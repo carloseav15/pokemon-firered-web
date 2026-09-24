@@ -14,6 +14,7 @@ import { countAliveNonEggMons, dexCount, healMon, leadMonIndex, nickname, setDex
 import type { ScriptRunner } from "./context";
 import { EXTRA_SPECIALS } from "./specialsExtra";
 import { DAYCARE_SPECIALS } from "../pokemon/daycare";
+import { initRoamer } from "../pokemon/roamer";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -248,7 +249,7 @@ const SPECIALS: Record<string, Special> = {
   EnterSafariMode: (ctx) => { flagSet(rom.c("FLAG_SYS_SAFARI_MODE")); ctx.ow.game.safariSteps = 600; ctx.ow.game.safariBalls = 30; },
   ExitSafariMode: (ctx) => { save.flags[rom.c("FLAG_SYS_SAFARI_MODE") >> 3] &= ~(1 << (rom.c("FLAG_SYS_SAFARI_MODE") & 7)); ctx.ow.game.safariSteps = undefined; },
   IsPlayerLeftOfVermilionSailor: () => (save.pos.x < 24 ? 1 : 0),
-  InitRoamer: () => {},
+  InitRoamer: () => { initRoamer(); },
   AnimateTeleporterHousing: () => {},
   AnimateTeleporterCable: () => {},
   BufferTMHMMoveName: () => {

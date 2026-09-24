@@ -29,6 +29,7 @@ import { healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
+import { createInGameTradePokemon, doInGameTradeScene, getInGameTradeSpeciesInfo, getTradeSpecies } from "./pokemon/ingameTrade";
 import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
 import { openHardwareMessage } from "./menus/hardwareChoice";
 import { learnMoveWithPrompt } from "./menus/monProgress";
@@ -72,10 +73,14 @@ export class Game {
     doCurrent: () => {},
   };
   readonly trades = {
-    getSpeciesInfo: () => 0,
-    getTradeSpecies: () => 0,
-    create: () => {},
-    doScene: () => { this.overworld.script.enable(); },
+    getSpeciesInfo: () => getInGameTradeSpeciesInfo(),
+    getTradeSpecies: () => getTradeSpecies(),
+    create: () => { createInGameTradePokemon(); },
+    doScene: () => {
+      const ow = this.overworld;
+      ow.script.stop();
+      fieldMenu(this, (close) => doInGameTradeScene(() => { close(); ow.script.enable(); }), false);
+    },
   };
   private accumulator = 0;
   private lastTime = 0;

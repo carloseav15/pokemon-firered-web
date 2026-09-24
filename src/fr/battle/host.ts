@@ -131,6 +131,7 @@ function battleTypeFlags(request: BattleRequest): number {
   if (request.isGhost) flags |= C.BATTLE_TYPE_GHOST;
   if (request.isSafari) flags |= C.BATTLE_TYPE_SAFARI;
   if (request.isDouble) flags |= C.BATTLE_TYPE_DOUBLE;
+  if (request.isRoamer) flags |= C.BATTLE_TYPE_ROAMER;
   return flags;
 }
 

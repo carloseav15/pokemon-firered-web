@@ -5,6 +5,8 @@ import { sound } from "../audio/sound";
 import { expandPlaceholders } from "../gba/charmap";
 import { rom } from "../rom";
 import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
+import { afterRoamerBattle } from "../pokemon/roamer";
+import { gEnemyParty } from "../pokemon/mon";
 import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "../save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
@@ -46,6 +48,7 @@ export type BattleRequest = {
   isLegendary?: boolean;
   isGhost?: boolean;
   isSafari?: boolean;
+  isRoamer?: boolean;
   isDouble?: boolean;
   terrain?: string;
   music?: number;
@@ -274,6 +277,21 @@ export class BattleSetup {
       kind: "wild", enemyParty: [enemy], isSafari: safari,
       isGhost: !safari && tower && !checkBagHasItem(c.ITEM_SILPH_SCOPE, 1),
       onEnd: outcome => {
+        this.game.battleOutcome = outcome;
+        if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
+        else this.game.returnToFieldContinueScript(true);
+      },
+    });
+  }
+
+  /** battle_setup.c StartRoamerBattle (BATTLE_TYPE_ROAMER), with UpdateRoamerHPStatus afterwards. */
+  startRoamerBattle(enemy: Pokemon): void {
+    incrementGameStat(rom.c("GAME_STAT_TOTAL_BATTLES"));
+    incrementGameStat(rom.c("GAME_STAT_WILD_BATTLES"));
+    this.game.startBattle({
+      kind: "wild", enemyParty: [enemy], isRoamer: true,
+      onEnd: (outcome) => {
+        afterRoamerBattle(gEnemyParty[0] as unknown as Pokemon, outcome);
         this.game.battleOutcome = outcome;
         if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);

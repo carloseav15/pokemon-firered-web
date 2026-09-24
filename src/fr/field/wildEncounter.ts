@@ -7,6 +7,7 @@ import { cdata, type SymRef } from "../hw/assets";
 import { random, random32 } from "../random";
 import { flagGet, incrementGameStat, save, varGet } from "../save";
 import { ability, createMon, type Pokemon } from "../pokemon/pokemon";
+import { roamerLevel, tryStartRoamerEncounter } from "../pokemon/roamer";
 
 type Area = "landMonsInfo" | "waterMonsInfo" | "rockSmashMonsInfo" | "fishingMonsInfo";
 type Header = { mapGroup: number; mapNum: number } & Record<Area, SymRef | 0>;
@@ -130,6 +131,12 @@ export class WildEncounter {
     if (!info) return false;
     if (previous !== this.previousBehavior && random() % 100 >= 60) return false;
     if (!this.rateTest(info.encounterRate, false)) { this.addRateBuff(info.encounterRate); return false; }
+    const roamerMon = tryStartRoamerEncounter();
+    if (roamerMon) {
+      if (!this.allowedByRepel(roamerLevel())) return false;
+      this.game.battleSetup.startRoamerBattle(roamerMon);
+      return true;
+    }
     const mon = this.create(info, this.chooseSlot(area === "landMonsInfo" ? LAND : WATER), true);
     if (!mon) { this.addRateBuff(info.encounterRate); return false; }
     this.resetEncounterRateModifiers(); this.start(mon); return true;

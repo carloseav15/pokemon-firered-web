@@ -5,7 +5,7 @@ import { loadCData, preloadPacks } from "../hw/assets";
 
 const CDATA_FILES = [
   "field_effect", "field_specials", "vs_seeker", "pokemon_jump", "fame_checker", "party_menu", "item_menu", "region_map",
-  "pokemon_summary_screen", "pokedex_screen", "trainer_card", "evolution_scene", "hall_of_fame", "daycare", "trade",
+  "pokemon_summary_screen", "pokedex_screen", "trainer_card", "evolution_scene", "hall_of_fame", "daycare", "trade", "trade_scene",
   "roamer", "seagallop", "field_weather", "field_weather_effects", "battle_transition", "learn_move", "tm_case", "berry_pouch",
   "shop", "item_pc", "pokemon_storage_system_graphics", "pokemon_storage_system_data", "diploma", "credits", "slot_machine",
   "trainer_tower", "help_system", "teachy_tv", "itemfinder", "ss_anne", "script_menu", "field_tasks",

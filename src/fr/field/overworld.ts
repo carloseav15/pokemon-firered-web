@@ -22,6 +22,7 @@ import { MapNamePopup } from "./mapNamePopup";
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
+import { onMapLoadForRoamer } from "../pokemon/roamer";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -180,6 +181,7 @@ export class Overworld {
   /** Per-map resets shared by LoadMapFromWarp and LoadMapFromCameraTransition. */
   private onMapLoad(): void {
     mapResetTrainerRematches(this.game);
+    onMapLoadForRoamer();
   }
 
   /** Overworld_ResetStateAfterFly / Teleport / DigEscRope / WhitingOut */
