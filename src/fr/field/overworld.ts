@@ -17,12 +17,13 @@ import { PlayerAvatar, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } 
 import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
-import { FieldEffects } from "./fieldEffects";
+import { FieldEffects, MAX_FLASH_LEVEL } from "./fieldEffects";
 import { MapNamePopup } from "./mapNamePopup";
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
 import { onMapLoadForRoamer } from "../pokemon/roamer";
+import { PerStepCallback } from "./fieldTasks";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -71,6 +72,7 @@ export class Overworld {
   readonly doors: DoorAnimator;
   readonly effects: FieldEffects;
   readonly mapName: MapNamePopup;
+  readonly stepCallback: PerStepCallback;
   private mapCache = new Map<string, Promise<LoadedMap>>();
   warpDestination: WarpData = dummyWarp();
   lastUsedWarp: WarpData = dummyWarp();
@@ -127,6 +129,7 @@ export class Overworld {
     this.doors = new DoorAnimator(this);
     this.effects = new FieldEffects(this);
     this.mapName = new MapNamePopup(this);
+    this.stepCallback = new PerStepCallback(this);
   }
 
   get header(): MapHeader {
@@ -180,6 +183,7 @@ export class Overworld {
 
   /** Per-map resets shared by LoadMapFromWarp and LoadMapFromCameraTransition. */
   private onMapLoad(): void {
+    this.stepCallback.reset();
     mapResetTrainerRematches(this.game);
     onMapLoadForRoamer();
   }
@@ -333,7 +337,7 @@ export class Overworld {
   private setDefaultFlashLevel(): void {
     if (!this.header.requiresFlash) this.flashLevel = 0;
     else if (flagGet(rom.constants.FLAG_SYS_FLASH_ACTIVE ?? 0)) this.flashLevel = 0;
-    else this.flashLevel = 7;
+    else this.flashLevel = MAX_FLASH_LEVEL; // gMaxFlashLevel
   }
 
   /** InitMap: InitMapLayoutData + ON_LOAD */
@@ -487,7 +491,11 @@ export class Overworld {
     callback();
   }
 
+  /** gDisableMapMusicChangeOnMapLoad == MUSIC_DISABLE_KEEP for the next load. */
+  keepMusicOnNextLoad = false;
+
   playSpecialMapMusic(): void {
+    if (this.keepMusicOnNextLoad) { this.keepMusicOnNextLoad = false; return; }
     const music = this.savedMusic || this.header.music;
     if (music && music !== sound.currentBGM) sound.playNewMapMusic(music);
   }

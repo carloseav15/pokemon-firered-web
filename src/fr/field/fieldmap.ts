@@ -45,9 +45,21 @@ export type LoadedMap = {
   connections: LoadedConnection[];
 };
 
+/** Layouts that map scripts swap in with setmaplayoutindex (fetched with the map). */
+const ALTERNATE_LAYOUTS: Record<string, string[]> = {
+  MAP_SEAFOAM_ISLANDS_B3F: ["LAYOUT_SEAFOAM_ISLANDS_B3F_CURRENT_STOPPED"],
+  MAP_SEAFOAM_ISLANDS_B4F: ["LAYOUT_SEAFOAM_ISLANDS_B4F_CURRENT_STOPPED"],
+  MAP_THREE_ISLAND_DUNSPARCE_TUNNEL: ["LAYOUT_THREE_ISLAND_DUNSPARCE_TUNNEL_DUG_OUT"],
+  MAP_SEVEN_ISLAND_HOUSE_ROOM1: ["LAYOUT_SEVEN_ISLAND_HOUSE_ROOM1_DOOR_OPEN"],
+};
+
 export async function loadMap(mapId: string): Promise<LoadedMap> {
   const header = await rom.loadMap(mapId);
   const layout = await rom.loadLayout(header.layout);
+  await Promise.all((ALTERNATE_LAYOUTS[mapId] ?? []).map(async (id) => {
+    const alt = await rom.loadLayout(id);
+    await Promise.all([rom.loadTileset(alt.primary), rom.loadTileset(alt.secondary)]);
+  }));
   const [primary, secondary] = await Promise.all([rom.loadTileset(layout.primary), rom.loadTileset(layout.secondary)]);
   const connections: LoadedConnection[] = [];
   for (const connection of header.connections) {

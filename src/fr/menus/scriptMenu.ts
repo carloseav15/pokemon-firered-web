@@ -10,7 +10,7 @@ import { tasks } from "../gba/tasks";
 import { printText } from "../gba/textPrinter";
 import { Window } from "../gba/window";
 import { DATA_ROOT, rom } from "../rom";
-import { save, SV, varGet, varSet } from "../save";
+import { flagGet, save, SV, varGet, varSet } from "../save";
 import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP } from "../gba/input";
 import { GridMenu, Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
 import type { Overworld } from "../field/overworld";
@@ -359,7 +359,27 @@ export class ScriptMenu {
     this.listSuspended.resume();
   }
 
+  /** script_menu.c CreatePCMenu / CreatePCMenuWindow */
   pcMenu(): void {
-    this.ow.game.openPlayerPC(false);
+    varSet(SV.RESULT, SCR_MENU_UNSET);
+    const k = rom.constants;
+    const dex = flagGet(k.FLAG_SYS_POKEDEX_GET);
+    const clear = flagGet(k.FLAG_SYS_GAME_CLEAR);
+    const numItems = clear ? 5 : dex ? 4 : 3;
+    const width = dex ? 14 : 13;
+    const window = this.createFramedWindow(0, 0, width, clear ? 10 : numItems * 2);
+    printText(window, FONT_NORMAL, rom.text(flagGet(k.FLAG_SYS_NOT_SOMEONES_PC) ? "gText_BillSPc" : "gText_SomeoneSPc"), 8, 2);
+    printText(window, FONT_NORMAL, expandPlaceholders(rom.text("gText_SPc")), 8, 18);
+    if (clear) {
+      printText(window, FONT_NORMAL, rom.text("gText_ProfOakSPc"), 8, 34);
+      printText(window, FONT_NORMAL, rom.text("gText_HallOfFame_2"), 8, 50);
+      printText(window, FONT_NORMAL, rom.text("gText_LogOff"), 8, 66);
+    } else {
+      if (dex) printText(window, FONT_NORMAL, rom.text("gText_ProfOakSPc"), 8, 34);
+      printText(window, FONT_NORMAL, rom.text("gText_LogOff"), 8, 2 + 16 * (numItems - 1));
+    }
+    const menu = new Menu(window, FONT_NORMAL, 0, 2, 16, numItems, 0);
+    const taskId = tasks.create(this.multichoiceTask, 80);
+    this.mcState.set(taskId, { window, menu, ignoreB: false, wrap: numItems > 3 });
   }
 }

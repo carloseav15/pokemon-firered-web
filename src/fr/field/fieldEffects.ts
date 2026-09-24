@@ -41,6 +41,9 @@ const EMOTE_ANIMS: AnimCmd[][] = [
 // MOVEMENT_ACTION_EMOTE_* order: exclamation, question, X, double exclamation, smile
 const EMOTE_FROM_ACTION = [0, 4, 2, 1, 3];
 
+export const FLASH_LEVEL_TO_RADIUS = [200, 72, 56, 40, 24];
+export const MAX_FLASH_LEVEL = FLASH_LEVEL_TO_RADIUS.length - 1;
+
 export class FieldEffects {
   readonly tasks = tasks;
   private surfBlob?: Sprite;
@@ -52,6 +55,30 @@ export class FieldEffects {
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
   flashOverlay = 0;
+  /** tCurFlashRadius while UpdateFlashLevelEffect runs. */
+  flashRadius: number | null = null;
+
+  /** AnimateFlash: the radius steps by 2 every other frame, then the script resumes. */
+  animateFlash(newLevel: number, onDone: () => void): void {
+    const from = FLASH_LEVEL_TO_RADIUS[Math.min(this.ow.flashLevel, MAX_FLASH_LEVEL)];
+    const to = FLASH_LEVEL_TO_RADIUS[Math.min(newLevel, MAX_FLASH_LEVEL)];
+    const delta = from < to ? 2 : -2;
+    let radius = from, state = 0;
+    this.flashRadius = radius;
+    this.ow.controlsLocked = true;
+    const id = tasks.create(() => {
+      if (state === 0) { state = 1; return; }
+      state = 0;
+      radius += delta;
+      this.flashRadius = radius;
+      if ((delta > 0 && radius > to) || (delta < 0 && radius < to)) {
+        this.flashRadius = null;
+        this.ow.flashLevel = newLevel;
+        tasks.destroy(id);
+        onDone();
+      }
+    }, 80);
+  }
   readonly moves: FieldMoveEffects;
 
   constructor(private readonly ow: Overworld) {
@@ -332,10 +359,11 @@ export class FieldEffects {
 
   renderFlash(ctx: CanvasRenderingContext2D): void {
     const level = this.ow.flashLevel;
-    if (!level) return;
-    // Flash radius shrinks with the level (field_screen_effect.c sFlashLevelToRadius)
-    const radii = [200, 72, 64, 56, 48, 40, 32, 24, 0];
-    const r = radii[Math.min(level, 8)];
+    if (!level && this.flashRadius === null) return;
+    // field_screen_effect.c sFlashLevelToRadius (FireRed: 5 levels); an
+    // AnimateFlash in progress draws its current radius instead.
+    const r = this.flashRadius ?? FLASH_LEVEL_TO_RADIUS[Math.min(level, MAX_FLASH_LEVEL)];
+    if (r >= 200) return;
     ctx.save();
     ctx.fillStyle = "#000";
     ctx.beginPath();

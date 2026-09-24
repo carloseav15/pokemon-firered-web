@@ -30,6 +30,8 @@ import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/f
 import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
 import { openPlayerPc } from "./menus/playerPc";
+import { showDiploma } from "./diploma";
+import { doCredits, enterHallOfFame, openHallOfFamePc } from "./hallOfFame";
 import { createInGameTradePokemon, doInGameTradeScene, getInGameTradeSpeciesInfo, getTradeSpecies } from "./pokemon/ingameTrade";
 import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
 import { openHardwareMessage } from "./menus/hardwareChoice";
@@ -177,6 +179,13 @@ export class Game {
 
   continueGame(data: SaveData): void {
     setSave(data);
+    // CB2_ContinueSavedGame: UseContinueGameWarp → SetWarpDestinationToContinueGameWarp
+    const flags = save as unknown as { continueGameWarpActive?: boolean };
+    if (flags.continueGameWarpActive && save.continueGameWarp.mapGroup !== 0xff) {
+      flags.continueGameWarpActive = false;
+      save.location = { ...save.continueGameWarp };
+      save.pos = { x: save.continueGameWarp.x, y: save.continueGameWarp.y };
+    }
     textOptions.speed = save.options.textSpeed;
     joy.buttonMode = save.options.buttonMode;
     sound.setStereo(save.options.sound === 1);
@@ -543,6 +552,9 @@ export class Game {
     });
   }
 
+  doCredits(): void { doCredits(this); }
+  openHallOfFamePc(): void { openHallOfFamePc(this); }
+
   /** A field message that resumes the waiting script once dismissed. */
   showMessageThenEnable(text: Uint8Array): void {
     this.overworld.script.stop();
@@ -566,17 +578,26 @@ export class Game {
       ow.script.enable();
     });
   }
-  showDiploma(): void { this.overworld.script.enable(); }
-  enterHallOfFame(): void { this.continueScriptAfterPlaceholder("HALL OF FAME\nCongratulations!"); }
+  showDiploma(): void { showDiploma(this); }
+  enterHallOfFame(): void { enterHallOfFame(this); }
   createPokemartMenu(ptr: number): void {
     this.overworld.script.stop();
     openShopMenu(this, ptr);
   }
   playSlotMachine(_id: number): void { this.overworld.script.enable(); }
-  animateFlash(_target: number): void { this.overworld.flashLevel = _target; this.overworld.script.enable(); }
+  animateFlash(target: number): void { this.overworld.effects.animateFlash(target, () => this.overworld.script.enable()); }
   fieldEffectStart(id: number): void { this.overworld.effects.start(id); }
-  setStepCallback(_id: number): void {}
-  setMapLayoutIndex(_index: number): void {}
+  setStepCallback(id: number): void { this.overworld.stepCallback.activate(id); }
+  /** SetCurrentMapLayout: used from ON_TRANSITION scripts, before InitMap builds the grid. */
+  setMapLayoutIndex(index: number): void {
+    const ow = this.overworld;
+    const id = rom.layoutIdByIndex_(index);
+    const layout = id ? rom.cachedLayout(id) : undefined;
+    if (!layout || !ow.loaded) return;
+    const primary = rom.cachedTileset(layout.primary) ?? ow.loaded.primary;
+    const secondary = rom.cachedTileset(layout.secondary) ?? ow.loaded.secondary;
+    ow.loaded = { ...ow.loaded, layout, primary, secondary };
+  }
   createVirtualObject(..._args: number[]): void {}
   turnVirtualObject(..._args: number[]): void {}
   animatePc(_on: boolean): void {}

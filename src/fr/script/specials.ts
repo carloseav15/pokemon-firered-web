@@ -151,7 +151,10 @@ const SPECIALS: Record<string, Special> = {
   SetWalkingIntoSignVars: (ctx) => { ctx.ow.control.walkAwayInhibitTimer = 6; ctx.ow.control.msgBoxCancelable = true; },
   ShowFieldMessageStringVar4: (ctx) => { ctx.ow.messageBox.show(stringVars.var4); },
   Overworld_PlaySpecialMapMusic: (ctx) => { ctx.ow.playSpecialMapMusic(); },
-  Script_FadeOutMapMusic: () => { sound.fadeOutBGM(4); },
+  Script_FadeOutMapMusic: (ctx) => {
+    sound.fadeOutBGM(4);
+    const id = tasks.create(() => { if (sound.isBGMPausedOrStopped()) { tasks.destroy(id); ctx.ow.script.enable(); } }, 80);
+  },
   QuestLog_CutRecording: () => {},
   QuestLog_StartRecordingInputsAfterDeferredEvent: () => {},
   SetUsedPkmnCenterQuestLogEvent: () => {},
@@ -226,8 +229,8 @@ const SPECIALS: Record<string, Special> = {
   Field_AskSaveTheGame: (ctx) => { ctx.ow.game.askSaveGame(); },
   ShowDiploma: (ctx) => { ctx.ow.game.showDiploma(); },
   EnterHallOfFame: (ctx) => { ctx.ow.game.enterHallOfFame(); },
-  DoCredits: (ctx) => { ctx.ow.game.enterHallOfFame(); },
-  HallOfFamePCBeginFade: () => {},
+  DoCredits: (ctx) => { ctx.ow.game.doCredits(); },
+  HallOfFamePCBeginFade: (ctx) => { ctx.ow.game.openHallOfFamePc(); },
   ListMenu: (ctx) => { ctx.ow.game.scriptMenu.listMenu(); },
   ReturnToListMenu: (ctx) => { ctx.ow.game.scriptMenu.returnToListMenu(); },
   DoPicboxCancel: (ctx) => { ctx.ow.game.scriptMenu.hideMonPic(); },

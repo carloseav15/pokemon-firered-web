@@ -502,7 +502,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     ctx.setupNative(() => !paletteFade.active);
     return true;
   },
-  setflashlevel: (ctx) => { const level = varGet(ctx.readHalfword()); ctx.ow.flashLevel = level < 0 || level > 8 ? 0 : level; return false; },
+  setflashlevel: (ctx) => { const level = varGet(ctx.readHalfword()); ctx.ow.flashLevel = level < 0 || level > 4 ? 0 : level; return false; },
   animateflash: (ctx) => {
     const target = ctx.readByte();
     ctx.ow.game.animateFlash(target);

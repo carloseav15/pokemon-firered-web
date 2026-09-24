@@ -398,6 +398,11 @@ export class Rom {
     return map;
   }
 
+  /** A layout already fetched (SetCurrentMapLayout runs synchronously in map scripts). */
+  cachedLayout(id: string): LayoutData | undefined {
+    return this.layouts.get(id);
+  }
+
   async loadLayout(id: string): Promise<LayoutData> {
     let layout = this.layouts.get(id);
     if (!layout) {
@@ -416,6 +421,10 @@ export class Rom {
 
   layoutIdByIndex_(index: number): string | undefined {
     return this.layoutIdByIndex.get(index);
+  }
+
+  cachedTileset(name: string): TilesetData | undefined {
+    return this.tilesets.get(name);
   }
 
   async loadTileset(name: string): Promise<TilesetData> {
