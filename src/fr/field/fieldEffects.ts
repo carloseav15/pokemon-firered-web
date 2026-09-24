@@ -435,8 +435,8 @@ export class FieldEffects {
     const steps = this.ow.game.safariSteps;
     if (steps === undefined) return false;
     this.ow.game.safariSteps = steps - 1;
-    if (steps - 1 <= 0) {
-      this.ow.script.setupScript(rom.label("SafariZone_EventScript_OutOfBallsMidBattle") ? rom.label("SafariZone_EventScript_TimesUp") : 0);
+    if (steps - 1 === 0) {
+      this.ow.script.setupScript(rom.label("SafariZone_EventScript_TimesUp"));
       return true;
     }
     return false;

@@ -256,8 +256,11 @@ const SPECIALS: Record<string, Special> = {
     const indices = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5];
     return indices[random() % indices.length];
   },
-  EnterSafariMode: (ctx) => { flagSet(rom.c("FLAG_SYS_SAFARI_MODE")); ctx.ow.game.safariSteps = 600; ctx.ow.game.safariBalls = 30; },
-  ExitSafariMode: (ctx) => { save.flags[rom.c("FLAG_SYS_SAFARI_MODE") >> 3] &= ~(1 << (rom.c("FLAG_SYS_SAFARI_MODE") & 7)); ctx.ow.game.safariSteps = undefined; },
+  EnterSafariMode: (ctx) => {
+    save.gameStats[rom.c("GAME_STAT_ENTERED_SAFARI_ZONE")] = (save.gameStats[rom.c("GAME_STAT_ENTERED_SAFARI_ZONE")] ?? 0) + 1;
+    flagSet(rom.c("FLAG_SYS_SAFARI_MODE")); ctx.ow.game.safariSteps = 600; ctx.ow.game.safariBalls = 30;
+  },
+  ExitSafariMode: (ctx) => { save.flags[rom.c("FLAG_SYS_SAFARI_MODE") >> 3] &= ~(1 << (rom.c("FLAG_SYS_SAFARI_MODE") & 7)); ctx.ow.game.safariSteps = 0; ctx.ow.game.safariBalls = 0; },
   IsPlayerLeftOfVermilionSailor: () => (save.pos.x < 24 ? 1 : 0),
   InitRoamer: () => { initRoamer(); },
   AnimateTeleporterHousing: () => {},

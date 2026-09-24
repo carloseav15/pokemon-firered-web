@@ -4,6 +4,8 @@
 import { sound } from "../audio/sound";
 import { expandPlaceholders } from "../gba/charmap";
 import { rom } from "../rom";
+import { tasks } from "../gba/tasks";
+import { paletteFade } from "../gba/fade";
 import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
 import { afterRoamerBattle } from "../pokemon/roamer";
 import { gEnemyParty } from "../pokemon/mon";
@@ -278,10 +280,39 @@ export class BattleSetup {
       isGhost: !safari && tower && !checkBagHasItem(c.ITEM_SILPH_SCOPE, 1),
       onEnd: outcome => {
         this.game.battleOutcome = outcome;
+        if (safari) { this.endSafariBattle(outcome); return; }
         if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);
       },
     });
+  }
+
+  /** safari_zone.c CB2_EndSafariBattle */
+  private endSafariBattle(outcome: number): void {
+    const game = this.game, ow = game.overworld;
+    if (game.safariBalls !== 0) { game.returnToFieldContinueScript(true); return; }
+    if (outcome === rom.c("B_OUTCOME_NO_SAFARI_BALLS")) {
+      game.scene = null;
+      ow.script.runImmediately(rom.label("SafariZone_EventScript_OutOfBallsMidBattle"));
+      ow.fieldCallback = () => {
+        ow.controlsLocked = true;
+        ow.playSpecialMapMusic();
+        ow.fadeInFromBlack();
+        const id = tasks.create(() => {
+          if (paletteFade.active) return;
+          tasks.destroy(id);
+          ow.objects.clearHeldMovementIfFinished(ow.player.object);
+          ow.objects.unfreezeAll();
+          ow.controlsLocked = false;
+        }, 10);
+      };
+      ow.warpIntoMapAndLoad();
+      return;
+    }
+    // B_OUTCOME_CAUGHT with the last ball
+    ow.script.setupScript(rom.label("SafariZone_EventScript_OutOfBalls"));
+    ow.script.stop();
+    game.returnToFieldContinueScript(true);
   }
 
   /** battle_setup.c StartRoamerBattle (BATTLE_TYPE_ROAMER), with UpdateRoamerHPStatus afterwards. */

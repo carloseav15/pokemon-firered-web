@@ -16,6 +16,7 @@ import { BufferBattlePartyCurrentOrderBySide } from "./ext";
 import { SetControllerToPlayer } from "./controller_player";
 import { SetControllerToOpponent } from "./controller_opponent";
 import { SetControllerToOakOrOldMan } from "./controller_oak_old_man";
+import { SetControllerToSafari } from "./controller_safari";
 
 export const BUFFER_A = 0;
 export const BUFFER_B = 1;
@@ -55,7 +56,8 @@ export function InitBattleControllers(): void {
 function InitSinglePlayerBtlControllers(): void {
   G.gBattleMainFunc = BeginBattleIntro;
   if (!(G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE)) {
-    if (G.gBattleTypeFlags & (C.BATTLE_TYPE_OLD_MAN_TUTORIAL | C.BATTLE_TYPE_FIRST_BATTLE)) gBattlerControllerFuncs[0] = SetControllerToOakOrOldMan;
+    if (G.gBattleTypeFlags & C.BATTLE_TYPE_SAFARI) gBattlerControllerFuncs[0] = SetControllerToSafari;
+    else if (G.gBattleTypeFlags & (C.BATTLE_TYPE_OLD_MAN_TUTORIAL | C.BATTLE_TYPE_FIRST_BATTLE)) gBattlerControllerFuncs[0] = SetControllerToOakOrOldMan;
     else gBattlerControllerFuncs[0] = SetControllerToPlayer;
     gBattlerPositions[0] = C.B_POSITION_PLAYER_LEFT;
     gBattlerControllerFuncs[1] = SetControllerToOpponent;

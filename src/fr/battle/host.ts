@@ -118,6 +118,7 @@ export const battleHost = {
     gMain.callback1 = battleHost.preBattleCallback1;
     c.scene.leave();
     game.scene = null;
+    if (c.request.isSafari) game.safariBalls = G.gNumSafariBalls;
     c.request.onEnd(outcome);
   },
 };
@@ -143,6 +144,7 @@ function runBattle(request: BattleRequest): Scene {
   resetBattleStructs();
   G.gBattleTypeFlags = battleTypeFlags(request);
   G.gTrainerBattleOpponent_A = request.trainerId ?? 0;
+  if (game && request.isSafari) G.gNumSafariBalls = game.safariBalls;
   ZeroEnemyPartyMons();
   request.enemyParty.forEach((mon, i) => {
     if (i < 6) CopyMon(gEnemyParty[i], mon as Mon);

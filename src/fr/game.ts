@@ -3,7 +3,7 @@
 
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
-import { encode, expandPlaceholders, stringVars } from "./gba/charmap";
+import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON } from "./gba/input";
@@ -221,13 +221,29 @@ export class Game {
     ow.objects.freezeAll();
     const items: Array<{ text: Uint8Array; desc: string; action: () => void }> = [];
     const c = rom.constants;
-    if (flagGet(c.FLAG_SYS_POKEDEX_GET)) items.push({ text: rom.text("gText_MenuPokedex"), desc: "gStartMenuDesc_Pokedex", action: () => this.openPlaceholder("POKéDEX") });
-    if (flagGet(c.FLAG_SYS_POKEMON_GET)) items.push({ text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => this.openPartyMenu() });
-    items.push({ text: rom.text("gText_MenuBag"), desc: "gStartMenuDesc_Bag", action: () => this.openBag() });
-    items.push({ text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => this.openPlaceholder("TRAINER CARD") });
-    items.push({ text: rom.text("gText_MenuSave"), desc: "gStartMenuDesc_Save", action: () => this.startMenuSave() });
-    items.push({ text: rom.text("gText_MenuOption"), desc: "gStartMenuDesc_Option", action: () => this.openOptions() });
-    items.push({ text: rom.text("gText_MenuExit"), desc: "gStartMenuDesc_Exit", action: () => this.closeStartMenu() });
+    const safari = flagGet(c.FLAG_SYS_SAFARI_MODE);
+    if (safari) {
+      // SetUpStartMenu_SafariZone
+      items.push({ text: rom.text("gText_MenuRetire"), desc: "gStartMenuDesc_Retire", action: () => {
+        this.removeStartMenuWindows();
+        this.closeStartMenu();
+        ow.script.setupScript(rom.label("SafariZone_EventScript_RetirePrompt"));
+      } });
+      items.push({ text: rom.text("gText_MenuPokedex"), desc: "gStartMenuDesc_Pokedex", action: () => this.openPokedex() });
+      items.push({ text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => this.openPartyMenu() });
+      items.push({ text: rom.text("gText_MenuBag"), desc: "gStartMenuDesc_Bag", action: () => this.openBag() });
+      items.push({ text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => this.openTrainerCard() });
+      items.push({ text: rom.text("gText_MenuOption"), desc: "gStartMenuDesc_Option", action: () => this.openOptions() });
+      items.push({ text: rom.text("gText_MenuExit"), desc: "gStartMenuDesc_Exit", action: () => this.closeStartMenu() });
+    } else {
+      if (flagGet(c.FLAG_SYS_POKEDEX_GET)) items.push({ text: rom.text("gText_MenuPokedex"), desc: "gStartMenuDesc_Pokedex", action: () => this.openPokedex() });
+      if (flagGet(c.FLAG_SYS_POKEMON_GET)) items.push({ text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => this.openPartyMenu() });
+      items.push({ text: rom.text("gText_MenuBag"), desc: "gStartMenuDesc_Bag", action: () => this.openBag() });
+      items.push({ text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => this.openTrainerCard() });
+      items.push({ text: rom.text("gText_MenuSave"), desc: "gStartMenuDesc_Save", action: () => this.startMenuSave() });
+      items.push({ text: rom.text("gText_MenuOption"), desc: "gStartMenuDesc_Option", action: () => this.openOptions() });
+      items.push({ text: rom.text("gText_MenuExit"), desc: "gStartMenuDesc_Exit", action: () => this.closeStartMenu() });
+    }
     const window = new Window(22, 1, 7, items.length * 2 - 1);
     window.frame = "std";
     window.frameType = save.options.frameType;
@@ -245,6 +261,19 @@ export class Game {
     };
     printDesc();
     this.startMenuWindows = [window, desc];
+    if (safari) {
+      // DrawSafariZoneStatsWindow
+      const stats = new Window(2, 2, 10, 4);
+      stats.frame = "std";
+      stats.frameType = save.options.frameType;
+      stats.fill(1);
+      stringVars.var1 = intToDecimal(this.safariSteps ?? 0, STR_CONV_MODE_RIGHT_ALIGN, 3);
+      stringVars.var2 = encode("600");
+      stringVars.var3 = intToDecimal(this.safariBalls, STR_CONV_MODE_RIGHT_ALIGN, 2);
+      printText(stats, FONT_NORMAL, expandPlaceholders(rom.text("gText_MenuSafariStats")), 4, 3);
+      ow.windows.add(stats);
+      this.startMenuWindows.push(stats);
+    }
     const id = tasks.create(() => {
       const before = menu.cursorPos;
       const input = menu.processInput();
@@ -333,6 +362,9 @@ export class Game {
       }
     }, 80);
   }
+
+  openPokedex(): void { this.openPlaceholder("POKéDEX"); }
+  openTrainerCard(): void { this.openPlaceholder("TRAINER CARD"); }
 
   openPartyMenu(): void { this.removeStartMenuWindows(); openFieldParty(this); }
   openBag(): void { this.removeStartMenuWindows(); openFieldBag(this); }
