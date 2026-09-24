@@ -1,0 +1,1 @@
+{"defs":{"sLinkSendTaskId":{"type":"u8","value":0},"sLinkReceiveTaskId":{"type":"u8","value":0},"sUnused":{"type":"u8","value":0},"gUnusedControllerStruct":{"type":"UnusedControllerStruct","value":[]},"sBattleBuffersTransferData":{"type":"u8","value":[]}}}

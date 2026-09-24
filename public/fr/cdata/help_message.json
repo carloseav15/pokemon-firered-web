@@ -1,0 +1,1 @@
+{"defs":{"sHelpMessageWindowId":{"type":"u8","value":0},"gHelpMessageWindow_Gfx":{"type":"u8","value":{"$incbin":["graphics/help_system/msg_window.4bpp"]}},"sHelpMessageWindowTemplate":{"type":"WindowTemplate","value":{"bg":0,"tilemapLeft":0,"tilemapTop":15,"width":30,"height":5,"paletteNum":15,"baseBlock":143}},"sHelpMessageTextColors":{"type":"u8","value":[0,10,2]}}}

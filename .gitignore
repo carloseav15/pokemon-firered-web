@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+assets/gba-reference/
+
+# Generated build and Python caches
+.decomp-build/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+
+# Local environment credentials
+.env
+.env.*
+!.env.example

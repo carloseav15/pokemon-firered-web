@@ -1,0 +1,588 @@
+// intro.c: IntroCB_Scene3_Entrance, IntroCB_Scene3_Fight and their sprite callbacks.
+import { sound } from "./audio/sound";
+import { SPECIES_NIDORINO, CRY_MODE_DOUBLES } from "./generated/constants";
+import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
+import {
+  BG_COORD_ADD, BG_COORD_SET, BG_COORD_SUB, type BgTemplate,
+  ChangeBgX, ChangeBgY, GetBgX, HideBg, InitBgsFromTemplates,
+  LoadBgTilemap, LoadBgTiles, ShowBg,
+} from "./hw/bg";
+import {
+  ClearGpuRegBits, CopyBufferedValuesToGpuRegs, SetGpuReg,
+  SetGpuRegBits,
+} from "./hw/gpu";
+import {
+  BeginNormalPaletteFade, BlendPalettes, FillPalette, gPaletteFade,
+  gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, RGB_BLACK,
+  RGB_WHITE, TransferPlttBuffer, UpdatePaletteFade,
+} from "./hw/palette";
+import {
+  DISPCNT_WIN0_ON, ppu, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H,
+  REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
+  WININ_WIN0_BG0, WININ_WIN0_BG1, WININ_WIN0_OBJ, WIN_RANGE,
+} from "./hw/ppu";
+import {
+  AFFINEANIMCMD_END, AFFINEANIMCMD_FRAME, ANIMCMD_END, ANIMCMD_FRAME,
+  ANIMCMD_JUMP, AnimateSprites, BuildOamBuffer, CalcCenterToCornerVec,
+  CreateSprite, DestroySprite, gDummySpriteAffineAnimTable, gSprites,
+  LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES, oamData,
+  ResetSpriteData, SetSpriteMatrixAnchor, SPRITE_SHAPE, SPRITE_SIZE,
+  SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim,
+  type AffineAnimCmd, type AnimCmd, type OamData, type Sprite,
+  type SpriteTemplate,
+} from "./hw/sprite";
+import { gSineTable } from "./hw/trig";
+
+const symbols = [
+  "sScene3_Bg_Pal", "sScene3_Bg_Gfx", "sScene3_Bg_Map",
+  "sScene3_GengarAnim_Gfx", "sScene3_GengarAnim_Map", "sGengar_Pal",
+  "sScene3_Nidorino_Gfx", "sNidorino_Pal", "sScene3_Grass_Gfx",
+  "sScene3_Grass_Pal", "sScene3_GengarStatic_Gfx",
+  "sScene3_Swipe_Gfx", "sScene3_Swipe_Pal",
+  "sScene3_RecoilDust_Gfx", "sScene3_RecoilDust_Pal",
+];
+type SymRef = { $sym: string };
+type ExtractedAnim = { frame?: { imageValue: number; duration: number }; jump?: { target: number }; type?: number };
+type ExtractedAffineAnim = { frame?: { xScale: number; yScale: number; rotation: number; duration: number }; type?: number };
+type ExtractedTemplate = { tileTag: number; paletteTag: number };
+
+function animations(name: string): AnimCmd[][] {
+  return cdata<SymRef[]>("intro", name).map(({ $sym }) =>
+    cdata<ExtractedAnim[]>("intro", $sym).map((cmd) =>
+      cmd.frame ? ANIMCMD_FRAME(cmd.frame.imageValue, cmd.frame.duration) :
+        cmd.jump ? ANIMCMD_JUMP(cmd.jump.target) : ANIMCMD_END));
+}
+
+function affineAnimations(name: string): AffineAnimCmd[][] {
+  return cdata<SymRef[]>("intro", name).map(({ $sym }) =>
+    cdata<ExtractedAffineAnim[]>("intro", $sym).map((cmd) =>
+      cmd.frame ? AFFINEANIMCMD_FRAME(cmd.frame.xScale, cmd.frame.yScale, cmd.frame.rotation, cmd.frame.duration) : AFFINEANIMCMD_END));
+}
+
+function spriteTemplate(name: string, oamName: string, animName: string, callback: (sprite: Sprite) => void, affine = false): SpriteTemplate {
+  const def = cdata<ExtractedTemplate>("intro", name);
+  return {
+    tileTag: def.tileTag,
+    paletteTag: def.paletteTag,
+    oam: oamData(cdata<OamData>("intro", oamName)),
+    anims: animations(animName),
+    images: null,
+    affineAnims: affine ? affineAnimations("sAffineAnims_Scene3_Mons") : gDummySpriteAffineAnimTable,
+    callback,
+  };
+}
+
+export class IntroScene3 {
+  private phase: "entrance" | "fight" | "exit" = "entrance";
+  private state = 0;
+  private timer = 0;
+  private bounceTimer = 0;
+  private bounceFrame = 0;
+  private bouncePaused = false;
+  private gengarSpeed = 0x400;
+  private gengarMoves = 0;
+  private gengarEntering = false;
+  private scrollSlow = false;
+  private nidorinoSprite = MAX_SPRITES;
+  private readonly gengarSprites: number[] = [];
+  private attackState = -1;
+  private attackTimer = 0;
+  private attackSin = 64;
+  private attackFrame = 0;
+  private attackMultX = 0;
+  private attackMultY = 0;
+  private attackBaseX = 0;
+  private attackLanded = false;
+  done = false;
+
+  static async preload(): Promise<void> {
+    await Promise.all([preloadIncbin(symbols), loadCData("intro")]);
+  }
+
+  begin(): void {
+    this.phase = "entrance";
+    this.state = this.timer = this.bounceTimer = this.bounceFrame = 0;
+    this.gengarSpeed = 0x400;
+    this.gengarMoves = 0;
+    this.gengarEntering = false;
+    this.scrollSlow = false;
+    this.bouncePaused = false;
+    this.nidorinoSprite = MAX_SPRITES;
+    this.gengarSprites.length = 0;
+    this.attackState = -1;
+    this.attackLanded = false;
+    this.done = false;
+    ResetSpriteData();
+    LoadSpriteSheet({ data: incbin("sScene3_Nidorino_Gfx"), size: 0x2800, tag: 5 });
+    LoadSpriteSheet({ data: incbin("sScene3_Grass_Gfx"), size: 0x800, tag: 8 });
+    LoadSpriteSheet({ data: incbin("sScene3_GengarStatic_Gfx"), size: 0x1800, tag: 9 });
+    LoadSpriteSheet({ data: incbin("sScene3_Swipe_Gfx"), size: 0xa00, tag: 10 });
+    LoadSpriteSheet({ data: incbin("sScene3_RecoilDust_Gfx"), size: 0x200, tag: 11 });
+    LoadSpritePalette({ data: incbin("sGengar_Pal"), tag: 6 });
+    LoadSpritePalette({ data: incbin("sNidorino_Pal"), tag: 7 });
+    LoadSpritePalette({ data: incbin("sScene3_Grass_Pal"), tag: 8 });
+    LoadSpritePalette({ data: incbin("sScene3_Swipe_Pal"), tag: 10 });
+    LoadSpritePalette({ data: incbin("sScene3_RecoilDust_Pal"), tag: 11 });
+  }
+
+  update(): void {
+    if (this.done) return;
+    if (this.phase !== "exit" && (this.phase === "fight" || this.state >= 3)) this.runSceneTasks();
+    if (this.phase === "fight") this.updateFight();
+    else if (this.phase === "exit") this.updateExit();
+    else this.updateEntrance();
+    AnimateSprites();
+    BuildOamBuffer();
+    LoadOam();
+    UpdatePaletteFade();
+    CopyBufferedValuesToGpuRegs();
+    TransferPlttBuffer();
+  }
+
+  private updateEntrance(): void {
+    switch (this.state) {
+      case 0:
+        LoadPalette(incbin("sScene3_Bg_Pal"), 16, incbin("sScene3_Bg_Pal").length);
+        LoadPalette(incbin("sGengar_Pal"), 5 * 16, 32);
+        BlendPalettes(PALETTES_ALL & ~1, 16, RGB_WHITE);
+        InitBgsFromTemplates(0, cdata<BgTemplate[]>("intro", "sBgTemplates_Scene3"));
+        LoadBgTiles(1, incbin("sScene3_Bg_Gfx"), incbin("sScene3_Bg_Gfx").length, 0);
+        LoadBgTilemap(1, incbin("sScene3_Bg_Map"), incbin("sScene3_Bg_Map").length, 0);
+        ShowBg(1);
+        HideBg(0);
+        HideBg(2);
+        HideBg(3);
+        for (let bg = 0; bg < 4; bg++) {
+          ChangeBgX(bg, 0, BG_COORD_SET);
+          ChangeBgY(bg, 0, BG_COORD_SET);
+        }
+        SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+        SetGpuRegBits(REG_OFFSET_WININ, WININ_WIN0_BG1 | WININ_WIN0_OBJ);
+        ClearGpuRegBits(REG_OFFSET_WININ, WININ_WIN0_BG0);
+        SetGpuRegBits(REG_OFFSET_WINOUT, 0);
+        SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(32, 128));
+        SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0, 120));
+        this.state++;
+        break;
+      case 1:
+        LoadBgTiles(0, incbin("sScene3_GengarAnim_Gfx"), incbin("sScene3_GengarAnim_Gfx").length, 0);
+        LoadBgTilemap(0, incbin("sScene3_GengarAnim_Map"), incbin("sScene3_GengarAnim_Map").length, 0);
+        ChangeBgX(0, 0x1800, BG_COORD_SET);
+        ChangeBgY(0, 0x1f000, BG_COORD_SET);
+        this.state++;
+        break;
+      case 2:
+        BlendPalettes(PALETTES_ALL & ~1, 0, RGB_WHITE);
+        ShowBg(0);
+        this.nidorinoSprite = CreateSprite(spriteTemplate(
+          "sSpriteTemplate_Scene3_Nidorino", "sOam_Scene3_Nidorino",
+          "sAnims_Scene3_Nidorino", (sprite) => this.nidorinoEnter(sprite), true), 0, 100, 9);
+        if (this.nidorinoSprite !== MAX_SPRITES) {
+          const sprite = gSprites[this.nidorinoSprite];
+          sprite.data[0] = 0;
+          sprite.data[1] = Math.trunc((180 << 4) / 52);
+          sprite.data[3] = 180;
+          sprite.data[4] = 0;
+        }
+        this.gengarEntering = true;
+        this.timer = 0;
+        this.state++;
+        break;
+      case 3:
+        if (++this.timer === 16) this.createGrass();
+        if (!this.gengarEntering &&
+            (this.nidorinoSprite === MAX_SPRITES || gSprites[this.nidorinoSprite].callback === SpriteCallbackDummy)) {
+          this.phase = "fight";
+          this.state = 0;
+        }
+        break;
+    }
+  }
+
+  private runSceneTasks(): void {
+    ChangeBgX(1, this.scrollSlow ? 0x20 : 0x400, BG_COORD_SUB);
+    if (!this.bouncePaused && ++this.bounceTimer >= 30) {
+      this.bounceTimer = 0;
+      this.bounceFrame ^= 1;
+      ChangeBgY(0, (this.bounceFrame << 15) + 0x1f000, BG_COORD_SET);
+    }
+    if (this.gengarEntering) {
+      if (++this.gengarMoves >= 40 && this.gengarSpeed > 16) this.gengarSpeed -= 16;
+      const scroll = ChangeBgX(0, this.gengarSpeed, BG_COORD_ADD);
+      if (scroll >= 0x8000) ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+      if (scroll >= 0xef00) {
+        ChangeBgX(0, 0xef00, BG_COORD_SET);
+        this.gengarEntering = false;
+      }
+    }
+    if (this.attackState >= 0) this.runGengarAttack();
+  }
+
+  private nidorinoEnter(sprite: Sprite): void {
+    const data = sprite.data;
+    if (++data[4] >= 40 && data[1] > 1) data[1]--;
+    data[0] += data[1];
+    sprite.x = data[0] >> 4;
+    if (sprite.x >= data[3]) {
+      sprite.x = data[3];
+      sprite.callback = SpriteCallbackDummy;
+    }
+  }
+
+  private createGrass(): void {
+    CreateSprite(spriteTemplate("sSpriteTemplate_Grass", "sOam_Grass",
+      "sAnims_Grass", (sprite) => this.grassMove(sprite)), 296, 112, 7);
+  }
+
+  private grassMove(sprite: Sprite): void {
+    const data = sprite.data;
+    if (data[0] === 0) {
+      data[1] = sprite.x << 5;
+      data[2] = 160;
+      data[0] = 1;
+    }
+    if (data[0] === 1) {
+      data[1] -= data[2];
+      sprite.x = data[1] >> 5;
+      if (sprite.x <= 52) { this.scrollSlow = true; data[0] = 2; }
+    } else if (data[0] === 2) {
+      data[1] -= 32;
+      sprite.x = data[1] >> 5;
+      if (sprite.x <= -32) DestroySprite(sprite);
+    }
+  }
+
+  private updateFight(): void {
+    const nidorino = gSprites[this.nidorinoSprite];
+    if (!nidorino?.inUse) { this.done = true; return; }
+    switch (this.state) {
+      case 0:
+        this.timer = 0;
+        this.state++;
+        break;
+      case 1:
+        if (++this.timer > 30) { this.startNidorinoCry(nidorino); this.state++; }
+        break;
+      case 2:
+        if (nidorino.callback === SpriteCallbackDummy) { this.timer = 0; this.state++; }
+        break;
+      case 3:
+        if (++this.timer > 30) {
+          this.bouncePaused = true;
+          this.startGengarAttack();
+          this.timer = 0;
+          this.state++;
+        }
+        break;
+      case 4:
+        if (this.attackLanded) { this.startNidorinoRecoil(nidorino); this.state++; }
+        break;
+      case 5:
+        if (nidorino.callback === SpriteCallbackDummy) {
+          this.bouncePaused = false;
+          this.timer = 0;
+          this.state++;
+        }
+        break;
+      case 6:
+        if (++this.timer > 16) { this.startNidorinoHop(nidorino, 8, 12, 5); this.state++; }
+        break;
+      case 7:
+        if (nidorino.callback === SpriteCallbackDummy) { this.startNidorinoHop(nidorino, 8, 12, 5); this.state++; }
+        break;
+      case 8:
+        if (nidorino.callback === SpriteCallbackDummy) { this.timer = 0; this.state++; }
+        break;
+      case 9:
+        if (++this.timer > 20) { this.startNidorinoAttack(nidorino); this.timer = 0; this.state++; }
+        break;
+      case 10:
+        if (!this.bounceFrame) { this.bouncePaused = true; this.createGengarBackSprites(); this.state++; }
+        break;
+      case 11:
+        HideBg(0);
+        this.timer = 0;
+        this.state++;
+        break;
+      case 12:
+        if (++this.timer === 48) BeginNormalPaletteFade((1 << 1) | (1 << 2), 2, 0, 16, RGB_WHITE);
+        if (this.timer > 120) {
+          nidorino.x += nidorino.x2;
+          nidorino.y += nidorino.y2;
+          SetSpriteMatrixAnchor(nidorino, 0, 42);
+          nidorino.callback = SpriteCallbackDummy;
+          StartSpriteAffineAnim(nidorino, 1);
+          const anchors = cdata<number[][]>("intro", "sGengarZoomMatrixAnchors");
+          this.gengarSprites.forEach((id, i) => {
+            const sprite = gSprites[id];
+            if (!sprite?.inUse) return;
+            StartSpriteAffineAnim(sprite, 1);
+            sprite.callback = SpriteCallbackDummy;
+            SetSpriteMatrixAnchor(sprite, anchors[i][0], anchors[i][1]);
+          });
+          this.timer = 0;
+          this.state++;
+        }
+        break;
+      case 13:
+        if (++this.timer > 8) {
+          gPlttBufferUnfaded.fill(RGB_WHITE, 16, 48);
+          BeginNormalPaletteFade(PALETTES_ALL & ~1, -2, 0, 16, RGB_BLACK);
+          this.state++;
+        }
+        break;
+      case 14:
+        if (!gPaletteFade.active) { this.timer = 0; this.state++; }
+        break;
+      case 15:
+        if (++this.timer > 60) { this.phase = "exit"; this.state = 0; }
+        break;
+    }
+  }
+
+  private updateExit(): void {
+    if (this.state++ === 0) FillPalette(RGB_BLACK, 0, 0x200);
+    else this.done = true;
+  }
+
+  private startNidorinoCry(sprite: Sprite): void {
+    StartSpriteAnim(sprite, 2);
+    sprite.data[0] = sprite.data[1] = sprite.data[2] = 0;
+    sprite.y2 = 3;
+    sprite.callback = (s) => {
+      const d = s.data;
+      if (d[0] === 0 && ++d[1] > 8) {
+        StartSpriteAnim(s, 1);
+        s.y2 = 0;
+        d[0] = 1;
+      } else if (d[0] === 1) {
+        sound.playCry(SPECIES_NIDORINO, CRY_MODE_DOUBLES);
+        d[1] = 0;
+        d[0] = 2;
+      } else if (d[0] === 2) {
+        if (++d[2] > 1) { d[2] = 0; s.y2 = s.y2 === 0 ? 1 : 0; }
+        if (++d[1] > 48) {
+          StartSpriteAnim(s, 0);
+          s.y2 = 0;
+          s.callback = SpriteCallbackDummy;
+        }
+      }
+    };
+  }
+
+  private startGengarAttack(): void {
+    this.attackLanded = false;
+    this.attackState = 0;
+    this.attackSin = 64;
+    this.attackBaseX = GetBgX(0);
+  }
+
+  private runGengarAttack(): void {
+    switch (this.attackState) {
+      case 0:
+        this.attackFrame = 2;
+        this.attackTimer = 0;
+        this.attackMultY = 6;
+        this.attackMultX = 32;
+        this.attackState++;
+        break;
+      case 1:
+        this.attackSin -= 2;
+        if (++this.attackTimer > 15) { this.attackTimer = 0; this.attackState++; }
+        break;
+      case 2:
+        if (++this.attackTimer === 14) this.attackLanded = true;
+        if (this.attackTimer > 15) { this.attackTimer = 0; this.attackState++; }
+        break;
+      case 3:
+        this.attackSin += 8;
+        if (++this.attackTimer === 4) {
+          this.createGengarSwipeSprites();
+          this.attackMultY = 32;
+          this.attackMultX = 48;
+          this.attackFrame = 3;
+        }
+        if (this.attackTimer > 7) { this.attackTimer = 0; this.attackState++; }
+        break;
+      case 4:
+        this.attackSin -= 8;
+        if (++this.attackTimer > 3) {
+          this.attackFrame = 0;
+          this.attackSin = 64;
+          this.attackTimer = 0;
+          this.attackState++;
+        }
+        break;
+      default:
+        this.attackState = -1;
+        return;
+    }
+    const xSub = -((gSineTable[this.attackSin + 64] * this.attackMultX) >> 8);
+    const ySub = this.attackMultY - ((gSineTable[this.attackSin] * this.attackMultY) >> 8);
+    ChangeBgY(0, (this.attackFrame << 15) + 0x1f000 - (ySub << 8), BG_COORD_SET);
+    ChangeBgX(0, this.attackBaseX - (xSub << 8), BG_COORD_SET);
+  }
+
+  private createGengarSwipeSprites(): void {
+    const make = () => spriteTemplate("sSpriteTemplate_GengarSwipe", "sOam_Swipe", "sAnims_Swipe", (sprite) => {
+      sprite.invisible = !sprite.invisible;
+      if (sprite.animEnded) DestroySprite(sprite);
+    });
+    CreateSprite(make(), 132, 78, 6);
+    const second = CreateSprite(make(), 132, 118, 6);
+    if (second !== MAX_SPRITES) {
+      const sprite = gSprites[second];
+      sprite.oam.shape = SPRITE_SHAPE("32x16");
+      sprite.oam.size = SPRITE_SIZE("32x16");
+      CalcCenterToCornerVec(sprite, sprite.oam.shape, sprite.oam.size, sprite.oam.affineMode);
+      StartSpriteAnim(sprite, 1);
+    }
+  }
+
+  private createGengarBackSprites(): void {
+    for (let i = 0; i < 4; i++) {
+      const id = CreateSprite(spriteTemplate("sSpriteTemplate_Scene3_Gengar", "sOam_Scene3_Gengar",
+        "sAnims_Scene3_Gengar", SpriteCallbackDummy, true), (i & 1) * 48 + 49, Math.floor(i / 2) * 64 + 72, 8);
+      if (id === MAX_SPRITES) continue;
+      const sprite = gSprites[id];
+      StartSpriteAnim(sprite, i);
+      if (i & 1) sprite.oam.shape = SPRITE_SHAPE("32x64");
+      CalcCenterToCornerVec(sprite, sprite.oam.shape, sprite.oam.size, sprite.oam.affineMode);
+      this.gengarSprites.push(id);
+    }
+  }
+
+  private startNidorinoRecoil(sprite: Sprite): void {
+    StartSpriteAnim(sprite, 2);
+    sprite.data.fill(0);
+    sprite.data[7] = 40;
+    sprite.callback = (s) => {
+      const d = s.data;
+      switch (d[0]) {
+        case 0:
+          if (++d[1] > 4) { StartSpriteAnim(s, 3); d[0]++; }
+          break;
+        case 1:
+          d[2] += d[7];
+          d[3] += 8;
+          s.x2 = d[2] >> 4;
+          s.y2 = -((gSineTable[d[3]] * 3) >> 5);
+          if (++d[5] > 0) { d[5] = 0; d[7]--; }
+          if (++d[4] > 15) {
+            StartSpriteAnim(s, 2);
+            d[1] = 0;
+            d[6] = 0x4757;
+            d[7] = 28;
+            d[0]++;
+          }
+          break;
+        case 2:
+          d[2] += d[7];
+          s.x2 = d[2] >> 4;
+          if (++d[1] > 6) {
+            this.createRecoilDust(s.x + s.x2, s.y + s.y2, d[6]);
+            d[6] = Math.imul(d[6], 1103515245);
+          }
+          if (d[1] > 12) { StartSpriteAnim(s, 0); d[1] = 0; d[0]++; }
+          break;
+        case 3:
+          if (++d[1] > 16) this.startNidorinoHop(s, 16, -s.x2, 4);
+          break;
+      }
+    };
+  }
+
+  private createRecoilDust(x: number, y: number, initialSeed: number): void {
+    let seed = initialSeed;
+    for (let i = 0; i < 2; i++) {
+      const id = CreateSprite(spriteTemplate("sSpriteTemplate_NidorinoRecoilDust", "sOam_RecoilDust",
+        "sAnims_RecoilDust", (sprite) => {
+          const d = sprite.data;
+          if (d[0] === 0) { d[1] = sprite.x << 4; d[2] = sprite.y << 4; d[0] = 1; }
+          d[1] -= d[3];
+          d[2] += d[4];
+          sprite.x = d[1] >> 4;
+          sprite.y = d[2] >> 4;
+          if (sprite.animEnded) { DestroySprite(sprite); return; }
+          if (++d[7] > 1) { d[7] = 0; sprite.invisible = !sprite.invisible; }
+        }), x - 22, y + 24, 10);
+      if (id !== MAX_SPRITES) {
+        const d = gSprites[id].data;
+        d[3] = seed % 13 + 8;
+        d[4] = seed % 3;
+        d[7] = i;
+      }
+      seed = (Math.imul(seed, 1103515245) << 16) >> 16;
+    }
+  }
+
+  private startNidorinoHop(sprite: Sprite, time: number, targetX: number, heightShift: number): void {
+    const d = sprite.data;
+    d[0] = 0;
+    d[1] = time;
+    d[2] = sprite.x2 << 4;
+    d[3] = Math.trunc((targetX << 4) / time);
+    d[4] = 0;
+    d[5] = Math.trunc(0x800 / time);
+    d[6] = 0;
+    d[7] = heightShift;
+    StartSpriteAnim(sprite, 2);
+    sprite.callback = (s) => {
+      const data = s.data;
+      switch (data[0]) {
+        case 0:
+          if (++data[6] > 4) { StartSpriteAnim(s, 3); data[6] = 0; data[0]++; }
+          break;
+        case 1:
+          if (--data[1]) {
+            data[2] += data[3];
+            data[4] += data[5];
+            s.x2 = data[2] >> 4;
+            s.y2 = -(gSineTable[data[4] >> 4] >> data[7]);
+          } else {
+            s.x2 = (data[2] & 0xffff) >> 4;
+            s.y2 = 0;
+            StartSpriteAnim(s, 2);
+            if (data[7] === 5) s.callback = SpriteCallbackDummy;
+            else { data[6] = 0; data[0]++; }
+          }
+          break;
+        case 2:
+          if (++data[6] > 4) { StartSpriteAnim(s, 0); s.callback = SpriteCallbackDummy; }
+          break;
+      }
+    };
+  }
+
+  private startNidorinoAttack(sprite: Sprite): void {
+    sprite.data.fill(0);
+    sprite.x += sprite.x2;
+    sprite.x2 = 0;
+    sprite.data[7] = 36;
+    StartSpriteAnim(sprite, 2);
+    sprite.callback = (s) => {
+      const d = s.data;
+      switch (d[0]) {
+        case 0:
+          if (++d[1] & 1) { if (++d[2] & 1) s.x2++; else s.x2--; }
+          if (d[1] > 17) { d[1] = 0; d[0]++; }
+          break;
+        case 1:
+          if (++d[1] >= 40) { StartSpriteAnim(s, 4); d[1] = d[2] = 0; d[0]++; }
+          break;
+        case 2:
+          d[1] += d[7];
+          s.x2 = -(d[1] >> 4);
+          s.y2 = -((gSineTable[d[1] >> 4] * 3) >> 4);
+          d[2]++;
+          if (d[7] > 12) d[7]--;
+          if ((d[1] >> 4) > 63) s.callback = SpriteCallbackDummy;
+          break;
+      }
+    };
+  }
+
+  render(ctx: CanvasRenderingContext2D): void {
+    ctx.putImageData(ppu.renderFrame(), 0, 0);
+  }
+}

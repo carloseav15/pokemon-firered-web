@@ -1,0 +1,1 @@
+{"defs":{"sServer":{"type":"MysteryGiftServer","value":0},"sFuncTable":{"type":"u32","value":[{"$sym":"Server_Init"},{"$sym":"Server_Done"},{"$sym":"Server_Recv"},{"$sym":"Server_Send"},{"$sym":"Server_Run"}]}}}

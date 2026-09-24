@@ -1,0 +1,1 @@
+{"defs":{"sScrollDistances":{"type":"u8","value":[1,2,4]},"sBrailleGlyphs":{"type":"u16","value":{"$incbin":["graphics/fonts/braille.fwjpnfont"]}}}}

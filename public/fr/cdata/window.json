@@ -1,0 +1,1 @@
+{"defs":{"gWindowClearTile":{"type":"u8","value":[0]},"gWindowBgTilemapBuffers":{"type":"void","value":[0]},"gWindows":{"type":"Window","value":[0]},"sDummyWindowTemplate":{"type":"WindowTemplate","value":{"bg":255,"tilemapLeft":0,"tilemapTop":0,"width":0,"height":0,"paletteNum":0,"baseBlock":0}}}}

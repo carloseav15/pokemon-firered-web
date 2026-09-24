@@ -1,0 +1,1 @@
+{"defs":{"sIsInSaveFailedScreen":{"type":"bool32","value":0},"sSaveType":{"type":"u16","value":0},"sUnused":{"type":"u16","value":0},"sSaveFailedScreenState":{"type":"u8","value":0},"sSaveFailedScreenPals":{"type":"u16","value":{"$incbin":["graphics/interface/save_failed_screen.gbapal"]}}}}

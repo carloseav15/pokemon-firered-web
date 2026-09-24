@@ -1,0 +1,1 @@
+{"defs":{"gScanlineEffectRegBuffers":{"type":"u16","value":[0]},"gScanlineEffect":{"type":"ScanlineEffect","value":{"dmaSrcBuffers":0}},"sShouldStopWaveTask":{"type":"bool8","value":0}}}

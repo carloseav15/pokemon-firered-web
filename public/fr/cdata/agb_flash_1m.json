@@ -1,0 +1,1 @@
+{"defs":{"AgbLibFlashVersion":{"type":"char","value":"FLASH1M_V103"},"sSetupInfos":{"type":"FlashSetupInfo","value":[{"$sym":"MX29L010"},{"$sym":"LE26FV10N1TS"},{"$sym":"DefaultFlash"}]}}}
