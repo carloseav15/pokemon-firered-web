@@ -12,6 +12,7 @@ import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
 import { countAliveNonEggMons, dexCount, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import type { ScriptRunner } from "./context";
+import { EXTRA_SPECIALS } from "./specialsExtra";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -24,6 +25,7 @@ function starterSpecies(index: number): number {
 }
 
 const SPECIALS: Record<string, Special> = {
+  ...EXTRA_SPECIALS,
   NullFieldSpecial: () => 0,
   // union_room.c: wireless link hardware init (RFU/manager/task). There is no
   // link hardware in the browser; the union-room desk simply stays inert.
@@ -214,7 +216,7 @@ const SPECIALS: Record<string, Special> = {
   DoCredits: (ctx) => { ctx.ow.game.enterHallOfFame(); },
   HallOfFamePCBeginFade: () => {},
   ListMenu: (ctx) => { ctx.ow.game.scriptMenu.listMenu(); },
-  ReturnToListMenu: (ctx) => { ctx.ow.game.scriptMenu.listMenu(); },
+  ReturnToListMenu: (ctx) => { ctx.ow.game.scriptMenu.returnToListMenu(); },
   DoPicboxCancel: (ctx) => { ctx.ow.game.scriptMenu.hideMonPic(); },
   CreatePCMenu: (ctx) => { ctx.ow.game.scriptMenu.pcMenu(); },
   // ---- in-game trades
@@ -227,52 +229,28 @@ const SPECIALS: Record<string, Special> = {
   GetDaycarePokemonCount: () => 0,
   IsThereMonInRoute5Daycare: () => 0,
   // ---- misc
-  GetElevatorFloor: () => 0,
-  InitElevatorFloorSelectMenuPos: () => {},
-  DrawElevatorCurrentFloorWindow: () => {},
-  CloseElevatorCurrentFloorWindow: () => {},
-  AnimateElevator: () => {},
-  SetPostgameFlags: () => { flagSet(rom.c("FLAG_SYS_CAN_LINK_WITH_RS")); },
-  GetMartClerkObjectId: () => 1,
-  GetMagikarpSizeRecordInfo: () => {},
-  GetHeracrossSizeRecordInfo: () => {},
   NameRaterWasNicknameChanged: () => {
     const mon = save.party[varGet(SV.x8004)];
     stringVars.var1 = mon ? nickname(mon) : encode("");
     return decode(stringVars.var3) === decode(stringVars.var1) ? 0 : 1;
   },
-  UpdateLoreleiDollCollection: () => {},
-  IsBadEggInParty: () => 0,
-  DoesPartyHaveEnigmaBerry: () => 0,
-  IsWirelessAdapterConnected: () => 0,
   ValidateEReaderTrainer: () => 1,
   GetMysteryGiftCardStat: () => 0,
   ValidateSavedWonderCard: () => 0,
   WonderNews_GetRewardInfo: () => 0,
   GetSeagallopNumber: () => varGet(SV.x8004),
-  LoopWingFlapSound: () => {},
   CheckAddCoins: () => (save.coins + varGet(SV.x8006) <= items.MAX_COINS ? 1 : 0),
   GetRandomSlotMachineId: () => {
     const indices = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5];
     return indices[random() % indices.length];
   },
   EggHatch: () => {},
-  DaisyMassageServices: () => {},
-  IsDodrioInParty: () => 0,
-  IsPokemonJumpSpeciesInParty: () => 0,
   EnterSafariMode: (ctx) => { flagSet(rom.c("FLAG_SYS_SAFARI_MODE")); ctx.ow.game.safariSteps = 600; ctx.ow.game.safariBalls = 30; },
   ExitSafariMode: (ctx) => { save.flags[rom.c("FLAG_SYS_SAFARI_MODE") >> 3] &= ~(1 << (rom.c("FLAG_SYS_SAFARI_MODE") & 7)); ctx.ow.game.safariSteps = undefined; },
-  SetIcefallCaveCrackedIceMetatiles: () => {},
-  SeafoamIslandsB4F_CurrentDumpsPlayerOnLand: () => 0,
   IsPlayerLeftOfVermilionSailor: () => (save.pos.x < 24 ? 1 : 0),
-  IsPlayerNotInTrainerTowerLobby: () => 1,
   InitRoamer: () => {},
-  DoSSAnneDepartureCutscene: () => {},
-  DoPokemonLeagueLightingEffect: () => {},
   AnimateTeleporterHousing: () => {},
   AnimateTeleporterCable: () => {},
-  OpenMuseumFossilPic: () => {},
-  CloseMuseumFossilPic: () => {},
   BufferTMHMMoveName: () => {
     const item = varGet(SV.x8004);
     const index = items.tmhmIndex(item);

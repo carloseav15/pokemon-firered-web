@@ -538,15 +538,18 @@ export class PlayerAvatar {
 
   private canStopSurfing(x: number, y: number, direction: number): boolean {
     if ((this.flags & PLAYER_AVATAR_FLAG_SURFING) && this.ow.map.elevationAt(x, y) === 3 && !this.ow.objects.objectAtXYZ(x, y, 3)) {
-      this.startStopSurfing(direction);
+      this.createStopSurfingTask(direction);
       return true;
     }
     return false;
   }
 
-  private startStopSurfing(direction: number): void {
+  /** CreateStopSurfingTask: surf music ends and the player hops onto land. */
+  createStopSurfingTask(direction: number): void {
     this.ow.controlsLocked = true;
     this.ow.objects.freezeAll();
+    this.ow.savedMusic = 0;
+    this.ow.playSpecialMapMusic();
     const o = this.object;
     let state = 0;
     const id = this.ow.effects.tasks.create(() => {

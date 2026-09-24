@@ -29,6 +29,7 @@ import { healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
+import { learnMoveWithPrompt } from "./menus/monProgress";
 import { checkBagHasItem } from "./pokemon/items";
 import { openStorageMenu } from "./menus/storageMenu";
 import { openShopMenu } from "./menus/shopMenu";
@@ -434,6 +435,67 @@ export class Game {
 
   openTeachyTv(): void {
     fieldMenu(this, (close) => openTeachyTv(close));
+  }
+
+  /** party_menu_specials.c SelectMoveDeleterMove: VAR_0x8005 = move slot, or MAX_MON_MOVES when cancelled. */
+  selectMoveDeleterMove(): void {
+    const ow = this.overworld;
+    ow.script.stop();
+    fieldMenu(this, (close) => {
+      const mon = save.party[varGet(SV.x8004)];
+      openHardwareChoice(rom.text("gText_WhichMoveToForget"), (mon?.moves ?? []).map((m, slot) => ({
+        label: m ? decode(rom.moveName(m)) : "-", value: slot, disabled: !m,
+      })), true, (slot) => {
+        varSet(SV.x8005, slot ?? 4);
+        close();
+        ow.script.enable();
+      });
+    }, false);
+  }
+
+  /** learn_move.c TeachMoveRelearnerMove: VAR_0x8004 = TRUE once a move was learned. */
+  openMoveRelearner(): void {
+    const ow = this.overworld;
+    ow.script.stop();
+    fieldMenu(this, (close) => {
+      const mon = save.party[varGet(SV.x8004)];
+      const finish = (learned: boolean): void => { varSet(SV.x8004, learned ? 1 : 0); close(); ow.script.enable(); };
+      if (!mon) { finish(false); return; }
+      const moves = relearnableMoves(mon);
+      const list = (): void => openHardwareChoice(rom.text("gText_TeachWhichMoveToMon"), moves.map((m, value) => ({
+        label: `${decode(rom.moveName(m))}  PP ${rom.moves[m].pp}`, value,
+      })), true, (i) => {
+        if (i === null) { finish(false); return; }
+        learnMoveWithPrompt(mon, moves[i], (learned) => { if (learned) finish(true); else list(); });
+      });
+      list();
+    }, false);
+  }
+
+  /** field_specials.c ChangeBoxPokemonNickname */
+  changeBoxNickname(box: number, pos: number): void {
+    const mon = save.boxes[box]?.[pos];
+    if (!mon) { this.overworld.script.enable(); return; }
+    stringVars.var3 = Uint8Array.from(mon.nickname);
+    stringVars.var2 = Uint8Array.from(mon.nickname);
+    this.overworld.script.stop();
+    const scene = new HwScene();
+    scene.enter();
+    this.scene = scene;
+    this.setCallbacks(null, () => scene.update());
+    DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
+      stringVars.var2 = Uint8Array.from(mon.nickname);
+      scene.leave();
+      this.scene = null;
+      this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
+      this.overworld.script.enable();
+    });
+  }
+
+  /** A field message that resumes the waiting script once dismissed. */
+  showMessageThenEnable(text: Uint8Array): void {
+    this.overworld.script.stop();
+    fieldMessage(this, text, () => this.overworld.script.enable());
   }
 
   /** FieldUseFunc_VsSeeker → Task_VsSeeker_0 */

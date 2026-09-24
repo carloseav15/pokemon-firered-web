@@ -9,6 +9,7 @@ import { joy } from "./gba/input";
 import * as saveModule from "./save";
 import { saveStore } from "./save";
 import { loadFieldFx } from "./field/fieldEffects";
+import { preloadFieldAssets } from "./field/preloadField";
 import { loadTrig } from "./hw/trig";
 import { installBattleHost } from "./battle/host";
 import { preloadBattleAssets } from "./battle/preload";
@@ -42,6 +43,7 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
     await rom.load((label) => { status.textContent = `Loading ${label}…`; });
     await loadFieldFx();
     await loadCData("wild_encounter");
+    await preloadFieldAssets();
     await loadTrig();
     status.textContent = "Loading battle data…";
     await preloadBattleAssets();
