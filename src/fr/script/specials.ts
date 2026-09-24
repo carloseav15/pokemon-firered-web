@@ -15,6 +15,7 @@ import type { ScriptRunner } from "./context";
 import { EXTRA_SPECIALS } from "./specialsExtra";
 import { DAYCARE_SPECIALS } from "../pokemon/daycare";
 import { initRoamer } from "../pokemon/roamer";
+import { doSeagallopFerryScene, getSeagallopNumber, getSelectedSeagallopDestination, seagallopDestinationItems } from "../seagallop";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -29,6 +30,13 @@ function starterSpecies(index: number): number {
 const SPECIALS: Record<string, Special> = {
   ...EXTRA_SPECIALS,
   ...DAYCARE_SPECIALS,
+  GetSeagallopNumber: () => getSeagallopNumber(),
+  DoSeagallopFerryScene: (ctx) => { doSeagallopFerryScene(ctx.ow.game); },
+  DrawSeagallopDestinationMenu: (ctx) => {
+    const { labels, numItems, top } = seagallopDestinationItems();
+    ctx.ow.game.scriptMenu.customChoice(labels, 17, top, 11, numItems * 2);
+  },
+  GetSelectedSeagallopDestination: () => getSelectedSeagallopDestination(varGet(SV.RESULT)),
   ShowDaycareLevelMenu: (ctx) => { ctx.ow.game.showDaycareLevelMenu(); },
   EggHatch: (ctx) => { ctx.ow.game.eggHatch(); },
   NullFieldSpecial: () => 0,
@@ -240,7 +248,6 @@ const SPECIALS: Record<string, Special> = {
   GetMysteryGiftCardStat: () => 0,
   ValidateSavedWonderCard: () => 0,
   WonderNews_GetRewardInfo: () => 0,
-  GetSeagallopNumber: () => varGet(SV.x8004),
   CheckAddCoins: () => (save.coins + varGet(SV.x8006) <= items.MAX_COINS ? 1 : 0),
   GetRandomSlotMachineId: () => {
     const indices = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5];

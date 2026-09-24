@@ -129,6 +129,16 @@ export class ScriptMenu {
     this.ow.script.enable();
   };
 
+  /** A multichoice built from explicit text symbols (CreateWindowFromRect + CreateMCMenuInputHandlerTask). */
+  customChoice(symbols: string[], left: number, top: number, width: number, height: number): void {
+    varSet(SV.RESULT, SCR_MENU_UNSET);
+    const window = this.createFramedWindow(left, top, width, height);
+    symbols.forEach((sym, i) => printText(window, FONT_NORMAL, expandPlaceholders(rom.text(sym)), 8, i * 16 + 2));
+    const menu = new Menu(window, FONT_NORMAL, 0, 2, 16, symbols.length, 0);
+    const taskId = tasks.create(this.multichoiceTask, 80);
+    this.mcState.set(taskId, { window, menu, ignoreB: false, wrap: symbols.length > 3 });
+  }
+
   multichoiceGrid(left: number, top: number, id: number, ignoreB: boolean, columns: number): boolean {
     varSet(SV.RESULT, SCR_MENU_UNSET);
     const texts = this.listTexts(id);
