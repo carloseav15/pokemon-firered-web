@@ -304,8 +304,10 @@ export class TextPrinter {
     }
     this.window.fillRect(this.bg, this.currentX, this.currentY, 10, 12);
     const arrow = downArrow();
-    const srcY = textFlags.useAlternateDownArrow ? 16 : 0;
-    this.window.blit(arrow.pixels, arrow.width, DOWN_ARROW_X[this.downArrowIndex & 3], srcY, this.currentX, this.currentY, 10, 12, true);
+    // text.c: DARK_DOWN_ARROW_OFFSET is 256 bytes (8 tiles), i.e. x=64
+    // in the exported 128-pixel-wide, row-major image, not a second row.
+    const srcX = (textFlags.useAlternateDownArrow ? 64 : 0) + DOWN_ARROW_X[this.downArrowIndex & 3];
+    this.window.blit(arrow.pixels, arrow.width, srcX, 0, this.currentX, this.currentY, 10, 12, true);
     this.downArrowDelay = 8;
     this.downArrowIndex = (this.downArrowIndex + 1) & 3;
   }

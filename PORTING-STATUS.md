@@ -122,4 +122,8 @@ Pending / placeholders:
   resolves them immediately (bag = no item, party = cancel / first usable mon on
   a forced switch, new move not learned, name kept, evolution applied in place).
 - Shiny sparkles, link battles, VS Seeker rematch state.
-- Known glitch: the battle text box's continue arrow draws as a black box.
+- The battle continue-arrow source offset is corrected: C's 256-byte alternate
+  offset maps to x=64 in the exported image. A focused check compared 960 pixels
+  against the packed source tiles across both variants and all four frames,
+  including delay ticks. TypeScript and production build pass. An interactive
+  battle check of the corrected arrow is still pending.
