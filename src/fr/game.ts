@@ -29,6 +29,7 @@ import { healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
+import { openPlayerPc } from "./menus/playerPc";
 import { createInGameTradePokemon, doInGameTradeScene, getInGameTradeSpeciesInfo, getTradeSpecies } from "./pokemon/ingameTrade";
 import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
 import { openHardwareMessage } from "./menus/hardwareChoice";
@@ -467,7 +468,7 @@ export class Game {
     });
   }
   openPokemonStorage(): void { openStorageMenu(this); }
-  openPlayerPC(_bedroom: boolean): void { this.continueScriptAfterPlaceholder("PC item storage\nis not ported yet."); }
+  openPlayerPC(bedroom: boolean): void { openPlayerPc(this, bedroom); }
   /** special ShowTownMap: the region map from a script, then the script resumes. */
   showTownMap(): void {
     this.overworld.script.stop();

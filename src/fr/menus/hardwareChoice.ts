@@ -2,7 +2,7 @@
 // graphics are being ported. Runs under gMain, pauses battle callbacks and
 // returns only after an explicit selection or allowed cancellation.
 import { encode } from "../gba/charmap";
-import { joy, A_BUTTON, B_BUTTON, DPAD_UP, DPAD_DOWN } from "../gba/input";
+import { joy, A_BUTTON, B_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "../gba/input";
 import { FONT_NORMAL } from "../gba/font";
 import { InitGpuRegManager, SetGpuReg } from "../hw/gpu";
 import { InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "../hw/bg";
@@ -91,6 +91,48 @@ export function openHardwareMessage(message: ArrayLike<number>, next: () => void
         SetMainCallback2(null);
         next();
       }
+    });
+  });
+}
+
+/** The ×NN quantity selector (item_menu.c / item_pc.c): up/down ±1, left/right ±10. */
+export function openHardwareQuantity(title: string | ArrayLike<number>, max: number, done: (value: number | null) => void): void {
+  const titleBytes = typeof title === "string" ? encode(title) : title;
+  const callback1 = gMain.callback1;
+  SetMainCallback1(null);
+  SetMainCallback2(() => {
+    SetVBlankCallback(null); SetHBlankCallback(null);
+    InitGpuRegManager(); FreeAllWindowBuffers(); DeactivateAllTextPrinters(); ResetPaletteFade();
+    ppu.vram.fill(0); ppu.oam.fill(0);
+    ResetBgsAndClearDma3BusyFlags(false);
+    InitBgsFromTemplates(0, [{bg: 0, charBaseIndex: 0, mapBaseIndex: 31, screenSize: 0, paletteMode: 0, priority: 0, baseTile: 0}]);
+    SetBgTilemapBuffer(0, new Uint16Array(1024));
+    InitWindows([{bg: 0, tilemapLeft: 1, tilemapTop: 1, width: 28, height: 6, paletteNum: 15, baseBlock: 1}]);
+    LoadPalette(GetTextWindowPalette(0), 240, 32);
+    SetGpuReg(REG_OFFSET_DISPCNT, 0); ShowBg(0);
+    let value = 1;
+    const draw = (): void => {
+      FillWindowPixelBuffer(0, 0x11);
+      AddTextPrinterParameterized3(0, FONT_NORMAL, 4, 0, [1, 2, 3], 0, titleBytes);
+      AddTextPrinterParameterized3(0, FONT_NORMAL, 4, 26, [1, 2, 3], 0, encode(`×${String(value).padStart(String(max).length, "0")}`));
+      PutWindowTilemap(0); CopyWindowToVram(0, COPYWIN_FULL);
+    };
+    const finish = (v: number | null): void => {
+      FreeAllWindowBuffers(); SetVBlankCallback(null); SetMainCallback1(callback1);
+      SetMainCallback2(null);
+      done(v);
+    };
+    draw();
+    SetVBlankCallback(TransferPlttBuffer);
+    SetMainCallback2(() => {
+      if (joy.newKeys & B_BUTTON) { sound.playSE(sound.SE_SELECT); finish(null); return; }
+      if (joy.newKeys & A_BUTTON) { sound.playSE(sound.SE_SELECT); finish(value); return; }
+      const old = value;
+      if (joy.repeated & DPAD_UP) value = value >= max ? 1 : value + 1;
+      else if (joy.repeated & DPAD_DOWN) value = value <= 1 ? max : value - 1;
+      else if (joy.repeated & DPAD_RIGHT) value = Math.min(max, value + 10);
+      else if (joy.repeated & DPAD_LEFT) value = Math.max(1, value - 10);
+      if (value !== old) { sound.playSE(sound.SE_SELECT); draw(); }
     });
   });
 }
