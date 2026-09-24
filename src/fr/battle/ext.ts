@@ -13,6 +13,7 @@ import { decode } from "../gba/charmap";
 import { b64 } from "../rom";
 import type { NameBuffer } from "../menus/namingModel";
 import { sound } from "../audio/sound";
+import { clearRematchStateByTrainerId } from "../field/vsSeeker";
 import { tasks } from "../gba/tasks";
 import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { FONT_NORMAL } from "../gba/font";
@@ -67,8 +68,10 @@ export function GetRivalBattleFlags(): number {
   return battleHost.rivalBattleFlags();
 }
 
-/** vs_seeker.c ClearRematchStateByTrainerId: the VS Seeker is not ported; there is no rematch state. */
-export function ClearRematchStateByTrainerId(): void {}
+/** vs_seeker.c ClearRematchStateByTrainerId */
+export function ClearRematchStateByTrainerId(): void {
+  clearRematchStateByTrainerId(battleHost.game(), battleHost.opponentA());
+}
 
 export function GetCurrentMapType(): number {
   return battleHost.mapType();

@@ -21,6 +21,7 @@ import { FieldEffects } from "./fieldEffects";
 import { MapNamePopup } from "./mapNamePopup";
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
+import { mapResetTrainerRematches } from "./vsSeeker";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -176,6 +177,11 @@ export class Overworld {
     if (heal) this.setWarpDestination(heal.mapGroup, heal.mapNum, -1, heal.x, heal.y);
   }
 
+  /** Per-map resets shared by LoadMapFromWarp and LoadMapFromCameraTransition. */
+  private onMapLoad(): void {
+    mapResetTrainerRematches(this.game);
+  }
+
   /** Overworld_ResetStateAfterFly / Teleport / DigEscRope / WhitingOut */
   resetStateAfterWarpOut(): void {
     this.resetInitialPlayerAvatarState();
@@ -314,6 +320,7 @@ export class Overworld {
     const outdoors = isMapTypeOutdoors(this.header.mapType);
     clearTempFieldEventData();
     this.effects.resetEncounterImmunity();
+    this.onMapLoad();
     if (outdoors && "FLAG_SYS_FLASH_ACTIVE" in rom.constants) flagClear(rom.c("FLAG_SYS_FLASH_ACTIVE"));
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
@@ -939,6 +946,7 @@ export class Overworld {
     this.loadObjEventTemplatesFromHeader();
     clearTempFieldEventData();
     this.effects.resetEncounterImmunity();
+    this.onMapLoad();
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
     this.runMapScriptImmediately(MAP_SCRIPT_ON_TRANSITION);

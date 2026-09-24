@@ -12,6 +12,7 @@ import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
 import { countAliveNonEggMons, dexCount, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import type { ScriptRunner } from "./context";
+import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 
 type Special = (ctx: ScriptRunner) => number | void;
 
@@ -146,7 +147,11 @@ const SPECIALS: Record<string, Special> = {
   SetHelpContextForMap: () => {},
   BackupHelpContext: () => {},
   RestoreHelpContext: () => {},
-  ForcePlayerOntoBike: (ctx) => { ctx.ow.player.setTransitionFlags(2); },
+  ForcePlayerOntoBike: (ctx) => {
+    if (ctx.ow.player.flags & 1) ctx.ow.player.setTransitionFlags(2);
+    ctx.ow.savedMusic = rom.c("MUS_CYCLING");
+    sound.playNewMapMusic(rom.c("MUS_CYCLING"));
+  },
   GetPlayerAvatarBike: (ctx) => ((ctx.ow.player.flags & 2) ? 1 : (ctx.ow.player.flags & 4) ? 2 : 0),
   ForcePlayerToStartSurfing: (ctx) => { ctx.ow.player.setTransitionFlags(8); },
   AnimatePcTurnOn: (ctx) => { ctx.ow.game.animatePc(true); },
@@ -168,8 +173,11 @@ const SPECIALS: Record<string, Special> = {
     varSet(SV.x8005, second);
   },
   // ---- battles
-  ShouldTryRematchBattle: () => 0,
-  IsTrainerReadyForRematch: () => 0,
+  ShouldTryRematchBattle: (ctx) => (shouldTryRematchBattle(ctx.ow.game.battleSetup.opponentA) ? 1 : 0),
+  IsTrainerReadyForRematch: (ctx) => (isTrainerReadyForRematch(ctx.ow.game.battleSetup.opponentA) ? 1 : 0),
+  StartRematchBattle: (ctx) => { ctx.ow.game.battleSetup.startTrainerBattle(true); ctx.ow.script.stop(); },
+  VsSeekerFreezeObjectsAfterChargeComplete: (ctx) => { vsSeekerFreezeObjectsAfterChargeComplete(ctx.ow.game); },
+  VsSeekerResetObjectMovementAfterChargeComplete: (ctx) => { vsSeekerResetObjectMovementAfterChargeComplete(ctx.ow.game); },
   GetBattleOutcome: (ctx) => ctx.ow.game.battleOutcome,
   GetTrainerBattleMode: (ctx) => ctx.ow.game.battleSetup.mode,
   ShowTrainerIntroSpeech: (ctx) => { ctx.ow.game.battleSetup.showIntroSpeech(); },

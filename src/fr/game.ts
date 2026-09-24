@@ -26,7 +26,9 @@ import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { decode } from "./gba/charmap";
 import { varSet, SV } from "./save";
 import { healMon } from "./pokemon/pokemon";
-import { openFieldBag, openFieldParty } from "./menus/fieldMenus";
+import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
+import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
+import { useVsSeeker } from "./field/vsSeeker";
 import { checkBagHasItem } from "./pokemon/items";
 import { openStorageMenu } from "./menus/storageMenu";
 import { openShopMenu } from "./menus/shopMenu";
@@ -415,7 +417,35 @@ export class Game {
   }
   openPokemonStorage(): void { openStorageMenu(this); }
   openPlayerPC(_bedroom: boolean): void { this.continueScriptAfterPlaceholder("PC item storage\nis not ported yet."); }
-  showTownMap(): void { this.continueScriptAfterPlaceholder("TOWN MAP\nis not ported yet."); }
+  /** special ShowTownMap: the region map from a script, then the script resumes. */
+  showTownMap(): void {
+    this.overworld.script.stop();
+    fieldMenu(this, (close) => openTownMapList(this.overworld.header.regionMapSection, () => { close(); this.overworld.script.enable(); }), false);
+  }
+
+  /** FieldUseFunc_TownMap from the field (registered item or bag). */
+  showTownMapFromField(): void {
+    fieldMenu(this, (close) => openTownMapList(this.overworld.header.regionMapSection, close));
+  }
+
+  openFameChecker(): void {
+    fieldMenu(this, (close) => { void openFameChecker(close); });
+  }
+
+  openTeachyTv(): void {
+    fieldMenu(this, (close) => openTeachyTv(close));
+  }
+
+  /** FieldUseFunc_VsSeeker → Task_VsSeeker_0 */
+  useVsSeeker(): void {
+    const ow = this.overworld;
+    const release = (): void => {
+      ow.objects.clearHeldMovementIfFinished(ow.player.object);
+      ow.objects.unfreezeAll();
+      ow.controlsLocked = false;
+    };
+    useVsSeeker(this, (text, next) => fieldMessage(this, text, next), release);
+  }
   askSaveGame(): void {
     const ow = this.overworld;
     import("./save").then(({ varSet }) => {

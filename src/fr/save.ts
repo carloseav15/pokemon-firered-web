@@ -51,6 +51,9 @@ export type SaveData = {
   facing: number;
   objectEventTemplates?: unknown;
   daycare?: unknown;
+  berryPowder?: number;
+  trainerRematchStepCounter?: number;
+  trainerRematches?: number[];
   roamer?: unknown;
 };
 

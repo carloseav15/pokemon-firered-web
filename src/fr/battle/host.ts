@@ -68,6 +68,16 @@ export const battleHost = {
     return game?.battleSetup.rivalFlags ?? 0;
   },
 
+  /** The running Game (field services used by battle-side C code). */
+  game(): Game {
+    if (!game) throw new Error("battle host has no game");
+    return game;
+  },
+  /** gTrainerBattleOpponent_A */
+  opponentA(): number {
+    return game?.battleSetup.opponentA ?? 0;
+  },
+
   /** gMapHeader.mapType */
   mapType(): number {
     return game?.overworld.header.mapType ?? C.MAP_TYPE_NONE;

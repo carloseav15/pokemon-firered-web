@@ -4,6 +4,7 @@
 import { sound } from "../audio/sound";
 import { expandPlaceholders } from "../gba/charmap";
 import { rom } from "../rom";
+import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
 import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "../save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
@@ -114,10 +115,12 @@ export class BattleSetup {
       case TRAINER_BATTLE_REMATCH_DOUBLE:
         this.load(DOUBLE, ptr);
         this.setMapVarsToTrainer();
+        this.opponentA = getRematchTrainerId(this.opponentA);
         return rom.label("EventScript_TryDoDoubleRematchBattle");
       case TRAINER_BATTLE_REMATCH:
         this.load(ORDINARY, ptr);
         this.setMapVarsToTrainer();
+        this.opponentA = getRematchTrainerId(this.opponentA);
         return rom.label("EventScript_TryDoRematchBattle");
       case TRAINER_BATTLE_EARLY_RIVAL:
         this.load(EARLY_RIVAL, ptr);
@@ -211,7 +214,7 @@ export class BattleSetup {
     return party;
   }
 
-  startTrainerBattle(): void {
+  startTrainerBattle(rematch = false): void {
     const ow = this.game.overworld;
     const firstBattle = this.mode === TRAINER_BATTLE_EARLY_RIVAL && (this.rivalFlags & RIVAL_BATTLE_TUTORIAL) === RIVAL_BATTLE_TUTORIAL;
     const trainer = rom.trainers[this.opponentA];
@@ -222,11 +225,11 @@ export class BattleSetup {
       enemyParty: this.trainerParty(this.opponentA),
       isFirstBattle: firstBattle,
       isDouble: !!trainer?.double && this.mode !== TRAINER_BATTLE_EARLY_RIVAL,
-      onEnd: (outcome) => this.endTrainerBattle(outcome),
+      onEnd: (outcome) => this.endTrainerBattle(outcome, rematch),
     });
   }
 
-  private endTrainerBattle(outcome: number): void {
+  private endTrainerBattle(outcome: number, rematch = false): void {
     const lost = outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW;
     if (this.mode === TRAINER_BATTLE_EARLY_RIVAL) {
       if (lost) {
@@ -249,6 +252,7 @@ export class BattleSetup {
       return;
     }
     this.setBattledTrainerFlag();
+    if (rematch) clearRematchStateOfLastTalked(); // CB2_EndRematchBattle
     this.game.returnToFieldContinueScript(true);
   }
 

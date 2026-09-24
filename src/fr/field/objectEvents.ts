@@ -324,6 +324,20 @@ export class ObjectEvents {
     s.y = object.currentCoords.y * 16 + 16 + s.centerToCornerVecY;
   }
 
+  /** SetTrainerMovementType */
+  setTrainerMovementType(object: ObjectEvent, movementType: number): void {
+    object.movementType = movementType;
+    object.directionSequenceIndex = 0;
+    object.playerCopyableMovement = 0;
+    object.sprite.data[1] = 0;
+  }
+
+  /** OverrideMovementTypeForObjectEvent: the saved template keeps the new movement type. */
+  overrideTemplateMovementType(object: ObjectEvent, movementType: number): void {
+    const template = this.templates.find((t) => t.localId === object.localId);
+    if (template) template.movementType = movementType;
+  }
+
   setGraphicsId(object: ObjectEvent, graphicsId: number): void {
     const info = graphicsInfo(graphicsId);
     object.graphicsId = graphicsId;

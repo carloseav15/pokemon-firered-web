@@ -6,7 +6,7 @@ import { rom } from "../rom";
 import { MOVEMENT_ACTION_STEP_END, type ObjectEvent } from "../field/objectEvents";
 import type { Overworld } from "../field/overworld";
 
-type Entry = { object: ObjectEvent; ptr: number; finished: boolean };
+type Entry = { object: ObjectEvent; ptr: number; finished: boolean; bytes?: ArrayLike<number> };
 
 export class ScriptMovement {
   private entries: Entry[] = [];
@@ -24,6 +24,14 @@ export class ScriptMovement {
     for (const entry of this.entries) this.takeStep(entry);
   };
 
+  /** Start a movement script held in C data (a byte array) rather than the script ROM. */
+  startBytes(object: ObjectEvent | undefined, bytes: ArrayLike<number>): boolean {
+    if (this.start(object, 0)) return true;
+    const entry = this.entries.find((e) => e.object === object);
+    if (entry) entry.bytes = bytes;
+    return false;
+  }
+
   /** ScriptMovement_StartObjectMovementScript: true on failure */
   start(object: ObjectEvent | undefined, ptr: number): boolean {
     if (!object) return true;
@@ -32,6 +40,7 @@ export class ScriptMovement {
     if (existing) {
       if (!existing.finished) return true;
       existing.ptr = ptr;
+      existing.bytes = undefined;
       existing.finished = false;
       return false;
     }
@@ -68,7 +77,7 @@ export class ScriptMovement {
     const o = entry.object;
     const objects = this.ow.objects;
     if (o.heldMovementActive && !objects.clearHeldMovementIfFinished(o)) return;
-    const next = rom.u8(entry.ptr);
+    const next = entry.bytes ? (entry.bytes[entry.ptr] ?? MOVEMENT_ACTION_STEP_END) : rom.u8(entry.ptr);
     if (next === MOVEMENT_ACTION_STEP_END) {
       entry.finished = true;
       objects.freeze(o);

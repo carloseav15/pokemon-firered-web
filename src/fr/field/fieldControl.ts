@@ -10,6 +10,7 @@ import { MAP_OFFSET } from "./fieldmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
 import { MOVING, PLAYER_AVATAR_FLAG_FORCED, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
 import type { Overworld } from "./overworld";
+import { updateVsSeekerStepCounter } from "./vsSeeker";
 
 export type FieldInput = {
   pressedAButton: boolean;
@@ -313,6 +314,10 @@ export class FieldControl {
   private tryStartStepCountScript(behavior: number): boolean {
     this.updateHappinessStepCounter();
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior)) {
+      if (updateVsSeekerStepCounter()) {
+        this.ow.script.setupScript(rom.label("EventScript_VsSeekerChargingDone"));
+        return true;
+      }
       if (this.ow.effects.updatePoisonStepCounter()) {
         this.ow.script.setupScript(rom.label("EventScript_FieldPoison"));
         return true;
