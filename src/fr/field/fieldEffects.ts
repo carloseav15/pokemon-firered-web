@@ -321,6 +321,7 @@ export class FieldEffects {
   // ---------------------------------------------------------------- step counters & encounters
 
   resetEncounterImmunity(): void {
+    this.ow.game.wild?.resetEncounterRateModifiers();
     this.encounterImmunitySteps = 0;
     this.previousMetatileBehavior = 0;
   }
@@ -358,11 +359,11 @@ export class FieldEffects {
     let fainted = false;
     let anyPoisoned = false;
     for (const mon of save.party) {
-      if (mon.isEgg || mon.hp === 0) continue;
+      if (!mon.species) continue;
       if ((mon.status & 0x88) !== 0) { // STATUS1_POISON | STATUS1_TOXIC_POISON
         anyPoisoned = true;
         mon.hp = Math.max(0, mon.hp - 1);
-        if (mon.hp === 0) { mon.status = 0; fainted = true; }
+        if (mon.hp === 0) fainted = true;
       }
     }
     if (anyPoisoned) {

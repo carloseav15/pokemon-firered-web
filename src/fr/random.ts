@@ -8,7 +8,8 @@ export function random(): number {
 }
 
 export function random32(): number {
-  return ((random() << 16) | random()) >>> 0;
+  // random.h Random32: first draw is the low halfword, second is high.
+  return (random() | (random() << 16)) >>> 0;
 }
 
 export function seedRng(value: number): void {

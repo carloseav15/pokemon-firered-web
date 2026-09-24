@@ -2,11 +2,16 @@
 // window), pokemon.c (PokemonUseItemEffects, GetEvolutionTargetSpecies, ...), overworld/field helpers,
 // battle_setup.c accessors, money and game stats.
 //
-// The bag, party, summary, naming, Pokédex and evolution *screens* are not ported yet. Their entry points
-// here resolve immediately in the way the battle expects (cancelled / no choice / evolve in place) and
-// return through ReshowBattleScreenAfterMenu, so battles run end to end until those screens exist.
+// Bag/party/move selection now use hardware-window adapters and naming has its
+// own hardware screen. Dedicated source menu presentation, tutorial choreography,
+// Pokédex and evolution screens still require port work.
 
 import * as C from "../generated/constants";
+import { DoNamingScreen as OpenNamingScreen } from "../namingScreen";
+import { openHardwareChoice } from "../menus/hardwareChoice";
+import { decode } from "../gba/charmap";
+import { b64 } from "../rom";
+import type { NameBuffer } from "../menus/namingModel";
 import { sound } from "../audio/sound";
 import { tasks } from "../gba/tasks";
 import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
@@ -15,7 +20,7 @@ import { cdata, incbin } from "../hw/assets";
 import { gMain } from "../hw/runtime";
 import { AddTextPrinterParameterized3 } from "../hw/text";
 import { FillWindowPixelBuffer, PIXEL_FILL } from "../hw/window";
-import { addBagItem, addMoney } from "../pokemon/items";
+import { itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
 import { evolveMon, giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "../pokemon/pokemon";
 import {
   CalculateMonStats, CalculatePPWithBonus, currentRegionMapSection, GetMonData, GetMonEVCount, gEnemyParty, playerMon, SetMonData, type Mon,
@@ -51,20 +56,8 @@ export function IncrementGameStat(index: number): void {
   incrementGameStat(index);
 }
 
-const sWhiteOutMoneyLossMultipliers = [2, 4, 6, 9, 12, 16, 20, 25, 30];
-
-/** overworld.c ComputeWhiteOutMoneyLoss */
-export function ComputeWhiteOutMoneyLoss(): number {
-  let nbadges = 0;
-  for (let i = 0; i < 8; i++) if (flagGet(C.FLAG_BADGE01_GET + i)) nbadges++;
-  let toplevel = 0;
-  for (let i = 0; i < C.PARTY_SIZE; i++) {
-    const mon = playerMon(i);
-    if (GetMonData(mon, C.MON_DATA_SPECIES) && !GetMonData(mon, C.MON_DATA_IS_EGG)) toplevel = Math.max(toplevel, GetMonData(mon, C.MON_DATA_LEVEL));
-  }
-  const losings = toplevel * 4 * sWhiteOutMoneyLossMultipliers[nbadges];
-  return Math.min(losings, save.money);
-}
+// Shared with field whiteout: both paths use the same source calculation.
+export { computeWhiteOutMoneyLoss as ComputeWhiteOutMoneyLoss } from "../pokemon/partyRules";
 
 export function GetTrainerBattleMode(): number {
   return battleHost.trainerBattleMode();
@@ -169,34 +162,82 @@ export function SwitchPartyMonSlots(slot: number, slot2: number): void {
 /** gPartyMenuUseExitCallback / gSelectedMonPartyId */
 export const partyMenuResult = { useExitCallback: false, selectedMonPartyId: C.PARTY_SIZE };
 
-/**
- * OpenPartyMenuInTutorialBattle. Until the party menu exists: a forced switch (the active mon fainted)
- * picks the first usable party member, any other request is treated as cancelled.
- */
+/** party_menu.c: choose a healthy non-active member; forced replacement cannot cancel. */
 export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
   partyMenuResult.useExitCallback = false;
   partyMenuResult.selectedMonPartyId = C.PARTY_SIZE;
-  if (partyAction === C.PARTY_ACTION_SEND_OUT) {
-    const active = new Set<number>();
-    for (let b = 0; b < G.gBattlersCount; b++) if (GetBattlerSide(b) === C.B_SIDE_PLAYER) active.add(gBattlerPartyIndexes[b]);
-    for (let i = 0; i < C.PARTY_SIZE; i++) {
-      const mon = playerMon(i);
-      if (active.has(i) || !GetMonData(mon, C.MON_DATA_SPECIES) || GetMonData(mon, C.MON_DATA_IS_EGG) || !GetMonData(mon, C.MON_DATA_HP)) continue;
+  const active = new Set<number>();
+  for (let b = 0; b < G.gBattlersCount; b++) if (GetBattlerSide(b) === C.B_SIDE_PLAYER) active.add(gBattlerPartyIndexes[b]);
+  const choices = save.party.map((mon, i) => ({
+    value: i,
+    label: `${decode(mon.nickname)}  ${mon.hp}/${mon.stats[0]}`,
+    disabled: active.has(i) || !mon.species || mon.isEgg || mon.hp === 0,
+  }));
+  openHardwareChoice("Choose a POKéMON.", choices, partyAction !== C.PARTY_ACTION_SEND_OUT, selected => {
+    if (selected !== null) {
       partyMenuResult.useExitCallback = true;
-      partyMenuResult.selectedMonPartyId = i;
-      // The chosen mon takes the first battle slot of the current order, as the party menu does.
-      const slot = [0, 1, 2, 3, 4, 5].find((s) => GetPartyIdFromBattleSlot(s) === i) ?? 0;
-      SwitchPartyMonSlots(0, slot);
-      break;
+      partyMenuResult.selectedMonPartyId = selected;
+      const slot = [0, 1, 2, 3, 4, 5].find(s => GetPartyIdFromBattleSlot(s) === selected);
+      if (slot !== undefined) SwitchPartyMonSlots(GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[G.gActiveBattler]), slot);
     }
-  }
-  ReshowBattleScreenAfterMenu();
+    ReshowBattleScreenAfterMenu();
+  });
 }
 
-/** CB2_BagMenuFromBattle. Until the bag exists: no item chosen (VAR_ITEM_ID = ITEM_NONE). */
+/** item_use.c battle handlers. Selection and effects finish before returning to battle. */
 export function CB2_BagMenuFromBattle(): void {
   varSet(C.VAR_ITEM_ID, C.ITEM_NONE);
-  ReshowBattleScreenAfterMenu();
+  const menuBattler = G.gBattlerInMenuId;
+  const finish = (item: number): void => { varSet(C.VAR_ITEM_ID, item); ReshowBattleScreenAfterMenu(); };
+  const message = (label: string): void => openHardwareChoice(label, [{label: "OK", value: 0}], false, () => showBag());
+  const apply = (item: number, partyIndex: number, moveIndex: number): void => {
+    G.gBattlerInMenuId = menuBattler;
+    const mon = playerMon(partyIndex);
+    if (PokemonUseItemEffects(mon, item, partyIndex, moveIndex, false)) { message("It won't have any effect."); return; }
+    removeBagItem(item, 1);
+    sound.playSE(C.SE_USE_ITEM);
+    finish(item);
+  };
+  const chooseMon = (item: number, ether: boolean): void => {
+    openHardwareChoice("Use on which POKéMON?", save.party.map((mon, i) => ({
+      label: `${decode(mon.nickname)}  ${mon.hp}/${mon.stats[0]}`, value: i, disabled: mon.isEgg,
+    })), true, selected => {
+      if (selected === null) { showBag(); return; }
+      if (!ether) { apply(item, selected, 0); return; }
+      const effects = rom.itemEffects[item - C.ITEM_POTION];
+      // ITEM4_HEAL_PP_ONE selects a move; Elixir applies across the moveset.
+      if (!effects || !(effects[4] & C.ITEM4_HEAL_PP_ONE)) { apply(item, selected, 0); return; }
+      const mon = save.party[selected];
+      openHardwareChoice("Restore which move's PP?", mon.moves.map((move, slot) => ({
+        label: move ? `${decode(b64(rom.moves[move].name))}  PP ${mon.pp[slot]}` : "-", value: slot, disabled: !move,
+      })), true, slot => { if (slot === null) chooseMon(item, true); else apply(item, selected, slot); });
+    });
+  };
+  const showBag = (): void => {
+    const choices = [1, 2, 3, 4, 5].flatMap(p => pocketList(p)).filter(slot => itemInfo(slot.item)?.battleUsage).map(slot => ({
+      label: `${decode(itemName(slot.item))} x${slot.quantity}`, value: slot.item,
+    }));
+    openHardwareChoice("BAG", choices, true, item => {
+      if (item === null) { finish(C.ITEM_NONE); return; }
+      const info = itemInfo(item)!;
+      switch (info.battleUseFunc) {
+        case "BattleUseFunc_PokeBallEtc":
+          if (save.party.length >= C.PARTY_SIZE && save.boxes.every(box => box.every(mon => !!mon?.species))) { message("The BOX is full."); return; }
+          if (removeBagItem(item, 1)) finish(item); else showBag();
+          return;
+        case "BattleUseFunc_PokeFlute": finish(item); return;
+        case "BattleUseFunc_PokeDoll":
+          if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) { message("Can't use that here."); return; }
+          if (removeBagItem(item, 1)) finish(item); else showBag();
+          return;
+        case "BattleUseFunc_StatBooster": apply(item, gBattlerPartyIndexes[menuBattler], 0); return;
+        case "BattleUseFunc_Medicine": chooseMon(item, false); return;
+        case "BattleUseFunc_Ether": chooseMon(item, true); return;
+        default: message("Can't use that here."); return;
+      }
+    });
+  };
+  showBag();
 }
 
 /** item_menu.c InitOldManBag: backs up the bag and gives a Potion and a Poké Ball for the tutorial. */
@@ -208,20 +249,29 @@ export function InitOldManBag(): void {
 
 let moveSlotToReplace = C.MAX_MON_MOVES;
 
-/** ShowSelectMovePokemonSummaryScreen. Until the summary screen exists: the new move is not learned. */
-export function ShowSelectMovePokemonSummaryScreen(_monId: number, _lastIdx: number, callback: () => void, _move: number): void {
+/** The battle script performs HM rejection and writes the selected move/PP itself. */
+export function ShowSelectMovePokemonSummaryScreen(monId: number, _lastIdx: number, callback: () => void, move: number): void {
   moveSlotToReplace = C.MAX_MON_MOVES;
-  callback();
+  const mon = save.party[monId];
+  if (!mon) { callback(); return; }
+  const choices = mon.moves.map((id, slot) => ({
+    value: slot, label: id ? `${decode(b64(rom.moves[id].name))}  PP ${mon.pp[slot]}` : "-", disabled: !id,
+  }));
+  openHardwareChoice(`Forget a move for ${decode(b64(rom.moves[move].name))}?`, choices, true, selected => {
+    moveSlotToReplace = selected ?? C.MAX_MON_MOVES;
+    callback();
+  });
 }
 
 export function GetMoveSlotToReplace(): number {
   return moveSlotToReplace;
 }
 
-/** naming_screen.c DoNamingScreen. Until the naming screen exists: the name is kept as is. */
-export function DoNamingScreen(_type: number, _dest: ArrayLike<number>, _species: number, _gender: number, _personality: number, returnCallback: () => void): void {
-  void returnCallback;
-  ReshowBattleScreenAfterMenu();
+/** Naming owns the hardware until it returns; reconstruct battle VRAM before resuming. */
+export function DoNamingScreen(type: number, dest: NameBuffer, species: number, gender: number, personality: number, returnCallback: () => void): void {
+  OpenNamingScreen(type, dest, species, gender, personality, () => {
+    ReshowBattleScreenAfterMenu(returnCallback);
+  });
 }
 
 /** pokedex_screen.c DexScreen_RegisterMonToPokedex: returns a task id; the task ends immediately until the Pokédex screen exists. */
@@ -267,25 +317,11 @@ export function GetPokedexHeightWeight(dexNum: number, data: number): number {
   return data === 0 ? entry.height : entry.weight;
 }
 
-export function ShouldShowBoxWasFullMessage(): boolean {
-  if (flagGet(C.FLAG_SHOWN_BOX_WAS_FULL_MESSAGE)) return false;
-  if (save.currentBox === varGet(C.VAR_PC_BOX_TO_SEND_MON)) return false;
-  flagSet(C.FLAG_SHOWN_BOX_WAS_FULL_MESSAGE);
-  return true;
-}
-
-export function GetPCBoxToSendMon(): number {
-  return save.currentBox;
-}
-
-/** pokemon_storage_system.c GetBoxNamePtr: default names are "BOX1".."BOX14". */
-export function GetBoxNamePtr(boxId: number): Uint8Array {
-  const names = (save as unknown as { boxNames?: number[][] }).boxNames;
-  if (names?.[boxId]) return Uint8Array.from([...names[boxId], EOS]);
-  const num = intToDecimal(boxId + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
-  const box = encode("BOX", false);
-  return Uint8Array.from([...box, ...Array.from(num).filter((c) => c !== EOS), EOS]);
-}
+export {
+  shouldShowBoxWasFullMessage as ShouldShowBoxWasFullMessage,
+  getPCBoxToSendMon as GetPCBoxToSendMon,
+  getBoxName as GetBoxNamePtr,
+} from "../pokemon/storage";
 
 // ---------------------------------------------------------------- pokemon_icon.c
 

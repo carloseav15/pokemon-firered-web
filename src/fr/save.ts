@@ -40,6 +40,7 @@ export type SaveData = {
   party: Pokemon[];
   boxes: Array<Array<Pokemon | null>>;
   currentBox: number;
+  boxNames?: number[][];
   pokedexSeen: number[];
   pokedexCaught: number[];
   gameStats: number[];

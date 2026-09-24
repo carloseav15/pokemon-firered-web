@@ -3,6 +3,7 @@
 import { EOS, length } from "../gba/charmap";
 import { random, random32 } from "../random";
 import { b64, rom } from "../rom";
+import { sendMonToPC } from "./storage";
 import { save } from "../save";
 
 export const MAX_LEVEL = 100;
@@ -253,21 +254,12 @@ export function leadMonIndex(): number {
 export function giveMonToPlayer(mon: Pokemon): number {
   mon.otName = [...save.playerName];
   mon.otGender = save.playerGender;
-  mon.otId = mon.otId ?? save.trainerId;
+  mon.otId = save.trainerId;
   if (save.party.length < PARTY_SIZE) {
-    save.party.push(mon);
+    save.party.push(structuredClone(mon));
     return 0;
   }
-  for (let b = 0; b < save.boxes.length; b++) {
-    const box = (b + save.currentBox) % save.boxes.length;
-    const slot = save.boxes[box].findIndex((entry) => entry === null);
-    if (slot >= 0) {
-      save.boxes[box][slot] = mon;
-      save.currentBox = box;
-      return 1;
-    }
-  }
-  return 2;
+  return sendMonToPC(mon) ? 1 : 2;
 }
 
 export function nationalDexNum(species: number): number {

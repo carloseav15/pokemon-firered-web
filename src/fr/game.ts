@@ -17,6 +17,23 @@ import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/
 import { addPCItem } from "./pokemon/items";
 import { rom } from "./rom";
 import { flagGet, newSaveData, save, saveStore, setName, setSave, varGet, type SaveData } from "./save";
+import { openHardwareChoice } from "./menus/hardwareChoice";
+import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
+import { TrainerSee } from "./field/trainerSee";
+import { WildEncounter } from "./field/wildEncounter";
+import { random } from "./random";
+import { tryFieldPoisonWhiteOut } from "./field/poison";
+import { decode } from "./gba/charmap";
+import { varSet, SV } from "./save";
+import { healMon } from "./pokemon/pokemon";
+import { openFieldBag, openFieldParty } from "./menus/fieldMenus";
+import { checkBagHasItem } from "./pokemon/items";
+import { openStorageMenu } from "./menus/storageMenu";
+import { openShopMenu } from "./menus/shopMenu";
+import { OptionsModel, OPTION_LABELS } from "./menus/optionsModel";
+import { DoNamingScreen } from "./namingScreen";
+import { HwScene } from "./hw/runtime";
+import { gender as pokemonGender } from "./pokemon/pokemon";
 import { ScriptMovement } from "./script/movement";
 
 export const FRAME_MS = 1000 / (16777216 / 280896);
@@ -40,8 +57,8 @@ export class Game {
   battleOutcome = 0;
   safariSteps: number | undefined;
   safariBalls = 0;
-  trainerSee?: { checkForTrainersWantingBattle(): boolean; endApproach(): void };
-  wild?: { tryStandardWildEncounter(attributes: number): boolean; rockSmashEncounter(): boolean };
+  readonly trainerSee: TrainerSee;
+  readonly wild: WildEncounter;
   fieldEffectArguments = new Array<number>(8).fill(0);
   battleRunner?: (request: BattleRequest) => Scene;
   readonly weather = {
@@ -67,6 +84,8 @@ export class Game {
     this.scriptMovement = new ScriptMovement(this.overworld);
     this.scriptMenu = new ScriptMenu(() => this.overworld);
     this.battleSetup = new BattleSetup(this);
+    this.wild = new WildEncounter(this);
+    this.trainerSee = new TrainerSee(this);
   }
 
   setCallbacks(cb1: Callback, cb2: Callback): void {
@@ -102,6 +121,7 @@ export class Game {
 
   /** One GBA frame: ReadKeys, callback1, callback2, sound. */
   frame(): void {
+    joy.buttonMode = save.options.buttonMode;
     joy.poll();
     this.frameCount++;
     save.playTimeFrames++;
@@ -124,8 +144,9 @@ export class Game {
   newGame(playerName: string, gender: number, rivalName: string): void {
     const data = newSaveData();
     setSave(data);
-    setName("player", encode(playerName.toUpperCase().slice(0, 7)));
-    setName("rival", encode(rivalName.toUpperCase().slice(0, 7)));
+    this.wild.seed(random());
+    setName("player", encode(playerName.slice(0, 7)));
+    setName("rival", encode(rivalName.slice(0, 7)));
     save.playerGender = gender;
     save.money = 3000;
     addPCItem(rom.c("ITEM_POTION"), 1);
@@ -146,6 +167,8 @@ export class Game {
   continueGame(data: SaveData): void {
     setSave(data);
     textOptions.speed = save.options.textSpeed;
+    joy.buttonMode = save.options.buttonMode;
+    sound.setStereo(save.options.sound === 1);
     this.syncStringVars();
     const w = save.location;
     this.overworld.setWarpDestination(w.mapGroup, w.mapNum, -1, save.pos.x, save.pos.y);
@@ -291,18 +314,32 @@ export class Game {
     }, 80);
   }
 
-  openPartyMenu(): void { this.openPlaceholder("POKéMON"); }
-  openBag(): void { this.openPlaceholder("BAG"); }
+  openPartyMenu(): void { this.removeStartMenuWindows(); openFieldParty(this); }
+  openBag(): void { this.removeStartMenuWindows(); openFieldBag(this); }
 
   openOptions(): void {
     this.removeStartMenuWindows();
-    textOptions.speed = (textOptions.speed + 1) % 3;
-    save.options.textSpeed = textOptions.speed;
-    const ow = this.overworld;
-    ow.messageBox.show(encode(`TEXT SPEED: ${["SLOW", "MID", "FAST"][textOptions.speed]}`));
+    const model = new OptionsModel(save.options);
+    const window = this.scriptMenu.createFramedWindow(0, 1, 28, 17);
+    const redraw = (): void => {
+      window.frameType = model.values[5];
+      window.fill(1);
+      printText(window, FONT_NORMAL, encode("OPTION"), 8, 0);
+      OPTION_LABELS.forEach((label, row) => {
+        const colors = row === model.cursor ? {fg: 4, bg: 1, shadow: 5} : {fg: 2, bg: 1, shadow: 3};
+        printText(window, FONT_NORMAL, encode(label), 8, 20 + row * 15, colors);
+        printText(window, FONT_NORMAL, encode(model.label(row)), 124, 20 + row * 15, colors);
+      });
+    };
+    redraw();
     const id = tasks.create(() => {
-      if (ow.messageBox.isHidden() && (JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON))) {
-        ow.messageBox.hide();
+      const result = model.input(joy.newKeys, joy.repeated);
+      if (result === "change") redraw();
+      else if (result === "close") {
+        textOptions.speed = save.options.textSpeed;
+        joy.buttonMode = save.options.buttonMode;
+        sound.setStereo(save.options.sound === 1);
+        this.scriptMenu.removeWindow(window);
         tasks.destroy(id);
         this.closeStartMenu();
       }
@@ -310,7 +347,11 @@ export class Game {
   }
 
   useRegisteredKeyItem(): boolean {
-    return false;
+    if (!save.registeredItem || !checkBagHasItem(save.registeredItem, 1)) return false;
+    this.overworld.controlsLocked = true;
+    this.overworld.objects.freezeAll();
+    openFieldBag(this, save.registeredItem);
+    return true;
   }
 
   shouldEggHatch(): boolean {
@@ -332,19 +373,47 @@ export class Game {
     }, 80);
   }
 
-  choosePartyMon(_mode: string): void {
-    // Until the party menu is ported, choose the first Pokémon.
-    stringVars.var1 = encode("");
+  choosePartyMon(mode: string): void {
     this.overworld.script.stop();
-    (globalThis as unknown as { __fr?: unknown }).__fr = this;
-    import("./save").then(({ varSet }) => {
-      varSet(0x8004, save.party.length ? 0 : 0xff);
+    const scene = new HwScene();
+    scene.enter();
+    this.scene = scene;
+    this.setCallbacks(null, () => scene.update());
+    openHardwareChoice("Choose a POKéMON.", save.party.map((mon, index) => ({
+      label: `${decode(mon.nickname)}  Lv${mon.level}`, value: index,
+    })), true, selected => {
+      // party_menu.c SLOT_CANCEL is PARTY_SIZE + 1 (7), not 0xff.
+      varSet(SV.x8004, selected ?? 7);
+      if (selected !== null) {
+        stringVars.var1 = Uint8Array.from(save.party[selected].nickname);
+        if (mode === "relearner") varSet(SV.x8005, relearnableMoves(save.party[selected]).length);
+      }
+      scene.leave();
+      this.scene = null;
+      this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
       this.overworld.script.enable();
     });
   }
 
-  changeNickname(_index: number): void { this.overworld.script.enable(); }
-  openPokemonStorage(): void { this.continueScriptAfterPlaceholder("POKéMON STORAGE SYSTEM\nis not ported yet."); }
+  changeNickname(index: number): void {
+    const mon = save.party[index];
+    if (!mon || mon.isEgg) { this.overworld.script.enable(); return; }
+    stringVars.var3 = Uint8Array.from(mon.nickname);
+    stringVars.var2 = Uint8Array.from(mon.nickname);
+    this.overworld.script.stop();
+    const scene = new HwScene();
+    scene.enter();
+    this.scene = scene;
+    this.setCallbacks(null, () => scene.update());
+    DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
+      stringVars.var2 = Uint8Array.from(mon.nickname);
+      scene.leave();
+      this.scene = null;
+      this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
+      this.overworld.script.enable();
+    });
+  }
+  openPokemonStorage(): void { openStorageMenu(this); }
   openPlayerPC(_bedroom: boolean): void { this.continueScriptAfterPlaceholder("PC item storage\nis not ported yet."); }
   showTownMap(): void { this.continueScriptAfterPlaceholder("TOWN MAP\nis not ported yet."); }
   askSaveGame(): void {
@@ -356,7 +425,10 @@ export class Game {
   }
   showDiploma(): void { this.overworld.script.enable(); }
   enterHallOfFame(): void { this.continueScriptAfterPlaceholder("HALL OF FAME\nCongratulations!"); }
-  createPokemartMenu(ptr: number): void { this.continueScriptAfterPlaceholder(`POKéMART (${ptr.toString(16)})\nis not ported yet.`); }
+  createPokemartMenu(ptr: number): void {
+    this.overworld.script.stop();
+    openShopMenu(this, ptr);
+  }
   playSlotMachine(_id: number): void { this.overworld.script.enable(); }
   animateFlash(_target: number): void { this.overworld.flashLevel = _target; this.overworld.script.enable(); }
   fieldEffectStart(_id: number): void {}
@@ -366,8 +438,8 @@ export class Game {
   turnVirtualObject(..._args: number[]): void {}
   animatePc(_on: boolean): void {}
   profOakRating(): number { return 0; }
-  tryFieldPoisonWhiteOut(): void {}
-  whiteOutMoneyLoss(): void {}
+  tryFieldPoisonWhiteOut(): void { tryFieldPoisonWhiteOut(this); }
+  whiteOutMoneyLoss(): void { stringVars.var1 = encode(String(computeWhiteOutMoneyLoss())); }
 
   scriptGiveMon(species: number, level: number, item: number): number {
     const mon = createMon(species, level, { metLocation: this.overworld.header.regionMapSection });
@@ -387,6 +459,7 @@ export class Game {
   // ---------------------------------------------------------------- battles
 
   startBattle(request: BattleRequest): void {
+    if (!this.battleRunner) throw new Error("Battle host has not been installed");
     const ow = this.overworld;
     ow.controlsLocked = true;
     ow.objects.freezeAll();
@@ -399,9 +472,6 @@ export class Game {
       if (this.battleRunner) {
         this.scene = this.battleRunner(request);
         this.setCallbacks(null, () => this.scene?.update());
-      } else {
-        this.battleOutcome = B_OUTCOME_WON;
-        request.onEnd(B_OUTCOME_WON);
       }
     }, 1);
   }
@@ -420,8 +490,8 @@ export class Game {
   whiteOut(): void {
     const ow = this.overworld;
     this.scene = null;
-    save.money = Math.floor(save.money / 2);
-    for (const mon of save.party) { mon.hp = mon.stats[0]; mon.status = 0; }
+    save.money -= computeWhiteOutMoneyLoss();
+    for (const mon of save.party) healMon(mon);
     const heal = save.lastHealLocation.mapGroup === 0xff ? { mapGroup: 4, mapNum: 1, warpId: -1, x: 6, y: 6 } : save.lastHealLocation;
     ow.warpDestination = { ...heal };
     ow.fieldCallback = () => {

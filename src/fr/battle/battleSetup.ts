@@ -4,6 +4,8 @@
 import { sound } from "../audio/sound";
 import { expandPlaceholders } from "../gba/charmap";
 import { rom } from "../rom";
+import { checkBagHasItem } from "../pokemon/items";
+import { incrementGameStat } from "../save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
 import { createMon, healMon, type Pokemon } from "../pokemon/pokemon";
 import type { Game } from "../game";
@@ -254,6 +256,25 @@ export class BattleSetup {
     const mon = createMon(species, level);
     if (item) mon.heldItem = item;
     this.scriptedWild = mon;
+  }
+
+  /** battle_setup.c StartWildBattle: Safari, unidentified tower ghost, or ordinary wild. */
+  startWildBattle(enemy: Pokemon): void {
+    const map = (save.location.mapGroup << 8) | save.location.mapNum;
+    const c = rom.constants;
+    const tower = [3, 4, 5, 6, 7].some(floor => map === c[`MAP_POKEMON_TOWER_${floor}F`]);
+    const safari = flagGet(c.FLAG_SYS_SAFARI_MODE);
+    incrementGameStat(c.GAME_STAT_TOTAL_BATTLES);
+    incrementGameStat(c.GAME_STAT_WILD_BATTLES);
+    this.game.startBattle({
+      kind: "wild", enemyParty: [enemy], isSafari: safari,
+      isGhost: !safari && tower && !checkBagHasItem(c.ITEM_SILPH_SCOPE, 1),
+      onEnd: outcome => {
+        this.game.battleOutcome = outcome;
+        if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
+        else this.game.returnToFieldContinueScript(true);
+      },
+    });
   }
 
   startScriptedWildBattle(): void {

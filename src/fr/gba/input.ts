@@ -33,12 +33,16 @@ const KEYMAP: Record<string, number> = {
 
 class Joypad {
   private raw = 0;
+  private previousRaw = 0;
+  buttonMode = 0;
   /** Keys pressed since the last poll, so taps shorter than a frame still count. */
   private latched = 0;
   held = 0;
   newKeys = 0;
   repeated = 0;
   private repeatCounter = 0;
+  /** gKeyRepeatStartDelay; naming_screen.c temporarily uses 16 frames. */
+  repeatStartDelay = 40;
   private attached = false;
   /** Called on key events that should unlock audio playback. */
   onUserGesture?: () => void;
@@ -67,18 +71,24 @@ class Joypad {
   poll(): void {
     const keyInput = this.raw | this.latched;
     this.latched = 0;
-    this.newKeys = keyInput & ~this.held;
+    this.newKeys = keyInput & ~this.previousRaw;
     this.repeated = this.newKeys;
-    if (keyInput !== 0 && this.held === keyInput) {
+    if (keyInput !== 0 && this.previousRaw === keyInput) {
       this.repeatCounter--;
       if (this.repeatCounter === 0) {
         this.repeated = keyInput;
         this.repeatCounter = 5;
       }
     } else {
-      this.repeatCounter = 40;
+      this.repeatCounter = this.repeatStartDelay;
     }
+    this.previousRaw = keyInput;
     this.held = keyInput;
+    // main.c ReadKeys remaps only new/held keys; repeat state stays raw.
+    if (this.buttonMode === 2) {
+      if (this.newKeys & L_BUTTON) this.newKeys |= A_BUTTON;
+      if (this.held & L_BUTTON) this.held |= A_BUTTON;
+    }
   }
 
   /** Inject presses for tests/automation. */

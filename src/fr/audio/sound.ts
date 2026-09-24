@@ -14,6 +14,7 @@ export interface SoundBackend {
   playCry(species: number, mode: number): void;
   isCryPlaying(): boolean;
   frame(): void;
+  setStereo?(stereo: boolean): void;
 }
 
 // Fanfare lengths in frames from sound.c sFanfares.
@@ -74,6 +75,13 @@ class Sound {
     if (this.seTimer > 0) this.seTimer--;
     if (this.cryTimer > 0) this.cryTimer--;
     this.backend?.frame();
+  }
+
+  /** Option-menu output mode; consumed when a playback backend is installed. */
+  stereo = false;
+  setStereo(stereo: boolean): void {
+    this.stereo = stereo;
+    this.backend?.setStereo?.(stereo);
   }
 
   playSE(song: number): void {

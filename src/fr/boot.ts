@@ -1,6 +1,7 @@
 // Starts the FireRed engine: loads the exported decomp data, mounts the
 // 240x160 canvas and begins a new game or continues the saved one.
 
+import { loadCData } from "./hw/assets";
 import { sound } from "./audio/sound";
 import { Game } from "./game";
 import { rom } from "./rom";
@@ -40,6 +41,7 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
   try {
     await rom.load((label) => { status.textContent = `Loading ${label}…`; });
     await loadFieldFx();
+    await loadCData("wild_encounter");
     await loadTrig();
     status.textContent = "Loading battle data…";
     await preloadBattleAssets();

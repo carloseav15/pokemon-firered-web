@@ -2,7 +2,7 @@
 // Each entry mirrors the original field_specials.c (or its home file).
 
 import { sound } from "../audio/sound";
-import { encode, stringVars } from "../gba/charmap";
+import { decode, encode, stringVars } from "../gba/charmap";
 import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { random } from "../random";
@@ -177,7 +177,7 @@ const SPECIALS: Record<string, Special> = {
   Script_HasTrainerBeenFought: (ctx) => (ctx.ow.game.battleSetup.hasTrainerBeenFought(varGet(SV.x8004)) ? 1 : 0),
   EndTrainerApproach: (ctx) => { ctx.ow.game.trainerSee?.endApproach(); },
   PlayTrainerEncounterMusic: (ctx) => { ctx.ow.game.battleSetup.playEncounterMusic(); },
-  SetUpTrainerMovement: () => {},
+  SetUpTrainerMovement: (ctx) => { ctx.ow.game.trainerSee.setUpTrainerMovement(); },
   SetBattledTrainerFlag: (ctx) => { ctx.ow.game.battleSetup.setBattledTrainerFlag(); },
   StartLegendaryBattle: (ctx) => { ctx.ow.game.battleSetup.startLegendaryBattle(); },
   StartMarowakBattle: (ctx) => { ctx.ow.game.battleSetup.startMarowakBattle(); },
@@ -193,7 +193,7 @@ const SPECIALS: Record<string, Special> = {
   // ---- menus / screens
   ChoosePartyMon: (ctx) => { ctx.ow.game.choosePartyMon("choose"); },
   ChooseMonForMoveTutor: (ctx) => { ctx.ow.game.choosePartyMon("moveTutor"); },
-  ChooseMonForMoveRelearner: (ctx) => { ctx.ow.game.choosePartyMon("choose"); },
+  ChooseMonForMoveRelearner: (ctx) => { ctx.ow.game.choosePartyMon("relearner"); },
   ChooseSendDaycareMon: (ctx) => { ctx.ow.game.choosePartyMon("choose"); },
   ChangePokemonNickname: (ctx) => { ctx.ow.game.changeNickname(varGet(SV.x8004)); },
   ShowPokemonStorageSystemPC: (ctx) => { ctx.ow.game.openPokemonStorage(); },
@@ -228,7 +228,11 @@ const SPECIALS: Record<string, Special> = {
   GetMartClerkObjectId: () => 1,
   GetMagikarpSizeRecordInfo: () => {},
   GetHeracrossSizeRecordInfo: () => {},
-  NameRaterWasNicknameChanged: () => 0,
+  NameRaterWasNicknameChanged: () => {
+    const mon = save.party[varGet(SV.x8004)];
+    stringVars.var1 = mon ? nickname(mon) : encode("");
+    return decode(stringVars.var3) === decode(stringVars.var1) ? 0 : 1;
+  },
   UpdateLoreleiDollCollection: () => {},
   IsBadEggInParty: () => 0,
   DoesPartyHaveEnigmaBerry: () => 0,

@@ -2,6 +2,7 @@
 // assembled battle / AI / animation scripts.
 
 import { loadCData, preloadPacks } from "../hw/assets";
+import { preloadNamingScreen } from "../namingScreen";
 import { loadBattleScripts } from "./bscript";
 
 const CDATA_FILES = [
@@ -18,5 +19,5 @@ const PACKS = [
 let loading: Promise<void> | null = null;
 
 export function preloadBattleAssets(): Promise<void> {
-  return (loading ??= Promise.all([loadCData(...CDATA_FILES), preloadPacks(PACKS), loadBattleScripts()]).then(() => undefined));
+  return (loading ??= Promise.all([loadCData(...CDATA_FILES), preloadPacks(PACKS), loadBattleScripts(), preloadNamingScreen()]).then(() => undefined));
 }

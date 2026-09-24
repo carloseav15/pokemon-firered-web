@@ -37,7 +37,10 @@ const IsDoubleBattle = () => !!(G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE);
 
 export function ReshowBattleScreenDummy(): void {}
 
-export function ReshowBattleScreenAfterMenu(): void {
+let returnFromMenu: () => void = BattleMainCB2;
+
+export function ReshowBattleScreenAfterMenu(callback: () => void = BattleMainCB2): void {
+  returnFromMenu = callback;
   gPaletteFade.bufferTransferDisabled = true;
   SetHBlankCallback(null);
   SetGpuReg(REG_OFFSET_MOSAIC, 0);
@@ -111,7 +114,7 @@ function CB2_ReshowBattleScreenAfterMenu(): void {
       ReshowBattleScreen_TurnOnDisplay();
       BeginHardwarePaletteFade(0xff, 0, 0x10, 0, 1);
       gPaletteFade.bufferTransferDisabled = false;
-      SetMainCallback2(BattleMainCB2);
+      SetMainCallback2(returnFromMenu);
       BattleInterfaceSetWindowPals();
       break;
   }

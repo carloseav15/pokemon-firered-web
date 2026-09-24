@@ -2,6 +2,7 @@
 // choice, player / rival naming and the shrinking exit — on the GBA hardware layer (gMain + tasks).
 
 import * as C from "./generated/constants";
+import { DoNamingScreen, preloadNamingScreen } from "./namingScreen";
 import { sound } from "./audio/sound";
 import { tasks } from "./gba/tasks";
 import { A_BUTTON, B_BUTTON, JOY_NEW } from "./gba/input";
@@ -121,16 +122,6 @@ const res = {
 /** gSaveBlock2Ptr / gSaveBlock1Ptr fields the scene writes. */
 export const newGameProfile = { playerGender: MALE, playerName: [EOS] as number[], rivalName: [EOS] as number[] };
 
-/**
- * DoNamingScreen hook: naming_screen.c is installed by the naming screen module. The fallback keeps the
- * default name already written by GetDefaultName and returns straight away.
- */
-export type NamingScreenFn = (type: number, dest: number[], gender: number, monSpecies: number, monPersonality: number, returnCallback: () => void) => void;
-let doNamingScreen: NamingScreenFn = (_t, _d, _g, _s, _p, cb) => SetMainCallback2(cb);
-export function setNamingScreen(fn: NamingScreenFn): void {
-  doNamingScreen = fn;
-}
-
 // ---------------------------------------------------------------- callbacks
 
 function VBlankCB_NewGameScene(): void {
@@ -159,6 +150,7 @@ export class OakSpeech {
   static preload(): Promise<unknown> {
     return Promise.all([
       rom.load(),
+      preloadNamingScreen(),
       loadCData("oak_speech", "strings", "text_window_graphics", "menu"),
       preloadPacks(["graphics_oak_speech", "graphics_text_window", "graphics_fonts", "graphics_interface", "pokemon"]),
       preloadBattleAssets(),
@@ -753,11 +745,11 @@ function Task_OakSpeech_DoNamingScreen(taskId: number): void {
   const t = tasks.tasks[taskId];
   GetDefaultName(res.hasPlayerBeenNamed, 0);
   if (!res.hasPlayerBeenNamed) {
-    doNamingScreen(C.NAMING_SCREEN_PLAYER, newGameProfile.playerName, newGameProfile.playerGender, 0, 0, CB2_ReturnFromNamingScreen);
+    DoNamingScreen(C.NAMING_SCREEN_PLAYER, newGameProfile.playerName, 0, newGameProfile.playerGender, 0, CB2_ReturnFromNamingScreen);
   } else {
     ClearStdWindowAndFrameToTransparent(t.data[tMenuWindowId], true);
     RemoveWindow(t.data[tMenuWindowId]);
-    doNamingScreen(C.NAMING_SCREEN_RIVAL, newGameProfile.rivalName, 0, 0, 0, CB2_ReturnFromNamingScreen);
+    DoNamingScreen(C.NAMING_SCREEN_RIVAL, newGameProfile.rivalName, 0, 0, 0, CB2_ReturnFromNamingScreen);
   }
   DestroyPikachuOrPlatformSprites(taskId, SPRITE_TYPE_PLATFORM);
   FreeAllWindowBuffers();
