@@ -29,6 +29,8 @@ import { healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
+import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
+import { openHardwareMessage } from "./menus/hardwareChoice";
 import { learnMoveWithPrompt } from "./menus/monProgress";
 import { checkBagHasItem } from "./pokemon/items";
 import { openStorageMenu } from "./menus/storageMenu";
@@ -358,7 +360,50 @@ export class Game {
   }
 
   shouldEggHatch(): boolean {
-    return false;
+    return shouldEggHatch();
+  }
+
+  /** daycare.c ShowDaycareLevelMenu: the two stored mons with their current levels. */
+  showDaycareLevelMenu(): void {
+    const ow = this.overworld;
+    const rows = daycareLevelMenuRows();
+    const window = this.scriptMenu.createFramedWindow(11, 0, 17, 5);
+    rows.forEach((r, i) => {
+      printText(window, FONT_NORMAL, r.name, 8, i * 16 + 1);
+      const lv = encode(`Lv${r.level}`);
+      printText(window, FONT_NORMAL, lv, 132 - lv.length * 6, i * 16 + 1);
+    });
+    printText(window, FONT_NORMAL, rom.text("gOtherText_Exit"), 8, 33);
+    const menu = new Menu(window, FONT_NORMAL, 0, 1, 16, 3, 0);
+    const id = tasks.create(() => {
+      const input = menu.processInputNoWrap();
+      if (input === MENU_NOTHING_CHOSEN) return;
+      varSet(SV.RESULT, input === MENU_B_PRESSED || input === 2 ? rom.c("DAYCARE_EXITED_LEVEL_MENU") : input);
+      this.scriptMenu.removeWindow(window);
+      tasks.destroy(id);
+      ow.script.enable();
+    }, 3);
+  }
+
+  /** daycare.c EggHatch (CB2_EggHatch): the hatch, its fanfare and the nickname prompt. */
+  eggHatch(): void {
+    const ow = this.overworld;
+    const index = varGet(SV.x8004);
+    hatchPartyEgg(index, ow.header.regionMapSection);
+    const mon = save.party[index];
+    fieldMenu(this, (close) => {
+      sound.playFanfare(rom.c("MUS_EVOLVED"));
+      sound.playCry(mon.species, 0);
+      stringVars.var1 = Uint8Array.from(mon.nickname);
+      openHardwareMessage(rom.text("gText_HatchedFromEgg"), () => {
+        stringVars.var1 = Uint8Array.from(mon.nickname);
+        openHardwareChoice(rom.text("gText_NickHatchPrompt"), [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
+          const done = (): void => { close(); ow.script.enable(); };
+          if (yes !== 1) { done(); return; }
+          DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, done);
+        });
+      });
+    }, false);
   }
 
   // ---------------------------------------------------------------- script-driven screens

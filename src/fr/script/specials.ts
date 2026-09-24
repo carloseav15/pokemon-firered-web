@@ -13,6 +13,7 @@ import * as items from "../pokemon/items";
 import { countAliveNonEggMons, dexCount, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import type { ScriptRunner } from "./context";
 import { EXTRA_SPECIALS } from "./specialsExtra";
+import { DAYCARE_SPECIALS } from "../pokemon/daycare";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -26,6 +27,9 @@ function starterSpecies(index: number): number {
 
 const SPECIALS: Record<string, Special> = {
   ...EXTRA_SPECIALS,
+  ...DAYCARE_SPECIALS,
+  ShowDaycareLevelMenu: (ctx) => { ctx.ow.game.showDaycareLevelMenu(); },
+  EggHatch: (ctx) => { ctx.ow.game.eggHatch(); },
   NullFieldSpecial: () => 0,
   // union_room.c: wireless link hardware init (RFU/manager/task). There is no
   // link hardware in the browser; the union-room desk simply stays inert.
@@ -225,9 +229,6 @@ const SPECIALS: Record<string, Special> = {
   CreateInGameTradePokemon: (ctx) => { ctx.ow.game.trades.create(); },
   DoInGameTradeScene: (ctx) => { ctx.ow.game.trades.doScene(); },
   // ---- daycare (Route 5 and Four Island)
-  GetDaycareState: () => 0,
-  GetDaycarePokemonCount: () => 0,
-  IsThereMonInRoute5Daycare: () => 0,
   // ---- misc
   NameRaterWasNicknameChanged: () => {
     const mon = save.party[varGet(SV.x8004)];
@@ -244,7 +245,6 @@ const SPECIALS: Record<string, Special> = {
     const indices = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5];
     return indices[random() % indices.length];
   },
-  EggHatch: () => {},
   EnterSafariMode: (ctx) => { flagSet(rom.c("FLAG_SYS_SAFARI_MODE")); ctx.ow.game.safariSteps = 600; ctx.ow.game.safariBalls = 30; },
   ExitSafariMode: (ctx) => { save.flags[rom.c("FLAG_SYS_SAFARI_MODE") >> 3] &= ~(1 << (rom.c("FLAG_SYS_SAFARI_MODE") & 7)); ctx.ow.game.safariSteps = undefined; },
   IsPlayerLeftOfVermilionSailor: () => (save.pos.x < 24 ? 1 : 0),
