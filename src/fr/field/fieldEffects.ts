@@ -9,6 +9,7 @@ import { DATA_ROOT, rom, type AnimCmd } from "../rom";
 import { flagGet, save, varGet, varSet } from "../save";
 import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
+import { FieldMoveEffects } from "./fieldMoves";
 
 type Template = { frames: Array<[string, number, number, number]>; anims: AnimCmd[][]; callback: string | null; size: [number, number] | null };
 type FieldFxData = { templates: Record<string, Template>; emoticons: { file: string; width: number; height: number } };
@@ -51,9 +52,35 @@ export class FieldEffects {
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
   flashOverlay = 0;
+  readonly moves: FieldMoveEffects;
 
   constructor(private readonly ow: Overworld) {
     void loadFieldFx();
+    this.moves = new FieldMoveEffects(ow);
+  }
+
+  /** FieldEffectStart: marks the effect active and runs its script. */
+  start(id: number): void {
+    this.active.add(id);
+    const handler = this.handlers.get(id);
+    if (handler) { handler(); return; }
+    if (this.moves.start(id)) return;
+    if (!this.startIcon(id)) this.active.delete(id);
+  }
+
+  /** FldEff_*MarkIcon / X / smiley: emote over gFieldEffectArguments[0..2] (localId, mapNum, mapGroup). */
+  private startIcon(id: number): boolean {
+    const icons: Record<number, number> = { [0]: 0, [33]: 1, [46]: 2, [66]: 3, [64]: 4 };
+    if (!(id in icons)) return false;
+    const args = this.ow.game.fieldEffectArguments;
+    const object = this.ow.objects.byLocalId(args[0]);
+    if (object) this.emote(object, icons[id]);
+    this.active.delete(id);
+    return true;
+  }
+
+  renderOverlays(ctx: CanvasRenderingContext2D): void {
+    this.moves.render(ctx);
   }
 
   reset(): void {

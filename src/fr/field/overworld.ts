@@ -9,7 +9,7 @@ import { tasks } from "../gba/tasks";
 import { WindowLayer } from "../gba/window";
 import { sound } from "../audio/sound";
 import { rom, type MapHeader, type MapObjectTemplate } from "../rom";
-import { clearTempFieldEventData, flagClear, flagGet, save, varGet, type WarpData } from "../save";
+import { clearTempFieldEventData, flagClear, flagGet, save, varGet, varSet, type WarpData } from "../save";
 import { FieldMap, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
@@ -174,6 +174,29 @@ export class Overworld {
   setWarpDestinationToHealLocation(healLocationId: number): void {
     const heal = this.healLocation(healLocationId);
     if (heal) this.setWarpDestination(heal.mapGroup, heal.mapNum, -1, heal.x, heal.y);
+  }
+
+  /** Overworld_ResetStateAfterFly / Teleport / DigEscRope / WhitingOut */
+  resetStateAfterWarpOut(): void {
+    this.resetInitialPlayerAvatarState();
+    const c = rom.constants;
+    flagClear(c.FLAG_SYS_ON_CYCLING_ROAD);
+    varSet(c.VAR_MAP_SCENE_ROUTE16, 0);
+    flagClear(c.FLAG_SYS_CRUISE_MODE);
+    flagClear(c.FLAG_SYS_SAFARI_MODE);
+    varSet(c.VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 0);
+    flagClear(c.FLAG_SYS_USE_STRENGTH);
+    flagClear(c.FLAG_SYS_FLASH_ACTIVE);
+    flagClear(c.FLAG_SYS_QL_DEPARTED);
+    varSet(c.VAR_QL_ENTRANCE, 0);
+  }
+  resetStateAfterTeleport(): void { this.resetStateAfterWarpOut(); }
+  resetStateAfterDigEscRope(): void { this.resetStateAfterWarpOut(); }
+  resetStateAfterFly(): void { this.resetStateAfterWarpOut(); }
+
+  /** SetWarpDestinationToLastHealLocation */
+  setWarpDestinationToLastHealLocation(): void {
+    this.warpDestination = { ...save.lastHealLocation };
   }
 
   setLastHealLocationWarp(healLocationId: number): void {
@@ -742,7 +765,7 @@ export class Overworld {
     }, 10);
   }
 
-  private fieldCBTeleportWarpIn(): void {
+  fieldCBTeleportWarpIn(): void {
     this.playSpecialMapMusic();
     this.warpFadeInScreen();
     sound.playSE(sound.c("SE_WARP_OUT"));
@@ -1044,6 +1067,7 @@ export class Overworld {
     drawLayer(2);
     this.sprites.render(ctx, 1);
     this.effects.renderFlash(ctx);
+    this.effects.renderOverlays(ctx);
     this.windows.render(ctx);
     this.mapName.render(ctx);
     this.sprites.render(ctx, 0);

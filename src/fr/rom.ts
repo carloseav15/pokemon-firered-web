@@ -361,6 +361,17 @@ export class Rom {
     return this.scripts.slice(start, end + 1);
   }
 
+  /** gMoveNames[move] */
+  moveName(move: number): Uint8Array {
+    return b64(this.moves[move]?.name ?? "/w==");
+  }
+
+  /** GetMapName for a region map section (gRegionMapEntries / sMapNames). */
+  regionMapName(section: number): Uint8Array {
+    const entry = this.regionMap[section];
+    return entry ? b64(entry.name) : Uint8Array.from([0xff]);
+  }
+
   text(name: string): Uint8Array {
     const value = this.strings[name];
     if (value) return b64(value);

@@ -93,6 +93,13 @@ export class PlayerAvatar {
     }
   }
 
+  /** GetPlayerAvatarGraphicsIdByCurrentState (as a PLAYER_AVATAR_GFX_* state). */
+  currentStateId(): number {
+    if (this.flags & PLAYER_AVATAR_FLAG_SURFING) return PLAYER_AVATAR_GFX_RIDE;
+    if (this.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) return PLAYER_AVATAR_GFX_BIKE;
+    return PLAYER_AVATAR_GFX_NORMAL;
+  }
+
   isDashing(): boolean {
     return (this.flags & PLAYER_AVATAR_FLAG_DASH) !== 0;
   }

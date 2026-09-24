@@ -431,7 +431,7 @@ export class Game {
   }
   playSlotMachine(_id: number): void { this.overworld.script.enable(); }
   animateFlash(_target: number): void { this.overworld.flashLevel = _target; this.overworld.script.enable(); }
-  fieldEffectStart(_id: number): void {}
+  fieldEffectStart(id: number): void { this.overworld.effects.start(id); }
   setStepCallback(_id: number): void {}
   setMapLayoutIndex(_index: number): void {}
   createVirtualObject(..._args: number[]): void {}

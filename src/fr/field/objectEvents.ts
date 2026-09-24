@@ -1220,9 +1220,16 @@ export class ObjectEvents {
     }
     // Start anim in direction
     if (id === 0x45) {
-      object.sprite.animPaused = false;
-      this.setStepAnim(object, moveAnim(object.facingDirection));
-      return this.finishStep(object);
+      // StartSpriteAnimInDirection(current animNum) then MovementAction_WaitSpriteAnim
+      if (step === 0) {
+        object.sprite.animPaused = false;
+        object.sprite.startAnim(object.sprite.animNum);
+        this.setDirection(object, object.movementDirection);
+        s.data[2] = 1;
+        return false;
+      }
+      if (object.sprite.animEnded) return this.finishStep(object);
+      return false;
     }
     // Jump special (ledge-like hops with special timing)
     if (id >= 0x46 && id <= 0x49) {
