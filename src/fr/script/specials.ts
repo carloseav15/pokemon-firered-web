@@ -69,7 +69,7 @@ const SPECIALS: Record<string, Special> = {
   HasAllKantoMons: () => (dexCount(true, true) >= 150 ? 1 : 0),
   HasAllMons: () => (dexCount(true, false) >= 386 ? 1 : 0),
   SetUnlockedPokedexFlags: () => {},
-  GetProfOaksRatingMessage: (ctx) => ctx.ow.game.profOakRating(),
+  GetProfOaksRatingMessage: (ctx) => { ctx.ow.game.profOakRating(); },
   CalculatePlayerPartyCount: () => save.party.length,
   CountPartyNonEggMons: () => save.party.filter((m) => !m.isEgg).length,
   CountPartyAliveNonEggMons_IgnoreVar0x8004Slot: () => countAliveNonEggMons(varGet(SV.x8004)),

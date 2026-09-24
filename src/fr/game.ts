@@ -25,7 +25,7 @@ import { random } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { decode } from "./gba/charmap";
 import { varSet, SV } from "./save";
-import { healMon } from "./pokemon/pokemon";
+import { getDexFlag, healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
@@ -600,8 +600,44 @@ export class Game {
   }
   createVirtualObject(..._args: number[]): void {}
   turnVirtualObject(..._args: number[]): void {}
-  animatePc(_on: boolean): void {}
-  profOakRating(): number { return 0; }
+  /** AnimatePcTurnOn (flickers five times) / AnimatePcTurnOff: the PC metatile in front of the player. */
+  animatePc(on: boolean): void {
+    const ow = this.overworld;
+    const dir = ow.player.object.facingDirection;
+    const [dx, dy] = dir === 2 ? [0, -1] : dir === 3 ? [-1, -1] : dir === 4 ? [1, -1] : [0, 0];
+    const which = varGet(SV.x8004);
+    const tile = (off: boolean) => rom.c(which === 0 ? (off ? "METATILE_Building_PCOff" : "METATILE_Building_PCOn") : (off ? "METATILE_GenericBuilding1_PlayersPCOff" : "METATILE_GenericBuilding1_PlayersPCOn"));
+    const set = (off: boolean) => {
+      ow.map.setMetatileIdAt(save.pos.x + dx + 7, save.pos.y + dy + 7, tile(off) | 0x0c00);
+      ow.renderer?.invalidate();
+    };
+    if (!on) { set(true); return; }
+    let timer = 0, state = 0;
+    const id = tasks.create(() => {
+      if (timer === 6) {
+        set((state & 1) === 1);
+        timer = 0;
+        state++;
+        if (state === 5) tasks.destroy(id);
+      }
+      timer++;
+    }, 8);
+  }
+  /** prof_pc.c GetProfOaksRatingMessage: shows the rating for VAR_0x8004 caught mons; RESULT = complete. */
+  profOakRating(): number {
+    const count = varGet(SV.x8004);
+    const steps = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
+    let label = "PokedexRating_Text_LessThan10";
+    varSet(SV.RESULT, 0);
+    const index = steps.findIndex((n) => count < n);
+    if (index >= 0) label = `PokedexRating_Text_LessThan${steps[index]}`;
+    else if (count === 150) {
+      if (getDexFlag(rom.c("SPECIES_MEW"), true)) label = "PokedexRating_Text_LessThan150";
+      else { label = "PokedexRating_Text_Complete"; varSet(SV.RESULT, 1); }
+    } else if (count === 151) { label = "PokedexRating_Text_Complete"; varSet(SV.RESULT, 1); }
+    this.overworld.messageBox.show(rom.text(label));
+    return varGet(SV.RESULT);
+  }
   tryFieldPoisonWhiteOut(): void { tryFieldPoisonWhiteOut(this); }
   whiteOutMoneyLoss(): void { stringVars.var1 = encode(String(computeWhiteOutMoneyLoss())); }
 
