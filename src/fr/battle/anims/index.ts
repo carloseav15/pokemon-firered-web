@@ -17,3 +17,5 @@ import "./rock";
 import "./electric";
 import "./fight";
 import "./ghost";
+import "./ice";
+import "./psychic";
