@@ -15,7 +15,7 @@ import { sound } from '../../src/fr/audio/sound.ts';
 import { loadTrig } from '../../src/fr/hw/trig.ts';
 import { runHwFrame, SetMainCallback2 } from '../../src/fr/hw/runtime.ts';
 import { ppu } from '../../src/fr/hw/ppu.ts';
-import { gSprites, MAX_SPRITES } from '../../src/fr/hw/sprite.ts';
+import { DestroySprite, gSprites, MAX_SPRITES } from '../../src/fr/hw/sprite.ts';
 import { tasks } from '../../src/fr/gba/tasks.ts';
 import { A_BUTTON, joy } from '../../src/fr/gba/input.ts';
 import { preloadBattleAssets } from '../../src/fr/battle/preload.ts';
@@ -108,6 +108,8 @@ const failures: Failure[] = [];
 function runAnim(table: AnimTable, id: number, attacker: number, target: number, label: string): void {
   const baseSprites = usedSprites();
   const baseTasks = tasks.count();
+  const baseTaskIds = new Set(tasks.tasks.map((t, i) => (t.isActive ? i : -1)).filter((i) => i >= 0));
+  const baseSpriteIds = new Set(gSprites.map((s, i) => (s.inUse ? i : -1)).filter((i) => i >= 0));
   animState.gBattleAnimAttacker = attacker;
   animState.gBattleAnimTarget = target;
   animState.gAnimMoveTurn = 0;
@@ -141,6 +143,9 @@ function runAnim(table: AnimTable, id: number, attacker: number, target: number,
     failures.push({ what: label, reason: `threw ${(e as Error).stack?.split('\n').slice(0, 4).join(' | ')}` });
     animState.gAnimScriptActive = false;
   }
+  // Isolate the next animation from anything this one left behind.
+  tasks.tasks.forEach((t, i) => { if (t.isActive && !baseTaskIds.has(i)) tasks.destroy(i); });
+  gSprites.forEach((s, i) => { if (s.inUse && !baseSpriteIds.has(i)) DestroySprite(s); });
   animState.gAnimVisualTaskCount = 0;
   animState.gAnimSoundTaskCount = 0;
 }

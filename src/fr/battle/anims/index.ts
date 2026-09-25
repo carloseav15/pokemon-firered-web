@@ -19,3 +19,4 @@ import "./fight";
 import "./ghost";
 import "./ice";
 import "./psychic";
+import "./water";

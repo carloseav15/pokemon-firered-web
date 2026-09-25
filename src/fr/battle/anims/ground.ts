@@ -332,7 +332,7 @@ const tInitHorizOffset = 15;
 // arg0: What to shake. 0-3 for any specific battler, MAX_BATTLERS_COUNT for all battlers, MAX_BATTLERS_COUNT + 1 for the terrain
 // arg1: Shake intensity, used to calculate horizontal pixel offset (if 0, use move power instead)
 // arg2: Length of time to shake for
-function AnimTask_HorizontalShake(taskId: number): void {
+export function AnimTask_HorizontalShake(taskId: number): void {
   const task = gTasks[taskId];
   const d = task.data;
   if (gBattleAnimArgs[1] !== 0) d[tHorizOffset] = d[tInitHorizOffset] = gBattleAnimArgs[1] + 3;
