@@ -245,6 +245,12 @@ function animateElevator(ctx: ScriptRunner): void {
 
 let powderWindow: Window | undefined;
 function berryPowder(): number { return save.berryPowder ?? 0; }
+/** GiveBerryPowder; Berry Crush is not yet ported, but this C API caps storage at 99,999. */
+export function GiveBerryPowder(amountToAdd: number): boolean {
+  const amount = ((berryPowder() >>> 0) + (amountToAdd >>> 0)) >>> 0;
+  save.berryPowder = Math.min(amount, 99999);
+  return amount <= 99999;
+}
 function drawPowder(): void {
   if (!powderWindow) return;
   powderWindow.fill(1);

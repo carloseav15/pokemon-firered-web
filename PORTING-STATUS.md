@@ -853,3 +853,9 @@ Pending / placeholders:
   (`HIDDEN=0`, `UNUSED=1`, `NORMAL=2`, `AUTO_SCROLL=3`). Init/show/hide and
   printer completion exist; Canvas frame/task timing remains adapted.
   `npm run check:port` passes; no visual runtime check.
+- `berry_powder.c`: added the missing `GiveBerryPowder` API with C `u32`
+  wraparound, the 99,999 cap, and the success/failure return. Existing read,
+  spend and vendor-menu paths remain in `specialsExtra.ts`. Browser save stores
+  the value plainly instead of GBA XOR encryption; the only C grant caller is
+  Berry Crush (link-only, not implemented). `npm run check:port` passes; vendor
+  window remains Canvas-adapted.
