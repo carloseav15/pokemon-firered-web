@@ -92,12 +92,45 @@ Playwright/Chromium headless (fuera del repo, en el scratchpad de la sesión).
   - Tienda de Ciudad Verde y Correo de Oak: el dependiente entrega `ITEM_OAKS_PARCEL` en la bolsa; al regresar
     al laboratorio en Pueblo Paleta, Oak recibe el correo, retira el objeto de la bolsa, entrega la Pokédex
     (`FLAG_SYS_POKEDEX_GET`), 5 Poké Balls y avanza la variable de escena `VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB` a 6.
-  - Suites headless agregadas: `npm run check:transitions` y `npm run check:earlygame`.
+  - Progresión Ruta 2 -> Bosque Verde -> Ciudad Plateada -> Gimnasio de Brock:
+    - Objetos del suelo recolectados en el Bosque Verde: Antídoto, Poción y Poké Ball.
+    - Encuentro salvaje infrecuente con Pikachu (5%) capturado y añadido al equipo.
+    - Combate contra Cazabichos (Sammy: Weedle N9) activando transición `B_TRANSITION_ANGLED_WIPES` y resolviendo turnos con PPU scanline.
+    - Desmontaje limpio de batalla con `FreeRestoreBattleData()` restaurando `gMain.callback1`.
+    - Llegada a Ciudad Plateada y curación de todo el equipo en el Centro Pokémon.
+    - Combate contra el Líder Brock (`TRAINER_LEADER_BROCK`: Geodude N12, Onix N14) con selección de acciones en el motor de combate.
+    - Concesión de la Medalla Roca (`FLAG_BADGE01_GET`), registro de victoria (`FLAG_DEFEATED_BROCK`) y recepción de la MT39 Tumba Rocas (`ITEM_TM39`).
+  - Suites headless agregadas: `npm run check:transitions`, `npm run check:earlygame`, `npm run check:viridian2brock`, `npm run check:weather`, `npm run check:teachytv`.
 - Nivel de prueba alcanzado: **navegador y suites headless** (arranque, casa del
   jugador 1F/2F, diálogo de la madre, salida a Pueblo Paleta, guion de Oak en
   Ruta 1, laboratorio, elección de inicial, pantalla de apodo con START/A,
   combate con el rival, Ruta 1 con hierba alta y transiciones SLICE/WHITE_BARS_FADE,
-  Ciudad Verde con Correo de Oak y entrega de Pokédex).
+  Ciudad Verde con Correo de Oak y entrega de Pokédex, Bosque Verde con Cazabichos y captura de Pikachu,
+  Ciudad Plateada y Gimnasio de Brock con Medalla Roca y MT39).
+
+## field_effect_helpers.c: ayudantes de efectos de campo (2026-09-25)
+
+Portado 1:1 en `src/fr/field/fieldEffectHelpers.ts` (76/76 funciones).
+- Rutinas de movimiento y proyección de sombras en saltos (`UpdateShadowObjectProperties`, `SetShadowSpriteData`, etc.).
+- Comportamientos y animaciones de hierba alta (`UpdateTallGrassFieldEffect`, `SpriteCB_TallGrass`), pisadas en arena, y salpicaduras en agua.
+- Efectos de impacto y aterrizaje de saltos sobre bordillos (`GroundImpactDust`, `JumpTallGrass`, `AshPuff`).
+- Verificado sin errores de compilación (`npm run check:port`) e integrado en `tools/checks/fieldAndBattleTransitions.ts`.
+
+## field_weather.c: sistema meteorológico y efectos visuales (2026-09-25)
+
+Portado 1:1 en `src/fr/field/weather.ts` (50/50 funciones).
+- Generación de tablas de gamma y fundidos de color según el clima (`BuildGammaShiftTables`, `ApplyWeatherGammaShiftToPalettes`).
+- Control de ciclos, variaciones de lluvia (`WEATHER_RAIN`, `WEATHER_RAIN_THUNDERSTORM`, `WEATHER_DOWNPOUR`), tormentas de arena (`WEATHER_SANDSTORM`), ceniza volcánica (`WEATHER_VOLCANIC_ASH`) y nieblas (`WEATHER_FOG_HORIZONTAL`, `WEATHER_FOG_DIAGONAL`).
+- Renderizado de partículas de clima sobre el overworld Canvas (`renderWeatherParticles`).
+- Verificado con la nueva suite headless `npm run check:weather`.
+
+## teachy_tv.c: Televisor de Enseñanza / Poké Tele (2026-09-25)
+
+Portado 1:1 en `src/fr/teachyTv.ts` (58/58 funciones).
+- Sustituye el adaptador simplificado previo (`menus/keyItemScreens.ts`) y se elimina del listado de adaptadores.
+- Inicialización y gestión de lecciones interactivas impartidas por el Poké Dude (captura, tipos, estados alterados, etc.).
+- Verificado con la nueva suite headless `npm run check:teachytv`.
+
 
 ## battle_transition.c: transiciones de combate de campo (2026-09-25)
 
