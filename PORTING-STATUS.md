@@ -123,6 +123,7 @@ audio backend exists.
 - `digit_obj_util.c`: OAM-based number printer is used only by Berry Crush and Pokemon Jump; no TypeScript equivalent exists, and those optional minigame interfaces remain incomplete. Marked partial.
 - `field_screen_effect.c`: Flash has a Canvas radius-mask adaptation. The barn-door window wipe and Safari out-of-balls callback are absent; also no source-equivalent post-defeat whiteout recovery text/task was found. Marked partial; includes the main story loss-recovery path.
 - `palette_util.c`: RouletteFlash and pulse-blend code is explicitly unused in FireRed, and decomp call search also finds no callers for its tilemap helpers. Marked out of scope.
+- `main.c`: `hw/runtime.ts` models callbacks and frame-driven scenes, while startup flow is separate. GBA interrupt/register setup, RFU/link gates, soft reset, flash checks and sound scheduling are hardware-specific and not implemented in the browser runtime. Marked partial.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -134,7 +135,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 50 modules as documented ported, 95 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 22 as explicitly out of scope, 36 as probable out-of-scope candidates, and 70 as unreviewed. Separately, 42 files have a
+The current review labels 50 modules as documented ported, 96 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 22 as explicitly out of scope, 36 as probable out-of-scope candidates, and 69 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
