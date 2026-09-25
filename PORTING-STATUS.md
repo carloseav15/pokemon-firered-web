@@ -942,3 +942,9 @@ Pending / placeholders:
   `npm run check:port` passes; mail runtime flow was not exercised.
 
 - `wild_encounter.c`: added the source `GetLocalWildMon` and `GetLocalWaterMon` behavior to `WildEncounter`, including no-header/no-table fallback, 80% land choice when both tables exist, water flag, and weighted 12-slot/5-slot selection using the shared C RNG. Ambient cries can reuse these APIs; ambient scheduling and cry-mixer parameters are still not ported. `npm run check:port` passes; no runtime RNG comparison was run.
+
+
+## Follow-up source review (2026-09-25; ambient cries)
+
+- Compared `field_tasks.c`, `overworld.c`, `wild_encounter.c`, their headers, and the active TS field/audio surfaces. C loads a local species on map setup/reload; the priority-80 task advances `UpdateAmbientCry` only while controls are unlocked and Quest Log playback is inactive. Its state machine waits 1200–3599 frames before the first cry and 1200–2399 frames thereafter. Water species cry only while the player's destination tile is surfable. C draws pan `(Random() % 88) + 212` and volume `(Random() % 30) + 50`, then observes STOP/KEEP map-music modes before calling `PlayCry_NormalNoDucking(..., CRY_PRIORITY_AMBIENT)`.
+- Current TS has the weighted local-species selectors (`getLocalWildMon`, `getLocalWaterMon`) from commit `4c79585`, per-step Icefall callback, `Overworld.controlsLocked`, and a cry backend whose `playCry` accepts only `(species, mode)`. Ambient species selection at map setup, timed task/state, surf gating, music-mode handling for ambient playback, and C pan/volume/priority support are not yet implemented. This is source-review evidence only; no further code was changed and no runtime/audio verification was performed in this follow-up.
