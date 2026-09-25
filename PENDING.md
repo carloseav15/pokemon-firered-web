@@ -5,31 +5,19 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **3972/9825 (40 %)**.
-- Archivos C pendientes: **153** (181645 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5009/9825 (50 %)**.
+- Archivos C pendientes: **128** (144518 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
 
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
-| `battle_anim_effects_1.c` | 5677 | 0/154 | ~5677 |  |
 | `image_processing_effects.c` | 4436 | 0/38 | ~4436 |  |
-| `battle_transition.c` | 3037 | 0/134 | ~3037 |  |
-| `battle_anim_ghost.c` | 1484 | 0/41 | ~1484 |  |
-| `battle_anim_flying.c` | 1289 | 0/33 | ~1289 |  |
-| `battle_anim_fire.c` | 1286 | 0/35 | ~1286 |  |
-| `battle_anim_electric.c` | 1280 | 0/37 | ~1280 |  |
-| `battle_anim_psychic.c` | 1090 | 0/26 | ~1090 |  |
-| `battle_anim_fight.c` | 969 | 0/31 | ~969 |  |
 | `palette_util.c` | 474 | 0/17 | ~474 |  |
-| `battle_anim_bug.c` | 462 | 0/13 | ~462 |  |
-| `battle_anim_dragon.c` | 434 | 0/11 | ~434 |  |
-| `battle_anim_poison.c` | 298 | 0/9 | ~298 |  |
 | `tilemap_util.c` | 238 | 0/11 | ~238 |  |
 | `save_failed_screen.c` | 228 | 0/14 | ~228 |  |
 | `braille_text.c` | 212 | 0/3 | ~212 |  |
-| `battle_anim_smokescreen.c` | 197 | 0/3 | ~197 |  |
 | `coord_event_weather.c` | 49 | 0/1 | ~49 |  |
 | `cable_car_util.c` | 38 | 0/2 | ~38 |  |
 
@@ -49,9 +37,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
 | `event_object_movement.c` | 9412 | 41/752 | ~8898 |  |
-| `battle_anim_effects_3.c` | 5430 | 5/140 | ~5236 |  |
-| `battle_anim_effects_2.c` | 3865 | 2/121 | ~3801 |  |
 | `field_effect.c` | 4033 | 39/239 | ~3374 |  |
+| `battle_transition.c` | 3037 | 1/134 | ~3014 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 | ~2634 |  |
 | `overworld.c` | 3563 | 67/238 | ~2559 |  |
@@ -63,33 +50,34 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `intro.c` | 2805 | 17/79 | ~2201 |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | ~2034 |  |
 | `battle_controller_pokedude.c` | 2698 | 31/107 | ~1916 |  |
-| `battle_anim_special.c` | 2304 | 18/81 | ~1792 |  |
 | `field_player_avatar.c` | 2168 | 33/176 | ~1761 |  |
-| `m4a.c` | 1781 | 4/72 | ~1682 |  |
-| `battle_anim_water.c` | 1591 | 1/48 | ~1557 |  |
+| `m4a.c` | 1781 | 5/72 | ~1657 |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 | ~1522 |  |
 | `battle_ai_script_commands.c` | 1970 | 25/103 | ~1491 |  |
-| `battle_anim_ice.c` | 1474 | 1/32 | ~1427 |  |
 | `field_effect_helpers.c` | 1421 | 0/76 | ~1421 |  |
 | `pokemon_storage_system_misc.c` | 1430 | 2/67 | ~1387 |  |
 | `party_menu.c` | 6342 | 280/357 | ~1367 |  |
 | `easy_chat_2.c` | 1363 | 1/72 | ~1344 |  |
 | `text.c` | 1695 | 10/37 | ~1236 |  |
 | `daycare.c` | 2155 | 41/93 | ~1204 |  |
-| `battle_anim.c` | 1725 | 24/77 | ~1187 |  |
 | `trainer_tower.c` | 1095 | 1/43 | ~1069 |  |
 | `battle_main.c` | 4477 | 82/106 | ~1013 |  |
 | `field_weather.c` | 1147 | 7/50 | ~986 |  |
 | `script_menu.c` | 1341 | 8/29 | ~971 |  |
 | `start_menu.c` | 1016 | 6/65 | ~922 |  |
-| `battle_anim_normal.c` | 997 | 3/36 | ~913 |  |
 | `berry.c` | 1028 | 1/8 | ~899 |  |
 | `battle_tower.c` | 1425 | 17/45 | ~886 |  |
-| `battle_anim_dark.c` | 923 | 2/25 | ~849 |  |
 | `vs_seeker.c` | 1326 | 15/40 | ~828 |  |
-| `battle_anim_rock.c` | 822 | 1/22 | ~784 |  |
+| `fieldmap.c` | 951 | 9/51 | ~783 |  |
+| `title_screen.c` | 1315 | 17/39 | ~741 |  |
+| `learn_move.c` | 932 | 5/23 | ~729 |  |
+| `battle_controller_oak_old_man.c` | 2293 | 73/107 | ~728 |  |
+| `field_specials.c` | 2555 | 85/118 | ~714 |  |
+| `evolution_scene.c` | 1704 | 13/22 | ~697 |  |
+| `field_fadetransition.c` | 965 | 18/57 | ~660 |  |
+| `mail.c` | 734 | 1/10 | ~660 |  |
 
-Hay 128 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
+Hay 115 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
 ## 4. Huecos conocidos que el conteo no muestra
 

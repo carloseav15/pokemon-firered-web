@@ -915,12 +915,21 @@ level-up, prize money, return to the field). Debug shortcut after launching a
 game: `frDebug.rivalBattle()` (optionally `"SPECIES_SQUIRTLE"` / `"SPECIES_CHARMANDER"`).
 
 Pending / placeholders:
-- Battle animation *scripts* run through the full opcode interpreter
-  (`battle/animScript.ts`: 664 scripts decode cleanly, headless-verified).
-  Mon-movement, palette-blend and sound effect tasks are ported
-  (`battle/animTasks.ts`, ~68% reference-weighted); the rest render a timed
-  target flash preserving pacing. Particle choreography, BG scrolling,
-  mon-to-BG copies and spatialized panning remain pending.
+- Battle animations are a faithful port of every `battle_anim*.c` file:
+  `battle/animScript.ts` (the `battle_anim.c` interpreter, all `Cmd_*` and BG/pan
+  helpers) plus one module per file under `battle/anims/` (mons, mon_movement,
+  utility_funcs, normal, special, sound_tasks, status_effects, effects_1/2/3,
+  smokescreen and every type file). Sprite callbacks and tasks register by their
+  C name (`battle/animRegistry.ts`); `animTasks.ts` only dispatches.
+  `npm run check:anims` boots a real wild battle headless and runs all 354 move
+  scripts from both sides, the general/status tables, level-up/switch-out/
+  Substitute specials, every ball × every throw outcome (0–3 shakes, trainer
+  block, ghost dodge, capture) and the shiny sparkles: 0 failures, 0 missing
+  callbacks/tasks, no leaked sprites or tasks. Adaptations: contest paths are
+  compiled but unreachable (`IsContest()` is false), cries and SEs ignore the pan
+  value (the m4a mixer has no panning yet), and the Safari bait/rock throws are
+  skipped by the check because they need the Safari trainer sprite. Not yet
+  compared frame by frame against the ROM.
 - Bag and party screens are the ported `bagMenu.ts` / `partyMenu.ts`; the
   summary screen and move-forget selection use the faithful `pokemonSummaryScreen.ts`;
   Pokédex page in `battle/ext.ts` remains a text adapter.
@@ -929,7 +938,7 @@ Pending / placeholders:
   auto-stop past Mew, congrats/stopped messages, Shedinja split, new-move
   learning); verified headless (complete, cancel, stone-no-cancel, auto-stop).
   Sprite/background animation callbacks remain pending.
-- Shiny sparkles, link battles, VS Seeker rematch state.
+- Link battles, VS Seeker rematch state.
 - The battle continue-arrow source offset is corrected: C's 256-byte alternate
   offset maps to x=64 in the exported image. A focused check compared 960 pixels
   against the packed source tiles across both variants and all four frames,
