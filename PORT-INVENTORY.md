@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 112 | 125319 | 1821/5915 |
-| Adaptador (UI simplificada) | 3 | 7224 | 18/207 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 94 | 116400 | 3531/3703 |
+| Parcial (menos del 80 % de funciones) | 112 | 124712 | 1842/5886 |
+| Adaptador (UI simplificada) | 2 | 5485 | 13/143 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 95 | 118746 | 3624/3796 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
-| Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **115** | **132543** | |
-| **Total en alcance** | **210** | **248996** | **5370/9825** |
+| Fuera de alcance | 51 | 55183 | 96/1950 |
+| **Pendiente de portar** | **114** | **130197** | |
+| **Total en alcance** | **210** | **248996** | **5479/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -35,7 +35,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_controller_pokedude.c` | 2698 | 31/107 |  |  |
 | `field_specials.c` | 2555 | 85/118 | `field/fieldMoves.ts`, `game.ts`, `menus/scriptMenu.ts` … |  |
 | `naming_screen.c` | 2509 | 4/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |
-| `field_weather_effects.c` | 2346 | 1/93 | `field/weather.ts`, `script/specials.ts` |  |
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |
 | `scrcmd.c` | 2264 | 3/224 | `field/messageBox.ts`, `script/commands.ts` |  |
@@ -46,6 +45,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |
 | `m4a.c` | 1781 | 5/72 | `audio/m4a.ts` |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |
+| `fame_checker.c` | 1739 | 22/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  |
 | `evolution_scene.c` | 1704 | 13/22 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |
 | `text.c` | 1695 | 10/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |
@@ -141,7 +141,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---|---|
 | `trade.c` | 2958 | 0/66 |  | pokemon/ingameTrade.ts: sin escena |
 | `slot_machine.c` | 2527 | 13/77 | `game/slots.ts`, `menus/slotMachine.ts` | menus/slotMachine.ts: reglas sin gráficos |
-| `fame_checker.c` | 1739 | 5/64 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
 
 ## Portado (≥ 80 % de funciones con el mismo nombre)
 
@@ -160,6 +159,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_message.c` | 2855 | 9/9 | `battle/message.ts` |  |
 | `item_menu.c` | 2397 | 99/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |
 | `battle_anim_mons.c` | 2360 | 126/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |
+| `field_weather_effects.c` | 2346 | 93/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  |
 | `battle_anim_special.c` | 2304 | 81/81 | `battle/anims/special.ts`, `battle/gfx_sfx_util.ts`, `battle/interface.ts` … |  |
 | `battle_interface.c` | 2240 | 45/51 | `battle/interface.ts`, `battle/util.ts` |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |
@@ -279,7 +279,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota |
 |---|---:|---:|---|---|
-| `dodrio_berry_picking.c` | 4954 | 6/147 |  |  |
+| `dodrio_berry_picking.c` | 4954 | 7/147 |  |  |
 | `union_room.c` | 4761 | 6/110 | `script/specials.ts` |  |
 | `pokemon_jump.c` | 4582 | 4/186 |  |  |
 | `berry_crush.c` | 3488 | 4/73 |  |  |

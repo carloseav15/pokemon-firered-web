@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5370/9825 (54 %)**.
-- Archivos C pendientes: **115** (132543 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5479/9825 (55 %)**.
+- Archivos C pendientes: **114** (130197 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -20,7 +20,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 |---|---:|---:|---:|---|
 | `trade.c` | 2958 | 0/66 | ~2958 | pokemon/ingameTrade.ts: sin escena |
 | `slot_machine.c` | 2527 | 13/77 | ~2100 | menus/slotMachine.ts: reglas sin gráficos |
-| `fame_checker.c` | 1739 | 5/64 | ~1603 | menus/keyItemScreens.ts |
 
 ## 3. Parciales con más C sin cubrir (top 40)
 
@@ -34,7 +33,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `overworld.c` | 3563 | 70/238 | ~2515 |  |
 | `battle_transition.c` | 3037 | 26/134 | ~2447 |  |
 | `naming_screen.c` | 2509 | 4/109 | ~2416 |  |
-| `field_weather_effects.c` | 2346 | 1/93 | ~2320 |  |
 | `easy_chat_3.c` | 2316 | 1/92 | ~2290 |  |
 | `scrcmd.c` | 2264 | 3/224 | ~2233 |  |
 | `intro.c` | 2805 | 17/79 | ~2201 |  |
@@ -49,6 +47,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `easy_chat_2.c` | 1363 | 1/72 | ~1344 |  |
 | `text.c` | 1695 | 10/37 | ~1236 |  |
 | `daycare.c` | 2155 | 41/93 | ~1204 |  |
+| `fame_checker.c` | 1739 | 22/64 | ~1141 |  |
 | `trainer_tower.c` | 1095 | 1/43 | ~1069 |  |
 | `battle_main.c` | 4477 | 82/106 | ~1013 |  |
 | `script_menu.c` | 1341 | 8/29 | ~971 |  |

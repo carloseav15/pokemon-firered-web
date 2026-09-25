@@ -25,7 +25,8 @@
     "check:storage": "esbuild tools/checks/storageMenu.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/storageMenu.mjs && node .decomp-build/checks/storageMenu.mjs",
     "check:weather": "esbuild tools/checks/weather.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/weather.mjs && node .decomp-build/checks/weather.mjs",
     "check:teachytv": "esbuild tools/checks/teachyTv.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/teachyTv.mjs && node .decomp-build/checks/teachyTv.mjs",
-    "check:viridian2brock": "esbuild tools/checks/viridianForestToBrockPlaytest.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/viridianForestToBrockPlaytest.mjs && node .decomp-build/checks/viridianForestToBrockPlaytest.mjs"
+    "check:viridian2brock": "esbuild tools/checks/viridianForestToBrockPlaytest.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/viridianForestToBrockPlaytest.mjs && node .decomp-build/checks/viridianForestToBrockPlaytest.mjs",
+    "check:famechecker": "esbuild tools/checks/fameChecker.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/fameChecker.mjs && node .decomp-build/checks/fameChecker.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

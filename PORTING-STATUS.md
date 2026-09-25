@@ -131,6 +131,22 @@ Portado 1:1 en `src/fr/teachyTv.ts` (58/58 funciones).
 - Inicialización y gestión de lecciones interactivas impartidas por el Poké Dude (captura, tipos, estados alterados, etc.).
 - Verificado con la nueva suite headless `npm run check:teachytv`.
 
+## field_weather_effects.c: partículas y controladores de clima (2026-09-25)
+
+Portado 1:1 en `src/fr/field/weatherEffects.ts` (93/93 funciones).
+- Sprites de gotas de lluvia y salpicaduras (`UpdateRainSprite`, `WaitRainSprite`, `InitRainSpriteMovement`, etc.).
+- Partículas de copos de nieve, ceniza volcánica, nubes móviles, tormentas de arena y nieblas horizontal/diagonal.
+- Vinculado directamente a `sWeatherFuncs` en `weather.ts`.
+- Verificado con la suite headless `npm run check:weather`.
+
+## fame_checker.c: Buscapeleas / Pokéradar (2026-09-25)
+
+Portado 1:1 en `src/fr/fameChecker.ts` (64+ funciones).
+- Sustituye el adaptador de texto en `menus/keyItemScreens.ts` y se elimina de la lista de adaptadores (reduciéndolos a solo 2).
+- Gestión fiel de las 16 personas célebres de Kanto (Oak, Daisy, Bill, Fuji, 8 líderes de gimnasio, Alto Mando y Giovanni).
+- Estados de silueta / desbloqueo con pistas (`flavorTextFlags`), fotos, selector con Pokéball giratoria, paletas e incbins reales (`graphics_fame_checker`).
+- Verificado con la nueva suite headless `npm run check:famechecker`.
+
 
 ## battle_transition.c: transiciones de combate de campo (2026-09-25)
 
