@@ -340,13 +340,15 @@ export class Game {
     this.showSaveStats();
     ow.control.msgIsSignpost = false;
     ow.messageBox.show(rom.text("gText_WouldYouLikeToSaveTheGame"));
+    // start_menu.c sSaveDialogCB chain: AskSaveHandleInput -> PrintAskOverwriteText
+    // -> AskOverwrite/ReplacePreviousFile -> PrintSavingDontTurnOffPower -> DoSave
+    // -> PrintSaveResult -> WaitPrintSuccessAndPlaySE -> ReturnSuccess.
     let state = 0;
-    const saveAndShowResult = (): void => {
-      const ok = this.writeSave();
-      this.differentSaveFile = false;
-      stringVars.var1 = Uint8Array.from(save.playerName);
-      ow.messageBox.show(expandPlaceholders(rom.text(ok ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory")));
-      if (ok) sound.playSE(sound.c("SE_SAVE"));
+    let saveOk = false;
+    const cancel = (): void => { tasks.destroy(id); this.closeStartMenu(); };
+    const printSavingDontTurnOffPower = (): void => {
+      ow.messageBox.hide();
+      ow.messageBox.show(rom.text("gText_SavingDontTurnOffThePower"));
       state = 4;
     };
     const id = tasks.create(() => {
@@ -357,38 +359,55 @@ export class Game {
             state = 1;
           }
           break;
-        case 1:
-          // the yes/no task re-enables the script context; here we poll the result var
+        case 1: // SaveDialogCB_AskSaveHandleInput
           if (varGet(0x800d) !== 0xff) {
             const yes = varGet(0x800d) === 1;
             ow.messageBox.hide();
-            if (!yes) { tasks.destroy(id); this.closeStartMenu(); return; }
-            if (this.differentSaveFile && saveStore.load()) {
-              ow.messageBox.show(rom.text("gText_DifferentGameFile"));
+            if (!yes) { cancel(); return; }
+            if (saveStore.load() || !this.differentSaveFile) {
+              // SaveDialogCB_PrintAskOverwriteText
+              ow.messageBox.show(rom.text(this.differentSaveFile ? "gText_DifferentGameFile" : "gText_AlreadySaveFile_WouldLikeToOverwrite"));
               state = 2;
-            } else saveAndShowResult();
+            } else printSavingDontTurnOffPower();
           }
           break;
         case 2:
           if (ow.messageBox.isHidden()) {
-            this.scriptMenu.yesNo(0, 0, 1); // C selects No for a different save file.
+            // DisplayYesNoMenuDefaultNo for a different file, DefaultYes to overwrite.
+            this.scriptMenu.yesNo(0, 0, this.differentSaveFile ? 1 : 0);
             state = 3;
           }
           break;
-        case 3:
+        case 3: // SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput
           if (varGet(0x800d) !== 0xff) {
-            const replace = varGet(0x800d) === 1;
+            const yes = varGet(0x800d) === 1;
             ow.messageBox.hide();
-            if (!replace) { tasks.destroy(id); this.closeStartMenu(); return; }
-            saveAndShowResult();
+            if (!yes) { cancel(); return; }
+            printSavingDontTurnOffPower();
           }
           break;
-        case 4:
-          if (ow.messageBox.isHidden() && (JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON) || ++this.saveWait > 60)) {
+        case 4: // SaveDialogCB_DoSave + SaveDialogCB_PrintSaveResult
+          if (ow.messageBox.isHidden()) {
+            saveOk = this.writeSave();
+            this.differentSaveFile = false;
+            stringVars.var1 = Uint8Array.from(save.playerName);
+            ow.messageBox.hide();
+            ow.messageBox.show(expandPlaceholders(rom.text(saveOk ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory")));
+            this.saveWait = 0;
+            state = 5;
+          }
+          break;
+        case 5: // SaveDialogCB_WaitPrintSuccessAndPlaySE: SE once the text is printed
+          if (ow.messageBox.isHidden()) {
+            if (saveOk) sound.playSE(sound.c("SE_SAVE"));
+            state = 6;
+          }
+          break;
+        case 6: // SaveDialogCB_ReturnSuccess: !IsSEPlaying() && (60 frames or A held)
+          if (!sound.isSEPlaying() && (++this.saveWait > 60 || (joy.held & A_BUTTON))) {
             this.saveWait = 0;
             ow.messageBox.hide();
-            tasks.destroy(id);
-            this.closeStartMenu();
+            cancel();
           }
           break;
       }
@@ -491,7 +510,7 @@ export class Game {
     const id = tasks.create(() => {
       const input = menu.processInputNoWrap();
       if (input === MENU_NOTHING_CHOSEN) return;
-      varSet(SV.RESULT, input === MENU_B_PRESSED || input === 2 ? rom.c("DAYCARE_EXITED_LEVEL_MENU") : input);
+      varSet(SV.RESULT, input === MENU_B_PRESSED || input === 2 ? C.DAYCARE_EXITED_LEVEL_MENU : input);
       this.scriptMenu.removeWindow(window);
       tasks.destroy(id);
       ow.script.enable();
@@ -551,9 +570,9 @@ export class Game {
     };
     switch (mode) {
       case "moveTutor": ChooseMonForMoveTutor(exit); break;
-      case "relearner": ChoosePartyMonByMenuType(rom.c("PARTY_MENU_TYPE_MOVE_RELEARNER"), exit); break;
+      case "relearner": ChoosePartyMonByMenuType(C.PARTY_MENU_TYPE_MOVE_RELEARNER, exit); break;
       case "daycare": ChooseMonForDaycare(exit); break;
-      default: ChoosePartyMonByMenuType(rom.c("PARTY_MENU_TYPE_CHOOSE_MON"), exit); break;
+      default: ChoosePartyMonByMenuType(C.PARTY_MENU_TYPE_CHOOSE_SINGLE_MON, exit); break;
     }
   }
 

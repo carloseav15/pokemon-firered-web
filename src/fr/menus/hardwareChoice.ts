@@ -66,13 +66,17 @@ export function openHardwareChoice(
     const items: ListMenuItem[] = rows.map((row, index) => ({label: typeof row.label === "string" ? encode(row.label) : row.label, index}));
     FillWindowPixelBuffer(0, PIXEL_FILL(1));
     AddTextPrinterParameterized3(0, FONT_NORMAL, 4, 1, [1, 2, 3], 0, titleBytes);
-    PutWindowTilemap(0); CopyWindowToVram(0, COPYWIN_FULL);
+    PutWindowTilemap(0);
     const rowHeight = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT) + 2;
     const listTaskId = ListMenuInit(listMenuTemplate({
       items, windowId: 1, totalItems: items.length, maxShowed: CHOICE_ROWS, item_X: 12, cursor_X: 2, upText_Y: 1,
       itemVerticalPadding: 2, fontId: FONT_NORMAL, scrollMultiple: LIST_MULTIPLE_SCROLL_DPAD, moveCursorFunc: ListMenuDefaultCursorMoveFunc,
       itemPrintFunc: (_windowId, index) => { if (rows[index]?.disabled) ListMenuOverrideSetColors(3, 1, 2); },
     }), 0, 0);
+    // ListMenuInit only copies window 1's tiles (COPYWIN_GFX); this loop never
+    // runs DoScheduledBgTilemapCopiesToVram, so copy BG0's tilemap once both
+    // windows are on it, or the list stays invisible.
+    CopyWindowToVram(0, COPYWIN_FULL);
     const shown = Math.min(CHOICE_ROWS, items.length);
     const arrows = items.length > CHOICE_ROWS
       ? AddScrollIndicatorArrowPairParameterized(SCROLL_ARROW_UP, 120, 4 * 8 - 4, 4 * 8 + shown * rowHeight + 4, items.length - CHOICE_ROWS,

@@ -1,6 +1,7 @@
 // gSpecials: the C functions scripts call through `special`/`specialvar`.
 // Each entry mirrors the original field_specials.c (or its home file).
 
+import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { decode, encode, stringVars } from "../gba/charmap";
 import { tasks } from "../gba/tasks";
@@ -76,10 +77,10 @@ const SPECIALS: Record<string, Special> = {
   CountPartyNonEggMons: () => save.party.filter((m) => !m.isEgg).length,
   CountPartyAliveNonEggMons_IgnoreVar0x8004Slot: () => countAliveNonEggMons(varGet(SV.x8004)),
   HasEnoughMonsForDoubleBattle: () => {
-    if (save.party.length === 1) return rom.c("PLAYER_HAS_ONE_MON");
+    if (save.party.length === 1) return C.PLAYER_HAS_ONE_MON;
     return countAliveNonEggMons() >= 2
-      ? rom.c("PLAYER_HAS_TWO_USABLE_MONS")
-      : rom.c("PLAYER_HAS_ONE_USABLE_MON");
+      ? C.PLAYER_HAS_TWO_USABLE_MONS
+      : C.PLAYER_HAS_ONE_USABLE_MON;
   },
   BufferMonNickname: () => { const mon = save.party[varGet(SV.x8004)]; stringVars.var1 = mon ? nickname(mon) : encode(""); },
   GetPartyMonSpecies: () => save.party[varGet(SV.x8004)]?.species ?? 0,

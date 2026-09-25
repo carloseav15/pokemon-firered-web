@@ -35,6 +35,14 @@ export const H = {
     this.G = await this.mod("/src/fr/battle/globals.ts");
     return { cb2: this.R.gMain.callback2?.name };
   },
+  /** After restore()/importSave(): run frames until the field map is loaded, then init(). */
+  async ready(maxFrames = 1200) {
+    for (let f = 0; f < maxFrames && !dbg()?.state?.()?.map; f += 20) {
+      if (dbg()?.wait) await dbg().wait(20); else await new Promise((r) => setTimeout(r, 200));
+    }
+    await this.init();
+    return dbg().state();
+  },
   cb2() { return this.R?.gMain.callback2?.name; },
   inBattle() {
     const name = g().scene?.constructor?.name;
@@ -262,6 +270,26 @@ export const H = {
     if (!data) throw new Error(`no checkpoint ${name}`);
     localStorage.setItem(SAVE_KEY, data);
     location.href = `${location.pathname}?fr=continue`;
+  },
+  /**
+   * Checkpoints in the repo (tools/playtest/saves/<name>.json) so they do not
+   * live only in one browser. exportSave returns gzip+base64 of a checkpoint;
+   * write it with: echo <b64> | base64 -d | gunzip > tools/playtest/saves/<name>.json
+   */
+  async exportSave(name) {
+    const data = localStorage.getItem(`fr-playtest-cp:${name}`);
+    if (!data) throw new Error(`no checkpoint ${name}`);
+    const gz = await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
+    let bin = "";
+    for (const b of new Uint8Array(gz)) bin += String.fromCharCode(b);
+    return btoa(bin);
+  },
+  /** Load tools/playtest/saves/<name>.json as checkpoint <name> and restore it. */
+  async importSave(name) {
+    const res = await fetch(`/tools/playtest/saves/${name}.json`);
+    if (!res.ok) throw new Error(`no saved checkpoint ${name}`);
+    localStorage.setItem(`fr-playtest-cp:${name}`, await res.text());
+    this.restore(name);
   },
   checkpoints() {
     return Object.keys(localStorage).filter((k) => k.startsWith("fr-playtest-cp:")).map((k) => k.slice(15));

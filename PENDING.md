@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5423/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5432/9825 (55 %)**.
 - Archivos C pendientes: **118** (132109 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -28,7 +28,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `field_effect.c` | 4033 | 39/239 | ~3374 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
 | `trade.c` | 2958 | 0/66 | ~2958 |  |
-| `pokemon_storage_system_tasks.c` | 2770 | 4/82 | ~2634 |  |
+| `pokemon_storage_system_tasks.c` | 2770 | 5/82 | ~2601 |  |
 | `overworld.c` | 3563 | 70/238 | ~2515 |  |
 | `battle_transition.c` | 3037 | 26/134 | ~2447 |  |
 | `naming_screen.c` | 2509 | 4/109 | ~2416 |  |
@@ -54,10 +54,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `trade_scene.c` | 2916 | 36/53 | ~935 |  |
 | `berry.c` | 1028 | 1/8 | ~899 |  |
 | `battle_tower.c` | 1425 | 17/45 | ~886 |  |
-| `start_menu.c` | 1016 | 11/65 | ~844 |  |
 | `vs_seeker.c` | 1326 | 15/40 | ~828 |  |
 | `fieldmap.c` | 951 | 9/51 | ~783 |  |
 | `title_screen.c` | 1315 | 17/39 | ~741 |  |
+| `start_menu.c` | 1016 | 18/65 | ~734 |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | ~728 |  |
 | `field_specials.c` | 2555 | 85/118 | ~714 |  |
 | `evolution_scene.c` | 1704 | 13/22 | ~697 |  |
@@ -133,7 +133,7 @@ Verificado solo con `check:port`, `build`, paridad de cdata/incbin/textos o chec
 - shop.c + buy_menu_helpers.c (+ event_object_movement.c parcial) → `shop.ts, buyMenuHelpers.ts, objectEventGraphics.ts`
 - hall_of_fame.c + credits.c (+ overworld.c créditos) → `hallOfFame.ts, credits.ts, overworldCredits.ts`
 - battle_transition.c (todas salvo ANGLED_WIPES) → `battle/transition.ts`
-- player_pc.c (menú superior) + pokemon_storage_system_menu.c → `menus/playerPc.ts, menus/storageMenu.ts`
+- player_pc.c (menú superior del PC del jugador) → `menus/playerPc.ts`
 - learn_move.c → `menus/moveRelearner.ts`
 - field_weather.c + field_weather_effects.c → `field/weather.ts, field/weatherEffects.ts`
 - fame_checker.c → `fameChecker.ts`

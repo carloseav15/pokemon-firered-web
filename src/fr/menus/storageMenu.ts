@@ -26,6 +26,12 @@ import { save, varGet, SV } from "../save";
 import * as C from "../generated/constants";
 import { rom } from "../rom";
 import { cdata, loadCData } from "../hw/assets";
+import { FONT_NORMAL } from "../gba/font";
+import { printText, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "../gba/textPrinter";
+import { Window } from "../gba/window";
+import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "../gba/fade";
+import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
+import { GetMenuCursorDimensionByFont } from "../hw/menu";
 
 export const TOTAL_BOXES_COUNT = 14;
 export const IN_BOX_ROWS = 5;
@@ -232,73 +238,142 @@ let activeGameInstance: Game | null = null;
 let currentPcWindowId = { id: 0 };
 
 /** CreatePCMainMenu */
-export function CreatePCMainMenu(whichMenu: number, windowIdPtr: { id: number }): void {
-  windowIdPtr.id = 1;
-  // Initialize cursor position to whichMenu
-  sPreviousBoxOption = whichMenu;
+// Browser adaptation: window 0 (the field dialogue box) and the main menu
+// window live on the canvas field layer (gba/window.ts), not on BG0.
+let pcMenuWindow: Window | null = null;
+let pcMenu: Menu | null = null;
+
+function descWindow(game: Game): Window {
+  const ow = game.overworld;
+  // Window 0 is the script message box still showing Text_OpenedPkmnStorage.
+  let w = ow.messageBox.window;
+  if (!w || !ow.windows.windows.includes(w)) {
+    w = new Window(2, 15, 26, 4);
+    ow.windows.add(w);
+    ow.messageBox.window = w;
+  }
+  w.frame = "dialogue";
+  w.visible = true;
+  return w;
 }
 
-/** Task_PCMainMenu */
+/** FillWindowPixelBuffer(0, PIXEL_FILL(1)) + AddTextPrinterParameterized2(0, FONT_NORMAL, text, …, DARK_GRAY, WHITE, LIGHT_GRAY) */
+function printPcMenuMessage(text: ArrayLike<number>): void {
+  if (!activeGameInstance) return;
+  const w = descWindow(activeGameInstance);
+  w.fill(TEXT_COLOR_WHITE);
+  printText(w, FONT_NORMAL, text, 0, 1, { fg: TEXT_COLOR_DARK_GRAY, bg: TEXT_COLOR_WHITE, shadow: TEXT_COLOR_LIGHT_GRAY });
+}
+
+/** CreatePCMainMenu: sWindowTemplate_MainMenu with a std frame, PrintTextArray and Menu_InitCursor. */
+export function CreatePCMainMenu(whichMenu: number, windowIdPtr: { id: number }): void {
+  if (!activeGameInstance) return;
+  const t = sWindowTemplate_MainMenu;
+  const w = new Window(t.tilemapLeft, t.tilemapTop, t.width, t.height);
+  w.frame = "std";
+  w.frameType = save.options.frameType;
+  w.fill(1);
+  // PrintTextArray(windowId, FONT_NORMAL, cursorWidth, 2, 16, …)
+  const left = GetMenuCursorDimensionByFont(FONT_NORMAL, 0);
+  sMainMenuTexts.forEach((item, i) => printText(w, FONT_NORMAL, rom.text(item.text), left, 2 + 16 * i));
+  activeGameInstance.overworld.windows.add(w);
+  pcMenuWindow = w;
+  pcMenu = new Menu(w, FONT_NORMAL, 0, 2, 16, OPTIONS_COUNT, whichMenu);
+  windowIdPtr.id = 1;
+}
+
+/** ClearStdWindowAndFrame(0) + ClearStdWindowAndFrame(tWindowId) */
+function clearPcMainMenu(): void {
+  const ow = activeGameInstance?.overworld;
+  if (pcMenuWindow && ow) ow.windows.remove(pcMenuWindow);
+  pcMenuWindow = null;
+  pcMenu = null;
+  ow?.messageBox.hide();
+}
+
+/** Task_PCMainMenu (tState = data[0], tSelectedOption = data[1], tInput = data[2], tNextOption = data[3]) */
 export function Task_PCMainMenu(taskId: number): void {
   const task = tasks.tasks[taskId];
   if (!task || !task.isActive) return;
 
   switch (task.data[0]) {
     case STATE_LOAD:
-      CreatePCMainMenu(task.data[1] || 0, currentPcWindowId);
+      CreatePCMainMenu(task.data[1], currentPcWindowId);
       task.data[15] = currentPcWindowId.id;
-      task.data[0] = STATE_FADE_IN;
+      printPcMenuMessage(rom.text(sMainMenuTexts[task.data[1]]!.desc));
+      task.data[0]++;
       break;
 
     case STATE_FADE_IN:
-      task.data[0] = STATE_HANDLE_INPUT;
+      // IsWeatherNotFadingIn
+      if (!paletteFade.active) task.data[0]++;
       break;
 
-    case STATE_HANDLE_INPUT:
-      if (JOY_NEW(B_BUTTON) || (JOY_NEW(A_BUTTON) && task.data[1] === OPTION_EXIT)) {
-        sound.playSE(C.SE_SELECT);
-        tasks.destroy(taskId);
-        if (activeGameInstance) {
-          activeGameInstance.overworld.script.enable();
-        }
-        return;
-      }
-      if (JOY_NEW(DPAD_UP)) {
-        sound.playSE(C.SE_SELECT);
-        task.data[1] = (task.data[1] - 1 + OPTIONS_COUNT) % OPTIONS_COUNT;
-      } else if (JOY_NEW(DPAD_DOWN)) {
-        sound.playSE(C.SE_SELECT);
-        task.data[1] = (task.data[1] + 1) % OPTIONS_COUNT;
-      } else if (JOY_NEW(A_BUTTON)) {
-        sound.playSE(C.SE_SELECT);
-        const choice = task.data[1] || 0;
-        if (choice === OPTION_WITHDRAW && CountPartyMons() === PARTY_SIZE) {
-          // Can't withdraw
-          task.data[0] = STATE_ERROR_MSG;
-        } else if (choice === OPTION_DEPOSIT && CountPartyMons() <= 1) {
-          // Can't deposit
-          task.data[0] = STATE_ERROR_MSG;
-        } else {
-          task.data[2] = choice;
-          task.data[0] = STATE_ENTER_PC;
-        }
+    case STATE_HANDLE_INPUT: {
+      if (!pcMenu) return;
+      task.data[2] = pcMenu.processInput();
+      switch (task.data[2]) {
+        case MENU_NOTHING_CHOSEN:
+          task.data[3] = task.data[1];
+          if (JOY_NEW(DPAD_UP) && --task.data[3] < 0) task.data[3] = OPTIONS_COUNT - 1;
+          if (JOY_NEW(DPAD_DOWN) && ++task.data[3] > OPTIONS_COUNT - 1) task.data[3] = 0;
+          if (task.data[1] !== task.data[3]) {
+            task.data[1] = task.data[3];
+            printPcMenuMessage(rom.text(sMainMenuTexts[task.data[1]]!.desc));
+          }
+          break;
+        case MENU_B_PRESSED:
+        case OPTION_EXIT:
+          clearPcMainMenu();
+          tasks.destroy(taskId);
+          // UnlockPlayerFieldControls + ScriptContext_Enable
+          activeGameInstance?.overworld.script.enable();
+          break;
+        default:
+          if (task.data[2] === OPTION_WITHDRAW && CountPartyMons() === PARTY_SIZE) {
+            printPcMenuMessage(rom.text("gText_PartyFull"));
+            task.data[0] = STATE_ERROR_MSG;
+          } else if (task.data[2] === OPTION_DEPOSIT && CountPartyMons() === 1) {
+            printPcMenuMessage(rom.text("gText_JustOnePkmn"));
+            task.data[0] = STATE_ERROR_MSG;
+          } else {
+            paletteFade.fadeScreen(FADE_TO_BLACK, 0);
+            task.data[0] = STATE_ENTER_PC;
+          }
+          break;
       }
       break;
+    }
 
     case STATE_ERROR_MSG:
-      if (JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON)) {
+      if (JOY_NEW(A_BUTTON | B_BUTTON)) {
+        printPcMenuMessage(rom.text(sMainMenuTexts[task.data[1]]!.desc));
+        task.data[0] = STATE_HANDLE_INPUT;
+      } else if (JOY_NEW(DPAD_UP)) {
+        pcMenu?.move(-1, true);
+        task.data[1] = pcMenu?.cursorPos ?? 0;
+        printPcMenuMessage(rom.text(sMainMenuTexts[task.data[1]]!.desc));
+        task.data[0] = STATE_HANDLE_INPUT;
+      } else if (JOY_NEW(DPAD_DOWN)) {
+        pcMenu?.move(1, true);
+        task.data[1] = pcMenu?.cursorPos ?? 0;
+        printPcMenuMessage(rom.text(sMainMenuTexts[task.data[1]]!.desc));
         task.data[0] = STATE_HANDLE_INPUT;
       }
       break;
 
-    case STATE_ENTER_PC: {
-      const choice = task.data[2] || 0;
-      tasks.destroy(taskId);
-      if (activeGameInstance) {
-        runStorageOptionFlow(activeGameInstance, choice);
+    case STATE_ENTER_PC:
+      if (!paletteFade.active) {
+        // CleanupOverworldWindowsAndTilemaps + EnterPokeStorage
+        const choice = task.data[2];
+        clearPcMainMenu();
+        tasks.destroy(taskId);
+        // The storage screen loads its own palettes (ResetPaletteFade in its
+        // init); the canvas field fade must not stay over it.
+        paletteFade.clear();
+        if (activeGameInstance) runStorageOptionFlow(activeGameInstance, choice);
       }
       break;
-    }
   }
 }
 
@@ -320,6 +395,8 @@ export function FieldTask_ReturnToPcMenu(): void {
   if (task) {
     task.data[0] = STATE_LOAD;
     task.data[1] = sPreviousBoxOption;
+    // CB2_ReturnToField fades the field back in; STATE_FADE_IN waits for it.
+    paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
     Task_PCMainMenu(taskId);
   }
 }
@@ -483,6 +560,8 @@ function runStorageOptionFlow(game: Game, option: number): void {
   game.setCallbacks(null, () => scene.update());
 
   const closeToPc = (): void => {
+    // CB2_ReturnToField: the field comes back from black (FieldTask_ReturnToPcMenu fades it in).
+    paletteFade.fill(RGB_BLACK);
     scene.leave();
     game.scene = null;
     game.setCallbacks(() => game.overworld.cb1(), () => game.overworld.cb2());

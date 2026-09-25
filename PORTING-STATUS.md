@@ -207,6 +207,50 @@ viejo → Ruta 2 → captura de un Rattata (Pokédex y apodo "No").
    - Nivel: navegador (contra Brock, al llegar a N15 se abrió el resumen,
      se olvidó Placaje por Somnífero y el combate siguió).
 
+8. **El menú del PC de Pokémon era invisible** (sesión Gemini, 998a96d).
+   - Síntoma: tras "POKéMON Storage System opened." no aparecía ningún menú; el
+     juego esperaba botones a ciegas.
+   - Causa: `CreatePCMainMenu` (`pokemon_storage_system_menu.c`) dibuja la
+     ventana `sWindowTemplate_MainMenu` con marco, `PrintTextArray` y
+     `Menu_InitCursor`, y `Task_PCMainMenu` imprime la descripción en la
+     ventana 0. El TS de Gemini ("29/29 faithfully") solo guardaba el cursor.
+   - Arreglo: port real de `CreatePCMainMenu`/`Task_PCMainMenu` sobre la capa
+     canvas del campo (Browser adaptation), con `FadeScreen` al entrar y el
+     fundido de vuelta de `CB2_ReturnToField`.
+   - Nivel: navegador (menú, descripciones, depositar y retirar a Pidgey).
+9. **Las listas de `openHardwareChoice` salían vacías** (cajas del PC y demás
+   adaptadores de lista).
+   - Causa: `ListMenuInit` pone el tilemap de la ventana 1 y copia solo sus
+     tiles (`COPYWIN_GFX`, como el C); el bucle del adaptador no ejecuta
+     `DoScheduledBgTilemapCopiesToVram` y el tilemap de BG0 se había copiado
+     antes de crear la lista.
+   - Arreglo: `CopyWindowToVram(0, COPYWIN_FULL)` después de `ListMenuInit`.
+   - Nivel: navegador.
+10. **Depositar un Pokémon lanzaba `unknown constant MAIL_NONE`.**
+    - Causa: `rom.c("MAIL_NONE")` busca en `constants.json`, que no incluye esa
+      constante (mismo patrón que el crash del apodo). Había 8 búsquedas así,
+      todas cuelgues latentes: veneno fuera de combate, guardería, recordador,
+      `specials` de equipo de 1-2 Pokémon y `ChoosePartyMon`, que además usaba
+      un nombre inexistente (`PARTY_MENU_TYPE_CHOOSE_MON`; el C usa
+      `PARTY_MENU_TYPE_CHOOSE_SINGLE_MON`, `party_menu_specials.c`).
+    - Arreglo: `C.*` de `generated/constants.ts`; `check:honesty` falla ahora
+      con cualquier `rom.c("X")` que no esté en `constants.json`.
+    - Nivel: navegador (depósito); el resto, tipos.
+11. **GUARDAR se saltaba pasos del C.**
+    - Causa: `SaveDialogCB_AskSaveHandleInput` → `SaveDialogCB_PrintAskOverwriteText`
+      pregunta "There is already a saved file…" (Sí por defecto) si ya hay
+      partida, y `SaveDialogCB_PrintSavingDontTurnOffPower` muestra
+      "SAVING… DON'T TURN OFF THE POWER." antes de guardar; el SE suena cuando
+      termina el texto del resultado. El TS guardaba directamente.
+    - Arreglo: `startMenuSave` sigue la cadena `sSaveDialogCB` del C.
+    - Nivel: navegador (guardar en el Centro de Plateada y recargar con
+      `?fr=continue`: misma casilla, equipo, caja y dinero).
+
+Comprobado y **no es fallo**: la Poké Ball desaparece durante "Gotcha!".
+`SpriteCB_ThrowBall_DoClick` muestra el mensaje en el frame 95 y en el 315
+llama a `SpriteCB_ThrowBall_FinishClick`, que la funde a blanco y la oculta; el
+TS es idéntico.
+
 Observado una vez y **no reproducido**: tras el tutorial del viejo (Ciudad
 Verde), la bolsa se quedó con los objetos temporales del viejo (Poción, 1 Poké
 Ball, Teachy TV) en vez de restaurar la del jugador (`InitOldManBag` /

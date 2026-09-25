@@ -13,6 +13,9 @@ See ESTADO-Y-REGLAS.md §3 and §5. Four checks:
    item and then reads the same one back (flagSet(X) + flagGet(X),
    varSet(X) + varGet(X), addBagItem(X) + checkBagHasItem(X)), unless the
    setting line says PREPARED (and the check logs it).
+5. rom.c("NAME") with a NAME missing from public/fr/constants.json: it throws
+   at run time (crashes found in the browser: NAMING_SCREEN_NICKNAME,
+   MAIL_NONE). Use C.NAME from generated/constants.ts.
 4. Commit messages not yet pushed: no "faithful(ly)", "complete(ly)",
    "fully", "all remaining", "1:1" or "100%".
 
@@ -110,6 +113,19 @@ def self_fulfilling() -> list[str]:
     return sorted(set(bad))
 
 
+def unknown_constants() -> list[str]:
+    known = json.loads((ROOT / "public/fr/constants.json").read_text())
+    bad = []
+    for f in sorted((ROOT / "src/fr").rglob("*.ts")):
+        if "generated" in f.parts:
+            continue
+        for i, line in enumerate(f.read_text().splitlines(), 1):
+            for m in re.finditer(r'rom\.c\("(\w+)"\)', line):
+                if m.group(1) not in known:
+                    bad.append(f"{f.relative_to(ROOT)}:{i}: rom.c(\"{m.group(1)}\")")
+    return bad
+
+
 BANNED = re.compile(r"\b(faithful(?:ly)?|complete(?:ly)?|fully|all remaining)\b|1:1|100 ?%", re.I)
 
 
@@ -152,6 +168,10 @@ def main() -> int:
     selff = self_fulfilling()
     if selff:
         failures.append("Checks that set state and then assert it (mark the setup line PREPARED and log it, or assert something the code under test did):\n  " + "\n  ".join(selff))
+
+    consts = unknown_constants()
+    if consts:
+        failures.append("rom.c() with a constant that is not in constants.json (throws at run time); use C.NAME:\n  " + "\n  ".join(consts))
 
     msgs = commit_messages()
     if msgs:

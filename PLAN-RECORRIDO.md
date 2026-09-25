@@ -36,7 +36,7 @@ texto ilegible > visual**. Lo visual va a PENDING.md §4 y no para el tramo.
   mapas y sistemas, no el equilibrio.
 - Nunca: poner flags de historia, dar MO/objetos clave o saltar guiones.
 
-## Primer paso (una vez, antes del tramo 1)
+## Primer paso (una vez, antes del tramo 1) — hecho 2026-09-25
 
 - `H.exportSave(nombre)` / `H.importSave(nombre)` en el driver: guardar la
   partida del punto de control en `tools/playtest/saves/*.json` para que los
@@ -79,4 +79,11 @@ no el archivo entero.
 ## Medida de avance
 
 La cifra que importa ahora es **el tramo más lejano jugado en navegador**, no el
-porcentaje de funciones. Hoy: tramo 0 (hasta Ruta 3). Objetivo: tramo 12.
+porcentaje de funciones. Hoy: tramo 0 (hasta Ruta 3) más PC, tienda y
+guardar/continuar verificados en Plateada. Objetivo: tramo 12.
+
+## Registro de tramos
+
+| Tramo | Estado | Fallos arreglados | Ayudas |
+|---|---|---|---|
+| 0 (intro → Plateada, PC, tienda, guardar) | jugado | ver PORTING-STATUS 1-11 | ninguna |

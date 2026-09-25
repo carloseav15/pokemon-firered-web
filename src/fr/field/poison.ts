@@ -1,5 +1,6 @@
 // field_poison.c Task_TryFieldPoisonWhiteOut. Poison is cleared only after the
 // fainted-mon message is queued, preserving the per-Pokémon task sequence.
+import * as C from "../generated/constants";
 import type { Game } from "../game";
 import { tasks } from "../gba/tasks";
 import { stringVars } from "../gba/charmap";
@@ -21,7 +22,7 @@ export function tryFieldPoisonWhiteOut(game: Game): void {
     for (; slot < save.party.length; slot++) {
       const mon = save.party[slot];
       if (!mon.species || mon.isEgg || mon.hp || !(mon.status & 0x88)) continue;
-      AdjustFriendship(mon as Mon, rom.c("FRIENDSHIP_EVENT_FAINT_OUTSIDE_BATTLE"));
+      AdjustFriendship(mon as Mon, C.FRIENDSHIP_EVENT_FAINT_OUTSIDE_BATTLE);
       mon.status = 0;
       stringVars.var1 = nickname(mon);
       game.overworld.messageBox.show(rom.text("gText_PkmnFainted3"));

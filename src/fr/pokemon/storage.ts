@@ -73,7 +73,7 @@ export function depositMon(partySlot: number, box: number): StorageResult {
   if (slot < 0) return "boxFull";
   const copy = structuredClone(mon);
   // A BoxPokemon stores no battle HP/status fields. Restore PP on deposit.
-  copy.status = 0; copy.hp = copy.stats[0]; copy.mail = rom.c("MAIL_NONE");
+  copy.status = 0; copy.hp = copy.stats[0]; copy.mail = C.MAIL_NONE;
   for (let i = 0; i < 4; i++) copy.pp[i] = copy.moves[i] ? calculatePPWithBonus(copy.moves[i], copy.ppBonuses, i) : 0;
   save.boxes[box][slot] = copy;
   save.party.splice(partySlot, 1);
@@ -84,7 +84,7 @@ export function withdrawMon(box: number, slot: number): StorageResult {
   if (!mon?.species) return "invalid";
   if (save.party.length >= 6) return "partyFull";
   const copy = structuredClone(mon);
-  copy.status = 0; copy.hp = copy.stats[0]; copy.mail = rom.c("MAIL_NONE");
+  copy.status = 0; copy.hp = copy.stats[0]; copy.mail = C.MAIL_NONE;
   save.party.push(copy); save.boxes[box][slot] = null;
   return "ok";
 }

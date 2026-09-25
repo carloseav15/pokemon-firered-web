@@ -25,7 +25,7 @@ UNTESTED = [
     ("hall_of_fame.c + credits.c (+ overworld.c créditos)", "hallOfFame.ts, credits.ts, overworldCredits.ts"),
     # Sesión Gemini (cb9cfae..77a7609): sus checks solo prueban datos/estado, no la pantalla.
     ("battle_transition.c (todas salvo ANGLED_WIPES)", "battle/transition.ts"),
-    ("player_pc.c (menú superior) + pokemon_storage_system_menu.c", "menus/playerPc.ts, menus/storageMenu.ts"),
+    ("player_pc.c (menú superior del PC del jugador)", "menus/playerPc.ts"),
     ("learn_move.c", "menus/moveRelearner.ts"),
     ("field_weather.c + field_weather_effects.c", "field/weather.ts, field/weatherEffects.ts"),
     ("fame_checker.c", "fameChecker.ts"),
