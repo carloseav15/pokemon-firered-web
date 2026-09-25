@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 28 modules as documented ported, 54 as partial or
+The current review labels 28 modules as documented ported, 55 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-151 as unreviewed. Separately, 42 files have a
+150 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -166,6 +166,9 @@ whiteout respawn now uses the original heal-location data in
   truncamiento `u16` de `SeedRng` coinciden. Sigue parcial porque el flujo TS
   aún no llama `seedRng` al salir del título con el valor de Timer1 ligado a la
   ID del entrenador, como hace C.
+- `field_weather_util.c`: TS cubre el guardado/cambio de clima habitual y el
+  contador de lluvia. Faltan `ResumePausedWeather`, el setter marcado unused y
+  las tablas de ciclo de rutas; los efectos visuales se documentan aparte.
 - `fldeff_poison.c` aplica un pulso de mosaic y deja un task activo hasta
   completarlo. TS ya resta HP y suena al caminar, pero `flashOverlay` no se lee,
   no hay mosaic task y la batalla no espera esa animación; queda parcial.
