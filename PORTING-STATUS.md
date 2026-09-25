@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 41 modules as documented ported, 74 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 13 as explicitly out of scope, 36 as probable out-of-scope candidates, and 109 as unreviewed. Separately, 42 files have a
+The current review labels 42 modules as documented ported, 74 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 13 as explicitly out of scope, 36 as probable out-of-scope candidates, and 108 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -185,6 +185,10 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `script_movement.c`: el movimiento por script respeta mapa/local ID, slots,
+  espera de held movement, avance del script, STEP_END, freeze/unfreeze y estados
+  de éxito/pending como C. TS guarda referencias a objetos en vez de IDs empaquetados.
+  Revisión de fuente; timing y convivencia de tasks no se ejecutaron.
 - `task.c`: `gba/tasks.ts` ahora conserva lista priorizada estable del C,
   inserción/reuso de slots, recorrido incluso al crear/destruir durante callback,
   reset y APIs de query/word args. El followup guarda referencia JS en vez de
