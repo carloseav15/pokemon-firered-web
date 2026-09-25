@@ -5,15 +5,14 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5097/9825 (51 %)**.
-- Archivos C pendientes: **121** (142539 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5141/9825 (52 %)**.
+- Archivos C pendientes: **120** (138103 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
 
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
-| `image_processing_effects.c` | 4436 | 0/38 | ~4436 |  |
 
 ## 2. Adaptadores (UI simplificada; hay que portar la pantalla real)
 
@@ -32,7 +31,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `event_object_movement.c` | 9412 | 42/752 | ~8886 |  |
 | `field_effect.c` | 4033 | 39/239 | ~3374 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
-| `battle_transition.c` | 3037 | 10/134 | ~2810 |  |
+| `battle_transition.c` | 3037 | 16/134 | ~2674 |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 | ~2634 |  |
 | `trade_scene.c` | 2916 | 7/53 | ~2530 |  |
 | `overworld.c` | 3563 | 70/238 | ~2515 |  |

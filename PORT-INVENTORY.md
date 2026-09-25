@@ -8,21 +8,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 1 | 4436 | 0/38 |
-| Parcial (menos del 80 % de funciones) | 115 | 128819 | 1818/6064 |
+| Falta (sin funciones portadas) | 0 | 0 | 0/0 |
+| Parcial (menos del 80 % de funciones) | 115 | 128819 | 1824/6064 |
 | Adaptador (UI simplificada) | 5 | 9284 | 22/294 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 88 | 106404 | 3257/3429 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 89 | 110840 | 3295/3467 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **121** | **142539** | |
-| **Total en alcance** | **210** | **248996** | **5097/9825** |
-
-## Falta (sin funciones portadas)
-
-| Archivo C | Líneas | Funciones | TS que lo citan | Nota |
-|---|---:|---:|---|---|
-| `image_processing_effects.c` | 4436 | 0/38 |  |  |
+| **Pendiente de portar** | **120** | **138103** | |
+| **Total en alcance** | **210** | **248996** | **5141/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -34,7 +28,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_main.c` | 4477 | 82/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |
 | `field_effect.c` | 4033 | 39/239 | `field/fieldMoves.ts` |  |
 | `overworld.c` | 3563 | 70/238 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |
-| `battle_transition.c` | 3037 | 10/134 | `battle/transition.ts` |  |
+| `battle_transition.c` | 3037 | 16/134 | `battle/transition.ts` |  |
 | `trade_scene.c` | 2916 | 7/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  |
 | `intro.c` | 2805 | 17/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 |  |  |
@@ -162,6 +156,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_effects_1.c` | 5677 | 154/154 | `battle/anims/effects1.ts` |  |
 | `battle_anim_effects_3.c` | 5430 | 140/140 | `battle/anims/effects3.ts` |  |
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |
+| `image_processing_effects.c` | 4436 | 38/38 | `imageProcessingEffects.ts` |  |
 | `region_map.c` | 4036 | 127/138 | `regionMap.ts` |  |
 | `battle_anim_effects_2.c` | 3865 | 121/121 | `battle/anims/effects2.ts` |  |
 | `pokedex_screen.c` | 3452 | 66/66 | `pokedexScreen.ts`, `pokemon/mon_extra.ts` |  |
