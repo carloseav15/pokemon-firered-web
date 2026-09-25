@@ -10,13 +10,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 4436 | 0/38 |
 | Parcial (menos del 80 % de funciones) | 115 | 128819 | 1818/6064 |
-| Adaptador (UI simplificada) | 6 | 10024 | 54/341 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 87 | 105664 | 3210/3382 |
+| Adaptador (UI simplificada) | 5 | 9284 | 22/294 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 88 | 106404 | 3257/3429 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **122** | **143279** | |
-| **Total en alcance** | **210** | **248996** | **5082/9825** |
+| **Pendiente de portar** | **121** | **142539** | |
+| **Total en alcance** | **210** | **248996** | **5097/9825** |
 
 ## Falta (sin funciones portadas)
 
@@ -150,9 +150,8 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---|---|
 | `trade.c` | 2958 | 0/66 |  | pokemon/ingameTrade.ts: sin escena |
 | `slot_machine.c` | 2527 | 13/77 | `game/slots.ts`, `menus/slotMachine.ts` | menus/slotMachine.ts: reglas sin gráficos |
-| `fame_checker.c` | 1739 | 4/64 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
+| `fame_checker.c` | 1739 | 5/64 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
 | `teachy_tv.c` | 1400 | 0/58 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
-| `player_pc.c` | 740 | 33/47 | `menus/playerPc.ts`, `playerPcMailbox.ts` | menus/playerPc.ts: menú superior sobre el campo canvas |
 | `pokemon_storage_system_menu.c` | 660 | 4/29 | `pokemon/storage.ts` | menus/storageMenu.ts: reglas con listas |
 
 ## Portado (≥ 80 % de funciones con el mismo nombre)
@@ -202,6 +201,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_dark.c` | 923 | 25/25 | `battle/anims/dark.ts` |  |
 | `battle_anim_rock.c` | 822 | 22/22 | `battle/anims/rock.ts` |  |
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |
+| `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts` |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |
 | `battle_ai_switch_items.c` | 674 | 12/12 | `battle/ai.ts` |  |
 | `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |

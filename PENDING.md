@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5082/9825 (51 %)**.
-- Archivos C pendientes: **122** (143279 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5097/9825 (51 %)**.
+- Archivos C pendientes: **121** (142539 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -21,10 +21,9 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 |---|---:|---:|---:|---|
 | `trade.c` | 2958 | 0/66 | ~2958 | pokemon/ingameTrade.ts: sin escena |
 | `slot_machine.c` | 2527 | 13/77 | ~2100 | menus/slotMachine.ts: reglas sin gráficos |
-| `fame_checker.c` | 1739 | 4/64 | ~1630 | menus/keyItemScreens.ts |
+| `fame_checker.c` | 1739 | 5/64 | ~1603 | menus/keyItemScreens.ts |
 | `teachy_tv.c` | 1400 | 0/58 | ~1400 | menus/keyItemScreens.ts |
 | `pokemon_storage_system_menu.c` | 660 | 4/29 | ~568 | menus/storageMenu.ts: reglas con listas |
-| `player_pc.c` | 740 | 33/47 | ~220 | menus/playerPc.ts: menú superior sobre el campo canvas |
 
 ## 3. Parciales con más C sin cubrir (top 40)
 
