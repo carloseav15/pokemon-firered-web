@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 39 modules as documented ported, 70 as partial or
+The current review labels 39 modules as documented ported, 71 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 eleven as explicitly out of scope, 36 as probable out-of-scope candidates, and
-117 as unreviewed. Separately, 42 files have a
+116 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,9 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `pc_screen_effect.c`: no existe el encendido/apagado CRT por WIN0/blend; C
+  lo usa Item PC, cajas y PC del Hall of Fame. Las versiones web actuales son
+  adaptadores de menú sin esa transición.
 - `text_window.c`: frames standard/user/menu, paletas, diálogo y borde externo
   están en `hw/menu.ts`/`menuHelpers.ts`; faltan signpost, tiles Quest Log,
   borde interior y `rbox_fill_rectangle`. El campo adapta ventana Canvas2D.
