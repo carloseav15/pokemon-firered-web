@@ -7,7 +7,7 @@ export type Task = { func: TaskFunc; priority: number; data: number[]; isActive:
 export const NUM_TASKS = 16;
 const HEAD_SENTINEL = 0xfe;
 export const TAIL_SENTINEL = 0xff;
-const TaskDummy: TaskFunc = () => {};
+export const TaskDummy: TaskFunc = () => {};
 
 class TaskManager {
   readonly tasks: Task[] = Array.from({ length: NUM_TASKS }, (_, i) => ({ func: TaskDummy, priority: -1, data: new Array(16).fill(0), isActive: false, prev: i, next: i + 1 }));

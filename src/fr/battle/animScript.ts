@@ -79,22 +79,22 @@ function externName(ptr: number): string {
 
 // ---------------------------------------------------------------- gBattleAnimPicTable / gBattleAnimPaletteTable
 
-type CompressedSpriteSheet = { data: SymRef; size: number; tag: number };
-type CompressedSpritePalette = { data: SymRef; tag: number };
+export type CompressedSpriteSheet = { data: SymRef; size: number; tag: number };
+export type CompressedSpritePalette = { data: SymRef; tag: number };
 
-function gBattleAnimPicTable(index: number): CompressedSpriteSheet {
+export function gBattleAnimPicTable(index: number): CompressedSpriteSheet {
   return cdata<CompressedSpriteSheet[]>("battle_anim", "gBattleAnimPicTable")[index];
 }
 
-function gBattleAnimPaletteTable(index: number): CompressedSpritePalette {
+export function gBattleAnimPaletteTable(index: number): CompressedSpritePalette {
   return cdata<CompressedSpritePalette[]>("battle_anim", "gBattleAnimPaletteTable")[index];
 }
 
-function LoadCompressedSpriteSheetUsingHeap(src: CompressedSpriteSheet): void {
+export function LoadCompressedSpriteSheetUsingHeap(src: CompressedSpriteSheet): void {
   LoadSpriteSheet({ data: incbin(symName(src.data)!), size: src.size, tag: src.tag });
 }
 
-function LoadCompressedSpritePaletteUsingHeap(src: CompressedSpritePalette): void {
+export function LoadCompressedSpritePaletteUsingHeap(src: CompressedSpritePalette): void {
   LoadSpritePalette({ data: incbin(symName(src.data)!), tag: src.tag });
 }
 

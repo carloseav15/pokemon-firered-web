@@ -22,3 +22,4 @@ import "./psychic";
 import "./water";
 import "./statusEffects";
 import "./soundTasks";
+import "./special";

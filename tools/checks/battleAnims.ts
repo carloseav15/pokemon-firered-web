@@ -19,9 +19,10 @@ import { DestroySprite, gSprites, MAX_SPRITES } from '../../src/fr/hw/sprite.ts'
 import { tasks } from '../../src/fr/gba/tasks.ts';
 import { A_BUTTON, joy } from '../../src/fr/gba/input.ts';
 import { preloadBattleAssets } from '../../src/fr/battle/preload.ts';
-import { G, resetBattleStructs } from '../../src/fr/battle/globals.ts';
+import { G, gBattlerSpriteIds, gBattleSpritesDataPtr, resetBattleStructs } from '../../src/fr/battle/globals.ts';
+import { TryShinyAnimation } from '../../src/fr/battle/anims/special.ts';
 import { CB2_InitBattle } from '../../src/fr/battle/main_init.ts';
-import { CopyMon, gEnemyParty, ZeroEnemyPartyMons, type Mon } from '../../src/fr/pokemon/mon.ts';
+import { CopyMon, gEnemyParty, GetMonData, SetMonData, ZeroEnemyPartyMons, type Mon } from '../../src/fr/pokemon/mon.ts';
 import { createMon } from '../../src/fr/pokemon/pokemon.ts';
 import { save } from '../../src/fr/save.ts';
 import { animState, LaunchBattleAnimation, type AnimTable } from '../../src/fr/battle/anim.ts';
@@ -105,7 +106,7 @@ function moveLabel(move: number): string {
 type Failure = { what: string; reason: string };
 const failures: Failure[] = [];
 
-function runAnim(table: AnimTable, id: number, attacker: number, target: number, label: string): void {
+function runAnim(table: AnimTable, id: number, attacker: number, target: number, label: string, spriteDelta = 0): void {
   const baseSprites = usedSprites();
   const baseTasks = tasks.count();
   const baseTaskIds = new Set(tasks.tasks.map((t, i) => (t.isActive ? i : -1)).filter((i) => i >= 0));
@@ -133,10 +134,11 @@ function runAnim(table: AnimTable, id: number, attacker: number, target: number,
       animState.gAnimScriptActive = false;
     }
     // Let lingering sprites (e.g. those destroyed on the next frame) settle.
-    for (let k = 0; k < 4; k++) frame();
+    // Ball-open particles and mon fades outlive the script by up to ~60 frames.
+    for (let k = 0; k < (table === 'moves' ? 4 : 90); k++) frame();
     const s = usedSprites();
     const t = tasks.count();
-    if (s !== baseSprites) failures.push({ what: label, reason: `sprites ${baseSprites} -> ${s}` });
+    if (s !== baseSprites + spriteDelta) failures.push({ what: label, reason: `sprites ${baseSprites} -> ${s}` });
     if (t !== baseTasks) failures.push({ what: label, reason: `tasks ${baseTasks} -> ${t}` });
     if (verbose) console.log(`${label}: ${n} frames`);
   } catch (e) {
@@ -153,6 +155,65 @@ function runAnim(table: AnimTable, id: number, attacker: number, target: number,
 for (let move = moveRange[0]; move <= moveRange[1]; move++) {
   runAnim('moves', move, 0, 1, `move ${move} ${moveLabel(move)} (player)`);
   runAnim('moves', move, 1, 0, `move ${move} ${moveLabel(move)} (enemy)`);
+}
+
+function restoreBattlers(): void {
+  for (let b = 0; b < 2; b++) {
+    const sprite = gSprites[gBattlerSpriteIds[b]];
+    sprite.invisible = false;
+    sprite.x2 = sprite.y2 = 0;
+  }
+}
+
+if (!argv.includes('--moves-only')) {
+  // gBattleAnims_General (28) and gBattleAnims_StatusConditions (10), from both sides.
+  for (let id = 0; id < 28; id++) {
+    // Bait/rock throws wait for the Safari trainer back sprite's throw frame.
+    if (id === C.B_ANIM_BAIT_THROW || id === C.B_ANIM_ROCK_THROW) continue;
+    runAnim('general', id, 0, 1, `general ${id} (player)`);
+    runAnim('general', id, 1, 0, `general ${id} (enemy)`);
+    restoreBattlers();
+  }
+  for (let id = 0; id < 10; id++) {
+    runAnim('status', id, 0, 1, `status ${id} (player)`);
+    runAnim('status', id, 1, 0, `status ${id} (enemy)`);
+    restoreBattlers();
+  }
+  // gBattleAnims_Special: level up, switch outs, substitute swaps, and ball throws
+  // with every ball and every non-capturing outcome (the capture itself runs last:
+  // it destroys the wild mon's sprite).
+  for (const id of [C.B_ANIM_LVL_UP, C.B_ANIM_SWITCH_OUT_PLAYER_MON, C.B_ANIM_SWITCH_OUT_OPPONENT_MON, C.B_ANIM_SUBSTITUTE_TO_MON, C.B_ANIM_MON_TO_SUBSTITUTE]) {
+    runAnim('special', id, 0, 1, `special ${id} (player)`);
+    restoreBattlers();
+  }
+  const balls = [C.ITEM_POKE_BALL, C.ITEM_GREAT_BALL, C.ITEM_ULTRA_BALL, C.ITEM_MASTER_BALL, C.ITEM_SAFARI_BALL, C.ITEM_NET_BALL,
+    C.ITEM_DIVE_BALL, C.ITEM_NEST_BALL, C.ITEM_REPEAT_BALL, C.ITEM_TIMER_BALL, C.ITEM_LUXURY_BALL, C.ITEM_PREMIER_BALL];
+  for (const ball of balls) {
+    for (const caseId of [C.BALL_NO_SHAKES, 1, 2, 3, C.BALL_TRAINER_BLOCK, C.BALL_GHOST_DODGE]) {
+      G.gLastUsedItem = ball;
+      gBattleSpritesDataPtr.animationData.ballThrowCaseId = caseId;
+      runAnim('special', C.B_ANIM_BALL_THROW, 0, 1, `ball throw item ${ball} case ${caseId}`);
+      restoreBattlers();
+    }
+  }
+  // Shiny sparkles on the wild mon (TryShinyAnimation's tasks, run outside a script).
+  {
+    const baseSprites = usedSprites();
+    const baseTasks = tasks.count();
+    const mon = createMon(C.SPECIES_CHARIZARD, 50) as unknown as Mon;
+    SetMonData(mon, C.MON_DATA_OT_ID, GetMonData(mon, C.MON_DATA_PERSONALITY));
+    gBattleSpritesDataPtr.healthBoxesData[1].finishedShinyMonAnim = 0;
+    TryShinyAnimation(1, mon);
+    let n = 0;
+    while (!gBattleSpritesDataPtr.healthBoxesData[1].finishedShinyMonAnim && n < 600) { frame(); n++; }
+    for (let k = 0; k < 60; k++) frame(); // the first sparkle task outlives the second
+    if (!gBattleSpritesDataPtr.healthBoxesData[1].finishedShinyMonAnim) failures.push({ what: 'shiny sparkles', reason: 'did not finish' });
+    else if (usedSprites() !== baseSprites || tasks.count() !== baseTasks) failures.push({ what: 'shiny sparkles', reason: `sprites ${baseSprites}->${usedSprites()} tasks ${baseTasks}->${tasks.count()}` });
+    else if (verbose) console.log(`shiny sparkles: ${n} frames`);
+  }
+  G.gLastUsedItem = C.ITEM_POKE_BALL;
+  gBattleSpritesDataPtr.animationData.ballThrowCaseId = C.BALL_3_SHAKES_SUCCESS;
+  runAnim('special', C.B_ANIM_BALL_THROW, 0, 1, 'ball throw capture', -1); // the caught mon's sprite is freed
 }
 
 console.log(`\n${failures.length} failures`);

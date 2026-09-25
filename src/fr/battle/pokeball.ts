@@ -1,18 +1,16 @@
 // pokeball.c: Poké Ball send-out animation, ball graphics, healthbox slide-in and hit shake, plus the
-// ball-open particles and mon fade from battle_anim_special.c. Other balls' particle patterns fall back
-// to the Poké Ball one until the move animation port adds them.
+// ball-open particles and mon fade, which live in battle/anims/special.ts (battle_anim_special.c).
 
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { tasks } from "../gba/tasks";
 import { cdata } from "../hw/assets";
 import { templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
-import { BeginNormalPaletteFade, BlendPalette, gPaletteFade, OBJ_PLTT_ID, RGB_WHITE } from "../hw/palette";
 import { OBJ_VRAM0, ppu } from "../hw/ppu";
 import { gMain } from "../hw/runtime";
 import {
   AnimateSprite, ChangeSpriteAffineAnim, CreateInvisibleSprite, CreateSprite, DestroySprite, DestroySpriteAndFreeResources, FreeOamMatrix,
-  FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpriteTileStartByTag, gSprites, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES,
+  FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpriteTileStartByTag, gSprites, LoadSpritePalette, LoadSpriteSheet,
   SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim, TAG_NONE, type Sprite, type SpriteTemplate,
 } from "../hw/sprite";
 import { Cos, gSineTable, Sin } from "../hw/trig";
@@ -22,6 +20,9 @@ import { symBytes, symPalette } from "../pokemon/pics";
 import { G, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds } from "./globals";
 import { GetBattlerSpriteCoord, InitAnimArcTranslation, AnimTranslateLinear, TranslateAnimHorizontalArc } from "./anim";
 import { ShouldPlayNormalMonCry } from "./gfx_sfx_util";
+import { AnimateBallOpenParticles, ItemIdToBallId, LaunchBallFadeMonTask } from "./anims/special";
+
+export { ItemIdToBallId };
 import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "./util";
 
 const IsDoubleBattle = () => !!(G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE);
@@ -30,10 +31,6 @@ type CSheet = { data: unknown; size: number; tag: number };
 type CPal = { data: unknown; tag: number };
 const gBallSpriteSheets = () => cdata<CSheet[]>("pokeball", "gBallSpriteSheets");
 const gBallSpritePalettes = () => cdata<CPal[]>("pokeball", "gBallSpritePalettes");
-const gBallParticleSpritesheets = () => cdata<CSheet[]>("battle_anim_special", "gBallParticleSpritesheets");
-const gBallParticlePalettes = () => cdata<CPal[]>("battle_anim_special", "gBallParticlePalettes");
-const sBallParticleAnimNums = () => cdata<number[]>("battle_anim_special", "sBallParticleAnimNums");
-const sBallOpenFadeColors = () => cdata<number[]>("battle_anim_special", "sBallOpenFadeColors");
 
 function loadSheet(s: CSheet): void {
   LoadSpriteSheet({ data: symBytes(s.data).subarray(0, s.size), size: s.size, tag: s.tag });
@@ -45,28 +42,6 @@ function loadPal(p: CPal): void {
 let ballTemplates: SpriteTemplate[] | null = null;
 export function gBallSpriteTemplates(): SpriteTemplate[] {
   return (ballTemplates ??= cdata<CSpriteTemplate[]>("pokeball", "gBallSpriteTemplates").map((t) => templateFrom(t, { SpriteCB_BallThrow })));
-}
-
-let particleTemplates: SpriteTemplate[] | null = null;
-function sBallParticlesSpriteTemplates(): SpriteTemplate[] {
-  return (particleTemplates ??= cdata<CSpriteTemplate[]>("battle_anim_special", "sBallParticlesSpriteTemplates").map((t) => templateFrom(t)));
-}
-
-export function ItemIdToBallId(ballItem: number): number {
-  switch (ballItem) {
-    case C.ITEM_MASTER_BALL: return C.BALL_MASTER;
-    case C.ITEM_ULTRA_BALL: return C.BALL_ULTRA;
-    case C.ITEM_GREAT_BALL: return C.BALL_GREAT;
-    case C.ITEM_SAFARI_BALL: return C.BALL_SAFARI;
-    case C.ITEM_NET_BALL: return C.BALL_NET;
-    case C.ITEM_DIVE_BALL: return C.BALL_DIVE;
-    case C.ITEM_NEST_BALL: return C.BALL_NEST;
-    case C.ITEM_REPEAT_BALL: return C.BALL_REPEAT;
-    case C.ITEM_TIMER_BALL: return C.BALL_TIMER;
-    case C.ITEM_LUXURY_BALL: return C.BALL_LUXURY;
-    case C.ITEM_PREMIER_BALL: return C.BALL_PREMIER;
-    default: return C.BALL_POKE;
-  }
 }
 
 const battlerMon = (battlerId: number): Mon =>
@@ -715,134 +690,4 @@ export function LoadBallGfx(ballId: number): void {
 export function FreeBallGfx(ballId: number): void {
   FreeSpriteTilesByTag(gBallSpriteSheets()[ballId].tag);
   FreeSpritePaletteByTag(gBallSpritePalettes()[ballId].tag);
-}
-
-// ---------------------------------------------------------------- battle_anim_special.c: open particles + mon fade
-
-function LoadBallParticleGfx(ballId: number): void {
-  if (GetSpriteTileStartByTag(gBallParticleSpritesheets()[ballId].tag) === 0xffff) {
-    loadSheet(gBallParticleSpritesheets()[ballId]);
-    loadPal(gBallParticlePalettes()[ballId]);
-  }
-}
-
-export function AnimateBallOpenParticles(x: number, y: number, priority: number, subpriority: number, ballId: number): number {
-  LoadBallParticleGfx(ballId);
-  const taskId = tasks.create(PokeBallOpenParticleAnimation, 5);
-  const d = tasks.tasks[taskId].data;
-  d[1] = x & 0xff;
-  d[2] = y & 0xff;
-  d[3] = priority;
-  d[4] = subpriority;
-  d[15] = ballId;
-  sound.playSE(C.SE_BALL_OPEN);
-  return taskId;
-}
-
-function IncrementBattleParticleCounter(): void {
-  if (gMain.inBattle) gBattleSpritesDataPtr.animationData.numBallParticles++;
-}
-
-function PokeBallOpenParticleAnimation(taskId: number): void {
-  const d = tasks.tasks[taskId].data;
-  const ballId = d[15];
-  if (d[0] < 16) {
-    const spriteId = CreateSprite(sBallParticlesSpriteTemplates()[ballId], d[1], d[2], d[4]);
-    if (spriteId !== MAX_SPRITES) {
-      IncrementBattleParticleCounter();
-      StartSpriteAnim(gSprites[spriteId], sBallParticleAnimNums()[ballId]);
-      gSprites[spriteId].callback = PokeBallOpenParticleAnimation_Step1;
-      gSprites[spriteId].oam.priority = d[3];
-      let var0 = d[0] & 0xff;
-      if (var0 >= 8) var0 -= 8;
-      gSprites[spriteId].data[0] = var0 * 32;
-    }
-    if (d[0] === 15) {
-      if (!gMain.inBattle) gSprites[spriteId].data[7] = 1;
-      tasks.destroy(taskId);
-      return;
-    }
-  }
-  d[0]++;
-}
-
-function PokeBallOpenParticleAnimation_Step1(sprite: Sprite): void {
-  if (sprite.data[1] === 0) sprite.callback = PokeBallOpenParticleAnimation_Step2;
-  else sprite.data[1]--;
-}
-
-function PokeBallOpenParticleAnimation_Step2(sprite: Sprite): void {
-  sprite.x2 = Sin(sprite.data[0], sprite.data[1]);
-  sprite.y2 = Cos(sprite.data[0], sprite.data[1]);
-  sprite.data[1] += 2;
-  if (sprite.data[1] === 50) DestroyBallOpenAnimationParticle(sprite);
-}
-
-function DestroyBallOpenAnimationParticle(sprite: Sprite): void {
-  if (!gMain.inBattle) {
-    if (sprite.data[7] === 1) DestroySpriteAndFreeResources(sprite);
-    else DestroySprite(sprite);
-    return;
-  }
-  const anim = gBattleSpritesDataPtr.animationData;
-  anim.numBallParticles--;
-  if (anim.numBallParticles === 0) {
-    for (let j = 0; j < C.POKEBALL_COUNT; j++) {
-      FreeSpriteTilesByTag(gBallParticleSpritesheets()[j].tag);
-      FreeSpritePaletteByTag(gBallParticlePalettes()[j].tag);
-    }
-  }
-  DestroySprite(sprite);
-}
-
-export function LaunchBallFadeMonTask(unfadeLater: boolean, battler: number, selectedPalettes: number, ballId: number): number {
-  const taskId = tasks.create(Task_FadeMon_ToBallColor, 5);
-  const d = tasks.tasks[taskId].data;
-  d[15] = ballId;
-  d[3] = battler;
-  d[10] = selectedPalettes & 0xffff;
-  d[11] = selectedPalettes >>> 16;
-  if (!unfadeLater) {
-    BlendPalette(OBJ_PLTT_ID(battler), 16, 0, sBallOpenFadeColors()[ballId]);
-    d[1] = 1;
-  } else {
-    BlendPalette(OBJ_PLTT_ID(battler), 16, 16, sBallOpenFadeColors()[ballId]);
-    d[0] = 16;
-    d[1] = -1;
-    tasks.tasks[taskId].func = Task_FadeMon_ToNormal;
-  }
-  BeginNormalPaletteFade(selectedPalettes, 0, 0, 16, RGB_WHITE);
-  return taskId;
-}
-
-const fadeSelected = (d: number[]) => ((d[10] & 0xffff) | ((d[11] & 0xffff) << 16)) >>> 0;
-
-function Task_FadeMon_ToBallColor(taskId: number): void {
-  const d = tasks.tasks[taskId].data;
-  if (d[2] <= 16) {
-    BlendPalette(OBJ_PLTT_ID(d[3]), 16, d[0], sBallOpenFadeColors()[d[15]]);
-    d[0] += d[1];
-    d[2]++;
-  } else if (!gPaletteFade.active) {
-    BeginNormalPaletteFade(fadeSelected(d), 0, 16, 0, RGB_WHITE);
-    tasks.destroy(taskId);
-  }
-}
-
-function Task_FadeMon_ToNormal(taskId: number): void {
-  if (!gPaletteFade.active) {
-    BeginNormalPaletteFade(fadeSelected(tasks.tasks[taskId].data), 0, 16, 0, RGB_WHITE);
-    tasks.tasks[taskId].func = Task_FadeMon_ToNormal_Step;
-  }
-}
-
-function Task_FadeMon_ToNormal_Step(taskId: number): void {
-  const d = tasks.tasks[taskId].data;
-  if (d[2] <= 16) {
-    BlendPalette(OBJ_PLTT_ID(d[3]), 16, d[0], sBallOpenFadeColors()[d[15]]);
-    d[0] += d[1];
-    d[2]++;
-  } else {
-    tasks.destroy(taskId);
-  }
 }

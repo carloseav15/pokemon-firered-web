@@ -24,7 +24,7 @@ import { gBattlerSpriteIds } from "../globals";
 import { BATTLE_PARTNER } from "../macros";
 import { GetBattlerAtPosition, GetBattlerSide } from "../util";
 
-const gBattleAnimArgs = animState.gBattleAnimArgs;
+import { gBattleAnimArgs } from "../animArgs";
 const gTasks = tasks.tasks;
 
 // Unused

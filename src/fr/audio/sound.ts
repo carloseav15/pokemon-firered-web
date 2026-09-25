@@ -123,6 +123,13 @@ class Sound {
     this.backend?.stop("bgm");
   }
 
+  /** m4aMPlayAllStop */
+  m4aMPlayAllStop(): void {
+    for (const player of ["bgm", "se1", "se2", "fanfare"] as const) this.backend?.stop(player);
+    this.seTimer = 0;
+    this.fanfareTimer = 0;
+  }
+
   pauseBGM(): void { this.backend?.pause("bgm"); }
   resumeBGM(): void { this.backend?.resume("bgm"); }
 

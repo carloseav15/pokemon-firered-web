@@ -6,6 +6,7 @@
 // callback (as if the script were only `end`), so battles run with instant move animations.
 
 import * as C from "../generated/constants";
+import { gBattleAnimArgs } from "./animArgs";
 import { sound } from "../audio/sound";
 import { tasks, type Task } from "../gba/tasks";
 import { cdata } from "../hw/assets";
@@ -71,7 +72,7 @@ export const animState = {
   gAnimFriendship: 0,
   gWeatherMoveAnim: 0,
   // 8 args plus the EWRAM that follows them: Magnitude's AnimTask_IsPowerOver99 / jumpargeq use index 15.
-  gBattleAnimArgs: new Int16Array(16),
+  gBattleAnimArgs,
   sSoundAnimFramesToWait: 0,
   sMonAnimTaskIdArray: [TASK_NONE, TASK_NONE],
   gAnimMoveTurn: 0,

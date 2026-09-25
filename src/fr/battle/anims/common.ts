@@ -8,10 +8,9 @@ import { tasks } from "../../gba/tasks";
 import { cdataAny } from "../../hw/assets";
 import { templateFrom, type CSpriteTemplate } from "../../hw/cdataSprite";
 import type { SpriteTemplate } from "../../hw/sprite";
-import { animState } from "../anim";
 import { ANIM_SPRITE_CALLBACKS } from "../animRegistry";
 
-export const gBattleAnimArgs = animState.gBattleAnimArgs;
+export { gBattleAnimArgs } from "../animArgs";
 export const gTasks = tasks.tasks;
 
 /** battle_anim.c IsContest: FRLG never runs contest animations. */
