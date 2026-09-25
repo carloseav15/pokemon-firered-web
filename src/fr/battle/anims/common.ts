@@ -5,10 +5,8 @@
 
 import { sound } from "../../audio/sound";
 import { tasks } from "../../gba/tasks";
-import { cdataAny } from "../../hw/assets";
-import { templateFrom, type CSpriteTemplate } from "../../hw/cdataSprite";
 import type { SpriteTemplate } from "../../hw/sprite";
-import { ANIM_SPRITE_CALLBACKS } from "../animRegistry";
+import { animSpriteTemplate } from "../animScript";
 
 export { gBattleAnimArgs } from "../animArgs";
 export const gTasks = tasks.tasks;
@@ -29,17 +27,13 @@ export function PlaySE(song: number): void {
   sound.playSE(song);
 }
 
-const templates = new Map<string, SpriteTemplate>();
-
-/** A C `const struct SpriteTemplate` by symbol, with callbacks resolved through the anim registry. */
+/**
+ * A C `const struct SpriteTemplate` by symbol, with callbacks resolved through the anim registry.
+ * Shares the interpreter's cache, so `sprite.template === animTemplate("gX")` matches sprites made by createsprite.
+ */
 export function animTemplate(name: string): SpriteTemplate {
-  let t = templates.get(name);
-  if (!t) {
-    const source = cdataAny<CSpriteTemplate>(name);
-    if (!source) throw new Error(`battle anim sprite template not loaded: ${name}`);
-    t = templateFrom(source, ANIM_SPRITE_CALLBACKS);
-    templates.set(name, t);
-  }
+  const t = animSpriteTemplate(name);
+  if (!t) throw new Error(`battle anim sprite template not loaded: ${name}`);
   return t;
 }
 

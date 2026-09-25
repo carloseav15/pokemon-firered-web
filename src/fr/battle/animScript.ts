@@ -108,7 +108,7 @@ function SpriteCB_MissingAnimCallback(sprite: Sprite): void {
   DestroyAnimSprite(sprite);
 }
 
-function animSpriteTemplate(name: string): SpriteTemplate | null {
+export function animSpriteTemplate(name: string): SpriteTemplate | null {
   const cached = templateCache.get(name);
   if (cached) return cached;
   const source = cdataAny<CSpriteTemplate>(name);

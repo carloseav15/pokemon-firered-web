@@ -23,3 +23,4 @@ import "./water";
 import "./statusEffects";
 import "./soundTasks";
 import "./special";
+import "./effects1";
