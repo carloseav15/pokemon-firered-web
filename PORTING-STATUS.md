@@ -295,9 +295,11 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
     `pokemonSpecialAnim.ts`. `partyMenu.ts` aún salta `StartUseItemAnim_*` y
     mantiene `PSA_IsCancelDisabled() = false`; faltan las cuatro tareas de escena,
     callbacks, tiempos de cancelación y efectos de sprites.
-11. **Recordador de movimientos** (`move_relearner.c`) **[juego]**: verificar
-    si la pantalla actual es adaptador y portarla (el menú de equipo ya le pasa
-    `VAR_0x8005` como en el C).
+11. **Recordador de movimientos** (`learn_move.c`, 932 líneas; reglas en
+    `pokemon.c`) **[visual]**: la búsqueda de movimientos ya está en
+    `pokemon/partyRules.ts` y el flujo de enseñar/olvidar usa las reglas actuales
+    de aprendizaje. `game.ts` sigue mostrando listas simplificadas; falta portar
+    la pantalla GBA de estados, ventanas, sprites, sonidos y selección/cancelación.
 12. **Tarjeta de entrenador** (`trainer_card.c`, 1959 líneas) **[PORTADO]**:
     portada fielmente en `src/fr/menus/trainerCard.ts` sobre la capa de hardware GBA (`hw/`).
     Implementa:
