@@ -32,7 +32,7 @@ import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST } from "../
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE } from "../field/playerAvatar";
 import { startFishing } from "../field/fishing";
 import { openHardwareMessage } from "./hardwareChoice";
-import { evolveWithMessages } from "./monProgress";
+import { BeginEvolutionScene } from "../evolutionScene";
 import { flagGet, incrementGameStat, SV } from "../save";
 
 
@@ -65,7 +65,7 @@ function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => v
       const msg = mon.mailMessage ?? blankMail();
       openMailView(decode(itemName(mon.heldItem)), mailLines(msg.words), msg.author.length ? decode(Uint8Array.from(msg.author)) : "", done);
     },
-    evolve: (mon, target, _canStop, _slot, done) => evolveWithMessages(mon, target, done),
+    evolve: (mon, target, canStop, slot, done) => BeginEvolutionScene(mon, target, canStop, slot, done),
     relearnableMoves: (mon) => relearnableMoves(mon).length,
   };
 }

@@ -10,6 +10,7 @@ import { rom } from "../rom";
 import { save } from "../save";
 import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, setDexFlag, createMon, speciesName, type Pokemon } from "../pokemon/pokemon";
 import { openHardwareChoice, openHardwareMessage } from "./hardwareChoice";
+import { BeginEvolutionScene } from "../evolutionScene";
 
 /** ItemIdToBattleMoveId: the move taught by a TM/HM item. */
 export function tmhmMove(item: number): number {
@@ -114,23 +115,11 @@ export function learnLevelUpMoves(mon: Pokemon, done: () => void): void {
 }
 
 /**
- * Evolution with its messages (gText_PkmnIsEvolving / gText_CongratsPkmnEvolved),
- * the evolved form's level moves and the Shedinja split (EVO_LEVEL_NINJASK).
+ * Evolution: runs the faithful GBA BeginEvolutionScene.
  */
 export function evolveWithMessages(mon: Pokemon, target: number, done: () => void): void {
-  stringVars.var1 = Uint8Array.from(mon.nickname);
-  const oldSpecies = mon.species;
-  openHardwareMessage(rom.text("gText_PkmnIsEvolving"), () => {
-    sound.playCry(oldSpecies, 0);
-    const oldName = Uint8Array.from(mon.nickname);
-    evolveMon(mon, target);
-    stringVars.var1 = oldName;
-    stringVars.var2 = speciesName(target);
-    sound.playFanfare(C.MUS_EVOLVED);
-    sound.playCry(target, 0);
-    trySpawnShedinja(mon, oldSpecies);
-    openHardwareMessage(rom.text("gText_CongratsPkmnEvolved"), () => learnLevelUpMoves(mon, done));
-  });
+  const slot = Math.max(0, save.party.indexOf(mon));
+  BeginEvolutionScene(mon, target, false, slot, done);
 }
 
 /** evolution_scene.c CreateShedinja */

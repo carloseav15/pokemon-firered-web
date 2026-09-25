@@ -175,11 +175,21 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
     (`battle_controller_pokedude.c`, 2698 líneas).
 14. **PC de objetos** (`item_pc.c`) **[visual]**: retirar/depositar con la
     interfaz real (hoy `playerPc.ts` usa listas; el depósito ya usa la mochila).
-15. **Evolución fuera de combate** (`evolution_scene.c` desde el campo +
-    `evolution_graphics.c`) **[visual]**: `battle/evoScene.ts` ya tiene la
-    presentación; conectar `BeginEvolutionScene` desde el menú de equipo /
-    Caramelo Raro / piedras (hoy `monProgress.evolveWithMessages`) y portar las
-    chispas de `evolution_graphics.c`.
+15. **Escena de Evolución** (`evolution_scene.c`, 1704 líneas + `evolution_graphics.c`, 638 líneas)
+    **[PORTADO]**: portada fielmente en `src/fr/evolutionScene.ts` sobre la capa de hardware GBA (`hw/`).
+    Implementa:
+    - `evolution_graphics.c`: matrices de escala OAM (20..31), 4 tareas de chispas (`EvolutionSparkles_SpiralUpward`,
+      `EvolutionSparkles_ArcDown`, `EvolutionSparkles_CircleInward`, `EvolutionSparkles_SprayAndFlash`), sprite de
+      chispas 8x8 (tag 1001), y morphing de silueta blanca en matrices 30 y 31 (`CycleEvolutionMonSprite`) con
+      aceleración progresiva (velocidad 8 a 128) y alternancia de escala pre/post evo.
+    - `evolution_scene.c`: animación de fondo con rotación y blend (`Task_AnimateBg` y `Task_UpdateBgPalette`
+      con `sBgAnim_PaletteControl` y `sBgAnim_PalIndexes`), cancelación con botón B (`canStopEvo`), bloqueo
+      automático sin Pokédex Nacional para especies >151, gritos de Pokémon, fanfarrias y música (`MUS_EVOLUTION`),
+      separación de Shedinja (`trySpawnShedinja`), y flujo de aprendizaje de movimientos con la pantalla de resumen
+      real (`ShowSelectMovePokemonSummaryScreen`).
+    - Conectado tanto en combate (`battle/evoScene.ts` y `battle/main.ts`) como en el campo (`fieldPartyHooks.evolve`,
+      piedras evolutivas, Caramelo Raro y `ingameTrade.ts`).
+    - Verificado headless (`npm run check:evolution`).
 16. **Intercambios en juego** (`trade.c` escena + `ingameTrade`) **[visual]**:
     la lógica funciona; falta la animación del intercambio.
 17. **Tragaperras: gráficos** (`slot_machine.c`) **[visual]**: reglas y pagos
