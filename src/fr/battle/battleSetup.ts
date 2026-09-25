@@ -12,7 +12,8 @@ import { gEnemyParty } from "../pokemon/mon";
 import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "../save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
-import { createMon, healMon, type Pokemon } from "../pokemon/pokemon";
+import { createMon, genderFromPersonality, healMon, MON_FEMALE, type Pokemon } from "../pokemon/pokemon";
+import { random32 } from "../random";
 import type { Game } from "../game";
 
 export const TRAINER_BATTLE_SINGLE = 0;
@@ -49,6 +50,7 @@ export type BattleRequest = {
   isOldMan?: boolean;
   isLegendary?: boolean;
   isGhost?: boolean;
+  isGhostUnveiled?: boolean;
   isSafari?: boolean;
   isRoamer?: boolean;
   isDouble?: boolean;
@@ -365,10 +367,23 @@ export class BattleSetup {
   startMarowakBattle(): void {
     const ow = this.game.overworld;
     ow.script.stop();
-    const marowak = createMon(rom.c("SPECIES_MAROWAK"), 30);
+    const species = rom.c("SPECIES_MAROWAK");
+    const hasSilphScope = checkBagHasItem(rom.c("ITEM_SILPH_SCOPE"), 1);
+    let marowak: Pokemon;
+    if (hasSilphScope) {
+      let personality: number;
+      do personality = random32();
+      while ((personality >>> 0) % 25 !== rom.c("NATURE_SERIOUS")
+        || genderFromPersonality(species, personality) !== MON_FEMALE);
+      marowak = createMon(species, 30, { fixedIV: 31, personality });
+    } else {
+      marowak = createMon(species, 30);
+    }
+    marowak.nickname = Array.from(rom.text("gText_Ghost"));
     this.game.startBattle({
       kind: "wild",
       isGhost: true,
+      isGhostUnveiled: hasSilphScope,
       enemyParty: [marowak],
       onEnd: (outcome) => {
         this.game.battleOutcome = outcome;

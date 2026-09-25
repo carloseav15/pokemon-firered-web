@@ -205,9 +205,11 @@ whiteout respawn now uses the original heal-location data in
 - `battle_setup.c`: al comprobar encuentros salvajes sin Silph Scope, el C
   incluye los pisos 1F–7F de la Torre Pokémon. `BattleSetup.startWildBattle`
   solo incluía 3F–7F; amplié la selección a 1F–7F, recuperando los combates
-  fantasma de los dos primeros pisos. `npm run check:port` pasa; no ejecuté un
-  encuentro en runtime. La preparación de entrenadores y las transiciones de
-  batalla siguen parcialmente adaptadas.
+  fantasma de los dos primeros pisos. También `StartMarowakBattle` ahora crea
+  al Marowak hembra, Serious y con IV 31 cuando hay Silph Scope, conserva las
+  banderas Ghost + Ghost Unveiled y el apodo `Ghost`; antes siempre era el caso
+  de fantasma oculto. `npm run check:port` pasa; no ejecuté un encuentro en
+  runtime. La preparación de entrenadores y las transiciones siguen adaptadas.
 - `fldeff_berrytree.c` contiene únicamente un `DoWateringBerryTreeAnim`
   vacío (comentario del propio decomp: eliminado de R/S). El special TS también
   es vacío. Paridad exacta de este archivo; el juego no tiene esa animación.

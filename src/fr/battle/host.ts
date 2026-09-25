@@ -130,6 +130,7 @@ function battleTypeFlags(request: BattleRequest): number {
   if (request.isOldMan) flags |= C.BATTLE_TYPE_OLD_MAN_TUTORIAL;
   if (request.isLegendary) flags |= C.BATTLE_TYPE_LEGENDARY;
   if (request.isGhost) flags |= C.BATTLE_TYPE_GHOST;
+  if (request.isGhostUnveiled) flags |= C.BATTLE_TYPE_GHOST_UNVEILED;
   if (request.isSafari) flags |= C.BATTLE_TYPE_SAFARI;
   if (request.isDouble) flags |= C.BATTLE_TYPE_DOUBLE;
   if (request.isRoamer) flags |= C.BATTLE_TYPE_ROAMER;
