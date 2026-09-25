@@ -877,3 +877,10 @@ Pending / placeholders:
   Half-party selection, `ReducePlayerPartyToThree` and Battle Tower callbacks
   remain absent/adapted, outside the ordinary single-player story. Typecheck
   passes; no runtime scenario was exercised.
+- `window_8bpp.c`: added all five APIs to `hw/window.ts`:
+  `AddWindow8Bit`, 8bpp full/rect fills, the 4bpp-to-8bpp window blit, and
+  `CopyWindowToVram8Bit` with MAP/GFX/FULL behavior. The buffer uses 64 bytes
+  per tile and bypasses 4bpp auto-allocation. `npm run check:port` and the
+  whitespace check pass. The storage multi-move caller in
+  `pokemon_storage_system_misc.c` is still absent because storage UI remains
+  an adapter; no pixel/runtime comparison was run.

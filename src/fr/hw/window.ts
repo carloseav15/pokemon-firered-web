@@ -1,7 +1,7 @@
 // window.c + blit.c: text/graphics windows backed by 4bpp tile buffers that
 // are placed on a BG tilemap.
 
-import { BG_ATTR_BASETILE, BG_ATTR_MAPSIZE, BG_TILE_ALLOC, BG_TILE_FIND_FREE_SPACE, BG_TILE_FREE, BgTileAllocOp, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgAttribute, GetBgTilemapBuffer, LoadBgTiles, SetBgTilemapBuffer, WriteSequenceToBgTilemapBuffer, gWindowTileAutoAllocEnabled } from "./bg";
+import { BG_ATTR_BASETILE, BG_ATTR_MAPSIZE, BG_TILE_ALLOC, BG_TILE_FIND_FREE_SPACE, BG_TILE_FREE, BgTileAllocOp, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgAttribute, GetBgTilemapBuffer, LoadBgTiles, SetBgTilemapBuffer, UnsetBgTilemapBuffer, WriteSequenceToBgTilemapBuffer, gWindowTileAutoAllocEnabled } from "./bg";
 
 export const WINDOWS_MAX = 32;
 export const WINDOW_NONE = 0xff;
@@ -29,6 +29,7 @@ export type GbaWindow = { window: WindowTemplate; tileData: Uint8Array | null };
 export const gWindows: GbaWindow[] = Array.from({ length: WINDOWS_MAX }, () => ({ window: { ...DUMMY_WIN_TEMPLATE }, tileData: null }));
 /** true: tilemap buffer owned by the caller; Uint16Array: allocated by the window system. */
 const windowBgTilemapBuffers: Array<Uint16Array | "external" | null> = [null, null, null, null];
+const window8BitIds = new Set<number>();
 export let gWindowClearTile = 0;
 
 export function setWindowClearTile(tile: number): void {
@@ -53,6 +54,7 @@ function ensureBgTilemap(bg: number): boolean {
 
 export function InitWindows(templates: WindowTemplate[]): boolean {
   for (let i = 0; i < 4; i++) windowBgTilemapBuffers[i] = GetBgTilemapBuffer(i) ? "external" : null;
+  window8BitIds.clear();
   for (const w of gWindows) {
     w.window = { ...DUMMY_WIN_TEMPLATE };
     w.tileData = null;
@@ -97,10 +99,35 @@ export function AddWindow(template: WindowTemplate): number {
   return win;
 }
 
+/** window_8bpp.c AddWindow8Bit; 8bpp tiles occupy 64 bytes and use caller-assigned tile blocks. */
+export function AddWindow8Bit(template: WindowTemplate): number {
+  let win = 0;
+  for (; win < WINDOWS_MAX; win++) if (gWindows[win].window.bg === 0xff) break;
+  if (win === WINDOWS_MAX) return WINDOW_NONE;
+
+  const bg = template.bg;
+  if (windowBgTilemapBuffers[bg] === null && GetBgTilemapBuffer(bg)) windowBgTilemapBuffers[bg] = "external";
+  const mapWasMissing = windowBgTilemapBuffers[bg] === null;
+  ensureBgTilemap(bg);
+  try {
+    gWindows[win].tileData = new Uint8Array(0x40 * template.width * template.height);
+  } catch {
+    if (mapWasMissing && numActiveWindowsOnBg(bg) === 0 && windowBgTilemapBuffers[bg] instanceof Uint16Array) {
+      windowBgTilemapBuffers[bg] = null;
+      UnsetBgTilemapBuffer(bg);
+    }
+    return WINDOW_NONE;
+  }
+  gWindows[win].window = { ...DUMMY_WIN_TEMPLATE, ...template };
+  window8BitIds.add(win);
+  return win;
+}
+
 export function RemoveWindow(windowId: number): void {
   const w = gWindows[windowId];
   const bg = w.window.bg;
-  if (gWindowTileAutoAllocEnabled) BgTileAllocOp(bg, w.window.baseBlock, w.window.width * w.window.height, BG_TILE_FREE);
+  const is8Bit = window8BitIds.delete(windowId);
+  if (gWindowTileAutoAllocEnabled && !is8Bit) BgTileAllocOp(bg, w.window.baseBlock, w.window.width * w.window.height, BG_TILE_FREE);
   w.window = { ...DUMMY_WIN_TEMPLATE };
   if (bg < 4 && numActiveWindowsOnBg(bg) === 0 && windowBgTilemapBuffers[bg] !== "external") windowBgTilemapBuffers[bg] = null;
   w.tileData = null;
@@ -119,6 +146,19 @@ export function CopyWindowToVram(windowId: number, mode: number): void {
     if (mode === COPYWIN_FULL && w.tileData) LoadBgTiles(w.window.bg, w.tileData, size, w.window.baseBlock);
     CopyBgTilemapBufferToVram(w.window.bg);
   } else if (mode === COPYWIN_GFX && w.tileData) {
+    LoadBgTiles(w.window.bg, w.tileData, size, w.window.baseBlock);
+  }
+}
+
+/** window_8bpp.c CopyWindowToVram8Bit; COPYWIN_MAP/GFX/FULL retain C semantics. */
+export function CopyWindowToVram8Bit(windowId: number, mode: number): void {
+  const w = gWindows[windowId];
+  if (!w || w.window.bg === 0xff || !w.tileData) return;
+  const size = (0x40 * w.window.width * w.window.height) & 0xffff;
+  if (mode === COPYWIN_MAP || mode === COPYWIN_FULL) {
+    if (mode === COPYWIN_FULL) LoadBgTiles(w.window.bg, w.tileData, size, w.window.baseBlock);
+    CopyBgTilemapBufferToVram(w.window.bg);
+  } else if (mode === COPYWIN_GFX) {
     LoadBgTiles(w.window.bg, w.tileData, size, w.window.baseBlock);
   }
 }
@@ -233,6 +273,26 @@ export function FillBitmapRect8Bit(surface: Bitmap, x: number, y: number, width:
 function windowBitmap(windowId: number): Bitmap {
   const w = gWindows[windowId];
   return { pixels: w.tileData!, width: 8 * w.window.width, height: 8 * w.window.height };
+}
+
+function windowBitmap8Bit(windowId: number): Bitmap {
+  const w = gWindows[windowId];
+  return { pixels: w.tileData!, width: 8 * w.window.width, height: 8 * w.window.height };
+}
+
+/** window_8bpp.c FillWindowPixelBuffer8Bit. */
+export function FillWindowPixelBuffer8Bit(windowId: number, fillValue: number): void {
+  gWindows[windowId].tileData?.fill(fillValue & 0xff);
+}
+
+/** window_8bpp.c FillWindowPixelRect8Bit. */
+export function FillWindowPixelRect8Bit(windowId: number, fillValue: number, x: number, y: number, width: number, height: number): void {
+  FillBitmapRect8Bit(windowBitmap8Bit(windowId), x, y, width, height, fillValue);
+}
+
+/** window_8bpp.c wrapper; source color zero is transparent and paletteNum selects the 16-color bank. */
+export function BlitBitmapRectToWindow4BitTo8Bit(windowId: number, pixels: Uint8Array, srcX: number, srcY: number, srcWidth: number, srcHeight: number, destX: number, destY: number, rectWidth: number, rectHeight: number, paletteNum: number): void {
+  BlitBitmapRect4BitTo8Bit({ pixels, width: srcWidth, height: srcHeight }, windowBitmap8Bit(windowId), srcX, srcY, destX, destY, rectWidth, rectHeight, 0, paletteNum);
 }
 
 export function BlitBitmapToWindow(windowId: number, pixels: Uint8Array, x: number, y: number, width: number, height: number): void {
