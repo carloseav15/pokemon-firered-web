@@ -143,6 +143,17 @@ explicitly out of scope.
    highlight, returns to the open start menu). Source review only; not run.
    Trainer card: dedicated card graphics, flip animation and photo icons
    pending.
+   - BAG: `src/fr/bagMenu.ts` ports `item_menu.c`, `bag.c` and
+     `item_menu_icons.c` (bag sprite with pocket switch and shake, item icons,
+     pocket list reveal, SELECT item moving with the swap line, context menus
+     by location, toss/register, sell to a shop, deposit to the PC, give from
+     the party menu). `src/fr/hw/menuHelpers.ts` adds `menu_helpers.c`,
+     `money.c` and the scheduled-copy helpers. The field bag, the battle bag,
+     the shop SELL option, PC deposit and the party GIVE option use it; item
+     effects keep the existing item_use logic (party-target flows still use
+     text-list adapters until `party_menu.c` lands). TM case and berry pouch
+     screens are pending (opening them from a give/sell bag returns as
+     cancelled). Old Man / Teachy TV scripted bags are not wired yet.
 5. Replace small, bounded event-special placeholders with source behavior.
 6. Complete shops and the bag, including item selection and use. Verify the
    Game Corner prize exchange scripts (stock, prices, delivery) — otherwise

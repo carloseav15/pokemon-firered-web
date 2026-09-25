@@ -11,6 +11,7 @@ import { flagClear, flagSet, save, varGet, varSet } from "../save";
 import { addBagItem, itemInfo, itemName, pocketList, removeBagItem } from "../pokemon/items";
 import { fieldMoveName, fieldMovesOf, text, trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
+import { bagResult, GoToBagMenu, type BagHandlers, type BagTaskContext } from "../bagMenu";
 import { encode, stringVars } from "../gba/charmap";
 import { PokemonUseItemEffects } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
@@ -100,9 +101,10 @@ export function openFieldParty(game: Game): void {
           message(`Received the ${decode(itemName(taken))} from ${decode(mon.nickname)}.`, party);
           return;
         }
-        const items = [1, 3, 4, 5].flatMap(p => pocketList(p)).map(slot => ({label: `${decode(itemName(slot.item))} x${slot.quantity}`, value: slot.item}));
-        openHardwareChoice(text("gText_GiveToWhichPokemon"), items, true, item => {
-          if (item === null) { itemMenu(index); return; }
+        // CB2_SelectBagItemToGive: GoToBagMenu(ITEMMENULOCATION_PARTY, OPEN_BAG_LAST, CB2_GiveHoldItem)
+        GoToBagMenu(C.ITEMMENULOCATION_PARTY, C.OPEN_BAG_LAST, () => {
+          const item = bagResult.itemId;
+          if (!item) { itemMenu(index); return; }
           removeBagItem(item, 1);
           if (mon.heldItem) addBagItem(mon.heldItem, 1);
           mon.heldItem = item;
@@ -110,7 +112,7 @@ export function openFieldParty(game: Game): void {
           // here carries a blank message until the writer is ported.
           if (!isMailItem(item)) mon.mailMessage = undefined;
           message(`${decode(mon.nickname)} was given the ${decode(itemName(item))} to hold.`, party);
-        });
+        }, {});
       });
     };
     const fieldMove = (index: number, move: number): void => {
@@ -159,19 +161,41 @@ export function openFieldParty(game: Game): void {
   });
 }
 
+/**
+ * The BAG from the start menu (CB2_BagMenuFromStartMenu → CB2_ReturnToFieldWithOpenMenu)
+ * or a registered item (UseRegisteredKeyItemOnField, `initialItem`). The bag
+ * screen is bagMenu.ts; this supplies what each item does (item_use.c).
+ * While a field function runs from the bag, `bagCtx` is its bag task: plain
+ * messages print in the bag, and flows that need another screen leave it first.
+ */
 export function openFieldBag(game: Game, initialItem?: number): void {
   let post: (() => void) | null = null;
   fieldMenu(game, close => {
-    const finish = (): void => { close(); const cb = post; post = null; cb?.(); };
-    const onField = (cb: () => void): void => {
+    const finish = (): void => {
+      close();
+      const cb = post;
+      post = null;
+      if (cb) { game.closeStartMenu(); cb(); }
+      else if (initialItem === undefined) game.showStartMenu();
+      else game.closeStartMenu();
+    };
+    let bagCtx: BagTaskContext | null = null;
+    /** Leave the bag (ItemMenu_SetExitCallback + fade) and continue with `flow`. */
+    const leave = (flow: () => void): void => {
+      const ctx = bagCtx;
+      bagCtx = null;
+      if (ctx) ctx.exit(flow); else flow();
+    };
+    const onField = (cb: () => void): void => leave(() => {
       post = () => { game.overworld.controlsLocked = true; game.overworld.objects.freezeAll(); cb(); };
       finish();
+    });
+    const message = (title: string | ArrayLike<number>, next: () => void = back): void => {
+      const bytes = typeof title === "string" ? encode(title) : title;
+      if (bagCtx && next === back) { const ctx = bagCtx; bagCtx = null; ctx.message(bytes); return; }
+      leave(() => openHardwareMessage(bytes, next));
     };
-    const message = (title: string | ArrayLike<number>, next: () => void = bag): void => {
-      if (typeof title === "string") openHardwareChoice(title, [{label: "OK", value: 0}], false, next);
-      else openHardwareMessage(title, next);
-    };
-    const notNow = (next: () => void = bag): void => {
+    const notNow = (next: () => void = back): void => {
       stringVars.var1 = Uint8Array.from(save.playerName);
       message(rom.text("gText_OakForbidsUseOfItemHere"), next);
     };
@@ -279,10 +303,10 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       const info = itemInfo(item)!;
       const ow = game.overworld;
       switch (info.fieldUseFunc) {
-        case "FieldUseFunc_Medicine": case "FieldUseFunc_Ether": case "FieldUseFunc_PpUp": medicine(item); return;
-        case "FieldUseFunc_RareCandy": rareCandy(item); return;
-        case "FieldUseFunc_EvoItem": evolutionStone(item); return;
-        case "FieldUseFunc_SacredAsh": sacredAsh(item); return;
+        case "FieldUseFunc_Medicine": case "FieldUseFunc_Ether": case "FieldUseFunc_PpUp": leave(() => medicine(item)); return;
+        case "FieldUseFunc_RareCandy": leave(() => rareCandy(item)); return;
+        case "FieldUseFunc_EvoItem": leave(() => evolutionStone(item)); return;
+        case "FieldUseFunc_SacredAsh": leave(() => sacredAsh(item)); return;
         case "FieldUseFunc_Repel":
           if (varGet(C.VAR_REPEL_STEP_COUNT)) { message(rom.text("gText_RepelEffectsLingered")); return; }
           if (removeBagItem(item, 1)) { varSet(C.VAR_REPEL_STEP_COUNT, info.holdEffectParam); sound.playSE(C.SE_REPEL); }
@@ -309,8 +333,8 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         }
         case "FieldUseFunc_CoinCase": stringVars.var1 = encode(String(save.coins)); message(rom.text("gText_CoinCase")); return;
         case "FieldUseFunc_PowderJar": stringVars.var1 = encode(String(save.berryPowder ?? 0)); message(rom.text("gText_PowderQty")); return;
-        case "FieldUseFunc_TmCase": tmCase(); return;
-        case "FieldUseFunc_BerryPouch": pocket(5); return;
+        case "FieldUseFunc_TmCase": leave(tmCase); return;
+        case "FieldUseFunc_BerryPouch": leave(() => pocket(5)); return;
         case "FieldUseFunc_Bike": {
           const p = ow.player.object;
           const behavior = ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
@@ -349,40 +373,42 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_TownMap":
           // From the bag the map returns to the bag (CB2_BagMenuFromStartMenu); a registered use returns to the field.
           if (initialItem !== undefined) onField(() => game.showTownMapFromField());
-          else openRegionMap(game, REGIONMAP_TYPE_NORMAL, bag);
+          else leave(() => openRegionMap(game, REGIONMAP_TYPE_NORMAL, bag));
           return;
         case "FieldUseFunc_FameChecker": onField(() => game.openFameChecker()); return;
         case "FieldUseFunc_TeachyTv": onField(() => game.openTeachyTv()); return;
         case "FieldUseFunc_VsSeeker": onField(() => game.useVsSeeker()); return;
-        case "FieldUseFunc_Mail": openMailView(decode(itemName(item)), [], "", bag); return;
-        case "ItemUseOutOfBattle_EnigmaBerry": medicine(item); return;
+        case "FieldUseFunc_Mail": leave(() => openMailView(decode(itemName(item)), [], "", bag)); return;
+        case "ItemUseOutOfBattle_EnigmaBerry": leave(() => medicine(item)); return;
         default: notNow(); return;
       }
     };
+    /** berry_pouch.c is not ported yet: its berries keep the text-list adapter. */
     const actions = (item: number): void => {
       const info = itemInfo(item)!;
-      const pocketId = itemPocket(item);
       const choices = [{label: "USE", value: 0}];
-      if (pocketId !== 2 && !info.importance) choices.push({label: "GIVE", value: 3});
-      if (!info.importance) choices.push({label: "TOSS", value: 1});
-      if (info.registrability) choices.push({label: save.registeredItem === item ? "DESELECT" : "REGISTER", value: 2});
+      if (!info.importance) choices.push({label: "GIVE", value: 3}, {label: "TOSS", value: 1});
       openHardwareChoice(decode(itemName(item)), choices, true, choice => {
-        if (choice === null) { bag(); return; }
+        if (choice === null) { pocket(5); return; }
         if (choice === 0) { use(item); return; }
-        if (choice === 3) { giveItem(item, bag); return; }
-        if (choice === 2) { save.registeredItem = save.registeredItem === item ? 0 : item; bag(); return; }
+        if (choice === 3) { giveItem(item, () => pocket(5)); return; }
         openHardwareChoice("Throw away one item?", [{label: "NO", value: 0}, {label: "YES", value: 1}], true, answer => {
           if (answer === 1) removeBagItem(item, 1);
-          bag();
+          pocket(5);
         });
       });
     };
     const pocket = (id: number): void => openHardwareChoice(["", "ITEMS", "KEY ITEMS", "POKé BALLS", "TM CASE", "BERRY POUCH"][id], pocketList(id).map(slot => ({label: `${decode(itemName(slot.item))} x${slot.quantity}`, value: slot.item})), true, item => {
       if (item === null) bag(); else actions(item);
     });
-    const bag = (): void => openHardwareChoice("BAG", [{label: "ITEMS", value: 1}, {label: "KEY ITEMS", value: 2}, {label: "POKé BALLS", value: 3}], true, selected => {
-      if (selected === null) finish(); else pocket(selected);
-    });
+    const handlers: BagHandlers = {
+      fieldUse: (item, ctx) => { bagCtx = ctx; use(item); bagCtx = null; },
+      giveToMon: (item) => giveItem(item, bag),
+      isOnBike: () => game.overworld.player.isOnBike(),
+    };
+    /** GoToBagMenu(ITEMMENULOCATION_FIELD, OPEN_BAG_LAST, ...) */
+    const bag = (): void => GoToBagMenu(C.ITEMMENULOCATION_FIELD, C.OPEN_BAG_LAST, finish, handlers);
+    const back = initialItem !== undefined ? finish : bag;
     if (initialItem !== undefined) use(initialItem); else bag();
   });
 }

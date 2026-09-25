@@ -8,6 +8,8 @@ import { addBagItem, addPCItem, checkBagHasSpace, itemInfo, itemName, pocketList
 import { blankMail, isMailItem, mailLines, takeMail } from "../pokemon/mail";
 import { openMailView } from "./mailView";
 import type { Game } from "../game";
+import * as C from "../generated/constants";
+import { GoToBagMenu } from "../bagMenu";
 import { fieldMenu, fieldMessage } from "./fieldMenus";
 import { openHardwareChoice, openHardwareMessage, openHardwareQuantity } from "./hardwareChoice";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
@@ -103,21 +105,8 @@ export function openPlayerPc(game: Game, bedroom: boolean): void {
           });
         });
       };
-      const deposit = (): void => {
-        const items = [1, 2, 3, 4, 5].flatMap((p) => pocketList(p)).filter((s) => !itemInfo(s.item)?.importance || itemInfo(s.item)?.pocket !== 2);
-        openHardwareChoice(rom.text("gText_DepositItem2"), items.map((slot) => ({
-          label: `${decode(itemName(slot.item))} x${slot.quantity}`, value: slot.item,
-        })), true, (item) => {
-          if (item === null) { submenu(); return; }
-          const slot = items.find((s) => s.item === item)!;
-          openHardwareQuantity(itemName(item), slot.quantity, (count) => {
-            if (count === null) { deposit(); return; }
-            if (!addPCItem(item, count)) { openHardwareMessage(rom.text("gText_NoRoomToStoreItems"), deposit); return; }
-            removeBagItem(item, count);
-            deposit();
-          });
-        });
-      };
+      /** Task_PlayerPcDepositItem: GoToBagMenu(ITEMMENULOCATION_ITEMPC, OPEN_BAG_ITEMS, ...) back to the submenu. */
+      const deposit = (): void => GoToBagMenu(C.ITEMMENULOCATION_ITEMPC, C.OPEN_BAG_ITEMS, submenu, {});
       submenu();
     }, false);
   };

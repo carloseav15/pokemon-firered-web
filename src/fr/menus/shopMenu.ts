@@ -3,6 +3,9 @@
 // at x 160); the source hardware buy screen (map view, item icon and
 // description boxes) and quest-log transaction history remain separate work.
 import type { Game } from "../game";
+import * as C from "../generated/constants";
+import { GoToBagMenu } from "../bagMenu";
+import { fieldMenu } from "./fieldMenus";
 import { ShopModel } from "./shopModel";
 import { decode, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
 import { Window } from "../gba/window";
@@ -88,7 +91,13 @@ export function openShopMenu(game: Game, pointer: number): void {
       }
       if (repeated & DPAD_UP) cursor = (cursor + 2) % 3;
       else if (repeated & DPAD_DOWN) cursor = (cursor + 1) % 3;
-      else if (pressed & A_BUTTON) { selling = cursor === 1; listPos = { cursorPos: 0, itemsAbove: 0 }; state = "list"; draw(); openList(); return; }
+      else if (pressed & A_BUTTON && cursor === 1) {
+        // Task_HandleShopMenuSell → CB2_GoToSellMenu: GoToBagMenu(ITEMMENULOCATION_SHOP, OPEN_BAG_LAST, ...), then back to BUY/SELL/QUIT.
+        win.visible = false;
+        fieldMenu(game, (close) => GoToBagMenu(C.ITEMMENULOCATION_SHOP, C.OPEN_BAG_LAST, () => { close(); win.visible = true; draw(); }, {}), false);
+        return;
+      }
+      else if (pressed & A_BUTTON) { selling = false; listPos = { cursorPos: 0, itemsAbove: 0 }; state = "list"; draw(); openList(); return; }
     } else if (state === "list") {
       const input = list ? ListMenu_ProcessInput(list.taskId) : LIST_NOTHING_CHOSEN;
       if (input === LIST_NOTHING_CHOSEN) return;

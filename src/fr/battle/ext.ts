@@ -10,7 +10,7 @@ import * as C from "../generated/constants";
 import { DoNamingScreen as OpenNamingScreen } from "../namingScreen";
 import { openHardwareChoice, openHardwareMessage } from "../menus/hardwareChoice";
 import { dexInfoMessage } from "../menus/pokedex";
-import { decode } from "../gba/charmap";
+import { decode, stringVars } from "../gba/charmap";
 import { b64 } from "../rom";
 import type { NameBuffer } from "../menus/namingModel";
 import { sound } from "../audio/sound";
@@ -41,6 +41,7 @@ import { BtlController_EmitGetMonData, BUFFER_A } from "./controllers";
 import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHoldEffect, MarkBattlerForControllerExec } from "./util";
 import { battleHost } from "./host";
 import { ReshowBattleScreenAfterMenu } from "./reshow";
+import { bagResult, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu } from "../bagMenu";
 import { gDisableStructs } from "./globals";
 
 export { GetSetPokedexFlag };
@@ -192,7 +193,7 @@ export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
 export function CB2_BagMenuFromBattle(): void {
   varSet(C.VAR_ITEM_ID, C.ITEM_NONE);
   const menuBattler = G.gBattlerInMenuId;
-  const finish = (item: number): void => { varSet(C.VAR_ITEM_ID, item); ReshowBattleScreenAfterMenu(); };
+  const finish = (item: number): void => { varSet(C.VAR_ITEM_ID, item); CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); };
   const message = (label: string): void => openHardwareChoice(label, [{label: "OK", value: 0}], false, () => showBag());
   const apply = (item: number, partyIndex: number, moveIndex: number): void => {
     G.gBattlerInMenuId = menuBattler;
@@ -217,30 +218,31 @@ export function CB2_BagMenuFromBattle(): void {
       })), true, slot => { if (slot === null) chooseMon(item, true); else apply(item, selected, slot); });
     });
   };
-  const showBag = (): void => {
-    const choices = [1, 2, 3, 4, 5].flatMap(p => pocketList(p)).filter(slot => itemInfo(slot.item)?.battleUsage).map(slot => ({
-      label: `${decode(itemName(slot.item))} x${slot.quantity}`, value: slot.item,
-    }));
-    openHardwareChoice("BAG", choices, true, item => {
-      if (item === null) { finish(C.ITEM_NONE); return; }
+  /** CB2_BagMenuFromBattle: GoToBagMenu(ITEMMENULOCATION_BATTLE, OPEN_BAG_LAST, SetCB2ToReshowScreenAfterMenu2). */
+  const showBag = (): void => GoToBagMenu(C.ITEMMENULOCATION_BATTLE, C.OPEN_BAG_LAST, () => finish(bagResult.itemId), {
+    // ItemId_GetBattleFunc(item)(taskId)
+    battleUse: (item, ctx) => {
       const info = itemInfo(item)!;
+      const notNow = (): void => { stringVars.var1 = Uint8Array.from(save.playerName); ctx.message(rom.text("gText_OakForbidsUseOfItemHere")); };
       switch (info.battleUseFunc) {
         case "BattleUseFunc_PokeBallEtc":
-          if (save.party.length >= C.PARTY_SIZE && save.boxes.every(box => box.every(mon => !!mon?.species))) { message("The BOX is full."); return; }
-          if (removeBagItem(item, 1)) finish(item); else showBag();
+          if (save.party.length >= C.PARTY_SIZE && save.boxes.every(box => box.every(mon => !!mon?.species))) { ctx.message(rom.text("gText_BoxFull")); return; }
+          removeBagItem(item, 1);
+          ctx.exit(() => finish(item));
           return;
-        case "BattleUseFunc_PokeFlute": finish(item); return;
+        case "BattleUseFunc_PokeFlute": ctx.exit(() => finish(item)); return;
         case "BattleUseFunc_PokeDoll":
-          if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) { message("Can't use that here."); return; }
-          if (removeBagItem(item, 1)) finish(item); else showBag();
+          if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) { notNow(); return; }
+          removeBagItem(item, 1);
+          ctx.exit(() => finish(item));
           return;
-        case "BattleUseFunc_StatBooster": apply(item, gBattlerPartyIndexes[menuBattler], 0); return;
-        case "BattleUseFunc_Medicine": chooseMon(item, false); return;
-        case "BattleUseFunc_Ether": chooseMon(item, true); return;
-        default: message("Can't use that here."); return;
+        case "BattleUseFunc_StatBooster": ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)); return;
+        case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, false)); return;
+        case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, true)); return;
+        default: notNow(); return;
       }
-    });
-  };
+    },
+  });
   showBag();
 }
 

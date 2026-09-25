@@ -1,6 +1,7 @@
 // field_message_box.c: the dialogue window (window 0) used by scripts.
 
 import { expandPlaceholders, stringVars } from "../gba/charmap";
+import { menuHelperHooks } from "../hw/menuHelpers";
 import { FONT_FEMALE, FONT_MALE, FONT_NORMAL } from "../gba/font";
 import { getTextSpeedSetting, TextPrinter, textFlags, TEXT_COLOR_BLUE, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "../gba/textPrinter";
 import { Window } from "../gba/window";
@@ -22,7 +23,9 @@ export class FieldMessageBox {
   printer?: TextPrinter;
   private drawState = -1;
 
-  constructor(private readonly ow: Overworld) {}
+  constructor(private readonly ow: Overworld) {
+    menuHelperHooks.contextNpcGetTextColor = () => this.npcTextColor();
+  }
 
   reset(): void {
     this.type = FIELD_MESSAGE_BOX_HIDDEN;
