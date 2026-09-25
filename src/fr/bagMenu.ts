@@ -58,7 +58,7 @@ import {
 } from "./hw/window";
 import { addBagItem, addMoney, addPCItem, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
-import { InitTMCase } from "./tmCase";
+import { InitPokedudeTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
 import { save } from "./save";
 
@@ -491,6 +491,7 @@ function DoLoadBagGraphics(): boolean {
 function CreateBagInputHandlerTask(_location: number): number {
   const handler = gBagMenuState.location === C.ITEMMENULOCATION_OLD_MAN ? Task_Bag_OldManTutorial
     : gBagMenuState.location === C.ITEMMENULOCATION_TTVSCR_REGISTER ? Task_Bag_TeachyTvRegister
+      : gBagMenuState.location === C.ITEMMENULOCATION_TTVSCR_TMS ? Task_Bag_TeachyTvTMs
       : Task_BagMenu_HandleInput;
   return tasks.create(handler, 0);
 }
@@ -528,6 +529,17 @@ export function InitPokedudeBagRegister(done: () => void): void {
   addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
   addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
   GoToBagMenu(C.ITEMMENULOCATION_TTVSCR_REGISTER, C.OPEN_BAG_ITEMS, () => { RestorePlayerBag(backup); done(); });
+}
+
+/** InitPokedudeBag for the Teachy TV TM lesson: item_menu.c Task_Bag_TeachyTvTMs. */
+export function InitPokedudeBagTMs(done: () => void): void {
+  const backup = BackUpPlayerBag();
+  addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
+  addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
+  GoToBagMenu(C.ITEMMENULOCATION_TTVSCR_TMS, C.OPEN_BAG_ITEMS, () => {
+    RestorePlayerBag(backup);
+    InitPokedudeTMCase(done);
+  });
 }
 
 /** item_menu.c Task_Bag_TeachyTvRegister: scripted registration demonstration. */
@@ -578,6 +590,45 @@ function Task_Bag_TeachyTvRegister(taskId: number): void {
       break;
     }
     case 714:
+      sound.playSE(C.SE_SELECT);
+      HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
+      CopyWindowToVram(0, COPYWIN_MAP);
+      Bag_BeginCloseWin0Animation();
+      tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+      return;
+  }
+  data.tutorialFrame++;
+}
+
+/** item_menu.c Task_Bag_TeachyTvTMs: scroll to TM Case and open it after the lesson prompt. */
+function Task_Bag_TeachyTvTMs(taskId: number): void {
+  if (gPaletteFade.active) return;
+  const data = td(taskId);
+  if (joy.newKeys & B_BUTTON) {
+    Bag_BeginCloseWin0Animation();
+    tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+    return;
+  }
+  switch (data.tutorialFrame) {
+    case 102:
+      sound.playSE(C.SE_BAG_POCKET);
+      SwitchPockets(taskId, 1, false);
+      break;
+    case 204: {
+      const oldNew = joy.newKeys, oldRepeated = joy.repeated;
+      joy.newKeys = 0; joy.repeated = DPAD_DOWN;
+      ListMenu_ProcessInput(data.listTaskId);
+      joy.newKeys = oldNew; joy.repeated = oldRepeated;
+      break;
+    }
+    case 306:
+      sound.playSE(C.SE_SELECT);
+      bag_menu_print_cursor_(data.listTaskId, 2);
+      Bag_FillMessageBoxWithPalette(1);
+      bagResult.itemId = C.ITEM_TM_CASE;
+      OpenContextMenu(taskId);
+      break;
+    case 408:
       sound.playSE(C.SE_SELECT);
       HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
       CopyWindowToVram(0, COPYWIN_MAP);

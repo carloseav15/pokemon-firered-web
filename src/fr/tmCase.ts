@@ -48,7 +48,7 @@ import {
 } from "./hw/window";
 import { bagResult } from "./bagMenu";
 import { tmhmMove } from "./menus/monProgress";
-import { addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addBagItem, addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { save } from "./save";
 
@@ -345,6 +345,31 @@ function RemoveScrollArrows(): void {
 export function ResetTMCaseCursorPos(): void {
   sStatic.selectedRow = 0;
   sStatic.scrollOffset = 0;
+}
+
+/**
+ * Adapted tm_case.c Pokedude_InitTMCase: expose its four temporary sample TMs,
+ * then restore the player's TM/key-item pockets when the case returns.
+ * The source's timed narration/forced cursor tour is still not emulated.
+ */
+export function InitPokedudeTMCase(done: () => void): void {
+  const tmBackup = save.bag.tmCase.map((slot) => ({ ...slot }));
+  const keyItemsBackup = save.bag.keyItems.map((slot) => ({ ...slot }));
+  const selectedRow = sStatic.selectedRow, scrollOffset = sStatic.scrollOffset;
+  save.bag.tmCase = [];
+  save.bag.keyItems = [];
+  ResetTMCaseCursorPos();
+  addBagItem(C.ITEM_TM01, 1);
+  addBagItem(C.ITEM_TM03, 1);
+  addBagItem(C.ITEM_TM09, 1);
+  addBagItem(C.ITEM_TM35, 1);
+  InitTMCase(C.TMCASE_POKEDUDE, () => {
+    save.bag.tmCase = tmBackup;
+    save.bag.keyItems = keyItemsBackup;
+    sStatic.selectedRow = selectedRow;
+    sStatic.scrollOffset = scrollOffset;
+    done();
+  }, false);
 }
 
 function TMCaseSetup_GetTMCount(): void {
