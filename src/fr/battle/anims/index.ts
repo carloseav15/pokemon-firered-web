@@ -20,3 +20,4 @@ import "./ghost";
 import "./ice";
 import "./psychic";
 import "./water";
+import "./statusEffects";
