@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 38 modules as documented ported, 65 as partial or
+The current review labels 39 modules as documented ported, 65 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 nine as explicitly out of scope, 36 as probable out-of-scope candidates, and
-125 as unreviewed. Separately, 42 files have a
+124 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,9 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `fldeff_rocksmash.c`: el menú exige la roca delante; el handler registra
+  el stat, reproduce `show mon`/sonido y reanuda el script igual que C. Revisión
+  de código completada; no se comparó el timing de animación en navegador.
 - `dynamic_placeholder_text_util.c`: el color de texto NPC usa la tabla C
   exportada. Los placeholders F7 tienen implementaciones locales en resumen
   y diploma, pero falta el helper compartido Reset/Set/Get/Expand para el resto
