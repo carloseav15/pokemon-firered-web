@@ -27,7 +27,7 @@ import { decode } from "./gba/charmap";
 import { varSet, SV } from "./save";
 import { getDexFlag, healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
-import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
+import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
@@ -43,7 +43,8 @@ import { openPokedexScreen } from "./menus/pokedex";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import { openSlotMachine } from "./menus/slotMachine";
 import { openShopMenu } from "./menus/shopMenu";
-import { OptionsModel, OPTION_LABELS } from "./menus/optionsModel";
+import { openOptionMenu } from "./optionMenu";
+import { openRegionMap, REGIONMAP_TYPE_NORMAL, REGIONMAP_TYPE_WALL } from "./regionMap";
 import { DoNamingScreen } from "./namingScreen";
 import { HwScene } from "./hw/runtime";
 import { gender as pokemonGender } from "./pokemon/pokemon";
@@ -375,33 +376,10 @@ export class Game {
   openPartyMenu(): void { this.removeStartMenuWindows(); openFieldParty(this); }
   openBag(): void { this.removeStartMenuWindows(); openFieldBag(this); }
 
+  /** CB2_OptionsMenuFromStartMenu; savedCallback CB2_ReturnToFieldWithOpenMenu reopens the start menu. */
   openOptions(): void {
     this.removeStartMenuWindows();
-    const model = new OptionsModel(save.options);
-    const window = this.scriptMenu.createFramedWindow(0, 1, 28, 17);
-    const redraw = (): void => {
-      window.frameType = model.values[5];
-      window.fill(1);
-      printText(window, FONT_NORMAL, encode("OPTION"), 8, 0);
-      OPTION_LABELS.forEach((label, row) => {
-        const colors = row === model.cursor ? {fg: 4, bg: 1, shadow: 5} : {fg: 2, bg: 1, shadow: 3};
-        printText(window, FONT_NORMAL, encode(label), 8, 20 + row * 15, colors);
-        printText(window, FONT_NORMAL, encode(model.label(row)), 124, 20 + row * 15, colors);
-      });
-    };
-    redraw();
-    const id = tasks.create(() => {
-      const result = model.input(joy.newKeys, joy.repeated);
-      if (result === "change") redraw();
-      else if (result === "close") {
-        textOptions.speed = save.options.textSpeed;
-        joy.buttonMode = save.options.buttonMode;
-        sound.setStereo(save.options.sound === 1);
-        this.scriptMenu.removeWindow(window);
-        tasks.destroy(id);
-        this.closeStartMenu();
-      }
-    }, 80);
+    fieldMenu(this, (close) => openOptionMenu(() => { close(); this.showStartMenu(); }), false);
   }
 
   useRegisteredKeyItem(): boolean {
@@ -516,15 +494,15 @@ export class Game {
   }
   openPokemonStorage(): void { openStorageMenu(this); }
   openPlayerPC(bedroom: boolean): void { openPlayerPc(this, bedroom); }
-  /** special ShowTownMap: the region map from a script, then the script resumes. */
+  /** special ShowTownMap: InitRegionMapWithExitCB(REGIONMAP_TYPE_WALL, CB2_ReturnToFieldContinueScriptPlayMapMusic). */
   showTownMap(): void {
     this.overworld.script.stop();
-    fieldMenu(this, (close) => openTownMapList(this.overworld.header.regionMapSection, () => { close(); this.overworld.script.enable(); }), false);
+    fieldMenu(this, (close) => openRegionMap(this, REGIONMAP_TYPE_WALL, () => { close(); this.overworld.script.enable(); }), false);
   }
 
-  /** FieldUseFunc_TownMap from the field (registered item or bag). */
+  /** Task_UseTownMapFromField: InitRegionMapWithExitCB(REGIONMAP_TYPE_NORMAL, CB2_ReturnToField). */
   showTownMapFromField(): void {
-    fieldMenu(this, (close) => openTownMapList(this.overworld.header.regionMapSection, close));
+    fieldMenu(this, (close) => openRegionMap(this, REGIONMAP_TYPE_NORMAL, close, true));
   }
 
   openFameChecker(): void {

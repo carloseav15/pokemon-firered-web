@@ -113,18 +113,3 @@ export function openTeachyTv(done: () => void): void {
   };
   menu();
 }
-
-/** region_map.c in town map mode: the map sections and where the player is. */
-export function openTownMapList(currentSection: number, done: () => void): void {
-  const kanto = rom.regionMap.map((e, i) => ({ e, i })).filter(({ i }) => i >= C.KANTO_MAPSEC_START && i < C.MAPSEC_NONE);
-  const seen = new Set<string>();
-  const rows = kanto.filter(({ e }) => {
-    const name = decode(Uint8Array.from(atob(e.name), (c) => c.charCodeAt(0)));
-    if (!name || seen.has(name)) return false;
-    seen.add(name);
-    return true;
-  });
-  openHardwareChoice("TOWN MAP", rows.map(({ e, i }) => ({
-    label: `${i === currentSection ? "> " : "  "}${decode(Uint8Array.from(atob(e.name), (c) => c.charCodeAt(0)))}`, value: i,
-  })), true, () => done());
-}

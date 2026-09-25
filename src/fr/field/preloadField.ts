@@ -4,7 +4,7 @@
 import { loadCData, preloadPacks } from "../hw/assets";
 
 const CDATA_FILES = [
-  "field_effect", "field_specials", "vs_seeker", "pokemon_jump", "fame_checker", "party_menu", "item_menu", "region_map",
+  "field_effect", "field_specials", "vs_seeker", "pokemon_jump", "fame_checker", "party_menu", "item_menu", "region_map", "map_preview_screen",
   "pokemon_summary_screen", "pokedex_screen", "trainer_card", "evolution_scene", "hall_of_fame", "daycare", "trade", "trade_scene",
   "roamer", "seagallop", "field_weather", "field_weather_effects", "battle_transition", "learn_move", "tm_case", "berry_pouch",
   "shop", "item_pc", "pokemon_storage_system_graphics", "pokemon_storage_system_data", "diploma", "credits", "slot_machine",
@@ -13,7 +13,7 @@ const CDATA_FILES = [
 
 const PACKS = [
   "graphics_field_effects", "graphics_field_specials", "graphics_interface", "graphics_object_events", "graphics_ss_anne", "graphics_seagallop",
-  "graphics_weather", "graphics_cave_transition", "graphics_battle_transitions", "graphics_misc", "graphics_region_map",
+  "graphics_weather", "graphics_cave_transition", "graphics_battle_transitions", "graphics_misc", "graphics_region_map", "graphics_map_preview",
   "graphics_party_menu", "graphics_item_menu", "graphics_summary_screen", "graphics_pokedex", "graphics_trainer_card",
   "graphics_evolution_scene", "graphics_hall_of_fame", "graphics_diploma", "graphics_credits", "graphics_items", "graphics_tm_case",
   "graphics_berry_pouch", "graphics_shop_menu", "graphics_item_pc", "graphics_pokemon_storage", "graphics_learn_move",

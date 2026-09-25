@@ -134,8 +134,15 @@ explicitly out of scope.
    trainer disguise icons, storage cursor animations pending).
 3. Verify `naming_screen.c` parity for player, rival and Pokémon naming (screen
    exists and is connected; choreography details pending).
-4. Complete options and town map screens (trainer card front/back is connected;
-   dedicated card graphics, flip animation and photo icons pending).
+4. Options and region map screens are ported on the hardware layer:
+   `src/fr/regionMap.ts` is `region_map.c` (Town Map with open/close edge
+   animation, dungeon icons, map-preview zoom with flavor text, Kanto/Sevii
+   switch menu; wall map for `ShowTownMap`; Fly map with fly icons and
+   `SetFlyWarpDestination`, wired to the party menu's FLY), and
+   `src/fr/optionMenu.ts` is `option_menu.c` (frame preview, WIN0 row
+   highlight, returns to the open start menu). Source review only; not run.
+   Trainer card: dedicated card graphics, flip animation and photo icons
+   pending.
 5. Replace small, bounded event-special placeholders with source behavior.
 6. Complete shops and the bag, including item selection and use. Verify the
    Game Corner prize exchange scripts (stock, prices, delivery) — otherwise

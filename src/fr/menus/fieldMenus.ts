@@ -9,7 +9,8 @@ import { decode } from "../gba/charmap";
 import { b64, rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
 import { addBagItem, itemInfo, itemName, pocketList, removeBagItem } from "../pokemon/items";
-import { fieldMoveName, fieldMovesOf, flyDestinations, text, trySetUpFieldMove } from "./fieldMoveMenu";
+import { fieldMoveName, fieldMovesOf, text, trySetUpFieldMove } from "./fieldMoveMenu";
+import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { encode, stringVars } from "../gba/charmap";
 import { PokemonUseItemEffects } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
@@ -122,20 +123,18 @@ export function openFieldParty(game: Game): void {
             if (yes === 1) { post = result.post; finish(); } else party();
           });
           return;
-        case "fly": {
-          const destinations = flyDestinations();
-          openHardwareChoice("Where to fly?", destinations.map((d, value) => ({label: d.name, value})), true, choice => {
-            if (choice === null) { party(); return; }
-            const dest = destinations[choice];
+        case "fly":
+          // CB2_OpenFlyMap: SetFlyWarpDestination, then ReturnToFieldFromFlyMapSelect
+          // (FieldCallback_UseFly) or CB2_ReturnToPartyMenuFromFlyMap.
+          openFlyMap(game, selected => {
+            if (!selected) { party(); return; }
             post = () => {
-              game.overworld.setWarpDestinationToHealLocation(dest.heal);
               game.fieldEffectArguments[0] = index;
               game.overworld.effects.moves.startFly();
             };
             finish();
           });
           return;
-        }
         case "softboiled":
           openHardwareChoice(text("gText_UseOnWhichPokemon"), save.party.map((m, value) => ({label: `${decode(m.nickname)} ${m.hp}/${m.stats[0]}`, value})), true, target => {
             if (target === null) { party(); return; }
@@ -347,7 +346,11 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           incrementGameStat(C.GAME_STAT_USED_ITEMFINDER);
           onField(() => useItemfinder(game));
           return;
-        case "FieldUseFunc_TownMap": onField(() => game.showTownMapFromField()); return;
+        case "FieldUseFunc_TownMap":
+          // From the bag the map returns to the bag (CB2_BagMenuFromStartMenu); a registered use returns to the field.
+          if (initialItem !== undefined) onField(() => game.showTownMapFromField());
+          else openRegionMap(game, REGIONMAP_TYPE_NORMAL, bag);
+          return;
         case "FieldUseFunc_FameChecker": onField(() => game.openFameChecker()); return;
         case "FieldUseFunc_TeachyTv": onField(() => game.openTeachyTv()); return;
         case "FieldUseFunc_VsSeeker": onField(() => game.useVsSeeker()); return;
