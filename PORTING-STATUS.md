@@ -864,3 +864,9 @@ Pending / placeholders:
   999,999 cap, and subtraction keeps the zero floor. `npm run check:port`
   passes. Encryption and GBA window/object rendering remain adapted; no runtime
   arithmetic exercise was run.
+- `dynamic_placeholder_text_util.c`: the eight-slot dynamic placeholder APIs
+  remain implemented in `pokemonSummaryScreen.ts`; extracted
+  `GetColorFromTextColorTable` to `dynamicPlaceholderTextUtil.ts` with C `u16`
+  narrowing, packed nibble selection and neutral fallback. Field dialogue uses
+  the shared function, and `rom.scriptMenu.textColors` now has its exported
+  flat-array type. `npm run check:port` passes; no runtime call exercise.

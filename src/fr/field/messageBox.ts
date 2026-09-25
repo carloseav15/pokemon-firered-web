@@ -8,6 +8,7 @@ import { Window } from "../gba/window";
 import { rom } from "../rom";
 import { SV, varGet } from "../save";
 import * as C from "../generated/constants";
+import { GetColorFromTextColorTable } from "../dynamicPlaceholderTextUtil";
 import type { Overworld } from "./overworld";
 
 export const FIELD_MESSAGE_BOX_HIDDEN = C.FIELD_MESSAGE_BOX_HIDDEN;
@@ -16,8 +17,6 @@ export const FIELD_MESSAGE_BOX_NORMAL = C.FIELD_MESSAGE_BOX_NORMAL;
 export const FIELD_MESSAGE_BOX_AUTO_SCROLL = C.FIELD_MESSAGE_BOX_AUTO_SCROLL;
 
 const NPC_TEXT_COLOR_MALE = 0, NPC_TEXT_COLOR_FEMALE = 1, NPC_TEXT_COLOR_NEUTRAL = 3, NPC_TEXT_COLOR_DEFAULT = 0xff;
-
-let textColorTable: number[] | undefined;
 
 export class FieldMessageBox {
   type = FIELD_MESSAGE_BOX_HIDDEN;
@@ -57,10 +56,7 @@ export class FieldMessageBox {
     let gfx = object.graphicsId;
     const base = rom.constants.OBJ_EVENT_GFX_VAR_0 ?? 0xef;
     if (gfx >= base) gfx = varGet(rom.c("VAR_OBJ_GFX_ID_0") + gfx - base);
-    if (!textColorTable) textColorTable = (rom as unknown as { scriptMenu: { textColors: number[] } }).scriptMenu.textColors;
-    const byte = textColorTable[gfx >> 1];
-    if (byte === undefined) return NPC_TEXT_COLOR_NEUTRAL;
-    return (byte >> ((gfx & 1) << 2)) & 0xf;
+    return GetColorFromTextColorTable(gfx);
   }
 
   /** ShowFieldMessage */
