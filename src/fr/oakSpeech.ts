@@ -43,6 +43,7 @@ import {
 import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate } from "./hw/window";
 import { random } from "./random";
+import { Q_8_8_inv } from "./mathUtil";
 import { rom } from "./rom";
 import { gMonFrontPicTable, DecompressPicFromTable, symPalette } from "./pokemon/pics";
 import { gMonSpritesGfxPtr } from "./battle/globals";
@@ -890,9 +891,6 @@ function Task_OakSpeech_SetUpShrinkPlayerPic(taskId: number): void {
   d[15] = 0;
   tasks.tasks[taskId].func = Task_OakSpeech_ShrinkPlayerPic;
 }
-
-/** Q_8_8_inv: 1 / x in Q8.8 */
-const Q_8_8_inv = (x: number) => s16(Math.trunc(0x10000 / x));
 
 function Task_OakSpeech_ShrinkPlayerPic(taskId: number): void {
   const d = tasks.tasks[taskId].data;
