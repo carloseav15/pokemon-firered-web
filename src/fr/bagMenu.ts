@@ -59,6 +59,7 @@ import {
 import { addMoney, addPCItem, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { InitTMCase } from "./tmCase";
+import { InitBerryPouch } from "./berryPouch";
 import { save } from "./save";
 
 // ---------------------------------------------------------------- public state and hooks
@@ -234,7 +235,7 @@ function BagDrawTextBoxOnWindow(windowId: number): void {
 
 const sItemMenuIconSpriteIds = new Array(SPR_COUNT).fill(SPRITE_NONE);
 
-function ResetItemMenuIconState(): void { sItemMenuIconSpriteIds.fill(SPRITE_NONE); }
+export function ResetItemMenuIconState(): void { sItemMenuIconSpriteIds.fill(SPRITE_NONE); }
 
 function template(tileTag: number, palTag: number, oam: string, anims: string, affine: string | null): SpriteTemplate {
   return {
@@ -316,6 +317,11 @@ export function AddItemIconObject(tilesTag: number, paletteTag: number, itemId: 
 }
 
 function CreateItemMenuIcon(itemId: number, idx: number): void {
+  CreateItemMenuIconAt(itemId, idx, 140);
+}
+
+/** CreateItemMenuIcon (y2 140) / CreateBerryPouchItemIcon (y2 147). */
+export function CreateItemMenuIconAt(itemId: number, idx: number, y2: number): void {
   if (sItemMenuIconSpriteIds[SPR_ITEM_ICON + idx] !== SPRITE_NONE) return;
   FreeSpriteTilesByTag(TAG_ITEM_ICON + idx);
   FreeSpritePaletteByTag(TAG_ITEM_ICON + idx);
@@ -323,11 +329,11 @@ function CreateItemMenuIcon(itemId: number, idx: number): void {
   if (spriteId !== MAX_SPRITES) {
     sItemMenuIconSpriteIds[SPR_ITEM_ICON + idx] = spriteId;
     gSprites[spriteId].x2 = 24;
-    gSprites[spriteId].y2 = 140;
+    gSprites[spriteId].y2 = y2;
   }
 }
 
-function DestroyItemMenuIcon(idx: number): void {
+export function DestroyItemMenuIcon(idx: number): void {
   const id = sItemMenuIconSpriteIds[SPR_ITEM_ICON + idx];
   if (id !== SPRITE_NONE) {
     DestroySpriteAndFreeResources(gSprites[id]);
@@ -747,10 +753,7 @@ function ItemMenu_SetExitCallback(cb: () => void): void {
   disp().exitCB = cb;
 }
 
-/**
- * GoToTMCase_* / GoToBerryPouch_*: without a handler for the case screen the
- * bag returns to its caller as if cancelled (tm_case.c / berry_pouch.c pending).
- */
+/** GoToTMCase_* / GoToBerryPouch_*: the case screen for a give/sell/PC bag, which returns to this bag. */
 function openCaseOrReturn(itemId: number, location: number): () => void {
   return () => {
     if (sHandlers.openCase) { sHandlers.openCase(itemId, location); return; }
@@ -761,6 +764,15 @@ function openCaseOrReturn(itemId: number, location: number): () => void {
       if (location === C.ITEMMENULOCATION_PARTY) InitTMCase(C.TMCASE_GIVE_PARTY, back, false, { giveParty: done });
       else if (location === C.ITEMMENULOCATION_SHOP) InitTMCase(C.TMCASE_SELL, back, false, {});
       else InitTMCase(C.TMCASE_GIVE_PC, back, false, { givePc: done });
+      return;
+    }
+    if (itemId === C.ITEM_BERRY_POUCH) {
+      // GoToBerryPouch_Give / _Sell / _PCBox
+      const back = (): void => GoToBagMenu(location, C.OPEN_BAG_LAST, null);
+      const done = (): void => gBagMenuState.bagCallback?.();
+      if (location === C.ITEMMENULOCATION_PARTY) InitBerryPouch(C.BERRYPOUCH_FROMPARTYGIVE, back, 0, { giveParty: done });
+      else if (location === C.ITEMMENULOCATION_SHOP) InitBerryPouch(C.BERRYPOUCH_FROMMARTSELL, back, 0, {});
+      else InitBerryPouch(C.BERRYPOUCH_FROMPOKEMONSTORAGEPC, back, 0, { givePc: done });
       return;
     }
     bagResult.itemId = C.ITEM_NONE;

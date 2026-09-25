@@ -13,6 +13,7 @@ import { fieldMoveName, fieldMovesOf, text, trySetUpFieldMove } from "./fieldMov
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { bagResult, GoToBagMenu, type BagHandlers, type BagTaskContext } from "../bagMenu";
 import { InitTMCase } from "../tmCase";
+import { InitBerryPouch } from "../berryPouch";
 import { encode, stringVars } from "../gba/charmap";
 import { PokemonUseItemEffects } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
@@ -328,7 +329,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_CoinCase": stringVars.var1 = encode(String(save.coins)); message(rom.text("gText_CoinCase")); return;
         case "FieldUseFunc_PowderJar": stringVars.var1 = encode(String(save.berryPowder ?? 0)); message(rom.text("gText_PowderQty")); return;
         case "FieldUseFunc_TmCase": leave(openTmCase); return;
-        case "FieldUseFunc_BerryPouch": leave(() => pocket(5)); return;
+        case "FieldUseFunc_BerryPouch": leave(berryPouch); return;
         case "FieldUseFunc_Bike": {
           const p = ow.player.object;
           const behavior = ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
@@ -377,24 +378,12 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         default: notNow(); return;
       }
     };
-    /** berry_pouch.c is not ported yet: its berries keep the text-list adapter. */
-    const actions = (item: number): void => {
-      const info = itemInfo(item)!;
-      const choices = [{label: "USE", value: 0}];
-      if (!info.importance) choices.push({label: "GIVE", value: 3}, {label: "TOSS", value: 1});
-      openHardwareChoice(decode(itemName(item)), choices, true, choice => {
-        if (choice === null) { pocket(5); return; }
-        if (choice === 0) { use(item); return; }
-        if (choice === 3) { giveItem(item, () => pocket(5)); return; }
-        openHardwareChoice("Throw away one item?", [{label: "NO", value: 0}, {label: "YES", value: 1}], true, answer => {
-          if (answer === 1) removeBagItem(item, 1);
-          pocket(5);
-        });
-      });
+    /** berry_pouch.c: InitBerryPouch(BERRYPOUCH_FROMFIELD, bag); the same item functions as the bag. */
+    const pouchHandlers = {
+      fieldUse: (item: number, ctx: BagTaskContext) => { bagCtx = ctx; use(item); bagCtx = null; },
+      giveToMon: (item: number) => giveItem(item, berryPouch),
     };
-    const pocket = (id: number): void => openHardwareChoice(["", "ITEMS", "KEY ITEMS", "POKé BALLS", "TM CASE", "BERRY POUCH"][id], pocketList(id).map(slot => ({label: `${decode(itemName(slot.item))} x${slot.quantity}`, value: slot.item})), true, item => {
-      if (item === null) bag(); else actions(item);
-    });
+    const berryPouch = (): void => InitBerryPouch(C.BERRYPOUCH_FROMFIELD, bag, 0, pouchHandlers);
     const handlers: BagHandlers = {
       fieldUse: (item, ctx) => { bagCtx = ctx; use(item); bagCtx = null; },
       giveToMon: (item) => giveItem(item, bag),

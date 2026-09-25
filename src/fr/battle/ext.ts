@@ -41,7 +41,8 @@ import { BtlController_EmitGetMonData, BUFFER_A } from "./controllers";
 import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHoldEffect, MarkBattlerForControllerExec } from "./util";
 import { battleHost } from "./host";
 import { ReshowBattleScreenAfterMenu } from "./reshow";
-import { bagResult, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu } from "../bagMenu";
+import { bagResult, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, type BagTaskContext } from "../bagMenu";
+import { InitBerryPouch } from "../berryPouch";
 import { gDisableStructs } from "./globals";
 
 export { GetSetPokedexFlag };
@@ -219,30 +220,31 @@ export function CB2_BagMenuFromBattle(): void {
     });
   };
   /** CB2_BagMenuFromBattle: GoToBagMenu(ITEMMENULOCATION_BATTLE, OPEN_BAG_LAST, SetCB2ToReshowScreenAfterMenu2). */
-  const showBag = (): void => GoToBagMenu(C.ITEMMENULOCATION_BATTLE, C.OPEN_BAG_LAST, () => finish(bagResult.itemId), {
-    // ItemId_GetBattleFunc(item)(taskId)
-    battleUse: (item, ctx) => {
-      const info = itemInfo(item)!;
-      const notNow = (): void => { stringVars.var1 = Uint8Array.from(save.playerName); ctx.message(rom.text("gText_OakForbidsUseOfItemHere")); };
-      switch (info.battleUseFunc) {
-        case "BattleUseFunc_PokeBallEtc":
-          if (save.party.length >= C.PARTY_SIZE && save.boxes.every(box => box.every(mon => !!mon?.species))) { ctx.message(rom.text("gText_BoxFull")); return; }
-          removeBagItem(item, 1);
-          ctx.exit(() => finish(item));
-          return;
-        case "BattleUseFunc_PokeFlute": ctx.exit(() => finish(item)); return;
-        case "BattleUseFunc_PokeDoll":
-          if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) { notNow(); return; }
-          removeBagItem(item, 1);
-          ctx.exit(() => finish(item));
-          return;
-        case "BattleUseFunc_StatBooster": ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)); return;
-        case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, false)); return;
-        case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, true)); return;
-        default: notNow(); return;
-      }
-    },
-  });
+  // ItemId_GetBattleFunc(item)(taskId), shared by the bag and the berry pouch.
+  const battleUse = (item: number, ctx: BagTaskContext): void => {
+    const info = itemInfo(item)!;
+    const notNow = (): void => { stringVars.var1 = Uint8Array.from(save.playerName); ctx.message(rom.text("gText_OakForbidsUseOfItemHere")); };
+    switch (info.battleUseFunc) {
+      case "BattleUseFunc_PokeBallEtc":
+        if (save.party.length >= C.PARTY_SIZE && save.boxes.every(box => box.every(mon => !!mon?.species))) { ctx.message(rom.text("gText_BoxFull")); return; }
+        removeBagItem(item, 1);
+        ctx.exit(() => finish(item));
+        return;
+      case "BattleUseFunc_PokeFlute": ctx.exit(() => finish(item)); return;
+      case "BattleUseFunc_PokeDoll":
+        if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) { notNow(); return; }
+        removeBagItem(item, 1);
+        ctx.exit(() => finish(item));
+        return;
+      case "BattleUseFunc_StatBooster": ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)); return;
+      case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, false)); return;
+      case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, true)); return;
+      // BattleUseFunc_BerryPouch: InitBerryPouch(BERRYPOUCH_FROMBATTLE, CB2_BagMenuFromBattle, FALSE)
+      case "BattleUseFunc_BerryPouch": ctx.exit(() => InitBerryPouch(C.BERRYPOUCH_FROMBATTLE, showBag, 0, { battleUse })); return;
+      default: notNow(); return;
+    }
+  };
+  const showBag = (): void => GoToBagMenu(C.ITEMMENULOCATION_BATTLE, C.OPEN_BAG_LAST, () => finish(bagResult.itemId), { battleUse });
   showBag();
 }
 

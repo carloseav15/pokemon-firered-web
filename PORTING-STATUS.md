@@ -155,8 +155,10 @@ explicitly out of scope.
      `tm_case.c` (HMs first, move info with type/power/accuracy/PP icons,
      disc sprite tinted by type with the swap animation, USE/GIVE context
      menu, give-from-party/PC and sell flows); the bag opens it for OPEN,
-     party GIVE, PC give and shop SELL. The berry pouch screen is pending
-     (opening it from a give/sell bag returns as cancelled). Old Man / Teachy TV scripted bags are not wired yet.
+     party GIVE, PC give and shop SELL. BERRY POUCH: `src/fr/berryPouch.ts` ports
+     `berry_pouch.c` (wobbling pouch sprite, item icons, USE/GIVE/TOSS,
+     party/PC give and sell), opened from the field bag, the battle bag and
+     give/sell/PC bags. Old Man / Teachy TV scripted bags are not wired yet.
 5. Replace small, bounded event-special placeholders with source behavior.
 6. Complete shops and the bag, including item selection and use. Verify the
    Game Corner prize exchange scripts (stock, prices, delivery) — otherwise
