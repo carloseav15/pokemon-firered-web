@@ -842,3 +842,9 @@ Pending / placeholders:
   repeat entries preserve prior teams. `SetCB2WhiteOut` already delegates to
   `Game.whiteOut`. `npm run check:port` passes; HOF presentation remains adapted
   and runtime behavior was not exercised.
+- `field_weather_util.c`: `FieldWeather.setWeather` now narrows to the C `u8`,
+  updates saved weather and the rain stat, then sets next weather immediately;
+  the `setweather` script command uses it. Map-header reset and
+  `DoCurrentWeather` remain separate. `npm run check:port` passes. Route-cycle
+  stages, paused-weather resume and the unused variant remain unported; visual
+  renderer limits are tracked under `field_weather.c`.

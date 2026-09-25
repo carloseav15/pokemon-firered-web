@@ -586,7 +586,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     return false;
   },
   resetweather: (ctx) => { ctx.ow.game.weather.setSavedFromHeader(ctx.ow.header.weather); return false; },
-  setweather: (ctx) => { ctx.ow.game.weather.setSaved(varGet(ctx.readHalfword())); return false; },
+  setweather: (ctx) => { ctx.ow.game.weather.setWeather(varGet(ctx.readHalfword())); return false; },
   doweather: (ctx) => { ctx.ow.game.weather.doCurrent(); return false; },
   setstepcallback: (ctx) => { ctx.ow.game.setStepCallback(ctx.readByte()); return false; },
   setmaplayoutindex: (ctx) => { ctx.ow.game.setMapLayoutIndex(varGet(ctx.readHalfword())); return false; },

@@ -60,6 +60,7 @@ const to8bit = (v: number): number => Math.min(255, Math.round((v * 255) / 31));
 
 /** TranslateWeatherNum (ROUTE119/123 cycles never occur in FRLG). */
 function translate(weather: number): number {
+  weather &= 0xff;
   if (weather >= 0 && weather <= 15) return weather;
   return rom.c("WEATHER_NONE") ?? 0;
 }
@@ -86,6 +87,12 @@ export class FieldWeather {
   /** SetSavedWeather */
   setSaved(weather: number): void {
     this.setSavedRaw(translate(weather));
+  }
+
+  /** SetWeather: update the saved weather and immediately schedule it. */
+  setWeather(weather: number): void {
+    this.setSaved(weather);
+    this.next = this.saved;
   }
 
   private setSavedRaw(weather: number): void {
