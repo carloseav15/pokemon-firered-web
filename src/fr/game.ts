@@ -27,6 +27,8 @@ import { WildEncounter } from "./field/wildEncounter";
 import { generatePlayerTrainerId, takeWildEncounterSeed } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { dexCount, getDexFlag, healMon } from "./pokemon/pokemon";
+import { SaveStatToString } from "./saveMenuUtil";
+import * as C from "./generated/constants";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
@@ -364,31 +366,25 @@ export class Game {
     stats.frameType = save.options.frameType;
     stats.fill(1);
 
-    const location = ow.header.regionMapSectionName ? rom.regionMapName(ow.header.regionMapSection) : encode("");
+    const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
     printText(stats, FONT_NORMAL, location, Math.max(0, (112 - stringWidth(FONT_NORMAL, location)) >> 1), 0);
     const label = (y: number, name: string) => printText(stats, FONT_NORMAL, rom.text(name), 2, y);
     const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_NORMAL, text, 60, y);
     label(14, "gText_Player");
-    value(14, Uint8Array.from([...save.playerName, 0xff]));
+    value(14, SaveStatToString(C.SAVE_STAT_NAME, 2));
 
-    let badges = 0;
-    for (let flag = rom.c("FLAG_BADGE01_GET"); flag < rom.c("FLAG_BADGE01_GET") + 8; flag++) if (flagGet(flag)) badges++;
     label(28, "gText_Badges");
-    value(28, concat(intToDecimal(badges, STR_CONV_MODE_RIGHT_ALIGN, 1), rom.text("gTextJPDummy_Ko")));
+    value(28, SaveStatToString(C.SAVE_STAT_BADGES, 2));
 
     let y = 42;
     if (flagGet(rom.c("FLAG_SYS_POKEDEX_GET"))) {
-      const national = varGet(rom.c("VAR_NATIONAL_DEX")) === 0x6258 && flagGet(rom.c("FLAG_SYS_NATIONAL_DEX"));
       label(y, "gText_Pokedex");
-      value(y, concat(intToDecimal(dexCount(true, !national), 0, 3), rom.text("gTextJPDummy_Hiki")));
+      value(y, concat(SaveStatToString(C.SAVE_STAT_POKEDEX, 2), rom.text("gTextJPDummy_Hiki")));
       y += 14;
     }
 
-    const totalMinutes = Math.floor(save.playTimeFrames / 3600);
-    const hours = Math.min(999, Math.floor(totalMinutes / 60));
-    const minutes = hours === 999 ? 59 : totalMinutes % 60;
     label(y, "gText_Time");
-    value(y, concat(intToDecimal(hours, 0, 3), Uint8Array.from([rom.c("CHAR_COLON"), 0xff]), intToDecimal(minutes, STR_CONV_MODE_LEADING_ZEROS, 2)));
+    value(y, SaveStatToString(C.SAVE_STAT_TIME, 2));
 
     ow.windows.add(stats);
     this.startMenuWindows.push(stats);

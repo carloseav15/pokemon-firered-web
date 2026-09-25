@@ -188,7 +188,7 @@ Sorted by C source length (a quick effort proxy, not an estimate):
 
 | C module | Lines | Finding |
 |---|---:|---|
-| `save_menu_util.c` | 56 | Save flow now renders the C summary fields before confirmation. Canvas frame/palette and exact text color controls remain simplified; check passes, visual execution still pending. |
+| `save_menu_util.c` | 56 | `SaveStatToString` now formats all five C values and emits the C color/shadow control codes; `npm run check:port` passes. Canvas window/frame placement remains adapted and visual parity is unverified. |
 | `play_time.c` | 65 | Reset/Start/Stop/Update/SetToMax now map to save.ts state and Game lifecycle calls. Total frames replace C's split time fields; typecheck passes, runtime parity is unverified. |
 | `coins.c` | 98 | Balance and display logic exist in `items.ts` and `scriptMenu.ts`. `addCoins` clamps and narrows its `u16` input; `removeCoins` now also narrows its `u16` input. `npm run check:port` passes; runtime arithmetic parity remains untested. |
 | `save_location.c` | 112 | Reviewed with `load_save.c`: normal continue uses the saved warp directly. Missing flags affect Pokémon Center/lobby reset warps, GameCube-link unlocks and Champion/postgame behavior; no main-story single-player blocker found. Deferred. |
@@ -198,7 +198,7 @@ The `AddCoins` and `RemoveCoins` argument widths now match `coins.c` in `src/fr/
 whiteout respawn now uses the original heal-location data in
 `src/fr/field/overworld.ts` and selects the correct healer/home script from
 `src/fr/game.ts`. These changes still need execution verification. The other
-`save_location.c` has no main-story single-player blocker; its missing flags are deferred with reset/link/postgame parity. `save_menu_util.c` now has the stats panel and remains partial until visual execution confirms placement, frame and colors.
+`save_location.c` has no main-story single-player blocker; its missing flags are deferred with reset/link/postgame parity. `save_menu_util.c` now has a source-derived `SaveStatToString` used by the stats panel. Color/shadow controls are preserved; Canvas placement/frame remain adapted and visual parity is unverified.
 
 ### Módulos pequeños revisados contra el C (2026-09-25)
 
