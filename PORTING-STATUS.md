@@ -108,6 +108,11 @@ audio backend exists.
 - `tools/check_down_arrow.ts` passes (960 pixels, both variants, four frames):
   the battle dialogue continue arrow matches C tile addressing.
 
+## Source review loop (2026-09-25, no runtime checks)
+
+- `tileset_anims.c`: reviewed all six primary/secondary callbacks against `TilesetAnimator` in `src/fr/field/tileRenderer.ts`. Tile frame order, destination/count, trigger cadence and counter periods match. The web renderer writes tiles directly instead of scheduling DMA3; `prime()` initializes the opening frame. No browser or pixel comparison was run.
+- `event_data.c`: core persisted vars/flags, special vars/flags and temporary-field clearing exist in `save.ts`; National Dex behavior is represented in script helpers. Quest Log flag/var recording/playback, upper-flag clearing, Mystery Event/Gift toggles and clearing, RTC-reset gates, and `ResetSpecialVars` are not implemented as source-equivalent APIs. Marked partial; optional systems remain unverified.
+
 ## C/header inventory first pass (2026-09-25)
 
 [`C-PORT-INVENTORY.csv`](C-PORT-INVENTORY.csv) lists all 283 C source files,
@@ -118,7 +123,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 48 modules as documented ported, 87 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 19 as explicitly out of scope, 36 as probable out-of-scope candidates, and 83 as unreviewed. Separately, 42 files have a
+The current review labels 49 modules as documented ported, 88 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 19 as explicitly out of scope, 36 as probable out-of-scope candidates, and 81 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
