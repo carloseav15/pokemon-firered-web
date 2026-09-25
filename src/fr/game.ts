@@ -44,7 +44,7 @@ import { learnMoveWithPrompt } from "./menus/monProgress";
 import { checkBagHasItem } from "./pokemon/items";
 import { resetPokemonStorageSystem } from "./pokemon/storage";
 import { openStorageMenu } from "./menus/storageMenu";
-import { openPokedexScreen } from "./menus/pokedex";
+import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import { openSlotMachine } from "./menus/slotMachine";
 import { openShopMenu } from "./menus/shopMenu";
@@ -435,9 +435,10 @@ export class Game {
     }, 80);
   }
 
+  /** CB2_OpenPokedexFromStartMenu; CB2_ClosePokedex returns with CB2_ReturnToFieldWithOpenMenu. */
   openPokedex(): void {
     this.removeStartMenuWindows();
-    fieldMenu(this, (close) => openPokedexScreen(() => close()));
+    fieldMenu(this, (close) => openPokedexScreen(() => { close(); this.showStartMenu(); }), false);
   }
   openTrainerCard(): void {
     this.removeStartMenuWindows();

@@ -728,9 +728,14 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 17. **Tragaperras: gráficos** (`slot_machine.c`) **[visual]**: reglas y pagos
     verificados; faltan rodillos, baile de Clefairy y destellos.
 18. **Pokédex completa** (`pokedex_screen.c`, `pokedex_area_markers.c`,
-    `wild_pokemon_area.c`) **[visual]**: lista, búsqueda, página de área
-    (dónde vive cada especie) y página de registro en batalla (hoy adaptador en
-    `battle/ext.ts DexScreen_RegisterMonToPokedex`).
+    `wild_pokemon_area.c`, `trainer_pokemon_sprites.c`) **[PORTADO, sin probar]**:
+    `src/fr/pokedexScreen.ts` traduce el C completo: menú principal, listas
+    numérica/búsqueda, páginas de hábitat con pase de página, ficha con marco de
+    zoom, página de área y registro tras una captura (`displaydexinfo`).
+    `pokedexArea.ts` porta los marcadores (ventana OBJ) y `trainerPokemonSprites.ts`
+    las imágenes de Pokémon/entrenador en sprite o ventana. Sustituye el adaptador
+    `menus/pokedex.ts`. Se corrigió `GetPokedexHeightWeight` (leía un cdata vacío).
+    Verificado solo con `check:port`, `build` y la paridad de cdata/incbin/textos.
 19. **Menú Guardar e informe** (`start_menu.c` guardado, `save_menu_util.c`)
     **[visual]**: comparar la ventana de guardado y el resumen con el C.
 

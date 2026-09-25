@@ -188,7 +188,7 @@ Márcalo en el comentario de cabecera y en `PORTING-STATUS.md`. Adaptadores
 actuales: resumen (`summaryScreen.ts`), elegir movimiento a olvidar
 (`battle/ext.ts ShowSelectMovePokemonSummaryScreen`, `menus/monProgress.ts`),
 PC de objetos/buzón (`menus/playerPc.ts`), almacenamiento de cajas
-(`menus/storageMenu.ts`), Pokédex (`menus/pokedex.ts`), tarjeta de entrenador,
+(`menus/storageMenu.ts`), tarjeta de entrenador,
 Fame Checker/Teachy TV (`menus/keyItemScreens.ts`), tragaperras (visual),
 intercambios en juego (`pokemon/ingameTrade.ts`), Salón de la Fama y créditos
 (`hallOfFame.ts`), evolución fuera de batalla (`monProgress.evolveWithMessages`).

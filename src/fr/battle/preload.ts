@@ -3,6 +3,7 @@
 
 import { loadCData, preloadPacks } from "../hw/assets";
 import { preloadNamingScreen } from "../namingScreen";
+import { preloadPokedexScreen } from "../pokedexScreen";
 import { loadBattleScripts } from "./bscript";
 
 const CDATA_FILES = [
@@ -14,7 +15,7 @@ const CDATA_FILES = [
   "battle_anim_rock", "battle_anim_smokescreen", "battle_anim_sound_tasks",
   "battle_anim_special", "battle_anim_status_effects", "battle_anim_utility_funcs",
   "battle_anim_water", "battle_bg", "battle_main", "battle_message",
-  "battle_script_commands", "battle_interface", "data", "graphics", "pokeball", "pokedex", "pokemon", "pokemon_icon",
+  "battle_script_commands", "battle_interface", "data", "graphics", "pokeball", "pokedex_screen", "pokemon", "pokemon_icon",
   "pokemon_special_anim_scene", "strings", "trig",
 ];
 
@@ -26,5 +27,5 @@ const PACKS = [
 let loading: Promise<void> | null = null;
 
 export function preloadBattleAssets(): Promise<void> {
-  return (loading ??= Promise.all([loadCData(...CDATA_FILES), preloadPacks(PACKS), loadBattleScripts(), preloadNamingScreen()]).then(() => undefined));
+  return (loading ??= Promise.all([loadCData(...CDATA_FILES), preloadPacks(PACKS), loadBattleScripts(), preloadNamingScreen(), preloadPokedexScreen()]).then(() => undefined));
 }

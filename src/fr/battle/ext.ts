@@ -8,18 +8,16 @@
 
 import * as C from "../generated/constants";
 import { DoNamingScreen as OpenNamingScreen } from "../namingScreen";
-import { openHardwareChoice, openHardwareMessage } from "../menus/hardwareChoice";
-import { dexInfoMessage } from "../menus/pokedex";
+import { openHardwareChoice } from "../menus/hardwareChoice";
 import { decode, stringVars } from "../gba/charmap";
 import { b64 } from "../rom";
 import type { NameBuffer } from "../menus/namingModel";
 import { sound } from "../audio/sound";
 import { clearRematchStateByTrainerId } from "../field/vsSeeker";
-import { tasks } from "../gba/tasks";
 import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { FONT_NORMAL } from "../gba/font";
 import { cdata, incbin } from "../hw/assets";
-import { gMain, SetMainCallback2 } from "../hw/runtime";
+import { gMain } from "../hw/runtime";
 import { AddTextPrinterParameterized3 } from "../hw/text";
 import { FillWindowPixelBuffer, PIXEL_FILL } from "../hw/window";
 import { itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
@@ -252,25 +250,8 @@ export function DoNamingScreen(type: number, dest: NameBuffer, species: number, 
   });
 }
 
-/** pokedex_screen.c DexScreen_RegisterMonToPokedex: shows the new dex info page. */
-export function DexScreen_RegisterMonToPokedex(species: number): number {
-  // displaydexinfo waits for this task plus callback2 back on BattleMainCB2.
-  const resume = gMain.callback2;
-  let finished = false;
-  sound.playCry(species, 0);
-  openHardwareMessage(dexInfoMessage(species), () => { finished = true; });
-  return tasks.create((id) => {
-    if (finished) {
-      tasks.destroy(id);
-      SetMainCallback2(resume);
-    }
-  }, 0);
-}
-
-/** pokemon_icon.c / trainer_pokemon_sprites.c CreateMonPicSprite_HandleDeoxys: the dex page pic (not shown yet). */
-export function CreateMonPicSprite_HandleDeoxys(_species: number, _otId: number, _personality: number, _isFront: boolean, _x: number, _y: number, _palSlot: number, _palTag: number): number {
-  return 0xffff;
-}
+export { DexScreen_RegisterMonToPokedex } from "../pokedexScreen";
+export { CreateMonPicSprite_HandleDeoxys } from "../trainerPokemonSprites";
 
 /** evolution_scene.c EvolutionScene (presentation in ./evoScene). */
 import { EvolutionScene } from "./evoScene";
@@ -297,7 +278,7 @@ export function IsPlayerPartyAndPokemonStorageFull(): boolean {
 
 /** pokedex.c GetPokedexHeightWeight(dexNum, 0 = height, 1 = weight) */
 export function GetPokedexHeightWeight(dexNum: number, data: number): number {
-  const entry = cdata<Array<{ height: number; weight: number }>>("pokedex", "gPokedexEntries")[dexNum];
+  const entry = cdata<Array<{ height: number; weight: number }>>("pokedex_screen", "gPokedexEntries")[dexNum];
   if (!entry) return 1;
   return data === 0 ? entry.height : entry.weight;
 }
