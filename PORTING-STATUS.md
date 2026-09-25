@@ -151,11 +151,16 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 
 ### Nivel 2 — pantallas medianas (1–3 días cada una)
 
-9. **Pantalla de datos del Pokémon** (`pokemon_summary_screen.c`, ~4700 líneas)
-   **[visual]**: reemplaza `summaryScreen.ts` (texto) y el selector de
-   movimiento a olvidar (`battle/ext.ts ShowSelectMovePokemonSummaryScreen`,
-   `menus/monProgress.ts`). Desbloquea también la versión de batalla y la de
-   las cajas. Es el hueco visual más visible hoy.
+9. **Pantalla de datos del Pokémon** (`pokemon_summary_screen.c`, 5225 líneas)
+   **[PORTADO]**: portada fielmente en `src/fr/pokemonSummaryScreen.ts` sobre la capa de hardware
+   GBA (`hw/`). Implementa los 4 BGs, ventanas con auto-wrap y buffer dinámico de memo/habilidades,
+   sprites interactivos (mon pic con vigor de rebote/vibración de huevo, Poké Ball, condición de
+   estado, barras de HP y EXP animadas, estrella variocolor, marcas con combo, punto de Pokérus
+   curado), cursores duales de selección/intercambio de movimientos, transiciones deslizantes de
+   página (Info, Habilidades, Movimientos y Datos de movimiento), cambio dinámico de Pokémon con
+   reproducción de grito (cries) y modo de selección de movimiento para aprender/olvidar movimientos
+   (`PSS_MODE_SELECT_MOVE`). Reemplaza el adaptador de texto en `summaryScreen.ts` y en `battle/ext.ts`.
+   Verificado headless (`npm run check:summary`).
 10. **Escena de "usar objeto"** (`pokemon_special_anim.c`, 2272 líneas)
     **[visual]**: `partyMenu.ts` salta `StartUseItemAnim_*` y fija
     `PSA_IsCancelDisabled() = false`; al portarla se cambia solo eso.
@@ -299,8 +304,8 @@ Pending / placeholders:
   target flash preserving pacing. Particle choreography, BG scrolling,
   mon-to-BG copies and spatialized panning remain pending.
 - Bag and party screens are the ported `bagMenu.ts` / `partyMenu.ts`; the
-  summary move-forget selection and Pokédex page are still text adapters in
-  `battle/ext.ts`.
+  summary screen and move-forget selection use the faithful `pokemonSummaryScreen.ts`;
+  Pokédex page in `battle/ext.ts` remains a text adapter.
 - Battle evolution runs the full presentation in `battle/evoScene.ts` (intro
   message, cry, evolution music, white flashes with B-hold cancel, national-dex
   auto-stop past Mew, congrats/stopped messages, Shedinja split, new-move

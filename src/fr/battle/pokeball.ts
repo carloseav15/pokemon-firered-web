@@ -43,7 +43,7 @@ function loadPal(p: CPal): void {
 }
 
 let ballTemplates: SpriteTemplate[] | null = null;
-function gBallSpriteTemplates(): SpriteTemplate[] {
+export function gBallSpriteTemplates(): SpriteTemplate[] {
   return (ballTemplates ??= cdata<CSpriteTemplate[]>("pokeball", "gBallSpriteTemplates").map((t) => templateFrom(t, { SpriteCB_BallThrow })));
 }
 

@@ -231,25 +231,7 @@ export function InitOldManBag(): void {
   CB2_BagMenuFromBattle();
 }
 
-let moveSlotToReplace = C.MAX_MON_MOVES;
-
-/** The battle script performs HM rejection and writes the selected move/PP itself. */
-export function ShowSelectMovePokemonSummaryScreen(monId: number, _lastIdx: number, callback: () => void, move: number): void {
-  moveSlotToReplace = C.MAX_MON_MOVES;
-  const mon = save.party[monId];
-  if (!mon) { callback(); return; }
-  const choices = mon.moves.map((id, slot) => ({
-    value: slot, label: id ? `${decode(b64(rom.moves[id].name))}  PP ${mon.pp[slot]}` : "-", disabled: !id,
-  }));
-  openHardwareChoice(`Forget a move for ${decode(b64(rom.moves[move].name))}?`, choices, true, selected => {
-    moveSlotToReplace = selected ?? C.MAX_MON_MOVES;
-    callback();
-  });
-}
-
-export function GetMoveSlotToReplace(): number {
-  return moveSlotToReplace;
-}
+export { ShowSelectMovePokemonSummaryScreen, GetMoveSlotToReplace } from "../pokemonSummaryScreen";
 
 /** Naming owns the hardware until it returns; reconstruct battle VRAM before resuming. */
 export function DoNamingScreen(type: number, dest: NameBuffer, species: number, gender: number, personality: number, returnCallback: () => void): void {
