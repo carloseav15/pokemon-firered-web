@@ -66,7 +66,6 @@ ADAPTERS: dict[str, str] = {
     "fame_checker": "menus/keyItemScreens.ts",
     "teachy_tv": "menus/keyItemScreens.ts",
     "pokemon_storage_system_menu": "menus/storageMenu.ts: reglas con listas",
-    "shop": "menus/shopMenu.ts",
     "slot_machine": "menus/slotMachine.ts: reglas sin gráficos",
     "trade": "pokemon/ingameTrade.ts: sin escena",
 }

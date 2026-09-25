@@ -550,6 +550,23 @@ escena hw (fondo negro, ventana de diálogo estándar) en vez de sobre el mapa;
 sin Quest Log ni help system. Verificado: `check:port`, `build` y paridad de
 cdata/incbin/textos; sin probar en navegador.
 
+### Tienda Pokémon: `shop.c`, `buy_menu_helpers.c` (2026-09-25)
+
+`shop.ts` porta `shop.c` (menú COMPRAR/VENDER/SALIR, pantalla de compra con
+vista del mostrador dibujada desde los metatiles del mapa, lista con precios,
+icono y descripción, diálogo de cantidad, compra, historial de transacciones) y
+`buyMenuHelpers.ts` porta `buy_menu_helpers.c` completo. La vista del mapa
+necesitó `objectEventGraphics.ts` (parte de `event_object_movement.c`:
+`CreateObjectGraphicsSprite` y la carga de paletas de objetos) y copiar los tilesets
+del mapa a la VRAM hw (`BuyMenuLoadMapTilesets`, el C los encuentra ya cargados).
+Reemplaza y borra `menus/shopMenu.ts` y `menus/shopModel.ts`. Adaptaciones: la
+ventana COMPRAR/VENDER/SALIR y el mensaje "¿Algo más?" se dibujan sobre el
+campo canvas (como `menus/playerPc.ts`); COMPRAR y VENDER (bolsa) corren como
+escena hw dentro de `fieldMenu` y al salir se cierra la escena y vuelve el menú;
+sin Quest Log (`RecordItemTransaction` guarda el historial pero nada lo registra)
+ni help system. Verificado: `check:port`, `build` y paridad de cdata/incbin/textos;
+sin probar en navegador.
+
 ### Lista de movimientos del Recordador (2026-09-25)
 
 `moveRelearner.ts` reemplaza la lista genérica por la pantalla de selección del C:

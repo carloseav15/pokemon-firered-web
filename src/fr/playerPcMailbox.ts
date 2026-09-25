@@ -40,7 +40,7 @@ import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "./h
 import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
 import { ScanlineEffect_Stop } from "./hw/scanline";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
-import { AddTextPrinterParameterized, RunTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized } from "./hw/text";
 import { FreeAllWindowBuffers, type WindowTemplate } from "./hw/window";
 import { ChooseMonToGiveMailFromMailbox } from "./partyMenu";
 import {
@@ -110,7 +110,7 @@ function MailboxScene_VBlankCB(): void {
 }
 
 function MailboxScene_MainCB(): void {
-  RunTextPrinters();
+  // No RunTextPrinters here: DisplayMessageAndContinueTask's task runs the printers (RunTextPrinters_CheckActive).
   tasks.run();
   AnimateSprites();
   BuildOamBuffer();

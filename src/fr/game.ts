@@ -47,7 +47,7 @@ import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import { openSlotMachine } from "./menus/slotMachine";
-import { openShopMenu } from "./menus/shopMenu";
+import { CreatePokemartMenu } from "./shop";
 import { openOptionMenu } from "./optionMenu";
 import { openRegionMap, REGIONMAP_TYPE_NORMAL, REGIONMAP_TYPE_WALL } from "./regionMap";
 import { DoNamingScreen } from "./namingScreen";
@@ -682,7 +682,7 @@ export class Game {
   enterHallOfFame(): void { enterHallOfFame(this); }
   createPokemartMenu(ptr: number): void {
     this.overworld.script.stop();
-    openShopMenu(this, ptr);
+    CreatePokemartMenu(this, ptr);
   }
   playSlotMachine(id: number): void {
     const ow = this.overworld;

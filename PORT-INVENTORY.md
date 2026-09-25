@@ -8,15 +8,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 20 | 23383 | 0/620 |
-| Parcial (menos del 80 % de funciones) | 130 | 151175 | 1855/6698 |
-| Adaptador (UI simplificada) | 7 | 11169 | 59/401 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 52 | 63216 | 1917/2106 |
+| Falta (sin funciones portadas) | 19 | 23178 | 0/613 |
+| Parcial (menos del 80 % de funciones) | 130 | 151175 | 1861/6698 |
+| Adaptador (UI simplificada) | 6 | 10024 | 54/341 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 54 | 64566 | 1980/2173 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 10/118 |
-| Fuera de alcance | 51 | 55183 | 92/1950 |
-| **Pendiente de portar** | **157** | **185727** | |
-| **Total en alcance** | **210** | **248996** | **3831/9825** |
+| Fuera de alcance | 51 | 55183 | 94/1950 |
+| **Pendiente de portar** | **155** | **184377** | |
+| **Total en alcance** | **210** | **248996** | **3895/9825** |
 
 ## Falta (sin funciones portadas)
 
@@ -38,7 +38,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `tilemap_util.c` | 238 | 0/11 |  |  |
 | `save_failed_screen.c` | 228 | 0/14 |  |  |
 | `braille_text.c` | 212 | 0/3 |  |  |
-| `buy_menu_helpers.c` | 205 | 0/7 |  |  |
 | `battle_anim_smokescreen.c` | 197 | 0/3 |  |  |
 | `coord_event_weather.c` | 49 | 0/1 |  |  |
 | `cable_car_util.c` | 38 | 0/2 |  |  |
@@ -47,7 +46,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota |
 |---|---:|---:|---|---|
-| `event_object_movement.c` | 9412 | 36/752 | `field/fieldEffects.ts`, `field/objectEvents.ts` |  |
+| `event_object_movement.c` | 9412 | 41/752 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `objectEventGraphics.ts` |  |
 | `pokemon.c` | 6453 | 72/135 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |
 | `party_menu.c` | 6342 | 280/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |
 | `battle_anim_effects_3.c` | 5430 | 5/140 |  |  |
@@ -66,7 +65,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_special.c` | 2304 | 18/81 | `battle/gfx_sfx_util.ts`, `battle/interface.ts`, `battle/pokeball.ts` |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |
 | `scrcmd.c` | 2264 | 2/224 | `script/commands.ts` |  |
-| `field_player_avatar.c` | 2168 | 32/176 | `field/fishing.ts`, `field/playerAvatar.ts` |  |
+| `field_player_avatar.c` | 2168 | 33/176 | `field/fishing.ts`, `field/playerAvatar.ts` |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |
 | `daycare.c` | 2155 | 41/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |
 | `battle_ai_script_commands.c` | 1970 | 25/103 | `battle/ai.ts`, `battle/util.ts` |  |
@@ -186,7 +185,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `slot_machine.c` | 2527 | 13/77 | `game/slots.ts`, `menus/slotMachine.ts` | menus/slotMachine.ts: reglas sin gráficos |
 | `fame_checker.c` | 1739 | 4/64 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
 | `teachy_tv.c` | 1400 | 0/58 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
-| `shop.c` | 1145 | 5/60 | `menus/shopMenu.ts`, `menus/shopModel.ts` | menus/shopMenu.ts |
 | `player_pc.c` | 740 | 33/47 | `menus/playerPc.ts`, `playerPcMailbox.ts` | menus/playerPc.ts: menú superior sobre el campo canvas |
 | `pokemon_storage_system_menu.c` | 660 | 4/29 | `pokemon/storage.ts` | menus/storageMenu.ts: reglas con listas |
 
@@ -201,7 +199,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_util.c` | 3252 | 34/36 | `battle/util.ts` |  |
 | `battle_controller_player.c` | 2966 | 114/123 | `battle/controller_player.ts` |  |
 | `battle_message.c` | 2855 | 9/9 | `battle/message.ts` |  |
-| `item_menu.c` | 2397 | 99/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` … |  |
+| `item_menu.c` | 2397 | 99/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |
 | `battle_anim_mons.c` | 2360 | 105/128 | `battle/anim.ts`, `battle/animTasks.ts` |  |
 | `battle_interface.c` | 2240 | 45/51 | `battle/interface.ts`, `battle/util.ts` |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |
@@ -213,6 +211,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokemon_icon.c` | 1283 | 19/20 | `battle/ext.ts`, `pokemonIcon.ts` |  |
 | `bg.c` | 1215 | 44/50 | `hw/bg.ts` |  |
 | `item_pc.c` | 1145 | 57/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |
+| `shop.c` | 1145 | 56/60 | `buyMenuHelpers.ts`, `shop.ts` |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |
 | `metatile_behavior.c` | 1039 | 97/115 |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |
@@ -233,6 +232,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |
 | `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |
 | `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |
+| `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |
 | `pc_screen_effect.c` | 179 | 7/7 | `pcScreenEffect.ts` |  |
 | `gpu_regs.c` | 158 | 10/11 | `hw/gpu.ts` |  |
 | `mailbox_pc.c` | 140 | 9/9 | `mailboxPc.ts`, `menus/playerPc.ts`, `playerPcMailbox.ts` … |  |
@@ -291,9 +291,9 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `link_rfu_2.c` | 3163 | 0/151 |  |  |
 | `help_system.c` | 2480 | 7/41 |  |  |
 | `librfu_rfu.c` | 2342 | 0/86 |  |  |
-| `quest_log_events.c` | 2247 | 1/79 |  |  |
+| `quest_log_events.c` | 2247 | 2/79 |  |  |
 | `link.c` | 2202 | 2/114 |  |  |
-| `quest_log.c` | 1767 | 2/88 |  |  |
+| `quest_log.c` | 1767 | 3/88 |  |  |
 | `battle_controller_link_opponent.c` | 1713 | 22/86 |  |  |
 | `battle_controller_link_partner.c` | 1647 | 17/85 |  |  |
 | `mystery_gift_menu.c` | 1609 | 0/32 |  |  |
