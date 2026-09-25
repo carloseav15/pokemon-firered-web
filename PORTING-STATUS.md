@@ -150,6 +150,7 @@ audio backend exists.
 - `fieldmap.c`: map layout, tile/behavior queries, camera and tileset loading are spread across field map/overworld/tile-renderer and BG modules. Backup map-view state and VRAM-copy paths are adapted; camera-specific differences are also tracked under `field_camera.c`. Partial source review; no route trace.
 - `save.c`: gameplay save state and play time live in `save.ts`, but persistence is JSON in localStorage; C sector checksums, incremental writes, damaged-sector recovery, slot/signature logic and link full-save are absent. Save format/recovery parity remains incomplete; no reload exercise this pass.
 - `field_fadetransition.c`: common door/fall/dive/teleport/map fades and music are wired in `field/overworld.ts`; several special transitions and return callbacks are absent or folded into shared handlers, with Canvas/palette sequencing adapted. Partial; route timing was not checked.
+- `berry.c`: Berry records/descriptions export to cdata and Berry Pouch UI is present, but field berry-tree growth and berry lookup/type APIs lack active TS equivalents; Enigma Berry validity remains a stub. Partial; optional Berry lifecycle is not implemented.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -161,7 +162,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 58 modules as documented ported, 113 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 43 as unreviewed. Separately, 42 files have a
+The current review labels 58 modules as documented ported, 114 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 42 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
