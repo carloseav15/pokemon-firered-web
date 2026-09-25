@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5194/9825 (52 %)**.
-- Archivos C pendientes: **118** (136511 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5270/9825 (53 %)**.
+- Archivos C pendientes: **117** (135090 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -45,7 +45,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `m4a.c` | 1781 | 5/72 | ~1657 |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 | ~1522 |  |
 | `battle_ai_script_commands.c` | 1970 | 25/103 | ~1491 |  |
-| `field_effect_helpers.c` | 1421 | 0/76 | ~1421 |  |
 | `pokemon_storage_system_misc.c` | 1430 | 2/67 | ~1387 |  |
 | `party_menu.c` | 6342 | 280/357 | ~1367 |  |
 | `easy_chat_2.c` | 1363 | 1/72 | ~1344 |  |
@@ -67,8 +66,9 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `field_fadetransition.c` | 965 | 18/57 | ~660 |  |
 | `mail.c` | 734 | 1/10 | ~660 |  |
 | `field_control_avatar.c` | 1182 | 17/37 | ~638 |  |
+| `battle_controller_opponent.c` | 1777 | 56/87 | ~633 |  |
 
-Hay 114 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
+Hay 113 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
 ## 4. Huecos conocidos que el conteo no muestra
 

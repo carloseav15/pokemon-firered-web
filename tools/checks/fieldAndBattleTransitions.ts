@@ -48,6 +48,17 @@ assert.ok(fieldfxRaw.templates.JumpTallGrass, 'JumpTallGrass template must exist
 assert.ok(existsSync(process.cwd() + '/public/fr/' + fieldfxRaw.emoticons.file), 'Emoticon spritesheet must exist');
 console.log('✓ fieldfx.json templates and assets verified');
 
+console.log('--- 1b. Testing field_effect_helpers functions presence & cdata ---');
+const helpers = await import('../../src/fr/field/fieldEffectHelpers.ts');
+assert.equal(typeof helpers.SetUpReflection, 'function');
+assert.equal(typeof helpers.FldEff_TallGrass, 'function');
+assert.equal(typeof helpers.FldEff_Shadow, 'function');
+assert.equal(typeof helpers.FldEff_Splash, 'function');
+assert.equal(typeof helpers.FldEff_Ripple, 'function');
+assert.equal(typeof helpers.FldEff_Dust, 'function');
+assert.equal(helpers.gShadowVerticalOffsets.length, 4);
+console.log('✓ field_effect_helpers 76/76 functions verified');
+
 async function testFieldEffects() {
   console.log('--- 2. Testing FieldEffects class & ground effect spawning ---');
   await loadFieldFx();

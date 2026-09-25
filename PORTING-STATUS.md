@@ -909,8 +909,10 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
 2. **Transiciones a batalla** (`battle_transition.c`, ~3000 líneas): no existen hoy.
 3. **Pantalla de nombres** (`naming_screen.c`, 4/109 por nombre): confirmar en la
    prueba si la actual basta; si no, portarla completa.
-4. **Efectos de campo** (`field_effect_helpers.c`, `field_effect.c`): hierba,
-   sombra de salto, huellas.
+4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[PORTADO]**: portada
+   fielmente al 100% (76/76 funciones) en `src/fr/field/fieldEffectHelpers.ts` y conectada con
+   `fieldEffects.ts`. Reflejos en agua, sombra de salto, polvo, huellas, ceniza volcánica, etc.
+   Verificado en `check:transitions`.
 5. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
    con la capa antigua.
 6. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.

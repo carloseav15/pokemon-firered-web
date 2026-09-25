@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 114 | 127887 | 1829/6041 |
+| Parcial (menos del 80 % de funciones) | 113 | 126466 | 1829/5965 |
 | Adaptador (UI simplificada) | 4 | 8624 | 18/265 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 91 | 112432 | 3347/3519 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 113853 | 3423/3595 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **118** | **136511** | |
-| **Total en alcance** | **210** | **248996** | **5194/9825** |
+| **Pendiente de portar** | **117** | **135090** | |
+| **Total en alcance** | **210** | **248996** | **5270/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -51,7 +51,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |
 | `pokemon_storage_system_misc.c` | 1430 | 2/67 |  |  |
 | `battle_tower.c` | 1425 | 17/45 | `script/specials.ts` |  |
-| `field_effect_helpers.c` | 1421 | 0/76 | `field/fieldEffects.ts` |  |
 | `easy_chat_2.c` | 1363 | 1/72 |  |  |
 | `script_menu.c` | 1341 | 8/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |
 | `vs_seeker.c` | 1326 | 15/40 | `battle/ext.ts`, `field/vsSeeker.ts` |  |
@@ -175,6 +174,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |
 | `credits.c` | 1446 | 16/16 | `credits.ts` |  |
+| `field_effect_helpers.c` | 1421 | 76/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  |
 | `pokeball.c` | 1334 | 34/37 | `battle/pokeball.ts` |  |
 | `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |
 | `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |
