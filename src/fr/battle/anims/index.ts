@@ -14,3 +14,6 @@ import "./smokescreen";
 import "./dark";
 import "./ground";
 import "./rock";
+import "./electric";
+import "./fight";
+import "./ghost";
