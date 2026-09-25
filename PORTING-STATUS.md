@@ -441,7 +441,11 @@ whiteout respawn now uses the original heal-location data in
   postgame conocida.
 - `field_poison.c`: daño cada cinco pasos, resultado poison/faint y task que
   anuncia a cada Pokémon caído, baja amistad, limpia poison y calcula derrota
-  están en `fieldEffects.ts` y `field/poison.ts`. El mosaic sigue en el C vecino.
+  están en `fieldEffects.ts` y `field/poison.ts`. `fldeff_poison.c` ahora anima
+  los niveles de mosaic del C (ajuste por revisión) sobre BGs durante 11 frames;
+  los sprites quedan fuera del pixelado y battle setup espera que termine.
+  `npm run check:port` pasa; la muestra Canvas y la paridad visual/frame siguen
+  sin comparar con GBA.
 - `event_object_lock.c`: comandos de lock esperan que jugador/NPC terminen,
   restauran facing, limpian held movement y desbloquean movimientos de script.
   El helper Union Room queda fuera del single-player.
@@ -463,9 +467,9 @@ whiteout respawn now uses the original heal-location data in
 - `field_weather_util.c`: TS cubre el guardado/cambio de clima habitual y el
   contador de lluvia. Faltan `ResumePausedWeather`, el setter marcado unused y
   las tablas de ciclo de rutas; los efectos visuales se documentan aparte.
-- `fldeff_poison.c` aplica un pulso de mosaic y deja un task activo hasta
-  completarlo. TS ya resta HP y suena al caminar, pero `flashOverlay` no se lee,
-  no hay mosaic task y la batalla no espera esa animación; queda parcial.
+- `fldeff_poison.c` aplica su curva de mosaic por task y hace esperar al setup
+  de batalla antes de la transición. TS reproduce niveles/timing del C y
+  pixeliza BGs Canvas (no sprites); paridad gráfica/frame sigue pendiente.
 - `coord_event_weather.c`: el propio C declara dummy los 13 callbacks y el
   dispatcher solo ejecuta uno vacío. Su efecto observable es no hacer nada;
   el clima que sí funciona está implementado por otras rutas.

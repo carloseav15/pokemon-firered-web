@@ -743,9 +743,15 @@ export class Game {
     ow.controlsLocked = true;
     ow.objects.freezeAll();
     this.battleOutcome = 0;
-    // Battle transition: fade to black, then run the battle scene.
-    paletteFade.fadeScreen(FADE_TO_BLACK, 0);
+    let startedFade = false;
     const id = tasks.create(() => {
+      // battle_setup.c Task_BattleStart waits for FldEffPoison_IsActive to clear.
+      if (!startedFade) {
+        if (ow.effects.isPoisonEffectActive()) return;
+        paletteFade.fadeScreen(FADE_TO_BLACK, 0);
+        startedFade = true;
+        return;
+      }
       if (paletteFade.active) return;
       tasks.destroy(id);
       if (this.battleRunner) {

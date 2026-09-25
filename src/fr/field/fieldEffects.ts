@@ -84,7 +84,8 @@ export class FieldEffects {
   private readonly emoteCounts = new Map<number, number>();
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
-  flashOverlay = 0;
+  poisonMosaicValue = 0;
+  private poisonEffectTaskActive = false;
   /** tCurFlashRadius while UpdateFlashLevelEffect runs. */
   flashRadius: number | null = null;
 
@@ -116,6 +117,33 @@ export class FieldEffects {
     this.moves = new FieldMoveEffects(ow);
   }
 
+  /** fldeff_poison.c FldEffPoison_Start / Task_FieldPoisonEffect. */
+  startPoisonEffect(): void {
+    sound.playSE(C.SE_FIELD_POISON);
+    this.poisonEffectTaskActive = true;
+    let state = 0, value = 0;
+    const id = tasks.create(() => {
+      switch (state) {
+        case 0:
+          value += C.REVISION >= 0xA ? 2 : 1;
+          if (value > 4) state++;
+          break;
+        case 1:
+          value--;
+          if (value === 0) state++;
+          break;
+        case 2:
+          this.poisonMosaicValue = 0;
+          this.poisonEffectTaskActive = false;
+          tasks.destroy(id);
+          return;
+      }
+      this.poisonMosaicValue = value;
+    }, 80);
+  }
+
+  isPoisonEffectActive(): boolean { return this.poisonEffectTaskActive; }
+
   /** FieldEffectStart: marks the effect active and runs its script. */
   start(id: number): void {
     this.active.add(id);
@@ -143,6 +171,8 @@ export class FieldEffects {
 
   reset(): void {
     this.surfBlob = undefined;
+    this.poisonMosaicValue = 0;
+    this.poisonEffectTaskActive = false;
     this.active.clear();
     this.emoteCounts.clear();
   }
@@ -467,8 +497,7 @@ export class FieldEffects {
       }
     }
     if (anyPoisoned) {
-      this.flashOverlay = 4;
-      sound.playSE(sound.c("SE_FIELD_POISON"));
+      this.startPoisonEffect();
     }
     if (fainted) return true;
     void flagGet;

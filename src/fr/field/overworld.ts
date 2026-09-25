@@ -77,6 +77,8 @@ export class Overworld {
   readonly mapPreview: MapPreviewManager;
   readonly stepCallback: PerStepCallback;
   private mapCache = new Map<string, Promise<LoadedMap>>();
+  private bgMosaicCanvas?: HTMLCanvasElement;
+  private bgMosaicContext?: CanvasRenderingContext2D;
   warpDestination: WarpData = dummyWarp();
   lastUsedWarp: WarpData = dummyWarp();
   fixedDiveWarp: WarpData = dummyWarp();
@@ -1127,7 +1129,37 @@ export class Overworld {
         }
       }
     }
-    const drawLayer = (i: number) => { for (const [c, x, y] of layers[i]) ctx.drawImage(c, x, y); };
+    const drawLayer = (i: number) => {
+      const entries = layers[i];
+      const mosaicValue = this.effects.poisonMosaicValue;
+      if (mosaicValue === 0) {
+        for (const [c, x, y] of entries) ctx.drawImage(c, x, y);
+        return;
+      }
+      // AdjustBgMosaic applies to BGs only. Compose one BG layer, sample each
+      // screen-aligned mosaic block from its top-left pixel, then composite it.
+      const canvas = this.bgMosaicCanvas ??= document.createElement("canvas");
+      canvas.width = 240; canvas.height = 160;
+      const mosaicCtx = this.bgMosaicContext ??= canvas.getContext("2d", { willReadFrequently: true })!;
+      mosaicCtx.clearRect(0, 0, 240, 160);
+      for (const [tile, x, y] of entries) mosaicCtx.drawImage(tile, x, y);
+      const image = mosaicCtx.getImageData(0, 0, 240, 160);
+      const pixels = image.data, blockSize = mosaicValue + 1;
+      for (let y = 0; y < 160; y += blockSize) {
+        for (let x = 0; x < 240; x += blockSize) {
+          const sample = (y * 240 + x) * 4;
+          const r = pixels[sample], g = pixels[sample + 1], b = pixels[sample + 2], a = pixels[sample + 3];
+          for (let dy = 0; dy < blockSize && y + dy < 160; dy++) {
+            for (let dx = 0; dx < blockSize && x + dx < 240; dx++) {
+              const dest = ((y + dy) * 240 + x + dx) * 4;
+              pixels[dest] = r; pixels[dest + 1] = g; pixels[dest + 2] = b; pixels[dest + 3] = a;
+            }
+          }
+        }
+      }
+      mosaicCtx.putImageData(image, 0, 0);
+      ctx.drawImage(canvas, 0, 0);
+    };
     drawLayer(0);
     this.sprites.render(ctx, 3);
     drawLayer(1);
