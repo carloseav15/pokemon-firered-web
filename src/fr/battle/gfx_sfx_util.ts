@@ -26,7 +26,7 @@ import {
 } from "./globals";
 import {
   animState, ClearBattleAnimationVars, GetBattlerSpriteCoord, GetBattlerSpriteDefault_Y, GetSubstituteSpriteDefault_Y, IsBattlerSpritePresent,
-  IsBattlerSpriteVisible, LaunchBattleAnimation, LaunchStatusAnimation,
+  LaunchBattleAnimation, LaunchStatusAnimation,
 } from "./anim";
 import {
   CreateBattlerHealthboxSprites, CreateSafariPlayerHealthboxSprites, DummyBattleInterfaceFunc, GetHPBarLevel, InitBattlerHealthboxCoords,
@@ -613,21 +613,5 @@ export function ShouldPlayNormalMonCry(mon: Mon): boolean {
   return GetHPBarLevel(hp, maxHP) > C.HP_BAR_YELLOW;
 }
 
-// ---------------------------------------------------------------- battle_anim_special.c: TryShinyAnimation
-
-export function TryShinyAnimation(battler: number, mon: Mon): void {
-  const hb = gBattleSpritesDataPtr.healthBoxesData[battler];
-  hb.triedShinyMonAnim = 1;
-  const otId = GetMonData(mon, C.MON_DATA_OT_ID) >>> 0;
-  const personality = GetMonData(mon, C.MON_DATA_PERSONALITY) >>> 0;
-  if (IsBattlerSpriteVisible(battler)) {
-    const shinyValue = (otId >>> 16) ^ (otId & 0xffff) ^ (personality >>> 16) ^ (personality & 0xffff);
-    if (shinyValue < C.SHINY_ODDS) {
-      // The sparkle tasks (AnimTask_ShinySparkles) come with the move animation port; finish right away.
-      hb.finishedShinyMonAnim = 1;
-      return;
-    }
-  }
-  hb.finishedShinyMonAnim = 1;
-}
+export { TryShinyAnimation } from "./anims/special";
 

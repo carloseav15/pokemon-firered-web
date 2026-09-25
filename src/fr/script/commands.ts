@@ -1,6 +1,7 @@
 // Port of scrcmd.c. Each command reads its arguments from the original
 // assembled bytecode exactly as the C implementation does.
 
+import { FONT_BRAILLE, stringWidth } from "../gba/font";
 import { sound } from "../audio/sound";
 import { concat, copy, countDigits, encode, intToDecimal, length, stringVars, STR_CONV_MODE_LEFT_ALIGN, EOS } from "../gba/charmap";
 import { paletteFade } from "../gba/fade";
@@ -442,8 +443,8 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     return true;
   },
   showcontestpainting: (ctx) => { ctx.readByte(); return false; },
-  braillemessage: (ctx) => { ctx.ow.messageBox.show(rom.stringAt(textPtr(ctx))); return false; },
-  getbraillestringwidth: (ctx) => { const p = textPtr(ctx); varSet(SV.x8004, length(rom.stringAt(p)) * 8); return false; },
+  braillemessage: (ctx) => { ctx.ow.messageBox.showBraille(rom.stringAt(textPtr(ctx))); return false; },
+  getbraillestringwidth: (ctx) => { varSet(SV.x8004, stringWidth(FONT_BRAILLE, rom.stringAt(textPtr(ctx)), -1)); return false; },
   bufferspeciesname: (ctx) => { const i = ctx.readByte(); stringVarSet(i, speciesName(varGet(ctx.readHalfword()))); return false; },
   bufferleadmonspeciesname: (ctx) => { const i = ctx.readByte(); const mon = save.party[leadMonIndex()]; stringVarSet(i, speciesName(mon?.species ?? 0)); return false; },
   bufferpartymonnick: (ctx) => { const i = ctx.readByte(); const idx = varGet(ctx.readHalfword()); const mon = save.party[idx]; stringVarSet(i, mon ? nickname(mon) : encode("")); return false; },

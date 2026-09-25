@@ -3,8 +3,9 @@
 
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
+import { BattleTransitionScene, getTrainerBattleTransition, getWildBattleTransition } from "./battle/transition";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON } from "./gba/input";
 import { tasks } from "./gba/tasks";
@@ -34,6 +35,7 @@ import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
+import { CreateHelpMessageWindow, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
 import { DoCredits } from "./credits";
 import { BeginHallOfFamePC } from "./hallOfFame";
@@ -270,14 +272,13 @@ export class Game {
     window.fill(1);
     items.forEach((item, i) => printText(window, FONT_NORMAL, item.text, 8, i * 15));
     ow.windows.add(window);
-    const desc = new Window(0, 17, 30, 3);
-    desc.frame = "none";
+    // DrawHelpMessageWindowWithText (help_message.c).
+    const desc = CreateHelpMessageWindow();
     ow.windows.add(desc);
     const menu = new Menu(window, FONT_NORMAL, 0, 0, 15, items.length, this.startMenuCursor);
     const printDesc = () => {
-      desc.fill(15);
       const sym = items[menu.cursorPos].desc;
-      if (rom.strings[sym]) printText(desc, FONT_NORMAL, rom.text(sym), 2, 3, { fg: 1, bg: 15, shadow: 2 });
+      PrintTextOnHelpMessageWindow(desc, rom.strings[sym] ? rom.text(sym) : [0xff]);
     };
     printDesc();
     this.startMenuWindows = [window, desc];
@@ -294,7 +295,14 @@ export class Game {
       ow.windows.add(stats);
       this.startMenuWindows.push(stats);
     }
+    // task50_startmenu: DoDrawStartMenu states 0-3, PrintStartMenuItems (two
+    // items per frame) and state 5 each take a frame, then
+    // Task_StartMenuHandleInput spends one frame in state 0. Only after that
+    // does StartCB_HandleInput read JOY_NEW, so the START press that opened
+    // the menu cannot also close it. The windows are drawn at once here.
+    let drawFrames = 4 + Math.ceil(items.length / 2) + 1 + 1;
     const id = tasks.create(() => {
+      if (drawFrames > 0) { drawFrames--; return; }
       const before = menu.cursorPos;
       const input = menu.processInput();
       if (menu.cursorPos !== before) printDesc();
@@ -397,22 +405,22 @@ export class Game {
 
     const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
     printText(stats, FONT_NORMAL, location, Math.max(0, (112 - stringWidth(FONT_NORMAL, location)) >> 1), 0);
-    const label = (y: number, name: string) => printText(stats, FONT_NORMAL, rom.text(name), 2, y);
-    const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_NORMAL, text, 60, y);
-    label(14, "gText_Player");
+    const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y);
+    const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y);
+    label(14, "gSaveStatName_Player");
     value(14, SaveStatToString(C.SAVE_STAT_NAME, 2));
 
-    label(28, "gText_Badges");
+    label(28, "gSaveStatName_Badges");
     value(28, SaveStatToString(C.SAVE_STAT_BADGES, 2));
 
     let y = 42;
     if (flagGet(rom.c("FLAG_SYS_POKEDEX_GET"))) {
-      label(y, "gText_Pokedex");
-      value(y, concat(SaveStatToString(C.SAVE_STAT_POKEDEX, 2), rom.text("gTextJPDummy_Hiki")));
+      label(y, "gSaveStatName_Pokedex");
+      value(y, SaveStatToString(C.SAVE_STAT_POKEDEX, 2));
       y += 14;
     }
 
-    label(y, "gText_Time");
+    label(y, "gSaveStatName_Time");
     value(y, SaveStatToString(C.SAVE_STAT_TIME, 2));
 
     ow.windows.add(stats);
@@ -505,7 +513,7 @@ export class Game {
         openHardwareChoice(rom.text("gText_NickHatchPrompt"), [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
           const done = (): void => { close(); ow.script.enable(); };
           if (yes !== 1) { done(); return; }
-          DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, done);
+          DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, done);
         });
       });
     }, false);
@@ -559,7 +567,7 @@ export class Game {
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
-    DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
+    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
       stringVars.var2 = Uint8Array.from(mon.nickname);
       scene.leave();
       this.scene = null;
@@ -645,7 +653,7 @@ export class Game {
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
-    DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
+    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
       stringVars.var2 = Uint8Array.from(mon.nickname);
       scene.leave();
       this.scene = null;
@@ -770,19 +778,22 @@ export class Game {
     ow.objects.freezeAll();
     this.battleOutcome = 0;
     sound.playBattleBGM(this.battleSetup.battleBgm(request));
-    let startedFade = false;
+    let startedTransition = false;
     const id = tasks.create(() => {
       // battle_setup.c Task_BattleStart waits for FldEffPoison_IsActive to clear.
-      if (!startedFade) {
+      if (!startedTransition) {
         if (ow.effects.isPoisonEffectActive()) return;
-        paletteFade.fadeScreen(FADE_TO_BLACK, 0);
-        startedFade = true;
-        return;
-      }
-      if (paletteFade.active) return;
-      tasks.destroy(id);
-      if (this.battleRunner) {
-        this.scene = this.battleRunner(request);
+        startedTransition = true;
+        tasks.destroy(id);
+        const transitionId = request.kind === "trainer"
+          ? getTrainerBattleTransition(ow, request.trainerId ?? 0, !!request.isDouble, request.enemyParty)
+          : getWildBattleTransition(ow, request.enemyParty);
+        this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
+          if (this.battleRunner) {
+            this.scene = this.battleRunner(request);
+            this.setCallbacks(null, () => this.scene?.update());
+          }
+        });
         this.setCallbacks(null, () => this.scene?.update());
       }
     }, 1);

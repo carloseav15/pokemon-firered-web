@@ -4,6 +4,8 @@ Lee esto antes de tocar código. Te ahorra horas: explica qué es el proyecto,
 dónde está cada cosa, cómo se sacan los datos del decomp y cómo se porta y se
 verifica un archivo C sin inventar nada.
 
+- **Primero lee [ESTADO-Y-REGLAS.md](ESTADO-Y-REGLAS.md)**: porcentaje real, qué está bien,
+  qué se hizo mal (sesión Gemini) y las reglas obligatorias para agentes.
 - Estado y lista de pendientes (de fácil a difícil): [PORTING-STATUS.md](PORTING-STATUS.md)
 - Faltantes actualizados (sin empezar, adaptadores, parciales, sin probar): [PENDING.md](PENDING.md)
 - Inventario por archivo `.c` (generado con `npm run inventory`): [PORT-INVENTORY.md](PORT-INVENTORY.md)
@@ -62,6 +64,8 @@ arranca la partida e instala `window.frDebug` (ver §6).
 npm ci                     # dependencias (typescript, vite; esbuild viene con vite)
 npm run dev                # servidor Vite (o preview_start "vite" desde .claude/launch.json)
 npm run check:port         # tsc sobre TODO src (incluye batalla). Obligatorio tras cada cambio
+npm run check:honesty      # stubs nuevos, módulos sin conectar, checks que se validan solos,
+                           # superlativos en commits. Obligatorio antes de cada commit
 npm run build              # tsc + bundle de producción
 npm run check:arrow        # ejemplo de check headless (flecha de diálogo vs tiles del C)
 npm run inventory          # regenera PORT-INVENTORY.md (avance por archivo .c)
@@ -188,12 +192,16 @@ Cuando una pantalla del C no está portada, se usa un **adaptador**: misma
 entrada/salida (variables, callbacks) pero UI simplificada, casi siempre con
 `openHardwareChoice`/`openHardwareMessage` (listas de texto sobre `ListMenu`).
 Márcalo en el comentario de cabecera y en `PORTING-STATUS.md`. Adaptadores
-actuales (la lista viva está en [PENDING.md](PENDING.md) §2): menú superior del
-PC del jugador (`menus/playerPc.ts`, sobre el campo canvas), almacenamiento de
-cajas (`menus/storageMenu.ts`), Fame Checker/Teachy TV
-(`menus/keyItemScreens.ts`), tragaperras (`menus/slotMachine.ts`, sin gráficos),
-intercambios en juego (`pokemon/ingameTrade.ts`), visor de cartas
-(`menus/mailView.ts`), elegir movimiento a olvidar (`menus/monProgress.ts`).
+actuales (la lista viva está en [PENDING.md](PENDING.md) §2 y §4): cajas del
+PC (`menus/storageMenu.ts`: el menú de `pokemon_storage_system_menu.c` es real,
+las cajas siguen siendo listas), Teachy TV (`menus/keyItemScreens.ts`; el
+`teachyTv.ts` a medias no está conectado), visor de cartas (`menus/mailView.ts`),
+elegir movimiento a olvidar (`menus/monProgress.ts`). Fame Checker, tragaperras
+e intercambios ya tienen pantalla propia, pero parcial o sin probar en navegador.
+
+**No dejes stubs con el nombre del C** (`function X() { return 0; }`): el
+inventario los detecta, no los cuenta y los lista en PENDING.md §3b. Si una
+función aún no se porta, no la declares.
 Ya son fieles y no adaptadores: resumen, tarjeta de entrenador, Pokédex, PC de
 objetos y buzón, tienda, Salón de la Fama, créditos, escena de "usar objeto".
 
@@ -233,12 +241,82 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    - `frDebug.rivalBattle("SPECIES_SQUIRTLE")` combate del laboratorio
    - `frDebug.state()`, `frDebug.save`, `frDebug.rom`, `window.frGame`
    Usa `?fr=new`/`?fr=continue`, revisa la consola y captura pantalla como prueba.
+
+   **Driver de recorrido** (`tools/playtest/driver.js`, solo con el servidor de
+   desarrollo). Desde la consola o `javascript_tool`:
+   ```js
+   const { H } = await import("/tools/playtest/driver.js");
+   await H.init()            // OBLIGATORIO tras cada carga de página (ver "trampas" abajo)
+   await H.goto(x, y)        // camina (BFS con las colisiones reales) y resuelve combates/scripts
+   await H.exit("U")         // camina en una dirección hasta cambiar de mapa (conexiones, flechas)
+   await H.enter(x, y)       // entra por la puerta (x, y) desde abajo
+   await H.talk(x, y)        // se pone al lado, mira y pulsa A
+   await H.counter(x, y)     // habla a través de un mostrador (dos casillas debajo)
+   await H.idle()            // pulsa A hasta que no haya script (cede si empieza un combate)
+   await H.battle("fight", 3) // combate eligiendo la ranura 3 con botones reales ("run" para huir)
+   await H.heal()            // dentro de un Centro Pokémon 1F: enfermera y salir
+   await H.grind([x1,y1], [x2,y2], { slot: 3, level: 14 })  // subir de nivel en la hierba
+   H.battleDefaults = { mode: "fight", slot: 3 }            // lo que usa goto() al encontrar combates
+   H.job(async () => …); H.jobStatus()                      // trabajo largo en segundo plano
+   H.checkpoint("nombre"); H.restore("nombre")              // puntos de control (no es el GUARDAR del juego)
+   H.st(), H.objects(), H.warps(), H.coords(), H.log, H.checkpoints()
+   ```
+   Las coordenadas son las de `frDebug.state()` (sin el borde de +7).
+
+   ### Cómo probar rápido y sin engañarte (método usado en las sesiones de Claude)
+
+   1. **Punto de control antes de cada tramo** (`H.checkpoint("zona")`). Un fallo
+      se reproduce en segundos con `H.restore`, sin volver a jugar desde el
+      principio. Nombres usados: `lab-done`, `viridian-pc`, `parcel`, `pokedex`,
+      `oldman`, `route2-L11`, `forest`, `pewter`, `gym`, `brock-done`, `mart`,
+      `route3`.
+   2. **Trabajo largo en segundo plano.** Las llamadas de herramienta caducan a
+      los ~45 s, pero la página sigue corriendo: `H.job(async () => …)` y luego
+      consulta `H.jobStatus()` cada 30-40 s. Devuelve solo resúmenes pequeños
+      (`H.party()`, `H.log.map(...)`): una traza enorme llena el contexto.
+   3. **Lee el estado, no adivines.** Para saber qué pantalla hay, consulta
+      `H.cb2()`, `H.G.gBattlerControllerFuncs[0].name`, `frDebug.save.save`
+      (flags, bolsa, dinero, equipo) en vez de pulsar A a ciegas y hacer capturas.
+      `H.battle` ya elige acción y movimiento mirando los cursores del combate.
+   4. **Capturas solo en los hitos** (menú nuevo, final de combate, error). Para
+      comprobar un valor (precio, flag, objeto) basta leer la partida.
+   5. **Un combate atascado se diagnostica, no se reintenta.** Si `H.log` marca
+      `stuck`, mira el controlador del jugador y el texto en pantalla antes de
+      suponer un fallo del juego: dos "bloqueos" de esta sesión eran del driver
+      (movimiento sin PP elegido en bucle; `idle` que no cedía el combate).
+   6. **Ninguna ayuda de depuración sin decirlo.** Se sube de nivel jugando
+      (`H.grind`, `H.heal`); si pones un flag, nivel u objeto a mano, dilo en el
+      informe y en PORTING-STATUS.
+   7. **Por cada fallo real**: función C → arreglo → `H.restore` del punto de
+      control → repetir el mismo tramo → captura → entrada en PORTING-STATUS →
+      commit. No acumules arreglos sin probar.
+
+   Trampas:
+   - **Editar cualquier archivo servido por Vite recarga la página** y pierde
+     `window.*`: vuelve con `H.restore(nombre)` y `await H.init()`. Agrupa las
+     ediciones y prueba después.
+   - **Instancias duplicadas de módulos**: tras un HMR la app importa
+     `x.ts?t=…`. Un `import("/src/fr/…/x.ts")` a secas carga otra copia vacía y
+     todo lo que leas es falso. Usa siempre `H.mod(ruta)` (lo hace `H.init()`).
+   - Sin `H.init()`, `H.inBattle()` confunde cualquier pantalla de hardware
+     (tienda, bolsa) con un combate.
+   - `H.idle()` pulsa A: dentro de un menú puede elegir la primera opción. Para
+     menús usa `frDebug.press`/`frDebug.wait(n, botones)` y lee el estado.
+   - No muevas al jugador mientras un guion ejecuta `applymovement`/`waitmovement`:
+     `goto`/`idle` ya esperan a que no haya script activo.
 6. **Comparación con el juego real** (opcional): mismo punto en un emulador con
    la ROM compilada del decomp (`make` en `../pokefirered`) y comparar frames.
 
 Si el usuario pide "no probar", haz solo 1–3 y dilo explícitamente.
 
 ## 7. Convenciones de trabajo
+
+- **`npm run check:honesty` debe pasar antes de cada commit** (reglas en
+  [ESTADO-Y-REGLAS.md](ESTADO-Y-REGLAS.md) §5). Si falla, se arregla la causa;
+  las líneas base `tools/checks/stub-baseline.json` y `unwired-baseline.json`
+  solo pueden encogerse (`python3 tools/checks/honesty.py --shrink-baselines`
+  se niega a añadir entradas). Una línea de preparación legítima en un check se
+  marca con `// PREPARED: …`.
 
 - Un commit por bloque terminado; mensaje en inglés, imperativo, que diga qué
   `.c` se portó; terminar con la línea `Co-Authored-By` que indique el entorno.

@@ -33,7 +33,7 @@ import {
   ResetPaletteFade, RGB_BLACK, RGB_WHITEALPHA, TransferPlttBuffer, UpdatePaletteFade,
 } from "./hw/palette";
 import { DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback } from "./hw/runtime";
+import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import { ScanlineEffect_Stop } from "./hw/scanline";
 import { AnimateSprites, BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, SetOamMatrix, ST_OAM_AFFINE_NORMAL } from "./hw/sprite";
 import { AddTextPrinter, AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "./hw/text";
@@ -280,7 +280,7 @@ function CB2_OpenPokedexFromStartMenu(): void {
 
 /** Start menu → Pokédex; `returnToField` is CB2_ReturnToFieldWithOpenMenu. */
 export function openPokedexScreen(returnToField: () => void): void {
-  void preloadPokedexScreen().then(() => {
+  SetMainCallback2WhenLoaded(preloadPokedexScreen(), () => {
     sReturnToField = returnToField;
     CB2_OpenPokedexFromStartMenu();
   });

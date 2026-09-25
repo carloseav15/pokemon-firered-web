@@ -128,6 +128,10 @@ defineScalars(G, {
   gTrainerBattleOpponent_A: "u16",
   gLastUsedItem: "u16",
   gNumSafariBalls: "u8",
+  // battle_bg / scanline globals are u16 in the C (negative scroll values wrap).
+  gBattle_BG0_X: "u16", gBattle_BG0_Y: "u16", gBattle_BG1_X: "u16", gBattle_BG1_Y: "u16",
+  gBattle_BG2_X: "u16", gBattle_BG2_Y: "u16", gBattle_BG3_X: "u16", gBattle_BG3_Y: "u16",
+  gBattle_WIN0H: "u16", gBattle_WIN0V: "u16", gBattle_WIN1H: "u16", gBattle_WIN1V: "u16",
 });
 
 // ---------------------------------------------------------------- RAM arrays / structs

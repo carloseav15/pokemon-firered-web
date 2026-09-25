@@ -33,6 +33,18 @@ export function SetMainCallback2(cb: MainCallback): void {
   gMain.state = 0;
 }
 
+/**
+ * Browser adaptation for screens whose exported data loads asynchronously.
+ * The C switches gMain.callback2 synchronously when a screen is opened, so the
+ * caller's CB2 (for example BattleMainCB2 waiting in CompleteWhenChoseItem)
+ * never runs again until the screen returns. Park callback2 on an idle stub
+ * at once and run the screen's setup when its data is ready.
+ */
+export function SetMainCallback2WhenLoaded(load: Promise<unknown>, setup: () => void): void {
+  SetMainCallback2(() => {});
+  void load.then(setup);
+}
+
 export function SetVBlankCallback(cb: MainCallback): void {
   gMain.vblankCallback = cb;
 }

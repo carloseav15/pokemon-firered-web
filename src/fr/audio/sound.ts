@@ -123,6 +123,13 @@ class Sound {
     this.backend?.stop("bgm");
   }
 
+  /** m4aMPlayAllStop */
+  m4aMPlayAllStop(): void {
+    for (const player of ["bgm", "se1", "se2", "fanfare"] as const) this.backend?.stop(player);
+    this.seTimer = 0;
+    this.fanfareTimer = 0;
+  }
+
   pauseBGM(): void { this.backend?.pause("bgm"); }
   resumeBGM(): void { this.backend?.resume("bgm"); }
 
@@ -131,13 +138,22 @@ class Sound {
     this.fadeOutTimer = speed * 16;
   }
 
+  /** FadeOutMapMusic: only this map-music transition is awaited by BGMusicStopped/isBGMPausedOrStopped. */
+  fadeOutMapMusic(speed: number): void {
+    if (!this.waitingForBGMStop) this.fadeOutBGM(speed);
+    this.waitingForBGMStop = true;
+  }
+
   fadeInBGM(speed: number): void { this.backend?.fadeIn("bgm", speed); }
 
   private fadeOutTimer = 0;
+  /** IsNotWaitingForBGMStop: true whenever no map-music fade-out is pending, not merely "audio is silent". */
+  private waitingForBGMStop = false;
   isBGMPausedOrStopped(): boolean {
-    if (this.backend) return !this.backend.isPlaying("bgm");
-    if (this.fadeOutTimer > 0) { this.fadeOutTimer--; return false; }
-    return true;
+    if (!this.waitingForBGMStop) return true;
+    const stopped = this.backend ? !this.backend.isPlaying("bgm") : (this.fadeOutTimer > 0 ? (this.fadeOutTimer--, false) : true);
+    if (stopped) this.waitingForBGMStop = false;
+    return stopped;
   }
 
   playFanfare(song: number): void {

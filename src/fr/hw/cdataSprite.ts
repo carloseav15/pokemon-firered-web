@@ -5,7 +5,8 @@ import { cdataAny, isSym, symName, type SymRef } from "./assets";
 import {
   AFFINEANIMCMD_END, AFFINEANIMCMD_END_ALT, AFFINEANIMCMD_FRAME, AFFINEANIMCMD_JUMP, AFFINEANIMCMD_LOOP, ANIMCMD_END, ANIMCMD_FRAME, ANIMCMD_JUMP,
   ANIMCMD_LOOP, gDummySpriteAffineAnimTable, gDummySpriteAnimTable, oamData, SpriteCallbackDummy,
-  type AffineAnimCmd, type AnimCmd, type OamData, type SpriteCallback, type SpriteFrameImage, type SpriteTemplate,
+  type AffineAnimCmd, type AnimCmd, type OamData, type SpriteCallback, type SpriteFrameImage, type SpriteTemplate, type Subsprite,
+  type SubspriteTable,
 } from "./sprite";
 
 type CAnimCmd = { frame?: { imageValue: number; duration: number; hFlip?: number; vFlip?: number }; loop?: { count: number }; jump?: { target: number }; type?: number };
@@ -98,4 +99,18 @@ export function templateFrom(t: CSpriteTemplate, callbacks: Record<string, Sprit
     affineAnims: affineAnimsFrom(t.affineAnims),
     callback: (cb && callbacks[cb]) || SpriteCallbackDummy,
   };
+}
+
+/**
+ * A `const struct SubspriteTable[]` by reference. subspriteCount is usually
+ * `ARRAY_COUNT(subsprites)`, exported as a sizeof $expr; it resolves to the
+ * length of the referenced Subsprite array.
+ */
+export function subspriteTablesFrom(ref: unknown): SubspriteTable[] {
+  const tables = isSym(ref) ? resolve<Array<{ subspriteCount: unknown; subsprites: SymRef | 0 }>>(ref) : (ref as Array<{ subspriteCount: unknown; subsprites: SymRef | 0 }>);
+  return (tables ?? []).map((t) => {
+    const subsprites = t.subsprites ? resolve<Subsprite[]>(t.subsprites) ?? null : null;
+    const count = typeof t.subspriteCount === "number" ? t.subspriteCount : subsprites?.length ?? 0;
+    return { subspriteCount: count, subsprites };
+  });
 }

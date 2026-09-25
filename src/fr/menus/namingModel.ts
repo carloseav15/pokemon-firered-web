@@ -82,7 +82,14 @@ export class NamingModel {
     }
     if (pressed & B_BUTTON) { this.deleteCharacter(); return "delete"; }
     if (pressed & SELECT_BUTTON) { this.swapPage(); return "page"; }
-    if (pressed & START_BUTTON) { this.moveToOK(); return "move"; }
+    if (pressed & START_BUTTON) {
+      if (this.onButton && this.y === 2) {
+        this.save();
+        return "confirm";
+      }
+      this.moveToOK();
+      return "move";
+    }
     let dx = 0, dy = 0;
     if (repeated & DPAD_UP) dy = -1;
     if (repeated & DPAD_DOWN) dy = 1;

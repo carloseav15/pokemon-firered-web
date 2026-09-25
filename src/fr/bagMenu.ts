@@ -45,7 +45,7 @@ import {
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
   WIN_RANGE, WININ_WIN0_BG_ALL, WININ_WIN0_CLR, WININ_WIN0_OBJ,
 } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySpriteAndFreeResources, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag,
   gDummySpriteAffineAnimTable, gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData,
@@ -380,10 +380,10 @@ const td = (taskId: number): BagTaskData => {
  */
 export function GoToBagMenu(location: number, pocket: number, bagCallback: (() => void) | null, handlers?: BagHandlers): void {
   if (handlers) sHandlers = handlers;
-  void Promise.all([
+  SetMainCallback2WhenLoaded(Promise.all([
     loadCData("item_menu", "bag", "item_menu_icons", "strings", "text_window_graphics"),
     preloadPacks(["graphics_item_menu", "graphics_interface", "graphics_items", "graphics_text_window", "graphics_fonts"]),
-  ]).then(() => {
+  ]), () => {
     sTextColors = rd<number[][]>("bag", "sTextColors");
     sWindowTemplates = rd<WindowTemplate[]>("bag", "sWindowTemplates");
     sItemMenuContextActions = ACTION_TEXTS.map((name) => ({ text: rom.strings[name] ? text(name) : Uint8Array.of(0xff) }));

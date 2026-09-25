@@ -169,7 +169,7 @@ class NamingScreen {
 
   private moveCursor(): void {
     const sprite = gSprites[this.cursor];
-    sprite.x = this.model.onButton ? 204 : this.model.columnPositions[this.model.x] + 38;
+    sprite.x = this.model.onButton ? 196 : this.model.columnPositions[this.model.x] + 38;
     sprite.y = this.model.onButton ? [88, 116, 140][this.model.y] : this.model.y * 16 + 88;
   }
 
@@ -198,6 +198,7 @@ class NamingScreen {
     if (this.state === "fadeIn" && !gPaletteFade.active) this.state = "input";
     else if (this.state === "input") {
       const action = this.model.input(joy.newKeys, joy.repeated);
+      if (action === "move") sound.playSE(C.SE_SELECT);
       if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.drawPage(); }
       if (action === "character" || action === "delete") {
         sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.drawEntry();

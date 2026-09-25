@@ -6,6 +6,7 @@
 // callback (as if the script were only `end`), so battles run with instant move animations.
 
 import * as C from "../generated/constants";
+import { gBattleAnimArgs } from "./animArgs";
 import { sound } from "../audio/sound";
 import { tasks, type Task } from "../gba/tasks";
 import { cdata } from "../hw/assets";
@@ -70,7 +71,8 @@ export const animState = {
   sAnimSpriteIndexArray: new Uint16Array(ANIM_SPRITE_INDEX_COUNT),
   gAnimFriendship: 0,
   gWeatherMoveAnim: 0,
-  gBattleAnimArgs: new Int16Array(ANIM_ARGS_COUNT),
+  // 8 args plus the EWRAM that follows them: Magnitude's AnimTask_IsPowerOver99 / jumpargeq use index 15.
+  gBattleAnimArgs,
   sSoundAnimFramesToWait: 0,
   sMonAnimTaskIdArray: [TASK_NONE, TASK_NONE],
   gAnimMoveTurn: 0,
@@ -93,7 +95,7 @@ export function ClearBattleAnimationVars(): void {
   a.gAnimMovePower = 0;
   a.gAnimFriendship = 0;
   a.sAnimSpriteIndexArray.fill(0xffff);
-  a.gBattleAnimArgs.fill(0);
+  a.gBattleAnimArgs.fill(0, 0, ANIM_ARGS_COUNT);
   a.sMonAnimTaskIdArray = [TASK_NONE, TASK_NONE];
   a.gAnimMoveTurn = 0;
   a.sAnimBackgroundFadeState = 0;
@@ -109,7 +111,19 @@ export function DoMoveAnim(move: number): void {
   LaunchBattleAnimation("moves", move, true);
 }
 
-export function LaunchBattleAnimation(_table: AnimTable, tableId: number, isMoveAnim: boolean): void {
+const ANIM_TABLE_LABELS: Record<AnimTable, string> = {
+  moves: "gBattleAnims_Moves",
+  general: "gBattleAnims_General",
+  special: "gBattleAnims_Special",
+  status: "gBattleAnims_StatusConditions",
+};
+
+/** animsTable[tableId]: the script pointer stored in the assembled table. */
+function animTableEntry(table: AnimTable, tableId: number): number {
+  return bs.animsView.getUint32(ANIMS(ANIM_TABLE_LABELS[table]) + tableId * 4 - ROM_BASE, true);
+}
+
+export function LaunchBattleAnimation(table: AnimTable, tableId: number, isMoveAnim: boolean): void {
   const a = animState;
   InitPrioritiesForVisibleBattlers();
   UpdateOamPriorityInAllHealthboxes(0);
@@ -117,8 +131,9 @@ export function LaunchBattleAnimation(_table: AnimTable, tableId: number, isMove
     a.gAnimBattlerSpecies[i] = GetMonData(GetBattlerSide(i) !== C.B_SIDE_PLAYER ? gEnemyParty[gBattlerPartyIndexes[i]] : playerMon(gBattlerPartyIndexes[i]), C.MON_DATA_SPECIES);
   }
   a.sAnimMoveIndex = isMoveAnim ? tableId : 0;
-  a.gBattleAnimArgs.fill(0);
+  a.gBattleAnimArgs.fill(0, 0, ANIM_ARGS_COUNT);
   a.sMonAnimTaskIdArray = [TASK_NONE, TASK_NONE];
+  a.sBattleAnimScriptPtr = animTableEntry(table, tableId);
   a.gAnimScriptActive = true;
   a.sAnimFramesToWait = 0;
   a.gAnimScriptCallback = RunAnimScriptCommand;

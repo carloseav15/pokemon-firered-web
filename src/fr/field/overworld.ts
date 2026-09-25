@@ -919,26 +919,30 @@ export class Overworld {
     }, 10);
   }
 
+  /** TryFadeOutOldMapMusic */
   tryFadeOutOldMapMusic(): void {
-    let music = this.header.music;
-    try {
-      const dest = this.mapIdForWarp(this.warpDestination);
-      const cached = rom.mapIndex.maps[dest];
-      void cached;
-    } catch { /* ignore */ }
+    if (flagGet(rom.constants.FLAG_DONT_TRANSITION_MUSIC ?? 0)) return;
     const destMusic = this.destinationMusic();
-    if (destMusic !== undefined && destMusic !== sound.currentBGM) sound.fadeOutBGM(4);
-    void music;
+    if (destMusic !== undefined && destMusic !== sound.currentBGM) sound.fadeOutMapMusic(this.destinationMusicFadeoutSpeed());
   }
 
+  /** GetWarpDestinationMusic: music of the map header at warpDestination, when already cached. */
   private destinationMusic(): number | undefined {
     try {
       const dest = this.mapIdForWarp(this.warpDestination);
-      const cachedPromise = this.mapCache.get(dest);
-      void cachedPromise;
-      return undefined;
+      return rom.cachedMap(dest)?.music;
     } catch {
       return undefined;
+    }
+  }
+
+  /** GetMapMusicFadeoutSpeed */
+  private destinationMusicFadeoutSpeed(): number {
+    try {
+      const dest = this.mapIdForWarp(this.warpDestination);
+      return this.peekMapType(dest) === MAP_TYPE.INDOOR ? 2 : 4;
+    } catch {
+      return 4;
     }
   }
 

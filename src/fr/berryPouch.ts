@@ -30,7 +30,7 @@ import {
 } from "./hw/menuHelpers";
 import { BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, oamData,
   ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAffineAnim, ANIMCMD_END, ANIMCMD_FRAME, AFFINEANIMCMD_END,
@@ -133,10 +133,10 @@ const td = (taskId: number): TaskData => {
 /** InitBerryPouch(type, savedCallback, allowSelect). Runs under gMain in an HwScene. */
 export function InitBerryPouch(type: number, savedCallback: (() => void) | null, allowSelect: number, handlers?: BerryPouchHandlers): void {
   if (handlers) sHandlers = handlers;
-  void Promise.all([
+  SetMainCallback2WhenLoaded(Promise.all([
     loadCData("strings", "text_window_graphics", "item_menu_icons"),
     preloadPacks(["graphics_berry_pouch", "graphics_interface", "graphics_items", "graphics_text_window", "graphics_fonts"]),
-  ]).then(() => {
+  ]), () => {
     if (type !== C.BERRYPOUCH_NA) sStaticCnt.type = type;
     if (allowSelect !== 0xff) sStaticCnt.allowSelect = !!allowSelect;
     if (savedCallback) sStaticCnt.savedCallback = savedCallback;

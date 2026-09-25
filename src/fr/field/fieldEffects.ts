@@ -232,6 +232,7 @@ export class FieldEffects {
     if (!sprite) return;
     (sprite as unknown as { fxTile: boolean }).fxTile = true;
     sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority - 1;
     sprite.data[1] = x;
     sprite.data[2] = y;
     sprite.data[7] = 0;
@@ -252,6 +253,7 @@ export class FieldEffects {
     const sprite = this.createFromTemplate("LongGrass", object.currentCoords.x * 16 + 8, object.currentCoords.y * 16 + 8);
     if (!sprite) return;
     sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority - 1;
     const x = object.currentCoords.x, y = object.currentCoords.y;
     sprite.callback = (s) => {
       if (!object.active || (s.animEnded && (object.currentCoords.x !== x || object.currentCoords.y !== y))) this.ow.sprites.destroy(s);
@@ -264,6 +266,8 @@ export class FieldEffects {
     const size = raw?.shadowSize ?? "SHADOW_SIZE_M";
     const sprite = this.createFromTemplate(SHADOW_TEMPLATES[size] ?? "ShadowMedium", object.sprite.x, object.sprite.y);
     if (!sprite) return;
+    sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority + 1;
     const offset = (object.sprite.height >> 1) - (SHADOW_OFFSETS[size] ?? 4);
     sprite.callback = (s) => {
       s.priority = object.sprite.priority;
@@ -288,6 +292,7 @@ export class FieldEffects {
     const sprite = this.createFromTemplate(name, object.currentCoords.x * 16 + 8, object.currentCoords.y * 16 + yOff);
     if (!sprite) return;
     sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority - 1;
     sprite.callback = (s) => { if (s.animEnded) this.ow.sprites.destroy(s); else s.subpriority = object.sprite.subpriority - 1; };
   }
 

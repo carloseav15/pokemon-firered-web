@@ -21,7 +21,7 @@ const items: RenewableHiddenItemData[] = cdataRaw.defs.sRenewableHiddenItems.val
 assert.equal(items.length, 15, 'sRenewableHiddenItems must have 15 map entries');
 
 // 1. Check step counter behavior
-varSet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER, 0);
+varSet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER, 0); // PREPARED: counter starts at 0; the code under test increments it
 for (let i = 0; i < 1499; i++) {
   IncrementRenewableHiddenItemStepCounter();
 }
@@ -59,7 +59,7 @@ TryRegenerateRenewableHiddenItems(3, 38);
 assert.equal(varGet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER), 0, 'counter must reset to 0 after regeneration');
 
 // Running again with counter < 1500 should not regenerate
-varSet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER, 100);
+varSet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER, 100); // PREPARED: below the 1500 threshold
 TryRegenerateRenewableHiddenItems(3, 38);
 assert.equal(varGet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER), 100, 'counter < 1500 must not trigger regeneration');
 
@@ -73,7 +73,7 @@ const resortGorgeous = items.find(e => e.mapGroup === 1 && e.mapNum === 109)!;
 assert.ok(resortGorgeous);
 
 for (let cycle = 0; cycle < 1000; cycle++) {
-  varSet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER, 1500);
+  varSet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER, 1500); // PREPARED: at the threshold
   TryRegenerateRenewableHiddenItems(1, 109);
   assert.equal(varGet(C.VAR_RENEWABLE_ITEM_STEP_COUNTER), 0);
 

@@ -35,7 +35,7 @@ import {
   TransferPlttBuffer, UpdatePaletteFade,
 } from "./hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gDummySpriteAffineAnimTable, gSprites, IndexOfSpritePaletteTag, LoadOam,
   LoadSpritePalette, LoadSpriteSheet, oamData, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAnim, ANIMCMD_END,
@@ -137,10 +137,10 @@ const td = (taskId: number): TaskData => {
 /** InitTMCase(type, exitCallback, allowSelectClose). Runs under gMain in an HwScene. */
 export function InitTMCase(type: number, exitCallback: (() => void) | null, allowSelectClose: boolean | number, handlers?: TmCaseHandlers): void {
   if (handlers) sHandlers = handlers;
-  void Promise.all([
+  SetMainCallback2WhenLoaded(Promise.all([
     loadCData("strings", "text_window_graphics"),
     preloadPacks(["graphics_tm_case", "graphics_interface", "graphics_text_window", "graphics_fonts"]),
-  ]).then(() => {
+  ]), () => {
     sDyn = {
       nextScreenCallback: null, discSpriteId: 0, maxTMsShown: 0, numTMs: 0, contextMenuWindowId: WINDOW_NONE, scrollArrowsTaskId: TASK_NONE,
       currItem: 0, menuActionIndices: [], numMenuActions: 0, seqId: 0,

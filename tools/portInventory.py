@@ -8,6 +8,10 @@ exported (public/fr/cdata/<name>.json). Categories that cannot be measured
 automatically (out of scope, covered by the browser/exporter, adapters) come
 from the tables below; edit them when a file changes state.
 
+A TS `function` whose body is trivial (empty, `return 0;`, `if (!x) return;`…)
+while the C body has real statements is a stub: it is NOT counted as ported and
+is listed in the "Stubs" column, so a named placeholder cannot inflate the count.
+
 Usage: python3 tools/portInventory.py   (or npm run inventory)
 """
 
@@ -62,13 +66,9 @@ COVERED: dict[str, str] = {
 
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
 ADAPTERS: dict[str, str] = {
-    "player_pc": "menus/playerPc.ts: menú superior sobre el campo canvas",
-    "fame_checker": "menus/keyItemScreens.ts",
-    "teachy_tv": "menus/keyItemScreens.ts",
-    "pokemon_storage_system_menu": "menus/storageMenu.ts: reglas con listas",
-    "slot_machine": "menus/slotMachine.ts: reglas sin gráficos",
-    "trade": "pokemon/ingameTrade.ts: sin escena",
+    "teachy_tv": "menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado",
 }
+
 
 FUNC_RE = re.compile(
     r"^(?!static const|const|typedef|struct\s+\w+\s*$)"
@@ -77,33 +77,101 @@ FUNC_RE = re.compile(
     re.M,
 )
 KEYWORDS = {"if", "while", "for", "switch", "return", "sizeof"}
+TS_FUNC_RE = re.compile(r"\bfunction\s+([A-Za-z_]\w*)\s*\(")
+TRIVIAL_LINE = re.compile(
+    r"^(return(\s+[\w.\[\]]+)?;|if\s*\(!?[\w.]+\)\s*return;|void\s+[\w.]+;|//.*|/\*.*\*/|\*.*)$"
+)
 
 
-def c_functions(text: str) -> list[str]:
-    names = []
+def norm(name: str) -> str:
+    return name.replace("_", "").lower()
+
+
+def body_after(text: str, start: int) -> str:
+    """Text between the `{` at/after `start` and its matching `}`."""
+    i = text.find("{", start)
+    if i < 0:
+        return ""
+    depth, j = 0, i
+    while j < len(text):
+        if text[j] == "{":
+            depth += 1
+        elif text[j] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[i + 1 : j]
+        j += 1
+    return text[i + 1 :]
+
+
+def statements(body: str) -> list[str]:
+    return [l.strip() for l in body.splitlines() if l.strip() and l.strip() not in ("{", "}")]
+
+
+def is_trivial(body: str) -> bool:
+    return all(TRIVIAL_LINE.match(l) for l in statements(body))
+
+
+def c_functions(text: str) -> list[tuple[str, bool]]:
+    """(name, has_real_body) for each function definition in a .c file."""
+    out: dict[str, bool] = {}
     for m in FUNC_RE.finditer(text):
         name = m.group(1)
-        if name not in KEYWORDS:
-            names.append(name)
-    return list(dict.fromkeys(names))
+        if name not in KEYWORDS and name not in out:
+            out[name] = not is_trivial(body_after(text, m.end() - 1))
+    return list(out.items())
 
 
-def load_ts() -> tuple[set[str], dict[str, list[str]]]:
+def ts_body_end(text: str, paren: int) -> int:
+    """Index of the `{` opening a TS function body, skipping the parameter list."""
+    depth, j = 0, paren
+    while j < len(text):
+        if text[j] == "(":
+            depth += 1
+        elif text[j] == ")":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return j
+
+
+def load_ts() -> tuple[set[str], dict[str, bool], dict[str, list[str]]]:
     idents: set[str] = set()
+    # norm(name) -> True if at least one TS `function name` has a real body.
+    real_def: dict[str, bool] = {}
     cites: dict[str, list[str]] = {}
     for path in sorted(SRC.rglob("*.ts")):
         if "generated" in path.parts:
             continue
         text = path.read_text()
         # Case/underscore-insensitive: older field code uses camelCase names.
-        idents.update(i.replace("_", "").lower() for i in re.findall(r"\b[A-Za-z_]\w*\b", text))
+        idents.update(norm(i) for i in re.findall(r"\b[A-Za-z_]\w*\b", text))
+        for m in TS_FUNC_RE.finditer(text):
+            key = norm(m.group(1))
+            real = not is_trivial(body_after(text, ts_body_end(text, m.end() - 1)))
+            real_def[key] = real_def.get(key, False) or real
         rel = str(path.relative_to(SRC))
         for c in set(re.findall(r"\b([A-Za-z0-9_]+)\.c\b", text)):
             cites.setdefault(c, []).append(rel)
-    return idents, cites
+    return idents, real_def, cites
 
 
-def classify(name: str, funcs: list[str], found: int, cited: bool) -> tuple[str, str]:
+def count_found(funcs: list[tuple[str, bool]], idents: set[str], real_def: dict[str, bool]) -> tuple[int, list[str]]:
+    """Ported functions and stubs (TS `function` with a trivial body for a non-trivial C body)."""
+    found, stubs = 0, []
+    for name, c_real in funcs:
+        key = norm(name)
+        if key not in idents:
+            continue
+        if c_real and real_def.get(key) is False:
+            stubs.append(name)
+            continue
+        found += 1
+    return found, stubs
+
+
+def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool) -> tuple[str, str]:
     if name in OUT_OF_SCOPE or name.startswith(OUT_OF_SCOPE_PREFIXES):
         return "fuera", ""
     if name in COVERED:
@@ -133,15 +201,15 @@ TITLES = {
 
 
 def main() -> None:
-    idents, cites = load_ts()
+    idents, real_def, cites = load_ts()
     rows = []
     for path in sorted((DECOMP / "src").glob("*.c")):
         name = path.stem
         text = path.read_text(errors="replace")
         funcs = c_functions(text)
-        found = sum(f.replace("_", "").lower() in idents for f in funcs)
+        found, stubs = count_found(funcs, idents, real_def)
         status, note = classify(name, funcs, found, name in cites)
-        rows.append((status, name, text.count("\n"), found, len(funcs), note, cites.get(name, [])))
+        rows.append((status, name, text.count("\n"), found, len(funcs), note, cites.get(name, []), len(stubs)))
 
     out = [
         "# Inventario del port (generado)",
@@ -150,6 +218,8 @@ def main() -> None:
         "Mide cuántas funciones de cada `.c` existen con el mismo nombre en `src/fr`.",
         "La comparación ignora mayúsculas y `_` (la capa de campo antigua usa camelCase).",
         "Un nombre presente no prueba paridad: es un indicador de avance, no de fidelidad.",
+        "Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene",
+        "código real cuenta como **stub** (columna Stubs) y no suma como portada.",
         "Las categorías fuera/cubierto/adaptador salen de las tablas del script.",
         "",
         "| Estado | Archivos | Líneas C | Funciones con nombre en TS |",
@@ -166,13 +236,13 @@ def main() -> None:
         sel = sorted((r for r in rows if r[0] == s), key=lambda r: (-r[2], r[1]))
         if not sel:
             continue
-        out += ["", f"## {TITLES[s]}", "", "| Archivo C | Líneas | Funciones | TS que lo citan | Nota |", "|---|---:|---:|---|---|"]
-        for _, name, lines, found, total, note, ts in sel:
+        out += ["", f"## {TITLES[s]}", "", "| Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |", "|---|---:|---:|---|---|---:|"]
+        for _, name, lines, found, total, note, ts, nstubs in sel:
             fn = f"{found}/{total}" if total else "—"
             where = ", ".join(f"`{t}`" for t in ts[:3]) + (" …" if len(ts) > 3 else "")
-            out.append(f"| `{name}.c` | {lines} | {fn} | {where} | {note} |")
+            out.append(f"| `{name}.c` | {lines} | {fn} | {where} | {note} | {nstubs or ''} |")
     OUT.write_text("\n".join(out) + "\n")
-    print(f"{OUT.relative_to(ROOT)}: {len(rows)} archivos, pendientes {len(todo)} ({sum(r[2] for r in todo)} líneas)")
+    print(f"{OUT.relative_to(ROOT)}: {len(rows)} archivos, pendientes {len(todo)} ({sum(r[2] for r in todo)} líneas), stubs {sum(r[7] for r in rows)}")
 
 
 if __name__ == "__main__":

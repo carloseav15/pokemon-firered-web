@@ -1,0 +1,12 @@
+[
+ "cableCarUtil.ts",
+ "field/fieldEffectHelpers.ts",
+ "game/slots.ts",
+ "hw/bgRegs.ts",
+ "hw/tilemapUtil.ts",
+ "imageProcessingEffects.ts",
+ "monMarkings.ts",
+ "paletteUtil.ts",
+ "saveFailedScreen.ts",
+ "teachyTv.ts"
+]

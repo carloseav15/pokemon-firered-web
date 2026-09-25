@@ -5,6 +5,7 @@ import { loadCData, preloadPacks } from "../hw/assets";
 import { preloadNamingScreen } from "../namingScreen";
 import { preloadPokedexScreen } from "../pokedexScreen";
 import { loadBattleScripts } from "./bscript";
+import "./anims";
 
 const CDATA_FILES = [
   "battle_anim", "battle_anim_bug", "battle_anim_dark", "battle_anim_dragon",
@@ -21,7 +22,7 @@ const CDATA_FILES = [
 
 const PACKS = [
   "pokemon", "graphics_trainers", "graphics_battle_anims", "graphics_battle_terrain", "graphics_battle_interface", "graphics_interface",
-  "graphics_fonts", "graphics_text_window", "graphics_pokemon_special_anim",
+  "graphics_fonts", "graphics_text_window", "graphics_pokemon_special_anim", "graphics_weather",
 ];
 
 let loading: Promise<void> | null = null;
