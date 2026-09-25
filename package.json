@@ -12,7 +12,8 @@
     "check:renewable": "esbuild tools/checks/renewableHiddenItems.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/renewableHiddenItems.mjs && node .decomp-build/checks/renewableHiddenItems.mjs",
     "check:preview": "esbuild tools/checks/mapPreviewScreen.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/mapPreviewScreen.mjs && node .decomp-build/checks/mapPreviewScreen.mjs",
     "check:summary": "esbuild tools/checks/pokemonSummaryScreen.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/pokemonSummaryScreen.mjs && node .decomp-build/checks/pokemonSummaryScreen.mjs",
-    "check:evolution": "esbuild tools/checks/evolutionScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/evolutionScene.mjs && node .decomp-build/checks/evolutionScene.mjs"
+    "check:evolution": "esbuild tools/checks/evolutionScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/evolutionScene.mjs && node .decomp-build/checks/evolutionScene.mjs",
+    "check:card": "esbuild tools/checks/trainerCard.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/trainerCard.mjs && node .decomp-build/checks/trainerCard.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

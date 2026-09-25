@@ -167,8 +167,20 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 11. **Recordador de movimientos** (`move_relearner.c`) **[juego]**: verificar
     si la pantalla actual es adaptador y portarla (el menú de equipo ya le pasa
     `VAR_0x8005` como en el C).
-12. **Tarjeta de entrenador** (`trainer_card.c`) **[visual]**: gráficos,
-    giro de la tarjeta, medallas y fotos (`menus/trainerCard.ts` es adaptador).
+12. **Tarjeta de entrenador** (`trainer_card.c`, 1959 líneas) **[PORTADO]**:
+    portada fielmente en `src/fr/menus/trainerCard.ts` sobre la capa de hardware GBA (`hw/`).
+    Implementa:
+    - Anverso con nombre del jugador, ID de 5 dígitos, dinero con símbolo de yen, conteo de Pokédex,
+      tiempo de juego con parpadeo del colon cada 60 frames, las 8 medallas de Kanto como bloques
+      2×2 de tiles en BG3, color de tarjeta según estrellas (0: Azul, 1: Verde por entrar al Hall of Fame,
+      2: Bronce por 150 Kanto, 3: Plata por 380 Nacional, 4: Oro por 200 saltos de bayas), y sprite frontal
+      del entrenador (Red/Leaf) renderizado en ventana 2 sobre BG3.
+    - Reverso con tiempo de debut en el Hall of Fame, estadísticas (victorias/derrotas por link, intercambios,
+      Berry Crush, sala Unión) e iconos mini de los 6 Pokémon del Salón de la Fama.
+    - Animación de perspectiva 3D al voltear la tarjeta con efectos scanline en BG0 y recorte vertical
+      mediante `WIN0V` en 11 frames de contracción a 7px/frame y expansión a 5px/frame con sonidos `SE_CARD_FLIP`
+      y `SE_CARD_FLIPPING`.
+    - Verificado headless con `npm run check:card` (cdata, estrellas, escena de hardware, animación de volteo 3D y fade out).
 13. **Fame Checker y Teachy TV** (`fame_checker.c`, `teachy_tv.c`)
     **[visual]**: `menus/keyItemScreens.ts` son adaptadores de texto; Teachy TV
     necesita además el controlador de batalla Pokédude
