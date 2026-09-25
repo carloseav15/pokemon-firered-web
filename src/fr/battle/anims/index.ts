@@ -25,3 +25,4 @@ import "./soundTasks";
 import "./special";
 import "./effects1";
 import "./effects2";
+import "./effects3";

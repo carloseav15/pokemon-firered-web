@@ -282,6 +282,18 @@ registerAnimSpriteCallbacks({
   AnimWeatherBallUp, AnimWeatherBallDown, AnimTranslateLinearAndFlicker, AnimTranslateLinearAndFlicker_Flipped,
 });
 
+export function AnimTask_GetFrustrationPowerLevel(taskId: number): void {
+  let powerLevel: number;
+  const friendship = animState.gAnimFriendship;
+  if (friendship <= 30) powerLevel = 0;
+  else if (friendship <= 100) powerLevel = 1;
+  else if (friendship <= 200) powerLevel = 2;
+  else powerLevel = 3;
+  gBattleAnimArgs[C.ARG_RET_ID] = powerLevel;
+  DestroyAnimVisualTask(taskId);
+}
+
 registerAnimTasks({
+  AnimTask_GetFrustrationPowerLevel,
   AnimTask_AttackerPunchWithTrace, AnimTask_AlphaFadeIn, AnimTask_BlendMonInAndOut, AnimTask_BlendPalInAndOutByTag,
 });
