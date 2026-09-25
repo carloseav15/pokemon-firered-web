@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 44 modules as documented ported, 79 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 15 as explicitly out of scope, 36 as probable out-of-scope candidates, and 99 as unreviewed. Separately, 42 files have a
+The current review labels 44 modules as documented ported, 80 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 15 as explicitly out of scope, 36 as probable out-of-scope candidates, and 98 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -225,6 +225,11 @@ whiteout respawn now uses the original heal-location data in
   alternos); sus callers viven en `pokemon_storage_system_tasks.c`. El storage
   web sigue como adaptador y no usa esos tilemaps; es brecha visual opcional
   del PC, no de progresión/equipo de combate. Revisión de código.
+- `menu_helpers.c`: `hw/menuHelpers.ts` cubre las rutinas single-player de
+  impresor/tarea, sí-no, L/R, cantidad, fuente de diálogo y reset de BG. Falta
+  link queue/wait y callbacks de interrupción; no hay hardware link web.
+  `IsHoldingItemAllowed` y `IsWritingMailAllowed` permiten todo por ausencia de
+  link activo; no equivalen a restricciones de link. Revisión de fuente.
 - `ss_anne.c`: salida del barco conserva espera de 50 frames, estela/humo,
   desplazamiento cada cinco frames, bocina, umbral de salida y espera final 40
   frames antes de reanudar el script. Animaciones/callbacks cotejados con C;
