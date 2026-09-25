@@ -169,6 +169,30 @@ viejo → Ruta 2 → captura de un Rattata (Pokédex y apodo "No").
    - Arreglo: `copyGlyph` omite los píxeles de color 0.
    - Nivel: navegador (cuadros de diálogo del campo).
 
+5. **El cursor del menú START tapaba la primera letra** (esta sesión).
+   - Síntoma: la "P" de POKéDEX/POKéMON quedaba cortada al mover el cursor.
+   - Causa: `Menu_RedrawCursor` (`menu.c`) borra `GetMenuCursorDimensionByFont`
+     (8×14 para FONT_NORMAL, `gMenuCursorDimensions` de `new_menu_helpers.c`);
+     `menus/menu.ts` borraba `maxLetterWidth` (10 px) y se comía 2 columnas del
+     texto impreso en x = 8. `GridMenu` borraba 10×14 fijo
+     (`MultichoiceGrid_RedrawCursor` también usa la tabla).
+   - Arreglo: ambos usan `GetMenuCursorDimensionByFont` de `hw/menu.ts`.
+   - Nivel: navegador (captura con el cursor en POKéDEX y en BAG).
+6. **La descripción del menú START salía cortada** (esta sesión).
+   - Síntoma: solo se veía la primera línea de la ayuda, sobre un fondo liso.
+   - Causa: `DrawHelpMessageWindowWithText` (`help_message.c`) usa una ventana
+     en y = 15 de 30×5 tiles con los tiles de `gHelpMessageWindow_Gfx`
+     (0 arriba, 5 en medio, 14 abajo), paleta `GetTextWindowPalette(2)` y texto
+     en (2, 5) con espaciado de letra y línea 1 y colores
+     `{TRANSPARENT, DYNAMIC_COLOR_1, DARK_GRAY}`. El TS usaba una ventana en
+     y = 17 de 3 tiles con relleno de color 15, así que la segunda línea caía
+     fuera.
+   - Arreglo: nuevo `menus/helpMessage.ts` (`CreateHelpMessageWindow`,
+     `DrawHelpMessageWindowTilesById`, `PrintTextOnHelpMessageWindow`); el pack
+     `graphics_help_system` se precarga en `boot.ts`. Browser adaptation: la
+     ventana vive en la capa canvas del campo, los tiles se copian a su buffer.
+   - Nivel: navegador (captura del menú START en la Ruta 2).
+
 Observado una vez y **no reproducido**: tras el tutorial del viejo (Ciudad
 Verde), la bolsa se quedó con los objetos temporales del viejo (Poción, 1 Poké
 Ball, Teachy TV) en vez de restaurar la del jugador (`InitOldManBag` /

@@ -51,8 +51,11 @@ export const H = {
       if (mode === "run") { await dbg().wait(2, 0x80); await dbg().wait(2); await dbg().wait(2, 0x10); await dbg().wait(2); }
       await dbg().press("A", 16);
     }
+    // Stuck only if the press budget ran out while still in battle; a new
+    // encounter starting in the next 30 frames is not a stuck battle.
+    const stuck = n >= maxPresses && this.inBattle();
     await dbg().wait(30);
-    const r = { battle: mode, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck: this.inBattle() };
+    const r = { battle: mode, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck };
     this.log.push(r);
     return r;
   },

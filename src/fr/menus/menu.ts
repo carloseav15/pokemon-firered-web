@@ -3,9 +3,10 @@
 
 import { sound } from "../audio/sound";
 import { encode } from "../gba/charmap";
-import { FONT_INFOS, FONT_NORMAL } from "../gba/font";
+import { FONT_NORMAL } from "../gba/font";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW } from "../gba/input";
 import { printText } from "../gba/textPrinter";
+import { GetMenuCursorDimensionByFont } from "../hw/menu";
 import type { Window } from "../gba/window";
 import { rom } from "../rom";
 
@@ -35,9 +36,14 @@ export class Menu {
     this.redraw(this.cursorPos, this.cursorPos);
   }
 
+  /** Menu_RedrawCursor: erases gMenuCursorDimensions (8 px wide for every
+   * font), not maxLetterWidth, so options printed at x = 8 keep their first
+   * column. */
   redraw(oldPos: number, newPos: number): void {
-    const info = FONT_INFOS[this.fontId] ?? FONT_INFOS[FONT_NORMAL];
-    this.window.fillRect(1, this.left, this.optionHeight * oldPos + this.top, info.maxLetterWidth, info.maxLetterHeight);
+    const fontId = this.fontId >= 0 && this.fontId <= 6 ? this.fontId : FONT_NORMAL;
+    const width = GetMenuCursorDimensionByFont(fontId, 0);
+    const height = GetMenuCursorDimensionByFont(fontId, 1);
+    this.window.fillRect(1, this.left, this.optionHeight * oldPos + this.top, width, height);
     printText(this.window, this.fontId, selectorArrow(), this.left, this.optionHeight * newPos + this.top);
   }
 
@@ -90,7 +96,9 @@ export class GridMenu {
 
   redraw(oldPos: number, newPos: number): void {
     const [ox, oy] = this.pos(oldPos);
-    this.window.fillRect(1, ox, oy, 10, 14);
+    // MultichoiceGrid_RedrawCursor: same gMenuCursorDimensions erase as Menu_RedrawCursor.
+    const fontId = this.fontId >= 0 && this.fontId <= 6 ? this.fontId : FONT_NORMAL;
+    this.window.fillRect(1, ox, oy, GetMenuCursorDimensionByFont(fontId, 0), GetMenuCursorDimensionByFont(fontId, 1));
     const [nx, ny] = this.pos(newPos);
     printText(this.window, this.fontId, selectorArrow(), nx, ny);
   }

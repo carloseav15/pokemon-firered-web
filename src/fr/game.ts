@@ -35,6 +35,7 @@ import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
+import { CreateHelpMessageWindow, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
 import { DoCredits } from "./credits";
 import { BeginHallOfFamePC } from "./hallOfFame";
@@ -271,14 +272,13 @@ export class Game {
     window.fill(1);
     items.forEach((item, i) => printText(window, FONT_NORMAL, item.text, 8, i * 15));
     ow.windows.add(window);
-    const desc = new Window(0, 17, 30, 3);
-    desc.frame = "none";
+    // DrawHelpMessageWindowWithText (help_message.c).
+    const desc = CreateHelpMessageWindow();
     ow.windows.add(desc);
     const menu = new Menu(window, FONT_NORMAL, 0, 0, 15, items.length, this.startMenuCursor);
     const printDesc = () => {
-      desc.fill(15);
       const sym = items[menu.cursorPos].desc;
-      if (rom.strings[sym]) printText(desc, FONT_NORMAL, rom.text(sym), 2, 3, { fg: 1, bg: 15, shadow: 2 });
+      PrintTextOnHelpMessageWindow(desc, rom.strings[sym] ? rom.text(sym) : [0xff]);
     };
     printDesc();
     this.startMenuWindows = [window, desc];

@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 117 | 130709 | 1921/6109 |
+| Parcial (menos del 80 % de funciones) | 117 | 130709 | 1923/6109 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 91 | 116834 | 3472/3658 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
-| Fuera de alcance | 51 | 55183 | 96/1950 |
+| Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **118** | **132109** | |
-| **Total en alcance** | **210** | **248996** | **5421/9825** |
+| **Total en alcance** | **210** | **248996** | **5423/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -71,10 +71,10 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `field_fadetransition.c` | 965 | 18/57 | `field/overworld.ts` |  |  |
 | `fieldmap.c` | 951 | 9/51 | `field/fieldmap.ts` |  |  |
 | `item_use.c` | 925 | 34/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `pokemon/items.ts` … |  |  |
-| `menu.c` | 872 | 26/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
+| `menu.c` | 872 | 27/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `main_menu.c` | 788 | 23/29 | `mainMenu.ts` |  |  |
 | `wild_encounter.c` | 784 | 7/36 | `field/wildEncounter.ts`, `menu2.ts` |  |  |
-| `new_menu_helpers.c` | 761 | 27/53 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
+| `new_menu_helpers.c` | 761 | 28/53 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `list_menu.c` | 758 | 24/31 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `trainer_see.c` | 750 | 7/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
@@ -329,6 +329,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `wonder_news.c` | 154 | 1/9 |  |  |  |
 | `quest_log_battle.c` | 150 | 0/3 |  |  |  |
 | `quest_log_objects.c` | 146 | 0/3 |  |  |  |
-| `help_message.c` | 106 | 1/7 | `partyMenu.ts` |  |  |
+| `help_message.c` | 106 | 4/7 | `boot.ts`, `game.ts`, `menus/helpMessage.ts` … |  |  |
 | `cereader_tool.c` | 97 | 1/8 | `script/specials.ts` |  |  |
 | `mystery_event_msg.c` | 13 | — |  |  |  |
