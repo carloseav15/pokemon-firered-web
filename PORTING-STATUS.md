@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 27 modules as documented ported, 52 as partial or
+The current review labels 27 modules as documented ported, 53 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-154 as unreviewed. Separately, 42 files have a
+153 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -166,6 +166,9 @@ whiteout respawn now uses the original heal-location data in
   truncamiento `u16` de `SeedRng` coinciden. Sigue parcial porque el flujo TS
   aún no llama `seedRng` al salir del título con el valor de Timer1 ligado a la
   ID del entrenador, como hace C.
+- `bg_regs.c` define arreglos de registros/flags de BG. El PPU TS expone
+  constantes individuales, pero el renderer de campo Canvas2D no conecta el
+  setup BLDCNT del overworld; queda parcial/adaptado.
 - `math_util.c`: los nueve helpers `Q_8_8`, `Q_N_S` y `Q_24_8` de producto,
   división e inversa viven en `src/fr/mathUtil.ts`. Los intermedios de 64 bits
   usan `BigInt`; Oak usa el helper común `Q_8_8_inv`. `npm run check:port`
