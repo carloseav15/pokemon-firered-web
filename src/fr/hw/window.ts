@@ -159,6 +159,15 @@ function pixelAddr(x: number, y: number, rowTiles: number): number {
   return ((x >> 1) & 3) + ((x >> 3) << 5) + (((y >> 3) * rowTiles) << 5) + ((y & 7) << 2);
 }
 
+function pixelAddr8Bit(x: number, y: number, rowTiles: number): number {
+  return (x & 7) + ((x >> 3) << 6) + (((y >> 3) * rowTiles) << 6) + ((y & 7) << 3);
+}
+
+/** blit.c BlitBitmapRect4BitWithoutColorKey. */
+export function BlitBitmapRect4BitWithoutColorKey(src: Bitmap, dst: Bitmap, srcX: number, srcY: number, dstX: number, dstY: number, width: number, height: number): void {
+  BlitBitmapRect4Bit(src, dst, srcX, srcY, dstX, dstY, width, height, 0xff);
+}
+
 export function BlitBitmapRect4Bit(src: Bitmap, dst: Bitmap, srcX: number, srcY: number, dstX: number, dstY: number, width: number, height: number, colorKey: number): void {
   const xEnd = dst.width - dstX < width ? dst.width - dstX + srcX : srcX + width;
   const yEnd = dst.height - dstY < height ? dst.height - dstY + srcY : height + srcY;
@@ -186,6 +195,37 @@ export function FillBitmapRect4Bit(surface: Bitmap, x: number, y: number, width:
       const a = pixelAddr(xx, yy, row);
       if (xx & 1) surface.pixels[a] = (surface.pixels[a] & 0xf) | ((fillValue & 0xf) << 4);
       else surface.pixels[a] = (surface.pixels[a] & 0xf0) | (fillValue & 0xf);
+    }
+  }
+}
+
+/** blit.c BlitBitmapRect4BitTo8Bit; dest pixels contain palette-offset indices. */
+export function BlitBitmapRect4BitTo8Bit(src: Bitmap, dst: Bitmap, srcX: number, srcY: number, dstX: number, dstY: number, width: number, height: number, colorKey: number, paletteOffset: number): void {
+  const xEnd = dst.width - dstX < width ? dst.width - dstX + srcX : srcX + width;
+  const yEnd = dst.height - dstY < height ? srcY + dst.height - dstY : srcY + height;
+  const srcRow = (src.width + (src.width & 7)) >> 3;
+  const dstRow = (dst.width + (dst.width & 7)) >> 3;
+  const paletteBase = ((paletteOffset & 0xf) << 4) & 0xff;
+  for (let sy = srcY, dy = dstY; sy < yEnd; sy++, dy++) {
+    for (let sx = srcX, dx = dstX; sx < xEnd; sx++, dx++) {
+      const source = src.pixels[pixelAddr(sx, sy, srcRow)];
+      const color = (source >> ((sx & 1) << 2)) & 0xf;
+      if (colorKey !== 0xff && color === (colorKey & 0xf)) continue;
+      const da = pixelAddr8Bit(dx, dy, dstRow);
+      if (da < dst.pixels.length) dst.pixels[da] = (paletteBase + color) & 0xff;
+    }
+  }
+}
+
+/** blit.c FillBitmapRect8Bit. */
+export function FillBitmapRect8Bit(surface: Bitmap, x: number, y: number, width: number, height: number, fillValue: number): void {
+  const xEnd = Math.min(surface.width, x + width);
+  const yEnd = Math.min(surface.height, y + height);
+  const row = (surface.width + (surface.width & 7)) >> 3;
+  for (let yy = y; yy < yEnd; yy++) {
+    for (let xx = x; xx < xEnd; xx++) {
+      const a = pixelAddr8Bit(xx, yy, row);
+      if (a < surface.pixels.length) surface.pixels[a] = fillValue & 0xff;
     }
   }
 }
