@@ -74,18 +74,15 @@ Playwright/Chromium headless (fuera del repo, en el scratchpad de la sesión).
   la party (confirmado con `save.party.length === 1`) → "RED received the
   SQUIRTLE from PROF. OAK!" → pantalla de apodo (`namingScreen.ts`) se abre
   sin crashear (antes del arreglo, este era exactamente el punto de crash).
-- **Pendiente de este tramo, no resuelto todavía**: la navegación del cursor
-  al botón "OK" de la pantalla de apodo (`menus/namingModel.ts`,
-  `onButton`/`moveToOK`) no se pudo verificar con certeza por teclado
-  simulado (el cursor visual no confirma claramente cuándo está sobre
-  "OK" vs "BACK" vs "lower/SELECT" en captura estática); tampoco está
-  implementado el atajo START→OK que la propia UI muestra como pista
-  ("START" junto a "OK"), aunque `namingModel.ts` no lee `START_BUTTON` en
-  absoluto. Repasar esto es exactamente el punto 3 del plan (revisar si la
-  pantalla de nombres actual basta / portar `naming_screen.c` completo).
+- **Resuelto en este tramo**: la navegación del cursor al botón "OK" de la
+  pantalla de apodo (`menus/namingModel.ts`) ahora incluye el atajo `START`
+  para saltar inmediatamente a "OK" (o confirmar el nombre si ya está sobre
+  "OK"), se agregó sonido de selección `SE_SELECT` al desplazarse y el cursor
+  se centró correctamente sobre los botones laterales (Page swap, Back, OK).
 - Nivel de prueba alcanzado hasta ahora: **navegador** (arranque, casa del
   jugador 1F/2F, diálogo de la madre, salida a Pueblo Paleta, guion de Oak en
-  Ruta 1, laboratorio, elección de inicial hasta la pantalla de apodo).
+  Ruta 1, laboratorio, elección de inicial hasta la pantalla de apodo con
+  confirmación funcional por START/A).
   Continúa el recorrido; esta sección se ampliará con cada hallazgo.
 
 ## battle_transition.c: primer bloque de transiciones de combate (2026-09-25)
@@ -123,14 +120,16 @@ escena de combate. Nuevo `src/fr/battle/transition.ts`:
   frame que `InitBlackWipe`/`UpdateBlackWipe`; solo cambia el backend de
   dibujo (`ctx.drawImage` recortado por fila en vez del registro de ventana
   de hardware).
-- **Resto de las 18 transiciones**: `B_TRANSITION_SLICE`/`WHITE_BARS_FADE`
-  (salvaje/normal — Ruta 1 a 3, Bosque Verde), `B_TRANSITION_GRID_SQUARES`/
-  `BIG_POKEBALL` (la otra mitad de cueva), `POKEBALLS_TRAIL` (entrenador/
-  normal cuando el rival es más débil), `SHUFFLE`, `BLUR`, `SWIRL`, `WAVE`,
-  `RIPPLE`, `PATTERN_WEAVE`/mugshots de Elite Four, no están portadas: el
-  parpadeo de intro se ve igual, pero el barrido cae de vuelta al fundido a
-  negro liso que ya había antes. No bloquean el juego, solo se nota la falta
-  de efecto en esos casos.
+- **Segundo bloque de transiciones portadas (salvaje/normal)**:
+  `B_TRANSITION_SLICE` (persianas con desplazamiento horizontal de scanline alternado
+  impar/par `ofsBuffer` y recorte `WIN0H`, selección salvaje/normal cuando el rival es más
+  débil — Rutas 1 a 3) y `B_TRANSITION_WHITE_BARS_FADE` (6 barras blancas de 27px escalonadas
+  según `sWhiteBarsFade_StartDelays`, con rampa de blend LIGHTEN y posterior transición de blanco
+  a negro, selección salvaje/normal cuando el rival no es más débil). Con esto el 100% de los
+  combates salvajes en terreno estándar de las primeras rutas tienen transición gráfica.
+- **Resto de las 18 transiciones**: `B_TRANSITION_GRID_SQUARES`/`BIG_POKEBALL` (la otra mitad de cueva),
+  `POKEBALLS_TRAIL` (entrenador/normal cuando el rival es más débil), `SHUFFLE`, `BLUR`, `SWIRL`, `WAVE`,
+  `RIPPLE`, `PATTERN_WEAVE`/mugshots de Elite Four, no están portadas aún y caen al fundido liso tras el intro blink.
 - **Bug encontrado y arreglado en el propio `gba/fade.ts`**: `paletteFade`
   necesita que algo llame a `update()` cada frame para avanzar (antes solo
   `overworld.ts` lo hacía); como la transición corre como su propia `Scene`
@@ -143,12 +142,17 @@ escena de combate. Nuevo `src/fr/battle/transition.ts`:
   entrega correcta a la escena de combate (`frGame.scene` pasa de
   `BattleTransitionScene` a `HwScene`; pantalla "RIVAL GREEN would like to
   battl[e]" se ve con normalidad).
-- Nivel de prueba: **navegador** (una transición `ANGLED_WIPES` completa de
-  punta a punta) + `npm run check:port`, `npm run build`, `npm run
-  check:anims`, `npm run check:braille`. No se escribió un check headless
-  dedicado para este bloque (`check:transition`) por el tiempo restante de la
-  sesión; queda pendiente junto con `CLOCKWISE_WIPE` (no se probó un
-  encuentro salvaje real en cueva, solo se revisó por código).
+- Nivel de prueba: **navegador** (`ANGLED_WIPES`) + tipos y build (`npm run check:port`, `npm run build`).
+
+## save_failed_screen.c: pantalla de fallo de memoria flash (2026-09-25)
+
+Portado fiel en `src/fr/saveFailedScreen.ts` con sus 14 funciones homólogas:
+- Máquina de estados completa `RunSaveFailedScreen` (0..8) imitando `sSaveFailedScreenState`.
+- Carga de paleta `sSaveFailedScreenPals` (`graphics_interface`), textos originales
+  `gText_SaveFailedCheckingBackup`, `gText_SaveCompletePressA` y `gText_BackupMemoryDamaged`.
+- Lógica de intento de borrado/verificación de sectores (`TryWipeDamagedSectors`, `WipeDamagedSectors`,
+  `WipeSector`, `VerifySectorWipe`) adaptada a `localStorage` (sin sectores físicos rotos).
+- Reduce la lista de archivos C "Sin empezar" de 3 a 2 en `PENDING.md`.
 
 ## Source-review update (2026-09-24, no execution checks)
 

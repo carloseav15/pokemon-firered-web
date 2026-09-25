@@ -396,7 +396,9 @@ export class TextPrinter {
     const maxH = Math.min(height, this.window.pixelHeight - this.currentY);
     for (let y = 0; y < maxH; y++) {
       for (let x = 0; x < maxW; x++) {
-        this.window.setPixel(this.currentX + x, this.currentY + y, colors[pixels[y * 16 + x]] ?? this.bg);
+        // GLYPH_COPY: pixels whose final color is 0 leave the window untouched.
+        const color = colors[pixels[y * 16 + x]] ?? this.bg;
+        if (color !== 0) this.window.setPixel(this.currentX + x, this.currentY + y, color);
       }
     }
   }

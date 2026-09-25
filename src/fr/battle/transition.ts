@@ -1,12 +1,13 @@
 // Port of battle_transition.c: the pre-battle screen effect (BattleTransition_StartOnField).
 //
 // Scope for this pass: the shared intro (double gray blink, Task_Intro /
-// TransitionIntro_FadeToGray / TransitionIntro_FadeFromGray) plus two of the
-// eighteen named effects: B_TRANSITION_ANGLED_WIPES (the trainer/normal
-// pick when the enemy is not weaker) and B_TRANSITION_CLOCKWISE_WIPE (the
-// wild/cave pick when the enemy is weaker, used on Mt. Moon). Every other
-// B_TRANSITION_* id still gets the intro blink, then falls back to the
-// plain black fade the port already used for every battle start.
+// TransitionIntro_FadeToGray / TransitionIntro_FadeFromGray) plus four named effects:
+// - B_TRANSITION_ANGLED_WIPES (trainer/normal pick when enemy not weaker)
+// - B_TRANSITION_CLOCKWISE_WIPE (wild/cave pick when enemy weaker, e.g. Mt. Moon)
+// - B_TRANSITION_SLICE (wild/normal pick when enemy weaker, e.g. Route 1-3)
+// - B_TRANSITION_WHITE_BARS_FADE (wild/normal pick when enemy not weaker)
+// Every other B_TRANSITION_* id still gets the intro blink, then falls back to the
+// plain black fade the port already used.
 //
 // Adaptation: the C manipulates the live GBA WIN0H/WININ/WINOUT registers
 // over the still-running PPU. In this port the overworld renders on the
@@ -143,11 +144,15 @@ const WIN_RANGE = (a: number, b: number) => [Math.max(0, Math.min(255, a)), Math
 /** One transition's per-frame state machine. Returns true when finished (ready for FadeScreenBlack). */
 interface Effect {
   /** Window bounds per scanline: [left, right) is drawn from the snapshot; outside is black. */
-  readonly rowBounds: [number, number][];
+  readonly rowBounds?: [number, number][];
+  /** Horizontal displacement offset per scanline (for sliding slices). */
+  readonly rowOffsets?: number[];
   /** True when the window itself is the black area instead of the visible area (ClockwiseWipe's polarity). */
-  readonly invertWindow: boolean;
+  readonly invertWindow?: boolean;
   /** Advance one VBlank frame. Returns true once the wipe is done and FadeScreenBlack should start. */
   tick(): boolean;
+  /** Optional custom per-frame renderer when an effect does more than basic window clipping. */
+  render?(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void;
 }
 
 const NUM_ANGLED_WIPES = 7;
@@ -300,6 +305,135 @@ class ClockwiseWipeEffect implements Effect {
   }
 }
 
+class SliceEffect implements Effect {
+  readonly rowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
+  readonly rowOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly invertWindow = false;
+  private effectX = 0;
+  private speed = 1 << 8;
+  private accel = 1;
+
+  tick(): boolean {
+    this.effectX += this.speed >> 8;
+    if (this.effectX > DISPLAY_WIDTH) this.effectX = DISPLAY_WIDTH;
+    if (this.speed <= 0xFFF) this.speed += this.accel;
+    if (this.accel < 128) this.accel <<= 1;
+
+    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
+      if (i & 1) {
+        // Odd rows: slide right, window is [0, DISPLAY_WIDTH - effectX)
+        this.rowOffsets[i] = this.effectX;
+        this.rowBounds[i] = [0, DISPLAY_WIDTH - this.effectX];
+      } else {
+        // Even rows: slide left, window is [effectX, DISPLAY_WIDTH)
+        this.rowOffsets[i] = -this.effectX;
+        this.rowBounds[i] = [this.effectX, DISPLAY_WIDTH];
+      }
+    }
+    return this.effectX >= DISPLAY_WIDTH;
+  }
+}
+
+const NUM_WHITE_BARS = 6;
+const WHITE_BAR_HEIGHT = 1 + Math.floor(DISPLAY_HEIGHT / NUM_WHITE_BARS); // 27
+const sWhiteBarsFade_StartDelays = [0, 9, 15, 6, 12, 3];
+const FADE_TARGET = 16 << 8;
+
+interface WhiteBar {
+  y: number;
+  height: number;
+  x: number;
+  fade: number;
+  delay: number;
+  finished: boolean;
+}
+
+class WhiteBarsFadeEffect implements Effect {
+  private bars: WhiteBar[];
+  private state: "bars" | "fadeToBlack" = "bars";
+  private blackBlendCounter = 0;
+  private blackBldY = 0;
+
+  constructor() {
+    this.bars = Array.from({ length: NUM_WHITE_BARS }, (_, i) => {
+      const y = i * WHITE_BAR_HEIGHT;
+      const height = i === NUM_WHITE_BARS - 1 ? DISPLAY_HEIGHT - y : WHITE_BAR_HEIGHT;
+      return {
+        y,
+        height,
+        x: DISPLAY_WIDTH,
+        fade: 0,
+        delay: sWhiteBarsFade_StartDelays[i]!,
+        finished: false,
+      };
+    });
+  }
+
+  tick(): boolean {
+    if (this.state === "bars") {
+      let allFinished = true;
+      for (const bar of this.bars) {
+        if (bar.delay > 0) {
+          bar.delay--;
+          allFinished = false;
+        } else {
+          if (bar.x === 0 && bar.fade === FADE_TARGET) {
+            bar.finished = true;
+          } else {
+            allFinished = false;
+            bar.x = Math.max(0, bar.x - 24);
+            bar.fade = Math.min(FADE_TARGET, bar.fade + 192);
+          }
+        }
+      }
+      if (allFinished) {
+        this.state = "fadeToBlack";
+      }
+      return false;
+    }
+    // fadeToBlack (WhiteBarsFade_End)
+    this.blackBlendCounter += 480;
+    this.blackBldY = this.blackBlendCounter >> 8;
+    return this.blackBldY > 16;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    if (this.state === "bars") {
+      for (const bar of this.bars) {
+        // Left portion: game snapshot with lighten blend
+        if (bar.x > 0) {
+          ctx.drawImage(snapshot, 0, bar.y, bar.x, bar.height, 0, bar.y, bar.x, bar.height);
+          const alpha = (bar.fade >> 8) / 16;
+          if (alpha > 0) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, bar.y, bar.x, bar.height);
+            ctx.restore();
+          }
+        }
+        // Right portion: white bar that has passed
+        if (bar.x < DISPLAY_WIDTH) {
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(bar.x, bar.y, DISPLAY_WIDTH - bar.x, bar.height);
+        }
+      }
+    } else {
+      // Fade white screen to black
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+      const alpha = Math.min(1, this.blackBldY / 16);
+      if (alpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+        ctx.restore();
+      }
+    }
+  }
+}
+
 /** Task_BattleTransition_Intro: two gray blinks (BlendPalettes toward RGB(11,11,11)) before the main effect. */
 class IntroBlink {
   private blend = 0;
@@ -341,6 +475,8 @@ export class BattleTransitionScene implements Scene {
     this.snapshot.getContext("2d")!.drawImage(sourceCtx.canvas, 0, 0);
     this.effect = transitionId === C.B_TRANSITION_ANGLED_WIPES ? new AngledWipesEffect()
       : transitionId === C.B_TRANSITION_CLOCKWISE_WIPE ? new ClockwiseWipeEffect()
+      : transitionId === C.B_TRANSITION_SLICE ? new SliceEffect()
+      : transitionId === C.B_TRANSITION_WHITE_BARS_FADE ? new WhiteBarsFadeEffect()
       : null;
     this.hadEffect = this.effect !== null;
   }
@@ -366,15 +502,22 @@ export class BattleTransitionScene implements Scene {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
     if (this.effect) {
-      const { rowBounds, invertWindow } = this.effect;
-      for (let y = 0; y < DISPLAY_HEIGHT; y++) {
-        const [rawLeft, rawRight] = rowBounds[y]!;
-        const [left, right] = WIN_RANGE(rawLeft, rawRight);
-        if (invertWindow) {
-          if (left > 0) ctx.drawImage(this.snapshot, 0, y, left, 1, 0, y, left, 1);
-          if (right < DISPLAY_WIDTH) ctx.drawImage(this.snapshot, right, y, DISPLAY_WIDTH - right, 1, right, y, DISPLAY_WIDTH - right, 1);
-        } else if (right > left) {
-          ctx.drawImage(this.snapshot, left, y, right - left, 1, left, y, right - left, 1);
+      if (this.effect.render) {
+        this.effect.render(ctx, this.snapshot);
+      } else if (this.effect.rowBounds) {
+        const { rowBounds, invertWindow, rowOffsets } = this.effect;
+        for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+          const [rawLeft, rawRight] = rowBounds[y]!;
+          const [left, right] = WIN_RANGE(rawLeft, rawRight);
+          const ofs = rowOffsets ? rowOffsets[y]! : 0;
+          if (invertWindow) {
+            if (left > 0) ctx.drawImage(this.snapshot, 0, y, left, 1, 0, y, left, 1);
+            if (right < DISPLAY_WIDTH) ctx.drawImage(this.snapshot, right, y, DISPLAY_WIDTH - right, 1, right, y, DISPLAY_WIDTH - right, 1);
+          } else if (right > left) {
+            const w = right - left;
+            const sx = Math.max(0, Math.min(DISPLAY_WIDTH - w, left + ofs));
+            ctx.drawImage(this.snapshot, sx, y, w, 1, left, y, w, 1);
+          }
         }
       }
     } else if (!this.hadEffect && !this.done) {

@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5044/9825 (51 %)**.
-- Archivos C pendientes: **124** (143981 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5065/9825 (51 %)**.
+- Archivos C pendientes: **123** (143753 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -15,7 +15,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 |---|---:|---:|---:|---|
 | `image_processing_effects.c` | 4436 | 0/38 | ~4436 |  |
 | `palette_util.c` | 474 | 0/17 | ~474 |  |
-| `save_failed_screen.c` | 228 | 0/14 | ~228 |  |
 
 ## 2. Adaptadores (UI simplificada; hay que portar la pantalla real)
 
@@ -32,10 +31,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
-| `event_object_movement.c` | 9412 | 41/752 | ~8898 |  |
+| `event_object_movement.c` | 9412 | 42/752 | ~8886 |  |
 | `field_effect.c` | 4033 | 39/239 | ~3374 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
-| `battle_transition.c` | 3037 | 9/134 | ~2833 |  |
+| `battle_transition.c` | 3037 | 10/134 | ~2810 |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 | ~2634 |  |
 | `trade_scene.c` | 2916 | 7/53 | ~2530 |  |
 | `overworld.c` | 3563 | 70/238 | ~2515 |  |
@@ -60,9 +59,9 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `battle_main.c` | 4477 | 82/106 | ~1013 |  |
 | `field_weather.c` | 1147 | 7/50 | ~986 |  |
 | `script_menu.c` | 1341 | 8/29 | ~971 |  |
-| `start_menu.c` | 1016 | 6/65 | ~922 |  |
 | `berry.c` | 1028 | 1/8 | ~899 |  |
 | `battle_tower.c` | 1425 | 17/45 | ~886 |  |
+| `start_menu.c` | 1016 | 11/65 | ~844 |  |
 | `vs_seeker.c` | 1326 | 15/40 | ~828 |  |
 | `fieldmap.c` | 951 | 9/51 | ~783 |  |
 | `title_screen.c` | 1315 | 17/39 | ~741 |  |
