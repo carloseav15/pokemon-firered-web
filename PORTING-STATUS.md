@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 37 modules as documented ported, 58 as partial or
+The current review labels 37 modules as documented ported, 59 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-138 as unreviewed. Separately, 42 files have a
+137 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,9 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `hof_pc.c` reabre el menú PC y muestra equipos guardados, pero usa listas y
+  mensajes genéricos en lugar de fades/tasks/summary originales; es adaptación
+  postgame conocida.
 - `field_poison.c`: daño cada cinco pasos, resultado poison/faint y task que
   anuncia a cada Pokémon caído, baja amistad, limpia poison y calcula derrota
   están en `fieldEffects.ts` y `field/poison.ts`. El mosaic sigue en el C vecino.
