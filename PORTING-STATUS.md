@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 44 modules as documented ported, 74 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 13 as explicitly out of scope, 36 as probable out-of-scope candidates, and 106 as unreviewed. Separately, 42 files have a
+The current review labels 44 modules as documented ported, 76 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 13 as explicitly out of scope, 36 as probable out-of-scope candidates, and 104 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,18 @@ whiteout respawn now uses the original heal-location data in
 - `blit.c`: 4bpp con/sin color key y fill ya estaban; añadí blit 4→8bpp,
   fill 8bpp y wrapper sin color key. `npm run check:port` pasó; falta contraste
   pixel/runtime. `window_8bpp.c` sigue pendiente en su ciclo de ventana y VRAM.
+- `braille_text.c`: el export contiene la fuente Braille comprimida, pero
+  `commands.ts` imprime `braillemessage` con el impresor normal y calcula
+  `getbraillestringwidth` a 8 px por carácter; el C descomprime glifos de 16 px
+  y ejecuta desplazamiento/esperas propios. Queda parcial; afecta las pistas
+  Braille opcionales de las islas Sevii. Revisión de código, sin prueba visual.
+- `script_pokemon_util.c`: `HealPlayerParty` y `DoesPartyHaveEnigmaBerry` ya
+  tienen specials TS. Corregí `HasEnoughMonsForDoubleBattle`: ahora conserva
+  los tres resultados C según el tamaño de party y cuántos Pokémon vivos no
+  huevo hay. `ScriptGiveMon`, `ScriptGiveEgg`, `ScriptSetMonMoveSlot` y
+  `CreateScriptedWildMon` aún no están implementadas con la semántica C; los
+  selectores de equipos especiales son no-ops. `npm run check:port` pasó;
+  queda revisión de comportamiento y de flujos individuales.
 - `ss_anne.c`: salida del barco conserva espera de 50 frames, estela/humo,
   desplazamiento cada cinco frames, bocina, umbral de salida y espera final 40
   frames antes de reanudar el script. Animaciones/callbacks cotejados con C;

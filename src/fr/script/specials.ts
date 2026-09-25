@@ -75,7 +75,12 @@ const SPECIALS: Record<string, Special> = {
   CalculatePlayerPartyCount: () => save.party.length,
   CountPartyNonEggMons: () => save.party.filter((m) => !m.isEgg).length,
   CountPartyAliveNonEggMons_IgnoreVar0x8004Slot: () => countAliveNonEggMons(varGet(SV.x8004)),
-  HasEnoughMonsForDoubleBattle: () => (countAliveNonEggMons() >= 2 ? 0 : 1),
+  HasEnoughMonsForDoubleBattle: () => {
+    if (save.party.length === 1) return rom.c("PLAYER_HAS_ONE_MON");
+    return countAliveNonEggMons() >= 2
+      ? rom.c("PLAYER_HAS_TWO_USABLE_MONS")
+      : rom.c("PLAYER_HAS_ONE_USABLE_MON");
+  },
   BufferMonNickname: () => { const mon = save.party[varGet(SV.x8004)]; stringVars.var1 = mon ? nickname(mon) : encode(""); },
   GetPartyMonSpecies: () => save.party[varGet(SV.x8004)]?.species ?? 0,
   IsSelectedMonEgg: () => (save.party[varGet(SV.x8004)]?.isEgg ? 1 : 0),
