@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5169/9825 (52 %)**.
-- Archivos C pendientes: **119** (137171 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5194/9825 (52 %)**.
+- Archivos C pendientes: **118** (136511 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -22,7 +22,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `slot_machine.c` | 2527 | 13/77 | ~2100 | menus/slotMachine.ts: reglas sin gráficos |
 | `fame_checker.c` | 1739 | 5/64 | ~1603 | menus/keyItemScreens.ts |
 | `teachy_tv.c` | 1400 | 0/58 | ~1400 | menus/keyItemScreens.ts |
-| `pokemon_storage_system_menu.c` | 660 | 4/29 | ~568 | menus/storageMenu.ts: reglas con listas |
 
 ## 3. Parciales con más C sin cubrir (top 40)
 

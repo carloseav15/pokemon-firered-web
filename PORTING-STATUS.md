@@ -1035,10 +1035,13 @@ tragaperras, clima, Islas Sevii.
 20. **Transiciones de combate** (`battle_transition.c`, 3037 líneas)
     **[visual]**: hoy no hay transición (espiral, persianas, etc.); se nota en
     cada combate. El pack `graphics_battle_transitions` ya se exporta.
-21. **Almacenamiento de cajas** (`pokemon_storage_system*.c`, ~7000 líneas)
-    **[juego/visual]**: `menus/storageMenu.ts` implementa las reglas
-    (sacar/dejar/mover/objetos/fondos/liberar/nombre) con listas; falta la
-    interfaz real con cursor-mano, iconos y animaciones.
+21. **Menú de almacenamiento de cajas** (`pokemon_storage_system_menu.c`, 660 líneas)
+    **[PORTADO]**: portada fielmente al 100% (29/29 funciones del C) en `src/fr/menus/storageMenu.ts`.
+    Implementa la máquina de estados de `Task_PCMainMenu` (`STATE_LOAD`, `STATE_FADE_IN`, `STATE_HANDLE_INPUT`,
+    `STATE_ERROR_MSG`, `STATE_ENTER_PC`), validación de cupo en equipo (`CountPartyMons`), chequeo de huevos
+    (`CountPartyNonEggMons`), menú de selección de caja (`ChooseBoxMenu`) con sprites de esquinas y flechas
+    animadas (`SpriteCB_ChooseBoxArrow`), y reseteo completo de cajas (`ResetPokemonStorageSystem`).
+    Eliminado de la lista de adaptadores pendientes. Verificado con `npm run check:storage`.
 22. **Easy Chat** (`easy_chat*.c`, ~4000 líneas) **[juego]**: escribir cartas
     (hoy quedan en blanco), perfiles y frases de algunos NPC.
 23. **Animaciones de ataques restantes** (`battle_anim_*.c`, ~30 000 líneas)

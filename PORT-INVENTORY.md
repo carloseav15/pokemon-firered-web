@@ -10,13 +10,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (menos del 80 % de funciones) | 114 | 127887 | 1829/6041 |
-| Adaptador (UI simplificada) | 5 | 9284 | 22/294 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 90 | 111772 | 3318/3490 |
+| Adaptador (UI simplificada) | 4 | 8624 | 18/265 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 91 | 112432 | 3347/3519 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **119** | **137171** | |
-| **Total en alcance** | **210** | **248996** | **5169/9825** |
+| **Pendiente de portar** | **118** | **136511** | |
+| **Total en alcance** | **210** | **248996** | **5194/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -40,7 +40,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |
 | `scrcmd.c` | 2264 | 3/224 | `field/messageBox.ts`, `script/commands.ts` |  |
 | `field_player_avatar.c` | 2168 | 33/176 | `field/fishing.ts`, `field/playerAvatar.ts` |  |
-| `pokemon_storage_system_data.c` | 2165 | 5/83 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |
+| `pokemon_storage_system_data.c` | 2165 | 5/83 | `pokemon/storage.ts` |  |
 | `daycare.c` | 2155 | 41/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |
 | `battle_ai_script_commands.c` | 1970 | 25/103 | `battle/ai.ts`, `battle/util.ts` |  |
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |
@@ -145,7 +145,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `slot_machine.c` | 2527 | 13/77 | `game/slots.ts`, `menus/slotMachine.ts` | menus/slotMachine.ts: reglas sin gráficos |
 | `fame_checker.c` | 1739 | 5/64 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
 | `teachy_tv.c` | 1400 | 0/58 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
-| `pokemon_storage_system_menu.c` | 660 | 4/29 | `pokemon/storage.ts` | menus/storageMenu.ts: reglas con listas |
 
 ## Portado (≥ 80 % de funciones con el mismo nombre)
 
@@ -199,6 +198,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts` |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |
 | `battle_ai_switch_items.c` | 674 | 12/12 | `battle/ai.ts` |  |
+| `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |
 | `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |
 | `renewable_hidden_items.c` | 608 | 4/4 | `renewableHiddenItems.ts` |  |
 | `mon_markings.c` | 605 | 14/15 | `monMarkings.ts` |  |
