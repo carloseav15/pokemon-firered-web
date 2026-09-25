@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 31 modules as documented ported, 58 as partial or
+The current review labels 32 modules as documented ported, 58 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-144 as unreviewed. Separately, 42 files have a
+143 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -166,6 +166,9 @@ whiteout respawn now uses the original heal-location data in
   truncamiento `u16` de `SeedRng` coinciden. Sigue parcial porque el flujo TS
   aún no llama `seedRng` al salir del título con el valor de Timer1 ligado a la
   ID del entrenador, como hace C.
+- `safari_zone.c`: los ocho APIs están enlazados entre specials, Game,
+  FieldEffects y `battleSetup`: entrada/salida, 30 balls/600 pasos, prompt,
+  timeout y retornos de batalla. Revisión de fuente; no jugué la zona en browser.
 - `text_window_graphics.c`: datos cdata/incbin exportados; `GetUserWindowGraphics`
   y la carga de marco/tiles/paletas están en `hw/menu.ts`, incluido fallback al
   marco cero para índices fuera de rango. No comparé visualmente cada frame.
