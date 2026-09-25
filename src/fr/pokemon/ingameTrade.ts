@@ -1,7 +1,9 @@
 // trade_scene.c and trade.c: in-game trade animations, link cable sequence,
 // trade evolution, and trade logic.
 //
-// Faithful 1:1 port of pokefirered trade_scene.c and trade.c:
+// Port of the trade_scene.c animation (not run in a browser yet). The trade.c
+// link-trade menu functions at the end of this file are empty stubs.
+// Covered by this file:
 //  - Complete 70+ state machine of DoTradeAnim_Cable and DoTradeAnim_Wireless
 //  - Pokeball departure and bouncing arrival with sTradeBallVerticalVelocityTable
 //  - Cable animation, LinkMon glow/shadow traveling through cable

@@ -1,6 +1,7 @@
-// Port of field_weather.c (all 50 C functions) and field_weather_util.c.
-// Overworld weather state, gamma shifts, rain, fog drift, sandstorm and ash.
-// Faithfully matches decomp function names and behavior.
+// Partial port of field_weather.c and field_weather_util.c.
+// Overworld weather state, rain, fog drift, sandstorm and ash. The gamma shift,
+// weather-aware screen fades and drought palettes are still stubs (30 of the
+// 50 C functions; see PENDING.md §3b).
 
 import { rom } from "../rom";
 import { incrementGameStat, save } from "../save";

@@ -188,12 +188,16 @@ Cuando una pantalla del C no está portada, se usa un **adaptador**: misma
 entrada/salida (variables, callbacks) pero UI simplificada, casi siempre con
 `openHardwareChoice`/`openHardwareMessage` (listas de texto sobre `ListMenu`).
 Márcalo en el comentario de cabecera y en `PORTING-STATUS.md`. Adaptadores
-actuales (la lista viva está en [PENDING.md](PENDING.md) §2): menú superior del
-PC del jugador (`menus/playerPc.ts`, sobre el campo canvas), almacenamiento de
-cajas (`menus/storageMenu.ts`), Fame Checker/Teachy TV
-(`menus/keyItemScreens.ts`), tragaperras (`menus/slotMachine.ts`, sin gráficos),
-intercambios en juego (`pokemon/ingameTrade.ts`), visor de cartas
-(`menus/mailView.ts`), elegir movimiento a olvidar (`menus/monProgress.ts`).
+actuales (la lista viva está en [PENDING.md](PENDING.md) §2 y §4): cajas del
+PC (`menus/storageMenu.ts`: el menú de `pokemon_storage_system_menu.c` es real,
+las cajas siguen siendo listas), Teachy TV (`menus/keyItemScreens.ts`; el
+`teachyTv.ts` a medias no está conectado), visor de cartas (`menus/mailView.ts`),
+elegir movimiento a olvidar (`menus/monProgress.ts`). Fame Checker, tragaperras
+e intercambios ya tienen pantalla propia, pero parcial o sin probar en navegador.
+
+**No dejes stubs con el nombre del C** (`function X() { return 0; }`): el
+inventario los detecta, no los cuenta y los lista en PENDING.md §3b. Si una
+función aún no se porta, no la declares.
 Ya son fieles y no adaptadores: resumen, tarjeta de entrenador, Pokédex, PC de
 objetos y buzón, tienda, Salón de la Fama, créditos, escena de "usar objeto".
 
@@ -233,6 +237,28 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    - `frDebug.rivalBattle("SPECIES_SQUIRTLE")` combate del laboratorio
    - `frDebug.state()`, `frDebug.save`, `frDebug.rom`, `window.frGame`
    Usa `?fr=new`/`?fr=continue`, revisa la consola y captura pantalla como prueba.
+
+   **Driver de recorrido** (`tools/playtest/driver.js`, solo con el servidor de
+   desarrollo). Desde la consola o `javascript_tool`:
+   ```js
+   const { H } = await import("/tools/playtest/driver.js");
+   await H.goto(x, y)        // camina (BFS con las colisiones reales) y resuelve combates/scripts
+   await H.exit("U")         // camina en una dirección hasta cambiar de mapa (conexiones, flechas)
+   await H.enter(x, y)       // entra por la puerta (x, y) desde abajo
+   await H.talk(x, y)        // se pone al lado, mira y pulsa A
+   await H.counter(x, y)     // habla a través de un mostrador (dos casillas debajo)
+   await H.idle()            // pulsa A hasta que no haya script ni controles bloqueados
+   await H.battle("fight")   // termina el combate con el primer movimiento ("run" para huir)
+   H.checkpoint("nombre")    // guarda un punto de control en localStorage (no es el GUARDAR del juego)
+   H.restore("nombre")       // lo carga y recarga con ?fr=continue
+   H.st(), H.objects(), H.warps(), H.checkpoints()
+   ```
+   Las coordenadas son las de `frDebug.state()` (sin el borde de +7). No muevas
+   al jugador mientras un guion ejecuta `applymovement`/`waitmovement`:
+   `goto`/`idle` ya esperan a que no haya script activo. Editar cualquier
+   archivo servido por Vite recarga la página: vuelve con `H.restore(nombre)`.
+   `H.battle("fight")` pulsa A sin elegir; si hace falta subir de nivel o curar,
+   hazlo jugando (Centro Pokémon, hierba) y di en el informe qué ayuda usaste.
 6. **Comparación con el juego real** (opcional): mismo punto en un emulador con
    la ROM compilada del decomp (`make` en `../pokefirered`) y comparar frames.
 

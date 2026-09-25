@@ -1,5 +1,6 @@
-// Port of teachy_tv.c (all 58 C functions).
-// Faithful port of the Teachy TV viewer screen:
+// Partial port of teachy_tv.c: 30 of the 58 C functions are stubs (graphics,
+// windows, map buffer, battle demo) and the game does not open this screen yet;
+// it still uses the text adapter in menus/keyItemScreens.ts. Intended content:
 // - Main TV frame, window and list menu (sBgTemplates, sWindowTemplates, sListMenuTemplate)
 // - Pokédude host NPC movement and animation across TV background
 // - Narration text printing and program options

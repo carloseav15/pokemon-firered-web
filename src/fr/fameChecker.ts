@@ -1,4 +1,5 @@
-// Port of fame_checker.c (all 64+ C functions and structures).
+// Partial port of fame_checker.c (unlock state and screen flow; the window,
+// scroll-arrow and info-box graphics functions are still stubs).
 // Fame Checker (Pokéradar) user interface, profiles, flavor text panels,
 // character silhouettes and photos, spinning pokeball and list menu navigation.
 // Faithfully matches decomp behavior and uses decomp cdata/incbin.

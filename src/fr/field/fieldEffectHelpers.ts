@@ -1,4 +1,6 @@
-// Port of field_effect_helpers.c (all 76 C functions).
+// Skeleton of field_effect_helpers.c: the 76 C names exist, but 62 are stubs
+// (`return 0;` / empty) and nothing imports this module yet; the live field
+// effects are still in fieldEffects.ts. See PENDING.md §3b.
 // Field effect helper routines:
 // - Water reflections and bridge reflection palettes (SetUpReflection, UpdateObjectReflectionSprite)
 // - Warp arrow sprites (CreateWarpArrowSprite, ShowWarpArrowSprite, SetSpriteInvisible)

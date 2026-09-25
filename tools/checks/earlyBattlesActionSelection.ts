@@ -1,5 +1,12 @@
-// Headless Playtest: Oak's Lab Rival Battle -> Route 1 Wild Battles & Transitions -> Viridian City Mart Oak's Parcel -> Pallet Town Pokédex
-// Run with: npm run check:earlygame
+// Headless check: a trainer battle against a hand-built rival party reaches
+// action selection, and getWildBattleTransition picks SLICE / WHITE_BARS_FADE
+// by level on a mock tall-grass overworld.
+// Run with: npm run check:earlybattles
+//
+// What this does NOT verify: the Oak's Lab scripts, the rival trainer data
+// (TRAINER_RIVAL_OAKS_LAB_*), winning, the post-battle heal, Route 1, the
+// parcel or the Pokédex. Those were exercised in the browser (PORTING-STATUS.md,
+// 2026-09-25). State set by hand is logged as PREPARED.
 
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
@@ -9,19 +16,16 @@ import { rom, type MapHeader } from '../../src/fr/rom.ts';
 import { sound } from '../../src/fr/audio/sound.ts';
 import { loadTrig } from '../../src/fr/hw/trig.ts';
 import { runHwFrame, SetMainCallback2 } from '../../src/fr/hw/runtime.ts';
-import { ppu } from '../../src/fr/hw/ppu.ts';
 import { tasks } from '../../src/fr/gba/tasks.ts';
 import { A_BUTTON, joy } from '../../src/fr/gba/input.ts';
 import { preloadBattleAssets } from '../../src/fr/battle/preload.ts';
 import { G, resetBattleStructs } from '../../src/fr/battle/globals.ts';
 import { CB2_InitBattle } from '../../src/fr/battle/main_init.ts';
 import { CopyMon, gEnemyParty, type Mon } from '../../src/fr/pokemon/mon.ts';
-import { createMon, giveMonToPlayer, type Pokemon } from '../../src/fr/pokemon/pokemon.ts';
-import { flagGet, flagSet, flagClear, varGet, varSet, save, newSaveData, setSave } from '../../src/fr/save.ts';
-import { addBagItem, checkBagHasItem, removeBagItem } from '../../src/fr/pokemon/items.ts';
+import { createMon, giveMonToPlayer } from '../../src/fr/pokemon/pokemon.ts';
+import { save, newSaveData, setSave } from '../../src/fr/save.ts';
 import { getWildBattleTransition } from '../../src/fr/battle/transition.ts';
 import type { Overworld } from '../../src/fr/field/overworld.ts';
-import type { FieldMap } from '../../src/fr/field/fieldmap.ts';
 
 const root = process.cwd() + '/public';
 (globalThis as any).fetch = async (url: string) => {
@@ -75,7 +79,7 @@ async function initData() {
 }
 
 async function testRivalBattle() {
-  console.log('--- 1. Testing Oak\'s Lab Rival Battle (Early Rival) ---');
+  console.log('--- 1. Trainer battle vs a hand-built rival party ---');
   setSave(newSaveData('RED', 0, 'GREEN'));
 
   // Player chooses Bulbasaur (L5)
@@ -91,6 +95,7 @@ async function testRivalBattle() {
   ZeroEnemyPartyMons();
   const rivalMon = createMon(C.SPECIES_CHARMANDER, 5);
   CopyMon(gEnemyParty[0], rivalMon as unknown as Mon);
+  console.log('  PREPARED by hand: party Bulbasaur L5, enemy party Charmander L5 (no trainer id, no script)');
 
   SetMainCallback2(CB2_InitBattle);
 
@@ -105,14 +110,8 @@ async function testRivalBattle() {
     frames++;
   }
   assert.ok(frames < 3000, 'Rival battle must reach action selection');
-  console.log(`✓ Rival battle started and reached action selection after ${frames} frames`);
+  console.log(`✓ Battle reached action selection after ${frames} frames`);
 
-  // Simulate battle conclusion: Charmander faints, player wins
-  gEnemyParty[0].hp = 0;
-  // Rival battle heals player's mon afterwards (RIVAL_BATTLE_HEAL_AFTER)
-  save.party[0]!.hp = save.party[0]!.stats[0]!;
-  assert.equal(save.party[0]!.hp, save.party[0]!.stats[0], 'Player starter is full HP after early rival battle');
-  console.log('✓ Rival battle completed and post-battle heal verified');
 }
 
 function ZeroEnemyPartyMons(): void {
@@ -124,7 +123,7 @@ function ZeroEnemyPartyMons(): void {
 }
 
 async function testRoute1EncountersAndTransitions() {
-  console.log('--- 2. Testing Route 1 Wild Encounters & Battle Transitions ---');
+  console.log('--- 2. Wild battle transition choice (mock tall-grass overworld) ---');
 
   const mockPlayerObj = { currentCoords: { x: 10, y: 15 } };
   const mockOw = {
@@ -156,42 +155,11 @@ async function testRoute1EncountersAndTransitions() {
   console.log('✓ Route 1 battle transitions (SLICE for weaker, WHITE_BARS_FADE for equal/stronger) verified');
 }
 
-async function testViridianMartAndOaksParcel() {
-  console.log('--- 3. Testing Viridian City Mart (Oak\'s Parcel) -> Pallet Town Pokédex ---');
-
-  // Verify initial state
-  assert.ok(!checkBagHasItem(C.ITEM_OAKS_PARCEL, 1), 'Player starts without Oak\'s Parcel');
-  assert.ok(!flagGet(C.FLAG_SYS_POKEDEX_GET), 'Player starts without Pokédex');
-
-  // 3a. Enter Viridian Mart: clerk gives Oak's Parcel
-  // In C event script: giveitem ITEM_OAKS_PARCEL, 1
-  addBagItem(C.ITEM_OAKS_PARCEL, 1);
-  assert.ok(checkBagHasItem(C.ITEM_OAKS_PARCEL, 1), 'Player received Oak\'s Parcel in bag');
-  console.log('✓ Viridian Mart clerk delivers Oak\'s Parcel to player');
-
-  // 3b. Return to Oak\'s Lab in Pallet Town
-  // In C event script: removeitem ITEM_OAKS_PARCEL, 1
-  assert.ok(removeBagItem(C.ITEM_OAKS_PARCEL, 1), 'Oak\'s Parcel delivered to Prof. Oak');
-  assert.ok(!checkBagHasItem(C.ITEM_OAKS_PARCEL, 1), 'Parcel no longer in bag');
-
-  // Oak gives Pokédex and 5 Poké Balls
-  flagSet(C.FLAG_SYS_POKEDEX_GET);
-  addBagItem(C.ITEM_POKE_BALL, 5);
-  varSet(C.VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB, 6);
-
-  assert.ok(flagGet(C.FLAG_SYS_POKEDEX_GET), 'Pokédex flag is now set');
-  assert.ok(checkBagHasItem(C.ITEM_POKE_BALL, 5), 'Player received 5 Poké Balls');
-  assert.equal(varGet(C.VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB), 6, 'Oak Lab scene variable advanced to 6');
-
-  console.log('✓ Oak receives Parcel, gives Pokédex & Poké Balls, and advances story flag');
-}
-
 async function main() {
   await initData();
   await testRivalBattle();
   await testRoute1EncountersAndTransitions();
-  await testViridianMartAndOaksParcel();
-  console.log('\nAll Early Game Playtest (Oak Lab -> Route 1 -> Viridian Mart -> Pokédex) passed successfully!');
+  console.log('\nEarly trainer battle reaches action selection; wild transition choice matches GetWildBattleTransition.');
 }
 
 main().catch((err) => {
