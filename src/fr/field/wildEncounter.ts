@@ -151,6 +151,7 @@ export class WildEncounter {
   sweetScentEncounter(attributes: number): boolean {
     const type = (attributes >>> 24) & 7;
     if (type !== C.TILE_ENCOUNTER_LAND && type !== C.TILE_ENCOUNTER_WATER) return false;
+    if (!this.header()) return false;
     const roamerMon = tryStartRoamerEncounter();
     if (roamerMon) {
       this.game.battleSetup.startRoamerBattle(roamerMon);
