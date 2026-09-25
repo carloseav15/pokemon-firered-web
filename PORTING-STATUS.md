@@ -3,6 +3,49 @@
 Target: the full FireRed game, including its main progression and optional
 systems. The first playable route is a milestone, not the completion criterion.
 
+## Browser playtest, primeras ~2 horas (2026-09-25, en curso)
+
+Prueba con `npm run dev` + `?fr=new` + `window.frDebug`, pilotado por un driver
+Playwright/Chromium headless (fuera del repo, en el scratchpad de la sesión).
+
+- **Bug bloqueante encontrado y arreglado: cualquier warp con la misma música
+  de destino se quedaba colgado para siempre.** `overworld.ts`
+  `tryFadeOutOldMapMusic()` → `destinationMusic()` era un stub que siempre
+  devolvía `undefined` (leía `rom.mapIndex.maps[dest]`/`mapCache.get(dest)` y
+  los descartaba con `void`), así que `sound.fadeOutBGM()` nunca se llamaba.
+  Además `sound.isBGMPausedOrStopped()` comprobaba "¿está sonando algo ahora
+  mismo?" (`!backend.isPlaying("bgm")`) en vez de imitar `BGMusicStopped()` /
+  `IsNotWaitingForBGMStop()` del C (`sound.c`), que solo es falso mientras
+  `sMapMusicState` está en 5/6/7 (un fade de música de mapa pendiente) y es
+  **verdadero de inmediato si nunca se pidió un fade** (p. ej. cuando la
+  música de destino es igual a la actual, como al salir de la casa del
+  jugador hacia Pueblo Paleta). Como la música de fondo hace loop infinito,
+  `isPlaying` nunca se volvía falso por sí solo, así que `startTeleport2WarpTask`
+  (Task_Teleport2Warp) se quedaba esperando para siempre en el estado 1 con
+  `controlsLocked=true` y ninguna excepción ni script activo: el jugador
+  quedaba congelado en cualquier puerta/warp cuya música no cambiara. Esto
+  afecta a la mayoría de transiciones del arranque (casa → Pueblo Paleta
+  incluida). Arreglo: `destinationMusic()` ahora lee `rom.cachedMap(dest)?.music`
+  (igual que `GetWarpDestinationMusic`/`GetLocationMusic`); nueva
+  `sound.fadeOutMapMusic(speed)` (= `FadeOutMapMusic`) marca un flag
+  `waitingForBGMStop` que `isBGMPausedOrStopped()` solo consulta si está
+  activo, limpiándolo en cuanto el audio realmente para (o de inmediato si
+  nunca se activó). También se implementó `destinationMusicFadeoutSpeed()`
+  (`GetMapMusicFadeoutSpeed`: 2 en interiores, 4 fuera) y el chequeo de
+  `FLAG_DONT_TRANSITION_MUSIC`. Verificado en navegador: salir de la casa del
+  jugador ahora completa el fundido y llega a `MAP_PALLET_TOWN` con
+  `controlsLocked=false`.
+- Escaleras direccionales (`MB_UP_RIGHT_STAIR_WARP` en la casa del jugador,
+  2F→1F) y el warp de flecha sur de la puerta funcionan correctamente cuando
+  se disparan (`tryArrowWarp`/`isDirectionalStairWarp`/`doStairWarp` en
+  `overworld.ts` coinciden con `field_control_avatar.c`/`field_player_avatar.c`
+  línea a línea); el ping-pong y bloqueos que parecían intermitentes en
+  pruebas manuales resultaron ser el bug de música de arriba, no un problema
+  de estas rutinas.
+- Nivel de prueba alcanzado hasta ahora: **navegador** (arranque, casa del
+  jugador 1F/2F, diálogo de la madre, salida a Pueblo Paleta). Continúa el
+  recorrido; esta sección se ampliará con cada hallazgo.
+
 ## Source-review update (2026-09-24, no execution checks)
 
 - Fixed `ScrCmd_bufferboxname` to use the stored box name through
