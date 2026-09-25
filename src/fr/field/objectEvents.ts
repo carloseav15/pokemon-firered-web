@@ -77,7 +77,7 @@ const PLAYER_DIRECTION_TO_COPY = [[2, 1, 4, 3], [1, 2, 3, 4], [4, 3, 1, 2], [3, 
 
 // Anim numbers (constants/event_object_movement.h)
 const ANIM_FACE = 0, ANIM_GO = 4, ANIM_GO_FAST = 8, ANIM_GO_FASTER = 12, ANIM_GO_FASTEST = 16, ANIM_RUN = 20;
-const ANIM_RAISE_HAND = 20;
+const ANIM_RAISE_HAND = 20, ANIM_NURSE_BOW = 20;
 const STEP_ANIM_TABLES = new Set(["sAnimTable_QuintyPlump", "sAnimTable_Standard", "sAnimTable_RedGreenNormal", "sAnimTable_AcroBike", "sAnimTable_RedGreenSurf", "sAnimTable_Nurse", "sAnimTable_RedGreenFish"]);
 
 export function dirIndex(direction: number): number {
@@ -489,6 +489,13 @@ export class ObjectEvents {
   }
 
   // ---------------------------------------------------------------- state helpers
+
+  /** SetAndStartSpriteAnim */
+  private setAndStartSpriteAnim(sprite: ObjectEvent["sprite"], animNum: number, animCmdIndex: number): void {
+    sprite.animNum = animNum;
+    sprite.animPaused = false;
+    sprite.seekAnim(animCmdIndex);
+  }
 
   setDirection(object: ObjectEvent, direction: number): void {
     object.previousMovementDirection = object.facingDirection;
@@ -1314,9 +1321,16 @@ export class ObjectEvents {
       return true;
     }
     if (id === 0x5b) {
-      // Nurse Joy bow: raise-hand style anim slot 20 for the nurse table
-      if (step === 0) { object.sprite.startAnim(ANIM_RAISE_HAND); s.data[2] = 1; }
-      if (object.sprite.animEnded) return this.finishStep(object);
+      // MovementAction_NurseJoyBowDown: StartSpriteAnimInDirection(DIR_SOUTH, ANIM_NURSE_BOW)
+      // then MovementAction_WaitSpriteAnim. SetAndStartSpriteAnim clears animPaused,
+      // which the preceding walk_in_place left set.
+      if (step === 0) {
+        this.setAndStartSpriteAnim(s, ANIM_NURSE_BOW, 0);
+        this.setDirection(object, DIR_SOUTH);
+        s.data[2] = 1;
+        return false;
+      }
+      if (s.animEnded) { s.data[2] = 2; return true; }
       return false;
     }
     if (id === 0x5c) { object.disableJumpLandingGroundEffect = false; return this.finishStep(object); }
