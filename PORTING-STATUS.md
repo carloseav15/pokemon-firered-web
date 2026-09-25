@@ -130,6 +130,7 @@ audio backend exists.
 - `trig.c`: exported sine tables and Q8.8/degree Sin/Cos helpers are loaded and consumed through `hw/trig.ts`. No exhaustive numeric diff was run.
 - `field_camera.c`: camera movement/map transitions, pan and metatile drawing are integrated in `field/overworld.ts`; GBA ring-buffer slices and camera sprite callbacks are adapted or absent. Marked partial; no movement trace this pass.
 - `option_menu.c`: six settings, cycling/input, frame preview, persistence and return flow are implemented in `optionMenu.ts`; Canvas/HwScene adaptation, no pixel comparison.
+- `wireless_communication_status_screen.c`: counts RFU trade/battle/union/minigame activity and displays nearby peers; no single-player caller or wireless hardware. Marked out of scope for single-player.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -141,7 +142,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 54 modules as documented ported, 98 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 22 as explicitly out of scope, 36 as probable out-of-scope candidates, and 63 as unreviewed. Separately, 42 files have a
+The current review labels 54 modules as documented ported, 98 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 62 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
