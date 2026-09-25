@@ -3,13 +3,14 @@
 // returns only after an explicit selection or allowed cancellation.
 import { encode, expandPlaceholders } from "../gba/charmap";
 import { joy, A_BUTTON, B_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "../gba/input";
-import { FONT_NORMAL } from "../gba/font";
+import { FONT_NORMAL, FONT_NORMAL_COPY_2 } from "../gba/font";
 import { InitGpuRegManager, SetGpuReg } from "../hw/gpu";
 import { InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "../hw/bg";
 import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "../hw/runtime";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "../hw/ppu";
-import { LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "../hw/palette";
+import { BG_PLTT_ID, LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "../hw/palette";
 import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetTextWindowPalette } from "../hw/menu";
+import { CreateYesNoMenu, LoadUserWindowGfx, MENU_NOTHING_CHOSEN, Menu_ProcessInputNoWrapClearOnChoose } from "../hw/menu";
 import {
   AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask, LIST_CANCEL, LIST_MULTIPLE_SCROLL_DPAD, ListMenu_ProcessInput, ListMenuDefaultCursorMoveFunc,
   ListMenuGetScrollAndRow, ListMenuInit, listMenuTemplate, ListMenuOverrideSetColors, RemoveScrollIndicatorArrowPair, SCROLL_ARROW_UP,
@@ -18,8 +19,9 @@ import {
 import { BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests } from "../hw/sprite";
 import { DeactivateAllTextPrinters, AddTextPrinterParameterized2, AddTextPrinterParameterized3, IsTextPrinterActive, RunTextPrinters } from "../hw/text";
 import { getTextSpeedSetting } from "../gba/textPrinter";
-import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap } from "../hw/window";
+import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "../hw/window";
 import { sound } from "../audio/sound";
+import { loadCData, preloadPacks } from "../hw/assets";
 
 export type HardwareChoice = { label: string | ArrayLike<number>; value: number; disabled?: boolean };
 
@@ -135,6 +137,44 @@ export function openHardwareMessage(message: ArrayLike<number>, next: () => void
       }
     });
   });
+}
+
+/** A text prompt followed by the source YesNoMenu, without an extra A press. */
+export function openHardwareMessageYesNo(message: ArrayLike<number>, yesNoTemplate: WindowTemplate, done: (yes: boolean) => void): void {
+  const callback1 = gMain.callback1;
+  SetMainCallback1(null);
+  SetMainCallback2(() => {});
+  void Promise.all([loadCData("text_window_graphics"), preloadPacks(["graphics_text_window"])]).then(() => SetMainCallback2(() => {
+    SetVBlankCallback(null); SetHBlankCallback(null);
+    InitGpuRegManager(); FreeAllWindowBuffers(); DeactivateAllTextPrinters(); ResetPaletteFade();
+    ppu.vram.fill(0); ppu.oam.fill(0);
+    ResetBgsAndClearDma3BusyFlags(false);
+    InitBgsFromTemplates(0, [{bg: 0, charBaseIndex: 0, mapBaseIndex: 31, screenSize: 0, paletteMode: 0, priority: 0, baseTile: 0}]);
+    SetBgTilemapBuffer(0, new Uint16Array(1024));
+    InitWindows([{bg: 0, tilemapLeft: 2, tilemapTop: 15, width: 26, height: 4, paletteNum: 15, baseBlock: 1}]);
+    LoadPalette(GetTextWindowPalette(0), 240, 32);
+    LoadUserWindowGfx(0, 1, BG_PLTT_ID(14));
+    SetGpuReg(REG_OFFSET_DISPCNT, 0); ShowBg(0);
+    FillWindowPixelBuffer(0, 0x11);
+    PutWindowTilemap(0); CopyWindowToVram(0, COPYWIN_FULL);
+    AddTextPrinterParameterized2(0, FONT_NORMAL, expandPlaceholders(message), getTextSpeedSetting(), null, 2, 1, 3);
+    let yesNoCreated = false;
+    SetVBlankCallback(TransferPlttBuffer);
+    SetMainCallback2(() => {
+      RunTextPrinters();
+      CopyWindowToVram(0, COPYWIN_FULL);
+      if (IsTextPrinterActive(0)) return;
+      if (!yesNoCreated) {
+        CreateYesNoMenu(yesNoTemplate, FONT_NORMAL_COPY_2, 0, 2, 1, 14, 0);
+        yesNoCreated = true;
+        return;
+      }
+      const input = Menu_ProcessInputNoWrapClearOnChoose();
+      if (input === MENU_NOTHING_CHOSEN) return;
+      FreeAllWindowBuffers(); SetVBlankCallback(null); SetMainCallback1(callback1); SetMainCallback2(null);
+      done(input === 0);
+    });
+  }));
 }
 
 /** The ×NN quantity selector (item_menu.c / item_pc.c): up/down ±1, left/right ±10. */

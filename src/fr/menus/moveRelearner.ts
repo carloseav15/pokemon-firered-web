@@ -18,10 +18,16 @@ import { AnimateSprites, BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyReq
 import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "../hw/text";
 import { COPYWIN_FULL, COPYWIN_GFX, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap, type WindowTemplate } from "../hw/window";
 import { rom } from "../rom";
+import { openHardwareMessageYesNo } from "./hardwareChoice";
 
 const ARROW_TAG = 0x5a25;
 const COLOR_LABEL = [0, 2, 3];
 const COLOR_VALUE = [1, 2, 3];
+
+/** The C uses this window template for every YesNoMenu in learn_move.c. */
+export function askMoveRelearnerQuestion(message: ArrayLike<number>, done: (yes: boolean) => void): void {
+  openHardwareMessageYesNo(message, cdata<WindowTemplate>("learn_move", "sMoveRelearnerYesNoMenuTemplate"), done);
+}
 
 /** The original list and its selected move's type, stats and description. */
 export async function openMoveRelearnerList(moves: number[], done: (index: number | null) => void): Promise<void> {

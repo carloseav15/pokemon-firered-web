@@ -36,7 +36,7 @@ import { doCredits, enterHallOfFame, openHallOfFamePc } from "./hallOfFame";
 import { createInGameTradePokemon, doInGameTradeScene, getInGameTradeSpeciesInfo, getTradeSpecies } from "./pokemon/ingameTrade";
 import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
 import { openHardwareMessage } from "./menus/hardwareChoice";
-import { openMoveRelearnerList } from "./menus/moveRelearner";
+import { askMoveRelearnerQuestion, openMoveRelearnerList } from "./menus/moveRelearner";
 import { learnMoveWithPrompt } from "./menus/monProgress";
 import { checkBagHasItem } from "./pokemon/items";
 import { openStorageMenu } from "./menus/storageMenu";
@@ -585,21 +585,17 @@ export class Game {
       const moves = relearnableMoves(mon);
       const confirmStop = (): void => {
         stringVars.var1 = Uint8Array.from(mon.nickname);
-        openHardwareMessage(rom.text("gText_GiveUpTryingToTeachNewMove"), () => {
-          openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
-            if (yes === 1) finish(false); else list();
-          });
+        askMoveRelearnerQuestion(rom.text("gText_GiveUpTryingToTeachNewMove"), (yes) => {
+          if (yes) finish(false); else list();
         });
       };
       const list = (): void => { void openMoveRelearnerList(moves, (i) => {
         if (i === null) { confirmStop(); return; }
         const move = moves[i];
         stringVars.var2 = rom.moveName(move);
-        openHardwareMessage(rom.text("gText_TeachMoveQues"), () => {
-          openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
-            if (yes !== 1) { list(); return; }
-            learnMoveWithPrompt(mon, move, (learned) => { if (learned) finish(true); else list(); }, true);
-          });
+        askMoveRelearnerQuestion(rom.text("gText_TeachMoveQues"), (yes) => {
+          if (!yes) { list(); return; }
+          learnMoveWithPrompt(mon, move, (learned) => { if (learned) finish(true); else list(); }, true);
         });
       }); };
       list();

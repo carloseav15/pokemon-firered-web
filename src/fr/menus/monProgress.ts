@@ -12,6 +12,7 @@ import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLe
 import { openHardwareChoice, openHardwareMessage } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
 import { GetMoveSlotToReplace, ShowSelectMovePokemonSummaryScreen } from "../pokemonSummaryScreen";
+import { askMoveRelearnerQuestion } from "./moveRelearner";
 
 /** ItemIdToBattleMoveId: the move taught by a TM/HM item. */
 export function tmhmMove(item: number): number {
@@ -66,7 +67,13 @@ export function learnMoveWithPrompt(
   }
   const askReplace = (): void => {
     setVars(mon, move);
-    openHardwareMessage(rom.text(useSummaryMoveSelector ? "gText_MonIsTryingToLearnMove" : "gText_PkmnNeedsToReplaceMove"), () => {
+    if (useSummaryMoveSelector) {
+      askMoveRelearnerQuestion(rom.text("gText_MonIsTryingToLearnMove"), (yes) => {
+        if (yes) chooseMove(); else stopLearning();
+      });
+      return;
+    }
+    openHardwareMessage(rom.text("gText_PkmnNeedsToReplaceMove"), () => {
       openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], true, (yes) => {
         if (yes === 1) chooseMove(); else stopLearning();
       });
@@ -119,7 +126,13 @@ export function learnMoveWithPrompt(
   };
   const stopLearning = (): void => {
     setVars(mon, move);
-    openHardwareMessage(rom.text(useSummaryMoveSelector ? "gText_StopLearningMove" : "gText_StopLearningMove2"), () => {
+    if (useSummaryMoveSelector) {
+      askMoveRelearnerQuestion(rom.text("gText_StopLearningMove"), (yes) => {
+        if (yes) done(false); else askReplace();
+      });
+      return;
+    }
+    openHardwareMessage(rom.text("gText_StopLearningMove2"), () => {
       openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], true, (yes) => {
         if (yes === 1) {
           setVars(mon, move);

@@ -175,11 +175,13 @@ para el movimiento seleccionado; usa el `ListMenu` común y la fila
 `gFameCheckerText_Cancel`. La navegación pregunta antes de enseñar y confirmar
 salida; con cuatro movimientos usa `ShowSelectMovePokemonSummaryScreen`, actualiza
 slot/PP/bonus, y presenta los textos de olvido/aprendizaje del decomp.
-`hardwareChoice.ts` expande placeholders como `StringExpandPlaceholders`.
-Verificado: `npm run check:port`, `npm run build` y paridad de las claves cdata/
+`hardwareChoice.ts` expande placeholders y ahora ofrece la pregunta seguida por
+`CreateYesNoMenu` en la misma pantalla, sin el A intermedio ni una falsa fila de
+cancelación; el Recordador pasa su `sMoveRelearnerYesNoMenuTemplate` y usa B como
+No. Verificado: `npm run check:port`, `npm run build` y paridad de claves cdata/
 INCBIN referenciadas. No se comprobó aún en navegador. Faltan el ciclo original
-de fades y tareas, el `YesNoMenu` del C, sprites/animaciones propios del Recordador
-y comparación visual.
+de fades/tareas, sprites y animaciones propios del Recordador, temporización de
+fanfarria y comparación visual.
 
 ### Pokédex area marker logic (2026-09-25)
 
@@ -313,9 +315,9 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 11. **Recordador de movimientos** (`learn_move.c`, 932 líneas; reglas en
     `pokemon.c`) **[parcial]**: `pokemon/partyRules.ts` busca movimientos; la
     pantalla `menus/moveRelearner.ts` usa recursos y ventanas del C, presenta
-    datos de movimiento y lista, y el flujo enseña/olvida con la pantalla de
-    resumen real. Faltan fades/estados temporales originales, YesNoMenu GBA,
-    sprites y validación visual.
+    datos de movimiento y lista, preguntas con el `YesNoMenu`/template del C, y
+    el flujo enseña/olvida con la pantalla de resumen real. Faltan fades/estados
+    temporales, sprites/animaciones, temporización de fanfarria y validación visual.
 12. **Tarjeta de entrenador** (`trainer_card.c`, 1959 líneas) **[PORTADO]**:
     portada fielmente en `src/fr/menus/trainerCard.ts` sobre la capa de hardware GBA (`hw/`).
     Implementa:
