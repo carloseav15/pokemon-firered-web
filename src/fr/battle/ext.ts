@@ -14,12 +14,8 @@ import { b64 } from "../rom";
 import type { NameBuffer } from "../menus/namingModel";
 import { sound } from "../audio/sound";
 import { clearRematchStateByTrainerId } from "../field/vsSeeker";
-import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
-import { FONT_NORMAL } from "../gba/font";
-import { cdata, incbin } from "../hw/assets";
+import { cdata } from "../hw/assets";
 import { gMain } from "../hw/runtime";
-import { AddTextPrinterParameterized3 } from "../hw/text";
-import { FillWindowPixelBuffer, PIXEL_FILL } from "../hw/window";
 import { itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
 import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "../pokemon/pokemon";
 import {
@@ -43,9 +39,8 @@ import * as PartyMenu from "../partyMenu";
 import { bagResult, BackUpPlayerBag, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, RestorePlayerBag, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
 import { gDisableStructs } from "./globals";
-import { GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
 
-export { GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
+export { DrawLevelUpWindowPg1, DrawLevelUpWindowPg2, GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
 
 export { GetSetPokedexFlag };
 
@@ -292,43 +287,6 @@ export {
 // ---------------------------------------------------------------- pokemon_icon.c
 
 export { GetMonIconPtr, GetValidMonIconPalettePtr } from "../pokemonIcon";
-
-// ---------------------------------------------------------------- level-up window (pokemon_special_anim*.c)
-
-const statNames = () => cdata<unknown[]>("pokemon_special_anim_scene", "sLevelUpWindowStatNames").map((r) => strFrom(r));
-function strFrom(ref: unknown): number[] {
-  const name = (ref as { $sym: string }).$sym;
-  return cdata<number[]>("strings", name);
-}
-
-export function DrawLevelUpWindowPg1(windowId: number, beforeStats: ArrayLike<number>, afterStats: ArrayLike<number>, bgColor: number, fgColor: number, shadowColor: number): void {
-  FillWindowPixelBuffer(windowId, PIXEL_FILL(bgColor));
-  const s16 = (v: number) => (v << 16) >> 16;
-  const diff = [0, 1, 2, 4, 5, 3].map((k) => s16(afterStats[k] - beforeStats[k]));
-  const color = [bgColor, fgColor, shadowColor];
-  const names = statNames();
-  for (let i = 0; i < 6; i++) {
-    AddTextPrinterParameterized3(windowId, FONT_NORMAL, 0, i * 15, color, C.TEXT_SKIP_DRAW, names[i]);
-    AddTextPrinterParameterized3(windowId, FONT_NORMAL, 56, i * 15, color, C.TEXT_SKIP_DRAW, strFrom({ $sym: diff[i] >= 0 ? "gText_LevelUp_Plus" : "gText_LevelUp_Minus" }));
-    const x = Math.abs(diff[i]) < 10 ? 12 : 6;
-    const num = intToDecimal(Math.abs(diff[i]), STR_CONV_MODE_LEFT_ALIGN, 2);
-    AddTextPrinterParameterized3(windowId, FONT_NORMAL, x + 56, i * 15, color, C.TEXT_SKIP_DRAW, [C.CHAR_SPACE, ...num]);
-  }
-}
-
-export function DrawLevelUpWindowPg2(windowId: number, currStats: ArrayLike<number>, bgColor: number, fgColor: number, shadowColor: number): void {
-  FillWindowPixelBuffer(windowId, PIXEL_FILL(bgColor));
-  const stats = [0, 1, 2, 4, 5, 3].map((k) => currStats[k]);
-  const color = [bgColor, fgColor, shadowColor];
-  const names = statNames();
-  for (let i = 0; i < 6; i++) {
-    const ndigits = stats[i] >= 100 ? 3 : stats[i] >= 10 ? 2 : 1;
-    const num = intToDecimal(stats[i], STR_CONV_MODE_LEFT_ALIGN, ndigits);
-    const x = 6 * (4 - ndigits);
-    AddTextPrinterParameterized3(windowId, FONT_NORMAL, 0, i * 15, color, C.TEXT_SKIP_DRAW, names[i]);
-    AddTextPrinterParameterized3(windowId, FONT_NORMAL, 56 + x, i * 15, color, C.TEXT_SKIP_DRAW, num);
-  }
-}
 
 // ---------------------------------------------------------------- pokemon.c PokemonUseItemEffects
 

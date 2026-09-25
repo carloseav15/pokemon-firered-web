@@ -1,5 +1,6 @@
 // Port of item.c (bag pockets, PC items) and money.c.
 
+import * as C from "../generated/constants";
 import { b64, rom, type ItemInfo } from "../rom";
 import { flagSet, save, type BagPocket } from "../save";
 
@@ -161,4 +162,12 @@ export function isTMHM(itemId: number): boolean {
 /** TM/HM index (0..57) for the TM case items. */
 export function tmhmIndex(itemId: number): number {
   return itemId - (rom.constants.ITEM_TM01 ?? 289);
+}
+
+/** item_use.c CheckIfItemIsTMHMOrEvolutionStone: 1 for TM/HM, 2 for an evolution item, 0 otherwise. */
+export function CheckIfItemIsTMHMOrEvolutionStone(item: number): number {
+  const info = itemInfo(item);
+  if (info?.fieldUseFunc === "FieldUseFunc_TmCase" || (info && item >= C.ITEM_TM01 && item <= C.ITEM_HM08)) return 1;
+  if (info?.fieldUseFunc === "FieldUseFunc_EvoItem") return 2;
+  return 0;
 }

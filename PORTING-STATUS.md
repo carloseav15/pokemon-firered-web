@@ -139,7 +139,7 @@ audio backend exists.
 - `move_descriptions.c`: all 355 source definitions, including the pointer table, are exported as cdata; move relearner and Pokémon summary screens load the table and resolve source text symbols. Source/data path reviewed; rendering parity was not checked.
 - `battle_controller_safari.c`: the Safari action menu, throw/intro animations, text, healthbox, sound and battle-animation waits are mapped in `battle/controller_safari.ts`; encounter and catch logic is in `battle/main.ts` / `battleSetup.ts`. Remaining controller opcodes often complete immediately, leaving source sprite/data/status/move/party-summary commands incomplete. Partial; no runtime execution.
 - `battle_ai_switch_items.c`: switch choices, switch targets, move/type scoring, held trainer-item classification/effects and AI action selection are represented in `battle/ai.ts`. The source itself notes the omitted Flying/Levitate trapping check. Source code review only; no battle replay or parity execution.
-- `menu2.c`: the species/Unown stat-page positioning table and blend task are exported as C data but lack active TypeScript consumers/equivalents. Stat-page sprite positions and blending remain gaps; code/data lookup only.
+- `menu2.c`: `menu2.ts` ports `Menu2_GetMonPosAttribute`/`Menu2_GetStarSpritePosAttribute` (used by the item-use scene); the blend task (`StartBlendTask`) and the rest of the file remain unported.
 - `mail.c`: held mail and Easy Chat word decoding are represented, while `ReadMail` uses the simplified `menus/mailView.ts` field adapter; C screen/task behavior and Easy Chat authoring remain incomplete. Partial; no UI comparison.
 - `player_pc.c`: item-PC and mailbox flows are wired through `menus/playerPc.ts` with bag/party/save behavior, but use generic choice/message adapters instead of the full C window/task/fade/list implementation. Partial source review; PC storage UI remains simplified.
 - `list_menu.c`: core list lifecycle, input, scrolling, cursor, template, palette and icon helpers are implemented in `hw/listMenu.ts`; the Mystery Gift-specific wrapper is outside the active single-player path. Source review only; visual list parity was not compared.
@@ -516,14 +516,23 @@ whiteout respawn now uses the original heal-location data in
   añadir/quitar decoración siguen siendo adaptadores que solo avanzan el script.
   La decoración de la habitación queda pendiente, fuera del camino principal.
 
-### Helpers de `pokemon_special_anim.c` (2026-09-25)
+### Escena de "usar objeto": `pokemon_special_anim.c` y `pokemon_special_anim_scene.c` (2026-09-25)
 
-`src/fr/pokemonSpecialAnim.ts` porta `GetAnimTypeByItemId` y
-`GetClosenessFromFriendship`. También concentra `GetMonLevelUpWindowStats`,
-antes definido en `battle/ext.ts`; ese módulo lo sigue reexportando para no
-romper sus consumidores. `npm run check:port` valida tipos e imports, pero no
-valida animación en navegador. Los cuatro task flows, la escena y el estado de
-cancelación permanecen adaptados.
+`src/fr/pokemonSpecialAnim.ts` porta ambos `.c` completos: `StartUseItemAnim_Normal/
+ForgetMoveAndLearnTMorHM/CantEvolve`, las seis tareas (`Task_UseItem_Normal`,
+`Task_ForgetMove`, `Task_EvoStone_CantEvolve`, `Task_UseTM_NoForget`,
+`Task_MachineSet`, `Task_CleanUp`), `sCancelDisabled`/`PSA_IsCancelDisabled`, la
+escena (fondos, ventana de mensaje, zoom, icono del objeto, espirales, estrellas,
+vaivén de la máquina), los sprites verticales de subida de nivel y las ventanas
+`DrawLevelUpWindowPg1/2` (antes duplicadas en `battle/anim.ts` y `battle/ext.ts`,
+que ahora las reexportan). También añade `menu2.ts` (`Menu2_GetMonPosAttribute`,
+`Menu2_GetStarSpritePosAttribute`), los placeholders dinámicos en
+`dynamicPlaceholderTextUtil.ts` (antes locales de `pokemonSummaryScreen.ts`) y
+`CheckIfItemIsTMHMOrEvolutionStone` en `pokemon/items.ts`. `partyMenu.ts` llama
+a los `StartUseItemAnim_*` reales (los callbacks pasan por `CB2_ONCE`).
+Adaptaciones: el puntero `PokemonSpecialAnim` de `data[0..1]` es el módulo
+`sPSA`; los punteros a sprite en `data[]` son índices de `gSprites`. Verificado:
+`check:port`, `build` y paridad de cdata/incbin/textos; sin probar en navegador.
 
 ### Lista de movimientos del Recordador (2026-09-25)
 
@@ -674,12 +683,9 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
    reproducción de grito (cries) y modo de selección de movimiento para aprender/olvidar movimientos
    (`PSS_MODE_SELECT_MOVE`). Reemplaza el adaptador de texto en `summaryScreen.ts` y en `battle/ext.ts`.
    Verificado headless (`npm run check:summary`).
-10. **Escena de "usar objeto"** (`pokemon_special_anim.c`, 709 líneas;
-    `pokemon_special_anim_scene.c`, 1563 líneas) **[visual]**: los helpers de
-    anim type, cercanía y estadísticas de subida de nivel ya están en
-    `pokemonSpecialAnim.ts`. `partyMenu.ts` aún salta `StartUseItemAnim_*` y
-    mantiene `PSA_IsCancelDisabled() = false`; faltan las cuatro tareas de escena,
-    callbacks, tiempos de cancelación y efectos de sprites.
+10. **Escena de "usar objeto"** (`pokemon_special_anim.c`,
+    `pokemon_special_anim_scene.c`) **[PORTADO, sin probar en navegador]**: ver
+    la sección de 2026-09-25 más arriba.
 11. **Recordador de movimientos** (`learn_move.c`, 932 líneas; reglas en
     `pokemon.c`) **[parcial]**: `pokemon/partyRules.ts` busca movimientos; la
     pantalla `menus/moveRelearner.ts` usa recursos y ventanas del C, presenta

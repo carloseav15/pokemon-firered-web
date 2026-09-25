@@ -62,6 +62,7 @@ import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW,
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { SetMainCallback2, SetVBlankCallback, SetHBlankCallback } from "./hw/runtime";
 import { sound } from "./audio/sound";
+import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr } from "./dynamicPlaceholderTextUtil";
 import { rom } from "./rom";
 import { save } from "./save";
 import {
@@ -367,36 +368,6 @@ function resolveText(ref: unknown): Uint8Array {
   } catch {
     return EOS_ARRAY;
   }
-}
-
-// Dynamic placeholders (0xF7, id)
-const sDynamicPlaceholders: (Uint8Array | null)[] = [null, null, null, null, null, null, null, null];
-
-function DynamicPlaceholderTextUtil_Reset(): void {
-  for (let i = 0; i < 8; i++) sDynamicPlaceholders[i] = null;
-}
-
-function DynamicPlaceholderTextUtil_SetPlaceholderPtr(id: number, ptr: Uint8Array): void {
-  if (id < 8) sDynamicPlaceholders[id] = ptr;
-}
-
-function DynamicPlaceholderTextUtil_ExpandPlaceholders(src: Uint8Array): Uint8Array {
-  const out: number[] = [];
-  for (let i = 0; i < src.length; i++) {
-    const b = src[i];
-    if (b === EOS) break;
-    if (b === 0xf7) {
-      const id = src[++i];
-      const repl = sDynamicPlaceholders[id];
-      if (repl) {
-        for (let j = 0; j < repl.length && repl[j] !== EOS; j++) out.push(repl[j]);
-      }
-      continue;
-    }
-    out.push(b);
-  }
-  out.push(EOS);
-  return Uint8Array.from(out);
 }
 
 // ---------------------------------------------------------------- public entry points

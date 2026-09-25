@@ -8,20 +8,20 @@
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { tasks, type Task } from "../gba/tasks";
-import { cdata, incbin } from "../hw/assets";
+import { cdata } from "../hw/assets";
 import { ANIMS, bs, ROM_BASE } from "./bscript";
 import { affineAnimFrom, animsFrom, cexpr, oamFrom, templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
 import { BG_SCREEN_SIZE, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect, LoadBgTiles } from "../hw/bg";
 import { SetGpuReg } from "../hw/gpu";
 import { BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, BG_PLTT_ID, PLTT_ID, PLTT_SIZE_4BPP } from "../hw/palette";
 import {
-  BLDALPHA_BLEND, BLDCNT_EFFECT_NONE, BLDCNT_TGT2_ALL, OBJ_VRAM0, ppu, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS,
+  BLDALPHA_BLEND, OBJ_VRAM0, ppu, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS,
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT,
 } from "../hw/ppu";
 import {
   AllocSpritePalette, CalcCenterToCornerVec, CreateInvisibleSprite, CreateSprite, DestroySprite, DestroySpriteAndFreeResources, FreeSpriteOamMatrix,
-  FreeSpritePaletteByTag, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable, gDummySpriteAnimTable, gOamMatrices, gSprites, IndexOfSpritePaletteTag,
-  LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES, objAffineSet, SPRITE_NONE, SpriteCallbackDummy, StartSpriteAnim, ST_OAM_AFFINE_DOUBLE,
+  gDummySpriteAffineAnimTable, gDummySpriteAnimTable, gOamMatrices, gSprites, IndexOfSpritePaletteTag,
+  LoadSpriteSheet, MAX_SPRITES, objAffineSet, SPRITE_NONE, SpriteCallbackDummy, StartSpriteAnim, ST_OAM_AFFINE_DOUBLE,
   ST_OAM_AFFINE_NORMAL, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL, ST_OAM_OBJ_WINDOW,
   type AffineAnimCmd, type AnimCmd, type Sprite, type SpriteCallback, type SpriteFrameImage, type SpriteTemplate,
 } from "../hw/sprite";
@@ -1384,84 +1384,6 @@ export function SpriteCB_TrainerSlideIn(sprite: Sprite): void {
   }
 }
 
-// ---------------------------------------------------------------- pokemon_special_anim_scene.c: level-up vertical sprites
-
-// task: tState data[0], tActiveSprCt data[1], tMadeSprCt data[2], tTimer data[3], tXpos data[4], tYpos data[5],
-// tTileTag data[6], tPaletteTag data[7], tPriority data[8], tSubpriority data[9]
-export function CreateLevelUpVerticalSpritesTask(x: number, y: number, tileTag: number, paletteTag: number, priority: number, subpriority: number): void {
-  const gfx = incbin("sLevelUp_Gfx");
-  LoadSpriteSheet({ data: gfx, size: gfx.length, tag: tileTag });
-  LoadSpritePalette({ data: palette16(incbin("sLevelUp_Pal")), tag: paletteTag });
-  const taskId = tasks.create(Task_LevelUpVerticalSprites, 0);
-  const d = tasks.tasks[taskId].data;
-  d[4] = ((x - 32) << 16) >> 16;
-  d[5] = ((y + 32) << 16) >> 16;
-  d[6] = tileTag;
-  d[7] = paletteTag;
-  d[8] = priority;
-  d[9] = subpriority;
-  SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_EFFECT_NONE | BLDCNT_TGT2_ALL);
-  SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(12, 6));
-}
-
-function palette16(b: Uint8Array): Uint16Array {
-  return new Uint16Array(b.buffer.slice(b.byteOffset, b.byteOffset + (b.length & ~1)));
-}
-
-export function LevelUpVerticalSpritesTaskIsRunning(): boolean {
-  return tasks.tasks.some((t) => t.isActive && t.func === Task_LevelUpVerticalSprites);
-}
-
-function Task_LevelUpVerticalSprites(taskId: number): void {
-  const d = tasks.tasks[taskId].data;
-  switch (d[0]) {
-    case 0:
-      if (d[3] === 0) {
-        d[3]++;
-        CreateLevelUpVerticalSprite(taskId, d);
-        if (d[2] > 17) d[0]++;
-      } else {
-        d[3]++;
-        if (d[3] === 2) d[3] = 0;
-      }
-      break;
-    case 1:
-      if (d[1] === 0) {
-        FreeSpriteTilesByTag(d[6] & 0xffff);
-        FreeSpritePaletteByTag(d[7] & 0xffff);
-        tasks.destroy(taskId);
-      }
-      break;
-  }
-}
-
-let levelUpTemplate: SpriteTemplate | null = null;
-
-function CreateLevelUpVerticalSprite(taskId: number, d: number[]): void {
-  levelUpTemplate ??= {
-    tileTag: 0, paletteTag: 0, oam: oamFrom({ $sym: "sOamData_LevelUpVertical" }),
-    anims: [animsFrom({ $sym: "sAnimTable_LevelUpVertical" })[0] ?? gDummySpriteAnimTable[0]], images: null,
-    affineAnims: gDummySpriteAffineAnimTable, callback: SpriteCB_LevelUpVertical,
-  };
-  const template = { ...levelUpTemplate, tileTag: d[6] & 0xffff, paletteTag: d[7] & 0xffff };
-  d[2]++;
-  const spriteId = CreateSprite(template, ((d[2] * 219) & 0x3f) + d[4], d[5], d[9]);
-  if (spriteId !== MAX_SPRITES) {
-    const s = gSprites[spriteId];
-    s.oam.priority = d[8];
-    s.data[1] = 0;
-    s.data[2] = ((Math.imul(1103515245, d[2]) + 24691) & 0x3f) + 0x20; // ISO_RANDOMIZE1
-    s.data[7] = taskId;
-    d[1]++;
-  }
-}
-
-function SpriteCB_LevelUpVertical(sprite: Sprite): void {
-  sprite.data[1] -= sprite.data[2];
-  sprite.y2 = sprite.data[1] >> 4;
-  if (sprite.y2 < -0x40) {
-    tasks.tasks[sprite.data[7]].data[1]--;
-    DestroySprite(sprite);
-  }
-}
+// pokemon_special_anim_scene.c: level-up vertical sprites live in ../pokemonSpecialAnim.
+export { CreateLevelUpVerticalSpritesTask, LevelUpVerticalSpritesTaskIsRunning } from "../pokemonSpecialAnim";
 

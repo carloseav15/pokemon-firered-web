@@ -62,10 +62,13 @@ import {
   CalculatePlayerPartyCount, GetMonData, GetMonGender, GiveMoveToMon, MonTryLearningNewMove, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot,
   zeroMon, type Mon,
 } from "./pokemon/mon";
-import { addBagItem, addPCItem, itemInfo, removeBagItem, removePCItem } from "./pokemon/items";
+import { addBagItem, addPCItem, CheckIfItemIsTMHMOrEvolutionStone, itemInfo, removeBagItem, removePCItem } from "./pokemon/items";
 import { isMailItem } from "./pokemon/mail";
 import { canLearnTMHM, speciesName } from "./pokemon/pokemon";
 import { tmhmMove } from "./menus/monProgress";
+import {
+  preloadPokemonSpecialAnim, PSA_IsCancelDisabled, StartUseItemAnim_CantEvolve, StartUseItemAnim_ForgetMoveAndLearnTMorHM, StartUseItemAnim_Normal,
+} from "./pokemonSpecialAnim";
 import { rom } from "./rom";
 import { flagGet, save, varGet, varSet, SV } from "./save";
 import {
@@ -172,6 +175,7 @@ export function InitPartyMenu(menuType: number, layout: number, partyAction: num
   sPartyBgTilemapBuffer = null;
   sPartyMenuBoxes = [];
   void Promise.all([
+    preloadPokemonSpecialAnim(),
     loadCData("party_menu", "pokemon_icon", "pokemon_special_anim_scene", "strings", "text_window_graphics"),
     preloadPacks(["graphics_party_menu", "graphics_interface", "pokemon", "graphics_text_window", "graphics_fonts", "graphics_help_system"]),
   ]).then(() => {
@@ -387,14 +391,6 @@ function DisplayPartyPokemonDataForMoveTutorOrEvolutionItem(slot: number): boole
     }
   }
   return true;
-}
-
-/** item.c CheckIfItemIsTMHMOrEvolutionStone */
-function CheckIfItemIsTMHMOrEvolutionStone(item: number): number {
-  const info = itemInfo(item);
-  if (info?.fieldUseFunc === "FieldUseFunc_TmCase" || (info && item >= C.ITEM_TM01 && item <= C.ITEM_HM08)) return 1;
-  if (info?.fieldUseFunc === "FieldUseFunc_EvoItem") return 2;
-  return 0;
 }
 
 function DisplayPartyPokemonDataToTeachMove(slot: number, item: number, tutor: number): void {
@@ -2187,16 +2183,25 @@ function Task_DoUseItemAnim(taskId: number): void {
   Task_ClosePartyMenu(taskId);
 }
 
-/** pokemon_special_anim.c is pending: the use-item scenes continue straight to their callbacks. */
-function StartUseItemAnim(cb: () => void): void { cb(); }
-function PSA_IsCancelDisabled(): boolean { return false; }
+/**
+ * The C hands a MainCallback to SetMainCallback2 and it runs once because it
+ * installs the next one; here the party-menu callbacks are plain functions
+ * (see Task_ClosePartyMenuAndSetCB2), so the PSA's SetMainCallback2(saved)
+ * runs it once with the main callback cleared.
+ */
+function CB2_ONCE(cb: MainCB): MainCB {
+  return () => {
+    SetMainCallback2(null);
+    cb?.();
+  };
+}
 
 function CB2_DoUseItemAnim(): void {
   if (CheckIfItemIsTMHMOrEvolutionStone(bagResult.itemId) === 2) {
-    if (MonCanEvolve()) StartUseItemAnim(CB2_UseEvolutionStone);
-    else StartUseItemAnim(() => gPartyMenu.exitCallback?.());
+    if (MonCanEvolve()) StartUseItemAnim_Normal(gPartyMenu.slotId, bagResult.itemId, CB2_ONCE(CB2_UseEvolutionStone));
+    else StartUseItemAnim_CantEvolve(gPartyMenu.slotId, bagResult.itemId, CB2_ONCE(gPartyMenu.exitCallback));
   } else {
-    StartUseItemAnim(CB2_UseItem);
+    StartUseItemAnim_Normal(gPartyMenu.slotId, bagResult.itemId, CB2_ONCE(CB2_UseItem));
   }
 }
 
@@ -2570,10 +2575,10 @@ function CB2_ShowSummaryScreenToForgetMove(): void {
 function CB2_ReturnToPartyMenuWhileLearningMove(): void {
   const moveIdx = GetMoveSlotToReplace();
   if (gPartyMenu.learnMoveMethod === LEARN_VIA_TMHM && moveIdx !== C.MAX_MON_MOVES) {
-    // StartUseItemAnim_ForgetMoveAndLearnTMorHM → CB2_UseTMHMAfterForgettingMove
+    const move = GetMonData(mon(gPartyMenu.slotId), moveIdx + C.MON_DATA_MOVE1);
+    StartUseItemAnim_ForgetMoveAndLearnTMorHM(gPartyMenu.slotId, bagResult.itemId, move, CB2_ONCE(CB2_UseTMHMAfterForgettingMove));
     gItemUseCB = ItemUseCB_ReplaceMoveWithTMHM;
     gPartyMenu.action = C.PARTY_ACTION_CHOOSE_MON;
-    StartUseItemAnim(CB2_UseTMHMAfterForgettingMove);
   } else {
     InitPartyMenu(C.PARTY_MENU_TYPE_FIELD, C.PARTY_LAYOUT_SINGLE, C.PARTY_ACTION_CHOOSE_MON, true, C.PARTY_MSG_NONE, Task_ReturnToPartyMenuWhileLearningMove, gPartyMenu.exitCallback);
   }
