@@ -273,7 +273,8 @@ export class BattleSetup {
   startWildBattle(enemy: Pokemon): void {
     const map = (save.location.mapGroup << 8) | save.location.mapNum;
     const c = rom.constants;
-    const tower = [3, 4, 5, 6, 7].some(floor => map === c[`MAP_POKEMON_TOWER_${floor}F`]);
+    // CheckSilphScopeInPokemonTower includes every floor from 1F through 7F.
+    const tower = [1, 2, 3, 4, 5, 6, 7].some(floor => map === c[`MAP_POKEMON_TOWER_${floor}F`]);
     const safari = flagGet(c.FLAG_SYS_SAFARI_MODE);
     incrementGameStat(c.GAME_STAT_TOTAL_BATTLES);
     incrementGameStat(c.GAME_STAT_WILD_BATTLES);
