@@ -5,7 +5,7 @@ import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
 import { BattleTransitionScene, getTrainerBattleTransition, getWildBattleTransition } from "./battle/transition";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON } from "./gba/input";
 import { tasks } from "./gba/tasks";
@@ -405,22 +405,22 @@ export class Game {
 
     const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
     printText(stats, FONT_NORMAL, location, Math.max(0, (112 - stringWidth(FONT_NORMAL, location)) >> 1), 0);
-    const label = (y: number, name: string) => printText(stats, FONT_NORMAL, rom.text(name), 2, y);
-    const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_NORMAL, text, 60, y);
-    label(14, "gText_Player");
+    const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y);
+    const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y);
+    label(14, "gSaveStatName_Player");
     value(14, SaveStatToString(C.SAVE_STAT_NAME, 2));
 
-    label(28, "gText_Badges");
+    label(28, "gSaveStatName_Badges");
     value(28, SaveStatToString(C.SAVE_STAT_BADGES, 2));
 
     let y = 42;
     if (flagGet(rom.c("FLAG_SYS_POKEDEX_GET"))) {
-      label(y, "gText_Pokedex");
-      value(y, concat(SaveStatToString(C.SAVE_STAT_POKEDEX, 2), rom.text("gTextJPDummy_Hiki")));
+      label(y, "gSaveStatName_Pokedex");
+      value(y, SaveStatToString(C.SAVE_STAT_POKEDEX, 2));
       y += 14;
     }
 
-    label(y, "gText_Time");
+    label(y, "gSaveStatName_Time");
     value(y, SaveStatToString(C.SAVE_STAT_TIME, 2));
 
     ow.windows.add(stats);
