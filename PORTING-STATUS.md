@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 44 modules as documented ported, 77 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 13 as explicitly out of scope, 36 as probable out-of-scope candidates, and 103 as unreviewed. Separately, 42 files have a
+The current review labels 44 modules as documented ported, 77 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 14 as explicitly out of scope, 36 as probable out-of-scope candidates, and 102 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -207,6 +207,11 @@ whiteout respawn now uses the original heal-location data in
   `GiveGiftRibbonToParty` solo lo llama Mystery Event (distribución externa);
   las firmas Seedot/Lotad del header no tienen definiciones en este C. Revisión
   de fuente, sin cotejo runtime.
+- `malloc.c`: allocator fijo de EWRAM (headers de bloque, alineación, split,
+  merge, zero y comprobación de integridad) queda fuera del runtime web, que usa
+  objetos/arrays JS y garbage collection, sin heap GBA direccionable. La
+  clasificación excluye el allocator, no los comportamientos de fallo por
+  presión de memoria de sus callers.
 - `ss_anne.c`: salida del barco conserva espera de 50 frames, estela/humo,
   desplazamiento cada cinco frames, bocina, umbral de salida y espera final 40
   frames antes de reanudar el script. Animaciones/callbacks cotejados con C;
