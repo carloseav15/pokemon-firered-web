@@ -118,8 +118,8 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 22 modules as documented ported, 45 as partial or
-adapted, 12 as pending, two with small parity fixes awaiting verification,
+The current review labels 22 modules as documented ported, 46 as partial or
+adapted, 11 as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
 162 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
@@ -156,6 +156,15 @@ whiteout respawn now uses the original heal-location data in
 `src/fr/field/overworld.ts` and selects the correct healer/home script from
 `src/fr/game.ts`. These changes still need execution verification. The other
 `save_location.c` has no main-story single-player blocker; its missing flags are deferred with reset/link/postgame parity. `save_menu_util.c` now has the stats panel and remains partial until visual execution confirms placement, frame and colors.
+
+### Helpers de `pokemon_special_anim.c` (2026-09-25)
+
+`src/fr/pokemonSpecialAnim.ts` porta `GetAnimTypeByItemId` y
+`GetClosenessFromFriendship`. También concentra `GetMonLevelUpWindowStats`,
+antes definido en `battle/ext.ts`; ese módulo lo sigue reexportando para no
+romper sus consumidores. `npm run check:port` valida tipos e imports, pero no
+valida animación en navegador. Los cuatro task flows, la escena y el estado de
+cancelación permanecen adaptados.
 
 ### Pokédex area marker logic (2026-09-25)
 
@@ -280,9 +289,12 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
    reproducción de grito (cries) y modo de selección de movimiento para aprender/olvidar movimientos
    (`PSS_MODE_SELECT_MOVE`). Reemplaza el adaptador de texto en `summaryScreen.ts` y en `battle/ext.ts`.
    Verificado headless (`npm run check:summary`).
-10. **Escena de "usar objeto"** (`pokemon_special_anim.c`, 2272 líneas)
-    **[visual]**: `partyMenu.ts` salta `StartUseItemAnim_*` y fija
-    `PSA_IsCancelDisabled() = false`; al portarla se cambia solo eso.
+10. **Escena de "usar objeto"** (`pokemon_special_anim.c`, 709 líneas;
+    `pokemon_special_anim_scene.c`, 1563 líneas) **[visual]**: los helpers de
+    anim type, cercanía y estadísticas de subida de nivel ya están en
+    `pokemonSpecialAnim.ts`. `partyMenu.ts` aún salta `StartUseItemAnim_*` y
+    mantiene `PSA_IsCancelDisabled() = false`; faltan las cuatro tareas de escena,
+    callbacks, tiempos de cancelación y efectos de sprites.
 11. **Recordador de movimientos** (`move_relearner.c`) **[juego]**: verificar
     si la pantalla actual es adaptador y portarla (el menú de equipo ya le pasa
     `VAR_0x8005` como en el C).

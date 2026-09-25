@@ -45,6 +45,9 @@ import * as PartyMenu from "../partyMenu";
 import { bagResult, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
 import { gDisableStructs } from "./globals";
+import { GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
+
+export { GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
 
 export { GetSetPokedexFlag };
 
@@ -301,10 +304,6 @@ export {
 export { GetMonIconPtr, GetValidMonIconPalettePtr } from "../pokemonIcon";
 
 // ---------------------------------------------------------------- level-up window (pokemon_special_anim*.c)
-
-export function GetMonLevelUpWindowStats(mon: Mon): number[] {
-  return [C.MON_DATA_MAX_HP, C.MON_DATA_ATK, C.MON_DATA_DEF, C.MON_DATA_SPEED, C.MON_DATA_SPATK, C.MON_DATA_SPDEF].map((f) => GetMonData(mon, f));
-}
 
 const statNames = () => cdata<unknown[]>("pokemon_special_anim_scene", "sLevelUpWindowStatNames").map((r) => strFrom(r));
 function strFrom(ref: unknown): number[] {
@@ -625,4 +624,3 @@ export function PokemonUseItemEffects(mon: Mon, item: number, partyIndex: number
   }
   return retVal;
 }
-
