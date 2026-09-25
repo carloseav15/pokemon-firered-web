@@ -5,6 +5,7 @@ dónde está cada cosa, cómo se sacan los datos del decomp y cómo se porta y s
 verifica un archivo C sin inventar nada.
 
 - Estado y lista de pendientes (de fácil a difícil): [PORTING-STATUS.md](PORTING-STATUS.md)
+- Faltantes actualizados (sin empezar, adaptadores, parciales, sin probar): [PENDING.md](PENDING.md)
 - Inventario por archivo `.c` (generado con `npm run inventory`): [PORT-INVENTORY.md](PORT-INVENTORY.md)
 - Flujo de arranque (intro → título → partida): [START-FLOW.md](START-FLOW.md)
 - Inventario de contenido opcional del juego: [SECONDARY-MISSIONS-AUDIT.md](SECONDARY-MISSIONS-AUDIT.md)
@@ -43,7 +44,7 @@ src/fr/pokemon/             reglas de Pokémon/objetos/caja/guardería/intercamb
 src/fr/menus/               adaptadores de menús de campo (algunos aún son listas de texto)
 src/fr/*.ts                 pantallas portadas 1:1: intro*, oakSpeech, mainMenu, namingScreen,
                             regionMap, optionMenu, bagMenu, tmCase, berryPouch, partyMenu,
-                            pokemonIcon, hallOfFame, diploma, seagallop…
+                            pokemonIcon, hallOfFame, credits, itemPc, shop, diploma, seagallop…
 src/fr/generated/           GENERADO (no editar): constants.ts, structs.ts, metatileBehavior.ts
 src/fr/rom.ts save.ts       datos cargados (rom.text, rom.c, rom.moveName…) y partida guardada
 public/fr/                  GENERADO por el exportador (datos del juego para el navegador)
@@ -63,6 +64,8 @@ npm run dev                # servidor Vite (o preview_start "vite" desde .claude
 npm run check:port         # tsc sobre TODO src (incluye batalla). Obligatorio tras cada cambio
 npm run build              # tsc + bundle de producción
 npm run check:arrow        # ejemplo de check headless (flecha de diálogo vs tiles del C)
+npm run inventory          # regenera PORT-INVENTORY.md (avance por archivo .c)
+npm run pending            # regenera PENDING.md (faltantes; ejecutar tras inventory)
 python3 tools/decomp/export.py [pasos…]   # regenerar datos (ver §4)
 ```
 
@@ -185,13 +188,14 @@ Cuando una pantalla del C no está portada, se usa un **adaptador**: misma
 entrada/salida (variables, callbacks) pero UI simplificada, casi siempre con
 `openHardwareChoice`/`openHardwareMessage` (listas de texto sobre `ListMenu`).
 Márcalo en el comentario de cabecera y en `PORTING-STATUS.md`. Adaptadores
-actuales: resumen (`summaryScreen.ts`), elegir movimiento a olvidar
-(`battle/ext.ts ShowSelectMovePokemonSummaryScreen`, `menus/monProgress.ts`),
-PC de objetos/buzón (`menus/playerPc.ts`), almacenamiento de cajas
-(`menus/storageMenu.ts`), tarjeta de entrenador,
-Fame Checker/Teachy TV (`menus/keyItemScreens.ts`), tragaperras (visual),
-intercambios en juego (`pokemon/ingameTrade.ts`), Salón de la Fama y créditos
-(`hallOfFame.ts`), evolución fuera de batalla (`monProgress.evolveWithMessages`).
+actuales (la lista viva está en [PENDING.md](PENDING.md) §2): menú superior del
+PC del jugador (`menus/playerPc.ts`, sobre el campo canvas), almacenamiento de
+cajas (`menus/storageMenu.ts`), Fame Checker/Teachy TV
+(`menus/keyItemScreens.ts`), tragaperras (`menus/slotMachine.ts`, sin gráficos),
+intercambios en juego (`pokemon/ingameTrade.ts`), visor de cartas
+(`menus/mailView.ts`), elegir movimiento a olvidar (`menus/monProgress.ts`).
+Ya son fieles y no adaptadores: resumen, tarjeta de entrenador, Pokédex, PC de
+objetos y buzón, tienda, Salón de la Fama, créditos, escena de "usar objeto".
 
 ## 6. Cómo se prueba y valida
 
@@ -238,8 +242,8 @@ Si el usuario pide "no probar", haz solo 1–3 y dilo explícitamente.
 
 - Un commit por bloque terminado; mensaje en inglés, imperativo, que diga qué
   `.c` se portó; terminar con la línea `Co-Authored-By` que indique el entorno.
-  No hay remoto git: no se puede hacer push.
-- Tras cada bloque: actualizar `PORTING-STATUS.md` (y `START-FLOW.md` si cambia el arranque).
+  El remoto `origin` es un repositorio privado de GitHub; el push lo decide el usuario.
+- Tras cada bloque: actualizar `PORTING-STATUS.md`, ejecutar `npm run inventory && npm run pending` (y actualizar `START-FLOW.md` si cambia el arranque).
 - No editar `src/fr/generated/` ni `public/fr/` a mano: cambia `tools/decomp/` y reexporta.
 - Borrar adaptadores y helpers cuando la pantalla real los sustituye (y los
   exports que queden sin uso).

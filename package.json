@@ -14,7 +14,8 @@
     "check:summary": "esbuild tools/checks/pokemonSummaryScreen.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/pokemonSummaryScreen.mjs && node .decomp-build/checks/pokemonSummaryScreen.mjs",
     "check:evolution": "esbuild tools/checks/evolutionScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/evolutionScene.mjs && node .decomp-build/checks/evolutionScene.mjs",
     "check:card": "esbuild tools/checks/trainerCard.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/trainerCard.mjs && node .decomp-build/checks/trainerCard.mjs",
-    "inventory": "python3 tools/portInventory.py"
+    "inventory": "python3 tools/portInventory.py",
+    "pending": "python3 tools/portPending.py"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

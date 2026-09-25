@@ -682,22 +682,29 @@ alcance (36 %). La capa de campo antigua (`field/`, `gba/`) usa nombres propios,
 así que su porcentaje bajo indica que no es una traducción 1:1, no que falte
 la funcionalidad. Actualiza las tablas del script cuando cambie un archivo.
 
-## Pendiente, de más sencillo a más difícil (2026-09-24)
+## Pendiente, de más sencillo a más difícil (actualizado 2026-09-25)
+
+> La lista completa y actualizada de faltantes (archivos sin empezar, adaptadores,
+> parciales con más C sin cubrir, huecos conocidos y pantallas sin probar) está en
+> [PENDING.md](PENDING.md) (`npm run pending`). Esta sección conserva el orden de
+> trabajo y el contexto de cada punto.
+
 
 Orden aproximado por esfuerzo. Cada punto dice qué `.c` portar, qué archivo
 TS reemplaza y por qué importa (**[juego]** afecta a la progresión o a las
 reglas, **[visual]** solo a la fidelidad visual). Ya portados como pantallas
 de hardware: intro/título, menú principal, Oak, teclado de nombres, mapa de
 región, opciones, mochila, estuche MT, saquito de bayas, menú de equipo,
-iconos de Pokémon, list_menu, Salón de la Fama (parcial), diploma, Seagallop,
-motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
+iconos de Pokémon, list_menu, Salón de la Fama y créditos, PC de objetos y buzón,
+tienda, escena de "usar objeto", Pokédex, tarjeta de entrenador, resumen, evolución,
+diploma, Seagallop, motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 
 ### Nivel 1 — pequeño (menos de un día cada uno)
 
-1. **Buzón del PC** (`mailbox_pc.c`, parte de `player_pc.c`) **[opcional/baja prioridad]**:
-   En FRLG las cartas solo almacenan mensajes creados con Easy Chat; guardar hasta 10 cartas
-   en el PC no bloquea eventos, medallas ni progresión en solitario (single-player).
-   El flujo ahora lee las cartas persistidas en `save.pcMail`, permite leerlas, moverlas a la bolsa (borrando el mensaje) y darlas a un Pokémon sin objeto. Conserva menús simplificados; falta verificar la presentación nativa. La escritura Easy Chat sigue pendiente.
+1. **Buzón del PC** (`mailbox_pc.c`, parte de `player_pc.c`) **[PORTADO, sin probar]**:
+   `mailboxPc.ts` + `playerPcMailbox.ts` (lista, leer, pasar a la bolsa, dar a un
+   Pokémon). El menú superior de `player_pc.c` sigue sobre el campo canvas
+   (`menus/playerPc.ts`). La escritura Easy Chat sigue pendiente.
 2. **Objetos ocultos renovables** (`renewable_hidden_items.c`, 608 líneas)
    **[juego]**: Portado fiel en `src/fr/renewableHiddenItems.ts`, conectado a
    `fieldControl.ts` (conteo de pasos) y `overworld.ts` (`onMapLoad`), verificado
@@ -764,9 +771,8 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
     **[visual]**: `menus/keyItemScreens.ts` son adaptadores de texto; Teachy TV
     necesita además el controlador de batalla Pokédude
     (`battle_controller_pokedude.c`, 2698 líneas).
-14. **PC de objetos** (`item_pc.c`) **[visual]**: retirar/depositar ya funciona
-    desde `playerPc.ts` con listas simplificadas y la mochila real; falta la
-    interfaz GBA, cursor, animaciones y estados originales.
+14. **PC de objetos** (`item_pc.c`, `pc_screen_effect.c`) **[PORTADO, sin probar]**:
+    `itemPc.ts` y `pcScreenEffect.ts`; ver la sección de 2026-09-25.
 15. **Escena de Evolución** (`evolution_scene.c`, 1704 líneas + `evolution_graphics.c`, 638 líneas)
     **[PORTADO]**: portada fielmente en `src/fr/evolutionScene.ts` sobre la capa de hardware GBA (`hw/`).
     Implementa:
@@ -797,6 +803,11 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
     Verificado solo con `check:port`, `build` y la paridad de cdata/incbin/textos.
 19. **Menú Guardar e informe** (`start_menu.c` guardado, `save_menu_util.c`)
     **[visual]**: comparar la ventana de guardado y el resumen con el C.
+
+20a. **Tienda Pokémon** (`shop.c`, `buy_menu_helpers.c`) **[PORTADO, sin probar]**:
+    ver la sección de 2026-09-25.
+20b. **Hall of Fame y créditos** (`hall_of_fame.c`, `credits.c`) **[PORTADO, sin probar]**:
+    ver la sección de 2026-09-25.
 
 ### Nivel 3 — sistemas grandes (varios días)
 
