@@ -19,12 +19,12 @@ import { rom } from "./rom";
 import { flagGet, newSaveData, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, ChoosePartyMonByMenuType } from "./partyMenu";
+import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { WildEncounter } from "./field/wildEncounter";
 import { random } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
-import { decode } from "./gba/charmap";
 import { dexCount, getDexFlag, healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
@@ -560,17 +560,18 @@ export class Game {
   /** party_menu_specials.c SelectMoveDeleterMove: VAR_0x8005 = move slot, or MAX_MON_MOVES when cancelled. */
   selectMoveDeleterMove(): void {
     const ow = this.overworld;
+    const partyIndex = varGet(SV.x8004);
     ow.script.stop();
-    fieldMenu(this, (close) => {
-      const mon = save.party[varGet(SV.x8004)];
-      openHardwareChoice(rom.text("gText_WhichMoveToForget"), (mon?.moves ?? []).map((m, slot) => ({
-        label: m ? decode(rom.moveName(m)) : "-", value: slot, disabled: !m,
-      })), true, (slot) => {
-        varSet(SV.x8005, slot ?? 4);
-        close();
+    ShowPokemonSummaryScreen(
+      save.party,
+      partyIndex,
+      save.party.length - 1,
+      () => {
+        varSet(SV.x8005, GetMoveSlotToReplace());
         ow.script.enable();
-      });
-    }, false);
+      },
+      PokemonSummaryScreenMode.PSS_MODE_FORGET_MOVE,
+    );
   }
 
   /** learn_move.c TeachMoveRelearnerMove: VAR_0x8004 = TRUE once a move was learned. */

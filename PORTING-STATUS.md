@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 34 modules as documented ported, 59 as partial or
+The current review labels 35 modules as documented ported, 58 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
 140 as unreviewed. Separately, 42 files have a
@@ -186,7 +186,8 @@ whiteout respawn now uses the original heal-location data in
   pantallas Union Room/Easy Chat no forman parte del recorrido single-player.
 - `party_menu_specials.c`: party picker, relearner entry, move counts,
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
-  Move deleter still shows a generic choice list instead of PSS_MODE_FORGET_MOVE.
+  Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
+  the selected move slot (4 when canceled) to the script variable.
 - `prof_pc.c`: TS calcula vistos/capturados con Kanto/National igual que C;
   `profOakRating` conserva los umbrales 10–150, la excepción de Mew, RESULT y
   el texto del decomp. Paridad por revisión de fuente; falta comparación runtime.
