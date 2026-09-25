@@ -27,7 +27,8 @@
     "check:teachytv": "esbuild tools/checks/teachyTv.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/teachyTv.mjs && node .decomp-build/checks/teachyTv.mjs",
     "check:viridian2brock": "esbuild tools/checks/viridianForestToBrockPlaytest.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/viridianForestToBrockPlaytest.mjs && node .decomp-build/checks/viridianForestToBrockPlaytest.mjs",
     "check:famechecker": "esbuild tools/checks/fameChecker.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/fameChecker.mjs && node .decomp-build/checks/fameChecker.mjs",
-    "check:slots": "esbuild tools/checks/slotMachine.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/slotMachine.mjs && node .decomp-build/checks/slotMachine.mjs"
+    "check:slots": "esbuild tools/checks/slotMachine.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/slotMachine.mjs && node .decomp-build/checks/slotMachine.mjs",
+    "check:trade": "esbuild tools/checks/tradeScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/tradeScene.mjs && node .decomp-build/checks/tradeScene.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

@@ -61,9 +61,7 @@ COVERED: dict[str, str] = {
 }
 
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
-ADAPTERS: dict[str, str] = {
-    "trade": "pokemon/ingameTrade.ts: sin escena",
-}
+ADAPTERS: dict[str, str] = {}
 
 
 FUNC_RE = re.compile(

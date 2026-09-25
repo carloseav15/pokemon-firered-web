@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5545/9825 (56 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5592/9825 (56 %)**.
 - Archivos C pendientes: **113** (127670 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
@@ -18,7 +18,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
-| `trade.c` | 2958 | 0/66 | ~2958 | pokemon/ingameTrade.ts: sin escena |
 
 ## 3. Parciales con más C sin cubrir (top 40)
 
@@ -28,11 +27,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `field_effect.c` | 4033 | 39/239 | ~3374 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 | ~2634 |  |
-| `trade_scene.c` | 2916 | 7/53 | ~2530 |  |
 | `overworld.c` | 3563 | 70/238 | ~2515 |  |
 | `battle_transition.c` | 3037 | 26/134 | ~2447 |  |
 | `naming_screen.c` | 2509 | 4/109 | ~2416 |  |
 | `easy_chat_3.c` | 2316 | 1/92 | ~2290 |  |
+| `trade.c` | 2958 | 15/66 | ~2285 |  |
 | `scrcmd.c` | 2264 | 3/224 | ~2233 |  |
 | `intro.c` | 2805 | 17/79 | ~2201 |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | ~2034 |  |
@@ -55,6 +54,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `start_menu.c` | 1016 | 11/65 | ~844 |  |
 | `vs_seeker.c` | 1326 | 15/40 | ~828 |  |
 | `fieldmap.c` | 951 | 9/51 | ~783 |  |
+| `trade_scene.c` | 2916 | 39/53 | ~770 |  |
 | `title_screen.c` | 1315 | 17/39 | ~741 |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | ~728 |  |
 | `field_specials.c` | 2555 | 85/118 | ~714 |  |
@@ -63,9 +63,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `mail.c` | 734 | 1/10 | ~660 |  |
 | `field_control_avatar.c` | 1182 | 17/37 | ~638 |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | ~633 |  |
-| `wild_encounter.c` | 784 | 7/36 | ~631 |  |
 
-Hay 112 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
+Hay 113 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
 ## 4. Huecos conocidos que el conteo no muestra
 

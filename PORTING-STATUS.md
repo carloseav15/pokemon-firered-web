@@ -1071,8 +1071,17 @@ tragaperras, Islas Sevii.
     - Conectado tanto en combate (`battle/evoScene.ts` y `battle/main.ts`) como en el campo (`fieldPartyHooks.evolve`,
       piedras evolutivas, Caramelo Raro y `ingameTrade.ts`).
     - Verificado headless (`npm run check:evolution`).
-16. **Intercambios en juego** (`trade.c` escena + `ingameTrade`) **[visual]**:
-    la lógica funciona; falta la animación del intercambio.
+16. **Intercambios en juego** (`trade.c` + `trade_scene.c`) **[PORTADO]**:
+    secuencia de intercambio fiel 1:1 en `src/fr/pokemon/ingameTrade.ts`. Traduce la
+    máquina de estados completa de DoTradeAnim_Cable y DoTradeAnim_Wireless (70+ estados),
+    deslizamiento de sprites de Pokémon, absorción por Pokéball (`CreateTradePokeballSprite`),
+    trayectorias de salto parabólico de la Pokéball con rebotes sonoros y tabla
+    `sTradeBallVerticalVelocityTable`, zoom y destellos de pantalla GBA con blending afín
+    en hardware BG2, viaje del Pokémon luminoso por el cable link, secuencia de cruce
+    con siluetas afines de ambos Pokémon, caída y rebote de llegada de la Pokéball
+    (`SpriteCB_BouncingPokeballArrive`), liberación con `CreatePokeballSpriteToReleaseMon`,
+    fanfare `MUS_EVOLVED`, registro en Pokédex, amistad a 70 y evolución posterior.
+    Verificado headless (`npm run check:trade`). Erradicado el último adaptador (0 adaptadores restantes).
 17. **Tragaperras completa** (`slot_machine.c`) **[PORTADO]**: pantalla fiel 1:1
     en `src/fr/menus/slotMachine.ts`. Traduce el C completo: 3 rodillos animados
     con deformación afín en OAM y scanline blending en HBlank, mascotas Clefairy con

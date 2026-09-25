@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 112 | 124712 | 1844/5886 |
-| Adaptador (UI simplificada) | 1 | 2958 | 0/66 |
+| Parcial (menos del 80 % de funciones) | 113 | 127670 | 1891/5952 |
+| Adaptador (UI simplificada) | 0 | 0 | 0/0 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 96 | 121273 | 3701/3873 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 97/1950 |
 | **Pendiente de portar** | **113** | **127670** | |
-| **Total en alcance** | **210** | **248996** | **5545/9825** |
+| **Total en alcance** | **210** | **248996** | **5592/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -29,7 +29,8 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `field_effect.c` | 4033 | 39/239 | `field/fieldMoves.ts` |  |
 | `overworld.c` | 3563 | 70/238 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |
 | `battle_transition.c` | 3037 | 26/134 | `battle/transition.ts` |  |
-| `trade_scene.c` | 2916 | 7/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  |
+| `trade.c` | 2958 | 15/66 | `pokemon/ingameTrade.ts` |  |
+| `trade_scene.c` | 2916 | 39/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  |
 | `intro.c` | 2805 | 17/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 |  |  |
 | `battle_controller_pokedude.c` | 2698 | 31/107 |  |  |
@@ -134,12 +135,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `fldeff_strength.c` | 46 | 1/4 | `field/fieldMoves.ts` |  |
 | `fldeff_teleport.c` | 41 | 1/4 | `field/fieldMoves.ts` |  |
 | `field_special_scene.c` | 27 | 1/6 | `script/specials.ts` |  |
-
-## Adaptador (UI simplificada)
-
-| Archivo C | Líneas | Funciones | TS que lo citan | Nota |
-|---|---:|---:|---|---|
-| `trade.c` | 2958 | 0/66 |  | pokemon/ingameTrade.ts: sin escena |
 
 ## Portado (≥ 80 % de funciones con el mismo nombre)
 
