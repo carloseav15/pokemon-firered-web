@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 33 modules as documented ported, 58 as partial or
+The current review labels 34 modules as documented ported, 58 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-142 as unreviewed. Separately, 42 files have a
+141 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -169,6 +169,9 @@ whiteout respawn now uses the original heal-location data in
 - `fldeff_dig.c`: mapa permitido, confirmación, selección del Pokémon,
   FieldEffect Dig, transición a pie y escape al último heal location están
   conectados entre `fieldMoveMenu.ts` y `fieldMoves.ts`; falta cotejo visual.
+- `fldeff_strength.c`: TS conserva el requisito de estar a pie y tener una
+  roca empujable delante; pasa el slot/nickname, muestra al Pokémon y reanuda
+  el script para activar Strength. Cotejado con `field_moves.inc` y el C.
 - `safari_zone.c`: los ocho APIs están enlazados entre specials, Game,
   FieldEffects y `battleSetup`: entrada/salida, 30 balls/600 pasos, prompt,
   timeout y retornos de batalla. Revisión de fuente; no jugué la zona en browser.
