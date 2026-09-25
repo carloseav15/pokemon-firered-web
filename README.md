@@ -17,8 +17,17 @@ npm run check:port   # tsc sobre todo src (obligatorio tras cada cambio)
 npm run build
 ```
 
-El exportador de datos (`tools/decomp/export.py`) necesita el decomp en
-`../pokefirered` (o `$POKEFIRERED`); ver [AGENTS.md](AGENTS.md) §4.
+El decomp de referencia va incluido como submódulo (`pokefirered/`, fijado en el
+commit usado para exportar los datos). Tras clonar:
+
+```sh
+git clone --recurse-submodules <repo>     # o: git submodule update --init
+```
+
+El exportador (`tools/decomp/export.py`) busca el decomp en `$POKEFIRERED`, luego
+en `../pokefirered` y por último en el submódulo; ver [AGENTS.md](AGENTS.md) §4.
+`public/fr/` y `src/fr/generated/` ya están versionados, así que solo hace falta
+reexportar si cambias `tools/decomp/`.
 
 ## Documentación
 

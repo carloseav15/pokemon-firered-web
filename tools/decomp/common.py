@@ -15,7 +15,15 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-DECOMP = Path(os.environ.get("POKEFIRERED", ROOT.parent / "pokefirered")).resolve()
+def _find_decomp() -> Path:
+    """$POKEFIRERED, else a sibling ../pokefirered, else the pokefirered/ submodule."""
+    if os.environ.get("POKEFIRERED"):
+        return Path(os.environ["POKEFIRERED"]).resolve()
+    sibling = ROOT.parent / "pokefirered"
+    return (sibling if sibling.exists() else ROOT / "pokefirered").resolve()
+
+
+DECOMP = _find_decomp()
 BUILD = ROOT / ".decomp-build"
 BIN = BUILD / "bin"
 GEN_INCLUDE = BUILD / "include"
