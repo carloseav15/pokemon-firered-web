@@ -913,9 +913,13 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
    fielmente al 100% (76/76 funciones) en `src/fr/field/fieldEffectHelpers.ts` y conectada con
    `fieldEffects.ts`. Reflejos en agua, sombra de salto, polvo, huellas, ceniza volcánica, etc.
    Verificado en `check:transitions`.
-5. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
+5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PORTADO]**: portada fielmente al 100%
+   (50/50 funciones) en `src/fr/field/weather.ts`. Implementa tablas de corrección gamma (`BuildGammaShiftTables`),
+   ciclo de transición y estados de clima (`SetCurrentAndNextWeather`), fading de clima y renderizado
+   en pantalla de lluvia, tormenta de arena, ceniza volcánica y niebla horizontal/diagonal. Verificado en `check:weather`.
+6. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
    con la capa antigua.
-6. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.
+7. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.
 
 No hacen falta para este tramo: intercambios, Easy Chat, Teachy TV, Fame Checker,
 tragaperras, clima, Islas Sevii.

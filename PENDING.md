@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5270/9825 (53 %)**.
-- Archivos C pendientes: **117** (135090 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5313/9825 (54 %)**.
+- Archivos C pendientes: **116** (133943 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -52,7 +52,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `daycare.c` | 2155 | 41/93 | ~1204 |  |
 | `trainer_tower.c` | 1095 | 1/43 | ~1069 |  |
 | `battle_main.c` | 4477 | 82/106 | ~1013 |  |
-| `field_weather.c` | 1147 | 7/50 | ~986 |  |
 | `script_menu.c` | 1341 | 8/29 | ~971 |  |
 | `berry.c` | 1028 | 1/8 | ~899 |  |
 | `battle_tower.c` | 1425 | 17/45 | ~886 |  |
@@ -67,8 +66,9 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `mail.c` | 734 | 1/10 | ~660 |  |
 | `field_control_avatar.c` | 1182 | 17/37 | ~638 |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | ~633 |  |
+| `wild_encounter.c` | 784 | 7/36 | ~631 |  |
 
-Hay 113 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
+Hay 112 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
 ## 4. Huecos conocidos que el conteo no muestra
 

@@ -22,7 +22,8 @@
     "check:earlygame": "esbuild tools/checks/oakLabToViridianPlaytest.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/oakLabToViridianPlaytest.mjs && node .decomp-build/checks/oakLabToViridianPlaytest.mjs",
     "check:imgfx": "esbuild tools/checks/imageProcessingEffects.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/imageProcessingEffects.mjs && node .decomp-build/checks/imageProcessingEffects.mjs",
     "check:learnmove": "esbuild tools/checks/learnMove.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/learnMove.mjs && node .decomp-build/checks/learnMove.mjs",
-    "check:storage": "esbuild tools/checks/storageMenu.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/storageMenu.mjs && node .decomp-build/checks/storageMenu.mjs"
+    "check:storage": "esbuild tools/checks/storageMenu.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/storageMenu.mjs && node .decomp-build/checks/storageMenu.mjs",
+    "check:weather": "esbuild tools/checks/weather.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/weather.mjs && node .decomp-build/checks/weather.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",
