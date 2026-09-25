@@ -21,6 +21,7 @@ import { Cos, Sin } from "../hw/trig";
 import { G, gBattleSpritesDataPtr, gBattlerPartyIndexes, gBattlerSpriteIds } from "./globals";
 import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "./util";
 import { GetMonData, gEnemyParty, playerMon } from "../pokemon/mon";
+import { ANIM_TASK_FUNCS } from "./animRegistry";
 
 type TaskFn = (taskId: number) => void;
 
@@ -943,15 +944,16 @@ function fallbackStep(taskId: number): void {
 const silent = new Set<string>();
 
 export function runAnimTask(name: string, priority: number, soundTask = false): void {
-  const fn = TASKS[name];
-  const id = tasks.create(fn ?? fallbackTask, priority);
+  const fn = ANIM_TASK_FUNCS[name] ?? TASKS[name];
   if (!fn && !silent.has(name)) {
     silent.add(name);
     console.warn(`battle anim task not implemented: ${name}`);
   }
+  const taskFunc = fn ?? fallbackTask;
+  const id = tasks.create(taskFunc, priority);
+  taskFunc(id);
   if (soundTask) animState.gAnimSoundTaskCount++;
   else animState.gAnimVisualTaskCount++;
-  tasks.tasks[id]!.func(id);
 }
 
 const TASKS: Record<string, TaskFn> = {
@@ -1012,6 +1014,6 @@ const TASKS: Record<string, TaskFn> = {
 export function animTaskCoverage(names: string[]): { known: string[]; missing: string[] } {
   const known: string[] = [];
   const missing: string[] = [];
-  for (const name of names) (TASKS[name] ? known : missing).push(name);
+  for (const name of names) (TASKS[name] || ANIM_TASK_FUNCS[name] ? known : missing).push(name);
   return { known: [...new Set(known)], missing: [...new Set(missing)] };
 }

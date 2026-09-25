@@ -109,7 +109,19 @@ export function DoMoveAnim(move: number): void {
   LaunchBattleAnimation("moves", move, true);
 }
 
-export function LaunchBattleAnimation(_table: AnimTable, tableId: number, isMoveAnim: boolean): void {
+const ANIM_TABLE_LABELS: Record<AnimTable, string> = {
+  moves: "gBattleAnims_Moves",
+  general: "gBattleAnims_General",
+  special: "gBattleAnims_Special",
+  status: "gBattleAnims_StatusConditions",
+};
+
+/** animsTable[tableId]: the script pointer stored in the assembled table. */
+function animTableEntry(table: AnimTable, tableId: number): number {
+  return bs.animsView.getUint32(ANIMS(ANIM_TABLE_LABELS[table]) + tableId * 4 - ROM_BASE, true);
+}
+
+export function LaunchBattleAnimation(table: AnimTable, tableId: number, isMoveAnim: boolean): void {
   const a = animState;
   InitPrioritiesForVisibleBattlers();
   UpdateOamPriorityInAllHealthboxes(0);
@@ -119,6 +131,7 @@ export function LaunchBattleAnimation(_table: AnimTable, tableId: number, isMove
   a.sAnimMoveIndex = isMoveAnim ? tableId : 0;
   a.gBattleAnimArgs.fill(0);
   a.sMonAnimTaskIdArray = [TASK_NONE, TASK_NONE];
+  a.sBattleAnimScriptPtr = animTableEntry(table, tableId);
   a.gAnimScriptActive = true;
   a.sAnimFramesToWait = 0;
   a.gAnimScriptCallback = RunAnimScriptCommand;
