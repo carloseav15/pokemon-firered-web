@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 23 modules as documented ported, 51 as partial or
+The current review labels 24 modules as documented ported, 52 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-159 as unreviewed. Separately, 42 files have a
+157 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -157,7 +157,7 @@ whiteout respawn now uses the original heal-location data in
 `src/fr/game.ts`. These changes still need execution verification. The other
 `save_location.c` has no main-story single-player blocker; its missing flags are deferred with reset/link/postgame parity. `save_menu_util.c` now has the stats panel and remains partial until visual execution confirms placement, frame and colors.
 
-### Dos módulos pequeños revisados contra el C (2026-09-25)
+### Módulos pequeños revisados contra el C (2026-09-25)
 
 - `fldeff_berrytree.c` contiene únicamente un `DoWateringBerryTreeAnim`
   vacío (comentario del propio decomp: eliminado de R/S). El special TS también
@@ -166,6 +166,14 @@ whiteout respawn now uses the original heal-location data in
   truncamiento `u16` de `SeedRng` coinciden. Sigue parcial porque el flujo TS
   aún no llama `seedRng` al salir del título con el valor de Timer1 ligado a la
   ID del entrenador, como hace C.
+- `tilesets.c` no contiene funciones: incluye las tablas fuente de tilesets,
+  metatiles y gráficos que `step_tilesets.py` exporta a `public/fr/tilesets`;
+  `rom.loadTileset` consume esos datos. Paridad del rol de datos de este .c;
+  callbacks y validación visual siguen siendo trabajo aparte.
+- `decoration.c` también incluye tablas de datos y se exporta a
+  `public/fr/cdata/decoration.json`, pero TS no las consume y los comandos de
+  añadir/quitar decoración siguen siendo adaptadores que solo avanzan el script.
+  La decoración de la habitación queda pendiente, fuera del camino principal.
 
 ### Helpers de `pokemon_special_anim.c` (2026-09-25)
 
