@@ -7,7 +7,7 @@ import * as MB from "../generated/metatileBehavior";
 import { decode, expandPlaceholders, stringVars } from "../gba/charmap";
 import { rom } from "../rom";
 import { sound } from "../audio/sound";
-import { METATILE_ATTRIBUTE_TERRAIN } from "../field/fieldmap";
+import { MAP_OFFSET, METATILE_ATTRIBUTE_TERRAIN } from "../field/fieldmap";
 import { flagGet, flagSet, save, varSet, SV, type WarpData } from "../save";
 import type { Game } from "../game";
 import { DIRECTION_VECTORS, DIR_NORTH } from "../field/objectEvents";
@@ -71,6 +71,19 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
         });
       } };
     case FIELD_MOVE_CUT: {
+      // CutMoveRuinValleyCheck: standing south of the Dotted Hole door.
+      ow.effects.moves.setScheduleOpenDottedHole(false);
+      if (!flagGet(C.FLAG_USED_CUT_ON_RUIN_VALLEY_BRAILLE)
+        && ow.mapId === "MAP_SIX_ISLAND_RUIN_VALLEY"
+        && p.currentCoords.x - MAP_OFFSET === 24
+        && p.currentCoords.y - MAP_OFFSET === 25
+        && p.facingDirection === DIR_NORTH) {
+        return { kind: "close", post: () => {
+          ow.effects.moves.setScheduleOpenDottedHole(true);
+          args[0] = partyIndex;
+          ow.effects.start(C.FLDEFF_USE_CUT_ON_GRASS);
+        } };
+      }
       const tree = frontObject(C.OBJ_EVENT_GFX_CUT_TREE);
       if (tree) {
         varSet(SV.LAST_TALKED, tree.localId);

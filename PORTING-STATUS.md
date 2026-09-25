@@ -325,10 +325,13 @@ whiteout respawn now uses the original heal-location data in
   usan datos C en `pokemon/pics.ts`/`trainerCard.ts`; falta ciclo completo de
   `CreatePicSprite`. El dex-info de batalla aún usa stub `0xffff`, coherente
   con el Pokédex UI adaptado. Revisión de fuente; presentación no fiel completa.
-- `fldeff_cut.c`: Cut de césped/árbol y tabla de metatiles están en
-  `fieldMoveMenu.ts`/`fieldMoves.ts`; corregí la comprobación de elevación al
-  aplicar el corte. Falta abrir Dotted Hole tras la pista Braille y actualizar
-  efectos de suelo; sprites de césped son adaptación omitida. `check:port` pasó.
+- `fldeff_cut.c` / `field_specials.c`: Cut al pie de la puerta de Dotted Hole
+  ahora comprueba posición, mapa, orientación y flag como
+  `CutMoveRuinValleyCheck`; tras mostrar el Pokémon cambia el metatile abierto,
+  reproduce `SE_BANG` y persiste la flag de la pista Braille. `check:port` pasa;
+  no jugué el recorrido. Cut de césped/árbol conserva su tabla y comprobación
+  de elevación, pero los sprites de césped y el refresco de efectos del suelo
+  siguen adaptados/omitidos.
 - `sloopsvc.c`: servicios `SWI` propios del emulador Sloop (RFU/link, guardado
   sectorial del emulador, controles parentales de comunicación, bad-word,
   telemetría); no implementan reglas de juego single-player ni existen en web.

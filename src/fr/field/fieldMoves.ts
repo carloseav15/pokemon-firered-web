@@ -14,7 +14,7 @@ import { Sprite } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
 import { cdata, incbin } from "../hw/assets";
 import { DATA_ROOT, rom } from "../rom";
-import { incrementGameStat, save } from "../save";
+import { flagSet, incrementGameStat, save } from "../save";
 import { stringVars } from "../gba/charmap";
 import { canvas, rgb555, spriteSheet, tilemapCanvas } from "./gfx4bpp";
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
@@ -31,12 +31,15 @@ export class FieldMoveEffects {
   readonly overlays = new Set<Overlay>();
   /** FLDEFF_SET_FUNC_TO_DATA: the callback run once the show-mon sequence is over. */
   private showMonCallback: (() => void) | null = null;
+  private scheduleOpenDottedHole = false;
 
   constructor(private readonly ow: Overworld) {}
 
   private get args(): number[] { return this.ow.game.fieldEffectArguments; }
   private get active(): Set<number> { return this.ow.effects.active; }
   private remove(id: number): void { this.active.delete(id); }
+
+  setScheduleOpenDottedHole(schedule: boolean): void { this.scheduleOpenDottedHole = schedule; }
 
   /** FieldEffectStart: returns false when the id has no task-style handler here. */
   start(id: number): boolean {
@@ -48,7 +51,13 @@ export class FieldMoveEffects {
         incrementGameStat(C.GAME_STAT_USED_CUT);
         return true;
       case C.FLDEFF_USE_CUT_ON_GRASS:
-        this.createShowMon(() => { this.remove(C.FLDEFF_USE_CUT_ON_GRASS); this.cutGrass(); });
+        this.createShowMon(() => {
+          this.remove(C.FLDEFF_USE_CUT_ON_GRASS);
+          if (this.scheduleOpenDottedHole) {
+            this.scheduleOpenDottedHole = false;
+            this.openDottedHoleDoor();
+          } else this.cutGrass();
+        });
         incrementGameStat(C.GAME_STAT_USED_CUT);
         return true;
       case C.FLDEFF_USE_ROCK_SMASH:
@@ -427,6 +436,17 @@ export class FieldMoveEffects {
     }
     ow.renderer?.invalidate();
     this.remove(C.FLDEFF_CUT_GRASS);
+    ow.controlsLocked = false;
+    ow.objects.unfreezeAll();
+  }
+
+  /** CutMoveOpenDottedHoleDoor in field_specials.c. */
+  private openDottedHoleDoor(): void {
+    const ow = this.ow;
+    ow.map.setMetatileIdAt(31, 31, rom.c("METATILE_SeviiIslands67_DottedHoleDoor_Open"));
+    ow.renderer?.invalidate();
+    sound.playSE(C.SE_BANG);
+    flagSet(C.FLAG_USED_CUT_ON_RUIN_VALLEY_BRAILLE);
     ow.controlsLocked = false;
     ow.objects.unfreezeAll();
   }
