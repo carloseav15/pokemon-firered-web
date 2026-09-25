@@ -79,6 +79,8 @@ export class Game {
   readonly wild: WildEncounter;
   fieldEffectArguments = new Array<number>(8).fill(0);
   battleRunner?: (request: BattleRequest) => Scene;
+  /** new_game.c gDifferentSaveFile: preserve a prior save until the new file is confirmed. */
+  private differentSaveFile = false;
   readonly weather = new FieldWeather();
   readonly trades = {
     getSpeciesInfo: () => getInGameTradeSpeciesInfo(),
@@ -161,6 +163,7 @@ export class Game {
 
   newGame(playerName: string, gender: number, rivalName: string): void {
     const data = newSaveData();
+    this.differentSaveFile = true;
     data.trainerId = generatePlayerTrainerId();
     setSave(data);
     PlayTimeCounter_Reset();
@@ -187,6 +190,7 @@ export class Game {
 
   continueGame(data: SaveData): void {
     setSave(data);
+    this.differentSaveFile = false;
     this.wild.seed(takeWildEncounterSeed());
     // Overworld_ResetStateOnContinue runs before the continue warp is applied.
     onWarpForRoamer();
@@ -325,6 +329,14 @@ export class Game {
     ow.control.msgIsSignpost = false;
     ow.messageBox.show(rom.text("gText_WouldYouLikeToSaveTheGame"));
     let state = 0;
+    const saveAndShowResult = (): void => {
+      const ok = this.writeSave();
+      this.differentSaveFile = false;
+      stringVars.var1 = Uint8Array.from(save.playerName);
+      ow.messageBox.show(expandPlaceholders(rom.text(ok ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory")));
+      if (ok) sound.playSE(sound.c("SE_SAVE"));
+      state = 4;
+    };
     const id = tasks.create(() => {
       switch (state) {
         case 0:
@@ -339,14 +351,27 @@ export class Game {
             const yes = varGet(0x800d) === 1;
             ow.messageBox.hide();
             if (!yes) { tasks.destroy(id); this.closeStartMenu(); return; }
-            const ok = this.writeSave();
-            stringVars.var1 = Uint8Array.from(save.playerName);
-            ow.messageBox.show(expandPlaceholders(rom.text(ok ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory")));
-            if (ok) sound.playSE(sound.c("SE_SAVE"));
-            state = 2;
+            if (this.differentSaveFile && saveStore.load()) {
+              ow.messageBox.show(rom.text("gText_DifferentGameFile"));
+              state = 2;
+            } else saveAndShowResult();
           }
           break;
         case 2:
+          if (ow.messageBox.isHidden()) {
+            this.scriptMenu.yesNo(0, 0, 1); // C selects No for a different save file.
+            state = 3;
+          }
+          break;
+        case 3:
+          if (varGet(0x800d) !== 0xff) {
+            const replace = varGet(0x800d) === 1;
+            ow.messageBox.hide();
+            if (!replace) { tasks.destroy(id); this.closeStartMenu(); return; }
+            saveAndShowResult();
+          }
+          break;
+        case 4:
           if (ow.messageBox.isHidden() && (JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON) || ++this.saveWait > 60)) {
             this.saveWait = 0;
             ow.messageBox.hide();

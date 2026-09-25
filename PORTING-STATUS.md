@@ -884,3 +884,11 @@ Pending / placeholders:
   whitespace check pass. The storage multi-move caller in
   `pokemon_storage_system_misc.c` is still absent because storage UI remains
   an adapter; no pixel/runtime comparison was run.
+- `new_game.c` / save path in `start_menu.c`: core initialization, options,
+  player trainer ID, title-seeded RNG order, Pallet room warp and reset-map-flags
+  script already map to `newSaveData`, `Game.newGame` and `random.ts`. Added
+  `gDifferentSaveFile` behavior: if a valid previous browser save exists, the
+  first save of the new game asks before replacement and selects No by default;
+  declining leaves the old local save intact. `npm run check:port` passes.
+  Browser overwrite/reload behavior was not exercised. Link/minigame/mystery-gift
+  reset blocks remain outside the ordinary single-player path.

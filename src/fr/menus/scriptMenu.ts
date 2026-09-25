@@ -55,7 +55,7 @@ export class ScriptMenu {
     this.ow.windows.remove(window);
   }
 
-  yesNo(_left: number, _top: number): boolean {
+  yesNo(_left: number, _top: number, defaultChoice = 0): boolean {
     if (tasks.isActive(this.yesNoTask)) return false;
     varSet(SV.RESULT, SCR_MENU_UNSET);
     const window = new Window(21, 9, 6, 4);
@@ -64,7 +64,7 @@ export class ScriptMenu {
     window.fill(1);
     printText(window, FONT_NORMAL, rom.text("gText_YesNo"), 10, 2);
     this.ow.windows.add(window);
-    const menu = new Menu(window, FONT_NORMAL, 0, 2, 14, 2, 0);
+    const menu = new Menu(window, FONT_NORMAL, 0, 2, 14, 2, defaultChoice);
     const id = tasks.create(this.yesNoTask, 80);
     this.yesNoState.set(id, { window, menu, timer: 0 });
     return true;
