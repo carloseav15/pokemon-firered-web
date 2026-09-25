@@ -120,8 +120,8 @@ and records whether each exact function name appears anywhere in `src/fr`.
 
 The current review labels 39 modules as documented ported, 69 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
-ten as explicitly out of scope, 36 as probable out-of-scope candidates, and
-119 as unreviewed. Separately, 42 files have a
+eleven as explicitly out of scope, 36 as probable out-of-scope candidates, and
+118 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -232,6 +232,9 @@ whiteout respawn now uses the original heal-location data in
 - `agb_flash_1m.c` identifica el chip Flash de 1 Mbit, cambia registros y
   asigna drivers específicos de hardware. Web guarda en localStorage; esto
   excluye solo el controlador físico, no la paridad del sistema de guardado.
+- `rom_header_gf.c` define una tabla Game Freak de metadatos/offsets SaveBlock
+  consumida por integraciones externas; no hay caller de runtime FireRed. Se
+  excluye esta interfaz de herramientas, no datos o lógica del juego.
 - `wonder_news.c` reparte berries por noticias enviadas/recibidas con
   partners link y limita recompensas por pasos. Requiere datos Mystery Gift
   transferidos; single-player web no tiene ese canal, así que se excluye solo
