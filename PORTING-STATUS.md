@@ -120,8 +120,8 @@ and records whether each exact function name appears anywhere in `src/fr`.
 
 The current review labels 39 modules as documented ported, 73 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
-twelve as explicitly out of scope, 36 as probable out-of-scope candidates, and
-113 as unreviewed. Separately, 42 files have a
+thirteen as explicitly out of scope, 36 as probable out-of-scope candidates, and
+112 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -242,6 +242,9 @@ whiteout respawn now uses the original heal-location data in
   tilemaps con wrap; no tienen call sites en el repositorio. Los specials de
   Cable Car se registran como `NullFieldSpecial`; se excluye solo este módulo
   inactivo, sin inferir paridad general de tilemaps.
+- `berry_fix_program.c` envía el programa multiboot Berry Fix a otro GBA por
+  cable, para reparar berries incompatibles entre cartuchos. Requiere hardware
+  link y queda fuera del recorrido single-player web.
 - `agb_flash_mx.c` contiene comandos físicos de erase/program para MX29L010,
   switching de bancos y polling de timer. No aplican a localStorage; se excluye
   el driver del chip, no la semántica de guardado.
