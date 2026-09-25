@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 38 modules as documented ported, 63 as partial or
+The current review labels 38 modules as documented ported, 64 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 nine as explicitly out of scope, 36 as probable out-of-scope candidates, and
-127 as unreviewed. Separately, 42 files have a
+126 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,9 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `berry_powder.c`: la resta/comprobación de polvo y el vendor tienen handlers
+  TS. Faltan el tope 99.999 de GiveBerryPowder, el rewrap por encryption key
+  y la ventana exacta; la adquisición depende de Berry Crush (link).
 - `window_8bpp.c`: falta portar AddWindow8Bit, su fill/blit 4→8 bpp y
   CopyWindowToVram8Bit. El caller es la ventana de multi-move de las cajas;
   PPU sí interpreta tiles BG 8bpp, pero la pantalla de cajas sigue adaptada.
