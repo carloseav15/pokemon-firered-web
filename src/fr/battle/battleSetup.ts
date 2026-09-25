@@ -49,6 +49,9 @@ export type BattleRequest = {
   isFirstBattle?: boolean;
   isOldMan?: boolean;
   isLegendary?: boolean;
+  isLegendaryFrlg?: boolean;
+  isRegi?: boolean;
+  isKyogreGroudon?: boolean;
   isGhost?: boolean;
   isGhostUnveiled?: boolean;
   isSafari?: boolean;
@@ -349,12 +352,29 @@ export class BattleSetup {
   }
 
   startLegendaryBattle(): void {
+    this.startLegendaryWild({ isLegendaryFrlg: true });
+  }
+
+  startSouthernIslandBattle(): void {
+    this.startLegendaryWild({});
+  }
+
+  startRegiBattle(): void {
+    this.startLegendaryWild({ isRegi: true });
+  }
+
+  startGroudonKyogreBattle(): void {
+    this.startLegendaryWild({ isKyogreGroudon: true });
+  }
+
+  private startLegendaryWild(flags: Pick<BattleRequest, "isRegi" | "isKyogreGroudon" | "isLegendaryFrlg">): void {
     const ow = this.game.overworld;
     ow.script.stop();
     const enemy = this.scriptedWild ?? createMon(1, 5);
     this.game.startBattle({
       kind: "wild",
       isLegendary: true,
+      ...flags,
       enemyParty: [enemy],
       onEnd: (outcome) => {
         this.game.battleOutcome = outcome;

@@ -129,6 +129,9 @@ function battleTypeFlags(request: BattleRequest): number {
   if (request.isFirstBattle) flags |= C.BATTLE_TYPE_FIRST_BATTLE;
   if (request.isOldMan) flags |= C.BATTLE_TYPE_OLD_MAN_TUTORIAL;
   if (request.isLegendary) flags |= C.BATTLE_TYPE_LEGENDARY;
+  if (request.isLegendaryFrlg) flags |= C.BATTLE_TYPE_LEGENDARY_FRLG;
+  if (request.isRegi) flags |= C.BATTLE_TYPE_REGI;
+  if (request.isKyogreGroudon) flags |= C.BATTLE_TYPE_KYOGRE_GROUDON;
   if (request.isGhost) flags |= C.BATTLE_TYPE_GHOST;
   if (request.isGhostUnveiled) flags |= C.BATTLE_TYPE_GHOST_UNVEILED;
   if (request.isSafari) flags |= C.BATTLE_TYPE_SAFARI;

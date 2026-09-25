@@ -211,8 +211,10 @@ whiteout respawn now uses the original heal-location data in
   de fantasma oculto. `npm run check:port` pasa; no ejecuté un encuentro en
   runtime. `StartOldManTutorialBattle` ahora usa `createMaleMon`, port de
   `CreateMaleMon` con orden de RNG, ID de entrenador aleatorio y reroll hasta
-  género macho. La preparación general de entrenadores y transiciones sigue
-  adaptada.
+  género macho. Los specials de legendarios ya conservan `LEGENDARY_FRLG`,
+  `REGI` y `KYOGRE_GROUDON` por separado; la IA FRLG depende de la primera
+  bandera. La preparación general de entrenadores y las transiciones siguen
+  adaptadas. `npm run check:port` pasa; no ejecuté estos combates.
 - `fldeff_berrytree.c` contiene únicamente un `DoWateringBerryTreeAnim`
   vacío (comentario del propio decomp: eliminado de R/S). El special TS también
   es vacío. Paridad exacta de este archivo; el juego no tiene esa animación.
