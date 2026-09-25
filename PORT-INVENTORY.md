@@ -8,22 +8,21 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 2 | 4910 | 0/55 |
+| Falta (sin funciones portadas) | 1 | 4436 | 0/38 |
 | Parcial (menos del 80 % de funciones) | 115 | 128819 | 1818/6064 |
 | Adaptador (UI simplificada) | 6 | 10024 | 54/341 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 86 | 105190 | 3193/3365 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 87 | 105664 | 3210/3382 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **123** | **143753** | |
-| **Total en alcance** | **210** | **248996** | **5065/9825** |
+| **Pendiente de portar** | **122** | **143279** | |
+| **Total en alcance** | **210** | **248996** | **5082/9825** |
 
 ## Falta (sin funciones portadas)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota |
 |---|---:|---:|---|---|
 | `image_processing_effects.c` | 4436 | 0/38 |  |  |
-| `palette_util.c` | 474 | 0/17 |  |  |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -212,6 +211,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_status_effects.c` | 535 | 12/12 | `battle/anim.ts`, `battle/anims/statusEffects.ts` |  |
 | `window.c` | 513 | 19/21 | `gba/window.ts`, `hw/window.ts` |  |
 | `battle_intro.c` | 492 | 9/10 | `battle/intro.ts` |  |
+| `palette_util.c` | 474 | 17/17 | `paletteUtil.ts` |  |
 | `battle_anim_bug.c` | 462 | 13/13 | `battle/anims/bug.ts` |  |
 | `item_menu_icons.c` | 439 | 13/16 | `bagMenu.ts` |  |
 | `battle_anim_dragon.c` | 434 | 11/11 | `battle/anims/dragon.ts` |  |

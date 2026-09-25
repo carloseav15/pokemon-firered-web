@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5065/9825 (51 %)**.
-- Archivos C pendientes: **123** (143753 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5082/9825 (51 %)**.
+- Archivos C pendientes: **122** (143279 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -14,7 +14,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
 | `image_processing_effects.c` | 4436 | 0/38 | ~4436 |  |
-| `palette_util.c` | 474 | 0/17 | ~474 |  |
 
 ## 2. Adaptadores (UI simplificada; hay que portar la pantalla real)
 
