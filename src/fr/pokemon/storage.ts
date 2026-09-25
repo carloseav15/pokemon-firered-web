@@ -1,13 +1,24 @@
 // pokemon.c SendMonToPC and field_specials.c destination-box bookkeeping.
-import { encode } from "../gba/charmap";
+import { concat, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagGet, flagSet, save, SV, varGet, varSet } from "../save";
 import { calculatePPWithBonus, type Pokemon } from "./pokemon";
+import * as C from "../generated/constants";
 let previousDestinationBox = 0;
 export function getPCBoxToSendMon(): number { return previousDestinationBox; }
 export function getBoxName(box: number): Uint8Array {
-  const name = save.boxNames?.[box];
-  return name ? Uint8Array.from(name) : encode(`BOX${box + 1}`);
+  const boxId = box & 0xff;
+  if (boxId >= save.boxes.length) return Uint8Array.of(0xff);
+  const name = save.boxNames?.[boxId];
+  return name ? Uint8Array.from(name) : concat(rom.text("gText_Box"), intToDecimal(boxId + 1, STR_CONV_MODE_LEFT_ALIGN, 2));
+}
+
+/** ResetPokemonStorageSystem (pokemon_storage_system_menu.c). */
+export function resetPokemonStorageSystem(): void {
+  save.currentBox = 0;
+  save.boxes = Array.from({ length: C.TOTAL_BOXES_COUNT }, () => new Array(C.IN_BOX_COUNT).fill(null));
+  save.boxNames = Array.from({ length: C.TOTAL_BOXES_COUNT }, (_, box) => Array.from(concat(rom.text("gText_Box"), intToDecimal(box + 1, STR_CONV_MODE_LEFT_ALIGN, 2))));
+  save.boxWallpapers = Array.from({ length: C.TOTAL_BOXES_COUNT }, (_, box) => box % (C.MAX_DEFAULT_WALLPAPER + 1));
 }
 export function shouldShowBoxWasFullMessage(): boolean {
   if (flagGet(rom.c("FLAG_SHOWN_BOX_WAS_FULL_MESSAGE")) || save.currentBox === varGet(rom.c("VAR_PC_BOX_TO_SEND_MON"))) return false;

@@ -42,6 +42,7 @@ import { openHardwareMessage } from "./menus/hardwareChoice";
 import { askMoveRelearnerQuestion, openMoveRelearnerList } from "./menus/moveRelearner";
 import { learnMoveWithPrompt } from "./menus/monProgress";
 import { checkBagHasItem } from "./pokemon/items";
+import { resetPokemonStorageSystem } from "./pokemon/storage";
 import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./menus/pokedex";
 import { openTrainerCardScreen } from "./menus/trainerCard";
@@ -166,6 +167,7 @@ export class Game {
     this.differentSaveFile = true;
     data.trainerId = generatePlayerTrainerId();
     setSave(data);
+    resetPokemonStorageSystem();
     PlayTimeCounter_Reset();
     this.wild.seed(takeWildEncounterSeed());
     setName("player", encode(playerName.slice(0, 7)));

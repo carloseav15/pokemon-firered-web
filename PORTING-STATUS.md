@@ -906,3 +906,10 @@ Pending / placeholders:
   `GetOverworldTextboxPalettePtr` is declared but has no definition or caller
   in this decomp. `npm run check:port` passes; field Canvas presentation remains
   adapted and no visual comparison was run.
+- `pokemon_storage_system_menu.c` / `pokemon_storage_system.c`: added
+  `resetPokemonStorageSystem` and call it during new-game initialization. It
+  resets current box, all 14×30 slots, localized `gText_Box` names with C's
+  two-digit conversion and wallpaper `boxId % (MAX_DEFAULT_WALLPAPER + 1)`.
+  `getBoxName` now uses the same generated text/format and handles invalid u8
+  box IDs as EOS. `npm run check:port` passes; storage screens remain adapted
+  and no UI/runtime flow was exercised.
