@@ -166,6 +166,14 @@ romper sus consumidores. `npm run check:port` valida tipos e imports, pero no
 valida animación en navegador. Los cuatro task flows, la escena y el estado de
 cancelación permanecen adaptados.
 
+### Lista de movimientos del Recordador (2026-09-25)
+
+`game.ts` ahora imprime solo el nombre de cada movimiento, como
+`MoveRelearnerInitListMenuBuffersEtc` del C; quitó los PP que no aparecen en la
+lista original. `npm run check:port` pasó. La lista sigue usando el menú de
+hardware genérico: faltan el panel de tipo/poder/precisión/PP/efecto, los estados
+de confirmación y salida del C, el fade y la pantalla real de resumen.
+
 ### Pokédex area marker logic (2026-09-25)
 
 `src/fr/pokedexArea.ts` now ports the source data resolution shared by
@@ -298,8 +306,9 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 11. **Recordador de movimientos** (`learn_move.c`, 932 líneas; reglas en
     `pokemon.c`) **[visual]**: la búsqueda de movimientos ya está en
     `pokemon/partyRules.ts` y el flujo de enseñar/olvidar usa las reglas actuales
-    de aprendizaje. `game.ts` sigue mostrando listas simplificadas; falta portar
-    la pantalla GBA de estados, ventanas, sprites, sonidos y selección/cancelación.
+    de aprendizaje. `game.ts` muestra solo los nombres de movimientos en una lista
+    de hardware genérica; falta portar el panel de datos, estados, ventanas, sprites,
+    sonidos, fades y el retorno a la pantalla real de resumen.
 12. **Tarjeta de entrenador** (`trainer_card.c`, 1959 líneas) **[PORTADO]**:
     portada fielmente en `src/fr/menus/trainerCard.ts` sobre la capa de hardware GBA (`hw/`).
     Implementa:

@@ -582,7 +582,9 @@ export class Game {
       if (!mon) { finish(false); return; }
       const moves = relearnableMoves(mon);
       const list = (): void => openHardwareChoice(rom.text("gText_TeachWhichMoveToMon"), moves.map((m, value) => ({
-        label: `${decode(rom.moveName(m))}  PP ${rom.moves[m].pp}`, value,
+        // MoveRelearnerInitListMenuBuffersEtc prints only gMoveNames; PP and
+        // move details are shown in the original info windows, not the list.
+        label: rom.moveName(m), value,
       })), true, (i) => {
         if (i === null) { finish(false); return; }
         learnMoveWithPrompt(mon, moves[i], (learned) => { if (learned) finish(true); else list(); });
