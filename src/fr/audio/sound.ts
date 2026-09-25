@@ -103,6 +103,15 @@ class Sound {
     this.backend?.playSong("bgm", song);
   }
 
+  /** PlayMapChosenOrBattleBGM resets map-music state and stops the previous BGM first. */
+  playBattleBGM(song: number): void {
+    for (const player of ["bgm", "se1", "se2", "fanfare"] as const) this.backend?.stop(player);
+    this.currentBGM = 0;
+    this.fanfareTimer = 0;
+    this.seTimer = 0;
+    this.playBGM(song);
+  }
+
   /** PlayNewMapMusic */
   playNewMapMusic(song: number): void {
     if (song === this.currentBGM && this.backend?.isPlaying("bgm")) return;

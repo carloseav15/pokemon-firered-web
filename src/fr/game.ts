@@ -766,6 +766,7 @@ export class Game {
     ow.controlsLocked = true;
     ow.objects.freezeAll();
     this.battleOutcome = 0;
+    sound.playBattleBGM(this.battleSetup.battleBgm(request));
     let startedFade = false;
     const id = tasks.create(() => {
       // battle_setup.c Task_BattleStart waits for FldEffPoison_IsActive to clear.

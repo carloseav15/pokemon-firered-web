@@ -169,6 +169,20 @@ export class BattleSetup {
   clearTrainerFlag(trainerId: number): void { flagClear(this.trainerFlag(trainerId)); }
   setBattledTrainerFlag(): void { flagSet(this.trainerFlag()); }
 
+  /** pokemon.c GetBattleBGM, with explicit CreateBattleStartTask song overrides. */
+  battleBgm(request: BattleRequest): number {
+    if (request.music) return request.music;
+    const c = rom.constants;
+    if (request.isKyogreGroudon) return c.MUS_VS_WILD;
+    if (request.isRegi) return c.MUS_RS_VS_TRAINER;
+    if (request.kind !== "trainer") return c.MUS_VS_WILD;
+    const trainerClass = rom.trainers[request.trainerId ?? 0]?.class;
+    if (trainerClass === c.TRAINER_CLASS_CHAMPION) return c.MUS_VS_CHAMPION;
+    if (trainerClass === c.TRAINER_CLASS_LEADER || trainerClass === c.TRAINER_CLASS_ELITE_FOUR)
+      return c.MUS_VS_GYM_LEADER;
+    return c.MUS_VS_TRAINER;
+  }
+
   scriptAddrAfterBattle(): number {
     return this.endScript || rom.label("EventScript_TestSignpostMsg");
   }
@@ -329,6 +343,7 @@ export class BattleSetup {
     incrementGameStat(rom.c("GAME_STAT_WILD_BATTLES"));
     this.game.startBattle({
       kind: "wild", enemyParty: [enemy], isRoamer: true,
+      music: rom.c("MUS_VS_LEGEND"),
       onEnd: (outcome) => {
         afterRoamerBattle(gEnemyParty[0] as unknown as Pokemon, outcome);
         this.game.battleOutcome = outcome;
@@ -356,25 +371,35 @@ export class BattleSetup {
   }
 
   startSouthernIslandBattle(): void {
-    this.startLegendaryWild({});
+    this.startLegendaryWild({}, 0);
   }
 
   startRegiBattle(): void {
-    this.startLegendaryWild({ isRegi: true });
+    this.startLegendaryWild({ isRegi: true }, rom.c("MUS_RS_VS_TRAINER"));
   }
 
   startGroudonKyogreBattle(): void {
-    this.startLegendaryWild({ isKyogreGroudon: true });
+    this.startLegendaryWild({ isKyogreGroudon: true }, rom.c("MUS_RS_VS_TRAINER"));
   }
 
-  private startLegendaryWild(flags: Pick<BattleRequest, "isRegi" | "isKyogreGroudon" | "isLegendaryFrlg">): void {
+  private startLegendaryWild(
+    flags: Pick<BattleRequest, "isRegi" | "isKyogreGroudon" | "isLegendaryFrlg">,
+    musicOverride?: number,
+  ): void {
     const ow = this.game.overworld;
     ow.script.stop();
     const enemy = this.scriptedWild ?? createMon(1, 5);
+    const species = enemy.species;
+    const music = species === rom.c("SPECIES_MEWTWO") ? rom.c("MUS_VS_MEWTWO")
+      : species === rom.c("SPECIES_DEOXYS") ? rom.c("MUS_VS_DEOXYS")
+        : ["SPECIES_MOLTRES", "SPECIES_ARTICUNO", "SPECIES_ZAPDOS", "SPECIES_HO_OH", "SPECIES_LUGIA"].some(name => species === rom.c(name))
+          ? rom.c("MUS_VS_LEGEND") : rom.c("MUS_RS_VS_TRAINER");
+    const battleMusic = musicOverride ?? music;
     this.game.startBattle({
       kind: "wild",
       isLegendary: true,
       ...flags,
+      ...(battleMusic ? { music: battleMusic } : {}),
       enemyParty: [enemy],
       onEnd: (outcome) => {
         this.game.battleOutcome = outcome;
