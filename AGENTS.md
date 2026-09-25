@@ -5,6 +5,7 @@ dónde está cada cosa, cómo se sacan los datos del decomp y cómo se porta y s
 verifica un archivo C sin inventar nada.
 
 - Estado y lista de pendientes (de fácil a difícil): [PORTING-STATUS.md](PORTING-STATUS.md)
+- Inventario por archivo `.c` (generado con `npm run inventory`): [PORT-INVENTORY.md](PORT-INVENTORY.md)
 - Flujo de arranque (intro → título → partida): [START-FLOW.md](START-FLOW.md)
 - Inventario de contenido opcional del juego: [SECONDARY-MISSIONS-AUDIT.md](SECONDARY-MISSIONS-AUDIT.md)
 

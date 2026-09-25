@@ -610,6 +610,16 @@ visual/audio parity after the main-story list is closed.
   party/bag contents, map transitions and save/continue state. Static checks
   locate these paths but cannot establish the results.
 
+## Inventario por archivo C (2026-09-25)
+
+`npm run inventory` regenera [PORT-INVENTORY.md](PORT-INVENTORY.md): una fila por
+`pokefirered/src/*.c` con las funciones que existen con el mismo nombre en
+`src/fr`, los TS que citan el archivo y su categoría (fuera de alcance, cubierto
+por hw/exportador, adaptador). Primera medición: 3531 de 9825 funciones en
+alcance (36 %). La capa de campo antigua (`field/`, `gba/`) usa nombres propios,
+así que su porcentaje bajo indica que no es una traducción 1:1, no que falte
+la funcionalidad. Actualiza las tablas del script cuando cambie un archivo.
+
 ## Pendiente, de más sencillo a más difícil (2026-09-24)
 
 Orden aproximado por esfuerzo. Cada punto dice qué `.c` portar, qué archivo
