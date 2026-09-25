@@ -209,7 +209,10 @@ whiteout respawn now uses the original heal-location data in
   al Marowak hembra, Serious y con IV 31 cuando hay Silph Scope, conserva las
   banderas Ghost + Ghost Unveiled y el apodo `Ghost`; antes siempre era el caso
   de fantasma oculto. `npm run check:port` pasa; no ejecuté un encuentro en
-  runtime. La preparación de entrenadores y las transiciones siguen adaptadas.
+  runtime. `StartOldManTutorialBattle` ahora usa `createMaleMon`, port de
+  `CreateMaleMon` con orden de RNG, ID de entrenador aleatorio y reroll hasta
+  género macho. La preparación general de entrenadores y transiciones sigue
+  adaptada.
 - `fldeff_berrytree.c` contiene únicamente un `DoWateringBerryTreeAnim`
   vacío (comentario del propio decomp: eliminado de R/S). El special TS también
   es vacío. Paridad exacta de este archivo; el juego no tiene esa animación.

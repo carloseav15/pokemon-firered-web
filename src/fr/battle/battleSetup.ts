@@ -12,7 +12,7 @@ import { gEnemyParty } from "../pokemon/mon";
 import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "../save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
-import { createMon, genderFromPersonality, healMon, MON_FEMALE, type Pokemon } from "../pokemon/pokemon";
+import { createMaleMon, createMon, genderFromPersonality, healMon, MON_FEMALE, type Pokemon } from "../pokemon/pokemon";
 import { random32 } from "../random";
 import type { Game } from "../game";
 
@@ -399,7 +399,7 @@ export class BattleSetup {
     this.game.startBattle({
       kind: "wild",
       isOldMan: true,
-      enemyParty: [createMon(rom.c("SPECIES_WEEDLE"), 5)],
+      enemyParty: [createMaleMon(rom.c("SPECIES_WEEDLE"), 5)],
       onEnd: () => this.game.returnToFieldContinueScript(true),
     });
   }

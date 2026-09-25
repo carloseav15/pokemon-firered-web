@@ -217,6 +217,17 @@ export function createMon(species: number, level: number, options: CreateOptions
   return mon;
 }
 
+/** CreateMaleMon: preset random OT ID and reroll personality until male. */
+export function createMaleMon(species: number, level: number): Pokemon {
+  let otId: number;
+  let personality: number;
+  do {
+    otId = random32();
+    personality = random32();
+  } while (genderFromPersonality(species, personality) !== MON_MALE);
+  return createMon(species, level, { otId, personality });
+}
+
 export function nickname(mon: Pokemon): Uint8Array {
   return Uint8Array.from(mon.nickname.slice(0, length(mon.nickname)).concat([EOS]));
 }
