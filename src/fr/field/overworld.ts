@@ -19,6 +19,7 @@ import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
 import { FieldEffects, MAX_FLASH_LEVEL } from "./fieldEffects";
 import { MapNamePopup } from "./mapNamePopup";
+import { MapPreviewManager, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST } from "../mapPreviewScreen";
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
@@ -73,6 +74,7 @@ export class Overworld {
   readonly doors: DoorAnimator;
   readonly effects: FieldEffects;
   readonly mapName: MapNamePopup;
+  readonly mapPreview: MapPreviewManager;
   readonly stepCallback: PerStepCallback;
   private mapCache = new Map<string, Promise<LoadedMap>>();
   warpDestination: WarpData = dummyWarp();
@@ -130,6 +132,7 @@ export class Overworld {
     this.doors = new DoorAnimator(this);
     this.effects = new FieldEffects(this);
     this.mapName = new MapNamePopup(this);
+    this.mapPreview = new MapPreviewManager(this);
     this.stepCallback = new PerStepCallback(this);
   }
 
@@ -302,7 +305,15 @@ export class Overworld {
     this.resumeMap();
     this.initObjectEventsLocal();
     this.initView();
-    if (this.header.showMapName && this.lastUsedWarpSection() !== this.header.regionMapSection) this.mapName.show(false);
+    const prevSection = this.lastUsedWarpSection();
+    const currSection = this.header.regionMapSection;
+    if (prevSection !== currSection && MapHasPreviewScreen_HandleQLState2(currSection, MPS_TYPE_FOREST)) {
+      this.mapPreview.startForest(currSection);
+    } else if (prevSection !== currSection && MapHasPreviewScreen_HandleQLState2(currSection, MPS_TYPE_CAVE)) {
+      this.mapPreview.startCave(currSection);
+    } else if (this.header.showMapName && prevSection !== currSection) {
+      this.mapName.show(false);
+    }
     this.runFieldCallback();
     this.game.setCallbacks(() => this.cb1(), () => this.cb2());
   }
@@ -557,6 +568,7 @@ export class Overworld {
 
   /** SetUpWarpExitTask */
   private setUpWarpExitTask(playerNotMoving: boolean): void {
+    if (this.mapPreview.isActive()) return;
     const p = this.player.object;
     const behavior = this.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
     if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
@@ -1046,6 +1058,7 @@ export class Overworld {
     this.cameraUpdate();
     this.messageBox.update();
     this.mapName.update();
+    this.mapPreview.update();
     paletteFade.update();
     this.animator?.update();
     this.doors.update();
@@ -1097,6 +1110,7 @@ export class Overworld {
     this.mapName.render(ctx);
     this.sprites.render(ctx, 0);
     this.sprites.render(ctx, 0, true);
+    this.mapPreview.render(ctx);
     paletteFade.render(ctx);
   }
 }

@@ -16,6 +16,7 @@ import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "./specials";
+import { MapPreview_SetFlag } from "../mapPreviewScreen";
 import type { ScriptCommand, ScriptRunner } from "./context";
 
 const CONDITION_TABLE = [
@@ -618,7 +619,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   normalmsg: (ctx) => { ctx.ow.control.msgIsSignpost = false; return false; },
   setmonmodernfatefulencounter: (ctx) => { const i = varGet(ctx.readHalfword()); if (save.party[i]) save.party[i].modernFatefulEncounter = true; return false; },
   checkmonmodernfatefulencounter: (ctx) => { const i = varGet(ctx.readHalfword()); varSet(SV.RESULT, save.party[i]?.modernFatefulEncounter ? 1 : 0); return false; },
-  setworldmapflag: (ctx) => { flagSet(ctx.readHalfword()); return false; },
+  setworldmapflag: (ctx) => { MapPreview_SetFlag(ctx.readHalfword()); return false; },
   setmonmetlocation: (ctx) => { const i = varGet(ctx.readHalfword()); const loc = ctx.readByte(); if (save.party[i]) save.party[i].metLocation = loc; return false; },
 };
 

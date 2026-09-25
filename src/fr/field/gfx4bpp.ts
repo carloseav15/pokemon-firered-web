@@ -57,13 +57,13 @@ export function spriteSheet(tiles: Uint8Array, palette: ArrayLike<number>, width
  * format (tile | hflip<<10 | vflip<<11 | palette<<12); `palettes` is the full
  * 16×16 BG palette RAM slice the palette numbers index.
  */
-export function tilemapCanvas(tiles: Uint8Array, tilemap: ArrayLike<number>, palettes: ArrayLike<number>, widthTiles: number, heightTiles: number, opaque = false): HTMLCanvasElement {
+export function tilemapCanvas(tiles: Uint8Array, tilemap: ArrayLike<number>, palettes: ArrayLike<number>, widthTiles: number, heightTiles: number, opaque = false, strideTiles = widthTiles): HTMLCanvasElement {
   const c = canvas(widthTiles * 8, heightTiles * 8);
   const ctx = c.getContext("2d")!;
   const img = ctx.createImageData(widthTiles * 8, heightTiles * 8);
   for (let ty = 0; ty < heightTiles; ty++) {
     for (let tx = 0; tx < widthTiles; tx++) {
-      const e = tilemap[ty * widthTiles + tx] ?? 0;
+      const e = tilemap[ty * strideTiles + tx] ?? 0;
       putTile(img, tiles, e & 0x3ff, palettes, ((e >> 12) & 15) * 16, tx * 8, ty * 8, !!(e & 0x400), !!(e & 0x800), opaque);
     }
   }

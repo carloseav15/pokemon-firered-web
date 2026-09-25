@@ -116,6 +116,14 @@ export function registerCData(file: string, defs: Record<string, { type: string 
   cdataFiles.set(file, defs);
 }
 
+export function registerIncbinIndex(idx: IncbinIndex): void {
+  index = idx;
+}
+
+export function registerPack(name: string, data: Uint8Array): void {
+  packs.set(name, data);
+}
+
 export type SymRef = { $sym: string; index?: number; offset?: number; expr?: string };
 
 export function isSym(v: unknown): v is SymRef {

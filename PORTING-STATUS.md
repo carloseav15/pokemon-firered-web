@@ -120,19 +120,22 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 
 ### Nivel 1 — pequeño (menos de un día cada uno)
 
-1. **Buzón del PC** (`mailbox_pc.c`, parte de `player_pc.c`) **[juego]**:
-   `menus/playerPc.ts` lista las cartas *del equipo*; en el C el buzón guarda
-   hasta 10 cartas en el PC con LEER / A LA MOCHILA / DAR A POKéMON. Unificar
-   con `save.pcMail` (lo crea `TakeMailFromMon2` en `partyMenu.ts`) y
-   completar `TryGiveMailToSelectedMon` (`PARTY_ACTION_GIVE_MAILBOX_MAIL`).
+1. **Buzón del PC** (`mailbox_pc.c`, parte de `player_pc.c`) **[opcional/baja prioridad]**:
+   En FRLG las cartas solo almacenan mensajes creados con Easy Chat; guardar hasta 10 cartas
+   en el PC no bloquea eventos, medallas ni progresión en solitario (single-player).
+   El adaptador actual en `menus/playerPc.ts` gestiona cartas del equipo; unificar con
+   `save.pcMail` y `TryGiveMailToSelectedMon` (`PARTY_ACTION_GIVE_MAILBOX_MAIL`) es de baja prioridad.
 2. **Objetos ocultos renovables** (`renewable_hidden_items.c`, 608 líneas)
    **[juego]**: Portado fiel en `src/fr/renewableHiddenItems.ts`, conectado a
    `fieldControl.ts` (conteo de pasos) y `overworld.ts` (`onMapLoad`), verificado
    headless con `npm run check:renewable` (15 mapas, límite de 1500 pasos,
    regeneración y distribución exacta de rare/uncommon/common).
-3. **Vista previa de mapa al entrar en cuevas/bosques** (`map_preview_screen.c`)
-   **[visual]**: los datos (`map_preview_screen` cdata, pack
-   `graphics_map_preview`) ya se precargan; falta la pantalla y el hook de warp.
+3. **Vista previa de mapa al entrar en cuevas/bosques** (`map_preview_screen.c`,
+   transición en `fldeff_flash.c`) **[visual]**: Portado fiel en `src/fr/mapPreviewScreen.ts`,
+   conectado a `overworld.ts` (`finishMapLoad`, `setUpWarpExitTask`, `cb2`, `render`)
+   y `commands.ts` (`setworldmapflag`). Soporta los 28 mapas (bosques con blend EVA/EVB
+   sobre el mapa y cuevas con fade blanco y salto con botón B). Verificado headless con
+   `npm run check:preview` (28/28 pantallas renderizadas a 240×160, duraciones 120/40 y banderas).
 4. **Efecto de Destello al usarlo** (`fldeff_flash.c`) **[visual]**: el nivel
    de oscuridad funciona; falta la animación de apertura del círculo.
 5. **Bolsa del Viejo y bolsa de Teachy TV** (`item_menu.c`
