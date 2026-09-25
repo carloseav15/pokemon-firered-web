@@ -2,7 +2,7 @@
 // standard window frames, the single-column cursor menu (sMenu) and the YES/NO menu.
 
 import { sound } from "../audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "../gba/input";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, JOY_NEW } from "../gba/input";
 import { FONT_INFOS, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "../gba/font";
 import { cdata, incbin } from "./assets";
 import { ChangeBgX, ChangeBgY, FillBgTilemapBufferRect, LoadBgTiles } from "./bg";
@@ -203,6 +203,33 @@ export function Menu_ProcessInputNoWrapAround(): number {
   } else if (JOY_NEW(DPAD_DOWN)) {
     if (oldPos !== Menu_MoveCursorNoWrapAround(1)) sound.playSE(SE_SELECT);
   }
+  return MENU_NOTHING_CHOSEN;
+}
+
+/** Menu_ProcessInput_other: like Menu_ProcessInput but the D-pad repeats. */
+export function Menu_ProcessInput_other(): number {
+  if (JOY_NEW(A_BUTTON)) {
+    if (!sMenu.APressMuted) sound.playSE(SE_SELECT);
+    return sMenu.cursorPos;
+  }
+  if (JOY_NEW(B_BUTTON)) return MENU_B_PRESSED;
+  const dpad = joy.repeated & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT);
+  if (dpad === DPAD_UP) { sound.playSE(SE_SELECT); Menu_MoveCursor(-1); }
+  else if (dpad === DPAD_DOWN) { sound.playSE(SE_SELECT); Menu_MoveCursor(1); }
+  return MENU_NOTHING_CHOSEN;
+}
+
+/** Menu_ProcessInputNoWrapAround_other */
+export function Menu_ProcessInputNoWrapAround_other(): number {
+  const oldPos = sMenu.cursorPos;
+  if (JOY_NEW(A_BUTTON)) {
+    if (!sMenu.APressMuted) sound.playSE(SE_SELECT);
+    return sMenu.cursorPos;
+  }
+  if (JOY_NEW(B_BUTTON)) return MENU_B_PRESSED;
+  const dpad = joy.repeated & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT);
+  if (dpad === DPAD_UP) { if (oldPos !== Menu_MoveCursorNoWrapAround(-1)) sound.playSE(SE_SELECT); }
+  else if (dpad === DPAD_DOWN) { if (oldPos !== Menu_MoveCursorNoWrapAround(1)) sound.playSE(SE_SELECT); }
   return MENU_NOTHING_CHOSEN;
 }
 

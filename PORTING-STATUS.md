@@ -147,9 +147,7 @@ explicitly out of scope.
      by location, toss/register, sell to a shop, deposit to the PC, give from
      the party menu). `src/fr/hw/menuHelpers.ts` adds `menu_helpers.c`,
      `money.c` and the scheduled-copy helpers. The field bag, the battle bag,
-     the shop SELL option, PC deposit and the party GIVE option use it; item
-     effects keep the existing item_use logic (party-target flows still use
-     text-list adapters until `party_menu.c` lands). TM CASE: `src/fr/tmCase.ts` ports
+     the shop SELL option, PC deposit and the party GIVE option use it. TM CASE: `src/fr/tmCase.ts` ports
      `tm_case.c` (HMs first, move info with type/power/accuracy/PP icons,
      disc sprite tinted by type with the swap animation, USE/GIVE context
      menu, give-from-party/PC and sell flows); the bag opens it for OPEN,
@@ -157,12 +155,27 @@ explicitly out of scope.
      `berry_pouch.c` (wobbling pouch sprite, item icons, USE/GIVE/TOSS,
      party/PC give and sell), opened from the field bag, the battle bag and
      give/sell/PC bags. Old Man / Teachy TV scripted bags are not wired yet.
+   - POKéMON (party menu): `src/fr/partyMenu.ts` ports `party_menu.c` and
+     `fldeff_softboiled.c` (slot boxes with palette states, bouncing icons from
+     `src/fr/pokemonIcon.ts` = `pokemon_icon.c`, held-item/ball/status sprites,
+     action menus with field-move descriptions, SWITCH with the slide
+     animation, give/take items, take/read mail, field moves and FLY map, HP
+     count-up medicine, PP items, TMs/HMs with move replacement, Rare Candy
+     level-up windows and new moves, Sacred Ash, evolution stones, Softboiled,
+     battle switching and the Oak tutorial voice-over, choose-multiple, move
+     tutor, relearner and daycare selection). Wired to the start menu, bag /
+     TM case / berry pouch USE and GIVE, the battle bag (medicine/ethers) and
+     battle switching, and the ChoosePartyMon / move tutor / relearner /
+     daycare specials. Pending: `pokemon_special_anim.c` (the use-item scene is
+     skipped), the real summary screen (`src/fr/summaryScreen.ts` is a text
+     adapter), Easy Chat mail writing (given mail keeps a blank message) and
+     giving PC-mailbox mail.
 5. Replace small, bounded event-special placeholders with source behavior.
 6. Complete shops and the bag, including item selection and use. Verify the
    Game Corner prize exchange scripts (stock, prices, delivery) — otherwise
    prize Pokémon/TMs stay unreachable.
-7. Complete party, summary and move-learning screens. The logic adapters work;
-   dedicated graphics are the biggest day-to-day visual gap.
+7. Complete the summary screen (`pokemon_summary_screen.c`), the move-forget
+   selection and `pokemon_special_anim.c`; the party menu is ported.
 8. Verify wild encounters and trainer sight detection against source behavior
    (both are connected to the field engine; parity checks pending).
 9. Complete and verify capture flow and its party/storage destinations, plus
@@ -253,9 +266,9 @@ Pending / placeholders:
   (`battle/animTasks.ts`, ~68% reference-weighted); the rest render a timed
   target flash preserving pacing. Particle choreography, BG scrolling,
   mon-to-BG copies and spatialized panning remain pending.
-- Bag, party, summary, naming and Pokédex screens: `battle/ext.ts`
-  resolves them immediately (bag = no item, party = cancel / first usable mon on
-  a forced switch, new move not learned, name kept).
+- Bag and party screens are the ported `bagMenu.ts` / `partyMenu.ts`; the
+  summary move-forget selection and Pokédex page are still text adapters in
+  `battle/ext.ts`.
 - Battle evolution runs the full presentation in `battle/evoScene.ts` (intro
   message, cry, evolution music, white flashes with B-hold cancel, national-dex
   auto-stop past Mew, congrats/stopped messages, Shedinja split, new-move

@@ -1,20 +1,26 @@
-// Field bag/party adapters. Rules reuse item.c/pokemon.c ports; dedicated
-// source menu graphics, mail composition and field-move interfaces remain pending.
+// Field entry points of the BAG (item_use.c field functions) and the POKéMON
+// party menu (partyMenu.ts), with the field side the menus hand off to.
 import type { Game } from "../game";
 import { HwScene } from "../hw/runtime";
-import { openHardwareChoice } from "./hardwareChoice";
 import { openMailView } from "./mailView";
-import { blankMail, isMailItem, mailLines, takeMail } from "../pokemon/mail";
+import { blankMail, mailLines } from "../pokemon/mail";
 import { decode } from "../gba/charmap";
-import { b64, rom } from "../rom";
+import { rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
-import { addBagItem, itemInfo, itemName, pocketList, removeBagItem } from "../pokemon/items";
-import { fieldMoveName, fieldMovesOf, text, trySetUpFieldMove } from "./fieldMoveMenu";
+import { itemInfo, itemName, removeBagItem } from "../pokemon/items";
+import { trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { bagResult, GoToBagMenu, type BagHandlers, type BagTaskContext } from "../bagMenu";
 import { InitTMCase } from "../tmCase";
 import { InitBerryPouch } from "../berryPouch";
+import {
+  CB2_ChooseMonToGiveItem, CB2_PartyMenuFromStartMenu, CB2_ShowPartyMenuForItemUse, ItemUseCB_EvolutionStone, ItemUseCB_Medicine, ItemUseCB_PPUp,
+  ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
+  type PartyMenuFieldHooks,
+} from "../partyMenu";
+import { relearnableMoves } from "../pokemon/partyRules";
 import { encode, stringVars } from "../gba/charmap";
+type ItemUseCB = Parameters<typeof SetItemUseCB>[0] & {};
 import { PokemonUseItemEffects } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
 import * as C from "../generated/constants";
@@ -26,10 +32,8 @@ import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST } from "../
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE } from "../field/playerAvatar";
 import { startFishing } from "../field/fishing";
 import { openHardwareMessage } from "./hardwareChoice";
-import { learnLevelUpMoves, evolveWithMessages, learnMoveWithPrompt, tmhmMove } from "./monProgress";
-import { canLearnTMHM, itemEvolution, levelUpEvolution } from "../pokemon/pokemon";
+import { evolveWithMessages } from "./monProgress";
 import { flagGet, incrementGameStat, SV } from "../save";
-import { itemPocket } from "../pokemon/items";
 
 
 export function fieldMenu(game: Game, begin: (close: () => void) => void, closeStartMenu = true): void {
@@ -42,125 +46,40 @@ export function fieldMenu(game: Game, begin: (close: () => void) => void, closeS
   });
 }
 
+/** The field side of party_menu.c: field moves, the fly map, mail and evolution. */
+function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => void): PartyMenuFieldHooks {
+  return {
+    setUpFieldMove: (fieldMove, slot) => trySetUpFieldMove(game, fieldMove, slot),
+    returnToField: (post) => leaveWith(post),
+    // CB2_OpenFlyMap: ReturnToFieldFromFlyMapSelect (FieldCallback_UseFly) or back to the party.
+    openFlyMap: (slot, done) => openFlyMap(game, (selected) => {
+      if (!selected) { done(false); return; }
+      done(true);
+      leaveWith(() => {
+        game.fieldEffectArguments[0] = slot;
+        game.overworld.effects.moves.startFly();
+      });
+    }),
+    readMail: (slot, done) => {
+      const mon = save.party[slot];
+      const msg = mon.mailMessage ?? blankMail();
+      openMailView(decode(itemName(mon.heldItem)), mailLines(msg.words), msg.author.length ? decode(Uint8Array.from(msg.author)) : "", done);
+    },
+    evolve: (mon, target, _canStop, _slot, done) => evolveWithMessages(mon, target, done),
+    relearnableMoves: (mon) => relearnableMoves(mon).length,
+  };
+}
+
+/** CB2_PartyMenuFromStartMenu → CB2_ReturnToFieldWithOpenMenu (or a field move's callback). */
 export function openFieldParty(game: Game): void {
-  let post: (() => void) | null = null;
   fieldMenu(game, close => {
-    const finish = (): void => { close(); const cb = post; post = null; cb?.(); };
-    const message = (title: string, next: () => void): void => openHardwareChoice(title, [{label: "OK", value: 0}], false, next);
-    const party = (): void => openHardwareChoice(text("gText_ChoosePokemon"), save.party.map((mon, index) => ({
-      label: `${decode(mon.nickname)} Lv${mon.level} ${mon.hp}/${mon.stats[0]}`, value: index,
-    })), true, index => { if (index === null) finish(); else actions(index); });
-    const actions = (index: number): void => {
-      const mon = save.party[index];
-      const moves = mon.isEgg ? [] : fieldMovesOf(mon.moves);
-      const choices = [
-        ...moves.map(fieldMove => ({label: fieldMoveName(fieldMove), value: 100 + fieldMove})),
-        {label: "SUMMARY", value: 0}, {label: "SWITCH", value: 1}, ...(mon.isEgg ? [] : [{label: "ITEM", value: 2}]),
-      ];
-      stringVars.var1 = Uint8Array.from(mon.nickname);
-      openHardwareChoice(text("gText_DoWhatWithPokemon"), choices, true, selected => {
-        if (selected === null) { party(); return; }
-        if (selected >= 100) { fieldMove(index, selected - 100); return; }
-        if (selected === 1) {
-          openHardwareChoice(text("gText_MoveToWhere"), save.party.map((m, value) => ({label: decode(m.nickname), value})), true, other => {
-            if (other !== null) [save.party[index], save.party[other]] = [save.party[other], save.party[index]];
-            party();
-          });
-        } else if (selected === 2) {
-          itemMenu(index);
-        } else {
-          const labels = mon.isEgg ? ["EGG", `OT ${decode(mon.otName)}`] : [
-            `Lv${mon.level} EXP ${mon.exp}`, `HP ${mon.hp}/${mon.stats[0]}`, `ATTACK ${mon.stats[1]} DEFENSE ${mon.stats[2]}`,
-            `SP. ATK ${mon.stats[4]} SP. DEF ${mon.stats[5]}`, `SPEED ${mon.stats[3]}`,
-            `ITEM ${mon.heldItem ? decode(itemName(mon.heldItem)) : "NONE"}`,
-            ...mon.moves.filter(Boolean).map((move, slot) => `${decode(b64(rom.moves[move].name))} ${mon.pp[slot]}`),
-          ];
-          openHardwareChoice(decode(mon.nickname), labels.map((label, value) => ({label, value})), true, () => actions(index));
-        }
-      });
+    const leaveWith = (post: (() => void) | null): void => {
+      close();
+      if (post) { game.closeStartMenu(); post(); } else game.showStartMenu();
     };
-    const itemMenu = (index: number): void => {
-      const mon = save.party[index];
-      const heldMail = isMailItem(mon.heldItem);
-      // party_menu.c mail window: READ + TAKE for held mail.
-      const itemChoices = heldMail
-        ? [{ label: "GIVE", value: 0 }, { label: "READ", value: 2 }, { label: "TAKE", value: 1 }]
-        : [{ label: "GIVE", value: 0 }, { label: "TAKE", value: 1 }];
-      openHardwareChoice(text("gText_DoWhatWithItem"), itemChoices, true, choice => {
-        if (choice === null) { actions(index); return; }
-        if (choice === 2) {
-          const msg = mon.mailMessage ?? blankMail();
-          openMailView(
-            decode(itemName(mon.heldItem)), mailLines(msg.words),
-            msg.author.length ? decode(Uint8Array.from(msg.author)) : "",
-            () => itemMenu(index));
-          return;
-        }
-        if (choice === 1) {
-          if (!mon.heldItem) { message(`${decode(mon.nickname)} isn't holding anything.`, () => actions(index)); return; }
-          if (!addBagItem(mon.heldItem, 1)) { message(text("gText_BagFullCouldNotRemoveItem"), () => actions(index)); return; }
-          const taken = takeMail(mon);
-          message(`Received the ${decode(itemName(taken))} from ${decode(mon.nickname)}.`, party);
-          return;
-        }
-        // CB2_SelectBagItemToGive: GoToBagMenu(ITEMMENULOCATION_PARTY, OPEN_BAG_LAST, CB2_GiveHoldItem)
-        GoToBagMenu(C.ITEMMENULOCATION_PARTY, C.OPEN_BAG_LAST, () => {
-          const item = bagResult.itemId;
-          if (!item) { itemMenu(index); return; }
-          removeBagItem(item, 1);
-          if (mon.heldItem) addBagItem(mon.heldItem, 1);
-          mon.heldItem = item;
-          // A swapped-in item drops any stored mail message; mail attached
-          // here carries a blank message until the writer is ported.
-          if (!isMailItem(item)) mon.mailMessage = undefined;
-          message(`${decode(mon.nickname)} was given the ${decode(itemName(item))} to hold.`, party);
-        }, {});
-      });
-    };
-    const fieldMove = (index: number, move: number): void => {
-      const result = trySetUpFieldMove(game, move, index);
-      switch (result.kind) {
-        case "fail": message(result.message, party); return;
-        case "close": post = result.post; finish(); return;
-        case "confirm":
-          openHardwareChoice(result.message, [{label: "YES", value: 1}, {label: "NO", value: 0}], true, yes => {
-            if (yes === 1) { post = result.post; finish(); } else party();
-          });
-          return;
-        case "fly":
-          // CB2_OpenFlyMap: SetFlyWarpDestination, then ReturnToFieldFromFlyMapSelect
-          // (FieldCallback_UseFly) or CB2_ReturnToPartyMenuFromFlyMap.
-          openFlyMap(game, selected => {
-            if (!selected) { party(); return; }
-            post = () => {
-              game.fieldEffectArguments[0] = index;
-              game.overworld.effects.moves.startFly();
-            };
-            finish();
-          });
-          return;
-        case "softboiled":
-          openHardwareChoice(text("gText_UseOnWhichPokemon"), save.party.map((m, value) => ({label: `${decode(m.nickname)} ${m.hp}/${m.stats[0]}`, value})), true, target => {
-            if (target === null) { party(); return; }
-            const user = save.party[index], recipient = save.party[target];
-            if (recipient.hp === 0 || target === index || recipient.hp === recipient.stats[0] || recipient.isEgg) {
-              message(text("gText_CantBeUsedOnPkmn"), party);
-              return;
-            }
-            const amount = Math.floor(user.stats[0] / 5);
-            sound.playSE(C.SE_USE_ITEM);
-            user.hp = Math.max(0, user.hp - amount);
-            const before = recipient.hp;
-            recipient.hp = Math.min(recipient.stats[0], recipient.hp + amount);
-            stringVars.var1 = Uint8Array.from(recipient.nickname);
-            stringVars.var2 = encode(String(recipient.hp - before));
-            message(text("gText_PkmnHPRestoredByVar2"), party);
-          });
-          return;
-      }
-    };
-    party();
-  });
+    SetPartyMenuFieldHooks(fieldPartyHooks(game, leaveWith));
+    CB2_PartyMenuFromStartMenu(() => leaveWith(null));
+  }, false);
 }
 
 /**
@@ -201,99 +120,34 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       stringVars.var1 = Uint8Array.from(save.playerName);
       message(rom.text("gText_OakForbidsUseOfItemHere"), next);
     };
-    const chooseMon = (title: ArrayLike<number>, next: (index: number) => void, back: () => void): void =>
-      openHardwareChoice(title, save.party.map((mon, value) => ({label: `${decode(mon.nickname)} Lv${mon.level} ${mon.hp}/${mon.stats[0]}`, value})), true,
-        index => { if (index === null) back(); else next(index); });
-    const apply = (item: number, index: number, move: number): void => {
-      if (PokemonUseItemEffects(save.party[index] as Mon, item, index, move, false)) { message(rom.text("gText_WontHaveEffect")); return; }
-      removeBagItem(item, 1); sound.playSE(C.SE_USE_ITEM); message("The item was used.");
+    /** gItemUseCB = cb; CB2_ShowPartyMenuForItemUse, back to the bag / TM case / berry pouch. */
+    const partyItemUse = (item: number, cb: ItemUseCB): void => leave(() => {
+      bagResult.itemId = item;
+      SetItemUseCB(cb);
+      CB2_ShowPartyMenuForItemUse();
+    });
+    const medicine = (item: number): void => {
+      const func = itemInfo(item)!.fieldUseFunc;
+      partyItemUse(item, func === "FieldUseFunc_PpUp" ? ItemUseCB_PPUp : func === "FieldUseFunc_Ether" ? ItemUseCB_TryRestorePP : ItemUseCB_Medicine);
     };
-    const medicine = (item: number): void => chooseMon(rom.text("gText_UseOnWhichPokemon"), index => {
-      const info = itemInfo(item)!;
-      const effect = rom.itemEffects[item - C.ITEM_POTION];
-      const moveNeeded = info.fieldUseFunc === "FieldUseFunc_PpUp" || info.fieldUseFunc === "FieldUseFunc_Ether" && !!((effect?.[4] ?? 0) & C.ITEM4_HEAL_PP_ONE);
-      if (save.party[index].isEgg) { message(rom.text("gText_WontHaveEffect")); return; }
-      if (!moveNeeded) { apply(item, index, 0); return; }
-      const mon = save.party[index];
-      openHardwareChoice(rom.text(info.fieldUseFunc === "FieldUseFunc_PpUp" ? "gText_BoostPp" : "gText_RestoreWhichMove"), mon.moves.map((id, value) => ({value, disabled: !id, label: id ? `${decode(rom.moveName(id))} PP ${mon.pp[value]}` : "-"})), true, slot => {
-        if (slot === null) medicine(item); else apply(item, index, slot);
-      });
-    }, bag);
-    /** ItemUseCB_RareCandy → level-up stats, new moves, evolution */
-    const rareCandy = (item: number): void => chooseMon(rom.text("gText_UseOnWhichPokemon"), index => {
-      const mon = save.party[index];
-      if (mon.isEgg || mon.level >= 100 || PokemonUseItemEffects(mon as Mon, item, index, 0, true)) { message(rom.text("gText_WontHaveEffect")); return; }
-      const before = [...mon.stats];
-      PokemonUseItemEffects(mon as Mon, item, index, 0, false);
-      removeBagItem(item, 1);
-      sound.playFanfare(C.MUS_LEVEL_UP);
-      stringVars.var1 = Uint8Array.from(mon.nickname);
-      stringVars.var2 = encode(String(mon.level));
-      message(rom.text("gText_PkmnElevatedToLvVar2"), () => {
-        const names = ["MAX. HP", "ATTACK", "DEFENSE", "SPEED", "SP. ATK", "SP. DEF"];
-        const order = [0, 1, 2, 4, 5, 3];
-        openHardwareChoice(decode(mon.nickname), order.map((i, value) => ({label: `${names[i]}  +${mon.stats[i] - before[i]}  ${mon.stats[i]}`, value})), false, () => {
-          learnLevelUpMoves(mon, () => {
-            const target = levelUpEvolution(mon);
-            if (target && mon.heldItem !== C.ITEM_EVERSTONE) evolveWithMessages(mon, target, bag);
-            else bag();
-          });
-        });
-      });
-    }, bag);
-    /** ItemUseCB_EvolutionStone */
-    const evolutionStone = (item: number): void => chooseMon(rom.text("gText_UseOnWhichPokemon"), index => {
-      const mon = save.party[index];
-      const target = mon.isEgg ? 0 : itemEvolution(mon, item);
-      if (!target) { message(rom.text("gText_WontHaveEffect")); return; }
-      removeBagItem(item, 1);
-      evolveWithMessages(mon, target, bag);
-    }, bag);
-    /** ItemUseCB_SacredAsh: revives every fainted party member */
-    const sacredAsh = (item: number): void => {
-      let used = false;
-      save.party.forEach((mon, i) => { if (!mon.isEgg && !PokemonUseItemEffects(mon as Mon, item, i, 0, false)) used = true; });
-      if (!used) { message(rom.text("gText_WontHaveEffect")); return; }
-      removeBagItem(item, 1);
-      sound.playSE(C.SE_USE_ITEM);
-      message("All fainted POKéMON were revived.");
-    };
-    /** tm_case.c UseTM → party_menu.c ItemUseCB_TMHM */
+    const rareCandy = (item: number): void => partyItemUse(item, ItemUseCB_RareCandy);
+    const evolutionStone = (item: number): void => partyItemUse(item, ItemUseCB_EvolutionStone);
+    const sacredAsh = (item: number): void => partyItemUse(item, ItemUseCB_SacredAsh);
+    /** tm_case.c UseTM: after "Booted up a TM", the party menu with ItemUseCB_TMHM. */
     const useTM = (item: number): void => {
-      const move = tmhmMove(item);
-      stringVars.var2 = rom.moveName(move);
-      message(rom.text(item >= C.ITEM_HM01 ? "gText_BootedUpHM" : "gText_BootedUpTM"), () => {
-        openHardwareChoice(rom.text("gText_TeachWhichPokemon"), save.party.map((mon, value) => {
-          const able = !mon.isEgg && canLearnTMHM(mon.species, item - C.ITEM_TM01);
-          const knows = mon.moves.includes(move);
-          return {label: `${decode(mon.nickname)}  ${mon.isEgg ? "" : knows ? "LEARNED" : able ? "ABLE" : "NOT ABLE"}`, value};
-        }), true, index => {
-          if (index === null) { tmCase(); return; }
-          const mon = save.party[index];
-          stringVars.var1 = Uint8Array.from(mon.nickname);
-          stringVars.var2 = rom.moveName(move);
-          if (mon.isEgg || !canLearnTMHM(mon.species, item - C.ITEM_TM01)) { message(rom.text("gText_PkmnCantLearnMove"), tmCase); return; }
-          if (mon.moves.includes(move)) { message(rom.text("gText_PkmnAlreadyKnows"), tmCase); return; }
-          learnMoveWithPrompt(mon, move, learned => {
-            if (learned && item < C.ITEM_HM01) removeBagItem(item, 1);
-            tmCase();
-          });
-        });
-      });
+      bagResult.itemId = item;
+      SetItemUseCB(ItemUseCB_TMHM);
+      CB2_ShowPartyMenuForItemUse();
     };
     /** tm_case.c: InitTMCase(TMCASE_FIELD, bag), reopened after a USE/GIVE (TMCASE_REOPENING). */
-    const tmHandlers = { useOnMon: (item: number) => useTM(item), giveToMon: (item: number) => giveItem(item, tmCase) };
+    const tmHandlers = { useOnMon: (item: number) => useTM(item), giveToMon: (item: number) => giveItem(item) };
     const openTmCase = (): void => InitTMCase(C.TMCASE_FIELD, bag, false, tmHandlers);
     const tmCase = (): void => InitTMCase(C.TMCASE_REOPENING, null, C.TMCASE_KEEP_PREV, tmHandlers);
-    const giveItem = (item: number, back: () => void): void => chooseMon(rom.text("gText_GiveToWhichPokemon"), index => {
-      const mon = save.party[index];
-      if (mon.isEgg) { message("An EGG can't hold an item.", back); return; }
-      removeBagItem(item, 1);
-      const previous = mon.heldItem;
-      mon.heldItem = item;
-      if (previous) addBagItem(previous, 1);
-      message(`${decode(mon.nickname)} was given the ${decode(itemName(item))} to hold.`, back);
-    }, back);
+    /** CB2_ChooseMonToGiveItem */
+    const giveItem = (item: number): void => {
+      bagResult.itemId = item;
+      CB2_ChooseMonToGiveItem();
+    };
     const use = (item: number): void => {
       const info = itemInfo(item)!;
       const ow = game.overworld;
@@ -381,16 +235,18 @@ export function openFieldBag(game: Game, initialItem?: number): void {
     /** berry_pouch.c: InitBerryPouch(BERRYPOUCH_FROMFIELD, bag); the same item functions as the bag. */
     const pouchHandlers = {
       fieldUse: (item: number, ctx: BagTaskContext) => { bagCtx = ctx; use(item); bagCtx = null; },
-      giveToMon: (item: number) => giveItem(item, berryPouch),
+      giveToMon: (item: number) => giveItem(item),
     };
     const berryPouch = (): void => InitBerryPouch(C.BERRYPOUCH_FROMFIELD, bag, 0, pouchHandlers);
     const handlers: BagHandlers = {
       fieldUse: (item, ctx) => { bagCtx = ctx; use(item); bagCtx = null; },
-      giveToMon: (item) => giveItem(item, bag),
+      giveToMon: (item) => giveItem(item),
       isOnBike: () => game.overworld.player.isOnBike(),
     };
     /** GoToBagMenu(ITEMMENULOCATION_FIELD, OPEN_BAG_LAST, ...) */
     const bag = (): void => GoToBagMenu(C.ITEMMENULOCATION_FIELD, C.OPEN_BAG_LAST, finish, handlers);
+    SetItemUseReturns({ bag, tmCase, berryPouch: () => InitBerryPouch(C.BERRYPOUCH_NA, null, 0xff, pouchHandlers) });
+    SetPartyMenuFieldHooks(fieldPartyHooks(game, (p) => { post = p; finish(); }));
     const back = initialItem !== undefined ? finish : bag;
     if (initialItem !== undefined) use(initialItem); else bag();
   });

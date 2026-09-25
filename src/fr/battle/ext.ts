@@ -41,6 +41,7 @@ import { BtlController_EmitGetMonData, BUFFER_A } from "./controllers";
 import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHoldEffect, MarkBattlerForControllerExec } from "./util";
 import { battleHost } from "./host";
 import { ReshowBattleScreenAfterMenu } from "./reshow";
+import * as PartyMenu from "../partyMenu";
 import { bagResult, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
 import { gDisableStructs } from "./globals";
@@ -168,26 +169,9 @@ export function SwitchPartyMonSlots(slot: number, slot2: number): void {
 /** gPartyMenuUseExitCallback / gSelectedMonPartyId */
 export const partyMenuResult = { useExitCallback: false, selectedMonPartyId: C.PARTY_SIZE };
 
-/** party_menu.c: choose a healthy non-active member; forced replacement cannot cancel. */
+/** party_menu.c OpenPartyMenuInTutorialBattle → SetCB2ToReshowScreenAfterMenu */
 export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
-  partyMenuResult.useExitCallback = false;
-  partyMenuResult.selectedMonPartyId = C.PARTY_SIZE;
-  const active = new Set<number>();
-  for (let b = 0; b < G.gBattlersCount; b++) if (GetBattlerSide(b) === C.B_SIDE_PLAYER) active.add(gBattlerPartyIndexes[b]);
-  const choices = save.party.map((mon, i) => ({
-    value: i,
-    label: `${decode(mon.nickname)}  ${mon.hp}/${mon.stats[0]}`,
-    disabled: active.has(i) || !mon.species || mon.isEgg || mon.hp === 0,
-  }));
-  openHardwareChoice("Choose a POKéMON.", choices, partyAction !== C.PARTY_ACTION_SEND_OUT, selected => {
-    if (selected !== null) {
-      partyMenuResult.useExitCallback = true;
-      partyMenuResult.selectedMonPartyId = selected;
-      const slot = [0, 1, 2, 3, 4, 5].find(s => GetPartyIdFromBattleSlot(s) === selected);
-      if (slot !== undefined) SwitchPartyMonSlots(GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[G.gActiveBattler]), slot);
-    }
-    ReshowBattleScreenAfterMenu();
-  });
+  PartyMenu.OpenPartyMenuInTutorialBattle(partyAction, () => { CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); });
 }
 
 /** item_use.c battle handlers. Selection and effects finish before returning to battle. */
@@ -204,26 +188,18 @@ export function CB2_BagMenuFromBattle(): void {
     sound.playSE(C.SE_USE_ITEM);
     finish(item);
   };
-  const chooseMon = (item: number, ether: boolean): void => {
-    openHardwareChoice("Use on which POKéMON?", save.party.map((mon, i) => ({
-      label: `${decode(mon.nickname)}  ${mon.hp}/${mon.stats[0]}`, value: i, disabled: mon.isEgg,
-    })), true, selected => {
-      if (selected === null) { showBag(); return; }
-      if (!ether) { apply(item, selected, 0); return; }
-      const effects = rom.itemEffects[item - C.ITEM_POTION];
-      // ITEM4_HEAL_PP_ONE selects a move; Elixir applies across the moveset.
-      if (!effects || !(effects[4] & C.ITEM4_HEAL_PP_ONE)) { apply(item, selected, 0); return; }
-      const mon = save.party[selected];
-      openHardwareChoice("Restore which move's PP?", mon.moves.map((move, slot) => ({
-        label: move ? `${decode(b64(rom.moves[move].name))}  PP ${mon.pp[slot]}` : "-", value: slot, disabled: !move,
-      })), true, slot => { if (slot === null) chooseMon(item, true); else apply(item, selected, slot); });
-    });
+  /** gItemUseCB = cb; EnterPartyFromItemMenuInBattle (CB2_SetUpExitToBattleScreen or back to the bag). */
+  const chooseMon = (item: number, cb: typeof PartyMenu.ItemUseCB_Medicine, back: () => void): void => {
+    bagResult.itemId = item;
+    PartyMenu.SetItemUseCB(cb);
+    PartyMenu.EnterPartyFromItemMenuInBattle(() => { G.gBattlerInMenuId = menuBattler; finish(item); }, back);
   };
   /** CB2_BagMenuFromBattle: GoToBagMenu(ITEMMENULOCATION_BATTLE, OPEN_BAG_LAST, SetCB2ToReshowScreenAfterMenu2). */
   // ItemId_GetBattleFunc(item)(taskId), shared by the bag and the berry pouch.
   const battleUse = (item: number, ctx: BagTaskContext): void => {
     const info = itemInfo(item)!;
     const notNow = (): void => { stringVars.var1 = Uint8Array.from(save.playerName); ctx.message(rom.text("gText_OakForbidsUseOfItemHere")); };
+    const back = info.pocket === C.POCKET_BERRY_POUCH ? () => InitBerryPouch(C.BERRYPOUCH_NA, null, 0xff, { battleUse }) : showBag;
     switch (info.battleUseFunc) {
       case "BattleUseFunc_PokeBallEtc":
         if (save.party.length >= C.PARTY_SIZE && save.boxes.every(box => box.every(mon => !!mon?.species))) { ctx.message(rom.text("gText_BoxFull")); return; }
@@ -237,8 +213,8 @@ export function CB2_BagMenuFromBattle(): void {
         ctx.exit(() => finish(item));
         return;
       case "BattleUseFunc_StatBooster": ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)); return;
-      case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, false)); return;
-      case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, true)); return;
+      case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_Medicine, back)); return;
+      case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back)); return;
       // BattleUseFunc_BerryPouch: InitBerryPouch(BERRYPOUCH_FROMBATTLE, CB2_BagMenuFromBattle, FALSE)
       case "BattleUseFunc_BerryPouch": ctx.exit(() => InitBerryPouch(C.BERRYPOUCH_FROMBATTLE, showBag, 0, { battleUse })); return;
       default: notNow(); return;
@@ -340,26 +316,7 @@ export {
 
 // ---------------------------------------------------------------- pokemon_icon.c
 
-export function GetMonIconPtr(species: number, personality: number, extra: number | boolean): Uint8Array {
-  let iconSpecies = species;
-  if (species === C.SPECIES_UNOWN) {
-    const letter = ((((personality & 0x3000000) >>> 18) | ((personality & 0x30000) >>> 12) | ((personality & 0x300) >>> 6) | (personality & 3)) >>> 0) % 28;
-    iconSpecies = letter === 0 ? C.SPECIES_UNOWN : letter + C.SPECIES_UNOWN_B - 1;
-  } else if (species > C.NUM_SPECIES) {
-    iconSpecies = 260; // INVALID_ICON_SPECIES (question mark)
-  }
-  const table = cdata<unknown[]>("pokemon_icon", "gMonIconTable");
-  const ref = table[iconSpecies] as { $sym: string };
-  const bytes = incbin(ref.$sym);
-  return iconSpecies === C.SPECIES_DEOXYS && extra ? bytes.subarray(0x400) : bytes;
-}
-
-export function GetValidMonIconPalettePtr(species: number): Uint16Array {
-  if (species > C.NUM_SPECIES) species = C.SPECIES_NONE;
-  const index = cdata<number[]>("pokemon_icon", "gMonIconPaletteIndices")[species];
-  const pal = cdata<Array<{ data: unknown }>>("pokemon_icon", "gMonIconPaletteTable")[index];
-  return symPalette(pal.data);
-}
+export { GetMonIconPtr, GetValidMonIconPalettePtr } from "../pokemonIcon";
 
 // ---------------------------------------------------------------- level-up window (pokemon_special_anim*.c)
 

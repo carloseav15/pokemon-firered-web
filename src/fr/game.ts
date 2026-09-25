@@ -18,6 +18,7 @@ import { addPCItem } from "./pokemon/items";
 import { rom } from "./rom";
 import { flagGet, newSaveData, save, saveStore, setName, setSave, varGet, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
+import { ChooseMonForDaycare, ChooseMonForMoveTutor, ChoosePartyMonByMenuType } from "./partyMenu";
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { WildEncounter } from "./field/wildEncounter";
@@ -452,26 +453,27 @@ export class Game {
     }, 80);
   }
 
+  /** ChoosePartyMon / ChooseMonForMoveTutor / ChooseMonForMoveRelearner / ChooseSendDaycareMon → CB2_ReturnToFieldContinueScriptPlayMapMusic */
   choosePartyMon(mode: string): void {
     this.overworld.script.stop();
     const scene = new HwScene();
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
-    openHardwareChoice("Choose a POKéMON.", save.party.map((mon, index) => ({
-      label: `${decode(mon.nickname)}  Lv${mon.level}`, value: index,
-    })), true, selected => {
-      // party_menu.c SLOT_CANCEL is PARTY_SIZE + 1 (7), not 0xff.
-      varSet(SV.x8004, selected ?? 7);
-      if (selected !== null) {
-        stringVars.var1 = Uint8Array.from(save.party[selected].nickname);
-        if (mode === "relearner") varSet(SV.x8005, relearnableMoves(save.party[selected]).length);
-      }
+    const exit = (): void => {
+      const selected = varGet(SV.x8004);
+      if (selected < save.party.length) stringVars.var1 = Uint8Array.from(save.party[selected].nickname);
       scene.leave();
       this.scene = null;
       this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
       this.overworld.script.enable();
-    });
+    };
+    switch (mode) {
+      case "moveTutor": ChooseMonForMoveTutor(exit); break;
+      case "relearner": ChoosePartyMonByMenuType(rom.c("PARTY_MENU_TYPE_MOVE_RELEARNER"), exit); break;
+      case "daycare": ChooseMonForDaycare(exit); break;
+      default: ChoosePartyMonByMenuType(rom.c("PARTY_MENU_TYPE_CHOOSE_MON"), exit); break;
+    }
   }
 
   changeNickname(index: number): void {
