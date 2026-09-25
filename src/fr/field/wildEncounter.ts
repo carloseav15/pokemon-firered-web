@@ -164,6 +164,35 @@ export class WildEncounter {
     this.start(mon); return true;
   }
   hasFishingMons(): boolean { return !!this.info("fishingMonsInfo"); }
+
+  /** wild_encounter.c GetLocalWildMon; selects a local land/water species for ambient cries. */
+  getLocalWildMon(): { species: number; isWaterMon: boolean } {
+    const land = this.info("landMonsInfo");
+    const water = this.info("waterMonsInfo");
+    if (!land && !water) return { species: C.SPECIES_NONE, isWaterMon: false };
+    if (land && !water) {
+      const slot = this.chooseSlot(LAND);
+      return { species: data<WildMon[]>(land.wildPokemon.$sym)[slot].species, isWaterMon: false };
+    }
+    if (!land && water) {
+      const slot = this.chooseSlot(WATER);
+      return { species: data<WildMon[]>(water.wildPokemon.$sym)[slot].species, isWaterMon: true };
+    }
+    if (random() % 100 < 80) {
+      const slot = this.chooseSlot(LAND);
+      return { species: data<WildMon[]>(land!.wildPokemon.$sym)[slot].species, isWaterMon: false };
+    }
+    const slot = this.chooseSlot(WATER);
+    return { species: data<WildMon[]>(water!.wildPokemon.$sym)[slot].species, isWaterMon: true };
+  }
+
+  /** wild_encounter.c GetLocalWaterMon; chooses one of the five water slots. */
+  getLocalWaterMon(): number {
+    const water = this.info("waterMonsInfo");
+    if (!water) return C.SPECIES_NONE;
+    return data<WildMon[]>(water.wildPokemon.$sym)[this.chooseSlot(WATER)].species;
+  }
+
   fishingEncounter(rod: number): boolean {
     const info = this.info("fishingMonsInfo");
     if (!info || rod < 0 || rod > 2) return false;
