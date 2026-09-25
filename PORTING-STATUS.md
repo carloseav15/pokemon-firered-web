@@ -899,3 +899,10 @@ Pending / placeholders:
   in the header but has no definition in this decomp, so no body was invented.
   The browser still dispatches callbacks from its frame loop. Typecheck passes;
   register/frame parity was not exercised.
+- `text_window.c`: added signpost/help/quest-log/std tile loaders,
+  `LoadUserWindowGfx2`, `DrawTextBorderInner` and `rbox_fill_rectangle` to the
+  shared hardware helpers. `LoadUserWindowGfx` now defaults to the saved frame
+  option as C does; palette IDs outside 0–3 resolve to frame palette 4.
+  `GetOverworldTextboxPalettePtr` is declared but has no definition or caller
+  in this decomp. `npm run check:port` passes; field Canvas presentation remains
+  adapted and no visual comparison was run.

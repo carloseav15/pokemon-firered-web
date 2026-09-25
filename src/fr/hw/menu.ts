@@ -8,6 +8,7 @@ import { cdata, incbin, incbin16 } from "./assets";
 import { ChangeBgX, ChangeBgY, FillBgTilemapBufferRect, LoadBgTiles } from "./bg";
 import { LoadPalette } from "./palette";
 import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./text";
+import { save } from "../save";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable, gDummySpriteAnimTable, gSprites, LoadSpritePalette,
   LoadSpriteSheet, oamData, SPRITE_SHAPE, SPRITE_SIZE, type Sprite, type SpriteTemplate,
@@ -35,7 +36,8 @@ const strings = (name: string) => cdata<number[]>("strings", name);
 /** GetTextWindowPalette: 16 colors of gTextWindowPalettes[id] (id 4+ -> 4). */
 export function GetTextWindowPalette(id: number): Uint8Array {
   const all = incbin("gTextWindowPalettes");
-  const i = Math.min(id, 4);
+  const paletteId = id & 0xff;
+  const i = paletteId < 4 ? paletteId : 4;
   return all.subarray(i * 32, i * 32 + 32);
 }
 
@@ -47,6 +49,28 @@ export function LoadStdWindowGfx(windowId: number, destOffset: number, palOffset
 export function LoadStdWindowGfxOnBg(bgId: number, destOffset: number, palOffset: number): void {
   LoadBgTiles(bgId, incbin("gStdTextWindow_Gfx"), 0x120, destOffset);
   LoadPalette(GetTextWindowPalette(3), palOffset, 32);
+}
+
+/** LoadSignpostWindowGfx (text_window.c). */
+export function LoadSignpostWindowGfx(windowId: number, destOffset: number, palOffset: number): void {
+  LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), incbin("gSignpostWindow_Gfx"), 0x260, destOffset);
+  LoadPalette(GetTextWindowPalette(1), palOffset, 32);
+}
+
+/** LoadHelpMessageWindowGfx (text_window.c). */
+export function LoadHelpMessageWindowGfx(windowId: number, destOffset: number, palOffset: number): void {
+  LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), incbin("gHelpMessageWindow_Gfx"), 0x280, destOffset);
+  LoadPalette(GetTextWindowPalette(2), palOffset, 32);
+}
+
+/** LoadStdWindowTiles (text_window.c), tiles only. */
+export function LoadStdWindowTiles(windowId: number, destOffset: number): void {
+  LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), incbin("gStdTextWindow_Gfx"), 0x120, destOffset);
+}
+
+/** LoadQuestLogWindowTiles (text_window.c), tiles only. */
+export function LoadQuestLogWindowTiles(windowId: number, destOffset: number): void {
+  LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), incbin("gQuestLogWindow_Gfx"), 0x280, destOffset);
 }
 
 // ---------------------------------------------------------------- frames
@@ -312,10 +336,15 @@ export function GetUserWindowGraphics(frameType = 0): { tiles: Uint8Array; palet
 }
 
 /** LoadUserWindowGfx: the frame chosen in the options (optionsWindowFrameType, default frame 1). */
-export function LoadUserWindowGfx(windowId: number, destOffset: number, palOffset: number, frameType = 0): void {
+export function LoadUserWindowGfx(windowId: number, destOffset: number, palOffset: number, frameType = save.options.frameType): void {
   const gfx = GetUserWindowGraphics(frameType);
   LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), gfx.tiles, 0x120, destOffset);
   LoadPalette(gfx.palette, palOffset, 32);
+}
+
+/** LoadUserWindowGfx2 is the C alias for LoadUserWindowGfx. */
+export function LoadUserWindowGfx2(windowId: number, destOffset: number, palOffset: number): void {
+  LoadUserWindowGfx(windowId, destOffset, palOffset, save.options.frameType);
 }
 
 export function LoadStdWindowFrameGfx(): void {

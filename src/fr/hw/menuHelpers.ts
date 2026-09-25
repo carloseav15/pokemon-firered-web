@@ -174,6 +174,33 @@ export function DrawTextBorderOuter(windowId: number, tileNum: number, palNum: n
   FillBgTilemapBufferRect(bg, tileNum + 8, left + width, top + height, 1, 1, palNum);
 }
 
+/** DrawTextBorderInner (text_window.c): draw an eight-tile border inside the window bounds. */
+export function DrawTextBorderInner(windowId: number, tileNum: number, palNum: number): void {
+  const bg = GetWindowAttribute(windowId, WINDOW_BG);
+  const left = GetWindowAttribute(windowId, WINDOW_TILEMAP_LEFT);
+  const top = GetWindowAttribute(windowId, WINDOW_TILEMAP_TOP);
+  const width = GetWindowAttribute(windowId, WINDOW_WIDTH);
+  const height = GetWindowAttribute(windowId, WINDOW_HEIGHT);
+  FillBgTilemapBufferRect(bg, tileNum, left, top, 1, 1, palNum);
+  FillBgTilemapBufferRect(bg, tileNum + 1, left + 1, top, width - 2, 1, palNum);
+  FillBgTilemapBufferRect(bg, tileNum + 2, left + width - 1, top, 1, 1, palNum);
+  FillBgTilemapBufferRect(bg, tileNum + 3, left, top + 1, 1, height - 2, palNum);
+  FillBgTilemapBufferRect(bg, tileNum + 5, left + width - 1, top + 1, 1, height - 2, palNum);
+  FillBgTilemapBufferRect(bg, tileNum + 6, left, top + height - 1, 1, 1, palNum);
+  FillBgTilemapBufferRect(bg, tileNum + 7, left + 1, top + height - 1, width - 2, 1, palNum);
+  FillBgTilemapBufferRect(bg, tileNum + 8, left + width - 1, top + height - 1, 1, 1, palNum);
+}
+
+/** rbox_fill_rectangle (text_window.c): clear the window and its one-tile margin. */
+export function rbox_fill_rectangle(windowId: number): void {
+  const bg = GetWindowAttribute(windowId, WINDOW_BG);
+  const left = GetWindowAttribute(windowId, WINDOW_TILEMAP_LEFT);
+  const top = GetWindowAttribute(windowId, WINDOW_TILEMAP_TOP);
+  const width = GetWindowAttribute(windowId, WINDOW_WIDTH);
+  const height = GetWindowAttribute(windowId, WINDOW_HEIGHT);
+  FillBgTilemapBufferRect(bg, 0, left - 1, top - 1, width + 2, height + 2, 17);
+}
+
 export function SetBgTilemapPalette(bgId: number, left: number, top: number, width: number, height: number, palette: number): void {
   const ptr = GetBgTilemapBuffer(bgId);
   if (!ptr) return;
