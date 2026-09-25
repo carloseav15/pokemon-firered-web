@@ -913,3 +913,10 @@ Pending / placeholders:
   `getBoxName` now uses the same generated text/format and handles invalid u8
   box IDs as EOS. `npm run check:port` passes; storage screens remain adapted
   and no UI/runtime flow was exercised.
+- `mail_data.c`: added `SpeciesToMailSpecies` and `MailSpeciesToSpecies` in
+  `pokemon/mail.ts`, preserving the C `UNOWN_OFFSET=30000` form encoding and
+  personality-derived letter. `trainerCard.ts` now calls the shared decoder.
+  Mail item IDs 121–132 were checked against every case in C and are contiguous.
+  Mail storage remains inline on Pokémon/PC entries rather than the C 16-slot
+  SaveBlock array; Easy Chat composition and link-mail import remain adapted.
+  `npm run check:port` passes; mail runtime flow was not exercised.

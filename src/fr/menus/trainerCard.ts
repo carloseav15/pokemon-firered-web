@@ -58,6 +58,7 @@ import {
 } from "../hw/window";
 import { dexCount, hasAllKantoDexSpecies, hasAllNationalDexSpecies } from "../pokemon/pokemon";
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
+import { MailSpeciesToSpecies } from "../pokemon/mail";
 import { rom } from "../rom";
 import { flagGet, save, varGet } from "../save";
 
@@ -84,16 +85,6 @@ const STATE_HANDLE_INPUT_BACK = 11;
 const STATE_WAIT_FLIP_TO_BACK = 12;
 const STATE_WAIT_FLIP_TO_FRONT = 13;
 const STATE_CLOSE_CARD = 14;
-
-const UNOWN_OFFSET = 30000;
-const NUM_UNOWN_FORMS = 28;
-
-function MailSpeciesToSpecies(mailSpecies: number): { species: number; unownLetter: number } {
-  if (mailSpecies >= UNOWN_OFFSET && mailSpecies < UNOWN_OFFSET + NUM_UNOWN_FORMS) {
-    return { species: C.SPECIES_UNOWN, unownLetter: mailSpecies - UNOWN_OFFSET };
-  }
-  return { species: mailSpecies, unownLetter: 0 };
-}
 
 export function MailSpeciesToIconSpecies(species: number): number {
   const { species: s, unownLetter } = MailSpeciesToSpecies(species);

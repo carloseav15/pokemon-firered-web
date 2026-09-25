@@ -4,12 +4,31 @@
 // attached through GIVE carries a blank message.
 
 import { decode } from "../gba/charmap";
+import * as C from "../generated/constants";
 import { cdata, hasCData, loadCData, type SymRef } from "../hw/assets";
 import { rom } from "../rom";
+import { GetUnownLetterByPersonality } from "../pokemonIcon";
 import { speciesName, type Pokemon } from "./pokemon";
 
 export const MAIL_WORDS_COUNT = 9;
 export const EC_WORD_UNDEFINED = 0xffff;
+const UNOWN_OFFSET = 30000;
+
+/** SpeciesToMailSpecies; preserve the Unown letter in the mail record. */
+export function SpeciesToMailSpecies(species: number, personality: number): number {
+  const speciesId = species & 0xffff;
+  if (speciesId === C.SPECIES_UNOWN) return (UNOWN_OFFSET + GetUnownLetterByPersonality(personality >>> 0)) & 0xffff;
+  return speciesId;
+}
+
+/** MailSpeciesToSpecies; returns the out-parameter as unownLetter. */
+export function MailSpeciesToSpecies(mailSpecies: number): { species: number; unownLetter: number } {
+  const id = mailSpecies & 0xffff;
+  if (id >= UNOWN_OFFSET && id < UNOWN_OFFSET + C.NUM_UNOWN_FORMS) {
+    return { species: C.SPECIES_UNOWN, unownLetter: id - UNOWN_OFFSET };
+  }
+  return { species: id, unownLetter: 0 };
+}
 
 /** struct Mail (words + author), stored on the holding mon. */
 export type MailMessage = {
