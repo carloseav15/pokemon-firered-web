@@ -7,11 +7,13 @@ import { getTextSpeedSetting, TextPrinter, textFlags, TEXT_COLOR_BLUE, TEXT_COLO
 import { Window } from "../gba/window";
 import { rom } from "../rom";
 import { SV, varGet } from "../save";
+import * as C from "../generated/constants";
 import type { Overworld } from "./overworld";
 
-export const FIELD_MESSAGE_BOX_HIDDEN = 0;
-export const FIELD_MESSAGE_BOX_NORMAL = 1;
-export const FIELD_MESSAGE_BOX_AUTO_SCROLL = 2;
+export const FIELD_MESSAGE_BOX_HIDDEN = C.FIELD_MESSAGE_BOX_HIDDEN;
+export const FIELD_MESSAGE_BOX_UNUSED = C.FIELD_MESSAGE_BOX_UNUSED;
+export const FIELD_MESSAGE_BOX_NORMAL = C.FIELD_MESSAGE_BOX_NORMAL;
+export const FIELD_MESSAGE_BOX_AUTO_SCROLL = C.FIELD_MESSAGE_BOX_AUTO_SCROLL;
 
 const NPC_TEXT_COLOR_MALE = 0, NPC_TEXT_COLOR_FEMALE = 1, NPC_TEXT_COLOR_NEUTRAL = 3, NPC_TEXT_COLOR_DEFAULT = 0xff;
 

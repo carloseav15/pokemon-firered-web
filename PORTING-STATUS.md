@@ -848,3 +848,8 @@ Pending / placeholders:
   `DoCurrentWeather` remain separate. `npm run check:port` passes. Route-cycle
   stages, paused-weather resume and the unused variant remain unported; visual
   renderer limits are tracked under `field_weather.c`.
+- `field_message_box.c`: compared the six header APIs and enum with
+  `field/messageBox.ts`; exported state values now use generated C constants
+  (`HIDDEN=0`, `UNUSED=1`, `NORMAL=2`, `AUTO_SCROLL=3`). Init/show/hide and
+  printer completion exist; Canvas frame/task timing remains adapted.
+  `npm run check:port` passes; no visual runtime check.
