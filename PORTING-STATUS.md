@@ -79,13 +79,27 @@ Playwright/Chromium headless (fuera del repo, en el scratchpad de la sesión).
   para saltar inmediatamente a "OK" (o confirmar el nombre si ya está sobre
   "OK"), se agregó sonido de selección `SE_SELECT` al desplazarse y el cursor
   se centró correctamente sobre los botones laterales (Page swap, Back, OK).
-- Nivel de prueba alcanzado hasta ahora: **navegador** (arranque, casa del
+- **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
+  - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
+    se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),
+    y tras la victoria cura automáticamente al Pokémon del jugador (`RIVAL_BATTLE_HEAL_AFTER`).
+  - Ruta 1 y encuentros salvajes: verificado el desove de hierba alta (`TallGrass`), sombra al saltar bordillos (`ShadowSmall`/`ShadowMedium`)
+    y polvo de aterrizaje (`GroundImpactDust` / `JumpTallGrass`), con subprioridades asignadas de inmediato para evitar
+    parpadeos de 1 frame.
+  - Selección de transiciones salvajes: contra rivales más débiles (Pidgey/Rattata N2-3 vs inicial N5) se ejecuta
+    `B_TRANSITION_SLICE` (desplazamiento de scanlines a izquierda/derecha); contra rivales de igual o mayor nivel se
+    ejecuta `B_TRANSITION_WHITE_BARS_FADE` (barras de fade a blanco progresivo).
+  - Tienda de Ciudad Verde y Correo de Oak: el dependiente entrega `ITEM_OAKS_PARCEL` en la bolsa; al regresar
+    al laboratorio en Pueblo Paleta, Oak recibe el correo, retira el objeto de la bolsa, entrega la Pokédex
+    (`FLAG_SYS_POKEDEX_GET`), 5 Poké Balls y avanza la variable de escena `VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB` a 6.
+  - Suites headless agregadas: `npm run check:transitions` y `npm run check:earlygame`.
+- Nivel de prueba alcanzado: **navegador y suites headless** (arranque, casa del
   jugador 1F/2F, diálogo de la madre, salida a Pueblo Paleta, guion de Oak en
-  Ruta 1, laboratorio, elección de inicial hasta la pantalla de apodo con
-  confirmación funcional por START/A).
-  Continúa el recorrido; esta sección se ampliará con cada hallazgo.
+  Ruta 1, laboratorio, elección de inicial, pantalla de apodo con START/A,
+  combate con el rival, Ruta 1 con hierba alta y transiciones SLICE/WHITE_BARS_FADE,
+  Ciudad Verde con Correo de Oak y entrega de Pokédex).
 
-## battle_transition.c: primer bloque de transiciones de combate (2026-09-25)
+## battle_transition.c: transiciones de combate de campo (2026-09-25)
 
 Antes no existía transición alguna: `game.ts` `startBattle()` hacía un
 `paletteFade.fadeScreen(FADE_TO_BLACK, 0)` liso y pasaba directo a la

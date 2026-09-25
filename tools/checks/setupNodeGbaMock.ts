@@ -16,3 +16,15 @@ if (typeof (globalThis as any).ImageData === 'undefined') {
 if (typeof (globalThis as any).window === 'undefined') {
   (globalThis as any).window = globalThis;
 }
+
+if (typeof (globalThis as any).Image === 'undefined') {
+  (globalThis as any).Image = class Image {
+    width = 16;
+    height = 16;
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    set src(_val: string) {
+      setTimeout(() => this.onload?.(), 0);
+    }
+  };
+}
