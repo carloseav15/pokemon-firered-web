@@ -221,6 +221,22 @@ export function FuncIsActiveTask(func: TaskFunc): boolean {
   return tasks.tasks.some((t) => t.isActive && t.func === func);
 }
 
+export function FindTaskIdByFunc(func: TaskFunc): number {
+  return tasks.findByFunc(func);
+}
+
+export function GetTaskCount(): number {
+  return tasks.count();
+}
+
+export function SetWordTaskArg(taskId: number, dataElem: number, value: number): void {
+  tasks.setWordArg(taskId, dataElem, value);
+}
+
+export function GetWordTaskArg(taskId: number, dataElem: number): number {
+  return tasks.getWordArg(taskId, dataElem);
+}
+
 // ---------------------------------------------------------------- item.c
 
 /** CopyItemName (the Enigma Berry name comes from the e-Reader berry, which the port never receives). */
