@@ -102,6 +102,10 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `slot_machine.c (reglas)` | `game/slots.ts` | duplicado sin uso; el juego usa `menus/slotMachine.ts` |
 | `image_processing_effects.c` | `imageProcessingEffects.ts` | sin llamador en FireRed de un jugador |
 | `palette_util.c` | `paletteUtil.ts` | sin llamador todavía |
+| `mon_markings.c` | `monMarkings.ts` | el resumen no abre el menú de marcas todavía |
+| `cable_car_util.c` | `cableCarUtil.ts` | sin llamador todavía |
+| `tilemap_util.c` | `hw/tilemapUtil.ts` | sin llamador todavía |
+| `(registros BG)` | `hw/bgRegs.ts` | sin llamador todavía |
 
 ## 4. Huecos conocidos que el conteo no muestra
 

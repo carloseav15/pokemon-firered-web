@@ -14,7 +14,7 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 | Archivos C parciales | 117 | 130 709 líneas C |
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
 | Funciones stub (nombre del C, cuerpo vacío) | 172 | No cuentan como portadas (PENDING.md §3b) |
-| Módulos portados que el juego no usa | 6 | PENDING.md §3c |
+| Módulos que el juego no importa | 10 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
 | **Jugado de verdad en navegador** | intro → Ruta 3 | ≈ la primera hora y media de juego; el resto del juego, sin probar |
 
 Resumen honesto: el motor (hardware GBA emulado, batalla completa, scripts,
@@ -116,6 +116,13 @@ en el mismo commit (si nadie lo importa no está portado) y se prueba la
 pantalla en navegador. Si no da tiempo a una función, **no se declara**.
 
 ## 5. Reglas obligatorias para cualquier agente
+
+Las reglas 2, 3, 4 y 5 las hace cumplir `npm run check:honesty`
+(`tools/checks/honesty.py`), que falla si aparece un stub nuevo, un módulo nuevo
+que el juego no importa, un check que pone estado y luego lo comprueba sin
+marcarlo `PREPARED`, o un superlativo en un commit sin subir. Se ejecuta antes
+de cada commit; sus líneas base solo pueden encogerse. Claude lee estas reglas
+desde `CLAUDE.md`, Codex desde `AGENTS.md` y Gemini desde `GEMINI.md`.
 
 1. **Nivel de prueba en cada bloque** (AGENTS.md §6): tipos / bundle / paridad
    de datos / headless / navegador. "Compila" o "check verde" no es "funciona".

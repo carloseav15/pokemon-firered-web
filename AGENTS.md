@@ -64,6 +64,8 @@ arranca la partida e instala `window.frDebug` (ver §6).
 npm ci                     # dependencias (typescript, vite; esbuild viene con vite)
 npm run dev                # servidor Vite (o preview_start "vite" desde .claude/launch.json)
 npm run check:port         # tsc sobre TODO src (incluye batalla). Obligatorio tras cada cambio
+npm run check:honesty      # stubs nuevos, módulos sin conectar, checks que se validan solos,
+                           # superlativos en commits. Obligatorio antes de cada commit
 npm run build              # tsc + bundle de producción
 npm run check:arrow        # ejemplo de check headless (flecha de diálogo vs tiles del C)
 npm run inventory          # regenera PORT-INVENTORY.md (avance por archivo .c)
@@ -267,6 +269,13 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
 Si el usuario pide "no probar", haz solo 1–3 y dilo explícitamente.
 
 ## 7. Convenciones de trabajo
+
+- **`npm run check:honesty` debe pasar antes de cada commit** (reglas en
+  [ESTADO-Y-REGLAS.md](ESTADO-Y-REGLAS.md) §5). Si falla, se arregla la causa;
+  las líneas base `tools/checks/stub-baseline.json` y `unwired-baseline.json`
+  solo pueden encogerse (`python3 tools/checks/honesty.py --shrink-baselines`
+  se niega a añadir entradas). Una línea de preparación legítima en un check se
+  marca con `// PREPARED: …`.
 
 - Un commit por bloque terminado; mensaje en inglés, imperativo, que diga qué
   `.c` se portó; terminar con la línea `Co-Authored-By` que indique el entorno.
