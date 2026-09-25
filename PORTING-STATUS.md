@@ -118,8 +118,8 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 22 modules as documented ported, 49 as partial or
-adapted, nine as pending, two with small parity fixes awaiting verification,
+The current review labels 22 modules as documented ported, 50 as partial or
+adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
 161 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
@@ -318,8 +318,9 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
     **[visual]**: `menus/keyItemScreens.ts` son adaptadores de texto; Teachy TV
     necesita además el controlador de batalla Pokédude
     (`battle_controller_pokedude.c`, 2698 líneas).
-14. **PC de objetos** (`item_pc.c`) **[visual]**: retirar/depositar con la
-    interfaz real (hoy `playerPc.ts` usa listas; el depósito ya usa la mochila).
+14. **PC de objetos** (`item_pc.c`) **[visual]**: retirar/depositar ya funciona
+    desde `playerPc.ts` con listas simplificadas y la mochila real; falta la
+    interfaz GBA, cursor, animaciones y estados originales.
 15. **Escena de Evolución** (`evolution_scene.c`, 1704 líneas + `evolution_graphics.c`, 638 líneas)
     **[PORTADO]**: portada fielmente en `src/fr/evolutionScene.ts` sobre la capa de hardware GBA (`hw/`).
     Implementa:
