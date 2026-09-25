@@ -39,8 +39,8 @@ samples, cries); see [port status](PORTING-STATUS.md) before regenerating assets
 - Wild encounters and trainer sight run through the field engine
   (`fieldControl.ts` → `fieldEffects.ts` → `game.wild`/`game.trainerSee`);
   source parity checks are still pending.
-- Party, bag and PC screens still have placeholders (trainer card, Pokédex
-  list/info and capture registration are connected).
+- Bag, TM case, berry pouch and party menu are hardware ports; the summary
+  screen, PC boxes/items, trainer card and Pokédex pages are still adapters.
 - The entire starter-to-Champion and postgame progression has not been verified.
 
 ## Verification

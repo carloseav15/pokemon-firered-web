@@ -108,109 +108,140 @@ audio backend exists.
 - `tools/check_down_arrow.ts` passes (960 pixels, both variants, four frames):
   the battle dialogue continue arrow matches C tile addressing.
 
-## Remaining work, from simpler to more complex
+## Pendiente, de más sencillo a más difícil (2026-09-24)
 
-This is an approximate complexity order. Dependencies can change implementation
-order; each item requires comparison with the original C, scripts and data.
-Why each item matters is noted: progression content, visible fidelity, or
-explicitly out of scope.
+Orden aproximado por esfuerzo. Cada punto dice qué `.c` portar, qué archivo
+TS reemplaza y por qué importa (**[juego]** afecta a la progresión o a las
+reglas, **[visual]** solo a la fidelidad visual). Ya portados como pantallas
+de hardware: intro/título, menú principal, Oak, teclado de nombres, mapa de
+región, opciones, mochila, estuche MT, saquito de bayas, menú de equipo,
+iconos de Pokémon, list_menu, Salón de la Fama (parcial), diploma, Seagallop,
+motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 
-1. Keep documentation current. The local Git baseline exists (`main`, no
-   remote configured, so nothing is pushed).
-   - `list_menu.c` + `menu_indicators.c` are ported (`src/fr/hw/listMenu.ts`)
-     over a `ListSurface`, so hardware windows and field canvas windows share
-     one implementation (`src/fr/menus/fieldListMenu.ts` adds the field
-     surface and the red scroll arrows as field sprites). In use by: every
-     `openHardwareChoice` adapter (bag, party, PC, Pokédex, trades…; source
-     selector arrow, 16px rows, D-pad paging, scroll arrows, grey disabled
-     rows), the `special ListMenu` script lists (`sFieldSpecialsListMenuTemplate`,
-     `ScriptListMenuMoveCursorFunction`, arrows at the source positions,
-     suspend/`ReturnToListMenu`) and the shop item list (prices as in
-     `BuyMenuPrintPriceInList`). Source review only; not run.
-2. Fix small visual defects (battle dialogue arrow verified via
-   `tools/check_down_arrow.ts`; naming page-swap/cursor choreography,
-   trainer disguise icons, storage cursor animations pending).
-3. Verify `naming_screen.c` parity for player, rival and Pokémon naming (screen
-   exists and is connected; choreography details pending).
-4. Options and region map screens are ported on the hardware layer:
-   `src/fr/regionMap.ts` is `region_map.c` (Town Map with open/close edge
-   animation, dungeon icons, map-preview zoom with flavor text, Kanto/Sevii
-   switch menu; wall map for `ShowTownMap`; Fly map with fly icons and
-   `SetFlyWarpDestination`, wired to the party menu's FLY), and
-   `src/fr/optionMenu.ts` is `option_menu.c` (frame preview, WIN0 row
-   highlight, returns to the open start menu). Source review only; not run.
-   Trainer card: dedicated card graphics, flip animation and photo icons
-   pending.
-   - BAG: `src/fr/bagMenu.ts` ports `item_menu.c`, `bag.c` and
-     `item_menu_icons.c` (bag sprite with pocket switch and shake, item icons,
-     pocket list reveal, SELECT item moving with the swap line, context menus
-     by location, toss/register, sell to a shop, deposit to the PC, give from
-     the party menu). `src/fr/hw/menuHelpers.ts` adds `menu_helpers.c`,
-     `money.c` and the scheduled-copy helpers. The field bag, the battle bag,
-     the shop SELL option, PC deposit and the party GIVE option use it. TM CASE: `src/fr/tmCase.ts` ports
-     `tm_case.c` (HMs first, move info with type/power/accuracy/PP icons,
-     disc sprite tinted by type with the swap animation, USE/GIVE context
-     menu, give-from-party/PC and sell flows); the bag opens it for OPEN,
-     party GIVE, PC give and shop SELL. BERRY POUCH: `src/fr/berryPouch.ts` ports
-     `berry_pouch.c` (wobbling pouch sprite, item icons, USE/GIVE/TOSS,
-     party/PC give and sell), opened from the field bag, the battle bag and
-     give/sell/PC bags. Old Man / Teachy TV scripted bags are not wired yet.
-   - POKéMON (party menu): `src/fr/partyMenu.ts` ports `party_menu.c` and
-     `fldeff_softboiled.c` (slot boxes with palette states, bouncing icons from
-     `src/fr/pokemonIcon.ts` = `pokemon_icon.c`, held-item/ball/status sprites,
-     action menus with field-move descriptions, SWITCH with the slide
-     animation, give/take items, take/read mail, field moves and FLY map, HP
-     count-up medicine, PP items, TMs/HMs with move replacement, Rare Candy
-     level-up windows and new moves, Sacred Ash, evolution stones, Softboiled,
-     battle switching and the Oak tutorial voice-over, choose-multiple, move
-     tutor, relearner and daycare selection). Wired to the start menu, bag /
-     TM case / berry pouch USE and GIVE, the battle bag (medicine/ethers) and
-     battle switching, and the ChoosePartyMon / move tutor / relearner /
-     daycare specials. Pending: `pokemon_special_anim.c` (the use-item scene is
-     skipped), the real summary screen (`src/fr/summaryScreen.ts` is a text
-     adapter), Easy Chat mail writing (given mail keeps a blank message) and
-     giving PC-mailbox mail.
-5. Replace small, bounded event-special placeholders with source behavior.
-6. Complete shops and the bag, including item selection and use. Verify the
-   Game Corner prize exchange scripts (stock, prices, delivery) — otherwise
-   prize Pokémon/TMs stay unreachable.
-7. Complete the summary screen (`pokemon_summary_screen.c`), the move-forget
-   selection and `pokemon_special_anim.c`; the party menu is ported.
-8. Verify wild encounters and trainer sight detection against source behavior
-   (both are connected to the field engine; parity checks pending).
-9. Complete and verify capture flow and its party/storage destinations, plus
-   a Safari Zone end-to-end pass (controller exists; bait/rock/flee/TimesUp
-   and clean exit unverified).
-10. Complete PC storage sprite visuals and the Pokédex search/area pages
-    (storage has withdraw/deposit/move-mon/move-items/wallpaper/
-    release/name-box with source rules; dex list, info page with cry and
-    capture registration are connected). Verify fossil revive and other gift
-    scripts that reuse `scriptGiveMon`.
-11. Battle animation effects: the 48-opcode interpreter is complete (664 scripts
-    decode cleanly, headless-verified) and ~68% of effect references render
-    real tasks; the rest flash on schedule. Still pending, by value: stat-change
-    arrows (every Growl/Tail Whip), horizontal/terrain shake, substitute/
-    transform/minimize sprites, BG scrolling, mon-to-BG copies, spatial panning.
-12. Refine audio: reverb, exact ADSR/duty/sweep, keysplit melodic voices,
-    BGM ducking under cries, per-channel panning. Playback, cries and the full
-    exporter already work.
-13. Complete rematches and roaming edge cases (daycare, trades, roamer core
-    are ported). Shiny sparkles need the animation only; rates already flow.
-14. Validate and complete main-story and postgame events across Kanto and Sevii
-    with zone-by-zone playthroughs. This is the only "full game" criterion and
-    the largest remaining item. Postgame distribution events (Mew/Deoxys
-    tickets) need a design decision: unreachable (faithful) vs alternative path.
-15. Verify full-game fidelity, saves and regression checkpoints (zone save
-    snapshots + loaders). Focused checks are also required during every
-    earlier step.
+### Nivel 1 — pequeño (menos de un día cada uno)
 
-Explicitly out of scope (no link hardware in a browser): link battles/trades,
-Battle Tower link play, Union Room, Berry Crush/Dodrio Berry Picking/Pokémon
-Jump, e-Reader, wireless adapter, Contest linkups. Stubs report the source's
-disconnected-cable codes. Quest Log recording and the Help system are inert
-and affect only rewatching, not gameplay.
+1. **Buzón del PC** (`mailbox_pc.c`, parte de `player_pc.c`) **[juego]**:
+   `menus/playerPc.ts` lista las cartas *del equipo*; en el C el buzón guarda
+   hasta 10 cartas en el PC con LEER / A LA MOCHILA / DAR A POKéMON. Unificar
+   con `save.pcMail` (lo crea `TakeMailFromMon2` en `partyMenu.ts`) y
+   completar `TryGiveMailToSelectedMon` (`PARTY_ACTION_GIVE_MAILBOX_MAIL`).
+2. **Objetos ocultos renovables** (`renewable_hidden_items.c`, 608 líneas)
+   **[juego]**: Portado fiel en `src/fr/renewableHiddenItems.ts`, conectado a
+   `fieldControl.ts` (conteo de pasos) y `overworld.ts` (`onMapLoad`), verificado
+   headless con `npm run check:renewable` (15 mapas, límite de 1500 pasos,
+   regeneración y distribución exacta de rare/uncommon/common).
+3. **Vista previa de mapa al entrar en cuevas/bosques** (`map_preview_screen.c`)
+   **[visual]**: los datos (`map_preview_screen` cdata, pack
+   `graphics_map_preview`) ya se precargan; falta la pantalla y el hook de warp.
+4. **Efecto de Destello al usarlo** (`fldeff_flash.c`) **[visual]**: el nivel
+   de oscuridad funciona; falta la animación de apertura del círculo.
+5. **Bolsa del Viejo y bolsa de Teachy TV** (`item_menu.c`
+   `InitOldManBag`/`Pokedude`) **[visual]**: la bolsa real no está conectada a
+   esos modos guionizados.
+6. **Marcas de Pokémon** (`mon_markings.c`) **[visual]**: necesarias para el
+   resumen y las cajas; sin ellas esos menús no pueden mostrar/editar marcas.
+7. **Registro de batallas** (`battle_records.c`) **[visual]**: solo afecta al
+   récord de combates por cable (fuera de alcance), pero el menú existe en el PC.
+8. **Contador de tiempo y utilidades pequeñas** (`play_time.c`, `coins.c`,
+   `save_location.c`, `heal_location.c`): comprobar que las reglas existentes
+   (en `save.ts`/`game.ts`) coinciden con el C línea a línea.
+
+### Nivel 2 — pantallas medianas (1–3 días cada una)
+
+9. **Pantalla de datos del Pokémon** (`pokemon_summary_screen.c`, ~4700 líneas)
+   **[visual]**: reemplaza `summaryScreen.ts` (texto) y el selector de
+   movimiento a olvidar (`battle/ext.ts ShowSelectMovePokemonSummaryScreen`,
+   `menus/monProgress.ts`). Desbloquea también la versión de batalla y la de
+   las cajas. Es el hueco visual más visible hoy.
+10. **Escena de "usar objeto"** (`pokemon_special_anim.c`, 2272 líneas)
+    **[visual]**: `partyMenu.ts` salta `StartUseItemAnim_*` y fija
+    `PSA_IsCancelDisabled() = false`; al portarla se cambia solo eso.
+11. **Recordador de movimientos** (`move_relearner.c`) **[juego]**: verificar
+    si la pantalla actual es adaptador y portarla (el menú de equipo ya le pasa
+    `VAR_0x8005` como en el C).
+12. **Tarjeta de entrenador** (`trainer_card.c`) **[visual]**: gráficos,
+    giro de la tarjeta, medallas y fotos (`menus/trainerCard.ts` es adaptador).
+13. **Fame Checker y Teachy TV** (`fame_checker.c`, `teachy_tv.c`)
+    **[visual]**: `menus/keyItemScreens.ts` son adaptadores de texto; Teachy TV
+    necesita además el controlador de batalla Pokédude
+    (`battle_controller_pokedude.c`, 2698 líneas).
+14. **PC de objetos** (`item_pc.c`) **[visual]**: retirar/depositar con la
+    interfaz real (hoy `playerPc.ts` usa listas; el depósito ya usa la mochila).
+15. **Evolución fuera de combate** (`evolution_scene.c` desde el campo +
+    `evolution_graphics.c`) **[visual]**: `battle/evoScene.ts` ya tiene la
+    presentación; conectar `BeginEvolutionScene` desde el menú de equipo /
+    Caramelo Raro / piedras (hoy `monProgress.evolveWithMessages`) y portar las
+    chispas de `evolution_graphics.c`.
+16. **Intercambios en juego** (`trade.c` escena + `ingameTrade`) **[visual]**:
+    la lógica funciona; falta la animación del intercambio.
+17. **Tragaperras: gráficos** (`slot_machine.c`) **[visual]**: reglas y pagos
+    verificados; faltan rodillos, baile de Clefairy y destellos.
+18. **Pokédex completa** (`pokedex_screen.c`, `pokedex_area_markers.c`,
+    `wild_pokemon_area.c`) **[visual]**: lista, búsqueda, página de área
+    (dónde vive cada especie) y página de registro en batalla (hoy adaptador en
+    `battle/ext.ts DexScreen_RegisterMonToPokedex`).
+19. **Menú Guardar e informe** (`start_menu.c` guardado, `save_menu_util.c`)
+    **[visual]**: comparar la ventana de guardado y el resumen con el C.
+
+### Nivel 3 — sistemas grandes (varios días)
+
+20. **Transiciones de combate** (`battle_transition.c`, 3037 líneas)
+    **[visual]**: hoy no hay transición (espiral, persianas, etc.); se nota en
+    cada combate. El pack `graphics_battle_transitions` ya se exporta.
+21. **Almacenamiento de cajas** (`pokemon_storage_system*.c`, ~7000 líneas)
+    **[juego/visual]**: `menus/storageMenu.ts` implementa las reglas
+    (sacar/dejar/mover/objetos/fondos/liberar/nombre) con listas; falta la
+    interfaz real con cursor-mano, iconos y animaciones.
+22. **Easy Chat** (`easy_chat*.c`, ~4000 líneas) **[juego]**: escribir cartas
+    (hoy quedan en blanco), perfiles y frases de algunos NPC.
+23. **Animaciones de ataques restantes** (`battle_anim_*.c`, ~30 000 líneas)
+    **[visual]**: el intérprete está completo y ~68 % de las referencias tienen
+    tareas reales; faltan flechas de stats, sacudidas de terreno, sustituto/
+    transformación, scroll de BG, copias mon→BG y los efectos por tipo
+    (`battle_anim_fire.c`, `…_ice.c`, `…_effects_1/2/3.c`…). Portar por
+    frecuencia de uso (Growl/Tail Whip primero).
+24. **Audio fino** (`m4a*.c`) **[visual/sonido]**: reverb, ADSR exacto,
+    duty/sweep, keysplit, atenuación de BGM bajo los gritos, paneo.
+25. **Torre Entrenador de Isla Siete** (`trainer_tower.c` + `trainer_tower_sets.c`,
+    ~9000 líneas de datos) **[juego postgame]**: specials registrados, falta
+    completar reglas y datos de equipos.
+26. **Casos límite de revanchas/roaming/guardería** **[juego]**: Buscapelea,
+    Pokémon errantes, huevos; núcleo portado, falta verificación contra el C.
+
+### Nivel 4 — validación de juego completo (lo más largo)
+
+27. **Recorrido zona por zona** de toda la historia de Kanto y Sevii con
+    comparación contra el C/emulador: eventos, specials que aún devuelven
+    valores fijos, entrenadores, objetos, capturas, Safari. Es el único
+    criterio real de "juego completo".
+28. **Guardados de regresión**: snapshots por zona + cargador para repetir
+    pruebas rápido; checks headless por sistema en `tools/checks/`.
+29. **Decisión de diseño postgame**: eventos de distribución (tickets de Mew/
+    Deoxys): inalcanzables (fiel) o ruta alternativa.
+
+### Fuera de alcance (no hay hardware de enlace en el navegador)
+
+Batallas/intercambios por cable, Union Room y su chat, Berry Crush, Dodrio
+Berry Picking, Pokémon Jump, Mystery Gift/Mystery Event, e-Reader, adaptador
+inalámbrico, `link*.c`/`librfu*.c`, `quest_log*.c` (repetición de partida) y
+el sistema de ayuda (`help_system.c`). Los stubs devuelven los códigos de
+"cable desconectado" del C.
+
+### Mejoras futuras posibles (no son parte del port fiel)
+
+16:9 con cámara ampliada del overworld, escalado entero/filtros, guardado en
+la nube, atajos de calidad de vida (correr siempre, texto instantáneo),
+sin tocar las reglas: hacerlo detrás de opciones para mantener el modo fiel.
 
 ## Removed legacy code (2026-09-24)
+
+Later cleanup: the text-list party adapter helpers (`fieldMovesOf`,
+`fieldMoveName`, `flyDestinations`, `mapSecName`) and the unused exported PNGs
+(`gfx/pokemon/{back,back_shiny,icon}`, `gfx/items`, `gfx/trainers`,
+`gfx/battle`, `gfx/interface`, `gfx/fieldfx`, ~7 MB) were removed; the ports
+read those graphics from INCBIN. `step_graphics.py` now exports only fonts,
+window frames, doors and front pics. `tools/check_down_arrow.ts` moved to
+`tools/checks/downArrow.ts` (`npm run check:arrow`).
 
 The Phaser prototype (`src/engine`, `src/scenes`, `src/content`, `src/game`,
 `src/audio`, `src/ui`), the `phaser` dependency, the legacy importers
@@ -233,10 +264,8 @@ songs, voice groups, instrument samples, cries).
 
 ## Porting method and document ownership
 
-Read source headers for constants and structures, C implementations for rules
-and callbacks, and event/battle scripts for sequencing. Translate behavior into
-TypeScript and reuse exported data through the hardware abstraction. Headers
-alone do not define the complete game behavior.
+The full method (data pipeline, cdata/INCBIN access, faithful translation
+rules, animations, verification levels) is in [AGENTS.md](AGENTS.md).
 
 This file describes the active `src/fr` port. `START-FLOW.md` describes its
 launch path.

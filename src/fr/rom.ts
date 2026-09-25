@@ -221,13 +221,7 @@ export class Rom {
   regionMap!: Array<{ id: string; name: string; x: number; y: number; width: number; height: number }>;
   strings!: Record<string, string>;
   battleStrings!: { start: number; table: Array<string | { label: string }> };
-  gfx!: {
-    pokemon: Record<string, string>;
-    trainers: { front: Record<string, { name: string; coords: [number, number] }>; back: Record<string, { width: number; height: number }> };
-    battle: { textboxPalette: number[][]; terrains: string[] };
-    fieldEffects: Record<string, unknown>;
-    itemIcons: Record<string, string>;
-  };
+  gfx!: { pokemon: Record<string, string> };
   fonts!: Record<string, { width: number; height: number; pixels: string; widths?: number[]; palette?: number[][] }>;
   windows!: Record<string, { width: number; height: number; pixels: string; palette: number[][] }> & { stdpal: number[][][] };
   doors!: Record<string, { width: number; height: number; pixels: string }>;

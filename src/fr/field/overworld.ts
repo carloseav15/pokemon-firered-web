@@ -23,6 +23,7 @@ import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
 import { onMapLoadForRoamer } from "../pokemon/roamer";
+import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
@@ -186,6 +187,7 @@ export class Overworld {
     this.stepCallback.reset();
     mapResetTrainerRematches(this.game);
     onMapLoadForRoamer();
+    TryRegenerateRenewableHiddenItems(save.location.mapGroup, save.location.mapNum);
   }
 
   /** Overworld_ResetStateAfterFly / Teleport / DigEscRope / WhitingOut */

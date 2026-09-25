@@ -11,6 +11,7 @@ import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS }
 import { MOVING, PLAYER_AVATAR_FLAG_FORCED, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
 import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
+import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
 
 export type FieldInput = {
   pressedAButton: boolean;
@@ -131,6 +132,7 @@ export class FieldControl {
 
     if (input.tookStep) {
       incrementGameStat(rom.constants.GAME_STAT_STEPS ?? 0);
+      IncrementRenewableHiddenItemStepCounter();
       if (this.tryStartStepBasedScript(position, behavior, direction)) return true;
     }
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {

@@ -112,6 +112,10 @@ export function cdataAny<T = unknown>(name: string): T | undefined {
   return undefined;
 }
 
+export function registerCData(file: string, defs: Record<string, { type: string | null; value: unknown }>): void {
+  cdataFiles.set(file, defs);
+}
+
 export type SymRef = { $sym: string; index?: number; offset?: number; expr?: string };
 
 export function isSym(v: unknown): v is SymRef {

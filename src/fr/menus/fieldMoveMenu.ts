@@ -1,7 +1,6 @@
-// party_menu.c field-move actions (sFieldMoves / sFieldMoveCursorCallbacks and
-// CursorCB_FieldMove) with the SetUpFieldMove_* checks from fldeff_*.c.
-// Each setup returns the post-menu field callback (gPostMenuFieldCallback)
-// that runs once the party menu has closed.
+// The SetUpFieldMove_* checks from fldeff_*.c behind party_menu.c
+// CursorCB_FieldMove (partyMenu.ts). Each setup returns the post-menu field
+// callback (gPostMenuFieldCallback) that runs once the party menu has closed.
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
@@ -29,17 +28,6 @@ export function text(symbol: string): string {
   return decode(expandPlaceholders(rom.text(symbol)));
 }
 
-/** SetPartyMonFieldSelectionActions: the field moves this mon knows, in sFieldMoves order. */
-export function fieldMovesOf(moves: number[]): number[] {
-  const out: number[] = [];
-  FIELD_MOVES.forEach((move, index) => { if (moves.includes(move)) out.push(index); });
-  return out;
-}
-
-export function fieldMoveName(index: number): string {
-  return decode(rom.moveName(FIELD_MOVES[index]));
-}
-
 export type FieldMoveResult =
   | { kind: "fail"; message: string }
   | { kind: "close"; post: () => void }
@@ -47,12 +35,7 @@ export type FieldMoveResult =
   | { kind: "fly" }
   | { kind: "softboiled" };
 
-/** GetMapNameGeneric for a map's region map section. */
-export function mapSecName(section: number): string {
-  return decode(rom.regionMapName(section));
-}
-
-export function sectionOfWarp(w: WarpData): number {
+function sectionOfWarp(w: WarpData): number {
   const id = rom.mapIdByNum((w.mapGroup << 8) | w.mapNum);
   const name = id ? rom.mapIndex.maps[id]?.section : undefined;
   return name ? rom.c(name) : 0;
@@ -162,34 +145,4 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       return { kind: "close", post: () => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_SWEET_SCENT); } };
   }
   return { kind: "fail", message: text("gText_CantUseHere") };
-}
-
-/** sMapFlyDestinations for the mapsecs GetMapsecType reports as visited towns. */
-const FLY_DESTINATIONS: Array<[string, string, string]> = [
-  ["MAPSEC_PALLET_TOWN", "FLAG_WORLD_MAP_PALLET_TOWN", "HEAL_LOCATION_PALLET_TOWN"],
-  ["MAPSEC_VIRIDIAN_CITY", "FLAG_WORLD_MAP_VIRIDIAN_CITY", "HEAL_LOCATION_VIRIDIAN_CITY"],
-  ["MAPSEC_PEWTER_CITY", "FLAG_WORLD_MAP_PEWTER_CITY", "HEAL_LOCATION_PEWTER_CITY"],
-  ["MAPSEC_ROUTE_4_POKECENTER", "FLAG_WORLD_MAP_ROUTE4_POKEMON_CENTER_1F", "HEAL_LOCATION_ROUTE4"],
-  ["MAPSEC_CERULEAN_CITY", "FLAG_WORLD_MAP_CERULEAN_CITY", "HEAL_LOCATION_CERULEAN_CITY"],
-  ["MAPSEC_ROUTE_10_POKECENTER", "FLAG_WORLD_MAP_ROUTE10_POKEMON_CENTER_1F", "HEAL_LOCATION_ROUTE10"],
-  ["MAPSEC_LAVENDER_TOWN", "FLAG_WORLD_MAP_LAVENDER_TOWN", "HEAL_LOCATION_LAVENDER_TOWN"],
-  ["MAPSEC_VERMILION_CITY", "FLAG_WORLD_MAP_VERMILION_CITY", "HEAL_LOCATION_VERMILION_CITY"],
-  ["MAPSEC_CELADON_CITY", "FLAG_WORLD_MAP_CELADON_CITY", "HEAL_LOCATION_CELADON_CITY"],
-  ["MAPSEC_FUCHSIA_CITY", "FLAG_WORLD_MAP_FUCHSIA_CITY", "HEAL_LOCATION_FUCHSIA_CITY"],
-  ["MAPSEC_SAFFRON_CITY", "FLAG_WORLD_MAP_SAFFRON_CITY", "HEAL_LOCATION_SAFFRON_CITY"],
-  ["MAPSEC_CINNABAR_ISLAND", "FLAG_WORLD_MAP_CINNABAR_ISLAND", "HEAL_LOCATION_CINNABAR_ISLAND"],
-  ["MAPSEC_INDIGO_PLATEAU", "FLAG_WORLD_MAP_INDIGO_PLATEAU_EXTERIOR", "HEAL_LOCATION_INDIGO_PLATEAU"],
-  ["MAPSEC_ONE_ISLAND", "FLAG_WORLD_MAP_ONE_ISLAND", "HEAL_LOCATION_ONE_ISLAND"],
-  ["MAPSEC_TWO_ISLAND", "FLAG_WORLD_MAP_TWO_ISLAND", "HEAL_LOCATION_TWO_ISLAND"],
-  ["MAPSEC_THREE_ISLAND", "FLAG_WORLD_MAP_THREE_ISLAND", "HEAL_LOCATION_THREE_ISLAND"],
-  ["MAPSEC_FOUR_ISLAND", "FLAG_WORLD_MAP_FOUR_ISLAND", "HEAL_LOCATION_FOUR_ISLAND"],
-  ["MAPSEC_FIVE_ISLAND", "FLAG_WORLD_MAP_FIVE_ISLAND", "HEAL_LOCATION_FIVE_ISLAND"],
-  ["MAPSEC_SIX_ISLAND", "FLAG_WORLD_MAP_SIX_ISLAND", "HEAL_LOCATION_SIX_ISLAND"],
-  ["MAPSEC_SEVEN_ISLAND", "FLAG_WORLD_MAP_SEVEN_ISLAND", "HEAL_LOCATION_SEVEN_ISLAND"],
-];
-
-export function flyDestinations(): Array<{ section: number; heal: number; name: string }> {
-  return FLY_DESTINATIONS.filter(([, flag]) => flag in rom.constants && flagGet(rom.c(flag))).map(([sec, , heal]) => ({
-    section: rom.c(sec), heal: rom.c(heal), name: decode(Uint8Array.from(rom.regionMapName(rom.c(sec)))),
-  }));
 }
