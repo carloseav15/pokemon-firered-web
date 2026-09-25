@@ -3,3 +3,7 @@
 
 import "./mons";
 import "./fire";
+import "./monMovement";
+import "./normal";
+import "./flying";
+import "./utilityFuncs";

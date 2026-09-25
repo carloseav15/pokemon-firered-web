@@ -89,6 +89,7 @@ while (frames < 3000) {
   joy.release(A_BUTTON);
   frames++;
 }
+for (let k = 0; k < 60; k++) frame(); // let the action menu finish drawing
 console.log(`battle ready after ${frames} frames (main=${G.gBattleMainFunc?.name})`);
 
 function usedSprites(): number {
