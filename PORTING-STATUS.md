@@ -168,16 +168,18 @@ cancelación permanecen adaptados.
 
 ### Lista de movimientos del Recordador (2026-09-25)
 
-`game.ts` imprime solo el nombre de cada movimiento, como
-`MoveRelearnerInitListMenuBuffersEtc` del C, y la fila de salida usa el texto C
-`gFameCheckerText_Cancel` en vez del rótulo genérico. También pregunta antes de enseñar,
-confirma la salida y usa `ShowSelectMovePokemonSummaryScreen` para escoger el
-movimiento que se olvida cuando el Pokémon ya conoce cuatro. La sustitución
-actualiza slot, PP y bonus, y muestra los textos C de olvido/aprendizaje.
-`hardwareChoice.ts` ahora expande placeholders de `STR_VAR_1..4` al mostrar
-diálogo, como hace el helper C. `npm run check:port` pasó. Sigue adaptado el
-menú de lista/Yes-No; faltan el panel de tipo/poder/precisión/PP/efecto, la
-máquina de estados, fades y el callback/ritmo originales del módulo.
+`moveRelearner.ts` reemplaza la lista genérica por la pantalla de selección del C:
+lee `sBgTemplates`, `sWindowTemplates`, el fondo y la paleta exportados; dibuja
+los iconos de tipo/poder/precisión/PP/efecto, las estadísticas y la descripción
+para el movimiento seleccionado; usa el `ListMenu` común y la fila
+`gFameCheckerText_Cancel`. La navegación pregunta antes de enseñar y confirmar
+salida; con cuatro movimientos usa `ShowSelectMovePokemonSummaryScreen`, actualiza
+slot/PP/bonus, y presenta los textos de olvido/aprendizaje del decomp.
+`hardwareChoice.ts` expande placeholders como `StringExpandPlaceholders`.
+Verificado: `npm run check:port`, `npm run build` y paridad de las claves cdata/
+INCBIN referenciadas. No se comprobó aún en navegador. Faltan el ciclo original
+de fades y tareas, el `YesNoMenu` del C, sprites/animaciones propios del Recordador
+y comparación visual.
 
 ### Pokédex area marker logic (2026-09-25)
 
@@ -309,11 +311,11 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
     mantiene `PSA_IsCancelDisabled() = false`; faltan las cuatro tareas de escena,
     callbacks, tiempos de cancelación y efectos de sprites.
 11. **Recordador de movimientos** (`learn_move.c`, 932 líneas; reglas en
-    `pokemon.c`) **[visual]**: la búsqueda de movimientos ya está en
-    `pokemon/partyRules.ts` y el flujo de enseñar/olvidar usa las reglas actuales
-    de aprendizaje. `game.ts` muestra los nombres y preguntas del C, y el caso de cuatro movimientos
-    usa la pantalla de resumen real para seleccionar el reemplazo; falta el panel
-    de datos, la máquina de estados y sus ventanas, sprites, sonidos y fades.
+    `pokemon.c`) **[parcial]**: `pokemon/partyRules.ts` busca movimientos; la
+    pantalla `menus/moveRelearner.ts` usa recursos y ventanas del C, presenta
+    datos de movimiento y lista, y el flujo enseña/olvida con la pantalla de
+    resumen real. Faltan fades/estados temporales originales, YesNoMenu GBA,
+    sprites y validación visual.
 12. **Tarjeta de entrenador** (`trainer_card.c`, 1959 líneas) **[PORTADO]**:
     portada fielmente en `src/fr/menus/trainerCard.ts` sobre la capa de hardware GBA (`hw/`).
     Implementa:

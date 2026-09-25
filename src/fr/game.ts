@@ -36,6 +36,7 @@ import { doCredits, enterHallOfFame, openHallOfFamePc } from "./hallOfFame";
 import { createInGameTradePokemon, doInGameTradeScene, getInGameTradeSpeciesInfo, getTradeSpecies } from "./pokemon/ingameTrade";
 import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
 import { openHardwareMessage } from "./menus/hardwareChoice";
+import { openMoveRelearnerList } from "./menus/moveRelearner";
 import { learnMoveWithPrompt } from "./menus/monProgress";
 import { checkBagHasItem } from "./pokemon/items";
 import { openStorageMenu } from "./menus/storageMenu";
@@ -580,6 +581,7 @@ export class Game {
       const mon = save.party[varGet(SV.x8004)];
       const finish = (learned: boolean): void => { varSet(SV.x8004, learned ? 1 : 0); close(); ow.script.enable(); };
       if (!mon) { finish(false); return; }
+      stringVars.var1 = Uint8Array.from(mon.nickname);
       const moves = relearnableMoves(mon);
       const confirmStop = (): void => {
         stringVars.var1 = Uint8Array.from(mon.nickname);
@@ -589,11 +591,7 @@ export class Game {
           });
         });
       };
-      const list = (): void => openHardwareChoice(rom.text("gText_TeachWhichMoveToMon"), moves.map((m, value) => ({
-        // MoveRelearnerInitListMenuBuffersEtc prints only gMoveNames; PP and
-        // move details are shown in the original info windows, not the list.
-        label: rom.moveName(m), value,
-      })), true, (i) => {
+      const list = (): void => { void openMoveRelearnerList(moves, (i) => {
         if (i === null) { confirmStop(); return; }
         const move = moves[i];
         stringVars.var2 = rom.moveName(move);
@@ -603,7 +601,7 @@ export class Game {
             learnMoveWithPrompt(mon, move, (learned) => { if (learned) finish(true); else list(); }, true);
           });
         });
-      }, rom.text("gFameCheckerText_Cancel"));
+      }); };
       list();
     }, false);
   }
