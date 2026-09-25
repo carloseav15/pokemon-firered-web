@@ -3,6 +3,7 @@
 
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
+import { BattleTransitionScene, getTrainerBattleTransition, getWildBattleTransition } from "./battle/transition";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL, stringWidth } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
@@ -770,19 +771,22 @@ export class Game {
     ow.objects.freezeAll();
     this.battleOutcome = 0;
     sound.playBattleBGM(this.battleSetup.battleBgm(request));
-    let startedFade = false;
+    let startedTransition = false;
     const id = tasks.create(() => {
       // battle_setup.c Task_BattleStart waits for FldEffPoison_IsActive to clear.
-      if (!startedFade) {
+      if (!startedTransition) {
         if (ow.effects.isPoisonEffectActive()) return;
-        paletteFade.fadeScreen(FADE_TO_BLACK, 0);
-        startedFade = true;
-        return;
-      }
-      if (paletteFade.active) return;
-      tasks.destroy(id);
-      if (this.battleRunner) {
-        this.scene = this.battleRunner(request);
+        startedTransition = true;
+        tasks.destroy(id);
+        const transitionId = request.kind === "trainer"
+          ? getTrainerBattleTransition(ow, request.trainerId ?? 0, !!request.isDouble, request.enemyParty)
+          : getWildBattleTransition(ow, request.enemyParty);
+        this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
+          if (this.battleRunner) {
+            this.scene = this.battleRunner(request);
+            this.setCallbacks(null, () => this.scene?.update());
+          }
+        });
         this.setCallbacks(null, () => this.scene?.update());
       }
     }, 1);

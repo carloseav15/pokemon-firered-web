@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 3 | 5138 | 0/69 |
-| Parcial (menos del 80 % de funciones) | 115 | 128819 | 1796/6064 |
+| Parcial (menos del 80 % de funciones) | 115 | 128819 | 1811/6064 |
 | Adaptador (UI simplificada) | 6 | 10024 | 54/341 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 85 | 104962 | 3179/3351 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
 | **Pendiente de portar** | **124** | **143981** | |
-| **Total en alcance** | **210** | **248996** | **5029/9825** |
+| **Total en alcance** | **210** | **248996** | **5044/9825** |
 
 ## Falta (sin funciones portadas)
 
@@ -35,8 +35,8 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `party_menu.c` | 6342 | 280/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |
 | `battle_main.c` | 4477 | 82/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |
 | `field_effect.c` | 4033 | 39/239 | `field/fieldMoves.ts` |  |
-| `overworld.c` | 3563 | 67/238 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |
-| `battle_transition.c` | 3037 | 1/134 |  |  |
+| `overworld.c` | 3563 | 70/238 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |
+| `battle_transition.c` | 3037 | 9/134 | `battle/transition.ts` |  |
 | `trade_scene.c` | 2916 | 7/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  |
 | `intro.c` | 2805 | 17/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 |  |  |
@@ -69,7 +69,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `field_weather.c` | 1147 | 7/50 | `field/weather.ts`, `gba/fade.ts` |  |
 | `battle_bg.c` | 1111 | 12/17 | `battle/bg.ts` |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |
-| `battle_setup.c` | 1070 | 29/57 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |
+| `battle_setup.c` | 1070 | 32/57 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |
 | `berry.c` | 1028 | 1/8 | `script/specials.ts` |  |
 | `start_menu.c` | 1016 | 6/65 | `game.ts` |  |
 | `palette.c` | 994 | 29/41 | `hw/palette.ts` |  |
@@ -91,7 +91,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |
 | `itemfinder.c` | 658 | 2/24 | `menus/fieldMenus.ts` |  |
 | `menu_indicators.c` | 656 | 12/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |
-| `sound.c` | 649 | 23/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |
+| `sound.c` | 649 | 24/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |
 | `map_preview_screen.c` | 616 | 6/13 | `mapPreviewScreen.ts` |  |
 | `script.c` | 583 | 15/53 | `field/fieldControl.ts`, `script/context.ts` |  |
 | `option_menu.c` | 575 | 15/19 | `optionMenu.ts` |  |

@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5029/9825 (51 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5044/9825 (51 %)**.
 - Archivos C pendientes: **124** (143981 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
@@ -34,11 +34,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 |---|---:|---:|---:|---|
 | `event_object_movement.c` | 9412 | 41/752 | ~8898 |  |
 | `field_effect.c` | 4033 | 39/239 | ~3374 |  |
-| `battle_transition.c` | 3037 | 1/134 | ~3014 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
+| `battle_transition.c` | 3037 | 9/134 | ~2833 |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 | ~2634 |  |
-| `overworld.c` | 3563 | 67/238 | ~2559 |  |
 | `trade_scene.c` | 2916 | 7/53 | ~2530 |  |
+| `overworld.c` | 3563 | 70/238 | ~2515 |  |
 | `naming_screen.c` | 2509 | 4/109 | ~2416 |  |
 | `field_weather_effects.c` | 2346 | 1/93 | ~2320 |  |
 | `easy_chat_3.c` | 2316 | 1/92 | ~2290 |  |

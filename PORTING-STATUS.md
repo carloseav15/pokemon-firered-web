@@ -88,6 +88,68 @@ Playwright/Chromium headless (fuera del repo, en el scratchpad de la sesión).
   Ruta 1, laboratorio, elección de inicial hasta la pantalla de apodo).
   Continúa el recorrido; esta sección se ampliará con cada hallazgo.
 
+## battle_transition.c: primer bloque de transiciones de combate (2026-09-25)
+
+Antes no existía transición alguna: `game.ts` `startBattle()` hacía un
+`paletteFade.fadeScreen(FADE_TO_BLACK, 0)` liso y pasaba directo a la
+escena de combate. Nuevo `src/fr/battle/transition.ts`:
+
+- **Selección fiel**: `getWildBattleTransition`/`getTrainerBattleTransition`
+  (`GetWildBattleTransition`/`GetTrainerBattleTransition`/
+  `GetBattleTransitionTypeByMap` de `battle_setup.c`) deciden el id de
+  transición real según terreno (normal/cueva/flash/agua vía
+  `MetatileBehavior_IsSurfable`, `ow.flashLevel`, `mapType`) y si el rival
+  es más débil que el jugador (`GetSumOfPlayerPartyLevel`/
+  `GetSumOfEnemyPartyLevel`). Elite Four/Campeón/Base Secreta caen en
+  `B_TRANSITION_BLUE` como marcador (sus mugshots dedicados no están
+  portados; no son alcanzables en este tramo).
+- **Intro compartida**: doble parpadeo a gris (`Task_BattleTransition_Intro`,
+  `TransitionIntro_FadeToGray`/`FadeFromGray`, `BlendPalette` hacia
+  `RGB(11,11,11)`), igual para las 18 transiciones.
+- **Efectos portados con fidelidad de coordenadas y temporización**:
+  `B_TRANSITION_ANGLED_WIPES` (7 barridos diagonales, elección de
+  entrenador/terreno normal cuando el rival no es más débil — la propia
+  batalla del rival en el laboratorio la usa) y `B_TRANSITION_CLOCKWISE_WIPE`
+  (barrido en sentido horario por cuadrantes, elección salvaje/cueva cuando
+  el rival es más débil — la que se verá en Monte Moon). `InitBlackWipe`/
+  `UpdateBlackWipe` (el paso Bresenham compartido) se portaron letra por
+  letra como la clase `BlackWipe`.
+- **Adaptación de render, no de comportamiento**: el C mueve los registros
+  GBA `WIN0H`/`WININ`/`WINOUT` por HBlank sobre la PPU en vivo. El campo de
+  este puerto renderiza en el canvas2D `gba/` (no en `hw/ppu.ts`), así que no
+  hay BG en vivo sobre el que recortar una vez arranca la transición. En su
+  lugar `BattleTransitionScene` toma una sola instantánea del frame de campo
+  y la recorta por scanline con las mismas coordenadas y el mismo avance por
+  frame que `InitBlackWipe`/`UpdateBlackWipe`; solo cambia el backend de
+  dibujo (`ctx.drawImage` recortado por fila en vez del registro de ventana
+  de hardware).
+- **Resto de las 18 transiciones**: `B_TRANSITION_SLICE`/`WHITE_BARS_FADE`
+  (salvaje/normal — Ruta 1 a 3, Bosque Verde), `B_TRANSITION_GRID_SQUARES`/
+  `BIG_POKEBALL` (la otra mitad de cueva), `POKEBALLS_TRAIL` (entrenador/
+  normal cuando el rival es más débil), `SHUFFLE`, `BLUR`, `SWIRL`, `WAVE`,
+  `RIPPLE`, `PATTERN_WEAVE`/mugshots de Elite Four, no están portadas: el
+  parpadeo de intro se ve igual, pero el barrido cae de vuelta al fundido a
+  negro liso que ya había antes. No bloquean el juego, solo se nota la falta
+  de efecto en esos casos.
+- **Bug encontrado y arreglado en el propio `gba/fade.ts`**: `paletteFade`
+  necesita que algo llame a `update()` cada frame para avanzar (antes solo
+  `overworld.ts` lo hacía); como la transición corre como su propia `Scene`
+  fuera del campo, se quedaba con `active=true` y `level=0` para siempre tras
+  terminar el barrido. `BattleTransitionScene.update()` ahora llama
+  `paletteFade.update()` en su fase final.
+- Verificado en navegador con `frDebug.rivalBattle('SPECIES_SQUIRTLE')`
+  (mismo nivel enemigo, terreno normal → `ANGLED_WIPES`): parpadeo a gris,
+  barrido diagonal visible cerrando la pantalla a negro, fundido final y
+  entrega correcta a la escena de combate (`frGame.scene` pasa de
+  `BattleTransitionScene` a `HwScene`; pantalla "RIVAL GREEN would like to
+  battl[e]" se ve con normalidad).
+- Nivel de prueba: **navegador** (una transición `ANGLED_WIPES` completa de
+  punta a punta) + `npm run check:port`, `npm run build`, `npm run
+  check:anims`, `npm run check:braille`. No se escribió un check headless
+  dedicado para este bloque (`check:transition`) por el tiempo restante de la
+  sesión; queda pendiente junto con `CLOCKWISE_WIPE` (no se probó un
+  encuentro salvaje real en cueva, solo se revisó por código).
+
 ## Source-review update (2026-09-24, no execution checks)
 
 - Fixed `ScrCmd_bufferboxname` to use the stored box name through
