@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 44 modules as documented ported, 76 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 13 as explicitly out of scope, 36 as probable out-of-scope candidates, and 104 as unreviewed. Separately, 42 files have a
+The current review labels 44 modules as documented ported, 77 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 13 as explicitly out of scope, 36 as probable out-of-scope candidates, and 103 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -200,6 +200,13 @@ whiteout respawn now uses the original heal-location data in
   `CreateScriptedWildMon` aún no están implementadas con la semántica C; los
   selectores de equipos especiales son no-ops. `npm run check:port` pasó;
   queda revisión de comportamiento y de flujos individuales.
+- `pokemon_size_record.c`: hash, tabla de tallas, comparación y textos de
+  récord de Magikarp/Heracross están implementados en `specialsExtra.ts` y se
+  usan en scripts de casas opcionales. Los inicializadores C solo fijan las
+  variables a cero al crear partida, igual que el valor inicial guardado web.
+  `GiveGiftRibbonToParty` solo lo llama Mystery Event (distribución externa);
+  las firmas Seedot/Lotad del header no tienen definiciones en este C. Revisión
+  de fuente, sin cotejo runtime.
 - `ss_anne.c`: salida del barco conserva espera de 50 frames, estela/humo,
   desplazamiento cada cinco frames, bocina, umbral de salida y espera final 40
   frames antes de reanudar el script. Animaciones/callbacks cotejados con C;
