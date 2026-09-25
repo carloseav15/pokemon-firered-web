@@ -28,6 +28,7 @@ function hallOfFame(): HofMon[][] {
 export function enterHallOfFame(game: Game): void {
   const ow = game.overworld;
   for (const mon of save.party) healMon(mon);
+  const hadHallOfFameRecords = flagGet(C.FLAG_SYS_GAME_CLEAR);
   flagSet(C.FLAG_SYS_GAME_CLEAR);
   const stats = save.gameStats;
   if (!stats[C.GAME_STAT_FIRST_HOF_PLAY_TIME]) {
@@ -62,6 +63,9 @@ export function enterHallOfFame(game: Game): void {
   }
   ow.script.stop();
   // Task_Hof_InitTeamSaveData: the newest team is appended, the oldest dropped.
+  // On the first clear, C clears the separate Hall of Fame save sectors before
+  // writing the first team; subsequent entries preserve the existing record.
+  if (!hadHallOfFameRecords) (save as unknown as { hallOfFame?: HofMon[][] }).hallOfFame = [];
   const teams = hallOfFame();
   teams.push(save.party.filter((m) => !m.isEgg).map((m) => ({ species: m.species, level: m.level, personality: m.personality, otId: m.otId, nickname: [...m.nickname] })));
   while (teams.length > HALL_OF_FAME_MAX_TEAMS) teams.shift();

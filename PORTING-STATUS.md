@@ -835,3 +835,10 @@ Pending / placeholders:
   are represented by their register offsets. `npm run check:port` passes;
   the Canvas2D field does not yet consume these shared hardware tables, and
   runtime/visual parity was not checked.
+- `post_battle_event_funcs.c`: `EnterHallOfFame` already covered healing,
+  game-clear/first-play-time stats, Pallet continue warp, ribbons, revision-0
+  ticket rewards and screen handoff. Source comparison with `hall_of_fame.c`
+  found and fixed first-clear history reset before recording the first team;
+  repeat entries preserve prior teams. `SetCB2WhiteOut` already delegates to
+  `Game.whiteOut`. `npm run check:port` passes; HOF presentation remains adapted
+  and runtime behavior was not exercised.
