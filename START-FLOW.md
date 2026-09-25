@@ -1,8 +1,6 @@
 # Active FireRed startup flow
 
 The default entry point uses the TypeScript engine and a 240×160 Canvas.
-Phaser remains a dependency for the legacy prototype, but its scenes are not
-part of the default launch path.
 
 ```text
 src/main.ts
@@ -55,5 +53,3 @@ report browser checks of startup and the lab rival battle; this audit did not
 repeat those interactive checks. Future startup changes need a default-URL
 check through title, START, controls, Oak and entry into the world.
 
-The earlier Phaser flow and its milestones are historical reference in
-[the prototype checklist](PALLET-TOWN-TASKLIST.md).
