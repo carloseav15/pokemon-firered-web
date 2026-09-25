@@ -295,7 +295,14 @@ export class Game {
       ow.windows.add(stats);
       this.startMenuWindows.push(stats);
     }
+    // task50_startmenu: DoDrawStartMenu states 0-3, PrintStartMenuItems (two
+    // items per frame) and state 5 each take a frame, then
+    // Task_StartMenuHandleInput spends one frame in state 0. Only after that
+    // does StartCB_HandleInput read JOY_NEW, so the START press that opened
+    // the menu cannot also close it. The windows are drawn at once here.
+    let drawFrames = 4 + Math.ceil(items.length / 2) + 1 + 1;
     const id = tasks.create(() => {
+      if (drawFrames > 0) { drawFrames--; return; }
       const before = menu.cursorPos;
       const input = menu.processInput();
       if (menu.cursorPos !== before) printDesc();
