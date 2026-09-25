@@ -1874,13 +1874,12 @@ function Task_SendMailToPCYesNo(taskId: number): void {
 
 /** mail_data.c TakeMailFromMon2: into the PC mailbox (10 slots). */
 function TakeMailFromMon2(m: Mon): number {
-  const s = save as unknown as { pcMail?: Array<{ item: number; message: unknown }> };
-  s.pcMail ??= [];
-  if (s.pcMail.length >= 10) return 0xff;
-  s.pcMail.push({ item: m.heldItem, message: m.mailMessage });
+  save.pcMail ??= [];
+  if (save.pcMail.length >= 10) return 0xff;
+  save.pcMail.push({ item: m.heldItem, message: m.mailMessage ?? { words: new Array(9).fill(0xffff), author: [...save.playerName], authorId: save.trainerId >>> 0 } });
   m.heldItem = C.ITEM_NONE;
   m.mailMessage = undefined;
-  return s.pcMail.length - 1;
+  return save.pcMail.length - 1;
 }
 
 function Task_HandleSendMailToPCYesNoInput(taskId: number): void {

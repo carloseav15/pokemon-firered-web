@@ -135,8 +135,9 @@ export function removeMoney(amount: number): void {
 }
 
 export function addCoins(amount: number): boolean {
-  if (save.coins + amount > MAX_COINS) return false;
-  save.coins += amount;
+  if (save.coins >= MAX_COINS) return false;
+  const next = save.coins + (amount & 0xffff);
+  save.coins = Math.min(MAX_COINS, next);
   return true;
 }
 

@@ -17,6 +17,7 @@ export const TEMP_VARS_END = 0x400f;
 export type WarpData = { mapGroup: number; mapNum: number; warpId: number; x: number; y: number };
 
 export type BagPocket = Array<{ item: number; quantity: number }>;
+export type PcMailEntry = { item: number; message: { words: number[]; author: number[]; authorId: number } };
 
 export type SaveData = {
   version: 2;
@@ -36,6 +37,7 @@ export type SaveData = {
   coins: number;
   bag: { items: BagPocket; keyItems: BagPocket; pokeBalls: BagPocket; tmCase: BagPocket; berryPouch: BagPocket };
   pcItems: BagPocket;
+  pcMail: PcMailEntry[];
   registeredItem: number;
   party: Pokemon[];
   boxes: Array<Array<Pokemon | null>>;
@@ -84,6 +86,7 @@ export function newSaveData(): SaveData {
     coins: 0,
     bag: { items: [], keyItems: [], pokeBalls: [], tmCase: [], berryPouch: [] },
     pcItems: [],
+    pcMail: [],
     registeredItem: 0,
     party: [],
     boxes: Array.from({ length: 14 }, () => new Array(30).fill(null)),
@@ -104,6 +107,42 @@ export let save: SaveData = newSaveData();
 
 export function setSave(data: SaveData): void {
   save = data;
+}
+
+// play_time.c: one persisted frame count represents hours/minutes/seconds/VBlanks.
+export const MAX_PLAY_TIME_FRAMES = 215_999_999;
+const PLAY_TIME_STOPPED = 0;
+const PLAY_TIME_RUNNING = 1;
+const PLAY_TIME_MAXED_OUT = 2;
+let playTimeCounterState = PLAY_TIME_STOPPED;
+
+export function PlayTimeCounter_Reset(): void {
+  playTimeCounterState = PLAY_TIME_STOPPED;
+  save.playTimeFrames = 0;
+}
+
+export function PlayTimeCounter_Start(): void {
+  if (save.playTimeFrames > MAX_PLAY_TIME_FRAMES) PlayTimeCounter_SetToMax();
+  else playTimeCounterState = PLAY_TIME_RUNNING;
+}
+
+export function PlayTimeCounter_Stop(): void {
+  playTimeCounterState = PLAY_TIME_STOPPED;
+}
+
+export function PlayTimeCounter_Update(): void {
+  if (playTimeCounterState !== PLAY_TIME_RUNNING) return;
+  if (save.playTimeFrames >= MAX_PLAY_TIME_FRAMES) {
+    PlayTimeCounter_SetToMax();
+    return;
+  }
+  save.playTimeFrames++;
+  if (save.playTimeFrames >= MAX_PLAY_TIME_FRAMES) playTimeCounterState = PLAY_TIME_MAXED_OUT;
+}
+
+export function PlayTimeCounter_SetToMax(): void {
+  playTimeCounterState = PLAY_TIME_MAXED_OUT;
+  save.playTimeFrames = MAX_PLAY_TIME_FRAMES;
 }
 
 export const specialVars = new Uint16Array(0x15);

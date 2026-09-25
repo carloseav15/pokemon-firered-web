@@ -108,6 +108,105 @@ audio backend exists.
 - `tools/check_down_arrow.ts` passes (960 pixels, both variants, four frames):
   the battle dialogue continue arrow matches C tile addressing.
 
+## C/header inventory first pass (2026-09-25)
+
+[`C-PORT-INVENTORY.csv`](C-PORT-INVENTORY.csv) lists all 283 C source files,
+their same-stem header when present, every included `.h`, source line count,
+same-name TypeScript candidates, automatic match category and a separate
+status extracted from this document. The
+decomp has 343 distinct included headers; 192 C files have a same-stem header.
+The inventory also extracts public function declarations from those headers
+and records whether each exact function name appears anywhere in `src/fr`.
+
+The current review labels 22 modules as documented ported, 40 as partial or
+adapted, 18 as pending, two with small parity fixes awaiting verification,
+four as explicitly out of scope, 36 as probable out-of-scope candidates, and
+162 as unreviewed. Separately, 42 files have a
+same-name TypeScript candidate and 181 have no automatic name mapping. These
+are inventory counts, not a port completion percentage: a filename match does
+not prove parity, and no automatic match does not prove that a C module is
+missing because TypeScript ports often combine or rename source modules. Next,
+resolve the unmapped names and compare each relevant header's public
+declarations with TypeScript exports; only then mark a module complete or
+missing.
+
+The initial public-API scan found 2,923 function declarations across 182
+same-stem headers; 1,286 names appear in TypeScript and 1,637 do not. The 21
+modules that were pending at that scan had 112 declarations; 94 exact names
+were absent from TypeScript. Treat those 94 as review candidates, not proven
+missing code: some C APIs are folded into another TS module or represented by
+different functions. Sort `C-PORT-INVENTORY.csv` by `c_lines` to get a quick
+small-to-large backlog, then source-review the absent names and existing TS
+behavior before changing their status.
+
+### Five small modules reviewed against source
+
+Sorted by C source length (a quick effort proxy, not an estimate):
+
+| C module | Lines | Finding |
+|---|---:|---|
+| `save_menu_util.c` | 56 | Save flow now renders the C summary fields before confirmation. Canvas frame/palette and exact text color controls remain simplified; check passes, visual execution still pending. |
+| `play_time.c` | 65 | Reset/Start/Stop/Update/SetToMax now map to save.ts state and Game lifecycle calls. Total frames replace C's split time fields; typecheck passes, runtime parity is unverified. |
+| `coins.c` | 98 | Balance and display logic exist in `items.ts` and `scriptMenu.ts`. Corrected `addCoins` to match C's cap behavior and u16 argument; verification is pending. |
+| `save_location.c` | 112 | Reviewed with `load_save.c`: normal continue uses the saved warp directly. Missing flags affect Pokémon Center/lobby reset warps, GameCube-link unlocks and Champion/postgame behavior; no main-story single-player blocker found. Deferred. |
+| `heal_location.c` | 122 | Whiteout now resolves the exported respawn map/NPC, source-specific spawn coordinates and the Pallet home-healing script. Verification is pending; Trainer Tower recovery and the pre-fade recovery presentation remain unported. |
+
+The `AddCoins` mismatch is corrected in `src/fr/pokemon/items.ts`. The play-time lifecycle is implemented in `src/fr/save.ts` and wired to new/continue/frame in `src/fr/game.ts`; runtime parity remains unverified. The standard
+whiteout respawn now uses the original heal-location data in
+`src/fr/field/overworld.ts` and selects the correct healer/home script from
+`src/fr/game.ts`. These changes still need execution verification. The other
+`save_location.c` has no main-story single-player blocker; its missing flags are deferred with reset/link/postgame parity. `save_menu_util.c` now has the stats panel and remains partial until visual execution confirms placement, frame and colors.
+
+## Single-player completion audit (2026-09-25)
+
+This is the fastest path to a trustworthy missing-work list. Audit only the
+main-story path first; do not count optional/postgame or visual-only work as a
+single-player blocker. A feature is complete only when its TS implementation
+matches the source behavior needed at that point and has a recorded check.
+
+| Order | Audit slice | Work product | Status |
+|---:|---|---|---|
+| 1 | Starting town → Route 1 → Viridian | Source scripts located; TS behavior still needs execution/parity checks | In progress |
+| 2 | Pewter → Mt. Moon → Cerulean → Vermilion | Same map/event inventory, following actual story gates | Not audited |
+| 3 | Lavender → Celadon → Saffron → Fuchsia → Cinnabar | Same inventory, including key items, rival/Rocket events and HM gates | Not audited |
+| 4 | Victory Road → Indigo Plateau → Champion | Confirm Elite Four, Champion, credits/result flags and return/save behavior | Not audited |
+| 5 | Re-run from a regression save at each discovered blocker | Record reproducible checks and fix only confirmed gaps | Not started |
+
+Within each slice, inspect only source scripts and TS handlers actually
+referenced by its story events. This keeps the first pass small and produces a
+ranked list by real blockers, rather than treating every registered command or
+every C file as equally important. Add optional content, Sevii Islands and
+visual/audio parity after the main-story list is closed.
+
+### First slice: initial source-derived checklist
+
+- **Pallet Town and Oak's Lab:** starter/rival scene and flags are already
+  implemented according to the earlier status notes. Recheck exit gating and
+  return behavior during a browser walkthrough. Source: `data/maps/PalletTown/`
+  and `data/maps/PalletTown_ProfessorOaksLab/`.
+- **Route 1:** verify the one-time Potion gift, bag-full branch, its persistent
+  flag, wild encounters and both exits. Source: `data/maps/Route1/scripts.inc`.
+- **Viridian City:** verify Oak's Parcel pickup and return handoff, the Old Man
+  road/tutorial scenes and their scene flags, shop/center interactions, and
+  exits. Source: `data/maps/ViridianCity/` and
+  `data/maps/ViridianCity_Mart/`.
+- **Static code cross-check:** all 213 exported script command names have a
+  TypeScript handler. The direct story specials found in this slice
+  (`GetPokedexCount`, `SetWalkingIntoSignVars`, `DisableMsgBoxWalkaway`,
+  `HealPlayerParty` and `StartOldManTutorialBattle`) also have handlers. The
+  Parcel macro expands to `additem` plus the standard received-item script;
+  both routes exist in the interpreter. This finds no missing command/special
+  registration for the inspected scripts, but does not prove their runtime
+  behavior matches the C.
+- **Known irrelevant stub in this slice:** `QuestLog_CutRecording` and
+  `GetQuestLogState` are Quest Log support, which the project lists as out of
+  scope. The standard solo-player route does not require Quest Log playback.
+- **Still unverified:** execute the new-game path through leaving the house,
+  Oak's Lab/rival battle, Route 1's one-time Potion (including the full-bag
+  branch), the Viridian Mart Parcel, and delivery back to Oak. Check flags,
+  party/bag contents, map transitions and save/continue state. Static checks
+  locate these paths but cannot establish the results.
+
 ## Pendiente, de más sencillo a más difícil (2026-09-24)
 
 Orden aproximado por esfuerzo. Cada punto dice qué `.c` portar, qué archivo
@@ -123,8 +222,7 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 1. **Buzón del PC** (`mailbox_pc.c`, parte de `player_pc.c`) **[opcional/baja prioridad]**:
    En FRLG las cartas solo almacenan mensajes creados con Easy Chat; guardar hasta 10 cartas
    en el PC no bloquea eventos, medallas ni progresión en solitario (single-player).
-   El adaptador actual en `menus/playerPc.ts` gestiona cartas del equipo; unificar con
-   `save.pcMail` y `TryGiveMailToSelectedMon` (`PARTY_ACTION_GIVE_MAILBOX_MAIL`) es de baja prioridad.
+   El flujo ahora lee las cartas persistidas en `save.pcMail`, permite leerlas, moverlas a la bolsa (borrando el mensaje) y darlas a un Pokémon sin objeto. Conserva menús simplificados; falta verificar la presentación nativa. La escritura Easy Chat sigue pendiente.
 2. **Objetos ocultos renovables** (`renewable_hidden_items.c`, 608 líneas)
    **[juego]**: Portado fiel en `src/fr/renewableHiddenItems.ts`, conectado a
    `fieldControl.ts` (conteo de pasos) y `overworld.ts` (`onMapLoad`), verificado
@@ -148,11 +246,11 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
    `UpdateMonMarkingTiles`), y `BufferMonMarkingsMenuTiles` que genera las tiles del marco
    del usuario (`GetUserWindowGraphics`). Exportada también `GetUserWindowGraphics` en
    `hw/menu.ts` para uso compartido. Compila y pasa build.
-7. **Registro de batallas** (`battle_records.c`) **[visual]**: solo afecta al
-   récord de combates por cable (fuera de alcance), pero el menú existe en el PC.
+7. **Registro de batallas** (`battle_records.c`) **[diferido]**: guarda rivales de combates por cable y muestra resultados de Trainer Tower. El port no tiene sesiones Cable Club y Trainer Tower es postgame; no bloquea la historia individual.
 8. **Contador de tiempo y utilidades pequeñas** (`play_time.c`, `coins.c`,
-   `save_location.c`, `heal_location.c`): comprobar que las reglas existentes
-   (en `save.ts`/`game.ts`) coinciden con el C línea a línea.
+   `save_location.c`, `heal_location.c`): revisados; tiempo, monedas y recuperación
+   estándar tras derrota ya reflejan la lógica principal. Las banderas de guardado
+   para enlace/postgame siguen diferidas; queda verificación de ejecución.
 
 ### Nivel 2 — pantallas medianas (1–3 días cada una)
 

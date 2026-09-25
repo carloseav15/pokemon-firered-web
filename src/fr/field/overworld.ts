@@ -228,6 +228,37 @@ export class Overworld {
     return { mapGroup: num >> 8, mapNum: num & 0xff, x: entry.x, y: entry.y };
   }
 
+  /** SetWhiteoutRespawnWarpAndHealerNpc (heal_location.c). */
+  whiteOutRespawn(): { warp: WarpData; healerLocalId: number; atHome: boolean } {
+    const last = save.lastHealLocation;
+    const locations = rom.healLocations.heal_locations;
+    const matched = locations.find((candidate) => {
+      const num = rom.mapNum(candidate.map);
+      return (num >> 8) === last.mapGroup && (num & 0xff) === last.mapNum;
+    });
+    const entry = matched ?? locations.find((candidate) => candidate.id === "HEAL_LOCATION_PALLET_TOWN");
+    if (!entry) throw new Error("FireRed heal-location table is empty");
+
+    const respawnMap = entry.respawn_map ?? entry.map;
+    const mapNum = rom.mapNum(respawnMap);
+    // These exceptions are the exact coordinates selected in heal_location.c;
+    // all other centers use the source's default (7, 4).
+    const specialPositions: Record<string, [number, number]> = {
+      MAP_PALLET_TOWN_PLAYERS_HOUSE_1F: [8, 5],
+      MAP_INDIGO_PLATEAU_POKEMON_CENTER_1F: [13, 12],
+      MAP_ONE_ISLAND_POKEMON_CENTER_1F: [5, 4],
+      MAP_TRAINER_TOWER_LOBBY: [4, 11],
+    };
+    const [x, y] = specialPositions[respawnMap] ?? [7, 4];
+    const home = entry.id === "HEAL_LOCATION_PALLET_TOWN"
+      && (!matched || (last.warpId === -1 && last.x === entry.x && last.y === entry.y));
+    return {
+      warp: { mapGroup: mapNum >> 8, mapNum: mapNum & 0xff, warpId: -1, x, y },
+      healerLocalId: entry.respawn_npc ? rom.c(entry.respawn_npc) : 0,
+      atHome: home,
+    };
+  }
+
   updateEscapeWarp(x: number, y: number): void {
     const current = this.header.mapType;
     let destType = MAP_TYPE.NONE;

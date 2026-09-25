@@ -3,8 +3,8 @@
 
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
-import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL } from "./gba/font";
+import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
+import { FONT_NORMAL, stringWidth } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON } from "./gba/input";
 import { tasks } from "./gba/tasks";
@@ -16,7 +16,7 @@ import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
 import { addPCItem } from "./pokemon/items";
 import { rom } from "./rom";
-import { flagGet, newSaveData, save, saveStore, setName, setSave, varGet, type SaveData } from "./save";
+import { flagGet, newSaveData, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, ChoosePartyMonByMenuType } from "./partyMenu";
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
@@ -25,8 +25,7 @@ import { WildEncounter } from "./field/wildEncounter";
 import { random } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { decode } from "./gba/charmap";
-import { varSet, SV } from "./save";
-import { getDexFlag, healMon } from "./pokemon/pokemon";
+import { dexCount, getDexFlag, healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
@@ -139,9 +138,9 @@ export class Game {
     joy.buttonMode = save.options.buttonMode;
     joy.poll();
     this.frameCount++;
-    save.playTimeFrames++;
     this.callback1?.();
     this.callback2?.();
+    PlayTimeCounter_Update();
     sound.frame();
   }
 
@@ -159,6 +158,7 @@ export class Game {
   newGame(playerName: string, gender: number, rivalName: string): void {
     const data = newSaveData();
     setSave(data);
+    PlayTimeCounter_Reset();
     this.wild.seed(random());
     setName("player", encode(playerName.slice(0, 7)));
     setName("rival", encode(rivalName.slice(0, 7)));
@@ -176,6 +176,7 @@ export class Game {
     this.overworld.fieldCallback = () => this.overworld.fieldCBWarpExitFadeFromBlack();
     this.overworld.script.init();
     paletteFade.fill(RGB_BLACK);
+    PlayTimeCounter_Start();
     this.overworld.warpIntoMapAndLoad();
   }
 
@@ -199,6 +200,7 @@ export class Game {
     this.overworld.script.init();
     this.overworld.fieldCallback = () => this.overworld.fieldCBWarpExitFadeFromBlack();
     paletteFade.fill(RGB_BLACK);
+    PlayTimeCounter_Start();
     this.overworld.warpIntoMapAndLoad();
   }
 
@@ -311,6 +313,7 @@ export class Game {
   private startMenuSave(): void {
     this.removeStartMenuWindows();
     const ow = this.overworld;
+    this.showSaveStats();
     ow.control.msgIsSignpost = false;
     ow.messageBox.show(rom.text("gText_WouldYouLikeToSaveTheGame"));
     let state = 0;
@@ -345,6 +348,44 @@ export class Game {
           break;
       }
     }, 80);
+  }
+
+  /** PrintSaveStats / SaveStatToString (start_menu.c, save_menu_util.c). */
+  private showSaveStats(): void {
+    const ow = this.overworld;
+    const stats = new Window(1, 1, 14, 9);
+    stats.frame = "std";
+    stats.frameType = save.options.frameType;
+    stats.fill(1);
+
+    const location = ow.header.regionMapSectionName ? rom.regionMapName(ow.header.regionMapSection) : encode("");
+    printText(stats, FONT_NORMAL, location, Math.max(0, (112 - stringWidth(FONT_NORMAL, location)) >> 1), 0);
+    const label = (y: number, name: string) => printText(stats, FONT_NORMAL, rom.text(name), 2, y);
+    const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_NORMAL, text, 60, y);
+    label(14, "gText_Player");
+    value(14, Uint8Array.from([...save.playerName, 0xff]));
+
+    let badges = 0;
+    for (let flag = rom.c("FLAG_BADGE01_GET"); flag < rom.c("FLAG_BADGE01_GET") + 8; flag++) if (flagGet(flag)) badges++;
+    label(28, "gText_Badges");
+    value(28, concat(intToDecimal(badges, STR_CONV_MODE_RIGHT_ALIGN, 1), rom.text("gTextJPDummy_Ko")));
+
+    let y = 42;
+    if (flagGet(rom.c("FLAG_SYS_POKEDEX_GET"))) {
+      const national = varGet(rom.c("VAR_NATIONAL_DEX")) === 0x6258 && flagGet(rom.c("FLAG_SYS_NATIONAL_DEX"));
+      label(y, "gText_Pokedex");
+      value(y, concat(intToDecimal(dexCount(true, !national), 0, 3), rom.text("gTextJPDummy_Hiki")));
+      y += 14;
+    }
+
+    const totalMinutes = Math.floor(save.playTimeFrames / 3600);
+    const hours = Math.min(999, Math.floor(totalMinutes / 60));
+    const minutes = hours === 999 ? 59 : totalMinutes % 60;
+    label(y, "gText_Time");
+    value(y, concat(intToDecimal(hours, 0, 3), Uint8Array.from([rom.c("CHAR_COLON"), 0xff]), intToDecimal(minutes, STR_CONV_MODE_LEADING_ZEROS, 2)));
+
+    ow.windows.add(stats);
+    this.startMenuWindows.push(stats);
   }
 
   private saveWait = 0;
@@ -713,11 +754,12 @@ export class Game {
     this.scene = null;
     save.money -= computeWhiteOutMoneyLoss();
     for (const mon of save.party) healMon(mon);
-    const heal = save.lastHealLocation.mapGroup === 0xff ? { mapGroup: 4, mapNum: 1, warpId: -1, x: 6, y: 6 } : save.lastHealLocation;
-    ow.warpDestination = { ...heal };
+    const respawn = ow.whiteOutRespawn();
+    ow.warpDestination = respawn.warp;
+    if (!respawn.atHome) varSet(SV.LAST_TALKED, respawn.healerLocalId);
     ow.fieldCallback = () => {
       ow.fadeInFromBlack();
-      ow.script.setupScript(rom.label("EventScript_AfterWhiteOutHeal"));
+      ow.script.setupScript(rom.label(respawn.atHome ? "EventScript_AfterWhiteOutMomHeal" : "EventScript_AfterWhiteOutHeal"));
     };
     ow.script.init();
     paletteFade.fill(RGB_BLACK);
