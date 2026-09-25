@@ -4,6 +4,7 @@
 // Coordinates are the ones frDebug.state() reports (map coords, without the +7 border).
 // Never walk while a script runs applymovement/waitmovement: goto()/path() only
 // move when no script is active and controls are unlocked; idle() only taps A.
+// Call `await H.init()` after every page load (see AGENTS.md §6.5).
 
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
@@ -19,10 +20,44 @@ export const H = {
   party() {
     return dbg().save.save.party.map((p) => `${p.species}:L${p.level}:${p.hp}/${p.stats?.[0]}`).join(",");
   },
+  /**
+   * Import a module as the running app sees it. After an HMR update the app
+   * imports "x.ts?t=…"; a plain import("/src/…/x.ts") would load a second,
+   * empty instance and every read would be wrong.
+   */
+  async mod(path) {
+    const hits = performance.getEntriesByType("resource").map((r) => r.name).filter((n) => n.includes(path + "?") || n.endsWith(path));
+    return import(hits.length ? hits[hits.length - 1] : path);
+  },
+  /** Cache gMain and the battle globals; call once after each page load. */
+  async init() {
+    this.R = await this.mod("/src/fr/hw/runtime.ts");
+    this.G = await this.mod("/src/fr/battle/globals.ts");
+    return { cb2: this.R.gMain.callback2?.name };
+  },
+  cb2() { return this.R?.gMain.callback2?.name; },
   inBattle() {
     const name = g().scene?.constructor?.name;
-    return name === "HwScene" || name === "BattleTransitionScene";
+    if (name === "BattleTransitionScene") return true;
+    if (name !== "HwScene") return false;
+    // Without init() any hardware screen (shop, bag) looks like a battle.
+    if (!this.R) return true;
+    return this.R.gMain.callback1?.name === "BattleMainCB1" || /Battle/.test(this.cb2() ?? "");
   },
+  /**
+   * Long work inside the page: tool calls time out (~45 s) but the page keeps
+   * running. Start with H.job(async () => …), then poll H.jobStatus().
+   */
+  job(fn) {
+    this.jobState = { done: false, out: null, t0: performance.now() };
+    const st = this.jobState;
+    (async () => {
+      try { st.out = await fn(); } catch (e) { st.out = "ERR " + (e?.stack ?? e); }
+      st.done = true;
+    })();
+    return "started";
+  },
+  jobStatus() { return { ...this.jobState, s: Math.round((performance.now() - (this.jobState?.t0 ?? 0)) / 1000), st: this.st() }; },
   warps() { return g().overworld.loaded.header.warps.map((w) => [w.x, w.y, w.destMap]); },
   coords() { return g().overworld.loaded.header.coords.map((c) => [c.x, c.y, c.scriptName]); },
   objects() {
@@ -42,25 +77,71 @@ export const H = {
     return { ...this.st(), timeout: true };
   },
   /**
-   * Finish the current battle. "fight" taps A (FIGHT, first move);
-   * "run" moves the action cursor to RUN first.
+   * Finish the current battle with real button presses.
+   * mode "fight": FIGHT, then the move in `slot` (0 TL, 1 TR, 2 BL, 3 BR);
+   * mode "run": RUN. With init() the cursor positions are read from
+   * gActionSelectionCursor/gMoveSelectionCursor, so presses are never blind;
+   * other screens (text, learn-move prompt, summary) get A.
    */
-  async battle(mode = "fight", maxPresses = 800) {
+  async battle(mode = "fight", slot = 0, maxSteps = 4000) {
     const start = this.party();
+    const screens = new Set();
     let n = 0;
-    while (this.inBattle() && n < maxPresses) {
+    const press = async (bits) => { await dbg().wait(2, bits); await dbg().wait(4); };
+    while (this.inBattle() && n < maxSteps) {
       n++;
-      if (mode === "run") { await dbg().wait(2, 0x80); await dbg().wait(2); await dbg().wait(2, 0x10); await dbg().wait(2); }
-      await dbg().press("A", 16);
+      screens.add(this.cb2());
+      const f = this.G?.gBattlerControllerFuncs[0]?.name;
+      if (f === "HandleInputChooseAction") {
+        const want = mode === "run" ? 3 : 0, c = this.G.gActionSelectionCursor[0];
+        if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
+        await dbg().press("A");
+        continue;
+      }
+      if (f === "HandleInputChooseMove") {
+        const c = this.G.gMoveSelectionCursor[0];
+        // With 0 PP the C prints "There's no PP left…" and returns to move
+        // selection: pick another slot with PP, or it loops forever.
+        const pp = this.G.gBattleMons?.[0]?.pp;
+        let want = slot;
+        if (pp && pp[want] === 0) for (let i = 0; i < 4; i++) if (pp[i] > 0) { want = i; break; }
+        if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
+        await dbg().press("A");
+        continue;
+      }
+      await dbg().press("A", 8);
     }
-    // Stuck only if the press budget ran out while still in battle; a new
-    // encounter starting in the next 30 frames is not a stuck battle.
-    const stuck = n >= maxPresses && this.inBattle();
+    const stuck = n >= maxSteps && this.inBattle();
     await dbg().wait(30);
-    const r = { battle: mode, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck };
+    const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, screens: [...screens].filter(Boolean) };
     this.log.push(r);
     return r;
   },
+  /** Heal inside a Pokémon Center 1F (nurse counter at 7,2) and walk back to the door mat. */
+  async heal() {
+    await this.counter(7, 2);
+    await this.idle(4000);
+    await this.goto(7, 7);
+    return this.exit("D", 3);
+  },
+  /**
+   * Walk back and forth over two tiles (e.g. tall grass) fighting with move
+   * `slot` until the lead reaches `level` or drops below `minHp` of max HP.
+   */
+  async grind(a, b, { slot = 0, level = 100, minHp = 0.4, loops = 30 } = {}) {
+    const lead = () => dbg().save.save.party[0];
+    for (let i = 0; i < loops; i++) {
+      if (lead().level >= level) return { stop: "level", party: this.party() };
+      if (lead().hp < lead().stats[0] * minHp) return { stop: "lowhp", party: this.party() };
+      const saved = this.battleDefaults;
+      this.battleDefaults = { mode: "fight", slot };
+      await this.goto(...a);
+      await this.goto(...b);
+      this.battleDefaults = saved;
+    }
+    return { stop: "loops", party: this.party() };
+  },
+  battleDefaults: { mode: "fight", slot: 0 },
   /** Shortest path in map-internal coords (+7), using the live collision checks. */
   bfs(tx, ty) {
     const ow = g().overworld, player = ow.player.object, objects = ow.objects;
@@ -94,10 +175,11 @@ export const H = {
   },
   /** Walk to (x, y) on the current map, replanning every step and resolving battles/scripts. */
   async goto(x, y, opts = {}) {
-    const mode = opts.battle ?? "fight";
+    const mode = opts.battle ?? this.battleDefaults.mode;
+    const slot = opts.slot ?? this.battleDefaults.slot;
     const map0 = dbg().state().map;
     for (let guard = 0; guard < 500; guard++) {
-      if (this.inBattle()) { await this.battle(mode); continue; }
+      if (this.inBattle()) { await this.battle(mode, slot); continue; }
       const s = this.st();
       if (s.map !== map0) return { ...s, note: "map changed" };
       if (s.script || s.locked) {

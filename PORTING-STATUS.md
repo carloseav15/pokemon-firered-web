@@ -229,6 +229,13 @@ restauración en `item_menu.c`). Vigilar en cada prueba que pase por ahí.
     `gMoveSelectionCursor` para saber dónde está el cursor; no toca el estado).
     El guion dio `FLAG_BADGE01_GET`, `FLAG_DEFEATED_BROCK` y la MT39 en el
     estuche (verificado leyendo la partida). Bulbasaur terminó en N15.
+  - Tienda de Plateada: compra de 3 Pociones (¥900, 4550 → 3650) y venta de 1
+    (¥150, la mitad del precio, 3650 → 3800), con el menú BUY/SELL/SEE YA.
+  - Ruta 3: el primer combate de entrenador (Weedle N10) se perdió al gastar
+    los PP de Látigo Cepa; la derrota llevó al Centro de Plateada con el equipo
+    curado. Dos "bloqueos" vistos aquí eran del driver, no del juego (elegía en
+    bucle un movimiento sin PP; `idle` no cedía el combate), corregidos en
+    `tools/playtest/driver.js`.
 
 ## Auditoría de la sesión de Gemini (cb9cfae..77a7609, 18 commits)
 

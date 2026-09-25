@@ -246,23 +246,64 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    desarrollo). Desde la consola o `javascript_tool`:
    ```js
    const { H } = await import("/tools/playtest/driver.js");
+   await H.init()            // OBLIGATORIO tras cada carga de página (ver "trampas" abajo)
    await H.goto(x, y)        // camina (BFS con las colisiones reales) y resuelve combates/scripts
    await H.exit("U")         // camina en una dirección hasta cambiar de mapa (conexiones, flechas)
    await H.enter(x, y)       // entra por la puerta (x, y) desde abajo
    await H.talk(x, y)        // se pone al lado, mira y pulsa A
    await H.counter(x, y)     // habla a través de un mostrador (dos casillas debajo)
-   await H.idle()            // pulsa A hasta que no haya script ni controles bloqueados
-   await H.battle("fight")   // termina el combate con el primer movimiento ("run" para huir)
-   H.checkpoint("nombre")    // guarda un punto de control en localStorage (no es el GUARDAR del juego)
-   H.restore("nombre")       // lo carga y recarga con ?fr=continue
-   H.st(), H.objects(), H.warps(), H.checkpoints()
+   await H.idle()            // pulsa A hasta que no haya script (cede si empieza un combate)
+   await H.battle("fight", 3) // combate eligiendo la ranura 3 con botones reales ("run" para huir)
+   await H.heal()            // dentro de un Centro Pokémon 1F: enfermera y salir
+   await H.grind([x1,y1], [x2,y2], { slot: 3, level: 14 })  // subir de nivel en la hierba
+   H.battleDefaults = { mode: "fight", slot: 3 }            // lo que usa goto() al encontrar combates
+   H.job(async () => …); H.jobStatus()                      // trabajo largo en segundo plano
+   H.checkpoint("nombre"); H.restore("nombre")              // puntos de control (no es el GUARDAR del juego)
+   H.st(), H.objects(), H.warps(), H.coords(), H.log, H.checkpoints()
    ```
-   Las coordenadas son las de `frDebug.state()` (sin el borde de +7). No muevas
-   al jugador mientras un guion ejecuta `applymovement`/`waitmovement`:
-   `goto`/`idle` ya esperan a que no haya script activo. Editar cualquier
-   archivo servido por Vite recarga la página: vuelve con `H.restore(nombre)`.
-   `H.battle("fight")` pulsa A sin elegir; si hace falta subir de nivel o curar,
-   hazlo jugando (Centro Pokémon, hierba) y di en el informe qué ayuda usaste.
+   Las coordenadas son las de `frDebug.state()` (sin el borde de +7).
+
+   ### Cómo probar rápido y sin engañarte (método usado en las sesiones de Claude)
+
+   1. **Punto de control antes de cada tramo** (`H.checkpoint("zona")`). Un fallo
+      se reproduce en segundos con `H.restore`, sin volver a jugar desde el
+      principio. Nombres usados: `lab-done`, `viridian-pc`, `parcel`, `pokedex`,
+      `oldman`, `route2-L11`, `forest`, `pewter`, `gym`, `brock-done`, `mart`,
+      `route3`.
+   2. **Trabajo largo en segundo plano.** Las llamadas de herramienta caducan a
+      los ~45 s, pero la página sigue corriendo: `H.job(async () => …)` y luego
+      consulta `H.jobStatus()` cada 30-40 s. Devuelve solo resúmenes pequeños
+      (`H.party()`, `H.log.map(...)`): una traza enorme llena el contexto.
+   3. **Lee el estado, no adivines.** Para saber qué pantalla hay, consulta
+      `H.cb2()`, `H.G.gBattlerControllerFuncs[0].name`, `frDebug.save.save`
+      (flags, bolsa, dinero, equipo) en vez de pulsar A a ciegas y hacer capturas.
+      `H.battle` ya elige acción y movimiento mirando los cursores del combate.
+   4. **Capturas solo en los hitos** (menú nuevo, final de combate, error). Para
+      comprobar un valor (precio, flag, objeto) basta leer la partida.
+   5. **Un combate atascado se diagnostica, no se reintenta.** Si `H.log` marca
+      `stuck`, mira el controlador del jugador y el texto en pantalla antes de
+      suponer un fallo del juego: dos "bloqueos" de esta sesión eran del driver
+      (movimiento sin PP elegido en bucle; `idle` que no cedía el combate).
+   6. **Ninguna ayuda de depuración sin decirlo.** Se sube de nivel jugando
+      (`H.grind`, `H.heal`); si pones un flag, nivel u objeto a mano, dilo en el
+      informe y en PORTING-STATUS.
+   7. **Por cada fallo real**: función C → arreglo → `H.restore` del punto de
+      control → repetir el mismo tramo → captura → entrada en PORTING-STATUS →
+      commit. No acumules arreglos sin probar.
+
+   Trampas:
+   - **Editar cualquier archivo servido por Vite recarga la página** y pierde
+     `window.*`: vuelve con `H.restore(nombre)` y `await H.init()`. Agrupa las
+     ediciones y prueba después.
+   - **Instancias duplicadas de módulos**: tras un HMR la app importa
+     `x.ts?t=…`. Un `import("/src/fr/…/x.ts")` a secas carga otra copia vacía y
+     todo lo que leas es falso. Usa siempre `H.mod(ruta)` (lo hace `H.init()`).
+   - Sin `H.init()`, `H.inBattle()` confunde cualquier pantalla de hardware
+     (tienda, bolsa) con un combate.
+   - `H.idle()` pulsa A: dentro de un menú puede elegir la primera opción. Para
+     menús usa `frDebug.press`/`frDebug.wait(n, botones)` y lee el estado.
+   - No muevas al jugador mientras un guion ejecuta `applymovement`/`waitmovement`:
+     `goto`/`idle` ya esperan a que no haya script activo.
 6. **Comparación con el juego real** (opcional): mismo punto en un emulador con
    la ROM compilada del decomp (`make` en `../pokefirered`) y comparar frames.
 
