@@ -147,6 +147,7 @@ audio backend exists.
 - `new_menu_helpers.c`: text-box/window/frame, printer and BG-copy behavior is split across hardware and GBA modules; several heap-decompression, printer variant, start-menu/help/signpost and temp-buffer APIs are missing or adapted through pre-exported assets. Partial; no exhaustive visual/frame check.
 - `menu.c`: cursor/input, yes-no, frame, top-bar and action-text helpers are spread across hardware-menu modules; grid multichoice, generic text/table printers and several utility APIs remain absent or adapted. Partial; no full menu parity check.
 - `item_use.c`: most field item classes dispatch to the corresponding party/screen/field flows; battle effects are shared with battle code. Oak item gate, Quest Log recording, Enigma battle use and some C task timing/details remain absent or adapted. Partial source review; no flow execution.
+- `fieldmap.c`: map layout, tile/behavior queries, camera and tileset loading are spread across field map/overworld/tile-renderer and BG modules. Backup map-view state and VRAM-copy paths are adapted; camera-specific differences are also tracked under `field_camera.c`. Partial source review; no route trace.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -158,7 +159,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 58 modules as documented ported, 110 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 46 as unreviewed. Separately, 42 files have a
+The current review labels 58 modules as documented ported, 111 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 45 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
