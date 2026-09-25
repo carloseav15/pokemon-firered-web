@@ -420,6 +420,7 @@ export class FieldMoveEffects {
     const cx = p.currentCoords.x, cy = p.currentCoords.y;
     for (let y = cy - 1; y <= cy + 1; y++) {
       for (let x = cx - 1; x <= cx + 1; x++) {
+        if (ow.map.elevationAt(x, y) !== p.currentElevation) continue;
         const id = ow.map.metatileIdAt(x, y);
         for (const [from, to] of mapping) if (id === from) ow.map.setMetatileIdAt(x, y, to);
       }
