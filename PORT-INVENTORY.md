@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 114 | 127887 | 1819/6041 |
+| Parcial (menos del 80 % de funciones) | 114 | 127887 | 1829/6041 |
 | Adaptador (UI simplificada) | 5 | 9284 | 22/294 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 90 | 111772 | 3318/3490 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
 | **Pendiente de portar** | **119** | **137171** | |
-| **Total en alcance** | **210** | **248996** | **5159/9825** |
+| **Total en alcance** | **210** | **248996** | **5169/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -28,7 +28,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_main.c` | 4477 | 82/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |
 | `field_effect.c` | 4033 | 39/239 | `field/fieldMoves.ts` |  |
 | `overworld.c` | 3563 | 70/238 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |
-| `battle_transition.c` | 3037 | 16/134 | `battle/transition.ts` |  |
+| `battle_transition.c` | 3037 | 26/134 | `battle/transition.ts` |  |
 | `trade_scene.c` | 2916 | 7/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  |
 | `intro.c` | 2805 | 17/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 |  |  |

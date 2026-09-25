@@ -280,6 +280,61 @@ async function testBattleTransitions() {
   }
   assert.ok(bigBallDone, 'B_TRANSITION_BIG_POKEBALL must finish cleanly');
   console.log('✓ B_TRANSITION_BIG_POKEBALL execution verified');
+
+  // 3i. Execution of B_TRANSITION_WAVE
+  let waveDone = false;
+  const waveScene = new BattleTransitionScene(C.B_TRANSITION_WAVE, mockCtx, () => {
+    waveDone = true;
+  });
+  for (let frame = 0; frame < 300 && !waveDone; frame++) {
+    waveScene.update();
+  }
+  assert.ok(waveDone, 'B_TRANSITION_WAVE must finish cleanly');
+  console.log('✓ B_TRANSITION_WAVE execution verified');
+
+  // 3j. Execution of B_TRANSITION_RIPPLE
+  let rippleDone = false;
+  const rippleScene = new BattleTransitionScene(C.B_TRANSITION_RIPPLE, mockCtx, () => {
+    rippleDone = true;
+  });
+  for (let frame = 0; frame < 300 && !rippleDone; frame++) {
+    rippleScene.update();
+  }
+  assert.ok(rippleDone, 'B_TRANSITION_RIPPLE must finish cleanly');
+  console.log('✓ B_TRANSITION_RIPPLE execution verified');
+
+  // 3k. Execution of B_TRANSITION_SWIRL
+  let swirlDone = false;
+  const swirlScene = new BattleTransitionScene(C.B_TRANSITION_SWIRL, mockCtx, () => {
+    swirlDone = true;
+  });
+  for (let frame = 0; frame < 300 && !swirlDone; frame++) {
+    swirlScene.update();
+  }
+  assert.ok(swirlDone, 'B_TRANSITION_SWIRL must finish cleanly');
+  console.log('✓ B_TRANSITION_SWIRL execution verified');
+
+  // 3l. Execution of B_TRANSITION_BLUR
+  let blurDone = false;
+  const blurScene = new BattleTransitionScene(C.B_TRANSITION_BLUR, mockCtx, () => {
+    blurDone = true;
+  });
+  for (let frame = 0; frame < 300 && !blurDone; frame++) {
+    blurScene.update();
+  }
+  assert.ok(blurDone, 'B_TRANSITION_BLUR must finish cleanly');
+  console.log('✓ B_TRANSITION_BLUR execution verified');
+
+  // 3m. Execution of B_TRANSITION_POKEBALLS_TRAIL
+  let trailDone = false;
+  const trailScene = new BattleTransitionScene(C.B_TRANSITION_POKEBALLS_TRAIL, mockCtx, () => {
+    trailDone = true;
+  });
+  for (let frame = 0; frame < 300 && !trailDone; frame++) {
+    trailScene.update();
+  }
+  assert.ok(trailDone, 'B_TRANSITION_POKEBALLS_TRAIL must finish cleanly');
+  console.log('✓ B_TRANSITION_POKEBALLS_TRAIL execution verified');
 }
 
 async function main() {

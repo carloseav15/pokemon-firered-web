@@ -148,9 +148,21 @@ escena de combate. Nuevo `src/fr/battle/transition.ts`:
     con fade simultáneo a negro, usada en combates de entrenador en cuevas cuando el rival es más débil.
   - `B_TRANSITION_BIG_POKEBALL` (`Task_BigPokeball`): apertura y cierre de máscara circular con la silueta
     de Poké Ball, usada en combates de entrenador en cuevas cuando el rival no es más débil.
-  - Con esto, 7 transiciones clave de campo, cuevas y entrenadores están completamente portadas y verificadas
+- **Cuarto bloque de transiciones portadas (100% de tablas wild/trainer completadas)**:
+  - `B_TRANSITION_WAVE` (`Task_Wave` / `Wave_Main`): barrido senoidal de ventana de izquierda a derecha
+    con modulación horizontal por scanline (`Sin(sinIndex, 40)`), completando combates en agua (rival débil).
+  - `B_TRANSITION_RIPPLE` (`Task_Ripple` / `Ripple_Main`): ondulación vertical por scanlines
+    con amplitud senoidal creciente y posterior fundido a negro, completando combates en agua (rival no débil).
+  - `B_TRANSITION_SWIRL` (`Task_Swirl` / `Swirl_End`): remolino senoidal horizontal de scanlines
+    con oscilación de amplitud y fade simultáneo a negro, completando combates de entrenador en agua (rival débil).
+  - `B_TRANSITION_BLUR` (`Task_Blur` / `Blur_Main`): efecto de mosaico y pixelación progresiva
+    con fade gradual a negro, completando combates en Flash (rival débil).
+  - `B_TRANSITION_POKEBALLS_TRAIL` (`Task_PokeballsTrail` / `SpriteCB_FldEffPokeballTrail`): 5 Poké Balls
+    deslizándose horizontalmente en bandas alternadas a velocidad 8px/frame y barriendo el fondo a negro,
+    completando combates de entrenador normal (rival débil).
+  - Con esto, **las 12 transiciones** de las tablas de encuentros salvajes y de entrenadores
+    (`sBattleTransitionTable_Wild` y `sBattleTransitionTable_Trainer`) están 100% portadas y verificadas
     en la suite `npm run check:transitions`.
-  `RIPPLE`, `PATTERN_WEAVE`/mugshots de Elite Four, no están portadas aún y caen al fundido liso tras el intro blink.
 - **Bug encontrado y arreglado en el propio `gba/fade.ts`**: `paletteFade`
   necesita que algo llame a `update()` cada frame para avanzar (antes solo
   `overworld.ts` lo hacía); como la transición corre como su propia `Scene`

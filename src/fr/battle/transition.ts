@@ -26,6 +26,7 @@ import { rom } from "../rom";
 import { save } from "../save";
 import type { Overworld } from "../field/overworld";
 import { MetatileBehavior_IsSurfable } from "../generated/metatileBehavior";
+import { Sin, gSineTable } from "../hw/trig";
 
 const MAP_TYPE_UNDERGROUND = 4;
 const TRANSITION_TYPE_NORMAL = 0;
@@ -578,6 +579,275 @@ class BigPokeballEffect implements Effect {
   }
 }
 
+function safeSin(index: number, amplitude: number): number {
+  const idx = index & 0xff;
+  if (gSineTable && gSineTable.length >= 256 && gSineTable[64] !== 0) {
+    return Sin(idx, amplitude);
+  }
+  return Math.round(amplitude * Math.sin((idx * 2 * Math.PI) / 256));
+}
+
+/** Task_Wave / Wave_Main: Sine wave window wipe from left to right. */
+class WaveEffect implements Effect {
+  readonly rowBounds: [number, number][] = [];
+  private tX = 0;
+  private tSinIndex = 0;
+
+  constructor() {
+    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
+      this.rowBounds.push([0, DISPLAY_WIDTH]);
+    }
+  }
+
+  tick(): boolean {
+    this.tSinIndex = (this.tSinIndex + 16) & 0xff;
+    this.tX += 8;
+    let sinIndex = this.tSinIndex;
+    let finished = true;
+
+    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
+      let x = this.tX + safeSin(sinIndex, 40);
+      sinIndex = (sinIndex + 4) & 0xff;
+      if (x < 0) x = 0;
+      if (x > DISPLAY_WIDTH) x = DISPLAY_WIDTH;
+      this.rowBounds[i] = [x, DISPLAY_WIDTH];
+      if (x < DISPLAY_WIDTH) finished = false;
+    }
+    return finished;
+  }
+}
+
+/** Task_Ripple / Ripple_Main: Vertical scanline sinusoidal ripple, then fade to black. */
+class RippleEffect implements Effect {
+  private sinVal = 0;
+  private amplitude = 0;
+  private timer = 0;
+  private blackLevel = 0;
+  private readonly offsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+
+  tick(): boolean {
+    const amp = this.amplitude >> 8;
+    let sVal = this.sinVal;
+    const speed = 384;
+    this.sinVal = (this.sinVal + 0x400) & 0xffff;
+    if (this.amplitude <= 0x1fff) this.amplitude += 384;
+
+    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
+      const sinIndex = (sVal >> 8) & 0xff;
+      sVal = (sVal + speed) & 0xffff;
+      this.offsets[i] = safeSin(sinIndex, amp);
+    }
+
+    this.timer++;
+    if (this.timer >= 41) {
+      this.blackLevel = Math.min(16, this.blackLevel + 1);
+      if (this.blackLevel >= 16) return true;
+    }
+    return false;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      const ofs = this.offsets[y] || 0;
+      const sy = Math.max(0, Math.min(DISPLAY_HEIGHT - 1, y + ofs));
+      ctx.drawImage(snapshot, 0, sy, DISPLAY_WIDTH, 1, 0, y, DISPLAY_WIDTH, 1);
+    }
+    if (this.blackLevel > 0) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${this.blackLevel / 16})`;
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    }
+  }
+}
+
+/** Task_Swirl / Swirl_End: Horizontal scanline sinusoidal swirl with simultaneous fade to black. */
+class SwirlEffect implements Effect {
+  private sinIndex = 0;
+  private amplitude = 0;
+  private blackLevel = 0;
+  private timer = 0;
+  private readonly offsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+
+  tick(): boolean {
+    this.sinIndex = (this.sinIndex + 4) & 0xff;
+    this.amplitude += 8;
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      this.offsets[y] = safeSin((this.sinIndex + y * 2) & 0xff, this.amplitude);
+    }
+    this.timer++;
+    if (this.timer % 4 === 0) {
+      this.blackLevel = Math.min(16, this.blackLevel + 1);
+    }
+    return this.blackLevel >= 16;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      const ofs = this.offsets[y] || 0;
+      ctx.drawImage(snapshot, 0, y, DISPLAY_WIDTH, 1, ofs, y, DISPLAY_WIDTH, 1);
+      if (ofs > 0) {
+        ctx.drawImage(snapshot, DISPLAY_WIDTH - ofs, y, ofs, 1, 0, y, ofs, 1);
+      } else if (ofs < 0) {
+        ctx.drawImage(snapshot, 0, y, -ofs, 1, DISPLAY_WIDTH + ofs, y, -ofs, 1);
+      }
+    }
+    if (this.blackLevel > 0) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${this.blackLevel / 16})`;
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    }
+  }
+}
+
+/** Task_Blur / Blur_Main: GBA mosaic zoom and fade to black. */
+class BlurEffect implements Effect {
+  private delay = 2;
+  private counter = 0;
+  private blackLevel = 0;
+
+  tick(): boolean {
+    if (this.delay !== 0) {
+      this.delay--;
+    } else {
+      this.delay = 2;
+      this.counter++;
+      if (this.counter >= 10) {
+        this.blackLevel = Math.min(16, this.blackLevel + 2);
+      }
+      if (this.counter > 14 && this.blackLevel >= 16) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    const mosaic = Math.max(1, (this.counter & 0xf) + 1);
+    const sw = Math.max(1, Math.floor(DISPLAY_WIDTH / mosaic));
+    const sh = Math.max(1, Math.floor(DISPLAY_HEIGHT / mosaic));
+
+    const prevSmoothing = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(snapshot, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0, 0, sw, sh);
+    ctx.drawImage(ctx.canvas, 0, 0, sw, sh, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    ctx.imageSmoothingEnabled = prevSmoothing;
+
+    if (this.blackLevel > 0) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${this.blackLevel / 16})`;
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    }
+  }
+}
+
+/** Task_PokeballsTrail / SpriteCB_FldEffPokeballTrail: 5 Pokéballs sliding horizontally wiping trails. */
+class PokeballsTrailEffect implements Effect {
+  private balls: Array<{ x: number; y: number; side: number; delay: number; speed: number; prevX: number; active: boolean }>;
+  private trails: boolean[][];
+  private done = false;
+
+  constructor() {
+    const delays = [0, 16, 32, 8, 24];
+    const speeds = [8, -8];
+    const startX = [-16, DISPLAY_WIDTH + 16];
+    let side = 0;
+    this.balls = [];
+    for (let i = 0; i < 5; i++, side ^= 1) {
+      this.balls.push({
+        x: startX[side]!,
+        y: i * 32 + 16,
+        side,
+        delay: delays[i]!,
+        speed: speeds[side]!,
+        prevX: -1,
+        active: true,
+      });
+    }
+    this.trails = Array.from({ length: 5 }, () => new Array(30).fill(false));
+  }
+
+  tick(): boolean {
+    let anyActive = false;
+    for (let i = 0; i < this.balls.length; i++) {
+      const b = this.balls[i]!;
+      if (!b.active) continue;
+      if (b.delay > 0) {
+        b.delay--;
+        anyActive = true;
+        continue;
+      }
+      const posX = b.x >> 3;
+      if (posX >= 0 && posX < 30 && posX !== b.prevX) {
+        b.prevX = posX;
+        this.trails[i]![posX] = true;
+      }
+      b.x += b.speed;
+      if (b.x < -24 || b.x > DISPLAY_WIDTH + 24) {
+        b.active = false;
+      } else {
+        anyActive = true;
+      }
+    }
+    if (!anyActive) {
+      this.done = true;
+      return true;
+    }
+    return false;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    if (this.done) {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+      return;
+    }
+    ctx.drawImage(snapshot, 0, 0);
+
+    ctx.fillStyle = "#000";
+    for (let i = 0; i < 5; i++) {
+      const y = i * 32;
+      for (let col = 0; col < 30; col++) {
+        if (this.trails[i]![col]) {
+          ctx.fillRect(col * 8, y, 8, 32);
+        }
+      }
+    }
+
+    for (const b of this.balls) {
+      if (!b.active || b.delay > 0) continue;
+      if (b.x < -16 || b.x > DISPLAY_WIDTH + 16) continue;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.beginPath();
+      ctx.arc(0, 0, 10, 0, Math.PI * 2);
+      ctx.fillStyle = "#000";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 9, Math.PI, 0);
+      ctx.fillStyle = "#e03020";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 9, 0, Math.PI);
+      ctx.fillStyle = "#f8f8f8";
+      ctx.fill();
+      ctx.fillStyle = "#000";
+      ctx.fillRect(-9, -2, 18, 4);
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#000";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
 /** Task_BattleTransition_Intro: two gray blinks (BlendPalettes toward RGB(11,11,11)) before the main effect. */
 class IntroBlink {
   private blend = 0;
@@ -624,6 +894,11 @@ export class BattleTransitionScene implements Scene {
       : transitionId === C.B_TRANSITION_GRID_SQUARES ? new GridSquaresEffect()
       : transitionId === C.B_TRANSITION_SHUFFLE ? new ShuffleEffect()
       : transitionId === C.B_TRANSITION_BIG_POKEBALL ? new BigPokeballEffect()
+      : transitionId === C.B_TRANSITION_WAVE ? new WaveEffect()
+      : transitionId === C.B_TRANSITION_RIPPLE ? new RippleEffect()
+      : transitionId === C.B_TRANSITION_SWIRL ? new SwirlEffect()
+      : transitionId === C.B_TRANSITION_BLUR ? new BlurEffect()
+      : transitionId === C.B_TRANSITION_POKEBALLS_TRAIL ? new PokeballsTrailEffect()
       : null;
     this.hadEffect = this.effect !== null;
   }
