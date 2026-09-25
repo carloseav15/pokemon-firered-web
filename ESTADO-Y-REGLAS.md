@@ -148,6 +148,8 @@ desde `CLAUDE.md`, Codex desde `AGENTS.md` y Gemini desde `GEMINI.md`.
 
 ## 6. Tareas que faltan
 
+El orden de trabajo está en [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md).
+
 ### Inmediatas (esta rama)
 - Aprobar el nuevo título y descripción de la PR y hacer push (pendiente de
   confirmación del usuario).

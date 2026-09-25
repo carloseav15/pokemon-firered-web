@@ -6,6 +6,7 @@ verifica un archivo C sin inventar nada.
 
 - **Primero lee [ESTADO-Y-REGLAS.md](ESTADO-Y-REGLAS.md)**: porcentaje real, qué está bien,
   qué se hizo mal (sesión Gemini) y las reglas obligatorias para agentes.
+- Plan de trabajo actual (jugar la historia tramo a tramo): [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md)
 - Estado y lista de pendientes (de fácil a difícil): [PORTING-STATUS.md](PORTING-STATUS.md)
 - Faltantes actualizados (sin empezar, adaptadores, parciales, sin probar): [PENDING.md](PENDING.md)
 - Inventario por archivo `.c` (generado con `npm run inventory`): [PORT-INVENTORY.md](PORT-INVENTORY.md)
