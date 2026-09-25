@@ -62,8 +62,7 @@ COVERED: dict[str, str] = {
 
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
 ADAPTERS: dict[str, str] = {
-    "item_pc": "menus/playerPc.ts: listas simplificadas",
-    "mailbox_pc": "menus/playerPc.ts: listas simplificadas",
+    "player_pc": "menus/playerPc.ts: menú superior sobre el campo canvas",
     "fame_checker": "menus/keyItemScreens.ts",
     "teachy_tv": "menus/keyItemScreens.ts",
     "pokemon_storage_system_menu": "menus/storageMenu.ts: reglas con listas",

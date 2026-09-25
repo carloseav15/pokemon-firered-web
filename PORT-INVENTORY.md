@@ -8,15 +8,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 21 | 23562 | 0/627 |
-| Parcial (menos del 80 % de funciones) | 132 | 152158 | 1860/6762 |
-| Adaptador (UI simplificada) | 8 | 11714 | 28/422 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 48 | 61509 | 1829/2014 |
+| Falta (sin funciones portadas) | 20 | 23383 | 0/620 |
+| Parcial (menos del 80 % de funciones) | 130 | 151175 | 1855/6698 |
+| Adaptador (UI simplificada) | 7 | 11169 | 59/401 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 52 | 63216 | 1917/2106 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 10/118 |
 | Fuera de alcance | 51 | 55183 | 92/1950 |
-| **Pendiente de portar** | **161** | **187434** | |
-| **Total en alcance** | **210** | **248996** | **3717/9825** |
+| **Pendiente de portar** | **157** | **185727** | |
+| **Total en alcance** | **210** | **248996** | **3831/9825** |
 
 ## Falta (sin funciones portadas)
 
@@ -40,7 +40,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `braille_text.c` | 212 | 0/3 |  |  |
 | `buy_menu_helpers.c` | 205 | 0/7 |  |  |
 | `battle_anim_smokescreen.c` | 197 | 0/3 |  |  |
-| `pc_screen_effect.c` | 179 | 0/7 |  |  |
 | `coord_event_weather.c` | 49 | 0/1 |  |  |
 | `cable_car_util.c` | 38 | 0/2 |  |  |
 
@@ -50,12 +49,12 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---|---|
 | `event_object_movement.c` | 9412 | 36/752 | `field/fieldEffects.ts`, `field/objectEvents.ts` |  |
 | `pokemon.c` | 6453 | 72/135 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |
-| `party_menu.c` | 6342 | 279/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |
+| `party_menu.c` | 6342 | 280/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |
 | `battle_anim_effects_3.c` | 5430 | 5/140 |  |  |
 | `battle_main.c` | 4477 | 82/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |
 | `field_effect.c` | 4033 | 39/239 | `field/fieldMoves.ts` |  |
 | `battle_anim_effects_2.c` | 3865 | 2/121 |  |  |
-| `overworld.c` | 3563 | 55/238 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |
+| `overworld.c` | 3563 | 56/238 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |
 | `trade_scene.c` | 2916 | 7/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  |
 | `intro.c` | 2805 | 17/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 4/82 |  |  |
@@ -91,7 +90,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `hall_of_fame.c` | 1286 | 6/42 | `hallOfFame.ts` |  |
 | `battle_controllers.c` | 1214 | 46/67 | `battle/controllers.ts` |  |
 | `field_control_avatar.c` | 1182 | 17/37 | `field/fieldControl.ts` |  |
-| `field_weather.c` | 1147 | 5/50 | `field/weather.ts`, `gba/fade.ts` |  |
+| `field_weather.c` | 1147 | 6/50 | `field/weather.ts`, `gba/fade.ts` |  |
 | `battle_bg.c` | 1111 | 12/17 | `battle/bg.ts` |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |
 | `battle_setup.c` | 1070 | 29/57 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |
@@ -104,21 +103,20 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `fieldmap.c` | 951 | 7/51 | `field/fieldmap.ts` |  |
 | `battle_anim_mon_movement.c` | 941 | 9/34 | `battle/animTasks.ts` |  |
 | `learn_move.c` | 932 | 5/23 | `game.ts`, `menus/hardwareChoice.ts`, `menus/moveRelearner.ts` |  |
-| `item_use.c` | 925 | 33/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `pokemon/items.ts` … |  |
+| `item_use.c` | 925 | 34/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `pokemon/items.ts` … |  |
 | `battle_anim_dark.c` | 923 | 2/25 | `battle/animTasks.ts` |  |
-| `menu.c` | 872 | 25/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |
+| `menu.c` | 872 | 26/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |
 | `battle_anim_rock.c` | 822 | 1/22 |  |  |
 | `main_menu.c` | 788 | 23/29 | `mainMenu.ts` |  |
 | `wild_encounter.c` | 784 | 7/36 | `field/wildEncounter.ts`, `menu2.ts` |  |
-| `new_menu_helpers.c` | 761 | 26/53 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |
+| `new_menu_helpers.c` | 761 | 27/53 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |
 | `list_menu.c` | 758 | 24/31 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |
 | `battle_anim_ground.c` | 752 | 1/25 |  |  |
 | `trainer_see.c` | 750 | 7/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |
-| `player_pc.c` | 740 | 3/47 | `menus/playerPc.ts` |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |
 | `easy_chat.c` | 730 | 5/37 | `script/specials.ts` |  |
-| `string_util.c` | 726 | 5/39 | `gba/charmap.ts` |  |
-| `item.c` | 680 | 22/47 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |
+| `string_util.c` | 726 | 6/39 | `gba/charmap.ts` |  |
+| `item.c` | 680 | 23/47 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |
 | `menu2.c` | 671 | 6/10 | `menu2.ts` |  |
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |
 | `itemfinder.c` | 658 | 2/24 | `menus/fieldMenus.ts` |  |
@@ -135,7 +133,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `fldeff_flash.c` | 479 | 2/22 | `mapPreviewScreen.ts` |  |
 | `field_screen_effect.c` | 462 | 5/19 | `field/fieldEffects.ts` |  |
 | `bike.c` | 418 | 8/24 | `field/playerAvatar.ts` |  |
-| `decompress.c` | 352 | 9/18 | `pokemon/pics.ts` |  |
+| `decompress.c` | 352 | 10/18 | `pokemon/pics.ts` |  |
 | `field_tasks.c` | 351 | 4/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |
 | `trainer_fan_club.c` | 347 | 10/23 | `script/specialsExtra.ts` |  |
 | `special_field_anim.c` | 341 | 2/10 | `script/specialsExtra.ts` |  |
@@ -148,13 +146,12 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `diploma.c` | 275 | 1/10 | `diploma.ts` |  |
 | `roamer.c` | 264 | 9/13 | `pokemon/roamer.ts` |  |
 | `scanline_effect.c` | 261 | 6/9 | `hw/scanline.ts` |  |
-| `menu_helpers.c` | 243 | 13/17 | `hw/menuHelpers.ts` |  |
 | `map_name_popup.c` | 231 | 0/7 | `field/mapNamePopup.ts` |  |
 | `script_movement.c` | 226 | 2/18 | `script/movement.ts` |  |
 | `pokemon_size_record.c` | 217 | 6/13 | `script/specialsExtra.ts` |  |
 | `script_pokemon_util.c` | 215 | 9/13 | `script/specials.ts` |  |
 | `ss_anne.c` | 200 | 1/8 | `script/specialsExtra.ts` |  |
-| `mail_data.c` | 187 | 6/12 | `partyMenu.ts` |  |
+| `mail_data.c` | 187 | 8/12 | `partyMenu.ts` |  |
 | `text_window.c` | 177 | 12/18 | `battle/bg.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` |  |
 | `pokemon_storage_system.c` | 171 | 4/21 |  |  |
 | `new_game.c` | 160 | 3/11 | `game.ts`, `random.ts`, `save.ts` |  |
@@ -189,10 +186,9 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `slot_machine.c` | 2527 | 13/77 | `game/slots.ts`, `menus/slotMachine.ts` | menus/slotMachine.ts: reglas sin gráficos |
 | `fame_checker.c` | 1739 | 4/64 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
 | `teachy_tv.c` | 1400 | 0/58 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
-| `item_pc.c` | 1145 | 0/59 | `menus/hardwareChoice.ts`, `menus/playerPc.ts` | menus/playerPc.ts: listas simplificadas |
 | `shop.c` | 1145 | 5/60 | `menus/shopMenu.ts`, `menus/shopModel.ts` | menus/shopMenu.ts |
+| `player_pc.c` | 740 | 33/47 | `menus/playerPc.ts`, `playerPcMailbox.ts` | menus/playerPc.ts: menú superior sobre el campo canvas |
 | `pokemon_storage_system_menu.c` | 660 | 4/29 | `pokemon/storage.ts` | menus/storageMenu.ts: reglas con listas |
-| `mailbox_pc.c` | 140 | 2/9 | `menus/playerPc.ts`, `pokemon/mail.ts` | menus/playerPc.ts: listas simplificadas |
 
 ## Portado (≥ 80 % de funciones con el mismo nombre)
 
@@ -216,6 +212,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokeball.c` | 1334 | 34/37 | `battle/pokeball.ts` |  |
 | `pokemon_icon.c` | 1283 | 19/20 | `battle/ext.ts`, `pokemonIcon.ts` |  |
 | `bg.c` | 1215 | 44/50 | `hw/bg.ts` |  |
+| `item_pc.c` | 1145 | 57/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |
 | `metatile_behavior.c` | 1039 | 97/115 |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |
@@ -232,10 +229,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `bag.c` | 312 | 13/13 | `bagMenu.ts` |  |
 | `trainer_pokemon_sprites.c` | 286 | 22/22 | `trainerPokemonSprites.ts` |  |
 | `pokedex_area_markers.c` | 274 | 5/5 | `pokedexArea.ts` |  |
+| `menu_helpers.c` | 243 | 15/17 | `hw/menuHelpers.ts` |  |
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |
 | `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |
 | `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |
+| `pc_screen_effect.c` | 179 | 7/7 | `pcScreenEffect.ts` |  |
 | `gpu_regs.c` | 158 | 10/11 | `hw/gpu.ts` |  |
+| `mailbox_pc.c` | 140 | 9/9 | `mailboxPc.ts`, `menus/playerPc.ts`, `playerPcMailbox.ts` … |  |
 | `dynamic_placeholder_text_util.c` | 137 | 4/4 | `dynamicPlaceholderTextUtil.ts` |  |
 | `prof_pc.c` | 109 | 2/2 | `game.ts` |  |
 | `math_util.c` | 87 | 9/9 | `mathUtil.ts` |  |

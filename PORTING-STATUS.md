@@ -534,6 +534,22 @@ Adaptaciones: el puntero `PokemonSpecialAnim` de `data[0..1]` es el módulo
 `sPSA`; los punteros a sprite en `data[]` son índices de `gSprites`. Verificado:
 `check:port`, `build` y paridad de cdata/incbin/textos; sin probar en navegador.
 
+### PC de objetos y buzón: `item_pc.c`, `mailbox_pc.c`, `pc_screen_effect.c` (2026-09-25)
+
+`itemPc.ts` porta `item_pc.c` completo (setup por estados, lista con modo de
+intercambio, retirar con cantidad, "Dar" al menú de equipo y regreso);
+`pcScreenEffect.ts` porta `pc_screen_effect.c` (efecto CRT); `mailboxPc.ts`
+porta `mailbox_pc.c` y `gPlayerPcMenuManager`; `playerPcMailbox.ts` porta el flujo
+del buzón de `player_pc.c` (lista, leer / pasar a la mochila / dar a un Pokémon)
+y `partyMenu.ts` implementa `TryGiveMailToSelectedMon` y
+`ChooseMonToGiveMailFromMailbox`. `menus/playerPc.ts` conserva el menú superior y
+el submenú de ITEM STORAGE dibujados sobre el campo canvas (adaptador de
+`player_pc.c`); "Withdraw" llama a `ItemPc_Init`. Adaptaciones: `save.pcItems` y
+`save.pcMail` no tienen huecos (compactación = no-op); el buzón corre en su propia
+escena hw (fondo negro, ventana de diálogo estándar) en vez de sobre el mapa;
+sin Quest Log ni help system. Verificado: `check:port`, `build` y paridad de
+cdata/incbin/textos; sin probar en navegador.
+
 ### Lista de movimientos del Recordador (2026-09-25)
 
 `moveRelearner.ts` reemplaza la lista genérica por la pantalla de selección del C:

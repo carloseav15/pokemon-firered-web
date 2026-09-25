@@ -14,7 +14,7 @@ import {
   LoadSpriteSheet, oamData, SPRITE_SHAPE, SPRITE_SIZE, type Sprite, type SpriteTemplate,
 } from "./sprite";
 import {
-  AddWindow, CallWindowFunction, InitWindows, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FillWindowPixelRect, GetWindowAttribute,
+  AddWindow, CallWindowFunction, InitWindows, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FillWindowPixelRect, GetWindowAttribute,
   PIXEL_FILL, PutWindowTilemap, RemoveWindow, WINDOW_BG, type WindowTemplate,
 } from "./window";
 
@@ -309,6 +309,14 @@ export function InitTextBoxGfxAndPrinters(): void {
 
 function pal16(bytes: Uint8Array): Uint16Array {
   return new Uint16Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + (bytes.length & ~1)));
+}
+
+export type MenuAction = { text: ArrayLike<number> };
+
+/** PrintTextArray */
+export function PrintTextArray(windowId: number, fontId: number, left: number, top: number, lineHeight: number, itemCount: number, strs: MenuAction[]): void {
+  for (let i = 0; i < itemCount; i++) AddTextPrinterParameterized(windowId, fontId, strs[i].text, left, lineHeight * i + top, 0xff, null);
+  CopyWindowToVram(windowId, COPYWIN_GFX);
 }
 
 export function Menu_LoadStdPal(): void {

@@ -66,6 +66,7 @@ import { addBagItem, addPCItem, CheckIfItemIsTMHMOrEvolutionStone, itemInfo, rem
 import { isMailItem } from "./pokemon/mail";
 import { canLearnTMHM, speciesName } from "./pokemon/pokemon";
 import { tmhmMove } from "./menus/monProgress";
+import { gPlayerPcMenuManager } from "./mailboxPc";
 import {
   preloadPokemonSpecialAnim, PSA_IsCancelDisabled, StartUseItemAnim_CantEvolve, StartUseItemAnim_ForgetMoveAndLearnTMorHM, StartUseItemAnim_Normal,
 } from "./pokemonSpecialAnim";
@@ -3031,10 +3032,26 @@ function ReturnGiveItemToBagOrPC(item: number): boolean {
   return gPartyMenu.action === C.PARTY_ACTION_GIVE_ITEM ? addBagItem(item, 1) : addPCItem(item, 1);
 }
 
+/** ChooseMonToGiveMailFromMailbox (the exit callback is Mailbox_ReturnToMailListAfterDeposit, passed in to avoid an import cycle). */
+export function ChooseMonToGiveMailFromMailbox(exitCallback: () => void): void {
+  InitPartyMenu(C.PARTY_MENU_TYPE_FIELD, C.PARTY_LAYOUT_SINGLE, C.PARTY_ACTION_GIVE_MAILBOX_MAIL, false, C.PARTY_MSG_GIVE_TO_WHICH_MON, Task_HandleChooseMonInput, exitCallback);
+}
+
 function TryGiveMailToSelectedMon(taskId: number): void {
-  // The PC mailbox hand-off is not wired to this menu yet.
+  const m = mon(gPartyMenu.slotId);
+
   partyMenuResult.useExitCallback = false;
-  DisplayPartyMenuMessage(text("gText_PkmnHoldingItemCantHoldMail"), true);
+  const index = gPlayerPcMenuManager.cursorPos + gPlayerPcMenuManager.itemsAbove;
+  const mail = save.pcMail[index];
+  if (GetMonData(m, C.MON_DATA_HELD_ITEM) !== C.ITEM_NONE) {
+    DisplayPartyMenuMessage(text("gText_PkmnHoldingItemCantHoldMail"), true);
+  } else {
+    // GiveMailToMon2(mon, mail); ClearMailStruct(mail): the message moves to the mon, the slot is removed.
+    m.heldItem = mail.item;
+    m.mailMessage = mail.message;
+    save.pcMail.splice(index, 1);
+    DisplayPartyMenuMessage(text("gText_MailTransferredFromMailbox"), true);
+  }
   ScheduleBgCopyTilemapToVram(2);
   tasks.setFunc(taskId, Task_UpdateHeldItemSpriteAndClosePartyMenu);
 }

@@ -140,7 +140,7 @@ const ItemId_GetType = (id: number): number => {
   const type = itemInfo(id)?.type ?? 0;
   return typeof type === "number" ? type : rom.constants[type] ?? 0;
 };
-const ItemId_GetDescription = (id: number): Uint8Array => b64(itemInfo(id)?.description ?? itemInfo(0)!.description);
+export const ItemId_GetDescription = (id: number): Uint8Array => b64(itemInfo(id)?.description ?? itemInfo(0)!.description);
 const ItemIsMail = (id: number): boolean => id >= C.ITEM_ORANGE_MAIL && id <= C.ITEM_RETRO_MAIL;
 const u8str = (bytes: ArrayLike<number>): number[] => { const o: number[] = []; for (let i = 0; i < bytes.length && bytes[i] !== 0xff; i++) o.push(bytes[i]); return o; };
 const cat = (...parts: ArrayLike<number>[]): Uint8Array => Uint8Array.from([...parts.flatMap(u8str), 0xff]);
@@ -276,7 +276,17 @@ function SpriteCB_ShakeBagSprite(sprite: Sprite): void {
   }
 }
 
-function CreateSwapLine(): void {
+/** LoadCompressedSpriteSheet(&gBagSwapSpriteSheet) (item_menu_icons.c). */
+export function LoadBagSwapSpriteSheet(): void {
+  LoadSpriteSheet({ data: incbin("gSwapLine_Gfx"), size: 0x100, tag: TAG_SWAP_LINE });
+}
+
+/** LoadCompressedSpritePalette(&gBagSwapSpritePalette). */
+export function LoadBagSwapSpritePalette(): void {
+  LoadSpritePalette({ data: incbin("gSwapLine_Pal"), tag: TAG_SWAP_LINE });
+}
+
+export function CreateSwapLine(): void {
   for (let i = 0; i < NUM_SWAP_LINE_SPRITES; i++) {
     const id = CreateSprite(template(TAG_SWAP_LINE, TAG_SWAP_LINE, "sOamData_SwapLine", "sAnims_SwapLine", null), i * 16 + 96, 7, 0);
     sItemMenuIconSpriteIds[SPR_SWAP_LINE_START + i] = id;
@@ -286,11 +296,11 @@ function CreateSwapLine(): void {
   }
 }
 
-function SetSwapLineInvisibility(invisible: boolean): void {
+export function SetSwapLineInvisibility(invisible: boolean): void {
   for (let i = 0; i < NUM_SWAP_LINE_SPRITES; i++) gSprites[sItemMenuIconSpriteIds[SPR_SWAP_LINE_START + i]].invisible = invisible;
 }
 
-function UpdateSwapLinePos(x: number, y: number): void {
+export function UpdateSwapLinePos(x: number, y: number): void {
   for (let i = 0; i < NUM_SWAP_LINE_SPRITES; i++) {
     const s = gSprites[sItemMenuIconSpriteIds[SPR_SWAP_LINE_START + i]];
     s.x2 = x;
@@ -316,7 +326,7 @@ export function AddItemIconObject(tilesTag: number, paletteTag: number, itemId: 
   return CreateSprite(template(tilesTag, paletteTag, "sOamData_ItemIcon", "sAnims_ItemIcon", null), 0, 0, 0);
 }
 
-function CreateItemMenuIcon(itemId: number, idx: number): void {
+export function CreateItemMenuIcon(itemId: number, idx: number): void {
   CreateItemMenuIconAt(itemId, idx, 140);
 }
 
@@ -893,7 +903,7 @@ function Task_AnimateWin0v(taskId: number): void {
 }
 
 /** MoveItemSlotInList */
-function MoveItemSlotInList(slots: Array<{ item: number; quantity: number }>, from: number, to: number): void {
+export function MoveItemSlotInList(slots: Array<{ item: number; quantity: number }>, from: number, to: number): void {
   if (from === to) return;
   const first = slots[from];
   if (to > from) {
