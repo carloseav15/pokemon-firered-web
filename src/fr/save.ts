@@ -72,7 +72,8 @@ export function newSaveData(): SaveData {
     version: 2,
     playerName: [0xff],
     playerGender: 0,
-    trainerId: (Math.random() * 0xffffffff) >>> 0,
+    // new_game.c InitPlayerTrainerId assigns this after title-screen RNG seeding.
+    trainerId: 0,
     rivalName: [0xff],
     location: emptyWarp(),
     pos: { x: 0, y: 0 },

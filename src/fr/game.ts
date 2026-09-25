@@ -24,7 +24,7 @@ import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScree
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { WildEncounter } from "./field/wildEncounter";
-import { random } from "./random";
+import { generatePlayerTrainerId, takeWildEncounterSeed } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { dexCount, getDexFlag, healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
@@ -159,9 +159,10 @@ export class Game {
 
   newGame(playerName: string, gender: number, rivalName: string): void {
     const data = newSaveData();
+    data.trainerId = generatePlayerTrainerId();
     setSave(data);
     PlayTimeCounter_Reset();
-    this.wild.seed(random());
+    this.wild.seed(takeWildEncounterSeed());
     setName("player", encode(playerName.slice(0, 7)));
     setName("rival", encode(rivalName.slice(0, 7)));
     save.playerGender = gender;
@@ -184,6 +185,7 @@ export class Game {
 
   continueGame(data: SaveData): void {
     setSave(data);
+    this.wild.seed(takeWildEncounterSeed());
     // Overworld_ResetStateOnContinue runs before the continue warp is applied.
     onWarpForRoamer();
     // CB2_ContinueSavedGame: UseContinueGameWarp → SetWarpDestinationToContinueGameWarp

@@ -19,6 +19,7 @@ import { SetVBlankCallback } from "./hw/runtime";
 import { LoadOam, ProcessSpriteCopyRequests } from "./hw/sprite";
 import { TransferPlttBuffer } from "./hw/palette";
 import { ScanlineEffect_InitHBlankDmaTransfer } from "./hw/scanline";
+import { SeedRngAndSetTrainerId } from "./random";
 
 type Stage = "copyright" | "logo" | "grass" | "forest" | "scene3" |
   "title" | "menu" | "clearsave" | "oak";
@@ -129,6 +130,8 @@ class Startup {
       }
       if (this.stage === "title" && this.titleScreen.done && this.titleScreen.exitTo === "menu" && this.romReady) {
         // CB2_InitMainMenu (a NEW GAME-only menu starts the new game immediately).
+        // main.c seeds the LCG and trainer-ID low half from Timer1 before loading the menu.
+        SeedRngAndSetTrainerId(this.titleScreen.timer1Low);
         this.set("menu");
         this.mainMenu.begin();
       }

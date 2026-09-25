@@ -82,6 +82,7 @@ const TITLE_TONE = RGB(30, 30, 31);
 
 export class IntroTitle {
   private scene: Scene = "init";
+  private timer1StartedAt = 0;
   private state = 0;
   private timer = 0;
   private counter = 0;
@@ -105,6 +106,8 @@ export class IntroTitle {
   }
 
   begin(): void {
+    // main.c StartTimer1 runs as the title screen initializes.
+    this.timer1StartedAt = performance.now();
     this.exitTo = "menu";
     this.scene = "init";
     this.state = 0;
@@ -226,6 +229,11 @@ export class IntroTitle {
 
   get inRun(): boolean {
     return this.scene === "run";
+  }
+
+  /** Low 16 bits of the browser high-resolution clock, as the Timer1 read. */
+  get timer1Low(): number {
+    return Math.floor((performance.now() - this.timer1StartedAt) * 16777.216) & 0xffff;
   }
 
   update(): void {

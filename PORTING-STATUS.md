@@ -205,10 +205,12 @@ whiteout respawn now uses the original heal-location data in
 - `fldeff_berrytree.c` contiene únicamente un `DoWateringBerryTreeAnim`
   vacío (comentario del propio decomp: eliminado de R/S). El special TS también
   es vacío. Paridad exacta de este archivo; el juego no tiene esa animación.
-- `random.c`: el LCG de `Random`, `Random32`, el estado inicial cero y el
-  truncamiento `u16` de `SeedRng` coinciden. Sigue parcial porque el flujo TS
-  aún no llama `seedRng` al salir del título con el valor de Timer1 ligado a la
-  ID del entrenador, como hace C.
+- `random.c` / `main.c`: `Random`, `Random32`, `SeedRng`, el muestreo de Timer1
+  al salir del título y el consumo de RNG para encuentros/ID siguen ahora el
+  orden de `ResetMenuAndMonGlobals`/`InitPlayerTrainerId`. La lectura de Timer1
+  usa el reloj de alta resolución del navegador (adaptación con precisión
+  limitada); `Random2`/`SeedRng2` solo tienen declaraciones en el decomp.
+  `npm run check:port` pasa; falta comparación de secuencias runtime.
 - `fldeff_dig.c`: mapa permitido, confirmación, selección del Pokémon,
   FieldEffect Dig, transición a pie y escape al último heal location están
   conectados entre `fieldMoveMenu.ts` y `fieldMoves.ts`; falta cotejo visual.
@@ -364,8 +366,8 @@ whiteout respawn now uses the original heal-location data in
   están en `hw/menu.ts`/`menuHelpers.ts`; faltan signpost, tiles Quest Log,
   borde interior y `rbox_fill_rectangle`. El campo adapta ventana Canvas2D.
 - `new_game.c`: `game.newGame`/`newSaveData` inicializan nombre, dinero,
-  Potion, Pokédex, flags/vars, tiempo y warp; faltan resets de varios sistemas
-  y el trainer ID todavía usa `Math.random()` en vez de Random + Timer1 de C.
+  Potion, Pokédex, flags/vars, tiempo y warp; el trainer ID ahora usa Random +
+  el Timer1 adaptado descrito arriba. Faltan resets de varios sistemas.
 - `gpu_regs.c`: buffer, coalescing y flush en VBlank están en `hw/gpu.ts` y
   `runtime.ts`; IE/IME/DISPSTAT de hardware se abstraen y los helpers de
   interrupción son no-op. En TS solo se llama `EnableInterrupts(0)`.
