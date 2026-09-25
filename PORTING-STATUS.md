@@ -120,8 +120,8 @@ and records whether each exact function name appears anywhere in `src/fr`.
 
 The current review labels 38 modules as documented ported, 61 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
-seven as explicitly out of scope, 36 as probable out-of-scope candidates, and
-131 as unreviewed. Separately, 42 files have a
+eight as explicitly out of scope, 36 as probable out-of-scope candidates, and
+130 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -199,6 +199,9 @@ whiteout respawn now uses the original heal-location data in
   tilemaps con wrap; no tienen call sites en el repositorio. Los specials de
   Cable Car se registran como `NullFieldSpecial`; se excluye solo este módulo
   inactivo, sin inferir paridad general de tilemaps.
+- `agb_flash_1m.c` identifica el chip Flash de 1 Mbit, cambia registros y
+  asigna drivers específicos de hardware. Web guarda en localStorage; esto
+  excluye solo el controlador físico, no la paridad del sistema de guardado.
 - `agb_flash_le.c` solo configura el chip Flash GBA y sus sectores/timings;
   se reemplaza por localStorage en web. Esto no implica paridad del formato de
   SaveBlock ni del flujo de guardado.
