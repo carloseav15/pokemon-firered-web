@@ -271,6 +271,10 @@ whiteout respawn now uses the original heal-location data in
   los coord events sin script, como `TryRunCoordEventScript` (FireRed deja vacíos
   todos los manejadores).
 - `cable_car_util.c`: portado en `cableCarUtil.ts`; sin llamadores en FireRed.
+- `tilemap_util.c`: portado en `hw/tilemapUtil.ts` (vistas recortadas de los tres
+  tilemaps de las cajas del PC); lo usará el port de `pokemon_storage_system_tasks.c`.
+- `palette_util.c`: sin uso en FireRed. Su propio comentario lo dice: solo sirve a la
+  ruleta y a la Torre Espejismo de Esmeralda. No se porta.
 - `save_failed_screen.c`: fuera de alcance, como `agb_flash.c`. Solo se activa con
   sectores Flash dañados (`gDamagedSaveSectors`) y los borra byte a byte; el guardado
   web usa `localStorage` y no tiene sectores.
