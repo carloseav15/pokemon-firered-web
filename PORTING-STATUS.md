@@ -712,6 +712,28 @@ iconos de Pokémon, list_menu, Salón de la Fama y créditos, PC de objetos y bu
 tienda, escena de "usar objeto", Pokédex, tarjeta de entrenador, resumen, evolución,
 diploma, Seagallop, motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 
+### Prioridad actual: jugar bien las primeras ~2 horas (2026-09-25)
+
+Ruta objetivo: intro → Pueblo Paleta → laboratorio (inicial y rival) → Ruta 1 →
+Ciudad Verde (paquete de Oak, Pokédex) → Ruta 2/22 → Bosque Verde → Ciudad
+Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
+
+1. **Prueba en navegador de la ruta completa** (`?fr=new`, `window.frDebug`) y
+   arreglo de todo lo que bloquee o rompa: nombres, inicial, combate rival,
+   paquete, entrenadores, captura, Centro Pokémon, tienda, PC, Brock,
+   guardar/continuar. Registrar cada fallo y su arreglo aquí.
+2. **Transiciones a batalla** (`battle_transition.c`, ~3000 líneas): no existen hoy.
+3. **Pantalla de nombres** (`naming_screen.c`, 4/109 por nombre): confirmar en la
+   prueba si la actual basta; si no, portarla completa.
+4. **Efectos de campo** (`field_effect_helpers.c`, `field_effect.c`): hierba,
+   sombra de salto, huellas.
+5. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
+   con la capa antigua.
+6. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.
+
+No hacen falta para este tramo: intercambios, Easy Chat, Teachy TV, Fame Checker,
+tragaperras, clima, Islas Sevii.
+
 ### Nivel 1 — pequeño (menos de un día cada uno)
 
 1. **Buzón del PC** (`mailbox_pc.c`, parte de `player_pc.c`) **[PORTADO, sin probar]**:

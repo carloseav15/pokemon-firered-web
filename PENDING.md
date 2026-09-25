@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5018/9825 (51 %)**.
-- Archivos C pendientes: **125** (144219 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5029/9825 (51 %)**.
+- Archivos C pendientes: **124** (143981 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -15,7 +15,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 |---|---:|---:|---:|---|
 | `image_processing_effects.c` | 4436 | 0/38 | ~4436 |  |
 | `palette_util.c` | 474 | 0/17 | ~474 |  |
-| `tilemap_util.c` | 238 | 0/11 | ~238 |  |
 | `save_failed_screen.c` | 228 | 0/14 | ~228 |  |
 
 ## 2. Adaptadores (UI simplificada; hay que portar la pantalla real)
@@ -84,7 +83,6 @@ Hay 115 archivos parciales en total; la lista completa está en [PORT-INVENTORY.
 - Fame Checker y Teachy TV son adaptadores de texto (`fame_checker.c`, `teachy_tv.c`, `battle_controller_pokedude.c`).
 - Tragaperras sin gráficos (`slot_machine.c`).
 - Sin transiciones de combate (`battle_transition.c`) ni `image_processing_effects.c`.
-- Animaciones de ataques restantes (`battle_anim_*.c`, ~30 000 líneas).
 - Pantalla de nombres: solo 4/109 funciones (`naming_screen.c`).
 - Clima y efectos de campo parciales (`field_weather*.c`, `field_effect*.c`, `field_effect_helpers.c`).
 - `scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).

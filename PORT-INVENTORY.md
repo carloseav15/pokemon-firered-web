@@ -8,15 +8,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 4 | 5376 | 0/80 |
+| Falta (sin funciones portadas) | 3 | 5138 | 0/69 |
 | Parcial (menos del 80 % de funciones) | 115 | 128819 | 1796/6064 |
 | Adaptador (UI simplificada) | 6 | 10024 | 54/341 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 84 | 104724 | 3168/3340 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 85 | 104962 | 3179/3351 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **125** | **144219** | |
-| **Total en alcance** | **210** | **248996** | **5018/9825** |
+| **Pendiente de portar** | **124** | **143981** | |
+| **Total en alcance** | **210** | **248996** | **5029/9825** |
 
 ## Falta (sin funciones portadas)
 
@@ -24,7 +24,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---|---|
 | `image_processing_effects.c` | 4436 | 0/38 |  |  |
 | `palette_util.c` | 474 | 0/17 |  |  |
-| `tilemap_util.c` | 238 | 0/11 |  |  |
 | `save_failed_screen.c` | 228 | 0/14 |  |  |
 
 ## Parcial (menos del 80 % de funciones)
@@ -225,6 +224,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `trainer_pokemon_sprites.c` | 286 | 22/22 | `trainerPokemonSprites.ts` |  |
 | `pokedex_area_markers.c` | 274 | 5/5 | `pokedexArea.ts` |  |
 | `menu_helpers.c` | 243 | 15/17 | `hw/menuHelpers.ts` |  |
+| `tilemap_util.c` | 238 | 11/11 | `hw/tilemapUtil.ts` |  |
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |
 | `braille_text.c` | 212 | 3/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |
 | `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |

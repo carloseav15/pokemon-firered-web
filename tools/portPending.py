@@ -33,7 +33,6 @@ KNOWN_GAPS = [
     "Fame Checker y Teachy TV son adaptadores de texto (`fame_checker.c`, `teachy_tv.c`, `battle_controller_pokedude.c`).",
     "Tragaperras sin gráficos (`slot_machine.c`).",
     "Sin transiciones de combate (`battle_transition.c`) ni `image_processing_effects.c`.",
-    "Animaciones de ataques restantes (`battle_anim_*.c`, ~30 000 líneas).",
     "Pantalla de nombres: solo 4/109 funciones (`naming_screen.c`).",
     "Clima y efectos de campo parciales (`field_weather*.c`, `field_effect*.c`, `field_effect_helpers.c`).",
     "`scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).",
