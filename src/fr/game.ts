@@ -14,6 +14,7 @@ import { Overworld } from "./field/overworld";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
+import { onWarpForRoamer } from "./pokemon/roamer";
 import { addPCItem } from "./pokemon/items";
 import { rom } from "./rom";
 import { flagGet, newSaveData, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
@@ -183,6 +184,8 @@ export class Game {
 
   continueGame(data: SaveData): void {
     setSave(data);
+    // Overworld_ResetStateOnContinue runs before the continue warp is applied.
+    onWarpForRoamer();
     // CB2_ContinueSavedGame: UseContinueGameWarp → SetWarpDestinationToContinueGameWarp
     const flags = save as unknown as { continueGameWarpActive?: boolean };
     if (flags.continueGameWarpActive && save.continueGameWarp.mapGroup !== 0xff) {
