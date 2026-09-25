@@ -142,8 +142,9 @@ export function addCoins(amount: number): boolean {
 }
 
 export function removeCoins(amount: number): boolean {
-  if (save.coins < amount) return false;
-  save.coins -= amount;
+  const toSub = amount & 0xffff; // coins.c RemoveCoins(u16 toSub)
+  if (save.coins < toSub) return false;
+  save.coins -= toSub;
   return true;
 }
 
