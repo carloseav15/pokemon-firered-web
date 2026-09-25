@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 115 | 128819 | 1824/6064 |
+| Parcial (menos del 80 % de funciones) | 114 | 127887 | 1819/6041 |
 | Adaptador (UI simplificada) | 5 | 9284 | 22/294 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 89 | 110840 | 3295/3467 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 90 | 111772 | 3318/3490 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **120** | **138103** | |
-| **Total en alcance** | **210** | **248996** | **5141/9825** |
+| **Pendiente de portar** | **119** | **137171** | |
+| **Total en alcance** | **210** | **248996** | **5159/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -67,7 +67,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `palette.c` | 994 | 29/41 | `hw/palette.ts` |  |
 | `field_fadetransition.c` | 965 | 18/57 | `field/overworld.ts` |  |
 | `fieldmap.c` | 951 | 9/51 | `field/fieldmap.ts` |  |
-| `learn_move.c` | 932 | 5/23 | `game.ts`, `menus/hardwareChoice.ts`, `menus/moveRelearner.ts` |  |
 | `item_use.c` | 925 | 34/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `pokemon/items.ts` … |  |
 | `menu.c` | 872 | 26/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |
 | `main_menu.c` | 788 | 23/29 | `mainMenu.ts` |  |
@@ -193,6 +192,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_utility_funcs.c` | 970 | 42/42 | `battle/anims/utilityFuncs.ts` |  |
 | `battle_anim_fight.c` | 969 | 31/31 | `battle/anims/fight.ts` |  |
 | `battle_anim_mon_movement.c` | 941 | 34/34 | `battle/anims/monMovement.ts` |  |
+| `learn_move.c` | 932 | 23/23 | `game.ts`, `menus/hardwareChoice.ts`, `menus/moveRelearner.ts` |  |
 | `battle_anim_dark.c` | 923 | 25/25 | `battle/anims/dark.ts` |  |
 | `battle_anim_rock.c` | 822 | 22/22 | `battle/anims/rock.ts` |  |
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |

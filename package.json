@@ -20,7 +20,8 @@
     "check:anims": "esbuild tools/checks/battleAnims.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/battleAnims.mjs && node .decomp-build/checks/battleAnims.mjs",
     "check:transitions": "esbuild tools/checks/fieldAndBattleTransitions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/fieldAndBattleTransitions.mjs && node .decomp-build/checks/fieldAndBattleTransitions.mjs",
     "check:earlygame": "esbuild tools/checks/oakLabToViridianPlaytest.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/oakLabToViridianPlaytest.mjs && node .decomp-build/checks/oakLabToViridianPlaytest.mjs",
-    "check:imgfx": "esbuild tools/checks/imageProcessingEffects.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/imageProcessingEffects.mjs && node .decomp-build/checks/imageProcessingEffects.mjs"
+    "check:imgfx": "esbuild tools/checks/imageProcessingEffects.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/imageProcessingEffects.mjs && node .decomp-build/checks/imageProcessingEffects.mjs",
+    "check:learnmove": "esbuild tools/checks/learnMove.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/learnMove.mjs && node .decomp-build/checks/learnMove.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

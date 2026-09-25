@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5141/9825 (52 %)**.
-- Archivos C pendientes: **120** (138103 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5159/9825 (52 %)**.
+- Archivos C pendientes: **119** (137171 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -62,14 +62,14 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `vs_seeker.c` | 1326 | 15/40 | ~828 |  |
 | `fieldmap.c` | 951 | 9/51 | ~783 |  |
 | `title_screen.c` | 1315 | 17/39 | ~741 |  |
-| `learn_move.c` | 932 | 5/23 | ~729 |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | ~728 |  |
 | `field_specials.c` | 2555 | 85/118 | ~714 |  |
 | `evolution_scene.c` | 1704 | 13/22 | ~697 |  |
 | `field_fadetransition.c` | 965 | 18/57 | ~660 |  |
 | `mail.c` | 734 | 1/10 | ~660 |  |
+| `field_control_avatar.c` | 1182 | 17/37 | ~638 |  |
 
-Hay 115 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
+Hay 114 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
 ## 4. Huecos conocidos que el conteo no muestra
 
