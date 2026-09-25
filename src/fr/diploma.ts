@@ -17,6 +17,7 @@ import { FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTile
 import { rom } from "./rom";
 import { save } from "./save";
 import { hasAllNationalDexSpecies } from "./pokemon/pokemon";
+import { ScanlineEffect_Stop } from "./hw/scanline";
 import type { Game } from "./game";
 
 /** DynamicPlaceholderTextUtil_ExpandPlaceholders: F7 nn → placeholder nn. */
@@ -109,7 +110,7 @@ export function showDiploma(game: Game): void {
     }
     initState++;
   };
-  ResetSpriteData(); ResetPaletteFade(); FreeAllSpritePalettes(); tasks.reset();
+  ResetSpriteData(); ResetPaletteFade(); FreeAllSpritePalettes(); tasks.reset(); ScanlineEffect_Stop();
   tasks.create(init, 0);
   SetMainCallback2(() => { tasks.run(); AnimateSprites(); BuildOamBuffer(); UpdatePaletteFade(); });
 }
