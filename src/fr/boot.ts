@@ -3,6 +3,7 @@
 
 import { loadCData } from "./hw/assets";
 import { sound } from "./audio/sound";
+import { createM4aBackend } from "./audio/m4a";
 import { Game } from "./game";
 import { rom } from "./rom";
 import { joy } from "./gba/input";
@@ -53,6 +54,7 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
   }
   status.remove();
   sound.init(rom.constants);
+  sound.backend = createM4aBackend();
   const game = new Game(canvas);
   installBattleHost(game);
   running = game;

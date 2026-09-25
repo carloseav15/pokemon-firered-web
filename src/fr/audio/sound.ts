@@ -1,6 +1,6 @@
-// sound.c facade. The m4a player (audio/m4a.ts) implements playback; until
-// it is ready this keeps the timing contracts (fanfares, SE waits, cries)
-// so scripts that wait on audio keep working.
+// sound.c facade. The m4a player (audio/m4a.ts) implements playback; this
+// keeps the timing contracts (fanfares, SE waits, cries) so scripts that wait
+// on audio keep working with or without a backend installed.
 
 export interface SoundBackend {
   playSong(player: "bgm" | "se1" | "se2" | "fanfare", song: number): void;
