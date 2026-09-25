@@ -131,6 +131,7 @@ audio backend exists.
 - `field_camera.c`: camera movement/map transitions, pan and metatile drawing are integrated in `field/overworld.ts`; GBA ring-buffer slices and camera sprite callbacks are adapted or absent. Marked partial; no movement trace this pass.
 - `option_menu.c`: six settings, cycling/input, frame preview, persistence and return flow are implemented in `optionMenu.ts`; Canvas/HwScene adaptation, no pixel comparison.
 - `wireless_communication_status_screen.c`: counts RFU trade/battle/union/minigame activity and displays nearby peers; no single-player caller or wireless hardware. Marked out of scope for single-player.
+- `script.c`: bytecode/native execution and map-script table dispatch exist in `script/context.ts` and `overworld.ts`; RAM scripts, some dialogue control flags and Quest Log input helpers are missing. Marked partial.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -142,7 +143,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 54 modules as documented ported, 98 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 62 as unreviewed. Separately, 42 files have a
+The current review labels 54 modules as documented ported, 99 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 61 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
