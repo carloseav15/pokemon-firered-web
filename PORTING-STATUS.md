@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 34 modules as documented ported, 58 as partial or
+The current review labels 33 modules as documented ported, 59 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
 141 as unreviewed. Separately, 42 files have a
@@ -169,6 +169,9 @@ whiteout respawn now uses the original heal-location data in
 - `fldeff_dig.c`: mapa permitido, confirmación, selección del Pokémon,
   FieldEffect Dig, transición a pie y escape al último heal location están
   conectados entre `fieldMoveMenu.ts` y `fieldMoves.ts`; falta cotejo visual.
+- `fldeff_teleport.c` tiene la compuerta de mapa y warp correctos, pero su
+  task omite `CameraObjectReset2` y la transición de prioridad del subsprite;
+  además mueve `y2` donde C cambia `sprite.y`. Queda parcial.
 - `fldeff_strength.c`: TS conserva el requisito de estar a pie y tener una
   roca empujable delante; pasa el slot/nickname, muestra al Pokémon y reanuda
   el script para activar Strength. Cotejado con `field_moves.inc` y el C.
