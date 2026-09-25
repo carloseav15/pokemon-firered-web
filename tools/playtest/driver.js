@@ -33,7 +33,9 @@ export const H = {
   async idle(max = 3000, tapA = true) {
     for (let f = 0; f < max; f += 20) {
       const s = this.st();
-      if (!s.script && !s.locked && !this.inBattle() && f > 40) return { ...s, f };
+      // A trainer script can start a battle: hand it back to goto()/battle().
+      if (this.inBattle()) return { ...s, f, battle: true };
+      if (!s.script && !s.locked && f > 40) return { ...s, f };
       await dbg().wait(16);
       if (tapA) await dbg().wait(4, 1);
     }

@@ -60,7 +60,7 @@ import { EOS, encode, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_L
 import { TEXT_SKIP_DRAW } from "./gba/textPrinter";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, L_BUTTON, R_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
-import { SetMainCallback2, SetVBlankCallback, SetHBlankCallback } from "./hw/runtime";
+import { SetMainCallback2, SetMainCallback2WhenLoaded, SetVBlankCallback, SetHBlankCallback } from "./hw/runtime";
 import { sound } from "./audio/sound";
 import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr } from "./dynamicPlaceholderTextUtil";
 import { rom } from "./rom";
@@ -556,7 +556,10 @@ function InitSummaryScreenState(
   sMonSummaryScreen.isEgg = !!sMonSummaryScreen.currentMon.isEgg;
   sMonSummaryScreen.isBadEgg = false;
 
-  SetMainCallback2(CB2_SetUpPSS);
+  // Browser adaptation: CB2 changes now (as in the C) and CB2_SetUpPSS starts
+  // once the summary data is loaded. Nothing else loads mon_markings, so the
+  // screen crashed when opened from battle (learn-move prompt).
+  SetMainCallback2WhenLoaded(preloadSummaryScreen(), () => SetMainCallback2(CB2_SetUpPSS));
 }
 
 function BufferSelectedMonData(mon: Pokemon): void {

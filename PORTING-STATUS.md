@@ -193,14 +193,42 @@ viejo → Ruta 2 → captura de un Rattata (Pokédex y apodo "No").
      ventana vive en la capa canvas del campo, los tiles se copian a su buffer.
    - Nivel: navegador (captura del menú START en la Ruta 2).
 
+7. **El resumen de Pokémon rompía al abrirse desde un combate** (esta sesión).
+   - Síntoma: al subir de nivel contra el Campista del gimnasio de Plateada y
+     aceptar olvidar un movimiento, excepción `cdata mon_markings not loaded`
+     en `PokeSum_CreateMonMarkingsSprite` y pantalla congelada.
+   - Causa: `Cmd_yesnoboxlearnmove` (`battle_script_commands.c`) llama a
+     `ShowSelectMovePokemonSummaryScreen`, que en el C pone
+     `CB2_SetUpPSS` al instante con todo en ROM. En el TS nadie llamaba a
+     `preloadSummaryScreen()`: el resumen solo funcionaba si otra pantalla ya
+     había cargado sus datos, y nada carga `mon_markings`.
+   - Arreglo: `InitSummaryScreenState` usa `SetMainCallback2WhenLoaded(preloadSummaryScreen(), …)`
+     (Browser adaptation, mismo patrón que baea3d2).
+   - Nivel: navegador (contra Brock, al llegar a N15 se abrió el resumen,
+     se olvidó Placaje por Somnífero y el combate siguió).
+
 Observado una vez y **no reproducido**: tras el tutorial del viejo (Ciudad
 Verde), la bolsa se quedó con los objetos temporales del viejo (Poción, 1 Poké
 Ball, Teachy TV) en vez de restaurar la del jugador (`InitOldManBag` /
 restauración en `item_menu.c`). Vigilar en cada prueba que pase por ahí.
 
 - Nivel de prueba alcanzado en navegador: del arranque hasta la Ruta 2 con una
-  captura (ver lista de arriba). Bosque Verde, Ciudad Plateada, Brock, Ruta 3,
-  Monte Moon, tienda, PC y guardar/continuar **no** se han jugado todavía.
+  captura (sesión anterior) y, en esta sesión, desde el punto de control
+  `oldman`:
+  - Bolsa tras el tutorial del viejo: correcta (5 Poké Balls, Teachy TV); el
+    fallo de la bolsa temporal no se reprodujo.
+  - Ruta 2: subida de N6 a N11 con combates salvajes reales (`H.battle`, primer
+    movimiento), curas en el Centro de Ciudad Verde y dos derrotas con vuelta al
+    Centro. Ninguna ayuda de depuración: ni niveles, ni flags, ni objetos.
+  - Bosque Verde: entrada con su vista previa, combate real contra el
+    Cazabichos Sammy (su flag de entrenador lo puso el guion), salida norte.
+  - Ciudad Plateada: Centro Pokémon (curación), museo (cobro de ¥50,
+    2980 → 2930, como el guion).
+  - Gimnasio: Campista y Brock vencidos eligiendo Látigo Cepa con botones reales
+    (la rutina lee `gBattlerControllerFuncs`, `gActionSelectionCursor` y
+    `gMoveSelectionCursor` para saber dónde está el cursor; no toca el estado).
+    El guion dio `FLAG_BADGE01_GET`, `FLAG_DEFEATED_BROCK` y la MT39 en el
+    estuche (verificado leyendo la partida). Bulbasaur terminó en N15.
 
 ## Auditoría de la sesión de Gemini (cb9cfae..77a7609, 18 commits)
 
