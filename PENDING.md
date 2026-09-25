@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5009/9825 (50 %)**.
-- Archivos C pendientes: **128** (144518 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5018/9825 (51 %)**.
+- Archivos C pendientes: **125** (144219 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -17,9 +17,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `palette_util.c` | 474 | 0/17 | ~474 |  |
 | `tilemap_util.c` | 238 | 0/11 | ~238 |  |
 | `save_failed_screen.c` | 228 | 0/14 | ~228 |  |
-| `braille_text.c` | 212 | 0/3 | ~212 |  |
-| `coord_event_weather.c` | 49 | 0/1 | ~49 |  |
-| `cable_car_util.c` | 38 | 0/2 | ~38 |  |
 
 ## 2. Adaptadores (UI simplificada; hay que portar la pantalla real)
 
@@ -46,7 +43,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `naming_screen.c` | 2509 | 4/109 | ~2416 |  |
 | `field_weather_effects.c` | 2346 | 1/93 | ~2320 |  |
 | `easy_chat_3.c` | 2316 | 1/92 | ~2290 |  |
-| `scrcmd.c` | 2264 | 2/224 | ~2243 |  |
+| `scrcmd.c` | 2264 | 3/224 | ~2233 |  |
 | `intro.c` | 2805 | 17/79 | ~2201 |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | ~2034 |  |
 | `battle_controller_pokedude.c` | 2698 | 31/107 | ~1916 |  |

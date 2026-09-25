@@ -1,6 +1,7 @@
 // Latin fonts from graphics/fonts with the glyph width tables from text.c.
 
 import { b64, rom } from "../rom";
+import { cdata, incbin16 } from "../hw/assets";
 
 export const FONT_SMALL = 0;
 export const FONT_NORMAL_COPY_1 = 1;
@@ -53,8 +54,44 @@ export type Glyph = { width: number; height: number; pixels: Uint8Array };
 
 const glyphPixels = new Uint8Array(16 * 16);
 
+// ---------------------------------------------------------------- braille_text.c
+
+/**
+ * text_printer.c DecompressGlyphTile for one 8x8 tile: each u16 holds a row, high
+ * byte first; sFontHalfRowOffsets turns a byte into a lookup index i*27+j*9+k*3+l whose
+ * entry packs colors[i] in the lowest nibble (the leftmost pixel), then j, k, l
+ * (GenerateFontHalfRowLookupTable, colors = {bg, fg, shadow} → 0/1/2 here).
+ */
+function DecompressGlyphTile(src: Uint16Array, srcOffset: number, dest: Uint8Array, destX: number, destY: number): void {
+  const offsets = cdata<number[]>("text_printer", "sFontHalfRowOffsets");
+  for (let i = 0; i < 16; i++) {
+    const word = src[srcOffset + (i >> 1)]!;
+    const offsetIndex = i & 1 ? word & 0xff : word >> 8;
+    const lut = offsets[offsetIndex]!;
+    const row = destY + (i >> 1);
+    const col = destX + (i & 1) * 4;
+    dest[row * 16 + col] = Math.trunc(lut / 27) % 3;
+    dest[row * 16 + col + 1] = Math.trunc(lut / 9) % 3;
+    dest[row * 16 + col + 2] = Math.trunc(lut / 3) % 3;
+    dest[row * 16 + col + 3] = lut % 3;
+  }
+}
+
+/** braille_text.c DecompressGlyph_Braille: four 8x8 tiles from sBrailleGlyphs, always 16x16. */
+function DecompressGlyph_Braille(code: number): Glyph {
+  const glyphs = incbin16("sBrailleGlyphs");
+  const base = 0x100 * Math.trunc(code / 8) + 0x10 * (code % 8);
+  glyphPixels.fill(0);
+  DecompressGlyphTile(glyphs, base, glyphPixels, 0, 0);
+  DecompressGlyphTile(glyphs, base + 0x8, glyphPixels, 8, 0);
+  DecompressGlyphTile(glyphs, base + 0x80, glyphPixels, 0, 8);
+  DecompressGlyphTile(glyphs, base + 0x88, glyphPixels, 8, 8);
+  return { width: 16, height: 16, pixels: glyphPixels };
+}
+
 /** DecompressGlyph_*: returns 2bpp-style values 0=bg 1=fg 2=shadow. */
 export function glyph(fontId: number, code: number): Glyph {
+  if (fontId === FONT_BRAILLE) return DecompressGlyph_Braille(code);
   const { s, height, cellW = 16 } = sheetFor(fontId);
   const cols = s.width / cellW;
   const x0 = (code % cols) * cellW;
@@ -70,6 +107,7 @@ export function glyph(fontId: number, code: number): Glyph {
 }
 
 export function glyphWidth(fontId: number, code: number): number {
+  if (fontId === FONT_BRAILLE) return 16; // GetGlyphWidth_Braille
   return sheetFor(fontId).s.widths[code] ?? 8;
 }
 

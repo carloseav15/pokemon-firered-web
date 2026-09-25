@@ -260,11 +260,20 @@ whiteout respawn now uses the original heal-location data in
 - `blit.c`: 4bpp con/sin color key y fill ya estaban; añadí blit 4→8bpp,
   fill 8bpp y wrapper sin color key. `npm run check:port` pasó; falta contraste
   pixel/runtime. `window_8bpp.c` sigue pendiente en su ciclo de ventana y VRAM.
-- `braille_text.c`: el export contiene la fuente Braille comprimida, pero
-  `commands.ts` imprime `braillemessage` con el impresor normal y calcula
-  `getbraillestringwidth` a 8 px por carácter; el C descomprime glifos de 16 px
-  y ejecuta desplazamiento/esperas propios. Queda parcial; afecta las pistas
-  Braille opcionales de las islas Sevii. Revisión de código, sin prueba visual.
+- `braille_text.c`: portado. `FONT_BRAILLE` decodifica `sBrailleGlyphs` con
+  `DecompressGlyphTile` y la tabla `sFontHalfRowOffsets` de `text_printer.c`
+  (`gba/font.ts`), y `TextPrinter` tiene la `FontFunc_Braille` propia
+  (16 px por glifo, sin sonidos ni iconos). `braillemessage` dibuja el marco de
+  diálogo e imprime al instante en la ventana 0, como `ScrCmd_braillemessage`, y
+  `getbraillestringwidth` usa `GetStringWidth(FONT_BRAILLE)`. `npm run check:braille`
+  compara los 64 glifos con `graphics/fonts/braille.png` (16384 píxeles).
+- `coord_event_weather.c`: portado en `field/coordEventWeather.ts` y llamado por
+  los coord events sin script, como `TryRunCoordEventScript` (FireRed deja vacíos
+  todos los manejadores).
+- `cable_car_util.c`: portado en `cableCarUtil.ts`; sin llamadores en FireRed.
+- `save_failed_screen.c`: fuera de alcance, como `agb_flash.c`. Solo se activa con
+  sectores Flash dañados (`gDamagedSaveSectors`) y los borra byte a byte; el guardado
+  web usa `localStorage` y no tiene sectores.
 - `script_pokemon_util.c`: `HealPlayerParty` y `DoesPartyHaveEnigmaBerry` ya
   tienen specials TS. Corregí `HasEnoughMonsForDoubleBattle`: ahora conserva
   los tres resultados C según el tamaño de party y cuántos Pokémon vivos no

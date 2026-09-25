@@ -2,7 +2,7 @@
 
 import { sound } from "../audio/sound";
 import { CHAR_EXTRA_SYMBOL, CHAR_KEYPAD_ICON, CHAR_NEWLINE, CHAR_PROMPT_CLEAR, CHAR_PROMPT_SCROLL, EOS, EXT_CTRL_CODE_BEGIN, PLACEHOLDER_BEGIN } from "./charmap";
-import { FONT_INFOS, FONT_NORMAL, glyph } from "./font";
+import { FONT_BRAILLE, FONT_INFOS, FONT_NORMAL, glyph } from "./font";
 import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "./input";
 import { b64, rom } from "../rom";
 import type { Window } from "./window";
@@ -141,6 +141,7 @@ export class TextPrinter {
   private render(): number {
     switch (this.state) {
       case State.HandleChar: {
+        if (this.fontId === FONT_BRAILLE) return this.FontFunc_Braille_HandleChar();
         if (JOY_HELD(A_BUTTON | B_BUTTON) && this.sped) this.delayCounter = 0;
         if (this.delayCounter && this.textSpeed) {
           this.delayCounter--;
@@ -269,6 +270,79 @@ export class TextPrinter {
         return RENDER_UPDATE;
     }
     return RENDER_FINISH;
+  }
+
+  /**
+   * braille_text.c FontFunc_Braille, RENDER_STATE_HANDLE_CHAR. The other states are
+   * identical to the normal font's. Differences: sounds are skipped, keypad icons draw
+   * nothing, unknown control codes print as glyphs, and every glyph is 16 px wide.
+   */
+  private FontFunc_Braille_HandleChar(): number {
+    if (JOY_HELD(A_BUTTON | B_BUTTON) && this.sped) this.delayCounter = 0;
+    if (this.delayCounter && this.textSpeed) {
+      this.delayCounter--;
+      if (textFlags.canABSpeedUpPrint && JOY_NEW(A_BUTTON | B_BUTTON)) {
+        this.sped = true;
+        this.delayCounter = 0;
+      }
+      return RENDER_UPDATE;
+    }
+    this.delayCounter = textFlags.autoScroll ? 1 : this.textSpeed;
+    let c = this.next();
+    switch (c) {
+      case EOS:
+        return RENDER_FINISH;
+      case CHAR_NEWLINE:
+        this.currentX = this.x;
+        this.currentY += FONT_INFOS[this.fontId].maxLetterHeight + this.lineSpacing;
+        return RENDER_REPEAT;
+      case PLACEHOLDER_BEGIN:
+        this.pos++;
+        return RENDER_REPEAT;
+      case EXT_CTRL_CODE_BEGIN:
+        c = this.next();
+        switch (c) {
+          case 0x01: this.fg = this.next(); return RENDER_REPEAT;
+          case 0x02: this.bg = this.next(); return RENDER_REPEAT;
+          case 0x03: this.shadow = this.next(); return RENDER_REPEAT;
+          case 0x04: this.fg = this.next(); this.bg = this.next(); this.shadow = this.next(); return RENDER_REPEAT;
+          case 0x05: this.pos++; return RENDER_REPEAT;
+          case 0x06: this.pos++; return RENDER_REPEAT; // sub->glyphId = font; unused by the braille font
+          case 0x07: return RENDER_REPEAT;
+          case 0x08: this.delayCounter = this.next(); this.state = State.Pause; return RENDER_REPEAT;
+          case 0x09:
+            this.state = State.Wait;
+            if (textFlags.autoScroll) this.autoScrollDelay = 0;
+            return RENDER_UPDATE;
+          case 0x0a: this.state = State.WaitSe; return RENDER_UPDATE;
+          case 0x0b: case 0x10: this.pos += 2; return RENDER_REPEAT;
+          case 0x0c: this.pos++; c = this.str[this.pos] ?? EOS; break;
+          case 0x0d: this.currentX = this.x + this.next(); return RENDER_REPEAT;
+          case 0x0e: this.currentY = this.y + this.next(); return RENDER_REPEAT;
+          case 0x0f: this.window.fill(this.bg); return RENDER_REPEAT;
+        }
+        break;
+      case CHAR_PROMPT_CLEAR:
+        this.state = State.Clear;
+        this.downArrowDelay = 0;
+        this.downArrowIndex = 0;
+        return RENDER_UPDATE;
+      case CHAR_PROMPT_SCROLL:
+        this.state = State.ScrollStart;
+        this.downArrowDelay = 0;
+        this.downArrowIndex = 0;
+        return RENDER_UPDATE;
+      case CHAR_EXTRA_SYMBOL:
+        c = this.next() | 0x100;
+        break;
+      case CHAR_KEYPAD_ICON:
+        this.pos++;
+        return RENDER_PRINT;
+    }
+    const g = glyph(FONT_BRAILLE, c);
+    this.copyGlyph(g.pixels, g.width, g.height);
+    this.currentX += g.width + this.letterSpacing;
+    return RENDER_PRINT;
   }
 
   private waitForButton(): boolean {

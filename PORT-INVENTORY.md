@@ -8,15 +8,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 7 | 5675 | 0/86 |
-| Parcial (menos del 80 % de funciones) | 115 | 128819 | 1793/6064 |
+| Falta (sin funciones portadas) | 4 | 5376 | 0/80 |
+| Parcial (menos del 80 % de funciones) | 115 | 128819 | 1796/6064 |
 | Adaptador (UI simplificada) | 6 | 10024 | 54/341 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 81 | 104425 | 3162/3334 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 84 | 104724 | 3168/3340 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **128** | **144518** | |
-| **Total en alcance** | **210** | **248996** | **5009/9825** |
+| **Pendiente de portar** | **125** | **144219** | |
+| **Total en alcance** | **210** | **248996** | **5018/9825** |
 
 ## Falta (sin funciones portadas)
 
@@ -26,9 +26,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `palette_util.c` | 474 | 0/17 |  |  |
 | `tilemap_util.c` | 238 | 0/11 |  |  |
 | `save_failed_screen.c` | 228 | 0/14 |  |  |
-| `braille_text.c` | 212 | 0/3 |  |  |
-| `coord_event_weather.c` | 49 | 0/1 |  |  |
-| `cable_car_util.c` | 38 | 0/2 |  |  |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -50,7 +47,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `field_weather_effects.c` | 2346 | 1/93 | `field/weather.ts`, `script/specials.ts` |  |
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |
-| `scrcmd.c` | 2264 | 2/224 | `script/commands.ts` |  |
+| `scrcmd.c` | 2264 | 3/224 | `field/messageBox.ts`, `script/commands.ts` |  |
 | `field_player_avatar.c` | 2168 | 33/176 | `field/fishing.ts`, `field/playerAvatar.ts` |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |
 | `daycare.c` | 2155 | 41/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |
@@ -112,7 +109,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `special_field_anim.c` | 341 | 2/10 | `script/specialsExtra.ts` |  |
 | `event_data.c` | 336 | 8/26 | `save.ts` |  |
 | `tileset_anims.c` | 332 | 9/28 | `field/tileRenderer.ts` |  |
-| `text_printer.c` | 326 | 7/15 | `gba/textPrinter.ts`, `hw/text.ts` |  |
+| `text_printer.c` | 326 | 9/15 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |
 | `fldeff_cut.c` | 295 | 3/13 | `field/fieldMoves.ts` |  |
 | `util.c` | 276 | 1/10 |  |  |
 | `diploma.c` | 275 | 1/10 | `diploma.ts` |  |
@@ -229,6 +226,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokedex_area_markers.c` | 274 | 5/5 | `pokedexArea.ts` |  |
 | `menu_helpers.c` | 243 | 15/17 | `hw/menuHelpers.ts` |  |
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |
+| `braille_text.c` | 212 | 3/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |
 | `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |
 | `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |
 | `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |
@@ -242,8 +240,10 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `post_battle_event_funcs.c` | 74 | 2/2 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |
 | `play_time.c` | 65 | 5/5 | `save.ts` |  |
 | `save_menu_util.c` | 56 | 1/1 | `game.ts`, `saveMenuUtil.ts` |  |
+| `coord_event_weather.c` | 49 | 1/1 | `field/coordEventWeather.ts` |  |
 | `blend_palette.c` | 46 | 2/2 | `hw/palette.ts` |  |
 | `fldeff_poison.c` | 42 | 3/3 | `field/fieldEffects.ts` |  |
+| `cable_car_util.c` | 38 | 2/2 | `cableCarUtil.ts` |  |
 | `random.c` | 18 | 2/2 | `random.ts` |  |
 | `fldeff_berrytree.c` | 4 | 1/1 | `script/specials.ts` |  |
 

@@ -1,7 +1,7 @@
 // Starts the FireRed engine: loads the exported decomp data, mounts the
 // 240x160 canvas and begins a new game or continues the saved one.
 
-import { loadCData } from "./hw/assets";
+import { loadCData, preloadPacks } from "./hw/assets";
 import { sound } from "./audio/sound";
 import { createM4aBackend } from "./audio/m4a";
 import { Game } from "./game";
@@ -44,6 +44,8 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
     await rom.load((label) => { status.textContent = `Loading ${label}…`; });
     await loadFieldFx();
     await loadCData("wild_encounter");
+    // braille_text.c glyphs and the text_printer.c half-row table for FONT_BRAILLE.
+    await Promise.all([loadCData("text_printer"), preloadPacks(["graphics_fonts"])]);
     await preloadFieldAssets();
     await loadTrig();
     status.textContent = "Loading battle data…";

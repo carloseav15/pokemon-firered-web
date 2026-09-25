@@ -1,6 +1,7 @@
 // Port of field_control_avatar.c: turns input into interactions, step
 // events (coord triggers, warps, wild encounters) and player steps.
 
+import { DoCoordEventWeather } from "./coordEventWeather";
 import * as MB from "../generated/metatileBehavior";
 import { sound } from "../audio/sound";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "../gba/input";
@@ -300,7 +301,11 @@ export class FieldControl {
     for (const c of this.ow.header.coords) {
       if (c.x !== x || c.y !== y) continue;
       if (c.elevation !== position.elevation && c.elevation !== 0) continue;
-      if (!c.script) continue;
+      // TryRunCoordEventScript
+      if (!c.script) {
+        DoCoordEventWeather(c.var);
+        continue;
+      }
       if (c.var === 0) {
         this.ow.script.runImmediately(c.script);
         continue;

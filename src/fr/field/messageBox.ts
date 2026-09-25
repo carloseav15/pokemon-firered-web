@@ -2,7 +2,7 @@
 
 import { expandPlaceholders, stringVars } from "../gba/charmap";
 import { menuHelperHooks } from "../hw/menuHelpers";
-import { FONT_FEMALE, FONT_MALE, FONT_NORMAL } from "../gba/font";
+import { FONT_BRAILLE, FONT_FEMALE, FONT_MALE, FONT_NORMAL } from "../gba/font";
 import { getTextSpeedSetting, TextPrinter, textFlags, TEXT_COLOR_BLUE, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "../gba/textPrinter";
 import { Window } from "../gba/window";
 import { rom } from "../rom";
@@ -84,6 +84,18 @@ export class FieldMessageBox {
     window.visible = true;
     this.printer = new TextPrinter(window, font, text, { x: 0, y: 1, speed: getTextSpeedSetting(), fg, bg: TEXT_COLOR_WHITE, shadow: TEXT_COLOR_LIGHT_GRAY });
     this.drawState = 0;
+  }
+
+  /**
+   * scrcmd.c ScrCmd_braillemessage: LoadStdWindowFrameGfx, DrawDialogueFrame(0, 1) and an
+   * instant FONT_BRAILLE printer on window 0. The message box mode is left untouched.
+   */
+  showBraille(str: ArrayLike<number>): void {
+    const window = this.ensureWindow();
+    window.frame = "dialogue";
+    window.fill(TEXT_COLOR_WHITE);
+    window.visible = true;
+    new TextPrinter(window, FONT_BRAILLE, str, { x: 0, y: 1, speed: 0 });
   }
 
   /** Runs the printer and the draw task every frame. */
