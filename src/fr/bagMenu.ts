@@ -10,7 +10,7 @@ import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, DPAD_LEFT, DPAD_RIGHT, SELECT_BUTTON } from "./gba/input";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, SELECT_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
 import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";
@@ -28,7 +28,7 @@ import {
 import {
   ClearDialogWindowAndFrameToTransparent, ClearStdWindowAndFrameToTransparent, DrawStdFrameWithCustomTileAndPalette, FONTATTR_LETTER_SPACING,
   FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetMenuCursorDimensionByFont, LoadMenuMessageWindowGfx, LoadStdWindowGfx, LoadUserWindowGfx, MENU_B_PRESSED,
-  MENU_NOTHING_CHOSEN, Menu_InitCursor, Menu_ProcessInputNoWrapAround,
+  MENU_NOTHING_CHOSEN, Menu_InitCursor, Menu_MoveCursorNoWrapAround, Menu_ProcessInputNoWrapAround,
 } from "./hw/menu";
 import {
   AddItemMenuActionTextPrinters, AdjustQuantityAccordingToDPadInput, ClearScheduledBgCopiesToVram, CopyItemName, CreateYesNoMenuWithCallbacks,
@@ -56,7 +56,7 @@ import {
   AddWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "./hw/window";
-import { addMoney, addPCItem, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addBagItem, addMoney, addPCItem, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
@@ -489,7 +489,103 @@ function DoLoadBagGraphics(): boolean {
 }
 
 function CreateBagInputHandlerTask(_location: number): number {
-  return tasks.create(gBagMenuState.location === C.ITEMMENULOCATION_OLD_MAN ? Task_Bag_OldManTutorial : Task_BagMenu_HandleInput, 0);
+  const handler = gBagMenuState.location === C.ITEMMENULOCATION_OLD_MAN ? Task_Bag_OldManTutorial
+    : gBagMenuState.location === C.ITEMMENULOCATION_TTVSCR_REGISTER ? Task_Bag_TeachyTvRegister
+      : Task_BagMenu_HandleInput;
+  return tasks.create(handler, 0);
+}
+
+type BagBackup = {
+  items: typeof save.bag.items; keyItems: typeof save.bag.keyItems; pokeBalls: typeof save.bag.pokeBalls;
+  registeredItem: number; pocket: number; itemsAbove: number[]; cursorPos: number[];
+};
+
+/** item_menu.c BackUpPlayerBag: preserve state, clear physical bag pockets, and reset cursors. */
+export function BackUpPlayerBag(): BagBackup {
+  const backup: BagBackup = {
+    items: save.bag.items.map((slot) => ({ ...slot })), keyItems: save.bag.keyItems.map((slot) => ({ ...slot })),
+    pokeBalls: save.bag.pokeBalls.map((slot) => ({ ...slot })), registeredItem: save.registeredItem,
+    pocket: gBagMenuState.pocket, itemsAbove: [...gBagMenuState.itemsAbove], cursorPos: [...gBagMenuState.cursorPos],
+  };
+  save.bag.items = []; save.bag.keyItems = []; save.bag.pokeBalls = [];
+  save.registeredItem = C.ITEM_NONE;
+  ResetBagCursorPositions();
+  return backup;
+}
+
+/** item_menu.c RestorePlayerBag */
+export function RestorePlayerBag(backup: BagBackup): void {
+  save.bag.items = backup.items; save.bag.keyItems = backup.keyItems; save.bag.pokeBalls = backup.pokeBalls;
+  save.registeredItem = backup.registeredItem;
+  gBagMenuState.pocket = backup.pocket;
+  gBagMenuState.itemsAbove = backup.itemsAbove;
+  gBagMenuState.cursorPos = backup.cursorPos;
+}
+
+/** InitPokedudeBag for the Teachy TV registration lesson (TTVSCR_REGISTER). */
+export function InitPokedudeBagRegister(done: () => void): void {
+  const backup = BackUpPlayerBag();
+  addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
+  addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
+  GoToBagMenu(C.ITEMMENULOCATION_TTVSCR_REGISTER, C.OPEN_BAG_ITEMS, () => { RestorePlayerBag(backup); done(); });
+}
+
+/** item_menu.c Task_Bag_TeachyTvRegister: scripted registration demonstration. */
+function Task_Bag_TeachyTvRegister(taskId: number): void {
+  if (gPaletteFade.active) return;
+  const data = td(taskId);
+  if (joy.newKeys & B_BUTTON) {
+    Bag_BeginCloseWin0Animation();
+    tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+    return;
+  }
+  switch (data.tutorialFrame) {
+    case 102:
+      sound.playSE(C.SE_BAG_POCKET);
+      SwitchPockets(taskId, 1, false);
+      break;
+    case 204:
+      sound.playSE(C.SE_SELECT);
+      bag_menu_print_cursor_(data.listTaskId, 2);
+      Bag_FillMessageBoxWithPalette(1);
+      bagResult.itemId = C.ITEM_TEACHY_TV;
+      OpenContextMenu(taskId);
+      break;
+    case 306:
+      sound.playSE(C.SE_SELECT);
+      Menu_MoveCursorNoWrapAround(1);
+      break;
+    case 408: {
+      sound.playSE(C.SE_SELECT);
+      save.registeredItem = bagResult.itemId;
+      HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
+      const pos = DestroyListMenuTask(data.listTaskId);
+      gBagMenuState.cursorPos[gBagMenuState.pocket] = pos.cursorPos;
+      gBagMenuState.itemsAbove[gBagMenuState.pocket] = pos.itemsAbove;
+      Bag_BuildListMenuTemplate(gBagMenuState.pocket);
+      data.listTaskId = ListMenuInit(gMultiuseListMenuTemplate!, pos.cursorPos, pos.itemsAbove);
+      Bag_FillMessageBoxWithPalette(0);
+      bag_menu_print_cursor_(data.listTaskId, 1);
+      CopyWindowToVram(0, COPYWIN_MAP);
+      break;
+    }
+    case 510:
+    case 612: {
+      const oldNew = joy.newKeys, oldRepeated = joy.repeated;
+      joy.newKeys = 0; joy.repeated = DPAD_DOWN;
+      ListMenu_ProcessInput(data.listTaskId);
+      joy.newKeys = oldNew; joy.repeated = oldRepeated;
+      break;
+    }
+    case 714:
+      sound.playSE(C.SE_SELECT);
+      HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
+      CopyWindowToVram(0, COPYWIN_MAP);
+      Bag_BeginCloseWin0Animation();
+      tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+      return;
+  }
+  data.tutorialFrame++;
 }
 
 /** item_menu.c Task_Bag_OldManTutorial: scripted pocket switches and timed ball prompt. */

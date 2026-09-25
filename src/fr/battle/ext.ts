@@ -42,7 +42,7 @@ import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHo
 import { battleHost } from "./host";
 import { ReshowBattleScreenAfterMenu } from "./reshow";
 import * as PartyMenu from "../partyMenu";
-import { bagResult, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, gBagMenuState, ResetBagCursorPositions, type BagTaskContext } from "../bagMenu";
+import { bagResult, BackUpPlayerBag, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, RestorePlayerBag, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
 import { gDisableStructs } from "./globals";
 import { GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
@@ -229,33 +229,14 @@ export function CB2_BagMenuFromBattle(): void {
 
 /** item_menu.c InitOldManBag: backs up the bag and gives a Potion and a Poké Ball for the tutorial. */
 export function InitOldManBag(): void {
-  const bagBackup = {
-    items: save.bag.items.map((slot) => ({ ...slot })),
-    keyItems: save.bag.keyItems.map((slot) => ({ ...slot })),
-    pokeBalls: save.bag.pokeBalls.map((slot) => ({ ...slot })),
-    registeredItem: save.registeredItem,
-    pocket: gBagMenuState.pocket,
-    itemsAbove: [...gBagMenuState.itemsAbove],
-    cursorPos: [...gBagMenuState.cursorPos],
-  };
   // BackUpPlayerBag clears the three GBA bag pockets so a full player bag
   // cannot prevent the tutorial's Potion and Poké Ball from being added.
-  save.bag.items = [];
-  save.bag.keyItems = [];
-  save.bag.pokeBalls = [];
-  save.registeredItem = C.ITEM_NONE;
-  ResetBagCursorPositions();
+  const bagBackup = BackUpPlayerBag();
   addBagItem(C.ITEM_POTION, 1);
   addBagItem(C.ITEM_POKE_BALL, 1);
   GoToBagMenu(C.ITEMMENULOCATION_OLD_MAN, C.OPEN_BAG_ITEMS, () => {
     // InitOldManBag/RestorePlayerBag: tutorial items are temporary, not save inventory.
-    save.bag.items = bagBackup.items;
-    save.bag.keyItems = bagBackup.keyItems;
-    save.bag.pokeBalls = bagBackup.pokeBalls;
-    save.registeredItem = bagBackup.registeredItem;
-    gBagMenuState.pocket = bagBackup.pocket;
-    gBagMenuState.itemsAbove = bagBackup.itemsAbove;
-    gBagMenuState.cursorPos = bagBackup.cursorPos;
+    RestorePlayerBag(bagBackup);
     varSet(C.VAR_ITEM_ID, bagResult.itemId);
     CB2_SetUpReshowBattleScreenAfterMenu();
     ReshowBattleScreenAfterMenu();

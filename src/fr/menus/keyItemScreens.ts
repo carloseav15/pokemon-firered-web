@@ -8,6 +8,7 @@ import { decode } from "../gba/charmap";
 import { cdata, loadCData, symName } from "../hw/assets";
 import { rom } from "../rom";
 import { save, varGet, varSet, SV } from "../save";
+import { InitPokedudeBagRegister } from "../bagMenu";
 import { openHardwareChoice, openHardwareMessage } from "./hardwareChoice";
 
 export const NUM_FAMECHECKER_PERSONS = 16;
@@ -107,7 +108,11 @@ export function openTeachyTv(done: () => void): void {
       openHardwareChoice("TEACHY TV", programs.map(([title], value) => ({ label: decode(rom.text(title)), value })), true, (i) => {
         if (i === null) { done(); return; }
         const [, a, b] = programs[i];
-        openHardwareMessage(rom.text(a), () => openHardwareMessage(rom.text(b), menu));
+        const afterProgram = (): void => {
+          if (i === 5) InitPokedudeBagRegister(menu);
+          else menu();
+        };
+        openHardwareMessage(rom.text(a), () => openHardwareMessage(rom.text(b), afterProgram));
       });
     });
   };
