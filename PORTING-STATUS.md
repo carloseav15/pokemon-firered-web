@@ -117,9 +117,18 @@ order; each item requires comparison with the original C, scripts and data.
 Why each item matters is noted: progression content, visible fidelity, or
 explicitly out of scope.
 
-1. Keep documentation current and establish a local Git baseline. Without a
-   baseline (~27 modified + 8 new files uncommitted) no regression tracking
-   is possible.
+1. Keep documentation current. The local Git baseline exists (`main`, no
+   remote configured, so nothing is pushed).
+   - `list_menu.c` + `menu_indicators.c` are ported (`src/fr/hw/listMenu.ts`)
+     over a `ListSurface`, so hardware windows and field canvas windows share
+     one implementation (`src/fr/menus/fieldListMenu.ts` adds the field
+     surface and the red scroll arrows as field sprites). In use by: every
+     `openHardwareChoice` adapter (bag, party, PC, Pokédex, trades…; source
+     selector arrow, 16px rows, D-pad paging, scroll arrows, grey disabled
+     rows), the `special ListMenu` script lists (`sFieldSpecialsListMenuTemplate`,
+     `ScriptListMenuMoveCursorFunction`, arrows at the source positions,
+     suspend/`ReturnToListMenu`) and the shop item list (prices as in
+     `BuyMenuPrintPriceInList`). Source review only; not run.
 2. Fix small visual defects (battle dialogue arrow verified via
    `tools/check_down_arrow.ts`; naming page-swap/cursor choreography,
    trainer disguise icons, storage cursor animations pending).

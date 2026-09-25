@@ -13,6 +13,11 @@ import { DATA_ROOT, rom } from "../rom";
 import { flagGet, save, SV, varGet, varSet } from "../save";
 import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP } from "../gba/input";
 import { GridMenu, Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
+import {
+  DestroyListMenuTask, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, LIST_NOTHING_CHOSEN, ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuInitOnSurface,
+  listMenuTemplate, SCROLL_ARROW_UP,
+} from "../hw/listMenu";
+import { addFieldScrollArrows, fieldListSurface } from "./fieldListMenu";
 import type { Overworld } from "../field/overworld";
 
 const SCR_MENU_UNSET = 0xff;
@@ -284,56 +289,60 @@ export class ScriptMenu {
     for (const t of items) widest = Math.max(widest, stringWidth(FONT_NORMAL, t, 0));
     const width = Math.floor((widest + 9) / 8) + 1;
     const left = left0 + width > 29 ? 29 - width : left0;
-    let scroll = which === 1 ? this.elevatorScroll : 0;
-    let cursor = which === 1 ? this.elevatorCursorPos : 0;
     this.ow.controlsLocked = true;
     const window = new Window(left, top, width, height);
     window.frame = "std";
     window.frameType = this.frameType();
     this.ow.windows.add(window);
-    const lineHeight = 16;
-    const draw = (): void => {
-      window.fill(1);
-      for (let i = 0; i < maxShowed && scroll + i < items.length; i++) {
-        printText(window, FONT_NORMAL, items[scroll + i], 8, i * lineHeight + 1, { fg: 2, bg: 1, shadow: 3 });
-      }
-      printText(window, FONT_NORMAL, rom.text("gText_SelectorArrow2"), 0, (cursor) * lineHeight + 1);
+    const listItems = items.map((label, index) => ({ label, index }));
+    // sListMenuLastScrollPosition, read by the scroll arrows.
+    let lastScroll = which === 1 ? this.elevatorScroll : 0;
+    let listTaskId = -1;
+    // CreateScriptListMenu (sFieldSpecialsListMenuTemplate)
+    const template = listMenuTemplate({
+      items: listItems, windowId: 0, surface: fieldListSurface(window), totalItems: items.length, maxShowed,
+      item_X: 8, cursor_X: 0, upText_Y: 0, cursorPal: 2, fillValue: 1, cursorShadowPal: 3, lettersSpacing: 1, itemVerticalPadding: 0,
+      scrollMultiple: LIST_NO_MULTIPLE_SCROLL, fontId: FONT_NORMAL, cursorKind: 0,
+      // ScriptListMenuMoveCursorFunction
+      moveCursorFunc: () => {
+        sound.playSE(sound.SE_SELECT);
+        if (listTaskId >= 0) lastScroll = ListMenuGetScrollAndRow(listTaskId).cursorPos;
+      },
+    });
+    // Task_CreateMenuRemoveScrollIndicatorArrowPair
+    let removeArrows: (() => void) | null = null;
+    const addArrows = (): void => {
+      if (maxShowed === items.length) return;
+      const x = 4 * width + 8 * left;
+      removeArrows = addFieldScrollArrows(this.ow, SCROLL_ARROW_UP, x, 8, 8 * height + 10, items.length - maxShowed, () => lastScroll);
     };
-    draw();
+    const removeArrowPair = (): void => { removeArrows?.(); removeArrows = null; };
+    addArrows();
+    listTaskId = ListMenuInitOnSurface(template, which === 1 ? this.elevatorScroll : 0, which === 1 ? this.elevatorCursorPos : 0);
     let active = true;
+    // Task_DestroyListMenu
     const finish = (): void => {
+      removeArrowPair();
+      DestroyListMenuTask(listTaskId);
       this.removeWindow(window);
       tasks.destroy(id);
       this.listSuspended = null;
       this.ow.script.enable();
     };
+    // Task_ListMenuHandleInput
     const id = tasks.create(() => {
       if (!active) return;
-      const index = scroll + cursor;
-      if (joy.newKeys & A_BUTTON) {
-        sound.playSE(sound.SE_SELECT);
-        varSet(SV.RESULT, index);
-        if (!staysOpen || index === items.length - 1) { finish(); return; }
-        active = false;
-        this.listSuspended = { resume: () => { active = true; }, pending: 0 };
-        this.ow.script.enable();
-        return;
-      }
-      if (joy.newKeys & B_BUTTON) {
-        sound.playSE(sound.SE_SELECT);
-        varSet(SV.RESULT, SCR_MENU_CANCEL);
-        finish();
-        return;
-      }
-      if (joy.repeated & DPAD_UP && index > 0) {
-        if (cursor > 0) cursor--; else scroll--;
-        sound.playSE(sound.SE_SELECT);
-        draw();
-      } else if (joy.repeated & DPAD_DOWN && index < items.length - 1) {
-        if (cursor < maxShowed - 1) cursor++; else scroll++;
-        sound.playSE(sound.SE_SELECT);
-        draw();
-      }
+      const input = ListMenu_ProcessInput(listTaskId);
+      if (input === LIST_NOTHING_CHOSEN) return;
+      sound.playSE(sound.SE_SELECT);
+      if (input === LIST_CANCEL) { varSet(SV.RESULT, SCR_MENU_CANCEL); finish(); return; }
+      varSet(SV.RESULT, input);
+      if (!staysOpen || input === items.length - 1) { finish(); return; }
+      // Task_SuspendListMenu until ReturnToListMenu, then Task_RedrawScrollArrowsAndWaitInput.
+      removeArrowPair();
+      active = false;
+      this.listSuspended = { resume: () => { addArrows(); active = true; }, pending: 0 };
+      this.ow.script.enable();
     }, 8);
   }
 

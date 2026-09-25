@@ -11,7 +11,7 @@ import { incbin } from "./assets";
 import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetMenuCursorDimensionByFont } from "./menu";
 import { LoadPalette, OBJ_PLTT_ID } from "./palette";
 import {
-  ANIMCMD_END, ANIMCMD_FRAME, CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable, gDummySpriteTemplate,
+  AnimateSprite, ANIMCMD_END, ANIMCMD_FRAME, CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable, gDummySpriteTemplate,
   gSprites, LoadSpritePalette, LoadSpriteSheet, oamData, SetSubspriteTables, StartSpriteAnim, TAG_NONE, type Sprite, type SpriteTemplate, type Subsprite,
 } from "./sprite";
 import { AddTextPrinterParameterized4 } from "./text";
@@ -47,7 +47,36 @@ export type ListMenuTemplate = {
   scrollMultiple: number;
   fontId: number;
   cursorKind: number;
+  /** Draw target; defaults to the hardware window `windowId`. */
+  surface?: ListSurface;
 };
+
+/** The window operations list_menu.c uses, so field (canvas) windows can host a ListMenu too. */
+export interface ListSurface {
+  readonly left: number; readonly top: number; readonly width: number; readonly height: number;
+  fill(fillValue: number): void;
+  fillRect(fillValue: number, x: number, y: number, w: number, h: number): void;
+  /** ScrollWindow: direction 0 moves the contents up, 1 down. */
+  scroll(direction: number, distance: number, fillValue: number): void;
+  print(fontId: number, x: number, y: number, letterSpacing: number, colors: [number, number, number], str: ArrayLike<number>): void;
+  copy(): void;
+}
+
+export function hwListSurface(windowId: number): ListSurface {
+  return {
+    get left() { return GetWindowAttribute(windowId, WINDOW_TILEMAP_LEFT); },
+    get top() { return GetWindowAttribute(windowId, WINDOW_TILEMAP_TOP); },
+    get width() { return GetWindowAttribute(windowId, WINDOW_WIDTH); },
+    get height() { return GetWindowAttribute(windowId, WINDOW_HEIGHT); },
+    fill: (v) => FillWindowPixelBuffer(windowId, v),
+    fillRect: (v, x, y, w, h) => FillWindowPixelRect(windowId, v, x, y, w, h),
+    scroll: (dir, dist, v) => ScrollWindow(windowId, dir, dist, v),
+    print: (fontId, x, y, spacing, colors, str) => AddTextPrinterParameterized4(windowId, fontId, x, y, spacing, 0, colors, -1, str),
+    copy: () => CopyWindowToVram(windowId, COPYWIN_GFX),
+  };
+}
+
+const surf = (list: ListMenu): ListSurface => (list.template.surface ??= hwListSurface(list.template.windowId));
 export type ListMenu = { template: ListMenuTemplate; cursorPos: number; itemsAbove: number; taskId: number };
 export type ListMenuWindowRect = { x: number; y: number; width: number; height: number; palNum: number };
 
@@ -67,6 +96,13 @@ export function ListMenuInit(template: ListMenuTemplate, cursorPos: number, item
   const taskId = ListMenuInitInternal(template, cursorPos, itemsAbove);
   PutWindowTilemap(template.windowId);
   CopyWindowToVram(template.windowId, COPYWIN_GFX);
+  return taskId;
+}
+
+/** ListMenuInit for a template whose `surface` is not a hardware window (no tilemap to put). */
+export function ListMenuInitOnSurface(template: ListMenuTemplate, cursorPos: number, itemsAbove: number): number {
+  const taskId = ListMenuInitInternal(template, cursorPos, itemsAbove);
+  surf(listMenuOf(taskId)).copy();
   return taskId;
 }
 
@@ -104,10 +140,10 @@ export function DestroyListMenuTask(listTaskId: number): { cursorPos: number; it
 
 export function RedrawListMenu(listTaskId: number): void {
   const list = listMenuOf(listTaskId);
-  FillWindowPixelBuffer(list.template.windowId, PIXEL_FILL(list.template.fillValue));
+  surf(list).fill(PIXEL_FILL(list.template.fillValue));
   ListMenuPrintEntries(list, list.cursorPos, 0, list.template.maxShowed);
   ListMenuDrawCursor(list);
-  CopyWindowToVram(list.template.windowId, COPYWIN_GFX);
+  surf(list).copy();
 }
 
 export function ListMenuGetScrollAndRow(listTaskId: number): { cursorPos: number; itemsAbove: number } {
@@ -128,7 +164,7 @@ function ListMenuInitInternal(template: ListMenuTemplate, cursorPos: number, ite
   Object.assign(override, { cursorPal: template.cursorPal, fillValue: template.fillValue, cursorShadowPal: template.cursorShadowPal,
     lettersSpacing: template.lettersSpacing, fontId: template.fontId, enabled: false });
   if (list.template.totalItems < list.template.maxShowed) list.template.maxShowed = list.template.totalItems;
-  FillWindowPixelBuffer(list.template.windowId, PIXEL_FILL(list.template.fillValue));
+  surf(list).fill(PIXEL_FILL(list.template.fillValue));
   ListMenuPrintEntries(list, list.cursorPos, 0, list.template.maxShowed);
   ListMenuDrawCursor(list);
   ListMenuCallSelectionChangedCallback(list, true);
@@ -137,11 +173,11 @@ function ListMenuInitInternal(template: ListMenuTemplate, cursorPos: number, ite
 
 function ListMenuPrint(list: ListMenu, str: ArrayLike<number>, x: number, y: number): void {
   if (override.enabled) {
-    AddTextPrinterParameterized4(list.template.windowId, override.fontId, x, y, override.lettersSpacing, 0, [override.fillValue, override.cursorPal, override.cursorShadowPal], -1, str);
+    surf(list).print(override.fontId, x, y, override.lettersSpacing, [override.fillValue, override.cursorPal, override.cursorShadowPal], str);
     override.enabled = false;
   } else {
     const t = list.template;
-    AddTextPrinterParameterized4(t.windowId, t.fontId, x, y, t.lettersSpacing, 0, [t.fillValue, t.cursorPal, t.cursorShadowPal], -1, str);
+    surf(list).print(t.fontId, x, y, t.lettersSpacing, [t.fillValue, t.cursorPal, t.cursorShadowPal], str);
   }
 }
 
@@ -168,18 +204,18 @@ function ListMenuDrawCursor(list: ListMenu): void {
     case 1: break;
     case 2:
       if (list.taskId === TAIL_SENTINEL) list.taskId = ListMenuAddCursorObject(list, 0);
-      ListMenuUpdateCursorObject(list.taskId, GetWindowAttribute(t.windowId, WINDOW_TILEMAP_LEFT) * 8 - 1, GetWindowAttribute(t.windowId, WINDOW_TILEMAP_TOP) * 8 + y - 1, 0);
+      ListMenuUpdateCursorObject(list.taskId, surf(list).left * 8 - 1, surf(list).top * 8 + y - 1, 0);
       break;
     case 3:
       if (list.taskId === TAIL_SENTINEL) list.taskId = ListMenuAddCursorObject(list, 1);
-      ListMenuUpdateCursorObject(list.taskId, GetWindowAttribute(t.windowId, WINDOW_TILEMAP_LEFT) * 8 + x, GetWindowAttribute(t.windowId, WINDOW_TILEMAP_TOP) * 8 + y, 1);
+      ListMenuUpdateCursorObject(list.taskId, surf(list).left * 8 + x, surf(list).top * 8 + y, 1);
       break;
   }
 }
 
 function ListMenuAddCursorObject(list: ListMenu, cursorKind: number): number {
   return ListMenuAddCursorObjectInternal({
-    left: 0, top: 160, rowWidth: GetWindowAttribute(list.template.windowId, WINDOW_WIDTH) * 8 + 2,
+    left: 0, top: 160, rowWidth: surf(list).width * 8 + 2,
     rowHeight: GetFontAttribute(list.template.fontId, FONTATTR_MAX_LETTER_HEIGHT) + 2, tileTag: 0x4000, palTag: TAG_NONE, palNum: 15,
   }, cursorKind);
 }
@@ -188,7 +224,7 @@ function ListMenuErasePrintedCursor(list: ListMenu, itemsAbove: number): void {
   const t = list.template;
   if (t.cursorKind !== 0) return;
   const yMultiplier = GetFontAttribute(t.fontId, FONTATTR_MAX_LETTER_HEIGHT) + t.itemVerticalPadding;
-  FillWindowPixelRect(t.windowId, PIXEL_FILL(t.fillValue), t.cursor_X, itemsAbove * yMultiplier + t.upText_Y,
+  surf(list).fillRect(PIXEL_FILL(t.fillValue), t.cursor_X, itemsAbove * yMultiplier + t.upText_Y,
     GetMenuCursorDimensionByFont(t.fontId, 0), GetMenuCursorDimensionByFont(t.fontId, 1));
 }
 
@@ -234,20 +270,20 @@ function ListMenuUpdateSelectedRowIndexAndScrollOffset(list: ListMenu, movingDow
 function ListMenuScroll(list: ListMenu, count: number, movingDown: boolean): void {
   const t = list.template;
   if (count >= t.maxShowed) {
-    FillWindowPixelBuffer(t.windowId, PIXEL_FILL(t.fillValue));
+    surf(list).fill(PIXEL_FILL(t.fillValue));
     ListMenuPrintEntries(list, list.cursorPos, 0, t.maxShowed);
     return;
   }
   const yMultiplier = GetFontAttribute(t.fontId, FONTATTR_MAX_LETTER_HEIGHT) + t.itemVerticalPadding;
   if (!movingDown) {
-    ScrollWindow(t.windowId, 1, count * yMultiplier, PIXEL_FILL(t.fillValue));
+    surf(list).scroll(1, count * yMultiplier, PIXEL_FILL(t.fillValue));
     ListMenuPrintEntries(list, list.cursorPos, 0, count);
     const y = t.maxShowed * yMultiplier + t.upText_Y;
-    FillWindowPixelRect(t.windowId, PIXEL_FILL(t.fillValue), 0, y, GetWindowAttribute(t.windowId, WINDOW_WIDTH) * 8, GetWindowAttribute(t.windowId, WINDOW_HEIGHT) * 8 - y);
+    surf(list).fillRect(PIXEL_FILL(t.fillValue), 0, y, surf(list).width * 8, surf(list).height * 8 - y);
   } else {
-    ScrollWindow(t.windowId, 0, count * yMultiplier, PIXEL_FILL(t.fillValue));
+    surf(list).scroll(0, count * yMultiplier, PIXEL_FILL(t.fillValue));
     ListMenuPrintEntries(list, list.cursorPos + (t.maxShowed - count), t.maxShowed - count, count);
-    FillWindowPixelRect(t.windowId, PIXEL_FILL(t.fillValue), 0, 0, GetWindowAttribute(t.windowId, WINDOW_WIDTH) * 8, t.upText_Y);
+    surf(list).fillRect(PIXEL_FILL(t.fillValue), 0, 0, surf(list).width * 8, t.upText_Y);
   }
 }
 
@@ -269,14 +305,14 @@ function ListMenuChangeSelection(list: ListMenu, update: boolean, count: number,
         ListMenuErasePrintedCursor(list, oldSelectedRow);
         ListMenuDrawCursor(list);
         ListMenuCallSelectionChangedCallback(list, false);
-        CopyWindowToVram(list.template.windowId, COPYWIN_GFX);
+        surf(list).copy();
         break;
       default:
         ListMenuErasePrintedCursor(list, oldSelectedRow);
         ListMenuScroll(list, cursorCount, movingDown);
         ListMenuDrawCursor(list);
         ListMenuCallSelectionChangedCallback(list, false);
-        CopyWindowToVram(list.template.windowId, COPYWIN_GFX);
+        surf(list).copy();
         break;
     }
   }
@@ -373,13 +409,33 @@ export function AddScrollIndicatorArrowPair(info: ScrollArrowsTemplate, scrollOf
     bottom: AddScrollIndicatorArrowObject(info.secondArrowType, info.secondX, info.secondY, info.tileTag, info.palTag),
   };
   if (info.palTag === TAG_NONE) { gSprites[pair.top].oam.paletteNum = info.palNum; gSprites[pair.bottom].oam.paletteNum = info.palNum; }
-  const taskId = tasks.create(() => {
-    const cur = pair.scrollOffset();
-    gSprites[pair.top].invisible = cur === pair.fullyUp;
-    gSprites[pair.bottom].invisible = cur === pair.fullyDown;
-  }, 0);
+  const taskId = tasks.create(Task_ScrollIndicatorArrowPair, 0);
   scrollPairs.set(taskId, pair);
   return taskId;
+}
+
+/** Task_ScrollIndicatorArrowPair: hide an arrow once its end of the list is reached. */
+export function Task_ScrollIndicatorArrowPair(taskId: number): void {
+  const pair = scrollPairs.get(taskId);
+  if (!pair) return;
+  const cur = pair.scrollOffset();
+  gSprites[pair.top].invisible = cur === pair.fullyUp;
+  gSprites[pair.bottom].invisible = cur === pair.fullyDown;
+}
+
+/**
+ * Runs one frame of a scroll-arrow pair alone (its task, sprite callbacks and
+ * animation) for screens that must not advance other tasks or sprites.
+ */
+export function StepScrollIndicatorArrowPair(taskId: number): void {
+  const pair = scrollPairs.get(taskId);
+  if (!pair) return;
+  Task_ScrollIndicatorArrowPair(taskId);
+  for (const id of [pair.top, pair.bottom]) {
+    const s = gSprites[id];
+    s.callback(s);
+    AnimateSprite(s);
+  }
 }
 
 export function AddScrollIndicatorArrowPairParameterized(arrowType: number, commonPos: number, firstPos: number, secondPos: number, fullyDownThreshold: number, tileTag: number, palTag: number, scrollOffset: () => number): number {

@@ -12,7 +12,7 @@ const CDATA_FILES = [
 ];
 
 const PACKS = [
-  "graphics_field_effects", "graphics_field_specials", "graphics_object_events", "graphics_ss_anne", "graphics_seagallop",
+  "graphics_field_effects", "graphics_field_specials", "graphics_interface", "graphics_object_events", "graphics_ss_anne", "graphics_seagallop",
   "graphics_weather", "graphics_cave_transition", "graphics_battle_transitions", "graphics_misc", "graphics_region_map",
   "graphics_party_menu", "graphics_item_menu", "graphics_summary_screen", "graphics_pokedex", "graphics_trainer_card",
   "graphics_evolution_scene", "graphics_hall_of_fame", "graphics_diploma", "graphics_credits", "graphics_items", "graphics_tm_case",
