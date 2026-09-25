@@ -126,6 +126,7 @@ audio backend exists.
 - `main.c`: `hw/runtime.ts` models callbacks and frame-driven scenes, while startup flow is separate. GBA interrupt/register setup, RFU/link gates, soft reset, flash checks and sound scheduling are hardware-specific and not implemented in the browser runtime. Marked partial.
 - `seagallop.c`: ferry state machine, route tables, scrolling crossing, sprite animations, fades, selection and destination warp are ported in `seagallop.ts` with exported source data. Canvas/WebAudio adaptation; no frame comparison.
 - `window.c`: window operations are split across `gba/window.ts` and `hw/window.ts`; allocation and rendering APIs are adapted, and some 8-bit/source helper entry points are missing. Marked partial; no exhaustive API/pixel parity check.
+- `field_door.c`: door asset table, frame timing, open/close/closed draws, sound and animation state are implemented in `field/doors.ts`; Canvas draws exported frames instead of VRAM tile copies. No visual comparison.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -137,7 +138,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 51 modules as documented ported, 97 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 22 as explicitly out of scope, 36 as probable out-of-scope candidates, and 67 as unreviewed. Separately, 42 files have a
+The current review labels 52 modules as documented ported, 97 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 22 as explicitly out of scope, 36 as probable out-of-scope candidates, and 66 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
