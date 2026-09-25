@@ -116,6 +116,7 @@ audio backend exists.
 - `trainer_fan_club.c`: postgame fan storage, NPC reveal, time-based gain/loss and dialogue helpers are represented in `specialsExtra.ts`. The new-game reset helper and link-battle updates/link trainer record names are absent; link battle is outside the single-player path. Marked partial.
 - `field_tasks.c`: the Icefall Cave thin/cracked ice state machine and persistent puzzle flags are represented in `fieldTasks.ts` with a four-frame delay. The source ambient-cry/time-based task is absent; other per-step callbacks are dummy or unused in FireRed. The web update uses an overworld frame hook instead of a priority-80 task. Marked partial.
 - `decompress.c`: source graphics are exported pre-decompressed; Pokémon picture selection and Unown/Deoxys/Spinda handling exist in `pokemon/pics.ts`. Buffer/heap sprite loaders and decompressed-size helper have no direct equivalents; the static object-stitching helper has no callers. Marked partial; no pixel comparison.
+- `mini_printf.c`: formatting is used only by emulator debug-print and SWI logging code in `isagbprn.c`, which has no gameplay caller. Marked out of scope for browser single-player.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -127,7 +128,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 49 modules as documented ported, 92 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 19 as explicitly out of scope, 36 as probable out-of-scope candidates, and 77 as unreviewed. Separately, 42 files have a
+The current review labels 49 modules as documented ported, 92 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 20 as explicitly out of scope, 36 as probable out-of-scope candidates, and 76 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
