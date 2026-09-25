@@ -141,8 +141,13 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 5. **Bolsa del Viejo y bolsa de Teachy TV** (`item_menu.c`
    `InitOldManBag`/`Pokedude`) **[visual]**: la bolsa real no está conectada a
    esos modos guionizados.
-6. **Marcas de Pokémon** (`mon_markings.c`) **[visual]**: necesarias para el
-   resumen y las cajas; sin ellas esos menús no pueden mostrar/editar marcas.
+6. **Marcas de Pokémon** (`mon_markings.c`, 605 líneas) **[PORTADO]**:
+   portado fielmente en `src/fr/monMarkings.ts`. Incluye el menú interactivo de marcas
+   (círculo, cuadrado, triángulo, corazón) con cursor y OK/Cancel, sprites combo para
+   el resumen y las cajas (`CreateMonMarkingAllCombosSprite`, `CreateMonMarkingComboSprite`,
+   `UpdateMonMarkingTiles`), y `BufferMonMarkingsMenuTiles` que genera las tiles del marco
+   del usuario (`GetUserWindowGraphics`). Exportada también `GetUserWindowGraphics` en
+   `hw/menu.ts` para uso compartido. Compila y pasa build.
 7. **Registro de batallas** (`battle_records.c`) **[visual]**: solo afecta al
    récord de combates por cable (fuera de alcance), pero el menú existe en el PC.
 8. **Contador de tiempo y utilidades pequeñas** (`play_time.c`, `coins.c`,

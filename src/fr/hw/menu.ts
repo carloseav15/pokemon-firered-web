@@ -4,7 +4,7 @@
 import { sound } from "../audio/sound";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, JOY_NEW } from "../gba/input";
 import { FONT_INFOS, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "../gba/font";
-import { cdata, incbin } from "./assets";
+import { cdata, incbin, incbin16 } from "./assets";
 import { ChangeBgX, ChangeBgY, FillBgTilemapBufferRect, LoadBgTiles } from "./bg";
 import { LoadPalette } from "./palette";
 import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./text";
@@ -300,11 +300,22 @@ export function LoadMenuMessageWindowGfx(windowId: number, destOffset: number, p
   LoadPalette(GetTextWindowPalette(0), palOffset, 32);
 }
 
+/** GetUserWindowGraphics: returns tiles and palette for user's frame type. */
+export function GetUserWindowGraphics(frameType = 0): { tiles: Uint8Array; palette: Uint16Array } {
+  const frames = cdata<Array<{ tiles: { $sym: string }; palette: { $sym: string } }>>("text_window_graphics", "gUserFrames");
+  const i = frameType >= frames.length ? 0 : frameType;
+  const frame = frames[i];
+  return {
+    tiles: incbin(frame.tiles.$sym),
+    palette: incbin16(frame.palette.$sym),
+  };
+}
+
 /** LoadUserWindowGfx: the frame chosen in the options (optionsWindowFrameType, default frame 1). */
 export function LoadUserWindowGfx(windowId: number, destOffset: number, palOffset: number, frameType = 0): void {
-  const frame = cdata<Array<{ tiles: { $sym: string }; palette: { $sym: string } }>>("text_window_graphics", "gUserFrames")[frameType];
-  LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), incbin(frame.tiles.$sym), 0x120, destOffset);
-  LoadPalette(incbin(frame.palette.$sym), palOffset, 32);
+  const gfx = GetUserWindowGraphics(frameType);
+  LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), gfx.tiles, 0x120, destOffset);
+  LoadPalette(gfx.palette, palOffset, 32);
 }
 
 export function LoadStdWindowFrameGfx(): void {
