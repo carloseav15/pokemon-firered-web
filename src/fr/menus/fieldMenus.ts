@@ -12,6 +12,7 @@ import { addBagItem, itemInfo, itemName, pocketList, removeBagItem } from "../po
 import { fieldMoveName, fieldMovesOf, text, trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { bagResult, GoToBagMenu, type BagHandlers, type BagTaskContext } from "../bagMenu";
+import { InitTMCase } from "../tmCase";
 import { encode, stringVars } from "../gba/charmap";
 import { PokemonUseItemEffects } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
@@ -279,17 +280,10 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         });
       });
     };
-    const tmCase = (): void => openHardwareChoice("TM CASE", pocketList(4).map(slot => ({
-      label: `${slot.item >= C.ITEM_HM01 ? "HM" : "TM"}${String(slot.item >= C.ITEM_HM01 ? slot.item - C.ITEM_HM01 + 1 : slot.item - C.ITEM_TM01 + 1).padStart(2, "0")} ${decode(rom.moveName(tmhmMove(slot.item)))}${slot.item >= C.ITEM_HM01 ? "" : ` x${slot.quantity}`}`,
-      value: slot.item,
-    })), true, item => {
-      if (item === null) { bag(); return; }
-      openHardwareChoice(decode(itemName(item)), [{label: "USE", value: 0}, ...(item < C.ITEM_HM01 ? [{label: "GIVE", value: 1}] : [])], true, choice => {
-        if (choice === null) { tmCase(); return; }
-        if (choice === 0) useTM(item);
-        else giveItem(item, tmCase);
-      });
-    });
+    /** tm_case.c: InitTMCase(TMCASE_FIELD, bag), reopened after a USE/GIVE (TMCASE_REOPENING). */
+    const tmHandlers = { useOnMon: (item: number) => useTM(item), giveToMon: (item: number) => giveItem(item, tmCase) };
+    const openTmCase = (): void => InitTMCase(C.TMCASE_FIELD, bag, false, tmHandlers);
+    const tmCase = (): void => InitTMCase(C.TMCASE_REOPENING, null, C.TMCASE_KEEP_PREV, tmHandlers);
     const giveItem = (item: number, back: () => void): void => chooseMon(rom.text("gText_GiveToWhichPokemon"), index => {
       const mon = save.party[index];
       if (mon.isEgg) { message("An EGG can't hold an item.", back); return; }
@@ -333,7 +327,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         }
         case "FieldUseFunc_CoinCase": stringVars.var1 = encode(String(save.coins)); message(rom.text("gText_CoinCase")); return;
         case "FieldUseFunc_PowderJar": stringVars.var1 = encode(String(save.berryPowder ?? 0)); message(rom.text("gText_PowderQty")); return;
-        case "FieldUseFunc_TmCase": leave(tmCase); return;
+        case "FieldUseFunc_TmCase": leave(openTmCase); return;
         case "FieldUseFunc_BerryPouch": leave(() => pocket(5)); return;
         case "FieldUseFunc_Bike": {
           const p = ow.player.object;

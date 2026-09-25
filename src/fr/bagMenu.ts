@@ -58,6 +58,7 @@ import {
 } from "./hw/window";
 import { addMoney, addPCItem, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
+import { InitTMCase } from "./tmCase";
 import { save } from "./save";
 
 // ---------------------------------------------------------------- public state and hooks
@@ -753,6 +754,15 @@ function ItemMenu_SetExitCallback(cb: () => void): void {
 function openCaseOrReturn(itemId: number, location: number): () => void {
   return () => {
     if (sHandlers.openCase) { sHandlers.openCase(itemId, location); return; }
+    if (itemId === C.ITEM_TM_CASE) {
+      // GoToTMCase_Give / _Sell / _PCBox, returning to this bag (ReturnToBagMenuFromSubmenu_*).
+      const back = (): void => GoToBagMenu(location, C.OPEN_BAG_LAST, null);
+      const done = (): void => gBagMenuState.bagCallback?.();
+      if (location === C.ITEMMENULOCATION_PARTY) InitTMCase(C.TMCASE_GIVE_PARTY, back, false, { giveParty: done });
+      else if (location === C.ITEMMENULOCATION_SHOP) InitTMCase(C.TMCASE_SELL, back, false, {});
+      else InitTMCase(C.TMCASE_GIVE_PC, back, false, { givePc: done });
+      return;
+    }
     bagResult.itemId = C.ITEM_NONE;
     gBagMenuState.bagCallback?.();
   };

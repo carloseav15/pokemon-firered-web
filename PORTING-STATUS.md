@@ -151,9 +151,12 @@ explicitly out of scope.
      `money.c` and the scheduled-copy helpers. The field bag, the battle bag,
      the shop SELL option, PC deposit and the party GIVE option use it; item
      effects keep the existing item_use logic (party-target flows still use
-     text-list adapters until `party_menu.c` lands). TM case and berry pouch
-     screens are pending (opening them from a give/sell bag returns as
-     cancelled). Old Man / Teachy TV scripted bags are not wired yet.
+     text-list adapters until `party_menu.c` lands). TM CASE: `src/fr/tmCase.ts` ports
+     `tm_case.c` (HMs first, move info with type/power/accuracy/PP icons,
+     disc sprite tinted by type with the swap animation, USE/GIVE context
+     menu, give-from-party/PC and sell flows); the bag opens it for OPEN,
+     party GIVE, PC give and shop SELL. The berry pouch screen is pending
+     (opening it from a give/sell bag returns as cancelled). Old Man / Teachy TV scripted bags are not wired yet.
 5. Replace small, bounded event-special placeholders with source behavior.
 6. Complete shops and the bag, including item selection and use. Verify the
    Game Corner prize exchange scripts (stock, prices, delivery) — otherwise
