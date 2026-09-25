@@ -120,8 +120,8 @@ and records whether each exact function name appears anywhere in `src/fr`.
 
 The current review labels 38 modules as documented ported, 60 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
-five as explicitly out of scope, 36 as probable out-of-scope candidates, and
-134 as unreviewed. Separately, 42 files have a
+six as explicitly out of scope, 36 as probable out-of-scope candidates, and
+133 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,8 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `reset_save_heap.c` expone `ReloadSave`, usado solo por recuperación de link;
+  su reset EWRAM/registro no aplica al recorrido single-player web.
 - `agb_flash_le.c` solo configura el chip Flash GBA y sus sectores/timings;
   se reemplaza por localStorage en web. Esto no implica paridad del formato de
   SaveBlock ni del flujo de guardado.
