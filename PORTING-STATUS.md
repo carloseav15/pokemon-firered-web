@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 24 modules as documented ported, 52 as partial or
+The current review labels 25 modules as documented ported, 52 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-157 as unreviewed. Separately, 42 files have a
+156 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -166,6 +166,10 @@ whiteout respawn now uses the original heal-location data in
   truncamiento `u16` de `SeedRng` coinciden. Sigue parcial porque el flujo TS
   aún no llama `seedRng` al salir del título con el valor de Timer1 ligado a la
   ID del entrenador, como hace C.
+- `blend_palette.c`: `BlendPalette` ya estaba en `hw/palette.ts`; añadí
+  `BlendPalettesAt`, incluida su ruta de coeficiente 16 y las operaciones con
+  coeficiente `u32` del C. `npm run check:port` pasa; no hice comparación en
+  runtime ni validación visual de clima.
 - `tilesets.c` no contiene funciones: incluye las tablas fuente de tilesets,
   metatiles y gráficos que `step_tilesets.py` exporta a `public/fr/tilesets`;
   `rom.loadTileset` consume esos datos. Paridad del rol de datos de este .c;

@@ -345,7 +345,7 @@ function isSoftwarePaletteFadeFinishing(): boolean {
   return false;
 }
 
-/** util.c BlendPalette */
+/** blend_palette.c: BlendPalette */
 export function BlendPalette(palOffset: number, numEntries: number, coeff: number, blendColor: number): void {
   const br = blendColor & 0x1f, bg = (blendColor >> 5) & 0x1f, bb = (blendColor >> 10) & 0x1f;
   for (let i = 0; i < numEntries; i++) {
@@ -353,6 +353,27 @@ export function BlendPalette(palOffset: number, numEntries: number, coeff: numbe
     const c = gPlttBufferUnfaded[index];
     const r = c & 0x1f, g = (c >> 5) & 0x1f, b = (c >> 10) & 0x1f;
     gPlttBufferFaded[index] = RGB(r + (((br - r) * coeff) >> 4), g + (((bg - g) * coeff) >> 4), b + (((bb - b) * coeff) >> 4));
+  }
+}
+
+/** blend_palette.c: BlendPalettesAt; blends a caller-provided palette buffer in place. */
+export function BlendPalettesAt(palbuff: Uint16Array, blendPal: number, coefficient: number, size: number): void {
+  const count = Math.max(0, size | 0);
+  const target = blendPal & 0xffff;
+  const coeff = coefficient >>> 0;
+  if (coeff === 16) {
+    palbuff.fill(target, 0, count);
+    return;
+  }
+  const r = target & 0x1f, g = (target >>> 5) & 0x1f, b = (target >>> 10) & 0x1f;
+  for (let i = 0; i < count; i++) {
+    const color = palbuff[i]!;
+    const r2 = color & 0x1f, g2 = (color >>> 5) & 0x1f, b2 = (color >>> 10) & 0x1f;
+    // Preserve C's u32 coefficient conversions and 32-bit multiplication wrap.
+    const rr = (r2 + (Math.imul((r - r2) >>> 0, coeff) >>> 4)) >>> 0;
+    const gg = (g2 + (Math.imul((g - g2) >>> 0, coeff) >>> 4)) >>> 0;
+    const bb = (b2 + (Math.imul((b - b2) >>> 0, coeff) >>> 4)) >>> 0;
+    palbuff[i] = (rr | (gg << 5) | (bb << 10)) & 0xffff;
   }
 }
 
