@@ -137,6 +137,7 @@ audio backend exists.
 - `menu_indicators.c`: scroll arrows, outline/arrow cursors and their add/update/remove behavior are implemented in `hw/listMenu.ts` and consumed by menus. Browser sprite adaptation; no pixel comparison.
 - `item.c`: item metadata, bag/PC inventory operations and item lookup exist across `pokemon/items.ts`, `save.ts` and `bagMenu.ts`; GBA encrypted slot storage, some sort/compaction helpers and story-item Quest Log logging are not exact equivalents. Marked partial.
 - `move_descriptions.c`: all 355 source definitions, including the pointer table, are exported as cdata; move relearner and Pokémon summary screens load the table and resolve source text symbols. Source/data path reviewed; rendering parity was not checked.
+- `battle_controller_safari.c`: the Safari action menu, throw/intro animations, text, healthbox, sound and battle-animation waits are mapped in `battle/controller_safari.ts`; encounter and catch logic is in `battle/main.ts` / `battleSetup.ts`. Remaining controller opcodes often complete immediately, leaving source sprite/data/status/move/party-summary commands incomplete. Partial; no runtime execution.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -148,7 +149,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 56 modules as documented ported, 102 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 56 as unreviewed. Separately, 42 files have a
+The current review labels 56 modules as documented ported, 103 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 55 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
