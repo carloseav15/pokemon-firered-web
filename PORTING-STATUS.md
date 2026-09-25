@@ -151,6 +151,7 @@ audio backend exists.
 - `save.c`: gameplay save state and play time live in `save.ts`, but persistence is JSON in localStorage; C sector checksums, incremental writes, damaged-sector recovery, slot/signature logic and link full-save are absent. Save format/recovery parity remains incomplete; no reload exercise this pass.
 - `field_fadetransition.c`: common door/fall/dive/teleport/map fades and music are wired in `field/overworld.ts`; several special transitions and return callbacks are absent or folded into shared handlers, with Canvas/palette sequencing adapted. Partial; route timing was not checked.
 - `berry.c`: Berry records/descriptions export to cdata and Berry Pouch UI is present, but field berry-tree growth and berry lookup/type APIs lack active TS equivalents; Enigma Berry validity remains a stub. Partial; optional Berry lifecycle is not implemented.
+- `field_screen_effect.c`: replaced the antialiased Canvas Flash arc with integer per-scanline boundaries from the C midpoint-circle algorithm; radius animation and levels already existed. `npm run check:port` passed. Canvas/GBA pixel parity is unverified; barn-door wipe and whiteout recovery remain incomplete.
 
 ## C/header inventory first pass (2026-09-25)
 

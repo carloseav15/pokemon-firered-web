@@ -46,6 +46,33 @@ const EMOTE_EFFECT_IDS: number[] = [C.FLDEFF_EXCLAMATION_MARK_ICON, C.FLDEFF_QUE
 export const FLASH_LEVEL_TO_RADIUS = [200, 72, 56, 40, 24];
 export const MAX_FLASH_LEVEL = FLASH_LEVEL_TO_RADIUS.length - 1;
 
+/** SetFlashScanlineEffectWindowBoundaries / SetFlashScanlineEffectWindowBoundary. */
+function flashWindowBoundaries(centerX: number, centerY: number, radius: number): Uint16Array {
+  const dest = new Uint16Array(160);
+  const setBoundary = (y: number, left: number, right: number): void => {
+    if (y < 0 || y > 160) return;
+    left = Math.max(0, Math.min(255, left));
+    right = Math.max(0, Math.min(255, right));
+    if (y < dest.length) dest[y] = (left << 8) | right;
+  };
+  let xy = radius;
+  let error = radius;
+  let yx = 0;
+  while (xy >= yx) {
+    setBoundary(centerY - yx, centerX - xy, centerX + xy);
+    setBoundary(centerY + yx, centerX - xy, centerX + xy);
+    setBoundary(centerY - xy, centerX - yx, centerX + yx);
+    setBoundary(centerY + xy, centerX - yx, centerX + yx);
+    error -= (yx * 2) - 1;
+    yx++;
+    if (error < 0) {
+      error += 2 * (xy - 1);
+      xy--;
+    }
+  }
+  return dest;
+}
+
 export class FieldEffects {
   readonly tasks = tasks;
   private surfBlob?: Sprite;
@@ -374,12 +401,20 @@ export class FieldEffects {
     // AnimateFlash in progress draws its current radius instead.
     const r = this.flashRadius ?? FLASH_LEVEL_TO_RADIUS[Math.min(level, MAX_FLASH_LEVEL)];
     if (r >= 200) return;
+    const boundaries = flashWindowBoundaries(120, 80, r);
     ctx.save();
     ctx.fillStyle = "#000";
     ctx.beginPath();
-    ctx.rect(0, 0, 240, 160);
-    ctx.arc(120, 80, r, 0, Math.PI * 2, true);
-    ctx.fill("evenodd");
+    for (let y = 0; y < boundaries.length; y++) {
+      const left = boundaries[y] >>> 8;
+      const right = boundaries[y] & 0xff;
+      if (right <= left) ctx.rect(0, y, 240, 1);
+      else {
+        if (left > 0) ctx.rect(0, y, left, 1);
+        if (right < 240) ctx.rect(right, y, 240 - right, 1);
+      }
+    }
+    ctx.fill();
     ctx.restore();
   }
 
