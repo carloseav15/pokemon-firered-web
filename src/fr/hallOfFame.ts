@@ -9,6 +9,7 @@ import { cdata, symName } from "./hw/assets";
 import { rom } from "./rom";
 import { flagGet, flagSet, save, varSet } from "./save";
 import { healMon, nickname, speciesName, type Pokemon } from "./pokemon/pokemon";
+import { addBagItem, checkBagHasItem } from "./pokemon/items";
 import { openHardwareChoice, openHardwareMessage } from "./menus/hardwareChoice";
 import { fieldMenu } from "./menus/fieldMenus";
 import type { Game } from "./game";
@@ -47,6 +48,17 @@ export function enterHallOfFame(game: Game): void {
   if (ribbon) {
     stats[C.GAME_STAT_RECEIVED_RIBBONS] = (stats[C.GAME_STAT_RECEIVED_RIBBONS] ?? 0) + 1;
     flagSet(C.FLAG_SYS_RIBBON_GET);
+    // post_battle_event_funcs.c (REVISION >= 0xA): event tickets are granted
+    // with the first ribbon-awarding Hall of Fame entry, unless Aurora Ticket
+    // is already in the bag. Like C, set unlock flags regardless of bag result.
+    if (!checkBagHasItem(C.ITEM_AURORA_TICKET, 1)) {
+      addBagItem(C.ITEM_AURORA_TICKET, 1);
+      flagSet(C.FLAG_ENABLE_SHIP_BIRTH_ISLAND);
+      flagSet(C.FLAG_RECEIVED_AURORA_TICKET);
+      addBagItem(C.ITEM_MYSTIC_TICKET, 1);
+      flagSet(C.FLAG_ENABLE_SHIP_NAVEL_ROCK);
+      flagSet(C.FLAG_RECEIVED_MYSTIC_TICKET);
+    }
   }
   ow.script.stop();
   // Task_Hof_InitTeamSaveData: the newest team is appended, the oldest dropped.

@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 38 modules as documented ported, 60 as partial or
+The current review labels 38 modules as documented ported, 61 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 seven as explicitly out of scope, 36 as probable out-of-scope candidates, and
-132 as unreviewed. Separately, 42 files have a
+131 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,11 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `post_battle_event_funcs.c`: `EnterHallOfFame` ahora entrega los dos tickets
+  y activa los flags de islas cuando se concede la primera Champion Ribbon,
+  como en REVISION >= 0xA. `SetCB2WhiteOut` está conectado; la UI/animación de
+  Hall of Fame sigue adaptada con mensajes y elecciones genéricos. Solo revisión
+  de fuente; falta verificación de ejecución.
 - `reset_save_heap.c` expone `ReloadSave`, usado solo por recuperación de link;
   su reset EWRAM/registro no aplica al recorrido single-player web.
 - `cable_car_util.c` solo define dos helpers estáticos para llenar/copiar
