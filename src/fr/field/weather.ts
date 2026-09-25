@@ -10,6 +10,7 @@ import type { Overworld } from "./overworld";
 import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
+import * as WE from "./weatherEffects";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -136,6 +137,31 @@ export function None_Main(): void {}
 export function None_Finish(): boolean {
   return true;
 }
+
+export interface WeatherCallbacks {
+  initVars: () => void;
+  main: () => void;
+  initAll: () => void;
+  finish: () => boolean;
+}
+
+export const sWeatherFuncs: WeatherCallbacks[] = [
+  { initVars: None_Init, main: None_Main, initAll: None_Init, finish: None_Finish },
+  { initVars: WE.Clouds_InitVars, main: WE.Clouds_Main, initAll: WE.Clouds_InitAll, finish: WE.Clouds_Finish },
+  { initVars: WE.Sunny_InitVars, main: WE.Sunny_Main, initAll: WE.Sunny_InitAll, finish: WE.Sunny_Finish },
+  { initVars: WE.Rain_InitVars, main: WE.Rain_Main, initAll: WE.Rain_InitAll, finish: WE.Rain_Finish },
+  { initVars: WE.Snow_InitVars, main: WE.Snow_Main, initAll: WE.Snow_InitAll, finish: WE.Snow_Finish },
+  { initVars: WE.Thunderstorm_InitVars, main: WE.Thunderstorm_Main, initAll: WE.Thunderstorm_InitAll, finish: WE.Thunderstorm_Finish },
+  { initVars: WE.FogHorizontal_InitVars, main: WE.FogHorizontal_Main, initAll: WE.FogHorizontal_InitAll, finish: WE.FogHorizontal_Finish },
+  { initVars: WE.Ash_InitVars, main: WE.Ash_Main, initAll: WE.Ash_InitAll, finish: WE.Ash_Finish },
+  { initVars: WE.Sandstorm_InitVars, main: WE.Sandstorm_Main, initAll: WE.Sandstorm_InitAll, finish: WE.Sandstorm_Finish },
+  { initVars: WE.FogDiagonal_InitVars, main: WE.FogDiagonal_Main, initAll: WE.FogDiagonal_InitAll, finish: WE.FogDiagonal_Finish },
+  { initVars: WE.FogHorizontal_InitVars, main: WE.FogHorizontal_Main, initAll: WE.FogHorizontal_InitAll, finish: WE.FogHorizontal_Finish },
+  { initVars: WE.Shade_InitVars, main: WE.Shade_Main, initAll: WE.Shade_InitAll, finish: WE.Shade_Finish },
+  { initVars: WE.Drought_InitVars, main: WE.Drought_Main, initAll: WE.Drought_InitAll, finish: WE.Drought_Finish },
+  { initVars: WE.Downpour_InitVars, main: WE.Thunderstorm_Main, initAll: WE.Downpour_InitAll, finish: WE.Thunderstorm_Finish },
+  { initVars: WE.Bubbles_InitVars, main: WE.Bubbles_Main, initAll: WE.Bubbles_InitAll, finish: WE.Bubbles_Finish },
+];
 
 /** UpdateWeatherGammaShift */
 export function UpdateWeatherGammaShift(): void {
