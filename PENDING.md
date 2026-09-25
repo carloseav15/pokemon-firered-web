@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5479/9825 (55 %)**.
-- Archivos C pendientes: **114** (130197 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5545/9825 (56 %)**.
+- Archivos C pendientes: **113** (127670 líneas de C).
 - Es un indicador de nombres, no de fidelidad, y **no incluye la fase de pruebas en navegador** (ninguna pantalla nueva se ha ejecutado aún).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -19,7 +19,6 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
 | `trade.c` | 2958 | 0/66 | ~2958 | pokemon/ingameTrade.ts: sin escena |
-| `slot_machine.c` | 2527 | 13/77 | ~2100 | menus/slotMachine.ts: reglas sin gráficos |
 
 ## 3. Parciales con más C sin cubrir (top 40)
 

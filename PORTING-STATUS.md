@@ -1073,8 +1073,14 @@ tragaperras, Islas Sevii.
     - Verificado headless (`npm run check:evolution`).
 16. **Intercambios en juego** (`trade.c` escena + `ingameTrade`) **[visual]**:
     la lógica funciona; falta la animación del intercambio.
-17. **Tragaperras: gráficos** (`slot_machine.c`) **[visual]**: reglas y pagos
-    verificados; faltan rodillos, baile de Clefairy y destellos.
+17. **Tragaperras completa** (`slot_machine.c`) **[PORTADO]**: pantalla fiel 1:1
+    en `src/fr/menus/slotMachine.ts`. Traduce el C completo: 3 rodillos animados
+    con deformación afín en OAM y scanline blending en HBlank, mascotas Clefairy con
+    animaciones (neutral, girando, baile de victoria y desmayo), dígitos de crédito
+    y pagos, ventana de combinaciones deslizable con WIN0, botones iluminados,
+    parpadeo de líneas ganadoras con tabla sinusoidal y menú Yes/No al salir.
+    Verificado headless (`npm run check:slots`). Erradicado de adaptadores.
+
 18. **Pokédex completa** (`pokedex_screen.c`, `pokedex_area_markers.c`,
     `wild_pokemon_area.c`, `trainer_pokemon_sprites.c`) **[PORTADO, sin probar]**:
     `src/fr/pokedexScreen.ts` traduce el C completo: menú principal, listas

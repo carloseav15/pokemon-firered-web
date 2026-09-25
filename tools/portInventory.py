@@ -62,9 +62,9 @@ COVERED: dict[str, str] = {
 
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
 ADAPTERS: dict[str, str] = {
-    "slot_machine": "menus/slotMachine.ts: reglas sin gráficos",
     "trade": "pokemon/ingameTrade.ts: sin escena",
 }
+
 
 FUNC_RE = re.compile(
     r"^(?!static const|const|typedef|struct\s+\w+\s*$)"

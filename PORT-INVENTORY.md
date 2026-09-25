@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 112 | 124712 | 1842/5886 |
-| Adaptador (UI simplificada) | 2 | 5485 | 13/143 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 95 | 118746 | 3624/3796 |
+| Parcial (menos del 80 % de funciones) | 112 | 124712 | 1844/5886 |
+| Adaptador (UI simplificada) | 1 | 2958 | 0/66 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 96 | 121273 | 3701/3873 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
-| Fuera de alcance | 51 | 55183 | 96/1950 |
-| **Pendiente de portar** | **114** | **130197** | |
-| **Total en alcance** | **210** | **248996** | **5479/9825** |
+| Fuera de alcance | 51 | 55183 | 97/1950 |
+| **Pendiente de portar** | **113** | **127670** | |
+| **Total en alcance** | **210** | **248996** | **5545/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -127,7 +127,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `party_menu_specials.c` | 108 | 7/9 | `game.ts`, `script/specialsExtra.ts` |  |
 | `field_weather_util.c` | 105 | 5/10 | `field/weather.ts` |  |
 | `fldeff_sweetscent.c` | 100 | 1/7 | `field/fieldMoves.ts` |  |
-| `coins.c` | 98 | 2/9 | `pokemon/items.ts` |  |
+| `coins.c` | 98 | 4/9 | `pokemon/items.ts` |  |
 | `safari_zone.c` | 79 | 4/8 | `battle/battleSetup.ts` |  |
 | `hof_pc.c` | 50 | 2/5 |  |  |
 | `fldeff_dig.c` | 46 | 1/4 | `field/fieldMoves.ts` |  |
@@ -140,7 +140,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota |
 |---|---:|---:|---|---|
 | `trade.c` | 2958 | 0/66 |  | pokemon/ingameTrade.ts: sin escena |
-| `slot_machine.c` | 2527 | 13/77 | `game/slots.ts`, `menus/slotMachine.ts` | menus/slotMachine.ts: reglas sin gráficos |
 
 ## Portado (≥ 80 % de funciones con el mismo nombre)
 
@@ -157,6 +156,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_util.c` | 3252 | 34/36 | `battle/util.ts` |  |
 | `battle_controller_player.c` | 2966 | 114/123 | `battle/controller_player.ts` |  |
 | `battle_message.c` | 2855 | 9/9 | `battle/message.ts` |  |
+| `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |
 | `item_menu.c` | 2397 | 99/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |
 | `battle_anim_mons.c` | 2360 | 126/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |
 | `field_weather_effects.c` | 2346 | 93/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  |
@@ -286,7 +286,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `link_rfu_2.c` | 3163 | 0/151 |  |  |
 | `help_system.c` | 2480 | 7/41 |  |  |
 | `librfu_rfu.c` | 2342 | 0/86 |  |  |
-| `quest_log_events.c` | 2247 | 2/79 |  |  |
+| `quest_log_events.c` | 2247 | 3/79 |  |  |
 | `link.c` | 2202 | 2/114 |  |  |
 | `quest_log.c` | 1767 | 4/88 |  |  |
 | `battle_controller_link_opponent.c` | 1713 | 22/86 |  |  |
