@@ -4,6 +4,8 @@ Lee esto antes de tocar código. Te ahorra horas: explica qué es el proyecto,
 dónde está cada cosa, cómo se sacan los datos del decomp y cómo se porta y se
 verifica un archivo C sin inventar nada.
 
+- **Primero lee [ESTADO-Y-REGLAS.md](ESTADO-Y-REGLAS.md)**: porcentaje real, qué está bien,
+  qué se hizo mal (sesión Gemini) y las reglas obligatorias para agentes.
 - Estado y lista de pendientes (de fácil a difícil): [PORTING-STATUS.md](PORTING-STATUS.md)
 - Faltantes actualizados (sin empezar, adaptadores, parciales, sin probar): [PENDING.md](PENDING.md)
 - Inventario por archivo `.c` (generado con `npm run inventory`): [PORT-INVENTORY.md](PORT-INVENTORY.md)
