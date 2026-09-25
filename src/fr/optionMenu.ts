@@ -21,7 +21,7 @@ import {
   BLDCNT_EFFECT_BLEND, BLDCNT_EFFECT_LIGHTEN, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY,
   REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT, WIN_RANGE, WININ_WIN0_BG0,
 } from "./hw/ppu";
-import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
 import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap } from "./hw/window";
@@ -56,10 +56,10 @@ const userFrame = (frameType: number): UserFrame => cdata<UserFrame[]>("text_win
 
 /** CB2_OptionsMenuFromStartMenu; `done` runs CloseAndSaveOptionMenu's savedCallback. Runs under gMain in an HwScene. */
 export function openOptionMenu(done: () => void): void {
-  void Promise.all([
+  SetMainCallback2WhenLoaded(Promise.all([
     loadCData("strings", "text_window_graphics"),
     preloadPacks(["graphics_misc", "graphics_text_window", "graphics_fonts"]),
-  ]).then(() => {
+  ]), () => {
     const o = save.options;
     sOptionMenuPtr = {
       option: [o.textSpeed, o.battleScene ? 0 : 1, o.battleStyle, o.sound, o.buttonMode, o.frameType, 0],

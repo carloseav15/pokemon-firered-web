@@ -43,7 +43,7 @@ import {
   RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade,
 } from "./hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests,
   ResetSpriteData, StartSpriteAnim, type Sprite,
@@ -175,11 +175,11 @@ export function InitPartyMenu(menuType: number, layout: number, partyAction: num
   sPartyMenuInternal = null;
   sPartyBgTilemapBuffer = null;
   sPartyMenuBoxes = [];
-  void Promise.all([
+  SetMainCallback2WhenLoaded(Promise.all([
     preloadPokemonSpecialAnim(),
     loadCData("party_menu", "pokemon_icon", "pokemon_special_anim_scene", "strings", "text_window_graphics"),
     preloadPacks(["graphics_party_menu", "graphics_interface", "pokemon", "graphics_text_window", "graphics_fonts", "graphics_help_system"]),
-  ]).then(() => {
+  ]), () => {
     gPartyMenu.menuType = menuType;
     gPartyMenu.exitCallback = callback;
     gPartyMenu.action = partyAction;

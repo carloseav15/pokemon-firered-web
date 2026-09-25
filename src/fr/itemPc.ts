@@ -40,7 +40,7 @@ import {
   UpdatePaletteFade,
 } from "./hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, type MainCallback } from "./hw/runtime";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import { ScanlineEffect_Stop } from "./hw/scanline";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
@@ -115,7 +115,7 @@ export function ItemPc_Init(kind: number, callback: MainCallback): void {
     runOnce(callback);
     return;
   }
-  void preloadItemPc().then(() => {
+  SetMainCallback2WhenLoaded(preloadItemPc(), () => {
     sStateDataPtr = {
       savedCallback: null, moveModeOrigPos: 0xff, itemMenuIconSlot: 0, maxShowed: 0, nItems: 0, scrollIndicatorArrowPairId: 0xff,
       withdrawQuantitySubmenuCursorPos: 0, data: [0, 0, 0],
