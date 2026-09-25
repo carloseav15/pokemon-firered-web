@@ -118,8 +118,8 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 22 modules as documented ported, 40 as partial or
-adapted, 18 as pending, two with small parity fixes awaiting verification,
+The current review labels 22 modules as documented ported, 45 as partial or
+adapted, 12 as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
 162 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
@@ -156,6 +156,22 @@ whiteout respawn now uses the original heal-location data in
 `src/fr/field/overworld.ts` and selects the correct healer/home script from
 `src/fr/game.ts`. These changes still need execution verification. The other
 `save_location.c` has no main-story single-player blocker; its missing flags are deferred with reset/link/postgame parity. `save_menu_util.c` now has the stats panel and remains partial until visual execution confirms placement, frame and colors.
+
+### Pokédex area marker logic (2026-09-25)
+
+`src/fr/pokedexArea.ts` now ports the source data resolution shared by
+`wild_pokemon_area.c` and `pokedex_area_markers.c`:
+
+- Reads the exported FireRed wild encounter rows and MAPSEC-to-DEX_AREA tables;
+  applies unlocked Sevii flags, the current Altering Cave set and the roamer's
+  starter/location rules.
+- Builds marker descriptors from the exported `sAreaMarkers` and C subsprite
+  templates, preserving source coordinates, shape, size, priority and tile offset.
+
+`npm run check:port` passes. This is a partial port: the Pokédex area page does
+not call the helper yet, and the C sprite/task lifecycle, compressed marker
+sheet, palette and OBJ-window blend remain unported. Browser rendering is not
+verified.
 
 ## Single-player completion audit (2026-09-25)
 
