@@ -215,8 +215,15 @@ whiteout respawn now uses the original heal-location data in
   FieldEffect Dig, transición a pie y escape al último heal location están
   conectados entre `fieldMoveMenu.ts` y `fieldMoves.ts`; falta cotejo visual.
 - `fldeff_teleport.c` tiene la compuerta de mapa y warp correctos, pero su
-  task omite `CameraObjectReset2` y la transición de prioridad del subsprite;
-  además mueve `y2` donde C cambia `sprite.y`. Queda parcial.
+  task ya mueve `sprite.y` como en `TeleportFieldEffectTask3`; `CameraObjectReset2`
+  no tiene equivalente porque el campo web no usa camera-object sprite y la
+  transición de prioridad de subsprites no está representada en el sprite 2D.
+  Queda parcial hasta cotejar el task/warp en runtime.
+- `decoration.c` solo incluye las tablas declarativas; el exportador ya las
+  entrega como `cdata/decoration.json`. El decomp deja comentadas las
+  implementaciones de alta/baja y nombre de decoración; los handlers TS también
+  consumen operandos sin efecto, igual que C. La colocación de adornos en la
+  habitación no tiene implementación activa en el decomp.
 - `fldeff_strength.c`: TS conserva el requisito de estar a pie y tener una
   roca empujable delante; pasa el slot/nickname, muestra al Pokémon y reanuda
   el script para activar Strength. Cotejado con `field_moves.inc` y el C.

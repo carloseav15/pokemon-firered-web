@@ -546,7 +546,8 @@ export class FieldMoveEffects {
         }
         case 2:
           if (--d1 <= 0) { d1 = 4; ow.objects.turn(p, spinA[p.facingDirection]); }
-          p.sprite.y2 -= d3;
+          // field_effect.c TeleportFieldEffectTask3 raises sprite->y directly.
+          p.sprite.y -= d3;
           d4 += d3;
           if (--d2 <= 0) { d2 = 4; if (d3 < 8) d3 <<= 1; }
           if (d4 > 8) p.sprite.priority = 1;
