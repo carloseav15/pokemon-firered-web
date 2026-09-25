@@ -720,7 +720,7 @@ export class Game {
     const mon = createMon(species, level, { metLocation: this.overworld.header.regionMapSection });
     if (item) mon.heldItem = item;
     const result = giveMonToPlayer(mon);
-    setDexFlag(species, true);
+    if (result === 0 || result === 1) setDexFlag(species, true);
     return result;
   }
 

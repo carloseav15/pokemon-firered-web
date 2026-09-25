@@ -870,3 +870,10 @@ Pending / placeholders:
   narrowing, packed nibble selection and neutral fallback. Field dialogue uses
   the shared function, and `rom.scriptMenu.textColors` now has its exported
   flat-array type. `npm run check:port` passes; no runtime call exercise.
+- `script_pokemon_util.c`: source callers are present under different names.
+  Fixed `Game.scriptGiveMon` to set seen/caught only when `GiveMonToPlayer`
+  succeeds to party or PC, as the C status switch specifies. Healing, eggs,
+  move-slot updates and scripted wild creation already map to TS paths.
+  Half-party selection, `ReducePlayerPartyToThree` and Battle Tower callbacks
+  remain absent/adapted, outside the ordinary single-player story. Typecheck
+  passes; no runtime scenario was exercised.
