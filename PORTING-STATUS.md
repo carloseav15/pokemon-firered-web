@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 38 modules as documented ported, 59 as partial or
+The current review labels 38 modules as documented ported, 60 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 five as explicitly out of scope, 36 as probable out-of-scope candidates, and
-135 as unreviewed. Separately, 42 files have a
+134 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -203,6 +203,9 @@ whiteout respawn now uses the original heal-location data in
 - `prof_pc.c`: TS calcula vistos/capturados con Kanto/National igual que C;
   `profOakRating` conserva los umbrales 10–150, la excepción de Mew, RESULT y
   el texto del decomp. Paridad por revisión de fuente; falta comparación runtime.
+- `fldeff_sweetscent.c`: arreglé el orden de encuentro con roamer (antes de
+  revisar la tabla normal). La transición rosa sigue como overlay Canvas y aún
+  no reproduce la copia/fade de paletas del C; permanece parcial.
 - `fldeff_softboiled.c`: eligibility, elegir destinatario, rechazar usuario/
   debilitado/HP lleno, transferir 1/5 HP y devolver cursor/mensaje coinciden con
   el task de `partyMenu.ts`; fuente revisada, sin interacción live.

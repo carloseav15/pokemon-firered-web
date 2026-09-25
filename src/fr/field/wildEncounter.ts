@@ -150,7 +150,13 @@ export class WildEncounter {
   }
   sweetScentEncounter(attributes: number): boolean {
     const type = (attributes >>> 24) & 7;
-    const info = type === C.TILE_ENCOUNTER_LAND ? this.info("landMonsInfo") : type === C.TILE_ENCOUNTER_WATER ? this.info("waterMonsInfo") : undefined;
+    if (type !== C.TILE_ENCOUNTER_LAND && type !== C.TILE_ENCOUNTER_WATER) return false;
+    const roamerMon = tryStartRoamerEncounter();
+    if (roamerMon) {
+      this.game.battleSetup.startRoamerBattle(roamerMon);
+      return true;
+    }
+    const info = type === C.TILE_ENCOUNTER_LAND ? this.info("landMonsInfo") : this.info("waterMonsInfo");
     if (!info) return false;
     const mon = this.create(info, this.chooseSlot(type === C.TILE_ENCOUNTER_LAND ? LAND : WATER), false);
     if (!mon) return false;
