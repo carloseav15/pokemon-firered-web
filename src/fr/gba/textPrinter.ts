@@ -312,8 +312,8 @@ export class TextPrinter {
     this.downArrowIndex = (this.downArrowIndex + 1) & 3;
   }
 
-  private clearSpan(width: number): void {
-    this.window.fillRect(this.bg, this.currentX, this.currentY, width, FONT_INFOS[this.fontId].maxLetterHeight);
+  private clearSpan(_width: number): void {
+    // text_printer.c: ClearTextSpan is empty in the FireRed source.
   }
 
   private copyGlyph(pixels: Uint8Array, width: number, height: number): void {

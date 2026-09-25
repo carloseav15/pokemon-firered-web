@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 48 modules as documented ported, 86 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 18 as explicitly out of scope, 36 as probable out-of-scope candidates, and 85 as unreviewed. Separately, 42 files have a
+The current review labels 48 modules as documented ported, 87 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 18 as explicitly out of scope, 36 as probable out-of-scope candidates, and 84 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -279,6 +279,10 @@ whiteout respawn now uses the original heal-location data in
 - `bag.c`: las 13 funciones de ventana/texto/depósito/sí-no/dinero tienen
   implementación homónima dentro de `bagMenu.ts` y se usan por la pantalla real
   de mochila con hardware TS. Revisión de nombres/flujo; sin comparación pixel.
+- `text_printer.c`: state machine, controles, colores, tiempos/scroll/prompt
+  están repartidos en `gba/textPrinter.ts`/`hw/text.ts`; hice `clearSpan` no-op
+  porque el `ClearTextSpan` C está vacío. La rasterización usa fuentes exportadas
+  en lugar de lookup y VRAM GBA; Braille custom sigue pendiente. `check:port` pasó.
 - `ss_anne.c`: salida del barco conserva espera de 50 frames, estela/humo,
   desplazamiento cada cinco frames, bocina, umbral de salida y espera final 40
   frames antes de reanudar el script. Animaciones/callbacks cotejados con C;
