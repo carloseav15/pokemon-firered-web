@@ -142,6 +142,7 @@ audio backend exists.
 - `menu2.c`: the species/Unown stat-page positioning table and blend task are exported as C data but lack active TypeScript consumers/equivalents. Stat-page sprite positions and blending remain gaps; code/data lookup only.
 - `mail.c`: held mail and Easy Chat word decoding are represented, while `ReadMail` uses the simplified `menus/mailView.ts` field adapter; C screen/task behavior and Easy Chat authoring remain incomplete. Partial; no UI comparison.
 - `player_pc.c`: item-PC and mailbox flows are wired through `menus/playerPc.ts` with bag/party/save behavior, but use generic choice/message adapters instead of the full C window/task/fade/list implementation. Partial source review; PC storage UI remains simplified.
+- `list_menu.c`: core list lifecycle, input, scrolling, cursor, template, palette and icon helpers are implemented in `hw/listMenu.ts`; the Mystery Gift-specific wrapper is outside the active single-player path. Source review only; visual list parity was not compared.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -153,7 +154,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 57 modules as documented ported, 106 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 51 as unreviewed. Separately, 42 files have a
+The current review labels 58 modules as documented ported, 106 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 23 as explicitly out of scope, 36 as probable out-of-scope candidates, and 50 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
