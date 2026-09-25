@@ -60,7 +60,8 @@ import {
 } from "./buyMenuHelpers";
 import { CreateItemMenuIcon, DestroyItemMenuIcon, GoToBagMenu, ItemId_GetDescription, ResetItemMenuIconState } from "./bagMenu";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./field/objectEvents";
-import { METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY } from "./field/fieldmap";
+import { METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY } from "./field/fieldmap";
+import { CopyMapTilesetsToHw } from "./field/hwTilesets";
 import type { Game } from "./game";
 import { fieldMenu } from "./menus/fieldMenus";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
@@ -370,14 +371,7 @@ function BuyMenuInitBgs(): void {
  */
 function BuyMenuLoadMapTilesets(): void {
   const { primary, secondary } = sGame.overworld.map.loaded;
-  ppu.vram.set(primary.tiles.subarray(0, NUM_TILES_IN_PRIMARY * 32), 0);
-  ppu.vram.set(secondary.tiles.subarray(0, (1024 - NUM_TILES_IN_PRIMARY) * 32), NUM_TILES_IN_PRIMARY * 32);
-  const rgb555 = (c: number[]) => ((c[0] >> 3) & 31) | (((c[1] >> 3) & 31) << 5) | (((c[2] >> 3) & 31) << 10);
-  for (let i = 0; i < 13; i++) {
-    const palette = (i < 7 ? primary.palettes[i] : secondary.palettes[i]).map(rgb555);
-    if (i === 0) palette[0] = 0;
-    LoadPalette(palette, BG_PLTT_ID(i), PLTT_SIZE_4BPP);
-  }
+  CopyMapTilesetsToHw(primary, secondary);
 }
 
 function BuyMenuDecompressBgGraphics(): void {

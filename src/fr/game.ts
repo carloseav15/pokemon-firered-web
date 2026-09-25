@@ -35,7 +35,9 @@ import { useVsSeeker } from "./field/vsSeeker";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
 import { showDiploma } from "./diploma";
-import { doCredits, enterHallOfFame, openHallOfFamePc } from "./hallOfFame";
+import { DoCredits } from "./credits";
+import { BeginHallOfFamePC } from "./hallOfFame";
+import { enterHallOfFame } from "./postBattleEventFuncs";
 import { createInGameTradePokemon, doInGameTradeScene, getInGameTradeSpeciesInfo, getTradeSpecies } from "./pokemon/ingameTrade";
 import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
 import { openHardwareMessage } from "./menus/hardwareChoice";
@@ -652,8 +654,8 @@ export class Game {
     });
   }
 
-  doCredits(): void { doCredits(this); }
-  openHallOfFamePc(): void { openHallOfFamePc(this); }
+  doCredits(): void { this.overworld.script.stop(); sound.playNewMapMusic(C.MUS_CREDITS); DoCredits(this); }
+  openHallOfFamePc(): void { this.overworld.script.stop(); BeginHallOfFamePC(this); }
 
   /** A field message that resumes the waiting script once dismissed. */
   showMessageThenEnable(text: Uint8Array): void {

@@ -173,6 +173,11 @@ class Sound {
     this.backend?.setVolume("bgm", volume);
   }
 
+  /** StopCryAndClearCrySongs: the m4a backend cannot cut a cry, so only the timer is cleared. */
+  stopCry(): void {
+    this.cryTimer = 0;
+  }
+
   /** IsCryPlayingOrClearCrySongs */
   isCryPlaying(): boolean {
     return !this.isCryFinished();

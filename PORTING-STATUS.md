@@ -567,6 +567,26 @@ sin Quest Log (`RecordItemTransaction` guarda el historial pero nada lo registra
 ni help system. Verificado: `check:port`, `build` y paridad de cdata/incbin/textos;
 sin probar en navegador.
 
+### Hall of Fame y créditos: `hall_of_fame.c`, `credits.c` (2026-09-25)
+
+`hallOfFame.ts` porta `hall_of_fame.c` completo: la pantalla de ingreso (cada
+Pokémon entra volando con su grito y ficha, aplausos y confeti, foto y ficha del
+jugador, salida hacia los créditos) y el visor del PC del Hall of Fame (efecto
+CRT, barra superior, equipos guardados). `postBattleEventFuncs.ts` conserva
+`EnterHallOfFame` (curar, flags, cintas, tickets, warp de continuación) y
+`SetWarpsToRollCredits`. `credits.ts` porta `credits.c`: guion de textos, ventana
+WIN0 con banda oscurecida, corredor jugador/rival y suelo, las cuatro escenas de
+Pokémon (círculo afín BG2, ventanas con la imagen), pantallas de copyright y THE
+END. `overworldCredits.ts` porta la parte de créditos de `overworld.c`
+(`Overworld_DoScrollSceneForCredits`, cámara con las órdenes de velocidad) dibujando
+el mapa como BGs hw con `field/hwTilesets.ts` (extraído de la tienda). Los equipos
+se guardan en `save.hallOfFame` como 6 entradas (`HofMon`, huecos con
+`SPECIES_NONE`). Adaptaciones: las escenas de mapa de los créditos no ejecutan NPCs,
+clima ni animaciones de tileset; `SoftReset` recarga la página; sin Quest Log ni
+help system; `StopCryAndClearCrySongs` solo limpia el temporizador del grito.
+Verificado: `check:port`, `build` y paridad de cdata/incbin/textos; sin probar en
+navegador.
+
 ### Lista de movimientos del Recordador (2026-09-25)
 
 `moveRelearner.ts` reemplaza la lista genérica por la pantalla de selección del C:
