@@ -90,8 +90,10 @@ export class BattleSetup {
   private setMapVarsToTrainer(): void {
     if (this.localId !== 0) {
       varSet(SV.LAST_TALKED, this.localId);
-      const o = this.game.overworld.objects.byLocalId(this.localId);
-      if (o) this.game.overworld.selectedObject = this.game.overworld.objects.indexOf(o);
+      const objects = this.game.overworld.objects;
+      const o = objects.byLocalIdAndMap(this.localId, save.location.mapNum, save.location.mapGroup);
+      // Source lookup returns OBJECT_EVENTS_COUNT when the trainer is absent.
+      this.game.overworld.selectedObject = o ? objects.indexOf(o) : objects.objects.length;
     }
   }
 

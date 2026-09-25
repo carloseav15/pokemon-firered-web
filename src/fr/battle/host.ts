@@ -83,9 +83,9 @@ export const battleHost = {
     return game?.overworld.header.mapType ?? C.MAP_TYPE_NONE;
   },
 
-  /** GetCurrentWeather: the field weather engine is not ported, so the map's default weather is used. */
+  /** GetCurrentWeather: the field weather engine's current weather. */
   weather(): number {
-    return game?.overworld.header.weather ?? C.WEATHER_NONE;
+    return game?.weather.current ?? C.WEATHER_NONE;
   },
 
   /** battle_setup.c GetTrainerALoseText / GetTrainerWonSpeech (already placeholder-expanded). */

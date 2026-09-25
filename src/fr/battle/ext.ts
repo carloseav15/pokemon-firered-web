@@ -8,7 +8,8 @@
 
 import * as C from "../generated/constants";
 import { DoNamingScreen as OpenNamingScreen } from "../namingScreen";
-import { openHardwareChoice } from "../menus/hardwareChoice";
+import { openHardwareChoice, openHardwareMessage } from "../menus/hardwareChoice";
+import { dexInfoMessage } from "../menus/pokedex";
 import { decode } from "../gba/charmap";
 import { b64 } from "../rom";
 import type { NameBuffer } from "../menus/namingModel";
@@ -18,11 +19,11 @@ import { tasks } from "../gba/tasks";
 import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { FONT_NORMAL } from "../gba/font";
 import { cdata, incbin } from "../hw/assets";
-import { gMain } from "../hw/runtime";
+import { gMain, SetMainCallback2 } from "../hw/runtime";
 import { AddTextPrinterParameterized3 } from "../hw/text";
 import { FillWindowPixelBuffer, PIXEL_FILL } from "../hw/window";
 import { itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
-import { evolveMon, giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "../pokemon/pokemon";
+import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "../pokemon/pokemon";
 import {
   CalculateMonStats, CalculatePPWithBonus, currentRegionMapSection, GetMonData, GetMonEVCount, gEnemyParty, playerMon, SetMonData, type Mon,
 } from "../pokemon/mon";
@@ -277,9 +278,19 @@ export function DoNamingScreen(type: number, dest: NameBuffer, species: number, 
   });
 }
 
-/** pokedex_screen.c DexScreen_RegisterMonToPokedex: returns a task id; the task ends immediately until the Pokédex screen exists. */
-export function DexScreen_RegisterMonToPokedex(_species: number): number {
-  return tasks.create((id) => tasks.destroy(id), 0);
+/** pokedex_screen.c DexScreen_RegisterMonToPokedex: shows the new dex info page. */
+export function DexScreen_RegisterMonToPokedex(species: number): number {
+  // displaydexinfo waits for this task plus callback2 back on BattleMainCB2.
+  const resume = gMain.callback2;
+  let finished = false;
+  sound.playCry(species, 0);
+  openHardwareMessage(dexInfoMessage(species), () => { finished = true; });
+  return tasks.create((id) => {
+    if (finished) {
+      tasks.destroy(id);
+      SetMainCallback2(resume);
+    }
+  }, 0);
 }
 
 /** pokemon_icon.c / trainer_pokemon_sprites.c CreateMonPicSprite_HandleDeoxys: the dex page pic (not shown yet). */
@@ -287,12 +298,9 @@ export function CreateMonPicSprite_HandleDeoxys(_species: number, _otId: number,
   return 0xffff;
 }
 
-/** evolution_scene.c EvolutionScene. Until the scene exists the mon evolves in place. */
-export function EvolutionScene(mon: Mon, targetSpecies: number, _canStopEvo: boolean, _partyId: number): void {
-  evolveMon(mon as Pokemon, targetSpecies);
-  GetSetPokedexFlag(rom.species[targetSpecies]?.national ?? 0, C.FLAG_SET_SEEN);
-  GetSetPokedexFlag(rom.species[targetSpecies]?.national ?? 0, C.FLAG_SET_CAUGHT);
-}
+/** evolution_scene.c EvolutionScene (presentation in ./evoScene). */
+import { EvolutionScene } from "./evoScene";
+export { EvolutionScene };
 
 // ---------------------------------------------------------------- pokemon.c
 

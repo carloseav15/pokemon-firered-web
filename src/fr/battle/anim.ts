@@ -145,25 +145,10 @@ function gMovesWithQuietBGM(): number[] {
   return quietBgmMoves;
 }
 
-/** Script interpreter placeholder: runs the `end` command immediately. */
-function RunAnimScriptCommand(): void {
-  Cmd_end();
-}
-
-function Cmd_end(): void {
-  const a = animState;
-  if (a.gAnimVisualTaskCount !== 0 || a.gAnimSoundTaskCount !== 0 || a.sMonAnimTaskIdArray[0] !== TASK_NONE || a.sMonAnimTaskIdArray[1] !== TASK_NONE) {
-    a.sSoundAnimFramesToWait = 0;
-    a.sAnimFramesToWait = 1;
-    return;
-  }
-  a.sSoundAnimFramesToWait = 0;
-  a.sAnimSpriteIndexArray.fill(0xffff);
-  sound.setBgmVolume(256);
-  InitPrioritiesForVisibleBattlers();
-  UpdateOamPriorityInAllHealthboxes(1);
-  a.gAnimScriptActive = false;
-}
+/** Animation script dispatch lives in ./animScript (full opcode interpreter). */
+import { RunAnimScriptCommand } from "./animScript";
+export { RunAnimScriptCommand };
+export { WaitAnimFrameCount } from "./animScript";
 
 export function DestroyAnimSprite(sprite: Sprite): void {
   FreeSpriteOamMatrix(sprite);
