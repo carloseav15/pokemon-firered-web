@@ -9,7 +9,7 @@ import { decode, stringVars } from "../gba/charmap";
 import { rom } from "../rom";
 import { save } from "../save";
 import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, setDexFlag, createMon, speciesName, type Pokemon } from "../pokemon/pokemon";
-import { openHardwareChoice, openHardwareMessage } from "./hardwareChoice";
+import { openHardwareChoice, openHardwareMessage, openHardwareMessageWithFanfare } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
 import { GetMoveSlotToReplace, ShowSelectMovePokemonSummaryScreen } from "../pokemonSummaryScreen";
 import { askMoveRelearnerQuestion } from "./moveRelearner";
@@ -61,6 +61,10 @@ export function learnMoveWithPrompt(
     return;
   }
   if (result !== MON_HAS_MAX_MOVES) {
+    if (useSummaryMoveSelector) {
+      openHardwareMessageWithFanfare(rom.text("gText_MonLearnedMove"), C.MUS_LEVEL_UP, false, false, () => done(true));
+      return;
+    }
     sound.playFanfare(C.MUS_LEVEL_UP);
     openHardwareMessage(rom.text("gText_PkmnLearnedMove3"), () => done(true));
     return;
@@ -93,11 +97,7 @@ export function learnMoveWithPrompt(
         stringVars.var2 = rom.moveName(move);
         stringVars.var3 = rom.moveName(oldMove);
         openHardwareMessage(rom.text("gText_1_2_and_Poof"), () => {
-          sound.playFanfare(C.MUS_LEVEL_UP);
-          openHardwareMessage(rom.text("gText_MonForgotOldMoveAndMonLearnedNewMove"), () => {
-            sound.playFanfare(C.MUS_LEVEL_UP);
-            done(true);
-          });
+          openHardwareMessageWithFanfare(rom.text("gText_MonForgotOldMoveAndMonLearnedNewMove"), C.MUS_LEVEL_UP, true, true, () => done(true));
         });
       }, move);
       return;
