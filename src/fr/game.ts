@@ -505,7 +505,7 @@ export class Game {
         openHardwareChoice(rom.text("gText_NickHatchPrompt"), [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
           const done = (): void => { close(); ow.script.enable(); };
           if (yes !== 1) { done(); return; }
-          DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, done);
+          DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, done);
         });
       });
     }, false);
@@ -559,7 +559,7 @@ export class Game {
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
-    DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
+    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
       stringVars.var2 = Uint8Array.from(mon.nickname);
       scene.leave();
       this.scene = null;
@@ -645,7 +645,7 @@ export class Game {
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
-    DoNamingScreen(rom.c("NAMING_SCREEN_NICKNAME"), mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
+    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
       stringVars.var2 = Uint8Array.from(mon.nickname);
       scene.leave();
       this.scene = null;

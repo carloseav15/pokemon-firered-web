@@ -42,9 +42,51 @@ Playwright/Chromium headless (fuera del repo, en el scratchpad de la sesión).
   línea a línea); el ping-pong y bloqueos que parecían intermitentes en
   pruebas manuales resultaron ser el bug de música de arriba, no un problema
   de estas rutinas.
+- **Crash bloqueante encontrado y arreglado: elegir un inicial rompía el
+  script en el prompt de apodo.** `game.ts` llamaba
+  `rom.c("NAMING_SCREEN_NICKNAME")` (lookup en tiempo de ejecución contra
+  `public/fr/constants.json`), pero ese `#define` de `naming_screen.h` no
+  está incluido en el paso `constants` del exportador (sí lo está, con su
+  valor correcto, en `generated/constants.ts` vía el paso `tsconst`), así que
+  `rom.c()` lanzaba `unknown constant NAMING_SCREEN_NICKNAME` dentro de
+  `Game.changeNickname` → `ChangePokemonNickname` (special), justo después de
+  `givemon` en `PalletTown_ProfessorOaksLab_EventScript_ChoseStarter` /
+  `EventScript_GiveNicknameToStarter`. La excepción no interrumpía el bucle
+  de frames pero dejaba el intérprete de scripts a medio ejecutar: el
+  Pokémon inicial SÍ quedaba en la party (`givemon` ya había corrido), pero
+  el juego nunca mostraba la pantalla de apodo ni devolvía el control
+  (bloqueo silencioso, sin `controlsLocked` visible desde fuera del script
+  pero sin avanzar tampoco). Arreglo: las 3 llamadas en `game.ts` ahora usan
+  `C.NAMING_SCREEN_NICKNAME` (import de `generated/constants.ts`), como pide
+  AGENTS.md §9 para constantes literales. Nota para el exportador: `tools/decomp/export.py`
+  paso `constants` no barre `include/naming_screen.h`; si aparecen más
+  `rom.c("NAMING_SCREEN_*")` en el futuro, preferir `C.*` en vez de
+  reexportar solo por esto.
+- Verificado en navegador de punta a punta, sin contaminar el guion con
+  movimiento manual mientras `applymovement`/`waitmovement` están en curso
+  (los `__reliableStep`/`walk` de prueba intercalados con el guion de Oak
+  desincronizaban el guion y daban falsos "bloqueos" — no eran bugs del
+  puerto, sino del arnés de pruebas): casa → Pueblo Paleta → guion "OAK: ¡Hey!
+  ¡Espera!" en la Ruta 1 → Oak lleva al jugador de vuelta y abre/cierra la
+  puerta del laboratorio con `opendoor`/`closedoor` → `ChooseStarterScene`
+  (`VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB` pasa a 1 correctamente) →
+  diálogo de Oak y el rival → elegir Squirtle → `givemon` añade el Pokémon a
+  la party (confirmado con `save.party.length === 1`) → "RED received the
+  SQUIRTLE from PROF. OAK!" → pantalla de apodo (`namingScreen.ts`) se abre
+  sin crashear (antes del arreglo, este era exactamente el punto de crash).
+- **Pendiente de este tramo, no resuelto todavía**: la navegación del cursor
+  al botón "OK" de la pantalla de apodo (`menus/namingModel.ts`,
+  `onButton`/`moveToOK`) no se pudo verificar con certeza por teclado
+  simulado (el cursor visual no confirma claramente cuándo está sobre
+  "OK" vs "BACK" vs "lower/SELECT" en captura estática); tampoco está
+  implementado el atajo START→OK que la propia UI muestra como pista
+  ("START" junto a "OK"), aunque `namingModel.ts` no lee `START_BUTTON` en
+  absoluto. Repasar esto es exactamente el punto 3 del plan (revisar si la
+  pantalla de nombres actual basta / portar `naming_screen.c` completo).
 - Nivel de prueba alcanzado hasta ahora: **navegador** (arranque, casa del
-  jugador 1F/2F, diálogo de la madre, salida a Pueblo Paleta). Continúa el
-  recorrido; esta sección se ampliará con cada hallazgo.
+  jugador 1F/2F, diálogo de la madre, salida a Pueblo Paleta, guion de Oak en
+  Ruta 1, laboratorio, elección de inicial hasta la pantalla de apodo).
+  Continúa el recorrido; esta sección se ampliará con cada hallazgo.
 
 ## Source-review update (2026-09-24, no execution checks)
 
