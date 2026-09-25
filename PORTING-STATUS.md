@@ -141,8 +141,15 @@ escena de combate. Nuevo `src/fr/battle/transition.ts`:
   según `sWhiteBarsFade_StartDelays`, con rampa de blend LIGHTEN y posterior transición de blanco
   a negro, selección salvaje/normal cuando el rival no es más débil). Con esto el 100% de los
   combates salvajes en terreno estándar de las primeras rutas tienen transición gráfica.
-- **Resto de las 18 transiciones**: `B_TRANSITION_GRID_SQUARES`/`BIG_POKEBALL` (la otra mitad de cueva),
-  `POKEBALLS_TRAIL` (entrenador/normal cuando el rival es más débil), `SHUFFLE`, `BLUR`, `SWIRL`, `WAVE`,
+- **Tercer bloque de transiciones portadas (cueva y combates especiales)**:
+  - `B_TRANSITION_GRID_SQUARES` (`Task_GridSquares`): cuadrícula de bloques de 8x8 con 15 etapas de
+    contracción progresiva del campo a negro, usada en cuevas cuando el rival no es más débil.
+  - `B_TRANSITION_SHUFFLE` (`Task_Shuffle`): desplazamiento senoidal de scanlines (`Sin(sinVal / 256, amplitude)`)
+    con fade simultáneo a negro, usada en combates de entrenador en cuevas cuando el rival es más débil.
+  - `B_TRANSITION_BIG_POKEBALL` (`Task_BigPokeball`): apertura y cierre de máscara circular con la silueta
+    de Poké Ball, usada en combates de entrenador en cuevas cuando el rival no es más débil.
+  - Con esto, 7 transiciones clave de campo, cuevas y entrenadores están completamente portadas y verificadas
+    en la suite `npm run check:transitions`.
   `RIPPLE`, `PATTERN_WEAVE`/mugshots de Elite Four, no están portadas aún y caen al fundido liso tras el intro blink.
 - **Bug encontrado y arreglado en el propio `gba/fade.ts`**: `paletteFade`
   necesita que algo llame a `update()` cada frame para avanzar (antes solo

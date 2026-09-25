@@ -434,6 +434,150 @@ class WhiteBarsFadeEffect implements Effect {
   }
 }
 
+/** B_TRANSITION_GRID_SQUARES: Task_GridSquares / GridSquares_Main. */
+class GridSquaresEffect implements Effect {
+  private delay = 0;
+  private shrinkStage = 0;
+  private endDelay = 16;
+  private state = 0;
+
+  tick(): boolean {
+    if (this.state === 0) {
+      if (this.delay <= 0) {
+        this.delay = 3;
+        this.shrinkStage++;
+        if (this.shrinkStage > 13) {
+          this.state = 1;
+        }
+      } else {
+        this.delay--;
+      }
+      return false;
+    }
+    return --this.endDelay <= 0;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    ctx.drawImage(snapshot, 0, 0);
+    if (this.shrinkStage <= 0) return;
+    const stage = Math.min(14, this.shrinkStage);
+    const size = Math.min(8, Math.round((stage * 8) / 11));
+    ctx.fillStyle = "#000";
+    if (stage >= 12) {
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+      return;
+    }
+    const offset = (8 - size) >> 1;
+    for (let y = 0; y < 160; y += 8) {
+      for (let x = 0; x < 240; x += 8) {
+        ctx.fillRect(x + offset, y + offset, size, size);
+      }
+    }
+  }
+}
+
+/** B_TRANSITION_SHUFFLE: Task_Shuffle / Shuffle_End. */
+class ShuffleEffect implements Effect {
+  private sinVal = 0;
+  private amplitude = 0;
+  private fadeFrame = 0;
+  private maxFadeFrames = 64;
+
+  tick(): boolean {
+    this.sinVal += 4224;
+    this.amplitude += 384;
+    this.fadeFrame++;
+    return this.fadeFrame >= this.maxFadeFrames;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    const amp = this.amplitude >> 8;
+    let sin = this.sinVal;
+    for (let y = 0; y < DISPLAY_HEIGHT; y++, sin += 4224) {
+      const shift = Math.round(Math.sin((sin & 0xffff) * ((2 * Math.PI) / 65536)) * amp);
+      ctx.drawImage(snapshot, 0, y, DISPLAY_WIDTH, 1, shift, y, DISPLAY_WIDTH, 1);
+      if (shift > 0) {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, y, shift, 1);
+      } else if (shift < 0) {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(DISPLAY_WIDTH + shift, y, -shift, 1);
+      }
+    }
+    const alpha = Math.min(1, this.fadeFrame / (this.maxFadeFrames * 0.75));
+    if (alpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+      ctx.restore();
+    }
+  }
+}
+
+/** B_TRANSITION_BIG_POKEBALL: Task_BigPokeball / PatternWeave_CircularMask. */
+class BigPokeballEffect implements Effect {
+  private radius = 0;
+  private radiusDelta = 3;
+  private closing = false;
+  private done = false;
+
+  tick(): boolean {
+    if (!this.closing) {
+      this.radius += this.radiusDelta;
+      if (this.radius >= 140) {
+        this.closing = true;
+      }
+    } else {
+      this.radius -= 6;
+      if (this.radius <= 0) {
+        this.done = true;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    if (this.done) {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+      return;
+    }
+    ctx.drawImage(snapshot, 0, 0);
+    // Draw outer black mask leaving circular Poké Ball aperture
+    const cx = DISPLAY_WIDTH / 2;
+    const cy = DISPLAY_HEIGHT / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    ctx.arc(cx, cy, Math.max(0, this.radius), 0, Math.PI * 2, true);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+
+    // Poké Ball band and center button inside the circle
+    if (this.radius > 15) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, this.radius, 0, Math.PI * 2);
+      ctx.clip();
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.fillRect(cx - this.radius, cy - 4, this.radius * 2, 8);
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "#000";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
 /** Task_BattleTransition_Intro: two gray blinks (BlendPalettes toward RGB(11,11,11)) before the main effect. */
 class IntroBlink {
   private blend = 0;
@@ -477,6 +621,9 @@ export class BattleTransitionScene implements Scene {
       : transitionId === C.B_TRANSITION_CLOCKWISE_WIPE ? new ClockwiseWipeEffect()
       : transitionId === C.B_TRANSITION_SLICE ? new SliceEffect()
       : transitionId === C.B_TRANSITION_WHITE_BARS_FADE ? new WhiteBarsFadeEffect()
+      : transitionId === C.B_TRANSITION_GRID_SQUARES ? new GridSquaresEffect()
+      : transitionId === C.B_TRANSITION_SHUFFLE ? new ShuffleEffect()
+      : transitionId === C.B_TRANSITION_BIG_POKEBALL ? new BigPokeballEffect()
       : null;
     this.hadEffect = this.effect !== null;
   }

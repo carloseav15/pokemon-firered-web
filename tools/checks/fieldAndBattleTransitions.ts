@@ -247,6 +247,39 @@ async function testBattleTransitions() {
   }
   assert.ok(angledDone, 'B_TRANSITION_ANGLED_WIPES must finish cleanly');
   console.log('✓ B_TRANSITION_ANGLED_WIPES execution verified');
+
+  // 3f. Execution of B_TRANSITION_GRID_SQUARES
+  let gridDone = false;
+  const gridScene = new BattleTransitionScene(C.B_TRANSITION_GRID_SQUARES, mockCtx, () => {
+    gridDone = true;
+  });
+  for (let frame = 0; frame < 300 && !gridDone; frame++) {
+    gridScene.update();
+  }
+  assert.ok(gridDone, 'B_TRANSITION_GRID_SQUARES must finish cleanly');
+  console.log('✓ B_TRANSITION_GRID_SQUARES execution verified');
+
+  // 3g. Execution of B_TRANSITION_SHUFFLE
+  let shuffleDone = false;
+  const shuffleScene = new BattleTransitionScene(C.B_TRANSITION_SHUFFLE, mockCtx, () => {
+    shuffleDone = true;
+  });
+  for (let frame = 0; frame < 300 && !shuffleDone; frame++) {
+    shuffleScene.update();
+  }
+  assert.ok(shuffleDone, 'B_TRANSITION_SHUFFLE must finish cleanly');
+  console.log('✓ B_TRANSITION_SHUFFLE execution verified');
+
+  // 3h. Execution of B_TRANSITION_BIG_POKEBALL
+  let bigBallDone = false;
+  const bigBallScene = new BattleTransitionScene(C.B_TRANSITION_BIG_POKEBALL, mockCtx, () => {
+    bigBallDone = true;
+  });
+  for (let frame = 0; frame < 300 && !bigBallDone; frame++) {
+    bigBallScene.update();
+  }
+  assert.ok(bigBallDone, 'B_TRANSITION_BIG_POKEBALL must finish cleanly');
+  console.log('✓ B_TRANSITION_BIG_POKEBALL execution verified');
 }
 
 async function main() {
