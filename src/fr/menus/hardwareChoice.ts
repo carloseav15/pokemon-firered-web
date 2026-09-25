@@ -33,7 +33,13 @@ const CHOICE_ARROW_TAG = 0x5a10;
  * menu's own sprites animate while it is open; any sprites of the calling
  * screen stay hidden until it closes.
  */
-export function openHardwareChoice(title: string | ArrayLike<number>, choices: HardwareChoice[], canCancel: boolean, done: (value: number | null) => void): void {
+export function openHardwareChoice(
+  title: string | ArrayLike<number>,
+  choices: HardwareChoice[],
+  canCancel: boolean,
+  done: (value: number | null) => void,
+  cancelLabel: string | ArrayLike<number> = "CANCEL",
+): void {
   const titleBytes = typeof title === "string" ? encode(title) : title;
   const callback1 = gMain.callback1;
   SetMainCallback1(null);
@@ -54,7 +60,7 @@ export function openHardwareChoice(title: string | ArrayLike<number>, choices: H
     const hidden = gSprites.filter((sp) => sp.inUse && !sp.invisible);
     for (const sp of hidden) sp.invisible = true;
 
-    const rows = canCancel ? [...choices, {label: "CANCEL", value: -1}] : choices;
+    const rows = canCancel ? [...choices, {label: cancelLabel, value: -1}] : choices;
     const items: ListMenuItem[] = rows.map((row, index) => ({label: typeof row.label === "string" ? encode(row.label) : row.label, index}));
     FillWindowPixelBuffer(0, PIXEL_FILL(1));
     AddTextPrinterParameterized3(0, FONT_NORMAL, 4, 1, [1, 2, 3], 0, titleBytes);

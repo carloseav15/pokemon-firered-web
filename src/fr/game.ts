@@ -603,7 +603,7 @@ export class Game {
             learnMoveWithPrompt(mon, move, (learned) => { if (learned) finish(true); else list(); }, true);
           });
         });
-      });
+      }, rom.text("gFameCheckerText_Cancel"));
       list();
     }, false);
   }

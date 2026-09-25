@@ -169,7 +169,8 @@ cancelación permanecen adaptados.
 ### Lista de movimientos del Recordador (2026-09-25)
 
 `game.ts` imprime solo el nombre de cada movimiento, como
-`MoveRelearnerInitListMenuBuffersEtc` del C. También pregunta antes de enseñar,
+`MoveRelearnerInitListMenuBuffersEtc` del C, y la fila de salida usa el texto C
+`gFameCheckerText_Cancel` en vez del rótulo genérico. También pregunta antes de enseñar,
 confirma la salida y usa `ShowSelectMovePokemonSummaryScreen` para escoger el
 movimiento que se olvida cuando el Pokémon ya conoce cuatro. La sustitución
 actualiza slot, PP y bonus, y muestra los textos C de olvido/aprendizaje.
