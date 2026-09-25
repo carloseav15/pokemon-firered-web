@@ -120,6 +120,7 @@ audio backend exists.
 - `multiboot.c`: implements the GBA cable multiboot download protocol and is unrelated to the single-player game. Marked out of scope.
 - `bike.c`: Mach/Acro movement state, rail/collision behavior, cycling-road movement and toggle/music behavior are embedded in `playerAvatar.ts`. Bumpy-slope Acro jumps and some bike counter/history helpers are absent. Marked partial; route behavior was not played through.
 - `item_menu_icons.c`: bag pocket animation/shake, swap line and item/berry icon sprite paths are implemented in `bagMenu.ts` and shared with `berryPouch.ts`; typed arrays replace C heap buffers. The custom-template icon loader has no separate equivalent. Marked ported for active single-player scope; no pixel comparison.
+- `digit_obj_util.c`: OAM-based number printer is used only by Berry Crush and Pokemon Jump; no TypeScript equivalent exists, and those optional minigame interfaces remain incomplete. Marked partial.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -131,7 +132,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 50 modules as documented ported, 93 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 21 as explicitly out of scope, 36 as probable out-of-scope candidates, and 73 as unreviewed. Separately, 42 files have a
+The current review labels 50 modules as documented ported, 94 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 21 as explicitly out of scope, 36 as probable out-of-scope candidates, and 72 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
