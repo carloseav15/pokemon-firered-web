@@ -291,6 +291,27 @@ export function dexCount(caught: boolean, kantoOnly = false): number {
   return count;
 }
 
+/** Exact dex completion predicates from pokedex.c (all checks use National Dex indices). */
+function hasCaughtNationalDexNumber(national: number): boolean {
+  const index = national - 1;
+  return index >= 0 && ((save.pokedexCaught[index >> 3] ?? 0) & (1 << (index & 7))) !== 0;
+}
+
+export function hasAllKantoDexSpecies(): boolean {
+  // HasAllKantoMons excludes Mew: national numbers 1 through 150.
+  for (let national = 1; national <= 150; national++)
+    if (!hasCaughtNationalDexNumber(national)) return false;
+  return true;
+}
+
+export function hasAllNationalDexSpecies(): boolean {
+  // HasAllMons excludes Mew, Lugia, Ho-Oh, Celebi, Jirachi and Deoxys.
+  const excluded = new Set([151, 249, 250, 251, 385, 386]);
+  for (let national = 1; national <= 386; national++)
+    if (!excluded.has(national) && !hasCaughtNationalDexNumber(national)) return false;
+  return true;
+}
+
 /** GetEvolutionTargetSpecies for level-up style evolutions (mode 0). */
 export function levelUpEvolution(mon: Pokemon): number {
   const info = rom.species[mon.species];

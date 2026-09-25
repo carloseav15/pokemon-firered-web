@@ -16,7 +16,7 @@ import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/te
 import { FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap } from "./hw/window";
 import { rom } from "./rom";
 import { save } from "./save";
-import { dexCount } from "./pokemon/pokemon";
+import { hasAllNationalDexSpecies } from "./pokemon/pokemon";
 import type { Game } from "./game";
 
 /** DynamicPlaceholderTextUtil_ExpandPlaceholders: F7 nn → placeholder nn. */
@@ -38,7 +38,7 @@ export function showDiploma(game: Game): void {
   scene.enter();
   game.scene = scene;
   game.setCallbacks(null, () => scene.update());
-  const hasAllMons = dexCount(true, false) >= 386;
+  const hasAllMons = hasAllNationalDexSpecies();
   let initState = 0, mainState = 0;
   const finish = (): void => {
     FreeAllWindowBuffers();

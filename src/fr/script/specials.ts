@@ -10,7 +10,7 @@ import { flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from ".
 import { MAP_OFFSET } from "../field/fieldmap";
 import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
-import { countAliveNonEggMons, dexCount, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
+import { countAliveNonEggMons, dexCount, hasAllKantoDexSpecies, hasAllNationalDexSpecies, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import { GetMonData, GetMonEVCount, SetMonData } from "../pokemon/mon";
 import { cdata, hasCData, loadCData } from "../hw/assets";
 import type { ScriptRunner } from "./context";
@@ -68,8 +68,8 @@ const SPECIALS: Record<string, Special> = {
   },
   IsNationalPokedexEnabled: () => (isNationalDexEnabled() ? 1 : 0),
   EnableNationalPokedex: () => { varSet(rom.c("VAR_NATIONAL_DEX"), 0x6258); flagSet(rom.c("FLAG_SYS_NATIONAL_DEX")); },
-  HasAllKantoMons: () => (dexCount(true, true) >= 150 ? 1 : 0),
-  HasAllMons: () => (dexCount(true, false) >= 386 ? 1 : 0),
+  HasAllKantoMons: () => (hasAllKantoDexSpecies() ? 1 : 0),
+  HasAllMons: () => (hasAllNationalDexSpecies() ? 1 : 0),
   SetUnlockedPokedexFlags: () => {},
   GetProfOaksRatingMessage: (ctx) => { ctx.ow.game.profOakRating(); },
   CalculatePlayerPartyCount: () => save.party.length,

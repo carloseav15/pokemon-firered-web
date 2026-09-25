@@ -56,7 +56,7 @@ import {
   BlitBitmapRectToWindow, COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
   FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "../hw/window";
-import { dexCount } from "../pokemon/pokemon";
+import { dexCount, hasAllKantoDexSpecies, hasAllNationalDexSpecies } from "../pokemon/pokemon";
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
 import { rom } from "../rom";
 import { flagGet, save, varGet } from "../save";
@@ -308,10 +308,10 @@ function TrainerCard_GenerateCardForLinkPlayer(card: TrainerCardFields): void {
   }
 
   // HasAllKantoMons: 150 caught
-  const hasKanto = dexCount(true, true) >= 150;
+  const hasKanto = hasAllKantoDexSpecies();
   card.caughtAllHoenn = hasKanto;
   // HasAllMons: 380 caught (excluding Mew, Lugia, Ho-Oh, Celebi, Jirachi, Deoxys)
-  const hasAll = dexCount(true, false) >= 380;
+  const hasAll = hasAllNationalDexSpecies();
   card.hasAllMons = hasAll;
 
   card.berriesPicked = 0;

@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 39 modules as documented ported, 66 as partial or
+The current review labels 39 modules as documented ported, 67 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 nine as explicitly out of scope, 36 as probable out-of-scope candidates, and
-123 as unreviewed. Separately, 42 files have a
+122 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -188,6 +188,10 @@ whiteout respawn now uses the original heal-location data in
   nickname/move variables, move deletion/PP-Up shift and egg check are wired.
   Move Deleter now uses the real PSS_MODE_FORGET_MOVE summary screen and returns
   the selected move slot (4 when canceled) to the script variable.
+- `pokedex.c`: las comprobaciones de completar Kanto/National ahora verifican
+  cada especie elegible según las exclusiones del C; arregla los umbrales usados
+  por scripts, estrellas de Trainer Card y diploma. La pantalla Pokédex sigue
+  adaptada (búsqueda/área/gráficos pendientes). `check:port` pasó.
 - `field_message_box.c`: show normal/autoscroll, expansión, color por NPC,
   bloqueo mientras imprime, cierre y reset están en `field/messageBox.ts`. La
   ventana y sus frames usan Canvas2D, no el task/ventana GBA original.
