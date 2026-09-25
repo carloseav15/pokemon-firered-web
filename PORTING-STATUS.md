@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 46 modules as documented ported, 84 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 18 as explicitly out of scope, 36 as probable out-of-scope candidates, and 89 as unreviewed. Separately, 42 files have a
+The current review labels 46 modules as documented ported, 85 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 18 as explicitly out of scope, 36 as probable out-of-scope candidates, and 88 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -264,6 +264,10 @@ whiteout respawn now uses the original heal-location data in
   lectura/programación/verificación sectorial). El browser guarda en
   `localStorage` y no tiene bus Flash. Se excluye hardware, no equivalencia de
   guardados web dañados.
+- `load_save.c`: `save.ts` persiste estado completo de juego como JSON en
+  `localStorage`, incluyendo party, bolsa, cajas, flags/vars y warps. No porta
+  estructura SaveBlock, cifrado/key rotation, checksums ni recovery Flash;
+  `load()` solo valida JSON y versión 2. Revisión de código.
 - `ss_anne.c`: salida del barco conserva espera de 50 frames, estela/humo,
   desplazamiento cada cinco frames, bocina, umbral de salida y espera final 40
   frames antes de reanudar el script. Animaciones/callbacks cotejados con C;
