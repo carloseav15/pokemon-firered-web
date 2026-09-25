@@ -830,3 +830,8 @@ Pending / placeholders:
   against the packed source tiles across both variants and all four frames,
   including delay ticks. TypeScript and production build pass. An interactive
   battle check of the corrected arrow is still pending.
+- `bg_regs.c`: added `hw/bgRegs.ts` with the BG0–BG3 control/scroll register
+  offsets, display flags and both BLDCNT target masks. C MMIO pointer tables
+  are represented by their register offsets. `npm run check:port` passes;
+  the Canvas2D field does not yet consume these shared hardware tables, and
+  runtime/visual parity was not checked.
