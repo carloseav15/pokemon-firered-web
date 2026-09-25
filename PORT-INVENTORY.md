@@ -9,14 +9,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 112 | 125319 | 1822/5915 |
-| Adaptador (UI simplificada) | 4 | 8624 | 18/265 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 93 | 115000 | 3473/3645 |
+| Parcial (menos del 80 % de funciones) | 112 | 125319 | 1821/5915 |
+| Adaptador (UI simplificada) | 3 | 7224 | 18/207 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 94 | 116400 | 3531/3703 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 95/1950 |
-| **Pendiente de portar** | **116** | **133943** | |
-| **Total en alcance** | **210** | **248996** | **5313/9825** |
+| **Pendiente de portar** | **115** | **132543** | |
+| **Total en alcance** | **210** | **248996** | **5370/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -125,7 +125,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_util2.c` | 108 | 1/3 | `battle/anim.ts`, `pokemon/mon_extra.ts` |  |
 | `fldeff_softboiled.c` | 108 | 6/8 | `partyMenu.ts` |  |
 | `party_menu_specials.c` | 108 | 7/9 | `game.ts`, `script/specialsExtra.ts` |  |
-| `field_weather_util.c` | 105 | 6/10 | `field/weather.ts` |  |
+| `field_weather_util.c` | 105 | 5/10 | `field/weather.ts` |  |
 | `fldeff_sweetscent.c` | 100 | 1/7 | `field/fieldMoves.ts` |  |
 | `coins.c` | 98 | 2/9 | `pokemon/items.ts` |  |
 | `safari_zone.c` | 79 | 4/8 | `battle/battleSetup.ts` |  |
@@ -142,7 +142,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `trade.c` | 2958 | 0/66 |  | pokemon/ingameTrade.ts: sin escena |
 | `slot_machine.c` | 2527 | 13/77 | `game/slots.ts`, `menus/slotMachine.ts` | menus/slotMachine.ts: reglas sin gráficos |
 | `fame_checker.c` | 1739 | 5/64 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
-| `teachy_tv.c` | 1400 | 0/58 | `menus/keyItemScreens.ts` | menus/keyItemScreens.ts |
 
 ## Portado (≥ 80 % de funciones con el mismo nombre)
 
@@ -174,6 +173,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |
 | `credits.c` | 1446 | 16/16 | `credits.ts` |  |
 | `field_effect_helpers.c` | 1421 | 76/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  |
+| `teachy_tv.c` | 1400 | 58/58 | `menus/keyItemScreens.ts`, `teachyTv.ts` |  |
 | `pokeball.c` | 1334 | 34/37 | `battle/pokeball.ts` |  |
 | `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |
 | `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |

@@ -63,7 +63,6 @@ COVERED: dict[str, str] = {
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
 ADAPTERS: dict[str, str] = {
     "fame_checker": "menus/keyItemScreens.ts",
-    "teachy_tv": "menus/keyItemScreens.ts",
     "slot_machine": "menus/slotMachine.ts: reglas sin gráficos",
     "trade": "pokemon/ingameTrade.ts: sin escena",
 }

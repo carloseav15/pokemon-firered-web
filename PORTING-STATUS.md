@@ -921,8 +921,15 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
    con la capa antigua.
 7. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.
 
-No hacen falta para este tramo: intercambios, Easy Chat, Teachy TV, Fame Checker,
-tragaperras, clima, Islas Sevii.
+No hacen falta para este tramo: intercambios, Easy Chat, Fame Checker,
+tragaperras, Islas Sevii.
+
+8. **Teachy TV** (`teachy_tv.c`, 1400 líneas) **[PORTADO]**: portada fielmente al 100%
+   (58/58 funciones) en `src/fr/teachyTv.ts`. Implementa máquina de estados de init
+   (`TeachyTvMainCallback`), controlador de lista de opciones (`TeachyTvOptionListController`),
+   movimientos y comandos del Pokédude (`TTVcmd_*`), carga de gráficos de televisor
+   (`gTeachyTv_Gfx`, `gTeachyTv_Pal`, tilemaps), e integración con demos de batalla y bolsa.
+   Eliminado de la lista de adaptadores (quedan solo 3). Verificado en `check:teachytv`.
 
 ### Nivel 1 — pequeño (menos de un día cada uno)
 
