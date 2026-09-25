@@ -581,13 +581,28 @@ export class Game {
       const finish = (learned: boolean): void => { varSet(SV.x8004, learned ? 1 : 0); close(); ow.script.enable(); };
       if (!mon) { finish(false); return; }
       const moves = relearnableMoves(mon);
+      const confirmStop = (): void => {
+        stringVars.var1 = Uint8Array.from(mon.nickname);
+        openHardwareMessage(rom.text("gText_GiveUpTryingToTeachNewMove"), () => {
+          openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
+            if (yes === 1) finish(false); else list();
+          });
+        });
+      };
       const list = (): void => openHardwareChoice(rom.text("gText_TeachWhichMoveToMon"), moves.map((m, value) => ({
         // MoveRelearnerInitListMenuBuffersEtc prints only gMoveNames; PP and
         // move details are shown in the original info windows, not the list.
         label: rom.moveName(m), value,
       })), true, (i) => {
-        if (i === null) { finish(false); return; }
-        learnMoveWithPrompt(mon, moves[i], (learned) => { if (learned) finish(true); else list(); });
+        if (i === null) { confirmStop(); return; }
+        const move = moves[i];
+        stringVars.var2 = rom.moveName(move);
+        openHardwareMessage(rom.text("gText_TeachMoveQues"), () => {
+          openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
+            if (yes !== 1) { list(); return; }
+            learnMoveWithPrompt(mon, move, (learned) => { if (learned) finish(true); else list(); }, true);
+          });
+        });
       });
       list();
     }, false);

@@ -1,7 +1,7 @@
 // Shared hardware-window adapter for menu logic while dedicated party/summary
 // graphics are being ported. Runs under gMain, pauses battle callbacks and
 // returns only after an explicit selection or allowed cancellation.
-import { encode } from "../gba/charmap";
+import { encode, expandPlaceholders } from "../gba/charmap";
 import { joy, A_BUTTON, B_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "../gba/input";
 import { FONT_NORMAL } from "../gba/font";
 import { InitGpuRegManager, SetGpuReg } from "../hw/gpu";
@@ -114,7 +114,9 @@ export function openHardwareMessage(message: ArrayLike<number>, next: () => void
     SetGpuReg(REG_OFFSET_DISPCNT, 0); ShowBg(0);
     FillWindowPixelBuffer(0, 0x11);
     PutWindowTilemap(0); CopyWindowToVram(0, COPYWIN_FULL);
-    AddTextPrinterParameterized2(0, FONT_NORMAL, message, getTextSpeedSetting(), null, 2, 1, 3);
+    // StringExpandPlaceholders is part of the C dialogue helper used by these
+    // field menus; callers set STR_VAR_1..4 immediately before opening it.
+    AddTextPrinterParameterized2(0, FONT_NORMAL, expandPlaceholders(message), getTextSpeedSetting(), null, 2, 1, 3);
     SetVBlankCallback(TransferPlttBuffer);
     SetMainCallback2(() => {
       RunTextPrinters();

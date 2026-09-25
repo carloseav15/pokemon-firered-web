@@ -168,11 +168,15 @@ cancelación permanecen adaptados.
 
 ### Lista de movimientos del Recordador (2026-09-25)
 
-`game.ts` ahora imprime solo el nombre de cada movimiento, como
-`MoveRelearnerInitListMenuBuffersEtc` del C; quitó los PP que no aparecen en la
-lista original. `npm run check:port` pasó. La lista sigue usando el menú de
-hardware genérico: faltan el panel de tipo/poder/precisión/PP/efecto, los estados
-de confirmación y salida del C, el fade y la pantalla real de resumen.
+`game.ts` imprime solo el nombre de cada movimiento, como
+`MoveRelearnerInitListMenuBuffersEtc` del C. También pregunta antes de enseñar,
+confirma la salida y usa `ShowSelectMovePokemonSummaryScreen` para escoger el
+movimiento que se olvida cuando el Pokémon ya conoce cuatro. La sustitución
+actualiza slot, PP y bonus, y muestra los textos C de olvido/aprendizaje.
+`hardwareChoice.ts` ahora expande placeholders de `STR_VAR_1..4` al mostrar
+diálogo, como hace el helper C. `npm run check:port` pasó. Sigue adaptado el
+menú de lista/Yes-No; faltan el panel de tipo/poder/precisión/PP/efecto, la
+máquina de estados, fades y el callback/ritmo originales del módulo.
 
 ### Pokédex area marker logic (2026-09-25)
 
@@ -306,9 +310,9 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
 11. **Recordador de movimientos** (`learn_move.c`, 932 líneas; reglas en
     `pokemon.c`) **[visual]**: la búsqueda de movimientos ya está en
     `pokemon/partyRules.ts` y el flujo de enseñar/olvidar usa las reglas actuales
-    de aprendizaje. `game.ts` muestra solo los nombres de movimientos en una lista
-    de hardware genérica; falta portar el panel de datos, estados, ventanas, sprites,
-    sonidos, fades y el retorno a la pantalla real de resumen.
+    de aprendizaje. `game.ts` muestra los nombres y preguntas del C, y el caso de cuatro movimientos
+    usa la pantalla de resumen real para seleccionar el reemplazo; falta el panel
+    de datos, la máquina de estados y sus ventanas, sprites, sonidos y fades.
 12. **Tarjeta de entrenador** (`trainer_card.c`, 1959 líneas) **[PORTADO]**:
     portada fielmente en `src/fr/menus/trainerCard.ts` sobre la capa de hardware GBA (`hw/`).
     Implementa:

@@ -11,6 +11,7 @@ import { save } from "../save";
 import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, setDexFlag, createMon, speciesName, type Pokemon } from "../pokemon/pokemon";
 import { openHardwareChoice, openHardwareMessage } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
+import { GetMoveSlotToReplace, ShowSelectMovePokemonSummaryScreen } from "../pokemonSummaryScreen";
 
 /** ItemIdToBattleMoveId: the move taught by a TM/HM item. */
 export function tmhmMove(item: number): number {
@@ -46,7 +47,12 @@ function setVars(mon: Pokemon, move: number): void {
  * Try to learn `move`: learned directly with a free slot, or ask to replace
  * one (HM moves can't be forgotten). `done(true)` when the move was learned.
  */
-export function learnMoveWithPrompt(mon: Pokemon, move: number, done: (learned: boolean) => void): void {
+export function learnMoveWithPrompt(
+  mon: Pokemon,
+  move: number,
+  done: (learned: boolean) => void,
+  useSummaryMoveSelector = false,
+): void {
   setVars(mon, move);
   const result = giveMove(mon, move);
   if (result === MON_ALREADY_KNOWS_MOVE) {
@@ -60,13 +66,35 @@ export function learnMoveWithPrompt(mon: Pokemon, move: number, done: (learned: 
   }
   const askReplace = (): void => {
     setVars(mon, move);
-    openHardwareMessage(rom.text("gText_PkmnNeedsToReplaceMove"), () => {
+    openHardwareMessage(rom.text(useSummaryMoveSelector ? "gText_MonIsTryingToLearnMove" : "gText_PkmnNeedsToReplaceMove"), () => {
       openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], true, (yes) => {
         if (yes === 1) chooseMove(); else stopLearning();
       });
     });
   };
   const chooseMove = (): void => {
+    if (useSummaryMoveSelector) {
+      const partyIndex = save.party.indexOf(mon);
+      ShowSelectMovePokemonSummaryScreen(save.party, partyIndex, save.party.length - 1, () => {
+        const slot = GetMoveSlotToReplace();
+        if (slot < 0 || slot >= C.MAX_MON_MOVES) { stopLearning(); return; }
+        const oldMove = mon.moves[slot];
+        mon.ppBonuses &= ~(3 << (slot * 2));
+        mon.moves[slot] = move;
+        mon.pp[slot] = rom.moves[move].pp;
+        stringVars.var1 = Uint8Array.from(mon.nickname);
+        stringVars.var2 = rom.moveName(move);
+        stringVars.var3 = rom.moveName(oldMove);
+        openHardwareMessage(rom.text("gText_1_2_and_Poof"), () => {
+          sound.playFanfare(C.MUS_LEVEL_UP);
+          openHardwareMessage(rom.text("gText_MonForgotOldMoveAndMonLearnedNewMove"), () => {
+            sound.playFanfare(C.MUS_LEVEL_UP);
+            done(true);
+          });
+        });
+      }, move);
+      return;
+    }
     openHardwareChoice(rom.text("gText_WhichMoveToForget"), [
       ...mon.moves.map((m, slot) => ({ label: m ? `${decode(rom.moveName(m))}  PP ${mon.pp[slot]}` : "-", value: slot, disabled: !m })),
       { label: decode(rom.moveName(move)), value: 4 },
@@ -91,7 +119,7 @@ export function learnMoveWithPrompt(mon: Pokemon, move: number, done: (learned: 
   };
   const stopLearning = (): void => {
     setVars(mon, move);
-    openHardwareMessage(rom.text("gText_StopLearningMove2"), () => {
+    openHardwareMessage(rom.text(useSummaryMoveSelector ? "gText_StopLearningMove" : "gText_StopLearningMove2"), () => {
       openHardwareChoice("", [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], true, (yes) => {
         if (yes === 1) {
           setVars(mon, move);
