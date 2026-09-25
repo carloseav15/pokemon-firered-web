@@ -152,6 +152,7 @@ audio backend exists.
 - `field_fadetransition.c`: common door/fall/dive/teleport/map fades and music are wired in `field/overworld.ts`; several special transitions and return callbacks are absent or folded into shared handlers, with Canvas/palette sequencing adapted. Partial; route timing was not checked.
 - `berry.c`: Berry records/descriptions export to cdata and Berry Pouch UI is present, but field berry-tree growth and berry lookup/type APIs lack active TS equivalents; Enigma Berry validity remains a stub. Partial; optional Berry lifecycle is not implemented.
 - `field_screen_effect.c`: replaced the antialiased Canvas Flash arc with integer per-scanline boundaries from the C midpoint-circle algorithm; radius animation and levels already existed. `npm run check:port` passed. Canvas/GBA pixel parity is unverified; barn-door wipe and whiteout recovery remain incomplete.
+- `item_menu.c`: `InitOldManBag` now snapshots and clears the player's real bag pockets/registered item, adds the temporary Potion/Poké Ball, reproduces the 102/204 pocket switches, 306 context prompt and 408 exit, then restores contents and cursor state and returns the chosen item to the battle controller. `npm run check:port` passed. Teachy TV bag modes and runtime frame/UI parity remain unverified.
 
 ## C/header inventory first pass (2026-09-25)
 
@@ -603,11 +604,8 @@ motor de batalla completo. Método y verificación: [AGENTS.md](AGENTS.md).
    y `commands.ts` (`setworldmapflag`). Soporta los 28 mapas (bosques con blend EVA/EVB
    sobre el mapa y cuevas con fade blanco y salto con botón B). Verificado headless con
    `npm run check:preview` (28/28 pantallas renderizadas a 240×160, duraciones 120/40 y banderas).
-4. **Efecto de Destello al usarlo** (`fldeff_flash.c`) **[visual]**: el nivel
-   de oscuridad funciona; falta la animación de apertura del círculo.
-5. **Bolsa del Viejo y bolsa de Teachy TV** (`item_menu.c`
-   `InitOldManBag`/`Pokedude`) **[visual]**: la bolsa real no está conectada a
-   esos modos guionizados.
+4. **Efecto de Destello al usarlo** (`field_screen_effect.c`) **[visual]**: máscara por scanlines del algoritmo midpoint C y animación de radio implementadas; falta comparación de píxeles/frame con GBA.
+5. **Bolsa del Viejo y bolsas de Teachy TV** (`item_menu.c`, `InitOldManBag`/`InitPokedudeBag`) **[visual]**: Old Man ahora usa un inventario temporal y la secuencia de bolsillos/selección del C; Teachy TV aún no conecta sus modos tutoriales a la bolsa. `npm run check:port` pasó; falta verificar frames y presentación en runtime.
 6. **Marcas de Pokémon** (`mon_markings.c`, 605 líneas) **[PORTADO]**:
    portado fielmente en `src/fr/monMarkings.ts`. Incluye el menú interactivo de marcas
    (círculo, cuadrado, triángulo, corazón) con cursor y OK/Cancel, sprites combo para

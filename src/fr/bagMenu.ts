@@ -356,11 +356,11 @@ let sContextMenuNumItems = 0;
 let sItemListTilemap: Uint16Array = new Uint16Array(0);
 
 /** Per task data of the bag input task (the C keeps them in gTasks[].data). */
-type BagTaskData = { listTaskId: number; itemIndex: number; quantity: number; data3: number; count: { value: number }; data10: number; switchDir: number; switchCounter: number; switchState: number };
+type BagTaskData = { listTaskId: number; itemIndex: number; quantity: number; data3: number; count: { value: number }; data10: number; switchDir: number; switchCounter: number; switchState: number; tutorialFrame: number };
 const taskData = new Map<number, BagTaskData>();
 const td = (taskId: number): BagTaskData => {
   let d = taskData.get(taskId);
-  if (!d) { d = { listTaskId: 0, itemIndex: 0, quantity: 0, data3: 0, count: { value: 0 }, data10: 0, switchDir: 0, switchCounter: 0, switchState: 0 }; taskData.set(taskId, d); }
+  if (!d) { d = { listTaskId: 0, itemIndex: 0, quantity: 0, data3: 0, count: { value: 0 }, data10: 0, switchDir: 0, switchCounter: 0, switchState: 0, tutorialFrame: 0 }; taskData.set(taskId, d); }
   return d;
 };
 
@@ -489,7 +489,38 @@ function DoLoadBagGraphics(): boolean {
 }
 
 function CreateBagInputHandlerTask(_location: number): number {
-  return tasks.create(Task_BagMenu_HandleInput, 0);
+  return tasks.create(gBagMenuState.location === C.ITEMMENULOCATION_OLD_MAN ? Task_Bag_OldManTutorial : Task_BagMenu_HandleInput, 0);
+}
+
+/** item_menu.c Task_Bag_OldManTutorial: scripted pocket switches and timed ball prompt. */
+function Task_Bag_OldManTutorial(taskId: number): void {
+  if (gPaletteFade.active) return;
+  const data = td(taskId);
+  switch (data.tutorialFrame) {
+    case 102:
+    case 204:
+      sound.playSE(C.SE_BAG_POCKET);
+      SwitchPockets(taskId, 1, false);
+      break;
+    case 306:
+      sound.playSE(C.SE_SELECT);
+      bag_menu_print_cursor_(data.listTaskId, 2);
+      Bag_FillMessageBoxWithPalette(1);
+      bagResult.itemId = C.ITEM_POKE_BALL;
+      OpenContextMenu(taskId);
+      break;
+    case 408:
+      sound.playSE(C.SE_SELECT);
+      HideBagWindow(10);
+      HideBagWindow(6);
+      PutWindowTilemap(0);
+      PutWindowTilemap(1);
+      CopyWindowToVram(0, COPYWIN_MAP);
+      Bag_BeginCloseWin0Animation();
+      tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+      return;
+  }
+  data.tutorialFrame++;
 }
 
 function Bag_BuildListMenuTemplate(pocket: number): void {
@@ -1496,4 +1527,3 @@ function BagIsTutorial(): boolean {
   return l === C.ITEMMENULOCATION_OLD_MAN || l === C.ITEMMENULOCATION_TTVSCR_CATCHING || l === C.ITEMMENULOCATION_TTVSCR_STATUS
     || l === C.ITEMMENULOCATION_TTVSCR_REGISTER || l === C.ITEMMENULOCATION_TTVSCR_TMS;
 }
-
