@@ -2,15 +2,18 @@
 // hardware registers during the VBlank interrupt.
 
 import { ppu, REG_OFFSET_DISPCNT, REG_OFFSET_DISPSTAT, REG_OFFSET_VCOUNT, DISPCNT_FORCED_BLANK } from "./ppu";
+import * as C from "../generated/constants";
 
 const GPU_REG_BUF_SIZE = 0x60;
 const buffer = new Uint16Array(GPU_REG_BUF_SIZE / 2);
 const waiting: number[] = [];
 let inVBlank = false;
+let regIE = 0;
 
 export function InitGpuRegManager(): void {
   buffer.fill(0);
   waiting.length = 0;
+  regIE = 0;
 }
 
 export function setInVBlank(value: boolean): void {
@@ -18,7 +21,11 @@ export function setInVBlank(value: boolean): void {
 }
 
 function copyBufferedValueToGpuReg(offset: number): void {
-  ppu.setReg(offset, buffer[offset >> 1]);
+  const value = buffer[offset >> 1];
+  if (offset === REG_OFFSET_DISPSTAT) {
+    const irqBits = C.DISPSTAT_HBLANK_INTR | C.DISPSTAT_VBLANK_INTR;
+    ppu.setReg(offset, (ppu.reg(offset) & ~irqBits) | value);
+  } else ppu.setReg(offset, value);
 }
 
 export function CopyBufferedValuesToGpuRegs(): void {
@@ -27,34 +34,50 @@ export function CopyBufferedValuesToGpuRegs(): void {
 }
 
 export function SetGpuReg(offset: number, value: number): void {
-  if (offset < GPU_REG_BUF_SIZE) {
-    buffer[offset >> 1] = value & 0xffff;
-    if (inVBlank || (ppu.reg(REG_OFFSET_DISPCNT) & DISPCNT_FORCED_BLANK)) {
-      copyBufferedValueToGpuReg(offset);
-    } else if (!waiting.includes(offset)) {
-      waiting.push(offset);
-    }
-  } else {
-    ppu.setReg(offset, value);
+  const regOffset = offset & 0xff;
+  if (regOffset >= GPU_REG_BUF_SIZE) return;
+  buffer[regOffset >> 1] = value & 0xffff;
+  if (inVBlank || (ppu.reg(REG_OFFSET_DISPCNT) & DISPCNT_FORCED_BLANK)) {
+    copyBufferedValueToGpuReg(regOffset);
+  } else if (!waiting.includes(regOffset)) {
+    waiting.push(regOffset);
   }
 }
 
 export function GetGpuReg(offset: number): number {
-  if (offset === REG_OFFSET_DISPSTAT) return ppu.reg(REG_OFFSET_DISPSTAT);
-  if (offset === REG_OFFSET_VCOUNT) return ppu.vcount;
-  if (offset < GPU_REG_BUF_SIZE) return buffer[offset >> 1];
-  return ppu.reg(offset);
+  const regOffset = offset & 0xff;
+  if (regOffset === REG_OFFSET_DISPSTAT) return ppu.reg(REG_OFFSET_DISPSTAT);
+  if (regOffset === REG_OFFSET_VCOUNT) return ppu.vcount;
+  if (regOffset < GPU_REG_BUF_SIZE) return buffer[regOffset >> 1];
+  return 0;
 }
 
 export function SetGpuRegBits(offset: number, mask: number): void {
-  SetGpuReg(offset, GetGpuReg(offset) | mask);
+  const regOffset = offset & 0xff;
+  if (regOffset < GPU_REG_BUF_SIZE) SetGpuReg(regOffset, buffer[regOffset >> 1] | mask);
 }
 
 export function ClearGpuRegBits(offset: number, mask: number): void {
-  SetGpuReg(offset, GetGpuReg(offset) & ~mask);
+  const regOffset = offset & 0xff;
+  if (regOffset < GPU_REG_BUF_SIZE) SetGpuReg(regOffset, buffer[regOffset >> 1] & ~mask);
 }
 
-// Interrupt masks are irrelevant here (VBlank/HBlank callbacks are driven by
-// the frame loop), but keep the API for ported code.
-export function EnableInterrupts(_mask: number): void {}
-export function DisableInterrupts(_mask: number): void {}
+// The browser frame loop drives callbacks directly, but preserve the C IE
+// mask and its visible DISPSTAT interrupt-enable bits.
+function updateRegDispstatIntrBits(): void {
+  let value = 0;
+  if (regIE & C.INTR_FLAG_HBLANK) value |= C.DISPSTAT_HBLANK_INTR;
+  if (regIE & C.INTR_FLAG_VBLANK) value |= C.DISPSTAT_VBLANK_INTR;
+  const current = GetGpuReg(REG_OFFSET_DISPSTAT) & (C.DISPSTAT_HBLANK_INTR | C.DISPSTAT_VBLANK_INTR);
+  if (current !== value) SetGpuReg(REG_OFFSET_DISPSTAT, value);
+}
+
+export function EnableInterrupts(mask: number): void {
+  regIE = (regIE | (mask & 0xffff)) & 0xffff;
+  updateRegDispstatIntrBits();
+}
+
+export function DisableInterrupts(mask: number): void {
+  regIE = (regIE & ~(mask & 0xffff)) & 0xffff;
+  updateRegDispstatIntrBits();
+}

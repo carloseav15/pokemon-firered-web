@@ -892,3 +892,10 @@ Pending / placeholders:
   declining leaves the old local save intact. `npm run check:port` passes.
   Browser overwrite/reload behavior was not exercised. Link/minigame/mystery-gift
   reset blocks remain outside the ordinary single-player path.
+- `gpu_regs.c`: buffer bit updates now read `sGpuRegBuffer`; DISPSTAT flushes
+  preserve non-interrupt status bits; Enable/DisableInterrupts track the C
+  16-bit IE mask and update H/VBlank enable bits. SetGpuReg ignores offsets
+  beyond `0x5f`, matching the C function. `SetGpuReg_ForcedBlank` is declared
+  in the header but has no definition in this decomp, so no body was invented.
+  The browser still dispatches callbacks from its frame loop. Typecheck passes;
+  register/frame parity was not exercised.
