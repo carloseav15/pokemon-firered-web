@@ -23,7 +23,7 @@ import { MapPreviewManager, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, M
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
-import { onMapLoadForRoamer } from "../pokemon/roamer";
+import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 
@@ -189,7 +189,6 @@ export class Overworld {
   private onMapLoad(): void {
     this.stepCallback.reset();
     mapResetTrainerRematches(this.game);
-    onMapLoadForRoamer();
     TryRegenerateRenewableHiddenItems(save.location.mapGroup, save.location.mapNum);
   }
 
@@ -372,6 +371,7 @@ export class Overworld {
     this.effects.resetEncounterImmunity();
     this.game.weather.setSavedFromHeader(this.loaded.header.weather);
     this.onMapLoad();
+    onWarpForRoamer();
     if (outdoors && "FLAG_SYS_FLASH_ACTIVE" in rom.constants) flagClear(rom.c("FLAG_SYS_FLASH_ACTIVE"));
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
@@ -1005,6 +1005,7 @@ export class Overworld {
     this.effects.resetEncounterImmunity();
     this.game.weather.setSavedFromHeader(this.loaded.header.weather);
     this.onMapLoad();
+    onCameraTransitionForRoamer();
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
     this.runMapScriptImmediately(MAP_SCRIPT_ON_TRANSITION);

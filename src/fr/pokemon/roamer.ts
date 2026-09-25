@@ -57,11 +57,21 @@ export function initRoamer(): void {
   location = [ROAMER_MAP_GROUP, locationSets()[random() % locationSets().length][0]];
 }
 
-/** UpdateLocationHistoryForRoamer + RoamerMove (every camera transition/map load) */
-export function onMapLoadForRoamer(): void {
+function updateLocationHistoryForRoamer(): void {
   history[2] = [...history[1]] as [number, number];
   history[1] = [...history[0]] as [number, number];
   history[0] = [save.location.mapGroup, save.location.mapNum];
+}
+
+/** LoadMapFromWarp and Overworld_ResetStateOnContinue move to a different route set. */
+export function onWarpForRoamer(): void {
+  updateLocationHistoryForRoamer();
+  moveToOtherLocationSet();
+}
+
+/** LoadMapFromCameraTransition uses RoamerMove's 1-in-16 route-set change. */
+export function onCameraTransitionForRoamer(): void {
+  updateLocationHistoryForRoamer();
   if (random() % 16 === 0) { moveToOtherLocationSet(); return; }
   if (!roamer().active) return;
   for (const set of locationSets()) {
@@ -104,7 +114,7 @@ export function afterRoamerBattle(enemy: Pokemon | undefined, outcome: number): 
   const r = roamer();
   if (enemy) { r.hp = enemy.hp; r.status = enemy.status; }
   moveToOtherLocationSet();
-  if ((outcome & C.B_OUTCOME_WON) || outcome === C.B_OUTCOME_CAUGHT) r.active = false;
+  if (outcome === C.B_OUTCOME_WON || outcome === C.B_OUTCOME_CAUGHT || outcome === C.B_OUTCOME_DREW) r.active = false;
 }
 
 /** GetRoamerLocationMapSectionId (Pokédex area display) */
