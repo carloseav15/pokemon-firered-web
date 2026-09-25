@@ -118,7 +118,7 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 47 modules as documented ported, 85 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 18 as explicitly out of scope, 36 as probable out-of-scope candidates, and 87 as unreviewed. Separately, 42 files have a
+The current review labels 47 modules as documented ported, 86 as partial or adapted, 8 as pending, 2 with small parity fixes awaiting verification, 18 as explicitly out of scope, 36 as probable out-of-scope candidates, and 86 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -272,6 +272,10 @@ whiteout respawn now uses the original heal-location data in
   nombres y tablas de sprites/trainer desde C en `cdata/data.json` + packs; TS
   los consume en `battle/anim.ts`, `pokemon/pics.ts`, `gfx_sfx_util.ts` y
   `oakSpeech.ts`. Revisé definiciones representativas; sin chequeo de píxeles.
+- `m4a_tables.c`: tablas MPlay/PCM/ruido/frecuencias/cries se exportan, pero
+  `audio/m4a.ts` usa secuenciador WebAudio propio y no las consume ni replica
+  dispatch/síntesis M4A. Brecha de fidelidad de audio, sin impacto en reglas de
+  progreso single-player; revisión de fuente.
 - `ss_anne.c`: salida del barco conserva espera de 50 frames, estela/humo,
   desplazamiento cada cinco frames, bocina, umbral de salida y espera final 40
   frames antes de reanudar el script. Animaciones/callbacks cotejados con C;
