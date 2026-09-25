@@ -118,10 +118,10 @@ decomp has 343 distinct included headers; 192 C files have a same-stem header.
 The inventory also extracts public function declarations from those headers
 and records whether each exact function name appears anywhere in `src/fr`.
 
-The current review labels 22 modules as documented ported, 50 as partial or
+The current review labels 23 modules as documented ported, 51 as partial or
 adapted, eight as pending, two with small parity fixes awaiting verification,
 four as explicitly out of scope, 36 as probable out-of-scope candidates, and
-161 as unreviewed. Separately, 42 files have a
+159 as unreviewed. Separately, 42 files have a
 same-name TypeScript candidate and 181 have no automatic name mapping. These
 are inventory counts, not a port completion percentage: a filename match does
 not prove parity, and no automatic match does not prove that a C module is
@@ -156,6 +156,16 @@ whiteout respawn now uses the original heal-location data in
 `src/fr/field/overworld.ts` and selects the correct healer/home script from
 `src/fr/game.ts`. These changes still need execution verification. The other
 `save_location.c` has no main-story single-player blocker; its missing flags are deferred with reset/link/postgame parity. `save_menu_util.c` now has the stats panel and remains partial until visual execution confirms placement, frame and colors.
+
+### Dos módulos pequeños revisados contra el C (2026-09-25)
+
+- `fldeff_berrytree.c` contiene únicamente un `DoWateringBerryTreeAnim`
+  vacío (comentario del propio decomp: eliminado de R/S). El special TS también
+  es vacío. Paridad exacta de este archivo; el juego no tiene esa animación.
+- `random.c`: el LCG de `Random`, `Random32`, el estado inicial cero y el
+  truncamiento `u16` de `SeedRng` coinciden. Sigue parcial porque el flujo TS
+  aún no llama `seedRng` al salir del título con el valor de Timer1 ligado a la
+  ID del entrenador, como hace C.
 
 ### Helpers de `pokemon_special_anim.c` (2026-09-25)
 
