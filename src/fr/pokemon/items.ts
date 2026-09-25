@@ -123,15 +123,21 @@ export function removePCItem(itemId: number, count: number): void {
 }
 
 export function isEnoughMoney(amount: number): boolean {
-  return save.money >= amount;
+  return (save.money >>> 0) >= (amount >>> 0);
 }
 
 export function addMoney(amount: number): void {
-  save.money = Math.min(MAX_MONEY, save.money + amount);
+  const current = save.money >>> 0;
+  let next = (current + (amount >>> 0)) >>> 0;
+  // AddMoney checks both its cap and whether unsigned addition wrapped.
+  if (next > MAX_MONEY || next < current) next = MAX_MONEY;
+  save.money = next;
 }
 
 export function removeMoney(amount: number): void {
-  save.money = Math.max(0, save.money - amount);
+  const current = save.money >>> 0;
+  const cost = amount >>> 0;
+  save.money = current < cost ? 0 : current - cost;
 }
 
 export function addCoins(amount: number): boolean {

@@ -859,3 +859,8 @@ Pending / placeholders:
   the value plainly instead of GBA XOR encryption; the only C grant caller is
   Berry Crush (link-only, not implemented). `npm run check:port` passes; vendor
   window remains Canvas-adapted.
+- `money.c`: `isEnoughMoney`, `addMoney` and `removeMoney` now narrow inputs
+  and balances to C `u32`; `AddMoney` reproduces wrap detection before its
+  999,999 cap, and subtraction keeps the zero floor. `npm run check:port`
+  passes. Encryption and GBA window/object rendering remain adapted; no runtime
+  arithmetic exercise was run.
