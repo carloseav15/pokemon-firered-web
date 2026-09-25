@@ -5,6 +5,8 @@ import { decode, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "../g
 import { rom } from "../rom";
 import { save } from "../save";
 import { addBagItem, addPCItem, checkBagHasSpace, itemInfo, itemName, pocketList, removeBagItem, removePCItem } from "../pokemon/items";
+import { blankMail, isMailItem, mailLines, takeMail } from "../pokemon/mail";
+import { openMailView } from "./mailView";
 import type { Game } from "../game";
 import { fieldMenu, fieldMessage } from "./fieldMenus";
 import { openHardwareChoice, openHardwareMessage, openHardwareQuantity } from "./hardwareChoice";
@@ -29,13 +31,48 @@ export function openPlayerPc(game: Game, bedroom: boolean): void {
       game.scriptMenu.removeWindow(window);
       ow.messageBox.hide();
       if (input === MENU_B_PRESSED || input === 2) { turnOff(); return; }
-      if (input === 1) { fieldMessage(game, rom.text("gText_TheresNoMailHere"), topMenu); return; }
+      if (input === 1) { mailbox(); return; }
       itemStorage();
     }, 80);
   };
   const turnOff = (): void => {
     if (bedroom) ow.script.setupScript(rom.label("EventScript_PalletTown_PlayersHouse_2F_ShutDownPC"));
     else ow.script.enable();
+  };
+  /** mailbox_pc.c: party mons holding mail can be READ or have it TAKEn. */
+  const mailbox = (): void => {
+    fieldMenu(game, (close) => {
+      const back = (): void => { close(); topMenu(); };
+      const holders = (): number[] =>
+        save.party.map((m, i) => (m && isMailItem(m.heldItem) ? i : -1)).filter((i) => i >= 0);
+      const list = (): void => {
+        if (!holders().length) { close(); fieldMessage(game, rom.text("gText_TheresNoMailHere"), topMenu); return; }
+        openHardwareChoice(rom.text("gText_Mailbox"), holders().map((i) => ({
+          label: `${decode(save.party[i].nickname)} ${decode(itemName(save.party[i].heldItem))}`, value: i,
+        })), true, (i) => {
+          if (i === null) { back(); return; }
+          entry(i);
+        });
+      };
+      const entry = (i: number): void => {
+        const mon = save.party[i];
+        openHardwareChoice(decode(mon.nickname), [{ label: "READ", value: 0 }, { label: "TAKE", value: 1 }], true, (c) => {
+          if (c === null) { list(); return; }
+          if (c === 0) {
+            const msg = mon.mailMessage ?? blankMail();
+            openMailView(
+              decode(itemName(mon.heldItem)), mailLines(msg.words),
+              msg.author.length ? decode(Uint8Array.from(msg.author)) : "",
+              () => entry(i));
+            return;
+          }
+          if (!addBagItem(mon.heldItem, 1)) { openHardwareMessage(rom.text("gText_BagIsFull"), () => entry(i)); return; }
+          takeMail(mon);
+          list();
+        });
+      };
+      list();
+    }, false);
   };
   const itemStorage = (): void => {
     fieldMenu(game, (close) => {

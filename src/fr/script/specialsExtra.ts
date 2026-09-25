@@ -261,7 +261,7 @@ function ssAnneDeparture(ctx: ScriptRunner): void {
   const wakeTiles = incbin("sWakeTiles"), smokeTiles = incbin("sSmokeTiles");
   const wakeFrames = [0, 1].map((f) => spriteSheet(wakeTiles.subarray(f * 256, f * 256 + 256), pal, 16, 32));
   const smokeFrames = [0, 1, 2, 3].map((f) => spriteSheet(smokeTiles.subarray(f * 128, f * 128 + 128), pal, 16, 16));
-  const boat = (): Sprite | undefined => ow.objects.byLocalId(1)?.sprite;
+  const boat = (): Sprite | undefined => ow.objects.byLocalIdAndMap(1, save.location.mapNum, save.location.mapGroup)?.sprite;
   let wait = 50, d1 = 0, d2 = 0, d3 = 0, state = 0;
   const makeWake = (): void => {
     const b = boat();

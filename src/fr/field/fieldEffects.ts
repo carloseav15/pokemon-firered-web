@@ -2,6 +2,7 @@
 // effects from event_object_movement.c) plus the step-driven encounter hooks.
 
 import * as MB from "../generated/metatileBehavior";
+import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { Sprite, loadImage } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
@@ -40,6 +41,7 @@ const EMOTE_ANIMS: AnimCmd[][] = [
 ];
 // MOVEMENT_ACTION_EMOTE_* order: exclamation, question, X, double exclamation, smile
 const EMOTE_FROM_ACTION = [0, 4, 2, 1, 3];
+const EMOTE_EFFECT_IDS: number[] = [C.FLDEFF_EXCLAMATION_MARK_ICON, C.FLDEFF_QUESTION_MARK_ICON, C.FLDEFF_X_ICON, C.FLDEFF_DOUBLE_EXCL_MARK_ICON, C.FLDEFF_SMILEY_FACE_ICON];
 
 export const FLASH_LEVEL_TO_RADIUS = [200, 72, 56, 40, 24];
 export const MAX_FLASH_LEVEL = FLASH_LEVEL_TO_RADIUS.length - 1;
@@ -52,6 +54,7 @@ export class FieldEffects {
   private previousMetatileBehavior = 0;
   /** Active field effect ids (FieldEffectActiveListContains) */
   readonly active = new Set<number>();
+  private readonly emoteCounts = new Map<number, number>();
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
   flashOverlay = 0;
@@ -97,22 +100,24 @@ export class FieldEffects {
 
   /** FldEff_*MarkIcon / X / smiley: emote over gFieldEffectArguments[0..2] (localId, mapNum, mapGroup). */
   private startIcon(id: number): boolean {
-    const icons: Record<number, number> = { [0]: 0, [33]: 1, [46]: 2, [66]: 3, [64]: 4 };
-    if (!(id in icons)) return false;
+    const actionIndex = EMOTE_EFFECT_IDS.indexOf(id);
+    if (actionIndex === -1) return false;
     const args = this.ow.game.fieldEffectArguments;
-    const object = this.ow.objects.byLocalId(args[0]);
-    if (object) this.emote(object, icons[id]);
-    this.active.delete(id);
+    const object = this.ow.objects.byLocalIdAndMap(args[0], args[1] & 0xff, args[2] & 0xff);
+    if (object && fxData) this.emote(object, actionIndex);
+    else if (!this.emoteCounts.has(id)) this.active.delete(id);
     return true;
   }
 
   renderOverlays(ctx: CanvasRenderingContext2D): void {
     this.moves.render(ctx);
+    this.ow.game.weather.renderFog(ctx, this.ow.camX);
   }
 
   reset(): void {
     this.surfBlob = undefined;
     this.active.clear();
+    this.emoteCounts.clear();
   }
 
   shift(_dx: number, _dy: number): void {
@@ -247,6 +252,8 @@ export class FieldEffects {
 
   emote(object: ObjectEvent, actionIndex: number): void {
     if (!fxData) return;
+    const id = EMOTE_EFFECT_IDS[actionIndex];
+    if (id === undefined) return;
     const anim = EMOTE_FROM_ACTION[actionIndex] ?? 0;
     const sprite = new Sprite();
     sprite.frameImages = Array.from({ length: 15 }, (_, i) => ({ url: `${DATA_ROOT}/${fxData!.emoticons.file}`, index: i, width: 16, height: 16 }));
@@ -256,15 +263,18 @@ export class FieldEffects {
     sprite.centerToCornerVecX = -8;
     sprite.centerToCornerVecY = -8;
     sprite.priority = 1;
-    sprite.subpriority = 0x52;
+    sprite.subpriority = id === C.FLDEFF_EXCLAMATION_MARK_ICON ? 0x53 : 0x52;
     sprite.data[3] = -5;
     sprite.data[4] = 0;
     sprite.startAnim(anim);
-    const id = 0x100 + actionIndex;
+    // The original active list can contain the same effect more than once.
+    this.emoteCounts.set(id, (this.emoteCounts.get(id) ?? 0) + 1);
     this.active.add(id);
     sprite.callback = (s) => {
       if (!object.active || s.animEnded) {
-        this.active.delete(id);
+        const remaining = (this.emoteCounts.get(id) ?? 1) - 1;
+        if (remaining > 0) this.emoteCounts.set(id, remaining);
+        else { this.emoteCounts.delete(id); this.active.delete(id); }
         this.ow.sprites.destroy(s);
         return;
       }

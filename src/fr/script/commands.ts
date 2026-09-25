@@ -6,13 +6,14 @@ import { concat, copy, countDigits, encode, intToDecimal, length, stringVars, ST
 import { paletteFade } from "../gba/fade";
 import { A_BUTTON, B_BUTTON, JOY_NEW } from "../gba/input";
 import { tasks } from "../gba/tasks";
-import { b64, rom } from "../rom";
+import { b64, rom, type MapHeader } from "../rom";
 import { random } from "../random";
 import { flagClear, flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { LOCALID_PLAYER, OPPOSITE } from "../field/objectEvents";
 import { T_TILE_TRANSITION } from "../field/playerAvatar";
 import * as items from "../pokemon/items";
+import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "./specials";
 import type { ScriptCommand, ScriptRunner } from "./context";
@@ -55,7 +56,15 @@ function textPtr(ctx: ScriptRunner): number {
 }
 
 function localIdObject(ctx: ScriptRunner, localId: number) {
-  return ctx.ow.objects.byLocalId(localId);
+  return ctx.ow.objects.byLocalIdAndMap(localId, save.location.mapNum, save.location.mapGroup);
+}
+
+/** Map-qualified commands encode the group before the map number. */
+function readObjectAt(ctx: ScriptRunner) {
+  const localId = varGet(ctx.readHalfword());
+  const mapGroup = ctx.readByte();
+  const mapNum = ctx.readByte();
+  return ctx.ow.objects.byLocalIdAndMap(localId, mapNum, mapGroup);
 }
 
 function selected(ctx: ScriptRunner) {
@@ -211,15 +220,16 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   applymovement: (ctx) => {
     const localId = varGet(ctx.readHalfword());
     const ptr = ctx.readWord();
-    ctx.ow.game.scriptMovement.start(localIdObject(ctx, localId), ptr);
+    ctx.ow.game.scriptMovement.start(ctx.ow.objects.byLocalIdAndMap(localId, save.location.mapNum, save.location.mapGroup), ptr);
     movingNpcId = localId;
     return false;
   },
   applymovementat: (ctx) => {
     const localId = varGet(ctx.readHalfword());
     const ptr = ctx.readWord();
-    ctx.readByte(); ctx.readByte();
-    ctx.ow.game.scriptMovement.start(localIdObject(ctx, localId), ptr);
+    const mapGroup = ctx.readByte();
+    const mapNum = ctx.readByte();
+    ctx.ow.game.scriptMovement.start(ctx.ow.objects.byLocalIdAndMap(localId, mapNum, mapGroup), ptr);
     movingNpcId = localId;
     return false;
   },
@@ -227,21 +237,52 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     const localId = varGet(ctx.readHalfword());
     if (localId !== 0) movingNpcId = localId;
     const id = movingNpcId;
-    ctx.setupNative(() => ctx.ow.game.scriptMovement.isFinished(localIdObject(ctx, id)));
+    const { mapNum, mapGroup } = save.location;
+    ctx.setupNative(() => ctx.ow.game.scriptMovement.isFinished(ctx.ow.objects.byLocalIdAndMap(id, mapNum, mapGroup)));
     return true;
   },
   waitmovementat: (ctx) => {
     const localId = varGet(ctx.readHalfword());
     if (localId !== 0) movingNpcId = localId;
-    ctx.readByte(); ctx.readByte();
+    const mapGroup = ctx.readByte();
+    const mapNum = ctx.readByte();
     const id = movingNpcId;
-    ctx.setupNative(() => ctx.ow.game.scriptMovement.isFinished(localIdObject(ctx, id)));
+    ctx.setupNative(() => ctx.ow.game.scriptMovement.isFinished(ctx.ow.objects.byLocalIdAndMap(id, mapNum, mapGroup)));
     return true;
   },
   removeobject: (ctx) => { removeObject(ctx, varGet(ctx.readHalfword())); return false; },
-  removeobjectat: (ctx) => { const id = varGet(ctx.readHalfword()); ctx.readByte(); ctx.readByte(); removeObject(ctx, id); return false; },
+  removeobjectat: (ctx) => { removeResolvedObject(ctx, readObjectAt(ctx)); return false; },
   addobject: (ctx) => { addObject(ctx, varGet(ctx.readHalfword())); return false; },
-  addobjectat: (ctx) => { const id = varGet(ctx.readHalfword()); ctx.readByte(); ctx.readByte(); addObject(ctx, id); return false; },
+  addobjectat: (ctx) => {
+    const id = varGet(ctx.readHalfword()) & 0xff;
+    const mapGroup = ctx.readByte();
+    const mapNum = ctx.readByte();
+    if (mapGroup === save.location.mapGroup && mapNum === save.location.mapNum) {
+      addObject(ctx, id);
+      return false;
+    }
+    const mapId = rom.mapIdByNum((mapGroup << 8) | mapNum);
+    if (!mapId) throw new Error(`Unknown object map ${mapGroup}.${mapNum}`);
+    const spawn = (header: MapHeader): void => {
+      const template = header.objects.find(t => !t.clone && t.localId === id);
+      if (!template || template.clone) return;
+      if (ctx.ow.objects.spawnFromTemplate({ ...template }, mapNum, mapGroup)) ctx.ow.syncObjectSprites();
+    };
+    const cached = rom.cachedMap(mapId);
+    if (cached) { spawn(cached); return false; }
+    // Browser adaptation: wait for the source map data before resuming bytecode.
+    let loaded: MapHeader | undefined;
+    let failed = false;
+    let failure: unknown;
+    void rom.loadMap(mapId).then(header => { loaded = header; }, error => { failed = true; failure = error; });
+    ctx.setupNative(() => {
+      if (failed) throw failure;
+      if (!loaded) return false;
+      spawn(loaded);
+      return true;
+    });
+    return true;
+  },
   setobjectxy: (ctx) => {
     const localId = varGet(ctx.readHalfword());
     const x = varGet(ctx.readHalfword());
@@ -269,14 +310,22 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   copyobjectxytoperm: (ctx) => {
     const localId = varGet(ctx.readHalfword());
     const o = localIdObject(ctx, localId);
-    const t = ctx.ow.objects.templates.find((tt) => tt.localId === localId);
-    if (o && t) { t.x = o.currentCoords.x - MAP_OFFSET; t.y = o.currentCoords.y - MAP_OFFSET; }
+    if (o) ctx.ow.objects.overrideTemplateCoords(o);
     return false;
   },
-  showobjectat: (ctx) => { const o = localIdObject(ctx, varGet(ctx.readHalfword())); ctx.readByte(); ctx.readByte(); if (o) o.invisible = false; return false; },
-  hideobjectat: (ctx) => { const o = localIdObject(ctx, varGet(ctx.readHalfword())); ctx.readByte(); ctx.readByte(); if (o) o.invisible = true; return false; },
-  setobjectsubpriority: (ctx) => { const o = localIdObject(ctx, varGet(ctx.readHalfword())); ctx.readByte(); ctx.readByte(); const p = ctx.readByte(); if (o) { o.fixedPriority = true; o.sprite.subpriority = p + 83; } return false; },
-  resetobjectsubpriority: (ctx) => { const o = localIdObject(ctx, varGet(ctx.readHalfword())); ctx.readByte(); ctx.readByte(); if (o) o.fixedPriority = false; return false; },
+  showobjectat: (ctx) => { const o = readObjectAt(ctx); if (o) o.invisible = false; return false; },
+  hideobjectat: (ctx) => { const o = readObjectAt(ctx); if (o) o.invisible = true; return false; },
+  setobjectsubpriority: (ctx) => {
+    const o = readObjectAt(ctx);
+    const p = ctx.readByte();
+    if (o) { o.fixedPriority = true; o.sprite.subpriority = (p + 83) & 0xff; }
+    return false;
+  },
+  resetobjectsubpriority: (ctx) => {
+    const o = readObjectAt(ctx);
+    if (o) { o.fixedPriority = false; o.triggerGroundEffectsOnMove = true; }
+    return false;
+  },
   faceplayer: (ctx) => {
     const o = selected(ctx);
     if (o && o.active) ctx.ow.objects.turn(o, OPPOSITE[ctx.ow.player.object.facingDirection]);
@@ -425,7 +474,13 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   bufferstring: (ctx) => { const i = ctx.readByte(); stringVarSet(i, rom.stringAt(ctx.readWord())); return false; },
   vbuffermessage: (ctx) => { stringVars.var4 = rom.stringAt(ctx.readWord() - addressOffset); return false; },
   vbufferstring: (ctx) => { const i = ctx.readByte(); stringVarSet(i, rom.stringAt(ctx.readWord() - addressOffset)); return false; },
-  bufferboxname: (ctx) => { const i = ctx.readByte(); const box = varGet(ctx.readHalfword()); stringVarSet(i, encode(`BOX${box + 1}`)); return false; },
+  // scrcmd.c ScrCmd_bufferboxname copies GetBoxNamePtr, including custom names.
+  bufferboxname: (ctx) => {
+    const i = ctx.readByte();
+    const box = varGet(ctx.readHalfword());
+    stringVarSet(i, getBoxName(box));
+    return false;
+  },
   givemon: (ctx) => {
     const species = varGet(ctx.readHalfword());
     const level = ctx.readByte();
@@ -529,7 +584,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     ctx.ow.map.setMetatileIdAt(x, y, impassable ? metatile | MAPGRID_COLLISION_MASK : metatile);
     return false;
   },
-  resetweather: (ctx) => { ctx.ow.game.weather.setSavedFromHeader(); return false; },
+  resetweather: (ctx) => { ctx.ow.game.weather.setSavedFromHeader(ctx.ow.header.weather); return false; },
   setweather: (ctx) => { ctx.ow.game.weather.setSaved(varGet(ctx.readHalfword())); return false; },
   doweather: (ctx) => { ctx.ow.game.weather.doCurrent(); return false; },
   setstepcallback: (ctx) => { ctx.ow.game.setStepCallback(ctx.readByte()); return false; },
@@ -582,7 +637,10 @@ function readWarp(ctx: ScriptRunner): void {
 }
 
 function removeObject(ctx: ScriptRunner, localId: number): void {
-  const o = localIdObject(ctx, localId);
+  removeResolvedObject(ctx, localIdObject(ctx, localId));
+}
+
+function removeResolvedObject(ctx: ScriptRunner, o: ReturnType<typeof localIdObject>): void {
   if (!o || o.isPlayer) return;
   const flag = o.template?.flag;
   if (flag) flagSet(flag);

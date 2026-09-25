@@ -142,7 +142,7 @@ export function clearRematchStateByTrainerId(game: Game, opponent: number): void
   for (const t of ow.objects.templates) {
     if (t.trainerType !== C.TRAINER_TYPE_NORMAL && t.trainerType !== C.TRAINER_TYPE_BURIED) continue;
     if (lookupOpponent(trainerFlagFromScript(t.script)) !== idx) continue;
-    const o = ow.objects.byLocalId(t.localId);
+    const o = ow.objects.byLocalIdAndMap(t.localId, save.location.mapNum, save.location.mapGroup);
     rematches()[t.localId] = 0;
     if (!o) continue;
     randomFaceDirectionMovementType();
@@ -216,7 +216,7 @@ export function vsSeekerResetObjectMovementAfterChargeComplete(game: Game): void
     if (t.trainerType !== C.TRAINER_TYPE_NORMAL && t.trainerType !== C.TRAINER_TYPE_BURIED) continue;
     if (!isRaiseHand(t.movementType)) continue;
     const type = randomFaceDirectionMovementType();
-    const o = ow.objects.byLocalId(t.localId);
+    const o = ow.objects.byLocalIdAndMap(t.localId, save.location.mapNum, save.location.mapGroup);
     if (o) ow.objects.setTrainerMovementType(o, type);
     t.movementType = type;
   }
@@ -230,7 +230,7 @@ export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: ()
   const info: TrainerInfo[] = ow.objects.templates
     .filter((t) => t.trainerType === C.TRAINER_TYPE_NORMAL || t.trainerType === C.TRAINER_TYPE_BURIED)
     .map((t) => {
-      const object = ow.objects.byLocalId(t.localId);
+      const object = ow.objects.byLocalIdAndMap(t.localId, save.location.mapNum, save.location.mapGroup);
       return { script: t.script, trainerIdx: trainerFlagFromScript(t.script), localId: t.localId, object,
         x: (object?.currentCoords.x ?? 0) - 7, y: (object?.currentCoords.y ?? 0) - 7, graphicsId: t.graphicsId };
     });

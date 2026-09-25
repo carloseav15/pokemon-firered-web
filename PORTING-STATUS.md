@@ -3,6 +3,58 @@
 Target: the full FireRed game, including its main progression and optional
 systems. The first playable route is a milestone, not the completion criterion.
 
+## Source-review update (2026-09-24, no execution checks)
+
+- Fixed `ScrCmd_bufferboxname` to use the stored box name through
+  `getBoxName`, matching `src/scrcmd.c` / `GetBoxNamePtr` in the decomp.
+  The transfer messages in `data/scripts/pc_transfer.inc` now use the same
+  name lookup as the PC menu, including renamed boxes and default names.
+- Added source-style object lookup by local ID, map number and map group for
+  `removeobjectat`, `showobjectat`, `hideobjectat`, `setobjectsubpriority` and
+  `resetobjectsubpriority`. Reserved IDs retain the source's map-independent
+  lookup. These commands previously discarded the map operands.
+- Subpriority now wraps to eight bits, and resetting it requests ground-effect
+  updates, matching `SetObjectSubpriority` / `ResetObjectSubpriority` in
+  `event_object_movement.c`. This is not full object-event parity.
+- Movement start/wait commands now resolve object identity using the requested
+  map (or the current map for the unqualified commands). Waiting with local ID
+  zero still refers to the last movement target, as in `scrcmd.c`.
+- `addobjectat` now uses the requested map's template and preserves that map's
+  identity on the spawned object. Current-map requests retain the mutable local
+  templates. Remote map headers are loaded on demand, pausing bytecode until
+  available; this loading wait is a browser adaptation. Spawn duplicate checks
+  now include map identity. These changes have source review only.
+- Current-map object commands (`setobjectxy`, `copyobjectxytoperm`,
+  `turnobject`, `removeobject`) now qualify their lookup by the current map.
+  Persistent movement-type updates ignore objects from other maps, matching
+  `GetBaseTemplateForObjectEvent`. Trainer battle selection also uses current-map
+  identity and clears a stale selection to the source's not-found sentinel when
+  the requested trainer is absent. No execution checks were run for these edits.
+- VS Seeker trainer collection, movement reset and rematch cleanup now use
+  current-map identity, matching `vs_seeker.c`. Scripted trainer icons use the
+  map number/group from field-effect arguments, matching `trainer_see.c`.
+  SS Anne departure and camera-object removal likewise select the current-map
+  object, following `ss_anne.c` and `field_specials.c`. Reviewed in source only.
+- Trainer reaction icons now retain their canonical `FLDEFF_*` ID until their
+  sprite finishes or its object disappears, so `waitfieldeffect` observes their
+  lifetime. Concurrent icons of the same type are counted separately, matching
+  the original active list's duplicate entries. Trainer approach waits use the
+  same canonical ID, and the single-exclamation sprite uses source subpriority
+  0x53. Source-reviewed only; no tests, compilation or browser checks run.
+- This change was reviewed against source only. No tests, compilation or
+  browser checks were run for it, at the user's request.
+- The older inventory below predates several implementations. Naming is
+  connected to Oak and battle; wild encounters and trainer sight are connected
+  to field control; bag, party, shops and storage have partial adapters.
+  These systems need completion and parity review, not implementation from zero.
+- Confirmed remaining gaps include Pokédex search/area pages, battle
+  animation interpretation, audio refinements, Berry Crush / Berry Picking /
+  Pokémon Jump link minigames and specific postgame event handlers. Slots run
+  with source betting, bias, stops, lines and payouts (headless-verified);
+  reel sprites, the Clefairy dance and line flashes remain pending. Field
+  weather runs its state machine with exact gamma shifts and fog drift
+  (headless-verified); per-weather sprite effects beyond fog remain pending.
+
 ## Active path
 
 The default URL runs `src/fr/startup.ts` on a 240×160 Canvas. New Game and
@@ -49,42 +101,104 @@ audio backend exists.
   and the lab rival battle. Those checks were not repeated in the read-only
   audit; no complete main-story or postgame playthrough has been verified.
 - All 213 exported event-script command names resolve to handlers. Registration
-  does not prove behavioral parity. Of 272 distinct exported special names,
-  150 are registered and 122 are not; some registered handlers are placeholders.
+  does not prove behavioral parity. All 272 distinct exported special names are
+  registered (verified 2026-09-24: 273 handlers, 0 missing); link/tower/contest
+  entries without browser hardware report the source's disconnected-cable codes,
+  and some registered handlers are placeholders.
 - Exported data includes 425 maps and 365 layouts. Imported maps do not prove
   their events, services or progression work.
+- `tools/check_down_arrow.ts` passes (960 pixels, both variants, four frames):
+  the battle dialogue continue arrow matches C tile addressing.
 
 ## Remaining work, from simpler to more complex
 
 This is an approximate complexity order. Dependencies can change implementation
 order; each item requires comparison with the original C, scripts and data.
+Why each item matters is noted: progression content, visible fidelity, or
+explicitly out of scope.
 
-1. Keep documentation current and establish a local Git baseline.
-2. Fix small visual defects, including the battle dialogue continue arrow.
-3. Port `naming_screen.c` and connect player, rival and Pokémon naming.
-4. Complete options, trainer card and town map screens.
+1. Keep documentation current and establish a local Git baseline. Without a
+   baseline (~27 modified + 8 new files uncommitted) no regression tracking
+   is possible.
+2. Fix small visual defects (battle dialogue arrow verified via
+   `tools/check_down_arrow.ts`; naming page-swap/cursor choreography,
+   trainer disguise icons, storage cursor animations pending).
+3. Verify `naming_screen.c` parity for player, rival and Pokémon naming (screen
+   exists and is connected; choreography details pending).
+4. Complete options and town map screens (trainer card front/back is connected;
+   dedicated card graphics, flip animation and photo icons pending).
 5. Replace small, bounded event-special placeholders with source behavior.
-6. Complete shops and the bag, including item selection and use.
-7. Complete party, summary and move-learning screens.
-8. Connect wild encounters and trainer sight detection to the field engine.
-9. Complete and verify capture flow and its party/storage destinations.
-10. Complete PC storage and Pokédex interfaces and persistent interactions.
-11. Interpret battle animation scripts and verify their effects.
-12. Implement audio export and a playback backend for music, sounds and cries.
-13. Complete daycare, trades, rematches, roaming Pokémon and related systems.
-14. Validate and complete main-story and postgame events across Kanto and Sevii.
-15. Verify full-game fidelity, saves and regression checkpoints. Focused checks
-    are also required during every earlier step.
+6. Complete shops and the bag, including item selection and use. Verify the
+   Game Corner prize exchange scripts (stock, prices, delivery) — otherwise
+   prize Pokémon/TMs stay unreachable.
+7. Complete party, summary and move-learning screens. The logic adapters work;
+   dedicated graphics are the biggest day-to-day visual gap.
+8. Verify wild encounters and trainer sight detection against source behavior
+   (both are connected to the field engine; parity checks pending).
+9. Complete and verify capture flow and its party/storage destinations, plus
+   a Safari Zone end-to-end pass (controller exists; bait/rock/flee/TimesUp
+   and clean exit unverified).
+10. Complete PC storage sprite visuals and the Pokédex search/area pages
+    (storage has withdraw/deposit/move-mon/move-items/wallpaper/
+    release/name-box with source rules; dex list, info page with cry and
+    capture registration are connected). Verify fossil revive and other gift
+    scripts that reuse `scriptGiveMon`.
+11. Battle animation effects: the 48-opcode interpreter is complete (664 scripts
+    decode cleanly, headless-verified) and ~68% of effect references render
+    real tasks; the rest flash on schedule. Still pending, by value: stat-change
+    arrows (every Growl/Tail Whip), horizontal/terrain shake, substitute/
+    transform/minimize sprites, BG scrolling, mon-to-BG copies, spatial panning.
+12. Refine audio: reverb, exact ADSR/duty/sweep, keysplit melodic voices,
+    BGM ducking under cries, per-channel panning. Playback, cries and the full
+    exporter already work.
+13. Complete rematches and roaming edge cases (daycare, trades, roamer core
+    are ported). Shiny sparkles need the animation only; rates already flow.
+14. Validate and complete main-story and postgame events across Kanto and Sevii
+    with zone-by-zone playthroughs. This is the only "full game" criterion and
+    the largest remaining item. Postgame distribution events (Mew/Deoxys
+    tickets) need a design decision: unreachable (faithful) vs alternative path.
+15. Verify full-game fidelity, saves and regression checkpoints (zone save
+    snapshots + loaders). Focused checks are also required during every
+    earlier step.
+
+Explicitly out of scope (no link hardware in a browser): link battles/trades,
+Battle Tower link play, Union Room, Berry Crush/Dodrio Berry Picking/Pokémon
+Jump, e-Reader, wireless adapter, Contest linkups. Stubs report the source's
+disconnected-cable codes. Quest Log recording and the Help system are inert
+and affect only rewatching, not gameplay.
+
+## Pending deletion (verified obsolete, not yet removed)
+
+The following are self-contained and unreachable from the active entry point
+(`src/main.ts` → `src/fr/`): no file under `src/fr`, `src/main.ts` or
+`index.html` imports them; the `src/fr/audio/sound` hits elsewhere are the
+active facade, not `src/audio`. Removal steps when approved:
+
+- `src/engine/`, `src/scenes/`, `src/content/`, `src/game/`, `src/audio/`,
+  `src/ui/` — legacy Phaser prototype (~2.4k lines). After removal, drop the
+  `phaser` dependency from `package.json` and note that `ENGINE-PORTING.md`
+  and `PALLET-TOWN-TASKLIST.md` describe the deleted code.
+- `tools/import_pallet_town.py`, `tools/import_fire_red_maps.py`,
+  `tools/import_startup_assets.py`, `tools/import_intro_frames.py` —
+  superseded by `tools/decomp/`.
+- `public/assets/` (~1.1M) — PNGs generated by the legacy importers.
+- `Pallet Town.mp3` (~688K) — unreferenced synthesized placeholder.
+- `dist/` — gitignored build output, regenerates with `npm run build`.
+- Keep: `tools/check_down_arrow.ts`, `tools/decomp/`, `.decomp-build/`
+  (gitignored export cache), `ENGINE-PORTING.md` / `PALLET-TOWN-TASKLIST.md`
+  until the code deletion lands.
 
 Existing Pokémon, inventory and save logic should be reused and compared with
 source behavior; missing interfaces do not mean those rules are absent.
-`game.ts` still has a fallback battle outcome when no runner is installed, but
-normal boot installs the battle host. Trainer sight and wild-encounter hooks
-remain unconnected. Several field services and specials still return fixed
-results or resume without implementing the source behavior.
+`game.ts` throws when no battle runner is installed, but normal boot installs
+the battle host. Trainer sight and wild encounters are connected through
+`fieldControl.ts` → `fieldEffects.ts` → `game.wild`/`game.trainerSee`; the
+keyboard naming screen (`namingScreen.ts`) is connected for player, rival,
+party, box and caught-mon naming. Several field services and specials still
+return fixed results or resume without implementing the source behavior.
 
-The exporter lists an audio step, but `tools/decomp/step_audio.py` is missing.
-Running the full exporter therefore cannot currently complete all its steps.
+The exporter covers all steps including audio (`tools/decomp/step_audio.py`:
+songs, voice groups, instrument samples, cries).
 
 ## Porting method and document ownership
 
@@ -116,11 +230,20 @@ level-up, prize money, return to the field). Debug shortcut after launching a
 game: `frDebug.rivalBattle()` (optionally `"SPECIES_SQUIRTLE"` / `"SPECIES_CHARMANDER"`).
 
 Pending / placeholders:
-- Move, status and general animation *scripts* are not interpreted yet; they
-  end immediately (the engine, sprites and callbacks they rely on exist).
-- Bag, party, summary, naming, Pokédex and evolution screens: `battle/ext.ts`
+- Battle animation *scripts* run through the full opcode interpreter
+  (`battle/animScript.ts`: 664 scripts decode cleanly, headless-verified).
+  Mon-movement, palette-blend and sound effect tasks are ported
+  (`battle/animTasks.ts`, ~68% reference-weighted); the rest render a timed
+  target flash preserving pacing. Particle choreography, BG scrolling,
+  mon-to-BG copies and spatialized panning remain pending.
+- Bag, party, summary, naming and Pokédex screens: `battle/ext.ts`
   resolves them immediately (bag = no item, party = cancel / first usable mon on
-  a forced switch, new move not learned, name kept, evolution applied in place).
+  a forced switch, new move not learned, name kept).
+- Battle evolution runs the full presentation in `battle/evoScene.ts` (intro
+  message, cry, evolution music, white flashes with B-hold cancel, national-dex
+  auto-stop past Mew, congrats/stopped messages, Shedinja split, new-move
+  learning); verified headless (complete, cancel, stone-no-cancel, auto-stop).
+  Sprite/background animation callbacks remain pending.
 - Shiny sparkles, link battles, VS Seeker rematch state.
 - The battle continue-arrow source offset is corrected: C's 256-byte alternate
   offset maps to x=64 in the exported image. A focused check compared 960 pixels

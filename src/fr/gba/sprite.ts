@@ -154,6 +154,8 @@ export class SpriteManager {
   /** gSpriteCoordOffsetX/Y */
   offsetX = 0;
   offsetY = 0;
+  /** Canvas filter for all sprites (field weather dimming); null for none. */
+  filter: string | null = null;
 
   add(sprite: Sprite): Sprite {
     this.sprites.push(sprite);
@@ -213,6 +215,7 @@ export class SpriteManager {
     const sy = Math.floor(frame.index / perRow) * frame.height;
     ctx.save();
     if (sprite.alpha !== 1) ctx.globalAlpha = sprite.alpha;
+    if (this.filter !== null) ctx.filter = this.filter;
     const w = frame.width * sprite.scale;
     const h = frame.height * sprite.scale;
     const dx = Math.round(x);

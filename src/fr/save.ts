@@ -41,6 +41,7 @@ export type SaveData = {
   boxes: Array<Array<Pokemon | null>>;
   currentBox: number;
   boxNames?: number[][];
+  boxWallpapers?: number[];
   pokedexSeen: number[];
   pokedexCaught: number[];
   gameStats: number[];
@@ -49,6 +50,7 @@ export type SaveData = {
   savedMusic: number;
   playerAvatarFlags: number;
   facing: number;
+  weather?: number;
   objectEventTemplates?: unknown;
   daycare?: unknown;
   berryPowder?: number;

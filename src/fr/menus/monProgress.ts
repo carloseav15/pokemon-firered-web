@@ -134,7 +134,7 @@ export function evolveWithMessages(mon: Pokemon, target: number, done: () => voi
 }
 
 /** evolution_scene.c CreateShedinja */
-function trySpawnShedinja(mon: Pokemon, preEvo: number): void {
+export function trySpawnShedinja(mon: Pokemon, preEvo: number): void {
   const evo = rom.species[preEvo]?.evolutions.find(([method]) => method === C.EVO_LEVEL_SHEDINJA);
   if (!evo || save.party.length >= 6) return;
   const ball = save.bag.pokeBalls.find((s) => s.item === C.ITEM_POKE_BALL && s.quantity > 0);

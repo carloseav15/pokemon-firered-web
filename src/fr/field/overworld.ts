@@ -326,12 +326,14 @@ export class Overworld {
     const outdoors = isMapTypeOutdoors(this.header.mapType);
     clearTempFieldEventData();
     this.effects.resetEncounterImmunity();
+    this.game.weather.setSavedFromHeader(this.loaded.header.weather);
     this.onMapLoad();
     if (outdoors && "FLAG_SYS_FLASH_ACTIVE" in rom.constants) flagClear(rom.c("FLAG_SYS_FLASH_ACTIVE"));
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
     this.runMapScriptImmediately(MAP_SCRIPT_ON_TRANSITION);
     this.initMap();
+    this.game.weather.doCurrent();
   }
 
   private setDefaultFlashLevel(): void {
@@ -956,6 +958,7 @@ export class Overworld {
     this.loadObjEventTemplatesFromHeader();
     clearTempFieldEventData();
     this.effects.resetEncounterImmunity();
+    this.game.weather.setSavedFromHeader(this.loaded.header.weather);
     this.onMapLoad();
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
@@ -964,6 +967,7 @@ export class Overworld {
     this.renderer = new TileRenderer(loaded.primary, loaded.secondary);
     this.animator = new TilesetAnimator(this.renderer);
     this.animator.prime();
+    this.game.weather.doCurrent();
     this.runMapScriptImmediately(MAP_SCRIPT_ON_RESUME);
     if (this.sectionCache.get(prevHeader.id) !== loaded.header.regionMapSection && loaded.header.showMapName) this.mapName.show(true);
     // Prefetch the next ring of neighbours.
@@ -1035,6 +1039,7 @@ export class Overworld {
     this.objects.update(-this.camX, -this.camY);
     this.objects.runGroundEffects();
     this.effects.update();
+    this.game.weather.update(this);
     this.sprites.update();
     this.cameraUpdate();
     this.messageBox.update();

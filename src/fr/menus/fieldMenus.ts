@@ -1,8 +1,10 @@
 // Field bag/party adapters. Rules reuse item.c/pokemon.c ports; dedicated
-// source menu graphics, mail editing and field-move interfaces remain pending.
+// source menu graphics, mail composition and field-move interfaces remain pending.
 import type { Game } from "../game";
 import { HwScene } from "../hw/runtime";
 import { openHardwareChoice } from "./hardwareChoice";
+import { openMailView } from "./mailView";
+import { blankMail, isMailItem, mailLines, takeMail } from "../pokemon/mail";
 import { decode } from "../gba/charmap";
 import { b64, rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
@@ -75,13 +77,25 @@ export function openFieldParty(game: Game): void {
     };
     const itemMenu = (index: number): void => {
       const mon = save.party[index];
-      openHardwareChoice(text("gText_DoWhatWithItem"), [{label: "GIVE", value: 0}, {label: "TAKE", value: 1}], true, choice => {
+      const heldMail = isMailItem(mon.heldItem);
+      // party_menu.c mail window: READ + TAKE for held mail.
+      const itemChoices = heldMail
+        ? [{ label: "GIVE", value: 0 }, { label: "READ", value: 2 }, { label: "TAKE", value: 1 }]
+        : [{ label: "GIVE", value: 0 }, { label: "TAKE", value: 1 }];
+      openHardwareChoice(text("gText_DoWhatWithItem"), itemChoices, true, choice => {
         if (choice === null) { actions(index); return; }
+        if (choice === 2) {
+          const msg = mon.mailMessage ?? blankMail();
+          openMailView(
+            decode(itemName(mon.heldItem)), mailLines(msg.words),
+            msg.author.length ? decode(Uint8Array.from(msg.author)) : "",
+            () => itemMenu(index));
+          return;
+        }
         if (choice === 1) {
           if (!mon.heldItem) { message(`${decode(mon.nickname)} isn't holding anything.`, () => actions(index)); return; }
           if (!addBagItem(mon.heldItem, 1)) { message(text("gText_BagFullCouldNotRemoveItem"), () => actions(index)); return; }
-          const taken = mon.heldItem;
-          mon.heldItem = 0;
+          const taken = takeMail(mon);
           message(`Received the ${decode(itemName(taken))} from ${decode(mon.nickname)}.`, party);
           return;
         }
@@ -91,6 +105,9 @@ export function openFieldParty(game: Game): void {
           removeBagItem(item, 1);
           if (mon.heldItem) addBagItem(mon.heldItem, 1);
           mon.heldItem = item;
+          // A swapped-in item drops any stored mail message; mail attached
+          // here carries a blank message until the writer is ported.
+          if (!isMailItem(item)) mon.mailMessage = undefined;
           message(`${decode(mon.nickname)} was given the ${decode(itemName(item))} to hold.`, party);
         });
       });
@@ -334,7 +351,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_FameChecker": onField(() => game.openFameChecker()); return;
         case "FieldUseFunc_TeachyTv": onField(() => game.openTeachyTv()); return;
         case "FieldUseFunc_VsSeeker": onField(() => game.useVsSeeker()); return;
-        case "FieldUseFunc_Mail": message(rom.text("gText_WontHaveEffect")); return;
+        case "FieldUseFunc_Mail": openMailView(decode(itemName(item)), [], "", bag); return;
         case "ItemUseOutOfBattle_EnigmaBerry": medicine(item); return;
         default: notNow(); return;
       }

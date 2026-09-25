@@ -44,7 +44,7 @@ export function sendMonToPC(mon: Pokemon): boolean {
   return true;
 }
 
-export type StorageResult = "ok" | "invalid" | "partyFull" | "boxFull" | "lastUsable" | "mail" | "egg" | "neededMove";
+export type StorageResult = "ok" | "invalid" | "partyFull" | "boxFull" | "lastUsable" | "mail" | "egg" | "neededMove" | "bagFull";
 export type StorageLocation = {box: number; slot: number}; // box=-1 is party
 const isMail = (item: number): boolean => item >= rom.c("ITEM_ORANGE_MAIL") && item <= rom.c("ITEM_RETRO_MAIL");
 export function storedMon(location: StorageLocation): Pokemon | null {
@@ -93,4 +93,78 @@ export function releaseMon(location: StorageLocation): StorageResult {
   if (location.box === -1) save.party.splice(location.slot, 1);
   else save.boxes[location.box][location.slot] = null;
   return "ok";
+}
+
+/**
+ * MOVE MON grab/place/shift (DoMonPlaceChange) across party slots and box
+ * slots. PLACE targets an empty slot, SHIFT swaps with an occupant;
+ * party-to-party is always a swap. Party-to-box keeps deposit rules (one
+ * usable mon must stay, mail never leaves the party this way).
+ */
+export function moveMon(from: StorageLocation, to: StorageLocation): StorageResult {
+  if (from.box === to.box && from.slot === to.slot) return "ok";
+  const src = storedMon(from);
+  if (!src?.species) return "invalid";
+  const dst = storedMon(to);
+  if (from.box === -1 && to.box === -1 && dst) {
+    save.party[from.slot] = dst;
+    save.party[to.slot] = src;
+    return "ok";
+  }
+  if (from.box === -1 && to.box !== -1) {
+    if (!mayRemovePartyMon(from.slot)) return "lastUsable";
+    if (isMail(src.heldItem)) return "mail";
+  }
+  if (from.box !== -1 && to.box === -1 && !dst && save.party.length >= 6) return "partyFull";
+  // Detach the moving mon.
+  if (from.box === -1) save.party.splice(from.slot, 1);
+  else save.boxes[from.box][from.slot] = null;
+  // A displaced mon returns to the source slot.
+  if (dst) {
+    if (from.box === -1) save.party.splice(Math.min(from.slot, save.party.length), 0, dst);
+    else save.boxes[from.box][from.slot] = dst;
+  }
+  // Place the moving mon.
+  if (to.box === -1) {
+    if (dst) save.party[to.slot] = src;
+    else save.party.push(src);
+  } else save.boxes[to.box][to.slot] = src;
+  return "ok";
+}
+
+/**
+ * MOVE ITEMS between mons (Item_GiveMovingToMon / Item_SwitchMonsWithMoving).
+ * Mail can never be picked up or displaced (Task_PrintCantStoreMail).
+ */
+export function giveHeldItem(from: StorageLocation, to: StorageLocation): StorageResult {
+  const src = storedMon(from);
+  const dst = storedMon(to);
+  if (!src?.species || !dst?.species || !src.heldItem) return "invalid";
+  if (isMail(src.heldItem) || isMail(dst.heldItem)) return "mail";
+  if (!dst.heldItem) {
+    dst.heldItem = src.heldItem;
+    src.heldItem = 0;
+    return "ok";
+  }
+  [src.heldItem, dst.heldItem] = [dst.heldItem, src.heldItem];
+  return "ok";
+}
+
+// ---------------------------------------------------------------- wallpapers
+
+/** Box wallpaper ids in pokemon_storage_system.h order. */
+export const WALLPAPER_NAMES = [
+  "FOREST", "CITY", "DESERT", "SAVANNA", "CRAG", "VOLCANO", "SNOW", "CAVE",
+  "BEACH", "SEAFLOOR", "RIVER", "SKY", "STARS", "POKECENTER", "TILES", "SIMPLE",
+];
+
+/** GetBoxWallpaper; new boxes default like the source (boxId % (SAVANNA + 1)). */
+export function getBoxWallpaper(box: number): number {
+  return save.boxWallpapers?.[box] ?? box % 4;
+}
+
+export function setBoxWallpaper(box: number, wallpaper: number): void {
+  if (wallpaper < 0 || wallpaper >= WALLPAPER_NAMES.length) return;
+  save.boxWallpapers ??= save.boxes.map((_, i) => i % 4);
+  save.boxWallpapers[box] = wallpaper;
 }

@@ -29,17 +29,20 @@ npm run dev
 Open the URL printed by Vite. Use the default URL to check the complete startup
 sequence. Exported runtime assets are under `public/fr`; the exporter reads the
 sibling `../pokefirered` directory by default, or the `POKEFIRERED` environment
-variable. The full export currently stops at the missing audio module; see
-[port status](PORTING-STATUS.md) before regenerating assets.
+variable. Audio data exports to `public/fr/audio` (songs, voice groups,
+samples, cries); see [port status](PORTING-STATUS.md) before regenerating assets.
 
 ## Current limitations
 
-- Oak's speech supports gender and default name choices. The keyboard naming
-  screen is not connected: NEW NAME keeps the default name.
-- Music, sounds and cries need an audio backend.
-- A connected battle engine does not imply a complete encounter/capture loop.
-  Wild encounters and trainer sight hooks remain unconnected.
-- Party, bag, PC, Pokédex and other screens still have placeholders.
+- Oak's speech supports gender and name choices through the keyboard naming
+  screen (`namingScreen.ts`, wired for player, rival, party, box and caught mons).
+- Music, sounds and cries play through the WebAudio backend (`audio/m4a.ts`,
+  installed at boot); browsers start it on the first input.
+- Wild encounters and trainer sight run through the field engine
+  (`fieldControl.ts` → `fieldEffects.ts` → `game.wild`/`game.trainerSee`);
+  source parity checks are still pending.
+- Party, bag and PC screens still have placeholders (trainer card, Pokédex
+  list/info and capture registration are connected).
 - The entire starter-to-Champion and postgame progression has not been verified.
 
 ## Verification

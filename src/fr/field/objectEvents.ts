@@ -225,6 +225,13 @@ export class ObjectEvents {
     return this.list.find((o) => !o.isPlayer && o.localId === localId);
   }
 
+  /** GetObjectEventIdByLocalIdAndMap: reserved IDs do not use map identity. */
+  byLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): ObjectEvent | undefined {
+    localId &= 0xff;
+    if (localId >= LOCALID_PLAYER) return this.byLocalId(localId);
+    return this.list.find((o) => o.localId === localId && o.mapNum === mapNum && o.mapGroup === mapGroup);
+  }
+
   indexOf(object: ObjectEvent): number {
     return this.objects.indexOf(object);
   }
@@ -235,15 +242,15 @@ export class ObjectEvents {
   }
 
   /** InitObjectEventStateFromTemplate + sprite creation */
-  spawnFromTemplate(template: MapObjectTemplate): ObjectEvent | undefined {
-    if (this.list.some((o) => !o.isPlayer && o.localId === template.localId)) return undefined;
+  spawnFromTemplate(template: MapObjectTemplate, mapNum = this.mapNum, mapGroup = this.mapGroup): ObjectEvent | undefined {
+    if (this.byLocalIdAndMap(template.localId, mapNum, mapGroup)) return undefined;
     const slot = this.freeSlot();
     if (slot < 0) return undefined;
     const object = new ObjectEvent();
     object.template = template;
     object.localId = template.localId;
-    object.mapNum = this.mapNum;
-    object.mapGroup = this.mapGroup;
+    object.mapNum = mapNum;
+    object.mapGroup = mapGroup;
     object.graphicsId = this.resolveGraphicsId(template.graphicsId);
     object.movementType = template.movementType;
     object.trainerType = template.trainerType;
@@ -334,8 +341,19 @@ export class ObjectEvents {
 
   /** OverrideMovementTypeForObjectEvent: the saved template keeps the new movement type. */
   overrideTemplateMovementType(object: ObjectEvent, movementType: number): void {
+    // GetBaseTemplateForObjectEvent never changes another map's local template.
+    if (object.mapNum !== this.mapNum || object.mapGroup !== this.mapGroup) return;
     const template = this.templates.find((t) => t.localId === object.localId);
     if (template) template.movementType = movementType;
+  }
+
+  /** OverrideTemplateCoordsForObjectEvent / GetBaseTemplateForObjectEvent. */
+  overrideTemplateCoords(object: ObjectEvent): void {
+    if (object.mapNum !== this.mapNum || object.mapGroup !== this.mapGroup) return;
+    const template = this.templates.find((t) => t.localId === object.localId);
+    if (!template) return;
+    template.x = object.currentCoords.x - MAP_OFFSET;
+    template.y = object.currentCoords.y - MAP_OFFSET;
   }
 
   setGraphicsId(object: ObjectEvent, graphicsId: number): void {

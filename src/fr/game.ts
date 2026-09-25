@@ -29,6 +29,7 @@ import { getDexFlag, healMon } from "./pokemon/pokemon";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv, openTownMapList } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
+import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
 import { showDiploma } from "./diploma";
 import { doCredits, enterHallOfFame, openHallOfFamePc } from "./hallOfFame";
@@ -38,6 +39,9 @@ import { openHardwareMessage } from "./menus/hardwareChoice";
 import { learnMoveWithPrompt } from "./menus/monProgress";
 import { checkBagHasItem } from "./pokemon/items";
 import { openStorageMenu } from "./menus/storageMenu";
+import { openPokedexScreen } from "./menus/pokedex";
+import { openTrainerCardScreen } from "./menus/trainerCard";
+import { openSlotMachine } from "./menus/slotMachine";
 import { openShopMenu } from "./menus/shopMenu";
 import { OptionsModel, OPTION_LABELS } from "./menus/optionsModel";
 import { DoNamingScreen } from "./namingScreen";
@@ -70,11 +74,7 @@ export class Game {
   readonly wild: WildEncounter;
   fieldEffectArguments = new Array<number>(8).fill(0);
   battleRunner?: (request: BattleRequest) => Scene;
-  readonly weather = {
-    setSavedFromHeader: () => {},
-    setSaved: (_w: number) => {},
-    doCurrent: () => {},
-  };
+  readonly weather = new FieldWeather();
   readonly trades = {
     getSpeciesInfo: () => getInGameTradeSpeciesInfo(),
     getTradeSpecies: () => getTradeSpecies(),
@@ -363,8 +363,14 @@ export class Game {
     }, 80);
   }
 
-  openPokedex(): void { this.openPlaceholder("POKéDEX"); }
-  openTrainerCard(): void { this.openPlaceholder("TRAINER CARD"); }
+  openPokedex(): void {
+    this.removeStartMenuWindows();
+    fieldMenu(this, (close) => openPokedexScreen(() => close()));
+  }
+  openTrainerCard(): void {
+    this.removeStartMenuWindows();
+    fieldMenu(this, (close) => openTrainerCardScreen(() => close()));
+  }
 
   openPartyMenu(): void { this.removeStartMenuWindows(); openFieldParty(this); }
   openBag(): void { this.removeStartMenuWindows(); openFieldBag(this); }
@@ -616,7 +622,10 @@ export class Game {
     this.overworld.script.stop();
     openShopMenu(this, ptr);
   }
-  playSlotMachine(_id: number): void { this.overworld.script.enable(); }
+  playSlotMachine(id: number): void {
+    const ow = this.overworld;
+    fieldMenu(this, (close) => openSlotMachine(id, () => { close(); ow.script.enable(); }), false);
+  }
   animateFlash(target: number): void { this.overworld.effects.animateFlash(target, () => this.overworld.script.enable()); }
   fieldEffectStart(id: number): void { this.overworld.effects.start(id); }
   setStepCallback(id: number): void { this.overworld.stepCallback.activate(id); }

@@ -9,6 +9,7 @@ import { cdata } from "../hw/assets";
 import { rom } from "../rom";
 import { save, SV, varGet } from "../save";
 import { calculateStats, createMon, nickname, setDexFlag, speciesName, tradeEvolution, type Pokemon } from "./pokemon";
+import { attachTradeMail } from "./mail";
 import { evolveWithMessages } from "../menus/monProgress";
 import { openHardwareMessage } from "../menus/hardwareChoice";
 
@@ -46,6 +47,8 @@ export function createInGameTradePokemon(): void {
   mon.abilityNum = t.abilityNum;
   mon.metLocation = C.METLOC_IN_GAME_TRADE;
   if (t.heldItem) mon.heldItem = t.heldItem;
+  // trade_scene.c GetInGameTradeMail: mailNum 255 means no mail.
+  if (t.mailNum !== undefined && t.mailNum !== 255) attachTradeMail(mon, t.mailNum, [...t.otName], t.otId);
   (mon as Pokemon & { contest?: number[] }).contest = [t.conditions[0], t.conditions[1], t.conditions[2], t.conditions[3], t.conditions[4], t.sheen];
   calculateStats(mon);
   mon.hp = mon.stats[0];

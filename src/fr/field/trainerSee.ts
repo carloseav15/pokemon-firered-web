@@ -77,7 +77,7 @@ export class TrainerSee {
           } else { ow.effects.emote(trainer, 0); cameraSteps = 0; state = "cameraDown"; }
           break;
         case "cameraDown":
-          if (!camera || ow.effects.active.has(0x100) || !movementReady(camera)) return;
+          if (!camera || ow.effects.active.has(C.FLDEFF_EXCLAMATION_MARK_ICON) || !movementReady(camera)) return;
           if (cameraSteps !== pending.steps - 1) {
             ow.objects.setHeldMovement(camera, actionWalkFast(DIR_SOUTH)); cameraSteps++;
           } else {
@@ -85,8 +85,10 @@ export class TrainerSee {
           }
           break;
         case "exclamation":
-          if (!ow.effects.active.has(0x100)) state = "walk";
-          break;
+          if (ow.effects.active.has(C.FLDEFF_EXCLAMATION_MARK_ICON)) return;
+          state = "walk";
+          // TrainerSeeFunc_WaitExclMark returns TRUE: approach runs this frame.
+          // fall through
         case "walk":
           if (!movementReady(trainer)) return;
           if (remaining) { ow.objects.setHeldMovement(trainer, actionWalkNormal(trainer.facingDirection)); remaining--; }
@@ -95,9 +97,9 @@ export class TrainerSee {
         case "engage":
           if (!movementReady(trainer)) return;
           this.setTrainerMovement(trainer);
-          if (trainer.template) { trainer.template.x = trainer.currentCoords.x - MAP_OFFSET; trainer.template.y = trainer.currentCoords.y - MAP_OFFSET; }
+          ow.objects.overrideTemplateCoords(trainer);
           if (!movementReady(ow.player.object)) return;
-          ow.player.flags &= ~C.PLAYER_AVATAR_FLAG_FORCED;
+          ow.player.cancelForcedMovement();
           state = "end";
           break;
         case "end":
@@ -111,8 +113,9 @@ export class TrainerSee {
     if (trainer) this.setTrainerMovement(trainer);
   }
   private setTrainerMovement(trainer: ObjectEvent): void {
-    trainer.movementType = [C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_UP, C.MOVEMENT_TYPE_FACE_LEFT, C.MOVEMENT_TYPE_FACE_RIGHT][trainer.facingDirection];
-    trainer.directionSequenceIndex = 0; trainer.playerCopyableMovement = 0; trainer.sprite.data[1] = 0;
-    if (trainer.template) trainer.template.movementType = trainer.movementType;
+    const movementType = [C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_UP, C.MOVEMENT_TYPE_FACE_LEFT, C.MOVEMENT_TYPE_FACE_RIGHT][trainer.facingDirection];
+    const objects = this.game.overworld.objects;
+    objects.setTrainerMovementType(trainer, movementType);
+    objects.overrideTemplateMovementType(trainer, movementType);
   }
 }

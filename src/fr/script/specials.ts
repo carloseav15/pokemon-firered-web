@@ -6,14 +6,16 @@ import { decode, encode, stringVars } from "../gba/charmap";
 import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { random } from "../random";
-import { flagGet, flagSet, save, SV, varGet, varSet } from "../save";
+import { flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET } from "../field/fieldmap";
 import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
 import { countAliveNonEggMons, dexCount, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
+import { GetMonData, GetMonEVCount, SetMonData } from "../pokemon/mon";
+import { cdata, hasCData, loadCData } from "../hw/assets";
 import type { ScriptRunner } from "./context";
 import { EXTRA_SPECIALS } from "./specialsExtra";
-import { DAYCARE_SPECIALS } from "../pokemon/daycare";
+import { DAYCARE_SPECIALS, hatchPartyEgg } from "../pokemon/daycare";
 import { initRoamer } from "../pokemon/roamer";
 import { doSeagallopFerryScene, getSeagallopNumber, getSelectedSeagallopDestination, seagallopDestinationItems } from "../seagallop";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
@@ -111,7 +113,7 @@ const SPECIALS: Record<string, Special> = {
   RemoveCameraObject: (ctx) => {
     const ow = ctx.ow;
     ow.cameraTarget = ow.player.object;
-    const o = ow.objects.byLocalId(LOCALID_CAMERA);
+    const o = ow.objects.byLocalIdAndMap(LOCALID_CAMERA, save.location.mapNum, save.location.mapGroup);
     if (o) ow.objects.remove(o);
     ow.syncObjectSprites();
   },
@@ -272,6 +274,118 @@ const SPECIALS: Record<string, Special> = {
     stringVars.var2 = speciesName(0);
     if (move) stringVars.var2 = Uint8Array.from(atob(rom.moves[move].name), (c) => c.charCodeAt(0));
   },
+  // ---- effort ribbon / EVs (field_specials.c:393-417)
+  LeadMonHasEffortRibbon: () => {
+    const mon = save.party[leadMonIndex()];
+    if (!mon) return 0;
+    return GetMonData(mon, rom.c("MON_DATA_EFFORT_RIBBON")) ? 1 : 0;
+  },
+  AreLeadMonEVsMaxedOut: () => {
+    const mon = save.party[leadMonIndex()];
+    if (!mon) return 0;
+    return GetMonEVCount(mon) >= (rom.c("MAX_TOTAL_EVS") ?? 510) ? 1 : 0;
+  },
+  GiveLeadMonEffortRibbon: () => {
+    const mon = save.party[leadMonIndex()];
+    if (!mon) return;
+    incrementGameStat(rom.c("GAME_STAT_RECEIVED_RIBBONS"));
+    flagSet(rom.c("FLAG_SYS_RIBBON_GET"));
+    SetMonData(mon, rom.c("MON_DATA_EFFORT_RIBBON"), 1);
+  },
+  // ---- enigma berry (berry.c:984): no enigma-berry storage in the web save,
+  // so the checksum check can never pass, matching an empty berry slot.
+  IsEnigmaBerryValid: () => 0,
+  // ---- bike swap (item.c:458): FireRed only registers the Bicycle, so the
+  // Mach/Acro swap is a no-op unless a Mach/Acro bike is registered.
+  RegisteredItemHandleBikeSwap: () => {
+    const mach = rom.c("ITEM_MACH_BIKE"), acro = rom.c("ITEM_ACRO_BIKE");
+    if (save.registeredItem === mach) save.registeredItem = acro;
+    else if (save.registeredItem === acro) save.registeredItem = mach;
+  },
+  // ---- daycare hatch (daycare.c:1675-1678): gSpecialVar_0x8004 holds the party index.
+  ScriptHatchMon: (ctx) => { hatchPartyEgg(varGet(SV.x8004), ctx.ow.header.regionMapSection); },
+  // ---- cable club save (cable_club.c:621)
+  CableClub_AskSaveTheGame: (ctx) => { ctx.ow.game.askSaveGame(); },
+  // ---- soft reset (main.c:480): the browser equivalent of a hardware reset.
+  DoSoftReset: () => { if (typeof location !== "undefined") location.reload(); },
+  // ---- empty scenes in source: field_special_scene.c:25, fldeff_berrytree.c:2
+  LookThroughPorthole: () => {},
+  DoWateringBerryTreeAnim: () => {},
+  // ---- weather/dive visuals without a ported engine: field_weather_effects.c:264
+  // has no drought state here, and FireRed has no Dive maps, so these stay inert.
+  StartDroughtWeatherBlend: () => {},
+  DoDiveWarp: () => {},
+  // ---- Deoxys triangle (field_specials.c:2360-2456): var/flag progression is
+  // source-accurate; the rock-move field effect (FLDEFF_MOVE_DEOXYS_ROCK) has no
+  // port yet, so the object stays while RESULT/vars advance. Palette step is visual-only.
+  DoDeoxysTriangleInteraction: () => {
+    if (flagGet(rom.c("FLAG_SYS_DEOXYS_AWAKENED"))) return 3;
+    const caps = [4, 8, 8, 8, 4, 4, 4, 6, 3, 3]; // sDeoxysStepCaps
+    const num = varGet(rom.c("VAR_DEOXYS_INTERACTION_NUM"));
+    const steps = varGet(rom.c("VAR_DEOXYS_INTERACTION_STEP_COUNTER"));
+    varSet(rom.c("VAR_DEOXYS_INTERACTION_STEP_COUNTER"), 0);
+    if (num !== 0 && (caps[num - 1] ?? 0) < steps) {
+      varSet(rom.c("VAR_DEOXYS_INTERACTION_NUM"), 0);
+      return 0;
+    }
+    if (num === 10) {
+      flagSet(rom.c("FLAG_SYS_DEOXYS_AWAKENED"));
+      return 2;
+    }
+    varSet(rom.c("VAR_DEOXYS_INTERACTION_NUM"), num + 1);
+    return 1;
+  },
+  SetDeoxysTrianglePalette: () => {},
+  // ---- easy chat hobby/lifestyle (easy_chat.c:318-323): random enabled word
+  // from group 12 (LIFESTYLE) or 13 (HOBBIES) into gStringVar2.
+  BufferRandomHobbyOrLifestyleString: () => {
+    if (!hasCData("easy_chat", "sEasyChatGroup_Hobbies")) {
+      void loadCData("easy_chat").catch(() => undefined);
+      const fallback = ["MUSIC", "SPORTS", "READING", "MOVIES", "TRAVEL", "COOKING"];
+      stringVars.var2 = encode(fallback[random() % fallback.length]);
+      return;
+    }
+    const group = random() & 1 ? "sEasyChatGroup_Hobbies" : "sEasyChatGroup_Lifestyle";
+    const words = cdata<Array<{ text: { $sym: string } }>>("easy_chat", group);
+    const word = words[random() % words.length];
+    const bytes = cdata<number[]>("easy_chat", word.text.$sym);
+    stringVars.var2 = Uint8Array.from(bytes);
+  },
+  // ---- link save slots (load_save.c:160-220): the web save object is live,
+  // so there is nothing to copy between save blocks and battle structs.
+  SavePlayerParty: () => {},
+  LoadPlayerParty: () => {},
+  LoadPlayerBag: () => {},
+  // ---- link party selection (script_pokemon_util.c:152-215): no link UI here,
+  // so the choice is treated as cancelled (RESULT FALSE, party restored).
+  ChooseHalfPartyForBattle: () => 0,
+  ChooseBattleTowerPlayerParty: () => 0,
+  ReducePlayerPartyToThree: () => {},
+  // ---- battle tower (battle_tower.c): the tower engine is not ported; gating
+  // checks report a valid party so field scripts continue past the desk.
+  CheckPartyBattleTowerBanlist: () => { varSet(SV.x8004, 0); },
+  ChooseNextBattleTowerTrainer: () => {},
+  DetermineBattleTowerPrize: () => {},
+  GiveBattleTowerPrize: () => 0,
+  AwardBattleTowerRibbons: () => 0,
+  SaveBattleTowerProgress: () => {},
+  BattleTowerUtil: () => 0,
+  BattleTowerMapScript2: () => {},
+  SetBattleTowerParty: () => {},
+  SetBattleTowerProperty: () => {},
+  // Unlike DoSoftReset, the tower exit must not reload the page.
+  BattleTower_SoftReset: () => {},
+  Dummy_TryEnableBravoTrainerBattleTower: () => {},
+  PrintBattleTowerTrainerGreeting: () => {},
+  // ---- trainer tower (trainer_tower.c:438, cereader_tool.c:93): e-Reader data
+  // is stubbed FALSE in FireRed itself, so validation always fails here too.
+  CallTrainerTowerFunc: () => 0,
+  ReadTrainerTowerAndValidate: () => 0,
+  // ---- link activities (cable_club.c:532-545,958): no link hardware, report the
+  // same LINKUP_CONNECTION_ERROR (6) as an unplugged cable.
+  TryContestLinkup: () => 6,
+  TryRecordMixLinkup: () => 6,
+  StartWiredCableClubTrade: () => 6,
 };
 
 export function isNationalDexEnabled(): boolean {

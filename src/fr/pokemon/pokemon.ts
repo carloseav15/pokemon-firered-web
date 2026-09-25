@@ -5,6 +5,7 @@ import { random, random32 } from "../random";
 import { b64, rom } from "../rom";
 import { sendMonToPC } from "./storage";
 import { save } from "../save";
+import type { MailMessage } from "./mail";
 
 export const MAX_LEVEL = 100;
 export const PARTY_SIZE = 6;
@@ -39,6 +40,8 @@ export type Pokemon = {
   isEgg: boolean;
   pokerus: number;
   markings: number;
+  contest?: number[]; // cool, beauty, cute, smart, tough, sheen (pokemon.c contest stats)
+  mailMessage?: MailMessage; // held-mail words + author (mail.c struct Mail)
   modernFatefulEncounter?: boolean;
   mail?: number;
 };
@@ -319,6 +322,7 @@ export function levelUpEvolution(mon: Pokemon): number {
         if (param <= mon.level) return target;
         break;
       case c.EVO_BEAUTY:
+        if (param <= (mon.contest?.[1] ?? 0)) return target;
         break;
     }
   }
