@@ -5,11 +5,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.084/9.834 funciones con homólogo (61,9%)**; quedan
-  **3.750 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **96 aún
-  tienen huecos de nombre**: 45 casi completos, 50 parciales y uno adaptador;
-  105 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.993/247.859 (31,5%)**. Son indicadores del
+- Inventario actual: **6.085/9.834 funciones con homólogo (61,9%)**; quedan
+  **3.749 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **95 aún
+  tienen huecos de nombre**: 44 casi completos, 50 parciales y uno adaptador;
+  106 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
+  de líneas C sin cubrir es **~77.967/247.859 (31,5%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
@@ -2611,5 +2611,13 @@ Pending / placeholders:
 - Añadí los accesores del C y los conecté a las operaciones de saldo. La capa de
   guardado web almacena `save.money` descifrado y sin puntero a SaveBlock; por
   eso no aplica XOR localmente. `money.c` ahora aparece con 13/13 nombres.
+- Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
+  sin prueba headless ni navegador.
+
+## `clear_save_data_screen.c`: reinicio previo a la pantalla de borrar partida (2026-09-26)
+
+- Extraje `CB2_Sub_SaveClearScreen_Init` para nombrar el reset compartido de
+  sprites, fade y tareas que se ejecuta antes de dibujar el aviso. El archivo
+  ahora aparece con 8/8 nombres en el inventario.
 - Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
   sin prueba headless ni navegador.

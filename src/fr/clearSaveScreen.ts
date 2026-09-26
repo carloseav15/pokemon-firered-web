@@ -46,9 +46,7 @@ export class ClearSaveScreen {
     this.done = false;
     this.state = { unk0: 0, unk1: 0, unk2: 0 };
     InitGpuRegManager();
-    ResetSpriteData();
-    ResetPaletteFade();
-    tasks.reset();
+    this.CB2_Sub_SaveClearScreen_Init();
     tasks.create((id) => this.Task_DrawClearSaveDataScreen(id), 0);
     SetMainCallback2(CB2_RunClearSaveDataScreen);
   }
@@ -93,6 +91,12 @@ export class ClearSaveScreen {
         break;
     }
     this.state.unk1++;
+  }
+
+  private CB2_Sub_SaveClearScreen_Init(): void {
+    ResetSpriteData();
+    ResetPaletteFade();
+    tasks.reset();
   }
 
   private Task_HandleYesNoMenu(taskId: number): void {
