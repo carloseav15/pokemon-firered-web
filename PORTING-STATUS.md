@@ -1745,3 +1745,15 @@ Pending / placeholders:
   `overworld.h`, el llamador `CameraMove` de `fieldmap.c`, el método activo
   `Overworld.loadMapFromCameraTransition` y los datos de mapas tempranos. No se
   ejecutó el juego ni el navegador.
+
+## `field_control_avatar.c`: escaleras direccionales al ir en bicicleta (2026-09-26)
+
+- `TryArrowWarp` ahora cambia al jugador a pie y pasa una espera de 12 frames a
+  `DoStairWarp` cuando se activa una escalera direccional desde la Mach Bike o
+  Acro Bike. Al caminar, mantiene demora 0. Esto sigue el orden del C:
+  `SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT)` antes de guardar
+  el estado inicial y comenzar la transición.
+- Comparé `TryArrowWarp`, `IsDirectionalStairWarpMetatileBehavior`, sus
+  constantes del avatar, el llamador de la entrada de campo y las rutas activas
+  `FieldControl.tryArrowWarp` / `Overworld.doStairWarp`. Sin prueba de juego ni
+  navegador; el caso de bicicleta es posterior a las primeras horas.

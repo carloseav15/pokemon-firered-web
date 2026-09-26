@@ -10,7 +10,7 @@ import { rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET } from "./fieldmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
-import { MOVING, PLAYER_AVATAR_FLAG_FORCED, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
+import { MOVING, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
 import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
@@ -436,9 +436,14 @@ export class FieldControl {
       return true;
     }
     if (this.ow.player.isDirectionalStairWarp(behavior, direction)) {
+      let delay = 0;
+      if (this.ow.player.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) {
+        this.ow.player.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);
+        delay = 12;
+      }
       this.ow.storeInitialPlayerAvatarState();
       this.setupWarp(warpIndex, position);
-      this.ow.doStairWarp(behavior, 0);
+      this.ow.doStairWarp(behavior, delay);
       return true;
     }
     return false;
