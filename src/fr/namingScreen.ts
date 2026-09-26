@@ -51,7 +51,7 @@ class NamingScreen {
   private cursor = 0;
   private pageText = 0;
   private pageButton = 0;
-  private state: "fadeIn" | "input" | "moveToOK" | "pageSwap" | "message" | "fadeOut" = "fadeIn";
+  private state: "fadeIn" | "input" | "moveToOK" | "pageSwap" | "pressedOK" | "message" | "fadeOut" = "fadeIn";
   private activeKeyboardBg = 1;
   private bgToReveal = 0;
   private bg1vOffset = 0;
@@ -508,11 +508,14 @@ class NamingScreen {
       }
       if (action !== "none" && action !== "moveToOK") this.moveCursor();
       if (action === "confirm") {
-        this.stopFlashesNextUpdate = true;
         sound.playSE(C.SE_SELECT);
-        if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
-        else this.fadeOut();
+        this.state = "pressedOK";
       }
+    } else if (this.state === "pressedOK") {
+      this.model.save();
+      this.stopFlashesNextUpdate = true;
+      if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
+      else this.fadeOut();
     } else if (this.state === "moveToOK") {
       if (gSprites[this.cursor].animEnded) {
         MoveCursorToOKButton(this.model);

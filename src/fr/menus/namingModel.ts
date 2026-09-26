@@ -70,7 +70,6 @@ export function KeyboardKeyHandler_Backspace(model: NamingModel, pressed: number
 /** KeyboardKeyHandler_OK (naming_screen.c). */
 export function KeyboardKeyHandler_OK(model: NamingModel, pressed: number): NamingAction {
   if (!(pressed & A_BUTTON)) return "none";
-  model.save();
   return "confirm";
 }
 

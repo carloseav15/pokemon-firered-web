@@ -118,6 +118,10 @@ AGENTS.md §6.5).
   `SetCursorInvisibility` y `SetCursorFlashing` ya están conectados al sprite
   real; el callback replica el ciclo de color y oculta el cursor en la columna
   de botones. Inventario: 35/109. Se revisó estáticamente, sin ejecutar el juego.
+- **Revisión de fuente, 2026-09-26 (sin prueba de juego)**: confirmar OK ahora
+  guarda el texto y decide fundido/mensaje en el estado siguiente, como
+  `MainState_PressedOKButton`; antes se guardaba en el manejador de A, un frame
+  antes que el C. Sin prueba de juego.
 - **Revisión de fuente, 2026-09-25 (sin prueba de juego)**: se agregó
   `GetCollisionFlagsAtCoords` de `event_object_movement.c`, preservando los
   bits independientes de rango, impasable, elevación y objeto. `trainerSee.ts`
