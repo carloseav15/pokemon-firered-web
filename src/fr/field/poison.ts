@@ -61,25 +61,32 @@ export function DoPoisonFieldEffect(startEffect: () => void): number {
   return C.FLDPSN_NONE;
 }
 
+function Task_TryFieldPoisonWhiteOut(taskId: number, game: Game): void {
+  // field_poison.c stores tState and tPartyId in task data[0] and [1].
+  const data = tasks.data(taskId);
+  switch (data[0]) {
+    case 0:
+      for (; data[1] < C.PARTY_SIZE; data[1]++) {
+        if (!MonFaintedFromPoison(data[1])) continue;
+        FaintFromFieldPoison(data[1]);
+        game.overworld.messageBox.show(rom.text("gText_PkmnFainted3"));
+        data[0]++;
+        return;
+      }
+      data[0] = 2;
+      break;
+    case 1:
+      if (game.overworld.messageBox.isHidden()) data[0]--;
+      break;
+    case 2:
+      varSet(SV.RESULT, AllMonsFainted() ? 1 : 0);
+      tasks.destroy(taskId);
+      game.overworld.script.ScriptContext_Enable();
+      break;
+  }
+}
+
 export function tryFieldPoisonWhiteOut(game: Game): void {
+  tasks.create((taskId) => Task_TryFieldPoisonWhiteOut(taskId, game), 80);
   game.overworld.script.ScriptContext_Stop();
-  let slot = 0, waiting = false;
-  const task = tasks.create(() => {
-    if (waiting) {
-      if (!game.overworld.messageBox.isHidden()) return;
-      waiting = false;
-      return;
-    }
-    for (; slot < C.PARTY_SIZE; slot++) {
-      const mon = save.party[slot];
-      if (!MonFaintedFromPoison(slot)) continue;
-      FaintFromFieldPoison(slot);
-      game.overworld.messageBox.show(rom.text("gText_PkmnFainted3"));
-      waiting = true;
-      return;
-    }
-    varSet(SV.RESULT, AllMonsFainted() ? 1 : 0);
-    tasks.destroy(task);
-    game.overworld.script.ScriptContext_Enable();
-  }, 80);
 }

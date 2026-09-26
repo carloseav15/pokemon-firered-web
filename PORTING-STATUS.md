@@ -2253,6 +2253,10 @@ Pending / placeholders:
   animación ya estaba conectada a `FieldEffects`. Revisión contra
   `../pokefirered/src/field_poison.c`; `check:port` pasa. No ejecuté runtime,
   headless ni navegador.
+- Reemplacé el estado closure-local por `Task_TryFieldPoisonWhiteOut` con
+  `tasks.data[0]`/`[1]`, replicando los estados y el cursor `tPartyId` del C.
+  `field_poison.c` ahora queda en 7/7 nombres. Inventario total: 5.765/9.834
+  (58,6 %), 98 archivos y 4.069 nombres pendientes. Solo verificación estática.
 
 ## `menu_helpers.c`: reinicio de callbacks y memoria de vídeo (2026-09-26)
 

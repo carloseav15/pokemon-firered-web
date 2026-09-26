@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 57 | 108124 | 1294/5030 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 40 | 61585 | 2084/2318 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 102 | 75267 | 2358/2358 |
+| Casi completo (≥ 80 % y < 100 %) | 39 | 61466 | 2078/2311 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 103 | 75386 | 2365/2365 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **99** | **172539** | |
-| **Total en alcance** | **202** | **247859** | **5764/9834** |
+| **Pendiente de portar** | **98** | **172420** | |
+| **Total en alcance** | **202** | **247859** | **5765/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -138,7 +138,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `menu_helpers.c` | 243 | 14/17 | `hw/menuHelpers.ts` |  | 1 |
 | `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |  |
 | `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
-| `field_poison.c` | 119 | 6/7 | `field/poison.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 
@@ -229,6 +228,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `money.c` | 136 | 13/13 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
 | `berry_powder.c` | 133 | 14/14 | `script/specialsExtra.ts` |  |  |
 | `heal_location.c` | 122 | 5/5 | `field/overworld.ts` |  |  |
+| `field_poison.c` | 119 | 7/7 | `field/poison.ts` |  |  |
 | `save_location.c` | 112 | 10/10 | `pokemon/saveLocation.ts` |  |  |
 | `prof_pc.c` | 109 | 3/3 | `game.ts` |  |  |
 | `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
