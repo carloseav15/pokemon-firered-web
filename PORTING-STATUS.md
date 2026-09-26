@@ -374,9 +374,10 @@ Portado 1:1 en `src/fr/field/weatherEffects.ts` (93/93 funciones).
 - `BuildGammaShiftTables` ahora produce las tablas normal y alternativa de 19×32 niveles con la fórmula del C.
 - `ApplyGammaShift` procesa `gPlttBufferUnfaded` hacia `gPlttBufferFaded`, respeta las 32 categorías base (`GAMMA_NONE`, `GAMMA_NORMAL`, `GAMMA_ALT`), el override de una paleta OBJ y el caso gamma 0. Los gamma negativos siguen sin efecto como en FRLG.
 - `ApplyGammaShiftWithBlend` reproduce la selección de tabla y mezcla por canal; las paletas `GAMMA_NONE` siguen la ruta `BlendPalette` del C. `FadeInScreen_RainShowShade` ejecuta el fundido de 16 pasos y aplica gamma 3 al terminar.
+- `ApplyDroughtGammaShiftWithBlend` mezcla los colores originales hacia el destino, sin usar la tabla gamma (así está escrito en el C); `FadeInScreen_Drought` aplica la misma secuencia de 16 pasos y la gamma negativa final, que en FRLG no-op.
 - `PreservePaletteInWeather` y `ResetPreservedPalettesInWeather` ahora modifican/restauran la categoría de paleta.
-- `check:weather` ejecuta las escrituras de paleta, compara vectores numéricos y recorre el contador del fundido de lluvia; nivel headless. La ruta Canvas2D del overworld sigue usando su aproximación de tint y no consume todavía los buffers globales de paleta.
-- Siguen pendientes el dispatcher `FadeInScreenWithWeather`, otros fundidos con clima, sequía y la conexión del controlador de clima a la ruta Canvas2D.
+- `check:weather` ejecuta las escrituras de paleta, compara vectores numéricos y recorre los contadores de lluvia y sequía; nivel headless. La ruta Canvas2D del overworld sigue usando su aproximación de tint y no consume todavía los buffers globales de paleta.
+- Siguen pendientes el dispatcher `FadeInScreenWithWeather`, el fundido horizontal de niebla, la máquina de estados de sequía y la conexión del controlador de clima a la ruta Canvas2D.
 
 ## fame_checker.c: Buscapeleas / Pokéradar (2026-09-25)
 
@@ -1206,8 +1207,8 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
    tiene los 76 nombres pero 62 son stubs y nadie lo importa (auditoría 2026-09-25). Los efectos
    visibles siguen en `field/fieldEffects.ts`. Hay que portar los cuerpos y conectarlo.
-5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 27/50, 23 stubs]**
-   en `src/fr/field/weather.ts`; tablas gamma normal/alternativa, aplicación y mezcla sobre buffers, preservación de paletas y el contador del fundido de lluvia tienen check headless. El dispatcher general, otros fundidos y sequía siguen pendientes; el render Canvas2D conserva su adaptación. `check:weather` ejecuta solo rutas seleccionadas.
+5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 29/50, 21 stubs]**
+   en `src/fr/field/weather.ts`; tablas gamma normal/alternativa, aplicación y mezcla sobre buffers, preservación de paletas, y fundidos de lluvia/sequía tienen check headless. El dispatcher general, el fundido horizontal de niebla y la máquina de estados de sequía siguen pendientes; el render Canvas2D conserva su adaptación. `check:weather` ejecuta solo rutas seleccionadas.
 6. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
    con la capa antigua.
 7. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.

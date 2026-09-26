@@ -285,8 +285,37 @@ export function ApplyGammaShiftWithBlend(
   }
 }
 
-/** ApplyDroughtGammaShiftWithBlend */
-export function ApplyDroughtGammaShiftWithBlend(gammaIndex: number, blendCoeff: number, blendColor: number): void {}
+/** ApplyDroughtGammaShiftWithBlend (field_weather.c; negative gamma is unused in FRLG). */
+export function ApplyDroughtGammaShiftWithBlend(gammaIndex: number, blendCoeff: number, blendColor: number): void {
+  // C transforms gammaIndex to a positive table index, but does not read it again.
+  const droughtGammaIndex = -((gammaIndex << 24) >> 24) - 1;
+  void droughtGammaIndex;
+
+  const coefficient = blendCoeff & 0xff;
+  const color = blendColor & 0xffff;
+  const blendR = GET_R(color);
+  const blendG = GET_G(color);
+  const blendB = GET_B(color);
+
+  for (let paletteIndex = 0; paletteIndex < 32; paletteIndex++) {
+    const colorOffset = paletteIndex * 16;
+    if (paletteGammaTypes[paletteIndex] === GAMMA_NONE) {
+      BlendPalette(colorOffset, 16, coefficient, color);
+      continue;
+    }
+
+    for (let i = 0; i < 16; i++) {
+      const baseColor = gPlttBufferUnfaded[colorOffset + i] ?? 0;
+      const r = GET_R(baseColor);
+      const g = GET_G(baseColor);
+      const b = GET_B(baseColor);
+      const shiftedR = r + (((blendR - r) * coefficient) >> 4);
+      const shiftedG = g + (((blendG - g) * coefficient) >> 4);
+      const shiftedB = b + (((blendB - b) * coefficient) >> 4);
+      gPlttBufferFaded[colorOffset + i] = (shiftedB << 10) | (shiftedG << 5) | shiftedR;
+    }
+  }
+}
 
 /** FadeInScreenWithWeather */
 export function FadeInScreenWithWeather(): void {}
@@ -306,8 +335,18 @@ export function FadeInScreen_RainShowShade(): boolean {
   return true;
 }
 
-/** FadeInScreen_Drought */
+/** FadeInScreen_Drought (field_weather.c). */
 export function FadeInScreen_Drought(): boolean {
+  if (gWeather.fadeScreenCounter === 16) return false;
+
+  gWeather.fadeScreenCounter++;
+  if (gWeather.fadeScreenCounter >= 16) {
+    ApplyGammaShift(0, 32, -6);
+    gWeather.fadeScreenCounter = 16;
+    return false;
+  }
+
+  ApplyDroughtGammaShiftWithBlend(-6, 16 - gWeather.fadeScreenCounter, gWeather.fadeDestColor);
   return true;
 }
 

@@ -85,6 +85,14 @@ try {
   assert.equal(gPlttBufferFaded[0], 0x35ad, 'last rain fade step applies gamma index 3');
   assert.equal(Weather.FadeInScreen_RainShowShade(), false, 'completed rain fade stays complete');
 
+  Weather.gWeather.fadeScreenCounter = 0;
+  assert.equal(Weather.FadeInScreen_Drought(), true, 'drought fade starts by blending palette colors');
+  assert.equal(gPlttBufferFaded[0], 0x0421, 'drought blends the original color toward black');
+  for (let frame = 1; frame < 15; frame++) assert.equal(Weather.FadeInScreen_Drought(), true);
+  assert.equal(Weather.FadeInScreen_Drought(), false, 'drought fade ends after the sixteenth frame');
+  assert.equal(Weather.gWeather.fadeScreenCounter, 16);
+  assert.equal(gPlttBufferFaded[0], 0x3def, 'FRLG negative-gamma completion leaves the preceding blended palette');
+
   Weather.PreservePaletteInWeather(0);
   Weather.ApplyGammaShift(0, 1, 1);
   assert.equal(gPlttBufferFaded[0], 0x4210, 'preserved palettes bypass gamma shifts');
