@@ -34,7 +34,24 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogShopEvent): void
   if (eventId !== C.QL_EVENT_BOUGHT_ITEM && eventId !== C.QL_EVENT_SOLD_ITEM) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
+  if (InQuestLogDisabledLocation()) return;
   getQuestLogEvents().push({ eventId, data: { ...data } });
+}
+
+/** InQuestLogDisabledLocation (quest_log_events.c). */
+export function InQuestLogDisabledLocation(mapGroup = save.location.mapGroup, mapNum = save.location.mapNum): boolean {
+  const map = (mapGroup << 8) | mapNum;
+  const disabledMaps = [
+    C.MAP_TRAINER_TOWER_1F, C.MAP_TRAINER_TOWER_2F, C.MAP_TRAINER_TOWER_3F,
+    C.MAP_TRAINER_TOWER_4F, C.MAP_TRAINER_TOWER_5F, C.MAP_TRAINER_TOWER_6F,
+    C.MAP_TRAINER_TOWER_7F, C.MAP_TRAINER_TOWER_8F, C.MAP_TRAINER_TOWER_ROOF,
+    C.MAP_TRAINER_TOWER_LOBBY, C.MAP_TRAINER_TOWER_ELEVATOR,
+    C.MAP_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB,
+    C.MAP_SEVEN_ISLAND_HOUSE_ROOM1, C.MAP_SEVEN_ISLAND_HOUSE_ROOM2,
+    C.MAP_ROCKET_HIDEOUT_ELEVATOR, C.MAP_SILPH_CO_ELEVATOR,
+    C.MAP_CELADON_CITY_DEPARTMENT_STORE_ELEVATOR,
+  ];
+  return disabledMaps.includes(map);
 }
 
 /** QL_EnableRecordingSteps (quest_log_events.c). */

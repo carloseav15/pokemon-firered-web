@@ -14,9 +14,9 @@ systems. The first playable route is a milestone, not the completion criterion.
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.850/10.061 funciones (58,1%)**, quedan **4.211 (41,9%)** y hay **79
+  son **5.851/10.061 funciones (58,2%)**, quedan **4.210 (41,8%)** y hay **79
   archivos C con huecos** (4 sin empezar, 1 adaptador, 19 casi completos y 55
-  parciales). La estimación ponderada sin cubrir es **~87.677/252.366 líneas
+  parciales). La estimación ponderada sin cubrir es **~87.658/252.366 líneas
   (34,8%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
@@ -30,14 +30,16 @@ systems. The first playable route is a milestone, not the completion criterion.
   copias tipadas en `SaveData.questLogEvents`. No existe todavía el formato de
   escenas ni reproducción de Quest Log. Pasaron los checks estáticos; sin
   prueba de flujo en navegador.
-- **`quest_log.c`: 3/88; `quest_log_events.c`: 5/118.** El inventario ahora
+- **`quest_log.c`: 3/88; `quest_log_events.c`: 6/118.** El inventario ahora
   incluye ambos módulos y los otros archivos `quest_log*.c`; no se excluyen
   para mejorar artificialmente el porcentaje. `QuestLog_CutRecording` y
   `GetQuestLogState` ya consultan/limpian estado modelado, y el evento de tienda
   se persiste en el formato web `SaveData.questLogEvents`. Saves v2 existentes
   reciben la lista vacía por migración. También están `QL_EnableRecordingSteps`,
   `QL_ResetRepeatEventTracker` y `QL_ResetEventStates`. La lógica completa de
-  escenas y playback continúa pendiente.
+  escenas y playback continúa pendiente. `InQuestLogDisabledLocation` también
+  impide guardar eventos en Trainer Tower, el Fan Club, la casa E-Reader y los
+  elevadores marcados por el C.
 - **`field_tasks.c`: 12/12 funciones con homólogo.** Implementé el callback R/S
   `AshGrassPerStepCallback` y su cadena visual: espera de cuatro frames,
   reemplazo del metatile de ceniza, reactivación de efectos de suelo y

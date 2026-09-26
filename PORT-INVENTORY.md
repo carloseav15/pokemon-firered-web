@@ -11,7 +11,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 4 | 1923 | 0/91 |
-| Parcial (< 80 % de funciones) | 55 | 111438 | 1278/5195 |
+| Parcial (< 80 % de funciones) | 55 | 111438 | 1279/5195 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 19 | 33456 | 1089/1262 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 127 | 104096 | 3455/3455 |
@@ -19,7 +19,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 46 | 50676 | 82/1765 |
 | **Pendiente de portar** | **79** | **148217** | |
-| **Total en alcance** | **207** | **252366** | **5850/10061** |
+| **Total en alcance** | **207** | **252366** | **5851/10061** |
 
 ## Falta (sin funciones portadas)
 
@@ -51,7 +51,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 1/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
-| `quest_log_events.c` | 2247 | 5/118 | `questLogEvents.ts` |  |  |
+| `quest_log_events.c` | 2247 | 6/118 | `questLogEvents.ts` |  |  |
 | `field_player_avatar.c` | 2168 | 12/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
