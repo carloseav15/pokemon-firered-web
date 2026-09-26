@@ -101,7 +101,7 @@ export class FieldMoveEffects {
     const id = tasks.create(() => {
       switch (state) {
         case 0:
-          if (!ow.objects.isMovementOverridden(player) || ow.objects.clearHeldMovementIfFinished(player)) {
+          if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             // fldeff_rocksmash.c: underwater maps skip the player summon
             // animation and start the show-mon field effect immediately.
             if (ow.header.mapType === C.MAP_TYPE_UNDERWATER) {
@@ -340,7 +340,7 @@ export class FieldMoveEffects {
           break;
         }
         case 1:
-          if (!ow.objects.isMovementOverridden(player) || ow.objects.clearHeldMovementIfFinished(player)) {
+          if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
             player.sprite.startAnim(ANIM_FIELD_MOVE);
             ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
@@ -357,7 +357,7 @@ export class FieldMoveEffects {
         case 3:
           if (!this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) {
             ow.player.setState(PLAYER_AVATAR_GFX_RIDE);
-            ow.objects.clearHeldMovementIfFinished(player);
+            ow.objects.ObjectEventClearHeldMovementIfFinished(player);
             ow.objects.setHeldMovement(player, actionJumpSpecial(player.movementDirection));
             ow.effects.startSurfBlob(player, true);
             void destX; void destY;
@@ -365,7 +365,7 @@ export class FieldMoveEffects {
           }
           break;
         case 4:
-          if (ow.objects.clearHeldMovementIfFinished(player)) {
+          if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             ow.player.preventStep = false;
             ow.player.flags &= ~PLAYER_AVATAR_FLAG_CONTROLLABLE;
             ow.objects.setHeldMovement(player, actionFace(player.movementDirection));
@@ -396,7 +396,7 @@ export class FieldMoveEffects {
         case 1:
           ow.controlsLocked = true;
           if (!ow.objects.isMovementOverridden(player)) {
-            ow.objects.clearHeldMovementIfFinished(player);
+            ow.objects.ObjectEventClearHeldMovementIfFinished(player);
             this.args[0] = partyIndex;
             this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
             state = 2;
@@ -411,7 +411,7 @@ export class FieldMoveEffects {
           state = 4;
           return false;
         case 4:
-          if (!ow.objects.clearHeldMovementIfFinished(player)) return false;
+          if (!ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return false;
           if (MB.MetatileBehavior_IsWaterfall(player.currentMetatileBehavior)) { state = 3; return true; }
           ow.controlsLocked = false;
           ow.player.preventStep = false;
@@ -499,7 +499,7 @@ export class FieldMoveEffects {
     const ow = this.ow;
     const p = ow.player.object;
     const next = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
-    if (!ow.objects.isMovementOverridden(p) || ow.objects.clearHeldMovementIfFinished(p)) {
+    if (!ow.objects.isMovementOverridden(p) || ow.objects.ObjectEventClearHeldMovementIfFinished(p)) {
       if (spin.delay !== 0 && --spin.delay !== 0) return p.facingDirection;
       ow.objects.setHeldMovement(p, actionFace(next[p.facingDirection]));
       if (spin.turns < 12) spin.turns++;
@@ -805,7 +805,7 @@ export class FieldMoveEffects {
     const id = tasks.create(() => {
       switch (state) {
         case 0:
-          if (!ow.objects.isMovementOverridden(player) || ow.objects.clearHeldMovementIfFinished(player)) {
+          if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             ow.player.preventStep = true;
             ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
             player.sprite.startAnim(ANIM_FIELD_MOVE);
@@ -814,7 +814,7 @@ export class FieldMoveEffects {
           }
           break;
         case 1:
-          if (ow.objects.clearHeldMovementIfFinished(player)) {
+          if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             this.args[0] = partyIndex;
             this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
             state = 2;
@@ -844,7 +844,7 @@ export class FieldMoveEffects {
           }
           break;
         case 4:
-          if ((timer === 0 || --timer === 0) && ow.objects.clearHeldMovementIfFinished(player)) {
+          if ((timer === 0 || --timer === 0) && ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             sound.playSE(C.SE_M_FLY);
             if (bird) { bird.x = 120; bird.y = 0; bird.x2 = 0; bird.y2 = 0; }
             t2 = 0; timer = 0;
@@ -913,7 +913,7 @@ export class FieldMoveEffects {
           }
           break;
         case 1:
-          if (ow.objects.clearHeldMovementIfFinished(player)) {
+          if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             ow.player.setState(wasSurfing ? PLAYER_AVATAR_GFX_RIDE : ow.player.currentStateId());
             ow.objects.turn(player, DIR_SOUTH);
             timer = 0;

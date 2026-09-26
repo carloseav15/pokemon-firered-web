@@ -195,7 +195,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           onField(() => {
             if (!ow.player.isOnBike()) sound.playSE(C.SE_BIKE_BELL);
             ow.player.getOnOffBike(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE);
-            ow.objects.clearHeldMovementIfFinished(ow.player.object);
+            ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
             ow.objects.unfreezeAll();
             ow.controlsLocked = false;
           });
@@ -299,7 +299,7 @@ function useItemfinder(game: Game): void {
     }
   }
   const release = (): void => {
-    ow.objects.clearHeldMovementIfFinished(p);
+    ow.objects.ObjectEventClearHeldMovementIfFinished(p);
     ow.objects.unfreezeAll();
     ow.controlsLocked = false;
   };

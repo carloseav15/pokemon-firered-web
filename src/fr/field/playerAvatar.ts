@@ -197,7 +197,7 @@ export class PlayerAvatar {
 
   private tryInterruptSpecialAnim(direction: number): boolean {
     const o = this.object;
-    if (this.ow.objects.isMovementOverridden(o) && !this.ow.objects.clearHeldMovementIfFinished(o)) {
+    if (this.ow.objects.isMovementOverridden(o) && !this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
       const held = o.movementActionId;
       if (held > 0x20 && held < 0x25) {
         if (direction !== DIR_NONE && o.movementDirection !== direction) {
@@ -554,12 +554,12 @@ export class PlayerAvatar {
     let state = 0;
     const id = this.ow.effects.tasks.create(() => {
       if (state === 0) {
-        if (!this.ow.objects.isMovementOverridden(o) || this.ow.objects.clearHeldMovementIfFinished(o)) {
+        if (!this.ow.objects.isMovementOverridden(o) || this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
           this.ow.effects.detachSurfBlob();
           this.ow.objects.setHeldMovement(o, 0x14 + direction - 1 + 0x3a - 0x14 - 0x3a + 0x46); // jump special
           state = 1;
         }
-      } else if (this.ow.objects.clearHeldMovementIfFinished(o)) {
+      } else if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
         this.setState(PLAYER_AVATAR_GFX_NORMAL);
         this.flags = (this.flags & ~PLAYER_AVATAR_FLAG_SURFING) | PLAYER_AVATAR_FLAG_ON_FOOT;
         this.ow.objects.turn(o, direction);
@@ -600,7 +600,7 @@ export class PlayerAvatar {
         this.ow.effects.startSurfBlob(o, true);
         this.ow.objects.setHeldMovement(o, 0x46 + direction - 1);
         state = 1;
-      } else if (this.ow.objects.clearHeldMovementIfFinished(o)) {
+      } else if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
         this.ow.effects.attachSurfBlob();
         this.ow.objects.turn(o, direction);
         this.ow.objects.unfreezeAll();

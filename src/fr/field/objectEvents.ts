@@ -633,15 +633,20 @@ export class ObjectEvents {
   }
 
   isHeldMovementFinished(object: ObjectEvent): boolean {
-    return object.heldMovementActive ? object.heldMovementFinished : true;
+    return this.ObjectEventCheckHeldMovementStatus(object) !== 0;
   }
 
-  clearHeldMovementIfFinished(object: ObjectEvent): boolean {
-    if (object.heldMovementActive && object.heldMovementFinished) {
-      this.clearHeldMovement(object);
-      return true;
-    }
-    return false;
+  /** ObjectEventCheckHeldMovementStatus (event_object_movement.c): 0, 1, or 16. */
+  ObjectEventCheckHeldMovementStatus(object: ObjectEvent): number {
+    if (object.heldMovementActive) return object.heldMovementFinished ? 1 : 0;
+    return 16;
+  }
+
+  /** ObjectEventClearHeldMovementIfFinished (event_object_movement.c). */
+  ObjectEventClearHeldMovementIfFinished(object: ObjectEvent): number {
+    const status = this.ObjectEventCheckHeldMovementStatus(object);
+    if (status !== 0 && status !== 16) this.clearHeldMovementIfActive(object);
+    return status;
   }
 
   freezeAll(except?: ObjectEvent): void {

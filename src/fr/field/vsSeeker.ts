@@ -191,7 +191,7 @@ export function vsSeekerFreezeObjectsAfterChargeComplete(game: Game): void {
   let standing = 0, frozen = 0;
   const id = tasks.create(() => {
     if (!standing && ow.player.isStandingStill()) {
-      ow.objects.clearHeldMovementIfFinished(ow.player.object);
+      ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
       standing = 1;
     }
     if (!frozen) {
@@ -261,7 +261,7 @@ export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: ()
   const fx = tasks.create(() => {
     switch (fxState) {
       case 0:
-        if (!ow.objects.isMovementOverridden(player) || ow.objects.clearHeldMovementIfFinished(player)) {
+        if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
           ow.player.setState(PLAYER_AVATAR_GFX_VSSEEKER);
           player.sprite.startAnim(0);
           ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
@@ -269,14 +269,14 @@ export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: ()
         }
         break;
       case 1:
-        if (ow.objects.clearHeldMovementIfFinished(player)) {
+        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
           ow.player.setState(ow.player.currentStateId());
           ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
           fxState = 2;
         }
         break;
       case 2:
-        if (ow.objects.clearHeldMovementIfFinished(player)) {
+        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
           ow.player.preventStep = false;
           fxState = 3;
           tasks.destroy(fx);

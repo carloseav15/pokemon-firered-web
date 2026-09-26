@@ -328,7 +328,7 @@ export class Game {
   closeStartMenu(): void {
     this.removeStartMenuWindows();
     const ow = this.overworld;
-    ow.objects.clearHeldMovementIfFinished(ow.player.object);
+    ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
     this.scriptMovement.unfreezeAndStop();
     ow.objects.unfreezeAll();
     ow.controlsLocked = false;
@@ -694,7 +694,7 @@ export class Game {
   useVsSeeker(): void {
     const ow = this.overworld;
     const release = (): void => {
-      ow.objects.clearHeldMovementIfFinished(ow.player.object);
+      ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
       ow.objects.unfreezeAll();
       ow.controlsLocked = false;
     };

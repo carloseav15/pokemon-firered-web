@@ -382,7 +382,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   },
   releaseall: (ctx) => {
     ctx.ow.messageBox.hide();
-    ctx.ow.objects.clearHeldMovementIfFinished(ctx.ow.player.object);
+    ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
     ctx.ow.game.scriptMovement.unfreezeAndStop();
     ctx.ow.objects.unfreezeAll();
     return false;
@@ -390,8 +390,8 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   release: (ctx) => {
     ctx.ow.messageBox.hide();
     const o = selected(ctx);
-    if (o && o.active) ctx.ow.objects.clearHeldMovementIfFinished(o);
-    ctx.ow.objects.clearHeldMovementIfFinished(ctx.ow.player.object);
+    if (o && o.active) ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(o);
+    ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
     ctx.ow.game.scriptMovement.unfreezeAndStop();
     ctx.ow.objects.unfreezeAll();
     return false;

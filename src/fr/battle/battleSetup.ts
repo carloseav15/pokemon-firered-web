@@ -323,7 +323,7 @@ export class BattleSetup {
         const id = tasks.create(() => {
           if (paletteFade.active) return;
           tasks.destroy(id);
-          ow.objects.clearHeldMovementIfFinished(ow.player.object);
+          ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
           ow.objects.unfreezeAll();
           ow.controlsLocked = false;
         }, 10);

@@ -399,8 +399,8 @@ export class FieldEffects {
       switch (state) {
         case 0:
           if (this.ow.objects.isHeldMovementFinished(player) && this.ow.objects.isHeldMovementFinished(boulder)) {
-            this.ow.objects.clearHeldMovementIfFinished(player);
-            this.ow.objects.clearHeldMovementIfFinished(boulder);
+            this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
+            this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
             this.ow.objects.setHeldMovement(player, 0x29 + direction - 1);
             this.ow.objects.setHeldMovement(boulder, 0x3d + direction - 1 - 0x3d + 0x10);
             sound.playSE(sound.c("SE_M_STRENGTH"));
@@ -409,8 +409,8 @@ export class FieldEffects {
           break;
         case 1:
           if (this.ow.objects.isHeldMovementFinished(player) && this.ow.objects.isHeldMovementFinished(boulder)) {
-            this.ow.objects.clearHeldMovementIfFinished(player);
-            this.ow.objects.clearHeldMovementIfFinished(boulder);
+            this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
+            this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
             this.ow.player.preventStep = false;
             this.ow.controlsLocked = false;
             const b = this.ow.map.behaviorAt(boulder.currentCoords.x, boulder.currentCoords.y);

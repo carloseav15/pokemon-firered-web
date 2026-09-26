@@ -653,7 +653,7 @@ export class Overworld {
           break;
         case 9:
           if (!paletteFade.active && this.player.isStandingStill() && !this.doors.isRunning()) {
-            this.objects.clearHeldMovementIfFinished(p);
+            this.objects.ObjectEventClearHeldMovementIfFinished(p);
             state = 4;
           }
           break;
@@ -785,7 +785,7 @@ export class Overworld {
         case 2:
           if (this.player.isStandingStill()) {
             this.doors.animateClose(x, y - 1);
-            this.objects.clearHeldMovementIfFinished(p);
+            this.objects.ObjectEventClearHeldMovementIfFinished(p);
             p.invisible = true;
             state = 3;
           }
@@ -868,7 +868,7 @@ export class Overworld {
           state = 1;
           break;
         case 1:
-          if (!this.objects.isMovementOverridden(p) || this.objects.clearHeldMovementIfFinished(p)) {
+          if (!this.objects.isMovementOverridden(p) || this.objects.ObjectEventClearHeldMovementIfFinished(p)) {
             if (wait > 0) { wait--; break; }
             this.tryFadeOutOldMapMusic();
             p.sprite.priority = 1;

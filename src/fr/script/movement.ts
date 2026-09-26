@@ -76,7 +76,7 @@ export class ScriptMovement {
     if (entry.finished) return;
     const o = entry.object;
     const objects = this.ow.objects;
-    if (o.heldMovementActive && !objects.clearHeldMovementIfFinished(o)) return;
+    if (o.heldMovementActive && !objects.ObjectEventClearHeldMovementIfFinished(o)) return;
     const next = entry.bytes ? (entry.bytes[entry.ptr] ?? MOVEMENT_ACTION_STEP_END) : rom.u8(entry.ptr);
     if (next === MOVEMENT_ACTION_STEP_END) {
       entry.finished = true;

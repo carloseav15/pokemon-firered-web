@@ -11,20 +11,20 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1958/6059 |
+| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1960/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3517/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **117** | **130962** | |
-| **Total en alcance** | **210** | **248996** | **5503/9825** |
+| **Total en alcance** | **210** | **248996** | **5505/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `event_object_movement.c` | 9412 | 45/752 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `objectEventGraphics.ts` |  |  |
+| `event_object_movement.c` | 9412 | 47/752 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `objectEventGraphics.ts` |  |  |
 | `pokemon.c` | 6453 | 73/135 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 280/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `battle_main.c` | 4477 | 82/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |  |

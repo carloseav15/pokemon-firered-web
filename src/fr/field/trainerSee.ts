@@ -115,7 +115,7 @@ export class TrainerSee {
     const ow = this.game.overworld, trainer = pending.trainer;
     let state: "start" | "cameraUp" | "cameraDown" | "exclamation" | "walk" | "engage" | "end" = "start";
     let camera: ObjectEvent | undefined, cameraSteps = 0, remaining = pending.steps;
-    const movementReady = (object: ObjectEvent): boolean => !ow.objects.isMovementOverridden(object) || ow.objects.clearHeldMovementIfFinished(object);
+    const movementReady = (object: ObjectEvent): boolean => !ow.objects.isMovementOverridden(object) || ow.objects.ObjectEventClearHeldMovementIfFinished(object) !== 0;
     const finish = (id: number): void => {
       if (camera) { ow.cameraTarget = ow.player.object; ow.objects.remove(camera); }
       this.approaching = null; tasks.destroy(id); ow.script.enable();
