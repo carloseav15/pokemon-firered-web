@@ -185,21 +185,31 @@ export function removePCItem(itemId: number, count: number): void {
 }
 
 export function isEnoughMoney(amount: number): boolean {
-  return (save.money >>> 0) >= (amount >>> 0);
+  return GetMoney() >= (amount >>> 0);
+}
+
+/** GetMoney (money.c): SaveBlock encryption is resolved by the browser save layer. */
+export function GetMoney(): number {
+  return save.money >>> 0;
+}
+
+/** SetMoney (money.c): store the decrypted u32 value used by the browser save format. */
+export function SetMoney(value: number): void {
+  save.money = value >>> 0;
 }
 
 export function addMoney(amount: number): void {
-  const current = save.money >>> 0;
+  const current = GetMoney();
   let next = (current + (amount >>> 0)) >>> 0;
   // AddMoney checks both its cap and whether unsigned addition wrapped.
   if (next > MAX_MONEY || next < current) next = MAX_MONEY;
-  save.money = next;
+  SetMoney(next);
 }
 
 export function removeMoney(amount: number): void {
-  const current = save.money >>> 0;
+  const current = GetMoney();
   const cost = amount >>> 0;
-  save.money = current < cost ? 0 : current - cost;
+  SetMoney(current < cost ? 0 : current - cost);
 }
 
 /** GetCoins (coins.c): the browser save stores the decrypted u16 value. */
