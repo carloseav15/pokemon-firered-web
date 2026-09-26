@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.796/9.834 (58,9%)**; quedan
-  **4.038 nombres (41,1%)**. Hay **83 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 27 casi completos y 54 parciales. La estimación de líneas sin
-  cubrir es **~84.259/247.859 (34,0%)**. El inventario mide nombres/cuerpos
+  stubs. El inventario vigente registra **5.814/9.834 (59,1%)**; quedan
+  **4.020 nombres (40,9%)**. Hay **82 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 26 casi completos y 54 parciales. La estimación de líneas sin
+  cubrir es **~84.097/247.859 (33,9%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
@@ -49,6 +49,13 @@ systems. The first playable route is a milestone, not the completion criterion.
   está marcada “Unused” en FireRed. Pasó `check:port`; no se ejecutó ni un
   caller ni una comparación de VRAM en runtime. El inventario ya no lista este
   archivo.
+- **`metatile_behavior.c`: 115/115 funciones con homólogo.** El exportador ya
+  traduce mecánicamente sus predicados a
+  `src/fr/generated/metatileBehavior.ts`, usados por el campo; el inventario
+  los omitía al excluir `generated/`. Cambié `portInventory.py` para atribuir
+  ese archivo generado solo a su C de origen, sin contar sus símbolos en otros
+  módulos. El archivo sale de `PENDING.md`; no edité el código generado.
+  Pasaron `inventory`, `pending`, `check:port` y `check:honesty`.
 - También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
   de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
   `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build
