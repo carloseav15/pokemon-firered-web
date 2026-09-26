@@ -20,7 +20,7 @@ export function setInVBlank(value: boolean): void {
   inVBlank = value;
 }
 
-function copyBufferedValueToGpuReg(offset: number): void {
+function CopyBufferedValueToGpuReg(offset: number): void {
   const value = buffer[offset >> 1];
   if (offset === REG_OFFSET_DISPSTAT) {
     const irqBits = C.DISPSTAT_HBLANK_INTR | C.DISPSTAT_VBLANK_INTR;
@@ -29,7 +29,7 @@ function copyBufferedValueToGpuReg(offset: number): void {
 }
 
 export function CopyBufferedValuesToGpuRegs(): void {
-  for (const offset of waiting) copyBufferedValueToGpuReg(offset);
+  for (const offset of waiting) CopyBufferedValueToGpuReg(offset);
   waiting.length = 0;
 }
 
@@ -38,7 +38,7 @@ export function SetGpuReg(offset: number, value: number): void {
   if (regOffset >= GPU_REG_BUF_SIZE) return;
   buffer[regOffset >> 1] = value & 0xffff;
   if (inVBlank || (ppu.reg(REG_OFFSET_DISPCNT) & DISPCNT_FORCED_BLANK)) {
-    copyBufferedValueToGpuReg(regOffset);
+    CopyBufferedValueToGpuReg(regOffset);
   } else if (!waiting.includes(regOffset)) {
     waiting.push(regOffset);
   }
