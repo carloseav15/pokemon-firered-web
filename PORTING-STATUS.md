@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.821/9.834 (59,2%)**; quedan
-  **4.013 nombres (40,8%)**. Hay **81 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 26 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.940/247.859 (33,9%)**. El inventario mide nombres/cuerpos
+  stubs. El inventario vigente registra **5.824/9.834 (59,2%)**; quedan
+  **4.010 nombres (40,8%)**. Hay **80 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 25 casi completos y 53 parciales. La estimación de líneas sin
+  cubrir es **~83.836/247.859 (33,8%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
@@ -71,6 +71,12 @@ systems. The first playable route is a milestone, not the completion criterion.
   arrays compactos y el registro de Quest Log fuera de alcance. Pasaron
   `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`;
   no ejecuté flujos de uso.
+- **`battle_script_commands.c`: 284/284 funciones con homólogo.** Extraje
+  `DrawLevelUpWindow1` y `DrawLevelUpWindow2` del estado de dibujo del panel de
+  subida de nivel; ambas siguen conectadas a los mismos estados y llamadas de
+  ventana. Añadí también el wrapper `Unused_ApplyRandomDmgMultiplier` que llama
+  al cálculo compartido ya portado. Pasaron `check:port`, `inventory` y
+  `pending`; no ejecuté un combate para verificar la pantalla.
 - También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
   de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
   `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build

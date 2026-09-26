@@ -294,6 +294,18 @@ export function IsMonGettingExpSentOut(): boolean {
   return false;
 }
 
+/** battle_script_commands.c DrawLevelUpWindow1: render the first stat page for the EXP recipient. */
+function DrawLevelUpWindow1(): void {
+  const curStats = GetMonLevelUpWindowStats(playerMon(gBattleStruct.expGetterMonId));
+  DrawLevelUpWindowPg1(C.B_WIN_LEVEL_UP_BOX, gBattleResources.beforeLvlUp.stats, curStats, C.TEXT_DYNAMIC_COLOR_5, C.TEXT_DYNAMIC_COLOR_4, C.TEXT_DYNAMIC_COLOR_6);
+}
+
+/** battle_script_commands.c DrawLevelUpWindow2: render the second stat page for the EXP recipient. */
+function DrawLevelUpWindow2(): void {
+  const curStats = GetMonLevelUpWindowStats(playerMon(gBattleStruct.expGetterMonId));
+  DrawLevelUpWindowPg2(C.B_WIN_LEVEL_UP_BOX, curStats, C.TEXT_DYNAMIC_COLOR_5, C.TEXT_DYNAMIC_COLOR_4, C.TEXT_DYNAMIC_COLOR_6);
+}
+
 export function Cmd_drawlvlupbox(): void {
   const s = gBattleScripting;
   if (s.drawlvlupboxState === 0) s.drawlvlupboxState = IsMonGettingExpSentOut() ? 3 : 1;
@@ -319,8 +331,7 @@ export function Cmd_drawlvlupbox(): void {
       s.drawlvlupboxState = 4;
       break;
     case 4: {
-      const curStats = GetMonLevelUpWindowStats(playerMon(gBattleStruct.expGetterMonId));
-      DrawLevelUpWindowPg1(C.B_WIN_LEVEL_UP_BOX, gBattleResources.beforeLvlUp.stats, curStats, C.TEXT_DYNAMIC_COLOR_5, C.TEXT_DYNAMIC_COLOR_4, C.TEXT_DYNAMIC_COLOR_6);
+      DrawLevelUpWindow1();
       PutWindowTilemap(C.B_WIN_LEVEL_UP_BOX);
       CopyWindowToVram(C.B_WIN_LEVEL_UP_BOX, COPYWIN_FULL);
       s.drawlvlupboxState++;
@@ -336,8 +347,7 @@ export function Cmd_drawlvlupbox(): void {
     case 6:
       if (gMain.newKeys !== 0) {
         sound.playSE(C.SE_SELECT);
-        const curStats = GetMonLevelUpWindowStats(playerMon(gBattleStruct.expGetterMonId));
-        DrawLevelUpWindowPg2(C.B_WIN_LEVEL_UP_BOX, curStats, C.TEXT_DYNAMIC_COLOR_5, C.TEXT_DYNAMIC_COLOR_4, C.TEXT_DYNAMIC_COLOR_6);
+        DrawLevelUpWindow2();
         CopyWindowToVram(C.B_WIN_LEVEL_UP_BOX, COPYWIN_GFX);
         s.drawlvlupboxState++;
       }
@@ -1589,4 +1599,3 @@ export function Cmd_copymovepermanently(): void {
     G.gBattlescriptCurrInstr = r32(cur() + 1);
   }
 }
-

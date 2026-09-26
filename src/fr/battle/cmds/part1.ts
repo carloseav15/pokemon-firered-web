@@ -562,6 +562,11 @@ function ApplyRandomDmgMultiplier(): void {
   }
 }
 
+/** battle_script_commands.c Unused_ApplyRandomDmgMultiplier. */
+function Unused_ApplyRandomDmgMultiplier(): void {
+  ApplyRandomDmgMultiplier();
+}
+
 function adjustDamage(checkFalseSwipe: boolean): void {
   ApplyRandomDmgMultiplier();
   const t = G.gBattlerTarget;
@@ -1648,4 +1653,3 @@ export function Cmd_getexp(): void {
       break;
   }
 }
-

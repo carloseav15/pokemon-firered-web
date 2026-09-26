@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 53 | 107424 | 1269/4989 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 26 | 47509 | 1532/1725 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 120 | 90043 | 2992/2992 |
+| Casi completo (≥ 80 % y < 100 %) | 25 | 37623 | 1251/1441 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 121 | 99929 | 3276/3276 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **81** | **157763** | |
-| **Total en alcance** | **202** | **247859** | **5821/9834** |
+| **Pendiente de portar** | **80** | **147877** | |
+| **Total en alcance** | **202** | **247859** | **5824/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -95,7 +95,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `battle_script_commands.c` | 9886 | 281/284 | `battle/cmds/helpers.ts`, `battle/cmds/index.ts`, `battle/cmds/part1.ts` … |  |  |
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `region_map.c` | 4036 | 128/140 | `regionMap.ts` |  |  |
 | `battle_util.c` | 3252 | 35/37 | `battle/util.ts` |  |  |
@@ -126,6 +125,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
+| `battle_script_commands.c` | 9886 | 284/284 | `battle/cmds/helpers.ts`, `battle/cmds/index.ts`, `battle/cmds/part1.ts` … |  |  |
 | `battle_anim_effects_1.c` | 5677 | 154/154 | `battle/anims/effects1.ts` |  |  |
 | `battle_anim_effects_3.c` | 5430 | 140/140 | `battle/anims/effects3.ts` |  |  |
 | `image_processing_effects.c` | 4436 | 38/38 | `imageProcessingEffects.ts` |  |  |
