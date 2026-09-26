@@ -2041,6 +2041,15 @@ Pending / placeholders:
   `npm run inventory` y `npm run pending` pasaron. El build emitió advertencias
   existentes por imports dinámicos y tamaño de chunk. Sin prueba de juego ni
   navegador.
+- En la pasada actual extraje las closures de espera en
+  `Task_WaitPlayerStopMoving`, `Task_WaitPlayerAndTargetNPCStopMoving` e
+  `IsFreezeSelectedObjectAndPlayerFinished`, conservando el estado entre
+  frames como task data. También añadí `UnionRoom_UnlockPlayerAndChatPartner`
+  con la limpieza del objeto seleccionado, jugador y eventos; el flujo Union
+  Room sigue sin implementarse ni conectarse. Inventario: 11/11 nombres; total
+  5.780/9.834 (58,8 %), 90 archivos y 4.054 nombres pendientes. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  runtime.
 
 ## `seagallop.c`: travesía del ferry (2026-09-26)
 

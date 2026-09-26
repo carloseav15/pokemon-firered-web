@@ -13,9 +13,15 @@ export function walkrunIsStandingStill(ctx: ScriptRunner): boolean {
 
 /** IsFreezePlayerFinished */
 export function IsFreezePlayerFinished(ctx: ScriptRunner): boolean {
+  if (!Task_WaitPlayerStopMoving(ctx)) return false;
+  StopPlayerAvatar(ctx);
+  return true;
+}
+
+/** Task_WaitPlayerStopMoving: native-script completion replaces task destruction. */
+function Task_WaitPlayerStopMoving(ctx: ScriptRunner): boolean {
   if (!walkrunIsStandingStill(ctx)) return false;
   HandleEnforcedLookDirection(ctx);
-  StopPlayerAvatar(ctx);
   return true;
 }
 
@@ -30,26 +36,35 @@ export function FreezeObjects_WaitForPlayerAndSelected(ctx: ScriptRunner): void 
   const object = ctx.ow.objects.objects[ctx.ow.selectedObject];
   ctx.ow.objects.freezeAll(object ?? undefined);
 
-  let playerDone = false;
-  let targetDone = false;
+  const state = { playerDone: false, targetDone: false };
   if (!object?.singleMovementActive) {
     if (object) ctx.ow.objects.freeze(object);
-    targetDone = true;
+    state.targetDone = true;
   }
 
-  ctx.SetupNativeScript(() => {
-    if (!playerDone && walkrunIsStandingStill(ctx)) {
-      HandleEnforcedLookDirection(ctx);
-      playerDone = true;
-    }
-    if (!targetDone && object && !object.singleMovementActive) {
-      ctx.ow.objects.freeze(object);
-      targetDone = true;
-    }
-    if (!playerDone || !targetDone) return false;
-    StopPlayerAvatar(ctx);
-    return true;
-  });
+  ctx.SetupNativeScript(() => IsFreezeSelectedObjectAndPlayerFinished(ctx, object, state));
+}
+
+type FreezeSelectedState = { playerDone: boolean; targetDone: boolean };
+
+/** IsFreezeSelectedObjectAndPlayerFinished / Task_WaitPlayerAndTargetNPCStopMoving. */
+function IsFreezeSelectedObjectAndPlayerFinished(ctx: ScriptRunner, object: typeof ctx.ow.player.object | null | undefined, state: FreezeSelectedState): boolean {
+  if (!Task_WaitPlayerAndTargetNPCStopMoving(ctx, object, state)) return false;
+  StopPlayerAvatar(ctx);
+  return true;
+}
+
+/** Task_WaitPlayerAndTargetNPCStopMoving; task data[0..1] becomes retained script state. */
+function Task_WaitPlayerAndTargetNPCStopMoving(ctx: ScriptRunner, object: typeof ctx.ow.player.object | null | undefined, state: FreezeSelectedState): boolean {
+  if (!state.playerDone && walkrunIsStandingStill(ctx)) {
+    HandleEnforcedLookDirection(ctx);
+    state.playerDone = true;
+  }
+  if (!state.targetDone && object && !object.singleMovementActive) {
+    ctx.ow.objects.freeze(object);
+    state.targetDone = true;
+  }
+  return state.playerDone && state.targetDone;
 }
 
 /**
@@ -57,6 +72,15 @@ export function FreezeObjects_WaitForPlayerAndSelected(ctx: ScriptRunner): void 
  * Used when a field sequence returns control after freezing the object set.
  */
 export function ClearPlayerHeldMovementAndUnfreezeObjectEvents(ctx: ScriptRunner): void {
+  ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
+  ctx.ow.game.scriptMovement.unfreezeAndStop();
+  ctx.ow.objects.unfreezeAll();
+}
+
+/** UnionRoom_UnlockPlayerAndChatPartner (union_room.c / event_object_lock.c). */
+export function UnionRoom_UnlockPlayerAndChatPartner(ctx: ScriptRunner): void {
+  const partner = ctx.ow.objects.objects[ctx.ow.selectedObject];
+  if (partner?.active) ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(partner);
   ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
   ctx.ow.game.scriptMovement.unfreezeAndStop();
   ctx.ow.objects.unfreezeAll();

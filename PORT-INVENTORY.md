@@ -11,15 +11,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 56 | 108019 | 1288/5020 |
+| Parcial (< 80 % de funciones) | 55 | 107905 | 1281/5009 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 33 | 56356 | 1898/2124 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 110 | 80601 | 2562/2562 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 111 | 80715 | 2573/2573 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **91** | **167205** | |
-| **Total en alcance** | **202** | **247859** | **5776/9834** |
+| **Pendiente de portar** | **90** | **167091** | |
+| **Total en alcance** | **202** | **247859** | **5780/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -85,7 +85,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 | `item_menu_icons.c` | 439 | 12/17 | `bagMenu.ts` |  |  |
 | `braille_text.c` | 212 | 1/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
-| `event_object_lock.c` | 114 | 7/11 | `script/eventObjectLock.ts` |  |  |
 | `fldeff_poison.c` | 42 | 0/3 | `field/fieldEffects.ts` |  |  |
 
 ## Adaptador (UI simplificada)
@@ -228,6 +227,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `berry_powder.c` | 133 | 14/14 | `script/specialsExtra.ts` |  |  |
 | `heal_location.c` | 122 | 5/5 | `field/overworld.ts` |  |  |
 | `field_poison.c` | 119 | 7/7 | `field/poison.ts` |  |  |
+| `event_object_lock.c` | 114 | 11/11 | `script/eventObjectLock.ts` |  |  |
 | `save_location.c` | 112 | 10/10 | `pokemon/saveLocation.ts` |  |  |
 | `prof_pc.c` | 109 | 3/3 | `game.ts` |  |  |
 | `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
@@ -293,7 +293,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `dodrio_berry_picking.c` | 4954 | 7/147 |  |  |  |
-| `union_room.c` | 4761 | 5/110 | `script/specials.ts` |  | 1 |
+| `union_room.c` | 4761 | 5/110 | `script/eventObjectLock.ts`, `script/specials.ts` |  | 1 |
 | `pokemon_jump.c` | 4582 | 4/186 |  |  |  |
 | `berry_crush.c` | 3488 | 4/73 |  |  |  |
 | `link_rfu_2.c` | 3163 | 0/149 |  |  |  |
