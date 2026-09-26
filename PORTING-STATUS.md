@@ -2042,6 +2042,11 @@ Pending / placeholders:
   conserva los 140 frames de desplazamiento y espera el fade de música/paleta
   antes del warp. Inventario: 22/22; esto mide nombres y cuerpos, no paridad de
   fotogramas.
+- Extraje `CreateFerrySprite` como función nombrada y la conecté en el estado
+  7 de setup. Conserva el template/callback creado para la escena y la
+  dirección determina animación, posición inicial y velocidad como en C.
+  Inventario global: 5.766/9.834 (58,6 %), 97 archivos y 4.068 nombres
+  pendientes. Verificación estática; sin navegador ni comparación visual.
 - La pantalla continúa usando `HwScene`, PPU simulada y WebAudio. No se modelan
   explícitamente `HelpSystem_Disable/Enable` (no hay sistema de ayuda web en
   esta ruta), `PlayRainStoppingSoundEffect` ni la pantalla/efectos de warp GBA.

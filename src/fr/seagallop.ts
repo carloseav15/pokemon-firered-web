@@ -12,7 +12,7 @@ import { GetTextWindowPalette } from "./hw/menu";
 import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import { DISPCNT_BG0_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "./hw/ppu";
 import { HwScene, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadOam, LoadSpritePalettes, LoadSpriteSheets, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, type Sprite } from "./hw/sprite";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadOam, LoadSpritePalettes, LoadSpriteSheets, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, type Sprite, type SpriteTemplate } from "./hw/sprite";
 import { FreeAllWindowBuffers } from "./hw/window";
 import { ResetAllPicSprites } from "./trainerPokemonSprites";
 import { tasks } from "./gba/tasks";
@@ -84,6 +84,18 @@ function FreeFerrySpriteResources(): void {
 }
 
 function directionOfTravel(): number { return GetDirectionOfTravel(); }
+
+/** CreateFerrySprite from seagallop.c; template carries the scene's ferry callback. */
+function CreateFerrySprite(template: SpriteTemplate): void {
+  const spriteId = CreateSprite(template, 0, 92, 0);
+  gSprites[spriteId].data[0] = 48;
+  if (GetDirectionOfTravel() === DIRN_EASTBOUND) {
+    StartSpriteAnim(gSprites[spriteId], 1);
+  } else {
+    gSprites[spriteId].x = 240;
+    gSprites[spriteId].data[0] *= -1;
+  }
+}
 
 /** GetSeagallopNumber: the "SEAGALLOP HI-SPEED ##" line for this route. */
 export function getSeagallopNumber(): number {
@@ -212,12 +224,7 @@ export function doSeagallopFerryScene(game: Game): void {
         SetDispcnt();
         SetVBlankCallback(VBlankCB_SeaGallop);
         sound.playSE(C.SE_SHIP);
-        // CreateFerrySprite
-        const id = CreateSprite(ferryTemplate, 0, 92, 0);
-        const ferry = gSprites[id];
-        ferry.data[0] = 48;
-        if (directionOfTravel() === DIRN_EASTBOUND) StartSpriteAnim(ferry, 1);
-        else { ferry.x = 240; ferry.data[0] *= -1; }
+        CreateFerrySprite(ferryTemplate);
         SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
         SetGpuReg(REG_OFFSET_WININ, 0x3f);
         SetGpuReg(REG_OFFSET_WINOUT, 0x00);

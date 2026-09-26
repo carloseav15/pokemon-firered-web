@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 57 | 108124 | 1294/5030 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 39 | 61466 | 2078/2311 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 103 | 75386 | 2365/2365 |
+| Casi completo (≥ 80 % y < 100 %) | 38 | 60962 | 2057/2289 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 104 | 75890 | 2387/2387 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **98** | **172420** | |
-| **Total en alcance** | **202** | **247859** | **5765/9834** |
+| **Pendiente de portar** | **97** | **171916** | |
+| **Total en alcance** | **202** | **247859** | **5766/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -130,7 +130,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `mon_markings.c` | 605 | 14/15 | `monMarkings.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `window.c` | 513 | 19/21 | `gba/window.ts`, `hw/window.ts` |  |  |
-| `seagallop.c` | 504 | 21/22 | `seagallop.ts` |  |  |
 | `battle_intro.c` | 492 | 9/10 | `battle/intro.ts` |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `field_screen_effect.c` | 462 | 18/19 | `field/fieldEffects.ts`, `field/overworld.ts`, `script/specials.ts` |  |  |
@@ -183,6 +182,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `option_menu.c` | 575 | 19/19 | `optionMenu.ts` |  |  |
 | `trig.c` | 542 | 4/4 | `hw/trig.ts` |  |  |
 | `battle_anim_status_effects.c` | 535 | 12/12 | `battle/anim.ts`, `battle/anims/statusEffects.ts` |  |  |
+| `seagallop.c` | 504 | 22/22 | `seagallop.ts` |  |  |
 | `palette_util.c` | 474 | 17/17 | `paletteUtil.ts` |  |  |
 | `battle_anim_bug.c` | 462 | 13/13 | `battle/anims/bug.ts` |  |  |
 | `battle_anim_dragon.c` | 434 | 11/11 | `battle/anims/dragon.ts` |  |  |
