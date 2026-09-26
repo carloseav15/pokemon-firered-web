@@ -92,6 +92,11 @@ AGENTS.md §6.5).
   del apodo, el cursor reproduce `sAnim_CursorSquish` y espera a que termine
   antes de moverse a OK, como `KeyboardKeyHandler_Character` y
   `MainState_MoveToOKButton`; la entrada queda bloqueada durante esa animación.
+- **Revisión de fuente, 2026-09-26 (sin prueba de juego)**: `UpdateHappinessStepCounter`
+  en `field_control_avatar.c` ya llamaba al homólogo portado de
+  `AdjustFriendship`, pero el TS sumaba `+1` manualmente. Ahora invoca
+  `AdjustFriendship` con `FRIENDSHIP_EVENT_WALKING`, que conserva la tirada del
+  50 %, el límite y los modificadores del C.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),

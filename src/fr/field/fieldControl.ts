@@ -2,6 +2,7 @@
 // events (coord triggers, warps, wild encounters) and player steps.
 
 import { DoCoordEventWeather } from "./coordEventWeather";
+import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
 import { sound } from "../audio/sound";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "../gba/input";
@@ -13,6 +14,7 @@ import { MOVING, PLAYER_AVATAR_FLAG_FORCED, T_NOT_MOVING, T_TILE_CENTER } from "
 import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
+import { AdjustFriendship } from "../pokemon/mon_extra";
 
 export type FieldInput = {
   pressedAButton: boolean;
@@ -344,12 +346,7 @@ export class FieldControl {
     const value = (varGet(id) + 1) % 128;
     varSet(id, value);
     if (value === 0) {
-      for (const mon of save.party) {
-        if (mon.isEgg) continue;
-        const f = mon.friendship;
-        const delta = f < 100 ? 1 : f < 200 ? 1 : 1;
-        mon.friendship = Math.min(255, f + delta);
-      }
+      for (const mon of save.party) AdjustFriendship(mon, C.FRIENDSHIP_EVENT_WALKING);
     }
   }
 
