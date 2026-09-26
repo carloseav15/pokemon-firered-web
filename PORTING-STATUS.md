@@ -9,7 +9,7 @@ systems. The first playable route is a milestone, not the completion criterion.
   **3.746 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **93 aún
   tienen huecos de nombre**: 42 casi completos, 50 parciales y uno adaptador;
   109 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.927/247.859 (31,4%)**. Son indicadores del
+  de líneas C sin cubrir es **~77.910/247.859 (31,4%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
