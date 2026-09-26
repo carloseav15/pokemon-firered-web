@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 53 | 107424 | 1270/4989 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 22 | 35589 | 1193/1371 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 124 | 101963 | 3346/3346 |
+| Casi completo (≥ 80 % y < 100 %) | 21 | 34952 | 1159/1334 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 125 | 102600 | 3383/3383 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 85/1992 |
-| **Pendiente de portar** | **77** | **145843** | |
-| **Total en alcance** | **202** | **247859** | **5837/9834** |
+| **Pendiente de portar** | **76** | **145206** | |
+| **Total en alcance** | **202** | **247859** | **5840/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -112,7 +112,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
 | `trainer_see.c` | 750 | 32/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
 | `item.c` | 680 | 44/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
-| `evolution_graphics.c` | 637 | 34/37 | `evolutionScene.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `field_tasks.c` | 351 | 11/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
@@ -167,6 +166,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `menu2.c` | 671 | 10/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |  |
 | `menu_indicators.c` | 656 | 20/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
+| `evolution_graphics.c` | 637 | 37/37 | `evolutionScene.ts` |  |  |
 | `map_preview_screen.c` | 616 | 14/14 | `mapPreviewScreen.ts` |  |  |
 | `renewable_hidden_items.c` | 608 | 4/4 | `renewableHiddenItems.ts` |  |  |
 | `mon_markings.c` | 605 | 15/15 | `monMarkings.ts` |  |  |

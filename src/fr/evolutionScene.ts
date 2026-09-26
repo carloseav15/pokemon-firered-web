@@ -485,6 +485,44 @@ function EvoTask_PostEvoSparklesSet2Init(taskId: number): void {
   sound.playSE(C.SE_M_PETAL_DANCE);
 }
 
+/** evolution_graphics.c EvoTask_CreatePostEvoSparklesSet2Trade. */
+function EvoTask_CreatePostEvoSparklesSet2Trade(taskId: number): void {
+  if (gTasks[taskId].data[15] < 128) {
+    switch (gTasks[taskId].data[15]) {
+      case 0:
+        for (let i = 0; i < 8; i++) CreatePostEvoSparkleSet2(i);
+        break;
+      case 32:
+        BeginNormalPaletteFade(0xffff0f00, 16, 16, 0, RGB_WHITE);
+        break;
+      default:
+        if (gTasks[taskId].data[15] < 50) CreatePostEvoSparkleSet2(random() & 7);
+        break;
+    }
+    gTasks[taskId].data[15]++;
+  } else {
+    gTasks[taskId].func = EvoTask_PostEvoSparklesSet2Teardown;
+  }
+}
+
+/** evolution_graphics.c EvoTask_PostEvoSparklesSet2TradeInit. */
+function EvoTask_PostEvoSparklesSet2TradeInit(taskId: number): void {
+  SetEvoSparklesMatrices();
+  gTasks[taskId].data[15] = 0;
+  IsMovingBackgroundTaskRunning();
+  gPlttBufferUnfaded.set(gPlttBufferFaded.subarray(BG_PLTT_ID(2), BG_PLTT_ID(2) + 48), BG_PLTT_ID(2));
+  BeginNormalPaletteFade(0xfff90f00, 0, 0, 16, RGB_WHITE);
+  gTasks[taskId].func = EvoTask_CreatePostEvoSparklesSet2Trade;
+  sound.playSE(C.SE_M_PETAL_DANCE);
+}
+
+/** evolution_graphics.c EvolutionSparkles_SprayAndFlash_Trade. */
+export function EvolutionSparkles_SprayAndFlash_Trade(species: number): number {
+  const taskId = CreateTask(EvoTask_PostEvoSparklesSet2TradeInit, 0);
+  gTasks[taskId].data[2] = species;
+  return taskId;
+}
+
 function EvolutionSparkles_SprayAndFlash(species: number): number {
   const taskId = CreateTask(EvoTask_PostEvoSparklesSet2Init, 0);
   gTasks[taskId].data[2] = species;

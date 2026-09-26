@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.837/9.834 (59,4%)**; quedan
-  **3.997 nombres (40,6%)**. Hay **77 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 22 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.479/247.859 (33,7%)**. El inventario mide nombres/cuerpos
+  stubs. El inventario vigente registra **5.840/9.834 (59,4%)**; quedan
+  **3.994 nombres (40,6%)**. Hay **76 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 21 casi completos y 53 parciales. La estimación de líneas sin
+  cubrir es **~83.428/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - **`evolution_scene.c`: `CreateShedinja` corregido y conectado.** El flujo
   anterior exigía y consumía una Poké Ball aunque el C no lo hace, y creaba
@@ -46,6 +46,11 @@ systems. The first playable route is a milestone, not the completion criterion.
   y su llamada sin efecto; el historial de transacciones todavía no se escribe
   al Quest Log. `check:honesty` baja de 117 a 116 stubs; pasaron los checks
   estáticos y el inventario.
+- **`evolution_graphics.c`: 37/37 funciones con homólogo.** Porté la variante
+  trade de la animación de chispas y sus dos callbacks de tarea, conservando
+  las máscaras de fade propias de C y compartiendo la creación de sprites. La
+  escena de evolución trade sigue sin estar conectada. Pasaron `check:port`,
+  `check:honesty`, `inventory`, `pending` y `git diff --check`; sin runtime.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
@@ -117,14 +122,14 @@ systems. The first playable route is a milestone, not the completion criterion.
   quedaron conectados al lanzamiento de Pokémon desde la bola y al envío en
   trade/Oak; `pokeball.c` sale de pendientes. Pasaron `check:port`, `inventory`
   y `pending`; no reproduje los flujos en navegador.
-- **`evolution_graphics.c`: 34/37 funciones con homólogo.** Separé las dos
+- **`evolution_graphics.c`: 37/37 funciones con homólogo.** Separé las dos
   tareas de teardown que estaban destruyendo la tarea en el mismo frame: el C
   cambia el callback y la destruye en el tick siguiente. Reemplacé también los
   dos callbacks dummy por aliases al callback no-op compartido, preservando su
-  identidad. Las tres funciones trade-specific restantes pertenecen a la
-  ruta de evolución durante trade por enlace, que el port de un jugador no
-  implementa. Pasaron `check:port`, `inventory` y `pending`; no ejecuté la
-  secuencia de evolución.
+  identidad. También portó la variante trade de SprayAndFlash con sus dos
+  tasks y las máscaras de fade del C. La transición de trade que las llama no
+  está implementada. Pasaron `check:port`, `inventory` y `pending`; no ejecuté
+  la secuencia de evolución.
 - También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
   de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
   `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build
@@ -1701,9 +1706,9 @@ tragaperras, Islas Sevii.
     `itemPc.ts` y `pcScreenEffect.ts`; ver la sección de 2026-09-25.
 15. **Escena de Evolución** (`evolution_scene.c`, 1704 líneas + `evolution_graphics.c`, 638 líneas)
     **[PARCIAL]**: `evolution_scene.c` tiene 14/23 y `evolution_graphics.c`
-    34/37 funciones con homólogo; `src/fr/evolutionScene.ts` implementa la
+    37/37 funciones con homólogo; `src/fr/evolutionScene.ts` implementa la
     secuencia principal descrita abajo, pero el inventario aún muestra huecos y
-    faltan las rutinas específicas de evolución durante trade por enlace.
+    falta conectar la rutina de escena específica de evolución durante trade por enlace.
     Implementa:
     - `evolution_graphics.c`: matrices de escala OAM (20..31), 4 tareas de chispas (`EvolutionSparkles_SpiralUpward`,
       `EvolutionSparkles_ArcDown`, `EvolutionSparkles_CircleInward`, `EvolutionSparkles_SprayAndFlash`), sprite de
