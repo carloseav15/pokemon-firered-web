@@ -57,7 +57,6 @@ export function KeyboardKeyHandler_Character(model: NamingModel, pressed: number
 /** KeyboardKeyHandler_Page (naming_screen.c). */
 export function KeyboardKeyHandler_Page(model: NamingModel, pressed: number): NamingAction {
   if (!(pressed & A_BUTTON)) return "none";
-  SwapKeyboardPage(model);
   return "page";
 }
 
@@ -124,7 +123,6 @@ export function HandleKeyboardEvent(model: NamingModel, pressed: number, repeate
     return "delete";
   }
   if (pressed & SELECT_BUTTON) {
-    SwapKeyboardPage(model);
     return "page";
   }
   if (pressed & START_BUTTON) {

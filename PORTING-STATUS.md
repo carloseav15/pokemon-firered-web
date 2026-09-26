@@ -102,6 +102,12 @@ AGENTS.md §6.5).
   jugador elegido por género desde `sPlayerAvatarGfxIds`, PC, Pokémon con sus
   paletas y personalidad, y rival con el template RED y sus recursos originales.
   El inventario sube a 21/109; siguen pendientes transición de página y flashes.
+- **Revisión de fuente, 2026-09-25 (sin prueba de juego)**: `naming_screen.c`
+  ahora prepara las dos páginas de teclado en BG1/BG2, aplica el blend del C,
+  anima los offsets con la tabla seno y cambia prioridades en el frame 64/128
+  (en unidades del C). El rótulo Page Swap conserva su callback independiente
+  `SlideOff/SlideOn`; el modelo solo cambia al concluir la animación. El
+  inventario sube a 28/109. Los flashes de botones siguen pendientes.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),
@@ -1230,8 +1236,8 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
    guardar/continuar. Registrar cada fallo y su arreglo aquí.
 2. **Transiciones a batalla** (`battle_transition.c`, ~3000 líneas) **[PARCIAL]**: 12 efectos de las
    tablas salvaje/entrenador en `battle/transition.ts` (26/134 funciones); solo ANGLED_WIPES visto en navegador.
-3. **Pantalla de nombres** (`naming_screen.c`, 21/109 por nombre): reglas de
-   entrada e iconos revisados contra C; faltan transiciones de página y flashes.
+3. **Pantalla de nombres** (`naming_screen.c`, 28/109 por nombre): reglas de
+   entrada, iconos y transición de página revisados contra C; faltan flashes.
    No se hizo prueba de juego en este bloque.
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
    tiene los 76 nombres pero 62 son stubs y nadie lo importa (auditoría 2026-09-25). Los efectos

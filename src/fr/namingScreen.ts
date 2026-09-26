@@ -1,7 +1,7 @@
 // naming_screen.c: hardware-screen entry/exit and source keyboard data.
-// Page-swap/button-flash choreography and target icons still need their C callbacks.
+// Target icons and the BG page-swap animation use C data; button flashes remain pending.
 import * as C from "./generated/constants";
-import { MoveCursorToOKButton, NamingModel, type NameBuffer } from "./menus/namingModel";
+import { MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "./hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
 import { save, varGet, flagGet } from "./save";
@@ -14,17 +14,18 @@ import { tasks } from "./gba/tasks";
 import { sound } from "./audio/sound";
 import { speciesName } from "./pokemon/pokemon";
 import { textFlags, getTextSpeedSetting } from "./gba/textPrinter";
-import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "./hw/bg";
+import { BG_ATTR_PRIORITY, BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, GetBgAttribute, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "./hw/bg";
 import { InitGpuRegManager, SetGpuReg } from "./hw/gpu";
 import { DrawDialogueFrame, GetTextWindowPalette, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters } from "./hw/menu";
 import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "./hw/ppu";
+import { BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG2, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
 import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
 import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Subsprite } from "./hw/sprite";
 import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
 import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
 import { CreateObjectGraphicsSprite, CopyObjectGraphicsInfoToSpriteTemplate } from "./objectEventGraphics";
+import { Sin } from "./hw/trig";
 
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
 const text = (name: string) => cdata<number[]>("strings", name);
@@ -48,7 +49,14 @@ class NamingScreen {
   private cursor = 0;
   private pageText = 0;
   private pageButton = 0;
-  private state: "fadeIn" | "input" | "moveToOK" | "message" | "fadeOut" = "fadeIn";
+  private state: "fadeIn" | "input" | "moveToOK" | "pageSwap" | "message" | "fadeOut" = "fadeIn";
+  private activeKeyboardBg = 1;
+  private bgToReveal = 0;
+  private bg1vOffset = 0;
+  private bg2vOffset = 0;
+  private pageSwapFrameCount = 0;
+  private pageSwapAnimState = 1;
+  private pageSwapButtonState: 1 | 2 | 3 = 1;
   private callback1 = gMain.callback1;
   private repeatDelay = joy.repeatStartDelay;
   private savedTextFlags = { ...textFlags };
@@ -80,6 +88,8 @@ class NamingScreen {
       LoadBgTiles(bg, tiles, tiles.length, 0);
     }
     CopyToBgTilemapBuffer(3, incbin("gNamingScreenBackground_Tilemap"), 0, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2);
+    SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(12, 8));
     for (const sheet of data<Array<{data: SymRef; size: number; tag: number}>>("sSpriteSheets")) {
       if (sheet.data) LoadSpriteSheet({data: incbin(sheet.data.$sym), size: sheet.size, tag: sheet.tag});
     }
@@ -102,7 +112,11 @@ class NamingScreen {
     for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
     joy.repeatStartDelay = 16;
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
-    SetVBlankCallback(() => { LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer(); });
+    SetVBlankCallback(() => {
+      LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer();
+      SetGpuReg(REG_OFFSET_BG1VOFS, this.bg1vOffset);
+      SetGpuReg(REG_OFFSET_BG2VOFS, this.bg2vOffset);
+    });
     SetMainCallback2(() => this.update());
   }
 
@@ -164,21 +178,117 @@ class NamingScreen {
   }
 
   private drawPage(): void {
-    const page = this.model.keyboardId;
-    const map = ["Lower", "Upper", "Symbols"][page];
-    CopyToBgTilemapBuffer(1, incbin(`gNamingScreenKeyboard${map}_Tilemap`), 0, 0);
-    const win = this.windows[0];
-    const fill = [14, 13, 15][page];
+    const nextKeyboard = data<number[]>("sPageToNextKeyboardId")[this.model.page];
+    this.drawKeyboardPage(1, 0, this.model.keyboardId);
+    this.drawKeyboardPage(2, 1, nextKeyboard);
+    this.setPageSwapButtonGfx(this.model.page);
+    this.moveCursor();
+  }
+
+  private drawKeyboardPage(bg: number, windowIndex: number, keyboardId: number): void {
+    const map = ["Lower", "Upper", "Symbols"][keyboardId];
+    CopyToBgTilemapBuffer(bg, incbin(`gNamingScreenKeyboard${map}_Tilemap`), 0, 0);
+    const win = this.windows[windowIndex];
+    const fill = [14, 13, 15][keyboardId];
     FillWindowPixelBuffer(win, PIXEL_FILL(fill));
-    const rows = data<SymRef[][]>("sNamingScreenKeyboardText")[page];
+    const rows = data<SymRef[][]>("sNamingScreenKeyboardText")[keyboardId];
     rows.forEach((row, i) => AddTextPrinterParameterized3(win, C.FONT_NORMAL_COPY_1, 0, i * 16 + 1, [fill, 1, 2], 0, cdata<number[]>("keyboard_text", row.$sym)));
     PutWindowTilemap(win); CopyWindowToVram(win, COPYWIN_FULL);
-    CopyBgTilemapBufferToVram(1);
-    const gfx = data<number[]>("sPageToNextGfxId")[this.model.page];
+    CopyBgTilemapBufferToVram(bg);
+  }
+
+  private setPageSwapButtonGfx(page: number): void {
+    const gfx = data<number[]>("sPageToNextGfxId")[page];
     gSprites[this.pageButton].oam.paletteNum = IndexOfSpritePaletteTag(data<number[]>("sPageSwapPalTags")[gfx]);
     gSprites[this.pageText].sheetTileStart = GetSpriteTileStartByTag(data<number[]>("sPageSwapGfxTags")[gfx]);
     gSprites[this.pageText].subspriteTableNum = gfx;
+  }
+
+  private MainState_StartPageSwap(): void {
+    this.state = "pageSwap";
+    this.pageSwapFrameCount = 0;
+    this.pageSwapAnimState = 1;
+    gSprites[this.cursor].invisible = true;
+    gSprites[this.pageText].y2 = 0;
+    this.pageSwapButtonState = 2;
+    this.bg1vOffset = 0;
+    this.bg2vOffset = 0;
+    ChangeBgY(1, 0, BG_COORD_SET); ChangeBgY(2, 0, BG_COORD_SET);
+  }
+
+  private updatePageSwapOffsets(): void {
+    this.pageSwapFrameCount++;
+    const angle = this.pageSwapFrameCount * 4;
+    const revealOffset = Sin(angle, 40);
+    const hideOffset = Sin((angle + 128) & 0xff, 40);
+    const offsets = this.bgToReveal === 0
+      ? [[REG_OFFSET_BG2VOFS, revealOffset], [REG_OFFSET_BG1VOFS, hideOffset]]
+      : [[REG_OFFSET_BG1VOFS, revealOffset], [REG_OFFSET_BG2VOFS, hideOffset]];
+    for (const [reg, value] of offsets) {
+      if (reg === REG_OFFSET_BG1VOFS) this.bg1vOffset = value;
+      else this.bg2vOffset = value;
+    }
+
+    this.updatePageSwapButton();
+  }
+
+  private updatePageSwapButton(): void {
+    if (this.pageSwapButtonState === 2) {
+      if (++gSprites[this.pageText].y2 > 7) {
+        this.pageSwapButtonState = 3;
+        gSprites[this.pageText].y2 = -4;
+        gSprites[this.pageText].invisible = true;
+        this.setPageSwapButtonGfx((this.model.page + 1) % 3);
+      }
+    } else if (this.pageSwapButtonState === 3) {
+      gSprites[this.pageText].invisible = false;
+      if (++gSprites[this.pageText].y2 >= 0) {
+        gSprites[this.pageText].y2 = 0;
+        this.pageSwapButtonState = 1;
+      }
+    }
+  }
+
+  private PageSwapAnimState_1(): void {
+    this.updatePageSwapOffsets();
+    if (this.pageSwapFrameCount < 16) return;
+    const bg1Priority = GetBgAttribute(1, BG_ATTR_PRIORITY);
+    const bg2Priority = GetBgAttribute(2, BG_ATTR_PRIORITY);
+    SetBgAttribute(1, BG_ATTR_PRIORITY, bg2Priority);
+    SetBgAttribute(2, BG_ATTR_PRIORITY, bg1Priority);
+    ShowBg(1); ShowBg(2);
+    this.activeKeyboardBg = bg1Priority < bg2Priority ? 2 : 1;
+    this.pageSwapAnimState = 2;
+  }
+
+  private PageSwapAnimState_2(): void {
+    this.updatePageSwapOffsets();
+    if (this.pageSwapFrameCount < 32) return;
+    this.bgToReveal = 1 - this.bgToReveal;
+    this.pageSwapAnimState = 3;
+  }
+
+  private DrawKeyboardPageOnDeck(): void {
+    const hiddenBg = this.activeKeyboardBg === 1 ? 2 : 1;
+    const hiddenWindow = hiddenBg === 1 ? 0 : 1;
+    const nextKeyboard = data<number[]>("sPageToNextKeyboardId")[this.model.page];
+    this.drawKeyboardPage(hiddenBg, hiddenWindow, nextKeyboard);
+  }
+
+  private PageSwapAnimState_Done(): void {
+    SwapKeyboardPage(this.model);
+    this.DrawKeyboardPageOnDeck();
+    this.setPageSwapButtonGfx(this.model.page);
+    gSprites[this.pageText].y2 = 0;
+    gSprites[this.cursor].invisible = false;
     this.moveCursor();
+    this.state = "input";
+  }
+
+  private MainState_WaitPageSwap(): void {
+    if (this.pageSwapAnimState === 1) this.PageSwapAnimState_1();
+    else if (this.pageSwapAnimState === 2) this.PageSwapAnimState_2();
+    else this.PageSwapAnimState_Done();
   }
 
   private drawEntry(): void {
@@ -241,7 +351,7 @@ class NamingScreen {
     else if (this.state === "input") {
       const action = this.model.input(joy.newKeys, joy.repeated);
       if (action === "move") sound.playSE(C.SE_SELECT);
-      if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.drawPage(); }
+      if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.MainState_StartPageSwap(); }
       if (action === "moveToOK") {
         StartSpriteAnim(gSprites[this.cursor], 1);
         this.state = "moveToOK";
@@ -261,6 +371,8 @@ class NamingScreen {
         this.moveCursor();
         this.state = "input";
       }
+    } else if (this.state === "pageSwap") {
+      this.MainState_WaitPageSwap();
     } else if (this.state === "message") {
       RunTextPrinters();
       if (!IsTextPrinterActive(0) && joy.newKeys & A_BUTTON) this.fadeOut();
