@@ -521,7 +521,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   showcoinsbox: (ctx) => { const x = ctx.readByte(); const y = ctx.readByte(); ctx.ow.game.scriptMenu.showCoinsBox(x, y); return false; },
   hidecoinsbox: (ctx) => { ctx.readByte(); ctx.readByte(); ctx.ow.game.scriptMenu.hideCoinsBox(); return false; },
   updatecoinsbox: (ctx) => { ctx.readByte(); ctx.readByte(); ctx.ow.game.scriptMenu.updateCoinsBox(); return false; },
-  checkcoins: (ctx) => { varSet(ctx.readHalfword(), save.coins); return false; },
+  checkcoins: (ctx) => { varSet(ctx.readHalfword(), items.GetCoins()); return false; },
   addcoins: (ctx) => { varSet(SV.RESULT, items.addCoins(varGet(ctx.readHalfword())) ? 0 : 1); return false; },
   removecoins: (ctx) => { varSet(SV.RESULT, items.removeCoins(varGet(ctx.readHalfword())) ? 0 : 1); return false; },
   trainerbattle: (ctx) => { ctx.scriptPtr = ctx.ow.game.battleSetup.configureTrainerBattle(ctx.scriptPtr); return false; },

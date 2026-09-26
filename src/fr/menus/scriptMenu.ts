@@ -19,6 +19,7 @@ import {
 } from "../hw/listMenu";
 import { addFieldScrollArrows, fieldListSurface } from "./fieldListMenu";
 import type { Overworld } from "../field/overworld";
+import { GetCoins } from "../pokemon/items";
 
 const SCR_MENU_UNSET = 0xff;
 const SCR_MENU_CANCEL = 127;
@@ -209,7 +210,7 @@ export class ScriptMenu {
     if (!window) return;
     window.fill(1);
     printText(window, FONT_NORMAL, rom.text("gText_Coins_2"), 0, 0);
-    stringVars.var1 = intToDecimal(save.coins, STR_CONV_MODE_RIGHT_ALIGN, 4);
+    stringVars.var1 = intToDecimal(GetCoins(), STR_CONV_MODE_RIGHT_ALIGN, 4);
     const text = expandPlaceholders(rom.text("gText_Coins"));
     printText(window, FONT_SMALL, text, 64 - stringWidth(FONT_SMALL, text, 0), 12);
   }

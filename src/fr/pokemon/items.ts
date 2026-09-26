@@ -8,7 +8,7 @@ export const POCKET_ITEMS = 1, POCKET_KEY_ITEMS = 2, POCKET_POKE_BALLS = 3, POCK
 const CAPACITY: Record<number, number> = { 1: 42, 2: 30, 3: 13, 4: 58, 5: 43 };
 export const PC_ITEMS_COUNT = 30;
 export const MAX_MONEY = 999999;
-export const MAX_COINS = 9999;
+export const MAX_COINS = C.MAX_COINS;
 
 let byId: Map<number, ItemInfo> | undefined;
 
@@ -141,17 +141,29 @@ export function removeMoney(amount: number): void {
   save.money = current < cost ? 0 : current - cost;
 }
 
+/** GetCoins (coins.c): the browser save stores the decrypted u16 value. */
+export function GetCoins(): number {
+  return save.coins & 0xffff;
+}
+
+/** SetCoins (coins.c): encryption is handled by the browser save format. */
+export function SetCoins(coinAmount: number): void {
+  save.coins = coinAmount & 0xffff;
+}
+
 export function addCoins(amount: number): boolean {
-  if (save.coins >= MAX_COINS) return false;
-  const next = save.coins + (amount & 0xffff);
-  save.coins = Math.min(MAX_COINS, next);
+  const coins = GetCoins();
+  const toAdd = amount & 0xffff;
+  if (coins >= MAX_COINS) return false;
+  SetCoins(Math.min(MAX_COINS, coins + toAdd));
   return true;
 }
 
 export function removeCoins(amount: number): boolean {
   const toSub = amount & 0xffff; // coins.c RemoveCoins(u16 toSub)
-  if (save.coins < toSub) return false;
-  save.coins -= toSub;
+  const coins = GetCoins();
+  if (coins < toSub) return false;
+  SetCoins(coins - toSub);
   return true;
 }
 

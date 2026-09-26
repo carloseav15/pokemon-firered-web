@@ -655,11 +655,11 @@ Sorted by C source length (a quick effort proxy, not an estimate):
 |---|---:|---|
 | `save_menu_util.c` | 56 | `SaveStatToString` now formats all five C values and emits the C color/shadow control codes; `npm run check:port` passes. Canvas window/frame placement remains adapted and visual parity is unverified. |
 | `play_time.c` | 65 | Reset/Start/Stop/Update/SetToMax now map to save.ts state and Game lifecycle calls. Total frames replace C's split time fields; typecheck passes, runtime parity is unverified. |
-| `coins.c` | 98 | Balance and display logic exist in `items.ts` and `scriptMenu.ts`. `addCoins` clamps and narrows its `u16` input; `removeCoins` now also narrows its `u16` input. `npm run check:port` passes; runtime arithmetic parity remains untested. |
+| `coins.c` | 98 | `GetCoins`, `SetCoins`, add and remove operations use the browser's plaintext `u16` balance; `check:coins` executes narrowing and cap cases. Coin-window presentation remains Canvas-adapted. |
 | `save_location.c` | 112 | Reviewed with `load_save.c`: normal continue uses the saved warp directly. Missing flags affect Pokémon Center/lobby reset warps, GameCube-link unlocks and Champion/postgame behavior; no main-story single-player blocker found. Deferred. |
 | `heal_location.c` | 122 | Whiteout now resolves the exported respawn map/NPC, source-specific spawn coordinates and the Pallet home-healing script. Verification is pending; Trainer Tower recovery and the pre-fade recovery presentation remain unported. |
 
-The `AddCoins` and `RemoveCoins` argument widths now match `coins.c` in `src/fr/pokemon/items.ts`. The play-time lifecycle is implemented in `src/fr/save.ts` and wired to new/continue/frame in `src/fr/game.ts`; runtime parity remains unverified. The standard
+`GetCoins`/`SetCoins` now share the coin balance API in `src/fr/pokemon/items.ts`; slot-machine reads, the `checkcoins` script command, script coin box and Coin Case use `GetCoins`. `check:coins` executes the balance API; the GBA SaveBlock encryption is replaced by the browser save's plaintext representation. The play-time lifecycle is implemented in `src/fr/save.ts` and wired to new/continue/frame in `src/fr/game.ts`; runtime parity remains unverified. The standard
 whiteout respawn now uses the original heal-location data in
 `src/fr/field/overworld.ts` and selects the correct healer/home script from
 `src/fr/game.ts`. These changes still need execution verification. The other
@@ -1580,3 +1580,7 @@ Pending / placeholders:
 ## Field move show-mon source parity (2026-09-25)
 
 - Compared `Task_FieldEffectShowMon_Init` in `../pokefirered/src/fldeff_rocksmash.c` with `FieldMoveEffects.createShowMon` in `src/fr/field/fieldMoves.ts`. The C has a `MAP_TYPE_UNDERWATER` branch that starts `FLDEFF_FIELD_MOVE_SHOW_MON_INIT` immediately, skipping the player summon animation; TS previously always ran that animation. Added the same branch using generated constants. FireRed currently marks underwater maps unused, so this is source parity rather than a presently reachable story path. `npm run check:port` passes; no runtime test was performed.
+
+## `coins.c`: shared coin balance operations (2026-09-25)
+
+- Added `GetCoins` and `SetCoins` to `pokemon/items.ts`; the browser save stores the decrypted C `u16` balance directly, so both APIs narrow to 16 bits without reproducing SaveBlock encryption. Reworked `addCoins`/`removeCoins` to use those shared operations and the generated `MAX_COINS` constant. Routed the slot machine's read, `checkcoins`, the script coin box, and Coin Case display through `GetCoins`. `tools/checks/coins.ts` executes u16 narrowing, cap, success, and insufficient-funds cases. Browser coin-window rendering remains Canvas-adapted.

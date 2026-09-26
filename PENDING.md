@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5432/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5433/9825 (55 %)**.
 - Archivos C pendientes: **118** (132109 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -86,7 +86,6 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `battle_anim_mons.c` | 2360 | 124/128 | 2 |
 | `player_pc.c` | 740 | 45/47 | 2 |
 | `sound.c` | 649 | 23/48 | 1 |
-| `coins.c` | 98 | 3/9 | 1 |
 | `slot_machine.c` | 2527 | 76/77 | 1 |
 | `bg.c` | 1215 | 43/50 | 1 |
 | `shop.c` | 1145 | 55/60 | 1 |

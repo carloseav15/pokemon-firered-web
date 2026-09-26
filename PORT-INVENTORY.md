@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 117 | 130709 | 1932/6109 |
+| Parcial (menos del 80 % de funciones) | 117 | 130709 | 1933/6109 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 91 | 116834 | 3472/3658 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **118** | **132109** | |
-| **Total en alcance** | **210** | **248996** | **5432/9825** |
+| **Total en alcance** | **210** | **248996** | **5433/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -134,7 +134,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `party_menu_specials.c` | 108 | 7/9 | `game.ts`, `script/specialsExtra.ts` |  |  |
 | `field_weather_util.c` | 105 | 5/10 | `field/weather.ts` |  |  |
 | `fldeff_sweetscent.c` | 100 | 1/7 | `field/fieldMoves.ts` |  |  |
-| `coins.c` | 98 | 3/9 | `pokemon/items.ts` |  | 1 |
+| `coins.c` | 98 | 4/9 | `pokemon/items.ts` |  |  |
 | `safari_zone.c` | 79 | 4/8 | `battle/battleSetup.ts` |  |  |
 | `hof_pc.c` | 50 | 2/5 |  |  |  |
 | `fldeff_dig.c` | 46 | 1/4 | `field/fieldMoves.ts` |  |  |

@@ -7,7 +7,7 @@ import { blankMail, mailLines } from "../pokemon/mail";
 import { decode } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
-import { itemInfo, itemName, removeBagItem } from "../pokemon/items";
+import { GetCoins, itemInfo, itemName, removeBagItem } from "../pokemon/items";
 import { trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { bagResult, GoToBagMenu, type BagHandlers, type BagTaskContext } from "../bagMenu";
@@ -180,7 +180,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           });
           return;
         }
-        case "FieldUseFunc_CoinCase": stringVars.var1 = encode(String(save.coins)); message(rom.text("gText_CoinCase")); return;
+        case "FieldUseFunc_CoinCase": stringVars.var1 = encode(String(GetCoins())); message(rom.text("gText_CoinCase")); return;
         case "FieldUseFunc_PowderJar": stringVars.var1 = encode(String(save.berryPowder ?? 0)); message(rom.text("gText_PowderQty")); return;
         case "FieldUseFunc_TmCase": leave(openTmCase); return;
         case "FieldUseFunc_BerryPouch": leave(berryPouch); return;

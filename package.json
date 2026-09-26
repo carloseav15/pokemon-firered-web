@@ -29,7 +29,8 @@
     "check:brock-action": "esbuild tools/checks/brockActionSelection.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/brockActionSelection.mjs && node .decomp-build/checks/brockActionSelection.mjs",
     "check:famechecker": "esbuild tools/checks/fameChecker.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/fameChecker.mjs && node .decomp-build/checks/fameChecker.mjs",
     "check:slots": "esbuild tools/checks/slotMachine.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/slotMachine.mjs && node .decomp-build/checks/slotMachine.mjs",
-    "check:trade": "esbuild tools/checks/tradeScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/tradeScene.mjs && node .decomp-build/checks/tradeScene.mjs"
+    "check:trade": "esbuild tools/checks/tradeScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/tradeScene.mjs && node .decomp-build/checks/tradeScene.mjs",
+    "check:coins": "esbuild tools/checks/coins.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/coins.mjs && node .decomp-build/checks/coins.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

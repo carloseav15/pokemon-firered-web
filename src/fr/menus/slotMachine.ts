@@ -52,7 +52,7 @@ import {
 import { sound } from "../audio/sound";
 import { random } from "../random";
 import { incrementGameStat, save } from "../save";
-import { removeCoins } from "../pokemon/items";
+import { GetCoins as getCoins, removeCoins } from "../pokemon/items";
 import { rom } from "../rom";
 import * as C from "../generated/constants";
 
@@ -212,7 +212,7 @@ function Random(): number {
 }
 
 function GetCoins(): number {
-  return save.coins;
+  return getCoins();
 }
 
 function SetCoins(coins: number): void {
