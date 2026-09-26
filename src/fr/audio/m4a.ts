@@ -302,6 +302,7 @@ export class M4aBackend implements SoundBackend {
   private cryGeneration = 0;
   private cryUntil = 0;
   private noiseBuffer: AudioBuffer | null = null;
+  private noiseSeed = 0x1ace;
 
   now(): number {
     return this.ctx?.currentTime ?? 0;
@@ -567,7 +568,12 @@ export class M4aBackend implements SoundBackend {
       const len = this.ctx.sampleRate;
       this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const data = this.noiseBuffer.getChannelData(0);
-      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      // Browser noise stands in for the GBA PSG noise channel. Keep its stream
+      // deterministic and local so audio setup never consumes the game's RNG.
+      for (let i = 0; i < len; i++) {
+        this.noiseSeed = (Math.imul(this.noiseSeed, 1103515245) + 24691) >>> 0;
+        data[i] = (this.noiseSeed >>> 16) / 0x8000 - 1;
+      }
     }
     return this.noiseBuffer;
   }

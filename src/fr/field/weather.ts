@@ -5,7 +5,7 @@
 // Canvas2D integration and weather sprites remain incomplete.
 // The live stub count is generated in PENDING.md §3b.
 
-import { rom } from "../rom";
+import { random } from "../random";
 import { incrementGameStat, save } from "../save";
 import { hasIncbin, incbin, incbin16 } from "../hw/assets";
 import { spriteSheet } from "./gfx4bpp";
@@ -15,6 +15,8 @@ import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
 import { gSineTable } from "../hw/trig";
+import { SetGpuReg } from "../hw/gpu";
+import { BLDALPHA_BLEND, REG_OFFSET_BLDALPHA } from "../hw/ppu";
 import { BeginNormalPaletteFade, BlendPalette, BlendPalettesAt, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
@@ -61,6 +63,10 @@ export let gWeather = {
   currBlendEVB: 0,
   targetBlendEVA: 0,
   targetBlendEVB: 0,
+  blendDelay: 0,
+  blendFrameCounter: 0,
+  blendUpdateCounter: 0,
+  weatherTaskFunc: "init" as "init" | "main",
 };
 let sDroughtFrameDelay = 0;
 
@@ -209,30 +215,43 @@ export function StartWeather(): void {
 
 /** Task_WeatherInit */
 export function Task_WeatherInit(): void {
-  // Weather initialization task
+  if (!gWeather.readyForInit) return;
+  sWeatherFuncs[gWeather.currWeather]?.initAll();
+  gWeather.weatherTaskFunc = "main";
 }
 
 /** Task_WeatherMain */
 export function Task_WeatherMain(): void {
+  if (gWeather.currWeather !== gWeather.nextWeather) {
+    if (!sWeatherFuncs[gWeather.currWeather]?.finish()) {
+      sWeatherFuncs[gWeather.nextWeather]?.initVars();
+      gWeather.gammaStepFrameCounter = 0;
+      gWeather.palProcessingState = C.WEATHER_PAL_STATE_CHANGING_WEATHER;
+      gWeather.currWeather = gWeather.nextWeather;
+      gWeather.weatherChangeComplete = true;
+    }
+  } else {
+    sWeatherFuncs[gWeather.currWeather]?.main();
+  }
+
   switch (gWeather.palProcessingState) {
-    case C.WEATHER_PAL_STATE_CHANGING_WEATHER:
-      UpdateWeatherGammaShift();
-      break;
-    case C.WEATHER_PAL_STATE_SCREEN_FADING_IN:
-      FadeInScreenWithWeather();
-      break;
+    case C.WEATHER_PAL_STATE_CHANGING_WEATHER: UpdateWeatherGammaShift(); break;
+    case C.WEATHER_PAL_STATE_SCREEN_FADING_IN: FadeInScreenWithWeather(); break;
   }
 }
 
 /** None_Init */
-export function None_Init(): void {}
+export function None_Init(): void {
+  gWeather.gammaTargetIndex = 0;
+  gWeather.gammaStepDelay = 0;
+}
 
 /** None_Main */
 export function None_Main(): void {}
 
 /** None_Finish */
 export function None_Finish(): boolean {
-  return true;
+  return false;
 }
 
 export interface WeatherCallbacks {
@@ -621,19 +640,43 @@ export function WeatherShiftGammaIfPalStateIdle(gammaIndex: number): void {
 
 /** Weather_SetBlendCoeffs */
 export function Weather_SetBlendCoeffs(eva: number, evb: number): void {
-  gWeather.currBlendEVA = eva;
-  gWeather.currBlendEVB = evb;
+  const alpha = eva & 0xff;
+  const beta = evb & 0xff;
+  gWeather.currBlendEVA = alpha;
+  gWeather.currBlendEVB = beta;
+  gWeather.targetBlendEVA = alpha;
+  gWeather.targetBlendEVB = beta;
+  SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(alpha, beta));
 }
 
 /** Weather_SetTargetBlendCoeffs */
 export function Weather_SetTargetBlendCoeffs(eva: number, evb: number, delay: number): void {
-  gWeather.targetBlendEVA = eva;
-  gWeather.targetBlendEVB = evb;
+  gWeather.targetBlendEVA = eva & 0xff;
+  gWeather.targetBlendEVB = evb & 0xff;
+  gWeather.blendDelay = delay & 0xff;
+  gWeather.blendFrameCounter = 0;
+  gWeather.blendUpdateCounter = 0;
 }
 
 /** Weather_UpdateBlend */
 export function Weather_UpdateBlend(): boolean {
-  return true;
+  if (gWeather.currBlendEVA === gWeather.targetBlendEVA && gWeather.currBlendEVB === gWeather.targetBlendEVB) return true;
+
+  gWeather.blendFrameCounter = (gWeather.blendFrameCounter + 1) & 0xff;
+  if (gWeather.blendFrameCounter > gWeather.blendDelay) {
+    gWeather.blendFrameCounter = 0;
+    gWeather.blendUpdateCounter = (gWeather.blendUpdateCounter + 1) & 0xff;
+    if (gWeather.blendUpdateCounter & 1) {
+      if (gWeather.currBlendEVA < gWeather.targetBlendEVA) gWeather.currBlendEVA++;
+      else if (gWeather.currBlendEVA > gWeather.targetBlendEVA) gWeather.currBlendEVA--;
+    } else {
+      if (gWeather.currBlendEVB < gWeather.targetBlendEVB) gWeather.currBlendEVB++;
+      else if (gWeather.currBlendEVB > gWeather.targetBlendEVB) gWeather.currBlendEVB--;
+    }
+  }
+
+  SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(gWeather.currBlendEVA, gWeather.currBlendEVB));
+  return gWeather.currBlendEVA === gWeather.targetBlendEVA && gWeather.currBlendEVB === gWeather.targetBlendEVB;
 }
 
 const s16 = (value: number): number => (value << 16) >> 16;
@@ -831,18 +874,18 @@ export class FieldWeather {
     // Initialize rain drops
     for (let i = 0; i < 24; i++) {
       this.rainDrops.push({
-        x: Math.random() * 240,
-        y: Math.random() * 160,
-        speed: 6 + Math.random() * 4,
-        len: 8 + Math.random() * 6,
+        x: (random() / 0x10000) * 240,
+        y: (random() / 0x10000) * 160,
+        speed: 6 + (random() / 0x10000) * 4,
+        len: 8 + (random() / 0x10000) * 6,
       });
     }
     // Initialize sandstorm particles
     for (let i = 0; i < 30; i++) {
       this.sandParticles.push({
-        x: Math.random() * 240,
-        y: Math.random() * 160,
-        speed: 5 + Math.random() * 5,
+        x: (random() / 0x10000) * 240,
+        y: (random() / 0x10000) * 160,
+        speed: 5 + (random() / 0x10000) * 5,
       });
     }
   }
@@ -917,9 +960,9 @@ export class FieldWeather {
     if (ow.sprites.filter !== filter) ow.sprites.filter = filter;
 
     // Advance weather particle positions
-    const isRain = this.current === (rom.c("WEATHER_RAIN") ?? 3) || this.current === (rom.c("WEATHER_RAIN_THUNDERSTORM") ?? 5);
-    const isSand = this.current === (rom.c("WEATHER_SANDSTORM") ?? 8);
-    const isFog = this.current === (rom.c("WEATHER_FOG_HORIZONTAL") ?? 6) || this.current === (rom.c("WEATHER_FOG_DIAGONAL") ?? 7);
+    const isRain = this.current === C.WEATHER_RAIN || this.current === C.WEATHER_RAIN_THUNDERSTORM;
+    const isSand = this.current === C.WEATHER_SANDSTORM;
+    const isFog = this.current === C.WEATHER_FOG_HORIZONTAL || this.current === C.WEATHER_FOG_DIAGONAL;
 
     if (isRain) {
       for (const drop of this.rainDrops) {
@@ -927,7 +970,7 @@ export class FieldWeather {
         drop.y += drop.speed;
         if (drop.y > 160) {
           drop.y = -10;
-          drop.x = Math.random() * 260;
+          drop.x = (random() / 0x10000) * 260;
         }
       }
     }
@@ -937,8 +980,8 @@ export class FieldWeather {
         p.x -= p.speed;
         p.y += p.speed * 0.5;
         if (p.x < -10 || p.y > 170) {
-          p.x = 250 + Math.random() * 20;
-          p.y = Math.random() * 160;
+          p.x = 250 + (random() / 0x10000) * 20;
+          p.y = (random() / 0x10000) * 160;
         }
       }
     }
@@ -953,11 +996,11 @@ export class FieldWeather {
 
   /** Render weather overlays (rain drops, sandstorm, fog, ash). */
   renderFog(ctx: CanvasRenderingContext2D, camX: number): void {
-    const isFogH = this.current === (rom.c("WEATHER_FOG_HORIZONTAL") ?? 6);
-    const isFogD = this.current === (rom.c("WEATHER_FOG_DIAGONAL") ?? 7);
-    const isRain = this.current === (rom.c("WEATHER_RAIN") ?? 3) || this.current === (rom.c("WEATHER_RAIN_THUNDERSTORM") ?? 5);
-    const isSand = this.current === (rom.c("WEATHER_SANDSTORM") ?? 8);
-    const isAsh = this.current === (rom.c("WEATHER_VOLCANIC_ASH") ?? 9);
+    const isFogH = this.current === C.WEATHER_FOG_HORIZONTAL;
+    const isFogD = this.current === C.WEATHER_FOG_DIAGONAL;
+    const isRain = this.current === C.WEATHER_RAIN || this.current === C.WEATHER_RAIN_THUNDERSTORM;
+    const isSand = this.current === C.WEATHER_SANDSTORM;
+    const isAsh = this.current === C.WEATHER_VOLCANIC_ASH;
 
     if (isFogH || isFogD) {
       const canvas = this.fogCanvas ??= this.buildFogCanvas();

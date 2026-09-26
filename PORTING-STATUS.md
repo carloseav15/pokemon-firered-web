@@ -3,10 +3,10 @@
 Target: the full FireRed game, including its main progression and optional
 systems. The first playable route is a milestone, not the completion criterion.
 
-## Avance de port y cola de trabajo, 2026-09-26
+## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.078/9.834 funciones con homólogo (61,8%)**; quedan
-  **3.756 nombres (38,2%)**. De 202 archivos C en alcance, 51 siguen parciales
+- Inventario actual: **6.081/9.834 funciones con homólogo (61,8%)**; quedan
+  **3.753 nombres (38,2%)**. De 202 archivos C en alcance, 51 siguen parciales
   o como adaptador: 50 parciales y uno adaptador. El estimado de líneas C sin
   cubrir es **108.138/247.859 (43,6%)**. Estos indicadores miden coincidencias
   de nombres y cobertura aproximada; no prueban equivalencia funcional.
@@ -28,6 +28,21 @@ systems. The first playable route is a milestone, not the completion criterion.
   de hardware como adaptación de los sprites específicos de GBA. Pasan
   `check:port`, `check:learnmove`, `check:honesty`, `inventory`, `pending` y
   `git diff --check`. No se probó en navegador.
+- **`field_weather.c`: 50/50 homólogos.** Corregí tres cuerpos que eran stubs:
+  `Task_WeatherInit` ahora espera `readyForInit`, inicializa el clima y cambia
+  al callback principal; `None_Init` restablece el destino y el retardo gamma;
+  `Weather_UpdateBlend` avanza los coeficientes EVA/EVB alternando frames y
+  actualiza BLDALPHA. También completé el dispatcher `Task_WeatherMain`,
+  `Weather_SetBlendCoeffs` y `Weather_SetTargetBlendCoeffs` según el C. La
+  revisión encontró un error aparte: `None_Finish` devolvía `true` en TS aunque
+  C devuelve `0`, bloqueando la salida del clima None; ya coincide. El
+  adaptador de partículas ya usa el LCG del juego en vez de `Math.random`, los
+  tipos de clima vienen de `C.*`, y el ruido de Web Audio usa una secuencia
+  local determinista para no consumir el RNG del juego. El
+  headless `check:weather` cubre inicialización, temporización de mezcla y
+  callbacks de clima; pasan también `check:port`, `check:honesty`, `inventory`,
+  `pending` y `git diff --check`. Sin prueba en navegador; partículas y
+  conexión a Canvas2D siguen incompletas.
 
 ## Revisión de código, 2026-09-26 (sin navegador)
 

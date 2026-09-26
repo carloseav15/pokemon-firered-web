@@ -59,6 +59,53 @@ assert.equal(table[0][16], 15, 'Normal row 0 dims level 16 by one');
 assert.equal(Weather.GAMMA_TABLE_ALT[0][16], 16, 'Alternate row 0 preserves level 16');
 console.log('✓ Normal and alternate gamma table vectors checked');
 
+console.log('--- 1a. Checking weather initialization and blend timing against field_weather.c ---');
+const savedBlendState = {
+  currBlendEVA: Weather.gWeather.currBlendEVA,
+  currBlendEVB: Weather.gWeather.currBlendEVB,
+  targetBlendEVA: Weather.gWeather.targetBlendEVA,
+  targetBlendEVB: Weather.gWeather.targetBlendEVB,
+  blendDelay: Weather.gWeather.blendDelay,
+  blendFrameCounter: Weather.gWeather.blendFrameCounter,
+  blendUpdateCounter: Weather.gWeather.blendUpdateCounter,
+  gammaTargetIndex: Weather.gWeather.gammaTargetIndex,
+  gammaStepDelay: Weather.gWeather.gammaStepDelay,
+  readyForInit: Weather.gWeather.readyForInit,
+  weatherTaskFunc: Weather.gWeather.weatherTaskFunc,
+};
+try {
+  Weather.gWeather.currWeather = C.WEATHER_NONE;
+  Weather.gWeather.gammaTargetIndex = 3;
+  Weather.gWeather.gammaStepDelay = 8;
+  Weather.gWeather.readyForInit = false;
+  Weather.gWeather.weatherTaskFunc = 'init';
+  Weather.Task_WeatherInit();
+  assert.equal(Weather.gWeather.gammaTargetIndex, 3, 'Task_WeatherInit waits until readyForInit');
+  Weather.gWeather.readyForInit = true;
+  Weather.Task_WeatherInit();
+  assert.equal(Weather.gWeather.gammaTargetIndex, 0, 'None_Init clears the gamma target');
+  assert.equal(Weather.gWeather.gammaStepDelay, 0, 'None_Init clears the gamma delay');
+  assert.equal(Weather.gWeather.weatherTaskFunc, 'main', 'Task_WeatherInit advances the task callback');
+  assert.equal(Weather.None_Finish(), false, 'None_Finish tells the dispatcher that no cleanup remains');
+
+  Weather.Weather_SetBlendCoeffs(0, 16);
+  Weather.Weather_SetTargetBlendCoeffs(2, 14, 1);
+  assert.equal(Weather.Weather_UpdateBlend(), false);
+  assert.equal(Weather.Weather_UpdateBlend(), false);
+  assert.deepEqual([Weather.gWeather.currBlendEVA, Weather.gWeather.currBlendEVB], [1, 16], 'first coefficient changes on the first eligible frame');
+  Weather.Weather_UpdateBlend();
+  assert.equal(Weather.Weather_UpdateBlend(), false);
+  assert.deepEqual([Weather.gWeather.currBlendEVA, Weather.gWeather.currBlendEVB], [1, 15], 'second coefficient changes on the next eligible frame');
+  Weather.Weather_UpdateBlend();
+  Weather.Weather_UpdateBlend();
+  Weather.Weather_UpdateBlend();
+  assert.equal(Weather.Weather_UpdateBlend(), true, 'blend finishes only after both coefficients reach their targets');
+  assert.deepEqual([Weather.gWeather.currBlendEVA, Weather.gWeather.currBlendEVB], [2, 14]);
+} finally {
+  Object.assign(Weather.gWeather, savedBlendState);
+}
+console.log('✓ Weather init readiness and alternating blend coefficients match field_weather.c');
+
 console.log('--- 2. Applying gamma and running weather fade state paths ---');
 const paletteRangeStart = 0;
 const paletteRangeEnd = 32 * 16;
@@ -70,6 +117,7 @@ const savedFadeColor = Weather.gWeather.fadeDestColor;
 const savedWeatherFrameState = {
   palProcessingState: Weather.gWeather.palProcessingState,
   currWeather: Weather.gWeather.currWeather,
+  nextWeather: Weather.gWeather.nextWeather,
   gammaIndex: Weather.gWeather.gammaIndex,
   gammaTargetIndex: Weather.gWeather.gammaTargetIndex,
   gammaStepFrameCounter: Weather.gWeather.gammaStepFrameCounter,
@@ -140,6 +188,7 @@ try {
   assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_IDLE, 'gamma state returns to idle on the following frame');
 
   Weather.gWeather.currWeather = C.WEATHER_RAIN;
+  Weather.gWeather.nextWeather = C.WEATHER_RAIN;
   Weather.gWeather.fadeScreenCounter = 0;
   Weather.gWeather.fadeInCounter = 0;
   Weather.gWeather.fadeInActive = 1;
@@ -150,6 +199,7 @@ try {
   assert.equal(Weather.gWeather.fadeInActive, 0, 'fade-in active flag clears after its second frame');
 
   Weather.gWeather.currWeather = C.WEATHER_FOG_HORIZONTAL;
+  Weather.gWeather.nextWeather = C.WEATHER_FOG_HORIZONTAL;
   Weather.gWeather.fadeScreenCounter = 0;
   Weather.gWeather.fadeInCounter = 0;
   Weather.gWeather.fadeInActive = 1;
