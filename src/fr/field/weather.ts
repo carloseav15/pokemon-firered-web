@@ -12,7 +12,7 @@ import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
-import { gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
+import { BlendPalette, GET_B, GET_G, GET_R, gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -36,6 +36,7 @@ export let gWeather = {
   altGammaSpritePalIndex: 0xff,
   palProcessingState: 0,
   fadeDestColor: 0,
+  fadeScreenCounter: 0,
   paletteFadeDelay: 0,
   weatherChangeComplete: true,
   blendCoeff: 0,
@@ -243,14 +244,46 @@ export function ApplyGammaShift(startPalIndex: number, numPalettes: number, gamm
   }
 }
 
-/** ApplyGammaShiftWithBlend */
+/** ApplyGammaShiftWithBlend (field_weather.c). */
 export function ApplyGammaShiftWithBlend(
   startPalIndex: number,
   numPalettes: number,
   gammaIndex: number,
   blendCoeff: number,
   blendColor: number,
-): void {}
+): void {
+  const firstPalette = startPalIndex & 0xff;
+  const endPalette = firstPalette + (numPalettes & 0xff);
+  const row = ((gammaIndex << 24) >> 24) - 1; // C parameter type: s8.
+  const coefficient = blendCoeff & 0xff;
+  const color = blendColor & 0xffff;
+  const blendR = GET_R(color);
+  const blendG = GET_G(color);
+  const blendB = GET_B(color);
+
+  for (let paletteIndex = firstPalette; paletteIndex < endPalette; paletteIndex++) {
+    const colorOffset = paletteIndex * 16;
+    if (paletteGammaTypes[paletteIndex] === GAMMA_NONE) {
+      BlendPalette(colorOffset, 16, coefficient, color);
+      continue;
+    }
+
+    const gammaTable = (paletteGammaTypes[paletteIndex] === GAMMA_NORMAL
+      ? gWeather.gammaShifts
+      : gWeather.altGammaShifts)[row];
+    if (!gammaTable) continue;
+    for (let i = 0; i < 16; i++) {
+      const baseColor = gPlttBufferUnfaded[colorOffset + i] ?? 0;
+      const gammaR = gammaTable[GET_R(baseColor)] ?? 0;
+      const gammaG = gammaTable[GET_G(baseColor)] ?? 0;
+      const gammaB = gammaTable[GET_B(baseColor)] ?? 0;
+      const r = gammaR + (((blendR - gammaR) * coefficient) >> 4);
+      const g = gammaG + (((blendG - gammaG) * coefficient) >> 4);
+      const b = gammaB + (((blendB - gammaB) * coefficient) >> 4);
+      gPlttBufferFaded[colorOffset + i] = (b << 10) | (g << 5) | r;
+    }
+  }
+}
 
 /** ApplyDroughtGammaShiftWithBlend */
 export function ApplyDroughtGammaShiftWithBlend(gammaIndex: number, blendCoeff: number, blendColor: number): void {}
@@ -258,8 +291,18 @@ export function ApplyDroughtGammaShiftWithBlend(gammaIndex: number, blendCoeff: 
 /** FadeInScreenWithWeather */
 export function FadeInScreenWithWeather(): void {}
 
-/** FadeInScreen_RainShowShade */
+/** FadeInScreen_RainShowShade (field_weather.c). */
 export function FadeInScreen_RainShowShade(): boolean {
+  if (gWeather.fadeScreenCounter === 16) return false;
+
+  gWeather.fadeScreenCounter++;
+  if (gWeather.fadeScreenCounter >= 16) {
+    ApplyGammaShift(0, 32, 3);
+    gWeather.fadeScreenCounter = 16;
+    return false;
+  }
+
+  ApplyGammaShiftWithBlend(0, 32, 3, 16 - gWeather.fadeScreenCounter, gWeather.fadeDestColor);
   return true;
 }
 

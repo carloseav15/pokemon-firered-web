@@ -56,6 +56,8 @@ const paletteRangeEnd = 32 * 16;
 const savedUnfaded = gPlttBufferUnfaded.slice(paletteRangeStart, paletteRangeEnd);
 const savedFaded = gPlttBufferFaded.slice(paletteRangeStart, paletteRangeEnd);
 const savedAltPalette = Weather.gWeather.altGammaSpritePalIndex;
+const savedFadeCounter = Weather.gWeather.fadeScreenCounter;
+const savedFadeColor = Weather.gWeather.fadeDestColor;
 try {
   gPlttBufferUnfaded.fill(0x4210, paletteRangeStart, paletteRangeEnd);
   gPlttBufferFaded.fill(0, paletteRangeStart, paletteRangeEnd);
@@ -67,6 +69,21 @@ try {
   assert.equal(gPlttBufferFaded[17 * 16], 0x4210, 'alternate sprite override uses the alternate table');
   assert.equal(gPlttBufferFaded[13 * 16], 0x4210, 'GAMMA_NONE palettes copy unfaded colors');
   assert.equal(gPlttBufferFaded[16 * 16], 0x4210, 'GAMMA_ALT sprite palettes use the alternate table');
+
+  Weather.ApplyGammaShiftWithBlend(0, 32, 1, 8, 0);
+  assert.equal(gPlttBufferFaded[0], 0x1ce7, 'normal gamma is applied before half blending');
+  assert.equal(gPlttBufferFaded[13 * 16], 0x2108, 'GAMMA_NONE blends from the original palette');
+  assert.equal(gPlttBufferFaded[16 * 16], 0x2108, 'alternate gamma is applied before half blending');
+
+  Weather.gWeather.fadeScreenCounter = 0;
+  Weather.gWeather.fadeDestColor = 0;
+  for (let frame = 0; frame < 15; frame++) {
+    assert.equal(Weather.FadeInScreen_RainShowShade(), true, `rain fade continues on frame ${frame + 1}`);
+  }
+  assert.equal(Weather.FadeInScreen_RainShowShade(), false, 'rain fade ends after the sixteenth frame');
+  assert.equal(Weather.gWeather.fadeScreenCounter, 16);
+  assert.equal(gPlttBufferFaded[0], 0x35ad, 'last rain fade step applies gamma index 3');
+  assert.equal(Weather.FadeInScreen_RainShowShade(), false, 'completed rain fade stays complete');
 
   Weather.PreservePaletteInWeather(0);
   Weather.ApplyGammaShift(0, 1, 1);
@@ -81,6 +98,8 @@ try {
   gPlttBufferUnfaded.set(savedUnfaded, paletteRangeStart);
   gPlttBufferFaded.set(savedFaded, paletteRangeStart);
   Weather.gWeather.altGammaSpritePalIndex = savedAltPalette;
+  Weather.gWeather.fadeScreenCounter = savedFadeCounter;
+  Weather.gWeather.fadeDestColor = savedFadeColor;
   Weather.ResetPreservedPalettesInWeather();
 }
 console.log('✓ ApplyGammaShift palette routing and buffer writes exercised');
