@@ -43,7 +43,7 @@ import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPC
 import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import { ScanlineEffect_Stop } from "./hw/scanline";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
-import { AddTextPrinterParameterized, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import {
   AddWindow, ClearWindowTilemap, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap,
   RemoveWindow, type WindowTemplate,
@@ -833,6 +833,24 @@ function ItemPc_AddTextPrinterParameterized(windowId: number, fontId: number, st
   AddTextPrinterParameterized4(windowId, fontId, x, y, letterSpacing, lineSpacing, sTextColors()[colorIdx], speed, str);
 }
 
+/** unused_ItemPc_AddTextPrinterParameterized from item_pc.c. */
+function unused_ItemPc_AddTextPrinterParameterized(windowId: number, str: ArrayLike<number>, x: number, y: number, letterSpacing: number, lineSpacing: number, speed: number): void {
+  const fontId = C.FONT_NORMAL_COPY_2;
+  AddTextPrinter({
+    windowId,
+    fontId,
+    x,
+    y,
+    currentX: x,
+    currentY: y,
+    fgColor: 2,
+    bgColor: 0,
+    shadowColor: 3,
+    letterSpacing: letterSpacing + GetFontAttribute(fontId, C.FONTATTR_LETTER_SPACING),
+    lineSpacing: lineSpacing + GetFontAttribute(fontId, C.FONTATTR_LINE_SPACING),
+  }, str, speed);
+}
+
 function ItemPc_SetBorderStyleOnWindow(windowId: number): void {
   DrawStdFrameWithCustomTileAndPalette(windowId, false, 0x3c0, 14);
 }
@@ -851,6 +869,10 @@ function ItemPc_DestroySubwindow(idx: number): void {
   ClearWindowTilemap(sSubmenuWindowIds[idx]); // redundant
   RemoveWindow(sSubmenuWindowIds[idx]);
   sSubmenuWindowIds[idx] = 0xff;
+}
+
+function ItemPc_GetSubwindow(idx: number): number {
+  return sSubmenuWindowIds[idx];
 }
 
 function ItemPc_PrintOnWindow5WithContinueTask(taskId: number, str: ArrayLike<number>, taskFunc: (taskId: number) => void): void {

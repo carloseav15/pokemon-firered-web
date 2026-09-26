@@ -1330,6 +1330,14 @@ ventana de diálogo estándar) en vez de sobre el mapa;
 sin Quest Log ni help system. Verificado: `check:port`, `build` y paridad de
 cdata/incbin/textos; sin probar en navegador.
 
+- En una pasada de homónimos añadí `ItemPc_GetSubwindow` y el helper C
+  `unused_ItemPc_AddTextPrinterParameterized` con su configuración de fuente,
+  colores y espaciado. Ambos siguen sin caller porque también están sin uso en
+  C; el campo `TextPrinterTemplate.unk` no forma parte del modelo TS. El
+  inventario marca `item_pc.c` 59/59 y el total 5.771/9.834 (58,7 %), 93
+  archivos y 4.063 nombres pendientes. Pasaron `check:port`, `check:honesty`,
+  inventory, pending y `git diff --check`; sin navegador.
+
 ### Tienda Pokémon: `shop.c`, `buy_menu_helpers.c` (2026-09-25)
 
 `shop.ts` porta `shop.c` (menú COMPRAR/VENDER/SALIR, pantalla de compra con

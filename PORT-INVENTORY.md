@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 57 | 108124 | 1294/5030 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 35 | 58106 | 1969/2198 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 107 | 78746 | 2478/2478 |
+| Casi completo (≥ 80 % y < 100 %) | 34 | 56961 | 1912/2139 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 108 | 79891 | 2537/2537 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **94** | **169060** | |
-| **Total en alcance** | **202** | **247859** | **5769/9834** |
+| **Pendiente de portar** | **93** | **167915** | |
+| **Total en alcance** | **202** | **247859** | **5771/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -115,7 +115,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokemon_icon.c` | 1283 | 22/23 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_controllers.c` | 1214 | 61/68 | `battle/controllers.ts` |  |  |
-| `item_pc.c` | 1145 | 57/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `shop.c` | 1145 | 55/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
@@ -159,6 +158,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `hall_of_fame.c` | 1286 | 42/42 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
 | `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
 | `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
+| `item_pc.c` | 1145 | 59/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
 | `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
 | `battle_anim_utility_funcs.c` | 970 | 42/42 | `battle/anims/utilityFuncs.ts` |  |  |
