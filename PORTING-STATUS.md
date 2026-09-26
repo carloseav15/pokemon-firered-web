@@ -1907,6 +1907,12 @@ Pending / placeholders:
   acepta pan, volumen, prioridad ambient ni modos STOP/KEEP de música; esos
   parámetros quedan sin equivalencia. Pasaron `check:port`, `check:honesty`,
   inventory, pending y `git diff --check`; no se verificaron RNG/audio en juego.
+- Revisión source-to-source del 2026-09-26: corregí `ActivatePerStepCallback`
+  para que un ID negativo o mayor que `STEP_CB_CRACKED_FLOOR` vuelva a
+  `STEP_CB_DUMMY`, igual que el límite `ARRAY_COUNT(sPerStepCallbacks)` en C.
+  Inventario vigente: 5.792/9.834 nombres (58,9 %), 4.042 pendientes en 85
+  archivos; este arreglo de comportamiento no incrementa el conteo de nombres.
+  `check:port` y `check:honesty` pasan; no ejecuté check headless ni navegador.
 
 ## `diploma.c`: estados y helpers de la pantalla de diploma (2026-09-26)
 

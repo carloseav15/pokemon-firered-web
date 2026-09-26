@@ -38,7 +38,10 @@ export class PerStepCallback {
   /** ActivatePerStepCallback */
   ActivatePerStepCallback(id: number): void {
     this.data.fill(0);
-    this.id = id;
+    // field_tasks.c: ActivatePerStepCallback falls back to STEP_CB_DUMMY
+    // when callbackId is outside sPerStepCallbacks.
+    const callbackCount = C.STEP_CB_CRACKED_FLOOR + 1;
+    this.id = id >= 0 && id < callbackCount ? id : C.STEP_CB_DUMMY;
   }
 
   activate(id: number): void { this.ActivatePerStepCallback(id); }
