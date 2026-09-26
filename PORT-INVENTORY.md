@@ -3,7 +3,7 @@
 Generado por `tools/portInventory.py` (`npm run inventory`); no editar a mano.
 Mide cuántas funciones de cada `.c` existen con el mismo nombre en `src/fr`.
 La comparación ignora mayúsculas y `_` (la capa de campo antigua usa camelCase).
-Un nombre presente no prueba paridad: es un indicador de avance, no de fidelidad.
+La coincidencia de nombres no demuestra paridad funcional ni fidelidad.
 Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene
 código real cuenta como **stub** (columna Stubs) y no suma como portada.
 Las categorías fuera/cubierto/adaptador salen de las tablas del script.
@@ -11,16 +11,17 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 50 | 106738 | 1447/4926 |
+| Parcial (< 80 % de funciones) | 50 | 106738 | 1447/4926 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 150 | 139668 | 4606/4850 |
+| Casi completo (≥ 80 % y < 100 %) | 47 | 61629 | 2180/2424 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 103 | 78039 | 2426/2426 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 40/192 |
 | Fuera de alcance | 51 | 55183 | 103/1992 |
-| **Pendiente de portar** | **51** | **108138** | |
+| **Pendiente de portar** | **98** | **169767** | |
 | **Total en alcance** | **202** | **247859** | **6081/9834** |
 
-## Parcial (menos del 80 % de funciones)
+## Parcial (< 80 % de funciones)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
@@ -81,54 +82,84 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---|---|---:|
 | `teachy_tv.c` | 1400 | 28/58 | `menus/keyItemScreens.ts`, `teachyTv.ts` | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado | 30 |
 
-## Portado (≥ 80 % de funciones con el mismo nombre)
+## Casi completo (≥ 80 % y < 100 %)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `battle_script_commands.c` | 9886 | 281/284 | `battle/cmds/helpers.ts`, `battle/cmds/index.ts`, `battle/cmds/part1.ts` … |  |  |
-| `battle_anim_effects_1.c` | 5677 | 154/154 | `battle/anims/effects1.ts` |  |  |
-| `battle_anim_effects_3.c` | 5430 | 140/140 | `battle/anims/effects3.ts` |  |  |
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
-| `image_processing_effects.c` | 4436 | 38/38 | `imageProcessingEffects.ts` |  |  |
 | `region_map.c` | 4036 | 129/140 | `regionMap.ts` |  |  |
-| `battle_anim_effects_2.c` | 3865 | 121/121 | `battle/anims/effects2.ts` |  |  |
-| `pokedex_screen.c` | 3452 | 66/66 | `pokedexScreen.ts`, `pokemon/mon_extra.ts` |  |  |
 | `battle_util.c` | 3252 | 35/37 | `battle/util.ts` |  |  |
 | `battle_controller_player.c` | 2966 | 114/123 | `battle/controller_player.ts` |  |  |
-| `battle_message.c` | 2855 | 10/10 | `battle/message.ts` |  |  |
-| `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
 | `item_menu.c` | 2397 | 99/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_anim_mons.c` | 2360 | 126/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |  |
 | `field_weather_effects.c` | 2346 | 87/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  | 6 |
-| `battle_anim_special.c` | 2304 | 81/81 | `battle/anims/special.ts`, `battle/gfx_sfx_util.ts`, `battle/interface.ts` … |  |  |
 | `battle_interface.c` | 2240 | 46/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
-| `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `tm_case.c` | 1737 | 67/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
-| `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
-| `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
-| `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `menu2.ts`, `pokemonSpecialAnim.ts` |  |  |
 | `berry_pouch.c` | 1529 | 66/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
-| `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |  |
-| `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
-| `credits.c` | 1446 | 16/16 | `credits.ts` |  |  |
 | `pokeball.c` | 1334 | 34/37 | `battle/pokeball.ts` |  |  |
-| `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |  |
-| `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |  |
-| `hall_of_fame.c` | 1286 | 42/42 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
 | `pokemon_icon.c` | 1283 | 22/23 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
-| `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_controllers.c` | 1214 | 61/68 | `battle/controllers.ts` |  |  |
-| `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
 | `item_pc.c` | 1145 | 57/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `shop.c` | 1145 | 55/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
 | `battle_bg.c` | 1111 | 15/17 | `battle/bg.ts` |  |  |
-| `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 97/115 |  |  |  |
-| `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
+| `new_menu_helpers.c` | 761 | 50/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
+| `trainer_see.c` | 750 | 32/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
+| `item.c` | 680 | 46/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
+| `menu2.c` | 671 | 9/10 | `hw/menu.ts`, `menu2.ts` |  |  |
+| `menu_indicators.c` | 656 | 18/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
+| `sound.c` | 649 | 40/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  | 1 |
+| `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
+| `mon_markings.c` | 605 | 14/15 | `monMarkings.ts` |  |  |
+| `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
+| `window.c` | 513 | 19/21 | `gba/window.ts`, `hw/window.ts` |  |  |
+| `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
+| `battle_intro.c` | 492 | 9/10 | `battle/intro.ts` |  |  |
+| `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
+| `item_menu_icons.c` | 439 | 14/17 | `bagMenu.ts` |  |  |
+| `field_tasks.c` | 351 | 10/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
+| `menu_helpers.c` | 243 | 15/17 | `hw/menuHelpers.ts` |  | 1 |
+| `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |  |
+| `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |  |
+| `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
+| `gpu_regs.c` | 158 | 10/11 | `hw/gpu.ts` |  |  |
+| `dynamic_placeholder_text_util.c` | 137 | 4/5 | `dynamicPlaceholderTextUtil.ts` |  |  |
+| `money.c` | 136 | 11/13 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
+| `event_object_lock.c` | 114 | 9/11 | `script/eventObjectLock.ts` |  |  |
+| `fldeff_softboiled.c` | 108 | 7/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
+| `party_menu_specials.c` | 108 | 8/9 | `game.ts`, `script/specialsExtra.ts` |  |  |
+
+## Sin huecos de nombre (100 %; fidelidad no medida)
+
+| Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
+|---|---:|---:|---|---|---:|
+| `battle_anim_effects_1.c` | 5677 | 154/154 | `battle/anims/effects1.ts` |  |  |
+| `battle_anim_effects_3.c` | 5430 | 140/140 | `battle/anims/effects3.ts` |  |  |
+| `image_processing_effects.c` | 4436 | 38/38 | `imageProcessingEffects.ts` |  |  |
+| `battle_anim_effects_2.c` | 3865 | 121/121 | `battle/anims/effects2.ts` |  |  |
+| `pokedex_screen.c` | 3452 | 66/66 | `pokedexScreen.ts`, `pokemon/mon_extra.ts` |  |  |
+| `battle_message.c` | 2855 | 10/10 | `battle/message.ts` |  |  |
+| `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
+| `battle_anim_special.c` | 2304 | 81/81 | `battle/anims/special.ts`, `battle/gfx_sfx_util.ts`, `battle/interface.ts` … |  |  |
+| `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
+| `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
+| `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
+| `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `menu2.ts`, `pokemonSpecialAnim.ts` |  |  |
+| `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |  |
+| `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
+| `credits.c` | 1446 | 16/16 | `credits.ts` |  |  |
+| `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |  |
+| `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |  |
+| `hall_of_fame.c` | 1286 | 42/42 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
+| `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
+| `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
+| `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
+| `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
 | `battle_anim_utility_funcs.c` | 970 | 42/42 | `battle/anims/utilityFuncs.ts` |  |  |
 | `battle_anim_fight.c` | 969 | 31/31 | `battle/anims/fight.ts` |  |  |
 | `battle_anim_mon_movement.c` | 941 | 34/34 | `battle/anims/monMovement.ts` |  |  |
@@ -137,39 +168,24 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `menu.c` | 872 | 49/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `battle_anim_rock.c` | 822 | 22/22 | `battle/anims/rock.ts` |  |  |
 | `main_menu.c` | 788 | 29/29 | `mainMenu.ts` |  |  |
-| `new_menu_helpers.c` | 761 | 50/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `list_menu.c` | 758 | 31/31 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |  |
-| `trainer_see.c` | 750 | 32/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |  |
-| `item.c` | 680 | 46/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
 | `battle_ai_switch_items.c` | 674 | 13/13 | `battle/ai.ts` |  |  |
-| `menu2.c` | 671 | 9/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |  |
-| `menu_indicators.c` | 656 | 18/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
-| `sound.c` | 649 | 40/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  | 1 |
-| `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
 | `map_preview_screen.c` | 616 | 14/14 | `mapPreviewScreen.ts` |  |  |
 | `renewable_hidden_items.c` | 608 | 4/4 | `renewableHiddenItems.ts` |  |  |
-| `mon_markings.c` | 605 | 14/15 | `monMarkings.ts` |  |  |
-| `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `option_menu.c` | 575 | 19/19 | `optionMenu.ts` |  |  |
 | `trig.c` | 542 | 4/4 | `hw/trig.ts` |  |  |
 | `battle_anim_status_effects.c` | 535 | 12/12 | `battle/anim.ts`, `battle/anims/statusEffects.ts` |  |  |
-| `window.c` | 513 | 19/21 | `gba/window.ts`, `hw/window.ts` |  |  |
 | `seagallop.c` | 504 | 22/22 | `seagallop.ts` |  |  |
-| `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
-| `battle_intro.c` | 492 | 9/10 | `battle/intro.ts` |  |  |
-| `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `palette_util.c` | 474 | 17/17 | `paletteUtil.ts` |  |  |
 | `battle_anim_bug.c` | 462 | 13/13 | `battle/anims/bug.ts` |  |  |
 | `field_screen_effect.c` | 462 | 19/19 | `field/fieldEffects.ts`, `field/overworld.ts`, `script/specials.ts` |  |  |
-| `item_menu_icons.c` | 439 | 14/17 | `bagMenu.ts` |  |  |
 | `battle_anim_dragon.c` | 434 | 11/11 | `battle/anims/dragon.ts` |  |  |
 | `bike.c` | 418 | 24/24 | `field/playerAvatar.ts` |  |  |
 | `decompress.c` | 352 | 18/18 | `decompress.ts`, `pokemon/pics.ts` |  |  |
-| `field_tasks.c` | 351 | 10/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
 | `trainer_fan_club.c` | 347 | 23/23 | `script/specialsExtra.ts` |  |  |
 | `special_field_anim.c` | 341 | 10/10 | `field/fieldControl.ts`, `field/specialFieldAnim.ts`, `script/specialsExtra.ts` |  |  |
 | `event_data.c` | 336 | 26/26 | `save.ts` |  |  |
@@ -187,7 +203,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokedex_area_markers.c` | 274 | 5/5 | `pokedexArea.ts` |  |  |
 | `roamer.c` | 264 | 13/13 | `pokemon/roamer.ts` |  |  |
 | `scanline_effect.c` | 261 | 9/9 | `hw/scanline.ts` |  |  |
-| `menu_helpers.c` | 243 | 15/17 | `hw/menuHelpers.ts` |  | 1 |
 | `tilemap_util.c` | 238 | 11/11 | `hw/tilemapUtil.ts` |  |  |
 | `map_name_popup.c` | 231 | 7/7 | `field/mapNamePopup.ts` |  |  |
 | `script_movement.c` | 226 | 19/19 | `script/movement.ts` |  |  |
@@ -195,32 +210,23 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `script_pokemon_util.c` | 215 | 13/13 | `game.ts`, `pokemon/daycare.ts`, `pokemon/scriptPokemonUtil.ts` … |  |  |
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |  |
 | `braille_text.c` | 212 | 3/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
-| `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |  |
-| `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |  |
 | `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |  |
 | `ss_anne.c` | 200 | 8/8 | `script/specialsExtra.ts` |  |  |
 | `battle_anim_smokescreen.c` | 197 | 3/3 | `battle/anims/smokescreen.ts` |  |  |
-| `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
 | `pc_screen_effect.c` | 179 | 7/7 | `pcScreenEffect.ts` |  |  |
 | `text_window.c` | 177 | 19/19 | `battle/bg.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` |  |  |
 | `pokemon_storage_system.c` | 171 | 21/21 | `pokemon/storage.ts` |  |  |
 | `new_game.c` | 160 | 11/11 | `game.ts`, `random.ts`, `save.ts` |  |  |
-| `gpu_regs.c` | 158 | 10/11 | `hw/gpu.ts` |  |  |
 | `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
 | `field_message_box.c` | 142 | 14/14 | `field/messageBox.ts` |  |  |
 | `mailbox_pc.c` | 140 | 9/9 | `mailboxPc.ts`, `menus/playerPc.ts`, `playerPcMailbox.ts` … |  |  |
-| `dynamic_placeholder_text_util.c` | 137 | 4/5 | `dynamicPlaceholderTextUtil.ts` |  |  |
 | `fldeff_rocksmash.c` | 137 | 10/10 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
-| `money.c` | 136 | 11/13 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
 | `berry_powder.c` | 133 | 14/14 | `script/specialsExtra.ts` |  |  |
 | `heal_location.c` | 122 | 5/5 | `field/overworld.ts` |  |  |
 | `field_poison.c` | 119 | 7/7 | `field/poison.ts` |  |  |
-| `event_object_lock.c` | 114 | 9/11 | `script/eventObjectLock.ts` |  |  |
 | `save_location.c` | 112 | 10/10 | `pokemon/saveLocation.ts` |  |  |
 | `prof_pc.c` | 109 | 3/3 | `game.ts` |  |  |
 | `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
-| `fldeff_softboiled.c` | 108 | 7/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
-| `party_menu_specials.c` | 108 | 8/9 | `game.ts`, `script/specialsExtra.ts` |  |  |
 | `field_weather_util.c` | 105 | 10/10 | `field/weather.ts` |  |  |
 | `fldeff_sweetscent.c` | 100 | 7/7 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `coins.c` | 98 | 9/9 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |

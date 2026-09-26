@@ -232,7 +232,7 @@ def count_found(funcs: list[tuple[str, bool]], idents: set[str], real_def: dict[
     return found, stubs
 
 
-def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool) -> tuple[str, str]:
+def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool, stubs: list[str]) -> tuple[str, str]:
     if name in OUT_OF_SCOPE or name.startswith(OUT_OF_SCOPE_PREFIXES):
         return "fuera", ""
     if name in COVERED:
@@ -242,19 +242,22 @@ def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool) 
     if not funcs:
         return ("datos", "") if (ROOT / "public/fr/cdata" / f"{name}.json").exists() else ("falta", "")
     ratio = found / len(funcs)
-    if ratio >= 0.8:
+    if found == len(funcs) and not stubs:
         return "portado", ""
+    if ratio >= 0.8:
+        return "casi", ""
     if found or cited:
         return "parcial", ""
     return "falta", ""
 
 
-ORDER = ["falta", "parcial", "adaptador", "portado", "datos", "cubierto", "fuera"]
+ORDER = ["falta", "parcial", "adaptador", "casi", "portado", "datos", "cubierto", "fuera"]
 TITLES = {
     "falta": "Falta (sin funciones portadas)",
-    "parcial": "Parcial (menos del 80 % de funciones)",
+    "parcial": "Parcial (< 80 % de funciones)",
     "adaptador": "Adaptador (UI simplificada)",
-    "portado": "Portado (≥ 80 % de funciones con el mismo nombre)",
+    "casi": "Casi completo (≥ 80 % y < 100 %)",
+    "portado": "Sin huecos de nombre (100 %; fidelidad no medida)",
     "datos": "Solo datos (exportados a cdata)",
     "cubierto": "Cubierto por hw/navegador/exportador",
     "fuera": "Fuera de alcance",
@@ -269,7 +272,7 @@ def main() -> None:
         text = path.read_text(errors="replace")
         funcs = c_functions(text)
         found, stubs = count_found(funcs, idents, real_def)
-        status, note = classify(name, funcs, found, name in cites)
+        status, note = classify(name, funcs, found, name in cites, stubs)
         rows.append((status, name, text.count("\n"), found, len(funcs), note, cites.get(name, []), len(stubs)))
 
     out = [
@@ -278,7 +281,7 @@ def main() -> None:
         "Generado por `tools/portInventory.py` (`npm run inventory`); no editar a mano.",
         "Mide cuántas funciones de cada `.c` existen con el mismo nombre en `src/fr`.",
         "La comparación ignora mayúsculas y `_` (la capa de campo antigua usa camelCase).",
-        "Un nombre presente no prueba paridad: es un indicador de avance, no de fidelidad.",
+        "La coincidencia de nombres no demuestra paridad funcional ni fidelidad.",
         "Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene",
         "código real cuenta como **stub** (columna Stubs) y no suma como portada.",
         "Las categorías fuera/cubierto/adaptador salen de las tablas del script.",
@@ -289,7 +292,7 @@ def main() -> None:
     for s in ORDER:
         sel = [r for r in rows if r[0] == s]
         out.append(f"| {TITLES[s]} | {len(sel)} | {sum(r[2] for r in sel)} | {sum(r[3] for r in sel)}/{sum(r[4] for r in sel)} |")
-    todo = [r for r in rows if r[0] in ("falta", "parcial", "adaptador")]
+    todo = [r for r in rows if r[0] in ("falta", "parcial", "adaptador", "casi")]
     scope = [r for r in rows if r[0] not in ("cubierto", "fuera")]
     out.append(f"| **Pendiente de portar** | **{len(todo)}** | **{sum(r[2] for r in todo)}** | |")
     out.append(f"| **Total en alcance** | **{len(scope)}** | **{sum(r[2] for r in scope)}** | **{sum(r[3] for r in scope)}/{sum(r[4] for r in scope)}** |")

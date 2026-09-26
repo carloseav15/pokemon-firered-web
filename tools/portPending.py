@@ -16,6 +16,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = (ROOT / "PORT-INVENTORY.md").read_text()
 
+
+def fmt_int(value: int) -> str:
+    return f"{value:,}".replace(",", ".")
+
 # Screens/systems ported from the C but never run in a browser (fase de pruebas).
 UNTESTED = [
     ("pokedex_screen.c + pokedex_area_markers.c + wild_pokemon_area.c + trainer_pokemon_sprites.c", "pokedexScreen.ts"),
@@ -125,25 +129,30 @@ def main() -> None:
     falta = section("Falta")
     adaptador = section("Adaptador")
     parcial = section("Parcial")
+    casi = section("Casi completo")
     total = re.search(r"\*\*Total en alcance\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)/(\d+)\*\*", SRC)
     pend = re.search(r"\*\*Pendiente de portar\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)\*\*", SRC)
+    pendientes = falta + adaptador + casi + parcial
+    lineas_estimadas_sin_cubrir = sum(missing(r) for r in pendientes)
     parts = ["# Faltantes del port (generado)", "",
              "Generado por `tools/portPending.py` (`npm run pending`) a partir de [PORT-INVENTORY.md](PORT-INVENTORY.md); no editar a mano.",
              "Las listas de \"pruebas\" y \"huecos conocidos\" salen del script.", ""]
     if total and pend:
         done, allf = int(total.group(3)), int(total.group(4))
         parts += ["## Avance", "",
-                  f"- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **{done}/{allf} ({100 * done // allf} %)**.",
-                  f"- Archivos C pendientes: **{pend.group(1)}** ({pend.group(2)} líneas de C).",
+                  f"- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **{done}/{allf} ({100 * done / allf:.1f} %)**.",
+                  f"- Archivos C con funciones aún sin homólogo: **{pend.group(1)}**; quedan **{allf - done} nombres**.",
+                  f"- Estos archivos contienen {fmt_int(int(pend.group(2)))} líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.",
+                  f"- Estimación ponderada del C sin homólogo: **~{fmt_int(lineas_estimadas_sin_cubrir)} líneas** (aproximación por proporción de funciones).",
                   "- Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).", ""]
-    pendientes = falta + adaptador + parcial
     statuses = {r[0]: "sin empezar" for r in falta}
     statuses.update({r[0]: "adaptador" for r in adaptador})
+    statuses.update({r[0]: "casi completo" for r in casi})
     statuses.update({r[0]: "parcial" for r in parcial})
-    parts += ["## 1. Archivos pendientes, de menos a más C sin cubrir", "",
+    parts += ["## 1. Archivos con huecos de implementación, de menos a más C sin cubrir", "",
               "Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fidelidad ni dificultad real.", "",
               ordered_table(pendientes, statuses), "",
-              f"Total: {len(falta)} sin empezar, {len(adaptador)} adaptadores y {len(parcial)} parciales.", "",
+              f"Total: {len(pendientes)} archivos con huecos: {len(falta)} sin empezar, {len(adaptador)} adaptador, {len(casi)} casi completos y {len(parcial)} parciales.", "",
               "## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)", "",
               "No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.", "",
               "| Archivo C | Líneas | Portadas | Stubs |", "|---|---:|---:|---:|"]
@@ -164,7 +173,7 @@ def main() -> None:
               "3. Guardados de regresión por zona y checks headless por sistema en `tools/checks/`.",
               "4. Decisión de diseño postgame (tickets de Mew/Deoxys)."]
     (ROOT / "PENDING.md").write_text("\n".join(parts) + "\n")
-    print(f"PENDING.md: {len(falta)} sin empezar, {len(adaptador)} adaptadores, {len(parcial)} parciales")
+    print(f"PENDING.md: {len(falta)} sin empezar, {len(adaptador)} adaptadores, {len(casi)} casi completos, {len(parcial)} parciales")
 
 
 if __name__ == "__main__":

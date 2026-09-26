@@ -6,10 +6,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 ## Revisión de clima y avance del port, 2026-09-26
 
 - Inventario actual: **6.081/9.834 funciones con homólogo (61,8%)**; quedan
-  **3.753 nombres (38,2%)**. De 202 archivos C en alcance, 51 siguen parciales
-  o como adaptador: 50 parciales y uno adaptador. El estimado de líneas C sin
-  cubrir es **108.138/247.859 (43,6%)**. Estos indicadores miden coincidencias
-  de nombres y cobertura aproximada; no prueban equivalencia funcional.
+  **3.753 nombres (38,2%)**. De 202 archivos C de la lista en alcance, **98 aún
+  tienen huecos de nombre**: 47 casi completos, 50 parciales y uno adaptador;
+  103 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
+  de líneas C sin cubrir es **~78.026/247.859 (31,5%)**. Son indicadores del
+  inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
   duplicados sin uso, función por función y sin ocultar adaptadores; (2) cerrar

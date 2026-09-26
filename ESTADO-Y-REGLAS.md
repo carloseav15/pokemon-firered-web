@@ -1,6 +1,6 @@
 # Estado del port, auditoría de la sesión Gemini y reglas para agentes
 
-Fecha: 2026-09-25. Rama `claude/dreamy-turing-at628d`. Cifras de
+Fecha: 2026-09-26. Rama `main`. Cifras de
 `npm run inventory` / `npm run pending` con la detección de stubs activa.
 Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 "Auditoría de la sesión de Gemini". Faltantes vivos: [PENDING.md](PENDING.md).
@@ -9,12 +9,16 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 
 | Medida | Valor | Qué significa |
 |---|---:|---|
-| Funciones del C con homólogo **con cuerpo real** en TS | **5423 / 9825 (55 %)** | Indicador de avance por nombre; no prueba fidelidad |
-| Archivos C "portados" (≥ 80 % de funciones) | 91 / 210 (43 %) | 116 834 de 248 996 líneas C en alcance (47 %) |
-| Archivos C parciales | 117 | 130 709 líneas C |
+| Funciones del C con homólogo por nombre en TS | **6081 / 9834 (61,8 %)** | Indicador de nombres; no prueba fidelidad |
+| Archivos C sin huecos de nombre | **103 / 202 (51,0 %)** | El inventario no mide paridad funcional |
+| Archivos casi completos (≥ 80 % y < 100 %) | **47** | Aún tienen funciones sin homólogo |
+| Archivos parciales (< 80 %) | **50** | Lista completa, junto con los casi completos, en `PENDING.md` |
+| Archivos adaptador | **1** | Teachy TV conserva interfaz de lista simplificada |
+| Archivos con algún hueco de nombre | **98** | 47 casi completos + 50 parciales + 1 adaptador |
+| Líneas C sin cubrir (estimación ponderada) | **~78 026 / 247 859 (31,5 %)** | Estimación por proporción de funciones, no comparación de cada línea |
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
-| Funciones stub (nombre del C, cuerpo vacío) | 172 | No cuentan como portadas (PENDING.md §3b) |
-| Módulos que el juego no importa | 10 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
+| Funciones stub (nombre del C, cuerpo vacío) | 125 | No cuentan como portadas (PENDING.md §3b) |
+| Módulos que el juego no importa | 9 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
 | **Jugado de verdad en navegador** | intro → Monte Moon (dentro) | ≈ las primeras 2 horas; el resto del juego, sin probar |
 
 Resumen honesto: el motor (hardware GBA emulado, batalla completa, scripts,
@@ -188,21 +192,21 @@ cambio la meta es **maximizar el C traducido fielmente**, el enfoque cambia,
 pero las reglas del §5 siguen igual: una función cuenta solo si tiene el cuerpo
 del C, está conectada y se ha probado al menos en headless.
 
-**Qué medir.** No "funciones con nombre" sino **líneas de C cubiertas con
-cuerpo real** (`npm run inventory`, columna Stubs a cero) y, para cada archivo,
-un check que ejecute su código. Hoy: 5423/9825 funciones, 117 archivos parciales
-con ~130 000 líneas de C.
+**Qué medir.** El inventario de nombres es un avance orientativo, no la medida
+final de implementación. Hoy marca 6081/9834 nombres, con 98 archivos que aún
+tienen huecos: 47 casi completos, 50 parciales y un adaptador. Estima ~78 026
+líneas C sin cubrir de 247 859 por proporción de funciones. La meta real además
+requiere revisar el cuerpo contra el C, conectar el flujo y probarlo en headless.
 
 **Orden recomendado (más retorno por hora, menos riesgo):**
 
-1. **Deuda existente primero** (barato y ya conectado): rellenar los 171 stubs
-   (PENDING.md §3b: `field_effect_helpers.c` 62, `field_weather.c` 30,
-   `teachy_tv.c` 30, `trade.c` 15, `fame_checker.c` 7…) y conectar o borrar los
-   10 módulos sin uso (§3c). Cada stub rellenado baja la línea base de
+1. **Deuda existente primero**: revisar los 125 stubs de `PENDING.md` §3b y
+   conectar o eliminar con cuidado los 9 módulos sin uso (§3c). Los stubs son
+   trabajo de complejidad desigual; cada cuerpo se compara con el C antes de
+   contarlo como portado. Cada stub corregido reduce la línea base de
    `check:honesty`.
-2. **Archivos casi terminados** (≥ 60 %, p. ej. `party_menu.c` 280/357,
-   `battle_main.c` 82/106, `field_weather_effects.c`, `trade_scene.c`): pocas
-   funciones cierran el archivo entero.
+2. **Archivos casi terminados**: cerrar los 47 archivos con al menos 80 % y
+   menos del 100 %, priorizando los que tengan pocas funciones pendientes.
 3. **Sustituir la capa antigua del campo** por los archivos del C, uno por uno,
    con el juego funcionando entre medias: `event_object_movement.c` (42/752),
    `field_player_avatar.c`, `field_control_avatar.c`, `overworld.c`,
