@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 57 | 108124 | 1294/5030 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 36 | 60292 | 2032/2262 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 106 | 76560 | 2414/2414 |
+| Casi completo (≥ 80 % y < 100 %) | 35 | 58106 | 1969/2198 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 107 | 78746 | 2478/2478 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **95** | **171246** | |
-| **Total en alcance** | **202** | **247859** | **5768/9834** |
+| **Pendiente de portar** | **94** | **169060** | |
+| **Total en alcance** | **202** | **247859** | **5769/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -108,7 +108,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_mons.c` | 2360 | 125/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |  |
 | `field_weather_effects.c` | 2346 | 91/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  | 2 |
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
-| `oak_speech.c` | 2186 | 63/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `tm_case.c` | 1737 | 66/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
 | `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
@@ -148,6 +147,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_message.c` | 2855 | 10/10 | `battle/message.ts` |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
 | `battle_anim_special.c` | 2304 | 81/81 | `battle/anims/special.ts`, `battle/gfx_sfx_util.ts`, `battle/interface.ts` … |  |  |
+| `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
 | `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
 | `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `menu2.ts`, `pokemonSpecialAnim.ts` |  |  |

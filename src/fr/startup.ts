@@ -156,7 +156,7 @@ class Startup {
         if (this.oakPending) {
           if (!this.oakLoaded) break;
           this.oakPending = false;
-          this.oakSpeech.begin();
+          this.oakSpeech.StartNewGameScene();
         }
         this.oakSpeech.update();
         if (this.oakSpeech.done) {

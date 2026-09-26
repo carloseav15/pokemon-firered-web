@@ -2734,3 +2734,12 @@ Pending / placeholders:
   `git diff --check` pasaron. El check de clima cubre rutas seleccionadas;
   no comparé posiciones de nieve con un emulador ni revisé el render del clima
   en navegador.
+
+## `oak_speech.c`: nombre del punto de entrada (2026-09-26)
+
+- Renombré `OakSpeech.begin()` a `StartNewGameScene()` y actualicé el caller de
+  startup. El método conserva la preparación del runtime web y crea
+  `Task_NewGameScene` antes de instalar `CB2_NewGameScene`, igual que el flujo
+  fuente. El inventario reconoce 64/64; global: 5.769/9.834 (58,7 %), 94
+  archivos y 4.065 nombres pendientes. Pasaron `check:port`, `check:honesty`,
+  inventory, pending y `git diff --check`; sin runtime.

@@ -166,8 +166,7 @@ export class OakSpeech {
     return { playerName: decode(newGameProfile.playerName), gender: newGameProfile.playerGender, rivalName: decode(newGameProfile.rivalName) };
   }
 
-  /** StartNewGameScene */
-  begin(): void {
+  StartNewGameScene(): void {
     finished = false;
     gPlttBufferUnfaded[0] = RGB_BLACK;
     gPlttBufferFaded[0] = RGB_BLACK;
