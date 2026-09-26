@@ -577,9 +577,9 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     ctx.ow.map.setMetatileIdAt(x, y, impassable ? metatile | MAPGRID_COLLISION_MASK : metatile);
     return false;
   },
-  resetweather: (ctx) => { ctx.ow.game.weather.setSavedFromHeader(ctx.ow.header.weather); return false; },
+  resetweather: (ctx) => { ctx.ow.game.weather.SetSavedWeatherFromCurrMapHeader(ctx.ow.header.weather); return false; },
   setweather: (ctx) => { ctx.ow.game.weather.setWeather(varGet(ctx.ScriptReadHalfword())); return false; },
-  doweather: (ctx) => { ctx.ow.game.weather.doCurrent(); return false; },
+  doweather: (ctx) => { ctx.ow.game.weather.DoCurrentWeather(); return false; },
   setstepcallback: (ctx) => { ctx.ow.game.setStepCallback(ctx.readByte()); return false; },
   setmaplayoutindex: (ctx) => { ctx.ow.game.setMapLayoutIndex(varGet(ctx.ScriptReadHalfword())); return false; },
   opendoor: (ctx) => {

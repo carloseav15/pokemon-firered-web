@@ -2743,6 +2743,16 @@ Pending / placeholders:
   no comparé posiciones de nieve con un emulador ni revisé el render del clima
   en navegador.
 
+## `field_weather_util.c`: nombres fuente de guardado y aplicación del clima (2026-09-26)
+
+- Alineé `TranslateWeatherNum`, `SetSavedWeather`,
+  `SetSavedWeatherFromCurrMapHeader` y `DoCurrentWeather` con el C, y actualicé
+  los callers de overworld y del intérprete de scripts. No cambié la lógica de
+  ciclos por ruta, el contador de lluvia ni la selección del próximo clima.
+  `field_weather_util.c` queda 10/10; total 5.775/9.834 (58,7 %), 92 archivos
+  y 4.059 nombres pendientes. Pasaron `check:port`, `check:honesty`, inventory,
+  pending y `git diff --check`; sin runtime.
+
 ## `oak_speech.c`: nombre del punto de entrada (2026-09-26)
 
 - Renombré `OakSpeech.begin()` a `StartNewGameScene()` y actualicé el caller de

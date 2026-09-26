@@ -456,7 +456,7 @@ export class Overworld {
     const outdoors = isMapTypeOutdoors(this.header.mapType);
     clearTempFieldEventData();
     this.effects.resetEncounterImmunity();
-    this.game.weather.setSavedFromHeader(this.loaded.header.weather);
+    this.game.weather.SetSavedWeatherFromCurrMapHeader(this.loaded.header.weather);
     this.onMapLoad();
     onWarpForRoamer();
     TrySetMapSaveWarpStatus();
@@ -465,7 +465,7 @@ export class Overworld {
     this.savedMusic = 0;
     this.RunOnTransitionMapScript();
     this.initMap();
-    this.game.weather.doCurrent();
+    this.game.weather.DoCurrentWeather();
   }
 
   private setDefaultFlashLevel(): void {
@@ -1180,7 +1180,7 @@ export class Overworld {
     this.loadObjEventTemplatesFromHeader();
     clearTempFieldEventData();
     this.effects.resetEncounterImmunity();
-    this.game.weather.setSavedFromHeader(this.loaded.header.weather);
+    this.game.weather.SetSavedWeatherFromCurrMapHeader(this.loaded.header.weather);
     this.onMapLoad();
     onCameraTransitionForRoamer();
     TrySetMapSaveWarpStatus();
@@ -1190,7 +1190,7 @@ export class Overworld {
     this.initMap();
     this.renderer = new TileRenderer(loaded.primary, loaded.secondary);
     this.animator = new TilesetAnimator(this.renderer);
-    this.game.weather.doCurrent();
+    this.game.weather.DoCurrentWeather();
     this.RunOnResumeMapScript();
     if (this.sectionCache.get(prevHeader.id) !== loaded.header.regionMapSection) this.mapName.show(true);
     // Prefetch the next ring of neighbours.

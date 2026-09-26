@@ -159,7 +159,7 @@ const WEATHER_CYCLE_ROUTE119 = [C.WEATHER_SUNNY, C.WEATHER_RAIN, C.WEATHER_RAIN_
 const WEATHER_CYCLE_ROUTE123 = [C.WEATHER_SUNNY, C.WEATHER_SUNNY, C.WEATHER_RAIN, C.WEATHER_SUNNY];
 
 /** TranslateWeatherNum (field_weather_util.c), including the saved route-cycle stage. */
-function translate(weather: number): number {
+function TranslateWeatherNum(weather: number): number {
   switch (weather & 0xff) {
     case C.WEATHER_NONE:
     case C.WEATHER_SUNNY_CLOUDS:
@@ -921,18 +921,18 @@ export class FieldWeather {
   }
 
   /** SetSavedWeatherFromCurrMapHeader */
-  setSavedFromHeader(headerWeather: number): void {
-    this.setSavedRaw(translate(headerWeather));
+  SetSavedWeatherFromCurrMapHeader(headerWeather: number): void {
+    this.setSavedRaw(TranslateWeatherNum(headerWeather));
   }
 
   /** SetSavedWeather */
-  setSaved(weather: number): void {
-    this.setSavedRaw(translate(weather));
+  SetSavedWeather(weather: number): void {
+    this.setSavedRaw(TranslateWeatherNum(weather));
   }
 
   /** SetWeather: update the saved weather and immediately schedule it. */
   setWeather(weather: number): void {
-    this.setSaved(weather);
+    this.SetSavedWeather(weather);
     this.next = this.saved;
   }
 
@@ -944,7 +944,7 @@ export class FieldWeather {
   }
 
   /** DoCurrentWeather */
-  doCurrent(): void {
+  DoCurrentWeather(): void {
     this.next = this.saved;
   }
 
@@ -956,7 +956,7 @@ export class FieldWeather {
 
   /** SetWeather_Unused (field_weather_util.c). */
   setWeatherUnused(weather: number): void {
-    this.setSaved(weather);
+    this.SetSavedWeather(weather);
     this.current = this.saved;
     this.next = this.saved;
   }
