@@ -59,7 +59,13 @@ export class PerStepCallback {
 
   Task_RunPerStepCallback(): void {
     if (this.id === C.STEP_CB_ICE) this.IcefallCaveIcePerStepCallback();
+    else if (this.id === C.STEP_CB_CRACKED_FLOOR) this.CrackedFloorPerStepCallback();
+    // STEP_CB_ASH is an unused R/S callback and no FireRed script selects it.
+    else if (this.id !== C.STEP_CB_ASH) this.DummyPerStepCallback();
   }
+
+  /** DummyPerStepCallback: the source callback intentionally does nothing. */
+  private DummyPerStepCallback(): void {}
 
   /** Task_RunTimeBasedEvents / UpdateAmbientCry state machine. */
   Task_RunTimeBasedEvents(): void {

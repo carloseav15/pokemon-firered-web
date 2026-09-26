@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.834/9.834 (59,3%)**; quedan
-  **4.000 nombres (40,7%)**. Hay **77 archivos C con huecos**: uno sin empezar,
+  stubs. El inventario vigente registra **5.835/9.834 (59,3%)**; quedan
+  **3.999 nombres (40,7%)**. Hay **77 archivos C con huecos**: uno sin empezar,
   uno adaptador, 22 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.546/247.859 (33,7%)**. El inventario mide nombres/cuerpos
+  cubrir es **~83.517/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - **`evolution_scene.c`: `CreateShedinja` corregido y conectado.** El flujo
   anterior exigía y consumía una Poké Ball aunque el C no lo hace, y creaba
@@ -33,6 +33,12 @@ systems. The first playable route is a milestone, not the completion criterion.
   Enigma Berry y escritura de mail. El archivo entero continúa fuera del
   alcance medido porque su sala online y transporte no están portados; este
   helper sí se usa. Los checks estáticos pasan; sin prueba de ejecución.
+- **`field_tasks.c`: 11/12 funciones con homólogo.** El dispatcher ahora llama
+  también al callback real de cracked floor y a `DummyPerStepCallback`, que es
+  el no-op definido por C. `AshGrassPerStepCallback` sigue faltando: es un
+  residuo R/S sin scripts FireRed que lo seleccionen y depende del efecto de
+  ceniza. Pasaron `check:port`, `check:honesty`, `inventory`, `pending` y
+  `git diff --check`; sin prueba en juego.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
@@ -1975,13 +1981,13 @@ Pending / placeholders:
 
 ## `field_tasks.c`: tareas persistentes del campo (2026-09-26)
 
-- El inventario reconoce 10/12 funciones. Ya están la tarea de callback por
+- El inventario reconoce 11/12 funciones. Ya están la tarea de callback por
   paso, configuración/reset, selección de especie ambiental en cada carga,
   estado de espera del cry con los rangos RNG del C, compuerta de controls/Quest
   Log, surfability del tile de destino y persistencia del puzzle de hielo. Los
-  helpers para cracked floor RSE están traducidos; `DummyPerStepCallback` es un
-  no-op del C y `AshGrassPerStepCallback` depende de ceniza/metatiles RSE que
-  FireRed no usa, así que no añadí sustitutos vacíos.
+  helpers para cracked floor RSE están conectados desde el dispatcher;
+  `DummyPerStepCallback` expresa el no-op del C. `AshGrassPerStepCallback`
+  depende de ceniza/metatiles RSE y FireRed no tiene scripts que lo seleccionen.
 - Web adapta la tarea prioridad 80 como callback por frame. El audio actual no
   acepta pan, volumen, prioridad ambient ni modos STOP/KEEP de música; esos
   parámetros quedan sin equivalencia. Pasaron `check:port`, `check:honesty`,
@@ -1989,7 +1995,7 @@ Pending / placeholders:
 - Revisión source-to-source del 2026-09-26: corregí `ActivatePerStepCallback`
   para que un ID negativo o mayor que `STEP_CB_CRACKED_FLOOR` vuelva a
   `STEP_CB_DUMMY`, igual que el límite `ARRAY_COUNT(sPerStepCallbacks)` en C.
-  Inventario vigente: 5.792/9.834 nombres (58,9 %), 4.042 pendientes en 85
+  Inventario de ese corte: 5.792/9.834 nombres (58,9 %), 4.042 pendientes en 85
   archivos; este arreglo de comportamiento no incrementa el conteo de nombres.
   `check:port` y `check:honesty` pasan; no ejecuté check headless ni navegador.
 
