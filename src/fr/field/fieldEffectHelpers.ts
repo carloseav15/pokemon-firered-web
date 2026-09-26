@@ -23,12 +23,6 @@ export const gFadeFootprintsTireTracksFuncs = [
   FadeFootprintsTireTracks_Step1,
 ];
 
-export const gAshFieldEffectFuncs = [
-  UpdateAshFieldEffect_Step0,
-  UpdateAshFieldEffect_Step1,
-  UpdateAshFieldEffect_Step2,
-];
-
 export let gFieldEffectArguments: number[] = [0, 0, 0, 0, 0, 0, 0, 0];
 
 /** SetUpReflection */
@@ -204,41 +198,6 @@ export function FadeFootprintsTireTracks_Step1(sprite: Sprite | any): void {
   if (sprite.data[1] > 16) {
     sprite.invisible = true;
   }
-}
-
-/** FldEff_Ash */
-export function FldEff_Ash(): number {
-  return 0;
-}
-
-/** StartAshFieldEffect */
-export function StartAshFieldEffect(x: number, y: number, priority: number, subpriority: number): void {
-  // Spawns ash puff effect on volcanic metatiles
-}
-
-/** UpdateAshFieldEffect */
-export function UpdateAshFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-  if (sprite.data && sprite.data[0] < gAshFieldEffectFuncs.length) {
-    gAshFieldEffectFuncs[sprite.data[0]](sprite);
-  }
-}
-
-/** UpdateAshFieldEffect_Step0 */
-export function UpdateAshFieldEffect_Step0(sprite: Sprite | any): void {
-  if (!sprite) return;
-  sprite.data[0] = 1;
-}
-
-/** UpdateAshFieldEffect_Step1 */
-export function UpdateAshFieldEffect_Step1(sprite: Sprite | any): void {
-  if (!sprite) return;
-  sprite.data[0] = 2;
-}
-
-/** UpdateAshFieldEffect_Step2 */
-export function UpdateAshFieldEffect_Step2(sprite: Sprite | any): void {
-  if (!sprite) return;
 }
 
 /** FldEff_SurfBlob */

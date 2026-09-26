@@ -8,10 +8,19 @@ systems. The first playable route is a milestone, not the completion criterion.
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
   stubs. El inventario vigente registra **5.840/9.834 (59,4%)**; quedan
-  **3.994 nombres (40,6%)**. Hay **76 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 21 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.428/247.859 (33,7%)**. El inventario mide nombres/cuerpos
+  **3.994 nombres (40,6%)**. Hay **75 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 20 casi completos y 53 parciales. La estimación de líneas sin
+  cubrir es **~83.417/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
+- **`field_tasks.c`: 12/12 funciones con homólogo.** Implementé el callback R/S
+  `AshGrassPerStepCallback` y su cadena visual: espera de cuatro frames,
+  reemplazo del metatile de ceniza, reactivación de efectos de suelo y
+  destrucción al terminar la animación. Conecté el sprite `Ash` exportado y
+  eliminé seis stubs de ash duplicados en el módulo legado sin conectar.
+  FireRed no selecciona `STEP_CB_ASH`; queda implementado por fidelidad al C,
+  pero sin caller FireRed ni verificación de ejecución. Pasaron
+  `check:port`, `check:honesty` (113 stubs), `inventory`, `pending` y
+  `git diff --check`.
 - **`evolution_scene.c`: `CreateShedinja` corregido y conectado.** El flujo
   anterior exigía y consumía una Poké Ball aunque el C no lo hace, y creaba
   stats desde un Pokémon nuevo. Ahora copia el Pokémon evolucionado, limpia
@@ -33,14 +42,6 @@ systems. The first playable route is a milestone, not the completion criterion.
   Enigma Berry y escritura de mail. El archivo entero continúa fuera del
   alcance medido porque su sala online y transporte no están portados; este
   helper sí se usa. Los checks estáticos pasan; sin prueba de ejecución.
-- **`field_tasks.c`: 11/12 funciones con homólogo.** El dispatcher ahora llama
-  también al callback real de cracked floor y a `DummyPerStepCallback`, que es
-  el no-op definido por C. `AshGrassPerStepCallback` sigue faltando: es un
-  residuo R/S sin scripts FireRed que lo seleccionen y depende del efecto de
-  ceniza. Pasaron `check:port`, `check:honesty`, `inventory`, `pending` y
-  `git diff --check`; sin prueba en juego. En esta revisión moví los dos
-  temporizadores y coordenadas cracked-floor a los índices `data[2..9]` del C;
-  `ActivatePerStepCallback` ya los limpia al cambiar de callback.
 - **`shop.c`: 59/60 funciones con homólogo y sin stub registrado.** Conecté los
   dos helpers debug que el C deja vacíos. Quité el stub `RecordTransactionForQuestLog`
   y su llamada sin efecto; el historial de transacciones todavía no se escribe

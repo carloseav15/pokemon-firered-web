@@ -393,6 +393,51 @@ export class FieldEffects {
     return sprite;
   }
 
+  /** StartAshFieldEffect / FldEff_Ash and UpdateAshFieldEffect_Step0..2. */
+  StartAshFieldEffect(x: number, y: number, metatileId: number, delay: number): void {
+    this.FldEff_Ash(x, y, metatileId, delay);
+  }
+
+  /** FldEff_Ash; the web port passes the C field-effect arguments directly. */
+  FldEff_Ash(x: number, y: number, metatileId: number, delay: number): void {
+    const sprite = this.createFromTemplate("Ash", x * 16 + 8, y * 16 + 8);
+    if (!sprite) return;
+    (sprite as unknown as { fxTile: boolean }).fxTile = true;
+    sprite.priority = 1;
+    sprite.subpriority = 0x52;
+    sprite.data[0] = 0;
+    sprite.data[1] = x;
+    sprite.data[2] = y;
+    sprite.data[3] = metatileId;
+    sprite.data[4] = delay;
+    sprite.invisible = true;
+    sprite.animPaused = true;
+    this.active.add(C.FLDEFF_ASH);
+    sprite.callback = (s) => {
+      switch (s.data[0]) {
+        case 0:
+          if (--s.data[4]! === 0) s.data[0] = 1;
+          break;
+        case 1: {
+          s.invisible = false;
+          s.animPaused = false;
+          this.ow.map.setMetatileIdAt(s.data[1]!, s.data[2]!, s.data[3]!);
+          this.ow.renderer?.invalidate();
+          const player = this.ow.objects.player();
+          if (player) player.triggerGroundEffectsOnMove = true;
+          s.data[0] = 2;
+          break;
+        }
+        case 2:
+          if (s.animEnded) {
+            this.active.delete(C.FLDEFF_ASH);
+            this.ow.sprites.destroy(s);
+          }
+          break;
+      }
+    };
+  }
+
   // ---------------------------------------------------------------- ground effects
 
   groundEffect(object: ObjectEvent, kind: "spawn" | "begin" | "finish"): void {

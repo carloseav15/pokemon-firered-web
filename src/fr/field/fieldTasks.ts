@@ -58,12 +58,30 @@ export class PerStepCallback {
   Task_RunPerStepCallback(): void {
     if (this.id === C.STEP_CB_ICE) this.IcefallCaveIcePerStepCallback();
     else if (this.id === C.STEP_CB_CRACKED_FLOOR) this.CrackedFloorPerStepCallback();
-    // STEP_CB_ASH is an unused R/S callback and no FireRed script selects it.
-    else if (this.id !== C.STEP_CB_ASH) this.DummyPerStepCallback();
+    else if (this.id === C.STEP_CB_ASH) this.AshGrassPerStepCallback();
+    else this.DummyPerStepCallback();
   }
 
   /** DummyPerStepCallback: the source callback intentionally does nothing. */
   private DummyPerStepCallback(): void {}
+
+  /** AshGrassPerStepCallback (field_tasks.c); unused by FireRed scripts. */
+  AshGrassPerStepCallback(): void {
+    const p = this.ow.player.object;
+    if (!p) return;
+    const x = p.currentCoords.x;
+    const y = p.currentCoords.y;
+    if (x === this.data[1] && y === this.data[2]) return;
+    this.data[1] = x;
+    this.data[2] = y;
+    const behavior = this.ow.map.behaviorAt(x, y);
+    if (!MB.MetatileBehavior_IsAshGrass(behavior)) return;
+    const metatile = this.ow.map.metatileIdAt(x, y);
+    this.ow.effects.StartAshFieldEffect(x, y,
+      metatile === rom.c("METATILE_Fallarbor_AshGrass")
+        ? rom.c("METATILE_Fallarbor_NormalGrass")
+        : rom.c("METATILE_Lavaridge_NormalGrass"), 4);
+  }
 
   /** Task_RunTimeBasedEvents / UpdateAmbientCry state machine. */
   Task_RunTimeBasedEvents(): void {
