@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 53 | 107424 | 1269/4989 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 24 | 36289 | 1217/1404 |
+| Casi completo (≥ 80 % y < 100 %) | 24 | 36289 | 1221/1404 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 122 | 101263 | 3313/3313 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
 | **Pendiente de portar** | **79** | **146543** | |
-| **Total en alcance** | **202** | **247859** | **5827/9834** |
+| **Total en alcance** | **202** | **247859** | **5831/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -112,7 +112,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
 | `trainer_see.c` | 750 | 32/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
 | `item.c` | 680 | 44/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
-| `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
+| `evolution_graphics.c` | 637 | 34/37 | `evolutionScene.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `window.c` | 513 | 20/21 | `gba/window.ts`, `hw/window.ts` |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |

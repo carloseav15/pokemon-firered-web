@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5827/9834 (59.3 %)**.
-- Archivos C con funciones aún sin homólogo: **79**; quedan **4007 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5831/9834 (59.3 %)**.
+- Archivos C con funciones aún sin homólogo: **79**; quedan **4003 nombres**.
 - Estos archivos contienen 146.543 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~83.728 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~83.659 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -20,13 +20,13 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 1 | `mail_data.c` | casi completo | 187 | 11/12 | ~15 |  |
 | 2 | `window.c` | casi completo | 513 | 20/21 | ~24 |  |
 | 3 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
-| 4 | `shop.c` | casi completo | 1145 | 57/60 | ~57 |  |
-| 5 | `field_tasks.c` | casi completo | 351 | 10/12 | ~58 |  |
-| 6 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
-| 7 | `item.c` | casi completo | 680 | 44/49 | ~69 |  |
-| 8 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
-| 9 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
-| 10 | `evolution_graphics.c` | casi completo | 637 | 30/37 | ~120 |  |
+| 4 | `evolution_graphics.c` | casi completo | 637 | 34/37 | ~51 |  |
+| 5 | `shop.c` | casi completo | 1145 | 57/60 | ~57 |  |
+| 6 | `field_tasks.c` | casi completo | 351 | 10/12 | ~58 |  |
+| 7 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
+| 8 | `item.c` | casi completo | 680 | 44/49 | ~69 |  |
+| 9 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
+| 10 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
 | 11 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
 | 12 | `sound.c` | parcial | 649 | 38/48 | ~135 |  |
 | 13 | `main.c` | parcial | 494 | 20/28 | ~141 |  |

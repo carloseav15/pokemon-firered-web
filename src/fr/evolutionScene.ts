@@ -176,6 +176,11 @@ const sEvolutionSparkleMatrixScales = [
   0x3c0, 0x380, 0x340, 0x300, 0x2c0, 0x280, 0x240, 0x200, 0x1c0, 0x180, 0x140, 0x100,
 ];
 
+// The C file uses named empty callbacks here; the shared dummy preserves the
+// same no-op behavior and keeps the engine's dummy-callback identity checks.
+const SpriteCallbackDummy_EvoSparkles = SpriteCallbackDummy;
+const SpriteCallbackDummy_MonSprites = SpriteCallbackDummy;
+
 function SetEvoSparklesMatrices(): void {
   for (let i = 0; i < sEvolutionSparkleMatrixScales.length; i++) {
     const s = sEvolutionSparkleMatrixScales[i];
@@ -196,7 +201,7 @@ const sSpriteTemplate_EvolutionSparkles: SpriteTemplate = {
   anims: gDummySpriteAnimTable,
   images: null,
   affineAnims: gDummySpriteAffineAnimTable,
-  callback: SpriteCallbackDummy,
+  callback: SpriteCallbackDummy_EvoSparkles,
 };
 
 function LoadEvoSparkleSpriteAndPal(): void {
@@ -306,8 +311,13 @@ function EvoTask_CreatePreEvoSparklesSet2(taskId: number): void {
     }
     gTasks[taskId].data[15]++;
   } else {
-    DestroyTask(taskId);
+    gTasks[taskId].func = EvoTask_PreEvoSparkleSet2Teardown;
   }
+}
+
+/** evolution_graphics.c EvoTask_PreEvoSparkleSet2Teardown; preserve its next-task-tick teardown. */
+function EvoTask_PreEvoSparkleSet2Teardown(taskId: number): void {
+  DestroyTask(taskId);
 }
 
 function EvoTask_PreEvoSparkleSet2Init(taskId: number): void {
@@ -358,8 +368,13 @@ function EvoTask_CreatePostEvoSparklesSet1(taskId: number): void {
     }
     gTasks[taskId].data[15]++;
   } else {
-    DestroyTask(taskId);
+    gTasks[taskId].func = EvoTask_PostEvoSparklesSet1Teardown;
   }
+}
+
+/** evolution_graphics.c EvoTask_PostEvoSparklesSet1Teardown; preserve its next-task-tick teardown. */
+function EvoTask_PostEvoSparklesSet1Teardown(taskId: number): void {
+  DestroyTask(taskId);
 }
 
 function EvoTask_PostEvoSparklesSet1Init(taskId: number): void {
@@ -561,14 +576,14 @@ function CycleEvolutionMonSprite(preEvoSpriteId: number, postEvoSpriteId: number
   SetOamMatrix(31, Math.floor(0x10000 / 16), 0, 0, Math.floor(0x10000 / 16));
 
   const pre = gSprites[preEvoSpriteId];
-  pre.callback = SpriteCallbackDummy;
+  pre.callback = SpriteCallbackDummy_MonSprites;
   pre.oam.affineMode = ST_OAM_AFFINE_NORMAL;
   pre.oam.matrixNum = 30;
   pre.invisible = false;
   CalcCenterToCornerVec(pre, pre.oam.shape, pre.oam.size, pre.oam.affineMode);
 
   const post = gSprites[postEvoSpriteId];
-  post.callback = SpriteCallbackDummy;
+  post.callback = SpriteCallbackDummy_MonSprites;
   post.oam.affineMode = ST_OAM_AFFINE_NORMAL;
   post.oam.matrixNum = 31;
   post.invisible = false;

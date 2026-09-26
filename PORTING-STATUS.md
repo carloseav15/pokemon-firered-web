@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.827/9.834 (59,3%)**; quedan
-  **4.007 nombres (40,7%)**. Hay **79 archivos C con huecos**: uno sin empezar,
+  stubs. El inventario vigente registra **5.831/9.834 (59,3%)**; quedan
+  **4.003 nombres (40,7%)**. Hay **79 archivos C con huecos**: uno sin empezar,
   uno adaptador, 24 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.728/247.859 (33,8%)**. El inventario mide nombres/cuerpos
+  cubrir es **~83.659/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
@@ -83,6 +83,14 @@ systems. The first playable route is a milestone, not the completion criterion.
   quedaron conectados al lanzamiento de Pokémon desde la bola y al envío en
   trade/Oak; `pokeball.c` sale de pendientes. Pasaron `check:port`, `inventory`
   y `pending`; no reproduje los flujos en navegador.
+- **`evolution_graphics.c`: 34/37 funciones con homólogo.** Separé las dos
+  tareas de teardown que estaban destruyendo la tarea en el mismo frame: el C
+  cambia el callback y la destruye en el tick siguiente. Reemplacé también los
+  dos callbacks dummy por aliases al callback no-op compartido, preservando su
+  identidad. Las tres funciones trade-specific restantes pertenecen a la
+  ruta de evolución durante trade por enlace, que el port de un jugador no
+  implementa. Pasaron `check:port`, `inventory` y `pending`; no ejecuté la
+  secuencia de evolución.
 - También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
   de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
   `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build
@@ -1655,7 +1663,10 @@ tragaperras, Islas Sevii.
 14. **PC de objetos** (`item_pc.c`, `pc_screen_effect.c`) **[PORTADO, sin probar]**:
     `itemPc.ts` y `pcScreenEffect.ts`; ver la sección de 2026-09-25.
 15. **Escena de Evolución** (`evolution_scene.c`, 1704 líneas + `evolution_graphics.c`, 638 líneas)
-    **[PORTADO]**: portada fielmente en `src/fr/evolutionScene.ts` sobre la capa de hardware GBA (`hw/`).
+    **[PARCIAL]**: `evolution_scene.c` tiene 13/23 y `evolution_graphics.c`
+    34/37 funciones con homólogo; `src/fr/evolutionScene.ts` implementa la
+    secuencia principal descrita abajo, pero el inventario aún muestra huecos y
+    faltan las rutinas específicas de evolución durante trade por enlace.
     Implementa:
     - `evolution_graphics.c`: matrices de escala OAM (20..31), 4 tareas de chispas (`EvolutionSparkles_SpiralUpward`,
       `EvolutionSparkles_ArcDown`, `EvolutionSparkles_CircleInward`, `EvolutionSparkles_SprayAndFlash`), sprite de
