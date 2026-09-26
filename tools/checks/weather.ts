@@ -88,6 +88,7 @@ const savedWeatherFrameState = {
   initStep: Weather.gWeather.initStep,
   loadDroughtPalsIndex: Weather.gWeather.loadDroughtPalsIndex,
   loadDroughtPalsOffset: Weather.gWeather.loadDroughtPalsOffset,
+  weatherPicSpritePalIndex: Weather.gWeather.weatherPicSpritePalIndex,
 };
 const savedPaletteFadeState = { ...gPaletteFade };
 const savedPpuPalette = ppu.pltt.slice();
@@ -187,6 +188,15 @@ try {
   gPlttBufferUnfaded[7 * 16] = 0x4210;
   Weather.ApplyWeatherGammaShiftToPal(7);
   assert.equal(gPlttBufferFaded[7 * 16], 0x3def, 'map palette gamma helper uses the current weather index');
+
+  // PREPARED by hand: exercise the C helper used by cloud and sandstorm setup.
+  Weather.gWeather.currWeather = C.WEATHER_NONE;
+  Weather.gWeather.gammaIndex = 0;
+  Weather.gWeather.weatherPicSpritePalIndex = 7;
+  const customWeatherPalette = Uint16Array.from({ length: 16 }, (_, i) => 0x4000 | i);
+  Weather.LoadCustomWeatherSpritePalette(customWeatherPalette);
+  assert.equal(gPlttBufferUnfaded[OBJ_PLTT_ID(7)], customWeatherPalette[0], 'custom weather palette loads into the allocated OBJ slot');
+  assert.equal(gPlttBufferFaded[OBJ_PLTT_ID(7)], customWeatherPalette[0], 'weather gamma hook updates the faded OBJ palette after loading');
   console.log('✓ Sprite/map palette weather hooks exercised');
 
   Weather.gWeather.currWeather = C.WEATHER_RAIN;

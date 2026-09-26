@@ -15,7 +15,7 @@ import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
 import { gSineTable } from "../hw/trig";
-import { BeginNormalPaletteFade, BlendPalette, BlendPalettesAt, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
+import { BeginNormalPaletteFade, BlendPalette, BlendPalettesAt, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -39,6 +39,7 @@ export let gWeather = {
   gammaShifts: [] as number[][],
   altGammaShifts: [] as number[][],
   altGammaSpritePalIndex: 0xff,
+  weatherPicSpritePalIndex: 0,
   palProcessingState: C.WEATHER_PAL_STATE_IDLE,
   fadeDestColor: 0,
   fadeScreenCounter: 0,
@@ -757,8 +758,11 @@ export function FadeSelectedPals(mode: number, delay: number, selectedPalettes: 
   fadeWeatherScreen(mode, delay, selectedPalettes);
 }
 
-/** LoadCustomWeatherSpritePalette */
-export function LoadCustomWeatherSpritePalette(palette: any): void {}
+/** LoadCustomWeatherSpritePalette (field_weather.c). */
+export function LoadCustomWeatherSpritePalette(palette: ArrayLike<number>): void {
+  LoadPalette(palette, OBJ_PLTT_ID(gWeather.weatherPicSpritePalIndex), 32);
+  UpdateSpritePaletteWithWeather(gWeather.weatherPicSpritePalIndex);
+}
 
 /** ApplyWeatherGammaShiftToPal (field_weather.c). */
 export function ApplyWeatherGammaShiftToPal(paletteIndex: number): void {

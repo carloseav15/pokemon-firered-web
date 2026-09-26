@@ -381,6 +381,7 @@ Portado 1:1 en `src/fr/field/weatherEffects.ts` (93/93 funciones).
 - `FadeScreen` y `FadeSelectedPals` siguen las cuatro direcciones `FADE_FROM/TO_BLACK/WHITE`: con clima compatible usan el dispatcher por paleta; en otros climas llaman `BeginNormalPaletteFade` con máscara completa o seleccionada, respectivamente.
 - `SlightlyDarkenPalsInWeather` recibe el buffer/longitud de C y aplica `BlendPalettesAt(..., RGB_BLACK, 3, size)` solo con lluvia, nieve, tormenta, shade y downpour; otros climas no cambian el buffer.
 - `PreservePaletteInWeather` y `ResetPreservedPalettesInWeather` ahora modifican/restauran la categoría de paleta.
+- `LoadCustomWeatherSpritePalette` copia 16 colores al slot OBJ `weatherPicSpritePalIndex` y llama a `UpdateSpritePaletteWithWeather`, como el C. `check:weather` verifica ambos buffers con un índice preparado; la creación/render de sprites de clima sigue sin integrarse al overworld.
 - `check:weather` ejecuta las escrituras de paleta, compara vectores numéricos y recorre los estados de gamma, lluvia, sequía y niebla horizontal sobre un estado de prueba preparado; nivel headless. La ruta Canvas2D del overworld sigue usando su aproximación de tint y no consume todavía los buffers globales de paleta.
 - `DroughtStateInit`/`DroughtStateRun` reproducen el retardo, la rampa, la tabla seno y el retorno del C; el check ejecuta esos estados con la tabla trigonométrica exportada.
 - En FRLG, `LoadDroughtWeatherPalette` está vacío en el C. Por eso `Drought_Main` permanece en el paso 2 y `Drought_InitAll` no termina; el port conserva ese comportamiento. La integración de sprites y del controlador de clima a Canvas2D sigue pendiente.
@@ -1213,8 +1214,8 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
    tiene los 76 nombres pero 62 son stubs y nadie lo importa (auditoría 2026-09-25). Los efectos
    visibles siguen en `field/fieldEffects.ts`. Hay que portar los cuerpos y conectarlo.
-5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 44/50, 6 stubs]**
-   en `src/fr/field/weather.ts`; tablas gamma normal/alternativa, aplicación/mezcla, hooks de paletas BG/OBJ, dispatcher, fundidos por clima, las cuatro variantes de `FadeScreen`/`FadeSelectedPals` y la máquina de gamma de sequía tienen check headless. En FRLG el loader de paletas de sequía es no-op en el C, así que su inicialización queda en el paso 2. Sprites y render Canvas2D siguen parciales. `check:weather` ejecuta rutas seleccionadas con estado preparado.
+5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 45/50, 5 stubs]**
+   en `src/fr/field/weather.ts`; tablas gamma normal/alternativa, aplicación/mezcla, hooks BG/OBJ, carga y ajuste de paleta OBJ, dispatcher, fundidos por clima, las cuatro variantes de `FadeScreen`/`FadeSelectedPals` y la máquina de gamma de sequía tienen check headless. En FRLG el loader de paletas de sequía es no-op en el C, así que su inicialización queda en el paso 2. La creación/render de sprites y Canvas2D siguen parciales. `check:weather` ejecuta rutas seleccionadas con estado preparado.
 6. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
    con la capa antigua.
 7. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.

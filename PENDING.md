@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5457/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5458/9825 (55 %)**.
 - Archivos C pendientes: **117** (130962 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -78,7 +78,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `trade.c` | 2958 | 0/66 | 15 |
 | `fame_checker.c` | 1739 | 15/64 | 7 |
 | `field_weather_effects.c` | 2346 | 87/93 | 6 |
-| `field_weather.c` | 1147 | 44/50 | 6 |
+| `field_weather.c` | 1147 | 45/50 | 5 |
 | `trade_scene.c` | 2916 | 36/53 | 3 |
 | `menu_helpers.c` | 243 | 12/17 | 3 |
 | `save_failed_screen.c` | 228 | 11/14 | 3 |

@@ -13,12 +13,12 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (menos del 80 % de funciones) | 116 | 129562 | 1913/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3516/3708 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3517/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **117** | **130962** | |
-| **Total en alcance** | **210** | **248996** | **5457/9825** |
+| **Total en alcance** | **210** | **248996** | **5458/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -185,7 +185,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokemon_icon.c` | 1283 | 19/20 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
 | `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
-| `field_weather.c` | 1147 | 44/50 | `field/weather.ts`, `gba/fade.ts` |  | 6 |
+| `field_weather.c` | 1147 | 45/50 | `field/weather.ts`, `gba/fade.ts` |  | 5 |
 | `item_pc.c` | 1145 | 57/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `shop.c` | 1145 | 55/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
