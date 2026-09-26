@@ -821,6 +821,7 @@ export function InitAnimFastLinearTranslationWithSpeedAndPos(sprite: Sprite): vo
 // ---------------------------------------------------------------- rot/scale
 
 export function SetSpriteRotScale(spriteId: number, xScale: number, yScale: number, rotation: number): void {
+  if (ShouldRotScaleSpeciesBeFlipped()) xScale = -xScale;
   const m = objAffineSet(xScale, yScale, rotation);
   const i = gSprites[spriteId].oam.matrixNum;
   gOamMatrices[i].a = m.a;
@@ -859,12 +860,18 @@ export function TrySetSpriteRotScale(sprite: Sprite, recalcCenterVector: boolean
   if (!(sprite.oam.affineMode & 1)) return;
   sprite.affineAnimPaused = true;
   if (recalcCenterVector) CalcCenterToCornerVec(sprite, sprite.oam.shape, sprite.oam.size, sprite.oam.affineMode);
+  if (ShouldRotScaleSpeciesBeFlipped()) xScale = -xScale;
   const m = objAffineSet(xScale, yScale, rotation);
   const i = sprite.oam.matrixNum;
   gOamMatrices[i].a = m.a;
   gOamMatrices[i].b = m.b;
   gOamMatrices[i].c = m.c;
   gOamMatrices[i].d = m.d;
+}
+
+/** battle_anim_mons.c ShouldRotScaleSpeciesBeFlipped: contest-only behavior is disabled in FireRed. */
+function ShouldRotScaleSpeciesBeFlipped(): boolean {
+  return false;
 }
 
 export function TryResetSpriteAffineState(sprite: Sprite): void {
@@ -953,9 +960,12 @@ export function AnimThrowProjectile(sprite: Sprite): void {
   sprite.data[4] = GetBattlerSpriteCoord(animState.gBattleAnimTarget, C.BATTLER_COORD_Y_PIC_OFFSET) + args[3];
   sprite.data[5] = args[5];
   InitAnimArcTranslation(sprite);
-  sprite.callback = (s) => {
-    if (TranslateAnimHorizontalArc(s)) DestroyAnimSprite(s);
-  };
+  sprite.callback = AnimThrowProjectile_Step;
+}
+
+/** battle_anim_mons.c AnimThrowProjectile_Step. */
+export function AnimThrowProjectile_Step(sprite: Sprite): void {
+  if (TranslateAnimHorizontalArc(sprite)) DestroyAnimSprite(sprite);
 }
 
 export function AnimTravelDiagonally(sprite: Sprite): void {

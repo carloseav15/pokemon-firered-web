@@ -7,12 +7,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. La auditoría encontró homónimos falsos, por lo que las cifras actuales
-  bajan de 6.094 a **5.763/9.834 (58,6%)**; quedan **4.071 nombres (41,4%)**.
-  Hay **100 archivos C con huecos**: uno sin empezar, uno adaptador, 41 casi
-  completos y 57 parciales. La estimación de líneas sin cubrir sube a
-  **~85.002/247.859 (34,3%)**. El inventario mide nombres/cuerpos triviales,
-  no paridad funcional ni pruebas en navegador.
+  stubs. El inventario vigente registra **5.795/9.834 (58,9%)**; quedan
+  **4.039 nombres (41,1%)**. Hay **84 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 28 casi completos y 54 parciales. La estimación de líneas sin
+  cubrir es **~84.308/247.859 (34,0%)**. El inventario mide nombres/cuerpos
+  triviales, no paridad funcional ni pruebas en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
@@ -37,6 +36,13 @@ systems. The first playable route is a milestone, not the completion criterion.
   especie guardada para iconos y actualiza las seis variables y el tinte del C.
   Eliminé el registro vacío de `DoDiveWarp`: no existe una llamada en scripts
   de FireRed (solo su número en `specials.inc`).
+- **`battle_anim_mons.c`: 128/128 funciones con homólogo.** Porté
+  `EndUnkPaletteAnim` usando el `PaletteStruct_ResetById` ya disponible,
+  `ShouldRotScaleSpeciesBeFlipped` (retorna falso en FireRed y ahora gobierna
+  ambas rutinas de rot/scale) y extraje `AnimThrowProjectile_Step` para que la
+  callback ejecutable use el nombre y cuerpo del C. Pasó `check:port`; el
+  inventario ya no lista este archivo. Falta ejecutar checks de animación o
+  navegador para verificar el comportamiento.
 - También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
   de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
   `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build

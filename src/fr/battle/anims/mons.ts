@@ -2,12 +2,10 @@
 // task. The shared coordinate/translation helpers of this file live in
 // battle/anim.ts; this module ports what was left and registers every callback
 // and task of the file that animation scripts reference by name.
-// Adaptation: EndUnkPaletteAnim (unused; needs the removed PaletteStruct API)
-// is not ported.
 
 import * as C from "../../generated/constants";
 import { tasks, type Task } from "../../gba/tasks";
-import { BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from "../../hw/palette";
+import { BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PaletteStruct_ResetById } from "../../hw/palette";
 import { AllocSpritePalette, FreeSpritePaletteByTag, gSprites, StartSpriteAnim, type Sprite } from "../../hw/sprite";
 import { ArcTan2, Cos, Sin } from "../../hw/trig";
 import { UpdateMonIconFrame } from "../../pokemonIcon";
@@ -93,6 +91,12 @@ export function Trade_MoveSelectedMonToTarget(sprite: Sprite): void {
 
 export function ArcTan2_(a: number, b: number): number {
   return ArcTan2(a, b);
+}
+
+/** battle_anim_mons.c EndUnkPaletteAnim; this callback is unused by FireRed scripts. */
+export function EndUnkPaletteAnim(sprite: Sprite): void {
+  PaletteStruct_ResetById(sprite.data[5]);
+  DestroySpriteAndMatrix(sprite);
 }
 
 export function GetSpritePalIdxByPosition(position: number): number {
