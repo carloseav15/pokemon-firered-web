@@ -10,8 +10,8 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 4 | 1923 | 0/91 |
-| Parcial (< 80 % de funciones) | 55 | 111438 | 1280/5195 |
+| Falta (sin funciones portadas) | 3 | 1773 | 0/88 |
+| Parcial (< 80 % de funciones) | 56 | 111588 | 1281/5198 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 19 | 33456 | 1090/1262 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 127 | 104096 | 3455/3455 |
@@ -19,7 +19,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 46 | 50676 | 82/1765 |
 | **Pendiente de portar** | **79** | **148217** | |
-| **Total en alcance** | **207** | **252366** | **5853/10061** |
+| **Total en alcance** | **207** | **252366** | **5854/10061** |
 
 ## Falta (sin funciones portadas)
 
@@ -27,7 +27,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---|---|---:|
 | `pokemon_storage_system_misc.c` | 1430 | 0/70 |  |  |  |
 | `quest_log_player.c` | 197 | 0/15 |  |  |  |
-| `quest_log_battle.c` | 150 | 0/3 |  |  |  |
 | `quest_log_objects.c` | 146 | 0/3 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
@@ -89,6 +88,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `field_door.c` | 524 | 0/21 | `field/doors.ts` |  |  |
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 | `braille_text.c` | 212 | 2/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
+| `quest_log_battle.c` | 150 | 1/3 | `questLogBattle.ts` |  |  |
 
 ## Adaptador (UI simplificada)
 

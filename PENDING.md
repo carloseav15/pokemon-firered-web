@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5853/10061 (58.2 %)**.
-- Archivos C con funciones aún sin homólogo: **79**; quedan **4208 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5854/10061 (58.2 %)**.
+- Archivos C con funciones aún sin homólogo: **79**; quedan **4207 nombres**.
 - Estos archivos contienen 148.217 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~87.625 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~87.575 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -22,12 +22,12 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 3 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
 | 4 | `braille_text.c` | parcial | 212 | 2/3 | ~70 |  |
 | 5 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
-| 6 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
-| 7 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
-| 8 | `sound.c` | parcial | 649 | 38/48 | ~135 |  |
-| 9 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
-| 10 | `quest_log_objects.c` | sin empezar | 146 | 0/3 | ~146 |  |
-| 11 | `quest_log_battle.c` | sin empezar | 150 | 0/3 | ~150 |  |
+| 6 | `quest_log_battle.c` | parcial | 150 | 1/3 | ~100 |  |
+| 7 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
+| 8 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
+| 9 | `sound.c` | parcial | 649 | 38/48 | ~135 |  |
+| 10 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
+| 11 | `quest_log_objects.c` | sin empezar | 146 | 0/3 | ~146 |  |
 | 12 | `tm_case.c` | casi completo | 1737 | 66/73 | ~166 |  |
 | 13 | `palette.c` | casi completo | 994 | 34/41 | ~169 |  |
 | 14 | `bg.c` | casi completo | 1215 | 43/50 | ~170 |  |
@@ -97,7 +97,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 78 | `field_effect.c` | parcial | 4033 | 13/239 | ~3813 |  |
 | 79 | `event_object_movement.c` | parcial | 9412 | 34/759 | ~8990 |  |
 
-Total: 79 archivos con huecos: 4 sin empezar, 1 adaptador, 19 casi completos y 55 parciales.
+Total: 79 archivos con huecos: 3 sin empezar, 1 adaptador, 19 casi completos y 56 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 

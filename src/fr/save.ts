@@ -97,7 +97,9 @@ export type SaveData = {
   questLogEvents?: Array<{
     eventId: number;
     data: { totalMoney: number; lastItemId: number; itemQuantity: number; mapSec: number; hasMultipleTransactions: boolean; logEventId: number }
-      | { itemId: number; mapSec: number };
+      | { itemId: number; mapSec: number }
+      | { trainerId: number; speciesOpponent: number; speciesPlayer: number; mapSec: number; hpFractionId: number }
+      | { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
   }>;
 };
 

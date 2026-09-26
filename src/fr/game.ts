@@ -61,6 +61,7 @@ import { ClearRoamerData } from "./pokemon/roamer";
 import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
 import { ResetQLPlayedTheSlots } from "./questLogEvents";
+import { setRegionMapSectionProvider } from "./pokemon/mon";
 
 /** GetProfOaksRatingMessageByCount (prof_pc.c). */
 function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
@@ -136,6 +137,7 @@ export class Game {
     this.ctx = canvas.getContext("2d")!;
     this.ctx.imageSmoothingEnabled = false;
     this.overworld = new Overworld(this);
+    setRegionMapSectionProvider(() => this.overworld.header.regionMapSection);
     this.scriptMovement = new ScriptMovement(this.overworld);
     this.scriptMenu = new ScriptMenu(() => this.overworld);
     this.battleSetup = new BattleSetup(this);

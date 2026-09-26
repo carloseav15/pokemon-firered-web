@@ -5,6 +5,16 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Inventario actualizado, 2026-09-26
 
+- **`quest_log_battle.c`: 1/3 funciones.** Implementé `TrySetQuestLogBattleEvent`
+  y lo conecté a `HandleEndTurn_FinishBattle`, con exclusiones de enlace,
+  tutorial del viejo y Poké Dude; registra victorias/capturas de entrenador o
+  Pokémon salvaje con sus especies, sección del mapa y fracción de PS del equipo
+  según el C. Los resúmenes se guardan en `SaveData.questLogEvents`, formato web
+  que no sustituye escenas, buffer ni playback originales. Al conectar el
+  proveedor de sección de mapa encontré que `setRegionMapSectionProvider` nunca
+  se inicializaba; ahora sigue el mapa actual del Overworld. Pasaron
+  `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`;
+  no ejecuté una batalla en navegador.
 - **`item.c`: 45/49 funciones con homólogo.** `TrySetObtainedItemQuestLogEvent`
   filtra los 20 objetos definidos en C, conserva la restricción del Town Map
   en la casa del rival y guarda el evento tipado con la región actual. Lo
@@ -20,10 +30,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.853/10.061 funciones (58,2%)**, quedan **4.208 (41,8%)** y hay **79
-  archivos C con huecos** (4 sin empezar, 1 adaptador, 19 casi completos y 55
-  parciales). La estimación ponderada sin cubrir es **~87.625/252.366 líneas
-  (34,8%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
+  son **5.854/10.061 funciones (58,2%)**, quedan **4.207 (41,8%)** y hay **79
+  archivos C con huecos** (3 sin empezar, 1 adaptador, 19 casi completos y 56
+  parciales). La estimación ponderada sin cubrir es **~87.575/252.366 líneas
+  (34,7%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
   y sobreviven cargas y escrituras del JSON web. `setSave` agrega el campo vacío
@@ -40,7 +50,8 @@ systems. The first playable route is a milestone, not the completion criterion.
   incluye ambos módulos y los otros archivos `quest_log*.c`; no se excluyen
   para mejorar artificialmente el porcentaje. `QuestLog_CutRecording` y
   `GetQuestLogState` ya consultan/limpian estado modelado, y el evento de tienda
-  se persiste en el formato web `SaveData.questLogEvents`. Saves v2 existentes
+  de tienda, objeto importante y resumen de batallas normales se persisten en
+  el formato web `SaveData.questLogEvents`. Saves v2 existentes
   reciben la lista vacía por migración. También están `QL_EnableRecordingSteps`,
   `QL_ResetRepeatEventTracker` y `QL_ResetEventStates`. La lógica completa de
   escenas y playback continúa pendiente. `InQuestLogDisabledLocation` también

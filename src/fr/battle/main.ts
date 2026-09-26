@@ -24,6 +24,7 @@ import { battleHost } from "./host";
 import { cdata } from "../hw/assets";
 import { gMain } from "../hw/runtime";
 import { sound } from "../audio/sound";
+import { TrySetQuestLogBattleEvent } from "../questLogBattle";
 
 const PARTY_SIZE = 6;
 const BATTLE_COMMUNICATION_ENTRIES_COUNT = 8;
@@ -1047,6 +1048,7 @@ function HandleEndTurn_FinishBattle(): void {
         }
       }
     }
+    TrySetQuestLogBattleEvent();
     if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) ClearRematchStateByTrainerId();
     BeginFastPaletteFade(3);
     FadeOutMapMusic(5);
