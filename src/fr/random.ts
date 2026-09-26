@@ -32,7 +32,7 @@ export function SeedRngAndSetTrainerId(timer1Low: number): void {
 export function GetGeneratedTrainerIdLower(): number { return generatedTrainerIdLower; }
 
 /** new_game.c InitPlayerTrainerId; upper half comes from the next Random() draw. */
-export function generatePlayerTrainerId(): number {
+export function InitPlayerTrainerId(): number {
   ensureTimerSeed();
   const trainerId = ((random() << 16) | generatedTrainerIdLower) >>> 0;
   const bytes = [0, 0, 0, 0];

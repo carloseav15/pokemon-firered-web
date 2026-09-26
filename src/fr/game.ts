@@ -24,7 +24,7 @@ import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScree
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { WildEncounter } from "./field/wildEncounter";
-import { generatePlayerTrainerId, takeWildEncounterSeed } from "./random";
+import { InitPlayerTrainerId, takeWildEncounterSeed } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { healMon } from "./pokemon/pokemon";
 import { GetSetPokedexFlag } from "./pokemon/mon_extra";
@@ -216,7 +216,7 @@ export class Game {
     this.Sav2_ClearSetDefault();
     this.differentSaveFile = true;
     const data = newSaveData();
-    data.trainerId = generatePlayerTrainerId();
+    data.trainerId = InitPlayerTrainerId();
     data.playerGender = gender;
     data.playerName = Array.from(encode(playerName.slice(0, 7)));
     data.rivalName = Array.from(encode(rivalName.slice(0, 7)));

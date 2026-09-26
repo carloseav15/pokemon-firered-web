@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 57 | 108124 | 1294/5030 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 41 | 61745 | 2094/2329 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 101 | 75107 | 2347/2347 |
+| Casi completo (≥ 80 % y < 100 %) | 40 | 61585 | 2084/2318 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 102 | 75267 | 2358/2358 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **100** | **172699** | |
-| **Total en alcance** | **202** | **247859** | **5763/9834** |
+| **Pendiente de portar** | **99** | **172539** | |
+| **Total en alcance** | **202** | **247859** | **5764/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -138,7 +138,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `menu_helpers.c` | 243 | 14/17 | `hw/menuHelpers.ts` |  | 1 |
 | `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |  |
 | `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
-| `new_game.c` | 160 | 10/11 | `game.ts`, `random.ts`, `save.ts` |  |  |
 | `field_poison.c` | 119 | 6/7 | `field/poison.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
@@ -220,6 +219,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pc_screen_effect.c` | 179 | 7/7 | `pcScreenEffect.ts` |  |  |
 | `text_window.c` | 177 | 19/19 | `battle/bg.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` |  |  |
 | `pokemon_storage_system.c` | 171 | 21/21 | `pokemon/storage.ts` |  |  |
+| `new_game.c` | 160 | 11/11 | `game.ts`, `random.ts`, `save.ts` |  |  |
 | `gpu_regs.c` | 158 | 11/11 | `hw/gpu.ts` |  |  |
 | `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
 | `field_message_box.c` | 142 | 14/14 | `field/messageBox.ts` |  |  |

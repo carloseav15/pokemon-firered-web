@@ -2421,6 +2421,11 @@ Pending / placeholders:
 - `check:port`, `check:honesty`, inventario, pendientes y `git diff --check`
   pasaron. No se ejecutaron checks headless ni pruebas de navegador, tal como
   pediste.
+- La revisión del inventario detectó que `InitPlayerTrainerId` estaba
+  implementada como `generatePlayerTrainerId`; renombré la función TS y
+  conservé la misma asignación del ID al SaveData. Inventario actualizado:
+  5.764/9.834 nombres (58,6 %), 99 archivos con huecos y 4.070 nombres
+  pendientes. Esto mide coincidencia de nombres, no paridad total.
 
 ## `option_menu.c`: callbacks y ciclo de vida del menú de opciones (2026-09-26)
 
