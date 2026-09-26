@@ -5,7 +5,7 @@ import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import * as Weather from '../../src/fr/field/weather.ts';
 import { sound } from '../../src/fr/audio/sound.ts';
-import { gPlttBufferFaded, gPlttBufferUnfaded } from '../../src/fr/hw/palette.ts';
+import { gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from '../../src/fr/hw/palette.ts';
 import * as C from '../../src/fr/generated/constants.ts';
 
 console.log('--- 0. Testing rain sound state and fade-out guard ---');
@@ -70,6 +70,7 @@ const savedWeatherFrameState = {
   lightenedFogSpritePals: [...Weather.gWeather.lightenedFogSpritePals],
   lightenedFogSpritePalsCount: Weather.gWeather.lightenedFogSpritePalsCount,
 };
+const savedPaletteFadeState = { y: gPaletteFade.y, blendColor: gPaletteFade.blendColor };
 try {
   gPlttBufferUnfaded.fill(0x4210, paletteRangeStart, paletteRangeEnd);
   gPlttBufferFaded.fill(0, paletteRangeStart, paletteRangeEnd);
@@ -140,6 +141,34 @@ try {
   assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_IDLE);
   assert.equal(gPlttBufferFaded[16 * 16], 0x6779, 'fog fade lightens the marked sprite palette');
 
+  // PREPARED by hand: invoke the C palette hook with each palette-processing state.
+  Weather.gWeather.currWeather = C.WEATHER_FOG_HORIZONTAL;
+  Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_IN;
+  Weather.gWeather.fadeInActive = 1;
+  Weather.gWeather.fadeDestColor = 0x1234;
+  Weather.UpdateSpritePaletteWithWeather(4);
+  assert.equal(gPlttBufferFaded[OBJ_PLTT_ID(4)], 0x1234, 'sprite palette is filled with the fade destination');
+  assert.equal(Weather.LightenSpritePaletteInFog(20), true, 'fog fade registers the sprite palette for lightening');
+
+  Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_OUT;
+  gPaletteFade.y = 8;
+  gPaletteFade.blendColor = 0;
+  gPlttBufferFaded[OBJ_PLTT_ID(5)] = 0x4210;
+  Weather.UpdateSpritePaletteWithWeather(5);
+  assert.equal(gPlttBufferUnfaded[OBJ_PLTT_ID(5)], 0x4210, 'fade-out snapshots the faded color as the new source');
+  assert.equal(gPlttBufferFaded[OBJ_PLTT_ID(5)], 0x2108, 'fade-out blends the new sprite palette');
+
+  Weather.gWeather.currWeather = C.WEATHER_RAIN;
+  Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+  Weather.gWeather.gammaIndex = 1;
+  gPlttBufferUnfaded[OBJ_PLTT_ID(6)] = 0x4210;
+  Weather.UpdateSpritePaletteWithWeather(6);
+  assert.equal(gPlttBufferFaded[OBJ_PLTT_ID(6)], 0x3def, 'normal weather applies gamma to a new sprite palette');
+  gPlttBufferUnfaded[7 * 16] = 0x4210;
+  Weather.ApplyWeatherGammaShiftToPal(7);
+  assert.equal(gPlttBufferFaded[7 * 16], 0x3def, 'map palette gamma helper uses the current weather index');
+  console.log('✓ Sprite/map palette weather hooks exercised');
+
   Weather.PreservePaletteInWeather(0);
   Weather.ApplyGammaShift(0, 1, 1);
   assert.equal(gPlttBufferFaded[0], 0x4210, 'preserved palettes bypass gamma shifts');
@@ -156,6 +185,7 @@ try {
   Weather.gWeather.fadeScreenCounter = savedFadeCounter;
   Weather.gWeather.fadeDestColor = savedFadeColor;
   Object.assign(Weather.gWeather, savedWeatherFrameState);
+  Object.assign(gPaletteFade, savedPaletteFadeState);
   Weather.ResetPreservedPalettesInWeather();
 }
 console.log('✓ Gamma task and rain, drought and fog fade paths exercised on palette buffers');

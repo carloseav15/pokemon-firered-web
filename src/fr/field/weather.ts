@@ -13,7 +13,7 @@ import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
-import { BlendPalette, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
+import { BlendPalette, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, RGB } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -510,8 +510,35 @@ export function ResetPreservedPalettesInWeather(): void {
   paletteGammaTypes = [...BASE_PALETTE_GAMMA_TYPES];
 }
 
-/** UpdateSpritePaletteWithWeather */
-export function UpdateSpritePaletteWithWeather(paletteIndex: number): void {}
+/** UpdateSpritePaletteWithWeather (field_weather.c). */
+export function UpdateSpritePaletteWithWeather(spritePaletteIndex: number): void {
+  const paletteIndex = 16 + (spritePaletteIndex & 0xff);
+
+  switch (gWeather.palProcessingState) {
+    case C.WEATHER_PAL_STATE_SCREEN_FADING_IN:
+      if (gWeather.fadeInActive !== 0) {
+        if (gWeather.currWeather === C.WEATHER_FOG_HORIZONTAL) MarkFogSpritePalToLighten(paletteIndex);
+        const colorOffset = OBJ_PLTT_ID(paletteIndex - 16);
+        for (let i = 0; i < 16; i++) gPlttBufferFaded[colorOffset + i] = gWeather.fadeDestColor;
+      }
+      break;
+    case C.WEATHER_PAL_STATE_SCREEN_FADING_OUT: {
+      const colorOffset = OBJ_PLTT_ID(paletteIndex - 16);
+      for (let i = 0; i < 16; i++) {
+        gPlttBufferUnfaded[colorOffset + i] = gPlttBufferFaded[colorOffset + i] ?? 0;
+      }
+      BlendPalette(colorOffset, 16, gPaletteFade.y, gPaletteFade.blendColor);
+      break;
+    }
+    default:
+      if (gWeather.currWeather !== C.WEATHER_FOG_HORIZONTAL) {
+        ApplyGammaShift(paletteIndex, 1, gWeather.gammaIndex);
+      } else {
+        BlendPalette(OBJ_PLTT_ID(paletteIndex - 16), 16, 12, RGB(28, 31, 28));
+      }
+      break;
+  }
+}
 
 /** WeatherBeginGammaFade (field_weather.c). */
 export function WeatherBeginGammaFade(gammaIndex: number, gammaTarget: number, stepDelay: number): void {
@@ -590,8 +617,10 @@ export function FadeSelectedPals(bitmask: number, delay: number): void {}
 /** LoadCustomWeatherSpritePalette */
 export function LoadCustomWeatherSpritePalette(palette: any): void {}
 
-/** ApplyWeatherGammaShiftToPal */
-export function ApplyWeatherGammaShiftToPal(paletteIndex: number): void {}
+/** ApplyWeatherGammaShiftToPal (field_weather.c). */
+export function ApplyWeatherGammaShiftToPal(paletteIndex: number): void {
+  ApplyGammaShift(paletteIndex, 1, gWeather.gammaIndex);
+}
 
 export class FieldWeather {
   saved = 0;
