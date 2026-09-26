@@ -11,7 +11,7 @@
 //  - The buy screen draws the map from the FieldMap tilesets: the port has no
 //    map tiles in hardware VRAM, so BuyMenuLoadMapTilesets copies the two
 //    tilesets and their palettes there first (the C finds them already loaded).
-//  - Shop event summaries enter a session-memory queue; Quest Log persistence
+//  - Shop event summaries enter the browser save; Quest Log scene recording
 //    and playback remain unimplemented. The help system is out of scope.
 //  - Alloc'd tilemap buffers are Uint16Arrays; the four Alloc failure paths cannot happen.
 // Needs preloadShop() before BUY.

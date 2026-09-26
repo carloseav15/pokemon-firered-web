@@ -1,7 +1,8 @@
-// State shared with quest_log_events.c. Quest Log recording itself is not yet
-// connected, but slot-machine play is remembered for the Game Corner exit rule.
+// Partial state port for quest_log_events.c. Shop-event payloads are persisted
+// in the browser save; the scene/action recorder and playback are not yet ported.
 
 import * as C from "./generated/constants";
+import { save } from "./save";
 
 let sPlayedTheSlots = false;
 export let gQuestLogState = 0;
@@ -23,15 +24,17 @@ export type QuestLogShopEvent = {
 };
 
 export type QuestLogEventRecord = { eventId: number; data: QuestLogShopEvent };
-export const gQuestLogEvents: QuestLogEventRecord[] = [];
+export function getQuestLogEvents(): QuestLogEventRecord[] {
+  return save.questLogEvents ??= [];
+}
 
-/** SetQuestLogEvent (quest_log_events.c), currently retaining shop payloads in session memory. */
+/** SetQuestLogEvent (quest_log_events.c), currently persisting typed shop payloads in SaveData. */
 export function SetQuestLogEvent(eventId: number, data: QuestLogShopEvent): void {
   // The current port has typed payload support for only the two shop events.
   if (eventId !== C.QL_EVENT_BOUGHT_ITEM && eventId !== C.QL_EVENT_SOLD_ITEM) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
-  gQuestLogEvents.push({ eventId, data: { ...data } });
+  getQuestLogEvents().push({ eventId, data: { ...data } });
 }
 
 /** QL_EnableRecordingSteps (quest_log_events.c). */
@@ -74,7 +77,7 @@ export function ResetQLPlayedTheSlots(): void {
   QL_ResetEventStates();
   sStepRecordingMode = 0;
   QL_ResetRepeatEventTracker();
-  gQuestLogEvents.length = 0;
+  getQuestLogEvents().length = 0;
   gQuestLogState = 0;
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
   gQuestLogDefeatedWildMonRecord = null;

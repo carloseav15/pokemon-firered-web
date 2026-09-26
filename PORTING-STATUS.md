@@ -13,21 +13,23 @@ systems. The first playable route is a milestone, not the completion criterion.
   parciales). La estimación ponderada sin cubrir es **~87.748/252.366 líneas
   (34,8%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
-  salir de la tienda; el receptor conserva los resúmenes tipados de compra y
-  venta en memoria de sesión. `QuestLog_CutRecording` limpia el estado y
-  punteros transitorios, y `GetQuestLogState` devuelve el estado al script.
-  Todavía faltan el buffer de acciones, serialización/persistencia, límites de
-  escenas y reproducción. Checks estáticos e inventario pasan; sin navegador.
+  salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
+  y sobreviven cargas y escrituras del JSON web. `setSave` agrega el campo vacío
+  a saves v2 antiguos. `QuestLog_CutRecording` limpia estado/punteros transitorios
+  y `GetQuestLogState` devuelve el estado al script. Faltan el buffer de acciones
+  y escenas original, sus límites/formato de guardado y la reproducción. Checks
+  estáticos e inventario pasan; sin navegador.
 - **`shop.c`: 60/60 funciones con homólogo.** Al salir de la tienda se envían
   los resúmenes de compra/venta al receptor `SetQuestLogEvent`, que conserva
-  copias tipadas en memoria de sesión. No hay persistencia ni reproducción de
-  Quest Log todavía. Pasaron `check:port`, `check:honesty`, `inventory`,
-  `pending` y `git diff --check`; sin prueba de flujo en navegador.
+  copias tipadas en `SaveData.questLogEvents`. No existe todavía el formato de
+  escenas ni reproducción de Quest Log. Pasaron los checks estáticos; sin
+  prueba de flujo en navegador.
 - **`quest_log.c`: 3/88; `quest_log_events.c`: 5/118.** El inventario ahora
   incluye ambos módulos y los otros archivos `quest_log*.c`; no se excluyen
   para mejorar artificialmente el porcentaje. `QuestLog_CutRecording` y
   `GetQuestLogState` ya consultan/limpian estado modelado, y el evento de tienda
-  se conserva temporalmente. También están `QL_EnableRecordingSteps`,
+  se persiste en el formato web `SaveData.questLogEvents`. Saves v2 existentes
+  reciben la lista vacía por migración. También están `QL_EnableRecordingSteps`,
   `QL_ResetRepeatEventTracker` y `QL_ResetEventStates`. La lógica completa de
   escenas y playback continúa pendiente.
 - **`field_tasks.c`: 12/12 funciones con homólogo.** Implementé el callback R/S

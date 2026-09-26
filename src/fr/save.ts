@@ -93,6 +93,11 @@ export type SaveData = {
   trainerRematches?: number[];
   roamer?: unknown;
   ramScript?: RamScriptSave;
+  /** Browser-save representation of recorded Quest Log events. */
+  questLogEvents?: Array<{
+    eventId: number;
+    data: { totalMoney: number; lastItemId: number; itemQuantity: number; mapSec: number; hasMultipleTransactions: boolean; logEventId: number };
+  }>;
 };
 
 function emptyRamScript(): RamScriptSave {
@@ -144,6 +149,7 @@ export function newSaveData(): SaveData {
     weatherCycleStage: 0,
     nationalDexMagic: 0,
     nationalDexRseMagic: 0,
+    questLogEvents: [],
     ramScript: emptyRamScript(),
   };
 }
@@ -178,6 +184,7 @@ export function setSave(data: SaveData): void {
   }
   delete legacy.pcMail;
   data.ramScript ??= emptyRamScript();
+  data.questLogEvents ??= [];
   // Migrate browser saves created before event_data.c's nationalDexMagic was represented.
   if (data.nationalDexMagic === undefined) {
     const flag = C.FLAG_SYS_NATIONAL_DEX;
