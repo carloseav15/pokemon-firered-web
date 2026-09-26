@@ -107,8 +107,13 @@ export function glyph(fontId: number, code: number): Glyph {
 }
 
 export function glyphWidth(fontId: number, code: number): number {
-  if (fontId === FONT_BRAILLE) return 16; // GetGlyphWidth_Braille
+  if (fontId === FONT_BRAILLE) return GetGlyphWidth_Braille(fontId, false);
   return sheetFor(fontId).s.widths[code] ?? 8;
+}
+
+/** GetGlyphWidth_Braille (braille_text.c); both arguments are ignored by C. */
+export function GetGlyphWidth_Braille(_fontType: number, _isJapanese: boolean): number {
+  return 16;
 }
 
 /** GetStringWidth from text.c (ignores control codes, handles letter spacing). */

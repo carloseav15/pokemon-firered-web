@@ -5,12 +5,18 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Inventario actualizado, 2026-09-26
 
+- **`braille_text.c`: 2/3.** `GetGlyphWidth_Braille` ahora existe como
+  función TS y `glyphWidth` la utiliza en vez de duplicar el valor `16` como
+  constante inline. `FontFunc_Braille` sigue ejecutándose en la máquina de
+  impresión compartida (`TextPrinter`); el render actual porta sus estados
+  distribuidos y no se cuenta como homólogo 1:1. Checks estáticos e inventario
+  pasan; no hice comparación de píxeles ni prueba en navegador.
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.849/10.061 funciones (58,1%)**, quedan **4.212 (41,9%)** y hay **79
+  son **5.850/10.061 funciones (58,1%)**, quedan **4.211 (41,9%)** y hay **79
   archivos C con huecos** (4 sin empezar, 1 adaptador, 19 casi completos y 55
-  parciales). La estimación ponderada sin cubrir es **~87.748/252.366 líneas
+  parciales). La estimación ponderada sin cubrir es **~87.677/252.366 líneas
   (34,8%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`

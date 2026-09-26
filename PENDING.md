@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5849/10061 (58.1 %)**.
-- Archivos C con funciones aún sin homólogo: **79**; quedan **4212 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5850/10061 (58.1 %)**.
+- Archivos C con funciones aún sin homólogo: **79**; quedan **4211 nombres**.
 - Estos archivos contienen 148.217 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~87.748 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~87.677 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -20,12 +20,12 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 1 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
 | 2 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
 | 3 | `item.c` | casi completo | 680 | 44/49 | ~69 |  |
-| 4 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
-| 5 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
-| 6 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
-| 7 | `sound.c` | parcial | 649 | 38/48 | ~135 |  |
-| 8 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
-| 9 | `braille_text.c` | parcial | 212 | 1/3 | ~141 |  |
+| 4 | `braille_text.c` | parcial | 212 | 2/3 | ~70 |  |
+| 5 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
+| 6 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
+| 7 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
+| 8 | `sound.c` | parcial | 649 | 38/48 | ~135 |  |
+| 9 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
 | 10 | `quest_log_objects.c` | sin empezar | 146 | 0/3 | ~146 |  |
 | 11 | `quest_log_battle.c` | sin empezar | 150 | 0/3 | ~150 |  |
 | 12 | `tm_case.c` | casi completo | 1737 | 66/73 | ~166 |  |

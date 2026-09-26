@@ -11,7 +11,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 4 | 1923 | 0/91 |
-| Parcial (< 80 % de funciones) | 55 | 111438 | 1277/5195 |
+| Parcial (< 80 % de funciones) | 55 | 111438 | 1278/5195 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 19 | 33456 | 1089/1262 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 127 | 104096 | 3455/3455 |
@@ -19,7 +19,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 46 | 50676 | 82/1765 |
 | **Pendiente de portar** | **79** | **148217** | |
-| **Total en alcance** | **207** | **252366** | **5849/10061** |
+| **Total en alcance** | **207** | **252366** | **5850/10061** |
 
 ## Falta (sin funciones portadas)
 
@@ -88,7 +88,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `sound.c` | 649 | 38/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
 | `field_door.c` | 524 | 0/21 | `field/doors.ts` |  |  |
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
-| `braille_text.c` | 212 | 1/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
+| `braille_text.c` | 212 | 2/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
 
 ## Adaptador (UI simplificada)
 
