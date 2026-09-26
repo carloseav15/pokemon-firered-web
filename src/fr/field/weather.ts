@@ -1,7 +1,7 @@
 // Partial port of field_weather.c and field_weather_util.c.
-// Overworld weather state, rain, fog drift, sandstorm and ash. The gamma shift,
-// weather-aware screen fades and drought palettes remain partial; the live
-// stub count is generated in PENDING.md §3b.
+// Overworld weather state, rain, fog drift, sandstorm and ash. Gamma tables
+// and palette application are ported; weather-aware fades and drought palettes
+// remain partial. The live stub count is generated in PENDING.md §3b.
 
 import { rom } from "../rom";
 import { incrementGameStat, save } from "../save";
@@ -12,6 +12,7 @@ import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
+import { gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -30,6 +31,9 @@ export let gWeather = {
   gammaTargetIndex: 0,
   gammaStepDelay: 0,
   gammaStepFrameCounter: 0,
+  gammaShifts: [] as number[][],
+  altGammaShifts: [] as number[][],
+  altGammaSpritePalIndex: 0xff,
   palProcessingState: 0,
   fadeDestColor: 0,
   paletteFadeDelay: 0,
@@ -42,12 +46,12 @@ export let gWeather = {
   targetBlendEVB: 0,
 };
 
-/** BuildGammaShiftTables: exact u16 port, rows 0..18. */
-export function BuildGammaShiftTables(): number[][] {
+/** Build one of field_weather.c's normal or alternate gamma tables. */
+function buildGammaShiftTable(alternate: boolean): number[][] {
   const table: number[][] = Array.from({ length: 19 }, () => new Array(32).fill(0));
   for (let v2 = 0; v2 < 32; v2++) {
     let v4 = v2 << 8;
-    const v5 = (v2 << 8) / 16;
+    const v5 = alternate ? 0 : (v2 << 8) / 16;
     let gammaIndex = 0;
     for (; gammaIndex <= 2; gammaIndex++) {
       v4 = v4 - v5;
@@ -76,8 +80,32 @@ export function BuildGammaShiftTables(): number[][] {
   return table;
 }
 
+/** BuildGammaShiftTables (field_weather.c). */
+export function BuildGammaShiftTables(): number[][] {
+  return buildGammaShiftTable(false);
+}
+
 export const buildGammaTable = BuildGammaShiftTables;
 export const GAMMA_TABLE = BuildGammaShiftTables();
+export const GAMMA_TABLE_ALT = buildGammaShiftTable(true);
+
+const GAMMA_NONE = 0;
+const GAMMA_NORMAL = 1;
+const GAMMA_ALT = 2;
+const BASE_PALETTE_GAMMA_TYPES = [
+  GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL,
+  GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL,
+  GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL,
+  GAMMA_NORMAL, GAMMA_NONE, GAMMA_NONE, GAMMA_NONE,
+  GAMMA_ALT, GAMMA_NORMAL, GAMMA_ALT, GAMMA_ALT,
+  GAMMA_ALT, GAMMA_ALT, GAMMA_NORMAL, GAMMA_NORMAL,
+  GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_ALT, GAMMA_NORMAL,
+  GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL, GAMMA_NORMAL,
+];
+let paletteGammaTypes = [...BASE_PALETTE_GAMMA_TYPES];
+
+gWeather.gammaShifts = GAMMA_TABLE;
+gWeather.altGammaShifts = GAMMA_TABLE_ALT;
 
 const to8bit = (v: number): number => Math.min(255, Math.round((v * 255) / 31));
 
@@ -175,8 +203,45 @@ export function UpdateWeatherGammaShift(): void {
   }
 }
 
-/** ApplyGammaShift */
-export function ApplyGammaShift(startPalIndex: number, numPalettes: number, gammaIndex: number): void {}
+/** ApplyGammaShift (field_weather.c). Negative gamma is dummied out in FRLG. */
+export function ApplyGammaShift(startPalIndex: number, numPalettes: number, gammaIndex: number): void {
+  const signedGammaIndex = (gammaIndex << 24) >> 24; // C parameter type: s8.
+  if (signedGammaIndex < 0) return;
+
+  const firstPalette = startPalIndex & 0xff;
+  const endPalette = firstPalette + (numPalettes & 0xff);
+  const firstColor = firstPalette * 16;
+  if (signedGammaIndex === 0) {
+    const endColor = firstColor + (numPalettes & 0xff) * 16;
+    for (let colorIndex = firstColor; colorIndex < endColor; colorIndex++) {
+      gPlttBufferFaded[colorIndex] = gPlttBufferUnfaded[colorIndex] ?? 0;
+    }
+    return;
+  }
+
+  const row = signedGammaIndex - 1;
+  for (let paletteIndex = firstPalette; paletteIndex < endPalette; paletteIndex++) {
+    const colorOffset = paletteIndex * 16;
+    if (paletteGammaTypes[paletteIndex] === GAMMA_NONE) {
+      for (let i = 0; i < 16; i++) {
+        gPlttBufferFaded[colorOffset + i] = gPlttBufferUnfaded[colorOffset + i] ?? 0;
+      }
+      continue;
+    }
+
+    const useAlternate = paletteGammaTypes[paletteIndex] === GAMMA_ALT
+      || paletteIndex - 16 === gWeather.altGammaSpritePalIndex;
+    const gammaTable = (useAlternate ? gWeather.altGammaShifts : gWeather.gammaShifts)[row];
+    if (!gammaTable) continue;
+    for (let i = 0; i < 16; i++) {
+      const color = gPlttBufferUnfaded[colorOffset + i] ?? 0;
+      const r = gammaTable[color & 0x1f] ?? 0;
+      const green = gammaTable[(color >>> 5) & 0x1f] ?? 0;
+      const b = gammaTable[(color >>> 10) & 0x1f] ?? 0;
+      gPlttBufferFaded[colorOffset + i] = (b << 10) | (green << 5) | r;
+    }
+  }
+}
 
 /** ApplyGammaShiftWithBlend */
 export function ApplyGammaShiftWithBlend(
@@ -263,11 +328,16 @@ export function SetRainStrengthFromSoundEffect(soundEffect: number): void {
   sound.playSE(soundEffect & 0xffff);
 }
 
-/** PreservePaletteInWeather */
-export function PreservePaletteInWeather(paletteIndex: number): void {}
+/** PreservePaletteInWeather (field_weather.c). */
+export function PreservePaletteInWeather(paletteIndex: number): void {
+  paletteGammaTypes = [...BASE_PALETTE_GAMMA_TYPES];
+  if (paletteIndex >= 0 && paletteIndex < paletteGammaTypes.length) paletteGammaTypes[paletteIndex] = GAMMA_NONE;
+}
 
-/** ResetPreservedPalettesInWeather */
-export function ResetPreservedPalettesInWeather(): void {}
+/** ResetPreservedPalettesInWeather (field_weather.c). */
+export function ResetPreservedPalettesInWeather(): void {
+  paletteGammaTypes = [...BASE_PALETTE_GAMMA_TYPES];
+}
 
 /** UpdateSpritePaletteWithWeather */
 export function UpdateSpritePaletteWithWeather(paletteIndex: number): void {}

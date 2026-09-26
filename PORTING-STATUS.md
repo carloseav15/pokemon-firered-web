@@ -345,7 +345,7 @@ Portado 1:1 en `src/fr/field/fieldEffectHelpers.ts` (76/76 funciones).
 
 ## field_weather.c: sistema meteorológico y efectos visuales (2026-09-25)
 
-**Corrección (auditoría):** 20/50 con cuerpo; la gamma, los fundidos con clima y la sequía son stubs. Texto original:
+**Corrección (auditoría previa):** comenzó en 20/50 con cuerpo; la gamma, los fundidos con clima y la sequía eran stubs. Texto original:
 Portado 1:1 en `src/fr/field/weather.ts` (50/50 funciones).
 - Generación de tablas de gamma y fundidos de color según el clima (`BuildGammaShiftTables`, `ApplyWeatherGammaShiftToPalettes`).
 - Control de ciclos, variaciones de lluvia (`WEATHER_RAIN`, `WEATHER_RAIN_THUNDERSTORM`, `WEATHER_DOWNPOUR`), tormentas de arena (`WEATHER_SANDSTORM`), ceniza volcánica (`WEATHER_VOLCANIC_ASH`) y nieblas (`WEATHER_FOG_HORIZONTAL`, `WEATHER_FOG_DIAGONAL`).
@@ -368,6 +368,14 @@ Portado 1:1 en `src/fr/field/weatherEffects.ts` (93/93 funciones).
 - Partículas de copos de nieve, ceniza volcánica, nubes móviles, tormentas de arena y nieblas horizontal/diagonal.
 - Vinculado directamente a `sWeatherFuncs` en `weather.ts`.
 - Verificado con la suite headless `npm run check:weather`.
+
+## `field_weather.c`: tablas y aplicación de gamma (2026-09-25)
+
+- `BuildGammaShiftTables` ahora produce las tablas normal y alternativa de 19×32 niveles con la fórmula del C.
+- `ApplyGammaShift` procesa `gPlttBufferUnfaded` hacia `gPlttBufferFaded`, respeta las 32 categorías base (`GAMMA_NONE`, `GAMMA_NORMAL`, `GAMMA_ALT`), el override de una paleta OBJ y el caso gamma 0. Los gamma negativos siguen sin efecto como en FRLG.
+- `PreservePaletteInWeather` y `ResetPreservedPalettesInWeather` ahora modifican/restauran la categoría de paleta.
+- `check:weather` ejecuta las escrituras de paleta y compara vectores numéricos concretos; nivel headless. La ruta Canvas2D del overworld sigue usando su aproximación de tint y no consume todavía los buffers globales de paleta.
+- Siguen pendientes gamma con blend, fundidos con clima, sequía y la conexión del controlador de clima a la ruta Canvas2D.
 
 ## fame_checker.c: Buscapeleas / Pokéradar (2026-09-25)
 
@@ -517,8 +525,11 @@ Portado fiel en `src/fr/saveFailedScreen.ts` con sus 14 funciones homólogas:
   Pokémon Jump link minigames and specific postgame event handlers. Slots run
   with source betting, bias, stops, lines and payouts (headless-verified);
   reel sprites, the Clefairy dance and line flashes remain pending. Field
-  weather runs its state machine with exact gamma shifts and fog drift
-  (headless-verified); per-weather sprite effects beyond fog remain pending.
+  weather's active Canvas2D path uses the normal gamma table for background
+  tint, but sprite brightness is still an approximation; the exact palette
+  buffer operation is headless-verified and its hardware buffers are not yet
+  connected to that renderer. Per-weather sprite effects beyond fog remain
+  pending.
 
 ## Active path
 
@@ -1194,10 +1205,8 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
    tiene los 76 nombres pero 62 son stubs y nadie lo importa (auditoría 2026-09-25). Los efectos
    visibles siguen en `field/fieldEffects.ts`. Hay que portar los cuerpos y conectarlo.
-5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 20/50, 30 stubs]**
-   en `src/fr/field/weather.ts`; gamma, fundidos con clima y sequía siguen vacíos. Texto original: Implementa tablas de corrección gamma (`BuildGammaShiftTables`),
-   ciclo de transición y estados de clima (`SetCurrentAndNextWeather`), fading de clima y renderizado
-   en pantalla de lluvia, tormenta de arena, ceniza volcánica y niebla horizontal/diagonal. Verificado en `check:weather`.
+5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 25/50, 25 stubs]**
+   en `src/fr/field/weather.ts`; tablas gamma normal/alternativa, aplicación a buffers y preservación de paletas ya tienen check headless. Gamma con blend, fundidos con clima y sequía siguen pendientes; el render Canvas2D conserva su adaptación. `check:weather` ejecuta solo rutas seleccionadas.
 6. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
    con la capa antigua.
 7. **Cajas del PC reales** (`pokemon_storage_system_*.c`): el adaptador funciona.

@@ -1,4 +1,4 @@
-// Port of field_weather_effects.c (all 93 functions).
+// Partial port of field_weather_effects.c (87/93 functions have bodies).
 // Field weather particle sprites, animations, movement updates and controllers:
 // Clouds, Sunny, Drought, Rain, Thunderstorm, Downpour, Snow, Fog (H/D), Ash, Sandstorm, Shade, Bubbles.
 

@@ -57,7 +57,7 @@ KNOWN_GAPS = [
     "Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.",
     "Pantalla de nombres: solo 4/109 funciones (`naming_screen.c`).",
     "Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.",
-    "Clima: `field/weather.ts` deja como stubs la gamma, los fundidos con clima y la sequía; las partículas (`field/weatherEffects.ts`) sí tienen cuerpo.",
+    "Clima: `field/weather.ts` porta las tablas y la aplicación de gamma a buffers de paleta; los fundidos con clima y la sequía siguen pendientes. La ruta Canvas2D del overworld mantiene su aproximación visual.",
     "`scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).",
     "Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.",
     "Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.",

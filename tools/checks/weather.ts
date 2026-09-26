@@ -5,6 +5,7 @@ import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import * as Weather from '../../src/fr/field/weather.ts';
 import { sound } from '../../src/fr/audio/sound.ts';
+import { gPlttBufferFaded, gPlttBufferUnfaded } from '../../src/fr/hw/palette.ts';
 import * as C from '../../src/fr/generated/constants.ts';
 
 console.log('--- 0. Testing rain sound state and fade-out guard ---');
@@ -45,9 +46,46 @@ console.log('--- 1. Checking field_weather gamma table shape ---');
 const table = Weather.BuildGammaShiftTables();
 assert.equal(table.length, 19, 'Gamma shift table must have 19 rows');
 assert.equal(table[0].length, 32, 'Each row must have 32 color levels');
-console.log('✓ Gamma table dimensions checked; numeric parity was not compared');
+assert.equal(table[0][16], 15, 'Normal row 0 dims level 16 by one');
+assert.equal(Weather.GAMMA_TABLE_ALT[0][16], 16, 'Alternate row 0 preserves level 16');
+console.log('✓ Normal and alternate gamma table vectors checked');
 
-console.log('--- 2. Exercising weather transition state API ---');
+console.log('--- 2. Exercising ApplyGammaShift against palette buffers ---');
+const paletteRangeStart = 0;
+const paletteRangeEnd = 32 * 16;
+const savedUnfaded = gPlttBufferUnfaded.slice(paletteRangeStart, paletteRangeEnd);
+const savedFaded = gPlttBufferFaded.slice(paletteRangeStart, paletteRangeEnd);
+const savedAltPalette = Weather.gWeather.altGammaSpritePalIndex;
+try {
+  gPlttBufferUnfaded.fill(0x4210, paletteRangeStart, paletteRangeEnd);
+  gPlttBufferFaded.fill(0, paletteRangeStart, paletteRangeEnd);
+  Weather.gWeather.altGammaSpritePalIndex = 1;
+  Weather.ResetPreservedPalettesInWeather();
+  Weather.ApplyGammaShift(0, 32, 1);
+
+  assert.equal(gPlttBufferFaded[0], 0x3def, 'normal BG palettes use the normal table');
+  assert.equal(gPlttBufferFaded[17 * 16], 0x4210, 'alternate sprite override uses the alternate table');
+  assert.equal(gPlttBufferFaded[13 * 16], 0x4210, 'GAMMA_NONE palettes copy unfaded colors');
+  assert.equal(gPlttBufferFaded[16 * 16], 0x4210, 'GAMMA_ALT sprite palettes use the alternate table');
+
+  Weather.PreservePaletteInWeather(0);
+  Weather.ApplyGammaShift(0, 1, 1);
+  assert.equal(gPlttBufferFaded[0], 0x4210, 'preserved palettes bypass gamma shifts');
+  Weather.ResetPreservedPalettesInWeather();
+  Weather.ApplyGammaShift(0, 1, 0);
+  assert.equal(gPlttBufferFaded[0], 0x4210, 'gamma zero restores the unfaded palette');
+  gPlttBufferFaded[0] = 0x1234;
+  Weather.ApplyGammaShift(0, 1, -1);
+  assert.equal(gPlttBufferFaded[0], 0x1234, 'negative gamma is a no-op in FRLG');
+} finally {
+  gPlttBufferUnfaded.set(savedUnfaded, paletteRangeStart);
+  gPlttBufferFaded.set(savedFaded, paletteRangeStart);
+  Weather.gWeather.altGammaSpritePalIndex = savedAltPalette;
+  Weather.ResetPreservedPalettesInWeather();
+}
+console.log('✓ ApplyGammaShift palette routing and buffer writes exercised');
+
+console.log('--- 3. Exercising weather transition state API ---');
 Weather.SetCurrentAndNextWeather(3); // Rain
 assert.equal(Weather.GetCurrentWeather(), 3);
 
@@ -64,7 +102,7 @@ assert.equal(fw.next, 3);
 
 console.log('✓ Current/next weather state updates exercised');
 
-console.log('--- 3. Exercising selected weather particle lifecycles ---');
+console.log('--- 4. Exercising selected weather particle lifecycles ---');
 import * as WE from '../../src/fr/field/weatherEffects.ts';
 
 // Clouds
