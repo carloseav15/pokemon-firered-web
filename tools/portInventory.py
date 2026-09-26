@@ -26,10 +26,10 @@ DECOMP = Path(os.environ.get("POKEFIRERED", ROOT.parent / "pokefirered")).resolv
 SRC = ROOT / "src" / "fr"
 OUT = ROOT / "PORT-INVENTORY.md"
 
-# No link hardware, Quest Log or help system in the browser (PORTING-STATUS.md).
+# Link hardware and help system are not part of the single-player browser port.
 OUT_OF_SCOPE_PREFIXES = (
     "link", "librfu", "AgbRfu_", "union_room", "mystery_gift", "mystery_event",
-    "ereader", "berry_crush", "dodrio_berry_picking", "pokemon_jump", "quest_log",
+    "ereader", "berry_crush", "dodrio_berry_picking", "pokemon_jump",
     "help_system", "battle_controller_link_",
 )
 OUT_OF_SCOPE = {

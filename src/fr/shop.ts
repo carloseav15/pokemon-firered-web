@@ -11,8 +11,8 @@
 //  - The buy screen draws the map from the FieldMap tilesets: the port has no
 //    map tiles in hardware VRAM, so BuyMenuLoadMapTilesets copies the two
 //    tilesets and their palettes there first (the C finds them already loaded).
-//  - Quest Log (SetQuestLogEvent) is out of scope: RecordItemTransaction keeps
-//    the history but nothing writes it to the quest log. The help system is out of scope.
+//  - Shop event summaries enter a session-memory queue; Quest Log persistence
+//    and playback remain unimplemented. The help system is out of scope.
 //  - Alloc'd tilemap buffers are Uint16Arrays; the four Alloc failure paths cannot happen.
 // Needs preloadShop() before BUY.
 
@@ -22,6 +22,7 @@ import { FONT_FEMALE, FONT_MALE, FONT_NORMAL, FONT_SMALL } from "./gba/font";
 import { A_BUTTON, B_BUTTON, JOY_NEW } from "./gba/input";
 import { tasks } from "./gba/tasks";
 import * as C from "./generated/constants";
+import { SetQuestLogEvent } from "./questLogEvents";
 import { cdata, incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
 import {
   FillBgTilemapBufferRect_Palette0, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
@@ -240,6 +241,7 @@ function CB2_GoToSellMenu(): void {
 
 function Task_HandleShopMenuQuit(taskId: number): void {
   ClearShopMenuWindow();
+  RecordTransactionForQuestLog();
   tasks.destroy(taskId);
   if (sShopData.callback !== null) sShopData.callback();
 }
@@ -896,6 +898,21 @@ export function RecordItemTransaction(itemId: number, quantity: number, logEvent
     // so for buying it will add the full price and selling will add half price
     history.totalMoney += ((itemInfo(itemId)?.price ?? 0) >> (logEventId - 1)) * quantity;
     if (history.totalMoney > 999999) history.totalMoney = 999999;
+  }
+}
+
+/** RecordTransactionForQuestLog (shop.c): submit bought/sold summaries on exit. */
+function RecordTransactionForQuestLog(): void {
+  for (const history of sHistory) {
+    if (history.logEventId === 0) continue;
+    SetQuestLogEvent(history.logEventId + C.QL_EVENT_USED_POKEMART, {
+      totalMoney: history.totalMoney,
+      lastItemId: history.lastItemId,
+      itemQuantity: history.itemQuantity,
+      mapSec: history.mapSec,
+      hasMultipleTransactions: history.hasMultipleTransactions,
+      logEventId: history.logEventId,
+    });
   }
 }
 

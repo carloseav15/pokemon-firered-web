@@ -5,13 +5,30 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Inventario actualizado, 2026-09-26
 
-- `npm run inventory` ahora ignora identificadores que aparecen solo en
-  comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.840/9.834 (59,4%)**; quedan
-  **3.994 nombres (40,6%)**. Hay **75 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 20 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.417/247.859 (33,7%)**. El inventario mide nombres/cuerpos
-  triviales, no paridad funcional ni pruebas en navegador.
+- `npm run inventory` ignora identificadores que aparecen solo en comentarios
+  y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
+  perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
+  son **5.846/10.061 funciones (58,1%)**, quedan **4.215 (41,9%)** y hay **79
+  archivos C con huecos** (4 sin empezar, 1 adaptador, 19 casi completos y 55
+  parciales). La estimación ponderada sin cubrir es **~87.805/252.366 líneas
+  (34,8%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
+- **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
+  salir de la tienda; el receptor conserva los resúmenes tipados de compra y
+  venta en memoria de sesión. `QuestLog_CutRecording` limpia el estado y
+  punteros transitorios, y `GetQuestLogState` devuelve el estado al script.
+  Todavía faltan el buffer de acciones, serialización/persistencia, límites de
+  escenas y reproducción. Checks estáticos e inventario pasan; sin navegador.
+- **`shop.c`: 60/60 funciones con homólogo.** Al salir de la tienda se envían
+  los resúmenes de compra/venta al receptor `SetQuestLogEvent`, que conserva
+  copias tipadas en memoria de sesión. No hay persistencia ni reproducción de
+  Quest Log todavía. Pasaron `check:port`, `check:honesty`, `inventory`,
+  `pending` y `git diff --check`; sin prueba de flujo en navegador.
+- **`quest_log.c`: 3/88; `quest_log_events.c`: 2/118.** El inventario ahora
+  incluye ambos módulos y los otros archivos `quest_log*.c`; no se excluyen
+  para mejorar artificialmente el porcentaje. `QuestLog_CutRecording` y
+  `GetQuestLogState` ya consultan/limpian estado modelado, y el evento de tienda
+  se conserva temporalmente. La lógica completa de escenas y playback continúa
+  pendiente.
 - **`field_tasks.c`: 12/12 funciones con homólogo.** Implementé el callback R/S
   `AshGrassPerStepCallback` y su cadena visual: espera de cuatro frames,
   reemplazo del metatile de ceniza, reactivación de efectos de suelo y
@@ -42,11 +59,6 @@ systems. The first playable route is a milestone, not the completion criterion.
   Enigma Berry y escritura de mail. El archivo entero continúa fuera del
   alcance medido porque su sala online y transporte no están portados; este
   helper sí se usa. Los checks estáticos pasan; sin prueba de ejecución.
-- **`shop.c`: 59/60 funciones con homólogo y sin stub registrado.** Conecté los
-  dos helpers debug que el C deja vacíos. Quité el stub `RecordTransactionForQuestLog`
-  y su llamada sin efecto; el historial de transacciones todavía no se escribe
-  al Quest Log. `check:honesty` baja de 117 a 116 stubs; pasaron los checks
-  estáticos y el inventario.
 - **`evolution_graphics.c`: 37/37 funciones con homólogo.** Porté la variante
   trade de la animación de chispas y sus dos callbacks de tarea, conservando
   las máscaras de fade propias de C y compartiendo la creación de sprites. La

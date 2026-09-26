@@ -2,6 +2,7 @@
 // Each entry mirrors the original field_specials.c (or its home file).
 
 import * as C from "../generated/constants";
+import { GetQuestLogState, QuestLog_CutRecording } from "../questLogEvents";
 import { sound } from "../audio/sound";
 import { decode, encode, stringVars } from "../gba/charmap";
 import { tasks } from "../gba/tasks";
@@ -172,8 +173,8 @@ const SPECIALS: Record<string, Special> = {
     sound.fadeOutMapMusic(4);
     tasks.create((id) => Task_EnableScriptAfterMusicFade(id, ctx), 80);
   },
-  QuestLog_CutRecording: () => {},
-  GetQuestLogState: () => 0,
+  QuestLog_CutRecording: () => { QuestLog_CutRecording(); },
+  GetQuestLogState: () => { varSet(SV.RESULT, GetQuestLogState()); },
   HelpSystem_Enable: () => {},
   HelpSystem_Disable: () => {},
   Script_SetHelpContext: () => {},

@@ -10,22 +10,25 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 53 | 107424 | 1269/4989 |
+| Falta (sin funciones portadas) | 4 | 1923 | 0/91 |
+| Parcial (< 80 % de funciones) | 55 | 111438 | 1274/5195 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 20 | 34601 | 1148/1322 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 126 | 102951 | 3395/3395 |
+| Casi completo (≥ 80 % y < 100 %) | 19 | 33456 | 1089/1262 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 127 | 104096 | 3455/3455 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| Fuera de alcance | 51 | 55183 | 85/1992 |
-| **Pendiente de portar** | **75** | **144855** | |
-| **Total en alcance** | **202** | **247859** | **5840/9834** |
+| Fuera de alcance | 46 | 50676 | 82/1765 |
+| **Pendiente de portar** | **79** | **148217** | |
+| **Total en alcance** | **207** | **252366** | **5846/10061** |
 
 ## Falta (sin funciones portadas)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `pokemon_storage_system_misc.c` | 1430 | 0/70 |  |  |  |
+| `quest_log_player.c` | 197 | 0/15 |  |  |  |
+| `quest_log_battle.c` | 150 | 0/3 |  |  |  |
+| `quest_log_objects.c` | 146 | 0/3 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
 
@@ -48,6 +51,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 1/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
+| `quest_log_events.c` | 2247 | 2/118 | `questLogEvents.ts` |  |  |
 | `field_player_avatar.c` | 2168 | 12/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
@@ -55,6 +59,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
+| `quest_log.c` | 1767 | 3/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 15/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
@@ -106,7 +111,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_controllers.c` | 1214 | 61/68 | `battle/controllers.ts` |  |  |
-| `shop.c` | 1145 | 59/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
@@ -146,6 +150,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
 | `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
 | `item_pc.c` | 1145 | 59/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
+| `shop.c` | 1145 | 60/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 115/115 | `generated/metatileBehavior.ts` |  |  |
 | `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
@@ -299,9 +304,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `link_rfu_2.c` | 3163 | 0/149 |  |  |  |
 | `help_system.c` | 2480 | 0/41 |  |  | 6 |
 | `librfu_rfu.c` | 2342 | 0/86 |  |  |  |
-| `quest_log_events.c` | 2247 | 1/118 | `questLogEvents.ts` |  |  |
 | `link.c` | 2202 | 1/114 |  |  | 1 |
-| `quest_log.c` | 1767 | 2/88 | `field/trainerSee.ts` |  | 1 |
 | `battle_controller_link_opponent.c` | 1713 | 22/86 |  |  |  |
 | `battle_controller_link_partner.c` | 1647 | 17/85 |  |  |  |
 | `mystery_gift_menu.c` | 1609 | 0/34 |  |  |  |
@@ -335,11 +338,8 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `mystery_gift_link.c` | 215 | 0/10 |  |  |  |
 | `berry_fix_program.c` | 203 | 0/4 |  |  |  |
 | `mystery_gift_scripts.c` | 198 | — |  |  |  |
-| `quest_log_player.c` | 197 | 0/15 |  |  |  |
 | `librfu_sio32id.c` | 170 | 0/4 |  |  |  |
 | `wonder_news.c` | 154 | 1/9 |  |  |  |
-| `quest_log_battle.c` | 150 | 0/3 |  |  |  |
-| `quest_log_objects.c` | 146 | 0/3 |  |  |  |
 | `help_message.c` | 106 | 3/7 | `boot.ts`, `game.ts`, `menus/helpMessage.ts` … |  |  |
 | `cereader_tool.c` | 97 | 1/8 | `script/specials.ts` |  |  |
 | `mystery_event_msg.c` | 13 | — |  |  |  |
