@@ -110,12 +110,14 @@ export class FieldControl {
     }
   }
 
-  private playerPosition(): { x: number; y: number; elevation: number } {
+  /** GetPlayerPosition (field_control_avatar.c). */
+  private GetPlayerPosition(): { x: number; y: number; elevation: number } {
     const p = this.ow.player.object;
     return { x: p.currentCoords.x, y: p.currentCoords.y, elevation: p.previousElevation };
   }
 
-  private inFrontOfPlayer(): { x: number; y: number; elevation: number } {
+  /** GetInFrontOfPlayerPosition (field_control_avatar.c). */
+  private GetInFrontOfPlayerPosition(): { x: number; y: number; elevation: number } {
     const p = this.ow.player.object;
     const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
     const elevation = this.ow.map.elevationAt(p.currentCoords.x, p.currentCoords.y) !== 0 ? p.previousElevation : 0;
@@ -126,7 +128,7 @@ export class FieldControl {
   processPlayerFieldInput(input: FieldInput): boolean {
     this.resetFacingNpcOrSignpostVars();
     const direction = this.ow.player.object.facingDirection;
-    let position = this.playerPosition();
+    let position = this.GetPlayerPosition();
     const attributes = this.ow.map.attributesOf(this.ow.map.metatileIdAt(position.x, position.y));
     let behavior = this.ow.map.behaviorAt(position.x, position.y);
 
@@ -139,16 +141,16 @@ export class FieldControl {
       if (this.tryStartStepBasedScript(position, behavior, direction)) return true;
     }
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {
-      const front = this.inFrontOfPlayer();
+      const front = this.GetInFrontOfPlayerPosition();
       const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
       if (this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) return true;
-      position = this.playerPosition();
+      position = this.GetPlayerPosition();
       behavior = this.ow.map.behaviorAt(position.x, position.y);
     }
     if (input.checkStandardWildEncounter && this.ow.effects.tryStandardWildEncounter(attributes)) return true;
     if (input.heldDirection && input.dpadDirection === direction && this.tryArrowWarp(position, behavior, direction)) return true;
 
-    const front = this.inFrontOfPlayer();
+    const front = this.GetInFrontOfPlayerPosition();
     const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
     if (input.heldDirection && input.dpadDirection === direction && this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) return true;
     if (input.pressedAButton && this.tryStartInteractionScript(front, frontBehavior, direction)) return true;

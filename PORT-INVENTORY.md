@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1953/6059 |
+| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1955/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3517/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **117** | **130962** | |
-| **Total en alcance** | **210** | **248996** | **5498/9825** |
+| **Total en alcance** | **210** | **248996** | **5500/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -60,7 +60,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `vs_seeker.c` | 1326 | 15/40 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
 | `title_screen.c` | 1315 | 17/39 | `introTitle.ts` |  |  |
 | `battle_controllers.c` | 1214 | 46/67 | `battle/controllers.ts` |  |  |
-| `field_control_avatar.c` | 1182 | 17/37 | `field/fieldControl.ts` |  |  |
+| `field_control_avatar.c` | 1182 | 19/37 | `field/fieldControl.ts` |  |  |
 | `battle_bg.c` | 1111 | 12/17 | `battle/bg.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_setup.c` | 1070 | 32/57 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |

@@ -1661,3 +1661,7 @@ Pending / placeholders:
 ## `trainer_see.c`: CheckTrainer (2026-09-25)
 
 - Ported the C `CheckTrainer` decision sequence into `TrainerSee.CheckTrainer` and connected the normal-trainer scan to it: reject missing/already-defeated scripts, require a visible unobstructed approach, reject double battles without two usable non-egg Pokémon, configure the trainer battle, and retain `approachDistance - 1` for the approach task. The behavior was already inline in the TS scan; extracting the source routine makes the C-to-TS correspondence explicit without enabling the still-unported buried/disguise/ash paths or Quest Log playback. `trainer_see.c` inventory is now 14/37. `npm run check:port`, `npm run check:honesty`, `npm run build`, `npm run inventory` and `npm run pending` pass. No browser/game test was run.
+
+## `field_control_avatar.c`: player position helpers (2026-09-25)
+
+- Compared `GetPlayerPosition` and `GetInFrontOfPlayerPosition` with the two helpers in `fieldControl.ts`. Their coordinate/elevation logic already matched `PlayerGetDestCoords`, `PlayerGetElevation`, `GetXYCoordsOneStepInFrontOfPlayer` and `MapGridGetElevationAt`; renamed the TS methods to the C names and documented their source so call sites remain traceable. No gameplay behavior changed. Inventory: `field_control_avatar.c` 19/37. `npm run check:port`, `npm run check:honesty`, `npm run build`, `npm run inventory` and `npm run pending` pass. No browser/game test was run.

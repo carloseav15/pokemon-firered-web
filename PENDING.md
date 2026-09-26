@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5498/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5500/9825 (55 %)**.
 - Archivos C pendientes: **117** (130962 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -63,7 +63,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `evolution_scene.c` | 1704 | 13/22 | ~697 |  |
 | `field_fadetransition.c` | 965 | 18/57 | ~660 |  |
 | `mail.c` | 734 | 1/10 | ~660 |  |
-| `field_control_avatar.c` | 1182 | 17/37 | ~638 |  |
+| `battle_controller_opponent.c` | 1777 | 56/87 | ~633 |  |
 
 Hay 116 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
