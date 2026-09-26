@@ -1670,3 +1670,9 @@ Pending / placeholders:
 ## `event_object_movement.c`: object lookup by position (2026-09-25)
 
 - Ported `GetObjectEventIdByPosition` and `ObjectEventDoesElevationMatch` into `ObjectEvents`, iterating the fixed 16-slot object-event table and preserving the C wildcard rule when either elevation is zero. `objectAtXYZ` now resolves through that source-equivalent lookup, so field interactions, counters and surf checks share it. Inventory: `event_object_movement.c` 45/752. `npm run check:port`, `npm run check:honesty`, `npm run build`, `npm run inventory` and `npm run pending` pass. No browser/game test was run.
+
+## Follow-up source review: capture ball and held movement (2026-09-25)
+
+- Rechecked `SpriteCB_ThrowBall_DoClick` / `SpriteCB_ThrowBall_FinishClick` in `battle_anim_special.c` against `battle/anims/special.ts`: both keep the ball visible through the caught-message interval and hide it only after the 16-step white blend. The instruction to fix a disappearing ball conflicts with this source comparison and the earlier browser note above; no code change is justified.
+- Identified a source-level gap for the next movement pass. C `ObjectEventCheckHeldMovementStatus` / `ObjectEventClearHeldMovementIfFinished` return `0` while active and unfinished, `1` when active and finished, and `16` when inactive; TS `clearHeldMovementIfFinished` currently returns only a boolean and maps inactive to `false`. Some C callers may rely on inactive `16` being truthy. This needs call-site comparison before changing the shared return type; no behavior change was made in this review.
+- Also compared the object lookup and turn wrappers used by `turnobject`: TS `byLocalIdAndMap` and `turn` already preserve the map-ID special case and direction/face-animation behavior. Source review only; no gameplay execution.
