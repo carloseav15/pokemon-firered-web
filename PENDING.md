@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5783/9834 (58.8 %)**.
-- Archivos C con funciones aún sin homólogo: **89**; quedan **4051 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5784/9834 (58.8 %)**.
+- Archivos C con funciones aún sin homólogo: **89**; quedan **4050 nombres**.
 - Estos archivos contienen 167.049 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~84.662 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~84.638 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -18,8 +18,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `mail_data.c` | casi completo | 187 | 11/12 | ~15 |  |
-| 2 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
-| 3 | `window.c` | casi completo | 513 | 19/21 | ~48 |  |
+| 2 | `window.c` | casi completo | 513 | 20/21 | ~24 |  |
+| 3 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
 | 4 | `battle_intro.c` | casi completo | 492 | 9/10 | ~49 |  |
 | 5 | `field_weather_effects.c` | casi completo | 2346 | 91/93 | ~50 |  |
 | 6 | `battle_anim_mons.c` | casi completo | 2360 | 125/128 | ~55 |  |

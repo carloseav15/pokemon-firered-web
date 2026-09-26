@@ -2782,6 +2782,16 @@ Pending / placeholders:
   pendientes. Pasaron `check:port`, `check:honesty`, inventory, pending y
   `git diff --check`; sin comparación en navegador.
 
+## `window.c`: conteo de ventanas por BG (2026-09-26)
+
+- Alineé el helper compartido `GetNumActiveWindowsOnBg` y lo reutilicé también
+  desde `GetNumActiveWindowsOnBg8Bit`, evitando dos conteos distintos sobre la
+  misma tabla. `window.c` sube a 20/21. `nullsub_8` se mantiene como sentinel
+  lógico `"external"` en TS; no añadí una función vacía para imitar el puntero
+  C. Total: 5.784/9.834 (58,8 %), 89 archivos y 4.050 nombres pendientes.
+  Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
+  sin navegador.
+
 ## `oak_speech.c`: nombre del punto de entrada (2026-09-26)
 
 - Renombré `OakSpeech.begin()` a `StartNewGameScene()` y actualicé el caller de

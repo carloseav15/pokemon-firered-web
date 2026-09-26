@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 33 | 56356 | 1898/2124 |
+| Casi completo (≥ 80 % y < 100 %) | 33 | 56356 | 1899/2124 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 112 | 80757 | 2576/2576 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
 | **Pendiente de portar** | **89** | **167049** | |
-| **Total en alcance** | **202** | **247859** | **5783/9834** |
+| **Total en alcance** | **202** | **247859** | **5784/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -123,7 +123,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `menu_indicators.c` | 656 | 18/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
-| `window.c` | 513 | 19/21 | `gba/window.ts`, `hw/window.ts` |  |  |
+| `window.c` | 513 | 20/21 | `gba/window.ts`, `hw/window.ts` |  |  |
 | `battle_intro.c` | 492 | 9/10 | `battle/intro.ts` |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `field_tasks.c` | 351 | 10/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |

@@ -36,13 +36,13 @@ export function setWindowClearTile(tile: number): void {
   gWindowClearTile = tile;
 }
 
-function numActiveWindowsOnBg(bg: number): number {
+function GetNumActiveWindowsOnBg(bg: number): number {
   return gWindows.filter((w) => w.window.bg === bg).length;
 }
 
 /** window_8bpp.c GetNumActiveWindowsOnBg8Bit; the shared table includes 4bpp and 8bpp windows. */
 function GetNumActiveWindowsOnBg8Bit(bgId: number): number {
-  return gWindows.reduce((count, window) => count + (window.window.bg === bgId ? 1 : 0), 0);
+  return GetNumActiveWindowsOnBg(bgId);
 }
 
 function ensureBgTilemap(bg: number): boolean {
@@ -134,7 +134,7 @@ export function RemoveWindow(windowId: number): void {
   const is8Bit = window8BitIds.delete(windowId);
   if (gWindowTileAutoAllocEnabled && !is8Bit) BgTileAllocOp(bg, w.window.baseBlock, w.window.width * w.window.height, BG_TILE_FREE);
   w.window = { ...DUMMY_WIN_TEMPLATE };
-  if (bg < 4 && numActiveWindowsOnBg(bg) === 0 && windowBgTilemapBuffers[bg] !== "external") windowBgTilemapBuffers[bg] = null;
+  if (bg < 4 && GetNumActiveWindowsOnBg(bg) === 0 && windowBgTilemapBuffers[bg] !== "external") windowBgTilemapBuffers[bg] = null;
   w.tileData = null;
 }
 
