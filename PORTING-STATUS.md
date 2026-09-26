@@ -5,6 +5,12 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Inventario actualizado, 2026-09-26
 
+- **`item.c`: 45/49 funciones con homólogo.** `TrySetObtainedItemQuestLogEvent`
+  filtra los 20 objetos definidos en C, conserva la restricción del Town Map
+  en la casa del rival y guarda el evento tipado con la región actual. Lo
+  conecté a `ScrCmd_additem`, incluso cuando la adición no tuvo espacio, igual
+  que la llamada incondicional del C. Pasaron checks estáticos e inventario;
+  sin prueba de script en navegador.
 - **`braille_text.c`: 2/3.** `GetGlyphWidth_Braille` ahora existe como
   función TS y `glyphWidth` la utiliza en vez de duplicar el valor `16` como
   constante inline. `FontFunc_Braille` sigue ejecutándose en la máquina de
@@ -14,9 +20,9 @@ systems. The first playable route is a milestone, not the completion criterion.
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.852/10.061 funciones (58,2%)**, quedan **4.209 (41,8%)** y hay **79
+  son **5.853/10.061 funciones (58,2%)**, quedan **4.208 (41,8%)** y hay **79
   archivos C con huecos** (4 sin empezar, 1 adaptador, 19 casi completos y 55
-  parciales). La estimación ponderada sin cubrir es **~87.639/252.366 líneas
+  parciales). La estimación ponderada sin cubrir es **~87.625/252.366 líneas
   (34,8%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
@@ -128,7 +134,8 @@ systems. The first playable route is a milestone, not the completion criterion.
   llama a `CreateBerryPouchItemIcon` directamente. Las imágenes comprimidas
   llegan descomprimidas del exportador. Pasaron `check:port`, `check:honesty`,
   `inventory`, `pending` y `git diff --check`; no hice prueba visual.
-- **`item.c`: 44/49 funciones con homólogo.** Añadí `ItemId_GetFieldFunc` y
+- **`item.c`: 45/49 funciones con homólogo.** Añadí `TrySetObtainedItemQuestLogEvent`
+  y lo conecté al `additem` de scripts. Antes ya estaban `ItemId_GetFieldFunc` y
   `ItemId_GetBattleFunc` como acceso a los símbolos de callback ya decodificados
   en la tabla de items y conecté las rutas de uso del bag, bayas y batalla a
   esos getters. Restan las dos funciones de recifrado GBA (el guardado web
@@ -1020,7 +1027,7 @@ audio backend exists.
 - `itemfinder.c`: current-map hidden item scan, underfoot digging and ding/message behavior exist in `fieldMenus.ts`; connected-map search and arrow/star directional sprites are absent. Marked partial; neighboring-map item detection is a gameplay gap.
 - `sound.c`: map music state/fades, fanfares, SEs, cries and ducking have WebAudio counterparts, but the source M4A engine and table-level audio behavior are adapted. Marked partial; no audio comparison.
 - `menu_indicators.c`: actualizado por el pase fuente 2026-09-26 abajo; las dos tareas C vacías permanecen sin declararse.
-- `item.c`: item metadata, bag/PC operations, field/battle callback-symbol getters and item lookup exist across `pokemon/items.ts`, `save.ts` and `bagMenu.ts`; GBA encrypted slot storage, array compaction and story-item Quest Log logging are not exact equivalents. Current inventory 44/49; marked partial.
+- `item.c`: item metadata, bag/PC operations, field/battle callback-symbol getters, item lookup and story-item Quest Log events exist across `pokemon/items.ts`, `save.ts`, `bagMenu.ts` and `questLogEvents.ts`; GBA encrypted slot storage and array compaction are not exact equivalents. Current inventory 45/49; marked partial.
 - `move_descriptions.c`: all 355 source definitions, including the pointer table, are exported as cdata; move relearner and Pokémon summary screens load the table and resolve source text symbols. Source/data path reviewed; rendering parity was not checked.
 - `battle_controller_safari.c`: the Safari action menu, throw/intro animations, text, healthbox, sound and battle-animation waits are mapped in `battle/controller_safari.ts`; encounter and catch logic is in `battle/main.ts` / `battleSetup.ts`. Remaining controller opcodes often complete immediately, leaving source sprite/data/status/move/party-summary commands incomplete. Partial; no runtime execution.
 - `battle_ai_switch_items.c`: switch choices, switch targets, move/type scoring, held trainer-item classification/effects and AI action selection are represented in `battle/ai.ts`. The source itself notes the omitted Flying/Levitate trapping check. Source code review only; no battle replay or parity execution.

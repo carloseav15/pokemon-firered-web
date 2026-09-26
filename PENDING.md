@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5852/10061 (58.2 %)**.
-- Archivos C con funciones aún sin homólogo: **79**; quedan **4209 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5853/10061 (58.2 %)**.
+- Archivos C con funciones aún sin homólogo: **79**; quedan **4208 nombres**.
 - Estos archivos contienen 148.217 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~87.639 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~87.625 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -18,8 +18,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
-| 2 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
-| 3 | `item.c` | casi completo | 680 | 44/49 | ~69 |  |
+| 2 | `item.c` | casi completo | 680 | 45/49 | ~55 |  |
+| 3 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
 | 4 | `braille_text.c` | parcial | 212 | 2/3 | ~70 |  |
 | 5 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
 | 6 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |

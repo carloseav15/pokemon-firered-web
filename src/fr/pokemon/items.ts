@@ -3,12 +3,31 @@
 import * as C from "../generated/constants";
 import { b64, rom, type ItemInfo } from "../rom";
 import { flagSet, save, type BagPocket } from "../save";
+import { SetQuestLogEvent } from "../questLogEvents";
 
 export const POCKET_ITEMS = 1, POCKET_KEY_ITEMS = 2, POCKET_POKE_BALLS = 3, POCKET_TM_CASE = 4, POCKET_BERRY_POUCH = 5;
 const CAPACITY: Record<number, number> = { 1: 42, 2: 30, 3: 13, 4: 58, 5: 43 };
 export const PC_ITEMS_COUNT = 30;
 export const MAX_MONEY = 999999;
 export const MAX_COINS = C.MAX_COINS;
+
+const QUEST_LOG_STORY_ITEMS = new Set([
+  C.ITEM_OAKS_PARCEL, C.ITEM_POKE_FLUTE, C.ITEM_SECRET_KEY, C.ITEM_BIKE_VOUCHER,
+  C.ITEM_GOLD_TEETH, C.ITEM_OLD_AMBER, C.ITEM_CARD_KEY, C.ITEM_LIFT_KEY,
+  C.ITEM_HELIX_FOSSIL, C.ITEM_DOME_FOSSIL, C.ITEM_SILPH_SCOPE, C.ITEM_BICYCLE,
+  C.ITEM_TOWN_MAP, C.ITEM_VS_SEEKER, C.ITEM_TEACHY_TV, C.ITEM_RAINBOW_PASS,
+  C.ITEM_TEA, C.ITEM_POWDER_JAR, C.ITEM_RUBY, C.ITEM_SAPPHIRE,
+]);
+
+/** TrySetObtainedItemQuestLogEvent (item.c); mapSection comes from gMapHeader. */
+export function TrySetObtainedItemQuestLogEvent(itemId: number, mapSection: number): void {
+  if (!QUEST_LOG_STORY_ITEMS.has(itemId)) return;
+  if (itemId === C.ITEM_TOWN_MAP) {
+    const rivalsHouse = C.MAP_PALLET_TOWN_RIVALS_HOUSE;
+    if (save.location.mapGroup !== (rivalsHouse >>> 8) || save.location.mapNum !== (rivalsHouse & 0xff)) return;
+  }
+  SetQuestLogEvent(C.QL_EVENT_OBTAINED_STORY_ITEM, { itemId, mapSec: mapSection });
+}
 
 let byId: Map<number, ItemInfo> | undefined;
 

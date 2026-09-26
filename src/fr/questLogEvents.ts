@@ -23,15 +23,18 @@ export type QuestLogShopEvent = {
   logEventId: number;
 };
 
-export type QuestLogEventRecord = { eventId: number; data: QuestLogShopEvent };
+export type QuestLogStoryItemEvent = { itemId: number; mapSec: number };
+export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent;
+export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
 }
 
-/** SetQuestLogEvent (quest_log_events.c), currently persisting typed shop payloads in SaveData. */
-export function SetQuestLogEvent(eventId: number, data: QuestLogShopEvent): void {
-  // The current port has typed payload support for only the two shop events.
-  if (eventId !== C.QL_EVENT_BOUGHT_ITEM && eventId !== C.QL_EVENT_SOLD_ITEM) return;
+/** SetQuestLogEvent (quest_log_events.c), currently supporting shop and story-item payloads. */
+export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void {
+  const isShopEvent = eventId === C.QL_EVENT_BOUGHT_ITEM || eventId === C.QL_EVENT_SOLD_ITEM;
+  const isStoryItemEvent = eventId === C.QL_EVENT_OBTAINED_STORY_ITEM;
+  if (!isShopEvent && !isStoryItemEvent) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;

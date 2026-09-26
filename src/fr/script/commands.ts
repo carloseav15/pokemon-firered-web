@@ -218,7 +218,13 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     return false;
   },
   getpartysize: () => { varSet(SV.RESULT, save.party.length); return false; },
-  additem: (ctx) => { const i = varGet(ctx.ScriptReadHalfword()); const q = varGet(ctx.ScriptReadHalfword()); varSet(SV.RESULT, items.addBagItem(i, q & 0xff) ? 1 : 0); return false; },
+  additem: (ctx) => {
+    const i = varGet(ctx.ScriptReadHalfword());
+    const q = varGet(ctx.ScriptReadHalfword());
+    varSet(SV.RESULT, items.addBagItem(i, q & 0xff) ? 1 : 0);
+    items.TrySetObtainedItemQuestLogEvent(i, ctx.ow.header.regionMapSection);
+    return false;
+  },
   removeitem: (ctx) => { const i = varGet(ctx.ScriptReadHalfword()); const q = varGet(ctx.ScriptReadHalfword()); varSet(SV.RESULT, items.removeBagItem(i, q & 0xff) ? 1 : 0); return false; },
   checkitemspace: (ctx) => { const i = varGet(ctx.ScriptReadHalfword()); const q = varGet(ctx.ScriptReadHalfword()); varSet(SV.RESULT, items.checkBagHasSpace(i, q & 0xff) ? 1 : 0); return false; },
   checkitem: (ctx) => { const i = varGet(ctx.ScriptReadHalfword()); const q = varGet(ctx.ScriptReadHalfword()); varSet(SV.RESULT, items.checkBagHasItem(i, q & 0xff) ? 1 : 0); return false; },

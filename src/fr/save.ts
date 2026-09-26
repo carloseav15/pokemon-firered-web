@@ -96,7 +96,8 @@ export type SaveData = {
   /** Browser-save representation of recorded Quest Log events. */
   questLogEvents?: Array<{
     eventId: number;
-    data: { totalMoney: number; lastItemId: number; itemQuantity: number; mapSec: number; hasMultipleTransactions: boolean; logEventId: number };
+    data: { totalMoney: number; lastItemId: number; itemQuantity: number; mapSec: number; hasMultipleTransactions: boolean; logEventId: number }
+      | { itemId: number; mapSec: number };
   }>;
 };
 
