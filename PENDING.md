@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6090/9834 (61.9 %)**.
-- Archivos C con funciones aún sin homólogo: **92**; quedan **3744 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6093/9834 (62.0 %)**.
+- Archivos C con funciones aún sin homólogo: **92**; quedan **3741 nombres**.
 - Estos archivos contienen 168.809 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~77.882 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~77.806 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -34,18 +34,18 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 15 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
 | 16 | `menu2.c` | casi completo | 671 | 9/10 | ~67 |  |
 | 17 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
-| 18 | `item_menu_icons.c` | casi completo | 439 | 14/17 | ~77 |  |
-| 19 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 20 | `sound.c` | casi completo | 649 | 41/48 | ~94 |  |
-| 21 | `shop.c` | casi completo | 1145 | 55/60 | ~95 |  |
-| 22 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
-| 23 | `battle_script_commands.c` | casi completo | 9886 | 281/284 | ~104 |  |
-| 24 | `pokeball.c` | casi completo | 1334 | 34/37 | ~108 |  |
-| 25 | `evolution_graphics.c` | casi completo | 637 | 30/37 | ~120 |  |
-| 26 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
-| 27 | `battle_bg.c` | casi completo | 1111 | 15/17 | ~130 |  |
-| 28 | `tm_case.c` | casi completo | 1737 | 67/73 | ~142 |  |
-| 29 | `field_weather_effects.c` | casi completo | 2346 | 87/93 | ~151 |  |
+| 18 | `field_weather_effects.c` | casi completo | 2346 | 90/93 | ~75 |  |
+| 19 | `item_menu_icons.c` | casi completo | 439 | 14/17 | ~77 |  |
+| 20 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
+| 21 | `sound.c` | casi completo | 649 | 41/48 | ~94 |  |
+| 22 | `shop.c` | casi completo | 1145 | 55/60 | ~95 |  |
+| 23 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
+| 24 | `battle_script_commands.c` | casi completo | 9886 | 281/284 | ~104 |  |
+| 25 | `pokeball.c` | casi completo | 1334 | 34/37 | ~108 |  |
+| 26 | `evolution_graphics.c` | casi completo | 637 | 30/37 | ~120 |  |
+| 27 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
+| 28 | `battle_bg.c` | casi completo | 1111 | 15/17 | ~130 |  |
+| 29 | `tm_case.c` | casi completo | 1737 | 67/73 | ~142 |  |
 | 30 | `metatile_behavior.c` | casi completo | 1039 | 97/115 | ~162 |  |
 | 31 | `palette.c` | casi completo | 994 | 34/41 | ~169 |  |
 | 32 | `bg.c` | casi completo | 1215 | 43/50 | ~170 |  |
@@ -122,8 +122,8 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
 | `trade.c` | 2958 | 0/66 | 15 |
 | `fame_checker.c` | 1739 | 15/64 | 7 |
-| `field_weather_effects.c` | 2346 | 87/93 | 6 |
 | `trade_scene.c` | 2916 | 36/53 | 3 |
+| `field_weather_effects.c` | 2346 | 90/93 | 3 |
 | `bg.c` | 1215 | 43/50 | 1 |
 | `shop.c` | 1145 | 55/60 | 1 |
 | `menu_helpers.c` | 243 | 15/17 | 1 |

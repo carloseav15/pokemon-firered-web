@@ -5,11 +5,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.090/9.834 funciones con homólogo (61,9%)**; quedan
-  **3.744 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **92 aún
+- Inventario actual: **6.093/9.834 funciones con homólogo (62,0%)**; quedan
+  **3.741 nombres (38,0%)**. De 202 archivos C de la lista en alcance, **92 aún
   tienen huecos de nombre**: 41 casi completos, 50 parciales y uno adaptador;
   109 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.882/247.859 (31,4%)**. Son indicadores del
+  de líneas C sin cubrir es **~77.806/247.859 (31,4%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
@@ -2649,3 +2649,16 @@ Pending / placeholders:
   antes de `rom.load()`. Moví esos imports detrás de la carga; ahora inicia el
   combate tras 467 frames y el check termina con cero fallos. También pasaron
   `check:port`, `check:honesty`, inventory, pending y `git diff --check`.
+
+## `field_weather_effects.c`: movimiento de niebla diagonal y tormenta de arena (2026-09-26)
+
+- Porté `UpdateFogDiagonalMovement`, `UpdateSandstormWaveIndex` y
+  `UpdateSandstormMovement` con sus contadores de 16 bits, acumuladores de 32
+  bits, tabla seno y offsets de cámara. Corregí además la inicialización y los
+  blends de entrada/salida de ambos climas para seguir las tareas C por frame;
+  los sprites Canvas aún son una adaptación visual separada.
+- `field_weather.c SetNextWeather` ahora reinicia `finishStep`, marca el cambio
+  pendiente y reproduce la señal de parada de lluvia según el clima destino.
+  El inventario subió `field_weather_effects.c` de 87/93 a 90/93, con tres
+  stubs restantes. Pasaron `check:weather`, `check:port`, `check:honesty`,
+  inventory, pending y `git diff --check`; sin comparación visual en navegador.

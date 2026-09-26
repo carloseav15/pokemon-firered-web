@@ -7,6 +7,8 @@ import { sound } from "../audio/sound";
 import { random } from "../random";
 import { DroughtStateInit, DroughtStateRun, gWeather, LoadDroughtWeatherPalettes, ResetDroughtWeatherPaletteLoading, SetRainStrengthFromSoundEffect, Weather_SetBlendCoeffs, Weather_SetTargetBlendCoeffs, Weather_UpdateBlend } from "./weather";
 import type { Sprite } from "../gba/sprite";
+import { spriteState } from "../hw/sprite";
+import { gSineTable } from "../hw/trig";
 
 export const MAX_RAIN_SPRITES = 24;
 export const NUM_CLOUD_SPRITES = 3;
@@ -653,11 +655,21 @@ export function UpdateAshSprite(sprite: WeatherSpriteRecord): void {
 // -----------------------------------------------------------------------------
 
 export function FogDiagonal_InitVars(): void {
-  const w = gWeather as any;
-  w.initStep = 0;
+  gWeather.initStep = 0;
   gWeather.weatherGfxLoaded = false;
   gWeather.gammaTargetIndex = 0;
   gWeather.gammaStepDelay = 20;
+  gWeather.fogHScrollCounter = 0;
+  gWeather.fogHScrollOffset = 1;
+  if (!gWeather.fogDSpritesCreated) {
+    gWeather.fogDScrollXCounter = 0;
+    gWeather.fogDScrollYCounter = 0;
+    gWeather.fogDXOffset = 0;
+    gWeather.fogDYOffset = 0;
+    gWeather.fogDBaseSpritesX = 0;
+    gWeather.fogDPosY = 0;
+    Weather_SetBlendCoeffs(0, 16);
+  }
 }
 
 export function FogDiagonal_InitAll(): void {
@@ -668,26 +680,59 @@ export function FogDiagonal_InitAll(): void {
 }
 
 export function FogDiagonal_Main(): void {
-  const w = gWeather as any;
-  switch (w.initStep || 0) {
+  UpdateFogDiagonalMovement();
+  switch (gWeather.initStep) {
     case 0:
       CreateFogDiagonalSprites();
-      w.initStep++;
+      gWeather.initStep++;
       break;
     case 1:
-      UpdateFogDiagonalMovement();
-      gWeather.weatherGfxLoaded = true;
-      w.initStep++;
+      Weather_SetTargetBlendCoeffs(12, 8, 8);
+      gWeather.initStep++;
+      break;
+    case 2:
+      if (Weather_UpdateBlend()) {
+        gWeather.weatherGfxLoaded = true;
+        gWeather.initStep++;
+      }
       break;
   }
 }
 
 export function FogDiagonal_Finish(): boolean {
-  DestroyFogDiagonalSprites();
-  return false;
+  UpdateFogDiagonalMovement();
+  switch (gWeather.finishStep) {
+    case 0:
+      Weather_SetTargetBlendCoeffs(0, 16, 1);
+      gWeather.finishStep++;
+      break;
+    case 1:
+      if (Weather_UpdateBlend()) gWeather.finishStep++;
+      break;
+    case 2:
+      DestroyFogDiagonalSprites();
+      gWeather.finishStep++;
+      break;
+    default:
+      return false;
+  }
+  return true;
 }
 
-export function UpdateFogDiagonalMovement(): void {}
+export function UpdateFogDiagonalMovement(): void {
+  gWeather.fogDScrollXCounter = (gWeather.fogDScrollXCounter + 1) & 0xffff;
+  if (gWeather.fogDScrollXCounter > 2) {
+    gWeather.fogDXOffset = (gWeather.fogDXOffset + 1) & 0xffff;
+    gWeather.fogDScrollXCounter = 0;
+  }
+  gWeather.fogDScrollYCounter = (gWeather.fogDScrollYCounter + 1) & 0xffff;
+  if (gWeather.fogDScrollYCounter > 4) {
+    gWeather.fogDYOffset = (gWeather.fogDYOffset + 1) & 0xffff;
+    gWeather.fogDScrollYCounter = 0;
+  }
+  gWeather.fogDBaseSpritesX = (spriteState.gSpriteCoordOffsetX - gWeather.fogDXOffset) & 0xff;
+  gWeather.fogDPosY = (spriteState.gSpriteCoordOffsetY + gWeather.fogDYOffset) & 0xffff;
+}
 
 export function CreateFogDiagonalSprites(): void {
   const w = gWeather as any;
@@ -719,11 +764,17 @@ export function UpdateFogDiagonalSprite(sprite: WeatherSpriteRecord): void {
 // -----------------------------------------------------------------------------
 
 export function Sandstorm_InitVars(): void {
-  const w = gWeather as any;
-  w.initStep = 0;
+  gWeather.initStep = 0;
   gWeather.weatherGfxLoaded = false;
   gWeather.gammaTargetIndex = 0;
   gWeather.gammaStepDelay = 20;
+  if (!gWeather.sandstormSpritesCreated) {
+    gWeather.sandstormXOffset = 0;
+    gWeather.sandstormYOffset = 0;
+    gWeather.sandstormWaveIndex = 8;
+    gWeather.sandstormWaveCounter = 0;
+    Weather_SetBlendCoeffs(0, 16);
+  }
 }
 
 export function Sandstorm_InitAll(): void {
@@ -734,29 +785,65 @@ export function Sandstorm_InitAll(): void {
 }
 
 export function Sandstorm_Main(): void {
-  const w = gWeather as any;
-  switch (w.initStep || 0) {
+  UpdateSandstormMovement();
+  UpdateSandstormWaveIndex();
+  if (gWeather.sandstormWaveIndex >= 0x80 - 0x20) gWeather.sandstormWaveIndex = 0x20;
+  switch (gWeather.initStep) {
     case 0:
       CreateSandstormSprites();
       CreateSwirlSandstormSprites();
-      w.initStep++;
+      gWeather.initStep++;
       break;
     case 1:
-      UpdateSandstormMovement();
-      UpdateSandstormWaveIndex();
-      gWeather.weatherGfxLoaded = true;
-      w.initStep++;
+      Weather_SetTargetBlendCoeffs(16, 0, 0);
+      gWeather.initStep++;
+      break;
+    case 2:
+      if (Weather_UpdateBlend()) {
+        gWeather.weatherGfxLoaded = true;
+        gWeather.initStep++;
+      }
       break;
   }
 }
 
 export function Sandstorm_Finish(): boolean {
-  DestroySandstormSprites();
-  return false;
+  UpdateSandstormMovement();
+  UpdateSandstormWaveIndex();
+  switch (gWeather.finishStep) {
+    case 0:
+      Weather_SetTargetBlendCoeffs(0, 16, 0);
+      gWeather.finishStep++;
+      break;
+    case 1:
+      if (Weather_UpdateBlend()) gWeather.finishStep++;
+      break;
+    case 2:
+      DestroySandstormSprites();
+      gWeather.finishStep++;
+      break;
+    default:
+      return false;
+  }
+  return true;
 }
 
-export function UpdateSandstormWaveIndex(): void {}
-export function UpdateSandstormMovement(): void {}
+export function UpdateSandstormWaveIndex(): void {
+  const oldCounter = gWeather.sandstormWaveCounter;
+  gWeather.sandstormWaveCounter = (oldCounter + 1) & 0xffff;
+  if (oldCounter > 4) {
+    gWeather.sandstormWaveIndex = (gWeather.sandstormWaveIndex + 1) & 0xffff;
+    gWeather.sandstormWaveCounter = 0;
+  }
+}
+
+export function UpdateSandstormMovement(): void {
+  const sine = gSineTable[gWeather.sandstormWaveIndex] ?? 0;
+  gWeather.sandstormXOffset = (gWeather.sandstormXOffset - sine * 4) >>> 0;
+  gWeather.sandstormYOffset = (gWeather.sandstormYOffset - sine) >>> 0;
+  gWeather.sandstormBaseSpritesX = (spriteState.gSpriteCoordOffsetX + (gWeather.sandstormXOffset >>> 8)) & 0xff;
+  gWeather.sandstormPosY = (spriteState.gSpriteCoordOffsetY + (gWeather.sandstormYOffset >>> 8)) & 0xffff;
+}
 
 export function CreateSandstormSprites(): void {
   const w = gWeather as any;

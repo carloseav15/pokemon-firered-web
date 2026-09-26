@@ -49,6 +49,23 @@ export let gWeather = {
   fadeInActive: 0,
   lightenedFogSpritePals: [] as number[],
   lightenedFogSpritePalsCount: 0,
+  fogHScrollCounter: 0,
+  fogHScrollOffset: 0,
+  fogDSpritesCreated: false,
+  fogDScrollXCounter: 0,
+  fogDScrollYCounter: 0,
+  fogDXOffset: 0,
+  fogDYOffset: 0,
+  fogDBaseSpritesX: 0,
+  fogDPosY: 0,
+  sandstormSpritesCreated: false,
+  sandstormSwirlSpritesCreated: false,
+  sandstormXOffset: 0,
+  sandstormYOffset: 0,
+  sandstormBaseSpritesX: 0,
+  sandstormPosY: 0,
+  sandstormWaveIndex: 0,
+  sandstormWaveCounter: 0,
   droughtBrightnessStage: 0,
   droughtLastBrightnessStage: 0,
   droughtTimer: 0,
@@ -67,6 +84,7 @@ export let gWeather = {
   blendFrameCounter: 0,
   blendUpdateCounter: 0,
   weatherTaskFunc: "init" as "init" | "main",
+  finishStep: 0,
 };
 let sDroughtFrameDelay = 0;
 
@@ -195,7 +213,15 @@ export function SetCurrentAndNextWeatherNoDelay(weather: number): void {
 
 /** SetNextWeather */
 export function SetNextWeather(weather: number): void {
+  if (weather !== C.WEATHER_RAIN && weather !== C.WEATHER_RAIN_THUNDERSTORM && weather !== C.WEATHER_DOWNPOUR) {
+    PlayRainStoppingSoundEffect();
+  }
+  if (gWeather.nextWeather !== weather && gWeather.currWeather === weather) {
+    sWeatherFuncs[weather]?.initVars();
+  }
+  gWeather.weatherChangeComplete = false;
   gWeather.nextWeather = weather;
+  gWeather.finishStep = 0;
 }
 
 /** GetCurrentWeather */
