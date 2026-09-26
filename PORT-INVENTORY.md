@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1913/6059 |
+| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1925/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3517/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **117** | **130962** | |
-| **Total en alcance** | **210** | **248996** | **5458/9825** |
+| **Total en alcance** | **210** | **248996** | **5470/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -37,7 +37,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokemon_storage_system_tasks.c` | 2770 | 5/82 |  |  |  |
 | `battle_controller_pokedude.c` | 2698 | 31/107 |  |  |  |
 | `field_specials.c` | 2555 | 85/118 | `field/fieldMoves.ts`, `game.ts`, `menus/scriptMenu.ts` … |  |  |
-| `naming_screen.c` | 2509 | 4/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
+| `naming_screen.c` | 2509 | 16/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 3/224 | `field/messageBox.ts`, `script/commands.ts` |  |  |

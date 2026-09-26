@@ -77,10 +77,17 @@ AGENTS.md §6.5).
   SQUIRTLE from PROF. OAK!" → pantalla de apodo (`namingScreen.ts`) se abre
   sin crashear (antes del arreglo, este era exactamente el punto de crash).
 - **Resuelto en este tramo**: la navegación del cursor al botón "OK" de la
-  pantalla de apodo (`menus/namingModel.ts`) ahora incluye el atajo `START`
-  para saltar inmediatamente a "OK" (o confirmar el nombre si ya está sobre
-  "OK"), se agregó sonido de selección `SE_SELECT` al desplazarse y el cursor
-  se centró correctamente sobre los botones laterales (Page swap, Back, OK).
+  pantalla de apodo (`menus/namingModel.ts`) incluye el atajo `START` para
+  saltar inmediatamente a "OK"; confirmar todavía requiere `A`, como en
+  `HandleKeyboardEvent` de `naming_screen.c`. Se agregó sonido de selección
+  `SE_SELECT` al desplazarse y el cursor se centró sobre Page swap, Back y OK.
+- **Revisión de fuente, 2026-09-26 (sin prueba de juego)**: las reglas de
+  teclado de `naming_screen.c` se separaron en funciones con nombre C y ahora
+  despachan desde `NamingModel.input`. Esto corrige la ruta `START` sobre OK,
+  que antes confirmaba el nombre aunque el C solo mueve el cursor; también
+  alinea las prioridades de A/B/SELECT/START y el salto al botón al llenar el
+  buffer. El inventario sube a 16/109; las animaciones de cambio de página y
+  flashes siguen pendientes. No se ejecutó el juego.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),
@@ -1209,8 +1216,9 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
    guardar/continuar. Registrar cada fallo y su arreglo aquí.
 2. **Transiciones a batalla** (`battle_transition.c`, ~3000 líneas) **[PARCIAL]**: 12 efectos de las
    tablas salvaje/entrenador en `battle/transition.ts` (26/134 funciones); solo ANGLED_WIPES visto en navegador.
-3. **Pantalla de nombres** (`naming_screen.c`, 4/109 por nombre): confirmar en la
-   prueba si la actual basta; si no, portarla completa.
+3. **Pantalla de nombres** (`naming_screen.c`, 16/109 por nombre): reglas de
+   entrada revisadas contra C; faltan transiciones de página, flashes e iconos.
+   No se hizo prueba de juego en este bloque.
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
    tiene los 76 nombres pero 62 son stubs y nadie lo importa (auditoría 2026-09-25). Los efectos
    visibles siguen en `field/fieldEffects.ts`. Hay que portar los cuerpos y conectarlo.

@@ -12,13 +12,136 @@ export type NamingTemplate = {
 export type NamingAction = "none" | "move" | "character" | "delete" | "page" | "confirm";
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
 
+type KeyboardKeyRole = "character" | "page" | "backspace" | "ok";
+
+/** GetCurrentPageColumnCount (naming_screen.c). */
+export function GetCurrentPageColumnCount(model: NamingModel): number {
+  const keyboardId = model.keyboardId;
+  return data<number[]>("sPageColumnCounts")[keyboardId] ?? 0;
+}
+
+/** GetKeyRoleAtCursorPos (naming_screen.c). */
+export function GetKeyRoleAtCursorPos(model: NamingModel): KeyboardKeyRole {
+  if (model.x < GetCurrentPageColumnCount(model)) return "character";
+  const buttonRoles: KeyboardKeyRole[] = ["page", "backspace", "ok"];
+  return buttonRoles[model.y] ?? "page";
+}
+
+/** MoveCursorToOKButton (naming_screen.c). */
+export function MoveCursorToOKButton(model: NamingModel): void {
+  model.moveToOK();
+}
+
+/** DeleteTextCharacter (naming_screen.c). */
+export function DeleteTextCharacter(model: NamingModel): void {
+  model.deleteCharacter();
+}
+
+/** AddTextCharacter (naming_screen.c); returns true when the text buffer is full. */
+export function AddTextCharacter(model: NamingModel): boolean {
+  return model.addCharacter();
+}
+
+/** SwapKeyboardPage (naming_screen.c). */
+export function SwapKeyboardPage(model: NamingModel): void {
+  model.swapPage();
+}
+
+/** KeyboardKeyHandler_Character (naming_screen.c). */
+export function KeyboardKeyHandler_Character(model: NamingModel, pressed: number): NamingAction {
+  if (!(pressed & A_BUTTON)) return "none";
+  if (AddTextCharacter(model)) MoveCursorToOKButton(model);
+  return "character";
+}
+
+/** KeyboardKeyHandler_Page (naming_screen.c). */
+export function KeyboardKeyHandler_Page(model: NamingModel, pressed: number): NamingAction {
+  if (!(pressed & A_BUTTON)) return "none";
+  SwapKeyboardPage(model);
+  return "page";
+}
+
+/** KeyboardKeyHandler_Backspace (naming_screen.c). */
+export function KeyboardKeyHandler_Backspace(model: NamingModel, pressed: number): NamingAction {
+  if (!(pressed & A_BUTTON)) return "none";
+  DeleteTextCharacter(model);
+  return "delete";
+}
+
+/** KeyboardKeyHandler_OK (naming_screen.c). */
+export function KeyboardKeyHandler_OK(model: NamingModel, pressed: number): NamingAction {
+  if (!(pressed & A_BUTTON)) return "none";
+  model.save();
+  return "confirm";
+}
+
+/** HandleDpadMovement (naming_screen.c). */
+export function HandleDpadMovement(model: NamingModel, repeated: number): NamingAction {
+  let dx = 0, dy = 0;
+  if (repeated & DPAD_UP) dy = -1;
+  if (repeated & DPAD_DOWN) dy = 1;
+  if (repeated & DPAD_LEFT) { dx = -1; dy = 0; }
+  if (repeated & DPAD_RIGHT) { dx = 1; dy = 0; }
+  if (!dx && !dy) return "none";
+
+  const previousX = model.x;
+  model.x += dx;
+  model.y += dy;
+  if (model.x < 0) model.x = GetCurrentPageColumnCount(model);
+  if (model.x > GetCurrentPageColumnCount(model)) model.x = 0;
+  if (dx) {
+    if (model.onButton) {
+      model.buttonRow = model.y;
+      model.y = [0, 1, 1, 2][model.y] ?? 0;
+    } else if (previousX === GetCurrentPageColumnCount(model)) {
+      model.y = model.y === 1 ? model.buttonRow : [0, 0, 3][model.y] ?? 0;
+    }
+  }
+
+  const buttonColumn = model.onButton;
+  const rowCount = buttonColumn ? 3 : 4;
+  if (model.y < 0) model.y = rowCount - 1;
+  if (model.y >= rowCount) model.y = 0;
+  if (buttonColumn) {
+    if (model.y === 0) model.buttonRow = 1;
+    else if (model.y === 2) model.buttonRow = 2;
+  }
+  return "move";
+}
+
+/** HandleKeyboardEvent (naming_screen.c), including the C key priority. */
+export function HandleKeyboardEvent(model: NamingModel, pressed: number, repeated: number): NamingAction {
+  if (pressed & A_BUTTON) {
+    switch (GetKeyRoleAtCursorPos(model)) {
+      case "character": return KeyboardKeyHandler_Character(model, pressed);
+      case "page": return KeyboardKeyHandler_Page(model, pressed);
+      case "backspace": return KeyboardKeyHandler_Backspace(model, pressed);
+      case "ok": return KeyboardKeyHandler_OK(model, pressed);
+    }
+  }
+  if (pressed & B_BUTTON) {
+    DeleteTextCharacter(model);
+    return "delete";
+  }
+  if (pressed & SELECT_BUTTON) {
+    SwapKeyboardPage(model);
+    return "page";
+  }
+  if (pressed & START_BUTTON) {
+    MoveCursorToOKButton(model);
+    return "move";
+  }
+  return HandleDpadMovement(model, repeated);
+}
+
 export class NamingModel {
   readonly template: NamingTemplate;
   readonly text: Uint8Array;
   page: number;
   x = 0;
   y = 0;
-  private buttonRow = 0;
+  /** tButtonId in Task_HandleInput: keyboard row to restore from the button column. */
+  buttonRow = 0;
 
   constructor(readonly type: number, readonly destination: NameBuffer) {
     const ref = data<Array<{ $sym: string }>>("sNamingScreenTemplates")[type];
@@ -54,11 +177,11 @@ export class NamingModel {
 
   deleteCharacter(): void { this.text[this.previousCaret] = EOS; }
 
-  addCharacter(): void {
+  addCharacter(): boolean {
     // C pads the short rows of sKeyboardChars[3][4][8] with zero/CHAR_SPACE.
     const rows = data<number[][][]>("sKeyboardChars");
     this.text[this.caret] = rows[this.keyboardId][this.y][this.x] ?? CHAR_SPACE;
-    if (this.previousCaret === this.template.maxChars - 1) this.moveToOK();
+    return this.previousCaret === this.template.maxChars - 1;
   }
 
   save(): void {
@@ -72,50 +195,6 @@ export class NamingModel {
   }
 
   input(pressed: number, repeated: number): NamingAction {
-    // Input_Enabled gives A, B, SELECT and START priority over the D-pad.
-    if (pressed & A_BUTTON) {
-      if (!this.onButton) { this.addCharacter(); return "character"; }
-      if (this.y === 0) { this.swapPage(); return "page"; }
-      if (this.y === 1) { this.deleteCharacter(); return "delete"; }
-      this.save();
-      return "confirm";
-    }
-    if (pressed & B_BUTTON) { this.deleteCharacter(); return "delete"; }
-    if (pressed & SELECT_BUTTON) { this.swapPage(); return "page"; }
-    if (pressed & START_BUTTON) {
-      if (this.onButton && this.y === 2) {
-        this.save();
-        return "confirm";
-      }
-      this.moveToOK();
-      return "move";
-    }
-    let dx = 0, dy = 0;
-    if (repeated & DPAD_UP) dy = -1;
-    if (repeated & DPAD_DOWN) dy = 1;
-    if (repeated & DPAD_LEFT) { dx = -1; dy = 0; }
-    if (repeated & DPAD_RIGHT) { dx = 1; dy = 0; }
-    if (!dx && !dy) return "none";
-    const previousX = this.x;
-    this.x += dx;
-    this.y += dy;
-    if (this.x < 0) this.x = this.columns;
-    if (this.x > this.columns) this.x = 0;
-    if (dx) {
-      if (this.onButton) {
-        this.buttonRow = this.y;
-        this.y = [0, 1, 1, 2][this.y];
-      } else if (previousX === this.columns) {
-        this.y = this.y === 1 ? this.buttonRow : [0, 0, 3][this.y];
-      }
-    }
-    const rows = this.onButton ? 3 : 4;
-    if (this.y < 0) this.y = rows - 1;
-    if (this.y >= rows) this.y = 0;
-    if (this.onButton) {
-      if (this.y === 0) this.buttonRow = 1;
-      else if (this.y === 2) this.buttonRow = 2;
-    }
-    return "move";
+    return HandleKeyboardEvent(this, pressed, repeated);
   }
 }
