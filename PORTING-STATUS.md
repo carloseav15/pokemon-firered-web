@@ -88,6 +88,10 @@ AGENTS.md §6.5).
   alinea las prioridades de A/B/SELECT/START y el salto al botón al llenar el
   buffer. El inventario sube a 16/109; las animaciones de cambio de página y
   flashes siguen pendientes. No se ejecutó el juego.
+- **Revisión de fuente, 2026-09-26 (sin prueba de juego)**: al llenar el buffer
+  del apodo, el cursor reproduce `sAnim_CursorSquish` y espera a que termine
+  antes de moverse a OK, como `KeyboardKeyHandler_Character` y
+  `MainState_MoveToOKButton`; la entrada queda bloqueada durante esa animación.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),

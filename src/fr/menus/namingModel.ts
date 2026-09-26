@@ -9,7 +9,7 @@ export type NamingTemplate = {
   copyExistingString: number; maxChars: number; iconFunction: number;
   addGenderIcon: number; initialPage: number; title: { $sym: string };
 };
-export type NamingAction = "none" | "move" | "character" | "delete" | "page" | "confirm";
+export type NamingAction = "none" | "move" | "moveToOK" | "character" | "delete" | "page" | "confirm";
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
 
 type KeyboardKeyRole = "character" | "page" | "backspace" | "ok";
@@ -50,7 +50,7 @@ export function SwapKeyboardPage(model: NamingModel): void {
 /** KeyboardKeyHandler_Character (naming_screen.c). */
 export function KeyboardKeyHandler_Character(model: NamingModel, pressed: number): NamingAction {
   if (!(pressed & A_BUTTON)) return "none";
-  if (AddTextCharacter(model)) MoveCursorToOKButton(model);
+  if (AddTextCharacter(model)) return "moveToOK";
   return "character";
 }
 

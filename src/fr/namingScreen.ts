@@ -1,7 +1,7 @@
 // naming_screen.c: hardware-screen entry/exit and source keyboard data.
-// Page-swap/cursor flash choreography and target icons still need their C callbacks.
+// Page-swap/button-flash choreography and target icons still need their C callbacks.
 import * as C from "./generated/constants";
-import { NamingModel, type NameBuffer } from "./menus/namingModel";
+import { MoveCursorToOKButton, NamingModel, type NameBuffer } from "./menus/namingModel";
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "./hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
 import { save, varGet, flagGet } from "./save";
@@ -20,7 +20,7 @@ import { DrawDialogueFrame, GetTextWindowPalette, InitStandardTextBoxWindows, In
 import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "./hw/ppu";
 import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, type Subsprite } from "./hw/sprite";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, StartSpriteAnim, type Subsprite } from "./hw/sprite";
 import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
 
@@ -46,7 +46,7 @@ class NamingScreen {
   private cursor = 0;
   private pageText = 0;
   private pageButton = 0;
-  private state: "fadeIn" | "input" | "message" | "fadeOut" = "fadeIn";
+  private state: "fadeIn" | "input" | "moveToOK" | "message" | "fadeOut" = "fadeIn";
   private callback1 = gMain.callback1;
   private repeatDelay = joy.repeatStartDelay;
   private savedTextFlags = { ...textFlags };
@@ -200,14 +200,24 @@ class NamingScreen {
       const action = this.model.input(joy.newKeys, joy.repeated);
       if (action === "move") sound.playSE(C.SE_SELECT);
       if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.drawPage(); }
-      if (action === "character" || action === "delete") {
+      if (action === "moveToOK") {
+        StartSpriteAnim(gSprites[this.cursor], 1);
+        this.state = "moveToOK";
+      }
+      if (action === "character" || action === "moveToOK" || action === "delete") {
         sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.drawEntry();
       }
-      if (action !== "none") this.moveCursor();
+      if (action !== "none" && action !== "moveToOK") this.moveCursor();
       if (action === "confirm") {
         sound.playSE(C.SE_SELECT);
         if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
         else this.fadeOut();
+      }
+    } else if (this.state === "moveToOK") {
+      if (gSprites[this.cursor].animEnded) {
+        MoveCursorToOKButton(this.model);
+        this.moveCursor();
+        this.state = "input";
       }
     } else if (this.state === "message") {
       RunTextPrinters();
