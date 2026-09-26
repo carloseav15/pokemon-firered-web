@@ -1757,3 +1757,16 @@ Pending / placeholders:
   constantes del avatar, el llamador de la entrada de campo y las rutas activas
   `FieldControl.tryArrowWarp` / `Overworld.doStairWarp`. Sin prueba de juego ni
   navegador; el caso de bicicleta es posterior a las primeras horas.
+
+## `battle_setup.c` / `field_control_avatar.c`: reinicio del enfriamiento de encuentros (2026-09-26)
+
+- Conecté `RestartWildEncounterImmunitySteps` al final de la transición de
+  batalla en `Game.startBattle`, antes de iniciar el motor. El C hace ese
+  reinicio en `Task_BattleStart` tras `IsBattleTransitionDone`; antes, el port
+  solo reiniciaba tras generar un encuentro salvaje y conservaba pasos y
+  bonificación de frecuencia después de combates contra entrenadores.
+- Comparé `Task_BattleStart`, la API `RestartWildEncounterImmunitySteps` y su
+  implementación (`ResetEncounterRateModifiers`) con el callback de
+  `BattleTransitionScene` y `WildEncounter.resetEncounterRateModifiers`. Esto
+  afecta los encuentros posteriores a los entrenadores de Ruta 3. Verificación
+  estática solamente; no ejecuté juego ni navegador.

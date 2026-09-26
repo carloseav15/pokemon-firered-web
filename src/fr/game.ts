@@ -808,6 +808,8 @@ export class Game {
           ? getTrainerBattleTransition(ow, request.trainerId ?? 0, !!request.isDouble, request.enemyParty)
           : getWildBattleTransition(ow, request.enemyParty);
         this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
+          // battle_setup.c Task_BattleStart resets encounter cooldowns after the transition completes.
+          this.wild.resetEncounterRateModifiers();
           if (this.battleRunner) {
             this.scene = this.battleRunner(request);
             this.setCallbacks(null, () => this.scene?.update());
