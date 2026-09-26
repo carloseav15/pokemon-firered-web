@@ -57,21 +57,22 @@ export const FLASH_LEVEL_TO_RADIUS = [200, 72, 56, 40, 24];
 export const MAX_FLASH_LEVEL = FLASH_LEVEL_TO_RADIUS.length - 1;
 
 /** SetFlashScanlineEffectWindowBoundaries / SetFlashScanlineEffectWindowBoundary from field_screen_effect.c. */
+function SetFlashScanlineEffectWindowBoundary(dest: Uint16Array, y: number, left: number, right: number): void {
+  if (y < 0 || y > 160) return;
+  left = Math.max(0, Math.min(255, left));
+  right = Math.max(0, Math.min(255, right));
+  dest[y] = (left << 8) | right;
+}
+
 export function SetFlashScanlineEffectWindowBoundaries(dest: Uint16Array, centerX: number, centerY: number, radius: number): void {
-  const setBoundary = (y: number, left: number, right: number): void => {
-    if (y < 0 || y > 160) return;
-    left = Math.max(0, Math.min(255, left));
-    right = Math.max(0, Math.min(255, right));
-    dest[y] = (left << 8) | right;
-  };
   let xy = radius;
   let error = radius;
   let yx = 0;
   while (xy >= yx) {
-    setBoundary(centerY - yx, centerX - xy, centerX + xy);
-    setBoundary(centerY + yx, centerX - xy, centerX + xy);
-    setBoundary(centerY - xy, centerX - yx, centerX + yx);
-    setBoundary(centerY + xy, centerX - yx, centerX + yx);
+    SetFlashScanlineEffectWindowBoundary(dest, centerY - yx, centerX - xy, centerX + xy);
+    SetFlashScanlineEffectWindowBoundary(dest, centerY + yx, centerX - xy, centerX + xy);
+    SetFlashScanlineEffectWindowBoundary(dest, centerY - xy, centerX - yx, centerX + yx);
+    SetFlashScanlineEffectWindowBoundary(dest, centerY + xy, centerX - yx, centerX + yx);
     error -= (yx * 2) - 1;
     yx++;
     if (error < 0) {

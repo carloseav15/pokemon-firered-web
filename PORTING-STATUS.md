@@ -2114,6 +2114,10 @@ Pending / placeholders:
   inventario actualizado marca 40/48 y ya no lista `sound.c` como pendiente.
   Las tareas del Quest Log, el ducking de cries y el fade temporal del mixer
   siguen fuera.
+- Extraje `SetFlashScanlineEffectWindowBoundary` del closure local con el
+  nombre del C y la uso desde las cuatro simetrías del algoritmo circular.
+  `field_screen_effect.c` queda 19/19; inventario global 5.767/9.834 (58,6 %),
+  96 archivos y 4.067 nombres pendientes. Verificación estática.
 
 ## `battle_util2.c`: ciclo de vida de recursos de batalla (2026-09-25)
 
