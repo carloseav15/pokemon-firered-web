@@ -16,7 +16,7 @@ import { sound } from "../audio/sound";
 import { clearRematchStateByTrainerId } from "../field/vsSeeker";
 import { cdata } from "../hw/assets";
 import { gMain } from "../hw/runtime";
-import { itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
+import { ItemId_GetBattleFunc, itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
 import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "../pokemon/pokemon";
 import {
   CalculateMonStats, CalculatePPWithBonus, currentRegionMapSection, GetMonData, GetMonEVCount, gEnemyParty, playerMon, SetMonData, type Mon,
@@ -211,7 +211,7 @@ export function CB2_BagMenuFromBattle(): void {
     const info = itemInfo(item)!;
     const notNow = (): void => { stringVars.var1 = Uint8Array.from(save.playerName); ctx.message(rom.text("gText_OakForbidsUseOfItemHere")); };
     const back = info.pocket === C.POCKET_BERRY_POUCH ? () => InitBerryPouch(C.BERRYPOUCH_NA, null, 0xff, { battleUse }) : showBag;
-    switch (info.battleUseFunc) {
+    switch (ItemId_GetBattleFunc(item)) {
       case "BattleUseFunc_PokeBallEtc":
         if (save.party.length >= C.PARTY_SIZE && save.boxes.every(box => box.every(mon => !!mon?.species))) { ctx.message(rom.text("gText_BoxFull")); return; }
         removeBagItem(item, 1);

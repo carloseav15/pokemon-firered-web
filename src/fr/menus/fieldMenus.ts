@@ -7,7 +7,7 @@ import { blankMail, mailLines } from "../pokemon/mail";
 import { decode } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
-import { GetCoins, itemInfo, itemName, removeBagItem } from "../pokemon/items";
+import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName, removeBagItem } from "../pokemon/items";
 import { trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { bagResult, GoToBagMenu, type BagHandlers, type BagTaskContext } from "../bagMenu";
@@ -182,7 +182,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       CB2_ShowPartyMenuForItemUse();
     });
     const medicine = (item: number): void => {
-      const func = itemInfo(item)!.fieldUseFunc;
+      const func = ItemId_GetFieldFunc(item);
       partyItemUse(item, func === "FieldUseFunc_PpUp" ? ItemUseCB_PPUp : func === "FieldUseFunc_Ether" ? ItemUseCB_TryRestorePP : ItemUseCB_Medicine);
     };
     const rareCandy = (item: number): void => partyItemUse(item, ItemUseCB_RareCandy);
@@ -206,7 +206,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
     const use = (item: number): void => {
       const info = itemInfo(item)!;
       const ow = game.overworld;
-      switch (info.fieldUseFunc) {
+      switch (ItemId_GetFieldFunc(item)) {
         case "FieldUseFunc_Medicine": case "FieldUseFunc_Ether": case "FieldUseFunc_PpUp": leave(() => medicine(item)); return;
         case "FieldUseFunc_RareCandy": leave(() => rareCandy(item)); return;
         case "FieldUseFunc_EvoItem": leave(() => evolutionStone(item)); return;

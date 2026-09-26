@@ -25,6 +25,15 @@ export function SanitizeItemId(itemId: number): number {
   return (itemId & 0xffff) >= C.ITEMS_COUNT ? C.ITEM_NONE : itemId & 0xffff;
 }
 
+/** ItemId_GetFieldFunc / ItemId_GetBattleFunc (item.c): data symbols stand in for C callback pointers. */
+export function ItemId_GetFieldFunc(itemId: number): string {
+  return itemInfo(itemId)?.fieldUseFunc ?? "NULL";
+}
+
+export function ItemId_GetBattleFunc(itemId: number): string {
+  return itemInfo(itemId)?.battleUseFunc ?? "NULL";
+}
+
 /** ItemId_Get* (item.c): the ROM data table is already decoded in the browser. */
 export const ItemId_GetName = itemName;
 export function ItemId_GetId(itemId: number): number { return itemInfo(itemId)?.id ?? C.ITEM_NONE; }

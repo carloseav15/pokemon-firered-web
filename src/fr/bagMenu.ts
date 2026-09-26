@@ -56,7 +56,7 @@ import {
   AddWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "./hw/window";
-import { addBagItem, addMoney, addPCItem, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addBagItem, addMoney, addPCItem, ItemId_GetFieldFunc, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { InitPokedudeTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
@@ -1362,7 +1362,7 @@ function hideContextWindows(): void {
 
 function Task_ItemMenuAction_Use(taskId: number): void {
   const item = bagResult.itemId;
-  if (!sHandlers.fieldUse || !itemInfo(item)?.fieldUseFunc || itemInfo(item)?.fieldUseFunc === "NULL") return;
+  if (!sHandlers.fieldUse || ItemId_GetFieldFunc(item) === "NULL") return;
   hideContextWindows();
   ScheduleBgCopyTilemapToVram(0);
   if (save.party.length === 0 && ItemId_GetType(item) === C.ITEM_TYPE_PARTY_MENU) Task_PrintThereIsNoPokemon(taskId);

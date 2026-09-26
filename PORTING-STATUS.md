@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.819/9.834 (59,2%)**; quedan
-  **4.015 nombres (40,8%)**. Hay **81 archivos C con huecos**: uno sin empezar,
+  stubs. El inventario vigente registra **5.821/9.834 (59,2%)**; quedan
+  **4.013 nombres (40,8%)**. Hay **81 archivos C con huecos**: uno sin empezar,
   uno adaptador, 26 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.968/247.859 (33,9%)**. El inventario mide nombres/cuerpos
+  cubrir es **~83.940/247.859 (33,9%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
@@ -63,6 +63,14 @@ systems. The first playable route is a milestone, not the completion criterion.
   llama a `CreateBerryPouchItemIcon` directamente. Las imágenes comprimidas
   llegan descomprimidas del exportador. Pasaron `check:port`, `check:honesty`,
   `inventory`, `pending` y `git diff --check`; no hice prueba visual.
+- **`item.c`: 44/49 funciones con homólogo.** Añadí `ItemId_GetFieldFunc` y
+  `ItemId_GetBattleFunc` como acceso a los símbolos de callback ya decodificados
+  en la tabla de items y conecté las rutas de uso del bag, bayas y batalla a
+  esos getters. Restan las dos funciones de recifrado GBA (el guardado web
+  conserva cantidades descifradas), las compactaciones incompatibles con los
+  arrays compactos y el registro de Quest Log fuera de alcance. Pasaron
+  `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`;
+  no ejecuté flujos de uso.
 - También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
   de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
   `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build
@@ -927,7 +935,7 @@ audio backend exists.
 - `itemfinder.c`: current-map hidden item scan, underfoot digging and ding/message behavior exist in `fieldMenus.ts`; connected-map search and arrow/star directional sprites are absent. Marked partial; neighboring-map item detection is a gameplay gap.
 - `sound.c`: map music state/fades, fanfares, SEs, cries and ducking have WebAudio counterparts, but the source M4A engine and table-level audio behavior are adapted. Marked partial; no audio comparison.
 - `menu_indicators.c`: actualizado por el pase fuente 2026-09-26 abajo; las dos tareas C vacías permanecen sin declararse.
-- `item.c`: item metadata, bag/PC inventory operations and item lookup exist across `pokemon/items.ts`, `save.ts` and `bagMenu.ts`; GBA encrypted slot storage, some sort/compaction helpers and story-item Quest Log logging are not exact equivalents. Marked partial.
+- `item.c`: item metadata, bag/PC operations, field/battle callback-symbol getters and item lookup exist across `pokemon/items.ts`, `save.ts` and `bagMenu.ts`; GBA encrypted slot storage, array compaction and story-item Quest Log logging are not exact equivalents. Current inventory 44/49; marked partial.
 - `move_descriptions.c`: all 355 source definitions, including the pointer table, are exported as cdata; move relearner and Pokémon summary screens load the table and resolve source text symbols. Source/data path reviewed; rendering parity was not checked.
 - `battle_controller_safari.c`: the Safari action menu, throw/intro animations, text, healthbox, sound and battle-animation waits are mapped in `battle/controller_safari.ts`; encounter and catch logic is in `battle/main.ts` / `battleSetup.ts`. Remaining controller opcodes often complete immediately, leaving source sprite/data/status/move/party-summary commands incomplete. Partial; no runtime execution.
 - `battle_ai_switch_items.c`: switch choices, switch targets, move/type scoring, held trainer-item classification/effects and AI action selection are represented in `battle/ai.ts`. The source itself notes the omitted Flying/Levitate trapping check. Source code review only; no battle replay or parity execution.

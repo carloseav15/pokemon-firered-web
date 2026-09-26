@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5819/9834 (59.2 %)**.
-- Archivos C con funciones aún sin homólogo: **81**; quedan **4015 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5821/9834 (59.2 %)**.
+- Archivos C con funciones aún sin homólogo: **81**; quedan **4013 nombres**.
 - Estos archivos contienen 157.763 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~83.968 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~83.940 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -23,8 +23,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 4 | `shop.c` | casi completo | 1145 | 57/60 | ~57 |  |
 | 5 | `field_tasks.c` | casi completo | 351 | 10/12 | ~58 |  |
 | 6 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
-| 7 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
-| 8 | `item.c` | casi completo | 680 | 42/49 | ~97 |  |
+| 7 | `item.c` | casi completo | 680 | 44/49 | ~69 |  |
+| 8 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
 | 9 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
 | 10 | `battle_script_commands.c` | casi completo | 9886 | 281/284 | ~104 |  |
 | 11 | `pokeball.c` | casi completo | 1334 | 34/37 | ~108 |  |
