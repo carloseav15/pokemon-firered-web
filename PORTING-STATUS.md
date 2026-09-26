@@ -5,11 +5,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.089/9.834 funciones con homólogo (61,9%)**; quedan
-  **3.745 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **92 aún
+- Inventario actual: **6.090/9.834 funciones con homólogo (61,9%)**; quedan
+  **3.744 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **92 aún
   tienen huecos de nombre**: 41 casi completos, 50 parciales y uno adaptador;
-  110 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.896/247.859 (31,4%)**. Son indicadores del
+  109 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
+  de líneas C sin cubrir es **~77.882/247.859 (31,4%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
@@ -2638,3 +2638,14 @@ Pending / placeholders:
   frame se mantienen. El inventario reconoce ahora 14/14 nombres.
 - Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
   sin comparación de orden frame a frame.
+
+## `sound.c`: paneo estéreo de efectos de batalla (2026-09-26)
+
+- Reemplacé el stub `SE12PanpotControl`: el sonido pasa el valor firmado a los
+  dos reproductores SE y `M4aBackend` ahora usa `StereoPannerNode`, mantiene el
+  paneo de futuras notas y centra ambos canales en modo mono. El control aún es
+  una aproximación de Web Audio, no el mixer M4A por track.
+- `check:anims` antes fallaba durante imports estáticos que consultaban `rom.c`
+  antes de `rom.load()`. Moví esos imports detrás de la carga; ahora inicia el
+  combate tras 467 frames y el check termina con cero fallos. También pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`.

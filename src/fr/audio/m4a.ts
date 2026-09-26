@@ -191,6 +191,8 @@ class SongPlayer {
   private playing = false;
   private loop = false;
   private gain: GainNode | null = null;
+  private panner: StereoPannerNode | null = null;
+  private pan = 0;
   private readonly programs = new Array<number>(16).fill(0);
   private readonly sources = new Set<AudioScheduledSourceNode>();
 
@@ -207,7 +209,10 @@ class SongPlayer {
     this.programs.fill(0);
     this.gain = this.backend.ctx!.createGain();
     this.gain.gain.value = (data.entry.volume / 100) * this.backend.master;
-    this.gain.connect(this.out);
+    this.panner = this.backend.ctx!.createStereoPanner();
+    this.panner.pan.value = this.backend.panValue(this.pan);
+    this.gain.connect(this.panner);
+    this.panner.connect(this.out);
     // Skip events before the resume offset.
     while (this.eventIndex < data.song.events.length && data.song.events[this.eventIndex]!.time < offset) {
       const event = data.song.events[this.eventIndex]!;
@@ -226,7 +231,18 @@ class SongPlayer {
       try { this.gain.disconnect(); } catch { /* disconnected */ }
       this.gain = null;
     }
+    if (this.panner) {
+      try { this.panner.disconnect(); } catch { /* disconnected */ }
+      this.panner = null;
+    }
     this.playing = false;
+  }
+
+  setPan(pan: number): void {
+    this.pan = Math.max(-64, Math.min(63, Math.trunc(pan)));
+    if (!this.panner || !this.backend.ctx) return;
+    const at = this.backend.ctx.currentTime;
+    this.panner.pan.setTargetAtTime(this.backend.panValue(this.pan), at, 0.01);
   }
 
   get active(): boolean {
@@ -293,6 +309,7 @@ export class M4aBackend implements SoundBackend {
   private samples: Record<string, string> | null = null;
   private cries: Array<string | null> | null = null;
   private readonly players = new Map<string, SongPlayer>();
+  private readonly playerPans = new Map<"se1" | "se2", number>([["se1", 0], ["se2", 0]]);
   private readonly buffers = new Map<string, AudioBuffer>();
   private readonly midiCache = new Map<number, ParsedSong>();
   private readonly requestToken = new Map<string, number>();
@@ -303,9 +320,14 @@ export class M4aBackend implements SoundBackend {
   private cryUntil = 0;
   private noiseBuffer: AudioBuffer | null = null;
   private noiseSeed = 0x1ace;
+  private stereo = true;
 
   now(): number {
     return this.ctx?.currentTime ?? 0;
+  }
+
+  panValue(pan: number): number {
+    return this.stereo ? pan / 64 : 0;
   }
 
   private ensure(): AudioContext | null {
@@ -495,7 +517,17 @@ export class M4aBackend implements SoundBackend {
   }
 
   setStereo(stereo: boolean): void {
-    void stereo; // No per-channel panning yet; stereo mixes down identically.
+    this.stereo = stereo;
+    for (const player of ["se1", "se2"] as const) {
+      const handle = this.players.get(player);
+      if (handle) handle.setPan(this.playerPans.get(player) ?? 0);
+    }
+  }
+
+  setPan(player: "se1" | "se2", pan: number): void {
+    const clampedPan = Math.max(-64, Math.min(63, Math.trunc(pan)));
+    this.playerPans.set(player, clampedPan);
+    this.players.get(player)?.setPan(clampedPan);
   }
 
   /** Render one MIDI note through the song's voicegroup program. */

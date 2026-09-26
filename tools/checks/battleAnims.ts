@@ -11,23 +11,8 @@ import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import * as C from '../../src/fr/generated/constants.ts';
 import { rom } from '../../src/fr/rom.ts';
-import { sound } from '../../src/fr/audio/sound.ts';
-import { loadTrig } from '../../src/fr/hw/trig.ts';
-import { runHwFrame, SetMainCallback2 } from '../../src/fr/hw/runtime.ts';
-import { ppu } from '../../src/fr/hw/ppu.ts';
-import { DestroySprite, gSprites, MAX_SPRITES } from '../../src/fr/hw/sprite.ts';
-import { tasks } from '../../src/fr/gba/tasks.ts';
-import { A_BUTTON, joy } from '../../src/fr/gba/input.ts';
-import { preloadBattleAssets } from '../../src/fr/battle/preload.ts';
-import { G, gBattlerSpriteIds, gBattleSpritesDataPtr, resetBattleStructs } from '../../src/fr/battle/globals.ts';
-import { TryShinyAnimation } from '../../src/fr/battle/anims/special.ts';
-import { CB2_InitBattle } from '../../src/fr/battle/main_init.ts';
-import { CopyMon, gEnemyParty, GetMonData, SetMonData, ZeroEnemyPartyMons, type Mon } from '../../src/fr/pokemon/mon.ts';
-import { createMon } from '../../src/fr/pokemon/pokemon.ts';
-import { save } from '../../src/fr/save.ts';
-import { animState, LaunchBattleAnimation, type AnimTable } from '../../src/fr/battle/anim.ts';
-import { SetBattlerSpriteAffineMode } from '../../src/fr/battle/gfx_sfx_util.ts';
-import { DisableStruct } from '../../src/fr/generated/structs.ts';
+import type { Mon } from '../../src/fr/pokemon/mon.ts';
+import type { AnimTable } from '../../src/fr/battle/anim.ts';
 
 const root = process.cwd() + '/public';
 (globalThis as any).fetch = async (url: string) => {
@@ -60,6 +45,19 @@ console.warn = (...args: unknown[]) => {
 };
 
 await rom.load();
+// Import the runtime only after ROM constants are available. Some field modules
+// build constant lookup tables at module scope with rom.c(...).
+const [{ sound }, { loadTrig }, { runHwFrame, SetMainCallback2 }, { ppu }, { DestroySprite, gSprites, MAX_SPRITES },
+  { tasks }, { A_BUTTON, joy }, { preloadBattleAssets }, { G, gBattlerSpriteIds, gBattleSpritesDataPtr, resetBattleStructs },
+  { TryShinyAnimation }, { CB2_InitBattle }, { CopyMon, gEnemyParty, GetMonData, SetMonData, ZeroEnemyPartyMons },
+  { createMon }, { save }, { animState, LaunchBattleAnimation }, { SetBattlerSpriteAffineMode }, { DisableStruct }] = await Promise.all([
+  import('../../src/fr/audio/sound.ts'), import('../../src/fr/hw/trig.ts'), import('../../src/fr/hw/runtime.ts'),
+  import('../../src/fr/hw/ppu.ts'), import('../../src/fr/hw/sprite.ts'), import('../../src/fr/gba/tasks.ts'),
+  import('../../src/fr/gba/input.ts'), import('../../src/fr/battle/preload.ts'), import('../../src/fr/battle/globals.ts'),
+  import('../../src/fr/battle/anims/special.ts'), import('../../src/fr/battle/main_init.ts'), import('../../src/fr/pokemon/mon.ts'),
+  import('../../src/fr/pokemon/pokemon.ts'), import('../../src/fr/save.ts'), import('../../src/fr/battle/anim.ts'),
+  import('../../src/fr/battle/gfx_sfx_util.ts'), import('../../src/fr/generated/structs.ts'),
+]);
 await loadTrig();
 await preloadBattleAssets();
 sound.init(rom.constants);

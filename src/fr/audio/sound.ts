@@ -11,6 +11,7 @@ export interface SoundBackend {
   fadeOut(player: "bgm", speed: number): void;
   fadeIn(player: "bgm", speed: number): void;
   setVolume(player: "bgm", volume: number): void;
+  setPan?(player: "se1" | "se2", pan: number): void;
   playCry(species: number, mode: number): void;
   isCryPlaying(): boolean;
   stopCry?(): void;
@@ -366,9 +367,16 @@ class Sound {
     return !this.isCryFinished();
   }
 
-  /** PlaySE12WithPanning / PlaySE1WithPanning (panning is ignored until the m4a mixer exists). */
-  playSEWithPanning(song: number, _pan: number): void {
+  /** PlaySE12WithPanning / PlaySE1WithPanning with a signed GBA pan value. */
+  playSEWithPanning(song: number, pan: number): void {
     this.playSE(song);
+    this.SE12PanpotControl(pan);
+  }
+
+  /** SE12PanpotControl from sound.c; both SE players receive the track pan. */
+  SE12PanpotControl(pan: number): void {
+    this.backend?.setPan?.("se1", pan);
+    this.backend?.setPan?.("se2", pan);
   }
 
   saveBGM(song: number): void { this.savedBGM = song; }

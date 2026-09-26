@@ -676,8 +676,8 @@ export function CalculatePanIncrement(sourcePan: number, targetPan: number, incr
   return 0;
 }
 
-/** sound.c SE12PanpotControl: the WebAudio backend does not pan SEs yet. */
-function SE12PanpotControl(_pan: number): void {}
+/** sound.c SE12PanpotControl updates pan on both active sound-effect players. */
+function SE12PanpotControl(pan: number): void { sound.SE12PanpotControl(pan); }
 
 function Cmd_playsewithpan(): void {
   animState.sBattleAnimScriptPtr++;

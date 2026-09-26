@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (< 80 % de funciones) | 50 | 106738 | 1447/4926 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 41 | 60671 | 2129/2365 |
+| Casi completo (≥ 80 % y < 100 %) | 41 | 60671 | 2130/2365 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 109 | 78997 | 2485/2485 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 40/192 |
 | Fuera de alcance | 51 | 55183 | 103/1992 |
 | **Pendiente de portar** | **92** | **168809** | |
-| **Total en alcance** | **202** | **247859** | **6089/9834** |
+| **Total en alcance** | **202** | **247859** | **6090/9834** |
 
 ## Parcial (< 80 % de funciones)
 
@@ -113,7 +113,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `item.c` | 680 | 46/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
 | `menu2.c` | 671 | 9/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `menu_indicators.c` | 656 | 18/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
-| `sound.c` | 649 | 40/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  | 1 |
+| `sound.c` | 649 | 41/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
 | `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
 | `mon_markings.c` | 605 | 14/15 | `monMarkings.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
