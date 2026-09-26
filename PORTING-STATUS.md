@@ -38,7 +38,9 @@ systems. The first playable route is a milestone, not the completion criterion.
   el no-op definido por C. `AshGrassPerStepCallback` sigue faltando: es un
   residuo R/S sin scripts FireRed que lo seleccionen y depende del efecto de
   ceniza. Pasaron `check:port`, `check:honesty`, `inventory`, `pending` y
-  `git diff --check`; sin prueba en juego.
+  `git diff --check`; sin prueba en juego. En esta revisión moví los dos
+  temporizadores y coordenadas cracked-floor a los índices `data[2..9]` del C;
+  `ActivatePerStepCallback` ya los limpia al cambiar de callback.
 - **`shop.c`: 59/60 funciones con homólogo y sin stub registrado.** Conecté los
   dos helpers debug que el C deja vacíos. Quité el stub `RecordTransactionForQuestLog`
   y su llamada sin efecto; el historial de transacciones todavía no se escribe

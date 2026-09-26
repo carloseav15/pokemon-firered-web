@@ -21,8 +21,6 @@ export class PerStepCallback {
   private ambientCryState = 0;
   private ambientCryDelay = 0;
   private setUp = false;
-  private crackedFloorPrev = { x: 0, y: 0 };
-  private crackedFloorSlots = [{ delay: 0, x: 0, y: 0 }, { delay: 0, x: 0, y: 0 }];
 
   constructor(private readonly ow: Overworld) {
     this.SetUpFieldTasks();
@@ -161,17 +159,17 @@ export class PerStepCallback {
 
   /** CrackedFloorPerStepCallback; not selected by any FireRed map script. */
   CrackedFloorPerStepCallback(): void {
+    const d = this.data;
     const p = this.ow.player.object, x = p.currentCoords.x, y = p.currentCoords.y;
     const behavior = this.ow.map.behaviorAt(x, y);
-    for (const slot of this.crackedFloorSlots) {
-      if (slot.delay > 0 && --slot.delay === 0) this.SetCrackedFloorHoleMetatile(slot.x, slot.y);
-    }
-    if (x === this.crackedFloorPrev.x && y === this.crackedFloorPrev.y) return;
-    this.crackedFloorPrev = { x, y };
+    if (d[4] !== 0 && --d[4] === 0) this.SetCrackedFloorHoleMetatile(d[5], d[6]);
+    if (d[7] !== 0 && --d[7] === 0) this.SetCrackedFloorHoleMetatile(d[8], d[9]);
+    if (x === d[2] && y === d[3]) return;
+    d[2] = x; d[3] = y;
     if (!MB.MetatileBehavior_IsCrackedFloor(behavior)) return;
     const fastestMach = !!(this.ow.player.flags & C.PLAYER_AVATAR_FLAG_MACH_BIKE) && this.ow.player.GetPlayerSpeed() === C.PLAYER_SPEED_FASTEST;
     if (!fastestMach) varSet(C.VAR_ICE_STEP_COUNT, 0);
-    const slot = this.crackedFloorSlots.find((entry) => entry.delay === 0);
-    if (slot) { slot.delay = 3; slot.x = x; slot.y = y; }
+    if (d[4] === 0) { d[4] = 3; d[5] = x; d[6] = y; }
+    else if (d[7] === 0) { d[7] = 3; d[8] = x; d[9] = y; }
   }
 }
