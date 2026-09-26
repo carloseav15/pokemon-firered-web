@@ -1734,3 +1734,14 @@ Pending / placeholders:
 - Static checks: `npm run check:port`, `npm run check:honesty`, `npm run build`,
   `npm run inventory` and `npm run pending` passed. No game or browser test was
   run.
+
+## `overworld.c`: camera-transition map-name popup (2026-09-26)
+
+- Al entrar en otro mapa por una conexión de cámara, `LoadMapFromCameraTransition`
+  muestra el popup si cambia `regionMapSectionId`, sin comprobar
+  `showMapName`. La condición extra del port se retiró para seguir el C; la
+  ruta de cámara a través de límites del mapa sigue usando su render Canvas.
+- Comparé el cuerpo completo de `LoadMapFromCameraTransition`, su declaración en
+  `overworld.h`, el llamador `CameraMove` de `fieldmap.c`, el método activo
+  `Overworld.loadMapFromCameraTransition` y los datos de mapas tempranos. No se
+  ejecutó el juego ni el navegador.

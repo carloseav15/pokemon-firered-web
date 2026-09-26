@@ -1021,7 +1021,7 @@ export class Overworld {
     this.animator.prime();
     this.game.weather.doCurrent();
     this.runMapScriptImmediately(MAP_SCRIPT_ON_RESUME);
-    if (this.sectionCache.get(prevHeader.id) !== loaded.header.regionMapSection && loaded.header.showMapName) this.mapName.show(true);
+    if (this.sectionCache.get(prevHeader.id) !== loaded.header.regionMapSection) this.mapName.show(true);
     // Prefetch the next ring of neighbours.
     void this.prepareMap(loaded.header.id).then((l) => this.rememberLoaded(l));
   }
