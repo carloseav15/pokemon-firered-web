@@ -27,8 +27,10 @@ export const DUMMY_WIN_TEMPLATE: WindowTemplate = { bg: 0xff, tilemapLeft: 0, ti
 export type GbaWindow = { window: WindowTemplate; tileData: Uint8Array | null };
 
 export const gWindows: GbaWindow[] = Array.from({ length: WINDOWS_MAX }, () => ({ window: { ...DUMMY_WIN_TEMPLATE }, tileData: null }));
+/** window.c nullsub_8: its function pointer marks a caller-owned tilemap buffer. */
+function nullsub_8(): void {}
 /** true: tilemap buffer owned by the caller; Uint16Array: allocated by the window system. */
-const windowBgTilemapBuffers: Array<Uint16Array | "external" | null> = [null, null, null, null];
+const windowBgTilemapBuffers: Array<Uint16Array | typeof nullsub_8 | null> = [null, null, null, null];
 const window8BitIds = new Set<number>();
 export let gWindowClearTile = 0;
 
@@ -58,7 +60,7 @@ function ensureBgTilemap(bg: number): boolean {
 }
 
 export function InitWindows(templates: WindowTemplate[]): boolean {
-  for (let i = 0; i < 4; i++) windowBgTilemapBuffers[i] = GetBgTilemapBuffer(i) ? "external" : null;
+  for (let i = 0; i < 4; i++) windowBgTilemapBuffers[i] = GetBgTilemapBuffer(i) ? nullsub_8 : null;
   window8BitIds.clear();
   for (const w of gWindows) {
     w.window = { ...DUMMY_WIN_TEMPLATE };
@@ -93,7 +95,7 @@ export function AddWindow(template: WindowTemplate): number {
     base = BgTileAllocOp(bg, 0, template.width * template.height, BG_TILE_FIND_FREE_SPACE);
     if (base === -1) return WINDOW_NONE;
   }
-  if (windowBgTilemapBuffers[bg] === null && GetBgTilemapBuffer(bg)) windowBgTilemapBuffers[bg] = "external";
+  if (windowBgTilemapBuffers[bg] === null && GetBgTilemapBuffer(bg)) windowBgTilemapBuffers[bg] = nullsub_8;
   ensureBgTilemap(bg);
   gWindows[win].tileData = new Uint8Array(0x20 * template.width * template.height);
   gWindows[win].window = { ...DUMMY_WIN_TEMPLATE, ...template };
@@ -111,7 +113,7 @@ export function AddWindow8Bit(template: WindowTemplate): number {
   if (win === WINDOWS_MAX) return WINDOW_NONE;
 
   const bg = template.bg;
-  if (windowBgTilemapBuffers[bg] === null && GetBgTilemapBuffer(bg)) windowBgTilemapBuffers[bg] = "external";
+  if (windowBgTilemapBuffers[bg] === null && GetBgTilemapBuffer(bg)) windowBgTilemapBuffers[bg] = nullsub_8;
   const mapWasMissing = windowBgTilemapBuffers[bg] === null;
   ensureBgTilemap(bg);
   try {
@@ -134,12 +136,12 @@ export function RemoveWindow(windowId: number): void {
   const is8Bit = window8BitIds.delete(windowId);
   if (gWindowTileAutoAllocEnabled && !is8Bit) BgTileAllocOp(bg, w.window.baseBlock, w.window.width * w.window.height, BG_TILE_FREE);
   w.window = { ...DUMMY_WIN_TEMPLATE };
-  if (bg < 4 && GetNumActiveWindowsOnBg(bg) === 0 && windowBgTilemapBuffers[bg] !== "external") windowBgTilemapBuffers[bg] = null;
+  if (bg < 4 && GetNumActiveWindowsOnBg(bg) === 0 && windowBgTilemapBuffers[bg] !== nullsub_8) windowBgTilemapBuffers[bg] = null;
   w.tileData = null;
 }
 
 export function FreeAllWindowBuffers(): void {
-  for (let i = 0; i < 4; i++) if (windowBgTilemapBuffers[i] !== "external") windowBgTilemapBuffers[i] = null;
+  for (let i = 0; i < 4; i++) if (windowBgTilemapBuffers[i] !== nullsub_8) windowBgTilemapBuffers[i] = null;
   for (const w of gWindows) w.tileData = null;
 }
 

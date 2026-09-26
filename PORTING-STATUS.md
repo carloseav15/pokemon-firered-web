@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.833/9.834 (59,3%)**; quedan
-  **4.001 nombres (40,7%)**. Hay **78 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 23 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.570/247.859 (33,7%)**. El inventario mide nombres/cuerpos
+  stubs. El inventario vigente registra **5.834/9.834 (59,3%)**; quedan
+  **4.000 nombres (40,7%)**. Hay **77 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 22 casi completos y 53 parciales. La estimación de líneas sin
+  cubrir es **~83.546/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - **`evolution_scene.c`: `CreateShedinja` corregido y conectado.** El flujo
   anterior exigía y consumía una Poké Ball aunque el C no lo hace, y creaba
@@ -24,6 +24,10 @@ systems. The first playable route is a milestone, not the completion criterion.
   representa un flujo pendiente ni una conducta inventada. El archivo sale de
   `PENDING.md`. Pasaron `check:port`, `check:honesty`, `inventory`, `pending` y
   `git diff --check`.
+- **`window.c`: 21/21 funciones con homólogo.** `nullsub_8` ahora es también
+  el marcador de identidad que distingue buffers BG externos y gobierna su
+  liberación, como en C. `window.c` sale de `PENDING.md`; pasaron
+  `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
@@ -2912,9 +2916,9 @@ Pending / placeholders:
 
 - Alineé el helper compartido `GetNumActiveWindowsOnBg` y lo reutilicé también
   desde `GetNumActiveWindowsOnBg8Bit`, evitando dos conteos distintos sobre la
-  misma tabla. `window.c` sube a 20/21. `nullsub_8` se mantiene como sentinel
-  lógico `"external"` en TS; no añadí una función vacía para imitar el puntero
-  C. Total: 5.784/9.834 (58,8 %), 89 archivos y 4.050 nombres pendientes.
+  misma tabla. `window.c` queda en 21/21: `nullsub_8` es la identidad de
+  sentinel para los buffers externos, igual que el puntero C. Total en ese
+  corte: 5.784/9.834 (58,8 %), 89 archivos y 4.050 nombres pendientes.
   Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
   sin navegador.
 
