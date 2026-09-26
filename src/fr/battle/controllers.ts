@@ -112,6 +112,63 @@ function cmd4(bufferId: number, c: number): void {
   put(bufferId, [c, c, c, c]);
 }
 
+// Remaining non-link command serializers from battle_controllers.c. The DMA
+// destination is represented by its GBA u32 address; browser memory pointers
+// are never serialized as host addresses.
+export function BtlController_EmitGetRawMonData(bufferId: number, monId: number, bytes: number): void {
+  put(bufferId, [C.CONTROLLER_GETRAWMONDATA, monId, bytes, 0]);
+}
+
+export function BtlController_EmitSetRawMonData(bufferId: number, monId: number, bytes: number, data: ArrayLike<number>): void {
+  const arr = [C.CONTROLLER_SETRAWMONDATA, monId, bytes];
+  for (let i = 0; i < bytes; i++) arr.push(data[i] ?? 0);
+  put(bufferId, arr, bytes + 3);
+}
+
+export function BtlController_EmitPaletteFade(bufferId: number): void { cmd4(bufferId, C.CONTROLLER_PALETTEFADE); }
+export function BtlController_EmitSuccessBallThrowAnim(bufferId: number): void { cmd4(bufferId, C.CONTROLLER_SUCCESSBALLTHROWANIM); }
+
+export function BtlController_EmitPause(bufferId: number, toWait: number, data: ArrayLike<number>): void {
+  const arr = [C.CONTROLLER_PAUSE, toWait];
+  for (let i = 0; i < toWait * 3; i++) arr.push(data[i] ?? 0);
+  put(bufferId, arr, toWait * 3 + 2);
+}
+
+export function BtlController_EmitUnknownYesNoBox(bufferId: number, arg1: number): void {
+  put(bufferId, [C.CONTROLLER_UNKNOWNYESNOBOX, arg1]);
+}
+
+export function BtlController_EmitCmd23(bufferId: number): void { cmd4(bufferId, C.CONTROLLER_23); }
+export function BtlController_EmitStatusXor(bufferId: number, value: number): void { put(bufferId, [C.CONTROLLER_STATUSXOR, value]); }
+
+export function BtlController_EmitDMA3Transfer(bufferId: number, dstAddress: number, size: number, data: ArrayLike<number>): void {
+  const address = dstAddress >>> 0;
+  const arr = [C.CONTROLLER_DMA3TRANSFER, address, address >>> 8, address >>> 16, address >>> 24, size, size >>> 8];
+  for (let i = 0; i < size; i++) arr.push(data[i] ?? 0);
+  put(bufferId, arr, size + 7);
+}
+
+// C's loop uses songId as a byte count and overflows its 0x100-byte scratch
+// buffer for values above 253. Keep its wire format while surfacing that C bug
+// deterministically instead of corrupting adjacent JavaScript memory.
+export function BtlController_EmitPlayBGM(bufferId: number, songId: number, data: ArrayLike<number>): void {
+  if (songId > 253) throw new RangeError("battle_controllers.c EmitPlayBGM exceeds its 0x100-byte transfer buffer");
+  const arr = [C.CONTROLLER_PLAYBGM, songId, songId >>> 8];
+  for (let i = 0; i < songId; i++) arr.push(data[i] ?? 0);
+  put(bufferId, arr, songId + 3);
+}
+
+export function BtlController_EmitCmd32(bufferId: number, size: number, data: ArrayLike<number>): void {
+  const arr = [C.CONTROLLER_32, size, size >>> 8];
+  for (let i = 0; i < size; i++) arr.push(data[i] ?? 0);
+  put(bufferId, arr, size + 3);
+}
+
+export function BtlController_EmitClearUnkVar(bufferId: number): void { cmd4(bufferId, C.CONTROLLER_CLEARUNKVAR); }
+export function BtlController_EmitSetUnkVar(bufferId: number, value: number): void { put(bufferId, [C.CONTROLLER_SETUNKVAR, value]); }
+export function BtlController_EmitClearUnkFlag(bufferId: number): void { cmd4(bufferId, C.CONTROLLER_CLEARUNKFLAG); }
+export function BtlController_EmitToggleUnkFlag(bufferId: number): void { cmd4(bufferId, C.CONTROLLER_TOGGLEUNKFLAG); }
+
 export function BtlController_EmitGetMonData(bufferId: number, requestId: number, monToCheck: number): void {
   put(bufferId, [C.CONTROLLER_GETMONDATA, requestId, monToCheck, 0]);
 }

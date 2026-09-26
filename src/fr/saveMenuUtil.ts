@@ -2,7 +2,7 @@
 
 import * as C from "./generated/constants";
 import { concat, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { dexCount } from "./pokemon/pokemon";
+import { GetKantoPokedexCount, GetNationalPokedexCount } from "./pokemon/pokemon";
 import { flagGet, save, varGet } from "./save";
 import { rom } from "./rom";
 
@@ -17,7 +17,7 @@ export function SaveStatToString(gameStatId: number, color: number, regionMapSec
       break;
     case C.SAVE_STAT_POKEDEX: {
       const nationalEnabled = varGet(C.VAR_NATIONAL_DEX) === 0x6258 && flagGet(C.FLAG_SYS_NATIONAL_DEX);
-      value = intToDecimal(dexCount(true, !nationalEnabled), STR_CONV_MODE_LEFT_ALIGN, 3);
+      value = intToDecimal(nationalEnabled ? GetNationalPokedexCount(C.FLAG_GET_CAUGHT) : GetKantoPokedexCount(C.FLAG_GET_CAUGHT), STR_CONV_MODE_LEFT_ALIGN, 3);
       break;
     }
     case C.SAVE_STAT_TIME:

@@ -28,10 +28,27 @@ export function SeedRngAndSetTrainerId(timer1Low: number): void {
   seededFromTimer1 = true;
 }
 
+/** main.c GetGeneratedTrainerIdLower. */
+export function GetGeneratedTrainerIdLower(): number { return generatedTrainerIdLower; }
+
 /** new_game.c InitPlayerTrainerId; upper half comes from the next Random() draw. */
 export function generatePlayerTrainerId(): number {
   ensureTimerSeed();
-  return ((random() << 16) | generatedTrainerIdLower) >>> 0;
+  const trainerId = ((random() << 16) | generatedTrainerIdLower) >>> 0;
+  const bytes = [0, 0, 0, 0];
+  SetTrainerId(trainerId, bytes);
+  return (bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24)) >>> 0;
+}
+
+/** new_game.c SetTrainerId: write a trainer ID in SaveBlock2 little-endian order. */
+export function SetTrainerId(trainerId: number, dst: number[], offset = 0): void {
+  const value = trainerId >>> 0;
+  for (let i = 0; i < 4; i++) dst[offset + i] = (value >>> (i * 8)) & 0xff;
+}
+
+/** new_game.c CopyTrainerId: copy the four bytes used by link/mail records. */
+export function CopyTrainerId(dst: number[], src: ArrayLike<number>, dstOffset = 0, srcOffset = 0): void {
+  for (let i = 0; i < 4; i++) dst[dstOffset + i] = src[srcOffset + i] & 0xff;
 }
 
 /** Consume the Random() value reserved by ResetMenuAndMonGlobals. */

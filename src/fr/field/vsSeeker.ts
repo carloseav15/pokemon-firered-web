@@ -204,7 +204,7 @@ export function vsSeekerFreezeObjectsAfterChargeComplete(game: Game): void {
     if (standing) {
       tasks.destroy(id);
       ow.player.runningState = 0;
-      ow.script.enable();
+      ow.script.ScriptContext_Enable();
     }
   }, 80);
 }

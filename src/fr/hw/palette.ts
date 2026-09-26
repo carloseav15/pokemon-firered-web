@@ -37,6 +37,23 @@ export const GET_B = (c: number) => (c >> 10) & 0x1f;
 const NORMAL_FADE = 0;
 const FAST_FADE = 1;
 const HARDWARE_FADE = 2;
+const NUM_PALETTE_STRUCTS = 16;
+type PaletteStructTemplateRef = { id: number };
+type PaletteStructState = {
+  template: PaletteStructTemplateRef;
+  active: boolean;
+  flag: boolean;
+  baseDestOffset: number;
+  destOffset: number;
+  srcIndex: number;
+  countdown1: number;
+  countdown2: number;
+};
+const DUMMY_PALETTE_STRUCT_TEMPLATE: PaletteStructTemplateRef = { id: 0xffff };
+const sPaletteStructs: PaletteStructState[] = Array.from({ length: NUM_PALETTE_STRUCTS }, () => ({
+  template: DUMMY_PALETTE_STRUCT_TEMPLATE, active: false, flag: false, baseDestOffset: 0,
+  destOffset: 0, srcIndex: 0, countdown1: 0, countdown2: 0,
+}));
 
 export const FAST_FADE_IN_FROM_WHITE = 0;
 export const FAST_FADE_OUT_TO_WHITE = 1;
@@ -117,7 +134,32 @@ export function UpdatePaletteFade(): number {
 }
 
 export function ResetPaletteFade(): void {
+  for (let i = 0; i < NUM_PALETTE_STRUCTS; i++) PaletteStruct_Reset(i);
   ResetPaletteFadeControl();
+}
+
+/** PaletteStruct_ResetById: battle animation cleanup API from palette.c. */
+export function PaletteStruct_ResetById(id: number): void {
+  const paletteNum = PaletteStruct_GetPalNum(id & 0xffff);
+  if (paletteNum !== NUM_PALETTE_STRUCTS) PaletteStruct_Reset(paletteNum);
+}
+
+function PaletteStruct_Reset(paletteNum: number): void {
+  const entry = sPaletteStructs[paletteNum];
+  if (!entry) return;
+  entry.template = DUMMY_PALETTE_STRUCT_TEMPLATE;
+  entry.active = false;
+  entry.baseDestOffset = 0;
+  entry.destOffset = 0;
+  entry.srcIndex = 0;
+  entry.flag = false;
+  entry.countdown1 = 0;
+  entry.countdown2 = 0;
+}
+
+function PaletteStruct_GetPalNum(id: number): number {
+  const index = sPaletteStructs.findIndex((entry) => entry.template.id === (id & 0xffff));
+  return index < 0 ? NUM_PALETTE_STRUCTS : index;
 }
 
 export function ReadPlttIntoBuffers(): void {
@@ -233,6 +275,11 @@ export function UnfadePlttBuffer(selectedPalettes: number): void {
 
 export function BeginFastPaletteFade(submode: number): void {
   gPaletteFade.deltaY = 2;
+  BeginFastPaletteFadeInternal(submode);
+}
+
+/** BeginFastPaletteFadeInternal (palette.c): initialization after setting the delta. */
+function BeginFastPaletteFadeInternal(submode: number): void {
   gPaletteFade.y = 31;
   gPaletteFade.multipurpose2 = submode & 0x3f;
   gPaletteFade.active = true;
@@ -430,6 +477,24 @@ export function TintPalette_CustomTone(palette: Uint16Array, count: number, rTon
     const g = Math.min(31, ((gTone * gray) & 0xffff) >> 8);
     const b = Math.min(31, ((bTone * gray) & 0xffff) >> 8);
     palette[start + i] = RGB(r, g, b);
+  }
+}
+
+/** CopyPaletteInvertedTint (palette.c), used by Quest Log palette snapshots. */
+export function CopyPaletteInvertedTint(src: ArrayLike<number>, dst: Uint16Array, count: number, tone: number): void {
+  const amount = tone & 0xff;
+  if (amount === 0) {
+    for (let i = 0; i < (count & 0xffff); i++) dst[i] = src[i] ?? 0;
+    return;
+  }
+  for (let i = 0; i < (count & 0xffff); i++) {
+    const color = src[i] ?? 0;
+    const r = color & 0x1f, g = (color >>> 5) & 0x1f, b = (color >>> 10) & 0x1f;
+    const gray = (r * 76 + g * 151 + b * 29) >> 8;
+    const outR = r + ((amount * (gray - r)) >> 4);
+    const outG = g + ((amount * (gray - g)) >> 4);
+    const outB = b + ((amount * (gray - b)) >> 4);
+    dst[i] = RGB(outR, outG, outB);
   }
 }
 

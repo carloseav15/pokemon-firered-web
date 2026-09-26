@@ -127,11 +127,53 @@ gWeather.altGammaShifts = GAMMA_TABLE_ALT;
 
 const to8bit = (v: number): number => Math.min(255, Math.round((v * 255) / 31));
 
-/** TranslateWeatherNum (ROUTE119/123 cycles never occur in FRLG). */
+const WEATHER_CYCLE_ROUTE119 = [C.WEATHER_SUNNY, C.WEATHER_RAIN, C.WEATHER_RAIN_THUNDERSTORM, C.WEATHER_RAIN];
+const WEATHER_CYCLE_ROUTE123 = [C.WEATHER_SUNNY, C.WEATHER_SUNNY, C.WEATHER_RAIN, C.WEATHER_SUNNY];
+
+/** TranslateWeatherNum (field_weather_util.c), including the saved route-cycle stage. */
 function translate(weather: number): number {
-  weather &= 0xff;
-  if (weather >= 0 && weather <= 15) return weather;
-  return rom.c("WEATHER_NONE") ?? 0;
+  switch (weather & 0xff) {
+    case C.WEATHER_NONE:
+    case C.WEATHER_SUNNY_CLOUDS:
+    case C.WEATHER_SUNNY:
+    case C.WEATHER_RAIN:
+    case C.WEATHER_SNOW:
+    case C.WEATHER_RAIN_THUNDERSTORM:
+    case C.WEATHER_FOG_HORIZONTAL:
+    case C.WEATHER_VOLCANIC_ASH:
+    case C.WEATHER_SANDSTORM:
+    case C.WEATHER_FOG_DIAGONAL:
+    case C.WEATHER_UNDERWATER:
+    case C.WEATHER_SHADE:
+    case C.WEATHER_DROUGHT:
+    case C.WEATHER_DOWNPOUR:
+    case C.WEATHER_UNDERWATER_BUBBLES:
+      return weather & 0xff;
+    case C.WEATHER_ROUTE119_CYCLE:
+    case C.WEATHER_ROUTE123_CYCLE: {
+      const stage = ((save.weatherCycleStage ?? 0) & 0xffff) % 4;
+      return (weather & 0xff) === C.WEATHER_ROUTE119_CYCLE ? WEATHER_CYCLE_ROUTE119[stage] : WEATHER_CYCLE_ROUTE123[stage];
+    }
+    default:
+      return C.WEATHER_NONE;
+  }
+}
+
+/** GetSav1Weather (field_weather_util.c). */
+export function GetSav1Weather(): number {
+  return save.weather ?? C.WEATHER_NONE;
+}
+
+/** UpdateWeatherPerDay (field_weather_util.c), with u16 stage storage. */
+export function UpdateWeatherPerDay(increment: number): void {
+  save.weatherCycleStage = (((save.weatherCycleStage ?? 0) + increment) & 0xffff) % 4;
+}
+
+/** UpdateRainCounter (field_weather_util.c). */
+function UpdateRainCounter(newWeather: number, oldWeather: number): void {
+  if (newWeather !== oldWeather && (newWeather === C.WEATHER_RAIN || newWeather === C.WEATHER_RAIN_THUNDERSTORM)) {
+    incrementGameStat(C.GAME_STAT_GOT_RAINED_ON);
+  }
 }
 
 /** SetCurrentAndNextWeather */
@@ -825,13 +867,24 @@ export class FieldWeather {
     const old = this.saved;
     this.saved = weather;
     save.weather = weather;
-    if (weather !== old && (weather === C.WEATHER_RAIN || weather === C.WEATHER_RAIN_THUNDERSTORM)) {
-      incrementGameStat(C.GAME_STAT_GOT_RAINED_ON);
-    }
+    UpdateRainCounter(weather, old);
   }
 
   /** DoCurrentWeather */
   doCurrent(): void {
+    this.next = this.saved;
+  }
+
+  /** ResumePausedWeather (field_weather_util.c). */
+  resumePausedWeather(): void {
+    this.current = this.saved;
+    this.next = this.saved;
+  }
+
+  /** SetWeather_Unused (field_weather_util.c). */
+  setWeatherUnused(weather: number): void {
+    this.setSaved(weather);
+    this.current = this.saved;
     this.next = this.saved;
   }
 

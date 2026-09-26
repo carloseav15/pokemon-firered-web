@@ -6,12 +6,13 @@
 
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
-import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
+import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
 import { FONT_SMALL } from "../gba/font";
 import { tasks } from "../gba/tasks";
 import { printText } from "../gba/textPrinter";
 import { Window } from "../gba/window";
 import { cdata, incbin } from "../hw/assets";
+import { BG_PLTT_ID } from "../hw/palette";
 import { random } from "../random";
 import { rom } from "../rom";
 import { flagClear, flagGet, flagSet, save, SV, varGet, varSet } from "../save";
@@ -21,7 +22,10 @@ import { rgb555, spriteSheet } from "../field/gfx4bpp";
 import { adjustFriendship, getDexFlag, leadMonIndex, nickname, speciesName, type Pokemon } from "../pokemon/pokemon";
 import { GetPokedexHeightWeight } from "../battle/ext";
 import { setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005 } from "../menus/keyItemScreens";
+import { SetPostgameFlags } from "../pokemon/saveLocation";
+import { CheckPartyMonHasHeldItem } from "../pokemon/scriptPokemonUtil";
 import { getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullMessage } from "../pokemon/storage";
+import { gPPUpGetMask, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
 import type { ScriptRunner } from "./context";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -32,8 +36,23 @@ function enableLater(ctx: ScriptRunner, frames = 1): void {
   const id = tasks.create(() => {
     if (--n > 0) return;
     tasks.destroy(id);
-    ctx.ow.script.enable();
+    ctx.ow.script.ScriptContext_Enable();
   }, 80);
+}
+
+/** party_menu_specials.c ShiftMoveSlot: move and PP Up bits travel with a move. */
+function ShiftMoveSlot(mon: (typeof save.party)[number], slotTo: number, slotFrom: number): void {
+  const moveTo = mon.moves[slotTo], moveFrom = mon.moves[slotFrom];
+  const ppTo = mon.pp[slotTo], ppFrom = mon.pp[slotFrom];
+  const bonusTo = (mon.ppBonuses & gPPUpGetMask[slotTo]) >> (slotTo * 2);
+  const bonusFrom = (mon.ppBonuses & gPPUpGetMask[slotFrom]) >> (slotFrom * 2);
+  mon.ppBonuses &= ~gPPUpGetMask[slotTo];
+  mon.ppBonuses &= ~gPPUpGetMask[slotFrom];
+  mon.ppBonuses |= (bonusTo << (slotFrom * 2)) + (bonusFrom << (slotTo * 2));
+  mon.moves[slotTo] = moveFrom;
+  mon.moves[slotFrom] = moveTo;
+  mon.pp[slotTo] = ppFrom;
+  mon.pp[slotFrom] = ppTo;
 }
 
 const LINKUP_CONNECTION_ERROR = 6;
@@ -50,7 +69,7 @@ const sBigMonSizeTable = [
   [1000, 150, 32710], [1100, 100, 47710], [1200, 50, 57710], [1300, 20, 62710], [1400, 5, 64710], [1500, 2, 65210], [1600, 1, 65410], [1700, 1, 65510],
 ];
 
-function monSizeHash(mon: Pokemon): number {
+function GetMonSizeHash(mon: Pokemon): number {
   const p = mon.personality & 0xffff;
   const iv = (i: number) => (mon.ivs[i] ?? 0) & 0xf;
   // ivs: [hp, atk, def, speed, spatk, spdef]
@@ -59,90 +78,226 @@ function monSizeHash(mon: Pokemon): number {
   return ((hibyte << 8) + lobyte) & 0xffff;
 }
 
-function monSize(species: number, b: number): number {
+function TranslateBigMonSizeTableIndex(size: number): number {
+  for (let i = 1; i < 15; i++) if ((size & 0xffff) < sBigMonSizeTable[i][2]) return i - 1;
+  return 15;
+}
+
+function GetMonSize(species: number, b: number): number {
   const height = GetPokedexHeightWeight(rom.species[species].national, 0);
-  let i = 1;
-  for (; i < 15; i++) if (b < sBigMonSizeTable[i][2]) break;
-  const index = i < 15 ? i - 1 : i;
+  const index = TranslateBigMonSizeTableIndex(b);
   const [base, div, start] = sBigMonSizeTable[index];
-  const unk0 = base + Math.floor((b - start) / div);
-  return Math.floor((height * unk0) / 10);
+  const unk0 = base + Math.trunc(((b & 0xffff) - start) / div);
+  return Math.trunc((height * unk0) / 10) >>> 0;
 }
 
-/** FormatMonSizeRecord (UNITS_IMPERIAL) */
-function formatSize(size: number): Uint8Array {
-  const inches = Math.floor((size * 100) / 254);
-  return encode(`${Math.floor(inches / 10)}.${inches % 10}`);
+/** FormatMonSizeRecord (UNITS_IMPERIAL from include/config.h). */
+function FormatMonSizeRecord(size: number): Uint8Array {
+  const inches = Math.trunc(((size >>> 0) * 100) / 254) >>> 0;
+  return concat(intToDecimal(Math.trunc(inches / 10), STR_CONV_MODE_LEFT_ALIGN, 8), rom.text("gText_DecimalPoint"),
+    intToDecimal(inches % 10, STR_CONV_MODE_LEFT_ALIGN, 1));
 }
 
-function compareMonSize(species: number, recordVar: number): number {
+function CompareMonSize(species: number, recordVar: number): number {
   const index = varGet(SV.RESULT);
   if (index >= 6) return 0;
   const mon = save.party[index];
   if (!mon || mon.isEgg || mon.species !== species) return 1;
-  const params = monSizeHash(mon);
-  const newSize = monSize(species, params);
-  const oldSize = monSize(species, varGet(recordVar));
-  stringVars.var3 = formatSize(oldSize);
-  stringVars.var2 = formatSize(newSize);
+  const params = GetMonSizeHash(mon);
+  const newSize = GetMonSize(species, params);
+  const oldSize = GetMonSize(species, varGet(recordVar));
+  stringVars.var3 = FormatMonSizeRecord(oldSize);
+  stringVars.var2 = FormatMonSizeRecord(newSize);
   if (newSize === oldSize) return 4;
   if (newSize < oldSize) return 2;
   varSet(recordVar, params);
   return 3;
 }
 
-function sizeRecordInfo(species: number, recordVar: number): void {
-  stringVars.var3 = formatSize(monSize(species, varGet(recordVar)));
+function GetMonSizeRecordInfo(species: number, recordVar: number): void {
+  stringVars.var3 = FormatMonSizeRecord(GetMonSize(species, varGet(recordVar)));
   stringVars.var1 = speciesName(species);
+}
+
+const sGiftRibbonsMonDataIds = [C.MON_DATA_MARINE_RIBBON, C.MON_DATA_LAND_RIBBON, C.MON_DATA_SKY_RIBBON,
+  C.MON_DATA_COUNTRY_RIBBON, C.MON_DATA_NATIONAL_RIBBON, C.MON_DATA_EARTH_RIBBON, C.MON_DATA_WORLD_RIBBON];
+
+/** mystery_event_script.c MEScrCmd_giveribbon → pokemon_size_record.c. */
+export function GiveGiftRibbonToParty(index: number, ribbonId: number): void {
+  index &= 0xff;
+  ribbonId &= 0xff;
+  if (index >= C.GIFT_RIBBONS_COUNT || ribbonId >= 65) return;
+  const block = save as unknown as { giftRibbons?: number[] };
+  block.giftRibbons ??= new Array(C.GIFT_RIBBONS_COUNT).fill(0);
+  block.giftRibbons[index] = ribbonId & 0xff;
+  // The C stack array is seven entries but its guard allows indices through 10.
+  // The seven defined entries are deterministic; higher indices read beyond it.
+  const monDataId = sGiftRibbonsMonDataIds[index];
+  if (monDataId === undefined) return;
+  let gotRibbon = false;
+  for (const mon of save.party as Mon[]) {
+    if (mon.species === C.SPECIES_NONE || mon.isEgg) continue;
+    SetMonData(mon, monDataId, 1);
+    gotRibbon = true;
+  }
+  if (gotRibbon) flagSet(C.FLAG_SYS_RIBBON_GET);
 }
 
 // ---------------------------------------------------------------- trainer_fan_club.c
 
-function fanClub(): { timer: number; got: boolean; flags: number } {
-  const v = varGet(C.VAR_FANCLUB_FAN_COUNTER);
-  return { timer: v & 0x7f, got: !!(v & 0x80), flags: (v >> 8) & 0xff };
-}
-function setFanClub(f: { timer: number; got: boolean; flags: number }): void {
-  varSet(C.VAR_FANCLUB_FAN_COUNTER, (f.timer & 0x7f) | (f.got ? 0x80 : 0) | ((f.flags & 0xff) << 8));
-}
-const numFans = (flags: number): number => { let n = 0; for (let i = 0; i < 8; i++) if (flags >> i & 1) n++; return n; };
+type TrainerFanClubData = { timer: number; gotInitialFans: boolean; fanFlags: number };
 
-function gainRandomFan(f: { flags: number }): void {
+function fanClub(): TrainerFanClubData {
+  const value = varGet(C.VAR_FANCLUB_FAN_COUNTER);
+  return { timer: value & 0x7f, gotInitialFans: !!(value & 0x80), fanFlags: (value >>> 8) & 0xff };
+}
+
+function setFanClub(data: TrainerFanClubData): void {
+  varSet(C.VAR_FANCLUB_FAN_COUNTER, (data.timer & 0x7f) | (data.gotInitialFans ? 0x80 : 0) | ((data.fanFlags & 0xff) << 8));
+}
+
+/** ResetTrainerFanClub. */
+export function ResetTrainerFanClub(): void {
+  varSet(C.VAR_FANCLUB_FAN_COUNTER, 0);
+  varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, 0);
+}
+
+/** GetNumFansOfPlayerInTrainerFanClub. */
+export function GetNumFansOfPlayerInTrainerFanClub(data: TrainerFanClubData = fanClub()): number {
+  let count = 0;
+  for (let id = 0; id < 8; id++) if ((data.fanFlags >>> id) & 1) count++;
+  return count;
+}
+
+/** DidPlayerGetFirstFans. */
+export function DidPlayerGetFirstFans(data: TrainerFanClubData = fanClub()): boolean {
+  const gotInitialFans = !!data.gotInitialFans;
+  return gotInitialFans;
+}
+
+/** SetPlayerGotFirstFans. */
+export function SetPlayerGotFirstFans(data: TrainerFanClubData): void { data.gotInitialFans = true; }
+
+/** SetInitialFansOfPlayer. The repeated MEMBER1 set is present in the C and is idempotent. */
+export function SetInitialFansOfPlayer(data: TrainerFanClubData): void {
+  data.fanFlags |= (1 << C.FANCLUB_MEMBER1) | (1 << C.FANCLUB_MEMBER2) | (1 << C.FANCLUB_MEMBER3);
+}
+
+/** PlayerGainRandomTrainerFan: walk the C's priority list with its one-bit RNG gate. */
+export function PlayerGainRandomTrainerFan(data: TrainerFanClubData): number {
   const ids = [C.FANCLUB_MEMBER2, C.FANCLUB_MEMBER4, C.FANCLUB_MEMBER6, C.FANCLUB_MEMBER1, C.FANCLUB_MEMBER8, C.FANCLUB_MEMBER7, C.FANCLUB_MEMBER5, C.FANCLUB_MEMBER3];
-  let idx = 0;
-  for (let i = 0; i < 8; i++) {
-    if (!(f.flags >> ids[i] & 1)) {
-      idx = i;
-      if (random() % 2) { f.flags |= 1 << ids[i]; return; }
+  let index = 0;
+  for (let i = 0; i < ids.length; i++) {
+    if (!((data.fanFlags >>> ids[i]) & 1)) {
+      index = i;
+      if (random() % 2) { data.fanFlags |= 1 << ids[i]; return ids[i]; }
     }
   }
-  f.flags |= 1 << ids[idx];
+  data.fanFlags |= 1 << ids[index];
+  return ids[index];
 }
 
-function loseRandomFan(f: { flags: number }): void {
+/** PlayerLoseRandomTrainerFan: preserve one fan and use the source priority/RNG order. */
+export function PlayerLoseRandomTrainerFan(data: TrainerFanClubData): number {
   const ids = [C.FANCLUB_MEMBER6, C.FANCLUB_MEMBER7, C.FANCLUB_MEMBER4, C.FANCLUB_MEMBER8, C.FANCLUB_MEMBER5, C.FANCLUB_MEMBER2, C.FANCLUB_MEMBER1, C.FANCLUB_MEMBER3];
-  if (numFans(f.flags) === 1) return;
-  let idx = 0;
-  for (let i = 0; i < 8; i++) {
-    if (f.flags >> ids[i] & 1) {
-      idx = i;
-      if (random() % 2) { f.flags ^= 1 << ids[i]; return; }
+  if (GetNumFansOfPlayerInTrainerFanClub(data) === 1) return 0;
+  let index = 0;
+  for (let i = 0; i < ids.length; i++) {
+    if ((data.fanFlags >>> ids[i]) & 1) {
+      index = i;
+      if (random() % 2) { data.fanFlags ^= 1 << ids[i]; return ids[i]; }
     }
   }
-  if (f.flags >> ids[idx] & 1) f.flags ^= 1 << ids[idx];
+  if ((data.fanFlags >>> ids[index]) & 1) data.fanFlags ^= 1 << ids[index];
+  return ids[index];
 }
 
-function tryLoseFansFromPlayTime(f: { flags: number }): void {
-  if (playTimeHours() >= 999) return;
+/** TryLoseFansFromPlayTime. */
+export function TryLoseFansFromPlayTime(data: TrainerFanClubData): void {
+  const hours = playTimeHours();
+  if (hours >= 999) return;
   for (let i = 0; ; i++) {
-    if (numFans(f.flags) < 5) { varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, playTimeHours()); break; }
+    if (GetNumFansOfPlayerInTrainerFanClub(data) < 5) { varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, hours); break; }
     if (i === 8) break;
     const timer = varGet(C.VAR_FANCLUB_LOSE_FAN_TIMER);
-    if (playTimeHours() - timer < 12) break;
-    loseRandomFan(f);
-    varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, varGet(C.VAR_FANCLUB_LOSE_FAN_TIMER) + 12);
+    if (hours - timer < 12) break;
+    PlayerLoseRandomTrainerFan(data);
+    varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, timer + 12);
   }
 }
+
+/** TryLoseFansFromPlayTimeAfterLinkBattle. */
+export function TryLoseFansFromPlayTimeAfterLinkBattle(data: TrainerFanClubData): void {
+  if (DidPlayerGetFirstFans(data)) {
+    TryLoseFansFromPlayTime(data);
+    varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, playTimeHours());
+  }
+}
+
+/** UpdateTrainerFanClubGameClear. */
+export function UpdateTrainerFanClubGameClear(data: TrainerFanClubData): void {
+  if (data.gotInitialFans) return;
+  SetPlayerGotFirstFans(data);
+  SetInitialFansOfPlayer(data);
+  varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, playTimeHours());
+  for (const flag of [C.FLAG_HIDE_SAFFRON_FAN_CLUB_BLACK_BELT, C.FLAG_HIDE_SAFFRON_FAN_CLUB_ROCKER, C.FLAG_HIDE_SAFFRON_FAN_CLUB_WOMAN, C.FLAG_HIDE_SAFFRON_FAN_CLUB_BEAUTY]) flagClear(flag);
+  varSet(C.VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB, 1);
+}
+
+/** TryGainNewFanFromCounter. */
+export function TryGainNewFanFromCounter(data: TrainerFanClubData, counter: number): number {
+  if (varGet(C.VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB) === 2) {
+    const increment = [2, 1, 2, 1][counter] ?? 0;
+    if (data.timer + increment >= 20) {
+      if (GetNumFansOfPlayerInTrainerFanClub(data) < 3) { PlayerGainRandomTrainerFan(data); data.timer = 0; }
+      else data.timer = 20;
+    } else data.timer += increment;
+  }
+  return data.timer;
+}
+
+/** IsFanClubMemberFanOfPlayer. */
+export function IsFanClubMemberFanOfPlayer(data: TrainerFanClubData, member: number): boolean {
+  return !!((data.fanFlags >>> member) & 1);
+}
+
+/** BufferFanClubTrainerName: use a saved link trainer name when present, otherwise the NPC fallback. */
+export function BufferFanClubTrainerName(linkNames: ArrayLike<ArrayLike<number>>, whichLinkTrainer: number, whichNPCTrainer: number): Uint8Array {
+  const name = linkNames[whichLinkTrainer];
+  if (name && name[0] !== 0xff) {
+    const result = Array.from(name).slice(0, C.PLAYER_NAME_LENGTH);
+    result.push(0xff);
+    if (result[0] === C.EXT_CTRL_CODE_BEGIN && result[1] === C.EXT_CTRL_CODE_JPN) {
+      let end = result.indexOf(0xff);
+      if (end < 0) end = result.length;
+      result.splice(end, 0, C.EXT_CTRL_CODE_BEGIN, C.EXT_CTRL_CODE_ENG);
+    }
+    return Uint8Array.from(result);
+  }
+  return Uint8Array.from(whichNPCTrainer === 1 ? rom.text("gText_LtSurge") : whichNPCTrainer === 2 ? rom.text("gText_Koga") : save.rivalName);
+}
+
+/** UpdateTrainerFansAfterLinkBattle. Link battle callers provide the C battle outcome. */
+export function UpdateTrainerFansAfterLinkBattle(data: TrainerFanClubData, battleOutcome: number): void {
+  if (varGet(C.VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB) !== 2) return;
+  TryLoseFansFromPlayTimeAfterLinkBattle(data);
+  if (battleOutcome === C.B_OUTCOME_WON) PlayerGainRandomTrainerFan(data);
+  else PlayerLoseRandomTrainerFan(data);
+}
+
+export function Script_TryLoseFansFromPlayTimeAfterLinkBattle(): void { const data = fanClub(); TryLoseFansFromPlayTimeAfterLinkBattle(data); setFanClub(data); }
+export function Script_UpdateTrainerFanClubGameClear(): void { const data = fanClub(); UpdateTrainerFanClubGameClear(data); setFanClub(data); }
+export function Script_TryGainNewFanFromCounter(): number { const data = fanClub(); const value = TryGainNewFanFromCounter(data, varGet(SV.x8004)); setFanClub(data); return value; }
+export function Script_GetNumFansOfPlayerInTrainerFanClub(): number { return GetNumFansOfPlayerInTrainerFanClub(); }
+export function Script_TryLoseFansFromPlayTime(): void { const data = fanClub(); TryLoseFansFromPlayTime(data); setFanClub(data); }
+export function Script_IsFanClubMemberFanOfPlayer(): number { return IsFanClubMemberFanOfPlayer(fanClub(), varGet(SV.x8004)) ? 1 : 0; }
+export function Script_SetPlayerGotFirstFans(): void { const data = fanClub(); SetPlayerGotFirstFans(data); setFanClub(data); }
+export function Script_BufferFanClubTrainerName(): void {
+  const member = varGet(SV.x8004);
+  const npc = member === C.FANCLUB_MEMBER5 ? 1 : member === C.FANCLUB_MEMBER7 ? 2 : 0;
+  stringVars.var1 = BufferFanClubTrainerName([], 0, npc);
+}
+export function Special_UpdateTrainerFansAfterLinkBattle(battleOutcome: number): void { const data = fanClub(); UpdateTrainerFansAfterLinkBattle(data, battleOutcome); setFanClub(data); }
 
 // ---------------------------------------------------------------- elevators (field_specials.c)
 
@@ -204,18 +359,20 @@ function animateElevator(ctx: ScriptRunner): void {
   const windowDurations = [3, 6, 9, 12, 15, 18, 21, 24, 27];
   const total = durations[nfloors];
   let d1 = 0, d2 = 0, d4 = 1;
+  ow.SetCameraPanningCallback(null);
   sound.playSE(C.SE_ELEVATOR);
   const shake = tasks.create(() => {
     if (++d1 % 3 !== 0) return;
     d1 = 0;
     d2++;
     d4 = -d4;
-    ow.panY = d4;
+    ow.SetCameraPanning(0, d4);
     if (d2 === total) {
-      ow.panY = 0;
+      ow.SetCameraPanning(0, 0);
       sound.playSE(C.SE_DING_DONG);
+      ow.InstallCameraPanAheadCallback();
       tasks.destroy(shake);
-      ow.script.enable();
+      ow.script.ScriptContext_Enable();
     }
   }, 9);
   // Task_AnimateElevatorWindowView: the window metatiles cycle every 6 frames.
@@ -244,79 +401,189 @@ function animateElevator(ctx: ScriptRunner): void {
 // ---------------------------------------------------------------- berry powder vendor
 
 let powderWindow: Window | undefined;
-function berryPowder(): number { return save.berryPowder ?? 0; }
+/** DecryptBerryPowder: browser saves keep this value in plaintext, not XORed. */
+export function DecryptBerryPowder(powder: number): number { return powder >>> 0; }
+
+/** SetBerryPowder: the web SaveData stores the logical amount directly. */
+export function SetBerryPowder(amount: number): void { save.berryPowder = amount >>> 0; }
+
+/** Re-key adaptation: preserve the logical amount while keeping plaintext storage. */
+export function ApplyNewEncryptionKeyToBerryPowder(_encryptionKey: number): void {
+  SetBerryPowder(DecryptBerryPowder(save.berryPowder ?? 0));
+}
+
+/** GetBerryPowder (berry_powder.c). */
+export function GetBerryPowder(): number { return DecryptBerryPowder(save.berryPowder ?? 0); }
+
+/** HasEnoughBerryPowder (berry_powder.c). */
+function HasEnoughBerryPowder(cost: number): boolean { return GetBerryPowder() >= (cost >>> 0); }
+
+/** TakeBerryPowder (berry_powder.c). */
+function TakeBerryPowder(cost: number): boolean {
+  if (!HasEnoughBerryPowder(cost)) return false;
+  SetBerryPowder((GetBerryPowder() - (cost >>> 0)) >>> 0);
+  return true;
+}
+
 /** GiveBerryPowder; Berry Crush is not yet ported, but this C API caps storage at 99,999. */
 export function GiveBerryPowder(amountToAdd: number): boolean {
-  const amount = ((berryPowder() >>> 0) + (amountToAdd >>> 0)) >>> 0;
-  save.berryPowder = Math.min(amount, 99999);
+  const amount = (GetBerryPowder() + (amountToAdd >>> 0)) >>> 0;
+  SetBerryPowder(Math.min(amount, 99999));
   return amount <= 99999;
 }
-function drawPowder(): void {
-  if (!powderWindow) return;
-  powderWindow.fill(1);
-  printText(powderWindow, FONT_SMALL, rom.text("gOtherText_Powder"), 0, 0);
-  printText(powderWindow, FONT_SMALL, intToDecimal(berryPowder(), STR_CONV_MODE_RIGHT_ALIGN, 5), 39, 12);
+
+/** PrintBerryPowderAmount (berry_powder.c), adapted to the Canvas field window. */
+function PrintBerryPowderAmount(window: Window, amount: number, x: number, y: number, _speed: number): void {
+  printText(window, FONT_SMALL, intToDecimal(amount >>> 0, STR_CONV_MODE_RIGHT_ALIGN, 5), x, y);
+}
+
+/** DrawPlayerPowderAmount (berry_powder.c), using the field window's selected frame. */
+function DrawPlayerPowderAmount(window: Window, _baseBlock: number, _palette: number, amount: number): void {
+  window.frame = "std";
+  window.frameType = save.options.frameType;
+  window.fill(1);
+  printText(window, FONT_SMALL, rom.text("gOtherText_Powder"), 0, 0);
+  PrintBerryPowderAmount(window, amount, 39, 12, 0);
+}
+
+/** Script_HasEnoughBerryPowder (berry_powder.c). */
+function Script_HasEnoughBerryPowder(): number {
+  return HasEnoughBerryPowder(varGet(SV.x8004)) ? 1 : 0;
+}
+
+/** Script_TakeBerryPowder (berry_powder.c). */
+function Script_TakeBerryPowder(): number {
+  return TakeBerryPowder(varGet(SV.x8004)) ? 1 : 0;
+}
+
+/** DisplayBerryPowderVendorMenu (berry_powder.c), adapted to a Canvas field window. */
+function DisplayBerryPowderVendorMenu(ctx: ScriptRunner): void {
+  powderWindow = new Window(2, 2, 8, 3);
+  ctx.ow.windows.add(powderWindow);
+  DrawPlayerPowderAmount(powderWindow, 0x21d, BG_PLTT_ID(13), GetBerryPowder());
+}
+
+/** PrintPlayerBerryPowderAmount (berry_powder.c). */
+function PrintPlayerBerryPowderAmount(): void {
+  if (powderWindow) PrintBerryPowderAmount(powderWindow, GetBerryPowder(), 39, 12, 0);
+}
+
+/** RemoveBerryPowderVendorMenu (berry_powder.c). */
+function RemoveBerryPowderVendorMenu(ctx: ScriptRunner): void {
+  if (powderWindow) ctx.ow.windows.remove(powderWindow);
+  powderWindow = undefined;
 }
 
 // ---------------------------------------------------------------- SS Anne departure (ss_anne.c)
 
-function ssAnneDeparture(ctx: ScriptRunner): void {
-  const ow = ctx.ow;
+type SSAnneDeparture = {
+  ctx: ScriptRunner; wait: number; smokeTimer: number; travelTimer: number; finishTimer: number;
+  wakeFrames: HTMLCanvasElement[]; smokeFrames: HTMLCanvasElement[];
+};
+const ssAnneTasks = new Map<number, SSAnneDeparture>();
+const ssAnneSprites = new WeakMap<Sprite, SSAnneDeparture>();
+
+function ssAnneDeparture(ctx: ScriptRunner): void { DoSSAnneDepartureCutscene(ctx); }
+
+/** DoSSAnneDepartureCutscene (ss_anne.c). */
+export function DoSSAnneDepartureCutscene(ctx: ScriptRunner): void {
   sound.playSE(C.SE_SS_ANNE_HORN);
   const pal = Array.from(incbinU16("gObjectEventPal_SSAnne"));
   const wakeTiles = incbin("sWakeTiles"), smokeTiles = incbin("sSmokeTiles");
-  const wakeFrames = [0, 1].map((f) => spriteSheet(wakeTiles.subarray(f * 256, f * 256 + 256), pal, 16, 32));
-  const smokeFrames = [0, 1, 2, 3].map((f) => spriteSheet(smokeTiles.subarray(f * 128, f * 128 + 128), pal, 16, 16));
-  const boat = (): Sprite | undefined => ow.objects.byLocalIdAndMap(1, save.location.mapNum, save.location.mapGroup)?.sprite;
-  let wait = 50, d1 = 0, d2 = 0, d3 = 0, state = 0;
-  const makeWake = (): void => {
-    const b = boat();
-    if (!b) return;
-    const s = new Sprite();
-    s.width = 16; s.height = 32; s.centerToCornerVecX = -8; s.centerToCornerVecY = -16;
-    s.priority = 2; s.subpriority = 0xff; s.y = 109; s.coordOffsetEnabled = false;
-    s.anims = [[["F", 0, 12, 0, 0], ["F", 1, 12, 0, 0], ["J", 0]]];
-    s.startAnim(0);
-    s.draw = (c, x, y) => c.drawImage(wakeFrames[s.imageValue] ?? wakeFrames[0], x, y);
-    s.callback = (sp) => {
-      const bb = boat();
-      if (!bb) { ow.sprites.destroy(sp); return; }
-      sp.x = bb.x + bb.x2 + 80 + ow.sprites.offsetX;
-      if (Math.floor(sp.data[0] / 6) < 22) sp.data[0]++;
-      sp.x2 = Math.floor(sp.data[0] / 6);
-      if (sp.x + sp.x2 < -18) ow.sprites.destroy(sp);
-    };
-    ow.sprites.add(s);
+  const departure: SSAnneDeparture = {
+    ctx, wait: 50, smokeTimer: 0, travelTimer: 0, finishTimer: 0,
+    wakeFrames: [0, 1].map((f) => spriteSheet(wakeTiles.subarray(f * 256, f * 256 + 256), pal, 16, 32)),
+    smokeFrames: [0, 1, 2, 3].map((f) => spriteSheet(smokeTiles.subarray(f * 128, f * 128 + 128), pal, 16, 16)),
   };
-  const makeSmoke = (): void => {
-    const b = boat();
-    if (!b) return;
-    const x = b.x + b.x2 + 49 + ow.sprites.offsetX;
-    if (x < -32) return;
-    const s = new Sprite();
-    s.width = 16; s.height = 16; s.centerToCornerVecX = -8; s.centerToCornerVecY = -8;
-    s.x = x; s.y = 78; s.priority = 2; s.subpriority = 8; s.coordOffsetEnabled = false;
-    s.anims = [[["F", 0, 10, 0, 0], ["F", 1, 20, 0, 0], ["F", 2, 20, 0, 0], ["F", 3, 30, 0, 0], ["E"]]];
-    s.startAnim(0);
-    s.draw = (c, dx, dy) => c.drawImage(smokeFrames[s.imageValue] ?? smokeFrames[0], dx, dy);
-    s.callback = (sp) => { sp.data[0]++; sp.x2 = Math.floor(sp.data[0] / 4); if (sp.animEnded) ow.sprites.destroy(sp); };
-    ow.sprites.add(s);
-  };
-  const id = tasks.create(() => {
-    if (state === 0) {
-      if (--wait === 0) { makeWake(); state = 1; }
-      return;
-    }
-    if (state === 1) {
-      d1++; d2++;
-      if (d1 === 70) { d1 = 0; makeSmoke(); }
-      const b = boat();
-      if (!b || b.x + b.x2 < -120) { sound.playSE(C.SE_SS_ANNE_HORN); state = 2; return; }
-      b.x2 = -Math.floor(d2 / 5);
-      return;
-    }
-    if (++d3 === 40) { tasks.destroy(id); ctx.ow.script.enable(); }
-  }, 8);
+  ssAnneTasks.set(tasks.create(Task_SSAnneInit, 8), departure);
+}
+
+function ssAnneBoat(d: SSAnneDeparture): Sprite | undefined {
+  return d.ctx.ow.objects.byLocalIdAndMap(1, save.location.mapNum, save.location.mapGroup)?.sprite;
+}
+
+/** Task_SSAnneInit: wait 50 frames before creating the wake. */
+export function Task_SSAnneInit(taskId: number): void {
+  const d = ssAnneTasks.get(taskId);
+  if (!d || --d.wait !== 0) return;
+  CreateWakeBehindBoat(taskId);
+  tasks.tasks[taskId].func = Task_SSAnneRun;
+}
+
+/** Task_SSAnneRun: animate the boat and emit smoke every 70 frames. */
+export function Task_SSAnneRun(taskId: number): void {
+  const d = ssAnneTasks.get(taskId);
+  if (!d) return;
+  d.smokeTimer++; d.travelTimer++;
+  if (d.smokeTimer === 70) { d.smokeTimer = 0; CreateSmokeSprite(taskId); }
+  const boat = ssAnneBoat(d);
+  if (!boat || boat.x + boat.x2 < -120) {
+    sound.playSE(C.SE_SS_ANNE_HORN);
+    tasks.tasks[taskId].func = Task_SSAnneFinish;
+  } else boat.x2 = -Math.floor(d.travelTimer / 5);
+}
+
+/** Task_SSAnneFinish: release the script after the C's 40-frame delay. */
+export function Task_SSAnneFinish(taskId: number): void {
+  const d = ssAnneTasks.get(taskId);
+  if (!d || ++d.finishTimer !== 40) return;
+  // Canvas sprites retain decoded frames directly, so the GBA tile-tag frees have no browser resource.
+  ssAnneTasks.delete(taskId);
+  tasks.destroy(taskId);
+  d.ctx.ow.script.ScriptContext_Enable();
+}
+
+/** CreateWakeBehindBoat. */
+export function CreateWakeBehindBoat(taskId: number): void {
+  const d = ssAnneTasks.get(taskId), boat = d && ssAnneBoat(d);
+  if (!d || !boat) return;
+  const s = new Sprite();
+  s.width = 16; s.height = 32; s.centerToCornerVecX = -8; s.centerToCornerVecY = -16;
+  s.priority = 2; s.subpriority = 0xff; s.y = 109; s.coordOffsetEnabled = false;
+  s.anims = [[['F', 0, 12, 0, 0], ['F', 1, 12, 0, 0], ['J', 0]]];
+  s.startAnim(0);
+  s.draw = (c, x, y) => c.drawImage(d.wakeFrames[s.imageValue] ?? d.wakeFrames[0], x, y);
+  ssAnneSprites.set(s, d);
+  s.callback = WakeSpriteCallback;
+  d.ctx.ow.sprites.add(s);
+}
+
+/** WakeSpriteCallback. */
+export function WakeSpriteCallback(s: Sprite): void {
+  const d = ssAnneSprites.get(s);
+  if (!d) return;
+  const boat = ssAnneBoat(d);
+  if (!boat) { d.ctx.ow.sprites.destroy(s); return; }
+  s.x = boat.x + boat.x2 + 80 + d.ctx.ow.sprites.offsetX;
+  if (Math.floor(s.data[0] / 6) < 22) s.data[0]++;
+  s.x2 = Math.floor(s.data[0] / 6);
+  if (s.x + s.x2 < -18) d.ctx.ow.sprites.destroy(s);
+}
+
+/** CreateSmokeSprite. */
+export function CreateSmokeSprite(taskId: number): void {
+  const d = ssAnneTasks.get(taskId), boat = d && ssAnneBoat(d);
+  if (!d || !boat) return;
+  const x = ((boat.x + boat.x2 + 49 + d.ctx.ow.sprites.offsetX) << 16) >> 16;
+  if (x < -32) return;
+  const s = new Sprite();
+  s.width = 16; s.height = 16; s.centerToCornerVecX = -8; s.centerToCornerVecY = -8;
+  s.x = x; s.y = 78; s.priority = 2; s.subpriority = 8; s.coordOffsetEnabled = false;
+  s.anims = [[['F', 0, 10, 0, 0], ['F', 1, 20, 0, 0], ['F', 2, 20, 0, 0], ['F', 3, 30, 0, 0], ['E']]];
+  s.startAnim(0);
+  s.draw = (c, dx, dy) => c.drawImage(d.smokeFrames[s.imageValue] ?? d.smokeFrames[0], dx, dy);
+  ssAnneSprites.set(s, d);
+  s.callback = SmokeSpriteCallback;
+  d.ctx.ow.sprites.add(s);
+}
+
+/** SmokeSpriteCallback. */
+export function SmokeSpriteCallback(s: Sprite): void {
+  const d = ssAnneSprites.get(s);
+  if (!d) return;
+  s.data[0]++;
+  s.x2 = Math.floor(s.data[0] / 4);
+  if (s.animEnded) d.ctx.ow.sprites.destroy(s);
 }
 
 function incbinU16(symbol: string): Uint16Array {
@@ -371,10 +638,11 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   SetFlavorTextFlagFromSpecialVars: () => { setFlavorTextFlagFromSpecialVars(); },
   UpdatePickStateFromSpecialVar8005: () => { updatePickStateFromSpecialVar8005(); },
   // size records
-  CompareHeracrossSize: () => { varSet(SV.RESULT, compareMonSize(C.SPECIES_HERACROSS, C.VAR_HERACROSS_SIZE_RECORD)); },
-  CompareMagikarpSize: () => { varSet(SV.RESULT, compareMonSize(C.SPECIES_MAGIKARP, C.VAR_MAGIKARP_SIZE_RECORD)); },
-  GetHeracrossSizeRecordInfo: () => { sizeRecordInfo(C.SPECIES_HERACROSS, C.VAR_HERACROSS_SIZE_RECORD); },
-  GetMagikarpSizeRecordInfo: () => { sizeRecordInfo(C.SPECIES_MAGIKARP, C.VAR_MAGIKARP_SIZE_RECORD); },
+  CompareHeracrossSize: () => { varSet(SV.RESULT, CompareMonSize(C.SPECIES_HERACROSS, C.VAR_HERACROSS_SIZE_RECORD)); },
+  CompareMagikarpSize: () => { varSet(SV.RESULT, CompareMonSize(C.SPECIES_MAGIKARP, C.VAR_MAGIKARP_SIZE_RECORD)); },
+  GetHeracrossSizeRecordInfo: () => { GetMonSizeRecordInfo(C.SPECIES_HERACROSS, C.VAR_HERACROSS_SIZE_RECORD); },
+  GetMagikarpSizeRecordInfo: () => { GetMonSizeRecordInfo(C.SPECIES_MAGIKARP, C.VAR_MAGIKARP_SIZE_RECORD); },
+  GiveGiftRibbonToParty: () => { GiveGiftRibbonToParty(varGet(SV.x8004), varGet(SV.x8005)); },
   // move deleter (party_menu_specials.c)
   GetNumMovesSelectedMonHas: () => { varSet(SV.RESULT, (save.party[varGet(SV.x8004)]?.moves ?? []).filter(Boolean).length); },
   BufferMoveDeleterNicknameAndMove: () => {
@@ -387,12 +655,9 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     const mon = save.party[varGet(SV.x8004)];
     const slot = varGet(SV.x8005);
     if (!mon) return;
-    const bonus = (i: number) => (mon.ppBonuses >> (i * 2)) & 3;
-    const moves = [...mon.moves], pp = [...mon.pp], bonuses = [0, 1, 2, 3].map(bonus);
-    moves.splice(slot, 1); pp.splice(slot, 1); bonuses.splice(slot, 1);
-    moves.push(0); pp.push(0); bonuses.push(0);
-    mon.moves = moves; mon.pp = pp;
-    mon.ppBonuses = bonuses.reduce((acc, b, i) => acc | (b << (i * 2)), 0);
+    SetMonMoveSlot(mon, C.MOVE_NONE, slot);
+    RemoveMonPPBonus(mon, slot);
+    for (let i = slot; i < C.MAX_MON_MOVES - 1; i++) ShiftMoveSlot(mon, i, i + 1);
   },
   SelectMoveDeleterMove: (ctx) => { ctx.ow.game.selectMoveDeleterMove(); },
   // field_specials.c
@@ -468,7 +733,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   },
   IsBadEggInParty: () => 0, // a Bad Egg only arises from checksum corruption, which the web save cannot produce
   DoesPartyHaveEnigmaBerry: () => {
-    const has = save.party.some((m) => m.heldItem === C.ITEM_ENIGMA_BERRY);
+    const has = CheckPartyMonHasHeldItem(C.ITEM_ENIGMA_BERRY);
     if (has) stringVars.var1 = encode("ENIGMA");
     return has ? 1 : 0;
   },
@@ -478,8 +743,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     varSet(SV.RESULT, save.party.some((m) => !m.isEgg && allowed.has(m.species)) ? 1 : 0);
   },
   SetIcefallCaveCrackedIceMetatiles: (ctx) => {
-    const coords = [[8, 3], [10, 5], [15, 5], [8, 9], [9, 9], [16, 9], [8, 10], [9, 10], [8, 14]];
-    coords.forEach(([x, y], i) => { if (flagGet(i + 1)) ctx.ow.map.setMetatileIdAt(x + MAP_OFFSET, y + MAP_OFFSET, rom.c("METATILE_SeafoamIslands_CrackedIce")); });
+    ctx.ow.stepCallback.SetIcefallCaveCrackedIceMetatiles();
   },
   SeafoamIslandsB4F_CurrentDumpsPlayerOnLand: (ctx) => { ctx.ow.player.createStopSurfingTask(C.DIR_NORTH); },
   IsPlayerNotInTrainerTowerLobby: () => (mapIs("MAP_TRAINER_TOWER_LOBBY") ? 0 : 1),
@@ -489,9 +753,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     varSet(C.VAR_MASSAGE_COOLDOWN_STEP_COUNTER, 0);
   },
   SetPostgameFlags: () => {
-    const s = save as unknown as { specialSaveWarpFlags?: number; gcnLinkFlags?: number };
-    s.specialSaveWarpFlags = (s.specialSaveWarpFlags ?? 0) | 0x80; // CHAMPION_SAVEWARP
-    s.gcnLinkFlags = (s.gcnLinkFlags ?? 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 15);
+    SetPostgameFlags();
   },
   // elevators
   GetElevatorFloor: () => { varSet(C.VAR_ELEVATOR_FLOOR, elevatorFloor()); },
@@ -510,60 +772,22 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   CloseElevatorCurrentFloorWindow: (ctx) => { ctx.ow.windows.remove(floorWindow); floorWindow = undefined; },
   AnimateElevator: (ctx) => { animateElevator(ctx); },
   // berry powder
-  Script_HasEnoughBerryPowder: () => (berryPowder() >= varGet(SV.x8004) ? 1 : 0),
-  Script_TakeBerryPowder: () => {
-    if (berryPowder() < varGet(SV.x8004)) return 0;
-    save.berryPowder = berryPowder() - varGet(SV.x8004);
-    return 1;
-  },
-  DisplayBerryPowderVendorMenu: (ctx) => {
-    powderWindow = new Window(2, 2, 8, 3);
-    powderWindow.frame = "std";
-    powderWindow.frameType = save.options.frameType;
-    ctx.ow.windows.add(powderWindow);
-    drawPowder();
-  },
-  PrintPlayerBerryPowderAmount: () => { drawPowder(); },
-  RemoveBerryPowderVendorMenu: (ctx) => { ctx.ow.windows.remove(powderWindow); powderWindow = undefined; },
+  Script_HasEnoughBerryPowder: () => Script_HasEnoughBerryPowder(),
+  Script_TakeBerryPowder: () => Script_TakeBerryPowder(),
+  DisplayBerryPowderVendorMenu: (ctx) => DisplayBerryPowderVendorMenu(ctx),
+  PrintPlayerBerryPowderAmount: () => PrintPlayerBerryPowderAmount(),
+  RemoveBerryPowderVendorMenu: (ctx) => RemoveBerryPowderVendorMenu(ctx),
   // trainer fan club
-  Script_TryLoseFansFromPlayTimeAfterLinkBattle: () => {
-    const f = fanClub();
-    if (f.got) { tryLoseFansFromPlayTime(f); varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, playTimeHours()); setFanClub(f); }
-  },
-  Script_UpdateTrainerFanClubGameClear: () => {
-    const f = fanClub();
-    if (f.got) return;
-    f.got = true;
-    f.flags |= (1 << C.FANCLUB_MEMBER1) | (1 << C.FANCLUB_MEMBER2) | (1 << C.FANCLUB_MEMBER3);
-    setFanClub(f);
-    varSet(C.VAR_FANCLUB_LOSE_FAN_TIMER, playTimeHours());
-    flagClear(C.FLAG_HIDE_SAFFRON_FAN_CLUB_BLACK_BELT);
-    flagClear(C.FLAG_HIDE_SAFFRON_FAN_CLUB_ROCKER);
-    flagClear(C.FLAG_HIDE_SAFFRON_FAN_CLUB_WOMAN);
-    flagClear(C.FLAG_HIDE_SAFFRON_FAN_CLUB_BEAUTY);
-    varSet(C.VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB, 1);
-  },
-  Script_TryGainNewFanFromCounter: () => {
-    const f = fanClub();
-    if (varGet(C.VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB) === 2) {
-      const inc = [2, 1, 2, 1][varGet(SV.x8004)] ?? 1;
-      if (f.timer + inc >= 20) {
-        if (numFans(f.flags) < 3) { gainRandomFan(f); f.timer = 0; } else f.timer = 20;
-      } else f.timer += inc;
-    }
-    setFanClub(f);
-    return f.timer;
-  },
-  Script_GetNumFansOfPlayerInTrainerFanClub: () => numFans(fanClub().flags),
-  Script_TryLoseFansFromPlayTime: () => { const f = fanClub(); tryLoseFansFromPlayTime(f); setFanClub(f); },
-  Script_IsFanClubMemberFanOfPlayer: () => (fanClub().flags >> varGet(SV.x8004) & 1),
-  Script_SetPlayerGotFirstFans: () => { const f = fanClub(); f.got = true; setFanClub(f); },
-  Script_BufferFanClubTrainerName: () => {
-    // No link battle records exist, so the NPC names are used (BufferFanClubTrainerName).
-    const m = varGet(SV.x8004);
-    const npc = m === C.FANCLUB_MEMBER5 ? 1 : m === C.FANCLUB_MEMBER7 ? 2 : 0;
-    stringVars.var1 = npc === 1 ? rom.text("gText_LtSurge") : npc === 2 ? rom.text("gText_Koga") : Uint8Array.from(save.rivalName);
-  },
+  ResetTrainerFanClub: () => ResetTrainerFanClub(),
+  Script_TryLoseFansFromPlayTimeAfterLinkBattle: () => Script_TryLoseFansFromPlayTimeAfterLinkBattle(),
+  Script_UpdateTrainerFanClubGameClear: () => Script_UpdateTrainerFanClubGameClear(),
+  Script_TryGainNewFanFromCounter: () => Script_TryGainNewFanFromCounter(),
+  Script_GetNumFansOfPlayerInTrainerFanClub: () => Script_GetNumFansOfPlayerInTrainerFanClub(),
+  Script_TryLoseFansFromPlayTime: () => Script_TryLoseFansFromPlayTime(),
+  Script_IsFanClubMemberFanOfPlayer: () => Script_IsFanClubMemberFanOfPlayer(),
+  Script_SetPlayerGotFirstFans: () => Script_SetPlayerGotFirstFans(),
+  Script_BufferFanClubTrainerName: () => Script_BufferFanClubTrainerName(),
+  Special_UpdateTrainerFansAfterLinkBattle: (ctx) => Special_UpdateTrainerFansAfterLinkBattle(ctx.ow.game.battleOutcome),
   // storage
   ShouldShowBoxWasFullMessage: () => (shouldShowBoxWasFullMessage() ? 1 : 0),
   GetPCBoxToSendMon: () => getPCBoxToSendMon(),

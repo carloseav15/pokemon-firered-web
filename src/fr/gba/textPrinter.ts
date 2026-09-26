@@ -2,7 +2,7 @@
 
 import { sound } from "../audio/sound";
 import { CHAR_EXTRA_SYMBOL, CHAR_KEYPAD_ICON, CHAR_NEWLINE, CHAR_PROMPT_CLEAR, CHAR_PROMPT_SCROLL, EOS, EXT_CTRL_CODE_BEGIN, PLACEHOLDER_BEGIN } from "./charmap";
-import { FONT_BRAILLE, FONT_INFOS, FONT_NORMAL, glyph } from "./font";
+import { FONT_BRAILLE, FONT_INFOS, FONT_NORMAL, glyph, type FontInfo } from "./font";
 import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "./input";
 import { b64, rom } from "../rom";
 import type { Window } from "./window";
@@ -34,6 +34,47 @@ const DOWN_ARROW_X = [0, 16, 32, 16];
 const SCROLL_SPEEDS = [1, 2, 4];
 
 export const textFlags = { canABSpeedUpPrint: false, useAlternateDownArrow: false, autoScroll: false, forceMidTextSpeed: false };
+
+let gFonts: FontInfo[] | null = null;
+let sLastTextBgColor = 0;
+let sLastTextFgColor = 0;
+let sLastTextShadowColor = 0;
+export const sFontHalfRowLookupTable = new Uint16Array(0x51);
+export const gGlyphInfo: { pixels: Uint8Array; width: number; height: number } = { pixels: new Uint8Array(16 * 16), width: 0, height: 0 };
+
+/** text_printer.c SetFontsPointer. */
+export function SetFontsPointer(fonts: FontInfo[] | null = FONT_INFOS): void { gFonts = fonts; }
+
+/** text_printer.c GenerateFontHalfRowLookupTable. */
+export function GenerateFontHalfRowLookupTable(fgColor: number, bgColor: number, shadowColor: number): void {
+  sLastTextBgColor = bgColor & 0xff;
+  sLastTextFgColor = fgColor & 0xff;
+  sLastTextShadowColor = shadowColor & 0xff;
+  const colors = [sLastTextBgColor, sLastTextFgColor, sLastTextShadowColor];
+  let index = 0;
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) for (let k = 0; k < 3; k++) for (let l = 0; l < 3; l++)
+    sFontHalfRowLookupTable[index++] = (colors[l] << 12) | (colors[k] << 8) | (colors[j] << 4) | colors[i];
+}
+
+/** text_printer.c SaveTextColors. */
+export function SaveTextColors(): { fgColor: number; bgColor: number; shadowColor: number } {
+  return { bgColor: sLastTextBgColor, fgColor: sLastTextFgColor, shadowColor: sLastTextShadowColor };
+}
+
+/** text_printer.c RestoreTextColors. */
+export function RestoreTextColors(fgColor: number, bgColor: number, shadowColor: number): void {
+  GenerateFontHalfRowLookupTable(fgColor, bgColor, shadowColor);
+}
+
+/** text_printer.c GetLastTextColor. */
+export function GetLastTextColor(colorType: number): number {
+  switch (colorType) {
+    case 0: return sLastTextFgColor;
+    case 2: return sLastTextBgColor;
+    case 1: return sLastTextShadowColor;
+    default: return 0;
+  }
+}
 
 /** gSaveBlock2Ptr->optionsTextSpeed: 0 slow, 1 mid, 2 fast. */
 export const textOptions = { speed: 1 };
@@ -97,7 +138,8 @@ export class TextPrinter {
   lineSpacing: number;
 
   constructor(readonly window: TextSurface, fontId: number, readonly str: ArrayLike<number>, options: PrinterOptions = {}) {
-    const info = FONT_INFOS[fontId] ?? FONT_INFOS[FONT_NORMAL];
+    const fonts = gFonts ?? FONT_INFOS;
+    const info = fonts[fontId] ?? fonts[FONT_NORMAL];
     this.fontId = fontId;
     this.x = this.currentX = options.x ?? 0;
     this.y = this.currentY = options.y ?? 1;
@@ -106,6 +148,7 @@ export class TextPrinter {
     this.shadow = options.shadow ?? info.shadowColor;
     this.letterSpacing = options.letterSpacing ?? info.letterSpacing;
     this.lineSpacing = options.lineSpacing ?? info.lineSpacing;
+    GenerateFontHalfRowLookupTable(this.fg, this.bg, this.shadow);
     const speed = options.speed ?? 0;
     if (speed !== TEXT_SKIP_DRAW && speed !== 0) {
       this.textSpeed = speed - 1;
@@ -126,6 +169,13 @@ export class TextPrinter {
     if (cmd === RENDER_FINISH) this.active = false;
     else this.onUpdate?.(this, cmd);
   }
+
+  /** One gFonts[fontId].fontFunction call, before RenderFont's repeat loop. */
+  renderFrame(): number { return this.render(); }
+  /** text_printer.c RenderFont's repeat-until-non-RENDER_REPEAT loop. */
+  renderUntilUpdate(): number { return this.renderFont(); }
+  /** Draw the most recently decompressed glyph into this printer's window. */
+  copyCurrentGlyph(): void { this.copyGlyph(gGlyphInfo.pixels, gGlyphInfo.width, gGlyphInfo.height); }
 
   private renderFont(): number {
     for (;;) {
@@ -156,7 +206,7 @@ export class TextPrinter {
         switch (c) {
           case CHAR_NEWLINE:
             this.currentX = this.x;
-            this.currentY += FONT_INFOS[this.fontId].maxLetterHeight + this.lineSpacing;
+            this.currentY += (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
             return RENDER_REPEAT;
           case PLACEHOLDER_BEGIN:
             this.pos++;
@@ -222,6 +272,9 @@ export class TextPrinter {
             return RENDER_FINISH;
         }
         const g = glyph(this.fontId, c);
+        gGlyphInfo.pixels = g.pixels;
+        gGlyphInfo.width = g.width;
+        gGlyphInfo.height = g.height;
         this.copyGlyph(g.pixels, g.width, g.height);
         if (this.minLetterSpacing) {
           this.currentX += g.width;
@@ -246,7 +299,7 @@ export class TextPrinter {
       case State.ScrollStart:
         if (this.waitWithDownArrow()) {
           this.window.fillRect(this.bg, this.currentX, this.currentY, 10, 12);
-          this.scrollDistance = FONT_INFOS[this.fontId].maxLetterHeight + this.lineSpacing;
+          this.scrollDistance = (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
           this.currentX = this.x;
           this.state = State.Scroll;
         }
@@ -294,7 +347,7 @@ export class TextPrinter {
         return RENDER_FINISH;
       case CHAR_NEWLINE:
         this.currentX = this.x;
-        this.currentY += FONT_INFOS[this.fontId].maxLetterHeight + this.lineSpacing;
+        this.currentY += (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
         return RENDER_REPEAT;
       case PLACEHOLDER_BEGIN:
         this.pos++;
@@ -340,6 +393,9 @@ export class TextPrinter {
         return RENDER_PRINT;
     }
     const g = glyph(FONT_BRAILLE, c);
+    gGlyphInfo.pixels = g.pixels;
+    gGlyphInfo.width = g.width;
+    gGlyphInfo.height = g.height;
     this.copyGlyph(g.pixels, g.width, g.height);
     this.currentX += g.width + this.letterSpacing;
     return RENDER_PRINT;
@@ -387,7 +443,7 @@ export class TextPrinter {
   }
 
   private clearSpan(_width: number): void {
-    // text_printer.c: ClearTextSpan is empty in the FireRed source.
+    ClearTextSpan(this, _width);
   }
 
   private copyGlyph(pixels: Uint8Array, width: number, height: number): void {
@@ -419,6 +475,33 @@ export class TextPrinter {
     return w;
   }
 }
+
+/** text_printer.c RenderFont. */
+export function RenderFont(printer: TextPrinter): number { return printer.renderUntilUpdate(); }
+
+/** text_printer.c CopyGlyphToWindow, adapted to the current window surface. */
+export function CopyGlyphToWindow(printer: TextPrinter): void { printer.copyCurrentGlyph(); }
+
+/** text_printer.c CopyGlyphToWindow_Parameterized, writing 4bpp tile bytes. */
+export function CopyGlyphToWindow_Parameterized(tileData: Uint8Array, currentX: number, currentY: number, width: number, height: number): void {
+  const glyphWidth = Math.max(0, Math.min(gGlyphInfo.width, width - currentX));
+  const glyphHeight = Math.max(0, Math.min(gGlyphInfo.height, height - currentY));
+  const sizeX = (width + (width & 7)) >> 3;
+  const colors = [sLastTextBgColor, sLastTextFgColor, sLastTextShadowColor];
+  for (let y = 0; y < glyphHeight; y++) for (let x = 0; x < glyphWidth; x++) {
+    const pixel = gGlyphInfo.pixels[y * 16 + x] ?? 0;
+    if (pixel === 0) continue;
+    const px = currentX + x;
+    const py = currentY + y;
+    const index = ((px >> 1) & 3) + ((px >> 3) << 5) + (((py >> 3) * sizeX) << 5) + ((py & 7) << 2);
+    const shift = (px & 1) * 4;
+    const nibble = (colors[pixel] ?? 0) & 0xf;
+    tileData[index] = (tileData[index] & (0xf0 >> shift)) | (nibble << shift);
+  }
+}
+
+/** text_printer.c ClearTextSpan is deliberately empty in the FireRed source. */
+export function ClearTextSpan(_printer: TextPrinter, _width: number): void {}
 
 /** Convenience: print a string instantly (AddTextPrinterParameterized with speed 0). */
 export function printText(window: TextSurface, fontId: number, str: ArrayLike<number>, x: number, y: number, colors?: { fg: number; bg: number; shadow: number }, letterSpacing?: number, lineSpacing?: number): void {

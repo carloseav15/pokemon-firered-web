@@ -26,9 +26,10 @@ export class FieldMessageBox {
 
   constructor(private readonly ow: Overworld) {
     menuHelperHooks.contextNpcGetTextColor = () => this.npcTextColor();
+    this.InitFieldMessageBox();
   }
 
-  reset(): void {
+  InitFieldMessageBox(): void {
     this.type = FIELD_MESSAGE_BOX_HIDDEN;
     this.window = undefined;
     this.printer = undefined;
@@ -37,6 +38,8 @@ export class FieldMessageBox {
     textFlags.useAlternateDownArrow = false;
     textFlags.autoScroll = false;
   }
+
+  reset(): void { this.InitFieldMessageBox(); }
 
   private ensureWindow(): Window {
     if (!this.window || !this.ow.windows.windows.includes(this.window)) {
@@ -60,16 +63,54 @@ export class FieldMessageBox {
   }
 
   /** ShowFieldMessage */
-  show(str: ArrayLike<number>, autoScroll = false): boolean {
+  ShowFieldMessage(str: ArrayLike<number>): boolean {
     if (this.type !== FIELD_MESSAGE_BOX_HIDDEN) return false;
-    const text = expandPlaceholders(str);
-    stringVars.var4 = text;
-    this.type = autoScroll ? FIELD_MESSAGE_BOX_AUTO_SCROLL : FIELD_MESSAGE_BOX_NORMAL;
-    this.startPrinter(text);
+    this.type = FIELD_MESSAGE_BOX_NORMAL;
+    this.ExpandStringAndStartDrawFieldMessageBox(str);
     return true;
   }
 
-  private startPrinter(text: Uint8Array): void {
+  ShowFieldAutoScrollMessage(str: ArrayLike<number>): boolean {
+    if (this.type !== FIELD_MESSAGE_BOX_HIDDEN) return false;
+    this.type = FIELD_MESSAGE_BOX_AUTO_SCROLL;
+    this.ExpandStringAndStartDrawFieldMessageBox(str);
+    return true;
+  }
+
+  ForceShowFieldAutoScrollMessage(str: ArrayLike<number>): boolean {
+    this.type = FIELD_MESSAGE_BOX_AUTO_SCROLL;
+    this.ExpandStringAndStartDrawFieldMessageBox(str);
+    return true;
+  }
+
+  ShowFieldMessageFromBuffer(): boolean {
+    if (this.type !== FIELD_MESSAGE_BOX_HIDDEN) return false;
+    this.type = FIELD_MESSAGE_BOX_NORMAL;
+    this.StartDrawFieldMessageBox();
+    return true;
+  }
+
+  show(str: ArrayLike<number>, autoScroll = false): boolean {
+    return autoScroll ? this.ShowFieldAutoScrollMessage(str) : this.ShowFieldMessage(str);
+  }
+
+  ExpandStringAndStartDrawFieldMessageBox(str: ArrayLike<number>): void {
+    const text = expandPlaceholders(str);
+    stringVars.var4 = text;
+    this.StartPrinter(text);
+    this.CreateTask_DrawFieldMessageBox();
+  }
+
+  StartDrawFieldMessageBox(): void {
+    this.StartPrinter(Uint8Array.from(stringVars.var4));
+    this.CreateTask_DrawFieldMessageBox();
+  }
+
+  CreateTask_DrawFieldMessageBox(): void { this.drawState = 0; }
+
+  DestroyTask_DrawFieldMessageBox(): void { this.drawState = -1; }
+
+  private StartPrinter(text: Uint8Array): void {
     const window = this.ensureWindow();
     textFlags.canABSpeedUpPrint = true;
     const color = this.npcTextColor();
@@ -81,9 +122,8 @@ export class FieldMessageBox {
     // starts right away as in AddTextPrinterDiffStyle.
     window.frame = this.ow.control.msgIsSignpost ? "signpost" : "dialogue";
     window.fill(TEXT_COLOR_WHITE);
-    window.visible = true;
+    window.visible = false;
     this.printer = new TextPrinter(window, font, text, { x: 0, y: 1, speed: getTextSpeedSetting(), fg, bg: TEXT_COLOR_WHITE, shadow: TEXT_COLOR_LIGHT_GRAY });
-    this.drawState = 0;
   }
 
   /**
@@ -99,20 +139,35 @@ export class FieldMessageBox {
   }
 
   /** Runs the printer and the draw task every frame. */
-  update(): void {
+  Task_DrawFieldMessageBox(): void {
     if (this.drawState < 0) return;
     this.printer?.run();
-    if (this.drawState === 0) this.drawState = 1;
-    else if (this.drawState === 1) this.drawState = 2;
-    else if (this.drawState === 2 && !(this.printer?.active)) {
-      this.type = FIELD_MESSAGE_BOX_HIDDEN;
-      this.drawState = -1;
+    switch (this.drawState) {
+      case 0: {
+        const questLog = this.ow.game as unknown as { questLogState?: number };
+        if (questLog.questLogState === C.QL_STATE_PLAYBACK) textFlags.autoScroll = true;
+        this.window!.frame = this.ow.control.msgIsSignpost ? "signpost" : "dialogue";
+        this.drawState++;
+        break;
+      }
+      case 1:
+        if (this.window) this.window.visible = true;
+        this.drawState++;
+        break;
+      case 2:
+        if (!this.printer?.active) {
+          this.type = FIELD_MESSAGE_BOX_HIDDEN;
+          this.DestroyTask_DrawFieldMessageBox();
+        }
+        break;
     }
   }
 
+  update(): void { this.Task_DrawFieldMessageBox(); }
+
   /** HideFieldMessageBox */
-  hide(): void {
-    this.drawState = -1;
+  HideFieldMessageBox(): void {
+    this.DestroyTask_DrawFieldMessageBox();
     this.printer = undefined;
     if (this.window) {
       this.ow.windows.remove(this.window);
@@ -121,7 +176,21 @@ export class FieldMessageBox {
     this.type = FIELD_MESSAGE_BOX_HIDDEN;
   }
 
-  isHidden(): boolean {
+  hide(): void { this.HideFieldMessageBox(); }
+
+  GetFieldMessageBoxType(): number { return this.type; }
+
+  IsFieldMessageBoxHidden(): boolean {
     return this.type === FIELD_MESSAGE_BOX_HIDDEN;
+  }
+
+  isHidden(): boolean { return this.IsFieldMessageBoxHidden(); }
+
+  ReplaceFieldMessageWithFrame(): void {
+    this.DestroyTask_DrawFieldMessageBox();
+    const window = this.ensureWindow();
+    window.frame = "std";
+    window.visible = true;
+    this.type = FIELD_MESSAGE_BOX_HIDDEN;
   }
 }

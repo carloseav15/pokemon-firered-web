@@ -5,20 +5,34 @@ import * as C from "../generated/constants";
 import { encode, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { random } from "../random";
 import { rom } from "../rom";
-import { flagSet, save, SV, varGet, varSet } from "../save";
+import { flagSet, save, SV, varGet, varSet, type MailData } from "../save";
+import { ClearMailStruct, GetMailDataForMon, GiveMailToMon2, MonHasMail, TakeMailFromMon } from "./mail";
 import {
   calculateStats, canLearnTMHM, createMon, deleteFirstMoveAndGive, genderFromPersonality, giveMove, levelFromExp, MON_HAS_MAX_MOVES,
   movesLearnedAtLevel, nickname, setDexFlag, speciesName, MON_FEMALE, MON_GENDERLESS, type Pokemon,
 } from "./pokemon";
 import { tmhmMove } from "../menus/monProgress";
 
-export type DaycareMon = { mon: Pokemon | null; steps: number };
+export type DaycareMon = { mon: Pokemon | null; steps: number; mail?: MailData };
 export type DayCare = { mons: [DaycareMon, DaycareMon]; offspringPersonality: number; stepCounter: number };
 
 const EGG_GENDER_MALE = 0x8000;
 const PARENTS_INCOMPATIBLE = 0, PARENTS_LOW_COMPATIBILITY = 20, PARENTS_MED_COMPATIBILITY = 50, PARENTS_MAX_COMPATIBILITY = 70;
 const EGG_HATCH_LEVEL = 5;
 const JAPANESE_EGG_NICKNAME = [96, 111, 139, 0xff]; // sJapaneseEggNickname "タマゴ"
+
+/** CreateEgg: setup used by script_pokemon_util.c ScriptGiveEgg. */
+export function CreateEgg(species: number, setHotSpringsLocation: boolean): Pokemon {
+  const egg = createMon(species, EGG_HATCH_LEVEL);
+  egg.pokeball = C.ITEM_POKE_BALL;
+  egg.nickname = [...JAPANESE_EGG_NICKNAME];
+  egg.friendship = rom.species[species].eggCycles;
+  egg.metLevel = 0;
+  (egg as Pokemon & { language?: number }).language = C.LANGUAGE_JAPANESE;
+  if (setHotSpringsLocation) egg.metLocation = C.METLOC_SPECIAL_EGG;
+  egg.isEgg = true;
+  return egg;
+}
 
 export function daycare(): DayCare {
   const s = save as unknown as { daycare?: DayCare };
@@ -42,6 +56,10 @@ const genderOf = (mon: Pokemon): number => genderFromPersonality(mon.species, mo
 function storePokemonInDaycare(partyIndex: number, slot: DaycareMon): void {
   const mon = save.party[partyIndex];
   if (!mon) return;
+  if (MonHasMail(mon)) {
+    slot.mail = GetMailDataForMon(mon);
+    TakeMailFromMon(mon);
+  } else slot.mail = undefined;
   // BoxMonRestorePP: the box form keeps full PP; status and HP are recalculated on withdrawal.
   mon.pp = mon.moves.map((m, i) => (m ? Math.floor(rom.moves[m].pp * (5 + ((mon.ppBonuses >> (i * 2)) & 3)) / 5) : 0));
   slot.mon = mon;
@@ -69,6 +87,11 @@ function takeFromDaycare(slot: DaycareMon): number {
   }
   mon.hp = mon.stats[0];
   mon.status = 0;
+  if (slot.mail?.itemId) {
+    GiveMailToMon2(mon, slot.mail);
+    ClearMailStruct(slot.mail);
+    slot.mail = undefined;
+  }
   save.party.push(mon);
   slot.mon = null;
   slot.steps = 0;

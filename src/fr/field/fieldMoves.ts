@@ -14,11 +14,14 @@ import { Sprite } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
 import { cdata, incbin } from "../hw/assets";
 import { DATA_ROOT, rom } from "../rom";
-import { flagSet, incrementGameStat, save } from "../save";
+import { flagGet, flagSet, incrementGameStat, save, varSet, SV } from "../save";
 import { stringVars } from "../gba/charmap";
+import { SetWeatherScreenFadeOut, WeatherProcessingIdle } from "./weather";
 import { canvas, rgb555, spriteSheet, tilemapCanvas } from "./gfx4bpp";
+import { MAP_OFFSET, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
+import type { Game } from "../game";
 import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_FIELD_MOVE, PLAYER_AVATAR_GFX_RIDE, PlayerAvatar } from "./playerAvatar";
 
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
@@ -29,6 +32,8 @@ const SHOW_MON_CRY_NO_DUCKING = 0x80000000;
 
 export class FieldMoveEffects {
   readonly overlays = new Set<Overlay>();
+  private cutGrassSprites: Sprite[] = [];
+  private cutGrassCleanupDone = false;
   /** FLDEFF_SET_FUNC_TO_DATA: the callback run once the show-mon sequence is over. */
   private showMonCallback: (() => void) | null = null;
   private scheduleOpenDottedHole = false;
@@ -41,39 +46,70 @@ export class FieldMoveEffects {
 
   setScheduleOpenDottedHole(schedule: boolean): void { this.scheduleOpenDottedHole = schedule; }
 
+  /** FieldCallback_CutTree in fldeff_cut.c. */
+  FieldCallback_CutTree(partyIndex: number): void {
+    this.args[0] = partyIndex;
+    this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_FldEffCut"));
+  }
+
+  /** FieldCallback_CutGrass. */
+  FieldCallback_CutGrass(partyIndex: number): void {
+    this.args[0] = partyIndex;
+    this.ow.effects.start(C.FLDEFF_USE_CUT_ON_GRASS);
+  }
+
+  /** FldEff_UseCutOnTree. */
+  FldEff_UseCutOnTree(): void {
+    this.CreateFieldEffectShowMon(() => this.FieldMoveCallback_CutTree());
+    incrementGameStat(C.GAME_STAT_USED_CUT);
+  }
+
+  /** FldEff_UseCutOnGrass. */
+  FldEff_UseCutOnGrass(): void {
+    this.CreateFieldEffectShowMon(() => this.FieldMoveCallback_CutGrass());
+    incrementGameStat(C.GAME_STAT_USED_CUT);
+  }
+
+  /** FieldMoveCallback_CutGrass, called after the show-mon effect finishes. */
+  FieldMoveCallback_CutGrass(): void {
+    this.remove(C.FLDEFF_USE_CUT_ON_GRASS);
+    if (this.scheduleOpenDottedHole) {
+      this.scheduleOpenDottedHole = false;
+      this.openDottedHoleDoor();
+    } else this.FldEff_CutGrass();
+  }
+
+  /** FieldMoveCallback_CutTree. */
+  FieldMoveCallback_CutTree(): void {
+    sound.playSE(C.SE_M_CUT);
+    this.remove(C.FLDEFF_USE_CUT_ON_TREE);
+    this.ow.script.ScriptContext_Enable();
+  }
+
   /** FieldEffectStart: returns false when the id has no task-style handler here. */
   start(id: number): boolean {
     switch (id) {
       case C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT: this.showMonInit(); return true;
       case C.FLDEFF_FIELD_MOVE_SHOW_MON: this.showMon(); return true;
       case C.FLDEFF_USE_CUT_ON_TREE:
-        this.createShowMon(() => { sound.playSE(C.SE_M_CUT); this.remove(C.FLDEFF_USE_CUT_ON_TREE); this.ow.script.enable(); });
-        incrementGameStat(C.GAME_STAT_USED_CUT);
+        this.FldEff_UseCutOnTree();
         return true;
       case C.FLDEFF_USE_CUT_ON_GRASS:
-        this.createShowMon(() => {
-          this.remove(C.FLDEFF_USE_CUT_ON_GRASS);
-          if (this.scheduleOpenDottedHole) {
-            this.scheduleOpenDottedHole = false;
-            this.openDottedHoleDoor();
-          } else this.cutGrass();
-        });
-        incrementGameStat(C.GAME_STAT_USED_CUT);
+        this.FldEff_UseCutOnGrass();
         return true;
       case C.FLDEFF_USE_ROCK_SMASH:
-        this.createShowMon(() => { sound.playSE(C.SE_M_ROCK_THROW); this.remove(C.FLDEFF_USE_ROCK_SMASH); this.ow.script.enable(); });
-        incrementGameStat(C.GAME_STAT_USED_ROCK_SMASH);
+        this.FldEff_UseRockSmash();
         return true;
       case C.FLDEFF_USE_STRENGTH:
-        this.createShowMon(() => { this.remove(C.FLDEFF_USE_STRENGTH); this.ow.script.enable(); });
+        this.CreateFieldEffectShowMon(() => { this.remove(C.FLDEFF_USE_STRENGTH); this.ow.script.ScriptContext_Enable(); });
         stringVars.var1 = Uint8Array.from(save.party[this.args[0]]?.nickname ?? [0xff]);
         return true;
       case C.FLDEFF_USE_DIG:
-        this.createShowMon(() => { this.remove(C.FLDEFF_USE_DIG); this.ow.resetInitialPlayerAvatarState(); this.startEscapeRope(); });
+        this.CreateFieldEffectShowMon(() => { this.remove(C.FLDEFF_USE_DIG); this.ow.resetInitialPlayerAvatarState(); this.startEscapeRope(); });
         this.ow.player.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);
         return true;
       case C.FLDEFF_USE_TELEPORT:
-        this.createShowMon(() => { this.remove(C.FLDEFF_USE_TELEPORT); this.startTeleport(); });
+        this.CreateFieldEffectShowMon(() => { this.remove(C.FLDEFF_USE_TELEPORT); this.startTeleport(); });
         this.ow.player.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);
         return true;
       case C.FLDEFF_USE_SURF: this.useSurf(); return true;
@@ -81,7 +117,7 @@ export class FieldMoveEffects {
       case C.FLDEFF_USE_DIVE: this.remove(id); return true; // no Dive maps in FireRed
       case C.FLDEFF_POKECENTER_HEAL: this.glowingPokeballs(C.FLDEFF_POKECENTER_HEAL, 93, 36, true); return true;
       case C.FLDEFF_HALL_OF_FAME_RECORD: this.glowingPokeballs(C.FLDEFF_HALL_OF_FAME_RECORD, 117, 60, false); return true;
-      case C.FLDEFF_SWEET_SCENT: this.sweetScent(); return true;
+      case C.FLDEFF_SWEET_SCENT: this.FieldCallback_SweetScent(); return true;
       case C.FLDEFF_PHOTO_FLASH: this.photoFlash(); return true;
       case C.FLDEFF_PCTURN_ON: this.remove(id); return true;
       default: return false;
@@ -91,61 +127,79 @@ export class FieldMoveEffects {
   // ---------------------------------------------------------------- show mon
 
   /** CreateFieldEffectShowMon + Task_FieldEffectShowMon_* (fldeff_rocksmash.c) */
-  createShowMon(callback: () => void): void {
+  CreateFieldEffectShowMon(callback: () => void): number {
     this.showMonCallback = callback;
     const ow = this.ow;
-    const player = ow.player.object;
-    ow.controlsLocked = true;
-    ow.player.preventStep = true;
-    let state = 0;
-    const id = tasks.create(() => {
-      switch (state) {
-        case 0:
-          if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-            // fldeff_rocksmash.c: underwater maps skip the player summon
-            // animation and start the show-mon field effect immediately.
-            if (ow.header.mapType === C.MAP_TYPE_UNDERWATER) {
-              this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
-              state = 2;
-            } else {
-              ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
-              player.sprite.startAnim(ANIM_FIELD_MOVE);
-              ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
-              state = 1;
-            }
-          }
-          break;
-        case 1:
-          if (ow.objects.isHeldMovementFinished(player)) {
-            this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
-            state = 2;
-          }
-          break;
-        case 2:
-          if (!this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) {
-            const facing = player.facingDirection;
-            ow.player.setState(ow.player.currentStateId());
-            player.sprite.startAnim([0, 0, 1, 2, 3][facing] ?? 0);
-            this.remove(C.FLDEFF_FIELD_MOVE_SHOW_MON);
-            state = 3;
-          }
-          break;
-        case 3: {
-          const cb = this.showMonCallback;
-          this.showMonCallback = null;
-          cb?.();
-          ow.player.preventStep = false;
-          tasks.destroy(id);
-          break;
-        }
+    const taskState = { id: 0, state: 0 };
+    taskState.id = tasks.create(() => {
+      switch (taskState.state) {
+        case 0: this.Task_FieldEffectShowMon_Init(taskState); break;
+        case 1: this.Task_FieldEffectShowMon_WaitPlayerAnim(taskState); break;
+        case 2: this.Task_FieldEffectShowMon_WaitFldeff(taskState); break;
+        case 3: this.Task_FieldEffectShowMon_Cleanup(taskState); break;
       }
     }, 8);
+    return taskState.id;
+  }
+
+  Task_FieldEffectShowMon_Init(task: { id: number; state: number }): void {
+    const ow = this.ow, player = ow.player.object;
+    ow.controlsLocked = true;
+    ow.player.preventStep = true;
+    if (ow.objects.isMovementOverridden(player) && !ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return;
+    if (ow.header.mapType === C.MAP_TYPE_UNDERWATER) {
+      this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
+      task.state = 2;
+    } else {
+      ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
+      player.sprite.startAnim(ANIM_FIELD_MOVE);
+      ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
+      task.state = 1;
+    }
+  }
+
+  Task_FieldEffectShowMon_WaitPlayerAnim(task: { id: number; state: number }): void {
+    if (!this.ow.objects.isHeldMovementFinished(this.ow.player.object)) return;
+    this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
+    task.state = 2;
+  }
+
+  Task_FieldEffectShowMon_WaitFldeff(task: { id: number; state: number }): void {
+    if (this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) return;
+    const player = this.ow.player.object;
+    this.args[1] = player.facingDirection;
+    this.args[2] = ({ [C.DIR_SOUTH]: 0, [C.DIR_NORTH]: 1, [C.DIR_WEST]: 2, [C.DIR_EAST]: 3 } as Record<number, number>)[player.facingDirection] ?? 0;
+    this.ow.player.setState(this.ow.player.currentStateId());
+    player.sprite.startAnim(this.args[2]);
+    this.remove(C.FLDEFF_FIELD_MOVE_SHOW_MON);
+    task.state = 3;
+  }
+
+  Task_FieldEffectShowMon_Cleanup(task: { id: number; state: number }): void {
+    const callback = this.showMonCallback;
+    this.showMonCallback = null;
+    callback?.();
+    this.ow.player.preventStep = false;
+    tasks.destroy(task.id);
   }
 
   /** Common entry used by the task handlers (adds to the active list first). */
   fieldEffectStart(id: number): void {
     this.active.add(id);
     this.start(id);
+  }
+
+  /** FldEff_UseRockSmash: CreateFieldEffectShowMon plus the use counter. */
+  FldEff_UseRockSmash(): void {
+    this.CreateFieldEffectShowMon(() => this.StartRockSmashFieldEffect());
+    incrementGameStat(C.GAME_STAT_USED_ROCK_SMASH);
+  }
+
+  /** StartRockSmashFieldEffect: finish the move animation and resume its script. */
+  StartRockSmashFieldEffect(): void {
+    sound.playSE(C.SE_M_ROCK_THROW);
+    this.remove(C.FLDEFF_USE_ROCK_SMASH);
+    this.ow.script.ScriptContext_Enable();
   }
 
   /** FldEff_FieldMoveShowMonInit */
@@ -428,23 +482,82 @@ export class FieldMoveEffects {
   // ---------------------------------------------------------------- cut grass
 
   /** FldEff_CutGrass: mows the 3×3 area in front of the player (sCutGrassMetatileMapping). */
-  private cutGrass(): void {
+  FldEff_CutGrass(): void {
     sound.playSE(C.SE_M_CUT);
     const ow = this.ow;
     const p = ow.player.object;
     const mapping = cutGrassMapping();
-    const cx = p.currentCoords.x, cy = p.currentCoords.y;
+    const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
+    const cx = p.currentCoords.x + dx, cy = p.currentCoords.y + dy;
     for (let y = cy - 1; y <= cy + 1; y++) {
       for (let x = cx - 1; x <= cx + 1; x++) {
         if (ow.map.elevationAt(x, y) !== p.currentElevation) continue;
-        const id = ow.map.metatileIdAt(x, y);
-        for (const [from, to] of mapping) if (id === from) ow.map.setMetatileIdAt(x, y, to);
+        this.SetCutGrassMetatileAt(x, y, mapping);
       }
     }
     ow.renderer?.invalidate();
+    this.active.add(C.FLDEFF_CUT_GRASS);
+    this.cutGrassSprites = [];
+    this.cutGrassCleanupDone = false;
+    const image = spriteSheet(incbin("gFieldEffectObjectPic_CutGrass"), incbin16le(incbin("gFieldEffectPal_CutGrass")), 8, 8);
+    for (let i = 0; i < 8; i++) {
+      const sprite = new Sprite();
+      sprite.width = sprite.height = 8;
+      sprite.centerToCornerVecX = sprite.centerToCornerVecY = -4;
+      sprite.x = p.sprite.x + 8;
+      sprite.y = p.sprite.y + 20;
+      sprite.priority = 1;
+      sprite.subpriority = 0;
+      sprite.data[0] = 8;
+      sprite.data[1] = 0;
+      sprite.data[2] = i * 32;
+      sprite.data[3] = 0;
+      sprite.draw = (ctx, x, y) => ctx.drawImage(image, x, y);
+      sprite.callback = (s) => this.SpriteCallback_CutGrass_Init(s);
+      ow.sprites.add(sprite);
+      this.cutGrassSprites.push(sprite);
+    }
+  }
+
+  /** SetCutGrassMetatileAt: replace a source metatile using the C mapping table. */
+  SetCutGrassMetatileAt(x: number, y: number, mapping = cutGrassMapping()): void {
+    const metatileId = this.ow.map.metatileIdAt(x, y);
+    for (const [from, to] of mapping) {
+      if (from === metatileId) {
+        this.ow.map.setMetatileIdAt(x, y, to);
+        return;
+      }
+    }
+  }
+
+  /** SpriteCallback_CutGrass_Init initializes the C sprite's data fields. */
+  SpriteCallback_CutGrass_Init(sprite: Sprite): void {
+    sprite.data[0] = 8; sprite.data[1] = 0; sprite.data[3] = 0;
+    sprite.callback = (s) => this.SpriteCallback_CutGrass_Run(s);
+  }
+
+  /** SpriteCallback_CutGrass_Run: eight particles orbit and expand for 29 frames. */
+  SpriteCallback_CutGrass_Run(sprite: Sprite): void {
+    sprite.x2 = Math.round(Math.sin(sprite.data[2] * Math.PI / 128) * sprite.data[0]);
+    sprite.y2 = Math.round(Math.cos(sprite.data[2] * Math.PI / 128) * sprite.data[0]);
+    sprite.data[2] = (sprite.data[2] + 8) & 0xff;
+    sprite.data[0]++;
+    sprite.data[0] += sprite.data[3] >> 2;
+    sprite.data[3]++;
+    if (sprite.data[1] !== 28) sprite.data[1]++;
+    else this.SpriteCallback_CutGrass_Cleanup(sprite);
+  }
+
+  /** SpriteCallback_CutGrass_Cleanup removes the burst and restores field controls. */
+  SpriteCallback_CutGrass_Cleanup(sprite: Sprite): void {
+    this.ow.sprites.destroy(sprite);
+    if (this.cutGrassCleanupDone) return;
+    this.cutGrassCleanupDone = true;
+    for (const other of this.cutGrassSprites) if (other !== sprite) this.ow.sprites.destroy(other);
+    this.cutGrassSprites = [];
     this.remove(C.FLDEFF_CUT_GRASS);
-    ow.controlsLocked = false;
-    ow.objects.unfreezeAll();
+    this.ow.controlsLocked = false;
+    this.ow.objects.unfreezeAll();
   }
 
   /** CutMoveOpenDottedHoleDoor in field_specials.c. */
@@ -714,33 +827,75 @@ export class FieldMoveEffects {
 
   // ---------------------------------------------------------------- sweet scent / photo flash
 
-  /** FldEff_SweetScent: show mon, pink screen blend, then a wild encounter if one can happen here. */
-  private sweetScent(): void {
-    this.createShowMon(() => this.startSweetScent());
+  /** Unused_StartSweetscentFldeff: retained source entry point for the unused debug path. */
+  Unused_StartSweetscentFldeff(): void { this.args[0] = 0; this.FieldCallback_SweetScent(); }
+
+  /** FieldCallback_SweetScent starts FLDEFF_SWEET_SCENT; party slot is in field-effect args. */
+  FieldCallback_SweetScent(): void {
+    this.FldEff_SweetScent();
   }
 
-  private startSweetScent(): void {
+  /** FldEff_SweetScent: fade the weather, then run the show-mon animation. */
+  FldEff_SweetScent(): void {
+    SetWeatherScreenFadeOut();
+    this.CreateFieldEffectShowMon(() => this.StartSweetScentFieldEffect());
+  }
+
+  /** StartSweetScentFieldEffect: play the cry and tint the field during its wait. */
+  StartSweetScentFieldEffect(): void {
     const ow = this.ow;
     ow.controlsLocked = true;
     ow.objects.freezeAll();
     sound.playSE(C.SE_M_SWEET_SCENT);
-    let t = 0;
+    let state = 0;
+    let waitFrames = 0;
     const tint: Overlay = (ctx) => {
-      const a = Math.min(8, t < 64 ? t >> 3 : Math.max(0, 16 - (t >> 3))) / 16;
+      const a = Math.min(8, paletteFade.level) / 16;
       ctx.fillStyle = `rgba(248, 144, 200, ${a})`;
       ctx.fillRect(0, 0, 240, 160);
     };
     this.overlays.add(tint);
     const id = tasks.create(() => {
-      if (++t < 128) return;
-      this.overlays.delete(tint);
-      tasks.destroy(id);
-      this.remove(C.FLDEFF_SWEET_SCENT);
-      const p = ow.player.object;
-      if (ow.game.wild.sweetScentEncounter(ow.map.attributesOf(ow.map.metatileIdAt(p.currentCoords.x, p.currentCoords.y)))) return;
-      ow.script.setupScript(rom.label("EventScript_FailSweetScent"));
-      ow.objects.unfreezeAll();
+      if (state === 0) {
+        paletteFade.begin(4, 0, 8, [248, 0, 0]);
+        state = 1;
+        return;
+      }
+      if (state === 1) {
+        if (paletteFade.active) return;
+        if (waitFrames++ < 64) return;
+        waitFrames = 0;
+        if (this.TrySweetScentEncounter()) {
+          this.overlays.delete(tint);
+          paletteFade.clear();
+          this.remove(C.FLDEFF_SWEET_SCENT);
+          tasks.destroy(id);
+          return;
+        }
+        paletteFade.begin(4, 8, 0, [248, 0, 0]);
+        state = 2;
+        return;
+      }
+      if (paletteFade.active) return;
+      this.FailSweetScentEncounter(id, tint);
     }, 0);
+  }
+
+  /** TrySweetScentEncounter: true if SweetScentWildEncounter starts a battle. */
+  TrySweetScentEncounter(): boolean {
+    const p = this.ow.player.object;
+    return this.ow.game.wild.sweetScentEncounter(this.ow.map.attributesOf(this.ow.map.metatileIdAt(p.currentCoords.x, p.currentCoords.y)));
+  }
+
+  /** FailSweetScentEncounter: restore weather and run the source failure script. */
+  FailSweetScentEncounter(taskId: number, tint: Overlay): void {
+    this.overlays.delete(tint);
+    paletteFade.clear();
+    WeatherProcessingIdle();
+    this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_FailSweetScent"));
+    this.ow.objects.unfreezeAll();
+    this.remove(C.FLDEFF_SWEET_SCENT);
+    tasks.destroy(taskId);
   }
 
   /** FldEff_PhotoFlash (Trainer card photo / Celadon photographer): a white flash. */
@@ -982,6 +1137,39 @@ function cutGrassMapping(): Array<[number, number]> {
   const k = rom.constants;
   grassMapping = pairs.filter(([a, b]) => a in k && b in k).map(([a, b]) => [k[a], k[b]]);
   return grassMapping;
+}
+
+/** MetatileAtCoordsIsGrassTile from fldeff_cut.c. */
+export function MetatileAtCoordsIsGrassTile(ow: Overworld, x: number, y: number): boolean {
+  return (ow.map.attributeAt(x, y, METATILE_ATTRIBUTE_TERRAIN) & C.TILE_TERRAIN_GRASS) !== 0;
+}
+
+/**
+ * SetUpFieldMove_Cut. Returns the post-menu field callback selected by the C
+ * checks: dotted-hole door, cuttable tree, or same-elevation grass in front.
+ */
+export function SetUpFieldMove_Cut(game: Game): "ruin" | "tree" | "grass" | undefined {
+  const ow = game.overworld, p = ow.player.object;
+  if (!flagGet(C.FLAG_USED_CUT_ON_RUIN_VALLEY_BRAILLE)
+    && ow.mapId === "MAP_SIX_ISLAND_RUIN_VALLEY"
+    && p.currentCoords.x - MAP_OFFSET === 24
+    && p.currentCoords.y - MAP_OFFSET === 25
+    && p.facingDirection === DIR_NORTH) return "ruin";
+  const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
+  const destX = p.currentCoords.x + dx, destY = p.currentCoords.y + dy;
+  const tree = ow.objects.objectAtXYZ(destX, destY, p.currentElevation);
+  if (tree?.graphicsId === C.OBJ_EVENT_GFX_CUT_TREE) {
+    varSet(SV.LAST_TALKED, tree.localId);
+    return "tree";
+  }
+  for (let i = 0; i < 3; i++) {
+    const y = destY - 1 + i;
+    for (let j = 0; j < 3; j++) {
+      const x = destX - 1 + j;
+      if (ow.map.elevationAt(x, y) === p.currentElevation && MetatileAtCoordsIsGrassTile(ow, x, y)) return "grass";
+    }
+  }
+  return undefined;
 }
 
 // Referenced for completeness of the palette helpers.

@@ -1,6 +1,7 @@
 // battle_util.c
 
 import * as C from "../generated/constants";
+import { CountTrailingZeroBits } from "../util";
 import { random } from "../random";
 import { BS, BattleScriptPop, BattleScriptPush, BattleScriptPushCursor, r8 } from "./bscript";
 import { cdata } from "../hw/assets";
@@ -77,11 +78,6 @@ function holdEffectOf(battler: number): number {
 
 function holdEffectParamOf(battler: number): number {
   return gBattleMons[battler].item === C.ITEM_ENIGMA_BERRY ? gEnigmaBerries[battler].holdEffectParam : ItemId_GetHoldEffectParam(gBattleMons[battler].item);
-}
-
-function CountTrailingZeroBits(value: number): number {
-  for (let i = 0; i < 32; i++) if (value & (1 << i)) return i;
-  return 0;
 }
 
 // ---------------------------------------------------------------- battle_util.c

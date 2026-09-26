@@ -10,11 +10,14 @@ import { rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET } from "./fieldmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
-import { MOVING, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
+import { MOVING, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_SPEED_FASTEST, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
 import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
 import { AdjustFriendship } from "../pokemon/mon_extra";
+import { tasks } from "../gba/tasks";
+import { GetRamScript } from "../script/context";
+import { IsEscalatorMoving, StartEscalator, StopEscalator } from "./specialFieldAnim";
 
 export type FieldInput = {
   pressedAButton: boolean;
@@ -73,12 +76,14 @@ export class FieldControl {
     const forcedMove = MB.MetatileBehavior_IsForcedMovementTile(this.GetPlayerCurMetatileBehavior());
     const tile = player.tileTransitionState;
     if ((tile === T_TILE_CENTER && !forcedMove) || tile === T_NOT_MOVING) {
-      if ((newKeys & START_BUTTON) && !(player.flags & PLAYER_AVATAR_FLAG_FORCED)) input.pressedStartButton = true;
-      if (!(player.flags & PLAYER_AVATAR_FLAG_FORCED)) {
-        if (newKeys & SELECT_BUTTON) input.pressedSelectButton = true;
-        if (newKeys & A_BUTTON) input.pressedAButton = true;
-        if (newKeys & B_BUTTON) input.pressedBButton = true;
-        if (newKeys & R_BUTTON) input.pressedRButton = true;
+      if (player.GetPlayerSpeed() !== PLAYER_SPEED_FASTEST) {
+        if ((newKeys & START_BUTTON) && !(player.flags & PLAYER_AVATAR_FLAG_FORCED)) input.pressedStartButton = true;
+        if (!(player.flags & PLAYER_AVATAR_FLAG_FORCED)) {
+          if (newKeys & SELECT_BUTTON) input.pressedSelectButton = true;
+          if (newKeys & A_BUTTON) input.pressedAButton = true;
+          if (newKeys & B_BUTTON) input.pressedBButton = true;
+          if (newKeys & R_BUTTON) input.pressedRButton = true;
+        }
       }
       if (heldKeys & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT)) {
         input.heldDirection = true;
@@ -97,16 +102,16 @@ export class FieldControl {
 
   /** FieldInput_HandleCancelSignpost */
   private handleCancelSignpost(input: FieldInput): void {
-    if (!this.ow.script.isEnabled()) return;
+    if (!this.ow.script.ScriptContext_IsEnabled()) return;
     if (this.walkAwayInhibitTimer !== 0) {
       this.walkAwayInhibitTimer--;
       return;
     }
-    if (!this.msgBoxCancelable) return;
+    if (!this.CanWalkAwayToCancelMsgBox()) return;
     const facing = this.ow.player.object.facingDirection;
     if ((input.dpadDirection !== 0 && facing !== input.dpadDirection) || input.pressedStartButton) {
-      if (input.dpadDirection !== 0 && this.msgBoxWalkawayDisabled) return;
-      this.ow.script.setupScript(rom.label("EventScript_CancelMessageBox"));
+      if (input.dpadDirection !== 0 && this.IsMsgBoxWalkawayDisabled()) return;
+      this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_CancelMessageBox"));
       this.ow.controlsLocked = true;
     }
   }
@@ -169,8 +174,18 @@ export class FieldControl {
   resetFacingNpcOrSignpostVars(): void {
     this.ow.selectedObject = 0;
     varSet(SV.TEXT_COLOR, 0xff);
-    this.msgIsSignpost = false;
+    this.MsgSetNotSignpost();
   }
+
+  DisableMsgBoxWalkaway(): void { this.msgBoxWalkawayDisabled = true; }
+  EnableMsgBoxWalkaway(): void { this.msgBoxWalkawayDisabled = false; }
+  IsMsgBoxWalkawayDisabled(): boolean { return this.msgBoxWalkawayDisabled; }
+  ClearMsgBoxCancelableState(): void { this.msgBoxCancelable = false; }
+  CanWalkAwayToCancelMsgBox(): boolean { return this.msgBoxCancelable; }
+  SetWalkingIntoSignVars(): void { this.walkAwayInhibitTimer = 6; this.msgBoxCancelable = true; }
+  MsgSetSignpost(): void { this.msgIsSignpost = true; }
+  MsgSetNotSignpost(): void { this.msgIsSignpost = false; }
+  IsMsgSignpost(): boolean { return this.msgIsSignpost; }
 
   // ---------------------------------------------------------------- interactions
 
@@ -179,7 +194,7 @@ export class FieldControl {
     if (!script) return false;
     const noSound = [rom.label("PalletTown_PlayersHouse_2F_EventScript_PC"), rom.label("EventScript_PC")];
     if (!noSound.includes(script)) sound.playSE(sound.SE_SELECT);
-    this.ow.script.setupScript(script);
+    this.ow.script.ScriptContext_SetupScript(script);
     return true;
   }
 
@@ -201,7 +216,7 @@ export class FieldControl {
     this.ow.selectedObject = this.ow.objects.indexOf(object);
     varSet(SV.LAST_TALKED, object.localId);
     varSet(SV.FACING, direction);
-    return object.template?.script ?? 0;
+    return GetRamScript(object.localId, object.template?.script ?? 0);
   }
 
   private backgroundEventAt(x: number, y: number, elevation: number) {
@@ -228,7 +243,7 @@ export class FieldControl {
       case c.BG_EVENT_PLAYER_FACING_EAST: if (direction !== DIR_EAST) return 0; break;
       case c.BG_EVENT_PLAYER_FACING_WEST: if (direction !== DIR_WEST) return 0; break;
     }
-    if (this.facingSignpostType(behavior, direction) !== SIGNPOST_NA) this.msgIsSignpost = true;
+    if (this.facingSignpostType(behavior, direction) !== SIGNPOST_NA) this.MsgSetSignpost();
     varSet(SV.FACING, direction);
     return bg.script;
   }
@@ -273,7 +288,7 @@ export class FieldControl {
     ];
     for (const [check, label, signpost] of table) {
       if (check(behavior, direction)) {
-        if (signpost) this.msgIsSignpost = true;
+        if (signpost) this.MsgSetSignpost();
         return rom.label(label);
       }
     }
@@ -312,11 +327,11 @@ export class FieldControl {
         continue;
       }
       if (c.var === 0) {
-        this.ow.script.runImmediately(c.script);
+        this.ow.script.RunScriptImmediately(c.script);
         continue;
       }
       if (varGet(c.var) === (c.value & 0xff)) {
-        this.ow.script.setupScript(c.script);
+        this.ow.script.ScriptContext_SetupScript(c.script);
         return true;
       }
     }
@@ -327,16 +342,16 @@ export class FieldControl {
     this.updateHappinessStepCounter();
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior)) {
       if (updateVsSeekerStepCounter()) {
-        this.ow.script.setupScript(rom.label("EventScript_VsSeekerChargingDone"));
+        this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_VsSeekerChargingDone"));
         return true;
       }
       if (this.ow.effects.updatePoisonStepCounter()) {
-        this.ow.script.setupScript(rom.label("EventScript_FieldPoison"));
+        this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_FieldPoison"));
         return true;
       }
       if (this.ow.game.shouldEggHatch()) {
         incrementGameStat(rom.constants.GAME_STAT_HATCHED_EGGS ?? 0);
-        this.ow.script.setupScript(rom.label("EventScript_EggHatch"));
+        this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_EggHatch"));
         return true;
       }
     }
@@ -370,10 +385,9 @@ export class FieldControl {
     const type = this.facingSignpostType(behavior, direction);
     const setup = (script: number) => {
       varSet(SV.FACING, direction);
-      this.ow.script.setupScript(script);
-      this.walkAwayInhibitTimer = 6;
-      this.msgBoxCancelable = true;
-      this.msgIsSignpost = true;
+      this.ow.script.ScriptContext_SetupScript(script);
+      this.SetWalkingIntoSignVars();
+      this.MsgSetSignpost();
       return true;
     };
     if (type === SIGNPOST_POKECENTER) return setup(rom.label("EventScript_PokecenterSign"));
@@ -455,7 +469,19 @@ export class FieldControl {
     this.ow.storeInitialPlayerAvatarState();
     this.setupWarp(warpIndex, position);
     if (MB.MetatileBehavior_IsEscalator(behavior)) {
-      this.ow.doWarp();
+      // special_field_anim.c draws the escalator's three transition stages
+      // before the field effect begins the map fade. field_effect.c also moves
+      // the avatar along the rail; this web path preserves the staged tiles
+      // and delays the warp until their source task reaches its final stage.
+      this.ow.controlsLocked = true;
+      this.ow.objects.freezeAll();
+      StartEscalator(this.ow, behavior === MB.MB_UP_ESCALATOR);
+      tasks.create((taskId) => {
+        if (IsEscalatorMoving()) return;
+        StopEscalator();
+        tasks.destroy(taskId);
+        this.ow.doWarp();
+      }, 0);
       return true;
     }
     if (MB.MetatileBehavior_IsWarpPad(behavior)) {
@@ -464,7 +490,7 @@ export class FieldControl {
     }
     if (MB.MetatileBehavior_IsFallWarp(behavior)) {
       this.ow.resetInitialPlayerAvatarState();
-      this.ow.script.setupScript(rom.label("EventScript_DoFallWarp"));
+      this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_DoFallWarp"));
       return true;
     }
     this.ow.doWarp();

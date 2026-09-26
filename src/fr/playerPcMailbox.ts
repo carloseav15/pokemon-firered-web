@@ -8,8 +8,7 @@
 //    (Task_ReturnToTopMenu) hands control back to the top menu.
 //  - The C returns from ReadMail / the party menu through CB2_ReturnToField and
 //    gFieldCallback; here each return re-creates the scene (MailboxScene_Init).
-//  - save.pcMail has no empty slots: PCMailCompaction and ClearMailStruct
-//    reduce to removing the entry.
+//  - The list indexes compacted SaveBlock1 mail slots 6 through 15.
 //  - The help system (SetHelpContext) is out of scope.
 
 import { sound } from "./audio/sound";
@@ -48,6 +47,7 @@ import {
   MailboxPC_InitListMenu, MailboxPC_RemoveWindow,
 } from "./mailboxPc";
 import { openMailView } from "./menus/mailView";
+import { ClearPCMailEntry, CountPCMail as CountSavePCMail, GetPCMailEntry, PCMailCompaction as CompactSavePCMail } from "./pokemon/mail";
 import { mailLines } from "./pokemon/mail";
 import { addBagItem, itemName } from "./pokemon/items";
 import { CalculatePlayerPartyCount } from "./pokemon/mon";
@@ -186,11 +186,11 @@ function Task_SetPageItemVars(_taskId: number): void {
 }
 
 function CountPCMail(): number {
-  return save.pcMail.length;
+  return CountSavePCMail();
 }
 
 function PCMailCompaction(): void {
-  // save.pcMail has no empty slots.
+  CompactSavePCMail();
 }
 
 /** SELECTED_MAIL */
@@ -238,7 +238,7 @@ function Task_MailboxPcHandleInput(taskId: number): void {
 }
 
 function Task_PrintWhatToDoWithSelectedMail(taskId: number): void {
-  const author = save.pcMail[SelectedMailIndex()]?.message.author ?? [];
+  const author = GetPCMailEntry(SelectedMailIndex())?.message.author ?? [];
   const name = author.length ? author : save.playerName;
   stringVars.var1 = Uint8Array.from([...name.filter((b) => b !== 0xff), 0xff]);
   stringVars.var4 = expandPlaceholders(rom.text("gText_WhatWouldYouLikeToDoWithPlayersMail"));
@@ -291,7 +291,8 @@ function Task_WaitFadeAndReadSelectedMail(taskId: number): void {
     FreeAllWindowBuffers();
     tasks.destroy(taskId);
     // ReadMail(&SELECTED_MAIL, CB2_SetCbToReturnToMailbox, 1): the mail viewer adapter (menus/mailView.ts).
-    const slot = save.pcMail[SelectedMailIndex()];
+    const slot = GetPCMailEntry(SelectedMailIndex());
+    if (!slot) return;
     SetMainCallback2(null);
     openMailView(decode(itemName(slot.item)), mailLines(slot.message.words), decode(Uint8Array.from(slot.message.author)), CB2_SetCbToReturnToMailbox);
   }
@@ -344,12 +345,13 @@ function Task_MoveToBagYesNoMenuHandleInput(taskId: number): void {
 
 function Task_TryPutMailInBag_DestroyMsgIfSuccessful(taskId: number): void {
   const index = SelectedMailIndex();
-  const mail = save.pcMail[index];
+  const mail = GetPCMailEntry(index);
+  if (!mail) return;
   if (!addBagItem(mail.item, 1)) {
     DisplayItemMessageOnField(taskId, FONT_NORMAL, rom.text("gText_BagIsFull"), Task_PlayerPcExitMailSubmenu);
   } else {
     DisplayItemMessageOnField(taskId, FONT_NORMAL, rom.text("gText_MailReturnedToBagMessageErased"), Task_PlayerPcExitMailSubmenu);
-    save.pcMail.splice(index, 1); // ClearMailStruct(mail); PCMailCompaction()
+    ClearPCMailEntry(index);
     gPlayerPcMenuManager.count--;
     if (gPlayerPcMenuManager.count < gPlayerPcMenuManager.pageItems + gPlayerPcMenuManager.cursorPos) {
       if (gPlayerPcMenuManager.cursorPos !== 0) gPlayerPcMenuManager.cursorPos--;

@@ -4,7 +4,7 @@
 
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
-import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON } from "../gba/input";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON, JOY_NEW } from "../gba/input";
 import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { incbin } from "./assets";
@@ -16,9 +16,13 @@ import {
 } from "./sprite";
 import { AddTextPrinterParameterized4 } from "./text";
 import { gSineTable } from "./trig";
+import { GetValidMonIconPalettePtr } from "../pokemonIcon";
+import { ClearStdWindowAndFrame, LoadUserWindowGfx } from "./menu";
+import { DrawTextBorderOuter } from "./menuHelpers";
 import {
-  BlitBitmapRectToWindow, BlitBitmapToWindow, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, GetWindowAttribute, PIXEL_FILL,
-  PutWindowRectTilemapOverridePalette, PutWindowTilemap, ScrollWindow, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH,
+  AddWindow, BlitBitmapRectToWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_GFX, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer,
+  FillWindowPixelRect, GetWindowAttribute, PIXEL_FILL, PutWindowRectTilemapOverridePalette, PutWindowTilemap, RemoveWindow, ScrollWindow,
+  SetWindowAttribute, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, type WindowTemplate,
 } from "./window";
 
 export const LIST_NOTHING_CHOSEN = -1;
@@ -130,6 +134,48 @@ export function ListMenu_ProcessInput(listTaskId: number): number {
   return LIST_NOTHING_CHOSEN;
 }
 
+/** list_menu.c ListMenuDummyTask is intentionally empty in the source. */
+export function ListMenuDummyTask(_taskId: number): void {}
+
+type MysteryGiftMenuState = { state: number; windowId: number; listTaskId: number; currentItemId: number };
+const mysteryGiftMenu: MysteryGiftMenuState = { state: 0, windowId: -1, listTaskId: -1, currentItemId: LIST_NOTHING_CHOSEN };
+
+/** DoMysteryGiftListMenu: C's three-step window/list lifecycle, called once per frame. */
+export function DoMysteryGiftListMenu(windowTemplate: WindowTemplate, listMenuTemplate: ListMenuTemplate, mode: number, tileNum: number, palOffset: number): number {
+  switch (mysteryGiftMenu.state) {
+    case 0:
+      mysteryGiftMenu.windowId = AddWindow(windowTemplate);
+      if (mode === 2) LoadUserWindowGfx(mysteryGiftMenu.windowId, tileNum, palOffset);
+      if (mode === 1 || mode === 2) DrawTextBorderOuter(mysteryGiftMenu.windowId, tileNum, palOffset / 16);
+      mysteryGiftMenu.listTaskId = ListMenuInit({ ...listMenuTemplate, windowId: mysteryGiftMenu.windowId }, 0, 0);
+      CopyWindowToVram(mysteryGiftMenu.windowId, COPYWIN_MAP);
+      mysteryGiftMenu.currentItemId = LIST_NOTHING_CHOSEN;
+      mysteryGiftMenu.state = 1;
+      break;
+    case 1:
+      mysteryGiftMenu.currentItemId = ListMenu_ProcessInput(mysteryGiftMenu.listTaskId);
+      if (JOY_NEW(A_BUTTON)) mysteryGiftMenu.state = 2;
+      if (JOY_NEW(B_BUTTON)) {
+        mysteryGiftMenu.currentItemId = LIST_CANCEL;
+        mysteryGiftMenu.state = 2;
+      }
+      if (mysteryGiftMenu.state === 2) {
+        if (mode === 0) ClearWindowTilemap(mysteryGiftMenu.windowId);
+        else if (mode === 1 || mode === 2) ClearStdWindowAndFrame(mysteryGiftMenu.windowId, false);
+        CopyWindowToVram(mysteryGiftMenu.windowId, COPYWIN_MAP);
+      }
+      break;
+    case 2: {
+      const result = mysteryGiftMenu.currentItemId;
+      DestroyListMenuTask(mysteryGiftMenu.listTaskId);
+      RemoveWindow(mysteryGiftMenu.windowId);
+      mysteryGiftMenu.state = 0;
+      return result;
+    }
+  }
+  return LIST_NOTHING_CHOSEN;
+}
+
 export function DestroyListMenuTask(listTaskId: number): { cursorPos: number; itemsAbove: number } {
   const list = listMenuOf(listTaskId);
   if (list.taskId !== TAIL_SENTINEL) ListMenuRemoveCursorObject(list.taskId, list.template.cursorKind - 2);
@@ -155,6 +201,48 @@ export function ListMenuGetYCoordForPrintingArrowCursor(listTaskId: number): num
   const list = listMenuOf(listTaskId);
   const yMultiplier = GetFontAttribute(list.template.fontId, FONTATTR_MAX_LETTER_HEIGHT) + list.template.itemVerticalPadding;
   return list.itemsAbove * yMultiplier + list.template.upText_Y;
+}
+
+/** ChangeListMenuPals. */
+export function ChangeListMenuPals(listTaskId: number, cursorPal: number, fillValue: number, cursorShadowPal: number): void {
+  const template = listMenuOf(listTaskId).template;
+  template.cursorPal = cursorPal;
+  template.fillValue = fillValue;
+  template.cursorShadowPal = cursorShadowPal;
+}
+
+/** ChangeListMenuCoords. */
+export function ChangeListMenuCoords(listTaskId: number, x: number, y: number): void {
+  const windowId = listMenuOf(listTaskId).template.windowId;
+  SetWindowAttribute(windowId, WINDOW_TILEMAP_LEFT, x);
+  SetWindowAttribute(windowId, WINDOW_TILEMAP_TOP, y);
+}
+
+/** ListMenuTestInput: process a single up/down input without drawing or callbacks. */
+export function ListMenuTestInput(template: ListMenuTemplate, cursorPos: number, itemsAbove: number, keys: number): { result: number; cursorPos: number; itemsAbove: number } {
+  const list: ListMenu = { template: { ...template }, cursorPos, itemsAbove, taskId: TAIL_SENTINEL };
+  if (keys === DPAD_UP) ListMenuChangeSelection(list, false, 1, false);
+  if (keys === DPAD_DOWN) ListMenuChangeSelection(list, false, 1, true);
+  return { result: LIST_NOTHING_CHOSEN, cursorPos: list.cursorPos, itemsAbove: list.itemsAbove };
+}
+
+/** ListMenuGetCurrentItemArrayId. */
+export function ListMenuGetCurrentItemArrayId(listTaskId: number): number {
+  const list = listMenuOf(listTaskId);
+  return list.cursorPos + list.itemsAbove;
+}
+
+/** ListMenuGetTemplateField (list_menu.h LISTFIELD_* order). */
+export function ListMenuGetTemplateField(taskId: number, field: number): unknown {
+  const t = listMenuOf(taskId).template;
+  const fields: unknown[] = [t.moveCursorFunc, t.moveCursorFunc, t.totalItems, t.maxShowed, t.windowId, t.header_X, t.item_X,
+    t.cursor_X, t.upText_Y, t.cursorPal, t.fillValue, t.cursorShadowPal, t.lettersSpacing, t.itemVerticalPadding, t.scrollMultiple, t.fontId, t.cursorKind];
+  return fields[field] ?? 0;
+}
+
+/** ListMenu_LoadMonIconPalette. */
+export function ListMenu_LoadMonIconPalette(palOffset: number, speciesId: number): void {
+  LoadPalette(GetValidMonIconPalettePtr(speciesId), palOffset, 32);
 }
 
 function ListMenuInitInternal(template: ListMenuTemplate, cursorPos: number, itemsAbove: number): number {
@@ -466,13 +554,46 @@ export function ListMenuAddCursorObjectInternal(cursor: CursorStruct, cursorKind
 }
 
 export function ListMenuUpdateCursorObject(taskId: number, x: number, y: number, cursorKind: number): void {
-  const c = cursors.get(taskId);
-  if (!c) return;
-  const s = gSprites[c.spriteId];
-  if (cursorKind === 0) { s.x = x + 120; s.y = y + 120; } else { s.x = x; s.y = y; }
+  if (cursorKind === 0) ListMenuUpdateRedOutlineCursorObject(taskId, x, y);
+  else if (cursorKind === 1) ListMenuUpdateRedArrowCursorObject(taskId, x, y);
 }
 
-export function ListMenuRemoveCursorObject(taskId: number, _cursorKind: number): void {
+export function ListMenuRemoveCursorObject(taskId: number, cursorKind: number): void {
+  if (cursorKind === 0) ListMenuRemoveRedOutlineCursorObject(taskId);
+  else if (cursorKind === 1) ListMenuRemoveRedArrowCursorObject(taskId);
+}
+
+export function ListMenuGetRedOutlineCursorSpriteCount(rowWidth: number, rowHeight: number): number {
+  return ListMenuSetUpRedOutlineCursorSpriteOamTable(rowWidth, rowHeight).length;
+}
+
+/** ListMenuUpdateRedOutlineCursorObject. */
+export function ListMenuUpdateRedOutlineCursorObject(taskId: number, x: number, y: number): void {
+  const c = cursors.get(taskId);
+  if (!c) return;
+  gSprites[c.spriteId].x = x + 120;
+  gSprites[c.spriteId].y = y + 120;
+}
+
+/** ListMenuRemoveRedOutlineCursorObject. */
+export function ListMenuRemoveRedOutlineCursorObject(taskId: number): void {
+  removeCursorObject(taskId);
+}
+
+/** ListMenuUpdateRedArrowCursorObject. */
+export function ListMenuUpdateRedArrowCursorObject(taskId: number, x: number, y: number): void {
+  const c = cursors.get(taskId);
+  if (!c) return;
+  gSprites[c.spriteId].x = x;
+  gSprites[c.spriteId].y = y;
+}
+
+/** ListMenuRemoveRedArrowCursorObject. */
+export function ListMenuRemoveRedArrowCursorObject(taskId: number): void {
+  removeCursorObject(taskId);
+}
+
+function removeCursorObject(taskId: number): void {
   const c = cursors.get(taskId);
   if (!c) return;
   if (c.tileTag !== TAG_NONE) FreeSpriteTilesByTag(c.tileTag);
@@ -489,7 +610,7 @@ function loadCursorGfx(cursor: CursorStruct, gfx: string, size: number): void {
 }
 
 /** ListMenuSetUpRedOutlineCursorSpriteOamTable */
-function redOutlineSubsprites(rowWidth: number, rowHeight: number): Subsprite[] {
+export function ListMenuSetUpRedOutlineCursorSpriteOamTable(rowWidth: number, rowHeight: number): Subsprite[] {
   const sub = (tile: number, x: number, y: number): Subsprite => ({ x: (x << 24) >> 24, y: (y << 24) >> 24, shape: 0, size: 0, tileOffset: tile, priority: 0 });
   const out = [sub(0, 136, 136), sub(1, rowWidth + 128, 136), sub(6, 136, rowHeight + 128), sub(7, rowWidth + 128, rowHeight + 128)];
   if (rowWidth > 16) for (let i = 8; i < rowWidth - 8; i += 8) { out.push(sub(2, i - 120, 136)); out.push(sub(5, i - 120, rowHeight + 128)); }
@@ -502,7 +623,7 @@ export function ListMenuAddRedOutlineCursorObject(cursor: CursorStruct): number 
   const taskId = tasks.create(() => {}, 0);
   const spriteId = CreateSprite({ ...gDummySpriteTemplate, tileTag: cursor.tileTag, paletteTag: cursor.palTag }, cursor.left + 120, cursor.top + 120, 0);
   const s = gSprites[spriteId];
-  const subsprites = redOutlineSubsprites(cursor.rowWidth, cursor.rowHeight);
+  const subsprites = ListMenuSetUpRedOutlineCursorSpriteOamTable(cursor.rowWidth, cursor.rowHeight);
   SetSubspriteTables(s, [{ subspriteCount: subsprites.length, subsprites }]);
   s.oam.priority = 0;
   s.subpriority = 0;
@@ -512,13 +633,18 @@ export function ListMenuAddRedOutlineCursorObject(cursor: CursorStruct): number 
   return taskId;
 }
 
+function SpriteCallback_RedArrowCursor(sp: Sprite): void {
+  sp.x2 = Math.trunc(gSineTable[sp.data[0] & 0xff] / 64);
+  sp.data[0] = (sp.data[0] + 8) & 0xffff;
+}
+
 function ListMenuAddRedArrowCursorObject(cursor: CursorStruct): number {
   loadCursorGfx(cursor, "sRedArrowGfx", 0x80);
   const taskId = tasks.create(() => {}, 0);
   const spriteId = CreateSprite({
     tileTag: cursor.tileTag, paletteTag: cursor.palTag, oam: oamData({ shape: 0, size: 1 }), anims: [[ANIMCMD_FRAME(0, 30), ANIMCMD_END]],
     images: null, affineAnims: gDummySpriteAffineAnimTable,
-    callback: (sp) => { sp.x2 = Math.trunc(gSineTable[sp.data[0] & 0xff] / 64); sp.data[0] = (sp.data[0] + 8) & 0xffff; },
+    callback: SpriteCallback_RedArrowCursor,
   }, cursor.left, cursor.top, 0);
   gSprites[spriteId].x2 = 8;
   gSprites[spriteId].y2 = 8;

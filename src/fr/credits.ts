@@ -34,8 +34,9 @@ import {
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT, WIN_RANGE,
 } from "./hw/ppu";
 import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+import { LoadCompressedSpriteSheet } from "./decompress";
 import {
-  CreateSprite, DestroySprite, FreeSpriteTilesByTag, gSprites, LoadCompressedSpriteSheet, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, TAG_NONE,
+  CreateSprite, DestroySprite, FreeSpriteTilesByTag, gSprites, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, TAG_NONE,
 } from "./hw/sprite";
 import { AddTextPrinterParameterized4 } from "./hw/text";
 import {

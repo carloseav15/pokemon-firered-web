@@ -5,6 +5,7 @@
 
 export const ROM_BASE = 0x08000000;
 export const EXTERN_BASE = 0x0f000000;
+export const RAM_SCRIPT_BASE = 0x10000000;
 export const DATA_ROOT = "/fr";
 
 export type MapObjectTemplate = {
@@ -228,6 +229,7 @@ export class Rom {
   charmap!: { chars: Record<string, number> };
 
   private loading?: Promise<void>;
+  private ramScriptBytes?: Uint8Array;
 
   /** Loads everything once; later calls (startup, then the game) share the same promise. */
   load(progress?: (label: string) => void): Promise<void> {
@@ -332,17 +334,26 @@ export class Rom {
     return this.labelByAddress.get(address);
   }
 
+  /** Register SaveBlock1's mutable RamScriptData at its browser-side virtual address. */
+  setRamScriptBytes(bytes: Uint8Array): void { this.ramScriptBytes = bytes; }
+
   /** Byte view of a script-blob pointer (texts, movement scripts, mart lists). */
   u8(address: number): number {
+    if (address >= RAM_SCRIPT_BASE && address < RAM_SCRIPT_BASE + (this.ramScriptBytes?.length ?? 0))
+      return this.ramScriptBytes![address - RAM_SCRIPT_BASE]!;
     return this.scripts[address - ROM_BASE] ?? 0xff;
   }
 
   u16(address: number): number {
+    if (address >= RAM_SCRIPT_BASE && address < RAM_SCRIPT_BASE + (this.ramScriptBytes?.length ?? 0))
+      return this.u8(address) | (this.u8(address + 1) << 8);
     const o = address - ROM_BASE;
     return this.scripts[o] | (this.scripts[o + 1] << 8);
   }
 
   u32(address: number): number {
+    if (address >= RAM_SCRIPT_BASE && address < RAM_SCRIPT_BASE + (this.ramScriptBytes?.length ?? 0))
+      return (this.u8(address) | (this.u8(address + 1) << 8) | (this.u8(address + 2) << 16) | (this.u8(address + 3) << 24)) >>> 0;
     const o = address - ROM_BASE;
     return (this.scripts[o] | (this.scripts[o + 1] << 8) | (this.scripts[o + 2] << 16) | (this.scripts[o + 3] << 24)) >>> 0;
   }

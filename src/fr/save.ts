@@ -1,8 +1,9 @@
 // SaveBlock1/SaveBlock2 equivalents and event_data.c (flags and vars).
 
-import { encode, EOS } from "./gba/charmap";
+import { CHAR_SPACE, encode, EOS } from "./gba/charmap";
 import { rom } from "./rom";
 import type { Pokemon } from "./pokemon/pokemon";
+import * as C from "./generated/constants";
 
 export const VARS_START = 0x4000;
 export const VARS_END = 0x40ff;
@@ -18,6 +19,32 @@ export type WarpData = { mapGroup: number; mapNum: number; warpId: number; x: nu
 
 export type BagPocket = Array<{ item: number; quantity: number }>;
 export type PcMailEntry = { item: number; message: { words: number[]; author: number[]; authorId: number } };
+export type MailData = { words: number[]; playerName: number[]; trainerId: number[]; species: number; itemId: number };
+export type RamScriptSave = { checksum: number; data: { magic: number; mapGroup: number; mapNum: number; objectId: number; script: number[] } };
+
+function emptyMailData(): MailData {
+  return {
+    words: new Array(C.MAIL_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED),
+    playerName: new Array(C.PLAYER_NAME_LENGTH + 1).fill(EOS),
+    trainerId: [0, 0, 0, 0],
+    species: C.SPECIES_BULBASAUR,
+    itemId: C.ITEM_NONE,
+  };
+}
+
+function mailAuthor(name: number[]): number[] {
+  const out = new Array(C.PLAYER_NAME_LENGTH + 1).fill(EOS);
+  let i = 0;
+  for (; i < C.PLAYER_NAME_LENGTH && i < name.length && name[i] !== EOS; i++) out[i] = name[i] & 0xff;
+  for (; i <= 5; i++) out[i] = CHAR_SPACE;
+  out[i] = EOS;
+  return out;
+}
+
+function mailTrainerId(id: number): number[] {
+  const value = id >>> 0;
+  return [value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff];
+}
 
 export type SaveData = {
   version: 2;
@@ -35,9 +62,9 @@ export type SaveData = {
   vars: number[];
   money: number;
   coins: number;
+  mail: MailData[];
   bag: { items: BagPocket; keyItems: BagPocket; pokeBalls: BagPocket; tmCase: BagPocket; berryPouch: BagPocket };
   pcItems: BagPocket;
-  pcMail: PcMailEntry[];
   registeredItem: number;
   party: Pokemon[];
   boxes: Array<Array<Pokemon | null>>;
@@ -47,19 +74,30 @@ export type SaveData = {
   pokedexSeen: number[];
   pokedexCaught: number[];
   gameStats: number[];
+  giftRibbons?: number[];
+  battleTower?: number[];
+  miniGameResults?: { berryCrush: number[]; pokemonJump: number[]; berryPicking: number[]; berryPowder: number };
   playTimeFrames: number;
   options: { textSpeed: number; battleScene: boolean; battleStyle: number; sound: number; buttonMode: number; frameType: number };
   savedMusic: number;
   playerAvatarFlags: number;
   facing: number;
   weather?: number;
+  weatherCycleStage?: number;
+  nationalDexMagic?: number;
+  nationalDexRseMagic?: number;
   objectEventTemplates?: unknown;
   daycare?: unknown;
   berryPowder?: number;
   trainerRematchStepCounter?: number;
   trainerRematches?: number[];
   roamer?: unknown;
+  ramScript?: RamScriptSave;
 };
+
+function emptyRamScript(): RamScriptSave {
+  return { checksum: 0, data: { magic: 0, mapGroup: 0, mapNum: 0, objectId: 0, script: new Array(995).fill(0) } };
+}
 
 const STORAGE_KEY = "pokemon-gba-web-lab.firered.v2";
 
@@ -85,9 +123,9 @@ export function newSaveData(): SaveData {
     vars: new Array(VARS_END - VARS_START + 1).fill(0),
     money: 3000,
     coins: 0,
+    mail: Array.from({ length: C.MAIL_COUNT }, emptyMailData),
     bag: { items: [], keyItems: [], pokeBalls: [], tmCase: [], berryPouch: [] },
     pcItems: [],
-    pcMail: [],
     registeredItem: 0,
     party: [],
     boxes: Array.from({ length: 14 }, () => new Array(30).fill(null)),
@@ -95,11 +133,18 @@ export function newSaveData(): SaveData {
     pokedexSeen: new Array(52).fill(0),
     pokedexCaught: new Array(52).fill(0),
     gameStats: new Array(64).fill(0),
+    giftRibbons: new Array(C.GIFT_RIBBONS_COUNT).fill(0),
+    battleTower: [],
+    miniGameResults: { berryCrush: [], pokemonJump: [], berryPicking: [], berryPowder: 0 },
     playTimeFrames: 0,
     options: { textSpeed: 1, battleScene: true, battleStyle: 0, sound: 0, buttonMode: 0, frameType: 0 },
     savedMusic: 0,
     playerAvatarFlags: 1,
     facing: 1,
+    weatherCycleStage: 0,
+    nationalDexMagic: 0,
+    nationalDexRseMagic: 0,
+    ramScript: emptyRamScript(),
   };
 }
 
@@ -107,6 +152,38 @@ export function newSaveData(): SaveData {
 export let save: SaveData = newSaveData();
 
 export function setSave(data: SaveData): void {
+  const legacy = data as SaveData & { pcMail?: PcMailEntry[] };
+  if (!Array.isArray(data.mail) || data.mail.length !== C.MAIL_COUNT) {
+    data.mail = Array.from({ length: C.MAIL_COUNT }, emptyMailData);
+    for (let i = 0; i < Math.min(10, legacy.pcMail?.length ?? 0); i++) {
+      const entry = legacy.pcMail![i];
+      const target = data.mail[C.PARTY_SIZE + i];
+      target.words = [...entry.message.words];
+      target.playerName = mailAuthor(entry.message.author);
+      target.trainerId = mailTrainerId(entry.message.authorId);
+      target.itemId = entry.item;
+    }
+    for (let i = 0; i < Math.min(C.PARTY_SIZE, data.party.length); i++) {
+      const mon = data.party[i];
+      const item = mon.heldItem;
+      if (item < C.ITEM_ORANGE_MAIL || item > C.ITEM_RETRO_MAIL) continue;
+      const slot = data.mail[i];
+      slot.words = [...(mon.mailMessage?.words ?? new Array(C.MAIL_WORDS_COUNT).fill(0xffff))];
+      slot.playerName = mailAuthor(mon.mailMessage?.author ?? data.playerName);
+      slot.trainerId = mailTrainerId(mon.mailMessage?.authorId ?? data.trainerId);
+      slot.species = mon.species;
+      slot.itemId = item;
+      mon.mail = i;
+    }
+  }
+  delete legacy.pcMail;
+  data.ramScript ??= emptyRamScript();
+  // Migrate browser saves created before event_data.c's nationalDexMagic was represented.
+  if (data.nationalDexMagic === undefined) {
+    const flag = C.FLAG_SYS_NATIONAL_DEX;
+    data.nationalDexMagic = data.vars[C.VAR_NATIONAL_DEX - VARS_START] === 0x6258
+      && (((data.flags[flag >> 3] ?? 0) & (1 << (flag & 7))) !== 0) ? 0xb9 : 0;
+  }
   save = data;
 }
 
@@ -198,6 +275,115 @@ export function flagClear(id: number): void {
     const index = id - SPECIAL_FLAGS_START;
     specialFlags[index >> 3] &= ~(1 << (index & 7));
   }
+}
+
+/** InitEventData: clear save-backed flags, vars, and temporary special flags. */
+export function InitEventData(): void {
+  save.flags.fill(0);
+  save.vars.fill(0);
+  specialFlags.fill(0);
+}
+
+/** ResetSpecialVars resets the complete gSpecialVar_0x8000..0x8014 table. */
+export function ResetSpecialVars(): void { specialVars.fill(0); }
+
+/** National Pokédex enable/disable markers from event_data.c. */
+export function DisableNationalPokedex(): void {
+  save.nationalDexMagic = 0;
+  varSet(C.VAR_NATIONAL_DEX, 0);
+  flagClear(C.FLAG_SYS_NATIONAL_DEX);
+}
+export function EnableNationalPokedex(): void {
+  save.nationalDexMagic = 0xb9;
+  varSet(C.VAR_NATIONAL_DEX, 0x6258);
+  flagSet(C.FLAG_SYS_NATIONAL_DEX);
+}
+export function IsNationalPokedexEnabled(): boolean {
+  return save.nationalDexMagic === 0xb9 && varGet(C.VAR_NATIONAL_DEX) === 0x6258 && flagGet(C.FLAG_SYS_NATIONAL_DEX);
+}
+
+/** Unused RSE compatibility routines retained in event_data.c. */
+export function DisableNationalPokedex_RSE(): void {
+  save.nationalDexRseMagic = 0;
+  varSet(rom.c("VAR_0x403C"), 0);
+  flagClear(rom.c("FLAG_0x838"));
+}
+export function EnableNationalPokedex_RSE(): void {
+  save.nationalDexRseMagic = 0xda;
+  varSet(rom.c("VAR_0x403C"), 0x0302);
+  flagSet(rom.c("FLAG_0x838"));
+}
+export function IsNationalPokedexEnabled_RSE(): boolean {
+  return save.nationalDexRseMagic === 0xda
+    && varGet(rom.c("VAR_0x403C")) === 0x0302
+    && flagGet(rom.c("FLAG_0x838"));
+}
+
+/** Mystery Gift and RTC reset gates/clearing routines from event_data.c. */
+export function DisableMysteryGift(): void { flagClear(C.FLAG_SYS_MYSTERY_GIFT_ENABLED); }
+export function EnableMysteryGift(): void { flagSet(C.FLAG_SYS_MYSTERY_GIFT_ENABLED); }
+export function IsMysteryGiftEnabled(): boolean { return flagGet(C.FLAG_SYS_MYSTERY_GIFT_ENABLED); }
+export function ClearMysteryGiftFlags(): void {
+  flagClear(C.FLAG_MYSTERY_GIFT_DONE);
+  for (let i = 1; i <= 15; i++) flagClear(C.FLAG_MYSTERY_GIFT_1 + i - 1);
+}
+export function ClearMysteryGiftVars(): void {
+  for (const id of [C.VAR_EVENT_PICHU_SLOT, C.VAR_MYSTERY_GIFT_1, C.VAR_MYSTERY_GIFT_2, C.VAR_MYSTERY_GIFT_3,
+    C.VAR_MYSTERY_GIFT_4, C.VAR_MYSTERY_GIFT_5, C.VAR_MYSTERY_GIFT_6, C.VAR_MYSTERY_GIFT_7, C.VAR_ALTERING_CAVE_WILD_SET]) varSet(id, 0);
+}
+export function DisableResetRTC(): void {
+  varSet(C.VAR_RESET_RTC_ENABLE, 0);
+  flagClear(C.FLAG_SYS_RESET_RTC_ENABLE);
+}
+export function EnableResetRTC(): void {
+  varSet(C.VAR_RESET_RTC_ENABLE, 0x0920);
+  flagSet(C.FLAG_SYS_RESET_RTC_ENABLE);
+}
+export function CanResetRTC(): boolean {
+  return flagGet(C.FLAG_SYS_RESET_RTC_ENABLE) && varGet(C.VAR_RESET_RTC_ENABLE) === 0x0920;
+}
+
+/** VarGetObjectEventGraphicsId. */
+export function VarGetObjectEventGraphicsId(index: number): number { return varGet(C.VAR_OBJ_GFX_ID_0 + index) & 0xff; }
+
+/** C-compatible flag/variable names and live storage pointers. */
+export type EventDataPointer = { value: number };
+export function VarGet(index: number): number { return varGet(index); }
+export function VarSet(index: number, value: number): boolean { return varSet(index, value); }
+export function FlagGet(index: number): boolean { return flagGet(index); }
+export function FlagSet(index: number): boolean { flagSet(index); return false; }
+export function FlagClear(index: number): boolean { flagClear(index); return false; }
+
+export function GetVarPointer(index: number): EventDataPointer | null {
+  if (index < VARS_START) return null;
+  if (index < SPECIAL_VARS_START) {
+    const slot = index - VARS_START;
+    if (slot >= save.vars.length) return null;
+    return { get value() { return save.vars[slot] ?? 0; }, set value(v: number) { save.vars[slot] = v & 0xffff; } };
+  }
+  const slot = index - SPECIAL_VARS_START;
+  if (slot >= specialVars.length) return null;
+  return { get value() { return specialVars[slot]; }, set value(v: number) { specialVars[slot] = v & 0xffff; } };
+}
+
+export function GetFlagAddr(index: number): EventDataPointer | null {
+  if (index === 0 || index >= FLAGS_COUNT && index < SPECIAL_FLAGS_START) return null;
+  if (index < SPECIAL_FLAGS_START) {
+    const slot = index >> 3;
+    return { get value() { return save.flags[slot] ?? 0; }, set value(v: number) { save.flags[slot] = v & 0xff; } };
+  }
+  const slot = (index - SPECIAL_FLAGS_START) >> 3;
+  if (slot >= specialFlags.length) return null;
+  return { get value() { return specialFlags[slot]; }, set value(v: number) { specialFlags[slot] = v & 0xff; } };
+}
+
+/** IsFlagOrVarStoredInQuestLog eligibility rules; storage/playback itself is not implemented. */
+export function IsFlagOrVarStoredInQuestLog(index: number, isVar: boolean): boolean {
+  if (!isVar) return index >= C.STORY_FLAGS_START && !(index >= C.SYS_FLAGS && index < C.PERMA_SYS_FLAGS_START);
+  const firstRecorded = C.VAR_ICE_STEP_COUNT - VARS_START;
+  const firstUnrecordedScene = C.VAR_MAP_SCENE_PALLET_TOWN_OAK - VARS_START;
+  const firstRecordedAfterScene = C.VAR_PORTHOLE - VARS_START;
+  return index >= firstRecorded && !(index >= firstUnrecordedScene && index < firstRecordedAfterScene);
 }
 
 /** ClearTempFieldEventData */

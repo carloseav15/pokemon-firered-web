@@ -1,9 +1,165 @@
-// pokemon.c SendMonToPC and field_specials.c destination-box bookkeeping.
-import { concat, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
+// pokemon_storage_system.c box accessors, pokemon.c SendMonToPC, and field_specials.c destination bookkeeping.
+import { concat, EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { rom } from "../rom";
-import { flagClear, flagGet, flagSet, save, SV, varGet, varSet } from "../save";
-import { calculatePPWithBonus, type Pokemon } from "./pokemon";
+import { flagClear, flagGet, flagSet, save, SV, varGet, varSet, type SaveData } from "../save";
+import { calculatePPWithBonus, calculateStats, createMon, type Pokemon } from "./pokemon";
+import { GetMonData, SetMonData, zeroMon, type Mon } from "./mon";
 import * as C from "../generated/constants";
+
+export type PokemonStorage = Pick<SaveData, "currentBox" | "boxes" | "boxNames" | "boxWallpapers">;
+
+/** BackupPokemonStorage: copy the complete modeled storage block by value. */
+export function BackupPokemonStorage(dest: PokemonStorage): void {
+  const copy = structuredClone({ currentBox: save.currentBox, boxes: save.boxes, boxNames: save.boxNames, boxWallpapers: save.boxWallpapers });
+  Object.assign(dest, copy);
+}
+
+/** RestorePokemonStorage: replace the modeled storage block from its snapshot. */
+export function RestorePokemonStorage(src: PokemonStorage): void {
+  save.currentBox = src.currentBox;
+  save.boxes = structuredClone(src.boxes);
+  save.boxNames = structuredClone(src.boxNames);
+  save.boxWallpapers = structuredClone(src.boxWallpapers);
+}
+
+/** StorageGetCurrentBox. */
+export function StorageGetCurrentBox(): number {
+  const boxId = save.currentBox & 0xff;
+  return boxId;
+}
+
+/** SetCurrentBox. */
+export function SetCurrentBox(boxId: number): void {
+  if (boxId >= 0 && boxId < C.TOTAL_BOXES_COUNT) save.currentBox = boxId & 0xff;
+}
+
+const validBoxSlot = (boxId: number, boxPosition: number): boolean =>
+  Number.isInteger(boxId) && Number.isInteger(boxPosition) && boxId >= 0 && boxId < C.TOTAL_BOXES_COUNT && boxPosition >= 0 && boxPosition < C.IN_BOX_COUNT;
+
+/** GetBoxMonDataAt. */
+export function GetBoxMonDataAt(boxId: number, boxPosition: number, request: number): number {
+  if (!validBoxSlot(boxId, boxPosition)) return 0;
+  const mon = save.boxes[boxId]?.[boxPosition];
+  return mon ? GetMonData(mon as Mon, request) : 0;
+}
+
+/** SetBoxMonDataAt. */
+export function SetBoxMonDataAt(boxId: number, boxPosition: number, request: number, value: number | ArrayLike<number>): void {
+  if (!validBoxSlot(boxId, boxPosition)) return;
+  let mon = save.boxes[boxId]?.[boxPosition];
+  if (!mon) save.boxes[boxId][boxPosition] = mon = zeroMon();
+  SetMonData(mon as Mon, request, value);
+}
+
+/** GetCurrentBoxMonData. */
+export function GetCurrentBoxMonData(boxPosition: number, request: number): number {
+  return GetBoxMonDataAt(StorageGetCurrentBox(), boxPosition, request);
+}
+
+/** SetCurrentBoxMonData. */
+export function SetCurrentBoxMonData(boxPosition: number, request: number, value: number | ArrayLike<number>): void {
+  SetBoxMonDataAt(StorageGetCurrentBox(), boxPosition, request, value);
+}
+
+/** GetBoxMonNickAt. */
+export function GetBoxMonNickAt(boxId: number, boxPosition: number, dst: number[] | Uint8Array): void {
+  if (!validBoxSlot(boxId, boxPosition)) { dst[0] = EOS; return; }
+  const mon = save.boxes[boxId]?.[boxPosition];
+  if (mon) GetMonData(mon as Mon, C.MON_DATA_NICKNAME, dst);
+  else dst[0] = EOS;
+}
+
+/** SetBoxMonNickAt. */
+export function SetBoxMonNickAt(boxId: number, boxPosition: number, nickname: ArrayLike<number>): void {
+  SetBoxMonDataAt(boxId, boxPosition, C.MON_DATA_NICKNAME, nickname);
+}
+
+/** GetAndCopyBoxMonDataAt. */
+export function GetAndCopyBoxMonDataAt(boxId: number, boxPosition: number, request: number, dst: number[] | Uint8Array): number {
+  if (!validBoxSlot(boxId, boxPosition)) return 0;
+  const mon = save.boxes[boxId]?.[boxPosition];
+  return mon ? GetMonData(mon as Mon, request, dst) : 0;
+}
+
+/** SetBoxMonAt. */
+export function SetBoxMonAt(boxId: number, boxPosition: number, src: Pokemon): void {
+  if (validBoxSlot(boxId, boxPosition)) save.boxes[boxId][boxPosition] = structuredClone(src);
+}
+
+/** CopyBoxMonAt. */
+export function CopyBoxMonAt(boxId: number, boxPosition: number, dst: Pokemon): void {
+  if (!validBoxSlot(boxId, boxPosition)) return;
+  const mon = save.boxes[boxId][boxPosition];
+  if (mon) Object.assign(dst, structuredClone(mon));
+  else Object.assign(dst, zeroMon());
+}
+
+/** CreateBoxMonAt. OT type values come from pokemon.h: random no shiny, preset, or player. */
+export function CreateBoxMonAt(boxId: number, boxPosition: number, species: number, level: number, fixedIV: number, hasFixedPersonality: number, personality: number, otIDType: number, otId: number): void {
+  if (!validBoxSlot(boxId, boxPosition)) return;
+  const randomNoShiny = C.OT_ID_RANDOM_NO_SHINY;
+  const preset = C.OT_ID_PRESET;
+  const mon = createMon(species, level, {
+    ...(fixedIV < C.USE_RANDOM_IVS ? { fixedIV } : {}),
+    ...(hasFixedPersonality ? { personality: personality >>> 0 } : {}),
+    ...(otIDType === preset ? { otId: otId >>> 0 } : {}),
+    ...(otIDType === randomNoShiny ? { noShiny: true } : {}),
+  });
+  save.boxes[boxId][boxPosition] = mon;
+}
+
+/** ZeroBoxMonAt. Empty box slots are represented by null in SaveData. */
+export function ZeroBoxMonAt(boxId: number, boxPosition: number): void {
+  if (validBoxSlot(boxId, boxPosition)) save.boxes[boxId][boxPosition] = null;
+}
+
+/** BoxMonAtToMon: restore battle-only fields and recalculate current stats. */
+export function BoxMonAtToMon(boxId: number, boxPosition: number, dst: Pokemon): void {
+  if (!validBoxSlot(boxId, boxPosition)) return;
+  const boxed = save.boxes[boxId][boxPosition];
+  if (!boxed) { Object.assign(dst, zeroMon()); return; }
+  Object.assign(dst, structuredClone(boxed));
+  dst.status = 0;
+  dst.mail = C.MAIL_NONE;
+  calculateStats(dst);
+  dst.hp = dst.stats[0];
+}
+
+/** GetBoxedMonPtr: direct reference to the modeled BoxPokemon, if the slot exists. */
+export function GetBoxedMonPtr(boxId: number, boxPosition: number): Pokemon | null {
+  if (!validBoxSlot(boxId, boxPosition)) return null;
+  return save.boxes[boxId][boxPosition] ?? (save.boxes[boxId][boxPosition] = zeroMon());
+}
+
+/** GetBoxNamePtr: initialize the default name so callers receive a persistent mutable buffer. */
+export function GetBoxNamePtr(boxId: number): number[] | null {
+  if (boxId < 0 || boxId >= C.TOTAL_BOXES_COUNT) return null;
+  save.boxNames ??= Array.from({ length: C.TOTAL_BOXES_COUNT }, (_, i) => Array.from(concat(rom.text("gText_Box"), intToDecimal(i + 1, STR_CONV_MODE_LEFT_ALIGN, 2))));
+  return save.boxNames[boxId] ?? null;
+}
+
+/** GetBoxWallpaper. */
+export function GetBoxWallpaper(boxId: number): number {
+  if (boxId < 0 || boxId >= C.TOTAL_BOXES_COUNT) return 0;
+  return getBoxWallpaper(boxId);
+}
+
+/** SetBoxWallpaper. */
+export function SetBoxWallpaper(boxId: number, wallpaperId: number): void {
+  if (boxId < 0 || boxId >= C.TOTAL_BOXES_COUNT || wallpaperId < 0 || wallpaperId >= C.WALLPAPER_COUNT) return;
+  setBoxWallpaper(boxId, wallpaperId);
+}
+
+/** SeekToNextMonInBox, respecting the source's egg and direction flags. */
+export function SeekToNextMonInBox(boxMons: Array<Pokemon | null>, curIndex: number, maxIndex: number, flags: number): number {
+  const adder = flags === 0 || flags === 1 ? 1 : -1;
+  const allowEggs = flags === 1 || flags === 3;
+  for (let i = curIndex + adder; i >= 0 && i <= maxIndex; i += adder) {
+    const mon = boxMons[i];
+    if (mon?.species && (allowEggs || !mon.isEgg)) return i;
+  }
+  return -1;
+}
 let previousDestinationBox = 0;
 export function getPCBoxToSendMon(): number { return previousDestinationBox; }
 export function getBoxName(box: number): Uint8Array {

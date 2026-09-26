@@ -11,6 +11,37 @@ import { nickname } from "../pokemon/pokemon";
 import { AdjustFriendship } from "../pokemon/mon_extra";
 import type { Mon } from "../pokemon/mon";
 
+/** IsMonValidSpecies (field_poison.c): empty and egg slots are not party mons. */
+function IsMonValidSpecies(pokemon: Mon): boolean {
+  const species = GetMonData(pokemon, C.MON_DATA_SPECIES_OR_EGG);
+  return species !== C.SPECIES_NONE && species !== C.SPECIES_EGG;
+}
+
+/** AllMonsFainted (field_poison.c) scans all PARTY_SIZE slots. */
+function AllMonsFainted(): boolean {
+  for (let i = 0; i < C.PARTY_SIZE; i++) {
+    const pokemon = save.party[i] as Mon;
+    if (pokemon && IsMonValidSpecies(pokemon) && GetMonData(pokemon, C.MON_DATA_HP)) return false;
+  }
+  return true;
+}
+
+/** MonFaintedFromPoison (field_poison.c). */
+function MonFaintedFromPoison(partyIdx: number): boolean {
+  const pokemon = save.party[partyIdx] as Mon;
+  return !!pokemon && IsMonValidSpecies(pokemon)
+    && GetMonData(pokemon, C.MON_DATA_HP) === 0
+    && (GetMonData(pokemon, C.MON_DATA_STATUS) & C.STATUS1_PSN_ANY) !== 0;
+}
+
+/** FaintFromFieldPoison (field_poison.c). */
+function FaintFromFieldPoison(partyIdx: number): void {
+  const pokemon = save.party[partyIdx] as Mon;
+  AdjustFriendship(pokemon, C.FRIENDSHIP_EVENT_FAINT_OUTSIDE_BATTLE);
+  SetMonData(pokemon, C.MON_DATA_STATUS, 0);
+  stringVars.var1 = nickname(pokemon);
+}
+
 /** DoPoisonFieldEffect: apply one field-poison HP loss and return FLDPSN_*. */
 export function DoPoisonFieldEffect(startEffect: () => void): number {
   let numPoisoned = 0;
@@ -31,7 +62,7 @@ export function DoPoisonFieldEffect(startEffect: () => void): number {
 }
 
 export function tryFieldPoisonWhiteOut(game: Game): void {
-  game.overworld.script.stop();
+  game.overworld.script.ScriptContext_Stop();
   let slot = 0, waiting = false;
   const task = tasks.create(() => {
     if (waiting) {
@@ -39,18 +70,16 @@ export function tryFieldPoisonWhiteOut(game: Game): void {
       waiting = false;
       return;
     }
-    for (; slot < save.party.length; slot++) {
+    for (; slot < C.PARTY_SIZE; slot++) {
       const mon = save.party[slot];
-      if (!mon.species || mon.isEgg || mon.hp || !(mon.status & 0x88)) continue;
-      AdjustFriendship(mon as Mon, C.FRIENDSHIP_EVENT_FAINT_OUTSIDE_BATTLE);
-      mon.status = 0;
-      stringVars.var1 = nickname(mon);
+      if (!MonFaintedFromPoison(slot)) continue;
+      FaintFromFieldPoison(slot);
       game.overworld.messageBox.show(rom.text("gText_PkmnFainted3"));
       waiting = true;
       return;
     }
-    varSet(SV.RESULT, save.party.some(mon => mon.species && !mon.isEgg && mon.hp > 0) ? 0 : 1);
+    varSet(SV.RESULT, AllMonsFainted() ? 1 : 0);
     tasks.destroy(task);
-    game.overworld.script.enable();
+    game.overworld.script.ScriptContext_Enable();
   }, 80);
 }

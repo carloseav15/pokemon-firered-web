@@ -19,7 +19,7 @@ export const SCANLINE_EFFECT_REG_BG3VOFS = 0xe;
 export type ScanlineEffectParams = { dmaDest: number; dmaControl: number; initState: number; unused9?: number };
 
 export const gScanlineEffectRegBuffers = [new Uint16Array(0x3c0), new Uint16Array(0x3c0)];
-export const gScanlineEffect = { dmaDest: 0, dmaControl: 0, srcBuffer: 0, state: 0, waveTaskId: 0xff };
+export const gScanlineEffect = { dmaDest: 0, dmaControl: 0, srcBuffer: 0, state: 0, waveTaskId: 0xff, setFirstScanlineReg: CopyValue16Bit };
 let shouldStopWaveTask = false;
 
 /** The HBlank DMA channel 0 state. */
@@ -34,6 +34,18 @@ export function scanlineHBlank(line: number): void {
   } else {
     ppu.setReg(dma0.dest, dma0.buffer[line]);
   }
+}
+
+/** scanline_effect.c CopyValue16Bit; manually sets the first scanline before HBlank DMA begins. */
+function CopyValue16Bit(): void {
+  ppu.setReg(gScanlineEffect.dmaDest, gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer][0]);
+}
+
+/** scanline_effect.c CopyValue32Bit; the first scanline is a pair of adjacent 16-bit registers. */
+function CopyValue32Bit(): void {
+  const buffer = gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer];
+  ppu.setReg(gScanlineEffect.dmaDest, buffer[0]);
+  ppu.setReg(gScanlineEffect.dmaDest + 2, buffer[1]);
 }
 
 export function DmaStop0(): void {
@@ -57,12 +69,14 @@ export function ScanlineEffect_Clear(): void {
   gScanlineEffect.srcBuffer = 0;
   gScanlineEffect.state = 0;
   gScanlineEffect.waveTaskId = 0xff;
+  gScanlineEffect.setFirstScanlineReg = CopyValue16Bit;
 }
 
 export function ScanlineEffect_SetParams(params: ScanlineEffectParams): void {
   gScanlineEffect.dmaControl = params.dmaControl;
   gScanlineEffect.dmaDest = params.dmaDest;
   gScanlineEffect.state = params.initState;
+  gScanlineEffect.setFirstScanlineReg = params.dmaControl === SCANLINE_EFFECT_DMACNT_16BIT ? CopyValue16Bit : CopyValue32Bit;
 }
 
 export function ScanlineEffect_InitHBlankDmaTransfer(): void {
@@ -77,6 +91,7 @@ export function ScanlineEffect_InitHBlankDmaTransfer(): void {
   dma0.buffer = gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer];
   dma0.dest = gScanlineEffect.dmaDest;
   dma0.is32 = gScanlineEffect.dmaControl === SCANLINE_EFFECT_DMACNT_32BIT;
+  gScanlineEffect.setFirstScanlineReg();
   gScanlineEffect.srcBuffer ^= 1;
 }
 
@@ -108,6 +123,15 @@ const TaskFunc_UpdateWavePerFrame = (taskId: number): void => {
   }
 };
 
+/** scanline_effect.c GenerateWave */
+function GenerateWave(buffer: Uint16Array, frequency: number, amplitude: number, _unused: number): void {
+  let theta = 0;
+  for (let i = 0; i < 256; i++) {
+    buffer[i] = Math.trunc((gSineTable[theta] * (amplitude & 0xff)) / 256) & 0xffff;
+    theta = (theta + (frequency & 0xff)) & 0xff;
+  }
+}
+
 export function ScanlineEffect_InitWave(startLine: number, endLine: number, frequency: number, amplitude: number, delayInterval: number, regOffset: number, applyBattleBgOffsets: boolean | number): number {
   ScanlineEffect_Clear();
   ScanlineEffect_SetParams({ dmaDest: 0x10 + regOffset, dmaControl: SCANLINE_EFFECT_DMACNT_16BIT, initState: 1 });
@@ -124,11 +148,7 @@ export function ScanlineEffect_InitWave(startLine: number, endLine: number, freq
   gScanlineEffect.waveTaskId = taskId;
   shouldStopWaveTask = false;
   const b0 = gScanlineEffectRegBuffers[0];
-  let theta = 0;
-  for (let i = 0; i < 256; i++) {
-    b0[320 + i] = Math.trunc((gSineTable[theta] * amplitude) / 256) & 0xffff;
-    theta = (theta + frequency) & 0xff;
-  }
+  GenerateWave(b0.subarray(320, 576), frequency, amplitude, endLine - startLine);
   let offset = 320;
   for (let i = startLine; i < endLine; i++) {
     b0[i] = b0[offset];

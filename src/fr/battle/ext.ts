@@ -165,6 +165,21 @@ export function SwitchPartyMonSlots(slot: number, slot2: number): void {
 /** gPartyMenuUseExitCallback / gSelectedMonPartyId */
 export const partyMenuResult = { useExitCallback: false, selectedMonPartyId: C.PARTY_SIZE };
 
+/** ItemUseInBattle_EnigmaBerry from item_use.c; effect type chooses the battle item handler. */
+export function ItemUseInBattle_EnigmaBerry(item: number, use: {
+  statBooster: () => void; medicine: () => void; ether: () => void; oakStopsYou: () => void;
+}): void {
+  switch (PartyMenu.GetItemEffectType(item)) {
+    case C.ITEM_EFFECT_X_ITEM: use.statBooster(); return;
+    case C.ITEM_EFFECT_HEAL_HP: case C.ITEM_EFFECT_CURE_POISON: case C.ITEM_EFFECT_CURE_SLEEP:
+    case C.ITEM_EFFECT_CURE_BURN: case C.ITEM_EFFECT_CURE_FREEZE: case C.ITEM_EFFECT_CURE_PARALYSIS:
+    case C.ITEM_EFFECT_CURE_CONFUSION: case C.ITEM_EFFECT_CURE_INFATUATION: case C.ITEM_EFFECT_CURE_ALL_STATUS:
+      use.medicine(); return;
+    case C.ITEM_EFFECT_HEAL_PP: use.ether(); return;
+    default: use.oakStopsYou(); return;
+  }
+}
+
 /** party_menu.c OpenPartyMenuInTutorialBattle → SetCB2ToReshowScreenAfterMenu */
 export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
   PartyMenu.OpenPartyMenuInTutorialBattle(partyAction, () => { CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); });
@@ -211,6 +226,14 @@ export function CB2_BagMenuFromBattle(): void {
       case "BattleUseFunc_StatBooster": ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)); return;
       case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_Medicine, back)); return;
       case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back)); return;
+      case "ItemUseInBattle_EnigmaBerry":
+        ItemUseInBattle_EnigmaBerry(item, {
+          statBooster: () => ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)),
+          medicine: () => ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_Medicine, back)),
+          ether: () => ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back)),
+          oakStopsYou: notNow,
+        });
+        return;
       // BattleUseFunc_BerryPouch: InitBerryPouch(BERRYPOUCH_FROMBATTLE, CB2_BagMenuFromBattle, FALSE)
       case "BattleUseFunc_BerryPouch": ctx.exit(() => InitBerryPouch(C.BERRYPOUCH_FROMBATTLE, showBag, 0, { battleUse })); return;
       default: notNow(); return;

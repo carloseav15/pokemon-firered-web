@@ -5,7 +5,7 @@ import { random } from "../random";
 import { rom } from "../rom";
 import { flagGet, save } from "../save";
 import { BS, r8, scriptTable } from "./bscript";
-import { G, gActionsByTurnOrder, gActionSelectionCursor, gBattleBufferB, gBattleCommunication, gBattleMons, gBattlerByTurnOrder, gBattlerControllerFuncs, gBattleResources, gBattleResults, gBattlerPartyIndexes, gBattleScripting, gBattleStruct, gBattleTextBuff1, gBattleTextBuff2, gBitTable, gChosenActionByBattler, gChosenMoveByBattler, gDisableStructs, gEnigmaBerries, gLastHitBy, gLastHitByType, gLastLandedMoves, gLastMoves, gLastPrintedMoves, gLastResultingMoves, gLockedMoves, gBattlePartyCurrentOrder, gMoveSelectionCursor, gProtectStructs, gSelectionBattleScripts, gSideStatuses, gSideTimers, gSpecialStatuses, gStatuses3, gWishFutureKnock } from "./globals";
+import { FreeBattleResources, G, gActionsByTurnOrder, gActionSelectionCursor, gBattleBufferB, gBattleCommunication, gBattleMons, gBattlerByTurnOrder, gBattlerControllerFuncs, gBattleResources, gBattleResults, gBattlerPartyIndexes, gBattleScripting, gBattleStruct, gBattleTextBuff1, gBattleTextBuff2, gBitTable, gChosenActionByBattler, gChosenMoveByBattler, gDisableStructs, gEnigmaBerries, gLastHitBy, gLastHitByType, gLastLandedMoves, gLastMoves, gLastPrintedMoves, gLastResultingMoves, gLockedMoves, gBattlePartyCurrentOrder, gMoveSelectionCursor, gProtectStructs, gSelectionBattleScripts, gSideStatuses, gSideTimers, gSpecialStatuses, gStatuses3, gWishFutureKnock } from "./globals";
 import { div, gBattleMoves, IS_BATTLER_OF_TYPE, s8, STATUS2_INFATUATED_WITH, STATUS3_ALWAYS_HITS_TURN } from "./macros";
 import { AbilityBattleEffects, AreAllMovesUnusable, BattleScriptExecute, CancelMultiTurnMoves, ClearFuryCutterDestinyBondGrudge, DoBattlerEndTurnEffects, DoFieldEndTurnEffects, GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide, GetMoveTarget, HandleAction_RunBattleScript, HandleFaintedMonActions, HandleWishPerishSongOnTurnEnd, IS_BATTLE_TYPE_GHOST_WITHOUT_SCOPE, ItemBattleEffects, ItemId_GetHoldEffect, ItemId_GetHoldEffectParam, MarkBattlerForControllerExec, PrepareStringBattle, RecordAbilityBattle, ResetSentPokesToOpponentValue, TryClearRageStatuses, TrySetCantSelectMoveBattleScript, WEATHER_HAS_EFFECT } from "./util";
 import { BtlController_EmitChooseAction, BtlController_EmitChooseItem, BtlController_EmitChooseMove, BtlController_EmitChoosePokemon, BtlController_EmitDrawPartyStatusSummary, BtlController_EmitDrawTrainerPic, BtlController_EmitEndBounceEffect, BtlController_EmitGetMonData, BtlController_EmitIntroSlide, BtlController_EmitIntroTrainerBallThrow, BtlController_EmitLinkStandbyMsg, BtlController_EmitLoadMonSprite, BUFFER_A, type ChooseMoveStruct, type HpAndStatus } from "./controllers";
@@ -1062,6 +1062,9 @@ function FreeResetData_ReturnToOvOrDoEvolutions(): void {
     if (G.gLeveledUpInBattle === 0 || G.gBattleOutcome !== C.B_OUTCOME_WON) G.gBattleMainFunc = ReturnFromBattleToOverworld;
     else G.gBattleMainFunc = TryEvolvePokemon;
     FreeAllWindowBuffers();
+    if (!(G.gBattleTypeFlags & C.BATTLE_TYPE_LINK)) {
+      FreeBattleResources();
+    }
   }
 }
 

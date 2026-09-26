@@ -27,6 +27,9 @@ export const NOT_MOVING = 0, TURN_DIRECTION = 1, MOVING = 2;
 export const T_NOT_MOVING = 0, T_TILE_TRANSITION = 1, T_TILE_CENTER = 2;
 
 export const PLAYER_AVATAR_GFX_NORMAL = 0, PLAYER_AVATAR_GFX_BIKE = 1, PLAYER_AVATAR_GFX_RIDE = 2, PLAYER_AVATAR_GFX_FIELD_MOVE = 3, PLAYER_AVATAR_GFX_FISH = 4, PLAYER_AVATAR_GFX_VSSEEKER = 5;
+const BIKE_TRANS_FACE_DIRECTION = 0, BIKE_TRANS_TURNING = 1, BIKE_TRANS_MOVE = 2, BIKE_TRANS_DOWNHILL = 3, BIKE_TRANS_UPHILL = 4;
+const BIKE_STATE_NORMAL = 0, BIKE_STATE_TURNING = 1, BIKE_STATE_SLOPE = 2;
+export const PLAYER_SPEED_STANDING = 0, PLAYER_SPEED_NORMAL = 1, PLAYER_SPEED_FAST = 2, PLAYER_SPEED_FASTER = 3, PLAYER_SPEED_FASTEST = 4;
 
 export class PlayerAvatar {
   flags = PLAYER_AVATAR_FLAG_ON_FOOT;
@@ -74,6 +77,7 @@ export class PlayerAvatar {
     }
     if (transition & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) {
       this.setState(PLAYER_AVATAR_GFX_BIKE);
+      this.BikeClearState(0, 0);
       this.flags = (this.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_SURFING)) | (transition & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE));
     }
     if (transition & PLAYER_AVATAR_FLAG_SURFING) {
@@ -178,7 +182,7 @@ export class PlayerAvatar {
   }
 
   /** player_step */
-  step(direction: number, _newKeys: number, heldKeys: number): void {
+  step(direction: number, newKeys: number, heldKeys: number): void {
     if (this.preventStep) return;
     if (this.tryUpdateSpinDirection()) return;
     if (this.tryInterruptSpecialAnim(direction)) return;
@@ -189,7 +193,7 @@ export class PlayerAvatar {
     this.flags &= ~PLAYER_AVATAR_FLAG_DASH;
     if (!this.tryForcedMovement()) {
       // MovePlayerAvatarUsingKeypadInput
-      if (this.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) this.movePlayerOnBike(direction, heldKeys);
+      if (this.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) this.movePlayerOnBike(direction, newKeys, heldKeys);
       else this.movePlayerNotOnBike(direction, heldKeys);
       if (this.runningState === MOVING) this.flags &= ~PLAYER_AVATAR_FLAG_CONTROLLABLE;
     }
@@ -312,122 +316,134 @@ export class PlayerAvatar {
   acroBikeState = 0;
   private newDirBackup = DIR_NONE;
   bikeFrameCounter = 0;
+  bikeSpeed = PLAYER_SPEED_STANDING;
+  directionHistory = 0;
+  abStartSelectHistory = 0;
+  readonly dirTimerHistory = new Array<number>(8).fill(0);
 
   /** MovePlayerOnBike: sBikeInputHandlers → sBikeTransitions */
-  private movePlayerOnBike(direction: number, heldKeys: number): void {
-    const BIKE_STATE_NORMAL = 0, BIKE_STATE_TURNING = 1, BIKE_STATE_SLOPE = 2;
-    const o = this.object;
-    const transition = (): string => {
-      const moveDir = o.movementDirection;
-      if (this.acroBikeState === BIKE_STATE_TURNING) {
-        direction = this.newDirBackup;
-        this.runningState = TURN_DIRECTION;
-        this.acroBikeState = BIKE_STATE_NORMAL;
-        this.bikeFrameCounter = 0;
-        return "turn";
-      }
-      if (this.acroBikeState === BIKE_STATE_SLOPE) {
-        if (MB.MetatileBehavior_IsCyclingRoadPullDownTile(o.currentMetatileBehavior)) {
-          if (direction !== moveDir) {
-            this.acroBikeState = BIKE_STATE_TURNING;
-            this.newDirBackup = direction;
-            this.runningState = NOT_MOVING;
-            return transition();
-          }
-          this.runningState = MOVING;
-          return direction < DIR_NORTH ? "downhill" : "uphill";
-        }
-        this.acroBikeState = BIKE_STATE_NORMAL;
-        if (direction === DIR_NONE) { direction = moveDir; this.runningState = NOT_MOVING; return "face"; }
-        this.runningState = MOVING;
-        return "move";
-      }
-      this.bikeFrameCounter = 0;
-      if (MB.MetatileBehavior_IsCyclingRoadPullDownTile(o.currentMetatileBehavior)) {
-        if (!(heldKeys & B_BUTTON)) {
-          this.acroBikeState = BIKE_STATE_SLOPE;
-          this.runningState = MOVING;
-          return direction < DIR_NORTH ? "downhill" : "uphill";
-        }
-        if (direction !== DIR_NONE) {
-          this.acroBikeState = BIKE_STATE_SLOPE;
-          this.runningState = MOVING;
-          return "uphill";
-        }
-      }
-      if (direction === DIR_NONE) { direction = moveDir; this.runningState = NOT_MOVING; return "face"; }
-      if (direction !== moveDir && this.runningState !== MOVING) {
-        this.acroBikeState = BIKE_STATE_TURNING;
-        this.newDirBackup = direction;
-        this.runningState = NOT_MOVING;
-        return transition();
-      }
-      this.runningState = MOVING;
-      return "move";
-    };
-    switch (transition()) {
-      case "face": this.faceDirection(direction); break;
-      case "turn":
-        if (!this.canBikeFaceDirectionOnRail(direction, o.currentMetatileBehavior)) direction = o.movementDirection;
-        this.faceDirection(direction);
-        break;
-      case "move": {
-        if (!this.canBikeFaceDirectionOnRail(direction, o.currentMetatileBehavior)) { this.faceDirection(o.movementDirection); break; }
-        const collision = this.bikeCollision(direction);
-        if (collision > COLLISION_NONE && collision <= 11) {
-          if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(direction);
-          else if (collision !== COLLISION_STOP_SURFING && collision !== COLLISION_PUSHED_BOULDER && collision !== COLLISION_DIRECTIONAL_STAIR_WARP) {
-            this.playCollisionSoundIfNotFacingWarp(direction);
-            this.setAnimId(0x25 + Math.max(0, direction - 1), 2); // GetWalkInPlaceNormalMovementAction
-          }
-        } else if (collision === 14 /* COLLISION_COUNT: cracked ice */ || this.isMovingOnRockStairs(direction)) {
-          this.walkFast(direction);
-        } else {
-          this.rideWaterCurrent(direction);
-        }
-        break;
-      }
-      case "downhill": {
-        const collision = this.bikeCollision(DIR_SOUTH);
-        if (collision === COLLISION_NONE) this.setAnimId(0x35, 2); // PlayerWalkFaster(DIR_SOUTH)
-        else if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(DIR_SOUTH);
-        break;
-      }
-      case "uphill":
-        if (this.bikeCollision(direction) === COLLISION_NONE) this.walkNormal(direction);
-        break;
+  private movePlayerOnBike(direction: number, newKeys: number, heldKeys: number): void {
+    const transitionId = this.GetBikeTransitionId(direction, newKeys, heldKeys);
+    switch (transitionId) {
+      case BIKE_TRANS_FACE_DIRECTION: this.BikeTransition_FaceDirection(direction); break;
+      case BIKE_TRANS_TURNING: this.BikeTransition_TurnDirection(direction); break;
+      case BIKE_TRANS_MOVE: this.BikeTransition_MoveDirection(direction); break;
+      case BIKE_TRANS_DOWNHILL: this.BikeTransition_Downhill(direction); break;
+      case BIKE_TRANS_UPHILL: this.BikeTransition_Uphill(direction); break;
     }
   }
 
+  private GetBikeTransitionId(direction: number, newKeys: number, heldKeys: number): number {
+    switch (this.acroBikeState) {
+      case BIKE_STATE_NORMAL: return this.BikeInputHandler_Normal(direction, newKeys, heldKeys);
+      case BIKE_STATE_TURNING: return this.BikeInputHandler_Turning(direction, newKeys, heldKeys);
+      case BIKE_STATE_SLOPE: return this.BikeInputHandler_Slope(direction, newKeys, heldKeys);
+      default: return BIKE_TRANS_FACE_DIRECTION;
+    }
+  }
+
+  private BikeInputHandler_Normal(direction: number, newKeys: number, heldKeys: number): number {
+    const moveDirection = this.object.movementDirection;
+    this.bikeFrameCounter = 0;
+    if (MB.MetatileBehavior_IsCyclingRoadPullDownTile(this.object.currentMetatileBehavior)) {
+      if (!(heldKeys & B_BUTTON)) {
+        this.acroBikeState = BIKE_STATE_SLOPE; this.runningState = MOVING;
+        return direction < DIR_NORTH ? BIKE_TRANS_DOWNHILL : BIKE_TRANS_UPHILL;
+      } else if (direction !== DIR_NONE) {
+        this.acroBikeState = BIKE_STATE_SLOPE; this.runningState = MOVING; return BIKE_TRANS_UPHILL;
+      }
+    }
+    if (direction === DIR_NONE) { this.runningState = NOT_MOVING; return BIKE_TRANS_FACE_DIRECTION; }
+    if (direction !== moveDirection && this.runningState !== MOVING) {
+      this.acroBikeState = BIKE_STATE_TURNING; this.newDirBackup = direction; this.runningState = NOT_MOVING;
+      return this.GetBikeTransitionId(direction, newKeys, heldKeys);
+    }
+    this.runningState = MOVING; return BIKE_TRANS_MOVE;
+  }
+
+  private BikeInputHandler_Turning(direction: number, newKeys: number, heldKeys: number): number {
+    void direction; void newKeys; void heldKeys;
+    this.runningState = TURN_DIRECTION; this.acroBikeState = BIKE_STATE_NORMAL; this.Bike_SetBikeStill();
+    return BIKE_TRANS_TURNING;
+  }
+
+  private BikeInputHandler_Slope(direction: number, newKeys: number, heldKeys: number): number {
+    void newKeys; void heldKeys;
+    if (MB.MetatileBehavior_IsCyclingRoadPullDownTile(this.object.currentMetatileBehavior)) {
+      if (direction !== this.object.movementDirection) {
+        this.acroBikeState = BIKE_STATE_TURNING; this.newDirBackup = direction; this.runningState = NOT_MOVING;
+        return this.GetBikeTransitionId(direction, newKeys, heldKeys);
+      }
+      this.runningState = MOVING; this.acroBikeState = BIKE_STATE_SLOPE;
+      return direction < DIR_NORTH ? BIKE_TRANS_DOWNHILL : BIKE_TRANS_UPHILL;
+    }
+    this.acroBikeState = BIKE_STATE_NORMAL;
+    if (direction === DIR_NONE) { this.runningState = NOT_MOVING; return BIKE_TRANS_FACE_DIRECTION; }
+    this.runningState = MOVING; return BIKE_TRANS_MOVE;
+  }
+
+  private BikeTransition_FaceDirection(direction: number): void { this.faceDirection(direction === DIR_NONE ? this.object.movementDirection : direction); }
+
+  private BikeTransition_TurnDirection(direction: number): void {
+    direction = this.newDirBackup;
+    if (!this.CanBikeFaceDirectionOnRail(direction, this.object.currentMetatileBehavior)) direction = this.object.movementDirection;
+    this.faceDirection(direction);
+  }
+
+  private BikeTransition_MoveDirection(direction: number): void {
+    if (!this.CanBikeFaceDirectionOnRail(direction, this.object.currentMetatileBehavior)) { this.faceDirection(this.object.movementDirection); return; }
+    const collision = this.GetBikeCollision(direction);
+    if (collision > COLLISION_NONE && collision <= 11) {
+      if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(direction);
+      else if (collision !== COLLISION_STOP_SURFING && collision !== COLLISION_PUSHED_BOULDER && collision !== COLLISION_DIRECTIONAL_STAIR_WARP) {
+        this.playCollisionSoundIfNotFacingWarp(direction); this.setAnimId(0x25 + Math.max(0, direction - 1), 2);
+      }
+    } else if (collision === 14 || this.isMovingOnRockStairs(direction)) this.walkFast(direction);
+    else this.rideWaterCurrent(direction);
+  }
+
+  private BikeTransition_Downhill(direction: number): void {
+    void direction;
+    const collision = this.GetBikeCollision(DIR_SOUTH);
+    if (collision === COLLISION_NONE) this.setAnimId(0x35, 2);
+    else if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(DIR_SOUTH);
+  }
+
+  private BikeTransition_Uphill(direction: number): void { if (this.GetBikeCollision(direction) === COLLISION_NONE) this.walkNormal(direction); }
+
   /** GetBikeCollision / GetBikeCollisionAt */
-  private bikeCollision(direction: number): number {
+  private GetBikeCollision(direction: number): number {
     const { x, y } = this.object.currentCoords;
     const [dx, dy] = DIRECTION_VECTORS[direction];
     const behavior = this.ow.map.behaviorAt(x + dx, y + dy);
-    let collision = this.checkObjectCollision(this.object, x + dx, y + dy, direction);
+    return this.GetBikeCollisionAt(x + dx, y + dy, direction, behavior);
+  }
+
+  private GetBikeCollisionAt(x: number, y: number, direction: number, behavior: number): number {
+    let collision = this.checkObjectCollision(this.object, x, y, direction);
     if (collision <= COLLISION_OBJECT_EVENT) {
       if (MB.MetatileBehavior_IsCrackedIce(behavior)) return 14;
-      if (collision === COLLISION_NONE && this.metatileBehaviorForbidsBiking(behavior)) collision = 2; // COLLISION_IMPASSABLE
+      if (collision === COLLISION_NONE && this.MetatileBehaviorForbidsBiking(behavior)) collision = 2; // COLLISION_IMPASSABLE
     }
     return collision;
   }
 
-  metatileBehaviorForbidsBiking(behavior: number): boolean {
+  MetatileBehaviorForbidsBiking(behavior: number): boolean {
     if (MB.MetatileBehavior_IsRunningDisallowed(behavior)) return true;
     if (!MB.MetatileBehavior_IsFortreeBridge(behavior)) return false;
     return !(this.object.previousElevation & 1);
   }
 
-  private canBikeFaceDirectionOnRail(direction: number, behavior: number): boolean {
+  private CanBikeFaceDirectionOnRail(direction: number, behavior: number): boolean {
     if (direction === DIR_EAST || direction === DIR_WEST) return !(MB.MetatileBehavior_IsIsolatedVerticalRail(behavior) || MB.MetatileBehavior_IsVerticalRail(behavior));
     return !(MB.MetatileBehavior_IsIsolatedHorizontalRail(behavior) || MB.MetatileBehavior_IsHorizontalRail(behavior));
   }
 
   /** IsBikingDisallowedByPlayer */
-  isBikingDisallowedByPlayer(): boolean {
-    if (this.flags & PLAYER_AVATAR_FLAG_SURFING) return true;
+  IsBikingDisallowedByPlayer(): boolean {
+    if (this.flags & (PLAYER_AVATAR_FLAG_UNDERWATER | PLAYER_AVATAR_FLAG_SURFING)) return true;
     const { x, y } = this.object.currentCoords;
-    return this.metatileBehaviorForbidsBiking(this.ow.map.behaviorAt(x, y));
+    return this.MetatileBehaviorForbidsBiking(this.ow.map.behaviorAt(x, y));
   }
 
   isOnBike(): boolean {
@@ -435,7 +451,7 @@ export class PlayerAvatar {
   }
 
   /** bike.c GetOnOffBike */
-  getOnOffBike(flags: number): void {
+  GetOnOffBike(flags: number): void {
     const ow = this.ow;
     if (this.isOnBike()) {
       this.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);
@@ -449,6 +465,73 @@ export class PlayerAvatar {
         ow.savedMusic = c.MUS_CYCLING;
         sound.playNewMapMusic(c.MUS_CYCLING);
       }
+    }
+  }
+
+  /** RS_IsRunningDisallowed (Emerald compatibility API retained by the decomp). */
+  RS_IsRunningDisallowed(behavior: number): boolean {
+    return this.MetatileBehaviorForbidsBiking(behavior) || this.ow.header.mapType === rom.constants.MAP_TYPE_INDOOR;
+  }
+
+  /** IsRunningDisallowed: map-header gate plus metatile restrictions. */
+  IsRunningDisallowed(behavior: number): boolean {
+    return !this.ow.header.allowRunning || this.MetatileBehaviorForbidsBiking(behavior);
+  }
+
+  /** IsPlayerNotUsingAcroBikeOnBumpySlope. */
+  IsPlayerNotUsingAcroBikeOnBumpySlope(): boolean {
+    return !((this.flags & PLAYER_AVATAR_FLAG_ACRO_BIKE) && MB.MetatileBehavior_IsBumpySlope(this.ow.map.behaviorAt(this.object.currentCoords.x, this.object.currentCoords.y)));
+  }
+
+  /** BikeClearState: reset Acro trick/input history and Mach speed state. */
+  BikeClearState(directionHistory: number, abStartSelectHistory: number): void {
+    this.acroBikeState = BIKE_STATE_NORMAL;
+    this.newDirBackup = 0;
+    this.bikeFrameCounter = 0;
+    this.bikeSpeed = PLAYER_SPEED_STANDING;
+    this.directionHistory = directionHistory >>> 0;
+    this.abStartSelectHistory = abStartSelectHistory >>> 0;
+    this.lastSpinTile = 0;
+    this.dirTimerHistory.fill(0);
+  }
+
+  Bike_UpdateBikeCounterSpeed(counter: number): void {
+    const counterU8 = counter & 0xff;
+    this.bikeFrameCounter = counterU8;
+    this.bikeSpeed = (counterU8 + (this.bikeFrameCounter >> 1)) & 0xff;
+  }
+
+  private Bike_SetBikeStill(): void {
+    this.bikeFrameCounter = 0;
+    this.bikeSpeed = PLAYER_SPEED_STANDING;
+  }
+
+  GetPlayerSpeed(): number {
+    if (this.flags & PLAYER_AVATAR_FLAG_MACH_BIKE) return [PLAYER_SPEED_NORMAL, PLAYER_SPEED_FAST, PLAYER_SPEED_FASTEST][this.bikeFrameCounter] ?? PLAYER_SPEED_NORMAL;
+    if (this.flags & PLAYER_AVATAR_FLAG_ACRO_BIKE) return PLAYER_SPEED_FASTER;
+    if (this.flags & (PLAYER_AVATAR_FLAG_SURFING | PLAYER_AVATAR_FLAG_DASH)) return PLAYER_SPEED_FAST;
+    return PLAYER_SPEED_NORMAL;
+  }
+
+  Bike_HandleBumpySlopeJump(): void {
+    if (!(this.flags & PLAYER_AVATAR_FLAG_ACRO_BIKE)) return;
+    const { x, y } = this.object.currentCoords;
+    if (MB.MetatileBehavior_IsBumpySlope(this.ow.map.behaviorAt(x, y))) {
+      this.acroBikeState = BIKE_STATE_SLOPE;
+      // PlayerUseAcroBikeOnBumpySlope has an empty body in FireRed's C source.
+    }
+  }
+
+  StopPlayerAvatar(): void {
+    const o = this.object;
+    o.inanimate = false;
+    o.disableAnim = false;
+    o.facingDirectionLocked = false;
+    this.flags &= ~PLAYER_AVATAR_FLAG_DASH;
+    this.ow.objects.setDirection(o, o.facingDirection);
+    if (this.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) {
+      this.Bike_HandleBumpySlopeJump();
+      this.Bike_UpdateBikeCounterSpeed(0);
     }
   }
 
@@ -477,7 +560,7 @@ export class PlayerAvatar {
       this.walkFast(direction);
       return;
     }
-    const canRun = (heldKeys & B_BUTTON) && flagGet(rom.constants.FLAG_SYS_B_DASH) && !this.isRunningDisallowed(this.object.currentMetatileBehavior);
+    const canRun = (heldKeys & B_BUTTON) && flagGet(rom.constants.FLAG_SYS_B_DASH) && !this.IsRunningDisallowed(this.object.currentMetatileBehavior);
     if (canRun) {
       if (this.isMovingOnRockStairs(direction)) this.runSlow(direction);
       else this.run(direction);
@@ -487,13 +570,6 @@ export class PlayerAvatar {
     } else {
       this.walkNormal(direction);
     }
-  }
-
-  private isRunningDisallowed(behavior: number): boolean {
-    if (!this.ow.header.allowRunning) return true;
-    if (MB.MetatileBehavior_IsRunningDisallowed(behavior)) return true;
-    if (MB.MetatileBehavior_IsFortreeBridge(behavior) && !(this.object.previousElevation & 1)) return true;
-    return false;
   }
 
   private isMovingOnRockStairs(direction: number): boolean {
@@ -605,7 +681,7 @@ export class PlayerAvatar {
         this.ow.objects.turn(o, direction);
         this.ow.objects.unfreezeAll();
         this.ow.controlsLocked = false;
-        this.ow.script.enable();
+        this.ow.script.ScriptContext_Enable();
         this.ow.effects.tasks.destroy(id);
       }
     }, 0xff);

@@ -17,8 +17,20 @@ export function itemInfo(itemId: number): ItemInfo | undefined {
     byId = new Map();
     for (const item of rom.items) byId.set(item.id, item);
   }
-  return byId.get(itemId);
+  return byId.get(SanitizeItemId(itemId));
 }
+
+/** SanitizeItemId (item.c): invalid IDs resolve to ITEM_NONE before table lookup. */
+export function SanitizeItemId(itemId: number): number {
+  return (itemId & 0xffff) >= C.ITEMS_COUNT ? C.ITEM_NONE : itemId & 0xffff;
+}
+
+/** ItemId_Get* (item.c): the ROM data table is already decoded in the browser. */
+export const ItemId_GetName = itemName;
+export function ItemId_GetId(itemId: number): number { return itemInfo(itemId)?.id ?? C.ITEM_NONE; }
+export function ItemId_GetRegistrability(itemId: number): number { return itemInfo(itemId)?.registrability ?? 0; }
+export function ItemId_GetPocket(itemId: number): number { return itemInfo(itemId)?.pocket ?? 0; }
+export function ItemId_GetSecondaryId(itemId: number): number { return itemInfo(itemId)?.secondaryId ?? 0; }
 
 export function itemName(itemId: number): Uint8Array {
   const info = itemInfo(itemId) ?? itemInfo(0);
@@ -38,6 +50,53 @@ export function pocketList(pocket: number): BagPocket {
     case POCKET_BERRY_POUCH: return save.bag.berryPouch;
   }
   return [];
+}
+
+/** SetBagPocketsPointers (item.c): return the five SaveBlock pocket arrays in C order. */
+export function SetBagPocketsPointers(): BagPocket[] {
+  return [save.bag.items, save.bag.keyItems, save.bag.pokeBalls, save.bag.tmCase, save.bag.berryPouch];
+}
+
+/** BagPocketGetFirstEmptySlot: compact browser arrays put the first empty slot at length. */
+export function BagPocketGetFirstEmptySlot(pocketId: number): number {
+  const list = pocketList((pocketId & 0xff) + 1);
+  const capacity = CAPACITY[(pocketId & 0xff) + 1];
+  return capacity === undefined || list.length >= capacity ? -1 : list.length;
+}
+
+/** IsPocketNotEmpty takes a one-based POCKET_* value in item.c. */
+export function IsPocketNotEmpty(pocketId: number): boolean {
+  return pocketList(pocketId).length !== 0;
+}
+
+export const GetPocketByItemId = ItemId_GetPocket;
+
+/** Slot quantities are plain numbers in SaveData; the GBA XOR encryption is not stored here. */
+export function GetBagItemQuantity(slot: { quantity: number }): number { return slot.quantity & 0xffff; }
+export function SetBagItemQuantity(slot: { quantity: number }, value: number): void { slot.quantity = value & 0xffff; }
+export function GetPcItemQuantity(slot: { quantity: number }): number { return slot.quantity & 0xffff; }
+export function SetPcItemQuantity(slot: { quantity: number }, value: number): void { slot.quantity = value & 0xffff; }
+
+/** ClearItemSlots operates on the occupied compact slots represented in the web save. */
+export function ClearItemSlots(slots: BagPocket, capacity: number): void { slots.splice(0, Math.max(0, capacity)); }
+export function ClearPCItemSlots(): void { save.pcItems.splice(0, save.pcItems.length); }
+export function ClearBag(): void { for (const pocket of SetBagPocketsPointers()) pocket.splice(0, pocket.length); }
+export function PCItemsGetFirstEmptySlot(): number { return save.pcItems.length < PC_ITEMS_COUNT ? save.pcItems.length : -1; }
+export function CountItemsInPC(): number {
+  let count = 0;
+  for (const slot of save.pcItems) if (slot.item !== C.ITEM_NONE) count++;
+  return count;
+}
+
+/** SwapItemSlots (item.c), mutating both slot records as the C pointer version does. */
+export function SwapItemSlots(a: BagPocket[number], b: BagPocket[number]): void {
+  [a.item, b.item] = [b.item, a.item];
+  [a.quantity, b.quantity] = [b.quantity, a.quantity];
+}
+
+/** SortAndCompactBagPocket: the fixed C table becomes a compact list sorted by item ID. */
+export function SortAndCompactBagPocket(pocket: BagPocket): void {
+  pocket.sort((a, b) => a.item - b.item);
 }
 
 export function checkBagHasItem(itemId: number, count: number): boolean {
@@ -99,6 +158,8 @@ export function bagItemQuantity(itemId: number): number {
   const pocket = itemPocket(itemId);
   return pocketList(pocket).find((s) => s.item === itemId)?.quantity ?? 0;
 }
+
+export const BagGetQuantityByItemId = bagItemQuantity;
 
 export function checkPCHasItem(itemId: number, count: number): boolean {
   return save.pcItems.some((s) => s.item === itemId && s.quantity >= count);

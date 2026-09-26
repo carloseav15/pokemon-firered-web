@@ -23,6 +23,7 @@ import {
 } from "./hw/ppu";
 import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+import { ScanlineEffect_Stop } from "./hw/scanline";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
 import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap } from "./hw/window";
 import { rom } from "./rom";
@@ -70,6 +71,37 @@ export function openOptionMenu(done: () => void): void {
   });
 }
 
+/** option_menu.c CB2_OptionsMenuFromStartMenu: enter through the start-menu adapter. */
+export function CB2_OptionsMenuFromStartMenu(done: () => void = () => {}): void {
+  openOptionMenu(done);
+}
+
+/** option_menu.c: clear interrupt callbacks before rebuilding the menu. */
+export function OptionMenu_InitCallbacks(): void {
+  SetVBlankCallback(null);
+  SetHBlankCallback(null);
+}
+
+/** option_menu.c: install the menu's VBlank transfer callback. */
+export function OptionMenu_SetVBlankCallback(): void {
+  SetVBlankCallback(VBlankCB_OptionMenu);
+}
+
+/** option_menu.c: install the task and its main callback after initialization. */
+export function SetOptionMenuTask(): void {
+  tasks.create(Task_OptionMenu, 0);
+  SetMainCallback2(CB2_InitOptionMenu);
+}
+
+/** option_menu.c: reset all menu-owned sprite, fade, task and scanline state. */
+export function OptionMenu_ResetSpriteData(): void {
+  ResetSpriteData();
+  ResetPaletteFade();
+  FreeAllSpritePalettes();
+  tasks.reset();
+  ScanlineEffect_Stop();
+}
+
 function CB2_InitOptionMenu(): void {
   tasks.run();
   AnimateSprites();
@@ -85,9 +117,9 @@ function VBlankCB_OptionMenu(): void {
 
 function CB2_OptionMenu(): void {
   switch (m().state) {
-    case 0: SetVBlankCallback(null); SetHBlankCallback(null); break;
+    case 0: OptionMenu_InitCallbacks(); break;
     case 1: InitOptionMenuBg(); break;
-    case 2: ResetSpriteData(); ResetPaletteFade(); FreeAllSpritePalettes(); tasks.reset(); break;
+    case 2: OptionMenu_ResetSpriteData(); break;
     case 3: if (!LoadOptionMenuPalette()) return; break;
     case 4: PrintOptionMenuHeader(); break;
     case 5: DrawOptionMenuBg(); break;
@@ -96,8 +128,7 @@ function CB2_OptionMenu(): void {
     case 8: UpdateSettingSelectionDisplay(m().cursorPos); break;
     case 9: OptionMenu_PickSwitchCancel(); break;
     default:
-      tasks.create(Task_OptionMenu, 0);
-      SetMainCallback2(CB2_InitOptionMenu);
+      SetOptionMenuTask();
       break;
   }
   if (sOptionMenuPtr) m().state++;
@@ -165,7 +196,7 @@ function Task_OptionMenu(taskId: number): void {
   switch (o.loadState) {
     case 0:
       BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, RGB_BLACK);
-      SetVBlankCallback(VBlankCB_OptionMenu);
+      OptionMenu_SetVBlankCallback();
       o.loadState++;
       break;
     case 1:
@@ -299,4 +330,3 @@ function UpdateSettingSelectionDisplay(selection: number): void {
   SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(y, y + maxLetterHeight));
   SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0x10, 0xe0));
 }
-

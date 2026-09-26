@@ -17,6 +17,10 @@ import { GetWindowAttribute, InitWindows, WINDOW_BG, type WindowTemplate } from 
 import { GetTextWindowPalette } from "../hw/menu";
 import { G } from "./globals";
 import { battleHost } from "./host";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, gSprites, ResetSpriteData } from "../hw/sprite";
+import { SetMainCallback2 } from "../hw/runtime";
+import { templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
+import { SpriteCB_UnusedDebugSprite } from "./main_init";
 
 export {
   BG_ATTR_PRIORITY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette, IsDma3ManagerBusyWithBgCopy, SetBgAttribute, ShowBg,
@@ -27,6 +31,21 @@ const BG_SCREEN_ADDR = (n: number) => n * 0x800;
 const BG_PLTT_ID = (n: number) => n * 16;
 
 type BattleBackground = { tileset: unknown; tilemap: unknown; entryTileset: unknown; entryTilemap: unknown; palette: unknown };
+
+/** battle_bg.c CreateUnknownDebugSprite (unused in normal gameplay). */
+export function CreateUnknownDebugSprite(): void {
+  ResetSpriteData();
+  const template = templateFrom(cdata<CSpriteTemplate>("battle_main", "gUnknownDebugSprite"), { SpriteCB_UnusedDebugSprite });
+  const spriteId = CreateSprite(template, 0, 0, 0);
+  if (spriteId < gSprites.length) gSprites[spriteId].invisible = true;
+  SetMainCallback2(CB2_unused);
+}
+
+/** battle_bg.c CB2_unused. */
+export function CB2_unused(): void {
+  AnimateSprites();
+  BuildOamBuffer();
+}
 
 export const gBattleBgTemplates = (): BgTemplate[] => cdata<BgTemplate[]>("battle_bg", "gBattleBgTemplates");
 const sStandardBattleWindowTemplates = (): WindowTemplate[] => cdata<WindowTemplate[]>("battle_bg", "sStandardBattleWindowTemplates");
@@ -52,6 +71,12 @@ function GetBattleTerrainByMapScene(mapBattleScene: number): number {
 function terrainEntry(terrain: number): BattleBackground {
   const table = sBattleTerrainTable();
   return table[terrain >= table.length ? C.BATTLE_TERRAIN_PLAIN : terrain];
+}
+
+/** GetBattleTerrainGfxPtrs from battle_bg.c; returns the original exported data references. */
+export function GetBattleTerrainGfxPtrs(terrain: number): { tiles: unknown; map: unknown; palette: unknown } {
+  const entry = terrainEntry(terrain > C.BATTLE_TERRAIN_PLAIN ? C.BATTLE_TERRAIN_PLAIN : terrain);
+  return { tiles: entry.tileset, map: entry.tilemap, palette: entry.palette };
 }
 
 function LoadBattleTerrainGfx(terrain: number): void {

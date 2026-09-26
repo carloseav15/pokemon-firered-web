@@ -1,4 +1,4 @@
-// hall_of_fame.c: the Hall of Fame induction screen (each mon flies in and is
+// hall_of_fame.c + hof_pc.c: the Hall of Fame induction screen (each mon flies in and is
 // introduced, applause and confetti, the player's trainer card) and the HALL OF
 // FAME PC viewer.
 // Adaptations:

@@ -5,22 +5,27 @@
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
-import { FONT_FEMALE, FONT_MALE, FONT_NORMAL, FONT_SMALL, stringWidth } from "../gba/font";
+import { FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_SMALL, stringWidth } from "../gba/font";
 import { joy, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON } from "../gba/input";
 import { tasks, type TaskFunc } from "../gba/tasks";
-import { textFlags } from "../gba/textPrinter";
+import { SetFontsPointer, textFlags } from "../gba/textPrinter";
 import { rom } from "../rom";
 import { save } from "../save";
 import { itemName } from "../pokemon/items";
-import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer } from "./bg";
+import { ItemIsMail } from "../pokemon/mail";
+import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer, LoadBgTiles, LoadBgTilemap } from "./bg";
+import { BG_PLTT_ID, LoadPalette } from "./palette";
+import { incbin16 } from "./assets";
 import { SetGpuReg } from "./gpu";
 import {
-  CreateYesNoMenu, DrawDialogFrameWithCustomTileAndPalette, DrawStdFrameWithCustomTileAndPalette, FONTATTR_COLOR_BACKGROUND, FONTATTR_COLOR_FOREGROUND,
+  ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, DrawDialogFrameWithCustomTileAndPalette, DrawStdFrameWithCustomTileAndPalette, FONTATTR_COLOR_BACKGROUND, FONTATTR_COLOR_FOREGROUND,
   FONTATTR_COLOR_SHADOW, FONTATTR_LINE_SPACING, GetFontAttribute, MENU_B_PRESSED, Menu_ProcessInputNoWrapClearOnChoose,
+  LoadStdWindowGfx, LoadStdWindowFrameGfx, LoadSignpostWindowGfx, LoadUserWindowGfx,
 } from "./menu";
-import { REG_OFFSET_DISPCNT } from "./ppu";
-import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized2, IsTextPrinterActive, RunTextPrinters } from "./text";
-import { GetWindowAttribute, WINDOW_BG, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, type WindowTemplate } from "./window";
+import { OAM_SIZE, PLTT_SIZE, REG_OFFSET_DISPCNT, ppu, VRAM_SIZE } from "./ppu";
+import { SetHBlankCallback, SetVBlankCallback } from "./runtime";
+import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized2, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./text";
+import { AddWindow, ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, GetWindowAttribute, PutWindowTilemap, RemoveWindow, WINDOW_BG, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, COPYWIN_GFX, type WindowTemplate } from "./window";
 
 export const MENU_L_PRESSED = 1, MENU_R_PRESSED = 2;
 const REG_OFFSET_BG0CNT = 0x08;
@@ -92,10 +97,33 @@ export function GetLRKeysPressedAndHeld(): number {
   return 0;
 }
 
-/** No link or Union Room in the browser: holding and mail writing are always allowed. */
-export function IsHoldingItemAllowed(_itemId: number): boolean { return true; }
-export function IsWritingMailAllowed(_itemId: number): boolean { return true; }
+/** IsHoldingItemAllowed (menu_helpers.c); InUnionRoom is absent in this port. */
+export function IsHoldingItemAllowed(itemId: number): boolean {
+  const tradeCenter = rom.c("MAP_TRADE_CENTER");
+  const inTradeCenter = save.location.mapGroup === (tradeCenter >>> 8)
+    && save.location.mapNum === (tradeCenter & 0xff);
+  return itemId !== C.ITEM_ENIGMA_BERRY || !inTradeCenter;
+}
+
+/** IsWritingMailAllowed (menu_helpers.c), with link-state helpers always idle. */
+export function IsWritingMailAllowed(itemId: number): boolean {
+  return !MenuHelpers_IsLinkActive() || !ItemIsMail(itemId);
+}
 export function MenuHelpers_IsLinkActive(): boolean { return false; }
+
+/** SetVBlankHBlankCallbacksToNull (menu_helpers.c). */
+export function SetVBlankHBlankCallbacksToNull(): void {
+  SetVBlankCallback(null);
+  SetHBlankCallback(null);
+}
+
+/** ResetVramOamAndBgCntRegs (menu_helpers.c), with GBA byte sizes. */
+export function ResetVramOamAndBgCntRegs(): void {
+  ResetAllBgsCoordinatesAndBgCntRegs();
+  ppu.vram.fill(0, 0, VRAM_SIZE);
+  ppu.oam.fill(0, 0, OAM_SIZE / 2);
+  ppu.pltt.fill(0, 0, PLTT_SIZE / 2);
+}
 
 export function ResetAllBgsCoordinatesAndBgCntRegs(): void {
   SetGpuReg(REG_OFFSET_DISPCNT, 0);
@@ -133,6 +161,8 @@ export function GetDialogBoxFontId(): number {
 
 // ---------------------------------------------------------------- money.c
 
+let sMoneyBoxWindowId = 0;
+
 function moneyString(amount: number): Uint8Array {
   stringVars.var1 = intToDecimal(amount, STR_CONV_MODE_LEFT_ALIGN, 6);
   const pad = 6 - u8str(stringVars.var1).length;
@@ -155,6 +185,76 @@ export function PrintMoneyAmountInMoneyBoxWithBorder(windowId: number, tileStart
   AddTextPrinterParameterized(windowId, FONT_NORMAL, rom.text("gText_TrainerCardMoney"), 0, 0, 0xff, null);
   PrintMoneyAmountInMoneyBox(windowId, amount, 0);
 }
+
+/** ChangeAmountInMoneyBox (money.c). */
+export function ChangeAmountInMoneyBox(amount: number): void {
+  PrintMoneyAmountInMoneyBox(sMoneyBoxWindowId, amount, 0);
+}
+
+/** DrawMoneyBox (money.c): 8x3 window at the requested tilemap position. */
+export function DrawMoneyBox(amount: number, x: number, y: number): void {
+  const template: WindowTemplate = { bg: 0, tilemapLeft: x + 1, tilemapTop: y + 1, width: 8, height: 3, paletteNum: 15, baseBlock: 8 };
+  sMoneyBoxWindowId = AddWindow(template);
+  FillWindowPixelBuffer(sMoneyBoxWindowId, 0);
+  PutWindowTilemap(sMoneyBoxWindowId);
+  LoadStdWindowGfx(sMoneyBoxWindowId, 0x21d, BG_PLTT_ID(13));
+  PrintMoneyAmountInMoneyBoxWithBorder(sMoneyBoxWindowId, 0x21d, 13, amount);
+}
+
+/** HideMoneyBox (money.c). */
+export function HideMoneyBox(): void {
+  ClearStdWindowAndFrameToTransparent(sMoneyBoxWindowId, false);
+  CopyWindowToVram(sMoneyBoxWindowId, COPYWIN_GFX);
+  RemoveWindow(sMoneyBoxWindowId);
+}
+
+// ---------------------------------------------------------------- coins.c
+
+let sCoinsWindowId = 0;
+
+function coinsString(amount: number): Uint8Array {
+  stringVars.var1 = intToDecimal(amount & 0xffffffff, C.STR_CONV_MODE_RIGHT_ALIGN, 4);
+  return expandPlaceholders(rom.text("gText_Coins"));
+}
+
+/** PrintCoinsString_Parameterized (coins.c). */
+function PrintCoinsString_Parameterized(windowId: number, amount: number, x: number, y: number, speed: number): void {
+  AddTextPrinterParameterized(windowId, FONT_SMALL, coinsString(amount), x, y, speed, null);
+}
+
+/** ShowCoinsWindow_Parameterized (coins.c, unused by the original game). */
+function ShowCoinsWindow_Parameterized(windowId: number, tileStart: number, palette: number, amount: number): void {
+  DrawStdFrameWithCustomTileAndPalette(windowId, false, tileStart, palette);
+  AddTextPrinterParameterized(windowId, FONT_NORMAL, rom.text("gText_Coins_2"), 0, 0, 0xff, null);
+  PrintCoinsString_Parameterized(windowId, amount, 0x10, 0x0c, 0);
+}
+
+/** PrintCoinsString (coins.c), right aligned within the 64 pixel window. */
+export function PrintCoinsString(amount: number): void {
+  const string = coinsString(amount);
+  const width = stringWidth(FONT_SMALL, string, 0);
+  AddTextPrinterParameterized(sCoinsWindowId, FONT_SMALL, string, 64 - width, 0x0c, 0, null);
+}
+
+/** ShowCoinsWindow (coins.c): frame, label, and four digit balance. */
+export function ShowCoinsWindow(amount: number, x: number, y: number): void {
+  const template: WindowTemplate = { bg: 0, tilemapLeft: x + 1, tilemapTop: y + 1, width: 8, height: 3, paletteNum: 0x0f, baseBlock: 0x20 };
+  sCoinsWindowId = AddWindow(template);
+  FillWindowPixelBuffer(sCoinsWindowId, 0);
+  PutWindowTilemap(sCoinsWindowId);
+  LoadStdWindowGfx(sCoinsWindowId, 0x21d, BG_PLTT_ID(13));
+  DrawStdFrameWithCustomTileAndPalette(sCoinsWindowId, false, 0x21d, 13);
+  AddTextPrinterParameterized(sCoinsWindowId, FONT_NORMAL, rom.text("gText_Coins_2"), 0, 0, 0xff, null);
+  PrintCoinsString(amount);
+}
+
+/** HideCoinsWindow (coins.c). */
+export function HideCoinsWindow(): void {
+  ClearWindowTilemap(sCoinsWindowId);
+  ClearStdWindowAndFrameToTransparent(sCoinsWindowId, true);
+  RemoveWindow(sCoinsWindowId);
+}
+
 
 // ---------------------------------------------------------------- text_window.c / new_menu_helpers.c
 
@@ -219,6 +319,144 @@ export function DoScheduledBgTilemapCopiesToVram(): void {
     if (sScheduledBgCopiesToVram[bg]) { CopyBgTilemapBufferToVram(bg); sScheduledBgCopiesToVram[bg] = false; }
   }
 }
+
+/** new_menu_helpers.c CopyToBufferFromBgTilemap: row-major copy from the 32-tile-wide BG buffer. */
+export function CopyToBufferFromBgTilemap(bgId: number, dest: number[] | Uint16Array, left: number, top: number, width: number, height: number): void {
+  const source = GetBgTilemapBuffer(bgId);
+  if (!source) return;
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) dest[y * width + x] = source[(y + top) * 32 + x + left];
+}
+
+/** new_menu_helpers.c ResetBgPositions. */
+export function ResetBgPositions(): void {
+  for (let bg = 0; bg < 4; bg++) { ChangeBgX(bg, 0, BG_COORD_SET); ChangeBgY(bg, 0, BG_COORD_SET); }
+}
+
+/** new_menu_helpers.c InitTextBoxGfxAndPrinters. */
+export function InitTextBoxGfxAndPrinters(): void {
+  ResetBgPositions();
+  DeactivateAllTextPrinters();
+  LoadStdWindowFrameGfx();
+}
+
+/** new_menu_helpers.c FreeAllOverworldWindowBuffers. */
+export function FreeAllOverworldWindowBuffers(): void { FreeAllWindowBuffers(); }
+
+/** new_menu_helpers.c RunTextPrinters_CheckPrinter0Active. */
+export function RunTextPrinters_CheckPrinter0Active(): number {
+  RunTextPrinters();
+  return IsTextPrinterActive(0) ? 1 : 0;
+}
+
+/** new_menu_helpers.c AddTextPrinterForMessage. */
+export function AddTextPrinterForMessage(allowSkippingDelayWithButtonPress: boolean): void {
+  textFlags.canABSpeedUpPrint = allowSkippingDelayWithButtonPress;
+  AddTextPrinterParameterized2(0, FONT_NORMAL, stringVars.var4, GetTextSpeedSetting(), null, 2, 1, 3);
+}
+
+/** new_menu_helpers.c AddTextPrinterWithCustomSpeedForMessage. */
+export function AddTextPrinterWithCustomSpeedForMessage(allowSkippingDelayWithButtonPress: boolean, speed: number): void {
+  textFlags.canABSpeedUpPrint = allowSkippingDelayWithButtonPress;
+  AddTextPrinterParameterized2(0, FONT_NORMAL, stringVars.var4, speed & 0xff, null, 2, 1, 3);
+}
+
+/** new_menu_helpers.c EraseFieldMessageBox. */
+export function EraseFieldMessageBox(copyToVram: boolean): void {
+  FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 17);
+  if (copyToVram) CopyBgTilemapBufferToVram(0);
+}
+
+let sStartMenuWindowId = 0xff;
+/** new_menu_helpers.c CreateStartMenuWindow: preserve the original tilemap geometry and singleton lifetime. */
+export function CreateStartMenuWindow(height: number): number {
+  if (sStartMenuWindowId === 0xff) {
+    const template: WindowTemplate = { bg: 0, tilemapLeft: 0x16, tilemapTop: 1, width: 7, height: (height * 2 - 1) & 0xff, paletteNum: 15, baseBlock: 0x13d };
+    sStartMenuWindowId = AddWindow(template);
+    PutWindowTilemap(sStartMenuWindowId);
+  }
+  return sStartMenuWindowId;
+}
+
+export function GetStartMenuWindowId(): number { return sStartMenuWindowId; }
+
+/** new_menu_helpers.c RemoveStartMenuWindow. */
+export function RemoveStartMenuWindow(): void {
+  if (sStartMenuWindowId !== 0xff) { RemoveWindow(sStartMenuWindowId); sStartMenuWindowId = 0xff; }
+}
+
+/** new_menu_helpers.c GetTextSpeedSetting uses the original frame-delay table. */
+export function GetTextSpeedSetting(): number {
+  if (save.options.textSpeed > C.OPTIONS_TEXT_SPEED_FAST) save.options.textSpeed = C.OPTIONS_TEXT_SPEED_MID;
+  return [8, 4, 1][save.options.textSpeed];
+}
+
+/** new_menu_helpers.c MallocAndDecompress: INCBIN bytes have already been decompressed by tools/decomp. */
+export function MallocAndDecompress(src: ArrayLike<number>): Uint8Array {
+  return Uint8Array.from(src, (byte) => byte & 0xff);
+}
+
+/** new_menu_helpers.c CopyDecompressedTileDataToVram, with the browser BG loader as the DMA destination. */
+export function CopyDecompressedTileDataToVram(bgId: number, src: ArrayLike<number>, size: number, offset: number, mode: number): number {
+  return mode === 1 ? LoadBgTilemap(bgId, src, size, offset) : LoadBgTiles(bgId, src, size, offset);
+}
+
+/** new_menu_helpers.c DecompressAndCopyTileDataToVram2. */
+export function DecompressAndCopyTileDataToVram2(bgId: number, src: ArrayLike<number>, size: number, offset: number, mode: number): Uint8Array | null {
+  const bytes = MallocAndDecompress(src);
+  const count = Math.min(bytes.length, size >>> 0);
+  if (!count) return bytes;
+  CopyDecompressedTileDataToVram(bgId, bytes, count, offset, mode);
+  return bytes;
+}
+
+/** new_menu_helpers.c DecompressAndLoadBgGfxUsingHeap: DMA completes synchronously in this PPU. */
+export function DecompressAndLoadBgGfxUsingHeap(bgId: number, src: ArrayLike<number>, size: number, offset: number, mode: number): void {
+  const bytes = MallocAndDecompress(src);
+  CopyDecompressedTileDataToVram(bgId, bytes, size === 0 ? bytes.length : size, offset, mode);
+}
+
+/** new_menu_helpers.c DecompressAndLoadBgGfxUsingHeap2. */
+export function DecompressAndLoadBgGfxUsingHeap2(bgId: number, src: ArrayLike<number>, size: number, offset: number, mode: number): void {
+  const bytes = MallocAndDecompress(src);
+  CopyDecompressedTileDataToVram(bgId, bytes, Math.min(bytes.length, size >>> 0), offset, mode);
+}
+
+/** new_menu_helpers.c WindowFunc_DrawStandardFrame. */
+export function WindowFunc_DrawStandardFrame(bg: number, left: number, top: number, width: number, height: number, _paletteNum: number): void {
+  const f = (tile: number, x: number, y: number, w: number, h: number) => FillBgTilemapBufferRect(bg, tile, x, y, w, h, 14);
+  f(0x214, left - 1, top - 1, 1, 1); f(0x215, left, top - 1, width, 1); f(0x216, left + width, top - 1, 1, 1);
+  f(0x217, left - 1, top, 1, height); f(0x219, left + width, top, 1, height);
+  f(0x21a, left - 1, top + height, 1, 1); f(0x21b, left, top + height, width, 1); f(0x21c, left + width, top + height, 1, 1);
+}
+
+/** new_menu_helpers.c WindowFunc_ClearStdWindowAndFrame. */
+export function WindowFunc_ClearStdWindowAndFrame(bg: number, left: number, top: number, width: number, height: number, _paletteNum: number): void {
+  FillBgTilemapBufferRect(bg, 0, left - 1, top - 1, width + 2, height + 2, 14);
+}
+
+/** new_menu_helpers.c WindowFunc_ClearDialogWindowAndFrame. */
+export function WindowFunc_ClearDialogWindowAndFrame(bg: number, left: number, top: number, width: number, height: number, _paletteNum: number): void {
+  FillBgTilemapBufferRect(bg, 0, left - 2, top - 1, width + 4, height + 2, 14);
+}
+
+/** new_menu_helpers.c GetStdPalColor (the value is in exported original palette data). */
+export function GetStdPalColor(colorNum: number): number {
+  const colors = incbin16("gStandardMenuPalette");
+  return colors[colorNum > 15 ? 0 : colorNum] ?? 0;
+}
+
+/** new_menu_helpers.c GetDlgWindowBaseTileNum. */
+export function GetDlgWindowBaseTileNum(): number { return 0x200; }
+
+/** new_menu_helpers.c LoadSignpostWindowFrameGfx. */
+export function LoadSignpostWindowFrameGfx(): void {
+  LoadPalette(incbin16("gStandardMenuPalette"), BG_PLTT_ID(14), 10 * 2);
+  LoadSignpostWindowGfx(0, 0x200, BG_PLTT_ID(15));
+  LoadUserWindowGfx(0, 0x214, BG_PLTT_ID(14));
+}
+
+/** new_menu_helpers.c SetDefaultFontsPointer. */
+export function SetDefaultFontsPointer(): void { SetFontsPointer(FONT_INFOS); }
 
 /** menu.c AddItemMenuActionTextPrinters: the actions of `orderArray`, one per line. */
 export function AddItemMenuActionTextPrinters(windowId: number, fontId: number, left: number, top: number, letterSpacing: number, lineHeight: number,

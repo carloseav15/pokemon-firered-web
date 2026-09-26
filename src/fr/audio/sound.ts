@@ -13,6 +13,7 @@ export interface SoundBackend {
   setVolume(player: "bgm", volume: number): void;
   playCry(species: number, mode: number): void;
   isCryPlaying(): boolean;
+  stopCry?(): void;
   frame(): void;
   setStereo?(stereo: boolean): void;
 }
@@ -46,16 +47,26 @@ class Sound {
   private savedBGM = 0;
   private fanfareTimer = 0;
   private fanfareSong = 0;
+  private fanfareTaskActive = false;
   private seTimer = 0;
   private cryTimer = 0;
   private constants: Record<string, number> = {};
   private fanfareBySong = new Map<number, number>();
+  private fanfareSongs: number[] = [];
+  private nextMapMusic = 0;
+  private mapMusicState = 0;
+  private mapMusicFadeInSpeed = 0;
+  private disableMusic = false;
+  private disableHelpSystemVolumeReduce = false;
 
   init(constants: Record<string, number>): void {
     this.constants = constants;
     this.SE_SELECT = constants.SE_SELECT ?? 5;
     for (const [name, frames] of Object.entries(FANFARE_DURATIONS)) {
-      if (constants[name] !== undefined) this.fanfareBySong.set(constants[name], frames);
+      if (constants[name] !== undefined) {
+        this.fanfareBySong.set(constants[name], frames);
+        if (this.fanfareSongs.length < 14) this.fanfareSongs.push(constants[name]);
+      }
     }
   }
 
@@ -65,13 +76,9 @@ class Sound {
 
   /** Called once per game frame (the m4a VBlank tick). */
   frame(): void {
-    if (this.fanfareTimer > 0) {
-      this.fanfareTimer--;
-      if (this.fanfareTimer === 0) {
-        this.backend?.stop("fanfare");
-        this.backend?.resume("bgm");
-      }
-    }
+    this.mapMusicMain();
+    if (this.fadeOutTimer > 0) this.fadeOutTimer--;
+    if (this.fanfareTaskActive) this.Task_Fanfare();
     if (this.seTimer > 0) this.seTimer--;
     if (this.cryTimer > 0) this.cryTimer--;
     this.backend?.frame();
@@ -107,15 +114,100 @@ class Sound {
   playBattleBGM(song: number): void {
     for (const player of ["bgm", "se1", "se2", "fanfare"] as const) this.backend?.stop(player);
     this.currentBGM = 0;
+    this.nextMapMusic = 0;
+    this.mapMusicState = 0;
     this.fanfareTimer = 0;
+    this.fanfareTaskActive = false;
     this.seTimer = 0;
     this.playBGM(song);
   }
 
+  /** InitMapMusic from sound.c. */
+  initMapMusic(): void { this.disableMusic = false; this.resetMapMusic(); }
+
+  /** MapMusicMain from sound.c; called once per game frame. */
+  mapMusicMain(): void {
+    switch (this.mapMusicState) {
+      case 1:
+        this.mapMusicState = 2;
+        this.playBGM(this.currentBGM = this.nextMapMusic);
+        break;
+      case 5:
+        if (this.isBGMStopped()) {
+          this.nextMapMusic = 0;
+          this.mapMusicState = 0;
+        }
+        break;
+      case 6:
+        if (this.isBGMStopped() && this.isFanfareTaskInactive()) {
+          this.currentBGM = this.nextMapMusic;
+          this.nextMapMusic = 0;
+          this.mapMusicState = 2;
+          this.playBGM(this.currentBGM);
+        }
+        break;
+      case 7:
+        if (this.isBGMStopped() && this.isFanfareTaskInactive()) {
+          this.fadeInNewBGM(this.nextMapMusic, this.mapMusicFadeInSpeed);
+          this.currentBGM = this.nextMapMusic;
+          this.nextMapMusic = 0;
+          this.mapMusicState = 2;
+          this.mapMusicFadeInSpeed = 0;
+        }
+        break;
+    }
+  }
+
+  /** ResetMapMusic from sound.c. */
+  resetMapMusic(): void {
+    this.currentBGM = 0;
+    this.nextMapMusic = 0;
+    this.mapMusicState = 0;
+    this.mapMusicFadeInSpeed = 0;
+    this.waitingForBGMStop = false;
+  }
+
+  /** GetCurrentMapMusic from sound.c. */
+  getCurrentMapMusic(): number { return this.currentBGM; }
+
+  /** StopMapMusic from sound.c. */
+  stopMapMusic(): void {
+    this.currentBGM = 0;
+    this.nextMapMusic = 0;
+    this.mapMusicState = 1;
+  }
+
   /** PlayNewMapMusic */
   playNewMapMusic(song: number): void {
-    if (song === this.currentBGM && this.backend?.isPlaying("bgm")) return;
-    this.playBGM(song);
+    this.nextMapMusic = song;
+    this.mapMusicState = 1;
+    this.waitingForBGMStop = false;
+  }
+
+  /** FadeOutAndPlayNewMapMusic from sound.c. */
+  fadeOutAndPlayNewMapMusic(song: number, speed: number): void {
+    this.fadeOutMapMusic(speed);
+    this.currentBGM = 0;
+    this.nextMapMusic = song;
+    this.mapMusicState = 6;
+  }
+
+  /** FadeOutAndFadeInNewMapMusic from sound.c. */
+  fadeOutAndFadeInNewMapMusic(song: number, fadeOutSpeed: number, fadeInSpeed: number): void {
+    this.fadeOutMapMusic(fadeOutSpeed);
+    this.currentBGM = 0;
+    this.nextMapMusic = song;
+    this.mapMusicState = 7;
+    this.mapMusicFadeInSpeed = fadeInSpeed;
+  }
+
+  /** FadeInNewMapMusic (unused in FireRed callers) from sound.c. */
+  fadeInNewMapMusic(song: number, speed: number): void {
+    this.fadeInNewBGM(song, speed);
+    this.currentBGM = song;
+    this.nextMapMusic = 0;
+    this.mapMusicState = 2;
+    this.mapMusicFadeInSpeed = 0;
   }
 
   stopBGM(): void {
@@ -128,6 +220,7 @@ class Sound {
     for (const player of ["bgm", "se1", "se2", "fanfare"] as const) this.backend?.stop(player);
     this.seTimer = 0;
     this.fanfareTimer = 0;
+    this.fanfareTaskActive = false;
   }
 
   pauseBGM(): void { this.backend?.pause("bgm"); }
@@ -140,31 +233,86 @@ class Sound {
 
   /** FadeOutMapMusic: only this map-music transition is awaited by BGMusicStopped/isBGMPausedOrStopped. */
   fadeOutMapMusic(speed: number): void {
-    if (!this.waitingForBGMStop) this.fadeOutBGM(speed);
+    if (this.isNotWaitingForBGMStop()) this.fadeOutBGM(speed);
     this.waitingForBGMStop = true;
+    this.currentBGM = 0;
+    this.nextMapMusic = 0;
+    this.mapMusicState = 5;
+  }
+
+  /** IsNotWaitingForBGMStop from sound.c. */
+  isNotWaitingForBGMStop(): boolean {
+    return this.mapMusicState !== 5 && this.mapMusicState !== 6 && this.mapMusicState !== 7;
   }
 
   fadeInBGM(speed: number): void { this.backend?.fadeIn("bgm", speed); }
+
+  /** FadeInNewBGM from sound.c. */
+  fadeInNewBGM(song: number, speed: number): void {
+    if (this.disableMusic || song === this.c("MUS_NONE")) song = 0;
+    this.playBGM(song);
+    this.backend?.fadeIn("bgm", speed);
+  }
 
   private fadeOutTimer = 0;
   /** IsNotWaitingForBGMStop: true whenever no map-music fade-out is pending, not merely "audio is silent". */
   private waitingForBGMStop = false;
   isBGMPausedOrStopped(): boolean {
     if (!this.waitingForBGMStop) return true;
-    const stopped = this.backend ? !this.backend.isPlaying("bgm") : (this.fadeOutTimer > 0 ? (this.fadeOutTimer--, false) : true);
+    const stopped = this.backend ? !this.backend.isPlaying("bgm") : this.fadeOutTimer === 0;
     if (stopped) this.waitingForBGMStop = false;
     return stopped;
   }
 
+  /** IsBGMStopped from sound.c: a paused, still-active track is not stopped. */
+  isBGMStopped(): boolean {
+    if (this.backend) return !this.backend.isPlaying("bgm");
+    return this.fadeOutTimer === 0;
+  }
+
   playFanfare(song: number): void {
+    const index = this.fanfareSongs.indexOf(song);
+    this.playFanfareByFanfareNum(index < 0 ? 0 : index);
+    this.CreateFanfareTask();
+  }
+
+  /** PlayFanfareByFanfareNum from sound.c; Quest Log playback is handled by its caller. */
+  playFanfareByFanfareNum(fanfareNum: number): void {
+    const song = this.fanfareSongs[fanfareNum];
+    if (song === undefined) return;
     this.fanfareSong = song;
     this.fanfareTimer = this.fanfareBySong.get(song) ?? 160;
     this.backend?.pause("bgm");
     this.backend?.playSong("fanfare", song);
   }
 
+  /** Task_Fanfare from sound.c. */
+  Task_Fanfare(): void {
+    if (this.fanfareTimer > 0) {
+      this.fanfareTimer--;
+    } else {
+      this.backend?.stop("fanfare");
+      this.backend?.resume("bgm");
+      this.fanfareTaskActive = false;
+    }
+  }
+
+  /** CreateFanfareTask from sound.c; the task runner is represented by frame(). */
+  CreateFanfareTask(): void {
+    if (!this.fanfareTaskActive) this.fanfareTaskActive = true;
+  }
+
+  /** StopFanfareByFanfareNum from sound.c. */
+  stopFanfareByFanfareNum(fanfareNum: number): void {
+    const song = this.fanfareSongs[fanfareNum];
+    if (song === undefined) return;
+    if (song === this.fanfareSong) {
+      this.backend?.stop("fanfare");
+    }
+  }
+
   isFanfareTaskInactive(): boolean {
-    return this.fanfareTimer === 0;
+    return !this.fanfareTaskActive;
   }
 
   playCry(species: number, mode = 0): void {
@@ -189,9 +337,28 @@ class Sound {
     this.backend?.setVolume("bgm", volume);
   }
 
-  /** StopCryAndClearCrySongs: the m4a backend cannot cut a cry, so only the timer is cleared. */
+  /** IsBGMPlaying from sound.c excludes paused tracks. */
+  isBGMPlaying(): boolean {
+    if (this.backend) return this.backend.isPlaying("bgm");
+    return this.currentBGM !== 0 || this.fadeOutTimer > 0;
+  }
+
+  /** SetBGMVolume_SuppressHelpSystemReduction from sound.c. */
+  setBGMVolumeSuppressHelpSystemReduction(volume: number): void {
+    this.disableHelpSystemVolumeReduce = true;
+    this.setBgmVolume(volume);
+  }
+
+  /** BGMVolumeMax_EnableHelpSystemReduction from sound.c. */
+  bgmVolumeMaxEnableHelpSystemReduction(): void {
+    this.disableHelpSystemVolumeReduce = false;
+    this.setBgmVolume(256);
+  }
+
+  /** StopCryAndClearCrySongs / main.c ClearPokemonCrySongs. */
   stopCry(): void {
     this.cryTimer = 0;
+    this.backend?.stopCry?.();
   }
 
   /** IsCryPlayingOrClearCrySongs */
@@ -209,3 +376,6 @@ class Sound {
 }
 
 export const sound = new Sound();
+
+/** main.c ClearPokemonCrySongs; clear the browser cry voice and its wait state. */
+export function ClearPokemonCrySongs(): void { sound.stopCry(); }

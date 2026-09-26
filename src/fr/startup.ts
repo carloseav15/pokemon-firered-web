@@ -11,11 +11,11 @@ import { IntroTitle } from "./introTitle";
 import { OakSpeech } from "./oakSpeech";
 import { sound } from "./audio/sound";
 import { loadTrig } from "./hw/trig";
-import { MainMenu } from "./mainMenu";
+import { CB2_InitMainMenu, MainMenu } from "./mainMenu";
 import { ClearSaveScreen } from "./clearSaveScreen";
 import { joy } from "./gba/input";
 import { rom } from "./rom";
-import { SetVBlankCallback } from "./hw/runtime";
+import { InitMainCallbacks, SetVBlankCallback } from "./hw/runtime";
 import { LoadOam, ProcessSpriteCopyRequests } from "./hw/sprite";
 import { TransferPlttBuffer } from "./hw/palette";
 import { ScanlineEffect_InitHBlankDmaTransfer } from "./hw/scanline";
@@ -66,6 +66,7 @@ class Startup {
     ]);
     void rom.load().then(() => { this.romReady = true; });
     void OakSpeech.preload().then(() => { this.oakLoaded = true; });
+    InitMainCallbacks();
     joy.attach();
     (window as unknown as { frStartup: unknown }).frStartup = this; // debug hook
     (window as unknown as { frStartupStep: unknown }).frStartupStep = (frames: number, buttons = 0): void => {
@@ -133,7 +134,7 @@ class Startup {
         // main.c seeds the LCG and trainer-ID low half from Timer1 before loading the menu.
         SeedRngAndSetTrainerId(this.titleScreen.timer1Low);
         this.set("menu");
-        this.mainMenu.begin();
+        CB2_InitMainMenu();
       }
       if (this.stage === "menu") {
         this.mainMenu.update();

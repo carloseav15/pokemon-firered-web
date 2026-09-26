@@ -22,7 +22,7 @@ export function IsFreezePlayerFinished(ctx: ScriptRunner): boolean {
 /** FreezeObjects_WaitForPlayer */
 export function FreezeObjects_WaitForPlayer(ctx: ScriptRunner): void {
   ctx.ow.objects.freezeAll();
-  ctx.setupNative(() => IsFreezePlayerFinished(ctx));
+  ctx.SetupNativeScript(() => IsFreezePlayerFinished(ctx));
 }
 
 /** IsFreezeSelectedObjectAndPlayerFinished / Task_WaitPlayerAndTargetNPCStopMoving */
@@ -37,7 +37,7 @@ export function FreezeObjects_WaitForPlayerAndSelected(ctx: ScriptRunner): void 
     targetDone = true;
   }
 
-  ctx.setupNative(() => {
+  ctx.SetupNativeScript(() => {
     if (!playerDone && walkrunIsStandingStill(ctx)) {
       HandleEnforcedLookDirection(ctx);
       playerDone = true;
@@ -63,16 +63,12 @@ export function ClearPlayerHeldMovementAndUnfreezeObjectEvents(ctx: ScriptRunner
 }
 
 function HandleEnforcedLookDirection(ctx: ScriptRunner): void {
+  if (!ctx.ow.player.IsPlayerNotUsingAcroBikeOnBumpySlope()) return;
   const player = ctx.ow.player.object;
   player.heldMovementActive = false;
   ctx.ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
 }
 
 function StopPlayerAvatar(ctx: ScriptRunner): void {
-  const player = ctx.ow.player.object;
-  player.inanimate = false;
-  player.disableAnim = false;
-  player.facingDirectionLocked = false;
-  ctx.ow.player.flags &= ~0x80;
-  ctx.ow.objects.setDirection(player, player.facingDirection);
+  ctx.ow.player.StopPlayerAvatar();
 }

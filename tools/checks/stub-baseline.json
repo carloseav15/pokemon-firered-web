@@ -1,13 +1,6 @@
 {
- "battle_anim_mons": [
-  "GetBattleBgPaletteNum",
-  "GetBattlerPosition"
- ],
  "bg": [
   "IsDma3ManagerBusyWithBgCopy"
- ],
- "coins": [
-  "GetCoins"
  ],
  "fame_checker": [
   "FCSetup_ClearVideoRegisters",
@@ -21,9 +14,7 @@
  "field_effect_helpers": [
   "CreateBobbingEffect",
   "CreateWarpArrowSprite",
-  "FindTallGrassFieldEffectSpriteId",
   "FldEff_Ash",
-  "FldEff_BerryTreeGrowthSparkle",
   "FldEff_BikeTireTracks",
   "FldEff_Bubbles",
   "FldEff_DeepSandFootprints",
@@ -48,7 +39,6 @@
   "FldEff_UnusedGrass2",
   "FldEff_UnusedSand",
   "FldEff_UnusedWaterSurfacing",
-  "GetReflectionVerticalOffset",
   "GetSurfBlob_BobState",
   "GetSurfBlob_DontSyncAnim",
   "GetSurfBlob_HasPlayerOffset",
@@ -83,35 +73,8 @@
   "WaitFieldEffectSpriteAnim"
  ],
  "field_weather": [
-  "ApplyDroughtGammaShiftWithBlend",
-  "ApplyFogBlend",
-  "ApplyGammaShift",
-  "ApplyGammaShiftWithBlend",
-  "ApplyWeatherGammaShiftToPal",
-  "DroughtStateInit",
-  "DroughtStateRun",
-  "FadeInScreenWithWeather",
-  "FadeInScreen_Drought",
-  "FadeInScreen_FogHorizontal",
-  "FadeInScreen_RainShowShade",
-  "FadeScreen",
-  "IsWeatherChangeComplete",
-  "IsWeatherNotFadingIn",
-  "LightenSpritePaletteInFog",
-  "LoadCustomWeatherSpritePalette",
-  "LoadDroughtWeatherPalettes",
-  "MarkFogSpritePalToLighten",
   "None_Init",
-  "PreservePaletteInWeather",
-  "ResetDroughtWeatherPaletteLoading",
-  "ResetPreservedPalettesInWeather",
-  "SetDroughtGamma",
-  "SetRainStrengthFromSoundEffect",
-  "SetWeatherScreenFadeOut",
-  "SlightlyDarkenPalsInWeather",
   "Task_WeatherInit",
-  "UpdateSpritePaletteWithWeather",
-  "WeatherProcessingIdle",
   "Weather_UpdateBlend"
  ],
  "field_weather_effects": [
@@ -122,30 +85,11 @@
   "UpdateSandstormWaveIndex",
   "UpdateVisibleSnowflakeSprites"
  ],
- "learn_move": [
-  "MoveLearnerInitListMenu",
-  "MoveRelearnerInitListMenuBuffersEtc",
-  "SpawnListMenuScrollIndicatorSprites"
- ],
  "menu_helpers": [
-  "IsHoldingItemAllowed",
-  "IsWritingMailAllowed",
   "MenuHelpers_IsLinkActive"
- ],
- "player_pc": [
-  "CountPCMail",
-  "PCMailCompaction"
- ],
- "save_failed_screen": [
-  "RequestDmaCopyFromCharBuffer",
-  "RequestDmaCopyFromScreenBuffer",
-  "VerifySectorWipe"
  ],
  "shop": [
   "RecordTransactionForQuestLog"
- ],
- "slot_machine": [
-  "GetSlotMachineSetupTaskDataPtr"
  ],
  "sound": [
   "SE12PanpotControl"

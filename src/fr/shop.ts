@@ -262,7 +262,7 @@ function MapPostLoadHook_ReturnToShopMenu(): void {
 function Task_ReturnToShopMenu(taskId: number): void {
   const ow = sGame.overworld;
   // DisplayItemMessageOnField(taskId, GetMartFontId(), gText_AnythingElseICanHelp, ShowShopMenuAfterExitingBuyOrSellMenu)
-  ow.control.msgIsSignpost = false;
+  ow.control.MsgSetNotSignpost();
   ow.messageBox.show(txt("gText_AnythingElseICanHelp"));
   tasks.setFunc(taskId, (id) => {
     if (!ow.messageBox.isHidden()) return;
@@ -889,7 +889,7 @@ export function CreatePokemartMenu(game: Game, itemsForSale: number): void {
   sGame = game;
   SetShopItemsForSale(itemsForSale);
   CreateShopMenu(MART_TYPE_REGULAR);
-  SetShopMenuCallback(() => game.overworld.script.enable()); // ScriptContext_Enable
+  SetShopMenuCallback(() => game.overworld.script.ScriptContext_Enable()); // ScriptContext_Enable
   for (const h of sHistory) Object.assign(h, { logEventId: 0, lastItemId: 0, itemQuantity: 0, totalMoney: 0, hasMultipleTransactions: false, mapSec: 0 });
 }
 
@@ -898,7 +898,7 @@ export function CreateDecorationShop1Menu(game: Game, itemsForSale: number): voi
   sGame = game;
   SetShopItemsForSale(itemsForSale);
   CreateShopMenu(MART_TYPE_DECOR);
-  SetShopMenuCallback(() => game.overworld.script.enable());
+  SetShopMenuCallback(() => game.overworld.script.ScriptContext_Enable());
 }
 
 /** CreateDecorationShop2Menu */
@@ -906,5 +906,5 @@ export function CreateDecorationShop2Menu(game: Game, itemsForSale: number): voi
   sGame = game;
   SetShopItemsForSale(itemsForSale);
   CreateShopMenu(MART_TYPE_DECOR2);
-  SetShopMenuCallback(() => game.overworld.script.enable());
+  SetShopMenuCallback(() => game.overworld.script.ScriptContext_Enable());
 }

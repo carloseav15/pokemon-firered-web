@@ -16,23 +16,25 @@ import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
 import { onWarpForRoamer } from "./pokemon/roamer";
-import { addPCItem } from "./pokemon/items";
 import { rom } from "./rom";
 import { flagGet, newSaveData, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
-import { ChooseMonForDaycare, ChooseMonForMoveTutor, ChoosePartyMonByMenuType } from "./partyMenu";
+import { ChooseMonForDaycare, ChooseMonForMoveTutor, ChoosePartyMonByMenuType, gSelectedOrderFromParty, InitChooseMonsForBattle } from "./partyMenu";
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { WildEncounter } from "./field/wildEncounter";
 import { generatePlayerTrainerId, takeWildEncounterSeed } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
-import { dexCount, getDexFlag, healMon } from "./pokemon/pokemon";
+import { healMon } from "./pokemon/pokemon";
+import { GetSetPokedexFlag } from "./pokemon/mon_extra";
 import { SaveStatToString } from "./saveMenuUtil";
 import * as C from "./generated/constants";
 import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
+import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
+import { ClearMailData } from "./pokemon/mail";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
 import { CreateHelpMessageWindow, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
@@ -41,7 +43,7 @@ import { DoCredits } from "./credits";
 import { BeginHallOfFamePC } from "./hallOfFame";
 import { enterHallOfFame } from "./postBattleEventFuncs";
 import { createInGameTradePokemon, doInGameTradeScene, getInGameTradeSpeciesInfo, getTradeSpecies } from "./pokemon/ingameTrade";
-import { daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
+import { CreateEgg, daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "./pokemon/daycare";
 import { openHardwareMessage } from "./menus/hardwareChoice";
 import { askMoveRelearnerQuestion, openMoveRelearnerList } from "./menus/moveRelearner";
 import { learnMoveWithPrompt } from "./menus/monProgress";
@@ -51,6 +53,33 @@ import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import { openSlotMachine } from "./menus/slotMachine";
+import { ReducePlayerPartyToThree } from "./pokemon/scriptPokemonUtil";
+import { ResetBagCursorPositions } from "./bagMenu";
+import { ResetTMCaseCursorPos } from "./tmCase";
+import { ResetFameChecker } from "./fameChecker";
+import { ClearRoamerData } from "./pokemon/roamer";
+import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
+import { NewGameInitPCItems } from "./menus/playerPc";
+
+/** GetProfOaksRatingMessageByCount (prof_pc.c). */
+function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
+  varSet(SV.RESULT, 0);
+  for (let threshold = 10; threshold < C.KANTO_DEX_COUNT; threshold += 10) {
+    if (count < threshold) return rom.text(`PokedexRating_Text_LessThan${threshold}`);
+  }
+  if (count === C.KANTO_DEX_COUNT - 1) {
+    const mewNationalDexNo = rom.species[rom.c("SPECIES_MEW")].national;
+    if (GetSetPokedexFlag(mewNationalDexNo, C.FLAG_GET_CAUGHT))
+      return rom.text("PokedexRating_Text_LessThan150");
+    varSet(SV.RESULT, 1);
+    return rom.text("PokedexRating_Text_Complete");
+  }
+  if (count === C.KANTO_DEX_COUNT) {
+    varSet(SV.RESULT, 1);
+    return rom.text("PokedexRating_Text_Complete");
+  }
+  return rom.text("PokedexRating_Text_LessThan10");
+}
 import { CreatePokemartMenu } from "./shop";
 import { openOptionMenu } from "./optionMenu";
 import { openRegionMap, REGIONMAP_TYPE_NORMAL, REGIONMAP_TYPE_WALL } from "./regionMap";
@@ -93,8 +122,8 @@ export class Game {
     create: () => { createInGameTradePokemon(); },
     doScene: () => {
       const ow = this.overworld;
-      ow.script.stop();
-      fieldMenu(this, (close) => doInGameTradeScene(() => { close(); ow.script.enable(); }), false);
+      ow.script.ScriptContext_Stop();
+      fieldMenu(this, (close) => doInGameTradeScene(() => { close(); ow.script.ScriptContext_Enable(); }), false);
     },
   };
   private accumulator = 0;
@@ -167,31 +196,87 @@ export class Game {
   // ---------------------------------------------------------------- new game / continue
 
   newGame(playerName: string, gender: number, rivalName: string): void {
-    const data = newSaveData();
-    this.differentSaveFile = true;
-    data.trainerId = generatePlayerTrainerId();
-    setSave(data);
-    resetPokemonStorageSystem();
-    PlayTimeCounter_Reset();
-    this.wild.seed(takeWildEncounterSeed());
+    this.NewGameInitData(playerName, gender, rivalName);
     setName("player", encode(playerName.slice(0, 7)));
     setName("rival", encode(rivalName.slice(0, 7)));
-    save.playerGender = gender;
-    save.money = 3000;
-    addPCItem(rom.c("ITEM_POTION"), 1);
     this.syncStringVars();
-    // WarpToPlayersRoom
-    const num = rom.c("MAP_PALLET_TOWN_PLAYERS_HOUSE_2F");
-    this.overworld.setWarpDestination(num >> 8, num & 0xff, -1, 6, 6);
-    this.overworld.lastUsedWarp = { ...save.location };
-    // RunScriptImmediately(EventScript_ResetAllMapFlags)
-    this.overworld.script.runImmediately(rom.label("EventScript_ResetAllMapFlags"));
     this.overworld.resetInitialPlayerAvatarState();
     this.overworld.fieldCallback = () => this.overworld.fieldCBWarpExitFadeFromBlack();
-    this.overworld.script.init();
+    this.overworld.script.ScriptContext_Init();
     paletteFade.fill(RGB_BLACK);
     PlayTimeCounter_Start();
     this.overworld.warpIntoMapAndLoad();
+  }
+
+  /** new_game.c: initialize the modeled SaveBlock state for a new game. */
+  NewGameInitData(playerName: string, gender: number, rivalName: string): void {
+    this.ResetMenuAndMonGlobals();
+    this.Sav2_ClearSetDefault();
+    this.differentSaveFile = true;
+    const data = newSaveData();
+    data.trainerId = generatePlayerTrainerId();
+    data.playerGender = gender;
+    data.playerName = Array.from(encode(playerName.slice(0, 7)));
+    data.rivalName = Array.from(encode(rivalName.slice(0, 7)));
+    this.ClearPokedexFlags(data);
+    this.ClearBattleTower(data);
+    data.money = 3000;
+    data.registeredItem = 0;
+    setSave(data);
+    ClearMailData();
+    ResetFameChecker();
+    this.ResetMiniGamesResults();
+    ClearRoamerData();
+    resetPokemonStorageSystem();
+    NewGameInitPCItems();
+    this.InitHeracrossSizeRecord();
+    this.InitMagikarpSizeRecord();
+    SetAllRenewableItemFlags();
+    PlayTimeCounter_Reset();
+    this.wild.seed(takeWildEncounterSeed());
+    this.WarpToPlayersRoom();
+    this.overworld.script.RunScriptImmediately(rom.label("EventScript_ResetAllMapFlags"));
+  }
+
+  /** new_game.c SetDefaultOptions. */
+  SetDefaultOptions(): void {
+    save.options = { textSpeed: 1, battleScene: true, battleStyle: 0, sound: 0, buttonMode: 0, frameType: 0 };
+  }
+
+  /** new_game.c ClearPokedexFlags. */
+  ClearPokedexFlags(data: SaveData = save): void {
+    data.pokedexCaught.fill(0);
+    data.pokedexSeen.fill(0);
+  }
+
+  /** new_game.c ClearBattleTower; this port currently models no tower records. */
+  ClearBattleTower(data: SaveData = save): void {
+    data.battleTower = [];
+  }
+
+  /** new_game.c Sav2_ClearSetDefault. A fresh SaveBlock2 is represented by newSaveData. */
+  Sav2_ClearSetDefault(): void {
+    this.SetDefaultOptions();
+  }
+
+  /** new_game.c ResetMiniGamesResults for the records represented by SaveData. */
+  ResetMiniGamesResults(): void {
+    save.miniGameResults = { berryCrush: [], pokemonJump: [], berryPicking: [], berryPowder: 0 };
+    save.berryPowder = 0;
+  }
+
+  /** main.c ResetMenuAndMonGlobals, limited to menu state present in this port. */
+  ResetMenuAndMonGlobals(): void {
+    this.differentSaveFile = false;
+    ResetBagCursorPositions();
+    ResetTMCaseCursorPos();
+  }
+
+  /** new_game.c WarpToPlayersRoom. */
+  WarpToPlayersRoom(): void {
+    const num = rom.c("MAP_PALLET_TOWN_PLAYERS_HOUSE_2F");
+    this.overworld.setWarpDestination(num >> 8, num & 0xff, -1, 6, 6);
+    this.overworld.lastUsedWarp = { ...save.location };
   }
 
   continueGame(data: SaveData): void {
@@ -215,7 +300,7 @@ export class Game {
     this.overworld.setWarpDestination(w.mapGroup, w.mapNum, -1, save.pos.x, save.pos.y);
     this.overworld.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };
     this.overworld.savedMusic = save.savedMusic;
-    this.overworld.script.init();
+    this.overworld.script.ScriptContext_Init();
     this.overworld.fieldCallback = () => this.overworld.fieldCBWarpExitFadeFromBlack();
     paletteFade.fill(RGB_BLACK);
     PlayTimeCounter_Start();
@@ -243,13 +328,13 @@ export class Game {
     ow.objects.freezeAll();
     const items: Array<{ text: Uint8Array; desc: string; action: () => void }> = [];
     const c = rom.constants;
-    const safari = flagGet(c.FLAG_SYS_SAFARI_MODE);
+    const safari = GetSafariZoneFlag();
     if (safari) {
       // SetUpStartMenu_SafariZone
       items.push({ text: rom.text("gText_MenuRetire"), desc: "gStartMenuDesc_Retire", action: () => {
         this.removeStartMenuWindows();
         this.closeStartMenu();
-        ow.script.setupScript(rom.label("SafariZone_EventScript_RetirePrompt"));
+        SafariZoneRetirePrompt((script) => ow.script.ScriptContext_SetupScript(script));
       } });
       items.push({ text: rom.text("gText_MenuPokedex"), desc: "gStartMenuDesc_Pokedex", action: () => this.openPokedex() });
       items.push({ text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => this.openPartyMenu() });
@@ -338,7 +423,7 @@ export class Game {
     this.removeStartMenuWindows();
     const ow = this.overworld;
     this.showSaveStats();
-    ow.control.msgIsSignpost = false;
+    ow.control.MsgSetNotSignpost();
     ow.messageBox.show(rom.text("gText_WouldYouLikeToSaveTheGame"));
     // start_menu.c sSaveDialogCB chain: AskSaveHandleInput -> PrintAskOverwriteText
     // -> AskOverwrite/ReplacePreviousFile -> PrintSavingDontTurnOffPower -> DoSave
@@ -453,7 +538,7 @@ export class Game {
   openPlaceholder(title: string): void {
     this.removeStartMenuWindows();
     const ow = this.overworld;
-    ow.control.msgIsSignpost = false;
+    ow.control.MsgSetNotSignpost();
     ow.messageBox.show(encode(`${title}\nThis screen is not ported yet.`));
     const id = tasks.create(() => {
       if (ow.messageBox.isHidden() && (JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON))) {
@@ -513,7 +598,7 @@ export class Game {
       varSet(SV.RESULT, input === MENU_B_PRESSED || input === 2 ? C.DAYCARE_EXITED_LEVEL_MENU : input);
       this.scriptMenu.removeWindow(window);
       tasks.destroy(id);
-      ow.script.enable();
+      ow.script.ScriptContext_Enable();
     }, 3);
   }
 
@@ -530,7 +615,7 @@ export class Game {
       openHardwareMessage(rom.text("gText_HatchedFromEgg"), () => {
         stringVars.var1 = Uint8Array.from(mon.nickname);
         openHardwareChoice(rom.text("gText_NickHatchPrompt"), [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
-          const done = (): void => { close(); ow.script.enable(); };
+          const done = (): void => { close(); ow.script.ScriptContext_Enable(); };
           if (yes !== 1) { done(); return; }
           DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, done);
         });
@@ -542,20 +627,20 @@ export class Game {
 
   private continueScriptAfterPlaceholder(message: string): void {
     const ow = this.overworld;
-    ow.script.stop();
+    ow.script.ScriptContext_Stop();
     ow.messageBox.show(encode(message));
     const id = tasks.create(() => {
       if (ow.messageBox.isHidden() && (JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON))) {
         ow.messageBox.hide();
         tasks.destroy(id);
-        ow.script.enable();
+        ow.script.ScriptContext_Enable();
       }
     }, 80);
   }
 
   /** ChoosePartyMon / ChooseMonForMoveTutor / ChooseMonForMoveRelearner / ChooseSendDaycareMon → CB2_ReturnToFieldContinueScriptPlayMapMusic */
   choosePartyMon(mode: string): void {
-    this.overworld.script.stop();
+    this.overworld.script.ScriptContext_Stop();
     const scene = new HwScene();
     scene.enter();
     this.scene = scene;
@@ -566,7 +651,7 @@ export class Game {
       scene.leave();
       this.scene = null;
       this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
-      this.overworld.script.enable();
+      this.overworld.script.ScriptContext_Enable();
     };
     switch (mode) {
       case "moveTutor": ChooseMonForMoveTutor(exit); break;
@@ -578,10 +663,10 @@ export class Game {
 
   changeNickname(index: number): void {
     const mon = save.party[index];
-    if (!mon || mon.isEgg) { this.overworld.script.enable(); return; }
+    if (!mon || mon.isEgg) { this.overworld.script.ScriptContext_Enable(); return; }
     stringVars.var3 = Uint8Array.from(mon.nickname);
     stringVars.var2 = Uint8Array.from(mon.nickname);
-    this.overworld.script.stop();
+    this.overworld.script.ScriptContext_Stop();
     const scene = new HwScene();
     scene.enter();
     this.scene = scene;
@@ -591,15 +676,15 @@ export class Game {
       scene.leave();
       this.scene = null;
       this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
-      this.overworld.script.enable();
+      this.overworld.script.ScriptContext_Enable();
     });
   }
   openPokemonStorage(): void { openStorageMenu(this); }
   openPlayerPC(bedroom: boolean): void { openPlayerPc(this, bedroom); }
   /** special ShowTownMap: InitRegionMapWithExitCB(REGIONMAP_TYPE_WALL, CB2_ReturnToFieldContinueScriptPlayMapMusic). */
   showTownMap(): void {
-    this.overworld.script.stop();
-    fieldMenu(this, (close) => openRegionMap(this, REGIONMAP_TYPE_WALL, () => { close(); this.overworld.script.enable(); }), false);
+    this.overworld.script.ScriptContext_Stop();
+    fieldMenu(this, (close) => openRegionMap(this, REGIONMAP_TYPE_WALL, () => { close(); this.overworld.script.ScriptContext_Enable(); }), false);
   }
 
   /** Task_UseTownMapFromField: InitRegionMapWithExitCB(REGIONMAP_TYPE_NORMAL, CB2_ReturnToField). */
@@ -619,14 +704,14 @@ export class Game {
   selectMoveDeleterMove(): void {
     const ow = this.overworld;
     const partyIndex = varGet(SV.x8004);
-    ow.script.stop();
+    ow.script.ScriptContext_Stop();
     ShowPokemonSummaryScreen(
       save.party,
       partyIndex,
       save.party.length - 1,
       () => {
         varSet(SV.x8005, GetMoveSlotToReplace());
-        ow.script.enable();
+        ow.script.ScriptContext_Enable();
       },
       PokemonSummaryScreenMode.PSS_MODE_FORGET_MOVE,
     );
@@ -635,10 +720,10 @@ export class Game {
   /** learn_move.c TeachMoveRelearnerMove: VAR_0x8004 = TRUE once a move was learned. */
   openMoveRelearner(): void {
     const ow = this.overworld;
-    ow.script.stop();
+    ow.script.ScriptContext_Stop();
     fieldMenu(this, (close) => {
       const mon = save.party[varGet(SV.x8004)];
-      const finish = (learned: boolean): void => { varSet(SV.x8004, learned ? 1 : 0); close(); ow.script.enable(); };
+      const finish = (learned: boolean): void => { varSet(SV.x8004, learned ? 1 : 0); close(); ow.script.ScriptContext_Enable(); };
       if (!mon) { finish(false); return; }
       stringVars.var1 = Uint8Array.from(mon.nickname);
       const moves = relearnableMoves(mon);
@@ -664,10 +749,10 @@ export class Game {
   /** field_specials.c ChangeBoxPokemonNickname */
   changeBoxNickname(box: number, pos: number): void {
     const mon = save.boxes[box]?.[pos];
-    if (!mon) { this.overworld.script.enable(); return; }
+    if (!mon) { this.overworld.script.ScriptContext_Enable(); return; }
     stringVars.var3 = Uint8Array.from(mon.nickname);
     stringVars.var2 = Uint8Array.from(mon.nickname);
-    this.overworld.script.stop();
+    this.overworld.script.ScriptContext_Stop();
     const scene = new HwScene();
     scene.enter();
     this.scene = scene;
@@ -677,17 +762,17 @@ export class Game {
       scene.leave();
       this.scene = null;
       this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
-      this.overworld.script.enable();
+      this.overworld.script.ScriptContext_Enable();
     });
   }
 
-  doCredits(): void { this.overworld.script.stop(); sound.playNewMapMusic(C.MUS_CREDITS); DoCredits(this); }
-  openHallOfFamePc(): void { this.overworld.script.stop(); BeginHallOfFamePC(this); }
+  doCredits(): void { this.overworld.script.ScriptContext_Stop(); sound.playNewMapMusic(C.MUS_CREDITS); DoCredits(this); }
+  openHallOfFamePc(): void { this.overworld.script.ScriptContext_Stop(); BeginHallOfFamePC(this); }
 
   /** A field message that resumes the waiting script once dismissed. */
   showMessageThenEnable(text: Uint8Array): void {
-    this.overworld.script.stop();
-    fieldMessage(this, text, () => this.overworld.script.enable());
+    this.overworld.script.ScriptContext_Stop();
+    fieldMessage(this, text, () => this.overworld.script.ScriptContext_Enable());
   }
 
   /** FieldUseFunc_VsSeeker → Task_VsSeeker_0 */
@@ -704,20 +789,20 @@ export class Game {
     const ow = this.overworld;
     import("./save").then(({ varSet }) => {
       varSet(0x800d, this.writeSave() ? 1 : 0);
-      ow.script.enable();
+      ow.script.ScriptContext_Enable();
     });
   }
   showDiploma(): void { showDiploma(this); }
   enterHallOfFame(): void { enterHallOfFame(this); }
   createPokemartMenu(ptr: number): void {
-    this.overworld.script.stop();
+    this.overworld.script.ScriptContext_Stop();
     CreatePokemartMenu(this, ptr);
   }
   playSlotMachine(id: number): void {
     const ow = this.overworld;
-    fieldMenu(this, (close) => openSlotMachine(id, () => { close(); ow.script.enable(); }), false);
+    fieldMenu(this, (close) => openSlotMachine(id, () => { close(); ow.script.ScriptContext_Enable(); }), false);
   }
-  animateFlash(target: number): void { this.overworld.effects.animateFlash(target, () => this.overworld.script.enable()); }
+  animateFlash(target: number): void { this.overworld.effects.animateFlash(target, () => this.overworld.script.ScriptContext_Enable()); }
   fieldEffectStart(id: number): void { this.overworld.effects.start(id); }
   setStepCallback(id: number): void { this.overworld.stepCallback.activate(id); }
   /** SetCurrentMapLayout: used from ON_TRANSITION scripts, before InitMap builds the grid. */
@@ -757,17 +842,7 @@ export class Game {
   }
   /** prof_pc.c GetProfOaksRatingMessage: shows the rating for VAR_0x8004 caught mons; RESULT = complete. */
   profOakRating(): number {
-    const count = varGet(SV.x8004);
-    const steps = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
-    let label = "PokedexRating_Text_LessThan10";
-    varSet(SV.RESULT, 0);
-    const index = steps.findIndex((n) => count < n);
-    if (index >= 0) label = `PokedexRating_Text_LessThan${steps[index]}`;
-    else if (count === 150) {
-      if (getDexFlag(rom.c("SPECIES_MEW"), true)) label = "PokedexRating_Text_LessThan150";
-      else { label = "PokedexRating_Text_Complete"; varSet(SV.RESULT, 1); }
-    } else if (count === 151) { label = "PokedexRating_Text_Complete"; varSet(SV.RESULT, 1); }
-    this.overworld.messageBox.show(rom.text(label));
+    this.overworld.messageBox.show(GetProfOaksRatingMessageByCount(varGet(SV.x8004)));
     return varGet(SV.RESULT);
   }
   tryFieldPoisonWhiteOut(): void { tryFieldPoisonWhiteOut(this); }
@@ -782,10 +857,38 @@ export class Game {
   }
 
   scriptGiveEgg(species: number): number {
-    const mon = createMon(species, 5);
-    mon.isEgg = true;
-    mon.friendship = rom.species[species].eggCycles;
-    return giveMonToPlayer(mon);
+    return giveMonToPlayer(CreateEgg(species, true));
+  }
+
+  /** pokemon_size_record.c InitHeracrossSizeRecord / new_game.c. */
+  InitHeracrossSizeRecord(): void { varSet(C.VAR_HERACROSS_SIZE_RECORD, 0); }
+
+  /** pokemon_size_record.c InitMagikarpSizeRecord / new_game.c. */
+  InitMagikarpSizeRecord(): void { varSet(C.VAR_MAGIKARP_SIZE_RECORD, 0); }
+
+  /** script_pokemon_util.c ChooseHalfPartyForBattle. */
+  ChooseHalfPartyForBattle(): void {
+    InitChooseMonsForBattle(C.CHOOSE_MONS_FOR_CABLE_CLUB_BATTLE, () => this.CB2_ReturnFromChooseHalfParty());
+  }
+
+  /** CB2_ReturnFromChooseHalfParty. */
+  CB2_ReturnFromChooseHalfParty(): void {
+    varSet(SV.RESULT, 0);
+    // party-menu selected order is maintained by InitChooseMonsForBattle.
+    if (gSelectedOrderFromParty[0] !== 0) varSet(SV.RESULT, 1);
+    this.returnToFieldContinueScript(true);
+  }
+
+  /** script_pokemon_util.c ChooseBattleTowerPlayerParty. */
+  ChooseBattleTowerPlayerParty(): void {
+    InitChooseMonsForBattle(C.CHOOSE_MONS_FOR_BATTLE_TOWER, () => this.CB2_ReturnFromChooseBattleTowerParty());
+  }
+
+  /** CB2_ReturnFromChooseBattleTowerParty. */
+  CB2_ReturnFromChooseBattleTowerParty(): void {
+    if (gSelectedOrderFromParty[0] === 0) varSet(SV.RESULT, 0);
+    else { ReducePlayerPartyToThree(); varSet(SV.RESULT, 1); }
+    this.returnToFieldContinueScript(true);
   }
 
   // ---------------------------------------------------------------- battles
@@ -825,7 +928,7 @@ export class Game {
     const ow = this.overworld;
     this.scene = null;
     this.setCallbacks(() => ow.cb1(), () => ow.cb2());
-    ow.runMapScriptImmediately(7);
+    ow.RunOnReturnToFieldMapScript();
     ow.fieldCBContinueScript(playMusic);
     ow.objects.unfreezeAll();
   }
@@ -836,14 +939,10 @@ export class Game {
     this.scene = null;
     save.money -= computeWhiteOutMoneyLoss();
     for (const mon of save.party) healMon(mon);
-    const respawn = ow.whiteOutRespawn();
+    const respawn = ow.SetWhiteoutRespawnWarpAndHealerNpc();
     ow.warpDestination = respawn.warp;
-    if (!respawn.atHome) varSet(SV.LAST_TALKED, respawn.healerLocalId);
-    ow.fieldCallback = () => {
-      ow.fadeInFromBlack();
-      ow.script.setupScript(rom.label(respawn.atHome ? "EventScript_AfterWhiteOutMomHeal" : "EventScript_AfterWhiteOutHeal"));
-    };
-    ow.script.init();
+    ow.fieldCallback = () => ow.FieldCB_RushInjuredPokemonToCenter();
+    ow.script.ScriptContext_Init();
     paletteFade.fill(RGB_BLACK);
     ow.warpIntoMapAndLoad();
   }

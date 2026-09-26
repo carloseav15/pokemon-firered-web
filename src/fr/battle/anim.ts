@@ -34,7 +34,7 @@ import {
 } from "../pokemon/pics";
 import { DisableStruct } from "../generated/structs";
 import {
-  G, gBattleMonForms, gBattlerPartyIndexes, gBattlerPositions, gBattlerSpriteIds, gBattleSpritesDataPtr, gMonSpritesGfxPtr, gTransformedPersonalities,
+  G, gBattleAnimBgTileBuffer, gBattleAnimBgTilemapBuffer, gBattleMonForms, gBattlerPartyIndexes, gBattlerPositions, gBattlerSpriteIds, gBattleSpritesDataPtr, gMonSpritesGfxPtr, gTransformedPersonalities,
 } from "./globals";
 import { GET_UNOWN_LETTER } from "./macros";
 import { BG_ANIM_AREA_OVERFLOW_MODE, BG_ANIM_PRIORITY, BG_ANIM_SCREEN_SIZE, CopyBattlerSpriteToBg, GetAnimBgAttribute, SetAnimBgAttribute } from "./intro";
@@ -201,8 +201,8 @@ function Task_DoStatusAnimation(taskId: number): void {
 
 // ---------------------------------------------------------------- battle anim BG buffers
 
-export const gBattleAnimBgTileBuffer = new Uint8Array(0x2000);
-export const gBattleAnimBgTilemapBuffer = new Uint16Array(0x800);
+export { gBattleAnimBgTileBuffer, gBattleAnimBgTilemapBuffer };
+
 const BG_ANIM_PAL_1 = 8;
 const BG_ANIM_PAL_2 = 9;
 const BG_SCREEN_ADDR = (n: number) => n * BG_SCREEN_SIZE;
@@ -1401,4 +1401,3 @@ export function SpriteCB_TrainerSlideIn(sprite: Sprite): void {
 
 // pokemon_special_anim_scene.c: level-up vertical sprites live in ../pokemonSpecialAnim.
 export { CreateLevelUpVerticalSpritesTask, LevelUpVerticalSpritesTaskIsRunning } from "../pokemonSpecialAnim";
-

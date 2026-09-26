@@ -3,6 +3,7 @@
 // by pointer are backed by the emulated RAM in ram.ts.
 
 import { allocU16Array, allocU8Array, defineScalars } from "./ram";
+import * as C from "../generated/constants";
 import {
   AI_ThinkingStruct, BattleHealthboxInfo, BattleAnimationInfo, BattleBarInfo, BattleHistory, BattlePokemon, BattleResults,
   BattleScripting, BattleSpriteInfo, BattleStruct, DisableStruct, ProtectStruct, SideTimer, SpecialStatus, WishFutureKnock,
@@ -194,6 +195,9 @@ export const gBattleStruct = structArray(BattleStruct, 1)[0];
 export const gBattleResults = structArray(BattleResults, 1)[0];
 export const gEnigmaBerries = structArray(BattleEnigmaBerry, 4);
 export const gPokedudeBattlerStates = structArray(PokedudeBattlerState, 4);
+/** battle_util2.c allocates these BG animation buffers for each battle. */
+export const gBattleAnimBgTileBuffer = new Uint8Array(0x2000);
+export const gBattleAnimBgTilemapBuffer = new Uint16Array(0x800);
 
 /** struct BattleResources */
 export const gBattleResources = {
@@ -229,6 +233,39 @@ export const parties = {
 
 export const gBitTable = Array.from({ length: 32 }, (_, i) => (1 << i) >>> 0);
 
+function clearBattleResourceStorage(): void {
+  gBattleResources.flags.flags.fill(0);
+  gBattleResources.battleScriptsStack.ptr.fill(0);
+  gBattleResources.battleScriptsStack.size = 0;
+  gBattleResources.battleCallbackStack.function.fill(null);
+  gBattleResources.battleCallbackStack.size = 0;
+  gBattleResources.beforeLvlUp.stats.fill(0);
+  for (const s of [gBattleResources.ai, gBattleResources.battleHistory]) s.bytes.fill(0);
+  gBattleResources.AI_ScriptsStack.ptr.fill(0);
+  gBattleResources.AI_ScriptsStack.size = 0;
+  gBattleAnimBgTileBuffer.fill(0);
+  gBattleAnimBgTilemapBuffer.fill(0);
+}
+
+/** battle_util2.c AllocateBattleResources; typed-array storage stands in for AllocZeroed. */
+export function AllocateBattleResources(): void {
+  gBattleStruct.clear();
+  clearBattleResourceStorage();
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_POKEDUDE) {
+    for (const s of gPokedudeBattlerStates) s.bytes.fill(0);
+  }
+}
+
+/** battle_util2.c FreeBattleResources; scrub the static browser storage at the end of its lifetime. */
+export function FreeBattleResources(): void {
+  gBattleStruct.clear();
+  clearBattleResourceStorage();
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_POKEDUDE) {
+    for (const s of gPokedudeBattlerStates) s.bytes.fill(0);
+  }
+}
+
 export function resetBattleStructs(): void {
-  for (const s of [...gBattleMons, ...gDisableStructs, ...gProtectStructs, ...gSpecialStatuses, ...gSideTimers, gWishFutureKnock, gBattleStruct, gBattleResults]) s.clear();
+  for (const s of [...gBattleMons, ...gDisableStructs, ...gProtectStructs, ...gSpecialStatuses, ...gSideTimers, gWishFutureKnock, gBattleResults]) s.clear();
+  AllocateBattleResources();
 }

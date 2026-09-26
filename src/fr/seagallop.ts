@@ -10,23 +10,80 @@ import { BG_COORD_ADD, BG_COORD_SUB, ChangeBgX, ChangeBgY, CopyBgTilemapBufferTo
 import { InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
 import { GetTextWindowPalette } from "./hw/menu";
 import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_BG0_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "./hw/ppu";
+import { DISPCNT_BG0_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "./hw/ppu";
 import { HwScene, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, gSprites, LoadOam, LoadSpritePalettes, LoadSpriteSheets, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, type Sprite } from "./hw/sprite";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadOam, LoadSpritePalettes, LoadSpriteSheets, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, type Sprite } from "./hw/sprite";
 import { FreeAllWindowBuffers } from "./hw/window";
+import { ResetAllPicSprites } from "./trainerPokemonSprites";
 import { tasks } from "./gba/tasks";
 import { SV, varGet } from "./save";
 import type { Game } from "./game";
 
 const data = <T>(name: string) => cdata<T>("seagallop", name);
 const DIRN_EASTBOUND = 1;
+const TILESTAG_FERRY = 3000;
+const TILESTAG_WAKE = 4000;
+const PALTAG_FERRY_WAKE = 3000;
 
-function directionOfTravel(): number {
+/** GetDirectionOfTravel from seagallop.c. */
+function GetDirectionOfTravel(): number {
   const from = varGet(SV.x8004), to = varGet(SV.x8006);
   const matrix = data<number[]>("sTravelDirectionMatrix");
   if (from >= matrix.length) return DIRN_EASTBOUND;
   return (matrix[from] >> to) & 1;
 }
+
+/** ResetBGPos from seagallop.c: clear all four BG scroll offsets. */
+function ResetBGPos(): void {
+  for (let bg = 0; bg < 4; bg++) { ChangeBgX(bg, 0, 0); ChangeBgY(bg, 0, 0); }
+}
+
+/** ResetGPU from seagallop.c, adapted to the browser-owned GBA memory arrays. */
+function ResetGPU(): void {
+  ppu.vram.fill(0);
+  ppu.oam.fill(0);
+  ppu.pltt.fill(0);
+  InitGpuRegManager();
+  SetGpuReg(REG_OFFSET_DISPCNT, 0);
+  for (let bg = 0; bg < 4; bg++) {
+    SetGpuReg(REG_OFFSET_BG0CNT + bg * 2, 0);
+    SetGpuReg(REG_OFFSET_BG0HOFS + bg * 4, 0);
+    SetGpuReg(REG_OFFSET_BG0VOFS + bg * 4, 0);
+  }
+  for (const reg of [REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY]) SetGpuReg(reg, 0);
+}
+
+/** ResetAllAssets from seagallop.c, using the browser task/sprite/palette owners. */
+function ResetAllAssets(): void {
+  tasks.reset();
+  ResetSpriteData();
+  ResetAllPicSprites();
+  ResetPaletteFade();
+  FreeAllSpritePalettes();
+}
+
+/** SetDispcnt from seagallop.c. */
+function SetDispcnt(): void {
+  SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0 | DISPCNT_OBJ_1D_MAP | DISPCNT_BG0_ON | DISPCNT_BG3_ON | DISPCNT_OBJ_ON);
+}
+
+/** LoadFerrySpriteResources from seagallop.c. */
+function LoadFerrySpriteResources(): void {
+  LoadSpriteSheets([
+    { data: incbin("sWakeSpriteTiles"), size: incbin("sWakeSpriteTiles").length, tag: TILESTAG_WAKE },
+    { data: incbin("sFerrySpriteTiles"), size: incbin("sFerrySpriteTiles").length, tag: TILESTAG_FERRY },
+  ]);
+  LoadSpritePalettes([{ data: incbin("sFerryAndWakePal"), tag: PALTAG_FERRY_WAKE }]);
+}
+
+/** FreeFerrySpriteResources from seagallop.c. */
+function FreeFerrySpriteResources(): void {
+  FreeSpriteTilesByTag(TILESTAG_FERRY);
+  FreeSpriteTilesByTag(TILESTAG_WAKE);
+  FreeSpritePaletteByTag(PALTAG_FERRY_WAKE);
+}
+
+function directionOfTravel(): number { return GetDirectionOfTravel(); }
 
 /** GetSeagallopNumber: the "SEAGALLOP HI-SPEED ##" line for this route. */
 export function getSeagallopNumber(): number {
@@ -52,27 +109,27 @@ export function doSeagallopFerryScene(game: Game): void {
   game.setCallbacks(null, () => scene.update());
   let state = 0;
   const wakeTemplate = templateFrom(data<CSpriteTemplate>("sWakeSpriteTemplate"), { SpriteCB_Wake: (s) => { if (s.animEnded) DestroySprite(s); } });
-  const createWake = (x: number): void => {
+  function CreateWakeSprite(x: number): void {
     const id = CreateSprite(wakeTemplate, x, 92, 8);
     if (id !== 64 && directionOfTravel() === DIRN_EASTBOUND) StartSpriteAnim(gSprites[id], 1);
-  };
+  }
   const ferryTemplate = templateFrom(data<CSpriteTemplate>("sFerrySpriteTemplate"), {
     SpriteCB_Ferry: (s: Sprite) => {
       s.data[1] += s.data[0];
       s.x2 = s.data[1] >> 4;
-      if (s.data[2] % 5 === 0) createWake(s.x + s.x2);
+      if (s.data[2] % 5 === 0) CreateWakeSprite(s.x + s.x2);
       s.data[2]++;
       if (((300 + s.x2) & 0xffff) > 600) DestroySprite(s);
     },
   });
   const scrollBg = (): void => { ChangeBgX(3, 0x600, directionOfTravel() === DIRN_EASTBOUND ? BG_COORD_ADD : BG_COORD_SUB); };
-  let timer = 0;
-  const finish = (): void => {
+  function Task_Seagallop_3(): void {
     const seag = data<number[][]>("sSeag");
     let dest = varGet(SV.x8006);
     if (dest >= seag.length) dest = 0;
     const [group, num, x, y] = seag[dest];
     sound.playSE(C.SE_EXIT);
+    FreeFerrySpriteResources();
     FreeAllWindowBuffers();
     scene.leave();
     game.scene = null;
@@ -80,49 +137,47 @@ export function doSeagallopFerryScene(game: Game): void {
     ow.fieldCallback = () => ow.fieldCBDefaultWarpExit();
     ow.resetInitialPlayerAvatarState();
     ow.warpIntoMapAndLoad();
-  };
-  const task1 = (id: number): void => {
+  }
+  let timer = 0;
+  function Task_Seagallop_1(id: number): void {
     scrollBg();
     if (++timer === 140) {
       sound.fadeOutBGM(4);
       BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
-      tasks.setFunc(id, task2);
+      tasks.setFunc(id, Task_Seagallop_2);
     }
-  };
-  const task2 = (id: number): void => {
+  }
+  function Task_Seagallop_2(id: number): void {
     scrollBg();
     if (sound.isBGMPausedOrStopped() && !gPaletteFade.active) {
+      Task_Seagallop_3();
       tasks.destroy(id);
-      finish();
     }
-  };
-  const mainCb2 = (): void => {
+  }
+  function Task_Seagallop_0(id: number): void { tasks.setFunc(id, Task_Seagallop_1); }
+  function MainCB2_SeaGallop(): void {
     tasks.run();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
-  };
+  }
+  function VBlankCB_SeaGallop(): void { LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer(); }
   SetVBlankCallback(null);
-  SetMainCallback2(() => {
+  function CB2_SetUpSeagallopScene(): void {
     switch (state) {
       case 0:
-        ppu.vram.fill(0); ppu.oam.fill(0); ppu.pltt.fill(0);
-        InitGpuRegManager();
-        SetGpuReg(REG_OFFSET_DISPCNT, 0);
+        ResetGPU();
         state++;
         break;
       case 1:
-        tasks.reset();
-        ResetSpriteData();
-        ResetPaletteFade();
-        FreeAllSpritePalettes();
+        ResetAllAssets();
         state++;
         break;
       case 2: {
         ResetBgsAndClearDma3BusyFlags(false);
         InitBgsFromTemplates(0, data<BgTemplate[]>("sBGTemplates"));
         SetBgTilemapBuffer(3, new Uint16Array(0x400));
-        for (let bg = 0; bg < 4; bg++) { ChangeBgX(bg, 0, 0); ChangeBgY(bg, 0, 0); }
+        ResetBGPos();
         state++;
         break;
       }
@@ -145,11 +200,7 @@ export function doSeagallopFerryScene(game: Game): void {
         state++;
         break;
       case 5:
-        LoadSpriteSheets([
-          { data: incbin("sWakeSpriteTiles"), size: incbin("sWakeSpriteTiles").length, tag: 4000 },
-          { data: incbin("sFerrySpriteTiles"), size: incbin("sFerrySpriteTiles").length, tag: 3000 },
-        ]);
-        LoadSpritePalettes([{ data: incbin("sFerryAndWakePal"), tag: 3000 }]);
+        LoadFerrySpriteResources();
         BlendPalettes(PALETTES_ALL, 16, RGB_BLACK);
         state++;
         break;
@@ -158,8 +209,8 @@ export function doSeagallopFerryScene(game: Game): void {
         state++;
         break;
       case 7: {
-        SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0 | DISPCNT_OBJ_1D_MAP | DISPCNT_BG0_ON | DISPCNT_BG3_ON | DISPCNT_OBJ_ON);
-        SetVBlankCallback(() => { LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer(); });
+        SetDispcnt();
+        SetVBlankCallback(VBlankCB_SeaGallop);
         sound.playSE(C.SE_SHIP);
         // CreateFerrySprite
         const id = CreateSprite(ferryTemplate, 0, 92, 0);
@@ -172,12 +223,13 @@ export function doSeagallopFerryScene(game: Game): void {
         SetGpuReg(REG_OFFSET_WINOUT, 0x00);
         SetGpuReg(REG_OFFSET_WIN0H, 0x00f0);
         SetGpuReg(REG_OFFSET_WIN0V, 0x1888);
-        tasks.create((tid) => tasks.setFunc(tid, task1), 8);
-        SetMainCallback2(mainCb2);
+        tasks.create(Task_Seagallop_0, 8);
+        SetMainCallback2(MainCB2_SeaGallop);
         break;
       }
     }
-  });
+  }
+  SetMainCallback2(CB2_SetUpSeagallopScene);
 }
 
 /** script_menu.c DrawSeagallopDestinationMenu: the list items for this page and origin. */

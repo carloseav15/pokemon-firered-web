@@ -1,6 +1,6 @@
 // mailbox_pc.c: windows and list menu of the player PC's mailbox screen, plus
-// gPlayerPcMenuManager (player_pc.h). The mail list is save.pcMail (no empty
-// slots), so the C's gSaveBlock1Ptr->mail[itemId + PARTY_SIZE] is pcMail[itemId].
+// gPlayerPcMenuManager (player_pc.h). The mail list reads the compacted C
+// SaveBlock1 mail slots 6 through 15 through pokemon/mail.ts.
 // Adaptations: the Japanese-name fix-up (ConvertInternationalString) is not
 // needed for the port's English player names; Alloc'd buffers are arrays.
 // Needs loadCData("mailbox_pc", "strings").
@@ -18,6 +18,7 @@ import { AddTextPrinterParameterized4 } from "./hw/text";
 import { AddWindow, ClearWindowTilemap, RemoveWindow, type WindowTemplate } from "./hw/window";
 import { rom } from "./rom";
 import { save } from "./save";
+import { GetPCMailEntry } from "./pokemon/mail";
 
 /** struct PlayerPCItemPageStruct */
 export type PlayerPCItemPageStruct = {
@@ -69,7 +70,7 @@ export function MailboxPC_GetWindowId(winIdx: number): number {
 
 function ItemPrintFunc(windowId: number, itemId: number, y: number): void {
   if (itemId !== -2) {
-    const author = save.pcMail[itemId]?.message.author ?? [];
+    const author = GetPCMailEntry(itemId)?.message.author ?? [];
     // An unnamed sender (e.g. mail from the port's own gifts) falls back to the player's name.
     const strbuf = Uint8Array.from([...(author.length ? author : save.playerName), EOS]);
     AddTextPrinterParameterized4(windowId, FONT_NORMAL, 8, y, 0, 0, sTextColor(), -1, strbuf);

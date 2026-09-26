@@ -3,15 +3,16 @@
 // ported; composing a new message (the Easy Chat writer) is pending, so mail
 // attached through GIVE carries a blank message.
 
-import { decode } from "../gba/charmap";
+import { CHAR_SPACE, decode, EOS } from "../gba/charmap";
 import * as C from "../generated/constants";
 import { cdata, hasCData, loadCData, type SymRef } from "../hw/assets";
 import { rom } from "../rom";
 import { GetUnownLetterByPersonality } from "../pokemonIcon";
+import { save, type MailData, type PcMailEntry } from "../save";
 import { speciesName, type Pokemon } from "./pokemon";
 
-export const MAIL_WORDS_COUNT = 9;
-export const EC_WORD_UNDEFINED = 0xffff;
+export const MAIL_WORDS_COUNT = C.MAIL_WORDS_COUNT;
+export const EC_WORD_UNDEFINED = C.EC_WORD_UNDEFINED;
 const UNOWN_OFFSET = 30000;
 
 /** SpeciesToMailSpecies; preserve the Unown letter in the mail record. */
@@ -41,6 +42,181 @@ export type MailMessage = {
 export function isMailItem(item: number): boolean {
   const c = rom.constants;
   return item >= (c.ITEM_ORANGE_MAIL ?? 0) && item <= (c.ITEM_RETRO_MAIL ?? 0) && (c.ITEM_ORANGE_MAIL ?? 0) !== 0;
+}
+
+/** ItemIsMail (mail_data.c). */
+export const ItemIsMail = isMailItem;
+
+function blankMailData(): MailData {
+  return {
+    words: new Array(C.MAIL_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED),
+    playerName: new Array(C.PLAYER_NAME_LENGTH + 1).fill(EOS),
+    trainerId: [0, 0, 0, 0],
+    species: C.SPECIES_BULBASAUR,
+    itemId: C.ITEM_NONE,
+  };
+}
+
+/** ClearMailStruct (mail_data.c). */
+export function ClearMailStruct(mail: MailData): void {
+  mail.words = new Array(C.MAIL_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
+  mail.playerName = new Array(C.PLAYER_NAME_LENGTH + 1).fill(EOS);
+  mail.trainerId = [0, 0, 0, 0];
+  mail.species = C.SPECIES_BULBASAUR;
+  mail.itemId = C.ITEM_NONE;
+}
+
+/** ClearMailData (mail_data.c): reset all 16 SaveBlock mail entries. */
+export function ClearMailData(): void {
+  save.mail = Array.from({ length: C.MAIL_COUNT }, blankMailData);
+}
+
+function currentMailData(mon: Pokemon): MailData | undefined {
+  const id = mon.mail ?? C.MAIL_NONE;
+  return id < C.MAIL_COUNT ? save.mail[id] : undefined;
+}
+
+function authorId(bytes: number[]): number {
+  return ((bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8) | ((bytes[2] ?? 0) << 16) | ((bytes[3] ?? 0) << 24)) >>> 0;
+}
+
+function authorBytes(name: number[]): number[] {
+  const out = new Array(C.PLAYER_NAME_LENGTH + 1).fill(EOS);
+  let i = 0;
+  for (; i < C.PLAYER_NAME_LENGTH && i < name.length && name[i] !== EOS; i++) out[i] = name[i] & 0xff;
+  for (; i <= 5; i++) out[i] = CHAR_SPACE;
+  out[i] = EOS;
+  return out;
+}
+
+function copiedNameBytes(name: number[]): number[] {
+  const out = new Array(C.PLAYER_NAME_LENGTH + 1).fill(EOS);
+  for (let i = 0; i < C.PLAYER_NAME_LENGTH && i < name.length && name[i] !== EOS; i++) out[i] = name[i] & 0xff;
+  return out;
+}
+
+function messageFromMailData(mail: MailData): MailMessage {
+  const eos = mail.playerName.indexOf(EOS);
+  return {
+    words: [...mail.words],
+    author: mail.playerName.slice(0, eos < 0 ? mail.playerName.length : eos + 1),
+    authorId: authorId(mail.trainerId),
+  };
+}
+
+/** MonHasMail (mail_data.c). */
+export function MonHasMail(mon: Pokemon): boolean {
+  return isMailItem(mon.heldItem) && (mon.mail ?? C.MAIL_NONE) !== C.MAIL_NONE;
+}
+
+/** GiveMailToMon (mail_data.c): allocate the corresponding party mail slot. */
+export function GiveMailToMon(mon: Pokemon, itemId: number): number {
+  for (let id = 0; id < C.PARTY_SIZE; id++) {
+    if (save.mail[id].itemId !== C.ITEM_NONE) continue;
+    const mail = save.mail[id];
+    ClearMailStruct(mail);
+    mail.playerName = authorBytes(save.playerName);
+    const trainerId = save.trainerId >>> 0;
+    mail.trainerId = [trainerId & 0xff, (trainerId >>> 8) & 0xff, (trainerId >>> 16) & 0xff, (trainerId >>> 24) & 0xff];
+    mail.species = SpeciesToMailSpecies(mon.species, mon.personality);
+    mail.itemId = itemId & 0xffff;
+    mon.mail = id;
+    mon.mailMessage = messageFromMailData(mail);
+    mon.heldItem = itemId & 0xffff;
+    return id;
+  }
+  return C.MAIL_NONE;
+}
+
+/** GiveMailToMon2 (mail_data.c): allocate a party slot and copy a Mail record. */
+export function GiveMailToMon2(mon: Pokemon, mail: MailData): number {
+  const id = GiveMailToMon(mon, mail.itemId);
+  if (id === C.MAIL_NONE) return C.MAIL_NONE;
+  const target = save.mail[id];
+  target.words = [...mail.words];
+  target.playerName = [...mail.playerName];
+  target.trainerId = [...mail.trainerId];
+  target.species = mail.species;
+  target.itemId = mail.itemId;
+  mon.mailMessage = messageFromMailData(target);
+  mon.heldItem = mail.itemId;
+  return id;
+}
+
+/** Copy the saved record for a mail-holding Pokémon. */
+export function GetMailDataForMon(mon: Pokemon): MailData | undefined {
+  const mail = currentMailData(mon);
+  if (!mail) return undefined;
+  return { words: [...mail.words], playerName: [...mail.playerName], trainerId: [...mail.trainerId], species: mail.species, itemId: mail.itemId };
+}
+
+/** TakeMailFromMon (mail_data.c). */
+export function TakeMailFromMon(mon: Pokemon): void {
+  if (!MonHasMail(mon)) return;
+  const mail = currentMailData(mon);
+  if (mail) mail.itemId = C.ITEM_NONE;
+  mon.mail = C.MAIL_NONE;
+  mon.heldItem = C.ITEM_NONE;
+  mon.mailMessage = undefined;
+}
+
+/** ClearMailItemId (mail_data.c). */
+export function ClearMailItemId(mailId: number): void {
+  if (mailId >= 0 && mailId < save.mail.length) save.mail[mailId].itemId = C.ITEM_NONE;
+}
+
+/** TakeMailFromMon2 (mail_data.c): copy a held party record into the first free PC slot. */
+export function TakeMailFromMon2(mon: Pokemon): number {
+  const source = currentMailData(mon);
+  if (!source) return C.MAIL_NONE;
+  for (let id = C.PARTY_SIZE; id < C.MAIL_COUNT; id++) {
+    if (save.mail[id].itemId !== C.ITEM_NONE) continue;
+    const target = save.mail[id];
+    target.words = [...source.words];
+    target.playerName = [...source.playerName];
+    target.trainerId = [...source.trainerId];
+    target.species = source.species;
+    target.itemId = source.itemId;
+    source.itemId = C.ITEM_NONE;
+    mon.mail = C.MAIL_NONE;
+    mon.heldItem = C.ITEM_NONE;
+    mon.mailMessage = undefined;
+    return id;
+  }
+  return C.MAIL_NONE;
+}
+
+/** CountPCMail (player_pc.c), over mail slots after the party records. */
+export function CountPCMail(): number {
+  return save.mail.slice(C.PARTY_SIZE).filter((mail) => mail.itemId !== C.ITEM_NONE).length;
+}
+
+/** PCMailCompaction (player_pc.c), preserving the order of nonempty records. */
+export function PCMailCompaction(): void {
+  const pc = save.mail.slice(C.PARTY_SIZE);
+  const occupied = pc.filter((mail) => mail.itemId !== C.ITEM_NONE);
+  const empty = pc.filter((mail) => mail.itemId === C.ITEM_NONE);
+  save.mail.splice(C.PARTY_SIZE, pc.length, ...occupied, ...empty);
+}
+
+/** Get the mail record at the compacted PC mailbox list index. */
+export function GetPCMail(index: number): MailData | undefined {
+  const slot = C.PARTY_SIZE + index;
+  return index >= 0 && index < C.MAIL_COUNT - C.PARTY_SIZE ? save.mail[slot] : undefined;
+}
+
+/** PC mailbox view derived from SaveBlock1 mail slots. */
+export function GetPCMailEntry(index: number): PcMailEntry | undefined {
+  const mail = GetPCMail(index);
+  return mail ? { item: mail.itemId, message: messageFromMailData(mail) } : undefined;
+}
+
+/** Clear a mailbox entry and compact the 10 SaveBlock PC mail slots. */
+export function ClearPCMailEntry(index: number): void {
+  const mail = GetPCMail(index);
+  if (!mail) return;
+  ClearMailStruct(mail);
+  PCMailCompaction();
 }
 
 /** Blank message, as a bag mail item or a fresh GIVE carries (messageExists=FALSE). */
@@ -117,18 +293,19 @@ export function attachTradeMail(mon: Pokemon, mailNum: number, otName: number[],
   const table = cdata<number[][]>("trade_scene", "sInGameTradeMailMessages");
   const row = table[mailNum];
   if (!row) return;
-  mon.mail = mailNum;
-  mon.mailMessage = {
-    words: row.slice(0, MAIL_WORDS_COUNT),
-    author: [...otName],
-    authorId: otId >>> 0,
-  };
+  const trainerId = otId >>> 0;
+  const mail = blankMailData();
+  mail.words = row.slice(0, MAIL_WORDS_COUNT);
+  mail.playerName = copiedNameBytes(otName);
+  mail.trainerId = [(trainerId >>> 24) & 0xff, (trainerId >>> 16) & 0xff, (trainerId >>> 8) & 0xff, trainerId & 0xff];
+  mail.species = mon.species;
+  mail.itemId = mon.heldItem;
+  GiveMailToMon2(mon, mail);
 }
 
 /** TakeMailFromMon: clears the held mail item and its message. */
 export function takeMail(mon: Pokemon): number {
   const item = mon.heldItem;
-  mon.heldItem = 0;
-  mon.mailMessage = undefined;
+  TakeMailFromMon(mon);
   return item;
 }

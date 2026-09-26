@@ -15,7 +15,7 @@ import { InitTMCase } from "../tmCase";
 import { InitBerryPouch } from "../berryPouch";
 import {
   CB2_ChooseMonToGiveItem, CB2_PartyMenuFromStartMenu, CB2_ShowPartyMenuForItemUse, ItemUseCB_EvolutionStone, ItemUseCB_Medicine, ItemUseCB_PPUp,
-  ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
+  ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, GetItemEffectType, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
   type PartyMenuFieldHooks,
 } from "../partyMenu";
 import { relearnableMoves } from "../pokemon/partyRules";
@@ -29,7 +29,7 @@ import * as MB from "../generated/metatileBehavior";
 import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
 import { tasks } from "../gba/tasks";
 import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST } from "../field/objectEvents";
-import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE } from "../field/playerAvatar";
+import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_UNDERWATER } from "../field/playerAvatar";
 import { startFishing } from "../field/fishing";
 import { openHardwareMessage } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
@@ -89,6 +89,64 @@ export function openFieldParty(game: Game): void {
  * While a field function runs from the bag, `bagCtx` is its bag task: plain
  * messages print in the bag, and flows that need another screen leave it first.
  */
+/** FieldUseFunc_OakStopsYou from item_use.c; `display` keeps the caller's bag/pouch context. */
+export function FieldUseFunc_OakStopsYou(display: (text: Uint8Array) => void): void {
+  stringVars.var1 = Uint8Array.from(save.playerName);
+  display(rom.text("gText_OakForbidsUseOfItemHere"));
+}
+
+/** Task_UsedBlackWhiteFlute from item_use.c: tick data[8], play after eight frames, then show the context message. */
+export function Task_UsedBlackWhiteFlute(taskId: number, done: () => void): void {
+  if (++tasks.data(taskId)[8]! > 7) {
+    sound.playSE(C.SE_GLASS_FLUTE);
+    tasks.destroy(taskId);
+    done();
+  }
+}
+
+/** Task_PlayPokeFlute from item_use.c: play the fanfare, then hand the same task to its wait callback. */
+export function Task_PlayPokeFlute(taskId: number, isFanfareDone: () => boolean, done: () => void): void {
+  sound.playFanfare(C.MUS_POKE_FLUTE);
+  tasks.setFunc(taskId, (id) => Task_DisplayPokeFluteMessage(id, isFanfareDone, done));
+}
+
+/** Task_DisplayPokeFluteMessage from item_use.c: wait until the fanfare callback completes. */
+export function Task_DisplayPokeFluteMessage(taskId: number, isFanfareDone: () => boolean, done: () => void): void {
+  if (!isFanfareDone()) return;
+  tasks.destroy(taskId);
+  done();
+}
+
+/** Task_UseRepel from item_use.c: wait for SE completion before consuming Repel and setting its step counter. */
+export function Task_UseRepel(taskId: number, item: number, onDone: (text: Uint8Array) => void): void {
+  if (sound.isSEPlaying()) return;
+  varSet(C.VAR_REPEL_STEP_COUNT, itemInfo(item)?.holdEffectParam ?? 0);
+  removeBagItem(item, 1);
+  stringVars.var1 = Uint8Array.from(save.playerName);
+  stringVars.var2 = itemName(item);
+  const text = rom.text("gText_PlayerUsedVar2");
+  tasks.destroy(taskId);
+  onDone(text);
+}
+
+/** ItemUseOutOfBattle_EnigmaBerry dispatch from item_use.c; effect data selects the real field handler. */
+export function ItemUseOutOfBattle_EnigmaBerry(item: number, use: {
+  medicine: () => void; sacredAsh: () => void; rareCandy: () => void; ppUp: () => void; ether: () => void; oakStopsYou: () => void;
+}): void {
+  switch (GetItemEffectType(item)) {
+    case C.ITEM_EFFECT_HEAL_HP: case C.ITEM_EFFECT_CURE_POISON: case C.ITEM_EFFECT_CURE_SLEEP:
+    case C.ITEM_EFFECT_CURE_BURN: case C.ITEM_EFFECT_CURE_FREEZE: case C.ITEM_EFFECT_CURE_PARALYSIS:
+    case C.ITEM_EFFECT_CURE_ALL_STATUS: case C.ITEM_EFFECT_ATK_EV: case C.ITEM_EFFECT_HP_EV:
+    case C.ITEM_EFFECT_SPATK_EV: case C.ITEM_EFFECT_SPDEF_EV: case C.ITEM_EFFECT_SPEED_EV: case C.ITEM_EFFECT_DEF_EV:
+      use.medicine(); return;
+    case C.ITEM_EFFECT_SACRED_ASH: use.sacredAsh(); return;
+    case C.ITEM_EFFECT_RAISE_LEVEL: use.rareCandy(); return;
+    case C.ITEM_EFFECT_PP_UP: case C.ITEM_EFFECT_PP_MAX: use.ppUp(); return;
+    case C.ITEM_EFFECT_HEAL_PP: use.ether(); return;
+    default: use.oakStopsYou(); return;
+  }
+}
+
 export function openFieldBag(game: Game, initialItem?: number): void {
   let post: (() => void) | null = null;
   fieldMenu(game, close => {
@@ -116,10 +174,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       if (bagCtx && next === back) { const ctx = bagCtx; bagCtx = null; ctx.message(bytes); return; }
       leave(() => openHardwareMessage(bytes, next));
     };
-    const notNow = (next: () => void = back): void => {
-      stringVars.var1 = Uint8Array.from(save.playerName);
-      message(rom.text("gText_OakForbidsUseOfItemHere"), next);
-    };
+    const notNow = (next: () => void = back): void => FieldUseFunc_OakStopsYou((text) => message(text, next));
     /** gItemUseCB = cb; CB2_ShowPartyMenuForItemUse, back to the bag / TM case / berry pouch. */
     const partyItemUse = (item: number, cb: ItemUseCB): void => leave(() => {
       bagResult.itemId = item;
@@ -158,25 +213,34 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_SacredAsh": leave(() => sacredAsh(item)); return;
         case "FieldUseFunc_Repel":
           if (varGet(C.VAR_REPEL_STEP_COUNT)) { message(rom.text("gText_RepelEffectsLingered")); return; }
-          if (removeBagItem(item, 1)) { varSet(C.VAR_REPEL_STEP_COUNT, info.holdEffectParam); sound.playSE(C.SE_REPEL); }
-          stringVars.var1 = Uint8Array.from(save.playerName);
-          stringVars.var2 = itemName(item);
-          message(rom.text("gText_PlayerUsedVar2")); return;
+          sound.playSE(C.SE_REPEL);
+          {
+            const context = bagCtx;
+            tasks.create((taskId) => Task_UseRepel(taskId, item, (text) => {
+              if (context) context.message(text); else message(text);
+            }), 80);
+          }
+          return;
         case "FieldUseFunc_BlackWhiteFlute": {
           const white = item === C.ITEM_WHITE_FLUTE;
           flagSet(white ? C.FLAG_SYS_WHITE_FLUTE_ACTIVE : C.FLAG_SYS_BLACK_FLUTE_ACTIVE);
           flagClear(white ? C.FLAG_SYS_BLACK_FLUTE_ACTIVE : C.FLAG_SYS_WHITE_FLUTE_ACTIVE);
-          sound.playSE(C.SE_GLASS_FLUTE);
           stringVars.var2 = itemName(item);
-          message(rom.text(white ? "gText_UsedVar2WildLured" : "gText_UsedVar2WildRepelled")); return;
+          const text = rom.text(white ? "gText_UsedVar2WildLured" : "gText_UsedVar2WildRepelled");
+          const context = bagCtx;
+          tasks.create((taskId) => Task_UsedBlackWhiteFlute(taskId, () => {
+            if (context) context.message(text); else message(text);
+          }), 80);
+          return;
         }
         case "FieldUseFunc_PokeFlute": {
           let woke = false;
           save.party.forEach((mon, i) => { if (!mon.isEgg && !PokemonUseItemEffects(mon as Mon, C.ITEM_AWAKENING, i, 0, false)) woke = true; });
           if (!woke) { message(rom.text("gText_PlayedPokeFluteCatchy")); return; }
           message(rom.text("gText_PlayedPokeFlute"), () => {
-            sound.playFanfare(C.MUS_POKE_FLUTE);
-            message(rom.text("gText_PokeFluteAwakenedMon"));
+            tasks.create((taskId) => Task_PlayPokeFlute(taskId, () => sound.isFanfareTaskInactive(), () => {
+              message(rom.text("gText_PokeFluteAwakenedMon"));
+            }), 80);
           });
           return;
         }
@@ -191,10 +255,10 @@ export function openFieldBag(game: Game, initialItem?: number): void {
             || MB.MetatileBehavior_IsIsolatedVerticalRail(behavior) || MB.MetatileBehavior_IsIsolatedHorizontalRail(behavior)) {
             message(rom.text("gText_CantDismountBike")); return;
           }
-          if (!ow.header.allowCycling || ow.player.isBikingDisallowedByPlayer()) { notNow(); return; }
+          if (!ow.header.allowCycling || ow.player.IsBikingDisallowedByPlayer()) { notNow(); return; }
           onField(() => {
             if (!ow.player.isOnBike()) sound.playSE(C.SE_BIKE_BELL);
-            ow.player.getOnOffBike(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE);
+            ow.player.GetOnOffBike(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE);
             ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
             ow.objects.unfreezeAll();
             ow.controlsLocked = false;
@@ -228,7 +292,16 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_TeachyTv": onField(() => game.openTeachyTv()); return;
         case "FieldUseFunc_VsSeeker": onField(() => game.useVsSeeker()); return;
         case "FieldUseFunc_Mail": leave(() => openMailView(decode(itemName(item)), [], "", bag)); return;
-        case "ItemUseOutOfBattle_EnigmaBerry": leave(() => medicine(item)); return;
+        case "ItemUseOutOfBattle_EnigmaBerry":
+          ItemUseOutOfBattle_EnigmaBerry(item, {
+            medicine: () => leave(() => medicine(item)),
+            sacredAsh: () => leave(() => sacredAsh(item)),
+            rareCandy: () => leave(() => rareCandy(item)),
+            ppUp: () => leave(() => partyItemUse(item, ItemUseCB_PPUp)),
+            ether: () => leave(() => partyItemUse(item, ItemUseCB_TryRestorePP)),
+            oakStopsYou: () => notNow(),
+          });
+          return;
         default: notNow(); return;
       }
     };
@@ -260,6 +333,7 @@ function canFish(game: Game): boolean {
   const x = p.currentCoords.x + dx, y = p.currentCoords.y + dy;
   const behavior = ow.map.behaviorAt(x, y);
   if (MB.MetatileBehavior_IsWaterfall(behavior)) return false;
+  if (ow.player.flags & PLAYER_AVATAR_FLAG_UNDERWATER) return false;
   if (!ow.player.isSurfing()) return ow.player.isFacingSurfableWater();
   if (MB.MetatileBehavior_IsSurfable(behavior) && ow.map.collisionAt(x, y) === 0) return true;
   return MB.MetatileBehavior_IsBridge(behavior);
@@ -268,7 +342,7 @@ function canFish(game: Game): boolean {
 /** DisplayItemMessageOnField: field message box, then `next` once dismissed. */
 export function fieldMessage(game: Game, text: ArrayLike<number>, next: () => void): void {
   const ow = game.overworld;
-  ow.control.msgIsSignpost = false;
+  ow.control.MsgSetNotSignpost();
   ow.messageBox.show(text);
   const id = tasks.create(() => {
     if (!ow.messageBox.isHidden()) return;
@@ -315,7 +389,7 @@ function useItemfinder(game: Game): void {
           varSet(SV.x8005, underfoot.item);
           varSet(SV.x8006, 1);
           fieldMessage(game, rom.text("gText_ItemfinderShakingWildly"), () => {
-            ow.script.setupScript(rom.label("EventScript_ItemfinderDigUpUnderfootItem"));
+            ow.script.ScriptContext_SetupScript(rom.label("EventScript_ItemfinderDigUpUnderfootItem"));
           });
         } else {
           // Face the item as the arrows point (GetPlayerDirectionTowardsHiddenItem).
@@ -331,4 +405,3 @@ function useItemfinder(game: Game): void {
     timer++;
   }, 80);
 }
-

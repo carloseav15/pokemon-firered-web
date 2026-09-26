@@ -88,7 +88,7 @@ export class ScriptMenu {
     }
     this.yesNoState.delete(taskId);
     tasks.destroy(taskId);
-    this.ow.script.enable();
+    this.ow.script.ScriptContext_Enable();
   };
 
   private listTexts(id: number): Uint8Array[] {
@@ -132,7 +132,7 @@ export class ScriptMenu {
     this.removeWindow(state.window);
     this.mcState.delete(taskId);
     tasks.destroy(taskId);
-    this.ow.script.enable();
+    this.ow.script.ScriptContext_Enable();
   };
 
   /** A multichoice built from explicit text symbols (CreateWindowFromRect + CreateMCMenuInputHandlerTask). */
@@ -165,7 +165,7 @@ export class ScriptMenu {
       } else varSet(SV.RESULT, input);
       this.removeWindow(window);
       tasks.destroy(id2);
-      this.ow.script.enable();
+      this.ow.script.ScriptContext_Enable();
     }, 80);
     return true;
   }
@@ -283,7 +283,7 @@ export class ScriptMenu {
       0: [4, 1, 1, 7, true], 1: [7, 1, 1, 12, false], 2: [4, 1, 1, 8, false], 3: [4, 1, 1, 8, false],
       4: [4, 1, 1, 8, true], 5: [7, 16, 1, 12, false], 6: [3, 1, 1, 6, false],
     };
-    if (!(which in labels)) { varSet(SV.RESULT, SCR_MENU_CANCEL); this.ow.script.enable(); return; }
+    if (!(which in labels)) { varSet(SV.RESULT, SCR_MENU_CANCEL); this.ow.script.ScriptContext_Enable(); return; }
     const items = labels[which].map((sym) => expandPlaceholders(rom.text(sym)));
     const [maxShowed, left0, top, height, staysOpen] = layout[which];
     let widest = 0;
@@ -328,7 +328,7 @@ export class ScriptMenu {
       this.removeWindow(window);
       tasks.destroy(id);
       this.listSuspended = null;
-      this.ow.script.enable();
+      this.ow.script.ScriptContext_Enable();
     };
     // Task_ListMenuHandleInput
     const id = tasks.create(() => {
@@ -343,7 +343,7 @@ export class ScriptMenu {
       removeArrowPair();
       active = false;
       this.listSuspended = { resume: () => { addArrows(); active = true; }, pending: 0 };
-      this.ow.script.enable();
+      this.ow.script.ScriptContext_Enable();
     }, 8);
   }
 
@@ -364,7 +364,7 @@ export class ScriptMenu {
 
   /** special ReturnToListMenu */
   returnToListMenu(): void {
-    if (!this.listSuspended) { this.ow.script.enable(); return; }
+    if (!this.listSuspended) { this.ow.script.ScriptContext_Enable(); return; }
     this.ow.controlsLocked = true;
     this.listSuspended.resume();
   }

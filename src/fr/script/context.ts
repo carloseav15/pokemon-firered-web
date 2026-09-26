@@ -1,8 +1,10 @@
 // Port of script.c: the bytecode script context (global and immediate).
 
-import { rom } from "../rom";
+import { RAM_SCRIPT_BASE, rom } from "../rom";
 import { COMMANDS } from "./commands";
 import type { Overworld } from "../field/overworld";
+import { save } from "../save";
+import { CalcCRC16WithTable } from "../util";
 
 export const SCRIPT_MODE_STOPPED = 0;
 export const SCRIPT_MODE_BYTECODE = 1;
@@ -11,6 +13,75 @@ export const SCRIPT_MODE_NATIVE = 2;
 const CONTEXT_RUNNING = 0;
 const CONTEXT_WAITING = 1;
 const CONTEXT_SHUTDOWN = 2;
+const RAM_SCRIPT_MAGIC = 51;
+const RAM_SCRIPT_DATA_SIZE = 999;
+const RAM_SCRIPT_BYTES = 995;
+
+export let gRamScriptRetAddr: number | null = null;
+
+function ramScriptDataBytes(): Uint8Array {
+  const data = save.ramScript!.data;
+  const bytes = new Uint8Array(RAM_SCRIPT_DATA_SIZE);
+  bytes[0] = data.magic;
+  bytes[1] = data.mapGroup;
+  bytes[2] = data.mapNum;
+  bytes[3] = data.objectId;
+  bytes.set(data.script.slice(0, RAM_SCRIPT_BYTES), 4);
+  return bytes;
+}
+
+/** CalculateRamScriptChecksum (script.c), over the complete packed RamScriptData. */
+export function CalculateRamScriptChecksum(): number {
+  return CalcCRC16WithTable(ramScriptDataBytes(), RAM_SCRIPT_DATA_SIZE);
+}
+
+/** ClearRamScript (script.c). */
+export function ClearRamScript(): void {
+  save.ramScript = { checksum: 0, data: { magic: 0, mapGroup: 0, mapNum: 0, objectId: 0, script: new Array(RAM_SCRIPT_BYTES).fill(0) } };
+  rom.setRamScriptBytes(new Uint8Array(RAM_SCRIPT_DATA_SIZE));
+}
+
+/** InitRamScript (script.c), copying a bounded script into SaveBlock1's RAM script slot. */
+export function InitRamScript(script: ArrayLike<number>, scriptSize: number, mapGroup: number, mapNum: number, objectId: number): boolean {
+  ClearRamScript();
+  if (scriptSize > RAM_SCRIPT_BYTES) return false;
+  const slot = save.ramScript!;
+  slot.data.magic = RAM_SCRIPT_MAGIC;
+  slot.data.mapGroup = mapGroup & 0xff;
+  slot.data.mapNum = mapNum & 0xff;
+  slot.data.objectId = objectId & 0xff;
+  for (let i = 0; i < scriptSize; i++) slot.data.script[i] = script[i] ?? 0;
+  slot.checksum = CalculateRamScriptChecksum();
+  rom.setRamScriptBytes(ramScriptDataBytes());
+  return true;
+}
+
+/** GetRamScript (script.c): select a valid override for this map and object, else use the ROM script. */
+export function GetRamScript(objectId: number, script: number): number {
+  gRamScriptRetAddr = null;
+  const slot = save.ramScript!;
+  if (slot.data.magic !== RAM_SCRIPT_MAGIC || slot.data.mapGroup !== save.location.mapGroup || slot.data.mapNum !== save.location.mapNum || slot.data.objectId !== (objectId & 0xff)) return script;
+  if (CalculateRamScriptChecksum() !== slot.checksum) {
+    ClearRamScript();
+    return script;
+  }
+  gRamScriptRetAddr = script;
+  rom.setRamScriptBytes(ramScriptDataBytes());
+  return RAM_SCRIPT_BASE + 4;
+}
+
+/** ValidateRamScript (script.c): validate a RAM script stored without an object event. */
+export function ValidateRamScript(): boolean {
+  const slot = save.ramScript!;
+  return slot.data.magic === RAM_SCRIPT_MAGIC
+    && slot.data.mapGroup === 0xff && slot.data.mapNum === 0xff && slot.data.objectId === 0xff
+    && CalculateRamScriptChecksum() === slot.checksum;
+}
+
+/** InitRamScript_NoObjectEvent (script.c). */
+export function InitRamScript_NoObjectEvent(script: ArrayLike<number>, scriptSize: number): void {
+  InitRamScript(script, Math.min(scriptSize, RAM_SCRIPT_BYTES), 0xff, 0xff, 0xff);
+}
 
 export type ScriptCommand = (ctx: ScriptRunner) => boolean;
 
@@ -48,23 +119,24 @@ export class ScriptRunner {
 
   constructor(readonly ow: Overworld) {}
 
-  setupBytecode(ptr: number): void {
+  SetupBytecodeScript(ptr: number): number {
     this.scriptPtr = ptr;
     this.mode = SCRIPT_MODE_BYTECODE;
     this.entry = rom.labelAt(ptr) ?? ptr.toString(16);
+    return 1;
   }
 
-  setupNative(fn: () => boolean): void {
+  SetupNativeScript(fn: () => boolean): void {
     this.mode = SCRIPT_MODE_NATIVE;
     this.nativePtr = fn;
   }
 
-  stop(): void {
+  StopScript(): void {
     this.mode = SCRIPT_MODE_STOPPED;
     this.scriptPtr = 0;
   }
 
-  reset(): void {
+  InitScriptContext(): void {
     this.mode = SCRIPT_MODE_STOPPED;
     this.scriptPtr = 0;
     this.stack = [];
@@ -74,7 +146,7 @@ export class ScriptRunner {
   }
 
   /** RunScriptCommand */
-  run(): boolean {
+  RunScriptCommand(): boolean {
     switch (this.mode) {
       case SCRIPT_MODE_STOPPED:
         return false;
@@ -109,19 +181,28 @@ export class ScriptRunner {
   }
 
   readByte(): number { return rom.u8(this.scriptPtr++); }
-  readHalfword(): number { const v = rom.u16(this.scriptPtr); this.scriptPtr += 2; return v; }
-  readWord(): number { const v = rom.u32(this.scriptPtr); this.scriptPtr += 4; return v; }
+  ScriptReadHalfword(): number { const v = rom.u16(this.scriptPtr); this.scriptPtr += 2; return v; }
+  ScriptReadWord(): number { const v = rom.u32(this.scriptPtr); this.scriptPtr += 4; return v; }
 
-  jump(ptr: number): void { this.scriptPtr = ptr; }
+  ScriptJump(ptr: number): void { this.scriptPtr = ptr; }
 
-  call(ptr: number): void {
-    if (this.stack.length + 1 >= 20) return;
-    this.stack.push(this.scriptPtr);
+  private ScriptPush(ptr: number): number {
+    if (this.stack.length + 1 >= 20) return 1;
+    this.stack.push(ptr);
+    return 0;
+  }
+
+  private ScriptPop(): number | null {
+    return this.stack.pop() ?? null;
+  }
+
+  ScriptCall(ptr: number): void {
+    this.ScriptPush(this.scriptPtr);
     this.scriptPtr = ptr;
   }
 
-  ret(): void {
-    this.scriptPtr = this.stack.pop() ?? 0;
+  ScriptReturn(): void {
+    this.scriptPtr = this.ScriptPop() ?? 0;
   }
 }
 
@@ -134,7 +215,7 @@ export class ScriptContext {
     this.global = new ScriptRunner(ow);
   }
 
-  isEnabled(): boolean {
+  ScriptContext_IsEnabled(): boolean {
     return this.status === CONTEXT_RUNNING;
   }
 
@@ -142,56 +223,56 @@ export class ScriptContext {
     return this.status !== CONTEXT_SHUTDOWN;
   }
 
-  init(): void {
-    this.global.reset();
+  ScriptContext_Init(): void {
+    this.global.InitScriptContext();
     this.status = CONTEXT_SHUTDOWN;
   }
 
   /** ScriptContext_RunScript */
-  runScript(): boolean {
+  ScriptContext_RunScript(): boolean {
     if (this.status === CONTEXT_SHUTDOWN || this.status === CONTEXT_WAITING) return false;
-    this.ow.controlsLocked = true;
+    this.ow.LockPlayerFieldControls();
     let running: boolean;
     try {
-      running = this.global.run();
+      running = this.global.RunScriptCommand();
     } catch (error) {
       console.error(`script error in ${this.global.entry}`, error);
       running = false;
     }
     if (!running) {
       this.status = CONTEXT_SHUTDOWN;
-      this.ow.controlsLocked = false;
+      this.ow.UnlockPlayerFieldControls();
       return false;
     }
     return true;
   }
 
   /** ScriptContext_SetupScript */
-  setupScript(ptr: number): void {
+  ScriptContext_SetupScript(ptr: number): void {
     const control = this.ow.control;
-    control.msgBoxCancelable = false;
-    control.msgBoxWalkawayDisabled = false;
-    this.global.reset();
-    this.global.setupBytecode(ptr);
-    this.ow.controlsLocked = true;
+    control.ClearMsgBoxCancelableState();
+    control.EnableMsgBoxWalkaway();
+    this.global.InitScriptContext();
+    this.global.SetupBytecodeScript(ptr);
+    this.ow.LockPlayerFieldControls();
     this.status = CONTEXT_RUNNING;
   }
 
   /** ScriptContext_Stop */
-  stop(): void {
+  ScriptContext_Stop(): void {
     this.status = CONTEXT_WAITING;
   }
 
   /** ScriptContext_Enable */
-  enable(): void {
+  ScriptContext_Enable(): void {
     this.status = CONTEXT_RUNNING;
-    this.ow.controlsLocked = true;
+    this.ow.LockPlayerFieldControls();
   }
 
   /** RunScriptImmediately */
-  runImmediately(ptr: number): void {
+  RunScriptImmediately(ptr: number): void {
     const runner = new ScriptRunner(this.ow);
-    runner.setupBytecode(ptr);
-    for (let guard = 0; guard < 10000 && runner.run(); guard++) { /* run to completion */ }
+    runner.SetupBytecodeScript(ptr);
+    for (let guard = 0; guard < 10000 && runner.RunScriptCommand(); guard++) { /* run to completion */ }
   }
 }

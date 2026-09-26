@@ -327,7 +327,7 @@ export function Task_PCMainMenu(taskId: number): void {
           clearPcMainMenu();
           tasks.destroy(taskId);
           // UnlockPlayerFieldControls + ScriptContext_Enable
-          activeGameInstance?.overworld.script.enable();
+          activeGameInstance?.overworld.script.ScriptContext_Enable();
           break;
         default:
           if (task.data[2] === OPTION_WITHDRAW && CountPartyMons() === PARTY_SIZE) {

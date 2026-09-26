@@ -1,5 +1,4 @@
-// roamer.c: the legendary beast (Raikou/Entei/Suicune by starter) that moves
-// between Kanto routes each map load and can appear in 1/4 of land encounters.
+// roamer.c: roaming legendary storage, route movement, and encounter creation.
 
 import * as C from "../generated/constants";
 import { random } from "../random";
@@ -8,7 +7,10 @@ import { save, varGet } from "../save";
 import { calculateStats, createMon, type Pokemon } from "./pokemon";
 
 const ROAMER_MAP_GROUP = 3;
-type RoamerSave = { species: number; level: number; status: number; active: boolean; ivs: number[]; personality: number; hp: number };
+type RoamerSave = {
+  species: number; level: number; status: number; active: boolean; ivs: number[]; personality: number; hp: number;
+  cool: number; beauty: number; cute: number; smart: number; tough: number;
+};
 
 const ROUTE_SETS: string[][] = [
   ["ROUTE1", "ROUTE2", "ROUTE21_NORTH", "ROUTE22"], ["ROUTE2", "ROUTE1", "ROUTE3", "ROUTE22"], ["ROUTE3", "ROUTE2", "ROUTE4"],
@@ -27,13 +29,11 @@ const MAP_UNDEFINED_NUM = (): number => rom.c("MAP_UNDEFINED") & 0xff;
 
 let sets: number[][] | undefined;
 function locationSets(): number[][] {
-  if (!sets) {
-    sets = ROUTE_SETS.map((row) => {
-      const nums = row.map((r) => rom.c(`MAP_${r}`) & 0xff);
-      while (nums.length < NUM_LOCATIONS_PER_SET) nums.push(MAP_UNDEFINED_NUM());
-      return nums;
-    });
-  }
+  if (!sets) sets = ROUTE_SETS.map((row) => {
+    const nums = row.map((r) => rom.c(`MAP_${r}`) & 0xff);
+    while (nums.length < NUM_LOCATIONS_PER_SET) nums.push(MAP_UNDEFINED_NUM());
+    return nums;
+  });
   return sets;
 }
 
@@ -43,36 +43,60 @@ const history: Array<[number, number]> = [[0, 0], [0, 0], [0, 0]];
 
 function roamer(): RoamerSave {
   const s = save as unknown as { roamer?: RoamerSave };
-  if (!s.roamer || typeof s.roamer !== "object") s.roamer = { species: 0, level: 0, status: 0, active: false, ivs: [0, 0, 0, 0, 0, 0], personality: 0, hp: 0 };
+  if (!s.roamer || typeof s.roamer !== "object") s.roamer = {
+    species: 0, level: 0, status: 0, active: false, ivs: [0, 0, 0, 0, 0, 0], personality: 0, hp: 0,
+    cool: 0, beauty: 0, cute: 0, smart: 0, tough: 0,
+  };
   return s.roamer;
 }
 
-/** InitRoamer: ClearRoamerData + CreateInitialRoamerMon */
-export function initRoamer(): void {
-  const starter = [C.SPECIES_BULBASAUR, C.SPECIES_SQUIRTLE, C.SPECIES_CHARMANDER][varGet(C.VAR_STARTER_MON)] ?? C.SPECIES_BULBASAUR;
-  const species = starter === C.SPECIES_BULBASAUR ? C.SPECIES_ENTEI : starter === C.SPECIES_CHARMANDER ? C.SPECIES_SUICUNE : C.SPECIES_RAIKOU;
-  const mon = createMon(species, 50);
-  Object.assign(roamer(), { species, level: 50, status: 0, active: true, ivs: [...mon.ivs], personality: mon.personality, hp: mon.stats[0] });
+export function ClearRoamerData(): void {
+  Object.assign(roamer(), {
+    species: 0, level: 0, status: 0, active: false, ivs: [0, 0, 0, 0, 0, 0], personality: 0, hp: 0,
+    cool: 0, beauty: 0, cute: 0, smart: 0, tough: 0,
+  });
+  location = [0, 0];
   for (const h of history) { h[0] = 0; h[1] = 0; }
+}
+
+function GetRoamerSpecies(): number {
+  const starter = [C.SPECIES_BULBASAUR, C.SPECIES_SQUIRTLE, C.SPECIES_CHARMANDER][varGet(C.VAR_STARTER_MON)];
+  if (starter === C.SPECIES_BULBASAUR) return C.SPECIES_ENTEI;
+  if (starter === C.SPECIES_CHARMANDER) return C.SPECIES_SUICUNE;
+  return C.SPECIES_RAIKOU;
+}
+
+export function CreateInitialRoamerMon(): void {
+  const mon = createMon(GetRoamerSpecies(), 50);
+  const r = roamer();
+  Object.assign(r, {
+    species: mon.species, level: 50, status: 0, active: true, ivs: [...mon.ivs], personality: mon.personality,
+    hp: mon.stats[0], cool: mon.contest?.[0] ?? 0, beauty: mon.contest?.[1] ?? 0,
+    cute: mon.contest?.[2] ?? 0, smart: mon.contest?.[3] ?? 0, tough: mon.contest?.[4] ?? 0,
+  });
   location = [ROAMER_MAP_GROUP, locationSets()[random() % locationSets().length][0]];
 }
 
-function updateLocationHistoryForRoamer(): void {
+export function InitRoamer(): void { ClearRoamerData(); CreateInitialRoamerMon(); }
+export const initRoamer = InitRoamer;
+
+export function UpdateLocationHistoryForRoamer(): void {
   history[2] = [...history[1]] as [number, number];
   history[1] = [...history[0]] as [number, number];
   history[0] = [save.location.mapGroup, save.location.mapNum];
 }
 
-/** LoadMapFromWarp and Overworld_ResetStateOnContinue move to a different route set. */
-export function onWarpForRoamer(): void {
-  updateLocationHistoryForRoamer();
-  moveToOtherLocationSet();
+export function RoamerMoveToOtherLocationSet(): void {
+  if (!roamer().active) return;
+  location[0] = ROAMER_MAP_GROUP;
+  for (;;) {
+    const mapNum = locationSets()[random() % locationSets().length][0];
+    if (location[1] !== mapNum) { location[1] = mapNum; return; }
+  }
 }
 
-/** LoadMapFromCameraTransition uses RoamerMove's 1-in-16 route-set change. */
-export function onCameraTransitionForRoamer(): void {
-  updateLocationHistoryForRoamer();
-  if (random() % 16 === 0) { moveToOtherLocationSet(); return; }
+export function RoamerMove(): void {
+  if (random() % 16 === 0) { RoamerMoveToOtherLocationSet(); return; }
   if (!roamer().active) return;
   for (const set of locationSets()) {
     if (location[1] !== set[0]) continue;
@@ -86,40 +110,53 @@ export function onCameraTransitionForRoamer(): void {
   }
 }
 
-function moveToOtherLocationSet(): void {
-  if (!roamer().active) return;
-  location[0] = ROAMER_MAP_GROUP;
-  for (;;) {
-    const mapNum = locationSets()[random() % locationSets().length][0];
-    if (location[1] !== mapNum) { location[1] = mapNum; return; }
-  }
+/** LoadMapFromWarp and Overworld_ResetStateOnContinue. */
+export function onWarpForRoamer(): void { UpdateLocationHistoryForRoamer(); RoamerMoveToOtherLocationSet(); }
+
+/** LoadMapFromCameraTransition. */
+export function onCameraTransitionForRoamer(): void { UpdateLocationHistoryForRoamer(); RoamerMove(); }
+
+export function IsRoamerAt(mapGroup: number, mapNum: number): boolean {
+  return roamer().active && mapGroup === location[0] && mapNum === location[1];
 }
 
-/** TryStartRoamerEncounter: the roamer instance, or null. */
-export function tryStartRoamerEncounter(): Pokemon | null {
+export function CreateRoamerMonInstance(): Pokemon {
   const r = roamer();
-  if (!r.active || save.location.mapGroup !== location[0] || save.location.mapNum !== location[1] || random() % 4 !== 0) return null;
   const mon = createMon(r.species, r.level, { personality: r.personality });
   mon.ivs = [...r.ivs];
-  calculateStats(mon); // CreateMonWithIVsPersonality recalculates stats from the stored IVs
+  calculateStats(mon);
   mon.status = r.status;
   mon.hp = r.hp;
+  mon.contest = [r.cool, r.beauty, r.cute, r.smart, r.tough, 0];
   return mon;
 }
 
+export function TryStartRoamerEncounter(): Pokemon | null {
+  if (IsRoamerAt(save.location.mapGroup, save.location.mapNum) && random() % 4 === 0) return CreateRoamerMonInstance();
+  return null;
+}
+export const tryStartRoamerEncounter = TryStartRoamerEncounter;
 export function roamerLevel(): number { return roamer().level; }
 
-/** UpdateRoamerHPStatus + SetRoamerInactive (battle_main.c after a roamer battle) */
-export function afterRoamerBattle(enemy: Pokemon | undefined, outcome: number): void {
+export function UpdateRoamerHPStatus(mon: Pokemon): void {
   const r = roamer();
-  if (enemy) { r.hp = enemy.hp; r.status = enemy.status; }
-  moveToOtherLocationSet();
-  if (outcome === C.B_OUTCOME_WON || outcome === C.B_OUTCOME_CAUGHT || outcome === C.B_OUTCOME_DREW) r.active = false;
+  r.hp = mon.hp;
+  r.status = mon.status;
+  RoamerMoveToOtherLocationSet();
 }
 
-/** GetRoamerLocationMapSectionId (Pokédex area display) */
-export function roamerMapSection(): number {
+export function SetRoamerInactive(): void { roamer().active = false; }
+
+export function afterRoamerBattle(mon: Pokemon | undefined, outcome: number): void {
+  if (mon) UpdateRoamerHPStatus(mon);
+  if (outcome === C.B_OUTCOME_WON || outcome === C.B_OUTCOME_CAUGHT || outcome === C.B_OUTCOME_DREW) SetRoamerInactive();
+}
+
+export function GetRoamerLocation(): [number, number] { return [...location]; }
+
+export function GetRoamerLocationMapSectionId(): number {
   if (!roamer().active) return C.MAPSEC_NONE;
   const id = rom.mapIdByNum((location[0] << 8) | location[1]);
   return id ? rom.c(rom.mapIndex.maps[id].section) : C.MAPSEC_NONE;
 }
+export const roamerMapSection = GetRoamerLocationMapSectionId;

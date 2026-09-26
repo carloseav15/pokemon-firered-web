@@ -3,6 +3,7 @@
 import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
 import { type BgTemplate, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, ShowBg, HideBg } from "./hw/bg";
 import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+import { IsBlendTaskActive, StartBlendTask } from "./hw/menu";
 import { BlendPalettes, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer } from "./hw/palette";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_TGT1_BG2, BLDCNT_TGT1_OBJ, BLDCNT_TGT2_ALL,
@@ -343,7 +344,7 @@ export class IntroGameFreak {
     // IntroCB_GF_RevealLogo, states 0-7.
     if (this.state === 0) {
       SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_OBJ | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_ALL);
-      this.blendFrame = 0;
+      StartBlendTask(0, 16, 16, 0, 16, 0);
       this.timer = 0;
       this.logoSprite = -1;
       this.state = 1;
@@ -351,9 +352,7 @@ export class IntroGameFreak {
       this.createLogoSprite();
       this.state = 2;
     } else if (this.state === 2) {
-      // StartBlendTask(0, 16, 16, 0, 16, 0): fade the OBJ logo art in.
-      this.blend(16, false);
-      if (this.blendFrame >= 16) {
+      if (!IsBlendTaskActive()) {
         BlitBitmapToWindow(0, incbin("sGameFreakLogo_Gfx"), 0x38, 0x06, 0x20, 0x40);
         BlitBitmapToWindow(0, incbin("sGameFreakText_Gfx"), 0, 0x28, 0x90, 0x10);
         CopyWindowToVram(0, COPYWIN_GFX);
@@ -368,13 +367,11 @@ export class IntroGameFreak {
     } else if (this.state === 4) {
       if (++this.timer > 90) {
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG2 | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_ALL);
-        this.blendFrame = 0;
+        StartBlendTask(16, 0, 0, 16, 20, 0);
         this.state = 5;
       }
     } else if (this.state === 5) {
-      // StartBlendTask(16, 0, 0, 16, 20, 0): fade BG2 text/logo out.
-      this.blend(20, true);
-      if (this.blendFrame >= 20) {
+      if (!IsBlendTaskActive()) {
         HideBg(2);
         this.state = 6;
       }

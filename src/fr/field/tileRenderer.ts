@@ -147,84 +147,195 @@ export class TileRenderer {
   }
 }
 
-type AnimStep = (timer: number, r: TileRenderer) => void;
+type TilesetAnimCallback = (timer: number) => void;
+type TilesetAnimTransfer = { src: Uint8Array; destTile: number; sizeBytes: number };
 
-function queue(r: TileRenderer, frames: Uint8Array[] | undefined, index: number, dest: number, count: number): void {
-  if (!frames || frames.length === 0) return;
-  r.writeTiles(dest, frames[index % frames.length], count);
-}
-
-/** Port of tileset_anims.c callbacks keyed by the tileset's callback name. */
+/** tileset_anims.c DMA transfer queue and callbacks, adapted to field tile buffers. */
 export class TilesetAnimator {
   private primaryCounter = 0;
   private primaryMax = 0;
   private secondaryCounter = 0;
   private secondaryMax = 0;
-  private primaryStep: AnimStep | null = null;
-  private secondaryStep: AnimStep | null = null;
+  private primaryCallback: TilesetAnimCallback | null = null;
+  private secondaryCallback: TilesetAnimCallback | null = null;
+  private readonly transferBuffer: TilesetAnimTransfer[] = [];
 
-  constructor(private readonly renderer: TileRenderer) {
-    this.initPrimary();
-    this.initSecondary();
+  constructor(private readonly renderer: TileRenderer) { this.InitTilesetAnimations(); }
+
+  /** ResetTilesetAnimBuffer. */
+  ResetTilesetAnimBuffer(): void { this.transferBuffer.length = 0; }
+
+  /** AppendTilesetAnimToBuffer (20 entries maximum). */
+  AppendTilesetAnimToBuffer(src: Uint8Array | undefined, destTile: number, sizeBytes: number): void {
+    if (!src || this.transferBuffer.length >= 20) return;
+    this.transferBuffer.push({ src, destTile, sizeBytes });
   }
 
-  private initPrimary(): void {
-    const t = this.renderer.primary;
-    if (t.callback === "InitTilesetAnim_General") {
-      this.primaryMax = 640;
-      this.primaryStep = (timer, r) => {
-        if (timer % 8 === 0) queue(r, t.anims.sandwatersedge, Math.floor(timer / 8), 464, 18);
-        if (timer % 16 === 1) queue(r, t.anims.water_current_landwatersedge, Math.floor(timer / 16), 416, 48);
-        if (timer % 16 === 2) queue(r, t.anims.flower, Math.floor(timer / 16), 508, 4);
-      };
+  /** TransferTilesetAnimsBuffer; synchronous copy is the browser's VBlank transfer. */
+  TransferTilesetAnimsBuffer(): void {
+    for (const transfer of this.transferBuffer)
+      this.renderer.writeTiles(transfer.destTile, transfer.src, Math.floor(transfer.sizeBytes / TILE_BYTES));
+    this.transferBuffer.length = 0;
+  }
+
+  /** InitTilesetAnimations. */
+  InitTilesetAnimations(): void {
+    this.ResetTilesetAnimBuffer();
+    this._InitPrimaryTilesetAnimation();
+    this._InitSecondaryTilesetAnimation();
+  }
+
+  /** InitSecondaryTilesetAnimation. */
+  InitSecondaryTilesetAnimation(): void { this._InitSecondaryTilesetAnimation(); }
+
+  /** _InitPrimaryTilesetAnimation. */
+  _InitPrimaryTilesetAnimation(): void {
+    this.primaryCounter = 0;
+    this.primaryMax = 0;
+    this.primaryCallback = null;
+    if (this.renderer.primary.callback === "InitTilesetAnim_General") this.InitTilesetAnim_General();
+  }
+
+  /** _InitSecondaryTilesetAnimation. */
+  _InitSecondaryTilesetAnimation(): void {
+    this.secondaryCounter = 0;
+    this.secondaryMax = 0;
+    this.secondaryCallback = null;
+    switch (this.renderer.secondary.callback) {
+      case "InitTilesetAnim_CeladonCity": this.InitTilesetAnim_CeladonCity(); break;
+      case "InitTilesetAnim_SilphCo": this.InitTilesetAnim_SilphCo(); break;
+      case "InitTilesetAnim_MtEmber": this.InitTilesetAnim_MtEmber(); break;
+      case "InitTilesetAnim_VermilionGym": this.InitTilesetAnim_VermilionGym(); break;
+      case "InitTilesetAnim_CeladonGym": this.InitTilesetAnim_CeladonGym(); break;
     }
   }
 
-  private initSecondary(): void {
-    const t = this.renderer.secondary;
-    const a = t.anims;
-    switch (t.callback) {
-      case "InitTilesetAnim_CeladonCity":
-        this.secondaryMax = 120;
-        this.secondaryStep = (timer, r) => { if (timer % 12 === 0) queue(r, a.fountain, Math.floor(timer / 12), 744, 8); };
-        break;
-      case "InitTilesetAnim_SilphCo":
-        this.secondaryMax = 160;
-        this.secondaryStep = (timer, r) => { if (timer % 10 === 0) queue(r, a.fountain, Math.floor(timer / 10), 976, 8); };
-        break;
-      case "InitTilesetAnim_MtEmber":
-        this.secondaryMax = 256;
-        this.secondaryStep = (timer, r) => { if (timer % 16 === 0) queue(r, a.steam, Math.floor(timer / 16), 896, 8); };
-        break;
-      case "InitTilesetAnim_VermilionGym":
-        this.secondaryMax = 240;
-        this.secondaryStep = (timer, r) => { if (timer % 2 === 0) queue(r, a.motorizeddoor, Math.floor(timer / 2), 880, 7); };
-        break;
-      case "InitTilesetAnim_CeladonGym": {
-        this.secondaryMax = 256;
-        // sTilesetAnims_CeladonGym_Flowers: frames 0,1,2,1
-        const order = a.flowers ? [a.flowers[0], a.flowers[1], a.flowers[2], a.flowers[1]] : undefined;
-        this.secondaryStep = (timer, r) => { if (timer % 16 === 0) queue(r, order, Math.floor(timer / 16), 739, 4); };
-        break;
-      }
-    }
-  }
-
-  /** UpdateTilesetAnimations (once per frame) */
-  update(): void {
+  /** UpdateTilesetAnimations, followed by the Canvas VBlank transfer. */
+  UpdateTilesetAnimations(): void {
+    this.ResetTilesetAnimBuffer();
     if (++this.primaryCounter >= this.primaryMax) this.primaryCounter = 0;
     if (++this.secondaryCounter >= this.secondaryMax) this.secondaryCounter = 0;
-    this.primaryStep?.(this.primaryCounter, this.renderer);
-    this.secondaryStep?.(this.secondaryCounter, this.renderer);
+    this.primaryCallback?.(this.primaryCounter);
+    this.secondaryCallback?.(this.secondaryCounter);
+    this.TransferTilesetAnimsBuffer();
   }
 
-  /** Draw every animation frame 0 immediately so the first view is correct. */
-  prime(): void {
-    for (let t = 0; t < 32; t++) {
-      this.primaryStep?.(t, this.renderer);
-      this.secondaryStep?.(t, this.renderer);
-    }
+  update(): void { this.UpdateTilesetAnimations(); }
+
+  /** QueueAnimTiles_General_Flower. */
+  QueueAnimTiles_General_Flower(timer: number): void {
+    const frames = this.renderer.primary.anims.flower;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 508, 4 * TILE_BYTES);
+  }
+
+  /** QueueAnimTiles_General_Water_Current_LandWatersEdge. */
+  QueueAnimTiles_General_Water_Current_LandWatersEdge(timer: number): void {
+    const frames = this.renderer.primary.anims.water_current_landwatersedge;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 416, 48 * TILE_BYTES);
+  }
+
+  /** QueueAnimTiles_General_SandWatersEdge. */
+  QueueAnimTiles_General_SandWatersEdge(timer: number): void {
+    const frames = this.renderer.primary.anims.sandwatersedge;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 464, 18 * TILE_BYTES);
+  }
+
+  /** TilesetAnim_General. */
+  TilesetAnim_General(timer: number): void {
+    if (timer % 8 === 0) this.QueueAnimTiles_General_SandWatersEdge(timer / 8);
+    if (timer % 16 === 1) this.QueueAnimTiles_General_Water_Current_LandWatersEdge(timer / 16);
+    if (timer % 16 === 2) this.QueueAnimTiles_General_Flower(timer / 16);
+  }
+
+  /** InitTilesetAnim_General. */
+  InitTilesetAnim_General(): void {
     this.primaryCounter = 0;
-    this.secondaryCounter = 0;
+    this.primaryMax = 640;
+    this.primaryCallback = (timer) => this.TilesetAnim_General(timer);
+  }
+
+  /** QueueAnimTiles_CeladonCity_Fountain. */
+  QueueAnimTiles_CeladonCity_Fountain(timer: number): void {
+    const frames = this.renderer.secondary.anims.fountain;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 744, 8 * TILE_BYTES);
+  }
+
+  /** TilesetAnim_CeladonCity. */
+  TilesetAnim_CeladonCity(timer: number): void {
+    if (timer % 12 === 0) this.QueueAnimTiles_CeladonCity_Fountain(timer / 12);
+  }
+
+  /** InitTilesetAnim_CeladonCity. */
+  InitTilesetAnim_CeladonCity(): void {
+    this.secondaryCounter = 0; this.secondaryMax = 120;
+    this.secondaryCallback = (timer) => this.TilesetAnim_CeladonCity(timer);
+  }
+
+  /** QueueAnimTiles_SilphCo_Fountain. */
+  QueueAnimTiles_SilphCo_Fountain(timer: number): void {
+    const frames = this.renderer.secondary.anims.fountain;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 976, 8 * TILE_BYTES);
+  }
+
+  /** TilesetAnim_SilphCo. */
+  TilesetAnim_SilphCo(timer: number): void {
+    if (timer % 10 === 0) this.QueueAnimTiles_SilphCo_Fountain(timer / 10);
+  }
+
+  /** InitTilesetAnim_SilphCo. */
+  InitTilesetAnim_SilphCo(): void {
+    this.secondaryCounter = 0; this.secondaryMax = 160;
+    this.secondaryCallback = (timer) => this.TilesetAnim_SilphCo(timer);
+  }
+
+  /** QueueAnimTiles_MtEmber_Steam. */
+  QueueAnimTiles_MtEmber_Steam(timer: number): void {
+    const frames = this.renderer.secondary.anims.steam;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 896, 8 * TILE_BYTES);
+  }
+
+  /** TilesetAnim_MtEmber. */
+  TilesetAnim_MtEmber(timer: number): void {
+    if (timer % 16 === 0) this.QueueAnimTiles_MtEmber_Steam(timer / 16);
+  }
+
+  /** InitTilesetAnim_MtEmber. */
+  InitTilesetAnim_MtEmber(): void {
+    this.secondaryCounter = 0; this.secondaryMax = 256;
+    this.secondaryCallback = (timer) => this.TilesetAnim_MtEmber(timer);
+  }
+
+  /** QueueAnimTiles_VermilionGym_MotorizedDoor. */
+  QueueAnimTiles_VermilionGym_MotorizedDoor(timer: number): void {
+    const frames = this.renderer.secondary.anims.motorizeddoor;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 880, 7 * TILE_BYTES);
+  }
+
+  /** TilesetAnim_VermilionGym. */
+  TilesetAnim_VermilionGym(timer: number): void {
+    if (timer % 2 === 0) this.QueueAnimTiles_VermilionGym_MotorizedDoor(timer / 2);
+  }
+
+  /** InitTilesetAnim_VermilionGym. */
+  InitTilesetAnim_VermilionGym(): void {
+    this.secondaryCounter = 0; this.secondaryMax = 240;
+    this.secondaryCallback = (timer) => this.TilesetAnim_VermilionGym(timer);
+  }
+
+  /** QueueAnimTiles_CeladonGym_Flowers. */
+  QueueAnimTiles_CeladonGym_Flowers(timer: number): void {
+    const frames = this.renderer.secondary.anims.flowers;
+    if (frames?.length) this.AppendTilesetAnimToBuffer(frames[timer % frames.length], 739, 4 * TILE_BYTES);
+  }
+
+  /** TilesetAnim_CeladonGym. */
+  TilesetAnim_CeladonGym(timer: number): void {
+    if (timer % 16 === 0) this.QueueAnimTiles_CeladonGym_Flowers(timer / 16);
+  }
+
+  /** InitTilesetAnim_CeladonGym. */
+  InitTilesetAnim_CeladonGym(): void {
+    this.secondaryCounter = 0; this.secondaryMax = 256;
+    this.secondaryCallback = (timer) => this.TilesetAnim_CeladonGym(timer);
   }
 }

@@ -299,6 +299,7 @@ export class M4aBackend implements SoundBackend {
   private readonly paused = new Map<string, { id: number; offset: number; loop: boolean }>();
   private out: GainNode | null = null;
   private crySource: AudioBufferSourceNode | null = null;
+  private cryGeneration = 0;
   private cryUntil = 0;
   private noiseBuffer: AudioBuffer | null = null;
 
@@ -445,6 +446,7 @@ export class M4aBackend implements SoundBackend {
 
   playCry(species: number, mode: number): void {
     if (!this.ensure() || !this.ctx || !this.out) return;
+    const generation = ++this.cryGeneration;
     void (async () => {
       if (!(await this.tables())) return;
       const file = this.cries?.[species];
@@ -458,6 +460,7 @@ export class M4aBackend implements SoundBackend {
           return;
         }
       }
+      if (generation !== this.cryGeneration) return;
       // Modes are battle-move nuances; faint/weak pitch down, doubles shorten.
       const rate = mode === 5 ? 0.85 : mode === 3 ? 1.15 : 1;
       const src = this.ctx.createBufferSource();
@@ -475,6 +478,13 @@ export class M4aBackend implements SoundBackend {
 
   isCryPlaying(): boolean {
     return !!this.ctx && this.ctx.currentTime < this.cryUntil;
+  }
+
+  stopCry(): void {
+    this.cryGeneration++;
+    this.crySource?.stop();
+    this.crySource = null;
+    this.cryUntil = 0;
   }
 
   frame(): void {

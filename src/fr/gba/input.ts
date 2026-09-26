@@ -91,6 +91,17 @@ class Joypad {
     }
   }
 
+  /** main.c InitKeys: install GBA repeat timing and clear ReadKeys state. */
+  initKeys(): void {
+    this.repeatStartDelay = 40;
+    this.repeatCounter = 0;
+    this.held = 0;
+    this.newKeys = 0;
+    this.repeated = 0;
+    this.previousRaw = 0;
+    this.latched = 0;
+  }
+
   /** Inject presses for tests/automation. */
   press(bits: number): void { this.raw |= bits; this.latched |= bits; }
   release(bits: number): void { this.raw &= ~bits; }

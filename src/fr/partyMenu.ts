@@ -63,7 +63,7 @@ import {
   zeroMon, type Mon,
 } from "./pokemon/mon";
 import { addBagItem, addPCItem, CheckIfItemIsTMHMOrEvolutionStone, itemInfo, removeBagItem, removePCItem } from "./pokemon/items";
-import { isMailItem } from "./pokemon/mail";
+import { ClearPCMailEntry, GetPCMail, GiveMailToMon, GiveMailToMon2, isMailItem, TakeMailFromMon, TakeMailFromMon2 } from "./pokemon/mail";
 import { canLearnTMHM, speciesName } from "./pokemon/pokemon";
 import { tmhmMove } from "./menus/monProgress";
 import { gPlayerPcMenuManager } from "./mailboxPc";
@@ -177,7 +177,7 @@ export function InitPartyMenu(menuType: number, layout: number, partyAction: num
   sPartyMenuBoxes = [];
   SetMainCallback2WhenLoaded(Promise.all([
     preloadPokemonSpecialAnim(),
-    loadCData("party_menu", "pokemon_icon", "pokemon_special_anim_scene", "strings", "text_window_graphics"),
+    loadCData("party_menu", "battle_tower", "pokemon_icon", "pokemon_special_anim_scene", "strings", "text_window_graphics"),
     preloadPacks(["graphics_party_menu", "graphics_interface", "pokemon", "graphics_text_window", "graphics_fonts", "graphics_help_system"]),
   ]), () => {
     gPartyMenu.menuType = menuType;
@@ -196,6 +196,15 @@ export function InitPartyMenu(menuType: number, layout: number, partyAction: num
     gMain.state = 0;
     SetMainCallback2(CB2_InitPartyMenu);
   });
+}
+
+/** party_menu.c InitChooseMonsForBattle; the caller owns the saved callback. */
+export function InitChooseMonsForBattle(chooseMonsBattleType: number, callback: MainCB): void {
+  ClearSelectedPartyOrder();
+  InitPartyMenu(C.PARTY_MENU_TYPE_CHOOSE_MULTIPLE_MONS, C.PARTY_LAYOUT_SINGLE, C.PARTY_ACTION_CHOOSE_MON,
+    false, C.PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, callback);
+  gPartyMenu.chooseMonsBattleType = chooseMonsBattleType;
+  gPartyMenu.task = Task_ValidateChosenMonsForBattle;
 }
 
 function CB2_UpdatePartyMenu(): void {
@@ -526,6 +535,48 @@ export function Task_HandleChooseMonInput(taskId: number): void {
   }
 }
 
+function CheckBattleEntriesAndGetMessage(): number {
+  const order = gSelectedOrderFromParty;
+  if (gPartyMenu.chooseMonsBattleType === C.CHOOSE_MONS_FOR_BATTLE_TOWER) {
+    if (order[2] === 0) return C.PARTY_MSG_THREE_MONS_ARE_NEEDED;
+    for (let i = 0; i < 2; i++) {
+      const first = save.party[order[i] - 1];
+      for (let j = i + 1; j < 3; j++) {
+        const next = save.party[order[j] - 1];
+        if (first?.species === next?.species) return C.PARTY_MSG_MONS_CANT_BE_SAME;
+        if (first?.heldItem && first.heldItem === next?.heldItem) return C.PARTY_MSG_NO_SAME_HOLD_ITEMS;
+      }
+    }
+  } else if (gPartyMenu.chooseMonsBattleType === C.CHOOSE_MONS_FOR_UNION_ROOM_BATTLE && order[1] === 0) {
+    return C.PARTY_MSG_TWO_MONS_ARE_NEEDED;
+  }
+  return 0xff;
+}
+
+function Task_ValidateChosenMonsForBattle(taskId: number): void {
+  const message = CheckBattleEntriesAndGetMessage();
+  if (message !== 0xff) {
+    sound.playSE(C.SE_FAILURE);
+    DisplayPartyMenuStdMessage(message);
+    tasks.setFunc(taskId, Task_ContinueChoosingMonsForBattle);
+  } else if (gSelectedOrderFromParty[0] !== 0) {
+    sound.playSE(C.SE_SELECT);
+    Task_ClosePartyMenu(taskId);
+  } else {
+    sound.playSE(C.SE_FAILURE);
+    DisplayPartyMenuStdMessage(C.PARTY_MSG_NO_MON_FOR_BATTLE);
+    tasks.setFunc(taskId, Task_ContinueChoosingMonsForBattle);
+  }
+}
+
+function Task_ContinueChoosingMonsForBattle(taskId: number): void {
+  if (!IsPartyMenuTextPrinterActive() && (joy.newKeys & (A_BUTTON | B_BUTTON)) !== 0) {
+    sound.playSE(C.SE_SELECT);
+    DisplayPartyMenuStdMessage(C.PARTY_MSG_CHOOSE_MON);
+    tasks.setFunc(taskId, Task_HandleChooseMonInput);
+  }
+}
+
 type SlotRef = { get(): number; set(v: number): void };
 /** GetCurrentPartySlotPtr */
 function slotRef(): SlotRef {
@@ -801,7 +852,7 @@ function DisplaySwitchedHeldItemMessage(item: number, item2: number, keepOpen: b
 
 /** GiveItemToMon (GiveMailToMon attaches a blank message until Easy Chat is ported). */
 function GiveItemToMon(m: Mon, item: number): void {
-  if (isMailItem(item)) m.mailMessage = { words: new Array(9).fill(0xffff), author: [...save.playerName], authorId: save.trainerId >>> 0 } as never;
+  if (isMailItem(item) && GiveMailToMon(m, item) === C.MAIL_NONE) return;
   SetMonData(m, C.MON_DATA_HELD_ITEM, item);
 }
 
@@ -1777,10 +1828,12 @@ function Task_HandleSwitchItemsYesNoInput(taskId: number): void {
         DisplayPartyMenuMessage(stringVars.var4, false);
         tasks.setFunc(taskId, Task_ReturnToChooseMonAfterText);
       } else if (isMailItem(bagResult.itemId)) {
+        if (isMailItem(sPartyMenuItemId)) TakeMailFromMon(mon(gPartyMenu.slotId));
         GiveItemToMon(mon(gPartyMenu.slotId), bagResult.itemId);
         DisplaySwitchedHeldItemMessage(bagResult.itemId, sPartyMenuItemId, true);
         tasks.setFunc(taskId, Task_UpdateHeldItemSprite);
       } else {
+        if (isMailItem(sPartyMenuItemId)) TakeMailFromMon(mon(gPartyMenu.slotId));
         GiveItemToMon(mon(gPartyMenu.slotId), bagResult.itemId);
         DisplaySwitchedHeldItemMessage(bagResult.itemId, sPartyMenuItemId, true);
         tasks.setFunc(taskId, Task_UpdateHeldItemSprite);
@@ -1869,20 +1922,10 @@ function Task_SendMailToPCYesNo(taskId: number): void {
   if (!IsPartyMenuTextPrinterActive()) { PartyMenuDisplayYesNoMenu(); tasks.setFunc(taskId, Task_HandleSendMailToPCYesNoInput); }
 }
 
-/** mail_data.c TakeMailFromMon2: into the PC mailbox (10 slots). */
-function TakeMailFromMon2(m: Mon): number {
-  save.pcMail ??= [];
-  if (save.pcMail.length >= 10) return 0xff;
-  save.pcMail.push({ item: m.heldItem, message: m.mailMessage ?? { words: new Array(9).fill(0xffff), author: [...save.playerName], authorId: save.trainerId >>> 0 } });
-  m.heldItem = C.ITEM_NONE;
-  m.mailMessage = undefined;
-  return save.pcMail.length - 1;
-}
-
 function Task_HandleSendMailToPCYesNoInput(taskId: number): void {
   switch (Menu_ProcessInputNoWrapClearOnChoose()) {
     case 0:
-      if (TakeMailFromMon2(mon(gPartyMenu.slotId)) !== 0xff) {
+      if (TakeMailFromMon2(mon(gPartyMenu.slotId)) !== C.MAIL_NONE) {
         DisplayPartyMenuMessage(text("gText_MailSentToPC"), false);
         tasks.setFunc(taskId, Task_UpdateHeldItemSprite);
       } else {
@@ -1910,8 +1953,7 @@ function Task_HandleLoseMailMessageYesNoInput(taskId: number): void {
       const m = mon(gPartyMenu.slotId);
       const item = GetMonData(m, C.MON_DATA_HELD_ITEM);
       if (addBagItem(item, 1)) {
-        m.heldItem = C.ITEM_NONE;
-        m.mailMessage = undefined;
+        TakeMailFromMon(m);
         DisplayPartyMenuMessage(text("gText_MailTakenFromPkmn"), false);
         tasks.setFunc(taskId, Task_UpdateHeldItemSprite);
       } else {
@@ -3006,6 +3048,7 @@ function Task_HandleSwitchItemsFromBagYesNoInput(taskId: number): void {
         BufferBagFullCantTakeItemMessage(sPartyMenuItemId);
         DisplayPartyMenuMessage(stringVars.var4, false);
       } else {
+        if (isMailItem(sPartyMenuItemId)) TakeMailFromMon(mon(gPartyMenu.slotId));
         GiveItemToMon(mon(gPartyMenu.slotId), item);
         DisplaySwitchedHeldItemMessage(item, sPartyMenuItemId, true);
       }
@@ -3042,14 +3085,16 @@ function TryGiveMailToSelectedMon(taskId: number): void {
 
   partyMenuResult.useExitCallback = false;
   const index = gPlayerPcMenuManager.cursorPos + gPlayerPcMenuManager.itemsAbove;
-  const mail = save.pcMail[index];
+  const mail = GetPCMail(index);
+  if (!mail) {
+    tasks.setFunc(taskId, Task_UpdateHeldItemSpriteAndClosePartyMenu);
+    return;
+  }
   if (GetMonData(m, C.MON_DATA_HELD_ITEM) !== C.ITEM_NONE) {
     DisplayPartyMenuMessage(text("gText_PkmnHoldingItemCantHoldMail"), true);
   } else {
-    // GiveMailToMon2(mon, mail); ClearMailStruct(mail): the message moves to the mon, the slot is removed.
-    m.heldItem = mail.item;
-    m.mailMessage = mail.message;
-    save.pcMail.splice(index, 1);
+    GiveMailToMon2(m, mail);
+    ClearPCMailEntry(index);
     DisplayPartyMenuMessage(text("gText_MailTransferredFromMailbox"), true);
   }
   ScheduleBgCopyTilemapToVram(2);
@@ -3071,7 +3116,12 @@ function GetBattleEntryEligibility(m: Mon): boolean {
   switch (gPartyMenu.chooseMonsBattleType) {
     default: return GetMonData(m, C.MON_DATA_LEVEL) <= 30;
     case C.CHOOSE_MONS_FOR_CABLE_CLUB_BATTLE: return GetMonData(m, C.MON_DATA_HP) !== 0;
-    case C.CHOOSE_MONS_FOR_BATTLE_TOWER: return GetMonData(m, C.MON_DATA_LEVEL) <= 50;
+    case C.CHOOSE_MONS_FOR_BATTLE_TOWER: {
+      const tower = save as unknown as { battleTower?: { battleTowerLevelType?: number } };
+      if ((tower.battleTower?.battleTowerLevelType ?? 0) === 0 && GetMonData(m, C.MON_DATA_LEVEL) > 50) return false;
+      const banned = cdata<number[]>("battle_tower", "gBattleTowerBannedSpecies");
+      return !banned.includes(GetMonData(m, C.MON_DATA_SPECIES));
+    }
   }
 }
 

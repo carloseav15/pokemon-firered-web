@@ -30,6 +30,51 @@ import { BattleInterfaceSetWindowPals, DrawBattleEntryBackground, InitBattleBgsV
 import { SetHealthboxSpriteVisible, StartHealthboxSlideIn } from "./interface";
 import { battleHost } from "./host";
 
+let sUnknownDebugSpriteDataBuffer: Uint16Array | null = null;
+
+/** battle_main.c SpriteCB_UnusedDebugSprite: begin the debug tile-buffer animation. */
+export function SpriteCB_UnusedDebugSprite(sprite: Sprite): void {
+  sprite.data[0] = 0;
+  sprite.callback = SpriteCB_UnusedDebugSprite_Step;
+}
+
+/** battle_main.c SpriteCB_UnusedDebugSprite_Step. */
+export function SpriteCB_UnusedDebugSprite_Step(sprite: Sprite): void {
+  switch (sprite.data[0]) {
+    case 0:
+      sUnknownDebugSpriteDataBuffer = new Uint16Array(0x800);
+      sprite.data[0]++;
+      sprite.data[1] = 0;
+      sprite.data[2] = 0x281;
+      sprite.data[3] = 0;
+      sprite.data[4] = 1;
+      // C falls through into case 1 on this frame.
+    case 1:
+      if (--sprite.data[4] === 0) {
+        sprite.data[4] = 2;
+        const row = sprite.data[3];
+        const first = sprite.data[1] + row * 32;
+        const second = sprite.data[2] - row * 32;
+        for (let i = 0; i <= 29; i += 2) {
+          sUnknownDebugSpriteDataBuffer![first + i] = 0x3d;
+          sUnknownDebugSpriteDataBuffer![second + i] = 0x3d;
+        }
+        if (++sprite.data[3] === 21) {
+          sprite.data[0]++;
+          sprite.data[1] = 32;
+        }
+      }
+      break;
+    case 2:
+      if (--sprite.data[1] === 20) {
+        sUnknownDebugSpriteDataBuffer?.fill(0);
+        sUnknownDebugSpriteDataBuffer = null;
+        SetMainCallback2(CB2_InitBattle);
+      }
+      break;
+  }
+}
+
 export { VBlankCB_Battle };
 
 export function CB2_InitBattle(): void {

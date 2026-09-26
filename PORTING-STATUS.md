@@ -3,6 +3,177 @@
 Target: the full FireRed game, including its main progression and optional
 systems. The first playable route is a milestone, not the completion criterion.
 
+## Avance de port y cola de trabajo, 2026-09-26
+
+- Inventario actual: **6.078/9.834 funciones con homólogo (61,8%)**; quedan
+  **3.756 nombres (38,2%)**. De 202 archivos C en alcance, 51 siguen parciales
+  o como adaptador: 50 parciales y uno adaptador. El estimado de líneas C sin
+  cubrir es **108.138/247.859 (43,6%)**. Estos indicadores miden coincidencias
+  de nombres y cobertura aproximada; no prueban equivalencia funcional.
+- Orden recomendado de menor a mayor dificultad, siguiendo
+  `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
+  duplicados sin uso, función por función y sin ocultar adaptadores; (2) cerrar
+  archivos casi completos; (3) sustituir por partes la capa antigua del campo
+  (`event_object_movement.c`, `field_player_avatar.c`, `overworld.c`,
+  `fieldmap.c`, `scrcmd.c`); (4) pantallas grandes pendientes, cajas del PC y
+  Easy Chat; (5) audio fino y sistemas postgame. `PENDING.md` contiene la lista
+  viva completa, ordenada por líneas estimadas pendientes, no por dificultad.
+- Corregí `tools/portInventory.py`: un getter TypeScript que devuelve estado
+  real ya no se considera stub solo por tener un `return`, y los `FALSE`/`TRUE`
+  del C se reconocen como literales. La corrección evita clasificar getters y
+  no-ops existentes en el decomp como deuda falsa.
+- **`learn_move.c`: 23/23 homólogos**, frente a 20/23. Implementé la carga de
+  filas del menú, su inicialización y el control de flechas de scroll; conecté
+  esos helpers a `openMoveRelearnerList`, usando el par de flechas de la lista
+  de hardware como adaptación de los sprites específicos de GBA. Pasan
+  `check:port`, `check:learnmove`, `check:honesty`, `inventory`, `pending` y
+  `git diff --check`. No se probó en navegador.
+
+## Revisión de código, 2026-09-26 (sin navegador)
+
+- **`item_use.c`: 41/73 funciones con homólogo (56%)**, ahora pendiente #1.
+  Corregí `CanFish` frente al C: cascadas y estado bajo el agua impiden pescar.
+  Extraje y conecté `FieldUseFunc_OakStopsYou` al rechazo común, y añadí los
+  despachadores de baya Enigma de campo y combate siguiendo sus tablas de
+  `ITEM_EFFECT_*`: cura/estado, Sacred Ash, Rare Candy, PP, Ether, X Item y
+  rechazo según corresponda. También conecté `Task_UsedBlackWhiteFlute`: tras
+  ocho frames reproduce el sonido y muestra el texto mediante el contexto
+  vigente de bolsa/Berry Pouch, siguiendo `data[8]` del C. Añadí las tareas
+  `Task_PlayPokeFlute`/`Task_DisplayPokeFluteMessage` para no presentar el
+  mensaje de despertar hasta que termina la fanfarria. Se mantienen los
+  handlers existentes de party, bolsa y Berry Pouch. Conecté `Task_UseRepel`:
+  ahora espera a que `sound.isSEPlaying()` sea falso antes de retirar el objeto,
+  activar `VAR_REPEL_STEP_COUNT` y mostrar el texto de uso como el C. El
+  inventario estima ~405 líneas C pendientes en este archivo. Pasan
+  `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`;
+  sin navegador ni bundle.
+- **Cierre del umbral de `trainer_see.c`: 32/37 funciones (86%)**. Conecté el
+  runner por frame `Task_RunTrainerSeeFuncList`, el inicio
+  `StartTrainerApproachWithFollowupTask` y la limpieza
+  `Task_DestroyTrainerApproachTask` al mismo task activo de acercamiento. El
+  inventario ya no lo lista entre los 51 archivos pendientes (su criterio es
+  ≥80% de nombres; el 14% restante y la paridad visual siguen sin resolverse).
+  Mismas comprobaciones estáticas; no probé en navegador.
+
+- Avance global medido: **6069/9834 nombres (61%)**. El inventario estima
+  **108138/247859 líneas C pendientes (~44% del código en alcance)**; es una
+  aproximación de líneas y no una medida de fidelidad.
+
+- **Continuación de `trainer_see.c`: 29/37 funciones con homólogo (78%)**.
+  Extraje y conecté `TrainerApproachPlayer` y las funciones del flujo normal
+  `TrainerSeeFunc_StartExclMark`, `WaitExclMark`, `TrainerApproach`,
+  `PrepareToEngage` y `End` al task que ya ejecuta el acercamiento. Ajusté el
+  despacho para que `StartExclMark` y `WaitExclMark` puedan avanzar en el mismo
+  frame, como el bucle `while` de `Task_RunTrainerSeeFuncList` en C. El
+  inventario automático ahora estima ~162 líneas faltantes para este archivo.
+  Disfraces/`REVEAL_TRAINER` siguen sin uso en FRLG; playback de Quest Log no
+  está completamente modelado. Pasan `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check`; sin navegador ni bundle.
+
+- **`trainer_see.c`: 29/37 funciones con homólogo (78%)**, quince más que en
+  el inventario previo a esta revisión. Conecté `QL_IsTrainerSightDisabled`
+  dentro de `checkForTrainersWantingBattle`, reproduciendo la condición de
+  `quest_log.c`. El playback Quest Log aún no está modelado en Game; se usan
+  los campos opcionales de estado si el runtime los entrega, con valores cero
+  como inicialización BSS de C. También conecté entrenadores `BURIED` al flujo
+  de detección: el task cara-al-jugador carga `AshPuff`, espera sus 12 frames
+  iniciales (frame de animación 2), ajusta prioridad, dispara el salto en sitio
+  y espera al final de los cinco cuadros de 6 frames antes de continuar el
+  acercamiento. Usa la plantilla exportada de `fieldfx.json`; el comportamiento
+  sigue sin prueba visual/runtime. La función GBA `FldEff_PopOutOfAsh` se adapta
+  mediante `FieldEffects.popOutOfAsh`; también conecté los callbacks de cámara
+  `CreateCameraObj`, `CameraObjMoveUp` y `CameraObjMoveDown`. En
+  `fieldEffects.ts` conecté los cinco `FldEff_*Icon` con las plantillas de
+  emote y extraje `SetIconSpriteData`/`SpriteCB_TrainerIcons`; el callback busca
+  el objeto por localId/map y limpia el efecto al desaparecer o terminar la
+  animación. Disfraces y otros callbacks en ceniza siguen pendientes. Pasan
+  `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check`; sin navegador.
+- **`fldeff_flash.c`: 19/22 funciones con homólogo (86%)**, ahora supera el
+  umbral del inventario. `fieldMoveMenu.ts` traduce el gate, el callback y la
+  activación de Flash con el script original; `overworld.ts` conecta
+  `TryDoMapTransition` y reproduce las ocho parejas de tipos de mapa de la
+  tabla C. `mapPreviewScreen.ts` corre el preview cave y las tareas
+  `FlashTransition_Enter/Exit` con incbins originales, actualizaciones parciales
+  de paleta y alpha por frame, dibujadas como overlay Canvas. Los tres nombres
+  restantes son `CB2_ChangeMapMain`, `VBC_ChangeMapVBlank` y `CB2_DoChangeMap`;
+  la tarea GBA/VBlank y el reset de registros se resuelven mediante el callback,
+  PPU y ciclo de frames compartidos del port, no con homólogos uno-a-uno. Las
+  transiciones nuevas no se probaron visualmente ni se compararon píxel a píxel.
+  Pasan `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`;
+  sin navegador.
+- **`script.c`: 48/55 funciones con homólogo**, supera el 80% y sale de
+  `PENDING.md`. Alineé los métodos del lector y stack bytecode con el C, conecté
+  setup/retorno/parada y los helpers de mapas/control de mensajes. Añadí el
+  estado RamScript serializable, CRC16 de los 999 bytes, sustitución de scripts
+  de objeto por mapa y `returnram`/`endram`. Quedan seis funciones de Quest Log
+  (fuera de alcance web) y `GetSavedRamScriptIfValid`, que depende de validar
+  Wonder Cards, también fuera del subsistema portado. Sin stubs nuevos. Pasan
+  `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`;
+  sin navegador.
+- **`field_camera.c`: 12/29 nombres con homólogo; cubierta por la capa web**
+  tras revisar sus funciones restantes. `Overworld` implementa seguimiento y
+  paneo; `fieldmap.ts` notifica cambios; `TileRenderer`/el render Canvas dibujan
+  el viewport completo; puertas y transiciones usan sus overlays/capturas. Por
+  eso no se portan los slices del ring buffer BG/VRAM. El pan callback se
+  conecta al ciclo web, `ShakeScreen` y el shake del ascensor. Esta clasificación
+  es revisión de código; sin prueba de movimiento en navegador.
+- **`battle_controllers.c`: 61/68 funciones con homólogo**, subió desde 46/68
+  y supera el umbral del inventario. Añadí los serializadores `Emit*` que
+  faltaban en `battle/controllers.ts`: datos raw del Pokémon, pausa, fade,
+  animación de captura exitosa, comandos poco usados, transferencia DMA y
+  variables/flags auxiliares. En `EmitDMA3Transfer` el destino se representa
+  como dirección GBA de 32 bits; `EmitPlayBGM` conserva el formato del C y
+  rechaza songId >253, donde el buffer C de 0x100 bytes se desborda. Los
+  emisores están en el módulo de controladores ya conectado, aunque varios se
+  marcan unused en C y no tienen caller en el juego normal. El setup y envío de
+  buffers de batallas por enlace siguen pendientes. Pasan `check:port`,
+  `check:honesty`, `inventory`, `pending` y `git diff --check`; sin navegador.
+- **`menu.c`: 49/49 funciones con homólogo**, subió desde 27/49 y sale de
+  `PENDING.md`. Completé callbacks de marcos, wrappers de ventanas/plantillas,
+  impresión de multichoice y navegación de cuadrícula en `hw/menu.ts`; se usan
+  desde la capa hardware existente. Los helpers C marcados unused siguen sin
+  una ruta de juego que los invoque. Pasan `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check`; no ejecuté navegador.
+- **`battle_bg.c`: 15/17 funciones con homólogo**, subió desde 13/17. Porté
+  `CreateUnknownDebugSprite` y `CB2_unused` en `battle/bg.ts`, y sus callbacks
+  de dibujo temporal en `battle/main_init.ts`. Son utilidades marcadas unused
+  en el C y no forman parte del flujo de combate normal; quedan sin ejecución
+  navegador. Las otras dos funciones pendientes son la pantalla VS de enlace.
+- **`main.c`: 23/28 funciones con homólogo**, subió desde 7/28 y sale de
+  `PENDING.md` por el umbral del 80%. En `hw/runtime.ts`, el contador VBlank es
+  condicional; `InitKeys` reinicia el estado; el despacho de interrupciones
+  ejecuta HBlank y VCount de línea 150; `WaitForVBlank` espera asincrónicamente
+  al siguiente frame. `InitMainCallbacks` se adaptó al coordinador de startup
+  (la intro web conduce el copyright) y quedó conectado en `startup.ts`.
+  `ClearPokemonCrySongs` invalida cargas pendientes y detiene el audio activo;
+  `m4aVSync` sigue sin equivalente. Pasan `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check`; sin navegador. Arranque GBA,
+  timer físico y serial/link quedan pendientes.
+- **`new_menu_helpers.c`: 50/54 funciones con homólogo**, subió desde 29/54 y
+  supera el umbral del inventario. `menuHelpers.ts` incluye copias de tilemap,
+  reset BG, impresoras, ventana START, carga de datos ya descomprimidos por el
+  exportador, dibujo/limpieza de marcos y carga de la ventana de señalización.
+  Los 4 huecos aún no cuentan como portados; quedan limitaciones de lifetimes
+  DMA y del help window heredado. Verificados `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check`, sin navegador.
+- **`item.c`: 46/49 funciones con homólogo**, subió desde 24/49. `items.ts`
+  ahora expone acceso sanitizado a los datos del decomp, operaciones de slots,
+  limpieza, conteo/espacio del PC y bolsillos, y orden/compactación ajustados
+  al modelo de arrays compactos del guardado web. Cifrado XOR de SaveBlock no
+  aplica porque el guardado del navegador conserva cantidades descifradas;
+  eventos de Quest Log siguen fuera de alcance. No se añadió stub. Verificados
+  `check:port`, `check:honesty`, inventario, pendientes y `git diff --check`;
+  sin bundle ni navegador.
+- `field_screen_effect.c`: 19/19 homólogos en `fieldEffects.ts` y
+  `overworld.ts`; la ventana de whiteout sigue siendo adaptación Canvas2D sin
+  verificación visual. Las limitaciones de juego no probado siguen en
+  `PENDING.md` §5.
+- El indicador automático actual es 6055/9834 nombres (61%); faltan 3779
+  homólogos (39%). El estimado de líneas C pendientes es 108888, aproximadamente
+  44% de las 247859 líneas medidas. Ambos son aproximaciones de inventario, no
+  prueba de fidelidad ni finalización funcional.
+
 ## Browser playtest, primeras ~2 horas (2026-09-25, en curso)
 
 Prueba con `npm run dev` + `?fr=new` + `window.frDebug`. Primero con un driver
@@ -528,15 +699,18 @@ escena de combate. Nuevo `src/fr/battle/transition.ts`:
   battl[e]" se ve con normalidad).
 - Nivel de prueba: **navegador** (`ANGLED_WIPES`) + tipos y build (`npm run check:port`, `npm run build`).
 
-## save_failed_screen.c: pantalla de fallo de memoria flash (2026-09-25)
+## `save_failed_screen.c`: reparación de sectores de Flash excluida del runtime web
 
-Portado fiel en `src/fr/saveFailedScreen.ts` con sus 14 funciones homólogas:
-- Máquina de estados completa `RunSaveFailedScreen` (0..8) imitando `sSaveFailedScreenState`.
-- Carga de paleta `sSaveFailedScreenPals` (`graphics_interface`), textos originales
-  `gText_SaveFailedCheckingBackup`, `gText_SaveCompletePressA` y `gText_BackupMemoryDamaged`.
-- Lógica de intento de borrado/verificación de sectores (`TryWipeDamagedSectors`, `WipeDamagedSectors`,
-  `WipeSector`, `VerifySectorWipe`) adaptada a `localStorage` (sin sectores físicos rotos).
-- Reduce la lista de archivos C "Sin empezar" de 3 a 2 en `PENDING.md`.
+- El port previo en `saveFailedScreen.ts` simulaba un verificador de sectores
+  con `VerifySectorWipe` que siempre devolvía falso, además de no estar conectado
+  al juego. Eliminé ese módulo y sus stubs: no hay sectores Flash en el
+  guardado web y no existe una operación honesta equivalente a borrarlos.
+- El flujo real de `Game.writeSave()` ya usa `saveStore.write()` y muestra
+  `gText_SaveError_PleaseExchangeBackupMemory` cuando `localStorage` rechaza la
+  escritura. Clasifiqué ese manejo como adaptación del error para navegador;
+  no afirma recuperar datos dañados ni reproduce la pantalla de hardware.
+- El flujo de error de guardado no se ejecutó en navegador ni con almacenamiento
+  bloqueado. La verificación de esta clasificación es de código solamente.
 
 ## Source-review update (2026-09-24, no execution checks)
 
@@ -648,15 +822,15 @@ audio backend exists.
 
 ## Source review loop (2026-09-25, no runtime checks)
 
-- `tileset_anims.c`: reviewed all six primary/secondary callbacks against `TilesetAnimator` in `src/fr/field/tileRenderer.ts`. Tile frame order, destination/count, trigger cadence and counter periods match. The web renderer writes tiles directly instead of scheduling DMA3; `prime()` initializes the opening frame. No browser or pixel comparison was run.
-- `event_data.c`: core persisted vars/flags, special vars/flags and temporary-field clearing exist in `save.ts`; National Dex behavior is represented in script helpers. Quest Log flag/var recording/playback, upper-flag clearing, Mystery Event/Gift toggles and clearing, RTC-reset gates, and `ResetSpecialVars` are not implemented as source-equivalent APIs. Marked partial; optional systems remain unverified.
-- `special_field_anim.c`: escalator start/stop/state and its staged 3×3 metatile redraw are not implemented as the C field-task sequence; warp routing exists separately. `AnimateTeleporterHousing` and `AnimateTeleporterCable` are no-op specials, while C animates Sea Cottage tiles over timed task sequences. Marked partial; source behavior identifies optional field-animation gaps.
+- `tileset_anims.c`: the current source review is superseded by the 2026-09-26 pass below. No browser or pixel comparison was run.
+- `event_data.c`: updated by the 2026-09-26 source pass below. Quest Log pointer redirection/recording/playback is still not implemented.
+- `special_field_anim.c` (2026-09-26): inventory is now 10/10. The two Sea Cottage specials run named priority-0 tasks with C task-data slots, tile IDs from `rom.c`, and their 13×16-frame / 4-frame timing. The escalator task advances the seven 3×3 sections in the C order and the field-control warp waits for its three stages before fading. The adjacent `field_effect.c` player rail animation, escalator sound, and Quest Log callback are not ported here; the browser integration uses the ordinary warp fade after the metatile task. `check:port`, `check:honesty`, inventory, pending, and `git diff --check` pass. No browser or pixel comparison.
 - `trainer_fan_club.c`: postgame fan storage, NPC reveal, time-based gain/loss and dialogue helpers are represented in `specialsExtra.ts`. The new-game reset helper and link-battle updates/link trainer record names are absent; link battle is outside the single-player path. Marked partial.
-- `field_tasks.c`: the Icefall Cave thin/cracked ice state machine and persistent puzzle flags are represented in `fieldTasks.ts` with a four-frame delay. The source ambient-cry/time-based task is absent; other per-step callbacks are dummy or unused in FireRed. The web update uses an overworld frame hook instead of a priority-80 task. `wild_encounter.c` local land/water species selection is now ported in `WildEncounter.getLocalWildMon` and `getLocalWaterMon`, with C slot weights and land/water probability; wiring species selection into map-load ambient-cry state, cry timing/pan/volume, and audio priority remains pending. Typecheck passes; runtime RNG/audio timing was not exercised.
+- `field_tasks.c`: updated by the 2026-09-26 source pass below; the 2025 note's ambient-cry gaps have since been implemented except source audio mixing controls.
 - `decompress.c`: source graphics are exported pre-decompressed; Pokémon picture selection and Unown/Deoxys/Spinda handling exist in `pokemon/pics.ts`. Buffer/heap sprite loaders and decompressed-size helper have no direct equivalents; the static object-stitching helper has no callers. Marked partial; no pixel comparison.
 - `mini_printf.c`: formatting is used only by emulator debug-print and SWI logging code in `isagbprn.c`, which has no gameplay caller. Marked out of scope for browser single-player.
 - `multiboot.c`: implements the GBA cable multiboot download protocol and is unrelated to the single-player game. Marked out of scope.
-- `bike.c`: Mach/Acro movement state, rail/collision behavior, cycling-road movement and toggle/music behavior are embedded in `playerAvatar.ts`. Bumpy-slope Acro jumps and some bike counter/history helpers are absent. Marked partial; route behavior was not played through.
+- `bike.c` (2026-09-26): inventory now recognizes 24/24 definitions in `playerAvatar.ts`. Split the bike input handlers and five transitions into C-named methods; added the collision, rail, running gate, bike speed/reset, stop-player and Acro bumpy-slope helpers. Connected speed gating to field input and cracked-floor steps, and the bumpy-slope stop check to event-object locking. FireRed's `PlayerUseAcroBikeOnBumpySlope` is itself an empty C function; R/S history fields are reset but the final game has no history consumer. `RS_IsRunningDisallowed` is retained with its C behavior but has no FireRed caller. Static checks and generated inventory passed; no browser route or pixel comparison.
 - `item_menu_icons.c`: bag pocket animation/shake, swap line and item/berry icon sprite paths are implemented in `bagMenu.ts` and shared with `berryPouch.ts`; typed arrays replace C heap buffers. The custom-template icon loader has no separate equivalent. Marked ported for active single-player scope; no pixel comparison.
 - `digit_obj_util.c`: OAM-based number printer is used only by Berry Crush and Pokemon Jump; no TypeScript equivalent exists, and those optional minigame interfaces remain incomplete. Marked partial.
 - `field_screen_effect.c`: Flash has a Canvas radius-mask adaptation. The barn-door window wipe and Safari out-of-balls callback are absent; also no source-equivalent post-defeat whiteout recovery text/task was found. Marked partial; includes the main story loss-recovery path.
@@ -672,19 +846,19 @@ audio backend exists.
 - `script.c`: bytecode/native execution and map-script table dispatch exist in `script/context.ts` and `overworld.ts`; RAM scripts, some dialogue control flags and Quest Log input helpers are missing. Marked partial.
 - `itemfinder.c`: current-map hidden item scan, underfoot digging and ding/message behavior exist in `fieldMenus.ts`; connected-map search and arrow/star directional sprites are absent. Marked partial; neighboring-map item detection is a gameplay gap.
 - `sound.c`: map music state/fades, fanfares, SEs, cries and ducking have WebAudio counterparts, but the source M4A engine and table-level audio behavior are adapted. Marked partial; no audio comparison.
-- `menu_indicators.c`: scroll arrows, outline/arrow cursors and their add/update/remove behavior are implemented in `hw/listMenu.ts` and consumed by menus. Browser sprite adaptation; no pixel comparison.
+- `menu_indicators.c`: actualizado por el pase fuente 2026-09-26 abajo; las dos tareas C vacías permanecen sin declararse.
 - `item.c`: item metadata, bag/PC inventory operations and item lookup exist across `pokemon/items.ts`, `save.ts` and `bagMenu.ts`; GBA encrypted slot storage, some sort/compaction helpers and story-item Quest Log logging are not exact equivalents. Marked partial.
 - `move_descriptions.c`: all 355 source definitions, including the pointer table, are exported as cdata; move relearner and Pokémon summary screens load the table and resolve source text symbols. Source/data path reviewed; rendering parity was not checked.
 - `battle_controller_safari.c`: the Safari action menu, throw/intro animations, text, healthbox, sound and battle-animation waits are mapped in `battle/controller_safari.ts`; encounter and catch logic is in `battle/main.ts` / `battleSetup.ts`. Remaining controller opcodes often complete immediately, leaving source sprite/data/status/move/party-summary commands incomplete. Partial; no runtime execution.
 - `battle_ai_switch_items.c`: switch choices, switch targets, move/type scoring, held trainer-item classification/effects and AI action selection are represented in `battle/ai.ts`. The source itself notes the omitted Flying/Levitate trapping check. Source code review only; no battle replay or parity execution.
-- `menu2.c`: `menu2.ts` ports `Menu2_GetMonPosAttribute`/`Menu2_GetStarSpritePosAttribute` (used by the item-use scene); the blend task (`StartBlendTask`) and the rest of the file remain unported.
+- `menu2.c`: `Menu2_GetMonPosAttribute`/`Menu2_GetStarSpritePosAttribute` are used by the item-use scene. This pass adds `Menu_PrintFormatIntlPlayerName`, `StartBlendTask`, `Task_SmoothBlendLayers` and `IsBlendTaskActive` to `hw/menu.ts`, and connects the blend task to Game Freak intro's logo fade. `UnusedBlitBitmapRect` is static and has no callers, so it is intentionally omitted. Source-driven implementation; no browser test or pixel comparison.
 - `mail.c`: held mail and Easy Chat word decoding are represented, while `ReadMail` uses the simplified `menus/mailView.ts` field adapter; C screen/task behavior and Easy Chat authoring remain incomplete. Partial; no UI comparison.
 - `player_pc.c`: item-PC and mailbox flows are wired through `menus/playerPc.ts` with bag/party/save behavior, but use generic choice/message adapters instead of the full C window/task/fade/list implementation. Partial source review; PC storage UI remains simplified.
 - `list_menu.c`: core list lifecycle, input, scrolling, cursor, template, palette and icon helpers are implemented in `hw/listMenu.ts`; the Mystery Gift-specific wrapper is outside the active single-player path. Source review only; visual list parity was not compared.
 - `string_util.c`: byte-string copy/concat/length, decimal conversion and placeholder expansion are spread across `gba/charmap.ts` and `battle/message.ts`; Braille, Japanese/international and multibyte/control-code APIs remain partial or unverified. No parity vectors run.
 - `new_menu_helpers.c`: text-box/window/frame, printer and BG-copy behavior is split across hardware and GBA modules; several heap-decompression, printer variant, start-menu/help/signpost and temp-buffer APIs are missing or adapted through pre-exported assets. Partial; no exhaustive visual/frame check.
 - `menu.c`: cursor/input, yes-no, frame, top-bar and action-text helpers are spread across hardware-menu modules; grid multichoice, generic text/table printers and several utility APIs remain absent or adapted. Partial; no full menu parity check.
-- `item_use.c`: most field item classes dispatch to the corresponding party/screen/field flows; battle effects are shared with battle code. Oak item gate, Quest Log recording, Enigma battle use and some C task timing/details remain absent or adapted. Partial source review; no flow execution.
+- `item_use.c`: field item classes dispatch to party/screen/field flows. Oak rejection, Enigma field/battle effect selection and the eight-frame Black/White Flute task are connected. Item-use Quest Log recording and the Stat Booster delay/message/button task remain absent or adapted. Partial source review; no flow execution.
 - `fieldmap.c`: map layout, tile/behavior queries, camera and tileset loading are spread across field map/overworld/tile-renderer and BG modules. Backup map-view state and VRAM-copy paths are adapted; camera-specific differences are also tracked under `field_camera.c`. Partial source review; no route trace.
 - `save.c`: gameplay save state and play time live in `save.ts`, but persistence is JSON in localStorage; C sector checksums, incremental writes, damaged-sector recovery, slot/signature logic and link full-save are absent. Save format/recovery parity remains incomplete; no reload exercise this pass.
 - `field_fadetransition.c`: common door/fall/dive/teleport/map fades and music are wired in `field/overworld.ts`; several special transitions and return callbacks are absent or folded into shared handlers, with Canvas/palette sequencing adapted. Partial; route timing was not checked.
@@ -768,12 +942,12 @@ whiteout respawn now uses the original heal-location data in
   `npm run check:port` pasa; falta comparación de secuencias runtime.
 - `fldeff_dig.c`: mapa permitido, confirmación, selección del Pokémon,
   FieldEffect Dig, transición a pie y escape al último heal location están
-  conectados entre `fieldMoveMenu.ts` y `fieldMoves.ts`; falta cotejo visual.
-- `fldeff_teleport.c` tiene la compuerta de mapa y warp correctos, pero su
-  task ya mueve `sprite.y` como en `TeleportFieldEffectTask3`; `CameraObjectReset2`
-  no tiene equivalente porque el campo web no usa camera-object sprite y la
-  transición de prioridad de subsprites no está representada en el sprite 2D.
-  Queda parcial hasta cotejar el task/warp en runtime.
+  conectados entre `fieldMoveMenu.ts` y `fieldMoves.ts`; revisión de fuente,
+  sin cotejo visual en navegador.
+- `fldeff_teleport.c`: compuerta, selección, animación, callbacks y warp están
+  conectados entre `fieldMoveMenu.ts`, `fieldMoves.ts` y `overworld.ts`. El
+  campo web no tiene el `camera-object sprite` para `CameraObjectReset2`; la
+  prioridad de subsprites no se representa en Canvas2D. Solo revisión estática.
 - `decoration.c` solo incluye las tablas declarativas; el exportador ya las
   entrega como `cdata/decoration.json`. El decomp deja comentadas las
   implementaciones de alta/baja y nombre de decoración; los handlers TS también
@@ -781,7 +955,8 @@ whiteout respawn now uses the original heal-location data in
   habitación no tiene implementación activa en el decomp.
 - `fldeff_strength.c`: TS conserva el requisito de estar a pie y tener una
   roca empujable delante; pasa el slot/nickname, muestra al Pokémon y reanuda
-  el script para activar Strength. Cotejado con `field_moves.inc` y el C.
+  el script para activar Strength. Cotejado con `field_moves.inc` y el C; sin
+  prueba en navegador.
 - `safari_zone.c`: los ocho APIs están enlazados entre specials, Game,
   FieldEffects y `battleSetup`: entrada/salida, 30 balls/600 pasos, prompt,
   timeout y retornos de batalla. Revisión de fuente; no jugué la zona en browser.
@@ -864,14 +1039,10 @@ whiteout respawn now uses the original heal-location data in
 - `isagbprn.c`: logging para impresoras/emuladores AGB Print, no$gba y mGBA,
   con registros de dirección fija, timing WAITCNT y aserciones debug; sin
   callers de juego single-player ni equivalente requerido en el navegador.
-- `diploma.c`: pantalla, datos y estados principales están en `diploma.ts`;
-  añadí `ScanlineEffect_Stop` del reset C. El retorno web adapta
-  `FieldCB_WarpExitFadeFromBlack` a `fieldCBContinueScript`, por lo que falta
-  paridad de transición de salida. `npm run check:port` pasó; sin chequeo visual.
-- `util.c`: helpers repartidos: `BlendPalette`/`DoBgAffineSet` y
-  `CountTrailingZeroBits` están mapeados en palette/bg/battle. Faltan
-  `CopySpriteTiles` y CRC16/suma; sus callers son Mystery Event, validación
-  RAM-script y transfer tower, fuera del recorrido normal single-player.
+- `diploma.c`: actualizado por el pase fuente de 2026-09-26; sigue adaptando el
+  retorno del callback C al ciclo de campo web.
+- `util.c`: actualizado por el pase fuente de 2026-09-26; el helperset ya está
+  en `util.ts`, conectado por `CountTrailingZeroBits` en batalla.
 - `trainer_pokemon_sprites.c`: decompression/paletas y dibujo de trainer card
   usan datos C en `pokemon/pics.ts`/`trainerCard.ts`; falta ciclo completo de
   `CreatePicSprite`. El dex-info de batalla aún usa stub `0xffff`, coherente
@@ -930,19 +1101,18 @@ whiteout respawn now uses the original heal-location data in
 - `buy_menu_helpers.c`: transacciones de compra/venta, cantidad y confirmación
   están en `shopMenu.ts`, pero con ventanas Canvas2D; faltan templates y bordes
   originales, money box y callbacks de mensaje/pacing de la pantalla C.
-- `mail_data.c`: leer/tomar/guardar mail en PC y asociar mail están adaptados;
-  TS guarda el mensaje dentro del Pokémon, sin el array C de 16 slots ni el
-  mapeo de formas Unown. El compositor Easy Chat y la importación de trades
-  siguen pendientes/adaptados.
+- `mail_data.c`: se conservan los 16 registros SaveBlock de C; el compositor
+  Easy Chat y la importación de mail de enlace siguen pendientes/adaptados.
 - `dma3_manager.c`: TS copia BG/tilemaps inmediatamente; falta la cola DMA3
   de 128 requests con presupuesto por VBlank, fill/copy 16/32-bit y wait APIs.
   Los callers existentes usan semántica inmediata y el busy check siempre es false.
 - `pc_screen_effect.c`: no existe el encendido/apagado CRT por WIN0/blend; C
   lo usa Item PC, cajas y PC del Hall of Fame. Las versiones web actuales son
   adaptadores de menú sin esa transición.
-- `text_window.c`: frames standard/user/menu, paletas, diálogo y borde externo
-  están en `hw/menu.ts`/`menuHelpers.ts`; faltan signpost, tiles Quest Log,
-  borde interior y `rbox_fill_rectangle`. El campo adapta ventana Canvas2D.
+- `text_window.c`: los loaders estándar, user, help, menú, signpost y Quest Log,
+  sus variantes `OnBg`, los dos bordes y `rbox_fill_rectangle` están en
+  `hw/menu.ts`/`menuHelpers.ts`. Las ventanas del campo siguen adaptadas a
+  Canvas2D; no se hizo cotejo visual en navegador.
 - `new_game.c`: `game.newGame`/`newSaveData` inicializan nombre, dinero,
   Potion, Pokédex, flags/vars, tiempo y warp; el trainer ID ahora usa Random +
   el Timer1 adaptado descrito arriba. Faltan resets de varios sistemas.
@@ -966,9 +1136,9 @@ whiteout respawn now uses the original heal-location data in
 - `berry_powder.c`: la resta/comprobación de polvo y el vendor tienen handlers
   TS. Faltan el tope 99.999 de GiveBerryPowder, el rewrap por encryption key
   y la ventana exacta; la adquisición depende de Berry Crush (link).
-- `window_8bpp.c`: falta portar AddWindow8Bit, su fill/blit 4→8 bpp y
-  CopyWindowToVram8Bit. El caller es la ventana de multi-move de las cajas;
-  PPU sí interpreta tiles BG 8bpp, pero la pantalla de cajas sigue adaptada.
+- `window_8bpp.c`: AddWindow8Bit, fills/blits 8bpp y CopyWindowToVram8Bit ya
+  están en `hw/window.ts`; `GetNumActiveWindowsOnBg8Bit` usa la tabla compartida.
+  El caller de multi-move aún falta porque las cajas del PC siguen adaptadas.
 - `battle_util2.c`: la pérdida de amistad al caer coincide, incluida la
   selección del rival de mayor nivel en dobles y el umbral de 29 niveles. Los
   recursos globales están preasignados en TS; faltan las llamadas propias al
@@ -1030,14 +1200,18 @@ whiteout respawn now uses the original heal-location data in
   debilitado/HP lleno, transferir 1/5 HP y devolver cursor/mensaje coinciden con
   el task de `partyMenu.ts`; fuente revisada, sin interacción live.
 - `money.c`: límites/suma/resta y formato básico ya existen en `items.ts`,
-  `hw/menuHelpers.ts` y `scriptMenu.ts`. El saldo no usa la clave de cifrado C;
-  el money box y APIs de label/draw son adaptadores, así que queda parcial.
+  `hw/menuHelpers.ts` y `scriptMenu.ts`. Añadí el ciclo C de `DrawMoneyBox`,
+  `ChangeAmountInMoneyBox` y `HideMoneyBox` con la ventana 8×3. El guardado web
+  mantiene el saldo descifrado; el acceso C a campos cifrados por puntero no se
+  usa directamente. Queda un homónimo pendiente; solo revisión estática.
 - `help_message.c`: el gráfico de borde y su patrón de tiles se reutilizan
   en la descripción de movimientos de campo del Party Menu. Falta el lifecycle
   compartido que C usa para las ayudas del Start Menu.
 - `field_weather_util.c`: TS cubre el guardado/cambio de clima habitual y el
-  contador de lluvia. Faltan `ResumePausedWeather`, el setter marcado unused y
-  las tablas de ciclo de rutas; los efectos visuales se documentan aparte.
+  contador de lluvia. Ahora traduce WEATHER_ROUTE119/123 con `weatherCycleStage`,
+  implementa `UpdateWeatherPerDay`, `GetSav1Weather`, el setter unused y reanuda
+  el clima al regresar al mapa. Check estático pendiente al cierre del bloque;
+  no hubo prueba en navegador.
 - `fldeff_poison.c` aplica su curva de mosaic por task y hace esperar al setup
   de batalla antes de la transición. TS reproduce niveles/timing del C y
   pixeliza BGs Canvas (no sprites); paridad gráfica/frame sigue pendiente.
@@ -1096,8 +1270,9 @@ y `partyMenu.ts` implementa `TryGiveMailToSelectedMon` y
 `ChooseMonToGiveMailFromMailbox`. `menus/playerPc.ts` conserva el menú superior y
 el submenú de ITEM STORAGE dibujados sobre el campo canvas (adaptador de
 `player_pc.c`); "Withdraw" llama a `ItemPc_Init`. Adaptaciones: `save.pcItems` y
-`save.pcMail` no tienen huecos (compactación = no-op); el buzón corre en su propia
-escena hw (fondo negro, ventana de diálogo estándar) en vez de sobre el mapa;
+`save.pcItems` usa una lista compacta; el buzón indexa los slots C 6–15 y ejecuta
+la compactación de `PCMailCompaction`. Corre en su propia escena hw (fondo negro,
+ventana de diálogo estándar) en vez de sobre el mapa;
 sin Quest Log ni help system. Verificado: `check:port`, `build` y paridad de
 cdata/incbin/textos; sin probar en navegador.
 
@@ -1627,6 +1802,10 @@ Pending / placeholders:
   `GetOverworldTextboxPalettePtr` is declared but has no definition or caller
   in this decomp. `npm run check:port` passes; field Canvas presentation remains
   adapted and no visual comparison was run.
+- Follow-up source pass: implemented the six missing C helpers for explicit BG
+  destinations and frame-indexed user windows, and routed the existing window
+  wrappers through them. `text_window.c` is 18/18 by name in the inventory;
+  only source/type checks were run, with no browser or headless comparison.
 - `pokemon_storage_system_menu.c` / `pokemon_storage_system.c`: added
   `resetPokemonStorageSystem` and call it during new-game initialization. It
   resets current box, all 14×30 slots, localized `gText_Box` names with C's
@@ -1634,21 +1813,37 @@ Pending / placeholders:
   `getBoxName` now uses the same generated text/format and handles invalid u8
   box IDs as EOS. `npm run check:port` passes; storage screens remain adapted
   and no UI/runtime flow was exercised.
-- `mail_data.c`: added `SpeciesToMailSpecies` and `MailSpeciesToSpecies` in
-  `pokemon/mail.ts`, preserving the C `UNOWN_OFFSET=30000` form encoding and
-  personality-derived letter. `trainerCard.ts` now calls the shared decoder.
-  Mail item IDs 121–132 were checked against every case in C and are contiguous.
-  Mail storage remains inline on Pokémon/PC entries rather than the C 16-slot
-  SaveBlock array; Easy Chat composition and link-mail import remain adapted.
-  `npm run check:port` passes; mail runtime flow was not exercised.
+- `mail_data.c` (initial partial pass): added `SpeciesToMailSpecies` and
+  `MailSpeciesToSpecies` in `pokemon/mail.ts`, preserving the C
+  `UNOWN_OFFSET=30000` form encoding and personality-derived letter.
+  This storage adaptation was superseded by the 2026-09-26 SaveBlock mail pass
+  below. Easy Chat composition remains unported.
 
 - `wild_encounter.c`: added the source `GetLocalWildMon` and `GetLocalWaterMon` behavior to `WildEncounter`, including no-header/no-table fallback, 80% land choice when both tables exist, water flag, and weighted 12-slot/5-slot selection using the shared C RNG. Ambient cries can reuse these APIs; ambient scheduling and cry-mixer parameters are still not ported. `npm run check:port` passes; no runtime RNG comparison was run.
 
 
-## Follow-up source review (2026-09-25; ambient cries)
+## `field_tasks.c`: tareas persistentes del campo (2026-09-26)
 
-- Compared `field_tasks.c`, `overworld.c`, `wild_encounter.c`, their headers, and the active TS field/audio surfaces. C loads a local species on map setup/reload; the priority-80 task advances `UpdateAmbientCry` only while controls are unlocked and Quest Log playback is inactive. Its state machine waits 1200–3599 frames before the first cry and 1200–2399 frames thereafter. Water species cry only while the player's destination tile is surfable. C draws pan `(Random() % 88) + 212` and volume `(Random() % 30) + 50`, then observes STOP/KEEP map-music modes before calling `PlayCry_NormalNoDucking(..., CRY_PRIORITY_AMBIENT)`.
-- Current TS has the weighted local-species selectors (`getLocalWildMon`, `getLocalWaterMon`) from commit `4c79585`, per-step Icefall callback, `Overworld.controlsLocked`, and a cry backend whose `playCry` accepts only `(species, mode)`. Ambient species selection at map setup, timed task/state, surf gating, music-mode handling for ambient playback, and C pan/volume/priority support are not yet implemented. This is source-review evidence only; no further code was changed and no runtime/audio verification was performed in this follow-up.
+- El inventario reconoce 10/12 funciones. Ya están la tarea de callback por
+  paso, configuración/reset, selección de especie ambiental en cada carga,
+  estado de espera del cry con los rangos RNG del C, compuerta de controls/Quest
+  Log, surfability del tile de destino y persistencia del puzzle de hielo. Los
+  helpers para cracked floor RSE están traducidos; `DummyPerStepCallback` es un
+  no-op del C y `AshGrassPerStepCallback` depende de ceniza/metatiles RSE que
+  FireRed no usa, así que no añadí sustitutos vacíos.
+- Web adapta la tarea prioridad 80 como callback por frame. El audio actual no
+  acepta pan, volumen, prioridad ambient ni modos STOP/KEEP de música; esos
+  parámetros quedan sin equivalencia. Pasaron `check:port`, `check:honesty`,
+  inventory, pending y `git diff --check`; no se verificaron RNG/audio en juego.
+
+## `diploma.c`: estados y helpers de la pantalla de diploma (2026-09-26)
+
+- Extraje la secuencia como `DiplomaScreen` y nombré sus diez rutinas con los
+  nombres C. La pantalla conserva init por estados, fanfare/input/fade, BG,
+  tilemap, texto y retorno del script; gráficos ya vienen descomprimidos por el
+  exportador. El retorno de campo sigue siendo adaptación web. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; no se
+  ejecutó en navegador ni se comparó el render.
 
 ## Field move show-mon source parity (2026-09-25)
 
@@ -1657,6 +1852,7 @@ Pending / placeholders:
 ## `coins.c`: shared coin balance operations (2026-09-25)
 
 - Added `GetCoins` and `SetCoins` to `pokemon/items.ts`; the browser save stores the decrypted C `u16` balance directly, so both APIs narrow to 16 bits without reproducing SaveBlock encryption. Reworked `addCoins`/`removeCoins` to use those shared operations and the generated `MAX_COINS` constant. Routed the slot machine's read, `checkcoins`, the script coin box, and Coin Case display through `GetCoins`. `tools/checks/coins.ts` executes u16 narrowing, cap, success, and insufficient-funds cases. Browser coin-window rendering remains Canvas-adapted.
+- Follow-up source pass: implemented `PrintCoinsString`, `ShowCoinsWindow` and `HideCoinsWindow` in `hw/menuHelpers.ts`, including the original 8×3 window geometry, frame, heading and right-aligned four-digit amount. Also translated the unused parameterized display helper. Source/types only in this pass; no browser or headless test was run.
 
 ## `field_weather.c`: rain sound state (2026-09-25)
 
@@ -1782,4 +1978,597 @@ Pending / placeholders:
   archivo. `npm run check:port`, `npm run check:honesty`, `npm run build`,
   `npm run inventory` y `npm run pending` pasaron. El build emitió advertencias
   existentes por imports dinámicos y tamaño de chunk. Sin prueba de juego ni
+  navegador.
+
+## `seagallop.c`: travesía del ferry (2026-09-26)
+
+- Alineé la máquina de estados con callbacks nombrados como en C, incluida la
+  secuencia de setup, VBlank, tareas 0–3, dirección, creación de estela,
+  configuración/reset de GPU y carga/liberación de recursos. La transición
+  conserva los 140 frames de desplazamiento y espera el fade de música/paleta
+  antes del warp. Inventario: 22/22; esto mide nombres y cuerpos, no paridad de
+  fotogramas.
+- La pantalla continúa usando `HwScene`, PPU simulada y WebAudio. No se modelan
+  explícitamente `HelpSystem_Disable/Enable` (no hay sistema de ayuda web en
+  esta ruta), `PlayRainStoppingSoundEffect` ni la pantalla/efectos de warp GBA.
+  Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
+  sin navegador ni comparación visual.
+
+## `battle_bg.c`: acceso a gráficos de terreno (2026-09-26)
+
+- Añadí `GetBattleTerrainGfxPtrs`, que devuelve las referencias de tiles,
+  tilemap y paleta del terreno desde la tabla exportada, y aplica el fallback a
+  plain que indica el C. El resto del render/carga de fondos ya tenía
+  implementación en `battle/bg.ts`.
+- En la primera revisión también se dejaron fuera `CreateUnknownDebugSprite` y
+  `CB2_unused` por ser utilidades marcadas unused. En la revisión posterior del
+  2026-09-26 quedaron portadas junto con los callbacks del sprite en
+  `battle/main_init.ts`; el inventario subió de 13/17 a 15/17. Solo quedan las
+  dos rutinas VS link, fuera del alcance single-player. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; sin navegador ni
+  prueba visual.
+
+## `sound.c`: máquina de estados de música de mapa (2026-09-26)
+
+- Porté `InitMapMusic`, `MapMusicMain`, `ResetMapMusic`, lectura de canción
+  actual, stop/cambio de canción, fades de transición y los estados 1/5/6/7 al
+  tick por frame de `Sound`. El cierre de fades ahora se resuelve por el estado
+  de reproducción del backend, con contador de frames como fallback cuando no
+  hay backend.
+- No añadí la atenuación temporal exacta de `m4aMPlayFadeOutTemporarily` porque
+  el backend web no expone el flag/automática de recuperación del mezclador;
+  tampoco se portaron las tareas del Quest Log/enlace/ducking de cries de este
+  bloque. El inventario subió de 23/48 a 33/48. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; sin navegador ni
+  verificación auditiva.
+
+## `field_screen_effect.c`: buffers del oscurecimiento por flash (2026-09-26)
+
+- Expuse la rasterización de límites de ventana con el algoritmo C y añadí
+  `WriteFlashScanlineEffectBuffer`, que rellena ambos buffers scanline desde el
+  radio de nivel C. `Overworld.setDefaultFlashLevel` ahora instala esos
+  parámetros en mapas que requieren Flash. Corregí también el special
+  `Script_FadeOutMapMusic`: inicia el estado de fade de música de mapa y espera
+  su fin antes de reanudar el script, en vez de consultar un fade genérico que
+  no estaba marcado como pendiente.
+- El oscurecimiento visible sigue teniendo además el render Canvas de
+  `FieldEffects.renderFlash`; no hice comparación de fotogramas. Después añadí
+  los callbacks con datos de tarea para el midpoint flash (update/wait) y el
+  wipe barn-door, con guardado/restauración de WIN0/WIN1 y blend regs. Conecté
+  el wipe de apertura en el flujo web de salida por puerta, en paralelo con el
+  fade que ya ejecutaba `warpFadeInScreen(3)`. Porté también la impresión de
+  recuperación whiteout y sus estados: selección casa/Centro mediante la
+  última heal location, giro al norte, cierre de ventana, fade y continuación
+  del script correspondiente. El inventario reconoce 19/19; el mensaje usa
+  una ventana Canvas y no se compararon fotogramas. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; sin navegador.
+- También avancé `sound.c` a 40/48: trasladé la permanencia/fin de la tarea de
+  fanfarria, los predicados de BGM en reproducción y los cambios de volumen
+  documentados en el C. Ese archivo salió de la lista de pendientes al superar
+  el 80 % nominal; la auditoría aún deja fuera los canales/mixer y las tareas
+  de cries que requieren soporte de audio adicional.
+- En una segunda pasada del mismo bloque añadí la selección de fanfarria por
+  índice y su parada por índice, reutilizando los datos/temporizadores ya
+  exportados. Separé `Task_Fanfare` y `CreateFanfareTask` del tick, de modo que
+  la tarea permanece activa hasta el tick que la destruye, como en C. Añadí
+  `IsBGMPlaying` y los dos controles de volumen disponibles en el backend. El
+  inventario actualizado marca 40/48 y ya no lista `sound.c` como pendiente.
+  Las tareas del Quest Log, el ducking de cries y el fade temporal del mixer
+  siguen fuera.
+
+## `battle_util2.c`: ciclo de vida de recursos de batalla (2026-09-25)
+
+- `AllocateBattleResources` ahora limpia los structs, pilas, flags, datos de IA,
+  historial, stats previos al nivel, estados de Poké Dude y buffers BG que el C
+  reserva con `AllocZeroed`; `runBattle()` lo llama antes de cada combate.
+- `FreeBattleResources` limpia ese almacenamiento estático en el punto de
+  liberación del C al cerrar un combate no-link. En JS no existe el heap GBA que
+  `Free` libera. Los hooks de init/free propios de Trainer Tower siguen sin
+  portarse y están anotados en los huecos conocidos.
+- `AdjustFriendshipOnBattleFaint` ya está portado en `pokemon/mon_extra.ts`;
+  `battle_util2.c` sigue parcial por sus ramas de Trainer Tower no conectadas.
+  No agregué wrappers vacíos ni stubs para fingir que el allocator de C existe
+  como heap separado en el navegador.
+- `npm run check:port` pasa. No ejecuté checks headless ni el navegador; no hay
+  verificación de comportamiento en runtime.
+
+## `fldeff_softboiled.c`: validación de PS máximos para usar el movimiento (2026-09-25)
+
+- Añadí `SetUpFieldMove_SoftBoiled` en `menus/fieldMoveMenu.ts` y conecté la
+  selección de Softboiled/Milk Drink a esa función, conservando la condición C
+  `curHp > maxHp / 5`.
+- Las tareas restantes ya estaban traducidas en `partyMenu.ts`. El callback de
+  mostrar HP restaurados mantiene el nombre `Task_SoftboiledDisplayHPRestored`
+  porque el C define callbacks estáticos homónimos en `party_menu.c` y
+  `fldeff_softboiled.c`, con continuaciones distintas, y ambos módulos TS están
+  combinados. El inventario ahora deja el archivo en 7/8 nombres; la diferencia
+  es ese callback con nombre adaptado, no un cuerpo vacío.
+- `npm run check:port`, `npm run inventory`, `npm run pending` y
+  `npm run check:honesty` pasan. Sin check headless ni prueba de navegador.
+
+## `heal_location.c`: acceso de ID a punto de curación (2026-09-25)
+
+- Añadí `GetHealLocation` en `field/overworld.ts`, leyendo la tabla exportada,
+  respetando IDs 1-based y retornando null para NONE/fuera de rango; el método
+  de overworld existente delega ahora en esa función.
+- `SetWhiteoutRespawnWarpAndHealerNpc` sigue implementado como
+  `Overworld.whiteOutRespawn()` y adapta su salida a la ruta de reaparición del
+  navegador. El caso de escena de Trainer Tower del C no está conectado a esta
+  ruta de FireRed ordinaria. Verificación estática: `check:port`, `inventory`,
+  `pending` y `check:honesty` pasan. Sin check headless ni navegador.
+
+## `window_8bpp.c`: conteo de ventanas 8bpp activas (2026-09-25)
+
+- Añadí el helper `GetNumActiveWindowsOnBg8Bit` y lo conecté a `AddWindow8Bit`;
+  cuenta la tabla compartida de ventanas por BG. Las otras APIs 8bpp ya estaban
+  en `hw/window.ts`. `nullsub_9` del C es un callback vacío usado como sentinel;
+  la adaptación ya limpia el buffer BG con `UnsetBgTilemapBuffer`.
+- Las cajas del PC aún no llaman a la interfaz 8bpp porque siguen adaptadas.
+  No ejecuté comparación de píxeles ni navegador.
+
+## `fldeff_teleport.c`: condición de mapa para Teleport (2026-09-25)
+
+- Añadí `SetUpFieldMove_Teleport` como la comprobación de tipos de mapa del C y
+  la conecté al dispatcher de movimientos de campo. Los callbacks de transición
+  del C permanecen integrados en los handlers del port: el diálogo confirma el
+  destino, se resetea el estado del avatar, se crea el efecto y la rutina de
+  campo sigue su secuencia de animación/warp existente.
+- `npm run check:port` pasa; sin check headless ni navegador.
+
+## `fldeff_dig.c`: condición de uso de Dig/Escape Rope (2026-09-25)
+
+- Añadí y conecté `SetUpFieldMove_Dig`, equivalente a la consulta C
+  `CanUseEscapeRopeOnCurrMap` sobre `gMapHeader.allowEscaping === TRUE`. El
+  efecto ya estaba conectado y muestra el Pokémon, cambia el avatar a pie y
+  arranca la tarea de salida existente.
+- `npm run check:port` pasa; sin check headless ni navegador.
+
+## `fldeff_strength.c`: requisitos de uso de Strength (2026-09-25)
+
+- Extraje `SetUpFieldMove_Strength` de `CursorCB_FieldMove`: permite continuar
+  solo si el avatar no está surfeando y el objeto inmediatamente delante tiene
+  el gráfico de roca empujable. El dispatcher conserva la asignación de la
+  variable de resultado y el inicio del script de campo.
+- `npm run check:port` pasa; sin check headless ni navegador.
+
+## `hof_pc.c`: visor de equipos del Hall of Fame desde el PC (2026-09-25)
+
+- Revisé las cinco funciones del C contra `BeginHallOfFamePC`, `CB2_InitHofPC`,
+  las tareas `Task_HofPC_*` y el cierre alojados en `hallOfFame.ts`. El port ya
+  recorre los equipos guardados, selecciona Pokémon y vuelve al menú PC; su
+  persistencia adapta `SAVE_HALL_OF_FAME` al arreglo del guardado web.
+- Registré `hof_pc.c` como cubierto por esa pantalla conectada. Es revisión de
+  código, no prueba runtime; no ejecuté navegador ni check headless.
+
+## `scanline_effect.c`: primer registro y generación de ondas (2026-09-25)
+
+- Porté `CopyValue16Bit`, `CopyValue32Bit` y `GenerateWave` en `hw/scanline.ts`.
+  `ScanlineEffect_InitHBlankDmaTransfer` aplica ahora el valor de la primera
+  scanline antes de intercambiar buffers; el callback del PPU representa el
+  valor de cada línea usando la tabla doble-buffered. `GenerateWave` reproduce
+  el avance de `theta` como `u8`, la amplitud y la división del C.
+- El inventario marca `scanline_effect.c` 9/9 por nombre. `check:port` y
+  `check:honesty` pasan. No ejecuté check headless ni comparé frames/runtime.
+
+## `party_menu_specials.c`: desplazamiento de movimientos y PP Ups (2026-09-25)
+
+- `MoveDeleterForgetMove` ahora sigue el orden del C: pone `MOVE_NONE` en el
+  slot elegido, quita sus PP Ups y desplaza los slots siguientes con
+  `ShiftMoveSlot`, preservando los PP actuales y moviendo los bits de PP Ups
+  junto a cada movimiento. Antes usaba `splice`, que ocultaba esa regla C en una
+  transformación de arreglos.
+- La selección de Pokémon y el callback de la pantalla ya están conectados en
+  `game.ts`/`partyMenu.ts`; no agregué otro task artificial para reemplazar el
+  flujo de callback del port. `check:port` pasa. Sin check headless ni navegador.
+
+## `mail_data.c`: SaveBlock mail y flujo de buzón/daycare (2026-09-26)
+
+- Reemplacé el mail inline/array `pcMail` por los 16 slots de `SaveBlock1` con
+  palabras, nombre, trainer ID, especie e item; `setSave` migra los saves web
+  previos. `ClearMailData`, `ClearMailStruct`, `MonHasMail`, `GiveMailToMon`,
+  `GiveMailToMon2`, `TakeMailFromMon`, `ClearMailItemId` y
+  `TakeMailFromMon2` están en `pokemon/mail.ts`. La party, buzón PC y daycare
+  ya leen o mutan esos slots; el buzón compacta los slots 6–15 como C.
+- `SpeciesToMailSpecies`, `MailSpeciesToSpecies` e `ItemIsMail` usan las reglas
+  del decomp. `DummyMailFunc` permanece sin declaración porque su cuerpo C es
+  vacío. Inventario: 11/12 funciones por nombre. `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check` pasaron. No ejecuté pruebas
+  headless ni navegador; Easy Chat y el flujo completo de mail de enlace siguen
+  fuera de este bloque.
+
+## `script_pokemon_util.c`: corrección del comando de slot y retiro de no-ops (2026-09-26)
+
+- `ScriptSetMonMoveSlot` ya estaba reflejado indirectamente por `setmonmove`,
+  pero el comando no reproducía el clamp del índice del helper C ni la llamada
+  con el orden de argumentos de `script_pokemon_util.c`. Añadí el helper con el
+  nombre del C y conecté el comando usando el orden de operandos de `scrcmd.c`.
+- Eliminé los tres specials vacíos de selección de equipos (`ChooseHalfPartyForBattle`,
+  `ChooseBattleTowerPlayerParty` y `ReducePlayerPartyToThree`). La selección
+  para Cable Club y Battle Tower sigue sin implementación, acorde a los límites
+  de alcance registrados arriba; no cuentan como implementaciones falsas.
+- El cuerpo C de las otras funciones ya conectadas no se reescribió. Sin prueba
+  en navegador ni ejercicio runtime; verificación estática con `check:port`.
+
+## `field_poison.c`: helpers de validez, desmayo y desmayo total (2026-09-26)
+
+- Separé `IsMonValidSpecies`, `AllMonsFainted`, `MonFaintedFromPoison` y
+  `FaintFromFieldPoison` en `field/poison.ts`, conservando sus nombres C y la
+  lectura de los seis slots de party. `TryFieldPoisonWhiteOut` usa esos helpers;
+  la baja de amistad precede al borrado de status y al mensaje, como en C.
+- `DoPoisonFieldEffect` ya estaba conectado desde el contador de pasos y la
+  animación ya estaba conectada a `FieldEffects`. Revisión contra
+  `../pokefirered/src/field_poison.c`; `check:port` pasa. No ejecuté runtime,
+  headless ni navegador.
+
+## `menu_helpers.c`: reinicio de callbacks y memoria de vídeo (2026-09-26)
+
+- Añadí `SetVBlankHBlankCallbacksToNull` y `ResetVramOamAndBgCntRegs` a
+  `hw/menuHelpers.ts`. El reinicio borra VRAM, OAM y paletas con los tamaños
+  GBA y restablece registros/coordenadas BG usando las funciones de hardware
+  existentes.
+- Las comprobaciones de colas y enlace (`IsActiveOverworldLinkBusy`,
+  `MenuHelpers_ShouldWaitForLinkRecv`) quedan pendientes: el subsistema link
+  no está implementado y sus APIs no se deben simular como port real.
+  `IsHoldingItemAllowed` conserva la restricción de Enigma Berry en Trade
+  Center; `IsWritingMailAllowed` aplica la regla cuando el estado de enlace
+  indique actividad. `check:port`, `check:honesty`, `inventory`, `pending` y
+  `git diff --check` pasaron; sin navegador ni runtime.
+
+## `pokedex.c`: conteos de dex y completitud (2026-09-26)
+
+- Añadí `GetPokedexCategoryName`, `GetNationalPokedexCount`,
+  `GetKantoPokedexCount` y `HasAllHoennMons` a `pokemon/pokemon.ts`. La categoría
+  usa el dato exportado; los conteos respetan las banderas GET del C y la
+  paridad caught/seen de `DexScreen_GetSetPokedexFlag`. El orden Hoenn se
+  resuelve con los símbolos `HOENN_DEX_*` y `SPECIES_*` exportados, sin tabla
+  escrita a mano.
+- Conecté los conteos al special `GetPokedexCount`, al panel de estadísticas
+  del guardado y al conteo de la tarjeta. `HasAllKantoMons` y `HasAllMons`
+  quedan como helpers con nombre C y comparten la regla de lectura C.
+- Corregí `portInventory.py` para ignorar comentarios C y aceptar funciones
+  cuyo tipo de retorno es `const`; así el cuerpo comentado de
+  `GetHoennPokedexCount` deja de figurar como deuda y se cuenta
+  `GetPokedexCategoryName`. El inventario cambió de 96 a 97 pendientes y su
+  nueva primera fila es `prof_pc.c`. `check:port` y `check:honesty` pasaron;
+  regeneré `PORT-INVENTORY.md` y `PENDING.md`. No ejecuté headless ni navegador.
+  `GetHoennPokedexCount` sigue comentado en C y no se declara como API.
+
+## `prof_pc.c`: conteo y rating de Pokédex (2026-09-26)
+
+- `GetPokedexCount` ya estaba conectado al special y ahora usa los conteos C de
+  `pokedex.c`. Añadí `GetProfOaksRatingMessageByCount` con los umbrales y los
+  dos casos de completitud del C; el caso de Mew consulta la bandera caught
+  mediante su número nacional y el mensaje sigue viniendo de los textos
+  exportados. `Game.profOakRating` consume el helper y conserva su salida de
+  mensaje y `VAR_RESULT`.
+- `prof_pc.c` figura 3/3 en el inventario actualizado. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; no
+  ejecuté headless ni navegador.
+
+## `heal_location.c`: búsqueda de punto de curación y respawn (2026-09-26)
+
+- Añadí los helpers C de búsqueda por map group/map number, búsqueda del registro
+  y selección del NPC que atiende tras un whiteout. Renombré el método de
+  respawn al símbolo `SetWhiteoutRespawnWarpAndHealerNpc` y conecté el caller de
+  `Game.whiteOut` a él. El caso de ubicación inválida conserva el warp previo,
+  como la salida temprana `BUGFIX`; ya no inventa Pallet Town como respaldo.
+- Añadí la rama de Trainer Tower: mapa y coordenadas vienen de constantes del
+  decomp y el scene var se limpia según `spokeToOwner` cuando existe ese dato
+  en el save web. El guardado web aún no modela la estructura completa de
+  Trainer Tower, por lo que este caso depende de su estado opcional.
+- `heal_location.c` figura 5/5 en el inventario actualizado. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; no
+  ejecuté headless ni navegador.
+
+## `berry_powder.c`: valor, operaciones y panel del vendedor (2026-09-26)
+
+- Porté con nombres C la lectura/escritura lógica de Berry Powder, la adaptación
+  de cambio de clave para el save web en texto plano, la comprobación y resta
+  por costo, y el límite de 99,999 de `GiveBerryPowder` con aritmética `u32`.
+- El panel Canvas conectado usa ahora los helpers de impresión/dibujo con los
+  mismos parámetros y mensajes del C; el marco/paleta GBA se adapta al marco
+  de ventana del campo y al ajuste del jugador. Los specials llaman los
+  helpers nombrados.
+- `berry_powder.c` figura 14/14 en el inventario actualizado. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  headless ni navegador.
+
+## `roamer.c`: datos y movimiento del Pokémon errante (2026-09-26)
+
+- Porté las 13 funciones activas del archivo con sus nombres C: inicialización,
+  historial de mapas, movimiento entre rutas, selección del encuentro,
+  restauración de la instancia y actualización del estado tras combate. La
+  instancia conserva además cool, beauty, cute, smart y tough entre encuentros.
+- El conteo de inventario marca `roamer.c` en 13/13. `check:port`,
+  `check:honesty`, `npm run inventory`, `npm run pending` y `git diff --check`
+  pasaron. Sin navegador ni checks headless.
+
+## `fldeff_sweetscent.c`: efecto de campo del movimiento Dulce Aroma (2026-09-26)
+
+- Conecté el preparador del movimiento al callback tras cerrar el menú y
+  separé el callback, el inicio del efecto, la espera, el intento de encuentro
+  y la recuperación del caso fallido con nombres de función C. El flujo espera
+  a que termine el fundido de 8 niveles, cuenta 64 frames y restaura el estado
+  del clima antes de ejecutar el script de fallo. También conservé la entrada
+  C marcada como no usada, con su comportamiento de seleccionar el primer slot.
+- El Canvas aplica el tinte rojo/rosado global en vez de copiar/restaurar los
+  buffers de paleta GBA; es una adaptación visual pendiente de comparación. El
+  inventario marca el archivo 7/7. `check:port`, `check:honesty`, inventario,
+  pendientes y `git diff --check` pasaron. Sin navegador ni checks headless.
+
+## `save_location.c`: clasificación de mapas y flags de guardado (2026-09-26)
+
+- Porté las 10 funciones del inventario, incluidos los predicados de listas,
+  los tres flags de warp y los flags de enlace de Pokédex/postgame. La lista de
+  Centros Pokémon y salas de enlace usa los símbolos de mapa del C; las listas
+  de lobby y mapa desconocido permanecen vacías como en la fuente.
+- Conecté el recálculo de flags al cargar mapa por warp y transición de cámara,
+  el special `SetUnlockedPokedexFlags` y el special de postgame existente.
+  `check:port`, `check:honesty`, inventario, pendientes y `git diff --check`
+  pasaron. Sin navegador ni checks headless.
+
+## `script_pokemon_util.c`: party, regalos y equipos de batalla (2026-09-26)
+
+- Completé las 13/13 funciones contabilizadas: los datos de huevo ahora pasan
+  por `CreateEgg`; el chequeo Enigma y la creación de salvaje guionizado usan
+  los helpers de party; y la selección múltiple cable/Tower conecta sus
+  callbacks, validación (tres elegidos, especies prohibidas y objetos
+  repetidos) y reducción del equipo en el orden elegido.
+- `check:port`, `check:honesty`, inventario, pendientes y `git diff --check`
+  pasaron. Sin checks headless ni navegador; no se comprobó el flujo de selección
+  múltiple visualmente.
+
+## `fldeff_rocksmash.c`: efecto de campo para Golpe Roca (2026-09-26)
+
+- Porté las 10 funciones contabilizadas: el lookup frontal compara graphics ID
+  y elevación, prepara `VAR_LAST_TALKED`, y el callback del menú inicia el script
+  de Golpe Roca. El flujo de animación del jugador quedó dividido en sus cuatro
+  estados C; el efecto reproduce SE, elimina el ID activo, reanuda el script y
+  suma la estadística al comenzar el movimiento.
+- `fldeff_rocksmash.c` figura 10/10. Pasaron `check:port`, `check:honesty`,
+  inventory, pending y `git diff --check`. Sin navegador ni checks headless.
+
+## `field_message_box.c`: ciclo y modos del cuadro de diálogo (2026-09-26)
+
+- Completé las 14/14 funciones detectadas: inicialización, dibujo por estados,
+  Show normal/auto-scroll, impresión desde `gStringVar4`, ocultar, consultas de
+  tipo y reemplazo por marco estándar. Las rutinas privadas conservan los
+  efectos funcionales en el adaptador Canvas.
+- Límite: el marco GBA se representa con ventanas Canvas; no cargué los tiles del
+  Quest Log, cuyo modo de playback no está conectado al `Game` web. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`. Sin
+  checks headless ni navegador.
+
+## `pokemon_size_record.c`: récords de tamaño y cintas de regalo (2026-09-26)
+
+- Porté las 13/13 funciones: hash de tamaño, tabla de intervalos, cálculo y
+  formato imperial (el de `include/config.h`), comparación/actualización del
+  récord y datos de Heracross/Magikarp. `newGame` inicializa ambos récords. La
+  entrega de cintas persiste los 11 registros, aplica los siete tipos definidos
+  a Pokémon elegibles y activa la flag si entregó al menos una.
+- El C guarda once IDs de cinta pero su tabla de tipos solo tiene siete entradas;
+  índices 7–10 leen fuera del array. El port preserva el registro de guardado,
+  pero no inventa un tipo de cinta para esos índices. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; sin headless ni
+  navegador.
+
+## `new_game.c`: inicialización de partida nueva (2026-09-26)
+
+- Las 11/11 funciones contabilizadas ya tienen homólogo: inicialización de ID
+  entrenador en orden little-endian, opciones, flags del Pokédex, torre de
+  batalla, partida nueva, reset parcial de menús/minijuegos y warp al cuarto.
+  `newGame` ahora concentra la creación de SaveData y reinicia el mail, el PC,
+  los datos de almacenamiento, el roamer, Fame Checker y récords de tamaño.
+- Alcance limitado por sistemas aún no modelados: no se recrean los bloques de
+  Easy Chat, Union Room, Mystery Gift, Berry Crush/Jumpluff completos, Trainer
+  Fan Club, resultados de Trainer Tower, ni datos de enlace/Quest Log; tampoco
+  hay modelo de flags National Dex y battle tower. No agregué stubs para ellos.
+  `PORT-INVENTORY.md` cuenta nombres homólogos, no demuestra paridad integral.
+- `check:port`, `check:honesty`, inventario, pendientes y `git diff --check`
+  pasaron. No se ejecutaron checks headless ni pruebas de navegador, tal como
+  pediste.
+
+## `option_menu.c`: callbacks y ciclo de vida del menú de opciones (2026-09-26)
+
+- Completé las 19/19 funciones contabilizadas. Añadí el punto de entrada desde
+  el menú inicial, reset/install de callbacks VBlank/HBlank, creación de la
+  tarea del menú y reset de sprites, fade, tareas y scanline; el ciclo existente
+  ahora llama esas rutinas con los nombres del C.
+- La entrada directa usa el callback `done` del adaptador web (no el callback
+  global `gMain.savedCallback` del ejecutable GBA). Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`. Sin navegador ni
+  checks headless.
+
+## `text_printer.c`: estado global y copiado de glifos (2026-09-26)
+
+- El inventario reconoce 15/15 funciones. Añadí la tabla global de fuentes,
+  generación/guardado/restauración de colores, consulta del último color,
+  `RenderFont`, copia de glifo a la ventana Canvas y la rutina parametrizada
+  que escribe nibbles en el buffer 4bpp; `ClearTextSpan` se mantiene vacío
+  porque su implementación C también lo está.
+- Adaptación: las fuentes y superficies se representan con tipos/objetos web;
+  no se emula el callback de copia DMA `CopyWindowToVram` dentro de estas APIs.
+  El conteo de funciones homónimas no demuestra paridad de píxeles en GBA.
+  Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`.
+  No ejecuté checks headless ni pruebas en navegador.
+
+## `decompress.c`: rutinas de gráficos comprimidos y sprites enlazados (2026-09-26)
+
+- Las 18/18 funciones contabilizadas ya tienen contraparte. Añadí las llamadas
+  WRAM/VRAM para bytes del pipeline, carga de sheets/paletas con buffer opcional,
+  tamaño de header LZ, helpers de imágenes de Pokémon Unown/Deoxys/Spinda y el
+  algoritmo de mosaico 8×8 (`StitchObjectsOn8x8Canvas`). La carga de sprites de
+  créditos ya pasa por el módulo nuevo.
+- La exportación de INCBIN elimina LZ77 previamente; no implementé un segundo
+  decodificador del formato binario dentro del navegador. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; no corrí pruebas
+  headless ni de navegador.
+
+## `pokemon_storage_system.c`: acceso a las cajas y datos de Pokémon (2026-09-26)
+
+- El inventario reconoce 21/21 funciones. Añadí lectura/escritura acotada por
+  caja y slot, acceso al slot actual, nickname, backup/restore, creación/copia,
+  conversión BoxMon→Mon con restauración de stats/HP, acceso mutable al slot,
+  puntero persistente al nombre, wallpapers y búsqueda adelante/atrás con la
+  regla de huevos del C. Los slots vacíos siguen representados como `null`
+  hasta que una operación C necesita un BoxPokemon cero.
+- `CreateBoxMonAt` usa los tipos OT y límites de IV de las constantes generadas;
+  la representación web no almacena checksum/cifrado de BoxPokemon. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  pruebas headless ni de navegador.
+
+## `main_menu.c`: estados, entrada y estadísticas de CONTINUE (2026-09-26)
+
+- El inventario reconoce 29/29 funciones. Conecté `CB2_InitMainMenu` al arranque,
+  añadí la segunda entrada C, separé las tareas de esperar fade/entrada, manejo
+  de controles y retorno al título, desglosé nombre/tiempo/Pokédex/medallas en
+  impresores propios y añadí el diálogo para un SaveData presente pero inválido.
+- El chequeo de guardado del navegador solo distingue ausente/válido/JSON o
+  versión inválidos; no modela los estados físicos de Flash `NO_FLASH` ni
+  `SAVE_STATUS_INVALID`. Para un guardado inválido se muestra el mensaje de
+  corrupción y se conserva la opción de continuación que define el C. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; no se
+  ejecutaron checks headless ni pruebas en navegador.
+
+## `list_menu.c`: utilidades de selección y menú de Mystery Gift (2026-09-26)
+
+- Las 31/31 funciones aparecen en el inventario. Añadí el flujo de tres estados
+  para abrir/procesar/cerrar la lista de Mystery Gift; cambios de paleta y
+  coordenadas, simulación de un input sin dibujar, lectura del índice/plantilla
+  y carga de paleta de icono. `ListMenuDummyTask` se conserva vacío porque el C
+  también lo deja vacío.
+- `ListMenuTestInput` devuelve el resultado y los dos cursores en un objeto TS;
+  `ListMenuGetTemplateField` devuelve valores/callbacks JS, no direcciones C.
+  Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
+  sin checks headless ni navegador.
+
+## `ss_anne.c`: salida del S.S. Anne (2026-09-26)
+
+- El inventario reconoce 8/8 funciones. Extraje la espera de 50 frames, el
+  avance del barco, humo cada 70 frames, estela animada y los callbacks de humo
+  y estela como estados/tareas C con nombres equivalentes; el script se libera
+  tras los 40 frames finales.
+- Adaptación: sprites Canvas conservan imágenes RGBA por sprite, así que liberar
+  tags GBA no tiene un recurso web equivalente. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; sin headless ni
+  pruebas de navegador.
+
+## `trainer_fan_club.c`: contador, pérdida y selección de fans (2026-09-26)
+
+- El inventario reconoce 23/23 funciones. Descompuse el contador empaquetado
+  en `VAR_FANCLUB_FAN_COUNTER`, el avance por interacciones, altas/bajas con
+  las prioridades y tiradas RNG del C, primera obtención, pérdida por horas,
+  game clear, miembro consultado y buffer de nombre. Los specials ahora llaman
+  esos helpers y la actualización de link recibe el resultado de batalla.
+- Los nombres de trainers de link no están guardados porque el port no implementa
+  los registros/enlace; la rutina usa los fallbacks NPC del C. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  checks headless ni pruebas en navegador.
+
+## `script_movement.c`: slots y tareas de movimiento de objetos (2026-09-26)
+
+- El inventario reconoce 19/19 funciones. Reemplacé la lista compacta de
+  entradas por los 16 slots indexados del C, con sentinel `0xFF`, ID del objeto,
+  puntero/bytes de script y estado terminado. La máquina de tareas porta la
+  asignación/reutilización de slots, bit de fin, ejecución por frame, freeze al
+  terminar y unfreeze al cancelar.
+- La API web conserva una representación de slot `{taskId, moveScriptId}` en
+  vez de exponer un puntero C a `gTasks[].data`; scripts del ROM avanzan su
+  puntero de byte tras cada movimiento aceptado. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; sin pruebas
+  headless ni navegador.
+
+## `tileset_anims.c`: callbacks de animación de tilesets (2026-09-26)
+
+- Porté los callbacks primarios/secundarios y la cola de hasta 20 transferencias
+  a `TilesetAnimator`, con contadores reiniciados por tileset y actualización
+  frame a frame. La copia síncrona sustituye DMA/VBlank del navegador; no hice
+  comparación de píxeles ni prueba de frames contra C.
+- Corregí el arranque para no precargar el primer frame con `prime()`: el C
+  arranca los contadores a cero y entra por `UpdateTilesetAnimations`.
+  `check:port`, `check:honesty`, inventario, pendientes y `git diff --check`
+  pasaron; sin navegador.
+
+## `fldeff_cut.c`: comprobación y corte de hierba (2026-09-26)
+
+- Ajusté el área 3×3 de `SetUpFieldMove_Cut` y `FldEff_CutGrass` para usar la
+  casilla de destino frente al jugador, igual que `PlayerGetDestCoords` en C;
+  antes se centraba en la casilla ocupada. Las conversiones de metatiles,
+  elevación y efecto de sonido ya estaban representadas. Añadí callbacks C con
+  nombres equivalentes para el uso en hierba/árbol, la reanudación del script y
+  los ocho sprites de corte. La animación usa `Math.sin/cos` redondeados en vez
+  de la tabla trigonométrica GBA; su temporización de vida sigue los 29 ticks C.
+- El efecto web usa sprites Canvas y desbloquea al limpiar el grupo. El inventario
+  reconoce ahora 13/13 funciones; esto no certifica paridad de píxeles. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  navegador.
+
+## `map_name_popup.c`: ciclo del rótulo de mapa (2026-09-26)
+
+- El inventario reconoce 7/7 funciones. Nombré el ciclo de tarea y helpers como
+  en C; conserva entrada/salida en 12 frames, espera 121 frames, reaparición,
+  descarte, altura del piso y techo. La copia de ventana Canvas es síncrona, por
+  lo que no modela el busy flag DMA3 ni selección de paleta fadeada. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  navegador ni comparación visual.
+
+## `event_data.c`: variables, flags y condiciones de sistemas opcionales (2026-09-26)
+
+- El inventario reconoce 26/26 funciones. Añadí inicialización y reset de
+  especiales, punteros web a variables/bytes de flags, reglas de elegibilidad
+  del Quest Log, marcadores completos del National Dex (incluida migración de
+  partidas web previas), flags/vars de Mystery Gift, gate de reset RTC y APIs
+  RSE que el C conserva sin uso. National Dex ya consume el mismo predicado en
+  Pokédex y specials.
+- La capa de pointers conserva lectura/escritura, pero no aplica las
+  redirecciones `QuestLogGetFlagOrVarPtr` ni registra/reproduce acciones; esas
+  funciones requieren el motor de Quest Log. Los helpers Mystery Gift/RTC no
+  sustituyen un flujo de hardware o enlace. Pasaron las comprobaciones estáticas
+  y la regeneración; sin navegador ni prueba de Quest Log.
+
+## `util.c`: helpers de sprites, afinidad BG y CRC (2026-09-26)
+
+- El inventario reconoce 10/10 funciones en `util.ts`: sprites invisibles,
+  palabras en dos halfwords, struct/BIOS BG affine, copia de tiles con flips,
+  trailing-zero count, CRC16 (bucle y tabla) y suma `u32`. Conecté el conteo de
+  bits desde `battle/util.ts` para que el módulo nuevo tenga un caller real.
+- Gráficos/tile data usan `Uint8Array`; el exportador sigue siendo la fuente de
+  datos. Pasaron `check:port`, `check:honesty`, inventory, pending y
+  `git diff --check`; no hay comparación CRC ni pixel check en este bloque.
+
+## `menu_indicators.c`: indicadores de scroll y cursores de lista (2026-09-26)
+
+- El inventario reconoce 18/20 funciones en `hw/listMenu.ts`. Extraje los
+  callbacks de flecha, el conteo/generación de subsprites del outline y los
+  callbacks C de actualización/eliminación para ambos cursores, y los conecté
+  a los dispatchers públicos de ListMenu.
+- `Task_RedOutlineCursor` y `Task_RedArrowCursor` tienen cuerpo vacío en el C;
+  no creé stubs TS para ellos. Las hojas/paletas provienen de INCBIN y el render
+  usa sprites del runtime web. Pasaron `check:port`, `check:honesty`, inventory,
+  pending y `git diff --check`; sin navegador ni comparación de píxeles.
+
+## `palette.c`: helpers de fade y reset de paletas (2026-09-26)
+
+- Añadí `CopyPaletteInvertedTint` con el paso ponderado en enteros del C,
+  extraje `BeginFastPaletteFadeInternal` de la API que lo usa y porté el reset
+  de slots de `PaletteStruct` junto con `PaletteStruct_ResetById`, incluyendo
+  su limpieza desde `ResetPaletteFade`. El inventario reconoce 34/41 funciones;
+  las siete ausentes son `BeginPlttFade` (marcada unused en C) y seis helpers
+  privados del sistema `PaletteStruct`, que el propio C describe como no usado
+  y de funcionalidad desconocida. Los fades/tintes existentes no recibieron
+  prueba de píxel en este pase, y `CopyPaletteInvertedTint` aún no tiene caller
+  en la web porque el Quest Log no está portado. Pasaron `check:port`,
+  `check:honesty`, inventory, pending y `git diff --check`; no se probó en
+  navegador.
+
+## `map_preview_screen.c`: rótulos de bosque y preview de mapas (2026-09-26)
+
+- El inventario reconoce 14/14 funciones. Nombré y conecté la transición de
+  bosque y su tarea, los helpers de inicio/carga/finalización/descarga y el
+  estado invertido `ForestMapPreviewScreenIsRunning`. `MapHasPreviewScreen_HandleQLState2`
+  ahora omite previews cuando Quest Log está en `QL_STATE_PLAYBACK`, según el C.
+  El Canvas arma el bitmap desde cdata/incbin de forma síncrona; sustituye la
+  carga de BG/VRAM, DMA y el window ID por un flag de capa y referencias de
+  Canvas. Por eso no hay equivalencia de timing DMA ni prueba de píxeles. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
   navegador.

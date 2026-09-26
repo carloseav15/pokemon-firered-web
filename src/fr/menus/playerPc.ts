@@ -42,7 +42,7 @@ export function NewGameInitPCItems(): void {
 
 /** PrintStringOnWindow0WithDialogueFrame: player_pc.c */
 export function PrintStringOnWindow0WithDialogueFrame(game: Game, str: Uint8Array): void {
-  game.overworld.control.msgIsSignpost = false;
+  game.overworld.control.MsgSetNotSignpost();
   game.overworld.messageBox.show(str);
 }
 
@@ -93,9 +93,9 @@ export function Task_TopMenuHandleInput(game: Game, taskId: number, menu: Menu, 
 export function Task_PlayerPcTurnOff(game: Game): void {
   const ow = game.overworld;
   if (!gPlayerPcMenuManager.notInRoom) {
-    ow.script.setupScript(rom.label("EventScript_PalletTown_PlayersHouse_2F_ShutDownPC"));
+    ow.script.ScriptContext_SetupScript(rom.label("EventScript_PalletTown_PlayersHouse_2F_ShutDownPC"));
   } else {
-    ow.script.enable();
+    ow.script.ScriptContext_Enable();
   }
 }
 
@@ -243,7 +243,7 @@ export function Task_ReturnToItemStorageSubmenu(game: Game, cursorPos: number): 
 export function BedroomPC(game: Game): void {
   gPlayerPcMenuManager.notInRoom = false;
   sTopMenuItemCount = 3;
-  game.overworld.script.stop();
+  game.overworld.script.ScriptContext_Stop();
   Task_DrawPlayerPcTopMenu(game);
 }
 
@@ -251,7 +251,7 @@ export function BedroomPC(game: Game): void {
 export function PlayerPC(game: Game): void {
   gPlayerPcMenuManager.notInRoom = true;
   sTopMenuItemCount = 3;
-  game.overworld.script.stop();
+  game.overworld.script.ScriptContext_Stop();
   Task_DrawPlayerPcTopMenu(game);
 }
 

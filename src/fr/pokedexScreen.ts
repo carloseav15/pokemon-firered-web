@@ -49,7 +49,7 @@ import { NationalPokedexNumToSpecies, SpeciesToNationalPokedexNum } from "./poke
 import { speciesName } from "./pokemon/pokemon";
 import { GetMonIconPtr, GetValidMonIconPalettePtr } from "./pokemonIcon";
 import { rom } from "./rom";
-import { flagGet, save, varGet } from "./save";
+import { IsNationalPokedexEnabled as isNationalPokedexEnabled, save } from "./save";
 import {
   CreateMonPicSprite_HandleDeoxys, CreateTrainerPicSprite, FreeAndDestroyMonPicSprite, FreeAndDestroyTrainerPicSprite, LoadMonPicInWindow,
   PlayerGenderToFrontTrainerPicId, ResetAllPicSprites,
@@ -181,7 +181,7 @@ export async function preloadPokedexScreen(): Promise<void> {
 }
 
 export function IsNationalPokedexEnabled(): boolean {
-  return varGet(C.VAR_NATIONAL_DEX) === 0x6258 && flagGet(C.FLAG_SYS_NATIONAL_DEX);
+  return isNationalPokedexEnabled();
 }
 
 // ---------------------------------------------------------------- main callbacks

@@ -7,6 +7,5 @@
  "imageProcessingEffects.ts",
  "monMarkings.ts",
  "paletteUtil.ts",
- "saveFailedScreen.ts",
  "teachyTv.ts"
 ]

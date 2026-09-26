@@ -40,6 +40,7 @@ export interface LearnMoveGfxResources {
   spriteIds: number[];
   learnableMoves: number[];
   listMenuItems: ListMenuItem[];
+  scrollArrowId: number | null;
 }
 
 export let sMoveRelearner: LearnMoveGfxResources | null = null;
@@ -84,6 +85,7 @@ export function InitMoveRelearnerStateVariables(): void {
     spriteIds: [0, 0],
     learnableMoves: new Array(20).fill(0),
     listMenuItems: [],
+    scrollArrowId: null,
   };
 }
 
@@ -116,7 +118,20 @@ export function SpriteCB_ListMenuScrollIndicators(sprite: Sprite): void {
 
 /** SpawnListMenuScrollIndicatorSprites: learn_move.c */
 export function SpawnListMenuScrollIndicatorSprites(): void {
-  // Handled by ListMenu scroll indicators in this engine
+  const state = sMoveRelearner;
+  if (!state || state.listMenuItems.length <= 6 || state.scrollArrowId !== null) return;
+  const listTaskId = state.listMenuTaskId;
+  const listHeight = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT);
+  state.scrollArrowId = AddScrollIndicatorArrowPairParameterized(
+    SCROLL_ARROW_UP,
+    120,
+    4 * 8 - 4,
+    4 * 8 + 7 * (listHeight + 2) + 4,
+    Math.max(0, state.listMenuItems.length - 7),
+    ARROW_TAG,
+    ARROW_TAG,
+    () => ListMenuGetScrollAndRow(listTaskId).itemsAbove,
+  );
 }
 
 /** LoadMoveInfoUI: learn_move.c */
@@ -175,13 +190,35 @@ export function MoveRelearnerMenu_MoveCursorFunc(itemIndex: number, onInit: bool
 }
 
 /** MoveRelearnerInitListMenuBuffersEtc: learn_move.c */
-export function MoveRelearnerInitListMenuBuffersEtc(): void {
-  // Populates items buffer for list menu
+export function MoveRelearnerInitListMenuBuffersEtc(moves: readonly number[] = []): void {
+  const state = sMoveRelearner;
+  if (!state) return;
+  const learnableMoves = moves.slice(0, 20);
+  state.learnableMoves.fill(0);
+  state.learnableMoves.splice(0, learnableMoves.length, ...learnableMoves);
+  state.numLearnableMoves = learnableMoves.length + 1;
+  state.selectedIndex = 0;
+  state.listMenuItems = learnableMoves.map((move, index) => ({ label: rom.moveName(move), index }));
+  state.listMenuItems.push({ label: rom.text("gFameCheckerText_Cancel"), index: LIST_CANCEL });
 }
 
 /** MoveLearnerInitListMenu: learn_move.c */
 export function MoveLearnerInitListMenu(): void {
-  // Initializes ListMenu task
+  const state = sMoveRelearner;
+  if (!state) return;
+  const listItems = state.listMenuItems;
+  const listMenu = listMenuTemplate({
+    items: listItems, totalItems: listItems.length, maxShowed: 7, windowId: 6,
+    header_X: 0, item_X: 8, cursor_X: 0, upText_Y: 0, cursorPal: 2,
+    fillValue: 1, cursorShadowPal: 3, lettersSpacing: 1, itemVerticalPadding: 0,
+    scrollMultiple: LIST_NO_MULTIPLE_SCROLL, fontId: FONT_NORMAL, cursorKind: 0,
+    moveCursorFunc: (itemIndex, onInit) => {
+      MoveRelearnerMenu_MoveCursorFunc(itemIndex, onInit);
+      PrintMoveInfo(itemIndex === LIST_CANCEL ? 0 : state.learnableMoves[itemIndex] ?? 0);
+    },
+  });
+  state.listMenuTaskId = ListMenuInit(listMenu, state.listMenuScrollPos, state.listMenuScrollRow);
+  CopyWindowToVram(6, COPYWIN_MAP);
 }
 
 /** MoveRelearnerMenuHandleInput: learn_move.c */
@@ -309,30 +346,17 @@ export async function openMoveRelearnerList(moves: number[], done: (index: numbe
 
   LoadMoveInfoUI();
 
-  const cancel = rom.text("gFameCheckerText_Cancel");
-  const rows = [...moves.map((moveId, index) => ({ label: rom.moveName(moveId), index })), { label: cancel, index: LIST_CANCEL }];
-  const listItems: ListMenuItem[] = rows.map((row) => ({ label: row.label, index: row.index }));
+  InitMoveRelearnerStateVariables();
+  MoveRelearnerInitListMenuBuffersEtc(moves);
+  MoveLearnerInitListMenu();
+  SpawnListMenuScrollIndicatorSprites();
+  const state = sMoveRelearner!;
   PrintTeachWhichMoveToStrVar1(false);
 
-  let listTaskId = 0;
-  const template = listMenuTemplate({
-    items: listItems, totalItems: listItems.length, maxShowed: 7, windowId: 6, header_X: 0, item_X: 8, cursor_X: 0,
-    upText_Y: 0, cursorPal: 2, fillValue: 1, cursorShadowPal: 3, lettersSpacing: 1, itemVerticalPadding: 0,
-    scrollMultiple: LIST_NO_MULTIPLE_SCROLL, fontId: FONT_NORMAL, cursorKind: 0,
-    moveCursorFunc: (index, onInit) => {
-      MoveRelearnerMenu_MoveCursorFunc(index, onInit);
-      PrintMoveInfo(index === LIST_CANCEL ? 0 : moves[index] ?? 0);
-    },
-  });
-  listTaskId = ListMenuInit(template, 0, 0);
-  CopyWindowToVram(6, COPYWIN_MAP);
-  const listHeight = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT);
-  const arrows = listItems.length > 6
-    ? AddScrollIndicatorArrowPairParameterized(SCROLL_ARROW_UP, 120, 4 * 8 - 4, 4 * 8 + 7 * (listHeight + 2) + 4,
-      Math.max(0, listItems.length - 7), ARROW_TAG, ARROW_TAG, () => ListMenuGetScrollAndRow(listTaskId).cursorPos)
-    : null;
+  const listTaskId = state.listMenuTaskId;
   const finish = (index: number | null): void => {
-    if (arrows !== null) RemoveScrollIndicatorArrowPair(arrows);
+    if (state.scrollArrowId !== null) RemoveScrollIndicatorArrowPair(state.scrollArrowId);
+    state.scrollArrowId = null;
     DestroyListMenuTask(listTaskId);
     for (const sp of hidden) if (sp.inUse) sp.invisible = false;
     FreeAllWindowBuffers(); SetVBlankCallback(null); SetMainCallback1(callback1); SetMainCallback2(null);
@@ -343,7 +367,7 @@ export async function openMoveRelearnerList(moves: number[], done: (index: numbe
     const selection = ListMenu_ProcessInput(listTaskId);
     if (selection === LIST_CANCEL) { sound.playSE(C.SE_SELECT); finish(null); return; }
     if (selection >= 0) { sound.playSE(C.SE_SELECT); finish(selection); return; }
-    if (arrows !== null) StepScrollIndicatorArrowPair(arrows);
+    if (state.scrollArrowId !== null) StepScrollIndicatorArrowPair(state.scrollArrowId);
     AnimateSprites();
     BuildOamBuffer();
   });

@@ -302,10 +302,58 @@ export function dexCount(caught: boolean, kantoOnly = false): number {
   return count;
 }
 
+/** GetPokedexCategoryName (pokedex.c); dexNum is the table index, not species id. */
+export function GetPokedexCategoryName(dexNum: number): Uint8Array {
+  return dexNum >= 0 && dexNum < rom.pokedex.length ? b64(rom.pokedex[dexNum].category) : new Uint8Array();
+}
+
+function GetPokedexFlagForCount(nationalDexNo: number, caseId: number): boolean {
+  const index = nationalDexNo - 1;
+  if (index < 0) return false;
+  const mask = 1 << (index & 7);
+  const seen = (save.pokedexSeen[index >> 3] ?? 0) & mask;
+  const caught = (save.pokedexCaught[index >> 3] ?? 0) & mask;
+  if (caseId === rom.constants.FLAG_GET_SEEN) return seen !== 0;
+  if (caseId === rom.constants.FLAG_GET_CAUGHT) return caught !== 0 && caught === seen;
+  return false;
+}
+
+/** GetNationalPokedexCount (pokedex.c), including the C caught/seen parity check. */
+export function GetNationalPokedexCount(caseId: number): number {
+  let count = 0;
+  for (let national = 1; national <= rom.constants.NATIONAL_DEX_COUNT; national++)
+    if (GetPokedexFlagForCount(national, caseId)) count++;
+  return count;
+}
+
+/** GetKantoPokedexCount (pokedex.c). */
+export function GetKantoPokedexCount(caseId: number): number {
+  let count = 0;
+  for (let national = 1; national <= rom.constants.KANTO_DEX_COUNT; national++)
+    if (GetPokedexFlagForCount(national, caseId)) count++;
+  return count;
+}
+
+function HoennToNationalOrder(hoennDexNo: number): number {
+  const constants = rom.constants as Record<string, number>;
+  const dexKey = Object.keys(constants).find((key) => key.startsWith("HOENN_DEX_") && constants[key] === hoennDexNo);
+  if (!dexKey) return 0;
+  const species = constants[`SPECIES_${dexKey.slice("HOENN_DEX_".length)}`];
+  return species === undefined ? 0 : rom.species[species]?.national ?? 0;
+}
+
+/** HasAllHoennMons (pokedex.c), excluding Jirachi and Deoxys from the Hoenn dex. */
+export function HasAllHoennMons(): boolean {
+  for (let hoennDexNo = 1; hoennDexNo < rom.constants.HOENN_DEX_COUNT - 1; hoennDexNo++) {
+    const national = HoennToNationalOrder(hoennDexNo);
+    if (!national || !GetPokedexFlagForCount(national, rom.constants.FLAG_GET_CAUGHT)) return false;
+  }
+  return true;
+}
+
 /** Exact dex completion predicates from pokedex.c (all checks use National Dex indices). */
 function hasCaughtNationalDexNumber(national: number): boolean {
-  const index = national - 1;
-  return index >= 0 && ((save.pokedexCaught[index >> 3] ?? 0) & (1 << (index & 7))) !== 0;
+  return GetPokedexFlagForCount(national, rom.constants.FLAG_GET_CAUGHT);
 }
 
 export function hasAllKantoDexSpecies(): boolean {
@@ -315,6 +363,9 @@ export function hasAllKantoDexSpecies(): boolean {
   return true;
 }
 
+/** HasAllKantoMons (pokedex.c), retained under its source symbol for callers. */
+export function HasAllKantoMons(): boolean { return hasAllKantoDexSpecies(); }
+
 export function hasAllNationalDexSpecies(): boolean {
   // HasAllMons excludes Mew, Lugia, Ho-Oh, Celebi, Jirachi and Deoxys.
   const excluded = new Set([151, 249, 250, 251, 385, 386]);
@@ -322,6 +373,9 @@ export function hasAllNationalDexSpecies(): boolean {
     if (!excluded.has(national) && !hasCaughtNationalDexNumber(national)) return false;
   return true;
 }
+
+/** HasAllMons (pokedex.c), retained under its source symbol for callers. */
+export function HasAllMons(): boolean { return hasAllNationalDexSpecies(); }
 
 /** GetEvolutionTargetSpecies for level-up style evolutions (mode 0). */
 export function levelUpEvolution(mon: Pokemon): number {

@@ -7,7 +7,7 @@ import * as MB from "../generated/metatileBehavior";
 import { decode, expandPlaceholders, stringVars } from "../gba/charmap";
 import { rom } from "../rom";
 import { sound } from "../audio/sound";
-import { MAP_OFFSET, METATILE_ATTRIBUTE_TERRAIN } from "../field/fieldmap";
+import { SetUpFieldMove_Cut } from "../field/fieldMoves";
 import { flagGet, flagSet, save, varSet, SV, type WarpData } from "../save";
 import type { Game } from "../game";
 import { DIRECTION_VECTORS, DIR_NORTH } from "../field/objectEvents";
@@ -35,6 +35,26 @@ export type FieldMoveResult =
   | { kind: "fly" }
   | { kind: "softboiled" };
 
+/** SetUpFieldMove_Flash (fldeff_flash.c), adapted to the field-move result callback. */
+export function SetUpFieldMove_Flash(game: Game, partyIndex: number): FieldMoveResult | null {
+  const ow = game.overworld;
+  if (!ow.header.requiresFlash || flagGet(C.FLAG_SYS_FLASH_ACTIVE)) return null;
+  return { kind: "close", post: () => FieldCallback_Flash(game, partyIndex) };
+}
+
+/** FieldCallback_Flash (fldeff_flash.c): show the selected Pokémon before invoking Flash. */
+export function FieldCallback_Flash(game: Game, partyIndex: number): void {
+  game.fieldEffectArguments[0] = partyIndex;
+  game.overworld.effects.moves.CreateFieldEffectShowMon(() => FldEff_UseFlash(game));
+}
+
+/** FldEff_UseFlash (fldeff_flash.c). */
+export function FldEff_UseFlash(game: Game): void {
+  sound.playSE(C.SE_M_REFLECT);
+  flagSet(C.FLAG_SYS_FLASH_ACTIVE);
+  game.overworld.script.ScriptContext_SetupScript(rom.label("EventScript_FldEffFlash"));
+}
+
 function sectionOfWarp(w: WarpData): number {
   const id = rom.mapIdByNum((w.mapGroup << 8) | w.mapNum);
   const name = id ? rom.mapIndex.maps[id]?.section : undefined;
@@ -43,6 +63,55 @@ function sectionOfWarp(w: WarpData): number {
 
 function mapTypeAllowsTeleportAndFly(mapType: number): boolean {
   return mapType === C.MAP_TYPE_ROUTE || mapType === C.MAP_TYPE_TOWN || mapType === C.MAP_TYPE_OCEAN_ROUTE || mapType === C.MAP_TYPE_CITY;
+}
+
+/** fldeff_softboiled.c SetUpFieldMove_SoftBoiled */
+export function SetUpFieldMove_SoftBoiled(partyIndex: number): boolean {
+  const mon = save.party[partyIndex];
+  return mon.hp > Math.floor(mon.stats[0] / 5);
+}
+
+/** fldeff_sweetscent.c SetUpFieldMove_SweetScent; its post-menu callback is the field effect. */
+let gPostMenuFieldCallback: (() => void) | undefined;
+export function SetUpFieldMove_SweetScent(postMenuCallback: () => void): boolean {
+  gPostMenuFieldCallback = postMenuCallback;
+  return true;
+}
+
+/** fldeff_teleport.c SetUpFieldMove_Teleport; callbacks are installed by the field-menu adapter. */
+export function SetUpFieldMove_Teleport(mapType: number): boolean {
+  return mapTypeAllowsTeleportAndFly(mapType);
+}
+
+/** fldeff_dig.c SetUpFieldMove_Dig / item_use.c CanUseEscapeRopeOnCurrMap */
+export function SetUpFieldMove_Dig(allowEscaping: boolean): boolean {
+  return allowEscaping === true;
+}
+
+/** fldeff_strength.c SetUpFieldMove_Strength; frontObject already checks the C graphics ID. */
+export function SetUpFieldMove_Strength(isSurfing: boolean, hasBoulder: boolean): boolean {
+  return !isSurfing && hasBoulder;
+}
+
+/** event_object_movement.c CheckObjectGraphicsInFrontOfPlayer. */
+export function CheckObjectGraphicsInFrontOfPlayer(game: Game, graphicsId: number): boolean {
+  const ow = game.overworld, player = ow.player.object;
+  const [dx, dy] = DIRECTION_VECTORS[player.facingDirection];
+  const object = ow.objects.objectAtXYZ(player.currentCoords.x + dx, player.currentCoords.y + dy, player.currentElevation);
+  if (!object || object.graphicsId !== graphicsId) return false;
+  varSet(SV.LAST_TALKED, object.localId);
+  return true;
+}
+
+/** fldeff_rocksmash.c SetUpFieldMove_RockSmash. */
+export function SetUpFieldMove_RockSmash(game: Game): boolean {
+  return CheckObjectGraphicsInFrontOfPlayer(game, C.OBJ_EVENT_GFX_ROCK_SMASH_ROCK);
+}
+
+/** fldeff_rocksmash.c FieldCallback_UseRockSmash. */
+export function FieldCallback_UseRockSmash(game: Game, partyIndex: number): void {
+  game.fieldEffectArguments[0] = partyIndex;
+  game.overworld.script.ScriptContext_SetupScript(rom.label("EventScript_FldEffRockSmash"));
 }
 
 /** CursorCB_FieldMove's badge check and the SetUpFieldMove_* dispatch. */
@@ -62,43 +131,20 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       if (!ow.header.requiresFlash || flagGet(C.FLAG_SYS_FLASH_ACTIVE)) {
         return { kind: "fail", message: text(flagGet(C.FLAG_SYS_FLASH_ACTIVE) ? "gText_InUseAlready_PM" : "gText_CantUseHere") };
       }
-      return { kind: "close", post: () => {
-        args[0] = partyIndex;
-        ow.effects.moves.createShowMon(() => {
-          sound.playSE(C.SE_M_REFLECT);
-          flagSet(C.FLAG_SYS_FLASH_ACTIVE);
-          ow.script.setupScript(rom.label("EventScript_FldEffFlash"));
-        });
-      } };
+      return SetUpFieldMove_Flash(game, partyIndex)!;
     case FIELD_MOVE_CUT: {
-      // CutMoveRuinValleyCheck: standing south of the Dotted Hole door.
       ow.effects.moves.setScheduleOpenDottedHole(false);
-      if (!flagGet(C.FLAG_USED_CUT_ON_RUIN_VALLEY_BRAILLE)
-        && ow.mapId === "MAP_SIX_ISLAND_RUIN_VALLEY"
-        && p.currentCoords.x - MAP_OFFSET === 24
-        && p.currentCoords.y - MAP_OFFSET === 25
-        && p.facingDirection === DIR_NORTH) {
+      const cutTarget = SetUpFieldMove_Cut(game);
+      if (cutTarget === "ruin") {
         return { kind: "close", post: () => {
           ow.effects.moves.setScheduleOpenDottedHole(true);
-          args[0] = partyIndex;
-          ow.effects.start(C.FLDEFF_USE_CUT_ON_GRASS);
+          ow.effects.moves.FieldCallback_CutGrass(partyIndex);
         } };
       }
-      const tree = frontObject(C.OBJ_EVENT_GFX_CUT_TREE);
-      if (tree) {
-        varSet(SV.LAST_TALKED, tree.localId);
-        return { kind: "close", post: () => { args[0] = partyIndex; ow.script.setupScript(rom.label("EventScript_FldEffCut")); } };
+      if (cutTarget === "tree") {
+        return { kind: "close", post: () => ow.effects.moves.FieldCallback_CutTree(partyIndex) };
       }
-      // Grass within the 3×3 area around the player at the same elevation.
-      const elevation = p.currentElevation;
-      for (let y = p.currentCoords.y - 1; y <= p.currentCoords.y + 1; y++) {
-        for (let x = p.currentCoords.x - 1; x <= p.currentCoords.x + 1; x++) {
-          if (ow.map.elevationAt(x, y) !== elevation) continue;
-          if (ow.map.attributeAt(x, y, METATILE_ATTRIBUTE_TERRAIN) & C.TILE_TERRAIN_GRASS) {
-            return { kind: "close", post: () => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_USE_CUT_ON_GRASS); } };
-          }
-        }
-      }
+      if (cutTarget === "grass") return { kind: "close", post: () => ow.effects.moves.FieldCallback_CutGrass(partyIndex) };
       return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
     }
     case FIELD_MOVE_FLY:
@@ -106,9 +152,9 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       return { kind: "fly" };
     case FIELD_MOVE_STRENGTH: {
       const boulder = frontObject(C.OBJ_EVENT_GFX_PUSHABLE_BOULDER);
-      if (ow.player.isSurfing() || !boulder) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      if (!SetUpFieldMove_Strength(ow.player.isSurfing(), !!boulder)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       varSet(SV.RESULT, partyIndex);
-      return { kind: "close", post: () => { args[0] = partyIndex; ow.script.setupScript(rom.label("EventScript_FldEffStrength")); } };
+      return { kind: "close", post: () => { args[0] = partyIndex; ow.script.ScriptContext_SetupScript(rom.label("EventScript_FldEffStrength")); } };
     }
     case FIELD_MOVE_SURF: {
       const behavior = ow.map.behaviorAt(fx, fy);
@@ -122,10 +168,8 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       return { kind: "fail", message: text(message) };
     }
     case FIELD_MOVE_ROCK_SMASH: {
-      const rock = frontObject(C.OBJ_EVENT_GFX_ROCK_SMASH_ROCK);
-      if (!rock) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
-      varSet(SV.LAST_TALKED, rock.localId);
-      return { kind: "close", post: () => { args[0] = partyIndex; ow.script.setupScript(rom.label("EventScript_FldEffRockSmash")); } };
+      if (!SetUpFieldMove_RockSmash(game)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      return { kind: "close", post: () => FieldCallback_UseRockSmash(game, partyIndex) };
     }
     case FIELD_MOVE_WATERFALL:
       if (MB.MetatileBehavior_IsWaterfall(ow.map.behaviorAt(fx, fy)) && ow.player.isSurfing() && p.facingDirection === DIR_NORTH) {
@@ -133,7 +177,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       }
       return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
     case FIELD_MOVE_TELEPORT:
-      if (!mapTypeAllowsTeleportAndFly(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      if (!SetUpFieldMove_Teleport(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       stringVars.var1 = Uint8Array.from(rom.regionMapName(sectionOfWarp(save.lastHealLocation)));
       return { kind: "confirm", message: text("gText_ReturnToHealingSpot"), post: () => {
         ow.resetStateAfterTeleport();
@@ -141,7 +185,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
         ow.effects.start(C.FLDEFF_USE_TELEPORT);
       } };
     case FIELD_MOVE_DIG:
-      if (!ow.header.allowEscaping) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      if (!SetUpFieldMove_Dig(ow.header.allowEscaping)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       stringVars.var1 = Uint8Array.from(rom.regionMapName(sectionOfWarp(save.escapeWarp)));
       return { kind: "confirm", message: text("gText_EscapeFromHereAndReturnTo"), post: () => {
         ow.resetStateAfterDigEscRope();
@@ -150,12 +194,13 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       } };
     case FIELD_MOVE_MILK_DRINK:
     case FIELD_MOVE_SOFT_BOILED: {
-      const mon = save.party[partyIndex];
-      if (mon.hp > Math.floor(mon.stats[0] / 5)) return { kind: "softboiled" };
+      if (SetUpFieldMove_SoftBoiled(partyIndex)) return { kind: "softboiled" };
       return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
     }
     case FIELD_MOVE_SWEET_SCENT:
-      return { kind: "close", post: () => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_SWEET_SCENT); } };
+      if (!SetUpFieldMove_SweetScent(() => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_SWEET_SCENT); }))
+        return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      return { kind: "close", post: () => { const callback = gPostMenuFieldCallback; gPostMenuFieldCallback = undefined; callback?.(); } };
   }
   return { kind: "fail", message: text("gText_CantUseHere") };
 }

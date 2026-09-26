@@ -23,7 +23,7 @@ export function setInVBlank(value: boolean): void {
 function copyBufferedValueToGpuReg(offset: number): void {
   const value = buffer[offset >> 1];
   if (offset === REG_OFFSET_DISPSTAT) {
-    const irqBits = C.DISPSTAT_HBLANK_INTR | C.DISPSTAT_VBLANK_INTR;
+    const irqBits = C.DISPSTAT_HBLANK_INTR | C.DISPSTAT_VBLANK_INTR | C.DISPSTAT_VCOUNT_INTR;
     ppu.setReg(offset, (ppu.reg(offset) & ~irqBits) | value);
   } else ppu.setReg(offset, value);
 }
@@ -65,10 +65,13 @@ export function ClearGpuRegBits(offset: number, mask: number): void {
 // The browser frame loop drives callbacks directly, but preserve the C IE
 // mask and its visible DISPSTAT interrupt-enable bits.
 function updateRegDispstatIntrBits(): void {
-  let value = 0;
+  let value = buffer[REG_OFFSET_DISPSTAT >> 1] & 0xff00;
+  value |= buffer[REG_OFFSET_DISPSTAT >> 1] & C.DISPSTAT_VCOUNT;
   if (regIE & C.INTR_FLAG_HBLANK) value |= C.DISPSTAT_HBLANK_INTR;
   if (regIE & C.INTR_FLAG_VBLANK) value |= C.DISPSTAT_VBLANK_INTR;
-  const current = GetGpuReg(REG_OFFSET_DISPSTAT) & (C.DISPSTAT_HBLANK_INTR | C.DISPSTAT_VBLANK_INTR);
+  if (regIE & C.INTR_FLAG_VCOUNT) value |= C.DISPSTAT_VCOUNT_INTR;
+  const irqBits = C.DISPSTAT_HBLANK_INTR | C.DISPSTAT_VBLANK_INTR | C.DISPSTAT_VCOUNT_INTR;
+  const current = GetGpuReg(REG_OFFSET_DISPSTAT) & (irqBits | 0xff00);
   if (current !== value) SetGpuReg(REG_OFFSET_DISPSTAT, value);
 }
 

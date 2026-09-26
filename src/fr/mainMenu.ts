@@ -53,6 +53,13 @@ const SYMBOLS = ["main_menu.c:sBg_Pal", "main_menu.c:sTextbox_Pal", "gStdTextWin
   ...Array.from({ length: 10 }, (_, i) => [`sUserFrame_Type${i + 1}_Gfx`, `sUserFrame_Type${i + 1}_Pal`]).flat()];
 
 export type MainMenuResult = "continue" | "newgame" | "title" | null;
+let activeMainMenu: MainMenu | null = null;
+
+/** CB2_InitMainMenu: begin the live main-menu scene. */
+export function CB2_InitMainMenu(): void { activeMainMenu?.begin(); }
+
+/** CB2_InitMainMenu_2: second C entry point, sharing MainMenuGpuInit's scene setup. */
+export function CB2_InitMainMenu_2(): void { activeMainMenu?.MainMenuGpuInit(1); }
 
 const text = (name: string) => cdata<number[]>("strings", name);
 
@@ -66,6 +73,9 @@ function concatStr(a: ArrayLike<number>, b: ArrayLike<number>): number[] {
 
 export class MainMenu {
   result: MainMenuResult = null;
+  private saveFileCorrupt = false;
+
+  constructor() { activeMainMenu = this; }
 
   static async preload(): Promise<void> {
     await Promise.all([preloadIncbin(SYMBOLS), loadCData("strings")]);
@@ -74,9 +84,11 @@ export class MainMenu {
   /** CB2_InitMainMenu */
   begin(): void {
     this.result = null;
+    this.saveFileCorrupt = false;
     if (saveStore.exists()) {
       const data = saveStore.load();
       if (data) setSave(data);
+      else this.saveFileCorrupt = true;
     }
     InitGpuRegManager();
     this.MainMenuGpuInit();
@@ -90,7 +102,7 @@ export class MainMenu {
     renderHw(ctx);
   }
 
-  private MainMenuGpuInit(): void {
+  MainMenuGpuInit(_unused: number = 1): boolean {
     SetVBlankCallback(null);
     for (const reg of [REG_OFFSET_DISPCNT, REG_OFFSET_BG2CNT, REG_OFFSET_BG1CNT, REG_OFFSET_BG0CNT, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS,
       REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS]) SetGpuReg(reg, 0);
@@ -117,6 +129,7 @@ export class MainMenu {
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_1D_MAP | DISPCNT_OBJ_ON | DISPCNT_WIN0_ON);
     const taskId = tasks.create((id) => this.Task_SetWin0BldRegsAndCheckSaveFile(id), 0);
     tasks.tasks[taskId].data[1] = 0;
+    return false;
   }
 
   private setDarkenRegs(): void {
@@ -135,6 +148,12 @@ export class MainMenu {
     const t = tasks.tasks[taskId];
     // SAVE_STATUS_OK when a save exists, SAVE_STATUS_EMPTY otherwise.
     LoadUserFrameToBg(0);
+    if (this.saveFileCorrupt) {
+      SetStdFrame0OnBg(0);
+      t.data[0] = flagGet(C.FLAG_SYS_MYSTERY_GIFT_ENABLED) ? MAIN_MENU_MYSTERYGIFT : MAIN_MENU_CONTINUE;
+      this.PrintSaveErrorStatus(taskId, text("gText_SaveFileCorrupted"));
+      return;
+    }
     if (saveStore.exists()) t.data[0] = flagGet(C.FLAG_SYS_MYSTERY_GIFT_ENABLED) ? MAIN_MENU_MYSTERYGIFT : MAIN_MENU_CONTINUE;
     else t.data[0] = MAIN_MENU_NEWGAME;
     t.func = (id) => this.Task_SetWin0BldRegsNoSaveFileCheck(id);
@@ -145,7 +164,33 @@ export class MainMenu {
     this.setDarkenRegs();
     const t = tasks.tasks[taskId];
     if (t.data[0] === MAIN_MENU_NEWGAME) t.func = (id) => this.Task_ExecuteMainMenuSelection(id);
-    else t.func = (id) => { if (!gPaletteFade.active) this.Task_PrintMainMenuText(id); };
+    else t.func = (id) => this.Task_WaitFadeAndPrintMainMenuText(id);
+  }
+
+  /** C's save-status error path, used when a browser save exists but cannot be decoded. */
+  private PrintSaveErrorStatus(taskId: number, str: ArrayLike<number>): void {
+    PrintMessageOnWindow4(str);
+    tasks.tasks[taskId].func = (id) => this.Task_SaveErrorStatus_RunPrinterThenWaitButton(id);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0xffff);
+    ShowBg(0);
+    SetVBlankCallback(VBlankCB_MainMenu);
+  }
+
+  private Task_SaveErrorStatus_RunPrinterThenWaitButton(taskId: number): void {
+    if (gPaletteFade.active) return;
+    RunTextPrinters();
+    if (IsTextPrinterActive(WIN_ERROR) || !JOY_NEW(A_BUTTON)) return;
+    const task = tasks.tasks[taskId];
+    ClearWindowTilemap(WIN_ERROR);
+    MainMenu_EraseWindow(sWindowTemplate[WIN_ERROR]);
+    LoadUserFrameToBg(0);
+    task.func = task.data[0] === MAIN_MENU_NEWGAME
+      ? (id) => this.Task_SetWin0BldRegsNoSaveFileCheck(id)
+      : (id) => this.Task_PrintMainMenuText(id);
+  }
+
+  private Task_WaitFadeAndPrintMainMenuText(taskId: number): void {
+    if (!gPaletteFade.active) this.Task_PrintMainMenuText(taskId);
   }
 
   private Task_PrintMainMenuText(taskId: number): void {
@@ -205,9 +250,12 @@ export class MainMenu {
   private Task_UpdateVisualSelection(taskId: number): void {
     const t = tasks.tasks[taskId];
     MoveWindowByMenuTypeAndCursorPos(t.data[0], t.data[1]);
-    t.func = (id) => {
-      if (!gPaletteFade.active && this.HandleMenuInput(id)) tasks.tasks[id].func = (id2) => this.Task_UpdateVisualSelection(id2);
-    };
+    t.func = (id) => this.Task_HandleMenuInput(id);
+  }
+
+  private Task_HandleMenuInput(taskId: number): void {
+    if (!gPaletteFade.active && this.HandleMenuInput(taskId))
+      tasks.tasks[taskId].func = (id) => this.Task_UpdateVisualSelection(id);
   }
 
   private HandleMenuInput(taskId: number): boolean {
@@ -221,7 +269,7 @@ export class MainMenu {
       BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
       SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0, 240));
       SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(0, 160));
-      t.func = (id) => this.Task_ReturnToTitleScreen(id);
+      t.func = (id) => this.Task_ReturnToTileScreen(id);
     } else if (JOY_NEW(DPAD_UP) && t.data[1] > 0) {
       t.data[1]--;
       return true;
@@ -282,13 +330,13 @@ export class MainMenu {
         if (JOY_NEW(A_BUTTON | B_BUTTON)) {
           sound.playSE(C.SE_SELECT);
           BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
-          t.func = (id) => this.Task_ReturnToTitleScreen(id);
+          t.func = (id) => this.Task_ReturnToTileScreen(id);
         }
         break;
     }
   }
 
-  private Task_ReturnToTitleScreen(taskId: number): void {
+  private Task_ReturnToTileScreen(taskId: number): void {
     if (gPaletteFade.active) return;
     tasks.destroy(taskId);
     this.exit("title");
@@ -348,11 +396,21 @@ function PrintMessageOnWindow4(str: ArrayLike<number>): void {
 function PrintContinueStats(): void {
   const label = (y: number, str: ArrayLike<number>) => AddTextPrinterParameterized3(WIN_CONTINUE, FONT_NORMAL, 2, y, sTextColor2, -1, str);
   const value = (y: number, str: ArrayLike<number>) => AddTextPrinterParameterized3(WIN_CONTINUE, FONT_NORMAL, 62, y, sTextColor2, -1, str);
-  // PrintPlayerName
+  PrintPlayerName(label, value);
+  PrintDexCount(label, value);
+  PrintPlayTime(label, value);
+  PrintBadgeCount(label, value);
+}
+
+type ContinueStatsPrinter = (y: number, str: ArrayLike<number>) => void;
+
+function PrintPlayerName(label: ContinueStatsPrinter, value: ContinueStatsPrinter): void {
   label(18, text("gText_Player"));
   const name = save.playerName.slice(0, C.PLAYER_NAME_LENGTH);
   value(18, [...name, 0xff]);
-  // PrintDexCount
+}
+
+function PrintDexCount(label: ContinueStatsPrinter, value: ContinueStatsPrinter): void {
   if (flagGet(C.FLAG_SYS_POKEDEX_GET)) {
     const national = varGet(C.VAR_NATIONAL_DEX) === 0x6258 && flagGet(C.FLAG_SYS_NATIONAL_DEX);
     const limit = national ? C.NATIONAL_DEX_COUNT : C.KANTO_DEX_COUNT;
@@ -364,14 +422,18 @@ function PrintContinueStats(): void {
     label(50, text("gText_Pokedex"));
     value(50, concatStr(intToDecimal(count, STR_CONV_MODE_LEFT_ALIGN, 3), text("gTextJPDummy_Hiki")));
   }
-  // PrintPlayTime
+}
+
+function PrintPlayTime(label: ContinueStatsPrinter, value: ContinueStatsPrinter): void {
   const totalMinutes = Math.floor(save.playTimeFrames / 3600);
   const hours = Math.min(999, Math.floor(totalMinutes / 60));
   const minutes = hours === 999 ? 59 : totalMinutes % 60;
   label(34, text("gText_Time"));
   const time = concatStr(intToDecimal(hours, STR_CONV_MODE_LEFT_ALIGN, 3), [C.CHAR_COLON, 0xff]);
   value(34, concatStr(time, intToDecimal(minutes, STR_CONV_MODE_LEADING_ZEROS, 2)));
-  // PrintBadgeCount
+}
+
+function PrintBadgeCount(label: ContinueStatsPrinter, value: ContinueStatsPrinter): void {
   let badges = 0;
   for (let f = C.FLAG_BADGE01_GET; f < C.FLAG_BADGE01_GET + 8; f++) if (flagGet(f)) badges++;
   label(66, text("gText_Badges"));

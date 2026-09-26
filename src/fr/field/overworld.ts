@@ -6,10 +6,13 @@ import { paletteFade, FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_W
 import { joy } from "../gba/input";
 import { SpriteManager } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
-import { WindowLayer } from "../gba/window";
+import { Window, WindowLayer, stdPalette } from "../gba/window";
+import { FONT_NORMAL } from "../gba/font";
+import { expandPlaceholders } from "../gba/charmap";
+import { TextPrinter, textFlags } from "../gba/textPrinter";
 import { sound } from "../audio/sound";
 import { rom, type MapHeader, type MapObjectTemplate } from "../rom";
-import { clearTempFieldEventData, flagClear, flagGet, save, varGet, varSet, type WarpData } from "../save";
+import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
 import { FieldMap, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
@@ -17,13 +20,16 @@ import { PlayerAvatar, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } 
 import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
-import { FieldEffects, MAX_FLASH_LEVEL } from "./fieldEffects";
+import { DoOutwardBarnDoorWipe, FieldEffects, MAX_FLASH_LEVEL, WriteFlashScanlineEffectBuffer } from "./fieldEffects";
+import { ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "../hw/scanline";
+import { REG_OFFSET_WIN0H } from "../hw/ppu";
 import { MapNamePopup } from "./mapNamePopup";
 import { MapPreviewManager, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST } from "../mapPreviewScreen";
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
 import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer";
+import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 
@@ -35,18 +41,57 @@ export const MAP_SCRIPT_ON_RESUME = 5;
 export const MAP_SCRIPT_ON_DIVE_WARP = 6;
 export const MAP_SCRIPT_ON_RETURN_TO_FIELD = 7;
 
+/** heal_location.c GetHealLocation: heal location IDs are one-based; NONE/out-of-range returns null. */
+export function GetHealLocation(id: number): { mapGroup: number; mapNum: number; x: number; y: number } | null {
+  if (id === rom.constants.HEAL_LOCATION_NONE || id > rom.healLocations.heal_locations.length) return null;
+  const entry = rom.healLocations.heal_locations[id - 1];
+  if (!entry) return null;
+  const num = rom.mapNum(entry.map);
+  return { mapGroup: num >> 8, mapNum: num & 0xff, x: entry.x, y: entry.y };
+}
+
+/** GetHealLocationIndexFromMapGroupAndNum (heal_location.c), returning one-based IDs. */
+export function GetHealLocationIndexFromMapGroupAndNum(mapGroup: number, mapNum: number): number {
+  const locations = rom.healLocations.heal_locations;
+  for (let i = 0; i < locations.length; i++) {
+    const map = rom.mapNum(locations[i].map);
+    if ((map >>> 8) === mapGroup && (map & 0xff) === mapNum) return i + 1;
+  }
+  return rom.constants.HEAL_LOCATION_NONE;
+}
+
+/** GetHealLocationPointerFromMapGroupAndNum (heal_location.c). */
+export function GetHealLocationPointerFromMapGroupAndNum(mapGroup: number, mapNum: number): ReturnType<typeof GetHealLocation> {
+  return GetHealLocation(GetHealLocationIndexFromMapGroupAndNum(mapGroup, mapNum));
+}
+
+/** SetWhiteoutRespawnHealerNpcAsLastTalked (heal_location.c). */
+export function SetWhiteoutRespawnHealerNpcAsLastTalked(healLocationIdx: number): number {
+  const entry = rom.healLocations.heal_locations[healLocationIdx - 1];
+  const localId = entry?.respawn_npc ? rom.c(entry.respawn_npc) : 0;
+  varSet(SV.LAST_TALKED, localId);
+  return localId;
+}
+
 const MAP_TYPE = { NONE: 0, TOWN: 1, CITY: 2, ROUTE: 3, UNDERGROUND: 4, UNDERWATER: 5, OCEAN_ROUTE: 6, UNKNOWN: 7, INDOOR: 8, SECRET_BASE: 9 };
 
 export function isMapTypeOutdoors(type: number): boolean {
   return type === MAP_TYPE.ROUTE || type === MAP_TYPE.TOWN || type === MAP_TYPE.UNDERWATER || type === MAP_TYPE.CITY || type === MAP_TYPE.OCEAN_ROUTE;
 }
 
-function mapTransitionIsEnter(from: number, to: number): boolean {
-  return to === MAP_TYPE.UNDERGROUND && from !== MAP_TYPE.UNDERGROUND && from !== MAP_TYPE.NONE;
+// MapTransitionIsEnter / MapTransitionIsExit (fldeff_flash.c): mirror the
+// explicit sTransitionTypes rows instead of treating unknown map types as valid.
+const FLASH_TRANSITION_SURFACE_TYPES = new Set([
+  MAP_TYPE.TOWN, MAP_TYPE.CITY, MAP_TYPE.ROUTE, MAP_TYPE.UNDERWATER,
+  MAP_TYPE.OCEAN_ROUTE, MAP_TYPE.UNKNOWN, MAP_TYPE.INDOOR, MAP_TYPE.SECRET_BASE,
+]);
+
+export function MapTransitionIsEnter(fromType: number, toType: number): boolean {
+  return toType === MAP_TYPE.UNDERGROUND && FLASH_TRANSITION_SURFACE_TYPES.has(fromType);
 }
 
-function mapTransitionIsExit(from: number, to: number): boolean {
-  return from === MAP_TYPE.UNDERGROUND && to !== MAP_TYPE.UNDERGROUND && to !== MAP_TYPE.NONE;
+export function MapTransitionIsExit(fromType: number, toType: number): boolean {
+  return fromType === MAP_TYPE.UNDERGROUND && FLASH_TRANSITION_SURFACE_TYPES.has(toType);
 }
 
 export function dummyWarp(): WarpData {
@@ -79,6 +124,8 @@ export class Overworld {
   private mapCache = new Map<string, Promise<LoadedMap>>();
   private bgMosaicCanvas?: HTMLCanvasElement;
   private bgMosaicContext?: CanvasRenderingContext2D;
+  private whiteOutWindow?: Window;
+  private whiteOutPrinter?: TextPrinter;
   warpDestination: WarpData = dummyWarp();
   lastUsedWarp: WarpData = dummyWarp();
   fixedDiveWarp: WarpData = dummyWarp();
@@ -93,6 +140,9 @@ export class Overworld {
   /** Camera pan (sHorizontalCameraPan / sVerticalCameraPan - 32). */
   panX = 0;
   panY = 0;
+  private cameraPanningCallback: (() => void) | null = null;
+  private bikeCameraAheadPanback = false;
+  private bikeCameraPanFlag = false;
   /** Camera tracks this object (the player by default). */
   cameraTarget: ObjectEvent | null = null;
   cameraObject: { x: number; y: number } | null = null;
@@ -145,6 +195,10 @@ export class Overworld {
   get mapId(): string {
     return this.loaded.header.id;
   }
+
+  LockPlayerFieldControls(): void { this.controlsLocked = true; }
+  UnlockPlayerFieldControls(): void { this.controlsLocked = false; }
+  ArePlayerFieldControlsLocked(): boolean { return this.controlsLocked; }
 
   // ---------------------------------------------------------------- map data
 
@@ -223,22 +277,30 @@ export class Overworld {
   }
 
   healLocation(id: number): { mapGroup: number; mapNum: number; x: number; y: number } | undefined {
-    const entry = rom.healLocations.heal_locations[id - 1];
-    if (!entry) return undefined;
-    const num = rom.mapNum(entry.map);
-    return { mapGroup: num >> 8, mapNum: num & 0xff, x: entry.x, y: entry.y };
+    return GetHealLocation(id) ?? undefined;
   }
 
   /** SetWhiteoutRespawnWarpAndHealerNpc (heal_location.c). */
-  whiteOutRespawn(): { warp: WarpData; healerLocalId: number; atHome: boolean } {
+  SetWhiteoutRespawnWarpAndHealerNpc(): { warp: WarpData; healerLocalId: number; atHome: boolean } {
+    if (varGet(rom.constants.VAR_MAP_SCENE_TRAINER_TOWER) === 1) {
+      const towerSave = save as typeof save & { trainerTower?: Array<{ spokeToOwner?: boolean }>; towerChallengeId?: number };
+      const spokeToOwner = towerSave.trainerTower?.[towerSave.towerChallengeId ?? 0]?.spokeToOwner ?? false;
+      if (!spokeToOwner) varSet(rom.constants.VAR_MAP_SCENE_TRAINER_TOWER, 0);
+      varSet(SV.LAST_TALKED, 1);
+      return {
+        warp: { mapGroup: rom.c("MAP_TRAINER_TOWER_LOBBY") >>> 8, mapNum: rom.c("MAP_TRAINER_TOWER_LOBBY") & 0xff, warpId: -1, x: 4, y: 11 },
+        healerLocalId: 1,
+        atHome: false,
+      };
+    }
     const last = save.lastHealLocation;
-    const locations = rom.healLocations.heal_locations;
-    const matched = locations.find((candidate) => {
-      const num = rom.mapNum(candidate.map);
-      return (num >> 8) === last.mapGroup && (num & 0xff) === last.mapNum;
-    });
-    const entry = matched ?? locations.find((candidate) => candidate.id === "HEAL_LOCATION_PALLET_TOWN");
-    if (!entry) throw new Error("FireRed heal-location table is empty");
+    const healLocationIdx = GetHealLocationIndexFromMapGroupAndNum(last.mapGroup, last.mapNum);
+    if (healLocationIdx === rom.constants.HEAL_LOCATION_NONE) {
+      return { warp: { ...this.warpDestination }, healerLocalId: 0, atHome: false };
+    }
+    const entry = rom.healLocations.heal_locations[healLocationIdx - 1];
+    const location = GetHealLocationPointerFromMapGroupAndNum(last.mapGroup, last.mapNum);
+    if (!entry || !location) return { warp: { ...this.warpDestination }, healerLocalId: 0, atHome: false };
 
     const respawnMap = entry.respawn_map ?? entry.map;
     const mapNum = rom.mapNum(respawnMap);
@@ -251,11 +313,12 @@ export class Overworld {
       MAP_TRAINER_TOWER_LOBBY: [4, 11],
     };
     const [x, y] = specialPositions[respawnMap] ?? [7, 4];
-    const home = entry.id === "HEAL_LOCATION_PALLET_TOWN"
-      && (!matched || (last.warpId === -1 && last.x === entry.x && last.y === entry.y));
+    if (respawnMap === "MAP_TRAINER_TOWER_LOBBY") varSet(rom.constants.VAR_MAP_SCENE_TRAINER_TOWER, 0);
+    const home = respawnMap === "MAP_PALLET_TOWN_PLAYERS_HOUSE_1F";
+    const healerLocalId = SetWhiteoutRespawnHealerNpcAsLastTalked(healLocationIdx);
     return {
       warp: { mapGroup: mapNum >> 8, mapNum: mapNum & 0xff, warpId: -1, x, y },
-      healerLocalId: entry.respawn_npc ? rom.c(entry.respawn_npc) : 0,
+      healerLocalId,
       atHome: home,
     };
   }
@@ -339,11 +402,9 @@ export class Overworld {
     this.initView();
     const prevSection = this.lastUsedWarpSection();
     const currSection = this.header.regionMapSection;
-    if (prevSection !== currSection && MapHasPreviewScreen_HandleQLState2(currSection, MPS_TYPE_FOREST)) {
-      this.mapPreview.startForest(currSection);
-    } else if (prevSection !== currSection && MapHasPreviewScreen_HandleQLState2(currSection, MPS_TYPE_CAVE)) {
-      this.mapPreview.startCave(currSection);
-    } else if (this.header.showMapName && prevSection !== currSection) {
+    const questLogState = (this.game as unknown as { questLogState?: number }).questLogState;
+    const ranMapTransition = this.TryDoMapTransition(prevSection, currSection, questLogState);
+    if (!ranMapTransition && this.header.showMapName && prevSection !== currSection) {
       this.mapName.show(false);
     }
     this.runFieldCallback();
@@ -357,6 +418,30 @@ export class Overworld {
     } catch {
       return -1;
     }
+  }
+
+  /** TryDoMapTransition (fldeff_flash.c): choose the source preview/transition when the region changes. */
+  private TryDoMapTransition(fromSection: number, toSection: number, questLogState?: number): boolean {
+    if (fromSection !== toSection) {
+      if (MapHasPreviewScreen_HandleQLState2(toSection, MPS_TYPE_FOREST, questLogState)) {
+        this.mapPreview.MapPreview_StartForestTransition(toSection);
+        return true;
+      }
+      if (MapHasPreviewScreen_HandleQLState2(toSection, MPS_TYPE_CAVE, questLogState)) {
+        this.mapPreview.RunMapPreviewScreen(toSection);
+        return true;
+      }
+    }
+    const fromType = this.lastUsedWarpType();
+    if (MapTransitionIsEnter(fromType, this.header.mapType)) {
+      this.mapPreview.FlashTransition_Enter();
+      return true;
+    }
+    if (MapTransitionIsExit(fromType, this.header.mapType)) {
+      this.mapPreview.FlashTransition_Exit();
+      return true;
+    }
+    return false;
   }
 
   private sectionCache = new Map<string, number>();
@@ -374,10 +459,11 @@ export class Overworld {
     this.game.weather.setSavedFromHeader(this.loaded.header.weather);
     this.onMapLoad();
     onWarpForRoamer();
+    TrySetMapSaveWarpStatus();
     if (outdoors && "FLAG_SYS_FLASH_ACTIVE" in rom.constants) flagClear(rom.c("FLAG_SYS_FLASH_ACTIVE"));
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
-    this.runMapScriptImmediately(MAP_SCRIPT_ON_TRANSITION);
+    this.RunOnTransitionMapScript();
     this.initMap();
     this.game.weather.doCurrent();
   }
@@ -386,13 +472,91 @@ export class Overworld {
     if (!this.header.requiresFlash) this.flashLevel = 0;
     else if (flagGet(rom.constants.FLAG_SYS_FLASH_ACTIVE ?? 0)) this.flashLevel = 0;
     else this.flashLevel = MAX_FLASH_LEVEL; // gMaxFlashLevel
+    if (this.flashLevel !== 0) {
+      WriteFlashScanlineEffectBuffer(this.flashLevel);
+      ScanlineEffect_SetParams({ dmaDest: REG_OFFSET_WIN0H, dmaControl: SCANLINE_EFFECT_DMACNT_16BIT, initState: 1 });
+    }
+  }
+
+  /** PrintWhiteOutRecoveryMessage from field_screen_effect.c, adapted to the Canvas window layer. */
+  private PrintWhiteOutRecoveryMessage(taskId: number, textSymbol: string, x: number, y: number): boolean {
+    const d = tasks.data(taskId);
+    switch (d[2]) {
+      case 0: {
+        const text = expandPlaceholders(rom.text(textSymbol));
+        textFlags.canABSpeedUpPrint = false;
+        const window = this.whiteOutWindow!;
+        this.whiteOutPrinter = new TextPrinter(window, FONT_NORMAL, text, {
+          x: x * 8, y: y * 8, speed: 2, fg: 1, bg: 0, shadow: 2, letterSpacing: 1, lineSpacing: 0,
+        });
+        d[2] = 1;
+        break;
+      }
+      case 1:
+        this.whiteOutPrinter?.run();
+        if (!this.whiteOutPrinter?.active) {
+          d[2] = 0;
+          return true;
+        }
+        break;
+    }
+    return false;
+  }
+
+  /** Task_RushInjuredPokemonToCenter from field_screen_effect.c. */
+  private Task_RushInjuredPokemonToCenter(taskId: number): void {
+    const d = tasks.data(taskId);
+    switch (d[0]) {
+      case 0: {
+        this.whiteOutWindow = new Window(0, 5, 30, 11, stdPalette(0));
+        this.whiteOutWindow.fill(0);
+        this.windows.add(this.whiteOutWindow);
+        const pallet = GetHealLocation(rom.c("HEAL_LOCATION_PALLET_TOWN"));
+        const last = save.lastHealLocation;
+        const atHome = !!pallet && last.mapGroup === pallet.mapGroup && last.mapNum === pallet.mapNum
+          && last.warpId === -1 && last.x === pallet.x && last.y === pallet.y;
+        d[1] = atHome ? 1 : 0;
+        d[0] = atHome ? 4 : 1;
+        break;
+      }
+      case 1:
+      case 4:
+        if (this.PrintWhiteOutRecoveryMessage(taskId, d[0] === 1 ? "gText_PlayerScurriedToCenter" : "gText_PlayerScurriedBackHome", 2, 8)) {
+          this.objects.turn(this.player.object, DIR_NORTH);
+          d[0]++;
+        }
+        break;
+      case 2:
+      case 5:
+        if (this.whiteOutWindow) this.windows.remove(this.whiteOutWindow);
+        this.whiteOutWindow = undefined;
+        this.whiteOutPrinter = undefined;
+        paletteFade.fill(RGB_BLACK);
+        this.fadeInFromBlack();
+        d[0]++;
+        break;
+      case 3:
+      case 6:
+        if (!paletteFade.active) {
+          tasks.destroy(taskId);
+          this.script.ScriptContext_SetupScript(rom.label(d[0] === 3 ? "EventScript_AfterWhiteOutHeal" : "EventScript_AfterWhiteOutMomHeal"));
+        }
+        break;
+    }
+  }
+
+  /** FieldCB_RushInjuredPokemonToCenter from field_screen_effect.c. */
+  FieldCB_RushInjuredPokemonToCenter(): void {
+    this.controlsLocked = true;
+    paletteFade.fill(RGB_BLACK);
+    tasks.create((taskId) => this.Task_RushInjuredPokemonToCenter(taskId), 10);
   }
 
   /** InitMap: InitMapLayoutData + ON_LOAD */
   private initMap(): void {
     this.map.init(this.loaded);
     this.map.onChange = () => this.renderer?.invalidate();
-    this.runMapScriptImmediately(MAP_SCRIPT_ON_LOAD);
+    this.RunOnLoadMapScript();
   }
 
   loadObjEventTemplatesFromHeader(): void {
@@ -412,11 +576,11 @@ export class Overworld {
     this.sprites.clear();
     this.windows.clear();
     paletteFade.clear();
-    this.panX = 0;
-    this.panY = 0;
+    this.InstallCameraPanAheadCallback();
     this.effects.reset();
+    this.game.weather.resumePausedWeather();
     this.messageBox.reset();
-    this.runMapScriptImmediately(MAP_SCRIPT_ON_RESUME);
+    this.RunOnResumeMapScript();
   }
 
   /** InitObjectEventsLocal + SetCameraToTrackPlayer */
@@ -433,13 +597,13 @@ export class Overworld {
     this.tryRunOnWarpIntoMapScript();
     this.cameraTarget = this.player.object;
     this.cameraObject = null;
+    this.InstallCameraPanAheadCallback();
     this.updateCameraPixels();
   }
 
   private initView(): void {
     this.renderer = new TileRenderer(this.loaded.primary, this.loaded.secondary);
     this.animator = new TilesetAnimator(this.renderer);
-    this.animator.prime();
     this.doors.reset();
   }
 
@@ -483,7 +647,7 @@ export class Overworld {
 
   // ---------------------------------------------------------------- map scripts
 
-  private mapScriptTable(tag: number): number {
+  private MapHeaderGetScriptTable(tag: number): number {
     let p = this.header.mapScripts;
     if (!p) return 0;
     for (let guard = 0; guard < 16; guard++) {
@@ -495,14 +659,20 @@ export class Overworld {
     return 0;
   }
 
-  runMapScriptImmediately(tag: number): void {
-    const ptr = this.mapScriptTable(tag);
-    if (ptr) this.script.runImmediately(ptr);
+  private MapHeaderRunScriptType(tag: number): void {
+    const ptr = this.MapHeaderGetScriptTable(tag);
+    if (ptr) this.script.RunScriptImmediately(ptr);
   }
 
+  RunOnLoadMapScript(): void { this.MapHeaderRunScriptType(MAP_SCRIPT_ON_LOAD); }
+  RunOnTransitionMapScript(): void { this.MapHeaderRunScriptType(MAP_SCRIPT_ON_TRANSITION); }
+  RunOnResumeMapScript(): void { this.MapHeaderRunScriptType(MAP_SCRIPT_ON_RESUME); }
+  RunOnReturnToFieldMapScript(): void { this.MapHeaderRunScriptType(MAP_SCRIPT_ON_RETURN_TO_FIELD); }
+  RunOnDiveWarpMapScript(): void { this.MapHeaderRunScriptType(MAP_SCRIPT_ON_DIVE_WARP); }
+
   /** MapHeaderCheckScriptTable */
-  private checkScriptTable(tag: number): number {
-    let ptr = this.mapScriptTable(tag);
+  private MapHeaderCheckScriptTable(tag: number): number {
+    let ptr = this.MapHeaderGetScriptTable(tag);
     if (!ptr) return 0;
     for (let guard = 0; guard < 64; guard++) {
       const var1 = rom.u16(ptr);
@@ -515,15 +685,15 @@ export class Overworld {
   }
 
   tryRunOnFrameMapScript(): boolean {
-    const ptr = this.checkScriptTable(MAP_SCRIPT_ON_FRAME_TABLE);
+    const ptr = this.MapHeaderCheckScriptTable(MAP_SCRIPT_ON_FRAME_TABLE);
     if (!ptr) return false;
-    this.script.setupScript(ptr);
+    this.script.ScriptContext_SetupScript(ptr);
     return true;
   }
 
   tryRunOnWarpIntoMapScript(): void {
-    const ptr = this.checkScriptTable(MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE);
-    if (ptr) this.script.runImmediately(ptr);
+    const ptr = this.MapHeaderCheckScriptTable(MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE);
+    if (ptr) this.script.RunScriptImmediately(ptr);
   }
 
   // ---------------------------------------------------------------- field callbacks
@@ -567,7 +737,7 @@ export class Overworld {
     const id = tasks.create(() => {
       if (!paletteFade.active) {
         tasks.destroy(id);
-        this.script.enable();
+        this.script.ScriptContext_Enable();
       }
     }, 10);
   }
@@ -579,7 +749,7 @@ export class Overworld {
 
   warpFadeInScreen(delay = 0): void {
     const lastType = this.lastUsedWarpType();
-    if (mapTransitionIsExit(lastType, this.header.mapType)) {
+    if (MapTransitionIsExit(lastType, this.header.mapType)) {
       paletteFade.fill(RGB_WHITE);
       paletteFade.fadeScreen(FADE_FROM_WHITE, delay);
     } else {
@@ -591,7 +761,7 @@ export class Overworld {
   warpFadeOutScreen(): void {
     let destType = MAP_TYPE.NONE;
     try { destType = this.peekMapType(this.mapIdForWarp(this.warpDestination)); } catch { /* keep */ }
-    if (mapTransitionIsEnter(this.header.mapType, destType)) paletteFade.fadeScreen(FADE_TO_WHITE, 0);
+    if (MapTransitionIsEnter(this.header.mapType, destType)) paletteFade.fadeScreen(FADE_TO_WHITE, 0);
     else paletteFade.fadeScreen(FADE_TO_BLACK, 0);
   }
 
@@ -601,11 +771,11 @@ export class Overworld {
 
   /** SetUpWarpExitTask */
   private setUpWarpExitTask(playerNotMoving: boolean): void {
-    if (this.mapPreview.isActive()) return;
+    if (this.mapPreview.isActive() || !this.mapPreview.ForestMapPreviewScreenIsRunning()) return;
     const p = this.player.object;
     const behavior = this.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
     if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
-      paletteFade.fill(mapTransitionIsExit(this.lastUsedWarpType(), this.header.mapType) ? RGB_WHITE : RGB_BLACK);
+      paletteFade.fill(MapTransitionIsExit(this.lastUsedWarpType(), this.header.mapType) ? RGB_WHITE : RGB_BLACK);
       this.startExitDoorTask();
       return;
     }
@@ -626,6 +796,7 @@ export class Overworld {
         case 5:
           p.invisible = true;
           this.objects.freezeAll();
+          DoOutwardBarnDoorWipe();
           this.warpFadeInScreen(3);
           state = 6;
           break;
@@ -1012,15 +1183,15 @@ export class Overworld {
     this.game.weather.setSavedFromHeader(this.loaded.header.weather);
     this.onMapLoad();
     onCameraTransitionForRoamer();
+    TrySetMapSaveWarpStatus();
     this.setDefaultFlashLevel();
     this.savedMusic = 0;
-    this.runMapScriptImmediately(MAP_SCRIPT_ON_TRANSITION);
+    this.RunOnTransitionMapScript();
     this.initMap();
     this.renderer = new TileRenderer(loaded.primary, loaded.secondary);
     this.animator = new TilesetAnimator(this.renderer);
-    this.animator.prime();
     this.game.weather.doCurrent();
-    this.runMapScriptImmediately(MAP_SCRIPT_ON_RESUME);
+    this.RunOnResumeMapScript();
     if (this.sectionCache.get(prevHeader.id) !== loaded.header.regionMapSection) this.mapName.show(true);
     // Prefetch the next ring of neighbours.
     void this.prepareMap(loaded.header.id).then((l) => this.rememberLoaded(l));
@@ -1050,6 +1221,7 @@ export class Overworld {
   }
 
   updateCameraPixels(): void {
+    this.cameraPanningCallback?.();
     if (this.cameraObject) {
       this.camX = this.cameraObject.x - 120;
       this.camY = this.cameraObject.y - 72;
@@ -1058,8 +1230,49 @@ export class Overworld {
       this.camX = s.x - 120 + this.panX;
       this.camY = s.y + s.centerToCornerVecY + 16 - 72 + this.panY;
     }
+    this.UpdateCameraPanning();
+  }
+
+  /** UpdateCameraPanning (field_camera.c): publish the camera displacement to every field sprite. */
+  UpdateCameraPanning(): void {
     this.sprites.offsetX = -this.camX;
     this.sprites.offsetY = -this.camY;
+  }
+
+  /** SetCameraPanning (field_camera.c): horizontal pan and vertical pan relative to the GBA's +32 baseline. */
+  SetCameraPanning(horizontal: number, vertical: number): void {
+    this.panX = horizontal;
+    this.panY = vertical;
+  }
+
+  /** SetCameraPanningCallback (field_camera.c). */
+  SetCameraPanningCallback(callback: (() => void) | null): void {
+    this.cameraPanningCallback = callback;
+  }
+
+  /** InstallCameraPanAheadCallback (field_camera.c). Bike pan-back is disabled in FireRed. */
+  InstallCameraPanAheadCallback(): void {
+    this.cameraPanningCallback = () => {
+      if (!this.bikeCameraAheadPanback) {
+        this.InstallCameraPanAheadCallback();
+        return;
+      }
+      const player = this.player.object;
+      if (this.player.tileTransitionState === 1) {
+        this.bikeCameraPanFlag = !this.bikeCameraPanFlag;
+        if (!this.bikeCameraPanFlag) return;
+      } else {
+        this.bikeCameraPanFlag = false;
+      }
+      const direction = player.movementDirection;
+      if (direction === DIR_NORTH) this.panY = Math.max(-40, this.panY - 2);
+      else if (direction === DIR_SOUTH) this.panY = Math.min(40, this.panY + 2);
+      else if (this.panY < 0) this.panY = Math.min(0, this.panY + 2);
+      else if (this.panY > 0) this.panY = Math.max(0, this.panY - 2);
+    };
+    this.bikeCameraPanFlag = false;
+    this.panX = 0;
+    this.panY = 0;
   }
 
   /** Keep object sprites registered in the sprite manager. */
@@ -1085,7 +1298,7 @@ export class Overworld {
 
   /** CB2_Overworld / OverworldBasic */
   cb2(): void {
-    this.script.runScript();
+    this.script.ScriptContext_RunScript();
     tasks.run();
     this.syncObjectSprites();
     this.objects.update(-this.camX, -this.camY);
@@ -1180,5 +1393,8 @@ export class Overworld {
     this.sprites.render(ctx, 0, true);
     this.mapPreview.render(ctx);
     paletteFade.render(ctx);
+    // Whiteout recovery text uses the window palette after the field palettes
+    // have been filled black, as in the C window's separately loaded palette.
+    this.whiteOutWindow?.render(ctx);
   }
 }

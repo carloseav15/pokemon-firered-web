@@ -48,7 +48,7 @@ export function enterHallOfFame(game: Game): void {
       flagSet(C.FLAG_RECEIVED_MYSTIC_TICKET);
     }
   }
-  ow.script.stop();
+  ow.script.ScriptContext_Stop();
   // On the first clear the C clears the Hall of Fame sectors before writing the first team.
   if (!hadHallOfFameRecords) (save as unknown as { hallOfFame?: unknown[] }).hallOfFame = [];
   stats[C.GAME_STAT_ENTERED_HOF] = (stats[C.GAME_STAT_ENTERED_HOF] ?? 0) + 1;

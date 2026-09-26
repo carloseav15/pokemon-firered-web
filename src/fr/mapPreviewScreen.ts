@@ -93,7 +93,8 @@ export function MapHasPreviewScreen(mapsec: number, type: number = MPS_TYPE_ANY)
 }
 
 /** MapHasPreviewScreen_HandleQLState2 */
-export function MapHasPreviewScreen_HandleQLState2(mapsec: number, type: number = MPS_TYPE_ANY): boolean {
+export function MapHasPreviewScreen_HandleQLState2(mapsec: number, type: number = MPS_TYPE_ANY, questLogState?: number): boolean {
+  if (questLogState === rom.constants.QL_STATE_PLAYBACK) return false;
   return MapHasPreviewScreen(mapsec, type);
 }
 
@@ -131,7 +132,7 @@ export function MapPreview_GetDuration(mapsec: number): number {
 }
 
 /** MapPreview_CreateMapNameWindow */
-export function createMapNameWindow(mapsec: number): Window {
+export function MapPreview_CreateMapNameWindow(mapsec: number): Window {
   const win = new Window(0, 0, 13, 2);
   win.fill(TEXT_COLOR_WHITE);
   const name = rom.regionMapName(mapsec);
@@ -163,6 +164,12 @@ export function buildMapPreviewCanvas(info: MapPreviewScreen): HTMLCanvasElement
   return tilemapCanvas(tiles, tilemap, bgPalettes, 30, 20, true, 32);
 }
 
+/** MapPreview_LoadGfx: exported incbins make this browser load synchronous. */
+export function MapPreview_LoadGfx(mapsec: number): HTMLCanvasElement | null {
+  const info = GetDungeonMapPreviewScreenInfo(mapsec);
+  return info ? buildMapPreviewCanvas(info) : null;
+}
+
 /**
  * Manages forest and cave preview screen transitions over the overworld.
  */
@@ -178,6 +185,128 @@ export class MapPreviewManager {
   private blendStep = 0;
   private previewCanvas?: HTMLCanvasElement;
   private window?: Window;
+  private bgVisible = false;
+  private graphicsLoading = false;
+  private flashTransition: "enter" | "exit" | null = null;
+  private flashState = 0;
+  private flashFrame = 0;
+  private flashAlpha = 0;
+  private flashPalette = new Uint16Array(16);
+  private flashPalette0 = new Uint16Array(16);
+  private flashTiles?: Uint8Array;
+  private flashTilemap?: Uint16Array;
+
+  private loadFlashTransitionGfx(): void {
+    this.flashTilemap = incbin16("sCaveTransitionTilemap");
+    this.flashTiles = incbin("sCaveTransitionTiles");
+    this.flashState = 0;
+    this.flashFrame = 0;
+    this.flashAlpha = 0;
+  }
+
+  /** FlashTransition_Enter: cave-pattern palette reveal, then blend it away. */
+  FlashTransition_Enter(): void {
+    this.flashTransition = "enter";
+    this.flashState = 0;
+    this.flashFrame = 0;
+    this.loadFlashTransitionGfx();
+  }
+
+  /** FlashTransition_Exit: blend in the cave pattern, then hand off from white. */
+  FlashTransition_Exit(): void {
+    this.flashTransition = "exit";
+    this.flashState = 0;
+    this.flashFrame = 0;
+    this.loadFlashTransitionGfx();
+  }
+
+  private updateFlashTransition(): void {
+    if (!this.flashTransition) return;
+    if (this.flashTransition === "enter") {
+      switch (this.flashState) {
+        case 0: this.Task_FlashTransition_Enter_0(); break;
+        case 1: this.Task_FlashTransition_Enter_1(); break;
+        case 2: this.Task_FlashTransition_Enter_2(); break;
+        case 3: this.Task_FlashTransition_Enter_3(); break;
+      }
+    } else {
+      switch (this.flashState) {
+        case 0: this.Task_FlashTransition_Exit_0(); break;
+        case 1: this.Task_FlashTransition_Exit_1(); break;
+        case 2: this.Task_FlashTransition_Exit_2(); break;
+        case 3: this.Task_FlashTransition_Exit_3(); break;
+        case 4: this.Task_FlashTransition_Exit_4(); break;
+      }
+    }
+  }
+
+  private Task_FlashTransition_Enter_0(): void { this.flashState = 1; }
+
+  private Task_FlashTransition_Enter_1(): void {
+    this.flashPalette.fill(0x7fff);
+    this.flashPalette0.fill(0);
+    this.flashAlpha = 0;
+    this.flashFrame = 0;
+    this.flashState = 2;
+  }
+
+  private Task_FlashTransition_Enter_2(): void {
+    const colors = incbin16("sCaveTransitionPalette");
+    if (this.flashFrame < 16) {
+      this.flashPalette.set(colors.subarray(15 - this.flashFrame, 16), 0);
+      this.flashFrame += 2;
+    } else {
+      this.flashAlpha = 16;
+      this.flashState = 3;
+      this.flashFrame = 0;
+    }
+  }
+
+  private Task_FlashTransition_Enter_3(): void {
+    this.flashAlpha = 16 - this.flashFrame;
+    if (this.flashAlpha !== 0) this.flashFrame++;
+    else {
+      this.flashPalette0.fill(0);
+      this.flashTransition = null;
+    }
+  }
+
+  private Task_FlashTransition_Exit_0(): void { this.flashState = 1; }
+
+  private Task_FlashTransition_Exit_1(): void {
+    this.flashPalette.fill(0x7fff);
+    this.flashPalette0.fill(0);
+    this.flashPalette.set(incbin16("sCaveTransitionPalette").subarray(8, 16), 0);
+    this.flashAlpha = 0;
+    this.flashFrame = 0;
+    this.flashState = 2;
+  }
+
+  private Task_FlashTransition_Exit_2(): void {
+    this.flashAlpha = this.flashFrame;
+    if (this.flashFrame <= 16) this.flashFrame++;
+    else {
+      this.flashState = 3;
+      this.flashFrame = 0;
+    }
+  }
+
+  private Task_FlashTransition_Exit_3(): void {
+    if (this.flashFrame < 8) {
+      this.flashPalette.set(incbin16("sCaveTransitionPalette").subarray(this.flashFrame + 8, 16), 0);
+      this.flashFrame++;
+    } else {
+      this.flashPalette0.fill(0x7fff);
+      this.flashState = 4;
+      this.flashFrame = 8;
+      this.flashAlpha = 16;
+    }
+  }
+
+  private Task_FlashTransition_Exit_4(): void {
+    if (this.flashFrame !== 0) this.flashFrame--;
+    else this.flashTransition = null;
+  }
 
   constructor(private readonly ow: Overworld) {}
 
@@ -185,7 +314,40 @@ export class MapPreviewManager {
     return this.active;
   }
 
-  startForest(mapsec: number): void {
+  /** Canvas equivalent of InitBgsFromTemplates + ShowBg(0). */
+  MapPreview_InitBgs(): void {
+    this.bgVisible = true;
+  }
+
+  /**
+   * Canvas equivalent of the C BG palette/tile/tilemap loads. Assets are
+   * already exported and the tilemap is composed immediately, so it returns
+   * once the bitmap exists instead of reserving BG/VRAM buffers.
+   */
+  MapPreview_LoadGfx(mapsec: number): void {
+    this.graphicsLoading = true;
+    this.previewCanvas = MapPreview_LoadGfx(mapsec) ?? undefined;
+    this.graphicsLoading = false;
+  }
+
+  /** C's temp-tile-buffer completion query; this Canvas load completes inline. */
+  MapPreview_IsGfxLoadFinished(): boolean {
+    return !this.graphicsLoading && this.previewCanvas !== undefined;
+  }
+
+  /** MapPreview_Unload: release the Canvas bitmap and its map-name window. */
+  MapPreview_Unload(): void {
+    this.previewCanvas = undefined;
+    this.window = undefined;
+    this.bgVisible = false;
+  }
+
+  /** ForestMapPreviewScreenIsRunning has an inverted C return convention. */
+  ForestMapPreviewScreenIsRunning(): boolean {
+    return !this.active || this.isCave;
+  }
+
+  MapPreview_StartForestTransition(mapsec: number): void {
     const info = GetDungeonMapPreviewScreenInfo(mapsec);
     if (!info) return;
 
@@ -200,9 +362,9 @@ export class MapPreviewManager {
 
     this.duration = MapPreview_GetDuration(mapsec);
     MapPreview_SetFlag(info.flagId);
-
-    this.previewCanvas = buildMapPreviewCanvas(info);
-    this.window = createMapNameWindow(mapsec);
+    this.MapPreview_InitBgs();
+    this.MapPreview_LoadGfx(mapsec);
+    this.window = MapPreview_CreateMapNameWindow(mapsec);
 
     this.ow.controlsLocked = true;
     this.ow.objects.freezeAll();
@@ -212,7 +374,7 @@ export class MapPreviewManager {
     paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
   }
 
-  startCave(mapsec: number): void {
+  RunMapPreviewScreen(mapsec: number): void {
     const info = GetDungeonMapPreviewScreenInfo(mapsec);
     if (!info) return;
 
@@ -225,8 +387,9 @@ export class MapPreviewManager {
     this.duration = MapPreview_GetDuration(mapsec);
     MapPreview_SetFlag(info.flagId);
 
-    this.previewCanvas = buildMapPreviewCanvas(info);
-    this.window = createMapNameWindow(mapsec);
+    this.MapPreview_InitBgs();
+    this.MapPreview_LoadGfx(mapsec);
+    this.window = MapPreview_CreateMapNameWindow(mapsec);
 
     this.ow.controlsLocked = true;
     this.ow.objects.freezeAll();
@@ -237,19 +400,20 @@ export class MapPreviewManager {
   }
 
   update(): void {
+    this.updateFlashTransition();
     if (!this.active) return;
 
     if (!this.isCave) {
-      this.updateForest();
+      this.Task_RunMapPreviewScreenForest();
     } else {
-      this.updateCave();
+      this.Task_MapPreviewScreen_0();
     }
   }
 
-  private updateForest(): void {
+  private Task_RunMapPreviewScreenForest(): void {
     switch (this.state) {
       case 0: // Waiting for fade in from black
-        if (!paletteFade.active) {
+        if (this.MapPreview_IsGfxLoadFinished() && !paletteFade.active) {
           this.ow.playSpecialMapMusic();
           this.state = 1;
           this.timer = 0;
@@ -282,18 +446,17 @@ export class MapPreviewManager {
         break;
       case 3: // Complete
         this.active = false;
-        this.previewCanvas = undefined;
-        this.window = undefined;
+        this.MapPreview_Unload();
         this.ow.objects.unfreezeAll();
         this.ow.controlsLocked = false;
         break;
     }
   }
 
-  private updateCave(): void {
+  private Task_MapPreviewScreen_0(): void {
     switch (this.state) {
       case 0: // Waiting for fade in from black
-        if (!paletteFade.active) {
+        if (this.MapPreview_IsGfxLoadFinished() && !paletteFade.active) {
           this.ow.playSpecialMapMusic();
           this.state = 1;
           this.timer = 0;
@@ -310,8 +473,7 @@ export class MapPreviewManager {
       case 2: // Waiting for fade to white to finish
         if (!paletteFade.active) {
           // Preview is hidden under white; now fade from white into cave overworld
-          this.previewCanvas = undefined;
-          this.window = undefined;
+          this.MapPreview_Unload();
           paletteFade.fadeScreen(FADE_FROM_WHITE, 0);
           this.state = 3;
         }
@@ -327,7 +489,16 @@ export class MapPreviewManager {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    if (!this.active || !this.previewCanvas) return;
+    if (this.flashTransition && this.flashTiles && this.flashTilemap) {
+      ctx.save();
+      ctx.globalAlpha = this.flashAlpha / 16;
+      const palettes = new Uint16Array(256);
+      palettes.set(this.flashPalette0, 0);
+      palettes.set(this.flashPalette, 14 * 16);
+      ctx.drawImage(tilemapCanvas(this.flashTiles, this.flashTilemap, palettes, 30, 20, true, 32), 0, 0);
+      ctx.restore();
+    }
+    if (!this.active || !this.bgVisible || !this.previewCanvas) return;
 
     ctx.save();
     if (!this.isCave && this.state === 2) {
@@ -339,4 +510,5 @@ export class MapPreviewManager {
     }
     ctx.restore();
   }
+
 }

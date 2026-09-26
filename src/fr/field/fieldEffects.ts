@@ -12,6 +12,15 @@ import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, type Objec
 import type { Overworld } from "./overworld";
 import { FieldMoveEffects } from "./fieldMoves";
 import { DoPoisonFieldEffect } from "./poison";
+import { SafariZoneTakeStep } from "./safariZone";
+import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
+import { FindTaskIdByFunc } from "../hw/menuHelpers";
+import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../hw/gpu";
+import {
+  DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, DISPLAY_WIDTH, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_DISPCNT,
+  REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
+  WIN_RANGE, WINOUT_WIN01_BG_ALL, WINOUT_WIN01_CLR, WINOUT_WIN01_OBJ,
+} from "../hw/ppu";
 
 type Template = { frames: Array<[string, number, number, number]>; anims: AnimCmd[][]; callback: string | null; size: [number, number] | null };
 type FieldFxData = { templates: Record<string, Template>; emoticons: { file: string; width: number; height: number } };
@@ -47,14 +56,13 @@ const EMOTE_EFFECT_IDS: number[] = [C.FLDEFF_EXCLAMATION_MARK_ICON, C.FLDEFF_QUE
 export const FLASH_LEVEL_TO_RADIUS = [200, 72, 56, 40, 24];
 export const MAX_FLASH_LEVEL = FLASH_LEVEL_TO_RADIUS.length - 1;
 
-/** SetFlashScanlineEffectWindowBoundaries / SetFlashScanlineEffectWindowBoundary. */
-function flashWindowBoundaries(centerX: number, centerY: number, radius: number): Uint16Array {
-  const dest = new Uint16Array(160);
+/** SetFlashScanlineEffectWindowBoundaries / SetFlashScanlineEffectWindowBoundary from field_screen_effect.c. */
+export function SetFlashScanlineEffectWindowBoundaries(dest: Uint16Array, centerX: number, centerY: number, radius: number): void {
   const setBoundary = (y: number, left: number, right: number): void => {
     if (y < 0 || y > 160) return;
     left = Math.max(0, Math.min(255, left));
     right = Math.max(0, Math.min(255, right));
-    if (y < dest.length) dest[y] = (left << 8) | right;
+    dest[y] = (left << 8) | right;
   };
   let xy = radius;
   let error = radius;
@@ -71,8 +79,118 @@ function flashWindowBoundaries(centerX: number, centerY: number, radius: number)
       xy--;
     }
   }
+}
+
+/** WriteFlashScanlineEffectBuffer from field_screen_effect.c. */
+export function WriteFlashScanlineEffectBuffer(flashLevel: number): void {
+  if (flashLevel) {
+    SetFlashScanlineEffectWindowBoundaries(gScanlineEffectRegBuffers[0], 120, 80, FLASH_LEVEL_TO_RADIUS[flashLevel] ?? FLASH_LEVEL_TO_RADIUS[MAX_FLASH_LEVEL]);
+    gScanlineEffectRegBuffers[1].set(gScanlineEffectRegBuffers[0]);
+  }
+}
+
+function flashWindowBoundaries(centerX: number, centerY: number, radius: number): Uint16Array {
+  const dest = new Uint16Array(0x3c0);
+  SetFlashScanlineEffectWindowBoundaries(dest, centerX, centerY, radius);
   return dest;
 }
+
+const BARN_WIPE_IN = 0;
+const BARN_WIPE_OUT = 1;
+
+/** BarnDoorWipeSaveGpuRegs from field_screen_effect.c. */
+export function BarnDoorWipeSaveGpuRegs(taskId: number): void {
+  const d = tasks.data(taskId);
+  d[0] = GetGpuReg(REG_OFFSET_DISPCNT);
+  d[1] = GetGpuReg(REG_OFFSET_WININ);
+  d[2] = GetGpuReg(REG_OFFSET_WINOUT);
+  d[3] = GetGpuReg(REG_OFFSET_BLDCNT);
+  d[4] = GetGpuReg(REG_OFFSET_BLDALPHA);
+  d[5] = GetGpuReg(REG_OFFSET_WIN0H);
+  d[6] = GetGpuReg(REG_OFFSET_WIN0V);
+  d[7] = GetGpuReg(REG_OFFSET_WIN1H);
+  d[8] = GetGpuReg(REG_OFFSET_WIN1V);
+}
+
+/** BarnDoorWipeLoadGpuRegs from field_screen_effect.c. */
+export function BarnDoorWipeLoadGpuRegs(taskId: number): void {
+  const d = tasks.data(taskId);
+  SetGpuReg(REG_OFFSET_DISPCNT, d[0]);
+  SetGpuReg(REG_OFFSET_WININ, d[1]);
+  SetGpuReg(REG_OFFSET_WINOUT, d[2]);
+  SetGpuReg(REG_OFFSET_BLDCNT, d[3]);
+  SetGpuReg(REG_OFFSET_BLDALPHA, d[4]);
+  SetGpuReg(REG_OFFSET_WIN0H, d[5]);
+  SetGpuReg(REG_OFFSET_WIN0V, d[6]);
+  SetGpuReg(REG_OFFSET_WIN1H, d[7]);
+  SetGpuReg(REG_OFFSET_WIN1V, d[8]);
+}
+
+/** Task_BarnDoorWipe from field_screen_effect.c. */
+export function Task_BarnDoorWipe(taskId: number): void {
+  const d = tasks.data(taskId);
+  switch (d[9]) {
+    case 0:
+      BarnDoorWipeSaveGpuRegs(taskId);
+      SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON | DISPCNT_WIN1_ON);
+      if (d[10] === BARN_WIPE_IN) {
+        SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0, 0));
+        SetGpuReg(REG_OFFSET_WIN1H, WIN_RANGE(DISPLAY_WIDTH, 255));
+      } else {
+        SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0, DISPLAY_WIDTH / 2));
+        SetGpuReg(REG_OFFSET_WIN1H, WIN_RANGE(DISPLAY_WIDTH / 2, 255));
+      }
+      SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(0, 255));
+      SetGpuReg(REG_OFFSET_WIN1V, WIN_RANGE(0, 255));
+      SetGpuReg(REG_OFFSET_WININ, 0);
+      SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_BG_ALL | WINOUT_WIN01_OBJ | WINOUT_WIN01_CLR);
+      d[9] = 1;
+      break;
+    case 1:
+      tasks.create(Task_BarnDoorWipeChild, 80);
+      d[9] = 2;
+      break;
+    case 2:
+      if (!tasks.isActive(Task_BarnDoorWipeChild)) d[9] = 3;
+      break;
+    case 3:
+      BarnDoorWipeLoadGpuRegs(taskId);
+      tasks.destroy(taskId);
+      break;
+  }
+}
+
+/** Task_BarnDoorWipeChild from field_screen_effect.c. */
+export function Task_BarnDoorWipeChild(taskId: number): void {
+  const d = tasks.data(taskId);
+  const parentId = FindTaskIdByFunc(Task_BarnDoorWipe);
+  if (parentId >= tasks.tasks.length) { tasks.destroy(taskId); return; }
+  const direction = tasks.data(parentId)[10];
+  let lhs: number, rhs: number;
+  if (direction === BARN_WIPE_IN) {
+    lhs = d[0];
+    rhs = DISPLAY_WIDTH - d[0];
+    if (lhs > DISPLAY_WIDTH / 2) { tasks.destroy(taskId); return; }
+  } else {
+    lhs = DISPLAY_WIDTH / 2 - d[0];
+    rhs = DISPLAY_WIDTH / 2 + d[0];
+    if (lhs < 0) { tasks.destroy(taskId); return; }
+  }
+  SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0, lhs));
+  SetGpuReg(REG_OFFSET_WIN1H, WIN_RANGE(rhs, DISPLAY_WIDTH));
+  d[0] += lhs < 90 ? 4 : 2;
+}
+
+function startBarnDoorWipe(direction: number): void {
+  const taskId = tasks.create(Task_BarnDoorWipe, 80);
+  tasks.data(taskId)[10] = direction;
+}
+
+/** DoInwardBarnDoorFade from field_screen_effect.c. */
+export function DoInwardBarnDoorFade(): void { startBarnDoorWipe(BARN_WIPE_IN); }
+
+/** DoOutwardBarnDoorWipe from field_screen_effect.c. */
+export function DoOutwardBarnDoorWipe(): void { startBarnDoorWipe(BARN_WIPE_OUT); }
 
 export class FieldEffects {
   readonly tasks = tasks;
@@ -89,27 +207,82 @@ export class FieldEffects {
   private poisonEffectTaskActive = false;
   /** tCurFlashRadius while UpdateFlashLevelEffect runs. */
   flashRadius: number | null = null;
+  private flashUpdateTaskId = -1;
+  private flashWaitTaskId = -1;
+  private flashWaitCallback?: () => void;
 
   /** AnimateFlash: the radius steps by 2 every other frame, then the script resumes. */
   animateFlash(newLevel: number, onDone: () => void): void {
     const from = FLASH_LEVEL_TO_RADIUS[Math.min(this.ow.flashLevel, MAX_FLASH_LEVEL)];
     const to = FLASH_LEVEL_TO_RADIUS[Math.min(newLevel, MAX_FLASH_LEVEL)];
-    const delta = from < to ? 2 : -2;
-    let radius = from, state = 0;
-    this.flashRadius = radius;
+    this.flashWaitCallback = onDone;
+    this.StartUpdateFlashLevelEffect(120, 80, from, to, newLevel === 0, 2);
+    this.StartWaitForFlashUpdate();
     this.ow.controlsLocked = true;
-    const id = tasks.create(() => {
-      if (state === 0) { state = 1; return; }
-      state = 0;
-      radius += delta;
-      this.flashRadius = radius;
-      if ((delta > 0 && radius > to) || (delta < 0 && radius < to)) {
-        this.flashRadius = null;
-        this.ow.flashLevel = newLevel;
-        tasks.destroy(id);
-        onDone();
+  }
+
+  /** StartUpdateFlashLevelEffect from field_screen_effect.c. */
+  StartUpdateFlashLevelEffect(centerX: number, centerY: number, initialFlashRadius: number, destFlashRadius: number, clearScanlineEffect: boolean, delta: number): number {
+    const taskId = tasks.create((id) => this.UpdateFlashLevelEffect(id), 80);
+    const d = tasks.data(taskId);
+    d[1] = centerX; d[2] = centerY; d[3] = initialFlashRadius; d[4] = destFlashRadius;
+    d[5] = initialFlashRadius < destFlashRadius ? delta : -delta;
+    d[6] = clearScanlineEffect ? 1 : 0;
+    this.flashUpdateTaskId = taskId;
+    this.flashRadius = initialFlashRadius;
+    return taskId;
+  }
+
+  /** UpdateFlashLevelEffect from field_screen_effect.c, on the existing frame task runner. */
+  UpdateFlashLevelEffect(taskId: number): void {
+    const d = tasks.data(taskId);
+    switch (d[0]) {
+      case 0:
+        SetFlashScanlineEffectWindowBoundaries(gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer], d[1], d[2], d[3]);
+        this.flashRadius = d[3];
+        d[0] = 1;
+        break;
+      case 1: {
+        SetFlashScanlineEffectWindowBoundaries(gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer], d[1], d[2], d[3]);
+        this.flashRadius = d[3];
+        d[0] = 0;
+        d[3] += d[5];
+        const crossed = d[5] > 0 ? d[3] > d[4] : d[3] < d[4];
+        if (crossed) {
+          this.ow.flashLevel = FLASH_LEVEL_TO_RADIUS.indexOf(d[4]);
+          if (d[6]) {
+            this.flashRadius = null;
+            ScanlineEffect_Stop();
+            d[0] = 2;
+          } else {
+            tasks.destroy(taskId);
+            this.flashUpdateTaskId = -1;
+          }
+        }
+        break;
       }
-    }, 80);
+      case 2:
+        ScanlineEffect_Clear();
+        tasks.destroy(taskId);
+        this.flashUpdateTaskId = -1;
+        break;
+    }
+  }
+
+  /** Task_WaitForFlashUpdate from field_screen_effect.c. */
+  Task_WaitForFlashUpdate(taskId: number): void {
+    if (this.flashUpdateTaskId >= 0 && tasks.tasks[this.flashUpdateTaskId].isActive) return;
+    tasks.destroy(taskId);
+    this.flashWaitTaskId = -1;
+    const callback = this.flashWaitCallback;
+    this.flashWaitCallback = undefined;
+    callback?.();
+  }
+
+  /** StartWaitForFlashUpdate from field_screen_effect.c. */
+  StartWaitForFlashUpdate(): void {
+    if (this.flashWaitTaskId >= 0 && tasks.tasks[this.flashWaitTaskId].isActive) return;
+    this.flashWaitTaskId = tasks.create((id) => this.Task_WaitForFlashUpdate(id), 80);
   }
   readonly moves: FieldMoveEffects;
 
@@ -160,8 +333,17 @@ export class FieldEffects {
     if (actionIndex === -1) return false;
     const args = this.ow.game.fieldEffectArguments;
     const object = this.ow.objects.byLocalIdAndMap(args[0], args[1] & 0xff, args[2] & 0xff);
-    if (object && fxData) this.emote(object, actionIndex);
-    else if (!this.emoteCounts.has(id)) this.active.delete(id);
+    if (!object || !fxData) {
+      if (!this.emoteCounts.has(id)) this.active.delete(id);
+      return true;
+    }
+    switch (id) {
+      case C.FLDEFF_EXCLAMATION_MARK_ICON: this.FldEff_ExclamationMarkIcon1(object); break;
+      case C.FLDEFF_DOUBLE_EXCL_MARK_ICON: this.FldEff_DoubleExclMarkIcon(object); break;
+      case C.FLDEFF_X_ICON: this.FldEff_XIcon(object); break;
+      case C.FLDEFF_SMILEY_FACE_ICON: this.FldEff_SmileyFaceIcon(object); break;
+      case C.FLDEFF_QUESTION_MARK_ICON: this.FldEff_QuestionMarkIcon(object); break;
+    }
     return true;
   }
 
@@ -325,31 +507,64 @@ export class FieldEffects {
     sprite.height = 16;
     sprite.centerToCornerVecX = -8;
     sprite.centerToCornerVecY = -8;
-    sprite.priority = 1;
-    sprite.subpriority = id === C.FLDEFF_EXCLAMATION_MARK_ICON ? 0x53 : 0x52;
-    sprite.data[3] = -5;
-    sprite.data[4] = 0;
-    sprite.startAnim(anim);
+    this.SetIconSpriteData(sprite, object, id, anim);
     // The original active list can contain the same effect more than once.
     this.emoteCounts.set(id, (this.emoteCounts.get(id) ?? 0) + 1);
     this.active.add(id);
-    sprite.callback = (s) => {
-      if (!object.active || s.animEnded) {
-        const remaining = (this.emoteCounts.get(id) ?? 1) - 1;
-        if (remaining > 0) this.emoteCounts.set(id, remaining);
-        else { this.emoteCounts.delete(id); this.active.delete(id); }
-        this.ow.sprites.destroy(s);
-        return;
-      }
-      s.data[4] += s.data[3];
-      s.x = object.sprite.x;
-      s.y = object.sprite.y - 16;
-      s.x2 = object.sprite.x2;
-      s.y2 = object.sprite.y2 + s.data[4];
-      if (s.data[4]) s.data[3]++;
-      else s.data[3] = 0;
-    };
+    sprite.callback = (s) => this.SpriteCB_TrainerIcons(s, id);
     this.ow.sprites.add(sprite);
+  }
+
+  private SetIconSpriteData(sprite: Sprite, object: ObjectEvent, fldEffId: number, spriteAnimNum: number): void {
+    sprite.priority = 1;
+    sprite.coordOffsetEnabled = true;
+    sprite.data[0] = object.localId;
+    sprite.data[1] = object.mapNum;
+    sprite.data[2] = object.mapGroup;
+    sprite.data[3] = -5;
+    sprite.data[4] = 0;
+    sprite.data[7] = fldEffId;
+    sprite.subpriority = fldEffId === C.FLDEFF_EXCLAMATION_MARK_ICON ? 0x53 : 0x52;
+    sprite.startAnim(spriteAnimNum);
+  }
+
+  private SpriteCB_TrainerIcons(sprite: Sprite, fldEffId: number): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[0]!, sprite.data[1]!, sprite.data[2]!);
+    if (!object || sprite.animEnded) {
+      const remaining = (this.emoteCounts.get(fldEffId) ?? 1) - 1;
+      if (remaining > 0) this.emoteCounts.set(fldEffId, remaining);
+      else { this.emoteCounts.delete(fldEffId); this.active.delete(fldEffId); }
+      this.ow.sprites.destroy(sprite);
+      return;
+    }
+    sprite.data[4] += sprite.data[3]!;
+    sprite.x = object.sprite.x;
+    sprite.y = object.sprite.y - 16;
+    sprite.x2 = object.sprite.x2;
+    sprite.y2 = object.sprite.y2 + sprite.data[4]!;
+    if (sprite.data[4]) sprite.data[3]!++;
+    else sprite.data[3] = 0;
+  }
+
+  private FldEff_ExclamationMarkIcon1(object: ObjectEvent): number { this.emote(object, 0); return 0; }
+  private FldEff_DoubleExclMarkIcon(object: ObjectEvent): number { this.emote(object, 3); return 0; }
+  private FldEff_XIcon(object: ObjectEvent): number { this.emote(object, 2); return 0; }
+  private FldEff_SmileyFaceIcon(object: ObjectEvent): number { this.emote(object, 4); return 0; }
+  private FldEff_QuestionMarkIcon(object: ObjectEvent): number { this.emote(object, 1); return 0; }
+
+  /** FldEff_PopOutOfAsh / SpriteCB_PopOutOfAsh: source AshPuff template, priority 2. */
+  popOutOfAsh(object: ObjectEvent): Sprite | undefined {
+    const sprite = this.createFromTemplate("AshPuff", object.sprite.x, object.sprite.y);
+    if (!sprite) return undefined;
+    sprite.priority = 2;
+    sprite.subpriority = object.sprite.subpriority - 1;
+    this.active.add(C.FLDEFF_POP_OUT_OF_ASH);
+    sprite.callback = (s) => {
+      if (!s.animEnded) return;
+      this.active.delete(C.FLDEFF_POP_OUT_OF_ASH);
+      this.ow.sprites.destroy(s);
+    };
+    return sprite;
   }
 
   // ---------------------------------------------------------------- surf blob
@@ -480,7 +695,7 @@ export class FieldEffects {
     steps--;
     varSet(id, steps);
     if (steps === 0) {
-      this.ow.script.setupScript(rom.label("EventScript_RepelWoreOff"));
+      this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_RepelWoreOff"));
       return true;
     }
     return false;
@@ -496,15 +711,7 @@ export class FieldEffects {
   }
 
   safariZoneTakeStep(): boolean {
-    if (!flagGet(rom.constants.FLAG_SYS_SAFARI_MODE ?? 0)) return false;
-    const steps = this.ow.game.safariSteps;
-    if (steps === undefined) return false;
-    this.ow.game.safariSteps = steps - 1;
-    if (steps - 1 === 0) {
-      this.ow.script.setupScript(rom.label("SafariZone_EventScript_TimesUp"));
-      return true;
-    }
-    return false;
+    return SafariZoneTakeStep(this.ow.game, (script) => this.ow.script.ScriptContext_SetupScript(script));
   }
 }
 

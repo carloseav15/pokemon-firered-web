@@ -37,7 +37,6 @@ UNTESTED = [
 UNWIRED = [
     ("teachy_tv.c", "teachyTv.ts", "el juego abre la lista de texto de `menus/keyItemScreens.ts`"),
     ("field_effect_helpers.c", "field/fieldEffectHelpers.ts", "los efectos reales siguen en `field/fieldEffects.ts`"),
-    ("save_failed_screen.c", "saveFailedScreen.ts", "ningún fallo de guardado la abre"),
     ("slot_machine.c (reglas)", "game/slots.ts", "duplicado sin uso; el juego usa `menus/slotMachine.ts`"),
     ("image_processing_effects.c", "imageProcessingEffects.ts", "sin llamador en FireRed de un jugador"),
     ("palette_util.c", "paletteUtil.ts", "sin llamador todavía"),
@@ -55,7 +54,7 @@ KNOWN_GAPS = [
     "Teachy TV: sigue siendo el adaptador de texto de `menus/keyItemScreens.ts`; `teachyTv.ts` tiene 30 stubs y no está conectado.",
     "Fame Checker: `fameChecker.ts` está conectado pero sus funciones de gráficos (ventanas, flechas, info box) son stubs.",
     "Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.",
-    "Visión de entrenadores: `trainer_see.c` separa cálculo direccional y chequeo de ruta, pero los entrenadores enterrados/disfrazados/en ceniza y la supresión durante Quest Log siguen pendientes.",
+    "Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote y el callback SpriteCB_TrainerIcons. La ruta buried conecta detección, AshPuff, salto y continuación de acercamiento; sigue sin prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona); la revelación de disfraces y otros callbacks en ceniza siguen pendientes.",
     "Pantalla de nombres: 35/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.",
     "Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.",
     "Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.",
@@ -63,6 +62,8 @@ KNOWN_GAPS = [
     "Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.",
     "Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.",
     "Quest Log, sistema de ayuda y todo el hardware de enlace están fuera de alcance por decisión.",
+    "Trainer Tower: `trainer_tower.c` y sus llamadas `InitTrainerTowerBattleStruct`/`FreeTrainerTowerBattleStruct` aún no están portadas; `battle_util2.c` tiene recursos normales cubiertos, pero ese branch queda pendiente.",
+    "Uso de objetos (`item_use.c`): dispatch de baya Enigma de campo/combate, rechazo de Oak, consumo diferido de Repel hasta acabar SE, retardo de ocho frames de las flautas y espera de fanfarria de la Poké Flauta están conectados. Quest Log al usar objetos y el retardo/mensaje/botones de `BattleUseFunc_StatBooster` siguen adaptados; quedan 32/73 funciones sin homólogo.",
 ]
 
 
@@ -101,12 +102,22 @@ def missing(row: tuple[str, int, int, int, str]) -> int:
 
 
 def table(rows: list[tuple[str, int, int, int, str]], limit: int | None = None) -> str:
-    rows = sorted(rows, key=missing, reverse=True)
+    rows = sorted(rows, key=missing)
     if limit:
         rows = rows[:limit]
     out = ["| Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |", "|---|---:|---:|---:|---|"]
     for r in rows:
         out.append(f"| `{r[0]}` | {r[1]} | {r[2]}/{r[3]} | ~{missing(r)} | {r[4]} |")
+    return "\n".join(out)
+
+
+def ordered_table(rows: list[tuple[str, int, int, int, str]], statuses: dict[str, str]) -> str:
+    rows = sorted(rows, key=missing)
+    out = ["| # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |",
+           "|---:|---|---|---:|---:|---:|---|"]
+    for rank, row in enumerate(rows, 1):
+        name, lines, done, total, note = row
+        out.append(f"| {rank} | `{name}` | {statuses[name]} | {lines} | {done}/{total} | ~{missing(row)} | {note} |")
     return "\n".join(out)
 
 
@@ -125,10 +136,14 @@ def main() -> None:
                   f"- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **{done}/{allf} ({100 * done // allf} %)**.",
                   f"- Archivos C pendientes: **{pend.group(1)}** ({pend.group(2)} líneas de C).",
                   "- Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).", ""]
-    parts += ["## 1. Sin empezar (0 funciones portadas)", "", table(falta), "",
-              "## 2. Adaptadores (UI simplificada; hay que portar la pantalla real)", "", table(adaptador), "",
-              "## 3. Parciales con más C sin cubrir (top 40)", "", table(parcial, 40), "",
-              f"Hay {len(parcial)} archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).", "",
+    pendientes = falta + adaptador + parcial
+    statuses = {r[0]: "sin empezar" for r in falta}
+    statuses.update({r[0]: "adaptador" for r in adaptador})
+    statuses.update({r[0]: "parcial" for r in parcial})
+    parts += ["## 1. Archivos pendientes, de menos a más C sin cubrir", "",
+              "Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fidelidad ni dificultad real.", "",
+              ordered_table(pendientes, statuses), "",
+              f"Total: {len(falta)} sin empezar, {len(adaptador)} adaptadores y {len(parcial)} parciales.", "",
               "## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)", "",
               "No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.", "",
               "| Archivo C | Líneas | Portadas | Stubs |", "|---|---:|---:|---:|"]

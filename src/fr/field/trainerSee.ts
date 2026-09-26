@@ -1,12 +1,13 @@
-// trainer_see.c: normal trainer sight, approach task and offscreen camera pan.
-// Buried/disguise/ash callbacks and quest-log playback suppression remain pending.
+// trainer_see.c: trainer sight, approach task and offscreen camera pan.
+// Disguise callbacks and complete Quest Log playback state remain adaptations.
 import type { Game } from "../game";
 import * as C from "../generated/constants";
 import { tasks } from "../gba/tasks";
+import type { Sprite } from "../gba/sprite";
 import { rom } from "../rom";
 import { countAliveNonEggMons } from "../pokemon/pokemon";
 import { MAP_OFFSET } from "./fieldmap";
-import { actionFace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, LOCALID_CAMERA, OBJECT_EVENTS_COUNT, type ObjectEvent, type ObjectEvents } from "./objectEvents";
+import { actionFace, actionJumpInPlace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, LOCALID_CAMERA, OBJECT_EVENTS_COUNT, type ObjectEvent, type ObjectEvents } from "./objectEvents";
 
 type TrainerApproachFunc = (objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number) => number;
 
@@ -82,7 +83,23 @@ function GetTrainerApproachDistance(objects: ObjectEvents, trainer: ObjectEvent,
 
 export class TrainerSee {
   private approaching: {trainer: ObjectEvent; steps: number} | null = null;
+  private approachTaskSteps = new Map<number, (taskId: number) => void>();
   constructor(private game: Game) {}
+
+  /** QL_IsTrainerSightDisabled (quest_log.c): Quest Log playback owns these state fields when active. */
+  private QL_IsTrainerSightDisabled(): boolean {
+    const questLog = this.game as Game & {
+      questLogState?: number;
+      questLogPlaybackState?: number;
+      questLogPlaybackControlState?: number;
+    };
+    if (questLog.questLogState !== C.QL_STATE_PLAYBACK) return false;
+    const playbackState = questLog.questLogPlaybackState ?? C.QL_PLAYBACK_STATE_STOPPED;
+    const playbackControlState = questLog.questLogPlaybackControlState ?? 0;
+    return playbackState === C.QL_PLAYBACK_STATE_STOPPED
+      || playbackControlState === 1
+      || playbackControlState === 2;
+  }
 
   /** CheckTrainer (trainer_see.c): flag, approach range, and double-battle eligibility. */
   private CheckTrainer(trainer: ObjectEvent, x: number, y: number): boolean {
@@ -95,15 +112,158 @@ export class TrainerSee {
     if (rom.u8(script + 1) === C.TRAINER_BATTLE_DOUBLE && countAliveNonEggMons() < 2) return false;
 
     this.game.battleSetup.configureFromApproach(ow.objects.indexOf(trainer), script);
-    this.approaching = {trainer, steps: approachDistance - 1};
+    this.TrainerApproachPlayer(trainer, approachDistance - 1);
     return true;
   }
 
+  /** TrainerApproachPlayer (trainer_see.c): create the task and retain range-1. */
+  private TrainerApproachPlayer(trainer: ObjectEvent, approachDistance: number): void {
+    this.approaching = {trainer, steps: approachDistance};
+  }
+
+  /** StartTrainerApproachWithFollowupTask: install the frame runner used by the C task list. */
+  private StartTrainerApproachWithFollowupTask(step: (taskId: number) => void): number {
+    const taskId = tasks.create((id) => this.Task_RunTrainerSeeFuncList(id), 80);
+    this.approachTaskSteps.set(taskId, step);
+    return taskId;
+  }
+
+  /** Task_RunTrainerSeeFuncList: execute the active trainer-see state once this frame. */
+  private Task_RunTrainerSeeFuncList(taskId: number): void {
+    const step = this.approachTaskSteps.get(taskId);
+    if (step) step(taskId);
+    else this.Task_DestroyTrainerApproachTask(taskId);
+  }
+
+  /** Task_DestroyTrainerApproachTask: release camera/task state and resume the event script. */
+  private Task_DestroyTrainerApproachTask(taskId: number): void {
+    this.approachTaskSteps.delete(taskId);
+    tasks.destroy(taskId);
+    this.approaching = null;
+    this.game.overworld.script.ScriptContext_Enable();
+  }
+
+  /** TrainerSeeFunc_StartExclMark: start the icon/face movement, or dispatch offscreen pan. */
+  private TrainerSeeFunc_StartExclMark(trainer: ObjectEvent, range: number): "camera" | "exclamation" {
+    if (trainer.facingDirection === DIR_SOUTH && range > 2) return "camera";
+    this.game.overworld.effects.emote(trainer, 0);
+    this.game.overworld.objects.setHeldMovement(trainer, actionFace(trainer.facingDirection));
+    return "exclamation";
+  }
+
+  /** TrainerSeeFunc_WaitExclMark: FALSE while active; otherwise advance the function list. */
+  private TrainerSeeFunc_WaitExclMark(): boolean {
+    return !this.game.overworld.effects.active.has(C.FLDEFF_EXCLAMATION_MARK_ICON);
+  }
+
+  /** TrainerSeeFunc_TrainerApproach: queue one walk step or face the player. */
+  private TrainerSeeFunc_TrainerApproach(trainer: ObjectEvent, range: {remaining: number}): boolean {
+    if (!this.isTrainerSeeMovementReady(trainer)) return false;
+    if (range.remaining) {
+      this.game.overworld.objects.setHeldMovement(trainer, actionWalkNormal(trainer.facingDirection));
+      range.remaining--;
+    } else {
+      this.game.overworld.objects.setHeldMovement(trainer, C.MOVEMENT_ACTION_FACE_PLAYER);
+      return true;
+    }
+    return false;
+  }
+
+  /** TrainerSeeFunc_PrepareToEngage: restore trainer movement, await player, cancel forced walk. */
+  private TrainerSeeFunc_PrepareToEngage(trainer: ObjectEvent): boolean {
+    const ow = this.game.overworld;
+    if (ow.objects.isMovementOverridden(trainer) && !ow.objects.ObjectEventClearHeldMovementIfFinished(trainer)) return false;
+    this.setTrainerMovement(trainer);
+    ow.objects.overrideTemplateCoords(trainer);
+    if (!this.isTrainerSeeMovementReady(ow.player.object)) return false;
+    ow.player.cancelForcedMovement();
+    return true;
+  }
+
+  /** TrainerSeeFunc_End: wait for player movement to finish before ending the task. */
+  private TrainerSeeFunc_End(): boolean {
+    return this.isTrainerSeeMovementReady(this.game.overworld.player.object);
+  }
+
+  /** TrainerSeeFunc_TrainerInAshFacesPlayer; task-state adaptation returns when its held action is queued. */
+  private TrainerSeeFunc_TrainerInAshFacesPlayer(trainer: ObjectEvent): boolean {
+    const ow = this.game.overworld;
+    if (ow.objects.isMovementOverridden(trainer) && !ow.objects.ObjectEventClearHeldMovementIfFinished(trainer)) return false;
+    ow.objects.setHeldMovement(trainer, C.MOVEMENT_ACTION_FACE_PLAYER);
+    return true;
+  }
+
+  /** TrainerSeeFunc_BeginJumpOutOfAsh / FldEff_PopOutOfAsh. */
+  private TrainerSeeFunc_BeginJumpOutOfAsh(trainer: ObjectEvent): Sprite | null | undefined {
+    const ow = this.game.overworld;
+    if (ow.objects.ObjectEventCheckHeldMovementStatus(trainer) === 0) return null;
+    return ow.effects.popOutOfAsh(trainer);
+  }
+
+  /** TrainerSeeFunc_WaitJumpOutOfAsh; AshPuff animCmdIndex 2 is the source reveal threshold. */
+  private TrainerSeeFunc_WaitJumpOutOfAsh(trainer: ObjectEvent, ashPuff: Sprite): boolean {
+    if (ashPuff.animCmdIndex !== 2) return false;
+    const ow = this.game.overworld;
+    trainer.fixedPriority = false;
+    trainer.triggerGroundEffectsOnMove = true;
+    trainer.sprite.priority = 2;
+    ow.objects.ObjectEventClearHeldMovementIfFinished(trainer);
+    ow.objects.setHeldMovement(trainer, actionJumpInPlace(trainer.facingDirection));
+    return true;
+  }
+
+  /** TrainerSeeFunc_EndJumpOutOfAsh. */
+  private TrainerSeeFunc_EndJumpOutOfAsh(): boolean {
+    return !this.game.overworld.effects.active.has(C.FLDEFF_POP_OUT_OF_ASH);
+  }
+
+  /** TrainerSeeFunc_OffscreenAboveTrainerCreateCameraObj; SpawnSpecialObjectEventParameterized adaptation. */
+  private TrainerSeeFunc_OffscreenAboveTrainerCreateCameraObj(): ObjectEvent | undefined {
+    const ow = this.game.overworld, player = ow.player.object;
+    const camera = ow.objects.spawnFromTemplate({localId: LOCALID_CAMERA, graphicsId: C.OBJ_EVENT_GFX_YOUNGSTER, graphicsName: "", x: player.currentCoords.x - MAP_OFFSET, y: player.currentCoords.y - MAP_OFFSET, elevation: 3, movementType: 7, rangeX: 0, rangeY: 0, trainerType: 0, trainerRange: 0, script: 0, scriptName: null, flag: 0});
+    if (camera) {
+      camera.invisible = true;
+      ow.cameraTarget = camera;
+      ow.syncObjectSprites();
+    }
+    return camera;
+  }
+
+  /** TrainerSeeFunc_OffscreenAboveTrainerCameraObjMoveUp. */
+  private TrainerSeeFunc_OffscreenAboveTrainerCameraObjMoveUp(camera: ObjectEvent, trainer: ObjectEvent, trainerRange: number, movedSteps: number): { movedSteps: number; exclamationStarted: boolean } | undefined {
+    const ow = this.game.overworld;
+    if (!this.isTrainerSeeMovementReady(camera)) return undefined;
+    if (movedSteps !== trainerRange - 1) {
+      ow.objects.setHeldMovement(camera, actionWalkFast(DIR_NORTH));
+      return {movedSteps: movedSteps + 1, exclamationStarted: false};
+    }
+    ow.effects.emote(trainer, 0);
+    return {movedSteps: 0, exclamationStarted: true};
+  }
+
+  /** TrainerSeeFunc_OffscreenAboveTrainerCameraObjMoveDown. */
+  private TrainerSeeFunc_OffscreenAboveTrainerCameraObjMoveDown(camera: ObjectEvent, trainerRange: number, movedSteps: number): { movedSteps: number; complete: boolean } | undefined {
+    const ow = this.game.overworld;
+    if (ow.effects.active.has(C.FLDEFF_EXCLAMATION_MARK_ICON) || !this.isTrainerSeeMovementReady(camera)) return undefined;
+    if (movedSteps !== trainerRange - 1) {
+      ow.objects.setHeldMovement(camera, actionWalkFast(DIR_SOUTH));
+      return {movedSteps: movedSteps + 1, complete: false};
+    }
+    ow.cameraTarget = ow.player.object;
+    ow.objects.remove(camera);
+    return {movedSteps: 0, complete: true};
+  }
+
+  private isTrainerSeeMovementReady(object: ObjectEvent): boolean {
+    const objects = this.game.overworld.objects;
+    return !objects.isMovementOverridden(object) || objects.ObjectEventClearHeldMovementIfFinished(object) !== 0;
+  }
+
   checkForTrainersWantingBattle(): boolean {
-    if (this.approaching) return false;
+    if (this.QL_IsTrainerSightDisabled() || this.approaching) return false;
     const ow = this.game.overworld;
     for (const trainer of ow.objects.list) {
-      if (trainer.trainerType !== C.TRAINER_TYPE_NORMAL) continue;
+      if (trainer.trainerType !== C.TRAINER_TYPE_NORMAL && trainer.trainerType !== C.TRAINER_TYPE_BURIED) continue;
       if (this.CheckTrainer(trainer, ow.player.object.currentCoords.x, ow.player.object.currentCoords.y)) return true;
     }
     return false;
@@ -111,64 +271,86 @@ export class TrainerSee {
   /** EndTrainerApproach starts the waiting task; the source event waits for it. */
   endApproach(): void {
     const pending = this.approaching;
-    if (!pending) { this.game.overworld.script.enable(); return; }
+    if (!pending) { this.game.overworld.script.ScriptContext_Enable(); return; }
     const ow = this.game.overworld, trainer = pending.trainer;
-    let state: "start" | "cameraUp" | "cameraDown" | "exclamation" | "walk" | "engage" | "end" = "start";
-    let camera: ObjectEvent | undefined, cameraSteps = 0, remaining = pending.steps;
-    const movementReady = (object: ObjectEvent): boolean => !ow.objects.isMovementOverridden(object) || ow.objects.ObjectEventClearHeldMovementIfFinished(object) !== 0;
+    let state: "start" | "cameraUp" | "cameraDown" | "exclamation" | "ashPuff" | "ashReveal" | "ashWaitPuff" | "walk" | "engage" | "end" = "start";
+    let camera: ObjectEvent | undefined, cameraSteps = 0, ashPuff: Sprite | null | undefined;
+    const approachRange = {remaining: pending.steps};
+    const movementReady = (object: ObjectEvent): boolean => this.isTrainerSeeMovementReady(object);
     const finish = (id: number): void => {
       if (camera) { ow.cameraTarget = ow.player.object; ow.objects.remove(camera); }
-      this.approaching = null; tasks.destroy(id); ow.script.enable();
+      this.Task_DestroyTrainerApproachTask(id);
     };
-    tasks.create(id => {
+    this.StartTrainerApproachWithFollowupTask(id => {
       if (!trainer.active) { finish(id); return; }
       switch (state) {
-        case "start":
-          if (trainer.facingDirection === DIR_SOUTH && pending.steps > 2) {
-            camera = ow.objects.spawnFromTemplate({localId: LOCALID_CAMERA, graphicsId: C.OBJ_EVENT_GFX_YOUNGSTER, graphicsName: "", x: ow.player.object.currentCoords.x - MAP_OFFSET, y: ow.player.object.currentCoords.y - MAP_OFFSET, elevation: 3, movementType: 7, rangeX: 0, rangeY: 0, trainerType: 0, trainerRange: 0, script: 0, scriptName: null, flag: 0});
-            if (camera) { camera.invisible = true; ow.cameraTarget = camera; ow.syncObjectSprites(); state = "cameraUp"; return; }
+        case "start": {
+          const next = this.TrainerSeeFunc_StartExclMark(trainer, pending.steps);
+          if (next === "camera") {
+            camera = this.TrainerSeeFunc_OffscreenAboveTrainerCreateCameraObj();
+            if (camera) { state = "cameraUp"; return; }
           }
-          ow.effects.emote(trainer, 0);
-          ow.objects.setHeldMovement(trainer, actionFace(trainer.facingDirection));
           state = "exclamation";
+          // StartExclMark returns TRUE in C, so check the icon in this same frame.
+          if (!this.TrainerSeeFunc_WaitExclMark()) return;
+          if (trainer.movementType === C.MOVEMENT_TYPE_BURIED) {
+            if (!this.TrainerSeeFunc_TrainerInAshFacesPlayer(trainer)) { state = "exclamation"; return; }
+            state = "ashPuff";
+          } else state = "walk";
           break;
+        }
         case "cameraUp":
-          if (!camera || !movementReady(camera)) return;
-          if (cameraSteps !== pending.steps - 1) {
-            ow.objects.setHeldMovement(camera, actionWalkFast(DIR_NORTH)); cameraSteps++;
-          } else { ow.effects.emote(trainer, 0); cameraSteps = 0; state = "cameraDown"; }
+          if (!camera) return;
+          {
+            const result = this.TrainerSeeFunc_OffscreenAboveTrainerCameraObjMoveUp(camera, trainer, pending.steps, cameraSteps);
+            if (!result) return;
+            cameraSteps = result.movedSteps;
+            if (result.exclamationStarted) state = "cameraDown";
+          }
           break;
         case "cameraDown":
-          if (!camera || ow.effects.active.has(C.FLDEFF_EXCLAMATION_MARK_ICON) || !movementReady(camera)) return;
-          if (cameraSteps !== pending.steps - 1) {
-            ow.objects.setHeldMovement(camera, actionWalkFast(DIR_SOUTH)); cameraSteps++;
-          } else {
-            ow.cameraTarget = ow.player.object; ow.objects.remove(camera); camera = undefined; state = "exclamation";
+          if (!camera) return;
+          {
+            const result = this.TrainerSeeFunc_OffscreenAboveTrainerCameraObjMoveDown(camera, pending.steps, cameraSteps);
+            if (!result) return;
+            cameraSteps = result.movedSteps;
+            if (result.complete) { camera = undefined; state = "exclamation"; }
           }
           break;
         case "exclamation":
-          if (ow.effects.active.has(C.FLDEFF_EXCLAMATION_MARK_ICON)) return;
+          if (!this.TrainerSeeFunc_WaitExclMark()) return;
+          if (trainer.movementType === C.MOVEMENT_TYPE_BURIED) {
+            if (!this.TrainerSeeFunc_TrainerInAshFacesPlayer(trainer)) return;
+            state = "ashPuff";
+            break;
+          }
           state = "walk";
           // TrainerSeeFunc_WaitExclMark returns TRUE: approach runs this frame.
           // fall through
         case "walk":
-          if (!movementReady(trainer)) return;
-          if (remaining) { ow.objects.setHeldMovement(trainer, actionWalkNormal(trainer.facingDirection)); remaining--; }
-          else { ow.objects.setHeldMovement(trainer, C.MOVEMENT_ACTION_FACE_PLAYER); state = "engage"; }
+          if (this.TrainerSeeFunc_TrainerApproach(trainer, approachRange)) state = "engage";
+          break;
+        case "ashPuff":
+          ashPuff = this.TrainerSeeFunc_BeginJumpOutOfAsh(trainer);
+          if (!ashPuff) { state = "walk"; break; }
+          state = "ashReveal";
+          break;
+        case "ashReveal":
+          if (!ashPuff || !this.TrainerSeeFunc_WaitJumpOutOfAsh(trainer, ashPuff)) return;
+          state = "ashWaitPuff";
+          break;
+        case "ashWaitPuff":
+          if (!this.TrainerSeeFunc_EndJumpOutOfAsh()) return;
+          state = "walk";
           break;
         case "engage":
-          if (!movementReady(trainer)) return;
-          this.setTrainerMovement(trainer);
-          ow.objects.overrideTemplateCoords(trainer);
-          if (!movementReady(ow.player.object)) return;
-          ow.player.cancelForcedMovement();
-          state = "end";
+          if (this.TrainerSeeFunc_PrepareToEngage(trainer)) state = "end";
           break;
         case "end":
-          if (movementReady(ow.player.object)) finish(id);
+          if (this.TrainerSeeFunc_End()) finish(id);
           break;
       }
-    }, 80);
+    });
   }
   setUpTrainerMovement(): void {
     const trainer = this.game.overworld.objects.objects[this.game.overworld.selectedObject];

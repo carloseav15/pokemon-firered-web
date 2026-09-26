@@ -62,6 +62,14 @@ COVERED: dict[str, str] = {
     "keyboard_text": "exportador (textos)",
     "text_window_graphics": "exportador (incbin)",
     "trainer_tower_sets": "exportador (cdata)",
+    "window_8bpp": "hw/window.ts: API 8bpp implementada; nullsub_9 es un no-op del C reemplazado por UnsetBgTilemapBuffer",
+    "hof_pc": "hallOfFame.ts: entrada del HOF PC, consulta de equipos y retorno al menú PC",
+    "save_failed_screen": "game.ts/save.ts: el error de localStorage ya muestra el texto de guardado fallido; reparación física de sectores Flash no aplica al navegador",
+    "field_special_scene": "field_special_scene.c: las dos escenas públicas y los cuatro callbacks/dummies tienen cuerpo vacío en el decomp; no hay lógica que portar",
+    "fldeff_teleport": "fieldMoveMenu.ts + field/fieldMoves.ts + field/overworld.ts: gate, selección/animación, callbacks y warp están conectados; CameraObjectReset2 no aplica al campo web 2D",
+    "fldeff_dig": "fieldMoveMenu.ts + field/fieldMoves.ts + field/overworld.ts: CanUseEscapeRopeOnCurrMap, setup, animación ShowMon, transición a pie y escape/warp están conectados",
+    "fldeff_strength": "fieldMoveMenu.ts + field/fieldMoves.ts: requisito de roca/pie, slot de selección, script, nickname, ShowMon y reanudación están conectados",
+    "field_camera": "field/overworld.ts + fieldmap.ts + tileRenderer.ts + doors.ts + battle/transition.ts: el seguimiento/paneo del jugador está conectado; el viewport Canvas recompone los metatiles desde FieldMap y omite el ring buffer BG/VRAM, doors.ts dibuja el overlay y las transiciones usan una captura de pantalla. Cámara de créditos en overworldCredits.ts; MoveCameraAndRedrawMap está unused en C",
 }
 
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
@@ -71,7 +79,7 @@ ADAPTERS: dict[str, str] = {
 
 
 FUNC_RE = re.compile(
-    r"^(?!static const|const|typedef|struct\s+\w+\s*$)"
+    r"^(?!typedef|struct\s+\w+\s*$)"
     r"(?:(?:static|inline|NAKED|UNUSED|NOINLINE|ARM_FUNC|IWRAM_CODE|EWRAM_CODE)\s+)*"
     r"[A-Za-z_][\w\s\*]*?\b([A-Za-z_]\w*)\s*\([^;{}]*\)\s*\n\{",
     re.M,
@@ -79,7 +87,10 @@ FUNC_RE = re.compile(
 KEYWORDS = {"if", "while", "for", "switch", "return", "sizeof"}
 TS_FUNC_RE = re.compile(r"\bfunction\s+([A-Za-z_]\w*)\s*\(")
 TRIVIAL_LINE = re.compile(
-    r"^(return(\s+[\w.\[\]]+)?;|if\s*\(!?[\w.]+\)\s*return;|void\s+[\w.]+;|//.*|/\*.*\*/|\*.*)$"
+    # Only flag empty returns and literal placeholder values. A return of a
+    # variable/property (for example a C task-data pointer adapted to TS state)
+    # can be a real getter and must not be mistaken for a stub.
+    r"^(return(\s+(?:0|1|false|true|FALSE|TRUE|null|undefined|NULL))?;|if\s*\(!?[\w.]+\)\s*return;|void\s+[\w.]+;|//.*|/\*.*\*/|\*.*)$"
 )
 
 
@@ -112,13 +123,63 @@ def is_trivial(body: str) -> bool:
     return all(TRIVIAL_LINE.match(l) for l in statements(body))
 
 
+def strip_c_comments(text: str) -> str:
+    """Blank C comments without changing line positions or quoted contents."""
+    out: list[str] = []
+    i = 0
+    state = "code"
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+        if state == "code":
+            if ch == "'":
+                state = "char"
+                out.append(ch)
+            elif ch == '"':
+                state = "string"
+                out.append(ch)
+            elif ch == "/" and nxt == "/":
+                state = "line"
+                out.extend("  ")
+                i += 1
+            elif ch == "/" and nxt == "*":
+                state = "block"
+                out.extend("  ")
+                i += 1
+            else:
+                out.append(ch)
+        elif state in ("string", "char"):
+            out.append(ch)
+            if ch == "\\" and i + 1 < len(text):
+                i += 1
+                out.append(text[i])
+            elif (state == "string" and ch == '"') or (state == "char" and ch == "'"):
+                state = "code"
+        elif state == "line":
+            if ch == "\n":
+                out.append(ch)
+                state = "code"
+            else:
+                out.append(" ")
+        else:  # block comment
+            if ch == "*" and nxt == "/":
+                out.extend("  ")
+                i += 1
+                state = "code"
+            else:
+                out.append("\n" if ch == "\n" else " ")
+        i += 1
+    return "".join(out)
+
+
 def c_functions(text: str) -> list[tuple[str, bool]]:
     """(name, has_real_body) for each function definition in a .c file."""
     out: dict[str, bool] = {}
-    for m in FUNC_RE.finditer(text):
+    uncommented = strip_c_comments(text)
+    for m in FUNC_RE.finditer(uncommented):
         name = m.group(1)
         if name not in KEYWORDS and name not in out:
-            out[name] = not is_trivial(body_after(text, m.end() - 1))
+            out[name] = not is_trivial(body_after(uncommented, m.end() - 1))
     return list(out.items())
 
 

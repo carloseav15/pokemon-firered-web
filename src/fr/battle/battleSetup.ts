@@ -8,6 +8,7 @@ import { tasks } from "../gba/tasks";
 import { paletteFade } from "../gba/fade";
 import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
 import { afterRoamerBattle } from "../pokemon/roamer";
+import { CreateScriptedWildMon } from "../pokemon/scriptPokemonUtil";
 import { gEnemyParty } from "../pokemon/mon";
 import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "../save";
@@ -15,6 +16,7 @@ import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
 import { createMaleMon, createMon, genderFromPersonality, healMon, MON_FEMALE, type Pokemon } from "../pokemon/pokemon";
 import { random32 } from "../random";
 import type { Game } from "../game";
+import { GetSafariZoneFlag } from "../field/safariZone";
 
 export const TRAINER_BATTLE_SINGLE = 0;
 export const TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC = 1;
@@ -153,7 +155,7 @@ export class BattleSetup {
     const o = ow.objects.objects[objectIndex];
     if (o) varSet(SV.LAST_TALKED, o.localId);
     this.configureTrainerBattle(trainerScript + 1);
-    ow.script.setupScript(rom.label("EventScript_DoTrainerBattleFromApproach"));
+    ow.script.ScriptContext_SetupScript(rom.label("EventScript_DoTrainerBattleFromApproach"));
     ow.controlsLocked = true;
   }
 
@@ -244,7 +246,7 @@ export class BattleSetup {
     const ow = this.game.overworld;
     const firstBattle = this.mode === TRAINER_BATTLE_EARLY_RIVAL && (this.rivalFlags & RIVAL_BATTLE_TUTORIAL) === RIVAL_BATTLE_TUTORIAL;
     const trainer = rom.trainers[this.opponentA];
-    ow.script.stop();
+    ow.script.ScriptContext_Stop();
     this.game.startBattle({
       kind: "trainer",
       trainerId: this.opponentA,
@@ -283,9 +285,8 @@ export class BattleSetup {
   }
 
   createScriptedWildMon(species: number, level: number, item: number): void {
-    const mon = createMon(species, level);
-    if (item) mon.heldItem = item;
-    this.scriptedWild = mon;
+    CreateScriptedWildMon(species, level, item);
+    this.scriptedWild = structuredClone(gEnemyParty[0]);
   }
 
   /** battle_setup.c StartWildBattle: Safari, unidentified tower ghost, or ordinary wild. */
@@ -294,7 +295,7 @@ export class BattleSetup {
     const c = rom.constants;
     // CheckSilphScopeInPokemonTower includes every floor from 1F through 7F.
     const tower = [1, 2, 3, 4, 5, 6, 7].some(floor => map === c[`MAP_POKEMON_TOWER_${floor}F`]);
-    const safari = flagGet(c.FLAG_SYS_SAFARI_MODE);
+    const safari = GetSafariZoneFlag();
     incrementGameStat(c.GAME_STAT_TOTAL_BATTLES);
     incrementGameStat(c.GAME_STAT_WILD_BATTLES);
     this.game.startBattle({
@@ -315,7 +316,7 @@ export class BattleSetup {
     if (game.safariBalls !== 0) { game.returnToFieldContinueScript(true); return; }
     if (outcome === rom.c("B_OUTCOME_NO_SAFARI_BALLS")) {
       game.scene = null;
-      ow.script.runImmediately(rom.label("SafariZone_EventScript_OutOfBallsMidBattle"));
+      ow.script.RunScriptImmediately(rom.label("SafariZone_EventScript_OutOfBallsMidBattle"));
       ow.fieldCallback = () => {
         ow.controlsLocked = true;
         ow.playSpecialMapMusic();
@@ -332,8 +333,8 @@ export class BattleSetup {
       return;
     }
     // B_OUTCOME_CAUGHT with the last ball
-    ow.script.setupScript(rom.label("SafariZone_EventScript_OutOfBalls"));
-    ow.script.stop();
+    ow.script.ScriptContext_SetupScript(rom.label("SafariZone_EventScript_OutOfBalls"));
+    ow.script.ScriptContext_Stop();
     game.returnToFieldContinueScript(true);
   }
 
@@ -387,7 +388,7 @@ export class BattleSetup {
     musicOverride?: number,
   ): void {
     const ow = this.game.overworld;
-    ow.script.stop();
+    ow.script.ScriptContext_Stop();
     const enemy = this.scriptedWild ?? createMon(1, 5);
     const species = enemy.species;
     const music = species === rom.c("SPECIES_MEWTWO") ? rom.c("MUS_VS_MEWTWO")
@@ -411,7 +412,7 @@ export class BattleSetup {
 
   startMarowakBattle(): void {
     const ow = this.game.overworld;
-    ow.script.stop();
+    ow.script.ScriptContext_Stop();
     const species = rom.c("SPECIES_MAROWAK");
     const hasSilphScope = checkBagHasItem(rom.c("ITEM_SILPH_SCOPE"), 1);
     let marowak: Pokemon;
@@ -440,7 +441,7 @@ export class BattleSetup {
 
   startOldManTutorialBattle(): void {
     const ow = this.game.overworld;
-    ow.script.stop();
+    ow.script.ScriptContext_Stop();
     this.game.startBattle({
       kind: "wild",
       isOldMan: true,

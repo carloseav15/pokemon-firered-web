@@ -40,6 +40,11 @@ function numActiveWindowsOnBg(bg: number): number {
   return gWindows.filter((w) => w.window.bg === bg).length;
 }
 
+/** window_8bpp.c GetNumActiveWindowsOnBg8Bit; the shared table includes 4bpp and 8bpp windows. */
+function GetNumActiveWindowsOnBg8Bit(bgId: number): number {
+  return gWindows.reduce((count, window) => count + (window.window.bg === bgId ? 1 : 0), 0);
+}
+
 function ensureBgTilemap(bg: number): boolean {
   if (windowBgTilemapBuffers[bg] === null) {
     const size = GetBgAttribute(bg, BG_ATTR_MAPSIZE);
@@ -112,7 +117,7 @@ export function AddWindow8Bit(template: WindowTemplate): number {
   try {
     gWindows[win].tileData = new Uint8Array(0x40 * template.width * template.height);
   } catch {
-    if (mapWasMissing && numActiveWindowsOnBg(bg) === 0 && windowBgTilemapBuffers[bg] instanceof Uint16Array) {
+    if (mapWasMissing && GetNumActiveWindowsOnBg8Bit(bg) === 0 && windowBgTilemapBuffers[bg] instanceof Uint16Array) {
       windowBgTilemapBuffers[bg] = null;
       UnsetBgTilemapBuffer(bg);
     }

@@ -7,11 +7,11 @@ import { decode, encode, stringVars } from "../gba/charmap";
 import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { random } from "../random";
-import { flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
+import { EnableNationalPokedex as enableNationalPokedex, flagGet, flagSet, incrementGameStat, IsNationalPokedexEnabled, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET } from "../field/fieldmap";
 import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
-import { countAliveNonEggMons, dexCount, hasAllKantoDexSpecies, hasAllNationalDexSpecies, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
+import { countAliveNonEggMons, GetKantoPokedexCount, GetNationalPokedexCount, HasAllKantoMons, HasAllMons, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import { GetMonData, GetMonEVCount, SetMonData } from "../pokemon/mon";
 import { cdata, hasCData, loadCData } from "../hw/assets";
 import type { ScriptRunner } from "./context";
@@ -20,6 +20,10 @@ import { DAYCARE_SPECIALS, hatchPartyEgg } from "../pokemon/daycare";
 import { initRoamer } from "../pokemon/roamer";
 import { doSeagallopFerryScene, getSeagallopNumber, getSelectedSeagallopDestination, seagallopDestinationItems } from "../seagallop";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
+import { EnterSafariMode, ExitSafariMode } from "../field/safariZone";
+import { SetUnlockedPokedexFlags } from "../pokemon/saveLocation";
+import { GetMonsStateToDoubles } from "../pokemon/scriptPokemonUtil";
+import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/specialFieldAnim";
 
 type Special = (ctx: ScriptRunner) => number | void;
 
@@ -28,6 +32,14 @@ const warned = new Set<string>();
 function starterSpecies(index: number): number {
   const c = rom.constants;
   return [c.SPECIES_BULBASAUR, c.SPECIES_SQUIRTLE, c.SPECIES_CHARMANDER][index] ?? c.SPECIES_BULBASAUR;
+}
+
+/** Task_EnableScriptAfterMusicFade from field_screen_effect.c. */
+function Task_EnableScriptAfterMusicFade(taskId: number, ctx: ScriptRunner): void {
+  if (sound.isBGMPausedOrStopped()) {
+    tasks.destroy(taskId);
+    ctx.ow.script.ScriptContext_Enable();
+  }
 }
 
 const SPECIALS: Record<string, Special> = {
@@ -63,25 +75,22 @@ const SPECIALS: Record<string, Special> = {
   SetSeenMon: () => { setDexFlag(varGet(SV.x8004), false); },
   GetPokedexCount: () => {
     const national = varGet(SV.x8004) !== 0;
-    varSet(SV.x8005, dexCount(false, !national));
-    varSet(SV.x8006, dexCount(true, !national));
+    varSet(SV.x8005, national ? GetNationalPokedexCount(C.FLAG_GET_SEEN) : GetKantoPokedexCount(C.FLAG_GET_SEEN));
+    varSet(SV.x8006, national ? GetNationalPokedexCount(C.FLAG_GET_CAUGHT) : GetKantoPokedexCount(C.FLAG_GET_CAUGHT));
     return isNationalDexEnabled() ? 1 : 0;
   },
   IsNationalPokedexEnabled: () => (isNationalDexEnabled() ? 1 : 0),
-  EnableNationalPokedex: () => { varSet(rom.c("VAR_NATIONAL_DEX"), 0x6258); flagSet(rom.c("FLAG_SYS_NATIONAL_DEX")); },
-  HasAllKantoMons: () => (hasAllKantoDexSpecies() ? 1 : 0),
-  HasAllMons: () => (hasAllNationalDexSpecies() ? 1 : 0),
-  SetUnlockedPokedexFlags: () => {},
+  EnableNationalPokedex: () => { enableNationalPokedex(); },
+  HasAllKantoMons: () => (HasAllKantoMons() ? 1 : 0),
+  HasAllMons: () => (HasAllMons() ? 1 : 0),
+  SetUnlockedPokedexFlags: () => { SetUnlockedPokedexFlags(); },
   GetProfOaksRatingMessage: (ctx) => { ctx.ow.game.profOakRating(); },
   CalculatePlayerPartyCount: () => save.party.length,
   CountPartyNonEggMons: () => save.party.filter((m) => !m.isEgg).length,
   CountPartyAliveNonEggMons_IgnoreVar0x8004Slot: () => countAliveNonEggMons(varGet(SV.x8004)),
-  HasEnoughMonsForDoubleBattle: () => {
-    if (save.party.length === 1) return C.PLAYER_HAS_ONE_MON;
-    return countAliveNonEggMons() >= 2
-      ? C.PLAYER_HAS_TWO_USABLE_MONS
-      : C.PLAYER_HAS_ONE_USABLE_MON;
-  },
+  HasEnoughMonsForDoubleBattle: () => { varSet(SV.RESULT, GetMonsStateToDoubles()); },
+  ChooseHalfPartyForBattle: (ctx) => { ctx.ow.game.ChooseHalfPartyForBattle(); },
+  ChooseBattleTowerPlayerParty: (ctx) => { ctx.ow.game.ChooseBattleTowerPlayerParty(); },
   BufferMonNickname: () => { const mon = save.party[varGet(SV.x8004)]; stringVars.var1 = mon ? nickname(mon) : encode(""); },
   GetPartyMonSpecies: () => save.party[varGet(SV.x8004)]?.species ?? 0,
   IsSelectedMonEgg: () => (save.party[varGet(SV.x8004)]?.isEgg ? 1 : 0),
@@ -128,6 +137,7 @@ const SPECIALS: Record<string, Special> = {
     let timer = 0;
     let remaining = n;
     let panY = yTrans, panX = xTrans;
+    ctx.ow.SetCameraPanningCallback(null);
     sound.playSE(sound.c("SE_M_STRENGTH"));
     const id = tasks.create(() => {
       timer++;
@@ -136,13 +146,12 @@ const SPECIALS: Record<string, Special> = {
         remaining--;
         panX = -panX;
         panY = -panY;
-        ctx.ow.panX = panX;
-        ctx.ow.panY = panY;
+        ctx.ow.SetCameraPanning(panX, panY);
         if (remaining === 0) {
-          ctx.ow.panX = 0;
-          ctx.ow.panY = 0;
+          ctx.ow.SetCameraPanning(0, 0);
+          ctx.ow.InstallCameraPanAheadCallback();
           tasks.destroy(id);
-          ctx.ow.script.enable();
+          ctx.ow.script.ScriptContext_Enable();
         }
       }
     }, 9);
@@ -160,8 +169,8 @@ const SPECIALS: Record<string, Special> = {
   ShowFieldMessageStringVar4: (ctx) => { ctx.ow.messageBox.show(stringVars.var4); },
   Overworld_PlaySpecialMapMusic: (ctx) => { ctx.ow.playSpecialMapMusic(); },
   Script_FadeOutMapMusic: (ctx) => {
-    sound.fadeOutBGM(4);
-    const id = tasks.create(() => { if (sound.isBGMPausedOrStopped()) { tasks.destroy(id); ctx.ow.script.enable(); } }, 80);
+    sound.fadeOutMapMusic(4);
+    tasks.create((id) => Task_EnableScriptAfterMusicFade(id, ctx), 80);
   },
   QuestLog_CutRecording: () => {},
   QuestLog_StartRecordingInputsAfterDeferredEvent: () => {},
@@ -201,7 +210,7 @@ const SPECIALS: Record<string, Special> = {
   // ---- battles
   ShouldTryRematchBattle: (ctx) => (shouldTryRematchBattle(ctx.ow.game.battleSetup.opponentA) ? 1 : 0),
   IsTrainerReadyForRematch: (ctx) => (isTrainerReadyForRematch(ctx.ow.game.battleSetup.opponentA) ? 1 : 0),
-  StartRematchBattle: (ctx) => { ctx.ow.game.battleSetup.startTrainerBattle(true); ctx.ow.script.stop(); },
+  StartRematchBattle: (ctx) => { ctx.ow.game.battleSetup.startTrainerBattle(true); ctx.ow.script.ScriptContext_Stop(); },
   VsSeekerFreezeObjectsAfterChargeComplete: (ctx) => { vsSeekerFreezeObjectsAfterChargeComplete(ctx.ow.game); },
   VsSeekerResetObjectMovementAfterChargeComplete: (ctx) => { vsSeekerResetObjectMovementAfterChargeComplete(ctx.ow.game); },
   GetBattleOutcome: (ctx) => ctx.ow.game.battleOutcome,
@@ -265,14 +274,13 @@ const SPECIALS: Record<string, Special> = {
     return indices[random() % indices.length];
   },
   EnterSafariMode: (ctx) => {
-    save.gameStats[rom.c("GAME_STAT_ENTERED_SAFARI_ZONE")] = (save.gameStats[rom.c("GAME_STAT_ENTERED_SAFARI_ZONE")] ?? 0) + 1;
-    flagSet(rom.c("FLAG_SYS_SAFARI_MODE")); ctx.ow.game.safariSteps = 600; ctx.ow.game.safariBalls = 30;
+    EnterSafariMode(ctx.ow.game);
   },
-  ExitSafariMode: (ctx) => { save.flags[rom.c("FLAG_SYS_SAFARI_MODE") >> 3] &= ~(1 << (rom.c("FLAG_SYS_SAFARI_MODE") & 7)); ctx.ow.game.safariSteps = 0; ctx.ow.game.safariBalls = 0; },
+  ExitSafariMode: (ctx) => { ExitSafariMode(ctx.ow.game); },
   IsPlayerLeftOfVermilionSailor: () => (save.pos.x < 24 ? 1 : 0),
   InitRoamer: () => { initRoamer(); },
-  AnimateTeleporterHousing: () => {},
-  AnimateTeleporterCable: () => {},
+  AnimateTeleporterHousing: (ctx) => { AnimateTeleporterHousing(ctx.ow, varGet(SV.x8004)); },
+  AnimateTeleporterCable: (ctx) => { AnimateTeleporterCable(ctx.ow); },
   BufferTMHMMoveName: () => {
     const item = varGet(SV.x8004);
     const index = items.tmhmIndex(item);
@@ -362,11 +370,6 @@ const SPECIALS: Record<string, Special> = {
   SavePlayerParty: () => {},
   LoadPlayerParty: () => {},
   LoadPlayerBag: () => {},
-  // ---- link party selection (script_pokemon_util.c:152-215): no link UI here,
-  // so the choice is treated as cancelled (RESULT FALSE, party restored).
-  ChooseHalfPartyForBattle: () => 0,
-  ChooseBattleTowerPlayerParty: () => 0,
-  ReducePlayerPartyToThree: () => {},
   // ---- battle tower (battle_tower.c): the tower engine is not ported; gating
   // checks report a valid party so field scripts continue past the desk.
   CheckPartyBattleTowerBanlist: () => { varSet(SV.x8004, 0); },
@@ -395,7 +398,7 @@ const SPECIALS: Record<string, Special> = {
 };
 
 export function isNationalDexEnabled(): boolean {
-  return varGet(rom.c("VAR_NATIONAL_DEX")) === 0x6258 && flagGet(rom.c("FLAG_SYS_NATIONAL_DEX"));
+  return IsNationalPokedexEnabled();
 }
 
 /** Runs a special by name; returns its u16 result when it has one. */

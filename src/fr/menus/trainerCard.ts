@@ -56,7 +56,7 @@ import {
   BlitBitmapRectToWindow, COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
   FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "../hw/window";
-import { dexCount, hasAllKantoDexSpecies, hasAllNationalDexSpecies } from "../pokemon/pokemon";
+import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllKantoMons, HasAllMons } from "../pokemon/pokemon";
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
 import { MailSpeciesToSpecies } from "../pokemon/mail";
 import { rom } from "../rom";
@@ -271,7 +271,7 @@ function SetPlayerCardData(card: TrainerCardFields, _cardType: number): void {
   const national = varGet(c.VAR_NATIONAL_DEX ?? 0) === 0x6258 && flagGet(c.FLAG_SYS_NATIONAL_DEX);
   card.hasPokedex = flagGet(c.FLAG_SYS_POKEDEX_GET);
   card.caughtAllHoenn = false;
-  card.caughtMonsCount = dexCount(true, !national);
+  card.caughtMonsCount = national ? GetNationalPokedexCount(C.FLAG_GET_CAUGHT) : GetKantoPokedexCount(C.FLAG_GET_CAUGHT);
 
   card.trainerId = save.trainerId & 0xffff;
   card.linkBattleWins = Math.min(9999, save.gameStats[c.GAME_STAT_LINK_BATTLE_WINS] ?? 0);
@@ -299,10 +299,10 @@ function TrainerCard_GenerateCardForLinkPlayer(card: TrainerCardFields): void {
   }
 
   // HasAllKantoMons: 150 caught
-  const hasKanto = hasAllKantoDexSpecies();
+  const hasKanto = HasAllKantoMons();
   card.caughtAllHoenn = hasKanto;
   // HasAllMons: 380 caught (excluding Mew, Lugia, Ho-Oh, Celebi, Jirachi, Deoxys)
-  const hasAll = hasAllNationalDexSpecies();
+  const hasAll = HasAllMons();
   card.hasAllMons = hasAll;
 
   card.berriesPicked = 0;
