@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 56 | 108019 | 1288/5020 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 34 | 56961 | 1912/2139 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 109 | 79996 | 2547/2547 |
+| Casi completo (≥ 80 % y < 100 %) | 33 | 56356 | 1898/2124 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 110 | 80601 | 2562/2562 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **92** | **167810** | |
-| **Total en alcance** | **202** | **247859** | **5775/9834** |
+| **Pendiente de portar** | **91** | **167205** | |
+| **Total en alcance** | **202** | **247859** | **5776/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -124,7 +124,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `menu2.c` | 671 | 9/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `menu_indicators.c` | 656 | 18/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
-| `mon_markings.c` | 605 | 14/15 | `monMarkings.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `window.c` | 513 | 19/21 | `gba/window.ts`, `hw/window.ts` |  |  |
 | `battle_intro.c` | 492 | 9/10 | `battle/intro.ts` |  |  |
@@ -176,6 +175,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |  |
 | `map_preview_screen.c` | 616 | 14/14 | `mapPreviewScreen.ts` |  |  |
 | `renewable_hidden_items.c` | 608 | 4/4 | `renewableHiddenItems.ts` |  |  |
+| `mon_markings.c` | 605 | 15/15 | `monMarkings.ts` |  |  |
 | `option_menu.c` | 575 | 19/19 | `optionMenu.ts` |  |  |
 | `trig.c` | 542 | 4/4 | `hw/trig.ts` |  |  |
 | `battle_anim_status_effects.c` | 535 | 12/12 | `battle/anim.ts`, `battle/anims/statusEffects.ts` |  |  |

@@ -230,6 +230,9 @@ function SpriteCB_Cursor(sprite: Sprite): void {
   sprite.y = 16 * sMenu.cursorPos + sprite.data[0];
 }
 
+/** SpriteCB_Dummy from mon_markings.c is intentionally empty in the source. */
+function SpriteCB_Dummy(_sprite: Sprite): void {}
+
 function CreateMonMarkingsMenuSprites(x: number, y: number, baseTileTag: number, basePaletteTag: number): void {
   if (!sMenu) return;
 
@@ -251,7 +254,7 @@ function CreateMonMarkingsMenuSprites(x: number, y: number, baseTileTag: number,
     anims: animsMenuWindow,
     images: null,
     affineAnims: gDummySpriteAffineAnimTable,
-    callback: () => {},
+    callback: SpriteCB_Dummy,
   };
 
   // Create window sprites (upper half y+32, lower half y+96)
@@ -277,7 +280,7 @@ function CreateMonMarkingsMenuSprites(x: number, y: number, baseTileTag: number,
   }
 
   // Create OK/Cancel text sprite
-  template.callback = () => {};
+  template.callback = SpriteCB_Dummy;
   const textSpriteId = CreateSprite(template, 0, 0, 0);
   const textSprite = gSprites[textSpriteId];
   sMenu.textSprite = textSprite;
@@ -326,7 +329,7 @@ function CreateMarkingComboSprite(tileTag: number, paletteTag: number, palette: 
     anims,
     images: null,
     affineAnims: gDummySpriteAffineAnimTable,
-    callback: () => {},
+    callback: SpriteCB_Dummy,
   };
 
   LoadSpriteSheet({ data: incbin("sMonMarkings_Gfx"), size: size * 0x80, tag: tileTag });

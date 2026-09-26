@@ -2753,6 +2753,15 @@ Pending / placeholders:
   y 4.059 nombres pendientes. Pasaron `check:port`, `check:honesty`, inventory,
   pending y `git diff --check`; sin runtime.
 
+## `mon_markings.c`: callback vacío de sprites (2026-09-26)
+
+- Reemplacé las tres callbacks inline vacías de sprites por el `SpriteCB_Dummy`
+  nombrado que define el C. Su cuerpo permanece vacío porque el C también lo
+  deja vacío; el callback queda conectado a la ventana, el texto y los sprites
+  de combinaciones. `mon_markings.c` figura 15/15. Total: 5.776/9.834 (58,7 %),
+  91 archivos y 4.058 nombres pendientes. Pasaron `check:port`, `check:honesty`,
+  inventory, pending y `git diff --check`; sin runtime.
+
 ## `oak_speech.c`: nombre del punto de entrada (2026-09-26)
 
 - Renombré `OakSpeech.begin()` a `StartNewGameScene()` y actualicé el caller de
