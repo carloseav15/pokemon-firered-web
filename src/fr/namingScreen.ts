@@ -20,17 +20,18 @@ import { DrawDialogueFrame, GetTextWindowPalette, InitStandardTextBoxWindows, In
 import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "./hw/ppu";
 import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, StartSpriteAnim, type Subsprite } from "./hw/sprite";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Subsprite } from "./hw/sprite";
 import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
+import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
 
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
 const text = (name: string) => cdata<number[]>("strings", name);
 let loading: Promise<void> | undefined;
 export function preloadNamingScreen(): Promise<void> {
   return loading ??= Promise.all([
-    loadCData("naming_screen", "keyboard_text", "strings", "text_window_graphics"),
-    preloadPacks(["graphics_naming_screen", "graphics_text_window", "graphics_fonts"]),
+    loadCData("naming_screen", "keyboard_text", "strings", "text_window_graphics", "pokemon_icon"),
+    preloadPacks(["graphics_naming_screen", "graphics_text_window", "graphics_fonts", "pokemon"]),
   ]).then(() => undefined);
 }
 
@@ -95,6 +96,7 @@ class NamingScreen {
     const baseX = (240 - this.model.template.maxChars * 8) / 2 + 6;
     gSprites[this.sprite("sSpriteTemplate_InputArrow", baseX - 5, 56, 0)].oam.priority = 3;
     for (let i = 0; i < this.model.template.maxChars; i++) gSprites[this.sprite("sSpriteTemplate_Underscore", baseX + i * 8 + 3, 60, 0)].oam.priority = 3;
+    this.createInputTargetIcon();
     this.drawPage(); this.drawEntry(); this.drawTitle(); this.drawControls();
     for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
     joy.repeatStartDelay = 16;
@@ -119,6 +121,24 @@ class NamingScreen {
       }));
     }
     return id;
+  }
+
+  /** NamingScreen_CreateInputTargetIcon: source iconFunction table, partial until player/rival art is wired. */
+  private createInputTargetIcon(): void {
+    switch (this.model.template.iconFunction) {
+      case 2: {
+        const id = this.sprite("sSpriteTemplate_PCIcon", 56, 41, 0, "sSubspriteTable_PCIcon");
+        gSprites[id].oam.priority = 3;
+        break;
+      }
+      case 3:
+        LoadMonIconPalettes();
+        {
+          const id = CreateMonIcon(this.species, SpriteCallbackDummy, 56, 40, 0, this.personality, 1);
+          gSprites[id].oam.priority = 3;
+        }
+        break;
+    }
   }
 
   private drawPage(): void {

@@ -97,6 +97,10 @@ AGENTS.md §6.5).
   `AdjustFriendship`, pero el TS sumaba `+1` manualmente. Ahora invoca
   `AdjustFriendship` con `FRIENDSHIP_EVENT_WALKING`, que conserva la tirada del
   50 %, el límite y los modificadores del C.
+- **Revisión de fuente, 2026-09-26 (sin prueba de juego)**: `naming_screen.c`
+  ahora crea los iconos de PC y Pokémon desde el `iconFunction` del template,
+  con las paletas, personalidad y prioridad originales. Los iconos de avatar
+  del jugador y del rival siguen pendientes.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),
@@ -1225,7 +1229,7 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
    guardar/continuar. Registrar cada fallo y su arreglo aquí.
 2. **Transiciones a batalla** (`battle_transition.c`, ~3000 líneas) **[PARCIAL]**: 12 efectos de las
    tablas salvaje/entrenador en `battle/transition.ts` (26/134 funciones); solo ANGLED_WIPES visto en navegador.
-3. **Pantalla de nombres** (`naming_screen.c`, 16/109 por nombre): reglas de
+3. **Pantalla de nombres** (`naming_screen.c`, 17/109 por nombre): reglas de
    entrada revisadas contra C; faltan transiciones de página, flashes e iconos.
    No se hizo prueba de juego en este bloque.
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
