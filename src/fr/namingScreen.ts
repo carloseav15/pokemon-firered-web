@@ -1,13 +1,13 @@
 // naming_screen.c: hardware-screen entry/exit and source keyboard data.
-// Target icons and the BG page-swap animation use C data; button flashes remain pending.
+// Target icons, the BG page swap, and cursor/button flashes use C data.
 import * as C from "./generated/constants";
-import { MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
+import { GetKeyRoleAtCursorPos, MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "./hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
 import { save, varGet, flagGet } from "./save";
 import { getBoxName, getPCBoxToSendMon, isDestinationBoxFull } from "./pokemon/storage";
 import { rom } from "./rom";
-import { joy, A_BUTTON } from "./gba/input";
+import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON, START_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "./gba/input";
 import { EOS, stringVars, expandPlaceholders } from "./gba/charmap";
 import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
 import { tasks } from "./gba/tasks";
@@ -17,10 +17,10 @@ import { textFlags, getTextSpeedSetting } from "./gba/textPrinter";
 import { BG_ATTR_PRIORITY, BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, GetBgAttribute, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "./hw/bg";
 import { InitGpuRegManager, SetGpuReg } from "./hw/gpu";
 import { DrawDialogueFrame, GetTextWindowPalette, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters } from "./hw/menu";
-import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
+import { BeginNormalPaletteFade, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import { BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG2, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
 import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Subsprite } from "./hw/sprite";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Sprite, type Subsprite } from "./hw/sprite";
 import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
 import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
@@ -29,6 +29,8 @@ import { Sin } from "./hw/trig";
 
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
 const text = (name: string) => cdata<number[]>("strings", name);
+// BUTTON_PAGE/BUTTON_BACK/BUTTON_OK/BUTTON_COUNT (naming_screen.c).
+const enum NamingButton { PAGE, BACK, OK, COUNT }
 let loading: Promise<void> | undefined;
 export function preloadNamingScreen(): Promise<void> {
   return loading ??= Promise.all([
@@ -54,6 +56,8 @@ class NamingScreen {
   private bgToReveal = 0;
   private bg1vOffset = 0;
   private bg2vOffset = 0;
+  private buttonFlashTaskId = -1;
+  private stopFlashesNextUpdate = false;
   private pageSwapFrameCount = 0;
   private pageSwapAnimState = 1;
   private pageSwapButtonState: 1 | 2 | 3 = 1;
@@ -97,6 +101,8 @@ class NamingScreen {
       if (pal.data) LoadSpritePalette({data: incbin(pal.data.$sym).subarray((pal.data.index ?? 0) * 32, ((pal.data.index ?? 0) + 1) * 32), tag: pal.tag});
     }
     this.cursor = this.sprite("sSpriteTemplate_Cursor", 38, 88, 1);
+    gSprites[this.cursor].callback = sprite => this.SpriteCB_Cursor(sprite);
+    this.SetCursorInvisibility(true);
     gSprites[this.cursor].oam.priority = 1;
     this.sprite("sSpriteTemplate_PageSwapFrame", 204, 88, 0, "sSubspriteTable_PageSwapFrame");
     this.pageText = this.sprite("sSpriteTemplate_PageSwapText", 204, 84, 1, "sSubspriteTable_PageSwapText");
@@ -109,9 +115,12 @@ class NamingScreen {
     for (let i = 0; i < this.model.template.maxChars; i++) gSprites[this.sprite("sSpriteTemplate_Underscore", baseX + i * 8 + 3, 60, 0)].oam.priority = 3;
     this.createInputTargetIcon();
     this.drawPage(); this.drawEntry(); this.drawTitle(); this.drawControls();
+    this.buttonFlashTaskId = tasks.create(taskId => this.Task_UpdateButtonFlash(taskId), 3);
+    tasks.data(this.buttonFlashTaskId)[0] = NamingButton.COUNT;
     for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
     joy.repeatStartDelay = 16;
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
+    this.SetCursorInvisibility(false);
     SetVBlankCallback(() => {
       LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer();
       SetGpuReg(REG_OFFSET_BG1VOFS, this.bg1vOffset);
@@ -205,10 +214,11 @@ class NamingScreen {
   }
 
   private MainState_StartPageSwap(): void {
+    this.TryStartButtonFlash(NamingButton.PAGE, false, true);
     this.state = "pageSwap";
     this.pageSwapFrameCount = 0;
     this.pageSwapAnimState = 1;
-    gSprites[this.cursor].invisible = true;
+    this.SetCursorInvisibility(true);
     gSprites[this.pageText].y2 = 0;
     this.pageSwapButtonState = 2;
     this.bg1vOffset = 0;
@@ -280,7 +290,7 @@ class NamingScreen {
     this.DrawKeyboardPageOnDeck();
     this.setPageSwapButtonGfx(this.model.page);
     gSprites[this.pageText].y2 = 0;
-    gSprites[this.cursor].invisible = false;
+    this.SetCursorInvisibility(false);
     this.moveCursor();
     this.state = "input";
   }
@@ -321,8 +331,50 @@ class NamingScreen {
 
   private moveCursor(): void {
     const sprite = gSprites[this.cursor];
-    sprite.x = this.model.onButton ? 196 : this.model.columnPositions[this.model.x] + 38;
+    sprite.data[0] = this.model.x; // sX
+    sprite.data[1] = this.model.y; // sY
+    sprite.x = this.model.onButton ? 0 : this.model.columnPositions[this.model.x] + 38;
     sprite.y = this.model.onButton ? [88, 116, 140][this.model.y] : this.model.y * 16 + 88;
+  }
+
+  /** SetCursorInvisibility (naming_screen.c). */
+  private SetCursorInvisibility(invisible: boolean): void {
+    const sprite = gSprites[this.cursor];
+    sprite.data[4] = (sprite.data[4]! & 0xff00) | Number(invisible); // sInvisible
+    StartSpriteAnim(sprite, 0);
+  }
+
+  /** SetCursorFlashing (naming_screen.c). */
+  private SetCursorFlashing(flashing: boolean): void {
+    const sprite = gSprites[this.cursor];
+    sprite.data[4] = (sprite.data[4]! & 0x00ff) | (Number(flashing) << 8); // sFlashing
+  }
+
+  /** SpriteCB_Cursor (naming_screen.c). */
+  private SpriteCB_Cursor(sprite: Sprite): void {
+    if (sprite.animEnded) StartSpriteAnim(sprite, 0);
+    sprite.invisible = !!(sprite.data[4]! & 0x00ff); // sInvisible
+    if (sprite.data[0] === this.model.columns) sprite.invisible = true;
+    if (sprite.invisible || !(sprite.data[4]! & 0xff00)
+      || sprite.data[0] !== sprite.data[2] || sprite.data[1] !== sprite.data[3]) {
+      sprite.data[5] = 0; // sColor
+      sprite.data[6] = 2; // sColorIncr
+      sprite.data[7] = 2; // sColorDelay
+    }
+    sprite.data[7] = sprite.data[7]! - 1;
+    if (sprite.data[7] === 0) {
+      sprite.data[5]! += sprite.data[6]!;
+      if (sprite.data[5] === 16 || sprite.data[5] === 0) sprite.data[6] = -sprite.data[6]!;
+      sprite.data[7] = 2;
+    }
+    if (sprite.data[4]! & 0xff00) {
+      const color = sprite.data[5]!;
+      const template = data<CSpriteTemplate>("sSpriteTemplate_Cursor");
+      const index = OBJ_PLTT_ID(IndexOfSpritePaletteTag(template.paletteTag)) + 1;
+      this.MultiplyInvertedPaletteRGBComponents(index, color >> 1, color, color);
+    }
+    sprite.data[2] = sprite.data[0]!; // sPrevX
+    sprite.data[3] = sprite.data[1]!; // sPrevY
   }
 
   private fadeOut(): void {
@@ -346,21 +398,117 @@ class NamingScreen {
     this.state = "message";
   }
 
+  /** TryStartButtonFlash (naming_screen.c). */
+  private TryStartButtonFlash(button: number, keepFlashing: boolean, interruptCurFlash: boolean): void {
+    const task = tasks.data(this.buttonFlashTaskId);
+    const currentButton = task[0];
+    if (button === currentButton && !interruptCurFlash) {
+      task[1] = Number(keepFlashing);
+      task[2] = 1;
+      return;
+    }
+    if (button === NamingButton.COUNT && !task[1] && !interruptCurFlash) return;
+    if (currentButton !== NamingButton.COUNT) this.RestoreButtonColor(currentButton);
+    this.StartButtonFlash(task, button, keepFlashing);
+  }
+
+  /** Task_UpdateButtonFlash (naming_screen.c). */
+  private Task_UpdateButtonFlash(taskId: number): void {
+    const task = tasks.data(taskId);
+    const button = task[0]!;
+    if (button === NamingButton.COUNT || !task[2]) return;
+    const paletteIndex = this.GetButtonPalOffset(button);
+    this.MultiplyInvertedPaletteRGBComponents(paletteIndex, task[3]!, task[3]!, task[3]!);
+    if (task[5]) {
+      task[5] = task[5]! - 1;
+      if (task[5]) return;
+    }
+    task[5] = 2;
+    if (task[4]! >= 0) {
+      if (task[3]! < 14) {
+        task[3] += task[4]!;
+        task[6] += task[4]!;
+      } else {
+        task[3] = 16;
+        task[6]++;
+      }
+    } else {
+      task[3] += task[4]!;
+      task[6] += task[4]!;
+    }
+    if (task[3] === 16 && task[6] === 22) task[4] = -4;
+    else if (task[3] === 0) {
+      task[2] = task[1]!;
+      task[4] = 2;
+      task[6] = 0;
+    }
+  }
+
+  /** GetButtonPalOffset (naming_screen.c). */
+  private GetButtonPalOffset(button: number): number {
+    const templateName = ["sSpriteTemplate_PageSwapFrame", "sSpriteTemplate_BackButton", "sSpriteTemplate_OkButton"][button]!;
+    const template = data<CSpriteTemplate>(templateName);
+    return OBJ_PLTT_ID(IndexOfSpritePaletteTag(template.paletteTag)) + 14;
+  }
+
+  /** RestoreButtonColor (naming_screen.c). */
+  private RestoreButtonColor(button: number): void {
+    const index = this.GetButtonPalOffset(button);
+    gPlttBufferFaded[index] = gPlttBufferUnfaded[index]!;
+  }
+
+  /** StartButtonFlash (naming_screen.c). */
+  private StartButtonFlash(task: number[], button: number, keepFlashing: boolean): void {
+    task[0] = button;
+    task[1] = Number(keepFlashing);
+    task[2] = 1;
+    task[3] = 4;
+    task[4] = 2;
+    task[5] = 0;
+    task[6] = 4;
+  }
+
+  /** MultiplyInvertedPaletteRGBComponents (field_effect.c). */
+  private MultiplyInvertedPaletteRGBComponents(index: number, r: number, g: number, b: number): void {
+    const color = gPlttBufferUnfaded[index]!;
+    const red = color & 0x1f;
+    const green = (color >> 5) & 0x1f;
+    const blue = (color >> 10) & 0x1f;
+    gPlttBufferFaded[index] = red + (((0x1f - red) * r) >> 4)
+      | (green + (((0x1f - green) * g) >> 4)) << 5
+      | (blue + (((0x1f - blue) * b) >> 4)) << 10;
+  }
+
   private update(): void {
-    if (this.state === "fadeIn" && !gPaletteFade.active) this.state = "input";
+    if (this.state === "fadeIn" && !gPaletteFade.active) {
+      this.SetCursorFlashing(true);
+      this.state = "input";
+    }
     else if (this.state === "input") {
+      const roleBeforeInput = GetKeyRoleAtCursorPos(this.model);
       const action = this.model.input(joy.newKeys, joy.repeated);
+      const dpadRepeated = !(joy.newKeys & (A_BUTTON | B_BUTTON | SELECT_BUTTON | START_BUTTON))
+        && !!(joy.repeated & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT));
+      const role = dpadRepeated ? GetKeyRoleAtCursorPos(this.model) : roleBeforeInput;
+      const button = role === "page" ? NamingButton.PAGE : role === "backspace" ? NamingButton.BACK : role === "ok" ? NamingButton.OK : NamingButton.COUNT;
+      if (!(joy.newKeys & (B_BUTTON | SELECT_BUTTON | START_BUTTON))) {
+        this.TryStartButtonFlash(button, button !== NamingButton.COUNT, false);
+      }
       if (action === "move") sound.playSE(C.SE_SELECT);
       if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.MainState_StartPageSwap(); }
       if (action === "moveToOK") {
         StartSpriteAnim(gSprites[this.cursor], 1);
         this.state = "moveToOK";
       }
+      if (action === "delete") {
+        if (role === "character" || role === "backspace") this.TryStartButtonFlash(NamingButton.BACK, false, true);
+      }
       if (action === "character" || action === "moveToOK" || action === "delete") {
         sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.drawEntry();
       }
       if (action !== "none" && action !== "moveToOK") this.moveCursor();
       if (action === "confirm") {
+        this.stopFlashesNextUpdate = true;
         sound.playSE(C.SE_SELECT);
         if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
         else this.fadeOut();
@@ -383,6 +531,12 @@ class NamingScreen {
       SetVBlankCallback(null); SetMainCallback1(this.callback1); SetMainCallback2(this.returnCallback);
       return;
     }
+    if (this.stopFlashesNextUpdate) {
+      this.SetCursorFlashing(false);
+      this.TryStartButtonFlash(NamingButton.COUNT, false, true);
+      this.stopFlashesNextUpdate = false;
+    }
+    tasks.run();
     AnimateSprites(); BuildOamBuffer(); UpdatePaletteFade();
   }
 }

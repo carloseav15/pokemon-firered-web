@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5482/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5490/9825 (55 %)**.
 - Archivos C pendientes: **117** (130962 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -25,7 +25,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
 | `event_object_movement.c` | 9412 | 42/752 | ~8886 |  |
-| `field_effect.c` | 4033 | 39/239 | ~3374 |  |
+| `field_effect.c` | 4033 | 40/239 | ~3358 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
 | `trade.c` | 2958 | 0/66 | ~2958 |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 5/82 | ~2601 |  |
@@ -36,8 +36,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `intro.c` | 2805 | 17/79 | ~2201 |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | ~2034 |  |
 | `battle_controller_pokedude.c` | 2698 | 31/107 | ~1916 |  |
-| `naming_screen.c` | 2509 | 28/109 | ~1864 |  |
 | `field_player_avatar.c` | 2168 | 33/176 | ~1761 |  |
+| `naming_screen.c` | 2509 | 35/109 | ~1703 |  |
 | `m4a.c` | 1781 | 5/72 | ~1657 |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 | ~1522 |  |
 | `battle_ai_script_commands.c` | 1970 | 25/103 | ~1491 |  |
@@ -114,7 +114,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Teachy TV: sigue siendo el adaptador de texto de `menus/keyItemScreens.ts`; `teachyTv.ts` tiene 30 stubs y no está conectado.
 - Fame Checker: `fameChecker.ts` está conectado pero sus funciones de gráficos (ventanas, flechas, info box) son stubs.
 - Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
-- Pantalla de nombres: 28/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino y transición de página con doble BG; faltan flashes de botones.
+- Pantalla de nombres: 35/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.
 - Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - `scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).

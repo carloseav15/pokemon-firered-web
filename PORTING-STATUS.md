@@ -108,6 +108,16 @@ AGENTS.md §6.5).
   (en unidades del C). El rótulo Page Swap conserva su callback independiente
   `SlideOff/SlideOn`; el modelo solo cambia al concluir la animación. El
   inventario sube a 28/109. Los flashes de botones siguen pendientes.
+- **Revisión de fuente, 2026-09-25 (sin prueba de juego)**: se portó el ciclo
+  `TryStartButtonFlash`/`Task_UpdateButtonFlash` de `naming_screen.c`, incluida
+  la selección persistente según la columna del cursor, las interrupciones al
+  borrar/confirmar/cambiar de página y la mezcla desde la paleta unfaded con la
+  espera y los incrementos originales. El inventario sube a 33/109; quedan los
+  detalles de parpadeo del cursor. Sin prueba de juego.
+- **Revisión de fuente, 2026-09-25 (sin prueba de juego)**: `SpriteCB_Cursor`,
+  `SetCursorInvisibility` y `SetCursorFlashing` ya están conectados al sprite
+  real; el callback replica el ciclo de color y oculta el cursor en la columna
+  de botones. Inventario: 35/109. Se revisó estáticamente, sin ejecutar el juego.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),
@@ -1236,8 +1246,9 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
    guardar/continuar. Registrar cada fallo y su arreglo aquí.
 2. **Transiciones a batalla** (`battle_transition.c`, ~3000 líneas) **[PARCIAL]**: 12 efectos de las
    tablas salvaje/entrenador en `battle/transition.ts` (26/134 funciones); solo ANGLED_WIPES visto en navegador.
-3. **Pantalla de nombres** (`naming_screen.c`, 28/109 por nombre): reglas de
-   entrada, iconos y transición de página revisados contra C; faltan flashes.
+3. **Pantalla de nombres** (`naming_screen.c`, 35/109 por nombre): reglas de
+   entrada, iconos, transición de página y destellos de botones/cursor revisados
+   contra C; quedan otras funciones de la pantalla.
    No se hizo prueba de juego en este bloque.
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
    tiene los 76 nombres pero 62 son stubs y nadie lo importa (auditoría 2026-09-25). Los efectos
