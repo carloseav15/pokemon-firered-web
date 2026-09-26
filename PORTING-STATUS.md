@@ -5,11 +5,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.088/9.834 funciones con homólogo (61,9%)**; quedan
-  **3.746 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **93 aún
-  tienen huecos de nombre**: 42 casi completos, 50 parciales y uno adaptador;
-  109 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.910/247.859 (31,4%)**. Son indicadores del
+- Inventario actual: **6.089/9.834 funciones con homólogo (61,9%)**; quedan
+  **3.745 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **92 aún
+  tienen huecos de nombre**: 41 casi completos, 50 parciales y uno adaptador;
+  110 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
+  de líneas C sin cubrir es **~77.896/247.859 (31,4%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
@@ -2595,8 +2595,9 @@ Pending / placeholders:
   de `REG_IE`; la escritura al hardware conserva los bits restantes de
   `DISPSTAT`, incluido el comparador VCount. Quité la actualización adicional
   del bit `DISPSTAT_VCOUNT_INTR`, que no existe en el helper C.
-- Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`.
-  No hay check headless ni validación en navegador para este cambio.
+- `SyncRegIE` ahora actualiza `REG_IE` con `REG_IME` temporalmente apagado y
+  restaura su valor, como en C. Pasaron `check:port`, `check:honesty`, inventory,
+  pending y `git diff --check`; sin check headless ni validación en navegador.
 
 ## `fldeff_softboiled.c`: rechazo de destinatario no válido (2026-09-26)
 

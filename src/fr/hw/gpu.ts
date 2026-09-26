@@ -1,7 +1,7 @@
 // gpu_regs.c: register writes outside VBlank are buffered and copied to the
 // hardware registers during the VBlank interrupt.
 
-import { ppu, REG_OFFSET_DISPCNT, REG_OFFSET_DISPSTAT, REG_OFFSET_VCOUNT, DISPCNT_FORCED_BLANK } from "./ppu";
+import { ppu, REG_OFFSET_DISPCNT, REG_OFFSET_DISPSTAT, REG_OFFSET_IE, REG_OFFSET_IME, REG_OFFSET_VCOUNT, DISPCNT_FORCED_BLANK } from "./ppu";
 import * as C from "../generated/constants";
 
 const GPU_REG_BUF_SIZE = 0x60;
@@ -9,11 +9,13 @@ const buffer = new Uint16Array(GPU_REG_BUF_SIZE / 2);
 const waiting: number[] = [];
 let inVBlank = false;
 let regIE = 0;
+let sShouldSyncRegIE = false;
 
 export function InitGpuRegManager(): void {
   buffer.fill(0);
   waiting.length = 0;
   regIE = 0;
+  sShouldSyncRegIE = false;
 }
 
 export function setInVBlank(value: boolean): void {
@@ -75,10 +77,24 @@ function updateRegDispstatIntrBits(): void {
 
 export function EnableInterrupts(mask: number): void {
   regIE = (regIE | (mask & 0xffff)) & 0xffff;
+  sShouldSyncRegIE = true;
+  SyncRegIE();
   updateRegDispstatIntrBits();
 }
 
 export function DisableInterrupts(mask: number): void {
   regIE = (regIE & ~(mask & 0xffff)) & 0xffff;
+  sShouldSyncRegIE = true;
+  SyncRegIE();
   updateRegDispstatIntrBits();
+}
+
+/** SyncRegIE (gpu_regs.c): update IE while preserving the caller's IME state. */
+function SyncRegIE(): void {
+  if (!sShouldSyncRegIE) return;
+  const ime = ppu.reg(REG_OFFSET_IME);
+  ppu.setReg(REG_OFFSET_IME, 0);
+  ppu.setReg(REG_OFFSET_IE, regIE);
+  ppu.setReg(REG_OFFSET_IME, ime);
+  sShouldSyncRegIE = false;
 }
