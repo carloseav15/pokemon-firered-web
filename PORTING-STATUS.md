@@ -124,6 +124,12 @@ AGENTS.md §6.5).
   ahora usa los flags para recorrer la línea de visión y enmascara solo el bit
   de rango, como `CheckPathBetweenTrainerAndPlayer`; luego desactiva el rango
   solo para comprobar que el jugador ocupa la última casilla. No se probó el juego.
+- **Revisión de fuente, 2026-09-25 (sin prueba de juego)**: `trainerSee.ts`
+  ahora tiene los homólogos `GetTrainerApproachDistanceSouth/North/West/East`,
+  `GetTrainerApproachDistance` y `CheckPathBetweenTrainerAndPlayer`; el flujo
+  normal usa la dirección del entrenador y el chequeo de colisión ya portado.
+  Inventario de `trainer_see.c`: 13/37. Buried/disguise/ash y Quest Log siguen
+  pendientes. Solo revisión estática.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),

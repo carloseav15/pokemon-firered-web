@@ -1,12 +1,84 @@
 // trainer_see.c: normal trainer sight, approach task and offscreen camera pan.
-// Disguise/ash trainer callbacks and quest-log playback suppression remain pending.
+// Buried/disguise/ash callbacks and quest-log playback suppression remain pending.
 import type { Game } from "../game";
 import * as C from "../generated/constants";
 import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { countAliveNonEggMons } from "../pokemon/pokemon";
 import { MAP_OFFSET } from "./fieldmap";
-import { actionFace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, LOCALID_CAMERA, type ObjectEvent } from "./objectEvents";
+import { actionFace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, LOCALID_CAMERA, OBJECT_EVENTS_COUNT, type ObjectEvent, type ObjectEvents } from "./objectEvents";
+
+type TrainerApproachFunc = (objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number) => number;
+
+/** GetTrainerApproachDistanceSouth (trainer_see.c). */
+function GetTrainerApproachDistanceSouth(objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+  if (trainer.currentCoords.x === x && y > trainer.currentCoords.y && y <= trainer.currentCoords.y + range) {
+    if (range > 3 && objects.list.length >= OBJECT_EVENTS_COUNT) return 0;
+    return y - trainer.currentCoords.y;
+  }
+  return 0;
+}
+
+/** GetTrainerApproachDistanceNorth (trainer_see.c). */
+function GetTrainerApproachDistanceNorth(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+  if (trainer.currentCoords.x === x && y < trainer.currentCoords.y && y >= trainer.currentCoords.y - range) return trainer.currentCoords.y - y;
+  return 0;
+}
+
+/** GetTrainerApproachDistanceWest (trainer_see.c). */
+function GetTrainerApproachDistanceWest(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+  if (trainer.currentCoords.y === y && x < trainer.currentCoords.x && x >= trainer.currentCoords.x - range) return trainer.currentCoords.x - x;
+  return 0;
+}
+
+/** GetTrainerApproachDistanceEast (trainer_see.c). */
+function GetTrainerApproachDistanceEast(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+  if (trainer.currentCoords.y === y && x > trainer.currentCoords.x && x <= trainer.currentCoords.x + range) return x - trainer.currentCoords.x;
+  return 0;
+}
+
+const sDirectionalApproachDistanceFuncs: TrainerApproachFunc[] = [
+  GetTrainerApproachDistanceSouth,
+  GetTrainerApproachDistanceNorth,
+  GetTrainerApproachDistanceWest,
+  GetTrainerApproachDistanceEast,
+];
+
+/** CheckPathBetweenTrainerAndPlayer (trainer_see.c). */
+function CheckPathBetweenTrainerAndPlayer(objects: ObjectEvents, trainer: ObjectEvent, approachDistance: number, direction: number): number {
+  if (approachDistance === 0) return 0;
+  const rangeX = trainer.rangeX, rangeY = trainer.rangeY;
+  try {
+    const [dx, dy] = DIRECTION_VECTORS[direction]!;
+    let x = trainer.currentCoords.x, y = trainer.currentCoords.y;
+    for (let i = 0; i <= approachDistance - 1; i++, x += dx, y += dy) {
+      const collision = GetCollisionFlagsAtCoords(objects, trainer, x, y, direction);
+      if (collision !== 0 && (collision & 0xfe)) return 0;
+    }
+    trainer.rangeX = 0;
+    trainer.rangeY = 0;
+    const collision = objects.collisionAt(trainer, x, y, direction);
+    if (collision === COLLISION_OBJECT_EVENT) return approachDistance;
+    return 0;
+  } finally {
+    trainer.rangeX = rangeX;
+    trainer.rangeY = rangeY;
+  }
+}
+
+/** GetTrainerApproachDistance (trainer_see.c). */
+function GetTrainerApproachDistance(objects: ObjectEvents, trainer: ObjectEvent, x: number, y: number): number {
+  if (trainer.trainerType === C.TRAINER_TYPE_NORMAL) {
+    const direction = trainer.facingDirection;
+    const distance = sDirectionalApproachDistanceFuncs[direction - 1]?.(objects, trainer, trainer.trainerRange, x, y) ?? 0;
+    return CheckPathBetweenTrainerAndPlayer(objects, trainer, distance, direction);
+  }
+  for (let i = 0; i < sDirectionalApproachDistanceFuncs.length; i++) {
+    const distance = sDirectionalApproachDistanceFuncs[i]!(objects, trainer, trainer.trainerRange, x, y);
+    if (CheckPathBetweenTrainerAndPlayer(objects, trainer, distance, i + 1)) return distance;
+  }
+  return 0;
+}
 
 export class TrainerSee {
   private approaching: {trainer: ObjectEvent; steps: number} | null = null;
@@ -19,32 +91,13 @@ export class TrainerSee {
       const script = trainer.template?.script;
       if (!script || this.game.battleSetup.hasTrainerBeenFought(rom.u16(script + 2))) continue;
       if (rom.u8(script + 1) === C.TRAINER_BATTLE_DOUBLE && countAliveNonEggMons() < 2) continue;
-      const distance = this.approachDistance(trainer);
+      const distance = GetTrainerApproachDistance(ow.objects, trainer, ow.player.object.currentCoords.x, ow.player.object.currentCoords.y);
       if (!distance) continue;
       this.approaching = {trainer, steps: distance - 1};
       this.game.battleSetup.configureFromApproach(ow.objects.indexOf(trainer), script);
       return true;
     }
     return false;
-  }
-  private approachDistance(trainer: ObjectEvent): number {
-    const ow = this.game.overworld;
-    const player = ow.player.object.currentCoords;
-    const [dx, dy] = DIRECTION_VECTORS[trainer.facingDirection];
-    const deltaX = player.x - trainer.currentCoords.x, deltaY = player.y - trainer.currentCoords.y;
-    if ((dx && deltaY) || (dy && deltaX)) return 0;
-    const distance = dx ? deltaX * dx : deltaY * dy;
-    if (distance <= 0 || distance > trainer.trainerRange) return 0;
-    if (trainer.facingDirection === DIR_SOUTH && trainer.trainerRange > 3 && ow.objects.list.length >= 16) return 0;
-    const rangeX = trainer.rangeX, rangeY = trainer.rangeY;
-    try {
-      for (let i = 0; i < distance; i++) {
-        const flags = GetCollisionFlagsAtCoords(ow.objects, trainer, trainer.currentCoords.x + dx * i, trainer.currentCoords.y + dy * i, trainer.facingDirection);
-        if (flags !== 0 && (flags & 0xfe)) return 0;
-      }
-      trainer.rangeX = trainer.rangeY = 0;
-      return ow.objects.collisionAt(trainer, player.x, player.y, trainer.facingDirection) === COLLISION_OBJECT_EVENT ? distance : 0;
-    } finally { trainer.rangeX = rangeX; trainer.rangeY = rangeY; }
   }
   /** EndTrainerApproach starts the waiting task; the source event waits for it. */
   endApproach(): void {
