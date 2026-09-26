@@ -47,6 +47,16 @@ export function gBallSpriteTemplates(): SpriteTemplate[] {
 const battlerMon = (battlerId: number): Mon =>
   GetBattlerSide(battlerId) !== C.B_SIDE_PLAYER ? gEnemyParty[gBattlerPartyIndexes[battlerId]] : playerMon(gBattlerPartyIndexes[battlerId]);
 
+/** pokeball.c AnimateBallOpenParticlesForPokeball fixes the effect to BALL_POKE. */
+function AnimateBallOpenParticlesForPokeball(x: number, y: number, kindOfStars: number, subpriority: number): number {
+  return AnimateBallOpenParticles(x & 0xff, y & 0xff, kindOfStars & 0xff, subpriority & 0xff, C.BALL_POKE);
+}
+
+/** pokeball.c LaunchBallFadeMonTaskForPokeball fixes the fade effect to BALL_POKE. */
+function LaunchBallFadeMonTaskForPokeball(unFadeLater: boolean, spritePalNum: number, selectedPalettes: number): number {
+  return LaunchBallFadeMonTask(unFadeLater, spritePalNum & 0xff, selectedPalettes >>> 0, C.BALL_POKE);
+}
+
 function GetBattlerPokeballItemId(battlerId: number): number {
   return GetMonData(battlerMon(battlerId), C.MON_DATA_POKEBALL);
 }
@@ -525,8 +535,8 @@ function SpriteCB_PokeballReleaseMon(sprite: Sprite): void {
   const selectedPalettes = ((sprite.data[3] & 0xffff) | ((sprite.data[4] & 0xffff) << 16)) >>> 0;
   const subpriority = sprite.subpriority !== 0 ? sprite.subpriority - 1 : 0;
   StartSpriteAnim(sprite, 1);
-  AnimateBallOpenParticles(sprite.x, sprite.y - 5, sprite.oam.priority, subpriority, C.BALL_POKE);
-  sprite.data[1] = LaunchBallFadeMonTask(true, sprite.data[2], selectedPalettes, C.BALL_POKE);
+  AnimateBallOpenParticlesForPokeball(sprite.x, sprite.y - 5, sprite.oam.priority, subpriority);
+  sprite.data[1] = LaunchBallFadeMonTaskForPokeball(true, sprite.data[2], selectedPalettes);
   sprite.callback = SpriteCB_ReleasedMonFlyOut;
   gSprites[spriteId].invisible = false;
   StartSpriteAffineAnim(gSprites[spriteId], C.BATTLER_AFFINE_EMERGE);
@@ -585,8 +595,8 @@ function SpriteCB_TradePokeball(sprite: Sprite): void {
   const selectedPalettes = ((sprite.data[3] & 0xffff) | ((sprite.data[4] & 0xffff) << 16)) >>> 0;
   const subpriority = sprite.subpriority !== 0 ? sprite.subpriority - 1 : 0;
   StartSpriteAnim(sprite, 1);
-  AnimateBallOpenParticles(sprite.x, sprite.y - 5, sprite.oam.priority, subpriority, C.BALL_POKE);
-  sprite.data[1] = LaunchBallFadeMonTask(true, sprite.data[2], selectedPalettes, C.BALL_POKE);
+  AnimateBallOpenParticlesForPokeball(sprite.x, sprite.y - 5, sprite.oam.priority, subpriority);
+  sprite.data[1] = LaunchBallFadeMonTaskForPokeball(true, sprite.data[2], selectedPalettes);
   sprite.callback = SpriteCB_TradePokeballSendOff;
   StartSpriteAffineAnim(gSprites[monSpriteId], C.BATTLER_AFFINE_RETURN);
   AnimateSprite(gSprites[monSpriteId]);
@@ -600,13 +610,16 @@ function SpriteCB_TradePokeballSendOff(sprite: Sprite): void {
     StartSpriteAnim(sprite, 2);
     mon.invisible = true;
     sprite.data[5] = 0;
-    sprite.callback = (s) => {
-      if (s.animEnded) s.callback = SpriteCallbackDummy;
-    };
+    sprite.callback = SpriteCB_TradePokeballEnd;
   } else {
     mon.data[1] += 96;
     mon.y2 = -mon.data[1] >> 8;
   }
+}
+
+/** pokeball.c SpriteCB_TradePokeballEnd. */
+function SpriteCB_TradePokeballEnd(sprite: Sprite): void {
+  if (sprite.animEnded) sprite.callback = SpriteCallbackDummy;
 }
 
 export function DestroySpriteAndFreeResources_Ball(sprite: Sprite): void {
