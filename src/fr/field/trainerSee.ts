@@ -6,7 +6,7 @@ import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { countAliveNonEggMons } from "../pokemon/pokemon";
 import { MAP_OFFSET } from "./fieldmap";
-import { actionFace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, LOCALID_CAMERA, type ObjectEvent } from "./objectEvents";
+import { actionFace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, LOCALID_CAMERA, type ObjectEvent } from "./objectEvents";
 
 export class TrainerSee {
   private approaching: {trainer: ObjectEvent; steps: number} | null = null;
@@ -37,12 +37,12 @@ export class TrainerSee {
     if (distance <= 0 || distance > trainer.trainerRange) return 0;
     if (trainer.facingDirection === DIR_SOUTH && trainer.trainerRange > 3 && ow.objects.list.length >= 16) return 0;
     const rangeX = trainer.rangeX, rangeY = trainer.rangeY;
-    trainer.rangeX = trainer.rangeY = 0;
     try {
       for (let i = 0; i < distance; i++) {
-        const collision = ow.objects.collisionAt(trainer, trainer.currentCoords.x + dx * i, trainer.currentCoords.y + dy * i, trainer.facingDirection);
-        if (collision !== 0) return 0;
+        const flags = GetCollisionFlagsAtCoords(ow.objects, trainer, trainer.currentCoords.x + dx * i, trainer.currentCoords.y + dy * i, trainer.facingDirection);
+        if (flags !== 0 && (flags & 0xfe)) return 0;
       }
+      trainer.rangeX = trainer.rangeY = 0;
       return ow.objects.collisionAt(trainer, player.x, player.y, trainer.facingDirection) === COLLISION_OBJECT_EVENT ? distance : 0;
     } finally { trainer.rangeX = rangeX; trainer.rangeY = rangeY; }
   }

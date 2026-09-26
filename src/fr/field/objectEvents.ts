@@ -439,6 +439,18 @@ export class ObjectEvents {
     return COLLISION_NONE;
   }
 
+  collisionFlagsAt(object: ObjectEvent, x: number, y: number, direction: number): number {
+    const map = this.hooks.map();
+    let flags = 0;
+    if (this.outsideRange(object, x, y)) flags |= 1;
+    if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID
+      || this.directionallyImpassable(object, x, y, direction)
+      || (object.trackedByCamera && !this.hooks.cameraCanMove(direction))) flags |= 2;
+    if (this.elevationMismatch(object.currentElevation, x, y)) flags |= 4;
+    if (this.objectAt(object, x, y)) flags |= 8;
+    return flags;
+  }
+
   collisionInDirection(object: ObjectEvent, direction: number): number {
     const [dx, dy] = DIRECTION_VECTORS[direction];
     return this.collisionAt(object, object.currentCoords.x + dx, object.currentCoords.y + dy, direction);
@@ -1436,6 +1448,11 @@ export class ObjectEvents {
       this.updatePriority(object);
     }
   }
+}
+
+/** GetCollisionFlagsAtCoords (event_object_movement.c). */
+export function GetCollisionFlagsAtCoords(objects: ObjectEvents, object: ObjectEvent, x: number, y: number, direction: number): number {
+  return objects.collisionFlagsAt(object, x, y, direction);
 }
 
 let varGetFn: ((id: number) => number) | undefined;

@@ -118,6 +118,12 @@ AGENTS.md §6.5).
   `SetCursorInvisibility` y `SetCursorFlashing` ya están conectados al sprite
   real; el callback replica el ciclo de color y oculta el cursor en la columna
   de botones. Inventario: 35/109. Se revisó estáticamente, sin ejecutar el juego.
+- **Revisión de fuente, 2026-09-25 (sin prueba de juego)**: se agregó
+  `GetCollisionFlagsAtCoords` de `event_object_movement.c`, preservando los
+  bits independientes de rango, impasable, elevación y objeto. `trainerSee.ts`
+  ahora usa los flags para recorrer la línea de visión y enmascara solo el bit
+  de rango, como `CheckPathBetweenTrainerAndPlayer`; luego desactiva el rango
+  solo para comprobar que el jugador ocupa la última casilla. No se probó el juego.
 - **Progresión de juego verificada (Laboratorio Oak → Ruta 1 → Ciudad Verde → Entrega de Correo y Pokédex)**:
   - Combate con el rival (`TRAINER_RIVAL_OAKS_LAB_*`, modo `TRAINER_BATTLE_EARLY_RIVAL`) verificado:
     se inicia tras la elección y apodo, avanza los turnos en el motor de batalla (`HandleTurnActionSelectionState`),
