@@ -79,11 +79,28 @@ no el archivo entero.
 ## Medida de avance
 
 La cifra que importa ahora es **el tramo más lejano jugado en navegador**, no el
-porcentaje de funciones. Hoy: tramo 0 (hasta Ruta 3) más PC, tienda y
-guardar/continuar verificados en Plateada. Objetivo: tramo 12.
+porcentaje de funciones. Hoy: tramo 0 completo y tramo 1 a medias (dentro del
+Monte Moon). Objetivo: tramo 12.
 
 ## Registro de tramos
 
 | Tramo | Estado | Fallos arreglados | Ayudas |
 |---|---|---|---|
 | 0 (intro → Plateada, PC, tienda, guardar) | jugado | ver PORTING-STATUS 1-11 | ninguna |
+| 1 (Ruta 3 → Monte Moon → Ruta 4) | a medias: Ruta 3 y Monte Moon 1F/B1F/B2F; falta la salida | ninguno del juego (solo driver) | ninguna |
+
+## Pendiente al cortar la sesión (2026-09-25)
+
+- **Terminar el tramo 1**: desde el punto de control `mtmoon-1f`, `H.explore`
+  hacia la escalera de B1F que da a la Ruta 4 (`(map, w) => map === "MAP_MT_MOON_B1F" && w.dest === "MAP_ROUTE4"`,
+  evitando la entrada de 1F). El explorador ya retrocede por la escalera menos
+  usada, pero no se llegó a comprobar tras ese cambio. Ver en el camino: guion
+  de Miguel y el fósil (B2F, coord event en 14,11), Team Rocket.
+- **Exportar al repo** los puntos de control nuevos (`route3-start`, `route4`,
+  `mtmoon-1f`, `pidgey-L9`, `pewter-saved`): solo están en el localStorage de
+  la máquina de la sesión. `H.exportSave(nombre)` + `base64 -d | gunzip`.
+- Driver sin probar a fondo: `H.explore` con retroceso y el modo `"switch"`
+  cuando el segundo Pokémon también cae.
+- `tools/playtest/driver.js` `H.battle` registra `outcome: 0` en combates de
+  entrenador ganados (lee `frGame.battleOutcome` después de que se reinicia);
+  usar la experiencia/flags para saber si se ganó.

@@ -15,7 +15,7 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
 | Funciones stub (nombre del C, cuerpo vacío) | 172 | No cuentan como portadas (PENDING.md §3b) |
 | Módulos que el juego no importa | 10 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
-| **Jugado de verdad en navegador** | intro → Ruta 3 | ≈ la primera hora y media de juego; el resto del juego, sin probar |
+| **Jugado de verdad en navegador** | intro → Monte Moon (dentro) | ≈ las primeras 2 horas; el resto del juego, sin probar |
 
 Resumen honesto: el motor (hardware GBA emulado, batalla completa, scripts,
 campo, menús principales) está sólido; el **contenido de juego probado en
@@ -180,3 +180,58 @@ El orden de trabajo está en [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md).
   `m4a.c` (lista completa en PENDING.md §3).
 - Recorrido completo de Kanto y las Islas Sevii en navegador, zona por zona,
   con puntos de control y checks de regresión.
+
+## 7. Si la meta es traducir la mayor cantidad posible de C a TypeScript
+
+El plan de juego (PLAN-RECORRIDO.md) prioriza llegar lejos jugando. Si en
+cambio la meta es **maximizar el C traducido fielmente**, el enfoque cambia,
+pero las reglas del §5 siguen igual: una función cuenta solo si tiene el cuerpo
+del C, está conectada y se ha probado al menos en headless.
+
+**Qué medir.** No "funciones con nombre" sino **líneas de C cubiertas con
+cuerpo real** (`npm run inventory`, columna Stubs a cero) y, para cada archivo,
+un check que ejecute su código. Hoy: 5423/9825 funciones, 117 archivos parciales
+con ~130 000 líneas de C.
+
+**Orden recomendado (más retorno por hora, menos riesgo):**
+
+1. **Deuda existente primero** (barato y ya conectado): rellenar los 171 stubs
+   (PENDING.md §3b: `field_effect_helpers.c` 62, `field_weather.c` 30,
+   `teachy_tv.c` 30, `trade.c` 15, `fame_checker.c` 7…) y conectar o borrar los
+   10 módulos sin uso (§3c). Cada stub rellenado baja la línea base de
+   `check:honesty`.
+2. **Archivos casi terminados** (≥ 60 %, p. ej. `party_menu.c` 280/357,
+   `battle_main.c` 82/106, `field_weather_effects.c`, `trade_scene.c`): pocas
+   funciones cierran el archivo entero.
+3. **Sustituir la capa antigua del campo** por los archivos del C, uno por uno,
+   con el juego funcionando entre medias: `event_object_movement.c` (42/752),
+   `field_player_avatar.c`, `field_control_avatar.c`, `overworld.c`,
+   `fieldmap.c`, `scrcmd.c` (224 comandos: la mayoría ya existen con nombre
+   propio; renombrar y alinear con el C cuenta como traducción si el cuerpo
+   coincide). Es la mayor masa de C y la que más bloqueos esconde.
+4. **Pantallas grandes pendientes**: cajas del PC
+   (`pokemon_storage_system_tasks/graphics/misc/data.c`, ~7 000 líneas),
+   `naming_screen.c`, `easy_chat_*.c`, `battle_transition.c` (resto),
+   `intro.c`, `title_screen.c`, `evolution_scene.c`.
+5. **Audio fino** (`m4a*.c`) y lo postgame (`trainer_tower.c`,
+   `battle_tower.c`) al final.
+
+**Cómo trabajar para que rinda:**
+
+- Un archivo `.c` por bloque, entero y en el orden del C (AGENTS.md §5):
+  leerlo, localizar sus datos en cdata/incbin, escribir el TS de una vez,
+  `check:port`, conectarlo, y un **check headless que ejecute sus funciones**
+  (no solo que existan sus datos).
+- Si una función no se puede terminar, **no se declara**. Mejor 40 funciones
+  reales que 76 con 62 vacías.
+- Paralelizar es posible porque los archivos del C son independientes: un
+  agente por archivo, en ramas separadas, y el mismo `check:honesty` para todos.
+  A Gemini o Codex, tareas de un solo archivo con criterio de aceptación
+  explícito ("stubs de X a 0, check:X ejecuta Y, conectado en Z").
+- Cada 3-4 archivos, una pasada en navegador por las pantallas tocadas: el
+  código sin ejecutar acumula fallos como los de esta sesión (constantes que no
+  existen, tilemaps que no se copian, menús invisibles).
+
+**Lo que no rinde:** portar archivos fuera de alcance (enlace, Quest Log),
+reescribir lo que ya es fiel, o inflar el inventario con nombres. El
+inventario ya no cuenta stubs, así que ese atajo no suma nada.

@@ -33,6 +33,7 @@ export const H = {
   async init() {
     this.R = await this.mod("/src/fr/hw/runtime.ts");
     this.G = await this.mod("/src/fr/battle/globals.ts");
+    this.PM = await this.mod("/src/fr/partyMenu.ts");
     return { cb2: this.R.gMain.callback2?.name };
   },
   /** After restore()/importSave(): run frames until the field map is loaded, then init(). */
@@ -87,7 +88,8 @@ export const H = {
   /**
    * Finish the current battle with real button presses.
    * mode "fight": FIGHT, then the move in `slot` (0 TL, 1 TR, 2 BL, 3 BR);
-   * mode "run": RUN. With init() the cursor positions are read from
+   * mode "run": RUN; mode "switch": shift the lead to party slot 1 on the
+   * first turn, then fight with `slot`. With init() the cursor positions are read from
    * gActionSelectionCursor/gMoveSelectionCursor, so presses are never blind;
    * other screens (text, learn-move prompt, summary) get A.
    */
@@ -101,7 +103,10 @@ export const H = {
       screens.add(this.cb2());
       const f = this.G?.gBattlerControllerFuncs[0]?.name;
       if (f === "HandleInputChooseAction") {
-        const want = mode === "run" ? 3 : 0, c = this.G.gActionSelectionCursor[0];
+        // mode "switch": the lead comes out, then shift to party slot 1 so both
+        // share the experience (a normal player technique).
+        const wantSwitch = mode === "switch" && this.G.gBattlerPartyIndexes?.[0] === 0 && dbg().save.save.party[1]?.hp > 0;
+        const want = mode === "run" ? 3 : wantSwitch ? 2 : 0, c = this.G.gActionSelectionCursor[0];
         if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
         await dbg().press("A");
         continue;
@@ -111,10 +116,21 @@ export const H = {
         // With 0 PP the C prints "There's no PP left…" and returns to move
         // selection: pick another slot with PP, or it loops forever.
         const pp = this.G.gBattleMons?.[0]?.pp;
-        let want = slot;
+        // `slot` may be a function of the active species: { 16: 2, 2: 3 }[species].
+        let want = typeof slot === "function" ? slot(this.G.gBattleMons?.[0]?.species) : slot;
         if (pp && pp[want] === 0) for (let i = 0; i < 4; i++) if (pp[i] > 0) { want = i; break; }
         if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
         await dbg().press("A");
+        continue;
+      }
+      if (f === "WaitForMonSelection" && this.PM && this.cb2() === "CB2_UpdatePartyMenu") {
+        // Forced switch after a faint: go to the first able Pokémon, then SHIFT.
+        // Pressing A on the fainted one only prints "has no energy left" forever.
+        const party = dbg().save.save.party;
+        const target = mode === "switch" && this.G.gBattlerPartyIndexes?.[0] === 0 ? 1 : party.findIndex((m, i) => i > 0 && m.hp > 0);
+        const cur = this.PM.gPartyMenu.slotId;
+        if (target > 0 && cur !== target) { await press(0x80); continue; }
+        await dbg().press("A", 20);
         continue;
       }
       await dbg().press("A", 8);
@@ -124,6 +140,37 @@ export const H = {
     const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, screens: [...screens].filter(Boolean) };
     this.log.push(r);
     return r;
+  },
+  /**
+   * Multi-floor navigation (caves, towers): on each map take a reachable warp
+   * not used yet, until `isTarget(map, warp)` is reachable and taken.
+   * `avoid(map, warp)` excludes warps (e.g. the cave entrance).
+   * Warps are { i, x, y, dest } in frDebug.state() coordinates.
+   */
+  async explore(isTarget, avoid = () => false, maxMoves = 40) {
+    const used = new Map();
+    const path = [];
+    for (let m = 0; m < maxMoves; m++) {
+      if (this.inBattle()) await this.battle(this.battleDefaults.mode, this.battleDefaults.slot);
+      const here = dbg().state();
+      const warps = g().overworld.loaded.header.warps.map((w, i) => ({ i, x: w.x, y: w.y, dest: w.destMap }));
+      const reachable = warps.filter((w) => this.bfs(w.x + 7, w.y + 7) !== null && !avoid(here.map, w));
+      const target = reachable.find((w) => isTarget(here.map, w));
+      // Prefer the least-used warp so dead ends (one-way ledges) are backed out of.
+      const count = (w) => used.get(`${here.map}#${w.i}`) ?? 0;
+      const pick = target ?? [...reachable].sort((a, b) => count(a) - count(b))[0];
+      if (!pick) return { stuck: true, map: here.map, path };
+      used.set(`${here.map}#${pick.i}`, count(pick) + 1);
+      path.push(`${here.map}->${pick.dest}@${pick.x},${pick.y}`);
+      const r = await this.goto(pick.x, pick.y);
+      // Some warps (ladders) fire on arrival; stairs and exits need one more step.
+      if (dbg().state().map === here.map && !r.note) {
+        for (const d of ["U", "D", "L", "R"]) { if ((await this.exit(d, 1)).map !== here.map) break; }
+      }
+      await this.idle(600, false);
+      if (target && dbg().state().map === target.dest) return { ok: true, path };
+    }
+    return { max: true, path };
   },
   /** Heal inside a Pokémon Center 1F (nurse counter at 7,2) and walk back to the door mat. */
   async heal() {
@@ -155,6 +202,8 @@ export const H = {
     const ow = g().overworld, player = ow.player.object, objects = ow.objects;
     const sx = player.currentCoords.x, sy = player.currentCoords.y;
     const key = (x, y) => `${x},${y}`;
+    // Never step on a warp (door, ladder, stairs) unless it is the target.
+    const warps = new Set(ow.loaded.header.warps.map((w) => key(w.x + 7, w.y + 7)));
     const prev = new Map([[key(sx, sy), null]]);
     const queue = [[sx, sy]];
     while (queue.length) {
@@ -167,6 +216,7 @@ export const H = {
         else if (c !== COLLISION_NONE && !(nx === tx && ny === ty && c === COLLISION_OBJECT_EVENT)) continue;
         const k = key(nx, ny);
         if (prev.has(k)) continue;
+        if (warps.has(k) && !(nx === tx && ny === ty)) continue;
         prev.set(k, [x, y, name]);
         queue.push([nx, ny]);
       }

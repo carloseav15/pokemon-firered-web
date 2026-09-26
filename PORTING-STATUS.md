@@ -246,6 +246,25 @@ viejo → Ruta 2 → captura de un Rattata (Pokédex y apodo "No").
     - Nivel: navegador (guardar en el Centro de Plateada y recargar con
       `?fr=continue`: misma casilla, equipo, caja y dinero).
 
+Tramo 1 (2026-09-25, en curso; sin ayudas de depuración):
+- Pidgey capturado en la Ruta 2 y subido de N2 a N9 con cambio al primer
+  turno (el participante recibe la mitad de la experiencia, como en Gen 3).
+- **Evolución tras combate verificada**: Bulbasaur → Ivysaur al llegar a N16
+  (`CB2_EvolutionSceneUpdate`, sin intervención).
+- Ruta 3 recorrida entera: sus entrenadores vencidos (una derrota intermedia
+  con vuelta al Centro de Plateada), llegada a la Ruta 4 y cura en su Centro.
+- **Monte Moon, transiciones en encuentros reales**: dos combates salvajes con
+  rival más débil usaron `ClockwiseWipeEffect` (CLOCKWISE_WIPE) y el entrenador
+  de la cueva `BigPokeballEffect` (BIG_POKEBALL), lo que manda
+  `sBattleTransitionTable_Wild/Trainer` para cueva. Sin captura del fotograma
+  (no se pudo congelar a mitad del barrido); la prueba es la clase del efecto.
+- Monte Moon 1F → B1F → B2F recorridos; falta llegar a la salida B1F → Ruta 4
+  (el explorador automático se detuvo antes; ver "Pendiente" en
+  PLAN-RECORRIDO.md). No se han visto aún los Rocket, el fósil ni Miguel.
+- Fallos de esta parte: **ninguno del juego**. Los atascos fueron del driver
+  (elegía en bucle un Pokémon debilitado; su BFS pisaba escaleras), ya
+  corregidos en `tools/playtest/driver.js`.
+
 Comprobado y **no es fallo**: la Poké Ball desaparece durante "Gotcha!".
 `SpriteCB_ThrowBall_DoClick` muestra el mensaje en el frame 95 y en el 315
 llama a `SpriteCB_ThrowBall_FinishClick`, que la funde a blanco y la oculta; el
