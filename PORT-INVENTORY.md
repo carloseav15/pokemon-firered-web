@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 57 | 108124 | 1294/5030 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 37 | 60500 | 2039/2270 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 105 | 76352 | 2406/2406 |
+| Casi completo (≥ 80 % y < 100 %) | 36 | 60292 | 2032/2262 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 106 | 76560 | 2414/2414 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **96** | **171454** | |
-| **Total en alcance** | **202** | **247859** | **5767/9834** |
+| **Pendiente de portar** | **95** | **171246** | |
+| **Total en alcance** | **202** | **247859** | **5768/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -134,7 +134,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `field_tasks.c` | 351 | 10/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
 | `menu_helpers.c` | 243 | 14/17 | `hw/menuHelpers.ts` |  | 1 |
-| `clear_save_data_screen.c` | 208 | 7/8 | `clearSaveScreen.ts` |  |  |
 | `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
@@ -212,6 +211,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `script_pokemon_util.c` | 215 | 13/13 | `game.ts`, `pokemon/daycare.ts`, `pokemon/scriptPokemonUtil.ts` … |  |  |
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |  |
 | `task.c` | 211 | 14/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |  |
+| `clear_save_data_screen.c` | 208 | 8/8 | `clearSaveScreen.ts` |  |  |
 | `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |  |
 | `ss_anne.c` | 200 | 8/8 | `script/specialsExtra.ts` |  |  |
 | `battle_anim_smokescreen.c` | 197 | 3/3 | `battle/anims/smokescreen.ts` |  |  |

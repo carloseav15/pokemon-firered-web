@@ -41,8 +41,7 @@ export class ClearSaveScreen {
     await Promise.all([preloadIncbin(["gStdTextWindow_Gfx", "gTextWindowPalettes"]), loadCData("strings")]);
   }
 
-  /** CB2_SaveClearScreen_Init */
-  begin(): void {
+  CB2_SaveClearScreen_Init(): void {
     this.done = false;
     this.state = { unk0: 0, unk1: 0, unk2: 0 };
     InitGpuRegManager();

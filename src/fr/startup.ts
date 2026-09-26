@@ -123,7 +123,7 @@ class Startup {
           TransferPlttBuffer();
           ScanlineEffect_InitHBlankDmaTransfer();
         });
-        this.clearSave.begin();
+        this.clearSave.CB2_SaveClearScreen_Init();
       }
       if (this.stage === "clearsave") {
         this.clearSave.update();

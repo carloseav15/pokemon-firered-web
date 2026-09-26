@@ -2678,6 +2678,11 @@ Pending / placeholders:
   ahora aparece con 8/8 nombres en el inventario.
 - Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
   sin prueba headless ni navegador.
+- Renombré `ClearSaveScreen.begin()` a `CB2_SaveClearScreen_Init()` y actualicé
+  el caller de startup. Así el punto de entrada del C es el método que instala
+  la pantalla y crea su tarea, en vez de quedar solo como comentario. El
+  inventario global queda en 5.768/9.834 (58,7 %), con 95 archivos y 4.066
+  nombres pendientes; verificación estática.
 
 ## `dynamic_placeholder_text_util.c`: acceso a placeholder (2026-09-26)
 
