@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 117 | 130709 | 1942/6109 |
+| Parcial (menos del 80 % de funciones) | 117 | 130709 | 1948/6109 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 91 | 116834 | 3472/3658 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **118** | **132109** | |
-| **Total en alcance** | **210** | **248996** | **5442/9825** |
+| **Total en alcance** | **210** | **248996** | **5448/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -61,7 +61,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `title_screen.c` | 1315 | 17/39 | `introTitle.ts` |  |  |
 | `battle_controllers.c` | 1214 | 46/67 | `battle/controllers.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 17/37 | `field/fieldControl.ts` |  |  |
-| `field_weather.c` | 1147 | 29/50 | `field/weather.ts`, `gba/fade.ts` |  | 21 |
+| `field_weather.c` | 1147 | 35/50 | `field/weather.ts`, `gba/fade.ts` |  | 15 |
 | `battle_bg.c` | 1111 | 12/17 | `battle/bg.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_setup.c` | 1070 | 32/57 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |

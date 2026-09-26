@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5442/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5448/9825 (55 %)**.
 - Archivos C pendientes: **118** (132109 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -75,8 +75,8 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 |---|---:|---:|---:|
 | `field_effect_helpers.c` | 1421 | 14/76 | 62 |
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
-| `field_weather.c` | 1147 | 29/50 | 21 |
 | `trade.c` | 2958 | 0/66 | 15 |
+| `field_weather.c` | 1147 | 35/50 | 15 |
 | `fame_checker.c` | 1739 | 15/64 | 7 |
 | `field_weather_effects.c` | 2346 | 87/93 | 6 |
 | `trade_scene.c` | 2916 | 36/53 | 3 |
@@ -116,7 +116,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
 - Pantalla de nombres: solo 4/109 funciones (`naming_screen.c`).
 - Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.
-- Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma y los fundidos de lluvia/sequía de 16 pasos sobre buffers de paleta; el dispatcher general, el fundido horizontal de niebla y la máquina de estados de sequía siguen pendientes. La ruta Canvas2D del overworld mantiene su aproximación visual.
+- Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, dispatcher y fundidos de lluvia/sequía de 16 pasos y niebla horizontal sobre buffers de paleta; la máquina de estados de sequía y la conexión a Canvas2D siguen pendientes.
 - `scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.

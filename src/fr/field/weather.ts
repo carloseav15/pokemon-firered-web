@@ -1,7 +1,8 @@
 // Partial port of field_weather.c and field_weather_util.c.
-// Overworld weather state, rain, fog drift, sandstorm and ash. Gamma tables
-// and palette application are ported; weather-aware fades and drought palettes
-// remain partial. The live stub count is generated in PENDING.md §3b.
+// Overworld weather state, rain, fog drift, sandstorm and ash. The hardware
+// palette fade dispatcher and its rain, drought and horizontal-fog paths are
+// ported partially; Canvas2D integration and drought state remain incomplete.
+// The live stub count is generated in PENDING.md §3b.
 
 import { rom } from "../rom";
 import { incrementGameStat, save } from "../save";
@@ -12,7 +13,7 @@ import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
-import { BlendPalette, GET_B, GET_G, GET_R, gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
+import { BlendPalette, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -34,9 +35,13 @@ export let gWeather = {
   gammaShifts: [] as number[][],
   altGammaShifts: [] as number[][],
   altGammaSpritePalIndex: 0xff,
-  palProcessingState: 0,
+  palProcessingState: C.WEATHER_PAL_STATE_IDLE,
   fadeDestColor: 0,
   fadeScreenCounter: 0,
+  fadeInCounter: 0,
+  fadeInActive: 0,
+  lightenedFogSpritePals: [] as number[],
+  lightenedFogSpritePalsCount: 0,
   paletteFadeDelay: 0,
   weatherChangeComplete: true,
   blendCoeff: 0,
@@ -155,7 +160,14 @@ export function Task_WeatherInit(): void {
 
 /** Task_WeatherMain */
 export function Task_WeatherMain(): void {
-  UpdateWeatherGammaShift();
+  switch (gWeather.palProcessingState) {
+    case C.WEATHER_PAL_STATE_CHANGING_WEATHER:
+      UpdateWeatherGammaShift();
+      break;
+    case C.WEATHER_PAL_STATE_SCREEN_FADING_IN:
+      FadeInScreenWithWeather();
+      break;
+  }
 }
 
 /** None_Init */
@@ -196,11 +208,14 @@ export const sWeatherFuncs: WeatherCallbacks[] = [
 
 /** UpdateWeatherGammaShift */
 export function UpdateWeatherGammaShift(): void {
-  if (gWeather.gammaIndex !== gWeather.gammaTargetIndex) {
-    if (++gWeather.gammaStepFrameCounter >= GAMMA_STEP_DELAY) {
-      gWeather.gammaStepFrameCounter = 0;
-      gWeather.gammaIndex += gWeather.gammaIndex < gWeather.gammaTargetIndex ? 1 : -1;
-    }
+  if (gWeather.gammaIndex === gWeather.gammaTargetIndex) {
+    gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+  } else if ((gWeather.gammaStepFrameCounter = (gWeather.gammaStepFrameCounter + 1) & 0xff) >= gWeather.gammaStepDelay) {
+    gWeather.gammaStepFrameCounter = 0;
+    const gamma = (gWeather.gammaIndex << 24) >> 24;
+    const target = (gWeather.gammaTargetIndex << 24) >> 24;
+    gWeather.gammaIndex = gamma < target ? (gamma + 1 << 24) >> 24 : (gamma - 1 << 24) >> 24;
+    ApplyGammaShift(0, 32, gWeather.gammaIndex);
   }
 }
 
@@ -317,8 +332,42 @@ export function ApplyDroughtGammaShiftWithBlend(gammaIndex: number, blendCoeff: 
   }
 }
 
-/** FadeInScreenWithWeather */
-export function FadeInScreenWithWeather(): void {}
+/** FadeInScreenWithWeather (field_weather.c). */
+export function FadeInScreenWithWeather(): void {
+  gWeather.fadeInCounter = (gWeather.fadeInCounter + 1) & 0xff;
+  if (gWeather.fadeInCounter > 1) gWeather.fadeInActive = 0;
+
+  switch (gWeather.currWeather) {
+    case C.WEATHER_RAIN:
+    case C.WEATHER_RAIN_THUNDERSTORM:
+    case C.WEATHER_DOWNPOUR:
+    case C.WEATHER_SNOW:
+    case C.WEATHER_SHADE:
+      if (!FadeInScreen_RainShowShade()) {
+        gWeather.gammaIndex = 3;
+        gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+      }
+      break;
+    case C.WEATHER_DROUGHT:
+      if (!FadeInScreen_Drought()) {
+        gWeather.gammaIndex = -6;
+        gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+      }
+      break;
+    case C.WEATHER_FOG_HORIZONTAL:
+      if (!FadeInScreen_FogHorizontal()) {
+        gWeather.gammaIndex = 0;
+        gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+      }
+      break;
+    default:
+      if (!gPaletteFade.active) {
+        gWeather.gammaIndex = gWeather.gammaTargetIndex;
+        gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+      }
+      break;
+  }
+}
 
 /** FadeInScreen_RainShowShade (field_weather.c). */
 export function FadeInScreen_RainShowShade(): boolean {
@@ -350,24 +399,64 @@ export function FadeInScreen_Drought(): boolean {
   return true;
 }
 
-/** FadeInScreen_FogHorizontal */
+/** FadeInScreen_FogHorizontal (field_weather.c). */
 export function FadeInScreen_FogHorizontal(): boolean {
+  if (gWeather.fadeScreenCounter === 16) return false;
+  gWeather.fadeScreenCounter = (gWeather.fadeScreenCounter + 1) & 0xff;
+  ApplyFogBlend(16 - gWeather.fadeScreenCounter, gWeather.fadeDestColor);
   return true;
 }
 
 /** DoNothing */
 export function DoNothing(): void {}
 
-/** ApplyFogBlend */
-export function ApplyFogBlend(blendCoeff: number, blendColor: number): void {}
+/** ApplyFogBlend (field_weather.c). */
+export function ApplyFogBlend(blendCoeff: number, blendColor: number): void {
+  const coefficient = blendCoeff & 0xff;
+  const color = blendColor & 0xffff;
+  const blendR = GET_R(color);
+  const blendG = GET_G(color);
+  const blendB = GET_B(color);
+  BlendPalette(0, 256, coefficient, color);
+
+  for (let paletteIndex = 16; paletteIndex < 32; paletteIndex++) {
+    const colorOffset = paletteIndex * 16;
+    if (!LightenSpritePaletteInFog(paletteIndex)) {
+      BlendPalette(colorOffset, 16, coefficient, color);
+      continue;
+    }
+
+    for (let i = 0; i < 16; i++) {
+      const baseColor = gPlttBufferUnfaded[colorOffset + i] ?? 0;
+      let r = GET_R(baseColor);
+      let g = GET_G(baseColor);
+      let b = GET_B(baseColor);
+      r += (((28 - r) * 3) >> 2);
+      g += (((31 - g) * 3) >> 2);
+      b += (((28 - b) * 3) >> 2);
+      r += (((blendR - r) * coefficient) >> 4);
+      g += (((blendG - g) * coefficient) >> 4);
+      b += (((blendB - b) * coefficient) >> 4);
+      gPlttBufferFaded[colorOffset + i] = (b << 10) | (g << 5) | r;
+    }
+  }
+}
 
 /** LightenSpritePaletteInFog */
 export function LightenSpritePaletteInFog(paletteIndex: number): boolean {
+  for (let i = 0; i < gWeather.lightenedFogSpritePalsCount; i++) {
+    if (gWeather.lightenedFogSpritePals[i] === (paletteIndex & 0xff)) return true;
+  }
   return false;
 }
 
 /** MarkFogSpritePalToLighten */
-export function MarkFogSpritePalToLighten(paletteIndex: number): void {}
+export function MarkFogSpritePalToLighten(paletteIndex: number): void {
+  if (gWeather.lightenedFogSpritePalsCount < 6) {
+    gWeather.lightenedFogSpritePals[gWeather.lightenedFogSpritePalsCount] = paletteIndex & 0xff;
+    gWeather.lightenedFogSpritePalsCount++;
+  }
+}
 
 /** IsWeatherChangeComplete */
 export function IsWeatherChangeComplete(): boolean {
@@ -424,21 +513,29 @@ export function ResetPreservedPalettesInWeather(): void {
 /** UpdateSpritePaletteWithWeather */
 export function UpdateSpritePaletteWithWeather(paletteIndex: number): void {}
 
-/** WeatherBeginGammaFade */
+/** WeatherBeginGammaFade (field_weather.c). */
 export function WeatherBeginGammaFade(gammaIndex: number, gammaTarget: number, stepDelay: number): void {
-  gWeather.gammaIndex = gammaIndex;
-  gWeather.gammaTargetIndex = gammaTarget;
-  gWeather.gammaStepDelay = stepDelay;
+  if (gWeather.palProcessingState !== C.WEATHER_PAL_STATE_IDLE) return;
+
+  gWeather.palProcessingState = C.WEATHER_PAL_STATE_CHANGING_WEATHER;
+  gWeather.gammaIndex = (((gammaIndex & 0xff) << 24) >> 24);
+  gWeather.gammaTargetIndex = (((gammaTarget & 0xff) << 24) >> 24);
+  gWeather.gammaStepFrameCounter = 0;
+  gWeather.gammaStepDelay = stepDelay & 0xff;
+  WeatherShiftGammaIfPalStateIdle(gWeather.gammaIndex);
 }
 
 /** WeatherProcessingIdle */
-export function WeatherProcessingIdle(): boolean {
-  return true;
+export function WeatherProcessingIdle(): void {
+  gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
 }
 
-/** WeatherShiftGammaIfPalStateIdle */
-export function WeatherShiftGammaIfPalStateIdle(): void {
-  UpdateWeatherGammaShift();
+/** WeatherShiftGammaIfPalStateIdle (field_weather.c). */
+export function WeatherShiftGammaIfPalStateIdle(gammaIndex: number): void {
+  if (gWeather.palProcessingState !== C.WEATHER_PAL_STATE_IDLE) return;
+  const signedGammaIndex = (gammaIndex << 24) >> 24;
+  ApplyGammaShift(0, 32, signedGammaIndex);
+  gWeather.gammaIndex = signedGammaIndex;
 }
 
 /** Weather_SetBlendCoeffs */

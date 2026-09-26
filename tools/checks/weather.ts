@@ -50,7 +50,7 @@ assert.equal(table[0][16], 15, 'Normal row 0 dims level 16 by one');
 assert.equal(Weather.GAMMA_TABLE_ALT[0][16], 16, 'Alternate row 0 preserves level 16');
 console.log('✓ Normal and alternate gamma table vectors checked');
 
-console.log('--- 2. Exercising ApplyGammaShift against palette buffers ---');
+console.log('--- 2. Applying gamma and running weather fade state paths ---');
 const paletteRangeStart = 0;
 const paletteRangeEnd = 32 * 16;
 const savedUnfaded = gPlttBufferUnfaded.slice(paletteRangeStart, paletteRangeEnd);
@@ -58,6 +58,18 @@ const savedFaded = gPlttBufferFaded.slice(paletteRangeStart, paletteRangeEnd);
 const savedAltPalette = Weather.gWeather.altGammaSpritePalIndex;
 const savedFadeCounter = Weather.gWeather.fadeScreenCounter;
 const savedFadeColor = Weather.gWeather.fadeDestColor;
+const savedWeatherFrameState = {
+  palProcessingState: Weather.gWeather.palProcessingState,
+  currWeather: Weather.gWeather.currWeather,
+  gammaIndex: Weather.gWeather.gammaIndex,
+  gammaTargetIndex: Weather.gWeather.gammaTargetIndex,
+  gammaStepFrameCounter: Weather.gWeather.gammaStepFrameCounter,
+  gammaStepDelay: Weather.gWeather.gammaStepDelay,
+  fadeInCounter: Weather.gWeather.fadeInCounter,
+  fadeInActive: Weather.gWeather.fadeInActive,
+  lightenedFogSpritePals: [...Weather.gWeather.lightenedFogSpritePals],
+  lightenedFogSpritePalsCount: Weather.gWeather.lightenedFogSpritePalsCount,
+};
 try {
   gPlttBufferUnfaded.fill(0x4210, paletteRangeStart, paletteRangeEnd);
   gPlttBufferFaded.fill(0, paletteRangeStart, paletteRangeEnd);
@@ -93,6 +105,41 @@ try {
   assert.equal(Weather.gWeather.fadeScreenCounter, 16);
   assert.equal(gPlttBufferFaded[0], 0x3def, 'FRLG negative-gamma completion leaves the preceding blended palette');
 
+  // PREPARED by hand: this headless check initializes the weather state and palette buffers directly.
+  Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+  Weather.WeatherBeginGammaFade(0, 2, 1);
+  assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_CHANGING_WEATHER);
+  Weather.Task_WeatherMain();
+  assert.equal(Weather.gWeather.gammaIndex, 1);
+  assert.equal(gPlttBufferFaded[0], 0x3def, 'Task_WeatherMain applies each changing gamma step');
+  Weather.Task_WeatherMain();
+  assert.equal(Weather.gWeather.gammaIndex, 2);
+  Weather.Task_WeatherMain();
+  assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_IDLE, 'gamma state returns to idle on the following frame');
+
+  Weather.gWeather.currWeather = C.WEATHER_RAIN;
+  Weather.gWeather.fadeScreenCounter = 0;
+  Weather.gWeather.fadeInCounter = 0;
+  Weather.gWeather.fadeInActive = 1;
+  Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_IN;
+  for (let frame = 0; frame < 16; frame++) Weather.Task_WeatherMain();
+  assert.equal(Weather.gWeather.gammaIndex, 3, 'weather dispatcher selects the rain/shade path');
+  assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_IDLE);
+  assert.equal(Weather.gWeather.fadeInActive, 0, 'fade-in active flag clears after its second frame');
+
+  Weather.gWeather.currWeather = C.WEATHER_FOG_HORIZONTAL;
+  Weather.gWeather.fadeScreenCounter = 0;
+  Weather.gWeather.fadeInCounter = 0;
+  Weather.gWeather.fadeInActive = 1;
+  Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_IN;
+  Weather.MarkFogSpritePalToLighten(16);
+  for (let frame = 0; frame < 16; frame++) Weather.Task_WeatherMain();
+  assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_SCREEN_FADING_IN, 'fog fade remains active on its sixteenth call');
+  Weather.Task_WeatherMain();
+  assert.equal(Weather.gWeather.gammaIndex, 0, 'fog dispatcher sets gamma to zero at completion');
+  assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_IDLE);
+  assert.equal(gPlttBufferFaded[16 * 16], 0x6779, 'fog fade lightens the marked sprite palette');
+
   Weather.PreservePaletteInWeather(0);
   Weather.ApplyGammaShift(0, 1, 1);
   assert.equal(gPlttBufferFaded[0], 0x4210, 'preserved palettes bypass gamma shifts');
@@ -108,9 +155,10 @@ try {
   Weather.gWeather.altGammaSpritePalIndex = savedAltPalette;
   Weather.gWeather.fadeScreenCounter = savedFadeCounter;
   Weather.gWeather.fadeDestColor = savedFadeColor;
+  Object.assign(Weather.gWeather, savedWeatherFrameState);
   Weather.ResetPreservedPalettesInWeather();
 }
-console.log('✓ ApplyGammaShift palette routing and buffer writes exercised');
+console.log('✓ Gamma task and rain, drought and fog fade paths exercised on palette buffers');
 
 console.log('--- 3. Exercising weather transition state API ---');
 Weather.SetCurrentAndNextWeather(3); // Rain
