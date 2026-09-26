@@ -2588,3 +2588,12 @@ Pending / placeholders:
   Canvas. Por eso no hay equivalencia de timing DMA ni prueba de píxeles. Pasaron
   `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
   navegador.
+
+## `gpu_regs.c`: bits de interrupción de DISPSTAT (2026-09-26)
+
+- Ajusté `UpdateRegDispstatIntrBits` al C: solo deriva los bits HBlank/VBlank
+  de `REG_IE`; la escritura al hardware conserva los bits restantes de
+  `DISPSTAT`, incluido el comparador VCount. Quité la actualización adicional
+  del bit `DISPSTAT_VCOUNT_INTR`, que no existe en el helper C.
+- Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`.
+  No hay check headless ni validación en navegador para este cambio.
