@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 117 | 130709 | 1952/6109 |
+| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1913/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Portado (≥ 80 % de funciones con el mismo nombre) | 91 | 116834 | 3472/3658 |
+| Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3516/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
-| **Pendiente de portar** | **118** | **132109** | |
-| **Total en alcance** | **210** | **248996** | **5452/9825** |
+| **Pendiente de portar** | **117** | **130962** | |
+| **Total en alcance** | **210** | **248996** | **5457/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -61,7 +61,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `title_screen.c` | 1315 | 17/39 | `introTitle.ts` |  |  |
 | `battle_controllers.c` | 1214 | 46/67 | `battle/controllers.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 17/37 | `field/fieldControl.ts` |  |  |
-| `field_weather.c` | 1147 | 39/50 | `field/weather.ts`, `gba/fade.ts` |  | 11 |
 | `battle_bg.c` | 1111 | 12/17 | `battle/bg.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_setup.c` | 1070 | 32/57 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
@@ -186,6 +185,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokemon_icon.c` | 1283 | 19/20 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
 | `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
+| `field_weather.c` | 1147 | 44/50 | `field/weather.ts`, `gba/fade.ts` |  | 6 |
 | `item_pc.c` | 1145 | 57/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `shop.c` | 1145 | 55/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |

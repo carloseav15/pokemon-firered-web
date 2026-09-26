@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5452/9825 (55 %)**.
-- Archivos C pendientes: **118** (132109 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5457/9825 (55 %)**.
+- Archivos C pendientes: **117** (130962 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -65,7 +65,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `mail.c` | 734 | 1/10 | ~660 |  |
 | `field_control_avatar.c` | 1182 | 17/37 | ~638 |  |
 
-Hay 117 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
+Hay 116 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -76,9 +76,9 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `field_effect_helpers.c` | 1421 | 14/76 | 62 |
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
 | `trade.c` | 2958 | 0/66 | 15 |
-| `field_weather.c` | 1147 | 39/50 | 11 |
 | `fame_checker.c` | 1739 | 15/64 | 7 |
 | `field_weather_effects.c` | 2346 | 87/93 | 6 |
+| `field_weather.c` | 1147 | 44/50 | 6 |
 | `trade_scene.c` | 2916 | 36/53 | 3 |
 | `menu_helpers.c` | 243 | 12/17 | 3 |
 | `save_failed_screen.c` | 228 | 11/14 | 3 |
@@ -116,7 +116,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
 - Pantalla de nombres: solo 4/109 funciones (`naming_screen.c`).
 - Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.
-- Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, FadeScreen/FadeSelectedPals y el oscurecimiento de paletas de quest log; la máquina de estados de sequía y la conexión a Canvas2D siguen pendientes.
+- Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - `scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.

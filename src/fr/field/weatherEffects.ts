@@ -5,7 +5,7 @@
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { random } from "../random";
-import { gWeather, SetRainStrengthFromSoundEffect, Weather_SetBlendCoeffs, Weather_SetTargetBlendCoeffs, Weather_UpdateBlend } from "./weather";
+import { DroughtStateInit, DroughtStateRun, gWeather, LoadDroughtWeatherPalettes, ResetDroughtWeatherPaletteLoading, SetRainStrengthFromSoundEffect, Weather_SetBlendCoeffs, Weather_SetTargetBlendCoeffs, Weather_UpdateBlend } from "./weather";
 import type { Sprite } from "../gba/sprite";
 
 export const MAX_RAIN_SPRITES = 24;
@@ -175,8 +175,7 @@ export function Sunny_Finish(): boolean {
 // -----------------------------------------------------------------------------
 
 export function Drought_InitVars(): void {
-  const w = gWeather as any;
-  w.initStep = 0;
+  gWeather.initStep = 0;
   gWeather.weatherGfxLoaded = false;
   gWeather.gammaTargetIndex = 0;
   gWeather.gammaStepDelay = 0;
@@ -184,33 +183,38 @@ export function Drought_InitVars(): void {
 
 export function Drought_InitAll(): void {
   Drought_InitVars();
+  // In FRLG, LoadDroughtWeatherPalette is a no-op, so the C init loop stays in
+  // step 2. Preserve that behavior; do not invoke this blocking path headlessly.
   while (!gWeather.weatherGfxLoaded) {
     Drought_Main();
   }
 }
 
 export function Drought_Main(): void {
-  const w = gWeather as any;
-  switch (w.initStep || 0) {
+  switch (gWeather.initStep) {
     case 0:
-      w.initStep++;
+      if (gWeather.palProcessingState !== C.WEATHER_PAL_STATE_CHANGING_WEATHER) gWeather.initStep++;
       break;
     case 1:
-      w.initStep++;
+      ResetDroughtWeatherPaletteLoading();
+      gWeather.initStep++;
       break;
     case 2:
-      w.initStep++;
+      if (!LoadDroughtWeatherPalettes()) gWeather.initStep++;
       break;
     case 3:
-      w.droughtBrightnessStage = 0;
-      w.droughtTimer = 0;
-      w.droughtState = 0;
-      w.initStep++;
+      DroughtStateInit();
+      gWeather.initStep++;
       break;
     case 4:
-      w.droughtBrightnessStage = 6;
-      gWeather.weatherGfxLoaded = true;
-      w.initStep++;
+      DroughtStateRun();
+      if (gWeather.droughtBrightnessStage === 6) {
+        gWeather.weatherGfxLoaded = true;
+        gWeather.initStep++;
+      }
+      break;
+    default:
+      DroughtStateRun();
       break;
   }
 }

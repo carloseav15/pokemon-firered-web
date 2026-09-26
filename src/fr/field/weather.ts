@@ -1,7 +1,8 @@
 // Partial port of field_weather.c and field_weather_util.c.
 // Overworld weather state, rain, fog drift, sandstorm and ash. The hardware
-// palette fade dispatcher and its rain, drought and horizontal-fog paths are
-// ported partially; Canvas2D integration and drought state remain incomplete.
+// palette fade dispatcher, rain, drought gamma state machine and horizontal-fog
+// paths are partial; FRLG's disabled drought palette loader stalls its init.
+// Canvas2D integration and weather sprites remain incomplete.
 // The live stub count is generated in PENDING.md §3b.
 
 import { rom } from "../rom";
@@ -13,6 +14,7 @@ import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
+import { gSineTable } from "../hw/trig";
 import { BeginNormalPaletteFade, BlendPalette, BlendPalettesAt, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
@@ -29,6 +31,7 @@ export let gWeather = {
   rainStrength: 0,
   weatherGfxLoaded: false,
   readyForInit: false,
+  initStep: 0,
   gammaIndex: 0,
   gammaTargetIndex: 0,
   gammaStepDelay: 0,
@@ -43,6 +46,12 @@ export let gWeather = {
   fadeInActive: 0,
   lightenedFogSpritePals: [] as number[],
   lightenedFogSpritePalsCount: 0,
+  droughtBrightnessStage: 0,
+  droughtLastBrightnessStage: 0,
+  droughtTimer: 0,
+  droughtState: 0,
+  loadDroughtPalsIndex: 0,
+  loadDroughtPalsOffset: 0,
   paletteFadeDelay: 0,
   weatherChangeComplete: true,
   blendCoeff: 0,
@@ -52,6 +61,7 @@ export let gWeather = {
   targetBlendEVA: 0,
   targetBlendEVB: 0,
 };
+let sDroughtFrameDelay = 0;
 
 /** Build one of field_weather.c's normal or alternate gamma tables. */
 function buildGammaShiftTable(alternate: boolean): number[][] {
@@ -583,23 +593,87 @@ export function Weather_UpdateBlend(): boolean {
   return true;
 }
 
-/** DroughtStateInit */
-export function DroughtStateInit(): void {}
+const s16 = (value: number): number => (value << 16) >> 16;
 
-/** DroughtStateRun */
-export function DroughtStateRun(): void {}
+/** SetDroughtGamma (field_weather.c). */
+export function SetDroughtGamma(gammaIndex: number): void {
+  const droughtGamma = (gammaIndex << 24) >> 24;
+  WeatherShiftGammaIfPalStateIdle(-droughtGamma - 1);
+}
 
-/** LoadDroughtWeatherPalette */
-export function LoadDroughtWeatherPalette(): void {}
+/** DroughtStateInit (field_weather.c). */
+export function DroughtStateInit(): void {
+  gWeather.droughtBrightnessStage = 0;
+  gWeather.droughtTimer = 0;
+  gWeather.droughtState = 0;
+  gWeather.droughtLastBrightnessStage = 0;
+  sDroughtFrameDelay = 5;
+}
 
-/** LoadDroughtWeatherPalettes */
-export function LoadDroughtWeatherPalettes(): void {}
+/** DroughtStateRun (field_weather.c). */
+export function DroughtStateRun(): void {
+  switch (gWeather.droughtState) {
+    case 0: {
+      gWeather.droughtTimer = s16(gWeather.droughtTimer + 1);
+      if (gWeather.droughtTimer > sDroughtFrameDelay) {
+        gWeather.droughtTimer = 0;
+        const stage = s16(gWeather.droughtBrightnessStage);
+        gWeather.droughtBrightnessStage = s16(stage + 1);
+        SetDroughtGamma(stage);
+        if (gWeather.droughtBrightnessStage > 5) {
+          gWeather.droughtLastBrightnessStage = gWeather.droughtBrightnessStage;
+          gWeather.droughtState = 1;
+          gWeather.droughtTimer = 60;
+        }
+      }
+      break;
+    }
+    case 1: {
+      gWeather.droughtTimer = (gWeather.droughtTimer + 3) & 0x7f;
+      gWeather.droughtBrightnessStage = s16(((((gSineTable[gWeather.droughtTimer] ?? 0) - 1) >> 6) + 2));
+      if (gWeather.droughtBrightnessStage !== gWeather.droughtLastBrightnessStage) {
+        SetDroughtGamma(gWeather.droughtBrightnessStage);
+      }
+      gWeather.droughtLastBrightnessStage = gWeather.droughtBrightnessStage;
+      break;
+    }
+    case 2: {
+      gWeather.droughtTimer = s16(gWeather.droughtTimer + 1);
+      if (gWeather.droughtTimer > sDroughtFrameDelay) {
+        gWeather.droughtTimer = 0;
+        gWeather.droughtBrightnessStage = s16(gWeather.droughtBrightnessStage - 1);
+        SetDroughtGamma(gWeather.droughtBrightnessStage);
+        if (gWeather.droughtBrightnessStage === 3) gWeather.droughtState = 0;
+      }
+      break;
+    }
+  }
+}
 
-/** ResetDroughtWeatherPaletteLoading */
-export function ResetDroughtWeatherPaletteLoading(): void {}
+/** LoadDroughtWeatherPalette (empty in FRLG; its C parameters remain unchanged). */
+export function LoadDroughtWeatherPalette(gammaIndex: { value: number }, paletteOffset: { value: number }): void {
+  void gammaIndex;
+  void paletteOffset;
+}
 
-/** SetDroughtGamma */
-export function SetDroughtGamma(): void {}
+/** LoadDroughtWeatherPalettes (field_weather.c). */
+export function LoadDroughtWeatherPalettes(): boolean {
+  if (gWeather.loadDroughtPalsIndex < 32) {
+    const gammaIndex = { value: gWeather.loadDroughtPalsIndex };
+    const paletteOffset = { value: gWeather.loadDroughtPalsOffset };
+    LoadDroughtWeatherPalette(gammaIndex, paletteOffset);
+    gWeather.loadDroughtPalsIndex = (gammaIndex.value << 24) >> 24;
+    gWeather.loadDroughtPalsOffset = paletteOffset.value & 0xff;
+    if (gWeather.loadDroughtPalsIndex < 32) return true;
+  }
+  return false;
+}
+
+/** ResetDroughtWeatherPaletteLoading (field_weather.c). */
+export function ResetDroughtWeatherPaletteLoading(): void {
+  gWeather.loadDroughtPalsIndex = 1;
+  gWeather.loadDroughtPalsOffset = 1;
+}
 
 /** SetWeatherScreenFadeOut */
 export function SetWeatherScreenFadeOut(): void {

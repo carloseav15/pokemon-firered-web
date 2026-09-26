@@ -3,11 +3,19 @@
 
 import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { registerCData } from '../../src/fr/hw/assets.ts';
+import * as Trig from '../../src/fr/hw/trig.ts';
 import * as Weather from '../../src/fr/field/weather.ts';
 import { sound } from '../../src/fr/audio/sound.ts';
 import { gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from '../../src/fr/hw/palette.ts';
 import { ppu } from '../../src/fr/hw/ppu.ts';
 import * as C from '../../src/fr/generated/constants.ts';
+
+const root = process.cwd() + '/public/fr/';
+const trigCData = JSON.parse(readFileSync(root + 'cdata/trig.json', 'utf8'));
+registerCData('trig', trigCData.defs);
+Trig.initTrig();
 
 console.log('--- 0. Testing rain sound state and fade-out guard ---');
 const playedRainSounds: number[] = [];
@@ -73,6 +81,13 @@ const savedWeatherFrameState = {
   currBlendEVB: Weather.gWeather.currBlendEVB,
   lightenedFogSpritePals: [...Weather.gWeather.lightenedFogSpritePals],
   lightenedFogSpritePalsCount: Weather.gWeather.lightenedFogSpritePalsCount,
+  droughtBrightnessStage: Weather.gWeather.droughtBrightnessStage,
+  droughtLastBrightnessStage: Weather.gWeather.droughtLastBrightnessStage,
+  droughtTimer: Weather.gWeather.droughtTimer,
+  droughtState: Weather.gWeather.droughtState,
+  initStep: Weather.gWeather.initStep,
+  loadDroughtPalsIndex: Weather.gWeather.loadDroughtPalsIndex,
+  loadDroughtPalsOffset: Weather.gWeather.loadDroughtPalsOffset,
 };
 const savedPaletteFadeState = { ...gPaletteFade };
 const savedPpuPalette = ppu.pltt.slice();
@@ -209,6 +224,36 @@ try {
   Weather.SlightlyDarkenPalsInWeather(unchangedPalette, unchangedPalette, 1);
   assert.equal(unchangedPalette[0], 0x4210, 'weather outside the C switch leaves this palette unchanged');
 
+  // PREPARED by hand: initialize the C drought state against exported trig-table data.
+  assert.equal(Trig.gSineTable.length, 320, 'the decomp trig table is loaded');
+  Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+  Weather.DroughtStateInit();
+  assert.equal(Weather.gWeather.droughtBrightnessStage, 0);
+  assert.equal(Weather.gWeather.droughtTimer, 0);
+  assert.equal(Weather.gWeather.droughtState, 0);
+  assert.equal(Weather.gWeather.droughtLastBrightnessStage, 0);
+  for (let frame = 0; frame < 36; frame++) Weather.DroughtStateRun();
+  assert.equal(Weather.gWeather.droughtBrightnessStage, 6, 'drought ramps through six brightness stages');
+  assert.equal(Weather.gWeather.droughtLastBrightnessStage, 6);
+  assert.equal(Weather.gWeather.droughtState, 1, 'drought enters the oscillation state');
+  assert.equal(Weather.gWeather.droughtTimer, 60);
+  assert.equal(Weather.gWeather.gammaIndex, -6, 'negative drought gamma is recorded while palette application remains FRLG-dummied');
+
+  Weather.DroughtStateRun();
+  const expectedDroughtStage = (((Trig.gSineTable[63] - 1) >> 6) + 2);
+  assert.equal(Weather.gWeather.droughtTimer, 63);
+  assert.equal(Weather.gWeather.droughtBrightnessStage, expectedDroughtStage, 'oscillation reads gSineTable using the C fixed-point formula');
+  assert.equal(Weather.gWeather.gammaIndex, -expectedDroughtStage - 1);
+
+  Weather.gWeather.droughtState = 2;
+  Weather.gWeather.droughtBrightnessStage = 4;
+  Weather.gWeather.droughtTimer = 5;
+  Weather.DroughtStateRun();
+  assert.equal(Weather.gWeather.droughtBrightnessStage, 3, 'ramp-down decrements the stage before applying gamma');
+  assert.equal(Weather.gWeather.droughtState, 0, 'ramp-down returns to state 0 at brightness stage 3');
+  assert.equal(Weather.gWeather.droughtTimer, 0);
+  console.log('✓ Drought ramp, sine-table oscillation and ramp-down state paths exercised');
+
   Weather.PreservePaletteInWeather(0);
   Weather.ApplyGammaShift(0, 1, 1);
   assert.equal(gPlttBufferFaded[0], 0x4210, 'preserved palettes bypass gamma shifts');
@@ -283,6 +328,26 @@ WE.FogHorizontal_Finish();
 WE.FogDiagonal_InitAll();
 assert.equal(WE.weatherSprites.fogDSprites.length, WE.NUM_FOG_DIAGONAL_SPRITES, 'Fog D particles created');
 WE.FogDiagonal_Finish();
+
+// PREPARED by hand: Drought_Main is advanced directly through its C init states.
+const savedDroughtInitState = {
+  palProcessingState: Weather.gWeather.palProcessingState,
+  weatherGfxLoaded: Weather.gWeather.weatherGfxLoaded,
+  initStep: Weather.gWeather.initStep,
+  loadDroughtPalsIndex: Weather.gWeather.loadDroughtPalsIndex,
+  loadDroughtPalsOffset: Weather.gWeather.loadDroughtPalsOffset,
+};
+Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+WE.Drought_InitVars();
+WE.Drought_Main();
+assert.equal(Weather.gWeather.initStep, 1, 'drought waits for weather gamma changes to stop');
+WE.Drought_Main();
+assert.equal(Weather.gWeather.initStep, 2);
+WE.Drought_Main();
+assert.equal(Weather.gWeather.initStep, 2, 'FRLG dummy palette loader leaves the C loading index unchanged');
+assert.equal(Weather.gWeather.loadDroughtPalsIndex, 1);
+assert.equal(Weather.gWeather.weatherGfxLoaded, false, 'drought init remains pending while the dummied C loader returns true');
+Object.assign(Weather.gWeather, savedDroughtInitState);
 
 console.log('✓ Selected cloud, rain, sandstorm, ash and fog lifecycle paths exercised');
 console.log('--- selected weather checks passed; this does not claim full module parity ---');
