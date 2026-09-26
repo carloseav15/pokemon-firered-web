@@ -72,27 +72,15 @@
   "UpdateTallGrassFieldEffect",
   "WaitFieldEffectSpriteAnim"
  ],
- "field_weather": [
-  "None_Init",
-  "Task_WeatherInit",
-  "Weather_UpdateBlend"
- ],
  "field_weather_effects": [
   "LoadAshSpriteSheet",
-  "LoadRainSpriteSheet",
-  "UpdateFogDiagonalMovement",
-  "UpdateSandstormMovement",
-  "UpdateSandstormWaveIndex",
-  "UpdateVisibleSnowflakeSprites"
+  "LoadRainSpriteSheet"
  ],
  "menu_helpers": [
   "MenuHelpers_IsLinkActive"
  ],
  "shop": [
   "RecordTransactionForQuestLog"
- ],
- "sound": [
-  "SE12PanpotControl"
  ],
  "teachy_tv": [
   "TeachyTvBg2AnimController",

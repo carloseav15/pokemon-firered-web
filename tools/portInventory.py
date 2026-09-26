@@ -86,6 +86,9 @@ FUNC_RE = re.compile(
 )
 KEYWORDS = {"if", "while", "for", "switch", "return", "sizeof"}
 TS_FUNC_RE = re.compile(r"\bfunction\s+([A-Za-z_]\w*)\s*\(")
+TS_ARROW_RE = re.compile(
+    r"\b([A-Za-z_]\w*)\s*:\s*(?:\([^()]*\)|[A-Za-z_]\w*)\s*=>\s*\{"
+)
 TRIVIAL_LINE = re.compile(
     # Only flag empty returns and literal placeholder values. A return of a
     # variable/property (for example a C task-data pointer adapted to TS state)
@@ -124,7 +127,7 @@ def is_trivial(body: str) -> bool:
 
 
 def strip_c_comments(text: str) -> str:
-    """Blank C comments without changing line positions or quoted contents."""
+    """Blank C/TypeScript comments without changing positions or quoted text."""
     out: list[str] = []
     i = 0
     state = "code"
@@ -138,6 +141,9 @@ def strip_c_comments(text: str) -> str:
             elif ch == '"':
                 state = "string"
                 out.append(ch)
+            elif ch == "`":
+                state = "template"
+                out.append(ch)
             elif ch == "/" and nxt == "/":
                 state = "line"
                 out.extend("  ")
@@ -148,12 +154,16 @@ def strip_c_comments(text: str) -> str:
                 i += 1
             else:
                 out.append(ch)
-        elif state in ("string", "char"):
+        elif state in ("string", "char", "template"):
             out.append(ch)
             if ch == "\\" and i + 1 < len(text):
                 i += 1
                 out.append(text[i])
-            elif (state == "string" and ch == '"') or (state == "char" and ch == "'"):
+            elif (
+                (state == "string" and ch == '"')
+                or (state == "char" and ch == "'")
+                or (state == "template" and ch == "`")
+            ):
                 state = "code"
         elif state == "line":
             if ch == "\n":
@@ -206,11 +216,17 @@ def load_ts() -> tuple[set[str], dict[str, bool], dict[str, list[str]]]:
         if "generated" in path.parts:
             continue
         text = path.read_text()
-        # Case/underscore-insensitive: older field code uses camelCase names.
-        idents.update(norm(i) for i in re.findall(r"\b[A-Za-z_]\w*\b", text))
-        for m in TS_FUNC_RE.finditer(text):
+        code = strip_c_comments(text)
+        # Ignore comments: they describe mappings but do not implement C
+        # functions. Case/underscore-insensitive for older camelCase ports.
+        idents.update(norm(i) for i in re.findall(r"\b[A-Za-z_]\w*\b", code))
+        for m in TS_FUNC_RE.finditer(code):
             key = norm(m.group(1))
-            real = not is_trivial(body_after(text, ts_body_end(text, m.end() - 1)))
+            real = not is_trivial(body_after(code, ts_body_end(code, m.end() - 1)))
+            real_def[key] = real_def.get(key, False) or real
+        for m in TS_ARROW_RE.finditer(code):
+            key = norm(m.group(1))
+            real = not is_trivial(body_after(code, m.end() - 1))
             real_def[key] = real_def.get(key, False) or real
         rel = str(path.relative_to(SRC))
         for c in set(re.findall(r"\b([A-Za-z0-9_]+)\.c\b", text)):

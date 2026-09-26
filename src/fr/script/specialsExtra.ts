@@ -25,7 +25,8 @@ import { setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005 } f
 import { SetPostgameFlags } from "../pokemon/saveLocation";
 import { CheckPartyMonHasHeldItem } from "../pokemon/scriptPokemonUtil";
 import { getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullMessage } from "../pokemon/storage";
-import { gPPUpGetMask, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
+import { CalculatePlayerPartyCount, GetMonData, gPPUpGetMask, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
+import { SpeciesToMailSpecies } from "../pokemon/mail";
 import type { ScriptRunner } from "./context";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -53,6 +54,30 @@ function ShiftMoveSlot(mon: (typeof save.party)[number], slotTo: number, slotFro
   mon.moves[slotFrom] = moveTo;
   mon.pp[slotTo] = ppFrom;
   mon.pp[slotFrom] = ppTo;
+}
+
+/** UpdateTrainerCardPhotoIcons (field_specials.c). */
+function UpdateTrainerCardPhotoIcons(): void {
+  const iconVars = [
+    C.VAR_TRAINER_CARD_MON_ICON_1,
+    C.VAR_TRAINER_CARD_MON_ICON_2,
+    C.VAR_TRAINER_CARD_MON_ICON_3,
+    C.VAR_TRAINER_CARD_MON_ICON_4,
+    C.VAR_TRAINER_CARD_MON_ICON_5,
+    C.VAR_TRAINER_CARD_MON_ICON_6,
+  ];
+  const partyCount = CalculatePlayerPartyCount();
+  for (let i = 0; i < iconVars.length; i++) {
+    let species = C.SPECIES_NONE;
+    let personality = 0;
+    if (i < partyCount) {
+      const mon = playerMon(i);
+      species = GetMonData(mon, C.MON_DATA_SPECIES_OR_EGG);
+      personality = GetMonData(mon, C.MON_DATA_PERSONALITY);
+    }
+    varSet(iconVars[i], SpeciesToMailSpecies(species, personality));
+  }
+  varSet(C.VAR_TRAINER_CARD_MON_ICON_TINT_IDX, varGet(SV.x8004));
 }
 
 const LINKUP_CONNECTION_ERROR = 6;
@@ -846,14 +871,11 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   EnterColosseumPlayerSpot: (ctx) => { enableLater(ctx); },
   EnterTradeSeat: (ctx) => { enableLater(ctx); },
   DoCableClubWarp: (ctx) => { enableLater(ctx); },
-  SetCableClubWarp: () => {},
   Script_ShowLinkTrainerCard: (ctx) => { enableLater(ctx); },
   StartSpecialBattle: (ctx) => { enableLater(ctx); },
   BufferEReaderTrainerGreeting: () => { stringVars.var1 = encode(""); },
   BufferEReaderTrainerName: () => { stringVars.var1 = encode(""); },
-  SetEReaderTrainerGfxId: () => {},
   ShowEasyChatScreen: (ctx) => { enableLater(ctx); },
-  ShowEasyChatMessage: () => {},
   // records (no link or minigame history exists)
   ShowBattleRecords: (ctx) => {
     stringVars.player = Uint8Array.from(save.playerName);
@@ -865,7 +887,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   ShowBerryCrushRankings: (ctx) => { ctx.ow.game.showMessageThenEnable(encode("BERRY CRUSH\n----")); },
   ShowDodrioBerryPickingRecords: (ctx) => { ctx.ow.game.showMessageThenEnable(Uint8Array.from([...rom.text("gText_BerryPickingRecords").filter((b) => b !== 0xff), 0xfe, ...encode("----")])); },
   ShowPokemonJumpRecords: (ctx) => { ctx.ow.game.showMessageThenEnable(Uint8Array.from([...rom.text("gText_PkmnJumpRecords").filter((b) => b !== 0xff), 0xfe, ...encode("----")])); },
-  UpdateTrainerCardPhotoIcons: () => {},
+  UpdateTrainerCardPhotoIcons: () => { UpdateTrainerCardPhotoIcons(); },
   // Braille cursor (sBrailleTextCursorSpriteID)
   BrailleCursorToggle: (ctx) => { ctx.ow.game.scriptMenu.brailleCursor(varGet(SV.x8004) + 27, varGet(SV.x8005), varGet(SV.x8006) === 0); },
   // box name buffer

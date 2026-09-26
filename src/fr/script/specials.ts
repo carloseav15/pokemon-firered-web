@@ -173,8 +173,6 @@ const SPECIALS: Record<string, Special> = {
     tasks.create((id) => Task_EnableScriptAfterMusicFade(id, ctx), 80);
   },
   QuestLog_CutRecording: () => {},
-  QuestLog_StartRecordingInputsAfterDeferredEvent: () => {},
-  SetUsedPkmnCenterQuestLogEvent: () => {},
   GetQuestLogState: () => 0,
   HelpSystem_Enable: () => {},
   HelpSystem_Disable: () => {},
@@ -325,10 +323,8 @@ const SPECIALS: Record<string, Special> = {
   // ---- empty scenes in source: field_special_scene.c:25, fldeff_berrytree.c:2
   LookThroughPorthole: () => {},
   DoWateringBerryTreeAnim: () => {},
-  // ---- weather/dive visuals without a ported engine: field_weather_effects.c:264
-  // has no drought state here, and FireRed has no Dive maps, so these stay inert.
+  // ---- weather visual without the ported drought layer: field_weather_effects.c:264.
   StartDroughtWeatherBlend: () => {},
-  DoDiveWarp: () => {},
   // ---- Deoxys triangle (field_specials.c:2360-2456): var/flag progression is
   // source-accurate; the rock-move field effect (FLDEFF_MOVE_DEOXYS_ROCK) has no
   // port yet, so the object stays while RESULT/vars advance. Palette step is visual-only.
@@ -349,7 +345,6 @@ const SPECIALS: Record<string, Special> = {
     varSet(rom.c("VAR_DEOXYS_INTERACTION_NUM"), num + 1);
     return 1;
   },
-  SetDeoxysTrianglePalette: () => {},
   // ---- easy chat hobby/lifestyle (easy_chat.c:318-323): random enabled word
   // from group 12 (LIFESTYLE) or 13 (HOBBIES) into gStringVar2.
   BufferRandomHobbyOrLifestyleString: () => {
@@ -365,27 +360,12 @@ const SPECIALS: Record<string, Special> = {
     const bytes = cdata<number[]>("easy_chat", word.text.$sym);
     stringVars.var2 = Uint8Array.from(bytes);
   },
-  // ---- link save slots (load_save.c:160-220): the web save object is live,
-  // so there is nothing to copy between save blocks and battle structs.
-  SavePlayerParty: () => {},
-  LoadPlayerParty: () => {},
-  LoadPlayerBag: () => {},
   // ---- battle tower (battle_tower.c): the tower engine is not ported; gating
   // checks report a valid party so field scripts continue past the desk.
   CheckPartyBattleTowerBanlist: () => { varSet(SV.x8004, 0); },
-  ChooseNextBattleTowerTrainer: () => {},
-  DetermineBattleTowerPrize: () => {},
   GiveBattleTowerPrize: () => 0,
   AwardBattleTowerRibbons: () => 0,
-  SaveBattleTowerProgress: () => {},
   BattleTowerUtil: () => 0,
-  BattleTowerMapScript2: () => {},
-  SetBattleTowerParty: () => {},
-  SetBattleTowerProperty: () => {},
-  // Unlike DoSoftReset, the tower exit must not reload the page.
-  BattleTower_SoftReset: () => {},
-  Dummy_TryEnableBravoTrainerBattleTower: () => {},
-  PrintBattleTowerTrainerGreeting: () => {},
   // ---- trainer tower (trainer_tower.c:438, cereader_tool.c:93): e-Reader data
   // is stubbed FALSE in FireRed itself, so validation always fails here too.
   CallTrainerTowerFunc: () => 0,

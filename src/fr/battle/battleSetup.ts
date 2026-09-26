@@ -303,7 +303,7 @@ export class BattleSetup {
       isGhost: !safari && tower && !checkBagHasItem(c.ITEM_SILPH_SCOPE, 1),
       onEnd: outcome => {
         this.game.battleOutcome = outcome;
-        if (safari) { this.endSafariBattle(outcome); return; }
+        if (safari) { this.CB2_EndSafariBattle(outcome); return; }
         if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);
       },
@@ -311,7 +311,7 @@ export class BattleSetup {
   }
 
   /** safari_zone.c CB2_EndSafariBattle */
-  private endSafariBattle(outcome: number): void {
+  private CB2_EndSafariBattle(outcome: number): void {
     const game = this.game, ow = game.overworld;
     if (game.safariBalls !== 0) { game.returnToFieldContinueScript(true); return; }
     if (outcome === rom.c("B_OUTCOME_NO_SAFARI_BALLS")) {

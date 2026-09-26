@@ -3,14 +3,48 @@
 Target: the full FireRed game, including its main progression and optional
 systems. The first playable route is a milestone, not the completion criterion.
 
+## Inventario actualizado, 2026-09-26
+
+- `npm run inventory` ahora ignora identificadores que aparecen solo en
+  comentarios y reconoce callbacks con cuerpo de función flecha al detectar
+  stubs. La auditoría encontró homónimos falsos, por lo que las cifras actuales
+  bajan de 6.094 a **5.762/9.834 (58,6%)**; quedan **4.072 nombres (41,4%)**.
+  Hay **101 archivos C con huecos**: uno sin empezar, uno adaptador, 42 casi
+  completos y 57 parciales. La estimación de líneas sin cubrir sube a
+  **~85.014/247.859 (34,3%)**. El inventario mide nombres/cuerpos triviales,
+  no paridad funcional ni pruebas en navegador.
+- El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
+  solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
+  esas funciones quedan sin implementar y el dispatcher las reporta. Los
+  stubs globales del inventario son 130 (119 en los módulos revisados por
+  `check:honesty`), y la línea base se redujo de 127 a 119.
+- **`quest_log_events.c`: indicador de tragamonedas implementado, 1 función
+  real de 118.** `SetQLPlayedTheSlots` ahora conserva el flag del C y se llama
+  desde el estado que inicia cada giro en `slotMachine.ts`; el flag se reinicia
+  al crear una partida, como hace `ResetQuestLog`. La grabación y
+  reproducción del Quest Log siguen fuera de alcance; no se presenta el
+  archivo como portado. El inventario cuenta
+  `QuestLog_StartRecordingInputsAfterDeferredEvent` como stub.
+- **`safari_zone.c`: 8/8 funciones con homólogo.** Renombré el callback privado
+  que ya reproducía las tres ramas de `CB2_EndSafariBattle` en `battleSetup.ts`
+  para que corresponda con el C. El archivo salió de `PENDING.md`.
+- **`field_specials.c`: implementé `UpdateTrainerCardPhotoIcons`.** El helper
+  obtiene especie/personalidad de cada miembro de equipo, convierte a la
+  especie guardada para iconos y actualiza las seis variables y el tinte del C.
+  Eliminé el registro vacío de `DoDiveWarp`: no existe una llamada en scripts
+  de FireRed (solo su número en `specials.inc`).
+- También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
+  de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
+  `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build
+  mostró sus advertencias ya existentes de imports mixtos/chunk grande. No hubo
+  prueba de navegador.
+
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.094/9.834 funciones con homólogo (62,0%)**; quedan
-  **3.740 nombres (38,0%)**. De 202 archivos C de la lista en alcance, **92 aún
-  tienen huecos de nombre**: 41 casi completos, 50 parciales y uno adaptador;
-  109 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.781/247.859 (31,4%)**. Son indicadores del
-  inventario, no prueba de equivalencia funcional.
+- En esa revisión el inventario medía **6.094/9.834 (62,0%)**; la auditoría de
+  falsos positivos del 2026-09-26, documentada arriba, actualizó las cifras.
+  Esta entrada conserva el orden de trabajo y los cambios de clima de esa
+  revisión; consulta el encabezado para el porcentaje vigente.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
   duplicados sin uso, función por función y sin ocultar adaptadores; (2) cerrar
@@ -1579,7 +1613,7 @@ tragaperras, Islas Sevii.
     (`SpriteCB_BouncingPokeballArrive`), liberación con `CreatePokeballSpriteToReleaseMon`,
     fanfare `MUS_EVOLVED`, registro en Pokédex, amistad a 70 y evolución posterior.
     `check:trade` solo comprueba datos (cdata/incbin), no ejecuta la escena.
-17. **Tragaperras** (`slot_machine.c`) **[PORTADO 76/77, sin probar en navegador]**: pantalla
+17. **Tragaperras** (`slot_machine.c`) **[PORTADO 77/77, sin probar en navegador]**: pantalla
     en `src/fr/menus/slotMachine.ts`. Traduce el C completo: 3 rodillos animados
     con deformación afín en OAM y scanline blending en HBlank, mascotas Clefairy con
     animaciones (neutral, girando, baile de victoria y desmayo), dígitos de crédito

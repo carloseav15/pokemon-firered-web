@@ -9,15 +9,15 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 
 | Medida | Valor | Qué significa |
 |---|---:|---|
-| Funciones del C con homólogo por nombre en TS | **6094 / 9834 (62,0 %)** | Indicador de nombres; no prueba fidelidad |
-| Archivos C sin huecos de nombre | **109 / 202 (54,0 %)** | El inventario no mide paridad funcional |
-| Archivos casi completos (≥ 80 % y < 100 %) | **41** | Aún tienen funciones sin homólogo |
-| Archivos parciales (< 80 %) | **50** | Lista completa, junto con los casi completos, en `PENDING.md` |
+| Funciones del C con homólogo por nombre en TS | **5762 / 9834 (58,6 %)** | Indicador de nombres; no prueba fidelidad |
+| Archivos C sin huecos de nombre | **100 / 202 (49,5 %)** | El inventario no mide paridad funcional |
+| Archivos casi completos (≥ 80 % y < 100 %) | **42** | Aún tienen funciones sin homólogo |
+| Archivos parciales (< 80 %) | **57** | Lista completa, junto con los casi completos, en `PENDING.md` |
 | Archivos adaptador | **1** | Teachy TV conserva interfaz de lista simplificada |
-| Archivos con algún hueco de nombre | **92** | 41 casi completos + 50 parciales + 1 adaptador |
-| Líneas C sin cubrir (estimación ponderada) | **~77 781 / 247 859 (31,4 %)** | Estimación por proporción de funciones, no comparación de cada línea |
+| Archivos con algún hueco de nombre | **101** | 42 casi completos + 57 parciales + 1 adaptador + 1 sin empezar |
+| Líneas C sin cubrir (estimación ponderada) | **~85 014 / 247 859 (34,3 %)** | Estimación por proporción de funciones, no comparación de cada línea |
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
-| Funciones stub (nombre del C, cuerpo vacío) | 120 | No cuentan como portadas (PENDING.md §3b) |
+| Funciones stub (nombre del C, cuerpo vacío) | 130 | No cuentan como portadas (PENDING.md §3b) |
 | Módulos que el juego no importa | 9 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
 | **Jugado de verdad en navegador** | intro → Monte Moon (dentro) | ≈ las primeras 2 horas; el resto del juego, sin probar |
 

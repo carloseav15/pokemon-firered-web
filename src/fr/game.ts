@@ -60,6 +60,7 @@ import { ResetFameChecker } from "./fameChecker";
 import { ClearRoamerData } from "./pokemon/roamer";
 import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
+import { ResetQLPlayedTheSlots } from "./questLogEvents";
 
 /** GetProfOaksRatingMessageByCount (prof_pc.c). */
 function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
@@ -210,6 +211,7 @@ export class Game {
 
   /** new_game.c: initialize the modeled SaveBlock state for a new game. */
   NewGameInitData(playerName: string, gender: number, rivalName: string): void {
+    ResetQLPlayedTheSlots();
     this.ResetMenuAndMonGlobals();
     this.Sav2_ClearSetDefault();
     this.differentSaveFile = true;

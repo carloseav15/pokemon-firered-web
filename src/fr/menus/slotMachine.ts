@@ -53,6 +53,7 @@ import { sound } from "../audio/sound";
 import { random } from "../random";
 import { incrementGameStat, save } from "../save";
 import { GetCoins as getCoins, removeCoins } from "../pokemon/items";
+import { SetQLPlayedTheSlots } from "../questLogEvents";
 import { rom } from "../rom";
 import * as C from "../generated/constants";
 
@@ -261,10 +262,6 @@ function FuncIsActiveTask(func: TaskFunc): boolean {
 
 function FindTaskIdByFunc(func: TaskFunc): number {
   return tasks.findByFunc(func);
-}
-
-function SetQLPlayedTheSlots(): void {
-  // Quest Log is out of scope per user rules & PORTING-STATUS.md
 }
 
 export function PlaySlotMachine(machineIdx: number, savedCallback: MainCallback): void {
