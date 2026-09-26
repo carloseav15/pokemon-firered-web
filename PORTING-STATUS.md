@@ -2771,6 +2771,17 @@ Pending / placeholders:
   91 archivos y 4.058 nombres pendientes. Pasaron `check:port`, `check:honesty`,
   inventory, pending y `git diff --check`; sin runtime.
 
+## `fldeff_poison.c`: estados y callback del mosaico (2026-09-26)
+
+- Moví el callback de una closure local a `Task_FieldPoisonEffect` y trasladé
+  `state`/`value` a `tasks.data[0..1]`, conservando los incrementos según la
+  revisión del juego, la bajada del mosaico y el momento de destruir la tarea.
+  Alineé los métodos con `FldEffPoison_Start` y `FldEffPoison_IsActive`; la
+  visual permanece adaptada mediante `poisonMosaicValue` en el render Canvas.
+  Inventario: 3/3; total 5.783/9.834 (58,8 %), 89 archivos y 4.051 nombres
+  pendientes. Pasaron `check:port`, `check:honesty`, inventory, pending y
+  `git diff --check`; sin comparación en navegador.
+
 ## `oak_speech.c`: nombre del punto de entrada (2026-09-26)
 
 - Renombré `OakSpeech.begin()` a `StartNewGameScene()` y actualicé el caller de

@@ -906,7 +906,7 @@ export class Game {
     const id = tasks.create(() => {
       // battle_setup.c Task_BattleStart waits for FldEffPoison_IsActive to clear.
       if (!startedTransition) {
-        if (ow.effects.isPoisonEffectActive()) return;
+        if (ow.effects.FldEffPoison_IsActive()) return;
         startedTransition = true;
         tasks.destroy(id);
         const transitionId = request.kind === "trainer"

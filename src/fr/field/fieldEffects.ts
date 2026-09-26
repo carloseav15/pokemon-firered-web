@@ -1,5 +1,6 @@
 // Field effects (field_effect_helpers.c, trainer_see.c emoticons, ground
 // effects from event_object_movement.c) plus the step-driven encounter hooks.
+// Includes the poison mosaic task from fldeff_poison.c.
 
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
@@ -292,32 +293,36 @@ export class FieldEffects {
     this.moves = new FieldMoveEffects(ow);
   }
 
-  /** fldeff_poison.c FldEffPoison_Start / Task_FieldPoisonEffect. */
-  startPoisonEffect(): void {
+  /** FldEffPoison_Start. */
+  FldEffPoison_Start(): void {
     sound.playSE(C.SE_FIELD_POISON);
     this.poisonEffectTaskActive = true;
-    let state = 0, value = 0;
-    const id = tasks.create(() => {
-      switch (state) {
-        case 0:
-          value += C.REVISION >= 0xA ? 2 : 1;
-          if (value > 4) state++;
-          break;
-        case 1:
-          value--;
-          if (value === 0) state++;
-          break;
-        case 2:
-          this.poisonMosaicValue = 0;
-          this.poisonEffectTaskActive = false;
-          tasks.destroy(id);
-          return;
-      }
-      this.poisonMosaicValue = value;
-    }, 80);
+    tasks.create((taskId) => this.Task_FieldPoisonEffect(taskId), 80);
   }
 
-  isPoisonEffectActive(): boolean { return this.poisonEffectTaskActive; }
+  /** Task_FieldPoisonEffect; task data[0..1] carries state and mosaic value. */
+  private Task_FieldPoisonEffect(taskId: number): void {
+    const data = tasks.data(taskId);
+    switch (data[0]) {
+      case 0:
+        data[1] += C.REVISION >= 0xA ? 2 : 1;
+        if (data[1] > 4) data[0]++;
+        break;
+      case 1:
+        data[1]--;
+        if (data[1] === 0) data[0]++;
+        break;
+      case 2:
+        this.poisonMosaicValue = 0;
+        this.poisonEffectTaskActive = false;
+        tasks.destroy(taskId);
+        return;
+    }
+    this.poisonMosaicValue = data[1];
+  }
+
+  /** FldEffPoison_IsActive. */
+  FldEffPoison_IsActive(): boolean { return this.poisonEffectTaskActive; }
 
   /** FieldEffectStart: marks the effect active and runs its script. */
   start(id: number): void {
@@ -708,7 +713,7 @@ export class FieldEffects {
     const value = (varGet(id) + 1) % 5;
     varSet(id, value);
     if (value !== 0) return false;
-    return DoPoisonFieldEffect(() => this.startPoisonEffect()) === C.FLDPSN_FNT;
+    return DoPoisonFieldEffect(() => this.FldEffPoison_Start()) === C.FLDPSN_FNT;
   }
 
   safariZoneTakeStep(): boolean {

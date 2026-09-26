@@ -11,15 +11,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 55 | 107905 | 1281/5009 |
+| Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 33 | 56356 | 1898/2124 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 111 | 80715 | 2573/2573 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 112 | 80757 | 2576/2576 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **90** | **167091** | |
-| **Total en alcance** | **202** | **247859** | **5780/9834** |
+| **Pendiente de portar** | **89** | **167049** | |
+| **Total en alcance** | **202** | **247859** | **5783/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -85,7 +85,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 | `item_menu_icons.c` | 439 | 12/17 | `bagMenu.ts` |  |  |
 | `braille_text.c` | 212 | 1/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
-| `fldeff_poison.c` | 42 | 0/3 | `field/fieldEffects.ts` |  |  |
 
 ## Adaptador (UI simplificada)
 
@@ -243,6 +242,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `save_menu_util.c` | 56 | 1/1 | `game.ts`, `saveMenuUtil.ts` |  |  |
 | `coord_event_weather.c` | 49 | 1/1 | `field/coordEventWeather.ts` |  |  |
 | `blend_palette.c` | 46 | 2/2 | `hw/palette.ts` |  |  |
+| `fldeff_poison.c` | 42 | 3/3 | `field/fieldEffects.ts` |  |  |
 | `cable_car_util.c` | 38 | 2/2 | `cableCarUtil.ts` |  |  |
 | `random.c` | 18 | 2/2 | `random.ts` |  |  |
 | `fldeff_berrytree.c` | 4 | 1/1 | `script/specials.ts` |  |  |
