@@ -86,7 +86,13 @@ function CreateMonIconSprite(image: Uint8Array, paletteTag: number, callback: Sp
 }
 
 export function DestroyMonIcon(sprite: Sprite): void {
+  DestroyMonIconInternal(sprite);
+}
+
+/** DestroyMonIconInternal: detach the per-species image pointer before freeing its tiles. */
+function DestroyMonIconInternal(sprite: Sprite): void {
   iconImages.delete(sprite);
+  sprite.images = [{ data: new Uint8Array(0), size: imageSize(sprite) }];
   DestroySprite(sprite);
 }
 

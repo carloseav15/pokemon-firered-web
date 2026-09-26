@@ -2763,6 +2763,16 @@ Pending / placeholders:
   `check:port`, `check:honesty`, inventory, pending y `git diff --check`; no
   ejecuté prueba de clima en navegador.
 
+## `pokemon_icon.c`: destrucción interna del icono (2026-09-26)
+
+- Extraje `DestroyMonIconInternal` y lo conecté a `DestroyMonIcon`. Antes de
+  liberar los tiles, elimina la referencia TS a los bytes del icono y conserva
+  en `images[0].size` el tamaño que el allocator necesita, equivalente al
+  `SpriteFrameImage { NULL, size }` del C. `pokemon_icon.c` queda 23/23; total
+  5.787/9.834 (58,8 %), 87 archivos y 4.047 nombres pendientes. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  prueba visual.
+
 ## `field_weather_util.c`: nombres fuente de guardado y aplicación del clima (2026-09-26)
 
 - Alineé `TranslateWeatherNum`, `SetSavedWeather`,

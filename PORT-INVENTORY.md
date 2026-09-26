@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 32 | 54010 | 1808/2031 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 113 | 83103 | 2669/2669 |
+| Casi completo (≥ 80 % y < 100 %) | 31 | 52727 | 1786/2008 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 114 | 84386 | 2692/2692 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **88** | **164703** | |
-| **Total en alcance** | **202** | **247859** | **5786/9834** |
+| **Pendiente de portar** | **87** | **163420** | |
+| **Total en alcance** | **202** | **247859** | **5787/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -108,7 +108,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `tm_case.c` | 1737 | 66/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
 | `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `pokeball.c` | 1334 | 34/37 | `battle/pokeball.ts` |  |  |
-| `pokemon_icon.c` | 1283 | 22/23 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_controllers.c` | 1214 | 61/68 | `battle/controllers.ts` |  |  |
 | `shop.c` | 1145 | 55/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
@@ -152,6 +151,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |  |
 | `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |  |
 | `hall_of_fame.c` | 1286 | 42/42 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
+| `pokemon_icon.c` | 1283 | 23/23 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
 | `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
 | `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
 | `item_pc.c` | 1145 | 59/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
