@@ -1,62 +1,33 @@
-// Port of field_door.c: door open/close animations drawn over metatiles.
+// Port of field_door.c: door graphics and animation frames come from exported
+// cdata; Canvas draws the source frames over the map metatiles.
 
 import { sound } from "../audio/sound";
+import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
 import { b64, rom } from "../rom";
+import { cdata, cdataAny, symName } from "../hw/assets";
 import type { Overworld } from "./overworld";
 
-const SLIDING = 1;
 const SIZE_1x2 = 1;
 const CLOSED = -1;
 
-// sDoorGraphics: [metatile label, sound, size, file, palettes]
-const DOORS: Array<[string, number, number, string, number[]]> = [
-  ["METATILE_General_Door", 0, 0, "general", [2, 2, 2, 2, 2, 2, 2, 2]],
-  ["METATILE_General_SlidingSingleDoor", 1, 0, "sliding_single", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_General_SlidingDoubleDoor", 1, 0, "sliding_double", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_PalletTown_Door", 0, 0, "pallet", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_PalletTown_OaksLabDoor", 0, 0, "oaks_lab", [10, 10, 10, 10, 10, 10, 10, 10]],
-  ["METATILE_ViridianCity_Door", 0, 0, "viridian", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_PewterCity_Door", 0, 0, "pewter", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_SaffronCity_Door", 0, 0, "saffron", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_SaffronCity_SilphCoDoor", 1, 0, "silph_co", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_CeruleanCity_Door", 0, 0, "cerulean", [12, 12, 12, 12, 12, 12, 12, 12]],
-  ["METATILE_LavenderTown_Door", 0, 0, "lavender", [9, 9, 9, 9, 9, 9, 9, 9]],
-  ["METATILE_VermilionCity_Door", 0, 0, "vermilion", [9, 9, 9, 9, 9, 9, 9, 9]],
-  ["METATILE_VermilionCity_SSAnneWarp", 0, 0, "pokemon_fan_club", [9, 9, 9, 9, 9, 9, 9, 9]],
-  ["METATILE_CeladonCity_DeptStoreDoor", 1, 0, "dept_store", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_FuchsiaCity_Door", 0, 0, "fuchsia", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_FuchsiaCity_SafariZoneDoor", 1, 0, "safari_zone", [9, 9, 9, 9, 9, 9, 9, 9]],
-  ["METATILE_CinnabarIsland_LabDoor", 0, 0, "cinnabar_lab", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_SeviiIslands123_Door", 0, 0, "sevii_123", [5, 5, 5, 5, 5, 5, 5, 5]],
-  ["METATILE_SeviiIslands123_GameCornerDoor", 1, 0, "joyful_game_corner", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_SeviiIslands123_PokeCenterDoor", 0, 0, "one_island_poke_center", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_SeviiIslands45_Door", 0, 0, "sevii_45", [5, 5, 5, 5, 5, 5, 5, 5]],
-  ["METATILE_SeviiIslands45_DayCareDoor", 0, 0, "four_island_day_care", [3, 3, 3, 3, 3, 3, 3, 3]],
-  ["METATILE_SeviiIslands45_RocketWarehouseDoor_Unlocked", 0, 0, "rocket_warehouse", [10, 10, 10, 10, 10, 10, 10, 10]],
-  ["METATILE_SeviiIslands67_Door", 0, 0, "sevii_67", [5, 5, 5, 5, 5, 5, 5, 5]],
-  ["METATILE_DepartmentStore_ElevatorDoor", 1, 1, "dept_store_elevator", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_PokemonCenter_CableClubDoor", 1, 1, "cable_club", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_SilphCo_HideoutElevatorDoor", 1, 1, "hideout_elevator", [12, 12, 2, 2, 2, 2, 2, 2]],
-  ["METATILE_SSAnne_Door", 0, 1, "ss_anne", [7, 7, 7, 7, 7, 7, 7, 7]],
-  ["METATILE_SilphCo_ElevatorDoor", 1, 1, "silph_co_elevator", [8, 8, 2, 2, 2, 2, 2, 2]],
-  ["METATILE_SeaCottage_Teleporter_Door", 1, 1, "teleporter", [8, 8, 8, 8, 8, 8, 8, 8]],
-  ["METATILE_TrainerTower_LobbyElevatorDoor", 1, 1, "trainer_tower_lobby_elevator", [8, 8, 2, 2, 2, 2, 2, 2]],
-  ["METATILE_TrainerTower_RoofElevatorDoor", 1, 1, "trainer_tower_roof_elevator", [11, 11, 2, 2, 2, 2, 2, 2]],
-];
-
-const OPEN_SMALL = [CLOSED, 0, 4, 8];
-const CLOSE_SMALL = [8, 4, 0, CLOSED];
-const OPEN_LARGE = [CLOSED, 0, 8, 16];
-const CLOSE_LARGE = [16, 8, 0, CLOSED];
-const FRAME_DURATION = 4;
-
 type DoorGfx = { metatile: number; sound: number; size: number; file: string; palettes: number[] };
+type DoorAnimFrame = { duration: number; tileOffset: number };
+type DoorGraphicsCData = { metatileId: number; sound: number; size: number; tiles: unknown; paletteNums: unknown };
+
+function doorImageName(symbol: string): string {
+  return symbol.replace(/^sDoorAnimTiles_/, "")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/([A-Za-z])([0-9])/g, "$1_$2")
+    .toLowerCase();
+}
 
 export class DoorAnimator {
   private gfx: DoorGfx[] | undefined;
+  private animFrames = new Map<string, DoorAnimFrame[]>();
   private tileData = new Map<string, Uint8Array>();
-  private anim?: { door: DoorGfx; frames: number[]; x: number; y: number; frameId: number; counter: number };
+  private anim?: { door: DoorGfx; frames: DoorAnimFrame[]; x: number; y: number; frameId: number; counter: number };
   /** Door frame currently drawn at a map position (tile offset or CLOSED). */
   private drawn = new Map<string, { door: DoorGfx; offset: number }>();
 
@@ -64,7 +35,15 @@ export class DoorAnimator {
 
   private table(): DoorGfx[] {
     if (!this.gfx) {
-      this.gfx = DOORS.filter(([label]) => label in rom.constants).map(([label, snd, size, file, palettes]) => ({ metatile: rom.c(label), sound: snd, size, file, palettes }));
+      const source = cdata<DoorGraphicsCData[]>("field_door", "sDoorGraphics");
+      this.gfx = source.filter((door) => typeof door.metatileId === "number").map((door) => {
+        const tileSymbol = symName(door.tiles);
+        const paletteSymbol = symName(door.paletteNums);
+        if (!tileSymbol || !paletteSymbol) throw new Error("invalid sDoorGraphics cdata reference");
+        const palettes = cdataAny<number[]>(paletteSymbol);
+        if (!palettes) throw new Error(`missing door palette cdata ${paletteSymbol}`);
+        return { metatile: door.metatileId, sound: door.sound, size: door.size, file: doorImageName(tileSymbol), palettes };
+      });
     }
     return this.gfx;
   }
@@ -81,14 +60,29 @@ export class DoorAnimator {
 
   soundEffect(x: number, y: number): number {
     const door = this.doorAt(x, y);
-    return sound.c(door?.sound === SLIDING ? "SE_SLIDING_DOOR" : "SE_DOOR");
+    return sound.c(door?.sound === 0 ? "SE_DOOR" : "SE_SLIDING_DOOR");
+  }
+
+  private frames(name: string): DoorAnimFrame[] {
+    let frames = this.animFrames.get(name);
+    if (!frames) {
+      frames = cdata<DoorAnimFrame[]>("field_door", name)
+        .filter((frame) => typeof frame.duration === "number")
+        .map((frame) => ({
+          duration: frame.duration,
+          tileOffset: frame.tileOffset === 0xffff ? CLOSED : frame.tileOffset / C.TILE_SIZE_4BPP,
+        }));
+      this.animFrames.set(name, frames);
+    }
+    return frames;
   }
 
   private start(x: number, y: number, open: boolean): boolean {
     if (this.anim) return false;
     const door = this.doorAt(x, y);
     if (!door) return false;
-    const frames = door.size === SIZE_1x2 ? (open ? OPEN_LARGE : CLOSE_LARGE) : (open ? OPEN_SMALL : CLOSE_SMALL);
+    const suffix = door.size === SIZE_1x2 ? "Large" : "Small";
+    const frames = this.frames(`sDoorAnimFrames_${open ? "Open" : "Close"}${suffix}`);
     this.anim = { door, frames, x, y, frameId: 0, counter: 0 };
     return true;
   }
@@ -105,8 +99,8 @@ export class DoorAnimator {
     if (!MB.MetatileBehavior_IsWarpDoor_2(this.ow.map.behaviorAt(x, y))) return;
     const door = this.doorAt(x, y);
     if (!door) return;
-    const frames = door.size === SIZE_1x2 ? OPEN_LARGE : OPEN_SMALL;
-    this.draw(door, frames[frames.length - 1], x, y);
+    const frames = this.frames(`sDoorAnimFrames_Open${door.size === SIZE_1x2 ? "Large" : "Small"}`);
+    this.draw(door, frames[frames.length - 1].tileOffset, x, y);
   }
 
   setClosed(x: number, y: number): void {
@@ -137,8 +131,8 @@ export class DoorAnimator {
   update(): void {
     const a = this.anim;
     if (!a) return;
-    if (a.counter === 0) this.draw(a.door, a.frames[a.frameId], a.x, a.y);
-    if (a.counter === FRAME_DURATION) {
+    if (a.counter === 0) this.draw(a.door, a.frames[a.frameId].tileOffset, a.x, a.y);
+    if (a.counter === a.frames[a.frameId].duration) {
       a.counter = 0;
       a.frameId++;
       if (a.frameId >= a.frames.length) this.anim = undefined;

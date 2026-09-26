@@ -1712,3 +1712,21 @@ Pending / placeholders:
   callers. The poison visual still uses the existing Canvas field effect and
   was not runtime-checked. Static checks and regenerated inventory/pending are
   recorded after this block; no game or browser test was run.
+
+## `field_door.c`: consume exported door definitions (2026-09-25)
+
+- Replaced the manually duplicated door table and four animation sequences in
+  `field/doors.ts` with `sDoorGraphics` and `sDoorAnimFrames_*` from the
+  exported `field_door.c` cdata. The field preload now loads `field_door`;
+  door metatile IDs, sound/size, palette references, frame byte offsets and
+  durations therefore come from the decomp export. `doorImageName` maps the
+  exported tile symbols to keys from the existing `gfx/doors.json` export.
+- Compared the complete `field_door.c`, its header and cdata with the active
+  door script commands, field transition callers and Pallet Town scripts. This
+  also corrected the unknown-door sound fallback to the C behavior
+  (`GetDoorSoundType` returns -1, and `GetDoorSoundEffect` selects the sliding
+  sound for every non-normal value). Door frames still render through Canvas
+  rather than VRAM tile copies; no visual/runtime comparison was run.
+- Static checks: `npm run check:port`, `npm run check:honesty`, `npm run build`,
+  `npm run inventory` and `npm run pending` passed. No game or browser test was
+  run.
