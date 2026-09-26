@@ -12,11 +12,11 @@ import { random } from "../random";
 import { flagClear, flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { LOCALID_PLAYER, OPPOSITE } from "../field/objectEvents";
-import { T_TILE_TRANSITION } from "../field/playerAvatar";
 import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "./specials";
+import { FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "../mapPreviewScreen";
 import type { ScriptCommand, ScriptRunner } from "./context";
 
@@ -354,29 +354,15 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   },
   turnvobject: (ctx) => { const id = ctx.readByte(); const dir = ctx.readByte(); ctx.ow.game.turnVirtualObject(id, dir); return false; },
   lockall: (ctx) => {
-    ctx.ow.objects.freezeAll();
-    ctx.setupNative(() => waitPlayerStopMoving(ctx));
+    FreezeObjects_WaitForPlayer(ctx);
     return true;
   },
   lock: (ctx) => {
     const o = selected(ctx);
     if (o && o.active && !o.isPlayer) {
-      ctx.ow.objects.freezeAll(o);
-      let npcFrozen = false;
-      if (!o.singleMovementActive) { ctx.ow.objects.freeze(o); npcFrozen = true; }
-      let playerDone = false;
-      ctx.setupNative(() => {
-        if (!playerDone && ctx.ow.player.tileTransitionState !== T_TILE_TRANSITION) {
-          handleEnforcedLookDirection(ctx);
-          playerDone = true;
-        }
-        if (!npcFrozen && !o.singleMovementActive) { ctx.ow.objects.freeze(o); npcFrozen = true; }
-        if (playerDone && npcFrozen) { stopPlayerAvatar(ctx); return true; }
-        return false;
-      });
+      FreezeObjects_WaitForPlayerAndSelected(ctx);
     } else {
-      ctx.ow.objects.freezeAll();
-      ctx.setupNative(() => waitPlayerStopMoving(ctx));
+      FreezeObjects_WaitForPlayer(ctx);
     }
     return true;
   },
@@ -655,28 +641,6 @@ function addObject(ctx: ScriptRunner, localId: number): void {
   if (!template) return;
   const o = ctx.ow.objects.spawnFromTemplate(template);
   if (o) ctx.ow.syncObjectSprites();
-}
-
-function handleEnforcedLookDirection(ctx: ScriptRunner): void {
-  const p = ctx.ow.player.object;
-  p.heldMovementActive = false;
-  ctx.ow.objects.forceSetHeldMovement(p, [0, 0, 1, 2, 3][p.facingDirection] ?? 0);
-}
-
-function stopPlayerAvatar(ctx: ScriptRunner): void {
-  const p = ctx.ow.player.object;
-  p.inanimate = false;
-  p.disableAnim = false;
-  p.facingDirectionLocked = false;
-  ctx.ow.player.flags &= ~0x80;
-  ctx.ow.objects.setDirection(p, p.facingDirection);
-}
-
-function waitPlayerStopMoving(ctx: ScriptRunner): boolean {
-  if (ctx.ow.player.tileTransitionState === T_TILE_TRANSITION) return false;
-  handleEnforcedLookDirection(ctx);
-  stopPlayerAvatar(ctx);
-  return true;
 }
 
 export { LOCALID_PLAYER, copy, EOS, tasks };

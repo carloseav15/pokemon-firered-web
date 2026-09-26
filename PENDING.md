@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5505/9825 (56 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5512/9825 (56 %)**.
 - Archivos C pendientes: **117** (130962 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -32,7 +32,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `overworld.c` | 3563 | 70/238 | ~2515 |  |
 | `battle_transition.c` | 3037 | 26/134 | ~2447 |  |
 | `easy_chat_3.c` | 2316 | 1/92 | ~2290 |  |
-| `scrcmd.c` | 2264 | 3/224 | ~2233 |  |
+| `scrcmd.c` | 2264 | 5/224 | ~2213 |  |
 | `intro.c` | 2805 | 17/79 | ~2201 |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | ~2034 |  |
 | `battle_controller_pokedude.c` | 2698 | 31/107 | ~1916 |  |

@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1960/6059 |
+| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1967/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3517/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **117** | **130962** | |
-| **Total en alcance** | **210** | **248996** | **5505/9825** |
+| **Total en alcance** | **210** | **248996** | **5512/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -40,7 +40,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `naming_screen.c` | 2509 | 35/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
-| `scrcmd.c` | 2264 | 3/224 | `field/messageBox.ts`, `script/commands.ts` |  |  |
+| `scrcmd.c` | 2264 | 5/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
 | `field_player_avatar.c` | 2168 | 33/176 | `field/fishing.ts`, `field/playerAvatar.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 5/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 41/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
@@ -126,7 +126,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `window_8bpp.c` | 127 | 5/7 | `hw/window.ts` |  |  |
 | `heal_location.c` | 122 | 1/3 | `field/overworld.ts` |  |  |
 | `field_poison.c` | 119 | 2/7 | `field/poison.ts` |  |  |
-| `event_object_lock.c` | 114 | 3/11 |  |  |  |
+| `event_object_lock.c` | 114 | 8/11 | `script/eventObjectLock.ts` |  |  |
 | `save_location.c` | 112 | 2/10 |  |  |  |
 | `battle_util2.c` | 108 | 1/3 | `battle/anim.ts`, `pokemon/mon_extra.ts` |  |  |
 | `fldeff_softboiled.c` | 108 | 6/8 | `partyMenu.ts` |  |  |

@@ -1676,3 +1676,22 @@ Pending / placeholders:
 - Rechecked `SpriteCB_ThrowBall_DoClick` / `SpriteCB_ThrowBall_FinishClick` in `battle_anim_special.c` against `battle/anims/special.ts`: both keep the ball visible through the caught-message interval and hide it only after the 16-step white blend. The instruction to fix a disappearing ball conflicts with this source comparison and the earlier browser note above; no code change is justified.
 - C `ObjectEventCheckHeldMovementStatus` / `ObjectEventClearHeldMovementIfFinished` return `0` while active and unfinished, `1` when active and finished, and `16` when inactive. Caller review found direct truth checks across field moves, surf, doors, and trainer approach, so mapping inactive `16` to `false` changes their C branch behavior. Ported both APIs with the original numeric statuses, routed TS callers through `ObjectEventClearHeldMovementIfFinished`, and kept `isHeldMovementFinished` as a boolean view of the C status. The Quest Log playback override in `ObjectEventSetHeldMovement` remains out of scope. Inventory: `event_object_movement.c` 47/752. `npm run check:port`, `npm run check:honesty`, `npm run build`, `npm run inventory` and `npm run pending` pass. No browser/game test was run.
 - Also compared the object lookup and turn wrappers used by `turnobject`: TS `byLocalIdAndMap` and `turn` already preserve the map-ID special case and direction/face-animation behavior. Source review only; no gameplay execution.
+
+## `event_object_lock.c`: lock / lockall wait routines (2026-09-25)
+
+- Ported and connected `walkrun_is_standing_still`, `IsFreezePlayerFinished`,
+  `FreezeObjects_WaitForPlayer` and `FreezeObjects_WaitForPlayerAndSelected`
+  in `script/eventObjectLock.ts`. `ScrCmd_lockall` and `ScrCmd_lock` now call
+  these routines instead of keeping equivalent native-script wait logic inline
+  in `script/commands.ts`. The selected-object path waits for the player's tile
+  transition and the NPC's active single movement before resuming; it then
+  restores the player's enforced facing and stops the avatar as the C helpers
+  do. This affects common scripts in Oak's Lab and Viridian City.
+- Source comparison covered the full `event_object_lock.c`,
+  `include/event_object_lock.h`, the `lock`/`lockall`/`release`/`releaseall`
+  callers in `scrcmd.c`, and relevant map scripts. Other routines in
+  `event_object_lock.c` remain pending or are represented through separate
+  existing paths; inventory now reports 8/11 names, which does not establish
+  full parity. Static checks: `npm run check:port`, `npm run check:honesty`,
+  `npm run build`, `npm run inventory` and `npm run pending` passed. No game or
+  browser test was run.

@@ -1,0 +1,68 @@
+// Port of the lock/wait routines in event_object_lock.c, used by ScrCmd_lock
+// and ScrCmd_lockall in scrcmd.c. Native script callbacks preserve the C wait
+// for the player's current tile transition and, for `lock`, the selected NPC's
+// single movement.
+
+import { T_TILE_TRANSITION } from "../field/playerAvatar";
+import type { ScriptRunner } from "./context";
+
+/** walkrun_is_standing_still */
+export function walkrunIsStandingStill(ctx: ScriptRunner): boolean {
+  return ctx.ow.player.tileTransitionState !== T_TILE_TRANSITION;
+}
+
+/** IsFreezePlayerFinished */
+export function IsFreezePlayerFinished(ctx: ScriptRunner): boolean {
+  if (!walkrunIsStandingStill(ctx)) return false;
+  HandleEnforcedLookDirection(ctx);
+  StopPlayerAvatar(ctx);
+  return true;
+}
+
+/** FreezeObjects_WaitForPlayer */
+export function FreezeObjects_WaitForPlayer(ctx: ScriptRunner): void {
+  ctx.ow.objects.freezeAll();
+  ctx.setupNative(() => IsFreezePlayerFinished(ctx));
+}
+
+/** IsFreezeSelectedObjectAndPlayerFinished / Task_WaitPlayerAndTargetNPCStopMoving */
+export function FreezeObjects_WaitForPlayerAndSelected(ctx: ScriptRunner): void {
+  const object = ctx.ow.objects.objects[ctx.ow.selectedObject];
+  ctx.ow.objects.freezeAll(object ?? undefined);
+
+  let playerDone = false;
+  let targetDone = false;
+  if (!object?.singleMovementActive) {
+    if (object) ctx.ow.objects.freeze(object);
+    targetDone = true;
+  }
+
+  ctx.setupNative(() => {
+    if (!playerDone && walkrunIsStandingStill(ctx)) {
+      HandleEnforcedLookDirection(ctx);
+      playerDone = true;
+    }
+    if (!targetDone && object && !object.singleMovementActive) {
+      ctx.ow.objects.freeze(object);
+      targetDone = true;
+    }
+    if (!playerDone || !targetDone) return false;
+    StopPlayerAvatar(ctx);
+    return true;
+  });
+}
+
+function HandleEnforcedLookDirection(ctx: ScriptRunner): void {
+  const player = ctx.ow.player.object;
+  player.heldMovementActive = false;
+  ctx.ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
+}
+
+function StopPlayerAvatar(ctx: ScriptRunner): void {
+  const player = ctx.ow.player.object;
+  player.inanimate = false;
+  player.disableAnim = false;
+  player.facingDirectionLocked = false;
+  ctx.ow.player.flags &= ~0x80;
+  ctx.ow.objects.setDirection(player, player.facingDirection);
+}
