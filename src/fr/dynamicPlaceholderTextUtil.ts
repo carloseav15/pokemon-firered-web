@@ -17,6 +17,11 @@ export function DynamicPlaceholderTextUtil_SetPlaceholderPtr(idx: number, ptr: A
   if (idx < sStringPointers.length) sStringPointers[idx] = ptr;
 }
 
+/** DynamicPlaceholderTextUtil_GetPlaceholderPtr; the C caller expects a nullable byte string. */
+export function DynamicPlaceholderTextUtil_GetPlaceholderPtr(idx: number): ArrayLike<number> | null | undefined {
+  return sStringPointers[idx];
+}
+
 /** DynamicPlaceholderTextUtil_ExpandPlaceholders */
 export function DynamicPlaceholderTextUtil_ExpandPlaceholders(src: ArrayLike<number>): Uint8Array {
   const out: number[] = [];

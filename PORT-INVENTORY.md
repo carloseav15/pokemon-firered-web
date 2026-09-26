@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (< 80 % de funciones) | 50 | 106738 | 1447/4926 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 44 | 61177 | 2155/2395 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 106 | 78491 | 2455/2455 |
+| Casi completo (≥ 80 % y < 100 %) | 43 | 61040 | 2151/2390 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 107 | 78628 | 2460/2460 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 40/192 |
 | Fuera de alcance | 51 | 55183 | 103/1992 |
-| **Pendiente de portar** | **95** | **169315** | |
-| **Total en alcance** | **202** | **247859** | **6085/9834** |
+| **Pendiente de portar** | **94** | **169178** | |
+| **Total en alcance** | **202** | **247859** | **6086/9834** |
 
 ## Parcial (< 80 % de funciones)
 
@@ -127,7 +127,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |  |
 | `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
 | `gpu_regs.c` | 158 | 10/11 | `hw/gpu.ts` |  |  |
-| `dynamic_placeholder_text_util.c` | 137 | 4/5 | `dynamicPlaceholderTextUtil.ts` |  |  |
 | `event_object_lock.c` | 114 | 9/11 | `script/eventObjectLock.ts` |  |  |
 | `party_menu_specials.c` | 108 | 8/9 | `game.ts`, `script/specialsExtra.ts` |  |  |
 
@@ -218,6 +217,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
 | `field_message_box.c` | 142 | 14/14 | `field/messageBox.ts` |  |  |
 | `mailbox_pc.c` | 140 | 9/9 | `mailboxPc.ts`, `menus/playerPc.ts`, `playerPcMailbox.ts` … |  |  |
+| `dynamic_placeholder_text_util.c` | 137 | 5/5 | `dynamicPlaceholderTextUtil.ts` |  |  |
 | `fldeff_rocksmash.c` | 137 | 10/10 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `money.c` | 136 | 13/13 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
 | `berry_powder.c` | 133 | 14/14 | `script/specialsExtra.ts` |  |  |

@@ -5,11 +5,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.085/9.834 funciones con homólogo (61,9%)**; quedan
-  **3.749 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **95 aún
-  tienen huecos de nombre**: 44 casi completos, 50 parciales y uno adaptador;
-  106 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.967/247.859 (31,5%)**. Son indicadores del
+- Inventario actual: **6.086/9.834 funciones con homólogo (61,9%)**; quedan
+  **3.748 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **94 aún
+  tienen huecos de nombre**: 43 casi completos, 50 parciales y uno adaptador;
+  107 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
+  de líneas C sin cubrir es **~77.940/247.859 (31,4%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
@@ -1146,9 +1146,9 @@ whiteout respawn now uses the original heal-location data in
   el stat, reproduce `show mon`/sonido y reanuda el script igual que C. Revisión
   de código completada; no se comparó el timing de animación en navegador.
 - `dynamic_placeholder_text_util.c`: el color de texto NPC usa la tabla C
-  exportada. Los placeholders F7 tienen implementaciones locales en resumen
-  y diploma, pero falta el helper compartido Reset/Set/Get/Expand para el resto
-  de callers; cajas y minijuegos opcionales conservan adaptaciones.
+  exportada. Reset/Set/Get/Expand están disponibles en
+  `dynamicPlaceholderTextUtil.ts`; expand devuelve bytes nuevos en vez de
+  escribir en un destino C. Cajas y minijuegos opcionales conservan adaptaciones.
 - `berry_powder.c`: la resta/comprobación de polvo y el vendor tienen handlers
   TS. Faltan el tope 99.999 de GiveBerryPowder, el rewrap por encryption key
   y la ventana exacta; la adquisición depende de Berry Crush (link).
@@ -2621,3 +2621,11 @@ Pending / placeholders:
   ahora aparece con 8/8 nombres en el inventario.
 - Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
   sin prueba headless ni navegador.
+
+## `dynamic_placeholder_text_util.c`: acceso a placeholder (2026-09-26)
+
+- Añadí `DynamicPlaceholderTextUtil_GetPlaceholderPtr`, que comparte la tabla
+  nullable de ocho entradas con Reset/Set/Expand. El archivo ahora aparece con
+  5/5 nombres; la expansión conserva su adaptación de devolver un buffer nuevo.
+- Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
+  sin check headless ni navegador.
