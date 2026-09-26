@@ -11,6 +11,7 @@ import { flagGet, save, varGet, varSet } from "../save";
 import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { FieldMoveEffects } from "./fieldMoves";
+import { DoPoisonFieldEffect } from "./poison";
 
 type Template = { frames: Array<[string, number, number, number]>; anims: AnimCmd[][]; callback: string | null; size: [number, number] | null };
 type FieldFxData = { templates: Record<string, Template>; emoticons: { file: string; width: number; height: number } };
@@ -491,22 +492,7 @@ export class FieldEffects {
     const value = (varGet(id) + 1) % 5;
     varSet(id, value);
     if (value !== 0) return false;
-    let fainted = false;
-    let anyPoisoned = false;
-    for (const mon of save.party) {
-      if (!mon.species) continue;
-      if ((mon.status & 0x88) !== 0) { // STATUS1_POISON | STATUS1_TOXIC_POISON
-        anyPoisoned = true;
-        mon.hp = Math.max(0, mon.hp - 1);
-        if (mon.hp === 0) fainted = true;
-      }
-    }
-    if (anyPoisoned) {
-      this.startPoisonEffect();
-    }
-    if (fainted) return true;
-    void flagGet;
-    return false;
+    return DoPoisonFieldEffect(() => this.startPoisonEffect()) === C.FLDPSN_FNT;
   }
 
   safariZoneTakeStep(): boolean {

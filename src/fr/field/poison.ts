@@ -6,9 +6,29 @@ import { tasks } from "../gba/tasks";
 import { stringVars } from "../gba/charmap";
 import { rom } from "../rom";
 import { save, SV, varSet } from "../save";
+import { GetMonData, SetMonData } from "../pokemon/mon";
 import { nickname } from "../pokemon/pokemon";
 import { AdjustFriendship } from "../pokemon/mon_extra";
 import type { Mon } from "../pokemon/mon";
+
+/** DoPoisonFieldEffect: apply one field-poison HP loss and return FLDPSN_*. */
+export function DoPoisonFieldEffect(startEffect: () => void): number {
+  let numPoisoned = 0;
+  let numFainted = 0;
+  for (const mon of save.party as Mon[]) {
+    if (!GetMonData(mon, C.MON_DATA_SANITY_HAS_SPECIES)) continue;
+    if (!(GetMonData(mon, C.MON_DATA_STATUS) & C.STATUS1_PSN_ANY)) continue;
+
+    let hp = GetMonData(mon, C.MON_DATA_HP);
+    if (hp === 0 || --hp === 0) numFainted++;
+    SetMonData(mon, C.MON_DATA_HP, hp);
+    numPoisoned++;
+  }
+  if (numFainted || numPoisoned) startEffect();
+  if (numFainted) return C.FLDPSN_FNT;
+  if (numPoisoned) return C.FLDPSN_PSN;
+  return C.FLDPSN_NONE;
+}
 
 export function tryFieldPoisonWhiteOut(game: Game): void {
   game.overworld.script.stop();

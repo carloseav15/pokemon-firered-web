@@ -1695,3 +1695,20 @@ Pending / placeholders:
   full parity. Static checks: `npm run check:port`, `npm run check:honesty`,
   `npm run build`, `npm run inventory` and `npm run pending` passed. No game or
   browser test was run.
+
+## `field_poison.c`: field poison damage step (2026-09-25)
+
+- Extracted `DoPoisonFieldEffect` into `field/poison.ts` and connected
+  `FieldEffects.updatePoisonStepCounter` to it. It checks C's
+  `MON_DATA_SANITY_HAS_SPECIES` and `STATUS1_PSN_ANY`, applies one HP loss,
+  starts the existing `FldEffPoison_Start` adaptation when at least one
+  Pokémon is poisoned, and returns the generated `FLDPSN_NONE` / `PSN` / `FNT`
+  value. `fieldControl.ts` continues to start `EventScript_FieldPoison` only
+  for the faint result, matching `UpdatePoisonStepCounter` in
+  `field_control_avatar.c`; the existing `TryFieldPoisonWhiteOut` task clears
+  poison and determines party wipeout.
+- Compared `field_poison.c`, `field_poison.h`, `UpdatePoisonStepCounter`,
+  `EventScript_FieldPoison`, and the active `fieldEffects.ts` / `fieldControl.ts`
+  callers. The poison visual still uses the existing Canvas field effect and
+  was not runtime-checked. Static checks and regenerated inventory/pending are
+  recorded after this block; no game or browser test was run.

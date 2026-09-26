@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1967/6059 |
+| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1968/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3517/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **117** | **130962** | |
-| **Total en alcance** | **210** | **248996** | **5512/9825** |
+| **Total en alcance** | **210** | **248996** | **5513/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -125,7 +125,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `berry_powder.c` | 133 | 6/14 | `script/specialsExtra.ts` |  |  |
 | `window_8bpp.c` | 127 | 5/7 | `hw/window.ts` |  |  |
 | `heal_location.c` | 122 | 1/3 | `field/overworld.ts` |  |  |
-| `field_poison.c` | 119 | 2/7 | `field/poison.ts` |  |  |
+| `field_poison.c` | 119 | 3/7 | `field/poison.ts` |  |  |
 | `event_object_lock.c` | 114 | 8/11 | `script/eventObjectLock.ts` |  |  |
 | `save_location.c` | 112 | 2/10 |  |  |  |
 | `battle_util2.c` | 108 | 1/3 | `battle/anim.ts`, `pokemon/mon_extra.ts` |  |  |
