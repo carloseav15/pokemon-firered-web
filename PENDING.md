@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5831/9834 (59.3 %)**.
-- Archivos C con funciones aún sin homólogo: **79**; quedan **4003 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5832/9834 (59.3 %)**.
+- Archivos C con funciones aún sin homólogo: **79**; quedan **4002 nombres**.
 - Estos archivos contienen 146.543 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~83.659 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~83.585 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -53,12 +53,12 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 34 | `battle_controller_opponent.c` | parcial | 1777 | 56/87 | ~633 |  |
 | 35 | `itemfinder.c` | parcial | 658 | 0/24 | ~658 |  |
 | 36 | `mail.c` | parcial | 734 | 1/10 | ~660 |  |
-| 37 | `field_fadetransition.c` | parcial | 965 | 16/59 | ~703 |  |
-| 38 | `string_util.c` | parcial | 726 | 1/40 | ~707 |  |
-| 39 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
-| 40 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 41 | `battle_controller_oak_old_man.c` | parcial | 2293 | 73/107 | ~728 |  |
-| 42 | `evolution_scene.c` | parcial | 1704 | 13/23 | ~740 |  |
+| 37 | `evolution_scene.c` | parcial | 1704 | 14/23 | ~666 |  |
+| 38 | `field_fadetransition.c` | parcial | 965 | 16/59 | ~703 |  |
+| 39 | `string_util.c` | parcial | 726 | 1/40 | ~707 |  |
+| 40 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
+| 41 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
+| 42 | `battle_controller_oak_old_man.c` | parcial | 2293 | 73/107 | ~728 |  |
 | 43 | `field_control_avatar.c` | parcial | 1182 | 17/49 | ~771 |  |
 | 44 | `fieldmap.c` | parcial | 951 | 4/54 | ~880 |  |
 | 45 | `berry.c` | parcial | 1028 | 1/9 | ~913 |  |

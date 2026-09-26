@@ -110,7 +110,7 @@ import { Sin, Cos } from "./hw/trig";
 import { random } from "./random";
 import { rom } from "./rom";
 import { save, flagGet, incrementGameStat, varGet } from "./save";
-import { evolveMon, speciesName, type Pokemon } from "./pokemon/pokemon";
+import { calculateStats, evolveMon, setDexFlag, speciesName, type Pokemon } from "./pokemon/pokemon";
 import {
   type Mon,
   CalculatePlayerPartyCount,
@@ -132,7 +132,6 @@ import {
   BattleDestroyYesNoCursorAt,
 } from "./battle/message";
 import { ShowSelectMovePokemonSummaryScreen, GetMoveSlotToReplace } from "./pokemonSummaryScreen";
-import { trySpawnShedinja } from "./menus/monProgress";
 import { ScanlineEffect_Stop } from "./hw/scanline";
 import { fieldMenu } from "./menus/fieldMenus";
 import type { Game } from "./game";
@@ -144,6 +143,34 @@ const TAG_PRE_EVO = 1002;
 const TAG_POST_EVO = 1003;
 
 const DISPCNT_BG_ALL_ON = DISPCNT_BG0_ON | DISPCNT_BG1_ON | DISPCNT_BG2_ON | DISPCNT_BG3_ON;
+
+/** evolution_scene.c CreateShedinja. Nincada's second evolution is granted
+ * after the Ninjask evolution, using the evolved mon as the source record. */
+function CreateShedinja(preEvoSpecies: number, mon: Pokemon): void {
+  const evolutions = rom.species[preEvoSpecies]?.evolutions;
+  const ninjaskEvolution = evolutions?.[0];
+  const shedinjaEvolution = evolutions?.[1];
+  if (ninjaskEvolution?.[0] !== C.EVO_LEVEL_NINJASK || !shedinjaEvolution || save.party.length >= C.PARTY_SIZE) return;
+
+  const shedinja = structuredClone(mon) as Mon;
+  shedinja.species = shedinjaEvolution[2];
+  shedinja.nickname = Array.from(speciesName(shedinja.species));
+  shedinja.heldItem = 0;
+  shedinja.markings = 0;
+  shedinja.status = 0;
+  shedinja.mail = C.MAIL_NONE;
+  shedinja.mailMessage = undefined;
+  shedinja.ribbons = new Array(18).fill(0);
+  calculateStats(shedinja);
+  save.party.push(shedinja);
+  setDexFlag(shedinja.species, true);
+
+  if (shedinja.species === C.SPECIES_SHEDINJA
+      && shedinja.language === C.LANGUAGE_JAPANESE
+      && mon.species === C.SPECIES_NINJASK) {
+    shedinja.nickname = [...cdata<number[]>("evolution_scene", "sText_ShedinjaJapaneseName")];
+  }
+}
 
 // Task wrappers matching C
 const gTasks = tasks.tasks;
@@ -1095,7 +1122,7 @@ function Task_EvolutionScene(taskId: number): void {
     case EvoState.EVOSTATE_END:
       if (!gPaletteFade.active) {
         if (!t.data[9]) {
-          trySpawnShedinja(mon, preEvoSpecies);
+          CreateShedinja(preEvoSpecies, mon);
         }
         DestroyTask(taskId);
         FreeSpriteTilesByTag(TAG_PRE_EVO);

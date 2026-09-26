@@ -7,11 +7,18 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.831/9.834 (59,3%)**; quedan
-  **4.003 nombres (40,7%)**. Hay **79 archivos C con huecos**: uno sin empezar,
+  stubs. El inventario vigente registra **5.832/9.834 (59,3%)**; quedan
+  **4.002 nombres (40,7%)**. Hay **79 archivos C con huecos**: uno sin empezar,
   uno adaptador, 24 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.659/247.859 (33,7%)**. El inventario mide nombres/cuerpos
+  cubrir es **~83.585/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
+- **`evolution_scene.c`: `CreateShedinja` corregido y conectado.** El flujo
+  anterior exigía y consumía una Poké Ball aunque el C no lo hace, y creaba
+  stats desde un Pokémon nuevo. Ahora copia el Pokémon evolucionado, limpia
+  objeto/estado/mail/ribbons, recalcula stats, registra la Pokédex y usa el
+  nombre japonés exportado cuando corresponde. El inventario queda en 14/23;
+  pasan `check:port`, `check:honesty`, `inventory`, `pending` y
+  `git diff --check`. Sin prueba de ejecución en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
@@ -1663,7 +1670,7 @@ tragaperras, Islas Sevii.
 14. **PC de objetos** (`item_pc.c`, `pc_screen_effect.c`) **[PORTADO, sin probar]**:
     `itemPc.ts` y `pcScreenEffect.ts`; ver la sección de 2026-09-25.
 15. **Escena de Evolución** (`evolution_scene.c`, 1704 líneas + `evolution_graphics.c`, 638 líneas)
-    **[PARCIAL]**: `evolution_scene.c` tiene 13/23 y `evolution_graphics.c`
+    **[PARCIAL]**: `evolution_scene.c` tiene 14/23 y `evolution_graphics.c`
     34/37 funciones con homólogo; `src/fr/evolutionScene.ts` implementa la
     secuencia principal descrita abajo, pero el inventario aún muestra huecos y
     faltan las rutinas específicas de evolución durante trade por enlace.

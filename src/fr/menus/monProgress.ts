@@ -8,7 +8,7 @@ import { sound } from "../audio/sound";
 import { decode, stringVars } from "../gba/charmap";
 import { rom } from "../rom";
 import { save } from "../save";
-import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, setDexFlag, createMon, speciesName, type Pokemon } from "../pokemon/pokemon";
+import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, type Pokemon } from "../pokemon/pokemon";
 import { openHardwareChoice, openHardwareMessage, openHardwareMessageWithFanfare } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
 import { GetMoveSlotToReplace, ShowSelectMovePokemonSummaryScreen } from "../pokemonSummaryScreen";
@@ -161,25 +161,4 @@ export function learnLevelUpMoves(mon: Pokemon, done: () => void): void {
 export function evolveWithMessages(mon: Pokemon, target: number, done: () => void): void {
   const slot = Math.max(0, save.party.indexOf(mon));
   BeginEvolutionScene(mon, target, false, slot, done);
-}
-
-/** evolution_scene.c CreateShedinja */
-export function trySpawnShedinja(mon: Pokemon, preEvo: number): void {
-  const evo = rom.species[preEvo]?.evolutions.find(([method]) => method === C.EVO_LEVEL_SHEDINJA);
-  if (!evo || save.party.length >= 6) return;
-  const ball = save.bag.pokeBalls.find((s) => s.item === C.ITEM_POKE_BALL && s.quantity > 0);
-  if (!ball) return;
-  const shedinja: Pokemon = { ...structuredClone(mon), species: evo[2] };
-  shedinja.nickname = Array.from(speciesName(evo[2]));
-  shedinja.heldItem = 0;
-  shedinja.markings = 0;
-  shedinja.status = 0;
-  shedinja.mail = undefined;
-  const fresh = createMon(evo[2], mon.level, { personality: mon.personality, otId: mon.otId });
-  shedinja.stats = fresh.stats;
-  shedinja.hp = fresh.stats[0];
-  save.party.push(shedinja);
-  setDexFlag(evo[2], true);
-  ball.quantity--;
-  if (!ball.quantity) save.bag.pokeBalls.splice(save.bag.pokeBalls.indexOf(ball), 1);
 }

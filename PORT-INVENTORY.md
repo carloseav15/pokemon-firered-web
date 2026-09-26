@@ -11,7 +11,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 53 | 107424 | 1269/4989 |
+| Parcial (< 80 % de funciones) | 53 | 107424 | 1270/4989 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 24 | 36289 | 1221/1404 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 122 | 101263 | 3313/3313 |
@@ -19,7 +19,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
 | **Pendiente de portar** | **79** | **146543** | |
-| **Total en alcance** | **202** | **247859** | **5831/9834** |
+| **Total en alcance** | **202** | **247859** | **5832/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -56,7 +56,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
 | `fame_checker.c` | 1739 | 15/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
-| `evolution_scene.c` | 1704 | 13/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
+| `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |  |
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
