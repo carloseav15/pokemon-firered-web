@@ -143,6 +143,11 @@ export function GiveMailToMon2(mon: Pokemon, mail: MailData): number {
   return id;
 }
 
+/** mail_data.c DummyMailFunc: the source's unused placeholder always returns FALSE. */
+export function DummyMailFunc(): boolean {
+  return false;
+}
+
 /** Copy the saved record for a mail-holding Pokémon. */
 export function GetMailDataForMon(mon: Pokemon): MailData | undefined {
   const mail = currentMailData(mon);

@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 53 | 107424 | 1270/4989 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 24 | 36289 | 1221/1404 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 122 | 101263 | 3313/3313 |
+| Casi completo (≥ 80 % y < 100 %) | 23 | 36102 | 1210/1392 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 123 | 101450 | 3325/3325 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **79** | **146543** | |
-| **Total en alcance** | **202** | **247859** | **5832/9834** |
+| **Pendiente de portar** | **78** | **146356** | |
+| **Total en alcance** | **202** | **247859** | **5833/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -118,7 +118,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `field_tasks.c` | 351 | 10/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
 | `menu_helpers.c` | 243 | 14/17 | `hw/menuHelpers.ts` |  | 1 |
-| `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 
@@ -212,6 +211,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |  |
 | `ss_anne.c` | 200 | 8/8 | `script/specialsExtra.ts` |  |  |
 | `battle_anim_smokescreen.c` | 197 | 3/3 | `battle/anims/smokescreen.ts` |  |  |
+| `mail_data.c` | 187 | 12/12 | `pokemon/mail.ts` |  |  |
 | `pc_screen_effect.c` | 179 | 7/7 | `pcScreenEffect.ts` |  |  |
 | `text_window.c` | 177 | 19/19 | `battle/bg.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` |  |  |
 | `pokemon_storage_system.c` | 171 | 21/21 | `pokemon/storage.ts` |  |  |

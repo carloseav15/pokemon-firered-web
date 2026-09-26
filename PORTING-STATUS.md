@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.832/9.834 (59,3%)**; quedan
-  **4.002 nombres (40,7%)**. Hay **79 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 24 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.585/247.859 (33,7%)**. El inventario mide nombres/cuerpos
+  stubs. El inventario vigente registra **5.833/9.834 (59,3%)**; quedan
+  **4.001 nombres (40,7%)**. Hay **78 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 23 casi completos y 53 parciales. La estimación de líneas sin
+  cubrir es **~83.570/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - **`evolution_scene.c`: `CreateShedinja` corregido y conectado.** El flujo
   anterior exigía y consumía una Poké Ball aunque el C no lo hace, y creaba
@@ -19,6 +19,11 @@ systems. The first playable route is a milestone, not the completion criterion.
   nombre japonés exportado cuando corresponde. El inventario queda en 14/23;
   pasan `check:port`, `check:honesty`, `inventory`, `pending` y
   `git diff --check`. Sin prueba de ejecución en navegador.
+- **`mail_data.c`: 12/12 funciones con homólogo.** Añadí `DummyMailFunc` como
+  no-op porque así está definido en C y no tiene callers en el decomp; no
+  representa un flujo pendiente ni una conducta inventada. El archivo sale de
+  `PENDING.md`. Pasaron `check:port`, `check:honesty`, `inventory`, `pending` y
+  `git diff --check`.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
