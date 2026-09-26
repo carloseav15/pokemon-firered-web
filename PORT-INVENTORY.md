@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (< 80 % de funciones) | 50 | 106738 | 1447/4926 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 47 | 61629 | 2180/2424 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 103 | 78039 | 2426/2426 |
+| Casi completo (≥ 80 % y < 100 %) | 46 | 61521 | 2173/2416 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 104 | 78147 | 2434/2434 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 40/192 |
 | Fuera de alcance | 51 | 55183 | 103/1992 |
-| **Pendiente de portar** | **98** | **169767** | |
-| **Total en alcance** | **202** | **247859** | **6081/9834** |
+| **Pendiente de portar** | **97** | **169659** | |
+| **Total en alcance** | **202** | **247859** | **6082/9834** |
 
 ## Parcial (< 80 % de funciones)
 
@@ -131,7 +131,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `dynamic_placeholder_text_util.c` | 137 | 4/5 | `dynamicPlaceholderTextUtil.ts` |  |  |
 | `money.c` | 136 | 11/13 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
 | `event_object_lock.c` | 114 | 9/11 | `script/eventObjectLock.ts` |  |  |
-| `fldeff_softboiled.c` | 108 | 7/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
 | `party_menu_specials.c` | 108 | 8/9 | `game.ts`, `script/specialsExtra.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
@@ -227,6 +226,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `save_location.c` | 112 | 10/10 | `pokemon/saveLocation.ts` |  |  |
 | `prof_pc.c` | 109 | 3/3 | `game.ts` |  |  |
 | `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
+| `fldeff_softboiled.c` | 108 | 8/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
 | `field_weather_util.c` | 105 | 10/10 | `field/weather.ts` |  |  |
 | `fldeff_sweetscent.c` | 100 | 7/7 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `coins.c` | 98 | 9/9 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |

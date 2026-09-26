@@ -2148,14 +2148,18 @@ function Task_TryUseSoftboiledOnPartyMon(taskId: number): void {
   }
   const curHp = GetMonData(mon(recipientPartyId), C.MON_DATA_HP);
   if (curHp === 0 || userPartyId === recipientPartyId || GetMonData(mon(recipientPartyId), C.MON_DATA_MAX_HP) === curHp) {
-    sound.playSE(C.SE_SELECT);
-    DisplayPartyMenuMessage(text("gText_CantBeUsedOnPkmn"), false);
-    ScheduleBgCopyTilemapToVram(2);
-    tasks.setFunc(taskId, Task_ChooseNewMonForSoftboiled);
+    CantUseSoftboiledOnMon(taskId);
   } else {
     sound.playSE(C.SE_USE_ITEM);
     PartyMenuModifyHP(taskId, userPartyId, -1, Math.floor(GetMonData(mon(userPartyId), C.MON_DATA_MAX_HP) / 5), Task_SoftboiledRestoreHealth);
   }
+}
+
+function CantUseSoftboiledOnMon(taskId: number): void {
+  sound.playSE(C.SE_SELECT);
+  DisplayPartyMenuMessage(text("gText_CantBeUsedOnPkmn"), false);
+  ScheduleBgCopyTilemapToVram(2);
+  tasks.setFunc(taskId, Task_ChooseNewMonForSoftboiled);
 }
 
 function Task_SoftboiledRestoreHealth(taskId: number): void {

@@ -9,13 +9,13 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 
 | Medida | Valor | Qué significa |
 |---|---:|---|
-| Funciones del C con homólogo por nombre en TS | **6081 / 9834 (61,8 %)** | Indicador de nombres; no prueba fidelidad |
-| Archivos C sin huecos de nombre | **103 / 202 (51,0 %)** | El inventario no mide paridad funcional |
-| Archivos casi completos (≥ 80 % y < 100 %) | **47** | Aún tienen funciones sin homólogo |
+| Funciones del C con homólogo por nombre en TS | **6082 / 9834 (61,8 %)** | Indicador de nombres; no prueba fidelidad |
+| Archivos C sin huecos de nombre | **104 / 202 (51,5 %)** | El inventario no mide paridad funcional |
+| Archivos casi completos (≥ 80 % y < 100 %) | **46** | Aún tienen funciones sin homólogo |
 | Archivos parciales (< 80 %) | **50** | Lista completa, junto con los casi completos, en `PENDING.md` |
 | Archivos adaptador | **1** | Teachy TV conserva interfaz de lista simplificada |
-| Archivos con algún hueco de nombre | **98** | 47 casi completos + 50 parciales + 1 adaptador |
-| Líneas C sin cubrir (estimación ponderada) | **~78 026 / 247 859 (31,5 %)** | Estimación por proporción de funciones, no comparación de cada línea |
+| Archivos con algún hueco de nombre | **97** | 46 casi completos + 50 parciales + 1 adaptador |
+| Líneas C sin cubrir (estimación ponderada) | **~78 013 / 247 859 (31,5 %)** | Estimación por proporción de funciones, no comparación de cada línea |
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
 | Funciones stub (nombre del C, cuerpo vacío) | 125 | No cuentan como portadas (PENDING.md §3b) |
 | Módulos que el juego no importa | 9 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
@@ -193,8 +193,8 @@ pero las reglas del §5 siguen igual: una función cuenta solo si tiene el cuerp
 del C, está conectada y se ha probado al menos en headless.
 
 **Qué medir.** El inventario de nombres es un avance orientativo, no la medida
-final de implementación. Hoy marca 6081/9834 nombres, con 98 archivos que aún
-tienen huecos: 47 casi completos, 50 parciales y un adaptador. Estima ~78 026
+final de implementación. Hoy marca 6082/9834 nombres, con 97 archivos que aún
+tienen huecos: 46 casi completos, 50 parciales y un adaptador. Estima ~78 013
 líneas C sin cubrir de 247 859 por proporción de funciones. La meta real además
 requiere revisar el cuerpo contra el C, conectar el flujo y probarlo en headless.
 
