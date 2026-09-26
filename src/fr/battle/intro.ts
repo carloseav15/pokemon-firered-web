@@ -310,3 +310,18 @@ export function CopyBattlerSpriteToBg(bgId: number, x: number, y: number, battle
   for (let i = y; i < y + 8; i++) for (let j = x; j < x + 8; j++) tilemapDest[i * 32 + j] = (offset++ | (palno << 12)) & 0xffff;
   LoadBgTilemap(bgId, tilemapDest, BG_SCREEN_SIZE, 0);
 }
+
+/** battle_intro.c DrawBattlerOnBgDMA (unused in FireRed): copy one form's 8x8 tiles and map entries directly into VRAM. */
+export function DrawBattlerOnBgDMA(arg0: number, arg1: number, battlerPosition: number, arg3: number, arg4: number, arg5: number, arg6: number, arg7: number): void {
+  const source = gMonSpritesGfxPtr.sprites[battlerPosition]!;
+  const sourceOffset = BG_SCREEN_SIZE * arg3;
+  ppu.vram.set(source.subarray(sourceOffset, sourceOffset + BG_SCREEN_SIZE), arg5);
+
+  let offset = (arg5 >> 5) - (arg7 << 9);
+  const bgVram = new Uint16Array(ppu.vram.buffer);
+  for (let i = arg1; i < arg1 + 8; i++) {
+    for (let j = arg0; j < arg0 + 8; j++) {
+      bgVram[i * 32 + j + (arg6 << 10)] = (offset++ | (arg4 << 12)) & 0xffff;
+    }
+  }
+}

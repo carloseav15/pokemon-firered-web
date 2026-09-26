@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 28 | 49040 | 1636/1850 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 117 | 88073 | 2850/2850 |
+| Casi completo (≥ 80 % y < 100 %) | 27 | 48548 | 1627/1840 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 118 | 88565 | 2860/2860 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **84** | **159733** | |
-| **Total en alcance** | **202** | **247859** | **5795/9834** |
+| **Pendiente de portar** | **83** | **159241** | |
+| **Total en alcance** | **202** | **247859** | **5796/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -119,7 +119,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `window.c` | 513 | 20/21 | `gba/window.ts`, `hw/window.ts` |  |  |
-| `battle_intro.c` | 492 | 9/10 | `battle/intro.ts` |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `field_tasks.c` | 351 | 10/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
 | `menu_helpers.c` | 243 | 14/17 | `hw/menuHelpers.ts` |  | 1 |
@@ -178,6 +177,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `trig.c` | 542 | 4/4 | `hw/trig.ts` |  |  |
 | `battle_anim_status_effects.c` | 535 | 12/12 | `battle/anim.ts`, `battle/anims/statusEffects.ts` |  |  |
 | `seagallop.c` | 504 | 22/22 | `seagallop.ts` |  |  |
+| `battle_intro.c` | 492 | 10/10 | `battle/intro.ts` |  |  |
 | `palette_util.c` | 474 | 17/17 | `paletteUtil.ts` |  |  |
 | `battle_anim_bug.c` | 462 | 13/13 | `battle/anims/bug.ts` |  |  |
 | `field_screen_effect.c` | 462 | 19/19 | `field/fieldEffects.ts`, `field/overworld.ts`, `script/specials.ts` |  |  |
