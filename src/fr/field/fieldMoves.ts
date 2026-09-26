@@ -102,10 +102,17 @@ export class FieldMoveEffects {
       switch (state) {
         case 0:
           if (!ow.objects.isMovementOverridden(player) || ow.objects.clearHeldMovementIfFinished(player)) {
-            ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
-            player.sprite.startAnim(ANIM_FIELD_MOVE);
-            ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
-            state = 1;
+            // fldeff_rocksmash.c: underwater maps skip the player summon
+            // animation and start the show-mon field effect immediately.
+            if (ow.header.mapType === C.MAP_TYPE_UNDERWATER) {
+              this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
+              state = 2;
+            } else {
+              ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
+              player.sprite.startAnim(ANIM_FIELD_MOVE);
+              ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
+              state = 1;
+            }
           }
           break;
         case 1:
