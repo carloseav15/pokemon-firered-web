@@ -495,9 +495,25 @@ export class ObjectEvents {
     return undefined;
   }
 
-  /** GetObjectEventIdByXYZ (for interactions) */
+  /** GetObjectEventIdByPosition (event_object_movement.c). */
+  GetObjectEventIdByPosition(x: number, y: number, elevation: number): number {
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (object?.active && object.currentCoords.x === x && object.currentCoords.y === y
+        && this.ObjectEventDoesElevationMatch(object, elevation)) return i;
+    }
+    return OBJECT_EVENTS_COUNT;
+  }
+
+  /** ObjectEventDoesElevationMatch (event_object_movement.c). */
+  private ObjectEventDoesElevationMatch(object: ObjectEvent, elevation: number): boolean {
+    return object.currentElevation === 0 || elevation === 0 || object.currentElevation === elevation;
+  }
+
+  /** Return the object at the C GetObjectEventIdByPosition coordinates. */
   objectAtXYZ(x: number, y: number, elevation: number): ObjectEvent | undefined {
-    return this.list.find((o) => o.currentCoords.x === x && o.currentCoords.y === y && (o.currentElevation === 0 || elevation === 0 || o.currentElevation === elevation));
+    const objectId = this.GetObjectEventIdByPosition(x, y, elevation);
+    return objectId === OBJECT_EVENTS_COUNT ? undefined : this.objects[objectId] ?? undefined;
   }
 
   // ---------------------------------------------------------------- state helpers

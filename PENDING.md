@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5501/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5503/9825 (56 %)**.
 - Archivos C pendientes: **117** (130962 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -24,7 +24,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 | Archivo C | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---|---:|---:|---:|---|
-| `event_object_movement.c` | 9412 | 43/752 | ~8873 |  |
+| `event_object_movement.c` | 9412 | 45/752 | ~8848 |  |
 | `field_effect.c` | 4033 | 40/239 | ~3358 |  |
 | `pokemon.c` | 6453 | 73/135 | ~2963 |  |
 | `trade.c` | 2958 | 0/66 | ~2958 |  |
