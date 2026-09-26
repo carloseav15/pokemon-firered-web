@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 33 | 56356 | 1899/2124 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 112 | 80757 | 2576/2576 |
+| Casi completo (≥ 80 % y < 100 %) | 32 | 54010 | 1808/2031 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 113 | 83103 | 2669/2669 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **89** | **167049** | |
-| **Total en alcance** | **202** | **247859** | **5784/9834** |
+| **Pendiente de portar** | **88** | **164703** | |
+| **Total en alcance** | **202** | **247859** | **5786/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -103,7 +103,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `battle_controller_player.c` | 2966 | 111/123 | `battle/controller_player.ts` |  |  |
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_anim_mons.c` | 2360 | 125/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |  |
-| `field_weather_effects.c` | 2346 | 91/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  | 2 |
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `tm_case.c` | 1737 | 66/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
@@ -141,6 +140,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokedex_screen.c` | 3452 | 66/66 | `pokedexScreen.ts`, `pokemon/mon_extra.ts` |  |  |
 | `battle_message.c` | 2855 | 10/10 | `battle/message.ts` |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
+| `field_weather_effects.c` | 2346 | 93/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  |  |
 | `battle_anim_special.c` | 2304 | 81/81 | `battle/anims/special.ts`, `battle/gfx_sfx_util.ts`, `battle/interface.ts` … |  |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |

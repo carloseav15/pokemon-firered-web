@@ -1,13 +1,15 @@
-// Partial port of field_weather_effects.c (87/93 functions have bodies).
+// field_weather_effects.c function inventory: 93/93 names have bodies; visual
+// weather sprites still use a Canvas adaptation and are not pixel-verified.
 // Field weather particle sprites, animations, movement updates and controllers:
 // Clouds, Sunny, Drought, Rain, Thunderstorm, Downpour, Snow, Fog (H/D), Ash, Sandstorm, Shade, Bubbles.
 
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
+import { incbin } from "../hw/assets";
 import { random } from "../random";
 import { DroughtStateInit, DroughtStateRun, gWeather, LoadDroughtWeatherPalettes, ResetDroughtWeatherPaletteLoading, SetRainStrengthFromSoundEffect, Weather_SetBlendCoeffs, Weather_SetTargetBlendCoeffs, Weather_UpdateBlend } from "./weather";
 import type { Sprite } from "../gba/sprite";
-import { spriteState } from "../hw/sprite";
+import { LoadSpriteSheet, spriteState } from "../hw/sprite";
 import { gSineTable } from "../hw/trig";
 
 export const MAX_RAIN_SPRITES = 24;
@@ -313,7 +315,9 @@ export function Rain_Finish(): boolean {
   return false;
 }
 
-export function LoadRainSpriteSheet(): void {}
+export function LoadRainSpriteSheet(): void {
+  LoadSpriteSheet({ data: incbin("gWeatherRainTiles"), size: 0x0600, tag: GFXTAG_RAIN });
+}
 
 export function CreateRainSprite(): boolean {
   const w = gWeather as any;
@@ -636,7 +640,9 @@ export function Ash_Finish(): boolean {
   return false;
 }
 
-export function LoadAshSpriteSheet(): void {}
+export function LoadAshSpriteSheet(): void {
+  LoadSpriteSheet({ data: incbin("gWeatherAshTiles"), size: 0x1000, tag: GFXTAG_ASH });
+}
 
 export function CreateAshSprites(): void {
   const w = gWeather as any;

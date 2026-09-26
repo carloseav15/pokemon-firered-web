@@ -2752,6 +2752,17 @@ Pending / placeholders:
   no comparé posiciones de nieve con un emulador ni revisé el render del clima
   en navegador.
 
+## `field_weather_effects.c`: carga de sheets de lluvia y ceniza (2026-09-26)
+
+- Reemplacé los cuerpos vacíos `LoadRainSpriteSheet` y `LoadAshSpriteSheet`
+  con `LoadSpriteSheet` usando `gWeatherRainTiles` (0x600, tag 0x1206) y
+  `gWeatherAshTiles` (0x1000, tag 0x1202), como en el C. El pack
+  `graphics_weather` ya se precarga en `preloadField.ts`. Inventario:
+  93/93 nombres; el verificador de honestidad detecta dos stubs menos. Total:
+  5.786/9.834 (58,8 %), 88 archivos y 4.048 nombres pendientes. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; no
+  ejecuté prueba de clima en navegador.
+
 ## `field_weather_util.c`: nombres fuente de guardado y aplicación del clima (2026-09-26)
 
 - Alineé `TranslateWeatherNum`, `SetSavedWeather`,
