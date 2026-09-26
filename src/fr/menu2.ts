@@ -1,14 +1,19 @@
-// menu2.c (partial): the per-species position table used by the item-use
-// scene (pokemon_special_anim_scene.c). The rest of menu2.c is still pending.
-// Needs loadCData("menu2") first.
+// menu2.c: per-species position data, text helpers, blend task and unused 4bpp
+// bitmap copy helper. Needs loadCData("menu2") first.
 
 import * as C from "./generated/constants";
 import { cdata } from "./hw/assets";
+import { BlitBitmapRect4BitWithoutColorKey, type Bitmap } from "./hw/window";
 
 const SPECIES_OLD_UNOWN_EMARK = C.NUM_SPECIES + 0;
 const SPECIES_OLD_UNOWN_QMARK = C.NUM_SPECIES + 1;
 
 const sMonPosAttributes = () => cdata<number[][]>("menu2", "sMonPosAttributes");
+
+/** UnusedBlitBitmapRect from menu2.c; the hardware window layer owns 4bpp pixel packing. */
+function UnusedBlitBitmapRect(src: Bitmap, dst: Bitmap, srcX: number, srcY: number, dstX: number, dstY: number, width: number, height: number): void {
+  BlitBitmapRect4BitWithoutColorKey(src, dst, srcX, srcY, dstX, dstY, width, height);
+}
 
 /** wild_encounter.c GetUnownLetterByPersonalityLoByte (GET_UNOWN_LETTER). */
 function GetUnownLetterByPersonalityLoByte(personality: number): number {

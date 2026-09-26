@@ -2783,6 +2783,16 @@ Pending / placeholders:
   `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
   navegador.
 
+## `menu2.c`: helper de blit 4bpp sin uso (2026-09-26)
+
+- Porté `UnusedBlitBitmapRect` con `BlitBitmapRect4BitWithoutColorKey` de
+  `hw/window.ts`; ambas rutas copian píxeles 4bpp en orden tiled y recortan el
+  rectángulo contra los límites del bitmap destino. Aunque el C no llama al
+  helper, su implementación queda disponible con el mismo nombre fuente.
+  `menu2.c` queda 10/10; total 5.790/9.834 (58,9 %), 85 archivos y 4.044
+  nombres pendientes. Pasaron `check:port`, `check:honesty`, inventory, pending
+  y `git diff --check`; sin check de píxeles.
+
 ## `field_weather_util.c`: nombres fuente de guardado y aplicación del clima (2026-09-26)
 
 - Alineé `TranslateWeatherNum`, `SetSavedWeather`,

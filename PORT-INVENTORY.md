@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 30 | 52071 | 1768/1988 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 115 | 85042 | 2712/2712 |
+| Casi completo (≥ 80 % y < 100 %) | 29 | 51400 | 1759/1978 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 116 | 85713 | 2722/2722 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **86** | **162764** | |
-| **Total en alcance** | **202** | **247859** | **5789/9834** |
+| **Pendiente de portar** | **85** | **162093** | |
+| **Total en alcance** | **202** | **247859** | **5790/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -117,7 +117,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
 | `trainer_see.c` | 750 | 32/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
 | `item.c` | 680 | 42/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
-| `menu2.c` | 671 | 9/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `evolution_graphics.c` | 637 | 30/37 | `evolutionScene.ts` |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `window.c` | 513 | 20/21 | `gba/window.ts`, `hw/window.ts` |  |  |
@@ -143,7 +142,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
 | `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
-| `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `menu2.ts`, `pokemonSpecialAnim.ts` |  |  |
+| `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `pokemonSpecialAnim.ts` |  |  |
 | `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |  |
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
 | `credits.c` | 1446 | 16/16 | `credits.ts` |  |  |
@@ -169,6 +168,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |  |
 | `battle_ai_switch_items.c` | 674 | 13/13 | `battle/ai.ts` |  |  |
+| `menu2.c` | 671 | 10/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |  |
 | `menu_indicators.c` | 656 | 20/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `map_preview_screen.c` | 616 | 14/14 | `mapPreviewScreen.ts` |  |  |
