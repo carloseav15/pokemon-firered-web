@@ -2773,6 +2773,16 @@ Pending / placeholders:
   `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
   prueba visual.
 
+## `menu_indicators.c`: callbacks de tareas de cursor (2026-09-26)
+
+- Reemplacé las closures anónimas vacías por `Task_RedOutlineCursor` y
+  `Task_RedArrowCursor`, y las conecté al crear ambos cursores. El C define
+  ambos callbacks sin cuerpo; la equivalencia mantiene las tareas de prioridad
+  cero que luego destruyen `ListMenuRemove*CursorObject`. Inventario: 20/20;
+  total 5.789/9.834 (58,9 %), 86 archivos y 4.045 nombres pendientes. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  navegador.
+
 ## `field_weather_util.c`: nombres fuente de guardado y aplicación del clima (2026-09-26)
 
 - Alineé `TranslateWeatherNum`, `SetSavedWeather`,

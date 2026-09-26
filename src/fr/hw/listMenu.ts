@@ -558,6 +558,12 @@ export function ListMenuUpdateCursorObject(taskId: number, x: number, y: number,
   else if (cursorKind === 1) ListMenuUpdateRedArrowCursorObject(taskId, x, y);
 }
 
+/** Task_RedOutlineCursor is an intentionally empty task in menu_indicators.c. */
+export function Task_RedOutlineCursor(_taskId: number): void {}
+
+/** Task_RedArrowCursor is an intentionally empty task in menu_indicators.c. */
+function Task_RedArrowCursor(_taskId: number): void {}
+
 export function ListMenuRemoveCursorObject(taskId: number, cursorKind: number): void {
   if (cursorKind === 0) ListMenuRemoveRedOutlineCursorObject(taskId);
   else if (cursorKind === 1) ListMenuRemoveRedArrowCursorObject(taskId);
@@ -620,7 +626,7 @@ export function ListMenuSetUpRedOutlineCursorSpriteOamTable(rowWidth: number, ro
 
 export function ListMenuAddRedOutlineCursorObject(cursor: CursorStruct): number {
   loadCursorGfx(cursor, "sSelectorOutlineGfx", 0x100);
-  const taskId = tasks.create(() => {}, 0);
+  const taskId = tasks.create(Task_RedOutlineCursor, 0);
   const spriteId = CreateSprite({ ...gDummySpriteTemplate, tileTag: cursor.tileTag, paletteTag: cursor.palTag }, cursor.left + 120, cursor.top + 120, 0);
   const s = gSprites[spriteId];
   const subsprites = ListMenuSetUpRedOutlineCursorSpriteOamTable(cursor.rowWidth, cursor.rowHeight);
@@ -640,7 +646,7 @@ function SpriteCallback_RedArrowCursor(sp: Sprite): void {
 
 function ListMenuAddRedArrowCursorObject(cursor: CursorStruct): number {
   loadCursorGfx(cursor, "sRedArrowGfx", 0x80);
-  const taskId = tasks.create(() => {}, 0);
+  const taskId = tasks.create(Task_RedArrowCursor, 0);
   const spriteId = CreateSprite({
     tileTag: cursor.tileTag, paletteTag: cursor.palTag, oam: oamData({ shape: 0, size: 1 }), anims: [[ANIMCMD_FRAME(0, 30), ANIMCMD_END]],
     images: null, affineAnims: gDummySpriteAffineAnimTable,
