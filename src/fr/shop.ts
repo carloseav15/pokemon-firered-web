@@ -125,6 +125,7 @@ export const sHistory: QuestLogEvent_Shop[] = [
 let sGame: Game = null!;
 /** Leaves the hardware scene of BUY/SELL (CB2_ReturnToField). */
 let sCloseScene: (() => void) | null = null;
+const sShopTransitionCallbacks = new Map<number, () => void>();
 
 const sShopMenuActions_BuySellQuit = () => [
   { text: txt("gText_ShopBuy"), func: (taskId: number) => Task_HandleShopMenuBuy(taskId) },
@@ -205,29 +206,36 @@ function Task_ShopMenu(taskId: number): void {
 }
 
 function Task_HandleShopMenuBuy(taskId: number): void {
-  // SetWordTaskArg(taskId, 0xE, CB2_InitBuyMenu); FadeScreen(FADE_TO_BLACK, 0): the hardware scene replaces the field.
+  sShopTransitionCallbacks.set(taskId, CB2_InitBuyMenu);
+  tasks.setFunc(taskId, Task_GoToBuyOrSellMenu);
+}
+
+function Task_HandleShopMenuSell(taskId: number): void {
+  sShopTransitionCallbacks.set(taskId, CB2_GoToSellMenu);
+  tasks.setFunc(taskId, Task_GoToBuyOrSellMenu);
+}
+
+/** Task_GoToBuyOrSellMenu; fieldMenu owns the fade/scene handoff in the web port. */
+function Task_GoToBuyOrSellMenu(taskId: number): void {
+  const callback = sShopTransitionCallbacks.get(taskId);
+  sShopTransitionCallbacks.delete(taskId);
+  if (!callback) {
+    tasks.destroy(taskId);
+    return;
+  }
   ClearShopMenuWindow();
   tasks.destroy(taskId);
   void preloadShop().then(() => {
     fieldMenu(sGame, (close) => {
       sCloseScene = close;
-      SetMainCallback2(CB2_InitBuyMenu);
+      callback();
     }, false);
   });
 }
 
-function Task_HandleShopMenuSell(taskId: number): void {
-  ClearShopMenuWindow();
-  tasks.destroy(taskId);
-  CB2_GoToSellMenu();
-}
-
 function CB2_GoToSellMenu(): void {
-  fieldMenu(sGame, (close) => {
-    sCloseScene = close;
-    // GoToBagMenu(ITEMMENULOCATION_SHOP, OPEN_BAG_LAST, CB2_ReturnToField); gFieldCallback = MapPostLoadHook_ReturnToShopMenu
-    GoToBagMenu(C.ITEMMENULOCATION_SHOP, C.OPEN_BAG_LAST, CB2_ReturnToField, {});
-  }, false);
+  // fieldMenu is already active in Task_GoToBuyOrSellMenu.
+  GoToBagMenu(C.ITEMMENULOCATION_SHOP, C.OPEN_BAG_LAST, CB2_ReturnToField, {});
 }
 
 function Task_HandleShopMenuQuit(taskId: number): void {
@@ -252,6 +260,11 @@ function CB2_ReturnToField(): void {
   sCloseScene = null;
   close?.();
   MapPostLoadHook_ReturnToShopMenu();
+}
+
+/** SetShopExitCallback: the field return adapter runs MapPostLoadHook on entry. */
+function SetShopExitCallback(): void {
+  SetMainCallback2(CB2_ReturnToField);
 }
 
 function MapPostLoadHook_ReturnToShopMenu(): void {
@@ -303,7 +316,11 @@ function CB2_InitBuyMenu(): void {
       tasks.reset();
       ClearScheduledBgCopiesToVram();
       ResetItemMenuIconState();
-      if (!InitShopData() || !BuyMenuBuildListMenuTemplate()) return;
+      if (!InitShopData() || !BuyMenuBuildListMenuTemplate()) {
+        BuyMenuFreeMemory();
+        SetShopExitCallback();
+        return;
+      }
       BuyMenuInitBgs();
       FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 0x20, 0x20);
       FillBgTilemapBufferRect_Palette0(1, 0, 0, 0, 0x20, 0x20);

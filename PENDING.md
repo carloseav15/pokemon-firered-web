@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5790/9834 (58.9 %)**.
-- Archivos C con funciones aún sin homólogo: **85**; quedan **4044 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5792/9834 (58.9 %)**.
+- Archivos C con funciones aún sin homólogo: **85**; quedan **4042 nombres**.
 - Estos archivos contienen 162.093 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~84.401 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~84.363 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -22,10 +22,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 3 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
 | 4 | `battle_intro.c` | casi completo | 492 | 9/10 | ~49 |  |
 | 5 | `battle_anim_mons.c` | casi completo | 2360 | 125/128 | ~55 |  |
-| 6 | `field_tasks.c` | casi completo | 351 | 10/12 | ~58 |  |
-| 7 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
-| 8 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
-| 9 | `shop.c` | casi completo | 1145 | 55/60 | ~95 |  |
+| 6 | `shop.c` | casi completo | 1145 | 57/60 | ~57 |  |
+| 7 | `field_tasks.c` | casi completo | 351 | 10/12 | ~58 |  |
+| 8 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
+| 9 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
 | 10 | `item.c` | casi completo | 680 | 42/49 | ~97 |  |
 | 11 | `trainer_see.c` | casi completo | 750 | 32/37 | ~101 |  |
 | 12 | `battle_script_commands.c` | casi completo | 9886 | 281/284 | ~104 |  |
@@ -119,7 +119,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `trade_scene.c` | 2916 | 35/53 | 3 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
 | `bg.c` | 1215 | 43/50 | 1 |
-| `shop.c` | 1145 | 55/60 | 1 |
+| `shop.c` | 1145 | 57/60 | 1 |
 | `menu_helpers.c` | 243 | 14/17 | 1 |
 | `union_room.c` | 4761 | 5/110 | 1 |
 | `link.c` | 2202 | 1/114 | 1 |

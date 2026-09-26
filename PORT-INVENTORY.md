@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 29 | 51400 | 1759/1978 |
+| Casi completo (≥ 80 % y < 100 %) | 29 | 51400 | 1761/1978 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 116 | 85713 | 2722/2722 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
 | **Pendiente de portar** | **85** | **162093** | |
-| **Total en alcance** | **202** | **247859** | **5790/9834** |
+| **Total en alcance** | **202** | **247859** | **5792/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -110,7 +110,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `pokeball.c` | 1334 | 34/37 | `battle/pokeball.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_controllers.c` | 1214 | 61/68 | `battle/controllers.ts` |  |  |
-| `shop.c` | 1145 | 55/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
+| `shop.c` | 1145 | 57/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 97/115 |  |  |  |

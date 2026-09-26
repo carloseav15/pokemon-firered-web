@@ -1355,6 +1355,16 @@ sin Quest Log (`RecordItemTransaction` guarda el historial pero nada lo registra
 ni help system. Verificado: `check:port`, `build` y paridad de cdata/incbin/textos;
 sin probar en navegador.
 
+- Restauré `Task_GoToBuyOrSellMenu` como callback de tarea nombrado: BUY y SELL
+  guardan su callback destino, la tarea limpia la ventana y luego instala la
+  escena/callback web. Añadí `SetShopExitCallback` al camino de inicialización
+  fallida; el retorno de campo ejecuta el hook que vuelve al menú. `shop.c` pasa
+  a 57/60 nombres; `RecordTransactionForQuestLog` sigue siendo el stub del
+  Quest Log y los otros dos faltantes son helpers debug vacíos en C. Inventario
+  global: 5.792/9.834 (58,9 %), 85 archivos y 4.042 nombres pendientes. Pasaron
+  `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
+  runtime.
+
 ### Hall of Fame y créditos: `hall_of_fame.c`, `credits.c` (2026-09-25)
 
 `hallOfFame.ts` porta `hall_of_fame.c` completo: la pantalla de ingreso (cada
