@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6093/9834 (62.0 %)**.
-- Archivos C con funciones aún sin homólogo: **92**; quedan **3741 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6094/9834 (62.0 %)**.
+- Archivos C con funciones aún sin homólogo: **92**; quedan **3740 nombres**.
 - Estos archivos contienen 168.809 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~77.806 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~77.781 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -27,14 +27,14 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 8 | `item.c` | casi completo | 680 | 46/49 | ~41 |  |
 | 9 | `window.c` | casi completo | 513 | 19/21 | ~48 |  |
 | 10 | `battle_intro.c` | casi completo | 492 | 9/10 | ~49 |  |
-| 11 | `pokemon_icon.c` | casi completo | 1283 | 22/23 | ~55 |  |
-| 12 | `new_menu_helpers.c` | casi completo | 761 | 50/54 | ~56 |  |
-| 13 | `field_tasks.c` | casi completo | 351 | 10/12 | ~58 |  |
-| 14 | `menu_indicators.c` | casi completo | 656 | 18/20 | ~65 |  |
-| 15 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
-| 16 | `menu2.c` | casi completo | 671 | 9/10 | ~67 |  |
-| 17 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
-| 18 | `field_weather_effects.c` | casi completo | 2346 | 90/93 | ~75 |  |
+| 11 | `field_weather_effects.c` | casi completo | 2346 | 91/93 | ~50 |  |
+| 12 | `pokemon_icon.c` | casi completo | 1283 | 22/23 | ~55 |  |
+| 13 | `new_menu_helpers.c` | casi completo | 761 | 50/54 | ~56 |  |
+| 14 | `field_tasks.c` | casi completo | 351 | 10/12 | ~58 |  |
+| 15 | `menu_indicators.c` | casi completo | 656 | 18/20 | ~65 |  |
+| 16 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
+| 17 | `menu2.c` | casi completo | 671 | 9/10 | ~67 |  |
+| 18 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
 | 19 | `item_menu_icons.c` | casi completo | 439 | 14/17 | ~77 |  |
 | 20 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 21 | `sound.c` | casi completo | 649 | 41/48 | ~94 |  |
@@ -123,7 +123,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `trade.c` | 2958 | 0/66 | 15 |
 | `fame_checker.c` | 1739 | 15/64 | 7 |
 | `trade_scene.c` | 2916 | 36/53 | 3 |
-| `field_weather_effects.c` | 2346 | 90/93 | 3 |
+| `field_weather_effects.c` | 2346 | 91/93 | 2 |
 | `bg.c` | 1215 | 43/50 | 1 |
 | `shop.c` | 1145 | 55/60 | 1 |
 | `menu_helpers.c` | 243 | 15/17 | 1 |

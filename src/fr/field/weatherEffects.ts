@@ -388,57 +388,65 @@ export function DestroyRainSprites(): void {
 // -----------------------------------------------------------------------------
 
 export function Snow_InitVars(): void {
-  const w = gWeather as any;
-  w.initStep = 0;
+  gWeather.initStep = 0;
   gWeather.weatherGfxLoaded = false;
   gWeather.gammaTargetIndex = 3;
   gWeather.gammaStepDelay = 20;
-  w.targetSnowflakeSpriteCount = 16;
-  w.snowflakeSpriteCount = 0;
+  gWeather.targetSnowflakeSpriteCount = 16;
+  gWeather.snowflakeVisibleCounter = 0;
 }
 
 export function Snow_InitAll(): void {
   Snow_InitVars();
   while (!gWeather.weatherGfxLoaded) {
     Snow_Main();
+    for (let i = 0; i < gWeather.snowflakeSpriteCount; i++) {
+      const sprite = weatherSprites.snowflakeSprites[i];
+      if (sprite) UpdateSnowflakeSprite(sprite);
+    }
   }
 }
 
 export function Snow_Main(): void {
-  const w = gWeather as any;
-  switch (w.initStep || 0) {
-    case 0:
-      if (!CreateSnowflakeSprite()) w.initStep++;
-      break;
-    case 1:
-      if (!UpdateVisibleSnowflakeSprites()) {
-        gWeather.weatherGfxLoaded = true;
-        w.initStep++;
-      }
-      break;
+  if (gWeather.initStep === 0 && !UpdateVisibleSnowflakeSprites()) {
+    gWeather.weatherGfxLoaded = true;
+    gWeather.initStep++;
   }
 }
 
 export function Snow_Finish(): boolean {
-  return DestroySnowflakeSprite();
+  switch (gWeather.finishStep) {
+    case 0:
+      gWeather.targetSnowflakeSpriteCount = 0;
+      gWeather.snowflakeVisibleCounter = 0;
+      gWeather.finishStep++;
+      // Fall through to the first visibility update, like the C switch.
+    case 1:
+      if (!UpdateVisibleSnowflakeSprites()) {
+        gWeather.finishStep++;
+        return false;
+      }
+      return true;
+    default:
+      return false;
+  }
 }
 
 export function CreateSnowflakeSprite(): boolean {
-  const w = gWeather as any;
-  if (w.snowflakeSpriteCount >= (w.targetSnowflakeSpriteCount || 16)) return false;
+  if (gWeather.snowflakeSpriteCount >= gWeather.targetSnowflakeSpriteCount) return false;
   const s = createWeatherSpriteRecord(random() % 240, -(random() % 20));
   InitSnowflakeSpriteMovement(s);
   s.callback = WaitSnowflakeSprite;
   weatherSprites.snowflakeSprites.push(s);
-  w.snowflakeSpriteCount++;
-  return w.snowflakeSpriteCount < w.targetSnowflakeSpriteCount;
+  gWeather.snowflakeSpriteCount++;
+  return true;
 }
 
 export function DestroySnowflakeSprite(): boolean {
-  const w = gWeather as any;
-  weatherSprites.snowflakeSprites = [];
-  w.snowflakeSpriteCount = 0;
-  return false;
+  if (gWeather.snowflakeSpriteCount === 0) return false;
+  weatherSprites.snowflakeSprites.pop();
+  gWeather.snowflakeSpriteCount--;
+  return true;
 }
 
 export function InitSnowflakeSpriteMovement(sprite: WeatherSpriteRecord): void {
@@ -462,7 +470,14 @@ export function UpdateSnowflakeSprite(sprite: WeatherSpriteRecord): void {
 }
 
 export function UpdateVisibleSnowflakeSprites(): boolean {
-  return false;
+  if (gWeather.snowflakeSpriteCount === gWeather.targetSnowflakeSpriteCount) return false;
+  gWeather.snowflakeVisibleCounter = (gWeather.snowflakeVisibleCounter + 1) & 0xffff;
+  if (gWeather.snowflakeVisibleCounter > 36) {
+    gWeather.snowflakeVisibleCounter = 0;
+    if (gWeather.snowflakeSpriteCount < gWeather.targetSnowflakeSpriteCount) CreateSnowflakeSprite();
+    else DestroySnowflakeSprite();
+  }
+  return gWeather.snowflakeSpriteCount !== gWeather.targetSnowflakeSpriteCount;
 }
 
 // -----------------------------------------------------------------------------

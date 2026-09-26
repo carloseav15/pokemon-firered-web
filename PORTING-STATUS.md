@@ -5,11 +5,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.093/9.834 funciones con homólogo (62,0%)**; quedan
-  **3.741 nombres (38,0%)**. De 202 archivos C de la lista en alcance, **92 aún
+- Inventario actual: **6.094/9.834 funciones con homólogo (62,0%)**; quedan
+  **3.740 nombres (38,0%)**. De 202 archivos C de la lista en alcance, **92 aún
   tienen huecos de nombre**: 41 casi completos, 50 parciales y uno adaptador;
   109 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.806/247.859 (31,4%)**. Son indicadores del
+  de líneas C sin cubrir es **~77.781/247.859 (31,4%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
@@ -2659,6 +2659,17 @@ Pending / placeholders:
   los sprites Canvas aún son una adaptación visual separada.
 - `field_weather.c SetNextWeather` ahora reinicia `finishStep`, marca el cambio
   pendiente y reproduce la señal de parada de lluvia según el clima destino.
-  El inventario subió `field_weather_effects.c` de 87/93 a 90/93, con tres
-  stubs restantes. Pasaron `check:weather`, `check:port`, `check:honesty`,
-  inventory, pending y `git diff --check`; sin comparación visual en navegador.
+  El inventario subió `field_weather_effects.c` de 87/93 a 90/93. Pasaron
+  `check:weather`, `check:port`, `check:honesty`, inventory, pending y
+  `git diff --check`; sin comparación visual en navegador.
+
+## `field_weather_effects.c`: aparición gradual y retirada de nieve (2026-09-26)
+
+- Reemplacé `UpdateVisibleSnowflakeSprites`: crea o retira un copo cada 37
+  actualizaciones hasta alcanzar el objetivo. Corregí `Snow_Finish` para bajar
+  el conteo de uno en uno antes de cerrar el cambio de clima, y el helper de
+  creación/destrucción para mantener sincronizado el arreglo Canvas.
+- `check:weather`, `check:port`, `check:honesty`, inventory, pending y
+  `git diff --check` pasaron. El check de clima cubre rutas seleccionadas;
+  no comparé posiciones de nieve con un emulador ni revisé el render del clima
+  en navegador.
