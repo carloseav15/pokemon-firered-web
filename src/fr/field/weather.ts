@@ -1,7 +1,7 @@
 // Partial port of field_weather.c and field_weather_util.c.
 // Overworld weather state, rain, fog drift, sandstorm and ash. The gamma shift,
-// weather-aware screen fades and drought palettes are still stubs (30 of the
-// 50 C functions; see PENDING.md §3b).
+// weather-aware screen fades and drought palettes remain partial; the live
+// stub count is generated in PENDING.md §3b.
 
 import { rom } from "../rom";
 import { incrementGameStat, save } from "../save";
@@ -24,6 +24,7 @@ export const SPRITE_BRIGHTNESS = [1, 0.96, 0.9, 0.77];
 export let gWeather = {
   currWeather: 0,
   nextWeather: 0,
+  rainStrength: 0,
   weatherGfxLoaded: false,
   gammaIndex: 0,
   gammaTargetIndex: 0,
@@ -241,8 +242,26 @@ export function PlayRainStoppingSoundEffect(): void {
   sound.playSE(C.SE_RAIN);
 }
 
-/** SetRainStrengthFromSoundEffect */
-export function SetRainStrengthFromSoundEffect(strength: number): void {}
+/** SetRainStrengthFromSoundEffect (field_weather.c). */
+export function SetRainStrengthFromSoundEffect(soundEffect: number): void {
+  if (gWeather.palProcessingState === C.WEATHER_PAL_STATE_SCREEN_FADING_OUT) return;
+
+  switch (soundEffect & 0xffff) {
+    case C.SE_RAIN:
+      gWeather.rainStrength = 0;
+      break;
+    case C.SE_DOWNPOUR:
+      gWeather.rainStrength = 1;
+      break;
+    case C.SE_THUNDERSTORM:
+      gWeather.rainStrength = 2;
+      break;
+    default:
+      return;
+  }
+
+  sound.playSE(soundEffect & 0xffff);
+}
 
 /** PreservePaletteInWeather */
 export function PreservePaletteInWeather(paletteIndex: number): void {}
@@ -306,7 +325,9 @@ export function ResetDroughtWeatherPaletteLoading(): void {}
 export function SetDroughtGamma(): void {}
 
 /** SetWeatherScreenFadeOut */
-export function SetWeatherScreenFadeOut(): void {}
+export function SetWeatherScreenFadeOut(): void {
+  gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_OUT;
+}
 
 /** SlightlyDarkenPalsInWeather */
 export function SlightlyDarkenPalsInWeather(startPalIndex: number, numPalettes: number): void {}

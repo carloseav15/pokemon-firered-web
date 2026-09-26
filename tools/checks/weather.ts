@@ -4,14 +4,50 @@
 import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import * as Weather from '../../src/fr/field/weather.ts';
+import { sound } from '../../src/fr/audio/sound.ts';
+import * as C from '../../src/fr/generated/constants.ts';
 
-console.log('--- 1. Testing field_weather gamma table construction ---');
+console.log('--- 0. Testing rain sound state and fade-out guard ---');
+const playedRainSounds: number[] = [];
+const originalPlaySE = sound.playSE.bind(sound);
+const originalPalState = Weather.gWeather.palProcessingState;
+const originalRainStrength = Weather.gWeather.rainStrength;
+sound.playSE = (soundEffect: number): void => { playedRainSounds.push(soundEffect); };
+try {
+  for (const [soundEffect, strength] of [
+    [C.SE_RAIN, 0],
+    [C.SE_DOWNPOUR, 1],
+    [C.SE_THUNDERSTORM, 2],
+  ]) {
+    Weather.gWeather.palProcessingState = C.WEATHER_PAL_STATE_IDLE;
+    Weather.SetRainStrengthFromSoundEffect(soundEffect);
+    assert.equal(Weather.gWeather.rainStrength, strength);
+    assert.equal(playedRainSounds.at(-1), soundEffect);
+  }
+
+  const playedCount = playedRainSounds.length;
+  Weather.SetRainStrengthFromSoundEffect(0xffff);
+  assert.equal(Weather.gWeather.rainStrength, 2, 'unknown effects preserve the last rain strength');
+  assert.equal(playedRainSounds.length, playedCount, 'unknown effects are not played');
+
+  Weather.SetWeatherScreenFadeOut();
+  Weather.SetRainStrengthFromSoundEffect(C.SE_RAIN);
+  assert.equal(Weather.gWeather.rainStrength, 2, 'screen fade-out blocks rain strength changes');
+  assert.equal(playedRainSounds.length, playedCount);
+} finally {
+  sound.playSE = originalPlaySE;
+  Weather.gWeather.palProcessingState = originalPalState;
+  Weather.gWeather.rainStrength = originalRainStrength;
+}
+console.log('✓ rain strength and fade-out guard match field_weather.c');
+
+console.log('--- 1. Checking field_weather gamma table shape ---');
 const table = Weather.BuildGammaShiftTables();
 assert.equal(table.length, 19, 'Gamma shift table must have 19 rows');
 assert.equal(table[0].length, 32, 'Each row must have 32 color levels');
-console.log('✓ BuildGammaShiftTables verified');
+console.log('✓ Gamma table dimensions checked; numeric parity was not compared');
 
-console.log('--- 2. Testing field_weather 50/50 functions presence & state ---');
+console.log('--- 2. Exercising weather transition state API ---');
 Weather.SetCurrentAndNextWeather(3); // Rain
 assert.equal(Weather.GetCurrentWeather(), 3);
 
@@ -26,9 +62,9 @@ fw.setWeather(3);
 assert.equal(fw.current, 0); // next scheduled, transitions in update
 assert.equal(fw.next, 3);
 
-console.log('✓ Weather transitions and state updates verified');
+console.log('✓ Current/next weather state updates exercised');
 
-console.log('--- 3. Testing field_weather_effects.c (weatherEffects.ts) 93/93 callbacks ---');
+console.log('--- 3. Exercising selected weather particle lifecycles ---');
 import * as WE from '../../src/fr/field/weatherEffects.ts';
 
 // Clouds
@@ -64,5 +100,5 @@ WE.FogDiagonal_InitAll();
 assert.equal(WE.weatherSprites.fogDSprites.length, WE.NUM_FOG_DIAGONAL_SPRITES, 'Fog D particles created');
 WE.FogDiagonal_Finish();
 
-console.log('✓ field_weather_effects 93/93 functions & lifecycle verified');
-console.log('--- weather check passed successfully! ---');
+console.log('✓ Selected cloud, rain, sandstorm, ash and fog lifecycle paths exercised');
+console.log('--- selected weather checks passed; this does not claim full module parity ---');

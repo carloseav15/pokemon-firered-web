@@ -1584,3 +1584,7 @@ Pending / placeholders:
 ## `coins.c`: shared coin balance operations (2026-09-25)
 
 - Added `GetCoins` and `SetCoins` to `pokemon/items.ts`; the browser save stores the decrypted C `u16` balance directly, so both APIs narrow to 16 bits without reproducing SaveBlock encryption. Reworked `addCoins`/`removeCoins` to use those shared operations and the generated `MAX_COINS` constant. Routed the slot machine's read, `checkcoins`, the script coin box, and Coin Case display through `GetCoins`. `tools/checks/coins.ts` executes u16 narrowing, cap, success, and insufficient-funds cases. Browser coin-window rendering remains Canvas-adapted.
+
+## `field_weather.c`: rain sound state (2026-09-25)
+
+- Ported `SetRainStrengthFromSoundEffect` and `SetWeatherScreenFadeOut` into the active `field/weather.ts`. Rain, downpour and thunderstorm IDs now set the C `rainStrength` values 0, 1 and 2 and play only when the palette state is not screen-fading-out; unknown IDs leave state untouched. `SetWeatherScreenFadeOut` sets the generated state constant. `check:weather` now executes these mappings and guards. The browser audio backend's SE-player routing remains adapted; `PlayRainStoppingSoundEffect` still needs the C `IsSpecialSEPlaying` channel behavior and correct stop sounds.

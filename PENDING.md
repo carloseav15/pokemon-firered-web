@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5433/9825 (55 %)**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5435/9825 (55 %)**.
 - Archivos C pendientes: **118** (132109 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
@@ -61,9 +61,9 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | ~728 |  |
 | `field_specials.c` | 2555 | 85/118 | ~714 |  |
 | `evolution_scene.c` | 1704 | 13/22 | ~697 |  |
-| `field_weather.c` | 1147 | 20/50 | ~688 |  |
 | `field_fadetransition.c` | 965 | 18/57 | ~660 |  |
 | `mail.c` | 734 | 1/10 | ~660 |  |
+| `field_weather.c` | 1147 | 22/50 | ~642 |  |
 
 Hay 117 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
@@ -74,8 +74,8 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | Archivo C | Líneas | Portadas | Stubs |
 |---|---:|---:|---:|
 | `field_effect_helpers.c` | 1421 | 14/76 | 62 |
-| `field_weather.c` | 1147 | 20/50 | 30 |
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
+| `field_weather.c` | 1147 | 22/50 | 28 |
 | `trade.c` | 2958 | 0/66 | 15 |
 | `fame_checker.c` | 1739 | 15/64 | 7 |
 | `field_weather_effects.c` | 2346 | 87/93 | 6 |
