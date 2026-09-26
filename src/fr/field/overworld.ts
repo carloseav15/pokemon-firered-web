@@ -32,6 +32,7 @@ import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer"
 import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
+import { QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -398,6 +399,9 @@ export class Overworld {
     this.setPlayerCoordsFromWarp(loaded.header, loaded.layout.width, loaded.layout.height);
     this.loadMapFromWarp(loaded);
     this.resumeMap();
+    // C checks whether playback must advance here; the browser port currently
+    // uses the call to cut recording in Quest Log-disabled locations.
+    QuestLog_ShouldEndSceneOnMapChange();
     this.initObjectEventsLocal();
     this.initView();
     const prevSection = this.lastUsedWarpSection();

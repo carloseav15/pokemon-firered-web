@@ -54,6 +54,14 @@ export function InQuestLogDisabledLocation(mapGroup = save.location.mapGroup, ma
   return disabledMaps.includes(map);
 }
 
+/** QuestLog_ShouldEndSceneOnMapChange (quest_log_events.c). */
+export function QuestLog_ShouldEndSceneOnMapChange(): boolean {
+  if (!InQuestLogDisabledLocation()) return false;
+  if (gQuestLogState === C.QL_STATE_PLAYBACK) return true;
+  if (gQuestLogState === C.QL_STATE_RECORDING) QuestLog_CutRecording();
+  return false;
+}
+
 /** QL_EnableRecordingSteps (quest_log_events.c). */
 export function QL_EnableRecordingSteps(): void { sStepRecordingMode = 1; }
 

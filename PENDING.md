@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5851/10061 (58.2 %)**.
-- Archivos C con funciones aún sin homólogo: **79**; quedan **4210 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5852/10061 (58.2 %)**.
+- Archivos C con funciones aún sin homólogo: **79**; quedan **4209 nombres**.
 - Estos archivos contienen 148.217 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~87.658 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~87.639 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -85,7 +85,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 66 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
 | 67 | `field_player_avatar.c` | parcial | 2168 | 12/176 | ~2020 |  |
 | 68 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
-| 69 | `quest_log_events.c` | parcial | 2247 | 6/118 | ~2132 |  |
+| 69 | `quest_log_events.c` | parcial | 2247 | 7/118 | ~2113 |  |
 | 70 | `scrcmd.c` | parcial | 2264 | 1/224 | ~2253 |  |
 | 71 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
 | 72 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
