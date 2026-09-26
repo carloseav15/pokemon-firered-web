@@ -83,19 +83,28 @@ function GetTrainerApproachDistance(objects: ObjectEvents, trainer: ObjectEvent,
 export class TrainerSee {
   private approaching: {trainer: ObjectEvent; steps: number} | null = null;
   constructor(private game: Game) {}
+
+  /** CheckTrainer (trainer_see.c): flag, approach range, and double-battle eligibility. */
+  private CheckTrainer(trainer: ObjectEvent, x: number, y: number): boolean {
+    const ow = this.game.overworld;
+    const script = trainer.template?.script;
+    if (!script || this.game.battleSetup.hasTrainerBeenFought(rom.u16(script + 2))) return false;
+
+    const approachDistance = GetTrainerApproachDistance(ow.objects, trainer, x, y);
+    if (!approachDistance) return false;
+    if (rom.u8(script + 1) === C.TRAINER_BATTLE_DOUBLE && countAliveNonEggMons() < 2) return false;
+
+    this.game.battleSetup.configureFromApproach(ow.objects.indexOf(trainer), script);
+    this.approaching = {trainer, steps: approachDistance - 1};
+    return true;
+  }
+
   checkForTrainersWantingBattle(): boolean {
     if (this.approaching) return false;
     const ow = this.game.overworld;
     for (const trainer of ow.objects.list) {
       if (trainer.trainerType !== C.TRAINER_TYPE_NORMAL) continue;
-      const script = trainer.template?.script;
-      if (!script || this.game.battleSetup.hasTrainerBeenFought(rom.u16(script + 2))) continue;
-      if (rom.u8(script + 1) === C.TRAINER_BATTLE_DOUBLE && countAliveNonEggMons() < 2) continue;
-      const distance = GetTrainerApproachDistance(ow.objects, trainer, ow.player.object.currentCoords.x, ow.player.object.currentCoords.y);
-      if (!distance) continue;
-      this.approaching = {trainer, steps: distance - 1};
-      this.game.battleSetup.configureFromApproach(ow.objects.indexOf(trainer), script);
-      return true;
+      if (this.CheckTrainer(trainer, ow.player.object.currentCoords.x, ow.player.object.currentCoords.y)) return true;
     }
     return false;
   }

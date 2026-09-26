@@ -1657,3 +1657,7 @@ Pending / placeholders:
 ## `field_weather.c`: rain sound state (2026-09-25)
 
 - Ported `SetRainStrengthFromSoundEffect` and `SetWeatherScreenFadeOut` into the active `field/weather.ts`. Rain, downpour and thunderstorm IDs now set the C `rainStrength` values 0, 1 and 2 and play only when the palette state is not screen-fading-out; unknown IDs leave state untouched. `SetWeatherScreenFadeOut` sets the generated state constant. `check:weather` now executes these mappings and guards. The browser audio backend's SE-player routing remains adapted; `PlayRainStoppingSoundEffect` still needs the C `IsSpecialSEPlaying` channel behavior and correct stop sounds.
+
+## `trainer_see.c`: CheckTrainer (2026-09-25)
+
+- Ported the C `CheckTrainer` decision sequence into `TrainerSee.CheckTrainer` and connected the normal-trainer scan to it: reject missing/already-defeated scripts, require a visible unobstructed approach, reject double battles without two usable non-egg Pokémon, configure the trainer battle, and retain `approachDistance - 1` for the approach task. The behavior was already inline in the TS scan; extracting the source routine makes the C-to-TS correspondence explicit without enabling the still-unported buried/disguise/ash paths or Quest Log playback. `trainer_see.c` inventory is now 14/37. `npm run check:port`, `npm run check:honesty`, `npm run build`, `npm run inventory` and `npm run pending` pass. No browser/game test was run.

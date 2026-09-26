@@ -11,14 +11,14 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1952/6059 |
+| Parcial (menos del 80 % de funciones) | 116 | 129562 | 1953/6059 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Portado (≥ 80 % de funciones con el mismo nombre) | 92 | 117981 | 3517/3708 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 22 | 16278 | 12/118 |
 | Fuera de alcance | 51 | 55183 | 99/1950 |
 | **Pendiente de portar** | **117** | **130962** | |
-| **Total en alcance** | **210** | **248996** | **5497/9825** |
+| **Total en alcance** | **210** | **248996** | **5498/9825** |
 
 ## Parcial (menos del 80 % de funciones)
 
@@ -75,7 +75,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `wild_encounter.c` | 784 | 7/36 | `field/wildEncounter.ts`, `menu2.ts` |  |  |
 | `new_menu_helpers.c` | 761 | 29/53 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `list_menu.c` | 758 | 24/31 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
-| `trainer_see.c` | 750 | 13/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
+| `trainer_see.c` | 750 | 14/37 | `field/fieldEffects.ts`, `field/trainerSee.ts` |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 5/37 | `script/specials.ts` |  |  |
 | `string_util.c` | 726 | 6/39 | `gba/charmap.ts` |  |  |
