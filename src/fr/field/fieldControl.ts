@@ -61,7 +61,8 @@ export class FieldControl {
     }
   }
 
-  private currentBehavior(): number {
+  /** GetPlayerCurMetatileBehavior (field_control_avatar.c). */
+  private GetPlayerCurMetatileBehavior(): number {
     const p = this.ow.player.object;
     return this.ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
   }
@@ -69,7 +70,7 @@ export class FieldControl {
   /** FieldGetPlayerInput */
   private getPlayerInput(input: FieldInput, newKeys: number, heldKeys: number): void {
     const player = this.ow.player;
-    const forcedMove = MB.MetatileBehavior_IsForcedMovementTile(this.currentBehavior());
+    const forcedMove = MB.MetatileBehavior_IsForcedMovementTile(this.GetPlayerCurMetatileBehavior());
     const tile = player.tileTransitionState;
     if ((tile === T_TILE_CENTER && !forcedMove) || tile === T_NOT_MOVING) {
       if ((newKeys & START_BUTTON) && !(player.flags & PLAYER_AVATAR_FLAG_FORCED)) input.pressedStartButton = true;
