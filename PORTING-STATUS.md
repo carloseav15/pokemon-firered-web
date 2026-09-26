@@ -8,10 +8,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
   stubs. La auditoría encontró homónimos falsos, por lo que las cifras actuales
-  bajan de 6.094 a **5.762/9.834 (58,6%)**; quedan **4.072 nombres (41,4%)**.
-  Hay **101 archivos C con huecos**: uno sin empezar, uno adaptador, 42 casi
+  bajan de 6.094 a **5.763/9.834 (58,6%)**; quedan **4.071 nombres (41,4%)**.
+  Hay **100 archivos C con huecos**: uno sin empezar, uno adaptador, 41 casi
   completos y 57 parciales. La estimación de líneas sin cubrir sube a
-  **~85.014/247.859 (34,3%)**. El inventario mide nombres/cuerpos triviales,
+  **~85.002/247.859 (34,3%)**. El inventario mide nombres/cuerpos triviales,
   no paridad funcional ni pruebas en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
@@ -28,6 +28,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 - **`safari_zone.c`: 8/8 funciones con homólogo.** Renombré el callback privado
   que ya reproducía las tres ramas de `CB2_EndSafariBattle` en `battleSetup.ts`
   para que corresponda con el C. El archivo salió de `PENDING.md`.
+- **`party_menu_specials.c`: 9/9.** Conecté `Task_ChoosePartyMon` al flujo
+  normal y de relearner. El task GBA de espera de fade se adapta al cambio de
+  escena web: `InitPartyMenu` carga sus datos de forma asíncrona y ejecuta la
+  inicialización/fade de la pantalla antes de aceptar entradas.
 - **`field_specials.c`: implementé `UpdateTrainerCardPhotoIcons`.** El helper
   obtiene especie/personalidad de cada miembro de equipo, convierte a la
   especie guardada para iconos y actualiza las seis variables y el tinte del C.

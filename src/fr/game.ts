@@ -19,7 +19,7 @@ import { onWarpForRoamer } from "./pokemon/roamer";
 import { rom } from "./rom";
 import { flagGet, newSaveData, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
-import { ChooseMonForDaycare, ChooseMonForMoveTutor, ChoosePartyMonByMenuType, gSelectedOrderFromParty, InitChooseMonsForBattle } from "./partyMenu";
+import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, InitChooseMonsForBattle, Task_ChoosePartyMon } from "./partyMenu";
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
@@ -657,9 +657,9 @@ export class Game {
     };
     switch (mode) {
       case "moveTutor": ChooseMonForMoveTutor(exit); break;
-      case "relearner": ChoosePartyMonByMenuType(C.PARTY_MENU_TYPE_MOVE_RELEARNER, exit); break;
+      case "relearner": Task_ChoosePartyMon(C.PARTY_MENU_TYPE_MOVE_RELEARNER, exit); break;
       case "daycare": ChooseMonForDaycare(exit); break;
-      default: ChoosePartyMonByMenuType(C.PARTY_MENU_TYPE_CHOOSE_SINGLE_MON, exit); break;
+      default: Task_ChoosePartyMon(C.PARTY_MENU_TYPE_CHOOSE_SINGLE_MON, exit); break;
     }
   }
 

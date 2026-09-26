@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 57 | 108124 | 1294/5030 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 42 | 61853 | 2102/2338 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 100 | 74999 | 2338/2338 |
+| Casi completo (≥ 80 % y < 100 %) | 41 | 61745 | 2094/2329 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 101 | 75107 | 2347/2347 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **101** | **172807** | |
-| **Total en alcance** | **202** | **247859** | **5762/9834** |
+| **Pendiente de portar** | **100** | **172699** | |
+| **Total en alcance** | **202** | **247859** | **5763/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -140,7 +140,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
 | `new_game.c` | 160 | 10/11 | `game.ts`, `random.ts`, `save.ts` |  |  |
 | `field_poison.c` | 119 | 6/7 | `field/poison.ts` |  |  |
-| `party_menu_specials.c` | 108 | 8/9 | `game.ts`, `script/specialsExtra.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 
@@ -234,6 +233,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `prof_pc.c` | 109 | 3/3 | `game.ts` |  |  |
 | `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
 | `fldeff_softboiled.c` | 108 | 8/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
+| `party_menu_specials.c` | 108 | 9/9 | `game.ts`, `partyMenu.ts`, `script/specialsExtra.ts` |  |  |
 | `fldeff_sweetscent.c` | 100 | 7/7 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `coins.c` | 98 | 9/9 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
 | `math_util.c` | 87 | 9/9 | `mathUtil.ts` |  |  |

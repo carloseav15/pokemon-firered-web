@@ -3282,4 +3282,9 @@ export function ChoosePartyMonByMenuType(menuType: number, exit: () => void): vo
   InitPartyMenu(menuType, C.PARTY_LAYOUT_SINGLE, C.PARTY_ACTION_CHOOSE_AND_CLOSE, false, C.PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, exit);
 }
 
+/** Task_ChoosePartyMon (party_menu_specials.c): the web scene's async party-menu init replaces the GBA fade-wait task. */
+export function Task_ChoosePartyMon(menuType: number, exit: () => void): void {
+  ChoosePartyMonByMenuType(menuType, exit);
+}
+
 void DRAW_MENU_BOX_ONLY; void ChangeBgX; void FillBgTilemapBufferRect; void CopyBgTilemapBufferToVram; void BlendPalettes;
