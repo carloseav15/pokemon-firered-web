@@ -24,14 +24,15 @@ import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, Ge
 import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
 import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
+import { CreateObjectGraphicsSprite, CopyObjectGraphicsInfoToSpriteTemplate } from "./objectEventGraphics";
 
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
 const text = (name: string) => cdata<number[]>("strings", name);
 let loading: Promise<void> | undefined;
 export function preloadNamingScreen(): Promise<void> {
   return loading ??= Promise.all([
-    loadCData("naming_screen", "keyboard_text", "strings", "text_window_graphics", "pokemon_icon"),
-    preloadPacks(["graphics_naming_screen", "graphics_text_window", "graphics_fonts", "pokemon"]),
+    loadCData("naming_screen", "keyboard_text", "strings", "text_window_graphics", "pokemon_icon", "event_object_movement", "field_player_avatar"),
+    preloadPacks(["graphics_naming_screen", "graphics_text_window", "graphics_fonts", "graphics_object_events", "pokemon"]),
   ]).then(() => undefined);
 }
 
@@ -123,22 +124,43 @@ class NamingScreen {
     return id;
   }
 
-  /** NamingScreen_CreateInputTargetIcon: source iconFunction table, partial until player/rival art is wired. */
+  /** CreateInputTargetIcon and sIconFunctions dispatch from naming_screen.c. */
   private createInputTargetIcon(): void {
     switch (this.model.template.iconFunction) {
-      case 2: {
-        const id = this.sprite("sSpriteTemplate_PCIcon", 56, 41, 0, "sSubspriteTable_PCIcon");
-        gSprites[id].oam.priority = 3;
-        break;
-      }
-      case 3:
-        LoadMonIconPalettes();
-        {
-          const id = CreateMonIcon(this.species, SpriteCallbackDummy, 56, 40, 0, this.personality, 1);
-          gSprites[id].oam.priority = 3;
-        }
-        break;
+      case 1: this.NamingScreen_CreatePlayerIcon(); break;
+      case 2: this.NamingScreen_CreatePCIcon(); break;
+      case 3: this.NamingScreen_CreateMonIcon(); break;
+      case 4: this.NamingScreen_CreateRivalIcon(); break;
     }
+  }
+
+  private NamingScreen_CreatePlayerIcon(): void {
+    const graphics = cdata<number[][]>("field_player_avatar", "sPlayerAvatarGfxIds")[C.PLAYER_AVATAR_STATE_NORMAL][this.species];
+    const id = CreateObjectGraphicsSprite(graphics, SpriteCallbackDummy, 56, 37, 0);
+    gSprites[id].oam.priority = 3;
+    StartSpriteAnim(gSprites[id], C.ANIM_STD_GO_SOUTH);
+  }
+
+  private NamingScreen_CreatePCIcon(): void {
+    const id = this.sprite("sSpriteTemplate_PCIcon", 56, 41, 0, "sSubspriteTable_PCIcon");
+    gSprites[id].oam.priority = 3;
+  }
+
+  private NamingScreen_CreateMonIcon(): void {
+    LoadMonIconPalettes();
+    const id = CreateMonIcon(this.species, SpriteCallbackDummy, 56, 40, 0, this.personality, 1);
+    gSprites[id].oam.priority = 3;
+  }
+
+  private NamingScreen_CreateRivalIcon(): void {
+    const { spriteTemplate } = CopyObjectGraphicsInfoToSpriteTemplate(C.OBJ_EVENT_GFX_RED_NORMAL, SpriteCallbackDummy);
+    spriteTemplate.tileTag = 255;
+    spriteTemplate.paletteTag = 255;
+    spriteTemplate.anims = data<SymRef[]>("sAnims_Rival").map(ref => animFrom(data(ref.$sym)));
+    LoadSpriteSheet({ data: incbin("sRival_Gfx"), size: 0x900, tag: 255 });
+    LoadSpritePalette({ data: incbin("gNamingScreenRival_Pal"), tag: 255 });
+    const id = CreateSprite(spriteTemplate, 56, 37, 0);
+    gSprites[id].oam.priority = 3;
   }
 
   private drawPage(): void {

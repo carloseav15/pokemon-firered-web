@@ -55,7 +55,7 @@ KNOWN_GAPS = [
     "Teachy TV: sigue siendo el adaptador de texto de `menus/keyItemScreens.ts`; `teachyTv.ts` tiene 30 stubs y no está conectado.",
     "Fame Checker: `fameChecker.ts` está conectado pero sus funciones de gráficos (ventanas, flechas, info box) son stubs.",
     "Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.",
-    "Pantalla de nombres: 17/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C; PC/Pokémon muestran iconos, pero faltan transiciones de página, flashes e iconos de jugador/rival.",
+    "Pantalla de nombres: 21/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C y los cuatro iconos de destino; faltan transiciones de página y flashes de botones.",
     "Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.",
     "Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.",
     "`scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).",
