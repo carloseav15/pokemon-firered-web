@@ -5,11 +5,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 ## Revisión de clima y avance del port, 2026-09-26
 
-- Inventario actual: **6.086/9.834 funciones con homólogo (61,9%)**; quedan
-  **3.748 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **94 aún
-  tienen huecos de nombre**: 43 casi completos, 50 parciales y uno adaptador;
-  107 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
-  de líneas C sin cubrir es **~77.940/247.859 (31,4%)**. Son indicadores del
+- Inventario actual: **6.088/9.834 funciones con homólogo (61,9%)**; quedan
+  **3.746 nombres (38,1%)**. De 202 archivos C de la lista en alcance, **93 aún
+  tienen huecos de nombre**: 42 casi completos, 50 parciales y uno adaptador;
+  109 no tienen huecos de nombre y uno es solo datos. La estimación ponderada
+  de líneas C sin cubrir es **~77.927/247.859 (31,4%)**. Son indicadores del
   inventario, no prueba de equivalencia funcional.
 - Orden recomendado de menor a mayor dificultad, siguiendo
   `ESTADO-Y-REGLAS.md` §7: (1) cerrar stubs existentes y conectar o retirar
@@ -2629,3 +2629,11 @@ Pending / placeholders:
   5/5 nombres; la expansión conserva su adaptación de devolver un buffer nuevo.
 - Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
   sin check headless ni navegador.
+
+## `task.c`: nombres C de orden y búsqueda de tareas (2026-09-26)
+
+- Renombré los métodos privados de inserción y búsqueda a `InsertTask` y
+  `FindFirstActiveTask`, como en C; el orden de prioridad y el callback por
+  frame se mantienen. El inventario reconoce ahora 14/14 nombres.
+- Pasaron `check:port`, `check:honesty`, inventory, pending y `git diff --check`;
+  sin comparación de orden frame a frame.

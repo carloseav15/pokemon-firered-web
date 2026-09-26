@@ -20,7 +20,7 @@ class TaskManager {
         task.priority = priority;
         task.data.fill(0);
         task.followup = undefined;
-        this.insert(i);
+        this.InsertTask(i);
         task.isActive = true;
         return i;
       }
@@ -28,13 +28,13 @@ class TaskManager {
     return 0;
   }
 
-  private firstActive(): number {
+  private FindFirstActiveTask(): number {
     for (let i = 0; i < NUM_TASKS; i++) if (this.tasks[i].isActive && this.tasks[i].prev === HEAD_SENTINEL) return i;
     return NUM_TASKS;
   }
 
-  private insert(newTaskId: number): void {
-    let id = this.firstActive();
+  private InsertTask(newTaskId: number): void {
+    let id = this.FindFirstActiveTask();
     if (id === NUM_TASKS) {
       this.tasks[newTaskId].prev = HEAD_SENTINEL;
       this.tasks[newTaskId].next = TAIL_SENTINEL;
@@ -90,7 +90,7 @@ class TaskManager {
   }
 
   run(): void {
-    let id = this.firstActive();
+    let id = this.FindFirstActiveTask();
     if (id === NUM_TASKS) return;
     do {
       this.tasks[id].func(id);

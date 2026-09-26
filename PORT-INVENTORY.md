@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (< 80 % de funciones) | 50 | 106738 | 1447/4926 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 43 | 61040 | 2151/2390 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 107 | 78628 | 2460/2460 |
+| Casi completo (≥ 80 % y < 100 %) | 42 | 60829 | 2139/2376 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 108 | 78839 | 2474/2474 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 40/192 |
 | Fuera de alcance | 51 | 55183 | 103/1992 |
-| **Pendiente de portar** | **94** | **169178** | |
-| **Total en alcance** | **202** | **247859** | **6086/9834** |
+| **Pendiente de portar** | **93** | **168967** | |
+| **Total en alcance** | **202** | **247859** | **6088/9834** |
 
 ## Parcial (< 80 % de funciones)
 
@@ -124,7 +124,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `item_menu_icons.c` | 439 | 14/17 | `bagMenu.ts` |  |  |
 | `field_tasks.c` | 351 | 10/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
 | `menu_helpers.c` | 243 | 15/17 | `hw/menuHelpers.ts` |  | 1 |
-| `task.c` | 211 | 12/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |  |
 | `mail_data.c` | 187 | 11/12 | `pokemon/mail.ts` |  |  |
 | `gpu_regs.c` | 158 | 10/11 | `hw/gpu.ts` |  |  |
 | `event_object_lock.c` | 114 | 9/11 | `script/eventObjectLock.ts` |  |  |
@@ -206,6 +205,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `script_pokemon_util.c` | 215 | 13/13 | `game.ts`, `pokemon/daycare.ts`, `pokemon/scriptPokemonUtil.ts` … |  |  |
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |  |
 | `braille_text.c` | 212 | 3/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
+| `task.c` | 211 | 14/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |  |
 | `clear_save_data_screen.c` | 208 | 8/8 | `clearSaveScreen.ts` |  |  |
 | `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |  |
 | `ss_anne.c` | 200 | 8/8 | `script/specialsExtra.ts` |  |  |
