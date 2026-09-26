@@ -1770,3 +1770,16 @@ Pending / placeholders:
   `BattleTransitionScene` y `WildEncounter.resetEncounterRateModifiers`. Esto
   afecta los encuentros posteriores a los entrenadores de Ruta 3. Verificación
   estática solamente; no ejecuté juego ni navegador.
+
+## `event_object_lock.c`: limpieza compartida de release (2026-09-25)
+
+- Porté `ClearPlayerHeldMovementAndUnfreezeObjectEvents` y conecté la función
+  a `releaseall` y `release` en `script/commands.ts`. Limpia el movimiento
+  retenido del jugador si ya terminó, detiene/descongela los movimientos de
+  guion activos y luego descongela los objetos, como el C. `release` conserva
+  antes su limpieza adicional del objeto seleccionado.
+- Inventario actual: `event_object_lock.c` 9/11 nombres; no implica paridad del
+  archivo. `npm run check:port`, `npm run check:honesty`, `npm run build`,
+  `npm run inventory` y `npm run pending` pasaron. El build emitió advertencias
+  existentes por imports dinámicos y tamaño de chunk. Sin prueba de juego ni
+  navegador.

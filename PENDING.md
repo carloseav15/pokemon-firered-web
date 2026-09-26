@@ -5,8 +5,8 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5513/9825 (56 %)**.
-- Archivos C pendientes: **117** (130962 líneas de C).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5514/9825 (56 %)**.
+- Archivos C pendientes: **116** (130848 líneas de C).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Sin empezar (0 funciones portadas)
@@ -65,7 +65,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 | `mail.c` | 734 | 1/10 | ~660 |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | ~633 |  |
 
-Hay 116 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
+Hay 115 archivos parciales en total; la lista completa está en [PORT-INVENTORY.md](PORT-INVENTORY.md).
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 

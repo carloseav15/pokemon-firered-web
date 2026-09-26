@@ -16,7 +16,7 @@ import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "./specials";
-import { FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
+import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "../mapPreviewScreen";
 import type { ScriptCommand, ScriptRunner } from "./context";
 
@@ -368,18 +368,14 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   },
   releaseall: (ctx) => {
     ctx.ow.messageBox.hide();
-    ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
-    ctx.ow.game.scriptMovement.unfreezeAndStop();
-    ctx.ow.objects.unfreezeAll();
+    ClearPlayerHeldMovementAndUnfreezeObjectEvents(ctx);
     return false;
   },
   release: (ctx) => {
     ctx.ow.messageBox.hide();
     const o = selected(ctx);
     if (o && o.active) ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(o);
-    ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
-    ctx.ow.game.scriptMovement.unfreezeAndStop();
-    ctx.ow.objects.unfreezeAll();
+    ClearPlayerHeldMovementAndUnfreezeObjectEvents(ctx);
     return false;
   },
   textcolor: (ctx) => { varSet(SV.PREV_TEXT_COLOR, varGet(SV.TEXT_COLOR)); varSet(SV.TEXT_COLOR, ctx.readByte()); return false; },

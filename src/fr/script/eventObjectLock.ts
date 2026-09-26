@@ -52,6 +52,16 @@ export function FreezeObjects_WaitForPlayerAndSelected(ctx: ScriptRunner): void 
   });
 }
 
+/**
+ * ClearPlayerHeldMovementAndUnfreezeObjectEvents (event_object_lock.c).
+ * Used when a field sequence returns control after freezing the object set.
+ */
+export function ClearPlayerHeldMovementAndUnfreezeObjectEvents(ctx: ScriptRunner): void {
+  ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
+  ctx.ow.game.scriptMovement.unfreezeAndStop();
+  ctx.ow.objects.unfreezeAll();
+}
+
 function HandleEnforcedLookDirection(ctx: ScriptRunner): void {
   const player = ctx.ow.player.object;
   player.heldMovementActive = false;
