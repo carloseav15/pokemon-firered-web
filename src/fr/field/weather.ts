@@ -13,7 +13,7 @@ import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
-import { BlendPalette, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, RGB } from "../hw/palette";
+import { BeginNormalPaletteFade, BlendPalette, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -28,6 +28,7 @@ export let gWeather = {
   nextWeather: 0,
   rainStrength: 0,
   weatherGfxLoaded: false,
+  readyForInit: false,
   gammaIndex: 0,
   gammaTargetIndex: 0,
   gammaStepDelay: 0,
@@ -608,11 +609,69 @@ export function SetWeatherScreenFadeOut(): void {
 /** SlightlyDarkenPalsInWeather */
 export function SlightlyDarkenPalsInWeather(startPalIndex: number, numPalettes: number): void {}
 
-/** FadeScreen */
-export function FadeScreen(mode: number, delay: number): void {}
+/** Weather-aware FADE_FROM/TO_* palette transition from field_weather.c. */
+function fadeWeatherScreen(mode: number, delay: number, selectedPalettes: number): void {
+  let fadeColor: number;
+  let fadeOut: boolean;
+  switch (mode & 0xff) {
+    case C.FADE_FROM_BLACK:
+      fadeColor = RGB_BLACK;
+      fadeOut = false;
+      break;
+    case C.FADE_FROM_WHITE:
+      fadeColor = RGB_WHITEALPHA;
+      fadeOut = false;
+      break;
+    case C.FADE_TO_BLACK:
+      fadeColor = RGB_BLACK;
+      fadeOut = true;
+      break;
+    case C.FADE_TO_WHITE:
+      fadeColor = RGB_WHITEALPHA;
+      fadeOut = true;
+      break;
+    default:
+      return;
+  }
 
-/** FadeSelectedPals */
-export function FadeSelectedPals(bitmask: number, delay: number): void {}
+  const weatherUsesPaletteFade = [
+    C.WEATHER_RAIN,
+    C.WEATHER_RAIN_THUNDERSTORM,
+    C.WEATHER_DOWNPOUR,
+    C.WEATHER_SNOW,
+    C.WEATHER_FOG_HORIZONTAL,
+    C.WEATHER_SHADE,
+    C.WEATHER_DROUGHT,
+  ].includes(gWeather.currWeather);
+  const paletteMask = selectedPalettes >>> 0;
+  const signedDelay = (delay << 24) >> 24;
+
+  if (fadeOut) {
+    if (weatherUsesPaletteFade) gPlttBufferUnfaded.set(gPlttBufferFaded);
+    BeginNormalPaletteFade(paletteMask, signedDelay, 0, 16, fadeColor);
+    gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_OUT;
+  } else {
+    gWeather.fadeDestColor = fadeColor;
+    if (weatherUsesPaletteFade) gWeather.fadeScreenCounter = 0;
+    else BeginNormalPaletteFade(paletteMask, signedDelay, 16, 0, fadeColor);
+
+    gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_IN;
+    gWeather.fadeInActive = 1;
+    gWeather.fadeInCounter = 0;
+    Weather_SetBlendCoeffs(gWeather.currBlendEVA, gWeather.currBlendEVB);
+    gWeather.readyForInit = true;
+  }
+}
+
+/** FadeScreen (field_weather.c), selecting every BG and OBJ palette. */
+export function FadeScreen(mode: number, delay: number): void {
+  fadeWeatherScreen(mode, delay, PALETTES_ALL);
+}
+
+/** FadeSelectedPals (field_weather.c). Parameter order matches the C API. */
+export function FadeSelectedPals(mode: number, delay: number, selectedPalettes: number): void {
+  fadeWeatherScreen(mode, delay, selectedPalettes);
+}
 
 /** LoadCustomWeatherSpritePalette */
 export function LoadCustomWeatherSpritePalette(palette: any): void {}
