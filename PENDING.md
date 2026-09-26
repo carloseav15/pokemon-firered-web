@@ -113,7 +113,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `bg.c` | 1215 | 43/50 | 1 |
 | `shop.c` | 1145 | 57/60 | 1 |
 | `menu_helpers.c` | 243 | 14/17 | 1 |
-| `union_room.c` | 4761 | 5/110 | 1 |
+| `union_room.c` | 4761 | 6/110 | 1 |
 | `link.c` | 2202 | 1/114 | 1 |
 | `quest_log.c` | 1767 | 2/88 | 1 |
 

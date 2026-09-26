@@ -28,6 +28,11 @@ systems. The first playable route is a milestone, not the completion criterion.
   el marcador de identidad que distingue buffers BG externos y gobierna su
   liberación, como en C. `window.c` sale de `PENDING.md`; pasaron
   `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`.
+- **`union_room.c`: `InUnionRoom` implementado.** Compara `mapGroup` y `mapNum`
+  con `MAP_UNION_ROOM`, y restaura esa condición en las restricciones de
+  Enigma Berry y escritura de mail. El archivo entero continúa fuera del
+  alcance medido porque su sala online y transporte no están portados; este
+  helper sí se usa. Los checks estáticos pasan; sin prueba de ejecución.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
@@ -1150,8 +1155,9 @@ whiteout respawn now uses the original heal-location data in
 - `menu_helpers.c`: `hw/menuHelpers.ts` cubre las rutinas single-player de
   impresor/tarea, sí-no, L/R, cantidad, fuente de diálogo y reset de BG. Falta
   link queue/wait y callbacks de interrupción; no hay hardware link web.
-  `IsHoldingItemAllowed` y `IsWritingMailAllowed` permiten todo por ausencia de
-  link activo; no equivalen a restricciones de link. Revisión de fuente.
+  `IsHoldingItemAllowed` y `IsWritingMailAllowed` también comprueban
+  `InUnionRoom()` con el mapa actual; las restricciones cuando el link está
+  activo siguen incompletas. Revisión de fuente.
 - `scanline_effect.c`: buffers dobles, DMA por HBlank 16/32-bit, write de
   primera línea y siguientes desde PPU, onda/tarea y offset opcional de BG de
   batalla están en `hw/scanline.ts`. Revisión fuente→TS; sin comparación de
@@ -2382,9 +2388,10 @@ Pending / placeholders:
 - Las comprobaciones de colas y enlace (`IsActiveOverworldLinkBusy`,
   `MenuHelpers_ShouldWaitForLinkRecv`) quedan pendientes: el subsistema link
   no está implementado y sus APIs no se deben simular como port real.
-  `IsHoldingItemAllowed` conserva la restricción de Enigma Berry en Trade
-  Center; `IsWritingMailAllowed` aplica la regla cuando el estado de enlace
-  indique actividad. `check:port`, `check:honesty`, `inventory`, `pending` y
+  `InUnionRoom` ya compara el mapa igual que en `union_room.c`; las dos
+  restricciones de Enigma Berry/mail consideran Trade Center/Union Room. La
+  condición activa de link sigue como adaptación inactiva. `check:port`,
+  `check:honesty`, `inventory`, `pending` y
   `git diff --check` pasaron; sin navegador ni runtime.
 
 ## `pokedex.c`: conteos de dex y completitud (2026-09-26)

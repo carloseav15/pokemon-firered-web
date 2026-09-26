@@ -13,6 +13,7 @@ import { rom } from "../rom";
 import { save } from "../save";
 import { itemName } from "../pokemon/items";
 import { ItemIsMail } from "../pokemon/mail";
+import { InUnionRoom } from "../unionRoom";
 import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer, LoadBgTiles, LoadBgTilemap } from "./bg";
 import { BG_PLTT_ID, LoadPalette } from "./palette";
 import { incbin16 } from "./assets";
@@ -97,17 +98,17 @@ export function GetLRKeysPressedAndHeld(): number {
   return 0;
 }
 
-/** IsHoldingItemAllowed (menu_helpers.c); InUnionRoom is absent in this port. */
+/** IsHoldingItemAllowed (menu_helpers.c). */
 export function IsHoldingItemAllowed(itemId: number): boolean {
   const tradeCenter = rom.c("MAP_TRADE_CENTER");
   const inTradeCenter = save.location.mapGroup === (tradeCenter >>> 8)
     && save.location.mapNum === (tradeCenter & 0xff);
-  return itemId !== C.ITEM_ENIGMA_BERRY || !inTradeCenter;
+  return itemId !== C.ITEM_ENIGMA_BERRY || (!inTradeCenter && !InUnionRoom());
 }
 
-/** IsWritingMailAllowed (menu_helpers.c), with link-state helpers always idle. */
+/** IsWritingMailAllowed (menu_helpers.c). */
 export function IsWritingMailAllowed(itemId: number): boolean {
-  return !MenuHelpers_IsLinkActive() || !ItemIsMail(itemId);
+  return !(MenuHelpers_IsLinkActive() || InUnionRoom()) || !ItemIsMail(itemId);
 }
 export function MenuHelpers_IsLinkActive(): boolean { return false; }
 

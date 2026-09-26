@@ -17,7 +17,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Sin huecos de nombre (100 %; fidelidad no medida) | 124 | 101963 | 3346/3346 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| Fuera de alcance | 51 | 55183 | 84/1992 |
+| Fuera de alcance | 51 | 55183 | 85/1992 |
 | **Pendiente de portar** | **77** | **145843** | |
 | **Total en alcance** | **202** | **247859** | **5834/9834** |
 
@@ -293,7 +293,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `dodrio_berry_picking.c` | 4954 | 7/147 |  |  |  |
-| `union_room.c` | 4761 | 5/110 | `script/eventObjectLock.ts`, `script/specials.ts` |  | 1 |
+| `union_room.c` | 4761 | 6/110 | `script/eventObjectLock.ts`, `script/specials.ts`, `unionRoom.ts` |  | 1 |
 | `pokemon_jump.c` | 4582 | 4/186 |  |  |  |
 | `berry_crush.c` | 3488 | 4/73 |  |  |  |
 | `link_rfu_2.c` | 3163 | 0/149 |  |  |  |
