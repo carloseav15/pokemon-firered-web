@@ -200,6 +200,15 @@ try {
   assert.equal(gPaletteFade.blendColor, 0x7fff, 'white-alpha fade uses the GBA white blend color');
   assert.equal(Weather.gWeather.palProcessingState, C.WEATHER_PAL_STATE_SCREEN_FADING_IN);
 
+  const questPalette = new Uint16Array([0x4210]);
+  Weather.gWeather.currWeather = C.WEATHER_RAIN;
+  Weather.SlightlyDarkenPalsInWeather(questPalette, questPalette, 1);
+  assert.equal(questPalette[0], 0x35ad, 'rain applies BlendPalettesAt black coefficient 3 to the supplied palette buffer');
+  Weather.gWeather.currWeather = C.WEATHER_FOG_HORIZONTAL;
+  const unchangedPalette = new Uint16Array([0x4210]);
+  Weather.SlightlyDarkenPalsInWeather(unchangedPalette, unchangedPalette, 1);
+  assert.equal(unchangedPalette[0], 0x4210, 'weather outside the C switch leaves this palette unchanged');
+
   Weather.PreservePaletteInWeather(0);
   Weather.ApplyGammaShift(0, 1, 1);
   assert.equal(gPlttBufferFaded[0], 0x4210, 'preserved palettes bypass gamma shifts');

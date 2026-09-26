@@ -13,7 +13,7 @@ import type { Rgb, TileRenderer } from "./tileRenderer";
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
-import { BeginNormalPaletteFade, BlendPalette, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
+import { BeginNormalPaletteFade, BlendPalette, BlendPalettesAt, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 
@@ -606,8 +606,18 @@ export function SetWeatherScreenFadeOut(): void {
   gWeather.palProcessingState = C.WEATHER_PAL_STATE_SCREEN_FADING_OUT;
 }
 
-/** SlightlyDarkenPalsInWeather */
-export function SlightlyDarkenPalsInWeather(startPalIndex: number, numPalettes: number): void {}
+/** SlightlyDarkenPalsInWeather (field_weather.c). */
+export function SlightlyDarkenPalsInWeather(palbuf: Uint16Array, _unused: Uint16Array, size: number): void {
+  switch (gWeather.currWeather) {
+    case C.WEATHER_RAIN:
+    case C.WEATHER_SNOW:
+    case C.WEATHER_RAIN_THUNDERSTORM:
+    case C.WEATHER_SHADE:
+    case C.WEATHER_DOWNPOUR:
+      BlendPalettesAt(palbuf, RGB_BLACK, 3, size >>> 0);
+      break;
+  }
+}
 
 /** Weather-aware FADE_FROM/TO_* palette transition from field_weather.c. */
 function fadeWeatherScreen(mode: number, delay: number, selectedPalettes: number): void {

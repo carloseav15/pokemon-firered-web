@@ -379,6 +379,7 @@ Portado 1:1 en `src/fr/field/weatherEffects.ts` (93/93 funciones).
 - `FadeInScreen_FogHorizontal`, `ApplyFogBlend`, `LightenSpritePaletteInFog` y `MarkFogSpritePalToLighten` implementan la mezcla del fondo y las seis paletas OBJ que C puede aclarar.
 - `UpdateSpritePaletteWithWeather` conserva las ramas C de fade-in, fade-out, gamma y niebla; `ApplyWeatherGammaShiftToPal` expone el mismo hook que `overworld.c` usa para las paletas secundarias del mapa.
 - `FadeScreen` y `FadeSelectedPals` siguen las cuatro direcciones `FADE_FROM/TO_BLACK/WHITE`: con clima compatible usan el dispatcher por paleta; en otros climas llaman `BeginNormalPaletteFade` con máscara completa o seleccionada, respectivamente.
+- `SlightlyDarkenPalsInWeather` recibe el buffer/longitud de C y aplica `BlendPalettesAt(..., RGB_BLACK, 3, size)` solo con lluvia, nieve, tormenta, shade y downpour; otros climas no cambian el buffer.
 - `PreservePaletteInWeather` y `ResetPreservedPalettesInWeather` ahora modifican/restauran la categoría de paleta.
 - `check:weather` ejecuta las escrituras de paleta, compara vectores numéricos y recorre los estados de gamma, lluvia, sequía y niebla horizontal sobre un estado de prueba preparado; nivel headless. La ruta Canvas2D del overworld sigue usando su aproximación de tint y no consume todavía los buffers globales de paleta.
 - Siguen pendientes la máquina de estados de sequía, la integración de sprites de clima y la conexión del controlador de clima a la ruta Canvas2D.
@@ -1211,7 +1212,7 @@ Plateada (museo, Brock) → Ruta 3 → Monte Moon. Orden de trabajo:
 4. **Efectos de campo** (`field_effect_helpers.c`, 1421 líneas) **[STUBS]**: `src/fr/field/fieldEffectHelpers.ts`
    tiene los 76 nombres pero 62 son stubs y nadie lo importa (auditoría 2026-09-25). Los efectos
    visibles siguen en `field/fieldEffects.ts`. Hay que portar los cuerpos y conectarlo.
-5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 38/50, 12 stubs]**
+5. **Clima de campo** (`field_weather.c`, 1147 líneas) **[PARCIAL: 39/50, 11 stubs]**
    en `src/fr/field/weather.ts`; tablas gamma normal/alternativa, aplicación/mezcla, hooks de paletas BG/OBJ, dispatcher, fundidos por clima y las cuatro variantes de `FadeScreen`/`FadeSelectedPals` tienen check headless. La máquina de estados de sequía, sprites de clima y el render Canvas2D siguen parciales. `check:weather` ejecuta rutas seleccionadas con estado preparado.
 6. **Movimiento de NPC fiel** (`event_object_movement.c`): grande; hoy funciona
    con la capa antigua.
