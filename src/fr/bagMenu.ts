@@ -311,23 +311,71 @@ export function UpdateSwapLinePos(x: number, y: number): void {
 /** GetItemIconGfxPtr */
 export function itemIconSymbols(itemId: number): [string, string] {
   const table = rd<SymRef[][]>("item_menu_icons", "sItemIconTable");
-  const entry = table[itemId > C.ITEMS_COUNT ? C.ITEM_NONE : itemId] ?? table[0];
+  const item = itemId & 0xffff;
+  const entry = table[item > C.ITEMS_COUNT ? C.ITEM_NONE : item] ?? table[0];
   return [symName(entry[0])!, symName(entry[1])!];
 }
 
-/** AddItemIconObject: the 24x24 icon padded into a 32x32 sprite. */
+let sItemIconTilesBuffer: Uint8Array | null = null;
+let sItemIconTilesBufferPadded: Uint8Array | null = null;
+
+/** item_menu_icons.c TryAllocItemIconTilesBuffers; JS owns these temporary buffers until sprite data is copied. */
+function TryAllocItemIconTilesBuffers(): boolean {
+  try {
+    sItemIconTilesBuffer = new Uint8Array(0x120);
+    sItemIconTilesBufferPadded = new Uint8Array(0x200);
+    return true;
+  } catch {
+    sItemIconTilesBuffer = null;
+    sItemIconTilesBufferPadded = null;
+    return false;
+  }
+}
+
+/** item_menu_icons.c CopyItemIconPicTo4x4Buffer: copy three 0x60-byte rows into the 4x4-tile stride. */
+export function CopyItemIconPicTo4x4Buffer(src: Uint8Array, dest: Uint8Array): void {
+  for (let i = 0; i < 3; i++) dest.set(src.subarray(0x60 * i, 0x60 * (i + 1)), 0x80 * i);
+}
+
+/** item_menu_icons.c GetItemIconGfxPtr; incbin data is already decompressed by the exporter. */
+export function GetItemIconGfxPtr(itemId: number, attrId: number): Uint8Array {
+  const symbols = itemIconSymbols(itemId);
+  return incbin(symbols[attrId === 0 ? 0 : 1]);
+}
+
+function addItemIconObject(origTemplate: SpriteTemplate, tilesTag: number, paletteTag: number, itemId: number): number {
+  if (!TryAllocItemIconTilesBuffers()) return MAX_SPRITES;
+  const tiles = sItemIconTilesBuffer!;
+  const padded = sItemIconTilesBufferPadded!;
+  try {
+    tiles.set(GetItemIconGfxPtr(itemId, 0).subarray(0, 0x120));
+    CopyItemIconPicTo4x4Buffer(tiles, padded);
+    LoadSpriteSheet({ data: padded, size: 0x200, tag: tilesTag });
+    LoadSpritePalette({ data: GetItemIconGfxPtr(itemId, 1), tag: paletteTag });
+    return CreateSprite({ ...origTemplate, tileTag: tilesTag, paletteTag }, 0, 0, 0);
+  } finally {
+    sItemIconTilesBuffer = null;
+    sItemIconTilesBufferPadded = null;
+  }
+}
+
+/** AddItemIconObject: the standard C item icon template, padded to 32x32 tiles. */
 export function AddItemIconObject(tilesTag: number, paletteTag: number, itemId: number): number {
-  const [tilesSym, palSym] = itemIconSymbols(itemId);
-  const src = incbin(tilesSym);
-  const padded = new Uint8Array(0x200);
-  for (let i = 0; i < 3; i++) padded.set(src.subarray(0x60 * i, 0x60 * i + 0x60), 0x80 * i);
-  LoadSpriteSheet({ data: padded, size: 0x200, tag: tilesTag });
-  LoadSpritePalette({ data: incbin(palSym), tag: paletteTag });
-  return CreateSprite(template(tilesTag, paletteTag, "sOamData_ItemIcon", "sAnims_ItemIcon", null), 0, 0, 0);
+  return addItemIconObject(template(tilesTag, paletteTag, "sOamData_ItemIcon", "sAnims_ItemIcon", null), tilesTag, paletteTag, itemId);
+}
+
+/** item_menu_icons.c AddItemIconObjectWithCustomObjectTemplate. */
+export function AddItemIconObjectWithCustomObjectTemplate(origTemplate: SpriteTemplate, tilesTag: number, paletteTag: number, itemId: number): number {
+  return addItemIconObject(origTemplate, tilesTag, paletteTag, itemId);
 }
 
 export function CreateItemMenuIcon(itemId: number, idx: number): void {
   CreateItemMenuIconAt(itemId, idx, 140);
+}
+
+/** item_menu_icons.c CreateBerryPouchItemIcon: same icon setup with the berry-pouch vertical offset. */
+export function CreateBerryPouchItemIcon(itemId: number, idx: number): void {
+  CreateItemMenuIconAt(itemId, idx, 147);
 }
 
 /** CreateItemMenuIcon (y2 140) / CreateBerryPouchItemIcon (y2 147). */

@@ -7,16 +7,16 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.814/9.834 (59,1%)**; quedan
-  **4.020 nombres (40,9%)**. Hay **82 archivos C con huecos**: uno sin empezar,
-  uno adaptador, 26 casi completos y 54 parciales. La estimación de líneas sin
-  cubrir es **~84.097/247.859 (33,9%)**. El inventario mide nombres/cuerpos
+  stubs. El inventario vigente registra **5.819/9.834 (59,2%)**; quedan
+  **4.015 nombres (40,8%)**. Hay **81 archivos C con huecos**: uno sin empezar,
+  uno adaptador, 26 casi completos y 53 parciales. La estimación de líneas sin
+  cubrir es **~83.968/247.859 (33,9%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
-  stubs globales del inventario son 130 (119 en los módulos revisados por
-  `check:honesty`), y la línea base se redujo de 127 a 119.
+  stubs globales del inventario son ahora 128 (117 en los módulos revisados por
+  `check:honesty`; línea base 119).
 - **`quest_log_events.c`: indicador de tragamonedas implementado, 1 función
   real de 118.** `SetQLPlayedTheSlots` ahora conserva el flag del C y se llama
   desde el estado que inicia cada giro en `slotMachine.ts`; el flag se reinicia
@@ -56,6 +56,13 @@ systems. The first playable route is a milestone, not the completion criterion.
   ese archivo generado solo a su C de origen, sin contar sus símbolos en otros
   módulos. El archivo sale de `PENDING.md`; no edité el código generado.
   Pasaron `inventory`, `pending`, `check:port` y `check:honesty`.
+- **`item_menu_icons.c`: 17/17 funciones con homólogo.** Implementé la
+  asignación de buffers temporales y el copiado 24×24 a stride 32×32,
+  recuperación de tiles/paleta desde la tabla exportada, la variante con
+  template personalizado y la creación del icono del saquito. El saquito ahora
+  llama a `CreateBerryPouchItemIcon` directamente. Las imágenes comprimidas
+  llegan descomprimidas del exportador. Pasaron `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check`; no hice prueba visual.
 - También actualicé los totales de `ESTADO-Y-REGLAS.md` y la ficha histórica
   de `slot_machine.c` a 77/77 nombres. Pasaron `check:port`, `check:honesty`,
   `check:slots`, `build`, `inventory`, `pending` y `git diff --check`. El build
@@ -904,7 +911,7 @@ audio backend exists.
 - `mini_printf.c`: formatting is used only by emulator debug-print and SWI logging code in `isagbprn.c`, which has no gameplay caller. Marked out of scope for browser single-player.
 - `multiboot.c`: implements the GBA cable multiboot download protocol and is unrelated to the single-player game. Marked out of scope.
 - `bike.c` (2026-09-26): inventory now recognizes 24/24 definitions in `playerAvatar.ts`. Split the bike input handlers and five transitions into C-named methods; added the collision, rail, running gate, bike speed/reset, stop-player and Acro bumpy-slope helpers. Connected speed gating to field input and cracked-floor steps, and the bumpy-slope stop check to event-object locking. FireRed's `PlayerUseAcroBikeOnBumpySlope` is itself an empty C function; R/S history fields are reset but the final game has no history consumer. `RS_IsRunningDisallowed` is retained with its C behavior but has no FireRed caller. Static checks and generated inventory passed; no browser route or pixel comparison.
-- `item_menu_icons.c`: bag pocket animation/shake, swap line and item/berry icon sprite paths are implemented in `bagMenu.ts` and shared with `berryPouch.ts`; typed arrays replace C heap buffers. The custom-template icon loader has no separate equivalent. Marked ported for active single-player scope; no pixel comparison.
+- `item_menu_icons.c`: bag pocket animation/shake, swap line and item/berry icon sprite paths are implemented in `bagMenu.ts` and shared with `berryPouch.ts`; typed arrays replace C heap buffers. Updated 2026-09-26 with the C-named temporary buffer, icon-padding, gfx lookup, custom-template and berry icon helpers; 17/17 by name, no pixel comparison.
 - `digit_obj_util.c`: OAM-based number printer is used only by Berry Crush and Pokemon Jump; no TypeScript equivalent exists, and those optional minigame interfaces remain incomplete. Marked partial.
 - `field_screen_effect.c`: Flash has a Canvas radius-mask adaptation. The barn-door window wipe and Safari out-of-balls callback are absent; also no source-equivalent post-defeat whiteout recovery text/task was found. Marked partial; includes the main story loss-recovery path.
 - `palette_util.c`: RouletteFlash and pulse-blend code is explicitly unused in FireRed, and decomp call search also finds no callers for its tilemap helpers. Marked out of scope.

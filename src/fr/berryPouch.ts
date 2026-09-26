@@ -41,7 +41,7 @@ import {
   AddWindow, ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL,
   PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "./hw/window";
-import { bagResult, CreateItemMenuIconAt, DestroyItemMenuIcon, ResetItemMenuIconState, type BagTaskContext } from "./bagMenu";
+import { bagResult, CreateBerryPouchItemIcon, DestroyItemMenuIcon, ResetItemMenuIconState, type BagTaskContext } from "./bagMenu";
 import { addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { save } from "./save";
@@ -274,7 +274,7 @@ function BerryPouchMoveCursorFunc(itemIndex: number, onInit: boolean): void {
     StartBerryPouchSpriteWobbleAnim();
   }
   DestroyItemMenuIcon(r.itemMenuIconId ^ 1);
-  CreateItemMenuIconAt(r.listMenuNumItems !== itemIndex ? BagGetItemIdByPocketPosition(itemIndex) : C.ITEMS_COUNT, r.itemMenuIconId, 147);
+  CreateBerryPouchItemIcon(r.listMenuNumItems !== itemIndex ? BagGetItemIdByPocketPosition(itemIndex) : C.ITEMS_COUNT, r.itemMenuIconId);
   r.itemMenuIconId ^= 1;
   PrintSelectedBerryDescription(itemIndex);
 }

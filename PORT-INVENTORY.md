@@ -11,15 +11,15 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 54 | 107863 | 1281/5006 |
+| Parcial (< 80 % de funciones) | 53 | 107424 | 1269/4989 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 26 | 47509 | 1530/1725 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 119 | 89604 | 2975/2975 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 120 | 90043 | 2992/2992 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 84/1992 |
-| **Pendiente de portar** | **82** | **158202** | |
-| **Total en alcance** | **202** | **247859** | **5814/9834** |
+| **Pendiente de portar** | **81** | **157763** | |
+| **Total en alcance** | **202** | **247859** | **5819/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -83,7 +83,6 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `sound.c` | 649 | 38/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
 | `field_door.c` | 524 | 0/21 | `field/doors.ts` |  |  |
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
-| `item_menu_icons.c` | 439 | 12/17 | `bagMenu.ts` |  |  |
 | `braille_text.c` | 212 | 1/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
 
 ## Adaptador (UI simplificada)
@@ -181,6 +180,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `palette_util.c` | 474 | 17/17 | `paletteUtil.ts` |  |  |
 | `battle_anim_bug.c` | 462 | 13/13 | `battle/anims/bug.ts` |  |  |
 | `field_screen_effect.c` | 462 | 19/19 | `field/fieldEffects.ts`, `field/overworld.ts`, `script/specials.ts` |  |  |
+| `item_menu_icons.c` | 439 | 17/17 | `bagMenu.ts` |  |  |
 | `battle_anim_dragon.c` | 434 | 11/11 | `battle/anims/dragon.ts` |  |  |
 | `bike.c` | 418 | 24/24 | `field/playerAvatar.ts` |  |  |
 | `decompress.c` | 352 | 18/18 | `decompress.ts`, `pokemon/pics.ts` |  |  |
