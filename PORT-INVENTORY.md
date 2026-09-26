@@ -13,13 +13,13 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 53 | 107424 | 1270/4989 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 22 | 35589 | 1191/1371 |
+| Casi completo (≥ 80 % y < 100 %) | 22 | 35589 | 1193/1371 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 124 | 101963 | 3346/3346 |
 | Solo datos (exportados a cdata) | 1 | 53 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Fuera de alcance | 51 | 55183 | 85/1992 |
 | **Pendiente de portar** | **77** | **145843** | |
-| **Total en alcance** | **202** | **247859** | **5835/9834** |
+| **Total en alcance** | **202** | **247859** | **5837/9834** |
 
 ## Falta (sin funciones portadas)
 
@@ -106,7 +106,7 @@ Las categorías fuera/cubierto/adaptador salen de las tablas del script.
 | `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_controllers.c` | 1214 | 61/68 | `battle/controllers.ts` |  |  |
-| `shop.c` | 1145 | 57/60 | `buyMenuHelpers.ts`, `shop.ts` |  | 1 |
+| `shop.c` | 1145 | 59/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |

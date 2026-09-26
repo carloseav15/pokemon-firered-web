@@ -7,10 +7,10 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 - `npm run inventory` ahora ignora identificadores que aparecen solo en
   comentarios y reconoce callbacks con cuerpo de función flecha al detectar
-  stubs. El inventario vigente registra **5.835/9.834 (59,3%)**; quedan
-  **3.999 nombres (40,7%)**. Hay **77 archivos C con huecos**: uno sin empezar,
+  stubs. El inventario vigente registra **5.837/9.834 (59,4%)**; quedan
+  **3.997 nombres (40,6%)**. Hay **77 archivos C con huecos**: uno sin empezar,
   uno adaptador, 22 casi completos y 53 parciales. La estimación de líneas sin
-  cubrir es **~83.517/247.859 (33,7%)**. El inventario mide nombres/cuerpos
+  cubrir es **~83.479/247.859 (33,7%)**. El inventario mide nombres/cuerpos
   triviales, no paridad funcional ni pruebas en navegador.
 - **`evolution_scene.c`: `CreateShedinja` corregido y conectado.** El flujo
   anterior exigía y consumía una Poké Ball aunque el C no lo hace, y creaba
@@ -39,6 +39,11 @@ systems. The first playable route is a milestone, not the completion criterion.
   residuo R/S sin scripts FireRed que lo seleccionen y depende del efecto de
   ceniza. Pasaron `check:port`, `check:honesty`, `inventory`, `pending` y
   `git diff --check`; sin prueba en juego.
+- **`shop.c`: 59/60 funciones con homólogo y sin stub registrado.** Conecté los
+  dos helpers debug que el C deja vacíos. Quité el stub `RecordTransactionForQuestLog`
+  y su llamada sin efecto; el historial de transacciones todavía no se escribe
+  al Quest Log. `check:honesty` baja de 117 a 116 stubs; pasaron los checks
+  estáticos y el inventario.
 - El detector de stubs reconoce ahora callbacks flecha y no cuenta nombres que
   solo aparecen en comentarios. Quité 17 registros que eran callbacks vacíos;
   esas funciones quedan sin implementar y el dispatcher las reporta. Los
@@ -1422,7 +1427,7 @@ cdata/incbin/textos; sin probar en navegador.
 
 ### Tienda Pokémon: `shop.c`, `buy_menu_helpers.c` (2026-09-25)
 
-`shop.ts` porta `shop.c` (menú COMPRAR/VENDER/SALIR, pantalla de compra con
+`shop.ts` porta las rutas funcionales de `shop.c` (menú COMPRAR/VENDER/SALIR, pantalla de compra con
 vista del mostrador dibujada desde los metatiles del mapa, lista con precios,
 icono y descripción, diálogo de cantidad, compra, historial de transacciones) y
 `buyMenuHelpers.ts` porta `buy_menu_helpers.c` completo. La vista del mapa
@@ -1433,16 +1438,18 @@ Reemplaza y borra `menus/shopMenu.ts` y `menus/shopModel.ts`. Adaptaciones: la
 ventana COMPRAR/VENDER/SALIR y el mensaje "¿Algo más?" se dibujan sobre el
 campo canvas (como `menus/playerPc.ts`); COMPRAR y VENDER (bolsa) corren como
 escena hw dentro de `fieldMenu` y al salir se cierra la escena y vuelve el menú;
-sin Quest Log (`RecordItemTransaction` guarda el historial pero nada lo registra)
-ni help system. Verificado: `check:port`, `build` y paridad de cdata/incbin/textos;
-sin probar en navegador.
+sin Quest Log (`RecordItemTransaction` guarda el historial, pero no se registra)
+ni help system. Los dos `DebugFunc_*` vacíos del C están conectados;
+`RecordTransactionForQuestLog` continúa pendiente y ya no se representa con un
+stub. Verificado: `check:port`, `build` y paridad de cdata/incbin/textos; sin
+probar en navegador.
 
 - Restauré `Task_GoToBuyOrSellMenu` como callback de tarea nombrado: BUY y SELL
   guardan su callback destino, la tarea limpia la ventana y luego instala la
   escena/callback web. Añadí `SetShopExitCallback` al camino de inicialización
   fallida; el retorno de campo ejecuta el hook que vuelve al menú. `shop.c` pasa
-  a 57/60 nombres; `RecordTransactionForQuestLog` sigue siendo el stub del
-  Quest Log y los otros dos faltantes son helpers debug vacíos en C. Inventario
+  a 59/60 nombres; `RecordTransactionForQuestLog` está retirado hasta portar
+  Quest Log, y los dos helpers debug vacíos ya están conectados. Inventario
   global: 5.792/9.834 (58,9 %), 85 archivos y 4.042 nombres pendientes. Pasaron
   `check:port`, `check:honesty`, inventory, pending y `git diff --check`; sin
   runtime.
@@ -1740,7 +1747,7 @@ tragaperras, Islas Sevii.
 19. **Menú Guardar e informe** (`start_menu.c` guardado, `save_menu_util.c`)
     **[visual]**: comparar la ventana de guardado y el resumen con el C.
 
-20a. **Tienda Pokémon** (`shop.c`, `buy_menu_helpers.c`) **[PORTADO, sin probar]**:
+20a. **Tienda Pokémon** (`shop.c`, `buy_menu_helpers.c`) **[PARCIAL, sin probar]**:
     ver la sección de 2026-09-25.
 20b. **Hall of Fame y créditos** (`hall_of_fame.c`, `credits.c`) **[PORTADO, sin probar]**:
     ver la sección de 2026-09-25.

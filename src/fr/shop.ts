@@ -12,7 +12,7 @@
 //    map tiles in hardware VRAM, so BuyMenuLoadMapTilesets copies the two
 //    tilesets and their palettes there first (the C finds them already loaded).
 //  - Quest Log (SetQuestLogEvent) is out of scope: RecordItemTransaction keeps
-//    the history but nothing records it. The help system is out of scope.
+//    the history but nothing writes it to the quest log. The help system is out of scope.
 //  - Alloc'd tilemap buffers are Uint16Arrays; the four Alloc failure paths cannot happen.
 // Needs preloadShop() before BUY.
 
@@ -240,7 +240,6 @@ function CB2_GoToSellMenu(): void {
 
 function Task_HandleShopMenuQuit(taskId: number): void {
   ClearShopMenuWindow();
-  RecordTransactionForQuestLog();
   tasks.destroy(taskId);
   if (sShopData.callback !== null) sShopData.callback();
 }
@@ -805,11 +804,15 @@ function BuyMenuTryMakePurchase(taskId: number): void {
   PutWindowTilemap(4);
   if (addBagItem(data[tItemId], data[tItemCount]) === true) {
     BuyMenuDisplayMessage(taskId, txt("gText_HereYouGoThankYou"), BuyMenuSubtractMoney);
+    DebugFunc_PrintPurchaseDetails(taskId);
     RecordItemTransaction(data[tItemId], data[tItemCount], 1); // QL_EVENT_BOUGHT_ITEM - QL_EVENT_USED_POKEMART
   } else {
     BuyMenuDisplayMessage(taskId, txt("gText_NoMoreRoomForThis"), BuyMenuReturnToItemList);
   }
 }
+
+/** DebugFunc_PrintPurchaseDetails (shop.c): intentionally empty in the decomp. */
+function DebugFunc_PrintPurchaseDetails(_taskId: number): void {}
 
 function BuyMenuSubtractMoney(taskId: number): void {
   incrementGameStat(C.GAME_STAT_SHOPPED);
@@ -896,19 +899,18 @@ export function RecordItemTransaction(itemId: number, quantity: number, logEvent
   }
 }
 
-// Will record QL_EVENT_BOUGHT_ITEM and/or QL_EVENT_SOLD_ITEM, or nothing.
-function RecordTransactionForQuestLog(): void {
-  // SetQuestLogEvent(eventId + QL_EVENT_USED_POKEMART, &sHistory[i]): Quest Log is out of scope.
-}
-
 /** CreatePokemartMenu (itemsForSale: ROM pointer to the u16 list) */
 export function CreatePokemartMenu(game: Game, itemsForSale: number): void {
   sGame = game;
   SetShopItemsForSale(itemsForSale);
   CreateShopMenu(MART_TYPE_REGULAR);
   SetShopMenuCallback(() => game.overworld.script.ScriptContext_Enable()); // ScriptContext_Enable
+  DebugFunc_PrintShopMenuHistoryBeforeClearMaybe();
   for (const h of sHistory) Object.assign(h, { logEventId: 0, lastItemId: 0, itemQuantity: 0, totalMoney: 0, hasMultipleTransactions: false, mapSec: 0 });
 }
+
+/** DebugFunc_PrintShopMenuHistoryBeforeClearMaybe (shop.c): intentionally empty. */
+function DebugFunc_PrintShopMenuHistoryBeforeClearMaybe(): void {}
 
 /** CreateDecorationShop1Menu */
 export function CreateDecorationShop1Menu(game: Game, itemsForSale: number): void {

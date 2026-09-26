@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5835/9834 (59.3 %)**.
-- Archivos C con funciones aún sin homólogo: **77**; quedan **3999 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5837/9834 (59.4 %)**.
+- Archivos C con funciones aún sin homólogo: **77**; quedan **3997 nombres**.
 - Estos archivos contienen 145.843 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~83.517 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~83.479 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -17,10 +17,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
-| 1 | `field_tasks.c` | casi completo | 351 | 11/12 | ~29 |  |
-| 2 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
-| 3 | `evolution_graphics.c` | casi completo | 637 | 34/37 | ~51 |  |
-| 4 | `shop.c` | casi completo | 1145 | 57/60 | ~57 |  |
+| 1 | `shop.c` | casi completo | 1145 | 59/60 | ~19 |  |
+| 2 | `field_tasks.c` | casi completo | 351 | 11/12 | ~29 |  |
+| 3 | `menu_helpers.c` | casi completo | 243 | 14/17 | ~42 |  |
+| 4 | `evolution_graphics.c` | casi completo | 637 | 34/37 | ~51 |  |
 | 5 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
 | 6 | `item.c` | casi completo | 680 | 44/49 | ~69 |  |
 | 7 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
@@ -111,7 +111,6 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `trade_scene.c` | 2916 | 35/53 | 3 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
 | `bg.c` | 1215 | 43/50 | 1 |
-| `shop.c` | 1145 | 57/60 | 1 |
 | `menu_helpers.c` | 243 | 14/17 | 1 |
 | `union_room.c` | 4761 | 6/110 | 1 |
 | `link.c` | 2202 | 1/114 | 1 |
