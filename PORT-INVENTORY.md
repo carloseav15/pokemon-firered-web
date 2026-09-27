@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 61 | 134431 | 1279/5971 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 10 | 22803 | 721/841 |
+| Casi completo (≥ 80 % y < 100 %) | 10 | 22803 | 729/841 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 148 | 119686 | 4139/4139 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **100** | **182223** | |
-| **Total en alcance** | **253** | **303042** | **6167/11826** |
+| **Total en alcance** | **253** | **303042** | **6175/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -135,7 +135,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
-| `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
+| `berry_pouch.c` | 1529 | 73/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 45/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |

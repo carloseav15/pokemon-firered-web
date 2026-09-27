@@ -196,7 +196,7 @@ function RunBerryPouchInit(): boolean {
       gMain.state++;
       break;
     }
-    case 15: sBerryPouchSpriteId = CreateSprite(sSpriteTemplate_BerryPouch, 40, 76, 0); gMain.state++; break;
+    case 15: CreateBerryPouchSprite(); gMain.state++; break;
     case 16: CreateScrollIndicatorArrows_BerryPouchList(); gMain.state++; break;
     case 17: BlendPalettes(PALETTES_ALL, 16, RGB_BLACK); gMain.state++; break;
     case 18: BeginNormalPaletteFade(PALETTES_ALL, -2, 16, 0, RGB_BLACK); gMain.state++; break;
@@ -524,7 +524,7 @@ function contextFor(taskId: number): BagTaskContext {
   return {
     taskId,
     message: (str, fontId = FONT_NORMAL) => DisplayItemMessageInBerryPouch(taskId, fontId, str, Task_BerryPouch_DestroyDialogueWindowAndRefreshListMenu),
-    exit: (cb) => { res().exitCallback = cb; BerryPouch_StartFadeToExitCallback(taskId); },
+    exit: (cb) => { BerryPouch_SetExitCallback(cb); BerryPouch_StartFadeToExitCallback(taskId); },
   };
 }
 
@@ -567,7 +567,7 @@ function Task_AskTossMultiple(taskId: number): void {
   stringVars.var2 = intToDecimal(td(taskId).count.value, STR_CONV_MODE_LEFT_ALIGN, 3);
   stringVars.var4 = expandPlaceholders(text("gText_ThrowAwayStrVar2OfThisItemQM"));
   BerryPouchPrint(GetOrCreateVariableWindow(7), FONT_NORMAL, stringVars.var4, 0, 2, 1, 2, 0, 1);
-  CreateYesNoMenuWithCallbacks(taskId, sWindowTemplates_Variable[3], FONT_NORMAL, 0, 2, 0x001, 14, sYesNoFuncs_Toss);
+  CreateYesNoMenuWin3(taskId, sYesNoFuncs_Toss);
 }
 
 function Task_TossNo(taskId: number): void {
@@ -644,7 +644,7 @@ function Task_BerryPouch_Give(taskId: number): void {
   closeContextWindows();
   if (save.party.length === 0) { Task_Give_PrintThereIsNoPokemon(taskId); return; }
   const item = bagResult.itemId;
-  res().exitCallback = () => sHandlers.giveToMon ? sHandlers.giveToMon(item) : sStaticCnt.savedCallback?.();
+  BerryPouch_SetExitCallback(() => sHandlers.giveToMon ? sHandlers.giveToMon(item) : sStaticCnt.savedCallback?.());
   tasks.setFunc(taskId, BerryPouch_StartFadeToExitCallback);
 }
 
@@ -675,13 +675,13 @@ function Task_BerryPouch_Exit(taskId: number): void {
 
 function Task_ContextMenu_FromPartyGiveMenu(taskId: number): void {
   const item = BagGetItemIdByPocketPosition(td(taskId).itemIndex);
-  res().exitCallback = () => sHandlers.giveParty ? sHandlers.giveParty(item) : sStaticCnt.savedCallback?.();
+  BerryPouch_SetExitCallback(() => sHandlers.giveParty ? sHandlers.giveParty(item) : sStaticCnt.savedCallback?.());
   tasks.setFunc(taskId, BerryPouch_StartFadeToExitCallback);
 }
 
 function Task_ContextMenu_FromPokemonPC(taskId: number): void {
   const item = bagResult.itemId;
-  res().exitCallback = () => sHandlers.givePc ? sHandlers.givePc(item) : sStaticCnt.savedCallback?.();
+  BerryPouch_SetExitCallback(() => sHandlers.givePc ? sHandlers.givePc(item) : sStaticCnt.savedCallback?.());
   tasks.setFunc(taskId, BerryPouch_StartFadeToExitCallback);
 }
 
@@ -711,7 +711,11 @@ function Task_AskSellMultiple(taskId: number): void {
   stringVars.var3 = intToDecimal(salePrice(taskId), STR_CONV_MODE_LEFT_ALIGN, 6);
   stringVars.var4 = expandPlaceholders(text("gText_ICanPayThisMuch_WouldThatBeOkay"));
   DisplayItemMessageInBerryPouch(taskId, GetDialogBoxFontId(), stringVars.var4,
-    (t) => CreateYesNoMenuWithCallbacks(t, sWindowTemplates_Variable[4], FONT_NORMAL, 0, 2, 0x001, 14, sYesNoFuncs_Sell));
+    (t) => Task_SellMultiple_CreateYesNoMenu(t));
+}
+
+function Task_SellMultiple_CreateYesNoMenu(taskId: number): void {
+  CreateYesNoMenuWin4(taskId, sYesNoFuncs_Sell);
 }
 
 function Task_SellNo(taskId: number): void {
@@ -730,7 +734,7 @@ function Task_Sell_PrintSelectMultipleUI(taskId: number): void {
   stringVars.var1 = intToDecimal(1, STR_CONV_MODE_LEADING_ZEROS, 2);
   stringVars.var4 = expandPlaceholders(text("gText_TimesStrVar1"));
   BerryPouchPrint(windowId, FONT_SMALL, stringVars.var4, 4, 10, 1, 0, 0xff, 1);
-  PrintMoneyAmount(sVariableWindowIds[1], 56, 10, salePrice(taskId), 0);
+  SellMultiple_UpdateSellPriceDisplay(salePrice(taskId));
   PrintMoneyInWin2();
   CreateScrollIndicatorArrows_SellQuantity();
   tasks.setFunc(taskId, Task_Sell_SelectMultiple);
@@ -740,7 +744,7 @@ function Task_Sell_SelectMultiple(taskId: number): void {
   const data = td(taskId);
   if (AdjustQuantityAccordingToDPadInput(data.count, data.quantity)) {
     PrintxQuantityOnWindow(1, data.count.value, 2);
-    PrintMoneyAmount(sVariableWindowIds[1], 56, 10, salePrice(taskId), 0);
+    SellMultiple_UpdateSellPriceDisplay(salePrice(taskId));
   } else if (joy.newKeys & A_BUTTON) {
     sound.playSE(C.SE_SELECT);
     DestroyVariableWindow(1);
@@ -817,10 +821,18 @@ function GetOrCreateVariableWindow(winIdx: number): number {
   if (sVariableWindowIds[winIdx] === 0xff) {
     sVariableWindowIds[winIdx] = AddWindow(sWindowTemplates_Variable[winIdx]);
     if (winIdx === 2 || winIdx === 6 || winIdx === 7 || winIdx === 8 || winIdx === 9) DrawStdFrameWithCustomTileAndPalette(sVariableWindowIds[winIdx], false, 0x00a, 12);
-    else DrawStdFrameWithCustomTileAndPalette(sVariableWindowIds[winIdx], false, 0x001, 14);
+    else VariableWindowSetAltFrameTileAndPalette(winIdx);
     ScheduleBgCopyTilemapToVram(2);
   }
   return sVariableWindowIds[winIdx];
+}
+
+function GetVariableWindowId(winIdx: number): number {
+  return sVariableWindowIds[winIdx];
+}
+
+function VariableWindowSetAltFrameTileAndPalette(winIdx: number): void {
+  DrawStdFrameWithCustomTileAndPalette(sVariableWindowIds[winIdx], false, 0x001, 14);
 }
 
 function DestroyVariableWindow(winIdx: number): void {
@@ -852,6 +864,26 @@ export function DisplayItemMessageInBerryPouch(taskId: number, fontId: number, s
 
 function PrintMoneyInWin2(): void {
   PrintMoneyAmountInMoneyBoxWithBorder(GetOrCreateVariableWindow(2), 0x00a, 0x0c, save.money);
+}
+
+function CreateYesNoMenuWin3(taskId: number, funcs: YesNoFuncTable): void {
+  CreateYesNoMenuWithCallbacks(taskId, sWindowTemplates_Variable[3], FONT_NORMAL, 0, 2, 0x001, 14, funcs);
+}
+
+function CreateYesNoMenuWin4(taskId: number, funcs: YesNoFuncTable): void {
+  CreateYesNoMenuWithCallbacks(taskId, sWindowTemplates_Variable[4], FONT_NORMAL, 0, 2, 0x001, 14, funcs);
+}
+
+function CreateBerryPouchSprite(): void {
+  sBerryPouchSpriteId = CreateSprite(sSpriteTemplate_BerryPouch, 40, 76, 0);
+}
+
+function SellMultiple_UpdateSellPriceDisplay(price: number): void {
+  PrintMoneyAmount(GetVariableWindowId(1), 56, 10, price, 0);
+}
+
+export function BerryPouch_SetExitCallback(callback: (() => void) | null): void {
+  res().exitCallback = callback;
 }
 
 function StartBerryPouchSpriteWobbleAnim(): void {

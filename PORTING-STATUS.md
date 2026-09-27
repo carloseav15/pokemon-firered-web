@@ -5,10 +5,27 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.167/11.826 funciones (52,2%)**,
+single-player. A 2026-09-27, la meta mide **6.175/11.826 funciones (52,2%)**,
 con **100 archivos** con huecos y una estimación ponderada de
-**~130.377/303.042 líneas C (43,0%)** pendientes. La coincidencia por nombre
+**~130.218/303.042 líneas C (43,0%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `berry_pouch.c`: callbacks y ayudas de venta (2026-09-27)
+
+- Conecté `BerryPouch_SetExitCallback` a las salidas de uso/entrega, extraje
+  `CreateBerryPouchSprite` del estado de inicialización y porté los helpers de
+  confirmación de ventanas 3 y 4. El flujo de venta usa
+  `Task_SellMultiple_CreateYesNoMenu` y `SellMultiple_UpdateSellPriceDisplay`;
+  las ventanas variables comparten `GetVariableWindowId` y
+  `VariableWindowSetAltFrameTileAndPalette`.
+- `berry_pouch.c` queda 73/77 por nombre. Las cuatro funciones pendientes son
+  la ruta de error de `Alloc`/fade (sin equivalente de asignación manual en
+  JavaScript) y utilidades de buffer de lista cuyo manejo usa arrays y objetos
+  de lista TS. El inventario global queda en **6.175/11.826 (52,2%)**, con
+  100 archivos incompletos y ~130.218 líneas ponderadas pendientes.
+- Pasaron `check:port`, `check:honesty`, `build`, inventory, pending y
+  `git diff --check`. No ejecuté el flujo visual de la bolsa en navegador;
+  el bloque extrae lógica ya ejercida en la misma pantalla.
 
 ## `battle_gfx_sfx_util.c`: memoria de sprites de batalla (2026-09-27)
 

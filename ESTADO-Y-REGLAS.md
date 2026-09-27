@@ -9,7 +9,7 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 
 | Medida | Valor | Qué significa |
 |---|---:|---|
-| Funciones del C con homólogo por nombre en TS | **6167 / 11826 (52,2 %)** | Indicador de nombres; incluye sistemas no single-player; no prueba fidelidad |
+| Funciones del C con homólogo por nombre en TS | **6175 / 11826 (52,2 %)** | Indicador de nombres; incluye sistemas no single-player; no prueba fidelidad |
 | Archivos C sin huecos de nombre | **147** | El inventario no mide paridad funcional |
 | Archivos casi completos (≥ 80 % y < 100 %) | **10** | Aún tienen funciones sin homólogo |
 | Archivos parciales (< 80 %) | **61** | Lista completa, junto con los casi completos, en `PENDING.md` |
