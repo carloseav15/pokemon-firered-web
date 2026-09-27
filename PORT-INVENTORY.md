@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 69 | 138246 | 1386/6197 |
+| Parcial (< 80 % de funciones) | 68 | 137462 | 1379/6161 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 18 | 33213 | 1086/1245 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 131 | 105315 | 3506/3506 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 132 | 106099 | 3542/3542 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **117** | **196594** | |
-| **Total en alcance** | **253** | **303042** | **6006/11826** |
+| **Pendiente de portar** | **116** | **195810** | |
+| **Total en alcance** | **253** | **303042** | **6035/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -111,7 +111,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `fieldmap.c` | 951 | 4/54 | `field/fieldmap.ts` |  |  |
 | `item_use.c` | 925 | 38/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
-| `wild_encounter.c` | 784 | 7/36 | `field/wildEncounter.ts`, `menu2.ts` |  |  |
 | `new_menu_helpers.c` | 761 | 42/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
@@ -199,6 +198,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `menu.c` | 872 | 49/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `battle_anim_rock.c` | 822 | 22/22 | `battle/anims/rock.ts` |  |  |
 | `main_menu.c` | 788 | 29/29 | `mainMenu.ts` |  |  |
+| `wild_encounter.c` | 784 | 36/36 | `field/wildEncounter.ts` |  |  |
 | `list_menu.c` | 758 | 31/31 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |  |
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |

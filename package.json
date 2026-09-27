@@ -32,7 +32,8 @@
     "check:trade": "esbuild tools/checks/tradeScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/tradeScene.mjs && node .decomp-build/checks/tradeScene.mjs",
     "check:coins": "esbuild tools/checks/coins.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/coins.mjs && node .decomp-build/checks/coins.mjs",
     "generate:string-util": "python3 tools/decomp/clang_codegen.py",
-    "check:string-util": "esbuild tools/checks/stringUtil.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/stringUtil.mjs && node .decomp-build/checks/stringUtil.mjs"
+    "check:string-util": "esbuild tools/checks/stringUtil.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/stringUtil.mjs && node .decomp-build/checks/stringUtil.mjs",
+    "check:wild-encounter": "esbuild tools/checks/wildEncounter.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/wildEncounter.mjs && node .decomp-build/checks/wildEncounter.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

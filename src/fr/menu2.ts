@@ -3,6 +3,7 @@
 
 import * as C from "./generated/constants";
 import { cdata } from "./hw/assets";
+import { GetUnownLetterByPersonalityLoByte } from "./field/wildEncounter";
 import { BlitBitmapRect4BitWithoutColorKey, type Bitmap } from "./hw/window";
 
 const SPECIES_OLD_UNOWN_EMARK = C.NUM_SPECIES + 0;
@@ -13,11 +14,6 @@ const sMonPosAttributes = () => cdata<number[][]>("menu2", "sMonPosAttributes");
 /** UnusedBlitBitmapRect from menu2.c; the hardware window layer owns 4bpp pixel packing. */
 function UnusedBlitBitmapRect(src: Bitmap, dst: Bitmap, srcX: number, srcY: number, dstX: number, dstY: number, width: number, height: number): void {
   BlitBitmapRect4BitWithoutColorKey(src, dst, srcX, srcY, dstX, dstY, width, height);
-}
-
-/** wild_encounter.c GetUnownLetterByPersonalityLoByte (GET_UNOWN_LETTER). */
-function GetUnownLetterByPersonalityLoByte(personality: number): number {
-  return ((((personality & 0x03000000) >>> 18) | ((personality & 0x00030000) >>> 12) | ((personality & 0x00000300) >>> 6) | (personality & 0x00000003)) >>> 0) % C.NUM_UNOWN_FORMS;
 }
 
 /** Menu2_GetMonPosAttribute */
