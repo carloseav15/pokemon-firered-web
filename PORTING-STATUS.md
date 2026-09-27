@@ -5,10 +5,22 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.224/11.826 funciones (52,6%)**,
+single-player. A 2026-09-27, la meta mide **6.225/11.826 funciones (52,6%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.451/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.439/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: curvas de salto desde cdata (2026-09-27)
+
+- Porté `GetJumpY` leyendo `sJumpYTable` y las tres curvas (`High`, `Low` y
+  `Normal`) desde el cdata exportado, y conecté el helper con ambos ciclos C de
+  salto. Eliminé las tres tablas duplicadas escritas a mano.
+- En navegador comparé las 48 salidas (16 entradas por curva) con el JSON de
+  cdata; todas coincidieron. `?fr=continue` quedó en la casa de Pallet. No
+  ejecuté la secuencia visual completa de salto. Pasaron `check:port`,
+  `check:honesty`, build, inventory, pending y `git diff --check`.
+- `event_object_movement.c` queda 69/759 por nombre; global **6.225/11.826
+  (52,6%)**, con ~129.439 líneas ponderadas sin homólogo.
 
 ## `event_object_movement.c`: coordenadas de destino por dirección (2026-09-27)
 

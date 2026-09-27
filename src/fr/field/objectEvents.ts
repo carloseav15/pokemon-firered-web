@@ -4,6 +4,7 @@
 
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
+import { cdata, symName } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
@@ -40,11 +41,6 @@ const STEP_SIZES: number[][] = [
   [2, 3, 3, 2, 3, 3],
   [4, 4, 4, 4],
   [8, 8],
-];
-const JUMP_Y = [
-  [-4, -6, -8, -10, -11, -12, -12, -12, -11, -10, -9, -8, -6, -4, 0, 0],
-  [0, -2, -3, -4, -5, -6, -6, -6, -5, -5, -4, -3, -2, 0, 0, 0],
-  [-2, -4, -6, -8, -9, -10, -10, -10, -9, -8, -6, -5, -3, -2, 0, 0],
 ];
 const DELAYS_MEDIUM = [32, 64, 96, 128];
 const DELAYS_SHORT = [32, 48, 64, 80];
@@ -227,6 +223,14 @@ export function ObjectEventMoveDestCoords(objectEvent: ObjectEvent, direction: n
     x: ((objectEvent.currentCoords.x + dx) << 16) >> 16,
     y: ((objectEvent.currentCoords.y + dy) << 16) >> 16,
   };
+}
+
+/** event_object_movement.c GetJumpY. The jump curves are read from exported C tables. */
+export function GetJumpY(i: number, type: number): number {
+  const tableRef = cdata<unknown[]>("event_object_movement", "sJumpYTable")[type & 0xff];
+  const tableName = symName(tableRef);
+  if (!tableName) throw new Error(`GetJumpY: missing C jump table for type ${type & 0xff}`);
+  return cdata<number[]>("event_object_movement", tableName)[((i << 16) >> 16)]!;
 }
 
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
@@ -1303,7 +1307,7 @@ export class ObjectEvents {
       const time = [16, 16, 32][distance];
       const shift = [0, 0, 1][distance];
       if (distance !== JUMP_DISTANCE_IN_PLACE) this.stepSprite(object, 1, s.data[3]);
-      s.y2 = JUMP_Y[s.data[5]][s.data[6] >> shift] ?? 0;
+      s.y2 = GetJumpY(s.data[6] >> shift, s.data[5]) ?? 0;
       s.data[6]++;
       if (s.data[6] === time >> 1) phase = JUMP_HALFWAY;
       if (s.data[6] >= time) { s.y2 = 0; phase = JUMP_FINISHED; }
@@ -1311,7 +1315,7 @@ export class ObjectEvents {
       const time = [0x20, 0x20, 0x40][distance];
       const shift = [1, 1, 2][distance];
       if (distance !== JUMP_DISTANCE_IN_PLACE && !(s.data[6] & 1)) this.stepSprite(object, 1, s.data[3]);
-      s.y2 = JUMP_Y[s.data[5]][s.data[6] >> shift] ?? 0;
+      s.y2 = GetJumpY(s.data[6] >> shift, s.data[5]) ?? 0;
       s.data[6]++;
       if (s.data[6] === time >> 1) phase = JUMP_HALFWAY;
       if (s.data[6] >= time) { s.y2 = 0; phase = JUMP_FINISHED; }
