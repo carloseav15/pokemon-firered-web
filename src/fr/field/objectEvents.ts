@@ -1319,8 +1319,8 @@ export class ObjectEvents {
   private initJump(object: ObjectEvent, direction: number, distance: number, type: number): void {
     const displacement = [0, 1, 1][distance];
     let [dx, dy] = DIRECTION_VECTORS[direction];
-    dx *= distance === JUMP_DISTANCE_FAR ? 2 : displacement;
-    dy *= distance === JUMP_DISTANCE_FAR ? 2 : displacement;
+    dx *= displacement;
+    dy *= displacement;
     this.setDirection(object, direction);
     this.shiftCoords(object, object.currentCoords.x + dx, object.currentCoords.y + dy);
     const s = object.sprite;
@@ -1329,6 +1329,7 @@ export class ObjectEvents {
     s.animPaused = false;
     object.landingJump = true;
     object.triggerGroundEffectsOnMove = true;
+    object.disableCoveringGroundEffects = true;
   }
 
   /** DoJumpSpriteMovement */
@@ -1359,7 +1360,17 @@ export class ObjectEvents {
   private updateJump(object: ObjectEvent, special = false): number {
     const phase = this.doJump(object, special);
     if (phase === JUMP_HALFWAY && object.sprite.data[4] !== JUMP_DISTANCE_IN_PLACE) {
-      // DoJumpAnimStep: halfway through, the object's previous coords catch up
+      const displacement = [0, 0, 1][object.sprite.data[4]] ?? 0;
+      if (displacement !== 0) {
+        const [dx, dy] = DIRECTION_VECTORS[object.movementDirection & 0xff]!;
+        this.shiftCoords(
+          object,
+          object.currentCoords.x + dx * displacement,
+          object.currentCoords.y + dy * displacement,
+        );
+        object.triggerGroundEffectsOnMove = true;
+        object.disableCoveringGroundEffects = true;
+      }
     }
     if (phase === JUMP_FINISHED) {
       this.shiftStill(object);
@@ -1368,6 +1379,16 @@ export class ObjectEvents {
       object.sprite.animPaused = true;
     }
     return phase;
+  }
+
+  /** event_object_movement.c DoJumpAnimStep. */
+  private DoJumpAnimStep(object: ObjectEvent): number {
+    return this.updateJump(object);
+  }
+
+  /** event_object_movement.c DoJumpSpecialAnimStep. */
+  private DoJumpSpecialAnimStep(object: ObjectEvent): number {
+    return this.updateJump(object, true);
   }
 
   private initMoveInPlace(object: ObjectEvent, direction: number, anim: number, duration: number): void {
@@ -1420,7 +1441,7 @@ export class ObjectEvents {
         this.initJump(object, dirOf(0x14), JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
-      if (this.updateJump(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
+      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
       return false;
     }
     // Delays
@@ -1497,7 +1518,7 @@ export class ObjectEvents {
         this.initJump(object, dirOf(0x46), JUMP_DISTANCE_NORMAL, JUMP_TYPE_HIGH);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
-      if (this.updateJump(object, true) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
+      if (this.DoJumpSpecialAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
       return false;
     }
     // Face player / away
@@ -1516,7 +1537,7 @@ export class ObjectEvents {
         this.initJump(object, dirOf(0x4e), JUMP_DISTANCE_NORMAL, JUMP_TYPE_NORMAL);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
-      if (this.updateJump(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
+      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
       return false;
     }
     // Jump in place
@@ -1527,7 +1548,7 @@ export class ObjectEvents {
         this.initJump(object, first, JUMP_DISTANCE_IN_PLACE, JUMP_TYPE_LOW);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
-      const phase = this.updateJump(object);
+      const phase = this.DoJumpAnimStep(object);
       if (phase === JUMP_HALFWAY && first !== second) {
         this.setDirection(object, second);
         this.setStepAnim(object, moveAnim(object.facingDirection));
@@ -1635,7 +1656,7 @@ export class ObjectEvents {
         this.initJump(object, dirOf(0xa6), JUMP_DISTANCE_NORMAL, JUMP_TYPE_HIGH);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
-      if (this.updateJump(object, true) === JUMP_FINISHED) return this.finishStep(object);
+      if (this.DoJumpSpecialAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
       return false;
     }
     // Acro bike actions are not used in FireRed maps; treat as face/walk.

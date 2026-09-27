@@ -5,10 +5,25 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.230/11.826 funciones (52,7%)**,
+single-player. A 2026-09-27, la meta mide **6.232/11.826 funciones (52,7%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.377/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.352/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: desplazamiento a mitad del salto (2026-09-27)
+
+- Porté el paso común `DoJumpAnimStep`/`DoJumpSpecialAnimStep`: en saltos
+  largos, al llegar a la mitad mueve las coordenadas un tile adicional, activa
+  efectos de suelo y desactiva temporalmente los efectos que cubren el suelo.
+  Ajusté también la inicialización del salto largo a un tile; el anterior
+  desplazamiento de dos tiles más el midpoint desplazaba el objeto de más.
+- En navegador ejecuté 16 frames de `MOVEMENT_ACTION_JUMP_2_DOWN` en un objeto
+  aislado. En el midpoint las coordenadas estaban a dos tiles del origen,
+  `previousCoords` reflejó el paso anterior y ambos flags de efectos estaban
+  activos. La partida siguió en la casa de Pallet. Pasaron `check:port`,
+  `check:honesty`, build, inventory, pending y `git diff --check`.
+- `event_object_movement.c` queda 76/759 por nombre; global **6.232/11.826
+  (52,7%)**, con ~129.352 líneas ponderadas sin homólogo.
 
 ## `event_object_movement.c`: iniciar animación en dirección (2026-09-27)
 
