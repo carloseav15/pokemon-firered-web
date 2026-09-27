@@ -14,6 +14,7 @@ import { save } from "../save";
 import { itemName } from "../pokemon/items";
 import { ItemIsMail } from "../pokemon/mail";
 import { InUnionRoom } from "../unionRoom";
+import { IsLinkSessionActive, IsLinkRecvQueueAtOverworldMax, Overworld_LinkRecvQueueLengthMoreThan2 } from "../linkState";
 import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer, LoadBgTiles, LoadBgTilemap } from "./bg";
 import { BG_PLTT_ID, LoadPalette } from "./palette";
 import { incbin16 } from "./assets";
@@ -110,7 +111,19 @@ export function IsHoldingItemAllowed(itemId: number): boolean {
 export function IsWritingMailAllowed(itemId: number): boolean {
   return !(MenuHelpers_IsLinkActive() || InUnionRoom()) || !ItemIsMail(itemId);
 }
-export function MenuHelpers_IsLinkActive(): boolean { return false; }
+
+/** MenuHelpers_IsLinkActive (menu_helpers.c). */
+export function MenuHelpers_IsLinkActive(): boolean { return IsLinkSessionActive(); }
+
+/** IsActiveOverworldLinkBusy (menu_helpers.c). */
+export function IsActiveOverworldLinkBusy(): boolean {
+  return MenuHelpers_IsLinkActive() && Overworld_LinkRecvQueueLengthMoreThan2();
+}
+
+/** MenuHelpers_ShouldWaitForLinkRecv (menu_helpers.c). */
+export function MenuHelpers_ShouldWaitForLinkRecv(): boolean {
+  return IsActiveOverworldLinkBusy() || IsLinkRecvQueueAtOverworldMax();
+}
 
 /** SetVBlankHBlankCallbacksToNull (menu_helpers.c). */
 export function SetVBlankHBlankCallbacksToNull(): void {

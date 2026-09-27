@@ -6,8 +6,8 @@ systems. The first playable route is a milestone, not the completion criterion.
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
 single-player. Los porcentajes anteriores de este documento son históricos;
-la meta vigente mide **5.966/11.826 funciones (50,4%)**, con **119 archivos**
-con huecos y una estimación ponderada de **~134.434/303.042 líneas C (44,4%)**
+la meta vigente mide **5.973/11.826 funciones (50,5%)**, con **118 archivos**
+con huecos y una estimación ponderada de **~134.324/303.042 líneas C (44,3%)**
 pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
 
 ## Estrategia de portado revisada, 2026-09-26
@@ -23,6 +23,15 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`menu_helpers.c`: 17/17 funciones con homólogo.** Reemplacé el stub de
+  `MenuHelpers_IsLinkActive` por las predicadas fuente-fieles de callback,
+  jugadores remotos y cola (`IsActiveOverworldLinkBusy`,
+  `MenuHelpers_ShouldWaitForLinkRecv`). `linkState.ts` modela el umbral C de
+  tres comandos, cola de 50 y selección serial/RFU, junto a las funciones de
+  `link.c` y `overworld.c`. La capa de transporte aún no las alimenta: no hay
+  cable/RFU funcional en el navegador. Pasaron `check:port`, `check:honesty`,
+  `build`, `inventory`, `pending` y `git diff --check`; no se probó una sesión
+  de enlace.
 - **`help_message.c`: 7/7 funciones con homólogo.** Implementé el registro,
   reuse y destrucción de la ventana singleton del mensaje de ayuda, e integré
   sus helpers de dibujo y texto en el cierre y actualización del menú START.
@@ -62,11 +71,11 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.966/11.826 funciones (50,4%)**, quedan **5.860 (49,6%)** y hay **119
-  archivos C con huecos** (29 sin empezar, 1 adaptador, 19 casi completos y 70
+  son **5.973/11.826 funciones (50,5%)**, quedan **5.853 (49,5%)** y hay **118
+  archivos C con huecos** (29 sin empezar, 1 adaptador, 18 casi completos y 70
   parciales). El denominador incluye los sistemas opcionales y de enlace antes
-  excluidos. La estimación ponderada sin cubrir es **~134.434/303.042 líneas
-  (44,4%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
+  excluidos. La estimación ponderada sin cubrir es **~134.324/303.042 líneas
+  (44,3%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
   y sobreviven cargas y escrituras del JSON web. `setSave` agrega el campo vacío
@@ -2476,18 +2485,20 @@ Pending / placeholders:
   `field_poison.c` ahora queda en 7/7 nombres. Inventario total: 5.765/9.834
   (58,6 %), 98 archivos y 4.069 nombres pendientes. Solo verificación estática.
 
-## `menu_helpers.c`: reinicio de callbacks y memoria de vídeo (2026-09-26)
+## `menu_helpers.c`: reinicio de callbacks, memoria de vídeo y predicados de enlace (2026-09-26)
 
 - Añadí `SetVBlankHBlankCallbacksToNull` y `ResetVramOamAndBgCntRegs` a
   `hw/menuHelpers.ts`. El reinicio borra VRAM, OAM y paletas con los tamaños
   GBA y restablece registros/coordenadas BG usando las funciones de hardware
   existentes.
-- Las comprobaciones de colas y enlace (`IsActiveOverworldLinkBusy`,
-  `MenuHelpers_ShouldWaitForLinkRecv`) quedan pendientes: el subsistema link
-  no está implementado y sus APIs no se deben simular como port real.
+- `MenuHelpers_IsLinkActive`, `IsActiveOverworldLinkBusy` y
+  `MenuHelpers_ShouldWaitForLinkRecv` siguen las condiciones del C usando
+  `linkState.ts`: identidad del callback, jugadores remotos y los umbrales de
+  recepción. El estado y las colas ya están modelados, pero el navegador aún
+  no tiene transporte cable/RFU que los alimente.
   `InUnionRoom` ya compara el mapa igual que en `union_room.c`; las dos
   restricciones de Enigma Berry/mail consideran Trade Center/Union Room. La
-  condición activa de link sigue como adaptación inactiva. `check:port`,
+  No se probó una sesión de link. `check:port`,
   `check:honesty`, `inventory`, `pending` y
   `git diff --check` pasaron; sin navegador ni runtime.
 

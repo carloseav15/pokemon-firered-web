@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 70 | 138458 | 1362/6200 |
+| Parcial (< 80 % de funciones) | 70 | 138458 | 1366/6200 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 19 | 33456 | 1090/1262 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 129 | 104860 | 3486/3486 |
+| Casi completo (≥ 80 % y < 100 %) | 18 | 33213 | 1076/1245 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 130 | 105103 | 3503/3503 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **119** | **197049** | |
-| **Total en alcance** | **253** | **303042** | **5966/11826** |
+| **Pendiente de portar** | **118** | **196806** | |
+| **Total en alcance** | **253** | **303042** | **5973/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -66,7 +66,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `pokemon_jump.c` | 4582 | 5/186 |  |  |  |
 | `battle_main.c` | 4477 | 84/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |  |
 | `field_effect.c` | 4033 | 13/239 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `namingScreen.ts` |  |  |
-| `overworld.c` | 3563 | 44/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |  |
+| `overworld.c` | 3563 | 46/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/overworld.ts` … |  |  |
 | `berry_crush.c` | 3488 | 4/73 |  |  |  |
 | `battle_transition.c` | 3037 | 1/134 | `battle/transition.ts` |  |  |
 | `trade.c` | 2958 | 0/66 | `pokemon/ingameTrade.ts` |  | 15 |
@@ -80,7 +80,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 1/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
 | `quest_log_events.c` | 2247 | 7/118 | `questLogEvents.ts` |  |  |
-| `link.c` | 2202 | 1/114 |  |  | 1 |
+| `link.c` | 2202 | 3/114 | `linkState.ts` |  | 1 |
 | `field_player_avatar.c` | 2168 | 12/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
@@ -157,7 +157,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `item.c` | 680 | 45/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
 | `script.c` | 583 | 48/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
-| `menu_helpers.c` | 243 | 14/17 | `hw/menuHelpers.ts` |  | 1 |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 
@@ -245,6 +244,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `pokedex_area_markers.c` | 274 | 5/5 | `pokedexArea.ts` |  |  |
 | `roamer.c` | 264 | 13/13 | `pokemon/roamer.ts` |  |  |
 | `scanline_effect.c` | 261 | 9/9 | `hw/scanline.ts` |  |  |
+| `menu_helpers.c` | 243 | 17/17 | `hw/menuHelpers.ts`, `linkState.ts` |  |  |
 | `tilemap_util.c` | 238 | 11/11 | `hw/tilemapUtil.ts` |  |  |
 | `map_name_popup.c` | 231 | 7/7 | `field/mapNamePopup.ts` |  |  |
 | `script_movement.c` | 226 | 19/19 | `script/movement.ts` |  |  |
