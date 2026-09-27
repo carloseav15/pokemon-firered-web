@@ -23,6 +23,7 @@ import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NORTH, D
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
 import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_FIELD_MOVE, PLAYER_AVATAR_GFX_RIDE, PlayerAvatar } from "./playerAvatar";
+import { SetHelpContext } from "../helpSystem";
 
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
 const ANIM_FIELD_MOVE = 0;
@@ -426,6 +427,7 @@ export class FieldMoveEffects {
             ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
             ow.objects.unfreezeAll();
             ow.controlsLocked = false;
+            SetHelpContext(C.HELPCONTEXT_SURFING);
             this.remove(C.FLDEFF_USE_SURF);
             tasks.destroy(id);
           }

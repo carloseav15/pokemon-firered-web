@@ -2,6 +2,11 @@
 // in the browser save; the scene/action recorder and playback are not yet ported.
 
 import * as C from "./generated/constants";
+import {
+  QL_LoadAction_Input, QL_LoadAction_MovementOrGfxChange, QL_LoadAction_SceneEnd, QL_LoadAction_Wait,
+  QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd,
+  type LoadedQuestLogAction, type QuestLogAction,
+} from "./questLogActions";
 import { save } from "./save";
 
 let sPlayedTheSlots = false;
@@ -27,6 +32,9 @@ let sStepRecordingMode = 0;
 let sNewlyEnteredMap = false;
 let sLastDepartedLocation = 0;
 export const gQuestLogRepeatEventTracker = { id: 0, numRepeats: 0, counter: 0 };
+let sActivePlayerActionScript = -1;
+let sNextActionDelay = 0;
+let sLastPlayerMovementActionId = -1;
 
 export type QuestLogShopEvent = {
   totalMoney: number;
@@ -49,6 +57,109 @@ export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
 }
 
+/** QuestLogRecordPlayerAvatarGfxTransition (quest_log.c): record the source gfx state byte. */
+export function QuestLogRecordPlayerAvatarGfxTransition(gfxState: number): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script) return;
+  const action: QuestLogAction = { type: C.QL_ACTION_GFX_CHANGE, duration: sNextActionDelay, data: [0, 0, 0, gfxState & 0xff] };
+  if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) sNextActionDelay = 0;
+}
+
+/** QuestLogRecordPlayerStep (quest_log.c), called after the avatar accepts a held movement. */
+export function QuestLogRecordPlayerStep(movementActionId: number, controlsLocked = false): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING || controlsLocked) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script) return;
+  if (movementActionId <= C.MOVEMENT_ACTION_FACE_RIGHT && sLastPlayerMovementActionId === movementActionId) return;
+  if (QL_RecordAction_MovementOrGfxChange(script, { type: C.QL_ACTION_MOVEMENT, duration: sNextActionDelay, data: [0, 0, 0, movementActionId & 0xff] }) === null) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    return;
+  }
+  sNextActionDelay = 0;
+  sLastPlayerMovementActionId = movementActionId & 0xff;
+}
+
+/** QuestLogRecordPlayerStepWithDuration (quest_log.c). */
+export function QuestLogRecordPlayerStepWithDuration(movementActionId: number, duration: number): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script) return;
+  if (QL_RecordAction_MovementOrGfxChange(script, { type: C.QL_ACTION_MOVEMENT, duration: sNextActionDelay, data: [0, 0, 0, movementActionId & 0xff] }) === null) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    return;
+  }
+  sLastPlayerMovementActionId = movementActionId & 0xff;
+  sNextActionDelay = duration & 0xffff;
+}
+
+/** QuestLogRecordNPCStepWithDuration (quest_log.c). */
+export function QuestLogRecordNPCStepWithDuration(localId: number, mapNum: number, mapGroup: number, movementActionId: number, duration: number): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script) return;
+  if (QL_RecordAction_MovementOrGfxChange(script, {
+    type: C.QL_ACTION_MOVEMENT, duration: sNextActionDelay,
+    data: [localId & 0xff, mapNum & 0xff, mapGroup & 0xff, movementActionId & 0xff],
+  }) === null) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    return;
+  }
+  sNextActionDelay = duration & 0xffff;
+}
+
+/** QL_RecordFieldInput (quest_log.c): preserve only the C bitfield mask and direction byte. */
+export function QL_RecordFieldInput(input: {
+  pressedAButton: boolean; checkStandardWildEncounter: boolean; heldDirection: boolean;
+  heldDirection2: boolean; tookStep: boolean; pressedBButton: boolean; dpadDirection: number;
+}): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script) return;
+  const flags = (input.pressedAButton ? 1 : 0) | (input.checkStandardWildEncounter ? 2 : 0)
+    | (input.heldDirection ? 0x10 : 0) | (input.heldDirection2 ? 0x20 : 0)
+    | (input.tookStep ? 0x40 : 0) | (input.pressedBButton ? 0x80 : 0);
+  if (QL_RecordAction_Input(script, { type: C.QL_ACTION_INPUT, duration: sNextActionDelay, data: [flags, 0, input.dpadDirection & 0xff, 0] }) === null) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    return;
+  }
+  sNextActionDelay = 0;
+}
+
+/** QL_TryRunActions recording branch (quest_log.c): count unlocked overworld frames between actions. */
+export function QL_TryRunActions(controlsLocked: boolean): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (controlsLocked) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (script && script.length >= 128) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    return;
+  }
+  sNextActionDelay = (sNextActionDelay + 1) & 0xffff;
+}
+
+/** Decode one saved action buffer using the source QL_LoadAction_* command format. */
+export function QL_LoadPlayerActionScript(eventIndex: number): QuestLogAction[] {
+  const script = save.questLogPlayerGfxActions?.find((entry) => entry.eventIndex === eventIndex)?.script;
+  if (!script) return [];
+  const actions: QuestLogAction[] = [];
+  let cursor = 0;
+  while (cursor < script.length) {
+    const command = script[cursor];
+    let loaded: LoadedQuestLogAction | null;
+    if (command === C.QL_EVENT_MOVEMENT || command === C.QL_EVENT_GFX_CHANGE) loaded = QL_LoadAction_MovementOrGfxChange(script, cursor);
+    else if (command === C.QL_EVENT_INPUT) loaded = QL_LoadAction_Input(script, cursor);
+    else if (command === C.QL_EVENT_WAIT) loaded = QL_LoadAction_Wait(script, cursor);
+    else if (command === C.QL_EVENT_SCENE_END) loaded = QL_LoadAction_SceneEnd(script, cursor);
+    else break;
+    if (!loaded) break;
+    actions.push(loaded.action);
+    cursor = loaded.next;
+    if (loaded.action.type === C.QL_ACTION_SCENE_END) break;
+  }
+  return actions;
+}
+
 /** SetQuestLogEvent (quest_log_events.c), currently supporting shop and story-item payloads. */
 export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void {
   const isShopEvent = eventId === C.QL_EVENT_BOUGHT_ITEM || eventId === C.QL_EVENT_SOLD_ITEM;
@@ -65,6 +176,15 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;
   getQuestLogEvents().push({ eventId, data: { ...data } });
+  if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED) {
+    gQuestLogState = C.QL_STATE_RECORDING;
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING;
+    sNextActionDelay = 0;
+    sLastPlayerMovementActionId = -1;
+    const scripts = save.questLogPlayerGfxActions ??= [];
+    scripts.push({ eventIndex: getQuestLogEvents().length - 1, script: [] });
+    sActivePlayerActionScript = scripts.length - 1;
+  }
 }
 
 /** InQuestLogDisabledLocation (quest_log_events.c). */
@@ -111,11 +231,16 @@ export function QL_ResetEventStates(): void {
 /** QuestLog_CutRecording (quest_log.c): close recording state and clear transient pointers. */
 export function QuestLog_CutRecording(): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_STOPPED && gQuestLogState === C.QL_STATE_RECORDING) {
+    const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+    if (script) QL_RecordAction_SceneEnd(script);
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
     gQuestLogState = 0;
+    sActivePlayerActionScript = -1;
   }
   gQuestLogDefeatedWildMonRecord = null;
   gQuestLogRecordingPointer = null;
+  sNextActionDelay = 0;
+  sLastPlayerMovementActionId = -1;
 }
 
 /** GetQuestLogState returns the C global consumed by `specialvar`. */
@@ -132,6 +257,10 @@ export function ResetQLPlayedTheSlots(): void {
   sStepRecordingMode = 0;
   QL_ResetRepeatEventTracker();
   getQuestLogEvents().length = 0;
+  (save.questLogPlayerGfxActions ??= []).length = 0;
+  sActivePlayerActionScript = -1;
+  sNextActionDelay = 0;
+  sLastPlayerMovementActionId = -1;
   gQuestLogState = 0;
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
   gQuestLogDefeatedWildMonRecord = null;

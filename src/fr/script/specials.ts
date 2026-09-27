@@ -2,6 +2,7 @@
 // Each entry mirrors the original field_specials.c (or its home file).
 
 import * as C from "../generated/constants";
+import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, Script_SetHelpContext, SetHelpContext, SetHelpContextForMap } from "../helpSystem";
 import { GetQuestLogState, QuestLog_CutRecording } from "../questLogEvents";
 import { sound } from "../audio/sound";
 import { decode, encode, stringVars } from "../gba/charmap";
@@ -177,19 +178,19 @@ export const SPECIALS: Record<string, Special> = {
   },
   QuestLog_CutRecording: () => { QuestLog_CutRecording(); },
   GetQuestLogState: () => { varSet(SV.RESULT, GetQuestLogState()); },
-  HelpSystem_Enable: () => {},
-  HelpSystem_Disable: () => {},
-  Script_SetHelpContext: () => {},
-  SetHelpContextForMap: () => {},
-  BackupHelpContext: () => {},
-  RestoreHelpContext: () => {},
+  HelpSystem_Enable: () => { HelpSystem_Enable(); },
+  HelpSystem_Disable: () => { HelpSystem_Disable(); },
+  Script_SetHelpContext: () => { Script_SetHelpContext(varGet(SV.x8004)); },
+  SetHelpContextForMap: (ctx) => { SetHelpContextForMap(ctx.ow); },
+  BackupHelpContext: () => { BackupHelpContext(); },
+  RestoreHelpContext: () => { RestoreHelpContext(); },
   ForcePlayerOntoBike: (ctx) => {
     if (ctx.ow.player.flags & 1) ctx.ow.player.setTransitionFlags(2);
     ctx.ow.savedMusic = rom.c("MUS_CYCLING");
     sound.playNewMapMusic(rom.c("MUS_CYCLING"));
   },
   GetPlayerAvatarBike: (ctx) => ((ctx.ow.player.flags & 2) ? 1 : (ctx.ow.player.flags & 4) ? 2 : 0),
-  ForcePlayerToStartSurfing: (ctx) => { ctx.ow.player.setTransitionFlags(8); },
+  ForcePlayerToStartSurfing: (ctx) => { SetHelpContext(C.HELPCONTEXT_SURFING); ctx.ow.player.setTransitionFlags(C.PLAYER_AVATAR_FLAG_SURFING); },
   AnimatePcTurnOn: (ctx) => { ctx.ow.game.animatePc(true); },
   AnimatePcTurnOff: (ctx) => { ctx.ow.game.animatePc(false); },
   SetVermilionTrashCans: () => {

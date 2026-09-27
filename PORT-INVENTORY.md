@@ -10,22 +10,21 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 60 | 133907 | 1362/5950 |
+| Falta (sin funciones portadas) | 26 | 20912 | 0/761 |
+| Parcial (< 80 % de funciones) | 62 | 136584 | 1396/6006 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 8 | 20213 | 626/716 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 151 | 122800 | 4285/4285 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **97** | **179109** | |
-| **Total en alcance** | **253** | **303042** | **6301/11826** |
+| **Total en alcance** | **253** | **303042** | **6335/11826** |
 
 ## Falta (sin funciones portadas)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `link_rfu_2.c` | 3163 | 0/149 |  |  |  |
-| `help_system.c` | 2480 | 0/41 |  |  | 6 |
 | `librfu_rfu.c` | 2342 | 0/86 |  |  |  |
 | `mystery_gift_menu.c` | 1609 | 0/34 |  |  |  |
 | `union_room_chat.c` | 1571 | 0/51 |  |  |  |
@@ -50,7 +49,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `union_room_battle.c` | 238 | 0/5 |  |  |  |
 | `mystery_gift_link.c` | 215 | 0/10 |  |  |  |
 | `berry_fix_program.c` | 203 | 0/4 |  |  |  |
-| `quest_log_player.c` | 197 | 0/15 |  |  |  |
 | `librfu_sio32id.c` | 170 | 0/4 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
@@ -73,12 +71,13 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `intro.c` | 2805 | 2/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 2/82 |  |  |  |
 | `battle_controller_pokedude.c` | 2698 | 31/108 |  |  |  |
-| `field_specials.c` | 2555 | 72/118 | `field/fieldMoves.ts`, `game.ts`, `menus/scriptMenu.ts` … |  |  |
+| `field_specials.c` | 2555 | 75/118 | `field/fieldMoves.ts`, `game.ts`, `menus/scriptMenu.ts` … |  |  |
 | `naming_screen.c` | 2509 | 38/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
+| `help_system.c` | 2480 | 10/41 | `helpSystem.ts` |  |  |
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 1/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
-| `quest_log_events.c` | 2247 | 7/118 | `questLogEvents.ts` |  |  |
+| `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
 | `link.c` | 2202 | 4/114 | `linkState.ts` |  | 1 |
 | `field_player_avatar.c` | 2168 | 21/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
@@ -87,7 +86,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
-| `quest_log.c` | 1767 | 5/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
+| `quest_log.c` | 1767 | 11/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `battle_controller_link_opponent.c` | 1713 | 22/86 |  |  |  |
 | `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
@@ -100,7 +99,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `script_menu.c` | 1341 | 5/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
 | `vs_seeker.c` | 1326 | 12/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
 | `title_screen.c` | 1315 | 2/39 | `introTitle.ts` |  |  |
-| `field_control_avatar.c` | 1182 | 17/49 | `field/fieldControl.ts` |  |  |
+| `field_control_avatar.c` | 1182 | 21/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_setup.c` | 1070 | 28/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
 | `cable_club.c` | 1036 | 9/54 | `script/specials.ts`, `script/specialsExtra.ts` |  | 2 |
@@ -117,6 +116,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_records.c` | 568 | 4/31 |  |  |  |
 | `wireless_communication_status_screen.c` | 522 | 1/12 |  |  |  |
 | `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` |  |  |
+| `quest_log_player.c` | 197 | 3/15 | `questLogPlayer.ts` |  |  |
 
 ## Adaptador (UI simplificada)
 

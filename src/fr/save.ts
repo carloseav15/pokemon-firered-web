@@ -119,6 +119,8 @@ export type SaveData = {
       | { trainerId: number; speciesOpponent: number; speciesPlayer: number; mapSec: number; hpFractionId: number }
       | { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
   }>;
+  /** Serialized avatar graphics actions captured while Quest Log recording is active. */
+  questLogPlayerGfxActions?: Array<{ eventIndex: number; script: number[] }>;
 };
 
 function emptyRamScript(): RamScriptSave {
@@ -171,6 +173,7 @@ export function newSaveData(): SaveData {
     nationalDexMagic: 0,
     nationalDexRseMagic: 0,
     questLogEvents: [],
+    questLogPlayerGfxActions: [],
     ramScript: emptyRamScript(),
     wonderNewsMetadata: { newsType: 0, sentRewardCounter: 0, rewardCounter: 0, berry: 0 },
   };
@@ -210,6 +213,9 @@ export function setSave(data: SaveData): void {
   delete legacy.pcMail;
   data.ramScript ??= emptyRamScript();
   data.questLogEvents ??= [];
+  data.questLogPlayerGfxActions ??= [];
+  data.questLogPlayerGfxActions = data.questLogPlayerGfxActions.filter((entry): entry is { eventIndex: number; script: number[] } =>
+    !!entry && typeof entry === "object" && Number.isInteger(entry.eventIndex) && Array.isArray(entry.script));
   // Migrate browser saves created before event_data.c's nationalDexMagic was represented.
   if (data.nationalDexMagic === undefined) {
     const flag = C.FLAG_SYS_NATIONAL_DEX;

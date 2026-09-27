@@ -20,6 +20,7 @@ import { runSpecial } from "./specials";
 import { gQuestLogState } from "../questLogEvents";
 import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "../mapPreviewScreen";
+import { DestroyHelpMessageWindow, DrawHelpMessageWindowWithText } from "../menus/helpMessage";
 import type { ScriptCommand, ScriptRunner } from "./context";
 import { ClearRamScript, GetSavedRamScriptIfValid, gRamScriptRetAddr, ramScriptDataBytes, setRamScriptRetAddr } from "./context";
 
@@ -407,8 +408,8 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   message: (ctx) => { ctx.ow.messageBox.show(rom.stringAt(textPtr(ctx))); return false; },
   messageautoscroll: (ctx) => { ctx.ow.messageBox.show(rom.stringAt(textPtr(ctx)), true); return false; },
   vmessage: (ctx) => { ctx.ow.messageBox.show(rom.stringAt(ctx.ScriptReadWord() - addressOffset)); return false; },
-  loadhelp: (ctx) => { textPtr(ctx); return false; },
-  unloadhelp: () => false,
+  loadhelp: (ctx) => { DrawHelpMessageWindowWithText(ctx.ow.windows, rom.stringAt(textPtr(ctx))); return false; },
+  unloadhelp: (ctx) => { DestroyHelpMessageWindow(ctx.ow.windows, 0); return false; },
   waitmessage: (ctx) => { ctx.SetupNativeScript(() => ctx.ow.messageBox.isHidden()); return true; },
   closemessage: (ctx) => { ctx.ow.messageBox.hide(); return false; },
   waitbuttonpress: (ctx) => { ctx.SetupNativeScript(() => JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON)); return true; },

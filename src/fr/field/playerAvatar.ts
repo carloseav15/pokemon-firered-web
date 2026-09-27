@@ -8,6 +8,8 @@ import { B_BUTTON } from "../gba/input";
 import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { flagGet, incrementGameStat } from "../save";
+import { QuestLogApplyPlayerAvatarTransition } from "../questLogPlayer";
+import { QuestLogRecordPlayerStep } from "../questLogEvents";
 import {
   actionFace, actionJump2, actionJumpInPlace, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
   actionWalkInPlaceSlow, actionWalkNormal, actionWalkSlow, COLLISION_DIRECTIONAL_STAIR_WARP, COLLISION_ELEVATION_MISMATCH, COLLISION_LEDGE_JUMP,
@@ -95,18 +97,14 @@ export class PlayerAvatar {
   /** SetPlayerAvatarTransitionFlags */
   setTransitionFlags(transition: number): void {
     if (transition & PLAYER_AVATAR_FLAG_ON_FOOT) {
-      this.setState(PLAYER_AVATAR_GFX_NORMAL);
-      this.flags = (this.flags & ~(PLAYER_AVATAR_FLAG_SURFING | PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) | PLAYER_AVATAR_FLAG_ON_FOOT;
+      QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_NORMAL);
     }
     if (transition & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) {
-      this.setState(PLAYER_AVATAR_GFX_BIKE);
-      this.BikeClearState(0, 0);
+      QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_BIKE);
       this.flags = (this.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_SURFING)) | (transition & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE));
     }
     if (transition & PLAYER_AVATAR_FLAG_SURFING) {
-      this.setState(PLAYER_AVATAR_GFX_RIDE);
-      this.flags = (this.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) | PLAYER_AVATAR_FLAG_SURFING;
-      this.ow.effects.startSurfBlob(this.object);
+      QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_SURF);
     }
     if (transition & PLAYER_AVATAR_FLAG_CONTROLLABLE) this.flags |= PLAYER_AVATAR_FLAG_CONTROLLABLE;
   }
@@ -171,6 +169,7 @@ export class PlayerAvatar {
     if (this.isAnimActive()) return;
     this.object.playerCopyableMovement = copyable;
     this.ow.objects.setHeldMovement(this.object, actionId);
+    QuestLogRecordPlayerStep(actionId, this.ow.controlsLocked);
   }
 
   forceSetHeldMovement(actionId: number): void {
@@ -744,11 +743,13 @@ export class PlayerAvatar {
   }
 
   /** CreateStopSurfingTask: surf music ends and the player hops onto land. */
-  createStopSurfingTask(direction: number): void {
+  createStopSurfingTask(direction: number, changeMusic = true): void {
     this.ow.controlsLocked = true;
     this.ow.objects.freezeAll();
-    this.ow.savedMusic = 0;
-    this.ow.playSpecialMapMusic();
+    if (changeMusic) {
+      this.ow.savedMusic = 0;
+      this.ow.playSpecialMapMusic();
+    }
     this.flags = (this.flags & ~PLAYER_AVATAR_FLAG_SURFING) | PLAYER_AVATAR_FLAG_ON_FOOT;
     this.preventStep = true;
     const o = this.object;

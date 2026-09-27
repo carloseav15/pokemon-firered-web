@@ -15,10 +15,13 @@ import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
 import { WonderNews_IncrementStepCounter } from "../wonderNews";
+import { IncrementBirthIslandRockStepCount, IncrementResortGorgeousStepCounter, RunMassageCooldownStepCounter } from "./fieldStepCounters";
 import { AdjustFriendship } from "../pokemon/mon_extra";
 import { tasks } from "../gba/tasks";
 import { GetRamScript } from "../script/context";
 import { IsEscalatorMoving, StartEscalator, StopEscalator } from "./specialFieldAnim";
+import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState } from "../questLogEvents";
+import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
 
 export type FieldInput = {
   pressedAButton: boolean;
@@ -37,6 +40,25 @@ function emptyInput(): FieldInput {
   return { pressedAButton: false, checkStandardWildEncounter: false, pressedStartButton: false, pressedSelectButton: false, heldDirection: false, heldDirection2: false, tookStep: false, pressedBButton: false, pressedRButton: false, dpadDirection: 0 };
 }
 
+/** QuestLogOverrideJoyVars (field_control_avatar.c). */
+export function QuestLogOverrideJoyVars(newKeys: number, heldKeys: number): { newKeys: number; heldKeys: number } {
+  let override = 0;
+  switch (GetRegisteredQuestLogInput()) {
+    case C.QL_INPUT_UP: override = DPAD_UP; break;
+    case C.QL_INPUT_DOWN: override = DPAD_DOWN; break;
+    case C.QL_INPUT_LEFT: override = DPAD_LEFT; break;
+    case C.QL_INPUT_RIGHT: override = DPAD_RIGHT; break;
+    case C.QL_INPUT_L: override = C.L_BUTTON; break;
+    case C.QL_INPUT_R: override = R_BUTTON; break;
+    case C.QL_INPUT_START: override = START_BUTTON; break;
+    case C.QL_INPUT_SELECT: override = SELECT_BUTTON; break;
+  }
+  if (override !== 0) newKeys = heldKeys = override;
+  ClearQuestLogInputIsDpadFlag();
+  ClearQuestLogInput();
+  return { newKeys, heldKeys };
+}
+
 const SIGNPOST_NA = 0, SIGNPOST_POKECENTER = 1, SIGNPOST_POKEMART = 2, SIGNPOST_INDIGO_1 = 3, SIGNPOST_INDIGO_2 = 4, SIGNPOST_SCRIPTED = 240;
 
 export class FieldControl {
@@ -45,11 +67,14 @@ export class FieldControl {
   msgBoxCancelable = false;
   msgBoxWalkawayDisabled = false;
   msgIsSignpost = false;
+  private recordedPlayerFieldInput = emptyInput();
+  private questLogStartMenuTask: number | null = null;
 
   constructor(private readonly ow: Overworld) {}
 
   /** DoCB1_Overworld */
   processFrame(newKeys: number, heldKeys: number): void {
+    QL_TryRunActions(this.ow.controlsLocked);
     const player = this.ow.player;
     player.updateTransitionState();
     const input = emptyInput();
@@ -57,6 +82,7 @@ export class FieldControl {
     this.handleCancelSignpost(input);
     if (!this.ow.controlsLocked) {
       if (this.processPlayerFieldInput(input)) {
+        if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) QL_RecordFieldInput(this.recordedPlayerFieldInput);
         this.ow.controlsLocked = true;
         this.ow.mapName.dismiss();
       } else {
@@ -76,17 +102,21 @@ export class FieldControl {
     const player = this.ow.player;
     const forcedMove = MB.MetatileBehavior_IsForcedMovementTile(this.GetPlayerCurMetatileBehavior());
     const tile = player.tileTransitionState;
+    if (!this.ow.script.ScriptContext_IsEnabled() && IsQuestLogInputDpad()) {
+      ({ newKeys, heldKeys } = QuestLogOverrideJoyVars(newKeys, heldKeys));
+    }
+    const isQuestLogPlayback = gQuestLogState === C.QL_STATE_PLAYBACK || gQuestLogState === C.QL_STATE_PLAYBACK_LAST;
     if ((tile === T_TILE_CENTER && !forcedMove) || tile === T_NOT_MOVING) {
       if (player.GetPlayerSpeed() !== PLAYER_SPEED_FASTEST) {
         if ((newKeys & START_BUTTON) && !(player.flags & PLAYER_AVATAR_FLAG_FORCED)) input.pressedStartButton = true;
-        if (!(player.flags & PLAYER_AVATAR_FLAG_FORCED)) {
+        if (!isQuestLogPlayback && !(player.flags & PLAYER_AVATAR_FLAG_FORCED)) {
           if (newKeys & SELECT_BUTTON) input.pressedSelectButton = true;
           if (newKeys & A_BUTTON) input.pressedAButton = true;
           if (newKeys & B_BUTTON) input.pressedBButton = true;
           if (newKeys & R_BUTTON) input.pressedRButton = true;
         }
       }
-      if (heldKeys & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT)) {
+      if (!isQuestLogPlayback && (heldKeys & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT))) {
         input.heldDirection = true;
         input.heldDirection2 = true;
       }
@@ -95,10 +125,12 @@ export class FieldControl {
       if (tile === T_TILE_CENTER && player.runningState === MOVING) input.tookStep = true;
       if (tile === T_TILE_CENTER) input.checkStandardWildEncounter = true;
     }
-    if (heldKeys & DPAD_UP) input.dpadDirection = DIR_NORTH;
-    else if (heldKeys & DPAD_DOWN) input.dpadDirection = DIR_SOUTH;
-    else if (heldKeys & DPAD_LEFT) input.dpadDirection = DIR_WEST;
-    else if (heldKeys & DPAD_RIGHT) input.dpadDirection = DIR_EAST;
+    if (!isQuestLogPlayback) {
+      if (heldKeys & DPAD_UP) input.dpadDirection = DIR_NORTH;
+      else if (heldKeys & DPAD_DOWN) input.dpadDirection = DIR_SOUTH;
+      else if (heldKeys & DPAD_LEFT) input.dpadDirection = DIR_WEST;
+      else if (heldKeys & DPAD_RIGHT) input.dpadDirection = DIR_EAST;
+    }
   }
 
   /** FieldInput_HandleCancelSignpost */
@@ -112,9 +144,27 @@ export class FieldControl {
     const facing = this.ow.player.object.facingDirection;
     if ((input.dpadDirection !== 0 && facing !== input.dpadDirection) || input.pressedStartButton) {
       if (input.dpadDirection !== 0 && this.IsMsgBoxWalkawayDisabled()) return;
+      if (input.dpadDirection !== 0) {
+        const registered = input.dpadDirection === DIR_NORTH ? C.QL_INPUT_UP
+          : input.dpadDirection === DIR_SOUTH ? C.QL_INPUT_DOWN
+            : input.dpadDirection === DIR_WEST ? C.QL_INPUT_LEFT : C.QL_INPUT_RIGHT;
+        RegisterQuestLogInput(registered);
+      }
       this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_CancelMessageBox"));
       this.ow.controlsLocked = true;
+      if (input.pressedStartButton && this.questLogStartMenuTask === null) {
+        this.questLogStartMenuTask = tasks.create(() => this.Task_QuestLogPlayback_OpenStartMenu(), 8);
+      }
     }
+  }
+
+  /** Task_QuestLogPlayback_OpenStartMenu (field_control_avatar.c). */
+  private Task_QuestLogPlayback_OpenStartMenu(): void {
+    if (this.ow.controlsLocked) return;
+    sound.playSE(sound.c("SE_WIN_OPEN"));
+    this.ow.game.showStartMenu();
+    if (this.questLogStartMenuTask !== null) tasks.destroy(this.questLogStartMenuTask);
+    this.questLogStartMenuTask = null;
   }
 
   /** GetPlayerPosition (field_control_avatar.c). */
@@ -133,6 +183,7 @@ export class FieldControl {
 
   /** ProcessPlayerFieldInput */
   processPlayerFieldInput(input: FieldInput): boolean {
+    this.recordedPlayerFieldInput = { ...emptyInput(), dpadDirection: input.dpadDirection };
     this.resetFacingNpcOrSignpostVars();
     const direction = this.ow.player.object.facingDirection;
     let position = this.GetPlayerPosition();
@@ -144,33 +195,41 @@ export class FieldControl {
 
     if (input.tookStep) {
       incrementGameStat(rom.constants.GAME_STAT_STEPS ?? 0);
-      IncrementRenewableHiddenItemStepCounter();
       WonderNews_IncrementStepCounter();
-      if (this.tryStartStepBasedScript(position, behavior, direction)) return true;
+      IncrementRenewableHiddenItemStepCounter();
+      RunMassageCooldownStepCounter();
+      IncrementResortGorgeousStepCounter();
+      IncrementBirthIslandRockStepCount();
+      if (this.tryStartStepBasedScript(position, behavior, direction)) { this.recordAcceptedFieldInput("tookStep"); return true; }
     }
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {
       const front = this.GetInFrontOfPlayerPosition();
       const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
-      if (this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) return true;
+      if (this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
       position = this.GetPlayerPosition();
       behavior = this.ow.map.behaviorAt(position.x, position.y);
     }
-    if (input.checkStandardWildEncounter && this.ow.effects.tryStandardWildEncounter(attributes)) return true;
-    if (input.heldDirection && input.dpadDirection === direction && this.tryArrowWarp(position, behavior, direction)) return true;
+    if (input.checkStandardWildEncounter && this.ow.effects.tryStandardWildEncounter(attributes)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
+    if (input.heldDirection && input.dpadDirection === direction && this.tryArrowWarp(position, behavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
 
     const front = this.GetInFrontOfPlayerPosition();
     const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
-    if (input.heldDirection && input.dpadDirection === direction && this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) return true;
-    if (input.pressedAButton && this.tryStartInteractionScript(front, frontBehavior, direction)) return true;
-    if (input.heldDirection2 && input.dpadDirection === direction && this.tryDoorWarp(front, frontBehavior, direction)) return true;
+    if (input.heldDirection && input.dpadDirection === direction && this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
+    if (input.pressedAButton && this.tryStartInteractionScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
+    if (input.heldDirection2 && input.dpadDirection === direction && this.tryDoorWarp(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection2"); return true; }
     if (input.pressedStartButton) {
       flagSet(rom.c("FLAG_OPENED_START_MENU"));
       sound.playSE(sound.c("SE_WIN_OPEN"));
       this.ow.game.showStartMenu();
+      this.recordAcceptedFieldInput("pressedStartButton");
       return true;
     }
-    if (input.pressedSelectButton && this.ow.game.useRegisteredKeyItem()) return true;
+    if (input.pressedSelectButton && this.ow.game.useRegisteredKeyItem()) { this.recordAcceptedFieldInput("pressedSelectButton"); return true; }
     return false;
+  }
+
+  private recordAcceptedFieldInput(key: "pressedAButton" | "checkStandardWildEncounter" | "pressedStartButton" | "pressedSelectButton" | "heldDirection" | "heldDirection2" | "tookStep"): void {
+    this.recordedPlayerFieldInput[key] = true;
   }
 
   resetFacingNpcOrSignpostVars(): void {

@@ -11,12 +11,47 @@ import { flagClear, flagGet, flagSet, save, SV, varGet } from "../save";
 import { checkBagHasItem } from "../pokemon/items";
 import type { Game } from "../game";
 import type { ObjectEvent } from "./objectEvents";
+import type { Overworld } from "./overworld";
 import { PLAYER_AVATAR_GFX_VSSEEKER } from "./playerAvatar";
 
 const MAX_REMATCH_PARTIES = 6;
 const SKIP = 0xffff;
 const MAX_REMATCH_ENTRIES = 100;
 type RematchData = { trainerIdxs: number[]; mapGroup: number; mapNum: number };
+
+/** FLDEFF_USE_VS_SEEKER avatar animation shared by the item flow and Quest Log playback. */
+export function StartVsSeekerFieldEffect(ow: Overworld): () => boolean {
+  const player = ow.player.object;
+  ow.player.preventStep = true;
+  let state = 0;
+  const id = tasks.create(() => {
+    switch (state) {
+      case 0:
+        if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
+          ow.player.setState(PLAYER_AVATAR_GFX_VSSEEKER);
+          player.sprite.startAnim(0);
+          ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
+          state++;
+        }
+        break;
+      case 1:
+        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
+          ow.player.setState(ow.player.currentStateId());
+          ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
+          state++;
+        }
+        break;
+      case 2:
+        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
+          ow.player.preventStep = false;
+          state++;
+          tasks.destroy(id);
+        }
+        break;
+    }
+  }, 0xff);
+  return () => state === 3;
+}
 
 let rematchTable: RematchData[] | undefined;
 function sRematches(): RematchData[] {
@@ -252,38 +287,10 @@ export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: ()
   if (!rematchable) { showMessage(rom.text("VSSeeker_Text_NoTrainersWithinRange"), release); return; }
 
   // FLDEFF_USE_VS_SEEKER
-  const player = ow.player.object;
   ow.controlsLocked = true;
   ow.objects.freezeAll();
-  ow.player.preventStep = true;
   let state = 0, d0 = 15, d1 = 0, d2 = 0;
-  let fxState = 0;
-  const fx = tasks.create(() => {
-    switch (fxState) {
-      case 0:
-        if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-          ow.player.setState(PLAYER_AVATAR_GFX_VSSEEKER);
-          player.sprite.startAnim(0);
-          ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
-          fxState = 1;
-        }
-        break;
-      case 1:
-        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-          ow.player.setState(ow.player.currentStateId());
-          ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
-          fxState = 2;
-        }
-        break;
-      case 2:
-        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-          ow.player.preventStep = false;
-          fxState = 3;
-          tasks.destroy(fx);
-        }
-        break;
-    }
-  }, 0xff);
+  const isVsSeekerAnimFinished = StartVsSeekerFieldEffect(ow);
 
   let responseCode = 0;
   const wantsRematch: Array<{ trainerIdx: number; behavior: number }> = [];
@@ -294,7 +301,7 @@ export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: ()
         break;
       case 1:
         if (d2 !== 2 && --d1 === 0) { sound.playSE(C.SE_CONTEST_MONS_TURN); d1 = 11; d2++; }
-        if (fxState === 3) {
+        if (isVsSeekerAnimFinished()) {
           setStepCounter(stepCounter() & 0xff00);
           responseCode = responseInArea();
           game.scriptMovement.startBytes(ow.player.object, [C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_STEP_END]);

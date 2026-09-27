@@ -8,14 +8,16 @@ import { sound } from "../audio/sound";
 import { Sprite, loadImage } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
 import { DATA_ROOT, rom, type AnimCmd } from "../rom";
-import { flagGet, save, varGet, varSet } from "../save";
-import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, graphicsInfo, type ObjectEvent } from "./objectEvents";
+import { flagClear, flagGet, save, varGet, varSet } from "../save";
+import { actionWalkInPlaceNormal, actionWalkSlower, DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, graphicsInfo, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { FieldMoveEffects } from "./fieldMoves";
 import { DoPoisonFieldEffect } from "./poison";
 import { SafariZoneTakeStep } from "./safariZone";
 import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
 import { FindTaskIdByFunc } from "../hw/menuHelpers";
+import { MAP_OFFSET } from "./fieldmap";
+import { QuestLog_CutRecording, QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
 import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../hw/gpu";
 import {
   DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, DISPLAY_WIDTH, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_DISPCNT,
@@ -1109,31 +1111,48 @@ export class FieldEffects {
     const id = tasks.create(() => {
       switch (state) {
         case 0:
-          if (this.ow.objects.isHeldMovementFinished(player) && this.ow.objects.isHeldMovementFinished(boulder)) {
-            this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
-            this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
-            this.ow.objects.setHeldMovement(player, 0x29 + direction - 1);
-            this.ow.objects.setHeldMovement(boulder, 0x3d + direction - 1 - 0x3d + 0x10);
-            sound.playSE(sound.c("SE_M_STRENGTH"));
-            state = 1;
-          }
+          this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
+          this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
+          if (!this.ow.objects.setHeldMovement(player, actionWalkInPlaceNormal(direction)))
+            QuestLogRecordPlayerStepWithDuration(actionWalkInPlaceNormal(direction), 0);
+          if (!this.ow.objects.setHeldMovement(boulder, actionWalkSlower(direction)))
+            QuestLogRecordNPCStepWithDuration(boulder.localId, boulder.mapNum, boulder.mapGroup, actionWalkSlower(direction), 32);
+          this.startBoulderDust(boulder);
+          sound.playSE(sound.c("SE_M_STRENGTH"));
+          state = 1;
           break;
         case 1:
           if (this.ow.objects.isHeldMovementFinished(player) && this.ow.objects.isHeldMovementFinished(boulder)) {
             this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
             this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
+            const b = this.ow.map.behaviorAt(boulder.currentCoords.x, boulder.currentCoords.y);
+            HandleBoulderFallThroughHole(this.ow, boulder, b);
+            HandleBoulderActivateVictoryRoadSwitch(this.ow, boulder.currentCoords.x, boulder.currentCoords.y, b);
             this.ow.player.preventStep = false;
             this.ow.controlsLocked = false;
-            const b = this.ow.map.behaviorAt(boulder.currentCoords.x, boulder.currentCoords.y);
-            if (b === rom.constants.MB_FALL_WARP) {
-              sound.playSE(sound.c("SE_FALL"));
-              this.ow.objects.remove(boulder);
-            }
             tasks.destroy(id);
           }
           break;
       }
     }, 80);
+  }
+
+  private startBoulderDust(boulder: ObjectEvent): void {
+    const sprite = this.createFromTemplate("GroundImpactDust", boulder.currentCoords.x * 16 + 8, boulder.currentCoords.y * 16 + 12);
+    if (!sprite) return;
+    this.active.add(C.FLDEFF_DUST);
+    sprite.priority = boulder.sprite.priority;
+    sprite.subpriority = boulder.sprite.subpriority - 1;
+    sprite.data[0] = boulder.previousElevation;
+    sprite.data[1] = C.FLDEFF_DUST;
+    sprite.callback = (s) => {
+      if (s.animEnded) {
+        this.active.delete(C.FLDEFF_DUST);
+        this.ow.sprites.destroy(s);
+      } else {
+        s.subpriority = boulder.sprite.subpriority - 1;
+      }
+    };
   }
 
   // ---------------------------------------------------------------- flash / fade helpers
@@ -1207,6 +1226,25 @@ export class FieldEffects {
 
   safariZoneTakeStep(): boolean {
     return SafariZoneTakeStep(this.ow.game, (script) => this.ow.script.ScriptContext_SetupScript(script));
+  }
+}
+
+/** HandleBoulderFallThroughHole (field_control_avatar.c), called after a pushed boulder finishes. */
+export function HandleBoulderFallThroughHole(ow: Overworld, object: ObjectEvent, metatileBehavior = ow.map.behaviorAt(object.currentCoords.x, object.currentCoords.y)): void {
+  if (metatileBehavior !== C.MB_FALL_WARP) return;
+  sound.playSE(sound.c("SE_FALL"));
+  ow.objects.remove(object);
+  flagClear(object.trainerType);
+}
+
+/** HandleBoulderActivateVictoryRoadSwitch (field_control_avatar.c). */
+export function HandleBoulderActivateVictoryRoadSwitch(ow: Overworld, x: number, y: number, metatileBehavior = ow.map.behaviorAt(x, y)): void {
+  if (metatileBehavior !== C.MB_STRENGTH_BUTTON) return;
+  for (const event of ow.header.coords) {
+    if (event.x + MAP_OFFSET !== x || event.y + MAP_OFFSET !== y) continue;
+    QuestLog_CutRecording();
+    ow.script.ScriptContext_SetupScript(event.script);
+    ow.controlsLocked = true;
   }
 }
 
