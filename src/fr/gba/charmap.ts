@@ -74,6 +74,15 @@ import {
   StringCopyPadded,
   StripExtCtrlCodes,
   StringCompareWithoutExtCtrlCodes,
+  StringCopy_Nickname,
+  StringGet_Nickname,
+  StringCopy_PlayerName,
+  ConvertIntToDecimalStringN,
+  ConvertIntToHexStringN,
+  StringCopyN_Multibyte,
+  StringLength_Multibyte,
+  WriteColorChangeControlCode,
+  ConvertInternationalString,
 } from "../generated/stringUtil";
 
 export {
@@ -91,6 +100,15 @@ export {
   StringCopyPadded,
   StripExtCtrlCodes,
   StringCompareWithoutExtCtrlCodes,
+  StringCopy_Nickname,
+  StringGet_Nickname,
+  StringCopy_PlayerName,
+  ConvertIntToDecimalStringN,
+  ConvertIntToHexStringN,
+  StringCopyN_Multibyte,
+  StringLength_Multibyte,
+  WriteColorChangeControlCode,
+  ConvertInternationalString,
 };
 
 /** Number of argument bytes following FC <code> (plus the code byte itself). */
@@ -120,20 +138,12 @@ export const STR_CONV_MODE_LEFT_ALIGN = 0;
 export const STR_CONV_MODE_RIGHT_ALIGN = 1;
 export const STR_CONV_MODE_LEADING_ZEROS = 2;
 
-const DIGIT_0 = 0xa1;
-
 /** ConvertIntToDecimalStringN from string_util.c */
 export function intToDecimal(value: number, mode = STR_CONV_MODE_LEFT_ALIGN, digits = 0): GbaString {
-  let text = Math.max(0, Math.floor(value)).toString();
-  if (digits > 0) {
-    if (text.length > digits) text = text.slice(text.length - digits);
-    if (mode === STR_CONV_MODE_LEADING_ZEROS) text = text.padStart(digits, "0");
-    else if (mode === STR_CONV_MODE_RIGHT_ALIGN) text = text.padStart(digits, " ");
-  }
-  const out: number[] = [];
-  for (const c of text) out.push(c === " " ? CHAR_SPACE : DIGIT_0 + Number(c));
-  out.push(EOS);
-  return Uint8Array.from(out);
+  const n = digits > 0 ? digits : countDigits(value);
+  const dest = new Uint8Array(n + 1);
+  ConvertIntToDecimalStringN(dest, value, mode, n);
+  return dest;
 }
 
 export function countDigits(value: number): number {

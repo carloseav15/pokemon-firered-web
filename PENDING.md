@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5997/11826 (50.7 %)**.
-- Archivos C con funciones aún sin homólogo: **117**; quedan **5829 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6006/11826 (50.8 %)**.
+- Archivos C con funciones aún sin homólogo: **117**; quedan **5820 nombres**.
 - Estos archivos contienen 196.594 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~133.885 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~133.722 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -47,17 +47,17 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 28 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |
 | 29 | `battle_interface.c` | casi completo | 2240 | 45/52 | ~301 |  |
 | 30 | `mystery_gift_server.c` | sin empezar | 302 | 0/14 | ~302 |  |
-| 31 | `mystery_event_script.c` | parcial | 322 | 0/25 | ~322 |  |
-| 32 | `minigame_countdown.c` | sin empezar | 332 | 0/10 | ~332 |  |
-| 33 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
-| 34 | `union_room_chat_objects.c` | sin empezar | 346 | 0/13 | ~346 |  |
-| 35 | `mystery_gift_show_news.c` | sin empezar | 404 | 0/10 | ~404 |  |
-| 36 | `ereader_helpers.c` | sin empezar | 406 | 0/17 | ~406 |  |
-| 37 | `multiboot.c` | sin empezar | 416 | 0/9 | ~416 |  |
-| 38 | `librfu_intr.c` | sin empezar | 417 | 0/9 | ~417 |  |
-| 39 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
-| 40 | `digit_obj_util.c` | sin empezar | 451 | 0/14 | ~451 |  |
-| 41 | `string_util.c` | parcial | 726 | 14/40 | ~471 |  |
+| 31 | `string_util.c` | parcial | 726 | 23/40 | ~308 |  |
+| 32 | `mystery_event_script.c` | parcial | 322 | 0/25 | ~322 |  |
+| 33 | `minigame_countdown.c` | sin empezar | 332 | 0/10 | ~332 |  |
+| 34 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
+| 35 | `union_room_chat_objects.c` | sin empezar | 346 | 0/13 | ~346 |  |
+| 36 | `mystery_gift_show_news.c` | sin empezar | 404 | 0/10 | ~404 |  |
+| 37 | `ereader_helpers.c` | sin empezar | 406 | 0/17 | ~406 |  |
+| 38 | `multiboot.c` | sin empezar | 416 | 0/9 | ~416 |  |
+| 39 | `librfu_intr.c` | sin empezar | 417 | 0/9 | ~417 |  |
+| 40 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
+| 41 | `digit_obj_util.c` | sin empezar | 451 | 0/14 | ~451 |  |
 | 42 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
 | 43 | `wireless_communication_status_screen.c` | parcial | 522 | 1/12 | ~478 |  |
 | 44 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |

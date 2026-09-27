@@ -10,6 +10,36 @@ export const EXT_CTRL_CODE_BEGIN = 0xfc;
 export const PLACEHOLDER_BEGIN = 0xfd;
 export const CHAR_NEWLINE = 0xfe;
 
+export const POKEMON_NAME_LENGTH = 10;
+export const PLAYER_NAME_LENGTH = 7;
+export const LANGUAGE_JAPANESE = 1;
+
+export const STR_CONV_MODE_LEFT_ALIGN = 0;
+export const STR_CONV_MODE_RIGHT_ALIGN = 1;
+export const STR_CONV_MODE_LEADING_ZEROS = 2;
+
+export const WAITING_FOR_NONZERO_DIGIT = 0;
+export const WRITING_DIGITS = 1;
+export const WRITING_SPACES = 2;
+
+export const sPowersOfTen = [
+  1,
+  10,
+  100,
+  1000,
+  10000,
+  100000,
+  1000000,
+  10000000,
+  100000000,
+  1000000000,
+];
+
+export const sDigits = [
+  0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa,
+  0xbb, 0xbc, 0xbd, 0xbe, 0xbf, 0xc0,
+];
+
 export function GetExtCtrlCodeLength(code: number): number {
   const lengths = [1, 2, 2, 2, 4, 2, 2, 1, 2, 1, 1, 3, 2, 2, 2, 1, 3, 2, 2, 2, 2, 1, 1, 1, 1];
   let length = 0;
@@ -141,7 +171,7 @@ export function StringCopyPadded(dest: Uint8Array, src: ArrayLike<number>, c: nu
     }
   }
   n--;
-  while (n !== -(1)) {
+  while (n !== -1) {
     {
       dest[dest_idx++] = c;
       n--;
@@ -185,7 +215,7 @@ export function StringCompareWithoutExtCtrlCodes(str1: ArrayLike<number>, str2: 
       }
       if (str1[str1_idx] < str2[str2_idx]) {
         {
-          retVal = -(1);
+          retVal = -1;
           if (str2[str2_idx] === EOS) {
             retVal = 1;
           }
@@ -200,7 +230,254 @@ export function StringCompareWithoutExtCtrlCodes(str1: ArrayLike<number>, str2: 
   }
   retVal = 1;
   if (str1[str1_idx] === EOS) {
-    retVal = -(1);
+    retVal = -1;
   }
   return retVal;
+}
+
+export function StringCopy_Nickname(dest: Uint8Array, src: ArrayLike<number>, destOffset = 0, srcOffset = 0): number {
+  let dest_idx = destOffset;
+  let src_idx = srcOffset;
+  let i = 0;
+  let limit = 10;
+  for (i = 0; i < limit; i++) {
+    {
+      dest[dest_idx + i] = src[src_idx + i];
+      if (dest[dest_idx + i] === EOS) {
+        return dest_idx + i;
+      }
+    }
+  }
+  dest[dest_idx + i] = EOS;
+  return dest_idx + i;
+}
+
+export function StringGet_Nickname(str: Uint8Array, strOffset = 0): number {
+  let str_idx = strOffset;
+  let i = 0;
+  let limit = 10;
+  for (i = 0; i < limit; i++) {
+    if (str[str_idx + i] === EOS) {
+      return str_idx + i;
+    }
+  }
+  str[str_idx + i] = EOS;
+  return str_idx + i;
+}
+
+export function StringCopy_PlayerName(dest: Uint8Array, src: ArrayLike<number>, destOffset = 0, srcOffset = 0): number {
+  let dest_idx = destOffset;
+  let src_idx = srcOffset;
+  let i = 0;
+  let limit = 7;
+  for (i = 0; i < limit; i++) {
+    {
+      dest[dest_idx + i] = src[src_idx + i];
+      if (dest[dest_idx + i] === EOS) {
+        return dest_idx + i;
+      }
+    }
+  }
+  dest[dest_idx + i] = EOS;
+  return dest_idx + i;
+}
+
+export function ConvertIntToDecimalStringN(dest: Uint8Array, value: number, mode: number, n: number, destOffset = 0): number {
+  let dest_idx = destOffset;
+  let state = 0;
+  let powerOfTen = 0;
+  let largestPowerOfTen = sPowersOfTen[n - 1];
+  state = WAITING_FOR_NONZERO_DIGIT;
+  if (mode === STR_CONV_MODE_RIGHT_ALIGN) {
+    state = WRITING_SPACES;
+  }
+  if (mode === STR_CONV_MODE_LEADING_ZEROS) {
+    state = WRITING_DIGITS;
+  }
+  for (powerOfTen = largestPowerOfTen; powerOfTen > 0; powerOfTen = Math.trunc(powerOfTen / 10)) {
+    {
+      let out_idx = 0;
+      let c = 0;
+      let digit = Math.trunc(value / powerOfTen);
+      let temp = value - (powerOfTen * digit);
+      if (state === WRITING_DIGITS) {
+        {
+          out_idx = dest_idx++;
+          if (digit <= 9) {
+            c = sDigits[digit];
+          } else {
+            c = CHAR_QUESTION_MARK;
+          }
+          dest[out_idx] = c;
+        }
+      } else {
+        if (digit !== 0 || powerOfTen === 1) {
+          {
+            state = WRITING_DIGITS;
+            out_idx = dest_idx++;
+            if (digit <= 9) {
+              c = sDigits[digit];
+            } else {
+              c = CHAR_QUESTION_MARK;
+            }
+            dest[out_idx] = c;
+          }
+        } else {
+          if (state === WRITING_SPACES) {
+            {
+              dest[dest_idx++] = 0;
+            }
+          }
+        }
+      }
+      value = temp;
+    }
+  }
+  dest[dest_idx] = EOS;
+  return dest_idx;
+}
+
+export function ConvertIntToHexStringN(dest: Uint8Array, value: number, mode: number, n: number, destOffset = 0): number {
+  let dest_idx = destOffset;
+  let state = 0;
+  let i = 0;
+  let powerOfSixteen = 0;
+  let largestPowerOfSixteen = 1;
+  for (i = 1; i < n; i++) {
+    largestPowerOfSixteen *= 16;
+  }
+  state = WAITING_FOR_NONZERO_DIGIT;
+  if (mode === STR_CONV_MODE_RIGHT_ALIGN) {
+    state = WRITING_SPACES;
+  }
+  if (mode === STR_CONV_MODE_LEADING_ZEROS) {
+    state = WRITING_DIGITS;
+  }
+  for (powerOfSixteen = largestPowerOfSixteen; powerOfSixteen > 0; powerOfSixteen = Math.trunc(powerOfSixteen / 16)) {
+    {
+      let out_idx = 0;
+      let c = 0;
+      let digit = Math.trunc(value / powerOfSixteen);
+      let temp = value % powerOfSixteen;
+      if (state === WRITING_DIGITS) {
+        {
+          out_idx = dest_idx++;
+          if (digit <= 15) {
+            c = sDigits[digit];
+          } else {
+            c = CHAR_QUESTION_MARK;
+          }
+          dest[out_idx] = c;
+        }
+      } else {
+        if (digit !== 0 || powerOfSixteen === 1) {
+          {
+            state = WRITING_DIGITS;
+            out_idx = dest_idx++;
+            if (digit <= 15) {
+              c = sDigits[digit];
+            } else {
+              c = CHAR_QUESTION_MARK;
+            }
+            dest[out_idx] = c;
+          }
+        } else {
+          if (state === WRITING_SPACES) {
+            {
+              dest[dest_idx++] = 0;
+            }
+          }
+        }
+      }
+      value = temp;
+    }
+  }
+  dest[dest_idx] = EOS;
+  return dest_idx;
+}
+
+export function StringCopyN_Multibyte(dest: Uint8Array, src: ArrayLike<number>, n: number, destOffset = 0, srcOffset = 0): number {
+  let dest_idx = destOffset;
+  let src_idx = srcOffset;
+  let i = 0;
+  for (i = n - 1; i !== -1; i--) {
+    {
+      if (src[src_idx] === EOS) {
+        {
+          break;
+        }
+      } else {
+        {
+          dest[dest_idx++] = src[src_idx++];
+          if (src[src_idx - 1] === 249) {
+            dest[dest_idx++] = src[src_idx++];
+          }
+        }
+      }
+    }
+  }
+  dest[dest_idx] = EOS;
+  return dest_idx;
+}
+
+export function StringLength_Multibyte(str: ArrayLike<number>, strOffset = 0): number {
+  let str_idx = strOffset;
+  let length = 0;
+  while (str[str_idx] !== EOS) {
+    {
+      if (str[str_idx] === 249) {
+        str_idx++;
+      }
+      str_idx++;
+      length++;
+    }
+  }
+  return length;
+}
+
+export function WriteColorChangeControlCode(dest: Uint8Array, colorType: number, color: number, destOffset = 0): number {
+  let dest_idx = destOffset;
+  dest[dest_idx] = EXT_CTRL_CODE_BEGIN;
+  dest_idx++;
+  switch (colorType) {
+    case 0:
+      dest[dest_idx] = 1;
+    dest_idx++;
+    break;
+    case 1:
+      dest[dest_idx] = 3;
+    dest_idx++;
+    break;
+    case 2:
+      dest[dest_idx] = 2;
+    dest_idx++;
+    break;
+  }
+  dest[dest_idx] = color;
+  dest_idx++;
+  dest[dest_idx] = EOS;
+  return dest_idx;
+}
+
+export function ConvertInternationalString(s: Uint8Array, language: number, sOffset = 0): void {
+  let s_idx = sOffset;
+  if (language === 1) {
+    {
+      let i = 0;
+      StripExtCtrlCodes(s, s_idx);
+      i = StringLength(s, s_idx);
+      s[s_idx + i++] = EXT_CTRL_CODE_BEGIN;
+      s[s_idx + i++] = 22;
+      s[s_idx + i++] = EOS;
+      i--;
+      while (i !== -1) {
+        {
+          s[s_idx + i + 2] = s[s_idx + i];
+          i--;
+        }
+      }
+      s[s_idx + 0] = EXT_CTRL_CODE_BEGIN;
+      s[s_idx + 1] = 21;
+    }
+  }
 }

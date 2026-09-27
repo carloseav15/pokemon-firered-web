@@ -35,6 +35,7 @@ CONSTANTS_MAP: dict[int, str] = {
     0xFC: "EXT_CTRL_CODE_BEGIN",
     0xFD: "PLACEHOLDER_BEGIN",
     0xFE: "CHAR_NEWLINE",
+    0xAC: "CHAR_QUESTION_MARK",
 }
 
 
@@ -219,6 +220,33 @@ class ClangTsEmitter:
                 self.emit_line("return;")
         elif k == "BreakStmt":
             self.emit_line("break;")
+        elif k == "SwitchStmt":
+            inner = node.get("inner", [])
+            cond_expr = self.emit_expr(inner[0])
+            self.emit_line(f"switch ({cond_expr}) {{")
+            self.indent_level += 1
+            body_stmt = inner[1]
+            if body_stmt.get("kind") == "CompoundStmt":
+                self.emit_compound_stmt(body_stmt)
+            else:
+                self.emit_stmt(body_stmt)
+            self.indent_level -= 1
+            self.emit_line("}")
+        elif k == "CaseStmt":
+            inner = node.get("inner", [])
+            case_val = self.emit_expr(inner[0])
+            self.emit_line(f"case {case_val}:")
+            if len(inner) > 1:
+                self.indent_level += 1
+                self.emit_stmt(inner[1])
+                self.indent_level -= 1
+        elif k == "DefaultStmt":
+            inner = node.get("inner", [])
+            self.emit_line("default:")
+            if inner:
+                self.indent_level += 1
+                self.emit_stmt(inner[0])
+                self.indent_level -= 1
         elif k in ("BinaryOperator", "CompoundAssignOperator", "UnaryOperator", "CallExpr"):
             expr = self.emit_expr(node)
             self.emit_line(f"{expr};")
@@ -228,6 +256,8 @@ class ClangTsEmitter:
     def emit_expr(self, node: dict[str, Any]) -> str:
         k = node.get("kind")
         if k == "ImplicitCastExpr":
+            return self.emit_expr(node["inner"][0])
+        elif k == "ConstantExpr":
             return self.emit_expr(node["inner"][0])
         elif k == "CStyleCastExpr":
             return self.emit_expr(node["inner"][0])
@@ -243,8 +273,20 @@ class ClangTsEmitter:
             op = node.get("opcode")
             is_postfix = node.get("isPostfix", False)
             sub = node["inner"][0]
-            # Pointer dereference *ptr or *ptr++
+            # Pointer dereference *ptr or *ptr++ or *(ptr +/- offset)
             if op == "*":
+                unwrapped = sub
+                while unwrapped.get("kind") in ("ParenExpr", "ImplicitCastExpr"):
+                    unwrapped = unwrapped["inner"][0]
+                if unwrapped.get("kind") == "BinaryOperator" and unwrapped.get("opcode") in ("+", "-"):
+                    bin_op = unwrapped.get("opcode")
+                    bin_lhs = unwrapped["inner"][0]
+                    bin_rhs = unwrapped["inner"][1]
+                    ptr_name = self._get_decl_ref_name(bin_lhs)
+                    if ptr_name and self.is_pointer(ptr_name):
+                        buf = self.get_pointer_buffer(ptr_name)
+                        rhs_expr = self.emit_expr(bin_rhs)
+                        return f"{buf}[{ptr_name}_idx {bin_op} {rhs_expr}]"
                 if sub.get("kind") == "UnaryOperator" and sub.get("opcode") in ("++", "--"):
                     sub_op = sub.get("opcode")
                     sub_is_postfix = sub.get("isPostfix", False)
@@ -265,7 +307,12 @@ class ClangTsEmitter:
                     return f"{sub_ref}_idx{op}" if is_postfix else f"{op}{sub_ref}_idx"
                 sub_expr = self.emit_expr(sub)
                 return f"{sub_expr}{op}" if is_postfix else f"{op}{sub_expr}"
-            elif op in ("-", "!", "~"):
+            elif op == "-":
+                inner_expr = self.emit_expr(sub)
+                if inner_expr.isdigit():
+                    return f"-{inner_expr}"
+                return f"-({inner_expr})"
+            elif op in ("!", "~"):
                 sub_expr = self.emit_expr(sub)
                 return f"{op}({sub_expr})"
             elif op == "&":
@@ -310,6 +357,11 @@ class ClangTsEmitter:
             if op == "=":
                 lhs_ptr = self._get_decl_ref_name(lhs_node)
                 if lhs_ptr and self.is_pointer(lhs_ptr):
+                    rhs_ptr = self._get_decl_ref_name(rhs_node)
+                    if not rhs_ptr and rhs_node.get("kind") == "UnaryOperator" and rhs_node.get("opcode") in ("++", "--"):
+                        rhs_ptr = self._get_decl_ref_name(rhs_node["inner"][0])
+                    if rhs_ptr and self.is_pointer(rhs_ptr):
+                        self.pointer_buffer[lhs_ptr] = self.get_pointer_buffer(rhs_ptr)
                     rhs_expr = self.emit_expr(rhs_node)
                     return f"{lhs_ptr}_idx = {rhs_expr}"
 
@@ -324,6 +376,16 @@ class ClangTsEmitter:
                 arr_ref = self._find_first_decl_ref(lhs_node)
                 if arr_ref:
                     return f"{arr_ref}.length"
+
+            # Integer division / and /=
+            if op == "/":
+                lhs_expr = self.emit_expr(lhs_node)
+                rhs_expr = self.emit_expr(rhs_node)
+                return f"Math.trunc({lhs_expr} / {rhs_expr})"
+            if op == "/=":
+                lhs_expr = self.emit_expr(lhs_node)
+                rhs_expr = self.emit_expr(rhs_node)
+                return f"{lhs_expr} = Math.trunc({lhs_expr} / {rhs_expr})"
 
             lhs_expr = self.emit_expr(lhs_node)
             rhs_expr = self.emit_expr(rhs_node)
@@ -410,6 +472,15 @@ def generate_string_util_ts() -> str:
         "StringCopyPadded",
         "StripExtCtrlCodes",
         "StringCompareWithoutExtCtrlCodes",
+        "StringCopy_Nickname",
+        "StringGet_Nickname",
+        "StringCopy_PlayerName",
+        "ConvertIntToDecimalStringN",
+        "ConvertIntToHexStringN",
+        "StringCopyN_Multibyte",
+        "StringLength_Multibyte",
+        "WriteColorChangeControlCode",
+        "ConvertInternationalString",
     ]
 
     out_lines = [
@@ -424,6 +495,36 @@ def generate_string_util_ts() -> str:
         "export const EXT_CTRL_CODE_BEGIN = 0xfc;",
         "export const PLACEHOLDER_BEGIN = 0xfd;",
         "export const CHAR_NEWLINE = 0xfe;",
+        "",
+        "export const POKEMON_NAME_LENGTH = 10;",
+        "export const PLAYER_NAME_LENGTH = 7;",
+        "export const LANGUAGE_JAPANESE = 1;",
+        "",
+        "export const STR_CONV_MODE_LEFT_ALIGN = 0;",
+        "export const STR_CONV_MODE_RIGHT_ALIGN = 1;",
+        "export const STR_CONV_MODE_LEADING_ZEROS = 2;",
+        "",
+        "export const WAITING_FOR_NONZERO_DIGIT = 0;",
+        "export const WRITING_DIGITS = 1;",
+        "export const WRITING_SPACES = 2;",
+        "",
+        "export const sPowersOfTen = [",
+        "  1,",
+        "  10,",
+        "  100,",
+        "  1000,",
+        "  10000,",
+        "  100000,",
+        "  1000000,",
+        "  10000000,",
+        "  100000000,",
+        "  1000000000,",
+        "];",
+        "",
+        "export const sDigits = [",
+        "  0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa,",
+        "  0xbb, 0xbc, 0xbd, 0xbe, 0xbf, 0xc0,",
+        "];",
         "",
     ]
 
