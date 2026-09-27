@@ -56,6 +56,7 @@ const configs: BgConfig[] = [zero(), zero(), zero(), zero()];
 let bgVisibilityAndMode = 0;
 const configs2: BgConfig2[] = Array.from({ length: 4 }, () => ({ baseTile: 0, basePalette: 0, tilemap: null, bg_x: 0, bg_y: 0 }));
 const tileAllocMap = new Uint8Array(0x100);
+const sDmaBusyBitfield = new Uint32Array(4);
 export let gWindowTileAutoAllocEnabled = false;
 
 const DISPCNT_ALL_BG_AND_MODE_BITS = 0x0f07;
@@ -78,9 +79,24 @@ export function ResetBgControlStructs(): void {
   for (let i = 0; i < 4; i++) configs[i] = zero();
 }
 
+/** IsInvalidBg: bg.c's u8 background index guard. */
+export function IsInvalidBg(bg: number): boolean {
+  return (bg & 0xff) > 3;
+}
+
+/** IsInvalidBg32 retains the source API's bool32 return for wider callers. */
+export function IsInvalidBg32(bg: number): boolean {
+  return (bg & 0xff) > 3;
+}
+
+/** Unused_ResetBgControlStruct from bg.c. */
+export function Unused_ResetBgControlStruct(bg: number): void {
+  if (!IsInvalidBg(bg)) configs[bg & 0xff] = zero();
+}
+
 export function SetBgControlAttributes(bg: number, charBaseIndex: number, mapBaseIndex: number, screenSize: number, paletteMode: number, priority: number, mosaic: number, wraparound: number): void {
-  if (bg > 3) return;
-  const c = configs[bg];
+  if (IsInvalidBg(bg)) return;
+  const c = configs[bg & 0xff]!;
   if (charBaseIndex !== 0xff) c.charBaseIndex = charBaseIndex & 3;
   if (mapBaseIndex !== 0xff) c.mapBaseIndex = mapBaseIndex & 0x1f;
   if (screenSize !== 0xff) c.screenSize = screenSize & 3;
@@ -92,8 +108,8 @@ export function SetBgControlAttributes(bg: number, charBaseIndex: number, mapBas
 }
 
 export function GetBgControlAttribute(bg: number, attr: number): number {
-  if (bg > 3 || !configs[bg].visible) return 0xff;
-  const c = configs[bg];
+  if (IsInvalidBg(bg) || !configs[bg & 0xff]!.visible) return 0xff;
+  const c = configs[bg & 0xff]!;
   switch (attr) {
     case BG_CTRL_ATTR_VISIBLE: return c.visible;
     case BG_CTRL_ATTR_CHARBASEINDEX: return c.charBaseIndex;
@@ -124,13 +140,20 @@ export function copyToVram(src: ArrayLike<number>, dest: number, size: number): 
 }
 
 export function LoadBgVram(bg: number, src: ArrayLike<number>, size: number, destOffset: number, mode: number): number {
-  if (bg > 3 || !configs[bg].visible) return -1;
+  if (IsInvalidBg(bg) || !configs[bg & 0xff]!.visible) return -1;
   let offset: number;
-  if (mode === 1) offset = configs[bg].charBaseIndex * BG_CHAR_SIZE;
-  else if (mode === 2) offset = configs[bg].mapBaseIndex * BG_SCREEN_SIZE;
+  if (mode === 1) offset = configs[bg & 0xff]!.charBaseIndex * BG_CHAR_SIZE;
+  else if (mode === 2) offset = configs[bg & 0xff]!.mapBaseIndex * BG_SCREEN_SIZE;
   else return -1;
-  copyToVram(src, (destOffset + offset) & 0xffff, size);
-  return 0;
+  const request = 0;
+  const mask = 1 << (request & 31);
+  sDmaBusyBitfield[request >> 5]! |= mask;
+  try {
+    copyToVram(src, (destOffset + offset) & 0xffff, size);
+  } finally {
+    sDmaBusyBitfield[request >> 5]! &= ~mask;
+  }
+  return request;
 }
 
 function showBgInternal(bg: number): void {
@@ -170,18 +193,25 @@ export function BgAffineSet(texX: number, texY: number, scrX: number, scrY: numb
   return { pa, pb, pc, pd, dx, dy };
 }
 
-export function SetBgAffine(bg: number, srcCenterX: number, srcCenterY: number, dispCenterX: number, dispCenterY: number, scaleX: number, scaleY: number, rotationAngle: number): void {
+function SetBgAffineInternal(bg: number, srcCenterX: number, srcCenterY: number, dispCenterX: number, dispCenterY: number, scaleX: number, scaleY: number, rotationAngle: number): void {
   const mode = bgVisibilityAndMode & 7;
+  bg &= 0xff;
   if (mode === 1) { if (bg !== 2) return; } else if (mode === 2) { if (bg < 2 || bg > 3) return; } else return;
-  const d = BgAffineSet(srcCenterX, srcCenterY, dispCenterX, dispCenterY, scaleX, scaleY, rotationAngle);
+  const d = BgAffineSet(srcCenterX >>> 0, srcCenterY >>> 0, (dispCenterX << 16) >> 16, (dispCenterY << 16) >> 16,
+    (scaleX << 16) >> 16, (scaleY << 16) >> 16, rotationAngle & 0xffff);
   SetGpuReg(REG_OFFSET_BG2PA, d.pa & 0xffff);
   SetGpuReg(REG_OFFSET_BG2PB, d.pb & 0xffff);
   SetGpuReg(REG_OFFSET_BG2PC, d.pc & 0xffff);
   SetGpuReg(REG_OFFSET_BG2PD, d.pd & 0xffff);
+  SetGpuReg(REG_OFFSET_BG2PA, d.pa & 0xffff);
   SetGpuReg(REG_OFFSET_BG2X_L, d.dx & 0xffff);
   SetGpuReg(REG_OFFSET_BG2X_H, (d.dx >> 16) & 0xffff);
   SetGpuReg(REG_OFFSET_BG2Y_L, d.dy & 0xffff);
   SetGpuReg(REG_OFFSET_BG2Y_H, (d.dy >> 16) & 0xffff);
+}
+
+export function SetBgAffine(bg: number, srcCenterX: number, srcCenterY: number, dispCenterX: number, dispCenterY: number, scaleX: number, scaleY: number, rotationAngle: number): void {
+  SetBgAffineInternal(bg, srcCenterX, srcCenterY, dispCenterX, dispCenterY, scaleX, scaleY, rotationAngle);
 }
 
 export function BgTileAllocOp(bg: number, offset: number, count: number, mode: number): number {
@@ -255,11 +285,38 @@ export function LoadBgTiles(bg: number, src: ArrayLike<number>, size: number, de
   return cursor;
 }
 
+/** Unused_LoadBgPalette; RequestDma3Copy is immediate in the browser backend. */
+export function Unused_LoadBgPalette(bg: number, src: ArrayLike<number>, size: number, destOffset: number): number {
+  bg &= 0xff;
+  if (IsInvalidBg32(bg)) return -1;
+  const paletteOffset = ((configs2[bg]!.basePalette & 0xf) * 16) + (destOffset & 0xffff);
+  const count = (size & 0xffff) >> 1;
+  const request = 0;
+  const mask = 1 << (request & 31);
+  sDmaBusyBitfield[request >> 5]! |= mask;
+  try {
+    for (let i = 0; i < count && paletteOffset + i < ppu.pltt.length; i++) {
+      const sourceIndex = src instanceof Uint8Array ? i * 2 : i;
+      const value = src instanceof Uint8Array
+        ? (src[sourceIndex] ?? 0) | ((src[sourceIndex + 1] ?? 0) << 8)
+        : src[sourceIndex] ?? 0;
+      ppu.pltt[paletteOffset + i] = value & 0xffff;
+    }
+  } finally {
+    sDmaBusyBitfield[request >> 5]! &= ~mask;
+  }
+  return request;
+}
+
 export function LoadBgTilemap(bg: number, src: ArrayLike<number>, size: number, destOffset: number): number {
   return LoadBgVram(bg, src, size, destOffset * 32, 2);
 }
 
 export function IsDma3ManagerBusyWithBgCopy(): boolean {
+  for (let request = 0; request < 0x80; request++) {
+    const mask = 1 << (request & 31);
+    if (sDmaBusyBitfield[request >> 5]! & mask) return true;
+  }
   return false;
 }
 
@@ -370,16 +427,22 @@ export function AdjustBgMosaic(value: number, mode: number): number {
 }
 
 export function SetBgTilemapBuffer(bg: number, tilemap: Uint16Array): void {
-  if (bg <= 3 && GetBgControlAttribute(bg, BG_CTRL_ATTR_VISIBLE) !== 0) configs2[bg].tilemap = tilemap;
+  if (!IsInvalidBg32(bg) && GetBgControlAttribute(bg, BG_CTRL_ATTR_VISIBLE) !== 0) configs2[bg & 0xff]!.tilemap = tilemap;
 }
 
 export function UnsetBgTilemapBuffer(bg: number): void {
-  if (bg <= 3 && GetBgControlAttribute(bg, BG_CTRL_ATTR_VISIBLE) !== 0) configs2[bg].tilemap = null;
+  if (!IsInvalidBg32(bg) && GetBgControlAttribute(bg, BG_CTRL_ATTR_VISIBLE) !== 0) configs2[bg & 0xff]!.tilemap = null;
 }
 
 export function GetBgTilemapBuffer(bg: number): Uint16Array | null {
-  if (bg > 3 || GetBgControlAttribute(bg, BG_CTRL_ATTR_VISIBLE) === 0) return null;
-  return configs2[bg].tilemap;
+  if (IsInvalidBg32(bg) || GetBgControlAttribute(bg, BG_CTRL_ATTR_VISIBLE) === 0) return null;
+  return configs2[bg & 0xff]!.tilemap;
+}
+
+/** IsTileMapOutsideWram: host typed arrays stand in for C's IWRAM/EWRAM buffers. */
+export function IsTileMapOutsideWram(bg: number): boolean {
+  bg &= 0xff;
+  return IsInvalidBg32(bg) || configs2[bg]!.tilemap === null;
 }
 
 function bytesOf(buf: Uint16Array): Uint8Array {
@@ -388,8 +451,8 @@ function bytesOf(buf: Uint16Array): Uint8Array {
 
 /** CopyToBgTilemapBuffer(bg, src, size (0 = compressed, whole source), destOffset in tiles) */
 export function CopyToBgTilemapBuffer(bg: number, src: ArrayLike<number>, mode: number, destOffset: number): void {
-  const tm = configs2[bg].tilemap;
-  if (bg > 3 || !tm) return;
+  if (IsInvalidBg32(bg) || IsTileMapOutsideWram(bg)) return;
+  const tm = configs2[bg & 0xff]!.tilemap!;
   const dst = bytesOf(tm);
   const start = destOffset * 32;
   const size = mode !== 0 ? mode : src.length;
@@ -397,8 +460,8 @@ export function CopyToBgTilemapBuffer(bg: number, src: ArrayLike<number>, mode: 
 }
 
 export function CopyBgTilemapBufferToVram(bg: number): void {
-  const tm = configs2[bg].tilemap;
-  if (bg > 3 || !tm) return;
+  if (IsInvalidBg32(bg) || IsTileMapOutsideWram(bg)) return;
+  const tm = configs2[bg & 0xff]!.tilemap!;
   let size: number;
   switch (GetBgType(bg)) {
     case 0: size = GetBgMetricTextMode(bg, 0) * 0x800; break;
@@ -410,8 +473,8 @@ export function CopyBgTilemapBufferToVram(bg: number): void {
 
 /** src is a u16 tilemap array for text BGs or bytes for affine BGs. */
 export function CopyToBgTilemapBufferRect(bg: number, src: ArrayLike<number>, destX: number, destY: number, width: number, height: number): void {
-  const tm = configs2[bg].tilemap;
-  if (bg > 3 || !tm) return;
+  if (IsInvalidBg32(bg) || IsTileMapOutsideWram(bg)) return;
+  const tm = configs2[bg & 0xff]!.tilemap!;
   let k = 0;
   switch (GetBgType(bg)) {
     case 0:
@@ -431,8 +494,8 @@ export function CopyToBgTilemapBufferRect_ChangePalette(bg: number, src: ArrayLi
 }
 
 export function CopyRectToBgTilemapBufferRect(bg: number, src: ArrayLike<number>, srcX: number, srcY: number, srcWidth: number, _srcHeight: number, destX: number, destY: number, rectWidth: number, rectHeight: number, palette1: number, tileOffset: number, palette2: number): void {
-  const tm = configs2[bg].tilemap;
-  if (bg > 3 || !tm) return;
+  if (IsInvalidBg32(bg) || IsTileMapOutsideWram(bg)) return;
+  const tm = configs2[bg & 0xff]!.tilemap!;
   const screenSize = GetBgControlAttribute(bg, BG_CTRL_ATTR_SCREENSIZE);
   const screenWidth = GetBgMetricTextMode(bg, 1) * 0x20;
   const screenHeight = GetBgMetricTextMode(bg, 2) * 0x20;
@@ -466,8 +529,8 @@ export function CopyRectToBgTilemapBufferRect(bg: number, src: ArrayLike<number>
 }
 
 export function FillBgTilemapBufferRect_Palette0(bg: number, tileNum: number, x: number, y: number, width: number, height: number): void {
-  const tm = configs2[bg].tilemap;
-  if (bg > 3 || !tm) return;
+  if (IsInvalidBg32(bg) || IsTileMapOutsideWram(bg)) return;
+  const tm = configs2[bg & 0xff]!.tilemap!;
   switch (GetBgType(bg)) {
     case 0:
       for (let yy = y; yy < y + height; yy++) for (let xx = x; xx < x + width; xx++) tm[(yy * 0x20 + xx) & 0xffff] = tileNum;
@@ -486,8 +549,8 @@ export function FillBgTilemapBufferRect(bg: number, tileNum: number, x: number, 
 }
 
 export function WriteSequenceToBgTilemapBuffer(bg: number, firstTileNum: number, x: number, y: number, width: number, height: number, paletteSlot: number, tileNumDelta: number): void {
-  const tm = configs2[bg].tilemap;
-  if (bg > 3 || !tm) return;
+  if (IsInvalidBg32(bg) || IsTileMapOutsideWram(bg)) return;
+  const tm = configs2[bg & 0xff]!.tilemap!;
   const attribute = GetBgControlAttribute(bg, BG_CTRL_ATTR_SCREENSIZE);
   const w = GetBgMetricTextMode(bg, 1) * 0x20;
   const h = GetBgMetricTextMode(bg, 2) * 0x20;

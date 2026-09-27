@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 63 | 135686 | 1341/6053 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 10 | 23524 | 736/863 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 146 | 117710 | 4035/4035 |
+| Casi completo (≥ 80 % y < 100 %) | 9 | 22309 | 693/813 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 147 | 118925 | 4085/4085 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **102** | **184199** | |
-| **Total en alcance** | **253** | **303042** | **6140/11826** |
+| **Pendiente de portar** | **101** | **182984** | |
+| **Total en alcance** | **253** | **303042** | **6147/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -138,7 +138,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
-| `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 
@@ -172,6 +171,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `hall_of_fame.c` | 1286 | 42/42 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
 | `pokemon_icon.c` | 1283 | 23/23 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
 | `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
+| `bg.c` | 1215 | 50/50 | `hw/bg.ts` |  |  |
 | `battle_controllers.c` | 1214 | 68/68 | `battle/controllers.ts` |  |  |
 | `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
 | `item_pc.c` | 1145 | 59/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |

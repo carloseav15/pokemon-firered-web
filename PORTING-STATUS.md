@@ -5,10 +5,25 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.140/11.826 funciones (51,9%)**,
-con **102 archivos** con huecos y una estimación ponderada de
-**~130.879/303.042 líneas C (43,2%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.147/11.826 funciones (52,0%)**,
+con **101 archivos** con huecos y una estimación ponderada de
+**~130.709/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `bg.c`: validación de fondos y carga de paleta (2026-09-27)
+
+- Porté `Unused_ResetBgControlStruct`, `SetBgAffineInternal`, `IsInvalidBg`,
+  `Unused_LoadBgPalette`, `IsInvalidBg32` e `IsTileMapOutsideWram`. Alineé
+  `SetBgAffine` para delegar al helper fuente y apliqué los guards del C al
+  acceso y la copia de tilemaps.
+- El port representa los buffers del juego como `Uint16Array` en memoria del
+  navegador, así que `IsTileMapOutsideWram` equivale a comprobar el buffer nulo.
+  Las peticiones DMA de BG se copian de forma síncrona; `IsDma3ManagerBusyWithBgCopy`
+  consulta el bitfield durante la operación inmediata.
+- `bg.c` queda 50/50 por nombre. Global: **6.147/11.826 (52,0%)**, 101 archivos
+  con huecos y ~130.709 líneas C ponderadas pendientes. Pasaron `check:port`,
+  `check:honesty`, `build`, inventory, pending y `git diff --check`; sin
+  ejecución en navegador.
 
 ## `palette.c`: familia inactiva de PaletteStruct (2026-09-27)
 
