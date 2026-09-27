@@ -1930,8 +1930,8 @@ export class ObjectEvents {
     }
     if (id === 0x5c) { object.disableJumpLandingGroundEffect = false; return this.finishStep(object); }
     if (id === 0x5d) { object.disableJumpLandingGroundEffect = true; return this.finishStep(object); }
-    if (id === 0x5e) { object.disableAnim = true; return this.finishStep(object); }
-    if (id === 0x5f) { object.disableAnim = false; object.sprite.animPaused = object.spriteAnimPausedBackup; return this.finishStep(object); }
+    if (id === 0x5e) { object.inanimate = true; return this.finishStep(object); }
+    if (id === 0x5f) { object.inanimate = graphicsInfo(object.graphicsId).inanimate; return this.finishStep(object); }
     if (id === 0x60) { object.invisible = true; return this.finishStep(object); }
     if (id === 0x61) { object.invisible = false; return this.finishStep(object); }
     // Emotes: exclamation, question, X, double exclamation, smile
