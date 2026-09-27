@@ -598,7 +598,7 @@ export class ObjectEvents {
     if (this.outsideRange(object, x, y)) return COLLISION_OUTSIDE_RANGE;
     if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID || this.directionallyImpassable(object, x, y, direction)) return COLLISION_IMPASSABLE;
     if (object.trackedByCamera && !this.hooks.cameraCanMove(direction)) return COLLISION_IMPASSABLE;
-    if (this.elevationMismatch(object.currentElevation, x, y)) return COLLISION_ELEVATION_MISMATCH;
+    if (this.IsElevationMismatchAt(object.currentElevation, x, y)) return COLLISION_ELEVATION_MISMATCH;
     if (this.objectAt(object, x, y)) return COLLISION_OBJECT_EVENT;
     return COLLISION_NONE;
   }
@@ -610,7 +610,7 @@ export class ObjectEvents {
     if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID
       || this.directionallyImpassable(object, x, y, direction)
       || (object.trackedByCamera && !this.hooks.cameraCanMove(direction))) flags |= 2;
-    if (this.elevationMismatch(object.currentElevation, x, y)) flags |= 4;
+    if (this.IsElevationMismatchAt(object.currentElevation, x, y)) flags |= 4;
     if (this.objectAt(object, x, y)) flags |= 8;
     return flags;
   }
@@ -638,14 +638,21 @@ export class ObjectEvents {
     return false;
   }
 
-  elevationMismatch(elevation: number, x: number, y: number): boolean {
+  /** IsElevationMismatchAt (event_object_movement.c); u8/s16 parameters wrap at the C boundary. */
+  IsElevationMismatchAt(elevation: number, x: number, y: number): boolean {
+    elevation &= 0xff;
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
     if (elevation === 0) return false;
-    const mapElevation = this.hooks.map().elevationAt(x, y);
+    const mapElevation = this.hooks.map().elevationAt(x, y) & 0xff;
     if (mapElevation === 0 || mapElevation === 15) return false;
     return mapElevation !== elevation;
   }
 
-  private static elevationsCompatible(a: number, b: number): boolean {
+  /** AreElevationsCompatible (event_object_movement.c). */
+  static AreElevationsCompatible(a: number, b: number): boolean {
+    a &= 0xff;
+    b &= 0xff;
     return a === 0 || b === 0 || a === b;
   }
 
@@ -653,7 +660,7 @@ export class ObjectEvents {
     for (const o of this.list) {
       if (o === self) continue;
       if ((o.currentCoords.x === x && o.currentCoords.y === y) || (o.previousCoords.x === x && o.previousCoords.y === y)) {
-        if (!self || ObjectEvents.elevationsCompatible(self.currentElevation, o.currentElevation)) return o;
+        if (!self || ObjectEvents.AreElevationsCompatible(self.currentElevation, o.currentElevation)) return o;
       }
     }
     return undefined;

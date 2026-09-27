@@ -81,6 +81,58 @@ int main(void)
     (build_dir / "copyDirectionResults.json").write_text(json.dumps(output))
 
 
+def check_elevation_helpers_against_c(ast: dict) -> None:
+    """Compile the exact C helper bodies and exhaust their u8 input domains."""
+    c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
+    preprocessed = clang_ast.preprocess_c_file(c_path).read_text()
+    funcs = clang_ast.extract_functions(ast, {"IsElevationMismatchAt", "AreElevationsCompatible"})
+    bodies: list[str] = []
+    for name in ("IsElevationMismatchAt", "AreElevationsCompatible"):
+        node = funcs[name].raw_node
+        start = node["range"]["begin"]["offset"]
+        end = node["range"]["end"]["offset"] + node["range"]["end"]["tokLen"]
+        bodies.append(preprocessed[start:end])
+    source = f'''#include <stdint.h>
+#include <stdio.h>
+typedef uint8_t u8;
+typedef int16_t s16;
+typedef uint8_t bool8;
+#define TRUE 1
+#define FALSE 0
+static u8 testMapElevation;
+static u8 MapGridGetElevationAt(s16 x, s16 y) {{ (void)x; (void)y; return testMapElevation; }}
+{bodies[0]}
+{bodies[1]}
+int main(void)
+{{
+    unsigned a, b;
+    for (a = 0; a < 256; a++)
+        for (testMapElevation = 0; testMapElevation < 16; testMapElevation++)
+            printf("%u", (unsigned)IsElevationMismatchAt((u8)a, 0, 0));
+    for (a = 0; a < 256; a++)
+        for (b = 0; b < 256; b++)
+            printf("%u", (unsigned)AreElevationsCompatible((u8)a, (u8)b));
+    return 0;
+}}
+'''
+    build_dir = ROOT / ".decomp-build" / "checks"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    c_file = build_dir / "eventObjectElevation.c"
+    binary = build_dir / "eventObjectElevation"
+    c_file.write_text(source)
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Werror", str(c_file), "-o", str(binary)], check=True)
+    result = subprocess.run([str(binary)], check=True, capture_output=True, text=True)
+    values = result.stdout.strip()
+    expected_count = 256 * 16 + 256 * 256
+    if len(values) != expected_count or any(value not in "01" for value in values):
+        raise AssertionError(f"C elevation harness returned {len(values)} values; expected {expected_count} booleans")
+    output = {
+        "mismatch": [int(value) for value in values[:256 * 16]],
+        "compatible": [int(value) for value in values[256 * 16:]],
+    }
+    (build_dir / "eventObjectElevationResults.json").write_text(json.dumps(output))
+
+
 def main() -> None:
     generated_a = clang_codegen.generate_event_object_anims_ts()
     generated_b = clang_codegen.generate_event_object_anims_ts()
@@ -92,6 +144,7 @@ def main() -> None:
     c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
     ast = clang_ast.dump_clang_ast_json(c_path)
     check_copy_direction_against_c(ast)
+    check_elevation_helpers_against_c(ast)
     func = clang_ast.extract_functions(ast, {"GetJumpY"})["GetJumpY"]
     unsupported = copy.deepcopy(func)
     unsupported.body["inner"] = [{"kind": "ReturnStmt", "inner": [{"kind": "IntegerLiteral", "value": "0"}]}]

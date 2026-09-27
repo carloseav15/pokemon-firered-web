@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import * as generated from "../../src/fr/generated/eventObjectAnims";
 import { registerCData } from "../../src/fr/hw/assets";
+import "./setupNodeGbaMock";
+import { ObjectEvents } from "../../src/fr/field/objectEvents";
 
 const exported = JSON.parse(readFileSync(resolve("public/fr/cdata/event_object_movement.json"), "utf8")) as {
   defs: Record<string, { type: string; value: unknown[] }>;
@@ -94,4 +96,32 @@ for (let i = 0; i < cResults.cases.length; i++) {
   if (actual !== cResults.expected[i]) throw new Error(`GetCopyDirection C parity case ${i}: got ${actual}, C returned ${cResults.expected[i]}`);
 }
 assertions += cResults.cases.length;
+const elevationResults = JSON.parse(readFileSync(resolve(".decomp-build/checks/eventObjectElevationResults.json"), "utf8")) as {
+  mismatch: number[];
+  compatible: number[];
+};
+let mapElevation = 0;
+let seenCoords = { x: 0, y: 0 };
+const objects = new ObjectEvents({
+  map: () => ({ elevationAt: (x: number, y: number) => { seenCoords = { x, y }; return mapElevation; } }),
+} as any);
+let mismatchIndex = 0;
+for (let elevation = 0; elevation < 256; elevation++) {
+  for (mapElevation = 0; mapElevation < 16; mapElevation++) {
+    const actual = objects.IsElevationMismatchAt(elevation, 0, 0) ? 1 : 0;
+    if (actual !== elevationResults.mismatch[mismatchIndex++]) throw new Error(`IsElevationMismatchAt(${elevation}, map=${mapElevation}) differs from C`);
+    assertions++;
+  }
+}
+let compatibleIndex = 0;
+for (let a = 0; a < 256; a++) {
+  for (let b = 0; b < 256; b++) {
+    const actual = ObjectEvents.AreElevationsCompatible(a, b) ? 1 : 0;
+    if (actual !== elevationResults.compatible[compatibleIndex++]) throw new Error(`AreElevationsCompatible(${a}, ${b}) differs from C`);
+    assertions++;
+  }
+}
+objects.IsElevationMismatchAt(1, 0x10001, -0x10002);
+if (seenCoords.x !== 1 || seenCoords.y !== -2) throw new Error("IsElevationMismatchAt did not wrap s16 coordinates at the C call boundary");
+assertions++;
 console.log(`event_object_movement checks: ${assertions - cResults.cases.length} C-data/edge comparisons and ${cResults.cases.length} extracted-C harness cases passed`);

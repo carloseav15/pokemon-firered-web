@@ -4051,3 +4051,20 @@ Pending / placeholders:
   inventory, pending y `git diff --check`. Sin recorrido de navegador. No
   capturé tiempos separados de preparación, revisión e integración en este
   bloque; no tomo este resultado como evidencia de aceleración.
+
+## `event_object_movement.c`: elevación de colisión (2026-09-27)
+
+- Alineé con sus nombres C los métodos activos `IsElevationMismatchAt` y
+  `AreElevationsCompatible`, usados por las comprobaciones de colisión y
+  ocupación de objetos. Conservé el comportamiento para valores válidos y añadí
+  el truncado `u8` y `s16` en los límites de llamada que el C aplica por tipo.
+  El archivo queda 80/759; total 6.257/11.826 (52,9 %), con 5.569 nombres
+  pendientes.
+- Clang extrajo ambos cuerpos C y el harness los ejecutó contra 4.096 casos de
+  elevación/mapa y los 65.536 pares `u8` de compatibilidad; TS coincidió en
+  todos y verificó además el wrap de coordenadas `s16`. En conjunto pasaron
+  70.066 comparaciones C-data/edge y 137 casos del harness previo de dirección,
+  además de `check:port`, `check:transitions`, `check:honesty`, inventory,
+  pending y `git diff --check`. No ejecuté navegador; este bloque refactoriza
+  helpers de colisión y no cambia resultados para valores representables por
+  los tipos C. No instrumenté tiempo por etapa ni reclamo aceleración.
