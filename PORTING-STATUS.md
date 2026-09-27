@@ -7,9 +7,9 @@ Reglas: [AGENTS.md](AGENTS.md). Cifras vivas: [PENDING.md](PENDING.md) y
 
 ## Siguiente tanda
 
-Continuar las familias de movimiento de `event_object_movement.c` que falten en
-`ObjectEvents.movementTypeStep`, priorizando un grupo conectado de NPCs y sus
-acciones. Comparar con los callbacks C antes de implementar.
+Comparar las acciones especiales de movimiento del jugador y NPCs en
+`event_object_movement.c`, especialmente las familias de Fly/Glide y bicicleta,
+y portar las que tengan rutas activas o sistemas opcionales conectables.
 
 ## Bloqueos y validación diferida
 
@@ -29,12 +29,12 @@ acciones. Comparar con los callbacks C antes de implementar.
 
 ## Última entrega
 
-- 2026-09-27: portados los objetos virtuales de `event_object_movement.c` y
-  conectados `createvobject`/`turnvobject` al SpriteManager activo.
-- Incluye creación gráfica, orientación, visibilidad, elevación y animaciones
-  Unión de entrada/salida; retorno adaptado al índice del SpriteManager.
+- 2026-09-27: conectados los efectos y el reveal de entrenadores disfrazados; el
+  tipo `INVISIBLE` ejecuta también su acción facial como en C.
+- Incluye `TreeDisguise`/`MountainDisguise`, sincronía de animación y estados de
+  espera; el contador de nombres no varió en esta tanda.
 - `check:port`, `check:honesty`, build e inventarios pasaron; sin prueba de juego.
-- Validación visual y recorrido de objetos virtuales quedan pendientes.
+- Validación visual y recorrido de estos tipos de movimiento quedan pendientes.
 
 ## Antecedentes bajo demanda
 

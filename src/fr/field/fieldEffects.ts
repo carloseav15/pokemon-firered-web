@@ -203,6 +203,7 @@ export class FieldEffects {
   /** Active field effect ids (FieldEffectActiveListContains) */
   readonly active = new Set<number>();
   private readonly emoteCounts = new Map<number, number>();
+  private readonly disguiseSprites = new WeakMap<ObjectEvent, Sprite>();
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
   poisonMosaicValue = 0;
@@ -399,6 +400,66 @@ export class FieldEffects {
     sprite.startAnim(0);
     this.ow.sprites.add(sprite);
     return sprite;
+  }
+
+  /** ShowTreeDisguiseFieldEffect / ShowMountainDisguiseFieldEffect. */
+  StartDisguiseFieldEffect(object: ObjectEvent, kind: "tree" | "mountain"): void {
+    const id = kind === "tree" ? C.FLDEFF_TREE_DISGUISE : C.FLDEFF_MOUNTAIN_DISGUISE;
+    const sprite = this.createFromTemplate(kind === "tree" ? "TreeDisguise" : "MountainDisguise", 0, 0);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = object.sprite.coordOffsetEnabled;
+    sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority - 1;
+    sprite.data[1] = id;
+    sprite.data[2] = object.localId;
+    sprite.data[3] = object.mapNum;
+    sprite.data[4] = object.mapGroup;
+    sprite.data[0] = 0;
+    sprite.callback = (s) => this.UpdateDisguiseFieldEffect(s, object);
+    this.disguiseSprites.set(object, sprite);
+    this.active.add(id);
+  }
+
+  /** UpdateDisguiseFieldEffect; the disguise follows its linked object sprite. */
+  private UpdateDisguiseFieldEffect(sprite: Sprite, object: ObjectEvent): void {
+    if (!object.active) {
+      this.ow.sprites.destroy(sprite);
+      this.active.delete(sprite.data[1]);
+      return;
+    }
+    sprite.invisible = object.sprite.invisible;
+    sprite.x = object.sprite.x;
+    sprite.y = (object.sprite.height >> 1) + object.sprite.y - 16;
+    sprite.subpriority = object.sprite.subpriority - 1;
+    if (sprite.data[0] === 1) {
+      sprite.data[0]++;
+      sprite.startAnim(1);
+    }
+    if (sprite.data[0] === 2 && sprite.animEnded) sprite.data[7] = 1;
+    if (sprite.data[0] === 3) {
+      this.ow.sprites.destroy(sprite);
+      this.active.delete(sprite.data[1]);
+    }
+  }
+
+  /** StartRevealDisguise (field_effect_helpers.c). */
+  StartRevealDisguise(object: ObjectEvent): void {
+    if (object.directionSequenceIndex === 1) {
+      const sprite = this.disguiseSprites.get(object);
+      if (sprite) sprite.data[0]++;
+    }
+  }
+
+  /** UpdateRevealDisguise (field_effect_helpers.c). */
+  UpdateRevealDisguise(object: ObjectEvent): boolean {
+    if (object.directionSequenceIndex === 2 || object.directionSequenceIndex === 0) return true;
+    const sprite = this.disguiseSprites.get(object);
+    if (sprite?.data[7]) {
+      object.directionSequenceIndex = 2;
+      sprite.data[0]++;
+      return true;
+    }
+    return false;
   }
 
   /** StartAshFieldEffect / FldEff_Ash and UpdateAshFieldEffect_Step0..2. */

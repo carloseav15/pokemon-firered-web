@@ -182,6 +182,9 @@ export class Overworld {
       registerSprite: (sprite) => { this.sprites.add(sprite); return this.sprites.sprites.indexOf(sprite); },
       unregisterSprite: (sprite) => this.sprites.destroy(sprite),
       cameraOffset: () => ({ x: this.camX, y: this.camY }),
+      startDisguise: (object, kind) => this.effects.StartDisguiseFieldEffect(object, kind),
+      startDisguiseReveal: (object) => this.effects.StartRevealDisguise(object),
+      isDisguiseRevealFinished: (object) => this.effects.UpdateRevealDisguise(object),
     });
     this.player = new PlayerAvatar(this);
     this.control = new FieldControl(this);

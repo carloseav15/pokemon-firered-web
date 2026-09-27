@@ -117,6 +117,9 @@ export type ObjectEventHooks = {
   registerSprite?: (sprite: Sprite) => number;
   unregisterSprite?: (sprite: Sprite) => void;
   cameraOffset?: () => { x: number; y: number };
+  startDisguise?: (object: ObjectEvent, kind: "tree" | "mountain") => void;
+  startDisguiseReveal?: (object: ObjectEvent) => void;
+  isDisguiseRevealFinished?: (object: ObjectEvent) => boolean;
 };
 
 type VirtualObject = { sprite: Sprite; id: number; elevation: number; invisible: boolean; animNum: number; animState: number };
@@ -1172,11 +1175,31 @@ export class ObjectEvents {
     const step = s.data[1];
 
     // Static facing types
-    if (type === c.MOVEMENT_TYPE_NONE || type === c.MOVEMENT_TYPE_BERRY_TREE_GROWTH || type === c.MOVEMENT_TYPE_INVISIBLE) {
-      if (type === c.MOVEMENT_TYPE_INVISIBLE && step === 0) { object.invisible = true; s.data[1] = 1; }
+    if (type === c.MOVEMENT_TYPE_NONE || type === c.MOVEMENT_TYPE_BERRY_TREE_GROWTH) {
       return false;
     }
-    if ([c.MOVEMENT_TYPE_FACE_UP, c.MOVEMENT_TYPE_FACE_DOWN, c.MOVEMENT_TYPE_FACE_LEFT, c.MOVEMENT_TYPE_FACE_RIGHT, c.MOVEMENT_TYPE_TREE_DISGUISE, c.MOVEMENT_TYPE_MOUNTAIN_DISGUISE, c.MOVEMENT_TYPE_BURIED].includes(type)) {
+    if (type === c.MOVEMENT_TYPE_INVISIBLE) {
+      if (step === 0) {
+        this.clearMovement(object);
+        this.setSingle(object, actionFace(object.facingDirection));
+        object.invisible = true;
+        s.data[1] = 1;
+        return true;
+      }
+      if (step === 1 && this.execSingle(object)) { s.data[1] = 2; return true; }
+      if (step === 2) object.singleMovementActive = false;
+      return false;
+    }
+    if (type === c.MOVEMENT_TYPE_TREE_DISGUISE || type === c.MOVEMENT_TYPE_MOUNTAIN_DISGUISE) {
+      if (object.directionSequenceIndex === 0 || (object.directionSequenceIndex === 1 && !s.data[7])) {
+        this.hooks.startDisguise?.(object, type === c.MOVEMENT_TYPE_TREE_DISGUISE ? "tree" : "mountain");
+        object.directionSequenceIndex = 1;
+        s.data[7]++;
+      }
+      this.clearMovement(object);
+      return false;
+    }
+    if ([c.MOVEMENT_TYPE_FACE_UP, c.MOVEMENT_TYPE_FACE_DOWN, c.MOVEMENT_TYPE_FACE_LEFT, c.MOVEMENT_TYPE_FACE_RIGHT, c.MOVEMENT_TYPE_BURIED].includes(type)) {
       if (step === 0) {
         this.clearMovement(object);
         this.setSingle(object, actionFace(INITIAL_FACING[type] ?? object.facingDirection));
@@ -1777,6 +1800,16 @@ export class ObjectEvents {
           return false;
         }
         if (this.revealTrainerMovementAction?.(object)) return this.finishStep(object);
+        return false;
+      }
+      if (object.movementType === C.MOVEMENT_TYPE_TREE_DISGUISE || object.movementType === C.MOVEMENT_TYPE_MOUNTAIN_DISGUISE) {
+        if (step === 0) {
+          this.hooks.startDisguiseReveal?.(object);
+          s.data[2] = 1;
+          if (this.hooks.isDisguiseRevealFinished?.(object)) return this.finishStep(object);
+          return false;
+        }
+        if (this.hooks.isDisguiseRevealFinished?.(object)) return this.finishStep(object);
         return false;
       }
       return this.finishStep(object);
