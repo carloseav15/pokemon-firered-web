@@ -54,4 +54,14 @@ for (let type = 0; type < jumpTables.length; type++) {
     assertions += 2;
   }
 }
+const copyDirections = exported.defs.sPlayerDirectionsForCopy.value as number[][];
+if (copyDirections.length !== 4 || copyDirections.some((row) => row.length !== 4)) throw new Error("sPlayerDirectionsForCopy must be a 4 by 4 C table");
+for (let initDir = 1; initDir <= 4; initDir++) {
+  for (let moveDir = 1; moveDir <= 4; moveDir++) {
+    const expected = copyDirections[initDir - 1][moveDir - 1];
+    if (generated.GetPlayerDirectionForCopy(initDir, moveDir) !== expected) throw new Error(`GetPlayerDirectionForCopy(${initDir}, ${moveDir}) differs from C data`);
+    if (generated.GetPlayerDirectionForCopy(initDir + 0x100, moveDir + 0x100) !== expected) throw new Error("GetPlayerDirectionForCopy did not wrap u8 parameters");
+    assertions += 2;
+  }
+}
 console.log(`event_object_movement table lookups: ${assertions} C-exported table comparisons passed`);

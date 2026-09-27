@@ -4020,3 +4020,17 @@ Pending / placeholders:
   junto con los 169 lookups existentes, pasaron 265 comparaciones. También
   pasaron `check:port`, `check:honesty`, `build`, inventory, pending y
   `git diff --check`. El recorrido de salto en navegador no se ejecutó.
+
+## `event_object_movement.c`: tabla de dirección para NPC imitador (2026-09-27)
+
+- Amplié la familia AST con `GetPlayerDirectionForCopy`, que acepta solo la
+  lookup bidimensional `sPlayerDirectionsForCopy[initDir - 1][moveDir - 1]`
+  sobre la tabla C `u8[4][4]`. El caller de movimiento ya usaba la misma tabla
+  copiada a mano; ahora llama la función generada y lee la tabla exportada.
+  `event_object_movement.c` queda 77/759; total: 6.254/11.826 (52,9 %), con
+  5.572 nombres pendientes.
+- El check añadió 32 comparaciones: las 16 celdas y las mismas 16 con ambos
+  parámetros sometidos a wrap `u8`. En conjunto pasaron 297 comparaciones C
+  exportadas, generación determinista, rechazo de AST alterado, `check:port`,
+  `check:honesty`, `build`, inventory, pending y `git diff --check`. No ejecuté
+  el recorrido de NPC en navegador.

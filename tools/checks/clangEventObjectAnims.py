@@ -18,6 +18,7 @@ def main() -> None:
     generated_b = clang_codegen.generate_event_object_anims_ts()
     assert generated_a == generated_b, "event object lookup generation must be deterministic"
     assert "export function GetJumpY(i: number, type: number)" in generated_a
+    assert "export function GetPlayerDirectionForCopy(initDir: number, moveDir: number)" in generated_a
 
     c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
     ast = clang_ast.dump_clang_ast_json(c_path)
@@ -30,6 +31,16 @@ def main() -> None:
         assert "expected nested table lookup" in str(exc)
     else:
         raise AssertionError("literal-return AST must be rejected, not translated as a jump table lookup")
+
+    copy_func = clang_ast.extract_functions(ast, {"GetPlayerDirectionForCopy"})["GetPlayerDirectionForCopy"]
+    unsupported = copy.deepcopy(copy_func)
+    unsupported.body["inner"] = [{"kind": "ReturnStmt", "inner": [{"kind": "IntegerLiteral", "value": "0"}]}]
+    try:
+        clang_codegen._event_object_player_direction_copy(unsupported)
+    except clang_codegen.UnsupportedAstError as exc:
+        assert "expected nested direction table lookup" in str(exc)
+    else:
+        raise AssertionError("literal-return AST must be rejected, not translated as a direction table lookup")
     print("Clang event object lookups: deterministic generation and unsupported-AST rejection passed")
 
 

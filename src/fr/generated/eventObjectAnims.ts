@@ -29,3 +29,6 @@ export function GetJumpY(i: number, type: number): number {
   if (!tableName) throw new Error(`GetJumpY: missing C jump table for type ${type & 0xff}`);
   return cdata<number[]>("event_object_movement", tableName)[(i << 16) >> 16]!;
 }
+export function GetPlayerDirectionForCopy(initDir: number, moveDir: number): number {
+  return cdata<number[][]>("event_object_movement", "sPlayerDirectionsForCopy")[((initDir & 0xff) - 1)]![((moveDir & 0xff) - 1)]!;
+}

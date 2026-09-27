@@ -8,7 +8,7 @@ import { cdata } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
-import { ElevationToPriority, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
+import { ElevationToPriority, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetPlayerDirectionForCopy, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 
@@ -69,7 +69,6 @@ const SEQUENCES: Array<[number[], number, "x" | "y"]> = [
 
 const COUNTERCLOCKWISE = [DIR_SOUTH, DIR_EAST, DIR_WEST, DIR_SOUTH, DIR_NORTH];
 const CLOCKWISE = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
-const PLAYER_DIRECTIONS_FOR_COPY = [[2, 1, 4, 3], [1, 2, 3, 4], [3, 4, 2, 1], [4, 3, 1, 2]];
 const PLAYER_DIRECTION_TO_COPY = [[2, 1, 4, 3], [1, 2, 3, 4], [4, 3, 1, 2], [3, 4, 2, 1]];
 
 // Anim numbers (constants/event_object_movement.h)
@@ -1163,7 +1162,7 @@ export class ObjectEvents {
           const moveDir = player.movementDirection;
           const playerInit = object.directionSequenceIndex;
           if (!playerInit || !moveDir || playerInit > 4 || moveDir > 4) return false;
-          const dir = PLAYER_DIRECTIONS_FOR_COPY[playerInit - 1][moveDir - 1];
+          const dir = GetPlayerDirectionForCopy(playerInit, moveDir);
           const direction = PLAYER_DIRECTION_TO_COPY[copyInit - 1][dir - 1];
           const moved = player.previous.x !== player.current.x || player.previous.y !== player.current.y;
           if (!moved) {

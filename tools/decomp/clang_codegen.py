@@ -907,6 +907,7 @@ EVENT_OBJECT_ANIM_FUNCS = {
     "ElevationToPriority",
 }
 EVENT_OBJECT_JUMP_FUNCS = {"GetJumpY"}
+EVENT_OBJECT_COPY_DIRECTION_FUNCS = {"GetPlayerDirectionForCopy"}
 
 
 # Explicitly reviewed const-table accessors whose source table is exported as cdata.
@@ -1084,10 +1085,65 @@ def _event_object_jump_y(func: clang_ast.AstFunction) -> tuple[str, str, str]:
     return i_param, type_param, "sJumpYTable"
 
 
+def _event_object_player_direction_copy(func: clang_ast.AstFunction) -> tuple[str, str, str]:
+    """Accept only `sPlayerDirectionsForCopy[initDir - 1][moveDir - 1]`."""
+    if func.return_type != "u32" or [t for _, t in func.params] != ["u8", "u8"]:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected u32 function with (u8, u8) parameters")
+    init_param, move_param = (n for n, _ in func.params)
+    statements = func.body.get("inner") or []
+    if len(statements) != 1 or statements[0].get("kind") != "ReturnStmt":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected a single return statement")
+
+    def unwrap(node: dict[str, Any]) -> dict[str, Any]:
+        while node.get("kind") in ("ImplicitCastExpr", "ConstantExpr", "CStyleCastExpr", "ParenExpr"):
+            children = node.get("inner") or []
+            if len(children) != 1:
+                raise UnsupportedAstError("event_object_movement.c", func.name, "unexpected cast in direction table lookup")
+            node = children[0]
+        return node
+
+    def minus_one(node: dict[str, Any], param: str) -> bool:
+        node = unwrap(node)
+        children = node.get("inner") or []
+        if node.get("kind") != "BinaryOperator" or node.get("opcode") != "-" or len(children) != 2:
+            return False
+        left, right = unwrap(children[0]), unwrap(children[1])
+        return (left.get("kind") == "DeclRefExpr"
+                and left.get("referencedDecl", {}).get("name") == param
+                and right.get("kind") == "IntegerLiteral"
+                and right.get("value") == "1")
+
+    ret = statements[0].get("inner") or []
+    outer = unwrap(ret[0]) if len(ret) == 1 else {}
+    if outer.get("kind") != "ArraySubscriptExpr" or len(outer.get("inner") or []) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected nested direction table lookup")
+    table_expr, move_index = (unwrap(n) for n in outer["inner"])
+    if not minus_one(move_index, move_param):
+        raise UnsupportedAstError("event_object_movement.c", func.name, "second table index must be moveDir - 1")
+    if table_expr.get("kind") != "ArraySubscriptExpr" or len(table_expr.get("inner") or []) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected two-dimensional direction table")
+    root, init_index = (unwrap(n) for n in table_expr["inner"])
+    if not minus_one(init_index, init_param):
+        raise UnsupportedAstError("event_object_movement.c", func.name, "first table index must be initDir - 1")
+    if root.get("kind") != "DeclRefExpr" or root.get("referencedDecl", {}).get("name") != "sPlayerDirectionsForCopy":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected sPlayerDirectionsForCopy table")
+    if root.get("type", {}).get("qualType") != "const u8[4][4]":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected const u8[4][4] table")
+    cdata_path = ROOT / "public" / "fr" / "cdata" / "event_object_movement.json"
+    try:
+        table = json.loads(cdata_path.read_text())["defs"]["sPlayerDirectionsForCopy"]
+    except (OSError, KeyError, json.JSONDecodeError) as exc:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "exported sPlayerDirectionsForCopy is missing") from exc
+    rows = table.get("value")
+    if table.get("type") != "u8" or not isinstance(rows, list) or len(rows) != 4 or any(not isinstance(row, list) or len(row) != 4 for row in rows):
+        raise UnsupportedAstError("event_object_movement.c", func.name, "exported direction table must be 4 by 4 u8 values")
+    return init_param, move_param, "sPlayerDirectionsForCopy"
+
+
 def generate_event_object_anims_ts() -> str:
     c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
     ast = clang_ast.dump_clang_ast_json(c_path)
-    expected = EVENT_OBJECT_ANIM_FUNCS | EVENT_OBJECT_JUMP_FUNCS
+    expected = EVENT_OBJECT_ANIM_FUNCS | EVENT_OBJECT_JUMP_FUNCS | EVENT_OBJECT_COPY_DIRECTION_FUNCS
     funcs = clang_ast.extract_functions(ast, expected)
     missing = expected - funcs.keys()
     if missing:
@@ -1103,6 +1159,13 @@ def generate_event_object_anims_ts() -> str:
         f'  const tableName = symName(tableRef);\n'
         f'  if (!tableName) throw new Error(`GetJumpY: missing C jump table for type ${{{type_param} & 0xff}}`);\n'
         f'  return cdata<number[]>("event_object_movement", tableName)[({i_param} << 16) >> 16]!;\n'
+        f'}}'
+    )
+    init_param, move_param, table = _event_object_player_direction_copy(funcs["GetPlayerDirectionForCopy"])
+    rows.append(
+        f'export function GetPlayerDirectionForCopy({init_param}: number, {move_param}: number): number {{\n'
+        f'  return cdata<number[][]>("event_object_movement", "{table}")'
+        f'[(({init_param} & 0xff) - 1)]![(({move_param} & 0xff) - 1)]!;\n'
         f'}}'
     )
     return "\n".join([
