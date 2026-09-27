@@ -19,6 +19,13 @@ export function CreateHelpMessageWindow(windows: WindowLayer): Window {
   return sHelpMessageWindow;
 }
 
+/** new_menu_helpers.c DrawHelpMessageWindowWithText, adapted to the Canvas field window layer. */
+export function DrawHelpMessageWindowWithText(windows: WindowLayer, text: ArrayLike<number>): Window {
+  const window = CreateHelpMessageWindow(windows);
+  PrintTextOnHelpMessageWindow(window, text);
+  return window;
+}
+
 /** MapNamePopupWindowIdSetDummy: mark the singleton window handle unused. */
 export function MapNamePopupWindowIdSetDummy(): void {
   sHelpMessageWindow = undefined;

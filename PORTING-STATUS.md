@@ -5,10 +5,28 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.149/11.826 funciones (52,0%)**,
-con **101 archivos** con huecos y una estimación ponderada de
-**~130.673/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.161/11.826 funciones (52,1%)**,
+con **100 archivos** con huecos y una estimación ponderada de
+**~130.504/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `new_menu_helpers.c`: buffers y helpers de ventana (2026-09-27)
+
+- Porté los buffers temporales de tiles con el límite C de 32, liberación
+  condicionada a DMA y copia. Como el exportador
+  entrega INCBIN descomprimidos y la copia del PPU web es síncrona, el helper
+  de tarea completa al confirmar que no queda DMA y los arrays quedan a cargo
+  del recolector de JavaScript.
+- Porté el texto diferencial masculino/femenino, los frames estándar y de
+  diálogo, el borde estándar, la carga de mensaje con Quest Log, la paleta
+  estándar y los menús sí/no con sus cursores iniciales. `GetStdMenuPalette`
+  está marcado sin uso en el C. El hook de signpost sigue el estado de
+  `FieldControl`. El helper de mensaje de ayuda quedó
+  conectado al texto descriptivo del menú START Canvas.
+- `new_menu_helpers.c` queda 54/54 por nombre. Inventario: **6.161/11.826
+  (52,1 %)**; 100 archivos con huecos y ~130.504 líneas C ponderadas
+  pendientes. Pasaron `check:port`, `check:honesty`, `build`, inventory,
+  pending y `git diff --check`; sin ejecución en navegador.
 
 ## `main.c`: sondeo de controles y Timer 1 (2026-09-27)
 

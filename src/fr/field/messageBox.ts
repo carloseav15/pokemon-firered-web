@@ -26,6 +26,7 @@ export class FieldMessageBox {
 
   constructor(private readonly ow: Overworld) {
     menuHelperHooks.contextNpcGetTextColor = () => this.npcTextColor();
+    menuHelperHooks.isMsgSignpost = () => this.ow.control.IsMsgSignpost();
     this.InitFieldMessageBox();
   }
 

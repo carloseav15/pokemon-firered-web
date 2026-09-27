@@ -15,19 +15,20 @@ import { itemName } from "../pokemon/items";
 import { ItemIsMail } from "../pokemon/mail";
 import { InUnionRoom } from "../unionRoom";
 import { IsLinkSessionActive, IsLinkRecvQueueAtOverworldMax, Overworld_LinkRecvQueueLengthMoreThan2 } from "../linkState";
-import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer, LoadBgTiles, LoadBgTilemap } from "./bg";
+import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, LoadBgTilemap } from "./bg";
 import { BG_PLTT_ID, LoadPalette } from "./palette";
 import { incbin16 } from "./assets";
 import { SetGpuReg } from "./gpu";
 import {
   ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, DrawDialogFrameWithCustomTileAndPalette, DrawStdFrameWithCustomTileAndPalette, FONTATTR_COLOR_BACKGROUND, FONTATTR_COLOR_FOREGROUND,
   FONTATTR_COLOR_SHADOW, FONTATTR_LINE_SPACING, GetFontAttribute, MENU_B_PRESSED, Menu_ProcessInputNoWrapClearOnChoose,
-  LoadStdWindowGfx, LoadStdWindowFrameGfx, LoadSignpostWindowGfx, LoadUserWindowGfx,
+  LoadMenuMessageWindowGfx, LoadQuestLogWindowTiles, LoadStdWindowGfx, LoadStdWindowFrameGfx, LoadSignpostWindowGfx, LoadUserWindowGfx,
 } from "./menu";
 import { OAM_SIZE, PLTT_SIZE, REG_OFFSET_DISPCNT, ppu, VRAM_SIZE } from "./ppu";
 import { SetHBlankCallback, SetVBlankCallback } from "./runtime";
 import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized2, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./text";
 import { AddWindow, ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, GetWindowAttribute, PutWindowTilemap, RemoveWindow, WINDOW_BG, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, COPYWIN_GFX, type WindowTemplate } from "./window";
+import { gQuestLogState } from "../questLogEvents";
 
 export const MENU_L_PRESSED = 1, MENU_R_PRESSED = 2;
 const REG_OFFSET_BG0CNT = 0x08;
@@ -42,7 +43,10 @@ const u8str = (bytes: ArrayLike<number>): number[] => {
 };
 
 /** Hooks the field layer provides (ContextNpcGetTextColor lives with the field message box). */
-export const menuHelperHooks = { contextNpcGetTextColor: (): number => C.NPC_TEXT_COLOR_NEUTRAL };
+export const menuHelperHooks = {
+  contextNpcGetTextColor: (): number => C.NPC_TEXT_COLOR_NEUTRAL,
+  isMsgSignpost: (): boolean => false,
+};
 
 // ---------------------------------------------------------------- menu_helpers.c
 
@@ -368,6 +372,17 @@ export function AddTextPrinterForMessage(allowSkippingDelayWithButtonPress: bool
   AddTextPrinterParameterized2(0, FONT_NORMAL, stringVars.var4, GetTextSpeedSetting(), null, 2, 1, 3);
 }
 
+/** new_menu_helpers.c AddTextPrinterDiffStyle: select the C text color from the active NPC context. */
+export function AddTextPrinterDiffStyle(allowSkippingDelayWithButtonPress: boolean): void {
+  textFlags.canABSpeedUpPrint = allowSkippingDelayWithButtonPress;
+  const npcColor = menuHelperHooks.contextNpcGetTextColor();
+  const font = npcColor === C.NPC_TEXT_COLOR_MALE ? FONT_MALE
+    : npcColor === C.NPC_TEXT_COLOR_FEMALE ? FONT_FEMALE : FONT_NORMAL;
+  const fg = npcColor === C.NPC_TEXT_COLOR_MALE ? C.TEXT_COLOR_BLUE
+    : npcColor === C.NPC_TEXT_COLOR_FEMALE ? C.TEXT_COLOR_RED : C.TEXT_COLOR_DARK_GRAY;
+  AddTextPrinterParameterized2(0, font, stringVars.var4, GetTextSpeedSetting(), null, fg, C.TEXT_COLOR_WHITE, C.TEXT_COLOR_LIGHT_GRAY);
+}
+
 /** new_menu_helpers.c AddTextPrinterWithCustomSpeedForMessage. */
 export function AddTextPrinterWithCustomSpeedForMessage(allowSkippingDelayWithButtonPress: boolean, speed: number): void {
   textFlags.canABSpeedUpPrint = allowSkippingDelayWithButtonPress;
@@ -379,6 +394,37 @@ export function EraseFieldMessageBox(copyToVram: boolean): void {
   FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 17);
   if (copyToVram) CopyBgTilemapBufferToVram(0);
 }
+
+/** new_menu_helpers.c SetStdWindowBorderStyle. */
+export function SetStdWindowBorderStyle(windowId: number, copyToVram: boolean): void {
+  DrawStdFrameWithCustomTileAndPalette(windowId, copyToVram, 0x214, 14);
+}
+
+/** new_menu_helpers.c LoadMessageBoxAndFrameGfx; Quest Log substitutes its original frame tiles. */
+export function LoadMessageBoxAndFrameGfx(windowId: number, copyToVram: boolean): void {
+  if (gQuestLogState === C.QL_STATE_PLAYBACK) {
+    textFlags.autoScroll = true;
+    LoadQuestLogWindowTiles(0, 0x200);
+  } else {
+    LoadMenuMessageWindowGfx(windowId, 0x200, BG_PLTT_ID(15));
+  }
+  DrawDialogFrameWithCustomTileAndPalette(windowId, copyToVram, 0x200, 15);
+}
+
+const sYesNoWindowTemplate: WindowTemplate = { bg: 0, tilemapLeft: 21, tilemapTop: 9, width: 6, height: 4, paletteNum: 15, baseBlock: 0x125 };
+
+/** new_menu_helpers.c DisplayYesNoMenuDefaultYes. */
+export function DisplayYesNoMenuDefaultYes(): void {
+  CreateYesNoMenu(sYesNoWindowTemplate, FONT_NORMAL, 0, 2, 0x214, 14, 0);
+}
+
+/** new_menu_helpers.c DisplayYesNoMenuDefaultNo. */
+export function DisplayYesNoMenuDefaultNo(): void {
+  CreateYesNoMenu(sYesNoWindowTemplate, FONT_NORMAL, 0, 2, 0x214, 14, 1);
+}
+
+/** GetStdMenuPalette (new_menu_helpers.c, unused): return the exported original 16-color palette. */
+export function GetStdMenuPalette(): Uint16Array { return incbin16("gStandardMenuPalette"); }
 
 let sStartMenuWindowId = 0xff;
 /** new_menu_helpers.c CreateStartMenuWindow: preserve the original tilemap geometry and singleton lifetime. */
@@ -404,6 +450,28 @@ export function GetTextSpeedSetting(): number {
   return [8, 4, 1][save.options.textSpeed];
 }
 
+const sTempTileDataBuffers: Array<Uint8Array | null> = Array(0x20).fill(null);
+let sTempTileDataBufferCursor = 0;
+
+/** new_menu_helpers.c ResetTempTileDataBuffers. Browser-owned byte buffers need no manual free. */
+export function ResetTempTileDataBuffers(): void {
+  sTempTileDataBuffers.fill(null);
+  sTempTileDataBufferCursor = 0;
+}
+
+/** FreeTempTileDataBuffersIfPossible: DMA copies are synchronous here, so pending is always false. */
+export function FreeTempTileDataBuffersIfPossible(): boolean {
+  if (IsDma3ManagerBusyWithBgCopy()) return true;
+  for (let i = 0; i < sTempTileDataBufferCursor; i++) sTempTileDataBuffers[i] = null;
+  sTempTileDataBufferCursor = 0;
+  return false;
+}
+
+/** new_menu_helpers.c TaskFreeBufAfterCopyingTileDataToVram: synchronous VRAM copies are complete on entry. */
+export function TaskFreeBufAfterCopyingTileDataToVram(taskId: number): void {
+  if (!IsDma3ManagerBusyWithBgCopy()) tasks.destroy(taskId);
+}
+
 /** new_menu_helpers.c MallocAndDecompress: INCBIN bytes have already been decompressed by tools/decomp. */
 export function MallocAndDecompress(src: ArrayLike<number>): Uint8Array {
   return Uint8Array.from(src, (byte) => byte & 0xff);
@@ -421,6 +489,39 @@ export function DecompressAndCopyTileDataToVram2(bgId: number, src: ArrayLike<nu
   if (!count) return bytes;
   CopyDecompressedTileDataToVram(bgId, bytes, count, offset, mode);
   return bytes;
+}
+
+/** new_menu_helpers.c DecompressAndCopyTileDataToVram: retain its temporary buffer until the next free pass. */
+export function DecompressAndCopyTileDataToVram(bgId: number, src: ArrayLike<number>, size: number, offset: number, mode: number): Uint8Array | null {
+  if (sTempTileDataBufferCursor >= sTempTileDataBuffers.length) return null;
+  const bytes = MallocAndDecompress(src);
+  CopyDecompressedTileDataToVram(bgId, bytes, size === 0 ? bytes.length : size, offset, mode);
+  sTempTileDataBuffers[sTempTileDataBufferCursor++] = bytes;
+  return bytes;
+}
+
+/** new_menu_helpers.c WindowFunc_DrawDialogueFrame: draw the source 5-row dialogue border into a BG tilemap. */
+export function WindowFunc_DrawDialogueFrame(bg: number, left: number, top: number, width: number, _height: number, _paletteNum: number): void {
+  const t = 0x200;
+  const row = (y: number, tiles: number[], flip = false): void => {
+    const tile = (n: number) => flip ? n | 0x800 : n;
+    FillBgTilemapBufferRect(bg, tile(t + tiles[0]), left - 2, y, 1, 1, 15);
+    FillBgTilemapBufferRect(bg, tile(t + tiles[1]), left - 1, y, 1, 1, 15);
+    if (tiles[2] >= 0) FillBgTilemapBufferRect(bg, tile(t + tiles[2]), left, y, width, 1, 15);
+    FillBgTilemapBufferRect(bg, tile(t + tiles[3]), left + width, y, 1, 1, 15);
+    FillBgTilemapBufferRect(bg, tile(t + tiles[4]), left + width + 1, y, 1, 1, 15);
+  };
+  row(top - 1, [0, 1, 2, 3, 4]);
+  row(top, [5, 6, -1, 8, 9]);
+  row(top + 1, [10, 11, -1, 12, 13]);
+  if (menuHelperHooks.isMsgSignpost()) {
+    row(top + 2, [5, 6, -1, 8, 9], true);
+    row(top + 3, [10, 11, -1, 12, 13], true);
+  } else {
+    row(top + 2, [10, 11, -1, 12, 13], true);
+    row(top + 3, [5, 6, -1, 8, 9], true);
+  }
+  row(top + 4, [0, 1, 2, 3, 4], true);
 }
 
 /** new_menu_helpers.c DecompressAndLoadBgGfxUsingHeap: DMA completes synchronously in this PPU. */

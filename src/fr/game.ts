@@ -37,7 +37,7 @@ import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
-import { CreateHelpMessageWindow, DestroyHelpMessageWindow, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
+import { CreateHelpMessageWindow, DestroyHelpMessageWindow, DrawHelpMessageWindowWithText, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
 import { DoCredits } from "./credits";
 import { BeginHallOfFamePC } from "./hallOfFame";
@@ -360,7 +360,7 @@ export class Game {
     const menu = new Menu(window, FONT_NORMAL, 0, 0, 15, items.length, this.startMenuCursor);
     const printDesc = () => {
       const sym = items[menu.cursorPos].desc;
-      PrintTextOnHelpMessageWindow(desc, rom.strings[sym] ? rom.text(sym) : [0xff]);
+      DrawHelpMessageWindowWithText(ow.windows, rom.strings[sym] ? rom.text(sym) : [0xff]);
     };
     printDesc();
     this.startMenuWindows = [window, desc];

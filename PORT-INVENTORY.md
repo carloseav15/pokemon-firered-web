@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 63 | 135686 | 1343/6053 |
+| Parcial (< 80 % de funciones) | 62 | 134925 | 1301/5999 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 9 | 22309 | 693/813 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 147 | 118925 | 4085/4085 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 148 | 119686 | 4139/4139 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **101** | **182984** | |
-| **Total en alcance** | **253** | **303042** | **6149/11826** |
+| **Pendiente de portar** | **100** | **182223** | |
+| **Total en alcance** | **253** | **303042** | **6161/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -110,7 +110,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `fieldmap.c` | 951 | 5/54 | `field/fieldmap.ts` |  |  |
 | `item_use.c` | 925 | 38/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
-| `new_menu_helpers.c` | 761 | 42/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
@@ -189,6 +188,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_anim_rock.c` | 822 | 22/22 | `battle/anims/rock.ts` |  |  |
 | `main_menu.c` | 788 | 29/29 | `mainMenu.ts` |  |  |
 | `wild_encounter.c` | 784 | 36/36 | `field/wildEncounter.ts` |  |  |
+| `new_menu_helpers.c` | 761 | 54/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `list_menu.c` | 758 | 31/31 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |  |
 | `trainer_see.c` | 750 | 37/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
