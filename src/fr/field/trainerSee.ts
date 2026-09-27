@@ -58,7 +58,7 @@ export function CheckPathBetweenTrainerAndPlayer(objects: ObjectEvents, trainer:
     }
     trainer.rangeX = 0;
     trainer.rangeY = 0;
-    const collision = objects.collisionAt(trainer, x, y, direction);
+    const collision = objects.GetCollisionAtCoords(trainer, x, y, direction);
     if (collision === COLLISION_OBJECT_EVENT) return approachDistance;
     return 0;
   } finally {

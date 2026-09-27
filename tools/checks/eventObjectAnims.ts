@@ -3,7 +3,14 @@ import { resolve } from "node:path";
 import * as generated from "../../src/fr/generated/eventObjectAnims";
 import { registerCData } from "../../src/fr/hw/assets";
 import "./setupNodeGbaMock";
-import { ObjectEvents } from "../../src/fr/field/objectEvents";
+import {
+  COLLISION_ELEVATION_MISMATCH,
+  COLLISION_NONE,
+  COLLISION_OBJECT_EVENT,
+  DIR_EAST,
+  ObjectEvent,
+  ObjectEvents,
+} from "../../src/fr/field/objectEvents";
 
 const exported = JSON.parse(readFileSync(resolve("public/fr/cdata/event_object_movement.json"), "utf8")) as {
   defs: Record<string, { type: string; value: unknown[] }>;
@@ -124,4 +131,34 @@ for (let a = 0; a < 256; a++) {
 objects.IsElevationMismatchAt(1, 0x10001, -0x10002);
 if (seenCoords.x !== 1 || seenCoords.y !== -2) throw new Error("IsElevationMismatchAt did not wrap s16 coordinates at the C call boundary");
 assertions++;
+const mockMap = {
+  collisionAt: () => 0,
+  borderIdAt: () => 0,
+  behaviorAt: () => 0,
+  elevationAt: () => mapElevation,
+};
+const fieldObjects = new ObjectEvents({ map: () => mockMap, cameraCanMove: () => true } as any);
+fieldObjects.objects.fill(null);
+const mover = new ObjectEvent();
+mover.currentCoords = { x: 10, y: 10 };
+mover.initialCoords = { x: 10, y: 10 };
+mover.currentElevation = 2;
+mover.rangeX = 1;
+mover.rangeY = 1;
+fieldObjects.objects[0] = mover;
+mapElevation = 2;
+if (fieldObjects.GetCollisionAtCoords(mover, 11, 10, DIR_EAST) !== COLLISION_NONE) throw new Error("clear collision target should be passable");
+if (fieldObjects.GetCollisionFlagsAtCoords(mover, 11, 10, DIR_EAST) !== 0) throw new Error("clear collision target should have no flags");
+const blocker = new ObjectEvent();
+blocker.currentCoords = { x: 11, y: 10 };
+blocker.currentElevation = 2;
+fieldObjects.objects[1] = blocker;
+if (!fieldObjects.DoesObjectCollideWithObjectAt(mover, 11, 10)) throw new Error("object collision helper missed active target");
+if (fieldObjects.GetCollisionInDirection(mover, DIR_EAST) !== COLLISION_OBJECT_EVENT) throw new Error("directional collision did not find object");
+if (fieldObjects.GetCollisionFlagsAtCoords(mover, 11, 10, DIR_EAST) !== 8) throw new Error("object collision flag does not match C bit 3");
+mapElevation = 3;
+if (fieldObjects.GetCollisionAtCoords(mover, 11, 10, DIR_EAST) !== COLLISION_ELEVATION_MISMATCH) throw new Error("elevation mismatch must be checked before object overlap");
+fieldObjects.objects[1] = null;
+if (fieldObjects.GetCollisionAtCoords(mover, 11, 10, DIR_EAST) !== COLLISION_ELEVATION_MISMATCH) throw new Error("elevation mismatch was not reported for empty target");
+assertions += 7;
 console.log(`event_object_movement checks: ${assertions - cResults.cases.length} C-data/edge comparisons and ${cResults.cases.length} extracted-C harness cases passed`);

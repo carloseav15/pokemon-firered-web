@@ -616,7 +616,7 @@ export class PlayerAvatar {
 
   /** CheckForObjectEventCollision */
   checkObjectCollision(object: ObjectEvent, x: number, y: number, direction: number): number {
-    const collision = this.ow.objects.collisionAt(object, x, y, direction);
+    const collision = this.ow.objects.GetCollisionAtCoords(object, x, y, direction);
     if (collision === COLLISION_ELEVATION_MISMATCH && this.canStopSurfing(x, y, direction)) return COLLISION_STOP_SURFING;
     if (this.ledgeJumpDirection(x, y, direction) !== DIR_NONE) {
       incrementGameStat(rom.constants.GAME_STAT_JUMPED_DOWN_LEDGES ?? 0);
@@ -677,7 +677,7 @@ export class PlayerAvatar {
     const tx = boulder.currentCoords.x + dx;
     const ty = boulder.currentCoords.y + dy;
     const behavior = this.ow.map.behaviorAt(tx, ty);
-    if (behavior === rom.constants.MB_FALL_WARP || (this.ow.objects.collisionAt(boulder, tx, ty, direction) === COLLISION_NONE && !MB.MetatileBehavior_IsNonAnimDoor(behavior))) {
+    if (behavior === rom.constants.MB_FALL_WARP || (this.ow.objects.GetCollisionAtCoords(boulder, tx, ty, direction) === COLLISION_NONE && !MB.MetatileBehavior_IsNonAnimDoor(behavior))) {
       this.ow.effects.startStrengthPush(boulder, direction);
       return true;
     }
@@ -718,7 +718,7 @@ export class PlayerAvatar {
     const o = this.object;
     const [dx, dy] = DIRECTION_VECTORS[o.facingDirection];
     const x = o.currentCoords.x + dx, y = o.currentCoords.y + dy;
-    if (this.ow.objects.collisionAt(o, x, y, o.facingDirection) === COLLISION_ELEVATION_MISMATCH && this.ow.map.elevationAt(x, y) === 1
+    if (this.ow.objects.GetCollisionAtCoords(o, x, y, o.facingDirection) === COLLISION_ELEVATION_MISMATCH && this.ow.map.elevationAt(x, y) === 1
       && MB.MetatileBehavior_IsSurfable(this.ow.map.behaviorAt(x, y))) return true;
     return false;
   }

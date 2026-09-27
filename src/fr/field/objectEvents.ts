@@ -593,40 +593,63 @@ export class ObjectEvents {
 
   // ---------------------------------------------------------------- collision
 
-  collisionAt(object: ObjectEvent, x: number, y: number, direction: number): number {
+  /** GetCollisionAtCoords (event_object_movement.c). */
+  GetCollisionAtCoords(object: ObjectEvent, x: number, y: number, direction: number): number {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    direction &= 0xff; // C parameter is u32; the body narrows it to u8.
     const map = this.hooks.map();
-    if (this.outsideRange(object, x, y)) return COLLISION_OUTSIDE_RANGE;
-    if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID || this.directionallyImpassable(object, x, y, direction)) return COLLISION_IMPASSABLE;
+    if (this.IsCoordOutsideObjectEventMovementRange(object, x, y)) return COLLISION_OUTSIDE_RANGE;
+    if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID || this.IsMetatileDirectionallyImpassable(object, x, y, direction)) return COLLISION_IMPASSABLE;
     if (object.trackedByCamera && !this.hooks.cameraCanMove(direction)) return COLLISION_IMPASSABLE;
     if (this.IsElevationMismatchAt(object.currentElevation, x, y)) return COLLISION_ELEVATION_MISMATCH;
-    if (this.objectAt(object, x, y)) return COLLISION_OBJECT_EVENT;
+    if (this.DoesObjectCollideWithObjectAt(object, x, y)) return COLLISION_OBJECT_EVENT;
     return COLLISION_NONE;
   }
 
-  collisionFlagsAt(object: ObjectEvent, x: number, y: number, direction: number): number {
+  /** GetCollisionFlagsAtCoords (event_object_movement.c). */
+  GetCollisionFlagsAtCoords(object: ObjectEvent, x: number, y: number, direction: number): number {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    direction &= 0xff;
     const map = this.hooks.map();
     let flags = 0;
-    if (this.outsideRange(object, x, y)) flags |= 1;
+    if (this.IsCoordOutsideObjectEventMovementRange(object, x, y)) flags |= 1;
     if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID
-      || this.directionallyImpassable(object, x, y, direction)
+      || this.IsMetatileDirectionallyImpassable(object, x, y, direction)
       || (object.trackedByCamera && !this.hooks.cameraCanMove(direction))) flags |= 2;
     if (this.IsElevationMismatchAt(object.currentElevation, x, y)) flags |= 4;
-    if (this.objectAt(object, x, y)) flags |= 8;
+    if (this.DoesObjectCollideWithObjectAt(object, x, y)) flags |= 8;
     return flags;
   }
 
-  collisionInDirection(object: ObjectEvent, direction: number): number {
+  /** GetCollisionInDirection (event_object_movement.c). */
+  GetCollisionInDirection(object: ObjectEvent, direction: number): number {
+    direction &= 0xff;
     const destination = ObjectEventMoveDestCoords(object, direction);
-    return this.collisionAt(object, destination.x, destination.y, direction);
+    return this.GetCollisionAtCoords(object, destination.x, destination.y, direction);
   }
 
-  private outsideRange(o: ObjectEvent, x: number, y: number): boolean {
-    if (o.rangeX !== 0 && (o.initialCoords.x - o.rangeX > x || o.initialCoords.x + o.rangeX < x)) return true;
-    if (o.rangeY !== 0 && (o.initialCoords.y - o.rangeY > y || o.initialCoords.y + o.rangeY < y)) return true;
+  /** IsCoordOutsideObjectEventMovementRange (event_object_movement.c). */
+  private IsCoordOutsideObjectEventMovementRange(o: ObjectEvent, x: number, y: number): boolean {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    const rangeX = o.rangeX & 0xf;
+    const rangeY = o.rangeY & 0xf;
+    const left = ((o.initialCoords.x - rangeX) << 16) >> 16;
+    const right = ((o.initialCoords.x + rangeX) << 16) >> 16;
+    const top = ((o.initialCoords.y - rangeY) << 16) >> 16;
+    const bottom = ((o.initialCoords.y + rangeY) << 16) >> 16;
+    if (rangeX !== 0 && (left > x || right < x)) return true;
+    if (rangeY !== 0 && (top > y || bottom < y)) return true;
     return false;
   }
 
-  directionallyImpassable(object: ObjectEvent, x: number, y: number, direction: number): boolean {
+  /** IsMetatileDirectionallyImpassable (event_object_movement.c). */
+  IsMetatileDirectionallyImpassable(object: ObjectEvent, x: number, y: number, direction: number): boolean {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    direction &= 0xff;
     const target = this.hooks.map().behaviorAt(x, y);
     const current = object.currentMetatileBehavior;
     switch (direction) {
@@ -664,6 +687,13 @@ export class ObjectEvents {
       }
     }
     return undefined;
+  }
+
+  /** DoesObjectCollideWithObjectAt (event_object_movement.c). */
+  DoesObjectCollideWithObjectAt(object: ObjectEvent, x: number, y: number): boolean {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    return this.objectAt(object, x, y) !== undefined;
   }
 
   /** GetObjectEventIdByPosition (event_object_movement.c). */
@@ -1052,7 +1082,7 @@ export class ObjectEvents {
           const direction = wanderDirs.length === 4 ? wanderDirs[random() & 3] : wanderDirs[random() & 1];
           this.setDirection(object, direction);
           s.data[1] = 5;
-          if (this.collisionInDirection(object, direction)) s.data[1] = 1;
+          if (this.GetCollisionInDirection(object, direction)) s.data[1] = 1;
           return true;
         }
         case 5:
@@ -1100,13 +1130,13 @@ export class ObjectEvents {
             object.directionSequenceIndex = 0;
             this.setDirection(object, OPPOSITE[object.movementDirection]);
           }
-          let collision = this.collisionInDirection(object, object.movementDirection);
+          let collision = this.GetCollisionInDirection(object, object.movementDirection);
           let action = actionWalkNormal(object.movementDirection);
           if (collision === COLLISION_OUTSIDE_RANGE) {
             object.directionSequenceIndex++;
             this.setDirection(object, OPPOSITE[object.movementDirection]);
             action = actionWalkNormal(object.movementDirection);
-            collision = this.collisionInDirection(object, object.movementDirection);
+            collision = this.GetCollisionInDirection(object, object.movementDirection);
           }
           if (collision) action = actionWalkInPlaceNormal(object.facingDirection);
           this.setSingle(object, action);
@@ -1131,12 +1161,12 @@ export class ObjectEvents {
           if (object.directionSequenceIndex === 3 && object.initialCoords.x === object.currentCoords.x && object.initialCoords.y === object.currentCoords.y) object.directionSequenceIndex = 0;
           this.setDirection(object, route[object.directionSequenceIndex]);
           let action = actionWalkNormal(object.movementDirection);
-          let collision = this.collisionInDirection(object, object.movementDirection);
+          let collision = this.GetCollisionInDirection(object, object.movementDirection);
           if (collision === COLLISION_OUTSIDE_RANGE) {
             object.directionSequenceIndex++;
             this.setDirection(object, route[object.directionSequenceIndex & 3]);
             action = actionWalkNormal(object.movementDirection);
-            collision = this.collisionInDirection(object, object.movementDirection);
+            collision = this.GetCollisionInDirection(object, object.movementDirection);
           }
           if (collision) action = actionWalkInPlaceNormal(object.facingDirection);
           this.setSingle(object, action);
@@ -1174,7 +1204,7 @@ export class ObjectEvents {
             this.setSingle(object, actionFace(direction));
           } else {
             const destination = ObjectEventMoveDestCoords(object, direction);
-            const blocked = this.collisionAt(object, destination.x, destination.y, direction) || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(destination.x, destination.y)));
+            const blocked = this.GetCollisionAtCoords(object, destination.x, destination.y, direction) || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(destination.x, destination.y)));
             this.setSingle(object, blocked ? actionFace(direction) : actionWalkNormal(direction));
           }
           object.singleMovementActive = true;
@@ -1685,7 +1715,7 @@ export class ObjectEvents {
 
 /** GetCollisionFlagsAtCoords (event_object_movement.c). */
 export function GetCollisionFlagsAtCoords(objects: ObjectEvents, object: ObjectEvent, x: number, y: number, direction: number): number {
-  return objects.collisionFlagsAt(object, x, y, direction);
+  return objects.GetCollisionFlagsAtCoords(object, x, y, direction);
 }
 
 let varGetFn: ((id: number) => number) | undefined;

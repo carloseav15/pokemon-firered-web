@@ -4068,3 +4068,24 @@ Pending / placeholders:
   pending y `git diff --check`. No ejecuté navegador; este bloque refactoriza
   helpers de colisión y no cambia resultados para valores representables por
   los tipos C. No instrumenté tiempo por etapa ni reclamo aceleración.
+
+## `event_object_movement.c`: camino de colisión del campo (2026-09-27)
+
+- Alineé cinco implementaciones activas con los nombres C y sus callers:
+  `GetCollisionAtCoords`, `GetCollisionInDirection`,
+  `IsCoordOutsideObjectEventMovementRange`,
+  `IsMetatileDirectionallyImpassable` y `DoesObjectCollideWithObjectAt`.
+  `GetCollisionFlagsAtCoords` ya tenía homólogo contado y ahora usa las mismas
+  rutinas nombradas. Actualicé referencias en `objectEvents.ts`,
+  `playerAvatar.ts` y `trainerSee.ts`; el `collisionAt` de `FieldMap` se queda
+  como acceso al mapa. Añadí los wraps C `u8`/`s16` y el ancho de 4 bits de los
+  rangos. `event_object_movement.c` queda 85/759; total 6.262/11.826 (53,0 %),
+  5.564 nombres pendientes.
+- El check del manager cubrió destino libre, objeto activo, flags y prioridad
+  del desnivel; `check:event-object-anims` comparó 70.073 casos contra cdata o
+  cuerpos C extraídos, además de 137 casos del harness de dirección. En
+  navegador cargué `?fr=new`: el jugador se movió de (6,6) a (6,8) en
+  `MAP_PALLET_TOWN_PLAYERS_HOUSE_2F` y el siguiente paso quedó bloqueado; no
+  hubo errores de juego en consola, solo dos 404 del `favicon.ico`. Pasaron
+  `check:port`, `check:transitions`, `check:honesty`, build, inventory, pending y
+  `git diff --check`. No medí tiempos por etapa ni reclamo aceleración.
