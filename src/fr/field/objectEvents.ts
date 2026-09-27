@@ -1633,7 +1633,7 @@ export class ObjectEvents {
     const s = object.sprite;
     const step = s.data[2];
     if (id === MOVEMENT_ACTION_NONE || id === MOVEMENT_ACTION_STEP_END) return true;
-    if (step === 2 && id !== 0x98 && id !== 0x99 && id !== 0x9a) return true;
+    if (step === 2 && id !== 0x68 && id !== 0x69 && id !== 0x98 && id !== 0x99 && id !== 0x9a) return true;
     const dirOf = (base: number) => [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST][(id - base) & 3];
 
     // Face (0x00-0x07)
@@ -1828,13 +1828,22 @@ export class ObjectEvents {
       return this.finishStep(object);
     }
     if (id === 0x68 || id === 0x69) {
-      // Rock smash / cut tree: play the obstacle removal anim then finish
-      if (step === 0) { object.sprite.startAnim(1); s.data[2] = 1; }
-      if (SpriteAnimEnded(object.sprite) || object.inanimate) {
-        object.invisible = true;
-        return this.finishStep(object);
+      // RockSmashBreak / CutTree: the C action flashes for 32 frames, then hides the object.
+      if (step === 0) {
+        SetAndStartSpriteAnim(s, C.ANIM_REMOVE_OBSTACLE, 0);
+        s.data[2] = 1;
+        return false;
       }
-      return false;
+      if (step === 1) {
+        if (SpriteAnimEnded(s)) { SetMovementDelay(s, 32); s.data[2] = 2; }
+        return false;
+      }
+      if (step === 2) {
+        object.invisible = !object.invisible;
+        if (WaitForMovementDelay(s)) { object.invisible = true; s.data[2] = 3; }
+        return false;
+      }
+      return true;
     }
     if (id === 0x6a) { object.fixedPriority = true; return this.finishStep(object); }
     if (id === 0x6b) { object.fixedPriority = false; return this.finishStep(object); }
