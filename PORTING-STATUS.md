@@ -5,10 +5,24 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.240/11.826 funciones (52,8%)**,
+single-player. A 2026-09-27, la meta mide **6.242/11.826 funciones (52,8%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.170/303.042 líneas C (42,6%)** pendientes. La coincidencia por nombre
+**~129.136/303.042 líneas C (42,6%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sprite.c`: lectura de frame y aplicación absoluta affine (2026-09-27)
+
+- Porté `GetAffineAnimFrame` para copiar x/y scale, rotación y duración del
+  frame de la matriz y sprite activos. Lo conecté al inicio, avance con demora,
+  salto y frame normal de `continueAffineAnim`.
+- Porté `ApplyAffineAnimFrameAbsolute` y la conecté al caso de duración cero
+  de `applyAffineAnimFrame`; escala s16 y rotación u16 conservan el ancho C.
+- `check:sprite-affine` usó un frame con escala negativa, escala Y 0x200,
+  rotación 64 y duración 0; validó los campos leídos y la matriz affine
+  resultante. También pasaron `check:port`, `check:honesty`, build, inventory,
+  pending y `git diff --check`. No ejecuté navegador.
+- `sprite.c` queda 93/103 por nombre; global **6.242/11.826 (52,8%)**, con
+  ~129.136 líneas ponderadas sin homólogo.
 
 ## `pokemon.c`: getter de retrato desde cdata generado por Clang (2026-09-27)
 

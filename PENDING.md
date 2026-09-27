@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6240/11826 (52.8 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5586 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6242/11826 (52.8 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5584 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~129.170 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~129.136 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -18,11 +18,11 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 2 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
-| 3 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 4 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
-| 5 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
-| 6 | `sprite.c` | casi completo | 1745 | 91/103 | ~203 |  |
+| 2 | `sprite.c` | casi completo | 1745 | 93/103 | ~169 |  |
+| 3 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
+| 4 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 5 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
+| 6 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
 | 7 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
 | 8 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
 | 9 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |

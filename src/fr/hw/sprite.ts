@@ -61,6 +61,7 @@ export function oamData(partial: Partial<OamData> = {}): OamData {
 export type AnimCmd = { type: number; imageValue: number; duration: number; hFlip: number; vFlip: number; count: number; target: number };
 /** Normalized union AffineAnimCmd: type is xScale for frames, or 0x7FFD loop, 0x7FFE jump, 0x7FFF end. */
 export type AffineAnimCmd = { type: number; xScale: number; yScale: number; rotation: number; duration: number; count: number; target: number; val: number };
+export type AffineAnimFrame = Pick<AffineAnimCmd, "xScale" | "yScale" | "rotation" | "duration">;
 
 export const ANIMCMD_FRAME = (imageValue: number, duration: number, hFlip = 0, vFlip = 0): AnimCmd => ({ type: imageValue, imageValue, duration, hFlip: hFlip ? 1 : 0, vFlip: vFlip ? 1 : 0, count: 0, target: 0 });
 export const ANIMCMD_LOOP = (count: number): AnimCmd => ({ type: -3, imageValue: 0, duration: 0, hFlip: 0, vFlip: 0, count, target: 0 });
@@ -622,7 +623,7 @@ function beginAffineAnim(sprite: Sprite): void {
     const matrixNum = getSpriteMatrixNum(sprite);
     const st = sAffineAnimStates[matrixNum];
     AffineAnimStateRestartAnim(matrixNum);
-    const frame = { ...affineCmd(sprite, matrixNum) };
+    const frame = GetAffineAnimFrame(matrixNum, sprite);
     sprite.affineAnimBeginning = false;
     sprite.affineAnimEnded = false;
     applyAffineAnimFrame(matrixNum, frame);
@@ -637,7 +638,7 @@ function continueAffineAnim(sprite: Sprite): void {
   const st = sAffineAnimStates[matrixNum];
   if (st.delayCounter) {
     if (!DecrementAffineAnimDelayCounter(sprite, matrixNum)) {
-      applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, affineCmd(sprite, matrixNum));
+      applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, GetAffineAnimFrame(matrixNum, sprite));
     }
   } else if (sprite.affineAnimPaused) {
     return;
@@ -659,7 +660,7 @@ function continueAffineAnim(sprite: Sprite): void {
       continueAffineAnim(sprite);
     } else if (type === 0x7ffe) {
       st.animCmdIndex = cmd.target;
-      const frame = { ...affineCmd(sprite, matrixNum) };
+      const frame = GetAffineAnimFrame(matrixNum, sprite);
       applyAffineAnimFrame(matrixNum, frame);
       st.delayCounter = frame.duration;
     } else if (type === 0x7fff) {
@@ -667,7 +668,7 @@ function continueAffineAnim(sprite: Sprite): void {
       st.animCmdIndex--;
       applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, AFFINEANIMCMD_FRAME(0, 0, 0, 0));
     } else {
-      const frame = { ...cmd };
+      const frame = GetAffineAnimFrame(matrixNum, sprite);
       applyAffineAnimFrame(matrixNum, frame);
       st.delayCounter = frame.duration;
     }
@@ -738,7 +739,7 @@ export function AffineAnimStateStartAnim(matrixNum: number, animNum: number): vo
   });
 }
 
-function applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum: number, frame: AffineAnimCmd): void {
+function applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum: number, frame: AffineAnimFrame): void {
   const st = sAffineAnimStates[matrixNum];
   st.xScale = s16(st.xScale + frame.xScale);
   st.yScale = s16(st.yScale + frame.yScale);
@@ -764,15 +765,32 @@ export function objAffineSet(xScale: number, yScale: number, rotation: number): 
   };
 }
 
-function applyAffineAnimFrame(matrixNum: number, frame: AffineAnimCmd): void {
+// sprite.c: GetAffineAnimFrame. Copy the active union's frame fields into the C output struct.
+export function GetAffineAnimFrame(matrixNum: number, sprite: Sprite): AffineAnimFrame {
+  const state = sAffineAnimStates[matrixNum];
+  const command = sprite.affineAnims[state.animNum]?.[state.animCmdIndex] ?? AFFINEANIMCMD_END;
+  return {
+    xScale: s16(command.xScale),
+    yScale: s16(command.yScale),
+    rotation: command.rotation & 0xff,
+    duration: command.duration & 0xff,
+  };
+}
+
+// sprite.c: ApplyAffineAnimFrameAbsolute.
+export function ApplyAffineAnimFrameAbsolute(matrixNum: number, frame: AffineAnimFrame): void {
+  const state = sAffineAnimStates[matrixNum];
+  state.xScale = s16(frame.xScale);
+  state.yScale = s16(frame.yScale);
+  state.rotation = (frame.rotation << 8) & 0xffff;
+}
+
+function applyAffineAnimFrame(matrixNum: number, frame: AffineAnimFrame): void {
   if (frame.duration) {
     frame.duration--;
     applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, frame);
   } else {
-    const st = sAffineAnimStates[matrixNum];
-    st.xScale = frame.xScale;
-    st.yScale = frame.yScale;
-    st.rotation = (frame.rotation << 8) & 0xffff;
+    ApplyAffineAnimFrameAbsolute(matrixNum, frame);
     applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, AFFINEANIMCMD_FRAME(0, 0, 0, 0));
   }
 }
