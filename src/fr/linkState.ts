@@ -87,6 +87,11 @@ export function Overworld_LinkRecvQueueLengthMoreThan2(): boolean {
   return sReceivingFromLink;
 }
 
+/** link.c GetLinkPlayerCount. */
+export function GetLinkPlayerCount(): number {
+  return receivedRemoteLinkPlayers !== 0 ? 2 : 1;
+}
+
 /** Reset link adapter state when a cable/RFU session closes. */
 export function ResetLinkState(): void {
   cableRecvQueue.clear();

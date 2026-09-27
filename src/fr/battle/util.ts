@@ -31,6 +31,7 @@ import { CalculatePPWithBonus, GetGenderFromSpeciesAndPersonality, GetMonData, g
 import { GetFlavorRelationByPersonality, IsOtherTrainer } from "../pokemon/mon_extra";
 import { GetCurrentWeather } from "./ext";
 import { rom } from "../rom";
+import { GetLinkPlayerCount } from "../linkState";
 
 const MAX_MON_MOVES = 4;
 const PARTY_SIZE = 6;
@@ -135,9 +136,31 @@ export function PressurePPLoseOnUsingPerishSong(attacker: number): void {
   pressureOnMove(attacker, C.MOVE_PERISH_SONG, (i) => i !== attacker);
 }
 
+/** MarkAllBattlersForControllerExec (battle_util.c). */
+export function MarkAllBattlersForControllerExec(): void {
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_LINK) {
+    for (let i = 0; i < G.gBattlersCount; i++) {
+      G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags | (gBitTable[i] << (32 - C.MAX_BATTLERS_COUNT))) >>> 0;
+    }
+  } else {
+    for (let i = 0; i < G.gBattlersCount; i++) {
+      G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags | gBitTable[i]) >>> 0;
+    }
+  }
+}
+
 export function MarkBattlerForControllerExec(battler: number): void {
-  if (G.gBattleTypeFlags & C.BATTLE_TYPE_LINK) G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags | (gBitTable[battler] << 28)) >>> 0;
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_LINK) G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags | (gBitTable[battler] << (32 - C.MAX_BATTLERS_COUNT))) >>> 0;
   else G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags | gBitTable[battler]) >>> 0;
+}
+
+/** MarkBattlerReceivedLinkData (battle_util.c). */
+export function MarkBattlerReceivedLinkData(battlerId: number): void {
+  const count = GetLinkPlayerCount();
+  for (let i = 0; i < count; i++) {
+    G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags | (gBitTable[battlerId] << (i << 2))) >>> 0;
+  }
+  G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags & ~((1 << 28) << battlerId)) >>> 0;
 }
 
 export function CancelMultiTurnMoves(battler: number): void {

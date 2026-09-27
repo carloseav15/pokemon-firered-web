@@ -35,7 +35,8 @@
     "check:string-util": "esbuild tools/checks/stringUtil.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/stringUtil.mjs && node .decomp-build/checks/stringUtil.mjs",
     "check:wild-encounter": "esbuild tools/checks/wildEncounter.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/wildEncounter.mjs && node .decomp-build/checks/wildEncounter.mjs",
     "check:script": "esbuild tools/checks/scriptContext.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/scriptContext.mjs && node .decomp-build/checks/scriptContext.mjs",
-    "check:trainer-see": "esbuild tools/checks/trainerSee.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/trainerSee.mjs && node .decomp-build/checks/trainerSee.mjs"
+    "check:trainer-see": "esbuild tools/checks/trainerSee.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/trainerSee.mjs && node .decomp-build/checks/trainerSee.mjs",
+    "check:battle-util": "esbuild tools/checks/battleUtil.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/battleUtil.mjs && node .decomp-build/checks/battleUtil.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

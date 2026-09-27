@@ -28,6 +28,12 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`battle_util.c`: 37/37 funciones con homólogo (controladores de batalla, banderas de ejecución y datos de enlace).**
+  Implementé las 2 funciones restantes del archivo, `MarkAllBattlersForControllerExec` y `MarkBattlerReceivedLinkData`, en `src/fr/battle/util.ts`, cubriendo la activación masiva de controladores en combates individuales y de enlace (con desplazamiento a bits superiores según `MAX_BATTLERS_COUNT`) y el marcado de datos de enlace recibidos por battler según `GetLinkPlayerCount()`.
+  Implementé y conecté `GetLinkPlayerCount` en `src/fr/linkState.ts` reflejando el número de jugadores conectados en la sesión de enlace.
+  Añadí el check headless `tools/checks/battleUtil.ts` (`npm run check:battle-util`) que valida: activación de banderas de ejecución para todos los contendientes en combates normales y de enlace, activación individual en `MarkBattlerForControllerExec`, descarte de bits superiores y marcado de bits de datos recibidos en `MarkBattlerReceivedLinkData`, limpieza de estados multiactivos en `CancelMultiTurnMoves` e inmovilidad por efectos de protección en `WasUnableToUseMove`.
+  Validación: pasan `check:battle-util`, `check:trainer-see`, `check:preview`, `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.047/11.826 funciones (51,1%)**, con **111 archivos** con huecos (bajó de 112); `battle_util.c` sale de `PENDING.md`.
 - **`trainer_see.c`: 37/37 funciones con homólogo (visión de entrenadores, rutinas de aproximación y disfraces).**
   Implementé las 3 funciones restantes del archivo, `TrainerSeeFunc_Dummy`, `TrainerSeeFunc_BeginRemoveDisguise` y `TrainerSeeFunc_WaitRemoveDisguise`, en `src/fr/field/trainerSee.ts`, asegurando el soporte para entrenadores disfrazados de árbol o roca (`MOVEMENT_TYPE_TREE_DISGUISE`, `MOVEMENT_TYPE_MOUNTAIN_DISGUISE`) con la acción de movimiento `MOVEMENT_ACTION_REVEAL_TRAINER`.
   Exporté las rutinas direccionales de alcance (`GetTrainerApproachDistanceSouth`, `GetTrainerApproachDistanceNorth`, `GetTrainerApproachDistanceWest`, `GetTrainerApproachDistanceEast`), la tabla `sDirectionalApproachDistanceFuncs`, la verificación de colisiones en la trayectoria (`CheckPathBetweenTrainerAndPlayer`) y la función principal de detección `GetTrainerApproachDistance`.

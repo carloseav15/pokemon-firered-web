@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 68 | 137462 | 1379/6161 |
+| Parcial (< 80 % de funciones) | 68 | 137462 | 1380/6161 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 14 | 30721 | 932/1082 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 136 | 108591 | 3705/3705 |
+| Casi completo (≥ 80 % y < 100 %) | 13 | 27469 | 897/1045 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 137 | 111843 | 3742/3742 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **112** | **193318** | |
-| **Total en alcance** | **253** | **303042** | **6044/11826** |
+| **Pendiente de portar** | **111** | **190066** | |
+| **Total en alcance** | **253** | **303042** | **6047/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -80,7 +80,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 1/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
 | `quest_log_events.c` | 2247 | 7/118 | `questLogEvents.ts` |  |  |
-| `link.c` | 2202 | 3/114 | `linkState.ts` |  | 1 |
+| `link.c` | 2202 | 4/114 | `linkState.ts` |  | 1 |
 | `field_player_avatar.c` | 2168 | 12/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
@@ -139,7 +139,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 |---|---:|---:|---|---|---:|
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `region_map.c` | 4036 | 128/140 | `regionMap.ts` |  |  |
-| `battle_util.c` | 3252 | 35/37 | `battle/util.ts` |  |  |
 | `battle_controller_player.c` | 2966 | 111/123 | `battle/controller_player.ts` |  |  |
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
@@ -162,6 +161,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `image_processing_effects.c` | 4436 | 38/38 | `imageProcessingEffects.ts` |  |  |
 | `battle_anim_effects_2.c` | 3865 | 121/121 | `battle/anims/effects2.ts` |  |  |
 | `pokedex_screen.c` | 3452 | 66/66 | `pokedexScreen.ts`, `pokemon/mon_extra.ts` |  |  |
+| `battle_util.c` | 3252 | 37/37 | `battle/util.ts` |  |  |
 | `battle_message.c` | 2855 | 10/10 | `battle/message.ts` |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
 | `battle_anim_mons.c` | 2360 | 128/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |  |
