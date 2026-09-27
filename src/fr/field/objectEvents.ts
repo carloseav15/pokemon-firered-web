@@ -1532,7 +1532,7 @@ export class ObjectEvents {
     return false;
   }
 
-  private initJump(object: ObjectEvent, direction: number, distance: number, type: number): void {
+  private initJump(object: ObjectEvent, direction: number, distance: number, type: number, shadow = false): void {
     const displacement = [0, 1, 1][distance];
     let [dx, dy] = DIRECTION_VECTORS[direction];
     dx *= displacement;
@@ -1546,6 +1546,7 @@ export class ObjectEvents {
     object.landingJump = true;
     object.triggerGroundEffectsOnMove = true;
     object.disableCoveringGroundEffects = true;
+    if (shadow) object.hasShadow = true;
   }
 
   /** DoJumpSpriteMovement */
@@ -1592,6 +1593,7 @@ export class ObjectEvents {
       this.shiftStill(object);
       object.triggerGroundEffectsOnStop = true;
       object.landingJump = true;
+      object.hasShadow = false;
       object.sprite.animPaused = true;
     }
     return phase;
@@ -1654,7 +1656,7 @@ export class ObjectEvents {
     // Jump 2 (far jump)
     if (id >= 0x14 && id <= 0x17) {
       if (step === 0) {
-        this.initJump(object, dirOf(0x14), JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
+        this.initJump(object, dirOf(0x14), JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH, true);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
       if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
@@ -1750,7 +1752,7 @@ export class ObjectEvents {
     // Jump (ledges)
     if (id >= 0x4e && id <= 0x51) {
       if (step === 0) {
-        this.initJump(object, dirOf(0x4e), JUMP_DISTANCE_NORMAL, JUMP_TYPE_NORMAL);
+        this.initJump(object, dirOf(0x4e), JUMP_DISTANCE_NORMAL, JUMP_TYPE_NORMAL, true);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
       if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
@@ -1761,7 +1763,7 @@ export class ObjectEvents {
       const pairs: Array<[number, number]> = [[DIR_SOUTH, DIR_SOUTH], [DIR_NORTH, DIR_NORTH], [DIR_WEST, DIR_WEST], [DIR_EAST, DIR_EAST], [DIR_SOUTH, DIR_NORTH], [DIR_NORTH, DIR_SOUTH], [DIR_WEST, DIR_EAST], [DIR_EAST, DIR_WEST]];
       const [first, second] = pairs[id - 0x52];
       if (step === 0) {
-        this.initJump(object, first, JUMP_DISTANCE_IN_PLACE, JUMP_TYPE_LOW);
+        this.initJump(object, first, JUMP_DISTANCE_IN_PLACE, JUMP_TYPE_LOW, true);
         this.setStepAnim(object, moveAnim(object.facingDirection));
       }
       const phase = this.DoJumpAnimStep(object);
@@ -1918,7 +1920,7 @@ export class ObjectEvents {
       const dir = dirOf(base);
       if (step === 0) {
         if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
-        this.initJump(object, dir, face ? JUMP_DISTANCE_IN_PLACE : JUMP_DISTANCE_NORMAL, JUMP_TYPE_LOW);
+        this.initJump(object, dir, face ? JUMP_DISTANCE_IN_PLACE : JUMP_DISTANCE_NORMAL, JUMP_TYPE_LOW, true);
         this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
       }
       if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
@@ -1928,7 +1930,7 @@ export class ObjectEvents {
       const dir = dirOf(0x84);
       if (step === 0) {
         if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
-        this.initJump(object, dir, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
+        this.initJump(object, dir, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH, true);
         this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
       }
       if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);

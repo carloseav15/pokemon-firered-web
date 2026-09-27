@@ -516,9 +516,7 @@ export class FieldEffects {
     if (kind === "begin") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, false);
       if (MB.MetatileBehavior_IsLongGrass(cur)) this.spawnLongGrass(object);
-      if (object.landingJump || object.movementActionId >= 0x14 && object.movementActionId <= 0x17 || object.movementActionId >= 0x4e && object.movementActionId <= 0x51) {
-        this.spawnShadow(object);
-      }
+      if (object.hasShadow) this.spawnShadow(object);
       if (MB.MetatileBehavior_IsDeepSand(prev) || MB.MetatileBehavior_IsSand(prev)) this.spawnFootprints(object);
     } else if (kind === "finish") {
       if (object.landingJump && !object.disableJumpLandingGroundEffect) this.spawnJumpLanding(object);
@@ -578,7 +576,7 @@ export class FieldEffects {
       s.x = object.sprite.x;
       s.y = object.sprite.y + offset;
       const jumping = object.heldMovementActive && !object.heldMovementFinished && object.sprite.y2 !== 0;
-      if (!object.active || (!jumping && object.sprite.data[2] !== 1)) this.ow.sprites.destroy(s);
+      if (!object.active || !object.hasShadow || (!jumping && object.sprite.data[2] !== 1)) this.ow.sprites.destroy(s);
     };
   }
 
