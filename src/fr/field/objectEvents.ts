@@ -2139,6 +2139,7 @@ export class ObjectEvents {
     if (id === 0xa4 || id === 0xa5) {
       // MovementAction_FlyUp/Down: step 0 initializes y2, step 1 moves 8px per frame,
       // and step 2 completes on the following callback, matching the C function table.
+      if (step === 2) return this.finishStep(object);
       if (step === 0) {
         s.y2 = id === 0xa4 ? 0 : -160;
         s.data[2] = 1;
