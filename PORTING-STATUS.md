@@ -5,10 +5,25 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.233/11.826 funciones (52,7%)**,
-con **98 archivos** con huecos y una estimación ponderada de
-**~129.325/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.234/11.826 funciones (52,7%)**,
+con **97 archivos** con huecos y una estimación ponderada de
+**~129.301/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `field_door.c`: copia de tiles de animación (2026-09-27)
+
+- Porté `CopyDoorTilesToVram` como copia a un búfer transitorio que consume el
+  renderer Canvas activo. Copia los cuatro tiles visibles de una puerta 1×1 o
+  los ocho de una puerta 1×2. El C siempre copia ocho tiles a VRAM; la ruta
+  Canvas solo necesita los que dibuja y no mantiene ese banco compartido.
+- Validé los datos: los PNG indexados de los 32 assets activos reconstruyen
+  byte por byte sus INCBIN 4bpp del C; los offsets de todos los frames visibles
+  caben en sus assets. En navegador, `general` dibujó índices 0–3 desde un
+  búfer de 128 bytes y `dept_store_elevator` dibujó 0–7 desde 256 bytes.
+  `?fr=continue` permaneció en la casa de Pallet. Pasaron `check:port`,
+  `check:honesty`, build, inventory, pending y `git diff --check`.
+- `field_door.c` queda 21/21 por nombre; global **6.234/11.826 (52,7%)**, con
+  ~129.301 líneas ponderadas sin homólogo.
 
 ## `fame_checker.c`: reordenamiento del perfil de Giovanni (2026-09-27)
 

@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 60 | 133907 | 1310/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 9 | 20737 | 631/737 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 150 | 122276 | 4264/4264 |
+| Casi completo (≥ 80 % y < 100 %) | 8 | 20213 | 611/716 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 151 | 122800 | 4285/4285 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **98** | **179633** | |
-| **Total en alcance** | **253** | **303042** | **6233/11826** |
+| **Pendiente de portar** | **97** | **179109** | |
+| **Total en alcance** | **253** | **303042** | **6234/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -135,7 +135,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
-| `field_door.c` | 524 | 20/21 | `field/doors.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
@@ -210,6 +209,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `option_menu.c` | 575 | 19/19 | `optionMenu.ts` |  |  |
 | `trig.c` | 542 | 4/4 | `hw/trig.ts` |  |  |
 | `battle_anim_status_effects.c` | 535 | 12/12 | `battle/anim.ts`, `battle/anims/statusEffects.ts` |  |  |
+| `field_door.c` | 524 | 21/21 | `field/doors.ts` |  |  |
 | `window.c` | 513 | 21/21 | `gba/window.ts`, `hw/window.ts` |  |  |
 | `seagallop.c` | 504 | 22/22 | `seagallop.ts` |  |  |
 | `battle_intro.c` | 492 | 10/10 | `battle/intro.ts` |  |  |

@@ -1,5 +1,6 @@
 // Port of field_door.c: door graphics and animation frames come from exported
-// cdata; Canvas draws the source frames over the map metatiles.
+// cdata; Canvas draws the source frames over the map metatiles. The VRAM copy
+// is adapted to a transient buffer containing only the tiles visible in Canvas.
 
 import { sound } from "../audio/sound";
 import * as C from "../generated/constants";
@@ -27,6 +28,16 @@ export function BuildDoorTiles(tileNum: number, paletteNums: ArrayLike<number>, 
   return tiles;
 }
 
+/** field_door.c CopyDoorTilesToVram, adapted to a transient Canvas draw buffer. */
+export function CopyDoorTilesToVram(doorTiles: Uint8Array, tileOffset: number, tileCount: number): Uint8Array {
+  const start = tileOffset * C.TILE_SIZE_4BPP;
+  const end = start + tileCount * C.TILE_SIZE_4BPP;
+  if (!Number.isInteger(tileOffset) || tileOffset < 0 || !Number.isInteger(tileCount) || tileCount < 1 || end > doorTiles.length) {
+    throw new RangeError(`CopyDoorTilesToVram: tile range ${tileOffset}+${tileCount} outside ${doorTiles.length} bytes`);
+  }
+  return doorTiles.slice(start, end);
+}
+
 function doorImageName(symbol: string): string {
   return symbol.replace(/^sDoorAnimTiles_/, "")
     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
@@ -44,7 +55,7 @@ export class DoorAnimator {
   private taskId = -1;
   private readonly Task_AnimateDoor: TaskFunc = (taskId) => this.taskAnimateDoor(taskId);
   /** Door frame currently drawn at a map position (tile offset or CLOSED). */
-  private drawn = new Map<string, { door: DoorGfx; offset: number }>();
+  private drawn = new Map<string, { door: DoorGfx; tileOffset: number; frameTiles: Uint8Array }>();
 
   constructor(private readonly ow: Overworld) {}
 
@@ -179,11 +190,13 @@ export class DoorAnimator {
       for (const key of keys) this.drawn.delete(key);
       return;
     }
+    const tileCount = door.size === SIZE_1x2 ? 8 : 4;
+    const frameTiles = CopyDoorTilesToVram(this.tiles(door.file), offset, tileCount);
     if (door.size === SIZE_1x2) {
-      this.drawn.set(`${x},${y - 1}`, { door, offset });
-      this.drawn.set(`${x},${y}`, { door, offset: offset + 4 });
+      this.drawn.set(`${x},${y - 1}`, { door, tileOffset: 0, frameTiles });
+      this.drawn.set(`${x},${y}`, { door, tileOffset: 4, frameTiles });
     } else {
-      this.drawn.set(`${x},${y}`, { door, offset });
+      this.drawn.set(`${x},${y}`, { door, tileOffset: 0, frameTiles });
     }
   }
 
@@ -246,22 +259,20 @@ export class DoorAnimator {
   render(ctx: CanvasRenderingContext2D, camX: number, camY: number): void {
     const renderer = this.ow.renderer;
     if (!renderer || this.drawn.size === 0) return;
-    for (const [key, { door, offset }] of this.drawn) {
+    for (const [key, { door, tileOffset, frameTiles }] of this.drawn) {
       const [x, y] = key.split(",").map(Number);
       const sx = x * 16 - camX;
       const sy = y * 16 - camY;
       if (sx < -16 || sy < -16 || sx > 240 || sy > 160) continue;
-      const data = this.tiles(door.file);
-      const paletteOffset = door.size === SIZE_1x2 && offset % 8 === 4 ? 4 : 0;
+      const paletteOffset = door.size === SIZE_1x2 && tileOffset === 4 ? 4 : 0;
       const tileNum = paletteOffset;
-      const frameOffset = offset - tileNum;
       const tilemap = BuildDoorTiles(tileNum, door.palettes, paletteOffset);
       for (let i = 0; i < tilemap.length; i++) {
         const tile = tilemap[i];
         renderer.drawRawTiles(
           ctx,
-          data,
-          frameOffset + (tile & 0x03ff),
+          frameTiles,
+          tile & 0x03ff,
           (tile >>> 12) & 0x0f,
           sx + (i & 1) * 8,
           sy + (i >> 1) * 8,
