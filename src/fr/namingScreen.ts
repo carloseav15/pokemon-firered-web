@@ -1,6 +1,7 @@
 // naming_screen.c: hardware-screen entry/exit and source keyboard data.
 // Target icons, the BG page swap, and cursor/button flashes use C data.
 import * as C from "./generated/constants";
+import { PageToNextGfxId } from "./generated/cdataTableAccessors";
 import { GetKeyRoleAtCursorPos, MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "./hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
@@ -207,7 +208,7 @@ class NamingScreen {
   }
 
   private setPageSwapButtonGfx(page: number): void {
-    const gfx = data<number[]>("sPageToNextGfxId")[page];
+    const gfx = PageToNextGfxId(page);
     gSprites[this.pageButton].oam.paletteNum = IndexOfSpritePaletteTag(data<number[]>("sPageSwapPalTags")[gfx]);
     gSprites[this.pageText].sheetTileStart = GetSpriteTileStartByTag(data<number[]>("sPageSwapGfxTags")[gfx]);
     gSprites[this.pageText].subspriteTableNum = gfx;

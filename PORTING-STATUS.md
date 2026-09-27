@@ -4157,3 +4157,34 @@ Pending / placeholders:
   conserva el número de tabla pero no compone las piezas de subsprite como el
   renderer GBA; no afirmo paridad visual de esos recortes. No medí tiempos por
   etapa ni reclamo aceleración.
+
+## `naming_screen.c`: accessor de la página siguiente generado con Clang (2026-09-27)
+
+- Revisé con Clang AST tres candidatos parciales: en `battle_interface.c`,
+  `GetBattleInterfaceGfxPtr` es un lookup a filas de un buffer de INCBIN y ya
+  está adaptado como `gfxPtr`; en `trainer_card.c` no encontré en las funciones
+  pendientes revisadas un retorno directo de tabla constante; en
+  `naming_screen.c`, `PageToNextGfxId` sí es un lookup `const u8[3]` con entrada
+  `u8`. Extendí el generador de accessors cdata para preservar wraps `u8` y
+  mantuve el soporte `u16` de `FacilityClassToPicIndex`. La pantalla activa
+  ahora llama al helper generado en `setPageSwapButtonGfx`. `naming_screen.c`
+  queda 34/109; total 6.272/11.826 (53,0 %), con 5.554 nombres pendientes.
+- El generador extrae `PageToNextGfxId` del AST, valida retorno/argumento,
+  tabla, tipo y longitud contra cdata; rechaza AST con otra tabla y produce
+  salida determinista. El harness compiló el cuerpo C extraído con `u8` de un
+  byte y comparó las tres páginas válidas junto con sus entradas tras wrap de
+  `u8` (seis casos). `check:cdata-table-accessors` pasó con 300 comparaciones
+  previas de retratos, tres callers integrados y los seis casos nuevos. Pasaron
+  `check:port`, `check:honesty`, `build`, inventory, pending y
+  `git diff --check`. La generación/análisis/emisión midió 4,574 ms; no medí por
+  separado preparación, revisión, integración ni reparación y no afirmo ahorro
+  neto.
+- En navegador `?fr=new`, preparé un Bulbasaur en la partida de depuración y
+  abrí `Game.changeNickname`: se vio la pantalla de apodo con la página inicial.
+  Intenté seleccionar el control de página, pero no pude verificar el cambio de
+  página; el render terminó negro y la consola solo mostró los 404 conocidos de
+  `favicon.ico`. No cuento esta interacción como prueba de salida ni de paridad
+  de la transición. Decomp `c75f352304d529f6ba92d4f74b9cf8b5c3810788`, Apple
+  Clang 21.0.0, AST `armv4t-none-eabi`, defines de `common.py`
+  (`FIRERED`, `REVISION=0`, `ENGLISH`, `MODERN=0`); el harness solo usa el
+  subconjunto host cuya semántica queda fijada por `_Static_assert(sizeof(u8))`.

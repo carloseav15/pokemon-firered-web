@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6271/11826 (53.0 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5555 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6272/11826 (53.0 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5554 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~128.337 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~128.314 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -90,7 +90,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 71 | `union_room_chat.c` | sin empezar | 1571 | 0/51 | ~1571 |  |
 | 72 | `mystery_gift_menu.c` | sin empezar | 1609 | 0/34 | ~1609 |  |
 | 73 | `quest_log.c` | parcial | 1767 | 4/88 | ~1686 |  |
-| 74 | `naming_screen.c` | parcial | 2509 | 33/109 | ~1749 |  |
+| 74 | `naming_screen.c` | parcial | 2509 | 34/109 | ~1726 |  |
 | 75 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 | 76 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
 | 77 | `field_player_avatar.c` | parcial | 2168 | 15/176 | ~1983 |  |
@@ -160,7 +160,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona). Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
 - Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
-- Pantalla de nombres: 35/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.
+- Pantalla de nombres: 34/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.
 - Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - `scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).
