@@ -908,6 +908,7 @@ EVENT_OBJECT_ANIM_FUNCS = {
 }
 EVENT_OBJECT_JUMP_FUNCS = {"GetJumpY"}
 EVENT_OBJECT_COPY_DIRECTION_FUNCS = {"GetPlayerDirectionForCopy"}
+EVENT_OBJECT_COPY_FUNCS = {"GetCopyDirection"}
 
 
 # Explicitly reviewed const-table accessors whose source table is exported as cdata.
@@ -1140,10 +1141,137 @@ def _event_object_player_direction_copy(func: clang_ast.AstFunction) -> tuple[st
     return init_param, move_param, "sPlayerDirectionsForCopy"
 
 
+def _event_object_copy_direction(func: clang_ast.AstFunction) -> tuple[list[str], int, int, str]:
+    """Accept the reviewed guard, helper call, and 4x4 C table lookup in GetCopyDirection."""
+    expected_types = ["u8", "u32", "u32"]
+    if func.return_type != "u32" or [t for _, t in func.params] != expected_types:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected u32 function with (u8, u32, u32) parameters")
+    params = [n for n, _ in func.params]
+    statements = func.body.get("inner") or []
+    if len(statements) != 6:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected declarations, guard, helper assignment, and table return")
+
+    def unwrap(node: dict[str, Any]) -> dict[str, Any]:
+        while node.get("kind") in ("ImplicitCastExpr", "ConstantExpr", "CStyleCastExpr", "ParenExpr"):
+            children = node.get("inner") or []
+            if len(children) != 1:
+                raise UnsupportedAstError("event_object_movement.c", func.name, "unexpected cast in copy-direction routine")
+            node = children[0]
+        return node
+
+    def ref_name(node: dict[str, Any]) -> str | None:
+        node = unwrap(node)
+        if node.get("kind") == "DeclRefExpr":
+            return node.get("referencedDecl", {}).get("name")
+        return None
+
+    def decl(stmt: dict[str, Any], name: str, typ: str, initializer: str | None = None) -> None:
+        inner = stmt.get("inner") or []
+        if stmt.get("kind") != "DeclStmt" or len(inner) != 1:
+            raise UnsupportedAstError("event_object_movement.c", func.name, f"expected local declaration {name}")
+        variable = inner[0]
+        if variable.get("kind") != "VarDecl" or variable.get("name") != name or variable.get("type", {}).get("qualType") != typ:
+            raise UnsupportedAstError("event_object_movement.c", func.name, f"unexpected declaration for {name}")
+        values = variable.get("inner") or []
+        if initializer is None:
+            if values:
+                raise UnsupportedAstError("event_object_movement.c", func.name, f"expected uninitialized local {name}")
+        elif len(values) != 1 or ref_name(values[0]) != initializer:
+            raise UnsupportedAstError("event_object_movement.c", func.name, f"{name} must copy {initializer}")
+
+    decl(statements[0], "dir", "u32")
+    decl(statements[1], "_playerInitDir", "u8", "playerInitDir")
+    decl(statements[2], "_playerMoveDir", "u8", "playerMoveDir")
+
+    if_node = statements[3]
+    if if_node.get("kind") != "IfStmt" or len(if_node.get("inner") or []) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected one guarded return")
+    condition, guarded_return = if_node["inner"]
+    comparisons: list[dict[str, Any]] = []
+
+    def flatten_or(node: dict[str, Any]) -> None:
+        node = unwrap(node)
+        children = node.get("inner") or []
+        if node.get("kind") == "BinaryOperator" and node.get("opcode") == "||" and len(children) == 2:
+            flatten_or(children[0])
+            flatten_or(children[1])
+        else:
+            comparisons.append(node)
+
+    flatten_or(condition)
+    expected_comparisons = [("_playerInitDir", "=="), ("_playerMoveDir", "=="), ("_playerInitDir", ">"), ("_playerMoveDir", ">")]
+    if len(comparisons) != len(expected_comparisons):
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected four direction guard comparisons")
+    literals: list[int] = []
+    for comparison, (local, opcode) in zip(comparisons, expected_comparisons):
+        children = comparison.get("inner") or []
+        if comparison.get("kind") != "BinaryOperator" or comparison.get("opcode") != opcode or len(children) != 2:
+            raise UnsupportedAstError("event_object_movement.c", func.name, "unexpected player-direction guard comparison")
+        if ref_name(children[0]) != local:
+            raise UnsupportedAstError("event_object_movement.c", func.name, f"guard must compare {local}")
+        literal = unwrap(children[1])
+        if literal.get("kind") != "IntegerLiteral":
+            raise UnsupportedAstError("event_object_movement.c", func.name, "guard constant is not resolved by Clang")
+        literals.append(int(literal["value"]))
+    if literals[0] != literals[1] or literals[2] != literals[3]:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "guard sentinel and maximum direction differ")
+
+    guarded_values = guarded_return.get("inner") or []
+    guarded_value = unwrap(guarded_values[0]) if guarded_return.get("kind") == "ReturnStmt" and len(guarded_values) == 1 else {}
+    if guarded_value.get("kind") != "IntegerLiteral" or int(guarded_value["value"]) != literals[0]:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "guard must return its C DIR_NONE value")
+
+    assignment = statements[4]
+    assignment_children = assignment.get("inner") or []
+    if assignment.get("kind") != "BinaryOperator" or assignment.get("opcode") != "=" or len(assignment_children) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected helper result assignment")
+    if ref_name(assignment_children[0]) != "dir":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "helper result must be assigned to dir")
+    call = unwrap(assignment_children[1])
+    call_children = call.get("inner") or []
+    if call.get("kind") != "CallExpr" or len(call_children) != 3 or ref_name(call_children[0]) != "GetPlayerDirectionForCopy":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected GetPlayerDirectionForCopy call")
+    if ref_name(call_children[1]) != "_playerInitDir" or ref_name(call_children[2]) != "playerMoveDir":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "unexpected copy-direction helper arguments")
+
+    ret_children = statements[5].get("inner") or []
+    outer = unwrap(ret_children[0]) if statements[5].get("kind") == "ReturnStmt" and len(ret_children) == 1 else {}
+    if outer.get("kind") != "ArraySubscriptExpr" or len(outer.get("inner") or []) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected nested copy-direction table lookup")
+    row_expr, col_index = (unwrap(n) for n in outer["inner"])
+
+    def minus_one_ref(node: dict[str, Any], name: str) -> bool:
+        node = unwrap(node)
+        children = node.get("inner") or []
+        if node.get("kind") != "BinaryOperator" or node.get("opcode") != "-" or len(children) != 2:
+            return False
+        return ref_name(children[0]) == name and unwrap(children[1]).get("kind") == "IntegerLiteral" and unwrap(children[1]).get("value") == "1"
+
+    row_children = row_expr.get("inner") or []
+    if row_expr.get("kind") != "ArraySubscriptExpr" or len(row_children) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected first dimension of final table lookup")
+    if not minus_one_ref(row_children[1], "copyInitDir"):
+        raise UnsupportedAstError("event_object_movement.c", func.name, "first final-table index must be copyInitDir - 1")
+    root = unwrap(row_children[0])
+    if ref_name(root) != "sPlayerDirectionToCopyDirection" or root.get("type", {}).get("qualType") != "const u8[4][4]":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected sPlayerDirectionToCopyDirection u8[4][4]")
+    if not minus_one_ref(col_index, "dir"):
+        raise UnsupportedAstError("event_object_movement.c", func.name, "second final-table index must be dir - 1")
+    cdata_path = ROOT / "public" / "fr" / "cdata" / "event_object_movement.json"
+    try:
+        table = json.loads(cdata_path.read_text())["defs"]["sPlayerDirectionToCopyDirection"]
+    except (OSError, KeyError, json.JSONDecodeError) as exc:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "exported sPlayerDirectionToCopyDirection is missing") from exc
+    rows = table.get("value")
+    if table.get("type") != "u8" or not isinstance(rows, list) or len(rows) != 4 or any(not isinstance(row, list) or len(row) != 4 for row in rows):
+        raise UnsupportedAstError("event_object_movement.c", func.name, "exported copy-direction table must be 4 by 4 u8 values")
+    return params, literals[0], literals[2], "sPlayerDirectionToCopyDirection"
+
+
 def generate_event_object_anims_ts() -> str:
     c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
     ast = clang_ast.dump_clang_ast_json(c_path)
-    expected = EVENT_OBJECT_ANIM_FUNCS | EVENT_OBJECT_JUMP_FUNCS | EVENT_OBJECT_COPY_DIRECTION_FUNCS
+    expected = EVENT_OBJECT_ANIM_FUNCS | EVENT_OBJECT_JUMP_FUNCS | EVENT_OBJECT_COPY_DIRECTION_FUNCS | EVENT_OBJECT_COPY_FUNCS
     funcs = clang_ast.extract_functions(ast, expected)
     missing = expected - funcs.keys()
     if missing:
@@ -1168,10 +1296,21 @@ def generate_event_object_anims_ts() -> str:
         f'[(({init_param} & 0xff) - 1)]![(({move_param} & 0xff) - 1)]!;\n'
         f'}}'
     )
+    params, none_value, east_value, table = _event_object_copy_direction(funcs["GetCopyDirection"])
+    copy_init, player_init, player_move = params
+    rows.append(
+        f'export function GetCopyDirection({copy_init}: number, {player_init}: number, {player_move}: number): number {{\n'
+        f'  const _playerInitDir = {player_init} & 0xff;\n'
+        f'  const _playerMoveDir = {player_move} & 0xff;\n'
+        f'  if (_playerInitDir === {none_value} || _playerMoveDir === {none_value} || _playerInitDir > {east_value} || _playerMoveDir > {east_value}) return {none_value};\n'
+        f'  const dir = GetPlayerDirectionForCopy(_playerInitDir, {player_move});\n'
+        f'  return cdata<number[][]>("event_object_movement", "{table}")[(({copy_init} & 0xff) - 1)]![(dir - 1)]!;\n'
+        f'}}'
+    )
     return "\n".join([
         "// GENERATED BY tools/decomp/clang_codegen.py FROM pokefirered/src/event_object_movement.c",
         "// DO NOT EDIT MANUALLY. Re-run npm run generate:event-object-anims to regenerate.",
-        "// Target: armv4t-none-eabi | ABI: u8 direction lookups and signed s16 jump index.",
+        "// Target: armv4t-none-eabi | ABI: u8 direction lookups, signed s16 jump index, and u32 copy helper with u8 narrowing.",
         "// C array bounds are preserved: out-of-range indices have no defined C result.",
         "",
         'import { cdata, symName } from "../hw/assets";',

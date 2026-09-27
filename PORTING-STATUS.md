@@ -4034,3 +4034,20 @@ Pending / placeholders:
   exportadas, generación determinista, rechazo de AST alterado, `check:port`,
   `check:honesty`, `build`, inventory, pending y `git diff --check`. No ejecuté
   el recorrido de NPC en navegador.
+
+## `event_object_movement.c`: helper completo de dirección imitadora (2026-09-27)
+
+- Añadí `GetCopyDirection` al generador AST: comprueba la firma, las tres
+  conversiones `u8`, las cuatro condiciones de rechazo, la llamada al helper
+  de la tabla inicial y el lookup final de la tabla C. Sustituí el cálculo
+  inline en el movimiento de NPC por esa función. El archivo queda 78/759;
+  inventario global: 6.255/11.826 (52,9 %), 5.571 nombres pendientes.
+- El harness compila los cuerpos exactos de `GetPlayerDirectionForCopy` y
+  `GetCopyDirection` extraídos por rangos del AST de Clang, con tablas de cdata
+  y tipos host `u8`/`u32` comprobados por `_Static_assert`. La prueba compara 137
+  casos ejecutados en C con TS, incluyendo combinaciones válidas, truncado y
+  el guard; además pasaron 433 comparaciones de tablas/edge cases, generación
+  determinista, rechazo de AST alterado, `check:port`, `check:honesty`, `build`,
+  inventory, pending y `git diff --check`. Sin recorrido de navegador. No
+  capturé tiempos separados de preparación, revisión e integración en este
+  bloque; no tomo este resultado como evidencia de aceleración.

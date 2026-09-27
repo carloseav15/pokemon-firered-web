@@ -64,4 +64,34 @@ for (let initDir = 1; initDir <= 4; initDir++) {
     assertions += 2;
   }
 }
-console.log(`event_object_movement table lookups: ${assertions} C-exported table comparisons passed`);
+const copyDirectionTable = exported.defs.sPlayerDirectionToCopyDirection.value as number[][];
+if (copyDirectionTable.length !== 4 || copyDirectionTable.some((row) => row.length !== 4)) throw new Error("sPlayerDirectionToCopyDirection must be a 4 by 4 C table");
+for (let copyInitDir = 1; copyInitDir <= 4; copyInitDir++) {
+  for (let playerInitDir = 1; playerInitDir <= 4; playerInitDir++) {
+    for (let playerMoveDir = 1; playerMoveDir <= 4; playerMoveDir++) {
+      const intermediate = copyDirections[playerInitDir - 1][playerMoveDir - 1];
+      const expected = copyDirectionTable[copyInitDir - 1][intermediate - 1];
+      const actual = generated.GetCopyDirection(copyInitDir, playerInitDir, playerMoveDir);
+      if (actual !== expected) throw new Error(`GetCopyDirection(${copyInitDir}, ${playerInitDir}, ${playerMoveDir}) differs from C tables`);
+      if (generated.GetCopyDirection(copyInitDir + 0x100, playerInitDir + 0x100, playerMoveDir + 0x100) !== expected) throw new Error("GetCopyDirection did not preserve u8 truncation");
+      assertions += 2;
+    }
+  }
+}
+for (const invalid of [0, 5, 0x100, 0x105]) {
+  if (generated.GetCopyDirection(1, invalid, 1) !== 0) throw new Error(`GetCopyDirection accepted invalid player initial direction ${invalid}`);
+  if (generated.GetCopyDirection(1, 1, invalid) !== 0) throw new Error(`GetCopyDirection accepted invalid player movement direction ${invalid}`);
+  assertions += 2;
+}
+const cResults = JSON.parse(readFileSync(resolve(".decomp-build/checks/copyDirectionResults.json"), "utf8")) as {
+  cases: number[][];
+  expected: number[];
+};
+if (cResults.cases.length !== cResults.expected.length) throw new Error("C copy-direction harness result is malformed");
+for (let i = 0; i < cResults.cases.length; i++) {
+  const [copyInitDir, playerInitDir, playerMoveDir] = cResults.cases[i];
+  const actual = generated.GetCopyDirection(copyInitDir, playerInitDir, playerMoveDir);
+  if (actual !== cResults.expected[i]) throw new Error(`GetCopyDirection C parity case ${i}: got ${actual}, C returned ${cResults.expected[i]}`);
+}
+assertions += cResults.cases.length;
+console.log(`event_object_movement checks: ${assertions - cResults.cases.length} C-data/edge comparisons and ${cResults.cases.length} extracted-C harness cases passed`);
