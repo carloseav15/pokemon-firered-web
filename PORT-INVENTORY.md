@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 61 | 134431 | 1279/5971 |
+| Parcial (< 80 % de funciones) | 60 | 133907 | 1267/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 10 | 22803 | 731/841 |
+| Casi completo (≥ 80 % y < 100 %) | 11 | 23327 | 750/862 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 148 | 119686 | 4139/4139 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **100** | **182223** | |
-| **Total en alcance** | **253** | **303042** | **6177/11826** |
+| **Total en alcance** | **253** | **303042** | **6184/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -115,7 +115,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
 | `mystery_gift.c` | 634 | 9/45 | `mysteryGift.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
-| `field_door.c` | 524 | 12/21 | `field/doors.ts` |  |  |
 | `wireless_communication_status_screen.c` | 522 | 1/12 |  |  |  |
 | `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` |  |  |
 
@@ -138,6 +137,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `berry_pouch.c` | 1529 | 75/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 45/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
+| `field_door.c` | 524 | 19/21 | `field/doors.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)

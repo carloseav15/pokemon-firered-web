@@ -11,6 +11,7 @@ import type { Overworld } from "./overworld";
 
 const SIZE_1x2 = 1;
 const CLOSED = -1;
+const DOOR_SOUND_NORMAL = 0;
 
 type DoorGfx = { metatile: number; sound: number; size: number; file: string; palettes: number[] };
 type DoorAnimFrame = { duration: number; tileOffset: number };
@@ -64,8 +65,11 @@ export class DoorAnimator {
   }
 
   GetDoorSoundEffect(x: number, y: number): number {
-    const door = this.doorAt(x, y);
-    return sound.c(door?.sound === 0 ? "SE_DOOR" : "SE_SLIDING_DOOR");
+    return sound.c(this.GetDoorSoundType(x, y) === DOOR_SOUND_NORMAL ? "SE_DOOR" : "SE_SLIDING_DOOR");
+  }
+
+  private GetDoorSoundType(x: number, y: number): number {
+    return this.doorAt(x, y)?.sound ?? -1;
   }
 
   private frames(name: string): DoorAnimFrame[] {
@@ -123,13 +127,13 @@ export class DoorAnimator {
     const door = this.doorAt(x, y);
     if (!door) return;
     const frames = this.frames(`sDoorAnimFrames_Open${door.size === SIZE_1x2 ? "Large" : "Small"}`);
-    this.draw(door, frames[frames.length - 1].tileOffset, x, y);
+    this.DrawOpenedDoor(door, frames, x, y);
   }
 
   FieldSetDoorClosed(x: number, y: number): void {
     if (!MB.MetatileBehavior_IsWarpDoor_2(this.ow.map.behaviorAt(x, y))) return;
     const door = this.doorAt(x, y);
-    if (door) this.draw(door, CLOSED, x, y);
+    if (door) this.DrawClosedDoor(door, x, y);
   }
 
   FieldIsDoorAnimationRunning(): boolean {
@@ -138,6 +142,26 @@ export class DoorAnimator {
 
   /** GetDoorGraphics: lookup the source table entry for the map metatile. */
   private GetDoorGraphics(id: number): DoorGfx | undefined { return this.table().find((door) => door.metatile === id); }
+
+  private DrawClosedDoor(door: DoorGfx, x: number, y: number): void {
+    this.DrawClosedDoorTiles(door, x, y);
+  }
+
+  private DrawClosedDoorTiles(door: DoorGfx, x: number, y: number): void {
+    this.draw(door, CLOSED, x, y);
+  }
+
+  private DrawOpenedDoor(door: DoorGfx, frames: DoorAnimFrame[], x: number, y: number): void {
+    this.DrawCurrentDoorAnimFrame(door, this.GetLastDoorAnimFrame(frames), x, y);
+  }
+
+  private GetLastDoorAnimFrame(frames: DoorAnimFrame[]): DoorAnimFrame {
+    return frames[frames.length - 1];
+  }
+
+  private DrawCurrentDoorAnimFrame(door: DoorGfx, frame: DoorAnimFrame, x: number, y: number): void {
+    this.draw(door, frame.tileOffset, x, y);
+  }
 
   private draw(door: DoorGfx, offset: number, x: number, y: number): void {
     const keys = door.size === SIZE_1x2 ? [`${x},${y - 1}`, `${x},${y}`] : [`${x},${y}`];
@@ -156,25 +180,30 @@ export class DoorAnimator {
   /** Task_AnimateDoor */
   private taskAnimateDoor(taskId: number): void {
     if (taskId !== this.taskId) return;
+    if (!this.AnimateDoorFrame()) {
+      this.anim = undefined;
+      this.taskId = -1;
+      tasks.destroy(taskId);
+    }
+  }
+
+  private AnimateDoorFrame(): boolean {
     const a = this.anim;
-    if (!a) { tasks.destroy(taskId); this.taskId = -1; return; }
+    if (!a) return false;
     if (a.counter === 0) this.DrawDoor(a.door, a.frames[a.frameId], a.x, a.y);
     if (a.counter === a.frames[a.frameId].duration) {
       a.counter = 0;
       a.frameId++;
-      if (a.frameId >= a.frames.length) {
-        this.anim = undefined;
-        this.taskId = -1;
-        tasks.destroy(taskId);
-      }
-      return;
+      return a.frameId < a.frames.length;
     }
     a.counter++;
+    return true;
   }
 
   /** DrawDoor; C copies frame tiles to VRAM, while this renderer composites exported tiles. */
   private DrawDoor(door: DoorGfx, frame: DoorAnimFrame, x: number, y: number): void {
-    this.draw(door, frame.tileOffset, x, y);
+    if (frame.tileOffset === CLOSED) this.DrawClosedDoorTiles(door, x, y);
+    else this.DrawCurrentDoorAnimFrame(door, frame, x, y);
   }
 
   private tiles(file: string): Uint8Array {

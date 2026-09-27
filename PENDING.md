@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6177/11826 (52.2 %)**.
-- Archivos C con funciones aún sin homólogo: **100**; quedan **5649 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6184/11826 (52.3 %)**.
+- Archivos C con funciones aún sin homólogo: **100**; quedan **5642 nombres**.
 - Estos archivos contienen 182.223 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~130.178 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~130.003 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -18,14 +18,14 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `berry_pouch.c` | casi completo | 1529 | 75/77 | ~39 |  |
-| 2 | `battle_gfx_sfx_util.c` | casi completo | 1061 | 45/48 | ~66 |  |
-| 3 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 4 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
-| 5 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 6 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
-| 7 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
-| 8 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
-| 9 | `field_door.c` | parcial | 524 | 12/21 | ~224 |  |
+| 2 | `field_door.c` | casi completo | 524 | 19/21 | ~49 |  |
+| 3 | `battle_gfx_sfx_util.c` | casi completo | 1061 | 45/48 | ~66 |  |
+| 4 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
+| 5 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
+| 6 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 7 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
+| 8 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
+| 9 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
 | 10 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
 | 11 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
 | 12 | `sprite.c` | casi completo | 1745 | 86/103 | ~288 |  |
@@ -118,7 +118,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 99 | `dodrio_berry_picking.c` | parcial | 4954 | 7/147 | ~4718 |  |
 | 100 | `event_object_movement.c` | parcial | 9412 | 34/759 | ~8990 |  |
 
-Total: 100 archivos con huecos: 28 sin empezar, 1 adaptador, 10 casi completos y 61 parciales.
+Total: 100 archivos con huecos: 28 sin empezar, 1 adaptador, 11 casi completos y 60 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 

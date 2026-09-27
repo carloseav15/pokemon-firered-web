@@ -5,10 +5,29 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.177/11.826 funciones (52,2%)**,
+single-player. A 2026-09-27, la meta mide **6.184/11.826 funciones (52,3%)**,
 con **100 archivos** con huecos y una estimación ponderada de
-**~130.178/303.042 líneas C (43,0%)** pendientes. La coincidencia por nombre
+**~130.003/303.042 líneas C (42,9%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `field_door.c`: frames abiertos y tipo de sonido (2026-09-27)
+
+- Extraje `GetDoorSoundType`, `GetLastDoorAnimFrame`, `DrawOpenedDoor`,
+  `DrawClosedDoor`, `DrawClosedDoorTiles`, `DrawCurrentDoorAnimFrame` y
+  `AnimateDoorFrame` de la lógica existente de `DoorAnimator`. Los callers
+  activos son los comandos de scripts y las transiciones de overworld; las
+  funciones conservan el orden de sonido, frame dibujado, duración y limpieza
+  de la tarea del C.
+- `field_door.c` queda 19/21 por nombre. `CopyDoorTilesToVram` y
+  `BuildDoorTiles` construyen la región VRAM y atributos de metatile de GBA;
+  el renderer web compone los tiles exportados del arte de puerta directamente
+  sobre Canvas, así que esas operaciones no tienen llamadas equivalentes.
+- Inventario: **6.184/11.826 (52,3%)**, 100 archivos incompletos,
+  ~130.003 líneas ponderadas pendientes; 148 archivos sin huecos de nombre.
+  Pasaron `check:port`, `check:honesty`, `build`, inventory, pending y
+  `git diff --check`. En navegador llegué al segundo piso de la casa, pero no
+  ejercí un frame de puerta; queda pendiente la verificación visual de una
+  entrada/salida real.
 
 ## `berry_pouch.c`: callbacks y ayudas de venta (2026-09-27)
 
