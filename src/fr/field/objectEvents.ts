@@ -7,7 +7,7 @@ import * as C from "../generated/constants";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
-import { GetFaceDirectionAnimNum, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
+import { ElevationToPriority, GetFaceDirectionAnimNum, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 
@@ -48,7 +48,6 @@ const JUMP_Y = [
 ];
 const DELAYS_MEDIUM = [32, 64, 96, 128];
 const DELAYS_SHORT = [32, 48, 64, 80];
-const ELEVATION_TO_PRIORITY = [2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 2];
 const ELEVATION_TO_SUBPRIORITY = [115, 115, 83, 115, 83, 115, 83, 115, 83, 115, 83, 115, 83, 0, 0, 115];
 
 const INITIAL_FACING: Record<number, number> = {};
@@ -651,7 +650,7 @@ export class ObjectEvents {
   updatePriority(object: ObjectEvent): void {
     if (object.fixedPriority) return;
     this.updateElevation(object);
-    object.sprite.priority = ELEVATION_TO_PRIORITY[object.previousElevation] ?? 2;
+    object.sprite.priority = ElevationToPriority(object.previousElevation) ?? 2;
   }
 
   updateSubpriority(object: ObjectEvent, cameraY: number): void {
@@ -795,7 +794,7 @@ export class ObjectEvents {
       }
       this.updateVisibility(object, cameraX, cameraY);
       this.updateSubpriority(object, cameraY);
-      if (!object.fixedPriority) sprite.priority = ELEVATION_TO_PRIORITY[object.previousElevation] ?? 2;
+      if (!object.fixedPriority) sprite.priority = ElevationToPriority(object.previousElevation) ?? 2;
       if (object.disableAnim) sprite.animPaused = true;
     }
   }

@@ -38,6 +38,24 @@ sigue sin demostrar fidelidad.
   ponderadas sin homólogo. No se midió ahorro de tiempo frente a portar la
   misma familia manualmente.
 
+## `event_object_movement.c`: prioridad por elevación (2026-09-27)
+
+- Amplié la familia AST de lookups indexados para aceptar tablas `const u8[16]`
+  además de `const u8[9]`, con validación del nombre del parámetro y longitud
+  desde el tipo de Clang. `ElevationToPriority` ahora devuelve el valor de
+  `sElevationToPriority` exportado por el decomp; sus dos usos en
+  `objectEvents.ts` ya no dependen de la tabla duplicada a mano.
+- `check:event-object-anims` compara ahora 169 accesos (las 17 tablas de
+  dirección y la tabla de elevación). Tipos, honesty, build, inventory, pending
+  y `git diff --check` pasan. En navegador arrancó `?fr=continue` y el getter
+  devolvió las 16 prioridades exportadas mientras el estado siguió en la casa
+  de Pallet. No hice una secuencia de movimiento visual ni ejecuté C nativo.
+- El total por nombres no cambia (**6.216/11.826**): el inventario ya contaba
+  `ElevationToPriority` por la antigua constante TS `ELEVATION_TO_PRIORITY`.
+  Ahora sí existe la función fuente y sus dos usos activos leen el dato C.
+  `event_object_movement.c` sigue 60/759 por nombre; quedan otros callers C
+  fuera de estos usos.
+
 ## `event_object_movement.c`: búsqueda por XY y activación de efectos de suelo (2026-09-27)
 
 - Porté `GetObjectEventIdByXY` con el recorrido por los 16 slots, comparación

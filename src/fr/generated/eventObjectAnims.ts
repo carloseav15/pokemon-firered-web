@@ -5,6 +5,7 @@
 
 import { cdata } from "../hw/assets";
 
+export function ElevationToPriority(elevation: number): number { return cdata<number[]>("event_object_movement", "sElevationToPriority")[elevation & 0xff]!; }
 export function GetAcroBunnyHopFrontWheelDirectionAnimNum(direction: number): number { return cdata<number[]>("event_object_movement", "sAcroBunnyHopFrontWheelDirectionAnimNums")[direction & 0xff]!; }
 export function GetAcroEndWheelieDirectionAnimNum(direction: number): number { return cdata<number[]>("event_object_movement", "sAcroStandingWheelieBackWheelDirectionAnimNums")[direction & 0xff]!; }
 export function GetAcroUnusedActionDirectionAnimNum(direction: number): number { return cdata<number[]>("event_object_movement", "sAcroStandingWheelieFrontWheelDirectionAnimNums")[direction & 0xff]!; }

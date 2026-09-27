@@ -26,17 +26,19 @@ const mappings: Array<[keyof typeof generated, string]> = [
   ["GetFishingBiteDirectionAnimNum", "sFishingBiteDirectionAnimNums"],
   ["GetRunningDirectionAnimNum", "sRunningDirectionAnimNums"],
   ["GetTrainerFacingDirectionMovementType", "sTrainerFacingDirectionMovementTypes"],
+  ["ElevationToPriority", "sElevationToPriority"],
 ];
 
 let assertions = 0;
 for (const [name, tableName] of mappings) {
   const table = exported.defs[tableName]?.value;
   const fn = generated[name] as (direction: number) => number;
-  if (!table || table.length !== 9) throw new Error(`${tableName} missing or has unexpected length`);
-  for (let direction = 0; direction < 9; direction++) {
-    const actual = fn(direction);
-    if (actual !== table[direction]) throw new Error(`${name}(${direction}) = ${actual}; C-exported ${tableName}[${direction}] = ${table[direction]}`);
+  const expectedLength = tableName === "sElevationToPriority" ? 16 : 9;
+  if (!table || table.length !== expectedLength) throw new Error(`${tableName} missing or has unexpected length`);
+  for (let index = 0; index < expectedLength; index++) {
+    const actual = fn(index);
+    if (actual !== table[index]) throw new Error(`${name}(${index}) = ${actual}; C-exported ${tableName}[${index}] = ${table[index]}`);
     assertions++;
   }
 }
-console.log(`event_object_movement direction lookups: ${assertions} C-exported table comparisons passed`);
+console.log(`event_object_movement table lookups: ${assertions} C-exported table comparisons passed`);
