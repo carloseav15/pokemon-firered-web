@@ -28,6 +28,13 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`quest_log_battle.c`: 3/3 funciones con homólogo (eventos del Quest Log para combates de entrenador, salvajes y de enlace).**
+  Implementé las 2 funciones restantes del archivo, `GetLinkMultiBattlePlayerIndexes` y `TrySetQuestLogLinkBattleEvent`, en `src/fr/questLogBattle.ts`, asegurando el registro de combates de enlace (individual, doble, unión y combate múltiple con cálculo de índices de compañero y oponentes).
+  Añadí el tipo de evento `QuestLogLinkBattleEvent` y el soporte para los códigos de evento `QL_EVENT_LINK_BATTLED_*` en `src/fr/questLogEvents.ts`.
+  Conecté `TrySetQuestLogLinkBattleEvent` en `HandleEndTurn_FinishBattle` en `src/fr/battle/main.ts` cuando la bandera de combate incluye `BATTLE_TYPE_LINK`.
+  Añadí el check headless `tools/checks/questLogBattle.ts` (`npm run check:questlog-battle`) que valida: registro de combates salvajes ganados y capturados, batallas de enlace individuales, dobles y múltiples (extrayendo nombres de jugadores y resultado normalizado), así como la correcta indexación de compañeros de equipo (`id ^ 2`).
+  Validación: pasan `check:questlog-battle`, `check:battle-util`, `check:trainer-see`, `check:preview`, `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.049/11.826 funciones (51,1%)**, con **110 archivos** con huecos (bajó de 111); `quest_log_battle.c` sale de `PENDING.md`.
 - **`battle_util.c`: 37/37 funciones con homólogo (controladores de batalla, banderas de ejecución y datos de enlace).**
   Implementé las 2 funciones restantes del archivo, `MarkAllBattlersForControllerExec` y `MarkBattlerReceivedLinkData`, en `src/fr/battle/util.ts`, cubriendo la activación masiva de controladores en combates individuales y de enlace (con desplazamiento a bits superiores según `MAX_BATTLERS_COUNT`) y el marcado de datos de enlace recibidos por battler según `GetLinkPlayerCount()`.
   Implementé y conecté `GetLinkPlayerCount` en `src/fr/linkState.ts` reflejando el número de jugadores conectados en la sesión de enlace.

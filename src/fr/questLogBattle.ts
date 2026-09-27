@@ -6,6 +6,8 @@ import { currentRegionMapSection, GetMonData, gEnemyParty } from "./pokemon/mon"
 import { G, gBattleMons, gBattleResults, gBattleStruct } from "./battle/globals";
 import { GetBattlerAtPosition, GetBattlerSide } from "./battle/util";
 import { SetQuestLogEvent } from "./questLogEvents";
+import { gLinkPlayers } from "./linkState";
+import { InUnionRoom } from "./unionRoom";
 
 /** TrySetQuestLogBattleEvent; called at HandleEndTurn_FinishBattle's terminal state. */
 export function TrySetQuestLogBattleEvent(): void {
@@ -54,5 +56,50 @@ export function TrySetQuestLogBattleEvent(): void {
     defeatedSpecies: G.gBattleOutcome === C.B_OUTCOME_WON ? species : C.SPECIES_NONE,
     caughtSpecies: G.gBattleOutcome === C.B_OUTCOME_CAUGHT ? species : C.SPECIES_NONE,
     mapSec,
+  });
+}
+
+/** GetLinkMultiBattlePlayerIndexes (quest_log_battle.c). */
+export function GetLinkMultiBattlePlayerIndexes(partnerIdx: { val: number }, opponentIdxs: [number, number]): void {
+  let numOpponentsFound = 0;
+  const partnerId = gLinkPlayers[gBattleStruct.multiplayerId].id ^ 2;
+  for (let i = 0; i < C.MAX_BATTLERS_COUNT; i++) {
+    if (partnerId === gLinkPlayers[i].id) {
+      partnerIdx.val = i;
+    } else if (i !== gBattleStruct.multiplayerId) {
+      opponentIdxs[numOpponentsFound++] = i;
+    }
+  }
+}
+
+/** TrySetQuestLogLinkBattleEvent (quest_log_battle.c). */
+export function TrySetQuestLogLinkBattleEvent(): void {
+  if (!(G.gBattleTypeFlags & C.BATTLE_TYPE_LINK)) return;
+
+  const outcome = G.gBattleOutcome - 1; // 0 = won, 1 = lost, 2 = drew
+  let eventId: number;
+  const playerNames: number[][] = [];
+
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_MULTI) {
+    eventId = C.QL_EVENT_LINK_BATTLED_MULTI;
+    const partnerIdx = { val: 0 };
+    const opponentIdxs: [number, number] = [0, 0];
+    GetLinkMultiBattlePlayerIndexes(partnerIdx, opponentIdxs);
+    playerNames.push([...gLinkPlayers[partnerIdx.val].name]);
+    playerNames.push([...gLinkPlayers[opponentIdxs[0]].name]);
+    playerNames.push([...gLinkPlayers[opponentIdxs[1]].name]);
+  } else {
+    if (G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE) {
+      eventId = C.QL_EVENT_LINK_BATTLED_DOUBLE;
+    } else {
+      const inUnionRoom = InUnionRoom();
+      eventId = inUnionRoom ? C.QL_EVENT_LINK_BATTLED_UNION : C.QL_EVENT_LINK_BATTLED_SINGLE;
+    }
+    playerNames.push([...gLinkPlayers[gBattleStruct.multiplayerId ^ 1].name]);
+  }
+
+  SetQuestLogEvent(eventId, {
+    outcome,
+    playerNames,
   });
 }

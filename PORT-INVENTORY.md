@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 68 | 137462 | 1380/6161 |
+| Parcial (< 80 % de funciones) | 67 | 137312 | 1379/6158 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 13 | 27469 | 897/1045 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 137 | 111843 | 3742/3742 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 138 | 111993 | 3745/3745 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **111** | **190066** | |
-| **Total en alcance** | **253** | **303042** | **6047/11826** |
+| **Pendiente de portar** | **110** | **189916** | |
+| **Total en alcance** | **253** | **303042** | **6049/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -124,7 +124,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 | `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` |  |  |
 | `wonder_news.c` | 154 | 1/9 |  |  |  |
-| `quest_log_battle.c` | 150 | 1/3 | `questLogBattle.ts` |  |  |
 | `cereader_tool.c` | 97 | 1/8 | `script/specials.ts` |  |  |
 
 ## Adaptador (UI simplificada)
@@ -262,6 +261,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `pokemon_storage_system.c` | 171 | 21/21 | `pokemon/storage.ts` |  |  |
 | `new_game.c` | 160 | 11/11 | `game.ts`, `random.ts`, `save.ts` |  |  |
 | `gpu_regs.c` | 158 | 11/11 | `hw/gpu.ts` |  |  |
+| `quest_log_battle.c` | 150 | 3/3 | `questLogBattle.ts` |  |  |
 | `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
 | `field_message_box.c` | 142 | 14/14 | `field/messageBox.ts` |  |  |
 | `mailbox_pc.c` | 140 | 9/9 | `mailboxPc.ts`, `menus/playerPc.ts`, `playerPcMailbox.ts` … |  |  |

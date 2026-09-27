@@ -28,7 +28,8 @@ export type QuestLogTrainerBattleEvent = {
   trainerId: number; speciesOpponent: number; speciesPlayer: number; mapSec: number; hpFractionId: number;
 };
 export type QuestLogWildBattleEvent = { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
-export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent;
+export type QuestLogLinkBattleEvent = { outcome: number; playerNames: number[][] };
+export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent;
 export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
@@ -41,7 +42,11 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
   const isBattleEvent = eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_WILD_MON
     || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER || eventId === C.QL_EVENT_DEFEATED_CHAMPION
     || eventId === C.QL_EVENT_DEFEATED_TRAINER;
-  if (!isShopEvent && !isStoryItemEvent && !isBattleEvent) return;
+  const isLinkBattleEvent = eventId === C.QL_EVENT_LINK_BATTLED_SINGLE
+    || eventId === C.QL_EVENT_LINK_BATTLED_DOUBLE
+    || eventId === C.QL_EVENT_LINK_BATTLED_MULTI
+    || eventId === C.QL_EVENT_LINK_BATTLED_UNION;
+  if (!isShopEvent && !isStoryItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;

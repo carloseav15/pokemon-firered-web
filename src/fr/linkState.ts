@@ -9,6 +9,34 @@ const CMD_LENGTH = 8; // link.h
 const QUEUE_CAPACITY = 50; // link.h
 const OVERWORLD_RECV_QUEUE_MAX = 3; // link.h
 
+export interface LinkPlayer {
+  version: number;
+  lp_field_2: number;
+  trainerId: number;
+  name: number[];
+  progressFlags: number;
+  neverRead: number;
+  progressFlagsCopy: number;
+  gender: number;
+  linkType: number;
+  id: number;
+  language: number;
+}
+
+export const gLinkPlayers: LinkPlayer[] = Array.from({ length: 5 }, (_, i) => ({
+  version: 0,
+  lp_field_2: 0,
+  trainerId: 0,
+  name: new Array(8).fill(0xff),
+  progressFlags: 0,
+  neverRead: 0,
+  progressFlagsCopy: 0,
+  gender: 0,
+  linkType: 0,
+  id: i,
+  language: 0,
+}));
+
 type LinkRecvCommandRows = Uint16Array[];
 
 class LinkRecvQueue {
