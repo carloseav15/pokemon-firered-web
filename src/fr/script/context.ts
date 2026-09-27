@@ -133,7 +133,7 @@ const missing = new Set<string>();
 function table(): ScriptCommand[] {
   if (!commandTable) {
     commandTable = rom.scriptMeta.commands.map((name) => {
-      const fn = COMMANDS[name.replace(/^ScrCmd_/, "")];
+      const fn = COMMANDS[name];
       if (fn) return fn;
       return (ctx: ScriptRunner) => {
         if (!missing.has(name)) {
