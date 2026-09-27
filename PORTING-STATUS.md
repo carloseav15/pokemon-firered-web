@@ -3964,3 +3964,15 @@ Pending / placeholders:
   fuente. El inventario reconoce 64/64; global: 5.769/9.834 (58,7 %), 94
   archivos y 4.065 nombres pendientes. Pasaron `check:port`, `check:honesty`,
   inventory, pending y `git diff --check`; sin runtime.
+
+## `berry.c`: conversiones entre item y tipo de baya (2026-09-27)
+
+- Añadí `ItemIdToBerryType` y `BerryTypeToItemId` en `pokemon/berry.ts`, con
+  truncado `u16` y los límites/fallbacks del C. La bolsa de bayas ahora usa
+  `ItemIdToBerryType` para numerar cada baya. `berry.c` queda 3/9: el acceso a
+  Enigma Berry sigue sin modelarse porque el guardado web no expone su struct
+  C ni su checksum; no añadí una copia parcial de esos bytes. El inventario
+  global sube de 6.249/11.826 a 6.251/11.826 (52,9 %); 97 archivos mantienen
+  huecos y quedan 5.575 nombres. Pasaron `check:port`, `check:honesty`,
+  `build`, inventory, pending y `git diff --check`; no ejecuté el juego ni el
+  navegador.

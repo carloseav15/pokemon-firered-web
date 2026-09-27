@@ -42,6 +42,7 @@ import {
   PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "./hw/window";
 import { bagResult, CreateBerryPouchItemIcon, DestroyItemMenuIcon, ResetItemMenuIconState, type BagTaskContext } from "./bagMenu";
+import { ItemIdToBerryType } from "./pokemon/berry";
 import { addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { save } from "./save";
@@ -291,7 +292,7 @@ function CopySelectedListMenuItemName(itemIdx: number): Uint8Array {
 }
 
 function GetBerryNameAndIndexForMenu(itemId: number): Uint8Array {
-  return cat(text("gText_FontSmall"), text("gText_NumberClear01"), intToDecimal(itemId - C.FIRST_BERRY_INDEX + 1, STR_CONV_MODE_LEADING_ZEROS, 2),
+  return cat(text("gText_FontSmall"), text("gText_NumberClear01"), intToDecimal(ItemIdToBerryType(itemId), STR_CONV_MODE_LEADING_ZEROS, 2),
     Uint8Array.of(0x00, 0xff), text("gText_FontNormal"), CopyItemName(itemId));
 }
 

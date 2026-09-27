@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 60 | 133907 | 1311/5950 |
+| Parcial (< 80 % de funciones) | 60 | 133907 | 1313/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 8 | 20213 | 625/716 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 151 | 122800 | 4285/4285 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **97** | **179109** | |
-| **Total en alcance** | **253** | **303042** | **6249/11826** |
+| **Total en alcance** | **253** | **303042** | **6251/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -104,7 +104,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_setup.c` | 1070 | 28/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
 | `cable_club.c` | 1036 | 9/54 | `script/specials.ts`, `script/specialsExtra.ts` |  | 2 |
-| `berry.c` | 1028 | 1/9 | `script/specials.ts` |  |  |
+| `berry.c` | 1028 | 3/9 | `pokemon/berry.ts`, `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
 | `field_fadetransition.c` | 965 | 16/59 | `field/overworld.ts` |  |  |
 | `fieldmap.c` | 951 | 5/54 | `field/fieldmap.ts` |  |  |
