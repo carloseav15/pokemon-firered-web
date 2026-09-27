@@ -955,6 +955,7 @@ export class FieldMoveEffects {
   private flyOut(done: () => void): void {
     const ow = this.ow;
     const player = ow.player.object;
+    const wasSurfing = ow.player.isSurfing();
     const partyIndex = this.args[0] < 6 ? this.args[0] : 0;
     let state = 0, timer = 0;
     let bird: Sprite | undefined;
@@ -979,6 +980,7 @@ export class FieldMoveEffects {
           break;
         case 2:
           if (!this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) {
+            if (wasSurfing) ow.effects.setSurfBlobBobState(C.BOB_MON_ONLY);
             // SpriteCB_FlyBirdLeaveBall: the bird circles up out of the ball.
             bird = this.createBird();
             if (bird) { bird.x = save.playerGender ? 118 : 128; bird.y = -48; }
