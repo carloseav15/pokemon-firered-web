@@ -6,7 +6,7 @@ import { DoNamingScreen, preloadNamingScreen } from "./namingScreen";
 import { sound } from "./audio/sound";
 import { tasks } from "./gba/tasks";
 import { A_BUTTON, B_BUTTON, JOY_NEW } from "./gba/input";
-import { decode, EOS, expandPlaceholders, stringVars } from "./gba/charmap";
+import { decode, EOS, expandPlaceholders } from "./gba/charmap";
 import { FONT_MALE, FONT_NORMAL } from "./gba/font";
 import { getTextSpeedSetting, textFlags, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "./gba/textPrinter";
 import { cdata, hasCData, incbin, loadCData, preloadPacks } from "./hw/assets";
@@ -757,16 +757,10 @@ function Task_OakSpeech_DoNamingScreen(taskId: number): void {
   tasks.destroy(taskId);
 }
 
-function syncNameVars(): void {
-  stringVars.player = Uint8Array.from(newGameProfile.playerName);
-  stringVars.rival = Uint8Array.from(newGameProfile.rivalName);
-}
-
 function Task_OakSpeech_ConfirmName(taskId: number): void {
   if (gPaletteFade.active) return;
   const t = tasks.tasks[taskId];
   if (t.data[tNameNotConfirmed] === 1) {
-    syncNameVars();
     OakSpeechPrintMessage(text(res.hasPlayerBeenNamed ? "gOakSpeech_Text_ConfirmRivalName" : "gOakSpeech_Text_SoYourNameIsPlayer"), res.textSpeed);
     t.data[tNameNotConfirmed] = 0;
     t.data[tTimer] = 25;
@@ -791,7 +785,6 @@ function Task_OakSpeech_HandleConfirmNameInput(taskId: number): void {
         CreateFadeInTask(taskId, 2);
         t.func = Task_OakSpeech_FadeOutPlayerPic;
       } else {
-        syncNameVars();
         OakSpeechPrintMessage(text("gOakSpeech_Text_RememberRivalsName"), res.textSpeed);
         t.func = Task_OakSpeech_FadeOutRivalPic;
       }
@@ -855,7 +848,6 @@ function Task_OakSpeech_ReshowPlayersPic(taskId: number): void {
 function Task_OakSpeech_LetsGo(taskId: number): void {
   const t = tasks.tasks[taskId];
   if (t.data[tTrainerPicFadeState] === 0) return;
-  syncNameVars();
   OakSpeechPrintMessage(text("gOakSpeech_Text_LetsGo"), res.textSpeed);
   t.data[tTimer] = 30;
   t.func = Task_OakSpeech_FadeOutBGM;

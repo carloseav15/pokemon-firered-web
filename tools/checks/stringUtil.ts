@@ -4,6 +4,7 @@
 
 import assert from "node:assert/strict";
 import { execSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import {
   EOS,
   EXT_CTRL_CODE_BEGIN,
@@ -31,11 +32,18 @@ import {
   StringLength_Multibyte,
   WriteColorChangeControlCode,
   ConvertInternationalString,
+  StringExpandPlaceholders,
+  StringBraille,
+  GetExpandedPlaceholder,
   STR_CONV_MODE_LEFT_ALIGN,
   STR_CONV_MODE_RIGHT_ALIGN,
   STR_CONV_MODE_LEADING_ZEROS,
   LANGUAGE_JAPANESE,
 } from "../../src/fr/generated/stringUtil.ts";
+import { rom } from "../../src/fr/rom.ts";
+import { expandPlaceholders } from "../../src/fr/gba/charmap.ts";
+import { bindSaveBlockReader, stringVars, type SaveBlocks } from "../../src/fr/gba/stringBuffers.ts";
+import { newSaveData, save, setSave } from "../../src/fr/save.ts";
 
 let compared = 0;
 
@@ -414,5 +422,211 @@ const rejectionResult = execSync(
 );
 assert.equal(rejectionResult.trim(), "REJECTED_GOTO");
 compared++;
+
+// 17. Placeholder family (StringExpandPlaceholders / StringBraille /
+//     GetExpandedPlaceholder / ExpandPlaceholder_*): differential against the
+//     real string_util.c, compiled for the host from the same preprocessed
+//     source the Clang AST and the generator come from.
+const root = process.cwd();
+rom.strings ??= JSON.parse(readFileSync(`${root}/public/fr/data/strings.json`, "utf8"));
+
+// 17a. save.ts publishes gSaveBlock1Ptr/gSaveBlock2Ptr to the placeholders.
+save.playerName = [0x51, 0x52, EOS];
+save.rivalName = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+save.playerGender = 1;
+assert.deepEqual(Array.from(expandPlaceholders([0xfd, 0x01, EOS])), [0x51, 0x52, EOS]);
+assert.deepEqual(Array.from(expandPlaceholders([0xfd, 0x06, EOS])), Array.from(rom.text("gExpandedPlaceholder_Red")));
+save.playerGender = 0;
+assert.deepEqual(Array.from(expandPlaceholders([0xfd, 0x06, EOS])), Array.from(rom.text("gExpandedPlaceholder_Green")));
+save.rivalName = [0x53, 0x54, 0x55, EOS, 0, 0, 0, 0];
+assert.deepEqual(Array.from(expandPlaceholders([0xfd, 0x06, EOS])), [0x53, 0x54, 0x55, EOS]);
+setSave(newSaveData());
+compared += 4;
+
+// 17b. adapter: a source without EOS behaves like the terminated one and the
+//      result is always terminated (the C keeps reading until it finds 0xFF).
+const unterm = expandPlaceholders([0xfd, 0x07]);
+assert.deepEqual(Array.from(unterm), Array.from(expandPlaceholders([0xfd, 0x07, EOS])));
+assert.equal(unterm[unterm.length - 1], EOS);
+assert.deepEqual(Array.from(unterm), Array.from(rom.text("gExpandedPlaceholder_Ruby")));
+compared += 3;
+
+// Shared battery: the C harness and the TS side run exactly these inputs.
+const expandCases: { key: string; bytes: number[] }[] = [
+  { key: "plain", bytes: [0xa1, 0xa2, EOS] },
+  { key: "player", bytes: [0xa1, 0xfd, 0x01, 0xa3, EOS] },
+  { key: "var1", bytes: [0xfd, 0x02, EOS] },
+  { key: "var2", bytes: [0xfd, 0x03, 0xb1, EOS] },
+  { key: "var3", bytes: [0xfd, 0x04, EOS] },
+  { key: "kun", bytes: [0xfd, 0x05, EOS] },
+  { key: "rival", bytes: [0xfd, 0x06, EOS] },
+  { key: "version", bytes: [0xfd, 0x07, EOS] },
+  { key: "magma", bytes: [0xfd, 0x08, EOS] },
+  { key: "aqua", bytes: [0xfd, 0x09, EOS] },
+  { key: "maxie", bytes: [0xfd, 0x0a, EOS] },
+  { key: "archie", bytes: [0xfd, 0x0b, EOS] },
+  { key: "groudon", bytes: [0xfd, 0x0c, EOS] },
+  { key: "kyogre", bytes: [0xfd, 0x0d, EOS] },
+  { key: "empty", bytes: [0xfd, 0x0e, EOS] },
+  { key: "junkid", bytes: [0xfd, 0xff, EOS] },
+  { key: "ext07", bytes: [0xfc, 0x07, 0xa4, EOS] },
+  { key: "ext09", bytes: [0xfc, 0x09, 0xa4, EOS] },
+  { key: "ext0f", bytes: [0xfc, 0x0f, 0xa4, EOS] },
+  { key: "ext15", bytes: [0xfc, 0x15, 0xa4, EOS] },
+  { key: "ext18", bytes: [0xfc, 0x18, 0xa4, EOS] },
+  { key: "ext04", bytes: [0xfc, 0x04, 0x01, 0x02, 0x03, 0xa5, EOS] },
+  { key: "ext0b", bytes: [0xfc, 0x0b, 0x01, 0x02, 0xa6, EOS] },
+  { key: "ext10", bytes: [0xfc, 0x10, 0x01, 0xa7, EOS] },
+  { key: "newline", bytes: [0xfe, 0xa6, EOS] },
+  { key: "prompt", bytes: [0xfa, 0xfb, 0x20, EOS] },
+  { key: "twice", bytes: [0xfd, 0x07, 0xfd, 0x0d, EOS] },
+  { key: "mixed", bytes: [0xa1, 0xfd, 0x01, 0xfc, 0x07, 0xa2, EOS] },
+];
+const brailleCases: { key: string; bytes: number[] }[] = [
+  { key: "b0", bytes: [0x61, 0x62, EOS] },
+  { key: "b1", bytes: [0xfe, 0x21, EOS] },
+  { key: "b2", bytes: [EOS] },
+];
+const states = [
+  {
+    player: [0x11, 0x12, 0xff, 0, 0, 0, 0, 0],
+    gender: 0,
+    rival: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    var1: [0xb1, 0xb2, 0xff],
+    var2: [0xc1, 0xff],
+    var3: [0xd1, 0xd2, 0xff],
+  },
+  {
+    player: [0xa1, 0xa2, 0xa3, 0xff, 0, 0, 0, 0],
+    gender: 1,
+    rival: [0x14, 0x15, 0x16, 0xff, 0, 0, 0, 0],
+    var1: [0xe1, 0xff],
+    var2: [0xe2, 0xff],
+    var3: [0xe3, 0xff],
+  },
+];
+
+const hexLine = (key: string, buf: ArrayLike<number>, end: number): string => {
+  let hex = "";
+  for (let i = 0; i <= end; i++) hex += (buf[i] ?? 0).toString(16).padStart(2, "0").toUpperCase();
+  return `${key} ${hex}`;
+};
+// Same rule as the C dumpStr: scan at most max bytes for the EOS and print
+// everything up to it (inclusive), or all max bytes when there is none.
+const hexUntil = (key: string, buf: ArrayLike<number>, max: number): string => {
+  const n = Math.min(max, buf.length);
+  let i = 0;
+  while (i < n && buf[i] !== EOS) i++;
+  return hexLine(key, buf, i < n ? i : n - 1);
+};
+
+// 17c. The stub save state, mirroring the harness' setState().
+const stub: SaveBlocks = { playerName: [], playerGender: 0, rivalName: [] };
+bindSaveBlockReader(() => stub);
+const tsLines: string[] = [];
+for (let s = 0; s < states.length; s++) {
+  const st = states[s];
+  const pfx = `${String.fromCharCode(65 + s)}.`;
+  stub.playerName = st.player;
+  stub.playerGender = st.gender;
+  stub.rivalName = st.rival;
+  stringVars.var1 = Uint8Array.from(st.var1);
+  stringVars.var2 = Uint8Array.from(st.var2);
+  stringVars.var3 = Uint8Array.from(st.var3);
+  for (const c of expandCases) {
+    const out = new Uint8Array(1000);
+    tsLines.push(hexLine(pfx + c.key, out, StringExpandPlaceholders(out, c.bytes)));
+  }
+  for (let id = 0; id < 16; id++) {
+    tsLines.push(hexUntil(`${pfx}gp${id}`, GetExpandedPlaceholder(id), id === 0 ? 16 : 64));
+  }
+  for (const c of brailleCases) {
+    const out = new Uint8Array(1000);
+    tsLines.push(hexLine(pfx + c.key, out, StringBraille(out, c.bytes)));
+  }
+}
+
+// Compile the real string_util.c for the host and run the same battery on it.
+const decompTree = process.env.POKEFIRERED ?? `${root}/../pokefirered`;
+const cTree = `${decompTree}/src/string_util.c`;
+if (!existsSync(cTree)) {
+  console.warn(`Notice: placeholder differential skipped, ${cTree} not found.`);
+} else {
+  const phNames = ["Empty", "Magma", "Aqua", "Maxie", "Archie", "Groudon", "Kyogre", "Ruby", "Red", "Green", "Kun", "Chan"];
+  const prefixExpr = (i: number): string =>
+    i === 0 ? `"${String.fromCharCode(65)}."` : `(which == ${i}) ? "${String.fromCharCode(65 + i)}." : ${prefixExpr(i - 1)}`;
+  const arraysOf = (st: (typeof states)[number], i: number): string[] =>
+    ["player", "rival", "var1", "var2", "var3"].map(
+      (f) => `static const u8 st${i}_${f}[] = {${(st as any)[f].join(",")}};`
+    );
+  const cTail = [
+    "extern int printf(const char *, ...);",
+    ...phNames.map((n) => `u8 gExpandedPlaceholder_${n}[] = {${Array.from(rom.text(`gExpandedPlaceholder_${n}`)).join(",")}};`),
+    "static struct SaveBlock2 sb2;",
+    "static struct SaveBlock1 sb1;",
+    "struct SaveBlock2 *gSaveBlock2Ptr = &sb2;",
+    "struct SaveBlock1 *gSaveBlock1Ptr = &sb1;",
+    "static const char *gPfx;",
+    "static void dump(const char *key, const u8 *buf, s32 end) {",
+    "    s32 i;",
+    '    printf("%s%s ", gPfx, key);',
+    '    for (i = 0; i <= end; i++) printf("%02X", buf[i]);',
+    '    printf("\\n");',
+    "}",
+    "static void dumpStr(const char *key, const u8 *p, s32 max) {",
+    "    s32 i = 0;",
+    "    while (i < max && p[i] != 0xFF) i++;",
+    "    dump(key, p, i < max ? i : max - 1);",
+    "}",
+    ...expandCases.map((c) => `static const u8 c_${c.key}[] = {${c.bytes.join(",")}};`),
+    ...brailleCases.map((c) => `static const u8 br_${c.key}[] = {${c.bytes.join(",")}};`),
+    ...states.flatMap(arraysOf),
+    "static void setState(int which) {",
+    "    memset(&sb2, 0, sizeof(sb2));",
+    "    memset(&sb1, 0, sizeof(sb1));",
+    "    memset(gStringVar1, 0, 32);",
+    "    memset(gStringVar2, 0, 32);",
+    "    memset(gStringVar3, 0, 32);",
+    ...states.flatMap((st, i) => [
+      `    if (which == ${i}) {`,
+      `        memcpy(sb2.playerName, st${i}_player, sizeof(st${i}_player));`,
+      `        sb2.playerGender = ${st.gender};`,
+      `        memcpy(sb1.rivalName, st${i}_rival, sizeof(st${i}_rival));`,
+      `        memcpy(gStringVar1, st${i}_var1, sizeof(st${i}_var1));`,
+      `        memcpy(gStringVar2, st${i}_var2, sizeof(st${i}_var2));`,
+      `        memcpy(gStringVar3, st${i}_var3, sizeof(st${i}_var3));`,
+      "    }",
+    ]),
+    "}",
+    "int main(void) {",
+    "    u8 out[1000];",
+    "    int which;",
+    `    for (which = 0; which < ${states.length}; which++) {`,
+    `        gPfx = ${prefixExpr(states.length - 1)};`,
+    "        setState(which);",
+    ...expandCases.map((c) => `        dump("${c.key}", out, (s32)(StringExpandPlaceholders(out, c_${c.key}) - out));`),
+    ...Array.from({ length: 16 }, (_, id) => `        dumpStr("gp${id}", GetExpandedPlaceholder(${id}), ${id === 0 ? 16 : 64});`),
+    ...brailleCases.map((c) => `        dump("${c.key}", out, (s32)(StringBraille(out, br_${c.key}) - out));`),
+    "    }",
+    "    return 0;",
+    "}",
+    "",
+  ].join("\n");
+
+  const pre = execSync(
+    `python3 -c 'import sys; sys.path.insert(0, "tools/decomp"); import clang_ast; from pathlib import Path; print(clang_ast.preprocess_c_file(Path(sys.argv[1])))' "${cTree}"`,
+    { cwd: root, encoding: "utf8" }
+  ).trim();
+  const preText = readFileSync(pre, "utf8").replace(/__attribute__\(\(section\("[^"]*"\)\)\)/g, "");
+  mkdirSync(`${root}/.decomp-build/checks`, { recursive: true });
+  const cFile = `${root}/.decomp-build/checks/suPlaceholder.c`;
+  const binFile = `${root}/.decomp-build/checks/suPlaceholder`;
+  writeFileSync(cFile, preText + "\n" + cTail);
+  const cOut = execSync(`gcc -O1 -w "${cFile}" -o "${binFile}" && "${binFile}"`, { cwd: root, encoding: "utf8" });
+  const cLines = cOut.trim().split("\n");
+  assert.equal(cLines.length, tsLines.length, "placeholder battery line count mismatch");
+  for (let i = 0; i < tsLines.length; i++) assert.equal(tsLines[i], cLines[i], `placeholder battery line ${i}`);
+  compared += tsLines.length;
+}
 
 console.log(`PASS: verified ${compared} differential checks against C semantics; deterministic regeneration and explicit rejection confirmed.`);

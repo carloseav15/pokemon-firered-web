@@ -223,22 +223,31 @@ def load_ts() -> tuple[set[str], dict[str, bool], dict[str, list[str]]]:
     return idents, real_def, cites
 
 
-def generated_ts_for_source() -> dict[str, tuple[set[str], dict[str, bool]]]:
-    """Return mechanically translated functions scoped to their source C file."""
-    path = SRC / "generated" / "metatileBehavior.ts"
-    text = path.read_text()
-    code = strip_c_comments(text)
-    idents = {norm(i) for i in re.findall(r"\b[A-Za-z_]\w*\b", code)}
-    real_def: dict[str, bool] = {}
-    for m in TS_FUNC_RE.finditer(code):
-        key = norm(m.group(1))
-        real = not is_trivial(body_after(code, ts_body_end(code, m.end() - 1)))
-        real_def[key] = real_def.get(key, False) or real
-    for m in TS_ARROW_RE.finditer(code):
-        key = norm(m.group(1))
-        real = not is_trivial(body_after(code, m.end() - 1))
-        real_def[key] = real_def.get(key, False) or real
-    return {"metatile_behavior": (idents, real_def)}
+def generated_ts_for_source() -> dict[str, tuple[set[str], dict[str, bool], str]]:
+    """Mechanically translated functions scoped to the .c file they come from.
+
+    Every generated file names its source in the header, e.g.
+    ``FROM pokefirered/src/string_util.c`` or ``from pokefirered src/x.c``.
+    """
+    out: dict[str, tuple[set[str], dict[str, bool], str]] = {}
+    for path in sorted((SRC / "generated").glob("*.ts")):
+        header = "\n".join(path.read_text().splitlines()[:3])
+        src_match = re.search(r"(?:from|FROM)\s+pokefirered[ /]src/(\w+)\.c", header)
+        if not src_match:
+            continue
+        code = strip_c_comments(path.read_text())
+        idents = {norm(i) for i in re.findall(r"\b[A-Za-z_]\w*\b", code)}
+        real_def: dict[str, bool] = {}
+        for m in TS_FUNC_RE.finditer(code):
+            key = norm(m.group(1))
+            real = not is_trivial(body_after(code, ts_body_end(code, m.end() - 1)))
+            real_def[key] = real_def.get(key, False) or real
+        for m in TS_ARROW_RE.finditer(code):
+            key = norm(m.group(1))
+            real = not is_trivial(body_after(code, m.end() - 1))
+            real_def[key] = real_def.get(key, False) or real
+        out[src_match.group(1)] = (idents, real_def, f"generated/{path.name}")
+    return out
 
 
 def count_found(funcs: list[tuple[str, bool]], idents: set[str], real_def: dict[str, bool]) -> tuple[int, list[str]]:
@@ -295,14 +304,14 @@ def main() -> None:
         c_idents = set(idents)
         c_real_def = dict(real_def)
         if name in generated_for_source:
-            generated_idents, generated_defs = generated_for_source[name]
+            generated_idents, generated_defs, generated_path = generated_for_source[name]
             c_idents.update(generated_idents)
             c_real_def.update(generated_defs)
+        else:
+            generated_path = ""
         found, stubs = count_found(funcs, c_idents, c_real_def)
-        if name in generated_for_source:
-            generated_path = "generated/metatileBehavior.ts"
-            if generated_path not in cites.setdefault(name, []):
-                cites[name].append(generated_path)
+        if generated_path and generated_path not in cites.setdefault(name, []):
+            cites[name].append(generated_path)
         status, note = classify(name, funcs, found, name in cites, stubs)
         rows.append((status, name, text.count("\n"), found, len(funcs), note, cites.get(name, []), len(stubs)))
 

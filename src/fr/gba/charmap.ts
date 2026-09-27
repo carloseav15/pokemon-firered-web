@@ -83,6 +83,9 @@ import {
   StringLength_Multibyte,
   WriteColorChangeControlCode,
   ConvertInternationalString,
+  StringExpandPlaceholders,
+  StringBraille,
+  GetExpandedPlaceholder,
 } from "../generated/stringUtil";
 
 export {
@@ -109,6 +112,9 @@ export {
   StringLength_Multibyte,
   WriteColorChangeControlCode,
   ConvertInternationalString,
+  StringExpandPlaceholders,
+  StringBraille,
+  GetExpandedPlaceholder,
 };
 
 /** Number of argument bytes following FC <code> (plus the code byte itself). */
@@ -150,56 +156,31 @@ export function countDigits(value: number): number {
   return Math.max(1, Math.floor(Math.abs(value)).toString().length);
 }
 
-/** Variables substituted by StringExpandPlaceholders. */
-export const stringVars = {
-  player: new Uint8Array([EOS]) as GbaString,
-  rival: new Uint8Array([EOS]) as GbaString,
-  var1: new Uint8Array([EOS]) as GbaString,
-  var2: new Uint8Array([EOS]) as GbaString,
-  var3: new Uint8Array([EOS]) as GbaString,
-  var4: new Uint8Array([EOS]) as GbaString,
-};
+/** Variables substituted by StringExpandPlaceholders (gStringVar1..4). */
+export { stringVars } from "./stringBuffers";
+import { STRING_VAR4_LENGTH } from "./stringBuffers";
 
-/** StringExpandPlaceholders: FD xx placeholders become the buffered strings. */
+/** StringExpandPlaceholders from string_util.c: FD xx placeholders are expanded
+ *  by the generated function (gStringVar*, the save fields and the
+ *  gExpandedPlaceholder_* strings). The C writes into gStringVar4; the adapter
+ *  allocates a buffer of the same capacity on every call so a caller can keep
+ *  the result without aliasing the next expansion, and appends EOS to sources
+ *  that lack one because the C keeps reading until it finds 0xFF. */
 export function expandPlaceholders(src: ArrayLike<number>): GbaString {
-  const out: number[] = [];
+  let input: ArrayLike<number> = src;
+  let terminated = false;
   for (let i = 0; i < src.length; i++) {
-    const b = src[i];
-    if (b === EOS) break;
-    if (b === PLACEHOLDER_BEGIN) {
-      const id = src[++i];
-      const value = placeholder(id);
-      for (let j = 0; j < value.length && value[j] !== EOS; j++) out.push(value[j]);
-      continue;
+    if (src[i] === EOS) {
+      terminated = true;
+      break;
     }
-    if (b === EXT_CTRL_CODE_BEGIN) {
-      const n = extCtrlCodeLength(src[i + 1]);
-      out.push(b);
-      for (let j = 1; j <= n; j++) out.push(src[i + j]);
-      i += n;
-      continue;
-    }
-    out.push(b);
   }
-  out.push(EOS);
-  return Uint8Array.from(out);
-}
-
-function placeholder(id: number): ArrayLike<number> {
-  switch (id) {
-    case 0x01: return stringVars.player;
-    case 0x02: return stringVars.var1;
-    case 0x03: return stringVars.var2;
-    case 0x04: return stringVars.var3;
-    case 0x05: return []; // KUN (JP honorific)
-    case 0x06: return stringVars.rival;
-    case 0x07: return encode("FIRERED", false);
-    case 0x08: return encode("MAGMA", false);
-    case 0x09: return encode("AQUA", false);
-    case 0x0a: return encode("MAXIE", false);
-    case 0x0b: return encode("ARCHIE", false);
-    case 0x0c: return encode("GROUDON", false);
-    case 0x0d: return encode("KYOGRE", false);
-    default: return [];
+  if (!terminated) {
+    const padded = new Uint8Array(src.length + 1);
+    for (let i = 0; i < src.length; i++) padded[i] = src[i];
+    padded[src.length] = EOS;
+    input = padded;
   }
+  const dest = new Uint8Array(STRING_VAR4_LENGTH);
+  return dest.slice(0, StringExpandPlaceholders(dest, input) + 1);
 }

@@ -38,15 +38,78 @@ CONSTANTS_MAP: dict[int, str] = {
     0xAC: "CHAR_QUESTION_MARK",
 }
 
+# Globals of the C translation unit that live outside the generated module.
+# stringVars/saveBlocks come from gba/stringBuffers.ts (a leaf module so the
+# generated file never enters the save.ts -> charmap.ts import cycle) and the
+# gExpandedPlaceholder_* strings are the exported rom texts.
+SYMBOL_MAP: dict[str, str] = {
+    "gStringVar1": "stringVars.var1",
+    "gStringVar2": "stringVars.var2",
+    "gStringVar3": "stringVars.var3",
+    "gStringVar4": "stringVars.var4",
+    "gSaveBlock1Ptr": "saveBlocks()",
+    "gSaveBlock2Ptr": "saveBlocks()",
+}
+for _ph in (
+    "Empty", "Kun", "Chan", "Sapphire", "Ruby", "Aqua", "Magma",
+    "Archie", "Maxie", "Kyogre", "Groudon", "Red", "Green",
+):
+    SYMBOL_MAP[f"gExpandedPlaceholder_{_ph}"] = f'rom.text("gExpandedPlaceholder_{_ph}")'
+
+MODULE_IMPORTS = [
+    'import { rom } from "../rom";',
+    'import { saveBlocks, stringVars } from "../gba/stringBuffers";',
+]
+
+# Expected element count for pointer-to-function tables, verified against
+# PLACEHOLDER_ID_UNKNOWN..PLACEHOLDER_ID_KYOGRE (0x0..0xD) in
+# pokefirered/include/constants/characters.h: Clang linearizes the designated
+# initializers, so the check must prove no gap was dropped.
+INIT_LIST_EXPECTED: dict[tuple[str, str], int] = {
+    ("GetExpandedPlaceholder", "funcs"): 14,
+}
+
+
+def _iter_nodes(node: dict[str, Any]) -> Any:
+    yield node
+    for child in node.get("inner") or []:
+        if isinstance(child, dict):
+            yield from _iter_nodes(child)
+
+
+def _decl_ref_name(node: dict[str, Any]) -> str | None:
+    while isinstance(node, dict) and node.get("kind") in (
+        "ImplicitCastExpr", "ConstantExpr", "CStyleCastExpr", "ParenExpr",
+    ):
+        inner = node.get("inner") or []
+        if not inner:
+            return None
+        node = inner[0]
+    if isinstance(node, dict) and node.get("kind") == "DeclRefExpr":
+        return node.get("referencedDecl", {}).get("name")
+    return None
+
 
 class ClangTsEmitter:
-    def __init__(self, c_file: str, func: clang_ast.AstFunction):
+    def __init__(
+        self,
+        c_file: str,
+        func: clang_ast.AstFunction,
+        models: dict[str, str] | None = None,
+        known_functions: set[str] | None = None,
+    ):
         self.c_file = c_file
         self.func = func
         self.func_name = func.name
+        self.models: dict[str, str] = models or {}
+        self.known_functions: set[str] = known_functions or {func.name}
         self.pointer_params: list[str] = []
         self.pointer_locals: set[str] = set()
         self.pointer_buffer: dict[str, str] = {}
+        # Pointer locals are either "offset" (a buffer name plus a {name}_idx
+        # cursor, as C pointer arithmetic is emulated) or "buffer" (the local
+        # holds the array itself, as ExpandPlaceholder_* return global arrays).
+        self.pointer_kind: dict[str, str] = {}
         self.indent_level = 0
         self.lines: list[str] = []
 
@@ -55,6 +118,20 @@ class ClangTsEmitter:
             if "*" in ptype:
                 self.pointer_params.append(pname)
                 self.pointer_buffer[pname] = pname
+                self.pointer_kind[pname] = "offset"
+
+        # Every pointer local of the body, known before emission so the model
+        # pre-scan can classify declarations and assignments.
+        self.pointer_decls: set[str] = set()
+        for node in _iter_nodes(func.body):
+            if node.get("kind") == "VarDecl" and "*" in node.get("type", {}).get("qualType", ""):
+                name = node.get("name", "")
+                if name:
+                    self.pointer_decls.add(name)
+
+        self.buffer_locals: set[str] = set()
+        self.buffer_locals = self._scan_buffer_locals()
+        self.return_model = self._compute_return_model()
 
     def indent(self) -> str:
         return "  " * self.indent_level
@@ -95,7 +172,15 @@ class ClangTsEmitter:
 
         ret_type = "void"
         if "*" in self.func.return_type:
-            ret_type = "number"  # returns offset into buffer
+            # Offset-returning functions hand back a cursor into their pointer
+            # parameter (StringCopy & co.); buffer-returning ones hand back a
+            # whole array (gStringVar*, gExpandedPlaceholder_*, save fields).
+            if self.return_model == "buffer":
+                ret_type = "ArrayLike<number>"
+            elif self.return_model == "offset":
+                ret_type = "number"
+            else:
+                self.reject("cannot classify the returned pointer model")
         elif self.func.return_type in ("u8", "u16", "u32", "s8", "s16", "s32", "int"):
             ret_type = "number"
         elif self.func.return_type in ("bool8", "bool32", "_Bool"):
@@ -121,8 +206,9 @@ class ClangTsEmitter:
             self.reject("goto statements are not supported")
         elif k == "GCCAsmStmt":
             self.reject("inline assembly is not supported")
-        for child in node.get("inner", []):
-            self._check_supported(child)
+        for child in node.get("inner") or []:
+            if isinstance(child, dict):
+                self._check_supported(child)
 
     def emit_compound_stmt(self, node: dict[str, Any], is_func_root: bool = False) -> None:
         for stmt in node.get("inner", []):
@@ -138,14 +224,28 @@ class ClangTsEmitter:
             self.emit_line("}")
         elif k == "DeclStmt":
             for child in node.get("inner", []):
+                if not isinstance(child, dict):
+                    continue
                 if child.get("kind") == "VarDecl":
                     vname = child.get("name", "")
                     vtype = child.get("type", {}).get("qualType", "")
                     inits = child.get("inner", [])
                     if "*" in vtype:
                         self.pointer_locals.add(vname)
-                        if inits:
+                        if vname in self.buffer_locals:
+                            # The local holds an array (gStringVar*, a save
+                            # field or a placeholder string), not a cursor.
+                            self.pointer_kind[vname] = "buffer"
+                            self.pointer_buffer[vname] = vname
+                            if inits:
+                                init_expr = self.emit_expr(inits[0])
+                                self.emit_line(f"let {vname}: ArrayLike<number> = {init_expr};")
+                            else:
+                                self.emit_line(f"let {vname}: ArrayLike<number>;")
+                            self.emit_line(f"let {vname}_idx = 0;")
+                        elif inits:
                             ref_name = self._get_decl_ref_name(inits[0])
+                            self.pointer_kind[vname] = "offset"
                             if ref_name and self.is_pointer(ref_name):
                                 self.pointer_buffer[vname] = self.get_pointer_buffer(ref_name)
                                 self.emit_line(f"let {vname}_idx = {ref_name}_idx;")
@@ -154,12 +254,17 @@ class ClangTsEmitter:
                                 self.pointer_buffer[vname] = vname
                                 self.emit_line(f"let {vname}_idx = {init_expr};")
                         else:
+                            self.pointer_kind[vname] = "offset"
                             self.pointer_buffer[vname] = vname
                             self.emit_line(f"let {vname}_idx = 0;")
                     elif "[" in vtype and inits and inits[0].get("kind") == "InitListExpr":
                         # Constant or static array declaration
-                        arr_vals = self._parse_init_list(inits[0])
-                        self.emit_line(f"const {vname} = [{', '.join(map(str, arr_vals))}];")
+                        refs = self._parse_init_list_refs(inits[0], vname)
+                        if refs is not None:
+                            self.emit_line(f"const {vname} = [{', '.join(refs)}];")
+                        else:
+                            arr_vals = self._parse_init_list(inits[0])
+                            self.emit_line(f"const {vname} = [{', '.join(map(str, arr_vals))}];")
                     else:
                         if inits:
                             init_expr = self.emit_expr(inits[0])
@@ -212,7 +317,10 @@ class ClangTsEmitter:
             if inner:
                 ref_name = self._get_decl_ref_name(inner[0])
                 if ref_name and self.is_pointer(ref_name):
-                    self.emit_line(f"return {ref_name}_idx;")
+                    if self.pointer_kind.get(ref_name) == "buffer":
+                        self.emit_line(f"return {ref_name};")
+                    else:
+                        self.emit_line(f"return {ref_name}_idx;")
                 else:
                     ret_val = self.emit_expr(inner[0])
                     self.emit_line(f"return {ret_val};")
@@ -268,7 +376,17 @@ class ClangTsEmitter:
             return CONSTANTS_MAP.get(val, str(val))
         elif k == "DeclRefExpr":
             name = node.get("referencedDecl", {}).get("name", "")
-            return name
+            if name in self.pointer_params or name in self.pointer_locals:
+                # Value context of a pointer variable: the cursor for offset
+                # locals, the array itself for buffer locals.
+                if self.pointer_kind.get(name) == "buffer":
+                    return name
+                return f"{name}_idx"
+            return SYMBOL_MAP.get(name, name)
+        elif k == "MemberExpr":
+            # gSaveBlock2Ptr->playerGender / gSaveBlock1Ptr->rivalName[0]
+            base_expr = self.emit_expr(node["inner"][0])
+            return f"{base_expr}.{node.get('name', '')}"
         elif k == "UnaryOperator":
             op = node.get("opcode")
             is_postfix = node.get("isPostfix", False)
@@ -353,10 +471,20 @@ class ClangTsEmitter:
                 ptr_expr = self.emit_expr(sub)
                 return f"{ptr_expr}[0] = {rhs_expr}"
 
-            # Special case: ptr = expr (pointer offset assignment)
+            # Special case: ptr = expr (buffer or cursor assignment)
             if op == "=":
                 lhs_ptr = self._get_decl_ref_name(lhs_node)
                 if lhs_ptr and self.is_pointer(lhs_ptr):
+                    model = self._expr_model(rhs_node)
+                    if self.pointer_kind.get(lhs_ptr) == "buffer":
+                        if model != "buffer":
+                            self.reject(f"buffer pointer {lhs_ptr} assigned a cursor expression")
+                        rhs_expr = self.emit_expr(rhs_node)
+                        return f"{lhs_ptr} = {rhs_expr}"
+                    if model == "buffer":
+                        if lhs_ptr in self.pointer_params:
+                            self.reject("assigning a whole buffer to a pointer parameter is not supported")
+                        self.reject(f"pointer {lhs_ptr} was not pre-scanned as a buffer local")
                     rhs_ptr = self._get_decl_ref_name(rhs_node)
                     if not rhs_ptr and rhs_node.get("kind") == "UnaryOperator" and rhs_node.get("opcode") in ("++", "--"):
                         rhs_ptr = self._get_decl_ref_name(rhs_node["inner"][0])
@@ -437,6 +565,164 @@ class ClangTsEmitter:
                 return res
         return None
 
+    def _is_pointer_name(self, name: str | None) -> bool:
+        return bool(name) and (name in self.pointer_params or name in self.pointer_decls)
+
+    def _expr_model(self, node: dict[str, Any]) -> str | None:
+        """Pointer model of an expression: "buffer" (a whole array) or "offset"
+        (a cursor into a buffer). None when it cannot be classified."""
+        while isinstance(node, dict) and node.get("kind") in (
+            "ImplicitCastExpr", "ConstantExpr", "CStyleCastExpr", "ParenExpr",
+        ):
+            inner = node.get("inner") or []
+            if not inner:
+                return None
+            node = inner[0]
+        if not isinstance(node, dict):
+            return None
+        k = node.get("kind")
+        if k == "DeclRefExpr":
+            name = node.get("referencedDecl", {}).get("name", "")
+            if self._is_pointer_name(name):
+                if name in self.pointer_kind:
+                    return self.pointer_kind[name]
+                if name in self.buffer_locals:
+                    return "buffer"
+                return "offset"
+            return "buffer"
+        if k == "MemberExpr":
+            return "buffer"
+        if k == "CallExpr":
+            inner = node.get("inner") or []
+            if not inner:
+                return None
+            callee = _decl_ref_name(inner[0])
+            if not callee:
+                return None  # indirect call: unknown until the caller decides
+            return self.models.get(callee)
+        if k == "UnaryOperator":
+            op = node.get("opcode")
+            inner = node.get("inner") or []
+            if op in ("++", "--") and inner:
+                return self._expr_model(inner[0])
+            if op == "&":
+                return "offset"
+            return None
+        if k == "BinaryOperator" and node.get("opcode") in ("+", "-"):
+            inner = node.get("inner") or []
+            if len(inner) == 2:
+                left = self._expr_model(inner[0])
+                return left if left is not None else self._expr_model(inner[1])
+            return None
+        return None
+
+    def _return_kind(self, node: dict[str, Any], param_names: list[str]) -> tuple[str, str | None] | str | None:
+        """Classify a returned expression: "buffer"/"offset", ("call", name) or None."""
+        while isinstance(node, dict) and node.get("kind") in (
+            "ImplicitCastExpr", "ConstantExpr", "CStyleCastExpr", "ParenExpr",
+        ):
+            inner = node.get("inner") or []
+            if not inner:
+                return None
+            node = inner[0]
+        if not isinstance(node, dict):
+            return None
+        k = node.get("kind")
+        if k == "DeclRefExpr":
+            name = node.get("referencedDecl", {}).get("name", "")
+            if name in param_names:
+                return "offset"
+            if name in self.pointer_decls:
+                if name in self.buffer_locals:
+                    return "buffer"
+                return "offset"
+            return "buffer"
+        if k == "MemberExpr":
+            return "buffer"
+        if k == "CallExpr":
+            inner = node.get("inner") or []
+            if not inner:
+                return None
+            callee = _decl_ref_name(inner[0])
+            if callee and callee in self.models:
+                return self.models[callee]
+            return ("call", callee)
+        if k == "UnaryOperator":
+            op = node.get("opcode")
+            inner = node.get("inner") or []
+            if op in ("++", "--") and inner:
+                return self._return_kind(inner[0], param_names)
+            if op == "&":
+                return "offset"
+            return None
+        if k == "BinaryOperator" and node.get("opcode") in ("+", "-"):
+            inner = node.get("inner") or []
+            if len(inner) == 2:
+                left = self._return_kind(inner[0], param_names)
+                if isinstance(left, str):
+                    return left
+                right = self._return_kind(inner[1], param_names)
+                if isinstance(right, str):
+                    return right
+            return None
+        return None
+
+    def _compute_return_model(self) -> str | None:
+        if "*" not in self.func.return_type:
+            return None
+        param_names = [p for p, _ in self.func.params]
+        direct: list[str] = []
+        deferred = 0
+        for node in _iter_nodes(self.func.body):
+            if node.get("kind") != "ReturnStmt":
+                continue
+            inner = node.get("inner") or []
+            if not inner:
+                continue
+            kind = self._return_kind(inner[0], param_names)
+            if isinstance(kind, str):
+                direct.append(kind)
+            else:
+                deferred += 1
+        if not direct:
+            return None
+        if len(set(direct)) > 1:
+            self.reject(f"mixed return models {sorted(set(direct))}")
+        model = direct[0]
+        if model == "offset" and deferred:
+            self.reject("offset-returning function has an unclassifiable return expression")
+        return model
+
+    def _scan_buffer_locals(self) -> set[str]:
+        """Pointer locals that hold an array instead of a cursor."""
+        for _ in range(3):
+            changed = False
+            for node in _iter_nodes(self.func.body):
+                k = node.get("kind")
+                if k == "VarDecl":
+                    name = node.get("name", "")
+                    if not self._is_pointer_name(name) or name in self.pointer_params:
+                        continue
+                    inits = node.get("inner") or []
+                    if inits and name not in self.buffer_locals and self._expr_model(inits[0]) == "buffer":
+                        self.buffer_locals.add(name)
+                        changed = True
+                elif k == "BinaryOperator" and node.get("opcode") == "=":
+                    inner = node.get("inner") or []
+                    if len(inner) == 2:
+                        lhs_name = _decl_ref_name(inner[0])
+                        if (
+                            self._is_pointer_name(lhs_name)
+                            and lhs_name not in self.pointer_params
+                            and lhs_name not in self.buffer_locals
+                            and self._expr_model(inner[1]) == "buffer"
+                        ):
+                            self.buffer_locals.add(lhs_name)
+                            changed = True
+            if not changed:
+                break
+        return self.buffer_locals
+
     def _parse_init_list(self, node: dict[str, Any]) -> list[int]:
         vals: list[int] = []
         for el in node.get("inner", []):
@@ -449,6 +735,28 @@ class ClangTsEmitter:
                 val = el.get("value")
             vals.append(int(val) if val is not None else 0)
         return vals
+
+
+    def _parse_init_list_refs(self, node: dict[str, Any], vname: str) -> list[str] | None:
+        """Names for a table of function pointers, or None for a numeric table."""
+        elements = node.get("inner", [])
+        if not elements:
+            return None
+        refs = [_decl_ref_name(el) for el in elements]
+        if any(r is None for r in refs):
+            if all(r is None for r in refs):
+                return None
+            self.reject(f"table {vname} mixes function references and literals")
+        names = [r for r in refs if r is not None]
+        expected = INIT_LIST_EXPECTED.get((self.func_name, vname))
+        if expected is not None and len(names) != expected:
+            self.reject(f"table {vname} has {len(names)} entries, expected {expected}")
+        for name in names:
+            if name not in self.known_functions:
+                self.reject(f"table {vname} references unknown function {name}")
+            if self.models.get(name) != "buffer":
+                self.reject(f"table {vname} entry {name} does not return a buffer")
+        return names
 
 
 def generate_string_util_ts() -> str:
@@ -481,12 +789,57 @@ def generate_string_util_ts() -> str:
         "StringLength_Multibyte",
         "WriteColorChangeControlCode",
         "ConvertInternationalString",
+        # Placeholder family (StringExpandPlaceholders + GetExpandedPlaceholder
+        # + the static ExpandPlaceholder_* functions of the same file).
+        "StringExpandPlaceholders",
+        "StringBraille",
+        "ExpandPlaceholder_UnknownStringVar",
+        "ExpandPlaceholder_PlayerName",
+        "ExpandPlaceholder_StringVar1",
+        "ExpandPlaceholder_StringVar2",
+        "ExpandPlaceholder_StringVar3",
+        "ExpandPlaceholder_KunChan",
+        "ExpandPlaceholder_RivalName",
+        "ExpandPlaceholder_Version",
+        "ExpandPlaceholder_Magma",
+        "ExpandPlaceholder_Aqua",
+        "ExpandPlaceholder_Maxie",
+        "ExpandPlaceholder_Archie",
+        "ExpandPlaceholder_Groudon",
+        "ExpandPlaceholder_Kyogre",
+        "GetExpandedPlaceholder",
     ]
+
+    target: dict[str, clang_ast.AstFunction] = {}
+    for name in target_funcs:
+        f = funcs.get(name)
+        if not f:
+            raise UnsupportedAstError("string_util.c", name, "function definition not found in Clang AST")
+        target[name] = f
+
+    # Classify every returned pointer as "buffer" (a whole array) or "offset"
+    # (a cursor). Functions whose returns are calls are resolved once the
+    # callee is known, so iterate to a fixed point.
+    models: dict[str, str] = {}
+    for _ in range(len(target) + 1):
+        changed = False
+        for name, f in target.items():
+            if name in models:
+                continue
+            model = ClangTsEmitter("string_util.c", f, models, set(target)).return_model
+            if model is None:
+                continue
+            models[name] = model
+            changed = True
+        if not changed:
+            break
 
     out_lines = [
         "// GENERATED BY tools/decomp/clang_codegen.py FROM pokefirered/src/string_util.c",
         "// DO NOT EDIT MANUALLY. Re-run npm run generate:string-util to regenerate.",
         "// Target: armv4t-none-eabi | ABI: 32-bit ILP32, unsigned char default.",
+        "",
+        *MODULE_IMPORTS,
         "",
         "export const EOS = 0xff;",
         "export const CHAR_SPACE = 0x00;",
@@ -507,6 +860,8 @@ def generate_string_util_ts() -> str:
         "export const WAITING_FOR_NONZERO_DIGIT = 0;",
         "export const WRITING_DIGITS = 1;",
         "export const WRITING_SPACES = 2;",
+        "",
+        "export const gUnknownStringVar = new Uint8Array(16);",
         "",
         "export const sPowersOfTen = [",
         "  1,",
@@ -529,10 +884,8 @@ def generate_string_util_ts() -> str:
     ]
 
     for name in target_funcs:
-        f = funcs.get(name)
-        if not f:
-            raise UnsupportedAstError("string_util.c", name, "function definition not found in Clang AST")
-        emitter = ClangTsEmitter("string_util.c", f)
+        f = target[name]
+        emitter = ClangTsEmitter("string_util.c", f, models, set(target))
         code = emitter.emit_function()
         out_lines.append(code)
         out_lines.append("")

@@ -202,7 +202,6 @@ export class Game {
     this.NewGameInitData(playerName, gender, rivalName);
     setName("player", encode(playerName.slice(0, 7)));
     setName("rival", encode(rivalName.slice(0, 7)));
-    this.syncStringVars();
     this.overworld.resetInitialPlayerAvatarState();
     this.overworld.fieldCallback = () => this.overworld.fieldCBWarpExitFadeFromBlack();
     this.overworld.script.ScriptContext_Init();
@@ -299,7 +298,6 @@ export class Game {
     textOptions.speed = save.options.textSpeed;
     joy.buttonMode = save.options.buttonMode;
     sound.setStereo(save.options.sound === 1);
-    this.syncStringVars();
     const w = save.location;
     this.overworld.setWarpDestination(w.mapGroup, w.mapNum, -1, save.pos.x, save.pos.y);
     this.overworld.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };
@@ -309,11 +307,6 @@ export class Game {
     paletteFade.fill(RGB_BLACK);
     PlayTimeCounter_Start();
     this.overworld.warpIntoMapAndLoad();
-  }
-
-  syncStringVars(): void {
-    stringVars.player = Uint8Array.from(save.playerName);
-    stringVars.rival = Uint8Array.from(save.rivalName);
   }
 
   writeSave(): boolean {

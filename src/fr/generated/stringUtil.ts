@@ -2,6 +2,9 @@
 // DO NOT EDIT MANUALLY. Re-run npm run generate:string-util to regenerate.
 // Target: armv4t-none-eabi | ABI: 32-bit ILP32, unsigned char default.
 
+import { rom } from "../rom";
+import { saveBlocks, stringVars } from "../gba/stringBuffers";
+
 export const EOS = 0xff;
 export const CHAR_SPACE = 0x00;
 export const CHAR_0 = 0xa1;
@@ -21,6 +24,8 @@ export const STR_CONV_MODE_LEADING_ZEROS = 2;
 export const WAITING_FOR_NONZERO_DIGIT = 0;
 export const WRITING_DIGITS = 1;
 export const WRITING_SPACES = 2;
+
+export const gUnknownStringVar = new Uint8Array(16);
 
 export const sPowersOfTen = [
   1,
@@ -479,5 +484,160 @@ export function ConvertInternationalString(s: Uint8Array, language: number, sOff
       s[s_idx + 0] = EXT_CTRL_CODE_BEGIN;
       s[s_idx + 1] = 21;
     }
+  }
+}
+
+export function StringExpandPlaceholders(dest: Uint8Array, src: ArrayLike<number>, destOffset = 0, srcOffset = 0): number {
+  let dest_idx = destOffset;
+  let src_idx = srcOffset;
+  for (; ; ) {
+    {
+      let c = src[src_idx++];
+      let placeholderId = 0;
+      let expandedString: ArrayLike<number>;
+      let expandedString_idx = 0;
+      switch (c) {
+        case PLACEHOLDER_BEGIN:
+          placeholderId = src[src_idx++];
+        expandedString = GetExpandedPlaceholder(placeholderId);
+        dest_idx = StringExpandPlaceholders(dest, expandedString, dest_idx, expandedString_idx);
+        break;
+        case EXT_CTRL_CODE_BEGIN:
+          dest[dest_idx++] = c;
+        c = src[src_idx++];
+        dest[dest_idx++] = c;
+        switch (c) {
+          case 7:
+            case 9:
+              case 15:
+                case 21:
+                  case 22:
+                    case 23:
+                      case 24:
+                        break;
+          case 4:
+            dest[dest_idx++] = src[src_idx++];
+          case 11:
+            dest[dest_idx++] = src[src_idx++];
+          default:
+            dest[dest_idx++] = src[src_idx++];
+        }
+        break;
+        case EOS:
+          dest[dest_idx] = EOS;
+        return dest_idx;
+        case 250:
+          case 251:
+            case CHAR_NEWLINE:
+              default:
+                dest[dest_idx++] = c;
+      }
+    }
+  }
+}
+
+export function StringBraille(dest: Uint8Array, src: ArrayLike<number>, destOffset = 0, srcOffset = 0): number {
+  let dest_idx = destOffset;
+  let src_idx = srcOffset;
+  const setBrailleFont = [252, 6, 6, 255];
+  const gotoLine2 = [254, 252, 14, 2, 255];
+  dest_idx = StringCopy(dest, setBrailleFont, dest_idx);
+  for (; ; ) {
+    {
+      let c = src[src_idx++];
+      switch (c) {
+        case EOS:
+          dest[dest_idx] = c;
+        return dest_idx;
+        case CHAR_NEWLINE:
+          dest_idx = StringCopy(dest, gotoLine2, dest_idx);
+        break;
+        default:
+          dest[dest_idx++] = c;
+        dest[dest_idx++] = c + 64;
+        break;
+      }
+    }
+  }
+}
+
+export function ExpandPlaceholder_UnknownStringVar(): ArrayLike<number> {
+  return gUnknownStringVar;
+}
+
+export function ExpandPlaceholder_PlayerName(): ArrayLike<number> {
+  return saveBlocks().playerName;
+}
+
+export function ExpandPlaceholder_StringVar1(): ArrayLike<number> {
+  return stringVars.var1;
+}
+
+export function ExpandPlaceholder_StringVar2(): ArrayLike<number> {
+  return stringVars.var2;
+}
+
+export function ExpandPlaceholder_StringVar3(): ArrayLike<number> {
+  return stringVars.var3;
+}
+
+export function ExpandPlaceholder_KunChan(): ArrayLike<number> {
+  if (saveBlocks().playerGender === 0) {
+    return rom.text("gExpandedPlaceholder_Kun");
+  } else {
+    return rom.text("gExpandedPlaceholder_Chan");
+  }
+}
+
+export function ExpandPlaceholder_RivalName(): ArrayLike<number> {
+  if (saveBlocks().rivalName[0] === EOS) {
+    {
+      if (saveBlocks().playerGender === 0) {
+        return rom.text("gExpandedPlaceholder_Green");
+      } else {
+        return rom.text("gExpandedPlaceholder_Red");
+      }
+    }
+  } else {
+    {
+      return saveBlocks().rivalName;
+    }
+  }
+}
+
+export function ExpandPlaceholder_Version(): ArrayLike<number> {
+  return rom.text("gExpandedPlaceholder_Ruby");
+}
+
+export function ExpandPlaceholder_Magma(): ArrayLike<number> {
+  return rom.text("gExpandedPlaceholder_Magma");
+}
+
+export function ExpandPlaceholder_Aqua(): ArrayLike<number> {
+  return rom.text("gExpandedPlaceholder_Aqua");
+}
+
+export function ExpandPlaceholder_Maxie(): ArrayLike<number> {
+  return rom.text("gExpandedPlaceholder_Maxie");
+}
+
+export function ExpandPlaceholder_Archie(): ArrayLike<number> {
+  return rom.text("gExpandedPlaceholder_Archie");
+}
+
+export function ExpandPlaceholder_Groudon(): ArrayLike<number> {
+  return rom.text("gExpandedPlaceholder_Groudon");
+}
+
+export function ExpandPlaceholder_Kyogre(): ArrayLike<number> {
+  return rom.text("gExpandedPlaceholder_Kyogre");
+}
+
+export function GetExpandedPlaceholder(id: number): ArrayLike<number> {
+  const funcs = [ExpandPlaceholder_UnknownStringVar, ExpandPlaceholder_PlayerName, ExpandPlaceholder_StringVar1, ExpandPlaceholder_StringVar2, ExpandPlaceholder_StringVar3, ExpandPlaceholder_KunChan, ExpandPlaceholder_RivalName, ExpandPlaceholder_Version, ExpandPlaceholder_Magma, ExpandPlaceholder_Aqua, ExpandPlaceholder_Maxie, ExpandPlaceholder_Archie, ExpandPlaceholder_Groudon, ExpandPlaceholder_Kyogre];
+  if (id >= (funcs.length)) {
+    return rom.text("gExpandedPlaceholder_Empty");
+  } else {
+    return funcs[id]();
   }
 }

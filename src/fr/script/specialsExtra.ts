@@ -878,7 +878,6 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   ShowEasyChatScreen: (ctx) => { enableLater(ctx); },
   // records (no link or minigame history exists)
   ShowBattleRecords: (ctx) => {
-    stringVars.player = Uint8Array.from(save.playerName);
     stringVars.var1 = encode("0"); stringVars.var2 = encode("0"); stringVars.var3 = encode("0");
     const title = expandPlaceholders(rom.text("gString_BattleRecords_PlayersBattleResults"));
     const total = expandPlaceholders(rom.text("gString_BattleRecords_TotalRecord"));

@@ -1,6 +1,7 @@
 // SaveBlock1/SaveBlock2 equivalents and event_data.c (flags and vars).
 
 import { CHAR_SPACE, encode, EOS } from "./gba/charmap";
+import { bindSaveBlockReader } from "./gba/stringBuffers";
 import { rom } from "./rom";
 import type { Pokemon } from "./pokemon/pokemon";
 import * as C from "./generated/constants";
@@ -177,6 +178,9 @@ export function newSaveData(): SaveData {
 
 /** The live save state (gSaveBlock1Ptr / gSaveBlock2Ptr). */
 export let save: SaveData = newSaveData();
+
+// gSaveBlock1Ptr/gSaveBlock2Ptr for the generated ExpandPlaceholder_* functions.
+bindSaveBlockReader(() => save);
 
 export function setSave(data: SaveData): void {
   const legacy = data as SaveData & { pcMail?: PcMailEntry[] };

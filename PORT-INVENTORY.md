@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 65 | 137061 | 1390/6141 |
+| Parcial (< 80 % de funciones) | 64 | 136335 | 1367/6101 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 12 | 26255 | 836/977 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 142 | 113604 | 3833/3833 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 143 | 114330 | 3873/3873 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **106** | **188305** | |
-| **Total en alcance** | **253** | **303042** | **6087/11826** |
+| **Pendiente de portar** | **105** | **187579** | |
+| **Total en alcance** | **253** | **303042** | **6104/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -113,7 +113,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `new_menu_helpers.c` | 761 | 42/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
-| `string_util.c` | 726 | 23/40 | `gba/charmap.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
 | `sound.c` | 649 | 38/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
 | `mystery_gift.c` | 634 | 9/45 | `mysteryGift.ts` |  |  |
@@ -195,6 +194,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |  |
 | `trainer_see.c` | 750 | 37/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |
+| `string_util.c` | 726 | 40/40 | `gba/charmap.ts`, `gba/stringBuffers.ts`, `generated/stringUtil.ts` |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |  |
 | `item.c` | 680 | 49/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
 | `battle_ai_switch_items.c` | 674 | 13/13 | `battle/ai.ts` |  |  |
