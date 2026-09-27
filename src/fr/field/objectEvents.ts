@@ -1168,7 +1168,11 @@ export class ObjectEvents {
     const p = this.hooks.playerDestCoords();
     const r = object.trainerRange;
     const o = object.currentCoords;
-    return !(o.x - r > p.x || o.x + r < p.x || o.y - r > p.y || o.y + r < p.y);
+    const minX = ((o.x - r) << 16) >> 16;
+    const maxX = ((o.x + r) << 16) >> 16;
+    const minY = ((o.y - r) << 16) >> 16;
+    const maxY = ((o.y + r) << 16) >> 16;
+    return !(minX > p.x || maxX < p.x || minY > p.y || maxY < p.y);
   }
 
   /** Mirrors gGetVectorDirectionFuncs in movement_type_func_tables.h. */
@@ -1178,7 +1182,10 @@ export class ObjectEvents {
     // The C locals are s16; keep the same wrapping before abs/comparison.
     const dx = (p.x - object.currentCoords.x) << 16 >> 16;
     const dy = (p.y - object.currentCoords.y) << 16 >> 16;
-    const vector = (): number => Math.abs(dx) > Math.abs(dy)
+    // The C absdx/absdy locals are also s16: abs(-32768) wraps back to -32768.
+    const absDx = (Math.abs(dx) << 16) >> 16;
+    const absDy = (Math.abs(dy) << 16) >> 16;
+    const vector = (): number => absDx > absDy
       ? dx < 0 ? DIR_WEST : DIR_EAST
       : dy < 0 ? DIR_NORTH : DIR_SOUTH;
     const northSouth = (): number => dy < 0 ? DIR_NORTH : DIR_SOUTH;
