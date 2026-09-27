@@ -1133,14 +1133,15 @@ export class ObjectEvents {
     const p = this.hooks.playerDestCoords();
     const dx = p.x - object.currentCoords.x;
     const dy = p.y - object.currentCoords.y;
-    let direction = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? DIR_WEST : DIR_EAST) : (dy < 0 ? DIR_NORTH : DIR_SOUTH);
-    if (!allowed.includes(direction)) {
-      const alt = allowed.includes(DIR_NORTH) || allowed.includes(DIR_SOUTH)
-        ? (dy < 0 ? DIR_NORTH : DIR_SOUTH)
-        : (dx < 0 ? DIR_WEST : DIR_EAST);
-      direction = allowed.includes(alt) ? alt : allowed[0];
-    }
-    return direction;
+    const horizontal = dx < 0 ? DIR_WEST : DIR_EAST;
+    const vertical = dy < 0 ? DIR_NORTH : DIR_SOUTH;
+    const direction = Math.abs(dx) > Math.abs(dy) ? horizontal : vertical;
+    if (allowed.includes(direction)) return direction;
+    const alternate = direction === DIR_WEST || direction === DIR_EAST ? vertical : horizontal;
+    if (allowed.includes(alternate)) return alternate;
+    return allowed.find((candidate) => candidate === DIR_NORTH || candidate === DIR_SOUTH)
+      ?? allowed.find((candidate) => candidate === DIR_WEST || candidate === DIR_EAST)
+      ?? DIR_NONE;
   }
 
   private runMovementType(object: ObjectEvent): void {
@@ -1161,10 +1162,10 @@ export class ObjectEvents {
       case c.MOVEMENT_TYPE_FACE_UP_AND_RIGHT: return [DIR_NORTH, DIR_EAST];
       case c.MOVEMENT_TYPE_FACE_DOWN_AND_LEFT: return [DIR_SOUTH, DIR_WEST];
       case c.MOVEMENT_TYPE_FACE_DOWN_AND_RIGHT: return [DIR_SOUTH, DIR_EAST];
-      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_LEFT: return [DIR_NORTH, DIR_WEST, DIR_SOUTH, DIR_SOUTH];
-      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_RIGHT: return [DIR_NORTH, DIR_EAST, DIR_SOUTH, DIR_SOUTH];
+      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_LEFT: return [DIR_NORTH, DIR_SOUTH, DIR_WEST, DIR_SOUTH];
+      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_RIGHT: return [DIR_SOUTH, DIR_NORTH, DIR_EAST, DIR_SOUTH];
       case c.MOVEMENT_TYPE_FACE_UP_LEFT_AND_RIGHT: return [DIR_NORTH, DIR_WEST, DIR_EAST, DIR_NORTH];
-      case c.MOVEMENT_TYPE_FACE_DOWN_LEFT_AND_RIGHT: return [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_SOUTH];
+      case c.MOVEMENT_TYPE_FACE_DOWN_LEFT_AND_RIGHT: return [DIR_WEST, DIR_EAST, DIR_SOUTH, DIR_SOUTH];
     }
     return undefined;
   }
