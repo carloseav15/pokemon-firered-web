@@ -143,16 +143,21 @@ export function DisableVBlankCounter1(): void {
   gMain.vblankCounter1 = null;
 }
 
+/** main.c VBlankIntr: run the registered callback and advance counters during VBlank. */
+export function VBlankIntr(): void {
+  if (gMain.vblankCounter1) gMain.vblankCounter1.value++;
+  gMain.vblankCallback?.();
+  gMain.vblankCounter2++;
+  CopyBufferedValuesToGpuRegs();
+  gMain.intrCheck |= C.INTR_FLAG_VBLANK;
+}
+
 /** One frame of a hardware scene: callbacks then the VBlank interrupt. */
 export function runHwFrame(): void {
   UpdateLinkAndCallCallbacks();
   setInVBlank(true);
-  gMain.vblankCallback?.();
-  gMain.intrCheck |= C.INTR_FLAG_VBLANK;
-  gMain.vblankCounter2++;
-  CopyBufferedValuesToGpuRegs();
+  VBlankIntr();
   setInVBlank(false);
-  if (gMain.vblankCounter1) gMain.vblankCounter1.value++;
   for (const resolve of vblankWaiters.splice(0)) resolve();
 }
 

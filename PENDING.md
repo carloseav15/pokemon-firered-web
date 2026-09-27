@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6161/11826 (52.1 %)**.
-- Archivos C con funciones aún sin homólogo: **100**; quedan **5665 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6162/11826 (52.1 %)**.
+- Archivos C con funciones aún sin homólogo: **100**; quedan **5664 nombres**.
 - Estos archivos contienen 182.223 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~130.504 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~130.487 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -17,7 +17,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
-| 1 | `main.c` | parcial | 494 | 22/28 | ~105 |  |
+| 1 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 2 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
 | 3 | `battle_gfx_sfx_util.c` | casi completo | 1061 | 40/48 | ~176 |  |
 | 4 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
@@ -118,7 +118,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 99 | `dodrio_berry_picking.c` | parcial | 4954 | 7/147 | ~4718 |  |
 | 100 | `event_object_movement.c` | parcial | 9412 | 34/759 | ~8990 |  |
 
-Total: 100 archivos con huecos: 28 sin empezar, 1 adaptador, 9 casi completos y 62 parciales.
+Total: 100 archivos con huecos: 28 sin empezar, 1 adaptador, 10 casi completos y 61 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 

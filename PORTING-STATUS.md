@@ -5,10 +5,24 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.161/11.826 funciones (52,1%)**,
+single-player. A 2026-09-27, la meta mide **6.162/11.826 funciones (52,1%)**,
 con **100 archivos** con huecos y una estimación ponderada de
-**~130.504/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
+**~130.487/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `main.c`: handler de VBlank (2026-09-27)
+
+- Extraje `VBlankIntr` del bucle `runHwFrame` en `hw/runtime.ts`. Conserva el
+  orden del C para incrementar el contador registrado, ejecutar el callback,
+  avanzar `vblankCounter2`, copiar registros GPU y señalar el bit de VBlank.
+  El wrapper web sigue controlando cuándo entra/sale del periodo VBlank y
+  cuándo despierta los esperadores del frame.
+- `main.c` queda 23/28 por nombre; AgbMain, flash y handlers serial/timer
+  siguen pendientes porque su boot/IRQ de hardware no tiene ruta equivalente
+  completa. Global: **6.162/11.826 (52,1 %)**, 100 archivos con huecos y
+  ~130.487 líneas C ponderadas pendientes. Pasaron `check:port`,
+  `check:honesty`, `build`, inventory, pending y `git diff --check`; sin
+  ejecución en navegador.
 
 ## `new_menu_helpers.c`: buffers y helpers de ventana (2026-09-27)
 
