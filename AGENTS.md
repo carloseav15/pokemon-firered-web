@@ -7,6 +7,7 @@ verifica un archivo C sin inventar nada.
 - **Primero lee [ESTADO-Y-REGLAS.md](ESTADO-Y-REGLAS.md)**: porcentaje real, qué está bien,
   qué se hizo mal (sesión Gemini) y las reglas obligatorias para agentes.
 - Estrategia para acelerar el port y elegir agentes: [ESTADO-Y-REGLAS.md §7](ESTADO-Y-REGLAS.md#7-estrategia-para-acelerar-el-port-fiel)
+- Piloto de generación con Clang: [ESTADO-Y-REGLAS.md §7.8](ESTADO-Y-REGLAS.md#78-clang-como-base-de-la-generación-c--typescript) y [prompt para un goal](GOAL-CLANG.md)
 - Plan de validación de la historia tramo a tramo: [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md)
 - Estado y lista de pendientes (de fácil a difícil): [PORTING-STATUS.md](PORTING-STATUS.md)
 - Faltantes actualizados (sin empezar, adaptadores, parciales, sin probar): [PENDING.md](PENDING.md)

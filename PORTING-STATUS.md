@@ -12,6 +12,11 @@ pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
 
 ## Estrategia de portado revisada, 2026-09-26
 
+Añadida §7.8: usar Clang/AST para un piloto acotado de generación C → TS,
+con análisis de dependencias, semántica de GBA, rechazo de casos no soportados
+y comparación contra C. GOAL-CLANG.md contiene el mensaje para iniciar ese
+trabajo. Estado: propuesta documentada; no se implementó ni ejecutó el piloto.
+
 Actualizada ESTADO-Y-REGLAS.md §7: bloques por dependencias, equivalencias C/TS
 antes de traducir, automatización de patrones, integración por bloque y piloto
 para medir tiempo total y elegir agentes. AGENTS.md, CLAUDE.md y PLAN-RECORRIDO.md

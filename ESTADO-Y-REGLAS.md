@@ -264,10 +264,11 @@ se resuelve una dependencia, sin acumular implementaciones desconectadas.
 1. Reutilizar las capas existentes de hardware, datos y tareas. Mantener nombres,
    máquinas de estados, índices de `data[]` y tiempos del C. Revisar división
    entera, signo, desbordamientos, alias de memoria y vida de los callbacks.
-2. Generar datos exclusivamente con `tools/decomp/`. Ampliar la traducción
-   mecánica solo para patrones repetidos cuyo ahorro se haya comprobado en un
-   piloto. Los casos no soportados deben quedar explícitos. No iniciar un
-   transpilador universal como requisito previo al port.
+2. Generar datos exclusivamente con `tools/decomp/`. Para acelerar la traducción
+   de cuerpos C, usar Clang y su AST como base del piloto descrito en §7.8.
+   Ampliar la generación solo para patrones con evidencia de corrección y ahorro.
+   Los casos no soportados deben quedar explícitos. No iniciar un transpilador
+   universal como requisito previo al port.
 3. Comparar los cuerpos con el C y ejecutar `check:port`, paridad de datos,
    `check:honesty` y `build`. Usar un check headless focalizado cuando pueda
    observar el comportamiento; extender uno existente si ya cubre el módulo.
@@ -355,3 +356,61 @@ o aumentar coincidencias de nombres no demuestra que el port avance más rápido
 Tras el piloto, ampliar automatización o paralelismo solo donde ahorre tiempo
 incluyendo revisión y correcciones. No prometer un multiplicador de velocidad
 antes de medirlo en este repositorio.
+
+### 7.8. Clang como base de la generación C → TypeScript
+
+**Decisión: usar Clang para analizar los cuerpos C y construir el piloto de
+generación especializada.** Clang proporciona un árbol de sintaxis abstracta
+(AST) con declaraciones, tipos y expresiones; el generador de TypeScript lo
+construimos nosotros. Esto no significa que Clang ya emita TS ni que todo el
+decomp pueda traducirse automáticamente.
+
+El exportador ya usa Clang para preprocesar datos, compilar probes y ensamblar
+scripts. Revisar `tools/decomp/common.py`, `step_cdata.py`, `step_structs.py` y
+`step_scripts.py` antes de añadir infraestructura. El análisis de cuerpos es
+una extensión propuesta, todavía sin implementar ni medir.
+
+1. **Entrada reproducible.** Resolver el decomp con `common.py`; registrar su
+   revisión, versión de Clang, target, flags, includes y defines reales de
+   FireRed. Reutilizar el procesamiento de charmap e INCBIN cuando corresponda,
+   conservando la procedencia de los símbolos. No analizar cuerpos mediante
+   sustituciones regex ni usar un AST parcial después de errores de compilación.
+2. **Semántica del target.** Verificar tamaños, signo, alineación y layout para
+   la GBA. No asumir que los probes ejecutados en macOS representan punteros,
+   `long` o structs del target. Cualquier shim de análisis debe ser explícito y
+   conservar los tipos; no puede ocultar cuerpos o comportamiento desconocidos.
+3. **Mapa de oportunidades.** Clasificar una muestra de al menos tres archivos
+   pendientes por nodos AST, llamadas y dependencias. Separar funciones ya
+   equivalentes en TS, candidatas generables, bloqueadas por dependencias y no
+   soportadas. Indicar qué parte del decomp se pudo analizar y cuál falló.
+4. **Generador pequeño.** Elegir una familia repetida con dependencias listas.
+   Seleccionar la interfaz de Clang más sencilla que conserve la información
+   necesaria: exportación estructurada del AST o LibTooling. Verificar soporte
+   en la versión instalada; no construir LLVM desde cero salvo necesidad demostrada.
+   El generador y sus reglas viven en `tools/decomp/`; prototipos e intermedios
+   en `.decomp-build/`. Toda salida final generada se produce por el pipeline,
+   nunca se corrige a mano ni se mezcla con funciones mantenidas manualmente.
+5. **Rechazo seguro.** Emitir funciones completas solo cuando tipos, operaciones
+   y dependencias estén soportados. Ante punteros, alias, operaciones volátiles,
+   ensamblador o callbacks no resueltos, informar archivo, función y motivo;
+   no emitir stubs, aproximaciones ni silenciosamente omitir efectos. Identificar
+   símbolos por archivo y nombre para no confundir funciones `static` homónimas.
+6. **Evidencia e integración.** Probar conversiones, promociones, desbordamientos,
+   división, shifts y efectos laterales que aparezcan en la familia elegida.
+   Comparar contra C original ejecutable con entradas comunes y supuestos de ABI
+   comprobados; un harness de host solo sirve para el subconjunto cuya semántica
+   coincida. Integrar un bloque real, comprobar regeneración determinista y que
+   un caso no soportado se rechace. Mantener las pruebas y reglas de §7.4.
+7. **Decidir con resultados.** Medir generación, revisión, integración y
+   correcciones. Escalar las familias que ahorren trabajo; mantener traducción
+   manual para las demás. Si no hay una familia viable en la muestra, entregar
+   el diagnóstico reproducible y su alcance, sin declarar implementado el generador.
+
+Para este piloto, usar Opus o Astra en el diseño semántico y la revisión; Sonnet
+o Sol en implementación delimitada; Luna en extracción e inventario con criterios
+fijos. Son roles propuestos, sujetos a la medición de §7.7.
+
+Mensaje listo para iniciar el trabajo: [GOAL-CLANG.md](GOAL-CLANG.md).
+Fuentes técnicas: [AST de Clang](https://clang.llvm.org/docs/IntroductionToTheClangAST.html)
+y [LibTooling](https://clang.llvm.org/docs/LibTooling.html). El uso de estas
+interfaces está documentado; la viabilidad y velocidad en este port aún no.
