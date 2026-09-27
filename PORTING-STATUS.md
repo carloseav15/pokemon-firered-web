@@ -5,10 +5,31 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.194/11.826 funciones (52,4%)**,
+single-player. A 2026-09-27, la meta mide **6.195/11.826 funciones (52,4%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.836/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
+**~129.811/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `field_door.c`: descriptores de tiles visibles en Canvas (2026-09-27)
+
+- Porté `BuildDoorTiles` como constructor de los cuatro descriptores que pinta
+  cada metatile visible: número de tile y paleta del cdata exportado. El
+  renderer usa esos descriptores para dibujar los cuatro tiles 8×8 del arte
+  original, tanto en puertas pequeñas como en la mitad inferior visible de las
+  puertas altas. La mitad superior/blank de la construcción C no se emula: en
+  la llamada para la parte baja de una puerta alta, el bucle C lee índices
+  8–11 de un arreglo de solo ocho paletas (comportamiento indefinido); Canvas
+  pinta directamente los cuatro tiles que cubren el metatile visible.
+- `CopyDoorTilesToVram` permanece sin homólogo: copia a VRAM de GBA, mientras
+  que el port web dibuja los datos de tiles exportados en Canvas. Así,
+  `field_door.c` queda 20/21 por nombre; no equivale a paridad completa del
+  archivo C. Intenté salir desde la escalera de la partida guardada en el
+  navegador, pero el driver dejó al jugador en el mismo mapa; no cuento eso
+  como verificación visual de puerta. Pasaron `check:port`, `check:honesty`,
+  `build`, inventory, pending y `git diff --check`.
+- Inventario global: **6.195/11.826 (52,4%)**, 98 archivos con huecos y
+  ~129.811 líneas ponderadas sin homólogo. Próximo archivo sugerido por
+  PENDING: `main.c` (23/28).
 
 ## `battle_gfx_sfx_util.c`: helpers de sprite y carga de healthboxes (2026-09-27)
 

@@ -17,6 +17,16 @@ type DoorGfx = { metatile: number; sound: number; size: number; file: string; pa
 type DoorAnimFrame = { duration: number; tileOffset: number };
 type DoorGraphicsCData = { metatileId: number; sound: number; size: number; tiles: unknown; paletteNums: unknown };
 
+/** BuildDoorTiles (field_door.c), adapted to the four visible bottom-layer descriptors used by Canvas. */
+export function BuildDoorTiles(tileNum: number, paletteNums: ArrayLike<number>, paletteOffset: number): Uint16Array {
+  const tiles = new Uint16Array(4);
+  for (let i = 0; i < tiles.length; i++) {
+    const tile = paletteNums[paletteOffset + i]! << 12;
+    tiles[i] = tile | (tileNum + i);
+  }
+  return tiles;
+}
+
 function doorImageName(symbol: string): string {
   return symbol.replace(/^sDoorAnimTiles_/, "")
     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
@@ -242,13 +252,21 @@ export class DoorAnimator {
       const sy = y * 16 - camY;
       if (sx < -16 || sy < -16 || sx > 240 || sy > 160) continue;
       const data = this.tiles(door.file);
-      const base = offset;
       const paletteOffset = door.size === SIZE_1x2 && offset % 8 === 4 ? 4 : 0;
-      // Cover the closed door tiles first with the frame (tile 0 of each slot is opaque in the art).
-      renderer.drawRawTiles(ctx, data, base + 0, door.palettes[paletteOffset + 0], sx, sy);
-      renderer.drawRawTiles(ctx, data, base + 1, door.palettes[paletteOffset + 1], sx + 8, sy);
-      renderer.drawRawTiles(ctx, data, base + 2, door.palettes[paletteOffset + 2], sx, sy + 8);
-      renderer.drawRawTiles(ctx, data, base + 3, door.palettes[paletteOffset + 3], sx + 8, sy + 8);
+      const tileNum = paletteOffset;
+      const frameOffset = offset - tileNum;
+      const tilemap = BuildDoorTiles(tileNum, door.palettes, paletteOffset);
+      for (let i = 0; i < tilemap.length; i++) {
+        const tile = tilemap[i];
+        renderer.drawRawTiles(
+          ctx,
+          data,
+          frameOffset + (tile & 0x03ff),
+          (tile >>> 12) & 0x0f,
+          sx + (i & 1) * 8,
+          sy + (i >> 1) * 8,
+        );
+      }
     }
   }
 

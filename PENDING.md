@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6194/11826 (52.4 %)**.
-- Archivos C con funciones aún sin homólogo: **98**; quedan **5632 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6195/11826 (52.4 %)**.
+- Archivos C con funciones aún sin homólogo: **98**; quedan **5631 nombres**.
 - Estos archivos contienen 179.633 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~129.836 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~129.811 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -17,7 +17,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
-| 1 | `field_door.c` | casi completo | 524 | 19/21 | ~49 |  |
+| 1 | `field_door.c` | casi completo | 524 | 20/21 | ~24 |  |
 | 2 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 3 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
 | 4 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
