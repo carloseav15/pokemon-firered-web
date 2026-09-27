@@ -12,7 +12,7 @@ import { actionFace, actionJumpInPlace, actionWalkFast, actionWalkNormal, COLLIS
 type TrainerApproachFunc = (objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number) => number;
 
 /** GetTrainerApproachDistanceSouth (trainer_see.c). */
-function GetTrainerApproachDistanceSouth(objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+export function GetTrainerApproachDistanceSouth(objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
   if (trainer.currentCoords.x === x && y > trainer.currentCoords.y && y <= trainer.currentCoords.y + range) {
     if (range > 3 && objects.list.length >= OBJECT_EVENTS_COUNT) return 0;
     return y - trainer.currentCoords.y;
@@ -21,24 +21,24 @@ function GetTrainerApproachDistanceSouth(objects: ObjectEvents, trainer: ObjectE
 }
 
 /** GetTrainerApproachDistanceNorth (trainer_see.c). */
-function GetTrainerApproachDistanceNorth(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+export function GetTrainerApproachDistanceNorth(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
   if (trainer.currentCoords.x === x && y < trainer.currentCoords.y && y >= trainer.currentCoords.y - range) return trainer.currentCoords.y - y;
   return 0;
 }
 
 /** GetTrainerApproachDistanceWest (trainer_see.c). */
-function GetTrainerApproachDistanceWest(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+export function GetTrainerApproachDistanceWest(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
   if (trainer.currentCoords.y === y && x < trainer.currentCoords.x && x >= trainer.currentCoords.x - range) return trainer.currentCoords.x - x;
   return 0;
 }
 
 /** GetTrainerApproachDistanceEast (trainer_see.c). */
-function GetTrainerApproachDistanceEast(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
+export function GetTrainerApproachDistanceEast(_objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number): number {
   if (trainer.currentCoords.y === y && x > trainer.currentCoords.x && x <= trainer.currentCoords.x + range) return x - trainer.currentCoords.x;
   return 0;
 }
 
-const sDirectionalApproachDistanceFuncs: TrainerApproachFunc[] = [
+export const sDirectionalApproachDistanceFuncs: TrainerApproachFunc[] = [
   GetTrainerApproachDistanceSouth,
   GetTrainerApproachDistanceNorth,
   GetTrainerApproachDistanceWest,
@@ -46,7 +46,7 @@ const sDirectionalApproachDistanceFuncs: TrainerApproachFunc[] = [
 ];
 
 /** CheckPathBetweenTrainerAndPlayer (trainer_see.c). */
-function CheckPathBetweenTrainerAndPlayer(objects: ObjectEvents, trainer: ObjectEvent, approachDistance: number, direction: number): number {
+export function CheckPathBetweenTrainerAndPlayer(objects: ObjectEvents, trainer: ObjectEvent, approachDistance: number, direction: number): number {
   if (approachDistance === 0) return 0;
   const rangeX = trainer.rangeX, rangeY = trainer.rangeY;
   try {
@@ -68,7 +68,7 @@ function CheckPathBetweenTrainerAndPlayer(objects: ObjectEvents, trainer: Object
 }
 
 /** GetTrainerApproachDistance (trainer_see.c). */
-function GetTrainerApproachDistance(objects: ObjectEvents, trainer: ObjectEvent, x: number, y: number): number {
+export function GetTrainerApproachDistance(objects: ObjectEvents, trainer: ObjectEvent, x: number, y: number): number {
   if (trainer.trainerType === C.TRAINER_TYPE_NORMAL) {
     const direction = trainer.facingDirection;
     const distance = sDirectionalApproachDistanceFuncs[direction - 1]?.(objects, trainer, trainer.trainerRange, x, y) ?? 0;
@@ -79,6 +79,25 @@ function GetTrainerApproachDistance(objects: ObjectEvents, trainer: ObjectEvent,
     if (CheckPathBetweenTrainerAndPlayer(objects, trainer, distance, i + 1)) return distance;
   }
   return 0;
+}
+
+/** TrainerSeeFunc_Dummy (trainer_see.c): no-op placeholder at index 0. */
+export function TrainerSeeFunc_Dummy(_taskId?: number, _task?: unknown, _trainerObj?: unknown): boolean {
+  return false;
+}
+
+/** TrainerSeeFunc_BeginRemoveDisguise (trainer_see.c): initiate reveal movement for disguised trainers. */
+export function TrainerSeeFunc_BeginRemoveDisguise(objects: ObjectEvents, trainer: ObjectEvent): boolean {
+  if (!objects.isMovementOverridden(trainer) || objects.ObjectEventClearHeldMovementIfFinished(trainer) !== 0) {
+    objects.setHeldMovement(trainer, C.MOVEMENT_ACTION_REVEAL_TRAINER);
+    return true;
+  }
+  return false;
+}
+
+/** TrainerSeeFunc_WaitRemoveDisguise (trainer_see.c): wait for disguise reveal to complete. */
+export function TrainerSeeFunc_WaitRemoveDisguise(objects: ObjectEvents, trainer: ObjectEvent): boolean {
+  return objects.ObjectEventClearHeldMovementIfFinished(trainer) !== 0;
 }
 
 export class TrainerSee {
@@ -353,12 +372,27 @@ export class TrainerSee {
     }
     return false;
   }
+  /** TrainerSeeFunc_Dummy (trainer_see.c): no-op placeholder at index 0. */
+  private TrainerSeeFunc_Dummy(): boolean {
+    return TrainerSeeFunc_Dummy();
+  }
+
+  /** TrainerSeeFunc_BeginRemoveDisguise (trainer_see.c): initiate reveal movement for disguised trainers. */
+  private TrainerSeeFunc_BeginRemoveDisguise(trainer: ObjectEvent): boolean {
+    return TrainerSeeFunc_BeginRemoveDisguise(this.game.overworld.objects, trainer);
+  }
+
+  /** TrainerSeeFunc_WaitRemoveDisguise (trainer_see.c): wait for disguise reveal to complete. */
+  private TrainerSeeFunc_WaitRemoveDisguise(trainer: ObjectEvent): boolean {
+    return TrainerSeeFunc_WaitRemoveDisguise(this.game.overworld.objects, trainer);
+  }
+
   /** EndTrainerApproach starts the waiting task; the source event waits for it. */
   endApproach(): void {
     const pending = this.approaching;
     if (!pending) { this.game.overworld.script.ScriptContext_Enable(); return; }
     const ow = this.game.overworld, trainer = pending.trainer;
-    let state: "start" | "cameraUp" | "cameraDown" | "exclamation" | "ashPuff" | "ashReveal" | "ashWaitPuff" | "walk" | "engage" | "end" = "start";
+    let state: "start" | "cameraUp" | "cameraDown" | "exclamation" | "beginDisguise" | "waitDisguise" | "ashPuff" | "ashReveal" | "ashWaitPuff" | "walk" | "engage" | "end" = "start";
     let camera: ObjectEvent | undefined, cameraSteps = 0, ashPuff: Sprite | null | undefined;
     const approachRange = {remaining: pending.steps};
     const movementReady = (object: ObjectEvent): boolean => this.isTrainerSeeMovementReady(object);
@@ -370,6 +404,7 @@ export class TrainerSee {
       if (!trainer.active) { finish(id); return; }
       switch (state) {
         case "start": {
+          this.TrainerSeeFunc_Dummy();
           const next = this.TrainerSeeFunc_StartExclMark(trainer, pending.steps);
           if (next === "camera") {
             camera = this.TrainerSeeFunc_OffscreenAboveTrainerCreateCameraObj();
@@ -378,7 +413,13 @@ export class TrainerSee {
           state = "exclamation";
           // StartExclMark returns TRUE in C, so check the icon in this same frame.
           if (!this.TrainerSeeFunc_WaitExclMark()) return;
-          if (trainer.movementType === C.MOVEMENT_TYPE_BURIED) {
+          if (trainer.movementType === C.MOVEMENT_TYPE_TREE_DISGUISE || trainer.movementType === C.MOVEMENT_TYPE_MOUNTAIN_DISGUISE) {
+            if (this.TrainerSeeFunc_BeginRemoveDisguise(trainer)) {
+              state = "waitDisguise";
+            } else {
+              state = "beginDisguise";
+            }
+          } else if (trainer.movementType === C.MOVEMENT_TYPE_BURIED) {
             if (!this.TrainerSeeFunc_TrainerInAshFacesPlayer(trainer)) { state = "exclamation"; return; }
             state = "ashPuff";
           } else state = "walk";
@@ -404,6 +445,14 @@ export class TrainerSee {
           break;
         case "exclamation":
           if (!this.TrainerSeeFunc_WaitExclMark()) return;
+          if (trainer.movementType === C.MOVEMENT_TYPE_TREE_DISGUISE || trainer.movementType === C.MOVEMENT_TYPE_MOUNTAIN_DISGUISE) {
+            if (this.TrainerSeeFunc_BeginRemoveDisguise(trainer)) {
+              state = "waitDisguise";
+            } else {
+              state = "beginDisguise";
+            }
+            break;
+          }
           if (trainer.movementType === C.MOVEMENT_TYPE_BURIED) {
             if (!this.TrainerSeeFunc_TrainerInAshFacesPlayer(trainer)) return;
             state = "ashPuff";
@@ -412,6 +461,16 @@ export class TrainerSee {
           state = "walk";
           // TrainerSeeFunc_WaitExclMark returns TRUE: approach runs this frame.
           // fall through
+        case "beginDisguise":
+          if (this.TrainerSeeFunc_BeginRemoveDisguise(trainer)) {
+            state = "waitDisguise";
+          }
+          break;
+        case "waitDisguise":
+          if (this.TrainerSeeFunc_WaitRemoveDisguise(trainer)) {
+            state = "walk";
+          }
+          break;
         case "walk":
           if (this.TrainerSeeFunc_TrainerApproach(trainer, approachRange)) state = "engage";
           break;

@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
 | Parcial (< 80 % de funciones) | 68 | 137462 | 1379/6161 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 15 | 31471 | 966/1119 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 135 | 107841 | 3668/3668 |
+| Casi completo (≥ 80 % y < 100 %) | 14 | 30721 | 932/1082 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 136 | 108591 | 3705/3705 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **113** | **194068** | |
-| **Total en alcance** | **253** | **303042** | **6041/11826** |
+| **Pendiente de portar** | **112** | **193318** | |
+| **Total en alcance** | **253** | **303042** | **6044/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -151,7 +151,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
-| `trainer_see.c` | 750 | 34/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 
@@ -198,6 +197,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `wild_encounter.c` | 784 | 36/36 | `field/wildEncounter.ts` |  |  |
 | `list_menu.c` | 758 | 31/31 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |  |
+| `trainer_see.c` | 750 | 37/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |  |
 | `item.c` | 680 | 49/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |

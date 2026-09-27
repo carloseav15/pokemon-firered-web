@@ -28,6 +28,13 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`trainer_see.c`: 37/37 funciones con homólogo (visión de entrenadores, rutinas de aproximación y disfraces).**
+  Implementé las 3 funciones restantes del archivo, `TrainerSeeFunc_Dummy`, `TrainerSeeFunc_BeginRemoveDisguise` y `TrainerSeeFunc_WaitRemoveDisguise`, en `src/fr/field/trainerSee.ts`, asegurando el soporte para entrenadores disfrazados de árbol o roca (`MOVEMENT_TYPE_TREE_DISGUISE`, `MOVEMENT_TYPE_MOUNTAIN_DISGUISE`) con la acción de movimiento `MOVEMENT_ACTION_REVEAL_TRAINER`.
+  Exporté las rutinas direccionales de alcance (`GetTrainerApproachDistanceSouth`, `GetTrainerApproachDistanceNorth`, `GetTrainerApproachDistanceWest`, `GetTrainerApproachDistanceEast`), la tabla `sDirectionalApproachDistanceFuncs`, la verificación de colisiones en la trayectoria (`CheckPathBetweenTrainerAndPlayer`) y la función principal de detección `GetTrainerApproachDistance`.
+  Conecté las fases de aproximación para entrenadores disfrazados dentro de la máquina de estados de `endApproach()`, llamando a `TrainerSeeFunc_Dummy()` al inicio del ciclo y despachando las fases `beginDisguise` y `waitDisguise` hacia la aproximación normal (`walk`).
+  Añadí el check headless `tools/checks/trainerSee.ts` (`npm run check:trainer-see`) que valida: paridad con las tablas exportadas en `public/fr/cdata/trainer_see.json` (`sTrainerSeeFuncList` de 15 funciones, `sDirectionalApproachDistanceFuncs`), cálculo de distancias direccionales en los cuatro puntos cardinales, detección de colisiones de ruta y ciclo de revelación de entrenadores disfrazados.
+  Validación: pasan `check:trainer-see`, `check:preview`, `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.044/11.826 funciones (51,1%)**, con **112 archivos** con huecos (bajó de 113); `trainer_see.c` sale de `PENDING.md`.
 - **`fldeff_flash.c`: 22/22 funciones con homólogo (animáticas de transición de mapa y callbacks de hardware).**
   Implementé los callbacks de hardware de animática de cambio de mapa `CB2_ChangeMapMain`, `VBC_ChangeMapVBlank` y `CB2_DoChangeMap` en `src/fr/mapPreviewScreen.ts`, asegurando el reseteo de registros GPU (`DISPCNT`, `BG0..2CNT`, `BG0..2HOFS`, `BG0..2VOFS`), limpieza de tareas y sprites, y fallback a `gMain.savedCallback` en caso de no ejecutarse la transición.
   Conecté `CB2_DoChangeMap` en `src/fr/field/overworld.ts` durante el manejo de transiciones por warps (`warpTransition`).
