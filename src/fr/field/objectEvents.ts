@@ -208,6 +208,18 @@ export function ObjectEventIsHeldMovementActive(objectEvent: ObjectEvent): boole
   return objectEvent.heldMovementActive && objectEvent.movementActionId !== MOVEMENT_ACTION_NONE;
 }
 
+/** event_object_movement.c GetDirectionToFace: x takes precedence over y. */
+export function GetDirectionToFace(x1: number, y1: number, x2: number, y2: number): number {
+  x1 = (x1 << 16) >> 16;
+  y1 = (y1 << 16) >> 16;
+  x2 = (x2 << 16) >> 16;
+  y2 = (y2 << 16) >> 16;
+  if (x1 > x2) return DIR_WEST;
+  if (x1 < x2) return DIR_EAST;
+  if (y1 > y2) return DIR_NORTH;
+  return DIR_SOUTH;
+}
+
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
 export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
   const oldX = (objectEvent.currentCoords.x << 16) >> 16;
@@ -1449,9 +1461,7 @@ export class ObjectEvents {
     // Face player / away
     if (id === 0x4a || id === 0x4b) {
       const p = this.hooks.playerDestCoords();
-      const dx = p.x - object.currentCoords.x;
-      const dy = p.y - object.currentCoords.y;
-      let direction = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? DIR_WEST : DIR_EAST) : (dy < 0 ? DIR_NORTH : DIR_SOUTH);
+      let direction = GetDirectionToFace(object.currentCoords.x, object.currentCoords.y, p.x, p.y);
       if (id === 0x4b) direction = OPPOSITE[direction];
       this.faceDirection(object, direction);
       return true;
