@@ -19,6 +19,28 @@ const RAM_SCRIPT_BYTES = 995;
 
 export let gRamScriptRetAddr: number | null = null;
 
+// script.c file-static input recorded for Quest Log playback.
+let sQuestLogInputIsDpad = false;
+let sQuestLogInput = 0;
+
+/** SetQuestLogInputIsDpadFlag (script.c). */
+export function SetQuestLogInputIsDpadFlag(): void { sQuestLogInputIsDpad = true; }
+
+/** ClearQuestLogInputIsDpadFlag (script.c). */
+export function ClearQuestLogInputIsDpadFlag(): void { sQuestLogInputIsDpad = false; }
+
+/** IsQuestLogInputDpad (script.c). */
+export function IsQuestLogInputDpad(): boolean { return sQuestLogInputIsDpad; }
+
+/** RegisterQuestLogInput (script.c): preserve the C u8 input code. */
+export function RegisterQuestLogInput(value: number): void { sQuestLogInput = value & 0xff; }
+
+/** ClearQuestLogInput (script.c). */
+export function ClearQuestLogInput(): void { sQuestLogInput = 0; }
+
+/** GetRegisteredQuestLogInput (script.c). */
+export function GetRegisteredQuestLogInput(): number { return sQuestLogInput; }
+
 function ramScriptDataBytes(): Uint8Array {
   const data = save.ramScript!.data;
   const bytes = new Uint8Array(RAM_SCRIPT_DATA_SIZE);

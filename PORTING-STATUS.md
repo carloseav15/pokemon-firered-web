@@ -6,8 +6,8 @@ systems. The first playable route is a milestone, not the completion criterion.
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
 single-player. Los porcentajes anteriores de este documento son históricos;
-la meta vigente mide **5.978/11.826 funciones (50,5%)**, con **117 archivos**
-con huecos y una estimación ponderada de **~134.185/303.042 líneas C (44,3%)**
+la meta vigente mide **5.984/11.826 funciones (50,6%)**, con **117 archivos**
+con huecos y una estimación ponderada de **~134.121/303.042 líneas C (44,3%)**
 pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
 
 ## Estrategia de portado revisada, 2026-09-26
@@ -47,6 +47,13 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
   de 16×16 y el ancho Braille ya usaban los datos exportados. Pasan
   `check:port`, `check:honesty`, `build`, `inventory`, `pending` y
   `git diff --check`; no hice comparación de píxeles ni prueba en navegador.
+- **`script.c`: 54/55 funciones con homólogo.** Añadí los seis accesores de
+  entrada Quest Log que comparten el estado estático del C: bandera de D-pad y
+  valor de entrada registrado. `GetSavedRamScriptIfValid` sigue pendiente
+  porque requiere `ValidateSavedWonderCard`; esa validación de Wonder Card aún
+  no existe en el port. Pasan `check:port`, `check:honesty`, `build`,
+  `inventory`, `pending` y `git diff --check`; sin playback Quest Log en
+  navegador.
 - **`menu_helpers.c`: 17/17 funciones con homólogo.** Reemplacé el stub de
   `MenuHelpers_IsLinkActive` por las predicadas fuente-fieles de callback,
   jugadores remotos y cola (`IsActiveOverworldLinkBusy`,
@@ -83,10 +90,10 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.978/11.826 funciones (50,5%)**, quedan **5.848 (49,5%)** y hay **117
+  son **5.984/11.826 funciones (50,6%)**, quedan **5.842 (49,4%)** y hay **117
   archivos C con huecos** (29 sin empezar, 1 adaptador, 18 casi completos y 69
   parciales). El denominador incluye los sistemas opcionales y de enlace antes
-  excluidos. La estimación ponderada sin cubrir es **~134.185/303.042 líneas
+  excluidos. La estimación ponderada sin cubrir es **~134.121/303.042 líneas
   (44,3%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
@@ -1088,7 +1095,7 @@ audio backend exists.
 - `field_camera.c`: camera movement/map transitions, pan and metatile drawing are integrated in `field/overworld.ts`; GBA ring-buffer slices and camera sprite callbacks are adapted or absent. Marked partial; no movement trace this pass.
 - `option_menu.c`: six settings, cycling/input, frame preview, persistence and return flow are implemented in `optionMenu.ts`; Canvas/HwScene adaptation, no pixel comparison.
 - `wireless_communication_status_screen.c`: counts RFU trade/battle/union/minigame activity and displays nearby peers; no single-player caller or wireless hardware. Marked out of scope for single-player.
-- `script.c`: bytecode/native execution and map-script table dispatch exist in `script/context.ts` and `overworld.ts`; RAM scripts, some dialogue control flags and Quest Log input helpers are missing. Marked partial.
+- `script.c`: bytecode/native execution and map-script table dispatch exist in `script/context.ts` and `overworld.ts`; the RAM script slot and checksum are modeled. Quest Log input state accessors are ported, but the saved-script getter still depends on unported Wonder Card validation. Marked partial.
 - `itemfinder.c`: complete name inventory in `menus/itemFinder.ts`; hidden-item scan, connected maps, underfoot behavior, responses, and arrow/star sprites are present. Browser/runtime verification remains pending.
 - `sound.c`: map music state/fades, fanfares, SEs, cries and ducking have WebAudio counterparts, but the source M4A engine and table-level audio behavior are adapted. Marked partial; no audio comparison.
 - `menu_indicators.c`: actualizado por el pase fuente 2026-09-26 abajo; las dos tareas C vacías permanecen sin declararse.

@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5978/11826 (50.5 %)**.
-- Archivos C con funciones aún sin homólogo: **117**; quedan **5848 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **5984/11826 (50.6 %)**.
+- Archivos C con funciones aún sin homólogo: **117**; quedan **5842 nombres**.
 - Estos archivos contienen 196.594 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~134.185 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~134.121 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -17,10 +17,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
-| 1 | `item.c` | casi completo | 680 | 47/49 | ~27 |  |
-| 2 | `trainer_see.c` | casi completo | 750 | 34/37 | ~60 |  |
-| 3 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
-| 4 | `script.c` | casi completo | 583 | 48/55 | ~74 |  |
+| 1 | `script.c` | casi completo | 583 | 54/55 | ~10 |  |
+| 2 | `item.c` | casi completo | 680 | 47/49 | ~27 |  |
+| 3 | `trainer_see.c` | casi completo | 750 | 34/37 | ~60 |  |
+| 4 | `fldeff_flash.c` | casi completo | 479 | 19/22 | ~65 |  |
 | 5 | `cereader_tool.c` | parcial | 97 | 1/8 | ~84 |  |
 | 6 | `quest_log_battle.c` | parcial | 150 | 1/3 | ~100 |  |
 | 7 | `battle_controllers.c` | casi completo | 1214 | 61/68 | ~124 |  |
@@ -179,6 +179,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
 - Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona). Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
+- Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
 - Pantalla de nombres: 35/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.
 - Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
@@ -211,6 +212,7 @@ Verificado solo con `check:port`, `build`, paridad de cdata/incbin/textos o chec
 - item.c (compactación de PC y bolsillos) → `pokemon/items.ts, itemPc.ts, bagMenu.ts, tmCase.ts`
 - trainer_see.c (revelación de entrenador enterrado) → `field/trainerSee.ts, field/objectEvents.ts`
 - braille_text.c (callback de impresora Braille) → `gba/textPrinter.ts, gba/font.ts`
+- script.c (estado de entrada Quest Log) → `script/context.ts`
 
 ## 6. Fase final (después de portar)
 
