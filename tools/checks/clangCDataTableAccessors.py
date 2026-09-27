@@ -50,13 +50,14 @@ def main() -> None:
     body = page_body[start:end]
     naming_defs = json.loads((ROOT / "public/fr/cdata/naming_screen.json").read_text())["defs"]
     cdata = naming_defs["sPageToNextGfxId"]["value"]
-    ast_funcs = clang_ast.extract_functions(naming_ast, {"CurrentPageToNextKeyboardId", "CurrentPageToKeyboardId"})
+    extra_names = {"CurrentPageToNextKeyboardId", "CurrentPageToKeyboardId", "GetTextEntryPosition", "GetPreviousTextCaretPosition"}
+    ast_funcs = clang_ast.extract_functions(naming_ast, extra_names)
     current_bodies = []
-    for name in ("CurrentPageToNextKeyboardId", "CurrentPageToKeyboardId"):
+    for name in sorted(extra_names):
         function = ast_funcs[name]
         start = function.raw_node["range"]["begin"]["offset"]
         end = function.raw_node["range"]["end"]["offset"] + function.raw_node["range"]["end"]["tokLen"]
-        current_bodies.append(page_body[start:end])
+        current_bodies.append((name, page_body[start:end]))
     next_keyboard = naming_defs["sPageToNextKeyboardId"]["value"]
     keyboard = naming_defs["sPageToKeyboardId"]["value"]
     calls = list(range(3)) + [0x100, 0x101, 0x102]
@@ -71,18 +72,28 @@ _Static_assert(sizeof(u8) == 1, "u8 width");
 static const u8 sPageToNextGfxId[3] = {{{", ".join(map(str, cdata))}}};
 static const u8 sPageToNextKeyboardId[3] = {{{", ".join(map(str, next_keyboard))}}};
 static const u8 sPageToKeyboardId[3] = {{{", ".join(map(str, keyboard))}}};
-struct NamingScreenData {{ u8 currentPage; }};
+typedef int8_t s8;
+struct NamingTemplate {{ u8 maxChars; }};
+struct NamingScreenData {{ u8 currentPage; struct NamingTemplate *template; u8 textBuffer[10]; }};
 static struct NamingScreenData namingScreen;
+static struct NamingTemplate namingTemplate;
 static struct NamingScreenData *sNamingScreen = &namingScreen;
 {body}
-{current_bodies[0]}
-{current_bodies[1]}
+{chr(10).join(item[1] for item in current_bodies)}
 int main(void)
 {{
 {cases}
     for (u8 page = 0; page < 3; page++) {{
         sNamingScreen->currentPage = page;
         printf("N %u %u\\n", (unsigned)CurrentPageToNextKeyboardId(), (unsigned)CurrentPageToKeyboardId());
+    }}
+    for (u8 maxChars = 1; maxChars <= 10; maxChars++) {{
+        namingTemplate.maxChars = maxChars;
+        sNamingScreen->template = &namingTemplate;
+        for (unsigned mask = 0; mask < (1u << maxChars); mask++) {{
+            for (u8 i = 0; i < 10; i++) sNamingScreen->textBuffer[i] = (i < maxChars && (mask & (1u << i))) ? 65 : 255;
+            printf("T %u %u %u %u\\n", maxChars, mask, (unsigned)GetTextEntryPosition(), (unsigned)GetPreviousTextCaretPosition());
+        }}
     }}
     return 0;
 }}
@@ -95,12 +106,15 @@ int main(void)
     subprocess.run(["clang", "-std=c11", "-Wall", "-Werror", str(c_file), "-o", str(binary)], check=True)
     lines = subprocess.run([str(binary)], check=True, capture_output=True, text=True).stdout.splitlines()
     gfx_actual = [int(value) for value in lines[:len(calls)]]
-    keyboard_actual = [[int(x) for x in line.split()[1:]] for line in lines[len(calls):]]
+    page_line_start = len(calls)
+    keyboard_actual = [[int(x) for x in line.split()[1:]] for line in lines[page_line_start:page_line_start + 3]]
+    caret_cases = [[int(x) for x in line.split()[1:]] for line in lines[page_line_start + 3:]]
     (build_dir / "pageToNextGfxIdResults.json").write_text(json.dumps({
         "cases": calls, "expected": gfx_actual,
         "currentPageMappings": keyboard_actual,
+        "caretCases": caret_cases,
     }))
-    print("Clang cdata table accessors: deterministic generation, unsupported-AST rejection, and three C keyboard-page mappings passed")
+    print(f"Clang naming accessors: deterministic generation, unsupported-AST rejection, three C keyboard-page mappings, and {len(caret_cases)} C caret cases passed")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import * as C from "../../src/fr/generated/constants.ts";
 import { FacilityClassToPicIndex, PageToNextGfxId } from "../../src/fr/generated/cdataTableAccessors.ts";
 import { registerCData } from "../../src/fr/hw/assets.ts";
 import { PlayerGenderToFrontTrainerPicId } from "../../src/fr/trainerPokemonSprites.ts";
-import { CurrentPageToKeyboardId, CurrentPageToNextKeyboardId, type NamingModel } from "../../src/fr/menus/namingModel.ts";
+import { CurrentPageToKeyboardId, CurrentPageToNextKeyboardId, GetPreviousTextCaretPosition, GetTextEntryPosition, type NamingModel } from "../../src/fr/menus/namingModel.ts";
 
 const root = `${process.cwd()}/public/fr/cdata/`;
 const pokemon = JSON.parse(readFileSync(`${root}pokemon.json`, "utf8")) as {
@@ -41,6 +41,7 @@ const pageResults = JSON.parse(readFileSync(`${process.cwd()}/.decomp-build/chec
   cases: number[];
   expected: number[];
   currentPageMappings: number[][];
+  caretCases: number[][];
 };
 for (let i = 0; i < pageResults.cases.length; i++) {
   assert.equal(PageToNextGfxId(pageResults.cases[i]), pageResults.expected[i], `PageToNextGfxId C parity case ${i}`);
@@ -56,7 +57,17 @@ for (let page = 0; page < 3; page++) {
   assert.equal(pageResults.currentPageMappings[page][0], nextKeyboardTable.value[page], `C next keyboard mapping for page ${page}`);
   assert.equal(pageResults.currentPageMappings[page][1], keyboardTable.value[page], `C keyboard mapping for page ${page}`);
 }
+for (const [maxChars, mask, cPosition, cPrevious] of pageResults.caretCases) {
+  const text = new Uint8Array(10).fill(0xff);
+  for (let index = 0; index < maxChars; index++) if (mask & (1 << index)) text[index] = 65;
+  const model = { page: 0, text, template: { maxChars } } as unknown as NamingModel;
+  assert.equal(GetTextEntryPosition(model), cPosition, `text entry position max=${maxChars} mask=${mask}`);
+  assert.equal(GetPreviousTextCaretPosition(model), cPrevious, `previous caret position max=${maxChars} mask=${mask}`);
+}
 const namingSource = readFileSync(`${process.cwd()}/src/fr/namingScreen.ts`, "utf8");
 assert.match(namingSource, /const gfx = PageToNextGfxId\(page\);/, "naming screen page button must use the generated C accessor");
 assert.equal((namingSource.match(/CurrentPageToNextKeyboardId\(this\.model\)/g) ?? []).length, 2, "both active keyboard-page callers must use the C-named helper");
-console.log(`C-data accessors: ${table.value.length * 2} trainer-pic comparisons, 3 integrated trainer-pic checks, ${pageResults.cases.length} PageToNextGfxId C cases, and 6 keyboard-page C/TS comparisons passed`);
+const namingModelSource = readFileSync(`${process.cwd()}/src/fr/menus/namingModel.ts`, "utf8");
+assert.match(namingModelSource, /text\[GetPreviousTextCaretPosition\(this\)\] = EOS/, "delete path must use the C-named previous-caret helper");
+assert.match(namingModelSource, /get caret\(\): number \{ return GetTextEntryPosition\(this\); \}/, "entry path must use the C-named caret helper");
+console.log(`C-data accessors: ${table.value.length * 2} trainer-pic comparisons, 3 integrated trainer-pic checks, ${pageResults.cases.length} PageToNextGfxId cases, 6 keyboard-page mappings, and ${pageResults.caretCases.length * 2} C/TS caret comparisons passed`);

@@ -30,6 +30,22 @@ export function CurrentPageToKeyboardId(model: NamingModel): number {
   return data<number[]>("sPageToKeyboardId")[model.page] ?? 0;
 }
 
+/** GetTextEntryPosition (naming_screen.c). */
+export function GetTextEntryPosition(model: NamingModel): number {
+  for (let i = 0; i < model.template.maxChars; i++) {
+    if (model.text[i] === EOS) return i;
+  }
+  return model.template.maxChars - 1;
+}
+
+/** GetPreviousTextCaretPosition (naming_screen.c). */
+export function GetPreviousTextCaretPosition(model: NamingModel): number {
+  for (let i = model.template.maxChars - 1; i > 0; i--) {
+    if (model.text[i] !== EOS) return i;
+  }
+  return 0;
+}
+
 /** GetKeyRoleAtCursorPos (naming_screen.c). */
 export function GetKeyRoleAtCursorPos(model: NamingModel): KeyboardKeyRole {
   if (model.x < GetCurrentPageColumnCount(model)) return "character";
@@ -164,14 +180,7 @@ export class NamingModel {
   get keyboardId(): number { return CurrentPageToKeyboardId(this); }
   get columns(): number { return data<number[]>("sPageColumnCounts")[this.keyboardId]; }
   get columnPositions(): number[] { return data<number[][]>("sPageColumnXPos")[this.keyboardId]; }
-  get caret(): number {
-    const end = this.text.indexOf(EOS);
-    return Math.min(end < 0 ? this.template.maxChars : end, this.template.maxChars - 1);
-  }
-  private get previousCaret(): number {
-    for (let i = this.template.maxChars - 1; i > 0; i--) if (this.text[i] !== EOS) return i;
-    return 0;
-  }
+  get caret(): number { return GetTextEntryPosition(this); }
   get onButton(): boolean { return this.x === this.columns; }
 
   moveToOK(): void { this.x = this.columns; this.y = 2; }
@@ -182,13 +191,13 @@ export class NamingModel {
     this.x = onButton ? this.columns : Math.min(this.x, this.columns - 1);
   }
 
-  deleteCharacter(): void { this.text[this.previousCaret] = EOS; }
+  deleteCharacter(): void { this.text[GetPreviousTextCaretPosition(this)] = EOS; }
 
   addCharacter(): boolean {
     // C pads the short rows of sKeyboardChars[3][4][8] with zero/CHAR_SPACE.
     const rows = data<number[][][]>("sKeyboardChars");
     this.text[this.caret] = rows[this.keyboardId][this.y][this.x] ?? CHAR_SPACE;
-    return this.previousCaret === this.template.maxChars - 1;
+    return GetPreviousTextCaretPosition(this) === this.template.maxChars - 1;
   }
 
   save(): void {

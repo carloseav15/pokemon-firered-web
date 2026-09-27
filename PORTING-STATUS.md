@@ -4228,3 +4228,17 @@ Pending / placeholders:
   `check:cdata-table-accessors`, `check:port`, `check:honesty`, `build`,
   inventory, pending y `git diff --check`. El build mantiene avisos anteriores
   sobre imports dinámicos y tamaño del bundle.
+
+## `naming_screen.c`: posiciones del texto y caret (2026-09-27)
+
+- Porté `GetTextEntryPosition` y `GetPreviousTextCaretPosition` como helpers con
+  nombres C en `namingModel.ts`. El getter de caret, `deleteCharacter` y la
+  guarda de buffer lleno ahora usan esos helpers; los recorridos conservan los
+  límites y el EOS de la pantalla original.
+- El harness compiló ambos cuerpos C extraídos y comparó cada máscara de texto
+  para longitudes 1–10: 2.046 estados por helper, 4.092 resultados C/TS. En
+  navegador preparé un Bulbasaur sin guardar el apodo y pulsé A; se dibujó la
+  primera letra y el caret avanzó. Pasaron `check:cdata-table-accessors`,
+  `check:port`, `check:honesty`, `build`, inventory, pending y
+  `git diff --check`; el build conserva sus avisos anteriores. `naming_screen.c`
+  queda 38/109; total 6.277/11.826 (53,1 %), con 5.549 nombres pendientes.
