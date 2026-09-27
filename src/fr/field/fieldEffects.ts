@@ -561,6 +561,7 @@ export class FieldEffects {
       if (object.landingJump && !object.disableJumpLandingGroundEffect) this.spawnJumpLanding(object);
       else if (object.landingJump && object.isPlayer) this.spawnJumpLanding(object);
       if (MB.MetatileBehavior_HasRipples(cur)) this.GroundEffect_Ripple(object);
+      if (MB.MetatileBehavior_IsSeaweed(cur)) this.GroundEffect_Seaweed(object);
     } else if (kind === "spawn") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, true);
     }
@@ -689,6 +690,32 @@ export class FieldEffects {
       s.invisible = object.sprite.invisible;
     };
     this.sandPileEffects.set(object, sprite);
+  }
+
+  /** GroundEffect_Seaweed / FldEff_Bubbles. */
+  GroundEffect_Seaweed(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("Bubbles", object.currentCoords.x * 16 + 8, object.currentCoords.y * 16);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = 1;
+    sprite.subpriority = 0x52;
+    sprite.data[0] = 0;
+    sprite.callback = (s) => {
+      s.data[0] = (s.data[0]! + 0x80) & 0x100;
+      s.y -= s.data[0]! >> 8;
+      this.UpdateObjectEventSpriteInvisibility(s, false);
+      if (s.invisible || s.animEnded) this.ow.sprites.destroy(s);
+    };
+  }
+
+  /** UpdateObjectEventSpriteInvisibility (event_object_movement.c). */
+  UpdateObjectEventSpriteInvisibility(sprite: Sprite, invisible: boolean): void {
+    sprite.invisible = invisible;
+    const x = (sprite.x + sprite.x2 + sprite.centerToCornerVecX + (sprite.coordOffsetEnabled ? this.ow.sprites.offsetX : 0)) & 0xffff;
+    const y = (sprite.y + sprite.y2 + sprite.centerToCornerVecY + (sprite.coordOffsetEnabled ? this.ow.sprites.offsetY : 0)) & 0xffff;
+    const x2 = ((x - (sprite.centerToCornerVecX >> 1)) << 16) >> 16;
+    const y2 = ((y - (sprite.centerToCornerVecY >> 1)) << 16) >> 16;
+    if (x >= 240 + 16 || x2 < -16 || y >= 160 + 16 || y2 < -16) sprite.invisible = true;
   }
 
   /** GroundEffect_StepOnPuddle (event_object_movement.c): play the linked splash on a puddle step. */
