@@ -5,10 +5,26 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.218/11.826 funciones (52,6%)**,
+single-player. A 2026-09-27, la meta mide **6.220/11.826 funciones (52,6%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.526/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.501/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: limpiar movimiento retenido (2026-09-27)
+
+- Porté `ObjectEventClearHeldMovement` y `ObjectEventClearHeldMovementIfActive`
+  como funciones C con nombre fuente. Los métodos TS anteriores delegan ahora
+  en ellas; los callers de pesca, movimientos forzados, especiales de campo y
+  movimiento ya usan esas rutas. La variante `IfActive` conserva el estado
+  intacto cuando `heldMovementActive` es falso.
+- En navegador invoqué ambas ramas de `ObjectEventClearHeldMovementIfActive`
+  en un objeto temporal. Activo: restableció acción a `MOVEMENT_ACTION_NONE`,
+  ambos flags y `sprite.data[1..2]`; inactivo: no limpió `heldMovementFinished`.
+  La partida permaneció en la casa de Pallet. Pasaron `check:port`,
+  `check:honesty`, build, inventory, pending y `git diff --check`.
+- `event_object_movement.c` queda 64/759 por nombre. Global: **6.220/11.826
+  (52,6%)**, con ~129.501 líneas ponderadas sin homólogo. La excepción de
+  Quest Log dentro de `ObjectEventSetHeldMovement` sigue sin portarse.
 
 ## `event_object_movement.c`: traslado de coordenadas de objetos (2026-09-27)
 

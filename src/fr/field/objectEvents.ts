@@ -184,6 +184,20 @@ export class ObjectEvent {
   }
 }
 
+/** event_object_movement.c ObjectEventClearHeldMovement. */
+export function ObjectEventClearHeldMovement(objectEvent: ObjectEvent): void {
+  objectEvent.movementActionId = MOVEMENT_ACTION_NONE;
+  objectEvent.heldMovementActive = false;
+  objectEvent.heldMovementFinished = false;
+  objectEvent.sprite.data[1] = 0;
+  objectEvent.sprite.data[2] = 0;
+}
+
+/** event_object_movement.c ObjectEventClearHeldMovementIfActive. */
+export function ObjectEventClearHeldMovementIfActive(objectEvent: ObjectEvent): void {
+  if (objectEvent.heldMovementActive) ObjectEventClearHeldMovement(objectEvent);
+}
+
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
 export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
   const oldX = (objectEvent.currentCoords.x << 16) >> 16;
@@ -731,15 +745,11 @@ export class ObjectEvents {
   }
 
   clearHeldMovementIfActive(object: ObjectEvent): void {
-    if (object.heldMovementActive) this.clearHeldMovement(object);
+    ObjectEventClearHeldMovementIfActive(object);
   }
 
   clearHeldMovement(object: ObjectEvent): void {
-    object.movementActionId = MOVEMENT_ACTION_NONE;
-    object.heldMovementActive = false;
-    object.heldMovementFinished = false;
-    object.sprite.data[1] = 0;
-    object.sprite.data[2] = 0;
+    ObjectEventClearHeldMovement(object);
   }
 
   isHeldMovementFinished(object: ObjectEvent): boolean {
