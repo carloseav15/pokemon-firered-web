@@ -5,17 +5,18 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. Los porcentajes anteriores de este documento son históricos;
-la meta vigente mide **5.984/11.826 funciones (50,6%)**, con **117 archivos**
-con huecos y una estimación ponderada de **~134.121/303.042 líneas C (44,3%)**
-pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
+single-player. A 2026-09-27, la meta mide **6.106/11.826 funciones (51,6%)**,
+con **105 archivos** con huecos y una estimación ponderada de
+**~131.622/303.042 líneas C (43,4%)** pendientes. La coincidencia por nombre
+sigue sin demostrar fidelidad.
 
 ## Estrategia de portado revisada, 2026-09-26
 
-Añadida §7.8: usar Clang/AST para un piloto acotado de generación C → TS,
-con análisis de dependencias, semántica de GBA, rechazo de casos no soportados
-y comparación contra C. GOAL-CLANG.md contiene el mensaje para iniciar ese
-trabajo. Estado: propuesta documentada; no se implementó ni ejecutó el piloto.
+§7.8 describe el piloto Clang/AST, ya implementado para la familia de
+`string_util.c`: análisis con ABI GBA, rechazo de nodos no soportados,
+generación determinista y comparación contra C. La ampliación a otras familias
+se decide por evidencia propia; GOAL-CLANG.md conserva el procedimiento y sus
+criterios, no un trabajo pendiente para iniciar el piloto.
 
 Actualizada ESTADO-Y-REGLAS.md §7: bloques por dependencias, equivalencias C/TS
 antes de traducir, automatización de patrones, integración por bloque y piloto
@@ -46,6 +47,22 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
   (51,6%)**, 105 archivos con huecos. Validación: `check:port`,
   `check:honesty`, `build`, `inventory`, `pending` y `git diff --check` pasan.
   No ejecuté el juego ni validé el audio en navegador.
+
+## `item.c`: comprobación de baya para Berry Crush (2026-09-27)
+
+- Porté `HasAtLeastOneBerry` a `pokemon/items.ts` y conecté el especial del Club
+  Cable en `script/specialsExtra.ts`. Sigue el C de `item.c`: exige el objeto
+  Berry Pouch, busca desde `FIRST_BERRY_INDEX` hasta `LAST_BERRY_INDEX`, escribe
+  `VAR_RESULT` y devuelve el booleano numérico. El atajo anterior solo miraba si
+  había una cantidad positiva en el array de bayas; podía diferir del C si
+  faltaba la bolsa o había datos fuera del rango.
+- El nombre ya figuraba en el inventario por la función inline del especial, así
+  que no cambia la cifra global: **6.106/11.826 (51,6%)**. El nuevo
+  `check:has-berry` pasa cuatro casos con estado preparado a mano, incluidos los
+  dos requisitos C y la escritura de `VAR_RESULT`. Pasaron también
+  `check:port`, `check:honesty`, `build`, `inventory`, `pending` y
+  `git diff --check`. No ejecuté el script en el juego ni hice prueba en
+  navegador.
 
 ## Inventario actualizado, 2026-09-26
 

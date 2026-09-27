@@ -2,7 +2,7 @@
 
 import * as C from "../generated/constants";
 import { b64, rom, type ItemInfo } from "../rom";
-import { flagSet, save, type BagPocket } from "../save";
+import { flagSet, save, SV, varSet, type BagPocket } from "../save";
 import { SetQuestLogEvent } from "../questLogEvents";
 
 export const POCKET_ITEMS = 1, POCKET_KEY_ITEMS = 2, POCKET_POKE_BALLS = 3, POCKET_TM_CASE = 4, POCKET_BERRY_POUCH = 5;
@@ -160,6 +160,22 @@ export function checkBagHasItem(itemId: number, count: number): boolean {
   if (!pocket) return false;
   const slot = pocketList(pocket).find((s) => s.item === itemId);
   return !!slot && slot.quantity >= count;
+}
+
+/** HasAtLeastOneBerry (item.c): the Berry Pouch key item and a berry are both required. */
+export function HasAtLeastOneBerry(): number {
+  let found = false;
+  if (checkBagHasItem(C.ITEM_BERRY_POUCH, 1)) {
+    for (let itemId = C.FIRST_BERRY_INDEX; itemId <= C.LAST_BERRY_INDEX; itemId++) {
+      if (checkBagHasItem(itemId, 1)) {
+        found = true;
+        break;
+      }
+    }
+  }
+  const result = found ? 1 : 0;
+  varSet(SV.RESULT, result);
+  return result;
 }
 
 export function checkBagHasSpace(itemId: number, count: number): boolean {

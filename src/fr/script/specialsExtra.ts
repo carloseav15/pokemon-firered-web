@@ -24,6 +24,7 @@ import { GetPokedexHeightWeight } from "../battle/ext";
 import { setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005 } from "../menus/keyItemScreens";
 import { SetPostgameFlags } from "../pokemon/saveLocation";
 import { CheckPartyMonHasHeldItem } from "../pokemon/scriptPokemonUtil";
+import { HasAtLeastOneBerry as Item_HasAtLeastOneBerry } from "../pokemon/items";
 import { getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullMessage } from "../pokemon/storage";
 import { CalculatePlayerPartyCount, GetMonData, gPPUpGetMask, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
 import { SpeciesToMailSpecies } from "../pokemon/mail";
@@ -739,7 +740,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     return flagGet(C.FLAG_TUTOR_FRENZY_PLANT) && flagGet(C.FLAG_TUTOR_BLAST_BURN) && flagGet(C.FLAG_TUTOR_HYDRO_CANNON) ? 1 : 0;
   },
   TeachMoveRelearnerMove: (ctx) => { ctx.ow.game.openMoveRelearner(); },
-  HasAtLeastOneBerry: () => (save.bag.berryPouch.some((s) => s.quantity > 0) ? 1 : 0),
+  HasAtLeastOneBerry: () => Item_HasAtLeastOneBerry(),
   GetMartClerkObjectId: () => {
     for (const [g, n, id] of cdata<number[][]>("field_specials", "sMartMaps")) if (save.location.mapGroup === g && save.location.mapNum === n) return id;
     return 1;
