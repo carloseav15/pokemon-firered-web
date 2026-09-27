@@ -518,12 +518,44 @@ export class FieldEffects {
       if (MB.MetatileBehavior_IsLongGrass(cur)) this.spawnLongGrass(object);
       if (object.hasShadow) this.spawnShadow(object);
       if (MB.MetatileBehavior_IsDeepSand(prev) || MB.MetatileBehavior_IsSand(prev)) this.spawnFootprints(object);
+      if (!object.landingJump && MB.MetatileBehavior_IsPuddle(cur) && MB.MetatileBehavior_IsPuddle(prev)) this.GroundEffect_StepOnPuddle(object);
     } else if (kind === "finish") {
       if (object.landingJump && !object.disableJumpLandingGroundEffect) this.spawnJumpLanding(object);
       else if (object.landingJump && object.isPlayer) this.spawnJumpLanding(object);
+      if (MB.MetatileBehavior_HasRipples(cur)) this.GroundEffect_Ripple(object);
     } else if (kind === "spawn") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, true);
     }
+  }
+
+  /** GroundEffect_StepOnPuddle (event_object_movement.c): play the linked splash on a puddle step. */
+  GroundEffect_StepOnPuddle(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("Splash", object.sprite.x, object.sprite.y);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = object.sprite.priority;
+    sprite.y2 = (object.sprite.height >> 1) - 4;
+    sprite.startAnim(1);
+    sound.playSE(sound.c("SE_PUDDLE"));
+    sprite.callback = (s) => {
+      if (!object.active || s.animEnded) {
+        this.ow.sprites.destroy(s);
+        return;
+      }
+      s.x = object.sprite.x;
+      s.y = object.sprite.y;
+      s.invisible = object.sprite.invisible;
+    };
+  }
+
+  /** GroundEffect_Ripple / DoRippleFieldEffect: emit the source ripple at the object's feet. */
+  GroundEffect_Ripple(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("Ripple", object.sprite.x, object.sprite.y + (object.sprite.height >> 1) - 2);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = 3;
+    sprite.subpriority = 149;
+    sprite.callback = (s) => { if (s.animEnded) this.ow.sprites.destroy(s); };
   }
 
   private spawnTallGrass(object: ObjectEvent, skipAnim: boolean): void {
