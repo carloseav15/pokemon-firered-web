@@ -9,7 +9,7 @@ import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
-import { flagGet } from "../save";
+import { flagGet, varGet } from "../save";
 import { QL_GetPlaybackState } from "../questLogEvents";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 import { gSineTable } from "../hw/trig";
@@ -306,10 +306,16 @@ export const gObjectEvents: ObjectEvent[] = Array.from({ length: OBJECT_EVENTS_C
 type GfxInfo = { width: number; height: number; inanimate: boolean; anims: AnimCmd[][]; frames: FrameImage[]; reflectionFrames: FrameImage[]; bridgeReflectionFrames: FrameImage[]; disableReflectionPaletteLoad: boolean; animTable: string; shadowSize: string; tracks: string };
 const gfxCache = new Map<number, GfxInfo>();
 
+/** GetObjectEventGraphicsInfo (event_object_movement.c), including VAR and invalid-ID resolution. */
 export function graphicsInfo(graphicsId: number): GfxInfo {
-  let info = gfxCache.get(graphicsId);
+  let resolvedGraphicsId = graphicsId & 0xff;
+  if (resolvedGraphicsId >= C.OBJ_EVENT_GFX_VARS) {
+    resolvedGraphicsId = varGet(C.VAR_OBJ_GFX_ID_0 + resolvedGraphicsId - C.OBJ_EVENT_GFX_VARS) & 0xff;
+  }
+  if (resolvedGraphicsId >= C.NUM_OBJ_EVENT_GFX) resolvedGraphicsId = C.OBJ_EVENT_GFX_LITTLE_BOY;
+  let info = gfxCache.get(resolvedGraphicsId);
   if (info) return info;
-  const raw = rom.objects.gfx[String(graphicsId)] ?? rom.objects.gfx["0"];
+  const raw = rom.objects.gfx[String(resolvedGraphicsId)] ?? rom.objects.gfx[String(C.OBJ_EVENT_GFX_LITTLE_BOY)];
   const table = rom.objects.animTables[raw.anims] ?? [];
   const anims = table.map((name) => (name ? rom.objects.anims[name] ?? [["F", 0, 16, 0, 0], ["J", 0]] : [["F", 0, 16, 0, 0], ["J", 0]])) as AnimCmd[][];
   info = {
@@ -325,7 +331,7 @@ export function graphicsInfo(graphicsId: number): GfxInfo {
     shadowSize: raw.shadowSize,
     tracks: raw.tracks,
   };
-  gfxCache.set(graphicsId, info);
+  gfxCache.set(resolvedGraphicsId, info);
   return info;
 }
 
@@ -653,6 +659,7 @@ export class ObjectEvents {
   }
 
   setGraphicsId(object: ObjectEvent, graphicsId: number): void {
+    graphicsId &= 0xff;
     const info = graphicsInfo(graphicsId);
     object.graphicsId = graphicsId;
     const s = object.sprite;
@@ -667,6 +674,7 @@ export class ObjectEvents {
     // ObjectEventSetGraphicsId repositions from current map coordinates while
     // retaining animNum, animCmdIndex, imageValue, flips and pause state.
     this.placeSprite(object);
+    if (object.trackedByCamera) this.hooks.cameraObjectReset?.(object);
   }
 
   remove(object: ObjectEvent | undefined): void {
