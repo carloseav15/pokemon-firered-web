@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6232/11826 (52.7 %)**.
-- Archivos C con funciones aún sin homólogo: **98**; quedan **5594 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6233/11826 (52.7 %)**.
+- Archivos C con funciones aún sin homólogo: **98**; quedan **5593 nombres**.
 - Estos archivos contienen 179.633 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~129.352 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~129.325 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -77,8 +77,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 58 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
 | 59 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
 | 60 | `battle_controller_link_opponent.c` | parcial | 1713 | 22/86 | ~1274 |  |
-| 61 | `battle_controller_link_partner.c` | parcial | 1647 | 17/85 | ~1317 |  |
-| 62 | `fame_checker.c` | parcial | 1739 | 15/64 | ~1331 |  |
+| 61 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
+| 62 | `battle_controller_link_partner.c` | parcial | 1647 | 17/85 | ~1317 |  |
 | 63 | `union_room_chat_display.c` | sin empezar | 1339 | 0/58 | ~1339 |  |
 | 64 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
 | 65 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
@@ -127,7 +127,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `field_effect_helpers.c` | 1421 | 16/76 | 56 |
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
 | `trade.c` | 2958 | 0/66 | 15 |
-| `fame_checker.c` | 1739 | 15/64 | 7 |
+| `fame_checker.c` | 1739 | 16/64 | 7 |
 | `help_system.c` | 2480 | 0/41 | 6 |
 | `trade_scene.c` | 2916 | 35/53 | 3 |
 | `cable_club.c` | 1036 | 9/54 | 2 |

@@ -6,7 +6,7 @@
 
 import * as C from "./generated/constants";
 import { rom } from "./rom";
-import { save, varGet, varSet, SV } from "./save";
+import { flagGet, save, varGet, varSet, SV } from "./save";
 import { sound } from "./audio/sound";
 import { decode } from "./gba/charmap";
 import { cdata, loadCData, preloadPacks, incbin, incbin16, symName } from "./hw/assets";
@@ -61,6 +61,16 @@ export function FullyUnlockFameChecker(): void {
   }
 }
 export const fullyUnlockFameChecker = FullyUnlockFameChecker;
+
+/** fame_checker.c AdjustGiovanniIndexIfBeatenInGym. */
+export function AdjustGiovanniIndexIfBeatenInGym(a0: number): number {
+  a0 &= 0xff;
+  if (flagGet(C.TRAINER_FLAGS_START + C.TRAINER_LEADER_GIOVANNI)) {
+    if (a0 === 9) return C.FAMECHECKER_GIOVANNI;
+    if (a0 > 9) return (a0 - 1) & 0xff;
+  }
+  return a0;
+}
 
 /** SetFlavorTextFlagFromSpecialVars */
 export function SetFlavorTextFlagFromSpecialVars(): void {
@@ -158,8 +168,9 @@ export function UseFameChecker(savedCallback: (() => void) | null): void {
   const entries = fameChecker();
   sFameCheckerData.unlockedPersons = [];
   for (let i = 0; i < NUM_FAMECHECKER_PERSONS; i++) {
-    if (entries[i].pickState !== FCPICKSTATE_NO_DRAW) {
-      sFameCheckerData.unlockedPersons.push(i);
+    const fameCheckerIdx = AdjustGiovanniIndexIfBeatenInGym(i);
+    if (entries[fameCheckerIdx]!.pickState !== FCPICKSTATE_NO_DRAW) {
+      sFameCheckerData.unlockedPersons.push(fameCheckerIdx);
     }
   }
   sFameCheckerData.numUnlockedPersons = sFameCheckerData.unlockedPersons.length;

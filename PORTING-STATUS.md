@@ -5,11 +5,34 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.232/11.826 funciones (52,7%)**,
+single-player. A 2026-09-27, la meta mide **6.233/11.826 funciones (52,7%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.352/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.325/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
 
+## `fame_checker.c`: reordenamiento del perfil de Giovanni (2026-09-27)
+
+- El análisis AST de Clang incluyó tres archivos pendientes con perfiles
+  distintos: `field_door.c` (20/21 nombres, su única candidata usa
+  `CpuFastCopy`), `fame_checker.c` (49 cuerpos clasificados genéricamente como
+  candidatos y 15 ya portados) y `field_effect_helpers.c` (42 candidatos,
+  mayormente acoplados al administrador de sprites). El conteo `CANDIDATE` es
+  una señal de inspección, no garantiza que el generador los soporte.
+- Seleccioné `AdjustGiovanniIndexIfBeatenInGym`: su AST es una condición y
+  retornos sobre un índice `u8`, con una única dependencia de la flag de
+  entrenador. Lo adapté manualmente porque ese estado pertenece a `save.ts`,
+  que el emisor actual no modela como dependencia. La lista de perfiles de
+  `UseFameChecker` aplica ahora el mismo mapeo que el bucle C.
+- La revisión usó Apple clang 21.0.0.1, target `armv4t-none-eabi`, defines
+  `FIRERED`, `REVISION=0`, `ENGLISH`, `MODERN=0`, los includes de Clang del
+  decomp y su `preproc`/charmap. C revisado: `pokefirered`
+  `c75f352304d529f6ba92d4f74b9cf8b5c3810788`. En navegador, sin la flag
+  produjo `8,9,10,15`; con Giovanni derrotado produjo `8,15,9,14`. Restauré la
+  flag al valor previo. Pasaron `check:port`, `check:honesty`, build, inventory,
+  pending y `git diff --check`.
+- `fame_checker.c` queda 17/64 por nombre; global **6.233/11.826 (52,7%)**,
+  con ~129.325 líneas ponderadas sin homólogo. El perfil se verificó por el
+  helper y la lista se conectó al flujo; no recorrí la pantalla completa.
 ## `event_object_movement.c`: desplazamiento a mitad del salto (2026-09-27)
 
 - Porté el paso común `DoJumpAnimStep`/`DoJumpSpecialAnimStep`: en saltos
