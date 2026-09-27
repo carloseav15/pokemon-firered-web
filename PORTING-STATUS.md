@@ -4118,3 +4118,24 @@ Pending / placeholders:
   (`FIRERED`, `REVISION=0`, `ENGLISH`, `MODERN=0`) e includes del shim, headers
   generados, `include`, `src` y `.decomp-build`. El harness host solo prueba los
   campos escalares modelados y afirma el ancho de `u8`; no reclama layout GBA.
+
+## `event_object_movement.c`: elevación y subprioridad de sprites (2026-09-27)
+
+- Alineé `ObjectEventUpdateElevation` con el C y añadí
+  `SetObjectSubpriorityByElevation`. El cálculo de subprioridad ya consulta
+  `sElevationToSubpriority` desde cdata exportada en vez de duplicar la tabla
+  en TypeScript. Conserva los anchos `u8`/`s16`, el bitfield de elevación de
+  cuatro bits y el wrap de coordenada Y; el `cameraY` del campo representa
+  `gSpriteCoordOffsetY`. `event_object_movement.c` queda 92/759; total
+  6.269/11.826 (53,0 %), con 5.557 nombres pendientes.
+- Clang extrajo los dos cuerpos C: `ObjectEventUpdateElevation` coincidió con
+  TS en los 65.536 pares posibles de elevación `u8`; `SetObjectSubpriorityByElevation`
+  coincidió en 576 combinaciones de elevación, geometría de sprite, offset y
+  subprioridad, incluyendo wrap y valores negativos `s16`. El check también
+  valida la tabla exportada de 16 `u8`. En navegador, con `?fr=new`, el sprite
+  del jugador pasó temporalmente de subprioridad 136 a 134 y volvió al estado
+  original tras la comprobación; la elevación siguió en `[3, 3]`. Pasaron
+  `check:event-object-anims` (136.828 comparaciones C-data/edge más 137 casos
+  C previos de dirección), `check:port`, `check:honesty`, `check:transitions`,
+  `build`, inventory, pending y `git diff --check`. No medí tiempos por etapa
+  ni reclamo aceleración.

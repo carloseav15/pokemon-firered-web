@@ -44,8 +44,6 @@ const STEP_SIZES: number[][] = [
 ];
 const DELAYS_MEDIUM = [32, 64, 96, 128];
 const DELAYS_SHORT = [32, 48, 64, 80];
-const ELEVATION_TO_SUBPRIORITY = [115, 115, 83, 115, 83, 115, 83, 115, 83, 115, 83, 115, 83, 0, 0, 115];
-
 const INITIAL_FACING: Record<number, number> = {};
 {
   const table: Array<[number, number]> = [
@@ -761,26 +759,38 @@ export class ObjectEvents {
     ShiftStillObjectEventCoords(object);
   }
 
-  updateElevation(object: ObjectEvent): void {
+  /** ObjectEventUpdateElevation (event_object_movement.c). */
+  ObjectEventUpdateElevation(object: ObjectEvent): void {
     const map = this.hooks.map();
-    const cur = map.elevationAt(object.currentCoords.x, object.currentCoords.y);
-    const prev = map.elevationAt(object.previousCoords.x, object.previousCoords.y);
+    const cur = map.elevationAt((object.currentCoords.x << 16) >> 16, (object.currentCoords.y << 16) >> 16) & 0xff;
+    const prev = map.elevationAt((object.previousCoords.x << 16) >> 16, (object.previousCoords.y << 16) >> 16) & 0xff;
     if (cur === 15 || prev === 15) return;
-    object.currentElevation = cur;
-    if (cur !== 0 && cur !== 15) object.previousElevation = cur;
+    object.currentElevation = cur & 0xf;
+    if (cur !== 0 && cur !== 15) object.previousElevation = cur & 0xf;
   }
 
   updatePriority(object: ObjectEvent): void {
     if (object.fixedPriority) return;
-    this.updateElevation(object);
+    this.ObjectEventUpdateElevation(object);
     object.sprite.priority = ElevationToPriority(object.previousElevation) ?? 2;
+  }
+
+  /** SetObjectSubpriorityByElevation (event_object_movement.c); cameraY maps gSpriteCoordOffsetY. */
+  SetObjectSubpriorityByElevation(elevation: number, sprite: Sprite, subpriority: number, cameraY: number): void {
+    elevation &= 0xff;
+    subpriority &= 0xff;
+    const spriteY = (sprite.y << 16) >> 16;
+    const centerY = (sprite.centerToCornerVecY << 16) >> 16;
+    cameraY = (cameraY << 16) >> 16;
+    const table = cdata<number[]>("event_object_movement", "sElevationToSubpriority");
+    let y = (spriteY - centerY + cameraY + 8) & 0xff;
+    y = (16 - (y >> 4)) << 1;
+    sprite.subpriority = (table[elevation]! + y + subpriority) & 0xff;
   }
 
   updateSubpriority(object: ObjectEvent, cameraY: number): void {
     if (object.fixedPriority) return;
-    const s = object.sprite;
-    const y = ((s.y - s.centerToCornerVecY + cameraY + 8) & 0xff);
-    s.subpriority = (ELEVATION_TO_SUBPRIORITY[object.previousElevation] ?? 115) + ((16 - (y >> 4)) << 1) + 1;
+    this.SetObjectSubpriorityByElevation(object.previousElevation, object.sprite, 1, cameraY);
   }
 
   updateMetatileBehaviors(object: ObjectEvent): void {

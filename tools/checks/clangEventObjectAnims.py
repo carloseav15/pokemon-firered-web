@@ -250,6 +250,123 @@ int main(void)
     (build_dir / "eventObjectFreezeResults.json").write_text(json.dumps(output))
 
 
+def check_subpriority_helper_against_c(ast: dict) -> None:
+    """Run the exact C subpriority helper over C-width and screen-wrap edges."""
+    c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
+    preprocessed = clang_ast.preprocess_c_file(c_path).read_text()
+    func = clang_ast.extract_functions(ast, {"SetObjectSubpriorityByElevation"})["SetObjectSubpriorityByElevation"]
+    node = func.raw_node
+    start = node["range"]["begin"]["offset"]
+    end = node["range"]["end"]["offset"] + node["range"]["end"]["tokLen"]
+    body = preprocessed[start:end]
+    defs = json.loads((ROOT / "public/fr/cdata/event_object_movement.json").read_text())["defs"]
+    table = defs["sElevationToSubpriority"]["value"]
+    if defs["sElevationToSubpriority"]["type"] != "u8" or len(table) != 16:
+        raise AssertionError("exported C subpriority table must contain 16 u8 values")
+    table_initializer = "{" + ",".join(str(value) for value in table) + "}"
+    vectors = [
+        (0, 0, 0, 0), (0, 0, 0, 1), (15, 0, 0, 255), (16, 0, 0, 1),
+        (255, 0, 8, 1), (256, 0, 0, 1), (32767, -32768, 32767, 256),
+        (-32768, 32767, -32768, 511), (-257, -128, -1, 17),
+        (-1, -8, 8, 255), (1, 8, -8, 0), (15, 127, 255, 1),
+        (255, -128, 32767, 256), (256, 32767, -32768, 511),
+        (-32768, -32768, 32767, 1), (32767, 32767, -32768, 255),
+        (16, 15, -1, 17), (0, 255, 255, 255),
+    ]
+    cases = [[elevation + wrap, y, center_y, offset_y, subpriority]
+             for elevation in range(16) for wrap in (0, 0x100)
+             for y, center_y, offset_y, subpriority in vectors]
+    calls = "\n".join(
+        f'    sprite.y = (s16){y}; sprite.centerToCornerVecY = (s16){center_y}; '
+        f'gSpriteCoordOffsetY = (s16){offset_y}; SetObjectSubpriorityByElevation((u8){elevation}, &sprite, (u8){subpriority}); '
+        'printf("%u\\n", (unsigned)sprite.subpriority);'
+        for elevation, y, center_y, offset_y, subpriority in cases
+    )
+    source = f'''#include <stdint.h>
+#include <stdio.h>
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef int16_t s16;
+_Static_assert(sizeof(u8) == 1, "u8 width");
+_Static_assert(sizeof(u16) == 2, "u16 width");
+_Static_assert(sizeof(s16) == 2, "s16 width");
+struct Sprite {{ s16 y; s16 centerToCornerVecY; u8 subpriority; }};
+static s16 gSpriteCoordOffsetY;
+static const u8 sElevationToSubpriority[16] = {table_initializer};
+{body}
+int main(void)
+{{
+    struct Sprite sprite = {{0}};
+{calls}
+    return 0;
+}}
+'''
+    build_dir = ROOT / ".decomp-build" / "checks"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    c_file = build_dir / "objectSubpriority.c"
+    binary = build_dir / "objectSubpriority"
+    c_file.write_text(source)
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Werror", str(c_file), "-o", str(binary)], check=True)
+    result = subprocess.run([str(binary)], check=True, capture_output=True, text=True)
+    expected = [int(line) for line in result.stdout.splitlines()]
+    if len(expected) != len(cases):
+        raise AssertionError(f"C subpriority harness returned {len(expected)} values for {len(cases)} cases")
+    (build_dir / "objectSubpriorityResults.json").write_text(json.dumps({"cases": cases, "expected": expected}))
+
+
+def check_object_elevation_update_against_c(ast: dict) -> None:
+    """Exhaust both u8 map elevations against the extracted bitfield updates."""
+    c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
+    preprocessed = clang_ast.preprocess_c_file(c_path).read_text()
+    func = clang_ast.extract_functions(ast, {"ObjectEventUpdateElevation"})["ObjectEventUpdateElevation"]
+    node = func.raw_node
+    start = node["range"]["begin"]["offset"]
+    end = node["range"]["end"]["offset"] + node["range"]["end"]["tokLen"]
+    body = preprocessed[start:end]
+    source = f'''#include <stdint.h>
+#include <stdio.h>
+typedef uint8_t u8;
+typedef int16_t s16;
+_Static_assert(sizeof(u8) == 1, "u8 width");
+_Static_assert(sizeof(s16) == 2, "s16 width");
+struct Coords16 {{ s16 x; s16 y; }};
+struct ObjectEvent {{ u8 currentElevation:4; u8 previousElevation:4; struct Coords16 currentCoords; struct Coords16 previousCoords; }};
+static u8 currentMapElevation;
+static u8 previousMapElevation;
+static u8 MapGridGetElevationAt(s16 x, s16 y) {{ (void)y; return x == 1 ? currentMapElevation : previousMapElevation; }}
+{body}
+int main(void)
+{{
+    struct ObjectEvent object = {{0}};
+    unsigned current, previous;
+    object.currentCoords.x = 1; object.currentCoords.y = 1;
+    object.previousCoords.x = 2; object.previousCoords.y = 2;
+    for (current = 0; current < 256; current++)
+        for (previous = 0; previous < 256; previous++)
+        {{
+            object.currentElevation = 7; object.previousElevation = 6;
+            currentMapElevation = (u8)current; previousMapElevation = (u8)previous;
+            ObjectEventUpdateElevation(&object);
+            printf("%u,%u\\n", (unsigned)object.currentElevation, (unsigned)object.previousElevation);
+        }}
+    return 0;
+}}
+'''
+    build_dir = ROOT / ".decomp-build" / "checks"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    c_file = build_dir / "objectElevationUpdate.c"
+    binary = build_dir / "objectElevationUpdate"
+    c_file.write_text(source)
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Werror", str(c_file), "-o", str(binary)], check=True)
+    result = subprocess.run([str(binary)], check=True, capture_output=True, text=True)
+    rows = [tuple(map(int, line.split(","))) for line in result.stdout.splitlines()]
+    if len(rows) != 256 * 256:
+        raise AssertionError(f"C elevation-update harness returned {len(rows)} rows; expected 65536")
+    (build_dir / "objectElevationUpdateResults.json").write_text(json.dumps({
+        "rows": rows,
+    }))
+
+
 def main() -> None:
     generated_a = clang_codegen.generate_event_object_anims_ts()
     generated_b = clang_codegen.generate_event_object_anims_ts()
@@ -263,6 +380,8 @@ def main() -> None:
     check_copy_direction_against_c(ast)
     check_elevation_helpers_against_c(ast)
     check_freeze_helpers_against_c(ast)
+    check_subpriority_helper_against_c(ast)
+    check_object_elevation_update_against_c(ast)
     func = clang_ast.extract_functions(ast, {"GetJumpY"})["GetJumpY"]
     unsupported = copy.deepcopy(func)
     unsupported.body["inner"] = [{"kind": "ReturnStmt", "inner": [{"kind": "IntegerLiteral", "value": "0"}]}]

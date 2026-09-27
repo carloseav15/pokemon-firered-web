@@ -231,4 +231,43 @@ freezeManager.objects[3]!.active = false;
 freezeManager.objects[3]!.frozen = true;
 freezeManager.UnfreezeObjectEvents();
 compareFreezeState(freezeManager, 4);
+const subpriorityResults = JSON.parse(readFileSync(resolve(".decomp-build/checks/objectSubpriorityResults.json"), "utf8")) as {
+  cases: number[][];
+  expected: number[];
+};
+// PREPARED: synthetic sprite geometry is used to exercise C integer and screen-wrap boundaries.
+for (let i = 0; i < subpriorityResults.cases.length; i++) {
+  const [elevation, y, centerY, cameraY, subpriority] = subpriorityResults.cases[i];
+  const sprite = { y, centerToCornerVecY: centerY, subpriority: 0 } as any;
+  objects.SetObjectSubpriorityByElevation(elevation, sprite, subpriority, cameraY);
+  if (sprite.subpriority !== subpriorityResults.expected[i]) {
+    throw new Error(`SetObjectSubpriorityByElevation case ${i}: got ${sprite.subpriority}, C returned ${subpriorityResults.expected[i]}`);
+  }
+  assertions++;
+}
+const elevationUpdateRows = JSON.parse(readFileSync(resolve(".decomp-build/checks/objectElevationUpdateResults.json"), "utf8")) as {
+  rows: Array<[number, number]>;
+};
+let currentMapElevation = 0;
+let previousMapElevation = 0;
+const elevationManager = new ObjectEvents({
+  map: () => ({ elevationAt: (x: number) => x === 1 ? currentMapElevation : previousMapElevation }),
+} as any);
+// PREPARED: elevation fields and map responses are seeded to exhaust the C u8 inputs.
+const elevationObject = new ObjectEvent();
+elevationObject.currentCoords = { x: 0x10001, y: -0xffff };
+elevationObject.previousCoords = { x: 0x10002, y: 0x10002 };
+let elevationUpdateIndex = 0;
+for (currentMapElevation = 0; currentMapElevation < 256; currentMapElevation++) {
+  for (previousMapElevation = 0; previousMapElevation < 256; previousMapElevation++) {
+    elevationObject.currentElevation = 7;
+    elevationObject.previousElevation = 6;
+    elevationManager.ObjectEventUpdateElevation(elevationObject);
+    const expected = elevationUpdateRows.rows[elevationUpdateIndex++];
+    if (elevationObject.currentElevation !== expected[0] || elevationObject.previousElevation !== expected[1]) {
+      throw new Error(`ObjectEventUpdateElevation(${currentMapElevation}, ${previousMapElevation}) differs from C`);
+    }
+    assertions++;
+  }
+}
 console.log(`event_object_movement checks: ${assertions - cResults.cases.length} C-data/edge comparisons and ${cResults.cases.length} extracted-C harness cases passed`);
