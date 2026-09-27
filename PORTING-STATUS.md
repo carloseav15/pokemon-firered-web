@@ -5,10 +5,25 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.242/11.826 funciones (52,8%)**,
+single-player. A 2026-09-27, la meta mide **6.246/11.826 funciones (52,8%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.136/303.042 líneas C (42,6%)** pendientes. La coincidencia por nombre
+**~129.068/303.042 líneas C (42,6%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sprite.c`: handlers de loop, salto y fin affine (2026-09-27)
+
+- Separé del `continueAffineAnim` inline las rutas C `AffineAnimDelay`,
+  `BeginAffineAnimLoop`, `ContinueAffineAnimLoop` y
+  `JumpToTopOfAffineAnimLoop`. Extraje también los handlers estáticos
+  `AffineAnimCmd_loop`, `_jump`, `_end` y `_frame` con sus cambios de índice,
+  contador de loop y demora `u8`.
+- El análisis AST confirma homólogos con cuerpo real para las siete funciones
+  con nombre revisadas. El check recorrió una secuencia affine que usa frame
+  con demora, salto, loop contado, frame final y fin; llegó a la matriz esperada
+  y marcó el sprite terminado. Pasaron `check:sprite-affine`, `check:port`,
+  `check:honesty`, build, inventory, pending y `git diff --check`. Sin navegador.
+- `sprite.c` queda 97/103 por nombre; global **6.246/11.826 (52,8%)**, con
+  ~129.068 líneas ponderadas sin homólogo.
 
 ## `sprite.c`: lectura de frame y aplicación absoluta affine (2026-09-27)
 

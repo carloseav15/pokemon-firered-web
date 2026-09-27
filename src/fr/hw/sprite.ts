@@ -637,43 +637,91 @@ function continueAffineAnim(sprite: Sprite): void {
   const matrixNum = getSpriteMatrixNum(sprite);
   const st = sAffineAnimStates[matrixNum];
   if (st.delayCounter) {
-    if (!DecrementAffineAnimDelayCounter(sprite, matrixNum)) {
-      applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, GetAffineAnimFrame(matrixNum, sprite));
-    }
+    AffineAnimDelay(matrixNum, sprite);
   } else if (sprite.affineAnimPaused) {
     return;
   } else {
-    st.animCmdIndex++;
+    st.animCmdIndex = (st.animCmdIndex + 1) & 0xff;
     const cmd = affineCmd(sprite, matrixNum);
     const type = cmd.type;
     if (type === 0x7ffd) {
-      if (st.loopCounter) st.loopCounter--;
-      else st.loopCounter = cmd.count;
-      if (st.loopCounter) {
-        st.animCmdIndex--;
-        while (sprite.affineAnims[st.animNum][st.animCmdIndex - 1]?.type !== 0x7ffd) {
-          if (st.animCmdIndex === 0) break;
-          st.animCmdIndex--;
-        }
-        st.animCmdIndex--;
-      }
-      continueAffineAnim(sprite);
+      AffineAnimCmd_loop(matrixNum, sprite);
     } else if (type === 0x7ffe) {
-      st.animCmdIndex = cmd.target;
-      const frame = GetAffineAnimFrame(matrixNum, sprite);
-      applyAffineAnimFrame(matrixNum, frame);
-      st.delayCounter = frame.duration;
+      AffineAnimCmd_jump(matrixNum, sprite);
     } else if (type === 0x7fff) {
-      sprite.affineAnimEnded = true;
-      st.animCmdIndex--;
-      applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, AFFINEANIMCMD_FRAME(0, 0, 0, 0));
+      AffineAnimCmd_end(matrixNum, sprite);
     } else {
-      const frame = GetAffineAnimFrame(matrixNum, sprite);
-      applyAffineAnimFrame(matrixNum, frame);
-      st.delayCounter = frame.duration;
+      AffineAnimCmd_frame(matrixNum, sprite);
     }
   }
   if (sprite.anchored) updateSpriteMatrixAnchorPos(sprite, sprite.data[6], sprite.data[7]);
+}
+
+// sprite.c: AffineAnimDelay.
+export function AffineAnimDelay(matrixNum: number, sprite: Sprite): void {
+  if (!DecrementAffineAnimDelayCounter(sprite, matrixNum)) {
+    applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, GetAffineAnimFrame(matrixNum, sprite));
+  }
+}
+
+// sprite.c: AffineAnimCmd_loop is static in C.
+function AffineAnimCmd_loop(matrixNum: number, sprite: Sprite): void {
+  if (sAffineAnimStates[matrixNum].loopCounter) ContinueAffineAnimLoop(matrixNum, sprite);
+  else BeginAffineAnimLoop(matrixNum, sprite);
+}
+
+// sprite.c: BeginAffineAnimLoop.
+export function BeginAffineAnimLoop(matrixNum: number, sprite: Sprite): void {
+  const state = sAffineAnimStates[matrixNum];
+  state.loopCounter = affineCmd(sprite, matrixNum).count & 0xff;
+  JumpToTopOfAffineAnimLoop(matrixNum, sprite);
+  continueAffineAnim(sprite);
+}
+
+// sprite.c: ContinueAffineAnimLoop.
+export function ContinueAffineAnimLoop(matrixNum: number, sprite: Sprite): void {
+  const state = sAffineAnimStates[matrixNum];
+  state.loopCounter = (state.loopCounter - 1) & 0xff;
+  JumpToTopOfAffineAnimLoop(matrixNum, sprite);
+  continueAffineAnim(sprite);
+}
+
+// sprite.c: JumpToTopOfAffineAnimLoop.
+export function JumpToTopOfAffineAnimLoop(matrixNum: number, sprite: Sprite): void {
+  const state = sAffineAnimStates[matrixNum];
+  if (state.loopCounter) {
+    const anim = sprite.affineAnims[state.animNum];
+    state.animCmdIndex = (state.animCmdIndex - 1) & 0xff;
+    while (anim[state.animCmdIndex - 1]?.type !== 0x7ffd) {
+      if (state.animCmdIndex === 0) break;
+      state.animCmdIndex = (state.animCmdIndex - 1) & 0xff;
+    }
+    state.animCmdIndex = (state.animCmdIndex - 1) & 0xff;
+  }
+}
+
+// sprite.c: AffineAnimCmd_jump is static in C.
+export function AffineAnimCmd_jump(matrixNum: number, sprite: Sprite): void {
+  const state = sAffineAnimStates[matrixNum];
+  state.animCmdIndex = affineCmd(sprite, matrixNum).target & 0xff;
+  const frame = GetAffineAnimFrame(matrixNum, sprite);
+  applyAffineAnimFrame(matrixNum, frame);
+  state.delayCounter = frame.duration;
+}
+
+// sprite.c: AffineAnimCmd_end is static in C.
+export function AffineAnimCmd_end(matrixNum: number, sprite: Sprite): void {
+  sprite.affineAnimEnded = true;
+  const state = sAffineAnimStates[matrixNum];
+  state.animCmdIndex = (state.animCmdIndex - 1) & 0xff;
+  applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, AFFINEANIMCMD_FRAME(0, 0, 0, 0));
+}
+
+// sprite.c: AffineAnimCmd_frame is static in C.
+export function AffineAnimCmd_frame(matrixNum: number, sprite: Sprite): void {
+  const frame = GetAffineAnimFrame(matrixNum, sprite);
+  applyAffineAnimFrame(matrixNum, frame);
+  sAffineAnimStates[matrixNum].delayCounter = frame.duration;
 }
 
 // sprite.c: DecrementAffineAnimDelayCounter. delayCounter is a u8 in C.
