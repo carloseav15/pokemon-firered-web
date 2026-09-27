@@ -173,7 +173,7 @@ export class Overworld {
       playerInfo: () => {
         const p = this.objects.player();
         if (!p) return undefined;
-        return { facing: p.facingDirection, movementDirection: p.movementDirection, previous: p.previousCoords, current: p.currentCoords, heldMovement: p.heldMovementActive && !p.heldMovementFinished };
+        return { facing: p.facingDirection, movementDirection: p.movementDirection, movementActionId: p.movementActionId, copyableMovement: p.playerCopyableMovement, tileTransitionState: this.player.tileTransitionState };
       },
       groundEffect: (object, kind) => this.effects.groundEffect(object, kind),
       emote: (object, kind) => this.effects.startEmoteForObjectEvent(object, kind),

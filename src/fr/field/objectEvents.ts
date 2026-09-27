@@ -110,7 +110,7 @@ export type ObjectEventHooks = {
   map: () => FieldMap;
   playerDestCoords: () => { x: number; y: number };
   playerIsRunning: () => boolean;
-  playerInfo: () => { facing: number; movementDirection: number; previous: { x: number; y: number }; current: { x: number; y: number }; heldMovement: boolean } | undefined;
+  playerInfo: () => { facing: number; movementDirection: number; movementActionId: number; copyableMovement: number; tileTransitionState: number } | undefined;
   groundEffect: (object: ObjectEvent, kind: "spawn" | "begin" | "finish") => void;
   emote: (object: ObjectEvent, kind: number) => void;
   playSE: (name: string) => void;
@@ -1375,19 +1375,36 @@ export class ObjectEvents {
         }
         case 1: {
           const player = this.hooks.playerInfo();
-          if (!player || !player.heldMovement) return false;
+          if (!player || player.movementActionId === MOVEMENT_ACTION_NONE || player.tileTransitionState === 2) return false; // T_TILE_CENTER
           const moveDir = player.movementDirection;
           const playerInit = object.directionSequenceIndex;
+          const copyableMovement = player.copyableMovement;
+          if (copyableMovement === 0 || copyableMovement === 9 || copyableMovement === 10) return false;
           if (!playerInit || !moveDir || playerInit > 4 || moveDir > 4) return false;
           const direction = GetCopyDirection(copyInit, playerInit, moveDir);
-          const moved = player.previous.x !== player.current.x || player.previous.y !== player.current.y;
-          if (!moved) {
-            this.setSingle(object, actionFace(direction));
-          } else {
-            const destination = ObjectEventMoveDestCoords(object, direction);
-            const blocked = this.GetCollisionAtCoords(object, destination.x, destination.y, direction) || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(destination.x, destination.y)));
-            this.setSingle(object, blocked ? actionFace(direction) : actionWalkNormal(direction));
+          const vector = DIRECTION_VECTORS[direction]!;
+          const destination = ObjectEventMoveDestCoords(object, direction);
+          const target = copyableMovement === 8
+            ? { x: ((object.currentCoords.x + vector[0] * 2) << 16) >> 16, y: ((object.currentCoords.y + vector[1] * 2) << 16) >> 16 }
+            : destination;
+          let action: number;
+          switch (copyableMovement) {
+            case 1: action = actionFace(direction); break;
+            case 2: action = actionWalkNormal(direction); break;
+            case 3: action = actionWalkFast(direction); break;
+            case 4: action = actionWalkFaster(direction); break;
+            case 5: action = actionSlide(direction); break;
+            case 6: action = actionJumpInPlace(direction); break;
+            case 7: action = actionJump(direction); break;
+            case 8: action = actionJump2(direction); break;
+            default: return false;
           }
+          if (copyableMovement !== 1 && copyableMovement !== 6) {
+            const blocked = this.GetCollisionAtCoords(object, target.x, target.y, direction)
+              || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(target.x, target.y)));
+            if (blocked) action = actionFace(direction);
+          }
+          this.setSingle(object, action);
           object.singleMovementActive = true;
           s.data[1] = 2;
           return true;
