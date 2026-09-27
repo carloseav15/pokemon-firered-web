@@ -172,7 +172,7 @@ export class TrainerSee {
   /** TrainerSeeFunc_StartExclMark: start the icon/face movement, or dispatch offscreen pan. */
   private TrainerSeeFunc_StartExclMark(trainer: ObjectEvent, range: number): "camera" | "exclamation" {
     if (trainer.facingDirection === DIR_SOUTH && range > 2) return "camera";
-    this.game.overworld.effects.emote(trainer, 0);
+    this.game.overworld.effects.startEmoteForObjectEvent(trainer, 0);
     this.game.overworld.objects.setHeldMovement(trainer, actionFace(trainer.facingDirection));
     return "exclamation";
   }
@@ -341,7 +341,7 @@ export class TrainerSee {
       ow.objects.setHeldMovement(camera, actionWalkFast(DIR_NORTH));
       return {movedSteps: movedSteps + 1, exclamationStarted: false};
     }
-    ow.effects.emote(trainer, 0);
+    ow.effects.startEmoteForObjectEvent(trainer, 0);
     return {movedSteps: 0, exclamationStarted: true};
   }
 

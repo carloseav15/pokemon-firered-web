@@ -9,7 +9,7 @@ import { Sprite, loadImage } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
 import { DATA_ROOT, rom, type AnimCmd } from "../rom";
 import { flagGet, save, varGet, varSet } from "../save";
-import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "./objectEvents";
+import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { FieldMoveEffects } from "./fieldMoves";
 import { DoPoisonFieldEffect } from "./poison";
@@ -331,6 +331,14 @@ export class FieldEffects {
     if (handler) { handler(); return; }
     if (this.moves.start(id)) return;
     if (!this.startIcon(id)) this.active.delete(id);
+  }
+
+  /** MovementAction_Emote* and trainer_see.c copy the object identity to field-effect arguments before dispatch. */
+  startEmoteForObjectEvent(object: ObjectEvent, actionIndex: number): void {
+    const id = EMOTE_EFFECT_IDS[actionIndex];
+    if (id === undefined) return;
+    ObjectEventGetLocalIdAndMap(object, this.ow.game.fieldEffectArguments);
+    this.start(id);
   }
 
   /** FldEff_*MarkIcon / X / smiley: emote over gFieldEffectArguments[0..2] (localId, mapNum, mapGroup). */

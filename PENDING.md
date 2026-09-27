@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6196/11826 (52.4 %)**.
-- Archivos C con funciones aún sin homólogo: **98**; quedan **5630 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6197/11826 (52.4 %)**.
+- Archivos C con funciones aún sin homólogo: **98**; quedan **5629 nombres**.
 - Estos archivos contienen 179.633 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~129.798 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~129.786 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -114,7 +114,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 95 | `pokemon_jump.c` | parcial | 4582 | 5/186 | ~4458 |  |
 | 96 | `union_room.c` | parcial | 4761 | 6/110 | ~4501 |  |
 | 97 | `dodrio_berry_picking.c` | parcial | 4954 | 7/147 | ~4718 |  |
-| 98 | `event_object_movement.c` | parcial | 9412 | 40/759 | ~8915 |  |
+| 98 | `event_object_movement.c` | parcial | 9412 | 41/759 | ~8903 |  |
 
 Total: 98 archivos con huecos: 28 sin empezar, 1 adaptador, 9 casi completos y 60 parciales.
 

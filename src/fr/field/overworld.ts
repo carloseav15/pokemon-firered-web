@@ -176,7 +176,7 @@ export class Overworld {
         return { facing: p.facingDirection, movementDirection: p.movementDirection, previous: p.previousCoords, current: p.currentCoords, heldMovement: p.heldMovementActive && !p.heldMovementFinished };
       },
       groundEffect: (object, kind) => this.effects.groundEffect(object, kind),
-      emote: (object, kind) => this.effects.emote(object, kind),
+      emote: (object, kind) => this.effects.startEmoteForObjectEvent(object, kind),
       playSE: (name) => sound.playSE(sound.c(name)),
       cameraCanMove: (direction) => this.canCameraMoveInDirection(direction),
     });

@@ -196,6 +196,15 @@ export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, 
   objectEvent.currentCoords.y = ((oldY + dy) << 16) >> 16;
 }
 
+/** event_object_movement.c ObjectEventGetLocalIdAndMap: write three u8 values through C byte pointers. */
+export function ObjectEventGetLocalIdAndMap(objectEvent: ObjectEvent, args: number[], offset = 0): void {
+  const values = [objectEvent.localId, objectEvent.mapNum, objectEvent.mapGroup];
+  for (let i = 0; i < values.length; i++) {
+    const previous = args[offset + i] ?? 0;
+    args[offset + i] = (((previous >>> 0) & 0xffffff00) | (values[i]! & 0xff)) >>> 0;
+  }
+}
+
 export const gObjectEvents: ObjectEvent[] = Array.from({ length: OBJECT_EVENTS_COUNT }, () => {
   const o = new ObjectEvent();
   o.active = false;

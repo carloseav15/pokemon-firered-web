@@ -5,10 +5,31 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.196/11.826 funciones (52,4%)**,
+single-player. A 2026-09-27, la meta mide **6.197/11.826 funciones (52,4%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.798/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
+**~129.786/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: identidad del objeto para efectos de campo (2026-09-27)
+
+- Porté `ObjectEventGetLocalIdAndMap`: escribe los tres bytes inferiores de
+  `[localId, mapNum, mapGroup]` en `fieldEffectArguments`, conservando los
+  otros bytes como hacen los punteros `u8 *` del C sobre palabras little-endian.
+  El dispatcher de emotes de `ObjectEvents` y las dos rutas de alerta de
+  `trainer_see.c` ahora copian esos argumentos y llaman al dispatcher común de
+  field effects para resolver el objeto por ID y mapa.
+- Los llamadores C de los disfraces de árbol/montaña y otros efectos de campo
+  todavía no están portados; la función está conectada al flujo de emotes,
+  pero no a todos sus usos en el decomp. En navegador forcé la acción real de
+  movimiento `MOVEMENT_ACTION_EMOTE_EXCLAMATION_MARK` sobre el jugador después
+  de despejar su movimiento previo: los argumentos quedaron `[255, 0, 0]`, el
+  efecto se activó y se limpió al completar la animación. El buffer del Canvas
+  conservó píxeles del mapa, pero la captura de Playwright salió negra y no la
+  cuento como evidencia visual.
+- `event_object_movement.c` queda 41/759 por nombre. Pasaron `check:port`,
+  `check:honesty`, `build`, inventory, pending y `git diff --check`. Inventario
+  global: **6.197/11.826 (52,4%)**, 98 archivos con huecos y ~129.786 líneas
+  ponderadas sin homólogo.
 
 ## `event_object_movement.c`: suma de coordenadas de objeto (2026-09-27)
 
