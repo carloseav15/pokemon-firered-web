@@ -6,9 +6,11 @@ export interface SoundBackend {
   playSong(player: "bgm" | "se1" | "se2" | "fanfare", song: number): void;
   stop(player: "bgm" | "se1" | "se2" | "fanfare"): void;
   isPlaying(player: "bgm" | "se1" | "se2" | "fanfare"): boolean;
+  isPaused(player: "bgm"): boolean;
   pause(player: "bgm"): void;
   resume(player: "bgm"): void;
   fadeOut(player: "bgm", speed: number): void;
+  fadeOutTemporarily(player: "bgm", speed: number): void;
   fadeIn(player: "bgm", speed: number): void;
   setVolume(player: "bgm", volume: number): void;
   setPan?(player: "se1" | "se2", pan: number): void;
@@ -59,6 +61,9 @@ class Sound {
   private mapMusicFadeInSpeed = 0;
   private disableMusic = false;
   private disableHelpSystemVolumeReduce = false;
+  private fallbackBgmPlaying = false;
+  private fallbackBgmPaused = false;
+  private fallbackFadeTemporary = false;
 
   init(constants: Record<string, number>): void {
     this.constants = constants;
@@ -78,7 +83,11 @@ class Sound {
   /** Called once per game frame (the m4a VBlank tick). */
   frame(): void {
     this.mapMusicMain();
-    if (this.fadeOutTimer > 0) this.fadeOutTimer--;
+    if (this.fadeOutTimer > 0 && --this.fadeOutTimer === 0) {
+      this.fallbackBgmPaused = true;
+      if (!this.fallbackFadeTemporary) this.fallbackBgmPlaying = false;
+      this.fallbackFadeTemporary = false;
+    }
     if (this.fanfareTaskActive) this.Task_Fanfare();
     if (this.seTimer > 0) this.seTimer--;
     if (this.cryTimer > 0) this.cryTimer--;
@@ -108,6 +117,10 @@ class Sound {
 
   playBGM(song: number): void {
     this.currentBGM = song;
+    this.fallbackBgmPlaying = song !== 0 && song !== this.c("MUS_NONE");
+    this.fallbackBgmPaused = false;
+    this.fallbackFadeTemporary = false;
+    this.fadeOutTimer = 0;
     this.backend?.playSong("bgm", song);
   }
 
@@ -165,7 +178,6 @@ class Sound {
     this.nextMapMusic = 0;
     this.mapMusicState = 0;
     this.mapMusicFadeInSpeed = 0;
-    this.waitingForBGMStop = false;
   }
 
   /** GetCurrentMapMusic from sound.c. */
@@ -182,7 +194,6 @@ class Sound {
   playNewMapMusic(song: number): void {
     this.nextMapMusic = song;
     this.mapMusicState = 1;
-    this.waitingForBGMStop = false;
   }
 
   /** FadeOutAndPlayNewMapMusic from sound.c. */
@@ -213,6 +224,8 @@ class Sound {
 
   stopBGM(): void {
     this.currentBGM = 0;
+    this.fallbackBgmPlaying = false;
+    this.fallbackBgmPaused = false;
     this.backend?.stop("bgm");
   }
 
@@ -222,20 +235,33 @@ class Sound {
     this.seTimer = 0;
     this.fanfareTimer = 0;
     this.fanfareTaskActive = false;
+    this.fallbackBgmPlaying = false;
+    this.fallbackBgmPaused = false;
   }
 
-  pauseBGM(): void { this.backend?.pause("bgm"); }
-  resumeBGM(): void { this.backend?.resume("bgm"); }
+  pauseBGM(): void { this.backend?.pause("bgm"); this.fallbackBgmPaused = true; }
+  resumeBGM(): void { this.backend?.resume("bgm"); this.fallbackBgmPaused = false; }
 
   fadeOutBGM(speed: number): void {
+    speed &= 0xff;
+    if (speed === 0) return;
     this.backend?.fadeOut("bgm", speed);
     this.fadeOutTimer = speed * 16;
+    this.fallbackFadeTemporary = false;
   }
 
-  /** FadeOutMapMusic: only this map-music transition is awaited by BGMusicStopped/isBGMPausedOrStopped. */
+  /** FadeOutBGMTemporarily from sound.c: fade the current track, then pause it for fadeinbgm. */
+  FadeOutBGMTemporarily(speed: number): void {
+    speed &= 0xff;
+    if (speed === 0) return;
+    this.backend?.fadeOutTemporarily("bgm", speed);
+    this.fadeOutTimer = speed * 16;
+    this.fallbackFadeTemporary = true;
+  }
+
+  /** FadeOutMapMusic: map transition state is advanced by MapMusicMain. */
   fadeOutMapMusic(speed: number): void {
     if (this.isNotWaitingForBGMStop()) this.fadeOutBGM(speed);
-    this.waitingForBGMStop = true;
     this.currentBGM = 0;
     this.nextMapMusic = 0;
     this.mapMusicState = 5;
@@ -246,7 +272,14 @@ class Sound {
     return this.mapMusicState !== 5 && this.mapMusicState !== 6 && this.mapMusicState !== 7;
   }
 
-  fadeInBGM(speed: number): void { this.backend?.fadeIn("bgm", speed); }
+  fadeInBGM(speed: number): void {
+    speed &= 0xff;
+    this.backend?.fadeIn("bgm", speed);
+    if (!this.fallbackBgmPlaying && this.currentBGM !== 0) this.fallbackBgmPlaying = true;
+    this.fallbackBgmPaused = false;
+    this.fallbackFadeTemporary = false;
+    this.fadeOutTimer = 0;
+  }
 
   /** FadeInNewBGM from sound.c. */
   fadeInNewBGM(song: number, speed: number): void {
@@ -256,19 +289,15 @@ class Sound {
   }
 
   private fadeOutTimer = 0;
-  /** IsNotWaitingForBGMStop: true whenever no map-music fade-out is pending, not merely "audio is silent". */
-  private waitingForBGMStop = false;
+  /** IsBGMPausedOrStopped from sound.c. */
   isBGMPausedOrStopped(): boolean {
-    if (!this.waitingForBGMStop) return true;
-    const stopped = this.backend ? !this.backend.isPlaying("bgm") : this.fadeOutTimer === 0;
-    if (stopped) this.waitingForBGMStop = false;
-    return stopped;
+    return this.backend ? !this.backend.isPlaying("bgm") : !this.fallbackBgmPlaying || this.fallbackBgmPaused;
   }
 
   /** IsBGMStopped from sound.c: a paused, still-active track is not stopped. */
   isBGMStopped(): boolean {
-    if (this.backend) return !this.backend.isPlaying("bgm");
-    return this.fadeOutTimer === 0;
+    if (this.backend) return !this.backend.isPlaying("bgm") && !this.backend.isPaused("bgm");
+    return !this.fallbackBgmPlaying;
   }
 
   playFanfare(song: number): void {
@@ -283,7 +312,7 @@ class Sound {
     if (song === undefined) return;
     this.fanfareSong = song;
     this.fanfareTimer = this.fanfareBySong.get(song) ?? 160;
-    this.backend?.pause("bgm");
+    this.pauseBGM();
     this.backend?.playSong("fanfare", song);
   }
 
@@ -293,7 +322,7 @@ class Sound {
       this.fanfareTimer--;
     } else {
       this.backend?.stop("fanfare");
-      this.backend?.resume("bgm");
+      this.resumeBGM();
       this.fanfareTaskActive = false;
     }
   }

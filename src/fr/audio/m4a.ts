@@ -313,6 +313,8 @@ export class M4aBackend implements SoundBackend {
   private readonly buffers = new Map<string, AudioBuffer>();
   private readonly midiCache = new Map<number, ParsedSong>();
   private readonly requestToken = new Map<string, number>();
+  private readonly loadingPlayers = new Set<string>();
+  private pendingTemporaryFadeSpeed: number | undefined;
   private readonly paused = new Map<string, { id: number; offset: number; loop: boolean }>();
   private out: GainNode | null = null;
   private crySource: AudioBufferSourceNode | null = null;
@@ -396,23 +398,37 @@ export class M4aBackend implements SoundBackend {
     const token = (this.requestToken.get(player) ?? 0) + 1;
     this.requestToken.set(player, token);
     this.paused.delete(player);
+    this.loadingPlayers.add(player);
     void this.songData(song).then((data) => {
-      if (!data || !this.ctx || !this.out) return;
       // A newer playSong call may have replaced this one while fetching.
       if (this.requestToken.get(player) !== token) return;
+      this.loadingPlayers.delete(player);
+      if (!data || !this.ctx || !this.out) {
+        if (player === "bgm") this.pendingTemporaryFadeSpeed = undefined;
+        return;
+      }
       handle.start(data, player === "bgm", this.ctx.currentTime + 0.02);
+      if (player === "bgm" && this.pendingTemporaryFadeSpeed !== undefined) {
+        const speed = this.pendingTemporaryFadeSpeed;
+        this.pendingTemporaryFadeSpeed = undefined;
+        this.fadeOutTemporarily(player, speed);
+      }
     });
   }
 
   stop(player: "bgm" | "se1" | "se2" | "fanfare"): void {
     this.requestToken.set(player, (this.requestToken.get(player) ?? 0) + 1);
+    this.loadingPlayers.delete(player);
     this.paused.delete(player);
+    if (player === "bgm") this.pendingTemporaryFadeSpeed = undefined;
     this.players.get(player)?.stop();
   }
 
   isPlaying(player: "bgm" | "se1" | "se2" | "fanfare"): boolean {
-    return this.players.get(player)?.active ?? false;
+    return this.loadingPlayers.has(player) || (this.players.get(player)?.active ?? false);
   }
+
+  isPaused(player: "bgm"): boolean { return this.paused.has(player); }
 
   pause(player: "bgm"): void {
     const handle = this.players.get(player);
@@ -422,7 +438,7 @@ export class M4aBackend implements SoundBackend {
     handle.stop();
   }
 
-  resume(player: "bgm"): void {
+  resume(player: "bgm", fadeInSpeed?: number): void {
     const saved = this.paused.get(player);
     if (!saved || !this.ensure()) return;
     this.paused.delete(player);
@@ -430,14 +446,18 @@ export class M4aBackend implements SoundBackend {
     if (!handle) return;
     const token = (this.requestToken.get(player) ?? 0) + 1;
     this.requestToken.set(player, token);
+    this.loadingPlayers.add(player);
     void this.songData(saved.id).then((data) => {
-      if (!data || !this.ctx) return;
       if (this.requestToken.get(player) !== token) return;
+      this.loadingPlayers.delete(player);
+      if (!data || !this.ctx) return;
       handle.start(data, saved.loop, this.ctx.currentTime + 0.02, saved.offset);
+      if (fadeInSpeed !== undefined) this.applyFadeIn(player, fadeInSpeed);
     });
   }
 
   fadeOut(player: "bgm", speed: number): void {
+    if (speed <= 0) return;
     const handle = this.players.get(player);
     const dest = handle?.destination();
     if (!this.ctx || !handle || !dest) {
@@ -454,7 +474,36 @@ export class M4aBackend implements SoundBackend {
     }, Math.max(60, (speed * 16 * 1000) / 60));
   }
 
+  /** m4aMPlayFadeOutTemporarily: fade to silence, then pause and retain song position. */
+  fadeOutTemporarily(player: "bgm", speed: number): void {
+    const handle = this.players.get(player);
+    const dest = handle?.destination();
+    if (speed <= 0) return;
+    if ((!this.ctx || !handle || !dest) && this.loadingPlayers.has(player)) {
+      this.pendingTemporaryFadeSpeed = speed;
+      return;
+    }
+    if (!this.ctx || !handle || !dest) return;
+    const at = this.ctx.currentTime;
+    const duration = Math.max(0.05, (speed * 16) / 60);
+    dest.gain.cancelScheduledValues(at);
+    dest.gain.setValueAtTime(dest.gain.value, at);
+    dest.gain.linearRampToValueAtTime(0, at + duration);
+    window.setTimeout(() => {
+      if (handle.destination() === dest) this.pause(player);
+    }, Math.max(60, duration * 1000));
+  }
+
   fadeIn(player: "bgm", speed: number): void {
+    if (this.paused.has(player)) {
+      this.resume(player, speed > 0 ? speed : undefined);
+      return;
+    }
+    if (speed <= 0) return;
+    this.applyFadeIn(player, speed);
+  }
+
+  private applyFadeIn(player: "bgm", speed: number): void {
     const dest = this.players.get(player)?.destination();
     if (!this.ctx || !dest) return;
     const at = this.ctx.currentTime;

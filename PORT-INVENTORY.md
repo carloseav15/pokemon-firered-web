@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 63 | 135686 | 1341/6053 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 13 | 26904 | 876/1025 |
+| Casi completo (≥ 80 % y < 100 %) | 13 | 26904 | 877/1025 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 143 | 114330 | 3873/3873 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **105** | **187579** | |
-| **Total en alcance** | **253** | **303042** | **6118/11826** |
+| **Total en alcance** | **253** | **303042** | **6119/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -143,7 +143,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
-| `sound.c` | 649 | 40/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
+| `sound.c` | 649 | 41/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 

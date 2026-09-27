@@ -5,10 +5,29 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.118/11.826 funciones (51,7%)**,
+single-player. A 2026-09-27, la meta mide **6.119/11.826 funciones (51,7%)**,
 con **105 archivos** con huecos y una estimación ponderada de
-**~131.322/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
+**~131.308/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sound.c`: fade temporal de BGM desde scripts (2026-09-27)
+
+- Comparé `FadeOutBGMTemporarily` y `IsBGMPausedOrStopped` en `sound.c`, el
+  `FadeOutBody` de `m4a.c` y los comandos `fadeoutbgm`/`fadeinbgm` de
+  `scrcmd.c`. El comando activo ahora hace fade hasta silencio, pausa el BGM
+  conservando su posición y lo reanuda desde ahí con `fadeinbgm`; antes se
+  llamaba a `fadeOutBGM`, que detenía la canción. Conservé la escala temporal
+  de 16 frames por unidad y la conversión a `u8`. Ambos comandos ignoran el
+  cambio durante la reproducción del Quest Log, igual que C.
+- El backend mantiene el estado de carga asíncrona para que el script espere;
+  `IsBGMStopped` distingue una pista pausada de una detenida. El fade se adapta
+  a Web Audio y la fuente musical sigue siendo la conversión MIDI aproximada
+  documentada en `audio/m4a.ts`.
+- `sound.c` queda 41/48 por nombres. El inventario global es
+  **6.119/11.826 (51,7%)**, 105 archivos con huecos y ~131.308 líneas C
+  ponderadas sin homólogo. Pasaron `check:port`, `check:honesty`, `build`,
+  `inventory`, `pending` y `git diff --check`; sin ejecución de juego o
+  navegador.
 
 ## `field_door.c`: tarea global de animación (2026-09-27)
 
@@ -24,8 +43,8 @@ sigue sin demostrar fidelidad.
   exportados con las paletas de cdata. No se afirma paridad visual píxel a píxel.
   `field_door.c` figura 12/21 por nombres, con sus 9 helpers restantes aún sin
   homólogo nominal.
-- Inventario: **6.118/11.826 (51,7%)**, 105 archivos con huecos y estimación
-  ponderada de ~131.322 líneas C sin cubrir. Pasaron `check:port`,
+- Inventario: **6.119/11.826 (51,7%)**, 105 archivos con huecos y estimación
+  ponderada de ~131.308 líneas C sin cubrir. Pasaron `check:port`,
   `check:honesty`, `build`, `inventory`, `pending` y `git diff --check`. Sin
   check headless ni ejecución en navegador.
 

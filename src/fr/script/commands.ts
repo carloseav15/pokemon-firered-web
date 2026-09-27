@@ -17,6 +17,7 @@ import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "./specials";
+import { gQuestLogState } from "../questLogEvents";
 import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "../mapPreviewScreen";
 import type { ScriptCommand, ScriptRunner } from "./context";
@@ -187,11 +188,16 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   fadenewbgm: (ctx) => { const music = ctx.ScriptReadHalfword(); if (music !== sound.currentBGM) sound.playNewMapMusic(music); return false; },
   fadeoutbgm: (ctx) => {
     const speed = ctx.readByte();
-    sound.fadeOutBGM(speed ? 4 * speed : 4);
+    if (gQuestLogState === C.QL_STATE_PLAYBACK) return false;
+    sound.FadeOutBGMTemporarily(speed ? 4 * speed : 4);
     ctx.SetupNativeScript(() => sound.isBGMPausedOrStopped());
     return true;
   },
-  fadeinbgm: (ctx) => { const speed = ctx.readByte(); sound.fadeInBGM(speed ? 4 * speed : 4); return false; },
+  fadeinbgm: (ctx) => {
+    const speed = ctx.readByte();
+    if (gQuestLogState !== C.QL_STATE_PLAYBACK) sound.fadeInBGM(speed ? 4 * speed : 4);
+    return false;
+  },
   warp: (ctx) => { readWarp(ctx); ctx.ow.doWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; },
   warpsilent: (ctx) => { readWarp(ctx); ctx.ow.doDiveWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; },
   warpdoor: (ctx) => { readWarp(ctx); ctx.ow.doDoorWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; },
