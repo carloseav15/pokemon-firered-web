@@ -113,7 +113,9 @@ type Resources = {
 };
 let sResources: Resources | null = null;
 const res = (): Resources => sResources!;
+let sListMenuItems: ListMenuItem[] = [];
 let sListMenuStrings: Uint8Array[] = [];
+let sListMenuStrbuf = new Uint8Array(0);
 let gMultiuseListMenuTemplate: ListMenuTemplate | null = null;
 let sContextMenuOptions: number[] = [];
 let sContextMenuNumOptions = 0;
@@ -186,7 +188,7 @@ function RunBerryPouchInit(): boolean {
     case 8: if (BerryPouchLoadGfx()) gMain.state++; break;
     case 9: BerryPouchInitWindows(); gMain.state++; break;
     case 10: SortAndCountBerries(); SanitizeListMenuSelectionParams(); UpdateListMenuScrollOffset(); gMain.state++; break;
-    case 11: gMain.state++; break;
+    case 11: AllocateListMenuBuffers(); gMain.state++; break;
     case 12: SetUpListMenuTemplate(); gMain.state++; break;
     case 13: PrintBerryPouchHeaderCentered(); gMain.state++; break;
     case 14: {
@@ -247,19 +249,35 @@ function BerryPouchLoadGfx(): boolean {
 
 function SetUpListMenuTemplate(): void {
   const r = res();
-  const items: ListMenuItem[] = [];
-  sListMenuStrings = [];
   for (let i = 0; i < r.listMenuNumItems; i++) {
-    sListMenuStrings.push(GetBerryNameAndIndexForMenu(berrySlots()[i].item));
-    items.push({ label: sListMenuStrings[i], index: i });
+    const label = GetBerryNameAndIndexForMenu(berrySlots()[i].item);
+    const strbuf = sListMenuStrbuf.subarray(i * 27, (i + 1) * 27);
+    strbuf.fill(0);
+    strbuf.set(label.subarray(0, strbuf.length));
+    sListMenuStrings[i] = strbuf;
+    sListMenuItems[i] = { label: sListMenuStrings[i], index: i };
   }
-  items.push({ label: text("gText_Close"), index: items.length });
+  if (sStaticCnt.type !== C.BERRYPOUCH_FROMBERRYCRUSH)
+    sListMenuItems[r.listMenuNumItems] = { label: text("gText_Close"), index: r.listMenuNumItems };
   gMultiuseListMenuTemplate = listMenuTemplate({
-    items, totalItems: sStaticCnt.type !== C.BERRYPOUCH_FROMBERRYCRUSH ? r.listMenuNumItems + 1 : r.listMenuNumItems, windowId: 0, header_X: 0,
+    items: sListMenuItems, totalItems: sStaticCnt.type !== C.BERRYPOUCH_FROMBERRYCRUSH ? r.listMenuNumItems + 1 : r.listMenuNumItems, windowId: 0, header_X: 0,
     item_X: 9, cursor_X: 1, lettersSpacing: 0, itemVerticalPadding: 2, upText_Y: 2, maxShowed: r.listMenuMaxShowed, fontId: FONT_NORMAL,
     cursorPal: 2, fillValue: 0, cursorShadowPal: 3, moveCursorFunc: BerryPouchMoveCursorFunc, itemPrintFunc: BerryPouchItemPrintFunc, cursorKind: 0,
     scrollMultiple: LIST_NO_MULTIPLE_SCROLL,
   });
+}
+
+function AllocateListMenuBuffers(): boolean {
+  sListMenuItems = new Array<ListMenuItem>(C.NUM_BERRIES);
+  sListMenuStrbuf = new Uint8Array(res().listMenuNumItems * 27);
+  sListMenuStrings = new Array<Uint8Array>(res().listMenuNumItems);
+  return true;
+}
+
+function CopySelectedListMenuItemName(itemIdx: number): Uint8Array {
+  const selected = sListMenuStrbuf.subarray(itemIdx * 27, (itemIdx + 1) * 27);
+  const eos = selected.indexOf(0xff);
+  return selected.slice(0, eos < 0 ? selected.length : eos + 1);
 }
 
 function GetBerryNameAndIndexForMenu(itemId: number): Uint8Array {
@@ -403,7 +421,7 @@ function SortAndCountBerries(): void {
 
 function InitTossQuantitySelectUI(taskId: number, str: ArrayLike<number>): void {
   const windowId = GetOrCreateVariableWindow(8);
-  stringVars.var1 = sListMenuStrings[td(taskId).itemIndex];
+  stringVars.var1 = CopySelectedListMenuItemName(td(taskId).itemIndex);
   stringVars.var4 = expandPlaceholders(str);
   BerryPouchPrint(windowId, FONT_NORMAL, stringVars.var4, 0, 2, 1, 2, 0, 1);
   const windowId2 = GetOrCreateVariableWindow(0);
@@ -482,7 +500,7 @@ function CreateNormalContextMenu(taskId: number): void {
     GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT) + 2, sContextMenuNumOptions, sContextMenuActions, sContextMenuOptions);
   Menu_InitCursor(windowId, FONT_NORMAL, 0, 2, GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT) + 2, sContextMenuNumOptions, 0);
   const windowId2 = GetOrCreateVariableWindow(6);
-  stringVars.var1 = sListMenuStrings[td(taskId).itemIndex];
+  stringVars.var1 = CopySelectedListMenuItemName(td(taskId).itemIndex);
   stringVars.var4 = expandPlaceholders(text("gText_Var1IsSelected"));
   BerryPouchPrint(windowId2, FONT_NORMAL, stringVars.var4, 0, 2, 1, 2, 0, 1);
 }
@@ -610,7 +628,7 @@ function Task_Toss_SelectMultiple(taskId: number): void {
 function Task_TossYes(taskId: number): void {
   const data = td(taskId);
   DestroyVariableWindow(7);
-  stringVars.var1 = sListMenuStrings[data.itemIndex];
+  stringVars.var1 = CopySelectedListMenuItemName(data.itemIndex);
   stringVars.var2 = intToDecimal(data.count.value, STR_CONV_MODE_LEFT_ALIGN, 3);
   stringVars.var4 = expandPlaceholders(text("gText_ThrewAwayStrVar2StrVar1s"));
   BerryPouchPrint(GetOrCreateVariableWindow(9), FONT_NORMAL, stringVars.var4, 0, 2, 1, 2, 0, 1);
