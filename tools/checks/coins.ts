@@ -1,7 +1,7 @@
 // Execute the C coins.c balance API against the browser save representation.
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
-import { GetCoins, SetCoins, addCoins, removeCoins } from "../../src/fr/pokemon/items.ts";
+import { GetCoins, SetCoins, addCoins, removeCoins, ApplyNewEncryptionKeyToBagItems, ApplyNewEncryptionKeyToBagItems_, GetBagItemQuantity } from "../../src/fr/pokemon/items.ts";
 import { save } from "../../src/fr/save.ts";
 
 SetCoins(0x10002);
@@ -21,4 +21,13 @@ assert.equal(GetCoins(), 9999);
 
 // The web save stores C's decrypted value directly.
 assert.equal(save.coins, GetCoins());
-console.log("✓ coins.c balance operations match u16 and MAX_COINS behavior");
+
+// ApplyNewEncryptionKeyToBagItems & ApplyNewEncryptionKeyToBagItems_ (item.c)
+save.bag.items.push({ item: 1, quantity: 5 });
+ApplyNewEncryptionKeyToBagItems(0x12345678);
+assert.equal(GetBagItemQuantity(save.bag.items[0]), 5, "ApplyNewEncryptionKeyToBagItems preserves logical quantity");
+ApplyNewEncryptionKeyToBagItems_(0x87654321);
+assert.equal(GetBagItemQuantity(save.bag.items[0]), 5, "ApplyNewEncryptionKeyToBagItems_ preserves logical quantity");
+save.bag.items.length = 0;
+
+console.log("✓ coins.c and item.c encryption key re-keying operations verified");

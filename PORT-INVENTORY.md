@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
 | Parcial (< 80 % de funciones) | 68 | 137462 | 1379/6161 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 17 | 32630 | 1032/1190 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 133 | 106682 | 3597/3597 |
+| Casi completo (≥ 80 % y < 100 %) | 16 | 31950 | 985/1141 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 134 | 107362 | 3646/3646 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **115** | **195227** | |
-| **Total en alcance** | **253** | **303042** | **6036/11826** |
+| **Pendiente de portar** | **114** | **194547** | |
+| **Total en alcance** | **253** | **303042** | **6038/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -152,7 +152,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
 | `trainer_see.c` | 750 | 34/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
-| `item.c` | 680 | 47/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
@@ -202,6 +201,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |  |
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |  |
+| `item.c` | 680 | 49/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
 | `battle_ai_switch_items.c` | 674 | 13/13 | `battle/ai.ts` |  |  |
 | `menu2.c` | 671 | 10/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |  |

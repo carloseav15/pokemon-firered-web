@@ -28,6 +28,12 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`item.c`: 49/49 funciones con homólogo (recifrado y gestión de bolsillos de la mochila).**
+  Implementé las dos funciones restantes de recifrado de la mochila en GBA, `ApplyNewEncryptionKeyToBagItems` y `ApplyNewEncryptionKeyToBagItems_`, en `src/fr/pokemon/items.ts`, adaptando la preservación de cantidades lógicas sobre la estructura de guardado web en texto claro.
+  Conecté `ApplyNewEncryptionKeyToBagItems_` al guardado de la partida en `src/fr/game.ts` (`save()`), antes de escribir los datos en `saveStore.write`, replicando el momento en el que el C original (`load_save.c`) invoca la rutina de actualización de clave de seguridad.
+  Amplié el check headless `tools/checks/coins.ts` (`npm run check:coins`) con verificación de preservación de cantidades lógicas a través de los bolsillos tras ejecutar ambas funciones con claves arbitrarias.
+  Validación: pasan `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.038/11.826 funciones (51,1%)**, con **114 archivos** con huecos (bajó de 115); `item.c` sale de `PENDING.md`.
 - **`script.c`: 55/55 funciones con homólogo (contexto de scripts, scripts en RAM y Wonder Cards).**
   Implementé la última función faltante del archivo, `GetSavedRamScriptIfValid`, en `src/fr/script/context.ts`, verificando la cabecera `RAM_SCRIPT_MAGIC`, el mapa comodín (`0xFF, 0xFF, 0xFF`), validación de Wonder Card vía `SPECIALS.ValidateSavedWonderCard` y cálculo de CRC16 contra `ramScript.checksum` (limpiando el slot si hay corrupción).
   Conecté la función en `src/fr/script/commands.ts` al comando de bytecode `trywondercardscript` (`ScrCmd_trywondercardscript`), registrando la dirección de retorno (`setRamScriptRetAddr`) y saltando a `RAM_SCRIPT_BASE + 4`.

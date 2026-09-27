@@ -105,6 +105,20 @@ export function SetBagItemQuantity(slot: { quantity: number }, value: number): v
 export function GetPcItemQuantity(slot: { quantity: number }): number { return slot.quantity & 0xffff; }
 export function SetPcItemQuantity(slot: { quantity: number }, value: number): void { slot.quantity = value & 0xffff; }
 
+/** ApplyNewEncryptionKeyToBagItems (item.c): preserve logical item quantities in plaintext web storage. */
+export function ApplyNewEncryptionKeyToBagItems(_key: number): void {
+  for (const pocket of SetBagPocketsPointers()) {
+    for (const slot of pocket) {
+      SetBagItemQuantity(slot, GetBagItemQuantity(slot));
+    }
+  }
+}
+
+/** ApplyNewEncryptionKeyToBagItems_ (item.c). */
+export function ApplyNewEncryptionKeyToBagItems_(key: number): void {
+  ApplyNewEncryptionKeyToBagItems(key);
+}
+
 /** ClearItemSlots operates on the occupied compact slots represented in the web save. */
 export function ClearItemSlots(slots: BagPocket, capacity: number): void { slots.splice(0, Math.max(0, capacity)); }
 export function ClearPCItemSlots(): void { save.pcItems.splice(0, save.pcItems.length); }

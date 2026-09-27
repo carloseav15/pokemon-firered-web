@@ -47,7 +47,7 @@ import { CreateEgg, daycareLevelMenuRows, hatchPartyEgg, shouldEggHatch } from "
 import { openHardwareMessage } from "./menus/hardwareChoice";
 import { askMoveRelearnerQuestion, openMoveRelearnerList } from "./menus/moveRelearner";
 import { learnMoveWithPrompt } from "./menus/monProgress";
-import { checkBagHasItem } from "./pokemon/items";
+import { checkBagHasItem, ApplyNewEncryptionKeyToBagItems_ } from "./pokemon/items";
 import { resetPokemonStorageSystem } from "./pokemon/storage";
 import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
@@ -322,6 +322,7 @@ export class Game {
     save.playerAvatarFlags = this.overworld.player.flags;
     save.savedMusic = this.overworld.savedMusic;
     save.options.textSpeed = textOptions.speed;
+    ApplyNewEncryptionKeyToBagItems_(save.trainerId);
     return saveStore.write(save);
   }
 
