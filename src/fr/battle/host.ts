@@ -10,7 +10,7 @@ import type { Game, Scene } from "../game";
 import type { BattleRequest } from "./battleSetup";
 import { PLAYER_AVATAR_FLAG_SURFING } from "../field/playerAvatar";
 import { CopyMon, GetMonData, gEnemyParty, SetMonData, ZeroEnemyPartyMons, type Mon } from "../pokemon/mon";
-import { G, resetBattleStructs } from "./globals";
+import { AllocateBattleSpritesData, AllocateMonSpritesGfx, FreeBattleSpritesData, FreeMonSpritesGfx, G, resetBattleStructs } from "./globals";
 import { CB2_InitBattle } from "./main_init";
 
 let game: Game | null = null;
@@ -116,6 +116,8 @@ export const battleHost = {
     current = null;
     gMain.inBattle = false;
     gMain.callback1 = battleHost.preBattleCallback1;
+    FreeMonSpritesGfx();
+    FreeBattleSpritesData();
     c.scene.leave();
     game.scene = null;
     if (c.request.isSafari) game.safariBalls = G.gNumSafariBalls;
@@ -146,6 +148,8 @@ function runBattle(request: BattleRequest): Scene {
   scene.enter();
   current = { request, scene };
   resetBattleStructs();
+  AllocateBattleSpritesData();
+  AllocateMonSpritesGfx();
   G.gBattleTypeFlags = battleTypeFlags(request);
   G.gTrainerBattleOpponent_A = request.trainerId ?? 0;
   if (game && request.isSafari) G.gNumSafariBalls = game.safariBalls;

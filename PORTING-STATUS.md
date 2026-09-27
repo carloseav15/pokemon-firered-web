@@ -5,10 +5,29 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.162/11.826 funciones (52,1%)**,
+single-player. A 2026-09-27, la meta mide **6.167/11.826 funciones (52,2%)**,
 con **100 archivos** con huecos y una estimación ponderada de
-**~130.487/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
+**~130.377/303.042 líneas C (43,0%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `battle_gfx_sfx_util.c`: memoria de sprites de batalla (2026-09-27)
+
+- Añadí `AllocateBattleSpritesData`, `FreeBattleSpritesData`,
+  `AllocateMonSpritesGfx` y `FreeMonSpritesGfx` con arrays GBA en almacenamiento
+  estable. Los arrays tipados se limpian al entrar/salir de la batalla para
+  representar `AllocZeroed`/free sin invalidar las vistas que usan los sprites.
+  Conecté ambos extremos al host de batallas. También extraje
+  `GetMonHPBarLevel` y lo reutilicé en `ShouldPlayNormalMonCry`.
+- Corregí el arranque que el navegador reveló en `saveLocation.ts`: la lista de
+  Centros Pokémon leía `rom.c()` durante importación, antes de cargar ROM. Ahora
+  consume las constantes de mapa generadas y falla explícitamente si falta una.
+- `battle_gfx_sfx_util.c` queda 45/48. Inventario: **6.167/11.826 (52,2 %)**;
+  100 archivos con huecos y ~130.377 líneas C ponderadas pendientes. Pasaron
+  `check:port`, `check:honesty`, `build`, inventory, pending y `git diff
+  --check`. En navegador, tras inicializar con `frDebug.rivalBattle` y resolver
+  la batalla con el driver, terminó sin atasco, regresó al mapa con control
+  desbloqueado y los buffers de sprites quedaron en cero; preparación de batalla
+  asistida por la utilidad de depuración, no partida jugada desde el título.
 
 ## `main.c`: handler de VBlank (2026-09-27)
 

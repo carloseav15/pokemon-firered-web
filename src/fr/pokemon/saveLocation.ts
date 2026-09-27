@@ -26,7 +26,11 @@ function IsCurMapInLocationList(list: readonly number[]): boolean {
   return false;
 }
 
-const SAVE_LOCATION_POKECENTER_LIST = POKECENTER_MAPS.map((name) => rom.c(`MAP_${name}`)).concat(C.MAP_UNDEFINED);
+const SAVE_LOCATION_POKECENTER_LIST = POKECENTER_MAPS.map((name) => {
+  const mapId = C[`MAP_${name}` as keyof typeof C];
+  if (typeof mapId !== "number") throw new Error(`Missing generated map constant MAP_${name}`);
+  return mapId;
+}).concat(C.MAP_UNDEFINED);
 const SAVE_LOCATION_RELOAD_LIST = [C.MAP_UNDEFINED];
 const EMPTY_MAP_LIST = [C.MAP_UNDEFINED];
 

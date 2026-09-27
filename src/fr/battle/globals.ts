@@ -235,6 +235,25 @@ export const parties = {
 
 export const gBitTable = Array.from({ length: 32 }, (_, i) => (1 << i) >>> 0);
 
+/** battle_gfx_sfx_util.c AllocateBattleSpritesData; stable typed arrays stand in for AllocZeroed blocks. */
+export function AllocateBattleSpritesData(): void {
+  for (const data of [...gBattleSpritesDataPtr.battlerData, ...gBattleSpritesDataPtr.healthBoxesData,
+    gBattleSpritesDataPtr.animationData, ...gBattleSpritesDataPtr.battleBars]) data.bytes.fill(0);
+}
+
+/** battle_gfx_sfx_util.c FreeBattleSpritesData; scrub the static browser storage before reuse. */
+export function FreeBattleSpritesData(): void { AllocateBattleSpritesData(); }
+
+/** battle_gfx_sfx_util.c AllocateMonSpritesGfx; reinitialize the fixed browser sprite buffers. */
+export function AllocateMonSpritesGfx(): void {
+  for (const sprite of gMonSpritesGfxPtr.sprites) sprite.fill(0);
+  gMonSpritesGfxPtr.barFontGfx.fill(0);
+  gMonSpritesGfxPtr.multiUseBuffer.fill(0);
+}
+
+/** battle_gfx_sfx_util.c FreeMonSpritesGfx; arrays stay allocated so image views remain stable. */
+export function FreeMonSpritesGfx(): void { AllocateMonSpritesGfx(); }
+
 function clearBattleResourceStorage(): void {
   gBattleResources.flags.flags.fill(0);
   gBattleResources.battleScriptsStack.ptr.fill(0);

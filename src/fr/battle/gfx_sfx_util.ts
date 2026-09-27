@@ -608,10 +608,12 @@ export function ClearBattleMonForms(): void {
 
 export function ShouldPlayNormalMonCry(mon: Mon): boolean {
   if (GetMonData(mon, C.MON_DATA_STATUS) & (C.STATUS1_ANY | C.STATUS1_TOXIC_COUNTER)) return false;
-  const hp = GetMonData(mon, C.MON_DATA_HP);
-  const maxHP = GetMonData(mon, C.MON_DATA_MAX_HP);
-  return GetHPBarLevel(hp, maxHP) > C.HP_BAR_YELLOW;
+  return GetMonHPBarLevel(mon) > C.HP_BAR_YELLOW;
+}
+
+/** battle_gfx_sfx_util.c GetMonHPBarLevel (static helper). */
+export function GetMonHPBarLevel(mon: Mon): number {
+  return GetHPBarLevel(GetMonData(mon, C.MON_DATA_HP), GetMonData(mon, C.MON_DATA_MAX_HP));
 }
 
 export { TryShinyAnimation } from "./anims/special";
-
