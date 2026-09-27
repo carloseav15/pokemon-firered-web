@@ -12,6 +12,15 @@ import { REG_OFFSET_DISPSTAT } from "./ppu";
 export type MainCallback = (() => void) | null;
 
 const vblankWaiters: Array<() => void> = [];
+let timer1StartedAt = 0;
+
+/** main.c StartTimer1; browser adaptation uses a monotonic clock at the GBA timer's rate. */
+export function StartTimer1(): void { timer1StartedAt = performance.now(); }
+
+/** Read REG_TM1CNT_L while Timer 1 is enabled. */
+export function GetTimer1Low(): number {
+  return Math.floor((performance.now() - timer1StartedAt) * 16777.216) & 0xffff;
+}
 
 export const gMain = {
   callback1: null as MainCallback,

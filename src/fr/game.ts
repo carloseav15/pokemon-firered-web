@@ -7,7 +7,7 @@ import { BattleTransitionScene, getTrainerBattleTransition, getWildBattleTransit
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
-import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON } from "./gba/input";
+import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON, ReadKeys } from "./gba/input";
 import { tasks } from "./gba/tasks";
 import { printText, TextPrinter, getTextSpeedSetting, textOptions } from "./gba/textPrinter";
 import { Window } from "./gba/window";
@@ -179,7 +179,7 @@ export class Game {
   /** One GBA frame: ReadKeys, callback1, callback2, sound. */
   frame(): void {
     joy.buttonMode = save.options.buttonMode;
-    joy.poll();
+    ReadKeys();
     this.frameCount++;
     this.callback1?.();
     this.callback2?.();

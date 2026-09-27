@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 63 | 135686 | 1341/6053 |
+| Parcial (< 80 % de funciones) | 63 | 135686 | 1343/6053 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 9 | 22309 | 693/813 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 147 | 118925 | 4085/4085 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **101** | **182984** | |
-| **Total en alcance** | **253** | **303042** | **6147/11826** |
+| **Total en alcance** | **253** | **303042** | **6149/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -118,7 +118,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_records.c` | 568 | 4/31 |  |  |  |
 | `field_door.c` | 524 | 12/21 | `field/doors.ts` |  |  |
 | `wireless_communication_status_screen.c` | 522 | 1/12 |  |  |  |
-| `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
+| `main.c` | 494 | 22/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 | `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` |  |  |
 
 ## Adaptador (UI simplificada)

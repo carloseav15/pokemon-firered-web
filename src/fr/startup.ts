@@ -13,7 +13,7 @@ import { sound } from "./audio/sound";
 import { loadTrig } from "./hw/trig";
 import { CB2_InitMainMenu, MainMenu } from "./mainMenu";
 import { ClearSaveScreen } from "./clearSaveScreen";
-import { joy } from "./gba/input";
+import { joy, ReadKeys } from "./gba/input";
 import { rom } from "./rom";
 import { InitMainCallbacks, SetVBlankCallback } from "./hw/runtime";
 import { LoadOam, ProcessSpriteCopyRequests } from "./hw/sprite";
@@ -103,7 +103,7 @@ class Startup {
     let steps = 0;
     while (this.elapsed >= 1000 / 60 && steps++ < 8) {
       this.elapsed -= 1000 / 60;
-      joy.poll();
+      ReadKeys();
       sound.frame(); // m4aSoundMain runs every frame
       if (this.stage === "copyright") this.copyright.update();
       if (this.stage === "logo") this.gameFreak.update();

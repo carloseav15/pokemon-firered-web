@@ -5,10 +5,26 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.147/11.826 funciones (52,0%)**,
+single-player. A 2026-09-27, la meta mide **6.149/11.826 funciones (52,0%)**,
 con **101 archivos** con huecos y una estimación ponderada de
-**~130.709/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
+**~130.673/303.042 líneas C (43,1%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `main.c`: sondeo de controles y Timer 1 (2026-09-27)
+
+- Añadí `ReadKeys` como entrada compartida al sondeo de controles y migré el
+  loop de `game.ts` y la intro de `startup.ts` para llamarla una vez por frame.
+  Conserva el estado y la repetición ya implementados en `Joypad.poll`.
+- Añadí `StartTimer1`/`GetTimer1Low` en `hw/runtime.ts`; `IntroTitle.begin`
+  arranca ese temporizador y el traspaso al menú lee sus 16 bits bajos, que
+  alimentan `SeedRngAndSetTrainerId`. El reloj monótono a la frecuencia del
+  contador GBA es una adaptación del hardware.
+- `AgbMain`, `InitFlashTimer` y los handlers de IRQ aún requieren representar
+  arranque, temporizador flash y tabla de interrupciones. `main.c` queda 22/28
+  por nombre. Inventario: **6.149/11.826 (52,0 %)**; 101 archivos con huecos y
+  ~130.673 líneas C ponderadas pendientes. Pasaron `check:port`,
+  `check:honesty`, `build`, inventory, pending y `git diff --check`; sin
+  ejecución en navegador.
 
 ## `bg.c`: validación de fondos y carga de paleta (2026-09-27)
 

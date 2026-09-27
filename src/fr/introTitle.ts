@@ -6,6 +6,7 @@ import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
 import { type BgTemplate, HideBg, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ShowBg } from "./hw/bg";
 import { tasks } from "./gba/tasks";
 import { B_BUTTON, DPAD_UP, joy, SELECT_BUTTON } from "./gba/input";
+import { GetTimer1Low, StartTimer1 } from "./hw/runtime";
 import { ClearGpuRegBits, CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
 import {
   BeginNormalPaletteFade, BlendPalettes, BlendPalettesGradually, DestroyBlendPalettesGraduallyTask, gPaletteFade,
@@ -82,7 +83,6 @@ const TITLE_TONE = RGB(30, 30, 31);
 
 export class IntroTitle {
   private scene: Scene = "init";
-  private timer1StartedAt = 0;
   private state = 0;
   private timer = 0;
   private counter = 0;
@@ -107,7 +107,7 @@ export class IntroTitle {
 
   begin(): void {
     // main.c StartTimer1 runs as the title screen initializes.
-    this.timer1StartedAt = performance.now();
+    StartTimer1();
     this.exitTo = "menu";
     this.scene = "init";
     this.state = 0;
@@ -233,7 +233,7 @@ export class IntroTitle {
 
   /** Low 16 bits of the browser high-resolution clock, as the Timer1 read. */
   get timer1Low(): number {
-    return Math.floor((performance.now() - this.timer1StartedAt) * 16777.216) & 0xffff;
+    return GetTimer1Low();
   }
 
   update(): void {

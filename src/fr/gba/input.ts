@@ -109,6 +109,9 @@ class Joypad {
 
 export const joy = new Joypad();
 
+/** main.c ReadKeys: sample the GBA buttons and update gMain's key state once per frame. */
+export function ReadKeys(): void { joy.poll(); }
+
 export const JOY_NEW = (bits: number) => (joy.newKeys & bits) !== 0;
 export const JOY_HELD = (bits: number) => (joy.held & bits) !== 0;
 export const JOY_REPEAT = (bits: number) => (joy.repeated & bits) !== 0;
