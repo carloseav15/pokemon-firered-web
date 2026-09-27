@@ -8,7 +8,7 @@ import { cdata } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
-import { GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
+import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 
@@ -1890,11 +1890,64 @@ export class ObjectEvents {
       if (this.DoJumpSpecialAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
       return false;
     }
-    // Acro bike actions are not used in FireRed maps; treat as face/walk.
-    if (id >= 0x70 && id <= 0x93) {
-      const dir = [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST][(id - 0x70) & 3];
-      this.faceDirection(object, dir);
+    // Acro bike movement actions (event_object_movement.c).
+    if (id >= 0x70 && id <= 0x73) {
+      const dir = dirOf(0x70);
+      if (step === 0) {
+        this.setDirection(object, dir);
+        this.shiftStill(object);
+        this.setStepAnim(object, GetAcroWheeliePedalDirectionAnimNum(dir));
+        s.animPaused = true;
+        s.data[2] = 1;
+      }
       return true;
+    }
+    if (id >= 0x74 && id <= 0x7b) {
+      if (step === 0) {
+        const dir = dirOf(id < 0x78 ? 0x74 : 0x78);
+        const anim = id < 0x78 ? GetAcroWheelieDirectionAnimNum(dir) : GetAcroEndWheelieDirectionAnimNum(dir);
+        this.StartSpriteAnimInDirection(object, dir, anim);
+        return false;
+      }
+      if (SpriteAnimEnded(object.sprite)) return this.finishStep(object);
+      return false;
+    }
+    if (id >= 0x7c && id <= 0x83) {
+      const face = id < 0x80;
+      const base = face ? 0x7c : 0x80;
+      const dir = dirOf(base);
+      if (step === 0) {
+        this.initJump(object, dir, face ? JUMP_DISTANCE_IN_PLACE : JUMP_DISTANCE_NORMAL, JUMP_TYPE_LOW);
+        this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
+      }
+      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
+      return false;
+    }
+    if (id >= 0x84 && id <= 0x87) {
+      const dir = dirOf(0x84);
+      if (step === 0) {
+        this.initJump(object, dir, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
+        this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
+      }
+      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
+      return false;
+    }
+    if (id >= 0x88 && id <= 0x8b) {
+      if (step === 0) this.initMoveInPlace(object, dirOf(0x88), GetAcroWheeliePedalDirectionAnimNum(dirOf(0x88)), 8);
+      return this.updateMoveInPlace(object);
+    }
+    if (id >= 0x8c && id <= 0x93) {
+      const pop = id < 0x90;
+      const base = pop ? 0x8c : 0x90;
+      const dir = dirOf(base);
+      if (step === 0) {
+        this.initNpcForMovement(object, dir, MOVE_SPEED_FAST_1);
+        const anim = GetAcroWheelieDirectionAnimNum(object.facingDirection);
+        if (pop) this.setAndStartSpriteAnim(s, anim, 0);
+        else this.setStepAnimHandleAlternation(object, GetAcroWheeliePedalDirectionAnimNum(object.facingDirection));
+      }
+      if (this.updateMovementNormal(object)) return this.finishStep(object);
+      return false;
     }
     return true;
   }
