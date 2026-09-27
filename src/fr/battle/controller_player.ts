@@ -1255,7 +1255,7 @@ function PlayerHandlePlayFanfare(): void {
 }
 
 function PlayerHandleFaintingCry(): void {
-  sound.playCry(GetMonData(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.MON_DATA_SPECIES), C.CRY_MODE_FAINT);
+  sound.PlayCry_ByMode(GetMonData(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.MON_DATA_SPECIES), -25, C.CRY_MODE_FAINT);
   PlayerBufferExecCompleted();
 }
 

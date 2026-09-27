@@ -445,7 +445,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     const species = varGet(ctx.ScriptReadHalfword());
     const x = ctx.readByte(); const y = ctx.readByte();
     ctx.ow.game.scriptMenu.showMonPic(species, x, y);
-    sound.playCry(species, 0);
+    sound.PlayCry_Script(species, C.CRY_MODE_NORMAL);
     return false;
   },
   hidemonpic: (ctx) => {
@@ -587,7 +587,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   },
   setrespawn: (ctx) => { ctx.ow.setLastHealLocationWarp(varGet(ctx.ScriptReadHalfword())); return false; },
   checkplayergender: () => { varSet(SV.RESULT, save.playerGender); return false; },
-  playmoncry: (ctx) => { const species = varGet(ctx.ScriptReadHalfword()); const mode = varGet(ctx.ScriptReadHalfword()); sound.playCry(species, mode); return false; },
+  playmoncry: (ctx) => { const species = varGet(ctx.ScriptReadHalfword()); const mode = varGet(ctx.ScriptReadHalfword()); sound.PlayCry_Script(species, mode); return false; },
   waitmoncry: (ctx) => { ctx.SetupNativeScript(() => sound.isCryFinished()); return true; },
   setmetatile: (ctx) => {
     const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET;

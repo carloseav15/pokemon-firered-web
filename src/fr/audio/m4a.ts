@@ -6,6 +6,7 @@
 // starts, so playback begins on the first input.
 
 import { DATA_ROOT } from "../rom";
+import * as C from "../generated/constants";
 import type { SoundBackend } from "./sound";
 
 const AUDIO_ROOT = `${DATA_ROOT}/audio`;
@@ -191,12 +192,14 @@ class SongPlayer {
   private playing = false;
   private loop = false;
   private gain: GainNode | null = null;
+  private volumeControl: GainNode | null = null;
+  private fadeControl: GainNode | null = null;
   private panner: StereoPannerNode | null = null;
   private pan = 0;
   private readonly programs = new Array<number>(16).fill(0);
   private readonly sources = new Set<AudioScheduledSourceNode>();
 
-  constructor(private readonly backend: M4aBackend, private readonly out: GainNode) {}
+  constructor(private readonly backend: M4aBackend, private readonly out: GainNode, private readonly useBgmVolume: boolean) {}
 
   start(data: SongData, loop: boolean, at: number, offset = 0): void {
     this.stop(at);
@@ -208,10 +211,16 @@ class SongPlayer {
     this.playing = true;
     this.programs.fill(0);
     this.gain = this.backend.ctx!.createGain();
-    this.gain.gain.value = (data.entry.volume / 100) * this.backend.master;
+    this.gain.gain.value = data.entry.volume / 100;
+    this.volumeControl = this.backend.ctx!.createGain();
+    this.volumeControl.gain.value = this.useBgmVolume ? this.backend.master : 1;
+    this.fadeControl = this.backend.ctx!.createGain();
+    this.fadeControl.gain.value = 1;
     this.panner = this.backend.ctx!.createStereoPanner();
     this.panner.pan.value = this.backend.panValue(this.pan);
-    this.gain.connect(this.panner);
+    this.gain.connect(this.volumeControl);
+    this.volumeControl.connect(this.fadeControl);
+    this.fadeControl.connect(this.panner);
     this.panner.connect(this.out);
     // Skip events before the resume offset.
     while (this.eventIndex < data.song.events.length && data.song.events[this.eventIndex]!.time < offset) {
@@ -230,6 +239,14 @@ class SongPlayer {
     if (this.gain) {
       try { this.gain.disconnect(); } catch { /* disconnected */ }
       this.gain = null;
+    }
+    if (this.volumeControl) {
+      try { this.volumeControl.disconnect(); } catch { /* disconnected */ }
+      this.volumeControl = null;
+    }
+    if (this.fadeControl) {
+      try { this.fadeControl.disconnect(); } catch { /* disconnected */ }
+      this.fadeControl = null;
     }
     if (this.panner) {
       try { this.panner.disconnect(); } catch { /* disconnected */ }
@@ -299,6 +316,14 @@ class SongPlayer {
   destination(): GainNode | null {
     return this.gain;
   }
+
+  fadeDestination(): GainNode | null { return this.fadeControl; }
+
+  setMasterVolume(master: number): void {
+    if (!this.volumeControl) return;
+    const at = this.backend.now();
+    this.volumeControl.gain.setTargetAtTime(master, at, 0.01);
+  }
 }
 
 export class M4aBackend implements SoundBackend {
@@ -311,10 +336,12 @@ export class M4aBackend implements SoundBackend {
   private readonly players = new Map<string, SongPlayer>();
   private readonly playerPans = new Map<"se1" | "se2", number>([["se1", 0], ["se2", 0]]);
   private readonly buffers = new Map<string, AudioBuffer>();
+  private readonly reversedCryBuffers = new Map<string, AudioBuffer>();
   private readonly midiCache = new Map<number, ParsedSong>();
   private readonly requestToken = new Map<string, number>();
   private readonly loadingPlayers = new Set<string>();
   private pendingTemporaryFadeSpeed: number | undefined;
+  private pendingFadeOutSpeed: number | undefined;
   private readonly paused = new Map<string, { id: number; offset: number; loop: boolean }>();
   private out: GainNode | null = null;
   private crySource: AudioBufferSourceNode | null = null;
@@ -342,8 +369,8 @@ export class M4aBackend implements SoundBackend {
       this.out = this.ctx.createGain();
       this.out.gain.value = 1;
       this.out.connect(this.ctx.destination);
-      for (const key of ["bgm", "se1", "se2", "fanfare"]) {
-        this.players.set(key, new SongPlayer(this, this.out));
+      for (const key of ["bgm", "se1", "se2", "se3", "fanfare"] as const) {
+        this.players.set(key, new SongPlayer(this, this.out, key === "bgm"));
       }
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
@@ -391,7 +418,18 @@ export class M4aBackend implements SoundBackend {
     return { entry, song, voices };
   }
 
-  playSong(player: "bgm" | "se1" | "se2" | "fanfare", song: number): void {
+  playSE(song: number): void {
+    if (!this.ensure()) return;
+    void this.tables().then((ready) => {
+      if (!ready) return;
+      const entry = this.songs!.find((candidate) => candidate.id === (song & 0xffff));
+      if (!entry) return;
+      const player = (["bgm", "se1", "se2", "se3"] as const)[entry.player];
+      if (player) this.playSong(player, song);
+    });
+  }
+
+  playSong(player: "bgm" | "se1" | "se2" | "se3" | "fanfare", song: number): void {
     if (!this.ensure()) return;
     const handle = this.players.get(player);
     if (!handle) return;
@@ -404,7 +442,10 @@ export class M4aBackend implements SoundBackend {
       if (this.requestToken.get(player) !== token) return;
       this.loadingPlayers.delete(player);
       if (!data || !this.ctx || !this.out) {
-        if (player === "bgm") this.pendingTemporaryFadeSpeed = undefined;
+        if (player === "bgm") {
+          this.pendingTemporaryFadeSpeed = undefined;
+          this.pendingFadeOutSpeed = undefined;
+        }
         return;
       }
       handle.start(data, player === "bgm", this.ctx.currentTime + 0.02);
@@ -412,19 +453,24 @@ export class M4aBackend implements SoundBackend {
         const speed = this.pendingTemporaryFadeSpeed;
         this.pendingTemporaryFadeSpeed = undefined;
         this.fadeOutTemporarily(player, speed);
+      } else if (player === "bgm" && this.pendingFadeOutSpeed !== undefined) {
+        const speed = this.pendingFadeOutSpeed;
+        this.pendingFadeOutSpeed = undefined;
+        this.fadeOut(player, speed);
       }
     });
   }
 
-  stop(player: "bgm" | "se1" | "se2" | "fanfare"): void {
+  stop(player: "bgm" | "se1" | "se2" | "se3" | "fanfare"): void {
     this.requestToken.set(player, (this.requestToken.get(player) ?? 0) + 1);
     this.loadingPlayers.delete(player);
     this.paused.delete(player);
     if (player === "bgm") this.pendingTemporaryFadeSpeed = undefined;
+    if (player === "bgm") this.pendingFadeOutSpeed = undefined;
     this.players.get(player)?.stop();
   }
 
-  isPlaying(player: "bgm" | "se1" | "se2" | "fanfare"): boolean {
+  isPlaying(player: "bgm" | "se1" | "se2" | "se3" | "fanfare"): boolean {
     return this.loadingPlayers.has(player) || (this.players.get(player)?.active ?? false);
   }
 
@@ -459,9 +505,12 @@ export class M4aBackend implements SoundBackend {
   fadeOut(player: "bgm", speed: number): void {
     if (speed <= 0) return;
     const handle = this.players.get(player);
-    const dest = handle?.destination();
+    const dest = handle?.fadeDestination();
     if (!this.ctx || !handle || !dest) {
-      handle?.stop();
+      if (this.loadingPlayers.has(player)) {
+        this.pendingTemporaryFadeSpeed = undefined;
+        this.pendingFadeOutSpeed = speed;
+      } else handle?.stop();
       return;
     }
     const at = this.ctx.currentTime;
@@ -470,16 +519,17 @@ export class M4aBackend implements SoundBackend {
     dest.gain.linearRampToValueAtTime(0, at + Math.max(0.05, (speed * 16) / 60));
     // Only stop if no newer song replaced this one while fading.
     window.setTimeout(() => {
-      if (handle.destination() === dest) handle.stop();
+      if (handle.fadeDestination() === dest) handle.stop();
     }, Math.max(60, (speed * 16 * 1000) / 60));
   }
 
   /** m4aMPlayFadeOutTemporarily: fade to silence, then pause and retain song position. */
   fadeOutTemporarily(player: "bgm", speed: number): void {
     const handle = this.players.get(player);
-    const dest = handle?.destination();
+    const dest = handle?.fadeDestination();
     if (speed <= 0) return;
     if ((!this.ctx || !handle || !dest) && this.loadingPlayers.has(player)) {
+      this.pendingFadeOutSpeed = undefined;
       this.pendingTemporaryFadeSpeed = speed;
       return;
     }
@@ -490,7 +540,7 @@ export class M4aBackend implements SoundBackend {
     dest.gain.setValueAtTime(dest.gain.value, at);
     dest.gain.linearRampToValueAtTime(0, at + duration);
     window.setTimeout(() => {
-      if (handle.destination() === dest) this.pause(player);
+      if (handle.fadeDestination() === dest) this.pause(player);
     }, Math.max(60, duration * 1000));
   }
 
@@ -504,7 +554,7 @@ export class M4aBackend implements SoundBackend {
   }
 
   private applyFadeIn(player: "bgm", speed: number): void {
-    const dest = this.players.get(player)?.destination();
+    const dest = this.players.get(player)?.fadeDestination();
     if (!this.ctx || !dest) return;
     const at = this.ctx.currentTime;
     dest.gain.cancelScheduledValues(at);
@@ -513,11 +563,12 @@ export class M4aBackend implements SoundBackend {
   }
 
   setVolume(player: "bgm", volume: number): void {
-    void player;
     this.master = volume / 256;
+    this.players.get(player)?.setMasterVolume(this.master);
   }
 
-  playCry(species: number, mode: number): void {
+  playCry(species: number, mode: number, pan = 0, volume = 120, priority = 10): void {
+    void priority; // C voice priority arbitrates its four cry players; this backend uses a single current buffer.
     if (!this.ensure() || !this.ctx || !this.out) return;
     const generation = ++this.cryGeneration;
     this.cryLoading = true;
@@ -543,12 +594,34 @@ export class M4aBackend implements SoundBackend {
       }
       if (generation !== this.cryGeneration) return;
       this.cryLoading = false;
-      // Modes are battle-move nuances; faint/weak pitch down, doubles shorten.
-      const rate = mode === 5 ? 0.85 : mode === 3 ? 1.15 : 1;
+      // Apply the pitch/volume overrides from PlayCryInternal; wav timing, chorus and release remain approximations.
+      const pitchByMode: Record<number, number> = {
+        [C.CRY_MODE_ENCOUNTER]: 15600,
+        [C.CRY_MODE_HIGH_PITCH]: 15800,
+        [C.CRY_MODE_ECHO_START]: 15600,
+        [C.CRY_MODE_FAINT]: 14440,
+        [C.CRY_MODE_ECHO_END]: 15555,
+        [C.CRY_MODE_ROAR_1]: 14848,
+        [C.CRY_MODE_ROAR_2]: 15616,
+        [C.CRY_MODE_GROWL_1]: 15200,
+        [C.CRY_MODE_GROWL_2]: 15200,
+        [C.CRY_MODE_WEAK]: 15000,
+        [C.CRY_MODE_WEAK_DOUBLES]: 15000,
+      };
+      const rate = (pitchByMode[mode] ?? 15360) / 15360;
+      const modeVolume = mode === C.CRY_MODE_ENCOUNTER || mode === C.CRY_MODE_HIGH_PITCH
+        || mode === C.CRY_MODE_ECHO_START || mode === C.CRY_MODE_ECHO_END ? 90 : volume;
       const src = this.ctx.createBufferSource();
-      src.buffer = buffer;
+      const reverse = mode === C.CRY_MODE_ECHO_START || mode === C.CRY_MODE_GROWL_1;
+      src.buffer = reverse ? this.reversedCryBuffer(file, buffer) : buffer;
       src.playbackRate.value = rate;
-      src.connect(this.out);
+      const gain = this.ctx.createGain();
+      gain.gain.value = Math.max(0, Math.min(1, modeVolume / 127));
+      const panner = this.ctx.createStereoPanner();
+      panner.pan.value = this.panValue(pan);
+      src.connect(gain);
+      gain.connect(panner);
+      panner.connect(this.out);
       this.crySource = src;
       const dur = buffer.duration / rate;
       const play = mode === 1 ? Math.min(dur, 0.4) : dur;
@@ -556,6 +629,19 @@ export class M4aBackend implements SoundBackend {
       src.start();
       src.stop(this.ctx.currentTime + play + 0.05);
     })();
+  }
+
+  private reversedCryBuffer(file: string, source: AudioBuffer): AudioBuffer {
+    const existing = this.reversedCryBuffers.get(file);
+    if (existing) return existing;
+    const reversed = this.ctx!.createBuffer(source.numberOfChannels, source.length, source.sampleRate);
+    for (let channel = 0; channel < source.numberOfChannels; channel++) {
+      const input = source.getChannelData(channel);
+      const output = reversed.getChannelData(channel);
+      for (let i = 0, end = input.length - 1; i < input.length; i++, end--) output[i] = input[end]!;
+    }
+    this.reversedCryBuffers.set(file, reversed);
+    return reversed;
   }
 
   isCryPlaying(): boolean {

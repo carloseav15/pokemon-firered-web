@@ -2150,7 +2150,7 @@ function PokeSum_TryPlayMonCry(): void {
   if (!sMonSummaryScreen || sMonSummaryScreen.isEgg) return;
   const mon = sMonSummaryScreen.currentMon;
   const mode = ShouldPlayNormalMonCry(mon) ? C.CRY_MODE_NORMAL : C.CRY_MODE_WEAK;
-  sound.playCry(mon.species, mode);
+  sound.PlayCry_ByMode(mon.species, 0, mode);
 }
 
 function IsPageFlipInput(direction: number): boolean {

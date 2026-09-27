@@ -2132,7 +2132,7 @@ function DexScreen_PageNumberToRenderablePages(page: number): number {
 }
 
 function PlayCry_NormalNoDucking(species: number): void {
-  sound.playCry(species, 0);
+  sound.PlayCry_NormalNoDucking(species, 0, C.CRY_VOLUME_RS, C.CRY_PRIORITY_NORMAL);
 }
 
 function DexScreen_InputHandler_StartToCry(): void {

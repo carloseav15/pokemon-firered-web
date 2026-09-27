@@ -608,7 +608,7 @@ function DoCreditsMonScene(): boolean {
       } else {
         HideBg(2);
         ShowBg(1);
-        sound.playCry(GetCreditsMonSpecies(m.whichMon), 0); // PlayCry_NormalNoDucking(species, 0, CRY_VOLUME_RS, CRY_PRIORITY_NORMAL)
+        sound.PlayCry_NormalNoDucking(GetCreditsMonSpecies(m.whichMon), 0, C.CRY_VOLUME_RS, C.CRY_PRIORITY_NORMAL);
         m.creditsMonTimer = 128;
         m.subseqno++;
       }

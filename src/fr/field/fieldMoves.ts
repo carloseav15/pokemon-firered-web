@@ -250,7 +250,7 @@ export class FieldMoveEffects {
         if (s.x <= 0x78) {
           s.x = 0x78;
           s.data[1] = 30;
-          sound.playCry(s.data[0], 0);
+          sound.PlayCry_Normal(s.data[0], 0);
           phase = 1;
         }
       } else if (phase === 1) {

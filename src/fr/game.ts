@@ -608,7 +608,7 @@ export class Game {
     const mon = save.party[index];
     fieldMenu(this, (close) => {
       sound.playFanfare(rom.c("MUS_EVOLVED"));
-      sound.playCry(mon.species, 0);
+      sound.PlayCry_Normal(mon.species, 0);
       stringVars.var1 = Uint8Array.from(mon.nickname);
       openHardwareMessage(rom.text("gText_HatchedFromEgg"), () => {
         stringVars.var1 = Uint8Array.from(mon.nickname);

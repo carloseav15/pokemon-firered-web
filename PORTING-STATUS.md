@@ -5,10 +5,26 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.119/11.826 funciones (51,7%)**,
-con **105 archivos** con huecos y una estimación ponderada de
-**~131.308/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.126/11.826 funciones (51,8%)**,
+con **104 archivos** con huecos y una estimación ponderada de
+**~131.214/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sound.c`: cries y enrutamiento de efectos por jugador (2026-09-27)
+
+- Porté los wrappers de cries de `sound.c` y migré sus callers confirmados en
+  scripts, batalla, captura, evolución, pantallas y overworld. El backend Web
+  adapta pitch/volumen/pan y algunas variantes de waveform sobre WAV; prioridad,
+  DSP M4A y mezcla exacta de fuentes todavía no son equivalentes al GBA.
+- Añadí el canal `se3` y el despacho de `PlaySE` según el campo `player` de la
+  tabla de canciones exportada. `IsSpecialSEPlaying` consulta ese canal, y
+  `PlayRainStoppingSoundEffect` elige el efecto de parada según `rainStrength`,
+  igual que `field_weather.c`. Los sonidos siguen reproduciéndose con MIDI/Web
+  Audio aproximado.
+- `sound.c` queda 48/48 por nombre. Inventario: **6.126/11.826 (51,8%)**, 104
+  archivos con huecos y ~131.214 líneas C ponderadas sin homólogo. Pasaron
+  `check:port`, `check:honesty`, `build`, inventory, pending y `git diff
+  --check`; sin prueba de juego ni comparación auditiva.
 
 ## `sound.c`: fade temporal de BGM desde scripts (2026-09-27)
 
@@ -23,7 +39,7 @@ sigue sin demostrar fidelidad.
   `IsBGMStopped` distingue una pista pausada de una detenida. El fade se adapta
   a Web Audio y la fuente musical sigue siendo la conversión MIDI aproximada
   documentada en `audio/m4a.ts`.
-- `sound.c` queda 41/48 por nombres. El inventario global es
+- En ese corte `sound.c` quedó 41/48 por nombres. El inventario global era
   **6.119/11.826 (51,7%)**, 105 archivos con huecos y ~131.308 líneas C
   ponderadas sin homólogo. Pasaron `check:port`, `check:honesty`, `build`,
   `inventory`, `pending` y `git diff --check`; sin ejecución de juego o

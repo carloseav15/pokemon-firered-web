@@ -905,7 +905,7 @@ function OakOldManHandlePlayFanfare(): void {
 }
 
 function OakOldManHandleFaintingCry(): void {
-  sound.playCry(GetMonData(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.MON_DATA_SPECIES), C.CRY_MODE_NORMAL);
+  sound.PlayCry_Normal(GetMonData(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.MON_DATA_SPECIES), 25);
   OakOldManBufferExecCompleted();
 }
 

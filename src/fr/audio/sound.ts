@@ -2,10 +2,15 @@
 // keeps the timing contracts (fanfares, SE waits, cries) so scripts that wait
 // on audio keep working with or without a backend installed.
 
+import * as C from "../generated/constants";
+import { tasks, type TaskFunc } from "../gba/tasks";
+import { gQuestLogState } from "../questLogEvents";
+
 export interface SoundBackend {
-  playSong(player: "bgm" | "se1" | "se2" | "fanfare", song: number): void;
-  stop(player: "bgm" | "se1" | "se2" | "fanfare"): void;
-  isPlaying(player: "bgm" | "se1" | "se2" | "fanfare"): boolean;
+  playSong(player: "bgm" | "se1" | "se2" | "se3" | "fanfare", song: number): void;
+  playSE(song: number): void;
+  stop(player: "bgm" | "se1" | "se2" | "se3" | "fanfare"): void;
+  isPlaying(player: "bgm" | "se1" | "se2" | "se3" | "fanfare"): boolean;
   isPaused(player: "bgm"): boolean;
   pause(player: "bgm"): void;
   resume(player: "bgm"): void;
@@ -14,7 +19,7 @@ export interface SoundBackend {
   fadeIn(player: "bgm", speed: number): void;
   setVolume(player: "bgm", volume: number): void;
   setPan?(player: "se1" | "se2", pan: number): void;
-  playCry(species: number, mode: number): void;
+  playCry(species: number, mode: number, pan?: number, volume?: number, priority?: number): void;
   isCryPlaying(): boolean;
   stopCry?(): void;
   frame(): void;
@@ -52,6 +57,7 @@ class Sound {
   private fanfareSong = 0;
   private fanfareTaskActive = false;
   private seTimer = 0;
+  private specialSETimer = 0;
   private cryTimer = 0;
   private constants: Record<string, number> = {};
   private fanfareBySong = new Map<number, number>();
@@ -64,6 +70,8 @@ class Sound {
   private fallbackBgmPlaying = false;
   private fallbackBgmPaused = false;
   private fallbackFadeTemporary = false;
+  private pokemonCryBGMDuckingCounter = 0;
+  private readonly taskDuckBgmForPokemonCryFunc: TaskFunc = (taskId) => this.Task_DuckBGMForPokemonCry(taskId);
 
   init(constants: Record<string, number>): void {
     this.constants = constants;
@@ -90,6 +98,7 @@ class Sound {
     }
     if (this.fanfareTaskActive) this.Task_Fanfare();
     if (this.seTimer > 0) this.seTimer--;
+    if (this.specialSETimer > 0) this.specialSETimer--;
     if (this.cryTimer > 0) this.cryTimer--;
     this.backend?.frame();
   }
@@ -103,7 +112,10 @@ class Sound {
 
   playSE(song: number): void {
     this.seTimer = 12;
-    this.backend?.playSong("se1", song);
+    if ([C.SE_RAIN, C.SE_RAIN_STOP, C.SE_DOWNPOUR, C.SE_DOWNPOUR_STOP, C.SE_THUNDERSTORM, C.SE_THUNDERSTORM_STOP].includes(song & 0xffff)) {
+      this.specialSETimer = 12;
+    }
+    this.backend?.playSE(song);
   }
 
   playSE2(song: number): void {
@@ -113,6 +125,10 @@ class Sound {
   isSEPlaying(): boolean {
     if (this.backend) return this.backend.isPlaying("se1") || this.backend.isPlaying("se2");
     return this.seTimer > 0;
+  }
+
+  IsSpecialSEPlaying(): boolean {
+    return this.backend ? this.backend.isPlaying("se3") : this.specialSETimer > 0;
   }
 
   playBGM(song: number): void {
@@ -345,12 +361,75 @@ class Sound {
     return !this.fanfareTaskActive;
   }
 
-  playCry(species: number, mode = 0): void {
+  playCry(species: number, mode = C.CRY_MODE_NORMAL, pan = 0, volume = C.CRY_VOLUME, priority = C.CRY_PRIORITY_NORMAL): void {
     this.cryTimer = 30;
-    this.backend?.playCry(species, mode);
+    this.backend?.playCry(species, mode, pan, volume, priority);
+  }
+
+  /** PlayCryInternal; cry waveforms and DSP are adapted to exported WAVs/Web Audio. */
+  PlayCryInternal(species: number, pan: number, volume: number, priority: number, mode: number): void {
+    this.playCry(species, mode & 0xff, (pan << 24) >> 24, volume & 0xff, priority & 0xff);
+  }
+
+  PlayCry_Normal(species: number, pan: number): void {
+    this.setBgmVolume(85);
+    this.PlayCryInternal(species, pan, C.CRY_VOLUME, C.CRY_PRIORITY_NORMAL, C.CRY_MODE_NORMAL);
+    this.pokemonCryBGMDuckingCounter = 2;
+    this.RestoreBGMVolumeAfterPokemonCry();
+  }
+
+  PlayCry_NormalNoDucking(species: number, pan: number, volume: number, priority: number): void {
+    this.PlayCryInternal(species, pan, volume, priority, C.CRY_MODE_NORMAL);
+  }
+
+  PlayCry_ByMode(species: number, pan: number, mode: number): void {
+    mode &= 0xff;
+    if (mode === C.CRY_MODE_DOUBLES) {
+      this.PlayCryInternal(species, pan, C.CRY_VOLUME, C.CRY_PRIORITY_NORMAL, mode);
+      return;
+    }
+    this.setBgmVolume(85);
+    this.PlayCryInternal(species, pan, C.CRY_VOLUME, C.CRY_PRIORITY_NORMAL, mode);
+    this.pokemonCryBGMDuckingCounter = 2;
+    this.RestoreBGMVolumeAfterPokemonCry();
+  }
+
+  PlayCry_ReleaseDouble(species: number, pan: number, mode: number, isMultiBattle = false): void {
+    mode &= 0xff;
+    if (mode === C.CRY_MODE_DOUBLES) {
+      this.PlayCryInternal(species, pan, C.CRY_VOLUME, C.CRY_PRIORITY_NORMAL, mode);
+    } else {
+      if (!isMultiBattle) this.setBgmVolume(85);
+      this.PlayCryInternal(species, pan, C.CRY_VOLUME, C.CRY_PRIORITY_NORMAL, mode);
+    }
+  }
+
+  PlayCry_Script(species: number, mode: number): void {
+    if (gQuestLogState !== C.QL_STATE_PLAYBACK) {
+      this.setBgmVolume(85);
+      this.PlayCryInternal(species, 0, C.CRY_VOLUME, C.CRY_PRIORITY_NORMAL, mode & 0xff);
+    }
+    this.pokemonCryBGMDuckingCounter = 2;
+    this.RestoreBGMVolumeAfterPokemonCry();
+  }
+
+  RestoreBGMVolumeAfterPokemonCry(): void {
+    if (!tasks.isActive(this.taskDuckBgmForPokemonCryFunc)) tasks.create(this.taskDuckBgmForPokemonCryFunc, 80);
+  }
+
+  Task_DuckBGMForPokemonCry(taskId: number): void {
+    if (this.pokemonCryBGMDuckingCounter !== 0) {
+      this.pokemonCryBGMDuckingCounter--;
+      return;
+    }
+    if (!this.backend?.isCryPlaying() && this.cryTimer === 0) {
+      this.setBgmVolume(256);
+      tasks.destroy(taskId);
+    }
   }
 
   isCryFinished(): boolean {
+    if (tasks.isActive(this.taskDuckBgmForPokemonCryFunc)) return false;
     if (this.backend) return !this.backend.isCryPlaying();
     return this.cryTimer === 0;
   }
@@ -364,7 +443,7 @@ class Sound {
 
   /** m4aMPlayVolumeControl(&gMPlayInfo_BGM, TRACKS_ALL, volume); 256 = full. */
   setBgmVolume(volume: number): void {
-    this.backend?.setVolume("bgm", volume);
+    this.backend?.setVolume("bgm", volume & 0xffff);
   }
 
   /** IsBGMPlaying from sound.c excludes paused tracks. */

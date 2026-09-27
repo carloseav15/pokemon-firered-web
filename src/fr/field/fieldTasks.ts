@@ -101,15 +101,16 @@ export class PerStepCallback {
     }
   }
 
-  /** PlayAmbientCry; audio backend currently cannot preserve source pan/volume/priority. */
+  /** PlayAmbientCry from overworld.c; WAV playback preserves the source pan/volume, with priority approximate. */
   PlayAmbientCry(): void {
     const p = this.ow.player.object;
     const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
     const behavior = this.ow.map.behaviorAt(p.currentCoords.x + dx, p.currentCoords.y + dy);
     if (this.ambientCryIsWaterMon && !MB.MetatileBehavior_IsSurfable(behavior)) return;
-    random(); // C chooses pan in [212,299].
-    random(); // C chooses volume in [50,79].
-    sound.playCry(this.ambientCrySpecies, C.CRY_MODE_NORMAL);
+    const pan = (((random() % 88) + 212) << 24) >> 24;
+    const volume = (random() % 30) + 50;
+    if (this.ow.keepMusicOnNextLoad) return;
+    sound.PlayCry_NormalNoDucking(this.ambientCrySpecies, pan, volume, C.CRY_PRIORITY_AMBIENT);
   }
 
   /** IcefallCaveIcePerStepCallback */

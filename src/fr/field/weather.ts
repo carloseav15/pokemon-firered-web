@@ -578,7 +578,20 @@ export function IsWeatherNotFadingIn(): boolean {
 
 /** PlayRainStoppingSoundEffect */
 export function PlayRainStoppingSoundEffect(): void {
-  sound.playSE(C.SE_RAIN);
+  if (!sound.IsSpecialSEPlaying()) return;
+
+  switch (gWeather.rainStrength & 0xff) {
+    case 0:
+      sound.playSE(C.SE_RAIN_STOP);
+      break;
+    case 1:
+      sound.playSE(C.SE_DOWNPOUR_STOP);
+      break;
+    case 2:
+    default:
+      sound.playSE(C.SE_THUNDERSTORM_STOP);
+      break;
+  }
 }
 
 /** SetRainStrengthFromSoundEffect (field_weather.c). */

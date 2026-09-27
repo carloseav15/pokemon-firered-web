@@ -632,7 +632,7 @@ export function DoTradeAnim_Cable(): boolean {
       const msg = expandPlaceholders(rom.text("gText_XWillBeSentToY"));
       DrawTextOnTradeWindow(0, msg, 0);
       if (sTradeAnim.monSpecies[TRADE_PLAYER] !== C.SPECIES_EGG) {
-        sound.playCry(sTradeAnim.monSpecies[TRADE_PLAYER], 0);
+        sound.PlayCry_Normal(sTradeAnim.monSpecies[TRADE_PLAYER], 0);
       }
       sTradeAnim.state = STATE_BYE_BYE;
       sTradeAnim.timer = 0;
@@ -1002,7 +1002,7 @@ export function DoTradeAnim_Cable(): boolean {
     case STATE_DELAY_FOR_MON_ANIM:
       if (++sTradeAnim.timer > 60) {
         if (sTradeAnim.monSpecies[TRADE_PARTNER] !== C.SPECIES_EGG) {
-          sound.playCry(sTradeAnim.monSpecies[TRADE_PARTNER], 0);
+          sound.PlayCry_Normal(sTradeAnim.monSpecies[TRADE_PARTNER], 0);
         }
         sTradeAnim.state = STATE_WAIT_FOR_MON_CRY;
         sTradeAnim.timer = 0;

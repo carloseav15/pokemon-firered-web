@@ -548,7 +548,7 @@ export class IntroTitle {
     if (this.state === 0) {
       if (!gPaletteFade.active) {
         try {
-          sound.playCry(6, 0);
+          sound.PlayCry_Normal(6, 0);
         } catch {
           // No audio backend during startup; the 90-frame hold stands in.
         }

@@ -283,7 +283,7 @@ function SpriteCB_MoveWildMonToRight(sprite: Sprite): void {
     sprite.x2 += 2;
     if (sprite.x2 === 0) {
       sprite.callback = SpriteCB_WildMonShowHealthbox;
-      sound.playCry(sprite.data[2] & 0xffff, C.CRY_MODE_NORMAL);
+      sound.PlayCry_Normal(sprite.data[2] & 0xffff, 25);
     }
   }
 }

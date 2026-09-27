@@ -1028,7 +1028,7 @@ function Task_EvolutionScene(taskId: number): void {
 
     case EvoState.EVOSTATE_INTRO_MON_ANIM:
       if (!IsTextPrinterActive(0)) {
-        sound.playCry(preEvoSpecies, 0);
+        sound.PlayCry_Normal(preEvoSpecies, 0);
         t.data[0]++;
       }
       break;
@@ -1113,7 +1113,7 @@ function Task_EvolutionScene(taskId: number): void {
 
     case EvoState.EVOSTATE_EVO_MON_ANIM:
       if (!gPaletteFade.active) {
-        sound.playCry(postEvoSpecies, 0);
+        sound.PlayCry_Normal(postEvoSpecies, 0);
         t.data[0]++;
       }
       break;
@@ -1185,7 +1185,7 @@ function Task_EvolutionScene(taskId: number): void {
 
     case EvoState.EVOSTATE_CANCEL_MON_ANIM:
       if (!gPaletteFade.active) {
-        sound.playCry(preEvoSpecies, 0);
+        sound.PlayCry_Normal(preEvoSpecies, 0);
         t.data[0] = EvoState.EVOSTATE_CANCEL_MSG;
       }
       break;

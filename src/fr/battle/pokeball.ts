@@ -302,7 +302,10 @@ function Task_PlayCryWhenReleasedFromBall(taskId: number): void {
   const wantedCry = d[2];
   const species = d[0];
   const mon = cryTaskMons[taskId];
-  const cry = (normal: number, weak: number) => sound.playCry(species, ShouldPlayNormalMonCry(mon) ? normal : weak);
+  const cryByMode = (normal: number, weak: number) => sound.PlayCry_ByMode(species, d[1], ShouldPlayNormalMonCry(mon) ? normal : weak);
+  const cryOnRelease = (normal: number, weak: number) => sound.PlayCry_ReleaseDouble(
+    species, d[1], ShouldPlayNormalMonCry(mon) ? normal : weak, !!(G.gBattleTypeFlags & C.BATTLE_TYPE_MULTI),
+  );
   switch (d[15]) {
     case 0:
     default:
@@ -310,7 +313,7 @@ function Task_PlayCryWhenReleasedFromBall(taskId: number): void {
       else d[15] = wantedCry + 1;
       break;
     case 1:
-      cry(C.CRY_MODE_NORMAL, C.CRY_MODE_WEAK);
+      cryByMode(C.CRY_MODE_NORMAL, C.CRY_MODE_WEAK);
       tasks.destroy(taskId);
       break;
     case 2:
@@ -319,7 +322,7 @@ function Task_PlayCryWhenReleasedFromBall(taskId: number): void {
       break;
     case 20:
       if (d[10] === 0) {
-        cry(C.CRY_MODE_DOUBLES, C.CRY_MODE_WEAK_DOUBLES);
+        cryOnRelease(C.CRY_MODE_DOUBLES, C.CRY_MODE_WEAK_DOUBLES);
         tasks.destroy(taskId);
       } else {
         d[10]--;
@@ -347,7 +350,7 @@ function Task_PlayCryWhenReleasedFromBall(taskId: number): void {
         d[10]--;
         break;
       }
-      cry(C.CRY_MODE_NORMAL, C.CRY_MODE_WEAK);
+      cryOnRelease(C.CRY_MODE_NORMAL, C.CRY_MODE_WEAK);
       tasks.destroy(taskId);
       break;
   }

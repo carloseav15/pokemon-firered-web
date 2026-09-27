@@ -151,7 +151,7 @@ const COMMANDS: Record<number, () => void> = {
     done();
   },
   [C.CONTROLLER_FAINTINGCRY]: () => {
-    sound.playCry(GetMonData(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.MON_DATA_SPECIES), 25);
+  sound.PlayCry_Normal(GetMonData(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.MON_DATA_SPECIES), 25);
     done();
   },
   [C.CONTROLLER_INTROSLIDE]: () => {

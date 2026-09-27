@@ -356,7 +356,7 @@ export class IntroScene3 {
         s.y2 = 0;
         d[0] = 1;
       } else if (d[0] === 1) {
-        sound.playCry(SPECIES_NIDORINO, CRY_MODE_DOUBLES);
+        sound.PlayCry_ByMode(SPECIES_NIDORINO, 0x3f, CRY_MODE_DOUBLES);
         d[1] = 0;
         d[0] = 2;
       } else if (d[0] === 2) {

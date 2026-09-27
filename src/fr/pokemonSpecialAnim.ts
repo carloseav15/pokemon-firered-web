@@ -287,7 +287,7 @@ function Task_UseItem_Normal(taskId: number): void {
     case 7:
       if (!PSA_IsItemUseOnMonAnimActive()) {
         ptr.cancelDisabled = true;
-        if (ptr.closeness === 3) sound.playCry(ptr.species, 0); // PlayCry_Normal
+        if (ptr.closeness === 3) sound.PlayCry_Normal(ptr.species, 0);
         PSA_ShowMessageWindow();
         ptr.state++;
       }

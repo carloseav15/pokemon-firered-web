@@ -570,7 +570,7 @@ function Task_OakSpeech_IsInhabitedFarAndWide(taskId: number): void {
     t.data[tTimer]++;
     if (t.data[tTimer] === 32) {
       OakSpeechPrintMessage(text("gOakSpeech_Text_IsInhabitedFarAndWide"), res.textSpeed);
-      sound.playCry(INTRO_SPECIES, 0);
+      sound.PlayCry_Normal(INTRO_SPECIES, 0);
     }
   }
 }

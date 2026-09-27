@@ -1,6 +1,6 @@
 // battle_anim_sound_tasks.c: sound tasks of the battle animation scripts
 // (looped/panned SEs and the special cries of Growl, Roar, Hyper Voice…).
-// Adaptation: PlayCry_ByMode ignores the pan (the m4a mixer does not pan cries yet).
+// Cry WAVs and DSP remain approximate, but mode, pan, volume ducking and task wait follow sound.c.
 
 import * as C from "../../generated/constants";
 import { sound } from "../../audio/sound";
@@ -15,8 +15,8 @@ import { gBattleAnimArgs, gTasks, PlaySE1WithPanning, PlaySE12WithPanning, PlayS
 const s8 = (v: number) => (v << 24) >> 24;
 const u16 = (v: number) => v & 0xffff;
 
-function PlayCry_ByMode(species: number, _pan: number, mode: number): void {
-  sound.playCry(species, mode);
+function PlayCry_ByMode(species: number, pan: number, mode: number): void {
+  sound.PlayCry_ByMode(species, pan, mode);
 }
 
 function IsCryPlaying(): boolean {

@@ -284,7 +284,7 @@ function Task_Hof_PlayMonCryAndPrintInfo(taskId: number): void {
   const currMonId = data[1];
   const currMon = sHofMonPtr[currMonId];
   if (gSprites[data[5 + currMonId]].data[0]) {
-    if (currMon.species !== C.SPECIES_EGG) sound.playCry(currMon.species, 0); // PlayCry_Normal
+    if (currMon.species !== C.SPECIES_EGG) sound.PlayCry_Normal(currMon.species, 0);
     HallOfFame_PrintMonInfo(currMon, 0, 14);
     data[3] = 120;
     tasks.tasks[taskId].func = Task_Hof_TryDisplayAnotherMon;
@@ -566,7 +566,7 @@ function Task_HofPC_PrintMonInfo(taskId: number): void {
   const currMon = savedTeam[data[2]];
   if (currMon.species !== C.SPECIES_EGG) {
     StopCryAndClearCrySongs();
-    sound.playCry(currMon.species, 0);
+    sound.PlayCry_Normal(currMon.species, 0);
   }
   HallOfFame_PrintMonInfo(currMon, 0, 14);
 
