@@ -111,6 +111,7 @@ export type ObjectEventHooks = {
   playerDestCoords: () => { x: number; y: number };
   playerIsRunning: () => boolean;
   playerInfo: () => { facing: number; movementDirection: number; movementActionId: number; copyableMovement: number; tileTransitionState: number } | undefined;
+  cameraObjectReset?: (object: ObjectEvent) => void;
   groundEffect: (object: ObjectEvent, kind: "spawn" | "begin" | "finish") => void;
   emote: (object: ObjectEvent, kind: number) => void;
   playSE: (name: string) => void;
@@ -596,6 +597,28 @@ export class ObjectEvents {
     const s = object.sprite;
     s.x = object.currentCoords.x * 16 + 8;
     s.y = object.currentCoords.y * 16 + 16 + s.centerToCornerVecY;
+  }
+
+  /** MoveObjectEventToMapCoords (event_object_movement.c). */
+  MoveObjectEventToMapCoords(object: ObjectEvent, x: number, y: number): void {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    object.previousCoords = { x, y };
+    object.currentCoords = { x, y };
+    const info = graphicsInfo(object.graphicsId);
+    object.sprite.centerToCornerVecX = -(info.width >> 1);
+    object.sprite.centerToCornerVecY = -(info.height >> 1);
+    this.placeSprite(object);
+
+    object.singleMovementActive = false;
+    object.triggerGroundEffectsOnMove = true;
+    object.hasShadow = false;
+    object.hasReflection = false;
+    object.inShortGrass = false;
+    object.inShallowFlowingWater = false;
+    object.inSandPile = false;
+    ObjectEventClearHeldMovement(object);
+    if (object.trackedByCamera) this.hooks.cameraObjectReset?.(object);
   }
 
   /** SetTrainerMovementType */

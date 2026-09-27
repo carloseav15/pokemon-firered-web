@@ -322,12 +322,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
     const o = localIdObject(ctx, localId);
     if (o) {
       const vx = (x << 16 >> 16) + MAP_OFFSET, vy = (y << 16 >> 16) + MAP_OFFSET;
-      o.previousCoords = { x: vx, y: vy };
-      o.currentCoords = { x: vx, y: vy };
-      o.initialCoords = { x: vx, y: vy };
-      ctx.ow.objects.placeSprite(o);
-      ctx.ow.objects.updateMetatileBehaviors(o);
-      if (o.isPlayer) ctx.ow.updateCameraPixels();
+      ctx.ow.objects.MoveObjectEventToMapCoords(o, vx, vy);
     }
     return false;
   },
