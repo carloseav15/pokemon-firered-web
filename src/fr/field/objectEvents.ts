@@ -540,7 +540,6 @@ export class ObjectEvents {
     this.objects[slot] = object;
     gObjectEvents[slot] = object;
     this.setupSprite(object);
-    this.hooks.groundEffect(object, "spawn");
     return object;
   }
 
@@ -572,7 +571,6 @@ export class ObjectEvents {
     this.objects[slot] = object;
     gObjectEvents[slot] = object;
     this.setupSprite(object);
-    this.hooks.groundEffect(object, "spawn");
     return object;
   }
 
@@ -593,6 +591,7 @@ export class ObjectEvents {
     sprite.data[0] = this.indexOf(object);
     sprite.data[1] = 0;
     sprite.data[2] = 0;
+    object.triggerGroundEffectsOnMove = true;
     object.currentMetatileBehavior = this.hooks.map().behaviorAt(object.currentCoords.x, object.currentCoords.y);
     object.previousMetatileBehavior = object.currentMetatileBehavior;
     this.InitObjectPriorityByElevation(sprite, object.previousElevation);
@@ -1097,6 +1096,12 @@ export class ObjectEvents {
   update(cameraX: number, cameraY: number): void {
     for (const object of this.list) {
       const sprite = object.sprite;
+      // UpdateObjectEventCurrentMovement calls DoGroundEffects_OnSpawn before
+      // enabling animation or dispatching this object's movement callback.
+      if (object.triggerGroundEffectsOnMove) {
+        this.doGroundEffect(object, "spawn");
+        object.triggerGroundEffectsOnMove = false;
+      }
       // TryEnableObjectEventAnim runs before the movement callback in C.
       if (object.enableAnim) {
         sprite.animPaused = false;
@@ -1113,11 +1118,26 @@ export class ObjectEvents {
           this.runMovementType(object);
         }
       }
+      // C processes begin/finish flags immediately after this object's callback.
+      if (object.triggerGroundEffectsOnMove) {
+        this.doGroundEffect(object, "begin");
+        object.triggerGroundEffectsOnMove = false;
+      }
+      if (object.triggerGroundEffectsOnStop) {
+        this.doGroundEffect(object, "finish");
+        object.triggerGroundEffectsOnStop = false;
+        object.landingJump = false;
+      }
       this.updateVisibility(object, cameraX, cameraY);
       this.updateSubpriority(object, cameraY);
       this.UpdateObjectEventElevationAndPriority(object);
       if (object.disableAnim) sprite.animPaused = true;
     }
+  }
+
+  private doGroundEffect(object: ObjectEvent, kind: "spawn" | "begin" | "finish"): void {
+    this.updateMetatileBehaviors(object);
+    this.hooks.groundEffect(object, kind);
   }
 
   private updateVisibility(object: ObjectEvent, offsetX: number, offsetY: number): void {
@@ -2195,23 +2215,6 @@ export class ObjectEvents {
     return true;
   }
 
-  /** Ground effect triggers after the action ran (DoGroundEffects_*) */
-  runGroundEffects(): void {
-    for (const object of this.list) {
-      if (object.triggerGroundEffectsOnMove) {
-        this.updateMetatileBehaviors(object);
-        this.hooks.groundEffect(object, "begin");
-        object.triggerGroundEffectsOnMove = false;
-      }
-      if (object.triggerGroundEffectsOnStop) {
-        this.updateMetatileBehaviors(object);
-        this.hooks.groundEffect(object, "finish");
-        object.triggerGroundEffectsOnStop = false;
-        object.landingJump = false;
-      }
-      this.updatePriority(object);
-    }
-  }
 }
 
 /** GetCollisionFlagsAtCoords (event_object_movement.c). */

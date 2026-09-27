@@ -1316,7 +1316,6 @@ export class Overworld {
     tasks.run();
     this.syncObjectSprites();
     this.objects.update(-this.camX, -this.camY);
-    this.objects.runGroundEffects();
     this.effects.update();
     this.game.weather.update(this);
     this.sprites.update();
