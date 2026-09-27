@@ -28,12 +28,13 @@ import { sound } from "../audio/sound";
 import * as MB from "../generated/metatileBehavior";
 import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
 import { tasks } from "../gba/tasks";
-import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST } from "../field/objectEvents";
+import { DIRECTION_VECTORS } from "../field/objectEvents";
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_UNDERWATER } from "../field/playerAvatar";
 import { startFishing } from "../field/fishing";
+import { startItemFinder } from "./itemFinder";
 import { openHardwareMessage } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
-import { flagGet, incrementGameStat, SV } from "../save";
+import { flagGet, incrementGameStat } from "../save";
 
 
 export function fieldMenu(game: Game, begin: (close: () => void) => void, closeStartMenu = true): void {
@@ -281,7 +282,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           return;
         case "ItemUseOutOfBattle_Itemfinder":
           incrementGameStat(C.GAME_STAT_USED_ITEMFINDER);
-          onField(() => useItemfinder(game));
+          onField(() => startItemFinder(game));
           return;
         case "FieldUseFunc_TownMap":
           // From the bag the map returns to the bag (CB2_BagMenuFromStartMenu); a registered use returns to the field.
@@ -350,58 +351,5 @@ export function fieldMessage(game: Game, text: ArrayLike<number>, next: () => vo
     ow.messageBox.hide();
     tasks.destroy(id);
     next();
-  }, 80);
-}
-
-/** itemfinder.c ItemUseOnFieldCB_Itemfinder */
-function useItemfinder(game: Game): void {
-  const ow = game.overworld;
-  const p = ow.player.object;
-  const px = p.currentCoords.x, py = p.currentCoords.y;
-  let found = false, itemX = 0, itemY = 0, underfoot: { flag: number; item: number } | null = null;
-  for (const bg of ow.header.bgs) {
-    if (bg.type !== "hidden_item" || flagGet(bg.flag)) continue;
-    const dx = bg.x + 7 - px, dy = bg.y + 7 - py;
-    if (bg.underfoot) {
-      if (dx === 0 && dy === 0) { underfoot = { flag: bg.flag, item: bg.item }; break; }
-    } else if (dx >= -7 && dx <= 7 && dy >= -5 && dy <= 5) {
-      if (!found) { itemX = dx; itemY = dy; found = true; }
-      else {
-        const d2 = Math.abs(itemX) + Math.abs(itemY), d3 = Math.abs(dx) + Math.abs(dy);
-        if (d2 > d3 || (d2 === d3 && (Math.abs(itemY) > Math.abs(dy) || (Math.abs(itemY) === Math.abs(dy) && itemY < dy)))) { itemX = dx; itemY = dy; }
-      }
-    }
-  }
-  const release = (): void => {
-    ow.objects.ObjectEventClearHeldMovementIfFinished(p);
-    ow.objects.unfreezeAll();
-    ow.controlsLocked = false;
-  };
-  if (!found && !underfoot) { fieldMessage(game, rom.text("gText_NopeTheresNoResponse"), release); return; }
-  let dings = underfoot ? 3 : itemX === 0 && itemY === 0 ? 4 : Math.max(Math.abs(itemX), Math.abs(itemY)) > 3 ? 2 : 4;
-  let timer = 0;
-  const id = tasks.create(() => {
-    if (timer % 25 === 0) {
-      if (dings === 0) {
-        tasks.destroy(id);
-        if (underfoot) {
-          varSet(SV.x8004, underfoot.flag);
-          varSet(SV.x8005, underfoot.item);
-          varSet(SV.x8006, 1);
-          fieldMessage(game, rom.text("gText_ItemfinderShakingWildly"), () => {
-            ow.script.ScriptContext_SetupScript(rom.label("EventScript_ItemfinderDigUpUnderfootItem"));
-          });
-        } else {
-          // Face the item as the arrows point (GetPlayerDirectionTowardsHiddenItem).
-          const dir = Math.abs(itemX) > Math.abs(itemY) ? (itemX < 0 ? DIR_WEST : DIR_EAST) : (itemY < 0 ? DIR_NORTH : DIR_SOUTH);
-          if (itemX || itemY) ow.objects.turn(p, dir);
-          fieldMessage(game, rom.text("gText_ItemfinderResponding"), release);
-        }
-        return;
-      }
-      sound.playSE(C.SE_ITEMFINDER);
-      dings--;
-    }
-    timer++;
   }, 80);
 }

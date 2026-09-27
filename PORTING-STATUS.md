@@ -3,11 +3,18 @@
 Target: the full FireRed game, including its main progression and optional
 systems. The first playable route is a milestone, not the completion criterion.
 
+El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
+e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
+single-player. Los porcentajes anteriores de este documento son históricos;
+la meta vigente mide **5.961/11.826 funciones (50,4%)**, con **120 archivos**
+con huecos y una estimación ponderada de **~134.508/303.042 líneas C (44,4%)**
+pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
+
 ## Inventario actualizado, 2026-09-26
 
 - **`quest_log_battle.c`: 1/3 funciones.** Implementé `TrySetQuestLogBattleEvent`
-  y lo conecté a `HandleEndTurn_FinishBattle`, con exclusiones de enlace,
-  tutorial del viejo y Poké Dude; registra victorias/capturas de entrenador o
+  y lo conecté a `HandleEndTurn_FinishBattle`, respetando el filtro del C para
+  batallas de enlace, tutorial del viejo y Poké Dude; registra resultados de entrenador o
   Pokémon salvaje con sus especies, sección del mapa y fracción de PS del equipo
   según el C. Los resúmenes se guardan en `SaveData.questLogEvents`, formato web
   que no sustituye escenas, buffer ni playback originales. Al conectar el
@@ -15,6 +22,14 @@ systems. The first playable route is a milestone, not the completion criterion.
   se inicializaba; ahora sigue el mapa actual del Overworld. Pasaron
   `check:port`, `check:honesty`, `inventory`, `pending` y `git diff --check`;
   no ejecuté una batalla en navegador.
+- **`itemfinder.c`: 24/24 funciones con homólogo.** Implementé la búsqueda de
+  objetos ocultos en el mapa actual y mapas conectados, sonidos y tiempos de
+  respuesta, mensajes de objeto cercano/justo debajo, y las animaciones de
+  flecha y estrella a partir del cdata e INCBIN exportados. Añadí la precarga
+  asíncrona de ambos recursos antes de crear la tarea. La paleta OBJ del campo
+  Canvas sigue siendo una adaptación visual. Pasaron `check:port`,
+  `check:honesty`, `inventory`, `pending` y `git diff --check`; no hubo prueba
+  en navegador.
 - **`item.c`: 45/49 funciones con homólogo.** `TrySetObtainedItemQuestLogEvent`
   filtra los 20 objetos definidos en C, conserva la restricción del Town Map
   en la casa del rival y guarda el evento tipado con la región actual. Lo
@@ -30,10 +45,11 @@ systems. The first playable route is a milestone, not the completion criterion.
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.854/10.061 funciones (58,2%)**, quedan **4.207 (41,8%)** y hay **79
-  archivos C con huecos** (3 sin empezar, 1 adaptador, 19 casi completos y 56
-  parciales). La estimación ponderada sin cubrir es **~87.575/252.366 líneas
-  (34,7%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
+  son **5.961/11.826 funciones (50,4%)**, quedan **5.865 (49,6%)** y hay **120
+  archivos C con huecos** (29 sin empezar, 1 adaptador, 19 casi completos y 71
+  parciales). El denominador incluye los sistemas opcionales y de enlace antes
+  excluidos. La estimación ponderada sin cubrir es **~134.508/303.042 líneas
+  (44,4%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
   y sobreviven cargas y escrituras del JSON web. `setSave` agrega el campo vacío
@@ -1035,7 +1051,7 @@ audio backend exists.
 - `option_menu.c`: six settings, cycling/input, frame preview, persistence and return flow are implemented in `optionMenu.ts`; Canvas/HwScene adaptation, no pixel comparison.
 - `wireless_communication_status_screen.c`: counts RFU trade/battle/union/minigame activity and displays nearby peers; no single-player caller or wireless hardware. Marked out of scope for single-player.
 - `script.c`: bytecode/native execution and map-script table dispatch exist in `script/context.ts` and `overworld.ts`; RAM scripts, some dialogue control flags and Quest Log input helpers are missing. Marked partial.
-- `itemfinder.c`: current-map hidden item scan, underfoot digging and ding/message behavior exist in `fieldMenus.ts`; connected-map search and arrow/star directional sprites are absent. Marked partial; neighboring-map item detection is a gameplay gap.
+- `itemfinder.c`: complete name inventory in `menus/itemFinder.ts`; hidden-item scan, connected maps, underfoot behavior, responses, and arrow/star sprites are present. Browser/runtime verification remains pending.
 - `sound.c`: map music state/fades, fanfares, SEs, cries and ducking have WebAudio counterparts, but the source M4A engine and table-level audio behavior are adapted. Marked partial; no audio comparison.
 - `menu_indicators.c`: actualizado por el pase fuente 2026-09-26 abajo; las dos tareas C vacías permanecen sin declararse.
 - `item.c`: item metadata, bag/PC operations, field/battle callback-symbol getters, item lookup and story-item Quest Log events exist across `pokemon/items.ts`, `save.ts`, `bagMenu.ts` and `questLogEvents.ts`; GBA encrypted slot storage and array compaction are not exact equivalents. Current inventory 45/49; marked partial.

@@ -39,14 +39,26 @@ import portInventory as inv  # noqa: E402
 STUB_BASELINE = ROOT / "tools/checks/stub-baseline.json"
 UNWIRED_BASELINE = ROOT / "tools/checks/unwired-baseline.json"
 
+# These exact placeholders predate the inventory's expanded scope (2026-09-26).
+# They are now visible in PENDING.md; this transition list keeps them from being
+# misreported as newly introduced regressions while still catching any other
+# new stub. Remove each name when its real C behavior is ported.
+SCOPE_EXPANSION_STUBS = {
+    "help_system": {
+        "Script_SetHelpContext", "BackupHelpContext", "RestoreHelpContext",
+        "SetHelpContextForMap", "HelpSystem_Disable", "HelpSystem_Enable",
+    },
+    "cable_club": {"CleanupLinkRoomState", "ExitLinkRoom"},
+    "union_room": {"Script_ResetUnionRoomTrade"},
+    "link": {"CloseLink"},
+}
+
 
 def current_stubs() -> dict[str, list[str]]:
     idents, real_def, _ = inv.load_ts()
     out: dict[str, list[str]] = {}
     for path in sorted((inv.DECOMP / "src").glob("*.c")):
         name = path.stem
-        if name in inv.OUT_OF_SCOPE or name.startswith(inv.OUT_OF_SCOPE_PREFIXES):
-            continue
         _, stubs = inv.count_found(inv.c_functions(path.read_text(errors="replace")), idents, real_def)
         if stubs:
             out[name] = sorted(stubs)
@@ -155,7 +167,12 @@ def main() -> int:
 
     stubs = current_stubs()
     base_stubs = json.loads(STUB_BASELINE.read_text()) if STUB_BASELINE.exists() else {}
-    new_stubs = [f"{c}.c: {s}" for c, names in stubs.items() for s in names if s not in base_stubs.get(c, [])]
+    new_stubs = [
+        f"{c}.c: {s}"
+        for c, names in stubs.items()
+        for s in names
+        if s not in base_stubs.get(c, []) and s not in SCOPE_EXPANSION_STUBS.get(c, set())
+    ]
     if new_stubs:
         failures.append("New stubs (C name with an empty/`return 0;` body). Port the body or do not declare it:\n  " + "\n  ".join(new_stubs))
 

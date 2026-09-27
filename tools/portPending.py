@@ -35,6 +35,7 @@ UNTESTED = [
     ("fame_checker.c", "fameChecker.ts"),
     ("slot_machine.c", "menus/slotMachine.ts"),
     ("trade_scene.c (intercambios en juego)", "pokemon/ingameTrade.ts"),
+    ("itemfinder.c", "menus/itemFinder.ts"),
 ]
 
 # Ported modules that nothing in the game imports yet (dead until wired).

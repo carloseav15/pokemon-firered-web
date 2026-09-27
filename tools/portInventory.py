@@ -26,18 +26,6 @@ DECOMP = Path(os.environ.get("POKEFIRERED", ROOT.parent / "pokefirered")).resolv
 SRC = ROOT / "src" / "fr"
 OUT = ROOT / "PORT-INVENTORY.md"
 
-# Link hardware and help system are not part of the single-player browser port.
-OUT_OF_SCOPE_PREFIXES = (
-    "link", "librfu", "AgbRfu_", "union_room", "mystery_gift", "mystery_event",
-    "ereader", "berry_crush", "dodrio_berry_picking", "pokemon_jump",
-    "help_system", "battle_controller_link_",
-)
-OUT_OF_SCOPE = {
-    "sloopsvc", "multiboot", "wonder_news", "minigame_countdown", "digit_obj_util",
-    "wireless_communication_status_screen", "berry_fix_program", "cable_club",
-    "help_message", "cereader_tool", "battle_records", "rfu_union_tool",
-}
-
 # Replaced by the TS hardware layer, the browser, or the decomp exporter.
 COVERED: dict[str, str] = {
     "malloc": "memoria de JS",
@@ -268,8 +256,6 @@ def count_found(funcs: list[tuple[str, bool]], idents: set[str], real_def: dict[
 
 
 def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool, stubs: list[str]) -> tuple[str, str]:
-    if name in OUT_OF_SCOPE or name.startswith(OUT_OF_SCOPE_PREFIXES):
-        return "fuera", ""
     if name in COVERED:
         return "cubierto", COVERED[name]
     if name in ADAPTERS:
@@ -286,7 +272,7 @@ def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool, 
     return "falta", ""
 
 
-ORDER = ["falta", "parcial", "adaptador", "casi", "portado", "datos", "cubierto", "fuera"]
+ORDER = ["falta", "parcial", "adaptador", "casi", "portado", "datos", "cubierto"]
 TITLES = {
     "falta": "Falta (sin funciones portadas)",
     "parcial": "Parcial (< 80 % de funciones)",
@@ -295,7 +281,6 @@ TITLES = {
     "portado": "Sin huecos de nombre (100 %; fidelidad no medida)",
     "datos": "Solo datos (exportados a cdata)",
     "cubierto": "Cubierto por hw/navegador/exportador",
-    "fuera": "Fuera de alcance",
 }
 
 
@@ -330,7 +315,7 @@ def main() -> None:
         "La coincidencia de nombres no demuestra paridad funcional ni fidelidad.",
         "Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene",
         "código real cuenta como **stub** (columna Stubs) y no suma como portada.",
-        "Las categorías fuera/cubierto/adaptador salen de las tablas del script.",
+        "Las categorías cubierto/adaptador salen de las tablas del script.",
         "",
         "| Estado | Archivos | Líneas C | Funciones con nombre en TS |",
         "|---|---:|---:|---:|",
@@ -339,7 +324,7 @@ def main() -> None:
         sel = [r for r in rows if r[0] == s]
         out.append(f"| {TITLES[s]} | {len(sel)} | {sum(r[2] for r in sel)} | {sum(r[3] for r in sel)}/{sum(r[4] for r in sel)} |")
     todo = [r for r in rows if r[0] in ("falta", "parcial", "adaptador", "casi")]
-    scope = [r for r in rows if r[0] not in ("cubierto", "fuera")]
+    scope = [r for r in rows if r[0] != "cubierto"]
     out.append(f"| **Pendiente de portar** | **{len(todo)}** | **{sum(r[2] for r in todo)}** | |")
     out.append(f"| **Total en alcance** | **{len(scope)}** | **{sum(r[2] for r in scope)}** | **{sum(r[3] for r in scope)}/{sum(r[4] for r in scope)}** |")
     for s in ORDER:

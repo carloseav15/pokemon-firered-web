@@ -9,13 +9,13 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 
 | Medida | Valor | Qué significa |
 |---|---:|---|
-| Funciones del C con homólogo por nombre en TS | **5854 / 10061 (58,2 %)** | Indicador de nombres; Quest Log está incluido; no prueba fidelidad |
-| Archivos C sin huecos de nombre | **127** | El inventario no mide paridad funcional |
+| Funciones del C con homólogo por nombre en TS | **5961 / 11826 (50,4 %)** | Indicador de nombres; ahora incluye sistemas no single-player; no prueba fidelidad |
+| Archivos C sin huecos de nombre | **128** | El inventario no mide paridad funcional |
 | Archivos casi completos (≥ 80 % y < 100 %) | **19** | Aún tienen funciones sin homólogo |
-| Archivos parciales (< 80 %) | **56** | Lista completa, junto con los casi completos, en `PENDING.md` |
+| Archivos parciales (< 80 %) | **55** | Lista completa, junto con los casi completos, en `PENDING.md` |
 | Archivos adaptador | **1** | Teachy TV conserva interfaz de lista simplificada |
-| Archivos con algún hueco de nombre | **79** | 3 sin empezar + 56 parciales + 19 casi completos + 1 adaptador |
-| Líneas C sin cubrir (estimación ponderada) | **~87 575 / 252 366 (34,7 %)** | Estimación por proporción de funciones, no comparación de cada línea |
+| Archivos con algún hueco de nombre | **120** | 29 sin empezar + 71 parciales + 19 casi completos + 1 adaptador |
+| Líneas C sin cubrir (estimación ponderada) | **~134 508 / 303 042 (44,4 %)** | Estimación por proporción de funciones, no comparación de cada línea |
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
 | Funciones stub (nombre del C, cuerpo vacío) | **123** | No cuentan como portadas (PENDING.md §3b) |
 | Módulos que el juego no importa | 9 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
@@ -236,6 +236,8 @@ requiere revisar el cuerpo contra el C, conectar el flujo y probarlo en headless
   código sin ejecutar acumula fallos como los de esta sesión (constantes que no
   existen, tilemaps que no se copian, menús invisibles).
 
-**Lo que no rinde:** portar archivos fuera de alcance (enlace, Quest Log),
-reescribir lo que ya es fiel, o inflar el inventario con nombres. El
-inventario ya no cuenta stubs, así que ese atajo no suma nada.
+**Lo que no rinde:** reescribir lo que ya es fiel o inflar el inventario con
+nombres. El inventario ya no cuenta stubs, así que ese atajo no suma nada.
+Desde el 2026-09-26 también incluye enlace, Quest Log y las demás funciones
+opcionales que antes se excluían; sus adaptaciones web requieren decisiones de
+transporte y persistencia, no retornos constantes.
