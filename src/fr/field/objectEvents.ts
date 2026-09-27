@@ -114,7 +114,12 @@ export type ObjectEventHooks = {
   emote: (object: ObjectEvent, kind: number) => void;
   playSE: (name: string) => void;
   cameraCanMove: (direction: number) => boolean;
+  registerSprite?: (sprite: Sprite) => number;
+  unregisterSprite?: (sprite: Sprite) => void;
+  cameraOffset?: () => { x: number; y: number };
 };
+
+type VirtualObject = { sprite: Sprite; id: number; elevation: number; invisible: boolean; animNum: number; animState: number };
 
 export class ObjectEvent {
   active = true;
@@ -318,6 +323,7 @@ export class ObjectEvents {
   readonly objects: Array<ObjectEvent | null> = new Array(OBJECT_EVENTS_COUNT).fill(null);
   /** Installed by TrainerSee for the buried-trainer REVEAL_TRAINER task. */
   revealTrainerMovementAction?: (object: ObjectEvent) => boolean;
+  private readonly virtualObjects = new Map<number, VirtualObject>();
   templates: MapObjectTemplate[] = [];
   mapNum = 0;
   mapGroup = 0;
@@ -326,6 +332,104 @@ export class ObjectEvents {
     for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
       if (gObjectEvents[i].active) this.objects[i] = gObjectEvents[i];
     }
+  }
+
+  /** CreateVirtualObject (event_object_movement.c): script/Union Room sprite outside gObjectEvents. */
+  CreateVirtualObject(graphicsId: number, virtualObjId: number, x: number, y: number, elevation: number, direction: number): number {
+    virtualObjId &= 0xff;
+    const previous = this.virtualObjects.get(virtualObjId);
+    if (previous) this.hooks.unregisterSprite?.(previous.sprite);
+    const info = graphicsInfo(graphicsId & 0xff);
+    const sprite = new Sprite();
+    sprite.anims = info.anims;
+    sprite.frameImages = info.frames;
+    sprite.width = info.width;
+    sprite.height = info.height;
+    sprite.centerToCornerVecX = -(info.width >> 1);
+    sprite.centerToCornerVecY = -(info.height >> 1);
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    sprite.x = ((x + MAP_OFFSET) * 16 + 8) | 0;
+    sprite.y = ((y + MAP_OFFSET) * 16 + 16 + sprite.centerToCornerVecY) | 0;
+    sprite.coordOffsetEnabled = true;
+    sprite.data[0] = virtualObjId;
+    this.InitObjectPriorityByElevation(sprite, elevation);
+    this.SetObjectSubpriorityByElevation(elevation, sprite, 1, 0);
+    sprite.startAnim(faceAnim(direction & 0xff));
+    const virtual: VirtualObject = { sprite, id: virtualObjId, elevation: elevation & 0xff, invisible: false, animNum: 0, animState: 0 };
+    sprite.callback = () => {
+      this.updateVirtualObject(virtual);
+    };
+    this.virtualObjects.set(virtualObjId, virtual);
+    return this.hooks.registerSprite?.(sprite) ?? -1;
+  }
+
+  /** TurnVirtualObject. */
+  TurnVirtualObject(virtualObjId: number, direction: number): void {
+    this.virtualObjects.get(virtualObjId & 0xff)?.sprite.startAnim(faceAnim(direction & 0xff));
+  }
+
+  /** SetVirtualObjectGraphics; directions are graphics IDs in the source API. */
+  SetVirtualObjectGraphics(virtualObjId: number, graphicsId: number): void {
+    const virtual = this.virtualObjects.get(virtualObjId & 0xff);
+    if (!virtual) return;
+    const info = graphicsInfo(graphicsId & 0xff), sprite = virtual.sprite;
+    sprite.anims = info.anims;
+    sprite.frameImages = info.frames;
+    sprite.width = info.width;
+    sprite.height = info.height;
+    sprite.startAnim(0);
+  }
+
+  /** SetVirtualObjectInvisibility. */
+  SetVirtualObjectInvisibility(virtualObjId: number, invisible: boolean | number): void {
+    const virtual = this.virtualObjects.get(virtualObjId & 0xff);
+    if (virtual) virtual.invisible = !!invisible;
+  }
+
+  /** IsVirtualObjectInvisible returns FALSE for an unknown id, matching C. */
+  IsVirtualObjectInvisible(virtualObjId: number): boolean {
+    return this.virtualObjects.get(virtualObjId & 0xff)?.invisible ?? false;
+  }
+
+  /** SetVirtualObjectSpriteAnim. */
+  SetVirtualObjectSpriteAnim(virtualObjId: number, animNo: number): void {
+    const virtual = this.virtualObjects.get(virtualObjId & 0xff);
+    if (virtual) { virtual.animNum = animNo & 0xff; virtual.animState = 0; }
+  }
+
+  /** IsVirtualObjectAnimating returns FALSE for an unknown id. */
+  IsVirtualObjectAnimating(virtualObjId: number): boolean {
+    return (this.virtualObjects.get(virtualObjId & 0xff)?.animNum ?? 0) !== 0;
+  }
+
+  /** Sprite reset during a map transition also removes native virtual-object sprites. */
+  ClearVirtualObjects(): void {
+    for (const virtual of this.virtualObjects.values()) this.hooks.unregisterSprite?.(virtual.sprite);
+    this.virtualObjects.clear();
+  }
+
+  private updateVirtualObject(virtual: VirtualObject): void {
+    const { sprite } = virtual;
+    const offset = this.hooks.cameraOffset?.() ?? { x: 0, y: 0 };
+    if (virtual.animNum === 1 || virtual.animNum === 2) {
+      if (virtual.animState === 0) {
+        sprite.y2 = virtual.animNum === 1 ? -160 : 0;
+        virtual.animState = 1;
+      }
+      sprite.y2 += virtual.animNum === 1 ? 8 : -8;
+      if (sprite.y2 === (virtual.animNum === 1 ? 0 : -160)) {
+        sprite.y2 = 0;
+        if (virtual.animNum === 2) virtual.invisible = true;
+        virtual.animNum = 0;
+        virtual.animState = 0;
+      }
+    }
+    this.SetObjectSubpriorityByElevation(virtual.elevation, sprite, 1, -offset.y);
+    sprite.invisible = virtual.invisible;
+    const x = sprite.x + sprite.x2 + sprite.centerToCornerVecX - offset.x;
+    const y = sprite.y + sprite.y2 + sprite.centerToCornerVecY - offset.y;
+    if (x >= 256 || x - (sprite.centerToCornerVecX >> 1) < -16 || y >= 176 || y - (sprite.centerToCornerVecY >> 1) < -16) sprite.invisible = true;
   }
 
   get list(): ObjectEvent[] {

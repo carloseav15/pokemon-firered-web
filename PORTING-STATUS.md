@@ -7,13 +7,9 @@ Reglas: [AGENTS.md](AGENTS.md). Cifras vivas: [PENDING.md](PENDING.md) y
 
 ## Siguiente tanda
 
-Priorizar un grupo de comportamiento faltante en `event_object_movement.c`,
-conectado a `src/fr/field/objectEvents.ts` y sus consumidores. Consultar cuerpos
-C y equivalencias TS antes de elegir; las funciones de tablas, congelación,
-elevación y colisión ya trabajadas no deben contarse otra vez como novedades.
-Si las dependencias bloquean el grupo, resolver la dependencia o seleccionar
-otro conjunto conectado desde PENDING.md. No retomar automáticamente getters
-aislados de naming solo por su tamaño.
+Continuar las familias de movimiento de `event_object_movement.c` que falten en
+`ObjectEvents.movementTypeStep`, priorizando un grupo conectado de NPCs y sus
+acciones. Comparar con los callbacks C antes de implementar.
 
 ## Bloqueos y validación diferida
 
@@ -33,10 +29,12 @@ aislados de naming solo por su tamaño.
 
 ## Última entrega
 
-- 2026-09-27: proceso unificado en AGENTS.md, tandas amplias y checks por cierre.
-- Guía técnica separada; historial archivado; prompts de agentes alineados.
-- Sin cambios al código del juego ni al cálculo de cobertura en esta entrega.
-- Validación: coherencia documental, enlaces locales, diff y check:honesty.
+- 2026-09-27: portados los objetos virtuales de `event_object_movement.c` y
+  conectados `createvobject`/`turnvobject` al SpriteManager activo.
+- Incluye creación gráfica, orientación, visibilidad, elevación y animaciones
+  Unión de entrada/salida; retorno adaptado al índice del SpriteManager.
+- `check:port`, `check:honesty`, build e inventarios pasaron; sin prueba de juego.
+- Validación visual y recorrido de objetos virtuales quedan pendientes.
 
 ## Antecedentes bajo demanda
 

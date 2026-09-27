@@ -179,6 +179,9 @@ export class Overworld {
       emote: (object, kind) => this.effects.startEmoteForObjectEvent(object, kind),
       playSE: (name) => sound.playSE(sound.c(name)),
       cameraCanMove: (direction) => this.canCameraMoveInDirection(direction),
+      registerSprite: (sprite) => { this.sprites.add(sprite); return this.sprites.sprites.indexOf(sprite); },
+      unregisterSprite: (sprite) => this.sprites.destroy(sprite),
+      cameraOffset: () => ({ x: this.camX, y: this.camY }),
     });
     this.player = new PlayerAvatar(this);
     this.control = new FieldControl(this);
@@ -245,6 +248,7 @@ export class Overworld {
 
   /** Per-map resets shared by LoadMapFromWarp and LoadMapFromCameraTransition. */
   private onMapLoad(): void {
+    this.objects.ClearVirtualObjects();
     this.stepCallback.reset();
     mapResetTrainerRematches(this.game);
     TryRegenerateRenewableHiddenItems(save.location.mapGroup, save.location.mapNum);

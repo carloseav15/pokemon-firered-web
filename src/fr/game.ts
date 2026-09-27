@@ -813,8 +813,12 @@ export class Game {
     const secondary = rom.cachedTileset(layout.secondary) ?? ow.loaded.secondary;
     ow.loaded = { ...ow.loaded, layout, primary, secondary };
   }
-  createVirtualObject(..._args: number[]): void {}
-  turnVirtualObject(..._args: number[]): void {}
+  createVirtualObject(graphicsId: number, virtualObjId: number, x: number, y: number, elevation: number, direction: number): void {
+    this.overworld.objects.CreateVirtualObject(graphicsId, virtualObjId, x, y, elevation, direction);
+  }
+  turnVirtualObject(virtualObjId: number, direction: number): void {
+    this.overworld.objects.TurnVirtualObject(virtualObjId, direction);
+  }
   /** AnimatePcTurnOn (flickers five times) / AnimatePcTurnOff: the PC metatile in front of the player. */
   animatePc(on: boolean): void {
     const ow = this.overworld;
