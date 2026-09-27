@@ -197,6 +197,7 @@ export function DoOutwardBarnDoorWipe(): void { startBarnDoorWipe(BARN_WIPE_OUT)
 export class FieldEffects {
   readonly tasks = tasks;
   private surfBlob?: Sprite;
+  private flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
   private surfBlobBobState = C.BOB_NONE;
   private encounterImmunitySteps = 0;
   private previousMetatileBehavior = 0;
@@ -369,6 +370,7 @@ export class FieldEffects {
 
   reset(): void {
     this.surfBlob = undefined;
+    this.flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
     this.poisonMosaicValue = 0;
     this.poisonEffectTaskActive = false;
     this.active.clear();
@@ -513,6 +515,14 @@ export class FieldEffects {
     if (!fxData) return;
     const cur = object.currentMetatileBehavior;
     const prev = object.previousMetatileBehavior;
+    const isShallowFlowing = MB.MetatileBehavior_IsShallowFlowingWater(cur)
+      && MB.MetatileBehavior_IsShallowFlowingWater(prev);
+    if (isShallowFlowing && !object.disableCoveringGroundEffects && !object.inShallowFlowingWater) {
+      object.inShallowFlowingWater = true;
+      this.GroundEffect_FlowingWater(object);
+    } else if (!isShallowFlowing || object.disableCoveringGroundEffects) {
+      object.inShallowFlowingWater = false;
+    }
     if (kind === "begin") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, false);
       if (MB.MetatileBehavior_IsLongGrass(cur)) this.spawnLongGrass(object);
@@ -526,6 +536,38 @@ export class FieldEffects {
     } else if (kind === "spawn") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, true);
     }
+  }
+
+  /** GroundEffect_FlowingWater / FldEff_FeetInFlowingWater. */
+  GroundEffect_FlowingWater(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("Splash", object.sprite.x, object.sprite.y);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = object.sprite.priority;
+    sprite.y2 = (object.sprite.height >> 1) - 4;
+    sprite.data[0] = object.localId;
+    sprite.data[1] = object.mapNum;
+    sprite.data[2] = object.mapGroup;
+    sprite.data[3] = -1;
+    sprite.data[4] = -1;
+    sprite.startAnim(1);
+    sprite.callback = (s) => {
+      if (!object.active || !object.inShallowFlowingWater) {
+        this.ow.sprites.destroy(s);
+        if (this.flowingWaterEffects.get(object) === s) this.flowingWaterEffects.delete(object);
+        return;
+      }
+      s.x = object.sprite.x;
+      s.y = object.sprite.y;
+      s.subpriority = object.sprite.subpriority;
+      s.invisible = object.sprite.invisible;
+      if (object.currentCoords.x !== s.data[3] || object.currentCoords.y !== s.data[4]) {
+        s.data[3] = object.currentCoords.x;
+        s.data[4] = object.currentCoords.y;
+        if (!s.invisible) sound.playSE(sound.c("SE_PUDDLE"));
+      }
+    };
+    this.flowingWaterEffects.set(object, sprite);
   }
 
   /** GroundEffect_StepOnPuddle (event_object_movement.c): play the linked splash on a puddle step. */

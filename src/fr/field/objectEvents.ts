@@ -536,6 +536,7 @@ export class ObjectEvents {
     this.objects[slot] = object;
     gObjectEvents[slot] = object;
     this.setupSprite(object);
+    this.hooks.groundEffect(object, "spawn");
     return object;
   }
 
@@ -567,6 +568,7 @@ export class ObjectEvents {
     this.objects[slot] = object;
     gObjectEvents[slot] = object;
     this.setupSprite(object);
+    this.hooks.groundEffect(object, "spawn");
     return object;
   }
 
