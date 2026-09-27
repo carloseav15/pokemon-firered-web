@@ -2,7 +2,7 @@
 // Target icons, the BG page swap, and cursor/button flashes use C data.
 import * as C from "./generated/constants";
 import { PageToNextGfxId } from "./generated/cdataTableAccessors";
-import { GetKeyRoleAtCursorPos, MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
+import { CurrentPageToNextKeyboardId, GetKeyRoleAtCursorPos, MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "./hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
 import { save, varGet, flagGet } from "./save";
@@ -188,7 +188,7 @@ class NamingScreen {
   }
 
   private drawPage(): void {
-    const nextKeyboard = data<number[]>("sPageToNextKeyboardId")[this.model.page];
+    const nextKeyboard = CurrentPageToNextKeyboardId(this.model);
     this.drawKeyboardPage(1, 0, this.model.keyboardId);
     this.drawKeyboardPage(2, 1, nextKeyboard);
     this.setPageSwapButtonGfx(this.model.page);
@@ -282,7 +282,7 @@ class NamingScreen {
   private DrawKeyboardPageOnDeck(): void {
     const hiddenBg = this.activeKeyboardBg === 1 ? 2 : 1;
     const hiddenWindow = hiddenBg === 1 ? 0 : 1;
-    const nextKeyboard = data<number[]>("sPageToNextKeyboardId")[this.model.page];
+    const nextKeyboard = CurrentPageToNextKeyboardId(this.model);
     this.drawKeyboardPage(hiddenBg, hiddenWindow, nextKeyboard);
   }
 

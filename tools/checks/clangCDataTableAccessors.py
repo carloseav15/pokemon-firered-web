@@ -48,7 +48,17 @@ def main() -> None:
     start = node["range"]["begin"]["offset"]
     end = node["range"]["end"]["offset"] + node["range"]["end"]["tokLen"]
     body = page_body[start:end]
-    cdata = json.loads((ROOT / "public/fr/cdata/naming_screen.json").read_text())["defs"]["sPageToNextGfxId"]["value"]
+    naming_defs = json.loads((ROOT / "public/fr/cdata/naming_screen.json").read_text())["defs"]
+    cdata = naming_defs["sPageToNextGfxId"]["value"]
+    ast_funcs = clang_ast.extract_functions(naming_ast, {"CurrentPageToNextKeyboardId", "CurrentPageToKeyboardId"})
+    current_bodies = []
+    for name in ("CurrentPageToNextKeyboardId", "CurrentPageToKeyboardId"):
+        function = ast_funcs[name]
+        start = function.raw_node["range"]["begin"]["offset"]
+        end = function.raw_node["range"]["end"]["offset"] + function.raw_node["range"]["end"]["tokLen"]
+        current_bodies.append(page_body[start:end])
+    next_keyboard = naming_defs["sPageToNextKeyboardId"]["value"]
+    keyboard = naming_defs["sPageToKeyboardId"]["value"]
     calls = list(range(3)) + [0x100, 0x101, 0x102]
     cases = "\n".join(
         f'    {{ unsigned input = {value}u; printf("%u\\n", (unsigned)PageToNextGfxId(input)); }}'
@@ -59,10 +69,21 @@ def main() -> None:
 typedef uint8_t u8;
 _Static_assert(sizeof(u8) == 1, "u8 width");
 static const u8 sPageToNextGfxId[3] = {{{", ".join(map(str, cdata))}}};
+static const u8 sPageToNextKeyboardId[3] = {{{", ".join(map(str, next_keyboard))}}};
+static const u8 sPageToKeyboardId[3] = {{{", ".join(map(str, keyboard))}}};
+struct NamingScreenData {{ u8 currentPage; }};
+static struct NamingScreenData namingScreen;
+static struct NamingScreenData *sNamingScreen = &namingScreen;
 {body}
+{current_bodies[0]}
+{current_bodies[1]}
 int main(void)
 {{
 {cases}
+    for (u8 page = 0; page < 3; page++) {{
+        sNamingScreen->currentPage = page;
+        printf("N %u %u\\n", (unsigned)CurrentPageToNextKeyboardId(), (unsigned)CurrentPageToKeyboardId());
+    }}
     return 0;
 }}
 '''
@@ -72,9 +93,14 @@ int main(void)
     binary = build_dir / "pageToNextGfxId"
     c_file.write_text(source)
     subprocess.run(["clang", "-std=c11", "-Wall", "-Werror", str(c_file), "-o", str(binary)], check=True)
-    actual = [int(value) for value in subprocess.run([str(binary)], check=True, capture_output=True, text=True).stdout.splitlines()]
-    (build_dir / "pageToNextGfxIdResults.json").write_text(json.dumps({"cases": calls, "expected": actual}))
-    print("Clang cdata table accessors: deterministic generation, unsupported-AST rejection, and PageToNextGfxId C harness passed")
+    lines = subprocess.run([str(binary)], check=True, capture_output=True, text=True).stdout.splitlines()
+    gfx_actual = [int(value) for value in lines[:len(calls)]]
+    keyboard_actual = [[int(x) for x in line.split()[1:]] for line in lines[len(calls):]]
+    (build_dir / "pageToNextGfxIdResults.json").write_text(json.dumps({
+        "cases": calls, "expected": gfx_actual,
+        "currentPageMappings": keyboard_actual,
+    }))
+    print("Clang cdata table accessors: deterministic generation, unsupported-AST rejection, and three C keyboard-page mappings passed")
 
 
 if __name__ == "__main__":

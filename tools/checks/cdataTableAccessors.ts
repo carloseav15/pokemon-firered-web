@@ -7,6 +7,7 @@ import * as C from "../../src/fr/generated/constants.ts";
 import { FacilityClassToPicIndex, PageToNextGfxId } from "../../src/fr/generated/cdataTableAccessors.ts";
 import { registerCData } from "../../src/fr/hw/assets.ts";
 import { PlayerGenderToFrontTrainerPicId } from "../../src/fr/trainerPokemonSprites.ts";
+import { CurrentPageToKeyboardId, CurrentPageToNextKeyboardId, type NamingModel } from "../../src/fr/menus/namingModel.ts";
 
 const root = `${process.cwd()}/public/fr/cdata/`;
 const pokemon = JSON.parse(readFileSync(`${root}pokemon.json`, "utf8")) as {
@@ -39,11 +40,23 @@ assert.equal(pageTable.value.length, 3, "KBPAGE_COUNT is three in FireRed");
 const pageResults = JSON.parse(readFileSync(`${process.cwd()}/.decomp-build/checks/pageToNextGfxIdResults.json`, "utf8")) as {
   cases: number[];
   expected: number[];
+  currentPageMappings: number[][];
 };
 for (let i = 0; i < pageResults.cases.length; i++) {
   assert.equal(PageToNextGfxId(pageResults.cases[i]), pageResults.expected[i], `PageToNextGfxId C parity case ${i}`);
   assert.equal(pageResults.expected[i], pageTable.value[pageResults.cases[i] & 0xff], `C table result for page input ${pageResults.cases[i]}`);
 }
+const nextKeyboardTable = naming.defs.sPageToNextKeyboardId;
+const keyboardTable = naming.defs.sPageToKeyboardId;
+assert.ok(nextKeyboardTable && keyboardTable, "C-exported current-page keyboard tables must exist");
+for (let page = 0; page < 3; page++) {
+  const model = { page } as NamingModel;
+  assert.equal(CurrentPageToNextKeyboardId(model), pageResults.currentPageMappings[page][0], `next keyboard for page ${page}`);
+  assert.equal(CurrentPageToKeyboardId(model), pageResults.currentPageMappings[page][1], `keyboard for page ${page}`);
+  assert.equal(pageResults.currentPageMappings[page][0], nextKeyboardTable.value[page], `C next keyboard mapping for page ${page}`);
+  assert.equal(pageResults.currentPageMappings[page][1], keyboardTable.value[page], `C keyboard mapping for page ${page}`);
+}
 const namingSource = readFileSync(`${process.cwd()}/src/fr/namingScreen.ts`, "utf8");
 assert.match(namingSource, /const gfx = PageToNextGfxId\(page\);/, "naming screen page button must use the generated C accessor");
-console.log(`C-data table accessors: ${table.value.length * 2} trainer-pic table comparisons, 3 integrated trainer-pic checks, and ${pageResults.cases.length} PageToNextGfxId C cases passed`);
+assert.equal((namingSource.match(/CurrentPageToNextKeyboardId\(this\.model\)/g) ?? []).length, 2, "both active keyboard-page callers must use the C-named helper");
+console.log(`C-data accessors: ${table.value.length * 2} trainer-pic comparisons, 3 integrated trainer-pic checks, ${pageResults.cases.length} PageToNextGfxId C cases, and 6 keyboard-page C/TS comparisons passed`);

@@ -20,6 +20,16 @@ export function GetCurrentPageColumnCount(model: NamingModel): number {
   return data<number[]>("sPageColumnCounts")[keyboardId] ?? 0;
 }
 
+/** CurrentPageToNextKeyboardId (naming_screen.c); model.page adapts sNamingScreen->currentPage. */
+export function CurrentPageToNextKeyboardId(model: NamingModel): number {
+  return data<number[]>("sPageToNextKeyboardId")[model.page] ?? 0;
+}
+
+/** CurrentPageToKeyboardId (naming_screen.c); model.page adapts sNamingScreen->currentPage. */
+export function CurrentPageToKeyboardId(model: NamingModel): number {
+  return data<number[]>("sPageToKeyboardId")[model.page] ?? 0;
+}
+
 /** GetKeyRoleAtCursorPos (naming_screen.c). */
 export function GetKeyRoleAtCursorPos(model: NamingModel): KeyboardKeyRole {
   if (model.x < GetCurrentPageColumnCount(model)) return "character";
@@ -151,7 +161,7 @@ export class NamingModel {
     }
   }
 
-  get keyboardId(): number { return data<number[]>("sPageToKeyboardId")[this.page]; }
+  get keyboardId(): number { return CurrentPageToKeyboardId(this); }
   get columns(): number { return data<number[]>("sPageColumnCounts")[this.keyboardId]; }
   get columnPositions(): number[] { return data<number[][]>("sPageColumnXPos")[this.keyboardId]; }
   get caret(): number {

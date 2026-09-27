@@ -4207,3 +4207,24 @@ Pending / placeholders:
   runtime. Decomp `c75f352304d529f6ba92d4f74b9cf8b5c3810788`, Apple Clang
   21.0.0, AST `armv4t-none-eabi`, defines `FIRERED`, `REVISION=0`, `ENGLISH`,
   `MODERN=0`.
+
+## `naming_screen.c`: mapeos de página del teclado (2026-09-27)
+
+- Añadí `CurrentPageToNextKeyboardId` y `CurrentPageToKeyboardId` al modelo TS
+  de nombres. Reciben `NamingModel` como adaptación explícita del singleton C
+  `sNamingScreen` y leen `currentPage` desde `model.page`; ambos callers que
+  dibujan el teclado usan ahora esos helpers con nombres C.
+- El check ejecutó los dos cuerpos C extraídos por Clang para las tres páginas
+  y comparó las seis salidas con TS y las tablas exportadas. También conservó
+  las comprobaciones de `PageToNextGfxId` y retratos. En navegador `?fr=new`,
+  preparé un Bulbasaur con `createMon` para abrir el cambio de apodo; `SELECT`
+  cambió la pantalla visible de letras mayúsculas a minúsculas (no preparé ni
+  guardé nombre). La comprobación confirma entrada y efecto visible del cambio
+  de página, no la salida completa de la pantalla. Revisión del decomp
+  `c75f352304d529f6ba92d4f74b9cf8b5c3810788`, Apple Clang 21.0.0.1, target
+  `armv4t-none-eabi`; el harness limita `u8` a un byte y usa las tablas cdata
+  exportadas como almacenamiento C. `naming_screen.c` queda 36/109; total
+  6.275/11.826 (53,0 %), con 5.551 nombres pendientes. Pasaron
+  `check:cdata-table-accessors`, `check:port`, `check:honesty`, `build`,
+  inventory, pending y `git diff --check`. El build mantiene avisos anteriores
+  sobre imports dinámicos y tamaño del bundle.
