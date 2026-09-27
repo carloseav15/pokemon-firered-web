@@ -115,9 +115,12 @@ baea3d2, 3dd07a0, 5c06cfc).
    nivel de prueba.
 6. Un commit por bloque, con la función C citada y el nivel alcanzado.
 
-Para portar un archivo: se traduce el C completo en orden, se conecta al juego
-en el mismo commit (si nadie lo importa no está portado) y se prueba la
-pantalla en navegador. Si no da tiempo a una función, **no se declara**.
+Para portar un archivo: se lee el C completo y su header, se conservan sus
+nombres y estructura, y se conecta el comportamiento al juego en el mismo
+bloque. Un archivo pequeño puede cerrarse entero; uno grande se divide en
+grupos coherentes de funciones con sus dependencias resueltas (§7). Cada grupo
+se verifica antes de continuar; las pantallas se prueban en navegador.
+Si no da tiempo a una función, **no se declara** y se registra el alcance parcial.
 
 ## 5. Reglas obligatorias para cualquier agente
 
@@ -152,7 +155,10 @@ desde `CLAUDE.md`, Codex desde `AGENTS.md` y Gemini desde `GEMINI.md`.
 
 ## 6. Tareas que faltan
 
-El orden de trabajo está en [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md).
+El orden para acelerar el port está en §7; el recorrido de validación está en
+[PLAN-RECORRIDO.md](PLAN-RECORRIDO.md). Las tareas siguientes son apuntes de
+sesiones anteriores: confirmar su vigencia contra el código y PENDING.md antes
+de asignarlas, pues algunas ya figuran resueltas en PLAN-RECORRIDO.md.
 
 ### Inmediatas (esta rama)
 - Aprobar el nuevo título y descripción de la PR y hacer push (pendiente de
@@ -185,59 +191,167 @@ El orden de trabajo está en [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md).
 - Recorrido completo de Kanto y las Islas Sevii en navegador, zona por zona,
   con puntos de control y checks de regresión.
 
-## 7. Si la meta es traducir la mayor cantidad posible de C a TypeScript
+## 7. Estrategia para acelerar el port fiel
 
-El plan de juego (PLAN-RECORRIDO.md) prioriza llegar lejos jugando. Si en
-cambio la meta es **maximizar el C traducido fielmente**, el enfoque cambia,
-pero las reglas del §5 siguen igual: una función cuenta solo si tiene el cuerpo
-del C, está conectada y se ha probado al menos en headless.
+Revisión de estrategia: 2026-09-26. Objetivo: aumentar el comportamiento del C
+traducido, conectado y verificado por hora, incluyendo integración y correcciones.
+[PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) sigue siendo el plan de validación de
+la historia; no limita qué archivos pueden portarse fuera de una sesión de recorrido.
 
-**Qué medir.** El inventario de nombres es un avance orientativo, no la medida
-final de implementación. Hoy marca 6094/9834 nombres, con 92 archivos que aún
-tienen huecos: 41 casi completos, 50 parciales y un adaptador. Estima ~77 781
-líneas C sin cubrir de 247 859 por proporción de funciones. La meta real además
-requiere revisar el cuerpo contra el C, conectar el flujo y probarlo en headless.
+### 7.1. Qué conservar y qué corregir
 
-**Orden recomendado (más retorno por hora, menos riesgo):**
+Conservar el hardware GBA, el exportador, los nombres y estados del C, la
+prohibición de stubs y la distinción entre traducido, conectado y probado.
+Corregir estas decisiones de la estrategia anterior:
 
-1. **Deuda existente primero**: revisar los 125 stubs de `PENDING.md` §3b y
-   conectar o eliminar con cuidado los 9 módulos sin uso (§3c). Los stubs son
-   trabajo de complejidad desigual; cada cuerpo se compara con el C antes de
-   contarlo como portado. Cada stub corregido reduce la línea base de
-   `check:honesty`.
-2. **Archivos casi terminados**: cerrar los 47 archivos con al menos 80 % y
-   menos del 100 %, priorizando los que tengan pocas funciones pendientes.
-3. **Sustituir la capa antigua del campo** por los archivos del C, uno por uno,
-   con el juego funcionando entre medias: `event_object_movement.c` (42/752),
-   `field_player_avatar.c`, `field_control_avatar.c`, `overworld.c`,
-   `fieldmap.c`, `scrcmd.c` (224 comandos: la mayoría ya existen con nombre
-   propio; renombrar y alinear con el C cuenta como traducción si el cuerpo
-   coincide). Es la mayor masa de C y la que más bloqueos esconde.
-4. **Pantallas grandes pendientes**: cajas del PC
-   (`pokemon_storage_system_tasks/graphics/misc/data.c`, ~7 000 líneas),
-   `naming_screen.c`, `easy_chat_*.c`, `battle_transition.c` (resto),
-   `intro.c`, `title_screen.c`, `evolution_scene.c`.
-5. **Audio fino** (`m4a*.c`) y lo postgame (`trainer_tower.c`,
-   `battle_tower.c`) al final.
+- Los archivos C **comparten dependencias**: globals, estructuras, tareas y
+  callbacks. Tener nombres de archivo distintos no basta para paralelizarlos.
+- Un archivo grande no tiene que escribirse entero antes de integrar nada.
+  Leerlo completo para entenderlo y entregar grupos coherentes de funciones,
+  conservando el orden del C dentro del módulo y declarando qué queda pendiente.
+- No cerrar porcentajes por nombre ni eliminar toda la deuda antes de avanzar.
+  Priorizar comportamiento faltante y dependencias que desbloqueen otros bloques.
+- No esperar a terminar tres o cuatro pantallas para ejecutarlas. Cada pantalla
+  modificada necesita una comprobación focalizada de su entrada, uso y salida.
 
-**Cómo trabajar para que rinda:**
+Las cifras vivas se consultan en PORT-INVENTORY.md y PENDING.md. No repetir aquí
+porcentajes de snapshots anteriores ni interpretarlos como paridad funcional.
 
-- Un archivo `.c` por bloque, entero y en el orden del C (AGENTS.md §5):
-  leerlo, localizar sus datos en cdata/incbin, escribir el TS de una vez,
-  `check:port`, conectarlo, y un **check headless que ejecute sus funciones**
-  (no solo que existan sus datos).
-- Si una función no se puede terminar, **no se declara**. Mejor 40 funciones
-  reales que 76 con 62 vacías.
-- Paralelizar es posible porque los archivos del C son independientes: un
-  agente por archivo, en ramas separadas, y el mismo `check:honesty` para todos.
-  A Gemini o Codex, tareas de un solo archivo con criterio de aceptación
-  explícito ("stubs de X a 0, check:X ejecuta Y, conectado en Z").
-- Cada 3-4 archivos, una pasada en navegador por las pantallas tocadas: el
-  código sin ejecutar acumula fallos como los de esta sesión (constantes que no
-  existen, tilemaps que no se copian, menús invisibles).
+### 7.2. Preparar cada bloque antes de asignarlo
 
-**Lo que no rinde:** reescribir lo que ya es fiel o inflar el inventario con
-nombres. El inventario ya no cuenta stubs, así que ese atajo no suma nada.
-Desde el 2026-09-26 también incluye enlace, Quest Log y las demás funciones
-opcionales que antes se excluían; sus adaptaciones web requieren decisiones de
-transporte y persistencia, no retornos constantes.
+Un bloque comprende un archivo pequeño o un grupo de funciones de un archivo
+grande, con un comportamiento observable y dependencias disponibles.
+Preparar una ficha breve en la tarea, sin crear documentación redundante:
+
+- **Fuente**: revisión del decomp, `.c`, header y funciones incluidas; scripts
+  que las invocan y datos cdata/INCBIN necesarios.
+- **Equivalencia**: localizar el TS existente aunque tenga otro nombre;
+  clasificar cada función como equivalente revisada, parcial, ausente o
+  adaptación web. Renombrar una equivalencia no es comportamiento nuevo.
+- **Dependencias**: funciones, globals, estructuras y callbacks compartidos;
+  señalar cuáles ya están implementados y cuáles bloquean la entrega.
+- **Integración**: archivos que se pueden editar, llamador real y cómo se llega
+  desde el juego. Un import sin una ruta ejecutable no demuestra integración.
+- **Aceptación**: resultados y estados esperados derivados del C, casos límite,
+  nivel de prueba y exclusiones explícitas.
+
+Si falta una dependencia necesaria, resolverla primero o cambiar el alcance.
+No sustituirla por un retorno constante para hacer compilar el bloque.
+
+### 7.3. Orden de trabajo
+
+1. **Huecos reales pequeños en módulos conectados**, con datos y dependencias
+   listos. Revisar candidatos como `menu_helpers.c`, `item.c`, `script.c` y
+   `trainer_see.c`; su posición en PENDING.md no garantiza baja dificultad.
+2. **Dependencias compartidas y stubs que bloqueen entregas concretas**.
+   Conectar o retirar código sin uso después de comprobar sus consumidores;
+   no borrar módulos solo para mejorar la métrica.
+3. **Campo y movimiento**, por grupos integrables: `event_object_movement.c`,
+   `field_player_avatar.c`, `field_control_avatar.c`, `fieldmap.c`,
+   `overworld.c` y `scrcmd.c`. Determinar el orden real por sus dependencias.
+4. **Pantallas y sistemas grandes**, como cajas del PC, naming, Easy Chat y
+   transiciones, aprovechando las interfaces ya estabilizadas.
+5. **Sistemas con adaptación web pendiente**, incluyendo enlace y persistencia
+   de Quest Log: acordar el contrato web antes de traducir sus consumidores.
+   Siguen dentro del alcance; su dificultad no autoriza stubs ni su exclusión.
+
+Un bloqueo del recorrido o una regresión de un sistema compartido tiene prioridad
+sobre un bloque nuevo. Se puede continuar con otro bloque independiente mientras
+se resuelve una dependencia, sin acumular implementaciones desconectadas.
+
+### 7.4. Traducción, automatización y verificación
+
+1. Reutilizar las capas existentes de hardware, datos y tareas. Mantener nombres,
+   máquinas de estados, índices de `data[]` y tiempos del C. Revisar división
+   entera, signo, desbordamientos, alias de memoria y vida de los callbacks.
+2. Generar datos exclusivamente con `tools/decomp/`. Ampliar la traducción
+   mecánica solo para patrones repetidos cuyo ahorro se haya comprobado en un
+   piloto. Los casos no soportados deben quedar explícitos. No iniciar un
+   transpilador universal como requisito previo al port.
+3. Comparar los cuerpos con el C y ejecutar `check:port`, paridad de datos,
+   `check:honesty` y `build`. Usar un check headless focalizado cuando pueda
+   observar el comportamiento; extender uno existente si ya cubre el módulo.
+4. Para lógica determinista, fijar entradas y semilla y comprobar resultados
+   derivados del C. Cuando sea viable, ejecutar C y TS con esas mismas entradas
+   y comparar salidas, estados y frames. Construir un harness C solo si su
+   reutilización compensa el coste; no inventar una referencia desde el TS.
+5. Para pantallas o cambios de flujo, ejecutar entrada → interacción → salida
+   en navegador desde un checkpoint. Un check headless no sustituye esa prueba.
+   Declarar las ayudas de preparación y lo que quedó sin ejecutar.
+6. Registrar funciones y comportamiento cubiertos, adaptación web, conexión y
+   evidencia en PORTING-STATUS.md. Regenerar inventory/pending y cerrar el
+   bloque según §5 antes de acumular más cambios.
+
+Los cambios exclusivamente documentales se revisan por coherencia y enlaces;
+no necesitan una prueba de juego. No repetir suites costosas sin un cambio o
+riesgo que lo justifique. Si el usuario limita las pruebas, registrar el nivel
+real alcanzado y dejar pendiente la validación correspondiente.
+
+### 7.5. Paralelismo con integración controlada
+
+Cuando se decida usar varios agentes, empezar con un integrador y hasta dos
+implementadores. Un solo agente es suficiente si el trabajo depende de una misma
+interfaz o la integración ocupa más tiempo que la implementación.
+
+- El integrador fija interfaces compartidas y reparte bloques con dependencias
+  listas. Cada implementador usa una rama/worktree separado, desde una base conocida.
+- No modificar simultáneamente `game.ts`, `save.ts`, APIs de hardware, exportador
+  o un mismo módulo. Un cambio de contrato se integra antes de sus consumidores.
+- Cada entrega incluye el diff, fuente C, comprobaciones ejecutadas y pendientes.
+  El integrador revisa los cuerpos y vuelve a comprobar el conjunto integrado.
+- Centralizar actualizaciones de inventario y documentación de estado al cerrar
+  cada bloque integrado para evitar conflictos entre archivos generados.
+- Revisar el código crítico contra el C, no solo contra el resumen del autor.
+  Un segundo agente o proveedor no garantiza independencia ni fidelidad.
+
+### 7.6. Qué agente usar
+
+La siguiente asignación es una **recomendación inicial para este proyecto**, no
+un benchmark del port ni una equivalencia de capacidad entre proveedores.
+Sonnet y Opus son familias de Claude; Luna, Sol y Astra son modelos de OpenAI.
+Usar la versión disponible en la herramienta elegida y registrar modelo exacto
+y esfuerzo de razonamiento en el piloto.
+
+| Trabajo | Modelo sugerido | Condición de uso |
+|---|---|---|
+| Implementación habitual C → TS, dependencias resueltas | Sonnet o GPT-6 Sol | Opción inicial para la mayoría de bloques; contexto y aceptación concretos |
+| Dependencias difíciles, memoria, temporización, bugs entre subsistemas | Opus o GPT-6 Astra | Razonamiento profundo cuando la incertidumbre o el retrabajo lo justifiquen |
+| Revisión e integración de cambios críticos | Opus o GPT-6 Astra | Revisar directamente C, TS y evidencia; no aprobar solo por compilación |
+| Inventario, extracción de referencias, comprobación de símbolos, cambios mecánicos pequeños | GPT-6 Luna | Procedimiento explícito, resultado comprobable y revisión de cambios semánticos |
+| Recorrido reproducible y diagnóstico inicial con el driver | Sonnet o GPT-6 Sol | Escalar si el bloqueo requiere reconstruir estados de varios subsistemas |
+
+Si hay que elegir **un solo modelo**, empezar con Sonnet o Sol y escalar los
+bloques difíciles a Opus o Astra. Para un bloque complejo y mal delimitado,
+empezar directamente con Opus o Astra puede evitar iteraciones. Reservar Luna
+para tareas acotadas al principio; ampliar su alcance solo si el piloto confirma
+que la revisión y las correcciones no eliminan el ahorro.
+
+En Codex, empezar con esfuerzo `medium` para tareas delimitadas y `high` para
+análisis difícil; aumentar solo si hace falta. Es una configuración propuesta,
+no una medición de velocidad. No asumir que los controles de Claude usan los
+mismos nombres ni que estos proveedores están disponibles en una misma sesión.
+
+Fuentes oficiales consultadas el 2026-09-26: OpenAI distingue Astra para trabajo
+complejo, Sol para equilibrar capacidad y coste, y Luna para volumen y eficiencia
+([catálogo](https://developers.openai.com/api/docs/models)). Anthropic describe
+[Sonnet](https://www.anthropic.com/claude/sonnet) para programación y trabajo
+habitual, y [Opus](https://www.anthropic.com/claude/opus) para trabajo exigente y
+agentes de larga duración. Estas descripciones respaldan los perfiles generales;
+la asignación al port es una decisión de ingeniería que hay que medir. Confirmar
+versiones y acceso en el selector de cada herramienta al iniciar una tanda.
+
+### 7.7. Piloto y medida de velocidad
+
+Empezar con tres bloques pequeños tras comprobar sus dependencias. Registrar
+modelo, tiempo de preparación, implementación, revisión, integración y reparación;
+coste o consumo cuando estén disponibles; y defectos detectados. No atribuir a
+un modelo la diferencia entre dos tareas de dificultad distinta.
+
+Medir **bloques aceptados con alcance comparable por hora total**, junto con
+regresiones y coste por bloque aceptado. Registrar aparte funciones revisadas,
+conexión al juego, nivel de prueba y progreso del recorrido. Escribir más líneas
+o aumentar coincidencias de nombres no demuestra que el port avance más rápido.
+
+Tras el piloto, ampliar automatización o paralelismo solo donde ahorre tiempo
+incluyendo revisión y correcciones. No prometer un multiplicador de velocidad
+antes de medirlo en este repositorio.

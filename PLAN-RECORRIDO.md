@@ -6,7 +6,12 @@ hasta la Ruta 3 (Brock vencido). Reglas y método: [AGENTS.md](AGENTS.md) §6.5 
 
 ## Idea
 
-El juego decide qué se porta. Se juega la historia principal tramo a tramo; solo
+Este documento organiza el recorrido y su validación. Para acelerar la traducción
+del decomp, usar [ESTADO-Y-REGLAS.md §7](ESTADO-Y-REGLAS.md#7-estrategia-para-acelerar-el-port-fiel):
+también se portan bloques fuera de la ruta cuando sus dependencias están listas.
+Las restricciones de alcance de este plan se aplican a las sesiones de recorrido.
+
+Durante el recorrido, el juego decide qué se porta. Se juega la historia principal tramo a tramo; solo
 se arregla o se porta lo que **bloquea** (cuelgue, excepción, guion que no
 avanza, regla de juego mal) en ese tramo. Lo visual que no bloquea se anota en
 una línea y se sigue. Cada tramo acaba con un punto de control guardado en el
@@ -21,7 +26,7 @@ repo, así cualquier agente puede empezar desde ahí.
    `tools/playtest/saves/<tramo>.json` (ver "Primer paso").
 5. Un commit por tramo: arreglos + una fila en la tabla de PORTING-STATUS
    (tramo, qué se jugó, fallos y commits, ayudas usadas). `check:port`,
-   `check:honesty`, `build`. Push a `main`.
+   `check:honesty`, `build`. El push lo decide el usuario, como indica AGENTS.md.
 
 Prioridad de lo que se arregla en el momento: **bloqueo > regla de juego mal >
 texto ilegible > visual**. Lo visual va a PENDING.md §4 y no para el tramo.
@@ -78,8 +83,9 @@ no el archivo entero.
 
 ## Medida de avance
 
-La cifra que importa ahora es **el tramo más lejano jugado en navegador**, no el
-porcentaje de funciones. Hoy: tramo 0 completo y tramo 1 a medias (dentro del
+La medida de este recorrido es **el tramo más lejano jugado en navegador**;
+el avance del port se registra por separado según ESTADO-Y-REGLAS.md §7.
+Estado registrado: tramo 0 completo y tramo 1 a medias (dentro del
 Monte Moon). Objetivo: tramo 12.
 
 ## Registro de tramos

@@ -10,6 +10,17 @@ la meta vigente mide **5.961/11.826 funciones (50,4%)**, con **120 archivos**
 con huecos y una estimación ponderada de **~134.508/303.042 líneas C (44,4%)**
 pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
 
+## Estrategia de portado revisada, 2026-09-26
+
+Actualizada ESTADO-Y-REGLAS.md §7: bloques por dependencias, equivalencias C/TS
+antes de traducir, automatización de patrones, integración por bloque y piloto
+para medir tiempo total y elegir agentes. AGENTS.md, CLAUDE.md y PLAN-RECORRIDO.md
+remiten al mismo criterio; el recorrido conserva su función de validación.
+La recomendación de modelos es una propuesta, no un benchmark de este port.
+Cambio documental: no añade funciones portadas ni evidencia nueva de juego.
+Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
+`git diff --check` pasaron. Sin build ni prueba en navegador por ser documentación.
+
 ## Inventario actualizado, 2026-09-26
 
 - **`quest_log_battle.c`: 1/3 funciones.** Implementé `TrySetQuestLogBattleEvent`
