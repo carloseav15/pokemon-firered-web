@@ -599,14 +599,14 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   opendoor: (ctx) => {
     const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET;
     const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET;
-    sound.playSE(ctx.ow.doors.soundEffect(x, y));
-    ctx.ow.doors.animateOpen(x, y);
+    sound.playSE(ctx.ow.doors.GetDoorSoundEffect(x, y));
+    ctx.ow.doors.FieldAnimateDoorOpen(x, y);
     return false;
   },
-  closedoor: (ctx) => { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.animateClose(x, y); return false; },
-  waitdooranim: (ctx) => { ctx.SetupNativeScript(() => !ctx.ow.doors.isRunning()); return true; },
-  setdooropen: (ctx) => { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.setOpened(x, y); return false; },
-  setdoorclosed: (ctx) => { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.setClosed(x, y); return false; },
+  closedoor: (ctx) => { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.FieldAnimateDoorClose(x, y); return false; },
+  waitdooranim: (ctx) => { ctx.SetupNativeScript(() => !ctx.ow.doors.FieldIsDoorAnimationRunning()); return true; },
+  setdooropen: (ctx) => { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.FieldSetDoorOpened(x, y); return false; },
+  setdoorclosed: (ctx) => { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.FieldSetDoorClosed(x, y); return false; },
   addelevmenuitem: () => false,
   showelevmenu: () => false,
   setvaddress: (ctx) => { const addr1 = ctx.scriptPtr - 1; const addr2 = ctx.ScriptReadWord(); addressOffset = addr2 - addr1; return false; },

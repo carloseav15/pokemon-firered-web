@@ -5,10 +5,29 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.106/11.826 funciones (51,6%)**,
+single-player. A 2026-09-27, la meta mide **6.118/11.826 funciones (51,7%)**,
 con **105 archivos** con huecos y una estimación ponderada de
-**~131.622/303.042 líneas C (43,4%)** pendientes. La coincidencia por nombre
+**~131.322/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `field_door.c`: tarea global de animación (2026-09-27)
+
+- Contrasté el archivo C completo, sus tablas cdata y los llamadores activos.
+  Alineé `FieldAnimateDoorOpen`/`FieldAnimateDoorClose` para devolver el ID de
+  tarea o `-1`, `FieldIsDoorAnimationRunning`, setters de puerta y el efecto de
+  sonido. La animación ahora corre con `tasks.run()` como `Task_AnimateDoor` de
+  prioridad 80, según `CreateTask`/`DestroyTask` del C; ya no avanza desde una
+  llamada manual posterior en `CB2_Overworld`. Los comandos de scripts y las
+  transiciones de campo usan las entradas con nombres fuente.
+- Adaptación explícita: el C copia 8 tiles a VRAM y compone metatiles mediante
+  `DrawCurrentDoorAnimFrame`/`BuildDoorTiles`; aquí el Canvas superpone tiles
+  exportados con las paletas de cdata. No se afirma paridad visual píxel a píxel.
+  `field_door.c` figura 12/21 por nombres, con sus 9 helpers restantes aún sin
+  homólogo nominal.
+- Inventario: **6.118/11.826 (51,7%)**, 105 archivos con huecos y estimación
+  ponderada de ~131.322 líneas C sin cubrir. Pasaron `check:port`,
+  `check:honesty`, `build`, `inventory`, `pending` y `git diff --check`. Sin
+  check headless ni ejecución en navegador.
 
 ## Estrategia de portado revisada, 2026-09-26
 

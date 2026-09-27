@@ -810,13 +810,13 @@ export class Overworld {
           if (++timer === 25) {
             doorX = p.currentCoords.x;
             doorY = p.currentCoords.y;
-            sound.playSE(this.doors.soundEffect(doorX, doorY));
-            this.doors.animateOpen(doorX, doorY);
+            sound.playSE(this.doors.GetDoorSoundEffect(doorX, doorY));
+            this.doors.FieldAnimateDoorOpen(doorX, doorY);
             state = 7;
           }
           break;
         case 7:
-          if (!this.doors.isRunning()) {
+          if (!this.doors.FieldIsDoorAnimationRunning()) {
             p.invisible = false;
             this.objects.setHeldMovement(p, 0x10);
             state = 8;
@@ -824,12 +824,12 @@ export class Overworld {
           break;
         case 8:
           if (++walkTimer === 14) {
-            this.doors.animateClose(doorX, doorY);
+            this.doors.FieldAnimateDoorClose(doorX, doorY);
             state = 9;
           }
           break;
         case 9:
-          if (!paletteFade.active && this.player.isStandingStill() && !this.doors.isRunning()) {
+          if (!paletteFade.active && this.player.isStandingStill() && !this.doors.FieldIsDoorAnimationRunning()) {
             this.objects.ObjectEventClearHeldMovementIfFinished(p);
             state = 4;
           }
@@ -948,12 +948,12 @@ export class Overworld {
           this.objects.freezeAll();
           x = p.currentCoords.x;
           y = p.currentCoords.y;
-          sound.playSE(this.doors.soundEffect(x, y - 1));
-          this.doors.animateOpen(x, y - 1);
+          sound.playSE(this.doors.GetDoorSoundEffect(x, y - 1));
+          this.doors.FieldAnimateDoorOpen(x, y - 1);
           state = 1;
           break;
         case 1:
-          if (!this.doors.isRunning()) {
+          if (!this.doors.FieldIsDoorAnimationRunning()) {
             this.objects.clearHeldMovementIfActive(p);
             this.objects.setHeldMovement(p, 0x11);
             state = 2;
@@ -961,14 +961,14 @@ export class Overworld {
           break;
         case 2:
           if (this.player.isStandingStill()) {
-            this.doors.animateClose(x, y - 1);
+            this.doors.FieldAnimateDoorClose(x, y - 1);
             this.objects.ObjectEventClearHeldMovementIfFinished(p);
             p.invisible = true;
             state = 3;
           }
           break;
         case 3:
-          if (!this.doors.isRunning()) state = 4;
+          if (!this.doors.FieldIsDoorAnimationRunning()) state = 4;
           break;
         case 4:
           this.tryFadeOutOldMapMusic();
@@ -1318,7 +1318,6 @@ export class Overworld {
     this.mapPreview.update();
     paletteFade.update();
     this.animator?.update();
-    this.doors.update();
     for (const hook of this.onFrame) hook();
   }
 

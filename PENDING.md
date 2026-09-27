@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6106/11826 (51.6 %)**.
-- Archivos C con funciones aún sin homólogo: **105**; quedan **5720 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6118/11826 (51.7 %)**.
+- Archivos C con funciones aún sin homólogo: **105**; quedan **5708 nombres**.
 - Estos archivos contienen 187.579 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~131.622 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~131.322 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -29,32 +29,32 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 10 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
 | 11 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
 | 12 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
-| 13 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
-| 14 | `berry_pouch.c` | casi completo | 1529 | 65/77 | ~238 |  |
-| 15 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
-| 16 | `sprite.c` | casi completo | 1745 | 86/103 | ~288 |  |
-| 17 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
-| 18 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |
-| 19 | `battle_interface.c` | casi completo | 2240 | 45/52 | ~301 |  |
-| 20 | `mystery_gift_server.c` | sin empezar | 302 | 0/14 | ~302 |  |
-| 21 | `mystery_event_script.c` | parcial | 322 | 0/25 | ~322 |  |
-| 22 | `minigame_countdown.c` | sin empezar | 332 | 0/10 | ~332 |  |
-| 23 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
-| 24 | `union_room_chat_objects.c` | sin empezar | 346 | 0/13 | ~346 |  |
-| 25 | `mystery_gift_show_news.c` | sin empezar | 404 | 0/10 | ~404 |  |
-| 26 | `ereader_helpers.c` | sin empezar | 406 | 0/17 | ~406 |  |
-| 27 | `multiboot.c` | sin empezar | 416 | 0/9 | ~416 |  |
-| 28 | `librfu_intr.c` | sin empezar | 417 | 0/9 | ~417 |  |
-| 29 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
-| 30 | `digit_obj_util.c` | sin empezar | 451 | 0/14 | ~451 |  |
-| 31 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
-| 32 | `wireless_communication_status_screen.c` | parcial | 522 | 1/12 | ~478 |  |
-| 33 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
-| 34 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 35 | `mystery_gift.c` | parcial | 634 | 9/45 | ~507 |  |
-| 36 | `mystery_gift_show_card.c` | sin empezar | 518 | 0/8 | ~518 |  |
-| 37 | `ereader_screen.c` | sin empezar | 520 | 0/11 | ~520 |  |
-| 38 | `field_door.c` | parcial | 524 | 0/21 | ~524 |  |
+| 13 | `field_door.c` | parcial | 524 | 12/21 | ~224 |  |
+| 14 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
+| 15 | `berry_pouch.c` | casi completo | 1529 | 65/77 | ~238 |  |
+| 16 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
+| 17 | `sprite.c` | casi completo | 1745 | 86/103 | ~288 |  |
+| 18 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
+| 19 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |
+| 20 | `battle_interface.c` | casi completo | 2240 | 45/52 | ~301 |  |
+| 21 | `mystery_gift_server.c` | sin empezar | 302 | 0/14 | ~302 |  |
+| 22 | `mystery_event_script.c` | parcial | 322 | 0/25 | ~322 |  |
+| 23 | `minigame_countdown.c` | sin empezar | 332 | 0/10 | ~332 |  |
+| 24 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
+| 25 | `union_room_chat_objects.c` | sin empezar | 346 | 0/13 | ~346 |  |
+| 26 | `mystery_gift_show_news.c` | sin empezar | 404 | 0/10 | ~404 |  |
+| 27 | `ereader_helpers.c` | sin empezar | 406 | 0/17 | ~406 |  |
+| 28 | `multiboot.c` | sin empezar | 416 | 0/9 | ~416 |  |
+| 29 | `librfu_intr.c` | sin empezar | 417 | 0/9 | ~417 |  |
+| 30 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
+| 31 | `digit_obj_util.c` | sin empezar | 451 | 0/14 | ~451 |  |
+| 32 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
+| 33 | `wireless_communication_status_screen.c` | parcial | 522 | 1/12 | ~478 |  |
+| 34 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
+| 35 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 36 | `mystery_gift.c` | parcial | 634 | 9/45 | ~507 |  |
+| 37 | `mystery_gift_show_card.c` | sin empezar | 518 | 0/8 | ~518 |  |
+| 38 | `ereader_screen.c` | sin empezar | 520 | 0/11 | ~520 |  |
 | 39 | `battle_controller_safari.c` | parcial | 669 | 14/72 | ~538 |  |
 | 40 | `battle_setup.c` | parcial | 1070 | 28/66 | ~616 |  |
 | 41 | `union_room_player_avatar.c` | sin empezar | 624 | 0/38 | ~624 |  |
