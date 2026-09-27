@@ -714,6 +714,13 @@ export class ObjectEvents {
     SetAndStartSpriteAnim(sprite, animNum, animCmdIndex);
   }
 
+  /** StartSpriteAnimInDirection (event_object_movement.c). */
+  private StartSpriteAnimInDirection(object: ObjectEvent, direction: number, animNum: number): void {
+    this.setAndStartSpriteAnim(object.sprite, animNum, 0);
+    this.setDirection(object, direction & 0xff);
+    object.sprite.data[2] = 1;
+  }
+
   setDirection(object: ObjectEvent, direction: number): void {
     object.previousMovementDirection = object.facingDirection;
     if (!object.facingDirectionLocked) object.facingDirection = direction;
@@ -1478,10 +1485,7 @@ export class ObjectEvents {
     if (id === 0x45) {
       // StartSpriteAnimInDirection(current animNum) then MovementAction_WaitSpriteAnim
       if (step === 0) {
-        object.sprite.animPaused = false;
-        object.sprite.startAnim(object.sprite.animNum);
-        this.setDirection(object, object.movementDirection);
-        s.data[2] = 1;
+        this.StartSpriteAnimInDirection(object, object.movementDirection, object.sprite.animNum);
         return false;
       }
       if (SpriteAnimEnded(object.sprite)) return this.finishStep(object);
@@ -1540,9 +1544,7 @@ export class ObjectEvents {
       // then MovementAction_WaitSpriteAnim. SetAndStartSpriteAnim clears animPaused,
       // which the preceding walk_in_place left set.
       if (step === 0) {
-        this.setAndStartSpriteAnim(s, ANIM_NURSE_BOW, 0);
-        this.setDirection(object, DIR_SOUTH);
-        s.data[2] = 1;
+        this.StartSpriteAnimInDirection(object, DIR_SOUTH, ANIM_NURSE_BOW);
         return false;
       }
       if (SpriteAnimEnded(s)) { s.data[2] = 2; return true; }

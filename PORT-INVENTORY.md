@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 60 | 133907 | 1306/5950 |
+| Parcial (< 80 % de funciones) | 60 | 133907 | 1307/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 9 | 20737 | 631/737 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 150 | 122276 | 4264/4264 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **98** | **179633** | |
-| **Total en alcance** | **253** | **303042** | **6229/11826** |
+| **Total en alcance** | **253** | **303042** | **6230/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -57,7 +57,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `event_object_movement.c` | 9412 | 73/759 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `menus/fieldMoveMenu.ts` … |  |  |
+| `event_object_movement.c` | 9412 | 74/759 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `pokemon.c` | 6453 | 70/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `dodrio_berry_picking.c` | 4954 | 7/147 |  |  |  |
