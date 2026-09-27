@@ -346,7 +346,7 @@ export function CreateInvisibleSprite(callback: SpriteCallback): number {
 
 function createSpriteAt(index: number, template: SpriteTemplate, x: number, y: number, subpriority: number): number {
   const s = gSprites[index];
-  s.reset();
+  ResetSprite(s);
   s.inUse = true;
   s.animBeginning = true;
   s.affineAnimBeginning = true;
@@ -364,7 +364,7 @@ function createSpriteAt(index: number, template: SpriteTemplate, x: number, y: n
     s.images = template.images;
     const tileNum = AllocSpriteTiles(((s.images?.[0]?.size ?? 0) / TILE_SIZE_4BPP) & 0xff);
     if (tileNum === -1) {
-      s.reset();
+      ResetSprite(s);
       return MAX_SPRITES;
     }
     s.oam.tileNum = tileNum;
@@ -398,7 +398,7 @@ export function DestroySprite(sprite: Sprite): void {
     const end = ((sprite.images?.[0]?.size ?? 0) / TILE_SIZE_4BPP) + sprite.oam.tileNum;
     for (let i = sprite.oam.tileNum; i < end; i++) freeTile(i);
   }
-  sprite.reset();
+  ResetSprite(sprite);
 }
 
 export function ResetOamRange(a: number, b: number): void {
@@ -509,10 +509,10 @@ export function RequestSpriteCopy(src: Uint8Array, dest: number, size: number): 
 
 function resetAllSprites(): void {
   for (let i = 0; i < MAX_SPRITES; i++) {
-    gSprites[i].reset();
+    ResetSprite(gSprites[i]);
     gSpriteOrder[i] = i;
   }
-  gSprites[MAX_SPRITES].reset();
+  ResetSprite(gSprites[MAX_SPRITES]);
 }
 
 export function FreeSpriteTiles(sprite: Sprite): void {
@@ -576,41 +576,73 @@ function continueAnim(sprite: Sprite): void {
     const cmd = cmdAt(sprite);
     if (!(sprite.oam.affineMode & ST_OAM_AFFINE_ON_MASK)) setSpriteOamFlipBits(sprite, cmd.hFlip, cmd.vFlip);
   } else if (!sprite.animPaused) {
-    sprite.animCmdIndex++;
+    sprite.animCmdIndex = (sprite.animCmdIndex + 1) & 0xff;
     const type = cmdAt(sprite).type;
-    if (type >= 0) applyFrame(sprite, cmdAt(sprite));
-    else if (type === -1) {
-      sprite.animCmdIndex--;
-      sprite.animEnded = true;
-    } else if (type === -2) {
-      sprite.animCmdIndex = cmdAt(sprite).target;
-      applyFrame(sprite, cmdAt(sprite));
-    } else if (type === -3) {
-      if (sprite.animLoopCounter) {
-        sprite.animLoopCounter--;
-      } else {
-        sprite.animLoopCounter = cmdAt(sprite).count;
-      }
-      jumpToTopOfAnimLoop(sprite);
-      continueAnim(sprite);
-    }
+    if (type >= 0) AnimCmd_frame(sprite);
+    else if (type === -1) AnimCmd_end(sprite);
+    else if (type === -2) AnimCmd_jump(sprite);
+    else if (type === -3) AnimCmd_loop(sprite);
   }
 }
 
-// sprite.c: DecrementAnimDelayCounter. animDelayCounter is a u8 in the GBA struct.
-export function DecrementAnimDelayCounter(sprite: Sprite): void {
-  if (!sprite.animPaused) sprite.animDelayCounter = (sprite.animDelayCounter - 1) & 0xff;
+// sprite.c: AnimCmd_frame is static in C.
+export function AnimCmd_frame(sprite: Sprite): void {
+  applyFrame(sprite, cmdAt(sprite));
 }
 
-function jumpToTopOfAnimLoop(sprite: Sprite): void {
+// sprite.c: AnimCmd_end is static in C.
+export function AnimCmd_end(sprite: Sprite): void {
+  sprite.animCmdIndex = (sprite.animCmdIndex - 1) & 0xff;
+  sprite.animEnded = true;
+}
+
+// sprite.c: AnimCmd_jump is static in C.
+export function AnimCmd_jump(sprite: Sprite): void {
+  sprite.animCmdIndex = cmdAt(sprite).target & 0xff;
+  AnimCmd_frame(sprite);
+}
+
+// sprite.c: AnimCmd_loop is static in C.
+function AnimCmd_loop(sprite: Sprite): void {
+  if (sprite.animLoopCounter) ContinueAnimLoop(sprite);
+  else BeginAnimLoop(sprite);
+}
+
+// sprite.c: BeginAnimLoop.
+export function BeginAnimLoop(sprite: Sprite): void {
+  sprite.animLoopCounter = cmdAt(sprite).count & 0xff;
+  JumpToTopOfAnimLoop(sprite);
+  continueAnim(sprite);
+}
+
+// sprite.c: ContinueAnimLoop.
+export function ContinueAnimLoop(sprite: Sprite): void {
+  sprite.animLoopCounter = (sprite.animLoopCounter - 1) & 0xff;
+  JumpToTopOfAnimLoop(sprite);
+  continueAnim(sprite);
+}
+
+// sprite.c: JumpToTopOfAnimLoop is static in C.
+export function JumpToTopOfAnimLoop(sprite: Sprite): void {
   if (sprite.animLoopCounter) {
-    sprite.animCmdIndex--;
-    while (sprite.anims[sprite.animNum][sprite.animCmdIndex - 1]?.type !== -3) {
+    const anim = sprite.anims[sprite.animNum];
+    sprite.animCmdIndex = (sprite.animCmdIndex - 1) & 0xff;
+    while (anim[sprite.animCmdIndex - 1]?.type !== -3) {
       if (sprite.animCmdIndex === 0) break;
-      sprite.animCmdIndex--;
+      sprite.animCmdIndex = (sprite.animCmdIndex - 1) & 0xff;
     }
-    sprite.animCmdIndex--;
+    sprite.animCmdIndex = (sprite.animCmdIndex - 1) & 0xff;
   }
+}
+
+// sprite.c: ResetSprite assigns the complete sDummySprite value.
+export function ResetSprite(sprite: Sprite): void {
+  sprite.reset();
+}
+
+// sprite.c: DecrementAnimDelayCounter. animDelayCounter is a u8:6 bitfield.
+export function DecrementAnimDelayCounter(sprite: Sprite): void {
+  if (!sprite.animPaused) sprite.animDelayCounter = (sprite.animDelayCounter - 1) & 0x3f;
 }
 
 function affineCmd(sprite: Sprite, matrixNum: number): AffineAnimCmd {

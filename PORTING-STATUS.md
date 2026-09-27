@@ -5,10 +5,27 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.246/11.826 funciones (52,8%)**,
+single-player. A 2026-09-27, la meta mide **6.249/11.826 funciones (52,8%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.068/303.042 líneas C (42,6%)** pendientes. La coincidencia por nombre
+**~129.017/303.042 líneas C (42,6%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sprite.c`: handlers normales de animación y reset (2026-09-27)
+
+- Separé `BeginAnimLoop`, `ContinueAnimLoop` y `JumpToTopOfAnimLoop` del
+  intérprete normal. El switch de `continueAnim` despacha ahora a los handlers
+  C `AnimCmd_frame`, `_end`, `_jump` y `_loop`; `ResetSprite` se usa en los
+  caminos de creación, destrucción y reinicio global de sprites.
+- Al comparar `include/sprite.h` corregí `DecrementAnimDelayCounter`: el campo
+  es `u8:6`, así que el decremento envuelve con `0x3f`. El caller mantiene la
+  guarda C de contador distinto de cero.
+- El análisis AST confirmó cuerpo TS para `ResetSprite`, `AnimCmd_end`,
+  `BeginAnimLoop`, `ContinueAnimLoop` y `JumpToTopOfAnimLoop`. `check:sprite-anim`
+  recorrió duración, flip, salto, loop contado, fin y reset; también comprobó
+  pausa y wrap de seis bits. Pasaron `check:port`, `check:honesty`, build,
+  inventory, pending y `git diff --check`. Sin navegador.
+- `sprite.c` queda 100/103 por nombre; global **6.249/11.826 (52,8%)**, con
+  ~129.017 líneas ponderadas sin homólogo.
 
 ## `sprite.c`: handlers de loop, salto y fin affine (2026-09-27)
 
@@ -122,9 +139,9 @@ sigue sin demostrar fidelidad.
 ## `sprite.c`: contador de demora de animación (2026-09-27)
 
 - Porté `DecrementAnimDelayCounter` y lo conecté a `continueAnim`. El helper
-  respeta `animPaused` y el decremento envuelve a 8 bits como el campo `u8` del
-  C. `continueAnim` lo llama bajo la misma condición del C: contador distinto
-  de cero.
+  respeta `animPaused` y envuelve a seis bits, como el bitfield `u8:6` del C.
+  `continueAnim` lo llama bajo la misma condición del C: contador distinto de
+  cero.
 - `check:port`, `check:honesty`, build, inventory, pending y `git diff --check`
   pasaron. No ejecuté navegador; no hay cambios en comandos, animación ni datos.
 - `sprite.c` queda 88/103 por nombre; global **6.236/11.826 (52,7%)**, con
