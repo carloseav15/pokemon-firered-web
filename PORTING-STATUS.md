@@ -5,10 +5,22 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.228/11.826 funciones (52,7%)**,
+single-player. A 2026-09-27, la meta mide **6.229/11.826 funciones (52,7%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.402/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.389/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: inicio y consulta de animación (2026-09-27)
+
+- Expuse `SetAndStartSpriteAnim` como helper fuente (número de animación y
+  cursor `u8`, despausa y `SeekSpriteAnim`) y añadí `SpriteAnimEnded`; los
+  callbacks de movimiento que esperan animaciones pasan por este último.
+- En navegador verifiqué que `0x101`/`0x102` se reducen a `1`/`2`, se llama a
+  `seekAnim(2)`, el sprite se despausa y `SpriteAnimEnded` sigue el flag. La
+  partida quedó en la casa de Pallet. Pasaron `check:port`, `check:honesty`,
+  build, inventory, pending y `git diff --check`.
+- `event_object_movement.c` queda 73/759 por nombre; global **6.229/11.826
+  (52,7%)**, con ~129.389 líneas ponderadas sin homólogo.
 
 ## `event_object_movement.c`: temporizador de movimiento (2026-09-27)
 

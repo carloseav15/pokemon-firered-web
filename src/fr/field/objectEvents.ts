@@ -252,6 +252,18 @@ export function WaitForMovementDelay(sprite: Sprite): boolean {
   return sprite.data[3] === 0;
 }
 
+/** event_object_movement.c SetAndStartSpriteAnim. */
+export function SetAndStartSpriteAnim(sprite: Sprite, animNum: number, animCmdIndex: number): void {
+  sprite.animNum = animNum & 0xff;
+  sprite.animPaused = false;
+  sprite.seekAnim(animCmdIndex & 0xff);
+}
+
+/** event_object_movement.c SpriteAnimEnded. */
+export function SpriteAnimEnded(sprite: Sprite): boolean {
+  return sprite.animEnded;
+}
+
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
 export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
   const oldX = (objectEvent.currentCoords.x << 16) >> 16;
@@ -699,9 +711,7 @@ export class ObjectEvents {
 
   /** SetAndStartSpriteAnim */
   private setAndStartSpriteAnim(sprite: ObjectEvent["sprite"], animNum: number, animCmdIndex: number): void {
-    sprite.animNum = animNum;
-    sprite.animPaused = false;
-    sprite.seekAnim(animCmdIndex);
+    SetAndStartSpriteAnim(sprite, animNum, animCmdIndex);
   }
 
   setDirection(object: ObjectEvent, direction: number): void {
@@ -1474,7 +1484,7 @@ export class ObjectEvents {
         s.data[2] = 1;
         return false;
       }
-      if (object.sprite.animEnded) return this.finishStep(object);
+      if (SpriteAnimEnded(object.sprite)) return this.finishStep(object);
       return false;
     }
     // Jump special (ledge-like hops with special timing)
@@ -1535,7 +1545,7 @@ export class ObjectEvents {
         s.data[2] = 1;
         return false;
       }
-      if (s.animEnded) { s.data[2] = 2; return true; }
+      if (SpriteAnimEnded(s)) { s.data[2] = 2; return true; }
       return false;
     }
     if (id === 0x5c) { object.disableJumpLandingGroundEffect = false; return this.finishStep(object); }
@@ -1568,7 +1578,7 @@ export class ObjectEvents {
     if (id === 0x68 || id === 0x69) {
       // Rock smash / cut tree: play the obstacle removal anim then finish
       if (step === 0) { object.sprite.startAnim(1); s.data[2] = 1; }
-      if (object.sprite.animEnded || object.inanimate) {
+      if (SpriteAnimEnded(object.sprite) || object.inanimate) {
         object.invisible = true;
         return this.finishStep(object);
       }
