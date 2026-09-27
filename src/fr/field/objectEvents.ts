@@ -586,6 +586,23 @@ export class ObjectEvents {
     return OBJECT_EVENTS_COUNT;
   }
 
+  /** GetObjectEventIdByXY (event_object_movement.c): active object at current coordinates, without elevation filtering. */
+  GetObjectEventIdByXY(x: number, y: number): number {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (object?.active && object.currentCoords.x === x && object.currentCoords.y === y) return i;
+    }
+    return OBJECT_EVENTS_COUNT;
+  }
+
+  /** EnableObjectGroundEffectsByXY (event_object_movement.c). */
+  EnableObjectGroundEffectsByXY(x: number, y: number): void {
+    const objectEventId = this.GetObjectEventIdByXY(x, y);
+    if (objectEventId !== OBJECT_EVENTS_COUNT) this.objects[objectEventId]!.triggerGroundEffectsOnMove = true;
+  }
+
   /** ObjectEventDoesElevationMatch (event_object_movement.c). */
   private ObjectEventDoesElevationMatch(object: ObjectEvent, elevation: number): boolean {
     return object.currentElevation === 0 || elevation === 0 || object.currentElevation === elevation;

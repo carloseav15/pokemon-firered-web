@@ -5,10 +5,28 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.197/11.826 funciones (52,4%)**,
+single-player. A 2026-09-27, la meta mide **6.199/11.826 funciones (52,4%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.786/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
+**~129.761/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: búsqueda por XY y activación de efectos de suelo (2026-09-27)
+
+- Porté `GetObjectEventIdByXY` con el recorrido por los 16 slots, comparación
+  de coordenadas actuales, sin filtro de elevación, y sentinel
+  `OBJECT_EVENTS_COUNT`; los parámetros se reducen a `s16`. Lo conecté a
+  `TryPushBoulder`, reemplazando la búsqueda local equivalente.
+- Porté `EnableObjectGroundEffectsByXY` y lo conecté a `FldEff_CutGrass`: para
+  cada tile de hierba y elevación coincidente, el port cambia el metatile y
+  marca el objeto coincidente para que procese sus efectos de suelo al moverse,
+  igual que C. En navegador confirmé que `GetObjectEventIdByXY` devuelve el
+  slot real del jugador y que `EnableObjectGroundEffectsByXY` activa el flag.
+  La partida guardada no contiene un recorrido preparado para ejecutar Corte
+  sobre hierba, así que no afirmo haber probado ese flujo completo.
+- `event_object_movement.c` queda 43/759 por nombre. Pasaron `check:port`,
+  `check:honesty`, `build`, inventory, pending y `git diff --check`. Inventario
+  global: **6.199/11.826 (52,4%)**, 98 archivos con huecos y ~129.761 líneas
+  ponderadas sin homólogo.
 
 ## `event_object_movement.c`: identidad del objeto para efectos de campo (2026-09-27)
 

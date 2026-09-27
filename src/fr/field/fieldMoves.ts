@@ -492,7 +492,9 @@ export class FieldMoveEffects {
     for (let y = cy - 1; y <= cy + 1; y++) {
       for (let x = cx - 1; x <= cx + 1; x++) {
         if (ow.map.elevationAt(x, y) !== p.currentElevation) continue;
+        if (!MetatileAtCoordsIsGrassTile(ow, x, y)) continue;
         this.SetCutGrassMetatileAt(x, y, mapping);
+        ow.objects.EnableObjectGroundEffectsByXY(x, y);
       }
     }
     ow.renderer?.invalidate();
