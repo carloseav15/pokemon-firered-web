@@ -5,10 +5,25 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.223/11.826 funciones (52,6%)**,
+single-player. A 2026-09-27, la meta mide **6.224/11.826 funciones (52,6%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.464/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.451/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: coordenadas de destino por dirección (2026-09-27)
+
+- Porté `ObjectEventMoveDestCoords`: reduce `direction` a `u8`, suma el vector
+  C a `currentCoords` y envuelve ambos resultados como `s16`. Lo conecté a las
+  comprobaciones de colisión por dirección y al movimiento copiable del
+  jugador.
+- En navegador comparé las nueve direcciones contra `sDirectionToVectors` del
+  cdata exportado, incluidas las diagonales; coincidieron todas. El caso
+  `(32767,-32768)` con `direction=0x104` produjo `(-32768,-32768)`, confirmando
+  truncamiento `u8` y wrap `s16`. Estado del juego: casa de Pallet. Pasaron
+  `check:port`, `check:honesty`, build, inventory, pending y `git diff --check`.
+- `event_object_movement.c` queda 68/759 por nombre; global **6.224/11.826
+  (52,6%)**, con ~129.451 líneas ponderadas sin homólogo. No ejecuté un tramo
+  real de movimiento copiable.
 
 ## `event_object_movement.c`: dirección para mirar a otro objeto (2026-09-27)
 

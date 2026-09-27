@@ -220,6 +220,15 @@ export function GetDirectionToFace(x1: number, y1: number, x2: number, y2: numbe
   return DIR_SOUTH;
 }
 
+/** event_object_movement.c ObjectEventMoveDestCoords: advance one tile using its u8 direction. */
+export function ObjectEventMoveDestCoords(objectEvent: ObjectEvent, direction: number): { x: number; y: number } {
+  const [dx, dy] = DIRECTION_VECTORS[direction & 0xff]!;
+  return {
+    x: ((objectEvent.currentCoords.x + dx) << 16) >> 16,
+    y: ((objectEvent.currentCoords.y + dy) << 16) >> 16,
+  };
+}
+
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
 export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
   const oldX = (objectEvent.currentCoords.x << 16) >> 16;
@@ -582,8 +591,8 @@ export class ObjectEvents {
   }
 
   collisionInDirection(object: ObjectEvent, direction: number): number {
-    const [dx, dy] = DIRECTION_VECTORS[direction];
-    return this.collisionAt(object, object.currentCoords.x + dx, object.currentCoords.y + dy, direction);
+    const destination = ObjectEventMoveDestCoords(object, direction);
+    return this.collisionAt(object, destination.x, destination.y, direction);
   }
 
   private outsideRange(o: ObjectEvent, x: number, y: number): boolean {
@@ -1128,9 +1137,8 @@ export class ObjectEvents {
           if (!moved) {
             this.setSingle(object, actionFace(direction));
           } else {
-            const [dx, dy] = DIRECTION_VECTORS[direction];
-            const tx = object.currentCoords.x + dx, ty = object.currentCoords.y + dy;
-            const blocked = this.collisionAt(object, tx, ty, direction) || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(tx, ty)));
+            const destination = ObjectEventMoveDestCoords(object, direction);
+            const blocked = this.collisionAt(object, destination.x, destination.y, direction) || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(destination.x, destination.y)));
             this.setSingle(object, blocked ? actionFace(direction) : actionWalkNormal(direction));
           }
           object.singleMovementActive = true;
