@@ -1164,7 +1164,7 @@ export class ObjectEvents {
 
   private trainerCloseToPlayer(object: ObjectEvent): boolean {
     if (!this.hooks.playerIsRunning()) return false;
-    if (object.trainerType !== 1 && object.trainerType !== 3) return false;
+    if (object.trainerType !== C.TRAINER_TYPE_NORMAL && object.trainerType !== C.TRAINER_TYPE_BURIED) return false;
     const p = this.hooks.playerDestCoords();
     const r = object.trainerRange;
     const o = object.currentCoords;
