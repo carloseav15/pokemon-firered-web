@@ -4,11 +4,11 @@
 
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
-import { cdata, symName } from "../hw/assets";
+import { cdata } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
-import { ElevationToPriority, GetFaceDirectionAnimNum, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
+import { ElevationToPriority, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 
@@ -223,14 +223,6 @@ export function ObjectEventMoveDestCoords(objectEvent: ObjectEvent, direction: n
     x: ((objectEvent.currentCoords.x + dx) << 16) >> 16,
     y: ((objectEvent.currentCoords.y + dy) << 16) >> 16,
   };
-}
-
-/** event_object_movement.c GetJumpY. The jump curves are read from exported C tables. */
-export function GetJumpY(i: number, type: number): number {
-  const tableRef = cdata<unknown[]>("event_object_movement", "sJumpYTable")[type & 0xff];
-  const tableName = symName(tableRef);
-  if (!tableName) throw new Error(`GetJumpY: missing C jump table for type ${type & 0xff}`);
-  return cdata<number[]>("event_object_movement", tableName)[((i << 16) >> 16)]!;
 }
 
 /** event_object_movement.c SetJumpSpriteData. */

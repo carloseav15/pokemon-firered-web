@@ -4007,3 +4007,16 @@ Pending / placeholders:
   `ClearEnigmaBerries`, `SetEnigmaBerry` y el helper de checksum siguen sin
   portar. Pasaron `check:port`, `check:honesty`, `build`, inventory, pending y
   `git diff --check`; no ejecuté el juego ni el navegador.
+
+## `event_object_movement.c`: lookup de curva de salto desde Clang AST (2026-09-27)
+
+- Amplié el generador de lookups de objetos para reconocer `GetJumpY` solo si
+  Clang confirma la expresión `sJumpYTable[type][i]`, la firma `(s16, u8)` y
+  las tres tablas exportadas de 16 valores `s8`. El código generado conserva
+  el wrap firmado del índice y la selección `u8`; el caller de animación usa
+  ahora esta salida en vez de una función escrita a mano. La ruta de generación
+  rechaza una forma AST distinta y produce salida determinista.
+- El check comparó las 48 celdas C exportadas más 48 índices con wrap `s16`;
+  junto con los 169 lookups existentes, pasaron 265 comparaciones. También
+  pasaron `check:port`, `check:honesty`, `build`, inventory, pending y
+  `git diff --check`. El recorrido de salto en navegador no se ejecutó.

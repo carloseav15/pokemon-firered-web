@@ -906,6 +906,7 @@ EVENT_OBJECT_ANIM_FUNCS = {
     "GetTrainerFacingDirectionMovementType",
     "ElevationToPriority",
 }
+EVENT_OBJECT_JUMP_FUNCS = {"GetJumpY"}
 
 
 # Explicitly reviewed const-table accessors whose source table is exported as cdata.
@@ -1035,24 +1036,82 @@ def _event_object_anim_table(func: clang_ast.AstFunction) -> tuple[str, str, int
     return table, param, int(array_type.rsplit("[", 1)[1][:-1])
 
 
+def _event_object_jump_y(func: clang_ast.AstFunction) -> tuple[str, str, str]:
+    """Accept only the C's `sJumpYTable[type][i]` signed-byte lookup."""
+    if func.return_type != "s16" or [(t) for _, t in func.params] != ["s16", "u8"]:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected s16 function with (s16, u8) parameters")
+    i_param, type_param = (n for n, _ in func.params)
+    statements = func.body.get("inner") or []
+    if len(statements) != 1 or statements[0].get("kind") != "ReturnStmt":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected a single return statement")
+
+    def unwrap(node: dict[str, Any]) -> dict[str, Any]:
+        while node.get("kind") in ("ImplicitCastExpr", "ConstantExpr", "CStyleCastExpr", "ParenExpr"):
+            children = node.get("inner") or []
+            if len(children) != 1:
+                raise UnsupportedAstError("event_object_movement.c", func.name, "unexpected cast in nested table lookup")
+            node = children[0]
+        return node
+
+    ret = statements[0].get("inner") or []
+    outer = unwrap(ret[0]) if len(ret) == 1 else {}
+    if outer.get("kind") != "ArraySubscriptExpr" or len(outer.get("inner") or []) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected nested table lookup")
+    table_expr, i_expr = (unwrap(n) for n in outer["inner"])
+    if i_expr.get("kind") != "DeclRefExpr" or i_expr.get("referencedDecl", {}).get("name") != i_param:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "inner array index must be the s16 parameter")
+    if table_expr.get("kind") != "ArraySubscriptExpr" or len(table_expr.get("inner") or []) != 2:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected table-of-tables lookup")
+    root, type_expr = (unwrap(n) for n in table_expr["inner"])
+    if type_expr.get("kind") != "DeclRefExpr" or type_expr.get("referencedDecl", {}).get("name") != type_param:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "outer array index must be the u8 parameter")
+    ref = root.get("inner", [{}])[0] if root.get("kind") == "ImplicitCastExpr" else root
+    if ref.get("kind") != "DeclRefExpr" or ref.get("referencedDecl", {}).get("name") != "sJumpYTable":
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected sJumpYTable as the outer table")
+    cdata_path = ROOT / "public" / "fr" / "cdata" / "event_object_movement.json"
+    try:
+        defs = json.loads(cdata_path.read_text())["defs"]
+        refs = defs["sJumpYTable"]["value"]
+    except (OSError, KeyError, json.JSONDecodeError) as exc:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "exported sJumpYTable is missing") from exc
+    if defs["sJumpYTable"].get("type") != "s8" or len(refs) != 3:
+        raise UnsupportedAstError("event_object_movement.c", func.name, "expected three exported signed jump tables")
+    for entry in refs:
+        name = entry.get("$sym") if isinstance(entry, dict) else None
+        table = defs.get(name or "", {})
+        if table.get("type") != "s8" or not isinstance(table.get("value"), list) or len(table["value"]) != 16:
+            raise UnsupportedAstError("event_object_movement.c", func.name, "jump table reference or signed-byte table data is invalid")
+    return i_param, type_param, "sJumpYTable"
+
+
 def generate_event_object_anims_ts() -> str:
     c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
     ast = clang_ast.dump_clang_ast_json(c_path)
-    funcs = clang_ast.extract_functions(ast, EVENT_OBJECT_ANIM_FUNCS)
-    missing = EVENT_OBJECT_ANIM_FUNCS - funcs.keys()
+    expected = EVENT_OBJECT_ANIM_FUNCS | EVENT_OBJECT_JUMP_FUNCS
+    funcs = clang_ast.extract_functions(ast, expected)
+    missing = expected - funcs.keys()
     if missing:
         raise UnsupportedAstError("event_object_movement.c", sorted(missing)[0], "function definition not found in Clang AST")
     rows = []
     for name in sorted(EVENT_OBJECT_ANIM_FUNCS):
         table, param, _ = _event_object_anim_table(funcs[name])
         rows.append(f'export function {name}({param}: number): number {{ return cdata<number[]>("event_object_movement", "{table}")[{param} & 0xff]!; }}')
+    i_param, type_param, table = _event_object_jump_y(funcs["GetJumpY"])
+    rows.append(
+        f'export function GetJumpY({i_param}: number, {type_param}: number): number {{\n'
+        f'  const tableRef = cdata<unknown[]>("event_object_movement", "{table}")[{type_param} & 0xff];\n'
+        f'  const tableName = symName(tableRef);\n'
+        f'  if (!tableName) throw new Error(`GetJumpY: missing C jump table for type ${{{type_param} & 0xff}}`);\n'
+        f'  return cdata<number[]>("event_object_movement", tableName)[({i_param} << 16) >> 16]!;\n'
+        f'}}'
+    )
     return "\n".join([
         "// GENERATED BY tools/decomp/clang_codegen.py FROM pokefirered/src/event_object_movement.c",
         "// DO NOT EDIT MANUALLY. Re-run npm run generate:event-object-anims to regenerate.",
-        "// Target: armv4t-none-eabi | ABI: u8 parameter and return values.",
-        "// C array bounds are preserved: out-of-range direction values have no defined C result.",
+        "// Target: armv4t-none-eabi | ABI: u8 direction lookups and signed s16 jump index.",
+        "// C array bounds are preserved: out-of-range indices have no defined C result.",
         "",
-        'import { cdata } from "../hw/assets";',
+        'import { cdata, symName } from "../hw/assets";',
         "",
         *rows,
         "",
