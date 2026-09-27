@@ -31,6 +31,24 @@ const BIKE_TRANS_FACE_DIRECTION = 0, BIKE_TRANS_TURNING = 1, BIKE_TRANS_MOVE = 2
 const BIKE_STATE_NORMAL = 0, BIKE_STATE_TURNING = 1, BIKE_STATE_SLOPE = 2;
 export const PLAYER_SPEED_STANDING = 0, PLAYER_SPEED_NORMAL = 1, PLAYER_SPEED_FAST = 2, PLAYER_SPEED_FASTER = 3, PLAYER_SPEED_FASTEST = 4;
 
+export let gPlayerAvatar: PlayerAvatar | null = null;
+export function SetPlayerAvatar(avatar: PlayerAvatar | null): void { gPlayerAvatar = avatar; }
+
+export function PlayerGetDestCoords(): { x: number; y: number } {
+  if (gPlayerAvatar?.object) {
+    return { x: gPlayerAvatar.object.currentCoords.x, y: gPlayerAvatar.object.currentCoords.y };
+  }
+  return { x: 0, y: 0 };
+}
+
+export function TestPlayerAvatarFlags(flags: number): number {
+  return (gPlayerAvatar?.flags ?? 0) & flags;
+}
+
+export function SetPlayerAvatarTransitionFlags(flags: number): void {
+  gPlayerAvatar?.setTransitionFlags(flags);
+}
+
 export class PlayerAvatar {
   flags = PLAYER_AVATAR_FLAG_ON_FOOT;
   runningState = NOT_MOVING;
@@ -41,7 +59,9 @@ export class PlayerAvatar {
   object!: ObjectEvent;
   surfBlob?: import("../gba/sprite").Sprite;
 
-  constructor(private readonly ow: Overworld) {}
+  constructor(private readonly ow: Overworld) {
+    gPlayerAvatar = this;
+  }
 
   static graphicsId(state: number, gender: number): number {
     const c = rom.constants;
@@ -58,6 +78,7 @@ export class PlayerAvatar {
 
   /** InitPlayerAvatar */
   init(x: number, y: number, direction: number, gender: number): void {
+    gPlayerAvatar = this;
     this.gender = gender;
     const object = this.ow.objects.spawnPlayer(x, y, PlayerAvatar.graphicsId(PLAYER_AVATAR_GFX_NORMAL, gender), direction, this.ow.map.elevationAt(x, y));
     this.object = object;

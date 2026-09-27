@@ -10,15 +10,15 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 65 | 137061 | 1385/6141 |
+| Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
+| Parcial (< 80 % de funciones) | 65 | 137061 | 1389/6141 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 13 | 27469 | 897/1045 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 140 | 112244 | 3762/3762 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 141 | 112390 | 3765/3765 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **108** | **189665** | |
-| **Total en alcance** | **253** | **303042** | **6072/11826** |
+| **Pendiente de portar** | **107** | **189519** | |
+| **Total en alcance** | **253** | **303042** | **6079/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -52,7 +52,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `berry_fix_program.c` | 203 | 0/4 |  |  |  |
 | `quest_log_player.c` | 197 | 0/15 |  |  |  |
 | `librfu_sio32id.c` | 170 | 0/4 |  |  |  |
-| `quest_log_objects.c` | 146 | 0/3 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
 
@@ -81,7 +80,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `scrcmd.c` | 2264 | 1/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
 | `quest_log_events.c` | 2247 | 7/118 | `questLogEvents.ts` |  |  |
 | `link.c` | 2202 | 4/114 | `linkState.ts` |  | 1 |
-| `field_player_avatar.c` | 2168 | 12/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
+| `field_player_avatar.c` | 2168 | 15/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
 | `battle_ai_script_commands.c` | 1970 | 25/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
@@ -108,7 +107,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `berry.c` | 1028 | 1/9 | `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
 | `field_fadetransition.c` | 965 | 16/59 | `field/overworld.ts` |  |  |
-| `fieldmap.c` | 951 | 4/54 | `field/fieldmap.ts` |  |  |
+| `fieldmap.c` | 951 | 5/54 | `field/fieldmap.ts` |  |  |
 | `item_use.c` | 925 | 38/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
 | `new_menu_helpers.c` | 761 | 42/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
@@ -262,6 +261,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `wonder_news.c` | 154 | 9/9 | `wonderNews.ts` |  |  |
 | `quest_log_battle.c` | 150 | 3/3 | `questLogBattle.ts` |  |  |
 | `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
+| `quest_log_objects.c` | 146 | 3/3 | `questLogObjects.ts` |  |  |
 | `field_message_box.c` | 142 | 14/14 | `field/messageBox.ts` |  |  |
 | `mailbox_pc.c` | 140 | 9/9 | `mailboxPc.ts`, `menus/playerPc.ts`, `playerPcMailbox.ts` … |  |  |
 | `dynamic_placeholder_text_util.c` | 137 | 5/5 | `dynamicPlaceholderTextUtil.ts` |  |  |

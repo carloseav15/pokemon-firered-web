@@ -99,6 +99,7 @@ export type SaveData = {
   weatherCycleStage?: number;
   nationalDexMagic?: number;
   nationalDexRseMagic?: number;
+  objectEvents?: unknown;
   objectEventTemplates?: unknown;
   daycare?: unknown;
   berryPowder?: number;

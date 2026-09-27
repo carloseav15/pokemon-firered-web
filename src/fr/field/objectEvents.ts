@@ -150,6 +150,8 @@ export class ObjectEvent {
   inSandPile = false;
   hasReflection = false;
   animPausedBackup = false;
+  spriteAnimPausedBackup = false;
+  spriteAffineAnimPausedBackup = false;
   graphicsId = 0;
   movementType = 0;
   trainerType = 0;
@@ -182,6 +184,12 @@ export class ObjectEvent {
   }
 }
 
+export const gObjectEvents: ObjectEvent[] = Array.from({ length: OBJECT_EVENTS_COUNT }, () => {
+  const o = new ObjectEvent();
+  o.active = false;
+  return o;
+});
+
 type GfxInfo = { width: number; height: number; inanimate: boolean; anims: AnimCmd[][]; frames: FrameImage[]; animTable: string; shadowSize: string; tracks: string };
 const gfxCache = new Map<number, GfxInfo>();
 
@@ -213,7 +221,11 @@ export class ObjectEvents {
   mapNum = 0;
   mapGroup = 0;
   /** Set by lock/lockall (FreezeObjectEvents) */
-  constructor(private readonly hooks: ObjectEventHooks) {}
+  constructor(private readonly hooks: ObjectEventHooks) {
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      if (gObjectEvents[i].active) this.objects[i] = gObjectEvents[i];
+    }
+  }
 
   get list(): ObjectEvent[] {
     return this.objects.filter((o): o is ObjectEvent => o !== null && o.active);
@@ -272,6 +284,7 @@ export class ObjectEvents {
     object.movementDirection = facing;
     object.previousMovementDirection = facing;
     this.objects[slot] = object;
+    gObjectEvents[slot] = object;
     this.setupSprite(object);
     return object;
   }
@@ -302,6 +315,7 @@ export class ObjectEvents {
     object.previousElevation = elevation;
     object.trackedByCamera = true;
     this.objects[slot] = object;
+    gObjectEvents[slot] = object;
     this.setupSprite(object);
     return object;
   }
@@ -382,7 +396,11 @@ export class ObjectEvents {
     if (!object) return;
     object.active = false;
     const index = this.objects.indexOf(object);
-    if (index >= 0) this.objects[index] = null;
+    if (index >= 0) {
+      this.objects[index] = null;
+      gObjectEvents[index] = new ObjectEvent();
+      gObjectEvents[index].active = false;
+    }
     object.sprite.destroyed = true;
     if (object.fieldEffectSprite) object.fieldEffectSprite.destroyed = true;
   }

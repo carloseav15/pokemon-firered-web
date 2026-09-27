@@ -72,6 +72,17 @@ export async function loadMap(mapId: string): Promise<LoadedMap> {
   return { header, layout, primary, secondary, connections };
 }
 
+let sCurrentFieldMap: FieldMap | null = null;
+export function SetCurrentFieldMap(map: FieldMap | null): void {
+  sCurrentFieldMap = map;
+}
+export function GetCurrentFieldMap(): FieldMap | null {
+  return sCurrentFieldMap;
+}
+export function MapGridGetMetatileBehaviorAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
+  return map ? map.behaviorAt(x, y) : 0;
+}
+
 /** gMapHeader + VMap state. */
 export class FieldMap {
   map!: Uint16Array;
@@ -85,6 +96,7 @@ export class FieldMap {
 
   /** InitMapLayoutData */
   init(loaded: LoadedMap): void {
+    SetCurrentFieldMap(this);
     this.loaded = loaded;
     const layout = loaded.layout;
     this.xSize = layout.width + MAP_OFFSET_W;

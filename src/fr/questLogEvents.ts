@@ -6,6 +6,7 @@ import { save } from "./save";
 
 let sPlayedTheSlots = false;
 export let gQuestLogState = 0;
+export function SetQuestLogState(state: number): void { gQuestLogState = state; }
 export let gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
 let gQuestLogDefeatedWildMonRecord: unknown | null = null;
 let gQuestLogRecordingPointer: unknown | null = null;

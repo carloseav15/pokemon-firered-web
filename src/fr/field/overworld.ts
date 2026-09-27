@@ -33,6 +33,7 @@ import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 import { QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
+import { QL_TryStopSurfing } from "../questLogObjects";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -404,6 +405,7 @@ export class Overworld {
     QuestLog_ShouldEndSceneOnMapChange();
     this.initObjectEventsLocal();
     this.initView();
+    QL_TryStopSurfing();
     const prevSection = this.lastUsedWarpSection();
     const currSection = this.header.regionMapSection;
     const questLogState = (this.game as unknown as { questLogState?: number }).questLogState;

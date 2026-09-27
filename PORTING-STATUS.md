@@ -28,6 +28,14 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`quest_log_objects.c`: 3/3 funciones con homólogo (serialización de objetos de escena del Quest Log y desmontaje de surf).**
+  Implementé las 3 funciones de `quest_log_objects.c` en `src/fr/questLogObjects.ts`: `QL_RecordObjects`, `QL_LoadObjects` y `QL_TryStopSurfing`.
+  Exporté el array global `gObjectEvents` sincronizado con las operaciones de spawn/eliminación en `src/fr/field/objectEvents.ts`, exporté `MapGridGetMetatileBehaviorAt` en `src/fr/field/fieldmap.ts`, y las rutinas del avatar del jugador (`PlayerGetDestCoords`, `SetPlayerAvatarTransitionFlags`, `TestPlayerAvatarFlags`) en `src/fr/field/playerAvatar.ts`.
+  Conecté `QL_TryStopSurfing()` a la carga y visualización de mapas en `src/fr/field/overworld.ts` tras `this.initView()`.
+  Añadí el check headless `tools/checks/questLogObjects.ts` (`npm run check:questlog-objects`) que valida: serialización completa de 16 slots de eventos de objeto en `QL_RecordObjects`, reconstrucción de coordenadas previas y atributos de plantillas en `QL_LoadObjects`, y desmontaje automático de surf hacia a pie con limpieza de sprite al reproducir en casillas no navegables.
+  Validación: pasan `check:questlog-objects`, `check:wonder-news`, `check:cereader-tool`, `check:questlog-battle`, `check:battle-util`, `check:trainer-see`, `check:preview`, `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.079/11.826 funciones (51,4%)**, con **107 archivos** con huecos (bajó de 108); `quest_log_objects.c` sale de `PENDING.md`.
+
 - **`wonder_news.c`: 9/9 funciones con homólogo (recompensas y control de pasos de Wonder News / Noticias Misteriosas).**
   Implementé las 9 funciones de `wonder_news.c` en `src/fr/wonderNews.ts`: `WonderNews_SetReward`, `WonderNews_Reset`, `WonderNews_IncrementStepCounter`, `WonderNews_GetRewardInfo`, `GetRewardItem`, `ResetSentRewardCounter`, `IncrementSentRewardCounter`, `IncrementRewardCounter` y `GetRewardType`.
   Implementé la capa de datos de guardado, serialización de 444 bytes y validación CRC16 de `mystery_gift.c` en `src/fr/mysteryGift.ts` (`GetSavedWonderNewsMetadata`, `GetSavedWonderNews`, `SaveWonderNews`, `ValidateSavedWonderNews`, `ValidateWonderNews`, `ClearSavedWonderNews`, `ClearSavedWonderNewsAndRelated`, `IsSendingSavedWonderNewsAllowed`).
