@@ -54,14 +54,20 @@ def parse_anim_tables(text: str, anim_indices: dict[str, int]) -> dict[str, list
     tables = {}
     for name, body in re.findall(r"const union AnimCmd \*const (\w+)\[\]\s*=\s*\{(.*?)\};", text, flags=re.S):
         entries = []
-        designated = re.findall(r"\[(\w+)\]\s*=\s*(\w+)", body)
+        designated = re.findall(r"\[([^\]]+)\]\s*=\s*(\w+)", body)
         if designated:
             size = 0
             mapping = {}
-            for key, value in designated:
-                index = anim_indices.get(key, int(key, 0) if key[0].isdigit() else None)
-                if index is None:
-                    continue
+            for expression, value in designated:
+                expression = expression.strip()
+                for key in sorted(anim_indices, key=len, reverse=True):
+                    expression = re.sub(rf"\b{re.escape(key)}\b", str(anim_indices[key]), expression)
+                if not re.fullmatch(r"[0-9a-fA-FxX\s()+\-]+", expression):
+                    raise ValueError(f"Unsupported animation index in {name}: [{expression}]")
+                try:
+                    index = int(eval(expression, {"__builtins__": {}}, {}))
+                except (SyntaxError, ValueError, TypeError, ZeroDivisionError) as exc:
+                    raise ValueError(f"Invalid animation index in {name}: [{expression}]") from exc
                 mapping[index] = value
                 size = max(size, index + 1)
             entries = [mapping.get(i) for i in range(size)]
@@ -180,7 +186,8 @@ def export_field_effect_objects(constants: dict[str, int]) -> None:
     tag_palettes.update(obj_palette_tags)
     text = strip_comments((DECOMP / "src/data/field_effects/field_effect_objects.h").read_text())
     anim_cmds = parse_anim_cmds(text)
-    anim_tables = parse_anim_tables(text, {})
+    anim_indices = parse_define_values(DECOMP / "include/constants/global.h", "DIR_")
+    anim_tables = parse_anim_tables(text, anim_indices)
     pic_tables = {}
     for name, body in re.findall(r"const struct SpriteFrameImage (\w+)\[\]\s*=\s*\{(.*?)\};", text, flags=re.S):
         frames = []

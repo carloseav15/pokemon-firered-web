@@ -34,6 +34,7 @@
     "check:has-berry": "esbuild tools/checks/hasAtLeastOneBerry.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hasAtLeastOneBerry.mjs && node .decomp-build/checks/hasAtLeastOneBerry.mjs",
     "generate:string-util": "python3 tools/decomp/clang_codegen.py",
     "generate:event-object-anims": "python3 tools/decomp/clang_codegen.py --event-object-anims",
+    "check:fieldfx-anims": "python3 tools/checks/fieldEffectAnimTables.py",
     "generate:cdata-table-accessors": "python3 tools/decomp/clang_codegen.py --cdata-table-accessors",
     "generate:incbin-row-accessors": "python3 tools/decomp/clang_codegen.py --incbin-row-accessors",
     "check:event-object-anims": "python3 tools/checks/clangEventObjectAnims.py && esbuild tools/checks/eventObjectAnims.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/eventObjectAnims.mjs && node .decomp-build/checks/eventObjectAnims.mjs",

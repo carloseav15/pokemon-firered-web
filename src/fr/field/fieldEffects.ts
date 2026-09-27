@@ -555,7 +555,8 @@ export class FieldEffects {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, false);
       if (MB.MetatileBehavior_IsLongGrass(cur)) this.spawnLongGrass(object);
       if (object.hasShadow) this.spawnShadow(object);
-      if (MB.MetatileBehavior_IsDeepSand(prev) || MB.MetatileBehavior_IsSand(prev)) this.spawnFootprints(object);
+      if (MB.MetatileBehavior_IsDeepSand(prev)) this.GroundEffect_DeepSandTracks(object);
+      else if (MB.MetatileBehavior_IsSand(prev) || MB.MetatileBehavior_IsFootprints(prev)) this.GroundEffect_SandTracks(object);
       if (!object.landingJump && MB.MetatileBehavior_IsPuddle(cur) && MB.MetatileBehavior_IsPuddle(prev)) this.GroundEffect_StepOnPuddle(object);
     } else if (kind === "finish") {
       if (object.landingJump && !object.disableJumpLandingGroundEffect) this.spawnJumpLanding(object);
@@ -820,16 +821,67 @@ export class FieldEffects {
   }
 
   private spawnFootprints(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("SandFootprints", object.previousCoords.x * 16 + 8, object.previousCoords.y * 16 + 8);
+    const tracks = rom.objects.gfx[String(object.graphicsId)]?.tracks;
+    if (tracks !== "TRACKS_FOOT") return;
+    const deepSand = MB.MetatileBehavior_IsDeepSand(object.previousMetatileBehavior);
+    const sprite = this.createFromTemplate(deepSand ? "DeepSandFootprints" : "SandFootprints", object.previousCoords.x * 16 + 8, object.previousCoords.y * 16 + 8);
     if (!sprite) return;
-    sprite.priority = object.sprite.priority;
-    sprite.startAnim(Math.max(0, object.movementDirection - 1) & 3);
-    sprite.subpriority = 0xff;
-    let timer = 0;
+    sprite.priority = 2;
+    sprite.startAnim(object.facingDirection);
+    sprite.subpriority = 149;
+    this.initTracksFade(sprite);
+  }
+
+  /** GroundEffect_SandTracks (event_object_movement.c). */
+  GroundEffect_SandTracks(object: ObjectEvent): void {
+    if (rom.objects.gfx[String(object.graphicsId)]?.tracks === "TRACKS_BIKE_TIRE") this.spawnBikeTireTracks(object);
+    else this.spawnFootprints(object);
+  }
+
+  /** GroundEffect_DeepSandTracks (event_object_movement.c). */
+  GroundEffect_DeepSandTracks(object: ObjectEvent): void {
+    if (rom.objects.gfx[String(object.graphicsId)]?.tracks === "TRACKS_BIKE_TIRE") this.spawnBikeTireTracks(object);
+    else this.spawnFootprints(object);
+  }
+
+  private spawnBikeTireTracks(object: ObjectEvent): void {
+    if (object.currentCoords.x === object.previousCoords.x && object.currentCoords.y === object.previousCoords.y) return;
+    const transitions = [
+      [1, 2, 7, 8],
+      [1, 2, 6, 5],
+      [5, 8, 3, 4],
+      [6, 7, 3, 4],
+    ];
+    const previousDirection = object.previousMovementDirection;
+    const nextDirection = object.facingDirection - 5;
+    // The source indexes this table directly. Out-of-range state has no defined C result.
+    const animation = transitions[previousDirection]?.[nextDirection];
+    if (animation === undefined) return;
+    const sprite = this.createFromTemplate("BikeTireTracks", object.previousCoords.x * 16 + 8, object.previousCoords.y * 16 + 8);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = 2;
+    sprite.subpriority = 149;
+    sprite.data[7] = C.FLDEFF_BIKE_TIRE_TRACKS;
+    sprite.startAnim(animation);
+    this.initTracksFade(sprite);
+  }
+
+  /** UpdateFootprintsTireTracksFieldEffect / FadeFootprintsTireTracks_Step0/1. */
+  private initTracksFade(sprite: Sprite): void {
+    sprite.data[0] = 0;
+    sprite.data[1] = 0;
     sprite.callback = (s) => {
-      timer++;
-      if (timer > 40) s.invisible = (timer & 1) === 1;
-      if (timer > 56) this.ow.sprites.destroy(s);
+      if (s.data[0] === 0) {
+        s.data[1] = (s.data[1]! + 1) & 0xffff;
+        if (s.data[1]! > 40) s.data[0] = 1;
+        this.UpdateObjectEventSpriteInvisibility(s, false);
+      } else {
+        s.invisible = !s.invisible;
+        s.data[1] = (s.data[1]! + 1) & 0xffff;
+        this.UpdateObjectEventSpriteInvisibility(s, s.invisible);
+        if (s.data[1]! > 56) this.ow.sprites.destroy(s);
+      }
     };
   }
 
