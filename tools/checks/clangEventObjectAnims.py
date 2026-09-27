@@ -133,6 +133,123 @@ int main(void)
     (build_dir / "eventObjectElevationResults.json").write_text(json.dumps(output))
 
 
+def check_freeze_helpers_against_c(ast: dict) -> None:
+    """Run exact C freeze/unfreeze bodies with explicitly sized state fields."""
+    c_path = clang_ast.DECOMP / "src" / "event_object_movement.c"
+    preprocessed = clang_ast.preprocess_c_file(c_path).read_text()
+    names = (
+        "FreezeObjectEvent",
+        "FreezeObjectEvents",
+        "FreezeObjectEventsExceptOne",
+        "UnfreezeObjectEvent",
+        "UnfreezeObjectEvents",
+    )
+    funcs = clang_ast.extract_functions(ast, set(names))
+    bodies: list[str] = []
+    for name in names:
+        node = funcs[name].raw_node
+        start = node["range"]["begin"]["offset"]
+        end = node["range"]["end"]["offset"] + node["range"]["end"]["tokLen"]
+        bodies.append(preprocessed[start:end])
+    source = f'''#include <stdint.h>
+#include <stdio.h>
+typedef uint8_t u8;
+typedef uint8_t bool8;
+#define TRUE 1
+#define FALSE 0
+#define OBJECT_EVENTS_COUNT 16
+_Static_assert(sizeof(u8) == 1, "u8 width");
+struct Sprite {{ bool8 animPaused; bool8 affineAnimPaused; }};
+struct ObjectEvent {{ bool8 heldMovementActive; bool8 frozen; u8 spriteId; bool8 spriteAnimPausedBackup; bool8 spriteAffineAnimPausedBackup; bool8 active; }};
+struct PlayerAvatar {{ u8 objectEventId; }};
+static struct Sprite gSprites[OBJECT_EVENTS_COUNT];
+static struct ObjectEvent gObjectEvents[OBJECT_EVENTS_COUNT];
+static struct PlayerAvatar gPlayerAvatar;
+{''.join(body + chr(10) for body in bodies)}
+static void setup(void)
+{{
+    unsigned i;
+    gPlayerAvatar.objectEventId = 0;
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+    {{
+        gSprites[i].animPaused = (i & 1) != 0;
+        gSprites[i].affineAnimPaused = (i & 2) != 0;
+        gObjectEvents[i].heldMovementActive = FALSE;
+        gObjectEvents[i].frozen = FALSE;
+        gObjectEvents[i].spriteId = (u8)i;
+        gObjectEvents[i].spriteAnimPausedBackup = FALSE;
+        gObjectEvents[i].spriteAffineAnimPausedBackup = FALSE;
+        gObjectEvents[i].active = i < 5;
+    }}
+}}
+static void print_state(void)
+{{
+    unsigned i;
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+        printf("%u,%u,%u,%u,%u,%u,%u,%u,", (unsigned)gObjectEvents[i].active, (unsigned)gObjectEvents[i].heldMovementActive,
+            (unsigned)gObjectEvents[i].frozen, (unsigned)gObjectEvents[i].spriteId, (unsigned)gObjectEvents[i].spriteAnimPausedBackup,
+            (unsigned)gObjectEvents[i].spriteAffineAnimPausedBackup, (unsigned)gSprites[i].animPaused, (unsigned)gSprites[i].affineAnimPaused);
+    printf("\\n");
+}}
+int main(void)
+{{
+    bool8 result1, result2, result3;
+    setup();
+    gObjectEvents[1].heldMovementActive = TRUE;
+    result1 = FreezeObjectEvent(&gObjectEvents[1]);
+    result2 = FreezeObjectEvent(&gObjectEvents[2]);
+    result3 = FreezeObjectEvent(&gObjectEvents[2]);
+    printf("%u,%u,%u\\n", (unsigned)result1, (unsigned)result2, (unsigned)result3);
+    print_state();
+    setup();
+    gObjectEvents[2].heldMovementActive = TRUE;
+    gObjectEvents[3].active = FALSE;
+    FreezeObjectEvents();
+    print_state();
+    setup();
+    FreezeObjectEventsExceptOne(4);
+    print_state();
+    setup();
+    gObjectEvents[1].frozen = TRUE;
+    gObjectEvents[1].spriteAnimPausedBackup = TRUE;
+    gObjectEvents[1].spriteAffineAnimPausedBackup = FALSE;
+    gSprites[1].animPaused = TRUE;
+    gSprites[1].affineAnimPaused = TRUE;
+    gObjectEvents[2].active = FALSE;
+    gObjectEvents[2].frozen = TRUE;
+    UnfreezeObjectEvent(&gObjectEvents[2]);
+    UnfreezeObjectEvent(&gObjectEvents[1]);
+    print_state();
+    setup();
+    gObjectEvents[1].frozen = TRUE;
+    gObjectEvents[1].spriteAnimPausedBackup = TRUE;
+    gObjectEvents[1].spriteAffineAnimPausedBackup = TRUE;
+    gObjectEvents[2].frozen = TRUE;
+    gObjectEvents[2].spriteAnimPausedBackup = FALSE;
+    gObjectEvents[2].spriteAffineAnimPausedBackup = TRUE;
+    gObjectEvents[3].active = FALSE;
+    gObjectEvents[3].frozen = TRUE;
+    UnfreezeObjectEvents();
+    print_state();
+    return 0;
+}}
+'''
+    build_dir = ROOT / ".decomp-build" / "checks"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    c_file = build_dir / "eventObjectFreeze.c"
+    binary = build_dir / "eventObjectFreeze"
+    c_file.write_text(source)
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Werror", str(c_file), "-o", str(binary)], check=True)
+    result = subprocess.run([str(binary)], check=True, capture_output=True, text=True)
+    lines = [line.rstrip(",") for line in result.stdout.splitlines()]
+    if len(lines) != 6 or any(not value.isdigit() for line in lines for value in line.split(",")):
+        raise AssertionError("C object freeze harness returned malformed output")
+    output = {"directResults": [int(value) for value in lines[0].split(",")], "states": [[int(value) for value in line.split(",")] for line in lines[1:]]}
+    if len(output["directResults"]) != 3 or any(len(state) != 16 * 8 for state in output["states"]):
+        raise AssertionError("C object freeze harness returned the wrong state shape")
+    (build_dir / "eventObjectFreezeResults.json").write_text(json.dumps(output))
+
+
 def main() -> None:
     generated_a = clang_codegen.generate_event_object_anims_ts()
     generated_b = clang_codegen.generate_event_object_anims_ts()
@@ -145,6 +262,7 @@ def main() -> None:
     ast = clang_ast.dump_clang_ast_json(c_path)
     check_copy_direction_against_c(ast)
     check_elevation_helpers_against_c(ast)
+    check_freeze_helpers_against_c(ast)
     func = clang_ast.extract_functions(ast, {"GetJumpY"})["GetJumpY"]
     unsupported = copy.deepcopy(func)
     unsupported.body["inner"] = [{"kind": "ReturnStmt", "inner": [{"kind": "IntegerLiteral", "value": "0"}]}]

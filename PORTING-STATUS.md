@@ -4089,3 +4089,32 @@ Pending / placeholders:
   hubo errores de juego en consola, solo dos 404 del `favicon.ico`. Pasaron
   `check:port`, `check:transitions`, `check:honesty`, build, inventory, pending y
   `git diff --check`. No medí tiempos por etapa ni reclamo aceleración.
+
+## `event_object_movement.c`: congelar y reanudar objetos (2026-09-27)
+
+- Porté `FreezeObjectEvent`, `FreezeObjectEvents`,
+  `FreezeObjectEventsExceptOne`, `UnfreezeObjectEvent` y
+  `UnfreezeObjectEvents` en `ObjectEvents`. Congelar ahora conserva y pausa
+  tanto la animación normal como la affine, y descongelar restaura ambos valores
+  originales, incluidos casos donde ya estaban pausados. Los aliases existentes
+  `freeze`, `freezeAll`, `unfreeze` y `unfreezeAll` delegan en esas rutinas, así
+  los callers actuales de scripts y campo comparten la misma implementación.
+  El cambio corrige la omisión previa de la pausa affine. El archivo queda
+  90/759; total 6.267/11.826 (53,0 %), con 5.559 nombres pendientes.
+- Clang extrajo los cinco cuerpos C y el harness host fijó explícitamente los
+  anchos `u8`/booleanos y comparó los estados de slots/sprites en cinco
+  escenarios: retorno de `FreezeObjectEvent`, lote completo, excepción de slot,
+  objeto inactivo y restauración del lote. El check TS marcó el estado preparado
+  manualmente. Pasaron `check:event-object-anims` (70.716 comparaciones de
+  datos/casos y 137 casos del harness C de dirección), `check:port`, `check:honesty`,
+  `build`, inventory, pending y `git diff --check`. No medí tiempos por etapa;
+  no reclamo aceleración. En navegador, sobre `?fr=new`, preparé un objeto
+  aislado: `FreezeObjectEvent` pausó ambas animaciones y `UnfreezeObjectEvent`
+  restauró `true/false`; la carga mostró únicamente el 404 habitual de
+  `favicon.ico`. El player activo tenía un held movement y rechazó el freeze,
+  como define el guard C, sin alterar su estado.
+- Procedencia de análisis: decomp `c75f352304d529f6ba92d4f74b9cf8b5c3810788`,
+  Apple Clang 21.0.0, target AST `armv4t-none-eabi`, defines de `common.py`
+  (`FIRERED`, `REVISION=0`, `ENGLISH`, `MODERN=0`) e includes del shim, headers
+  generados, `include`, `src` y `.decomp-build`. El harness host solo prueba los
+  campos escalares modelados y afirma el ancho de `u8`; no reclama layout GBA.

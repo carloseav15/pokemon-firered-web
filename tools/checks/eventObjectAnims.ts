@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import assert from "node:assert/strict";
 import * as generated from "../../src/fr/generated/eventObjectAnims";
 import { registerCData } from "../../src/fr/hw/assets";
 import "./setupNodeGbaMock";
@@ -161,4 +162,73 @@ if (fieldObjects.GetCollisionAtCoords(mover, 11, 10, DIR_EAST) !== COLLISION_ELE
 fieldObjects.objects[1] = null;
 if (fieldObjects.GetCollisionAtCoords(mover, 11, 10, DIR_EAST) !== COLLISION_ELEVATION_MISMATCH) throw new Error("elevation mismatch was not reported for empty target");
 assertions += 7;
+const freezeResults = JSON.parse(readFileSync(resolve(".decomp-build/checks/eventObjectFreezeResults.json"), "utf8")) as {
+  directResults: number[];
+  states: number[][];
+};
+// PREPARED: object and sprite states are seeded to isolate the C freeze/unfreeze cases.
+function freshObjectManager(): ObjectEvents {
+  const manager = new ObjectEvents({ map: () => mockMap, cameraCanMove: () => true } as any);
+  manager.objects.fill(null);
+  for (let i = 0; i < 16; i++) {
+    const object = new ObjectEvent();
+    object.active = i < 5;
+    object.isPlayer = i === 0;
+    object.spriteId = i;
+    object.sprite.animPaused = (i & 1) !== 0;
+    object.sprite.affineAnimPaused = (i & 2) !== 0;
+    manager.objects[i] = object;
+  }
+  return manager;
+}
+function flattenObjectManager(manager: ObjectEvents): number[] {
+  return manager.objects.flatMap((object, i) => object
+    ? [Number(object.active), Number(object.heldMovementActive), Number(object.frozen), object.spriteId,
+      Number(object.spriteAnimPausedBackup), Number(object.spriteAffineAnimPausedBackup),
+      Number(object.sprite.animPaused), Number(object.sprite.affineAnimPaused)]
+    : [0, 0, 0, i, 0, 0, 0, 0]);
+}
+let freezeManager = freshObjectManager();
+freezeManager.objects[1]!.heldMovementActive = true;
+const freezeReturns = [
+  Number(freezeManager.FreezeObjectEvent(freezeManager.objects[1]!)),
+  Number(freezeManager.FreezeObjectEvent(freezeManager.objects[2]!)),
+  Number(freezeManager.FreezeObjectEvent(freezeManager.objects[2]!)),
+];
+assert.deepEqual(freezeReturns, freezeResults.directResults, "FreezeObjectEvent return values differ from C");
+assertions += freezeReturns.length;
+function compareFreezeState(manager: ObjectEvents, scenario: number): void {
+  assert.deepEqual(flattenObjectManager(manager), freezeResults.states[scenario], `object freeze scenario ${scenario} differs from C`);
+  assertions += freezeResults.states[scenario].length;
+}
+compareFreezeState(freezeManager, 0);
+freezeManager = freshObjectManager();
+freezeManager.objects[2]!.heldMovementActive = true;
+freezeManager.objects[3]!.active = false;
+freezeManager.FreezeObjectEvents();
+compareFreezeState(freezeManager, 1);
+freezeManager = freshObjectManager();
+freezeManager.FreezeObjectEventsExceptOne(4);
+compareFreezeState(freezeManager, 2);
+freezeManager = freshObjectManager();
+freezeManager.objects[1]!.frozen = true;
+freezeManager.objects[1]!.spriteAnimPausedBackup = true;
+freezeManager.objects[1]!.spriteAffineAnimPausedBackup = false;
+freezeManager.objects[1]!.sprite.animPaused = true;
+freezeManager.objects[1]!.sprite.affineAnimPaused = true;
+freezeManager.objects[2]!.active = false;
+freezeManager.objects[2]!.frozen = true;
+freezeManager.UnfreezeObjectEvent(freezeManager.objects[2]!);
+freezeManager.UnfreezeObjectEvent(freezeManager.objects[1]!);
+compareFreezeState(freezeManager, 3);
+freezeManager = freshObjectManager();
+freezeManager.objects[1]!.frozen = true;
+freezeManager.objects[1]!.spriteAnimPausedBackup = true;
+freezeManager.objects[1]!.spriteAffineAnimPausedBackup = true;
+freezeManager.objects[2]!.frozen = true;
+freezeManager.objects[2]!.spriteAffineAnimPausedBackup = true;
+freezeManager.objects[3]!.active = false;
+freezeManager.objects[3]!.frozen = true;
+freezeManager.UnfreezeObjectEvents();
+compareFreezeState(freezeManager, 4);
 console.log(`event_object_movement checks: ${assertions - cResults.cases.length} C-data/edge comparisons and ${cResults.cases.length} extracted-C harness cases passed`);

@@ -143,7 +143,6 @@ export class ObjectEvent {
   inShallowFlowingWater = false;
   inSandPile = false;
   hasReflection = false;
-  animPausedBackup = false;
   spriteAnimPausedBackup = false;
   spriteAffineAnimPausedBackup = false;
   graphicsId = 0;
@@ -871,34 +870,61 @@ export class ObjectEvents {
     return status;
   }
 
+  /** FreezeObjectEvent (event_object_movement.c): true means already busy/frozen. */
+  FreezeObjectEvent(object: ObjectEvent): boolean {
+    if (object.heldMovementActive || object.frozen) return true;
+    object.frozen = true;
+    object.spriteAnimPausedBackup = object.sprite.animPaused;
+    object.spriteAffineAnimPausedBackup = object.sprite.affineAnimPaused;
+    object.sprite.animPaused = true;
+    object.sprite.affineAnimPaused = true;
+    return false;
+  }
+
+  /** FreezeObjectEvents (event_object_movement.c). */
+  FreezeObjectEvents(): void {
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (object?.active && !object.isPlayer) this.FreezeObjectEvent(object);
+    }
+  }
+
+  /** FreezeObjectEventsExceptOne (event_object_movement.c); noFreeze is a u8 object slot. */
+  FreezeObjectEventsExceptOne(noFreeze: number): void {
+    noFreeze &= 0xff;
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (i !== noFreeze && object?.active && !object.isPlayer) this.FreezeObjectEvent(object);
+    }
+  }
+
+  /** UnfreezeObjectEvent (event_object_movement.c). */
+  UnfreezeObjectEvent(object: ObjectEvent): void {
+    if (!object.active || !object.frozen) return;
+    object.frozen = false;
+    object.sprite.animPaused = object.spriteAnimPausedBackup;
+    object.sprite.affineAnimPaused = object.spriteAffineAnimPausedBackup;
+  }
+
+  /** UnfreezeObjectEvents (event_object_movement.c). */
+  UnfreezeObjectEvents(): void {
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (object?.active) this.UnfreezeObjectEvent(object);
+    }
+  }
+
   freezeAll(except?: ObjectEvent): void {
-    for (const o of this.list) {
-      if (o === except || o.isPlayer) continue;
-      this.freeze(o);
+    for (const object of this.list) {
+      if (object !== except && !object.isPlayer) this.FreezeObjectEvent(object);
     }
   }
 
-  freeze(o: ObjectEvent): void {
-    if (o.heldMovementActive || o.frozen) return;
-    o.frozen = true;
-    o.animPausedBackup = o.sprite.animPaused;
-    o.sprite.animPaused = true;
-  }
+  freeze(object: ObjectEvent): void { this.FreezeObjectEvent(object); }
 
-  unfreeze(o: ObjectEvent): void {
-    if (!o.active || !o.frozen) return;
-    o.frozen = false;
-    o.sprite.animPaused = o.animPausedBackup;
-  }
+  unfreeze(object: ObjectEvent): void { this.UnfreezeObjectEvent(object); }
 
-  unfreezeAll(): void {
-    for (const o of this.list) {
-      if (o.frozen) {
-        o.frozen = false;
-        o.sprite.animPaused = o.animPausedBackup;
-      }
-    }
-  }
+  unfreezeAll(): void { this.UnfreezeObjectEvents(); }
 
   // ---------------------------------------------------------------- per-frame update
 
@@ -1600,7 +1626,7 @@ export class ObjectEvents {
     if (id === 0x5c) { object.disableJumpLandingGroundEffect = false; return this.finishStep(object); }
     if (id === 0x5d) { object.disableJumpLandingGroundEffect = true; return this.finishStep(object); }
     if (id === 0x5e) { object.disableAnim = true; return this.finishStep(object); }
-    if (id === 0x5f) { object.disableAnim = false; object.sprite.animPaused = object.animPausedBackup; return this.finishStep(object); }
+    if (id === 0x5f) { object.disableAnim = false; object.sprite.animPaused = object.spriteAnimPausedBackup; return this.finishStep(object); }
     if (id === 0x60) { object.invisible = true; return this.finishStep(object); }
     if (id === 0x61) { object.invisible = false; return this.finishStep(object); }
     // Emotes: exclamation, question, X, double exclamation, smile
