@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 63 | 135686 | 1341/6053 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 11 | 24518 | 770/904 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 145 | 116716 | 3994/3994 |
+| Casi completo (≥ 80 % y < 100 %) | 10 | 23524 | 736/863 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 146 | 117710 | 4035/4035 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **103** | **185193** | |
-| **Total en alcance** | **253** | **303042** | **6133/11826** |
+| **Pendiente de portar** | **102** | **184199** | |
+| **Total en alcance** | **253** | **303042** | **6140/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -141,7 +141,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
-| `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 
@@ -180,6 +179,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 115/115 | `generated/metatileBehavior.ts` |  |  |
 | `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
+| `palette.c` | 994 | 41/41 | `hw/palette.ts` |  |  |
 | `battle_anim_utility_funcs.c` | 970 | 42/42 | `battle/anims/utilityFuncs.ts` |  |  |
 | `battle_anim_fight.c` | 969 | 31/31 | `battle/anims/fight.ts` |  |  |
 | `battle_anim_mon_movement.c` | 941 | 34/34 | `battle/anims/monMovement.ts` |  |  |

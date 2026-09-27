@@ -5,10 +5,23 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.133/11.826 funciones (51,9%)**,
-con **103 archivos** con huecos y una estimación ponderada de
-**~131.048/303.042 líneas C (43,2%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.140/11.826 funciones (51,9%)**,
+con **102 archivos** con huecos y una estimación ponderada de
+**~130.879/303.042 líneas C (43,2%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `palette.c`: familia inactiva de PaletteStruct (2026-09-27)
+
+- Implementé `BeginPlttFade`, `PaletteStruct_Run`, `PaletteStruct_Copy`,
+  `PaletteStruct_Blend`, `PaletteStruct_TryEnd` y los helpers de flags usando
+  las estructuras, cuentas y buffers ya presentes en `hw/palette.ts`. Apliqué
+  los anchos del C para campos `u8`, `u16` y bitfields.
+- El propio C marca `BeginPlttFade` y el sistema `PaletteStruct` como no usados;
+  no hay caller que active esos estados en FireRed. El inventario llega a
+  41/41, pero esto no prueba la ruta inactiva por ejecución.
+- Global: **6.140/11.826 (51,9%)**, 102 archivos con huecos y ~130.879 líneas C
+  ponderadas pendientes. Pasaron `check:port`, `check:honesty`, `build`,
+  inventory, pending y `git diff --check`; sin prueba de juego.
 
 ## `tm_case.c`: tutorial guiado de Pokédude (2026-09-27)
 
@@ -22,7 +35,7 @@ sigue sin demostrar fidelidad.
   preparación de batalla que Teachy TV muestra detrás de la funda TM sigue
   adaptada, y no verifiqué el resultado visual en navegador.
 - `tm_case.c` queda 73/73 por nombre. Global: **6.133/11.826 (51,9%)**, 103
-  archivos con huecos y ~131.048 líneas C ponderadas sin homólogo. Pasaron
+  archivos con huecos y ~131.048 líneas C ponderadas sin homólogo en ese corte. Pasaron
   `check:port`, `check:honesty`, `build`, inventory, pending y `git diff
   --check`; sin ejecución en navegador.
 

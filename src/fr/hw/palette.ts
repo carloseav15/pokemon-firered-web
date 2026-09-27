@@ -38,7 +38,9 @@ const NORMAL_FADE = 0;
 const FAST_FADE = 1;
 const HARDWARE_FADE = 2;
 const NUM_PALETTE_STRUCTS = 16;
-type PaletteStructTemplateRef = { id: number };
+type PaletteStructTemplateRef = {
+  id: number; src: ArrayLike<number>; pst_field_8_0: number; size: number; time1: number; srcCount: number; state: number; time2: number;
+};
 type PaletteStructState = {
   template: PaletteStructTemplateRef;
   active: boolean;
@@ -49,7 +51,7 @@ type PaletteStructState = {
   countdown1: number;
   countdown2: number;
 };
-const DUMMY_PALETTE_STRUCT_TEMPLATE: PaletteStructTemplateRef = { id: 0xffff };
+const DUMMY_PALETTE_STRUCT_TEMPLATE: PaletteStructTemplateRef = { id: 0xffff, src: [], pst_field_8_0: 0, size: 0, time1: 0, srcCount: 0, state: 1, time2: 0 };
 const sPaletteStructs: PaletteStructState[] = Array.from({ length: NUM_PALETTE_STRUCTS }, () => ({
   template: DUMMY_PALETTE_STRUCT_TEMPLATE, active: false, flag: false, baseDestOffset: 0,
   destOffset: 0, srcIndex: 0, countdown1: 0, countdown2: 0,
@@ -142,6 +144,95 @@ export function ResetPaletteFade(): void {
 export function PaletteStruct_ResetById(id: number): void {
   const paletteNum = PaletteStruct_GetPalNum(id & 0xffff);
   if (paletteNum !== NUM_PALETTE_STRUCTS) PaletteStruct_Reset(paletteNum);
+}
+
+/** Unused BeginPlttFade from palette.c; read hardware palette into both buffers first. */
+function BeginPlttFade(selectedPalettes: number, delay: number, startY: number, targetY: number, blendColor: number): boolean {
+  ReadPlttIntoBuffers();
+  return BeginNormalPaletteFade(selectedPalettes >>> 0, delay & 0xff, startY & 0xff, targetY & 0xff, blendColor & 0xffff);
+}
+
+type PaletteStructRunFlags = { value: number };
+
+/** Unused PaletteStruct_Run state machine from palette.c. */
+function PaletteStruct_Run(a1: number, unkFlags: PaletteStructRunFlags): void {
+  for (let i = 0; i < NUM_PALETTE_STRUCTS; i++) {
+    const palstruct = sPaletteStructs[i]!;
+    if (!palstruct.active || palstruct.template.pst_field_8_0 !== (a1 & 0xff)) continue;
+
+    if ((palstruct.srcIndex & 0x7f) === (palstruct.template.srcCount & 0x1f)) {
+      PaletteStruct_TryEnd(palstruct);
+      if (!palstruct.active) continue;
+    }
+    if ((palstruct.countdown1 & 0xff) === 0) PaletteStruct_Copy(palstruct, unkFlags);
+    else palstruct.countdown1 = (palstruct.countdown1 - 1) & 0xff;
+    PaletteStruct_Blend(palstruct, unkFlags);
+  }
+}
+
+function PaletteStruct_Copy(palStruct: PaletteStructState, unkFlags: PaletteStructRunFlags): void {
+  const template = palStruct.template;
+  let srcOffset = ((palStruct.srcIndex & 0x7f) * template.size) & 0xffff;
+  for (let i = 0; i < (template.size & 0x1f); i++) {
+    const destOffset = palStruct.destOffset & 0x3ff;
+    const value = template.src[srcOffset] ?? 0;
+    if (!template.pst_field_8_0) gPlttBufferUnfaded[destOffset] = value;
+    gPlttBufferFaded[destOffset] = value;
+    palStruct.destOffset = (destOffset + 1) & 0x3ff;
+    srcOffset = (srcOffset + 1) & 0xffff;
+  }
+  palStruct.destOffset = palStruct.baseDestOffset & 0x1ff;
+  palStruct.countdown1 = template.time1 & 0xff;
+  palStruct.srcIndex = ((palStruct.srcIndex & 0x7f) + 1) & 0x7f;
+  if ((palStruct.srcIndex & 0x7f) >= (template.srcCount & 0x1f)) {
+    if (palStruct.countdown2) palStruct.countdown2 = (palStruct.countdown2 - 1) & 0xff;
+    palStruct.srcIndex = 0;
+  }
+  unkFlags.value = (unkFlags.value | ((1 << ((palStruct.baseDestOffset & 0x1ff) >> 4)) >>> 0)) >>> 0;
+}
+
+function PaletteStruct_Blend(palStruct: PaletteStructState, unkFlags: PaletteStructRunFlags): void {
+  const template = palStruct.template;
+  const paletteMask = (1 << ((palStruct.baseDestOffset & 0x1ff) >> 4)) >>> 0;
+  if (!gPaletteFade.active || !(gPaletteFade.multipurpose1 & paletteMask)) return;
+
+  if (!template.pst_field_8_0) {
+    if (gPaletteFade.delayCounter !== gPaletteFade.multipurpose2) {
+      BlendPalette(palStruct.baseDestOffset, template.size & 0x1f, gPaletteFade.y, gPaletteFade.blendColor);
+    }
+  } else if (!gPaletteFade.delayCounter && palStruct.countdown1 !== (template.time1 & 0xff)) {
+    const srcOffset = (palStruct.srcIndex & 0x7f) * template.size;
+    for (let i = 0; i < (template.size & 0x1f); i++) {
+      gPlttBufferFaded[palStruct.baseDestOffset + i] = template.src[srcOffset + i] ?? 0;
+    }
+  }
+  void unkFlags;
+}
+
+function PaletteStruct_TryEnd(palStruct: PaletteStructState): void {
+  if (palStruct.countdown2 === 0) {
+    const state = palStruct.template.state & 0x7;
+    if (state === 0) {
+      palStruct.srcIndex = 0;
+      palStruct.countdown1 = palStruct.template.time1 & 0xff;
+      palStruct.countdown2 = palStruct.template.time2 & 0xff;
+      palStruct.destOffset = palStruct.baseDestOffset & 0x1ff;
+    } else if (state >= 0 && state <= 2) {
+      PaletteStruct_ResetById(palStruct.template.id);
+    }
+  } else {
+    palStruct.countdown2 = (palStruct.countdown2 - 1) & 0xff;
+  }
+}
+
+function PaletteStruct_SetUnusedFlag(id: number): void {
+  const paletteNum = PaletteStruct_GetPalNum(id & 0xffff);
+  if (paletteNum !== NUM_PALETTE_STRUCTS) sPaletteStructs[paletteNum]!.flag = true;
+}
+
+function PaletteStruct_ClearUnusedFlag(id: number): void {
+  const paletteNum = PaletteStruct_GetPalNum(id & 0xffff);
+  if (paletteNum !== NUM_PALETTE_STRUCTS) sPaletteStructs[paletteNum]!.flag = false;
 }
 
 function PaletteStruct_Reset(paletteNum: number): void {

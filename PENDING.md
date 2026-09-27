@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6133/11826 (51.9 %)**.
-- Archivos C con funciones aún sin homólogo: **103**; quedan **5693 nombres**.
-- Estos archivos contienen 185.193 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~131.048 líneas** (aproximación por proporción de funciones).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6140/11826 (51.9 %)**.
+- Archivos C con funciones aún sin homólogo: **102**; quedan **5686 nombres**.
+- Estos archivos contienen 184.199 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
+- Estimación ponderada del C sin homólogo: **~130.879 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -18,110 +18,109 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
-| 2 | `palette.c` | casi completo | 994 | 34/41 | ~169 |  |
-| 3 | `new_menu_helpers.c` | parcial | 761 | 42/54 | ~169 |  |
-| 4 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
-| 5 | `bg.c` | casi completo | 1215 | 43/50 | ~170 |  |
-| 6 | `battle_gfx_sfx_util.c` | casi completo | 1061 | 40/48 | ~176 |  |
-| 7 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 8 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
-| 9 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
-| 10 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
-| 11 | `field_door.c` | parcial | 524 | 12/21 | ~224 |  |
-| 12 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
-| 13 | `berry_pouch.c` | casi completo | 1529 | 65/77 | ~238 |  |
-| 14 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
-| 15 | `sprite.c` | casi completo | 1745 | 86/103 | ~288 |  |
-| 16 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
-| 17 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |
-| 18 | `battle_interface.c` | casi completo | 2240 | 45/52 | ~301 |  |
-| 19 | `mystery_gift_server.c` | sin empezar | 302 | 0/14 | ~302 |  |
-| 20 | `mystery_event_script.c` | parcial | 322 | 0/25 | ~322 |  |
-| 21 | `minigame_countdown.c` | sin empezar | 332 | 0/10 | ~332 |  |
-| 22 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
-| 23 | `union_room_chat_objects.c` | sin empezar | 346 | 0/13 | ~346 |  |
-| 24 | `mystery_gift_show_news.c` | sin empezar | 404 | 0/10 | ~404 |  |
-| 25 | `ereader_helpers.c` | sin empezar | 406 | 0/17 | ~406 |  |
-| 26 | `multiboot.c` | sin empezar | 416 | 0/9 | ~416 |  |
-| 27 | `librfu_intr.c` | sin empezar | 417 | 0/9 | ~417 |  |
-| 28 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
-| 29 | `digit_obj_util.c` | sin empezar | 451 | 0/14 | ~451 |  |
-| 30 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
-| 31 | `wireless_communication_status_screen.c` | parcial | 522 | 1/12 | ~478 |  |
-| 32 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
-| 33 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 34 | `mystery_gift.c` | parcial | 634 | 9/45 | ~507 |  |
-| 35 | `mystery_gift_show_card.c` | sin empezar | 518 | 0/8 | ~518 |  |
-| 36 | `ereader_screen.c` | sin empezar | 520 | 0/11 | ~520 |  |
-| 37 | `battle_controller_safari.c` | parcial | 669 | 14/72 | ~538 |  |
-| 38 | `battle_setup.c` | parcial | 1070 | 28/66 | ~616 |  |
-| 39 | `union_room_player_avatar.c` | sin empezar | 624 | 0/38 | ~624 |  |
-| 40 | `battle_controller_opponent.c` | parcial | 1777 | 56/87 | ~633 |  |
-| 41 | `librfu_stwi.c` | sin empezar | 650 | 0/48 | ~650 |  |
-| 42 | `mail.c` | parcial | 734 | 1/10 | ~660 |  |
-| 43 | `evolution_scene.c` | parcial | 1704 | 14/23 | ~666 |  |
-| 44 | `field_fadetransition.c` | parcial | 965 | 16/59 | ~703 |  |
-| 45 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
-| 46 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 47 | `battle_controller_oak_old_man.c` | parcial | 2293 | 73/107 | ~728 |  |
-| 48 | `field_control_avatar.c` | parcial | 1182 | 17/49 | ~771 |  |
-| 49 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
-| 50 | `fieldmap.c` | parcial | 951 | 5/54 | ~862 |  |
-| 51 | `cable_club.c` | parcial | 1036 | 9/54 | ~863 |  |
-| 52 | `berry.c` | parcial | 1028 | 1/9 | ~913 |  |
-| 53 | `battle_main.c` | parcial | 4477 | 84/106 | ~929 |  |
-| 54 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
-| 55 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
-| 56 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
-| 57 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
-| 58 | `field_specials.c` | parcial | 2555 | 72/118 | ~996 |  |
-| 59 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
-| 60 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
-| 61 | `field_effect_helpers.c` | parcial | 1421 | 16/76 | ~1121 |  |
-| 62 | `link_rfu_3.c` | sin empezar | 1192 | 0/30 | ~1192 |  |
-| 63 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
-| 64 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
-| 65 | `battle_controller_link_opponent.c` | parcial | 1713 | 22/86 | ~1274 |  |
-| 66 | `battle_controller_link_partner.c` | parcial | 1647 | 17/85 | ~1317 |  |
-| 67 | `fame_checker.c` | parcial | 1739 | 15/64 | ~1331 |  |
-| 68 | `union_room_chat_display.c` | sin empezar | 1339 | 0/58 | ~1339 |  |
-| 69 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
-| 70 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
-| 71 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
-| 72 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
-| 73 | `AgbRfu_LinkManager.c` | sin empezar | 1480 | 0/33 | ~1480 |  |
-| 74 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
-| 75 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
-| 76 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
-| 77 | `union_room_chat.c` | sin empezar | 1571 | 0/51 | ~1571 |  |
-| 78 | `mystery_gift_menu.c` | sin empezar | 1609 | 0/34 | ~1609 |  |
-| 79 | `quest_log.c` | parcial | 1767 | 4/88 | ~1686 |  |
-| 80 | `naming_screen.c` | parcial | 2509 | 33/109 | ~1749 |  |
-| 81 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 82 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
-| 83 | `field_player_avatar.c` | parcial | 2168 | 15/176 | ~1983 |  |
-| 84 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
-| 85 | `quest_log_events.c` | parcial | 2247 | 7/118 | ~2113 |  |
-| 86 | `link.c` | parcial | 2202 | 4/114 | ~2124 |  |
-| 87 | `scrcmd.c` | parcial | 2264 | 1/224 | ~2253 |  |
-| 88 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
-| 89 | `librfu_rfu.c` | sin empezar | 2342 | 0/86 | ~2342 |  |
-| 90 | `help_system.c` | sin empezar | 2480 | 0/41 | ~2480 |  |
-| 91 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
-| 92 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
-| 93 | `overworld.c` | parcial | 3563 | 46/242 | ~2885 |  |
-| 94 | `trade.c` | parcial | 2958 | 0/66 | ~2958 |  |
-| 95 | `battle_transition.c` | parcial | 3037 | 1/134 | ~3014 |  |
-| 96 | `link_rfu_2.c` | sin empezar | 3163 | 0/149 | ~3163 |  |
-| 97 | `pokemon.c` | parcial | 6453 | 70/140 | ~3226 |  |
-| 98 | `berry_crush.c` | parcial | 3488 | 4/73 | ~3296 |  |
-| 99 | `field_effect.c` | parcial | 4033 | 13/239 | ~3813 |  |
-| 100 | `pokemon_jump.c` | parcial | 4582 | 5/186 | ~4458 |  |
-| 101 | `union_room.c` | parcial | 4761 | 6/110 | ~4501 |  |
-| 102 | `dodrio_berry_picking.c` | parcial | 4954 | 7/147 | ~4718 |  |
-| 103 | `event_object_movement.c` | parcial | 9412 | 34/759 | ~8990 |  |
+| 2 | `new_menu_helpers.c` | parcial | 761 | 42/54 | ~169 |  |
+| 3 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |
+| 4 | `bg.c` | casi completo | 1215 | 43/50 | ~170 |  |
+| 5 | `battle_gfx_sfx_util.c` | casi completo | 1061 | 40/48 | ~176 |  |
+| 6 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 7 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
+| 8 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
+| 9 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
+| 10 | `field_door.c` | parcial | 524 | 12/21 | ~224 |  |
+| 11 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
+| 12 | `berry_pouch.c` | casi completo | 1529 | 65/77 | ~238 |  |
+| 13 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
+| 14 | `sprite.c` | casi completo | 1745 | 86/103 | ~288 |  |
+| 15 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
+| 16 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |
+| 17 | `battle_interface.c` | casi completo | 2240 | 45/52 | ~301 |  |
+| 18 | `mystery_gift_server.c` | sin empezar | 302 | 0/14 | ~302 |  |
+| 19 | `mystery_event_script.c` | parcial | 322 | 0/25 | ~322 |  |
+| 20 | `minigame_countdown.c` | sin empezar | 332 | 0/10 | ~332 |  |
+| 21 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
+| 22 | `union_room_chat_objects.c` | sin empezar | 346 | 0/13 | ~346 |  |
+| 23 | `mystery_gift_show_news.c` | sin empezar | 404 | 0/10 | ~404 |  |
+| 24 | `ereader_helpers.c` | sin empezar | 406 | 0/17 | ~406 |  |
+| 25 | `multiboot.c` | sin empezar | 416 | 0/9 | ~416 |  |
+| 26 | `librfu_intr.c` | sin empezar | 417 | 0/9 | ~417 |  |
+| 27 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
+| 28 | `digit_obj_util.c` | sin empezar | 451 | 0/14 | ~451 |  |
+| 29 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
+| 30 | `wireless_communication_status_screen.c` | parcial | 522 | 1/12 | ~478 |  |
+| 31 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
+| 32 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 33 | `mystery_gift.c` | parcial | 634 | 9/45 | ~507 |  |
+| 34 | `mystery_gift_show_card.c` | sin empezar | 518 | 0/8 | ~518 |  |
+| 35 | `ereader_screen.c` | sin empezar | 520 | 0/11 | ~520 |  |
+| 36 | `battle_controller_safari.c` | parcial | 669 | 14/72 | ~538 |  |
+| 37 | `battle_setup.c` | parcial | 1070 | 28/66 | ~616 |  |
+| 38 | `union_room_player_avatar.c` | sin empezar | 624 | 0/38 | ~624 |  |
+| 39 | `battle_controller_opponent.c` | parcial | 1777 | 56/87 | ~633 |  |
+| 40 | `librfu_stwi.c` | sin empezar | 650 | 0/48 | ~650 |  |
+| 41 | `mail.c` | parcial | 734 | 1/10 | ~660 |  |
+| 42 | `evolution_scene.c` | parcial | 1704 | 14/23 | ~666 |  |
+| 43 | `field_fadetransition.c` | parcial | 965 | 16/59 | ~703 |  |
+| 44 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
+| 45 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
+| 46 | `battle_controller_oak_old_man.c` | parcial | 2293 | 73/107 | ~728 |  |
+| 47 | `field_control_avatar.c` | parcial | 1182 | 17/49 | ~771 |  |
+| 48 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
+| 49 | `fieldmap.c` | parcial | 951 | 5/54 | ~862 |  |
+| 50 | `cable_club.c` | parcial | 1036 | 9/54 | ~863 |  |
+| 51 | `berry.c` | parcial | 1028 | 1/9 | ~913 |  |
+| 52 | `battle_main.c` | parcial | 4477 | 84/106 | ~929 |  |
+| 53 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
+| 54 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
+| 55 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
+| 56 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
+| 57 | `field_specials.c` | parcial | 2555 | 72/118 | ~996 |  |
+| 58 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
+| 59 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
+| 60 | `field_effect_helpers.c` | parcial | 1421 | 16/76 | ~1121 |  |
+| 61 | `link_rfu_3.c` | sin empezar | 1192 | 0/30 | ~1192 |  |
+| 62 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
+| 63 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
+| 64 | `battle_controller_link_opponent.c` | parcial | 1713 | 22/86 | ~1274 |  |
+| 65 | `battle_controller_link_partner.c` | parcial | 1647 | 17/85 | ~1317 |  |
+| 66 | `fame_checker.c` | parcial | 1739 | 15/64 | ~1331 |  |
+| 67 | `union_room_chat_display.c` | sin empezar | 1339 | 0/58 | ~1339 |  |
+| 68 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
+| 69 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
+| 70 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
+| 71 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
+| 72 | `AgbRfu_LinkManager.c` | sin empezar | 1480 | 0/33 | ~1480 |  |
+| 73 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
+| 74 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
+| 75 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
+| 76 | `union_room_chat.c` | sin empezar | 1571 | 0/51 | ~1571 |  |
+| 77 | `mystery_gift_menu.c` | sin empezar | 1609 | 0/34 | ~1609 |  |
+| 78 | `quest_log.c` | parcial | 1767 | 4/88 | ~1686 |  |
+| 79 | `naming_screen.c` | parcial | 2509 | 33/109 | ~1749 |  |
+| 80 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
+| 81 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
+| 82 | `field_player_avatar.c` | parcial | 2168 | 15/176 | ~1983 |  |
+| 83 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
+| 84 | `quest_log_events.c` | parcial | 2247 | 7/118 | ~2113 |  |
+| 85 | `link.c` | parcial | 2202 | 4/114 | ~2124 |  |
+| 86 | `scrcmd.c` | parcial | 2264 | 1/224 | ~2253 |  |
+| 87 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
+| 88 | `librfu_rfu.c` | sin empezar | 2342 | 0/86 | ~2342 |  |
+| 89 | `help_system.c` | sin empezar | 2480 | 0/41 | ~2480 |  |
+| 90 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
+| 91 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
+| 92 | `overworld.c` | parcial | 3563 | 46/242 | ~2885 |  |
+| 93 | `trade.c` | parcial | 2958 | 0/66 | ~2958 |  |
+| 94 | `battle_transition.c` | parcial | 3037 | 1/134 | ~3014 |  |
+| 95 | `link_rfu_2.c` | sin empezar | 3163 | 0/149 | ~3163 |  |
+| 96 | `pokemon.c` | parcial | 6453 | 70/140 | ~3226 |  |
+| 97 | `berry_crush.c` | parcial | 3488 | 4/73 | ~3296 |  |
+| 98 | `field_effect.c` | parcial | 4033 | 13/239 | ~3813 |  |
+| 99 | `pokemon_jump.c` | parcial | 4582 | 5/186 | ~4458 |  |
+| 100 | `union_room.c` | parcial | 4761 | 6/110 | ~4501 |  |
+| 101 | `dodrio_berry_picking.c` | parcial | 4954 | 7/147 | ~4718 |  |
+| 102 | `event_object_movement.c` | parcial | 9412 | 34/759 | ~8990 |  |
 
-Total: 103 archivos con huecos: 28 sin empezar, 1 adaptador, 11 casi completos y 63 parciales.
+Total: 102 archivos con huecos: 28 sin empezar, 1 adaptador, 10 casi completos y 63 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
