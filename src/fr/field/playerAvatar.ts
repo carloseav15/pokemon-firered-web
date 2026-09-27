@@ -2,6 +2,7 @@
 // forced movement tiles) for the on-foot and surfing states.
 
 import * as MB from "../generated/metatileBehavior";
+import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { B_BUTTON } from "../gba/input";
 import { rom } from "../rom";
@@ -131,6 +132,12 @@ export class PlayerAvatar {
 
   isSurfing(): boolean {
     return (this.flags & PLAYER_AVATAR_FLAG_SURFING) !== 0;
+  }
+
+  /** SetPlayerInvisibility (field_player_avatar.c), including the surfing field-effect sprite. */
+  SetPlayerInvisibility(invisible: boolean): void {
+    this.object.invisible = invisible;
+    if (this.isSurfing()) this.ow.effects.setSurfBlobInvisible(invisible);
   }
 
   isAnimActive(): boolean {
@@ -623,7 +630,24 @@ export class PlayerAvatar {
       return COLLISION_LEDGE_JUMP;
     }
     if (collision === COLLISION_OBJECT_EVENT && this.tryPushBoulder(x, y, direction)) return COLLISION_PUSHED_BOULDER;
+    if (collision === COLLISION_NONE) {
+      const acroCollision = this.CheckAcroBikeCollision(this.ow.map.behaviorAt(x, y));
+      if (acroCollision !== COLLISION_NONE) return acroCollision;
+    }
     return collision;
+  }
+
+  /** CheckAcroBikeCollision (field_player_avatar.c); called after ordinary collision checks. */
+  private CheckAcroBikeCollision(metatileBehavior: number): number {
+    const checks: Array<[(behavior: number) => boolean, number]> = [
+      [MB.MetatileBehavior_IsBumpySlope, C.COLLISION_WHEELIE_HOP],
+      [MB.MetatileBehavior_IsIsolatedVerticalRail, C.COLLISION_ISOLATED_VERTICAL_RAIL],
+      [MB.MetatileBehavior_IsIsolatedHorizontalRail, C.COLLISION_ISOLATED_HORIZONTAL_RAIL],
+      [MB.MetatileBehavior_IsVerticalRail, C.COLLISION_VERTICAL_RAIL],
+      [MB.MetatileBehavior_IsHorizontalRail, C.COLLISION_HORIZONTAL_RAIL],
+    ];
+    for (const [check, collision] of checks) if (check(metatileBehavior)) return collision;
+    return COLLISION_NONE;
   }
 
   private ledgeJumpDirection(x: number, y: number, direction: number): number {

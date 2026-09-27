@@ -716,6 +716,10 @@ export class FieldEffects {
   detachSurfBlob(): void { this.surfBlobDetached = true; }
   attachSurfBlob(): void { this.surfBlobDetached = false; }
 
+  setSurfBlobInvisible(invisible: boolean): void {
+    if (this.surfBlob) this.surfBlob.invisible = invisible;
+  }
+
   destroySurfBlob(): void {
     if (this.surfBlob) this.ow.sprites.destroy(this.surfBlob);
     this.surfBlob = undefined;

@@ -632,7 +632,7 @@ export class FieldMoveEffects {
     ow.controlsLocked = true;
     ow.objects.freezeAll();
     const p = ow.player.object;
-    p.invisible = true;
+    ow.player.SetPlayerInvisibility(true);
     let state = 0, timer = 0, spinEnded = false, originalDir = DIR_SOUTH, currentDir = DIR_SOUTH;
     let movingState = 0, offsetY = 0;
     const spin = { delay: 0, turns: 0 };
@@ -653,7 +653,7 @@ export class FieldMoveEffects {
         if (offsetY >= 0) { p.sprite.y2 = 0; sound.playSE(C.SE_CLICK); movingState = 3; }
       }
       if (movingState === 3) moving = false;
-      p.invisible = false;
+      ow.player.SetPlayerInvisibility(false);
       if (timer < 8) timer++;
       else if (!spinEnded) {
         timer++;
@@ -929,7 +929,7 @@ export class FieldMoveEffects {
       ow.fieldCallback = () => {
         ow.playSpecialMapMusic();
         ow.fadeInFromBlack();
-        ow.player.object.invisible = true;
+        ow.player.SetPlayerInvisibility(true);
         ow.controlsLocked = true;
         ow.objects.freezeAll();
         const wait = tasks.create(() => {
@@ -1019,7 +1019,7 @@ export class FieldMoveEffects {
           }
           if (timer === 18) {
             ow.objects.clearHeldMovementIfActive(player);
-            player.invisible = true;
+            ow.player.SetPlayerInvisibility(true);
             bird?.startAnim(save.playerGender * 2 + 1);
           }
           if (t2 >= 128 || t2 === 0) { ow.tryFadeOutOldMapMusic(); ow.warpFadeOutScreen(); state = 6; }
@@ -1029,7 +1029,7 @@ export class FieldMoveEffects {
           t2 = Math.min(255, t2 + 4);
           if (!paletteFade.active) {
             if (bird) ow.sprites.destroy(bird);
-            player.invisible = false;
+            ow.player.SetPlayerInvisibility(false);
             ow.player.preventStep = false;
             tasks.destroy(id);
             done();
@@ -1062,7 +1062,7 @@ export class FieldMoveEffects {
           angle = (angle + 4) & 0xff;
           if (angle === 0 || angle >= 252) {
             if (bird) { bird.startAnim(0); }
-            player.invisible = false;
+            ow.player.SetPlayerInvisibility(false);
             ow.player.setState(PLAYER_AVATAR_GFX_RIDE);
             ow.objects.turn(player, DIR_WEST);
             ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT);

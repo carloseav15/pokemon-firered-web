@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6283/11826 (53.1 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5543 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6285/11826 (53.1 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5541 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~128.104 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~128.079 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -93,7 +93,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 74 | `quest_log.c` | parcial | 1767 | 4/88 | ~1686 |  |
 | 75 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 | 76 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
-| 77 | `field_player_avatar.c` | parcial | 2168 | 15/176 | ~1983 |  |
+| 77 | `field_player_avatar.c` | parcial | 2168 | 17/176 | ~1958 |  |
 | 78 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
 | 79 | `quest_log_events.c` | parcial | 2247 | 7/118 | ~2113 |  |
 | 80 | `link.c` | parcial | 2202 | 4/114 | ~2124 |  |

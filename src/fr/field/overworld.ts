@@ -807,7 +807,7 @@ export class Overworld {
       const p = this.player.object;
       switch (state) {
         case 5:
-          p.invisible = true;
+          this.player.SetPlayerInvisibility(true);
           this.objects.freezeAll();
           DoOutwardBarnDoorWipe();
           this.warpFadeInScreen(3);
@@ -824,7 +824,7 @@ export class Overworld {
           break;
         case 7:
           if (!this.doors.FieldIsDoorAnimationRunning()) {
-            p.invisible = false;
+            this.player.SetPlayerInvisibility(false);
             this.objects.setHeldMovement(p, 0x10);
             state = 8;
           }
@@ -856,13 +856,13 @@ export class Overworld {
       const p = this.player.object;
       switch (state) {
         case 0:
-          p.invisible = true;
+          this.player.SetPlayerInvisibility(true);
           this.objects.freezeAll();
           state = 1;
           break;
         case 1:
           if (!paletteFade.active) {
-            p.invisible = false;
+            this.player.SetPlayerInvisibility(false);
             this.objects.setHeldMovement(p, 0x10 + Math.max(0, p.facingDirection - 1));
             state = 2;
           }
@@ -921,13 +921,13 @@ export class Overworld {
     this.controlsLocked = true;
     this.objects.freezeAll();
     const p = this.player.object;
-    p.invisible = true;
+    this.player.SetPlayerInvisibility(true);
     let state = 0;
     let fallY = -160;
     const id = tasks.create(() => {
       switch (state) {
         case 0:
-          if (!paletteFade.active) { p.invisible = false; state = 1; }
+          if (!paletteFade.active) { this.player.SetPlayerInvisibility(false); state = 1; }
           break;
         case 1:
           fallY += 8;
@@ -970,7 +970,7 @@ export class Overworld {
           if (this.player.isStandingStill()) {
             this.doors.FieldAnimateDoorClose(x, y - 1);
             this.objects.ObjectEventClearHeldMovementIfFinished(p);
-            p.invisible = true;
+            this.player.SetPlayerInvisibility(true);
             state = 3;
           }
           break;
