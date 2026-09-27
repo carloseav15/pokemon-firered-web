@@ -1094,6 +1094,12 @@ export class ObjectEvents {
   update(cameraX: number, cameraY: number): void {
     for (const object of this.list) {
       const sprite = object.sprite;
+      // TryEnableObjectEventAnim runs before the movement callback in C.
+      if (object.enableAnim) {
+        sprite.animPaused = false;
+        object.disableAnim = false;
+        object.enableAnim = false;
+      }
       if (object.isPlayer) {
         // Player movement type is driven by field_player_avatar.
         if (ObjectEventIsHeldMovementActive(object) && !object.heldMovementFinished) this.execHeld(object);
