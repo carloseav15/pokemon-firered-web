@@ -621,9 +621,7 @@ function beginAffineAnim(sprite: Sprite): void {
   if ((sprite.oam.affineMode & ST_OAM_AFFINE_ON_MASK) && sprite.affineAnims[0]?.[0]?.type !== 0x7fff) {
     const matrixNum = getSpriteMatrixNum(sprite);
     const st = sAffineAnimStates[matrixNum];
-    st.animCmdIndex = 0;
-    st.delayCounter = 0;
-    st.loopCounter = 0;
+    AffineAnimStateRestartAnim(matrixNum);
     const frame = { ...affineCmd(sprite, matrixNum) };
     sprite.affineAnimBeginning = false;
     sprite.affineAnimEnded = false;
@@ -722,6 +720,14 @@ function setSpriteOamFlipBits(sprite: Sprite, hFlip: number, vFlip: number): voi
 
 function affineAnimStateReset(matrixNum: number): void {
   Object.assign(sAffineAnimStates[matrixNum], { animNum: 0, animCmdIndex: 0, delayCounter: 0, loopCounter: 0, xScale: 0x100, yScale: 0x100, rotation: 0 });
+}
+
+// sprite.c: AffineAnimStateRestartAnim.
+export function AffineAnimStateRestartAnim(matrixNum: number): void {
+  const state = sAffineAnimStates[matrixNum];
+  state.animCmdIndex = 0;
+  state.delayCounter = 0;
+  state.loopCounter = 0;
 }
 
 // sprite.c: AffineAnimStateStartAnim.

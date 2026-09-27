@@ -5,10 +5,21 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.238/11.826 funciones (52,7%)**,
+single-player. A 2026-09-27, la meta mide **6.239/11.826 funciones (52,8%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.233/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.216/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sprite.c`: reinicio de animación affine (2026-09-27)
+
+- Porté `AffineAnimStateRestartAnim(matrixNum)`: limpia únicamente el índice
+  del comando, la demora y el contador de loop. `beginAffineAnim` usa ahora el
+  helper donde el C llama a la misma rutina.
+- `check:port`, `check:honesty`, build, inventory, pending y `git diff --check`
+  pasaron. No ejecuté navegador; se conservó sin cambios la escala y rotación
+  de la matriz, que el helper C tampoco reinicia.
+- `sprite.c` queda 91/103 por nombre; global **6.239/11.826 (52,8%)**, con
+  ~129.216 líneas ponderadas sin homólogo.
 
 ## `sprite.c`: inicio de animación affine (2026-09-27)
 

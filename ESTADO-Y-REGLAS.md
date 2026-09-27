@@ -9,13 +9,13 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 
 | Medida | Valor | Qué significa |
 |---|---:|---|
-| Funciones del C con homólogo por nombre en TS | **6238 / 11826 (52,7 %)** | Indicador de nombres; incluye sistemas no single-player; no prueba fidelidad |
+| Funciones del C con homólogo por nombre en TS | **6239 / 11826 (52,8 %)** | Indicador de nombres; incluye sistemas no single-player; no prueba fidelidad |
 | Archivos C sin huecos de nombre | **151** | El inventario no mide paridad funcional |
 | Archivos casi completos (≥ 80 % y < 100 %) | **8** | Aún tienen funciones sin homólogo |
 | Archivos parciales (< 80 %) | **60** | Lista completa, junto con los casi completos, en `PENDING.md` |
 | Archivos adaptador | **1** | Teachy TV conserva interfaz de lista simplificada |
 | Archivos con algún hueco de nombre | **97** | 28 sin empezar + 60 parciales + 8 casi completos + 1 adaptador |
-| Líneas C sin cubrir (estimación ponderada) | **~129 233 / 303 042 (42,7 %)** | Estimación por proporción de funciones, no comparación de cada línea |
+| Líneas C sin cubrir (estimación ponderada) | **~129 216 / 303 042 (42,7 %)** | Estimación por proporción de funciones, no comparación de cada línea |
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
 | Funciones stub (nombre del C, cuerpo vacío) | **121** | No cuentan como portadas (PENDING.md §3b) |
 | Módulos que el juego no importa | 9 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
