@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 60 | 133907 | 1272/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 11 | 23327 | 750/862 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 148 | 119686 | 4139/4139 |
+| Casi completo (≥ 80 % y < 100 %) | 10 | 21798 | 675/785 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 149 | 121215 | 4216/4216 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **100** | **182223** | |
-| **Total en alcance** | **253** | **303042** | **6189/11826** |
+| **Pendiente de portar** | **99** | **180694** | |
+| **Total en alcance** | **253** | **303042** | **6191/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -134,7 +134,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
-| `berry_pouch.c` | 1529 | 75/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 45/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
 | `field_door.c` | 524 | 19/21 | `field/doors.ts` |  |  |
@@ -161,6 +160,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
 | `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
 | `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `pokemonSpecialAnim.ts` |  |  |
+| `berry_pouch.c` | 1529 | 77/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |  |
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
 | `credits.c` | 1446 | 16/16 | `credits.ts` |  |  |

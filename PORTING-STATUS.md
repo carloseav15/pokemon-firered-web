@@ -5,10 +5,47 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.189/11.826 funciones (52,3%)**,
-con **100 archivos** con huecos y una estimación ponderada de
-**~129.941/303.042 líneas C (42,9%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.191/11.826 funciones (52,4%)**,
+con **99 archivos** con huecos y una estimación ponderada de
+**~129.902/303.042 líneas C (42,9%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `berry_pouch.c`: cancelación de inicialización y limpieza (2026-09-27)
+
+- Porté `AbortBerryPouchLoading` y `Task_AbortBerryPouchLoading_WaitFade` al
+  camino real de `RunBerryPouchInit`: si falla alguna reserva, inicia el fade
+  negro con `-2`, instala los callbacks idle, espera a que `gPaletteFade.active`
+  sea falso, restaura el callback guardado y destruye recursos y task. La
+  reserva TS captura los fallos de `Array`/`Uint8Array` y conserva las
+  asignaciones parciales para que la limpieza las suelte.
+- `berry_pouch.c` queda 77/77 por nombre. En navegador abrí el saquito vacío
+  desde un `HwScene`, confirmé que muestra `CLOSE`, y salí con A; el mapa y la
+  bolsa siguieron iguales. Esta ejecución no forzó un fallo de memoria, por lo
+  que la rama de abort se validó estáticamente, no en ejecución.
+- **Muestra Clang para ampliar el generador:** `clang_ast.py` procesó los tres
+  C completos con Apple Clang 21.0.0, target `armv4t-none-eabi`, defines
+  `FIRERED`, `REVISION=0`, `ENGLISH`, `MODERN=0`; includes shim, `.decomp-build/include`,
+  `include`, `src` y `.decomp-build`; preprocesador de charmap del decomp.
+  Resultado: `field_door.c` 21/21 AST (19 existentes; `CopyDoorTilesToVram`
+  usa `CpuFastCopy` sobre VRAM y `BuildDoorTiles` tiene una lectura fuera del
+  array de 8 paletas al procesar la segunda mitad de puertas altas); antes de
+  este bloque `berry_pouch.c` 77/77 AST con dos funciones pendientes cuyo
+  comportamiento depende de tasks, callbacks y globals de pantalla;
+  `event_object_movement.c` 759/759 funciones fuente resueltas por AST, pero
+  720 nombres sin cuerpo TS, mayormente estado/structs, callbacks y hardware.
+  Clasificación de esta muestra: equivalentes ya conectados, 19/21 door,
+  75/77 berry antes del cambio y 39/759 object movement; candidato acotado,
+  las dos rutinas berry de abort (portadas manualmente); bloqueada, la copia a
+  VRAM; rechazada para generación, `BuildDoorTiles` por su lectura C fuera del
+  array; bloqueadas para traducción automática, las funciones restantes de
+  movimiento que operan sobre structs/globals/callbacks. Las 759 definiciones
+  C de movimiento sí resolvieron a nodos AST: no se contó un fallo de parsing
+  como cobertura. No amplié el emisor desde esta muestra; esto no clasifica el
+  resto del decomp.
+- El AST tomó 3,16 s; no se emitió código nuevo. Los tiempos manuales de
+  preparación, revisión e integración no se midieron, por lo que no se afirma
+  aceleración del generador. Pasaron `check:port`, `check:honesty`, `build`,
+  inventory, pending, `git diff --check` y el flujo de navegador descrito.
 
 ## `event_object_movement.c`: búsquedas por ID y ranura libre (2026-09-27)
 

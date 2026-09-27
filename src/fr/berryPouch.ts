@@ -188,7 +188,13 @@ function RunBerryPouchInit(): boolean {
     case 8: if (BerryPouchLoadGfx()) gMain.state++; break;
     case 9: BerryPouchInitWindows(); gMain.state++; break;
     case 10: SortAndCountBerries(); SanitizeListMenuSelectionParams(); UpdateListMenuScrollOffset(); gMain.state++; break;
-    case 11: AllocateListMenuBuffers(); gMain.state++; break;
+    case 11:
+      if (!AllocateListMenuBuffers()) {
+        AbortBerryPouchLoading();
+        return true;
+      }
+      gMain.state++;
+      break;
     case 12: SetUpListMenuTemplate(); gMain.state++; break;
     case 13: PrintBerryPouchHeaderCentered(); gMain.state++; break;
     case 14: {
@@ -268,10 +274,14 @@ function SetUpListMenuTemplate(): void {
 }
 
 function AllocateListMenuBuffers(): boolean {
-  sListMenuItems = new Array<ListMenuItem>(C.NUM_BERRIES);
-  sListMenuStrbuf = new Uint8Array(res().listMenuNumItems * 27);
-  sListMenuStrings = new Array<Uint8Array>(res().listMenuNumItems);
-  return true;
+  try {
+    sListMenuItems = new Array<ListMenuItem>(C.NUM_BERRIES);
+    sListMenuStrbuf = new Uint8Array(res().listMenuNumItems * 27);
+    sListMenuStrings = new Array<Uint8Array>(res().listMenuNumItems);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function CopySelectedListMenuItemName(itemIdx: number): Uint8Array {
@@ -386,7 +396,27 @@ function UpdateListMenuScrollOffset(): void {
 function BerryPouch_DestroyResources(): void {
   sResources = null;
   gMultiuseListMenuTemplate = null;
+  sListMenuItems = [];
+  sListMenuStrings = [];
+  sListMenuStrbuf = new Uint8Array(0);
   FreeAllWindowBuffers();
+}
+
+/** AbortBerryPouchLoading (berry_pouch.c): begin the failure fade, then return through the saved callback. */
+function AbortBerryPouchLoading(): void {
+  BeginNormalPaletteFade(PALETTES_ALL, -2, 0, 16, RGB_BLACK);
+  tasks.create(Task_AbortBerryPouchLoading_WaitFade, 0);
+  SetVBlankCallback(VBlankCB_BerryPouchIdle);
+  SetMainCallback2(CB2_BerryPouchIdle);
+}
+
+/** Task_AbortBerryPouchLoading_WaitFade (berry_pouch.c). */
+function Task_AbortBerryPouchLoading_WaitFade(taskId: number): void {
+  if (gPaletteFade.active) return;
+  SetMainCallback2(sStaticCnt.savedCallback);
+  BerryPouch_DestroyResources();
+  tasks.destroy(taskId);
+  taskData.delete(taskId);
 }
 
 function BerryPouch_StartFadeToExitCallback(taskId: number): void {
