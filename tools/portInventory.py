@@ -60,6 +60,24 @@ COVERED: dict[str, str] = {
     "field_camera": "field/overworld.ts + fieldmap.ts + tileRenderer.ts + doors.ts + battle/transition.ts: el seguimiento/paneo del jugador está conectado; el viewport Canvas recompone los metatiles desde FieldMap y omite el ring buffer BG/VRAM, doors.ts dibuja el overlay y las transiciones usan una captura de pantalla. Cámara de créditos en overworldCredits.ts; MoveCameraAndRedrawMap está unused en C",
 }
 
+# Link, wireless and multiplayer systems: still to be ported, but outside the
+# main goal (single-player game) by user decision on 2026-09-27. They are
+# counted apart so the main figure measures the single-player game only.
+LINK: set[str] = {
+    "AgbRfu_LinkManager", "librfu_intr", "librfu_rfu", "librfu_sio32id", "librfu_stwi",
+    "link", "link_rfu_2", "link_rfu_3", "multiboot", "cable_club", "trade",
+    "battle_controller_link_opponent", "battle_controller_link_partner",
+    "union_room", "union_room_battle", "union_room_chat", "union_room_chat_display",
+    "union_room_chat_objects", "union_room_player_avatar", "union_room_message",
+    "wireless_communication_status_screen",
+    "mystery_gift", "mystery_gift_client", "mystery_gift_link", "mystery_gift_menu",
+    "mystery_gift_server", "mystery_gift_show_card", "mystery_gift_show_news",
+    "mystery_gift_scripts", "mystery_event_script", "mystery_event_msg", "wonder_news",
+    "ereader_helpers", "ereader_screen", "cereader_tool", "berry_fix_program",
+    "dodrio_berry_picking", "dodrio_berry_picking_comm", "berry_crush", "pokemon_jump",
+    "minigame_countdown", "digit_obj_util",
+}
+
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
 ADAPTERS: dict[str, str] = {
     "teachy_tv": "menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado",
@@ -269,6 +287,8 @@ def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool, 
         return "cubierto", COVERED[name]
     if name in ADAPTERS:
         return "adaptador", ADAPTERS[name]
+    if name in LINK:
+        return "enlace", f"{found}/{len(funcs)}" if funcs else ""
     if not funcs:
         return ("datos", "") if (ROOT / "public/fr/cdata" / f"{name}.json").exists() else ("falta", "")
     ratio = found / len(funcs)
@@ -281,7 +301,7 @@ def classify(name: str, funcs: list[tuple[str, bool]], found: int, cited: bool, 
     return "falta", ""
 
 
-ORDER = ["falta", "parcial", "adaptador", "casi", "portado", "datos", "cubierto"]
+ORDER = ["falta", "parcial", "adaptador", "casi", "portado", "datos", "cubierto", "enlace"]
 TITLES = {
     "falta": "Falta (sin funciones portadas)",
     "parcial": "Parcial (< 80 % de funciones)",
@@ -290,6 +310,7 @@ TITLES = {
     "portado": "Sin huecos de nombre (100 %; fidelidad no medida)",
     "datos": "Solo datos (exportados a cdata)",
     "cubierto": "Cubierto por hw/navegador/exportador",
+    "enlace": "Enlace e inalámbrico (fuera de la meta principal)",
 }
 
 
@@ -324,7 +345,8 @@ def main() -> None:
         "La coincidencia de nombres no demuestra paridad funcional ni fidelidad.",
         "Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene",
         "código real cuenta como **stub** (columna Stubs) y no suma como portada.",
-        "Las categorías cubierto/adaptador salen de las tablas del script.",
+        "Las categorías cubierto/adaptador/enlace salen de las tablas del script.",
+        "Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 2026-09-27).",
         "",
         "| Estado | Archivos | Líneas C | Funciones con nombre en TS |",
         "|---|---:|---:|---:|",
@@ -333,9 +355,11 @@ def main() -> None:
         sel = [r for r in rows if r[0] == s]
         out.append(f"| {TITLES[s]} | {len(sel)} | {sum(r[2] for r in sel)} | {sum(r[3] for r in sel)}/{sum(r[4] for r in sel)} |")
     todo = [r for r in rows if r[0] in ("falta", "parcial", "adaptador", "casi")]
-    scope = [r for r in rows if r[0] != "cubierto"]
+    scope = [r for r in rows if r[0] not in ("cubierto", "enlace")]
+    link = [r for r in rows if r[0] == "enlace"]
     out.append(f"| **Pendiente de portar** | **{len(todo)}** | **{sum(r[2] for r in todo)}** | |")
     out.append(f"| **Total en alcance** | **{len(scope)}** | **{sum(r[2] for r in scope)}** | **{sum(r[3] for r in scope)}/{sum(r[4] for r in scope)}** |")
+    out.append(f"| **Enlace (aparte)** | **{len(link)}** | **{sum(r[2] for r in link)}** | **{sum(r[3] for r in link)}/{sum(r[4] for r in link)}** |")
     for s in ORDER:
         sel = sorted((r for r in rows if r[0] == s), key=lambda r: (-r[2], r[1]))
         if not sel:

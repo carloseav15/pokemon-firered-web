@@ -67,6 +67,21 @@ python3 tools/decomp/export.py [pasos…]   # regenerar datos (ver §4)
 
 URLs de desarrollo: `/` = arranque completo; `?fr=new` / `?fr=continue` saltan la intro.
 
+Flujo de arranque activo (antes en `START-FLOW.md`):
+
+```text
+src/main.ts -> src/fr/startup.ts
+  -> copyright -> Game Freak -> intro escenas 1–3 -> título
+  -> menú principal (main_menu.c)
+     -> Nueva partida -> guía de controles -> discurso de Oak -> género y nombres
+        -> src/fr/boot.ts -> habitación del jugador
+     -> Continuar -> src/fr/boot.ts -> estado de campo guardado
+```
+
+`boot.ts` carga las tablas trigonométricas y los recursos de batalla e instala el
+host de batalla antes del juego normal. Un cambio en el arranque necesita probar
+la URL por defecto hasta entrar al mundo (título, START, controles, Oak).
+
 ## 4. De dónde salen los datos (pipeline del exportador)
 
 `tools/decomp/export.py` resuelve `$POKEFIRERED`, `../pokefirered`

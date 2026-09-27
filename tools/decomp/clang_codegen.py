@@ -1,6 +1,6 @@
 """Bounded TypeScript code generator from Clang AST for Pokémon FireRed.
 
-Implements steps 3 and 4 of GOAL-CLANG.md:
+Clang code-generation step of the batch porting workflow (AGENTS.md):
 - Translates a viable, bounded family of functions directly from Clang's AST.
 - Enforces GBA ABI semantics:
   - 8-bit unsigned chars, EOS = 0xFF, EXT_CTRL_CODE_BEGIN = 0xFC.

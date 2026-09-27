@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check:honesty — fail when a change repeats the known agent mistakes.
 
-See ESTADO-Y-REGLAS.md §3 and §5. Four checks:
+See AGENTS.md (Clang y fidelidad; Verificación). Four checks:
 
 1. Stubs: a TS `function` named after a C function whose body is trivial
    (empty, `return 0;`…) while the C body has code. The list may only shrink:
@@ -204,7 +204,7 @@ def main() -> int:
         print("baselines rewritten (they can only shrink)")
 
     if failures:
-        print("\ncheck:honesty FAILED (ESTADO-Y-REGLAS.md §5)\n")
+        print("\ncheck:honesty FAILED (AGENTS.md)\n")
         print("\n\n".join(failures))
         return 1
     print("check:honesty PASS")

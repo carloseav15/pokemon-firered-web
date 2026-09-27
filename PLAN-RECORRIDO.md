@@ -97,7 +97,7 @@ Monte Moon). Objetivo: tramo 12.
 
 | Tramo | Estado | Fallos arreglados | Ayudas |
 |---|---|---|---|
-| 0 (intro → Plateada, PC, tienda, guardar) | jugado | ver [historial](docs/archive/PORTING-STATUS-2026-09-27.md) | ninguna |
+| 0 (intro → Plateada, PC, tienda, guardar) | jugado | ver historial en Git: `git show 3355d2e:docs/archive/PORTING-STATUS-2026-09-27.md` | ninguna |
 | 1 (Ruta 3 → Monte Moon → Ruta 4) | a medias: Ruta 3 y Monte Moon 1F/B1F/B2F; falta la salida | ninguno del juego (solo driver) | ninguna |
 
 ## Pendiente al cortar la sesión (2026-09-25)

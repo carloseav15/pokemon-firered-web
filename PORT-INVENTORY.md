@@ -6,50 +6,28 @@ La comparación ignora mayúsculas y `_` (la capa de campo antigua usa camelCase
 La coincidencia de nombres no demuestra paridad funcional ni fidelidad.
 Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene
 código real cuenta como **stub** (columna Stubs) y no suma como portada.
-Las categorías cubierto/adaptador salen de las tablas del script.
+Las categorías cubierto/adaptador/enlace salen de las tablas del script.
+Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 2026-09-27).
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 26 | 20912 | 0/761 |
-| Parcial (< 80 % de funciones) | 62 | 136584 | 1396/6006 |
+| Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
+| Parcial (< 80 % de funciones) | 50 | 107765 | 1312/5003 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 8 | 20213 | 626/716 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 151 | 122800 | 4285/4285 |
-| Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 149 | 122549 | 4268/4268 |
+| Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **97** | **179109** | |
-| **Total en alcance** | **253** | **303042** | **6335/11826** |
+| Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
+| **Pendiente de portar** | **60** | **130808** | |
+| **Total en alcance** | **211** | **253703** | **6234/10115** |
+| **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `link_rfu_2.c` | 3163 | 0/149 |  |  |  |
-| `librfu_rfu.c` | 2342 | 0/86 |  |  |  |
-| `mystery_gift_menu.c` | 1609 | 0/34 |  |  |  |
-| `union_room_chat.c` | 1571 | 0/51 |  |  |  |
-| `AgbRfu_LinkManager.c` | 1480 | 0/33 |  |  |  |
 | `pokemon_storage_system_misc.c` | 1430 | 0/70 |  |  |  |
-| `union_room_chat_display.c` | 1339 | 0/58 |  |  |  |
-| `link_rfu_3.c` | 1192 | 0/30 |  |  |  |
-| `librfu_stwi.c` | 650 | 0/48 |  |  |  |
-| `union_room_player_avatar.c` | 624 | 0/38 |  |  |  |
-| `ereader_screen.c` | 520 | 0/11 |  |  |  |
-| `mystery_gift_show_card.c` | 518 | 0/8 |  |  |  |
-| `digit_obj_util.c` | 451 | 0/14 |  |  |  |
-| `librfu_intr.c` | 417 | 0/9 |  |  |  |
-| `multiboot.c` | 416 | 0/9 |  |  |  |
-| `ereader_helpers.c` | 406 | 0/17 |  |  |  |
-| `mystery_gift_show_news.c` | 404 | 0/10 |  |  |  |
-| `union_room_chat_objects.c` | 346 | 0/13 |  |  |  |
-| `minigame_countdown.c` | 332 | 0/10 |  |  |  |
-| `mystery_gift_server.c` | 302 | 0/14 |  |  |  |
-| `mystery_gift_client.c` | 300 | 0/18 |  |  |  |
-| `dodrio_berry_picking_comm.c` | 274 | 0/8 |  |  |  |
-| `union_room_battle.c` | 238 | 0/5 |  |  |  |
-| `mystery_gift_link.c` | 215 | 0/10 |  |  |  |
-| `berry_fix_program.c` | 203 | 0/4 |  |  |  |
-| `librfu_sio32id.c` | 170 | 0/4 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
 
@@ -58,15 +36,10 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `event_object_movement.c` | 9412 | 111/759 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `pokemon.c` | 6453 | 71/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
-| `dodrio_berry_picking.c` | 4954 | 7/147 |  |  |  |
-| `union_room.c` | 4761 | 6/110 | `script/eventObjectLock.ts`, `script/specials.ts`, `unionRoom.ts` |  | 1 |
-| `pokemon_jump.c` | 4582 | 5/186 |  |  |  |
 | `battle_main.c` | 4477 | 84/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |  |
 | `field_effect.c` | 4033 | 13/239 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `namingScreen.ts` |  |  |
 | `overworld.c` | 3563 | 46/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
-| `berry_crush.c` | 3488 | 4/73 |  |  |  |
 | `battle_transition.c` | 3037 | 1/134 | `battle/transition.ts` |  |  |
-| `trade.c` | 2958 | 0/66 | `pokemon/ingameTrade.ts` |  | 15 |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
 | `intro.c` | 2805 | 2/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 2/82 |  |  |  |
@@ -78,7 +51,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 1/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
 | `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
-| `link.c` | 2202 | 4/114 | `linkState.ts` |  | 1 |
 | `field_player_avatar.c` | 2168 | 21/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
@@ -88,10 +60,8 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
 | `quest_log.c` | 1767 | 11/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
-| `battle_controller_link_opponent.c` | 1713 | 22/86 |  |  |  |
 | `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
-| `battle_controller_link_partner.c` | 1647 | 17/85 |  |  |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |  |
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
 | `field_effect_helpers.c` | 1421 | 16/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  | 56 |
@@ -102,7 +72,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `field_control_avatar.c` | 1182 | 21/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_setup.c` | 1070 | 28/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
-| `cable_club.c` | 1036 | 9/54 | `script/specials.ts`, `script/specialsExtra.ts` |  | 2 |
 | `berry.c` | 1028 | 5/9 | `pokemon/berry.ts`, `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
 | `field_fadetransition.c` | 965 | 16/59 | `field/overworld.ts` |  |  |
@@ -112,10 +81,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
-| `mystery_gift.c` | 634 | 9/45 | `mysteryGift.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
-| `wireless_communication_status_screen.c` | 522 | 1/12 |  |  |  |
-| `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` |  |  |
 | `quest_log_player.c` | 197 | 3/15 | `questLogPlayer.ts` |  |  |
 
 ## Adaptador (UI simplificada)
@@ -258,7 +224,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `pokemon_storage_system.c` | 171 | 21/21 | `pokemon/storage.ts` |  |  |
 | `new_game.c` | 160 | 11/11 | `game.ts`, `random.ts`, `save.ts` |  |  |
 | `gpu_regs.c` | 158 | 11/11 | `hw/gpu.ts` |  |  |
-| `wonder_news.c` | 154 | 9/9 | `wonderNews.ts` |  |  |
 | `quest_log_battle.c` | 150 | 3/3 | `questLogBattle.ts` |  |  |
 | `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
 | `quest_log_objects.c` | 146 | 3/3 | `questLogObjects.ts` |  |  |
@@ -280,7 +245,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `field_weather_util.c` | 105 | 10/10 | `field/weather.ts` |  |  |
 | `fldeff_sweetscent.c` | 100 | 7/7 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `coins.c` | 98 | 9/9 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
-| `cereader_tool.c` | 97 | 8/8 | `cereaderTool.ts`, `script/specials.ts` |  |  |
 | `math_util.c` | 87 | 9/9 | `mathUtil.ts` |  |  |
 | `safari_zone.c` | 79 | 8/8 | `battle/battleSetup.ts`, `field/safariZone.ts` |  |  |
 | `post_battle_event_funcs.c` | 74 | 2/2 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
@@ -297,11 +261,8 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `union_room_message.c` | 576 | — |  |  |  |
 | `sloopsvc.c` | 293 | — |  |  |  |
-| `mystery_gift_scripts.c` | 198 | — |  |  |  |
 | `bg_regs.c` | 53 | — | `hw/bgRegs.ts` |  |  |
-| `mystery_event_msg.c` | 13 | — |  |  |  |
 
 ## Cubierto por hw/navegador/exportador
 
@@ -337,3 +298,50 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `reset_save_heap.c` | 27 | 0/1 |  | save.ts |  |
 | `decoration.c` | 7 | — |  | exportador |  |
 | `tilesets.c` | 7 | — |  | exportador (tilesets) |  |
+
+## Enlace e inalámbrico (fuera de la meta principal)
+
+| Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
+|---|---:|---:|---|---|---:|
+| `dodrio_berry_picking.c` | 4954 | 7/147 |  | 7/147 |  |
+| `union_room.c` | 4761 | 6/110 | `script/eventObjectLock.ts`, `script/specials.ts`, `unionRoom.ts` | 6/110 | 1 |
+| `pokemon_jump.c` | 4582 | 5/186 |  | 5/186 |  |
+| `berry_crush.c` | 3488 | 4/73 |  | 4/73 |  |
+| `link_rfu_2.c` | 3163 | 0/149 |  | 0/149 |  |
+| `trade.c` | 2958 | 0/66 | `pokemon/ingameTrade.ts` | 0/66 | 15 |
+| `librfu_rfu.c` | 2342 | 0/86 |  | 0/86 |  |
+| `link.c` | 2202 | 4/114 | `linkState.ts` | 4/114 | 1 |
+| `battle_controller_link_opponent.c` | 1713 | 22/86 |  | 22/86 |  |
+| `battle_controller_link_partner.c` | 1647 | 17/85 |  | 17/85 |  |
+| `mystery_gift_menu.c` | 1609 | 0/34 |  | 0/34 |  |
+| `union_room_chat.c` | 1571 | 0/51 |  | 0/51 |  |
+| `AgbRfu_LinkManager.c` | 1480 | 0/33 |  | 0/33 |  |
+| `union_room_chat_display.c` | 1339 | 0/58 |  | 0/58 |  |
+| `link_rfu_3.c` | 1192 | 0/30 |  | 0/30 |  |
+| `cable_club.c` | 1036 | 9/54 | `script/specials.ts`, `script/specialsExtra.ts` | 9/54 | 2 |
+| `librfu_stwi.c` | 650 | 0/48 |  | 0/48 |  |
+| `mystery_gift.c` | 634 | 9/45 | `mysteryGift.ts` | 9/45 |  |
+| `union_room_player_avatar.c` | 624 | 0/38 |  | 0/38 |  |
+| `union_room_message.c` | 576 | — |  |  |  |
+| `wireless_communication_status_screen.c` | 522 | 1/12 |  | 1/12 |  |
+| `ereader_screen.c` | 520 | 0/11 |  | 0/11 |  |
+| `mystery_gift_show_card.c` | 518 | 0/8 |  | 0/8 |  |
+| `digit_obj_util.c` | 451 | 0/14 |  | 0/14 |  |
+| `librfu_intr.c` | 417 | 0/9 |  | 0/9 |  |
+| `multiboot.c` | 416 | 0/9 |  | 0/9 |  |
+| `ereader_helpers.c` | 406 | 0/17 |  | 0/17 |  |
+| `mystery_gift_show_news.c` | 404 | 0/10 |  | 0/10 |  |
+| `union_room_chat_objects.c` | 346 | 0/13 |  | 0/13 |  |
+| `minigame_countdown.c` | 332 | 0/10 |  | 0/10 |  |
+| `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` | 0/25 |  |
+| `mystery_gift_server.c` | 302 | 0/14 |  | 0/14 |  |
+| `mystery_gift_client.c` | 300 | 0/18 |  | 0/18 |  |
+| `dodrio_berry_picking_comm.c` | 274 | 0/8 |  | 0/8 |  |
+| `union_room_battle.c` | 238 | 0/5 |  | 0/5 |  |
+| `mystery_gift_link.c` | 215 | 0/10 |  | 0/10 |  |
+| `berry_fix_program.c` | 203 | 0/4 |  | 0/4 |  |
+| `mystery_gift_scripts.c` | 198 | — |  |  |  |
+| `librfu_sio32id.c` | 170 | 0/4 |  | 0/4 |  |
+| `wonder_news.c` | 154 | 9/9 | `wonderNews.ts` | 9/9 |  |
+| `cereader_tool.c` | 97 | 8/8 | `cereaderTool.ts`, `script/specials.ts` | 8/8 |  |
+| `mystery_event_msg.c` | 13 | — |  |  |  |

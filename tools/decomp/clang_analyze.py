@@ -1,6 +1,6 @@
 """Analyze candidate C files using Clang AST and classify their functions.
 
-Implements step 2 of GOAL-CLANG.md:
+Clang analysis step of the batch porting workflow (AGENTS.md):
 - Analyzes at least 3 pending files chosen for pattern/dependency diversity:
   1. src/string_util.c (buffer manipulation, charmap strings, formatting, control codes)
   2. src/item.c (save block struct, item slot queries, EWRAM encryption, ROM getters)

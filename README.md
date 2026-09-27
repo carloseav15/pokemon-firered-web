@@ -39,16 +39,13 @@ reexportar si cambias `tools/decomp/`.
 | [PENDING.md](PENDING.md) | **Faltantes** (generado): sin empezar, adaptadores, parciales, huecos conocidos, pantallas sin probar |
 | [PORT-INVENTORY.md](PORT-INVENTORY.md) | Avance por archivo `.c` (generado con `npm run inventory`) |
 | [PORTING-STATUS.md](PORTING-STATUS.md) | Estado operativo breve, siguiente tanda y validación pendiente |
-| [GOAL-CLANG.md](GOAL-CLANG.md) | Prompt para continuar con Clang y traducción manual por tandas |
 | [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) | Recorrido para la fase de revisión funcional |
-| [START-FLOW.md](START-FLOW.md) | Flujo de arranque (intro → título → partida) |
-| [SECONDARY-MISSIONS-AUDIT.md](SECONDARY-MISSIONS-AUDIT.md) | Inventario de contenido opcional |
 
 ## Estado
 
 Las cifras vivas y los huecos están en [PENDING.md](PENDING.md); no se duplican
 en los documentos de instrucciones. El contador mide homólogos por nombre,
-no fidelidad ni validación funcional. El modo actual prioriza implementar e
-integrar tandas con dependencias resueltas, dejando la revisión exhaustiva
-para una fase posterior. El historial se conserva enlazado desde
-[PORTING-STATUS.md](PORTING-STATUS.md), fuera de la lectura inicial habitual.
+no fidelidad ni validación funcional. La meta principal es el juego de un
+jugador; enlace e inalámbrico se cuentan aparte. El modo actual porta por
+archivo completo y deja la revisión exhaustiva para una fase posterior. El
+historial de proceso anterior está en Git, no en el árbol de trabajo.

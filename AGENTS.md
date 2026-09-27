@@ -1,8 +1,9 @@
 # FireRed C → TypeScript: reglas de trabajo
 
-Modo vigente desde 2026-09-27: **portado por tandas, revisión funcional exhaustiva
-posterior**, autorizado por el usuario para reducir pruebas y documentación
-repetitivas. Estas reglas sustituyen el procedimiento anterior. Responde en español.
+Modo vigente desde 2026-09-27: **portado por archivo completo, revisión funcional
+exhaustiva posterior**, autorizado por el usuario para reducir pruebas y
+documentación repetitivas. Estas reglas sustituyen el procedimiento anterior.
+Responde en español.
 
 ## Lectura inicial
 
@@ -10,20 +11,27 @@ repetitivas. Estas reglas sustituyen el procedimiento anterior. Responde en espa
 - Consulta las filas relevantes de [PENDING.md](PENDING.md) y el código de la tanda.
 - [Referencia técnica](docs/PORTING-GUIDE.md): mapa, datos, semántica C y driver;
   lee únicamente la sección necesaria. No releas el historial al iniciar una tarea.
-- `ESTADO-Y-REGLAS.md` es un índice; `docs/archive/` conserva antecedentes sin
-  autoridad sobre el proceso actual. `PLAN-RECORRIDO.md` se reserva para revisión.
+- `PLAN-RECORRIDO.md` se reserva para la revisión. El proceso anterior está solo
+  en el historial de Git; no lo recuperes como guía.
 
 ## Objetivo y selección
 
-Portar e integrar el juego completo, incluidos sistemas opcionales y de enlace.
-El inventario mide nombres, no fidelidad: no reduzcas su alcance para subirlo.
+**Meta principal:** portar e integrar el juego de un jugador completo. Enlace,
+inalámbrico, Mystery Gift, e-Reader y minijuegos multijugador (tabla `LINK` de
+`tools/portInventory.py`) quedan fuera de la meta principal por decisión del
+usuario (2026-09-27): se cuentan aparte y se portan después. No muevas otros
+archivos a esa tabla ni a `COVERED` para subir la cifra sin indicación del usuario.
+El inventario mide nombres, no fidelidad.
 
-1. Elige una familia repetida o un conjunto de funciones que entregue comportamiento
-   faltante en una ruta real. Agrupa helpers relacionados en la misma tanda.
-   Evita cierres de una o dos funciones triviales cuando el resto está desbloqueado.
-2. Localiza primero equivalencias TS y dependencias. Distingue implementación nueva,
-   corrección y renombre/extracción de lógica existente; este último no es avance
-   funcional. No priorices renombres solo para aumentar el porcentaje.
+1. **Una tanda = un archivo C completo** (o, si es muy grande, una familia completa
+   del archivo, p. ej. todos los `MovementAction_*`). Prioriza los archivos de la
+   meta principal con más funciones faltantes y dependencias resueltas. No cierres
+   tandas de una o dos funciones cuando el resto del archivo está desbloqueado.
+2. Localiza primero equivalencias TS: comportamiento que ya existe con otro nombre
+   o estructura (p. ej. la tabla de comandos de `script/commands.ts` frente a los
+   `ScrCmd_*` de `scrcmd.c`). Reestructúralo con el nombre y la forma del C,
+   revisando cada función contra el C; es trabajo válido, pero se reporta aparte
+   como **equivalencia**, no como implementación nueva.
 3. Lee completas las funciones C seleccionadas, headers/tipos, globals, tablas y
    callers C/TS/scripts relevantes. Lee el archivo entero cuando sus dependencias
    lo exijan; no repitas esa lectura por cada helper.
@@ -57,6 +65,9 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
 
 - Al cerrar una tanda de código: `npm run check:port`, `npm run check:honesty`,
   `npm run build` y `git diff --check`. Repite solo lo afectado por cambios posteriores.
+- Las correcciones de fidelidad menores detectadas fuera de la tanda (anchos,
+  orden de callbacks, etc.) se anotan en una línea en `PORTING-STATUS.md` y se
+  resuelven en la revisión, salvo que rompan algo que la tanda necesita.
 - Comprueba los cdata/INCBIN nuevos que se usan. Ejecuta el check focalizado existente
   si cubre una regla modificada; no ejecutes todas las suites por rutina.
 - Una regla nueva/modificada del generador necesita comparación focalizada con C,
@@ -77,8 +88,11 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
 
 ## Cierre y documentación mínima
 
-- Tras una tanda que cambia código del port, ejecuta `npm run inventory` y después
-  `npm run pending` una sola vez. No cambies su algoritmo para inflar cobertura.
+- **Documentación una vez por sesión, no por commit:** al final de la sesión (o
+  cada varias tandas) ejecuta `npm run inventory`, después `npm run pending`, y
+  actualiza `PORTING-STATUS.md`, todo en un único commit de estado. Los commits
+  de tanda contienen solo código. No cambies el algoritmo del inventario para
+  inflar cobertura.
 - Mantén `PORTING-STATUS.md` como estado operativo breve: siguiente tanda,
   bloqueos, validación diferida y resumen de la última entrega (máximo 8 líneas).
   Sustituye el resumen anterior; el detalle permanece en Git. No abras otra crónica.
@@ -95,6 +109,6 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
 
 Implementado, integrado y validado son estados distintos. Terminar la fase de
 portado requiere revisar huecos, stubs, adaptadores y dependencias de todo el
-alcance, no solo alcanzar todos los nombres. Después usar `PLAN-RECORRIDO.md`
+alcance principal, no solo alcanzar todos los nombres. Después usar `PLAN-RECORRIDO.md`
 y los checks para revisar historia, sistemas opcionales, gráficos y temporización.
 No borres de la cola una validación pendiente al sustituir el resumen de entrega.

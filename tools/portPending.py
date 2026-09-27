@@ -144,6 +144,7 @@ def main() -> None:
     total = re.search(r"\*\*Total en alcance\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)/(\d+)\*\*", SRC)
     pend = re.search(r"\*\*Pendiente de portar\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)\*\*", SRC)
     pendientes = falta + adaptador + casi + parcial
+    link = re.search(r"\*\*Enlace \(aparte\)\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)\*\* \| \*\*(\d+)/(\d+)\*\*", SRC)
     lineas_estimadas_sin_cubrir = sum(missing(r) for r in pendientes)
     parts = ["# Faltantes del port (generado)", "",
              "Generado por `tools/portPending.py` (`npm run pending`) a partir de [PORT-INVENTORY.md](PORT-INVENTORY.md); no editar a mano.",
@@ -153,6 +154,7 @@ def main() -> None:
         parts += ["## Avance", "",
                   f"- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **{done}/{allf} ({100 * done / allf:.1f} %)**.",
                   f"- Archivos C con funciones aún sin homólogo: **{pend.group(1)}**; quedan **{allf - done} nombres**.",
+                  *([f"- Fuera de la meta principal, enlace e inalámbrico: {link.group(3)}/{link.group(4)} en {link.group(1)} archivos (sección aparte en PORT-INVENTORY.md)."] if link else []),
                   f"- Estos archivos contienen {fmt_int(int(pend.group(2)))} líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.",
                   f"- Estimación ponderada del C sin homólogo: **~{fmt_int(lineas_estimadas_sin_cubrir)} líneas** (aproximación por proporción de funciones).",
                   "- Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).", ""]
