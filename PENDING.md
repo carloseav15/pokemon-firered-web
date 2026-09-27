@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6239/11826 (52.8 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5587 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6240/11826 (52.8 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5586 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~129.216 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~129.170 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -107,7 +107,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 88 | `trade.c` | parcial | 2958 | 0/66 | ~2958 |  |
 | 89 | `battle_transition.c` | parcial | 3037 | 1/134 | ~3014 |  |
 | 90 | `link_rfu_2.c` | sin empezar | 3163 | 0/149 | ~3163 |  |
-| 91 | `pokemon.c` | parcial | 6453 | 70/140 | ~3226 |  |
+| 91 | `pokemon.c` | parcial | 6453 | 71/140 | ~3180 |  |
 | 92 | `berry_crush.c` | parcial | 3488 | 4/73 | ~3296 |  |
 | 93 | `field_effect.c` | parcial | 4033 | 13/239 | ~3813 |  |
 | 94 | `pokemon_jump.c` | parcial | 4582 | 5/186 | ~4458 |  |

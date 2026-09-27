@@ -5,10 +5,46 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.239/11.826 funciones (52,8%)**,
+single-player. A 2026-09-27, la meta mide **6.240/11.826 funciones (52,8%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.216/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.170/303.042 líneas C (42,6%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `pokemon.c`: getter de retrato desde cdata generado por Clang (2026-09-27)
+
+- Amplié `clang_codegen.py` con la familia acotada de getters que retornan una
+  entrada de una tabla C `const u8[N]` indexada por un parámetro `u16`. El
+  emisor exige esa forma exacta en el AST, verifica la declaración C y tipo y
+  longitud de la tabla exportada, y falla con `UnsupportedAstError` si cambia.
+- Generé `FacilityClassToPicIndex` desde el AST de `pokemon.c`; conecté ambos
+  callers de `PlayerGenderToFrontTrainerPicId` al getter. El cdata conserva los
+  150 valores medidos de `gFacilityClassToPicIndex`; se probó cada índice,
+  el wrap de entrada `u16` y ambos retratos integrados.
+- Mapa AST de cuatro archivos: `main.c` tiene 5 huecos de bucle/IRQ/enlace
+  dependientes de infraestructura no modelada; `battle_bg.c` tiene 3
+  inicializadores de pantalla de enlace dependientes del render/texto de
+  batalla; `quest_log_player.c` tiene 15 transiciones y tareas de reproducción;
+  `event_object_movement.c` tiene 18 getters de tabla ya generados y uno más
+  (`GetReflectionEffectPaletteSlot`) cuyo cdata exportado trae 12 valores aunque
+  el arreglo C está declarado de 16, por lo que el generador lo rechaza.
+  `pokemon.c` ofrece el candidato activo: el TS consultaba manualmente la tabla
+  en la ruta del retrato y el getter generado la comparte ahora.
+- Reproducibilidad: revisión C `c75f352304d529f6ba92d4f74b9cf8b5c3810788`,
+  Apple clang 21.0.0.1, target `armv4t-none-eabi`, defines
+  `FIRERED, REVISION=0, ENGLISH, MODERN=0`, include shim del exportador más
+  `generated/include`, `include`, `src` y `.decomp-build/include`. El AST se
+  obtuvo después de preprocesar con Clang y el `preproc` del decomp.
+- `generate:cdata-table-accessors` fue determinista; el check rechazó un AST
+  mutado que retornaba literal. Pasaron `check:cdata-table-accessors`
+  (300 comparaciones de tabla y 3 comprobaciones integradas), `check:card`,
+  `check:port`, `check:honesty`, build, inventory, pending y `git diff --check`.
+  El build mantiene las advertencias previas de imports y tamaño de bundle.
+- Tiempo medido de las herramientas: cada generación AST tarda ~3 s; la
+  comprobación de determinismo/paridad enfocada tarda ~6 s. El tiempo manual de
+  selección, revisión e integración no quedó cronometrado, así que este bloque
+  no demuestra ahorro neto del generador. Sin prueba de navegador en este paso.
+- `pokemon.c` queda 72/140 por nombre; global **6.240/11.826 (52,8%)**, con
+  ~129.170 líneas ponderadas sin homólogo.
 
 ## `sprite.c`: reinicio de animación affine (2026-09-27)
 

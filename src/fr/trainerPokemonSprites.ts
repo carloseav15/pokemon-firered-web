@@ -4,6 +4,7 @@
 // bytes (pokemon/pics.ts); Alloc/Free become plain typed arrays.
 
 import * as C from "./generated/constants";
+import { FacilityClassToPicIndex } from "./generated/cdataTableAccessors";
 import { cdata } from "./hw/assets";
 import { animsFrom } from "./hw/cdataSprite";
 import { BG_PLTT_ID, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "./hw/palette";
@@ -196,9 +197,8 @@ export function CreateTrainerCardTrainerPicSprite(species: number, isFrontPic: b
 
 export function PlayerGenderToFrontTrainerPicId(gender: number, getClass: boolean): number {
   if (getClass === true) {
-    const table = cdata<number[]>("pokemon", "gFacilityClassToPicIndex");
-    if (gender !== MALE) return table[C.FACILITY_CLASS_LEAF];
-    return table[C.FACILITY_CLASS_RED];
+    if (gender !== MALE) return FacilityClassToPicIndex(C.FACILITY_CLASS_LEAF);
+    return FacilityClassToPicIndex(C.FACILITY_CLASS_RED);
   }
   return gender;
 }

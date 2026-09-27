@@ -6,6 +6,13 @@ El piloto inicial ya está integrado: `clang_ast.py`, `clang_analyze.py`,
 para seleccionar y portar la siguiente familia. No reconstruyas el piloto ni
 supongas que el emisor actual admite una familia nueva.
 
+Primera extensión posterior: `generate:cdata-table-accessors` genera
+`FacilityClassToPicIndex` desde `pokemon.c`; `check:cdata-table-accessors`
+verifica regeneración determinista, rechazo de una forma AST no soportada,
+los 150 elementos de la tabla exportada y su caller activo. La familia aún es
+una sola función y no demuestra ahorro neto. Sigue seleccionando las siguientes
+funciones por AST, caller y dependencias reales.
+
 ## Mensaje para copiar
 
 Continúa ampliando el port fuente-fiel de Pokémon FireRed. Selecciona funciones
