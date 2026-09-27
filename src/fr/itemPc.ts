@@ -2,8 +2,8 @@
 // effect, swap mode, withdraw quantity, "Give" to a party mon).
 // Adaptations:
 //  - ItemPc_Init loads its data (preloadItemPc) before running the setup.
-//  - The PC item list is save.pcItems, an array without empty slots, so
-//    ItemPcCompaction is a no-op and nItems is its length.
+//  - The PC item list is save.pcItems, an array without empty slots; the
+//    source compaction runs over that compact representation before counting.
 //  - MainCallbacks handed to SetMainCallback2 by this screen are plain
 //    functions that must run once (see runOnce), as in party_menu.
 //  - ItemUse_SetQuestLogEvent (Quest Log) and SetHelpContext (help system) are out of scope.
@@ -57,7 +57,7 @@ import {
 } from "./pcScreenEffect";
 import { gPartyMenu, InitPartyMenu, Task_HandleChooseMonInput } from "./partyMenu";
 import { tmhmMove } from "./menus/monProgress";
-import { addBagItem, itemInfo, itemName, removePCItem } from "./pokemon/items";
+import { addBagItem, ItemPcCompaction, itemInfo, itemName, removePCItem } from "./pokemon/items";
 import { CalculatePlayerPartyCount } from "./pokemon/mon";
 import { rom } from "./rom";
 import { save } from "./save";
@@ -481,7 +481,7 @@ function ItemPc_GetItemQuantityBySlotId(idx: number): number {
 }
 
 function ItemPc_CountPcItems(): void {
-  // ItemPcCompaction(): save.pcItems never has empty slots.
+  ItemPcCompaction();
   sStateDataPtr.nItems = Math.min(save.pcItems.length, C.PC_ITEMS_COUNT);
   sStateDataPtr.maxShowed = sStateDataPtr.nItems + 1 <= 6 ? sStateDataPtr.nItems + 1 : 6;
 }
@@ -686,7 +686,7 @@ function Task_ItemPcWaitButtonAndFinishWithdrawMultiple(taskId: number): void {
     sound.playSE(C.SE_SELECT);
     const itemId = ItemPc_GetItemIdBySlotId(data[1]);
     removePCItem(itemId, data[8]);
-    // ItemPcCompaction(): not needed.
+    ItemPcCompaction();
     Task_ItemPcCleanUpWithdraw(taskId);
   }
 }

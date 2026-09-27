@@ -56,7 +56,7 @@ import {
   AddWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "./hw/window";
-import { addBagItem, addMoney, addPCItem, ItemId_GetFieldFunc, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFunc, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { InitPokedudeTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
@@ -966,9 +966,9 @@ export function MoveItemSlotInList(slots: Array<{ item: number; quantity: number
 function Pocket_CalculateNItemsAndMaxShowed(pocketId: number): void {
   const d = disp();
   const slots = pocketSlots(pocketId + 1);
-  // BagPocketCompaction: the port's pockets never hold empty slots.
-  for (let i = slots.length - 1; i >= 0; i--) if (!slots[i].item || slots[i].quantity <= 0) slots.splice(i, 1);
-  d.nItems[pocketId] = slots.length;
+  BagPocketCompaction(slots);
+  const firstEmpty = slots.findIndex((slot) => slot.item === C.ITEM_NONE);
+  d.nItems[pocketId] = firstEmpty === -1 ? slots.length : firstEmpty;
   d.maxShowed[pocketId] = d.nItems[pocketId] + 1 > 6 ? 6 : d.nItems[pocketId] + 1;
 }
 

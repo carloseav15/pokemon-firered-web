@@ -48,7 +48,7 @@ import {
 } from "./hw/window";
 import { bagResult } from "./bagMenu";
 import { tmhmMove } from "./menus/monProgress";
-import { addBagItem, addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addBagItem, addMoney, BagPocketCompaction, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { save } from "./save";
 
@@ -374,8 +374,9 @@ export function InitPokedudeTMCase(done: () => void): void {
 
 function TMCaseSetup_GetTMCount(): void {
   const slots = tmSlots();
-  for (let i = slots.length - 1; i >= 0; i--) if (!slots[i].item || slots[i].quantity <= 0) slots.splice(i, 1);
-  dyn().numTMs = slots.length;
+  BagPocketCompaction(slots);
+  const firstEmpty = slots.findIndex((slot) => slot.item === C.ITEM_NONE);
+  dyn().numTMs = firstEmpty === -1 ? slots.length : firstEmpty;
   dyn().maxTMsShown = Math.min(dyn().numTMs + 1, 5);
 }
 

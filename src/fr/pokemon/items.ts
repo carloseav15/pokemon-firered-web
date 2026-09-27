@@ -116,6 +116,20 @@ export function CountItemsInPC(): number {
   return count;
 }
 
+/** ItemPcCompaction (item.c): omit empty fixed-table slots in the compact web save. */
+export function ItemPcCompaction(): void {
+  for (let i = save.pcItems.length - 1; i >= 0; i--) {
+    if (save.pcItems[i].item === C.ITEM_NONE) save.pcItems.splice(i, 1);
+  }
+}
+
+/** BagPocketCompaction (item.c): omit zero-quantity slots from the compact web pocket. */
+export function BagPocketCompaction(slots: BagPocket): void {
+  for (let i = slots.length - 1; i >= 0; i--) {
+    if (GetBagItemQuantity(slots[i]) === 0) slots.splice(i, 1);
+  }
+}
+
 /** SwapItemSlots (item.c), mutating both slot records as the C pointer version does. */
 export function SwapItemSlots(a: BagPocket[number], b: BagPocket[number]): void {
   [a.item, b.item] = [b.item, a.item];
