@@ -241,6 +241,17 @@ export function SetJumpSpriteData(sprite: Sprite, direction: number, distance: n
   sprite.data[6] = 0;
 }
 
+/** event_object_movement.c SetMovementDelay. */
+export function SetMovementDelay(sprite: Sprite, delay: number): void {
+  sprite.data[3] = (delay << 16) >> 16;
+}
+
+/** event_object_movement.c WaitForMovementDelay. */
+export function WaitForMovementDelay(sprite: Sprite): boolean {
+  sprite.data[3] = ((sprite.data[3] - 1) << 16) >> 16;
+  return sprite.data[3] === 0;
+}
+
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
 export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
   const oldX = (objectEvent.currentCoords.x << 16) >> 16;
@@ -895,11 +906,11 @@ export class ObjectEvents {
   }
 
   private setDelay(object: ObjectEvent, delay: number): void {
-    object.sprite.data[3] = delay;
+    SetMovementDelay(object.sprite, delay);
   }
 
   private waitDelay(object: ObjectEvent): boolean {
-    return --object.sprite.data[3] === 0;
+    return WaitForMovementDelay(object.sprite);
   }
 
   private trainerCloseToPlayer(object: ObjectEvent): boolean {

@@ -5,10 +5,23 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.226/11.826 funciones (52,6%)**,
+single-player. A 2026-09-27, la meta mide **6.228/11.826 funciones (52,7%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.426/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.402/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: temporizador de movimiento (2026-09-27)
+
+- Porté `SetMovementDelay` y `WaitForMovementDelay`, preservando el valor `s16`
+  en `sprite.data[3]`, el decremento con wrap de 16 bits y la condición de
+  finalización cuando llega a cero. Los callbacks TS existentes ahora usan
+  estos helpers fuente.
+- En navegador, el delay `1` terminó en `0` y devolvió `true`; desde `0` pasó a
+  `-1` y devolvió `false`; asignar `0x8000` quedó como `-32768`. `?fr=continue`
+  permaneció en la casa de Pallet. Pasaron `check:port`, `check:honesty`, build,
+  inventory, pending y `git diff --check`.
+- `event_object_movement.c` queda 72/759 por nombre; global **6.228/11.826
+  (52,7%)**, con ~129.402 líneas ponderadas sin homólogo.
 
 ## `event_object_movement.c`: inicialización de datos de salto (2026-09-27)
 
