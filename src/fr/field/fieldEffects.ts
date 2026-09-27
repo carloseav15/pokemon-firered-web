@@ -200,6 +200,7 @@ export class FieldEffects {
   private flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
   private shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
   private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
+  private sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
   private surfBlobBobState = C.BOB_NONE;
   private encounterImmunitySteps = 0;
   private previousMetatileBehavior = 0;
@@ -375,6 +376,7 @@ export class FieldEffects {
     this.flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
     this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
     this.hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
+    this.sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
     this.poisonMosaicValue = 0;
     this.poisonEffectTaskActive = false;
     this.active.clear();
@@ -523,10 +525,12 @@ export class FieldEffects {
       && MB.MetatileBehavior_IsShallowFlowingWater(prev);
     const isShortGrass = MB.MetatileBehavior_IsShortGrass(cur) && MB.MetatileBehavior_IsShortGrass(prev);
     const isHotSprings = MB.MetatileBehavior_IsHotSprings(cur) && MB.MetatileBehavior_IsHotSprings(prev);
+    const isSandPile = MB.MetatileBehavior_IsDeepSand(cur) && MB.MetatileBehavior_IsDeepSand(prev);
     if (object.disableCoveringGroundEffects) {
       object.inShortGrass = false;
       object.inHotSprings = false;
       object.inShallowFlowingWater = false;
+      object.inSandPile = false;
     } else {
       if (isShortGrass && !object.inShortGrass) {
         object.inShortGrass = true;
@@ -536,6 +540,10 @@ export class FieldEffects {
         object.inHotSprings = true;
         this.GroundEffect_HotSprings(object);
       } else if (!isHotSprings) object.inHotSprings = false;
+      if (isSandPile && !object.inSandPile) {
+        object.inSandPile = true;
+        this.GroundEffect_SandHeap(object);
+      } else if (!isSandPile) object.inSandPile = false;
     }
     if (isShallowFlowing && !object.disableCoveringGroundEffects && !object.inShallowFlowingWater) {
       object.inShallowFlowingWater = true;
@@ -647,6 +655,40 @@ export class FieldEffects {
       s.invisible = object.sprite.invisible;
     };
     this.hotSpringsEffects.set(object, sprite);
+  }
+
+  /** GroundEffect_SandHeap / FldEff_SandPile. */
+  GroundEffect_SandHeap(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("SandPile", object.sprite.x, object.sprite.y);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority;
+    sprite.y2 = (object.sprite.height >> 1) - 2;
+    sprite.data[0] = object.localId;
+    sprite.data[1] = object.mapNum;
+    sprite.data[2] = object.mapGroup;
+    sprite.data[3] = object.sprite.x;
+    sprite.data[4] = object.sprite.y;
+    sprite.seekAnim(2);
+    sprite.callback = (s) => {
+      if (!object.active || !object.inSandPile) {
+        this.ow.sprites.destroy(s);
+        if (this.sandPileEffects.get(object) === s) this.sandPileEffects.delete(object);
+        return;
+      }
+      const moved = s.data[3] !== object.sprite.x || s.data[4] !== object.sprite.y;
+      if (moved) {
+        s.data[3] = object.sprite.x;
+        s.data[4] = object.sprite.y;
+        if (s.animEnded) s.startAnim(0);
+      }
+      s.x = object.sprite.x;
+      s.y = object.sprite.y;
+      s.subpriority = object.sprite.subpriority;
+      s.invisible = object.sprite.invisible;
+    };
+    this.sandPileEffects.set(object, sprite);
   }
 
   /** GroundEffect_StepOnPuddle (event_object_movement.c): play the linked splash on a puddle step. */
