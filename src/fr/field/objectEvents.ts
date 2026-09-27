@@ -302,7 +302,7 @@ export const gObjectEvents: ObjectEvent[] = Array.from({ length: OBJECT_EVENTS_C
   return o;
 });
 
-type GfxInfo = { width: number; height: number; inanimate: boolean; anims: AnimCmd[][]; frames: FrameImage[]; animTable: string; shadowSize: string; tracks: string };
+type GfxInfo = { width: number; height: number; inanimate: boolean; anims: AnimCmd[][]; frames: FrameImage[]; reflectionFrames: FrameImage[]; bridgeReflectionFrames: FrameImage[]; disableReflectionPaletteLoad: boolean; animTable: string; shadowSize: string; tracks: string };
 const gfxCache = new Map<number, GfxInfo>();
 
 export function graphicsInfo(graphicsId: number): GfxInfo {
@@ -317,6 +317,9 @@ export function graphicsInfo(graphicsId: number): GfxInfo {
     inanimate: raw.inanimate,
     anims,
     frames: raw.frames.map(([file, index]) => ({ url: `${DATA_ROOT}/${file}`, index, width: raw.width, height: raw.height })),
+    reflectionFrames: raw.reflectionFrames.map(([file, index]) => ({ url: `${DATA_ROOT}/${file}`, index, width: raw.width, height: raw.height })),
+    bridgeReflectionFrames: raw.bridgeReflectionFrames.map(([file, index]) => ({ url: `${DATA_ROOT}/${file}`, index, width: raw.width, height: raw.height })),
+    disableReflectionPaletteLoad: raw.disableReflectionPaletteLoad,
     animTable: raw.anims,
     shadowSize: raw.shadowSize,
     tracks: raw.tracks,

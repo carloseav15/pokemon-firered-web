@@ -9,7 +9,7 @@ import { Sprite, loadImage } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
 import { DATA_ROOT, rom, type AnimCmd } from "../rom";
 import { flagGet, save, varGet, varSet } from "../save";
-import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, type ObjectEvent } from "./objectEvents";
+import { DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, graphicsInfo, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { FieldMoveEffects } from "./fieldMoves";
 import { DoPoisonFieldEffect } from "./poison";
@@ -208,6 +208,7 @@ export class FieldEffects {
   readonly active = new Set<number>();
   private readonly emoteCounts = new Map<number, number>();
   private readonly disguiseSprites = new WeakMap<ObjectEvent, Sprite>();
+  private readonly reflectionSprites = new Map<ObjectEvent, Sprite>();
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
   poisonMosaicValue = 0;
@@ -372,6 +373,8 @@ export class FieldEffects {
   }
 
   reset(): void {
+    for (const sprite of this.reflectionSprites.values()) this.ow.sprites.destroy(sprite);
+    this.reflectionSprites.clear();
     this.surfBlob = undefined;
     this.flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
     this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -518,6 +521,7 @@ export class FieldEffects {
   // ---------------------------------------------------------------- ground effects
 
   groundEffect(object: ObjectEvent, kind: "spawn" | "begin" | "finish"): void {
+    if (kind !== "finish") this.updateObjectReflection(object);
     if (!fxData) return;
     const cur = object.currentMetatileBehavior;
     const prev = object.previousMetatileBehavior;
@@ -566,6 +570,73 @@ export class FieldEffects {
     } else if (kind === "spawn") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, true);
     }
+  }
+
+  /** ObjectEventCheckForReflectiveSurface and GetGroundEffectFlags_Reflection. */
+  private updateObjectReflection(object: ObjectEvent): void {
+    const type = this.objectReflectionType(object);
+    if (type === 0) {
+      object.hasReflection = false;
+      const old = this.reflectionSprites.get(object);
+      if (old) this.ow.sprites.destroy(old);
+      this.reflectionSprites.delete(object);
+      return;
+    }
+    if (object.hasReflection) return;
+
+    object.hasReflection = true;
+    const info = graphicsInfo(object.graphicsId);
+    if (info.reflectionFrames.length === 0) return;
+    const isBridge = !info.disableReflectionPaletteLoad
+      && (MB.MetatileBehavior_GetBridgeType(object.previousMetatileBehavior)
+        || MB.MetatileBehavior_GetBridgeType(object.currentMetatileBehavior));
+    const sprite = new Sprite();
+    sprite.frameImages = isBridge && info.bridgeReflectionFrames.length > 0
+      ? info.bridgeReflectionFrames
+      : info.reflectionFrames;
+    sprite.width = info.width;
+    sprite.height = info.height;
+    sprite.centerToCornerVecX = object.sprite.centerToCornerVecX;
+    sprite.centerToCornerVecY = object.sprite.centerToCornerVecY;
+    sprite.priority = 3;
+    sprite.subpriority = 0x98;
+    sprite.coordOffsetEnabled = object.sprite.coordOffsetEnabled;
+    sprite.vFlip = true;
+    sprite.callback = (reflection) => {
+      if (!object.active || !object.hasReflection) {
+        this.ow.sprites.destroy(reflection);
+        this.reflectionSprites.delete(object);
+        return;
+      }
+      const source = object.sprite;
+      reflection.imageValue = source.imageValue;
+      reflection.hFlip = source.hFlip;
+      reflection.x = source.x;
+      reflection.y = source.y + info.height - 2;
+      reflection.x2 = source.x2;
+      reflection.y2 = -source.y2;
+      reflection.centerToCornerVecX = source.centerToCornerVecX;
+      reflection.centerToCornerVecY = source.centerToCornerVecY;
+      reflection.coordOffsetEnabled = source.coordOffsetEnabled;
+      reflection.invisible = source.invisible;
+    };
+    this.reflectionSprites.set(object, sprite);
+    this.ow.sprites.add(sprite);
+  }
+
+  /** Scans the two metatile rows beneath the current and previous object tile. */
+  private objectReflectionType(object: ObjectEvent): number {
+    const positions = [object.currentCoords, object.previousCoords];
+    for (let yOffset = 1; yOffset <= 2; yOffset++) {
+      for (const position of positions) {
+        const x = (position.x << 16) >> 16;
+        const y = ((position.y + yOffset) << 16) >> 16;
+        const behavior = this.ow.map.behaviorAt(x, y);
+        if (MB.MetatileBehavior_IsIce(behavior)) return 1;
+        if (MB.MetatileBehavior_IsReflective(behavior)) return 2;
+      }
+    }
+    return 0;
   }
 
   /** GroundEffect_FlowingWater / FldEff_FeetInFlowingWater. */

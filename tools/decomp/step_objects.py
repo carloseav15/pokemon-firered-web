@@ -87,8 +87,54 @@ def export_objects(constants: dict[str, int]) -> None:
     block = re.search(r"sObjectEventSpritePalettes\[\] = \{(.*?)\};", movement_c, flags=re.S).group(1)
     for pal_symbol, tag in re.findall(r"\{(gObjectEventPal_\w+),\s*(\w+)\}", block):
         palette_tags[tag] = pal_symbol
-    tag_values = parse_define_values(DECOMP / "include/event_object_movement.h", "OBJ_EVENT_PAL_TAG_")
-    tag_values.update(parse_define_values(DECOMP / "include/constants/event_objects.h", "OBJ_EVENT_PAL_TAG_"))
+    movement_header = (DECOMP / "include/event_object_movement.h").read_text()
+    palette_enum = re.search(r"enum\s*\{(.*?)\}\s*;", movement_header, flags=re.S)
+    palette_slots = {}
+    if palette_enum:
+        palette_slots = {name: index for index, name in enumerate(re.findall(r"\bPALSLOT_\w+\b", palette_enum.group(1)))}
+
+    def tag_array(name: str) -> list[str]:
+        match = re.search(rf"\b{re.escape(name)}\[\]\s*=\s*\{{(.*?)\}}\s*;", movement_c, flags=re.S)
+        return re.findall(r"OBJ_EVENT_PAL_TAG_\w+", match.group(1)) if match else []
+
+    palette_arrays = {
+        name: re.findall(r"OBJ_EVENT_PAL_TAG_\w+", body)
+        for name, body in re.findall(r"(?:static\s+)?const\s+u16\s+(\w+)\[\]\s*=\s*\{(.*?)\};", movement_c, flags=re.S)
+    }
+
+    def paired_palette_sets(name: str) -> dict[str, str]:
+        match = re.search(rf"\b{name}\[\]\s*=\s*\{{(.*?)\}}\s*;", movement_c, flags=re.S)
+        if not match:
+            return {}
+        return {tag: array for tag, array in re.findall(r"\{\s*(OBJ_EVENT_PAL_TAG_\w+)\s*,\s*(\w+)\s*\}", match.group(1))}
+
+    player_reflection_sets = paired_palette_sets("gPlayerReflectionPaletteSets")
+    special_reflection_sets = paired_palette_sets("gSpecialObjectReflectionPaletteSets")
+    object_reflection_tags = tag_array("sObjectPaletteTags0")
+    reflection_map_block = re.search(r"gReflectionEffectPaletteMap\[16\]\s*=\s*\{(.*?)\};", movement_c, flags=re.S)
+    reflection_map = {}
+    if reflection_map_block:
+        for source, target in re.findall(r"\[\s*(PALSLOT_\w+)\s*\]\s*=\s*(PALSLOT_\w+)", reflection_map_block.group(1)):
+            reflection_map[source] = target
+
+    def reflection_palette_tag(info: dict[str, str]) -> str | None:
+        slot = info.get("paletteSlot", "").strip()
+        source_tag = info.get("paletteTag", "").strip()
+        if slot == "PALSLOT_PLAYER":
+            array = player_reflection_sets.get(source_tag)
+            values = palette_arrays.get(array or "", [])
+            return values[0] if values else None
+        if slot == "PALSLOT_NPC_SPECIAL":
+            array = special_reflection_sets.get(source_tag)
+            values = palette_arrays.get(array or "", [])
+            return values[0] if values else None
+        target_slot = reflection_map.get(slot)
+        if target_slot is None:
+            return None
+        target_index = palette_slots.get(target_slot)
+        if target_index is None or target_index >= len(object_reflection_tags):
+            return None
+        return object_reflection_tags[target_index]
 
     pic_tables = {}
     for name, body in re.findall(r"const struct SpriteFrameImage (\w+)\[\]\s*=\s*\{(.*?)\};", (base / "object_event_pic_tables.h").read_text(), flags=re.S):
@@ -134,6 +180,10 @@ def export_objects(constants: dict[str, int]) -> None:
         info = infos.get(info_name)
         if info is None:
             continue
+        reflect_tag = reflection_palette_tag(info)
+        reflect_symbol = palette_tags.get(reflect_tag or "")
+        bridge_tag = info.get("reflectionPaletteTag", "OBJ_EVENT_PAL_TAG_NONE").strip()
+        bridge_symbol = palette_tags.get(bridge_tag)
         pal_symbol = palette_tags.get(info.get("paletteTag", ""))
         frames = []
         images = {}
@@ -143,6 +193,17 @@ def export_objects(constants: dict[str, int]) -> None:
             image = export_pic(pic_symbol, pal_symbol)
             images[pic_symbol] = image["file"]
             frames.append([image["file"], frame])
+        reflection_frames = []
+        bridge_reflection_frames = []
+        for pic_symbol, _w, _h, frame in pic_tables.get(info["images"], []):
+            if pic_symbol not in pics:
+                continue
+            reflect_image = export_pic(pic_symbol, reflect_symbol) if reflect_symbol else None
+            bridge_image = export_pic(pic_symbol, bridge_symbol or reflect_symbol) if (bridge_symbol or reflect_symbol) else None
+            if reflect_image:
+                reflection_frames.append([reflect_image["file"], frame])
+            if bridge_image:
+                bridge_reflection_frames.append([bridge_image["file"], frame])
         anim_table = info.get("anims", "NULL")
         used_anims.add(anim_table)
         gfx[constants[gfx_name]] = {
@@ -151,18 +212,24 @@ def export_objects(constants: dict[str, int]) -> None:
             "height": int(info["height"], 0),
             "paletteTag": info.get("paletteTag"),
             "paletteSlot": info.get("paletteSlot"),
+            "reflectionPaletteTag": info.get("reflectionPaletteTag"),
+            "reflectionFramePaletteTag": reflect_tag,
+            "bridgeReflectionFramePaletteTag": bridge_tag if bridge_symbol else reflect_tag,
+            "disableReflectionPaletteLoad": info.get("disableReflectionPaletteLoad", "FALSE") == "TRUE",
             "shadowSize": info.get("shadowSize"),
             "inanimate": info.get("inanimate", "FALSE") == "TRUE",
             "tracks": info.get("tracks"),
             "anims": anim_table,
             "frames": frames,
+            "reflectionFrames": reflection_frames,
+            "bridgeReflectionFrames": bridge_reflection_frames,
         }
-    tables = {name: [entry for entry in anim_tables.get(name, [])] for name in used_anims if name in anim_tables}
+    tables = {name: [entry for entry in anim_tables.get(name, [])] for name in sorted(used_anims) if name in anim_tables}
     cmds_needed = {entry for table in tables.values() for entry in table if entry}
     write_json(OUT / "objects.json", {
         "gfx": gfx,
         "animTables": tables,
-        "anims": {name: anim_cmds[name] for name in cmds_needed if name in anim_cmds},
+        "anims": {name: anim_cmds[name] for name in sorted(cmds_needed) if name in anim_cmds},
     })
     print(f"  {len(gfx)} object graphics, {len(exported_images)} images")
 

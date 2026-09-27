@@ -92,11 +92,17 @@ export type ObjectGfxInfo = {
   height: number;
   paletteTag: string;
   paletteSlot: string;
+  reflectionPaletteTag: string;
+  reflectionFramePaletteTag: string | null;
+  bridgeReflectionFramePaletteTag: string | null;
+  disableReflectionPaletteLoad: boolean;
   shadowSize: string;
   inanimate: boolean;
   tracks: string;
   anims: string;
   frames: Array<[string, number]>;
+  reflectionFrames: Array<[string, number]>;
+  bridgeReflectionFrames: Array<[string, number]>;
 };
 
 export type SpeciesInfo = {
