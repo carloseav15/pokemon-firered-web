@@ -8,7 +8,7 @@ import { concat, copy, countDigits, encode, intToDecimal, length, stringVars, ST
 import { paletteFade } from "../gba/fade";
 import { A_BUTTON, B_BUTTON, JOY_NEW } from "../gba/input";
 import { tasks } from "../gba/tasks";
-import { b64, rom, type MapHeader } from "../rom";
+import { b64, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
 import { random } from "../random";
 import { flagClear, flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
@@ -20,7 +20,7 @@ import { runSpecial } from "./specials";
 import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "../mapPreviewScreen";
 import type { ScriptCommand, ScriptRunner } from "./context";
-import { ClearRamScript, gRamScriptRetAddr } from "./context";
+import { ClearRamScript, GetSavedRamScriptIfValid, gRamScriptRetAddr, ramScriptDataBytes, setRamScriptRetAddr } from "./context";
 
 const CONDITION_TABLE = [
   [1, 0, 0],
@@ -105,7 +105,15 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   returnram: (ctx) => { ctx.ScriptJump(gRamScriptRetAddr ?? 0); return false; },
   endram: (ctx) => { ClearRamScript(); ctx.StopScript(); return true; },
   setmysteryeventstatus: (ctx) => { ctx.readByte(); return false; },
-  trywondercardscript: () => false,
+  trywondercardscript: (ctx) => {
+    const script = GetSavedRamScriptIfValid(ctx);
+    if (script !== null) {
+      setRamScriptRetAddr(ctx.scriptPtr);
+      rom.setRamScriptBytes(ramScriptDataBytes());
+      ctx.ScriptJump(RAM_SCRIPT_BASE + 4);
+    }
+    return false;
+  },
   loadword: (ctx) => { const i = ctx.readByte(); ctx.data[i] = ctx.ScriptReadWord(); return false; },
   loadbyte: (ctx) => { const i = ctx.readByte(); ctx.data[i] = ctx.readByte(); return false; },
   loadbytefromptr: (ctx) => { const i = ctx.readByte(); ctx.data[i] = rom.u8(ctx.ScriptReadWord()); return false; },

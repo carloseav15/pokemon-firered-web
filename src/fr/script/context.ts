@@ -5,6 +5,7 @@ import { COMMANDS } from "./commands";
 import type { Overworld } from "../field/overworld";
 import { save } from "../save";
 import { CalcCRC16WithTable } from "../util";
+import { SPECIALS } from "./specials";
 
 export const SCRIPT_MODE_STOPPED = 0;
 export const SCRIPT_MODE_BYTECODE = 1;
@@ -18,6 +19,10 @@ const RAM_SCRIPT_DATA_SIZE = 999;
 const RAM_SCRIPT_BYTES = 995;
 
 export let gRamScriptRetAddr: number | null = null;
+
+export function setRamScriptRetAddr(addr: number | null): void {
+  gRamScriptRetAddr = addr;
+}
 
 // script.c file-static input recorded for Quest Log playback.
 let sQuestLogInputIsDpad = false;
@@ -41,7 +46,7 @@ export function ClearQuestLogInput(): void { sQuestLogInput = 0; }
 /** GetRegisteredQuestLogInput (script.c). */
 export function GetRegisteredQuestLogInput(): number { return sQuestLogInput; }
 
-function ramScriptDataBytes(): Uint8Array {
+export function ramScriptDataBytes(): Uint8Array {
   const data = save.ramScript!.data;
   const bytes = new Uint8Array(RAM_SCRIPT_DATA_SIZE);
   bytes[0] = data.magic;
@@ -103,6 +108,21 @@ export function ValidateRamScript(): boolean {
 /** InitRamScript_NoObjectEvent (script.c). */
 export function InitRamScript_NoObjectEvent(script: ArrayLike<number>, scriptSize: number): void {
   InitRamScript(script, Math.min(scriptSize, RAM_SCRIPT_BYTES), 0xff, 0xff, 0xff);
+}
+
+/** GetSavedRamScriptIfValid (script.c). */
+export function GetSavedRamScriptIfValid(ctx?: ScriptRunner): number[] | null {
+  const slot = save.ramScript;
+  if (!slot) return null;
+  if (ctx && SPECIALS.ValidateSavedWonderCard?.(ctx) !== 1) return null;
+  const scriptData = slot.data;
+  if (scriptData.magic !== RAM_SCRIPT_MAGIC) return null;
+  if (scriptData.mapGroup !== 0xff || scriptData.mapNum !== 0xff || scriptData.objectId !== 0xff) return null;
+  if (CalculateRamScriptChecksum() !== slot.checksum) {
+    ClearRamScript();
+    return null;
+  }
+  return scriptData.script;
 }
 
 export type ScriptCommand = (ctx: ScriptRunner) => boolean;

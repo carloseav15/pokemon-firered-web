@@ -1,6 +1,7 @@
 // map_name_popup.c: the region name box that slides in from the top.
 
 import { b64, rom } from "../rom";
+import * as C from "../generated/constants";
 import { flagGet } from "../save";
 import { concat, encode } from "../gba/charmap";
 import { FONT_NORMAL, stringWidth } from "../gba/font";
@@ -55,7 +56,7 @@ export class MapNamePopup {
 
   private isQuestLogPlayback(): boolean {
     const state = (this.ow.game as unknown as { questLogState?: number }).questLogState;
-    return state !== undefined && state >= C_QL_PLAYBACK && state <= (rom.constants.QL_STATE_PLAYBACK_LAST ?? C_QL_PLAYBACK);
+    return state !== undefined && state >= C_QL_PLAYBACK && state <= (rom.constants?.QL_STATE_PLAYBACK_LAST ?? C.QL_STATE_PLAYBACK_LAST);
   }
 
   DismissMapNamePopup(): void {
@@ -144,4 +145,4 @@ export class MapNamePopup {
   }
 }
 
-const C_QL_PLAYBACK = rom.constants.QL_STATE_PLAYBACK ?? -1;
+const C_QL_PLAYBACK = rom.constants?.QL_STATE_PLAYBACK ?? C.QL_STATE_PLAYBACK;

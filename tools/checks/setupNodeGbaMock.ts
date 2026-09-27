@@ -1,4 +1,10 @@
-// Polyfill minimal browser globals needed by GBA HW in Node.js headless checks
+import { readFileSync, existsSync } from "node:fs";
+import { rom } from "../../src/fr/rom.ts";
+
+const constsPath = process.cwd() + "/public/fr/constants.json";
+if (existsSync(constsPath) && !rom.constants) {
+  rom.constants = JSON.parse(readFileSync(constsPath, "utf8"));
+}
 
 if (typeof (globalThis as any).ImageData === 'undefined') {
   (globalThis as any).ImageData = class ImageData {

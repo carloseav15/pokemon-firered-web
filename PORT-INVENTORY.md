@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
 | Parcial (< 80 % de funciones) | 68 | 137462 | 1379/6161 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 18 | 33213 | 1086/1245 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 132 | 106099 | 3542/3542 |
+| Casi completo (≥ 80 % y < 100 %) | 17 | 32630 | 1032/1190 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 133 | 106682 | 3597/3597 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **116** | **195810** | |
-| **Total en alcance** | **253** | **303042** | **6035/11826** |
+| **Pendiente de portar** | **115** | **195227** | |
+| **Total en alcance** | **253** | **303042** | **6036/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -153,7 +153,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
 | `trainer_see.c` | 750 | 34/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
 | `item.c` | 680 | 47/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
-| `script.c` | 583 | 54/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
@@ -212,6 +211,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `map_preview_screen.c` | 616 | 14/14 | `mapPreviewScreen.ts` |  |  |
 | `renewable_hidden_items.c` | 608 | 4/4 | `renewableHiddenItems.ts` |  |  |
 | `mon_markings.c` | 605 | 15/15 | `monMarkings.ts` |  |  |
+| `script.c` | 583 | 55/55 | `field/fieldControl.ts`, `script/context.ts` |  |  |
 | `option_menu.c` | 575 | 19/19 | `optionMenu.ts` |  |  |
 | `trig.c` | 542 | 4/4 | `hw/trig.ts` |  |  |
 | `battle_anim_status_effects.c` | 535 | 12/12 | `battle/anim.ts`, `battle/anims/statusEffects.ts` |  |  |

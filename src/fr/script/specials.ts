@@ -43,7 +43,7 @@ function Task_EnableScriptAfterMusicFade(taskId: number, ctx: ScriptRunner): voi
   }
 }
 
-const SPECIALS: Record<string, Special> = {
+export const SPECIALS: Record<string, Special> = {
   ...EXTRA_SPECIALS,
   ...DAYCARE_SPECIALS,
   GetSeagallopNumber: () => getSeagallopNumber(),
