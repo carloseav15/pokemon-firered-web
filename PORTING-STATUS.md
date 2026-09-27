@@ -5,10 +5,26 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.131/11.826 funciones (51,8%)**,
-con **104 archivos** con huecos y una estimación ponderada de
-**~131.095/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.133/11.826 funciones (51,9%)**,
+con **103 archivos** con huecos y una estimación ponderada de
+**~131.048/303.042 líneas C (43,2%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `tm_case.c`: tutorial guiado de Pokédude (2026-09-27)
+
+- Porté `Task_Pokedude_Start` y la secuencia por estados de `Task_Pokedude_Run`:
+  102 frames entre movimientos forzados del cursor, dos textos fuente,
+  confirmaciones A/B, salida temprana con B, restauración de la bolsa/cursor,
+  copia de paleta y retorno al controlador de Teachy TV. `InitPokedudeBagTMs`
+  transmite al TM Case los callbacks de reanudar y preparar el retorno; al
+  volver, copia también el buffer de paleta desvanecida al buffer base.
+- Este flujo conserva la temporización y los textos de `tm_case.c`. La
+  preparación de batalla que Teachy TV muestra detrás de la funda TM sigue
+  adaptada, y no verifiqué el resultado visual en navegador.
+- `tm_case.c` queda 73/73 por nombre. Global: **6.133/11.826 (51,9%)**, 103
+  archivos con huecos y ~131.048 líneas C ponderadas sin homólogo. Pasaron
+  `check:port`, `check:honesty`, `build`, inventory, pending y `git diff
+  --check`; sin ejecución en navegador.
 
 ## `tm_case.c`: buffers del menú y confirmación de venta (2026-09-27)
 
@@ -16,14 +32,11 @@ sigue sin demostrar fidelidad.
   `Task_PlaceYesNoBox` y `HandleCreateYesNoMenu`, y conecté la preparación de
   buffers en el estado 12 del setup de la pantalla. Los arreglos JS reemplazan
   las asignaciones C; la lista conserva orden, etiquetas y terminador de cierre.
-- Alineé el nombre de entrada adaptado `Pokedude_InitTMCase` y su caller. El
-  tutorial cronometrado de `Task_Pokedude_Start`/`Task_Pokedude_Run` continúa
-  pendiente; la pantalla hoy muestra los cuatro TMs temporales y restaura la
-  bolsa al volver.
-- `tm_case.c` queda 71/73 por nombre. Global: **6.131/11.826 (51,8%)**, 104
-  archivos con huecos y ~131.095 líneas C ponderadas sin homólogo. Pasaron
-  `check:port`, `check:honesty`, `build`, inventory, pending y `git diff
-  --check`; sin ejecución en navegador.
+- Alineé el nombre de entrada adaptado `Pokedude_InitTMCase` y su caller. En
+  ese corte `tm_case.c` quedó 71/73 por nombre; el tutorial sigue en la entrada
+  posterior. Inventario entonces: **6.131/11.826 (51,8%)**, 104 archivos con
+  huecos y ~131.095 líneas C ponderadas. `check:port`, `check:honesty`, build,
+  inventory, pending y `git diff --check` pasaron; sin navegador.
 
 ## `sound.c`: cries y enrutamiento de efectos por jugador (2026-09-27)
 

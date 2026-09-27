@@ -361,7 +361,7 @@ export function TTVcmd_RenderAndRemoveBg1EndGraphic(taskId: number): void {
 /** TTVcmd_TaskBattleOrFadeByOptionChosen */
 export function TTVcmd_TaskBattleOrFadeByOptionChosen(taskId: number): void {
   if (sStaticResources.whichScript === TTVSCR_TMS) {
-    InitPokedudeBagTMs(() => CB2_ReturnToTeachyTV());
+    InitPokedudeBagTMs(() => CB2_ReturnToTeachyTV(), SetTeachyTvControllerModeToResume);
     return;
   }
   if (sStaticResources.whichScript === TTVSCR_REGISTER) {

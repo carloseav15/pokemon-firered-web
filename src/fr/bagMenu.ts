@@ -590,13 +590,13 @@ export function InitPokedudeBagRegister(done: () => void): void {
 }
 
 /** InitPokedudeBag for the Teachy TV TM lesson: item_menu.c Task_Bag_TeachyTvTMs. */
-export function InitPokedudeBagTMs(done: () => void): void {
+export function InitPokedudeBagTMs(done: () => void, onSkip?: () => void, onReshow?: () => void): void {
   const backup = BackUpPlayerBag();
   addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
   addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
   GoToBagMenu(C.ITEMMENULOCATION_TTVSCR_TMS, C.OPEN_BAG_ITEMS, () => {
     RestorePlayerBag(backup);
-    Pokedude_InitTMCase(done);
+    Pokedude_InitTMCase(done, onSkip, onReshow ?? CB2_SetUpReshowBattleScreenAfterMenu);
   });
 }
 

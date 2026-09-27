@@ -7,8 +7,8 @@
 import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, stringWidth } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON } from "./gba/input";
+import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, stringWidth } from "./gba/font";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, SELECT_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
 import { incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
@@ -31,7 +31,7 @@ import {
   type YesNoFuncTable,
 } from "./hw/menuHelpers";
 import {
-  BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, OBJ_PLTT_OFFSET, PALETTES_ALL, PLTT_ID, ResetPaletteFade, RGB_BLACK,
+  BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_OFFSET, PALETTES_ALL, PLTT_ID, ResetPaletteFade, RGB_BLACK,
   TransferPlttBuffer, UpdatePaletteFade,
 } from "./hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
@@ -41,7 +41,7 @@ import {
   LoadSpritePalette, LoadSpriteSheet, oamData, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAnim, ANIMCMD_END,
   ANIMCMD_FRAME, type Sprite, type SpriteTemplate,
 } from "./hw/sprite";
-import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import {
   AddWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PutWindowTilemap, RemoveWindow, WINDOW_NONE, type WindowTemplate,
@@ -127,6 +127,10 @@ let sListMenuStringsBuffer: Uint8Array[] | null = null;
 let gMultiuseListMenuTemplate: ListMenuTemplate | null = null;
 let sHandlers: TmCaseHandlers = {};
 let sMenuActions: MenuAction[] = [];
+let sPokedudeCursorBackup: { selectedRow: number; scrollOffset: number } | null = null;
+let sPokedudeOnSkip: (() => void) | null = null;
+let sPokedudeOnReshow: (() => void) | null = null;
+let sPokedudeBagBackup: { tmCase: typeof save.bag.tmCase; keyItems: typeof save.bag.keyItems } | null = null;
 
 type TaskData = { listTaskId: number; selection: number; quantityOwned: number; quantitySelected: { value: number } };
 const taskData = new Map<number, TaskData>();
@@ -203,7 +207,7 @@ function DoSetUpTMCaseUI(): boolean {
     case 12: CreateTMCaseListMenuBuffers(); InitTMCaseListMenuItems(); gMain.state++; break;
     case 13: PrintTitle(); gMain.state++; break;
     case 14: {
-      const taskId = tasks.create(Task_HandleListInput, 0);
+      const taskId = tasks.create(sStatic.menuType === C.TMCASE_POKEDUDE ? Task_Pokedude_Start : Task_HandleListInput, 0);
       td(taskId).listTaskId = ListMenuInit(gMultiuseListMenuTemplate!, sStatic.scrollOffset, sStatic.selectedRow);
       gMain.state++;
       break;
@@ -373,12 +377,16 @@ export function ResetTMCaseCursorPos(): void {
 /**
  * Adapted tm_case.c Pokedude_InitTMCase: expose its four temporary sample TMs,
  * then restore the player's TM/key-item pockets when the case returns.
- * The source's timed narration/forced cursor tour is still not emulated.
+ * The timed narration and forced cursor tour run in Task_Pokedude_Run below.
  */
-export function Pokedude_InitTMCase(done: () => void): void {
+export function Pokedude_InitTMCase(done: () => void, onSkip?: () => void, onReshow?: () => void): void {
   const tmBackup = save.bag.tmCase.map((slot) => ({ ...slot }));
   const keyItemsBackup = save.bag.keyItems.map((slot) => ({ ...slot }));
   const selectedRow = sStatic.selectedRow, scrollOffset = sStatic.scrollOffset;
+  sPokedudeCursorBackup = { selectedRow, scrollOffset };
+  sPokedudeOnSkip = onSkip ?? null;
+  sPokedudeOnReshow = onReshow ?? null;
+  sPokedudeBagBackup = { tmCase: tmBackup, keyItems: keyItemsBackup };
   save.bag.tmCase = [];
   save.bag.keyItems = [];
   ResetTMCaseCursorPos();
@@ -447,6 +455,121 @@ function Task_FadeOutAndCloseTMCase(taskId: number): void {
   SetVBlankCallback(null);
   SetMainCallback2(null);
   cb?.();
+}
+
+/** Task_Pokedude_Start: begin the C tutorial once the opening palette fade ends. */
+function Task_Pokedude_Start(taskId: number): void {
+  if (gPaletteFade.active) return;
+  const data = tasks.tasks[taskId]!.data;
+  data[8] = 0;
+  data[9] = 0;
+  tasks.setFunc(taskId, Task_Pokedude_Run);
+}
+
+/** Task_Pokedude_Run from tm_case.c; task data[8..9] hold its state and timer. */
+function Task_Pokedude_Run(taskId: number): void {
+  const data = tasks.tasks[taskId]!.data;
+  let state = data[8]!;
+  let timer = data[9]!;
+
+  if ((joy.newKeys & B_BUTTON) && state < 21) {
+    state = 21;
+    sPokedudeOnSkip?.();
+  }
+
+  switch (state) {
+    case 0:
+      BeginNormalPaletteFade(0xffff8405, 4, 0, 6, 0);
+      SetDescriptionWindowShade(1);
+      state++;
+      break;
+    case 1:
+    case 11:
+      if (!gPaletteFade.active && ++timer > 101) { timer = 0; state++; }
+      break;
+    case 2: case 3: case 4: case 12: case 13: case 14:
+      if (timer === 0) Task_PokedudeMoveCursor(td(taskId).listTaskId, DPAD_DOWN);
+      if (++timer > 101) { timer = 0; state++; }
+      break;
+    case 5: case 6: case 7: case 15: case 16: case 17:
+      if (timer === 0) Task_PokedudeMoveCursor(td(taskId).listTaskId, DPAD_UP);
+      if (++timer > 101) { timer = 0; state++; }
+      break;
+    case 8:
+      SetDescriptionWindowShade(1);
+      PrintMessageWithFollowupTask(taskId, FONT_MALE, text("gPokedudeText_TMTypes"), Task_Pokedude_Run);
+      state++;
+      break;
+    case 9:
+    case 19:
+      RunTextPrinters();
+      if (!IsTextPrinterActive(WIN_MESSAGE)) state++;
+      break;
+    case 10:
+      if (joy.newKeys & (A_BUTTON | B_BUTTON)) {
+        SetDescriptionWindowShade(0);
+        BeginNormalPaletteFade(0x00000400, 0, 6, 0, 0);
+        ClearDialogWindowAndFrameToTransparent(WIN_MESSAGE, false);
+        ScheduleBgCopyTilemapToVram(1);
+        state++;
+      }
+      break;
+    case 18:
+      SetDescriptionWindowShade(1);
+      PrintMessageWithFollowupTask(taskId, FONT_MALE, text("gPokedudeText_ReadTMDescription"), Task_Pokedude_Run);
+      state++;
+      break;
+    case 20:
+      if (joy.newKeys & (A_BUTTON | B_BUTTON)) state++;
+      break;
+    case 21:
+      if (!gPaletteFade.active) {
+        if (sPokedudeBagBackup) {
+          save.bag.tmCase = sPokedudeBagBackup.tmCase;
+          save.bag.keyItems = sPokedudeBagBackup.keyItems;
+        }
+        DestroyListMenuTask(td(taskId).listTaskId);
+        if (sPokedudeCursorBackup) {
+          sStatic.selectedRow = sPokedudeCursorBackup.selectedRow;
+          sStatic.scrollOffset = sPokedudeCursorBackup.scrollOffset;
+        }
+        sPokedudeCursorBackup = null;
+        sPokedudeOnSkip = null;
+        sPokedudeBagBackup = null;
+        gPlttBufferUnfaded.set(gPlttBufferFaded);
+        sPokedudeOnReshow?.();
+        sPokedudeOnReshow = null;
+        BeginNormalPaletteFade(PALETTES_ALL, -2, 0, 16, 0);
+        state++;
+      }
+      break;
+    default:
+      if (!gPaletteFade.active) {
+        const cb = dyn().nextScreenCallback ?? sStatic.exitCallback;
+        RemoveScrollArrows();
+        DestroyTMCaseBuffers();
+        tasks.destroy(taskId);
+        taskData.delete(taskId);
+        SetVBlankCallback(null);
+        SetMainCallback2(null);
+        cb?.();
+        return;
+      }
+      break;
+  }
+  data[8] = state;
+  data[9] = timer;
+}
+
+/** Apply the one-frame list cursor input injected by the C tutorial task. */
+function Task_PokedudeMoveCursor(listTaskId: number, direction: number): void {
+  const newKeys = joy.newKeys;
+  const repeated = joy.repeated;
+  joy.newKeys = 0;
+  joy.repeated = direction;
+  ListMenu_ProcessInput(listTaskId);
+  joy.newKeys = newKeys;
+  joy.repeated = repeated;
 }
 
 function Task_HandleListInput(taskId: number): void {

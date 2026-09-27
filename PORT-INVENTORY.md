@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 63 | 135686 | 1341/6053 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 12 | 26255 | 841/977 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 144 | 114979 | 3921/3921 |
+| Casi completo (≥ 80 % y < 100 %) | 11 | 24518 | 770/904 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 145 | 116716 | 3994/3994 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **104** | **186930** | |
-| **Total en alcance** | **253** | **303042** | **6131/11826** |
+| **Pendiente de portar** | **103** | **185193** | |
+| **Total en alcance** | **253** | **303042** | **6133/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -137,7 +137,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
-| `tm_case.c` | 1737 | 71/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
 | `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
@@ -161,6 +160,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `field_weather_effects.c` | 2346 | 93/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  |  |
 | `battle_anim_special.c` | 2304 | 81/81 | `battle/anims/special.ts`, `battle/gfx_sfx_util.ts`, `battle/interface.ts` … |  |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
+| `tm_case.c` | 1737 | 73/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
 | `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
 | `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
 | `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `pokemonSpecialAnim.ts` |  |  |
