@@ -61,6 +61,12 @@ export class Sprite {
   animPaused = false;
   animLoopCounter = 0;
   affineAnimPaused = false;
+  /** OAM affine state used by object-event movement actions. */
+  affineMode = 0;
+  affineAnimNum = 0;
+  affineScaleX = 1;
+  affineScaleY = 1;
+  affineRotation = 0;
   frameImages: FrameImage[] = [];
   imageValue = 0;
   data = new Array<number>(16).fill(0);
@@ -198,6 +204,12 @@ export class SpriteManager {
   drawSprite(ctx: CanvasRenderingContext2D, sprite: Sprite): void {
     let x = sprite.x + sprite.x2 + sprite.centerToCornerVecX;
     let y = sprite.y + sprite.y2 + sprite.centerToCornerVecY;
+    // DOUBLE expands the OAM bounds around the same center. With the identity
+    // matrix, the rendered pixels retain their normal anchor position.
+    if (sprite.affineMode & 2) {
+      x += sprite.width >> 1;
+      y += sprite.height >> 1;
+    }
     if (sprite.coordOffsetEnabled) {
       x += this.offsetX;
       y += this.offsetY;
@@ -220,10 +232,15 @@ export class SpriteManager {
     ctx.save();
     if (sprite.alpha !== 1) ctx.globalAlpha = sprite.alpha;
     if (this.filter !== null) ctx.filter = this.filter;
-    const w = frame.width * sprite.scale;
-    const h = frame.height * sprite.scale;
-    const dx = Math.round(x);
-    const dy = Math.round(y);
+    const w = frame.width * sprite.scale * sprite.affineScaleX;
+    const h = frame.height * sprite.scale * sprite.affineScaleY;
+    const dx = Math.round(x + (frame.width * sprite.scale - w) / 2);
+    const dy = Math.round(y + (frame.height * sprite.scale - h) / 2);
+    if (sprite.affineRotation) {
+      ctx.translate(dx + w / 2, dy + h / 2);
+      ctx.rotate(sprite.affineRotation * Math.PI / 128);
+      ctx.translate(-w / 2, -h / 2);
+    }
     if (sprite.hFlip || sprite.vFlip) {
       ctx.translate(dx + (sprite.hFlip ? w : 0), dy + (sprite.vFlip ? h : 0));
       ctx.scale(sprite.hFlip ? -1 : 1, sprite.vFlip ? -1 : 1);

@@ -1985,7 +1985,44 @@ export class ObjectEvents {
     }
     if (id === 0x6a) { object.fixedPriority = true; return this.finishStep(object); }
     if (id === 0x6b) { object.fixedPriority = false; return this.finishStep(object); }
-    if (id >= 0x6c && id <= 0x6f) return this.finishStep(object);
+    if (id === 0x6c) {
+      // InitSpriteAffineAnim + ST_OAM_AFFINE_DOUBLE. The object graphics
+      // tables use gDummySpriteAffineAnimTable, so the initialized matrix is
+      // identity until a real affine sequence is selected.
+      s.affineMode = C.ST_OAM_AFFINE_DOUBLE;
+      s.affineScaleX = s.affineScaleY = 1;
+      s.affineRotation = 0;
+      s.affineAnimNum = 0;
+      s.affineAnimPaused = true;
+      s.centerToCornerVecX = -(s.width >> 1) * 2;
+      s.centerToCornerVecY = -(s.height >> 1) * 2;
+      s.subspriteMode = 0;
+      return this.finishStep(object);
+    }
+    if (id === 0x6d) {
+      // FreeOamMatrix + ST_OAM_AFFINE_OFF + CalcCenterToCornerVec.
+      s.affineMode = C.ST_OAM_AFFINE_OFF;
+      s.affineScaleX = s.affineScaleY = 1;
+      s.affineRotation = 0;
+      s.centerToCornerVecX = -(s.width >> 1);
+      s.centerToCornerVecY = -(s.height >> 1);
+      return this.finishStep(object);
+    }
+    if (id === 0x6e || id === 0x6f) {
+      // C starts affine animation 0 or changes to animation 1, then walks
+      // south at the slower step cadence. FRLG object graphics all point to
+      // the one-command dummy affine table; the visual matrix remains identity.
+      if (step === 0) {
+        this.initWalkSlowStyle(object, DIR_SOUTH, moveAnim(DIR_SOUTH));
+        s.affineAnimPaused = false;
+        s.affineAnimNum = id === 0x6e ? 0 : 1;
+      }
+      if (this.updateWalkSlowStyle(object, "slower")) {
+        s.affineAnimPaused = true;
+        return this.finishStep(object);
+      }
+      return false;
+    }
     // Spin (Rocket Hideout spinner tiles)
     if (id >= 0x94 && id <= 0x97) {
       if (step === 0) {
