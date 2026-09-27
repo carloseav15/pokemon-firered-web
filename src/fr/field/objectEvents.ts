@@ -1246,7 +1246,7 @@ export class ObjectEvents {
 
     // Wandering
     const wanderDirs = type === c.MOVEMENT_TYPE_WANDER_AROUND || type === c.MOVEMENT_TYPE_WANDER_AROUND_SLOWER ? [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST]
-      : type === c.MOVEMENT_TYPE_WANDER_UP_AND_DOWN || type === c.MOVEMENT_TYPE_WANDER_DOWN_AND_UP ? [DIR_NORTH, DIR_SOUTH]
+      : type === c.MOVEMENT_TYPE_WANDER_UP_AND_DOWN || type === c.MOVEMENT_TYPE_WANDER_DOWN_AND_UP ? [DIR_SOUTH, DIR_NORTH]
         : type === c.MOVEMENT_TYPE_WANDER_LEFT_AND_RIGHT || type === c.MOVEMENT_TYPE_WANDER_RIGHT_AND_LEFT ? [DIR_WEST, DIR_EAST] : undefined;
     if (wanderDirs) {
       switch (step) {
