@@ -413,7 +413,7 @@ export class FieldMoveEffects {
             ow.player.setState(PLAYER_AVATAR_GFX_RIDE);
             ow.objects.ObjectEventClearHeldMovementIfFinished(player);
             ow.objects.setHeldMovement(player, actionJumpSpecial(player.movementDirection));
-            ow.effects.startSurfBlob(player, true);
+            ow.effects.startSurfBlob(player, C.BOB_NONE);
             void destX; void destY;
             state = 4;
           }
@@ -423,7 +423,7 @@ export class FieldMoveEffects {
             ow.player.preventStep = false;
             ow.player.flags &= ~PLAYER_AVATAR_FLAG_CONTROLLABLE;
             ow.objects.setHeldMovement(player, actionFace(player.movementDirection));
-            ow.effects.attachSurfBlob();
+            ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
             ow.objects.unfreezeAll();
             ow.controlsLocked = false;
             this.remove(C.FLDEFF_USE_SURF);

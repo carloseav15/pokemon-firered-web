@@ -671,19 +671,21 @@ export class PlayerAvatar {
     this.ow.objects.freezeAll();
     this.ow.savedMusic = 0;
     this.ow.playSpecialMapMusic();
+    this.flags = (this.flags & ~PLAYER_AVATAR_FLAG_SURFING) | PLAYER_AVATAR_FLAG_ON_FOOT;
+    this.preventStep = true;
     const o = this.object;
     let state = 0;
     const id = this.ow.effects.tasks.create(() => {
       if (state === 0) {
         if (!this.ow.objects.isMovementOverridden(o) || this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
-          this.ow.effects.detachSurfBlob();
+          this.ow.effects.setSurfBlobBobState(C.BOB_MON_ONLY);
           this.ow.objects.setHeldMovement(o, 0x14 + direction - 1 + 0x3a - 0x14 - 0x3a + 0x46); // jump special
           state = 1;
         }
       } else if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
         this.setState(PLAYER_AVATAR_GFX_NORMAL);
-        this.flags = (this.flags & ~PLAYER_AVATAR_FLAG_SURFING) | PLAYER_AVATAR_FLAG_ON_FOOT;
-        this.ow.objects.turn(o, direction);
+        this.ow.objects.setHeldMovement(o, actionFace(o.facingDirection));
+        this.preventStep = false;
         this.ow.effects.destroySurfBlob();
         this.ow.objects.unfreezeAll();
         this.ow.controlsLocked = false;
@@ -719,11 +721,11 @@ export class PlayerAvatar {
       if (state === 0) {
         this.setState(PLAYER_AVATAR_GFX_RIDE);
         this.flags = (this.flags & ~PLAYER_AVATAR_FLAG_ON_FOOT) | PLAYER_AVATAR_FLAG_SURFING;
-        this.ow.effects.startSurfBlob(o, true);
+        this.ow.effects.startSurfBlob(o, C.BOB_NONE);
         this.ow.objects.setHeldMovement(o, 0x46 + direction - 1);
         state = 1;
       } else if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
-        this.ow.effects.attachSurfBlob();
+        this.ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
         this.ow.objects.turn(o, direction);
         this.ow.objects.unfreezeAll();
         this.ow.controlsLocked = false;

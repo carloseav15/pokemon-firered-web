@@ -197,7 +197,7 @@ export function DoOutwardBarnDoorWipe(): void { startBarnDoorWipe(BARN_WIPE_OUT)
 export class FieldEffects {
   readonly tasks = tasks;
   private surfBlob?: Sprite;
-  private surfBlobDetached = false;
+  private surfBlobBobState = C.BOB_NONE;
   private encounterImmunitySteps = 0;
   private previousMetatileBehavior = 0;
   /** Active field effect ids (FieldEffectActiveListContains) */
@@ -687,34 +687,47 @@ export class FieldEffects {
 
   // ---------------------------------------------------------------- surf blob
 
-  startSurfBlob(player: ObjectEvent, detached = false): void {
+  startSurfBlob(player: ObjectEvent, bobState = C.BOB_PLAYER_AND_MON): void {
     if (this.surfBlob && !this.surfBlob.destroyed) return;
     const sprite = this.createFromTemplate("SurfBlob", player.sprite.x, player.sprite.y + 8);
     if (!sprite) return;
     this.surfBlob = sprite;
-    this.surfBlobDetached = detached;
+    this.surfBlobBobState = bobState;
+    sprite.data[3] = 0; // sBobDirection
+    sprite.data[4] = 0; // sTimer
     sprite.data[5] = 0;
     sprite.data[6] = -1;
     sprite.data[7] = -1;
-    let timer = 0;
-    let bob = 1;
     sprite.callback = (s) => {
       const dir = player.movementDirection;
       const anim = [0, 0, 1, 2, 3][dir] ?? 0;
       if (s.animNum !== anim) s.startAnim(anim);
       s.priority = player.sprite.priority;
       s.subpriority = player.sprite.subpriority + 1;
-      if (this.surfBlobDetached) return;
-      if ((++timer & 7) === 0) s.y2 += bob;
-      if ((timer & 0x1f) === 0) bob = -bob;
-      player.sprite.y2 = s.y2 + (s.animCmdIndex !== 0 ? 1 : 0);
-      s.x = player.sprite.x;
-      s.y = player.sprite.y + 8;
+      if (s.y2 === 0 && (player.currentCoords.x !== s.data[6] || player.currentCoords.y !== s.data[7])) {
+        s.data[5] = 0;
+        s.data[6] = player.currentCoords.x;
+        s.data[7] = player.currentCoords.y;
+        for (const direction of [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST]) {
+          const [dx, dy] = DIRECTION_VECTORS[direction]!;
+          if (this.ow.map.elevationAt(player.currentCoords.x + dx, player.currentCoords.y + dy) === 3) { s.data[5] = 1; break; }
+        }
+      }
+      if (this.surfBlobBobState !== C.BOB_NONE) {
+        s.data[4] = (s.data[4] + 1) & 0xffff;
+        const interval = s.data[5] === 0 ? 7 : 15;
+        if ((s.data[4] & interval) === 0) s.y2 += s.data[3];
+        if ((s.data[4] & 0x1f) === 0) s.data[3] = -s.data[3];
+        if (this.surfBlobBobState !== C.BOB_MON_ONLY) {
+          player.sprite.y2 = s.y2 + (s.animCmdIndex !== 0 ? 1 : 0);
+          s.x = player.sprite.x;
+          s.y = player.sprite.y + 8;
+        }
+      }
     };
   }
 
-  detachSurfBlob(): void { this.surfBlobDetached = true; }
-  attachSurfBlob(): void { this.surfBlobDetached = false; }
+  setSurfBlobBobState(state: number): void { this.surfBlobBobState = state & 0xf; }
 
   setSurfBlobInvisible(invisible: boolean): void {
     if (this.surfBlob) this.surfBlob.invisible = invisible;
@@ -723,6 +736,7 @@ export class FieldEffects {
   destroySurfBlob(): void {
     if (this.surfBlob) this.ow.sprites.destroy(this.surfBlob);
     this.surfBlob = undefined;
+    this.surfBlobBobState = C.BOB_NONE;
     this.ow.player.object.sprite.y2 = 0;
   }
 
