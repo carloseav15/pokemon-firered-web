@@ -1235,11 +1235,8 @@ export class ObjectEvents {
   }
 
   private runMovementType(object: ObjectEvent): void {
-    // Each movement type is a table of steps indexed by sprite.data[1]; steps
-    // returning true run the next step in the same frame.
-    for (let guard = 0; guard < 8; guard++) {
-      if (!this.movementTypeStep(object)) break;
-    }
+    // UpdateObjectEventCurrentMovement repeats the callback until it returns FALSE.
+    while (this.movementTypeStep(object)) {}
   }
 
   private faceTypeDirections(type: number): number[] | undefined {
@@ -1314,9 +1311,20 @@ export class ObjectEvents {
       if (step === 1 && this.execSingle(object)) s.data[1] = 2;
       return false;
     }
-    if (type === c.MOVEMENT_TYPE_RAISE_HAND_AND_STOP || type === c.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP || type === c.MOVEMENT_TYPE_RAISE_HAND_AND_SWIM) {
-      if (step === 0) { this.clearMovement(object); this.setSingle(object, 0x98 + (type - c.MOVEMENT_TYPE_RAISE_HAND_AND_STOP)); s.data[1] = 1; return true; }
-      if (step === 1 && this.execSingle(object)) s.data[1] = 2;
+    if (type === c.MOVEMENT_TYPE_RAISE_HAND_AND_STOP) {
+      if (step === 0) { this.clearMovement(object); this.setSingle(object, c.MOVEMENT_ACTION_RAISE_HAND_AND_STOP); s.data[1] = 1; return true; }
+      if (step === 1 && this.execSingle(object)) { s.data[1] = 2; return true; }
+      if (step === 2) object.singleMovementActive = false;
+      return false;
+    }
+    if (type === c.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP || type === c.MOVEMENT_TYPE_RAISE_HAND_AND_SWIM) {
+      if (step === 0) {
+        this.clearMovement(object);
+        this.setSingle(object, type === c.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP ? c.MOVEMENT_ACTION_RAISE_HAND_AND_JUMP : c.MOVEMENT_ACTION_RAISE_HAND_AND_SWIM);
+        s.data[1] = 1;
+        return false;
+      }
+      if (step === 1 && this.execSingle(object)) s.data[1] = 0;
       return false;
     }
 
