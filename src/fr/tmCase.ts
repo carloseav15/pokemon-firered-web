@@ -122,6 +122,8 @@ let sDyn: Dynamic | null = null;
 const dyn = (): Dynamic => sDyn!;
 let sTilemapBuffer: Uint16Array | null = null;
 let sTMSpritePaletteBuffer: Uint16Array | null = null;
+let sListMenuItemsBuffer: ListMenuItem[] | null = null;
+let sListMenuStringsBuffer: Uint8Array[] | null = null;
 let gMultiuseListMenuTemplate: ListMenuTemplate | null = null;
 let sHandlers: TmCaseHandlers = {};
 let sMenuActions: MenuAction[] = [];
@@ -141,6 +143,7 @@ export function InitTMCase(type: number, exitCallback: (() => void) | null, allo
     loadCData("strings", "text_window_graphics"),
     preloadPacks(["graphics_tm_case", "graphics_interface", "graphics_text_window", "graphics_fonts"]),
   ]), () => {
+    ResetBufferPointers_NoFree();
     sDyn = {
       nextScreenCallback: null, discSpriteId: 0, maxTMsShown: 0, numTMs: 0, contextMenuWindowId: WINDOW_NONE, scrollArrowsTaskId: TASK_NONE,
       currItem: 0, menuActionIndices: [], numMenuActions: 0, seqId: 0,
@@ -173,6 +176,16 @@ function CB2_SetUpTMCaseUI_Blocking(): void {
   while (!DoSetUpTMCaseUI()) { /* one frame, as the source loop */ }
 }
 
+/** ResetBufferPointers_NoFree: discard handles without freeing ownership elsewhere. */
+function ResetBufferPointers_NoFree(): void {
+  sDyn = null;
+  sTilemapBuffer = null;
+  sListMenuItemsBuffer = null;
+  sListMenuStringsBuffer = null;
+  sTMSpritePaletteBuffer = null;
+  gMultiuseListMenuTemplate = null;
+}
+
 function DoSetUpTMCaseUI(): boolean {
   switch (gMain.state) {
     case 0: SetVBlankCallback(null); SetHBlankCallback(null); ClearScheduledBgCopiesToVram(); gMain.state++; break;
@@ -187,7 +200,7 @@ function DoSetUpTMCaseUI(): boolean {
     case 9: SortPocketAndPlaceHMsFirst(); gMain.state++; break;
     case 10: TMCaseSetup_GetTMCount(); TMCaseSetup_InitListMenuPositions(); TMCaseSetup_UpdateVisualMenuOffset(); gMain.state++; break;
     case 11: DrawMoveInfoLabels(); gMain.state++; break;
-    case 12: InitTMCaseListMenuItems(); gMain.state++; break;
+    case 12: CreateTMCaseListMenuBuffers(); InitTMCaseListMenuItems(); gMain.state++; break;
     case 13: PrintTitle(); gMain.state++; break;
     case 14: {
       const taskId = tasks.create(Task_HandleListInput, 0);
@@ -252,11 +265,21 @@ function SortPocketAndPlaceHMsFirst(): void {
   slots.splice(0, slots.length, ...hms, ...tms);
 }
 
+/** CreateTMCaseListMenuBuffers: JS arrays replace the C heap allocations. */
+function CreateTMCaseListMenuBuffers(): void {
+  sListMenuItemsBuffer = new Array<ListMenuItem>(dyn().numTMs + 1);
+  sListMenuStringsBuffer = new Array<Uint8Array>(dyn().numTMs);
+}
+
 function InitTMCaseListMenuItems(): void {
   const d = dyn();
-  const items: ListMenuItem[] = [];
-  for (let i = 0; i < d.numTMs; i++) items.push({ label: GetTMNumberAndMoveString(tmSlots()[i].item), index: i });
-  items.push({ label: text("gText_Close"), index: LIST_CANCEL });
+  const items = sListMenuItemsBuffer!;
+  for (let i = 0; i < d.numTMs; i++) {
+    const label = GetTMNumberAndMoveString(tmSlots()[i].item);
+    sListMenuStringsBuffer![i] = label;
+    items[i] = { label, index: i };
+  }
+  items[d.numTMs] = { label: text("gText_Close"), index: LIST_CANCEL };
   gMultiuseListMenuTemplate = listMenuTemplate({
     items, totalItems: d.numTMs + 1, windowId: WIN_LIST, header_X: 0, item_X: 8, cursor_X: 0, lettersSpacing: 0, itemVerticalPadding: 2, upText_Y: 2,
     maxShowed: d.maxTMsShown, fontId: FONT_NORMAL, cursorPal: 2, fillValue: 0, cursorShadowPal: 3, moveCursorFunc: List_MoveCursorFunc,
@@ -352,7 +375,7 @@ export function ResetTMCaseCursorPos(): void {
  * then restore the player's TM/key-item pockets when the case returns.
  * The source's timed narration/forced cursor tour is still not emulated.
  */
-export function InitPokedudeTMCase(done: () => void): void {
+export function Pokedude_InitTMCase(done: () => void): void {
   const tmBackup = save.bag.tmCase.map((slot) => ({ ...slot }));
   const keyItemsBackup = save.bag.keyItems.map((slot) => ({ ...slot }));
   const selectedRow = sStatic.selectedRow, scrollOffset = sStatic.scrollOffset;
@@ -399,7 +422,10 @@ function TMCaseSetup_UpdateVisualMenuOffset(): void {
 function DestroyTMCaseBuffers(): void {
   sDyn = null;
   sTilemapBuffer = null;
+  sListMenuItemsBuffer = null;
+  sListMenuStringsBuffer = null;
   sTMSpritePaletteBuffer = null;
+  gMultiuseListMenuTemplate = null;
   FreeAllWindowBuffers();
 }
 
@@ -628,7 +654,15 @@ const sYesNoFuncTable: YesNoFuncTable = { yesFunc: (t) => Task_PrintSaleConfirme
 function Task_AskConfirmSaleWithAmount(taskId: number): void {
   stringVars.var3 = intToDecimal(salePrice(taskId), STR_CONV_MODE_LEFT_ALIGN, 6);
   stringVars.var4 = expandPlaceholders(text("gText_ICanPayThisMuch_WouldThatBeOkay"));
-  PrintMessageWithFollowupTask(taskId, GetDialogBoxFontId(), stringVars.var4, (t) => CreateYesNoMenuWithCallbacks(t, sYesNoWindowTemplate, FONT_NORMAL, 0, 2, 91, 14, sYesNoFuncTable));
+  PrintMessageWithFollowupTask(taskId, GetDialogBoxFontId(), stringVars.var4, Task_PlaceYesNoBox);
+}
+
+function Task_PlaceYesNoBox(taskId: number): void {
+  HandleCreateYesNoMenu(taskId, sYesNoFuncTable);
+}
+
+function HandleCreateYesNoMenu(taskId: number, callbacks: YesNoFuncTable): void {
+  CreateYesNoMenuWithCallbacks(taskId, sYesNoWindowTemplate, FONT_NORMAL, 0, 2, 91, 14, callbacks);
 }
 
 function Task_SaleOfTMsCanceled(taskId: number): void {

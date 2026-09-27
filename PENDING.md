@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6126/11826 (51.8 %)**.
-- Archivos C con funciones aún sin homólogo: **104**; quedan **5700 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6131/11826 (51.8 %)**.
+- Archivos C con funciones aún sin homólogo: **104**; quedan **5695 nombres**.
 - Estos archivos contienen 186.930 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~131.214 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~131.095 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -17,8 +17,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
-| 1 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
-| 2 | `tm_case.c` | casi completo | 1737 | 66/73 | ~166 |  |
+| 1 | `tm_case.c` | casi completo | 1737 | 71/73 | ~47 |  |
+| 2 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
 | 3 | `palette.c` | casi completo | 994 | 34/41 | ~169 |  |
 | 4 | `new_menu_helpers.c` | parcial | 761 | 42/54 | ~169 |  |
 | 5 | `librfu_sio32id.c` | sin empezar | 170 | 0/4 | ~170 |  |

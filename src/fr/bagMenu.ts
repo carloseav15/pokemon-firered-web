@@ -58,7 +58,7 @@ import {
 } from "./hw/window";
 import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFunc, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
-import { InitPokedudeTMCase, InitTMCase } from "./tmCase";
+import { Pokedude_InitTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
 import { save } from "./save";
 
@@ -596,7 +596,7 @@ export function InitPokedudeBagTMs(done: () => void): void {
   addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
   GoToBagMenu(C.ITEMMENULOCATION_TTVSCR_TMS, C.OPEN_BAG_ITEMS, () => {
     RestorePlayerBag(backup);
-    InitPokedudeTMCase(done);
+    Pokedude_InitTMCase(done);
   });
 }
 

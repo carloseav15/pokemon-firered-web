@@ -5,10 +5,25 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.126/11.826 funciones (51,8%)**,
+single-player. A 2026-09-27, la meta mide **6.131/11.826 funciones (51,8%)**,
 con **104 archivos** con huecos y una estimación ponderada de
-**~131.214/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
+**~131.095/303.042 líneas C (43,3%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `tm_case.c`: buffers del menú y confirmación de venta (2026-09-27)
+
+- Añadí `ResetBufferPointers_NoFree`, `CreateTMCaseListMenuBuffers`,
+  `Task_PlaceYesNoBox` y `HandleCreateYesNoMenu`, y conecté la preparación de
+  buffers en el estado 12 del setup de la pantalla. Los arreglos JS reemplazan
+  las asignaciones C; la lista conserva orden, etiquetas y terminador de cierre.
+- Alineé el nombre de entrada adaptado `Pokedude_InitTMCase` y su caller. El
+  tutorial cronometrado de `Task_Pokedude_Start`/`Task_Pokedude_Run` continúa
+  pendiente; la pantalla hoy muestra los cuatro TMs temporales y restaura la
+  bolsa al volver.
+- `tm_case.c` queda 71/73 por nombre. Global: **6.131/11.826 (51,8%)**, 104
+  archivos con huecos y ~131.095 líneas C ponderadas sin homólogo. Pasaron
+  `check:port`, `check:honesty`, `build`, inventory, pending y `git diff
+  --check`; sin ejecución en navegador.
 
 ## `sound.c`: cries y enrutamiento de efectos por jugador (2026-09-27)
 
