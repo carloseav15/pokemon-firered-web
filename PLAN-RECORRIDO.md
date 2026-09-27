@@ -1,13 +1,17 @@
-# Plan: llegar lo más lejos posible en el juego con el mínimo proceso
+# Plan de recorrido para la fase de revisión
+
+Este plan se activa al pasar a revisión funcional o cuando el usuario pide un
+recorrido. No impone pruebas de navegador durante la fase de portado por tandas.
+Las reglas operativas vigentes están en [AGENTS.md](AGENTS.md).
 
 Fecha: 2026-09-25. Punto de partida: `main` (82eda72), jugado en navegador
-hasta la Ruta 3 (Brock vencido). Reglas y método: [AGENTS.md](AGENTS.md) §6.5 y
-[ESTADO-Y-REGLAS.md](ESTADO-Y-REGLAS.md).
+hasta la Ruta 3 (Brock vencido). Método del driver:
+[guía técnica §6](docs/PORTING-GUIDE.md#6-cómo-se-prueba-y-valida).
 
 ## Idea
 
 Este documento organiza el recorrido y su validación. Para acelerar la traducción
-del decomp, usar [ESTADO-Y-REGLAS.md §7](ESTADO-Y-REGLAS.md#7-estrategia-para-acelerar-el-port-fiel):
+del decomp, usar [AGENTS.md](AGENTS.md):
 también se portan bloques fuera de la ruta cuando sus dependencias están listas.
 Las restricciones de alcance de este plan se aplican a las sesiones de recorrido.
 
@@ -24,8 +28,9 @@ repo, así cualquier agente puede empezar desde ahí.
 3. Si algo bloquea: función C → arreglo → `H.restore` → repetir el mismo punto.
 4. Al terminar el tramo: `H.checkpoint(<tramo>)` y exportar la partida a
    `tools/playtest/saves/<tramo>.json` (ver "Primer paso").
-5. Un commit por tramo: arreglos + una fila en la tabla de PORTING-STATUS
-   (tramo, qué se jugó, fallos y commits, ayudas usadas). `check:port`,
+5. Un commit por tramo: arreglos + actualizar la tabla de progreso de este plan
+   (tramo, qué se jugó, fallos y commits, ayudas usadas) y el resumen operativo
+   de PORTING-STATUS. `check:port`,
    `check:honesty`, `build`. El push lo decide el usuario, como indica AGENTS.md.
 
 Prioridad de lo que se arregla en el momento: **bloqueo > regla de juego mal >
@@ -84,7 +89,7 @@ no el archivo entero.
 ## Medida de avance
 
 La medida de este recorrido es **el tramo más lejano jugado en navegador**;
-el avance del port se registra por separado según ESTADO-Y-REGLAS.md §7.
+el avance del port se registra por separado según AGENTS.md.
 Estado registrado: tramo 0 completo y tramo 1 a medias (dentro del
 Monte Moon). Objetivo: tramo 12.
 
@@ -92,7 +97,7 @@ Monte Moon). Objetivo: tramo 12.
 
 | Tramo | Estado | Fallos arreglados | Ayudas |
 |---|---|---|---|
-| 0 (intro → Plateada, PC, tienda, guardar) | jugado | ver PORTING-STATUS 1-11 | ninguna |
+| 0 (intro → Plateada, PC, tienda, guardar) | jugado | ver [historial](docs/archive/PORTING-STATUS-2026-09-27.md) | ninguna |
 | 1 (Ruta 3 → Monte Moon → Ruta 4) | a medias: Ruta 3 y Monte Moon 1F/B1F/B2F; falta la salida | ninguno del juego (solo driver) | ninguna |
 
 ## Pendiente al cortar la sesión (2026-09-25)

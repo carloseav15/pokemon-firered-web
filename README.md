@@ -13,7 +13,7 @@ código del decomp casi línea por línea, usando sus datos originales exportado
 ```sh
 npm ci
 npm run dev          # servidor Vite; / = arranque completo, ?fr=new / ?fr=continue saltan la intro
-npm run check:port   # tsc sobre todo src (obligatorio tras cada cambio)
+npm run check:port   # tsc sobre todo src al cerrar una tanda de código
 npm run build
 ```
 
@@ -25,7 +25,8 @@ git clone --recurse-submodules <repo>     # o: git submodule update --init
 ```
 
 El exportador (`tools/decomp/export.py`) busca el decomp en `$POKEFIRERED`, luego
-en `../pokefirered` y por último en el submódulo; ver [AGENTS.md](AGENTS.md) §4.
+en `../pokefirered` y por último en el submódulo; ver la
+[referencia del exportador](docs/PORTING-GUIDE.md#4-de-dónde-salen-los-datos-pipeline-del-exportador).
 `public/fr/` y `src/fr/generated/` ya están versionados, así que solo hace falta
 reexportar si cambias `tools/decomp/`.
 
@@ -33,18 +34,21 @@ reexportar si cambias `tools/decomp/`.
 
 | Archivo | Contenido |
 |---|---|
-| [AGENTS.md](AGENTS.md) | Guía para agentes: mapa del repo, pipeline de datos, método de port y verificación |
+| [AGENTS.md](AGENTS.md) | Reglas únicas: portado por tandas, comprobaciones mínimas y revisión posterior |
+| [Guía técnica](docs/PORTING-GUIDE.md) | Consulta bajo demanda: mapa, exportador, semántica C y driver |
 | [PENDING.md](PENDING.md) | **Faltantes** (generado): sin empezar, adaptadores, parciales, huecos conocidos, pantallas sin probar |
 | [PORT-INVENTORY.md](PORT-INVENTORY.md) | Avance por archivo `.c` (generado con `npm run inventory`) |
-| [PORTING-STATUS.md](PORTING-STATUS.md) | Estado detallado, decisiones y lista de pendientes ordenada |
+| [PORTING-STATUS.md](PORTING-STATUS.md) | Estado operativo breve, siguiente tanda y validación pendiente |
+| [GOAL-CLANG.md](GOAL-CLANG.md) | Prompt para continuar con Clang y traducción manual por tandas |
+| [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) | Recorrido para la fase de revisión funcional |
 | [START-FLOW.md](START-FLOW.md) | Flujo de arranque (intro → título → partida) |
 | [SECONDARY-MISSIONS-AUDIT.md](SECONDARY-MISSIONS-AUDIT.md) | Inventario de contenido opcional |
 
-## Estado (2026-09-25)
+## Estado
 
-Alrededor del 40 % de las funciones del C en alcance tienen homólogo del mismo
-nombre en `src/fr`; el motor de batalla, la mayoría de las pantallas de menú y
-el arranque están portados. Falta sobre todo: animaciones de ataques y
-transiciones de combate, almacenamiento de cajas, Easy Chat, intercambios,
-Teachy TV / Fame Checker y toda la fase de pruebas en navegador. Detalle en
-[PENDING.md](PENDING.md).
+Las cifras vivas y los huecos están en [PENDING.md](PENDING.md); no se duplican
+en los documentos de instrucciones. El contador mide homólogos por nombre,
+no fidelidad ni validación funcional. El modo actual prioriza implementar e
+integrar tandas con dependencias resueltas, dejando la revisión exhaustiva
+para una fase posterior. El historial se conserva enlazado desde
+[PORTING-STATUS.md](PORTING-STATUS.md), fuera de la lectura inicial habitual.

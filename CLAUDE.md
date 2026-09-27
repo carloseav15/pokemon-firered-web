@@ -1,9 +1,10 @@
 @AGENTS.md
 
-## Notas específicas para Claude Code
+## Particularidades de Claude Code
 
-- Lee `AGENTS.md` (arriba), `ESTADO-Y-REGLAS.md` (reglas obligatorias) y la sección "Pendiente" de `PORTING-STATUS.md` antes de empezar.
-- Decomp de referencia: `../pokefirered` (directorio de trabajo adicional). Léelo con Read/grep; no lo modifiques.
-- Servidor de desarrollo: `preview_start` con el nombre `vite` (`.claude/launch.json`). No uses Bash para servidores.
-- Archivos grandes del port (`partyMenu.ts`, `bagMenu.ts`, `battle/*`) superan el límite de lectura: usa `offset`/`limit` o `grep -n`.
-- Para portar un `.c` grande, lee el C completo y su header; divide la entrega en grupos coherentes de funciones con dependencias resueltas, conservando el orden del C. Integra y verifica cada bloque según ESTADO-Y-REGLAS.md §7.
+- Sigue el modo por tandas de AGENTS.md; lee PORTING-STATUS.md y solo los pendientes
+  relevantes. El archivo histórico y la guía técnica se consultan bajo demanda.
+- Resuelve el decomp como `tools/decomp/common.py`; no lo modifiques.
+- Si necesitas navegador, usa `preview_start` con `vite` (`.claude/launch.json`)
+  para el servidor. No es un paso rutinario durante el portado.
+- Usa lecturas por rangos en módulos grandes. Indica Claude en `Co-Authored-By`.
