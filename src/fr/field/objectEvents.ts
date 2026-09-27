@@ -1162,21 +1162,76 @@ export class ObjectEvents {
     return !(o.x - r > p.x || o.x + r < p.x || o.y - r > p.y || o.y + r < p.y);
   }
 
-  /** TryGetTrainerEncounterDirection limited to the allowed directions. */
-  private trainerEncounterDirection(object: ObjectEvent, allowed: number[]): number {
+  /** Mirrors gGetVectorDirectionFuncs in movement_type_func_tables.h. */
+  private trainerEncounterDirection(object: ObjectEvent, mode: number): number {
     if (!this.trainerCloseToPlayer(object)) return DIR_NONE;
     const p = this.hooks.playerDestCoords();
-    const dx = p.x - object.currentCoords.x;
-    const dy = p.y - object.currentCoords.y;
-    const horizontal = dx < 0 ? DIR_WEST : DIR_EAST;
-    const vertical = dy < 0 ? DIR_NORTH : DIR_SOUTH;
-    const direction = Math.abs(dx) > Math.abs(dy) ? horizontal : vertical;
-    if (allowed.includes(direction)) return direction;
-    const alternate = direction === DIR_WEST || direction === DIR_EAST ? vertical : horizontal;
-    if (allowed.includes(alternate)) return alternate;
-    return allowed.find((candidate) => candidate === DIR_NORTH || candidate === DIR_SOUTH)
-      ?? allowed.find((candidate) => candidate === DIR_WEST || candidate === DIR_EAST)
-      ?? DIR_NONE;
+    // The C locals are s16; keep the same wrapping before abs/comparison.
+    const dx = (p.x - object.currentCoords.x) << 16 >> 16;
+    const dy = (p.y - object.currentCoords.y) << 16 >> 16;
+    const vector = (): number => Math.abs(dx) > Math.abs(dy)
+      ? dx < 0 ? DIR_WEST : DIR_EAST
+      : dy < 0 ? DIR_NORTH : DIR_SOUTH;
+    const northSouth = (): number => dy < 0 ? DIR_NORTH : DIR_SOUTH;
+    const westEast = (): number => dx < 0 ? DIR_WEST : DIR_EAST;
+    switch (mode) {
+      case rom.constants.RUNFOLLOW_NORTH_SOUTH: return northSouth();
+      case rom.constants.RUNFOLLOW_EAST_WEST: return westEast();
+      case rom.constants.RUNFOLLOW_NORTH_WEST: {
+        const dir = vector();
+        if (dir === DIR_SOUTH) return dx < 0 ? DIR_WEST : DIR_NORTH;
+        if (dir === DIR_EAST) return dy < 0 ? DIR_NORTH : DIR_NORTH;
+        return dir;
+      }
+      case rom.constants.RUNFOLLOW_NORTH_EAST: {
+        const dir = vector();
+        if (dir === DIR_SOUTH) return dx < 0 ? DIR_NORTH : DIR_EAST;
+        if (dir === DIR_WEST) return dy < 0 ? DIR_NORTH : DIR_NORTH;
+        return dir;
+      }
+      case rom.constants.RUNFOLLOW_SOUTH_WEST: {
+        const dir = vector();
+        if (dir === DIR_NORTH) return dx < 0 ? DIR_WEST : DIR_SOUTH;
+        if (dir === DIR_EAST) return dy < 0 ? DIR_SOUTH : DIR_SOUTH;
+        return dir;
+      }
+      case rom.constants.RUNFOLLOW_SOUTH_EAST: {
+        const dir = vector();
+        if (dir === DIR_NORTH) return dx < 0 ? DIR_SOUTH : DIR_EAST;
+        if (dir === DIR_WEST) return dy < 0 ? DIR_SOUTH : DIR_SOUTH;
+        return dir;
+      }
+      case rom.constants.RUNFOLLOW_NORTH_SOUTH_WEST: {
+        const dir = vector(); return dir === DIR_EAST ? northSouth() : dir;
+      }
+      case rom.constants.RUNFOLLOW_NORTH_SOUTH_EAST: {
+        const dir = vector(); return dir === DIR_WEST ? northSouth() : dir;
+      }
+      case rom.constants.RUNFOLLOW_NORTH_EAST_WEST: {
+        const dir = vector(); return dir === DIR_SOUTH ? westEast() : dir;
+      }
+      case rom.constants.RUNFOLLOW_SOUTH_EAST_WEST: {
+        const dir = vector(); return dir === DIR_NORTH ? westEast() : dir;
+      }
+      default: return vector();
+    }
+  }
+
+  private trainerDirectionMode(type: number): number {
+    const c = rom.constants;
+    switch (type) {
+      case c.MOVEMENT_TYPE_FACE_DOWN_AND_UP: return c.RUNFOLLOW_NORTH_SOUTH;
+      case c.MOVEMENT_TYPE_FACE_LEFT_AND_RIGHT: return c.RUNFOLLOW_EAST_WEST;
+      case c.MOVEMENT_TYPE_FACE_UP_AND_LEFT: return c.RUNFOLLOW_NORTH_WEST;
+      case c.MOVEMENT_TYPE_FACE_UP_AND_RIGHT: return c.RUNFOLLOW_NORTH_EAST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_AND_LEFT: return c.RUNFOLLOW_SOUTH_WEST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_AND_RIGHT: return c.RUNFOLLOW_SOUTH_EAST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_LEFT: return c.RUNFOLLOW_NORTH_SOUTH_WEST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_RIGHT: return c.RUNFOLLOW_NORTH_SOUTH_EAST;
+      case c.MOVEMENT_TYPE_FACE_UP_LEFT_AND_RIGHT: return c.RUNFOLLOW_NORTH_EAST_WEST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_LEFT_AND_RIGHT: return c.RUNFOLLOW_SOUTH_EAST_WEST;
+      default: return c.RUNFOLLOW_ANY;
+    }
   }
 
   private runMovementType(object: ObjectEvent): void {
@@ -1211,6 +1266,15 @@ export class ObjectEvents {
     const type = object.movementType;
     const step = s.data[1];
 
+    // MovementType_Buried initializes its fixed layer once before dispatching
+    // the buried callback (event_object_movement.c).
+    if (type === c.MOVEMENT_TYPE_BURIED && !s.data[7]) {
+      object.fixedPriority = true;
+      s.subspriteMode = c.SUBSPRITES_IGNORE_PRIORITY;
+      s.priority = 3;
+      s.data[7]++;
+    }
+
     // Static facing types
     if (type === c.MOVEMENT_TYPE_NONE || type === c.MOVEMENT_TYPE_BERRY_TREE_GROWTH) {
       return false;
@@ -1236,7 +1300,11 @@ export class ObjectEvents {
       this.clearMovement(object);
       return false;
     }
-    if ([c.MOVEMENT_TYPE_FACE_UP, c.MOVEMENT_TYPE_FACE_DOWN, c.MOVEMENT_TYPE_FACE_LEFT, c.MOVEMENT_TYPE_FACE_RIGHT, c.MOVEMENT_TYPE_BURIED].includes(type)) {
+    if (type === c.MOVEMENT_TYPE_BURIED) {
+      if (step === 0) this.clearMovement(object);
+      return false;
+    }
+    if ([c.MOVEMENT_TYPE_FACE_UP, c.MOVEMENT_TYPE_FACE_DOWN, c.MOVEMENT_TYPE_FACE_LEFT, c.MOVEMENT_TYPE_FACE_RIGHT].includes(type)) {
       if (step === 0) {
         this.clearMovement(object);
         this.setSingle(object, actionFace(INITIAL_FACING[type] ?? object.facingDirection));
@@ -1269,7 +1337,7 @@ export class ObjectEvents {
           if (this.waitDelay(object) || this.trainerCloseToPlayer(object)) { s.data[1] = 4; return true; }
           return false;
         case 4: {
-          let direction = this.trainerEncounterDirection(object, [...new Set(faceDirs)]);
+          let direction = this.trainerEncounterDirection(object, this.trainerDirectionMode(type));
           if (direction === DIR_NONE) direction = faceDirs.length === 2 ? faceDirs[random() & 1] : faceDirs[random() & 3];
           this.setDirection(object, direction);
           s.data[1] = 1;
@@ -1321,7 +1389,7 @@ export class ObjectEvents {
         case 1: if (this.execSingle(object)) { this.setDelay(object, 48); s.data[1] = 2; } return false;
         case 2: if (this.waitDelay(object) || this.trainerCloseToPlayer(object)) s.data[1] = 3; return false;
         case 3: {
-          let direction = this.trainerEncounterDirection(object, [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST]);
+          let direction = this.trainerEncounterDirection(object, rom.constants.RUNFOLLOW_ANY);
           if (direction === DIR_NONE) direction = (type === c.MOVEMENT_TYPE_ROTATE_CLOCKWISE ? CLOCKWISE : COUNTERCLOCKWISE)[object.facingDirection];
           this.setDirection(object, direction);
           s.data[1] = 0;
