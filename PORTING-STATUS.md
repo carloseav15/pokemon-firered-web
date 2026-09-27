@@ -5,10 +5,27 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.216/11.826 funciones (52,6%)**,
+single-player. A 2026-09-27, la meta mide **6.218/11.826 funciones (52,6%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.761/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
+**~129.526/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: traslado de coordenadas de objetos (2026-09-27)
+
+- Porté `ShiftObjectEventCoords`: conserva las coordenadas actuales en
+  `previousCoords` y escribe las nuevas en `currentCoords`, truncando los
+  cuatro componentes al `s16` del C. `ShiftStillObjectEventCoords` llama al
+  helper común y sustituye el equivalente TS anterior. Los callers existentes
+  de pasos de NPC, caminata lenta y caminata lenta en sitio pasan ahora por
+  estos nombres fuente.
+- En navegador ejecuté ambos helpers sobre objetos temporales, sin cambiar la
+  partida: `ShiftObjectEventCoords(7,-4,65535,-32769)` dejó previos `(7,-4)` y
+  actuales `(-1,32767)`; el helper “still” dejó iguales ambos pares en `(12,34)`.
+  El estado siguió en la casa de Pallet. Pasaron `check:port`, `check:honesty`,
+  build, inventory, pending y `git diff --check`; no recorrí un movimiento
+  visible del jugador.
+- `event_object_movement.c` queda 62/759 por nombre. Total: **6.218/11.826
+  (52,6%)**; ~129.526 líneas ponderadas sin homólogo.
 
 ## `event_object_movement.c`: lookups de animación generados desde AST (2026-09-27)
 

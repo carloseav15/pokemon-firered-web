@@ -196,6 +196,19 @@ export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, 
   objectEvent.currentCoords.y = ((oldY + dy) << 16) >> 16;
 }
 
+/** event_object_movement.c ShiftObjectEventCoords: copy current to previous, then assign s16 coordinates. */
+export function ShiftObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
+  objectEvent.previousCoords.x = (objectEvent.currentCoords.x << 16) >> 16;
+  objectEvent.previousCoords.y = (objectEvent.currentCoords.y << 16) >> 16;
+  objectEvent.currentCoords.x = (x << 16) >> 16;
+  objectEvent.currentCoords.y = (y << 16) >> 16;
+}
+
+/** event_object_movement.c ShiftStillObjectEventCoords. */
+export function ShiftStillObjectEventCoords(objectEvent: ObjectEvent): void {
+  ShiftObjectEventCoords(objectEvent, objectEvent.currentCoords.x, objectEvent.currentCoords.y);
+}
+
 /** event_object_movement.c ObjectEventGetLocalIdAndMap: write three u8 values through C byte pointers. */
 export function ObjectEventGetLocalIdAndMap(objectEvent: ObjectEvent, args: number[], offset = 0): void {
   const values = [objectEvent.localId, objectEvent.mapNum, objectEvent.mapGroup];
@@ -630,12 +643,11 @@ export class ObjectEvents {
   }
 
   shiftCoords(object: ObjectEvent, x: number, y: number): void {
-    object.previousCoords = { ...object.currentCoords };
-    object.currentCoords = { x, y };
+    ShiftObjectEventCoords(object, x, y);
   }
 
   shiftStill(object: ObjectEvent): void {
-    this.shiftCoords(object, object.currentCoords.x, object.currentCoords.y);
+    ShiftStillObjectEventCoords(object);
   }
 
   updateElevation(object: ObjectEvent): void {
