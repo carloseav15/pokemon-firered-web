@@ -724,6 +724,14 @@ function affineAnimStateReset(matrixNum: number): void {
   Object.assign(sAffineAnimStates[matrixNum], { animNum: 0, animCmdIndex: 0, delayCounter: 0, loopCounter: 0, xScale: 0x100, yScale: 0x100, rotation: 0 });
 }
 
+// sprite.c: AffineAnimStateStartAnim.
+export function AffineAnimStateStartAnim(matrixNum: number, animNum: number): void {
+  Object.assign(sAffineAnimStates[matrixNum], {
+    animNum: animNum & 0xff, animCmdIndex: 0, delayCounter: 0, loopCounter: 0,
+    xScale: 0x100, yScale: 0x100, rotation: 0,
+  });
+}
+
 function applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum: number, frame: AffineAnimCmd): void {
   const st = sAffineAnimStates[matrixNum];
   st.xScale = s16(st.xScale + frame.xScale);
@@ -787,8 +795,7 @@ export function SeekSpriteAnim(sprite: Sprite, animCmdIndex: number): void {
 
 export function StartSpriteAffineAnim(sprite: Sprite, animNum: number): void {
   const m = getSpriteMatrixNum(sprite);
-  affineAnimStateReset(m);
-  sAffineAnimStates[m].animNum = animNum;
+  AffineAnimStateStartAnim(m, animNum);
   sprite.affineAnimBeginning = true;
   sprite.affineAnimEnded = false;
 }
