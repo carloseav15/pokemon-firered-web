@@ -184,6 +184,18 @@ export class ObjectEvent {
   }
 }
 
+/** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
+export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
+  const oldX = (objectEvent.currentCoords.x << 16) >> 16;
+  const oldY = (objectEvent.currentCoords.y << 16) >> 16;
+  const dx = (x << 16) >> 16;
+  const dy = (y << 16) >> 16;
+  objectEvent.previousCoords.x = oldX;
+  objectEvent.previousCoords.y = oldY;
+  objectEvent.currentCoords.x = ((oldX + dx) << 16) >> 16;
+  objectEvent.currentCoords.y = ((oldY + dy) << 16) >> 16;
+}
+
 export const gObjectEvents: ObjectEvent[] = Array.from({ length: OBJECT_EVENTS_COUNT }, () => {
   const o = new ObjectEvent();
   o.active = false;

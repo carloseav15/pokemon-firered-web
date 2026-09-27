@@ -5,10 +5,28 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.195/11.826 funciones (52,4%)**,
+single-player. A 2026-09-27, la meta mide **6.196/11.826 funciones (52,4%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.811/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
+**~129.798/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: suma de coordenadas de objeto (2026-09-27)
+
+- Porté `IncrementObjectEventCoords` en `field/objectEvents.ts`. Copia las
+  coordenadas actuales a `previousCoords`, suma los desplazamientos a las
+  actuales y emula el truncamiento de argumentos y resultados a `s16`. El AST
+  de Clang resolvió la definición C del decomp `c75f35230` con Apple Clang
+  21.0.0. El struct `ObjectEvent` ya modela esos campos. El C marca esta
+  función `Unused` y no tiene callers; tampoco hay un caller TS, así que no la
+  presento como comportamiento conectado al juego.
+- `event_object_movement.c` queda 40/759 por nombre. Pasaron `check:port`,
+  `check:honesty`, `build`, inventory, pending y `git diff --check`. No corrí
+  un harness de C/TS ni el navegador; la rutina no se ejecuta en el flujo
+  actual.
+- Inventario global: **6.196/11.826 (52,4%)**, 98 archivos con huecos y
+  ~129.798 líneas ponderadas sin homólogo. La siguiente revisión vuelve a
+  buscar bloques pequeños con dependencias disponibles; `main.c` y la pantalla
+  de enlace de `battle_bg.c` siguen ligados a hardware/enlace no conectado.
 
 ## `field_door.c`: descriptores de tiles visibles en Canvas (2026-09-27)
 
