@@ -663,11 +663,9 @@ export class ObjectEvents {
     s.centerToCornerVecY = -(info.height >> 1);
     object.inanimate = info.inanimate;
     object.animTableName = info.animTable;
-    // Re-anchor the sprite at its feet, keeping the in-progress step offset.
-    const stepX = s.x - (object.previousCoords.x * 16 + 8);
+    // ObjectEventSetGraphicsId repositions from current map coordinates while
+    // retaining animNum, animCmdIndex, imageValue, flips and pause state.
     this.placeSprite(object);
-    if (object.heldMovementActive || object.singleMovementActive) s.x += stepX;
-    s.startAnim(faceAnim(object.facingDirection));
   }
 
   remove(object: ObjectEvent | undefined): void {
