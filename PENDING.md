@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6236/11826 (52.7 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5590 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6237/11826 (52.7 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5589 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~129.267 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~129.250 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -23,8 +23,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 4 | `quest_log_player.c` | sin empezar | 197 | 0/15 | ~197 |  |
 | 5 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
 | 6 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
-| 7 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
-| 8 | `sprite.c` | casi completo | 1745 | 88/103 | ~254 |  |
+| 7 | `sprite.c` | casi completo | 1745 | 89/103 | ~237 |  |
+| 8 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
 | 9 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
 | 10 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
 | 11 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |

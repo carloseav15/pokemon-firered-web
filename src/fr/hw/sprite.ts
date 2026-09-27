@@ -638,8 +638,9 @@ function continueAffineAnim(sprite: Sprite): void {
   const matrixNum = getSpriteMatrixNum(sprite);
   const st = sAffineAnimStates[matrixNum];
   if (st.delayCounter) {
-    if (!sprite.affineAnimPaused) --st.delayCounter;
-    if (!sprite.affineAnimPaused) applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, affineCmd(sprite, matrixNum));
+    if (!DecrementAffineAnimDelayCounter(sprite, matrixNum)) {
+      applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum, affineCmd(sprite, matrixNum));
+    }
   } else if (sprite.affineAnimPaused) {
     return;
   } else {
@@ -674,6 +675,15 @@ function continueAffineAnim(sprite: Sprite): void {
     }
   }
   if (sprite.anchored) updateSpriteMatrixAnchorPos(sprite, sprite.data[6], sprite.data[7]);
+}
+
+// sprite.c: DecrementAffineAnimDelayCounter. delayCounter is a u8 in C.
+export function DecrementAffineAnimDelayCounter(sprite: Sprite, matrixNum: number): boolean {
+  if (!sprite.affineAnimPaused) {
+    const state = sAffineAnimStates[matrixNum];
+    state.delayCounter = (state.delayCounter - 1) & 0xff;
+  }
+  return sprite.affineAnimPaused;
 }
 
 function getSpriteMatrixNum(sprite: Sprite): number {

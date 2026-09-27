@@ -5,10 +5,21 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.236/11.826 funciones (52,7%)**,
+single-player. A 2026-09-27, la meta mide **6.237/11.826 funciones (52,7%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.267/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.250/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sprite.c`: contador de demora affine (2026-09-27)
+
+- Porté `DecrementAffineAnimDelayCounter(sprite, matrixNum)` y lo conecté al
+  avance de la animación affine. Decrementa el contador de 8 bits solo si la
+  animación no está pausada y devuelve ese estado de pausa, igual que el C.
+- `check:port`, `check:honesty`, build, inventory, pending y `git diff --check`
+  pasaron. No ejecuté navegador; no cambiaron el estado de los comandos ni el
+  orden temporal de la animación.
+- `sprite.c` queda 89/103 por nombre; global **6.237/11.826 (52,7%)**, con
+  ~129.250 líneas ponderadas sin homólogo.
 
 ## `sprite.c`: carga de paleta OBJ (2026-09-27)
 
