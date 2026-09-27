@@ -5,12 +5,13 @@ import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { B_BUTTON } from "../gba/input";
+import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { flagGet, incrementGameStat } from "../save";
 import {
-  actionFace, actionJump2, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
+  actionFace, actionJump2, actionJumpInPlace, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
   actionWalkInPlaceSlow, actionWalkNormal, actionWalkSlow, COLLISION_DIRECTIONAL_STAIR_WARP, COLLISION_ELEVATION_MISMATCH, COLLISION_LEDGE_JUMP,
-  COLLISION_NONE, COLLISION_OBJECT_EVENT, COLLISION_PUSHED_BOULDER, COLLISION_STOP_SURFING, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST,
+  actionWalkSlower, COLLISION_NONE, COLLISION_OBJECT_EVENT, COLLISION_PUSHED_BOULDER, COLLISION_STOP_SURFING, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, OPPOSITE,
   DIRECTION_VECTORS, graphicsInfo, OBJECT_EVENTS_COUNT, type ObjectEvent,
 } from "./objectEvents";
 import type { Overworld } from "./overworld";
@@ -277,7 +278,84 @@ export class PlayerAvatar {
       [MB.MetatileBehavior_IsSlideWest, () => this.forcedSlide(DIR_WEST)],
       [MB.MetatileBehavior_IsSlideEast, () => this.forcedSlide(DIR_EAST)],
       [MB.MetatileBehavior_IsWaterfall, () => this.doForcedMovement(DIR_SOUTH, (d) => this.rideWaterCurrent(d))],
+      [MB.MetatileBehavior_IsSecretBaseJumpMat, () => this.ForcedMovement_MatJump()],
+      [MB.MetatileBehavior_IsSecretBaseSpinMat, () => this.ForcedMovement_MatSpin()],
     ];
+  }
+
+  /** ForcedMovement_MatJump (field_player_avatar.c). */
+  private ForcedMovement_MatJump(): boolean {
+    this.DoPlayerMatJump();
+    return true;
+  }
+
+  /** DoPlayerMatJump / PlayerAvatar_DoSecretBaseMatJump. */
+  private DoPlayerMatJump(): void {
+    let taskId = -1;
+    let steps = 0;
+    const tick = (): void => {
+      this.preventStep = true;
+      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(this.object) === 0) return;
+      sound.playSE(sound.c("SE_LEDGE"));
+      this.ow.objects.setHeldMovement(this.object, actionJumpInPlace(this.object.facingDirection));
+      steps++;
+      if (steps > 1) {
+        this.preventStep = false;
+        this.setTransitionFlags(PLAYER_AVATAR_FLAG_CONTROLLABLE);
+        tasks.destroy(taskId);
+      }
+    };
+    taskId = this.ow.effects.tasks.create(tick, 0xff);
+    tick();
+  }
+
+  /** ForcedMovement_MatSpin (field_player_avatar.c). */
+  private ForcedMovement_MatSpin(): boolean {
+    this.DoPlayerMatSpin();
+    return true;
+  }
+
+  /** DoPlayerMatSpin / PlayerAvatar_DoSecretBaseMatSpin. */
+  private DoPlayerMatSpin(): void {
+    const object = this.object;
+    const directions = [DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
+    const delays = [C.MOVEMENT_ACTION_DELAY_1, C.MOVEMENT_ACTION_DELAY_1, C.MOVEMENT_ACTION_DELAY_2, C.MOVEMENT_ACTION_DELAY_4, C.MOVEMENT_ACTION_DELAY_8];
+    let taskId = -1;
+    let stage = 0;
+    let initialDirection = DIR_SOUTH;
+    let sameDirectionCount = 0;
+    const tick = (): void => {
+      if (stage === 0) {
+        stage = 1;
+        initialDirection = object.movementDirection;
+        this.preventStep = true;
+        this.ow.controlsLocked = true;
+        sound.playSE(sound.c("SE_WARP_IN"));
+      }
+      if (stage === 1) {
+        if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return;
+        const direction = directions[object.movementDirection - 1];
+        if (direction === undefined) return;
+        this.ow.objects.setHeldMovement(object, actionFace(direction));
+        if (direction === initialDirection) sameDirectionCount++;
+        stage = 2;
+        if (sameDirectionCount > 3 && direction === OPPOSITE[initialDirection]) stage = 3;
+        return;
+      }
+      if (stage === 2) {
+        if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return;
+        this.ow.objects.setHeldMovement(object, delays[sameDirectionCount] ?? delays[4]!);
+        stage = 1;
+        return;
+      }
+      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return;
+      this.ow.objects.setHeldMovement(object, actionWalkSlower(OPPOSITE[initialDirection]));
+      this.ow.controlsLocked = false;
+      this.preventStep = false;
+      tasks.destroy(taskId);
+    };
+    taskId = this.ow.effects.tasks.create(tick, 0xff);
+    tick();
   }
 
   private tryForcedMovement(): boolean {
