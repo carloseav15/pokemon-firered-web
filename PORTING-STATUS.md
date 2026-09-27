@@ -6,8 +6,8 @@ systems. The first playable route is a milestone, not the completion criterion.
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
 single-player. Los porcentajes anteriores de este documento son históricos;
-la meta vigente mide **5.977/11.826 funciones (50,5%)**, con **118 archivos**
-con huecos y una estimación ponderada de **~134.255/303.042 líneas C (44,3%)**
+la meta vigente mide **5.978/11.826 funciones (50,5%)**, con **117 archivos**
+con huecos y una estimación ponderada de **~134.185/303.042 líneas C (44,3%)**
 pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
 
 ## Estrategia de portado revisada, 2026-09-26
@@ -40,6 +40,13 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
   web almacena cantidades descifradas y no representa el sector GBA cifrado.
   Pasan `check:port`, `check:honesty`, `build`, `inventory`, `pending` y
   `git diff --check`; sin prueba de flujo en navegador.
+- **`braille_text.c`: 3/3 nombres con homólogo.** Reuní el despacho de estados
+  en `TextPrinter.FontFunc_Braille`: carácter Braille, espera, limpieza, scroll,
+  espera de sonido y pausa siguen el callback C, mientras comparte los helpers
+  de ventana/entrada ya usados por la impresora general. La expansión del glyph
+  de 16×16 y el ancho Braille ya usaban los datos exportados. Pasan
+  `check:port`, `check:honesty`, `build`, `inventory`, `pending` y
+  `git diff --check`; no hice comparación de píxeles ni prueba en navegador.
 - **`menu_helpers.c`: 17/17 funciones con homólogo.** Reemplacé el stub de
   `MenuHelpers_IsLinkActive` por las predicadas fuente-fieles de callback,
   jugadores remotos y cola (`IsActiveOverworldLinkBusy`,
@@ -73,19 +80,13 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
   Canvas sigue siendo una adaptación visual. Pasaron `check:port`,
   `check:honesty`, `inventory`, `pending` y `git diff --check`; no hubo prueba
   en navegador.
-- **`braille_text.c`: 2/3.** `GetGlyphWidth_Braille` ahora existe como
-  función TS y `glyphWidth` la utiliza en vez de duplicar el valor `16` como
-  constante inline. `FontFunc_Braille` sigue ejecutándose en la máquina de
-  impresión compartida (`TextPrinter`); el render actual porta sus estados
-  distribuidos y no se cuenta como homólogo 1:1. Checks estáticos e inventario
-  pasan; no hice comparación de píxeles ni prueba en navegador.
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.977/11.826 funciones (50,5%)**, quedan **5.849 (49,5%)** y hay **118
-  archivos C con huecos** (29 sin empezar, 1 adaptador, 18 casi completos y 70
+  son **5.978/11.826 funciones (50,5%)**, quedan **5.848 (49,5%)** y hay **117
+  archivos C con huecos** (29 sin empezar, 1 adaptador, 18 casi completos y 69
   parciales). El denominador incluye los sistemas opcionales y de enlace antes
-  excluidos. La estimación ponderada sin cubrir es **~134.255/303.042 líneas
+  excluidos. La estimación ponderada sin cubrir es **~134.185/303.042 líneas
   (44,3%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`

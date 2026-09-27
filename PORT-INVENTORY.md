@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 70 | 138458 | 1366/6200 |
+| Parcial (< 80 % de funciones) | 69 | 138246 | 1364/6197 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 18 | 33213 | 1080/1245 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 130 | 105103 | 3503/3503 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 131 | 105315 | 3506/3506 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **118** | **196806** | |
-| **Total en alcance** | **253** | **303042** | **5977/11826** |
+| **Pendiente de portar** | **117** | **196594** | |
+| **Total en alcance** | **253** | **303042** | **5978/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -124,7 +124,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `wireless_communication_status_screen.c` | 522 | 1/12 |  |  |  |
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 | `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` |  |  |
-| `braille_text.c` | 212 | 2/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
 | `wonder_news.c` | 154 | 1/9 |  |  |  |
 | `quest_log_battle.c` | 150 | 1/3 | `questLogBattle.ts` |  |  |
 | `cereader_tool.c` | 97 | 1/8 | `script/specials.ts` |  |  |
@@ -251,6 +250,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `pokemon_size_record.c` | 217 | 13/13 | `game.ts`, `script/specialsExtra.ts` |  |  |
 | `script_pokemon_util.c` | 215 | 13/13 | `game.ts`, `pokemon/daycare.ts`, `pokemon/scriptPokemonUtil.ts` … |  |  |
 | `blit.c` | 212 | 5/5 | `hw/window.ts` |  |  |
+| `braille_text.c` | 212 | 3/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
 | `task.c` | 211 | 14/14 | `gba/tasks.ts`, `hw/menuHelpers.ts` |  |  |
 | `clear_save_data_screen.c` | 208 | 8/8 | `clearSaveScreen.ts` |  |  |
 | `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |  |

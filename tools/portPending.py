@@ -40,6 +40,7 @@ UNTESTED = [
     ("link.c + overworld.c (predicados y cola de recepción; sin transporte)", "linkState.ts, hw/menuHelpers.ts"),
     ("item.c (compactación de PC y bolsillos)", "pokemon/items.ts, itemPc.ts, bagMenu.ts, tmCase.ts"),
     ("trainer_see.c (revelación de entrenador enterrado)", "field/trainerSee.ts, field/objectEvents.ts"),
+    ("braille_text.c (callback de impresora Braille)", "gba/textPrinter.ts, gba/font.ts"),
 ]
 
 # Ported modules that nothing in the game imports yet (dead until wired).

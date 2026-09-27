@@ -189,9 +189,9 @@ export class TextPrinter {
   }
 
   private render(): number {
+    if (this.fontId === FONT_BRAILLE) return this.FontFunc_Braille();
     switch (this.state) {
       case State.HandleChar: {
-        if (this.fontId === FONT_BRAILLE) return this.FontFunc_Braille_HandleChar();
         if (JOY_HELD(A_BUTTON | B_BUTTON) && this.sped) this.delayCounter = 0;
         if (this.delayCounter && this.textSpeed) {
           this.delayCounter--;
@@ -326,9 +326,57 @@ export class TextPrinter {
   }
 
   /**
-   * braille_text.c FontFunc_Braille, RENDER_STATE_HANDLE_CHAR. The other states are
-   * identical to the normal font's. Differences: sounds are skipped, keypad icons draw
-   * nothing, unknown control codes print as glyphs, and every glyph is 16 px wide.
+   * FontFunc_Braille (braille_text.c): the same printer states as the normal
+   * font, with Braille-specific character handling and glyph data.
+   */
+  private FontFunc_Braille(): number {
+    switch (this.state) {
+      case State.HandleChar:
+        return this.FontFunc_Braille_HandleChar();
+      case State.Wait:
+        if (this.waitForButton()) this.state = State.HandleChar;
+        return RENDER_UPDATE;
+      case State.Clear:
+        if (this.waitWithDownArrow()) {
+          this.window.fill(this.bg);
+          this.currentX = this.x;
+          this.currentY = this.y;
+          this.state = State.HandleChar;
+        }
+        return RENDER_UPDATE;
+      case State.ScrollStart:
+        if (this.waitWithDownArrow()) {
+          this.window.fillRect(this.bg, this.currentX, this.currentY, 10, 12);
+          this.scrollDistance = (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
+          this.currentX = this.x;
+          this.state = State.Scroll;
+        }
+        return RENDER_UPDATE;
+      case State.Scroll:
+        if (this.scrollDistance) {
+          const speed = SCROLL_SPEEDS[textOptions.speed] ?? 2;
+          const step = Math.min(this.scrollDistance, speed);
+          this.window.scroll(step, this.bg);
+          this.scrollDistance -= step;
+        } else {
+          this.state = State.HandleChar;
+        }
+        return RENDER_UPDATE;
+      case State.WaitSe:
+        if (!sound.isSEPlaying()) this.state = State.HandleChar;
+        return RENDER_UPDATE;
+      case State.Pause:
+        if (this.delayCounter !== 0) this.delayCounter--;
+        else this.state = State.HandleChar;
+        return RENDER_UPDATE;
+    }
+    return RENDER_FINISH;
+  }
+
+  /**
+   * FontFunc_Braille's RENDER_STATE_HANDLE_CHAR behavior. Differences from
+   * normal text: sounds are skipped, keypad icons draw nothing, unknown
+   * control codes print as glyphs, and every glyph is 16 px wide.
    */
   private FontFunc_Braille_HandleChar(): number {
     if (JOY_HELD(A_BUTTON | B_BUTTON) && this.sped) this.delayCounter = 0;
