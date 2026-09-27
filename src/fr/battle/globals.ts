@@ -149,6 +149,8 @@ export const gSideStatuses = allocU16Array("gSideStatuses", 2);
 export const gDisplayedStringBattle = new Uint8Array(300 + 100);
 export const gBattleBufferA = Array.from({ length: 4 }, () => new Uint8Array(0x200));
 export const gBattleBufferB = Array.from({ length: 4 }, () => new Uint8Array(0x200));
+export const gLinkBattleSendBuffer = new Uint8Array(0x1000);  // BATTLE_BUFFER_LINK_SIZE
+export const gLinkBattleRecvBuffer = new Uint8Array(0x1000);  // BATTLE_BUFFER_LINK_SIZE
 export const gBattlerPartyIndexes = new Uint16Array(4);
 export const gBattlerPositions = new Uint8Array(4);
 export const gActionsByTurnOrder = new Uint8Array(4);

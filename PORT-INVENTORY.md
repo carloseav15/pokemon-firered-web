@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 65 | 137061 | 1389/6141 |
+| Parcial (< 80 % de funciones) | 65 | 137061 | 1390/6141 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 13 | 27469 | 897/1045 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 141 | 112390 | 3765/3765 |
+| Casi completo (≥ 80 % y < 100 %) | 12 | 26255 | 836/977 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 142 | 113604 | 3833/3833 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **107** | **189519** | |
-| **Total en alcance** | **253** | **303042** | **6079/11826** |
+| **Pendiente de portar** | **106** | **188305** | |
+| **Total en alcance** | **253** | **303042** | **6087/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -87,7 +87,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
-| `quest_log.c` | 1767 | 3/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
+| `quest_log.c` | 1767 | 4/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 15/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `battle_controller_link_opponent.c` | 1713 | 22/86 |  |  |  |
 | `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
@@ -142,7 +142,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `tm_case.c` | 1737 | 66/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
 | `berry_pouch.c` | 1529 | 65/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `bg.c` | 1215 | 43/50 | `hw/bg.ts` |  | 1 |
-| `battle_controllers.c` | 1214 | 61/68 | `battle/controllers.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
@@ -176,6 +175,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `hall_of_fame.c` | 1286 | 42/42 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
 | `pokemon_icon.c` | 1283 | 23/23 | `battle/ext.ts`, `pokemonIcon.ts` |  |  |
 | `battle_anim_electric.c` | 1280 | 37/37 | `battle/anims/electric.ts` |  |  |
+| `battle_controllers.c` | 1214 | 68/68 | `battle/controllers.ts` |  |  |
 | `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
 | `item_pc.c` | 1145 | 59/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `shop.c` | 1145 | 60/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |

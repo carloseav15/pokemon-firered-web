@@ -40,7 +40,8 @@
     "check:questlog-battle": "esbuild tools/checks/questLogBattle.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/questLogBattle.mjs && node .decomp-build/checks/questLogBattle.mjs",
     "check:cereader-tool": "esbuild tools/checks/cereaderTool.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/cereaderTool.mjs && node .decomp-build/checks/cereaderTool.mjs",
     "check:wonder-news": "esbuild tools/checks/wonderNews.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/wonderNews.mjs && node .decomp-build/checks/wonderNews.mjs",
-    "check:questlog-objects": "esbuild tools/checks/questLogObjects.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/questLogObjects.mjs && node .decomp-build/checks/questLogObjects.mjs"
+    "check:questlog-objects": "esbuild tools/checks/questLogObjects.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/questLogObjects.mjs && node .decomp-build/checks/questLogObjects.mjs",
+    "check:battle-controllers": "esbuild tools/checks/battleControllers.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/battleControllers.mjs && node .decomp-build/checks/battleControllers.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

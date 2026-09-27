@@ -129,3 +129,36 @@ export function ResetLinkState(): void {
   linkStateUpdateCallback = null;
   sReceivingFromLink = false;
 }
+
+// ---------------------------------------------------------------------------
+// Adapter helpers for link battle controllers.
+// The web port has no active link transport; linkTransport exposes safe
+// single-player hooks without declaring premature stubs for unported link.c.
+// ---------------------------------------------------------------------------
+
+/** link.c gReceivedRemoteLinkPlayers accessor. */
+export function getReceivedRemoteLinkPlayers(): number { return receivedRemoteLinkPlayers; }
+
+/** link.c gWirelessCommType accessor. */
+export function getWirelessCommType(): number { return wirelessCommType; }
+
+/** link.c SetWirelessCommType1 helper. */
+export function setWirelessCommTypeToRfu(): void { wirelessCommType = 1; }
+
+export const linkTransport = {
+  rawSendPacket(_mask: number, _src: Uint8Array, _size: number): void {},
+  commDone(): boolean { return true; },
+  isHost(): boolean { return true; },
+  localPlayerId(): number { return 0; },
+  otherPeersMask(): number { return 0; },
+  recvStatus(): number { return 0; },
+  clearRecvFlag(_who: number): void {},
+  stepLinkState(): void {},
+  cleanupRfu(): void {},
+  initCommChannel(): void {},
+  waitConnection(_taskId: number): void {},
+};
+
+/** link.c gBlockRecvBuffer. 4 players × BLOCK_BUFFER_SIZE/2 halfwords. */
+const BLOCK_BUFFER_SIZE = 0x100;
+export const gBlockRecvBuffer: Uint16Array[] = Array.from({ length: 4 }, () => new Uint16Array(BLOCK_BUFFER_SIZE / 2));

@@ -24,7 +24,7 @@ import { AdjustFriendship } from "../pokemon/mon_extra";
 import { G, gBattleCommunication, gBattleMonForms, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds, gMonSpritesGfxPtr } from "./globals";
 import { BattleMainCB1 } from "./main";
 import { GetBattlerPosition } from "./util";
-import { InitBattleControllers, SetUpBattleVars } from "./controllers";
+import { InitBattleControllers, SetUpBattleVars, TryReceiveLinkBattleData } from "./controllers";
 import { BattleInitAllSprites } from "./gfx_sfx_util";
 import { BattleInterfaceSetWindowPals, DrawBattleEntryBackground, InitBattleBgsVideo, LoadBattleTextboxAndBackground } from "./bg";
 import { SetHealthboxSpriteVisible, StartHealthboxSlideIn } from "./interface";
@@ -249,6 +249,7 @@ function CreateNPCTrainerParty(trainerNum: number): number {
 }
 
 function VBlankCB_Battle(): void {
+  TryReceiveLinkBattleData();
   random();
   SetGpuReg(REG_OFFSET_BG0HOFS, G.gBattle_BG0_X);
   SetGpuReg(REG_OFFSET_BG0VOFS, G.gBattle_BG0_Y);
