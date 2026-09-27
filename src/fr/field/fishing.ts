@@ -32,6 +32,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     if (frame === 1 || frame === 2 || frame === 3) sprite.x2 = player.facingDirection === DIR_WEST ? -8 : 8;
     if (frame === 5) sprite.y2 = -8;
     if (frame === 10 || frame === 11) sprite.y2 = 8;
+    if (ow.player.isSurfing()) ow.effects.setSurfBlobPlayerOffset(true, sprite.y2);
   };
   const openWindow = (): Window => {
     if (!window) {
@@ -57,6 +58,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     ow.objects.setGraphicsId(player, playerGfxId);
     ow.syncObjectSprites();
     ow.objects.turn(player, player.movementDirection);
+    if (ow.player.isSurfing()) ow.effects.setSurfBlobPlayerOffset(false, 0);
     sprite.x2 = 0;
     sprite.y2 = 0;
   };

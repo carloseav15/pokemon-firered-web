@@ -202,6 +202,8 @@ export class FieldEffects {
   private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
   private sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
   private surfBlobBobState = C.BOB_NONE;
+  private surfBlobHasPlayerOffset = false;
+  private surfBlobPlayerOffset = 0;
   private encounterImmunitySteps = 0;
   private previousMetatileBehavior = 0;
   /** Active field effect ids (FieldEffectActiveListContains) */
@@ -376,6 +378,8 @@ export class FieldEffects {
     for (const sprite of this.reflectionSprites.values()) this.ow.sprites.destroy(sprite);
     this.reflectionSprites.clear();
     this.surfBlob = undefined;
+    this.surfBlobHasPlayerOffset = false;
+    this.surfBlobPlayerOffset = 0;
     this.flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
     this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
     this.hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -1064,7 +1068,8 @@ export class FieldEffects {
         if ((s.data[4] & interval) === 0) s.y2 += s.data[3];
         if ((s.data[4] & 0x1f) === 0) s.data[3] = -s.data[3];
         if (this.surfBlobBobState !== C.BOB_MON_ONLY) {
-          player.sprite.y2 = s.y2 + (s.animCmdIndex !== 0 ? 1 : 0);
+          player.sprite.y2 = (this.surfBlobHasPlayerOffset ? this.surfBlobPlayerOffset : 0)
+            + s.y2 + (s.animCmdIndex !== 0 ? 1 : 0);
           s.x = player.sprite.x;
           s.y = player.sprite.y + 8;
         }
@@ -1074,6 +1079,13 @@ export class FieldEffects {
 
   setSurfBlobBobState(state: number): void { this.surfBlobBobState = state & 0xf; }
 
+  /** SetSurfBlob_PlayerOffset: retain fishing's frame-specific offset over bobbing. */
+  setSurfBlobPlayerOffset(hasOffset: boolean, offset: number): void {
+    if (!this.surfBlob) return;
+    this.surfBlobHasPlayerOffset = hasOffset;
+    this.surfBlobPlayerOffset = (offset << 16) >> 16;
+  }
+
   setSurfBlobInvisible(invisible: boolean): void {
     if (this.surfBlob) this.surfBlob.invisible = invisible;
   }
@@ -1082,6 +1094,8 @@ export class FieldEffects {
     if (this.surfBlob) this.ow.sprites.destroy(this.surfBlob);
     this.surfBlob = undefined;
     this.surfBlobBobState = C.BOB_NONE;
+    this.surfBlobHasPlayerOffset = false;
+    this.surfBlobPlayerOffset = 0;
     this.ow.player.object.sprite.y2 = 0;
   }
 
