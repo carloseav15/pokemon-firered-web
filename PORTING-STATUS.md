@@ -4188,3 +4188,22 @@ Pending / placeholders:
   Clang 21.0.0, AST `armv4t-none-eabi`, defines de `common.py`
   (`FIRERED`, `REVISION=0`, `ENGLISH`, `MODERN=0`); el harness solo usa el
   subconjunto host cuya semántica queda fijada por `_Static_assert(sizeof(u8))`.
+
+## `battle_interface.c`: accessor de filas INCBIN generado con Clang (2026-09-27)
+
+- Generé `GetBattleInterfaceGfxPtr` desde su cuerpo C y conecté el HUD de batalla
+  a ese accessor; el adaptador conserva el puntero como `{buf, off}` para el
+  runtime web y suma los offsets de los callers existentes. El INCBIN exportado
+  contiene 120 filas de 32 bytes. `battle_interface.c` queda 46/52; total
+  6.273/11.826 (53,0 %), con 5.553 nombres pendientes.
+- El generador verifica desde el AST el tipo, parámetro `u8`, tabla, ancho de
+  fila y tamaño del INCBIN, y falla si la referencia de tabla se altera. El
+  harness compiló el cuerpo C extraído y comparó 123 índices (120 filas y
+  entradas con wrap `u8`); el check TypeScript confirmó el offset generado y el
+  caller/preload activos. `check:incbin-row-accessors` pasó. En navegador,
+  preparé una batalla rival mediante `frDebug.rivalBattle("SPECIES_SQUIRTLE")`;
+  se renderizaron sprites, barras de equipo y diálogo inicial del combate. Es
+  una comprobación del HUD integrado, no una comparación de punteros GBA en
+  runtime. Decomp `c75f352304d529f6ba92d4f74b9cf8b5c3810788`, Apple Clang
+  21.0.0, AST `armv4t-none-eabi`, defines `FIRERED`, `REVISION=0`, `ENGLISH`,
+  `MODERN=0`.

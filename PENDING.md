@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6272/11826 (53.0 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5554 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6273/11826 (53.0 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5553 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~128.314 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~128.271 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -25,10 +25,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 6 | `berry_fix_program.c` | sin empezar | 203 | 0/4 | ~203 |  |
 | 7 | `mystery_gift_link.c` | sin empezar | 215 | 0/10 | ~215 |  |
 | 8 | `union_room_battle.c` | sin empezar | 238 | 0/5 | ~238 |  |
-| 9 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
-| 10 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
-| 11 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |
-| 12 | `battle_interface.c` | casi completo | 2240 | 45/52 | ~301 |  |
+| 9 | `battle_interface.c` | casi completo | 2240 | 46/52 | ~258 |  |
+| 10 | `dodrio_berry_picking_comm.c` | sin empezar | 274 | 0/8 | ~274 |  |
+| 11 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
+| 12 | `mystery_gift_client.c` | sin empezar | 300 | 0/18 | ~300 |  |
 | 13 | `mystery_gift_server.c` | sin empezar | 302 | 0/14 | ~302 |  |
 | 14 | `mystery_event_script.c` | parcial | 322 | 0/25 | ~322 |  |
 | 15 | `minigame_countdown.c` | sin empezar | 332 | 0/10 | ~332 |  |

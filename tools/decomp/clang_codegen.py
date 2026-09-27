@@ -919,6 +919,11 @@ CDATA_TABLE_ACCESSORS = {
     "PageToNextGfxId": ("naming_screen.c", "naming_screen", "sPageToNextGfxId"),
 }
 
+# Reviewed pointers into fixed-width rows of exported INCBIN data.
+INCBIN_ROW_POINTER_ACCESSORS = {
+    "GetBattleInterfaceGfxPtr": ("battle_interface.c", "gBattleInterface_Gfx"),
+}
+
 
 def _cdata_table_accessor(func: clang_ast.AstFunction, c_file: str, cdata_file: str, expected_table: str) -> tuple[str, str, int]:
     """Validate a direct `return const_u8_table[integer_parameter]` accessor."""
@@ -1004,6 +1009,91 @@ def generate_cdata_table_accessors_ts() -> str:
 def write_cdata_table_accessors_file() -> Path:
     out_file = ROOT / "src" / "fr" / "generated" / "cdataTableAccessors.ts"
     out_file.write_text(generate_cdata_table_accessors_ts())
+    return out_file
+
+
+def _incbin_row_pointer_accessor(func: clang_ast.AstFunction, c_file: str, expected_symbol: str) -> tuple[str, str, int]:
+    """Validate a direct pointer to a fixed-width row of a C INCBIN array."""
+    if func.return_type != "const u8 *" or len(func.params) != 1 or func.params[0][1] != "u8":
+        raise UnsupportedAstError(c_file, func.name, "expected const u8 * function with one u8 parameter")
+    param = func.params[0][0]
+    statements = func.body.get("inner") or []
+    if len(statements) != 1 or statements[0].get("kind") != "ReturnStmt":
+        raise UnsupportedAstError(c_file, func.name, "expected a single direct return")
+
+    def unwrap(node: dict[str, Any]) -> dict[str, Any]:
+        while node.get("kind") in ("ImplicitCastExpr", "ConstantExpr", "CStyleCastExpr", "ParenExpr"):
+            children = node.get("inner") or []
+            if len(children) != 1:
+                raise UnsupportedAstError(c_file, func.name, "unexpected cast around INCBIN row lookup")
+            node = children[0]
+        return node
+
+    children = statements[0].get("inner") or []
+    lookup = unwrap(children[0]) if len(children) == 1 else {}
+    if lookup.get("kind") != "ArraySubscriptExpr":
+        raise UnsupportedAstError(c_file, func.name, "expected direct INCBIN row lookup")
+    operands = lookup.get("inner") or []
+    if len(operands) != 2:
+        raise UnsupportedAstError(c_file, func.name, "unexpected INCBIN row lookup operands")
+    table_ref = unwrap(operands[0])
+    index_ref = unwrap(operands[1])
+    table_decl = table_ref.get("referencedDecl", {})
+    if table_ref.get("kind") != "DeclRefExpr" or table_decl.get("kind") != "VarDecl" or table_decl.get("name") != expected_symbol:
+        raise UnsupportedAstError(c_file, func.name, f"expected INCBIN symbol {expected_symbol}")
+    index_decl = index_ref.get("referencedDecl", {})
+    if index_ref.get("kind") != "DeclRefExpr" or index_decl.get("kind") != "ParmVarDecl" or index_decl.get("name") != param:
+        raise UnsupportedAstError(c_file, func.name, "row index must be the u8 parameter")
+
+    element_type = lookup.get("type", {}).get("qualType", "")
+    prefix = "const u8["
+    if not element_type.startswith(prefix) or not element_type.endswith("]"):
+        raise UnsupportedAstError(c_file, func.name, f"expected fixed-width const u8 row, got {element_type or 'unknown type'}")
+    try:
+        row_size = int(element_type[len(prefix):-1])
+    except ValueError as exc:
+        raise UnsupportedAstError(c_file, func.name, "INCBIN row width is not a constant integer") from exc
+    if table_decl.get("type", {}).get("qualType") != f"const u8[][{row_size}]":
+        raise UnsupportedAstError(c_file, func.name, "INCBIN declaration does not match the AST row width")
+
+    index_path = ROOT / "public" / "fr" / "incbin" / "index.json"
+    try:
+        index = json.loads(index_path.read_text())
+        pack, _offset, size = index["symbols"][expected_symbol]
+    except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
+        raise UnsupportedAstError(c_file, func.name, f"exported INCBIN symbol {expected_symbol} is missing") from exc
+    if not isinstance(row_size, int) or row_size <= 0 or size % row_size:
+        raise UnsupportedAstError(c_file, func.name, "exported INCBIN byte size is not a multiple of the C row width")
+    return param, pack, row_size
+
+
+def generate_incbin_row_pointer_accessors_ts() -> str:
+    rows: list[str] = []
+    for name, (c_file, symbol) in sorted(INCBIN_ROW_POINTER_ACCESSORS.items()):
+        ast = clang_ast.dump_clang_ast_json(clang_ast.DECOMP / "src" / c_file)
+        func = clang_ast.extract_functions(ast, {name}).get(name)
+        if not func:
+            raise UnsupportedAstError(c_file, name, "function definition not found in Clang AST")
+        param, _pack, row_size = _incbin_row_pointer_accessor(func, c_file, symbol)
+        rows.append(
+            f'export function {name}({param}: number): {{ buf: Uint8Array; off: number }} '
+            f'{{ return {{ buf: incbin("{symbol}"), off: ({param} & 0xff) * {row_size} }}; }}'
+        )
+    return "\n".join([
+        "// GENERATED BY tools/decomp/clang_codegen.py FROM Clang AST-validated INCBIN row accessors.",
+        "// DO NOT EDIT MANUALLY. Re-run npm run generate:incbin-row-accessors to regenerate.",
+        "// Target: armv4t-none-eabi | C const u8* uses the browser pointer model {buf, off}; u8 row indices wrap.",
+        "",
+        'import { incbin } from "../hw/assets";',
+        "",
+        *rows,
+        "",
+    ])
+
+
+def write_incbin_row_pointer_accessors_file() -> Path:
+    out_file = ROOT / "src" / "fr" / "generated" / "incbinRowAccessors.ts"
+    out_file.write_text(generate_incbin_row_pointer_accessors_ts())
     return out_file
 
 
@@ -1342,10 +1432,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--event-object-anims", action="store_true", help="generate event_object_movement direction-animation lookups")
     parser.add_argument("--cdata-table-accessors", action="store_true", help="generate reviewed direct cdata table accessors")
+    parser.add_argument("--incbin-row-accessors", action="store_true", help="generate reviewed fixed-width INCBIN row pointer accessors")
     args = parser.parse_args()
-    if args.event_object_anims and args.cdata_table_accessors:
+    if sum((args.event_object_anims, args.cdata_table_accessors, args.incbin_row_accessors)) > 1:
         parser.error("choose one generator mode")
-    if args.cdata_table_accessors:
+    if args.incbin_row_accessors:
+        out_path = write_incbin_row_pointer_accessors_file()
+    elif args.cdata_table_accessors:
         out_path = write_cdata_table_accessors_file()
     elif args.event_object_anims:
         out_path = write_event_object_anims_file()

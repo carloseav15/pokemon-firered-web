@@ -2,6 +2,7 @@
 // Graphics are written straight into OBJ VRAM like the original CpuCopy32 calls.
 
 import * as C from "../generated/constants";
+import { GetBattleInterfaceGfxPtr } from "../generated/incbinRowAccessors";
 import { sound } from "../audio/sound";
 import { tasks } from "../gba/tasks";
 import { cdata, incbin } from "../hw/assets";
@@ -74,9 +75,11 @@ const DISPLAY_WIDTH = 240;
 
 // ---------------------------------------------------------------- VRAM helpers
 
-const gfx = () => incbin("gBattleInterface_Gfx");
-/** GetBattleInterfaceGfxPtr(elementId) + byteOffset */
-const gfxPtr = (elementId: number, byteOffset = 0) => ({ buf: gfx(), off: elementId * TILE_SIZE_4BPP + byteOffset });
+/** Browser pointer adaptation for GetBattleInterfaceGfxPtr(elementId) + byteOffset. */
+const gfxPtr = (elementId: number, byteOffset = 0) => {
+  const ptr = GetBattleInterfaceGfxPtr(elementId);
+  return { buf: ptr.buf, off: ptr.off + byteOffset };
+};
 type Ptr = { buf: Uint8Array; off: number };
 
 function CpuCopy32(src: Ptr, dest: number, size: number): void {
