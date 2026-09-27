@@ -242,9 +242,9 @@ export class ObjectEvents {
 
   /** GetObjectEventIdByLocalIdAndMap: reserved IDs do not use map identity. */
   byLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): ObjectEvent | undefined {
-    localId &= 0xff;
-    if (localId >= LOCALID_PLAYER) return this.byLocalId(localId);
-    return this.list.find((o) => o.localId === localId && o.mapNum === mapNum && o.mapGroup === mapGroup);
+    const objectEventId = { value: OBJECT_EVENTS_COUNT };
+    if (this.TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, objectEventId)) return undefined;
+    return this.objects[objectEventId.value] ?? undefined;
   }
 
   indexOf(object: ObjectEvent): number {
@@ -252,8 +252,47 @@ export class ObjectEvents {
   }
 
   private freeSlot(): number {
-    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) if (!this.objects[i] || !this.objects[i]!.active) return i;
-    return -1;
+    const objectEventId = this.GetFirstInactiveObjectEventId();
+    return objectEventId === OBJECT_EVENTS_COUNT ? -1 : objectEventId;
+  }
+
+  GetFirstInactiveObjectEventId(): number {
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      if (!this.objects[i]?.active) return i;
+    }
+    return OBJECT_EVENTS_COUNT;
+  }
+
+  GetObjectEventIdByLocalId(localId: number): number {
+    localId &= 0xff;
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const objectEvent = this.objects[i];
+      if (objectEvent?.active && objectEvent.localId === localId) return i;
+    }
+    return OBJECT_EVENTS_COUNT;
+  }
+
+  GetObjectEventIdByLocalIdAndMapInternal(localId: number, mapNum: number, mapGroupId: number): number {
+    localId &= 0xff;
+    mapNum &= 0xff;
+    mapGroupId &= 0xff;
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const objectEvent = this.objects[i];
+      if (objectEvent?.active && objectEvent.localId === localId && objectEvent.mapNum === mapNum && objectEvent.mapGroup === mapGroupId) return i;
+    }
+    return OBJECT_EVENTS_COUNT;
+  }
+
+  GetObjectEventIdByLocalIdAndMap(localId: number, mapNum: number, mapGroupId: number): number {
+    localId &= 0xff;
+    if (localId < LOCALID_PLAYER) return this.GetObjectEventIdByLocalIdAndMapInternal(localId, mapNum, mapGroupId);
+    return this.GetObjectEventIdByLocalId(localId);
+  }
+
+  /** The C helper returns TRUE when the object is absent and writes the sentinel ID. */
+  TryGetObjectEventIdByLocalIdAndMap(localId: number, mapNum: number, mapGroupId: number, objectEventId: { value: number }): boolean {
+    objectEventId.value = this.GetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroupId);
+    return objectEventId.value === OBJECT_EVENTS_COUNT;
   }
 
   /** InitObjectEventStateFromTemplate + sprite creation */

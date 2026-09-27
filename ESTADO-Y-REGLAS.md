@@ -9,13 +9,13 @@ Detalle por commit: [PORTING-STATUS.md](PORTING-STATUS.md), sección
 
 | Medida | Valor | Qué significa |
 |---|---:|---|
-| Funciones del C con homólogo por nombre en TS | **6184 / 11826 (52,3 %)** | Indicador de nombres; incluye sistemas no single-player; no prueba fidelidad |
+| Funciones del C con homólogo por nombre en TS | **6189 / 11826 (52,3 %)** | Indicador de nombres; incluye sistemas no single-player; no prueba fidelidad |
 | Archivos C sin huecos de nombre | **148** | El inventario no mide paridad funcional |
 | Archivos casi completos (≥ 80 % y < 100 %) | **11** | Aún tienen funciones sin homólogo |
 | Archivos parciales (< 80 %) | **60** | Lista completa, junto con los casi completos, en `PENDING.md` |
 | Archivos adaptador | **1** | Teachy TV conserva interfaz de lista simplificada |
-| Archivos con algún hueco de nombre | **100** | 28 sin empezar + 61 parciales + 10 casi completos + 1 adaptador |
-| Líneas C sin cubrir (estimación ponderada) | **~130 003 / 303 042 (42,9 %)** | Estimación por proporción de funciones, no comparación de cada línea |
+| Archivos con algún hueco de nombre | **100** | 28 sin empezar + 60 parciales + 11 casi completos + 1 adaptador |
+| Líneas C sin cubrir (estimación ponderada) | **~129 941 / 303 042 (42,9 %)** | Estimación por proporción de funciones, no comparación de cada línea |
 | Adaptadores reales | 1 archivo (teachy_tv) + cajas del PC | UI simplificada con listas de texto |
 | Funciones stub (nombre del C, cuerpo vacío) | **121** | No cuentan como portadas (PENDING.md §3b) |
 | Módulos que el juego no importa | 9 | PENDING.md §3c y `tools/checks/unwired-baseline.json` |
@@ -175,7 +175,7 @@ de asignarlas, pues algunas ya figuran resueltas en PLAN-RECORRIDO.md.
 ### Corto plazo (primeras ~2 horas de juego)
 - `naming_screen.c` completo (4/109): icono, parpadeo del cursor en OK/BACK,
   cambio de página, `SaveInputText`; añadir `check:naming`.
-- `event_object_movement.c` (42/752): fuente probable de más bloqueos como el
+- `event_object_movement.c` (39/759): fuente probable de más bloqueos como el
   de la enfermera.
 - Rellenar o borrar los stubs de Gemini: `field_effect_helpers.c` (62),
   `field_weather.c` (30), `teachy_tv.c` (30), `fame_checker.c` (7).

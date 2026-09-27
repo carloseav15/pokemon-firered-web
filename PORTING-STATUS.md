@@ -5,10 +5,24 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.184/11.826 funciones (52,3%)**,
+single-player. A 2026-09-27, la meta mide **6.189/11.826 funciones (52,3%)**,
 con **100 archivos** con huecos y una estimación ponderada de
-**~130.003/303.042 líneas C (42,9%)** pendientes. La coincidencia por nombre
+**~129.941/303.042 líneas C (42,9%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: búsquedas por ID y ranura libre (2026-09-27)
+
+- Porté `GetFirstInactiveObjectEventId`, `GetObjectEventIdByLocalId`,
+  `GetObjectEventIdByLocalIdAndMap`, su helper interno y
+  `TryGetObjectEventIdByLocalIdAndMap` sobre la tabla fija de 16 objetos.
+  Mantienen el sentinel `OBJECT_EVENTS_COUNT`, el trato especial de los IDs
+  reservados desde `LOCALID_PLAYER` y la convención C de que `TryGet...`
+  devuelve TRUE cuando no encuentra el objeto. `freeSlot` y
+  `byLocalIdAndMap` ahora usan estas rutinas.
+- El inventario queda en **39/759** para `event_object_movement.c`; total
+  **6.189/11.826 (52,3%)**, 100 archivos con huecos y ~129.941 líneas
+  ponderadas pendientes. Pasaron `check:port`, `check:honesty`, `build`,
+  inventory, pending y `git diff --check`. No se hizo prueba de navegador.
 
 ## `field_door.c`: frames abiertos y tipo de sonido (2026-09-27)
 
