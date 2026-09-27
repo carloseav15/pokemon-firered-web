@@ -1,8 +1,8 @@
 """Generate byte-backed TS classes for decomp structs (src/fr/generated/structs.ts).
 
 Field names/types come from the C parser (step_cdata); offsets, sizes,
-signedness and bitfield positions are measured by a host C probe compiled
-against the real headers, so the layout matches the game's memory layout.
+signedness and bitfield positions come from Clang's ARMv4T record-layout dump.
+Do not execute a host probe: host pointers have the wrong ABI.
 """
 
 from __future__ import annotations
@@ -19,9 +19,12 @@ STRUCTS = [
     "BattleSpriteInfo", "BattleAnimationInfo", "BattleHealthboxInfo", "BattleBarInfo", "UsedMoves",
     "ResourceFlags", "StatsArray", "PokedudeBattlerState", "LinkBattlerHeader", "BattleEnigmaBerry",
     "MultiBattlePokemonTx", "ChooseMoveStruct", "BattleMove",
+    "Berry", "Berry2", "EnigmaBerry",
 ]
 HEADERS = ["global.h", "battle.h", "pokemon.h", "battle_controllers.h", "battle_ai_script_commands.h", "battle_gfx_sfx_util.h"]
 SCALARS = {1: ("u8", "s8"), 2: ("u16", "s16"), 4: ("u32", "s32")}
+SCALAR_ALIASES = {"bool8": (1, False), "bool16": (2, False), "bool32": (4, False)}
+TARGET = "armv4t-none-eabi"
 
 
 def preprocess_headers() -> str:
@@ -31,123 +34,113 @@ def preprocess_headers() -> str:
     return r.stdout.decode()
 
 
-def field_decls(struct_text_tokens):
-    pass
+def target_layouts(preprocessed: str, structs: dict[str, list[tuple[str, str | None, bool]]]) -> tuple[dict[str, int], dict[str, list[dict]]]:
+    """Measure selected C structs using Clang's target ABI layout dump."""
+    BUILD.mkdir(parents=True, exist_ok=True)
+    path = BUILD / "structs_layout.c"
+    declarations = "\n".join(f"struct {name} codex_layout_{name};" for name in STRUCTS if name in structs)
+    path.write_text(preprocessed + "\n" + declarations + "\n")
+    result = subprocess.run(
+        ["clang", f"--target={TARGET}", "-Xclang", "-fdump-record-layouts-complete", "-fsyntax-only", "-w", "-x", "c", str(path)],
+        cwd=DECOMP, capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Clang {TARGET} layout dump failed:\n{result.stderr[:4000]}")
 
-
-def main_probe(structs: dict[str, list[tuple[str, str | None, bool]]]) -> str:
-    lines = ['#include <stdio.h>', '#include <string.h>', '#include <stddef.h>']
-    lines += [f'#include "{h}"' for h in HEADERS]
-    lines.append("int main(void){")
-    for name in STRUCTS:
+    dump = result.stdout + result.stderr
+    layouts: dict[str, tuple[int, dict[str, dict]]] = {}
+    blocks = re.split(r"\*\*\* Dumping AST Record Layout\n", dump)
+    for block in blocks:
+        header = re.search(r"^\s*0 \| struct (\w+)\s*$", block, re.M)
+        trailer = re.search(r"\[sizeof=(\d+), align=(\d+)\]", block)
+        if not header or not trailer:
+            continue
+        name = header.group(1)
         if name not in structs:
             continue
-        lines.append(f'{{ struct {name} s; printf("S {name} %d\\n", (int)sizeof(s));')
-        for field, sub, _arr in structs[name]:
-            # bitfield detection: sizeof on a bitfield is illegal, so we
-            # always use the fill trick, which also works for plain fields.
-            lines.append(f'''  {{ unsigned char *p = (unsigned char *)&s; memset(&s, 0, sizeof s);
-    __typeof__(s.{field}) *probe_unused; (void)probe_unused; }}''')
-        lines.append("}")
-    lines.append("return 0;}")
-    return "\n".join(lines)
+        parsed: dict[str, dict] = {}
+        for line in block.splitlines():
+            row = re.match(r"^\s*(\d+)(?::(\d+)-(\d+))? \|([ ]+)(.*?)\s*$", line)
+            # Top-level record fields have exactly three spaces after '|';
+            # deeper indentation is Clang expanding a nested struct member.
+            if not row or len(row.group(4)) != 3:
+                continue
+            field_type = row.group(5)
+            field_name = re.search(r"([A-Za-z_]\w*)$", field_type)
+            if not field_name:
+                continue
+            parsed[field_name.group(1)] = {
+                "offset": int(row.group(1)),
+                "bitStart": int(row.group(2)) if row.group(2) is not None else None,
+                "bitEnd": int(row.group(3)) if row.group(3) is not None else None,
+                "type": field_type[:field_name.start()].strip(),
+            }
+        layouts[name] = (int(trailer.group(1)), parsed)
 
+    missing = [name for name in structs if name not in layouts]
+    if missing:
+        raise RuntimeError(f"Clang {TARGET} did not report layouts for: {missing}")
 
-def build_probe(structs: dict[str, list[tuple[str, str | None, bool]]], bitfields: set[tuple[str, str]], raw: set[tuple[str, str]] = set()) -> str:
-    out = ['#include <stdio.h>', '#include <string.h>', '#include <stddef.h>']
-    out += [f'#include "{h}"' for h in HEADERS]
-    out.append("static void dump(const char *s, const char *f, unsigned char *p, int n){ int i; printf(\"B %s %s\", s, f); for(i=0;i<n;i++) printf(\" %02x\", p[i]); printf(\"\\n\"); }")
-    out.append("int main(void){")
-    for name in STRUCTS:
-        if name not in structs:
-            continue
-        out.append(f'{{ static struct {name} s; printf("S {name} %d\\n", (int)sizeof(s));')
-        for field, sub, arr in structs[name]:
-            if (name, field) in raw:
-                out.append(f'  printf("R {name} {field} %d %d\\n", (int)offsetof(struct {name}, {field}), (int)sizeof(s.{field}));')
-            elif (name, field) in bitfields:
-                out.append(f'  memset(&s, 0, sizeof s); s.{field} = -1; dump("{name}", "{field}", (unsigned char *)&s, sizeof s);')
-            elif sub:
-                out.append(f'  printf("N {name} {field} %d %d {sub}\\n", (int)offsetof(struct {name}, {field}), (int)sizeof(s.{field}));')
-            elif arr:
-                out.append(f'  printf("A {name} {field} %d %d %d %d\\n", (int)offsetof(struct {name}, {field}), (int)sizeof(s.{field}), (int)sizeof(s.{field}[0]), (int)(((__typeof__(s.{field}[0]))-1) < 0));')
+    sizes = {name: layout[0] for name, layout in layouts.items()}
+    fields: dict[str, list[dict]] = {}
+    for name, decls in structs.items():
+        parsed = layouts[name][1]
+        generated: list[dict] = []
+        for field_index, (field, sub, arr) in enumerate(decls):
+            layout = parsed.get(field)
+            if layout is None:
+                raise RuntimeError(f"Clang {TARGET} layout for {name}.{field} was not found")
+            offset, bit_start, bit_end, field_type = layout["offset"], layout["bitStart"], layout["bitEnd"], layout["type"]
+            next_field = parsed.get(decls[field_index + 1][0]) if field_index + 1 < len(decls) else None
+            raw_size = (next_field["offset"] if next_field else sizes[name]) - offset
+            if bit_start is not None:
+                generated.append({"kind": "bits", "name": field, "offset": offset, "shift": bit_start, "width": bit_end - bit_start + 1})
+            elif field_type.startswith("struct "):
+                nested = field_type.removeprefix("struct ").strip()
+                if nested not in sizes:
+                    generated.append({"kind": "raw", "name": field, "offset": offset, "size": raw_size})
+                else:
+                    generated.append({"kind": "struct", "name": field, "offset": offset, "size": sizes[nested], "type": nested})
+            elif field_type.startswith("union "):
+                generated.append({"kind": "raw", "name": field, "offset": offset, "size": raw_size})
+            elif "[" in field_type:
+                array = re.match(r"^(.+?)((?:\[\d+\])+)$", field_type)
+                if not array:
+                    raise RuntimeError(f"Clang {TARGET} array type not recognized: {name}.{field}: {field_type}")
+                elem_name = array.group(1).strip()
+                count = 1
+                for dim in re.findall(r"\[(\d+)\]", array.group(2)):
+                    count *= int(dim)
+                if "*" in elem_name:
+                    elem_size, signed = 4, False
+                else:
+                    elem_size, signed = next(((n, t.startswith("s")) for n, types in SCALARS.items() for t in types if t == elem_name), SCALAR_ALIASES.get(elem_name, (0, False)))
+                if not elem_size and elem_name.startswith("struct "):
+                    elem_size, signed = sizes.get(elem_name.removeprefix("struct "), 0), False
+                if not elem_size:
+                    generated.append({"kind": "raw", "name": field, "offset": offset, "size": raw_size})
+                    continue
+                generated.append({"kind": "array", "name": field, "offset": offset, "size": elem_size * count, "elem": elem_size, "signed": signed})
+            elif "*" in field_type:
+                generated.append({"kind": "raw", "name": field, "offset": offset, "size": 4})
             else:
-                out.append(f'  printf("F {name} {field} %d %d %d\\n", (int)offsetof(struct {name}, {field}), (int)sizeof(s.{field}), (int)(((__typeof__(s.{field}))-1) < 0));')
-        out.append("}")
-    out.append("return 0;}")
-    return "\n".join(out)
-
-
-def compile_run(source: str) -> tuple[bool, str]:
-    path = BUILD / "structs_probe.c"
-    path.write_text(source)
-    exe = BUILD / "structs_probe"
-    r = subprocess.run(["clang", "-w", "-x", "c", "-U__APPLE__", *CPP_DEFINES, "-I", str(BUILD), "-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", str(path), "-o", str(exe)], cwd=DECOMP, capture_output=True)
-    if r.returncode != 0:
-        return False, r.stderr.decode()
-    return True, subprocess.run([str(exe)], capture_output=True).stdout.decode()
+                scalar = field_type.strip()
+                scalar_size, signed = next(((n, scalar.startswith("s")) for n, types in SCALARS.items() for t in types if t == scalar), SCALAR_ALIASES.get(scalar, (0, False)))
+                if not scalar_size:
+                    generated.append({"kind": "raw", "name": field, "offset": offset, "size": raw_size})
+                else:
+                    generated.append({"kind": "scalar", "name": field, "offset": offset, "size": scalar_size, "signed": signed})
+        fields[name] = generated
+    return sizes, fields
 
 
 def export_structs() -> None:
-    parser = CParser(tokenize(preprocess_headers()), {})
+    preprocessed = preprocess_headers()
+    parser = CParser(tokenize(preprocessed), {})
     parser.parse()
     structs = {n: parser.structs[n] for n in STRUCTS if n in parser.structs}
     missing = [n for n in STRUCTS if n not in parser.structs]
-    bitfields: set[tuple[str, str]] = set()
-    # Iterate: compile errors on offsetof/sizeof identify bitfields or
-    # unsupported fields; mark bitfields and retry.
-    dropped: set[tuple[str, str]] = set()
-    for _ in range(200):
-        filtered = {n: [f for f in fs if (n, f[0]) not in dropped] for n, fs in structs.items()}
-        ok, out = compile_run(build_probe(filtered, bitfields))
-        if ok:
-            break
-        lines = build_probe(filtered, bitfields).split("\n")
-        changed = False
-        errors: dict[tuple[str, str], list[str]] = {}
-        for m in re.finditer(r"structs_probe\.c:(\d+):\d+: error: (.*)", out):
-            line = lines[int(m.group(1)) - 1]
-            fm = re.search(r'"([A-Za-z_]\w*)", "?([A-Za-z_]\w*)', line) or re.search(r"[FNA] (\w+) (\w+)", line)
-            if fm:
-                errors.setdefault((fm.group(1), fm.group(2)), []).append(m.group(2))
-        for key, msgs in errors.items():
-            if key not in bitfields and any("bit-field" in x for x in msgs):
-                bitfields.add(key)
-                changed = True
-            elif key not in dropped:
-                dropped.add(key)
-                changed = True
-        if not changed:
-            raise RuntimeError(out[:4000])
-    if dropped:
-        ok2, out2 = compile_run(build_probe(structs, bitfields, dropped))
-        if ok2:
-            out = out2
-            dropped = set()
-    sizes: dict[str, int] = {}
-    fields: dict[str, list[dict]] = {n: [] for n in STRUCTS}
-    for line in out.splitlines():
-        parts = line.split()
-        if parts[0] == "S":
-            sizes[parts[1]] = int(parts[2])
-        elif parts[0] == "F":
-            fields[parts[1]].append({"kind": "scalar", "name": parts[2], "offset": int(parts[3]), "size": int(parts[4]), "signed": parts[5] == "1"})
-        elif parts[0] == "A":
-            fields[parts[1]].append({"kind": "array", "name": parts[2], "offset": int(parts[3]), "size": int(parts[4]), "elem": int(parts[5]), "signed": parts[6] == "1"})
-        elif parts[0] == "N":
-            fields[parts[1]].append({"kind": "struct", "name": parts[2], "offset": int(parts[3]), "size": int(parts[4]), "type": parts[5]})
-        elif parts[0] == "R":
-            fields[parts[1]].append({"kind": "raw", "name": parts[2], "offset": int(parts[3]), "size": int(parts[4])})
-        elif parts[0] == "B":
-            bits = [int(x, 16) for x in parts[3:]]
-            first = next(i for i, b in enumerate(bits) if b)
-            last = max(i for i, b in enumerate(bits) if b)
-            value = 0
-            for i in range(first, last + 1):
-                value |= bits[i] << (8 * (i - first))
-            shift = (value & -value).bit_length() - 1
-            width = bin(value).count("1")
-            fields[parts[1]].append({"kind": "bits", "name": parts[2], "offset": first, "shift": shift, "width": width})
+    sizes, fields = target_layouts(preprocessed, structs)
     ts = ["// Generated by tools/decomp/step_structs.py from the decompilation headers. Do not edit.",
           'import { ByteStruct } from "../battle/ram";', ""]
     for name in STRUCTS:
@@ -181,4 +174,4 @@ def export_structs() -> None:
         ts.append("}")
         ts.append("")
     (ROOT / "src" / "fr" / "generated" / "structs.ts").write_text("\n".join(ts))
-    print(f"  structs: {len(sizes)} generated, missing {missing}, dropped {sorted(dropped)}")
+    print(f"  structs: {len(sizes)} generated for {TARGET}, missing {missing}")

@@ -354,7 +354,7 @@ export class AI_ThinkingStruct extends ByteStruct {
 /** struct BattleHistory (0x2e bytes) */
 export class BattleHistory extends ByteStruct {
   static readonly SIZE = 46;
-  /** raw bytes */ get usedMoves(): Uint8Array { return this.bytes.subarray(0, 32); }
+  get usedMoves(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 0, 16); }
   get abilities(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 32, 2); }
   get itemEffects(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 34, 2); }
   get trainerItems(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 36, 4); }
@@ -408,9 +408,9 @@ export class BattleResults extends ByteStruct {
   get catchAttempts(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 54, 11); }
 }
 
-/** struct BattleStruct (0x208 bytes) */
+/** struct BattleStruct (0x200 bytes) */
 export class BattleStruct extends ByteStruct {
-  static readonly SIZE = 520;
+  static readonly SIZE = 512;
   get turnEffectsTracker(): number { return this.bytes[0]; }
   set turnEffectsTracker(v: number) { this.bytes[0] = v & 0xff; }
   get turnEffectsBattlerId(): number { return this.bytes[1]; }
@@ -419,7 +419,7 @@ export class BattleStruct extends ByteStruct {
   set filler2(v: number) { this.bytes[2] = v & 0xff; }
   get turnCountersTracker(): number { return this.bytes[3]; }
   set turnCountersTracker(v: number) { this.bytes[3] = v & 0xff; }
-  /** raw bytes */ get wrappedMove(): Uint8Array { return this.bytes.subarray(4, 12); }
+  get wrappedMove(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 4, 8); }
   get moveTarget(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 12, 4); }
   get expGetterMonId(): number { return this.bytes[16]; }
   set expGetterMonId(v: number) { this.bytes[16] = v & 0xff; }
@@ -430,7 +430,7 @@ export class BattleStruct extends ByteStruct {
   get dynamicMoveType(): number { return this.bytes[19]; }
   set dynamicMoveType(v: number) { this.bytes[19] = v & 0xff; }
   get wrappedBy(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 20, 4); }
-  /** raw bytes */ get assistPossibleMoves(): Uint8Array { return this.bytes.subarray(24, 72); }
+  get assistPossibleMoves(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 24, 24); }
   get focusPunchBattlerId(): number { return this.bytes[72]; }
   set focusPunchBattlerId(v: number) { this.bytes[72] = v & 0xff; }
   get battlerPreventingSwitchout(): number { return this.bytes[73]; }
@@ -454,7 +454,7 @@ export class BattleStruct extends ByteStruct {
   get selectionScriptFinished(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 84, 4); }
   get battlerPartyIndexes(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 88, 4); }
   get monToSwitchIntoId(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 92, 4); }
-  /** raw bytes */ get battlerPartyOrders(): Uint8Array { return this.bytes.subarray(96, 108); }
+  get battlerPartyOrders(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 96, 12); }
   get runTries(): number { return this.bytes[108]; }
   set runTries(v: number) { this.bytes[108] = v & 0xff; }
   get caughtMonNick(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 109, 11); }
@@ -498,7 +498,7 @@ export class BattleStruct extends ByteStruct {
   set absentBattlerFlags(v: number) { this.bytes[145] = v & 0xff; }
   get AI_monToSwitchIntoId(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 146, 2); }
   get simulatedInputState(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 148, 4); }
-  /** raw bytes */ get lastTakenMove(): Uint8Array { return this.bytes.subarray(152, 168); }
+  get lastTakenMove(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 152, 16); }
   get hpOnSwitchout(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 168, 2); }
   get abilityPreventingSwitchout(): number { return this.bytes[172]; }
   set abilityPreventingSwitchout(v: number) { this.bytes[172] = v & 0xff; }
@@ -506,42 +506,42 @@ export class BattleStruct extends ByteStruct {
   set hpScale(v: number) { this.bytes[173] = v & 0xff; }
   get savedBattleTypeFlags(): number { return this.view.getUint16(174, true); }
   set savedBattleTypeFlags(v: number) { this.view.setUint16(174, v & 0xffff, true); }
-  /** raw bytes */ get savedCallback(): Uint8Array { return this.bytes.subarray(176, 184); }
-  get synchronizeMoveEffect(): number { return this.bytes[184]; }
-  set synchronizeMoveEffect(v: number) { this.bytes[184] = v & 0xff; }
-  get multiplayerId(): number { return this.bytes[185]; }
-  set multiplayerId(v: number) { this.bytes[185] = v & 0xff; }
-  get overworldWeatherDone(): number { return this.bytes[186]; }
-  set overworldWeatherDone(v: number) { this.bytes[186] = v & 0xff; }
-  get atkCancellerTracker(): number { return this.bytes[187]; }
-  set atkCancellerTracker(v: number) { this.bytes[187] = v & 0xff; }
-  get usedHeldItems(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 188, 4); }
-  get chosenItem(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 196, 4); }
-  get AI_itemType(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 200, 2); }
-  get AI_itemFlags(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 202, 2); }
-  get choicedMove(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 204, 4); }
-  get changedItems(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 212, 4); }
-  get intimidateBattler(): number { return this.bytes[220]; }
-  set intimidateBattler(v: number) { this.bytes[220] = v & 0xff; }
-  get switchInItemsCounter(): number { return this.bytes[221]; }
-  set switchInItemsCounter(v: number) { this.bytes[221] = v & 0xff; }
-  get field_DA(): number { return this.bytes[222]; }
-  set field_DA(v: number) { this.bytes[222] = v & 0xff; }
-  get turnSideTracker(): number { return this.bytes[223]; }
-  set turnSideTracker(v: number) { this.bytes[223] = v & 0xff; }
-  get fillerDC(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 224, 3); }
-  get givenExpMons(): number { return this.bytes[227]; }
-  set givenExpMons(v: number) { this.bytes[227] = v & 0xff; }
-  /** raw bytes */ get lastTakenMoveFrom(): Uint8Array { return this.bytes.subarray(228, 260); }
-  /** raw bytes */ get castformPalette(): Uint8Array { return this.bytes.subarray(260, 388); }
-  get wishPerishSongState(): number { return this.bytes[388]; }
-  set wishPerishSongState(v: number) { this.bytes[388] = v & 0xff; }
-  get wishPerishSongBattlerId(): number { return this.bytes[389]; }
-  set wishPerishSongBattlerId(v: number) { this.bytes[389] = v & 0xff; }
-  get lastAttackerToFaintOpponent(): number { return this.bytes[390]; }
-  set lastAttackerToFaintOpponent(v: number) { this.bytes[390] = v & 0xff; }
-  /** raw bytes */ get multiBuffer(): Uint8Array { return this.bytes.subarray(392, 488); }
-  get padding_1E4(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 488, 28); }
+  /** raw bytes */ get savedCallback(): Uint8Array { return this.bytes.subarray(176, 180); }
+  get synchronizeMoveEffect(): number { return this.bytes[180]; }
+  set synchronizeMoveEffect(v: number) { this.bytes[180] = v & 0xff; }
+  get multiplayerId(): number { return this.bytes[181]; }
+  set multiplayerId(v: number) { this.bytes[181] = v & 0xff; }
+  get overworldWeatherDone(): number { return this.bytes[182]; }
+  set overworldWeatherDone(v: number) { this.bytes[182] = v & 0xff; }
+  get atkCancellerTracker(): number { return this.bytes[183]; }
+  set atkCancellerTracker(v: number) { this.bytes[183] = v & 0xff; }
+  get usedHeldItems(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 184, 4); }
+  get chosenItem(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 192, 4); }
+  get AI_itemType(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 196, 2); }
+  get AI_itemFlags(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 198, 2); }
+  get choicedMove(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 200, 4); }
+  get changedItems(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 208, 4); }
+  get intimidateBattler(): number { return this.bytes[216]; }
+  set intimidateBattler(v: number) { this.bytes[216] = v & 0xff; }
+  get switchInItemsCounter(): number { return this.bytes[217]; }
+  set switchInItemsCounter(v: number) { this.bytes[217] = v & 0xff; }
+  get field_DA(): number { return this.bytes[218]; }
+  set field_DA(v: number) { this.bytes[218] = v & 0xff; }
+  get turnSideTracker(): number { return this.bytes[219]; }
+  set turnSideTracker(v: number) { this.bytes[219] = v & 0xff; }
+  get fillerDC(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 220, 3); }
+  get givenExpMons(): number { return this.bytes[223]; }
+  set givenExpMons(v: number) { this.bytes[223] = v & 0xff; }
+  get lastTakenMoveFrom(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 224, 32); }
+  get castformPalette(): Uint16Array { return new Uint16Array(this.bytes.buffer, this.bytes.byteOffset + 256, 64); }
+  get wishPerishSongState(): number { return this.bytes[384]; }
+  set wishPerishSongState(v: number) { this.bytes[384] = v & 0xff; }
+  get wishPerishSongBattlerId(): number { return this.bytes[385]; }
+  set wishPerishSongBattlerId(v: number) { this.bytes[385] = v & 0xff; }
+  get lastAttackerToFaintOpponent(): number { return this.bytes[386]; }
+  set lastAttackerToFaintOpponent(v: number) { this.bytes[386] = v & 0xff; }
+  /** raw bytes */ get multiBuffer(): Uint8Array { return this.bytes.subarray(388, 484); }
+  get padding_1E4(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 484, 28); }
 }
 
 /** struct BattleSpriteInfo (0x4 bytes) */
@@ -778,4 +778,77 @@ export class BattleMove extends ByteStruct {
   set priority(v: number) { this.bytes[7] = v & 0xff; }
   get flags(): number { return this.bytes[8]; }
   set flags(v: number) { this.bytes[8] = v & 0xff; }
+}
+
+/** struct Berry (0x1c bytes) */
+export class Berry extends ByteStruct {
+  static readonly SIZE = 28;
+  /** raw bytes */ get name(): Uint8Array { return this.bytes.subarray(0, 7); }
+  get firmness(): number { return this.bytes[7]; }
+  set firmness(v: number) { this.bytes[7] = v & 0xff; }
+  get size(): number { return this.view.getUint16(8, true); }
+  set size(v: number) { this.view.setUint16(8, v & 0xffff, true); }
+  get maxYield(): number { return this.bytes[10]; }
+  set maxYield(v: number) { this.bytes[10] = v & 0xff; }
+  get minYield(): number { return this.bytes[11]; }
+  set minYield(v: number) { this.bytes[11] = v & 0xff; }
+  /** raw bytes */ get description1(): Uint8Array { return this.bytes.subarray(12, 16); }
+  /** raw bytes */ get description2(): Uint8Array { return this.bytes.subarray(16, 20); }
+  get stageDuration(): number { return this.bytes[20]; }
+  set stageDuration(v: number) { this.bytes[20] = v & 0xff; }
+  get spicy(): number { return this.bytes[21]; }
+  set spicy(v: number) { this.bytes[21] = v & 0xff; }
+  get dry(): number { return this.bytes[22]; }
+  set dry(v: number) { this.bytes[22] = v & 0xff; }
+  get sweet(): number { return this.bytes[23]; }
+  set sweet(v: number) { this.bytes[23] = v & 0xff; }
+  get bitter(): number { return this.bytes[24]; }
+  set bitter(v: number) { this.bytes[24] = v & 0xff; }
+  get sour(): number { return this.bytes[25]; }
+  set sour(v: number) { this.bytes[25] = v & 0xff; }
+  get smoothness(): number { return this.bytes[26]; }
+  set smoothness(v: number) { this.bytes[26] = v & 0xff; }
+}
+
+/** struct Berry2 (0x1c bytes) */
+export class Berry2 extends ByteStruct {
+  static readonly SIZE = 28;
+  get name(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 0, 7); }
+  get firmness(): number { return this.bytes[7]; }
+  set firmness(v: number) { this.bytes[7] = v & 0xff; }
+  get size(): number { return this.view.getUint16(8, true); }
+  set size(v: number) { this.view.setUint16(8, v & 0xffff, true); }
+  get maxYield(): number { return this.bytes[10]; }
+  set maxYield(v: number) { this.bytes[10] = v & 0xff; }
+  get minYield(): number { return this.bytes[11]; }
+  set minYield(v: number) { this.bytes[11] = v & 0xff; }
+  /** raw bytes */ get description1(): Uint8Array { return this.bytes.subarray(12, 16); }
+  /** raw bytes */ get description2(): Uint8Array { return this.bytes.subarray(16, 20); }
+  get stageDuration(): number { return this.bytes[20]; }
+  set stageDuration(v: number) { this.bytes[20] = v & 0xff; }
+  get spicy(): number { return this.bytes[21]; }
+  set spicy(v: number) { this.bytes[21] = v & 0xff; }
+  get dry(): number { return this.bytes[22]; }
+  set dry(v: number) { this.bytes[22] = v & 0xff; }
+  get sweet(): number { return this.bytes[23]; }
+  set sweet(v: number) { this.bytes[23] = v & 0xff; }
+  get bitter(): number { return this.bytes[24]; }
+  set bitter(v: number) { this.bytes[24] = v & 0xff; }
+  get sour(): number { return this.bytes[25]; }
+  set sour(v: number) { this.bytes[25] = v & 0xff; }
+  get smoothness(): number { return this.bytes[26]; }
+  set smoothness(v: number) { this.bytes[26] = v & 0xff; }
+}
+
+/** struct EnigmaBerry (0x34 bytes) */
+export class EnigmaBerry extends ByteStruct {
+  static readonly SIZE = 52;
+  get berry(): Berry2 { return new Berry2(this.bytes.subarray(0, 28)); }
+  get itemEffect(): Uint8Array { return new Uint8Array(this.bytes.buffer, this.bytes.byteOffset + 28, 18); }
+  get holdEffect(): number { return this.bytes[46]; }
+  set holdEffect(v: number) { this.bytes[46] = v & 0xff; }
+  get holdEffectParam(): number { return this.bytes[47]; }
+  set holdEffectParam(v: number) { this.bytes[47] = v & 0xff; }
+  get checksum(): number { return this.view.getUint32(48, true); }
+  set checksum(v: number) { this.view.setUint32(48, v >>> 0, true); }
 }

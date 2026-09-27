@@ -3976,3 +3976,18 @@ Pending / placeholders:
   huecos y quedan 5.575 nombres. Pasaron `check:port`, `check:honesty`,
   `build`, inventory, pending y `git diff --check`; no ejecuté el juego ni el
   navegador.
+
+## `step_structs.py`: medir layouts con el ABI ARM de GBA (2026-09-27)
+
+- Reemplacé el probe ejecutado con Clang host por `-fdump-record-layouts`
+  usando `--target=armv4t-none-eabi`. Así punteros y offsets salen del ABI de
+  FireRed, y una generación falla si falta el layout o un campo. Reproducible
+  con decomp `c75f35230`, Apple Clang 21.0.0 y defines `FIRERED`,
+  `REVISION=0`, `ENGLISH`, `MODERN=0`. Añadí las
+  estructuras `Berry`, `Berry2` y `EnigmaBerry`: Clang mide 28, 28 y 52 bytes;
+  `EnigmaBerry.checksum` queda en offset 48. La misma pasada corrige
+  `BattleStruct` de 0x208 a 0x200 bytes, ya que sus callbacks ocupan 4 bytes en
+  GBA; también representa `BattleHistory.usedMoves` como 16 `u16`.
+  `check:port`, `check:honesty`, `build`, `check:anims` (cero fallos), inventory,
+  pending y `git diff --check` pasaron. Esto verifica tipos, bundle, honestidad
+  y el check headless de batalla; no ejecuté el juego en navegador.
