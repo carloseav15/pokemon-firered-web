@@ -3,6 +3,7 @@
 // collision rules.
 
 import * as MB from "../generated/metatileBehavior";
+import * as C from "../generated/constants";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
@@ -206,6 +207,8 @@ export function graphicsInfo(graphicsId: number): GfxInfo {
 
 export class ObjectEvents {
   readonly objects: Array<ObjectEvent | null> = new Array(OBJECT_EVENTS_COUNT).fill(null);
+  /** Installed by TrainerSee for the buried-trainer REVEAL_TRAINER task. */
+  revealTrainerMovementAction?: (object: ObjectEvent) => boolean;
   templates: MapObjectTemplate[] = [];
   mapNum = 0;
   mapGroup = 0;
@@ -1377,9 +1380,20 @@ export class ObjectEvents {
       this.hooks.emote(object, id - 0x62);
       return this.finishStep(object);
     }
-    if (id === 0x67) {
-      // Reveal trainer (disguise): just make visible and face
-      object.invisible = false;
+    if (id === C.MOVEMENT_ACTION_REVEAL_TRAINER) {
+      // MovementAction_RevealTrainer_Step0 (event_object_movement.c).
+      // The buried case delegates to trainer_see.c; ordinary FRLG trainers
+      // only advance the action and keep their current visibility. Disguise
+      // movement types are unused in FRLG (trainer_see.c).
+      if (object.movementType === C.MOVEMENT_TYPE_BURIED) {
+        if (step === 0) {
+          this.revealTrainerMovementAction?.(object);
+          s.data[2] = 1;
+          return false;
+        }
+        if (this.revealTrainerMovementAction?.(object)) return this.finishStep(object);
+        return false;
+      }
       return this.finishStep(object);
     }
     if (id === 0x68 || id === 0x69) {

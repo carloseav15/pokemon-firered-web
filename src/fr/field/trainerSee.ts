@@ -84,7 +84,14 @@ function GetTrainerApproachDistance(objects: ObjectEvents, trainer: ObjectEvent,
 export class TrainerSee {
   private approaching: {trainer: ObjectEvent; steps: number} | null = null;
   private approachTaskSteps = new Map<number, (taskId: number) => void>();
-  constructor(private game: Game) {}
+  private revealTrainerTaskByObject = new WeakMap<ObjectEvent, number>();
+  private revealTrainerTasks = new Map<number, {trainer: ObjectEvent; ashPuffId?: number}>();
+  private revealTrainerAshPuffs = new Map<number, Sprite>();
+  private nextRevealTrainerAshPuffId = 0;
+
+  constructor(private game: Game) {
+    game.overworld.objects.revealTrainerMovementAction = (trainer) => this.MovementAction_RevealTrainer_RunTrainerSeeFuncList(trainer);
+  }
 
   /** QL_IsTrainerSightDisabled (quest_log.c): Quest Log playback owns these state fields when active. */
   private QL_IsTrainerSightDisabled(): boolean {
@@ -215,6 +222,84 @@ export class TrainerSee {
   /** TrainerSeeFunc_EndJumpOutOfAsh. */
   private TrainerSeeFunc_EndJumpOutOfAsh(): boolean {
     return !this.game.overworld.effects.active.has(C.FLDEFF_POP_OUT_OF_ASH);
+  }
+
+  /**
+   * MovementAction_RevealTrainer_RunTrainerSeeFuncList (trainer_see.c).
+   * TypeScript keeps the ObjectEvent and ash-puff Sprite in maps because its
+   * Task data array cannot store GBA pointers; the corresponding C slots stay
+   * reserved below (data[1..2] and data[4]). Returns true after the task ends
+   * so ObjectEvents can complete the held movement action.
+   */
+  MovementAction_RevealTrainer_RunTrainerSeeFuncList(trainer: ObjectEvent): boolean {
+    const existingTaskId = this.revealTrainerTaskByObject.get(trainer);
+    if (existingTaskId !== undefined) {
+      if (this.revealTrainerTasks.get(existingTaskId)?.trainer === trainer) return false;
+      this.revealTrainerTaskByObject.delete(trainer);
+      return true;
+    }
+
+    if (!tasks.tasks.some((task) => !task.isActive)) return false;
+    const taskId = tasks.create((id) => this.Task_RevealTrainer_RunTrainerSeeFuncList(id), 0);
+    const task = tasks.data(taskId);
+    // C stores a pointer in data[1..2]. The object event table slot is its
+    // stable TypeScript equivalent and is retained as a 32-bit word.
+    tasks.setWordArg(taskId, 1, this.game.overworld.objects.indexOf(trainer));
+    task[0] = 0;
+    task[4] = 0;
+    task[7] = 0;
+    this.revealTrainerTasks.set(taskId, {trainer});
+    this.revealTrainerTaskByObject.set(trainer, taskId);
+    return false;
+  }
+
+  /** Task_RevealTrainer_RunTrainerSeeFuncList (trainer_see.c), data[0] indexes sTrainerSeeFuncList2. */
+  private Task_RevealTrainer_RunTrainerSeeFuncList(taskId: number): void {
+    const state = this.revealTrainerTasks.get(taskId);
+    if (!state) { tasks.destroy(taskId); return; }
+
+    const data = tasks.data(taskId);
+    const trainer = state.trainer;
+    if (!data[7]) {
+      this.game.overworld.objects.clearHeldMovement(trainer);
+      data[7]++;
+    }
+
+    switch (data[0]) {
+      case 0:
+        if (this.TrainerSeeFunc_TrainerInAshFacesPlayer(trainer)) data[0]++;
+        break;
+      case 1: {
+        const ashPuff = this.TrainerSeeFunc_BeginJumpOutOfAsh(trainer);
+        if (ashPuff) {
+          let spriteId = this.nextRevealTrainerAshPuffId & 0xff;
+          while (this.revealTrainerAshPuffs.has(spriteId)) spriteId = (spriteId + 1) & 0xff;
+          this.nextRevealTrainerAshPuffId = (spriteId + 1) & 0xff;
+          state.ashPuffId = spriteId;
+          data[4] = spriteId;
+          this.revealTrainerAshPuffs.set(spriteId, ashPuff);
+          data[0]++;
+        }
+        break;
+      }
+      case 2: {
+        const ashPuff = this.revealTrainerAshPuffs.get(data[4]);
+        if (ashPuff && this.TrainerSeeFunc_WaitJumpOutOfAsh(trainer, ashPuff)) data[0]++;
+        break;
+      }
+      case 3:
+        if (this.TrainerSeeFunc_EndJumpOutOfAsh()) {
+          this.setTrainerMovement(trainer);
+          if (state.ashPuffId !== undefined) this.revealTrainerAshPuffs.delete(state.ashPuffId);
+          this.revealTrainerTasks.delete(taskId);
+          tasks.destroy(taskId);
+          return;
+        }
+        break;
+    }
+
+    // trainer_see.c keeps the reveal movement from completing while the task runs.
+    trainer.heldMovementFinished = false;
   }
 
   /** TrainerSeeFunc_OffscreenAboveTrainerCreateCameraObj; SpawnSpecialObjectEventParameterized adaptation. */
