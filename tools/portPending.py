@@ -36,6 +36,7 @@ UNTESTED = [
     ("slot_machine.c", "menus/slotMachine.ts"),
     ("trade_scene.c (intercambios en juego)", "pokemon/ingameTrade.ts"),
     ("itemfinder.c", "menus/itemFinder.ts"),
+    ("help_message.c (ciclo de vida de la ventana de ayuda)", "menus/helpMessage.ts, game.ts"),
 ]
 
 # Ported modules that nothing in the game imports yet (dead until wired).

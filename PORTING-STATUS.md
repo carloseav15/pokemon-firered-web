@@ -6,8 +6,8 @@ systems. The first playable route is a milestone, not the completion criterion.
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
 single-player. Los porcentajes anteriores de este documento son históricos;
-la meta vigente mide **5.961/11.826 funciones (50,4%)**, con **120 archivos**
-con huecos y una estimación ponderada de **~134.508/303.042 líneas C (44,4%)**
+la meta vigente mide **5.966/11.826 funciones (50,4%)**, con **119 archivos**
+con huecos y una estimación ponderada de **~134.434/303.042 líneas C (44,4%)**
 pendientes. La coincidencia por nombre sigue sin demostrar fidelidad.
 
 ## Estrategia de portado revisada, 2026-09-26
@@ -23,6 +23,12 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`help_message.c`: 7/7 funciones con homólogo.** Implementé el registro,
+  reuse y destrucción de la ventana singleton del mensaje de ayuda, e integré
+  sus helpers de dibujo y texto en el cierre y actualización del menú START.
+  `WindowLayer` sustituye la asignación/liberación de ventana de GBA; la copia
+  a VRAM es inmediata en Canvas. Pasaron `check:port`, `check:honesty`,
+  `inventory`, `pending` y `git diff --check`; no se hizo prueba en navegador.
 - **`quest_log_battle.c`: 1/3 funciones.** Implementé `TrySetQuestLogBattleEvent`
   y lo conecté a `HandleEndTurn_FinishBattle`, respetando el filtro del C para
   batallas de enlace, tutorial del viejo y Poké Dude; registra resultados de entrenador o
@@ -56,10 +62,10 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 - `npm run inventory` ignora identificadores que aparecen solo en comentarios
   y reconoce callbacks con cuerpo de función flecha al detectar stubs. Para
   perseguir el 100% del juego, reintroduje `quest_log*.c` en el alcance: ahora
-  son **5.961/11.826 funciones (50,4%)**, quedan **5.865 (49,6%)** y hay **120
-  archivos C con huecos** (29 sin empezar, 1 adaptador, 19 casi completos y 71
+  son **5.966/11.826 funciones (50,4%)**, quedan **5.860 (49,6%)** y hay **119
+  archivos C con huecos** (29 sin empezar, 1 adaptador, 19 casi completos y 70
   parciales). El denominador incluye los sistemas opcionales y de enlace antes
-  excluidos. La estimación ponderada sin cubrir es **~134.508/303.042 líneas
+  excluidos. La estimación ponderada sin cubrir es **~134.434/303.042 líneas
   (44,4%)**. La coincidencia de nombres no demuestra paridad ni ejecución.
 - **Primer bloque de Quest Log:** `shop.c` ahora llama a `SetQuestLogEvent` al
   salir de la tienda; los resúmenes tipados se guardan en `SaveData.questLogEvents`
@@ -1423,9 +1429,9 @@ whiteout respawn now uses the original heal-location data in
   `ChangeAmountInMoneyBox` y `HideMoneyBox` con la ventana 8×3. El guardado web
   mantiene el saldo descifrado; el acceso C a campos cifrados por puntero no se
   usa directamente. Queda un homónimo pendiente; solo revisión estática.
-- `help_message.c`: el gráfico de borde y su patrón de tiles se reutilizan
-  en la descripción de movimientos de campo del Party Menu. Falta el lifecycle
-  compartido que C usa para las ayudas del Start Menu.
+- `help_message.c`: el gráfico, los helpers de texto y el lifecycle singleton
+  de la ayuda del Start Menu están conectados a `WindowLayer`; Canvas dibuja
+  inmediatamente en vez de copiar tiles a VRAM. Falta prueba en navegador.
 - `field_weather_util.c`: TS cubre el guardado/cambio de clima habitual y el
   contador de lluvia. Ahora traduce WEATHER_ROUTE119/123 con `weatherCycleStage`,
   implementa `UpdateWeatherPerDay`, `GetSav1Weather`, el setter unused y reanuda

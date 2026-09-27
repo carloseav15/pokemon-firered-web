@@ -5,16 +5,31 @@
 
 import { FONT_NORMAL } from "../gba/font";
 import { printText } from "../gba/textPrinter";
-import { stdPalette, Window } from "../gba/window";
+import { stdPalette, Window, type WindowLayer } from "../gba/window";
 import { incbin } from "../hw/assets";
 
 const TEXT_COLOR_TRANSPARENT = 0;
 const TEXT_DYNAMIC_COLOR_1 = 10;
 const TEXT_COLOR_DARK_GRAY = 2;
+let sHelpMessageWindow: Window | undefined;
 
 /** sHelpMessageWindowTemplate: {bg 0, left 0, top 15, width 30, height 5}; LoadHelpMessageWindowGfx uses GetTextWindowPalette(2). */
-export function CreateHelpMessageWindow(): Window {
-  return new Window(0, 15, 30, 5, stdPalette(2));
+export function CreateHelpMessageWindow(windows: WindowLayer): Window {
+  if (!sHelpMessageWindow) sHelpMessageWindow = windows.add(new Window(0, 15, 30, 5, stdPalette(2)));
+  return sHelpMessageWindow;
+}
+
+/** MapNamePopupWindowIdSetDummy: mark the singleton window handle unused. */
+export function MapNamePopupWindowIdSetDummy(): void {
+  sHelpMessageWindow = undefined;
+}
+
+/** DestroyHelpMessageWindow: clear and release the active window; Canvas draws immediately, so `mode` needs no VRAM copy. */
+export function DestroyHelpMessageWindow(windows: WindowLayer, _mode: number): void {
+  if (!sHelpMessageWindow) return;
+  sHelpMessageWindow.fill(0);
+  windows.remove(sHelpMessageWindow);
+  sHelpMessageWindow = undefined;
 }
 
 /** DrawHelpMessageWindowTilesById: tile 0 on the top row, 14 on the bottom row, 5 in between. */
@@ -33,8 +48,24 @@ export function DrawHelpMessageWindowTilesById(window: Window): void {
   }
 }
 
+/** DrawHelpMessageWindowTiles: draw through the C module's active window handle. */
+export function DrawHelpMessageWindowTiles(): void {
+  if (sHelpMessageWindow) DrawHelpMessageWindowTilesById(sHelpMessageWindow);
+}
+
+/** PrintHelpMessageText: use the original font and colors on the active window. */
+export function PrintHelpMessageText(text: ArrayLike<number>): void {
+  if (!sHelpMessageWindow) return;
+  printText(sHelpMessageWindow, FONT_NORMAL, text, 2, 5, { bg: TEXT_COLOR_TRANSPARENT, fg: TEXT_DYNAMIC_COLOR_1, shadow: TEXT_COLOR_DARK_GRAY }, 1, 1);
+}
+
 /** PrintTextOnHelpMessageWindow: redraw the tiles, then PrintHelpMessageText (x 2, y 5, letter/line spacing 1). */
 export function PrintTextOnHelpMessageWindow(window: Window, text: ArrayLike<number>): void {
-  DrawHelpMessageWindowTilesById(window);
-  printText(window, FONT_NORMAL, text, 2, 5, { bg: TEXT_COLOR_TRANSPARENT, fg: TEXT_DYNAMIC_COLOR_1, shadow: TEXT_COLOR_DARK_GRAY }, 1, 1);
+  if (window === sHelpMessageWindow) {
+    DrawHelpMessageWindowTiles();
+    PrintHelpMessageText(text);
+  } else {
+    DrawHelpMessageWindowTilesById(window);
+    printText(window, FONT_NORMAL, text, 2, 5, { bg: TEXT_COLOR_TRANSPARENT, fg: TEXT_DYNAMIC_COLOR_1, shadow: TEXT_COLOR_DARK_GRAY }, 1, 1);
+  }
 }

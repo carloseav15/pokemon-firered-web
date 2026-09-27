@@ -37,7 +37,7 @@ import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
-import { CreateHelpMessageWindow, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
+import { CreateHelpMessageWindow, DestroyHelpMessageWindow, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
 import { DoCredits } from "./credits";
 import { BeginHallOfFamePC } from "./hallOfFame";
@@ -362,8 +362,7 @@ export class Game {
     items.forEach((item, i) => printText(window, FONT_NORMAL, item.text, 8, i * 15));
     ow.windows.add(window);
     // DrawHelpMessageWindowWithText (help_message.c).
-    const desc = CreateHelpMessageWindow();
-    ow.windows.add(desc);
+    const desc = CreateHelpMessageWindow(ow.windows);
     const menu = new Menu(window, FONT_NORMAL, 0, 0, 15, items.length, this.startMenuCursor);
     const printDesc = () => {
       const sym = items[menu.cursorPos].desc;
@@ -410,6 +409,7 @@ export class Game {
   private startMenuWindows: Window[] = [];
 
   private removeStartMenuWindows(): void {
+    DestroyHelpMessageWindow(this.overworld.windows, 0);
     for (const w of this.startMenuWindows) this.overworld.windows.remove(w);
     this.startMenuWindows = [];
   }

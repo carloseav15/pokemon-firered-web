@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 71 | 138564 | 1364/6207 |
+| Parcial (< 80 % de funciones) | 70 | 138458 | 1362/6200 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 19 | 33456 | 1090/1262 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 128 | 104754 | 3479/3479 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 129 | 104860 | 3486/3486 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **120** | **197155** | |
-| **Total en alcance** | **253** | **303042** | **5961/11826** |
+| **Pendiente de portar** | **119** | **197049** | |
+| **Total en alcance** | **253** | **303042** | **5966/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -112,7 +112,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `item_use.c` | 925 | 38/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
 | `wild_encounter.c` | 784 | 7/36 | `field/wildEncounter.ts`, `menu2.ts` |  |  |
-| `new_menu_helpers.c` | 761 | 41/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
+| `new_menu_helpers.c` | 761 | 42/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
 | `string_util.c` | 726 | 1/40 | `gba/charmap.ts` |  |  |
@@ -127,7 +127,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `braille_text.c` | 212 | 2/3 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` |  |  |
 | `wonder_news.c` | 154 | 1/9 |  |  |  |
 | `quest_log_battle.c` | 150 | 1/3 | `questLogBattle.ts` |  |  |
-| `help_message.c` | 106 | 3/7 | `boot.ts`, `game.ts`, `menus/helpMessage.ts` … |  |  |
 | `cereader_tool.c` | 97 | 1/8 | `script/specials.ts` |  |  |
 
 ## Adaptador (UI simplificada)
@@ -278,6 +277,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
 | `fldeff_softboiled.c` | 108 | 8/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
 | `party_menu_specials.c` | 108 | 9/9 | `game.ts`, `partyMenu.ts`, `script/specialsExtra.ts` |  |  |
+| `help_message.c` | 106 | 7/7 | `boot.ts`, `game.ts`, `menus/helpMessage.ts` … |  |  |
 | `field_weather_util.c` | 105 | 10/10 | `field/weather.ts` |  |  |
 | `fldeff_sweetscent.c` | 100 | 7/7 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `coins.c` | 98 | 9/9 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
