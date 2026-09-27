@@ -4139,3 +4139,21 @@ Pending / placeholders:
   C previos de dirección), `check:port`, `check:honesty`, `check:transitions`,
   `build`, inventory, pending y `git diff --check`. No medí tiempos por etapa
   ni reclamo aceleración.
+
+## `event_object_movement.c`: prioridad y tabla de subsprites (2026-09-27)
+
+- Añadí `UpdateObjectEventElevationAndPriority` e
+  `InitObjectPriorityByElevation`, conectados a la actualización de objetos y
+  a la preparación de sus sprites. Ambos consultan las tablas C exportadas
+  `sElevationToPriority` y `sElevationToSubspriteTableNum`; el selector
+  `subspriteTableNum` ahora también está representado en el sprite de campo.
+  El archivo queda 94/759; total 6.271/11.826 (53,0 %), con 5.555 nombres
+  pendientes.
+- El check compara las 16 elevaciones válidas con ambas tablas exportadas y
+  conserva los harness C anteriores para dirección, elevación y movimiento.
+  Pasaron `check:event-object-anims` (136.860 comparaciones C-data/edge y 137
+  casos del harness C), `check:port`, `check:honesty`, `build`, inventory, pending y
+  `git diff --check`. No hice recorrido en navegador: el Canvas2D del campo
+  conserva el número de tabla pero no compone las piezas de subsprite como el
+  renderer GBA; no afirmo paridad visual de esos recortes. No medí tiempos por
+  etapa ni reclamo aceleración.

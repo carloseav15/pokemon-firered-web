@@ -104,6 +104,18 @@ for (let i = 0; i < cResults.cases.length; i++) {
   if (actual !== cResults.expected[i]) throw new Error(`GetCopyDirection C parity case ${i}: got ${actual}, C returned ${cResults.expected[i]}`);
 }
 assertions += cResults.cases.length;
+const elevationPriority = exported.defs.sElevationToPriority.value as number[];
+const elevationSubspriteTable = exported.defs.sElevationToSubspriteTableNum.value as number[];
+if (elevationPriority.length !== 16 || elevationSubspriteTable.length !== 16) throw new Error("elevation priority tables must each contain 16 entries");
+const prioritySprite = new ObjectEvent().sprite;
+const priorityManager = new ObjectEvents({} as any);
+for (let elevation = 0; elevation < 16; elevation++) {
+  priorityManager.InitObjectPriorityByElevation(prioritySprite, elevation);
+  if (prioritySprite.priority !== elevationPriority[elevation] || prioritySprite.subspriteTableNum !== elevationSubspriteTable[elevation]) {
+    throw new Error(`InitObjectPriorityByElevation(${elevation}) differs from exported C tables`);
+  }
+  assertions += 2;
+}
 const elevationResults = JSON.parse(readFileSync(resolve(".decomp-build/checks/eventObjectElevationResults.json"), "utf8")) as {
   mismatch: number[];
   compatible: number[];

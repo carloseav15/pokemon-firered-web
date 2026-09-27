@@ -8,7 +8,7 @@ import { cdata } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
-import { ElevationToPriority, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
+import { GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 
@@ -479,6 +479,7 @@ export class ObjectEvents {
     sprite.data[2] = 0;
     object.currentMetatileBehavior = this.hooks.map().behaviorAt(object.currentCoords.x, object.currentCoords.y);
     object.previousMetatileBehavior = object.currentMetatileBehavior;
+    this.InitObjectPriorityByElevation(sprite, object.previousElevation);
     this.updatePriority(object);
   }
 
@@ -770,9 +771,25 @@ export class ObjectEvents {
   }
 
   updatePriority(object: ObjectEvent): void {
+    this.UpdateObjectEventElevationAndPriority(object);
+  }
+
+  /** UpdateObjectEventElevationAndPriority (event_object_movement.c). */
+  UpdateObjectEventElevationAndPriority(object: ObjectEvent): void {
     if (object.fixedPriority) return;
     this.ObjectEventUpdateElevation(object);
-    object.sprite.priority = ElevationToPriority(object.previousElevation) ?? 2;
+    const elevation = object.previousElevation & 0xff;
+    const priorities = cdata<number[]>("event_object_movement", "sElevationToPriority");
+    const subspriteTables = cdata<number[]>("event_object_movement", "sElevationToSubspriteTableNum");
+    object.sprite.subspriteTableNum = subspriteTables[elevation]!;
+    object.sprite.priority = priorities[elevation]!;
+  }
+
+  /** InitObjectPriorityByElevation (event_object_movement.c). */
+  InitObjectPriorityByElevation(sprite: Sprite, elevation: number): void {
+    elevation &= 0xff;
+    sprite.subspriteTableNum = cdata<number[]>("event_object_movement", "sElevationToSubspriteTableNum")[elevation]!;
+    sprite.priority = cdata<number[]>("event_object_movement", "sElevationToPriority")[elevation]!;
   }
 
   /** SetObjectSubpriorityByElevation (event_object_movement.c); cameraY maps gSpriteCoordOffsetY. */
@@ -954,7 +971,7 @@ export class ObjectEvents {
       }
       this.updateVisibility(object, cameraX, cameraY);
       this.updateSubpriority(object, cameraY);
-      if (!object.fixedPriority) sprite.priority = ElevationToPriority(object.previousElevation) ?? 2;
+      this.UpdateObjectEventElevationAndPriority(object);
       if (object.disableAnim) sprite.animPaused = true;
     }
   }

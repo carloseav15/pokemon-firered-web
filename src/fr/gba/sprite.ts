@@ -43,6 +43,8 @@ export class Sprite {
   invisible = false;
   priority = 2;
   subpriority = 0;
+  /** GBA subsprite table selector used by object-event elevation rendering. */
+  subspriteTableNum = 0;
   hFlip = false;
   vFlip = false;
   coordOffsetEnabled = true;
