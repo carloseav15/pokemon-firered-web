@@ -7,9 +7,9 @@ Reglas: [AGENTS.md](AGENTS.md). Cifras vivas: [PENDING.md](PENDING.md) y
 
 ## Siguiente tanda
 
-Comparar las acciones especiales de movimiento del jugador y NPCs en
-`event_object_movement.c`, especialmente las familias de Fly/Glide y bicicleta,
-y portar las que tengan rutas activas o sistemas opcionales conectables.
+Trazar los IDs Acro del jugador desde `playerAvatar.ts` hasta el dispatcher y
+comparar el bloque con `event_object_movement.c`; portar el grupo activo, no su
+aproximación facial actual.
 
 ## Bloqueos y validación diferida
 
@@ -29,12 +29,12 @@ y portar las que tengan rutas activas o sistemas opcionales conectables.
 
 ## Última entrega
 
-- 2026-09-27: conectados los efectos y el reveal de entrenadores disfrazados; el
-  tipo `INVISIBLE` ejecuta también su acción facial como en C.
-- Incluye `TreeDisguise`/`MountainDisguise`, sincronía de animación y estados de
-  espera; el contador de nombres no varió en esta tanda.
+- 2026-09-27: corregidas seis acciones `Glide`/`Fly` de
+  `event_object_movement.c`, incluidos pasos, animación y cierre por frames.
+- `Fly` ahora desplaza 8 px por frame; `Glide` conserva su animación C al cerrar.
+- Contador: 6.282 → 6.283/11.826; nuevo homólogo `UpdateMovementGlide`.
 - `check:port`, `check:honesty`, build e inventarios pasaron; sin prueba de juego.
-- Validación visual y recorrido de estos tipos de movimiento quedan pendientes.
+- Validación visual y recorridos de estas acciones quedan pendientes.
 
 ## Antecedentes bajo demanda
 

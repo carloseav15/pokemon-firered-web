@@ -1476,6 +1476,16 @@ export class ObjectEvents {
     return false;
   }
 
+  /** UpdateMovementGlide; the C glide callback deliberately does not pause the sprite animation. */
+  private updateMovementGlide(object: ObjectEvent): boolean {
+    if (this.npcTakeStep(object)) {
+      this.shiftStill(object);
+      object.triggerGroundEffectsOnStop = true;
+      return true;
+    }
+    return false;
+  }
+
   private finishStep(object: ObjectEvent): boolean {
     object.sprite.data[2] = 2;
     return true;
@@ -1853,18 +1863,23 @@ export class ObjectEvents {
     // Glide (used by Fly/teleport scenes): fast step with face anim
     if (id >= 0xa0 && id <= 0xa3) {
       if (step === 0) {
-        this.initNpcForMovement(object, dirOf(0xa0), MOVE_SPEED_FAST_1);
-        this.setStepAnim(object, faceAnim(object.facingDirection));
+        const direction = dirOf(0xa0);
+        if (object.facingDirection !== direction) object.sprite.startAnim(faceAnim(direction));
+        this.initNpcForMovement(object, direction, MOVE_SPEED_FAST_1);
       }
-      if (this.updateMovementNormal(object)) return this.finishStep(object);
+      if (this.updateMovementGlide(object)) return this.finishStep(object);
       return false;
     }
     if (id === 0xa4 || id === 0xa5) {
-      // Fly up/down: vertical sprite offset animation
-      if (step === 0) { s.data[3] = 0; s.data[2] = 1; }
-      s.data[3]++;
-      s.y2 = id === 0xa4 ? -s.data[3] * 4 : Math.min(0, -160 + s.data[3] * 4);
-      if (s.data[3] >= 40) { if (id === 0xa5) s.y2 = 0; return this.finishStep(object); }
+      // MovementAction_FlyUp/Down: step 0 initializes y2, step 1 moves 8px per frame,
+      // and step 2 completes on the following callback, matching the C function table.
+      if (step === 0) {
+        s.y2 = id === 0xa4 ? 0 : -160;
+        s.data[2] = 1;
+        return false;
+      }
+      s.y2 += id === 0xa4 ? -8 : 8;
+      if ((id === 0xa4 && s.y2 === -160) || (id === 0xa5 && s.y2 === 0)) s.data[2] = 2;
       return false;
     }
     if (id >= 0xa6 && id <= 0xa9) {
