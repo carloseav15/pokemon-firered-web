@@ -1917,6 +1917,7 @@ export class ObjectEvents {
       const base = face ? 0x7c : 0x80;
       const dir = dirOf(base);
       if (step === 0) {
+        if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
         this.initJump(object, dir, face ? JUMP_DISTANCE_IN_PLACE : JUMP_DISTANCE_NORMAL, JUMP_TYPE_LOW);
         this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
       }
@@ -1926,6 +1927,7 @@ export class ObjectEvents {
     if (id >= 0x84 && id <= 0x87) {
       const dir = dirOf(0x84);
       if (step === 0) {
+        if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
         this.initJump(object, dir, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
         this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
       }
@@ -1933,7 +1935,10 @@ export class ObjectEvents {
       return false;
     }
     if (id >= 0x88 && id <= 0x8b) {
-      if (step === 0) this.initMoveInPlace(object, dirOf(0x88), GetAcroWheeliePedalDirectionAnimNum(dirOf(0x88)), 8);
+      if (step === 0) {
+        if (object.isPlayer) this.hooks.playSE("SE_WALL_HIT");
+        this.initMoveInPlace(object, dirOf(0x88), GetAcroWheeliePedalDirectionAnimNum(dirOf(0x88)), 8);
+      }
       return this.updateMoveInPlace(object);
     }
     if (id >= 0x8c && id <= 0x93) {
