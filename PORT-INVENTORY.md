@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 69 | 138246 | 1364/6197 |
+| Parcial (< 80 % de funciones) | 69 | 138246 | 1377/6197 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 18 | 33213 | 1086/1245 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 131 | 105315 | 3506/3506 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **117** | **196594** | |
-| **Total en alcance** | **253** | **303042** | **5984/11826** |
+| **Total en alcance** | **253** | **303042** | **5997/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -115,7 +115,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `new_menu_helpers.c` | 761 | 42/54 | `gba/font.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
-| `string_util.c` | 726 | 1/40 | `gba/charmap.ts` |  |  |
+| `string_util.c` | 726 | 14/40 | `gba/charmap.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
 | `sound.c` | 649 | 38/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
 | `mystery_gift.c` | 634 | 1/45 |  |  |  |

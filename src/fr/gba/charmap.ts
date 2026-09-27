@@ -59,23 +59,47 @@ export function decode(bytes: ArrayLike<number>): string {
   return out;
 }
 
+import {
+  GetExtCtrlCodeLength,
+  SkipExtCtrlCode,
+  StringLength,
+  StringCopy,
+  StringAppend,
+  StringCopyN,
+  StringAppendN,
+  StringCompare,
+  StringCompareN,
+  StringFill,
+  StringFillWithTerminator,
+  StringCopyPadded,
+  StripExtCtrlCodes,
+  StringCompareWithoutExtCtrlCodes,
+} from "../generated/stringUtil";
+
+export {
+  GetExtCtrlCodeLength,
+  SkipExtCtrlCode,
+  StringLength,
+  StringCopy,
+  StringAppend,
+  StringCopyN,
+  StringAppendN,
+  StringCompare,
+  StringCompareN,
+  StringFill,
+  StringFillWithTerminator,
+  StringCopyPadded,
+  StripExtCtrlCodes,
+  StringCompareWithoutExtCtrlCodes,
+};
+
 /** Number of argument bytes following FC <code> (plus the code byte itself). */
 export function extCtrlCodeLength(code: number): number {
-  switch (code) {
-    case 0x04: return 4; // COLOR_HIGHLIGHT_SHADOW
-    case 0x0b: case 0x10: return 3; // PLAY_BGM, PLAY_SE
-    case 0x01: case 0x02: case 0x03: case 0x05: case 0x06: case 0x08: case 0x0c: case 0x0d:
-    case 0x0e: case 0x11: case 0x12: case 0x13: case 0x14:
-      return 2;
-    default:
-      return 1;
-  }
+  return GetExtCtrlCodeLength(code);
 }
 
 export function length(s: ArrayLike<number>): number {
-  let n = 0;
-  while (n < s.length && s[n] !== EOS) n++;
-  return n;
+  return StringLength(s);
 }
 
 export function concat(...parts: ArrayLike<number>[]): GbaString {
@@ -86,7 +110,10 @@ export function concat(...parts: ArrayLike<number>[]): GbaString {
 }
 
 export function copy(s: ArrayLike<number>): GbaString {
-  return Uint8Array.from(Array.prototype.slice.call(s, 0, length(s) + 1).concat(length(s) === s.length ? [EOS] : []));
+  const len = StringLength(s);
+  const dest = new Uint8Array(len + 1);
+  StringCopy(dest, s);
+  return dest;
 }
 
 export const STR_CONV_MODE_LEFT_ALIGN = 0;

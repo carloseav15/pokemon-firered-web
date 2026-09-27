@@ -30,7 +30,9 @@
     "check:famechecker": "esbuild tools/checks/fameChecker.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/fameChecker.mjs && node .decomp-build/checks/fameChecker.mjs",
     "check:slots": "esbuild tools/checks/slotMachine.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/slotMachine.mjs && node .decomp-build/checks/slotMachine.mjs",
     "check:trade": "esbuild tools/checks/tradeScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/tradeScene.mjs && node .decomp-build/checks/tradeScene.mjs",
-    "check:coins": "esbuild tools/checks/coins.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/coins.mjs && node .decomp-build/checks/coins.mjs"
+    "check:coins": "esbuild tools/checks/coins.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/coins.mjs && node .decomp-build/checks/coins.mjs",
+    "generate:string-util": "python3 tools/decomp/clang_codegen.py",
+    "check:string-util": "esbuild tools/checks/stringUtil.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/stringUtil.mjs && node .decomp-build/checks/stringUtil.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",
