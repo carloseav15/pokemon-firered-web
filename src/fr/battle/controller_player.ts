@@ -14,7 +14,7 @@ import { BattleMainCB2, BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceE
 import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpritePaletteTagByPaletteNum, gSprites, Sprite, SpriteCallbackDummy, StartSpriteAnim } from "../hw/sprite";
 import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "../pokemon/mon";
 import { addBagItem as AddBagItem } from "../pokemon/items";
-import { BattleLoadPlayerMonSpriteGfx, BattleStopLowHpSound, ClearTemporarySpeciesSpriteData, CopyAllBattleSpritesInvisibilities, CopyBattleSpriteInvisibility, DecompressTrainerBackPalette, DoHitAnimHealthboxEffect, gTrainerBackPicCoords, HandleLowHpMusicChange, InitAndLaunchChosenStatusAnimation, InitAndLaunchSpecialAnimation, IsBattlerSpritePresent, IsBattleSEPlaying, IsMoveWithoutAnimation, PlayBGM, PlaySE12WithPanning, SetBattlerSpriteAffineMode, SpriteCB_WaitForBattlerBallReleaseAnim, trainerBackPicPalette, TryHandleLaunchBattleTableAnimation, TrySetBehindSubstituteSpriteBit, TryShinyAnimation } from "./gfx_sfx_util";
+import { BattleGfxSfxDummy3, BattleLoadPlayerMonSpriteGfx, BattleStopLowHpSound, ClearTemporarySpeciesSpriteData, CopyAllBattleSpritesInvisibilities, CopyBattleSpriteInvisibility, DecompressTrainerBackPalette, DoHitAnimHealthboxEffect, gTrainerBackPicCoords, HandleLowHpMusicChange, InitAndLaunchChosenStatusAnimation, InitAndLaunchSpecialAnimation, IsBattlerSpritePresent, IsBattleSEPlaying, IsMoveWithoutAnimation, PlayBGM, PlaySE12WithPanning, SetBattlerSpriteAffineMode, SpriteCB_WaitForBattlerBallReleaseAnim, trainerBackPicPalette, TryHandleLaunchBattleTableAnimation, TrySetBehindSubstituteSpriteBit, TryShinyAnimation } from "./gfx_sfx_util";
 import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle, SetPpNumbersPaletteInMoveSelection } from "./message";
 import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFadeControl, RGB_BLACK, RGB_WHITE } from "../hw/palette";
 import { CB2_BagMenuFromBattle, OpenPartyMenuInTutorialBattle, partyMenuResult } from "./ext";
@@ -337,6 +337,7 @@ function CompleteOnBattlerSpriteCallbackDummy(): void {
 function FreeTrainerSpriteAfterSlide(): void {
   const s = gSprites[gBattlerSpriteIds[G.gActiveBattler]];
   if (s.callback === SpriteCallbackDummy) {
+    BattleGfxSfxDummy3(save.playerGender);
     FreeSpriteOamMatrix(s);
     DestroySprite(s);
     PlayerBufferExecCompleted();

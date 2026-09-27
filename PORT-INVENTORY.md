@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 60 | 133907 | 1272/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 10 | 21798 | 675/785 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 149 | 121215 | 4216/4216 |
+| Casi completo (≥ 80 % y < 100 %) | 9 | 20737 | 630/737 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 150 | 122276 | 4264/4264 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **99** | **180694** | |
-| **Total en alcance** | **253** | **303042** | **6191/11826** |
+| **Pendiente de portar** | **98** | **179633** | |
+| **Total en alcance** | **253** | **303042** | **6194/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -135,7 +135,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
-| `battle_gfx_sfx_util.c` | 1061 | 45/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
 | `field_door.c` | 524 | 19/21 | `field/doors.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 
@@ -176,6 +175,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `item_pc.c` | 1145 | 59/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `shop.c` | 1145 | 60/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
+| `battle_gfx_sfx_util.c` | 1061 | 48/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 115/115 | `generated/metatileBehavior.ts` |  |  |
 | `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
 | `palette.c` | 994 | 41/41 | `hw/palette.ts` |  |  |

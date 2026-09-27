@@ -5,10 +5,26 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.191/11.826 funciones (52,4%)**,
-con **99 archivos** con huecos y una estimación ponderada de
-**~129.902/303.042 líneas C (42,9%)** pendientes. La coincidencia por nombre
+single-player. A 2026-09-27, la meta mide **6.194/11.826 funciones (52,4%)**,
+con **98 archivos** con huecos y una estimación ponderada de
+**~129.836/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `battle_gfx_sfx_util.c`: helpers de sprite y carga de healthboxes (2026-09-27)
+
+- Porté `DoBattleSpriteAffineAnim`, `BattleGfxSfxDummy3` y
+  `BattleLoadAllHealthBoxesGfxAtOnce` tras resolver las 48 definiciones fuente
+  con Clang AST. Conecté `BattleGfxSfxDummy3` al cierre del slide del entrenador
+  en `controller_player.ts`, siguiendo `FreeTrainerSpriteAfterSlide` del C;
+  es intencionalmente no-op. Las otras dos funciones tienen comentario `Unused`
+  / `not used` en el C y no tienen callers: quedan representadas con la misma
+  animación affine y el mismo orden de carga single/double, sin afirmar que el
+  juego las ejecute.
+- `battle_gfx_sfx_util.c` queda 48/48 por nombre; inventario total
+  **6.194/11.826 (52,4%)**, 98 archivos con huecos y ~129.836 líneas ponderadas
+  pendientes. Pasaron `check:port`, `check:honesty`, `build`, inventory, pending
+  y `git diff --check`. No corrí juego/navegador para estas rutinas; el cambio
+  conectado solo invoca el no-op del C.
 
 ## `berry_pouch.c`: cancelación de inicialización y limpieza (2026-09-27)
 

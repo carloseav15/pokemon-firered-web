@@ -10,7 +10,7 @@ import { templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
 import { BG_PLTT_ID, BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITE } from "../hw/palette";
 import { OBJ_VRAM0, ppu } from "../hw/ppu";
 import {
-  CreateSprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadSpritePalette, LoadSpriteSheet, SpriteCallbackDummy, StartSpriteAffineAnim,
+  AnimateSprite, CreateSprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadSpritePalette, LoadSpriteSheet, SpriteCallbackDummy, StartSpriteAffineAnim,
   StartSpriteAnim, ST_OAM_AFFINE_OFF, type Sprite,
 } from "../hw/sprite";
 import { GetMonData, gEnemyParty, playerMon, SetMonData, type Mon } from "../pokemon/mon";
@@ -111,6 +111,18 @@ export function SpriteCB_WaitForBattlerBallReleaseAnim(sprite: Sprite): void {
     sprite.callback = SpriteCallbackDummy;
   }
 }
+
+/** DoBattleSpriteAffineAnim (battle_gfx_sfx_util.c); the original helper is unused. */
+function DoBattleSpriteAffineAnim(sprite: Sprite, arg1: number | boolean): void {
+  sprite.animPaused = true;
+  sprite.callback = SpriteCallbackDummy;
+  if (!arg1) StartSpriteAffineAnim(sprite, 1);
+  else StartSpriteAffineAnim(sprite, 1);
+  AnimateSprite(sprite);
+}
+
+/** BattleGfxSfxDummy3 (battle_gfx_sfx_util.c) is intentionally empty. */
+export function BattleGfxSfxDummy3(_gender: number): void {}
 
 // ---------------------------------------------------------------- animations
 
@@ -334,6 +346,27 @@ export function BattleLoadAllHealthBoxesGfx(state: number): boolean {
     else retVal = true;
   }
   return retVal;
+}
+
+/** BattleLoadAllHealthBoxesGfxAtOnce (battle_gfx_sfx_util.c); retained source helper, unused by FireRed. */
+function BattleLoadAllHealthBoxesGfxAtOnce(): void {
+  const palettes = sSpritePalettes_HealthBoxHealthBar();
+  LoadSpritePalette(palettes[0]);
+  LoadSpritePalette(palettes[1]);
+  let numberOfBattlers: number;
+  if (!IsDoubleBattle()) {
+    loadSheet(sSpriteSheet_SinglesPlayerHealthbox);
+    loadSheet(sSpriteSheet_SinglesOpponentHealthbox);
+    numberOfBattlers = 2;
+  } else {
+    loadSheet(sSpriteSheets_DoublesPlayerHealthbox[0]);
+    loadSheet(sSpriteSheets_DoublesPlayerHealthbox[1]);
+    loadSheet(sSpriteSheets_DoublesOpponentHealthbox[0]);
+    loadSheet(sSpriteSheets_DoublesOpponentHealthbox[1]);
+    numberOfBattlers = C.MAX_BATTLERS_COUNT;
+  }
+  for (let i = 0; i < numberOfBattlers; ++i)
+    loadSheet(sSpriteSheets_HealthBar[gBattlerPositions[i]]);
 }
 
 export function LoadBattleBarGfx(_arg0: number): void {
