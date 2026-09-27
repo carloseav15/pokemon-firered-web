@@ -198,6 +198,8 @@ export class FieldEffects {
   readonly tasks = tasks;
   private surfBlob?: Sprite;
   private flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
+  private shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
+  private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
   private surfBlobBobState = C.BOB_NONE;
   private encounterImmunitySteps = 0;
   private previousMetatileBehavior = 0;
@@ -371,6 +373,8 @@ export class FieldEffects {
   reset(): void {
     this.surfBlob = undefined;
     this.flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
+    this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
+    this.hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
     this.poisonMosaicValue = 0;
     this.poisonEffectTaskActive = false;
     this.active.clear();
@@ -517,6 +521,22 @@ export class FieldEffects {
     const prev = object.previousMetatileBehavior;
     const isShallowFlowing = MB.MetatileBehavior_IsShallowFlowingWater(cur)
       && MB.MetatileBehavior_IsShallowFlowingWater(prev);
+    const isShortGrass = MB.MetatileBehavior_IsShortGrass(cur) && MB.MetatileBehavior_IsShortGrass(prev);
+    const isHotSprings = MB.MetatileBehavior_IsHotSprings(cur) && MB.MetatileBehavior_IsHotSprings(prev);
+    if (object.disableCoveringGroundEffects) {
+      object.inShortGrass = false;
+      object.inHotSprings = false;
+      object.inShallowFlowingWater = false;
+    } else {
+      if (isShortGrass && !object.inShortGrass) {
+        object.inShortGrass = true;
+        this.GroundEffect_ShortGrass(object);
+      } else if (!isShortGrass) object.inShortGrass = false;
+      if (isHotSprings && !object.inHotSprings) {
+        object.inHotSprings = true;
+        this.GroundEffect_HotSprings(object);
+      } else if (!isHotSprings) object.inHotSprings = false;
+    }
     if (isShallowFlowing && !object.disableCoveringGroundEffects && !object.inShallowFlowingWater) {
       object.inShallowFlowingWater = true;
       this.GroundEffect_FlowingWater(object);
@@ -568,6 +588,65 @@ export class FieldEffects {
       }
     };
     this.flowingWaterEffects.set(object, sprite);
+  }
+
+  /** GroundEffect_ShortGrass / FldEff_ShortGrass. */
+  GroundEffect_ShortGrass(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("ShortGrass", object.sprite.x, object.sprite.y);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority - 1;
+    sprite.data[0] = object.localId;
+    sprite.data[1] = object.mapNum;
+    sprite.data[2] = object.mapGroup;
+    sprite.data[3] = object.sprite.x;
+    sprite.data[4] = object.sprite.y;
+    sprite.callback = (s) => {
+      if (!object.active || !object.inShortGrass) {
+        this.ow.sprites.destroy(s);
+        if (this.shortGrassEffects.get(object) === s) this.shortGrassEffects.delete(object);
+        return;
+      }
+      const moved = s.data[3] !== object.sprite.x || s.data[4] !== object.sprite.y;
+      if (moved) {
+        s.data[3] = object.sprite.x;
+        s.data[4] = object.sprite.y;
+        if (s.animEnded) s.startAnim(0);
+      }
+      s.x = object.sprite.x;
+      s.y = object.sprite.y;
+      s.y2 = (object.sprite.height >> 1) - 8;
+      s.subpriority = object.sprite.subpriority - 1;
+      s.priority = object.sprite.priority;
+      s.invisible = object.sprite.invisible;
+    };
+    this.shortGrassEffects.set(object, sprite);
+  }
+
+  /** GroundEffect_HotSprings / FldEff_HotSpringsWater. */
+  GroundEffect_HotSprings(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("HotSpringsWater", object.sprite.x, object.sprite.y);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = object.sprite.priority;
+    sprite.subpriority = object.sprite.subpriority - 1;
+    sprite.data[0] = object.localId;
+    sprite.data[1] = object.mapNum;
+    sprite.data[2] = object.mapGroup;
+    sprite.callback = (s) => {
+      if (!object.active || !object.inHotSprings) {
+        this.ow.sprites.destroy(s);
+        if (this.hotSpringsEffects.get(object) === s) this.hotSpringsEffects.delete(object);
+        return;
+      }
+      s.x = object.sprite.x;
+      s.y = object.sprite.y + (object.sprite.height >> 1) - 8;
+      s.subpriority = object.sprite.subpriority - 1;
+      s.priority = object.sprite.priority;
+      s.invisible = object.sprite.invisible;
+    };
+    this.hotSpringsEffects.set(object, sprite);
   }
 
   /** GroundEffect_StepOnPuddle (event_object_movement.c): play the linked splash on a puddle step. */

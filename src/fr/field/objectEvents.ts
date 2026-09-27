@@ -148,6 +148,7 @@ export class ObjectEvent {
   disableJumpLandingGroundEffect = true;
   fixedPriority = false;
   inShortGrass = false;
+  inHotSprings = false;
   inShallowFlowingWater = false;
   inSandPile = false;
   hasReflection = false;
