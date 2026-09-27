@@ -5,10 +5,22 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.225/11.826 funciones (52,6%)**,
+single-player. A 2026-09-27, la meta mide **6.226/11.826 funciones (52,6%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.439/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.426/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: inicialización de datos de salto (2026-09-27)
+
+- Porté `SetJumpSpriteData`, que escribe dirección, distancia y tipo como
+  valores `u8` en `sprite.data[3..5]` y reinicia `sprite.data[6]`. `initJump`
+  ahora reutiliza el helper antes de marcar su estado local de movimiento.
+- En navegador pasé valores `0x104`, `0x102` y `0x103`: los campos quedaron
+  `4`, `2`, `3` y `0`, respectivamente; los demás datos del sprite no
+  cambiaron. `?fr=continue` quedó en la casa de Pallet. Pasaron `check:port`,
+  `check:honesty`, build, inventory, pending y `git diff --check`.
+- `event_object_movement.c` queda 70/759 por nombre; global **6.226/11.826
+  (52,6%)**, con ~129.426 líneas ponderadas sin homólogo.
 
 ## `event_object_movement.c`: curvas de salto desde cdata (2026-09-27)
 

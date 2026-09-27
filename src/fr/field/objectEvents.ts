@@ -233,6 +233,14 @@ export function GetJumpY(i: number, type: number): number {
   return cdata<number[]>("event_object_movement", tableName)[((i << 16) >> 16)]!;
 }
 
+/** event_object_movement.c SetJumpSpriteData. */
+export function SetJumpSpriteData(sprite: Sprite, direction: number, distance: number, type: number): void {
+  sprite.data[3] = direction & 0xff;
+  sprite.data[4] = distance & 0xff;
+  sprite.data[5] = type & 0xff;
+  sprite.data[6] = 0;
+}
+
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
 export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
   const oldX = (objectEvent.currentCoords.x << 16) >> 16;
@@ -1288,10 +1296,7 @@ export class ObjectEvents {
     this.setDirection(object, direction);
     this.shiftCoords(object, object.currentCoords.x + dx, object.currentCoords.y + dy);
     const s = object.sprite;
-    s.data[3] = direction;
-    s.data[4] = distance;
-    s.data[5] = type;
-    s.data[6] = 0;
+    SetJumpSpriteData(s, direction, distance, type);
     s.data[2] = 1;
     s.animPaused = false;
     object.landingJump = true;
