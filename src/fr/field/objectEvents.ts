@@ -11,6 +11,7 @@ import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
+import { gSineTable } from "../hw/trig";
 
 export const DIR_NONE = 0, DIR_SOUTH = 1, DIR_NORTH = 2, DIR_WEST = 3, DIR_EAST = 4;
 export const DIR_SOUTHWEST = 5, DIR_SOUTHEAST = 6, DIR_NORTHWEST = 7, DIR_NORTHEAST = 8;
@@ -70,7 +71,7 @@ const CLOCKWISE = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
 
 // Anim numbers (constants/event_object_movement.h)
 const ANIM_FACE = 0, ANIM_GO = 4, ANIM_GO_FAST = 8, ANIM_GO_FASTER = 12, ANIM_GO_FASTEST = 16, ANIM_RUN = 20;
-const ANIM_RAISE_HAND = 20, ANIM_NURSE_BOW = 20;
+const ANIM_RAISE_HAND = C.ANIM_RAISE_HAND, ANIM_NURSE_BOW = C.ANIM_NURSE_BOW;
 const STEP_ANIM_TABLES = new Set(["sAnimTable_QuintyPlump", "sAnimTable_Standard", "sAnimTable_RedGreenNormal", "sAnimTable_AcroBike", "sAnimTable_RedGreenSurf", "sAnimTable_Nurse", "sAnimTable_RedGreenFish"]);
 
 export function dirIndex(direction: number): number {
@@ -1849,8 +1850,52 @@ export class ObjectEvents {
     }
     // Raise hand
     if (id >= 0x98 && id <= 0x9a) {
-      if (step === 0) { object.sprite.startAnim(ANIM_RAISE_HAND); s.data[2] = 1; }
-      return false;
+      if (step === 0) {
+        s.startAnim(ANIM_RAISE_HAND);
+        s.animPaused = false;
+        object.disableAnim = false;
+        s.data[2] = 1;
+        s.data[4] = 0; s.data[5] = 0; s.data[6] = 0; s.data[7] = 0;
+        return false;
+      }
+      if (id === 0x98) return SpriteAnimEnded(s) ? this.finishStep(object) : false;
+      if (id === 0x9a) {
+        s.data[7] = (s.data[7] + 4) & 0xff;
+        s.x2 = (gSineTable[s.data[7]] ?? 0) >> 7;
+        return s.data[7] === 0 ? this.finishStep(object) : false;
+      }
+      switch (s.data[7]) {
+        case 0:
+          s.data[6] += 10;
+          if (s.data[6] > 127) {
+            s.data[6] = 0;
+            s.data[5]++;
+            s.data[7] = s.data[5];
+            s.startAnim(C.ANIM_STD_FACE_SOUTH);
+            s.animPaused = false;
+            object.disableAnim = false;
+          }
+          s.y2 = -((3 * (gSineTable[s.data[6] & 0xff] ?? 0)) >> 7);
+          object.singleMovementActive = s.y2 !== 0;
+          return false;
+        case 1:
+          if (++s.data[4] > 16) {
+            s.data[4] = 0;
+            s.startAnim(ANIM_RAISE_HAND);
+            s.animPaused = false;
+            object.disableAnim = false;
+            s.data[7] = 0;
+          } else {
+            object.singleMovementActive = false;
+          }
+          return false;
+        case 2:
+          object.singleMovementActive = false;
+          if (++s.data[4] > 80) { s.data[4] = 0; return this.finishStep(object); }
+          return false;
+        default:
+          return false;
+      }
     }
     // Walk slowest
     if (id >= 0x9b && id <= 0x9e) {
