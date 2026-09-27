@@ -16,6 +16,7 @@ Implements step 2 of GOAL-CLANG.md:
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -86,11 +87,13 @@ def analyze_file(c_stem: str, idents: set[str], real_defs: dict[str, bool]) -> l
         norm_name = portInventory.norm(name)
 
         # Determine TS status
-        if norm_name in idents:
-            if real_defs.get(norm_name, False):
+        if norm_name in real_defs:
+            if real_defs[norm_name]:
                 ts_status = "ported"
             else:
                 ts_status = "stub"
+        elif norm_name in idents:
+            ts_status = "unverified"
         else:
             ts_status = "missing"
 
@@ -200,6 +203,17 @@ def analyze_file(c_stem: str, idents: set[str], real_defs: dict[str, bool]) -> l
 
 def run_sample_analysis() -> dict[str, list[FunctionAnalysis]]:
     idents, real_defs, _cites = portInventory.load_ts()
+    scan = subprocess.run(
+        ["node", str(ROOT / "tools" / "decomp" / "ts_symbol_scan.mjs")],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    real_defs.update(json.loads(scan.stdout))
+    for generated_idents, generated_defs, _generated_path in portInventory.generated_ts_for_source().values():
+        idents.update(generated_idents)
+        real_defs.update(generated_defs)
     results: dict[str, list[FunctionAnalysis]] = {}
     for stem in ["string_util", "item", "digit_obj_util"]:
         results[stem] = analyze_file(stem, idents, real_defs)

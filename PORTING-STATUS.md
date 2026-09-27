@@ -64,6 +64,22 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
   `git diff --check`. No ejecuté el script en el juego ni hice prueba en
   navegador.
 
+## Analizador Clang: símbolos TS reales y mapa inicial de familias (2026-09-27)
+
+- Corregí el analizador de oportunidades: ahora usa el AST de TypeScript para
+  contar declaraciones normales, arrow functions (incluidas expresiones),
+  callbacks de objetos y aliases, además de incluir funciones del directorio
+  generado. Antes, once cuerpos/aliases de `item.c` se clasificaban como
+  candidatos aunque ya tenían implementación activa.
+- El análisis repetible (`python3 tools/decomp/clang_analyze.py`) ahora ve
+  `string_util.c` 40/40 presentes, `item.c` 49/49 presentes y
+  `digit_obj_util.c` 14/14 bloqueadas por allocator EWRAM, OAM o dependencias
+  del subsistema de dígitos. “Presentes” mide cuerpo TS, no equivalencia C:
+  siguen haciendo falta auditorías de callers y semántica.
+- Este resultado impide extender el generador sobre una falsa lista de
+  candidatos; el siguiente mapa debe incluir familias activas adicionales,
+  empezando por una con dependencias ya representadas en `src/fr`.
+
 ## Inventario actualizado, 2026-09-26
 
 - **`string_util.c`: 40/40 funciones con homólogo (familia de placeholders de texto).**

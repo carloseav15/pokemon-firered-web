@@ -1,29 +1,34 @@
-# Prompt para un goal: piloto Clang → TypeScript
+# Procedimiento para ampliar el generador Clang → TypeScript
 
-Este mensaje prepara un goal futuro; documentarlo no inicia su ejecución.
-Modelo inicial recomendado: Opus o Astra para el diseño y revisión semántica.
-Se puede usar Sonnet o Sol para implementar bloques ya delimitados.
+El piloto inicial ya está integrado: `clang_ast.py`, `clang_analyze.py`,
+`clang_codegen.py` y `src/fr/generated/stringUtil.ts`; el comparador
+`check:string-util` prueba 235 observaciones contra C. Usa este procedimiento
+para seleccionar y portar la siguiente familia. No reconstruyas el piloto ni
+supongas que el emisor actual admite una familia nueva.
 
 ## Mensaje para copiar
 
-Establece como goal evaluar e implementar, si la muestra demuestra viabilidad,
-un piloto reproducible de generación C → TypeScript basado en el AST de Clang
-para este port de Pokémon FireRed. El objetivo es reducir el trabajo total de
-traducción e integración manteniendo el comportamiento del decomp. Conserva
-TypeScript como salida; no sustituyas el motor por WebAssembly.
+Continúa ampliando el port fuente-fiel de Pokémon FireRed. Selecciona funciones
+pendientes mediante el AST de Clang, callers C/scripts y dependencias del motor
+activo; implementa el siguiente bloque coherente en TypeScript y mide si la
+generación ahorra trabajo total. Conserva TypeScript como salida; no sustituyas
+el motor por WebAssembly.
 
-Lee AGENTS.md y ESTADO-Y-REGLAS.md, especialmente §7.8. Inspecciona el estado
-actual y el exportador antes de cambiar código. Respeta trabajo concurrente,
-el decomp original y las salidas generadas. Trabaja en bloques pequeños.
+Lee AGENTS.md y ESTADO-Y-REGLAS.md, especialmente §7.8 y la última entrada de
+PORTING-STATUS.md. Inspecciona el estado actual, el analizador de símbolos TS y
+el exportador antes de cambiar código. Respeta el decomp original y las salidas
+generadas. Trabaja en bloques coherentes.
 
 1. Reutiliza la resolución del decomp y configuración de tools/decomp/common.py.
    Registra revisión del C, versión de Clang, target, defines e includes.
    Verifica semántica de enteros y ABI de GBA; no asumas que macOS tiene el
    mismo layout. Usa el AST de Clang para analizar los cuerpos, no regex.
 2. Analiza al menos tres archivos pendientes seleccionados por patrones y
-   dependencias, no solo por porcentaje de nombres. Busca equivalencias TS
-   existentes y presenta funciones candidatas, bloqueadas y no soportadas,
-   con motivos y alcance exacto. No cuentes fallos de parsing como cobertura.
+   dependencias, no solo por porcentaje de nombres. Usa el AST de TypeScript
+   para localizar declaraciones, arrows, callbacks de objetos y aliases; una
+   mención del nombre en TS no prueba que haya cuerpo real. Presenta funciones
+   candidatas, ya implementadas, bloqueadas y no soportadas, con motivos y
+   alcance exacto. No cuentes fallos de parsing como cobertura.
 3. Si existe una familia viable, implementa un generador acotado en tools/decomp/
    que emita funciones completas y deterministas. Conserva nombres, tipos
    efectivos, estados, callbacks y temporización. Reutiliza hardware y datos
@@ -32,7 +37,7 @@ el decomp original y las salidas generadas. Trabaja en bloques pequeños.
    archivo y función. No inventes retornos, constantes, datos ni efectos.
    Conserva la procedencia C → TS y una separación clara entre código generado
    y manual; corrige las reglas del generador en vez de parchear su salida.
-5. Integra al menos un bloque generado en un flujo real del juego. Valídalo
+5. Integra el bloque adaptado o generado en un flujo real del juego. Valídalo
    contra el C con entradas comunes y casos límite relevantes; justifica los
    supuestos de un harness de host. Comprueba regeneración determinista y rechazo
    de un caso no soportado. Ejecuta tipos, honesty, build y checks focalizados;
