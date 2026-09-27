@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
 | Parcial (< 80 % de funciones) | 68 | 137462 | 1379/6161 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 16 | 31950 | 985/1141 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 134 | 107362 | 3646/3646 |
+| Casi completo (≥ 80 % y < 100 %) | 15 | 31471 | 966/1119 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 135 | 107841 | 3668/3668 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **114** | **194547** | |
-| **Total en alcance** | **253** | **303042** | **6038/11826** |
+| **Pendiente de portar** | **113** | **194068** | |
+| **Total en alcance** | **253** | **303042** | **6041/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -152,7 +152,6 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_gfx_sfx_util.c` | 1061 | 40/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts` |  |  |
 | `palette.c` | 994 | 34/41 | `hw/palette.ts` |  |  |
 | `trainer_see.c` | 750 | 34/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
-| `fldeff_flash.c` | 479 | 19/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
 
@@ -218,6 +217,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `window.c` | 513 | 21/21 | `gba/window.ts`, `hw/window.ts` |  |  |
 | `seagallop.c` | 504 | 22/22 | `seagallop.ts` |  |  |
 | `battle_intro.c` | 492 | 10/10 | `battle/intro.ts` |  |  |
+| `fldeff_flash.c` | 479 | 22/22 | `field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `palette_util.c` | 474 | 17/17 | `paletteUtil.ts` |  |  |
 | `battle_anim_bug.c` | 462 | 13/13 | `battle/anims/bug.ts` |  |  |
 | `field_screen_effect.c` | 462 | 19/19 | `field/fieldEffects.ts`, `field/overworld.ts`, `script/specials.ts` |  |  |

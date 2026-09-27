@@ -1,10 +1,12 @@
 // Headless check for map preview screen parity (map_preview_screen.c, fldeff_flash.c)
 // Run with: npx esbuild tools/checks/mapPreviewScreen.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/mapPreviewScreen.mjs && node .decomp-build/checks/mapPreviewScreen.mjs
 
+import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { registerCData } from '../../src/fr/hw/assets.ts';
 import { flagClear, flagGet, flagSet } from '../../src/fr/save.ts';
+import { gMain } from '../../src/fr/hw/runtime.ts';
 import {
   MPS_COUNT,
   MPS_TYPE_CAVE,
@@ -24,6 +26,9 @@ import {
   getHasVisitedMapBefore,
   setHasVisitedMapBefore,
   buildMapPreviewCanvas,
+  CB2_ChangeMapMain,
+  VBC_ChangeMapVBlank,
+  CB2_DoChangeMap,
   type MapPreviewScreen,
 } from '../../src/fr/mapPreviewScreen.ts';
 
@@ -158,4 +163,26 @@ for (let i = 0; i < MPS_COUNT; i++) {
   renderedCount++;
 }
 
-console.log(`PASS: All 28 map preview screens verified (constants, flags, durations, and 28/28 rendered 240x160 canvases).`);
+// 10. Test map transition animatics callbacks (fldeff_flash.c)
+let transitionExecuted = false;
+const ok = CB2_DoChangeMap(() => {
+  transitionExecuted = true;
+  return true;
+});
+assert.equal(ok, true, 'CB2_DoChangeMap returns true on successful transition');
+assert.equal(transitionExecuted, true, 'transitionRunner must be invoked');
+assert.equal(gMain.callback2, CB2_ChangeMapMain, 'CB2_DoChangeMap must set CB2_ChangeMapMain as callback2');
+assert.equal(gMain.vblankCallback, VBC_ChangeMapVBlank, 'CB2_DoChangeMap must set VBC_ChangeMapVBlank as vblankCallback');
+
+// Verify that execution of the main loop and vblank callbacks succeeds without error
+CB2_ChangeMapMain();
+VBC_ChangeMapVBlank();
+
+// Test failure fallback to savedCallback
+const savedStub = () => {};
+gMain.savedCallback = savedStub;
+const fail = CB2_DoChangeMap(() => false);
+assert.equal(fail, false, 'CB2_DoChangeMap returns false if runner fails');
+assert.equal(gMain.callback2, savedStub, 'CB2_DoChangeMap restores savedCallback on failure');
+
+console.log(`PASS: All 28 map preview screens and map change animatics verified.`);

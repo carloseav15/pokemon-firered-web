@@ -12,6 +12,23 @@ import { printText, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } fr
 import { tilemapCanvas } from "./field/gfx4bpp";
 import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_WHITE, paletteFade, RGB_BLACK } from "./gba/fade";
 import { B_BUTTON, JOY_HELD } from "./gba/input";
+import { tasks } from "./gba/tasks";
+import { ResetPaletteFade, UpdatePaletteFade, TransferPlttBuffer } from "./hw/palette";
+import { AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+import { SetMainCallback2, SetVBlankCallback, gMain } from "./hw/runtime";
+import { SetGpuReg } from "./hw/gpu";
+import {
+  REG_OFFSET_BG0CNT,
+  REG_OFFSET_BG1CNT,
+  REG_OFFSET_BG2CNT,
+  REG_OFFSET_BG0HOFS,
+  REG_OFFSET_BG0VOFS,
+  REG_OFFSET_BG1HOFS,
+  REG_OFFSET_BG1VOFS,
+  REG_OFFSET_BG2HOFS,
+  REG_OFFSET_BG2VOFS,
+  REG_OFFSET_DISPCNT,
+} from "./hw/ppu";
 import type { Overworld } from "./field/overworld";
 
 export const MPS_VIRIDIAN_FOREST = 0;
@@ -510,5 +527,48 @@ export class MapPreviewManager {
     }
     ctx.restore();
   }
+}
 
+/** CB2_ChangeMapMain (fldeff_flash.c): main loop during map change animatics. */
+export function CB2_ChangeMapMain(): void {
+  tasks.run();
+  AnimateSprites();
+  BuildOamBuffer();
+  UpdatePaletteFade();
+}
+
+/** VBC_ChangeMapVBlank (fldeff_flash.c): VBlank callback during map change animatics. */
+export function VBC_ChangeMapVBlank(): void {
+  LoadOam();
+  ProcessSpriteCopyRequests();
+  TransferPlttBuffer();
+}
+
+/** CB2_DoChangeMap (fldeff_flash.c): initiates map change animatics. */
+export function CB2_DoChangeMap(transitionRunner?: () => boolean): boolean {
+  SetVBlankCallback(null);
+
+  SetGpuReg(REG_OFFSET_DISPCNT, 0);
+  SetGpuReg(REG_OFFSET_BG2CNT, 0);
+  SetGpuReg(REG_OFFSET_BG1CNT, 0);
+  SetGpuReg(REG_OFFSET_BG0CNT, 0);
+  SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+  SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+  SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+  SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+  SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+  SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+
+  ResetPaletteFade();
+  tasks.reset();
+  ResetSpriteData();
+  SetVBlankCallback(VBC_ChangeMapVBlank);
+  SetMainCallback2(CB2_ChangeMapMain);
+  if (transitionRunner && !transitionRunner()) {
+    if (gMain.savedCallback) {
+      SetMainCallback2(gMain.savedCallback);
+    }
+    return false;
+  }
+  return true;
 }

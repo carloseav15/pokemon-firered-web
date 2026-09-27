@@ -28,6 +28,12 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`fldeff_flash.c`: 22/22 funciones con homólogo (animáticas de transición de mapa y callbacks de hardware).**
+  Implementé los callbacks de hardware de animática de cambio de mapa `CB2_ChangeMapMain`, `VBC_ChangeMapVBlank` y `CB2_DoChangeMap` en `src/fr/mapPreviewScreen.ts`, asegurando el reseteo de registros GPU (`DISPCNT`, `BG0..2CNT`, `BG0..2HOFS`, `BG0..2VOFS`), limpieza de tareas y sprites, y fallback a `gMain.savedCallback` en caso de no ejecutarse la transición.
+  Conecté `CB2_DoChangeMap` en `src/fr/field/overworld.ts` durante el manejo de transiciones por warps (`warpTransition`).
+  Amplié el check headless `tools/checks/mapPreviewScreen.ts` (`npm run check:preview`) para verificar la ejecución de los callbacks del bucle principal y VBlank, así como la restauración de `savedCallback` en caso de fallo.
+  Validación: pasan `check:preview`, `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.041/11.826 funciones (51,1%)**, con **113 archivos** con huecos (bajó de 114); `fldeff_flash.c` sale de `PENDING.md`.
 - **`item.c`: 49/49 funciones con homólogo (recifrado y gestión de bolsillos de la mochila).**
   Implementé las dos funciones restantes de recifrado de la mochila en GBA, `ApplyNewEncryptionKeyToBagItems` y `ApplyNewEncryptionKeyToBagItems_`, en `src/fr/pokemon/items.ts`, adaptando la preservación de cantidades lógicas sobre la estructura de guardado web en texto claro.
   Conecté `ApplyNewEncryptionKeyToBagItems_` al guardado de la partida en `src/fr/game.ts` (`save()`), antes de escribir los datos en `saveStore.write`, replicando el momento en el que el C original (`load_save.c`) invoca la rutina de actualización de clave de seguridad.

@@ -24,7 +24,7 @@ import { DoOutwardBarnDoorWipe, FieldEffects, MAX_FLASH_LEVEL, WriteFlashScanlin
 import { ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "../hw/scanline";
 import { REG_OFFSET_WIN0H } from "../hw/ppu";
 import { MapNamePopup } from "./mapNamePopup";
-import { MapPreviewManager, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST } from "../mapPreviewScreen";
+import { MapPreviewManager, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST, CB2_DoChangeMap } from "../mapPreviewScreen";
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
@@ -407,7 +407,7 @@ export class Overworld {
     const prevSection = this.lastUsedWarpSection();
     const currSection = this.header.regionMapSection;
     const questLogState = (this.game as unknown as { questLogState?: number }).questLogState;
-    const ranMapTransition = this.TryDoMapTransition(prevSection, currSection, questLogState);
+    const ranMapTransition = CB2_DoChangeMap(() => this.TryDoMapTransition(prevSection, currSection, questLogState));
     if (!ranMapTransition && this.header.showMapName && prevSection !== currSection) {
       this.mapName.show(false);
     }
