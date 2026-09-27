@@ -571,7 +571,7 @@ function beginAnim(sprite: Sprite): void {
 
 function continueAnim(sprite: Sprite): void {
   if (sprite.animDelayCounter) {
-    if (!sprite.animPaused) sprite.animDelayCounter--;
+    DecrementAnimDelayCounter(sprite);
     const cmd = cmdAt(sprite);
     if (!(sprite.oam.affineMode & ST_OAM_AFFINE_ON_MASK)) setSpriteOamFlipBits(sprite, cmd.hFlip, cmd.vFlip);
   } else if (!sprite.animPaused) {
@@ -594,6 +594,11 @@ function continueAnim(sprite: Sprite): void {
       continueAnim(sprite);
     }
   }
+}
+
+// sprite.c: DecrementAnimDelayCounter. animDelayCounter is a u8 in the GBA struct.
+export function DecrementAnimDelayCounter(sprite: Sprite): void {
+  if (!sprite.animPaused) sprite.animDelayCounter = (sprite.animDelayCounter - 1) & 0xff;
 }
 
 function jumpToTopOfAnimLoop(sprite: Sprite): void {

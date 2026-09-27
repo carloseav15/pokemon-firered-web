@@ -5,9 +5,9 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.235/11.826 funciones (52,7%)**,
+single-player. A 2026-09-27, la meta mide **6.236/11.826 funciones (52,7%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.284/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.267/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
 
 ## `sprite.c`: carga de paleta OBJ (2026-09-27)
@@ -20,6 +20,17 @@ sigue sin demostrar fidelidad.
   `LoadPalette` y no cambia los datos ni el flujo de carga.
 - `sprite.c` queda 87/103 por nombre; global **6.235/11.826 (52,7%)**, con
   ~129.284 líneas ponderadas sin homólogo.
+
+## `sprite.c`: contador de demora de animación (2026-09-27)
+
+- Porté `DecrementAnimDelayCounter` y lo conecté a `continueAnim`. El helper
+  respeta `animPaused` y el decremento envuelve a 8 bits como el campo `u8` del
+  C. `continueAnim` lo llama bajo la misma condición del C: contador distinto
+  de cero.
+- `check:port`, `check:honesty`, build, inventory, pending y `git diff --check`
+  pasaron. No ejecuté navegador; no hay cambios en comandos, animación ni datos.
+- `sprite.c` queda 88/103 por nombre; global **6.236/11.826 (52,7%)**, con
+  ~129.267 líneas ponderadas sin homólogo.
 
 ## `field_door.c`: copia de tiles de animación (2026-09-27)
 
