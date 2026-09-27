@@ -28,6 +28,12 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`cereader_tool.c`: 8/8 funciones con homólogo (validación y guardado de datos de la Torre Desafío e-Reader).**
+  Implementé las 8 funciones de `cereader_tool.c` en `src/fr/cereaderTool.ts`: `CalcByteArraySum`, `GetTrainerHillUnkVal`, `ValidateTrainerTowerTrainer`, `ValidateTrainerTowerData`, `CEReaderTool_SaveTrainerTower_r`, `CEReaderTool_SaveTrainerTower`, `CEReaderTool_LoadTrainerTower_r`, `CEReaderTool_LoadTrainerTower` y el stub original de FireRed `ReadTrainerTowerAndValidate`.
+  Conecté `ReadTrainerTowerAndValidate` al despachador de scripts de eventos en `src/fr/script/specials.ts` (`SPECIALS.ReadTrainerTowerAndValidate`).
+  Añadí el check headless `tools/checks/cereaderTool.ts` (`npm run check:cereader-tool`) que valida: suma de bytes con límite u32 (`CalcByteArraySum`), cálculo modular del byte de variación de la torre (`GetTrainerHillUnkVal`), validación de número de pisos y tipos de desafío (`ValidateTrainerTowerTrainer` y `ValidateTrainerTowerData`), y persistencia bidireccional en sectores flash especiales.
+  Validación: pasan `check:cereader-tool`, `check:questlog-battle`, `check:battle-util`, `check:trainer-see`, `check:preview`, `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.056/11.826 funciones (51,2%)**, con **109 archivos** con huecos (bajó de 110); `cereader_tool.c` sale de `PENDING.md`.
 - **`quest_log_battle.c`: 3/3 funciones con homólogo (eventos del Quest Log para combates de entrenador, salvajes y de enlace).**
   Implementé las 2 funciones restantes del archivo, `GetLinkMultiBattlePlayerIndexes` y `TrySetQuestLogLinkBattleEvent`, en `src/fr/questLogBattle.ts`, asegurando el registro de combates de enlace (individual, doble, unión y combate múltiple con cálculo de índices de compañero y oponentes).
   Añadí el tipo de evento `QuestLogLinkBattleEvent` y el soporte para los códigos de evento `QL_EVENT_LINK_BATTLED_*` en `src/fr/questLogEvents.ts`.
