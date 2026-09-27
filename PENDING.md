@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6296/11826 (53.2 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5530 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6297/11826 (53.2 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5529 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~127.943 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~127.923 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -90,7 +90,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 71 | `union_room_chat.c` | sin empezar | 1571 | 0/51 | ~1571 |  |
 | 72 | `mystery_gift_menu.c` | sin empezar | 1609 | 0/34 | ~1609 |  |
 | 73 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
-| 74 | `quest_log.c` | parcial | 1767 | 4/88 | ~1686 |  |
+| 74 | `quest_log.c` | parcial | 1767 | 5/88 | ~1666 |  |
 | 75 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 | 76 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
 | 77 | `field_player_avatar.c` | parcial | 2168 | 17/176 | ~1958 |  |

@@ -8,6 +8,19 @@ let sPlayedTheSlots = false;
 export let gQuestLogState = 0;
 export function SetQuestLogState(state: number): void { gQuestLogState = state; }
 export let gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+/** QL_GetPlaybackState (quest_log.c): hide the two transitional playback states. */
+export function QL_GetPlaybackState(): number {
+  switch (gQuestLogPlaybackState) {
+    case C.QL_PLAYBACK_STATE_RUNNING:
+    case C.QL_PLAYBACK_STATE_ACTION_END:
+      return C.QL_PLAYBACK_STATE_RUNNING;
+    case C.QL_PLAYBACK_STATE_RECORDING:
+    case C.QL_PLAYBACK_STATE_RECORDING_NO_DELAY:
+      return C.QL_PLAYBACK_STATE_RECORDING;
+    default:
+      return C.QL_PLAYBACK_STATE_STOPPED;
+  }
+}
 let gQuestLogDefeatedWildMonRecord: unknown | null = null;
 let gQuestLogRecordingPointer: unknown | null = null;
 let sStepRecordingMode = 0;

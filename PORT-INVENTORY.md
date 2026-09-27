@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
-| Parcial (< 80 % de funciones) | 60 | 133907 | 1357/5950 |
+| Parcial (< 80 % de funciones) | 60 | 133907 | 1358/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 8 | 20213 | 626/716 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 151 | 122800 | 4285/4285 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **97** | **179109** | |
-| **Total en alcance** | **253** | **303042** | **6296/11826** |
+| **Total en alcance** | **253** | **303042** | **6297/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -87,7 +87,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
-| `quest_log.c` | 1767 | 4/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
+| `quest_log.c` | 1767 | 5/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `battle_controller_link_opponent.c` | 1713 | 22/86 |  |  |  |
 | `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |

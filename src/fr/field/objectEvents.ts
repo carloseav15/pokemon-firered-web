@@ -10,6 +10,7 @@ import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
+import { QL_GetPlaybackState } from "../questLogEvents";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 import { gSineTable } from "../hw/trig";
 
@@ -993,7 +994,8 @@ export class ObjectEvents {
 
   /** ObjectEventSetHeldMovement: returns true if it could not be set. */
   setHeldMovement(object: ObjectEvent, actionId: number): boolean {
-    if (ObjectEventIsMovementOverridden(object)) return true;
+    if (QL_GetPlaybackState() === C.QL_PLAYBACK_STATE_RUNNING) this.clearHeldMovementIfActive(object);
+    else if (ObjectEventIsMovementOverridden(object)) return true;
     this.unfreeze(object);
     object.movementActionId = actionId;
     object.heldMovementActive = true;
