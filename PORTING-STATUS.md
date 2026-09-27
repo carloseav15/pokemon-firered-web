@@ -3991,3 +3991,19 @@ Pending / placeholders:
   `check:port`, `check:honesty`, `build`, `check:anims` (cero fallos), inventory,
   pending y `git diff --check` pasaron. Esto verifica tipos, bundle, honestidad
   y el check headless de batalla; no ejecuté el juego en navegador.
+
+## `berry.c`: consulta de tabla y copia del nombre (2026-09-27)
+
+- Añadí `GetBerryInfo` y `GetBerryNameByBerryType` sobre `gBerries` y sus textos
+  exportados en cdata, con los límites y el fallback a Cheri del C. Cargué esa
+  cdata al iniciar. `CopyItemName` y el especial `DoesPartyHaveEnigmaBerry`
+  ahora usan el nombre desde la tabla y `gText_Berry`, en vez de omitir el
+  sufijo o escribir `ENIGMA` fijo. `berry.c` queda 5/9; total: 6.253/11.826
+  (52,9 %), 97 archivos con huecos y 5.573 nombres pendientes.
+- El dato Enigma consultado es la fila estática exportada. El guardado del
+  navegador no contiene `EnigmaBerry`, su checksum ni el resultado de
+  `SetEnigmaBerry`; por eso no representa nombres recibidos por e-Reader y
+  `IsEnigmaBerryValid` continúa reportando falso. `InitEnigmaBerry`,
+  `ClearEnigmaBerries`, `SetEnigmaBerry` y el helper de checksum siguen sin
+  portar. Pasaron `check:port`, `check:honesty`, `build`, inventory, pending y
+  `git diff --check`; no ejecuté el juego ni el navegador.

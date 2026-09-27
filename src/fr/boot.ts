@@ -43,7 +43,7 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
   try {
     await rom.load((label) => { status.textContent = `Loading ${label}…`; });
     await loadFieldFx();
-    await loadCData("wild_encounter");
+    await loadCData("wild_encounter", "berry");
     // braille_text.c glyphs and the text_printer.c half-row table for FONT_BRAILLE.
     // help_message.c window tiles for the START menu descriptions.
     await Promise.all([loadCData("text_printer"), preloadPacks(["graphics_fonts", "graphics_help_system"])]);

@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6251/11826 (52.9 %)**.
-- Archivos C con funciones aún sin homólogo: **97**; quedan **5575 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6253/11826 (52.9 %)**.
+- Archivos C con funciones aún sin homólogo: **97**; quedan **5573 nombres**.
 - Estos archivos contienen 179.109 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~128.789 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~128.560 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -40,21 +40,21 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 21 | `librfu_intr.c` | sin empezar | 417 | 0/9 | ~417 |  |
 | 22 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
 | 23 | `digit_obj_util.c` | sin empezar | 451 | 0/14 | ~451 |  |
-| 24 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
-| 25 | `wireless_communication_status_screen.c` | parcial | 522 | 1/12 | ~478 |  |
-| 26 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
-| 27 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 28 | `mystery_gift.c` | parcial | 634 | 9/45 | ~507 |  |
-| 29 | `mystery_gift_show_card.c` | sin empezar | 518 | 0/8 | ~518 |  |
-| 30 | `ereader_screen.c` | sin empezar | 520 | 0/11 | ~520 |  |
-| 31 | `battle_controller_safari.c` | parcial | 669 | 14/72 | ~538 |  |
-| 32 | `battle_setup.c` | parcial | 1070 | 28/66 | ~616 |  |
-| 33 | `union_room_player_avatar.c` | sin empezar | 624 | 0/38 | ~624 |  |
-| 34 | `battle_controller_opponent.c` | parcial | 1777 | 56/87 | ~633 |  |
-| 35 | `librfu_stwi.c` | sin empezar | 650 | 0/48 | ~650 |  |
-| 36 | `mail.c` | parcial | 734 | 1/10 | ~660 |  |
-| 37 | `evolution_scene.c` | parcial | 1704 | 14/23 | ~666 |  |
-| 38 | `berry.c` | parcial | 1028 | 3/9 | ~685 |  |
+| 24 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
+| 25 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
+| 26 | `wireless_communication_status_screen.c` | parcial | 522 | 1/12 | ~478 |  |
+| 27 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
+| 28 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 29 | `mystery_gift.c` | parcial | 634 | 9/45 | ~507 |  |
+| 30 | `mystery_gift_show_card.c` | sin empezar | 518 | 0/8 | ~518 |  |
+| 31 | `ereader_screen.c` | sin empezar | 520 | 0/11 | ~520 |  |
+| 32 | `battle_controller_safari.c` | parcial | 669 | 14/72 | ~538 |  |
+| 33 | `battle_setup.c` | parcial | 1070 | 28/66 | ~616 |  |
+| 34 | `union_room_player_avatar.c` | sin empezar | 624 | 0/38 | ~624 |  |
+| 35 | `battle_controller_opponent.c` | parcial | 1777 | 56/87 | ~633 |  |
+| 36 | `librfu_stwi.c` | sin empezar | 650 | 0/48 | ~650 |  |
+| 37 | `mail.c` | parcial | 734 | 1/10 | ~660 |  |
+| 38 | `evolution_scene.c` | parcial | 1704 | 14/23 | ~666 |  |
 | 39 | `field_fadetransition.c` | parcial | 965 | 16/59 | ~703 |  |
 | 40 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
 | 41 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |

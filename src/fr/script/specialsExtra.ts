@@ -25,6 +25,7 @@ import { setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005 } f
 import { SetPostgameFlags } from "../pokemon/saveLocation";
 import { CheckPartyMonHasHeldItem } from "../pokemon/scriptPokemonUtil";
 import { HasAtLeastOneBerry as Item_HasAtLeastOneBerry } from "../pokemon/items";
+import { GetBerryNameByBerryType, ItemIdToBerryType } from "../pokemon/berry";
 import { getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullMessage } from "../pokemon/storage";
 import { CalculatePlayerPartyCount, GetMonData, gPPUpGetMask, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
 import { SpeciesToMailSpecies } from "../pokemon/mail";
@@ -760,7 +761,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   IsBadEggInParty: () => 0, // a Bad Egg only arises from checksum corruption, which the web save cannot produce
   DoesPartyHaveEnigmaBerry: () => {
     const has = CheckPartyMonHasHeldItem(C.ITEM_ENIGMA_BERRY);
-    if (has) stringVars.var1 = encode("ENIGMA");
+    if (has) GetBerryNameByBerryType(ItemIdToBerryType(C.ITEM_ENIGMA_BERRY), stringVars.var1);
     return has ? 1 : 0;
   },
   IsDodrioInParty: () => { varSet(SV.RESULT, save.party.some((m) => !m.isEgg && m.species === C.SPECIES_DODRIO) ? 1 : 0); },

@@ -12,6 +12,7 @@ import { SetFontsPointer, textFlags } from "../gba/textPrinter";
 import { rom } from "../rom";
 import { save } from "../save";
 import { itemName } from "../pokemon/items";
+import { GetBerryInfo } from "../pokemon/berry";
 import { ItemIsMail } from "../pokemon/mail";
 import { InUnionRoom } from "../unionRoom";
 import { IsLinkSessionActive, IsLinkRecvQueueAtOverworldMax, Overworld_LinkRecvQueueLengthMoreThan2 } from "../linkState";
@@ -619,7 +620,11 @@ export function GetWordTaskArg(taskId: number, dataElem: number): number {
 
 // ---------------------------------------------------------------- item.c
 
-/** CopyItemName (the Enigma Berry name comes from the e-Reader berry, which the port never receives). */
+/** CopyItemName from item.c. */
 export function CopyItemName(itemId: number): Uint8Array {
+  if ((itemId & 0xffff) === C.ITEM_ENIGMA_BERRY) {
+    const name = GetBerryInfo(C.ITEM_ENIGMA_BERRY - C.FIRST_BERRY_INDEX + 1).name;
+    return Uint8Array.from([...u8str(name), ...u8str(rom.text("gText_Berry")), 0xff]);
+  }
   return Uint8Array.from([...u8str(itemName(itemId)), 0xff]);
 }
