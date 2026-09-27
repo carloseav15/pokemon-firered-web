@@ -5,10 +5,38 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.199/11.826 funciones (52,4%)**,
+single-player. A 2026-09-27, la meta mide **6.216/11.826 funciones (52,6%)**,
 con **98 archivos** con huecos y una estimación ponderada de
 **~129.761/303.042 líneas C (42,8%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: lookups de animación generados desde AST (2026-09-27)
+
+- Amplié `tools/decomp/clang_codegen.py` con una familia acotada que acepta
+  únicamente funciones `u8 F(u8 direction)` cuyo AST completo contiene un
+  `return tabla[direction]` sobre `const u8[9]`. Rechaza cuerpos, tipos,
+  índices y arreglos de otra forma. Clang Apple 21.0.0, target
+  `armv4t-none-eabi`, decomp `c75f35230`; salida repetible en
+  `src/fr/generated/eventObjectAnims.ts`.
+- Se generan 17 funciones y sus 17 arreglos se leen del cdata de C, incluido
+  el retorno a tipo `u8`. Conecté las seis funciones de cara, caminar y correr
+  a `objectEvents.ts` y las funciones de sacar caña, picada y fallo de pesca a
+  `fishing.ts`. Esto conserva las direcciones 0–8 del C, incluidas las
+  diagonales; antes TS calculaba el índice direccional como si solo hubiera
+  cuatro direcciones. Las demás ocho funciones generadas aún no sustituyen
+  todos sus callers C en el port.
+- `check:event-object-anims` comparó 153 lecturas (17 tablas × 9 índices) con
+  los valores de las tablas C exportadas. `check:port`, `check:honesty`, build,
+  inventory, pending y `git diff --check` pasan. Dos regeneraciones produjeron
+  SHA-256 idéntico y un AST de retorno escalar fue rechazado con diagnóstico.
+  En navegador, `?fr=continue` cargó en la casa de Pallet; las cuatro funciones
+  conectadas pudieron leer cdata y devolvieron sus nueve valores. Solo hubo
+  404 de favicon. Esto verifica carga e índices, no una secuencia animada
+  visible de movimiento o pesca; tampoco ejecuté C de forma nativa.
+- El inventario sube a **6.216/11.826 (52,6%)**; `event_object_movement.c`
+  queda 60/759 por nombre. Siguen 98 archivos con huecos y ~129.550 líneas
+  ponderadas sin homólogo. No se midió ahorro de tiempo frente a portar la
+  misma familia manualmente.
 
 ## `event_object_movement.c`: búsqueda por XY y activación de efectos de suelo (2026-09-27)
 

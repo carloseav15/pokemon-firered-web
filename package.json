@@ -33,6 +33,8 @@
     "check:coins": "esbuild tools/checks/coins.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/coins.mjs && node .decomp-build/checks/coins.mjs",
     "check:has-berry": "esbuild tools/checks/hasAtLeastOneBerry.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hasAtLeastOneBerry.mjs && node .decomp-build/checks/hasAtLeastOneBerry.mjs",
     "generate:string-util": "python3 tools/decomp/clang_codegen.py",
+    "generate:event-object-anims": "python3 tools/decomp/clang_codegen.py --event-object-anims",
+    "check:event-object-anims": "esbuild tools/checks/eventObjectAnims.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/eventObjectAnims.mjs && node .decomp-build/checks/eventObjectAnims.mjs",
     "check:string-util": "esbuild tools/checks/stringUtil.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/stringUtil.mjs && node .decomp-build/checks/stringUtil.mjs",
     "check:wild-encounter": "esbuild tools/checks/wildEncounter.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/wildEncounter.mjs && node .decomp-build/checks/wildEncounter.mjs",
     "check:script": "esbuild tools/checks/scriptContext.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/scriptContext.mjs && node .decomp-build/checks/scriptContext.mjs",

@@ -7,6 +7,7 @@ import * as C from "../generated/constants";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
+import { GetFaceDirectionAnimNum, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet } from "../save";
 import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
 
@@ -85,12 +86,12 @@ export function dirIndex(direction: number): number {
   return Math.max(0, Math.min(3, direction - 1));
 }
 
-export function faceAnim(direction: number): number { return ANIM_FACE + dirIndex(direction); }
-export function moveAnim(direction: number): number { return ANIM_GO + dirIndex(direction); }
-export function moveFastAnim(direction: number): number { return ANIM_GO_FAST + dirIndex(direction); }
-export function moveFasterAnim(direction: number): number { return ANIM_GO_FASTER + dirIndex(direction); }
-export function moveFastestAnim(direction: number): number { return ANIM_GO_FASTEST + dirIndex(direction); }
-export function runAnim(direction: number): number { return ANIM_RUN + dirIndex(direction); }
+export function faceAnim(direction: number): number { return GetFaceDirectionAnimNum(direction); }
+export function moveAnim(direction: number): number { return GetMoveDirectionAnimNum(direction); }
+export function moveFastAnim(direction: number): number { return GetMoveDirectionFastAnimNum(direction); }
+export function moveFasterAnim(direction: number): number { return GetMoveDirectionFasterAnimNum(direction); }
+export function moveFastestAnim(direction: number): number { return GetMoveDirectionFastestAnimNum(direction); }
+export function runAnim(direction: number): number { return GetRunningDirectionAnimNum(direction); }
 
 export function actionFace(direction: number): number { return [0, 0, 1, 2, 3][direction] ?? 0; }
 export function actionWalkNormal(direction: number): number { return 0x10 + dirIndex(direction); }

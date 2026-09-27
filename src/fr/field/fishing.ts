@@ -9,6 +9,7 @@ import { printText, TextPrinter, getTextSpeedSetting } from "../gba/textPrinter"
 import { Window } from "../gba/window";
 import { random } from "../random";
 import { rom } from "../rom";
+import { GetFishingBiteDirectionAnimNum, GetFishingDirectionAnimNum, GetFishingNoCatchDirectionAnimNum } from "../generated/eventObjectAnims";
 import { DIR_WEST } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { PLAYER_AVATAR_GFX_FISH } from "./playerAvatar";
@@ -21,7 +22,6 @@ export function startFishing(ow: Overworld, rod: number): void {
   let step = 0, frameCounter = 0, roundsPlayed = 0, minRoundsRequired = 0, playerGfxId = 0, numDots = 0, dotsRequired = 0;
   let window: Window | undefined;
   let printer: TextPrinter | undefined;
-  const facingIndex = (): number => Math.max(0, player.facingDirection - 1);
 
   const align = (): void => {
     // AlignFishingAnimationFrames: the player sprite is animated here, then offset by the frame shown.
@@ -70,7 +70,7 @@ export function startFishing(ow: Overworld, rod: number): void {
       ow.objects.clearHeldMovementIfActive(player);
       player.enableAnim = true;
       ow.player.setState(PLAYER_AVATAR_GFX_FISH);
-      sprite.startAnim(facingIndex()); // ANIM_TAKE_OUT_ROD_*
+      sprite.startAnim(GetFishingDirectionAnimNum(player.facingDirection));
       step++;
       return false;
     },
@@ -104,7 +104,7 @@ export function startFishing(ow: Overworld, rod: number): void {
       align();
       step++;
       if (!ow.game.wild.hasFishingMons() || random() & 1) step = NO_BITE;
-      else sprite.startAnim(8 + facingIndex()); // ANIM_HOOKED_POKEMON_*
+      else sprite.startAnim(GetFishingBiteDirectionAnimNum(player.facingDirection));
       return true;
     },
     // Fishing7
@@ -132,9 +132,9 @@ export function startFishing(ow: Overworld, rod: number): void {
     // Fishing11
     () => onHook(),
     // NO_BITE
-    () => { align(); sprite.startAnim(4 + facingIndex()); print("gText_NotEvenANibble"); step = SHOW_RESULT; return true; },
+    () => { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_NotEvenANibble"); step = SHOW_RESULT; return true; },
     // GOT_AWAY
-    () => { align(); sprite.startAnim(4 + facingIndex()); print("gText_ItGotAway"); step++; return true; },
+    () => { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_ItGotAway"); step++; return true; },
     // SHOW_RESULT
     () => { align(); step++; return false; },
     () => {
