@@ -328,6 +328,7 @@ export class ObjectEvents {
   /** Installed by TrainerSee for the buried-trainer REVEAL_TRAINER task. */
   revealTrainerMovementAction?: (object: ObjectEvent) => boolean;
   private readonly virtualObjects = new Map<number, VirtualObject>();
+  private ssAnneExteriorMapNumber?: number;
   templates: MapObjectTemplate[] = [];
   mapNum = 0;
   mapGroup = 0;
@@ -1086,9 +1087,17 @@ export class ObjectEvents {
 
   private updateVisibility(object: ObjectEvent, offsetX: number, offsetY: number): void {
     const s = object.sprite;
-    const x = s.x + s.x2 + s.centerToCornerVecX + offsetX;
-    const y = s.y + s.y2 + s.centerToCornerVecY + offsetY;
-    object.offScreen = x >= 256 || x + s.width < -16 || y >= 176 || y + s.height < -16;
+    const x = (((s.x + s.x2 + s.centerToCornerVecX + (s.coordOffsetEnabled ? offsetX : 0)) & 0xffff) << 16) >> 16;
+    const y = (((s.y + s.y2 + s.centerToCornerVecY + (s.coordOffsetEnabled ? offsetY : 0)) & 0xffff) << 16) >> 16;
+    const right = ((x + s.width) << 16) >> 16;
+    const bottom = ((y + s.height) << 16) >> 16;
+    this.ssAnneExteriorMapNumber ??= rom.mapNum("MAP_SSANNE_EXTERIOR");
+    const ssAnneMap = this.ssAnneExteriorMapNumber;
+    const onSsAnneExterior = object.localId === C.LOCALID_SS_ANNE
+      && this.mapGroup === (ssAnneMap >>> 8)
+      && this.mapNum === (ssAnneMap & 0xff);
+    const minX = onSsAnneExterior ? -32 : -16;
+    object.offScreen = x >= C.DISPLAY_WIDTH + 16 || right < minX || y >= C.DISPLAY_HEIGHT + 16 || bottom < -16;
     s.invisible = object.invisible || object.offScreen;
   }
 
