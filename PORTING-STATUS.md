@@ -26,6 +26,27 @@ Cambio documental: no añade funciones portadas ni evidencia nueva de juego.
 Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 `git diff --check` pasaron. Sin build ni prueba en navegador por ser documentación.
 
+## Piloto Clang integrado y adaptación de `sound.c` (2026-09-27)
+
+- El piloto documentado en §7.8 ya se ejecutó e integró: `clang_ast.py` prepara
+  el AST con target GBA, `clang_codegen.py` genera la familia de
+  `string_util.c`, y `check:string-util` compara 235 observaciones TS/C. La
+  generación actual produce 40/40 funciones. La muestra costó ~100 min entre
+  preparación, implementación, comparación e integración; no basta para afirmar
+  que otras familias ahorren tiempo.
+- En este bloque adapté `StopCryAndClearCrySongs` y
+  `IsCryPlayingOrClearCrySongs` de `sound.c` en `audio/sound.ts`, y conecté los
+  chequeos y la parada del PC del Hall of Fame. La segunda rutina ahora consulta
+  el estado real del backend y limpia el estado de voz cuando ya no suena. Para
+  evitar limpiar una voz durante la carga asíncrona, `audio/m4a.ts` considera la
+  decodificación pendiente como reproducción activa. La voz sigue siendo una
+  adaptación con muestras decodificadas: no reproduce las tablas de tono,
+  inversión, chorus y envolventes del motor M4A de GBA.
+- `sound.c` sube a 40/48 por nombres; inventario global: **6.106/11.826
+  (51,6%)**, 105 archivos con huecos. Validación: `check:port`,
+  `check:honesty`, `build`, `inventory`, `pending` y `git diff --check` pasan.
+  No ejecuté el juego ni validé el audio en navegador.
+
 ## Inventario actualizado, 2026-09-26
 
 - **`string_util.c`: 40/40 funciones con homólogo (familia de placeholders de texto).**

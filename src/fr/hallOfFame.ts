@@ -13,10 +13,10 @@
 //    warps to the credits (SetWarpsToRollCredits) or returns to the PC menu
 //    (ReturnFromHallOfFamePC).
 //  - Quest Log (SaveQuestLogData) and the help system are out of scope.
-//  - StopCryAndClearCrySongs only clears the cry timer (the m4a backend cannot cut a cry).
+//  - Cry playback uses decoded species samples; it does not model the GBA's cry tables and parameters.
 // Needs preloadHallOfFame().
 
-import { sound } from "./audio/sound";
+import { IsCryPlayingOrClearCrySongs, sound, StopCryAndClearCrySongs } from "./audio/sound";
 import { concat, EOS, expandPlaceholders as expand, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, stringVars } from "./gba/charmap";
 import { FONT_NORMAL, stringWidth as stringWidthOf } from "./gba/font";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "./gba/input";
@@ -565,7 +565,7 @@ function Task_HofPC_PrintMonInfo(taskId: number): void {
 
   const currMon = savedTeam[data[2]];
   if (currMon.species !== C.SPECIES_EGG) {
-    sound.stopCry(); // StopCryAndClearCrySongs
+    StopCryAndClearCrySongs();
     sound.playCry(currMon.species, 0);
   }
   HallOfFame_PrintMonInfo(currMon, 0, 14);
@@ -586,15 +586,15 @@ function Task_HofPC_HandleInput(taskId: number): void {
       if (data[1] !== 0) data[1]--;
       tasks.tasks[taskId].func = Task_HofPC_DrawSpritesPrintText;
     } else { // no more teams to view, turn off hall of fame PC
-      if (sound.isCryPlaying()) {
-        sound.stopCry();
+      if (IsCryPlayingOrClearCrySongs()) {
+        StopCryAndClearCrySongs();
         sound.setBgmVolume(0x100);
       }
       tasks.tasks[taskId].func = Task_HofPC_HandlePaletteOnExit;
     }
   } else if (JOY_NEW(B_BUTTON)) { // turn off hall of fame PC
-    if (sound.isCryPlaying()) {
-      sound.stopCry();
+    if (IsCryPlayingOrClearCrySongs()) {
+      StopCryAndClearCrySongs();
       sound.setBgmVolume(0x100);
     }
     tasks.tasks[taskId].func = Task_HofPC_HandlePaletteOnExit;

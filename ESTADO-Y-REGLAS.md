@@ -365,10 +365,14 @@ generación especializada.** Clang proporciona un árbol de sintaxis abstracta
 construimos nosotros. Esto no significa que Clang ya emita TS ni que todo el
 decomp pueda traducirse automáticamente.
 
-El exportador ya usa Clang para preprocesar datos, compilar probes y ensamblar
-scripts. Revisar `tools/decomp/common.py`, `step_cdata.py`, `step_structs.py` y
-`step_scripts.py` antes de añadir infraestructura. El análisis de cuerpos es
-una extensión propuesta, todavía sin implementar ni medir.
+El piloto ya está integrado en `tools/decomp/clang_ast.py` y
+`tools/decomp/clang_codegen.py`. Genera `src/fr/generated/stringUtil.ts` desde
+el AST real de `string_util.c`, con target `armv4t-none-eabi`, shim freestanding
+explícito, rechazo de nodos no soportados y comparación headless contra C. El
+bloque inicial completó 40/40 nombres de `string_util.c`; el harness registró
+235 comprobaciones. La estimación del piloto fue de unos 100 minutos totales;
+es una sola muestra y todavía no demuestra que convenga generalizarlo a otras
+familias.
 
 1. **Entrada reproducible.** Resolver el decomp con `common.py`; registrar su
    revisión, versión de Clang, target, flags, includes y defines reales de
@@ -406,11 +410,15 @@ una extensión propuesta, todavía sin implementar ni medir.
    manual para las demás. Si no hay una familia viable en la muestra, entregar
    el diagnóstico reproducible y su alcance, sin declarar implementado el generador.
 
-Para este piloto, usar Opus o Astra en el diseño semántico y la revisión; Sonnet
-o Sol en implementación delimitada; Luna en extracción e inventario con criterios
-fijos. Son roles propuestos, sujetos a la medición de §7.7.
+Para ampliar el generador, elegir cada siguiente familia mediante análisis AST,
+caller-tracing y dependencias del port activo. `string_util.c` demuestra una
+familia viable de buffers y tablas; las funciones de voz/M4A, hardware, punteros
+con alias y enlaces siguen necesitando adaptadores específicos o quedar bloqueadas
+hasta que sus dependencias estén modeladas. Medir cada bloque por tiempo total y
+paridad, no solo por número de funciones emitidas.
 
 Mensaje listo para iniciar el trabajo: [GOAL-CLANG.md](GOAL-CLANG.md).
 Fuentes técnicas: [AST de Clang](https://clang.llvm.org/docs/IntroductionToTheClangAST.html)
-y [LibTooling](https://clang.llvm.org/docs/LibTooling.html). El uso de estas
-interfaces está documentado; la viabilidad y velocidad en este port aún no.
+y [LibTooling](https://clang.llvm.org/docs/LibTooling.html). El generador está
+integrado para la familia citada; cada nueva familia aún requiere evidencia
+propia de semántica y ahorro.

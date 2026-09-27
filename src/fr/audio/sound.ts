@@ -367,6 +367,13 @@ class Sound {
     return !this.isCryFinished();
   }
 
+  /** IsCryPlayingOrClearCrySongs from sound.c: clear the cry state when idle. */
+  IsCryPlayingOrClearCrySongs(): boolean {
+    const playing = this.backend ? this.backend.isCryPlaying() : this.cryTimer > 0;
+    if (!playing) ClearPokemonCrySongs();
+    return playing;
+  }
+
   /** PlaySE12WithPanning / PlaySE1WithPanning with a signed GBA pan value. */
   playSEWithPanning(song: number, pan: number): void {
     this.playSE(song);
@@ -385,5 +392,11 @@ class Sound {
 
 export const sound = new Sound();
 
-/** main.c ClearPokemonCrySongs; clear the browser cry voice and its wait state. */
+/** main.c ClearPokemonCrySongs has no separate browser queue, so clear the voice's pending state. */
 export function ClearPokemonCrySongs(): void { sound.stopCry(); }
+
+/** sound.c StopCryAndClearCrySongs: stop the current cry and clear its state. */
+export function StopCryAndClearCrySongs(): void { ClearPokemonCrySongs(); }
+
+/** sound.c IsCryPlayingOrClearCrySongs, used by Hall of Fame transitions. */
+export function IsCryPlayingOrClearCrySongs(): boolean { return sound.IsCryPlayingOrClearCrySongs(); }

@@ -5,10 +5,10 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6104/11826 (51.6 %)**.
-- Archivos C con funciones aún sin homólogo: **105**; quedan **5722 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6106/11826 (51.6 %)**.
+- Archivos C con funciones aún sin homólogo: **105**; quedan **5720 nombres**.
 - Estos archivos contienen 187.579 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~131.649 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~131.622 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -17,7 +17,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
-| 1 | `sound.c` | parcial | 649 | 38/48 | ~135 |  |
+| 1 | `sound.c` | casi completo | 649 | 40/48 | ~108 |  |
 | 2 | `main.c` | parcial | 494 | 20/28 | ~141 |  |
 | 3 | `tm_case.c` | casi completo | 1737 | 66/73 | ~166 |  |
 | 4 | `palette.c` | casi completo | 994 | 34/41 | ~169 |  |
@@ -123,7 +123,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 104 | `dodrio_berry_picking.c` | parcial | 4954 | 7/147 | ~4718 |  |
 | 105 | `event_object_movement.c` | parcial | 9412 | 34/759 | ~8990 |  |
 
-Total: 105 archivos con huecos: 28 sin empezar, 1 adaptador, 12 casi completos y 64 parciales.
+Total: 105 archivos con huecos: 28 sin empezar, 1 adaptador, 13 casi completos y 63 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 

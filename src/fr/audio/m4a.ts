@@ -317,6 +317,7 @@ export class M4aBackend implements SoundBackend {
   private out: GainNode | null = null;
   private crySource: AudioBufferSourceNode | null = null;
   private cryGeneration = 0;
+  private cryLoading = false;
   private cryUntil = 0;
   private noiseBuffer: AudioBuffer | null = null;
   private noiseSeed = 0x1ace;
@@ -470,20 +471,29 @@ export class M4aBackend implements SoundBackend {
   playCry(species: number, mode: number): void {
     if (!this.ensure() || !this.ctx || !this.out) return;
     const generation = ++this.cryGeneration;
+    this.cryLoading = true;
     void (async () => {
-      if (!(await this.tables())) return;
+      if (!(await this.tables())) {
+        if (generation === this.cryGeneration) this.cryLoading = false;
+        return;
+      }
       const file = this.cries?.[species];
-      if (!file || !this.ctx || !this.out) return;
+      if (!file || !this.ctx || !this.out) {
+        if (generation === this.cryGeneration) this.cryLoading = false;
+        return;
+      }
       let buffer = this.buffers.get(`cry:${file}`);
       if (!buffer) {
         try {
           buffer = await this.ctx.decodeAudioData(await (await fetch(`${AUDIO_ROOT}/cries/${file}`)).arrayBuffer());
           this.buffers.set(`cry:${file}`, buffer);
         } catch {
+          if (generation === this.cryGeneration) this.cryLoading = false;
           return;
         }
       }
       if (generation !== this.cryGeneration) return;
+      this.cryLoading = false;
       // Modes are battle-move nuances; faint/weak pitch down, doubles shorten.
       const rate = mode === 5 ? 0.85 : mode === 3 ? 1.15 : 1;
       const src = this.ctx.createBufferSource();
@@ -500,13 +510,14 @@ export class M4aBackend implements SoundBackend {
   }
 
   isCryPlaying(): boolean {
-    return !!this.ctx && this.ctx.currentTime < this.cryUntil;
+    return !!this.ctx && (this.cryLoading || this.ctx.currentTime < this.cryUntil);
   }
 
   stopCry(): void {
     this.cryGeneration++;
     this.crySource?.stop();
     this.crySource = null;
+    this.cryLoading = false;
     this.cryUntil = 0;
   }
 
