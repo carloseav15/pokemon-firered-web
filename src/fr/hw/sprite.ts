@@ -912,8 +912,14 @@ export function LoadSpritePalette(palette: SpritePalette): number {
   index = IndexOfSpritePaletteTag(TAG_NONE);
   if (index === 0xff) return 0xff;
   sSpritePaletteTags[index] = palette.tag;
-  LoadPalette(palette.data, PLTT_ID(index) + OBJ_PLTT_OFFSET, PLTT_SIZE_4BPP);
+  DoLoadSpritePalette(palette.data, PLTT_ID(index));
   return index;
+}
+
+// sprite.c: DoLoadSpritePalette. C receives the palette number as a BG-relative
+// color offset; LoadPalette writes the 16-color sprite palette after OBJ_PLTT_OFFSET.
+export function DoLoadSpritePalette(src: ArrayLike<number>, paletteOffset: number): void {
+  LoadPalette(src, paletteOffset + OBJ_PLTT_OFFSET, PLTT_SIZE_4BPP);
 }
 
 export const LoadCompressedSpritePalette = LoadSpritePalette;

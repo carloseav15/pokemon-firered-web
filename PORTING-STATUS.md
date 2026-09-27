@@ -5,10 +5,21 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.234/11.826 funciones (52,7%)**,
+single-player. A 2026-09-27, la meta mide **6.235/11.826 funciones (52,7%)**,
 con **97 archivos** con huecos y una estimación ponderada de
-**~129.301/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.284/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `sprite.c`: carga de paleta OBJ (2026-09-27)
+
+- Porté `DoLoadSpritePalette(src, paletteOffset)` y conecté `LoadSpritePalette`
+  a este helper como en C. Convierte el número de paleta a offset de color OBJ
+  y carga los 16 colores (32 bytes) mediante `LoadPalette`.
+- `check:port`, `check:honesty`, build, inventory, pending y `git diff --check`
+  pasaron. No ejecuté navegador; el helper comparte la ruta ya usada por
+  `LoadPalette` y no cambia los datos ni el flujo de carga.
+- `sprite.c` queda 87/103 por nombre; global **6.235/11.826 (52,7%)**, con
+  ~129.284 líneas ponderadas sin homólogo.
 
 ## `field_door.c`: copia de tiles de animación (2026-09-27)
 

@@ -13,12 +13,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Falta (sin funciones portadas) | 28 | 23589 | 0/817 |
 | Parcial (< 80 % de funciones) | 60 | 133907 | 1310/5950 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 8 | 20213 | 611/716 |
+| Casi completo (≥ 80 % y < 100 %) | 8 | 20213 | 612/716 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 151 | 122800 | 4285/4285 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | **Pendiente de portar** | **97** | **179109** | |
-| **Total en alcance** | **253** | **303042** | **6234/11826** |
+| **Total en alcance** | **253** | **303042** | **6235/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -133,7 +133,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `battle_controller_player.c` | 2966 | 111/123 | `battle/controller_player.ts` |  |  |
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_interface.c` | 2240 | 45/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
-| `sprite.c` | 1745 | 86/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
+| `sprite.c` | 1745 | 87/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 
