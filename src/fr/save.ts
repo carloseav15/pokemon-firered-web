@@ -21,6 +21,19 @@ export type BagPocket = Array<{ item: number; quantity: number }>;
 export type PcMailEntry = { item: number; message: { words: number[]; author: number[]; authorId: number } };
 export type MailData = { words: number[]; playerName: number[]; trainerId: number[]; species: number; itemId: number };
 export type RamScriptSave = { checksum: number; data: { magic: number; mapGroup: number; mapNum: number; objectId: number; script: number[] } };
+export interface WonderNewsMetadata {
+  newsType: number;
+  sentRewardCounter: number;
+  rewardCounter: number;
+  berry: number;
+}
+export interface WonderNews {
+  id: number;
+  sendType: number;
+  bgType: number;
+  titleText: number[];
+  bodyText: number[][];
+}
 
 function emptyMailData(): MailData {
   return {
@@ -93,6 +106,9 @@ export type SaveData = {
   trainerRematches?: number[];
   roamer?: unknown;
   ramScript?: RamScriptSave;
+  wonderNewsMetadata?: WonderNewsMetadata;
+  wonderNews?: WonderNews;
+  wonderNewsCrc?: number;
   /** Browser-save representation of recorded Quest Log events. */
   questLogEvents?: Array<{
     eventId: number;
@@ -154,6 +170,7 @@ export function newSaveData(): SaveData {
     nationalDexRseMagic: 0,
     questLogEvents: [],
     ramScript: emptyRamScript(),
+    wonderNewsMetadata: { newsType: 0, sentRewardCounter: 0, rewardCounter: 0, berry: 0 },
   };
 }
 

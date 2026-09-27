@@ -14,6 +14,7 @@ import { MOVING, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER
 import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
+import { WonderNews_IncrementStepCounter } from "../wonderNews";
 import { AdjustFriendship } from "../pokemon/mon_extra";
 import { tasks } from "../gba/tasks";
 import { GetRamScript } from "../script/context";
@@ -144,6 +145,7 @@ export class FieldControl {
     if (input.tookStep) {
       incrementGameStat(rom.constants.GAME_STAT_STEPS ?? 0);
       IncrementRenewableHiddenItemStepCounter();
+      WonderNews_IncrementStepCounter();
       if (this.tryStartStepBasedScript(position, behavior, direction)) return true;
     }
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {

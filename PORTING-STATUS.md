@@ -28,6 +28,14 @@ Validación: `check:port`, `check:honesty`, `inventory`, `pending` y
 
 ## Inventario actualizado, 2026-09-26
 
+- **`wonder_news.c`: 9/9 funciones con homólogo (recompensas y control de pasos de Wonder News / Noticias Misteriosas).**
+  Implementé las 9 funciones de `wonder_news.c` en `src/fr/wonderNews.ts`: `WonderNews_SetReward`, `WonderNews_Reset`, `WonderNews_IncrementStepCounter`, `WonderNews_GetRewardInfo`, `GetRewardItem`, `ResetSentRewardCounter`, `IncrementSentRewardCounter`, `IncrementRewardCounter` y `GetRewardType`.
+  Implementé la capa de datos de guardado, serialización de 444 bytes y validación CRC16 de `mystery_gift.c` en `src/fr/mysteryGift.ts` (`GetSavedWonderNewsMetadata`, `GetSavedWonderNews`, `SaveWonderNews`, `ValidateSavedWonderNews`, `ValidateWonderNews`, `ClearSavedWonderNews`, `ClearSavedWonderNewsAndRelated`, `IsSendingSavedWonderNewsAllowed`).
+  Conecté `WonderNews_IncrementStepCounter()` al paso del jugador en `src/fr/field/fieldControl.ts` (`input.tookStep`), y `WonderNews_GetRewardInfo()` al mapa de rutinas especiales en `src/fr/script/specials.ts` (`SPECIALS.WonderNews_GetRewardInfo`).
+  Añadí el check headless `tools/checks/wonderNews.ts` (`npm run check:wonder-news`) que valida: reseteo y estructura de metadatos, rangos aleatorios de bayas recibidas (Frambu a Omel) y enviadas (Zreza a Guayaba), avance y reinicio de contador de 500 pasos al alcanzar el límite de recompensas (`MAX_REWARD`), cálculo de CRC16 y validación de noticias guardadas, y clasificación de recompensas (pequeña/grande por recibir o enviar).
+  Validación: pasan `check:wonder-news`, `check:cereader-tool`, `check:questlog-battle`, `check:battle-util`, `check:trainer-see`, `check:preview`, `check:coins`, `check:script`, `check:wild-encounter`, `check:string-util`, `check:port`, `check:honesty`, `build`, `inventory` y `pending`.
+  Cifras globales de inventario: **6.072/11.826 funciones (51,3%)**, con **108 archivos** con huecos (bajó de 109); `wonder_news.c` sale de `PENDING.md`.
+
 - **`cereader_tool.c`: 8/8 funciones con homólogo (validación y guardado de datos de la Torre Desafío e-Reader).**
   Implementé las 8 funciones de `cereader_tool.c` en `src/fr/cereaderTool.ts`: `CalcByteArraySum`, `GetTrainerHillUnkVal`, `ValidateTrainerTowerTrainer`, `ValidateTrainerTowerData`, `CEReaderTool_SaveTrainerTower_r`, `CEReaderTool_SaveTrainerTower`, `CEReaderTool_LoadTrainerTower_r`, `CEReaderTool_LoadTrainerTower` y el stub original de FireRed `ReadTrainerTowerAndValidate`.
   Conecté `ReadTrainerTowerAndValidate` al despachador de scripts de eventos en `src/fr/script/specials.ts` (`SPECIALS.ReadTrainerTowerAndValidate`).

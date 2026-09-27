@@ -38,7 +38,8 @@
     "check:trainer-see": "esbuild tools/checks/trainerSee.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/trainerSee.mjs && node .decomp-build/checks/trainerSee.mjs",
     "check:battle-util": "esbuild tools/checks/battleUtil.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/battleUtil.mjs && node .decomp-build/checks/battleUtil.mjs",
     "check:questlog-battle": "esbuild tools/checks/questLogBattle.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/questLogBattle.mjs && node .decomp-build/checks/questLogBattle.mjs",
-    "check:cereader-tool": "esbuild tools/checks/cereaderTool.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/cereaderTool.mjs && node .decomp-build/checks/cereaderTool.mjs"
+    "check:cereader-tool": "esbuild tools/checks/cereaderTool.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/cereaderTool.mjs && node .decomp-build/checks/cereaderTool.mjs",
+    "check:wonder-news": "esbuild tools/checks/wonderNews.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/wonderNews.mjs && node .decomp-build/checks/wonderNews.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

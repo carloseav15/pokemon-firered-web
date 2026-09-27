@@ -26,6 +26,7 @@ import { SetUnlockedPokedexFlags } from "../pokemon/saveLocation";
 import { GetMonsStateToDoubles } from "../pokemon/scriptPokemonUtil";
 import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/specialFieldAnim";
 import { ReadTrainerTowerAndValidate } from "../cereaderTool";
+import { WonderNews_GetRewardInfo } from "../wonderNews";
 
 type Special = (ctx: ScriptRunner) => number | void;
 
@@ -267,7 +268,7 @@ export const SPECIALS: Record<string, Special> = {
   ValidateEReaderTrainer: () => 1,
   GetMysteryGiftCardStat: () => 0,
   ValidateSavedWonderCard: () => 0,
-  WonderNews_GetRewardInfo: () => 0,
+  WonderNews_GetRewardInfo: () => WonderNews_GetRewardInfo(),
   CheckAddCoins: () => (save.coins + varGet(SV.x8006) <= items.MAX_COINS ? 1 : 0),
   GetRandomSlotMachineId: () => {
     const indices = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5];

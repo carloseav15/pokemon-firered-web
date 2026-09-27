@@ -11,14 +11,14 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 29 | 23735 | 0/820 |
-| Parcial (< 80 % de funciones) | 66 | 137215 | 1378/6150 |
+| Parcial (< 80 % de funciones) | 65 | 137061 | 1385/6141 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 13 | 27469 | 897/1045 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 139 | 112090 | 3753/3753 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 140 | 112244 | 3762/3762 |
 | Solo datos (exportados a cdata) | 5 | 1133 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
-| **Pendiente de portar** | **109** | **189819** | |
-| **Total en alcance** | **253** | **303042** | **6056/11826** |
+| **Pendiente de portar** | **108** | **189665** | |
+| **Total en alcance** | **253** | **303042** | **6072/11826** |
 
 ## Falta (sin funciones portadas)
 
@@ -117,13 +117,12 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `string_util.c` | 726 | 23/40 | `gba/charmap.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
 | `sound.c` | 649 | 38/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
-| `mystery_gift.c` | 634 | 1/45 |  |  |  |
+| `mystery_gift.c` | 634 | 9/45 | `mysteryGift.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
 | `field_door.c` | 524 | 0/21 | `field/doors.ts` |  |  |
 | `wireless_communication_status_screen.c` | 522 | 1/12 |  |  |  |
 | `main.c` | 494 | 20/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 | `mystery_event_script.c` | 322 | 0/25 | `script/specialsExtra.ts` |  |  |
-| `wonder_news.c` | 154 | 1/9 |  |  |  |
 
 ## Adaptador (UI simplificada)
 
@@ -260,6 +259,7 @@ Las categorías cubierto/adaptador salen de las tablas del script.
 | `pokemon_storage_system.c` | 171 | 21/21 | `pokemon/storage.ts` |  |  |
 | `new_game.c` | 160 | 11/11 | `game.ts`, `random.ts`, `save.ts` |  |  |
 | `gpu_regs.c` | 158 | 11/11 | `hw/gpu.ts` |  |  |
+| `wonder_news.c` | 154 | 9/9 | `wonderNews.ts` |  |  |
 | `quest_log_battle.c` | 150 | 3/3 | `questLogBattle.ts` |  |  |
 | `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
 | `field_message_box.c` | 142 | 14/14 | `field/messageBox.ts` |  |  |
