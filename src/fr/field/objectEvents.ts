@@ -198,6 +198,16 @@ export function ObjectEventClearHeldMovementIfActive(objectEvent: ObjectEvent): 
   if (objectEvent.heldMovementActive) ObjectEventClearHeldMovement(objectEvent);
 }
 
+/** event_object_movement.c ObjectEventIsMovementOverridden. */
+export function ObjectEventIsMovementOverridden(objectEvent: ObjectEvent): boolean {
+  return objectEvent.singleMovementActive || objectEvent.heldMovementActive;
+}
+
+/** event_object_movement.c ObjectEventIsHeldMovementActive. */
+export function ObjectEventIsHeldMovementActive(objectEvent: ObjectEvent): boolean {
+  return objectEvent.heldMovementActive && objectEvent.movementActionId !== MOVEMENT_ACTION_NONE;
+}
+
 /** event_object_movement.c IncrementObjectEventCoords (unused by the C callers). */
 export function IncrementObjectEventCoords(objectEvent: ObjectEvent, x: number, y: number): void {
   const oldX = (objectEvent.currentCoords.x << 16) >> 16;
@@ -725,12 +735,16 @@ export class ObjectEvents {
   // ---------------------------------------------------------------- held movement API
 
   isMovementOverridden(object: ObjectEvent): boolean {
-    return object.singleMovementActive || object.heldMovementActive;
+    return ObjectEventIsMovementOverridden(object);
+  }
+
+  isHeldMovementActive(object: ObjectEvent): boolean {
+    return ObjectEventIsHeldMovementActive(object);
   }
 
   /** ObjectEventSetHeldMovement: returns true if it could not be set. */
   setHeldMovement(object: ObjectEvent, actionId: number): boolean {
-    if (this.isMovementOverridden(object)) return true;
+    if (ObjectEventIsMovementOverridden(object)) return true;
     this.unfreeze(object);
     object.movementActionId = actionId;
     object.heldMovementActive = true;
@@ -806,9 +820,9 @@ export class ObjectEvents {
       const sprite = object.sprite;
       if (object.isPlayer) {
         // Player movement type is driven by field_player_avatar.
-        if (object.heldMovementActive && !object.heldMovementFinished) this.execHeld(object);
+        if (ObjectEventIsHeldMovementActive(object) && !object.heldMovementFinished) this.execHeld(object);
       } else if (!object.frozen) {
-        if (object.heldMovementActive) {
+        if (ObjectEventIsHeldMovementActive(object)) {
           if (!object.heldMovementFinished) this.execHeld(object);
         } else {
           this.runMovementType(object);

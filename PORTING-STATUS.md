@@ -5,10 +5,27 @@ systems. The first playable route is a milestone, not the completion criterion.
 
 El 2026-09-26 amplié el inventario: ahora incluye 46 archivos C de enlace,
 e-Reader, minijuegos y otros sistemas que antes se excluían por el alcance
-single-player. A 2026-09-27, la meta mide **6.220/11.826 funciones (52,6%)**,
+single-player. A 2026-09-27, la meta mide **6.222/11.826 funciones (52,6%)**,
 con **98 archivos** con huecos y una estimación ponderada de
-**~129.501/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
+**~129.476/303.042 líneas C (42,7%)** pendientes. La coincidencia por nombre
 sigue sin demostrar fidelidad.
+
+## `event_object_movement.c`: estados de movimiento retenido (2026-09-27)
+
+- Porté `ObjectEventIsMovementOverridden` y `ObjectEventIsHeldMovementActive`.
+  Los métodos TS previos delegan ahora en esos predicados fuente. El update por
+  frame consulta `ObjectEventIsHeldMovementActive`, que exige tanto
+  `heldMovementActive` como una acción distinta de `MOVEMENT_ACTION_NONE`,
+  antes de ejecutar la acción retenida.
+- En navegador comprobé tres combinaciones sobre un objeto temporal: activo
+  con acción NONE da `(overridden=true, heldActive=false)`; activo con acción 7
+  da `(true,true)`; inactivo da `(false,false)`. El juego continuó en la casa
+  de Pallet. Pasaron `check:port`, `check:honesty`, build, inventory, pending y
+  `git diff --check`; no probé un movimiento visible de historia.
+- `event_object_movement.c` queda 66/759 por nombre; global **6.222/11.826
+  (52,6%)**, con ~129.476 líneas ponderadas sin homólogo. Los predicados ya
+  están integrados, aunque Quest Log mantiene aún una diferencia separada en
+  `ObjectEventSetHeldMovement`.
 
 ## `event_object_movement.c`: limpiar movimiento retenido (2026-09-27)
 
