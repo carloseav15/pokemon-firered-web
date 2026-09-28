@@ -28,6 +28,7 @@ import { REG_OFFSET_WIN0H } from "../hw/ppu";
 import { MapNamePopup } from "./mapNamePopup";
 import { MapPreviewManager, MapHasPreviewScreen, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST, CB2_DoChangeMap } from "../mapPreviewScreen";
 import { ScriptContext } from "../script/context";
+import { FieldCB_ShowPortholeView } from "../script/specials";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
 import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer";
@@ -1663,6 +1664,15 @@ export class Overworld {
 
   private startTeleport2WarpTask(): void {
     tasks.create((taskId) => this.Task_Teleport2Warp(taskId), 10);
+  }
+
+  /** DoPortholeWarp (field_fadetransition.c): unused in FRLG (SS Tidal's porthole is Hoenn-only);
+   * FieldCB_ShowPortholeView is empty in the source too. */
+  DoPortholeWarp(): void {
+    this.LockPlayerFieldControls();
+    this.warpFadeOutScreen();
+    this.startTeleport2WarpTask();
+    this.fieldCallback = FieldCB_ShowPortholeView;
   }
 
   /** Task_Teleport2Warp (field_fadetransition.c). */

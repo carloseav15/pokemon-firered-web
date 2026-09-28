@@ -148,7 +148,7 @@ function FieldSpecialScene_Dummy0(): number { return 0; }
 function FieldSpecialScene_Dummy1(): void {}
 function FieldSpecialScene_Dummy2(): void {}
 function FieldSpecialScene_Dummy3(): void {}
-function FieldCB_ShowPortholeView(): void {}
+export function FieldCB_ShowPortholeView(): void {}
 
 /** SetUsedPkmnCenterQuestLogEvent (field_specials.c): this event has no payload. */
 function SetUsedPkmnCenterQuestLogEvent(): void {
