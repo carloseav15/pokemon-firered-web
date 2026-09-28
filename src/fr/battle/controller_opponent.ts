@@ -18,7 +18,7 @@ import {
   BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues, gUnusedControllerStruct,
   BUFFER_B, decodeChooseMoveStruct, decodeHpAndStatus,
 } from "./controllers";
-import { HandleGetMonData, HandleSetMonData } from "./mon_transfer";
+import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
 import { SpriteCB_FaintOpponentMon } from "./main_init";
 import { GetMonData, gEnemyParty } from "../pokemon/mon";
 import {
@@ -307,14 +307,24 @@ function CompleteOnFinishedBattleAnimation(): void {
 }
 
 function OpponentHandleGetMonData(): void {
-  const [data, size] = HandleGetMonData(enemy);
+  const [data, size] = HandleGetMonData(enemy, (monId, dst, offset) => GetOpponentMonData(monId, dst, offset));
   BtlController_EmitDataTransfer(BUFFER_B, size, data);
   OpponentBufferExecCompleted();
 }
 
+/** GetOpponentMonData (battle_controller_opponent.c): copy the requested opponent fields to the transfer buffer. */
+function GetOpponentMonData(monId: number, dst: Uint8Array, offset: number): number {
+  return CopyMonData(enemy(monId), gBattleBufferA[G.gActiveBattler][1], dst, offset);
+}
+
 function OpponentHandleSetMonData(): void {
-  HandleSetMonData(enemy);
+  HandleSetMonData(enemy, (monId) => SetOpponentMonData(monId));
   OpponentBufferExecCompleted();
+}
+
+/** SetOpponentMonData (battle_controller_opponent.c): apply the active request to the selected opponent-party member. */
+function SetOpponentMonData(monId: number): void {
+  SetMonDataFromBuffer(enemy(monId));
 }
 
 function OpponentHandleLoadMonSprite(): void {
