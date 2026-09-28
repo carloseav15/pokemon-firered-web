@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 46 | 102211 | 1806/4515 |
+| Parcial (< 80 % de funciones) | 44 | 98475 | 1775/4355 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 7 | 14862 | 534/597 |
+| Casi completo (≥ 80 % y < 100 %) | 9 | 18598 | 690/757 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 154 | 133454 | 4875/4875 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **55** | **119903** | |
-| **Total en alcance** | **211** | **253703** | **7243/10115** |
+| **Total en alcance** | **211** | **253703** | **7368/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -53,12 +53,10 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
 | `battle_ai_script_commands.c` | 1970 | 25/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
-| `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
-| `battle_controller_opponent.c` | 1777 | 57/87 | `battle/controller_opponent.ts` |  |  |
 | `quest_log.c` | 1767 | 13/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
-| `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
+| `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |  |
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
@@ -67,17 +65,17 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `script_menu.c` | 1341 | 5/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
 | `vs_seeker.c` | 1326 | 12/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
 | `title_screen.c` | 1315 | 2/39 | `introTitle.ts` |  |  |
-| `field_control_avatar.c` | 1182 | 21/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` |  |  |
+| `field_control_avatar.c` | 1182 | 26/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
-| `battle_setup.c` | 1070 | 26/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
+| `battle_setup.c` | 1070 | 34/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
 | `berry.c` | 1028 | 5/9 | `pokemon/berry.ts`, `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
-| `field_fadetransition.c` | 965 | 16/59 | `field/overworld.ts` |  |  |
+| `field_fadetransition.c` | 965 | 39/59 | `field/overworld.ts` |  |  |
 | `fieldmap.c` | 951 | 5/54 | `field/fieldmap.ts` |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
-| `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
+| `mail.c` | 734 | 2/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
-| `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
+| `battle_controller_safari.c` | 669 | 55/72 | `battle/controller_safari.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
 
 ## Adaptador (UI simplificada)
@@ -92,10 +90,12 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 |---|---:|---:|---|---|---:|
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
-| `item_menu.c` | 2397 | 103/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
-| `sprite.c` | 1745 | 100/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
+| `item_menu.c` | 2397 | 105/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
+| `trainer_card.c` | 1959 | 63/73 | `menus/trainerCard.ts` |  |  |
+| `battle_controller_opponent.c` | 1777 | 82/87 | `battle/controller_opponent.ts` |  |  |
+| `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
-| `item_use.c` | 925 | 61/73 | `bagMenu.ts`, `battle/ext.ts`, `field/vsSeeker.ts` … |  |  |
+| `item_use.c` | 925 | 69/73 | `bagMenu.ts`, `battle/ext.ts`, `field/vsSeeker.ts` … |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)

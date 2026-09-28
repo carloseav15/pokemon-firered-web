@@ -1,8 +1,7 @@
-Modo: tanda por archivo/familia; meta principal de un jugador. Enlace e inalámbrico quedan aparte.
-Siguiente: terminar `item_use.c` (61/73); quedan callbacks de framework, Teachy TV y Sacred Ash de batalla (sin caller activo).
-Bloqueo: `berry.c` Enigma depende del payload Mystery Gift fuera de alcance y de representar punteros/layout GBA para validar su checksum.
-Después: `item_menu.c` (103/116); Teachy TV y la bolsa Pokedude siguen como adaptadores parciales.
-Validación diferida: recorrido de navegador de las pantallas en PENDING; sin afirmar paridad runtime.
-Entrega (2026-09-28): callbacks de party y Vs Seeker de `item_use.c`; callbacks de submenús y entrada a bolsa de `item_menu.c`.
-Conteo: 7.243/10.115 (71,6 %), +22 frente al último estado registrado; incluye funciones nuevas y equivalencias con nombre C.
-`check:port`, `check:honesty`, build y `git diff --check` pasaron en cada tanda; no hubo recorrido de navegador.
+Modo: tandas integradas por archivo/familia; meta principal de un jugador. Enlace e inalámbrico quedan aparte.
+Siguiente: `item_use.c` (69/73); revisar los tres callbacks de retorno a campo, además de `BattleUseFunc_SacredAsh` sin caller activo.
+Bloqueos: `sprite.c` `CopyFromSprites`/`CopyToSprites` serializan el layout C de `struct Sprite` sin callers; `battle_controller_player.c` solo tiene pendiente el callback LINK.
+Validación diferida: recorridos de navegador e historia; no afirmar paridad runtime. Teachy TV sigue como adaptador.
+Entrega (2026-09-28): estados de warp/puerta de `field_fadetransition.c` conectados a callbacks nombrados y `data[]` de tasks.
+Conteo: 7.368/10.115 (72,8 %), +125 desde el estado registrado; mezcla trabajo nuevo y equivalencias.
+`check:port`, `check:honesty`, build y `git diff --check` pasaron para la tanda; build conserva avisos previos de chunks/imports. Sin navegador.
