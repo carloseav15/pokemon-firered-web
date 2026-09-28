@@ -234,7 +234,7 @@ export class FieldControl {
       position = this.GetPlayerPosition();
       behavior = this.ow.map.behaviorAt(position.x, position.y);
     }
-    if (input.checkStandardWildEncounter && this.ow.effects.tryStandardWildEncounter(attributes)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
+    if (input.checkStandardWildEncounter && this.CheckStandardWildEncounter(attributes)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
     if (input.heldDirection && input.dpadDirection === direction && this.TryArrowWarp(position, behavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
 
     const front = this.GetInFrontOfPlayerPosition();
@@ -405,6 +405,11 @@ export class FieldControl {
   }
 
   // ---------------------------------------------------------------- step events
+
+  /** CheckStandardWildEncounter (field_control_avatar.c). */
+  private CheckStandardWildEncounter(metatileAttributes: number): boolean {
+    return this.ow.effects.tryStandardWildEncounter(metatileAttributes);
+  }
 
   /** TryStartStepBasedScript (field_control_avatar.c). */
   private TryStartStepBasedScript(position: { x: number; y: number; elevation: number }, behavior: number, _direction: number): boolean {

@@ -23,7 +23,7 @@ import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, In
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
 import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
-import { WildEncounter } from "./field/wildEncounter";
+import { RestartWildEncounterImmunitySteps, WildEncounter } from "./field/wildEncounter";
 import { InitPlayerTrainerId, takeWildEncounterSeed } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { healMon } from "./pokemon/pokemon";
@@ -937,7 +937,7 @@ export class Game {
           : getWildBattleTransition(ow, request.enemyParty);
         this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
           // battle_setup.c Task_BattleStart resets encounter cooldowns after the transition completes.
-          this.wild.resetEncounterRateModifiers();
+          RestartWildEncounterImmunitySteps();
           ow.control.ClearPoisonStepCounter();
           if (this.battleRunner) {
             this.scene = this.battleRunner(request);

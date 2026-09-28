@@ -12,6 +12,7 @@ import { flagClear, flagGet, save, varGet, varSet } from "../save";
 import { actionWalkInPlaceNormal, actionWalkSlower, DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, graphicsInfo, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { FieldMoveEffects } from "./fieldMoves";
+import { RestartWildEncounterImmunitySteps } from "./wildEncounter";
 import { DoPoisonFieldEffect } from "./poison";
 import { SafariZoneTakeStep } from "./safariZone";
 import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
@@ -1206,7 +1207,7 @@ export class FieldEffects {
   // ---------------------------------------------------------------- step counters & encounters
 
   resetEncounterImmunity(): void {
-    this.ow.game.wild?.resetEncounterRateModifiers();
+    RestartWildEncounterImmunitySteps();
     this.encounterImmunitySteps = 0;
     this.previousMetatileBehavior = 0;
   }

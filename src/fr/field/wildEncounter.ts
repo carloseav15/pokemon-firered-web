@@ -290,6 +290,11 @@ export function ResetEncounterRateModifiers(): void {
   sWildEncounterData.stepsSinceLastEncounter = 0;
 }
 
+/** RestartWildEncounterImmunitySteps (field_control_avatar.c). */
+export function RestartWildEncounterImmunitySteps(): void {
+  ResetEncounterRateModifiers();
+}
+
 export function AddToWildEncounterRateBuff(encounterRate: number): void {
   if (varGet(C.VAR_REPEL_STEP_COUNT) === 0)
     sWildEncounterData.encounterRateBuff = (sWildEncounterData.encounterRateBuff + encounterRate) & 0xFFFF;
@@ -690,10 +695,6 @@ export class WildEncounter {
 
   seed(value: number): void {
     SeedWildEncounterRng(value);
-  }
-
-  resetEncounterRateModifiers(): void {
-    ResetEncounterRateModifiers();
   }
 
   tryStandardWildEncounter(attributes: number): boolean {
