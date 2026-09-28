@@ -13,6 +13,7 @@ import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { bagResult, GoToBagMenu, RemoveUsedItem, type BagHandlers, type BagTaskContext } from "../bagMenu";
 import { InitTMCase } from "../tmCase";
 import { InitBerryPouch } from "../berryPouch";
+import { StopPokemonLeagueLightingEffectTask } from "../field/leagueLighting";
 import {
   CB2_ChooseMonToGiveItem, CB2_PartyMenuFromStartMenu, CB2_ShowPartyMenuForItemUse, ItemUseCB_EvolutionStone, ItemUseCB_Medicine, ItemUseCB_PPUp,
   ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, GetItemEffectType, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
@@ -471,6 +472,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
     });
     const onFieldItemReturn = (cb: () => void): void => leave(() => {
       post = () => {
+        StopPokemonLeagueLightingEffectTask();
         SetFieldCallback2ForItemUse(game);
         const fieldCallback2 = game.overworld.fieldCallback2;
         if (fieldCallback2?.()) {

@@ -37,6 +37,7 @@ import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
 import { InUnionRoom } from "./unionRoom";
 import { FieldWeather } from "./field/weather";
+import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
 import { openPlayerPc } from "./menus/playerPc";
 import { CreateHelpMessageWindow, DestroyHelpMessageWindow, DrawHelpMessageWindowWithText, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
@@ -566,19 +567,22 @@ export class Game {
 
   /** CB2_OpenPokedexFromStartMenu; CB2_ClosePokedex returns with CB2_ReturnToFieldWithOpenMenu. */
   openPokedex(): void {
+    StopPokemonLeagueLightingEffectTask();
     this.removeStartMenuWindows();
     fieldMenu(this, (close) => openPokedexScreen(() => { close(); this.showStartMenu(); }), false);
   }
   openTrainerCard(): void {
+    StopPokemonLeagueLightingEffectTask();
     this.removeStartMenuWindows();
     fieldMenu(this, (close) => openTrainerCardScreen(() => close()));
   }
 
-  openPartyMenu(): void { this.removeStartMenuWindows(); openFieldParty(this); }
-  openBag(): void { CB2_BagMenuFromStartMenu(this, () => this.removeStartMenuWindows()); }
+  openPartyMenu(): void { StopPokemonLeagueLightingEffectTask(); this.removeStartMenuWindows(); openFieldParty(this); }
+  openBag(): void { StopPokemonLeagueLightingEffectTask(); CB2_BagMenuFromStartMenu(this, () => this.removeStartMenuWindows()); }
 
   /** CB2_OptionsMenuFromStartMenu; savedCallback CB2_ReturnToFieldWithOpenMenu reopens the start menu. */
   openOptions(): void {
+    StopPokemonLeagueLightingEffectTask();
     this.removeStartMenuWindows();
     fieldMenu(this, (close) => openOptionMenu(() => { close(); this.showStartMenu(); }), false);
   }

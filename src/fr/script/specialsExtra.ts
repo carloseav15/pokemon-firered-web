@@ -18,7 +18,8 @@ import { rom } from "../rom";
 import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "../save";
 import { Sprite } from "../gba/sprite";
 import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
-import { rgb555, spriteSheet } from "../field/gfx4bpp";
+import { DoPokemonLeagueLightingEffect } from "../field/leagueLighting";
+import { spriteSheet } from "../field/gfx4bpp";
 import { adjustFriendship, getDexFlag, GetPlayerTrainerId, leadMonIndex, nickname, speciesName, type Pokemon } from "../pokemon/pokemon";
 import { GetPokedexHeightWeight } from "../battle/ext";
 import { setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005 } from "../menus/keyItemScreens";
@@ -668,40 +669,6 @@ function SampleResortGorgeousReward(): number {
   return rewards[random() % rewards.length]!;
 }
 
-// ---------------------------------------------------------------- Pokémon League lighting
-
-let leagueTask = -1;
-function leagueLighting(ctx: ScriptRunner): void {
-  const ow = ctx.ow;
-  const champion = mapIs("MAP_POKEMON_LEAGUE_CHAMPIONS_ROOM");
-  const palettes = incbinU16(champion ? "sChampionRoomLightingPalettes" : "sEliteFourLightingPalettes");
-  const timers = cdata<number[]>("field_specials", champion ? "sChampionRoomLightingTimers" : "sEliteFourLightingTimers");
-  const count = champion ? 8 : 11;
-  const apply = (i: number): void => {
-    const colors = Array.from(palettes.subarray(i * 16, i * 16 + 16), (c) => rgb555(c));
-    ow.renderer?.setPalette(7, colors);
-  };
-  if (leagueTask >= 0) tasks.destroy(leagueTask);
-  if (flagGet(C.FLAG_TEMP_3)) {
-    leagueTask = tasks.create(() => {
-      if (!flagGet(C.FLAG_TEMP_4)) return;
-      apply(champion ? 8 : 11);
-      tasks.destroy(leagueTask);
-      leagueTask = -1;
-    }, 8);
-    return;
-  }
-  let d0 = timers[0], d1 = 0;
-  apply(0);
-  leagueTask = tasks.create(() => {
-    if (!flagGet(C.FLAG_TEMP_2) || flagGet(C.FLAG_TEMP_5)) return;
-    if (--d0 !== 0) return;
-    if (++d1 === count) d1 = 0;
-    d0 = timers[d1];
-    apply(d1);
-  }, 8);
-}
-
 // ---------------------------------------------------------------- museum fossil pic (script_menu.c)
 
 let fossilPic: { window: Window; sprite: Sprite; state: number } | undefined;
@@ -877,7 +844,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   GetPCBoxToSendMon: () => GetPCBoxToSendMon(),
   // cutscenes and field animations
   DoSSAnneDepartureCutscene: (ctx) => { ssAnneDeparture(ctx); },
-  DoPokemonLeagueLightingEffect: (ctx) => { leagueLighting(ctx); },
+  DoPokemonLeagueLightingEffect: () => DoPokemonLeagueLightingEffect(),
   LoopWingFlapSound: () => { LoopWingFlapSound(); },
   DoFallWarp: (ctx) => { ctx.ow.doFallWarp(); },
   OpenMuseumFossilPic: (ctx) => {
