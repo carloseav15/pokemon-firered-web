@@ -16,7 +16,7 @@ import { cdata, incbin } from "../hw/assets";
 import { DATA_ROOT, rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, varSet, SV } from "../save";
 import { stringVars } from "../gba/charmap";
-import { SetWeatherScreenFadeOut, WeatherProcessingIdle } from "./weather";
+import { IsWeatherNotFadingIn, SetWeatherScreenFadeOut, WeatherProcessingIdle } from "./weather";
 import { canvas, rgb555, spriteSheet, tilemapCanvas } from "./gfx4bpp";
 import { MAP_OFFSET, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
@@ -669,40 +669,119 @@ export class FieldMoveEffects {
 
   /** CreateTeleportFieldEffectTask (TeleportFieldEffectTask1-4) */
   startTeleport(): void {
-    const ow = this.ow;
-    const p = ow.player.object;
-    ow.controlsLocked = true;
-    ow.objects.freezeAll();
-    const facing = p.facingDirection;
-    let state = 1, d1 = 0, d2 = 0, d3 = 0, d4 = 0;
-    const spinA = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH]; // [NONE,S,N,W,E] → S,W,E? see teleport table
-    const id = tasks.create(() => {
-      switch (state) {
-        case 1: {
-          const table = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
-          if (d1 === 0 || --d1 === 0) { ow.objects.turn(p, table[p.facingDirection]); d1 = 8; d2++; }
-          if (d2 > 7 && facing === p.facingDirection) { state = 2; d1 = 4; d2 = 8; d3 = 1; sound.playSE(C.SE_WARP_IN); }
-          break;
-        }
-        case 2:
-          if (--d1 <= 0) { d1 = 4; ow.objects.turn(p, spinA[p.facingDirection]); }
-          // field_effect.c TeleportFieldEffectTask3 raises sprite->y directly.
-          p.sprite.y -= d3;
-          d4 += d3;
-          if (--d2 <= 0) { d2 = 4; if (d3 < 8) d3 <<= 1; }
-          if (d4 > 8) p.sprite.priority = 1;
-          if (d4 >= 0xa8) { state = 3; ow.tryFadeOutOldMapMusic(); ow.warpFadeOutScreen(); }
-          break;
-        case 3:
-          if (!paletteFade.active && sound.isBGMPausedOrStopped()) {
-            ow.setWarpDestinationToLastHealLocation();
-            ow.fieldCallback = () => ow.fieldCBTeleportWarpIn();
-            tasks.destroy(id);
-            ow.warpIntoMapAndLoad();
-          }
-          break;
+    this.CreateTeleportFieldEffectTask();
+  }
+
+  private teleportFieldTaskId = -1;
+  private teleportFieldTaskData = new Array<number>(16).fill(0);
+  private teleportInTaskId = -1;
+  private teleportInTaskData = new Array<number>(16).fill(0);
+
+  /** CreateTeleportFieldEffectTask (field_effect.c). */
+  CreateTeleportFieldEffectTask(): void {
+    this.teleportFieldTaskData = new Array<number>(16).fill(0);
+    this.teleportFieldTaskId = tasks.create(() => this.Task_DoTeleportFieldEffect(), 0);
+  }
+
+  /** Task_DoTeleportFieldEffect (field_effect.c). */
+  private Task_DoTeleportFieldEffect(): void {
+    switch (this.teleportFieldTaskData[0]) {
+      case 0: this.TeleportFieldEffectTask1(); break;
+      case 1: this.TeleportFieldEffectTask2(); break;
+      case 2: this.TeleportFieldEffectTask3(); break;
+      case 3: this.TeleportFieldEffectTask4(); break;
+    }
+  }
+
+  private TeleportFieldEffectTask1(): void {
+    this.ow.controlsLocked = true;
+    this.ow.objects.freezeAll();
+    this.teleportFieldTaskData[15] = this.ow.player.object.facingDirection;
+    this.teleportFieldTaskData[0]++;
+  }
+
+  private TeleportFieldEffectTask2(): void {
+    const d = this.teleportFieldTaskData, p = this.ow.player.object;
+    const spin = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
+    if (d[1] === 0 || --d[1] === 0) { this.ow.objects.turn(p, spin[p.facingDirection] ?? DIR_SOUTH); d[1] = 8; d[2]++; }
+    if (d[2] > 7 && d[15] === p.facingDirection) {
+      d[0]++; d[1] = 4; d[2] = 8; d[3] = 1; sound.playSE(C.SE_WARP_IN);
+    }
+  }
+
+  private TeleportFieldEffectTask3(): void {
+    const d = this.teleportFieldTaskData, p = this.ow.player.object, sprite = p.sprite;
+    const spin = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
+    if (--d[1] <= 0) { d[1] = 4; this.ow.objects.turn(p, spin[p.facingDirection] ?? DIR_SOUTH); }
+    sprite.y -= d[3]; d[4] += d[3];
+    if (--d[2] <= 0) { d[2] = 4; if (d[3] < 8) d[3] <<= 1; }
+    if (d[4] > 8) { sprite.priority = 1; if (sprite.subspriteMode !== C.SUBSPRITES_OFF) sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY; }
+    if (d[4] >= 0xa8) { d[0]++; this.ow.tryFadeOutOldMapMusic(); this.ow.warpFadeOutScreen(); }
+  }
+
+  private TeleportFieldEffectTask4(): void {
+    if (!paletteFade.active && sound.isBGMPausedOrStopped()) {
+      this.ow.setWarpDestinationToLastHealLocation();
+      this.ow.fieldCallback = () => this.FieldCallback_TeleportIn();
+      tasks.destroy(this.teleportFieldTaskId);
+      this.ow.warpIntoMapAndLoad();
+    }
+  }
+
+  /** FieldCallback_TeleportIn (field_effect.c). */
+  private FieldCallback_TeleportIn(): void {
+    this.ow.playSpecialMapMusic(); this.ow.warpFadeInScreen();
+    this.ow.controlsLocked = true; this.ow.objects.freezeAll();
+    this.ow.player.SetPlayerInvisibility(true);
+    this.teleportInTaskData = new Array<number>(16).fill(0);
+    this.teleportInTaskId = tasks.create(() => this.Task_DoTeleportInFieldEffect(), 0);
+  }
+
+  /** Task_DoTeleportInFieldEffect and TeleportInFieldEffectTask1-3 (field_effect.c). */
+  private Task_DoTeleportInFieldEffect(): void {
+    switch (this.teleportInTaskData[0]) {
+      case 0: this.TeleportInFieldEffectTask1(); break;
+      case 1: this.TeleportInFieldEffectTask2(); break;
+      case 2: this.TeleportInFieldEffectTask3(); break;
+    }
+  }
+
+  /** TeleportInFieldEffectTask1 (field_effect.c). */
+  private TeleportInFieldEffectTask1(): void {
+    const d = this.teleportInTaskData, p = this.ow.player.object, sprite = p.sprite;
+    if (!IsWeatherNotFadingIn()) return;
+    const center = sprite.centerToCornerVecY;
+    sprite.y2 = -(sprite.y - this.ow.camY - center);
+    this.ow.player.SetPlayerInvisibility(false);
+    d[0]++; d[1] = 8; d[2] = 1; d[14] = sprite.subspriteMode; d[15] = p.facingDirection;
+    sound.playSE(C.SE_WARP_IN);
+  }
+
+  /** TeleportInFieldEffectTask2 (field_effect.c). */
+  private TeleportInFieldEffectTask2(): void {
+    const d = this.teleportInTaskData, p = this.ow.player.object, sprite = p.sprite;
+    const spin = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
+    if (d[0] === 1) {
+      sprite.y2 += d[1];
+      if (sprite.y2 >= -8) {
+        if (d[13] === 0) { d[13]++; p.triggerGroundEffectsOnMove = true; sprite.subspriteMode = d[14]; }
+      } else { sprite.priority = 1; if (sprite.subspriteMode !== C.SUBSPRITES_OFF) sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY; }
+      if (sprite.y2 >= -0x30 && d[1] > 1 && !(sprite.y2 & 1)) d[1]--;
+      if (--d[2] === 0) { d[2] = 4; this.ow.objects.turn(p, spin[p.facingDirection] ?? DIR_SOUTH); }
+      if (sprite.y2 >= 0) { sprite.y2 = 0; d[0]++; d[1] = 1; d[2] = 0; }
+    }
+  }
+
+  /** TeleportInFieldEffectTask3 (field_effect.c). */
+  private TeleportInFieldEffectTask3(): void {
+    const d = this.teleportInTaskData, p = this.ow.player.object;
+    const spin = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
+    if (--d[1] === 0) {
+      this.ow.objects.turn(p, spin[p.facingDirection] ?? DIR_SOUTH); d[1] = 8;
+      if (++d[2] > 4 && d[14] === p.facingDirection) {
+        this.ow.objects.unfreezeAll(); this.ow.controlsLocked = false; tasks.destroy(this.teleportInTaskId);
       }
-    }, 0);
+    }
   }
 
   // ---------------------------------------------------------------- pokecenter / hall of fame
