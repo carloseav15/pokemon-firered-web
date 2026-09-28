@@ -13,9 +13,9 @@ import { FONT_NORMAL } from "../gba/font";
 import { expandPlaceholders } from "../gba/charmap";
 import { TextPrinter, textFlags } from "../gba/textPrinter";
 import { sound } from "../audio/sound";
-import { rom, type MapHeader, type MapObjectTemplate } from "../rom";
+import { rom, type MapConnection, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
-import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
+import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_DIVE, CONNECTION_EAST, CONNECTION_EMERGE, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
 import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
@@ -55,6 +55,12 @@ function SetPositionFromConnection(connection: LoadedConnection, direction: numb
   save.pos.x = (save.pos.x << 16) >> 16;
   save.pos.y = (save.pos.y << 16) >> 16;
 }
+
+/** CONNECTION_* (fieldmap.c) numeric direction -> the string direction MapConnection.direction uses. */
+const CONNECTION_DIRECTION_NAMES: Record<number, MapConnection["direction"]> = {
+  [CONNECTION_SOUTH]: "down", [CONNECTION_NORTH]: "up", [CONNECTION_WEST]: "left",
+  [CONNECTION_EAST]: "right", [CONNECTION_DIVE]: "dive", [CONNECTION_EMERGE]: "emerge",
+};
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -394,6 +400,43 @@ export class Overworld {
   SetWarpDestinationToFixedHoleWarp(x: number, y: number): void {
     if (isDummyWarp(this.fixedHoleWarp)) this.warpDestination = { ...this.lastUsedWarp };
     else this.SetWarpDestination(this.fixedHoleWarp.mapGroup, this.fixedHoleWarp.mapNum, -1, x, y);
+  }
+
+  /** SetWarpDestinationToDiveWarp (overworld.c). */
+  private SetWarpDestinationToDiveWarp(): void {
+    this.warpDestination = { ...this.fixedDiveWarp };
+  }
+
+  /** GetMapConnection (overworld.c): dir uses the CONNECTION_* numeric constants from fieldmap.ts;
+   * this port's MapConnection stores a direction name and a single map id (see rom.ts) instead of
+   * a numeric direction and a mapGroup/mapNum pair. */
+  GetMapConnection(dir: number): MapConnection | undefined {
+    const name = CONNECTION_DIRECTION_NAMES[dir];
+    return name ? this.header.connections.find((c) => c.direction === name) : undefined;
+  }
+
+  /** SetDiveWarp (overworld.c). */
+  private SetDiveWarp(dir: number, x: number, y: number): boolean {
+    const connection = this.GetMapConnection(dir);
+    if (connection) {
+      const num = rom.mapNum(connection.map);
+      this.SetWarpDestination(num >> 8, num & 0xff, -1, x, y);
+    } else {
+      this.RunOnDiveWarpMapScript();
+      if (isDummyWarp(this.fixedDiveWarp)) return false;
+      this.SetWarpDestinationToDiveWarp();
+    }
+    return true;
+  }
+
+  /** SetDiveWarpEmerge (overworld.c). */
+  SetDiveWarpEmerge(x: number, y: number): boolean {
+    return this.SetDiveWarp(CONNECTION_EMERGE, x, y);
+  }
+
+  /** SetDiveWarpDive (overworld.c). */
+  SetDiveWarpDive(x: number, y: number): boolean {
+    return this.SetDiveWarp(CONNECTION_DIVE, x, y);
   }
 
   /** SetContinueGameWarp family (overworld.c). */
