@@ -22,6 +22,7 @@ import { GetRamScript } from "../script/context";
 import { IsEscalatorMoving, StartEscalator, StopEscalator } from "./specialFieldAnim";
 import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState } from "../questLogEvents";
 import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
+import { InUnionRoom } from "../unionRoom";
 
 export type FieldInput = {
   pressedAButton: boolean;
@@ -224,7 +225,7 @@ export class FieldControl {
       RunMassageCooldownStepCounter();
       IncrementResortGorgeousStepCounter();
       IncrementBirthIslandRockStepCount();
-      if (this.tryStartStepBasedScript(position, behavior, direction)) { this.recordAcceptedFieldInput("tookStep"); return true; }
+      if (this.TryStartStepBasedScript(position, behavior, direction)) { this.recordAcceptedFieldInput("tookStep"); return true; }
     }
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {
       const front = this.GetInFrontOfPlayerPosition();
@@ -399,19 +400,27 @@ export class FieldControl {
 
   // ---------------------------------------------------------------- step events
 
-  private tryStartStepBasedScript(position: { x: number; y: number; elevation: number }, behavior: number, _direction: number): boolean {
-    if (this.tryStartCoordEventScript(position)) return true;
+  /** TryStartStepBasedScript (field_control_avatar.c). */
+  private TryStartStepBasedScript(position: { x: number; y: number; elevation: number }, behavior: number, _direction: number): boolean {
+    if (this.TryStartCoordEventScript(position)) return true;
     if (this.TryStartWarpEventScript(position, behavior)) return true;
-    if (this.tryStartStepCountScript(behavior)) return true;
+    if (this.TryStartMiscWalkingScripts(behavior)) return true;
+    if (this.TryStartStepCountScript(behavior)) return true;
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior) && this.ow.effects.updateRepelCounter()) return true;
     return false;
   }
 
-  private tryStartCoordEventScript(position: { x: number; y: number; elevation: number }): boolean {
+  /** TryStartCoordEventScript (field_control_avatar.c). */
+  private TryStartCoordEventScript(position: { x: number; y: number; elevation: number }): boolean {
     const script = this.GetCoordEventScriptAtMapPosition(position);
     if (!script) return false;
     this.ow.script.ScriptContext_SetupScript(script);
     return true;
+  }
+
+  /** TryStartMiscWalkingScripts (field_control_avatar.c); the source function is dummied and always returns FALSE. */
+  private TryStartMiscWalkingScripts(_metatileBehavior: number): boolean {
+    return false;
   }
 
   /** TryRunCoordEventScript (field_control_avatar.c), including weather and immediate-script side effects. */
@@ -443,8 +452,10 @@ export class FieldControl {
     return this.GetCoordEventScriptAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
   }
 
-  private tryStartStepCountScript(behavior: number): boolean {
-    this.updateHappinessStepCounter();
+  /** TryStartStepCountScript (field_control_avatar.c). */
+  private TryStartStepCountScript(behavior: number): boolean {
+    if (InUnionRoom() || gQuestLogState === C.QL_STATE_PLAYBACK) return false;
+    this.UpdateHappinessStepCounter();
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior)) {
       if (updateVsSeekerStepCounter()) {
         this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_VsSeekerChargingDone"));
@@ -464,7 +475,8 @@ export class FieldControl {
     return false;
   }
 
-  private updateHappinessStepCounter(): void {
+  /** UpdateHappinessStepCounter (field_control_avatar.c). */
+  private UpdateHappinessStepCounter(): void {
     const id = rom.c("VAR_HAPPINESS_STEP_COUNTER");
     const value = (varGet(id) + 1) % 128;
     varSet(id, value);
