@@ -1,8 +1,8 @@
 Modo: tandas integradas por archivo/familia; alcance principal de un jugador. No push.
-Siguiente: inspeccionar familia de huellas y marcas de bicicleta en `field_effect_helpers.c`, con callers de `event_object_movement.c`.
+Siguiente: inspeccionar sincronización y bobbing de Surf Blob en `field_effect_helpers.c`, incluidos sus callers de surf.
 Bloqueos: `UsedPokemonCenterWarp` solo cierra Link; Safari requiere Pokéblock Case sin ruta activa y otros huecos Safari son Link/no usados.
-Entrega (2026-09-28): hierba corta, sombras de salto, hierba alta y hierba larga conectadas a sus rutas de campo/movimiento.
-Inventario: 7.621/10.115 (75,3 %), +6 nombres desde 7.615; `field_effect_helpers.c` 47/76.
-Equivalencias: el movimiento de hierba larga ya existía inline; se conectaron los callbacks C y el comportamiento de salto/elevación.
-Checks: `check:port`, `check:honesty` (88 stubs), build y `git diff --check` pasaron.
+Entrega (2026-09-28): hierba corta/alta/larga, sombras de salto y huellas/neumáticos conectados a rutas de campo.
+Inventario: 7.624/10.115 (75,4 %), +3 nombres desde 7.621; `field_effect_helpers.c` 50/76.
+Equivalencias: huellas/neumáticos ya tenían lógica inline; se conectaron los efectos C y se corrigió su ciclo de desvanecimiento.
+Checks: `check:port`, `check:honesty` (85 stubs), build y `git diff --check` pasaron.
 Pendiente: revisión funcional exhaustiva de campo, navegador e historia todavía sin validar.
