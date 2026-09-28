@@ -1,8 +1,8 @@
 Modo: tandas integradas por archivo/familia; alcance principal de un jugador. No push.
-Siguiente: portar `FldEff_Splash` y `UpdateSplashFieldEffect` y conectarlos a `GroundEffect_StepOnPuddle`.
-Bloqueos: warps Lavaridge dependen de efectos no portados; callbacks Link, UI Pokéblock Case sin ruta y estructuras Pokémon/Sprite sin layout GBA activo.
-Validación diferida: recorridos de navegador e historia; Berry Enigma no conserva direcciones GBA de punteros y no se afirma paridad runtime.
-Entrega (2026-09-28): callbacks Ash y efectos de aterrizaje de `field_effect_helpers.c`, conectados a `FieldEffects` y su ruta de movimiento.
-Funciones nuevas: 8 equivalencias C conectadas; retiré 4 stubs sustituidos. Sin algoritmos nuevos.
-Conteo: 7.594/10.115 (75,1 %), +8 nombres desde 7.586; `field_effect_helpers.c` queda 27/76, 49 stubs. Checks/build/diff pasaron.
-Pendiente: tests de navegador/historia; la ruta Mystery Event Club del ajuste de línea Easy Chat sigue fuera de la meta principal.
+Siguiente: seleccionar una familia completa y con caller activo dentro de `field_effect_helpers.c` tras revisar scripts de campo.
+Bloqueos anotados: `UsedPokemonCenterWarp` solo decide cerrar Link; Safari requiere Pokéblock Case sin ruta activa y los otros huecos Safari son Link/no usados.
+Entrega (2026-09-28): Splash, burbujas, ripple, pies en agua corriente y aguas termales, conectados desde `GroundEffect_*`.
+Funciones nuevas: 10 equivalencias C conectadas; se retiraron 10 stubs. Sin algoritmos nuevos.
+Contador: 7.604/10.115 (75,2 %), +10 nombres desde 7.594; `field_effect_helpers.c` queda en 37/76.
+Checks: `check:port`, `check:honesty` (98 stubs), build y `git diff --check` pasaron.
+Pendiente: revisión de Safari antes de seleccionar funciones no Link; navegador e historia siguen sin validar.
