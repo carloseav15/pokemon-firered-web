@@ -33,11 +33,35 @@ export type FieldInput = {
   tookStep: boolean;
   pressedBButton: boolean;
   pressedRButton: boolean;
+  input_field_1_0: boolean;
+  input_field_1_1: boolean;
+  input_field_1_2: boolean;
+  input_field_1_3: boolean;
   dpadDirection: number;
 };
 
 function emptyInput(): FieldInput {
-  return { pressedAButton: false, checkStandardWildEncounter: false, pressedStartButton: false, pressedSelectButton: false, heldDirection: false, heldDirection2: false, tookStep: false, pressedBButton: false, pressedRButton: false, dpadDirection: 0 };
+  const input = {} as FieldInput;
+  FieldClearPlayerInput(input);
+  return input;
+}
+
+/** FieldClearPlayerInput (field_control_avatar.c). */
+export function FieldClearPlayerInput(input: FieldInput): void {
+  input.pressedAButton = false;
+  input.checkStandardWildEncounter = false;
+  input.pressedStartButton = false;
+  input.pressedSelectButton = false;
+  input.heldDirection = false;
+  input.heldDirection2 = false;
+  input.tookStep = false;
+  input.pressedBButton = false;
+  input.pressedRButton = false;
+  input.input_field_1_0 = false;
+  input.input_field_1_1 = false;
+  input.input_field_1_2 = false;
+  input.input_field_1_3 = false;
+  input.dpadDirection = 0;
 }
 
 /** QuestLogOverrideJoyVars (field_control_avatar.c). */
@@ -78,8 +102,8 @@ export class FieldControl {
     const player = this.ow.player;
     player.UpdatePlayerAvatarTransitionState();
     const input = emptyInput();
-    this.getPlayerInput(input, newKeys, heldKeys);
-    this.handleCancelSignpost(input);
+    this.FieldGetPlayerInput(input, newKeys, heldKeys);
+    this.FieldInput_HandleCancelSignpost(input);
     if (!this.ow.controlsLocked) {
       if (this.processPlayerFieldInput(input)) {
         if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) QL_RecordFieldInput(this.recordedPlayerFieldInput);
@@ -97,8 +121,8 @@ export class FieldControl {
     return this.ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
   }
 
-  /** FieldGetPlayerInput */
-  private getPlayerInput(input: FieldInput, newKeys: number, heldKeys: number): void {
+  /** FieldGetPlayerInput (field_control_avatar.c). */
+  FieldGetPlayerInput(input: FieldInput, newKeys: number, heldKeys: number): void {
     const player = this.ow.player;
     const forcedMove = MB.MetatileBehavior_IsForcedMovementTile(this.GetPlayerCurMetatileBehavior());
     const tile = player.tileTransitionState;
@@ -133,8 +157,8 @@ export class FieldControl {
     }
   }
 
-  /** FieldInput_HandleCancelSignpost */
-  private handleCancelSignpost(input: FieldInput): void {
+  /** FieldInput_HandleCancelSignpost (field_control_avatar.c). */
+  FieldInput_HandleCancelSignpost(input: FieldInput): void {
     if (!this.ow.script.ScriptContext_IsEnabled()) return;
     if (this.walkAwayInhibitTimer !== 0) {
       this.walkAwayInhibitTimer--;
