@@ -63,6 +63,7 @@ import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
 import { ResetQLPlayedTheSlots } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
+import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
 
 /** GetProfOaksRatingMessageByCount (prof_pc.c). */
 function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
@@ -924,29 +925,47 @@ export class Game {
     ow.controlsLocked = true;
     ow.objects.freezeAll();
     this.battleOutcome = 0;
-    sound.playBattleBGM(this.battleSetup.battleBgm(request));
-    let startedTransition = false;
-    const id = tasks.create(() => {
-      // battle_setup.c Task_BattleStart waits for FldEffPoison_IsActive to clear.
-      if (!startedTransition) {
-        if (ow.effects.FldEffPoison_IsActive()) return;
-        startedTransition = true;
-        tasks.destroy(id);
-        const transitionId = request.kind === "trainer"
-          ? GetTrainerBattleTransition(ow, request.trainerId ?? 0)
-          : GetWildBattleTransition(ow, request.enemyParty);
-        this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
-          // battle_setup.c Task_BattleStart resets encounter cooldowns after the transition completes.
+    let transitionDone = false;
+    let transition = 0;
+    const game = this;
+    function Task_BattleStart(taskId: number): void {
+      const data = tasks.data(taskId);
+      switch (data[0]) {
+        case 0: {
+          // battle_setup.c waits for FldEffPoison_IsActive before disabling help and starting the transition.
+          if (ow.effects.FldEffPoison_IsActive()) return;
+          HelpSystem_Disable();
+          game.scene = new BattleTransitionScene(transition, game.ctx, () => {
+            transitionDone = true;
+            Task_BattleStart(taskId);
+          });
+          data[0]++;
+          game.setCallbacks(null, () => game.scene?.update());
+          break;
+        }
+        case 1:
+          if (!transitionDone) return;
+          HelpSystem_Enable();
+          // CleanupOverworldWindowsAndTilemaps is hardware/window cleanup; the Canvas battle host has no equivalent.
           RestartWildEncounterImmunitySteps();
           ow.control.ClearPoisonStepCounter();
-          if (this.battleRunner) {
-            this.scene = this.battleRunner(request);
-            this.setCallbacks(null, () => this.scene?.update());
+          tasks.destroy(taskId);
+          if (game.battleRunner) {
+            game.scene = game.battleRunner(request);
+            game.setCallbacks(null, () => game.scene?.update());
           }
-        });
-        this.setCallbacks(null, () => this.scene?.update());
+          break;
       }
-    }, 1);
+    }
+    function CreateBattleStartTask(transitionType: number, song: number): void {
+      transition = transitionType;
+      const taskId = tasks.create(Task_BattleStart, 1);
+      sound.playBattleBGM(song);
+    }
+    const transitionType = request.kind === "trainer"
+      ? GetTrainerBattleTransition(ow, request.trainerId ?? 0)
+      : GetWildBattleTransition(ow, request.enemyParty);
+    CreateBattleStartTask(transitionType, this.battleSetup.battleBgm(request));
   }
 
   /** CB2_ReturnToFieldContinueScriptPlayMapMusic */
