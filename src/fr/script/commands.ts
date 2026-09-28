@@ -597,7 +597,7 @@ function ScrCmd_updatecoinsbox(ctx: ScriptRunner): boolean { ctx.readByte(); ctx
 function ScrCmd_checkcoins(ctx: ScriptRunner): boolean { varSet(ctx.ScriptReadHalfword(), items.GetCoins()); return false; }
 function ScrCmd_addcoins(ctx: ScriptRunner): boolean { varSet(SV.RESULT, items.addCoins(varGet(ctx.ScriptReadHalfword())) ? 0 : 1); return false; }
 function ScrCmd_removecoins(ctx: ScriptRunner): boolean { varSet(SV.RESULT, items.removeCoins(varGet(ctx.ScriptReadHalfword())) ? 0 : 1); return false; }
-function ScrCmd_trainerbattle(ctx: ScriptRunner): boolean { ctx.scriptPtr = ctx.ow.game.battleSetup.configureTrainerBattle(ctx.scriptPtr); return false; }
+function ScrCmd_trainerbattle(ctx: ScriptRunner): boolean { ctx.scriptPtr = ctx.ow.game.battleSetup.BattleSetup_ConfigureTrainerBattle(ctx.scriptPtr); return false; }
 function ScrCmd_dotrainerbattle(ctx: ScriptRunner): boolean { ctx.ow.game.battleSetup.startTrainerBattle(); return true; }
 function ScrCmd_gotopostbattlescript(ctx: ScriptRunner): boolean { ctx.scriptPtr = ctx.ow.game.battleSetup.scriptAddrAfterBattle(); return false; }
 function ScrCmd_gotobeatenscript(ctx: ScriptRunner): boolean { ctx.scriptPtr = ctx.ow.game.battleSetup.trainerPostBattleScript(); return false; }

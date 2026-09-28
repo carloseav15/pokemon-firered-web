@@ -17,6 +17,7 @@ import { createMaleMon, createMon, genderFromPersonality, healMon, MON_FEMALE, t
 import { random32 } from "../random";
 import type { Game } from "../game";
 import { GetSafariZoneFlag } from "../field/safariZone";
+import { QL_FinishRecordingScene } from "../questLogEvents";
 
 export const TRAINER_BATTLE_SINGLE = 0;
 export const TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC = 1;
@@ -131,9 +132,14 @@ export class BattleSetup {
     }
   }
 
-  /** BattleSetup_ConfigureTrainerBattle: returns the script to jump to. */
-  configureTrainerBattle(ptr: number): number {
+  /** InitTrainerBattleVariables (battle_setup.c). */
+  private InitTrainerBattleVariables(): void {
     this.mode = this.opponentA = this.localId = this.rivalFlags = this.introSpeech = this.defeatSpeech = this.victorySpeech = this.cannotBattleSpeech = this.battleScriptRetAddr = this.endScript = 0;
+  }
+
+  /** BattleSetup_ConfigureTrainerBattle: returns the script to jump to. */
+  BattleSetup_ConfigureTrainerBattle(ptr: number): number {
+    this.InitTrainerBattleVariables();
     const mode = rom.u8(ptr);
     switch (mode) {
       case TRAINER_BATTLE_SINGLE_NO_INTRO_TEXT:
@@ -154,11 +160,13 @@ export class BattleSetup {
         this.setMapVarsToTrainer();
         return rom.label("EventScript_TryDoDoubleTrainerBattle");
       case TRAINER_BATTLE_REMATCH_DOUBLE:
+        QL_FinishRecordingScene();
         TrainerBattleLoadArgs(this, DOUBLE, ptr);
         this.setMapVarsToTrainer();
         this.opponentA = getRematchTrainerId(this.opponentA);
         return rom.label("EventScript_TryDoDoubleRematchBattle");
       case TRAINER_BATTLE_REMATCH:
+        QL_FinishRecordingScene();
         TrainerBattleLoadArgs(this, ORDINARY, ptr);
         this.setMapVarsToTrainer();
         this.opponentA = getRematchTrainerId(this.opponentA);
@@ -175,13 +183,19 @@ export class BattleSetup {
     }
   }
 
-  /** Called by trainer_see when a trainer spots the player. */
-  configureFromApproach(objectIndex: number, trainerScript: number): void {
+  /** GetTrainerFlagFromScriptPointer (battle_setup.c). */
+  GetTrainerFlagFromScriptPointer(data: number): boolean {
+    const trainerId = rom.u16(data + 2);
+    return flagGet(rom.c("TRAINER_FLAGS_START") + trainerId);
+  }
+
+  /** ConfigureAndSetUpOneTrainerBattle (battle_setup.c), called when a trainer spots the player. */
+  ConfigureAndSetUpOneTrainerBattle(objectIndex: number, trainerScript: number): void {
     const ow = this.game.overworld;
     ow.selectedObject = objectIndex;
     const o = ow.objects.objects[objectIndex];
     if (o) varSet(SV.LAST_TALKED, o.localId);
-    this.configureTrainerBattle(trainerScript + 1);
+    this.BattleSetup_ConfigureTrainerBattle(trainerScript + 1);
     ow.script.ScriptContext_SetupScript(rom.label("EventScript_DoTrainerBattleFromApproach"));
     ow.controlsLocked = true;
   }

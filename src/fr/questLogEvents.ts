@@ -261,6 +261,18 @@ export function QuestLog_CutRecording(): void {
   sLastPlayerMovementActionId = -1;
 }
 
+/** QL_FinishRecordingScene (quest_log.c): commit the active scene-end marker and stop recording. */
+export function QL_FinishRecordingScene(): void {
+  if (gQuestLogState !== C.QL_STATE_RECORDING) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (script) QL_RecordAction_SceneEnd(script);
+  gQuestLogState = 0;
+  sActivePlayerActionScript = -1;
+  gQuestLogDefeatedWildMonRecord = null;
+  gQuestLogRecordingPointer = null;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+}
+
 /** GetQuestLogState returns the C global consumed by `specialvar`. */
 export function GetQuestLogState(): number { return gQuestLogState; }
 

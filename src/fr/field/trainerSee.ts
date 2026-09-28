@@ -131,13 +131,13 @@ export class TrainerSee {
   private CheckTrainer(trainer: ObjectEvent, x: number, y: number): boolean {
     const ow = this.game.overworld;
     const script = trainer.template?.script;
-    if (!script || this.game.battleSetup.hasTrainerBeenFought(rom.u16(script + 2))) return false;
+    if (!script || this.game.battleSetup.GetTrainerFlagFromScriptPointer(script)) return false;
 
     const approachDistance = GetTrainerApproachDistance(ow.objects, trainer, x, y);
     if (!approachDistance) return false;
     if (rom.u8(script + 1) === C.TRAINER_BATTLE_DOUBLE && countAliveNonEggMons() < 2) return false;
 
-    this.game.battleSetup.configureFromApproach(ow.objects.indexOf(trainer), script);
+    this.game.battleSetup.ConfigureAndSetUpOneTrainerBattle(ow.objects.indexOf(trainer), script);
     this.TrainerApproachPlayer(trainer, approachDistance - 1);
     return true;
   }
