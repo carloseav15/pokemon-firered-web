@@ -113,7 +113,7 @@ export class FieldMoveEffects {
         this.ow.player.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);
         return true;
       case C.FLDEFF_USE_SURF: this.FldEff_UseSurf(); return true;
-      case C.FLDEFF_USE_WATERFALL: this.useWaterfall(); return true;
+      case C.FLDEFF_USE_WATERFALL: this.FldEff_UseWaterfall(); return true;
       case C.FLDEFF_USE_DIVE: this.remove(id); return true; // no Dive maps in FireRed
       case C.FLDEFF_POKECENTER_HEAL: this.glowingPokeballs(C.FLDEFF_POKECENTER_HEAL, 93, 36, true); return true;
       case C.FLDEFF_HALL_OF_FAME_RECORD: this.glowingPokeballs(C.FLDEFF_HALL_OF_FAME_RECORD, 117, 60, false); return true;
@@ -519,49 +519,70 @@ export class FieldMoveEffects {
     tasks.destroy(_task.id);
   }
 
-  /** FldEff_UseWaterfall (sUseWaterfallFieldEffectFuncs) */
-  private useWaterfall(): void {
-    const ow = this.ow;
-    const partyIndex = this.args[0];
-    const player = ow.player.object;
-    let state = 0;
-    const step = (): boolean => {
-      switch (state) {
-        case 0:
-          ow.controlsLocked = true;
-          ow.player.preventStep = true;
-          state = 1;
-          return false;
-        case 1:
-          ow.controlsLocked = true;
-          if (!ow.objects.isMovementOverridden(player)) {
-            ow.objects.ObjectEventClearHeldMovementIfFinished(player);
-            this.args[0] = partyIndex;
-            this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
-            state = 2;
-          }
-          return false;
-        case 2:
-          if (this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) return false;
-          state = 3;
-          return true;
-        case 3:
-          ow.objects.setHeldMovement(player, actionWalkSlower(DIR_NORTH));
-          state = 4;
-          return false;
-        case 4:
-          if (!ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return false;
-          if (MB.MetatileBehavior_IsWaterfall(player.currentMetatileBehavior)) { state = 3; return true; }
-          ow.controlsLocked = false;
-          ow.player.preventStep = false;
-          tasks.destroy(id);
-          this.remove(C.FLDEFF_USE_WATERFALL);
-          return false;
-      }
-      return false;
-    };
-    const id = tasks.create(() => { while (step()); }, 0xff);
-    while (step());
+  /** FldEff_UseWaterfall: create Task_UseWaterfall and run its initial callback now. */
+  private FldEff_UseWaterfall(): void {
+    const task = { id: 0, data: new Int16Array(16) };
+    task.data[1] = this.args[0]!;
+    task.id = tasks.create(() => this.Task_UseWaterfall(task), 0xff);
+    this.Task_UseWaterfall(task);
+  }
+
+  private Task_UseWaterfall(task: { id: number; data: Int16Array }): void {
+    while (true) {
+      const state = task.data[0]!;
+      const continueNow = state === 0 ? this.waterfall_0_setup(task)
+        : state === 1 ? this.waterfall_1_do_anim_probably(task)
+        : state === 2 ? this.waterfall_2_wait_anim_finish_probably(task)
+        : state === 3 ? this.waterfall_3_move_player_probably(task)
+        : state === 4 ? this.waterfall_4_wait_player_move_probably(task)
+        : false;
+      if (!continueNow) return;
+    }
+  }
+
+  private waterfall_0_setup(task: { data: Int16Array }): boolean {
+    this.ow.controlsLocked = true;
+    this.ow.player.preventStep = true;
+    task.data[0]++;
+    return false;
+  }
+
+  private waterfall_1_do_anim_probably(task: { data: Int16Array }): boolean {
+    const player = this.ow.player.object;
+    this.ow.controlsLocked = true;
+    if (!this.ow.objects.isMovementOverridden(player)) {
+      this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
+      this.args[0] = task.data[1]!;
+      this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
+      task.data[0]++;
+    }
+    return false;
+  }
+
+  private waterfall_2_wait_anim_finish_probably(task: { data: Int16Array }): boolean {
+    if (this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) return false;
+    task.data[0]++;
+    return true;
+  }
+
+  private waterfall_3_move_player_probably(task: { data: Int16Array }): boolean {
+    this.ow.objects.setHeldMovement(this.ow.player.object, actionWalkSlower(DIR_NORTH));
+    task.data[0]++;
+    return false;
+  }
+
+  private waterfall_4_wait_player_move_probably(task: { id: number; data: Int16Array }): boolean {
+    const player = this.ow.player.object;
+    if (!this.ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return false;
+    if (MB.MetatileBehavior_IsWaterfall(player.currentMetatileBehavior)) {
+      task.data[0] = 3;
+      return true;
+    }
+    this.ow.controlsLocked = false;
+    this.ow.player.preventStep = false;
+    tasks.destroy(task.id);
+    this.remove(C.FLDEFF_USE_WATERFALL);
+    return false;
   }
 
   // ---------------------------------------------------------------- cut grass
