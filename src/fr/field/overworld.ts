@@ -1120,6 +1120,13 @@ export class Overworld {
     }, 10);
   }
 
+  /** DoTeleport2Warp (field_fadetransition.c): warp with the teleport-in callback only. */
+  DoTeleport2Warp(): void {
+    this.controlsLocked = true;
+    this.startTeleport2WarpTask();
+    this.fieldCallback = () => this.fieldCBTeleportWarpIn();
+  }
+
   fieldCBTeleportWarpIn(): void {
     this.playSpecialMapMusic();
     this.warpFadeInScreen();
@@ -1188,23 +1195,26 @@ export class Overworld {
   }
 
   private startTeleport2WarpTask(): void {
-    let state = 0;
-    const id = tasks.create(() => {
-      switch (state) {
+    tasks.create((taskId) => this.Task_Teleport2Warp(taskId), 10);
+  }
+
+  /** Task_Teleport2Warp (field_fadetransition.c). */
+  private Task_Teleport2Warp(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    switch (data[0]) {
         case 0:
           this.objects.freezeAll();
           this.controlsLocked = true;
-          state = 1;
+          data[0]++;
           break;
         case 1:
-          if (!paletteFade.active && sound.isBGMPausedOrStopped()) state = 2;
+          if (!paletteFade.active && sound.isBGMPausedOrStopped()) data[0]++;
           break;
         case 2:
-          tasks.destroy(id);
+          tasks.destroy(taskId);
           this.warpIntoMapAndLoad();
           break;
-      }
-    }, 10);
+    }
   }
 
   /** TryFadeOutOldMapMusic */

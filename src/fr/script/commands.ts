@@ -277,7 +277,7 @@ function ScrCmd_warphole(ctx: ScriptRunner): boolean {
   return true;
 }
 function ScrCmd_warpteleport(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.doTeleportWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
-function ScrCmd_warpspinenter(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.setInitialPlayerAvatarStateWithDirection(ctx.ow.player.object.facingDirection); ctx.ow.doTeleportWarp(); return true; }
+function ScrCmd_warpspinenter(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.setInitialPlayerAvatarStateWithDirection(ctx.ow.player.object.facingDirection); ctx.ow.DoTeleport2Warp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_setwarp(ctx: ScriptRunner): boolean { readWarp(ctx); return false; }
 function ScrCmd_setdynamicwarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); ctx.ow.SetDynamicWarpWithCoords(0, w.mapGroup, w.mapNum, w.warpId, w.x, w.y); return false; }
 function ScrCmd_setdivewarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); ctx.ow.SetFixedDiveWarp(w.mapGroup, w.mapNum, w.warpId, w.x, w.y); return false; }
