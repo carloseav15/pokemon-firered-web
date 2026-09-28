@@ -66,6 +66,15 @@ export function QuestLogRecordPlayerAvatarGfxTransition(gfxState: number): void 
   if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) sNextActionDelay = 0;
 }
 
+/** QuestLogRecordPlayerAvatarGfxTransitionWithDuration (quest_log.c). */
+export function QuestLogRecordPlayerAvatarGfxTransitionWithDuration(gfxState: number, duration: number): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script) return;
+  const action: QuestLogAction = { type: C.QL_ACTION_GFX_CHANGE, duration: sNextActionDelay, data: [0, 0, 0, gfxState & 0xff] };
+  if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) sNextActionDelay = duration & 0xff;
+}
+
 /** QL_AfterRecordFishActionSuccessful (quest_log.c). */
 export function QL_AfterRecordFishActionSuccessful(): void { sNextActionDelay++; }
 

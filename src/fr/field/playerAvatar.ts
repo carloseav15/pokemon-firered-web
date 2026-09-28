@@ -9,7 +9,7 @@ import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { flagGet, incrementGameStat } from "../save";
 import { QuestLogApplyPlayerAvatarTransition, QuestLogCallUpdatePlayerSprite } from "../questLogPlayer";
-import { QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerStep, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
+import { QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerAvatarGfxTransitionWithDuration, QuestLogRecordPlayerStep, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
 import {
   actionFace, actionJump2, actionJumpInPlace, actionJumpSpecial, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
   actionWalkInPlaceSlow, actionWalkNormal, actionWalkSlow, COLLISION_DIRECTIONAL_STAIR_WARP, COLLISION_ELEVATION_MISMATCH, COLLISION_LEDGE_JUMP,
@@ -26,6 +26,11 @@ export const PLAYER_AVATAR_FLAG_UNDERWATER = 1 << 4;
 export const PLAYER_AVATAR_FLAG_CONTROLLABLE = 1 << 5;
 export const PLAYER_AVATAR_FLAG_FORCED = 1 << 6;
 export const PLAYER_AVATAR_FLAG_DASH = 1 << 7;
+
+const sQuestLogSurfDismountActionIds = [
+  C.QL_PLAYER_GFX_STOP_SURF_S, C.QL_PLAYER_GFX_STOP_SURF_S, C.QL_PLAYER_GFX_STOP_SURF_N,
+  C.QL_PLAYER_GFX_STOP_SURF_W, C.QL_PLAYER_GFX_STOP_SURF_E,
+];
 
 export const NOT_MOVING = 0, TURN_DIRECTION = 1, MOVING = 2;
 export const T_NOT_MOVING = 0, T_TILE_TRANSITION = 1, T_TILE_CENTER = 2;
@@ -1139,7 +1144,7 @@ export class PlayerAvatar {
   /** CheckForObjectEventCollision */
   CheckForObjectEventCollision(object: ObjectEvent, x: number, y: number, direction: number): number {
     const collision = this.ow.objects.GetCollisionAtCoords(object, x, y, direction);
-    if (collision === COLLISION_ELEVATION_MISMATCH && this.canStopSurfing(x, y, direction)) return COLLISION_STOP_SURFING;
+    if (collision === COLLISION_ELEVATION_MISMATCH && this.CanStopSurfing(x, y, direction)) return COLLISION_STOP_SURFING;
     if (this.ShouldJumpLedge(x, y, direction)) {
       incrementGameStat(rom.constants.GAME_STAT_JUMPED_DOWN_LEDGES ?? 0);
       return COLLISION_LEDGE_JUMP;
@@ -1175,8 +1180,10 @@ export class PlayerAvatar {
     return checks[index]?.(behavior) ?? false;
   }
 
-  private canStopSurfing(x: number, y: number, direction: number): boolean {
+  /** CanStopSurfing (field_player_avatar.c): records the dismount action before starting it. */
+  private CanStopSurfing(x: number, y: number, direction: number): boolean {
     if ((this.flags & PLAYER_AVATAR_FLAG_SURFING) && this.ow.map.elevationAt(x, y) === 3 && !this.ow.objects.objectAtXYZ(x, y, 3)) {
+      QuestLogRecordPlayerAvatarGfxTransitionWithDuration(sQuestLogSurfDismountActionIds[direction] ?? sQuestLogSurfDismountActionIds[0], 16);
       this.createStopSurfingTask(direction);
       return true;
     }
