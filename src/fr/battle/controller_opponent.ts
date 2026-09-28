@@ -15,7 +15,7 @@ import {
 import { gBattleMoves } from "./macros";
 import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "./util";
 import {
-  BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues,
+  BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues, gUnusedControllerStruct,
   BUFFER_B, decodeChooseMoveStruct, decodeHpAndStatus,
 } from "./controllers";
 import { HandleGetMonData, HandleSetMonData } from "./mon_transfer";
@@ -69,6 +69,51 @@ function OpponentBufferRunCommand(): void {
 export function OpponentBufferExecCompleted(): void {
   gBattlerControllerFuncs[G.gActiveBattler] = OpponentBufferRunCommand;
   G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags & ~gBitTable[G.gActiveBattler]) >>> 0;
+}
+
+// These controller commands are explicit completion-only handlers in battle_controller_opponent.c.
+function OpponentHandlePaletteFade(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleSuccessBallThrowAnim(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleBallThrowAnim(): void { OpponentBufferExecCompleted(); }
+function OpponentHandlePause(): void { OpponentBufferExecCompleted(); }
+function OpponentHandlePrintSelectionString(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleUnknownYesNoBox(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleCmd23(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleExpUpdate(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleStatusXor(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleDataTransfer(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleDMA3Transfer(): void { OpponentBufferExecCompleted(); }
+function OpponentHandlePlayBGM(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleCmd32(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleTwoReturnValues(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleChosenMonReturnValue(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleOneReturnValue(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleOneReturnValue_Duplicate(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleCmd42(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleEndBounceEffect(): void { OpponentBufferExecCompleted(); }
+
+/** OpponentHandleCmd37 (battle_controller_opponent.c): clear the legacy controller word. */
+function OpponentHandleCmd37(): void {
+  gUnusedControllerStruct.unk = 0;
+  OpponentBufferExecCompleted();
+}
+
+/** OpponentHandleCmd38 (battle_controller_opponent.c): copy the command byte to the legacy word. */
+function OpponentHandleCmd38(): void {
+  gUnusedControllerStruct.unk = gBattleBufferA[G.gActiveBattler][1];
+  OpponentBufferExecCompleted();
+}
+
+/** OpponentHandleCmd39 (battle_controller_opponent.c): clear the legacy controller flag. */
+function OpponentHandleCmd39(): void {
+  gUnusedControllerStruct.flag = 0;
+  OpponentBufferExecCompleted();
+}
+
+/** OpponentHandleCmd40 (battle_controller_opponent.c): toggle the low legacy controller flag bit. */
+function OpponentHandleCmd40(): void {
+  gUnusedControllerStruct.flag ^= 1;
+  OpponentBufferExecCompleted();
 }
 
 function CompleteOnBattlerSpriteCallbackDummy(): void {
@@ -760,38 +805,38 @@ const sOpponentBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_TRAINERSLIDE]: OpponentHandleTrainerSlide,
   [C.CONTROLLER_TRAINERSLIDEBACK]: OpponentHandleTrainerSlideBack,
   [C.CONTROLLER_FAINTANIMATION]: OpponentHandleFaintAnimation,
-  [C.CONTROLLER_PALETTEFADE]: done,
-  [C.CONTROLLER_SUCCESSBALLTHROWANIM]: done,
-  [C.CONTROLLER_BALLTHROWANIM]: done,
-  [C.CONTROLLER_PAUSE]: done,
+  [C.CONTROLLER_PALETTEFADE]: OpponentHandlePaletteFade,
+  [C.CONTROLLER_SUCCESSBALLTHROWANIM]: OpponentHandleSuccessBallThrowAnim,
+  [C.CONTROLLER_BALLTHROWANIM]: OpponentHandleBallThrowAnim,
+  [C.CONTROLLER_PAUSE]: OpponentHandlePause,
   [C.CONTROLLER_MOVEANIMATION]: OpponentHandleMoveAnimation,
   [C.CONTROLLER_PRINTSTRING]: OpponentHandlePrintString,
-  [C.CONTROLLER_PRINTSTRINGPLAYERONLY]: done,
+  [C.CONTROLLER_PRINTSTRINGPLAYERONLY]: OpponentHandlePrintSelectionString,
   [C.CONTROLLER_CHOOSEACTION]: OpponentHandleChooseAction,
-  [C.CONTROLLER_UNKNOWNYESNOBOX]: done,
+  [C.CONTROLLER_UNKNOWNYESNOBOX]: OpponentHandleUnknownYesNoBox,
   [C.CONTROLLER_CHOOSEMOVE]: OpponentHandleChooseMove,
   [C.CONTROLLER_OPENBAG]: OpponentHandleChooseItem,
   [C.CONTROLLER_CHOOSEPOKEMON]: OpponentHandleChoosePokemon,
-  [C.CONTROLLER_23]: done,
+  [C.CONTROLLER_23]: OpponentHandleCmd23,
   [C.CONTROLLER_HEALTHBARUPDATE]: OpponentHandleHealthBarUpdate,
-  [C.CONTROLLER_EXPUPDATE]: done,
+  [C.CONTROLLER_EXPUPDATE]: OpponentHandleExpUpdate,
   [C.CONTROLLER_STATUSICONUPDATE]: OpponentHandleStatusIconUpdate,
   [C.CONTROLLER_STATUSANIMATION]: OpponentHandleStatusAnimation,
-  [C.CONTROLLER_STATUSXOR]: done,
-  [C.CONTROLLER_DATATRANSFER]: done,
-  [C.CONTROLLER_DMA3TRANSFER]: done,
-  [C.CONTROLLER_PLAYBGM]: done,
-  [C.CONTROLLER_32]: done,
-  [C.CONTROLLER_TWORETURNVALUES]: done,
-  [C.CONTROLLER_CHOSENMONRETURNVALUE]: done,
-  [C.CONTROLLER_ONERETURNVALUE]: done,
-  [C.CONTROLLER_ONERETURNVALUE_DUPLICATE]: done,
-  [C.CONTROLLER_CLEARUNKVAR]: done,
-  [C.CONTROLLER_SETUNKVAR]: done,
-  [C.CONTROLLER_CLEARUNKFLAG]: done,
-  [C.CONTROLLER_TOGGLEUNKFLAG]: done,
+  [C.CONTROLLER_STATUSXOR]: OpponentHandleStatusXor,
+  [C.CONTROLLER_DATATRANSFER]: OpponentHandleDataTransfer,
+  [C.CONTROLLER_DMA3TRANSFER]: OpponentHandleDMA3Transfer,
+  [C.CONTROLLER_PLAYBGM]: OpponentHandlePlayBGM,
+  [C.CONTROLLER_32]: OpponentHandleCmd32,
+  [C.CONTROLLER_TWORETURNVALUES]: OpponentHandleTwoReturnValues,
+  [C.CONTROLLER_CHOSENMONRETURNVALUE]: OpponentHandleChosenMonReturnValue,
+  [C.CONTROLLER_ONERETURNVALUE]: OpponentHandleOneReturnValue,
+  [C.CONTROLLER_ONERETURNVALUE_DUPLICATE]: OpponentHandleOneReturnValue_Duplicate,
+  [C.CONTROLLER_CLEARUNKVAR]: OpponentHandleCmd37,
+  [C.CONTROLLER_SETUNKVAR]: OpponentHandleCmd38,
+  [C.CONTROLLER_CLEARUNKFLAG]: OpponentHandleCmd39,
+  [C.CONTROLLER_TOGGLEUNKFLAG]: OpponentHandleCmd40,
   [C.CONTROLLER_HITANIMATION]: OpponentHandleHitAnimation,
-  [C.CONTROLLER_CANTSWITCH]: done,
+  [C.CONTROLLER_CANTSWITCH]: OpponentHandleCmd42,
   [C.CONTROLLER_PLAYSE]: OpponentHandlePlaySE,
   [C.CONTROLLER_PLAYFANFARE]: OpponentHandlePlayFanfare,
   [C.CONTROLLER_FAINTINGCRY]: OpponentHandleFaintingCry,
@@ -799,7 +844,7 @@ const sOpponentBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_INTROTRAINERBALLTHROW]: OpponentHandleIntroTrainerBallThrow,
   [C.CONTROLLER_DRAWPARTYSTATUSSUMMARY]: OpponentHandleDrawPartyStatusSummary,
   [C.CONTROLLER_HIDEPARTYSTATUSSUMMARY]: OpponentHandleHidePartyStatusSummary,
-  [C.CONTROLLER_ENDBOUNCE]: done,
+  [C.CONTROLLER_ENDBOUNCE]: OpponentHandleEndBounceEffect,
   [C.CONTROLLER_SPRITEINVISIBILITY]: OpponentHandleSpriteInvisibility,
   [C.CONTROLLER_BATTLEANIMATION]: OpponentHandleBattleAnimation,
   [C.CONTROLLER_LINKSTANDBYMSG]: done,
