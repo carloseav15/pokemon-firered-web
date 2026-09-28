@@ -706,8 +706,8 @@ export class Game {
     fieldMenu(this, (close) => { void openFameChecker(close); });
   }
 
-  openTeachyTv(): void {
-    fieldMenu(this, (close) => openTeachyTv(close));
+  openTeachyTv(done?: () => void): void {
+    fieldMenu(this, (close) => openTeachyTv(() => { close(); done?.(); }));
   }
 
   /** party_menu_specials.c SelectMoveDeleterMove: VAR_0x8005 = move slot, or MAX_MON_MOVES when cancelled. */

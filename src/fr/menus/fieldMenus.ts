@@ -231,6 +231,16 @@ export function InitBerryPouchFromBag(open: () => void): void { open(); }
 /** Task_InitBerryPouchFromField (item_use.c): open the pouch with the field as its return target. */
 export function Task_InitBerryPouchFromField(open: () => void): void { open(); }
 
+/** InitTeachyTvFromBag (item_use.c): the current Teachy TV adapter returns to the bag callback. */
+export function InitTeachyTvFromBag(game: Game, returnToBag: () => void): void {
+  game.openTeachyTv(returnToBag);
+}
+
+/** Task_InitTeachyTvFromField (item_use.c): open the field-returning Teachy TV route. */
+export function Task_InitTeachyTvFromField(game: Game): void {
+  game.openTeachyTv();
+}
+
 /** FieldUseFunc_Mail (item_use.c): fade the bag out, then run CB2_CheckMail. */
 export function FieldUseFunc_Mail(exitToMail: (checkMail: () => void) => void, checkMail: () => void): void {
   exitToMail(checkMail);
@@ -518,7 +528,9 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           return;
         case "FieldUseFunc_TeachyTv":
           ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
-          onField(() => game.openTeachyTv()); return;
+          if (bagCtx) leave(() => InitTeachyTvFromBag(game, bag));
+          else onField(() => Task_InitTeachyTvFromField(game));
+          return;
         case "FieldUseFunc_VsSeeker": FieldUseFunc_VsSeeker(game, item, { notNow, onField }); return;
         case "FieldUseFunc_Mail":
           FieldUseFunc_Mail((checkMail) => leave(checkMail), () => CB2_CheckMail(item, bag));
