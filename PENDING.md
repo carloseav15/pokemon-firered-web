@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7055/10115 (69.7 %)**.
-- Archivos C con funciones aún sin homólogo: **61**; quedan **3060 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7090/10115 (70.1 %)**.
+- Archivos C con funciones aún sin homólogo: **61**; quedan **3025 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 131.457 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~70.565 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~69.805 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -70,15 +70,15 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 50 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
 | 51 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
 | 52 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
-| 53 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
-| 54 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
-| 55 | `battle_transition.c` | parcial | 3037 | 18/134 | ~2629 |  |
+| 53 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
+| 54 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
+| 55 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
 | 56 | `overworld.c` | parcial | 3563 | 61/242 | ~2664 |  |
 | 57 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
 | 58 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
 | 59 | `event_object_movement.c` | parcial | 9412 | 525/759 | ~2901 |  |
 | 60 | `pokemon.c` | parcial | 6453 | 71/140 | ~3180 |  |
-| 61 | `field_effect.c` | parcial | 4033 | 24/239 | ~3628 |  |
+| 61 | `field_effect.c` | parcial | 4033 | 30/239 | ~3526 |  |
 
 Total: 61 archivos con huecos: 1 sin empezar, 1 adaptador, 11 casi completos y 48 parciales.
 
@@ -120,7 +120,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Almacenamiento de cajas con listas en vez de la interfaz real (`pokemon_storage_system_tasks.c`, `_graphics.c`, `_misc.c`, `_data.c`).
 - Teachy TV: sigue siendo el adaptador de texto de `menus/keyItemScreens.ts`; `teachyTv.ts` tiene 30 stubs y no está conectado.
 - Fame Checker: `fameChecker.ts` está conectado pero sus funciones de gráficos (ventanas, flechas, info box) son stubs.
-- Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
+- Transiciones de combate: mugshots de Alto Mando/Campeón ya integradas con assets y estados del C; faltan otras familias de `battle_transition.c`, y queda pendiente la revisión visual en navegador del adaptador Canvas.
 - Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona). Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
 - Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
@@ -142,7 +142,7 @@ Verificado solo con `check:port`, `build`, paridad de cdata/incbin/textos o chec
 - item_pc.c + mailbox_pc.c + pc_screen_effect.c + player_pc.c (buzón) → `itemPc.ts, mailboxPc.ts, playerPcMailbox.ts, pcScreenEffect.ts`
 - shop.c + buy_menu_helpers.c (+ event_object_movement.c parcial) → `shop.ts, buyMenuHelpers.ts, objectEventGraphics.ts`
 - hall_of_fame.c + credits.c (+ overworld.c créditos) → `hallOfFame.ts, credits.ts, overworldCredits.ts`
-- battle_transition.c (todas salvo ANGLED_WIPES) → `battle/transition.ts`
+- battle_transition.c (parcial; mugshots y varios efectos activos, otras familias con fallback) → `battle/mugshotTransition.ts`, `battle/transition.ts`
 - player_pc.c (menú superior del PC del jugador) → `menus/playerPc.ts`
 - learn_move.c → `menus/moveRelearner.ts`
 - field_weather.c + field_weather_effects.c → `field/weather.ts, field/weatherEffects.ts`
