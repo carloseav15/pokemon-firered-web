@@ -77,10 +77,10 @@ export const bagResult = { itemId: 0 };
 /** Stands in for the bag task when an item's field or battle function runs. */
 export type BagTaskContext = {
   taskId: number;
-  /** DisplayItemMessageInBag(..., Task_ReturnToBagFromContextMenu) */
-  message(str: ArrayLike<number>, fontId?: number): void;
+  /** DisplayItemMessageInBag(..., followUpFunc), defaulting to the bag's normal return task. */
+  message(str: ArrayLike<number>, fontId?: number, followUpFunc?: TaskFunc): void;
   /** ItemMenu_SetExitCallback(cb) + ItemMenu_StartFadeToExitCallback */
-  exit(cb: () => void): void;
+  exit(cb: () => void, closeWindow?: boolean): void;
 };
 
 export type BagHandlers = {
@@ -1019,8 +1019,12 @@ function openCaseOrReturn(itemId: number, location: number): () => void {
 function contextFor(taskId: number): BagTaskContext {
   return {
     taskId,
-    message: (str, fontId = FONT_NORMAL) => DisplayItemMessageInBag(taskId, fontId, str, Task_ReturnToBagFromContextMenu),
-    exit: (cb) => { ItemMenu_SetExitCallback(cb); ItemMenu_StartFadeToExitCallback(taskId); },
+    message: (str, fontId = FONT_NORMAL, followUpFunc = Task_ReturnToBagFromContextMenu) => DisplayItemMessageInBag(taskId, fontId, str, followUpFunc),
+    exit: (cb, closeWindow = false) => {
+      if (closeWindow) Bag_BeginCloseWin0Animation();
+      ItemMenu_SetExitCallback(cb);
+      ItemMenu_StartFadeToExitCallback(taskId);
+    },
   };
 }
 

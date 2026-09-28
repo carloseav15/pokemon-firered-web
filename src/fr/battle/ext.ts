@@ -10,6 +10,9 @@ import * as C from "../generated/constants";
 import { DoNamingScreen as OpenNamingScreen } from "../namingScreen";
 import { openHardwareChoice } from "../menus/hardwareChoice";
 import { decode, stringVars } from "../gba/charmap";
+import { A_BUTTON, B_BUTTON, JOY_NEW } from "../gba/input";
+import { tasks } from "../gba/tasks";
+import { FONT_NORMAL } from "../gba/font";
 import { b64 } from "../rom";
 import type { NameBuffer } from "../menus/namingModel";
 import { sound } from "../audio/sound";
@@ -27,8 +30,10 @@ import { rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, varGet, varSet } from "../save";
 import { BattlePokemon } from "../generated/structs";
 import {
-  G, gBattleMons, gBattlePartyCurrentOrder, gBattlerPartyIndexes, gBattleResults, gBattleScripting, gBattleStruct, gBitTable, gSideTimers,
+  G, gBattleMons, gBattlePartyCurrentOrder, gBattleTextBuff1, gBattleTextBuff2, gBattlerPartyIndexes, gBattleResults, gBattleScripting, gBattleStruct,
+  gBitTable, gDisplayedStringBattle, gEnigmaBerries, gSideTimers,
 } from "./globals";
+import { BattleStringExpandPlaceholdersToDisplayedString, PREPARE_STAT_BUFFER } from "./message";
 import { MOVE_IS_PERMANENT } from "./macros";
 import { CopyMonData } from "./mon_transfer";
 import { BtlController_EmitGetMonData, BUFFER_A } from "./controllers";
@@ -186,6 +191,85 @@ export function BattleUseFunc_BerryPouch(open: () => void): void { open(); }
 /** InitBerryPouchFromBattle (item_use.c): initialize BERRYPOUCH_FROMBATTLE and return to the bag. */
 export function InitBerryPouchFromBattle(open: () => void): void { open(); }
 
+/** BufferStatRoseMessage (pokemon.c): prepare the target stat and expand gText_DefendersStatRose. */
+function BufferStatRoseMessage(statIndex: number): void {
+  G.gBattlerTarget = G.gBattlerInMenuId;
+  PREPARE_STAT_BUFFER(gBattleTextBuff1, cdata<number[]>("pokemon", "sStatsToRaise")[statIndex]);
+  const rose = cdata<number[]>("battle_message", "gBattleText_Rose");
+  gBattleTextBuff2.fill(0xff);
+  gBattleTextBuff2.set(rose.slice(0, gBattleTextBuff2.length));
+  BattleStringExpandPlaceholdersToDisplayedString(cdata<number[]>("battle_message", "gText_DefendersStatRose"));
+}
+
+/** Battle_PrintStatBoosterEffectMessage (pokemon.c), using the active battler's ROM effect bytes. */
+export function Battle_PrintStatBoosterEffectMessage(itemId: number): Uint8Array {
+  let itemEffect: ArrayLike<number> | undefined;
+  if (itemId === C.ITEM_ENIGMA_BERRY) {
+    // This helper is reached from BattleUseFunc_StatBooster while the battle bag is active.
+    if (!gMain.inBattle) throw new Error("Battle_PrintStatBoosterEffectMessage requires an active battle for Enigma Berry data");
+    itemEffect = gEnigmaBerries[G.gBattlerInMenuId].itemEffect;
+  } else {
+    itemEffect = rom.itemEffects[itemId - C.ITEM_POTION] ?? undefined;
+  }
+  if (!itemEffect) throw new Error(`Missing item effect bytes for item ${itemId}`);
+
+  G.gPotentialItemEffectBattler = G.gBattlerInMenuId;
+  for (let i = 0; i < 3; i++) {
+    if (itemEffect[i]! & (C.ITEM0_X_ATTACK | C.ITEM1_X_SPEED | C.ITEM2_X_SPATK)) BufferStatRoseMessage(i * 2);
+    if (itemEffect[i]! & (C.ITEM0_DIRE_HIT | C.ITEM1_X_DEFEND | C.ITEM2_X_ACCURACY)) {
+      if (i !== 0) BufferStatRoseMessage(i * 2 + 1);
+      else {
+        G.gBattlerAttacker = G.gBattlerInMenuId;
+        BattleStringExpandPlaceholdersToDisplayedString(cdata<number[]>("battle_message", "gBattleText_GetPumped"));
+      }
+    }
+  }
+  if (itemEffect[3]! & C.ITEM3_GUARD_SPEC) {
+    G.gBattlerAttacker = G.gBattlerInMenuId;
+    BattleStringExpandPlaceholdersToDisplayedString(cdata<number[]>("battle_message", "gBattleText_MistShroud"));
+  }
+  return gDisplayedStringBattle;
+}
+
+type StatBoosterTaskState = { itemId: number; battlerId: number; context: BagTaskContext; finish: () => void };
+const sStatBoosterTasks = new Map<number, StatBoosterTaskState>();
+
+/** BattleUseFunc_StatBooster (item_use.c): apply first, then run the source's eight-frame/message/input sequence. */
+export function BattleUseFunc_StatBooster(taskId: number, itemId: number, battlerId: number, context: BagTaskContext, finish: () => void): void {
+  const partyIndex = gBattlerPartyIndexes[battlerId];
+  if (PokemonUseItemEffects(playerMon(partyIndex), itemId, partyIndex, 0, false)) {
+    context.message(rom.text("gText_WontHaveEffect"));
+    return;
+  }
+  tasks.data(taskId)[8] = 0;
+  sStatBoosterTasks.set(taskId, { itemId, battlerId, context, finish });
+  tasks.setFunc(taskId, Task_BattleUse_StatBooster_DelayAndPrint);
+}
+
+/** Task_BattleUse_StatBooster_DelayAndPrint (item_use.c). */
+function Task_BattleUse_StatBooster_DelayAndPrint(taskId: number): void {
+  const state = sStatBoosterTasks.get(taskId);
+  if (!state) return;
+  const data = tasks.data(taskId);
+  data[8] = ((data[8]! + 1) << 16) >> 16;
+  if (data[8]! <= 7) return;
+  G.gBattlerInMenuId = state.battlerId;
+  sound.playSE(C.SE_USE_ITEM);
+  removeBagItem(state.itemId, 1);
+  state.context.message(Battle_PrintStatBoosterEffectMessage(state.itemId), FONT_NORMAL, Task_BattleUse_StatBooster_WaitButton_ReturnToBattle);
+}
+
+/** Task_BattleUse_StatBooster_WaitButton_ReturnToBattle (item_use.c). */
+function Task_BattleUse_StatBooster_WaitButton_ReturnToBattle(taskId: number): void {
+  if (!JOY_NEW(A_BUTTON) && !JOY_NEW(B_BUTTON)) return;
+  const state = sStatBoosterTasks.get(taskId);
+  if (!state) return;
+  state.context.exit(() => {
+    sStatBoosterTasks.delete(taskId);
+    state.finish();
+  }, true);
+}
+
 /** party_menu.c OpenPartyMenuInTutorialBattle → SetCB2ToReshowScreenAfterMenu */
 export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
   PartyMenu.OpenPartyMenuInTutorialBattle(partyAction, () => { CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); });
@@ -197,14 +281,6 @@ export function CB2_BagMenuFromBattle(): void {
   const menuBattler = G.gBattlerInMenuId;
   const finish = (item: number): void => { varSet(C.VAR_ITEM_ID, item); CB2_SetUpReshowBattleScreenAfterMenu(); SetCB2ToReshowScreenAfterMenu2(); };
   const message = (label: string): void => openHardwareChoice(label, [{label: "OK", value: 0}], false, () => showBag());
-  const apply = (item: number, partyIndex: number, moveIndex: number): void => {
-    G.gBattlerInMenuId = menuBattler;
-    const mon = playerMon(partyIndex);
-    if (PokemonUseItemEffects(mon, item, partyIndex, moveIndex, false)) { message("It won't have any effect."); return; }
-    removeBagItem(item, 1);
-    sound.playSE(C.SE_USE_ITEM);
-    finish(item);
-  };
   /** gItemUseCB = cb; EnterPartyFromItemMenuInBattle (CB2_SetUpExitToBattleScreen or back to the bag). */
   const chooseMon = (item: number, cb: typeof PartyMenu.ItemUseCB_Medicine, back: () => void): void => {
     bagResult.itemId = item;
@@ -229,12 +305,14 @@ export function CB2_BagMenuFromBattle(): void {
         removeBagItem(item, 1);
         ctx.exit(() => finish(item));
         return;
-      case "BattleUseFunc_StatBooster": ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)); return;
+      case "BattleUseFunc_StatBooster":
+        BattleUseFunc_StatBooster(ctx.taskId, item, menuBattler, ctx, () => finish(item));
+        return;
       case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_Medicine, back)); return;
       case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back)); return;
       case "ItemUseInBattle_EnigmaBerry":
         ItemUseInBattle_EnigmaBerry(item, {
-          statBooster: () => ctx.exit(() => apply(item, gBattlerPartyIndexes[menuBattler], 0)),
+          statBooster: () => BattleUseFunc_StatBooster(ctx.taskId, item, menuBattler, ctx, () => finish(item)),
           medicine: () => ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_Medicine, back)),
           ether: () => ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back)),
           oakStopsYou: notNow,
