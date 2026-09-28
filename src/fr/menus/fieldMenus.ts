@@ -84,6 +84,34 @@ export function Task_WaitFadeIn_CallItemUseOnFieldCB(taskId: number, itemUseOnFi
   itemUseOnField();
 }
 
+/** SetFieldCallback2ForItemUse / FieldCB2_UseItemFromField (item_use.c).
+ * The Canvas menus return directly to this field flow without CB2_LoadMap,
+ * so openFieldBag invokes the queued callback at the corresponding handoff. */
+export function SetFieldCallback2ForItemUse(game: Game): void {
+  game.overworld.fieldCallback2 = () => FieldCB2_UseItemFromField(game);
+}
+
+/** FieldCB2_UseItemFromField (item_use.c), run when a field item screen returns. */
+export function FieldCB2_UseItemFromField(game: Game): boolean {
+  const ow = game.overworld;
+  ow.objects.freezeAll();
+  ow.controlsLocked = true;
+  paletteFade.fill(RGB_BLACK);
+  paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
+  paletteFade.fill(RGB_BLACK);
+  tasks.create((taskId) => Task_ItemUseWaitForFade(taskId, game), 10);
+  ow.gExitStairsMovementDisabled = false;
+  return true;
+}
+
+/** Task_ItemUseWaitForFade (item_use.c). */
+export function Task_ItemUseWaitForFade(taskId: number, game: Game): void {
+  if (!IsWeatherNotFadingIn()) return;
+  game.overworld.objects.unfreezeAll();
+  game.overworld.controlsLocked = false;
+  tasks.destroy(taskId);
+}
+
 type UsePartyItem = (item: number) => void;
 
 /** FieldUseFunc_Medicine (item_use.c). */
@@ -440,6 +468,18 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       post = () => { game.overworld.controlsLocked = true; game.overworld.objects.freezeAll(); cb(); };
       finish();
     });
+    const onFieldItemReturn = (cb: () => void): void => leave(() => {
+      post = () => {
+        SetFieldCallback2ForItemUse(game);
+        const fieldCallback2 = game.overworld.fieldCallback2;
+        if (fieldCallback2?.()) {
+          game.overworld.fieldCallback2 = null;
+          game.overworld.fieldCallback = null;
+        }
+        cb();
+      };
+      finish();
+    });
     const message = (title: string | ArrayLike<number>, next: () => void = back, fontId = C.FONT_NORMAL): void => {
       const bytes = typeof title === "string" ? encode(title) : title;
       if (bagCtx && next === back) { const ctx = bagCtx; bagCtx = null; ctx.message(bytes, fontId); return; }
@@ -515,12 +555,12 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_TmCase":
           FieldUseFunc_TmCase(bagCtx !== null,
             () => leave(() => InitTMCaseFromBag(openTmCase)),
-            () => onField(() => Task_InitTMCaseFromField(() => InitTMCase(C.TMCASE_FIELD, finish, true, tmHandlers))));
+            () => onFieldItemReturn(() => Task_InitTMCaseFromField(() => InitTMCase(C.TMCASE_FIELD, finish, true, tmHandlers))));
           return;
         case "FieldUseFunc_BerryPouch":
           FieldUseFunc_BerryPouch(bagCtx !== null,
             () => leave(() => InitBerryPouchFromBag(berryPouch)),
-            () => onField(() => Task_InitBerryPouchFromField(() => InitBerryPouch(C.BERRYPOUCH_FROMFIELD, finish, 1, pouchHandlers))));
+            () => onFieldItemReturn(() => Task_InitBerryPouchFromField(() => InitBerryPouch(C.BERRYPOUCH_FROMFIELD, finish, 1, pouchHandlers))));
           return;
         case "FieldUseFunc_Bike":
           FieldUseFunc_Bike(game, {
@@ -542,19 +582,19 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_TownMap":
           FieldUseFunc_TownMap(initialItem === undefined, {
             openFromBag: () => leave(() => UseTownMapFromBag(game, bag)),
-            openFromField: () => onField(() => Task_UseTownMapFromField(game)),
+            openFromField: () => onFieldItemReturn(() => Task_UseTownMapFromField(game)),
           });
           return;
         case "FieldUseFunc_FameChecker":
           FieldUseFunc_FameChecker(game, item, initialItem === undefined, {
             openFromBag: () => leave(() => UseFameCheckerFromBag(game, bag)),
-            openFromField: () => onField(() => Task_UseFameCheckerFromField(game)),
+            openFromField: () => onFieldItemReturn(() => Task_UseFameCheckerFromField(game)),
           });
           return;
         case "FieldUseFunc_TeachyTv":
           ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
           if (bagCtx) leave(() => InitTeachyTvFromBag(game, bag));
-          else onField(() => Task_InitTeachyTvFromField(game));
+          else onFieldItemReturn(() => Task_InitTeachyTvFromField(game));
           return;
         case "FieldUseFunc_VsSeeker": FieldUseFunc_VsSeeker(game, item, { notNow, fromBag: bagCtx !== null, onField }); return;
         case "FieldUseFunc_Mail":
