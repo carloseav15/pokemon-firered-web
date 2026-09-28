@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7405/10115 (73.2 %)**.
-- Archivos C con funciones aún sin homólogo: **55**; quedan **2710 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7407/10115 (73.2 %)**.
+- Archivos C con funciones aún sin homólogo: **55**; quedan **2708 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 119.903 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~64.086 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~64.038 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -25,7 +25,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 5 | `battle_controller_opponent.c` | casi completo | 1777 | 83/87 | ~81 |  |
 | 6 | `item_menu.c` | casi completo | 2397 | 112/116 | ~82 |  |
 | 7 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 8 | `field_control_avatar.c` | casi completo | 1182 | 41/49 | ~192 |  |
+| 8 | `field_control_avatar.c` | casi completo | 1182 | 43/49 | ~144 |  |
 | 9 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 10 | `trainer_card.c` | casi completo | 1959 | 63/73 | ~268 |  |
 | 11 | `field_fadetransition.c` | parcial | 965 | 39/59 | ~327 |  |

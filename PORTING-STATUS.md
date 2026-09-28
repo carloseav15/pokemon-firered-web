@@ -1,8 +1,8 @@
 Modo: tandas integradas por archivo/familia; meta principal de un jugador. Enlace e inalámbrico quedan aparte.
-Siguiente: `battle_controller_pokedude.c`, lecciones 7/8; desbloquea `item_menu.c` Catching/Status.
-Bloqueos: `item_use.c` Sacred Ash batalla sin caller; `battle_controller_player.c` pendiente solo LINK; `sprite.c` snapshots del layout GBA sin modelo TS activo.
-Pendiente fuera de la ruta FireRed activa: Pokéblock en Safari; Lavaridge requiere la familia de tareas de efectos de campo.
+Siguiente: `battle_controller_pokedude.c` bloqueado por Teachy TV desconectado y modos Catching/Status ausentes en la bolsa; seguir por otra familia viable.
+Bloqueos: Sacred Ash no tiene caller de batalla; raw `Pokemon` requiere layout GBA; Pokémon Safari Pokéblock y battle callbacks restantes dependen de sistemas fuera de alcance.
+No añadir alias para `AgbMain`: el loop activo es `Game`/`hw/runtime.ts`; serial y timer Flash requieren hardware o transporte no activo.
 Validación diferida: recorridos de navegador e historia; no afirmar paridad runtime. Teachy TV sigue como adaptador.
-Entrega (2026-09-28): helpers de input, pasos, signos y warps conectados; handlers de Safari alineados con su tabla C.
-Conteo: 7.405/10.115 (73,2 %), +37 desde el estado registrado (7.368); incluye implementaciones y equivalencias.
-`check:port`, `check:honesty`, build y `git diff --check` pasaron; build conserva avisos previos de chunks/imports. Sin navegador.
+Entrega (2026-09-28): reinicio poison y helpers de encuentro integrados; transición de batalla UNDERWATER usa constantes C y tipo de agua.
+Conteo: 7.407/10.115 (73,2 %), +2 desde el estado registrado (7.405); incluye implementaciones y equivalencias.
+`check:port`, `check:honesty`, build y `git diff --check` pasaron; `check:transitions` falla antes por aserción de sombra en salto. Sin navegador.
