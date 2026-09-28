@@ -2,7 +2,9 @@
 // transitions, the per-frame field callbacks, and BG/OBJ composition.
 
 import * as MB from "../generated/metatileBehavior";
+import * as C from "../generated/constants";
 import { paletteFade, FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_WHITE, RGB_BLACK, RGB_WHITE } from "../gba/fade";
+import { gPlttBufferFaded } from "../hw/palette";
 import { joy } from "../gba/input";
 import { SpriteManager } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
@@ -76,6 +78,18 @@ export function SetWhiteoutRespawnHealerNpcAsLastTalked(healLocationIdx: number)
 }
 
 const MAP_TYPE = { NONE: 0, TOWN: 1, CITY: 2, ROUTE: 3, UNDERGROUND: 4, UNDERWATER: 5, OCEAN_ROUTE: 6, UNKNOWN: 7, INDOOR: 8, SECRET_BASE: 9 };
+
+/** palette_bg_faded_fill_black (field_fadetransition.c): PLTT_SIZE is 0x200 bytes. */
+function palette_bg_faded_fill_black(): void {
+  gPlttBufferFaded.fill(C.RGB_BLACK, 0, 0x200 / 2);
+  paletteFade.fill(RGB_BLACK);
+}
+
+/** palette_bg_faded_fill_white (field_fadetransition.c). */
+function palette_bg_faded_fill_white(): void {
+  gPlttBufferFaded.fill(C.RGB_WHITE, 0, 0x200 / 2);
+  paletteFade.fill(RGB_WHITE);
+}
 
 export function isMapTypeOutdoors(type: number): boolean {
   return type === MAP_TYPE.ROUTE || type === MAP_TYPE.TOWN || type === MAP_TYPE.UNDERWATER || type === MAP_TYPE.CITY || type === MAP_TYPE.OCEAN_ROUTE;
@@ -832,18 +846,21 @@ export class Overworld {
   }
 
   fadeInFromBlack(): void {
-    paletteFade.fill(RGB_BLACK);
+    palette_bg_faded_fill_black();
     paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
+    palette_bg_faded_fill_black();
   }
 
   warpFadeInScreen(delay = 0): void {
     const lastType = this.lastUsedWarpType();
     if (MapTransitionIsExit(lastType, this.header.mapType)) {
-      paletteFade.fill(RGB_WHITE);
+      palette_bg_faded_fill_white();
       paletteFade.fadeScreen(FADE_FROM_WHITE, delay);
+      palette_bg_faded_fill_white();
     } else {
-      paletteFade.fill(RGB_BLACK);
+      palette_bg_faded_fill_black();
       paletteFade.fadeScreen(FADE_FROM_BLACK, delay);
+      palette_bg_faded_fill_black();
     }
   }
 
