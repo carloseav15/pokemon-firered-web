@@ -5,6 +5,18 @@ import { random } from "./random";
 import { cdata, hasCData } from "./hw/assets";
 import { CopyEasyChatWord } from "./pokemon/mail";
 import { flagGet, IsNationalPokedexEnabled } from "./save";
+import type { SaveData } from "./save";
+
+/** InitEasyChatPhrases (easy_chat.c): new-game SaveBlock initialization. */
+export function InitEasyChatPhrases(data: SaveData): void {
+  data.easyChatProfile = [C.EC_WORD_I_AM, C.EC_WORD_A, C.EC_WORD_POKEMON, C.EC_WORD_FRIEND];
+  data.easyChatBattleStart = [C.EC_WORD_ARE, C.EC_WORD_YOU, C.EC_WORD_READY, C.EC_WORD_QUES, C.EC_WORD_HERE_I_COME, C.EC_WORD_EXCL];
+  data.easyChatBattleWon = new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
+  data.easyChatBattleLost = new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
+  for (const mail of data.mail) mail.words.fill(C.EC_WORD_UNDEFINED);
+  // include/config.h enables UBFIX; NUM_ADDITIONAL_PHRASE_BYTES is five in this build.
+  data.additionalPhrases.fill(0);
+}
 
 type EasyChatWord = { text: { $sym: string } };
 const GROUP_DATA: Record<number, string> = {

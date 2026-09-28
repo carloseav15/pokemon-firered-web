@@ -77,6 +77,11 @@ export type SaveData = {
   money: number;
   coins: number;
   mail: MailData[];
+  easyChatProfile: number[];
+  easyChatBattleStart: number[];
+  easyChatBattleWon: number[];
+  easyChatBattleLost: number[];
+  additionalPhrases: number[];
   bag: { items: BagPocket; keyItems: BagPocket; pokeBalls: BagPocket; tmCase: BagPocket; berryPouch: BagPocket };
   pcItems: BagPocket;
   registeredItem: number;
@@ -152,6 +157,11 @@ export function newSaveData(): SaveData {
     money: 3000,
     coins: 0,
     mail: Array.from({ length: C.MAIL_COUNT }, emptyMailData),
+    easyChatProfile: [C.EC_WORD_I_AM, C.EC_WORD_A, C.EC_WORD_POKEMON, C.EC_WORD_FRIEND],
+    easyChatBattleStart: [C.EC_WORD_ARE, C.EC_WORD_YOU, C.EC_WORD_READY, C.EC_WORD_QUES, C.EC_WORD_HERE_I_COME, C.EC_WORD_EXCL],
+    easyChatBattleWon: new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED),
+    easyChatBattleLost: new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED),
+    additionalPhrases: new Array(C.NUM_ADDITIONAL_PHRASE_BYTES).fill(0),
     bag: { items: [], keyItems: [], pokeBalls: [], tmCase: [], berryPouch: [] },
     pcItems: [],
     registeredItem: 0,
@@ -211,6 +221,11 @@ export function setSave(data: SaveData): void {
     }
   }
   delete legacy.pcMail;
+  data.easyChatProfile ??= [C.EC_WORD_I_AM, C.EC_WORD_A, C.EC_WORD_POKEMON, C.EC_WORD_FRIEND];
+  data.easyChatBattleStart ??= [C.EC_WORD_ARE, C.EC_WORD_YOU, C.EC_WORD_READY, C.EC_WORD_QUES, C.EC_WORD_HERE_I_COME, C.EC_WORD_EXCL];
+  data.easyChatBattleWon ??= new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
+  data.easyChatBattleLost ??= new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
+  data.additionalPhrases ??= new Array(C.NUM_ADDITIONAL_PHRASE_BYTES).fill(0);
   data.ramScript ??= emptyRamScript();
   data.questLogEvents ??= [];
   data.questLogPlayerGfxActions ??= [];

@@ -64,6 +64,7 @@ import { NewGameInitPCItems } from "./menus/playerPc";
 import { ResetQLPlayedTheSlots } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
+import { InitEasyChatPhrases } from "./easyChat";
 
 /** GetProfOaksRatingMessageByCount (prof_pc.c). */
 function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
@@ -235,6 +236,7 @@ export class Game {
     ClearRoamerData();
     resetPokemonStorageSystem();
     NewGameInitPCItems();
+    InitEasyChatPhrases(save);
     this.InitHeracrossSizeRecord();
     this.InitMagikarpSizeRecord();
     SetAllRenewableItemFlags();
