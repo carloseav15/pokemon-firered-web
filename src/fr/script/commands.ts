@@ -630,7 +630,7 @@ function ScrCmd_fadescreenspeed(ctx: ScriptRunner): boolean {
   ctx.SetupNativeScript(IsPaletteNotActive);
   return true;
 }
-function ScrCmd_setflashlevel(ctx: ScriptRunner): boolean { const level = varGet(ctx.ScriptReadHalfword()); ctx.ow.flashLevel = level < 0 || level > 4 ? 0 : level; return false; }
+function ScrCmd_setflashlevel(ctx: ScriptRunner): boolean { ctx.ow.SetFlashLevel(varGet(ctx.ScriptReadHalfword())); return false; }
 function ScrCmd_animateflash(ctx: ScriptRunner): boolean {
   const target = ctx.readByte();
   ctx.ow.game.animateFlash(target);

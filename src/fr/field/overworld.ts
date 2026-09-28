@@ -18,7 +18,7 @@ import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, 
 import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_DIVE, CONNECTION_EAST, CONNECTION_EMERGE, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
-import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
+import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_FLAG_UNDERWATER } from "./playerAvatar";
 import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
@@ -358,6 +358,12 @@ export class Overworld {
 
   setWarpDestination(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
     this.SetWarpDestination(mapGroup, mapNum, warpId, x, y);
+  }
+
+  /** Overworld_SetWarpDestinationFromWarp (overworld.c). No caller yet: the one real call site is
+   * quest_log.c's playback, not ported (see PORTING-STATUS.md). */
+  Overworld_SetWarpDestinationFromWarp(warp: WarpData): void {
+    this.warpDestination = { ...warp };
   }
 
   /** SetWarpDestinationToMapWarp (overworld.c). */
@@ -724,10 +730,28 @@ export class Overworld {
     if (!this.header.requiresFlash) this.flashLevel = 0;
     else if (flagGet(rom.constants.FLAG_SYS_FLASH_ACTIVE ?? 0)) this.flashLevel = 0;
     else this.flashLevel = MAX_FLASH_LEVEL; // gMaxFlashLevel
+    this.InitCurrentFlashLevelScanlineEffect();
+  }
+
+  /** InitCurrentFlashLevelScanlineEffect (overworld.c): called from CB1_Overworld in the C; here
+   * it also runs right after setDefaultFlashLevel sets flashLevel, since this port has no
+   * per-frame CB1_Overworld loop driving it separately. */
+  InitCurrentFlashLevelScanlineEffect(): void {
     if (this.flashLevel !== 0) {
       WriteFlashScanlineEffectBuffer(this.flashLevel);
       ScanlineEffect_SetParams({ dmaDest: REG_OFFSET_WIN0H, dmaControl: SCANLINE_EFFECT_DMACNT_16BIT, initState: 1 });
     }
+  }
+
+  /** SetFlashLevel (overworld.c). */
+  SetFlashLevel(flashLevel: number): void {
+    if (flashLevel < 0 || flashLevel > MAX_FLASH_LEVEL) flashLevel = 0;
+    this.flashLevel = flashLevel;
+  }
+
+  /** Overworld_GetFlashLevel (overworld.c). */
+  Overworld_GetFlashLevel(): number {
+    return this.flashLevel;
   }
 
   /** PrintWhiteOutRecoveryMessage from field_screen_effect.c, adapted to the Canvas window layer. */
@@ -870,7 +894,7 @@ export class Overworld {
     this.objects.removeAll();
     const x = save.pos.x + MAP_OFFSET;
     const y = save.pos.y + MAP_OFFSET;
-    const state = this.getInitialPlayerAvatarState();
+    const state = this.GetInitialPlayerAvatarState();
     this.player.InitPlayerAvatar(x, y, state.direction, save.playerGender);
     this.player.setTransitionFlags(state.transitionFlags);
     this.resetInitialPlayerAvatarState();
@@ -890,30 +914,62 @@ export class Overworld {
     this.doors.reset();
   }
 
-  private getInitialPlayerAvatarState(): { direction: number; transitionFlags: number } {
-    const behavior = this.map.behaviorAt(save.pos.x + 7, save.pos.y + 7);
+  /** GetInitialPlayerAvatarState (overworld.c): unlike the C, this returns the new state instead
+   * of also storing it into sInitialPlayerAvatarState — the one caller resets initialAvatar right
+   * after using it, so there's nothing left to read gInitialPlayerAvatarState's persisted copy. */
+  GetInitialPlayerAvatarState(): { direction: number; transitionFlags: number } {
+    const behavior = this.GetCenterScreenMetatileBehavior();
     const mapType = this.header.mapType;
-    const s = this.initialAvatar;
-    let flags = PLAYER_AVATAR_FLAG_ON_FOOT;
-    if (mapType !== MAP_TYPE.INDOOR && flagGet(rom.constants.FLAG_SYS_CRUISE_MODE ?? 0)) flags = PLAYER_AVATAR_FLAG_ON_FOOT;
-    else if (MB.MetatileBehavior_IsSurfable(behavior) && !this.isSurfableInSeafoamIslands(behavior)) flags = PLAYER_AVATAR_FLAG_SURFING;
-    else if (!this.header.allowCycling) flags = PLAYER_AVATAR_FLAG_ON_FOOT;
-    else flags = s.transitionFlags === 2 || s.transitionFlags === 4 ? s.transitionFlags : PLAYER_AVATAR_FLAG_ON_FOOT;
-    let direction = DIR_SOUTH;
-    if (MB.MetatileBehavior_IsNonAnimDoor(behavior) || MB.MetatileBehavior_IsWarpDoor_2(behavior)) direction = DIR_SOUTH;
-    else if (MB.MetatileBehavior_IsSouthArrowWarp(behavior)) direction = DIR_NORTH;
-    else if (MB.MetatileBehavior_IsNorthArrowWarp(behavior)) direction = DIR_SOUTH;
-    else if (MB.MetatileBehavior_IsWestArrowWarp(behavior)) direction = DIR_EAST;
-    else if (MB.MetatileBehavior_IsEastArrowWarp(behavior)) direction = DIR_WEST;
-    else if (MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior)) direction = DIR_WEST;
-    else if (MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior)) direction = DIR_EAST;
-    else if (MB.MetatileBehavior_IsLadder(behavior)) direction = s.direction;
-    else if (s.hasDirectionSet) direction = s.direction;
-    return { direction, transitionFlags: flags };
+    const transitionFlags = this.GetAdjustedInitialTransitionFlags(behavior, mapType);
+    const direction = this.GetAdjustedInitialDirection(transitionFlags, behavior, mapType);
+    return { direction, transitionFlags };
   }
 
-  private isSurfableInSeafoamIslands(behavior: number): boolean {
+  /** GetAdjustedInitialTransitionFlags (overworld.c). */
+  GetAdjustedInitialTransitionFlags(behavior: number, mapType: number): number {
+    if (mapType !== MAP_TYPE.INDOOR && flagGet(rom.constants.FLAG_SYS_CRUISE_MODE ?? 0)) return PLAYER_AVATAR_FLAG_ON_FOOT;
+    if (mapType === MAP_TYPE.UNDERWATER) return PLAYER_AVATAR_FLAG_UNDERWATER;
+    if (this.MetatileBehavior_IsSurfableInSeafoamIslands(behavior)) return PLAYER_AVATAR_FLAG_ON_FOOT;
+    if (MB.MetatileBehavior_IsSurfable(behavior)) return PLAYER_AVATAR_FLAG_SURFING;
+    if (!this.Overworld_IsBikingAllowed()) return PLAYER_AVATAR_FLAG_ON_FOOT;
+    const prev = this.initialAvatar.transitionFlags;
+    if (prev === PLAYER_AVATAR_FLAG_MACH_BIKE) return PLAYER_AVATAR_FLAG_MACH_BIKE;
+    if (prev !== PLAYER_AVATAR_FLAG_ACRO_BIKE) return PLAYER_AVATAR_FLAG_ON_FOOT;
+    return PLAYER_AVATAR_FLAG_ACRO_BIKE;
+  }
+
+  /** MetatileBehavior_IsSurfableInSeafoamIslands (overworld.c). */
+  MetatileBehavior_IsSurfableInSeafoamIslands(behavior: number): boolean {
     return MB.MetatileBehavior_IsSurfable(behavior) && (this.mapId === "MAP_SEAFOAM_ISLANDS_B3F" || this.mapId === "MAP_SEAFOAM_ISLANDS_B4F");
+  }
+
+  /** GetAdjustedInitialDirection (overworld.c). */
+  GetAdjustedInitialDirection(transitionFlags: number, behavior: number, mapType: number): number {
+    const s = this.initialAvatar;
+    if (flagGet(rom.constants.FLAG_SYS_CRUISE_MODE ?? 0) && mapType === MAP_TYPE.OCEAN_ROUTE) return DIR_EAST;
+    if (MB.MetatileBehavior_IsDeepSouthWarp(behavior)) return DIR_NORTH;
+    if (MB.MetatileBehavior_IsNonAnimDoor(behavior) || MB.MetatileBehavior_IsWarpDoor_2(behavior)) return DIR_SOUTH;
+    if (MB.MetatileBehavior_IsSouthArrowWarp(behavior)) return DIR_NORTH;
+    if (MB.MetatileBehavior_IsNorthArrowWarp(behavior)) return DIR_SOUTH;
+    if (MB.MetatileBehavior_IsWestArrowWarp(behavior)) return DIR_EAST;
+    if (MB.MetatileBehavior_IsEastArrowWarp(behavior)) return DIR_WEST;
+    if (MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior)) return DIR_WEST;
+    if (MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior)) return DIR_EAST;
+    if ((s.transitionFlags === PLAYER_AVATAR_FLAG_UNDERWATER && transitionFlags === PLAYER_AVATAR_FLAG_SURFING)
+      || (s.transitionFlags === PLAYER_AVATAR_FLAG_SURFING && transitionFlags === PLAYER_AVATAR_FLAG_UNDERWATER)) return s.direction;
+    if (MB.MetatileBehavior_IsLadder(behavior)) return s.direction;
+    if (s.hasDirectionSet) return s.direction;
+    return DIR_SOUTH;
+  }
+
+  /** GetCenterScreenMetatileBehavior (overworld.c). */
+  GetCenterScreenMetatileBehavior(): number {
+    return this.map.behaviorAt(save.pos.x + 7, save.pos.y + 7);
+  }
+
+  /** Overworld_IsBikingAllowed (overworld.c). */
+  Overworld_IsBikingAllowed(): boolean {
+    return this.header.allowCycling;
   }
 
   resetInitialPlayerAvatarState(): void {
