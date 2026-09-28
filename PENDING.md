@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7854/10115 (77.6 %)**.
-- Archivos C con funciones aún sin homólogo: **45**; quedan **2261 nombres**.
-- Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7869/10115 (77.8 %)**.
+- Archivos C con funciones aún sin homólogo: **45**; quedan **2246 nombres**.
+- Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 106.224 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~54.548 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~54.201 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -24,16 +24,16 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 4 | `battle_setup.c` | casi completo | 1070 | 63/66 | ~48 |  |
 | 5 | `item_menu.c` | casi completo | 2397 | 113/116 | ~61 |  |
 | 6 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 7 | `field_fadetransition.c` | casi completo | 965 | 48/59 | ~179 |  |
-| 8 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
-| 9 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 10 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 11 | `naming_screen.c` | casi completo | 2509 | 88/109 | ~483 |  |
+| 7 | `naming_screen.c` | casi completo | 2509 | 104/109 | ~115 |  |
+| 8 | `field_fadetransition.c` | casi completo | 965 | 48/59 | ~179 |  |
+| 9 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
+| 10 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 11 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 12 | `start_menu.c` | parcial | 1016 | 34/65 | ~484 |  |
 | 13 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
 | 14 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
 | 15 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 16 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
+| 16 | `help_system_util.c` | sin empezar | 848 | 0/41 | ~848 |  |
 | 17 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
 | 18 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
 | 19 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
@@ -64,7 +64,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 44 | `event_object_movement.c` | parcial | 9412 | 533/759 | ~2802 |  |
 | 45 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
-Total: 45 archivos con huecos: 1 sin empezar, 1 adaptador, 12 casi completos y 31 parciales.
+Total: 45 archivos con huecos: 2 sin empezar, 1 adaptador, 12 casi completos y 30 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -107,7 +107,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona). Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
 - Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
-- Pantalla de nombres: 88/109 funciones (`naming_screen.c`); estados de input, sprites, iconos, renderizado de texto/teclado y callbacks conectados. Quedan 21 nombres; pantalla e historia sin validar en navegador.
+- Pantalla de nombres: 104/109 funciones (`naming_screen.c`); estados, sprites, iconos, renderizado, teclado y callbacks conectados. Quedan cinco `Debug_NamingScreen*` estáticos sin callers en el C; pantalla e historia sin validar en navegador.
 - Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
@@ -116,6 +116,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Trainer Tower: `trainer_tower.c` y sus llamadas `InitTrainerTowerBattleStruct`/`FreeTrainerTowerBattleStruct` aún no están portadas; `battle_util2.c` tiene recursos normales cubiertos, pero ese branch queda pendiente.
 - Uso de objetos (`item_use.c`): dispatch Enigma, rechazo de Oak, consumo/mensaje común de Repel, Escape Rope y Poké Doll, flautas, cañas, Item Finder, TM Case, Berry Pouch, Mail, Bike y la secuencia de potenciadores de combate están conectados. El helper registra payloads de uso en las rutas activas; faltan 12/73 nombres y la reproducción/serialización original de Quest Log.
 - Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller y Battle Tower sigue sin portar; los huecos de `battle_bg.c`, `evolution_scene.c` y `battle_records.c` son de enlace/intercambio; `help_system_util.c` requiere la UI GBA de ayuda aún no conectada.
+- Bloqueo de tanda (2026-09-28): los cinco `Debug_NamingScreen*` restantes son funciones estáticas sin callers en `naming_screen.c`; los últimos huecos de `field_control_avatar.c` son interacciones de jugadores de enlace y `SetCableClubWarp` es solo Cable Club, fuera de la meta principal.
 - Menú de guardado (`start_menu.c`): el commit de Quest Log necesita el buffer/serialización original de escenas (`SaveQuestLogData` en `quest_log.c`); la escena y reproducción de Quest Log siguen pendientes.
 
 ## 5. Portado pero sin probar en navegador

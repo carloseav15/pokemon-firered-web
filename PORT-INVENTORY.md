@@ -11,23 +11,24 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 31 | 77295 | 1423/3479 |
+| Falta (sin funciones portadas) | 2 | 2278 | 0/111 |
+| Parcial (< 80 % de funciones) | 30 | 76447 | 1422/3438 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 12 | 26099 | 881/986 |
+| Casi completo (≥ 80 % y < 100 %) | 12 | 26099 | 897/986 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 164 | 147133 | 5522/5522 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
-| Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
+| Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
 | **Pendiente de portar** | **45** | **106224** | |
-| **Total en alcance** | **211** | **253703** | **7854/10115** |
-| **Enlace (aparte)** | **42** | **49339** | **101/1711** |
+| **Total en alcance** | **211** | **253703** | **7869/10115** |
+| **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Falta (sin funciones portadas)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `pokemon_storage_system_misc.c` | 1430 | 0/70 |  |  |  |
+| `help_system_util.c` | 848 | 0/41 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
 
@@ -61,7 +62,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `title_screen.c` | 1315 | 2/39 | `introTitle.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 34/65 | `game.ts`, `startMenu.ts` |  |  |
-| `help_system_util.c` | 848 | 1/41 |  |  |  |
 | `easy_chat.c` | 730 | 10/39 | `easyChat.ts`, `pokemon/mail.ts`, `script/specials.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
 
@@ -78,7 +78,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `battle_main.c` | 4477 | 85/106 | `battle/controllers.ts`, `battle/globals.ts`, `battle/main.ts` … |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
-| `naming_screen.c` | 2509 | 88/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
+| `naming_screen.c` | 2509 | 104/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
 | `item_menu.c` | 2397 | 113/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `trainer_card.c` | 1959 | 66/73 | `menus/trainerCard.ts` |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
@@ -303,7 +303,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `dodrio_berry_picking.c` | 4954 | 7/147 |  | 7/147 |  |
+| `dodrio_berry_picking.c` | 4954 | 8/147 |  | 8/147 |  |
 | `union_room.c` | 4761 | 6/110 | `script/eventObjectLock.ts`, `script/specials.ts`, `unionRoom.ts` | 6/110 | 1 |
 | `pokemon_jump.c` | 4582 | 5/186 |  | 5/186 |  |
 | `berry_crush.c` | 3488 | 4/73 |  | 4/73 |  |
