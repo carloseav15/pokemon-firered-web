@@ -485,25 +485,27 @@ export class FieldControl {
     return SIGNPOST_NA;
   }
 
+  /** SetUpWalkIntoSignScript (field_control_avatar.c). */
+  private SetUpWalkIntoSignScript(script: number, playerDirection: number): void {
+    varSet(SV.FACING, playerDirection);
+    this.ow.script.ScriptContext_SetupScript(script);
+    this.SetWalkingIntoSignVars();
+    this.MsgSetSignpost();
+  }
+
   private trySetUpWalkIntoSignpostScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     if (JOY_HELD(DPAD_LEFT | DPAD_RIGHT)) return false;
     if (direction === DIR_EAST || direction === DIR_WEST) return false;
     const type = this.GetFacingSignpostType(behavior, direction);
-    const setup = (script: number) => {
-      varSet(SV.FACING, direction);
-      this.ow.script.ScriptContext_SetupScript(script);
-      this.SetWalkingIntoSignVars();
-      this.MsgSetSignpost();
-      return true;
-    };
-    if (type === SIGNPOST_POKECENTER) return setup(rom.label("EventScript_PokecenterSign"));
-    if (type === SIGNPOST_POKEMART) return setup(rom.label("EventScript_PokemartSign"));
-    if (type === SIGNPOST_INDIGO_1) return setup(rom.label("EventScript_Indigo_UltimateGoal"));
-    if (type === SIGNPOST_INDIGO_2) return setup(rom.label("EventScript_Indigo_HighestAuthority"));
+    if (type === SIGNPOST_POKECENTER) { this.SetUpWalkIntoSignScript(rom.label("EventScript_PokecenterSign"), direction); return true; }
+    if (type === SIGNPOST_POKEMART) { this.SetUpWalkIntoSignScript(rom.label("EventScript_PokemartSign"), direction); return true; }
+    if (type === SIGNPOST_INDIGO_1) { this.SetUpWalkIntoSignScript(rom.label("EventScript_Indigo_UltimateGoal"), direction); return true; }
+    if (type === SIGNPOST_INDIGO_2) { this.SetUpWalkIntoSignScript(rom.label("EventScript_Indigo_HighestAuthority"), direction); return true; }
     const script = this.GetSignpostScriptAtMapPosition(position);
     if (!script) return false;
     if (type !== SIGNPOST_SCRIPTED) return false;
-    return setup(script);
+    this.SetUpWalkIntoSignScript(script, direction);
+    return true;
   }
 
   /** GetSignpostScriptAtMapPosition (field_control_avatar.c). */
