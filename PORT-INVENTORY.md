@@ -12,7 +12,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 49 | 105501 | 1760/4779 |
+| Parcial (< 80 % de funciones) | 49 | 105501 | 1782/4779 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 10 | 23126 | 889/988 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 148 | 121900 | 4220/4220 |
@@ -20,7 +20,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **61** | **131457** | |
-| **Total en alcance** | **211** | **253703** | **6897/10115** |
+| **Total en alcance** | **211** | **253703** | **6919/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -50,7 +50,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
-| `field_player_avatar.c` | 2168 | 62/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
+| `field_player_avatar.c` | 2168 | 84/176 | `field/fishing.ts`, `field/playerAvatar.ts`, `field/specialFieldAnim.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
 | `battle_ai_script_commands.c` | 1970 | 25/105 | `battle/ai.ts`, `battle/util.ts` |  |  |

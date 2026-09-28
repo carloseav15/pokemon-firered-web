@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6897/10115 (68.2 %)**.
-- Archivos C con funciones aún sin homólogo: **61**; quedan **3218 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6919/10115 (68.4 %)**.
+- Archivos C con funciones aún sin homólogo: **61**; quedan **3196 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 131.457 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~72.790 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~72.519 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -53,13 +53,13 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 33 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
 | 34 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
 | 35 | `field_effect_helpers.c` | parcial | 1421 | 16/76 | ~1121 |  |
-| 36 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
-| 37 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
-| 38 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
-| 39 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
-| 40 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
-| 41 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
-| 42 | `field_player_avatar.c` | parcial | 2168 | 62/176 | ~1404 |  |
+| 36 | `field_player_avatar.c` | parcial | 2168 | 84/176 | ~1133 |  |
+| 37 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
+| 38 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
+| 39 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
+| 40 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
+| 41 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
+| 42 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
 | 43 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
 | 44 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
 | 45 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
