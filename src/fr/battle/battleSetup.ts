@@ -330,7 +330,7 @@ export class BattleSetup {
     const firstBattle = this.mode === TRAINER_BATTLE_EARLY_RIVAL && (this.rivalFlags & RIVAL_BATTLE_TUTORIAL) === RIVAL_BATTLE_TUTORIAL;
     const trainer = rom.trainers[this.opponentA];
     ow.script.ScriptContext_Stop();
-    this.game.startBattle({
+    this.DoTrainerBattle({
       kind: "trainer",
       trainerId: this.opponentA,
       enemyParty: this.trainerParty(this.opponentA),
@@ -338,6 +338,13 @@ export class BattleSetup {
       isDouble: !!trainer?.double && this.mode !== TRAINER_BATTLE_EARLY_RIVAL,
       onEnd: (outcome) => this.endTrainerBattle(outcome, rematch),
     });
+  }
+
+  /** DoTrainerBattle (battle_setup.c): start the battle transition and account for both battle stats. */
+  private DoTrainerBattle(request: BattleRequest): void {
+    incrementGameStat(rom.c("GAME_STAT_TOTAL_BATTLES"));
+    incrementGameStat(rom.c("GAME_STAT_TRAINER_BATTLES"));
+    this.game.startBattle(request);
   }
 
   private endTrainerBattle(outcome: number, rematch = false): void {
