@@ -5,14 +5,17 @@ import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { A_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW } from "../gba/input";
 import { rom } from "../rom";
-import { save } from "../save";
+import { save, varGet } from "../save";
 import { G, gActionSelectionCursor, gBattleBufferA, gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gBitTable, gDisplayedStringBattle, gHealthboxSpriteIds } from "./globals";
-import { BtlController_EmitTwoReturnValues, BUFFER_B } from "./controllers";
+import { BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues, BUFFER_B } from "./controllers";
 import { CreateSprite, gSprites, SpriteCallbackDummy } from "../hw/sprite";
 import { playerMon, GetMonData } from "../pokemon/mon";
 import { DecompressTrainerBackPalette, gTrainerBackPicCoords, InitAndLaunchSpecialAnimation, PlaySE12WithPanning, TryHandleLaunchBattleTableAnimation } from "./gfx_sfx_util";
 import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle } from "./message";
-import { BeginFastPaletteFade } from "../hw/palette";
+import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "../hw/palette";
+import { gMain } from "../hw/runtime";
+import { battleHost } from "./host";
+import { BattleMainCB2 } from "./main_init";
 import { IsDma3ManagerBusyWithBgCopy } from "../hw/bg";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToTrainerBack, SpriteCB_TrainerSlideIn } from "./anim";
 import { SetHealthboxSpriteVisible, StartHealthboxSlideIn, UpdateHealthboxAttribute } from "./interface";
@@ -49,6 +52,32 @@ function SafariHandleUnknownYesNoBox(): void { SafariBufferExecCompleted(); }
 function SafariHandleChooseMove(): void { SafariBufferExecCompleted(); }
 function SafariHandleChoosePokemon(): void { SafariBufferExecCompleted(); }
 function SafariHandleCmd23(): void { SafariBufferExecCompleted(); }
+
+/** SafariHandleChooseItem/SafariOpenPokeblockCase/CompleteWhenChosePokeblock
+ * (battle_controller_safari.c): CONTROLLER_OPENBAG is in the C's own command table but this chain
+ * never sets gSpecialVar_ItemId/opens a real menu on its own either — the real FRLG Safari Zone
+ * action menu is BALL/BAIT/ROCK/RUN (see SafariHandleChooseAction), so CONTROLLER_OPENBAG is
+ * never actually sent to this controller. Kept for the same reason the no-op handlers above are. */
+function SafariHandleChooseItem(): void {
+  const b = G.gActiveBattler;
+  BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, RGB_BLACK);
+  gBattlerControllerFuncs[b] = SafariOpenPokeblockCase;
+  G.gBattlerInMenuId = b;
+}
+
+function SafariOpenPokeblockCase(): void {
+  if (!gPaletteFade.active) gBattlerControllerFuncs[G.gActiveBattler] = CompleteWhenChosePokeblock;
+}
+
+function CompleteWhenChosePokeblock(): void {
+  if (gMain.callback2 === BattleMainCB2 && !gPaletteFade.active) {
+    BtlController_EmitOneReturnValue(BUFFER_B, varGet(C.VAR_ITEM_ID));
+    SafariBufferExecCompleted();
+  }
+}
+
+/** SafariDummy (battle_controller_safari.c): defined but never referenced there either. */
+function SafariDummy(): void {}
 function SafariHandleHealthBarUpdate(): void { SafariBufferExecCompleted(); }
 function SafariHandleExpUpdate(): void { SafariBufferExecCompleted(); }
 function SafariHandleStatusAnimation(): void { SafariBufferExecCompleted(); }
@@ -237,6 +266,7 @@ const done = (): void => SafariBufferExecCompleted();
 
 const COMMANDS: Record<number, () => void> = {
   [C.CONTROLLER_GETMONDATA]: SafariHandleGetMonData,
+  [C.CONTROLLER_OPENBAG]: SafariHandleChooseItem,
   [C.CONTROLLER_GETRAWMONDATA]: SafariHandleGetRawMonData,
   [C.CONTROLLER_SETMONDATA]: SafariHandleSetMonData,
   [C.CONTROLLER_SETRAWMONDATA]: SafariHandleSetRawMonData,
@@ -290,11 +320,29 @@ const COMMANDS: Record<number, () => void> = {
   [C.CONTROLLER_INTROSLIDE]: SafariHandleIntroSlide,
   [C.CONTROLLER_INTROTRAINERBALLTHROW]: SafariHandleIntroTrainerBallThrow,
   [C.CONTROLLER_BATTLEANIMATION]: SafariHandleBattleAnimation,
-  [C.CONTROLLER_ENDLINKBATTLE]: () => {
-    G.gBattleOutcome = gBattleBufferA[G.gActiveBattler][1];
-    sound.fadeOutBGM(5);
-    BeginFastPaletteFade(3);
-    done();
-  },
+  [C.CONTROLLER_ENDLINKBATTLE]: SafariHandleCmd55,
   [C.CONTROLLER_TERMINATOR_NOP]: SafariCmdEnd,
 };
+
+/** SafariHandleCmd55 (battle_controller_safari.c): the link-only
+ * gBattlerControllerFuncs[b] = Safari_SetBattleEndCallbacks branch is kept structurally but never
+ * taken (no link battles). */
+function SafariHandleCmd55(): void {
+  G.gBattleOutcome = gBattleBufferA[G.gActiveBattler][1];
+  sound.fadeOutBGM(5);
+  BeginFastPaletteFade(3);
+  done();
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_LINK && !(G.gBattleTypeFlags & C.BATTLE_TYPE_IS_MASTER)) {
+    gBattlerControllerFuncs[G.gActiveBattler] = Safari_SetBattleEndCallbacks;
+  }
+}
+
+/** Safari_SetBattleEndCallbacks (battle_controller_safari.c): unlike controller_player.ts's
+ * SetBattleEndCallbacks, this one doesn't stop the low-health SE. */
+function Safari_SetBattleEndCallbacks(): void {
+  if (!gPaletteFade.active) {
+    gMain.inBattle = false;
+    gMain.callback1 = battleHost.preBattleCallback1;
+    battleHost.finish(G.gBattleOutcome);
+  }
+}
