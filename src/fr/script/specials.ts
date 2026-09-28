@@ -13,7 +13,7 @@ import { EnableNationalPokedex as enableNationalPokedex, flagGet, flagSet, incre
 import { MAP_OFFSET } from "../field/fieldmap";
 import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
-import { countAliveNonEggMons, GetKantoPokedexCount, GetNationalPokedexCount, GetLeadMonIndex, HasAllKantoMons, HasAllMons, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
+import { countAliveNonEggMons, GetKantoPokedexCount, GetNationalPokedexCount, GetLeadMonIndex, GetPlayerTrainerId, HasAllKantoMons, HasAllMons, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import { GetMonData, GetMonEVCount, SetMonData } from "../pokemon/mon";
 import { cdata, hasCData, loadCData } from "../hw/assets";
 import type { ScriptRunner } from "./context";
@@ -148,7 +148,7 @@ export const SPECIALS: Record<string, Special> = {
   DoesPlayerPartyContainSpecies: () => (save.party.some((m) => m.species === varGet(SV.x8004)) ? 1 : 0),
   PlayerHasGrassPokemonInParty: () => (save.party.some((m) => !m.isEgg && rom.species[m.species].types.includes(rom.c("TYPE_GRASS"))) ? 1 : 0),
   IsPokerusInParty: () => (save.party.some((m) => m.pokerus & 0xf) ? 1 : 0),
-  IsMonOTIDNotPlayers: () => { varSet(SV.RESULT, save.party[varGet(SV.x8004)]?.otId === save.trainerId ? 0 : 1); },
+  IsMonOTIDNotPlayers: () => { varSet(SV.RESULT, GetPlayerTrainerId() === save.party[varGet(SV.x8004)]?.otId ? 0 : 1); },
   IsMonOTNameNotPlayers: () => {
     const mon = save.party[varGet(SV.x8004)];
     stringVars.var1 = Uint8Array.from(mon?.otName ?? [0xff]);

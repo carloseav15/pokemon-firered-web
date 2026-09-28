@@ -19,7 +19,7 @@ import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } fr
 import { Sprite } from "../gba/sprite";
 import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { rgb555, spriteSheet } from "../field/gfx4bpp";
-import { adjustFriendship, getDexFlag, leadMonIndex, nickname, speciesName, type Pokemon } from "../pokemon/pokemon";
+import { adjustFriendship, getDexFlag, GetPlayerTrainerId, leadMonIndex, nickname, speciesName, type Pokemon } from "../pokemon/pokemon";
 import { GetPokedexHeightWeight } from "../battle/ext";
 import { setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005 } from "../menus/keyItemScreens";
 import { SetPostgameFlags } from "../pokemon/saveLocation";
@@ -753,7 +753,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   },
   SelectMoveDeleterMove: (ctx) => { ctx.ow.game.selectMoveDeleterMove(); },
   // field_specials.c
-  PlayerPartyContainsSpeciesWithPlayerID: () => (save.party.some((m) => (m.isEgg ? C.SPECIES_EGG : m.species) === varGet(SV.x8004) && m.otId === save.trainerId) ? 1 : 0),
+  PlayerPartyContainsSpeciesWithPlayerID: () => (save.party.some((m) => (m.isEgg ? C.SPECIES_EGG : m.species) === varGet(SV.x8004) && m.otId === GetPlayerTrainerId()) ? 1 : 0),
   SampleResortGorgeousMonAndReward: () => {
     const requested = varGet(C.VAR_RESORT_GORGEOUS_REQUESTED_MON);
     if (requested === 0 || requested === 0xffff) {

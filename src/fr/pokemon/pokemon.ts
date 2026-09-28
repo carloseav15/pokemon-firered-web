@@ -270,6 +270,11 @@ export function GetLeadMonIndex(): number {
 /** Existing TypeScript callers share the source-faithful C helper. */
 export const leadMonIndex = GetLeadMonIndex;
 
+/** GetPlayerTrainerId from field_specials.c (playerTrainerId is a little-endian u32). */
+export function GetPlayerTrainerId(): number {
+  return save.trainerId >>> 0;
+}
+
 /** GiveMonToPlayer: party or PC. Returns MON_GIVEN_TO_PARTY(0)/PC(1)/CANT(2). */
 export function giveMonToPlayer(mon: Pokemon): number {
   mon.otName = [...save.playerName];
