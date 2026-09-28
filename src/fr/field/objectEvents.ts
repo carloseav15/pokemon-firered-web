@@ -1448,8 +1448,7 @@ export class ObjectEvents {
         object.enableAnim = false;
       }
       if (object.isPlayer) {
-        // Player movement type is driven by field_player_avatar.
-        if (ObjectEventIsHeldMovementActive(object) && !object.heldMovementFinished) this.execHeld(object);
+        this.MovementType_Player(object, sprite);
       } else if (!object.frozen) {
         if (ObjectEventIsHeldMovementActive(object)) {
           if (!object.heldMovementFinished) this.execHeld(object);
@@ -1613,6 +1612,18 @@ export class ObjectEvents {
     // UpdateObjectEventCurrentMovement repeats the callback until it returns FALSE (event_object_movement.c).
     while (this.movementTypeCallback(object)) {}
   }
+
+  /** MovementType_Player (field_player_avatar.c), driven from the object update loop. */
+  private MovementType_Player(object: ObjectEvent, sprite: Sprite): void {
+    if (ObjectEventIsHeldMovementActive(object)) {
+      if (!object.heldMovementFinished) this.execHeld(object);
+    } else if (!object.frozen) {
+      while (this.ObjectEventCB2_NoMovement2(object, sprite)) { /* C repeats while callback returns nonzero. */ }
+    }
+  }
+
+  /** ObjectEventCB2_NoMovement2 (field_player_avatar.c): player movement has no autonomous step. */
+  private ObjectEventCB2_NoMovement2(_object: ObjectEvent, _sprite: Sprite): number { return 0; }
 
   /**
    * sMovementTypeCallbacks[objectEvent->movementType] selects the MovementType_* setup
