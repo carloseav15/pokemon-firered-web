@@ -26,7 +26,7 @@ import { DoOutwardBarnDoorWipe, FieldEffects, MAX_FLASH_LEVEL, Task_BarnDoorWipe
 import { ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "../hw/scanline";
 import { REG_OFFSET_WIN0H } from "../hw/ppu";
 import { MapNamePopup } from "./mapNamePopup";
-import { MapPreviewManager, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST, CB2_DoChangeMap } from "../mapPreviewScreen";
+import { MapPreviewManager, MapHasPreviewScreen, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST, CB2_DoChangeMap } from "../mapPreviewScreen";
 import { ScriptContext } from "../script/context";
 import type { Game } from "../game";
 import { mapResetTrainerRematches } from "./vsSeeker";
@@ -1130,11 +1130,23 @@ export class Overworld {
     this.warpFadeInScreen(delay);
   }
 
+  /** WarpFadeOutScreen (field_fadetransition.c). */
   warpFadeOutScreen(): void {
-    let destType = MAP_TYPE.NONE;
-    try { destType = this.peekMapType(this.mapIdForWarp(this.warpDestination)); } catch { /* keep */ }
-    if (MapTransitionIsEnter(this.header.mapType, destType)) paletteFade.fadeScreen(FADE_TO_WHITE, 0);
-    else paletteFade.fadeScreen(FADE_TO_BLACK, 0);
+    const header = this.GetDestinationWarpMapHeader();
+    if (header && header.regionMapSection !== this.header.regionMapSection && MapHasPreviewScreen(header.regionMapSection, MPS_TYPE_CAVE)) {
+      paletteFade.fadeScreen(FADE_TO_BLACK, 0);
+    } else if (MapTransitionIsEnter(this.header.mapType, header?.mapType ?? MAP_TYPE.NONE)) {
+      paletteFade.fadeScreen(FADE_TO_WHITE, 0);
+    } else {
+      paletteFade.fadeScreen(FADE_TO_BLACK, 0);
+    }
+  }
+
+  /** WarpFadeOutScreenWithDelay (field_fadetransition.c): unused in FRLG. */
+  WarpFadeOutScreenWithDelay(): void {
+    const destType = this.GetDestinationWarpMapHeader()?.mapType ?? MAP_TYPE.NONE;
+    if (MapTransitionIsEnter(this.header.mapType, destType)) paletteFade.fadeScreen(FADE_TO_WHITE, 3);
+    else paletteFade.fadeScreen(FADE_TO_BLACK, 3);
   }
 
   /** WaitWarpFadeOutScreen (field_fadetransition.c). */
