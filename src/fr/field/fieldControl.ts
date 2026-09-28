@@ -10,7 +10,7 @@ import { rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET } from "./fieldmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
-import { MOVING, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_SPEED_FASTEST, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
+import { GetPlayerMovementDirection, MOVING, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_SPEED_FASTEST, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
 import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
@@ -319,6 +319,49 @@ export class FieldControl {
     return GetRamScript(object.localId, object.template?.script ?? 0);
   }
 
+  /** GetObjectEventScriptPointerPlayerFacing (field_control_avatar.c): no caller anywhere in
+   * pokefirered. */
+  private GetObjectEventScriptPointerPlayerFacing(): number {
+    const direction = GetPlayerMovementDirection();
+    const position = this.GetInFrontOfPlayerPosition();
+    const behavior = this.ow.map.behaviorAt(position.x, position.y);
+    return this.GetInteractedObjectEventScript(position, behavior, direction);
+  }
+
+  /** dive_warp (field_control_avatar.c): called from field_effect.c's UpdateFeetInFlowingWater-
+   * adjacent surf/dive check, not ported yet — no caller here either. */
+  dive_warp(position: { x: number; y: number }, metatileBehavior: number): boolean {
+    if (this.ow.header.mapType === C.MAP_TYPE_UNDERWATER && !MB.MetatileBehavior_IsUnableToEmerge(metatileBehavior)) {
+      if (this.ow.SetDiveWarpEmerge(position.x - MAP_OFFSET, position.y - MAP_OFFSET)) {
+        this.ow.storeInitialPlayerAvatarState();
+        this.ow.doDiveWarp();
+        sound.playSE(sound.c("SE_M_DIVE"));
+        return true;
+      }
+    } else if (MB.MetatileBehavior_IsDiveable(metatileBehavior)) {
+      if (this.ow.SetDiveWarpDive(position.x - MAP_OFFSET, position.y - MAP_OFFSET)) {
+        this.ow.storeInitialPlayerAvatarState();
+        this.ow.doDiveWarp();
+        sound.playSE(sound.c("SE_M_DIVE"));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** TrySetDiveWarp (field_control_avatar.c): no caller anywhere in pokefirered (dive_warp above
+   * does the same job at its own call site). */
+  private TrySetDiveWarp(): number {
+    const { x, y } = PlayerGetDestCoords();
+    const metatileBehavior = this.ow.map.behaviorAt(x, y);
+    if (this.ow.header.mapType === C.MAP_TYPE_UNDERWATER && !MB.MetatileBehavior_IsUnableToEmerge(metatileBehavior)) {
+      if (this.ow.SetDiveWarpEmerge(x - MAP_OFFSET, y - MAP_OFFSET)) return 1;
+    } else if (MB.MetatileBehavior_IsDiveable(metatileBehavior)) {
+      if (this.ow.SetDiveWarpDive(x - MAP_OFFSET, y - MAP_OFFSET)) return 2;
+    }
+    return 0;
+  }
+
   /** GetBackgroundEventAtPosition (field_control_avatar.c), including wildcard elevation 0. */
   private GetBackgroundEventAtPosition(x: number, y: number, elevation: number) {
     return this.ow.header.bgs.find((bg) => bg.x === x && bg.y === y && (bg.elevation === elevation || bg.elevation === 0));
@@ -501,6 +544,12 @@ export class FieldControl {
     if (value === 0) {
       for (const mon of save.party) AdjustFriendship(mon, C.FRIENDSHIP_EVENT_WALKING);
     }
+  }
+
+  /** Unref_ClearHappinessStepCounter (field_control_avatar.c): no caller anywhere in
+   * pokefirered. */
+  private Unref_ClearHappinessStepCounter(): void {
+    varSet(rom.c("VAR_HAPPINESS_STEP_COUNTER"), 0);
   }
 
   // ---------------------------------------------------------------- signposts
