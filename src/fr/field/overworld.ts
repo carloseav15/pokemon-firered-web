@@ -1251,20 +1251,27 @@ export class Overworld {
     this.warpFadeInScreen();
     sound.playSE(sound.c("SE_WARP_OUT"));
     this.controlsLocked = true;
-    const p = this.player.object;
-    p.sprite.y2 = -80;
-    const task = { id: -1, state: 0 };
-    task.id = tasks.create(() => {
-      if (task.state === 0) {
+    tasks.create((taskId) => this.Task_TeleportWarpIn(taskId), 10);
+  }
+
+  /** Task_TeleportWarpIn (field_fadetransition.c). */
+  private Task_TeleportWarpIn(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    switch (data[0]) {
+      case 0:
         this.objects.freezeAll();
+        this.controlsLocked = true;
         this.player.StartTeleportInPlayerAnim();
-        task.state++;
-      } else if (!paletteFade.active && !this.player.WaitTeleportInPlayerAnim()) {
-        this.objects.unfreezeAll();
-        this.controlsLocked = false;
-        tasks.destroy(task.id);
-      }
-    }, 10);
+        data[0]++;
+        break;
+      case 1:
+        if (this.FieldFadeTransitionBackgroundEffectIsFinished() && !this.player.WaitTeleportInPlayerAnim()) {
+          this.objects.unfreezeAll();
+          this.controlsLocked = false;
+          tasks.destroy(taskId);
+        }
+        break;
+    }
   }
 
   doStairWarp(behavior: number, delay: number): void {
