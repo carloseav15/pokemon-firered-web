@@ -29,7 +29,7 @@ import * as MB from "../generated/metatileBehavior";
 import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
 import { tasks } from "../gba/tasks";
 import { DIRECTION_VECTORS } from "../field/objectEvents";
-import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_UNDERWATER } from "../field/playerAvatar";
+import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_UNDERWATER, PlayerGetDestCoords } from "../field/playerAvatar";
 import { startFishing } from "../field/fishing";
 import { startItemFinder } from "./itemFinder";
 import { openHardwareMessage } from "./hardwareChoice";
@@ -180,6 +180,34 @@ export function CB2_CheckMail(item: number, returnToBag: () => void): void {
   openMailView(decode(itemName(item)), [], "", returnToBag);
 }
 
+/** ItemUseOnFieldCB_Bicycle (item_use.c): toggle the bike and release field controls. */
+export function ItemUseOnFieldCB_Bicycle(game: Game): void {
+  const ow = game.overworld;
+  if (!(ow.player.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE))) sound.playSE(C.SE_BIKE_BELL);
+  ow.player.GetOnOffBike(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE);
+  ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
+  ow.game.scriptMovement.unfreezeAndStop();
+  ow.objects.unfreezeAll();
+  ow.controlsLocked = false;
+}
+
+/** FieldUseFunc_Bike (item_use.c): C rail, map-permission and player-ban checks. */
+export function FieldUseFunc_Bike(game: Game, route: {
+  cantDismount: () => void; notNow: () => void; onField: (callback: () => void) => void;
+}): void {
+  const ow = game.overworld;
+  const { x, y } = PlayerGetDestCoords();
+  const behavior = ow.map.behaviorAt(x, y);
+  if (flagGet(C.FLAG_SYS_ON_CYCLING_ROAD) || MB.MetatileBehavior_IsVerticalRail(behavior) || MB.MetatileBehavior_IsHorizontalRail(behavior)
+    || MB.MetatileBehavior_IsIsolatedVerticalRail(behavior) || MB.MetatileBehavior_IsIsolatedHorizontalRail(behavior)) {
+    route.cantDismount();
+  } else if (ow.header.allowCycling && !ow.player.IsBikingDisallowedByPlayer()) {
+    route.onField(() => ItemUseOnFieldCB_Bicycle(game));
+  } else {
+    route.notNow();
+  }
+}
+
 export function openFieldBag(game: Game, initialItem?: number): void {
   let post: (() => void) | null = null;
   fieldMenu(game, close => {
@@ -289,23 +317,13 @@ export function openFieldBag(game: Game, initialItem?: number): void {
             () => leave(() => InitBerryPouchFromBag(berryPouch)),
             () => onField(() => Task_InitBerryPouchFromField(() => InitBerryPouch(C.BERRYPOUCH_FROMFIELD, finish, 1, pouchHandlers))));
           return;
-        case "FieldUseFunc_Bike": {
-          const p = ow.player.object;
-          const behavior = ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
-          if (flagGet(C.FLAG_SYS_ON_CYCLING_ROAD) || MB.MetatileBehavior_IsVerticalRail(behavior) || MB.MetatileBehavior_IsHorizontalRail(behavior)
-            || MB.MetatileBehavior_IsIsolatedVerticalRail(behavior) || MB.MetatileBehavior_IsIsolatedHorizontalRail(behavior)) {
-            message(rom.text("gText_CantDismountBike")); return;
-          }
-          if (!ow.header.allowCycling || ow.player.IsBikingDisallowedByPlayer()) { notNow(); return; }
-          onField(() => {
-            if (!ow.player.isOnBike()) sound.playSE(C.SE_BIKE_BELL);
-            ow.player.GetOnOffBike(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE);
-            ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
-            ow.objects.unfreezeAll();
-            ow.controlsLocked = false;
+        case "FieldUseFunc_Bike":
+          FieldUseFunc_Bike(game, {
+            cantDismount: () => message(rom.text("gText_CantDismountBike")),
+            notNow,
+            onField,
           });
           return;
-        }
         case "FieldUseFunc_Rod":
           if (!canFish(game)) { notNow(); return; }
           onField(() => startFishing(ow, info.secondaryId));
