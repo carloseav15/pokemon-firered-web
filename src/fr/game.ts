@@ -32,7 +32,7 @@ import * as C from "./generated/constants";
 import { CB2_BagMenuFromStartMenu, fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { Task_VsSeeker_0 } from "./field/vsSeeker";
-import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
+import { GetSafariZoneFlag } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
 import { InUnionRoom } from "./unionRoom";
 import { FieldWeather } from "./field/weather";
@@ -53,7 +53,11 @@ import { resetPokemonStorageSystem } from "./pokemon/storage";
 import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
-import { SetUpStartMenu, type StartMenuSetupState } from "./startMenu";
+import {
+  SetUpStartMenu, StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
+  StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
+  StartMenuSaveCallback, type StartMenuSetupState,
+} from "./startMenu";
 import { IsUpdateLinkStateCBActive } from "./linkState";
 import { openSlotMachine } from "./menus/slotMachine";
 import { ReducePlayerPartyToThree } from "./pokemon/scriptPokemonUtil";
@@ -370,20 +374,16 @@ export class Game {
       inSafariZone: safari,
     };
     SetUpStartMenu(startMenu);
-    const actions: Array<{ text: Uint8Array; desc: string; action: () => void }> = [
-      { text: rom.text("gText_MenuPokedex"), desc: "gStartMenuDesc_Pokedex", action: () => this.openPokedex() },
-      { text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => this.openPartyMenu() },
-      { text: rom.text("gText_MenuBag"), desc: "gStartMenuDesc_Bag", action: () => this.openBag() },
-      { text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => this.openTrainerCard() },
-      { text: rom.text("gText_MenuSave"), desc: "gStartMenuDesc_Save", action: () => this.startMenuSave() },
-      { text: rom.text("gText_MenuOption"), desc: "gStartMenuDesc_Option", action: () => this.openOptions() },
-      { text: rom.text("gText_MenuExit"), desc: "gStartMenuDesc_Exit", action: () => this.closeStartMenu() },
-      { text: rom.text("gText_MenuRetire"), desc: "gStartMenuDesc_Retire", action: () => {
-        this.removeStartMenuWindows();
-        this.closeStartMenu();
-        SafariZoneRetirePrompt((script) => ow.script.ScriptContext_SetupScript(script));
-      } },
-      { text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => this.openTrainerCard() },
+    const actions: Array<{ text: Uint8Array; desc: string; action: () => void; canChoose?: () => boolean }> = [
+      { text: rom.text("gText_MenuPokedex"), desc: "gStartMenuDesc_Pokedex", action: () => StartMenuPokedexCallback(this), canChoose: StartMenuPokedexSanityCheck },
+      { text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => StartMenuPokemonCallback(this) },
+      { text: rom.text("gText_MenuBag"), desc: "gStartMenuDesc_Bag", action: () => StartMenuBagCallback(this) },
+      { text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => StartMenuPlayerCallback(this) },
+      { text: rom.text("gText_MenuSave"), desc: "gStartMenuDesc_Save", action: () => StartMenuSaveCallback(this) },
+      { text: rom.text("gText_MenuOption"), desc: "gStartMenuDesc_Option", action: () => StartMenuOptionCallback(this) },
+      { text: rom.text("gText_MenuExit"), desc: "gStartMenuDesc_Exit", action: () => StartMenuExitCallback(this) },
+      { text: rom.text("gText_MenuRetire"), desc: "gStartMenuDesc_Retire", action: () => StartMenuSafariZoneRetireCallback(this) },
+      { text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => StartMenuPlayerCallback(this) },
     ];
     const items = startMenu.order.slice(0, startMenu.numItems).map((entry) => actions[entry]!);
     const window = new Window(22, 1, 7, items.length * 2 - 1);
@@ -429,6 +429,7 @@ export class Game {
         if (JOY_NEW(START_BUTTON)) { tasks.destroy(id); this.closeStartMenu(); }
         return;
       }
+      if (items[input].canChoose?.() === false) return;
       tasks.destroy(id);
       if (input === MENU_B_PRESSED) { this.closeStartMenu(); return; }
       this.startMenuCursor = input;
@@ -454,7 +455,7 @@ export class Game {
     ow.controlsLocked = false;
   }
 
-  private startMenuSave(): void {
+  startMenuSave(): void {
     this.removeStartMenuWindows();
     const ow = this.overworld;
     this.showSaveStats();
@@ -593,7 +594,7 @@ export class Game {
   openTrainerCard(): void {
     StopPokemonLeagueLightingEffectTask();
     this.removeStartMenuWindows();
-    fieldMenu(this, (close) => openTrainerCardScreen(() => close()));
+    fieldMenu(this, (close) => openTrainerCardScreen(() => { close(); this.showStartMenu(); }), false);
   }
 
   openPartyMenu(): void { StopPokemonLeagueLightingEffectTask(); this.removeStartMenuWindows(); openFieldParty(this); }

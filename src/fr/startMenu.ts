@@ -1,6 +1,13 @@
 // start_menu.c: start-menu list construction and the shared list helper used
 // by party_menu.c.
 
+import type { Game } from "./game";
+import * as C from "./generated/constants";
+import { PlayRainStoppingSoundEffect } from "./field/weather";
+import { GetNationalPokedexCount } from "./pokemon/pokemon";
+import { IncrementGameStat } from "./save";
+import { SafariZoneRetirePrompt } from "./field/safariZone";
+
 enum StartMenuOption {
   STARTMENU_POKEDEX = 0,
   STARTMENU_POKEMON,
@@ -88,4 +95,53 @@ export function SetUpStartMenu(state: StartMenuSetupState): void {
   else if (state.inUnionRoom) SetUpStartMenu_UnionRoom(state);
   else if (state.inSafariZone) SetUpStartMenu_SafariZone(state);
   else SetUpStartMenu_NormalField(state);
+}
+
+/** StartMenuPokedexSanityCheck (start_menu.c). */
+export function StartMenuPokedexSanityCheck(): boolean {
+  return GetNationalPokedexCount(0) !== 0;
+}
+
+/** StartMenuPokedexCallback (start_menu.c): the Canvas screen performs the fade and field cleanup. */
+export function StartMenuPokedexCallback(game: Game): boolean {
+  IncrementGameStat(C.GAME_STAT_CHECKED_POKEDEX);
+  PlayRainStoppingSoundEffect();
+  game.openPokedex();
+  return true;
+}
+
+/** StartMenuPokemonCallback (start_menu.c): fieldMenu owns the screen transition and cleanup. */
+export function StartMenuPokemonCallback(game: Game): void {
+  PlayRainStoppingSoundEffect();
+  game.openPartyMenu();
+}
+
+/** StartMenuBagCallback (start_menu.c): the bag adapter owns the field handoff. */
+export function StartMenuBagCallback(game: Game): void {
+  PlayRainStoppingSoundEffect();
+  game.openBag();
+}
+
+/** StartMenuPlayerCallback (start_menu.c): ShowPlayerTrainerCard supplies the screen callback. */
+export function StartMenuPlayerCallback(game: Game): void {
+  PlayRainStoppingSoundEffect();
+  game.openTrainerCard();
+}
+
+/** StartMenuSaveCallback (start_menu.c). */
+export function StartMenuSaveCallback(game: Game): void { game.startMenuSave(); }
+
+/** StartMenuOptionCallback (start_menu.c): fieldMenu owns the screen transition and cleanup. */
+export function StartMenuOptionCallback(game: Game): void {
+  PlayRainStoppingSoundEffect();
+  game.openOptions();
+}
+
+/** StartMenuExitCallback (start_menu.c). */
+export function StartMenuExitCallback(game: Game): void { game.closeStartMenu(); }
+
+/** StartMenuSafariZoneRetireCallback (start_menu.c). */
+export function StartMenuSafariZoneRetireCallback(game: Game): void {
+  game.closeStartMenu();
+  SafariZoneRetirePrompt((script) => game.overworld.script.ScriptContext_SetupScript(script));
 }
