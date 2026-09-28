@@ -2,6 +2,7 @@
 // string_util.c used by scripts and menus.
 
 import { rom } from "../rom";
+import { STRING_VAR4_LENGTH, stringVars } from "./stringBuffers";
 
 export const EOS = 0xff;
 export const CHAR_NEWLINE = 0xfe;
@@ -144,6 +145,27 @@ export const STR_CONV_MODE_LEFT_ALIGN = 0;
 export const STR_CONV_MODE_RIGHT_ALIGN = 1;
 export const STR_CONV_MODE_LEADING_ZEROS = 2;
 
+/** CountDigits from field_specials.c; divisions use C's truncation toward zero. */
+export function CountDigits(number: number): number {
+  if (Math.trunc(number / 10) === 0) return 1;
+  if (Math.trunc(number / 100) === 0) return 2;
+  if (Math.trunc(number / 1000) === 0) return 3;
+  if (Math.trunc(number / 10000) === 0) return 4;
+  if (Math.trunc(number / 100000) === 0) return 5;
+  if (Math.trunc(number / 1000000) === 0) return 6;
+  if (Math.trunc(number / 10000000) === 0) return 7;
+  if (Math.trunc(number / 100000000) === 0) return 8;
+  return 1;
+}
+
+/** TV_PrintIntToStringVar from field_specials.c; varidx selects gStringVar1..3. */
+export function TV_PrintIntToStringVar(varidx: number, number: number): void {
+  const value = intToDecimal(number, STR_CONV_MODE_LEFT_ALIGN, CountDigits(number));
+  if (varidx === 0) stringVars.var1 = value;
+  else if (varidx === 1) stringVars.var2 = value;
+  else if (varidx === 2) stringVars.var3 = value;
+}
+
 /** ConvertIntToDecimalStringN from string_util.c */
 export function intToDecimal(value: number, mode = STR_CONV_MODE_LEFT_ALIGN, digits = 0): GbaString {
   const n = digits > 0 ? digits : countDigits(value);
@@ -157,8 +179,7 @@ export function countDigits(value: number): number {
 }
 
 /** Variables substituted by StringExpandPlaceholders (gStringVar1..4). */
-export { stringVars } from "./stringBuffers";
-import { STRING_VAR4_LENGTH } from "./stringBuffers";
+export { stringVars };
 
 /** StringExpandPlaceholders from string_util.c: FD xx placeholders are expanded
  *  by the generated function (gStringVar*, the save fields and the

@@ -282,8 +282,8 @@ export function useVsSeeker(game: Game, item: number, showMessage: (text: Uint8A
   const charge = stepCounter() & 0xff;
   if (charge !== 100) {
     // TV_PrintIntToStringVar(0, 100 - steps)
-    import("../gba/charmap").then(({ stringVars, encode }) => {
-      stringVars.var1 = encode(String(100 - charge));
+    import("../gba/charmap").then(({ TV_PrintIntToStringVar }) => {
+      TV_PrintIntToStringVar(0, 100 - charge);
       showMessage(rom.text("VSSeeker_Text_BatteryNotChargedNeedXSteps"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release));
     });
     return;

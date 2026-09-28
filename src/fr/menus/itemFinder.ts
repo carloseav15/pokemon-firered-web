@@ -10,7 +10,7 @@ import { rom, type MapBgEvent, type MapHeader } from "../rom";
 import { flagGet, SV, varSet } from "../save";
 import { tasks } from "../gba/tasks";
 import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
-import { encode, stringVars } from "../gba/charmap";
+import { TV_PrintIntToStringVar } from "../gba/charmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "../field/objectEvents";
 import { CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
 import { canvas, rgb555 } from "../field/gfx4bpp";
@@ -128,7 +128,7 @@ function SetUnderfootHiddenItem(taskId: number, hiddenItem: HiddenItem): void {
   const item = GetHiddenItemAttr(raw, C.HIDDEN_ITEM_ITEM);
   varSet(SV.x8004, GetHiddenItemAttr(raw, C.HIDDEN_ITEM_FLAG));
   varSet(SV.x8005, item);
-  stringVars.var1 = encode(String(item)); // TV_PrintIntToStringVar(0, item)
+  TV_PrintIntToStringVar(0, item);
   // itemfinder.c deliberately ignores the map event quantity for underfoot items.
   varSet(SV.x8006, 1);
   data[tHiddenItemFound] = 1;
