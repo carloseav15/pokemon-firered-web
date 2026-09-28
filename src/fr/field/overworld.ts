@@ -301,6 +301,41 @@ export class Overworld {
     return this.Overworld_GetMapHeaderByGroupAndId(this.warpDestination.mapGroup, this.warpDestination.mapNum);
   }
 
+  /** GetMapTypeByGroupAndId (overworld.c). */
+  GetMapTypeByGroupAndId(mapGroup: number, mapNum: number): number | undefined {
+    return this.Overworld_GetMapHeaderByGroupAndId(mapGroup, mapNum)?.mapType;
+  }
+
+  /** GetMapTypeByWarpData (overworld.c). */
+  GetMapTypeByWarpData(warp: WarpData): number | undefined {
+    return this.GetMapTypeByGroupAndId(warp.mapGroup, warp.mapNum);
+  }
+
+  /** GetLastUsedWarpMapType (overworld.c). */
+  GetLastUsedWarpMapType(): number | undefined {
+    return this.GetMapTypeByWarpData(this.lastUsedWarp);
+  }
+
+  /** GetLastUsedWarpMapSectionId (overworld.c). */
+  GetLastUsedWarpMapSectionId(): number | undefined {
+    return this.Overworld_GetMapHeaderByGroupAndId(this.lastUsedWarp.mapGroup, this.lastUsedWarp.mapNum)?.regionMapSection;
+  }
+
+  /** GetSavedWarpRegionMapSectionId (overworld.c). */
+  GetSavedWarpRegionMapSectionId(): number | undefined {
+    return this.Overworld_GetMapHeaderByGroupAndId(save.dynamicWarp.mapGroup, save.dynamicWarp.mapNum)?.regionMapSection;
+  }
+
+  /** GetCurrentRegionMapSectionId (overworld.c). */
+  GetCurrentRegionMapSectionId(): number | undefined {
+    return this.Overworld_GetMapHeaderByGroupAndId(save.location.mapGroup, save.location.mapNum)?.regionMapSection;
+  }
+
+  /** GetCurrentMapBattleScene (overworld.c). */
+  GetCurrentMapBattleScene(): number | undefined {
+    return this.Overworld_GetMapHeaderByGroupAndId(save.location.mapGroup, save.location.mapNum)?.battleScene;
+  }
+
   // ---------------------------------------------------------------- warps
 
   /** SetWarpData (overworld.c): arguments are truncated to the source s8 fields. */
