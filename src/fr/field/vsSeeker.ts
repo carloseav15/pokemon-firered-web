@@ -28,8 +28,7 @@ export function StartVsSeekerFieldEffect(ow: Overworld): () => boolean {
     switch (state) {
       case 0:
         if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-          ow.player.setState(PLAYER_AVATAR_GFX_VSSEEKER);
-          player.sprite.startAnim(0);
+          ow.player.StartPlayerAvatarVsSeekerAnim();
           ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
           state++;
         }

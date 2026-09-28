@@ -22,12 +22,10 @@ import { MAP_OFFSET, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
-import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_FIELD_MOVE, PLAYER_AVATAR_GFX_RIDE, PlayerAvatar } from "./playerAvatar";
+import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_RIDE, PlayerAvatar } from "./playerAvatar";
 import { SetHelpContext } from "../helpSystem";
 
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
-const ANIM_FIELD_MOVE = 0;
-
 /** gFieldEffectArguments[0] bit 31: play the cry without ducking (Surf). */
 const SHOW_MON_CRY_NO_DUCKING = 0x80000000;
 
@@ -152,8 +150,7 @@ export class FieldMoveEffects {
       this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
       task.state = 2;
     } else {
-      ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
-      player.sprite.startAnim(ANIM_FIELD_MOVE);
+      ow.player.StartPlayerAvatarSummonMonForFieldMoveAnim();
       ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
       task.state = 1;
     }
@@ -396,8 +393,7 @@ export class FieldMoveEffects {
         }
         case 1:
           if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-            ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
-            player.sprite.startAnim(ANIM_FIELD_MOVE);
+            ow.player.StartPlayerAvatarSummonMonForFieldMoveAnim();
             ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
             state = 2;
           }
@@ -967,8 +963,7 @@ export class FieldMoveEffects {
         case 0:
           if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             ow.player.preventStep = true;
-            ow.player.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
-            player.sprite.startAnim(ANIM_FIELD_MOVE);
+            ow.player.StartPlayerAvatarSummonMonForFieldMoveAnim();
             ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
             state = 1;
           }

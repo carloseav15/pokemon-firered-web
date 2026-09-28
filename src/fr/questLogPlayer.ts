@@ -28,12 +28,12 @@ export function QuestLogUpdatePlayerSprite(ow: Overworld, state: number): void {
     case C.QL_PLAYER_GFX_NORMAL:
       player.setState(PLAYER_AVATAR_GFX_NORMAL);
       ow.objects.turn(object, object.movementDirection);
-      player.flags = (player.flags & ~(PLAYER_AVATAR_FLAG_SURFING | PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) | PLAYER_AVATAR_FLAG_ON_FOOT;
+      player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
       break;
     case C.QL_PLAYER_GFX_BIKE:
       player.setState(PLAYER_AVATAR_GFX_BIKE);
       ow.objects.turn(object, object.movementDirection);
-      player.flags = (player.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_SURFING)) | PLAYER_AVATAR_FLAG_MACH_BIKE;
+      player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_MACH_BIKE);
       player.BikeClearState(0, 0);
       break;
     case C.QL_PLAYER_GFX_FISH:
@@ -89,7 +89,7 @@ export function QuestLogUpdatePlayerSprite(ow: Overworld, state: number): void {
       if (!(player.flags & PLAYER_AVATAR_FLAG_SURFING)) {
         player.setState(PLAYER_AVATAR_GFX_RIDE);
         ow.objects.turn(object, object.movementDirection);
-        player.flags = (player.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) | PLAYER_AVATAR_FLAG_SURFING;
+        player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_SURFING);
         ow.effects.startSurfBlob(object, C.BOB_PLAYER_AND_MON);
       }
       break;

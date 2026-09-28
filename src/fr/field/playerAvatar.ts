@@ -8,7 +8,7 @@ import { B_BUTTON } from "../gba/input";
 import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { flagGet, incrementGameStat } from "../save";
-import { QuestLogApplyPlayerAvatarTransition } from "../questLogPlayer";
+import { QuestLogApplyPlayerAvatarTransition, QuestLogCallUpdatePlayerSprite } from "../questLogPlayer";
 import { QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerStep, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
 import {
   actionFace, actionJump2, actionJumpInPlace, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
@@ -112,15 +112,57 @@ export class PlayerAvatar {
   /** InitPlayerAvatar */
   init(x: number, y: number, direction: number, gender: number): void {
     gPlayerAvatar = this;
-    this.gender = gender;
     const object = this.ow.objects.spawnPlayer(x, y, PlayerAvatar.graphicsId(PLAYER_AVATAR_GFX_NORMAL, gender), direction, this.ow.map.elevationAt(x, y));
+    this.ClearPlayerAvatarInfo();
+    this.gender = gender;
     this.object = object;
-    this.flags = PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_CONTROLLABLE;
+    this.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_CONTROLLABLE | PLAYER_AVATAR_FLAG_ON_FOOT);
     this.runningState = NOT_MOVING;
     this.tileTransitionState = T_NOT_MOVING;
     this.preventStep = false;
     object.hasShadow = false;
     this.ow.objects.turn(object, direction);
+  }
+
+  /** InitPlayerAvatar (field_player_avatar.c), wired from the active overworld setup. */
+  InitPlayerAvatar(x: number, y: number, direction: number, gender: number): void { this.init(x, y, direction, gender); }
+
+  /** ClearPlayerAvatarInfo (field_player_avatar.c): clear the PlayerAvatar state block. */
+  ClearPlayerAvatarInfo(): void {
+    this.flags = 0;
+    this.runningState = NOT_MOVING;
+    this.tileTransitionState = T_NOT_MOVING;
+    this.gender = 0;
+    this.preventStep = false;
+    this.lastSpinTile = 0;
+    this.acroBikeState = BIKE_STATE_NORMAL;
+    this.newDirBackup = DIR_NONE;
+    this.bikeFrameCounter = 0;
+    this.bikeSpeed = PLAYER_SPEED_STANDING;
+    this.directionHistory = 0;
+    this.abStartSelectHistory = 0;
+    this.dirTimerHistory.fill(0);
+  }
+
+  /** SetPlayerAvatarStateMask (field_player_avatar.c). */
+  SetPlayerAvatarStateMask(mask: number): void {
+    this.flags = ((this.flags & (PLAYER_AVATAR_FLAG_DASH | PLAYER_AVATAR_FLAG_FORCED | PLAYER_AVATAR_FLAG_CONTROLLABLE)) | (mask & 0xff)) & 0xff;
+  }
+
+  /** GetPlayerAvatarStateTransitionByGraphicsId (field_player_avatar.c). */
+  GetPlayerAvatarStateTransitionByGraphicsId(graphicsId: number, gender: number): number {
+    const c = rom.constants;
+    const table = gender === 1
+      ? [[c.OBJ_EVENT_GFX_GREEN_NORMAL, PLAYER_AVATAR_FLAG_ON_FOOT], [c.OBJ_EVENT_GFX_GREEN_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE], [c.OBJ_EVENT_GFX_GREEN_SURF, PLAYER_AVATAR_FLAG_SURFING]]
+      : [[c.OBJ_EVENT_GFX_RED_NORMAL, PLAYER_AVATAR_FLAG_ON_FOOT], [c.OBJ_EVENT_GFX_RED_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE], [c.OBJ_EVENT_GFX_RED_SURF, PLAYER_AVATAR_FLAG_SURFING]];
+    for (const [gfx, state] of table) if (gfx === (graphicsId & 0xff)) return state!;
+    return PLAYER_AVATAR_FLAG_ON_FOOT;
+  }
+
+  /** SetPlayerAvatarExtraStateTransition (field_player_avatar.c). */
+  SetPlayerAvatarExtraStateTransition(graphicsId: number, extras: number): void {
+    const state = this.GetPlayerAvatarStateTransitionByGraphicsId(graphicsId, this.gender);
+    this.DoPlayerAvatarTransition(state | (extras & 0xff));
   }
 
   /**
@@ -164,6 +206,37 @@ export class PlayerAvatar {
       this.ow.objects.setGraphicsId(this.object, id);
       this.ow.syncObjectSprites();
     }
+  }
+
+  /** StartPlayerAvatarSummonMonForFieldMoveAnim (field_player_avatar.c). */
+  StartPlayerAvatarSummonMonForFieldMoveAnim(): void {
+    this.setState(PLAYER_AVATAR_GFX_FIELD_MOVE);
+    this.object.sprite.startAnim(C.ANIM_FIELD_MOVE);
+  }
+
+  /** GetPlayerAvatarVsSeekerGfxId (field_player_avatar.c). */
+  GetPlayerAvatarVsSeekerGfxId(): number {
+    if (this.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) {
+      return [C.OBJ_EVENT_GFX_RED_VS_SEEKER_BIKE, C.OBJ_EVENT_GFX_GREEN_VS_SEEKER_BIKE][this.gender] ?? 0;
+    }
+    return GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_GFX_VSSEEKER, this.gender);
+  }
+
+  /** StartPlayerAvatarVsSeekerAnim (field_player_avatar.c). */
+  StartPlayerAvatarVsSeekerAnim(): void {
+    const graphicsId = this.GetPlayerAvatarVsSeekerGfxId();
+    if (graphicsId !== this.object.graphicsId) {
+      graphicsInfo(graphicsId);
+      this.ow.objects.setGraphicsId(this.object, graphicsId);
+      this.ow.syncObjectSprites();
+    }
+    this.object.sprite.startAnim(C.ANIM_VS_SEEKER);
+  }
+
+  /** StartPlayerAvatarFishAnim (field_player_avatar.c). */
+  StartPlayerAvatarFishAnim(direction: number): void {
+    void direction;
+    QuestLogCallUpdatePlayerSprite(this.ow, C.QL_PLAYER_GFX_FISH);
   }
 
   /** GetPlayerAvatarGraphicsIdByCurrentState (as a PLAYER_AVATAR_GFX_* state). */

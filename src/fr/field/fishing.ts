@@ -9,10 +9,9 @@ import { printText, TextPrinter, getTextSpeedSetting } from "../gba/textPrinter"
 import { Window } from "../gba/window";
 import { random } from "../random";
 import { rom } from "../rom";
-import { GetFishingBiteDirectionAnimNum, GetFishingDirectionAnimNum, GetFishingNoCatchDirectionAnimNum } from "../generated/eventObjectAnims";
+import { GetFishingBiteDirectionAnimNum, GetFishingNoCatchDirectionAnimNum } from "../generated/eventObjectAnims";
 import { DIR_WEST } from "./objectEvents";
 import type { Overworld } from "./overworld";
-import { PLAYER_AVATAR_GFX_FISH } from "./playerAvatar";
 
 const START_ROUND = 3, GOT_BITE = 6, ON_HOOK = 9, NO_BITE = 11, GOT_AWAY = 12, SHOW_RESULT = 13;
 
@@ -72,8 +71,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     playerGfxId = player.graphicsId;
     ow.objects.clearHeldMovementIfActive(player);
     player.enableAnim = true;
-    ow.player.setState(PLAYER_AVATAR_GFX_FISH);
-    sprite.startAnim(GetFishingDirectionAnimNum(player.facingDirection));
+    ow.player.StartPlayerAvatarFishAnim(player.facingDirection);
     step++;
     return false;
   }

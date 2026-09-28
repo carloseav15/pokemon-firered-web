@@ -603,7 +603,7 @@ export class Overworld {
     const x = save.pos.x + MAP_OFFSET;
     const y = save.pos.y + MAP_OFFSET;
     const state = this.getInitialPlayerAvatarState();
-    this.player.init(x, y, state.direction, save.playerGender);
+    this.player.InitPlayerAvatar(x, y, state.direction, save.playerGender);
     this.player.setTransitionFlags(state.transitionFlags);
     this.resetInitialPlayerAvatarState();
     this.objects.trySpawnInView(save.pos.x, save.pos.y);
