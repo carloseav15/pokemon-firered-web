@@ -111,7 +111,7 @@ export class FieldMoveEffects {
         this.CreateFieldEffectShowMon(() => { this.remove(C.FLDEFF_USE_TELEPORT); this.startTeleport(); });
         this.ow.player.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);
         return true;
-      case C.FLDEFF_USE_SURF: this.useSurf(); return true;
+      case C.FLDEFF_USE_SURF: this.FldEff_UseSurf(); return true;
       case C.FLDEFF_USE_WATERFALL: this.useWaterfall(); return true;
       case C.FLDEFF_USE_DIVE: this.remove(id); return true; // no Dive maps in FireRed
       case C.FLDEFF_POKECENTER_HEAL: this.glowingPokeballs(C.FLDEFF_POKECENTER_HEAL, 93, 36, true); return true;
@@ -369,67 +369,80 @@ export class FieldMoveEffects {
 
   // ---------------------------------------------------------------- surf / waterfall
 
-  /** FldEff_UseSurf (sUseSurfEffectFuncs) */
-  private useSurf(): void {
+  /** FldEff_UseSurf / Task_FldEffUseSurf (field_effect.c). */
+  private FldEff_UseSurf(): void {
     const ow = this.ow;
-    const partyIndex = this.args[0];
+    const task = { id: 0, data: new Int16Array(16) };
+    task.data[15] = this.args[0]!;
     ow.savedMusic = 0;
     if (musicCanOverrideMapMusic(ow, C.MUS_SURF)) sound.playNewMapMusic(C.MUS_SURF);
-    let state = 0;
-    let destX = 0, destY = 0;
-    const player = ow.player.object;
-    const id = tasks.create(() => {
-      switch (state) {
-        case 0: {
-          ow.controlsLocked = true;
-          ow.objects.freezeAll();
-          ow.player.preventStep = true;
-          ow.player.flags |= PLAYER_AVATAR_FLAG_SURFING;
-          const [dx, dy] = DIRECTION_VECTORS[player.movementDirection];
-          destX = player.currentCoords.x + dx;
-          destY = player.currentCoords.y + dy;
-          state = 1;
-          break;
-        }
-        case 1:
-          if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-            ow.player.StartPlayerAvatarSummonMonForFieldMoveAnim();
-            ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
-            state = 2;
-          }
-          break;
-        case 2:
-          if (ow.objects.isHeldMovementFinished(player)) {
-            this.args[0] = (partyIndex | SHOW_MON_CRY_NO_DUCKING) >>> 0;
-            this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
-            state = 3;
-          }
-          break;
-        case 3:
-          if (!this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) {
-            ow.player.setState(PLAYER_AVATAR_GFX_RIDE);
-            ow.objects.ObjectEventClearHeldMovementIfFinished(player);
-            ow.objects.setHeldMovement(player, actionJumpSpecial(player.movementDirection));
-            ow.effects.startSurfBlob(player, C.BOB_NONE);
-            void destX; void destY;
-            state = 4;
-          }
-          break;
-        case 4:
-          if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-            ow.player.preventStep = false;
-            ow.player.flags &= ~PLAYER_AVATAR_FLAG_CONTROLLABLE;
-            ow.objects.setHeldMovement(player, actionFace(player.movementDirection));
-            ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
-            ow.objects.unfreezeAll();
-            ow.controlsLocked = false;
-            SetHelpContext(C.HELPCONTEXT_SURFING);
-            this.remove(C.FLDEFF_USE_SURF);
-            tasks.destroy(id);
-          }
-          break;
-      }
-    }, 0xff);
+    task.id = tasks.create(() => this.Task_FldEffUseSurf(task), 0xff);
+  }
+
+  private Task_FldEffUseSurf(task: { id: number; data: Int16Array }): void {
+    const state = task.data[0]!;
+    if (state === 0) this.UseSurfEffect_1(task);
+    else if (state === 1) this.UseSurfEffect_2(task);
+    else if (state === 2) this.UseSurfEffect_3(task);
+    else if (state === 3) this.UseSurfEffect_4(task);
+    else if (state === 4) this.UseSurfEffect_5(task);
+  }
+
+  private UseSurfEffect_1(task: { data: Int16Array }): void {
+    const player = this.ow.player.object;
+    this.ow.controlsLocked = true;
+    this.ow.objects.freezeAll();
+    this.ow.player.preventStep = true;
+    this.ow.player.flags |= PLAYER_AVATAR_FLAG_SURFING;
+    const [dx, dy] = DIRECTION_VECTORS[player.movementDirection]!;
+    task.data[1] = player.currentCoords.x;
+    task.data[2] = player.currentCoords.y;
+    task.data[1] = (task.data[1]! + dx) << 16 >> 16;
+    task.data[2] = (task.data[2]! + dy) << 16 >> 16;
+    task.data[0]++;
+  }
+
+  private UseSurfEffect_2(task: { data: Int16Array }): void {
+    const player = this.ow.player.object;
+    if (this.ow.objects.isMovementOverridden(player) && !this.ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return;
+    this.ow.player.StartPlayerAvatarSummonMonForFieldMoveAnim();
+    this.ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
+    task.data[0]++;
+  }
+
+  private UseSurfEffect_3(task: { data: Int16Array }): void {
+    const player = this.ow.player.object;
+    if (!this.ow.objects.ObjectEventCheckHeldMovementStatus(player)) return;
+    this.args[0] = (task.data[15]! | SHOW_MON_CRY_NO_DUCKING) >>> 0;
+    this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
+    task.data[0]++;
+  }
+
+  private UseSurfEffect_4(task: { data: Int16Array }): void {
+    if (this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) return;
+    const player = this.ow.player.object;
+    this.ow.player.setState(PLAYER_AVATAR_GFX_RIDE);
+    this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
+    this.ow.objects.setHeldMovement(player, actionJumpSpecial(player.movementDirection));
+    this.ow.effects.startSurfBlob(player, C.BOB_NONE);
+    this.args[0] = task.data[1]!;
+    this.args[1] = task.data[2]!;
+    this.args[2] = this.ow.objects.objects.indexOf(player);
+    task.data[0]++;
+  }
+
+  private UseSurfEffect_5(_task: { id: number; data: Int16Array }): void {
+    const player = this.ow.player.object;
+    if (!this.ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return;
+    this.ow.player.preventStep = false;
+    this.ow.player.flags &= ~PLAYER_AVATAR_FLAG_CONTROLLABLE;
+    this.ow.objects.setHeldMovement(player, actionFace(player.movementDirection));
+    this.ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
+    this.ow.objects.unfreezeAll();
+    this.ow.controlsLocked = false;
+    this.remove(C.FLDEFF_USE_SURF);
+    SetHelpContext(C.HELPCONTEXT_SURFING);
+    tasks.destroy(_task.id);
   }
 
   /** FldEff_UseWaterfall (sUseWaterfallFieldEffectFuncs) */
