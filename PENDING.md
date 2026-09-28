@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6856/10115 (67.8 %)**.
-- Archivos C con funciones aún sin homólogo: **61**; quedan **3259 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6897/10115 (68.2 %)**.
+- Archivos C con funciones aún sin homólogo: **61**; quedan **3218 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 131.457 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~73.295 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~72.790 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -59,15 +59,15 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 39 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
 | 40 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
 | 41 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
-| 42 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
-| 43 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
-| 44 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
-| 45 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
-| 46 | `quest_log.c` | parcial | 1767 | 11/88 | ~1546 |  |
-| 47 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
-| 48 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 49 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
-| 50 | `field_player_avatar.c` | parcial | 2168 | 21/176 | ~1909 |  |
+| 42 | `field_player_avatar.c` | parcial | 2168 | 62/176 | ~1404 |  |
+| 43 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
+| 44 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
+| 45 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
+| 46 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
+| 47 | `quest_log.c` | parcial | 1767 | 11/88 | ~1546 |  |
+| 48 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
+| 49 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
+| 50 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
 | 51 | `battle_controller_pokedude.c` | parcial | 2698 | 31/108 | ~1923 |  |
 | 52 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
 | 53 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
