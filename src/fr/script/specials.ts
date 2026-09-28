@@ -35,7 +35,8 @@ type Special = (ctx: ScriptRunner) => number | void;
 
 const warned = new Set<string>();
 
-function starterSpecies(index: number): number {
+/** GetStarterSpeciesById (field_specials.c): invalid ids select Bulbasaur. */
+function GetStarterSpeciesById(index: number): number {
   const c = rom.constants;
   return [c.SPECIES_BULBASAUR, c.SPECIES_SQUIRTLE, c.SPECIES_CHARMANDER][index] ?? c.SPECIES_BULBASAUR;
 }
@@ -111,8 +112,8 @@ export const SPECIALS: Record<string, Special> = {
   },
   IsEnoughForCostInVar0x8005: () => (items.isEnoughMoney(varGet(SV.x8005)) ? 1 : 0),
   SubtractMoneyFromVar0x8005: () => { items.removeMoney(varGet(SV.x8005)); },
-  GetStarterSpecies: () => starterSpecies(varGet(rom.c("VAR_STARTER_MON"))),
-  IsStarterFirstStageInParty: () => (save.party.some((m) => m.species === starterSpecies(varGet(rom.c("VAR_STARTER_MON")))) ? 1 : 0),
+  GetStarterSpecies: () => GetStarterSpeciesById(varGet(rom.c("VAR_STARTER_MON"))),
+  IsStarterFirstStageInParty: () => (save.party.some((m) => m.species === GetStarterSpeciesById(varGet(rom.c("VAR_STARTER_MON")))) ? 1 : 0),
   IsThereRoomInAnyBoxForMorePokemon: () => (save.boxes.some((b) => b.some((s) => s === null)) ? 1 : 0),
   SetSeenMon: () => { setDexFlag(varGet(SV.x8004), false); },
   GetPokedexCount: () => {
