@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7828/10115 (77.4 %)**.
-- Archivos C con funciones aún sin homólogo: **45**; quedan **2287 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7854/10115 (77.6 %)**.
+- Archivos C con funciones aún sin homólogo: **45**; quedan **2261 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 106.224 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~55.146 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~54.548 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -28,16 +28,16 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 8 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
 | 9 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 10 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 11 | `start_menu.c` | parcial | 1016 | 34/65 | ~484 |  |
-| 12 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 13 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
-| 14 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 15 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
-| 16 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
-| 17 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
-| 18 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
-| 19 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
-| 20 | `naming_screen.c` | parcial | 2509 | 62/109 | ~1081 |  |
+| 11 | `naming_screen.c` | casi completo | 2509 | 88/109 | ~483 |  |
+| 12 | `start_menu.c` | parcial | 1016 | 34/65 | ~484 |  |
+| 13 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 14 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
+| 15 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
+| 16 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
+| 17 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
+| 18 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
+| 19 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
+| 20 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
 | 21 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
 | 22 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
 | 23 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
@@ -64,7 +64,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 44 | `event_object_movement.c` | parcial | 9412 | 533/759 | ~2802 |  |
 | 45 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
-Total: 45 archivos con huecos: 1 sin empezar, 1 adaptador, 11 casi completos y 32 parciales.
+Total: 45 archivos con huecos: 1 sin empezar, 1 adaptador, 12 casi completos y 31 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -107,7 +107,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona). Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
 - Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
-- Pantalla de nombres: 62/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.
+- Pantalla de nombres: 88/109 funciones (`naming_screen.c`); estados de input, sprites, iconos, renderizado de texto/teclado y callbacks conectados. Quedan 21 nombres; pantalla e historia sin validar en navegador.
 - Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
