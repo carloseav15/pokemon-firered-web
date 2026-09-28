@@ -198,12 +198,14 @@ function newRegionMap(type: number, cb: () => void, fromField: boolean): RegionM
 
 function InitRegionMap(type: number, cb: () => void): void {
   sRegionMap = newRegionMap(type, cb, false);
+  sGame!.overworld.gExitStairsMovementDisabled = true;
   InitRegionMapType();
   SetMainCallback2(CB2_OpenRegionMap);
 }
 
 function InitRegionMapWithExitCB(type: number, cb: () => void, fromField: boolean): void {
   sRegionMap = newRegionMap(type, cb, fromField);
+  sGame!.overworld.gExitStairsMovementDisabled = true;
   InitRegionMapType();
   SetMainCallback2(CB2_OpenRegionMap);
 }

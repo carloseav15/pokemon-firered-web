@@ -36,6 +36,7 @@ import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 import { QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
+import { IsWeatherNotFadingIn } from "./weather";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -172,6 +173,7 @@ export class Overworld {
   /** Camera tracks this object (the player by default). */
   cameraTarget: ObjectEvent | null = null;
   cameraObject: { x: number; y: number } | null = null;
+  gExitStairsMovementDisabled = false;
   flashLevel = 0;
   private loadState = 0;
   private loadPromise?: Promise<LoadedMap>;
@@ -896,12 +898,91 @@ export class Overworld {
     if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
       paletteFade.fill(MapTransitionIsExit(this.lastUsedWarpType(), this.header.mapType) ? RGB_WHITE : RGB_BLACK);
       this.startExitDoorTask();
+      this.gExitStairsMovementDisabled = false;
       return;
     }
     if (!playerNotMoving) this.warpFadeInScreen();
     else this.fadeInFromBlack();
     if (MB.MetatileBehavior_IsNonAnimDoor(behavior)) this.startExitNonAnimDoorTask();
+    else if (MB.MetatileBehavior_IsDirectionalStairWarp(behavior) && !this.gExitStairsMovementDisabled) this.startExitStairsTask();
     else this.startExitNonDoorTask();
+    this.gExitStairsMovementDisabled = false;
+  }
+
+  /** FieldFadeTransitionBackgroundEffectIsFinished (field_fadetransition.c). */
+  private FieldFadeTransitionBackgroundEffectIsFinished(): boolean {
+    return IsWeatherNotFadingIn() && this.mapPreview.ForestMapPreviewScreenIsRunning();
+  }
+
+  /** GetStairsMovementDirection (field_fadetransition.c); C narrows behavior to u8. */
+  private GetStairsMovementDirection(metatileBehavior: number): [number, number] {
+    const behavior = metatileBehavior & 0xff;
+    if (MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior)) return [16, -10];
+    if (MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior)) return [-17, -10];
+    if (MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior)) return [17, 3];
+    if (MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior)) return [-17, 3];
+    return [0, 0];
+  }
+
+  /** ExitStairsMovement (field_fadetransition.c), using task data slots 1..5 as s16. */
+  private ExitStairsMovement(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    const behavior = this.map.behaviorAt(player.currentCoords.x, player.currentCoords.y);
+    const direction = (MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior)
+      || MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior)) ? DIR_WEST : DIR_EAST;
+    this.objects.forceSetHeldMovement(player, direction === DIR_WEST
+      ? C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_LEFT
+      : C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_RIGHT);
+    const [speedX, speedY] = this.GetStairsMovementDirection(behavior);
+    data[3] = speedX * 16;
+    data[4] = speedY * 16;
+    data[5] = 16;
+    player.sprite.x2 = data[3] >> 5;
+    player.sprite.y2 = data[4] >> 5;
+    data[1] = -speedX;
+    data[2] = -speedY;
+  }
+
+  /** WaitStairExitMovementFinished (field_fadetransition.c). */
+  private WaitStairExitMovementFinished(taskId: number): boolean {
+    const data = tasks.tasks[taskId].data;
+    const sprite = this.player.object.sprite;
+    if (data[5] !== 0) {
+      data[3] += data[1];
+      data[4] += data[2];
+      sprite.x2 = data[3] >> 5;
+      sprite.y2 = data[4] >> 5;
+      data[5]--;
+      return true;
+    }
+    sprite.x2 = 0;
+    sprite.y2 = 0;
+    return false;
+  }
+
+  /** Task_ExitStairs (field_fadetransition.c). */
+  private Task_ExitStairs(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    if (data[0] === 0) {
+      this.playSpecialMapMusic();
+      this.warpFadeInScreen();
+      this.controlsLocked = true;
+      this.ExitStairsMovement(taskId);
+      data[0]++;
+    } else if (data[0] === 1) {
+      if (!this.WaitStairExitMovementFinished(taskId)) data[0]++;
+    } else if (this.FieldFadeTransitionBackgroundEffectIsFinished()) {
+      // CameraObjectReset1: this renderer tracks the player directly and has no camera-object sprite.
+      this.cameraTarget = this.player.object;
+      this.cameraObject = null;
+      this.controlsLocked = false;
+      tasks.destroy(taskId);
+    }
+  }
+
+  private startExitStairsTask(): void {
+    tasks.create((taskId) => this.Task_ExitStairs(taskId), 10);
   }
 
   private startExitDoorTask(): void {
