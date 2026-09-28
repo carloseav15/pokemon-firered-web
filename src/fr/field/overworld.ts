@@ -992,25 +992,24 @@ export class Overworld {
     this.controlsLocked = true;
     this.tryFadeOutOldMapMusic();
     this.fieldCallback = () => this.fieldCBTeleportWarpIn();
-    let state = 0;
-    let timer = 0;
-    const id = tasks.create(() => {
-      const p = this.player.object;
-      switch (state) {
+    const task = { id: -1, state: 0 };
+    task.id = tasks.create(() => {
+      switch (task.state) {
         case 0:
           this.objects.freezeAll();
           sound.playSE(sound.c("SE_WARP_IN"));
-          state = 1;
+          this.player.StartTeleportWarpOutPlayerAnim();
+          task.state++;
           break;
         case 1:
-          // Spin and rise (StartTeleportWarpOutPlayerAnim)
-          timer++;
-          if (timer % 4 === 0) this.objects.turn(p, [DIR_SOUTH, DIR_WEST, DIR_NORTH, DIR_EAST][(timer / 4) & 3]);
-          if (timer > 16) p.sprite.y2 -= 4;
-          if (timer >= 48) { this.warpFadeOutScreen(); state = 2; }
+          if (!this.player.WaitTeleportWarpOutPlayerAnim()) { this.warpFadeOutScreen(); task.state++; }
           break;
         case 2:
-          if (!paletteFade.active) { tasks.destroy(id); this.warpIntoMapAndLoad(); }
+          if (!paletteFade.active && sound.isBGMPausedOrStopped()) task.state++;
+          break;
+        case 3:
+          tasks.destroy(task.id);
+          this.warpIntoMapAndLoad();
           break;
       }
     }, 10);
@@ -1023,17 +1022,16 @@ export class Overworld {
     this.controlsLocked = true;
     const p = this.player.object;
     p.sprite.y2 = -80;
-    let timer = 0;
-    const id = tasks.create(() => {
-      this.objects.freezeAll();
-      timer++;
-      p.sprite.y2 = Math.min(0, p.sprite.y2 + 4);
-      if (timer % 4 === 0) this.objects.turn(p, [DIR_SOUTH, DIR_EAST, DIR_NORTH, DIR_WEST][(timer / 4) & 3]);
-      if (p.sprite.y2 === 0 && timer >= 32 && !paletteFade.active) {
-        this.objects.turn(p, DIR_SOUTH);
+    const task = { id: -1, state: 0 };
+    task.id = tasks.create(() => {
+      if (task.state === 0) {
+        this.objects.freezeAll();
+        this.player.StartTeleportInPlayerAnim();
+        task.state++;
+      } else if (!paletteFade.active && !this.player.WaitTeleportInPlayerAnim()) {
         this.objects.unfreezeAll();
         this.controlsLocked = false;
-        tasks.destroy(id);
+        tasks.destroy(task.id);
       }
     }, 10);
   }
