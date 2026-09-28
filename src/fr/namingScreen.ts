@@ -22,8 +22,8 @@ import { BeginNormalPaletteFade, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfa
 import { BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG2, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
 import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
 import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Sprite, type Subsprite } from "./hw/sprite";
-import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
-import { AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
+import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
+import { AddWindow, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
 import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
 import { CreateObjectGraphicsSprite, CopyObjectGraphicsInfoToSpriteTemplate } from "./objectEventGraphics";
 import { GetRivalAvatarGraphicsIdByStateIdAndGender } from "./field/playerAvatar";
@@ -472,25 +472,75 @@ class NamingScreen {
     this.state = "input";
   }
 
-  private drawEntry(): void {
+  /** DrawTextEntry (naming_screen.c). */
+  private DrawTextEntry(): void {
     const win = this.windows[2];
     FillWindowPixelBuffer(win, PIXEL_FILL(1));
-    const x = (240 - this.model.template.maxChars * 8) / 2 + 6 - 64;
-    for (let i = 0; i < this.model.template.maxChars; i++) AddTextPrinterParameterized3(win, FONT_NORMAL, x + i * 8, 1, [1, 2, 3], 0, [this.model.text[i], EOS]);
-    if (this.model.template.addGenderIcon && this.gender !== C.MON_GENDERLESS) {
-      const female = this.gender === C.MON_FEMALE;
-      AddTextPrinterParameterized3(win, FONT_NORMAL, 104, 1, female ? [0, 5, 4] : [0, 9, 8], 0, text(female ? "gText_FemaleSymbol" : "gText_MaleSymbol"));
+    const x = (240 - this.model.template.maxChars * 8) / 2 + 6 - 0x40;
+    const emptyPlaceholder = text("gExpandedPlaceholder_Empty")[0] ?? EOS;
+    for (let i = 0; i < this.model.template.maxChars; i++) {
+      const character = this.model.text[i]!;
+      const extraWidth = this.IsWideLetter(character) ? 2 : 0;
+      AddTextPrinterParameterized(win, FONT_NORMAL, [character, emptyPlaceholder], i * 8 + x + extraWidth, 1, C.TEXT_SKIP_DRAW, null);
     }
-    PutWindowTilemap(win); CopyWindowToVram(win, COPYWIN_FULL);
+    this.TryDrawGenderIcon();
+    CopyWindowToVram(win, COPYWIN_GFX);
+    PutWindowTilemap(win);
   }
 
-  private drawTitle(): void {
+  /** DrawTextEntryBox (naming_screen.c): select the title renderer by template id. */
+  private DrawTextEntryBox(): void {
+    const drawFunctions = [this.DrawNormalTextEntryBox, this.DrawNormalTextEntryBox,
+      this.DrawMonTextEntryBox, this.DrawMonTextEntryBox, this.DrawNormalTextEntryBox];
+    drawFunctions[this.model.type]!.call(this);
+  }
+
+  /** DrawNormalTextEntryBox (naming_screen.c). */
+  private DrawNormalTextEntryBox(): void {
     const win = this.windows[3];
-    const title = text(this.model.template.title.$sym);
-    const prefix = this.model.template.addGenderIcon ? Array.from(speciesName(this.species)).filter(ch => ch !== EOS) : [];
     FillWindowPixelBuffer(win, PIXEL_FILL(1));
-    AddTextPrinterParameterized3(win, C.FONT_NORMAL_COPY_1, 1, 1, [1, 2, 3], 0, [...prefix, ...title]);
-    PutWindowTilemap(win); CopyWindowToVram(win, COPYWIN_FULL);
+    AddTextPrinterParameterized(win, C.FONT_NORMAL_COPY_1, text(this.model.template.title.$sym), 1, 1, 0, null);
+    PutWindowTilemap(win);
+  }
+
+  /** DrawMonTextEntryBox (naming_screen.c): prepend the species name and append at most 15 title bytes. */
+  private DrawMonTextEntryBox(): void {
+    const win = this.windows[3];
+    const species = speciesName(this.species);
+    const title = text(this.model.template.title.$sym);
+    const speciesEnd = species.indexOf(EOS);
+    const buffer = [...species.subarray(0, speciesEnd < 0 ? 31 : speciesEnd), ...title.slice(0, 15)].slice(0, 31);
+    buffer.push(EOS);
+    FillWindowPixelBuffer(win, PIXEL_FILL(1));
+    AddTextPrinterParameterized(win, C.FONT_NORMAL_COPY_1, buffer, 1, 1, 0, null);
+    PutWindowTilemap(win);
+  }
+
+  /** TryDrawGenderIcon (naming_screen.c): select the configured callback. */
+  private TryDrawGenderIcon(): void {
+    const drawFunctions = [this.DummyGenderIcon, this.DrawGenderIcon];
+    drawFunctions[this.model.template.addGenderIcon]!.call(this);
+  }
+
+  /** DummyGenderIcon (naming_screen.c). */
+  private DummyGenderIcon(): void {}
+
+  /** DrawGenderIcon (naming_screen.c). */
+  private DrawGenderIcon(): void {
+    if (this.gender === C.MON_GENDERLESS) return;
+    const female = this.gender === C.MON_FEMALE;
+    const colors = female
+      ? [C.TEXT_COLOR_TRANSPARENT, C.TEXT_COLOR_LIGHT_RED, C.TEXT_COLOR_RED]
+      : [C.TEXT_COLOR_TRANSPARENT, C.TEXT_COLOR_LIGHT_BLUE, C.TEXT_COLOR_BLUE];
+    AddTextPrinterParameterized3(this.windows[2], FONT_NORMAL, 0x68, 1, colors, C.TEXT_SKIP_DRAW,
+      text(female ? "gText_FemaleSymbol" : "gText_MaleSymbol"));
+  }
+
+  /** IsWideLetter (naming_screen.c). */
+  private IsWideLetter(character: number): boolean {
+    const alphabet = text("gText_AlphabetUpperLower");
+    for (let i = 0; alphabet[i] !== EOS; i++) if (character === alphabet[i]) return true;
+    return false;
   }
 
   private drawControls(): void {
@@ -550,7 +600,7 @@ class NamingScreen {
 
   /** MainState_FadeIn (naming_screen.c). */
   private MainState_FadeIn(): void {
-    this.drawPage(); this.drawEntry(); this.drawTitle(); this.drawControls();
+    this.drawPage(); this.DrawTextEntry(); this.DrawTextEntryBox(); this.drawControls();
     for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
     joy.repeatStartDelay = 16;
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
@@ -591,7 +641,7 @@ class NamingScreen {
       if (role === "character" || role === "backspace") this.TryStartButtonFlash(NamingButton.BACK, false, true);
     }
     if (action === "character" || action === "moveToOK" || action === "delete") {
-      sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.drawEntry();
+      sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.DrawTextEntry();
     }
     if (action !== "none" && action !== "moveToOK") this.moveCursor();
     if (action === "confirm") {
