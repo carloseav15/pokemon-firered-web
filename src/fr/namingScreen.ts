@@ -110,12 +110,20 @@ class NamingScreen {
     this.sprite("sSpriteTemplate_BackButton", 204, 116, 0, "sSubspriteTable_Button");
     this.sprite("sSpriteTemplate_OkButton", 204, 140, 0, "sSubspriteTable_Button");
     const baseX = (240 - this.model.template.maxChars * 8) / 2 + 6;
-    gSprites[this.sprite("sSpriteTemplate_InputArrow", baseX - 5, 56, 0)].oam.priority = 3;
-    for (let i = 0; i < this.model.template.maxChars; i++) gSprites[this.sprite("sSpriteTemplate_Underscore", baseX + i * 8 + 3, 60, 0)].oam.priority = 3;
+    const inputArrow = this.sprite("sSpriteTemplate_InputArrow", baseX - 5, 56, 0);
+    gSprites[inputArrow].oam.priority = 3;
+    gSprites[inputArrow].invisible = true;
+    gSprites[inputArrow].callback = sprite => this.SpriteCB_InputArrow(sprite);
+    for (let i = 0; i < this.model.template.maxChars; i++) {
+      const underscore = this.sprite("sSpriteTemplate_Underscore", baseX + i * 8 + 3, 60, 0);
+      gSprites[underscore].oam.priority = 3;
+      gSprites[underscore].data[0] = i;
+      gSprites[underscore].invisible = true;
+      gSprites[underscore].callback = sprite => this.SpriteCB_Underscore(sprite);
+    }
     this.createInputTargetIcon();
     this.buttonFlashTaskId = tasks.create(taskId => this.Task_UpdateButtonFlash(taskId), 3);
     tasks.data(this.buttonFlashTaskId)[0] = NamingButton.COUNT;
-    this.MainState_FadeIn();
     SetVBlankCallback(() => {
       LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer();
       SetGpuReg(REG_OFFSET_BG1VOFS, this.bg1vOffset);
@@ -140,6 +148,44 @@ class NamingScreen {
       }));
     }
     return id;
+  }
+
+  /** SetSpritesVisible (naming_screen.c). */
+  private SetSpritesVisible(): void {
+    for (const sprite of gSprites) {
+      if (sprite.inUse) sprite.invisible = false;
+    }
+    this.SetCursorInvisibility(false);
+  }
+
+  /** SpriteCB_InputArrow (naming_screen.c). */
+  private SpriteCB_InputArrow(sprite: Sprite): void {
+    const x = [0, -4, -2, -1];
+    let delay = sprite.data[0]!;
+    if (delay === 0 || --delay === 0) {
+      delay = 8;
+      sprite.data[1] = (sprite.data[1]! + 1) & (x.length - 1);
+    }
+    sprite.data[0] = delay;
+    sprite.x2 = x[sprite.data[1]! & (x.length - 1)]!;
+  }
+
+  /** SpriteCB_Underscore (naming_screen.c). */
+  private SpriteCB_Underscore(sprite: Sprite): void {
+    const y = [2, 3, 2, 1];
+    if (this.model.caret !== (sprite.data[0]! & 0xff)) {
+      sprite.y2 = 0;
+      sprite.data[1] = 0;
+      sprite.data[2] = 0;
+      return;
+    }
+    const yPosId = sprite.data[1]! & (y.length - 1);
+    sprite.y2 = y[yPosId]!;
+    sprite.data[2] = sprite.data[2]! + 1;
+    if (sprite.data[2]! > 8) {
+      sprite.data[1] = (yPosId + 1) & (y.length - 1);
+      sprite.data[2] = 0;
+    }
   }
 
   /** CreateInputTargetIcon and sIconFunctions dispatch from naming_screen.c. */
@@ -436,7 +482,6 @@ class NamingScreen {
     for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
     joy.repeatStartDelay = 16;
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
-    this.SetCursorInvisibility(false);
     this.state = "waitFadeIn";
   }
 
@@ -615,6 +660,7 @@ class NamingScreen {
   /** Task_NamingScreen (naming_screen.c): dispatch the active main-state callback. */
   private Task_NamingScreen(): void {
     switch (this.state) {
+      case "fadeIn": this.MainState_FadeIn(); this.SetSpritesVisible(); break;
       case "waitFadeIn": this.MainState_WaitFadeIn(); break;
       case "input": this.MainState_HandleInput(); break;
       case "moveToOK": this.MainState_MoveToOKButton(); break;
