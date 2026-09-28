@@ -7,10 +7,10 @@ import { blankMail, mailLines } from "../pokemon/mail";
 import { decode } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
-import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName, removeBagItem } from "../pokemon/items";
+import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "../pokemon/items";
 import { trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
-import { bagResult, GoToBagMenu, type BagHandlers, type BagTaskContext } from "../bagMenu";
+import { bagResult, GoToBagMenu, RemoveUsedItem, type BagHandlers, type BagTaskContext } from "../bagMenu";
 import { InitTMCase } from "../tmCase";
 import { InitBerryPouch } from "../berryPouch";
 import {
@@ -122,10 +122,7 @@ export function Task_DisplayPokeFluteMessage(taskId: number, isFanfareDone: () =
 export function Task_UseRepel(taskId: number, item: number, onDone: (text: Uint8Array) => void): void {
   if (sound.isSEPlaying()) return;
   varSet(C.VAR_REPEL_STEP_COUNT, itemInfo(item)?.holdEffectParam ?? 0);
-  removeBagItem(item, 1);
-  stringVars.var1 = Uint8Array.from(save.playerName);
-  stringVars.var2 = itemName(item);
-  const text = rom.text("gText_PlayerUsedVar2");
+  const text = RemoveUsedItem(item);
   tasks.destroy(taskId);
   onDone(text);
 }
@@ -346,10 +343,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           if (!ow.header.allowEscaping) { notNow(); return; }
           onField(() => {
             ow.resetStateAfterDigEscRope();
-            removeBagItem(item, 1);
-            stringVars.var1 = Uint8Array.from(save.playerName);
-            stringVars.var2 = itemName(item);
-            fieldMessage(game, rom.text("gText_PlayerUsedVar2"), () => { ow.resetInitialPlayerAvatarState(); ow.effects.moves.startEscapeRope(); });
+            fieldMessage(game, RemoveUsedItem(item), () => { ow.resetInitialPlayerAvatarState(); ow.effects.moves.startEscapeRope(); });
           });
           return;
         case "ItemUseOutOfBattle_Itemfinder":

@@ -41,7 +41,7 @@ import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHo
 import { battleHost } from "./host";
 import { ReshowBattleScreenAfterMenu, SetCB2ToReshowScreenAfterMenu2 } from "./reshow";
 import * as PartyMenu from "../partyMenu";
-import { bagResult, BackUpPlayerBag, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, RestorePlayerBag, type BagTaskContext } from "../bagMenu";
+import { bagResult, BackUpPlayerBag, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, RemoveUsedItem, RestorePlayerBag, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
 import { gDisableStructs } from "./globals";
 
@@ -302,8 +302,7 @@ export function CB2_BagMenuFromBattle(): void {
       case "BattleUseFunc_PokeFlute": ctx.exit(() => finish(item)); return;
       case "BattleUseFunc_PokeDoll":
         if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) { notNow(); return; }
-        removeBagItem(item, 1);
-        ctx.exit(() => finish(item));
+        ctx.message(RemoveUsedItem(item), FONT_NORMAL, () => ctx.exit(() => finish(item)));
         return;
       case "BattleUseFunc_StatBooster":
         BattleUseFunc_StatBooster(ctx.taskId, item, menuBattler, ctx, () => finish(item));

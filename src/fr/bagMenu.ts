@@ -56,7 +56,7 @@ import {
   AddWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "./hw/window";
-import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFunc, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFunc, ItemId_GetPocket, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "./rom";
 import { Pokedude_InitTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
@@ -73,6 +73,20 @@ export const gBagMenuState = {
 
 /** gSpecialVar_ItemId as the bag leaves it. */
 export const bagResult = { itemId: 0 };
+
+/** RemoveUsedItem (item_use.c): consume the selected item and prepare gStringVar4. */
+export function RemoveUsedItem(itemId: number): Uint8Array {
+  removeBagItem(itemId, 1);
+  const pocketId = ItemId_GetPocket(itemId);
+  // The C helper passes ItemId_GetPocket directly to these zero-based bag-menu
+  // routines. Its call is only meaningful while the bag display still exists.
+  if (sBagMenuDisplay && pocketId < NUM_BAG_POCKETS_NO_CASES) {
+    Pocket_CalculateNItemsAndMaxShowed(pocketId);
+    PocketCalculateInitialCursorPosAndItemsAbove(pocketId);
+  }
+  stringVars.var2 = CopyItemName(itemId);
+  return expandPlaceholders(text("gText_PlayerUsedVar2"));
+}
 
 /** Stands in for the bag task when an item's field or battle function runs. */
 export type BagTaskContext = {
