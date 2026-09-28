@@ -515,6 +515,157 @@ const MOVEMENT_ACTION_STEPS: readonly (readonly string[])[] = [
   /* JUMP_SPECIAL_WITH_EFFECT_RIGHT */ ["MovementAction_JumpSpecialWithEffectRight_Step0", "MovementAction_JumpSpecialWithEffectRight_Step1", "MovementAction_PauseSpriteAnim"],
 ];
 
+/**
+ * sMovementTypeCallbacks (event_object_movement.c): one entry per MOVEMENT_TYPE_* id
+ * (0..80), naming the MovementType_* setup it runs. null matches C's NULL entry
+ * (MOVEMENT_TYPE_BERRY_TREE_GROWTH has no movement-type behavior).
+ */
+const MOVEMENT_TYPE_CALLBACKS: readonly (string | null)[] = [
+  /* NONE */ "MovementType_None",
+  /* LOOK_AROUND */ "MovementType_LookAround",
+  /* WANDER_AROUND */ "MovementType_WanderAround",
+  /* WANDER_UP_AND_DOWN */ "MovementType_WanderUpAndDown",
+  /* WANDER_DOWN_AND_UP */ "MovementType_WanderUpAndDown",
+  /* WANDER_LEFT_AND_RIGHT */ "MovementType_WanderLeftAndRight",
+  /* WANDER_RIGHT_AND_LEFT */ "MovementType_WanderLeftAndRight",
+  /* FACE_UP */ "MovementType_FaceDirection",
+  /* FACE_DOWN */ "MovementType_FaceDirection",
+  /* FACE_LEFT */ "MovementType_FaceDirection",
+  /* FACE_RIGHT */ "MovementType_FaceDirection",
+  /* PLAYER */ "MovementType_Player",
+  /* BERRY_TREE_GROWTH */ null,
+  /* FACE_DOWN_AND_UP */ "MovementType_FaceDownAndUp",
+  /* FACE_LEFT_AND_RIGHT */ "MovementType_FaceLeftAndRight",
+  /* FACE_UP_AND_LEFT */ "MovementType_FaceUpAndLeft",
+  /* FACE_UP_AND_RIGHT */ "MovementType_FaceUpAndRight",
+  /* FACE_DOWN_AND_LEFT */ "MovementType_FaceDownAndLeft",
+  /* FACE_DOWN_AND_RIGHT */ "MovementType_FaceDownAndRight",
+  /* FACE_DOWN_UP_AND_LEFT */ "MovementType_FaceDownUpAndLeft",
+  /* FACE_DOWN_UP_AND_RIGHT */ "MovementType_FaceDownUpAndRight",
+  /* FACE_UP_LEFT_AND_RIGHT */ "MovementType_FaceUpRightAndLeft",
+  /* FACE_DOWN_LEFT_AND_RIGHT */ "MovementType_FaceDownRightAndLeft",
+  /* ROTATE_COUNTERCLOCKWISE */ "MovementType_RotateCounterclockwise",
+  /* ROTATE_CLOCKWISE */ "MovementType_RotateClockwise",
+  /* WALK_UP_AND_DOWN */ "MovementType_WalkBackAndForth",
+  /* WALK_DOWN_AND_UP */ "MovementType_WalkBackAndForth",
+  /* WALK_LEFT_AND_RIGHT */ "MovementType_WalkBackAndForth",
+  /* WALK_RIGHT_AND_LEFT */ "MovementType_WalkBackAndForth",
+  /* WALK_SEQUENCE_UP_RIGHT_LEFT_DOWN */ "MovementType_WalkSequenceUpRightLeftDown",
+  /* WALK_SEQUENCE_RIGHT_LEFT_DOWN_UP */ "MovementType_WalkSequenceRightLeftDownUp",
+  /* WALK_SEQUENCE_DOWN_UP_RIGHT_LEFT */ "MovementType_WalkSequenceDownUpRightLeft",
+  /* WALK_SEQUENCE_LEFT_DOWN_UP_RIGHT */ "MovementType_WalkSequenceLeftDownUpRight",
+  /* WALK_SEQUENCE_UP_LEFT_RIGHT_DOWN */ "MovementType_WalkSequenceUpLeftRightDown",
+  /* WALK_SEQUENCE_LEFT_RIGHT_DOWN_UP */ "MovementType_WalkSequenceLeftRightDownUp",
+  /* WALK_SEQUENCE_DOWN_UP_LEFT_RIGHT */ "MovementType_WalkSequenceDownUpLeftRight",
+  /* WALK_SEQUENCE_RIGHT_DOWN_UP_LEFT */ "MovementType_WalkSequenceRightDownUpLeft",
+  /* WALK_SEQUENCE_LEFT_UP_DOWN_RIGHT */ "MovementType_WalkSequenceLeftUpDownRight",
+  /* WALK_SEQUENCE_UP_DOWN_RIGHT_LEFT */ "MovementType_WalkSequenceUpDownRightLeft",
+  /* WALK_SEQUENCE_RIGHT_LEFT_UP_DOWN */ "MovementType_WalkSequenceRightLeftUpDown",
+  /* WALK_SEQUENCE_DOWN_RIGHT_LEFT_UP */ "MovementType_WalkSequenceDownRightLeftUp",
+  /* WALK_SEQUENCE_RIGHT_UP_DOWN_LEFT */ "MovementType_WalkSequenceRightUpDownLeft",
+  /* WALK_SEQUENCE_UP_DOWN_LEFT_RIGHT */ "MovementType_WalkSequenceUpDownLeftRight",
+  /* WALK_SEQUENCE_LEFT_RIGHT_UP_DOWN */ "MovementType_WalkSequenceLeftRightUpDown",
+  /* WALK_SEQUENCE_DOWN_LEFT_RIGHT_UP */ "MovementType_WalkSequenceDownLeftRightUp",
+  /* WALK_SEQUENCE_UP_LEFT_DOWN_RIGHT */ "MovementType_WalkSequenceUpLeftDownRight",
+  /* WALK_SEQUENCE_DOWN_RIGHT_UP_LEFT */ "MovementType_WalkSequenceDownRightUpLeft",
+  /* WALK_SEQUENCE_LEFT_DOWN_RIGHT_UP */ "MovementType_WalkSequenceLeftDownRightUp",
+  /* WALK_SEQUENCE_RIGHT_UP_LEFT_DOWN */ "MovementType_WalkSequenceRightUpLeftDown",
+  /* WALK_SEQUENCE_UP_RIGHT_DOWN_LEFT */ "MovementType_WalkSequenceUpRightDownLeft",
+  /* WALK_SEQUENCE_DOWN_LEFT_UP_RIGHT */ "MovementType_WalkSequenceDownLeftUpRight",
+  /* WALK_SEQUENCE_LEFT_UP_RIGHT_DOWN */ "MovementType_WalkSequenceLeftUpRightDown",
+  /* WALK_SEQUENCE_RIGHT_DOWN_LEFT_UP */ "MovementType_WalkSequenceRightDownLeftUp",
+  /* COPY_PLAYER */ "MovementType_CopyPlayer",
+  /* COPY_PLAYER_OPPOSITE */ "MovementType_CopyPlayer",
+  /* COPY_PLAYER_COUNTERCLOCKWISE */ "MovementType_CopyPlayer",
+  /* COPY_PLAYER_CLOCKWISE */ "MovementType_CopyPlayer",
+  /* TREE_DISGUISE */ "MovementType_TreeDisguise",
+  /* MOUNTAIN_DISGUISE */ "MovementType_MountainDisguise",
+  /* COPY_PLAYER_IN_GRASS */ "MovementType_CopyPlayerInGrass",
+  /* COPY_PLAYER_OPPOSITE_IN_GRASS */ "MovementType_CopyPlayerInGrass",
+  /* COPY_PLAYER_COUNTERCLOCKWISE_IN_GRASS */ "MovementType_CopyPlayerInGrass",
+  /* COPY_PLAYER_CLOCKWISE_IN_GRASS */ "MovementType_CopyPlayerInGrass",
+  /* BURIED */ "MovementType_Buried",
+  /* WALK_IN_PLACE_DOWN */ "MovementType_WalkInPlace",
+  /* WALK_IN_PLACE_UP */ "MovementType_WalkInPlace",
+  /* WALK_IN_PLACE_LEFT */ "MovementType_WalkInPlace",
+  /* WALK_IN_PLACE_RIGHT */ "MovementType_WalkInPlace",
+  /* WALK_IN_PLACE_FAST_DOWN */ "MovementType_WalkInPlaceFast",
+  /* WALK_IN_PLACE_FAST_UP */ "MovementType_WalkInPlaceFast",
+  /* WALK_IN_PLACE_FAST_LEFT */ "MovementType_WalkInPlaceFast",
+  /* WALK_IN_PLACE_FAST_RIGHT */ "MovementType_WalkInPlaceFast",
+  /* JOG_IN_PLACE_DOWN */ "MovementType_JogInPlace",
+  /* JOG_IN_PLACE_UP */ "MovementType_JogInPlace",
+  /* JOG_IN_PLACE_LEFT */ "MovementType_JogInPlace",
+  /* JOG_IN_PLACE_RIGHT */ "MovementType_JogInPlace",
+  /* INVISIBLE */ "MovementType_Invisible",
+  /* RAISE_HAND_AND_STOP */ "MovementType_RaiseHandAndStop",
+  /* RAISE_HAND_AND_JUMP */ "MovementType_RaiseHandAndJump",
+  /* RAISE_HAND_AND_SWIM */ "MovementType_RaiseHandAndSwim",
+  /* WANDER_AROUND_SLOWER */ "MovementType_WanderAroundSlower",
+];
+
+/**
+ * gMovementTypeFuncs_<name> (event_object_movement.c, data/object_events/movement_type_func_tables.h):
+ * per MovementType_* setup, the ordered MovementType_*_StepN callbacks it steps through via
+ * sprite->data[1]. MovementType_None/_Player/_TreeDisguise/_MountainDisguise have no table in
+ * C either; they run their own body directly (see movementTypeCallback).
+ */
+const MOVEMENT_TYPE_STEPS: Readonly<Record<string, readonly string[]>> = {
+  MovementType_WanderAround: ["MovementType_WanderAround_Step0", "MovementType_WanderAround_Step1", "MovementType_WanderAround_Step2", "MovementType_WanderAround_Step3", "MovementType_WanderAround_Step4", "MovementType_WanderAround_Step5", "MovementType_WanderAround_Step6"],
+  MovementType_WanderAroundSlower: ["MovementType_WanderAround_Step0", "MovementType_WanderAround_Step1", "MovementType_WanderAround_Step2", "MovementType_WanderAround_Step3", "MovementType_WanderAround_Step4", "MovementType_WanderAround_Step5Slower", "MovementType_WanderAround_Step6"],
+  MovementType_LookAround: ["MovementType_LookAround_Step0", "MovementType_LookAround_Step1", "MovementType_LookAround_Step2", "MovementType_LookAround_Step3", "MovementType_LookAround_Step4"],
+  MovementType_WanderUpAndDown: ["MovementType_WanderUpAndDown_Step0", "MovementType_WanderUpAndDown_Step1", "MovementType_WanderUpAndDown_Step2", "MovementType_WanderUpAndDown_Step3", "MovementType_WanderUpAndDown_Step4", "MovementType_WanderUpAndDown_Step5", "MovementType_WanderUpAndDown_Step6"],
+  MovementType_WanderLeftAndRight: ["MovementType_WanderLeftAndRight_Step0", "MovementType_WanderLeftAndRight_Step1", "MovementType_WanderLeftAndRight_Step2", "MovementType_WanderLeftAndRight_Step3", "MovementType_WanderLeftAndRight_Step4", "MovementType_WanderLeftAndRight_Step5", "MovementType_WanderLeftAndRight_Step6"],
+  MovementType_FaceDirection: ["MovementType_FaceDirection_Step0", "MovementType_FaceDirection_Step1", "MovementType_FaceDirection_Step2"],
+  MovementType_FaceDownAndUp: ["MovementType_FaceDownAndUp_Step0", "MovementType_FaceDownAndUp_Step1", "MovementType_FaceDownAndUp_Step2", "MovementType_FaceDownAndUp_Step3", "MovementType_FaceDownAndUp_Step4"],
+  MovementType_FaceLeftAndRight: ["MovementType_FaceLeftAndRight_Step0", "MovementType_FaceLeftAndRight_Step1", "MovementType_FaceLeftAndRight_Step2", "MovementType_FaceLeftAndRight_Step3", "MovementType_FaceLeftAndRight_Step4"],
+  MovementType_FaceUpAndLeft: ["MovementType_FaceUpAndLeft_Step0", "MovementType_FaceUpAndLeft_Step1", "MovementType_FaceUpAndLeft_Step2", "MovementType_FaceUpAndLeft_Step3", "MovementType_FaceUpAndLeft_Step4"],
+  MovementType_FaceUpAndRight: ["MovementType_FaceUpAndRight_Step0", "MovementType_FaceUpAndRight_Step1", "MovementType_FaceUpAndRight_Step2", "MovementType_FaceUpAndRight_Step3", "MovementType_FaceUpAndRight_Step4"],
+  MovementType_FaceDownAndLeft: ["MovementType_FaceDownAndLeft_Step0", "MovementType_FaceDownAndLeft_Step1", "MovementType_FaceDownAndLeft_Step2", "MovementType_FaceDownAndLeft_Step3", "MovementType_FaceDownAndLeft_Step4"],
+  MovementType_FaceDownAndRight: ["MovementType_FaceDownAndRight_Step0", "MovementType_FaceDownAndRight_Step1", "MovementType_FaceDownAndRight_Step2", "MovementType_FaceDownAndRight_Step3", "MovementType_FaceDownAndRight_Step4"],
+  MovementType_FaceDownUpAndLeft: ["MovementType_FaceDownUpAndLeft_Step0", "MovementType_FaceDownUpAndLeft_Step1", "MovementType_FaceDownUpAndLeft_Step2", "MovementType_FaceDownUpAndLeft_Step3", "MovementType_FaceDownUpAndLeft_Step4"],
+  MovementType_FaceDownUpAndRight: ["MovementType_FaceDownUpAndRight_Step0", "MovementType_FaceDownUpAndRight_Step1", "MovementType_FaceDownUpAndRight_Step2", "MovementType_FaceDownUpAndRight_Step3", "MovementType_FaceDownUpAndRight_Step4"],
+  MovementType_FaceUpRightAndLeft: ["MovementType_FaceUpLeftAndRight_Step0", "MovementType_FaceUpLeftAndRight_Step1", "MovementType_FaceUpLeftAndRight_Step2", "MovementType_FaceUpLeftAndRight_Step3", "MovementType_FaceUpLeftAndRight_Step4"],
+  MovementType_FaceDownRightAndLeft: ["MovementType_FaceDownLeftAndRight_Step0", "MovementType_FaceDownLeftAndRight_Step1", "MovementType_FaceDownLeftAndRight_Step2", "MovementType_FaceDownLeftAndRight_Step3", "MovementType_FaceDownLeftAndRight_Step4"],
+  MovementType_RotateCounterclockwise: ["MovementType_RotateCounterclockwise_Step0", "MovementType_RotateCounterclockwise_Step1", "MovementType_RotateCounterclockwise_Step2", "MovementType_RotateCounterclockwise_Step3"],
+  MovementType_RotateClockwise: ["MovementType_RotateClockwise_Step0", "MovementType_RotateClockwise_Step1", "MovementType_RotateClockwise_Step2", "MovementType_RotateClockwise_Step3"],
+  MovementType_WalkBackAndForth: ["MovementType_WalkBackAndForth_Step0", "MovementType_WalkBackAndForth_Step1", "MovementType_WalkBackAndForth_Step2", "MovementType_WalkBackAndForth_Step3"],
+  MovementType_WalkSequenceUpRightLeftDown: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceUpRightLeftDown_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceRightLeftDownUp: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceRightLeftDownUp_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceDownUpRightLeft: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceDownUpRightLeft_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceLeftDownUpRight: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceLeftDownUpRight_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceUpLeftRightDown: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceUpLeftRightDown_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceLeftRightDownUp: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceLeftRightDownUp_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceDownUpLeftRight: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceDownUpLeftRight_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceRightDownUpLeft: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceRightDownUpLeft_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceLeftUpDownRight: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceLeftUpDownRight_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceUpDownRightLeft: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceUpDownRightLeft_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceRightLeftUpDown: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceRightLeftUpDown_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceDownRightLeftUp: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceDownRightLeftUp_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceRightUpDownLeft: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceRightUpDownLeft_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceUpDownLeftRight: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceUpDownLeftRight_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceLeftRightUpDown: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceLeftRightUpDown_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceDownLeftRightUp: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceDownLeftRightUp_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceUpLeftDownRight: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceUpLeftDownRight_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceDownRightUpLeft: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceDownRightUpLeft_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceLeftDownRightUp: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceLeftDownRightUp_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceRightUpLeftDown: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceRightUpLeftDown_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceUpRightDownLeft: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceUpRightDownLeft_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceDownLeftUpRight: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceDownLeftUpRight_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceLeftUpRightDown: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceLeftUpRightDown_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_WalkSequenceRightDownLeftUp: ["MovementType_WalkSequence_Step0", "MovementType_WalkSequenceRightDownLeftUp_Step1", "MovementType_WalkSequence_Step2"],
+  MovementType_CopyPlayer: ["MovementType_CopyPlayer_Step0", "MovementType_CopyPlayer_Step1", "MovementType_CopyPlayer_Step2"],
+  MovementType_CopyPlayerInGrass: ["MovementType_CopyPlayer_Step0", "MovementType_CopyPlayerInGrass_Step1", "MovementType_CopyPlayer_Step2"],
+  MovementType_WalkInPlace: ["MovementType_WalkInPlace_Step0", "MovementType_MoveInPlace_Step1"],
+  MovementType_WalkInPlaceFast: ["MovementType_WalkInPlaceFast_Step0", "MovementType_MoveInPlace_Step1"],
+  MovementType_JogInPlace: ["MovementType_JogInPlace_Step0", "MovementType_MoveInPlace_Step1"],
+  MovementType_Invisible: ["MovementType_Invisible_Step0", "MovementType_Invisible_Step1", "MovementType_Invisible_Step2"],
+  MovementType_Buried: ["MovementType_Buried_Step0"],
+  MovementType_RaiseHandAndStop: ["MovementType_RaiseHandAndStop_Step0", "MovementType_RaiseHandAndStop_Step1", "MovementType_RaiseHandAndStop_Step2"],
+  MovementType_RaiseHandAndJump: ["MovementType_RaiseHandAndJump_Step0", "MovementType_RaiseHandAndMove_Step1"],
+  MovementType_RaiseHandAndSwim: ["MovementType_RaiseHandAndSwim_Step0", "MovementType_RaiseHandAndMove_Step1"],
+};
+
 export class ObjectEvents {
   readonly objects: Array<ObjectEvent | null> = new Array(OBJECT_EVENTS_COUNT).fill(null);
   /** Installed by TrainerSee for the buried-trainer REVEAL_TRAINER task. */
@@ -1459,8 +1610,24 @@ export class ObjectEvents {
   }
 
   private runMovementType(object: ObjectEvent): void {
-    // UpdateObjectEventCurrentMovement repeats the callback until it returns FALSE.
-    while (this.movementTypeStep(object)) {}
+    // UpdateObjectEventCurrentMovement repeats the callback until it returns FALSE (event_object_movement.c).
+    while (this.movementTypeCallback(object)) {}
+  }
+
+  /**
+   * sMovementTypeCallbacks[objectEvent->movementType] selects the MovementType_* setup
+   * (event_object_movement.c); its callback then runs gMovementTypeFuncs_<name>[sprite->data[1]].
+   * MovementType_None/_Player/_TreeDisguise/_MountainDisguise have no step table in C (they
+   * run their own body directly), so movementTypeBranch below covers them too.
+   */
+  private movementTypeCallback(object: ObjectEvent): boolean {
+    const name = MOVEMENT_TYPE_CALLBACKS[object.movementType];
+    if (!name) return false;
+    const steps = MOVEMENT_TYPE_STEPS[name];
+    if (!steps) return this.movementTypeBranch(object);
+    const step = object.sprite.data[1];
+    const fn = (this as unknown as Record<string, (object: ObjectEvent, sprite: Sprite) => boolean>)[steps[Math.min(step, steps.length - 1)]];
+    return fn.call(this, object, object.sprite);
   }
 
   private faceTypeDirections(type: number): number[] | undefined {
@@ -1481,7 +1648,7 @@ export class ObjectEvents {
     return undefined;
   }
 
-  private movementTypeStep(object: ObjectEvent): boolean {
+  private movementTypeBranch(object: ObjectEvent): boolean {
     const c = rom.constants;
     const s = object.sprite;
     const type = object.movementType;
@@ -2741,6 +2908,146 @@ export class ObjectEvents {
   private MovementAction_JumpSpecialWithEffectLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_LEFT, 1); }
   private MovementAction_JumpSpecialWithEffectRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_RIGHT, 0); }
   private MovementAction_JumpSpecialWithEffectRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_RIGHT, 1); }
+
+  // MovementType_*_StepN wrappers (event_object_movement.c): named to match the C
+  // gMovementTypeFuncs_* tables, delegating to the shared movementTypeBranch body
+  // above, which already reads object.movementType/sprite.data[1] live (equivalencia).
+  private MovementType_WanderAround_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderAround_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderAround_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderAround_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderAround_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderAround_Step5(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderAround_Step6(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderAround_Step5Slower(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_LookAround_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_LookAround_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_LookAround_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_LookAround_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_LookAround_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderUpAndDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderUpAndDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderUpAndDown_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderUpAndDown_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderUpAndDown_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderUpAndDown_Step5(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderUpAndDown_Step6(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderLeftAndRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderLeftAndRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderLeftAndRight_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderLeftAndRight_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderLeftAndRight_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderLeftAndRight_Step5(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WanderLeftAndRight_Step6(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDirection_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDirection_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDirection_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndUp_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndUp_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndUp_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceLeftAndRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceLeftAndRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceLeftAndRight_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceLeftAndRight_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceLeftAndRight_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndLeft_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndLeft_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndLeft_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndRight_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndRight_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpAndRight_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndLeft_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndLeft_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndLeft_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndRight_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndRight_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownAndRight_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndLeft_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndLeft_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndLeft_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndRight_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndRight_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownUpAndRight_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpLeftAndRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpLeftAndRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpLeftAndRight_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpLeftAndRight_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceUpLeftAndRight_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownLeftAndRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownLeftAndRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownLeftAndRight_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownLeftAndRight_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_FaceDownLeftAndRight_Step4(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateCounterclockwise_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateCounterclockwise_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateCounterclockwise_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateCounterclockwise_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateClockwise_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateClockwise_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateClockwise_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RotateClockwise_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkBackAndForth_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkBackAndForth_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkBackAndForth_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkBackAndForth_Step3(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequence_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceUpRightLeftDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequence_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceRightLeftDownUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceDownUpRightLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceLeftDownUpRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceUpLeftRightDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceLeftRightDownUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceDownUpLeftRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceRightDownUpLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceLeftUpDownRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceUpDownRightLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceRightLeftUpDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceDownRightLeftUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceRightUpDownLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceUpDownLeftRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceLeftRightUpDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceDownLeftRightUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceUpLeftDownRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceDownRightUpLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceLeftDownRightUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceRightUpLeftDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceUpRightDownLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceDownLeftUpRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceLeftUpRightDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSequenceRightDownLeftUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_CopyPlayer_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_CopyPlayer_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_CopyPlayer_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_CopyPlayerInGrass_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkInPlace_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_MoveInPlace_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkInPlaceFast_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_JogInPlace_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_Invisible_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_Invisible_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_Invisible_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_Buried_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RaiseHandAndStop_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RaiseHandAndStop_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RaiseHandAndStop_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RaiseHandAndJump_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RaiseHandAndMove_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_RaiseHandAndSwim_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
 }
 
 /** GetCollisionFlagsAtCoords (event_object_movement.c). */
