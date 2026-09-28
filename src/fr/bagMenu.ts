@@ -111,6 +111,8 @@ export type BagHandlers = {
 };
 
 let sHandlers: BagHandlers = {};
+let sPokedudeBagRestore: (() => void) | undefined;
+let sPokedudeBagResume: (() => void) | undefined;
 
 // ---------------------------------------------------------------- data
 
@@ -604,8 +606,8 @@ export function RestorePlayerBag(backup: BagBackup): void {
 }
 
 /** InitPokedudeBag for the Teachy TV registration lesson (TTVSCR_REGISTER). */
-export function InitPokedudeBagRegister(done: () => void): void {
-  InitPokedudeBag(C.ITEMMENULOCATION_TTVSCR_REGISTER, done);
+export function InitPokedudeBagRegister(done: () => void, onSkip?: () => void): void {
+  InitPokedudeBag(C.ITEMMENULOCATION_TTVSCR_REGISTER, done, onSkip);
 }
 
 /** InitPokedudeBag (item_menu.c), for the Teachy TV bag modes connected by this runtime. */
@@ -613,15 +615,23 @@ export function InitPokedudeBag(location: number, done: () => void, onSkip?: () 
   if (location !== C.ITEMMENULOCATION_TTVSCR_REGISTER && location !== C.ITEMMENULOCATION_TTVSCR_TMS)
     throw new RangeError(`InitPokedudeBag: unsupported active bag lesson ${location}`);
   const backup = BackUpPlayerBag();
+  let restored = false;
+  const restore = (): void => {
+    if (restored) return;
+    restored = true;
+    RestorePlayerBag(backup);
+  };
+  sPokedudeBagRestore = restore;
+  sPokedudeBagResume = onSkip;
   addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
   addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
   if (location === C.ITEMMENULOCATION_TTVSCR_REGISTER) {
-    GoToBagMenu(location, C.OPEN_BAG_ITEMS, () => { RestorePlayerBag(backup); done(); });
+    GoToBagMenu(location, C.OPEN_BAG_ITEMS, () => { restore(); sPokedudeBagRestore = undefined; sPokedudeBagResume = undefined; done(); });
     return;
   }
   if (location === C.ITEMMENULOCATION_TTVSCR_TMS) {
     GoToBagMenu(location, C.OPEN_BAG_ITEMS, () => {
-      RestorePlayerBag(backup);
+      restore(); sPokedudeBagRestore = undefined; sPokedudeBagResume = undefined;
       Pokedude_InitTMCase(done, onSkip, onReshow ?? CB2_SetUpReshowBattleScreenAfterMenu);
     });
     return;
@@ -644,15 +654,21 @@ function Task_Pokedude_WaitFadeAndExitBag(taskId: number): void {
   Task_ItemMenu_WaitFadeAndSwitchToExitCallback(taskId);
 }
 
+/** Task_BButtonInterruptTeachyTv (item_menu.c), connected to the active registration/TM lesson flows. */
+function Task_BButtonInterruptTeachyTv(taskId: number): boolean {
+  if (!(joy.newKeys & B_BUTTON)) return false;
+  sPokedudeBagRestore?.();
+  sPokedudeBagResume?.();
+  disp().exitCB = gBagMenuState.bagCallback;
+  tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
+  return true;
+}
+
 /** item_menu.c Task_Bag_TeachyTvRegister: scripted registration demonstration. */
 function Task_Bag_TeachyTvRegister(taskId: number): void {
   if (gPaletteFade.active) return;
   const data = td(taskId);
-  if (joy.newKeys & B_BUTTON) {
-    Bag_BeginCloseWin0Animation();
-    tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
-    return;
-  }
+  if (Task_BButtonInterruptTeachyTv(taskId)) return;
   switch (data.tutorialFrame) {
     case 102:
       sound.playSE(C.SE_BAG_POCKET);
@@ -706,11 +722,7 @@ function Task_Bag_TeachyTvRegister(taskId: number): void {
 function Task_Bag_TeachyTvTMs(taskId: number): void {
   if (gPaletteFade.active) return;
   const data = td(taskId);
-  if (joy.newKeys & B_BUTTON) {
-    Bag_BeginCloseWin0Animation();
-    tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
-    return;
-  }
+  if (Task_BButtonInterruptTeachyTv(taskId)) return;
   switch (data.tutorialFrame) {
     case 102:
       sound.playSE(C.SE_BAG_POCKET);

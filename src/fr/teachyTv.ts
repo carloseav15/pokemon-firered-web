@@ -365,7 +365,7 @@ export function TTVcmd_TaskBattleOrFadeByOptionChosen(taskId: number): void {
     return;
   }
   if (sStaticResources.whichScript === TTVSCR_REGISTER) {
-    InitPokedudeBagRegister(() => CB2_ReturnToTeachyTV());
+    InitPokedudeBagRegister(() => CB2_ReturnToTeachyTV(), SetTeachyTvControllerModeToResume);
     return;
   }
   TTVcmd_End(taskId);
