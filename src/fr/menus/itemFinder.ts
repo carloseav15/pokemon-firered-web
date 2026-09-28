@@ -12,7 +12,7 @@ import { tasks } from "../gba/tasks";
 import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
 import { TV_PrintIntToStringVar } from "../gba/charmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "../field/objectEvents";
-import { CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
+import { GetMapConnectionAtPos, CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
 import { canvas, rgb555 } from "../field/gfx4bpp";
 import { EncodeHiddenItemData, GetHiddenItemAttr } from "../field/hiddenItem";
 import type { Game } from "../game";
@@ -197,7 +197,7 @@ function FindHiddenItemsInConnectedMaps(game: Game, taskId: number): void {
   for (let curX = x - 7; curX <= x + 7; curX++) {
     for (let curY = y - 5; curY <= y + 5; curY++) {
       if (curX < MAP_OFFSET || curX >= width || curY < MAP_OFFSET || curY >= height) {
-        const connection = game.overworld.map.connectionAtPos(curX, curY);
+        const connection = GetMapConnectionAtPos(curX, curY, game.overworld.map);
         if (connection && HiddenItemInConnectedMapAtPos(game, connection, curX, curY))
           RegisterHiddenItemRelativeCoordsIfCloser(taskId, curX - x, curY - y);
       }

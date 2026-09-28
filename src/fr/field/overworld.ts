@@ -15,7 +15,7 @@ import { TextPrinter, textFlags } from "../gba/textPrinter";
 import { sound } from "../audio/sound";
 import { rom, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
-import { FieldMap, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedMap } from "./fieldmap";
+import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
 import { PlayerAvatar, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
@@ -1452,12 +1452,12 @@ export class Overworld {
 
   canCameraMoveInDirection(direction: number): boolean {
     const [dx, dy] = DIRECTION_VECTORS[direction];
-    return this.map.borderIdAt(save.pos.x + MAP_OFFSET + dx, save.pos.y + MAP_OFFSET + dy) !== CONNECTION_INVALID;
+    return GetMapBorderIdAt(save.pos.x + MAP_OFFSET + dx, save.pos.y + MAP_OFFSET + dy, this.map) !== CONNECTION_INVALID;
   }
 
   /** CameraMove: returns true when the map changed. */
   private cameraMove(dx: number, dy: number): boolean {
-    const direction = this.map.borderIdAt(save.pos.x + MAP_OFFSET + dx, save.pos.y + MAP_OFFSET + dy);
+    const direction = GetMapBorderIdAt(save.pos.x + MAP_OFFSET + dx, save.pos.y + MAP_OFFSET + dy, this.map);
     if (direction === CONNECTION_NONE || direction === CONNECTION_INVALID) {
       save.pos.x += dx;
       save.pos.y += dy;
@@ -1465,7 +1465,7 @@ export class Overworld {
     }
     const oldX = save.pos.x;
     const oldY = save.pos.y;
-    const connection = this.map.incomingConnection(direction, save.pos.x, save.pos.y);
+    const connection = GetIncomingConnection(direction, save.pos.x, save.pos.y, this.map);
     if (!connection) {
       save.pos.x += dx;
       save.pos.y += dy;

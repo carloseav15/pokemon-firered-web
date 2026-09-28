@@ -116,6 +116,22 @@ export function MapGridGetMetatileLayerTypeAt(x: number, y: number, map: FieldMa
   return MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_LAYER_TYPE, map) & 0xff;
 }
 
+/** GetMapBorderIdAt (fieldmap.c). */
+export function GetMapBorderIdAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
+  return map ? map.borderIdAt(x | 0, y | 0) : CONNECTION_INVALID;
+}
+
+/** GetIncomingConnection (fieldmap.c). */
+export function GetIncomingConnection(direction: number, x: number, y: number, map: FieldMap | null = sCurrentFieldMap): LoadedConnection | undefined {
+  return map?.incomingConnection(direction & 0xff, x | 0, y | 0);
+}
+
+/** GetMapConnectionAtPos (fieldmap.c), whose coordinates are s16. */
+export function GetMapConnectionAtPos(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): LoadedConnection | undefined {
+  return map?.connectionAtPos((x << 16) >> 16, (y << 16) >> 16);
+}
+
+
 /** gMapHeader + VMap state. */
 export class FieldMap {
   map!: Uint16Array;
@@ -286,13 +302,7 @@ export class FieldMap {
   incomingConnection(direction: number, x: number, y: number): LoadedConnection | undefined {
     for (const connection of this.loaded.connections) {
       if (connection.direction !== direction) continue;
-      const vertical = direction === CONNECTION_SOUTH || direction === CONNECTION_NORTH;
-      const coord = vertical ? x : y;
-      let srcMax = vertical ? this.layout.width : this.layout.height;
-      const destMax = vertical ? connection.layout.width : connection.layout.height;
-      const offset2 = Math.max(connection.offset, 0);
-      if (destMax + connection.offset < srcMax) srcMax = destMax + connection.offset;
-      if (offset2 <= coord && coord <= srcMax) return connection;
+      if (IsPosInIncomingConnectingMap(direction, x, y, connection, this)) return connection;
     }
     return undefined;
   }
@@ -306,14 +316,41 @@ export class FieldMap {
         || (d === CONNECTION_SOUTH && y < this.layout.height + MAP_OFFSET)
         || (d === CONNECTION_WEST && x > MAP_OFFSET - 1)
         || (d === CONNECTION_EAST && x < this.layout.width + MAP_OFFSET)) continue;
-      const mx = x - MAP_OFFSET;
-      const my = y - MAP_OFFSET;
-      if (d === CONNECTION_SOUTH || d === CONNECTION_NORTH) {
-        if (mx - connection.offset >= 0 && mx - connection.offset < connection.layout.width) return connection;
-      } else if (my - connection.offset >= 0 && my - connection.offset < connection.layout.height) return connection;
+      if (IsPosInConnectingMap(connection, x - MAP_OFFSET, y - MAP_OFFSET)) return connection;
     }
     return undefined;
   }
+}
+
+/** IsCoordInIncomingConnectingMap (fieldmap.c). */
+function IsCoordInIncomingConnectingMap(coord: number, srcMax: number, destMax: number, offset: number): boolean {
+  if (destMax + offset < srcMax) srcMax = destMax + offset;
+  const offset2 = Math.max(offset, 0);
+  return offset2 <= coord && coord <= srcMax;
+}
+
+/** IsPosInIncomingConnectingMap (fieldmap.c). */
+function IsPosInIncomingConnectingMap(direction: number, x: number, y: number, connection: LoadedConnection, map: FieldMap): boolean {
+  if (direction === CONNECTION_SOUTH || direction === CONNECTION_NORTH)
+    return IsCoordInIncomingConnectingMap(x, map.layout.width, connection.layout.width, connection.offset);
+  if (direction === CONNECTION_WEST || direction === CONNECTION_EAST)
+    return IsCoordInIncomingConnectingMap(y, map.layout.height, connection.layout.height, connection.offset);
+  return false;
+}
+
+/** IsCoordInConnectingMap (fieldmap.c). */
+function IsCoordInConnectingMap(coord: number, max: number): boolean {
+  return coord >= 0 && coord < max;
+}
+
+/** IsPosInConnectingMap (fieldmap.c). */
+function IsPosInConnectingMap(connection: LoadedConnection, x: number, y: number): boolean {
+  const direction = connection.direction;
+  if (direction === CONNECTION_SOUTH || direction === CONNECTION_NORTH)
+    return IsCoordInConnectingMap(x - connection.offset, connection.layout.width);
+  if (direction === CONNECTION_WEST || direction === CONNECTION_EAST)
+    return IsCoordInConnectingMap(y - connection.offset, connection.layout.height);
+  return false;
 }
 
 /** GetAttributeByMetatileIdAndMapLayout (fieldmap.c). */
