@@ -26,7 +26,7 @@ import { SetPostgameFlags } from "../pokemon/saveLocation";
 import { CheckPartyMonHasHeldItem } from "../pokemon/scriptPokemonUtil";
 import { HasAtLeastOneBerry as Item_HasAtLeastOneBerry } from "../pokemon/items";
 import { GetBerryNameByBerryType, ItemIdToBerryType } from "../pokemon/berry";
-import { getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullMessage } from "../pokemon/storage";
+import { GetPCBoxToSendMon, getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullMessage } from "../pokemon/storage";
 import { CalculatePlayerPartyCount, GetMonData, gPPUpGetMask, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
 import { SpeciesToMailSpecies } from "../pokemon/mail";
 import type { ScriptRunner } from "./context";
@@ -874,7 +874,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   Special_UpdateTrainerFansAfterLinkBattle: (ctx) => Special_UpdateTrainerFansAfterLinkBattle(ctx.ow.game.battleOutcome),
   // storage
   ShouldShowBoxWasFullMessage: () => (shouldShowBoxWasFullMessage() ? 1 : 0),
-  GetPCBoxToSendMon: () => getPCBoxToSendMon(),
+  GetPCBoxToSendMon: () => GetPCBoxToSendMon(),
   // cutscenes and field animations
   DoSSAnneDepartureCutscene: (ctx) => { ssAnneDeparture(ctx); },
   DoPokemonLeagueLightingEffect: (ctx) => { leagueLighting(ctx); },

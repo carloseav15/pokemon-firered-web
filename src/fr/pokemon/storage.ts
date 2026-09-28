@@ -161,7 +161,11 @@ export function SeekToNextMonInBox(boxMons: Array<Pokemon | null>, curIndex: num
   return -1;
 }
 let previousDestinationBox = 0;
-export function getPCBoxToSendMon(): number { return previousDestinationBox; }
+/** SetPCBoxToSendMon from field_specials.c; the backing field is a u8. */
+export function SetPCBoxToSendMon(boxId: number): void { previousDestinationBox = boxId & 0xff; }
+/** GetPCBoxToSendMon from field_specials.c (promoted u8 return). */
+export function GetPCBoxToSendMon(): number { return previousDestinationBox; }
+export const getPCBoxToSendMon = GetPCBoxToSendMon;
 export function getBoxName(box: number): Uint8Array {
   const boxId = box & 0xff;
   if (boxId >= save.boxes.length) return Uint8Array.of(0xff);
@@ -191,7 +195,7 @@ export function findStorageDestination(): {box: number; slot: number} | null {
 }
 /** IsDestinationBoxFull also updates the script's chosen box, like the C function. */
 export function isDestinationBoxFull(): boolean {
-  previousDestinationBox = varGet(rom.c("VAR_PC_BOX_TO_SEND_MON"));
+  SetPCBoxToSendMon(varGet(rom.c("VAR_PC_BOX_TO_SEND_MON")));
   const destination = findStorageDestination();
   if (!destination) return false;
   if (previousDestinationBox !== destination.box) flagClear(rom.c("FLAG_SHOWN_BOX_WAS_FULL_MESSAGE"));
@@ -199,7 +203,7 @@ export function isDestinationBoxFull(): boolean {
   return shouldShowBoxWasFullMessage();
 }
 export function sendMonToPC(mon: Pokemon): boolean {
-  previousDestinationBox = varGet(rom.c("VAR_PC_BOX_TO_SEND_MON"));
+  SetPCBoxToSendMon(varGet(rom.c("VAR_PC_BOX_TO_SEND_MON")));
   const destination = findStorageDestination();
   if (!destination) return false;
   for (let i = 0; i < 4; i++) mon.pp[i] = mon.moves[i] ? calculatePPWithBonus(mon.moves[i], mon.ppBonuses, i) : 0;
