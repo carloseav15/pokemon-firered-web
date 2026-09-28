@@ -36,7 +36,7 @@ import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 import { QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
-import { IsWeatherNotFadingIn } from "./weather";
+import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -886,6 +886,11 @@ export class Overworld {
     else paletteFade.fadeScreen(FADE_TO_BLACK, 0);
   }
 
+  /** WaitWarpFadeOutScreen (field_fadetransition.c). */
+  private WaitWarpFadeOutScreen(): boolean {
+    return paletteFade.active;
+  }
+
   private lastUsedWarpType(): number {
     try { return this.peekMapType(this.mapIdForWarp(this.lastUsedWarp)); } catch { return MAP_TYPE.NONE; }
   }
@@ -1230,49 +1235,88 @@ export class Overworld {
   }
 
   doStairWarp(behavior: number, delay: number): void {
-    let state = 0;
-    let wait = delay;
-    let timer = 0;
-    let ox = 0, oy = 0;
-    let speedX = 0, speedY = 0;
-    const id = tasks.create(() => {
-      const p = this.player.object;
-      switch (state) {
-        case 0:
-          this.controlsLocked = true;
-          this.objects.freezeAll();
-          state = 1;
-          break;
-        case 1:
-          if (!this.objects.isMovementOverridden(p) || this.objects.ObjectEventClearHeldMovementIfFinished(p)) {
-            if (wait > 0) { wait--; break; }
+    const taskId = tasks.create((id) => this.Task_StairWarp(id), 10);
+    tasks.tasks[taskId].data[1] = behavior & 0xffff;
+    tasks.tasks[taskId].data[15] = delay & 0xffff;
+    this.Task_StairWarp(taskId);
+  }
+
+  /** ForceStairsMovement (field_fadetransition.c). */
+  private ForceStairsMovement(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    const direction = player.facingDirection;
+    const action = direction === DIR_NORTH ? C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_UP
+      : direction === DIR_WEST ? C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_LEFT
+        : direction === DIR_EAST ? C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_RIGHT
+          : C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_DOWN;
+    this.objects.forceSetHeldMovement(player, action);
+    const [speedX, speedY] = this.GetStairsMovementDirection(data[1]);
+    data[2] = speedX;
+    data[3] = speedY;
+  }
+
+  /** UpdateStairsMovement (field_fadetransition.c), with C s16 task-data slots. */
+  private UpdateStairsMovement(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    if (data[3] > 0 || data[6] > 6) data[5] += data[3];
+    data[4] += data[2];
+    data[6]++;
+    player.sprite.x2 = data[4] >> 5;
+    player.sprite.y2 = data[5] >> 5;
+    if (player.heldMovementFinished) {
+      const direction = player.facingDirection;
+      const action = direction === DIR_NORTH ? C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_UP
+        : direction === DIR_WEST ? C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_LEFT
+          : direction === DIR_EAST ? C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_RIGHT
+            : C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_DOWN;
+      this.objects.forceSetHeldMovement(player, action);
+    }
+  }
+
+  /** Task_StairWarp (field_fadetransition.c), preserving its immediate state-0 call. */
+  private Task_StairWarp(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    switch (data[0]) {
+      case 0:
+        this.controlsLocked = true;
+        this.objects.freezeAll();
+        // CameraObjectReset2 has no object-camera sprite in the Canvas overworld.
+        data[0]++;
+        break;
+      case 1:
+        if (!this.objects.isMovementOverridden(player) || this.objects.ObjectEventClearHeldMovementIfFinished(player)) {
+          if (data[15] !== 0) data[15]--;
+          else {
             this.tryFadeOutOldMapMusic();
-            p.sprite.priority = 1;
-            // ForceStairsMovement
-            if (MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior)) { speedX = 16; speedY = -10; this.objects.setHeldMovement(p, 0x9e); }
-            else if (MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior)) { speedX = -17; speedY = -10; this.objects.setHeldMovement(p, 0x9d); }
-            else if (MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior)) { speedX = 17; speedY = 3; this.objects.setHeldMovement(p, 0x9e); }
-            else { speedX = -17; speedY = 3; this.objects.setHeldMovement(p, 0x9d); }
+            PlayRainStoppingSoundEffect();
+            player.sprite.priority = 1;
+            this.ForceStairsMovement(taskId);
             sound.playSE(sound.c("SE_EXIT"));
-            state = 2;
+            data[0]++;
           }
-          break;
-        case 2:
-        case 3:
-          if (speedY > 0 || timer > 6) oy += speedY;
-          ox += speedX;
-          timer++;
-          p.sprite.x2 = ox >> 5;
-          p.sprite.y2 = oy >> 5;
-          if (state === 2 && timer >= 12) { this.warpFadeOutScreen(); state = 3; }
-          else if (state === 3 && !paletteFade.active) {
-            tasks.destroy(id);
-            this.fieldCallback = () => this.fieldCBDefaultWarpExit();
-            this.warpIntoMapAndLoad();
-          }
-          break;
-      }
-    }, 10);
+        }
+        break;
+      case 2:
+        this.UpdateStairsMovement(taskId);
+        data[15]++;
+        if (data[15] >= 12) {
+          this.warpFadeOutScreen();
+          data[0]++;
+        }
+        break;
+      case 3:
+        this.UpdateStairsMovement(taskId);
+        if (!this.WaitWarpFadeOutScreen() && sound.isBGMPausedOrStopped()) data[0]++;
+        break;
+      default:
+        this.fieldCallback = () => this.fieldCBDefaultWarpExit();
+        this.warpIntoMapAndLoad();
+        tasks.destroy(taskId);
+        break;
+    }
   }
 
   private startTeleport2WarpTask(): void {
