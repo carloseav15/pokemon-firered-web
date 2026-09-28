@@ -40,6 +40,42 @@ function starterSpecies(index: number): number {
   return [c.SPECIES_BULBASAUR, c.SPECIES_SQUIRTLE, c.SPECIES_CHARMANDER][index] ?? c.SPECIES_BULBASAUR;
 }
 
+/** ShakeScreen (field_specials.c). */
+function ShakeScreen(ctx: ScriptRunner): void {
+  const taskId = tasks.create((id) => Task_ShakeScreen(id, ctx), 9);
+  const data = tasks.tasks[taskId].data;
+  data[0] = varGet(SV.x8005);
+  data[1] = 0;
+  data[2] = varGet(SV.x8006);
+  data[3] = varGet(SV.x8007);
+  data[4] = varGet(SV.x8004);
+  ctx.ow.SetCameraPanningCallback(null);
+  sound.playSE(sound.c("SE_M_STRENGTH"));
+}
+
+/** Task_ShakeScreen (field_specials.c). */
+function Task_ShakeScreen(taskId: number, ctx: ScriptRunner): void {
+  const data = tasks.tasks[taskId].data;
+  data[1] = data[1]! + 1;
+  if (data[1]! % data[3]! === 0) {
+    data[1] = 0;
+    data[2] = data[2]! - 1;
+    data[0] = -data[0]!;
+    data[4] = -data[4]!;
+    ctx.ow.SetCameraPanning(data[0]!, data[4]!);
+    if (data[2] === 0) {
+      Task_EndScreenShake(taskId, ctx);
+      ctx.ow.InstallCameraPanAheadCallback();
+    }
+  }
+}
+
+/** Task_EndScreenShake (field_specials.c). */
+function Task_EndScreenShake(taskId: number, ctx: ScriptRunner): void {
+  tasks.destroy(taskId);
+  ctx.ow.script.ScriptContext_Enable();
+}
+
 /** Task_EnableScriptAfterMusicFade from field_screen_effect.c. */
 function Task_EnableScriptAfterMusicFade(taskId: number, ctx: ScriptRunner): void {
   if (sound.isBGMPausedOrStopped()) {
@@ -138,30 +174,7 @@ export const SPECIALS: Record<string, Special> = {
     if (o) ow.objects.remove(o);
     ow.syncObjectSprites();
   },
-  ShakeScreen: (ctx) => {
-    const yTrans = varGet(SV.x8004), xTrans = varGet(SV.x8005), n = varGet(SV.x8006), duration = varGet(SV.x8007);
-    let timer = 0;
-    let remaining = n;
-    let panY = yTrans, panX = xTrans;
-    ctx.ow.SetCameraPanningCallback(null);
-    sound.playSE(sound.c("SE_M_STRENGTH"));
-    const id = tasks.create(() => {
-      timer++;
-      if (duration && timer % duration === 0) {
-        timer = 0;
-        remaining--;
-        panX = -panX;
-        panY = -panY;
-        ctx.ow.SetCameraPanning(panX, panY);
-        if (remaining === 0) {
-          ctx.ow.SetCameraPanning(0, 0);
-          ctx.ow.InstallCameraPanAheadCallback();
-          tasks.destroy(id);
-          ctx.ow.script.ScriptContext_Enable();
-        }
-      }
-    }, 9);
-  },
+  ShakeScreen,
   Script_FacePlayer: (ctx) => {
     const o = ctx.ow.objects.objects[ctx.ow.selectedObject];
     if (o) ctx.ow.objects.turn(o, OPPOSITE[varGet(SV.FACING)]);
