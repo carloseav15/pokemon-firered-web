@@ -26,6 +26,7 @@ import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateA
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
 import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
 import { CreateObjectGraphicsSprite, CopyObjectGraphicsInfoToSpriteTemplate } from "./objectEventGraphics";
+import { GetRivalAvatarGraphicsIdByStateIdAndGender } from "./field/playerAvatar";
 import { Sin } from "./hw/trig";
 
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
@@ -142,7 +143,7 @@ class NamingScreen {
     this.CreatePageSwapButtonSprites();
     this.CreateBackOkSprites();
     this.CreateTextEntrySprites();
-    this.createInputTargetIcon();
+    this.CreateInputTargetIcon();
   }
 
   /** CreateCursorSprite (naming_screen.c). */
@@ -257,18 +258,18 @@ class NamingScreen {
     }
   }
 
-  /** CreateInputTargetIcon and sIconFunctions dispatch from naming_screen.c. */
-  private createInputTargetIcon(): void {
-    switch (this.model.template.iconFunction) {
-      case 1: this.NamingScreen_CreatePlayerIcon(); break;
-      case 2: this.NamingScreen_CreatePCIcon(); break;
-      case 3: this.NamingScreen_CreateMonIcon(); break;
-      case 4: this.NamingScreen_CreateRivalIcon(); break;
-    }
+  /** CreateInputTargetIcon (naming_screen.c): dispatch through sIconFunctions by template index. */
+  private CreateInputTargetIcon(): void {
+    const iconFunctions = [this.NamingScreen_NoIcon, this.NamingScreen_CreatePlayerIcon,
+      this.NamingScreen_CreatePCIcon, this.NamingScreen_CreateMonIcon, this.NamingScreen_CreateRivalIcon];
+    iconFunctions[this.model.template.iconFunction]!.call(this);
   }
 
+  /** NamingScreen_NoIcon (naming_screen.c). */
+  private NamingScreen_NoIcon(): void {}
+
   private NamingScreen_CreatePlayerIcon(): void {
-    const graphics = cdata<number[][]>("field_player_avatar", "sPlayerAvatarGfxIds")[C.PLAYER_AVATAR_STATE_NORMAL][this.species];
+    const graphics = GetRivalAvatarGraphicsIdByStateIdAndGender(C.PLAYER_AVATAR_STATE_NORMAL, this.species & 0xff);
     const id = CreateObjectGraphicsSprite(graphics, SpriteCallbackDummy, 56, 37, 0);
     gSprites[id].oam.priority = 3;
     StartSpriteAnim(gSprites[id], C.ANIM_STD_GO_SOUTH);
