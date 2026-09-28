@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 34 | 82095 | 1486/3688 |
+| Parcial (< 80 % de funciones) | 33 | 80769 | 1506/3647 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 10 | 22625 | 744/818 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 163 | 145807 | 5481/5481 |
+| Casi completo (≥ 80 % y < 100 %) | 10 | 22625 | 745/818 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 164 | 147133 | 5522/5522 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
-| **Pendiente de portar** | **46** | **107550** | |
-| **Total en alcance** | **211** | **253703** | **7739/10115** |
+| **Pendiente de portar** | **45** | **106224** | |
+| **Total en alcance** | **211** | **253703** | **7801/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -59,11 +59,10 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
 | `easy_chat_2.c` | 1363 | 1/73 |  |  |  |
 | `script_menu.c` | 1341 | 5/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
-| `vs_seeker.c` | 1326 | 12/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
 | `title_screen.c` | 1315 | 2/39 | `introTitle.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
-| `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
-| `field_fadetransition.c` | 965 | 44/59 | `field/fieldControl.ts`, `field/overworld.ts` |  |  |
+| `start_menu.c` | 1016 | 34/65 | `game.ts`, `startMenu.ts` |  |  |
+| `field_fadetransition.c` | 965 | 45/59 | `field/fieldControl.ts`, `field/overworld.ts` |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
 | `easy_chat.c` | 730 | 10/39 | `easyChat.ts`, `pokemon/mail.ts`, `script/specials.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
@@ -81,7 +80,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `battle_main.c` | 4477 | 85/106 | `battle/controllers.ts`, `battle/globals.ts`, `battle/main.ts` … |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
-| `item_menu.c` | 2397 | 112/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
+| `item_menu.c` | 2397 | 113/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `trainer_card.c` | 1959 | 66/73 | `menus/trainerCard.ts` |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
@@ -123,6 +122,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `credits.c` | 1446 | 16/16 | `credits.ts`, `field/overworld.ts` |  |  |
 | `field_effect_helpers.c` | 1421 | 76/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  |  |
 | `pokeball.c` | 1334 | 37/37 | `battle/pokeball.ts` |  |  |
+| `vs_seeker.c` | 1326 | 41/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
 | `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |  |
 | `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |  |
 | `hall_of_fame.c` | 1286 | 42/42 | `field/overworld.ts`, `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
@@ -249,7 +249,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `safari_zone.c` | 79 | 8/8 | `battle/battleSetup.ts`, `field/safariZone.ts` |  |  |
 | `post_battle_event_funcs.c` | 74 | 2/2 | `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
 | `play_time.c` | 65 | 5/5 | `save.ts` |  |  |
-| `save_menu_util.c` | 56 | 1/1 | `game.ts`, `saveMenuUtil.ts` |  |  |
+| `save_menu_util.c` | 56 | 1/1 | `saveMenuUtil.ts` |  |  |
 | `coord_event_weather.c` | 49 | 1/1 | `field/coordEventWeather.ts` |  |  |
 | `blend_palette.c` | 46 | 2/2 | `hw/palette.ts` |  |  |
 | `fldeff_poison.c` | 42 | 3/3 | `field/fieldEffects.ts` |  |  |

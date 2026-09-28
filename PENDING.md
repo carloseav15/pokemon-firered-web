@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7739/10115 (76.5 %)**.
-- Archivos C con funciones aún sin homólogo: **46**; quedan **2376 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7801/10115 (77.1 %)**.
+- Archivos C con funciones aún sin homólogo: **45**; quedan **2314 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
-- Estos archivos contienen 107.550 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~57.208 líneas** (aproximación por proporción de funciones).
+- Estos archivos contienen 106.224 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
+- Estimación ponderada del C sin homólogo: **~55.748 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -22,50 +22,49 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 2 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
 | 3 | `field_control_avatar.c` | casi completo | 1182 | 47/49 | ~48 |  |
 | 4 | `battle_setup.c` | casi completo | 1070 | 63/66 | ~48 |  |
-| 5 | `item_menu.c` | casi completo | 2397 | 112/116 | ~82 |  |
+| 5 | `item_menu.c` | casi completo | 2397 | 113/116 | ~61 |  |
 | 6 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 7 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
 | 8 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 9 | `field_fadetransition.c` | parcial | 965 | 44/59 | ~245 |  |
+| 9 | `field_fadetransition.c` | parcial | 965 | 45/59 | ~228 |  |
 | 10 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 11 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 12 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
-| 13 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 14 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
-| 15 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
-| 16 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
-| 17 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
-| 18 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
-| 19 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
-| 20 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
-| 21 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
-| 22 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
-| 23 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
-| 24 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
-| 25 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
-| 26 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
-| 27 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
-| 28 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
-| 29 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
-| 30 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
-| 31 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
-| 32 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
-| 33 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
-| 34 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 35 | `overworld.c` | parcial | 3563 | 118/242 | ~1825 |  |
-| 36 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
-| 37 | `battle_controller_pokedude.c` | parcial | 2698 | 32/108 | ~1898 |  |
-| 38 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
-| 39 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
-| 40 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
-| 41 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
-| 42 | `field_effect.c` | parcial | 4033 | 95/239 | ~2429 |  |
-| 43 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
-| 44 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
-| 45 | `event_object_movement.c` | parcial | 9412 | 533/759 | ~2802 |  |
-| 46 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
+| 11 | `start_menu.c` | parcial | 1016 | 34/65 | ~484 |  |
+| 12 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 13 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
+| 14 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
+| 15 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
+| 16 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
+| 17 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
+| 18 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
+| 19 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
+| 20 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
+| 21 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
+| 22 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
+| 23 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
+| 24 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
+| 25 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
+| 26 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
+| 27 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
+| 28 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
+| 29 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
+| 30 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
+| 31 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
+| 32 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
+| 33 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
+| 34 | `overworld.c` | parcial | 3563 | 118/242 | ~1825 |  |
+| 35 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
+| 36 | `battle_controller_pokedude.c` | parcial | 2698 | 32/108 | ~1898 |  |
+| 37 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
+| 38 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
+| 39 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
+| 40 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
+| 41 | `field_effect.c` | parcial | 4033 | 95/239 | ~2429 |  |
+| 42 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
+| 43 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
+| 44 | `event_object_movement.c` | parcial | 9412 | 533/759 | ~2802 |  |
+| 45 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
-Total: 46 archivos con huecos: 1 sin empezar, 1 adaptador, 10 casi completos y 34 parciales.
+Total: 45 archivos con huecos: 1 sin empezar, 1 adaptador, 10 casi completos y 33 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -116,6 +115,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Quest Log: el inventario incluye quest_log*.c; los eventos de tienda ya persisten en SaveData, pero faltan el buffer/serialización original, escenas, acciones y reproducción.
 - Trainer Tower: `trainer_tower.c` y sus llamadas `InitTrainerTowerBattleStruct`/`FreeTrainerTowerBattleStruct` aún no están portadas; `battle_util2.c` tiene recursos normales cubiertos, pero ese branch queda pendiente.
 - Uso de objetos (`item_use.c`): dispatch Enigma, rechazo de Oak, consumo/mensaje común de Repel, Escape Rope y Poké Doll, flautas, cañas, Item Finder, TM Case, Berry Pouch, Mail, Bike y la secuencia de potenciadores de combate están conectados. El helper registra payloads de uso en las rutas activas; faltan 12/73 nombres y la reproducción/serialización original de Quest Log.
+- Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller y Battle Tower sigue sin portar; los huecos de `battle_bg.c`, `evolution_scene.c` y `battle_records.c` son de enlace/intercambio; `help_system_util.c` requiere la UI GBA de ayuda aún no conectada.
 
 ## 5. Portado pero sin probar en navegador
 
