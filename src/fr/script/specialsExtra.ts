@@ -706,6 +706,23 @@ function leagueLighting(ctx: ScriptRunner): void {
 
 let fossilPic: { window: Window; sprite: Sprite; state: number } | undefined;
 
+/** LoopWingFlapSound and Task_WingFlapSound from field_specials.c. */
+function LoopWingFlapSound(): void {
+  tasks.create(Task_WingFlapSound, 8);
+  sound.playSE(C.SE_M_WING_ATTACK);
+}
+
+function Task_WingFlapSound(taskId: number): void {
+  const data = tasks.data(taskId);
+  data[1] = (data[1]! + 1 << 16) >> 16;
+  if (data[1] === varGet(SV.x8005)) {
+    data[0] = (data[0]! + 1 << 16) >> 16;
+    data[1] = 0;
+    sound.playSE(C.SE_M_WING_ATTACK);
+  }
+  if (data[0] === varGet(SV.x8004) - 1) tasks.destroy(taskId);
+}
+
 // ---------------------------------------------------------------- the table
 
 export const EXTRA_SPECIALS: Record<string, Special> = {
@@ -861,15 +878,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   // cutscenes and field animations
   DoSSAnneDepartureCutscene: (ctx) => { ssAnneDeparture(ctx); },
   DoPokemonLeagueLightingEffect: (ctx) => { leagueLighting(ctx); },
-  LoopWingFlapSound: () => {
-    let flaps = 0, timer = 0;
-    sound.playSE(C.SE_M_WING_ATTACK);
-    const count = varGet(SV.x8004), delay = varGet(SV.x8005);
-    const id = tasks.create(() => {
-      if (++timer === delay) { flaps++; timer = 0; sound.playSE(C.SE_M_WING_ATTACK); }
-      if (flaps === count - 1) tasks.destroy(id);
-    }, 8);
-  },
+  LoopWingFlapSound: () => { LoopWingFlapSound(); },
   DoFallWarp: (ctx) => { ctx.ow.doFallWarp(); },
   OpenMuseumFossilPic: (ctx) => {
     const species = varGet(SV.x8004);
