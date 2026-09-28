@@ -1,13 +1,8 @@
 // Port of battle_transition.c: the pre-battle screen effect (BattleTransition_StartOnField).
 //
-// Scope for this pass: the shared intro (double gray blink, Task_Intro /
-// TransitionIntro_FadeToGray / TransitionIntro_FadeFromGray) plus four named effects:
-// - B_TRANSITION_ANGLED_WIPES (trainer/normal pick when enemy not weaker)
-// - B_TRANSITION_CLOCKWISE_WIPE (wild/cave pick when enemy weaker, e.g. Mt. Moon)
-// - B_TRANSITION_SLICE (wild/normal pick when enemy weaker, e.g. Route 1-3)
-// - B_TRANSITION_WHITE_BARS_FADE (wild/normal pick when enemy not weaker)
-// Every other B_TRANSITION_* id still gets the intro blink, then falls back to the
-// plain black fade the port already used.
+// Active effects include the shared intro, trainer mugshots, angled wipes,
+// clockwise wipe, slice, white bars, Poké Balls trail, and several other
+// transition families below. Remaining IDs use the existing black-fade fallback.
 //
 // Adaptation: the C manipulates the live GBA WIN0H/WININ/WINOUT registers
 // over the still-running PPU. In this port the overworld renders on the
@@ -29,6 +24,7 @@ import type { Overworld } from "../field/overworld";
 import { MetatileBehavior_IsSurfable } from "../generated/metatileBehavior";
 import { Sin, gSineTable } from "../hw/trig";
 import { random as Random } from "../random";
+import { MugshotTransitionEffect } from "./mugshotTransition";
 
 const MAP_TYPE_UNDERGROUND = 4;
 const TRANSITION_TYPE_NORMAL = 0;
@@ -85,12 +81,17 @@ export function getWildBattleTransition(ow: Overworld, enemyParty: Pokemon[]): n
 }
 
 /** GetTrainerBattleTransition */
-export function getTrainerBattleTransition(ow: Overworld, trainerId: number, isDouble: boolean, enemyParty: Pokemon[]): number {
+export function getTrainerBattleTransition(ow: Overworld, trainerId: number, enemyParty: Pokemon[]): number {
   const trainer = rom.trainers[trainerId];
-  if (trainer?.class === rom.c("TRAINER_CLASS_ELITE_FOUR") || trainer?.class === rom.c("TRAINER_CLASS_CHAMPION")) {
-    return C.B_TRANSITION_BLUE; // Not ported: dedicated mugshot transitions (Lorelei/Bruno/Agatha/Lance/Blue).
+  if (trainerId === C.TRAINER_SECRET_BASE || trainer?.class === rom.c("TRAINER_CLASS_CHAMPION")) return C.B_TRANSITION_BLUE;
+  if (trainer?.class === rom.c("TRAINER_CLASS_ELITE_FOUR")) {
+    if (trainerId === C.TRAINER_ELITE_FOUR_LORELEI || trainerId === C.TRAINER_ELITE_FOUR_LORELEI_2) return C.B_TRANSITION_LORELEI;
+    if (trainerId === C.TRAINER_ELITE_FOUR_BRUNO || trainerId === C.TRAINER_ELITE_FOUR_BRUNO_2) return C.B_TRANSITION_BRUNO;
+    if (trainerId === C.TRAINER_ELITE_FOUR_AGATHA || trainerId === C.TRAINER_ELITE_FOUR_AGATHA_2) return C.B_TRANSITION_AGATHA;
+    if (trainerId === C.TRAINER_ELITE_FOUR_LANCE || trainerId === C.TRAINER_ELITE_FOUR_LANCE_2) return C.B_TRANSITION_LANCE;
+    return C.B_TRANSITION_BLUE;
   }
-  const minPartyCount = isDouble ? 2 : 1;
+  const minPartyCount = trainer?.double === 1 ? 2 : 1;
   const type = getBattleTransitionTypeByMap(ow);
   const enemyLevel = sumEnemyPartyLevel(enemyParty, minPartyCount);
   const playerLevel = sumPlayerPartyLevel(minPartyCount);
@@ -1030,6 +1031,7 @@ export class BattleTransitionScene implements Scene {
       : transitionId === C.B_TRANSITION_SWIRL ? new SwirlEffect()
       : transitionId === C.B_TRANSITION_BLUR ? new BlurEffect()
       : transitionId === C.B_TRANSITION_POKEBALLS_TRAIL ? new PokeballsTrailEffect()
+      : transitionId >= C.B_TRANSITION_LORELEI && transitionId <= C.B_TRANSITION_BLUE ? new MugshotTransitionEffect(transitionId, save.playerGender)
       : null;
     this.hadEffect = this.effect !== null;
   }

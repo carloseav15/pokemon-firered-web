@@ -922,7 +922,7 @@ export class Game {
         startedTransition = true;
         tasks.destroy(id);
         const transitionId = request.kind === "trainer"
-          ? getTrainerBattleTransition(ow, request.trainerId ?? 0, !!request.isDouble, request.enemyParty)
+          ? getTrainerBattleTransition(ow, request.trainerId ?? 0, request.enemyParty)
           : getWildBattleTransition(ow, request.enemyParty);
         this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
           // battle_setup.c Task_BattleStart resets encounter cooldowns after the transition completes.
