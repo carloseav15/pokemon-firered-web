@@ -19,11 +19,6 @@ import type { ObjectEvent } from "./objectEvents";
 export const gShadowEffectTemplateIds = [0, 1, 2, 3];
 export const gShadowVerticalOffsets = [4, 4, 4, 16];
 
-export const gFadeFootprintsTireTracksFuncs = [
-  FadeFootprintsTireTracks_Step0,
-  FadeFootprintsTireTracks_Step1,
-];
-
 export let gFieldEffectArguments: number[] = [0, 0, 0, 0, 0, 0, 0, 0];
 
 /** SetUpReflection */
@@ -127,48 +122,6 @@ export function FldEff_UnusedGrass(): number {
 /** FldEff_UnusedGrass2 */
 export function FldEff_UnusedGrass2(): number {
   return 0;
-}
-
-/** FldEff_SandFootprints */
-export function FldEff_SandFootprints(): number {
-  return 0;
-}
-
-/** FldEff_DeepSandFootprints */
-export function FldEff_DeepSandFootprints(): number {
-  return 0;
-}
-
-/** FldEff_BikeTireTracks */
-export function FldEff_BikeTireTracks(): number {
-  return 0;
-}
-
-/** UpdateFootprintsTireTracksFieldEffect */
-export function UpdateFootprintsTireTracksFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-  if (sprite.data && sprite.data[0] < gFadeFootprintsTireTracksFuncs.length) {
-    gFadeFootprintsTireTracksFuncs[sprite.data[0]](sprite);
-  }
-}
-
-/** FadeFootprintsTireTracks_Step0 */
-export function FadeFootprintsTireTracks_Step0(sprite: Sprite | any): void {
-  if (!sprite) return;
-  if (++sprite.data[1] > 40) {
-    sprite.data[0] = 1;
-    sprite.data[1] = 0;
-  }
-}
-
-/** FadeFootprintsTireTracks_Step1 */
-export function FadeFootprintsTireTracks_Step1(sprite: Sprite | any): void {
-  if (!sprite) return;
-  sprite.data[1]++;
-  sprite.invisible = (sprite.data[1] & 1) === 1;
-  if (sprite.data[1] > 16) {
-    sprite.invisible = true;
-  }
 }
 
 /** FldEff_SurfBlob */

@@ -206,6 +206,7 @@ export class FieldEffects {
   private shadowSprites = new Set<Sprite>();
   private tallGrassSprites = new Set<Sprite>();
   private longGrassSprites = new Set<Sprite>();
+  private tracksSprites = new Set<Sprite>();
   private shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
   private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
   private sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -350,6 +351,9 @@ export class FieldEffects {
     if (id === C.FLDEFF_JUMP_TALL_GRASS) { this.FldEff_JumpTallGrass(); return; }
     if (id === C.FLDEFF_LONG_GRASS) { this.FldEff_LongGrass(); return; }
     if (id === C.FLDEFF_JUMP_LONG_GRASS) { this.FldEff_JumpLongGrass(); return; }
+    if (id === C.FLDEFF_SAND_FOOTPRINTS) { this.FldEff_SandFootprints(); return; }
+    if (id === C.FLDEFF_DEEP_SAND_FOOTPRINTS) { this.FldEff_DeepSandFootprints(); return; }
+    if (id === C.FLDEFF_BIKE_TIRE_TRACKS) { this.FldEff_BikeTireTracks(); return; }
     if (id === C.FLDEFF_MOVE_DEOXYS_ROCK) { this.FldEff_MoveDeoxysRock(); return; }
     if (this.moves.start(id)) return;
     if (!this.startIcon(id)) this.active.delete(id);
@@ -447,6 +451,7 @@ export class FieldEffects {
     this.shadowSprites.clear();
     this.tallGrassSprites.clear();
     this.longGrassSprites.clear();
+    this.tracksSprites.clear();
     this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
     this.hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
     this.sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -1344,31 +1349,29 @@ export class FieldEffects {
     }
   }
 
-  private spawnFootprints(object: ObjectEvent): void {
-    const tracks = rom.objects.gfx[String(object.graphicsId)]?.tracks;
-    if (tracks !== "TRACKS_FOOT") return;
-    const deepSand = MB.MetatileBehavior_IsDeepSand(object.previousMetatileBehavior);
-    const sprite = this.createFromTemplate(deepSand ? "DeepSandFootprints" : "SandFootprints", object.previousCoords.x * 16 + 8, object.previousCoords.y * 16 + 8);
-    if (!sprite) return;
-    sprite.priority = 2;
-    sprite.startAnim(object.facingDirection);
-    sprite.subpriority = 149;
-    this.initTracksFade(sprite);
-  }
-
   /** GroundEffect_SandTracks (event_object_movement.c). */
   GroundEffect_SandTracks(object: ObjectEvent): void {
-    if (rom.objects.gfx[String(object.graphicsId)]?.tracks === "TRACKS_BIKE_TIRE") this.spawnBikeTireTracks(object);
-    else this.spawnFootprints(object);
+    this.DoTracksGroundEffect(object, false);
   }
 
   /** GroundEffect_DeepSandTracks (event_object_movement.c). */
   GroundEffect_DeepSandTracks(object: ObjectEvent): void {
-    if (rom.objects.gfx[String(object.graphicsId)]?.tracks === "TRACKS_BIKE_TIRE") this.spawnBikeTireTracks(object);
-    else this.spawnFootprints(object);
+    this.DoTracksGroundEffect(object, true);
   }
 
-  private spawnBikeTireTracks(object: ObjectEvent): void {
+  private DoTracksGroundEffect(object: ObjectEvent, deepSand: boolean): void {
+    const tracks = rom.objects.gfx[String(object.graphicsId)]?.tracks;
+    if (tracks !== "TRACKS_FOOT" && tracks !== "TRACKS_BIKE_TIRE") return;
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = (object.previousCoords.x << 16) >> 16;
+    args[1] = (object.previousCoords.y << 16) >> 16;
+    args[2] = 149;
+    args[3] = 2;
+    if (tracks === "TRACKS_FOOT") {
+      args[4] = object.facingDirection & 0xff;
+      this.start(deepSand ? C.FLDEFF_DEEP_SAND_FOOTPRINTS : C.FLDEFF_SAND_FOOTPRINTS);
+      return;
+    }
     if (object.currentCoords.x === object.previousCoords.x && object.currentCoords.y === object.previousCoords.y) return;
     const transitions = [
       [1, 2, 7, 8],
@@ -1381,32 +1384,78 @@ export class FieldEffects {
     // The source indexes this table directly. Out-of-range state has no defined C result.
     const animation = transitions[previousDirection]?.[nextDirection];
     if (animation === undefined) return;
-    const sprite = this.createFromTemplate("BikeTireTracks", object.previousCoords.x * 16 + 8, object.previousCoords.y * 16 + 8);
-    if (!sprite) return;
-    sprite.coordOffsetEnabled = true;
-    sprite.priority = 2;
-    sprite.subpriority = 149;
-    sprite.data[7] = C.FLDEFF_BIKE_TIRE_TRACKS;
-    sprite.startAnim(animation);
-    this.initTracksFade(sprite);
+    args[4] = animation;
+    this.start(C.FLDEFF_BIKE_TIRE_TRACKS);
   }
 
-  /** UpdateFootprintsTireTracksFieldEffect / FadeFootprintsTireTracks_Step0/1. */
-  private initTracksFade(sprite: Sprite): void {
+  /** FldEff_SandFootprints (field_effect_helpers.c). */
+  FldEff_SandFootprints(): number {
+    this.CreateFootprintsTireTracksSprite("SandFootprints", C.FLDEFF_SAND_FOOTPRINTS);
+    return 0;
+  }
+
+  /** FldEff_DeepSandFootprints (field_effect_helpers.c). */
+  FldEff_DeepSandFootprints(): number {
+    return this.CreateFootprintsTireTracksSprite("DeepSandFootprints", C.FLDEFF_DEEP_SAND_FOOTPRINTS);
+  }
+
+  /** FldEff_BikeTireTracks (field_effect_helpers.c). */
+  FldEff_BikeTireTracks(): number {
+    return this.CreateFootprintsTireTracksSprite("BikeTireTracks", C.FLDEFF_BIKE_TIRE_TRACKS);
+  }
+
+  private CreateFootprintsTireTracksSprite(template: string, effectId: number): number {
+    const args = this.ow.game.fieldEffectArguments;
+    const x = (args[0]! << 16) >> 16;
+    const y = (args[1]! << 16) >> 16;
+    const sprite = this.createFromTemplate(template, x * 16 + 8, y * 16 + 8);
+    if (!sprite) {
+      if (![...this.tracksSprites].some((s) => s.data[7] === effectId)) this.active.delete(effectId);
+      return effectId === C.FLDEFF_SAND_FOOTPRINTS ? 0 : C.MAX_SPRITES;
+    }
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = args[3]! & 0xff;
+    sprite.subpriority = args[2]! & 0xff;
     sprite.data[0] = 0;
     sprite.data[1] = 0;
-    sprite.callback = (s) => {
-      if (s.data[0] === 0) {
-        s.data[1] = (s.data[1]! + 1) & 0xffff;
-        if (s.data[1]! > 40) s.data[0] = 1;
-        this.UpdateObjectEventSpriteInvisibility(s, false);
-      } else {
-        s.invisible = !s.invisible;
-        s.data[1] = (s.data[1]! + 1) & 0xffff;
-        this.UpdateObjectEventSpriteInvisibility(s, s.invisible);
-        if (s.data[1]! > 56) this.ow.sprites.destroy(s);
-      }
-    };
+    sprite.data[7] = effectId;
+    sprite.startAnim(args[4]! & 0xff);
+    sprite.callback = (s) => this.UpdateFootprintsTireTracksFieldEffect(s);
+    this.tracksSprites.add(sprite);
+    this.active.add(effectId);
+    const spriteId = this.ow.sprites.getId(sprite);
+    return effectId === C.FLDEFF_SAND_FOOTPRINTS ? 0 : spriteId;
+  }
+
+  /** UpdateFootprintsTireTracksFieldEffect (field_effect_helpers.c). */
+  UpdateFootprintsTireTracksFieldEffect(sprite: Sprite): void {
+    switch (sprite.data[0]) {
+      case 0: this.FadeFootprintsTireTracks_Step0(sprite); break;
+      case 1: this.FadeFootprintsTireTracks_Step1(sprite); break;
+      default: return;
+    }
+  }
+
+  /** FadeFootprintsTireTracks_Step0 (field_effect_helpers.c). */
+  FadeFootprintsTireTracks_Step0(sprite: Sprite): void {
+    sprite.data[1] = (sprite.data[1]! + 1) << 16 >> 16;
+    if (sprite.data[1]! > 40) sprite.data[0] = 1;
+    this.UpdateObjectEventSpriteInvisibility(sprite, false);
+  }
+
+  /** FadeFootprintsTireTracks_Step1 (field_effect_helpers.c). */
+  FadeFootprintsTireTracks_Step1(sprite: Sprite): void {
+    sprite.invisible = !sprite.invisible;
+    sprite.data[1] = (sprite.data[1]! + 1) << 16 >> 16;
+    this.UpdateObjectEventSpriteInvisibility(sprite, sprite.invisible);
+    if (sprite.data[1]! > 56) this.StopFootprintsTireTracksFieldEffect(sprite);
+  }
+
+  private StopFootprintsTireTracksFieldEffect(sprite: Sprite): void {
+    const effectId = sprite.data[7]! & 0xff;
+    this.ow.sprites.destroy(sprite);
+    this.tracksSprites.delete(sprite);
+    if (![...this.tracksSprites].some((s) => s.data[7] === effectId)) this.active.delete(effectId);
   }
 
   // ---------------------------------------------------------------- emotes
