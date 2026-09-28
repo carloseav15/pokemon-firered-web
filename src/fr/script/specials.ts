@@ -15,7 +15,9 @@ import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
 import { countAliveNonEggMons, GetKantoPokedexCount, GetNationalPokedexCount, GetLeadMonIndex, GetPlayerTrainerId, HasAllKantoMons, HasAllMons, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import { GetMonData, GetMonEVCount, SetMonData } from "../pokemon/mon";
-import { cdata, hasCData, loadCData } from "../hw/assets";
+import { cdata, hasCData, incbin16, loadCData } from "../hw/assets";
+import { ApplyGlobalFieldPaletteTint } from "../field/fieldPalette";
+import { LoadPalette, OBJ_PLTT_ID, PLTT_SIZEOF } from "../hw/palette";
 import type { ScriptRunner } from "./context";
 import { EXTRA_SPECIALS } from "./specialsExtra";
 import { DAYCARE_SPECIALS, hatchPartyEgg } from "../pokemon/daycare";
@@ -60,6 +62,83 @@ function ShakeScreen(ctx: ScriptRunner): void {
   data[4] = varGet(SV.x8004);
   ctx.ow.SetCameraPanningCallback(null);
   sound.playSE(sound.c("SE_M_STRENGTH"));
+}
+
+/** DoDeoxysTriangleInteraction and task from field_specials.c. */
+function DoDeoxysTriangleInteraction(ctx: ScriptRunner): void {
+  tasks.create((taskId) => Task_DoDeoxysTriangleInteraction(taskId, ctx), 8);
+}
+
+function Task_DoDeoxysTriangleInteraction(taskId: number, ctx: ScriptRunner): void {
+  if (flagGet(C.FLAG_SYS_DEOXYS_AWAKENED)) {
+    varSet(SV.RESULT, 3);
+    ctx.ow.script.ScriptContext_Enable();
+    tasks.destroy(taskId);
+    return;
+  }
+
+  const num = varGet(C.VAR_DEOXYS_INTERACTION_NUM) & 0xffff;
+  const steps = varGet(C.VAR_DEOXYS_INTERACTION_STEP_COUNTER) & 0xffff;
+  const stepCaps = cdata<number[]>("field_specials", "sDeoxysStepCaps");
+  varSet(C.VAR_DEOXYS_INTERACTION_STEP_COUNTER, 0);
+  if (num !== 0 && stepCaps[num - 1]! < steps) {
+    MoveDeoxysObject(ctx, 0);
+    varSet(C.VAR_DEOXYS_INTERACTION_NUM, 0);
+    varSet(SV.RESULT, 0);
+    tasks.destroy(taskId);
+  } else if (num === 10) {
+    flagSet(C.FLAG_SYS_DEOXYS_AWAKENED);
+    varSet(SV.RESULT, 2);
+    ctx.ow.script.ScriptContext_Enable();
+    tasks.destroy(taskId);
+  } else {
+    const next = (num + 1) & 0xffff;
+    MoveDeoxysObject(ctx, next);
+    varSet(C.VAR_DEOXYS_INTERACTION_NUM, next);
+    varSet(SV.RESULT, 1);
+    tasks.destroy(taskId);
+  }
+}
+
+/** MoveDeoxysObject and Task_WaitDeoxysFieldEffect from field_specials.c. */
+function MoveDeoxysObject(ctx: ScriptRunner, num: number): void {
+  const palettes = incbin16("field_specials.c:sDeoxysObjectPals");
+  LoadPalette(palettes.subarray(num * 16, num * 16 + 16), OBJ_PLTT_ID(10), PLTT_SIZEOF(4));
+  ApplyGlobalFieldPaletteTint(10);
+
+  const localId = C.LOCALID_BIRTH_ISLAND_EXTERIOR_ROCK;
+  const packedMap = rom.mapNum("MAP_BIRTH_ISLAND_EXTERIOR");
+  const mapNum = packedMap & 0xff, mapGroup = packedMap >>> 8;
+  sound.playSE(sound.c(num === 0 ? "SE_M_CONFUSE_RAY" : "SE_DEOXYS_MOVE"));
+  tasks.create((taskId) => Task_WaitDeoxysFieldEffect(taskId, ctx), 8);
+
+  const args = ctx.ow.game.fieldEffectArguments;
+  const coords = cdata<number[][]>("field_specials", "sDeoxysCoords")[num]!;
+  args[0] = localId;
+  args[1] = mapNum;
+  args[2] = mapGroup;
+  args[3] = coords[0]!;
+  args[4] = coords[1]!;
+  args[5] = num === 0 ? 60 : 5;
+  ctx.ow.effects.start(C.FLDEFF_MOVE_DEOXYS_ROCK);
+
+  const object = ctx.ow.objects.byLocalIdAndMap(localId, mapNum, mapGroup);
+  if (object) ctx.ow.objects.overrideTemplateCoords(object);
+}
+
+function Task_WaitDeoxysFieldEffect(taskId: number, ctx: ScriptRunner): void {
+  if (!ctx.ow.effects.active.has(C.FLDEFF_MOVE_DEOXYS_ROCK)) {
+    ctx.ow.script.ScriptContext_Enable();
+    tasks.destroy(taskId);
+  }
+}
+
+/** SetDeoxysTrianglePalette from field_specials.c. */
+function SetDeoxysTrianglePalette(): void {
+  const num = varGet(C.VAR_DEOXYS_INTERACTION_NUM) & 0xff;
+  const palettes = incbin16("field_specials.c:sDeoxysObjectPals");
+  LoadPalette(palettes.subarray(num * 16, num * 16 + 16), OBJ_PLTT_ID(10), PLTT_SIZEOF(4));
+  ApplyGlobalFieldPaletteTint(10);
 }
 
 /** Task_ShakeScreen (field_specials.c). */
@@ -350,26 +429,9 @@ export const SPECIALS: Record<string, Special> = {
   DoWateringBerryTreeAnim: () => {},
   // ---- weather visual without the ported drought layer: field_weather_effects.c:264.
   StartDroughtWeatherBlend: () => {},
-  // ---- Deoxys triangle (field_specials.c:2360-2456): var/flag progression is
-  // source-accurate; the rock-move field effect (FLDEFF_MOVE_DEOXYS_ROCK) has no
-  // port yet, so the object stays while RESULT/vars advance. Palette step is visual-only.
-  DoDeoxysTriangleInteraction: () => {
-    if (flagGet(rom.c("FLAG_SYS_DEOXYS_AWAKENED"))) return 3;
-    const caps = [4, 8, 8, 8, 4, 4, 4, 6, 3, 3]; // sDeoxysStepCaps
-    const num = varGet(rom.c("VAR_DEOXYS_INTERACTION_NUM"));
-    const steps = varGet(rom.c("VAR_DEOXYS_INTERACTION_STEP_COUNTER"));
-    varSet(rom.c("VAR_DEOXYS_INTERACTION_STEP_COUNTER"), 0);
-    if (num !== 0 && (caps[num - 1] ?? 0) < steps) {
-      varSet(rom.c("VAR_DEOXYS_INTERACTION_NUM"), 0);
-      return 0;
-    }
-    if (num === 10) {
-      flagSet(rom.c("FLAG_SYS_DEOXYS_AWAKENED"));
-      return 2;
-    }
-    varSet(rom.c("VAR_DEOXYS_INTERACTION_NUM"), num + 1);
-    return 1;
-  },
+  // ---- Deoxys triangle (field_specials.c:2360-2456).
+  DoDeoxysTriangleInteraction: (ctx) => { DoDeoxysTriangleInteraction(ctx); },
+  SetDeoxysTrianglePalette: () => { SetDeoxysTrianglePalette(); },
   // ---- easy chat hobby/lifestyle (easy_chat.c:318-323): random enabled word
   // from group 12 (LIFESTYLE) or 13 (HOBBIES) into gStringVar2.
   BufferRandomHobbyOrLifestyleString,

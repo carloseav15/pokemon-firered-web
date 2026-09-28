@@ -34,7 +34,7 @@ import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer"
 import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
-import { gQuestLogState, QuestLog_CheckDepartingIndoorsMap, QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
+import { gQuestLogState, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
 
@@ -497,6 +497,7 @@ export class Overworld {
   private finishMapLoad(loaded: LoadedMap): void {
     this.setPlayerCoordsFromWarp(loaded.header, loaded.layout.width, loaded.layout.height);
     this.loadMapFromWarp(loaded);
+    QuestLog_InitPalettesBackup();
     this.resumeMap();
     // C checks whether playback must advance here; the browser port currently
     // uses the call to cut recording in Quest Log-disabled locations.

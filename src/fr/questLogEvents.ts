@@ -3,16 +3,26 @@
 
 import * as C from "./generated/constants";
 import { cdata } from "./hw/assets";
+import { SetGlobalFieldTintMode } from "./field/fieldPalette";
 import {
   QL_LoadAction_Input, QL_LoadAction_MovementOrGfxChange, QL_LoadAction_SceneEnd, QL_LoadAction_Wait,
   QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd,
   type LoadedQuestLogAction, type QuestLogAction,
 } from "./questLogActions";
 import { flagSet, save, varGet, varSet } from "./save";
+import { QuestLog_InitPalettesBackup as initQuestLogPalettesBackup } from "./questLogPalette";
 
 let sPlayedTheSlots = false;
 export let gQuestLogState = 0;
-export function SetQuestLogState(state: number): void { gQuestLogState = state; }
+export function SetQuestLogState(state: number): void {
+  gQuestLogState = state;
+  SetGlobalFieldTintMode(state === C.QL_STATE_PLAYBACK ? C.QL_TINT_GRAYSCALE
+    : state === C.QL_STATE_PLAYBACK_LAST ? C.QL_TINT_BACKUP_GRAYSCALE : C.QL_TINT_NONE);
+}
+/** QuestLog_InitPalettesBackup (quest_log.c). */
+export function QuestLog_InitPalettesBackup(): void {
+  initQuestLogPalettesBackup(gQuestLogState === C.QL_STATE_PLAYBACK_LAST);
+}
 export let gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
 /** QL_GetPlaybackState (quest_log.c): hide the two transitional playback states. */
 export function QL_GetPlaybackState(): number {

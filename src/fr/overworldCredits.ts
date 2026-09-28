@@ -16,6 +16,7 @@
 // Needs loadCData("credits") and preloadCreditsMaps().
 
 import { tasks } from "./gba/tasks";
+import { SetGlobalFieldTintMode } from "./field/fieldPalette";
 import { cdata } from "./hw/assets";
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg, BG_ATTR_MOSAIC,
@@ -205,7 +206,8 @@ export function Overworld_CreditsIdleCB(): void {
 // ---------------------------------------------------------------- scroll scene
 
 /** Overworld_DoScrollSceneForCredits */
-export function Overworld_DoScrollSceneForCredits(state_p: { value: number }, script: CreditsOverworldCmd[], _tintMode: number): boolean {
+export function Overworld_DoScrollSceneForCredits(state_p: { value: number }, script: CreditsOverworldCmd[], tintMode: number): boolean {
+  SetGlobalFieldTintMode(tintMode);
   sCreditsOverworld_Script = script;
   return SetUpScrollSceneForCredits(state_p, 0);
 }
@@ -400,4 +402,3 @@ function Task_OvwldCredits_WaitFade(taskId: number): void {
     tasks.destroy(taskId);
   }
 }
-
