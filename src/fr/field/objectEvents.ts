@@ -178,6 +178,8 @@ export class ObjectEvent {
   directionSequenceIndex = 0;
   playerCopyableMovement = 0;
   fieldEffectSprite?: Sprite;
+  /** GBA sprite ID returned by CreateWarpArrowSprite for the player. */
+  warpArrowSpriteId = 0xff;
   template?: MapObjectTemplate;
   sprite: Sprite;
   animTableName = "";

@@ -190,7 +190,7 @@ export class Overworld {
       emote: (object, kind) => this.effects.startEmoteForObjectEvent(object, kind),
       playSE: (name) => sound.playSE(sound.c(name)),
       cameraCanMove: (direction) => this.canCameraMoveInDirection(direction),
-      registerSprite: (sprite) => { this.sprites.add(sprite); return this.sprites.sprites.indexOf(sprite); },
+      registerSprite: (sprite) => this.sprites.getId(this.sprites.add(sprite)),
       unregisterSprite: (sprite) => this.sprites.destroy(sprite),
       cameraOffset: () => ({ x: this.camX, y: this.camY }),
       startDisguise: (object, kind) => this.effects.StartDisguiseFieldEffect(object, kind),
@@ -682,6 +682,7 @@ export class Overworld {
     this.resetInitialPlayerAvatarState();
     this.objects.trySpawnInView(save.pos.x, save.pos.y);
     this.syncObjectSprites();
+    this.player.InitWarpArrowSprite();
     this.tryRunOnWarpIntoMapScript();
     this.cameraTarget = this.player.object;
     this.cameraObject = null;
@@ -1364,8 +1365,10 @@ export class Overworld {
   /** Keep object sprites registered in the sprite manager. */
   syncObjectSprites(): void {
     const live = new Set(this.objects.list.map((o) => o.sprite));
+    const liveArrowIds = new Set(this.objects.list.map((o) => o.warpArrowSpriteId));
     for (const s of [...this.sprites.sprites]) {
       if ((s as unknown as { objectSprite?: boolean }).objectSprite && !live.has(s)) this.sprites.destroy(s);
+      if ((s as unknown as { warpArrowSprite?: boolean }).warpArrowSprite && !liveArrowIds.has(this.sprites.getId(s))) this.sprites.destroy(s);
     }
     for (const o of this.objects.list) {
       if (!this.sprites.sprites.includes(o.sprite)) {

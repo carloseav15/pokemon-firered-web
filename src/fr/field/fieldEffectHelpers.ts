@@ -10,9 +10,11 @@
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
-import { cdata, loadCData } from "../hw/assets";
+import { cdata, incbin, incbin16, loadCData } from "../hw/assets";
+import { spriteSheet } from "./gfx4bpp";
+import { SpriteManager } from "../gba/sprite";
 import { rom } from "../rom";
-import type { Sprite } from "../gba/sprite";
+import { Sprite } from "../gba/sprite";
 import type { ObjectEvent } from "./objectEvents";
 
 export const gShadowEffectTemplateIds = [0, 1, 2, 3];
@@ -67,18 +69,55 @@ export function UpdateObjectReflectionSprite(reflectionSprite: Sprite | any): vo
 }
 
 /** CreateWarpArrowSprite */
-export function CreateWarpArrowSprite(): number {
-  return 0;
+let arrowSheet: HTMLCanvasElement | undefined;
+function getArrowSheet(): HTMLCanvasElement {
+  return arrowSheet ??= spriteSheet(incbin("gFieldEffectObjectPic_Arrow"), incbin16("gObjectEventPal_Player"), 16, 16, 8);
+}
+
+export function CreateWarpArrowSprite(sprites: SpriteManager): number {
+  const sprite = new Sprite();
+  (sprite as Sprite & { warpArrowSprite?: boolean }).warpArrowSprite = true;
+  sprite.width = sprite.height = 16;
+  sprite.priority = 1;
+  sprite.subpriority = 0x52;
+  sprite.invisible = true;
+  sprite.data[0] = -1;
+  sprite.data[1] = -1;
+  sprite.draw = (ctx, x, y) => {
+    const sheet = getArrowSheet();
+    ctx.drawImage(sheet, 0, sprite.imageValue * 16, 16, 16, x, y, 16, 16);
+  };
+  const id = sprites.getId(sprites.addAtEnd(sprite));
+  if (id === 0xff) sprites.destroy(sprite);
+  return id;
 }
 
 /** SetSpriteInvisible */
-export function SetSpriteInvisible(spriteId: number): void {
-  // Hides warp arrow sprite
+export function SetSpriteInvisible(sprites: SpriteManager, spriteId: number): void {
+  const sprite = sprites.getById(spriteId);
+  if (sprite) sprite.invisible = true;
 }
 
 /** ShowWarpArrowSprite */
-export function ShowWarpArrowSprite(spriteId: number, direction: number, x: number, y: number): void {
-  // Shows directional warp arrow at destination coordinates
+export function ShowWarpArrowSprite(sprites: SpriteManager, spriteId: number, direction: number, x: number, y: number): void {
+  const sprite = sprites.getById(spriteId);
+  if (!sprite) return;
+  if (sprite.invisible || sprite.data[0] !== (x << 16 >> 16) || sprite.data[1] !== (y << 16 >> 16)) {
+    sprite.x = x * 16;
+    sprite.y = y * 16;
+    sprite.invisible = false;
+    sprite.data[0] = x << 16 >> 16;
+    sprite.data[1] = y << 16 >> 16;
+    sprite.data[2] = (direction - 1) & 3;
+    sprite.data[3] = 0;
+    sprite.imageValue = sprite.data[2] * 2;
+  }
+  sprite.callback = (s) => {
+    if (++s.data[3] >= 32) {
+      s.data[3] = 0;
+      s.imageValue = s.data[2] * 2 + (s.imageValue % 2 === 0 ? 1 : 0);
+    }
+  };
 }
 
 /** FldEff_Shadow */

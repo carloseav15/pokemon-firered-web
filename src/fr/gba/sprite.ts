@@ -161,6 +161,8 @@ export class Sprite {
 
 export class SpriteManager {
   readonly sprites: Sprite[] = [];
+  /** Stable GBA OAM slot IDs, independent of the render-list indices. */
+  private readonly spriteIds: Array<Sprite | undefined> = new Array(64);
   /** gSpriteCoordOffsetX/Y */
   offsetX = 0;
   offsetY = 0;
@@ -168,13 +170,46 @@ export class SpriteManager {
   filter: string | null = null;
 
   add(sprite: Sprite): Sprite {
-    this.sprites.push(sprite);
+    return this.addIntoFreeSlot(sprite, false);
+  }
+
+  /** CreateSpriteAtEnd uses the highest free OAM slot first. */
+  addAtEnd(sprite: Sprite): Sprite {
+    return this.addIntoFreeSlot(sprite, true);
+  }
+
+  private addIntoFreeSlot(sprite: Sprite, fromEnd: boolean): Sprite {
+    if (!this.sprites.includes(sprite)) this.sprites.push(sprite);
+    if (this.getId(sprite) === 0xff) {
+      let slot = -1;
+      if (fromEnd) {
+        for (let i = this.spriteIds.length - 1; i >= 0; i--) {
+          if (!this.spriteIds[i] || this.spriteIds[i]!.destroyed) { slot = i; break; }
+        }
+      } else {
+        slot = this.spriteIds.findIndex((entry) => !entry || entry.destroyed);
+      }
+      if (slot >= 0) this.spriteIds[slot] = sprite;
+    }
     return sprite;
+  }
+
+  /** CreateSprite/CreateSpriteAtEnd result; 0xFF is MAX_SPRITES. */
+  getId(sprite: Sprite): number {
+    const id = this.spriteIds.indexOf(sprite);
+    return id < 0 || sprite.destroyed ? 0xff : id;
+  }
+
+  getById(id: number): Sprite | undefined {
+    const sprite = this.spriteIds[id & 0xff];
+    return sprite && !sprite.destroyed ? sprite : undefined;
   }
 
   destroy(sprite: Sprite | undefined): void {
     if (!sprite) return;
     sprite.destroyed = true;
+    const id = this.spriteIds.indexOf(sprite);
+    if (id >= 0) this.spriteIds[id] = undefined;
     const index = this.sprites.indexOf(sprite);
     if (index >= 0) this.sprites.splice(index, 1);
   }
@@ -182,6 +217,7 @@ export class SpriteManager {
   clear(): void {
     for (const s of this.sprites) s.destroyed = true;
     this.sprites.length = 0;
+    this.spriteIds.fill(undefined);
   }
 
   /** RunSpriteCallbacks + AnimateSprites */

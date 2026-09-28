@@ -10,6 +10,7 @@ import { rom } from "../rom";
 import { flagGet, incrementGameStat } from "../save";
 import { QuestLogApplyPlayerAvatarTransition, QuestLogCallUpdatePlayerSprite } from "../questLogPlayer";
 import { QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerAvatarGfxTransitionWithDuration, QuestLogRecordPlayerStep, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
+import { CreateWarpArrowSprite, SetSpriteInvisible, ShowWarpArrowSprite } from "./fieldEffectHelpers";
 import {
   actionFace, actionJump2, actionJumpInPlace, actionJumpSpecial, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
   actionWalkInPlaceSlow, actionWalkNormal, actionWalkSlow, COLLISION_DIRECTIONAL_STAIR_WARP, COLLISION_ELEVATION_MISMATCH, COLLISION_LEDGE_JUMP,
@@ -64,6 +65,11 @@ export function GetPlayerMovementDirection(): number { return gPlayerAvatar?.obj
 /** PlayerGetElevation returns the player's previous elevation byte. */
 export function PlayerGetElevation(): number { return gPlayerAvatar?.object.previousElevation ?? 0; }
 export function GetPlayerAvatarFlags(): number { return gPlayerAvatar?.flags ?? 0; }
+/** GetPlayerAvatarObjectId (field_player_avatar.c): return the player's stable GBA OAM slot. */
+export function GetPlayerAvatarObjectId(): number {
+  const avatar = gPlayerAvatar;
+  return avatar ? avatar.GetPlayerAvatarObjectId() : 0xff;
+}
 export function GetPlayerAvatarGraphicsIdByStateIdAndGender(state: number, gender: number): number {
   return PlayerAvatar.graphicsId(state, gender);
 }
@@ -131,6 +137,17 @@ export class PlayerAvatar {
 
   /** InitPlayerAvatar (field_player_avatar.c), wired from the active overworld setup. */
   InitPlayerAvatar(x: number, y: number, direction: number, gender: number): void { this.init(x, y, direction, gender); }
+
+  /** InitPlayerAvatar's CreateWarpArrowSprite call, after the player sprite has entered OAM. */
+  InitWarpArrowSprite(): void {
+    this.ow.sprites.add(this.object.sprite);
+    this.object.warpArrowSpriteId = CreateWarpArrowSprite(this.ow.sprites);
+  }
+
+  GetPlayerAvatarObjectId(): number { return this.ow.sprites.getId(this.object.sprite); }
+
+  /** SetPlayerAvatarWatering is an empty static helper in FireRed. */
+  private SetPlayerAvatarWatering(): void {}
 
   /** ClearPlayerAvatarInfo (field_player_avatar.c): clear the PlayerAvatar state block. */
   ClearPlayerAvatarInfo(): void {
@@ -585,6 +602,7 @@ export class PlayerAvatar {
 
   /** player_step */
   player_step(direction: number, newKeys: number, heldKeys: number): void {
+    this.HandleWarpArrowSpriteHideShow();
     if (this.preventStep) return;
     if (this.TryUpdatePlayerSpinDirection()) return;
     if (this.TryInterruptObjectEventSpecialAnim(direction)) return;
@@ -593,6 +611,23 @@ export class PlayerAvatar {
       this.MovePlayerAvatarUsingKeypadInput(direction, newKeys, heldKeys);
       this.PlayerAllowForcedMovementIfMovingSameDirection();
     }
+  }
+
+  /** HandleWarpArrowSpriteHideShow (field_player_avatar.c), preserving south,north,west,east order. */
+  private HandleWarpArrowSpriteHideShow(): void {
+    const object = this.object;
+    const arrowChecks = [MB.MetatileBehavior_IsSouthArrowWarp, MB.MetatileBehavior_IsNorthArrowWarp, MB.MetatileBehavior_IsWestArrowWarp, MB.MetatileBehavior_IsEastArrowWarp];
+    for (let i = 0; i < arrowChecks.length; i++) {
+      const direction = DIR_SOUTH + i;
+      if (arrowChecks[i]!(object.currentMetatileBehavior) && direction === object.movementDirection) {
+        const [dx, dy] = DIRECTION_VECTORS[direction]!;
+        ShowWarpArrowSprite(this.ow.sprites, object.warpArrowSpriteId, direction,
+          (object.currentCoords.x + dx) << 16 >> 16,
+          (object.currentCoords.y + dy) << 16 >> 16);
+        return;
+      }
+    }
+    SetSpriteInvisible(this.ow.sprites, object.warpArrowSpriteId);
   }
 
   private npc_clear_strange_bits(): void {
