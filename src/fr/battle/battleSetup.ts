@@ -431,11 +431,7 @@ export class BattleSetup {
     incrementGameStat(c.GAME_STAT_WILD_BATTLES);
     this.game.startBattle({
       kind: "wild", enemyParty: [enemy], isGhost,
-      onEnd: outcome => {
-        this.game.battleOutcome = outcome;
-        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
-        else this.game.returnToFieldContinueScript(true);
-      },
+      onEnd: outcome => this.CB2_EndWildBattle(outcome),
     });
   }
 
@@ -477,6 +473,30 @@ export class BattleSetup {
     game.returnToFieldContinueScript(true);
   }
 
+  /** CB2_EndWildBattle (battle_setup.c); the browser field uses its shared continuation callback. */
+  private CB2_EndWildBattle(outcome: number): void {
+    this.game.battleOutcome = outcome;
+    if (IsPlayerDefeated(outcome)) this.game.whiteOut();
+    else this.game.returnToFieldContinueScript(true);
+  }
+
+  /** CB2_EndScriptedWildBattle (battle_setup.c). */
+  private CB2_EndScriptedWildBattle(outcome: number): void {
+    this.game.battleOutcome = outcome;
+    if (IsPlayerDefeated(outcome)) this.game.whiteOut();
+    else this.game.returnToFieldContinueScript(true);
+  }
+
+  /** CB2_EndMarowakBattle (battle_setup.c). */
+  private CB2_EndMarowakBattle(outcome: number): void {
+    this.game.battleOutcome = outcome;
+    if (IsPlayerDefeated(outcome)) this.game.whiteOut();
+    else {
+      varSet(SV.RESULT, outcome === B_OUTCOME_WON ? 0 : 1);
+      this.game.returnToFieldContinueScript(true);
+    }
+  }
+
   /** battle_setup.c StartRoamerBattle (BATTLE_TYPE_ROAMER), with UpdateRoamerHPStatus afterwards. */
   startRoamerBattle(enemy: Pokemon): void {
     incrementGameStat(rom.c("GAME_STAT_TOTAL_BATTLES"));
@@ -486,9 +506,7 @@ export class BattleSetup {
       music: rom.c("MUS_VS_LEGEND"),
       onEnd: (outcome) => {
         afterRoamerBattle(gEnemyParty[0] as unknown as Pokemon, outcome);
-        this.game.battleOutcome = outcome;
-        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
-        else this.game.returnToFieldContinueScript(true);
+        this.CB2_EndWildBattle(outcome);
       },
     });
   }
@@ -498,11 +516,7 @@ export class BattleSetup {
     this.game.startBattle({
       kind: "wild",
       enemyParty: [enemy],
-      onEnd: (outcome) => {
-        this.game.battleOutcome = outcome;
-        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
-        else this.game.returnToFieldContinueScript(true);
-      },
+      onEnd: (outcome) => this.CB2_EndScriptedWildBattle(outcome),
     });
   }
 
@@ -541,11 +555,7 @@ export class BattleSetup {
       ...flags,
       ...(battleMusic ? { music: battleMusic } : {}),
       enemyParty: [enemy],
-      onEnd: (outcome) => {
-        this.game.battleOutcome = outcome;
-        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
-        else this.game.returnToFieldContinueScript(true);
-      },
+      onEnd: (outcome) => this.CB2_EndScriptedWildBattle(outcome),
     });
   }
 
@@ -570,14 +580,7 @@ export class BattleSetup {
       isGhost: true,
       isGhostUnveiled: hasSilphScope,
       enemyParty: [marowak],
-      onEnd: (outcome) => {
-        this.game.battleOutcome = outcome;
-        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
-        else {
-          varSet(SV.RESULT, outcome === B_OUTCOME_WON ? 0 : 1);
-          this.game.returnToFieldContinueScript(true);
-        }
-      },
+      onEnd: (outcome) => this.CB2_EndMarowakBattle(outcome),
     });
   }
 
