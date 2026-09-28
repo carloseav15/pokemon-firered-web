@@ -26,6 +26,7 @@ import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVA
 import { SetHelpContext } from "../helpSystem";
 
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
+type FieldMoveShowMonTask = { id: number; data: Int16Array; mon: Sprite; outdoors: boolean; image?: HTMLCanvasElement; overlay?: Overlay };
 /** gFieldEffectArguments[0] bit 31: play the cry without ducking (Surf). */
 const SHOW_MON_CRY_NO_DUCKING = 0x80000000;
 
@@ -88,8 +89,8 @@ export class FieldMoveEffects {
   /** FieldEffectStart: returns false when the id has no task-style handler here. */
   start(id: number): boolean {
     switch (id) {
-      case C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT: this.showMonInit(); return true;
-      case C.FLDEFF_FIELD_MOVE_SHOW_MON: this.showMon(); return true;
+      case C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT: this.FldEff_FieldMoveShowMonInit(); return true;
+      case C.FLDEFF_FIELD_MOVE_SHOW_MON: this.FldEff_FieldMoveShowMon(); return true;
       case C.FLDEFF_USE_CUT_ON_TREE:
         this.FldEff_UseCutOnTree();
         return true;
@@ -200,27 +201,31 @@ export class FieldMoveEffects {
     this.ow.script.ScriptContext_Enable();
   }
 
-  /** FldEff_FieldMoveShowMonInit */
-  private showMonInit(): void {
-    const noDucking = (this.args[0] & SHOW_MON_CRY_NO_DUCKING) !== 0;
-    const mon = save.party[this.args[0] & 0xff];
-    this.args[0] = (mon?.species ?? 0) | (noDucking ? SHOW_MON_CRY_NO_DUCKING : 0);
+  /** FldEff_FieldMoveShowMonInit (field_effect.c). */
+  private FldEff_FieldMoveShowMonInit(): void {
+    const cryFlags = this.args[0]! & SHOW_MON_CRY_NO_DUCKING;
+    const mon = save.party[this.args[0]! & 0xff];
+    this.args[0] = ((mon?.species ?? 0) | cryFlags) >>> 0;
     this.args[1] = mon?.otId ?? 0;
     this.args[2] = mon?.personality ?? 0;
     this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON);
     this.remove(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
   }
 
-  /** FldEff_FieldMoveShowMon: outdoor/indoor streak banner with the mon sliding across. */
-  private showMon(): void {
-    const species = this.args[0] & 0x7fffffff;
-    const mon = this.createMonSprite(species, this.args[1] >>> 0, this.args[2] >>> 0);
-    if (isMapTypeOutdoors(this.ow.header.mapType)) this.showMonOutdoors(mon);
-    else this.showMonIndoors(mon);
+  /** FldEff_FieldMoveShowMon (field_effect.c). */
+  private FldEff_FieldMoveShowMon(): void {
+    const speciesAndFlags = this.args[0]! >>> 0;
+    const mon = this.InitFieldMoveMonSprite(speciesAndFlags, this.args[1]! >>> 0, this.args[2]! >>> 0);
+    const outdoors = isMapTypeOutdoors(this.ow.header.mapType);
+    const task: FieldMoveShowMonTask = { id: 0, data: new Int16Array(16), mon, outdoors };
+    task.data[15] = this.ow.sprites.sprites.indexOf(mon);
+    task.id = tasks.create(() => outdoors ? this.Task_ShowMon_Outdoors(task) : this.Task_ShowMon_Indoors(task), 0xff);
   }
 
-  /** CreateMonSprite_FieldMove at (0x140, 0x50) with the slide/cry callbacks. */
-  private createMonSprite(species: number, otId: number, personality: number): Sprite {
+  /** InitFieldMoveMonSprite (field_effect.c), with the existing canvas sprite loader. */
+  private InitFieldMoveMonSprite(speciesAndFlags: number, otId: number, personality: number): Sprite {
+    const playCry = (speciesAndFlags & SHOW_MON_CRY_NO_DUCKING) >>> 16;
+    const species = speciesAndFlags & 0x7fffffff;
     const sprite = new Sprite();
     const shiny = (((otId >>> 16) ^ (otId & 0xffff) ^ (personality >>> 16) ^ (personality & 0xffff)) & 0xffff) < 8;
     sprite.frameImages = [{ url: `${DATA_ROOT}/gfx/pokemon/${shiny ? "front_shiny" : "front"}/${species}.png`, index: 0, width: 64, height: 64 }];
@@ -234,31 +239,33 @@ export class FieldMoveEffects {
     sprite.priority = 0;
     sprite.aboveWindows = true;
     sprite.data[0] = species;
-    sprite.callback = null;
+    sprite.data[6] = playCry;
+    sprite.callback = () => {};
     this.ow.sprites.add(sprite);
     return sprite;
   }
 
-  private startMonSlide(sprite: Sprite): void {
-    // SpriteCB_FieldMoveMonSlideOnscreen → WaitAfterCry → SlideOffscreen
-    let phase = 0;
-    sprite.callback = (s) => {
-      if (phase === 0) {
-        s.x -= 20;
-        if (s.x <= 0x78) {
-          s.x = 0x78;
-          s.data[1] = 30;
-          sound.PlayCry_Normal(s.data[0], 0);
-          phase = 1;
-        }
-      } else if (phase === 1) {
-        if (--s.data[1] === 0) phase = 2;
-      } else if (s.x < -0x40) s.data[7] = 1;
-      else s.x -= 20;
-    };
+  private SpriteCB_FieldMoveMonSlideOnscreen(sprite: Sprite): void {
+    if ((sprite.x -= 20) <= 0x78) {
+      sprite.x = 0x78;
+      sprite.data[1] = 30;
+      sprite.callback = (s) => this.SpriteCB_FieldMoveMonWaitAfterCry(s);
+      if (sprite.data[6]) sound.PlayCry_NormalNoDucking(sprite.data[0]!, 0, C.CRY_VOLUME_RS, C.CRY_PRIORITY_NORMAL);
+      else sound.PlayCry_Normal(sprite.data[0]!, 0);
+    }
   }
 
-  private streaks(outdoors: boolean): HTMLCanvasElement {
+  private SpriteCB_FieldMoveMonWaitAfterCry(sprite: Sprite): void {
+    if (--sprite.data[1]! === 0) sprite.callback = (s) => this.SpriteCB_FieldMoveMonSlideOffscreen(s);
+  }
+
+  private SpriteCB_FieldMoveMonSlideOffscreen(sprite: Sprite): void {
+    if (sprite.x < -0x40) sprite.data[7] = 1;
+    else sprite.x -= 20;
+  }
+
+  /** Canvas equivalent of loading the matching source BG assets into VRAM. */
+  private LoadFieldMoveStreaksTilemapToVram(outdoors: boolean): HTMLCanvasElement {
     const name = outdoors ? "Outdoors" : "Indoors";
     const tiles = incbin(`sFieldMoveStreaks${name}_Gfx`);
     const pal = incbin(`sFieldMoveStreaks${name}_Pal`);
@@ -267,7 +274,7 @@ export class FieldMoveEffects {
     const map = incbin(`sFieldMoveStreaks${name}_Tilemap`);
     const entries = new Uint16Array(32 * 10);
     for (let i = 0; i < entries.length; i++) entries[i] = ((map[i * 2] | (map[i * 2 + 1] << 8)) & 0x0fff) | 0xf000;
-    return tilemapCanvas(tiles, entries, palette, 32, 10);
+    return tilemapCanvas(tiles, entries, palette, 32, 10, true);
   }
 
   private drawScrolled(ctx: CanvasRenderingContext2D, image: HTMLCanvasElement, hofs: number, y: number): void {
@@ -276,95 +283,162 @@ export class FieldMoveEffects {
     ctx.drawImage(image, x + 256, y);
   }
 
-  /** Task_ShowMon_Outdoors: WIN0 opens from the right edge / vertical centre, BG0 streaks scroll. */
-  private showMonOutdoors(mon: Sprite): void {
-    const image = this.streaks(true);
-    let state = 0;
-    let hLo = 0xf0, vLo = 0x50, vHi = 0x51, hofs = 0;
-    const overlay: Overlay = (ctx) => {
-      if (state === 0 || state >= 5) return;
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(hLo, vLo, 240 - hLo, vHi - vLo);
-      ctx.clip();
-      this.drawScrolled(ctx, image, hofs, 40);
-      ctx.restore();
-    };
-    this.overlays.add(overlay);
-    const id = tasks.create(() => {
-      switch (state) {
-        case 0: state = 1; break;
-        case 1:
-          hofs -= 16;
-          hLo = Math.max(0, hLo - 16); vLo = Math.max(0x28, vLo - 2); vHi = Math.min(0x78, vHi + 2);
-          if (hLo === 0 && vLo === 0x28 && vHi === 0x78) { this.startMonSlide(mon); state = 2; }
-          break;
-        case 2:
-          hofs -= 16;
-          if (mon.data[7]) state = 3;
-          break;
-        case 3:
-          hofs -= 16;
-          vLo = Math.min(0x50, vLo + 6); vHi = Math.max(0x51, vHi - 6);
-          if (vLo === 0x50 && vHi === 0x51) state = 4;
-          break;
-        case 4: state = 5; break;
-        case 5:
-          this.overlays.delete(overlay);
-          this.ow.sprites.destroy(mon);
-          this.remove(C.FLDEFF_FIELD_MOVE_SHOW_MON);
-          tasks.destroy(id);
-          break;
-      }
-    }, 0xff);
+  private Task_ShowMon_Outdoors(task: FieldMoveShowMonTask): void {
+    const state = task.data[0]!;
+    if (state === 0) this.ShowMonEffect_Outdoors_1(task);
+    else if (state === 1) this.ShowMonEffect_Outdoors_2(task);
+    else if (state === 2) this.ShowMonEffect_Outdoors_3(task);
+    else if (state === 3) this.ShowMonEffect_Outdoors_4(task);
+    else if (state === 4) this.ShowMonEffect_Outdoors_5(task);
+    else if (state === 5) this.ShowMonEffect_Outdoors_6(task);
+    else this.ShowMonEffect_Outdoors_7(task);
   }
 
-  /** Task_ShowMon_Indoors: the banner is written two columns per frame, then erased the same way. */
-  private showMonIndoors(mon: Sprite): void {
-    const image = this.streaks(false);
-    let state = 0;
-    let hofs = 0, columns = 0, erasing = false, erased = 0;
-    const overlay: Overlay = (ctx) => {
-      const shown = Math.min(32, columns) * 8;
-      if (!shown) return;
-      ctx.save();
-      // Banner columns fill in from the right edge of the scrolled BG0.
-      const left = erasing ? 0 : 240 - Math.min(240, shown);
-      const right = erasing ? 240 - Math.min(240, erased * 8) : 240;
-      ctx.beginPath();
-      ctx.rect(left, 40, Math.max(0, right - left), 80);
-      ctx.clip();
-      if (state === 2 || state === 3) { ctx.fillStyle = "#000"; ctx.fillRect(0, 40, 240, 80); }
-      this.drawScrolled(ctx, image, hofs, 40);
-      ctx.restore();
-    };
-    this.overlays.add(overlay);
-    const id = tasks.create(() => {
-      hofs -= 16;
-      switch (state) {
-        case 0:
-          columns += 2;
-          if (columns >= 32) { this.startMonSlide(mon); state = 2; }
-          break;
-        case 2:
-          if (mon.data[7]) state = 3;
-          break;
-        case 3:
-          erasing = true;
-          state = 4;
-          break;
-        case 4:
-          erased += 2;
-          if (erased >= 32) state = 5;
-          break;
-        case 5:
-          this.overlays.delete(overlay);
-          this.ow.sprites.destroy(mon);
-          this.remove(C.FLDEFF_FIELD_MOVE_SHOW_MON);
-          tasks.destroy(id);
-          break;
-      }
-    }, 0xff);
+  private ShowMonEffect_Outdoors_1(task: FieldMoveShowMonTask): void {
+    task.data[1] = 0xf0f1; task.data[2] = 0x5051; task.data[3] = 0x1f;
+    task.overlay = (ctx) => this.VBlankCB_ShowMonEffect_Outdoors(task, ctx);
+    this.overlays.add(task.overlay);
+    task.data[0]++;
+  }
+
+  private ShowMonEffect_Outdoors_2(task: FieldMoveShowMonTask): void {
+    task.image = this.LoadFieldMoveStreaksTilemapToVram(true);
+    task.data[0]++;
+  }
+
+  private ShowMonEffect_Outdoors_3(task: FieldMoveShowMonTask): void {
+    task.data[5] = (task.data[5]! - 16) << 16 >> 16;
+    const left = Math.max(0, ((task.data[1]! & 0xffff) >>> 8) - 16);
+    const top = Math.max(0x28, ((task.data[2]! & 0xffff) >>> 8) - 2);
+    const bottom = Math.min(0x78, (task.data[2]! & 0xff) + 2);
+    task.data[1] = (left << 8) | (task.data[1]! & 0xff);
+    task.data[2] = (top << 8) | bottom;
+    if (left === 0 && top === 0x28 && bottom === 0x78) {
+      task.mon.callback = (sprite) => this.SpriteCB_FieldMoveMonSlideOnscreen(sprite);
+      task.data[0]++;
+    }
+  }
+
+  private ShowMonEffect_Outdoors_4(task: FieldMoveShowMonTask): void {
+    task.data[5] = (task.data[5]! - 16) << 16 >> 16;
+    if (task.mon.data[7]) task.data[0]++;
+  }
+
+  private ShowMonEffect_Outdoors_5(task: FieldMoveShowMonTask): void {
+    task.data[5] = (task.data[5]! - 16) << 16 >> 16;
+    const top = Math.min(0x50, ((task.data[2]! & 0xffff) >>> 8) + 6);
+    const bottom = Math.max(0x51, (task.data[2]! & 0xff) - 6);
+    task.data[2] = (top << 8) | bottom;
+    if (top === 0x50 && bottom === 0x51) task.data[0]++;
+  }
+
+  private ShowMonEffect_Outdoors_6(task: FieldMoveShowMonTask): void {
+    task.data[1] = 0x00f1; task.data[2] = 0x00a1; task.data[3] = 0;
+    task.data[0]++;
+  }
+
+  private ShowMonEffect_Outdoors_7(task: FieldMoveShowMonTask): void {
+    this.FreeResourcesAndDestroySprite(task.mon);
+    if (task.overlay) this.overlays.delete(task.overlay);
+    this.remove(C.FLDEFF_FIELD_MOVE_SHOW_MON);
+    tasks.destroy(task.id);
+  }
+
+  private VBlankCB_ShowMonEffect_Outdoors(task: FieldMoveShowMonTask, ctx: CanvasRenderingContext2D): void {
+    if (!task.image || task.data[0] < 2 || task.data[0] >= 6) return;
+    const h = task.data[1]!, v = task.data[2]!;
+    const left = (h & 0xffff) >>> 8, right = h & 0xff, top = (v & 0xffff) >>> 8, bottom = v & 0xff;
+    ctx.save(); ctx.beginPath(); ctx.rect(left, top, Math.max(0, right - left), Math.max(0, bottom - top)); ctx.clip();
+    this.drawScrolled(ctx, task.image, task.data[5]!, 40); ctx.restore();
+  }
+
+  private Task_ShowMon_Indoors(task: FieldMoveShowMonTask): void {
+    const state = task.data[0]!;
+    if (state === 0) this.ShowMonEffect_Indoors_1(task);
+    else if (state === 1) this.ShowMonEffect_Indoors_2(task);
+    else if (state === 2) this.ShowMonEffect_Indoors_3(task);
+    else if (state === 3) this.ShowMonEffect_Indoors_4(task);
+    else if (state === 4) this.ShowMonEffect_Indoors_5(task);
+    else if (state === 5) this.ShowMonEffect_Indoors_6(task);
+    else this.ShowMonEffect_Indoors_7(task);
+  }
+
+  private ShowMonEffect_Indoors_1(task: FieldMoveShowMonTask): void {
+    task.data[1] = 0; task.data[2] = 0;
+    task.overlay = (ctx) => this.VBlankCB_ShowMonEffect_Indoors(task, ctx);
+    this.overlays.add(task.overlay);
+    task.data[0]++;
+  }
+
+  private ShowMonEffect_Indoors_2(task: FieldMoveShowMonTask): void {
+    task.image = this.LoadFieldMoveStreaksTilemapToVram(false);
+    task.data[0]++;
+  }
+
+  private ShowMonEffect_Indoors_3(task: FieldMoveShowMonTask): void {
+    if (this.SlideIndoorBannerOnscreen(task)) {
+      task.mon.callback = (sprite) => this.SpriteCB_FieldMoveMonSlideOnscreen(sprite);
+      task.data[0]++;
+    }
+    this.AnimateIndoorShowMonBg(task);
+  }
+
+  private ShowMonEffect_Indoors_4(task: FieldMoveShowMonTask): void {
+    this.AnimateIndoorShowMonBg(task);
+    if (task.mon.data[7]) task.data[0]++;
+  }
+
+  private ShowMonEffect_Indoors_5(task: FieldMoveShowMonTask): void {
+    this.AnimateIndoorShowMonBg(task);
+    task.data[3] = task.data[1]! & 7;
+    task.data[4] = 0;
+    task.data[0]++;
+  }
+
+  private ShowMonEffect_Indoors_6(task: FieldMoveShowMonTask): void {
+    this.AnimateIndoorShowMonBg(task);
+    if (this.SlideIndoorBannerOffscreen(task)) task.data[0]++;
+  }
+
+  private ShowMonEffect_Indoors_7(task: FieldMoveShowMonTask): void {
+    this.FreeResourcesAndDestroySprite(task.mon);
+    if (task.overlay) this.overlays.delete(task.overlay);
+    this.remove(C.FLDEFF_FIELD_MOVE_SHOW_MON);
+    tasks.destroy(task.id);
+  }
+
+  private VBlankCB_ShowMonEffect_Indoors(task: FieldMoveShowMonTask, ctx: CanvasRenderingContext2D): void {
+    if (!task.image || task.data[0] < 2 || task.data[0] >= 6) return;
+    const erasing = task.data[0] >= 5;
+    const shown = Math.min(240, Math.max(0, task.data[4]! * 8));
+    const left = erasing ? 0 : 240 - shown;
+    const right = erasing ? 240 - shown : 240;
+    if (right <= left) return;
+    ctx.save(); ctx.beginPath(); ctx.rect(left, 40, right - left, 80); ctx.clip();
+    this.drawScrolled(ctx, task.image, task.data[1]!, 40); ctx.restore();
+  }
+
+  private AnimateIndoorShowMonBg(task: FieldMoveShowMonTask): void {
+    task.data[1] = (task.data[1]! - 16) << 16 >> 16;
+    task.data[3] = (task.data[3]! + 16) << 16 >> 16;
+  }
+
+  private SlideIndoorBannerOnscreen(task: FieldMoveShowMonTask): boolean {
+    if (task.data[4]! >= 32) return true;
+    const dstOffs = (task.data[3]! >> 3) & 0x1f;
+    if (dstOffs >= task.data[4]!) task.data[4] = (task.data[4]! + 2) << 16 >> 16;
+    return false;
+  }
+
+  private SlideIndoorBannerOffscreen(task: FieldMoveShowMonTask): boolean {
+    if (task.data[4]! >= 32) return true;
+    const dstOffs = task.data[3]! >> 3;
+    if (dstOffs >= task.data[4]!) task.data[4] = (task.data[4]! + 2) << 16 >> 16;
+    return false;
+  }
+
+  private FreeResourcesAndDestroySprite(sprite: Sprite): void {
+    this.ow.sprites.destroy(sprite);
   }
 
   // ---------------------------------------------------------------- surf / waterfall
