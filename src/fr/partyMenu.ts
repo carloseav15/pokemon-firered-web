@@ -83,6 +83,7 @@ import { GetHPBarLevel, GetScaledHPFraction } from "./battle/interface";
 import { HandleBattleLowHpMusicChange } from "./battle/gfx_sfx_util";
 import { BattleStringExpandPlaceholders } from "./battle/message";
 import { BtlCtrl_OakOldMan_SetState2Flag, BtlCtrl_OakOldMan_TestState2Flag } from "./battle/controller_oak_old_man";
+import { AppendToList } from "./startMenu";
 
 // ---------------------------------------------------------------- constants
 
@@ -1510,18 +1511,19 @@ function SetPartyMonSelectionActions(slotId: number, action: number): void {
 function SetPartyMonFieldSelectionActions(slotId: number): void {
   const p = pmi();
   p.actions = [];
-  p.actions.push(CURSOR_OPTION_SUMMARY);
+  const cursor = { value: 0 };
+  AppendToList(p.actions, cursor, CURSOR_OPTION_SUMMARY);
   const fieldMoves = rd<number[]>("sFieldMoves");
   const m = mon(slotId);
   for (let i = 0; i < C.MAX_MON_MOVES; i++) {
     for (let j = 0; fieldMoves[j] !== C.FIELD_MOVE_END && j < fieldMoves.length; j++) {
-      if (GetMonData(m, C.MON_DATA_MOVE1 + i) === fieldMoves[j]) { p.actions.push(j + CURSOR_OPTION_FIELD_MOVES); break; }
+      if (GetMonData(m, C.MON_DATA_MOVE1 + i) === fieldMoves[j]) { AppendToList(p.actions, cursor, j + CURSOR_OPTION_FIELD_MOVES); break; }
     }
   }
-  if (GetMonData(mon(1), C.MON_DATA_SPECIES) !== C.SPECIES_NONE) p.actions.push(CURSOR_OPTION_SWITCH);
-  p.actions.push(isMailItem(GetMonData(m, C.MON_DATA_HELD_ITEM)) ? CURSOR_OPTION_MAIL : CURSOR_OPTION_ITEM);
-  p.actions.push(CURSOR_OPTION_CANCEL1);
-  p.numActions = p.actions.length;
+  if (GetMonData(mon(1), C.MON_DATA_SPECIES) !== C.SPECIES_NONE) AppendToList(p.actions, cursor, CURSOR_OPTION_SWITCH);
+  AppendToList(p.actions, cursor, isMailItem(GetMonData(m, C.MON_DATA_HELD_ITEM)) ? CURSOR_OPTION_MAIL : CURSOR_OPTION_ITEM);
+  AppendToList(p.actions, cursor, CURSOR_OPTION_CANCEL1);
+  p.numActions = cursor.value;
 }
 
 function GetPartyMenuActionsType(m: Mon): number {
