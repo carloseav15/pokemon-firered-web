@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7685/10115 (76.0 %)**.
-- Archivos C con funciones aún sin homólogo: **51**; quedan **2430 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7699/10115 (76.1 %)**.
+- Archivos C con funciones aún sin homólogo: **51**; quedan **2416 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 115.795 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~58.097 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~57.891 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -59,10 +59,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 39 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 | 40 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
 | 41 | `battle_controller_pokedude.c` | parcial | 2698 | 32/108 | ~1898 |  |
-| 42 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
-| 43 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
-| 44 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
-| 45 | `overworld.c` | parcial | 3563 | 95/242 | ~2164 |  |
+| 42 | `overworld.c` | parcial | 3563 | 109/242 | ~1958 |  |
+| 43 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
+| 44 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
+| 45 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
 | 46 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
 | 47 | `field_effect.c` | parcial | 4033 | 90/239 | ~2514 |  |
 | 48 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
