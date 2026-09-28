@@ -216,6 +216,34 @@ export function ItemUseOutOfBattle_Itemfinder(game: Game, onField: (callback: ()
   onField(() => startItemFinder(game));
 }
 
+/** CanUseEscapeRopeOnCurrMap (item_use.c): use the map header's escape gate. */
+export function CanUseEscapeRopeOnCurrMap(game: Game): boolean {
+  return game.overworld.header.allowEscaping;
+}
+
+/** ItemUseOutOfBattle_EscapeRope (item_use.c): hand off to the field callback only on allowed maps. */
+export function ItemUseOutOfBattle_EscapeRope(game: Game, item: number, route: {
+  notNow: () => void; onField: (callback: () => void) => void;
+}): void {
+  if (!CanUseEscapeRopeOnCurrMap(game)) {
+    route.notNow();
+    return;
+  }
+  route.onField(() => ItemUseOnFieldCB_EscapeRope(game, item));
+}
+
+/** ItemUseOnFieldCB_EscapeRope (item_use.c): reset field state, consume the item, and print its message. */
+function ItemUseOnFieldCB_EscapeRope(game: Game, item: number): void {
+  game.overworld.resetStateAfterDigEscRope();
+  fieldMessage(game, RemoveUsedItem(item), () => Task_UseDigEscapeRopeOnField(game));
+}
+
+/** Task_UseDigEscapeRopeOnField (item_use.c): the message task is already destroyed by fieldMessage. */
+function Task_UseDigEscapeRopeOnField(game: Game): void {
+  game.overworld.resetInitialPlayerAvatarState();
+  game.overworld.effects.moves.startEscapeRope();
+}
+
 /** FieldUseFunc_Rod (item_use.c): gate the rod, then enter the field callback. */
 export function FieldUseFunc_Rod(game: Game, item: number, route: {
   notNow: () => void; onField: (callback: () => void) => void;
@@ -346,11 +374,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           FieldUseFunc_Rod(game, item, { notNow, onField });
           return;
         case "ItemUseOutOfBattle_EscapeRope":
-          if (!ow.header.allowEscaping) { notNow(); return; }
-          onField(() => {
-            ow.resetStateAfterDigEscRope();
-            fieldMessage(game, RemoveUsedItem(item), () => { ow.resetInitialPlayerAvatarState(); ow.effects.moves.startEscapeRope(); });
-          });
+          ItemUseOutOfBattle_EscapeRope(game, item, { notNow, onField });
           return;
         case "ItemUseOutOfBattle_Itemfinder":
           ItemUseOutOfBattle_Itemfinder(game, onField);
