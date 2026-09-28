@@ -24,7 +24,7 @@ import { CreatePartyStatusSummarySprites, LoadBattleBarGfx, MoveBattleBar, SetBa
 import { DisableStruct } from "../generated/structs";
 import { DoPokeballSendOutAnimation } from "./pokeball";
 import { FreeAllWindowBuffers } from "../hw/window";
-import { HandleGetMonData, HandleSetMonData } from "./mon_transfer";
+import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
 import { HandleIntroSlide } from "./intro";
 import { IsMonGettingExpSentOut } from "./cmds/part3";
 import { IsTextPrinterActive } from "../hw/text";
@@ -162,6 +162,13 @@ function HandleInputChooseTarget(): void {
     targetCycle(1);
     gSprites[gBattlerSpriteIds[G.gMultiUsePlayerCursor]].callback = SpriteCB_ShowAsMoveTarget;
   }
+}
+
+/** EndBounceEffect2 (battle_controller_player.c); the C helper is intentionally unused. */
+function EndBounceEffect2(): void {
+  EndBounceEffect(G.gActiveBattler, BOUNCE_HEALTHBOX);
+  EndBounceEffect(G.gActiveBattler, BOUNCE_MON);
+  gBattlerControllerFuncs[G.gActiveBattler] = HandleInputChooseTarget;
 }
 
 function moveCursorTo(mask: number, want: boolean, limited: boolean): void {
@@ -331,6 +338,11 @@ export function SetBattleEndCallbacks(): void {
 }
 
 function CompleteOnBattlerSpriteCallbackDummy(): void {
+  if (gSprites[gBattlerSpriteIds[G.gActiveBattler]].callback === SpriteCallbackDummy) PlayerBufferExecCompleted();
+}
+
+/** CompleteOnBattlerSpriteCallbackDummy2 (battle_controller_player.c). */
+function CompleteOnBattlerSpriteCallbackDummy2(): void {
   if (gSprites[gBattlerSpriteIds[G.gActiveBattler]].callback === SpriteCallbackDummy) PlayerBufferExecCompleted();
 }
 
@@ -778,6 +790,44 @@ export function MoveSelectionDestroyCursorAt(cursorPosition: number): void {
   CopyBgTilemapBufferToVram(0);
 }
 
+/** HandleMoveInputUnused (battle_controller_player.c); retained unused C helper. */
+function HandleMoveInputUnused(): number {
+  const battler = G.gActiveBattler;
+  let result = 0;
+  if (JOY_NEW(A_BUTTON)) { sound.playSE(C.SE_SELECT); result = 1; }
+  if (JOY_NEW(B_BUTTON)) {
+    sound.playSE(C.SE_SELECT);
+    G.gBattle_BG0_X = 0;
+    G.gBattle_BG0_Y = 0x140;
+    result = 0xff;
+  }
+  if (JOY_NEW(DPAD_LEFT) && (gMoveSelectionCursor[battler] & 1)) {
+    MoveSelectionDestroyCursorAt(gMoveSelectionCursor[battler]);
+    gMoveSelectionCursor[battler] ^= 1;
+    sound.playSE(C.SE_SELECT);
+    MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
+  }
+  if (JOY_NEW(DPAD_RIGHT) && !(gMoveSelectionCursor[battler] & 1) && (gMoveSelectionCursor[battler] ^ 1) < G.gNumberOfMovesToChoose) {
+    MoveSelectionDestroyCursorAt(gMoveSelectionCursor[battler]);
+    gMoveSelectionCursor[battler] ^= 1;
+    sound.playSE(C.SE_SELECT);
+    MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
+  }
+  if (JOY_NEW(DPAD_UP) && (gMoveSelectionCursor[battler] & 2)) {
+    MoveSelectionDestroyCursorAt(gMoveSelectionCursor[battler]);
+    gMoveSelectionCursor[battler] ^= 2;
+    sound.playSE(C.SE_SELECT);
+    MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
+  }
+  if (JOY_NEW(DPAD_DOWN) && !(gMoveSelectionCursor[battler] & 2) && (gMoveSelectionCursor[battler] ^ 2) < G.gNumberOfMovesToChoose) {
+    MoveSelectionDestroyCursorAt(gMoveSelectionCursor[battler]);
+    gMoveSelectionCursor[battler] ^= 2;
+    sound.playSE(C.SE_SELECT);
+    MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
+  }
+  return result >>> 0;
+}
+
 export function ActionSelectionCreateCursorAt(cursorPosition: number, _arg1: number): void {
   CopyToBgTilemapBufferRect_ChangePalette(0, [1, 2], 7 * (cursorPosition & 1) + 16, 35 + (cursorPosition & 2), 1, 2, 0x11);
   CopyBgTilemapBufferToVram(0);
@@ -809,9 +859,14 @@ function PrintLinkStandbyMsg(): void {
 }
 
 function PlayerHandleGetMonData(): void {
-  const [data, size] = HandleGetMonData(playerMon);
+  const [data, size] = HandleGetMonData(playerMon, CopyPlayerMonData);
   BtlController_EmitDataTransfer(BUFFER_B, size, data);
   PlayerBufferExecCompleted();
+}
+
+/** CopyPlayerMonData (battle_controller_player.c): serialize the selected party member using bufferA's request byte. */
+function CopyPlayerMonData(monId: number, dst: Uint8Array, offset: number): number {
+  return CopyMonData(playerMon(monId), gBattleBufferA[G.gActiveBattler][1], dst, offset);
 }
 
 function PlayerHandleGetRawMonData(): void {
@@ -820,10 +875,13 @@ function PlayerHandleGetRawMonData(): void {
 }
 
 function PlayerHandleSetMonData(): void {
-  HandleSetMonData(playerMon);
+  HandleSetMonData(playerMon, SetPlayerMonData);
   HandleLowHpMusicChange(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), G.gActiveBattler);
   PlayerBufferExecCompleted();
 }
+
+/** SetPlayerMonData (battle_controller_player.c): apply bufferA's request bytes to one player-party slot. */
+function SetPlayerMonData(monId: number): void { SetMonDataFromBuffer(playerMon(monId)); }
 
 function PlayerHandleSetRawMonData(): void {
   PlayerBufferExecCompleted();
@@ -930,7 +988,7 @@ function PlayerHandleTrainerSlide(): void {
   s.x2 = -96;
   s.data[0] = 2;
   s.callback = SpriteCB_TrainerSlideIn;
-  gBattlerControllerFuncs[b] = CompleteOnBattlerSpriteCallbackDummy;
+  gBattlerControllerFuncs[b] = CompleteOnBattlerSpriteCallbackDummy2;
 }
 
 function PlayerHandleTrainerSlideBack(): void {

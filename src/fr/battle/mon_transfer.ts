@@ -165,17 +165,20 @@ export function CopyMonData(mon: Mon, request: number, dst: Uint8Array, offset: 
 }
 
 /** Handles CONTROLLER_GETMONDATA for a party accessor; returns [data, size]. */
-export function HandleGetMonData(party: (i: number) => Mon): [Uint8Array, number] {
+export function HandleGetMonData(
+  party: (i: number) => Mon,
+  copy = (monId: number, dst: Uint8Array, offset: number): number => CopyMonData(party(monId), gBattleBufferA[G.gActiveBattler][1], dst, offset),
+): [Uint8Array, number] {
   const b = G.gActiveBattler;
   const buf = gBattleBufferA[b];
   const out = new Uint8Array(0x200);
   let size = 0;
   if (buf[2] === 0) {
-    size += CopyMonData(party(gBattlerPartyIndexes[b]), buf[1], out, size);
+    size += copy(gBattlerPartyIndexes[b], out, size);
   } else {
     let monToCheck = buf[2];
     for (let i = 0; i < 6; i++) {
-      if (monToCheck & 1) size += CopyMonData(party(i), buf[1], out, size);
+      if (monToCheck & 1) size += copy(i, out, size);
       monToCheck >>= 1;
     }
   }
@@ -251,14 +254,17 @@ export function SetMonDataFromBuffer(mon: Mon): void {
 }
 
 /** Handles CONTROLLER_SETMONDATA for a party accessor. */
-export function HandleSetMonData(party: (i: number) => Mon): void {
+export function HandleSetMonData(
+  party: (i: number) => Mon,
+  set = (monId: number): void => SetMonDataFromBuffer(party(monId)),
+): void {
   const buf = gBattleBufferA[G.gActiveBattler];
   if (buf[2] === 0) {
-    SetMonDataFromBuffer(party(gBattlerPartyIndexes[G.gActiveBattler]));
+    set(gBattlerPartyIndexes[G.gActiveBattler]);
   } else {
     let monToCheck = buf[2];
     for (let i = 0; i < 6; i++) {
-      if (monToCheck & 1) SetMonDataFromBuffer(party(i));
+      if (monToCheck & 1) set(i);
       monToCheck >>= 1;
     }
   }

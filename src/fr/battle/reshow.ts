@@ -49,6 +49,9 @@ export function ReshowBattleScreenAfterMenu(callback: () => void = BattleMainCB2
   SetMainCallback2(CB2_ReshowBattleScreenAfterMenu);
 }
 
+/** SetCB2ToReshowScreenAfterMenu2 (battle_controller_player.c): defer re-entry to the next callback frame. */
+export function SetCB2ToReshowScreenAfterMenu2(): void { SetMainCallback2(ReshowBattleScreenAfterMenu); }
+
 function CB2_ReshowBattleScreenAfterMenu(): void {
   const s = gBattleScripting;
   switch (s.reshowMainState) {

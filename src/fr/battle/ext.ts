@@ -34,7 +34,7 @@ import { CopyMonData } from "./mon_transfer";
 import { BtlController_EmitGetMonData, BUFFER_A } from "./controllers";
 import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHoldEffect, MarkBattlerForControllerExec } from "./util";
 import { battleHost } from "./host";
-import { ReshowBattleScreenAfterMenu } from "./reshow";
+import { ReshowBattleScreenAfterMenu, SetCB2ToReshowScreenAfterMenu2 } from "./reshow";
 import * as PartyMenu from "../partyMenu";
 import { bagResult, BackUpPlayerBag, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, RestorePlayerBag, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
@@ -189,7 +189,7 @@ export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
 export function CB2_BagMenuFromBattle(): void {
   varSet(C.VAR_ITEM_ID, C.ITEM_NONE);
   const menuBattler = G.gBattlerInMenuId;
-  const finish = (item: number): void => { varSet(C.VAR_ITEM_ID, item); CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); };
+  const finish = (item: number): void => { varSet(C.VAR_ITEM_ID, item); CB2_SetUpReshowBattleScreenAfterMenu(); SetCB2ToReshowScreenAfterMenu2(); };
   const message = (label: string): void => openHardwareChoice(label, [{label: "OK", value: 0}], false, () => showBag());
   const apply = (item: number, partyIndex: number, moveIndex: number): void => {
     G.gBattlerInMenuId = menuBattler;
