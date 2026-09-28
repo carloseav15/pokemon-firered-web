@@ -282,13 +282,14 @@ export class FieldControl {
     return GetRamScript(object.localId, object.template?.script ?? 0);
   }
 
-  private backgroundEventAt(x: number, y: number, elevation: number) {
+  /** GetBackgroundEventAtPosition (field_control_avatar.c), including wildcard elevation 0. */
+  private GetBackgroundEventAtPosition(x: number, y: number, elevation: number) {
     return this.ow.header.bgs.find((bg) => bg.x === x && bg.y === y && (bg.elevation === elevation || bg.elevation === 0));
   }
 
   /** GetInteractedBackgroundEventScript (field_control_avatar.c). */
   private GetInteractedBackgroundEventScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
-    const bg = this.backgroundEventAt(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
+    const bg = this.GetBackgroundEventAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
     if (!bg) return 0;
     if (bg.type === "hidden_item") {
       if (bg.underfoot) return 0;
@@ -307,7 +308,7 @@ export class FieldControl {
       case c.BG_EVENT_PLAYER_FACING_EAST: if (direction !== DIR_EAST) return 0; break;
       case c.BG_EVENT_PLAYER_FACING_WEST: if (direction !== DIR_WEST) return 0; break;
     }
-    if (this.facingSignpostType(behavior, direction) !== SIGNPOST_NA) this.MsgSetSignpost();
+    if (this.GetFacingSignpostType(behavior, direction) !== SIGNPOST_NA) this.MsgSetSignpost();
     varSet(SV.FACING, direction);
     return bg.script;
   }
@@ -383,25 +384,39 @@ export class FieldControl {
   }
 
   private tryStartCoordEventScript(position: { x: number; y: number; elevation: number }): boolean {
-    const x = position.x - MAP_OFFSET, y = position.y - MAP_OFFSET;
-    for (const c of this.ow.header.coords) {
-      if (c.x !== x || c.y !== y) continue;
-      if (c.elevation !== position.elevation && c.elevation !== 0) continue;
-      // TryRunCoordEventScript
-      if (!c.script) {
-        DoCoordEventWeather(c.var);
-        continue;
-      }
-      if (c.var === 0) {
-        this.ow.script.RunScriptImmediately(c.script);
-        continue;
-      }
-      if (varGet(c.var) === (c.value & 0xff)) {
-        this.ow.script.ScriptContext_SetupScript(c.script);
-        return true;
-      }
+    const script = this.GetCoordEventScriptAtMapPosition(position);
+    if (!script) return false;
+    this.ow.script.ScriptContext_SetupScript(script);
+    return true;
+  }
+
+  /** TryRunCoordEventScript (field_control_avatar.c), including weather and immediate-script side effects. */
+  private TryRunCoordEventScript(event: (typeof this.ow.header.coords)[number]): number {
+    if (!event.script) {
+      DoCoordEventWeather(event.var);
+      return 0;
     }
-    return false;
+    if (event.var === 0) {
+      this.ow.script.RunScriptImmediately(event.script);
+      return 0;
+    }
+    return varGet(event.var) === (event.value & 0xff) ? event.script : 0;
+  }
+
+  /** GetCoordEventScriptAtPosition (field_control_avatar.c). */
+  private GetCoordEventScriptAtPosition(x: number, y: number, elevation: number): number {
+    for (const event of this.ow.header.coords) {
+      if (event.x !== x || event.y !== y) continue;
+      if (event.elevation !== elevation && event.elevation !== 0) continue;
+      const script = this.TryRunCoordEventScript(event);
+      if (script) return script;
+    }
+    return 0;
+  }
+
+  /** GetCoordEventScriptAtMapPosition (field_control_avatar.c). */
+  private GetCoordEventScriptAtMapPosition(position: { x: number; y: number; elevation: number }): number {
+    return this.GetCoordEventScriptAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
   }
 
   private tryStartStepCountScript(behavior: number): boolean {
@@ -436,7 +451,8 @@ export class FieldControl {
 
   // ---------------------------------------------------------------- signposts
 
-  private facingSignpostType(behavior: number, direction: number): number {
+  /** GetFacingSignpostType (field_control_avatar.c). */
+  private GetFacingSignpostType(behavior: number, direction: number): number {
     if (MB.MetatileBehavior_IsPlayerFacingPokemonCenterSign(behavior, direction)) return SIGNPOST_POKECENTER;
     if (MB.MetatileBehavior_IsPlayerFacingPokeMartSign(behavior, direction)) return SIGNPOST_POKEMART;
     if (MB.MetatileBehavior_IsIndigoPlateauSign1(behavior)) return SIGNPOST_INDIGO_1;
@@ -448,7 +464,7 @@ export class FieldControl {
   private trySetUpWalkIntoSignpostScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     if (JOY_HELD(DPAD_LEFT | DPAD_RIGHT)) return false;
     if (direction === DIR_EAST || direction === DIR_WEST) return false;
-    const type = this.facingSignpostType(behavior, direction);
+    const type = this.GetFacingSignpostType(behavior, direction);
     const setup = (script: number) => {
       varSet(SV.FACING, direction);
       this.ow.script.ScriptContext_SetupScript(script);
@@ -460,17 +476,29 @@ export class FieldControl {
     if (type === SIGNPOST_POKEMART) return setup(rom.label("EventScript_PokemartSign"));
     if (type === SIGNPOST_INDIGO_1) return setup(rom.label("EventScript_Indigo_UltimateGoal"));
     if (type === SIGNPOST_INDIGO_2) return setup(rom.label("EventScript_Indigo_HighestAuthority"));
-    const bg = this.backgroundEventAt(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
-    if (!bg || bg.type !== "sign") return false;
+    const script = this.GetSignpostScriptAtMapPosition(position);
+    if (!script) return false;
     if (type !== SIGNPOST_SCRIPTED) return false;
-    return setup(bg.script || rom.label("EventScript_TestSignpostMsg"));
+    return setup(script);
+  }
+
+  /** GetSignpostScriptAtMapPosition (field_control_avatar.c). */
+  private GetSignpostScriptAtMapPosition(position: { x: number; y: number; elevation: number }): number {
+    const event = this.GetBackgroundEventAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
+    if (!event) return 0;
+    return ("script" in event && event.script) || rom.label("EventScript_TestSignpostMsg");
   }
 
   // ---------------------------------------------------------------- warps
 
-  private warpEventAt(position: { x: number; y: number; elevation: number }): number {
-    const x = position.x - MAP_OFFSET, y = position.y - MAP_OFFSET;
-    return this.ow.header.warps.findIndex((w) => w.x === x && w.y === y && (w.elevation === position.elevation || w.elevation === 0));
+  /** GetWarpEventAtPosition (field_control_avatar.c). */
+  private GetWarpEventAtPosition(x: number, y: number, elevation: number): number {
+    return this.ow.header.warps.findIndex((w) => w.x === x && w.y === y && (w.elevation === elevation || w.elevation === 0));
+  }
+
+  /** GetWarpEventAtMapPosition (field_control_avatar.c). */
+  private GetWarpEventAtMapPosition(position: { x: number; y: number; elevation: number }): number {
+    return this.GetWarpEventAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
   }
 
   private isWarpMetatileBehavior(b: number): boolean {
@@ -507,7 +535,7 @@ export class FieldControl {
   }
 
   private tryArrowWarp(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
-    const warpIndex = this.warpEventAt(position);
+    const warpIndex = this.GetWarpEventAtMapPosition(position);
     if (warpIndex < 0) return false;
     if (this.isArrowWarp(behavior, direction)) {
       this.ow.storeInitialPlayerAvatarState();
@@ -530,7 +558,7 @@ export class FieldControl {
   }
 
   private tryStartWarpEventScript(position: { x: number; y: number; elevation: number }, behavior: number): boolean {
-    const warpIndex = this.warpEventAt(position);
+    const warpIndex = this.GetWarpEventAtMapPosition(position);
     if (warpIndex < 0 || !this.isWarpMetatileBehavior(behavior)) return false;
     this.ow.storeInitialPlayerAvatarState();
     this.setupWarp(warpIndex, position);
@@ -565,7 +593,7 @@ export class FieldControl {
 
   private tryDoorWarp(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     if (direction !== DIR_NORTH || !MB.MetatileBehavior_IsWarpDoor(behavior)) return false;
-    const warpIndex = this.warpEventAt(position);
+    const warpIndex = this.GetWarpEventAtMapPosition(position);
     if (warpIndex < 0 || !this.isWarpMetatileBehavior(behavior)) return false;
     this.ow.storeInitialPlayerAvatarState();
     this.setupWarp(warpIndex, position);
