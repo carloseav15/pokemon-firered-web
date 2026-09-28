@@ -3,7 +3,7 @@
 
 import * as C from "../generated/constants";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, Script_SetHelpContext, SetHelpContext, SetHelpContextForMap } from "../helpSystem";
-import { GetQuestLogState, QuestLog_CutRecording } from "../questLogEvents";
+import { GetQuestLogState, QuestLog_CutRecording, SetQuestLogEvent } from "../questLogEvents";
 import { sound } from "../audio/sound";
 import { decode, encode, stringVars } from "../gba/charmap";
 import { tasks } from "../gba/tasks";
@@ -139,6 +139,11 @@ function SetDeoxysTrianglePalette(): void {
   const palettes = incbin16("field_specials.c:sDeoxysObjectPals");
   LoadPalette(palettes.subarray(num * 16, num * 16 + 16), OBJ_PLTT_ID(10), PLTT_SIZEOF(4));
   ApplyGlobalFieldPaletteTint(10);
+}
+
+/** SetUsedPkmnCenterQuestLogEvent (field_specials.c): this event has no payload. */
+function SetUsedPkmnCenterQuestLogEvent(): void {
+  SetQuestLogEvent(C.QL_EVENT_USED_PKMN_CENTER, {});
 }
 
 /** Task_ShakeScreen (field_specials.c). */
@@ -432,6 +437,7 @@ export const SPECIALS: Record<string, Special> = {
   // ---- Deoxys triangle (field_specials.c:2360-2456).
   DoDeoxysTriangleInteraction: (ctx) => { DoDeoxysTriangleInteraction(ctx); },
   SetDeoxysTrianglePalette: () => { SetDeoxysTrianglePalette(); },
+  SetUsedPkmnCenterQuestLogEvent: () => { SetUsedPkmnCenterQuestLogEvent(); },
   // ---- easy chat hobby/lifestyle (easy_chat.c:318-323): random enabled word
   // from group 12 (LIFESTYLE) or 13 (HOBBIES) into gStringVar2.
   BufferRandomHobbyOrLifestyleString,

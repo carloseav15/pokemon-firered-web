@@ -68,7 +68,7 @@ export type QuestLogTrainerBattleEvent = {
 export type QuestLogWildBattleEvent = { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
 export type QuestLogLinkBattleEvent = { outcome: number; playerNames: number[][] };
 export type QuestLogDepartedEvent = { mapSec: number; locationId: number };
-export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent | QuestLogDepartedEvent;
+export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent | QuestLogDepartedEvent | Record<string, never>;
 export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
@@ -265,6 +265,7 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     return;
   }
   const isShopEvent = eventId === C.QL_EVENT_BOUGHT_ITEM || eventId === C.QL_EVENT_SOLD_ITEM;
+  const isPokemonCenterEvent = eventId === C.QL_EVENT_USED_PKMN_CENTER;
   const isStoryItemEvent = eventId === C.QL_EVENT_OBTAINED_STORY_ITEM;
   const isDepartedEvent = eventId === C.QL_EVENT_DEPARTED;
   const isItemEvent = eventId === C.QL_EVENT_USED_ITEM || eventId === C.QL_EVENT_GAVE_HELD_ITEM
@@ -279,10 +280,12 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     || eventId === C.QL_EVENT_LINK_BATTLED_DOUBLE
     || eventId === C.QL_EVENT_LINK_BATTLED_MULTI
     || eventId === C.QL_EVENT_LINK_BATTLED_UNION;
-  if (!isShopEvent && !isStoryItemEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
+  if (!isShopEvent && !isPokemonCenterEvent && !isStoryItemEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;
+  if (isPokemonCenterEvent && gQuestLogRepeatEventTracker.id === C.QL_EVENT_USED_PKMN_CENTER
+    && gQuestLogRepeatEventTracker.numRepeats !== 0) return;
   getQuestLogEvents().push({ eventId, data: { ...data } });
   if (eventId === C.QL_EVENT_DEPARTED && (data as QuestLogDepartedEvent).locationId === C.QL_LOCATION_SAFARI_ZONE) {
     sStepRecordingMode = STEP_RECORDING_MODE_DISABLED;
