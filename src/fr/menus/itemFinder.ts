@@ -12,7 +12,7 @@ import { tasks } from "../gba/tasks";
 import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
 import { TV_PrintIntToStringVar } from "../gba/charmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "../field/objectEvents";
-import { GetMapConnectionAtPos, CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
+import { GetMapConnectionAtPos, GetMapHeaderFromConnection, CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
 import { canvas, rgb555 } from "../field/gfx4bpp";
 import { EncodeHiddenItemData, GetHiddenItemAttr } from "../field/hiddenItem";
 import type { Game } from "../game";
@@ -186,7 +186,7 @@ function HiddenItemInConnectedMapAtPos(game: Game, connection: LoadedConnection,
     default: return false;
   }
   // The C temporaries are u16, then HiddenItemAtPos receives s16 parameters.
-  return HiddenItemAtPos(connection.header.bgs, signed16(unsigned16(localX)), signed16(unsigned16(localY)));
+  return HiddenItemAtPos(GetMapHeaderFromConnection(connection).bgs, signed16(unsigned16(localX)), signed16(unsigned16(localY)));
 }
 
 function FindHiddenItemsInConnectedMaps(game: Game, taskId: number): void {

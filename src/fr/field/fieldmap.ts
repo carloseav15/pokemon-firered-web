@@ -131,6 +131,11 @@ export function GetMapConnectionAtPos(x: number, y: number, map: FieldMap | null
   return map?.connectionAtPos((x << 16) >> 16, (y << 16) >> 16);
 }
 
+/** GetMapHeaderFromConnection (fieldmap.c). */
+export function GetMapHeaderFromConnection(connection: LoadedConnection): MapHeader {
+  return connection.header;
+}
+
 
 /** gMapHeader + VMap state. */
 export class FieldMap {

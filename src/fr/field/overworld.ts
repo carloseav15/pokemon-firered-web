@@ -15,7 +15,7 @@ import { TextPrinter, textFlags } from "../gba/textPrinter";
 import { sound } from "../audio/sound";
 import { rom, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
-import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedMap } from "./fieldmap";
+import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
 import { PlayerAvatar, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
@@ -34,9 +34,27 @@ import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer"
 import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
+
 import { gQuestLogState, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
+
+/** GetPostCameraMoveMapBorderId (fieldmap.c). */
+function GetPostCameraMoveMapBorderId(x: number, y: number, map: FieldMap): number {
+  return GetMapBorderIdAt(save.pos.x + MAP_OFFSET + x, save.pos.y + MAP_OFFSET + y, map);
+}
+
+/** SetPositionFromConnection (fieldmap.c). */
+function SetPositionFromConnection(connection: LoadedConnection, direction: number, x: number, y: number): void {
+  switch (direction) {
+    case CONNECTION_EAST: save.pos.x = -x; save.pos.y -= connection.offset; break;
+    case CONNECTION_WEST: save.pos.x = connection.layout.width; save.pos.y -= connection.offset; break;
+    case CONNECTION_SOUTH: save.pos.x -= connection.offset; save.pos.y = -y; break;
+    case CONNECTION_NORTH: save.pos.x -= connection.offset; save.pos.y = connection.layout.height; break;
+  }
+  save.pos.x = (save.pos.x << 16) >> 16;
+  save.pos.y = (save.pos.y << 16) >> 16;
+}
 
 export const MAP_SCRIPT_ON_LOAD = 1;
 export const MAP_SCRIPT_ON_FRAME_TABLE = 2;
@@ -208,7 +226,7 @@ export class Overworld {
       groundEffect: (object, kind) => this.effects.groundEffect(object, kind),
       emote: (object, kind) => this.effects.startEmoteForObjectEvent(object, kind),
       playSE: (name) => sound.playSE(sound.c(name)),
-      cameraCanMove: (direction) => this.canCameraMoveInDirection(direction),
+      cameraCanMove: (direction) => this.CanCameraMoveInDirection(direction),
       registerSprite: (sprite) => this.sprites.getId(this.sprites.add(sprite)),
       unregisterSprite: (sprite) => this.sprites.destroy(sprite),
       cameraOffset: () => ({ x: this.camX, y: this.camY }),
@@ -1450,39 +1468,34 @@ export class Overworld {
 
   // ---------------------------------------------------------------- camera
 
-  canCameraMoveInDirection(direction: number): boolean {
+  CanCameraMoveInDirection(direction: number): boolean {
     const [dx, dy] = DIRECTION_VECTORS[direction];
-    return GetMapBorderIdAt(save.pos.x + MAP_OFFSET + dx, save.pos.y + MAP_OFFSET + dy, this.map) !== CONNECTION_INVALID;
+    return GetPostCameraMoveMapBorderId(dx, dy, this.map) !== CONNECTION_INVALID;
   }
 
   /** CameraMove: returns true when the map changed. */
-  private cameraMove(dx: number, dy: number): boolean {
-    const direction = GetMapBorderIdAt(save.pos.x + MAP_OFFSET + dx, save.pos.y + MAP_OFFSET + dy, this.map);
+  private CameraMove(dx: number, dy: number): boolean {
+    const direction = GetPostCameraMoveMapBorderId(dx, dy, this.map);
     if (direction === CONNECTION_NONE || direction === CONNECTION_INVALID) {
-      save.pos.x += dx;
-      save.pos.y += dy;
+      save.pos.x = ((save.pos.x + dx) << 16) >> 16;
+      save.pos.y = ((save.pos.y + dy) << 16) >> 16;
       return false;
     }
     const oldX = save.pos.x;
     const oldY = save.pos.y;
     const connection = GetIncomingConnection(direction, save.pos.x, save.pos.y, this.map);
     if (!connection) {
-      save.pos.x += dx;
-      save.pos.y += dy;
+      save.pos.x = ((save.pos.x + dx) << 16) >> 16;
+      save.pos.y = ((save.pos.y + dy) << 16) >> 16;
       return false;
     }
-    switch (direction) {
-      case CONNECTION_EAST: save.pos.x = -dx; save.pos.y -= connection.offset; break;
-      case CONNECTION_WEST: save.pos.x = connection.layout.width; save.pos.y -= connection.offset; break;
-      case CONNECTION_SOUTH: save.pos.x -= connection.offset; save.pos.y = -dy; break;
-      case CONNECTION_NORTH: save.pos.x -= connection.offset; save.pos.y = connection.layout.height; break;
-    }
+    SetPositionFromConnection(connection, direction, dx, dy);
     const num = rom.mapNum(connection.mapId);
     this.loadMapFromCameraTransition(num >> 8, num & 0xff, connection.mapId);
     const shiftX = oldX - save.pos.x;
     const shiftY = oldY - save.pos.y;
-    save.pos.x += dx;
-    save.pos.y += dy;
+    save.pos.x = ((save.pos.x + dx) << 16) >> 16;
+    save.pos.y = ((save.pos.y + dy) << 16) >> 16;
     this.objects.shiftAll(shiftX, shiftY);
     this.camX -= shiftX * 16;
     this.camY -= shiftY * 16;
@@ -1543,7 +1556,7 @@ export class Overworld {
     const dx = Math.sign(tx - save.pos.x);
     const dy = Math.sign(ty - save.pos.y);
     if (dx !== 0 || dy !== 0) {
-      this.cameraMove(dx, dy);
+      this.CameraMove(dx, dy);
       this.objects.trySpawnInView(save.pos.x, save.pos.y);
       this.objects.removeOutsideView(save.pos.x, save.pos.y);
       this.syncObjectSprites();
