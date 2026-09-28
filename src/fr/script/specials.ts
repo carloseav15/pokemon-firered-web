@@ -142,6 +142,14 @@ function SetDeoxysTrianglePalette(): void {
   ApplyGlobalFieldPaletteTint(10);
 }
 
+/** FieldSpecialScene_Dummy0-3 and FieldCB_ShowPortholeView (field_special_scene.c): all empty in
+ * the source, with no caller anywhere in pokefirered (not script specials themselves). */
+function FieldSpecialScene_Dummy0(): number { return 0; }
+function FieldSpecialScene_Dummy1(): void {}
+function FieldSpecialScene_Dummy2(): void {}
+function FieldSpecialScene_Dummy3(): void {}
+function FieldCB_ShowPortholeView(): void {}
+
 /** SetUsedPkmnCenterQuestLogEvent (field_specials.c): this event has no payload. */
 function SetUsedPkmnCenterQuestLogEvent(): void {
   SetQuestLogEvent(C.QL_EVENT_USED_PKMN_CENTER, {});
