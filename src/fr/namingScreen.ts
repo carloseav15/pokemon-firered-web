@@ -122,8 +122,7 @@ class NamingScreen {
       gSprites[underscore].callback = sprite => this.SpriteCB_Underscore(sprite);
     }
     this.createInputTargetIcon();
-    this.buttonFlashTaskId = tasks.create(taskId => this.Task_UpdateButtonFlash(taskId), 3);
-    tasks.data(this.buttonFlashTaskId)[0] = NamingButton.COUNT;
+    this.CreateButtonFlashTask();
     SetVBlankCallback(() => {
       LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer();
       SetGpuReg(REG_OFFSET_BG1VOFS, this.bg1vOffset);
@@ -148,6 +147,12 @@ class NamingScreen {
       }));
     }
     return id;
+  }
+
+  /** CreateButtonFlashTask (naming_screen.c). */
+  private CreateButtonFlashTask(): void {
+    this.buttonFlashTaskId = tasks.create(taskId => this.Task_UpdateButtonFlash(taskId), 3);
+    tasks.data(this.buttonFlashTaskId)[0] = NamingButton.COUNT;
   }
 
   /** SetSpritesVisible (naming_screen.c). */
