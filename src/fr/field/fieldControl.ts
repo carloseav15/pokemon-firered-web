@@ -533,12 +533,13 @@ export class FieldControl {
       || MB.MetatileBehavior_IsFallWarp(b) || MB.MetatileBehavior_IsUnionRoomWarp(b);
   }
 
-  private isArrowWarp(b: number, direction: number): boolean {
-    switch (direction) {
-      case DIR_NORTH: return MB.MetatileBehavior_IsNorthArrowWarp(b);
-      case DIR_SOUTH: return MB.MetatileBehavior_IsSouthArrowWarp(b);
-      case DIR_WEST: return MB.MetatileBehavior_IsWestArrowWarp(b);
-      case DIR_EAST: return MB.MetatileBehavior_IsEastArrowWarp(b);
+  /** IsArrowWarpMetatileBehavior (field_control_avatar.c). */
+  private IsArrowWarpMetatileBehavior(metatileBehavior: number, playerDirection: number): boolean {
+    switch (playerDirection) {
+      case DIR_NORTH: return MB.MetatileBehavior_IsNorthArrowWarp(metatileBehavior);
+      case DIR_SOUTH: return MB.MetatileBehavior_IsSouthArrowWarp(metatileBehavior);
+      case DIR_WEST: return MB.MetatileBehavior_IsWestArrowWarp(metatileBehavior);
+      case DIR_EAST: return MB.MetatileBehavior_IsEastArrowWarp(metatileBehavior);
     }
     return false;
   }
@@ -563,13 +564,13 @@ export class FieldControl {
   private tryArrowWarp(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     const warpIndex = this.GetWarpEventAtMapPosition(position);
     if (warpIndex < 0) return false;
-    if (this.isArrowWarp(behavior, direction)) {
+    if (this.IsArrowWarpMetatileBehavior(behavior, direction)) {
       this.ow.storeInitialPlayerAvatarState();
       this.setupWarp(warpIndex, position);
       this.ow.doWarp();
       return true;
     }
-    if (this.ow.player.isDirectionalStairWarp(behavior, direction)) {
+    if (this.ow.player.IsDirectionalStairWarpMetatileBehavior(behavior, direction)) {
       let delay = 0;
       if (this.ow.player.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) {
         this.ow.player.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);

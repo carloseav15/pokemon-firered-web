@@ -1165,14 +1165,15 @@ export class PlayerAvatar {
   /** CheckForPlayerAvatarCollision */
   private CheckForPlayerAvatarCollision(direction: number): number {
     const { x, y } = this.object.currentCoords;
-    if (this.isDirectionalStairWarp(this.ow.map.behaviorAt(x, y), direction)) return COLLISION_DIRECTIONAL_STAIR_WARP;
+    if (this.IsDirectionalStairWarpMetatileBehavior(this.ow.map.behaviorAt(x, y), direction)) return COLLISION_DIRECTIONAL_STAIR_WARP;
     const [dx, dy] = DIRECTION_VECTORS[direction];
     return this.CheckForObjectEventCollision(this.object, x + dx, y + dy, direction);
   }
 
-  isDirectionalStairWarp(behavior: number, direction: number): boolean {
-    if (direction === DIR_WEST) return MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior);
-    if (direction === DIR_EAST) return MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior);
+  /** IsDirectionalStairWarpMetatileBehavior (field_control_avatar.c). */
+  IsDirectionalStairWarpMetatileBehavior(behavior: number, playerDirection: number): boolean {
+    if (playerDirection === DIR_WEST) return MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior);
+    if (playerDirection === DIR_EAST) return MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior);
     return false;
   }
 
