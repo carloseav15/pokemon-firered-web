@@ -801,6 +801,11 @@ function OpponentHandleBattleAnimation(): void {
   }
 }
 
+/** OpponentHandleResetActionMoveSelection (battle_controller_opponent.c). */
+function OpponentHandleResetActionMoveSelection(): void {
+  OpponentBufferExecCompleted();
+}
+
 function OpponentCmdEnd(): void {}
 
 const sOpponentBufferCommands: Record<number, () => void> = {
@@ -858,7 +863,7 @@ const sOpponentBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_SPRITEINVISIBILITY]: OpponentHandleSpriteInvisibility,
   [C.CONTROLLER_BATTLEANIMATION]: OpponentHandleBattleAnimation,
   [C.CONTROLLER_LINKSTANDBYMSG]: done,
-  [C.CONTROLLER_RESETACTIONMOVESELECTION]: done,
+  [C.CONTROLLER_RESETACTIONMOVESELECTION]: OpponentHandleResetActionMoveSelection,
   [C.CONTROLLER_ENDLINKBATTLE]: done,
   [C.CONTROLLER_TERMINATOR_NOP]: OpponentCmdEnd,
 };
