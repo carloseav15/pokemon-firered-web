@@ -239,6 +239,8 @@ export class BattleSetup {
   SetTrainerFlag(trainerId: number): void { flagSet(this.trainerFlag(trainerId)); }
   ClearTrainerFlag(trainerId: number): void { flagClear(this.trainerFlag(trainerId)); }
   SetBattledTrainerFlag(): void { flagSet(this.GetTrainerAFlag()); }
+  /** SetBattledTrainerFlag2 (battle_setup.c): unused, byte-identical to SetBattledTrainerFlag. */
+  SetBattledTrainerFlag2(): void { this.SetBattledTrainerFlag(); }
 
   /** pokemon.c GetBattleBGM, with explicit CreateBattleStartTask song overrides. */
   battleBgm(request: BattleRequest): number {
