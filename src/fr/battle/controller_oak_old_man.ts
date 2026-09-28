@@ -26,7 +26,7 @@ import { BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer,
 import { HandleGetMonData, HandleSetMonData } from "./mon_transfer";
 import { BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB_FaintSlideAnim, BattleMainCB2 } from "./main_init";
 import { ActionSelectionCreateCursorAt, ActionSelectionDestroyCursorAt, HandleInputChooseMove, InitMoveSelectionsVarsAndStrings,
-  SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry } from "./controller_player";
+  SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry, PlayerHandleGetRawMonData } from "./controller_player";
 import { OpponentBufferExecCompleted } from "./controller_opponent";
 import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "../pokemon/mon";
 import { addBagItem as AddBagItem } from "../pokemon/items";
@@ -601,9 +601,36 @@ function CompleteOnFinishedBattleAnimation(): void {
 }
 
 // ---------------------------------------------------------------- buffer command handlers
-function done(): void {
-  OakOldManBufferExecCompleted();
-}
+// These OakOldManHandle* routines in battle_controller_oak_old_man.c each
+// acknowledge their controller command and return without changing state.
+function OakOldManHandleSetRawMonData(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleGetRawMonData(): void { PlayerHandleGetRawMonData(); }
+function OakOldManHandleLoadMonSprite(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleSwitchInAnim(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleTrainerSlideBack(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandlePaletteFade(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandlePause(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleUnknownYesNoBox(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleCmd23(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleStatusIconUpdate(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleStatusAnimation(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleStatusXor(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleDataTransfer(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleDMA3Transfer(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandlePlayBGM(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleCmd32(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleTwoReturnValues(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleChosenMonReturnValue(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleOneReturnValue(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleOneReturnValue_Duplicate(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleCmd37(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleCmd38(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleCmd39(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleCmd40(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleCmd42(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleHidePartyStatusSummary(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleSpriteInvisibility(): void { OakOldManBufferExecCompleted(); }
+function OakOldManHandleResetActionMoveSelection(): void { OakOldManBufferExecCompleted(); }
 
 function OakOldManHandleGetMonData(): void {
   const [data, size] = HandleGetMonData(playerMon);
@@ -1082,60 +1109,60 @@ export function BtlCtrl_RemoveVoiceoverMessageFrame(): void {
 
 const sOakOldManBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_GETMONDATA]: OakOldManHandleGetMonData,
-  [C.CONTROLLER_GETRAWMONDATA]: done,
+  [C.CONTROLLER_GETRAWMONDATA]: OakOldManHandleGetRawMonData,
   [C.CONTROLLER_SETMONDATA]: OakOldManHandleSetMonData,
-  [C.CONTROLLER_SETRAWMONDATA]: done,
-  [C.CONTROLLER_LOADMONSPRITE]: done,
-  [C.CONTROLLER_SWITCHINANIM]: done,
+  [C.CONTROLLER_SETRAWMONDATA]: OakOldManHandleSetRawMonData,
+  [C.CONTROLLER_LOADMONSPRITE]: OakOldManHandleLoadMonSprite,
+  [C.CONTROLLER_SWITCHINANIM]: OakOldManHandleSwitchInAnim,
   [C.CONTROLLER_RETURNMONTOBALL]: OakOldManHandleReturnMonToBall,
   [C.CONTROLLER_DRAWTRAINERPIC]: OakOldManHandleDrawTrainerPic,
   [C.CONTROLLER_TRAINERSLIDE]: OakOldManHandleTrainerSlide,
-  [C.CONTROLLER_TRAINERSLIDEBACK]: done,
+  [C.CONTROLLER_TRAINERSLIDEBACK]: OakOldManHandleTrainerSlideBack,
   [C.CONTROLLER_FAINTANIMATION]: OakOldManHandleFaintAnimation,
-  [C.CONTROLLER_PALETTEFADE]: done,
+  [C.CONTROLLER_PALETTEFADE]: OakOldManHandlePaletteFade,
   [C.CONTROLLER_SUCCESSBALLTHROWANIM]: () => launchBallThrow(C.BALL_3_SHAKES_SUCCESS),
   [C.CONTROLLER_BALLTHROWANIM]: () => launchBallThrow(gBattleBufferA[G.gActiveBattler][1]),
-  [C.CONTROLLER_PAUSE]: done,
+  [C.CONTROLLER_PAUSE]: OakOldManHandlePause,
   [C.CONTROLLER_MOVEANIMATION]: OakOldManHandleMoveAnimation,
   [C.CONTROLLER_PRINTSTRING]: OakOldManHandlePrintString,
   [C.CONTROLLER_PRINTSTRINGPLAYERONLY]: OakOldManHandlePrintSelectionString,
   [C.CONTROLLER_CHOOSEACTION]: OakOldManHandleChooseAction,
-  [C.CONTROLLER_UNKNOWNYESNOBOX]: done,
+  [C.CONTROLLER_UNKNOWNYESNOBOX]: OakOldManHandleUnknownYesNoBox,
   [C.CONTROLLER_CHOOSEMOVE]: OakOldManHandleChooseMove,
   [C.CONTROLLER_OPENBAG]: OakOldManHandleChooseItem,
   [C.CONTROLLER_CHOOSEPOKEMON]: OakOldManHandleChoosePokemon,
-  [C.CONTROLLER_23]: done,
+  [C.CONTROLLER_23]: OakOldManHandleCmd23,
   [C.CONTROLLER_HEALTHBARUPDATE]: OakOldManHandleHealthBarUpdate,
   [C.CONTROLLER_EXPUPDATE]: OakOldManHandleExpUpdate,
-  [C.CONTROLLER_STATUSICONUPDATE]: done,
-  [C.CONTROLLER_STATUSANIMATION]: done,
-  [C.CONTROLLER_STATUSXOR]: done,
-  [C.CONTROLLER_DATATRANSFER]: done,
-  [C.CONTROLLER_DMA3TRANSFER]: done,
-  [C.CONTROLLER_PLAYBGM]: done,
-  [C.CONTROLLER_32]: done,
-  [C.CONTROLLER_TWORETURNVALUES]: done,
-  [C.CONTROLLER_CHOSENMONRETURNVALUE]: done,
-  [C.CONTROLLER_ONERETURNVALUE]: done,
-  [C.CONTROLLER_ONERETURNVALUE_DUPLICATE]: done,
-  [C.CONTROLLER_CLEARUNKVAR]: done,
-  [C.CONTROLLER_SETUNKVAR]: done,
-  [C.CONTROLLER_CLEARUNKFLAG]: done,
-  [C.CONTROLLER_TOGGLEUNKFLAG]: done,
+  [C.CONTROLLER_STATUSICONUPDATE]: OakOldManHandleStatusIconUpdate,
+  [C.CONTROLLER_STATUSANIMATION]: OakOldManHandleStatusAnimation,
+  [C.CONTROLLER_STATUSXOR]: OakOldManHandleStatusXor,
+  [C.CONTROLLER_DATATRANSFER]: OakOldManHandleDataTransfer,
+  [C.CONTROLLER_DMA3TRANSFER]: OakOldManHandleDMA3Transfer,
+  [C.CONTROLLER_PLAYBGM]: OakOldManHandlePlayBGM,
+  [C.CONTROLLER_32]: OakOldManHandleCmd32,
+  [C.CONTROLLER_TWORETURNVALUES]: OakOldManHandleTwoReturnValues,
+  [C.CONTROLLER_CHOSENMONRETURNVALUE]: OakOldManHandleChosenMonReturnValue,
+  [C.CONTROLLER_ONERETURNVALUE]: OakOldManHandleOneReturnValue,
+  [C.CONTROLLER_ONERETURNVALUE_DUPLICATE]: OakOldManHandleOneReturnValue_Duplicate,
+  [C.CONTROLLER_CLEARUNKVAR]: OakOldManHandleCmd37,
+  [C.CONTROLLER_SETUNKVAR]: OakOldManHandleCmd38,
+  [C.CONTROLLER_CLEARUNKFLAG]: OakOldManHandleCmd39,
+  [C.CONTROLLER_TOGGLEUNKFLAG]: OakOldManHandleCmd40,
   [C.CONTROLLER_HITANIMATION]: OakOldManHandleHitAnimation,
-  [C.CONTROLLER_CANTSWITCH]: done,
+  [C.CONTROLLER_CANTSWITCH]: OakOldManHandleCmd42,
   [C.CONTROLLER_PLAYSE]: OakOldManHandlePlaySE,
   [C.CONTROLLER_PLAYFANFARE]: OakOldManHandlePlayFanfare,
   [C.CONTROLLER_FAINTINGCRY]: OakOldManHandleFaintingCry,
   [C.CONTROLLER_INTROSLIDE]: OakOldManHandleIntroSlide,
   [C.CONTROLLER_INTROTRAINERBALLTHROW]: OakOldManHandleIntroTrainerBallThrow,
   [C.CONTROLLER_DRAWPARTYSTATUSSUMMARY]: OakOldManHandleDrawPartyStatusSummary,
-  [C.CONTROLLER_HIDEPARTYSTATUSSUMMARY]: done,
+  [C.CONTROLLER_HIDEPARTYSTATUSSUMMARY]: OakOldManHandleHidePartyStatusSummary,
   [C.CONTROLLER_ENDBOUNCE]: OakOldManHandleEndBounceEffect,
-  [C.CONTROLLER_SPRITEINVISIBILITY]: done,
+  [C.CONTROLLER_SPRITEINVISIBILITY]: OakOldManHandleSpriteInvisibility,
   [C.CONTROLLER_BATTLEANIMATION]: OakOldManHandleBattleAnimation,
   [C.CONTROLLER_LINKSTANDBYMSG]: OakOldManHandleLinkStandbyMsg,
-  [C.CONTROLLER_RESETACTIONMOVESELECTION]: done,
+  [C.CONTROLLER_RESETACTIONMOVESELECTION]: OakOldManHandleResetActionMoveSelection,
   [C.CONTROLLER_ENDLINKBATTLE]: OakOldManHandleCmd55,
   [C.CONTROLLER_TERMINATOR_NOP]: OakOldManCmdEnd,
 };

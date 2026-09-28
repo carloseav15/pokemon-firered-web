@@ -869,7 +869,7 @@ function CopyPlayerMonData(monId: number, dst: Uint8Array, offset: number): numb
   return CopyMonData(playerMon(monId), gBattleBufferA[G.gActiveBattler][1], dst, offset);
 }
 
-function PlayerHandleGetRawMonData(): void {
+export function PlayerHandleGetRawMonData(): void {
   // Raw struct Pokemon memory access is not meaningful for the TS Pokemon objects (unused by the game).
   PlayerBufferExecCompleted();
 }
