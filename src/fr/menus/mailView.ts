@@ -36,7 +36,7 @@ const SPEED_INSTANT = 0;
 
 /** ReadMail(mail, savedCallback, messageExists): the source C entrypoint accepts a Mail record and return callback. */
 export function ReadMail(mail: Pick<MailData, "itemId" | "species" | "words" | "playerName">, savedCallback: (() => void) | null, messageExists: boolean): void {
-  const load = Promise.all([loadCData("mail"), preloadPacks(["graphics_mail"])]);
+  const load = Promise.all([loadCData("mail", "easy_chat"), preloadPacks(["graphics_mail"])]);
   SetMainCallback2(() => {});
   void load.then(() => {
     const firstItem = C.ITEM_ORANGE_MAIL;

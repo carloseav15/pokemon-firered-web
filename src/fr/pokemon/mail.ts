@@ -258,8 +258,9 @@ function groupWords(group: number): number[] | WordInfo[] | undefined {
   return cdata<number[] | WordInfo[]>("easy_chat", key);
 }
 
-/** CopyEasyChatWord: word id to display text, null for EC_WORD_UNDEFINED. */
-export function ecWordText(word: number): string | null {
+/** CopyEasyChatWord (easy_chat.c), as decoded game text; null represents an EOS-only word. */
+export function CopyEasyChatWord(word: number): string | null {
+  word &= 0xffff;
   if (word === EC_WORD_UNDEFINED) return null;
   const group = word >> 9;
   const index = word & 0x1ff;
@@ -282,20 +283,32 @@ export function ecWordText(word: number): string | null {
   return decode(Uint8Array.from(cdata<number[]>("easy_chat", sym)));
 }
 
+/** ConvertEasyChatWordsToString (easy_chat.c): separate nonempty preceding words with a space and rows with a newline. */
+export function ConvertEasyChatWordsToString(words: number[], columns: number, rows: number): string {
+  const lines: string[] = [];
+  let index = 0;
+  for (let row = 0; row < rows; row++) {
+    let line = "";
+    for (let column = 0; column < columns; column++) {
+      const word = words[index++] ?? C.EC_WORD_UNDEFINED;
+      line += CopyEasyChatWord(word) ?? "";
+      if (column < columns - 1 && word !== C.EC_WORD_UNDEFINED) line += " ";
+    }
+    lines.push(line);
+  }
+  return lines.join("\n");
+}
+
 /** BufferMailMessage's active 5x2 layout: ConvertEasyChatWordsToString for
  * each row (two words in rows 0..3, one word in row 4). C appends a space
  * after the first defined word even when the second word is undefined. */
 export function BufferMailMessage(words: number[]): string[] {
   const lines: string[] = [];
+  let index = 0;
   for (let row = 0; row < 5; row++) {
     const columns = row < 4 ? 2 : 1;
-    const first = words[row * 2] ?? C.EC_WORD_UNDEFINED;
-    let line = ecWordText(first) ?? "";
-    if (columns > 1) {
-      if (first !== C.EC_WORD_UNDEFINED) line += " ";
-      line += ecWordText(words[row * 2 + 1] ?? C.EC_WORD_UNDEFINED) ?? "";
-    }
-    lines.push(line);
+    lines.push(ConvertEasyChatWordsToString(words.slice(index, index + columns), columns, 1));
+    index += columns;
   }
   return lines;
 }
