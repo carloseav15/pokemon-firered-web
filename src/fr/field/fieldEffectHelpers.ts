@@ -304,21 +304,6 @@ export function SpriteCB_UnderwaterSurfBlob(sprite: Sprite | any): void {
   if (!sprite) return;
 }
 
-/** FldEff_Ripple */
-export function FldEff_Ripple(): number {
-  return 0;
-}
-
-/** FldEff_FeetInFlowingWater */
-export function FldEff_FeetInFlowingWater(): number {
-  return 0;
-}
-
-/** UpdateFeetInFlowingWaterFieldEffect */
-export function UpdateFeetInFlowingWaterFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
 /** FldEff_HotSpringsWater */
 export function FldEff_HotSpringsWater(): number {
   return 0;
@@ -326,16 +311,6 @@ export function FldEff_HotSpringsWater(): number {
 
 /** UpdateHotSpringsWaterFieldEffect */
 export function UpdateHotSpringsWaterFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
-/** FldEff_Bubbles */
-export function FldEff_Bubbles(): number {
-  return 0;
-}
-
-/** UpdateBubblesFieldEffect */
-export function UpdateBubblesFieldEffect(sprite: Sprite | any): void {
   if (!sprite) return;
 }
 
@@ -406,10 +381,5 @@ export function StartRevealDisguise(sprite: Sprite | any): void {
 
 /** UpdateRevealDisguise */
 export function UpdateRevealDisguise(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
-/** WaitFieldEffectSpriteAnim */
-export function WaitFieldEffectSpriteAnim(sprite: Sprite | any): void {
   if (!sprite) return;
 }

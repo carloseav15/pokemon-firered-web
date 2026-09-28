@@ -713,34 +713,45 @@ export class FieldEffects {
 
   /** GroundEffect_FlowingWater / FldEff_FeetInFlowingWater. */
   GroundEffect_FlowingWater(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("Splash", object.sprite.x, object.sprite.y);
+    this.FldEff_FeetInFlowingWater(object);
+  }
+
+  /** FldEff_FeetInFlowingWater (field_effect_helpers.c). */
+  FldEff_FeetInFlowingWater(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("Splash", 0, 0);
     if (!sprite) return;
     sprite.coordOffsetEnabled = true;
-    sprite.priority = object.sprite.priority;
-    sprite.y2 = (object.sprite.height >> 1) - 4;
-    sprite.data[0] = object.localId;
-    sprite.data[1] = object.mapNum;
-    sprite.data[2] = object.mapGroup;
+    sprite.priority = object.sprite.priority & 0xff;
+    sprite.y2 = ((((graphicsInfo(object.graphicsId).height >> 1) - 4) << 16) >> 16);
+    sprite.data[0] = object.localId & 0xff;
+    sprite.data[1] = object.mapNum & 0xff;
+    sprite.data[2] = object.mapGroup & 0xff;
     sprite.data[3] = -1;
     sprite.data[4] = -1;
     sprite.startAnim(1);
-    sprite.callback = (s) => {
-      if (!object.active || !object.inShallowFlowingWater) {
-        this.ow.sprites.destroy(s);
-        if (this.flowingWaterEffects.get(object) === s) this.flowingWaterEffects.delete(object);
-        return;
-      }
-      s.x = object.sprite.x;
-      s.y = object.sprite.y;
-      s.subpriority = object.sprite.subpriority;
-      s.invisible = object.sprite.invisible;
-      if (object.currentCoords.x !== s.data[3] || object.currentCoords.y !== s.data[4]) {
-        s.data[3] = object.currentCoords.x;
-        s.data[4] = object.currentCoords.y;
-        if (!s.invisible) sound.playSE(sound.c("SE_PUDDLE"));
-      }
-    };
+    this.active.add(C.FLDEFF_FEET_IN_FLOWING_WATER);
+    sprite.callback = (s) => this.UpdateFeetInFlowingWaterFieldEffect(s);
     this.flowingWaterEffects.set(object, sprite);
+  }
+
+  /** UpdateFeetInFlowingWaterFieldEffect (field_effect_helpers.c). */
+  UpdateFeetInFlowingWaterFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[0]! & 0xff, sprite.data[1]! & 0xff, sprite.data[2]! & 0xff);
+    if (!object || !object.inShallowFlowingWater) {
+      this.active.delete(C.FLDEFF_FEET_IN_FLOWING_WATER);
+      this.ow.sprites.destroy(sprite);
+      if (object && this.flowingWaterEffects.get(object) === sprite) this.flowingWaterEffects.delete(object);
+      return;
+    }
+    sprite.x = object.sprite.x;
+    sprite.y = object.sprite.y;
+    sprite.subpriority = object.sprite.subpriority;
+    this.UpdateObjectEventSpriteInvisibility(sprite, false);
+    if (object.currentCoords.x !== sprite.data[3] || object.currentCoords.y !== sprite.data[4]) {
+      sprite.data[3] = (object.currentCoords.x << 16) >> 16;
+      sprite.data[4] = (object.currentCoords.y << 16) >> 16;
+      if (!sprite.invisible) sound.playSE(sound.c("SE_PUDDLE"));
+    }
   }
 
   /** GroundEffect_ShortGrass / FldEff_ShortGrass. */
@@ -838,18 +849,30 @@ export class FieldEffects {
 
   /** GroundEffect_Seaweed / FldEff_Bubbles. */
   GroundEffect_Seaweed(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("Bubbles", object.currentCoords.x * 16 + 8, object.currentCoords.y * 16);
+    this.FldEff_Bubbles(object.currentCoords.x, object.currentCoords.y);
+  }
+
+  /** FldEff_Bubbles (field_effect_helpers.c). */
+  FldEff_Bubbles(x: number, y: number): void {
+    const sprite = this.createFromTemplate("Bubbles", ((x << 16) >> 16) * 16 + 8, ((y << 16) >> 16) * 16);
     if (!sprite) return;
     sprite.coordOffsetEnabled = true;
     sprite.priority = 1;
     sprite.subpriority = 0x52;
     sprite.data[0] = 0;
-    sprite.callback = (s) => {
-      s.data[0] = (s.data[0]! + 0x80) & 0x100;
-      s.y -= s.data[0]! >> 8;
-      this.UpdateObjectEventSpriteInvisibility(s, false);
-      if (s.invisible || s.animEnded) this.ow.sprites.destroy(s);
-    };
+    this.active.add(C.FLDEFF_BUBBLES);
+    sprite.callback = (s) => this.UpdateBubblesFieldEffect(s);
+  }
+
+  /** UpdateBubblesFieldEffect (field_effect_helpers.c). */
+  UpdateBubblesFieldEffect(sprite: Sprite): void {
+    sprite.data[0] = ((sprite.data[0] ?? 0) + 0x80) & 0x100;
+    sprite.y -= sprite.data[0]! >> 8;
+    this.UpdateObjectEventSpriteInvisibility(sprite, false);
+    if (sprite.invisible || sprite.animEnded) {
+      this.active.delete(C.FLDEFF_BUBBLES);
+      this.ow.sprites.destroy(sprite);
+    }
   }
 
   /** UpdateObjectEventSpriteInvisibility (event_object_movement.c). */
@@ -897,12 +920,29 @@ export class FieldEffects {
 
   /** GroundEffect_Ripple / DoRippleFieldEffect: emit the source ripple at the object's feet. */
   GroundEffect_Ripple(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("Ripple", object.sprite.x, object.sprite.y + (object.sprite.height >> 1) - 2);
+    this.FldEff_Ripple(object.sprite.x, object.sprite.y + (graphicsInfo(object.graphicsId).height >> 1) - 2, 151, 3);
+  }
+
+  /** FldEff_Ripple (field_effect_helpers.c). */
+  FldEff_Ripple(x: number, y: number, subpriority: number, priority: number): void {
+    const sprite = this.createFromTemplate("Ripple", x, y);
     if (!sprite) return;
     sprite.coordOffsetEnabled = true;
-    sprite.priority = 3;
-    sprite.subpriority = 149;
-    sprite.callback = (s) => { if (s.animEnded) this.ow.sprites.destroy(s); };
+    sprite.priority = priority & 0xff;
+    sprite.subpriority = subpriority & 0xff;
+    sprite.data[0] = C.FLDEFF_RIPPLE;
+    this.active.add(C.FLDEFF_RIPPLE);
+    sprite.callback = (s) => this.WaitFieldEffectSpriteAnim(s);
+  }
+
+  /** WaitFieldEffectSpriteAnim (field_effect_helpers.c). */
+  WaitFieldEffectSpriteAnim(sprite: Sprite): void {
+    if (sprite.animEnded) {
+      this.active.delete(sprite.data[0]! & 0xff);
+      this.ow.sprites.destroy(sprite);
+    } else {
+      this.UpdateObjectEventSpriteInvisibility(sprite, false);
+    }
   }
 
   private spawnTallGrass(object: ObjectEvent, skipAnim: boolean): void {
