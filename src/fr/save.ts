@@ -96,6 +96,8 @@ export type SaveData = {
   giftRibbons?: number[];
   /** berry.c EnigmaBerry save block, serialized as its 0x34 GBA bytes. */
   enigmaBerry: number[];
+  /** fieldmap.c SaveBlock2.mapView, a 0x100-entry u16 snapshot of the current map view. */
+  mapView: number[];
   battleTower?: number[];
   miniGameResults?: { berryCrush: number[]; pokemonJump: number[]; berryPicking: number[]; berryPowder: number };
   playTimeFrames: number;
@@ -177,6 +179,7 @@ export function newSaveData(): SaveData {
     gameStats: new Array(64).fill(0),
     giftRibbons: new Array(C.GIFT_RIBBONS_COUNT).fill(0),
     enigmaBerry: new Array(0x34).fill(0),
+    mapView: new Array(0x100).fill(0),
     battleTower: [],
     miniGameResults: { berryCrush: [], pokemonJump: [], berryPicking: [], berryPowder: 0 },
     playTimeFrames: 0,
@@ -231,6 +234,7 @@ export function setSave(data: SaveData): void {
   data.easyChatBattleWon ??= new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
   data.easyChatBattleLost ??= new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
   data.enigmaBerry ??= new Array(0x34).fill(0);
+  data.mapView ??= new Array(0x100).fill(0);
   data.additionalPhrases ??= new Array(C.NUM_ADDITIONAL_PHRASE_BYTES).fill(0);
   data.ramScript ??= emptyRamScript();
   data.questLogEvents ??= [];

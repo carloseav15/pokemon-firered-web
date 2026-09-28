@@ -15,7 +15,7 @@ import { TextPrinter, textFlags } from "../gba/textPrinter";
 import { sound } from "../audio/sound";
 import { rom, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
-import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
+import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
 import { PlayerAvatar, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
@@ -203,6 +203,8 @@ export class Overworld {
   savedMusic = 0;
   /** Set when a map-changing event needs the load callback (CB2_LoadMap) */
   pendingLoad = false;
+  /** InitMapFromSavedGame restores the saved VMap window on the first continue load. */
+  restoreMapViewOnNextInit = false;
   /** Selected object (gSelectedObjectEvent) */
   selectedObject = 0;
   /** Field-wide hooks for other modules (battle start etc.) */
@@ -686,6 +688,10 @@ export class Overworld {
   /** InitMap: InitMapLayoutData + ON_LOAD */
   private initMap(): void {
     this.map.init(this.loaded);
+    if (this.restoreMapViewOnNextInit) {
+      LoadSavedMapView(this.map, save.pos, save.mapView);
+      this.restoreMapViewOnNextInit = false;
+    }
     this.map.onChange = () => this.renderer?.invalidate();
     this.RunOnLoadMapScript();
   }
@@ -1481,6 +1487,7 @@ export class Overworld {
       save.pos.y = ((save.pos.y + dy) << 16) >> 16;
       return false;
     }
+    SaveMapView(this.map, save.pos, save.mapView);
     const oldX = save.pos.x;
     const oldY = save.pos.y;
     const connection = GetIncomingConnection(direction, save.pos.x, save.pos.y, this.map);
@@ -1492,6 +1499,8 @@ export class Overworld {
     SetPositionFromConnection(connection, direction, dx, dy);
     const num = rom.mapNum(connection.mapId);
     this.loadMapFromCameraTransition(num >> 8, num & 0xff, connection.mapId);
+    MoveMapViewToBackup(direction, this.map, save.pos, save.mapView);
+    this.renderer?.invalidate();
     const shiftX = oldX - save.pos.x;
     const shiftY = oldY - save.pos.y;
     save.pos.x = ((save.pos.x + dx) << 16) >> 16;

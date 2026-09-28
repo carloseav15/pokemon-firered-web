@@ -67,6 +67,7 @@ import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
 import { ClearEnigmaBerries } from "./pokemon/berry";
+import { SaveMapView } from "./field/fieldmap";
 
 /** GetProfOaksRatingMessageByCount (prof_pc.c). */
 function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
@@ -293,6 +294,7 @@ export class Game {
 
   continueGame(data: SaveData): void {
     setSave(data);
+    this.overworld.restoreMapViewOnNextInit = true;
     this.differentSaveFile = false;
     this.wild.seed(takeWildEncounterSeed());
     // Overworld_ResetStateOnContinue runs before the continue warp is applied.
@@ -325,6 +327,7 @@ export class Game {
     save.playerAvatarFlags = this.overworld.player.flags;
     save.savedMusic = this.overworld.savedMusic;
     save.options.textSpeed = textOptions.speed;
+    SaveMapView(this.overworld.map, save.pos, save.mapView);
     ApplyNewEncryptionKeyToGameStats(save.trainerId);
     ApplyNewEncryptionKeyToBagItems_(save.trainerId);
     const continueFlags = save as SaveData & { continueGameWarpActive?: boolean };

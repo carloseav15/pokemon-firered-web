@@ -46,6 +46,8 @@ export type LoadedMap = {
   connections: LoadedConnection[];
 };
 
+export type MapPosition = { x: number; y: number };
+
 /** Layouts that map scripts swap in with setmaplayoutindex (fetched with the map). */
 const ALTERNATE_LAYOUTS: Record<string, string[]> = {
   MAP_SEAFOAM_ISLANDS_B3F: ["LAYOUT_SEAFOAM_ISLANDS_B3F_CURRENT_STOPPED"],
@@ -365,6 +367,62 @@ function GetAttributeByMetatileIdAndMapLayout(mapLayout: FieldMap, metatile: num
   else if (metatile < NUM_METATILES_TOTAL) attributes = mapLayout.loaded.secondary.attributes[metatile - NUM_METATILES_IN_PRIMARY] ?? 0;
   else return 0xff;
   return ExtractMetatileAttribute(attributes, attributeType);
+}
+
+/** SaveMapView (fieldmap.c): persist the 15×14 tile window at the C save position. */
+export function SaveMapView(map: FieldMap, position: MapPosition, mapView: number[]): void {
+  let dst = 0;
+  for (let y = position.y | 0; y < (position.y | 0) + MAP_OFFSET_H; y++) {
+    for (let x = position.x | 0; x < (position.x | 0) + MAP_OFFSET_W; x++)
+      mapView[dst++] = map.map[x + map.xSize * y] ?? 0;
+  }
+}
+
+/** SavedMapViewIsEmpty (fieldmap.c, UBFIX build): inspect all 0x100 u16 entries. */
+function SavedMapViewIsEmpty(mapView: number[]): boolean {
+  for (let i = 0; i < 0x100; i++) if ((mapView[i] ?? 0) !== 0) return false;
+  return true;
+}
+
+/** ClearSavedMapView (fieldmap.c). */
+function ClearSavedMapView(mapView: number[]): void {
+  mapView.fill(0, 0, 0x100);
+}
+
+/** LoadSavedMapView (fieldmap.c): restore a saved 15×14 region after map initialization. */
+export function LoadSavedMapView(map: FieldMap, position: MapPosition, mapView: number[]): void {
+  if (SavedMapViewIsEmpty(mapView)) return;
+  let src = 0;
+  for (let y = position.y | 0; y < (position.y | 0) + MAP_OFFSET_H; y++) {
+    for (let x = position.x | 0; x < (position.x | 0) + MAP_OFFSET_W; x++)
+      map.map[x + map.xSize * y] = mapView[src++] ?? 0;
+  }
+  ClearSavedMapView(mapView);
+}
+
+/** MoveMapViewToBackup (fieldmap.c): shift the saved overlap into a connected map's VMap. */
+export function MoveMapViewToBackup(direction: number, map: FieldMap, position: MapPosition, mapView: number[]): void {
+  const width = map.xSize;
+  let x0 = position.x | 0;
+  let y0 = position.y | 0;
+  let x2 = MAP_OFFSET_W;
+  let y2 = MAP_OFFSET_H;
+  let srcX = 0;
+  let srcY = 0;
+  switch (direction & 0xff) {
+    case CONNECTION_NORTH: y0++; y2 = MAP_OFFSET_H - 1; break;
+    case CONNECTION_SOUTH: srcY = 1; y2 = MAP_OFFSET_H - 1; break;
+    case CONNECTION_WEST: x0++; x2 = MAP_OFFSET_W - 1; break;
+    case CONNECTION_EAST: srcX = 1; x2 = MAP_OFFSET_W - 1; break;
+  }
+  for (let y = 0; y < y2; y++) {
+    for (let x = 0; x < x2; x++) {
+      const src = (y + srcY) * MAP_OFFSET_W + srcX + x;
+      const dst = x0 + x + width * (y + y0);
+      map.map[dst] = mapView[src] ?? 0;
+    }
+  }
+  ClearSavedMapView(mapView);
 }
 
 /** MapGridSetMetatileIdAt (fieldmap.c). */
