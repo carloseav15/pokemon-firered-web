@@ -14,13 +14,13 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 34 | 82095 | 1486/3688 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 10 | 22625 | 740/818 |
+| Casi completo (≥ 80 % y < 100 %) | 10 | 22625 | 744/818 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 163 | 145807 | 5481/5481 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
-| Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
+| Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **46** | **107550** | |
-| **Total en alcance** | **211** | **253703** | **7735/10115** |
+| **Total en alcance** | **211** | **253703** | **7739/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -36,7 +36,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `event_object_movement.c` | 9412 | 533/759 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts`, `field/objectEvents.ts` … |  |  |
 | `pokemon.c` | 6453 | 73/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
-| `field_effect.c` | 4033 | 95/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `field/fieldPalette.ts` … |  |  |
+| `field_effect.c` | 4033 | 95/239 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldMoves.ts` … |  |  |
 | `overworld.c` | 3563 | 118/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
 | `battle_transition.c` | 3037 | 47/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
@@ -84,7 +84,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `item_menu.c` | 2397 | 112/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `trainer_card.c` | 1959 | 66/73 | `menus/trainerCard.ts` |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
-| `field_control_avatar.c` | 1182 | 43/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
+| `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_setup.c` | 1070 | 63/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
@@ -294,7 +294,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `fldeff_strength.c` | 46 | 2/4 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` | fieldMoveMenu.ts + field/fieldMoves.ts: requisito de roca/pie, slot de selección, script, nickname, ShowMon y reanudación están conectados |  |
 | `fldeff_teleport.c` | 41 | 2/4 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` | fieldMoveMenu.ts + field/fieldMoves.ts + field/overworld.ts: gate, selección/animación, callbacks y warp están conectados; CameraObjectReset2 no aplica al campo web 2D |  |
 | `agb_flash_le.c` | 31 | — |  | save.ts (localStorage) |  |
-| `field_special_scene.c` | 27 | 1/6 | `script/specials.ts` | field_special_scene.c: las dos escenas públicas y los cuatro callbacks/dummies tienen cuerpo vacío en el decomp; no hay lógica que portar |  |
+| `field_special_scene.c` | 27 | 6/6 | `script/specials.ts` | field_special_scene.c: las dos escenas públicas y los cuatro callbacks/dummies tienen cuerpo vacío en el decomp; no hay lógica que portar |  |
 | `reset_save_heap.c` | 27 | 0/1 |  | save.ts |  |
 | `decoration.c` | 7 | — |  | exportador |  |
 | `tilesets.c` | 7 | — |  | exportador (tilesets) |  |

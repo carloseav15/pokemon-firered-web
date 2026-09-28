@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7735/10115 (76.5 %)**.
-- Archivos C con funciones aún sin homólogo: **46**; quedan **2380 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7739/10115 (76.5 %)**.
+- Archivos C con funciones aún sin homólogo: **46**; quedan **2376 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 107.550 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~57.304 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~57.208 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -20,10 +20,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 |---:|---|---|---:|---:|---:|---|
 | 1 | `battle_controller_player.c` | casi completo | 2966 | 122/123 | ~24 |  |
 | 2 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
-| 3 | `battle_setup.c` | casi completo | 1070 | 63/66 | ~48 |  |
-| 4 | `item_menu.c` | casi completo | 2397 | 112/116 | ~82 |  |
-| 5 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 6 | `field_control_avatar.c` | casi completo | 1182 | 43/49 | ~144 |  |
+| 3 | `field_control_avatar.c` | casi completo | 1182 | 47/49 | ~48 |  |
+| 4 | `battle_setup.c` | casi completo | 1070 | 63/66 | ~48 |  |
+| 5 | `item_menu.c` | casi completo | 2397 | 112/116 | ~82 |  |
+| 6 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 7 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
 | 8 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 9 | `field_fadetransition.c` | parcial | 965 | 44/59 | ~245 |  |
