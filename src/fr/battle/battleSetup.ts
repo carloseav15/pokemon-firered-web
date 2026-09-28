@@ -372,23 +372,54 @@ export class BattleSetup {
     this.scriptedWild = structuredClone(gEnemyParty[0]);
   }
 
-  /** battle_setup.c StartWildBattle: Safari, unidentified tower ghost, or ordinary wild. */
-  startWildBattle(enemy: Pokemon): void {
+  /** CheckSilphScopeInPokemonTower (battle_setup.c): true means the encounter remains a ghost. */
+  private CheckSilphScopeInPokemonTower(): boolean {
     const map = (save.location.mapGroup << 8) | save.location.mapNum;
     const c = rom.constants;
-    // CheckSilphScopeInPokemonTower includes every floor from 1F through 7F.
-    const tower = [1, 2, 3, 4, 5, 6, 7].some(floor => map === c[`MAP_POKEMON_TOWER_${floor}F`]);
-    const safari = GetSafariZoneFlag();
+    const inPokemonTower = [1, 2, 3, 4, 5, 6, 7].some(floor => map === c[`MAP_POKEMON_TOWER_${floor}F`]);
+    return inPokemonTower && !checkBagHasItem(c.ITEM_SILPH_SCOPE, 1);
+  }
+
+  /** StartWildBattle (battle_setup.c) dispatches the active Safari, ghost, or standard route. */
+  StartWildBattle(enemy: Pokemon): void {
+    if (GetSafariZoneFlag()) {
+      this.DoSafariBattle(enemy);
+    } else if (this.CheckSilphScopeInPokemonTower()) {
+      this.DoGhostBattle(enemy);
+    } else {
+      this.DoStandardWildBattle(enemy);
+    }
+  }
+
+  private DoStandardWildBattle(enemy: Pokemon): void {
+    this.StartOrdinaryWildBattle(enemy, false);
+  }
+
+  private DoGhostBattle(enemy: Pokemon): void {
+    enemy.nickname = Array.from(rom.text("gText_Ghost"));
+    this.StartOrdinaryWildBattle(enemy, true);
+  }
+
+  private StartOrdinaryWildBattle(enemy: Pokemon, isGhost: boolean): void {
+    const c = rom.constants;
     incrementGameStat(c.GAME_STAT_TOTAL_BATTLES);
     incrementGameStat(c.GAME_STAT_WILD_BATTLES);
     this.game.startBattle({
-      kind: "wild", enemyParty: [enemy], isSafari: safari,
-      isGhost: !safari && tower && !checkBagHasItem(c.ITEM_SILPH_SCOPE, 1),
+      kind: "wild", enemyParty: [enemy], isGhost,
       onEnd: outcome => {
         this.game.battleOutcome = outcome;
-        if (safari) { this.CB2_EndSafariBattle(outcome); return; }
         if (IsPlayerDefeated(outcome)) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);
+      },
+    });
+  }
+
+  private DoSafariBattle(enemy: Pokemon): void {
+    this.game.startBattle({
+      kind: "wild", enemyParty: [enemy], isSafari: true,
+      onEnd: outcome => {
+        this.game.battleOutcome = outcome;
+        this.CB2_EndSafariBattle(outcome);
       },
     });
   }

@@ -489,7 +489,7 @@ export function StandardWildEncounter(currMetatileAttrs: number, previousMetatil
         return true;
       }
       if (TryGenerateWildMon(landInfo, WILD_AREA_LAND, WILD_CHECK_REPEL)) {
-        if (sLastGeneratedWildMon) sGame?.battleSetup.startWildBattle(sLastGeneratedWildMon);
+        if (sLastGeneratedWildMon) sGame?.battleSetup.StartWildBattle(sLastGeneratedWildMon);
         return true;
       } else {
         AddToWildEncounterRateBuff(landInfo.encounterRate);
@@ -512,7 +512,7 @@ export function StandardWildEncounter(currMetatileAttrs: number, previousMetatil
         return true;
       }
       if (TryGenerateWildMon(waterInfo, WILD_AREA_WATER, WILD_CHECK_REPEL)) {
-        if (sLastGeneratedWildMon) sGame?.battleSetup.startWildBattle(sLastGeneratedWildMon);
+        if (sLastGeneratedWildMon) sGame?.battleSetup.StartWildBattle(sLastGeneratedWildMon);
         return true;
       } else {
         AddToWildEncounterRateBuff(waterInfo.encounterRate);
@@ -555,7 +555,7 @@ export function RockSmashWildEncounter(): void {
     return;
   }
   if (TryGenerateWildMon(info, WILD_AREA_ROCKS, WILD_CHECK_REPEL)) {
-    if (sLastGeneratedWildMon) sGame?.battleSetup.startWildBattle(sLastGeneratedWildMon);
+    if (sLastGeneratedWildMon) sGame?.battleSetup.StartWildBattle(sLastGeneratedWildMon);
     varSet(C.VAR_RESULT, 1);
   } else {
     varSet(C.VAR_RESULT, 0);
@@ -583,7 +583,7 @@ export function SweetScentWildEncounter(): boolean {
       return false;
     const info = data<WildPokemonInfo>((header.landMonsInfo as SymRef).$sym);
     TryGenerateWildMon(info, WILD_AREA_LAND, 0);
-    if (sLastGeneratedWildMon) sGame?.battleSetup.startWildBattle(sLastGeneratedWildMon);
+    if (sLastGeneratedWildMon) sGame?.battleSetup.StartWildBattle(sLastGeneratedWildMon);
     return true;
   } else if (encType === C.TILE_ENCOUNTER_WATER) {
     const roamer = tryStartRoamerEncounter();
@@ -595,7 +595,7 @@ export function SweetScentWildEncounter(): boolean {
       return false;
     const info = data<WildPokemonInfo>((header.waterMonsInfo as SymRef).$sym);
     TryGenerateWildMon(info, WILD_AREA_WATER, 0);
-    if (sLastGeneratedWildMon) sGame?.battleSetup.startWildBattle(sLastGeneratedWildMon);
+    if (sLastGeneratedWildMon) sGame?.battleSetup.StartWildBattle(sLastGeneratedWildMon);
     return true;
   }
   return false;
@@ -619,7 +619,7 @@ export function FishingWildEncounter(rod: number): void {
   const info = data<WildPokemonInfo>((headers[headerIdx].fishingMonsInfo as SymRef).$sym);
   GenerateFishingEncounter(info, rod);
   incrementGameStat(C.GAME_STAT_FISHING_CAPTURES);
-  if (sLastGeneratedWildMon) sGame?.battleSetup.startWildBattle(sLastGeneratedWildMon);
+  if (sLastGeneratedWildMon) sGame?.battleSetup.StartWildBattle(sLastGeneratedWildMon);
 }
 
 export function GetLocalWildMon(isWaterMon?: { value: boolean }): number {
