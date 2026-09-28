@@ -648,6 +648,26 @@ function incbinU16(symbol: string): Uint16Array {
   return out;
 }
 
+/** SampleResortGorgeousMon (field_specials.c). */
+function SampleResortGorgeousMon(): number {
+  let species = C.SPECIES_NONE;
+  for (let i = 0; i < 100; i++) {
+    species = (random() % (C.NUM_SPECIES - 1)) + 1;
+    if (getDexFlag(species, false)) return species;
+  }
+  while (!getDexFlag(species, false)) {
+    species = species === C.SPECIES_BULBASAUR ? C.NUM_SPECIES - 1 : species - 1;
+  }
+  return species;
+}
+
+/** SampleResortGorgeousReward (field_specials.c). */
+function SampleResortGorgeousReward(): number {
+  if (random() % 100 >= 30) return C.ITEM_LUXURY_BALL;
+  const rewards = cdata<number[]>("field_specials", "sResortGorgeousDeluxeRewards");
+  return rewards[random() % rewards.length]!;
+}
+
 // ---------------------------------------------------------------- Pokémon League lighting
 
 let leagueTask = -1;
@@ -720,16 +740,8 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   SampleResortGorgeousMonAndReward: () => {
     const requested = varGet(C.VAR_RESORT_GORGEOUS_REQUESTED_MON);
     if (requested === 0 || requested === 0xffff) {
-      let species = 1;
-      let found = false;
-      for (let i = 0; i < 100 && !found; i++) {
-        species = (random() % (C.NUM_SPECIES - 1)) + 1;
-        if (getDexFlag(species, false)) found = true;
-      }
-      while (!found && !getDexFlag(species, false)) species = species === C.SPECIES_BULBASAUR ? C.NUM_SPECIES - 1 : species - 1;
-      varSet(C.VAR_RESORT_GORGEOUS_REQUESTED_MON, species);
-      const rewards = cdata<number[]>("field_specials", "sResortGorgeousDeluxeRewards");
-      varSet(C.VAR_RESORT_GORGEOUS_REWARD, random() % 100 >= 30 ? C.ITEM_LUXURY_BALL : rewards[random() % rewards.length]);
+      varSet(C.VAR_RESORT_GORGEOUS_REQUESTED_MON, SampleResortGorgeousMon());
+      varSet(C.VAR_RESORT_GORGEOUS_REWARD, SampleResortGorgeousReward());
       varSet(C.VAR_RESORT_GOREGEOUS_STEP_COUNTER, 0);
     }
     stringVars.var1 = speciesName(varGet(C.VAR_RESORT_GORGEOUS_REQUESTED_MON));
