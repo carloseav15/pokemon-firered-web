@@ -46,6 +46,9 @@ export const MAP_SCRIPT_ON_RESUME = 5;
 export const MAP_SCRIPT_ON_DIVE_WARP = 6;
 export const MAP_SCRIPT_ON_RETURN_TO_FIELD = 7;
 
+/** ResetCyclingRoadChallengeData (field_specials.c) is deliberately empty in the decomp. */
+export function ResetCyclingRoadChallengeData(): void {}
+
 /** heal_location.c GetHealLocation: heal location IDs are one-based; NONE/out-of-range returns null. */
 export function GetHealLocation(id: number): { mapGroup: number; mapNum: number; x: number; y: number } | null {
   if (id === rom.constants.HEAL_LOCATION_NONE || id > rom.healLocations.heal_locations.length) return null;
@@ -342,6 +345,7 @@ export class Overworld {
   private onMapLoad(): void {
     this.objects.ClearVirtualObjects();
     this.stepCallback.reset();
+    ResetCyclingRoadChallengeData();
     mapResetTrainerRematches(this.game);
     TryRegenerateRenewableHiddenItems(save.location.mapGroup, save.location.mapNum);
   }
