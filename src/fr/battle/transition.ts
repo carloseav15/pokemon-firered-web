@@ -494,25 +494,13 @@ class WhiteBarsFadeEffect implements Effect {
 
 /** B_TRANSITION_GRID_SQUARES: Task_GridSquares / GridSquares_Main. */
 class GridSquaresEffect implements Effect {
-  private delay = 0;
-  private shrinkStage = 0;
-  private endDelay = 16;
-  private state = 0;
+  delay = 0;
+  shrinkStage = 0;
+  state = 0;
+  done = false;
 
   tick(): boolean {
-    if (this.state === 0) {
-      if (this.delay <= 0) {
-        this.delay = 3;
-        this.shrinkStage++;
-        if (this.shrinkStage > 13) {
-          this.state = 1;
-        }
-      } else {
-        this.delay--;
-      }
-      return false;
-    }
-    return --this.endDelay <= 0;
+    return Task_GridSquares(this);
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
@@ -532,6 +520,45 @@ class GridSquaresEffect implements Effect {
       }
     }
   }
+}
+
+/** Task_GridSquares (battle_transition.c): dispatch task states until a state yields. */
+function Task_GridSquares(effect: GridSquaresEffect): boolean {
+  let keepRunning: boolean;
+  do {
+    switch (effect.state) {
+      case 0: keepRunning = GridSquares_Init(effect); break;
+      case 1: keepRunning = GridSquares_Main(effect); break;
+      default: keepRunning = GridSquares_End(effect); break;
+    }
+  } while (keepRunning);
+  return effect.done;
+}
+
+/** GridSquares_Init (battle_transition.c); the tilemap/GFX setup is represented by Canvas render. */
+function GridSquares_Init(effect: GridSquaresEffect): boolean {
+  effect.state++;
+  return true;
+}
+
+/** GridSquares_Main (battle_transition.c): shrink every third task frame, then wait 15 frames. */
+function GridSquares_Main(effect: GridSquaresEffect): boolean {
+  if (effect.delay === 0) {
+    effect.delay = 3;
+    effect.shrinkStage++;
+    if (effect.shrinkStage > 13) {
+      effect.state++;
+      effect.delay = 16;
+    }
+  }
+  effect.delay--;
+  return false;
+}
+
+/** GridSquares_End (battle_transition.c); the Canvas scene starts the shared black fade. */
+function GridSquares_End(effect: GridSquaresEffect): boolean {
+  if (--effect.delay === 0) effect.done = true;
+  return false;
 }
 
 /** B_TRANSITION_SHUFFLE: Task_Shuffle / Shuffle_End. */
