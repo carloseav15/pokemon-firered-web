@@ -1,8 +1,8 @@
 Modo: tandas integradas por archivo/familia; alcance principal de un jugador. No push.
-Siguiente: continuar familias viables de field_specials.c; field_control_avatar.c sigue bloqueado en Dive, sin mapas Dive en FR.
-Bloqueos: Liga depende de ApplyGlobalTintToPaletteSlot/fieldmap.c; Deoxys no tiene FLDEFF_MOVE_DEOXYS_ROCK; Teachy TV y help_system_util.c no tienen ruta completa; battle_bg.c y trainer_card.c conservan solo nombres LINK.
-Validación diferida: recorridos de navegador e historia; Teachy TV y pantallas gráficas esperan revisión. Sin afirmaciones de paridad runtime.
-Entrega (2026-09-28): menús de lista, Corte en Ruin Valley, sonido de alas de Ho-Oh, atributos de objetos ocultos, formato numérico y helpers de Pokémon/entrenador alineados con C.
-Funciones: +21 nombres; 1 implementación nueva (GetHiddenItemAttr) y 20 equivalencias reestructuradas.
-Conteo: 7.517/10.115 (74,3 %), +21 desde 7.496; enlace sigue separado.
-check:port, check:honesty, build y git diff --check pasaron; advertencias previas de Vite, sin navegador.
+Siguiente: continuar `field_specials.c`; priorizar Deoxys cuando estén portados `ApplyGlobalFieldPaletteTint` y el estado de tint global.
+Bloqueo registrado: especiales de Deoxys requieren las paletas `sDeoxysObjectPals` y el tinte global; `field_control_avatar.c` sigue bloqueado en Dive.
+Validación diferida: recorridos de navegador e historia; sin afirmaciones de paridad runtime.
+Entrega (2026-09-28): callbacks de apodo y movimiento de roca Deoxys integrados; `GetPlayerAvatarBike` alineado con C.
+Nuevas: 4 nombres C (2 callbacks de apodo y `FldEff_MoveDeoxysRock`/`Task_MoveDeoxysRock_Step`).
+Equivalencias: `GetPlayerAvatarBike` prioriza Acro sobre Mach como C; callbacks de apodo conectados a su especial.
+Conteo: 7.521/10.115 (74,4 %), +4 desde 7.517; checks de tanda, build y diff pasaron.

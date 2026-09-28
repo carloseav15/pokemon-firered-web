@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7517/10115 (74.3 %)**.
-- Archivos C con funciones aún sin homólogo: **54**; quedan **2598 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7521/10115 (74.4 %)**.
+- Archivos C con funciones aún sin homólogo: **54**; quedan **2594 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 119.169 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~61.439 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~61.362 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -30,8 +30,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 10 | `field_control_avatar.c` | casi completo | 1182 | 43/49 | ~144 |  |
 | 11 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 12 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
-| 13 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
-| 14 | `field_specials.c` | casi completo | 2555 | 104/118 | ~303 |  |
+| 13 | `field_specials.c` | casi completo | 2555 | 106/118 | ~259 |  |
+| 14 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
 | 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 16 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
 | 17 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
@@ -66,7 +66,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 46 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
 | 47 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
 | 48 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
-| 49 | `field_effect.c` | parcial | 4033 | 87/239 | ~2564 |  |
+| 49 | `field_effect.c` | parcial | 4033 | 89/239 | ~2531 |  |
 | 50 | `overworld.c` | parcial | 3563 | 61/242 | ~2664 |  |
 | 51 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
 | 52 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
