@@ -833,16 +833,29 @@ export class Overworld {
     this.controlsLocked = true;
   }
 
-  fieldCBContinueScript(handleMusic = false): void {
+  /** FieldCB_ContinueScriptHandleMusic (field_fadetransition.c). */
+  FieldCB_ContinueScriptHandleMusic(): void {
+    this.continueScriptAfterFade(true);
+  }
+
+  /** FieldCB_ContinueScript (field_fadetransition.c). */
+  FieldCB_ContinueScript(): void {
+    this.continueScriptAfterFade(false);
+  }
+
+  private continueScriptAfterFade(handleMusic: boolean): void {
     if (handleMusic) this.playSpecialMapMusic();
     this.controlsLocked = true;
     this.fadeInFromBlack();
-    const id = tasks.create(() => {
-      if (!paletteFade.active) {
-        tasks.destroy(id);
-        this.script.ScriptContext_Enable();
-      }
-    }, 10);
+    tasks.create((taskId) => this.Task_ContinueScript(taskId), 10);
+  }
+
+  /** Task_ContinueScript (field_fadetransition.c). */
+  private Task_ContinueScript(taskId: number): void {
+    if (!paletteFade.active) {
+      tasks.destroy(taskId);
+      this.script.ScriptContext_Enable();
+    }
   }
 
   fadeInFromBlack(): void {

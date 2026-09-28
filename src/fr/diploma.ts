@@ -101,7 +101,7 @@ class DiplomaScreen {
     this.scene.leave();
     this.game.scene = null;
     this.game.setCallbacks(() => this.ow.cb1(), () => this.ow.cb2());
-    this.ow.fieldCBContinueScript(true);
+    this.ow.FieldCB_ContinueScriptHandleMusic();
   }
 
   /** DiplomaReset. */

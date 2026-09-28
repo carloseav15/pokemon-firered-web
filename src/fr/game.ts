@@ -954,7 +954,8 @@ export class Game {
     this.scene = null;
     this.setCallbacks(() => ow.cb1(), () => ow.cb2());
     ow.RunOnReturnToFieldMapScript();
-    ow.fieldCBContinueScript(playMusic);
+    if (playMusic) ow.FieldCB_ContinueScriptHandleMusic();
+    else ow.FieldCB_ContinueScript();
     ow.objects.unfreezeAll();
   }
 
