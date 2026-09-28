@@ -107,26 +107,7 @@ class NamingScreen {
     for (const pal of data<Array<{data: SymRef; tag: number}>>("sSpritePalettes")) {
       if (pal.data) LoadSpritePalette({data: incbin(pal.data.$sym).subarray((pal.data.index ?? 0) * 32, ((pal.data.index ?? 0) + 1) * 32), tag: pal.tag});
     }
-    this.cursor = this.sprite("sSpriteTemplate_Cursor", 38, 88, 1);
-    gSprites[this.cursor].callback = sprite => this.SpriteCB_Cursor(sprite);
-    this.SetCursorInvisibility(true);
-    gSprites[this.cursor].oam.priority = 1;
-    this.CreatePageSwapButtonSprites();
-    this.sprite("sSpriteTemplate_BackButton", 204, 116, 0, "sSubspriteTable_Button");
-    this.sprite("sSpriteTemplate_OkButton", 204, 140, 0, "sSubspriteTable_Button");
-    const baseX = (240 - this.model.template.maxChars * 8) / 2 + 6;
-    const inputArrow = this.sprite("sSpriteTemplate_InputArrow", baseX - 5, 56, 0);
-    gSprites[inputArrow].oam.priority = 3;
-    gSprites[inputArrow].invisible = true;
-    gSprites[inputArrow].callback = sprite => this.SpriteCB_InputArrow(sprite);
-    for (let i = 0; i < this.model.template.maxChars; i++) {
-      const underscore = this.sprite("sSpriteTemplate_Underscore", baseX + i * 8 + 3, 60, 0);
-      gSprites[underscore].oam.priority = 3;
-      gSprites[underscore].data[0] = i;
-      gSprites[underscore].invisible = true;
-      gSprites[underscore].callback = sprite => this.SpriteCB_Underscore(sprite);
-    }
-    this.createInputTargetIcon();
+    this.CreateSprites();
     this.CreateInputHandlerTask();
     this.CreateButtonFlashTask();
     SetVBlankCallback(() => {
@@ -153,6 +134,50 @@ class NamingScreen {
       }));
     }
     return id;
+  }
+
+  /** CreateSprites (naming_screen.c): create the screen sprites in source order. */
+  private CreateSprites(): void {
+    this.CreateCursorSprite();
+    this.CreatePageSwapButtonSprites();
+    this.CreateBackOkSprites();
+    this.CreateTextEntrySprites();
+    this.createInputTargetIcon();
+  }
+
+  /** CreateCursorSprite (naming_screen.c). */
+  private CreateCursorSprite(): void {
+    this.cursor = this.sprite("sSpriteTemplate_Cursor", 38, 88, 1);
+    const sprite = gSprites[this.cursor];
+    sprite.callback = current => this.SpriteCB_Cursor(current);
+    this.SetCursorInvisibility(true);
+    sprite.oam.priority = 1;
+    sprite.oam.objMode = C.ST_OAM_OBJ_BLEND;
+    sprite.data[6] = 2; // sColorIncr; C's initial value of 1 is immediately overwritten.
+  }
+
+  /** CreateBackOkSprites (naming_screen.c). */
+  private CreateBackOkSprites(): void {
+    const back = this.sprite("sSpriteTemplate_BackButton", 204, 116, 0, "sSubspriteTable_Button");
+    gSprites[back].invisible = true;
+    const ok = this.sprite("sSpriteTemplate_OkButton", 204, 140, 0, "sSubspriteTable_Button");
+    gSprites[ok].invisible = true;
+  }
+
+  /** CreateTextEntrySprites (naming_screen.c). */
+  private CreateTextEntrySprites(): void {
+    const baseX = (240 - this.model.template.maxChars * 8) / 2 + 6;
+    const inputArrow = this.sprite("sSpriteTemplate_InputArrow", baseX - 5, 56, 0);
+    gSprites[inputArrow].oam.priority = 3;
+    gSprites[inputArrow].invisible = true;
+    gSprites[inputArrow].callback = sprite => this.SpriteCB_InputArrow(sprite);
+    for (let i = 0; i < this.model.template.maxChars; i++) {
+      const underscore = this.sprite("sSpriteTemplate_Underscore", baseX + i * 8 + 3, 60, 0);
+      gSprites[underscore].oam.priority = 3;
+      gSprites[underscore].data[0] = i;
+      gSprites[underscore].invisible = true;
+      gSprites[underscore].callback = sprite => this.SpriteCB_Underscore(sprite);
+    }
   }
 
   /** CreateInputHandlerTask (naming_screen.c): initialize the field-frame input task state. */
