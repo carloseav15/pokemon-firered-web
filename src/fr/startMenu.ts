@@ -404,6 +404,31 @@ export interface SaveDialogRuntime {
   isSEPlaying(): boolean;
   closeStatsWindow(): void;
   finish(result: typeof SAVECB_RETURN_OKAY | typeof SAVECB_RETURN_CANCEL | typeof SAVECB_RETURN_ERROR): void;
+  prepareForSave(): void;
+  beginSaveHelpContext(): void;
+}
+
+/** StartMenu_PrepareForSave (start_menu.c). */
+export function StartMenu_PrepareForSave(dialog: SaveDialogRuntime): void {
+  dialog.prepareForSave();
+  dialog.saveDialogCB = SaveDialogCB_PrintAskSaveText;
+}
+
+/** StartCB_Save1 (start_menu.c). */
+export function StartCB_Save1(dialog: SaveDialogRuntime): false {
+  dialog.beginSaveHelpContext();
+  StartMenu_PrepareForSave(dialog);
+  return false;
+}
+
+/** StartCB_Save2 (start_menu.c): dispatch the callback result to the parent flow. */
+export function StartCB_Save2(dialog: SaveDialogRuntime): boolean {
+  const result = RunSaveDialogCB(dialog);
+  if (result === SAVECB_RETURN_OKAY || result === SAVECB_RETURN_ERROR || result === SAVECB_RETURN_CANCEL) {
+    dialog.finish(result);
+    return result !== SAVECB_RETURN_CANCEL;
+  }
+  return false;
 }
 
 /** RunSaveDialogCB (start_menu.c): invoke the current source callback. */
@@ -433,7 +458,6 @@ export function SaveDialogCB_AskSaveHandleInput(dialog: SaveDialogRuntime): numb
   if (input === 1 || input === -1) {
     dialog.closeStatsWindow();
     dialog.hideMessage();
-    dialog.finish(SAVECB_RETURN_CANCEL);
     return SAVECB_RETURN_CANCEL;
   }
   if (input === 0) {
@@ -475,7 +499,6 @@ export function SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput(dialog
   else {
     dialog.closeStatsWindow();
     dialog.hideMessage();
-    dialog.finish(SAVECB_RETURN_CANCEL);
     return SAVECB_RETURN_CANCEL;
   }
   return SAVECB_RETURN_CONTINUE;
@@ -520,7 +543,6 @@ export function SaveDialogCB_ReturnSuccess(dialog: SaveDialogRuntime): number {
   if (dialog.isSEPlaying() || !SaveDialog_Wait60FramesOrAButtonHeld(dialog)) return SAVECB_RETURN_CONTINUE;
   dialog.closeStatsWindow();
   dialog.hideMessage();
-  dialog.finish(SAVECB_RETURN_OKAY);
   return SAVECB_RETURN_OKAY;
 }
 
@@ -538,7 +560,6 @@ export function SaveDialogCB_ReturnError(dialog: SaveDialogRuntime): number {
   if (!SaveDialog_Wait60FramesThenCheckAButtonHeld(dialog)) return SAVECB_RETURN_CONTINUE;
   dialog.closeStatsWindow();
   dialog.hideMessage();
-  dialog.finish(SAVECB_RETURN_ERROR);
   return SAVECB_RETURN_ERROR;
 }
 

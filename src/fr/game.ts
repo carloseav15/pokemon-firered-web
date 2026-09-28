@@ -54,7 +54,7 @@ import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
   CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
-  PrintSaveStats, RunSaveDialogCB, SaveDialogCB_PrintAskSaveText, type SaveDialogRuntime,
+  PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, StartCB_Save2, type SaveDialogRuntime,
   FadeTransition_FadeInOnReturnToStartMenu, FieldCB_ReturnToFieldOpenStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
@@ -466,10 +466,8 @@ export class Game {
     this.removeStartMenuWindows();
     const ow = this.overworld;
     ow.control.MsgSetNotSignpost();
-    BackupHelpContext();
-    SetHelpContext(C.HELPCONTEXT_SAVE);
-    SaveMapView(ow.map, save.pos, save.mapView);
     let taskId = -1;
+    let startCallback: (dialog: SaveDialogRuntime) => boolean = StartCB_Save1;
     const dialog: SaveDialogRuntime = {
       saveDialogCB: SaveDialogCB_PrintAskSaveText,
       saveDialogDelay: 0,
@@ -495,6 +493,8 @@ export class Game {
       },
       saveGame: () => { IncrementGameStat(C.GAME_STAT_SAVED_GAME); return this.writeSave(); },
       setDifferentSaveFile: (value) => { this.differentSaveFile = value; dialog.differentSaveFile = value; },
+      prepareForSave: () => SaveMapView(ow.map, save.pos, save.mapView),
+      beginSaveHelpContext: () => { BackupHelpContext(); SetHelpContext(C.HELPCONTEXT_SAVE); },
       playSuccessSE: () => sound.playSE(sound.c("SE_SAVE")),
       playErrorSE: () => sound.playSE(sound.c("SE_BOO")),
       playSelectSE: () => sound.playSE(sound.c("SE_SELECT")),
@@ -515,10 +515,11 @@ export class Game {
         RestoreHelpContext();
       },
     };
-    taskId = tasks.create(() => { RunSaveDialogCB(dialog); }, 80);
+    taskId = tasks.create(() => {
+      if (startCallback(dialog)) return;
+      startCallback = StartCB_Save2;
+    }, 80);
   }
-
-  private saveWait = 0;
 
   // ---------------------------------------------------------------- placeholder screens
 
