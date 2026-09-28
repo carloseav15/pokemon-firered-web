@@ -60,8 +60,9 @@ class NamingScreen {
   private buttonFlashTaskId = -1;
   private stopFlashesNextUpdate = false;
   private pageSwapFrameCount = 0;
-  private pageSwapAnimState = 1;
-  private pageSwapButtonState: 1 | 2 | 3 = 1;
+  private pageSwapAnimState = 0;
+  private pageSwapButtonState = 0;
+  private pageSwapPage = 0;
   private callback1 = gMain.callback1;
   private repeatDelay = joy.repeatStartDelay;
   private savedTextFlags = { ...textFlags };
@@ -105,10 +106,7 @@ class NamingScreen {
     gSprites[this.cursor].callback = sprite => this.SpriteCB_Cursor(sprite);
     this.SetCursorInvisibility(true);
     gSprites[this.cursor].oam.priority = 1;
-    this.sprite("sSpriteTemplate_PageSwapFrame", 204, 88, 0, "sSubspriteTable_PageSwapFrame");
-    this.pageText = this.sprite("sSpriteTemplate_PageSwapText", 204, 84, 1, "sSubspriteTable_PageSwapText");
-    this.pageButton = this.sprite("sSpriteTemplate_PageSwapButton", 204, 83, 2);
-    gSprites[this.pageButton].oam.priority = 1;
+    this.CreatePageSwapButtonSprites();
     this.sprite("sSpriteTemplate_BackButton", 204, 116, 0, "sSubspriteTable_Button");
     this.sprite("sSpriteTemplate_OkButton", 204, 140, 0, "sSubspriteTable_Button");
     const baseX = (240 - this.model.template.maxChars * 8) / 2 + 6;
@@ -214,17 +212,87 @@ class NamingScreen {
     gSprites[this.pageText].subspriteTableNum = gfx;
   }
 
+  /** CreatePageSwapButtonSprites (naming_screen.c). */
+  private CreatePageSwapButtonSprites(): void {
+    this.sprite("sSpriteTemplate_PageSwapFrame", 204, 88, 0, "sSubspriteTable_PageSwapFrame");
+    this.pageText = this.sprite("sSpriteTemplate_PageSwapText", 204, 84, 1, "sSubspriteTable_PageSwapText");
+    this.pageButton = this.sprite("sSpriteTemplate_PageSwapButton", 204, 83, 2);
+    gSprites[this.pageButton].oam.priority = 1;
+  }
+
+  /** StartPageSwapAnim (naming_screen.c); create and run the C task init state immediately. */
+  private StartPageSwapAnim(): void {
+    this.pageSwapFrameCount = 0;
+    this.PageSwapAnimState_Init();
+  }
+
+  /** PageSwapAnimState_Init (naming_screen.c). */
+  private PageSwapAnimState_Init(): void {
+    this.bg1vOffset = 0;
+    this.bg2vOffset = 0;
+    ChangeBgY(1, 0, BG_COORD_SET);
+    ChangeBgY(2, 0, BG_COORD_SET);
+    this.pageSwapAnimState = 1;
+  }
+
+  /** StartPageSwapButtonAnim (naming_screen.c). */
+  private StartPageSwapButtonAnim(): void {
+    this.pageSwapButtonState = 2;
+    this.pageSwapPage = this.model.page;
+  }
+
+  /** IsPageSwapAnimNotInProgress (naming_screen.c). */
+  private IsPageSwapAnimNotInProgress(): boolean {
+    return this.pageSwapAnimState === 0;
+  }
+
+  /** SpriteCB_PageSwap (naming_screen.c): run the current page-button callback state. */
+  private SpriteCB_PageSwap(): void {
+    switch (this.pageSwapButtonState) {
+      case 0: this.PageSwapSprite_Init(); break;
+      case 1: this.PageSwapSprite_Idle(); break;
+      case 2: this.PageSwapSprite_SlideOff(); break;
+      case 3: this.PageSwapSprite_SlideOn(); break;
+    }
+  }
+
+  /** PageSwapSprite_Init (naming_screen.c). */
+  private PageSwapSprite_Init(): void {
+    this.setPageSwapButtonGfx(PageToNextGfxId(this.model.page));
+    this.pageSwapButtonState = 1;
+  }
+
+  /** PageSwapSprite_Idle (naming_screen.c). */
+  private PageSwapSprite_Idle(): void {}
+
+  /** PageSwapSprite_SlideOff (naming_screen.c). */
+  private PageSwapSprite_SlideOff(): void {
+    const text = gSprites[this.pageText]!;
+    if (++text.y2 > 7) {
+      this.pageSwapButtonState = 3;
+      text.y2 = -4;
+      text.invisible = true;
+      this.setPageSwapButtonGfx(PageToNextGfxId((this.pageSwapPage + 1) % 3));
+    }
+  }
+
+  /** PageSwapSprite_SlideOn (naming_screen.c). */
+  private PageSwapSprite_SlideOn(): void {
+    const text = gSprites[this.pageText]!;
+    text.invisible = false;
+    if (++text.y2 >= 0) {
+      text.y2 = 0;
+      this.pageSwapButtonState = 1;
+    }
+  }
+
   private MainState_StartPageSwap(): void {
     this.TryStartButtonFlash(NamingButton.PAGE, false, true);
     this.state = "pageSwap";
-    this.pageSwapFrameCount = 0;
-    this.pageSwapAnimState = 1;
     this.SetCursorInvisibility(true);
     gSprites[this.pageText].y2 = 0;
-    this.pageSwapButtonState = 2;
-    this.bg1vOffset = 0;
-    this.bg2vOffset = 0;
-    ChangeBgY(1, 0, BG_COORD_SET); ChangeBgY(2, 0, BG_COORD_SET);
+    this.StartPageSwapButtonAnim();
+    this.StartPageSwapAnim();
   }
 
   private updatePageSwapOffsets(): void {
@@ -240,24 +308,6 @@ class NamingScreen {
       else this.bg2vOffset = value;
     }
 
-    this.updatePageSwapButton();
-  }
-
-  private updatePageSwapButton(): void {
-    if (this.pageSwapButtonState === 2) {
-      if (++gSprites[this.pageText].y2 > 7) {
-        this.pageSwapButtonState = 3;
-        gSprites[this.pageText].y2 = -4;
-        gSprites[this.pageText].invisible = true;
-        this.setPageSwapButtonGfx((this.model.page + 1) % 3);
-      }
-    } else if (this.pageSwapButtonState === 3) {
-      gSprites[this.pageText].invisible = false;
-      if (++gSprites[this.pageText].y2 >= 0) {
-        gSprites[this.pageText].y2 = 0;
-        this.pageSwapButtonState = 1;
-      }
-    }
   }
 
   private PageSwapAnimState_1(): void {
@@ -287,6 +337,18 @@ class NamingScreen {
   }
 
   private PageSwapAnimState_Done(): void {
+    this.pageSwapAnimState = 0;
+  }
+
+  /** Task_HandlePageSwapAnim (naming_screen.c): advance one C task state per field frame. */
+  private Task_HandlePageSwapAnim(): void {
+    if (this.pageSwapAnimState === 1) this.PageSwapAnimState_1();
+    else if (this.pageSwapAnimState === 2) this.PageSwapAnimState_2();
+    else if (this.pageSwapAnimState === 3) this.PageSwapAnimState_Done();
+  }
+
+  private MainState_WaitPageSwap(): void {
+    if (!this.IsPageSwapAnimNotInProgress()) return;
     SwapKeyboardPage(this.model);
     this.DrawKeyboardPageOnDeck();
     this.setPageSwapButtonGfx(this.model.page);
@@ -294,12 +356,6 @@ class NamingScreen {
     this.SetCursorInvisibility(false);
     this.moveCursor();
     this.state = "input";
-  }
-
-  private MainState_WaitPageSwap(): void {
-    if (this.pageSwapAnimState === 1) this.PageSwapAnimState_1();
-    else if (this.pageSwapAnimState === 2) this.PageSwapAnimState_2();
-    else this.PageSwapAnimState_Done();
   }
 
   private drawEntry(): void {
@@ -535,6 +591,8 @@ class NamingScreen {
       SetVBlankCallback(null); SetMainCallback1(this.callback1); SetMainCallback2(this.returnCallback);
       return;
     }
+    this.Task_HandlePageSwapAnim();
+    this.SpriteCB_PageSwap();
     if (this.stopFlashesNextUpdate) {
       this.SetCursorFlashing(false);
       this.TryStartButtonFlash(NamingButton.COUNT, false, true);
