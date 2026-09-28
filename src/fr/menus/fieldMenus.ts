@@ -33,6 +33,7 @@ import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVAT
 import { startFishing } from "../field/fishing";
 import { startItemFinder } from "./itemFinder";
 import { openHardwareMessage } from "./hardwareChoice";
+import { openFameChecker } from "./keyItemScreens";
 import { BeginEvolutionScene } from "../evolutionScene";
 import { flagGet, incrementGameStat } from "../save";
 import { GetBerryPowder } from "../script/specialsExtra";
@@ -266,6 +267,27 @@ export function FieldUseFunc_TownMap(fromBag: boolean, route: { openFromBag: () 
   else route.openFromField();
 }
 
+/** UseFameCheckerFromBag (item_use.c): keep a bag return callback while the Fame Checker is open. */
+export function UseFameCheckerFromBag(game: Game, returnToBag: () => void): void {
+  fieldMenu(game, (close) => {
+    void openFameChecker(() => { close(); returnToBag(); });
+  }, false);
+}
+
+/** Task_UseFameCheckerFromField (item_use.c): enter the screen with the normal field return callback. */
+export function Task_UseFameCheckerFromField(game: Game): void {
+  game.openFameChecker();
+}
+
+/** FieldUseFunc_FameChecker (item_use.c): record use and select the bag or field return path. */
+export function FieldUseFunc_FameChecker(game: Game, item: number, fromBag: boolean, route: {
+  openFromBag: () => void; openFromField: () => void;
+}): void {
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
+  if (fromBag) route.openFromBag();
+  else route.openFromField();
+}
+
 /** ItemUseOnFieldCB_EscapeRope (item_use.c): reset field state, consume the item, and print its message. */
 function ItemUseOnFieldCB_EscapeRope(game: Game, item: number): void {
   game.overworld.resetStateAfterDigEscRope();
@@ -422,8 +444,11 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           });
           return;
         case "FieldUseFunc_FameChecker":
-          ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
-          onField(() => game.openFameChecker()); return;
+          FieldUseFunc_FameChecker(game, item, initialItem === undefined, {
+            openFromBag: () => leave(() => UseFameCheckerFromBag(game, bag)),
+            openFromField: () => onField(() => Task_UseFameCheckerFromField(game)),
+          });
+          return;
         case "FieldUseFunc_TeachyTv":
           ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
           onField(() => game.openTeachyTv()); return;
