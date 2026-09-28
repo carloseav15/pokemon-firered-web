@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6937/10115 (68.6 %)**.
-- Archivos C con funciones aún sin homólogo: **61**; quedan **3178 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7019/10115 (69.4 %)**.
+- Archivos C con funciones aún sin homólogo: **61**; quedan **3096 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 131.457 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~72.297 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~71.230 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -19,32 +19,32 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `sound.c` | casi completo | 649 | 47/48 | ~13 |  |
-| 2 | `sprite.c` | casi completo | 1745 | 100/103 | ~50 |  |
-| 3 | `scrcmd.c` | casi completo | 2264 | 216/224 | ~80 |  |
-| 4 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 5 | `quest_log_player.c` | parcial | 197 | 3/15 | ~157 |  |
-| 6 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 7 | `battle_interface.c` | casi completo | 2240 | 46/52 | ~258 |  |
-| 8 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
-| 9 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
-| 10 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
-| 11 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
-| 12 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
-| 13 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
-| 14 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 15 | `battle_controller_safari.c` | parcial | 669 | 14/72 | ~538 |  |
-| 16 | `battle_controller_opponent.c` | parcial | 1777 | 56/87 | ~633 |  |
-| 17 | `battle_setup.c` | parcial | 1070 | 26/66 | ~648 |  |
-| 18 | `mail.c` | parcial | 734 | 1/10 | ~660 |  |
-| 19 | `evolution_scene.c` | parcial | 1704 | 14/23 | ~666 |  |
-| 20 | `field_control_avatar.c` | parcial | 1182 | 21/49 | ~675 |  |
-| 21 | `field_fadetransition.c` | parcial | 965 | 16/59 | ~703 |  |
-| 22 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
-| 23 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 24 | `battle_controller_oak_old_man.c` | parcial | 2293 | 73/107 | ~728 |  |
-| 25 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
-| 26 | `fieldmap.c` | parcial | 951 | 5/54 | ~862 |  |
-| 27 | `field_player_avatar.c` | parcial | 2168 | 102/176 | ~911 |  |
+| 2 | `field_player_avatar.c` | casi completo | 2168 | 172/176 | ~49 |  |
+| 3 | `sprite.c` | casi completo | 1745 | 100/103 | ~50 |  |
+| 4 | `scrcmd.c` | casi completo | 2264 | 216/224 | ~80 |  |
+| 5 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
+| 6 | `quest_log_player.c` | parcial | 197 | 3/15 | ~157 |  |
+| 7 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 8 | `battle_interface.c` | casi completo | 2240 | 46/52 | ~258 |  |
+| 9 | `battle_controller_player.c` | casi completo | 2966 | 111/123 | ~289 |  |
+| 10 | `region_map.c` | casi completo | 4036 | 128/140 | ~345 |  |
+| 11 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
+| 12 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
+| 13 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
+| 14 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
+| 15 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 16 | `battle_controller_safari.c` | parcial | 669 | 14/72 | ~538 |  |
+| 17 | `battle_controller_opponent.c` | parcial | 1777 | 56/87 | ~633 |  |
+| 18 | `battle_setup.c` | parcial | 1070 | 26/66 | ~648 |  |
+| 19 | `mail.c` | parcial | 734 | 1/10 | ~660 |  |
+| 20 | `evolution_scene.c` | parcial | 1704 | 14/23 | ~666 |  |
+| 21 | `field_control_avatar.c` | parcial | 1182 | 21/49 | ~675 |  |
+| 22 | `field_fadetransition.c` | parcial | 965 | 16/59 | ~703 |  |
+| 23 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
+| 24 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
+| 25 | `battle_controller_oak_old_man.c` | parcial | 2293 | 73/107 | ~728 |  |
+| 26 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
+| 27 | `fieldmap.c` | parcial | 951 | 5/54 | ~862 |  |
 | 28 | `battle_main.c` | parcial | 4477 | 84/106 | ~929 |  |
 | 29 | `field_specials.c` | parcial | 2555 | 75/118 | ~931 |  |
 | 30 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
@@ -64,7 +64,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 44 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
 | 45 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
 | 46 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
-| 47 | `quest_log.c` | parcial | 1767 | 11/88 | ~1546 |  |
+| 47 | `quest_log.c` | parcial | 1767 | 12/88 | ~1526 |  |
 | 48 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
 | 49 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 | 50 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
@@ -78,9 +78,9 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 58 | `overworld.c` | parcial | 3563 | 42/242 | ~2944 |  |
 | 59 | `battle_transition.c` | parcial | 3037 | 1/134 | ~3014 |  |
 | 60 | `pokemon.c` | parcial | 6453 | 71/140 | ~3180 |  |
-| 61 | `field_effect.c` | parcial | 4033 | 13/239 | ~3813 |  |
+| 61 | `field_effect.c` | parcial | 4033 | 24/239 | ~3628 |  |
 
-Total: 61 archivos con huecos: 1 sin empezar, 1 adaptador, 10 casi completos y 49 parciales.
+Total: 61 archivos con huecos: 1 sin empezar, 1 adaptador, 11 casi completos y 48 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 

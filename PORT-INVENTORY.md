@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 49 | 105501 | 1800/4779 |
+| Parcial (< 80 % de funciones) | 48 | 103333 | 1710/4603 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 10 | 23126 | 889/988 |
+| Casi completo (≥ 80 % y < 100 %) | 11 | 25294 | 1061/1164 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 148 | 121900 | 4220/4220 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **61** | **131457** | |
-| **Total en alcance** | **211** | **253703** | **6937/10115** |
+| **Total en alcance** | **211** | **253703** | **7019/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -37,7 +37,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon.c` | 6453 | 71/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `battle_main.c` | 4477 | 84/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |  |
-| `field_effect.c` | 4033 | 13/239 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `namingScreen.ts` |  |  |
+| `field_effect.c` | 4033 | 24/239 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `namingScreen.ts` |  |  |
 | `overworld.c` | 3563 | 42/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
 | `battle_transition.c` | 3037 | 1/134 | `battle/transition.ts` |  |  |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
@@ -50,14 +50,13 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 73/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
-| `field_player_avatar.c` | 2168 | 102/176 | `field/fieldEffects.ts`, `field/fishing.ts`, `field/playerAvatar.ts` … |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
 | `battle_ai_script_commands.c` | 1970 | 25/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
-| `quest_log.c` | 1767 | 11/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
+| `quest_log.c` | 1767 | 12/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
@@ -99,6 +98,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `scrcmd.c` | 2264 | 216/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
 | `battle_interface.c` | 2240 | 46/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
+| `field_player_avatar.c` | 2168 | 172/176 | `field/fieldEffects.ts`, `field/fishing.ts`, `field/playerAvatar.ts` … |  |  |
 | `sprite.c` | 1745 | 100/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `sound.c` | 649 | 47/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
