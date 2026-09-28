@@ -237,18 +237,80 @@ export class Overworld {
 
   // ---------------------------------------------------------------- warps
 
+  /** SetWarpData (overworld.c): arguments are truncated to the source s8 fields. */
+  private SetWarpData(warp: WarpData, mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
+    const s8 = (value: number): number => (value << 24) >> 24;
+    warp.mapGroup = s8(mapGroup); warp.mapNum = s8(mapNum); warp.warpId = s8(warpId);
+    warp.x = s8(x); warp.y = s8(y);
+  }
+
+  /** SetWarpDestination (overworld.c). */
+  SetWarpDestination(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
+    this.SetWarpData(this.warpDestination, mapGroup, mapNum, warpId, x, y);
+  }
+
   setWarpDestination(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
-    this.warpDestination = { mapGroup, mapNum, warpId: warpId === 0xff ? -1 : warpId, x: x === 0xffff || x > 0x7fff ? -1 : x, y: y === 0xffff || y > 0x7fff ? -1 : y };
+    this.SetWarpDestination(mapGroup, mapNum, warpId, x, y);
+  }
+
+  /** SetWarpDestinationToMapWarp (overworld.c). */
+  SetWarpDestinationToMapWarp(mapGroup: number, mapNum: number, warpId: number): void {
+    this.SetWarpDestination(mapGroup, mapNum, warpId, -1, -1);
   }
 
   setWarpDestinationToMapWarp(mapGroup: number, mapNum: number, warpId: number): void {
-    this.setWarpDestination(mapGroup, mapNum, warpId, -1, -1);
+    this.SetWarpDestinationToMapWarp(mapGroup, mapNum, warpId);
   }
 
-  setWarpDestinationToHealLocation(healLocationId: number): void {
-    const heal = this.healLocation(healLocationId);
-    if (heal) this.setWarpDestination(heal.mapGroup, heal.mapNum, -1, heal.x, heal.y);
+  /** SetDynamicWarp (overworld.c); the current player coordinates are saved. */
+  SetDynamicWarp(_unused: number, mapGroup: number, mapNum: number, warpId: number): void {
+    this.SetWarpData(save.dynamicWarp, mapGroup, mapNum, warpId, save.pos.x, save.pos.y);
   }
+
+  /** SetDynamicWarpWithCoords (overworld.c). */
+  SetDynamicWarpWithCoords(_unused: number, mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
+    this.SetWarpData(save.dynamicWarp, mapGroup, mapNum, warpId, x, y);
+  }
+
+  /** SetWarpDestinationToDynamicWarp (overworld.c). */
+  SetWarpDestinationToDynamicWarp(_unusedWarpId: number): void { this.warpDestination = { ...save.dynamicWarp }; }
+
+  /** SetWarpDestinationToEscapeWarp (overworld.c). */
+  SetWarpDestinationToEscapeWarp(): void { this.warpDestination = { ...save.escapeWarp }; }
+
+  /** SetEscapeWarp (overworld.c). */
+  SetEscapeWarp(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
+    this.SetWarpData(save.escapeWarp, mapGroup, mapNum, warpId, x, y);
+  }
+
+  /** SetFixedDiveWarp and SetFixedHoleWarp (overworld.c). */
+  SetFixedDiveWarp(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
+    this.SetWarpData(this.fixedDiveWarp, mapGroup, mapNum, warpId, x, y);
+  }
+  SetFixedHoleWarp(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
+    this.SetWarpData(this.fixedHoleWarp, mapGroup, mapNum, warpId, x, y);
+  }
+  SetWarpDestinationToFixedHoleWarp(x: number, y: number): void {
+    if (isDummyWarp(this.fixedHoleWarp)) this.warpDestination = { ...this.lastUsedWarp };
+    else this.SetWarpDestination(this.fixedHoleWarp.mapGroup, this.fixedHoleWarp.mapNum, -1, x, y);
+  }
+
+  /** SetContinueGameWarp family (overworld.c). */
+  private SetContinueGameWarp(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
+    this.SetWarpData(save.continueGameWarp, mapGroup, mapNum, warpId, x, y);
+  }
+  SetWarpDestinationToContinueGameWarp(): void { this.warpDestination = { ...save.continueGameWarp }; }
+  SetContinueGameWarpToHealLocation(healLocationId: number): void {
+    const heal = this.healLocation(healLocationId);
+    if (heal) this.SetContinueGameWarp(heal.mapGroup, heal.mapNum, -1, heal.x, heal.y);
+  }
+  SetContinueGameWarpToDynamicWarp(_unused: number): void { save.continueGameWarp = { ...save.dynamicWarp }; }
+
+  SetWarpDestinationToHealLocation(healLocationId: number): void {
+    const heal = this.healLocation(healLocationId);
+    if (heal) this.SetWarpDestination(heal.mapGroup, heal.mapNum, -1, heal.x, heal.y);
+  }
+  setWarpDestinationToHealLocation(healLocationId: number): void { this.SetWarpDestinationToHealLocation(healLocationId); }
 
   /** Per-map resets shared by LoadMapFromWarp and LoadMapFromCameraTransition. */
   private onMapLoad(): void {
@@ -277,14 +339,16 @@ export class Overworld {
   resetStateAfterFly(): void { this.resetStateAfterWarpOut(); }
 
   /** SetWarpDestinationToLastHealLocation */
-  setWarpDestinationToLastHealLocation(): void {
+  SetWarpDestinationToLastHealLocation(): void {
     this.warpDestination = { ...save.lastHealLocation };
   }
+  setWarpDestinationToLastHealLocation(): void { this.SetWarpDestinationToLastHealLocation(); }
 
-  setLastHealLocationWarp(healLocationId: number): void {
+  SetLastHealLocationWarp(healLocationId: number): void {
     const heal = this.healLocation(healLocationId);
-    if (heal) save.lastHealLocation = { mapGroup: heal.mapGroup, mapNum: heal.mapNum, warpId: -1, x: heal.x, y: heal.y };
+    if (heal) this.SetWarpData(save.lastHealLocation, heal.mapGroup, heal.mapNum, -1, heal.x, heal.y);
   }
+  setLastHealLocationWarp(healLocationId: number): void { this.SetLastHealLocationWarp(healLocationId); }
 
   healLocation(id: number): { mapGroup: number; mapNum: number; x: number; y: number } | undefined {
     return GetHealLocation(id) ?? undefined;
@@ -344,7 +408,7 @@ export class Overworld {
     } catch { /* ignore */ }
     if (isMapTypeOutdoors(current) && !isMapTypeOutdoors(destType) && this.mapId !== "MAP_VIRIDIAN_FOREST") {
       const delta = this.player.object.facingDirection !== DIR_SOUTH ? 1 : 0;
-      save.escapeWarp = { mapGroup: save.location.mapGroup, mapNum: save.location.mapNum, warpId: -1, x: x - 7, y: y - 7 + delta };
+      this.SetEscapeWarp(save.location.mapGroup, save.location.mapNum, -1, x - 7, y - 7 + delta);
     }
   }
 

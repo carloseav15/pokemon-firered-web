@@ -241,13 +241,8 @@ function ScrCmd_warphole(ctx: ScriptRunner): boolean {
   const num = ctx.readByte();
   const p = ctx.ow.player.object;
   const x = p.currentCoords.x - MAP_OFFSET, y = p.currentCoords.y - MAP_OFFSET;
-  if (group === 0x7f && num === 0x7f) {
-    const fixed = ctx.ow.fixedHoleWarp;
-    if (fixed.mapGroup === 0x7f || fixed.mapGroup === 0xff) ctx.ow.warpDestination = { ...ctx.ow.lastUsedWarp };
-    else ctx.ow.setWarpDestination(fixed.mapGroup, fixed.mapNum, -1, x, y);
-  } else {
-    ctx.ow.setWarpDestination(group, num, -1, x, y);
-  }
+  if (group === 0x7f && num === 0x7f) ctx.ow.SetWarpDestinationToFixedHoleWarp(x, y);
+  else ctx.ow.SetWarpDestination(group, num, -1, x, y);
   ctx.ow.doFallWarp();
   ctx.ow.resetInitialPlayerAvatarState();
   return true;
@@ -255,10 +250,10 @@ function ScrCmd_warphole(ctx: ScriptRunner): boolean {
 function ScrCmd_warpteleport(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.doTeleportWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_warpspinenter(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.setInitialPlayerAvatarStateWithDirection(ctx.ow.player.object.facingDirection); ctx.ow.doTeleportWarp(); return true; }
 function ScrCmd_setwarp(ctx: ScriptRunner): boolean { readWarp(ctx); return false; }
-function ScrCmd_setdynamicwarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); save.dynamicWarp = w; return false; }
-function ScrCmd_setdivewarp(ctx: ScriptRunner): boolean { ctx.ow.fixedDiveWarp = readWarpData(ctx); return false; }
-function ScrCmd_setholewarp(ctx: ScriptRunner): boolean { ctx.ow.fixedHoleWarp = readWarpData(ctx); return false; }
-function ScrCmd_setescapewarp(ctx: ScriptRunner): boolean { save.escapeWarp = readWarpData(ctx); return false; }
+function ScrCmd_setdynamicwarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); ctx.ow.SetDynamicWarpWithCoords(0, w.mapGroup, w.mapNum, w.warpId, w.x, w.y); return false; }
+function ScrCmd_setdivewarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); ctx.ow.SetFixedDiveWarp(w.mapGroup, w.mapNum, w.warpId, w.x, w.y); return false; }
+function ScrCmd_setholewarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); ctx.ow.SetFixedHoleWarp(w.mapGroup, w.mapNum, w.warpId, w.x, w.y); return false; }
+function ScrCmd_setescapewarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); ctx.ow.SetEscapeWarp(w.mapGroup, w.mapNum, w.warpId, w.x, w.y); return false; }
 function ScrCmd_getplayerxy(ctx: ScriptRunner): boolean {
   const vx = ctx.ScriptReadHalfword();
   const vy = ctx.ScriptReadHalfword();
@@ -747,7 +742,7 @@ function readWarpData(ctx: ScriptRunner) {
 
 function readWarp(ctx: ScriptRunner): void {
   const w = readWarpData(ctx);
-  ctx.ow.warpDestination = w;
+  ctx.ow.SetWarpDestination(w.mapGroup, w.mapNum, w.warpId, w.x, w.y);
 }
 
 function removeObject(ctx: ScriptRunner, localId: number): void {

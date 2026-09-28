@@ -488,16 +488,16 @@ export class FieldControl {
   private setupWarp(warpIndex: number, position: { x: number; y: number }): void {
     const warp = this.ow.header.warps[warpIndex];
     if (warp.destMap === "MAP_DYNAMIC") {
-      this.ow.warpDestination = { ...save.dynamicWarp };
+      this.ow.SetWarpDestinationToDynamicWarp(warp.destWarpId);
       return;
     }
     const num = rom.mapNum(warp.destMap);
-    this.ow.setWarpDestinationToMapWarp(num >> 8, num & 0xff, warp.destWarpId);
+    this.ow.SetWarpDestinationToMapWarp(num >> 8, num & 0xff, warp.destWarpId);
     this.ow.updateEscapeWarp(position.x, position.y);
     const destHeader = rom.cachedMap(warp.destMap);
     const back = destHeader?.warps[warp.destWarpId];
     if (back && back.destMap === "MAP_DYNAMIC") {
-      save.dynamicWarp = { mapGroup: save.location.mapGroup, mapNum: save.location.mapNum, warpId: warpIndex, x: save.pos.x, y: save.pos.y };
+      this.ow.SetDynamicWarp(warp.destWarpId, save.location.mapGroup, save.location.mapNum, warpIndex);
     }
   }
 

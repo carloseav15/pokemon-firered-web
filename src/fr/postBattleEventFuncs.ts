@@ -24,8 +24,7 @@ export function enterHallOfFame(game: Game): void {
   }
   // SetContinueGameWarpStatus + SetContinueGameWarpToHealLocation(HEAL_LOCATION_PALLET_TOWN)
   (save as unknown as { continueGameWarpActive?: boolean }).continueGameWarpActive = true;
-  const heal = ow.healLocation(C.HEAL_LOCATION_PALLET_TOWN);
-  if (heal) save.continueGameWarp = { mapGroup: heal.mapGroup, mapNum: heal.mapNum, warpId: -1, x: heal.x, y: heal.y };
+  ow.SetContinueGameWarpToHealLocation(C.HEAL_LOCATION_PALLET_TOWN);
   let ribbon = false;
   for (const mon of save.party) {
     if (mon.isEgg) continue;

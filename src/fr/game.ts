@@ -292,8 +292,9 @@ export class Game {
     const flags = save as unknown as { continueGameWarpActive?: boolean };
     if (flags.continueGameWarpActive && save.continueGameWarp.mapGroup !== 0xff) {
       flags.continueGameWarpActive = false;
-      save.location = { ...save.continueGameWarp };
-      save.pos = { x: save.continueGameWarp.x, y: save.continueGameWarp.y };
+      this.overworld.SetWarpDestinationToContinueGameWarp();
+      save.location = { ...this.overworld.warpDestination };
+      save.pos = { x: this.overworld.warpDestination.x, y: this.overworld.warpDestination.y };
     }
     textOptions.speed = save.options.textSpeed;
     joy.buttonMode = save.options.buttonMode;
@@ -316,7 +317,12 @@ export class Game {
     save.savedMusic = this.overworld.savedMusic;
     save.options.textSpeed = textOptions.speed;
     ApplyNewEncryptionKeyToBagItems_(save.trainerId);
-    return saveStore.write(save);
+    this.overworld.SetContinueGameWarpToDynamicWarp(0);
+    const continueFlags = save as SaveData & { continueGameWarpActive?: boolean };
+    continueFlags.continueGameWarpActive = true;
+    const succeeded = saveStore.write(save);
+    if (succeeded) continueFlags.continueGameWarpActive = false;
+    return succeeded;
   }
 
   // ---------------------------------------------------------------- start menu

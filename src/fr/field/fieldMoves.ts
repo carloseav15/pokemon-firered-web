@@ -599,7 +599,7 @@ export class FieldMoveEffects {
         }
       }
       if (offscreen && !paletteFade.active && sound.isBGMPausedOrStopped()) {
-        ow.warpDestination = { ...save.escapeWarp };
+        ow.SetWarpDestinationToEscapeWarp();
         ow.fieldCallback = () => this.escapeRopeExit();
         tasks.destroy(id);
         ow.warpIntoMapAndLoad();
@@ -721,7 +721,7 @@ export class FieldMoveEffects {
 
   private TeleportFieldEffectTask4(): void {
     if (!paletteFade.active && sound.isBGMPausedOrStopped()) {
-      this.ow.setWarpDestinationToLastHealLocation();
+      this.ow.SetWarpDestinationToLastHealLocation();
       this.ow.fieldCallback = () => this.FieldCallback_TeleportIn();
       tasks.destroy(this.teleportFieldTaskId);
       this.ow.warpIntoMapAndLoad();
