@@ -30,6 +30,7 @@ import {
   REG_OFFSET_DISPCNT,
 } from "./hw/ppu";
 import type { Overworld } from "./field/overworld";
+import { getMapNameGenericBytes } from "./regionMap";
 
 export const MPS_VIRIDIAN_FOREST = 0;
 export const MPS_MT_MOON = 1;
@@ -152,7 +153,7 @@ export function MapPreview_GetDuration(mapsec: number): number {
 export function MapPreview_CreateMapNameWindow(mapsec: number): Window {
   const win = new Window(0, 0, 13, 2);
   win.fill(TEXT_COLOR_WHITE);
-  const name = rom.regionMapName(mapsec);
+  const name = getMapNameGenericBytes(mapsec);
   const width = stringWidth(FONT_NORMAL, name);
   const x = Math.max(0, Math.floor((104 - width) / 2));
   printText(win, FONT_NORMAL, name, x, 2, {

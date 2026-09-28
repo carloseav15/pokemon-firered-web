@@ -5,6 +5,7 @@ import { concat, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_LEADING_Z
 import { GetKantoPokedexCount, GetNationalPokedexCount } from "./pokemon/pokemon";
 import { flagGet, save, varGet } from "./save";
 import { rom } from "./rom";
+import { getMapNameGenericBytes } from "./regionMap";
 
 /** SaveStatToString; the current map section is supplied for SAVE_STAT_LOCATION. */
 export function SaveStatToString(gameStatId: number, color: number, regionMapSection?: number): Uint8Array {
@@ -31,7 +32,7 @@ export function SaveStatToString(gameStatId: number, color: number, regionMapSec
       break;
     }
     case C.SAVE_STAT_LOCATION:
-      value = regionMapSection === undefined ? Uint8Array.of(0xff) : rom.regionMapName(regionMapSection);
+      value = regionMapSection === undefined ? Uint8Array.of(0xff) : getMapNameGenericBytes(regionMapSection);
       break;
     case C.SAVE_STAT_BADGES: {
       const firstBadge = C.FLAG_BADGE01_GET;

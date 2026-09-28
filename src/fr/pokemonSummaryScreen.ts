@@ -76,6 +76,7 @@ import { CreateMonIcon, DestroyMonIcon, SafeFreeMonIconPalette, SafeLoadMonIconP
 import { FreeBallGfx, gBallSpriteTemplates, ItemIdToBallId, LoadBallGfx } from "./battle/pokeball";
 import { ShouldPlayNormalMonCry } from "./battle/gfx_sfx_util";
 import { isHMMove } from "./menus/monProgress";
+import { getMapNameGenericBytes } from "./regionMap";
 import { fieldMenu } from "./menus/fieldMenus";
 
 function CheckPartyPokerus(mon: Mon, _selection = 0): boolean {
@@ -1252,7 +1253,7 @@ function PokeSum_PrintTrainerMemo_Mon(): void {
   const metLoc = mon.metLocation || 0;
   let mapName: Uint8Array;
   if (metLoc >= C.KANTO_MAPSEC_START && metLoc < C.MAPSEC_NONE) {
-    mapName = rom.regionMapName(metLoc);
+    mapName = getMapNameGenericBytes(metLoc);
   } else if (!isOT) {
     mapName = rom.text("gText_PokeSum_ATrade");
   } else {

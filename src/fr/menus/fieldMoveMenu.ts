@@ -12,6 +12,7 @@ import { flagGet, flagSet, save, varSet, SV, type WarpData } from "../save";
 import type { Game } from "../game";
 import { DIRECTION_VECTORS, DIR_NORTH } from "../field/objectEvents";
 import { Overworld_MapTypeAllowsTeleportAndFly } from "../field/overworld";
+import { getMapNameGenericBytes } from "../regionMap";
 
 export const FIELD_MOVE_FLASH = 0, FIELD_MOVE_CUT = 1, FIELD_MOVE_FLY = 2, FIELD_MOVE_STRENGTH = 3, FIELD_MOVE_SURF = 4,
   FIELD_MOVE_ROCK_SMASH = 5, FIELD_MOVE_WATERFALL = 6, FIELD_MOVE_TELEPORT = 7, FIELD_MOVE_DIG = 8, FIELD_MOVE_MILK_DRINK = 9,
@@ -175,7 +176,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
     case FIELD_MOVE_TELEPORT:
       if (!SetUpFieldMove_Teleport(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
-      stringVars.var1 = Uint8Array.from(rom.regionMapName(sectionOfWarp(save.lastHealLocation)));
+      stringVars.var1 = getMapNameGenericBytes(sectionOfWarp(save.lastHealLocation));
       return { kind: "confirm", message: text("gText_ReturnToHealingSpot"), post: () => {
         ow.resetStateAfterTeleport();
         args[0] = partyIndex;
@@ -183,7 +184,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       } };
     case FIELD_MOVE_DIG:
       if (!SetUpFieldMove_Dig(ow.header.allowEscaping)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
-      stringVars.var1 = Uint8Array.from(rom.regionMapName(sectionOfWarp(save.escapeWarp)));
+      stringVars.var1 = getMapNameGenericBytes(sectionOfWarp(save.escapeWarp));
       return { kind: "confirm", message: text("gText_EscapeFromHereAndReturnTo"), post: () => {
         ow.resetStateAfterDigEscRope();
         args[0] = partyIndex;

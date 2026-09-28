@@ -210,7 +210,7 @@ function InitRegionMapWithExitCB(type: number, cb: () => void, fromField: boolea
 
 function InitRegionMapType(): void {
   const r = rm();
-  r.mainTask = r.type === REGIONMAP_TYPE_FLY ? Task_FlyMap : Task_RegionMap;
+  SetMainMapTask(r.type === REGIONMAP_TYPE_FLY ? Task_FlyMap : Task_RegionMap);
   const perms = rd<number[][]>("sRegionMapPermissions")[r.type];
   for (let i = 0; i < 4; i++) r.permissions[i] = !!perms[i];
   if (!flagGet(C.FLAG_SYS_SEVII_MAP_123)) r.permissions[MAPPERM_HAS_SWITCH_BUTTON] = false;
@@ -225,7 +225,7 @@ function InitRegionMapType(): void {
     }
   }
   r.selectedRegion = region;
-  r.playersRegion = region;
+  SetRegionMapPlayerIsOn(region);
 }
 
 function CB2_OpenRegionMap(): void {
@@ -317,14 +317,14 @@ function Task_RegionMap(taskId: number): void {
   const r = rm();
   switch (r.mainState) {
     case 0:
-      InitMapIcons(GetSelectedRegionMap(), taskId, r.mainTask);
+      InitMapIcons(GetSelectedRegionMap(), taskId, GetMainMapTask());
       CreateMapCursor(0, 0);
       CreatePlayerIcon(1, 1);
       r.mainState++;
       break;
     case 1:
       if (r.permissions[MAPPERM_HAS_OPEN_ANIM]) {
-        InitMapOpenAnim(taskId, r.mainTask);
+        InitMapOpenAnim(taskId, GetMainMapTask());
       } else {
         ShowBg(0); ShowBg(3); ShowBg(1);
         PrintTopBarTextLeft(text("gText_RegionMap_DPadMove"));
@@ -393,7 +393,7 @@ function Task_RegionMap(taskId: number): void {
 }
 
 function SaveMainMapTask(taskId: number): void {
-  tasks.setFunc(taskId, rm().mainTask);
+  tasks.setFunc(taskId, GetMainMapTask());
 }
 
 function FreeRegionMap(taskId: number): void {
@@ -543,9 +543,12 @@ function WriteSequence(bg: number, firstTileNum: number, x: number, y: number, w
 }
 
 function GetRegionMapPermission(attr: number): boolean { return rm().permissions[attr]; }
+function SetMainMapTask(taskFunc: TaskFunc): void { rm().mainTask = taskFunc; }
+function GetMainMapTask(): TaskFunc { return rm().mainTask; }
 function GetSelectedRegionMap(): number { return rm().selectedRegion; }
 function GetRegionMapPlayerIsOn(): number { return rm().playersRegion; }
 function SetSelectedRegionMap(region: number): void { rm().selectedRegion = region; }
+function SetRegionMapPlayerIsOn(region: number): void { rm().playersRegion = region & 0xff; }
 
 // ---------------------------------------------------------------- switch map menu
 
@@ -799,7 +802,7 @@ function Task_DungeonMapPreview(taskId: number): void {
     case 0: NullVBlankHBlankCallbacks(); p.mainState++; break;
     case 1: if (LoadMapPreviewGfx()) p.mainState++; break;
     case 2: InitScreenForDungeonMapPreview(); PrintTopBarTextRight(text("gText_RegionMap_AButtonCancel2")); p.mainState++; break;
-    case 3: CopyToBgTilemapBufferRect(2, p.tilemap, 0, 0, 32, 20); CopyBgTilemapBufferToVram(2); p.mainState++; break;
+    case 3: CopyMapPreviewTilemapToBgTilemapBuffer(2, p.tilemap); CopyBgTilemapBufferToVram(2); p.mainState++; break;
     case 4: ShowBg(2); p.mainState++; break;
     case 5: SetRegionMapVBlankCB(); p.mainState++; break;
     case 6: if (UpdateDungeonMapPreview(false)) p.mainState++; break;
@@ -807,6 +810,11 @@ function Task_DungeonMapPreview(taskId: number): void {
     case 8: if (UpdateDungeonMapPreview(true)) p.mainState++; break;
     case 9: FreeDungeonMapPreview(taskId); break;
   }
+}
+
+/** CopyMapPreviewTilemapToBgTilemapBuffer (region_map.c); C deliberately targets BG2. */
+function CopyMapPreviewTilemapToBgTilemapBuffer(_bgId: number, tilemap: ArrayLike<number>): void {
+  CopyToBgTilemapBufferRect(2, tilemap, 0, 0, 32, 20);
 }
 
 function Task_DrawDungeonMapPreviewFlavorText(taskId: number): void {
@@ -915,10 +923,13 @@ function CreateMapEdgeSprite(mapEdgeNum: number, tileTag: number, palTag: number
   edge.palTag = palTag;
   LoadSpriteSheet({ data: edge.tiles, size: 0x400, tag: tileTag });
   LoadSpritePalette({ data: incbin("sMapEdge_Pal"), tag: palTag });
-  const spriteId = CreateSprite(spriteTemplate(tileTag, palTag, "sOamData_MapEdge", "sAnims_MapEdge", SpriteCallbackDummy), edge.x, edge.y, 0);
+  const spriteId = CreateSprite(spriteTemplate(tileTag, palTag, "sOamData_MapEdge", "sAnims_MapEdge", SpriteCB_MapEdge), edge.x, edge.y, 0);
   edge.sprite = gSprites[spriteId];
   edge.sprite.invisible = true;
 }
+
+/** SpriteCB_MapEdge (region_map.c) is the original empty sprite callback. */
+function SpriteCB_MapEdge(_sprite: Sprite): void {}
 
 function InitMapOpenAnim(taskId: number, taskFunc: TaskFunc): void {
   sMapOpenCloseAnim = {
@@ -1055,9 +1066,12 @@ function Task_MapOpenAnim(taskId: number): void {
       else { a.blendY--; SetBldY(a.blendY); }
       break;
     case 13: SetRegionMapGpuRegs(0); DisplayCurrentDungeonName(); a.openState++; break;
-    default: FreeMapEdgeSprites(); tasks.setFunc(taskId, a.exitTask); break;
+    default: FreeMapEdgeSprites(); FinishMapOpenAnim(taskId); break;
   }
 }
+
+/** FinishMapOpenAnim (region_map.c). */
+function FinishMapOpenAnim(taskId: number): void { tasks.setFunc(taskId, sMapOpenCloseAnim!.exitTask); }
 
 function moveEdges(delta: number): void {
   const e = sMapOpenCloseAnim!.mapEdges;
@@ -1541,10 +1555,13 @@ function LoadMapIcons(taskId: number): void {
     case 4: SetRegionMapVBlankCB(); m.state++; break;
     default:
       SetGpuReg(REG_OFFSET_DISPCNT, GetGpuReg(REG_OFFSET_DISPCNT) | DISPCNT_OBJ_ON);
-      tasks.setFunc(taskId, m.exitTask);
+      FinishMapIconLoad(taskId);
       break;
   }
 }
+
+/** FinishMapIconLoad (region_map.c). */
+function FinishMapIconLoad(taskId: number): void { tasks.setFunc(taskId, sMapIcons!.exitTask); }
 
 function CreateFlyIconSprite(whichMap: number, numIcons: number, x: number, y: number, tileTag: number, palTag: number): void {
   const m = sMapIcons!;
@@ -1689,8 +1706,13 @@ function SetGpuWindowDims(winIdx: number, data: GpuWindowParams): void {
 }
 
 function FreeAndResetGpuRegs(): void {
-  sRegionMapGpuRegs.fill(null);
+  FreeRegionMapGpuRegs();
   ResetGpuRegs();
+}
+
+/** FreeRegionMapGpuRegs (region_map.c); release each saved register snapshot. */
+function FreeRegionMapGpuRegs(): void {
+  sRegionMapGpuRegs.fill(null);
 }
 
 // WINOUT_WIN01_* (outside both windows) bits.
@@ -1705,16 +1727,46 @@ function mapNameBytes(mapsec: number): Uint8Array {
   return ref ? Uint8Array.from(rd<number[]>(symName(ref)!)) : Uint8Array.of(0xff);
 }
 
-/** GetMapName while the region map is open (IsCeladonDeptStoreMapsec is FALSE then). */
+/** IsCeladonDeptStoreMapsec (region_map.c): use the department label only from its floors, outside the map UI. */
+function IsCeladonDeptStoreMapsec(mapsec: number): boolean {
+  if (sRegionMap !== null || (mapsec & 0xffff) !== C.MAPSEC_CELADON_CITY) return false;
+  const firstFloor = C.MAP_CELADON_CITY_DEPARTMENT_STORE_1F;
+  if (save.location.mapGroup !== (firstFloor >>> 8)) return false;
+  const floors = [C.MAP_CELADON_CITY_DEPARTMENT_STORE_1F, C.MAP_CELADON_CITY_DEPARTMENT_STORE_2F,
+    C.MAP_CELADON_CITY_DEPARTMENT_STORE_3F, C.MAP_CELADON_CITY_DEPARTMENT_STORE_4F,
+    C.MAP_CELADON_CITY_DEPARTMENT_STORE_5F, C.MAP_CELADON_CITY_DEPARTMENT_STORE_ROOF,
+    C.MAP_CELADON_CITY_DEPARTMENT_STORE_ELEVATOR];
+  return floors.some((map) => save.location.mapNum === (map & 0xff));
+}
+
+/** GetMapName while the region map is open; the special Celadon department label is suppressed. */
 function GetMapName(mapsec: number, fill: number): Uint8Array {
+  mapsec &= 0xffff;
   const idx = mapsec - C.KANTO_MAPSEC_START;
   if (idx < 0 || idx >= C.MAPSEC_NONE - C.KANTO_MAPSEC_START) return Uint8Array.from([...new Array(fill || 18).fill(0x00), 0xff]);
-  const name = Array.from(mapNameBytes(mapsec));
+  const name = Array.from(IsCeladonDeptStoreMapsec(mapsec) ? rd<number[]>("sMapsecName_CELADON_DEPT_") : mapNameBytes(mapsec));
   const end = name.indexOf(0xff);
   const out = name.slice(0, end < 0 ? name.length : end);
   if (fill) while (out.length < fill) out.push(0x00);
   out.push(0xff);
   return Uint8Array.from(out);
+}
+
+/** GetMapNameGeneric (region_map.c); copies the EOS string and returns the one-past-EOS destination view. */
+export function GetMapNameGeneric(dest: Uint8Array, mapsec: number): Uint8Array {
+  const name = GetMapName(mapsec, 0);
+  dest.set(name.subarray(0, dest.length));
+  return dest.subarray(Math.min(name.length, dest.length));
+}
+
+/** GetMapNameGeneric_ (region_map.c) is the same destination-buffer helper. */
+export function GetMapNameGeneric_(dest: Uint8Array, mapsec: number): Uint8Array { return GetMapNameGeneric(dest, mapsec); }
+
+/** Byte-array form for TypeScript call sites that model the C string destination inline. */
+export function getMapNameGenericBytes(mapsec: number): Uint8Array {
+  const dest = new Uint8Array(64).fill(0xff);
+  GetMapNameGeneric(dest, mapsec);
+  return dest.subarray(0, dest.indexOf(0xff) + 1);
 }
 
 function PrintTopBarTextLeft(str: Uint8Array): void {
@@ -1840,7 +1892,7 @@ function FreeFlyMap(taskId: number): void {
   FreeMapCursor();
   FreePlayerIcon();
   FreeAndResetGpuRegs();
-  sRegionMap = null;
+  FreeRegionMapForFlyMap();
   tasks.destroy(taskId);
   FreeAllWindowBuffers();
   const selected = sFlyMap!.selectedDestination;
@@ -1851,6 +1903,9 @@ function FreeFlyMap(taskId: number): void {
   sFlyDone = null;
   done?.(selected);
 }
+
+/** FreeRegionMapForFlyMap (region_map.c); the fly map frees this state separately. */
+function FreeRegionMapForFlyMap(): void { sRegionMap = null; }
 
 function SetFlyWarpDestination(mapsec: number): void {
   const dest = rd<number[][]>("sMapFlyDestinations")[mapsec - C.KANTO_MAPSEC_START];
