@@ -1902,13 +1902,26 @@ export class Overworld {
 
   // ---------------------------------------------------------------- frame
 
-  /** CB1_Overworld */
-  cb1(): void {
+  /** CB1_Overworld: DoCB1_Overworld_QuestLogPlayback's branch (Quest Log playback re-driving
+   * field input from a recording) isn't modeled — see PORTING-STATUS.md. */
+  CB1_Overworld(): void {
     this.control.processFrame(joy.newKeys, joy.held);
   }
+  cb1(): void { this.CB1_Overworld(); }
 
-  /** CB2_Overworld / OverworldBasic */
-  cb2(): void {
+  /** CB2_Overworld (overworld.c): the C disables the VBlank callback while a palette fade is
+   * active to avoid a hardware race on the fade buffer; there's no such race in this port's
+   * canvas renderer, so it just runs OverworldBasic every tick. */
+  CB2_Overworld(): void {
+    this.OverworldBasic();
+  }
+  cb2(): void { this.CB2_Overworld(); }
+
+  /** CB2_OverworldBasic (overworld.c): identical to CB2_Overworld here for the same reason. */
+  CB2_OverworldBasic(): void { this.OverworldBasic(); }
+
+  /** OverworldBasic (overworld.c). */
+  OverworldBasic(): void {
     this.script.ScriptContext_RunScript();
     tasks.run();
     this.syncObjectSprites();
@@ -1923,6 +1936,11 @@ export class Overworld {
     paletteFade.update();
     this.animator?.update();
     for (const hook of this.onFrame) hook();
+  }
+
+  /** ClearFieldCallback (overworld.c). */
+  ClearFieldCallback(): void {
+    this.fieldCallback = null;
   }
 
   // ---------------------------------------------------------------- render
