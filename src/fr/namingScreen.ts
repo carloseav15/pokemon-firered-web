@@ -790,7 +790,10 @@ class NamingScreen {
     this.SetInputState(NamingInputState.DISABLED);
     SaveInputText(this.model);
     this.stopFlashesNextUpdate = true;
-    if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
+    if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) {
+      this.DisplaySentToPCMessage();
+      this.state = "waitSentToPCMessage";
+    }
     else this.state = "fadeOut";
   }
 
@@ -810,7 +813,8 @@ class NamingScreen {
     RestoreHelpContext();
   }
 
-  private showPCMessage(): void {
+  /** DisplaySentToPCMessage (naming_screen.c). */
+  private DisplaySentToPCMessage(): void {
     const changedBox = isDestinationBoxFull();
     stringVars.var1 = getBoxName(varGet(C.VAR_PC_BOX_TO_SEND_MON));
     stringVars.var2 = Uint8Array.from(Array.from({length: this.model.destination.length}, (_, i) => this.model.destination[i]));
@@ -823,7 +827,6 @@ class NamingScreen {
     textFlags.autoScroll = false;
     AddTextPrinterParameterized2(0, FONT_NORMAL, expandPlaceholders(rom.text(labels[index])), getTextSpeedSetting(), null, 2, 1, 3);
     CopyWindowToVram(0, COPYWIN_FULL);
-    this.state = "waitSentToPCMessage";
   }
 
   /** MainState_WaitSentToPCMessage (naming_screen.c). */
