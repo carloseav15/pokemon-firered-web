@@ -86,7 +86,7 @@ export class FieldControl {
         this.ow.controlsLocked = true;
         this.ow.mapName.dismiss();
       } else {
-        player.step(input.dpadDirection, newKeys, heldKeys);
+        player.player_step(input.dpadDirection, newKeys, heldKeys);
       }
     }
   }

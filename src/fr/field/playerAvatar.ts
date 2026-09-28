@@ -359,24 +359,34 @@ export class PlayerAvatar {
   }
 
   /** player_step */
-  step(direction: number, newKeys: number, heldKeys: number): void {
+  player_step(direction: number, newKeys: number, heldKeys: number): void {
     if (this.preventStep) return;
-    if (this.tryUpdateSpinDirection()) return;
-    if (this.tryInterruptSpecialAnim(direction)) return;
-    // npc_clear_strange_bits
+    if (this.TryUpdatePlayerSpinDirection()) return;
+    if (this.TryInterruptObjectEventSpecialAnim(direction)) return;
+    this.npc_clear_strange_bits();
+    if (!this.TryDoMetatileBehaviorForcedMovement()) {
+      this.MovePlayerAvatarUsingKeypadInput(direction, newKeys, heldKeys);
+      this.PlayerAllowForcedMovementIfMovingSameDirection();
+    }
+  }
+
+  private npc_clear_strange_bits(): void {
     this.object.inanimate = false;
     this.object.disableAnim = false;
     this.object.facingDirectionLocked = false;
     this.flags &= ~PLAYER_AVATAR_FLAG_DASH;
-    if (!this.tryForcedMovement()) {
-      // MovePlayerAvatarUsingKeypadInput
-      if (this.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) this.movePlayerOnBike(direction, newKeys, heldKeys);
-      else this.movePlayerNotOnBike(direction, heldKeys);
-      if (this.runningState === MOVING) this.flags &= ~PLAYER_AVATAR_FLAG_CONTROLLABLE;
-    }
   }
 
-  private tryInterruptSpecialAnim(direction: number): boolean {
+  private MovePlayerAvatarUsingKeypadInput(direction: number, newKeys: number, heldKeys: number): void {
+    if (this.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) this.movePlayerOnBike(direction, newKeys, heldKeys);
+    else this.MovePlayerNotOnBike(direction, heldKeys);
+  }
+
+  private PlayerAllowForcedMovementIfMovingSameDirection(): void {
+    if (this.runningState === MOVING) this.flags &= ~PLAYER_AVATAR_FLAG_CONTROLLABLE;
+  }
+
+  private TryInterruptObjectEventSpecialAnim(direction: number): boolean {
     const o = this.object;
     if (this.ow.objects.isMovementOverridden(o) && !this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
       const held = o.movementActionId;
@@ -391,7 +401,7 @@ export class PlayerAvatar {
     return false;
   }
 
-  private tryUpdateSpinDirection(): boolean {
+  private TryUpdatePlayerSpinDirection(): boolean {
     if ((this.flags & PLAYER_AVATAR_FLAG_FORCED) && MB.MetatileBehavior_IsSpinTile(this.lastSpinTile)) {
       const o = this.object;
       if (o.heldMovementFinished) {
@@ -542,7 +552,7 @@ export class PlayerAvatar {
     PlayerAvatar_DoSecretBaseMatSpin();
   }
 
-  private tryForcedMovement(): boolean {
+  private TryDoMetatileBehaviorForcedMovement(): boolean {
     if (!(this.flags & PLAYER_AVATAR_FLAG_CONTROLLABLE)) {
       const behavior = this.object.currentMetatileBehavior;
       for (const [check, apply] of this.forcedMovementTable()) {
@@ -576,7 +586,7 @@ export class PlayerAvatar {
   }
 
   private DoForcedMovement(direction: number, action: (d: number) => void): boolean {
-    const collision = this.checkCollision(direction);
+    const collision = this.CheckForPlayerAvatarCollision(direction);
     this.flags |= PLAYER_AVATAR_FLAG_FORCED;
     if (collision) {
       this.ForcedMovement_None();
@@ -689,7 +699,7 @@ export class PlayerAvatar {
       else if (collision !== COLLISION_STOP_SURFING && collision !== COLLISION_PUSHED_BOULDER && collision !== COLLISION_DIRECTIONAL_STAIR_WARP) {
         this.PlayerOnBikeCollide(direction);
       }
-    } else if (collision === 14 || this.isMovingOnRockStairs(direction)) this.PlayerWalkFast(direction);
+    } else if (collision === 14 || this.PlayerIsMovingOnRockStairs(direction)) this.PlayerWalkFast(direction);
     else this.PlayerRideWaterCurrent(direction);
   }
 
@@ -717,7 +727,7 @@ export class PlayerAvatar {
   }
 
   private GetBikeCollisionAt(x: number, y: number, direction: number, behavior: number): number {
-    let collision = this.checkObjectCollision(this.object, x, y, direction);
+    let collision = this.CheckForObjectEventCollision(this.object, x, y, direction);
     if (collision <= COLLISION_OBJECT_EVENT) {
       if (MB.MetatileBehavior_IsCrackedIce(behavior)) return 14;
       if (collision === COLLISION_NONE && this.MetatileBehaviorForbidsBiking(behavior)) collision = 2; // COLLISION_IMPASSABLE
@@ -832,21 +842,25 @@ export class PlayerAvatar {
     }
   }
 
-  private movePlayerNotOnBike(direction: number, heldKeys: number): void {
-    // CheckMovementInputNotOnBike
-    if (direction === DIR_NONE) {
-      this.runningState = NOT_MOVING;
-      this.PlayerFaceDirection(this.object.facingDirection);
-      return;
-    }
-    if (direction !== this.object.movementDirection && this.runningState !== MOVING) {
-      this.runningState = TURN_DIRECTION;
-      this.PlayerTurnInPlace(direction);
-      return;
-    }
+  private CheckMovementInputNotOnBike(direction: number): number {
+    if (direction === DIR_NONE) { this.runningState = NOT_MOVING; return 0; }
+    if (direction !== this.object.movementDirection && this.runningState !== MOVING) { this.runningState = TURN_DIRECTION; return 1; }
     this.runningState = MOVING;
-    // PlayerNotOnBikeMoving
-    const collision = this.checkCollision(direction);
+    return 2;
+  }
+
+  private MovePlayerNotOnBike(direction: number, heldKeys: number): void {
+    const input = this.CheckMovementInputNotOnBike(direction);
+    if (input === 0) this.PlayerNotOnBikeNotMoving();
+    else if (input === 1) this.PlayerNotOnBikeTurningInPlace(direction);
+    else this.PlayerNotOnBikeMoving(direction, heldKeys);
+  }
+
+  private PlayerNotOnBikeNotMoving(): void { this.PlayerFaceDirection(this.object.facingDirection); }
+  private PlayerNotOnBikeTurningInPlace(direction: number): void { this.PlayerTurnInPlace(direction); }
+
+  private PlayerNotOnBikeMoving(direction: number, heldKeys: number): void {
+    const collision = this.CheckForPlayerAvatarCollision(direction);
     if (collision !== COLLISION_NONE) {
       if (collision === COLLISION_LEDGE_JUMP) this.PlayerJumpLedge(direction);
       else if (collision === COLLISION_DIRECTIONAL_STAIR_WARP) this.PlayerFaceDirection(direction);
@@ -859,17 +873,17 @@ export class PlayerAvatar {
     }
     const canRun = (heldKeys & B_BUTTON) && flagGet(rom.constants.FLAG_SYS_B_DASH) && !this.IsRunningDisallowed(this.object.currentMetatileBehavior);
     if (canRun) {
-      if (this.isMovingOnRockStairs(direction)) this.PlayerRunSlow(direction);
+      if (this.PlayerIsMovingOnRockStairs(direction)) this.PlayerRunSlow(direction);
       else this.PlayerRun(direction);
       this.flags |= PLAYER_AVATAR_FLAG_DASH;
-    } else if (this.isMovingOnRockStairs(direction)) {
+    } else if (this.PlayerIsMovingOnRockStairs(direction)) {
       this.PlayerWalkSlow(direction);
     } else {
       this.PlayerWalkNormal(direction);
     }
   }
 
-  private isMovingOnRockStairs(direction: number): boolean {
+  PlayerIsMovingOnRockStairs(direction: number): boolean {
     const { x, y } = this.object.currentCoords;
     if (direction === DIR_NORTH) return MB.MetatileBehavior_IsRockStairs(this.ow.map.behaviorAt(x, y));
     if (direction === DIR_SOUTH) return MB.MetatileBehavior_IsRockStairs(this.ow.map.behaviorAt(x, y + 1));
@@ -877,11 +891,11 @@ export class PlayerAvatar {
   }
 
   /** CheckForPlayerAvatarCollision */
-  checkCollision(direction: number): number {
+  private CheckForPlayerAvatarCollision(direction: number): number {
     const { x, y } = this.object.currentCoords;
     if (this.isDirectionalStairWarp(this.ow.map.behaviorAt(x, y), direction)) return COLLISION_DIRECTIONAL_STAIR_WARP;
     const [dx, dy] = DIRECTION_VECTORS[direction];
-    return this.checkObjectCollision(this.object, x + dx, y + dy, direction);
+    return this.CheckForObjectEventCollision(this.object, x + dx, y + dy, direction);
   }
 
   isDirectionalStairWarp(behavior: number, direction: number): boolean {
@@ -891,10 +905,10 @@ export class PlayerAvatar {
   }
 
   /** CheckForObjectEventCollision */
-  checkObjectCollision(object: ObjectEvent, x: number, y: number, direction: number): number {
+  CheckForObjectEventCollision(object: ObjectEvent, x: number, y: number, direction: number): number {
     const collision = this.ow.objects.GetCollisionAtCoords(object, x, y, direction);
     if (collision === COLLISION_ELEVATION_MISMATCH && this.canStopSurfing(x, y, direction)) return COLLISION_STOP_SURFING;
-    if (this.ledgeJumpDirection(x, y, direction) !== DIR_NONE) {
+    if (this.ShouldJumpLedge(x, y, direction)) {
       incrementGameStat(rom.constants.GAME_STAT_JUMPED_DOWN_LEDGES ?? 0);
       return COLLISION_LEDGE_JUMP;
     }
@@ -919,11 +933,14 @@ export class PlayerAvatar {
     return COLLISION_NONE;
   }
 
-  private ledgeJumpDirection(x: number, y: number, direction: number): number {
+  private ShouldJumpLedge(x: number, y: number, direction: number): boolean {
     const behavior = this.ow.map.behaviorAt(x, y);
     const checks = [MB.MetatileBehavior_IsJumpSouth, MB.MetatileBehavior_IsJumpNorth, MB.MetatileBehavior_IsJumpWest, MB.MetatileBehavior_IsJumpEast];
-    if (direction < 1 || direction > 4) return DIR_NONE;
-    return checks[direction - 1](behavior) ? direction : DIR_NONE;
+    let index = direction & 0xff;
+    if (index === DIR_NONE) return false;
+    if (index > DIR_EAST) index -= DIR_EAST;
+    index--;
+    return checks[index]?.(behavior) ?? false;
   }
 
   private canStopSurfing(x: number, y: number, direction: number): boolean {
