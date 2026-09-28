@@ -434,6 +434,11 @@ export function SetOamMatrix(matrixNum: number, a: number, b: number, c: number,
   m.a = s16(a); m.b = s16(b); m.c = s16(c); m.d = s16(d);
 }
 
+/** CopyOamMatrix (sprite.c): copy four signed 16-bit affine coefficients into GBA OAM state. */
+export function CopyOamMatrix(destMatrixIndex: number, srcMatrix: Readonly<{ a: number; b: number; c: number; d: number }>): void {
+  SetOamMatrix(destMatrixIndex, srcMatrix.a, srcMatrix.b, srcMatrix.c, srcMatrix.d);
+}
+
 export function CalcCenterToCornerVec(sprite: Sprite, shape: number, size: number, affineMode: number): void {
   let [x, y] = CENTER_TO_CORNER[shape]?.[size] ?? [0, 0];
   if (affineMode & ST_OAM_AFFINE_DOUBLE_MASK) {
@@ -825,7 +830,7 @@ function applyAffineAnimFrameRelativeAndUpdateMatrix(matrixNum: number, frame: A
   st.yScale = s16(st.yScale + frame.yScale);
   st.rotation = (st.rotation + (frame.rotation << 8)) & 0xff00;
   const m = objAffineSet(convertScaleParam(st.xScale), convertScaleParam(st.yScale), st.rotation);
-  Object.assign(gOamMatrices[matrixNum], m);
+  CopyOamMatrix(matrixNum, m);
 }
 
 function convertScaleParam(scale: number): number {
@@ -960,7 +965,7 @@ export function InitSpriteAffineAnim(sprite: Sprite): void {
 }
 
 export function SetOamMatrixRotationScaling(matrixNum: number, xScale: number, yScale: number, rotation: number): void {
-  Object.assign(gOamMatrices[matrixNum], objAffineSet(convertScaleParam(xScale), convertScaleParam(yScale), rotation & 0xffff));
+  CopyOamMatrix(matrixNum, objAffineSet(convertScaleParam(xScale), convertScaleParam(yScale), rotation & 0xffff));
 }
 
 export function LoadSpriteSheet(sheet: SpriteSheet): number {
