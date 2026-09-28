@@ -22,7 +22,7 @@ import { PlayerAvatar, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } 
 import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
-import { DoOutwardBarnDoorWipe, FieldEffects, MAX_FLASH_LEVEL, WriteFlashScanlineEffectBuffer } from "./fieldEffects";
+import { DoOutwardBarnDoorWipe, FieldEffects, MAX_FLASH_LEVEL, Task_BarnDoorWipe, WriteFlashScanlineEffectBuffer } from "./fieldEffects";
 import { ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "../hw/scanline";
 import { REG_OFFSET_WIN0H } from "../hw/ppu";
 import { MapNamePopup } from "./mapNamePopup";
@@ -879,6 +879,11 @@ export class Overworld {
     }
   }
 
+  /** WarpFadeInScreenWithDelay (field_fadetransition.c). */
+  private WarpFadeInScreenWithDelay(delay: number): void {
+    this.warpFadeInScreen(delay);
+  }
+
   warpFadeOutScreen(): void {
     let destType = MAP_TYPE.NONE;
     try { destType = this.peekMapType(this.mapIdForWarp(this.warpDestination)); } catch { /* keep */ }
@@ -991,99 +996,127 @@ export class Overworld {
   }
 
   private startExitDoorTask(): void {
-    let state = 5;
-    let timer = 0;
-    let walkTimer = 0;
-    let doorX = 0, doorY = 0;
-    const id = tasks.create(() => {
-      const p = this.player.object;
-      switch (state) {
-        case 5:
-          this.player.SetPlayerInvisibility(true);
-          this.objects.freezeAll();
-          DoOutwardBarnDoorWipe();
-          this.warpFadeInScreen(3);
-          state = 6;
-          break;
-        case 6:
-          if (++timer === 25) {
-            doorX = p.currentCoords.x;
-            doorY = p.currentCoords.y;
-            sound.playSE(this.doors.GetDoorSoundEffect(doorX, doorY));
-            this.doors.FieldAnimateDoorOpen(doorX, doorY);
-            state = 7;
-          }
-          break;
-        case 7:
-          if (!this.doors.FieldIsDoorAnimationRunning()) {
-            this.player.SetPlayerInvisibility(false);
-            this.objects.setHeldMovement(p, 0x10);
-            state = 8;
-          }
-          break;
-        case 8:
-          if (++walkTimer === 14) {
-            this.doors.FieldAnimateDoorClose(doorX, doorY);
-            state = 9;
-          }
-          break;
-        case 9:
-          if (!paletteFade.active && this.player.isStandingStill() && !this.doors.FieldIsDoorAnimationRunning()) {
-            this.objects.ObjectEventClearHeldMovementIfFinished(p);
-            state = 4;
-          }
-          break;
-        case 4:
-          this.objects.unfreezeAll();
-          this.controlsLocked = false;
-          tasks.destroy(id);
-          break;
-      }
-    }, 10);
+    tasks.create((taskId) => this.Task_ExitDoor(taskId), 10);
+  }
+
+  /** SetPlayerVisibility (field_fadetransition.c). */
+  private SetPlayerVisibility(visible: boolean): void {
+    this.player.SetPlayerInvisibility(!visible);
+  }
+
+  /** Task_ExitDoor (field_fadetransition.c), with the C task data slots. */
+  private Task_ExitDoor(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    if (data[0] === 0) data[0] = 5;
+    switch (data[0]) {
+      case 5:
+        this.SetPlayerVisibility(false);
+        this.objects.freezeAll();
+        DoOutwardBarnDoorWipe();
+        this.WarpFadeInScreenWithDelay(3);
+        data[0] = 6;
+        break;
+      case 6:
+        data[15]++;
+        if (data[15] === 25) {
+          data[2] = player.currentCoords.x;
+          data[3] = player.currentCoords.y;
+          sound.playSE(this.doors.GetDoorSoundEffect(data[2], data[3]));
+          this.doors.FieldAnimateDoorOpen(data[2], data[3]);
+          data[0] = 7;
+        }
+        break;
+      case 7:
+        if (!this.doors.FieldIsDoorAnimationRunning()) {
+          data[12] = player.currentCoords.x;
+          data[13] = player.currentCoords.y;
+          this.SetPlayerVisibility(true);
+          this.objects.setHeldMovement(player, C.MOVEMENT_ACTION_WALK_NORMAL_DOWN);
+          data[0] = 8;
+        }
+        break;
+      case 8:
+        data[14]++;
+        if (data[14] === 14) {
+          this.doors.FieldAnimateDoorClose(data[12], data[13]);
+          data[0] = 9;
+        }
+        break;
+      case 9:
+        if (this.FieldFadeTransitionBackgroundEffectIsFinished()
+            && this.player.isStandingStill()
+            && !this.doors.FieldIsDoorAnimationRunning()
+            && !tasks.isActive(Task_BarnDoorWipe)) {
+          this.objects.ObjectEventClearHeldMovementIfFinished(player);
+          data[0] = 4;
+        }
+        break;
+      case 4:
+        this.objects.unfreezeAll();
+        this.controlsLocked = false;
+        tasks.destroy(taskId);
+        break;
+    }
   }
 
   private startExitNonAnimDoorTask(): void {
-    let state = 0;
-    const id = tasks.create(() => {
-      const p = this.player.object;
-      switch (state) {
-        case 0:
-          this.player.SetPlayerInvisibility(true);
-          this.objects.freezeAll();
-          state = 1;
-          break;
-        case 1:
-          if (!paletteFade.active) {
-            this.player.SetPlayerInvisibility(false);
-            this.objects.setHeldMovement(p, 0x10 + Math.max(0, p.facingDirection - 1));
-            state = 2;
-          }
-          break;
-        case 2:
-          if (this.player.isStandingStill()) state = 3;
-          break;
-        case 3:
-          this.objects.unfreezeAll();
-          this.controlsLocked = false;
-          tasks.destroy(id);
-          break;
-      }
-    }, 10);
+    tasks.create((taskId) => this.Task_ExitNonAnimDoor(taskId), 10);
+  }
+
+  /** Task_ExitNonAnimDoor (field_fadetransition.c). */
+  private Task_ExitNonAnimDoor(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    switch (data[0]) {
+      case 0:
+        this.SetPlayerVisibility(false);
+        this.objects.freezeAll();
+        data[2] = player.currentCoords.x;
+        data[3] = player.currentCoords.y;
+        data[0] = 1;
+        break;
+      case 1:
+        if (this.FieldFadeTransitionBackgroundEffectIsFinished()) {
+          this.SetPlayerVisibility(true);
+          this.objects.setHeldMovement(player, this.GetWalkNormalMovementAction(player.facingDirection));
+          data[0] = 2;
+        }
+        break;
+      case 2:
+        if (this.player.isStandingStill()) data[0] = 3;
+        break;
+      case 3:
+        this.objects.unfreezeAll();
+        this.controlsLocked = false;
+        tasks.destroy(taskId);
+        break;
+    }
+  }
+
+  private GetWalkNormalMovementAction(direction: number): number {
+    if (direction === DIR_NORTH) return C.MOVEMENT_ACTION_WALK_NORMAL_UP;
+    if (direction === DIR_WEST) return C.MOVEMENT_ACTION_WALK_NORMAL_LEFT;
+    if (direction === DIR_EAST) return C.MOVEMENT_ACTION_WALK_NORMAL_RIGHT;
+    return C.MOVEMENT_ACTION_WALK_NORMAL_DOWN;
   }
 
   private startExitNonDoorTask(): void {
-    let state = 0;
-    const id = tasks.create(() => {
-      if (state === 0) {
-        this.objects.freezeAll();
-        this.controlsLocked = true;
-        state = 1;
-      } else if (!paletteFade.active) {
-        this.objects.unfreezeAll();
-        this.controlsLocked = false;
-        tasks.destroy(id);
-      }
-    }, 10);
+    tasks.create((taskId) => this.Task_ExitNonDoor(taskId), 10);
+  }
+
+  /** Task_ExitNonDoor (field_fadetransition.c). */
+  private Task_ExitNonDoor(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    if (data[0] === 0) {
+      this.objects.freezeAll();
+      this.controlsLocked = true;
+      data[0]++;
+    } else if (this.FieldFadeTransitionBackgroundEffectIsFinished()) {
+      this.objects.unfreezeAll();
+      this.controlsLocked = false;
+      tasks.destroy(taskId);
+    }
   }
 
   // Warp starters (field_fadetransition.c)
