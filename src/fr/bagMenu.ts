@@ -436,11 +436,19 @@ const td = (taskId: number): BagTaskData => {
   return d;
 };
 
+/** NullBagMenuBufferPtrs (item_menu.c): clear bag-owned allocation references before a fresh GoToBagMenu. */
+function NullBagMenuBufferPtrs(): void {
+  sBagMenuDisplay = null;
+  sBagBgTilemapBuffer = null;
+  gMultiuseListMenuTemplate = null;
+}
+
 /**
  * GoToBagMenu(location, pocket, bagCallback). Runs under gMain; `bagCallback`
  * is called once the bag has faded out and freed its resources.
  */
 export function GoToBagMenu(location: number, pocket: number, bagCallback: (() => void) | null, handlers?: BagHandlers): void {
+  NullBagMenuBufferPtrs();
   if (handlers) sHandlers = handlers;
   SetMainCallback2WhenLoaded(Promise.all([
     loadCData("item_menu", "bag", "item_menu_icons", "strings", "text_window_graphics"),
