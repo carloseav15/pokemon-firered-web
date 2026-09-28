@@ -46,7 +46,7 @@ const sBattleTransitionTable_Trainer: number[][] = [
 ];
 
 /** GetBattleTransitionTypeByMap */
-function getBattleTransitionTypeByMap(ow: Overworld): number {
+function GetBattleTransitionTypeByMap(ow: Overworld): number {
   const p = ow.player.object;
   const behavior = ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
   if (ow.flashLevel) return TRANSITION_TYPE_FLASH;
@@ -56,32 +56,34 @@ function getBattleTransitionTypeByMap(ow: Overworld): number {
   return TRANSITION_TYPE_NORMAL;
 }
 
-function sumPlayerPartyLevel(numMons: number): number {
+function GetSumOfPlayerPartyLevel(numMons: number): number {
   let sum = 0, remaining = numMons;
   for (const mon of save.party) {
     if (mon.isEgg || mon.species === 0 || mon.hp === 0) continue;
-    sum += mon.level;
+    sum = (sum + mon.level) & 0xff;
     if (--remaining === 0) break;
   }
   return sum;
 }
 
-function sumEnemyPartyLevel(enemyParty: Pokemon[], numMons: number): number {
+function GetSumOfEnemyPartyLevel(trainerId: number, numMons: number): number {
+  const party = rom.trainers[trainerId]?.party ?? [];
   let sum = 0;
-  for (let i = 0; i < numMons && i < enemyParty.length; i++) sum += enemyParty[i]!.level;
+  const count = Math.min(numMons, party.length);
+  for (let i = 0; i < count; i++) sum = (sum + party[i]!.level) & 0xff;
   return sum;
 }
 
 /** GetWildBattleTransition */
-export function getWildBattleTransition(ow: Overworld, enemyParty: Pokemon[]): number {
-  const type = getBattleTransitionTypeByMap(ow);
+export function GetWildBattleTransition(ow: Overworld, enemyParty: Pokemon[]): number {
+  const type = GetBattleTransitionTypeByMap(ow);
   const enemyLevel = enemyParty[0]?.level ?? 0;
-  const playerLevel = sumPlayerPartyLevel(1);
+  const playerLevel = GetSumOfPlayerPartyLevel(1);
   return sBattleTransitionTable_Wild[type]![enemyLevel < playerLevel ? 0 : 1]!;
 }
 
 /** GetTrainerBattleTransition */
-export function getTrainerBattleTransition(ow: Overworld, trainerId: number, enemyParty: Pokemon[]): number {
+export function GetTrainerBattleTransition(ow: Overworld, trainerId: number): number {
   const trainer = rom.trainers[trainerId];
   if (trainerId === C.TRAINER_SECRET_BASE || trainer?.class === rom.c("TRAINER_CLASS_CHAMPION")) return C.B_TRANSITION_BLUE;
   if (trainer?.class === rom.c("TRAINER_CLASS_ELITE_FOUR")) {
@@ -92,9 +94,9 @@ export function getTrainerBattleTransition(ow: Overworld, trainerId: number, ene
     return C.B_TRANSITION_BLUE;
   }
   const minPartyCount = trainer?.double === 1 ? 2 : 1;
-  const type = getBattleTransitionTypeByMap(ow);
-  const enemyLevel = sumEnemyPartyLevel(enemyParty, minPartyCount);
-  const playerLevel = sumPlayerPartyLevel(minPartyCount);
+  const type = GetBattleTransitionTypeByMap(ow);
+  const enemyLevel = GetSumOfEnemyPartyLevel(trainerId, minPartyCount);
+  const playerLevel = GetSumOfPlayerPartyLevel(minPartyCount);
   return sBattleTransitionTable_Trainer[type]![enemyLevel < playerLevel ? 0 : 1]!;
 }
 

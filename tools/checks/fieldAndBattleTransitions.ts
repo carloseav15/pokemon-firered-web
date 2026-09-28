@@ -12,8 +12,8 @@ import { ObjectEvent, ObjectManager, DIR_SOUTH } from '../../src/fr/field/object
 import { Overworld } from '../../src/fr/field/overworld.ts';
 import type { FieldMap } from '../../src/fr/field/fieldmap.ts';
 import {
-  getWildBattleTransition,
-  getTrainerBattleTransition,
+  GetWildBattleTransition,
+  GetTrainerBattleTransition,
   BattleTransitionScene,
 } from '../../src/fr/battle/transition.ts';
 import { createMon, type Pokemon } from '../../src/fr/pokemon/pokemon.ts';
@@ -170,13 +170,13 @@ async function testBattleTransitions() {
   const weakWild = [{ level: 3, hp: 10, isEgg: false } as unknown as Pokemon];
   const strongWild = [{ level: 6, hp: 25, isEgg: false } as unknown as Pokemon];
 
-  const weakTrans = getWildBattleTransition(normalMapOw, weakWild);
+  const weakTrans = GetWildBattleTransition(normalMapOw, weakWild);
   assert.equal(weakTrans, C.B_TRANSITION_SLICE, 'Wild battle against weaker enemy on normal map must use B_TRANSITION_SLICE');
 
-  const strongTrans = getWildBattleTransition(normalMapOw, strongWild);
+  const strongTrans = GetWildBattleTransition(normalMapOw, strongWild);
   assert.equal(strongTrans, C.B_TRANSITION_WHITE_BARS_FADE, 'Wild battle against stronger enemy on normal map must use B_TRANSITION_WHITE_BARS_FADE');
 
-  const caveTrans = getWildBattleTransition(caveMapOw, weakWild);
+  const caveTrans = GetWildBattleTransition(caveMapOw, weakWild);
   assert.equal(caveTrans, C.B_TRANSITION_CLOCKWISE_WIPE, 'Wild battle in cave must use B_TRANSITION_CLOCKWISE_WIPE');
 
   console.log('✓ Battle transition table selection verified');

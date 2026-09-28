@@ -3,7 +3,7 @@
 
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
-import { BattleTransitionScene, getTrainerBattleTransition, getWildBattleTransition } from "./battle/transition";
+import { BattleTransitionScene, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
@@ -933,8 +933,8 @@ export class Game {
         startedTransition = true;
         tasks.destroy(id);
         const transitionId = request.kind === "trainer"
-          ? getTrainerBattleTransition(ow, request.trainerId ?? 0, request.enemyParty)
-          : getWildBattleTransition(ow, request.enemyParty);
+          ? GetTrainerBattleTransition(ow, request.trainerId ?? 0)
+          : GetWildBattleTransition(ow, request.enemyParty);
         this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
           // battle_setup.c Task_BattleStart resets encounter cooldowns after the transition completes.
           RestartWildEncounterImmunitySteps();

@@ -24,7 +24,7 @@ import { CB2_InitBattle } from '../../src/fr/battle/main_init.ts';
 import { CopyMon, gEnemyParty, type Mon } from '../../src/fr/pokemon/mon.ts';
 import { createMon, giveMonToPlayer } from '../../src/fr/pokemon/pokemon.ts';
 import { save, newSaveData, setSave } from '../../src/fr/save.ts';
-import { getWildBattleTransition } from '../../src/fr/battle/transition.ts';
+import { GetWildBattleTransition } from '../../src/fr/battle/transition.ts';
 import type { Overworld } from '../../src/fr/field/overworld.ts';
 
 const root = process.cwd() + '/public';
@@ -141,15 +141,15 @@ async function testRoute1EncountersAndTransitions() {
   const wildRattataL3 = [createMon(C.SPECIES_RATTATA, 3)];
 
   // Weaker enemy (< Level 5) -> B_TRANSITION_SLICE
-  const trans1 = getWildBattleTransition(mockOw, wildPidgeyL2);
+  const trans1 = GetWildBattleTransition(mockOw, wildPidgeyL2);
   assert.equal(trans1, C.B_TRANSITION_SLICE, 'Weaker wild enemy (L2 vs L5) must trigger B_TRANSITION_SLICE');
 
-  const trans2 = getWildBattleTransition(mockOw, wildRattataL3);
+  const trans2 = GetWildBattleTransition(mockOw, wildRattataL3);
   assert.equal(trans2, C.B_TRANSITION_SLICE, 'Weaker wild enemy (L3 vs L5) must trigger B_TRANSITION_SLICE');
 
   // Equal or stronger enemy (>= Level 5) -> B_TRANSITION_WHITE_BARS_FADE
   const strongWild = [createMon(C.SPECIES_PIDGEY, 5)];
-  const trans3 = getWildBattleTransition(mockOw, strongWild);
+  const trans3 = GetWildBattleTransition(mockOw, strongWild);
   assert.equal(trans3, C.B_TRANSITION_WHITE_BARS_FADE, 'Equal/stronger wild enemy (L5 vs L5) must trigger B_TRANSITION_WHITE_BARS_FADE');
 
   console.log('✓ Route 1 battle transitions (SLICE for weaker, WHITE_BARS_FADE for equal/stronger) verified');

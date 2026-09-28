@@ -23,7 +23,7 @@ import { G, resetBattleStructs } from '../../src/fr/battle/globals.ts';
 import { CB2_InitBattle, FreeRestoreBattleData } from '../../src/fr/battle/main_init.ts';
 import { createMon, giveMonToPlayer } from '../../src/fr/pokemon/pokemon.ts';
 import { save, newSaveData, setSave } from '../../src/fr/save.ts';
-import { getTrainerBattleTransition } from '../../src/fr/battle/transition.ts';
+import { GetTrainerBattleTransition } from '../../src/fr/battle/transition.ts';
 import type { Overworld } from '../../src/fr/field/overworld.ts';
 
 const root = process.cwd() + '/public';
@@ -112,7 +112,7 @@ async function testBugCatcherSammy() {
     flashLevel: 0,
     header: { mapType: 0 } as MapHeader,
   } as unknown as Overworld;
-  const trans = getTrainerBattleTransition(mockOw, C.TRAINER_BUG_CATCHER_SAMMY, false, [createMon(C.SPECIES_WEEDLE, 9)]);
+  const trans = GetTrainerBattleTransition(mockOw, C.TRAINER_BUG_CATCHER_SAMMY);
   assert.equal(trans, C.B_TRANSITION_ANGLED_WIPES, 'Trainer battle on normal terrain, enemy not weaker -> ANGLED_WIPES');
   console.log('✓ getTrainerBattleTransition picks ANGLED_WIPES (mock overworld, normal terrain)');
 
