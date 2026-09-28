@@ -150,30 +150,46 @@ export class FieldMap {
   get header(): MapHeader { return this.loaded.header; }
   get layout(): LayoutData { return this.loaded.layout; }
 
-  /** InitMapLayoutData */
+  /** Entry used by InitMap / InitMapFromSavedGame (fieldmap.c). */
   init(loaded: LoadedMap): void {
+    this.InitMapLayoutData(loaded);
+  }
+
+  /** InitMapLayoutData (fieldmap.c). */
+  InitMapLayoutData(loaded: LoadedMap): void {
     SetCurrentFieldMap(this);
     this.loaded = loaded;
     const layout = loaded.layout;
     this.xSize = layout.width + MAP_OFFSET_W;
     this.ySize = layout.height + MAP_OFFSET_H;
     this.map = new Uint16Array(this.xSize * this.ySize).fill(MAPGRID_UNDEFINED);
+    this.InitBackupMapLayoutData(layout);
+    this.InitBackupMapLayoutConnections();
+  }
+
+  /** InitBackupMapLayoutData (fieldmap.c). */
+  private InitBackupMapLayoutData(layout: LayoutData): void {
     for (let y = 0; y < layout.height; y++) {
       const dest = this.xSize * (y + MAP_OFFSET) + MAP_OFFSET;
       this.map.set(layout.blocks.subarray(y * layout.width, (y + 1) * layout.width), dest);
     }
+  }
+
+  /** InitBackupMapLayoutConnections (fieldmap.c). */
+  private InitBackupMapLayoutConnections(): void {
     this.flags = { south: false, north: false, west: false, east: false };
-    for (const connection of loaded.connections) {
+    for (const connection of this.loaded.connections) {
       switch (connection.direction) {
-        case CONNECTION_SOUTH: this.fillSouth(connection); this.flags.south = true; break;
-        case CONNECTION_NORTH: this.fillNorth(connection); this.flags.north = true; break;
-        case CONNECTION_WEST: this.fillWest(connection); this.flags.west = true; break;
-        case CONNECTION_EAST: this.fillEast(connection); this.flags.east = true; break;
+        case CONNECTION_SOUTH: this.FillSouthConnection(connection); this.flags.south = true; break;
+        case CONNECTION_NORTH: this.FillNorthConnection(connection); this.flags.north = true; break;
+        case CONNECTION_WEST: this.FillWestConnection(connection); this.flags.west = true; break;
+        case CONNECTION_EAST: this.FillEastConnection(connection); this.flags.east = true; break;
       }
     }
   }
 
-  private fillConnection(x: number, y: number, c: LayoutData, x2: number, y2: number, width: number, height: number): void {
+  /** FillConnection (fieldmap.c). */
+  private FillConnection(x: number, y: number, c: LayoutData, x2: number, y2: number, width: number, height: number): void {
     for (let i = 0; i < height; i++) {
       for (let j = 0; j < width; j++) {
         const value = c.blocks[c.width * (y2 + i) + x2 + j];
@@ -215,24 +231,28 @@ export class FieldMap {
     return [y, y2, height];
   }
 
-  private fillSouth(c: LoadedConnection): void {
+  /** FillSouthConnection (fieldmap.c). */
+  private FillSouthConnection(c: LoadedConnection): void {
     const [x, x2, width] = this.horizontalSpan(c.offset, c.layout.width);
-    this.fillConnection(x, this.layout.height + MAP_OFFSET, c.layout, x2, 0, width, MAP_OFFSET);
+    this.FillConnection(x, this.layout.height + MAP_OFFSET, c.layout, x2, 0, width, MAP_OFFSET);
   }
 
-  private fillNorth(c: LoadedConnection): void {
+  /** FillNorthConnection (fieldmap.c). */
+  private FillNorthConnection(c: LoadedConnection): void {
     const [x, x2, width] = this.horizontalSpan(c.offset, c.layout.width);
-    this.fillConnection(x, 0, c.layout, x2, c.layout.height - MAP_OFFSET, width, MAP_OFFSET);
+    this.FillConnection(x, 0, c.layout, x2, c.layout.height - MAP_OFFSET, width, MAP_OFFSET);
   }
 
-  private fillWest(c: LoadedConnection): void {
+  /** FillWestConnection (fieldmap.c). */
+  private FillWestConnection(c: LoadedConnection): void {
     const [y, y2, height] = this.verticalSpan(c.offset, c.layout.height);
-    this.fillConnection(0, y, c.layout, c.layout.width - MAP_OFFSET, y2, MAP_OFFSET, height);
+    this.FillConnection(0, y, c.layout, c.layout.width - MAP_OFFSET, y2, MAP_OFFSET, height);
   }
 
-  private fillEast(c: LoadedConnection): void {
+  /** FillEastConnection (fieldmap.c). */
+  private FillEastConnection(c: LoadedConnection): void {
     const [y, y2, height] = this.verticalSpan(c.offset, c.layout.height);
-    this.fillConnection(this.layout.width + MAP_OFFSET, y, c.layout, 0, y2, MAP_OFFSET + 1, height);
+    this.FillConnection(this.layout.width + MAP_OFFSET, y, c.layout, 0, y2, MAP_OFFSET + 1, height);
   }
 
   private borderBlockAt(x: number, y: number): number {

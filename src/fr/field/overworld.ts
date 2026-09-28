@@ -687,11 +687,23 @@ export class Overworld {
 
   /** InitMap: InitMapLayoutData + ON_LOAD */
   private initMap(): void {
-    this.map.init(this.loaded);
     if (this.restoreMapViewOnNextInit) {
-      LoadSavedMapView(this.map, save.pos, save.mapView);
+      this.InitMapFromSavedGame();
       this.restoreMapViewOnNextInit = false;
-    }
+    } else this.InitMap();
+  }
+
+  /** InitMap (fieldmap.c): initialize VMap and run the map's ON_LOAD scripts. */
+  private InitMap(): void {
+    this.map.InitMapLayoutData(this.loaded);
+    this.map.onChange = () => this.renderer?.invalidate();
+    this.RunOnLoadMapScript();
+  }
+
+  /** InitMapFromSavedGame (fieldmap.c): restore the saved VMap window before ON_LOAD. */
+  private InitMapFromSavedGame(): void {
+    this.map.InitMapLayoutData(this.loaded);
+    LoadSavedMapView(this.map, save.pos, save.mapView);
     this.map.onChange = () => this.renderer?.invalidate();
     this.RunOnLoadMapScript();
   }
