@@ -187,6 +187,7 @@ class NamingScreen {
     sprite.oam.priority = 1;
     sprite.oam.objMode = C.ST_OAM_OBJ_BLEND;
     sprite.data[6] = 2; // sColorIncr; C's initial value of 1 is immediately overwritten.
+    this.SetCursorPos(0, 0);
   }
 
   /** CreateBackOkSprites (naming_screen.c). */
@@ -243,7 +244,7 @@ class NamingScreen {
     else if (joy.newKeys & B_BUTTON) this.keyboardEvent = NamingInputEvent.B_BUTTON;
     else if (joy.newKeys & SELECT_BUTTON) this.keyboardEvent = NamingInputEvent.SELECT;
     else if (joy.newKeys & START_BUTTON) this.keyboardEvent = NamingInputEvent.START;
-    else if (HandleDpadMovement(this.model, joy.repeated) === "move") this.moveCursor();
+    else if (HandleDpadMovement(this.model, joy.repeated) === "move") this.SetCursorPos(this.model.x, this.model.y);
   }
 
   /** CreateButtonFlashTask (naming_screen.c). */
@@ -334,7 +335,7 @@ class NamingScreen {
     this.drawKeyboardPage(1, 0, this.model.keyboardId);
     this.drawKeyboardPage(2, 1, nextKeyboard);
     this.setPageSwapButtonGfx(this.model.page);
-    this.moveCursor();
+    this.SetCursorPos(this.model.x, this.model.y);
   }
 
   private drawKeyboardPage(bg: number, windowIndex: number, keyboardId: number): void {
@@ -508,12 +509,17 @@ class NamingScreen {
 
   private MainState_WaitPageSwap(): void {
     if (!this.IsPageSwapAnimNotInProgress()) return;
+    const [cursorX, cursorY] = this.GetCursorPos();
+    const onLastColumn = cursorX === this.model.columns;
     SwapKeyboardPage(this.model);
+    this.model.y = cursorY;
+    if (onLastColumn) this.model.x = this.model.columns;
+    else if (cursorX >= this.model.columns) this.model.x = this.model.columns - 1;
     this.DrawKeyboardPageOnDeck();
     this.setPageSwapButtonGfx(this.model.page);
     gSprites[this.pageText].y2 = 0;
     this.SetCursorInvisibility(false);
-    this.moveCursor();
+    this.SetCursorPos(this.model.x, this.model.y);
     this.SetInputState(NamingInputState.ENABLED);
     this.state = "input";
   }
@@ -596,12 +602,33 @@ class NamingScreen {
     PutWindowTilemap(win); CopyWindowToVram(win, COPYWIN_FULL);
   }
 
-  private moveCursor(): void {
+  /** SetCursorPos (naming_screen.c): apply s16 keyboard coordinates and retain the previous position. */
+  private SetCursorPos(x: number, y: number): void {
     const sprite = gSprites[this.cursor];
-    sprite.data[0] = this.model.x; // sX
-    sprite.data[1] = this.model.y; // sY
-    sprite.x = this.model.onButton ? 0 : this.model.columnPositions[this.model.x] + 38;
-    sprite.y = this.model.onButton ? [88, 116, 140][this.model.y] : this.model.y * 16 + 88;
+    sprite.x = x < this.model.columns ? this.model.columnPositions[x]! + 38 : 0;
+    sprite.y = y * 16 + 88;
+    sprite.data[2] = sprite.data[0]!; // sPrevX
+    sprite.data[3] = sprite.data[1]!; // sPrevY
+    sprite.data[0] = x; // sX
+    sprite.data[1] = y; // sY
+    this.model.x = x;
+    this.model.y = y;
+  }
+
+  /** GetCursorPos (naming_screen.c). */
+  private GetCursorPos(): [number, number] {
+    const sprite = gSprites[this.cursor];
+    return [sprite.data[0]!, sprite.data[1]!];
+  }
+
+  /** SquishCursor (naming_screen.c). */
+  private SquishCursor(): void {
+    StartSpriteAnim(gSprites[this.cursor], 1);
+  }
+
+  /** IsCursorAnimFinished (naming_screen.c). */
+  private IsCursorAnimFinished(): boolean {
+    return gSprites[this.cursor].animEnded;
   }
 
   /** SetCursorInvisibility (naming_screen.c). */
@@ -680,16 +707,16 @@ class NamingScreen {
     if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.MainState_StartPageSwap(); }
     if (action === "moveToOK") {
       this.SetInputState(NamingInputState.DISABLED);
-      StartSpriteAnim(gSprites[this.cursor], 1);
       this.state = "moveToOK";
     }
+    if (action === "character" || action === "moveToOK") this.SquishCursor();
     if (action === "delete") {
       if (role === "character" || role === "backspace") this.TryStartButtonFlash(NamingButton.BACK, false, true);
     }
     if (action === "character" || action === "moveToOK" || action === "delete") {
       sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.DrawTextEntry();
     }
-    if (action !== "none" && action !== "moveToOK") this.moveCursor();
+    if (action !== "none" && action !== "moveToOK") this.SetCursorPos(this.model.x, this.model.y);
     if (action === "confirm") {
       sound.playSE(C.SE_SELECT);
       this.state = "pressedOK";
@@ -698,9 +725,9 @@ class NamingScreen {
 
   /** MainState_MoveToOKButton (naming_screen.c). */
   private MainState_MoveToOKButton(): void {
-    if (!gSprites[this.cursor].animEnded) return;
+    if (!this.IsCursorAnimFinished()) return;
     MoveCursorToOKButton(this.model);
-    this.moveCursor();
+    this.SetCursorPos(this.model.x, this.model.y);
     this.SetInputState(NamingInputState.ENABLED);
     this.state = "input";
   }
