@@ -166,6 +166,10 @@ function CompleteOnSpecialAnimDone(): void {
   if (!G.gDoingBattleAnim) OakOldManBufferExecCompleted();
 }
 
+/** OakOldManHandleSuccessBallThrowAnim / OakOldManHandleBallThrowAnim (battle_controller_oak_old_man.c). */
+function OakOldManHandleSuccessBallThrowAnim(): void { launchBallThrow(C.BALL_3_SHAKES_SUCCESS); }
+function OakOldManHandleBallThrowAnim(): void { launchBallThrow(gBattleBufferA[G.gActiveBattler][1]); }
+
 export function OakOldManHandleInputChooseMove(): void {
   HandleInputChooseMove();
   if (!(G.gBattleControllerExecFlags & gBitTable[G.gActiveBattler])) OakOldManBufferExecCompleted();
@@ -1120,8 +1124,8 @@ const sOakOldManBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_TRAINERSLIDEBACK]: OakOldManHandleTrainerSlideBack,
   [C.CONTROLLER_FAINTANIMATION]: OakOldManHandleFaintAnimation,
   [C.CONTROLLER_PALETTEFADE]: OakOldManHandlePaletteFade,
-  [C.CONTROLLER_SUCCESSBALLTHROWANIM]: () => launchBallThrow(C.BALL_3_SHAKES_SUCCESS),
-  [C.CONTROLLER_BALLTHROWANIM]: () => launchBallThrow(gBattleBufferA[G.gActiveBattler][1]),
+  [C.CONTROLLER_SUCCESSBALLTHROWANIM]: OakOldManHandleSuccessBallThrowAnim,
+  [C.CONTROLLER_BALLTHROWANIM]: OakOldManHandleBallThrowAnim,
   [C.CONTROLLER_PAUSE]: OakOldManHandlePause,
   [C.CONTROLLER_MOVEANIMATION]: OakOldManHandleMoveAnimation,
   [C.CONTROLLER_PRINTSTRING]: OakOldManHandlePrintString,
