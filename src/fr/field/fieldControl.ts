@@ -234,13 +234,13 @@ export class FieldControl {
       behavior = this.ow.map.behaviorAt(position.x, position.y);
     }
     if (input.checkStandardWildEncounter && this.ow.effects.tryStandardWildEncounter(attributes)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
-    if (input.heldDirection && input.dpadDirection === direction && this.tryArrowWarp(position, behavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
+    if (input.heldDirection && input.dpadDirection === direction && this.TryArrowWarp(position, behavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
 
     const front = this.GetInFrontOfPlayerPosition();
     const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
     if (input.heldDirection && input.dpadDirection === direction && this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
     if (input.pressedAButton && this.tryStartInteractionScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
-    if (input.heldDirection2 && input.dpadDirection === direction && this.tryDoorWarp(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection2"); return true; }
+    if (input.heldDirection2 && input.dpadDirection === direction && this.TryDoorWarp(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection2"); return true; }
     if (input.pressedStartButton) {
       flagSet(rom.c("FLAG_OPENED_START_MENU"));
       sound.playSE(sound.c("SE_WIN_OPEN"));
@@ -401,7 +401,7 @@ export class FieldControl {
 
   private tryStartStepBasedScript(position: { x: number; y: number; elevation: number }, behavior: number, _direction: number): boolean {
     if (this.tryStartCoordEventScript(position)) return true;
-    if (this.tryStartWarpEventScript(position, behavior)) return true;
+    if (this.TryStartWarpEventScript(position, behavior)) return true;
     if (this.tryStartStepCountScript(behavior)) return true;
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior) && this.ow.effects.updateRepelCounter()) return true;
     return false;
@@ -527,10 +527,11 @@ export class FieldControl {
     return this.GetWarpEventAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
   }
 
-  private isWarpMetatileBehavior(b: number): boolean {
-    return MB.MetatileBehavior_IsWarpDoor(b) || MB.MetatileBehavior_IsLadder(b) || MB.MetatileBehavior_IsEscalator(b) || MB.MetatileBehavior_IsNonAnimDoor(b)
-      || MB.MetatileBehavior_IsLavaridgeB1FWarp(b) || MB.MetatileBehavior_IsLavaridge1FWarp(b) || MB.MetatileBehavior_IsWarpPad(b)
-      || MB.MetatileBehavior_IsFallWarp(b) || MB.MetatileBehavior_IsUnionRoomWarp(b);
+  /** IsWarpMetatileBehavior (field_control_avatar.c). */
+  private IsWarpMetatileBehavior(metatileBehavior: number): boolean {
+    return MB.MetatileBehavior_IsWarpDoor(metatileBehavior) || MB.MetatileBehavior_IsLadder(metatileBehavior) || MB.MetatileBehavior_IsEscalator(metatileBehavior) || MB.MetatileBehavior_IsNonAnimDoor(metatileBehavior)
+      || MB.MetatileBehavior_IsLavaridgeB1FWarp(metatileBehavior) || MB.MetatileBehavior_IsLavaridge1FWarp(metatileBehavior) || MB.MetatileBehavior_IsWarpPad(metatileBehavior)
+      || MB.MetatileBehavior_IsFallWarp(metatileBehavior) || MB.MetatileBehavior_IsUnionRoomWarp(metatileBehavior);
   }
 
   /** IsArrowWarpMetatileBehavior (field_control_avatar.c). */
@@ -561,7 +562,8 @@ export class FieldControl {
     }
   }
 
-  private tryArrowWarp(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
+  /** TryArrowWarp (field_control_avatar.c). */
+  private TryArrowWarp(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     const warpIndex = this.GetWarpEventAtMapPosition(position);
     if (warpIndex < 0) return false;
     if (this.IsArrowWarpMetatileBehavior(behavior, direction)) {
@@ -584,9 +586,10 @@ export class FieldControl {
     return false;
   }
 
-  private tryStartWarpEventScript(position: { x: number; y: number; elevation: number }, behavior: number): boolean {
+  /** TryStartWarpEventScript (field_control_avatar.c). */
+  private TryStartWarpEventScript(position: { x: number; y: number; elevation: number }, behavior: number): boolean {
     const warpIndex = this.GetWarpEventAtMapPosition(position);
-    if (warpIndex < 0 || !this.isWarpMetatileBehavior(behavior)) return false;
+    if (warpIndex < 0 || !this.IsWarpMetatileBehavior(behavior)) return false;
     this.ow.storeInitialPlayerAvatarState();
     this.setupWarp(warpIndex, position);
     if (MB.MetatileBehavior_IsEscalator(behavior)) {
@@ -618,10 +621,11 @@ export class FieldControl {
     return true;
   }
 
-  private tryDoorWarp(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
+  /** TryDoorWarp (field_control_avatar.c). */
+  private TryDoorWarp(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     if (direction !== DIR_NORTH || !MB.MetatileBehavior_IsWarpDoor(behavior)) return false;
     const warpIndex = this.GetWarpEventAtMapPosition(position);
-    if (warpIndex < 0 || !this.isWarpMetatileBehavior(behavior)) return false;
+    if (warpIndex < 0 || !this.IsWarpMetatileBehavior(behavior)) return false;
     this.ow.storeInitialPlayerAvatarState();
     this.setupWarp(warpIndex, position);
     this.ow.doDoorWarp();
