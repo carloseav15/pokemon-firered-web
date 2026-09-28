@@ -1,6 +1,5 @@
-// Skeleton of field_effect_helpers.c: the 76 C names exist, but 62 are stubs
-// (`return 0;` / empty) and nothing imports this module yet; the live field
-// effects are still in fieldEffects.ts. See PENDING.md §3b.
+// Remaining field_effect_helpers.c routines are listed in PENDING.md §3b.
+// Connected ground effects are implemented in fieldEffects.ts.
 // Field effect helper routines:
 // - Water reflections and bridge reflection palettes (SetUpReflection, UpdateObjectReflectionSprite)
 // - Warp arrow sprites (CreateWarpArrowSprite, ShowWarpArrowSprite, SetSpriteInvisible)
@@ -160,16 +159,6 @@ export function FindTallGrassFieldEffectSpriteId(
 export function UpdateGrassFieldEffectSubpriority(sprite: Sprite | any, z: number, offset: number): void {
   if (!sprite) return;
   sprite.subpriority = (z - offset) & 0xff;
-}
-
-/** FldEff_ShortGrass */
-export function FldEff_ShortGrass(): number {
-  return 0;
-}
-
-/** UpdateShortGrassFieldEffect */
-export function UpdateShortGrassFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
 }
 
 /** FldEff_LongGrass */

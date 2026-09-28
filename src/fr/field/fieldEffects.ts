@@ -756,36 +756,51 @@ export class FieldEffects {
 
   /** GroundEffect_ShortGrass / FldEff_ShortGrass. */
   GroundEffect_ShortGrass(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("ShortGrass", object.sprite.x, object.sprite.y);
-    if (!sprite) return;
+    this.FldEff_ShortGrass(object);
+  }
+
+  /** FldEff_ShortGrass (field_effect_helpers.c). */
+  FldEff_ShortGrass(object: ObjectEvent): number {
+    const sprite = this.createFromTemplate("ShortGrass", 0, 0);
+    if (!sprite) return 0;
     sprite.coordOffsetEnabled = true;
-    sprite.priority = object.sprite.priority;
-    sprite.subpriority = object.sprite.subpriority - 1;
-    sprite.data[0] = object.localId;
-    sprite.data[1] = object.mapNum;
-    sprite.data[2] = object.mapGroup;
-    sprite.data[3] = object.sprite.x;
-    sprite.data[4] = object.sprite.y;
-    sprite.callback = (s) => {
-      if (!object.active || !object.inShortGrass) {
-        this.ow.sprites.destroy(s);
-        if (this.shortGrassEffects.get(object) === s) this.shortGrassEffects.delete(object);
-        return;
-      }
-      const moved = s.data[3] !== object.sprite.x || s.data[4] !== object.sprite.y;
-      if (moved) {
-        s.data[3] = object.sprite.x;
-        s.data[4] = object.sprite.y;
-        if (s.animEnded) s.startAnim(0);
-      }
-      s.x = object.sprite.x;
-      s.y = object.sprite.y;
-      s.y2 = (object.sprite.height >> 1) - 8;
-      s.subpriority = object.sprite.subpriority - 1;
-      s.priority = object.sprite.priority;
-      s.invisible = object.sprite.invisible;
-    };
+    sprite.priority = object.sprite.priority & 0xff;
+    sprite.data[0] = object.localId & 0xff;
+    sprite.data[1] = object.mapNum & 0xff;
+    sprite.data[2] = object.mapGroup & 0xff;
+    sprite.data[3] = (object.sprite.x << 16) >> 16;
+    sprite.data[4] = (object.sprite.y << 16) >> 16;
+    sprite.callback = (s) => this.UpdateShortGrassFieldEffect(s);
+    this.active.add(C.FLDEFF_SHORT_GRASS);
     this.shortGrassEffects.set(object, sprite);
+    return 0;
+  }
+
+  /** UpdateShortGrassFieldEffect (field_effect_helpers.c). */
+  UpdateShortGrassFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[0]! & 0xff, sprite.data[1]! & 0xff, sprite.data[2]! & 0xff);
+    if (!object || !object.inShortGrass) {
+      this.active.delete(C.FLDEFF_SHORT_GRASS);
+      this.ow.sprites.destroy(sprite);
+      if (object && this.shortGrassEffects.get(object) === sprite) this.shortGrassEffects.delete(object);
+      return;
+    }
+
+    const graphics = graphicsInfo(object.graphicsId);
+    const linkedSprite = object.sprite;
+    const x = (linkedSprite.x << 16) >> 16;
+    const y = (linkedSprite.y << 16) >> 16;
+    if (x !== sprite.data[3] || y !== sprite.data[4]) {
+      sprite.data[3] = x;
+      sprite.data[4] = y;
+      if (sprite.animEnded) sprite.startAnim(0);
+    }
+    sprite.x = x;
+    sprite.y = y;
+    sprite.y2 = ((graphics.height >> 1) - 8 << 16) >> 16;
+    sprite.subpriority = (linkedSprite.subpriority - 1) & 0xff;
+    sprite.priority = linkedSprite.priority & 0xff;
+    this.UpdateObjectEventSpriteInvisibility(sprite, linkedSprite.invisible);
   }
 
   /** GroundEffect_HotSprings / FldEff_HotSpringsWater. */
