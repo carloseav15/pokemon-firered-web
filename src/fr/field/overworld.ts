@@ -1749,6 +1749,28 @@ export class Overworld {
 
   // ---------------------------------------------------------------- camera
 
+  /** SetCameraFocusCoords (fieldmap.c). */
+  SetCameraFocusCoords(x: number, y: number): void {
+    save.pos.x = x - MAP_OFFSET;
+    save.pos.y = y - MAP_OFFSET;
+  }
+
+  /** GetCameraFocusCoords (fieldmap.c). */
+  GetCameraFocusCoords(): { x: number; y: number } {
+    return { x: save.pos.x + MAP_OFFSET, y: save.pos.y + MAP_OFFSET };
+  }
+
+  /** SetCameraCoords (fieldmap.c): unused in FRLG. */
+  SetCameraCoords(x: number, y: number): void {
+    save.pos.x = x;
+    save.pos.y = y;
+  }
+
+  /** GetCameraCoords (fieldmap.c). */
+  GetCameraCoords(): { x: number; y: number } {
+    return { x: save.pos.x, y: save.pos.y };
+  }
+
   CanCameraMoveInDirection(direction: number): boolean {
     const [dx, dy] = DIRECTION_VECTORS[direction];
     return GetPostCameraMoveMapBorderId(dx, dy, this.map) !== CONNECTION_INVALID;

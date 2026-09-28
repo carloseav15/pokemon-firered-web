@@ -313,6 +313,23 @@ export class FieldMap {
     this.onChange?.(x, y);
   }
 
+  /** MapGridSetMetatileEntryAt (fieldmap.c): unlike setMetatileIdAt, overwrites the whole grid
+   * entry (elevation and collision bits included). */
+  setMetatileEntryAt(x: number, y: number, metatile: number): void {
+    if (!this.inBounds(x, y)) return;
+    this.map[x + y * this.xSize] = metatile & 0xffff;
+    this.onChange?.(x, y);
+  }
+
+  /** MapGridSetMetatileImpassabilityAt (fieldmap.c). */
+  setMetatileImpassabilityAt(x: number, y: number, impassable: boolean): void {
+    if (!this.inBounds(x, y)) return;
+    const i = x + y * this.xSize;
+    if (impassable) this.map[i] |= MAPGRID_COLLISION_MASK;
+    else this.map[i] &= ~MAPGRID_COLLISION_MASK & 0xffff;
+    this.onChange?.(x, y);
+  }
+
   onChange?: (x: number, y: number) => void;
 
   /** GetMapBorderIdAt */
@@ -448,6 +465,16 @@ export function MoveMapViewToBackup(direction: number, map: FieldMap, position: 
 /** MapGridSetMetatileIdAt (fieldmap.c). */
 export function MapGridSetMetatileIdAt(x: number, y: number, metatile: number, map: FieldMap | null = sCurrentFieldMap): void {
   map?.setMetatileIdAt(x | 0, y | 0, metatile & 0xffff);
+}
+
+/** MapGridSetMetatileEntryAt (fieldmap.c). */
+export function MapGridSetMetatileEntryAt(x: number, y: number, metatile: number, map: FieldMap | null = sCurrentFieldMap): void {
+  map?.setMetatileEntryAt(x | 0, y | 0, metatile & 0xffff);
+}
+
+/** MapGridSetMetatileImpassabilityAt (fieldmap.c). */
+export function MapGridSetMetatileImpassabilityAt(x: number, y: number, impassable: boolean, map: FieldMap | null = sCurrentFieldMap): void {
+  map?.setMetatileImpassabilityAt(x | 0, y | 0, impassable);
 }
 
 export function connectionForDirection(connections: MapConnection[], direction: string): MapConnection | undefined {
