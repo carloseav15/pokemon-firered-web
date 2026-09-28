@@ -34,7 +34,7 @@ import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer"
 import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
-import { QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
+import { gQuestLogState, QuestLog_CheckDepartingIndoorsMap, QuestLog_ShouldEndSceneOnMapChange } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
 
@@ -502,6 +502,7 @@ export class Overworld {
     // uses the call to cut recording in Quest Log-disabled locations.
     QuestLog_ShouldEndSceneOnMapChange();
     this.initObjectEventsLocal();
+    if (gQuestLogState !== C.QL_STATE_PLAYBACK) QuestLog_CheckDepartingIndoorsMap();
     this.initView();
     QL_TryStopSurfing();
     const prevSection = this.lastUsedWarpSection();

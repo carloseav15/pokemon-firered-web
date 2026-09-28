@@ -2,12 +2,13 @@
 // in the browser save; the scene/action recorder and playback are not yet ported.
 
 import * as C from "./generated/constants";
+import { cdata } from "./hw/assets";
 import {
   QL_LoadAction_Input, QL_LoadAction_MovementOrGfxChange, QL_LoadAction_SceneEnd, QL_LoadAction_Wait,
   QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd,
   type LoadedQuestLogAction, type QuestLogAction,
 } from "./questLogActions";
-import { save } from "./save";
+import { flagSet, save, varGet, varSet } from "./save";
 
 let sPlayedTheSlots = false;
 export let gQuestLogState = 0;
@@ -56,6 +57,20 @@ export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | Que
 export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
+}
+
+/** QuestLog_CheckDepartingIndoorsMap (field_specials.c), called after InitObjectEventsLocal on map entry. */
+export function QuestLog_CheckDepartingIndoorsMap(): void {
+  const pairs = cdata<number[][]>("field_specials", "sInsideOutsidePairs");
+  for (let i = 0; i < pairs.length; i++) {
+    const [insideGroup, insideNum] = pairs[i]!;
+    if (save.location.mapGroup !== insideGroup || save.location.mapNum !== insideNum) continue;
+    if (varGet(C.VAR_QL_ENTRANCE) !== C.QL_LOCATION_ROCKET_HIDEOUT || i !== C.QL_LOCATION_GAME_CORNER) {
+      varSet(C.VAR_QL_ENTRANCE, i);
+      flagSet(C.FLAG_SYS_QL_DEPARTED);
+    }
+    break;
+  }
 }
 
 /** QuestLogRecordPlayerAvatarGfxTransition (quest_log.c): record the source gfx state byte. */
