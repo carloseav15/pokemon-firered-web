@@ -304,16 +304,6 @@ export function SpriteCB_UnderwaterSurfBlob(sprite: Sprite | any): void {
   if (!sprite) return;
 }
 
-/** FldEff_HotSpringsWater */
-export function FldEff_HotSpringsWater(): number {
-  return 0;
-}
-
-/** UpdateHotSpringsWaterFieldEffect */
-export function UpdateHotSpringsWaterFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
 /** FldEff_Sparkle */
 export function FldEff_Sparkle(): number {
   return 0;

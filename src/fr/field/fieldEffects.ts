@@ -790,27 +790,41 @@ export class FieldEffects {
 
   /** GroundEffect_HotSprings / FldEff_HotSpringsWater. */
   GroundEffect_HotSprings(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("HotSpringsWater", object.sprite.x, object.sprite.y);
-    if (!sprite) return;
+    this.FldEff_HotSpringsWater(object);
+  }
+
+  /** FldEff_HotSpringsWater (field_effect_helpers.c). */
+  FldEff_HotSpringsWater(object: ObjectEvent): number {
+    const sprite = this.createFromTemplate("HotSpringsWater", 0, 0);
+    if (!sprite) return 0;
     sprite.coordOffsetEnabled = true;
-    sprite.priority = object.sprite.priority;
-    sprite.subpriority = object.sprite.subpriority - 1;
-    sprite.data[0] = object.localId;
-    sprite.data[1] = object.mapNum;
-    sprite.data[2] = object.mapGroup;
-    sprite.callback = (s) => {
-      if (!object.active || !object.inHotSprings) {
-        this.ow.sprites.destroy(s);
-        if (this.hotSpringsEffects.get(object) === s) this.hotSpringsEffects.delete(object);
-        return;
-      }
-      s.x = object.sprite.x;
-      s.y = object.sprite.y + (object.sprite.height >> 1) - 8;
-      s.subpriority = object.sprite.subpriority - 1;
-      s.priority = object.sprite.priority;
-      s.invisible = object.sprite.invisible;
-    };
+    sprite.priority = object.sprite.priority & 0xff;
+    sprite.data[0] = object.localId & 0xff;
+    sprite.data[1] = object.mapNum & 0xff;
+    sprite.data[2] = object.mapGroup & 0xff;
+    sprite.data[3] = ((object.sprite.x << 16) >> 16);
+    sprite.data[4] = ((object.sprite.y << 16) >> 16);
+    sprite.callback = (s) => this.UpdateHotSpringsWaterFieldEffect(s);
+    this.active.add(C.FLDEFF_HOT_SPRINGS_WATER);
     this.hotSpringsEffects.set(object, sprite);
+    return 0;
+  }
+
+  /** UpdateHotSpringsWaterFieldEffect (field_effect_helpers.c). */
+  UpdateHotSpringsWaterFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[0]! & 0xff, sprite.data[1]! & 0xff, sprite.data[2]! & 0xff);
+    if (!object || !object.inHotSprings) {
+      this.active.delete(C.FLDEFF_HOT_SPRINGS_WATER);
+      this.ow.sprites.destroy(sprite);
+      if (object && this.hotSpringsEffects.get(object) === sprite) this.hotSpringsEffects.delete(object);
+      return;
+    }
+    const linkedSprite = object.sprite;
+    const height = graphicsInfo(object.graphicsId).height;
+    sprite.x = linkedSprite.x;
+    sprite.y = linkedSprite.y + (height >> 1) - 8;
+    sprite.subpriority = (linkedSprite.subpriority - 1) & 0xff;
+    this.UpdateObjectEventSpriteInvisibility(sprite, false);
   }
 
   /** GroundEffect_SandHeap / FldEff_SandPile. */
