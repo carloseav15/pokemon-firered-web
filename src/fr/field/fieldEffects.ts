@@ -210,9 +210,6 @@ export class FieldEffects {
   private shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
   private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
   private sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
-  private surfBlobBobState = C.BOB_NONE;
-  private surfBlobHasPlayerOffset = false;
-  private surfBlobPlayerOffset = 0;
   private encounterImmunitySteps = 0;
   private previousMetatileBehavior = 0;
   /** Active field effect ids (FieldEffectActiveListContains) */
@@ -443,9 +440,9 @@ export class FieldEffects {
   reset(): void {
     for (const sprite of this.reflectionSprites.values()) this.ow.sprites.destroy(sprite);
     this.reflectionSprites.clear();
+    const surfPlayer = this.surfBlob ? this.ow.objects.objects[this.surfBlob.data[2]! & 0xff] : undefined;
+    if (surfPlayer && surfPlayer.fieldEffectSprite === this.surfBlob) surfPlayer.fieldEffectSprite = undefined;
     this.surfBlob = undefined;
-    this.surfBlobHasPlayerOffset = false;
-    this.surfBlobPlayerOffset = 0;
     this.flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
     this.shadowEffects = new WeakMap<ObjectEvent, Sprite>();
     this.shadowSprites.clear();
@@ -470,7 +467,7 @@ export class FieldEffects {
     }
   }
 
-  createFromTemplate(name: string, x: number, y: number): Sprite | undefined {
+  createFromTemplate(name: string, x: number, y: number, atEnd = false): Sprite | undefined {
     const template = fxData?.templates[name];
     if (!template) return undefined;
     const sprite = new Sprite();
@@ -484,7 +481,8 @@ export class FieldEffects {
     sprite.x = x;
     sprite.y = y;
     sprite.startAnim(0);
-    this.ow.sprites.add(sprite);
+    if (atEnd) this.ow.sprites.addAtEnd(sprite);
+    else this.ow.sprites.add(sprite);
     return sprite;
   }
 
@@ -1534,66 +1532,180 @@ export class FieldEffects {
 
   // ---------------------------------------------------------------- surf blob
 
-  startSurfBlob(player: ObjectEvent, bobState = C.BOB_PLAYER_AND_MON): void {
-    if (this.surfBlob && !this.surfBlob.destroyed) return;
-    const sprite = this.createFromTemplate("SurfBlob", player.sprite.x, player.sprite.y + 8);
-    if (!sprite) return;
-    this.surfBlob = sprite;
-    this.surfBlobBobState = bobState;
-    sprite.data[3] = 0; // sBobDirection
-    sprite.data[4] = 0; // sTimer
-    sprite.data[5] = 0;
-    sprite.data[6] = -1;
-    sprite.data[7] = -1;
-    sprite.callback = (s) => {
-      const dir = player.movementDirection;
-      const anim = [0, 0, 1, 2, 3][dir] ?? 0;
-      if (s.animNum !== anim) s.startAnim(anim);
-      s.priority = player.sprite.priority;
-      s.subpriority = player.sprite.subpriority + 1;
-      if (s.y2 === 0 && (player.currentCoords.x !== s.data[6] || player.currentCoords.y !== s.data[7])) {
-        s.data[5] = 0;
-        s.data[6] = player.currentCoords.x;
-        s.data[7] = player.currentCoords.y;
-        for (const direction of [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST]) {
-          const [dx, dy] = DIRECTION_VECTORS[direction]!;
-          if (this.ow.map.elevationAt(player.currentCoords.x + dx, player.currentCoords.y + dy) === 3) { s.data[5] = 1; break; }
-        }
-      }
-      if (this.surfBlobBobState !== C.BOB_NONE) {
-        s.data[4] = (s.data[4] + 1) & 0xffff;
-        const interval = s.data[5] === 0 ? 7 : 15;
-        if ((s.data[4] & interval) === 0) s.y2 += s.data[3];
-        if ((s.data[4] & 0x1f) === 0) s.data[3] = -s.data[3];
-        if (this.surfBlobBobState !== C.BOB_MON_ONLY) {
-          player.sprite.y2 = (this.surfBlobHasPlayerOffset ? this.surfBlobPlayerOffset : 0)
-            + s.y2 + (s.animCmdIndex !== 0 ? 1 : 0);
-          s.x = player.sprite.x;
-          s.y = player.sprite.y + 8;
-        }
-      }
-    };
+  startSurfBlob(player: ObjectEvent, bobState = C.BOB_PLAYER_AND_MON): number {
+    if (this.surfBlob && !this.surfBlob.destroyed) return this.ow.sprites.getId(this.surfBlob);
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = (player.currentCoords.x << 16) >> 16;
+    args[1] = (player.currentCoords.y << 16) >> 16;
+    args[2] = this.ow.objects.objects.indexOf(player);
+    const spriteId = this.FldEff_SurfBlob();
+    if (spriteId !== C.MAX_SPRITES) this.SetSurfBlob_BobState(spriteId, bobState);
+    return spriteId;
   }
 
-  setSurfBlobBobState(state: number): void { this.surfBlobBobState = state & 0xf; }
+  /** FldEff_SurfBlob (field_effect_helpers.c). */
+  FldEff_SurfBlob(): number {
+    const args = this.ow.game.fieldEffectArguments;
+    const x = (args[0]! << 16) >> 16;
+    const y = (args[1]! << 16) >> 16;
+    const playerObjectId = args[2]! & 0xff;
+    const player = this.ow.objects.objects[playerObjectId];
+    if (!player) {
+      this.active.delete(C.FLDEFF_SURF_BLOB);
+      return C.MAX_SPRITES;
+    }
+    const sprite = this.createFromTemplate("SurfBlob", x * 16 + 8, y * 16 + 8, true);
+    if (!sprite) {
+      this.active.delete(C.FLDEFF_SURF_BLOB);
+      return C.MAX_SPRITES;
+    }
+    sprite.coordOffsetEnabled = true;
+    sprite.subpriority = 0x96;
+    sprite.data[2] = playerObjectId;
+    sprite.data[3] = 0;
+    sprite.data[6] = -1;
+    sprite.data[7] = -1;
+    sprite.callback = (s) => this.UpdateSurfBlobFieldEffect(s);
+    this.surfBlob = sprite;
+    player.fieldEffectSprite = sprite;
+    this.active.delete(C.FLDEFF_SURF_BLOB);
+    return this.ow.sprites.getId(sprite);
+  }
 
-  /** SetSurfBlob_PlayerOffset: retain fishing's frame-specific offset over bobbing. */
+  /** SetSurfBlob_BobState (field_effect_helpers.c). */
+  SetSurfBlob_BobState(spriteId: number, bobState: number): void {
+    const sprite = this.ow.sprites.getById(spriteId);
+    if (sprite) sprite.data[0] = ((sprite.data[0]! & ~0xf) | (bobState & 0xf)) << 16 >> 16;
+  }
+
+  /** GetSurfBlob_BobState (field_effect_helpers.c). */
+  GetSurfBlob_BobState(spriteId: number): number {
+    return this.ow.sprites.getById(spriteId)?.data[0]! & 0xf;
+  }
+
+  /** SetSurfBlob_DontSyncAnim (field_effect_helpers.c). */
+  SetSurfBlob_DontSyncAnim(spriteId: number, value: boolean): void {
+    const sprite = this.ow.sprites.getById(spriteId);
+    if (sprite) sprite.data[0] = ((sprite.data[0]! & ~0xf0) | ((Number(value) & 0xf) << 4)) << 16 >> 16;
+  }
+
+  /** GetSurfBlob_DontSyncAnim (field_effect_helpers.c). */
+  GetSurfBlob_DontSyncAnim(spriteId: number): boolean {
+    return (((this.ow.sprites.getById(spriteId)?.data[0] ?? 0) & 0xf0) >>> 4) !== 0;
+  }
+
+  /** SetSurfBlob_PlayerOffset (field_effect_helpers.c). */
+  SetSurfBlob_PlayerOffset(spriteId: number, hasOffset: boolean, offset: number): void {
+    const sprite = this.ow.sprites.getById(spriteId);
+    if (!sprite) return;
+    sprite.data[0] = ((sprite.data[0]! & ~0xf00) | ((Number(hasOffset) & 0xf) << 8)) << 16 >> 16;
+    sprite.data[1] = (offset << 16) >> 16;
+  }
+
+  /** GetSurfBlob_HasPlayerOffset (field_effect_helpers.c). */
+  GetSurfBlob_HasPlayerOffset(spriteId: number): boolean {
+    return (((this.ow.sprites.getById(spriteId)?.data[0] ?? 0) & 0xf00) >>> 8) !== 0;
+  }
+
+  /** UpdateSurfBlobFieldEffect (field_effect_helpers.c). */
+  UpdateSurfBlobFieldEffect(sprite: Sprite): void {
+    const player = this.ow.objects.objects[sprite.data[2]! & 0xff];
+    if (!player) return;
+    this.SynchroniseSurfAnim(player, sprite);
+    this.SynchroniseSurfPosition(player, sprite);
+    this.CreateBobbingEffect(player, player.sprite, sprite);
+    sprite.priority = player.sprite.priority;
+  }
+
+  /** SynchroniseSurfAnim (field_effect_helpers.c). */
+  SynchroniseSurfAnim(objectEvent: ObjectEvent, sprite: Sprite): void {
+    if (this.GetSurfBlob_DontSyncAnim(this.ow.sprites.getId(sprite))) return;
+    const surfBlobDirectionAnims = [0, 0, 1, 2, 3];
+    const anim = surfBlobDirectionAnims[objectEvent.movementDirection];
+    if (anim !== undefined && sprite.animNum !== anim) sprite.startAnim(anim);
+  }
+
+  /** SynchroniseSurfPosition (field_effect_helpers.c). */
+  SynchroniseSurfPosition(playerObject: ObjectEvent, surfBlobSprite: Sprite): void {
+    let x = (playerObject.currentCoords.x << 16) >> 16;
+    let y = (playerObject.currentCoords.y << 16) >> 16;
+    if (surfBlobSprite.y2 !== 0 || (x === surfBlobSprite.data[6] && y === surfBlobSprite.data[7])) return;
+    surfBlobSprite.data[5] = 0;
+    surfBlobSprite.data[6] = x;
+    surfBlobSprite.data[7] = y;
+    for (const direction of [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST]) {
+      const [dx, dy] = DIRECTION_VECTORS[direction]!;
+      x = (surfBlobSprite.data[6]! + dx << 16) >> 16;
+      y = (surfBlobSprite.data[7]! + dy << 16) >> 16;
+      if (this.ow.map.elevationAt(x, y) === 3) {
+        surfBlobSprite.data[5] = 1;
+        break;
+      }
+    }
+  }
+
+  /** CreateBobbingEffect (field_effect_helpers.c). */
+  CreateBobbingEffect(objectEvent: ObjectEvent, linkedSprite: Sprite, sprite: Sprite): void {
+    const bobState = this.GetSurfBlob_BobState(this.ow.sprites.getId(sprite));
+    if (bobState === C.BOB_NONE) return;
+    sprite.data[4] = (sprite.data[4]! + 1) << 16 >> 16;
+    const timer = sprite.data[4]! & 0xffff;
+    const interval = sprite.data[5] ? 15 : 7;
+    if ((timer & interval) === 0) sprite.y2 = (sprite.y2 + sprite.data[3]!) << 16 >> 16;
+    if ((timer & 0x1f) === 0) sprite.data[3] = (-sprite.data[3]!) << 16 >> 16;
+    if (bobState === C.BOB_MON_ONLY) return;
+    const playerOffset = this.GetSurfBlob_HasPlayerOffset(this.ow.sprites.getId(sprite)) ? sprite.data[1]! : 0;
+    linkedSprite.y2 = (playerOffset + sprite.y2 + (sprite.animCmdIndex !== 0 ? 1 : 0)) << 16 >> 16;
+    sprite.x = linkedSprite.x;
+    sprite.y = (linkedSprite.y + 8) << 16 >> 16;
+  }
+
+  /** SetSurfBlob_BobState wrapper used by TypeScript field-move callers. */
+  setSurfBlobBobState(state: number): void {
+    if (this.surfBlob) this.SetSurfBlob_BobState(this.ow.sprites.getId(this.surfBlob), state);
+  }
+
+  setSurfBlobDontSyncAnim(dontSync: boolean): void {
+    if (this.surfBlob) this.SetSurfBlob_DontSyncAnim(this.ow.sprites.getId(this.surfBlob), dontSync);
+  }
+
+  /** SetSurfBlob_PlayerOffset wrapper used by fishing and Quest Log playback. */
   setSurfBlobPlayerOffset(hasOffset: boolean, offset: number): void {
-    if (!this.surfBlob) return;
-    this.surfBlobHasPlayerOffset = hasOffset;
-    this.surfBlobPlayerOffset = (offset << 16) >> 16;
+    if (this.surfBlob) this.SetSurfBlob_PlayerOffset(this.ow.sprites.getId(this.surfBlob), hasOffset, offset);
   }
 
   setSurfBlobInvisible(invisible: boolean): void {
     if (this.surfBlob) this.surfBlob.invisible = invisible;
   }
 
+  /** StartUnderwaterSurfBlobBobbing (field_effect_helpers.c). */
+  StartUnderwaterSurfBlobBobbing(oldSpriteId: number): number {
+    const sprite = new Sprite();
+    sprite.subpriority = 0xff;
+    this.ow.sprites.addAtEnd(sprite);
+    const spriteId = this.ow.sprites.getId(sprite);
+    if (spriteId === 0xff) return spriteId;
+    sprite.callback = (s) => this.SpriteCB_UnderwaterSurfBlob(s);
+    sprite.invisible = true;
+    sprite.data[0] = oldSpriteId & 0xff;
+    sprite.data[1] = 1;
+    return spriteId;
+  }
+
+  /** SpriteCB_UnderwaterSurfBlob (field_effect_helpers.c). */
+  SpriteCB_UnderwaterSurfBlob(sprite: Sprite): void {
+    const oldSprite = this.ow.sprites.getById(sprite.data[0]! & 0xff);
+    if (!oldSprite) return;
+    const previousTimer = sprite.data[2]! & 0xffff;
+    sprite.data[2] = (sprite.data[2]! + 1) << 16 >> 16;
+    if ((previousTimer & 3) === 0) oldSprite.y2 = (oldSprite.y2 + sprite.data[1]!) << 16 >> 16;
+    if ((sprite.data[2]! & 0xf) === 0) sprite.data[1] = (-sprite.data[1]!) << 16 >> 16;
+  }
+
   destroySurfBlob(): void {
     if (this.surfBlob) this.ow.sprites.destroy(this.surfBlob);
+    if (this.ow.player.object.fieldEffectSprite === this.surfBlob) this.ow.player.object.fieldEffectSprite = undefined;
     this.surfBlob = undefined;
-    this.surfBlobBobState = C.BOB_NONE;
-    this.surfBlobHasPlayerOffset = false;
-    this.surfBlobPlayerOffset = 0;
     this.ow.player.object.sprite.y2 = 0;
   }
 

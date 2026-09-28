@@ -1238,7 +1238,10 @@ export class FieldMoveEffects {
           break;
         case 2:
           if (!this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) {
-            if (wasSurfing) ow.effects.setSurfBlobBobState(C.BOB_MON_ONLY);
+            if (wasSurfing) {
+              ow.effects.setSurfBlobBobState(C.BOB_MON_ONLY);
+              ow.effects.setSurfBlobDontSyncAnim(false);
+            }
             // SpriteCB_FlyBirdLeaveBall: the bird circles up out of the ball.
             bird = this.createBird();
             if (bird) { bird.x = save.playerGender ? 118 : 128; bird.y = -48; }
@@ -1310,6 +1313,7 @@ export class FieldMoveEffects {
     const ow = this.ow;
     const player = ow.player.object;
     const wasSurfing = ow.player.isSurfing();
+    if (wasSurfing) ow.effects.setSurfBlobBobState(C.BOB_NONE);
     const bird = this.createBird();
     if (bird) { bird.x = 120; bird.y = 0; bird.startAnim(save.playerGender * 2 + 1); }
     sound.playSE(C.SE_M_FLY);
@@ -1341,6 +1345,7 @@ export class FieldMoveEffects {
           if (bird) { bird.y2 -= 6; bird.x2 += 2; }
           if (++timer >= 30) {
             if (bird) ow.sprites.destroy(bird);
+            if (wasSurfing) ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
             tasks.destroy(id);
             done();
           }
