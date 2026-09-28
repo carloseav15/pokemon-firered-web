@@ -172,7 +172,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       return { kind: "close", post: () => FieldCallback_UseRockSmash(game, partyIndex) };
     }
     case FIELD_MOVE_WATERFALL:
-      if (MB.MetatileBehavior_IsWaterfall(ow.map.behaviorAt(fx, fy)) && ow.player.isSurfing() && p.facingDirection === DIR_NORTH) {
+      if (MB.MetatileBehavior_IsWaterfall(ow.map.behaviorAt(fx, fy)) && ow.player.IsPlayerSurfingNorth()) {
         return { kind: "close", post: () => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_USE_WATERFALL); } };
       }
       return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };

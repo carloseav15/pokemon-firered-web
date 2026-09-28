@@ -1013,19 +1013,25 @@ export class PlayerAvatar {
     return this.ow.game.party().some((mon) => !mon.isEgg && mon.moves.includes(rom.constants.MOVE_SURF));
   }
 
+  /** IsPlayerSurfingNorth (field_player_avatar.c) checks movement direction. */
+  IsPlayerSurfingNorth(): boolean { return this.object.movementDirection === DIR_NORTH && this.isSurfing(); }
+
+  /** MetatileAtCoordsIsWaterTile (field_player_avatar.c). */
+  MetatileAtCoordsIsWaterTile(x: number, y: number): boolean {
+    const terrain = this.ow.map.attributeAt(x, y, C.METATILE_ATTRIBUTE_TERRAIN);
+    return (terrain & (1 << C.TILE_TERRAIN_WATER)) !== 0;
+  }
+
   /**
-   * IsPlayerFacingSurfableFishableWater (field_player_avatar.c): the C check gates on
-   * PlayerGetElevation() (the player's OWN previousElevation, e.g. a bridge tile) equal
-   * to 3, not the target tile's elevation; this checks the target tile's elevation
-   * instead, and MetatileBehavior_IsSurfable instead of MetatileAtCoordsIsWaterTile.
-   * Not touched here pending a focused check against the elevation/bridge system.
+   * IsPlayerFacingSurfableFishableWater (field_player_avatar.c): uses the player's
+   * previous elevation byte and the target tile terrain water bit, not target elevation
+   * or the MetatileBehavior_IsSurfable predicate.
    */
   IsPlayerFacingSurfableFishableWater(): boolean {
     const o = this.object;
     const [dx, dy] = DIRECTION_VECTORS[o.facingDirection];
     const x = o.currentCoords.x + dx, y = o.currentCoords.y + dy;
-    if (this.ow.objects.GetCollisionAtCoords(o, x, y, o.facingDirection) === COLLISION_ELEVATION_MISMATCH && this.ow.map.elevationAt(x, y) === 1
-      && MB.MetatileBehavior_IsSurfable(this.ow.map.behaviorAt(x, y))) return true;
-    return false;
+    return this.ow.objects.GetCollisionAtCoords(o, x, y, o.facingDirection) === COLLISION_ELEVATION_MISMATCH
+      && PlayerGetElevation() === 3 && this.MetatileAtCoordsIsWaterTile(x, y);
   }
 }
