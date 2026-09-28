@@ -11,7 +11,7 @@ import { flagGet, incrementGameStat } from "../save";
 import { QuestLogApplyPlayerAvatarTransition, QuestLogCallUpdatePlayerSprite } from "../questLogPlayer";
 import { QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerStep, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
 import {
-  actionFace, actionJump2, actionJumpInPlace, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
+  actionFace, actionJump2, actionJumpInPlace, actionJumpSpecial, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
   actionWalkInPlaceSlow, actionWalkNormal, actionWalkSlow, COLLISION_DIRECTIONAL_STAIR_WARP, COLLISION_ELEVATION_MISMATCH, COLLISION_LEDGE_JUMP,
   actionWalkSlower, COLLISION_NONE, COLLISION_OBJECT_EVENT, COLLISION_PUSHED_BOULDER, COLLISION_STOP_SURFING, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, OPPOSITE,
   DIRECTION_VECTORS, graphicsInfo, OBJECT_EVENTS_COUNT, type ObjectEvent,
@@ -561,7 +561,7 @@ export class PlayerAvatar {
 
   /** ForcedMovement_MatJump (field_player_avatar.c). */
   private ForcedMovement_MatJump(): boolean {
-    this.DoPlayerAvatarSecretBaseMatJump();
+    this.DoPlayerMatJump();
     return true;
   }
 
@@ -588,6 +588,9 @@ export class PlayerAvatar {
     taskId = this.ow.effects.tasks.create(PlayerAvatar_DoSecretBaseMatJump, 0xff);
     PlayerAvatar_DoSecretBaseMatJump();
   }
+
+  /** DoPlayerMatJump (field_player_avatar.c). */
+  private DoPlayerMatJump(): void { this.DoPlayerAvatarSecretBaseMatJump(); }
 
 
   /** ForcedMovement_MatSpin (field_player_avatar.c). */
@@ -1060,25 +1063,33 @@ export class PlayerAvatar {
     }
     this.flags = (this.flags & ~PLAYER_AVATAR_FLAG_SURFING) | PLAYER_AVATAR_FLAG_ON_FOOT;
     this.preventStep = true;
-    const o = this.object;
-    let state = 0;
-    const id = this.ow.effects.tasks.create(() => {
-      if (state === 0) {
-        if (!this.ow.objects.isMovementOverridden(o) || this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
-          this.ow.effects.setSurfBlobBobState(C.BOB_MON_ONLY);
-          this.ow.objects.setHeldMovement(o, 0x14 + direction - 1 + 0x3a - 0x14 - 0x3a + 0x46); // jump special
-          state = 1;
-        }
-      } else if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
-        this.setState(PLAYER_AVATAR_GFX_NORMAL);
-        this.ow.objects.setHeldMovement(o, actionFace(o.facingDirection));
-        this.preventStep = false;
-        this.ow.effects.destroySurfBlob();
-        this.ow.objects.unfreezeAll();
-        this.ow.controlsLocked = false;
-        this.ow.effects.tasks.destroy(id);
-      }
+    const task = { id: -1, direction, state: 0 };
+    task.id = this.ow.effects.tasks.create(() => {
+      if (task.state === 0) this.Task_StopSurfingInit(task);
+      else this.Task_WaitStopSurfing(task);
     }, 0xff);
+  }
+
+  /** Task_StopSurfingInit (field_player_avatar.c). */
+  private Task_StopSurfingInit(task: { id: number; direction: number; state: number }): void {
+    const object = this.object;
+    if (this.ow.objects.isMovementOverridden(object) && this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return;
+    this.ow.effects.setSurfBlobBobState(C.BOB_MON_ONLY);
+    this.QL_TryRecordPlayerStepWithDuration0(actionJumpSpecial(task.direction));
+    task.state = 1;
+  }
+
+  /** Task_WaitStopSurfing (field_player_avatar.c). */
+  private Task_WaitStopSurfing(task: { id: number; direction: number; state: number }): void {
+    const object = this.object;
+    if (!this.ow.objects.ObjectEventClearHeldMovementIfFinished(object)) return;
+    this.setState(PLAYER_AVATAR_GFX_NORMAL);
+    this.QL_TryRecordPlayerStepWithDuration0(actionFace(object.facingDirection));
+    this.preventStep = false;
+    this.ow.effects.destroySurfBlob();
+    this.ow.objects.unfreezeAll();
+    this.ow.controlsLocked = false;
+    this.ow.effects.tasks.destroy(task.id);
   }
 
   /** CreateStopSurfingTask_NoMusicChange (field_player_avatar.c). */

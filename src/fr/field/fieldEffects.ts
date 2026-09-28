@@ -1110,14 +1110,26 @@ export class FieldEffects {
    * created, matching Task_BumpBoulder's tight while-loop calling it the same frame.
    */
   StartStrengthAnim(boulder: ObjectEvent, direction: number): void {
-    const player = this.ow.player.object;
+    const task = { id: -1, boulder, direction, state: 0 };
+    this.DoBoulderInit();
+    task.id = tasks.create(() => this.Task_BumpBoulder(task), 80);
+    task.state++;
+  }
+
+  /** DoBoulderInit (field_player_avatar.c). */
+  private DoBoulderInit(): void {
     this.ow.controlsLocked = true;
     this.ow.player.preventStep = true;
-    let state = 1;
-    const id = tasks.create(() => {
-      if (state === 1) { if (this.DoBoulderDust(player, boulder, direction)) state = 2; }
-      else if (this.DoBoulderFinish(player, boulder)) tasks.destroy(id);
-    }, 80);
+  }
+
+  /** Task_BumpBoulder (field_player_avatar.c): dispatches its three task states. */
+  private Task_BumpBoulder(task: { id: number; boulder: ObjectEvent; direction: number; state: number }): void {
+    const player = this.ow.player.object;
+    if (task.state === 1) {
+      if (this.DoBoulderDust(player, task.boulder, task.direction)) task.state++;
+    } else if (task.state === 2 && this.DoBoulderFinish(player, task.boulder)) {
+      tasks.destroy(task.id);
+    }
   }
 
   /** DoBoulderDust (field_player_avatar.c). */
