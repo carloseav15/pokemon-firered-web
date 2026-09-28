@@ -788,8 +788,13 @@ function StartBgAnimation(isLink: boolean): void {
   }
 
   CreateTask(Task_UpdateBgPalette, 5);
-  const animTask = CreateTask(Task_AnimateBg, 7);
-  gTasks[animTask].data[2] = isLink ? 1 : 0;
+  CreateBgAnimTask(isLink);
+}
+
+/** CreateBgAnimTask (evolution_scene.c): the task uses data[2] as a bool8. */
+function CreateBgAnimTask(isLink: boolean): void {
+  const taskId = CreateTask(Task_AnimateBg, 7);
+  gTasks[taskId].data[2] = isLink ? 1 : 0;
 }
 
 function IsMovingBackgroundTaskRunning(): void {
@@ -1514,14 +1519,13 @@ export function BeginEvolutionScene(
 ): void {
   const start = (done: () => void) => {
     void preloadEvolutionScene().then(() => {
-      BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, RGB_BLACK);
-      CreateTask((id) => {
-        UpdatePaletteFade();
-        if (!gPaletteFade.active) {
-          DestroyTask(id);
-          EvolutionScene(mon, postEvoSpecies, canStopEvo, partyId, done);
-        }
-      }, 0);
+      sPendingEvolution = { mon, postEvoSpecies: postEvoSpecies & 0xffff, canStopEvo, partyId: partyId & 0xff, done };
+      const taskId = CreateTask(Task_BeginEvolutionScene, 0);
+      gTasks[taskId].data[0] = 0;
+      gTasks[taskId].data[2] = postEvoSpecies & 0xffff;
+      gTasks[taskId].data[3] = canStopEvo ? 1 : 0;
+      gTasks[taskId].data[10] = partyId & 0xff;
+      SetMainCallback2(CB2_BeginEvolutionScene);
     });
   };
 
@@ -1536,6 +1540,38 @@ export function BeginEvolutionScene(
     });
   } else {
     start(exitCallback ?? (() => {}));
+  }
+}
+
+type PendingEvolution = {
+  mon: Mon | Pokemon;
+  postEvoSpecies: number;
+  canStopEvo: boolean;
+  partyId: number;
+  done: () => void;
+};
+
+let sPendingEvolution: PendingEvolution | null = null;
+
+/** CB2_BeginEvolutionScene (evolution_scene.c). */
+function CB2_BeginEvolutionScene(): void {
+  UpdatePaletteFade();
+  RunTasks();
+}
+
+/** Task_BeginEvolutionScene (evolution_scene.c), including its two task states. */
+function Task_BeginEvolutionScene(taskId: number): void {
+  const task = gTasks[taskId];
+  if (task.data[0] === 0) {
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, RGB_BLACK);
+    task.data[0]++;
+    return;
+  }
+  if (task.data[0] === 1 && !gPaletteFade.active) {
+    const pending = sPendingEvolution;
+    DestroyTask(taskId);
+    sPendingEvolution = null;
+    if (pending) EvolutionScene(pending.mon, task.data[2], !!task.data[3], task.data[10], pending.done);
   }
 }
 
