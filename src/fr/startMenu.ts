@@ -3,7 +3,7 @@
 
 import type { Game } from "./game";
 import * as C from "./generated/constants";
-import { PlayRainStoppingSoundEffect } from "./field/weather";
+import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./field/weather";
 import { GetNationalPokedexCount } from "./pokemon/pokemon";
 import { flagGet, IncrementGameStat, save } from "./save";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
@@ -15,7 +15,7 @@ import { printText } from "./gba/textPrinter";
 import { Window } from "./gba/window";
 import { joy, JOY_NEW, START_BUTTON } from "./gba/input";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
-import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
+import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
 import { FONT_SMALL, stringWidth } from "./gba/font";
 import { SaveStatToString } from "./saveMenuUtil";
@@ -140,8 +140,30 @@ export function SetUpStartMenu(state: StartMenuSetupState): void {
 /** ShowStartMenu (start_menu.c); the Game method owns the active Canvas task and menu state. */
 export function ShowStartMenu(game: Game): void { game.showStartMenu(); }
 
-/** SetUpReturnToStartMenu (start_menu.c); returning screens use the same active start-menu entry. */
-export function SetUpReturnToStartMenu(game: Game): void { game.showStartMenu(); }
+/** SetUpReturnToStartMenu (start_menu.c); return through the source fade-in and input-task sequence. */
+export function SetUpReturnToStartMenu(game: Game): void { game.showStartMenu(false, true); }
+
+/** Task_WaitFadeAndCreateStartMenuTask (field_fadetransition.c). */
+export function Task_WaitFadeAndCreateStartMenuTask(taskId: number, game: Game, startInput: (taskId: number) => void): void {
+  if (!IsWeatherNotFadingIn() || !game.overworld.mapPreview.ForestMapPreviewScreenIsRunning()) return;
+  tasks.destroy(taskId);
+  tasks.create(startInput, 80);
+}
+
+/** FadeTransition_FadeInOnReturnToStartMenu (field_fadetransition.c). */
+export function FadeTransition_FadeInOnReturnToStartMenu(game: Game, startInput: (taskId: number) => void): void {
+  paletteFade.fill(RGB_BLACK);
+  paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
+  paletteFade.fill(RGB_BLACK);
+  tasks.create((taskId) => Task_WaitFadeAndCreateStartMenuTask(taskId, game, startInput), 80);
+  game.overworld.controlsLocked = true;
+}
+
+/** FieldCB_ReturnToFieldOpenStartMenu (field_fadetransition.c). */
+export function FieldCB_ReturnToFieldOpenStartMenu(game: Game): false {
+  SetUpReturnToStartMenu(game);
+  return false;
+}
 
 /** CloseStartMenu (start_menu.c); release and cleanup live on the field Game. */
 export function CloseStartMenu(game: Game): void { game.closeStartMenu(); }

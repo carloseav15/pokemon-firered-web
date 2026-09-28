@@ -40,7 +40,7 @@ import { GetBerryPowder } from "../script/specialsExtra";
 import { ItemUse_SetQuestLogEvent } from "../itemUse";
 import { FADE_FROM_BLACK, paletteFade, RGB_BLACK } from "../gba/fade";
 import { IsWeatherNotFadingIn } from "../field/weather";
-import { SetUpReturnToStartMenu } from "../startMenu";
+import { FieldCB_ReturnToFieldOpenStartMenu } from "../startMenu";
 
 
 export function fieldMenu(game: Game, begin: (close: () => void) => void, closeStartMenu = true): void {
@@ -182,7 +182,7 @@ export function openFieldParty(game: Game): void {
   fieldMenu(game, close => {
     const leaveWith = (post: (() => void) | null): void => {
       close();
-      if (post) { game.closeStartMenu(); post(); } else SetUpReturnToStartMenu(game);
+      if (post) { game.closeStartMenu(); post(); } else FieldCB_ReturnToFieldOpenStartMenu(game);
     };
     SetPartyMenuFieldHooks(fieldPartyHooks(game, leaveWith));
     CB2_PartyMenuFromStartMenu(() => leaveWith(null));
@@ -457,7 +457,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       const cb = post;
       post = null;
       if (cb) { game.closeStartMenu(); cb(); }
-      else if (initialItem === undefined) SetUpReturnToStartMenu(game);
+      else if (initialItem === undefined) FieldCB_ReturnToFieldOpenStartMenu(game);
       else game.closeStartMenu();
     };
     let bagCtx: BagTaskContext | null = null;
