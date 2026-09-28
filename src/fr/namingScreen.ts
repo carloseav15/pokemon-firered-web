@@ -28,6 +28,7 @@ import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
 import { CreateObjectGraphicsSprite, CopyObjectGraphicsInfoToSpriteTemplate } from "./objectEventGraphics";
 import { GetRivalAvatarGraphicsIdByStateIdAndGender } from "./field/playerAvatar";
 import { Sin } from "./hw/trig";
+import { BackupHelpContext, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 
 const data = <T>(name: string) => cdata<T>("naming_screen", name);
 const text = (name: string) => cdata<number[]>("strings", name);
@@ -76,8 +77,7 @@ class NamingScreen {
 
   begin(): void {
     SetMainCallback1(null);
-    SetVBlankCallback(null);
-    SetHBlankCallback(null);
+    this.ResetVHBlank();
     InitGpuRegManager();
     ppu.vram.fill(0); ppu.oam.fill(0); ppu.pltt.fill(0);
     tasks.reset();
@@ -109,14 +109,8 @@ class NamingScreen {
       if (pal.data) LoadSpritePalette({data: incbin(pal.data.$sym).subarray((pal.data.index ?? 0) * 32, ((pal.data.index ?? 0) + 1) * 32), tag: pal.tag});
     }
     this.CreateSprites();
-    this.CreateInputHandlerTask();
-    this.CreateButtonFlashTask();
-    SetVBlankCallback(() => {
-      LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer();
-      SetGpuReg(REG_OFFSET_BG1VOFS, this.bg1vOffset);
-      SetGpuReg(REG_OFFSET_BG2VOFS, this.bg2vOffset);
-    });
-    SetMainCallback2(() => this.Task_NamingScreen());
+    this.CreateHelperTasks();
+    this.CreateNamingScreenTask();
   }
 
   private sprite(name: string, x: number, y: number, order: number, table?: string): number {
@@ -135,6 +129,44 @@ class NamingScreen {
       }));
     }
     return id;
+  }
+
+  /** CreateNamingScreenTask (naming_screen.c): install the frame callback and help context. */
+  private CreateNamingScreenTask(): void {
+    SetMainCallback2(() => this.CB2_NamingScreen());
+    BackupHelpContext();
+    SetHelpContext(C.HELPCONTEXT_NAMING_SCREEN);
+  }
+
+  /** CreateHelperTasks (naming_screen.c). */
+  private CreateHelperTasks(): void {
+    this.CreateInputHandlerTask();
+    this.CreateButtonFlashTask();
+  }
+
+  /** ResetVHBlank (naming_screen.c). */
+  private ResetVHBlank(): void {
+    SetVBlankCallback(null);
+    SetHBlankCallback(null);
+  }
+
+  /** SetVBlank (naming_screen.c). */
+  private SetVBlank(): void {
+    SetVBlankCallback(() => this.VBlankCB_NamingScreen());
+  }
+
+  /** VBlankCB_NamingScreen (naming_screen.c). */
+  private VBlankCB_NamingScreen(): void {
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+    SetGpuReg(REG_OFFSET_BG1VOFS, this.bg1vOffset);
+    SetGpuReg(REG_OFFSET_BG2VOFS, this.bg2vOffset);
+  }
+
+  /** CB2_NamingScreen (naming_screen.c). */
+  private CB2_NamingScreen(): void {
+    this.Task_NamingScreen();
   }
 
   /** CreateSprites (naming_screen.c): create the screen sprites in source order. */
@@ -695,6 +727,7 @@ class NamingScreen {
     Object.assign(textFlags, this.savedTextFlags);
     FreeAllWindowBuffers(); DeactivateAllTextPrinters();
     SetVBlankCallback(null); SetMainCallback1(this.callback1); SetMainCallback2(this.returnCallback);
+    RestoreHelpContext();
   }
 
   private showPCMessage(): void {
@@ -804,7 +837,7 @@ class NamingScreen {
   private Task_NamingScreen(): void {
     this.Task_HandleInput();
     switch (this.state) {
-      case "fadeIn": this.MainState_FadeIn(); this.SetSpritesVisible(); break;
+      case "fadeIn": this.MainState_FadeIn(); this.SetSpritesVisible(); this.SetVBlank(); break;
       case "waitFadeIn": this.MainState_WaitFadeIn(); break;
       case "input": this.MainState_HandleInput(); break;
       case "moveToOK": this.MainState_MoveToOKButton(); break;
