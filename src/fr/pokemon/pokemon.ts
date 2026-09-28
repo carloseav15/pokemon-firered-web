@@ -38,6 +38,7 @@ export type Pokemon = {
   metLocation: number;
   pokeball: number;
   isEgg: boolean;
+  language?: number;
   pokerus: number;
   markings: number;
   contest?: number[]; // cool, beauty, cute, smart, tough, sheen (pokemon.c contest stats)
@@ -259,10 +260,15 @@ export function firstAliveNonEgg(): Pokemon | undefined {
   return save.party.find((mon) => !mon.isEgg && mon.hp > 0);
 }
 
-export function leadMonIndex(): number {
-  const index = save.party.findIndex((mon) => !mon.isEgg);
+/** GetLeadMonIndex from field_specials.c; the C loop skips SPECIES_EGG and SPECIES_NONE. */
+export function GetLeadMonIndex(): number {
+  const egg = rom.c("SPECIES_EGG"), none = rom.c("SPECIES_NONE");
+  const index = save.party.findIndex((mon) => mon.species !== egg && mon.species !== none);
   return index < 0 ? 0 : index;
 }
+
+/** Existing TypeScript callers share the source-faithful C helper. */
+export const leadMonIndex = GetLeadMonIndex;
 
 /** GiveMonToPlayer: party or PC. Returns MON_GIVEN_TO_PARTY(0)/PC(1)/CANT(2). */
 export function giveMonToPlayer(mon: Pokemon): number {

@@ -13,7 +13,7 @@ import { EnableNationalPokedex as enableNationalPokedex, flagGet, flagSet, incre
 import { MAP_OFFSET } from "../field/fieldmap";
 import { LOCALID_CAMERA, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
-import { countAliveNonEggMons, GetKantoPokedexCount, GetNationalPokedexCount, HasAllKantoMons, HasAllMons, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
+import { countAliveNonEggMons, GetKantoPokedexCount, GetNationalPokedexCount, GetLeadMonIndex, HasAllKantoMons, HasAllMons, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "../pokemon/pokemon";
 import { GetMonData, GetMonEVCount, SetMonData } from "../pokemon/mon";
 import { cdata, hasCData, loadCData } from "../hw/assets";
 import type { ScriptRunner } from "./context";
@@ -32,6 +32,14 @@ import { WonderNews_GetRewardInfo } from "../wonderNews";
 import { BufferRandomHobbyOrLifestyleString } from "../easyChat";
 
 type Special = (ctx: ScriptRunner) => number | void;
+
+/** HasMonBeenRenamed from field_specials.c. */
+function HasMonBeenRenamed(idx: number): boolean {
+  const mon = save.party[idx];
+  if (!mon) return false;
+  if ((mon.language ?? C.LANGUAGE_ENGLISH) !== C.LANGUAGE_ENGLISH) return true;
+  return nickname(mon).join(",") !== speciesName(mon.species).join(",");
+}
 
 const warned = new Set<string>();
 
@@ -147,10 +155,7 @@ export const SPECIALS: Record<string, Special> = {
     return mon && mon.otName.join(",") === save.playerName.join(",") ? 0 : 1;
   },
   HasLeadMonBeenRenamed: () => {
-    const mon = save.party[leadMonIndex()];
-    if (!mon) return 0;
-    const name = speciesName(mon.species);
-    return nickname(mon).join(",") === name.join(",") ? 0 : 1;
+    return HasMonBeenRenamed(GetLeadMonIndex()) ? 1 : 0;
   },
   GetPlayerTrainerIdOnesDigit: () => (save.trainerId & 0xffff) % 10,
   BufferBigGuyOrBigGirlString: () => { stringVars.var1 = rom.text(save.playerGender ? "gText_BigGirl" : "gText_BigGuy"); },
