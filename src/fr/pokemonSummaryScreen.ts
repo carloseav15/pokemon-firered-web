@@ -56,7 +56,7 @@ import {
 import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import { BlitMenuInfoIcon, ListMenuLoadStdPalAt } from "./hw/listMenu";
 import { FONT_NORMAL, FONT_SMALL, stringWidth as GetStringWidth } from "./gba/font";
-import { EOS, encode, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
+import { EOS, encode, intToDecimal, StringCompareWithoutExtCtrlCodes, StringCopy, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { TEXT_SKIP_DRAW } from "./gba/textPrinter";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, L_BUTTON, R_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
@@ -1238,7 +1238,41 @@ function PokeSum_PrintTrainerMemo(): void {
 function PokeSum_PrintTrainerMemo_Mon(): void {
   if (!sMonSummaryScreen) return;
   const mon = sMonSummaryScreen.currentMon;
-  const isOT = (mon.otId & 0xffff) === (save.trainerId & 0xffff);
+  if (PokeSum_BufferOtName_IsEqualToCurrentOwner(mon)) PokeSum_PrintTrainerMemo_Mon_HeldByOT();
+  else PokeSum_PrintTrainerMemo_Mon_NotHeldByOT();
+}
+
+/** PokeSum_BufferOtName_IsEqualToCurrentOwner (pokemon_summary_screen.c). */
+function PokeSum_BufferOtName_IsEqualToCurrentOwner(mon: Mon): boolean {
+  const summary = sMonSummaryScreen!.summary;
+  const ownerName = save.playerName;
+  StringCopy(summary.otNameStrBufs[0], ownerName);
+  StringCopy(summary.otNameStrBufs[1], mon.otName);
+  return (save.trainerId & 0xffff) === (GetMonData(mon, C.MON_DATA_OT_ID) & 0xffff)
+    && StringCompareWithoutExtCtrlCodes(summary.otNameStrBufs[0], summary.otNameStrBufs[1]) === 0;
+}
+
+/** PokeSum_IsMonBoldOrGentle (pokemon_summary_screen.c). */
+function PokeSum_IsMonBoldOrGentle(nature: number): boolean {
+  return nature === C.NATURE_BOLD || nature === C.NATURE_GENTLE;
+}
+
+/** CurrentMonIsFromGBA (pokemon_summary_screen.c). */
+function CurrentMonIsFromGBA(): boolean {
+  const version = GetMonData(sMonSummaryScreen!.currentMon, C.MON_DATA_MET_GAME);
+  return version === C.VERSION_LEAF_GREEN || version === C.VERSION_FIRE_RED || version === C.VERSION_RUBY
+    || version === C.VERSION_SAPPHIRE || version === C.VERSION_EMERALD;
+}
+
+/** MapSecIsInKantoOrSevii (pokemon_summary_screen.c). */
+function MapSecIsInKantoOrSevii(mapSec: number): boolean {
+  return mapSec >= C.KANTO_MAPSEC_START && mapSec < C.MAPSEC_NONE;
+}
+
+/** PokeSum_PrintTrainerMemo_Mon_HeldByOT (pokemon_summary_screen.c). */
+function PokeSum_PrintTrainerMemo_Mon_HeldByOT(): void {
+  if (!sMonSummaryScreen) return;
+  const mon = sMonSummaryScreen.currentMon;
   const win = sMonSummaryScreen.windowIds[POKESUM_WIN_TRAINER_MEMO];
   const colors = cdata<number[][]>("pokemon_summary_screen", "sLevelNickTextColors");
 
@@ -1247,31 +1281,65 @@ function PokeSum_PrintTrainerMemo_Mon(): void {
   const natureNames = cdata<unknown[]>("pokemon_summary_screen", "gNatureNamePointers");
   DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, resolveText(natureNames[nature]));
 
-  const metLevel = mon.metLevel || 5;
+  const metLevel = GetMonData(mon, C.MON_DATA_MET_LEVEL) || 5;
   DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, intToDecimal(metLevel, STR_CONV_MODE_LEFT_ALIGN, 3));
 
-  const metLoc = mon.metLocation || 0;
-  let mapName: Uint8Array;
-  if (metLoc >= C.KANTO_MAPSEC_START && metLoc < C.MAPSEC_NONE) {
-    mapName = getMapNameGenericBytes(metLoc);
-  } else if (!isOT) {
-    mapName = rom.text("gText_PokeSum_ATrade");
-  } else {
-    mapName = rom.text("gText_Somewhere");
-  }
+  const metLoc = GetMonData(mon, C.MON_DATA_MET_LOCATION);
+  const mapName = MapSecIsInKantoOrSevii(metLoc) ? getMapNameGenericBytes(metLoc)
+    : (sMonSummaryScreen.isEnemyParty ? rom.text("gText_Somewhere") : rom.text("gText_PokeSum_ATrade"));
   DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, mapName);
 
-  let templateText: Uint8Array;
-  if (mon.metLevel === 0) {
-    templateText = isOT ? rom.text("gText_PokeSum_Hatched") : rom.text("gText_PokeSum_ApparentlyMet");
-  } else if (!isOT) {
-    templateText = rom.text("gText_PokeSum_MetInATrade");
+  const metLevelRaw = GetMonData(mon, C.MON_DATA_MET_LEVEL);
+  const fateful = metLoc === C.METLOC_FATEFUL_ENCOUNTER;
+  const modernFateful = GetMonData(mon, C.MON_DATA_MODERN_FATEFUL_ENCOUNTER) === 1;
+  let template: string;
+  if (metLevelRaw === 0) {
+    if (modernFateful) template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_FatefulEncounterHatched_BoldGentleGrammar" : "gText_PokeSum_FatefulEncounterHatched";
+    else template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_Hatched_BoldGentleGrammar" : "gText_PokeSum_Hatched";
+  } else if (fateful) {
+    template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_FatefulEncounterMet_BoldGentleGrammar" : "gText_PokeSum_FatefulEncounterMet";
   } else {
-    templateText = rom.text("gText_PokeSum_Met");
+    template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_Met_BoldGentleGrammar" : "gText_PokeSum_Met";
+  }
+  AddTextPrinterParameterized4(win, FONT_NORMAL, 0, 3, 0, 0, colors[0], TEXT_SKIP_DRAW, DynamicPlaceholderTextUtil_ExpandPlaceholders(rom.text(template)));
+}
+
+/** PokeSum_PrintTrainerMemo_Mon_NotHeldByOT (pokemon_summary_screen.c). */
+function PokeSum_PrintTrainerMemo_Mon_NotHeldByOT(): void {
+  if (!sMonSummaryScreen) return;
+  const mon = sMonSummaryScreen.currentMon;
+  const win = sMonSummaryScreen.windowIds[POKESUM_WIN_TRAINER_MEMO];
+  const colors = cdata<number[][]>("pokemon_summary_screen", "sLevelNickTextColors");
+  DynamicPlaceholderTextUtil_Reset();
+  const nature = (mon.personality >>> 0) % 25;
+  const natureNames = cdata<unknown[]>("pokemon_summary_screen", "gNatureNamePointers");
+  DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, resolveText(natureNames[nature]));
+  const metLevel = GetMonData(mon, C.MON_DATA_MET_LEVEL);
+  DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, intToDecimal(metLevel || 5, STR_CONV_MODE_LEFT_ALIGN, 3));
+  const metLoc = GetMonData(mon, C.MON_DATA_MET_LOCATION);
+  const fateful = metLoc === C.METLOC_FATEFUL_ENCOUNTER;
+  const fromForeignOrigin = !MapSecIsInKantoOrSevii(metLoc) || !CurrentMonIsFromGBA();
+  if (fromForeignOrigin) {
+    const template = fateful
+      ? (PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_FatefulEncounterMet_BoldGentleGrammar" : "gText_PokeSum_FatefulEncounterMet")
+      : (PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_MetInATrade_BoldGentleGrammar" : "gText_PokeSum_MetInATrade");
+    AddTextPrinterParameterized4(win, FONT_NORMAL, 0, 3, 0, 0, colors[0], TEXT_SKIP_DRAW, DynamicPlaceholderTextUtil_ExpandPlaceholders(rom.text(template)));
+    return;
   }
 
-  const memoStr = DynamicPlaceholderTextUtil_ExpandPlaceholders(templateText);
-  AddTextPrinterParameterized4(win, FONT_NORMAL, 0, 3, 0, 0, colors[0], TEXT_SKIP_DRAW, memoStr);
+  const mapName = MapSecIsInKantoOrSevii(metLoc) ? getMapNameGenericBytes(metLoc) : rom.text("gText_PokeSum_ATrade");
+  DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, mapName);
+  const modernFateful = GetMonData(mon, C.MON_DATA_MODERN_FATEFUL_ENCOUNTER) === 1;
+  let template: string;
+  if (metLevel === 0) {
+    if (modernFateful) template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_ApparentlyFatefulEncounterHatched_BoldGentleGrammar" : "gText_PokeSum_ApparentlyFatefulEncounterHatched";
+    else template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_ApparentlyMet_BoldGentleGrammar" : "gText_PokeSum_ApparentlyMet";
+  } else if (fateful) {
+    template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_FatefulEncounterMet_BoldGentleGrammar" : "gText_PokeSum_FatefulEncounterMet";
+  } else {
+    template = PokeSum_IsMonBoldOrGentle(nature) ? "gText_PokeSum_ApparentlyMet_BoldGentleGrammar" : "gText_PokeSum_ApparentlyMet";
+  }
+  AddTextPrinterParameterized4(win, FONT_NORMAL, 0, 3, 0, 0, colors[0], TEXT_SKIP_DRAW, DynamicPlaceholderTextUtil_ExpandPlaceholders(rom.text(template)));
 }
 
 function PokeSum_PrintTrainerMemo_Egg(): void {
