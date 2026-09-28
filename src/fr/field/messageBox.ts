@@ -25,7 +25,7 @@ export class FieldMessageBox {
   private drawState = -1;
 
   constructor(private readonly ow: Overworld) {
-    menuHelperHooks.contextNpcGetTextColor = () => this.npcTextColor();
+    menuHelperHooks.contextNpcGetTextColor = () => this.ContextNpcGetTextColor();
     menuHelperHooks.isMsgSignpost = () => this.ow.control.IsMsgSignpost();
     this.InitFieldMessageBox();
   }
@@ -50,8 +50,8 @@ export class FieldMessageBox {
     return this.window;
   }
 
-  /** ContextNpcGetTextColor */
-  private npcTextColor(): number {
+  /** ContextNpcGetTextColor from field_specials.c. */
+  ContextNpcGetTextColor(): number {
     const color = varGet(SV.TEXT_COLOR);
     if (color !== NPC_TEXT_COLOR_DEFAULT) return color;
     if (this.ow.selectedObject === 0) return NPC_TEXT_COLOR_NEUTRAL;
@@ -114,7 +114,7 @@ export class FieldMessageBox {
   private StartPrinter(text: Uint8Array): void {
     const window = this.ensureWindow();
     textFlags.canABSpeedUpPrint = true;
-    const color = this.npcTextColor();
+    const color = this.ContextNpcGetTextColor();
     let font = FONT_NORMAL;
     let fg = TEXT_COLOR_DARK_GRAY;
     if (color === NPC_TEXT_COLOR_MALE) { font = FONT_MALE; fg = TEXT_COLOR_BLUE; }

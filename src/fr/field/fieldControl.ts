@@ -259,9 +259,14 @@ export class FieldControl {
   }
 
   resetFacingNpcOrSignpostVars(): void {
+    this.ResetContextNpcTextColor();
+    this.MsgSetNotSignpost();
+  }
+
+  /** ResetContextNpcTextColor from field_specials.c. */
+  ResetContextNpcTextColor(): void {
     this.ow.selectedObject = 0;
     varSet(SV.TEXT_COLOR, 0xff);
-    this.MsgSetNotSignpost();
   }
 
   DisableMsgBoxWalkaway(): void { this.msgBoxWalkawayDisabled = true; }
