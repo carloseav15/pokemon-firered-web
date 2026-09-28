@@ -14,13 +14,13 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 34 | 82095 | 1422/3688 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 16 | 32291 | 1218/1332 |
+| Casi completo (≥ 80 % y < 100 %) | 16 | 32291 | 1224/1332 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 157 | 136141 | 4967/4967 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **52** | **117216** | |
-| **Total en alcance** | **211** | **253703** | **7635/10115** |
+| **Total en alcance** | **211** | **253703** | **7641/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -87,7 +87,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `trainer_card.c` | 1959 | 64/73 | `menus/trainerCard.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 83/87 | `battle/controller_opponent.ts` |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
-| `field_effect_helpers.c` | 1421 | 61/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  | 15 |
+| `field_effect_helpers.c` | 1421 | 67/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  | 9 |
 | `field_control_avatar.c` | 1182 | 43/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_setup.c` | 1070 | 62/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |

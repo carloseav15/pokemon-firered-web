@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7635/10115 (75.5 %)**.
-- Archivos C con funciones aún sin homólogo: **52**; quedan **2480 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7641/10115 (75.5 %)**.
+- Archivos C con funciones aún sin homólogo: **52**; quedan **2474 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 117.216 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~58.889 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~58.777 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -29,10 +29,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 9 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 10 | `fieldmap.c` | casi completo | 951 | 48/54 | ~105 |  |
 | 11 | `field_control_avatar.c` | casi completo | 1182 | 43/49 | ~144 |  |
-| 12 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 13 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
-| 14 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
-| 15 | `field_effect_helpers.c` | casi completo | 1421 | 61/76 | ~280 |  |
+| 12 | `field_effect_helpers.c` | casi completo | 1421 | 67/76 | ~168 |  |
+| 13 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 14 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
+| 15 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
 | 16 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 17 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
 | 18 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
@@ -80,8 +80,8 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | Archivo C | Líneas | Portadas | Stubs |
 |---|---:|---:|---:|
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
-| `field_effect_helpers.c` | 1421 | 61/76 | 15 |
 | `trade.c` | 2958 | 0/66 | 15 |
+| `field_effect_helpers.c` | 1421 | 67/76 | 9 |
 | `fame_checker.c` | 1739 | 16/64 | 7 |
 | `trade_scene.c` | 2916 | 35/53 | 3 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
