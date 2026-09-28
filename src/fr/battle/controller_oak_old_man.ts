@@ -23,7 +23,7 @@ import {
 import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "./util";
 import { BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues,
   BattleControllerDummy, BUFFER_B, decodeHpAndStatus } from "./controllers";
-import { HandleGetMonData, HandleSetMonData } from "./mon_transfer";
+import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
 import { BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB_FaintSlideAnim, BattleMainCB2 } from "./main_init";
 import { ActionSelectionCreateCursorAt, ActionSelectionDestroyCursorAt, HandleInputChooseMove, InitMoveSelectionsVarsAndStrings,
   SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry, PlayerHandleGetRawMonData } from "./controller_player";
@@ -637,14 +637,25 @@ function OakOldManHandleSpriteInvisibility(): void { OakOldManBufferExecComplete
 function OakOldManHandleResetActionMoveSelection(): void { OakOldManBufferExecCompleted(); }
 
 function OakOldManHandleGetMonData(): void {
-  const [data, size] = HandleGetMonData(playerMon);
+  const [data, size] = HandleGetMonData(playerMon, CopyOakOldManMonData);
   BtlController_EmitDataTransfer(BUFFER_B, size, data);
   OakOldManBufferExecCompleted();
 }
 
+/** CopyOakOldManMonData (battle_controller_oak_old_man.c): shared request serializer, routed to the player's party. */
+function CopyOakOldManMonData(monId: number, dst: Uint8Array, offset: number): number {
+  return CopyMonData(playerMon(monId), gBattleBufferA[G.gActiveBattler][1], dst, offset);
+}
+
 function OakOldManHandleSetMonData(): void {
-  HandleSetMonData(playerMon);
+  HandleSetMonData(playerMon, SetOakOldManMonData);
+  HandleLowHpMusicChange(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), G.gActiveBattler);
   OakOldManBufferExecCompleted();
+}
+
+/** SetOakOldManMonData (battle_controller_oak_old_man.c): shared request deserializer, routed to the player's party. */
+function SetOakOldManMonData(monId: number): void {
+  SetMonDataFromBuffer(playerMon(monId));
 }
 
 function OakOldManHandleReturnMonToBall(): void {
