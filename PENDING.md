@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6919/10115 (68.4 %)**.
-- Archivos C con funciones aún sin homólogo: **61**; quedan **3196 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6928/10115 (68.5 %)**.
+- Archivos C con funciones aún sin homólogo: **61**; quedan **3187 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 131.457 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~72.519 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~72.408 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -50,10 +50,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 30 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
 | 31 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
 | 32 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
-| 33 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
-| 34 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
-| 35 | `field_effect_helpers.c` | parcial | 1421 | 16/76 | ~1121 |  |
-| 36 | `field_player_avatar.c` | parcial | 2168 | 84/176 | ~1133 |  |
+| 33 | `field_player_avatar.c` | parcial | 2168 | 93/176 | ~1022 |  |
+| 34 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
+| 35 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
+| 36 | `field_effect_helpers.c` | parcial | 1421 | 16/76 | ~1121 |  |
 | 37 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
 | 38 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
 | 39 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
