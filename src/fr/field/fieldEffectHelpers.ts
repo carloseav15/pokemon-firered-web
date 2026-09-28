@@ -148,38 +148,3 @@ export function FldEff_UnusedWaterSurfacing(): number {
 export function FldEff_BerryTreeGrowthSparkle(): number {
   return 0;
 }
-
-/** ShowDisguiseFieldEffect */
-export function ShowDisguiseFieldEffect(fldEff: number, templateIdx: number, paletteNum: number): number {
-  return 0;
-}
-
-/** ShowSandDisguiseFieldEffect */
-export function ShowSandDisguiseFieldEffect(): number {
-  return ShowDisguiseFieldEffect(C.FLDEFF_SAND_DISGUISE, 0, 0);
-}
-
-/** ShowMountainDisguiseFieldEffect */
-export function ShowMountainDisguiseFieldEffect(): number {
-  return ShowDisguiseFieldEffect(C.FLDEFF_MOUNTAIN_DISGUISE, 1, 0);
-}
-
-/** ShowTreeDisguiseFieldEffect */
-export function ShowTreeDisguiseFieldEffect(): number {
-  return ShowDisguiseFieldEffect(C.FLDEFF_TREE_DISGUISE, 2, 0);
-}
-
-/** UpdateDisguiseFieldEffect */
-export function UpdateDisguiseFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
-/** StartRevealDisguise */
-export function StartRevealDisguise(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
-/** UpdateRevealDisguise */
-export function UpdateRevealDisguise(sprite: Sprite | any): void {
-  if (!sprite) return;
-}

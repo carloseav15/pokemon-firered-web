@@ -217,6 +217,7 @@ export class FieldEffects {
   readonly active = new Set<number>();
   private readonly emoteCounts = new Map<number, number>();
   private readonly disguiseSprites = new WeakMap<ObjectEvent, Sprite>();
+  private readonly disguiseSpriteSet = new Set<Sprite>();
   private readonly reflectionSprites = new Map<ObjectEvent, Sprite>();
   private readonly deoxysRockObjects = new Map<number, ObjectEvent>();
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
@@ -442,6 +443,8 @@ export class FieldEffects {
   reset(): void {
     for (const sprite of this.reflectionSprites.values()) this.ow.sprites.destroy(sprite);
     this.reflectionSprites.clear();
+    for (const sprite of this.disguiseSpriteSet) this.ow.sprites.destroy(sprite);
+    this.disguiseSpriteSet.clear();
     const surfPlayer = this.surfBlob ? this.ow.objects.objects[this.surfBlob.data[2]! & 0xff] : undefined;
     if (surfPlayer && surfPlayer.fieldEffectSprite === this.surfBlob) surfPlayer.fieldEffectSprite = undefined;
     this.surfBlob = undefined;
@@ -492,58 +495,101 @@ export class FieldEffects {
   /** ShowTreeDisguiseFieldEffect / ShowMountainDisguiseFieldEffect. */
   StartDisguiseFieldEffect(object: ObjectEvent, kind: "tree" | "mountain"): void {
     const id = kind === "tree" ? C.FLDEFF_TREE_DISGUISE : C.FLDEFF_MOUNTAIN_DISGUISE;
-    const sprite = this.createFromTemplate(kind === "tree" ? "TreeDisguise" : "MountainDisguise", 0, 0);
-    if (!sprite) return;
-    sprite.coordOffsetEnabled = object.sprite.coordOffsetEnabled;
-    sprite.priority = object.sprite.priority;
-    sprite.subpriority = object.sprite.subpriority - 1;
-    sprite.data[1] = id;
-    sprite.data[2] = object.localId;
-    sprite.data[3] = object.mapNum;
-    sprite.data[4] = object.mapGroup;
-    sprite.data[0] = 0;
-    sprite.callback = (s) => this.UpdateDisguiseFieldEffect(s, object);
-    this.disguiseSprites.set(object, sprite);
-    this.active.add(id);
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = object.localId & 0xff;
+    args[1] = object.mapNum & 0xff;
+    args[2] = object.mapGroup & 0xff;
+    const spriteId = kind === "tree" ? this.ShowTreeDisguiseFieldEffect() : this.ShowMountainDisguiseFieldEffect();
+    object.fieldEffectSprite = this.ow.sprites.getById(spriteId);
   }
 
-  /** UpdateDisguiseFieldEffect; the disguise follows its linked object sprite. */
-  private UpdateDisguiseFieldEffect(sprite: Sprite, object: ObjectEvent): void {
-    if (!object.active) {
-      this.ow.sprites.destroy(sprite);
-      this.active.delete(sprite.data[1]);
+  /** ShowTreeDisguiseFieldEffect (field_effect_helpers.c). */
+  ShowTreeDisguiseFieldEffect(): number {
+    return this.ShowDisguiseFieldEffect(C.FLDEFF_TREE_DISGUISE, C.FLDEFFOBJ_TREE_DISGUISE, 4);
+  }
+
+  /** ShowMountainDisguiseFieldEffect (field_effect_helpers.c). */
+  ShowMountainDisguiseFieldEffect(): number {
+    return this.ShowDisguiseFieldEffect(C.FLDEFF_MOUNTAIN_DISGUISE, C.FLDEFFOBJ_MOUNTAIN_DISGUISE, 3);
+  }
+
+  /** ShowSandDisguiseFieldEffect (field_effect_helpers.c). */
+  ShowSandDisguiseFieldEffect(): number {
+    return this.ShowDisguiseFieldEffect(C.FLDEFF_SAND_DISGUISE, C.FLDEFFOBJ_SAND_DISGUISE, 2);
+  }
+
+  /** ShowDisguiseFieldEffect (field_effect_helpers.c). */
+  ShowDisguiseFieldEffect(fieldEffectId: number, templateId: number, _paletteNum: number): number {
+    const args = this.ow.game.fieldEffectArguments;
+    const object = this.ow.objects.byLocalIdAndMap(args[0]! & 0xff, args[1]! & 0xff, args[2]! & 0xff);
+    if (!object) {
+      this.active.delete(fieldEffectId);
+      return C.MAX_SPRITES;
+    }
+    const template = templateId === C.FLDEFFOBJ_TREE_DISGUISE ? "TreeDisguise"
+      : templateId === C.FLDEFFOBJ_MOUNTAIN_DISGUISE ? "MountainDisguise" : "SandDisguisePlaceholder";
+    const sprite = this.createFromTemplate(template, 0, 0, true);
+    if (!sprite) return C.MAX_SPRITES;
+    sprite.coordOffsetEnabled = true;
+    sprite.data[1] = fieldEffectId;
+    sprite.data[2] = args[0]! & 0xff;
+    sprite.data[3] = args[1]! & 0xff;
+    sprite.data[4] = args[2]! & 0xff;
+    sprite.callback = (s) => this.UpdateDisguiseFieldEffect(s);
+    this.disguiseSprites.set(object, sprite);
+    this.disguiseSpriteSet.add(sprite);
+    this.active.add(fieldEffectId);
+    return this.ow.sprites.getId(sprite);
+  }
+
+  /** UpdateDisguiseFieldEffect (field_effect_helpers.c). */
+  UpdateDisguiseFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[2]! & 0xff, sprite.data[3]! & 0xff, sprite.data[4]! & 0xff);
+    if (!object) {
+      this.stopDisguiseFieldEffect(sprite);
       return;
     }
-    sprite.invisible = object.sprite.invisible;
-    sprite.x = object.sprite.x;
-    sprite.y = (object.sprite.height >> 1) + object.sprite.y - 16;
-    sprite.subpriority = object.sprite.subpriority - 1;
+    const linkedSprite = object.sprite;
+    const height = graphicsInfo(object.graphicsId).height;
+    sprite.invisible = linkedSprite.invisible;
+    sprite.x = linkedSprite.x;
+    sprite.y = (height >> 1) + linkedSprite.y - 16;
+    sprite.subpriority = (linkedSprite.subpriority - 1) & 0xff;
     if (sprite.data[0] === 1) {
       sprite.data[0]++;
       sprite.startAnim(1);
     }
     if (sprite.data[0] === 2 && sprite.animEnded) sprite.data[7] = 1;
-    if (sprite.data[0] === 3) {
-      this.ow.sprites.destroy(sprite);
-      this.active.delete(sprite.data[1]);
+    if (sprite.data[0] === 3) this.stopDisguiseFieldEffect(sprite);
+  }
+
+  private stopDisguiseFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[2]! & 0xff, sprite.data[3]! & 0xff, sprite.data[4]! & 0xff);
+    this.ow.sprites.destroy(sprite);
+    this.disguiseSpriteSet.delete(sprite);
+    if (object && this.disguiseSprites.get(object) === sprite) {
+      this.disguiseSprites.delete(object);
+      if (object.fieldEffectSprite === sprite) object.fieldEffectSprite = undefined;
     }
+    const fieldEffectId = sprite.data[1]! & 0xff;
+    if (![...this.disguiseSpriteSet].some((s) => s.data[1] === fieldEffectId)) this.active.delete(fieldEffectId);
   }
 
   /** StartRevealDisguise (field_effect_helpers.c). */
   StartRevealDisguise(object: ObjectEvent): void {
     if (object.directionSequenceIndex === 1) {
-      const sprite = this.disguiseSprites.get(object);
-      if (sprite) sprite.data[0]++;
+      const sprite = object.fieldEffectSprite;
+      if (sprite) sprite.data[0] = (sprite.data[0]! + 1) << 16 >> 16;
     }
   }
 
   /** UpdateRevealDisguise (field_effect_helpers.c). */
   UpdateRevealDisguise(object: ObjectEvent): boolean {
     if (object.directionSequenceIndex === 2 || object.directionSequenceIndex === 0) return true;
-    const sprite = this.disguiseSprites.get(object);
+    const sprite = object.fieldEffectSprite;
     if (sprite?.data[7]) {
       object.directionSequenceIndex = 2;
-      sprite.data[0]++;
+      sprite.data[0] = (sprite.data[0]! + 1) << 16 >> 16;
       return true;
     }
     return false;
