@@ -210,6 +210,7 @@ export class FieldEffects {
   private shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
   private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
   private sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
+  private sandPileSprites = new Set<Sprite>();
   private encounterImmunitySteps = 0;
   private previousMetatileBehavior = 0;
   /** Active field effect ids (FieldEffectActiveListContains) */
@@ -351,6 +352,7 @@ export class FieldEffects {
     if (id === C.FLDEFF_SAND_FOOTPRINTS) { this.FldEff_SandFootprints(); return; }
     if (id === C.FLDEFF_DEEP_SAND_FOOTPRINTS) { this.FldEff_DeepSandFootprints(); return; }
     if (id === C.FLDEFF_BIKE_TIRE_TRACKS) { this.FldEff_BikeTireTracks(); return; }
+    if (id === C.FLDEFF_SAND_PILE) { this.FldEff_SandPile(); return; }
     if (id === C.FLDEFF_MOVE_DEOXYS_ROCK) { this.FldEff_MoveDeoxysRock(); return; }
     if (this.moves.start(id)) return;
     if (!this.startIcon(id)) this.active.delete(id);
@@ -452,6 +454,7 @@ export class FieldEffects {
     this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
     this.hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
     this.sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
+    this.sandPileSprites.clear();
     this.poisonMosaicValue = 0;
     this.poisonEffectTaskActive = false;
     this.active.clear();
@@ -858,38 +861,60 @@ export class FieldEffects {
     this.UpdateObjectEventSpriteInvisibility(sprite, false);
   }
 
-  /** GroundEffect_SandHeap / FldEff_SandPile. */
+  /** GroundEffect_SandHeap (event_object_movement.c). */
   GroundEffect_SandHeap(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("SandPile", object.sprite.x, object.sprite.y);
-    if (!sprite) return;
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = object.localId & 0xff;
+    args[1] = object.mapNum & 0xff;
+    args[2] = object.mapGroup & 0xff;
+    this.start(C.FLDEFF_SAND_PILE);
+  }
+
+  /** FldEff_SandPile (field_effect_helpers.c). */
+  FldEff_SandPile(): number {
+    const args = this.ow.game.fieldEffectArguments;
+    const object = this.ow.objects.byLocalIdAndMap(args[0]! & 0xff, args[1]! & 0xff, args[2]! & 0xff);
+    if (!object) return 0;
+    const sprite = this.createFromTemplate("SandPile", 0, 0, true);
+    if (!sprite) return 0;
     sprite.coordOffsetEnabled = true;
-    sprite.priority = object.sprite.priority;
-    sprite.subpriority = object.sprite.subpriority;
-    sprite.y2 = (object.sprite.height >> 1) - 2;
-    sprite.data[0] = object.localId;
-    sprite.data[1] = object.mapNum;
-    sprite.data[2] = object.mapGroup;
-    sprite.data[3] = object.sprite.x;
-    sprite.data[4] = object.sprite.y;
+    sprite.priority = object.sprite.priority & 0xff;
+    sprite.data[0] = args[0]! & 0xff;
+    sprite.data[1] = args[1]! & 0xff;
+    sprite.data[2] = args[2]! & 0xff;
+    sprite.data[3] = (object.sprite.x << 16) >> 16;
+    sprite.data[4] = (object.sprite.y << 16) >> 16;
+    sprite.y2 = (graphicsInfo(object.graphicsId).height >> 1) - 2;
     sprite.seekAnim(2);
-    sprite.callback = (s) => {
-      if (!object.active || !object.inSandPile) {
-        this.ow.sprites.destroy(s);
-        if (this.sandPileEffects.get(object) === s) this.sandPileEffects.delete(object);
-        return;
-      }
-      const moved = s.data[3] !== object.sprite.x || s.data[4] !== object.sprite.y;
-      if (moved) {
-        s.data[3] = object.sprite.x;
-        s.data[4] = object.sprite.y;
-        if (s.animEnded) s.startAnim(0);
-      }
-      s.x = object.sprite.x;
-      s.y = object.sprite.y;
-      s.subpriority = object.sprite.subpriority;
-      s.invisible = object.sprite.invisible;
-    };
+    sprite.callback = (s) => this.UpdateSandPileFieldEffect(s);
+    this.active.add(C.FLDEFF_SAND_PILE);
+    this.sandPileSprites.add(sprite);
     this.sandPileEffects.set(object, sprite);
+    return 0;
+  }
+
+  /** UpdateSandPileFieldEffect (field_effect_helpers.c). */
+  UpdateSandPileFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[0]! & 0xff, sprite.data[1]! & 0xff, sprite.data[2]! & 0xff);
+    if (!object || !object.inSandPile) {
+      this.ow.sprites.destroy(sprite);
+      this.sandPileSprites.delete(sprite);
+      if (object && this.sandPileEffects.get(object) === sprite) this.sandPileEffects.delete(object);
+      if (this.sandPileSprites.size === 0) this.active.delete(C.FLDEFF_SAND_PILE);
+      return;
+    }
+    const linkedSprite = object.sprite;
+    const x = (linkedSprite.x << 16) >> 16;
+    const y = (linkedSprite.y << 16) >> 16;
+    if (x !== sprite.data[3] || y !== sprite.data[4]) {
+      sprite.data[3] = x;
+      sprite.data[4] = y;
+      if (sprite.animEnded) sprite.startAnim(0);
+    }
+    sprite.x = x;
+    sprite.y = y;
+    sprite.subpriority = linkedSprite.subpriority & 0xff;
+    this.UpdateObjectEventSpriteInvisibility(sprite, false);
   }
 
   /** GroundEffect_Seaweed / FldEff_Bubbles. */

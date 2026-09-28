@@ -134,16 +134,6 @@ export function UpdateSparkleFieldEffect(sprite: Sprite | any): void {
   if (!sprite) return;
 }
 
-/** FldEff_SandPile */
-export function FldEff_SandPile(): number {
-  return 0;
-}
-
-/** UpdateSandPileFieldEffect */
-export function UpdateSandPileFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
 /** FldEff_UnusedSand */
 export function FldEff_UnusedSand(): number {
   return 0;
