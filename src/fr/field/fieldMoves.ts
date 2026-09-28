@@ -24,14 +24,19 @@ import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
 import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_RIDE, PlayerAvatar } from "./playerAvatar";
 import { SetHelpContext } from "../helpSystem";
+import { CalculatePlayerPartyCount } from "../pokemon/mon";
 
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
 type FieldMoveShowMonTask = { id: number; data: Int16Array; mon: Sprite; outdoors: boolean; image?: HTMLCanvasElement; overlay?: Overlay };
+type PokeballGlowTask = { id: number; data: Int16Array; glow: Sprite; monitor?: Sprite };
+type PokeballGlowSprite = { palette: Uint16Array; unfaded: Uint16Array; gfx: Uint8Array; cacheKey: string; image?: HTMLCanvasElement };
 /** gFieldEffectArguments[0] bit 31: play the cry without ducking (Surf). */
 const SHOW_MON_CRY_NO_DUCKING = 0x80000000;
 
 export class FieldMoveEffects {
   readonly overlays = new Set<Overlay>();
+  private readonly pokeballGlowSprites = new Map<Sprite, PokeballGlowSprite>();
+  private readonly pokeballGlowBallOwners = new WeakMap<Sprite, Sprite>();
   private cutGrassSprites: Sprite[] = [];
   private cutGrassCleanupDone = false;
   /** FLDEFF_SET_FUNC_TO_DATA: the callback run once the show-mon sequence is over. */
@@ -115,8 +120,8 @@ export class FieldMoveEffects {
       case C.FLDEFF_USE_SURF: this.FldEff_UseSurf(); return true;
       case C.FLDEFF_USE_WATERFALL: this.FldEff_UseWaterfall(); return true;
       case C.FLDEFF_USE_DIVE: this.remove(id); return true; // no Dive maps in FireRed
-      case C.FLDEFF_POKECENTER_HEAL: this.glowingPokeballs(C.FLDEFF_POKECENTER_HEAL, 93, 36, true); return true;
-      case C.FLDEFF_HALL_OF_FAME_RECORD: this.glowingPokeballs(C.FLDEFF_HALL_OF_FAME_RECORD, 117, 60, false); return true;
+      case C.FLDEFF_POKECENTER_HEAL: this.FldEff_PokecenterHeal(); return true;
+      case C.FLDEFF_HALL_OF_FAME_RECORD: this.FldEff_HallOfFameRecord(); return true;
       case C.FLDEFF_SWEET_SCENT: this.FieldCallback_SweetScent(); return true;
       case C.FLDEFF_PHOTO_FLASH: this.photoFlash(); return true;
       case C.FLDEFF_PCTURN_ON: this.remove(id); return true;
@@ -894,90 +899,156 @@ export class FieldMoveEffects {
 
   // ---------------------------------------------------------------- pokecenter / hall of fame
 
-  /** FldEff_PokecenterHeal / FldEff_HallOfFameRecord with CreateGlowingPokeballsEffect */
-  private glowingPokeballs(effectId: number, x: number, y: number, playHealSe: boolean): void {
-    const ow = this.ow;
-    const glowPal = Array.from(incbin16le(incbin("sPokeballGlow_Pal")));
-    const basePal = glowPal.slice();
-    const ballTiles = incbin("sPokeballGlow_Gfx");
-    let cacheKey = "";
-    let ballImage: HTMLCanvasElement | null = null;
-    const ballCanvas = (): HTMLCanvasElement => {
-      const key = glowPal.join(",");
-      if (key !== cacheKey || !ballImage) { cacheKey = key; ballImage = spriteSheet(ballTiles, glowPal, 8, 8); }
-      return ballImage;
-    };
-    const offsets = [[0, 0], [6, 0], [0, 4], [6, 4], [0, 8], [6, 8]];
-    const balls: Sprite[] = [];
-    let numMons = save.party.length;
-    let glowState = 0, timer = 0, counter = 0, numFlashed = 0;
-    const reds = [16, 12, 8, 0];
-    const multiply = (i: number, amount: number): void => {
-      const c = basePal[i];
-      let r = c & 31, g = (c >> 5) & 31;
-      const b = (c >> 10) & 31;
-      r += ((31 - r) * amount) >> 4;
-      g += ((31 - g) * amount) >> 4;
-      glowPal[i] = r | (g << 5) | (b << 10);
-    };
-    const monitor = playHealSe ? this.createMonitorSprite(128, 24) : null;
-    const id = tasks.create(() => {
-      switch (glowState) {
-        case 0:
-          if (timer === 0 || --timer === 0) {
-            timer = 25;
-            const s = new Sprite();
-            s.draw = (ctx, dx, dy) => ctx.drawImage(ballCanvas(), dx, dy);
-            s.width = 8; s.height = 8; s.centerToCornerVecX = -4; s.centerToCornerVecY = -4;
-            s.x = offsets[counter][0] + x; s.y = offsets[counter][1] + y;
-            s.coordOffsetEnabled = false; s.priority = 2; s.subpriority = 0xff;
-            ow.sprites.add(s);
-            balls.push(s);
-            counter++;
-            numMons--;
-            sound.playSE(C.SE_BALL);
-          }
-          if (numMons <= 0) { timer = 32; glowState = 1; }
-          break;
-        case 1:
-          if (--timer === 0) {
-            glowState = 2; timer = 8; counter = 0; numFlashed = 0;
-            if (playHealSe) sound.playFanfare(C.MUS_HEAL);
-            if (monitor) monitor.data[0] = 1;
-            else this.createHofMonitorSprite(120, 25);
-          }
-          break;
-        case 2: {
-          if (--timer === 0) { timer = 8; counter = (counter + 1) & 3; if (counter === 0) numFlashed++; }
-          multiply(8, reds[(counter + 3) & 3]);
-          multiply(6, reds[(counter + 2) & 3]);
-          multiply(2, reds[(counter + 1) & 3]);
-          multiply(5, reds[counter]);
-          multiply(3, reds[counter]);
-          if (numFlashed >= 3) { glowState = 3; timer = 8; counter = 0; }
-          break;
-        }
-        case 3:
-          if (--timer === 0) { timer = 8; counter = (counter + 1) & 3; if (counter === 3) { glowState = 4; timer = 30; } }
-          for (const i of [8, 6, 2, 5, 3]) multiply(i, reds[counter]);
-          break;
-        case 4:
-          if (--timer === 0) glowState = 5;
-          break;
-        case 5:
-          // SpriteCB_PokeballGlow frees each ball once the effect passes state 4.
-          for (const s of balls) ow.sprites.destroy(s);
-          glowState = 6;
-          break;
-        case 6:
-          if (!playHealSe || sound.isFanfareTaskInactive()) glowState = 7;
-          break;
-        case 7:
-          this.remove(effectId);
-          tasks.destroy(id);
-          break;
-      }
-    }, 0xff);
+  /** FldEff_PokecenterHeal: begin the task after the field-effect dispatcher activates its id. */
+  FldEff_PokecenterHeal(): void {
+    const data = new Int16Array(16);
+    data[1] = CalculatePlayerPartyCount(); data[2] = 93; data[3] = 36; data[4] = 128; data[5] = 24;
+    const task: PokeballGlowTask = { id: 0, data, glow: new Sprite() };
+    task.id = tasks.create(() => this.Task_PokecenterHeal(task), 0xff);
+  }
+
+  private Task_PokecenterHeal(task: PokeballGlowTask): void {
+    switch (task.data[0]) {
+      case 0: this.PokecenterHealEffect_Init(task); break;
+      case 1: this.PokecenterHealEffect_WaitForBallPlacement(task); break;
+      case 2: this.PokecenterHealEffect_WaitForBallFlashing(task); break;
+      case 3: this.PokecenterHealEffect_WaitForSoundAndEnd(task); break;
+    }
+  }
+
+  private PokecenterHealEffect_Init(task: PokeballGlowTask): void {
+    task.data[0]++;
+    task.glow = this.CreateGlowingPokeballsEffect(task.data[1], task.data[2], task.data[3], true);
+    task.monitor = this.CreatePokecenterMonitorSprite(task.data[4], task.data[5]);
+  }
+
+  private PokecenterHealEffect_WaitForBallPlacement(task: PokeballGlowTask): void {
+    if (task.glow.data[0] >= 2) { task.monitor!.data[0]++; task.data[0]++; }
+  }
+
+  private PokecenterHealEffect_WaitForBallFlashing(task: PokeballGlowTask): void {
+    if (task.glow.data[0] > 4) task.data[0]++;
+  }
+
+  private PokecenterHealEffect_WaitForSoundAndEnd(task: PokeballGlowTask): void {
+    if (task.glow.data[0] > 6) {
+      this.ow.sprites.destroy(task.glow); this.remove(C.FLDEFF_POKECENTER_HEAL); tasks.destroy(task.id);
+    }
+  }
+
+  /** FldEff_HallOfFameRecord. */
+  FldEff_HallOfFameRecord(): void {
+    const data = new Int16Array(16);
+    data[1] = CalculatePlayerPartyCount(); data[2] = 117; data[3] = 60;
+    const task: PokeballGlowTask = { id: 0, data, glow: new Sprite() };
+    task.id = tasks.create(() => this.Task_HallOfFameRecord(task), 0xff);
+  }
+
+  private Task_HallOfFameRecord(task: PokeballGlowTask): void {
+    switch (task.data[0]) {
+      case 0: this.HallOfFameRecordEffect_Init(task); break;
+      case 1: this.HallOfFameRecordEffect_WaitForBallPlacement(task); break;
+      case 2: this.HallOfFameRecordEffect_WaitForBallFlashing(task); break;
+      case 3: this.HallOfFameRecordEffect_WaitForSoundAndEnd(task); break;
+    }
+  }
+
+  private HallOfFameRecordEffect_Init(task: PokeballGlowTask): void {
+    task.data[0]++; task.glow = this.CreateGlowingPokeballsEffect(task.data[1], task.data[2], task.data[3], false);
+  }
+
+  private HallOfFameRecordEffect_WaitForBallPlacement(task: PokeballGlowTask): void {
+    if (task.glow.data[0] > 1) { this.CreateHofMonitorSprite(120, 25); task.data[15]++; task.data[0]++; }
+  }
+
+  private HallOfFameRecordEffect_WaitForBallFlashing(task: PokeballGlowTask): void {
+    if (task.glow.data[0] > 4) task.data[0]++;
+  }
+
+  private HallOfFameRecordEffect_WaitForSoundAndEnd(task: PokeballGlowTask): void {
+    if (task.glow.data[0] > 6) {
+      this.ow.sprites.destroy(task.glow); this.remove(C.FLDEFF_HALL_OF_FAME_RECORD); tasks.destroy(task.id);
+    }
+  }
+
+  /** CreateGlowingPokeballsEffect (field_effect.c). */
+  private CreateGlowingPokeballsEffect(numMons: number, x: number, y: number, playHealSe: boolean): Sprite {
+    const glow = new Sprite(), pal = Uint16Array.from(incbin16le(incbin("sPokeballGlow_Pal")));
+    const state: PokeballGlowSprite = { palette: pal, unfaded: pal.slice(), gfx: incbin("sPokeballGlow_Gfx"), cacheKey: "" };
+    glow.data[5] = Number(playHealSe); glow.data[6] = numMons; glow.x2 = x; glow.y2 = y; glow.subpriority = 0xff; glow.invisible = true;
+    this.pokeballGlowSprites.set(glow, state);
+    glow.callback = (sprite) => this.SpriteCB_PokeballGlowEffect(sprite);
+    this.ow.sprites.add(glow);
+    return glow;
+  }
+
+  private SpriteCB_PokeballGlowEffect(sprite: Sprite): void {
+    switch (sprite.data[0]) {
+      case 0: this.PokeballGlowEffect_PlaceBalls(sprite); break;
+      case 1: this.PokeballGlowEffect_TryPlaySe(sprite); break;
+      case 2: this.PokeballGlowEffect_FlashFirstThree(sprite); break;
+      case 3: this.PokeballGlowEffect_FlashLast(sprite); break;
+      case 4: this.PokeballGlowEffect_WaitAfterFlash(sprite); break;
+      case 5: this.PokeballGlowEffect_Dummy(sprite); break;
+      case 6: this.PokeballGlowEffect_WaitForSound(sprite); break;
+      case 7: this.PokeballGlowEffect_Idle(sprite); break;
+    }
+  }
+
+  private PokeballGlowEffect_PlaceBalls(sprite: Sprite): void {
+    if (sprite.data[1] === 0 || --sprite.data[1] === 0) {
+      sprite.data[1] = 25;
+      const offset = [[0, 0], [6, 0], [0, 4], [6, 4], [0, 8], [6, 8]][sprite.data[2]];
+      const ball = new Sprite(), owner = sprite;
+      ball.width = 8; ball.height = 8; ball.centerToCornerVecX = -4; ball.centerToCornerVecY = -4;
+      ball.x = offset[0] + sprite.x2; ball.y = offset[1] + sprite.y2; ball.coordOffsetEnabled = false; ball.priority = 2; ball.subpriority = 0xff;
+      ball.data[0] = sprite.data[7]; this.pokeballGlowBallOwners.set(ball, owner);
+      ball.draw = (ctx, dx, dy) => { const st = this.pokeballGlowSprites.get(owner)!; const key = st.palette.join(","); if (!st.image || st.cacheKey !== key) { st.cacheKey = key; st.image = spriteSheet(st.gfx, st.palette, 8, 8); } ctx.drawImage(st.image, dx, dy); };
+      ball.callback = (sp) => this.SpriteCB_PokeballGlow(sp);
+      this.ow.sprites.add(ball); sprite.data[2]++; sprite.data[6]--; sound.playSE(C.SE_BALL);
+    }
+    if (sprite.data[6] === 0) { sprite.data[1] = 32; sprite.data[0]++; }
+  }
+
+  private PokeballGlowEffect_TryPlaySe(sprite: Sprite): void {
+    if (--sprite.data[1] === 0) { sprite.data[0]++; sprite.data[1] = 8; sprite.data[2] = 0; sprite.data[3] = 0; if (sprite.data[5]) sound.playFanfare(C.MUS_HEAL); }
+  }
+
+  private PokeballGlowEffect_FlashFirstThree(sprite: Sprite): void {
+    if (--sprite.data[1] === 0) { sprite.data[1] = 8; sprite.data[2] = (sprite.data[2] + 1) & 3; if (sprite.data[2] === 0) sprite.data[3]++; }
+    const phase = sprite.data[2], red = [16, 12, 8, 0];
+    for (const [i, p] of [[8, (phase + 3) & 3], [6, (phase + 2) & 3], [2, (phase + 1) & 3], [5, phase], [3, phase]]) this.MultiplyInvertedPaletteRGBComponents(sprite, i, red[p]);
+    if (sprite.data[3] >= 3) { sprite.data[0]++; sprite.data[1] = 8; sprite.data[2] = 0; }
+  }
+
+  private PokeballGlowEffect_FlashLast(sprite: Sprite): void {
+    if (--sprite.data[1] === 0) { sprite.data[1] = 8; sprite.data[2] = (sprite.data[2] + 1) & 3; if (sprite.data[2] === 3) { sprite.data[0]++; sprite.data[1] = 30; } }
+    for (const i of [8, 6, 2, 5, 3]) this.MultiplyInvertedPaletteRGBComponents(sprite, i, [16, 12, 8, 0][sprite.data[2]]);
+  }
+
+  private PokeballGlowEffect_WaitAfterFlash(sprite: Sprite): void { if (--sprite.data[1] === 0) sprite.data[0]++; }
+  private PokeballGlowEffect_Dummy(sprite: Sprite): void { sprite.data[0]++; }
+  private PokeballGlowEffect_WaitForSound(sprite: Sprite): void { if (!sprite.data[5] || sound.isFanfareTaskInactive()) sprite.data[0]++; }
+  private PokeballGlowEffect_Idle(_sprite: Sprite): void {}
+
+  private MultiplyInvertedPaletteRGBComponents(sprite: Sprite, index: number, amount: number): void {
+    const state = this.pokeballGlowSprites.get(sprite)!; const c = state.unfaded[index];
+    const r = c & 31, g = (c >> 5) & 31, b = (c >> 10) & 31;
+    state.palette[index] = (r + (((31 - r) * amount) >> 4)) | ((g + (((31 - g) * amount) >> 4)) << 5) | (b << 10);
+  }
+
+  private SpriteCB_PokeballGlow(sprite: Sprite): void { const owner = this.pokeballGlowBallOwners.get(sprite); if (owner && owner.data[0] > 4) this.ow.sprites.destroy(sprite); }
+
+  /** CreatePokecenterMonitorSprite (field_effect.c). */
+  private CreatePokecenterMonitorSprite(x: number, y: number): Sprite {
+    const sprite = this.createMonitorSprite(x, y);
+    sprite.callback = (sp) => this.SpriteCB_PokecenterMonitor(sp);
+    return sprite;
+  }
+
+  private SpriteCB_PokecenterMonitor(sprite: Sprite): void {
+    if (sprite.data[0] !== 0) { sprite.data[0] = 0; sprite.invisible = false; sprite.startAnim(1); sprite.data[1] = 1; }
+    if (sprite.data[1] && sprite.animEnded) this.ow.sprites.destroy(sprite);
   }
 
   /** CreatePokecenterMonitorSprite: 32×16, sAnims_Flicker, invisible until the balls are placed. */
@@ -998,7 +1069,7 @@ export class FieldMoveEffects {
     return s;
   }
 
-  private createHofMonitorSprite(x: number, y: number): void {
+  private CreateHofMonitorSprite(x: number, y: number): void {
     const tilesAll = incbin("sHofMonitor_Gfx");
     const pal = incbin16le(incbin("sHofMonitor_Pal"));
     const frames = [0, 1, 2, 3].map((f) => spriteSheet(tilesAll.subarray(f * 128, f * 128 + 128), pal, 16, 16));
@@ -1007,10 +1078,12 @@ export class FieldMoveEffects {
     s.width = 16; s.height = 16; s.centerToCornerVecX = -8; s.centerToCornerVecY = -8;
     s.x = x; s.y = y; s.coordOffsetEnabled = false; s.priority = 2;
     s.draw = (ctx, dx, dy) => ctx.drawImage(frames[s.imageValue] ?? frames[0], dx, dy);
-    s.callback = (sp) => { if (sp.animEnded) this.ow.sprites.destroy(sp); };
+    s.callback = (sp) => this.SpriteCB_HallOfFameMonitor(sp);
     s.startAnim(0);
     this.ow.sprites.add(s);
   }
+
+  private SpriteCB_HallOfFameMonitor(sprite: Sprite): void { if (sprite.animEnded) this.ow.sprites.destroy(sprite); }
 
   // ---------------------------------------------------------------- sweet scent / photo flash
 
