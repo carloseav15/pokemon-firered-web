@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7869/10115 (77.8 %)**.
-- Archivos C con funciones aún sin homólogo: **45**; quedan **2246 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7897/10115 (78.1 %)**.
+- Archivos C con funciones aún sin homólogo: **45**; quedan **2218 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 106.224 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~54.201 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~53.602 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -25,18 +25,18 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 5 | `item_menu.c` | casi completo | 2397 | 113/116 | ~61 |  |
 | 6 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 7 | `naming_screen.c` | casi completo | 2509 | 104/109 | ~115 |  |
-| 8 | `field_fadetransition.c` | casi completo | 965 | 48/59 | ~179 |  |
-| 9 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
-| 10 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 11 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 12 | `start_menu.c` | parcial | 1016 | 34/65 | ~484 |  |
+| 8 | `start_menu.c` | casi completo | 1016 | 55/65 | ~156 |  |
+| 9 | `field_fadetransition.c` | casi completo | 965 | 48/59 | ~179 |  |
+| 10 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
+| 11 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 12 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 13 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
 | 14 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
 | 15 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 16 | `help_system_util.c` | sin empezar | 848 | 0/41 | ~848 |  |
-| 17 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
-| 18 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
-| 19 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
+| 16 | `pokemon_summary_screen.c` | casi completo | 5224 | 117/137 | ~762 |  |
+| 17 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
+| 18 | `help_system_util.c` | sin empezar | 848 | 0/41 | ~848 |  |
+| 19 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
 | 20 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
 | 21 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
 | 22 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
@@ -64,7 +64,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 44 | `event_object_movement.c` | parcial | 9412 | 533/759 | ~2802 |  |
 | 45 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
-Total: 45 archivos con huecos: 2 sin empezar, 1 adaptador, 12 casi completos y 30 parciales.
+Total: 45 archivos con huecos: 2 sin empezar, 1 adaptador, 13 casi completos y 29 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -118,6 +118,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller y Battle Tower sigue sin portar; los huecos de `battle_bg.c`, `evolution_scene.c` y `battle_records.c` son de enlace/intercambio; `help_system_util.c` requiere la UI GBA de ayuda aún no conectada.
 - Bloqueo de tanda (2026-09-28): los cinco `Debug_NamingScreen*` restantes son funciones estáticas sin callers en `naming_screen.c`; los últimos huecos de `field_control_avatar.c` son interacciones de jugadores de enlace y `SetCableClubWarp` es solo Cable Club, fuera de la meta principal.
 - Menú de guardado (`start_menu.c`): el commit de Quest Log necesita el buffer/serialización original de escenas (`SaveQuestLogData` en `quest_log.c`); la escena y reproducción de Quest Log siguen pendientes.
+- Summary Pokémon: el cambio de mon usa una lista TS compacta; el C distingue `monList.boxMons`, huecos, huevos y party multi. La selección de caja/party requiere adaptar esos datos antes de portar `PokeSum_SeekToNextMon` y `Task_PokeSum_SwitchDisplayedPokemon`.
 
 ## 5. Portado pero sin probar en navegador
 
