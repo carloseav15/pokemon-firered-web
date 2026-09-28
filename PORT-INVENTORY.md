@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 38 | 89972 | 1527/3933 |
+| Parcial (< 80 % de funciones) | 36 | 84467 | 1438/3818 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 13 | 25442 | 1024/1096 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 156 | 135113 | 4958/4958 |
+| Casi completo (≥ 80 % y < 100 %) | 14 | 29919 | 1109/1202 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 157 | 136141 | 4967/4967 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
-| **Pendiente de portar** | **53** | **118244** | |
-| **Total en alcance** | **211** | **253703** | **7537/10115** |
+| **Pendiente de portar** | **52** | **117216** | |
+| **Total en alcance** | **211** | **253703** | **7542/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -36,7 +36,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `event_object_movement.c` | 9412 | 525/759 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `pokemon.c` | 6453 | 73/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
-| `battle_main.c` | 4477 | 84/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |  |
 | `field_effect.c` | 4033 | 90/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `field/fieldPalette.ts` … |  |  |
 | `overworld.c` | 3563 | 61/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
 | `battle_transition.c` | 3037 | 47/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
@@ -64,7 +63,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `vs_seeker.c` | 1326 | 12/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
 | `title_screen.c` | 1315 | 2/39 | `introTitle.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
-| `berry.c` | 1028 | 5/9 | `pokemon/berry.ts`, `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
 | `field_fadetransition.c` | 965 | 43/59 | `field/fieldControl.ts`, `field/overworld.ts` |  |  |
 | `fieldmap.c` | 951 | 6/54 | `field/fieldPalette.ts`, `field/fieldmap.ts` |  |  |
@@ -83,6 +81,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
+| `battle_main.c` | 4477 | 85/106 | `battle/controllers.ts`, `battle/globals.ts`, `battle/main.ts` … |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
 | `field_specials.c` | 2555 | 117/118 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `field/hiddenItem.ts` … |  |  |
 | `item_menu.c` | 2397 | 112/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
@@ -139,6 +138,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 48/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 115/115 | `generated/metatileBehavior.ts` |  |  |
+| `berry.c` | 1028 | 9/9 | `pokemon/berry.ts`, `save.ts`, `script/specials.ts` |  |  |
 | `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
 | `palette.c` | 994 | 41/41 | `hw/palette.ts` |  |  |
 | `battle_anim_utility_funcs.c` | 970 | 42/42 | `battle/anims/utilityFuncs.ts` |  |  |
