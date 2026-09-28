@@ -1,8 +1,7 @@
 Modo: tandas integradas por archivo/familia; alcance principal de un jugador. No push.
-Siguiente: `item_use.c` (73 funciones; queda una sin homólogo), según el orden vivo de `PENDING.md`.
-Bloqueos: `field_control_avatar.c` conserva Dive sin resolver; funciones Link quedan fuera de alcance.
+Siguiente: `field_specials.c`; `UsedPokemonCenterWarp` solo alimenta `CloseLink` en la reanudación, sin ruta activa single-player equivalente.
+Bloqueos: callbacks Link/Cable Club; Dive sin mapas FireRed; raw `struct Sprite`/Pokemon sin layout GBA activo; UI de Pokéblock Case y Teachy TV sin ruta conectada; Battle/Trainer Tower pendientes.
 Validación diferida: recorridos de navegador e historia; sin afirmaciones de paridad runtime.
-Entrega (2026-09-28): Quest Log de salidas, tinte/paletas, flujo del triángulo Deoxys, iluminación de Liga, eventos del Centro Pokémon, reset de ciclismo.
-Nuevas: funciones de esos sistemas integradas a rutas activas; también movimiento de roca Deoxys y callbacks de apodo.
-Equivalencias: avatar Acro/Mach, `UpdatePoisonStepCounter` y `TrySetUpWalkIntoSignpostScript` alineados con nombres y orden de C.
-Conteo: 7.536/10.115 (74,5 %), +15 desde 7.521; checks de tanda, build y diff pasaron.
+Entrega (2026-09-28): completa el nombre ausente de `item_use.c` con `BattleUseFunc_SacredAsh` (C lo marca unused; sin dispatcher inventado).
+Funciones nuevas: 0 rutas single-player; equivalencia C añadida: `BattleUseFunc_SacredAsh`, usa el callback de Sacred Ash y el helper de salida de bolsa existente.
+Conteo: 7.537/10.115 (74,5 %), +1 nombre desde 7.536; `item_use.c` queda 73/73; tanda checks/build/diff pasaron.

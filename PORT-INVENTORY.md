@@ -14,13 +14,13 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
 | Parcial (< 80 % de funciones) | 38 | 89972 | 1527/3933 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 14 | 26367 | 1096/1169 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 155 | 134188 | 4885/4885 |
+| Casi completo (≥ 80 % y < 100 %) | 13 | 25442 | 1024/1096 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 156 | 135113 | 4958/4958 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
-| **Pendiente de portar** | **54** | **119169** | |
-| **Total en alcance** | **211** | **253703** | **7536/10115** |
+| **Pendiente de portar** | **53** | **118244** | |
+| **Total en alcance** | **211** | **253703** | **7537/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -93,7 +93,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `field_control_avatar.c` | 1182 | 43/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_setup.c` | 1070 | 62/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
-| `item_use.c` | 925 | 72/73 | `bagMenu.ts`, `battle/ext.ts`, `field/vsSeeker.ts` … |  |  |
 | `battle_controller_safari.c` | 669 | 66/72 | `battle/controller_safari.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 
@@ -146,6 +145,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_anim_fight.c` | 969 | 31/31 | `battle/anims/fight.ts` |  |  |
 | `battle_anim_mon_movement.c` | 941 | 34/34 | `battle/anims/monMovement.ts` |  |  |
 | `learn_move.c` | 932 | 23/23 | `game.ts`, `menus/hardwareChoice.ts`, `menus/moveRelearner.ts` |  |  |
+| `item_use.c` | 925 | 73/73 | `bagMenu.ts`, `battle/ext.ts`, `field/vsSeeker.ts` … |  |  |
 | `battle_anim_dark.c` | 923 | 25/25 | `battle/anims/dark.ts` |  |  |
 | `menu.c` | 872 | 49/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
 | `battle_anim_rock.c` | 822 | 22/22 | `battle/anims/rock.ts` |  |  |
