@@ -646,7 +646,8 @@ class NamingScreen {
     return false;
   }
 
-  private drawControls(): void {
+  /** PrintControls (naming_screen.c). */
+  private PrintControls(): void {
     const win = this.windows[4], label = text("gText_MoveOkBack");
     FillWindowPixelBuffer(win, PIXEL_FILL(15));
     AddTextPrinterParameterized3(win, FONT_SMALL, 236 - stringWidth(FONT_SMALL, label, 0), 0, [15, 1, 2], 0, label);
@@ -725,7 +726,7 @@ class NamingScreen {
   /** MainState_FadeIn (naming_screen.c). */
   private MainState_FadeIn(): void {
     this.DecompressToBgTilemapBuffer(3, incbin("gNamingScreenBackground_Tilemap"));
-    this.drawPage(); this.DrawTextEntry(); this.DrawTextEntryBox(); this.drawControls();
+    this.drawPage(); this.DrawTextEntry(); this.DrawTextEntryBox(); this.PrintControls();
     for (let bg = 1; bg < 4; bg++) CopyBgTilemapBufferToVram(bg);
     joy.repeatStartDelay = 16;
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
