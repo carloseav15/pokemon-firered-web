@@ -17,7 +17,7 @@ import { random } from "../random";
 import { rom } from "../rom";
 import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "../save";
 import { Sprite } from "../gba/sprite";
-import { MAP_OFFSET } from "../field/fieldmap";
+import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { rgb555, spriteSheet } from "../field/gfx4bpp";
 import { adjustFriendship, getDexFlag, leadMonIndex, nickname, speciesName, type Pokemon } from "../pokemon/pokemon";
 import { GetPokedexHeightWeight } from "../battle/ext";
@@ -377,52 +377,80 @@ const FLOOR_NAMES = ["gText_B4F", "gText_B3F", "gText_B2F", "gText_B1F", "gText_
   "gText_7F", "gText_8F", "gText_9F", "gText_10F", "gText_11F", "gText_Rooftop"];
 let floorWindow: Window | undefined;
 
-function animateElevator(ctx: ScriptRunner): void {
+/** AnimateElevator (field_specials.c). */
+function AnimateElevator(ctx: ScriptRunner): void {
   const ow = ctx.ow;
   const from = varGet(SV.x8005), to = varGet(SV.x8006);
-  const up = from > to ? 1 : 0;
-  const nfloors = Math.min(8, Math.abs(from - to));
-  const durations = [8, 16, 24, 32, 38, 46, 53, 56, 57];
-  const windowDurations = [3, 6, 9, 12, 15, 18, 21, 24, 27];
-  const total = durations[nfloors];
-  let d1 = 0, d2 = 0, d4 = 1;
+  const data = tasks.tasks[tasks.create((taskId) => Task_ElevatorShake(taskId, ctx), 9)].data;
+  data[1] = 0;
+  data[2] = 0;
+  data[4] = 1;
+  let nfloors: number;
+  if (from > to) {
+    nfloors = from - to;
+    data[6] = 1;
+  } else {
+    nfloors = to - from;
+    data[6] = 0;
+  }
+  if (nfloors > 8) nfloors = 8;
+  data[5] = cdata<number[]>("field_specials", "sElevatorAnimationDuration")[nfloors];
   ow.SetCameraPanningCallback(null);
+  AnimateElevatorWindowView(nfloors, data[6]!, ctx);
   sound.playSE(C.SE_ELEVATOR);
-  const shake = tasks.create(() => {
-    if (++d1 % 3 !== 0) return;
-    d1 = 0;
-    d2++;
-    d4 = -d4;
-    ow.SetCameraPanning(0, d4);
-    if (d2 === total) {
-      ow.SetCameraPanning(0, 0);
-      sound.playSE(C.SE_DING_DONG);
-      ow.InstallCameraPanAheadCallback();
-      tasks.destroy(shake);
-      ow.script.ScriptContext_Enable();
-    }
-  }, 9);
-  // Task_AnimateElevatorWindowView: the window metatiles cycle every 6 frames.
-  const k = rom.constants;
-  const tiles = (row: string, i: number) => k[`METATILE_SilphCo_ElevatorWindow_${row}${i}`];
-  const goingUp = [["Top", [0, 1, 2]], ["Mid", [0, 1, 2]], ["Bottom", [0, 1, 2]]] as const;
-  const goingDown = [["Top", [0, 2, 1]], ["Mid", [0, 2, 1]], ["Bottom", [0, 2, 1]]] as const;
-  if (tiles("Top", 0) === undefined) return;
-  let w0 = 0, w1 = 0;
-  const window = tasks.create(() => {
-    if (w1 === 6) {
-      w0++;
-      const table = up ? goingDown : goingUp;
-      for (let i = 0; i < 3; i++) {
-        const [row, order] = table[i];
-        for (let j = 0; j < 3; j++) ow.map.setMetatileIdAt(j + 1 + MAP_OFFSET, i + MAP_OFFSET, tiles(row, order[w0 % 3]) | 0x0c00);
+}
+
+/** Task_ElevatorShake (field_specials.c). */
+function Task_ElevatorShake(taskId: number, ctx: ScriptRunner): void {
+  const data = tasks.tasks[taskId].data;
+  data[1] = data[1]! + 1;
+  if (data[1]! % 3 !== 0) return;
+  data[1] = 0;
+  data[2] = data[2]! + 1;
+  data[4] = -data[4]!;
+  ctx.ow.SetCameraPanning(0, data[4]!);
+  if (data[2] === data[5]) {
+    sound.playSE(C.SE_DING_DONG);
+    tasks.destroy(taskId);
+    ctx.ow.script.ScriptContext_Enable();
+    ctx.ow.InstallCameraPanAheadCallback();
+  }
+}
+
+/** AnimateElevatorWindowView (field_specials.c). */
+let elevatorWindowTaskId: number | undefined;
+function AnimateElevatorWindowView(nfloors: number, direction: number, ctx: ScriptRunner): void {
+  if (elevatorWindowTaskId !== undefined && tasks.tasks[elevatorWindowTaskId]?.isActive) return;
+  const taskId = tasks.create((id) => Task_AnimateElevatorWindowView(id, ctx), 8);
+  elevatorWindowTaskId = taskId;
+  const data = tasks.tasks[taskId].data;
+  data[0] = 0;
+  data[1] = 0;
+  data[2] = direction;
+  data[3] = cdata<number[]>("field_specials", "sElevatorWindowAnimDuration")[nfloors]!;
+}
+
+/** Task_AnimateElevatorWindowView (field_specials.c). */
+function Task_AnimateElevatorWindowView(taskId: number, ctx: ScriptRunner): void {
+  const data = tasks.tasks[taskId].data;
+  if (data[1] === 6) {
+    data[0] = data[0]! + 1;
+    const tables = cdata<number[][]>("field_specials", data[2] === 0
+      ? "sElevatorWindowMetatilesGoingUp" : "sElevatorWindowMetatilesGoingDown");
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        ctx.ow.map.setMetatileIdAt(j + 1 + MAP_OFFSET, i + MAP_OFFSET,
+          tables[i]![data[0]! % 3]! | MAPGRID_COLLISION_MASK);
       }
-      ow.renderer?.invalidate();
-      w1 = 0;
-      if (w0 === windowDurations[nfloors]) tasks.destroy(window);
     }
-    w1++;
-  }, 8);
+    ctx.ow.renderer?.invalidate();
+    data[1] = 0;
+    if (data[0] === data[3]) {
+      tasks.destroy(taskId);
+      elevatorWindowTaskId = undefined;
+    }
+  }
+  data[1] = data[1]! + 1;
 }
 
 // ---------------------------------------------------------------- berry powder vendor
@@ -797,7 +825,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     floorWindow = window;
   },
   CloseElevatorCurrentFloorWindow: (ctx) => { ctx.ow.windows.remove(floorWindow); floorWindow = undefined; },
-  AnimateElevator: (ctx) => { animateElevator(ctx); },
+  AnimateElevator: (ctx) => { AnimateElevator(ctx); },
   // berry powder
   Script_HasEnoughBerryPowder: () => Script_HasEnoughBerryPowder(),
   Script_TakeBerryPowder: () => Script_TakeBerryPowder(),
