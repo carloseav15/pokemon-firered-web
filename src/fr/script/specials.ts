@@ -23,7 +23,7 @@ import { initRoamer } from "../pokemon/roamer";
 import { doSeagallopFerryScene, getSeagallopNumber, getSelectedSeagallopDestination, seagallopDestinationItems } from "../seagallop";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 import { EnterSafariMode, ExitSafariMode } from "../field/safariZone";
-import { GetPlayerFacingDirection } from "../field/playerAvatar";
+import { GetPlayerAvatarBike, GetPlayerFacingDirection } from "../field/playerAvatar";
 import { SetUnlockedPokedexFlags } from "../pokemon/saveLocation";
 import { GetMonsStateToDoubles } from "../pokemon/scriptPokemonUtil";
 import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/specialFieldAnim";
@@ -210,7 +210,7 @@ export const SPECIALS: Record<string, Special> = {
     ctx.ow.savedMusic = rom.c("MUS_CYCLING");
     sound.playNewMapMusic(rom.c("MUS_CYCLING"));
   },
-  GetPlayerAvatarBike: (ctx) => ((ctx.ow.player.flags & 2) ? 1 : (ctx.ow.player.flags & 4) ? 2 : 0),
+  GetPlayerAvatarBike: (ctx) => GetPlayerAvatarBike(ctx.ow.player.flags),
   ForcePlayerToStartSurfing: (ctx) => { SetHelpContext(C.HELPCONTEXT_SURFING); ctx.ow.player.setTransitionFlags(C.PLAYER_AVATAR_FLAG_SURFING); },
   AnimatePcTurnOn: (ctx) => { ctx.ow.game.AnimatePcTurnOn(); },
   AnimatePcTurnOff: (ctx) => { ctx.ow.game.AnimatePcTurnOff(); },

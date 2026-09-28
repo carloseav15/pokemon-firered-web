@@ -55,6 +55,13 @@ export function TestPlayerAvatarFlags(flags: number): number {
   return (gPlayerAvatar?.flags ?? 0) & flags;
 }
 
+/** GetPlayerAvatarBike (field_specials.c), using the active avatar flags supplied by the script caller. */
+export function GetPlayerAvatarBike(flags: number): number {
+  if (flags & PLAYER_AVATAR_FLAG_ACRO_BIKE) return 1;
+  if (flags & PLAYER_AVATAR_FLAG_MACH_BIKE) return 2;
+  return 0;
+}
+
 export function SetPlayerAvatarTransitionFlags(flags: number): void {
   gPlayerAvatar?.DoPlayerAvatarTransition(flags);
 }
