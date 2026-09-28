@@ -29,6 +29,9 @@ export const BUFFER_A = 0;
 export const BUFFER_B = 1;
 const PARTY_SIZE = 6;
 
+/** gUnusedControllerStruct (battle_controllers.c), used by legacy player command handlers. */
+export const gUnusedControllerStruct = { unk: 0, flag: 0 };
+
 export type HpAndStatus = { hp: number; status: number };
 export type ChooseMoveStruct = { moves: number[]; currentPp: number[]; maxPp: number[]; species: number; monType1: number; monType2: number };
 export const CHOOSE_MOVE_STRUCT_SIZE = 20;

@@ -9,7 +9,7 @@ import { save, varGet } from "../save";
 import { G, gActionSelectionCursor, gBattleBufferA, gBattleBufferB, gBattleControllerData, gBattleMonForms, gBattleMons, gBattlePartyCurrentOrder, gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerSpriteIds, gBattlerStatusSummaryTaskId, gBattleSpritesDataPtr, gBattleStruct, gBitTable, gDisableStructs, gDisplayedStringBattle, gHealthboxSpriteIds, gMoveSelectionCursor, gTransformedPersonalities } from "./globals";
 import { gBattleMoves } from "./macros";
 import { CountAliveMonsInBattle, GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide, GetDefaultMoveTarget } from "./util";
-import { BattleControllerDummy, BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitOneReturnValue_Duplicate, BtlController_EmitTwoReturnValues, BUFFER_B, type ChooseMoveStruct, decodeChooseMoveStruct, decodeHpAndStatus, encodeChooseMoveStruct } from "./controllers";
+import { BattleControllerDummy, BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitOneReturnValue_Duplicate, BtlController_EmitTwoReturnValues, BUFFER_B, gUnusedControllerStruct, type ChooseMoveStruct, decodeChooseMoveStruct, decodeHpAndStatus, encodeChooseMoveStruct } from "./controllers";
 import { BattleMainCB2, BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB_FaintSlideAnim, SpriteCB_HideAsMoveTarget, SpriteCB_ShowAsMoveTarget } from "./main_init";
 import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpritePaletteTagByPaletteNum, gSprites, Sprite, SpriteCallbackDummy, StartSpriteAnim } from "../hw/sprite";
 import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "../pokemon/mon";
@@ -1208,6 +1208,12 @@ function PlayerHandlePlayBGM(): void {
 
 function PlayerHandleCmd32(): void { PlayerBufferExecCompleted(); }
 
+function PlayerHandleCmd37(): void { gUnusedControllerStruct.unk = 0; PlayerBufferExecCompleted(); }
+function PlayerHandleCmd38(): void { gUnusedControllerStruct.unk = gBattleBufferA[G.gActiveBattler][1] & 0x7f; PlayerBufferExecCompleted(); }
+function PlayerHandleCmd39(): void { gUnusedControllerStruct.flag = 0; PlayerBufferExecCompleted(); }
+function PlayerHandleCmd40(): void { gUnusedControllerStruct.flag = (gUnusedControllerStruct.flag ^ 1) & 1; PlayerBufferExecCompleted(); }
+function PlayerHandleCmd42(): void { PlayerBufferExecCompleted(); }
+
 function PlayerHandleTwoReturnValues(): void {
   BtlController_EmitTwoReturnValues(BUFFER_B, 0, 0);
   PlayerBufferExecCompleted();
@@ -1505,12 +1511,12 @@ const sPlayerBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_CHOSENMONRETURNVALUE]: PlayerHandleChosenMonReturnValue,
   [C.CONTROLLER_ONERETURNVALUE]: PlayerHandleOneReturnValue,
   [C.CONTROLLER_ONERETURNVALUE_DUPLICATE]: PlayerHandleOneReturnValue_Duplicate,
-  [C.CONTROLLER_CLEARUNKVAR]: PlayerHandleCmdNop,
-  [C.CONTROLLER_SETUNKVAR]: PlayerHandleCmdNop,
-  [C.CONTROLLER_CLEARUNKFLAG]: PlayerHandleCmdNop,
-  [C.CONTROLLER_TOGGLEUNKFLAG]: PlayerHandleCmdNop,
+  [C.CONTROLLER_CLEARUNKVAR]: PlayerHandleCmd37,
+  [C.CONTROLLER_SETUNKVAR]: PlayerHandleCmd38,
+  [C.CONTROLLER_CLEARUNKFLAG]: PlayerHandleCmd39,
+  [C.CONTROLLER_TOGGLEUNKFLAG]: PlayerHandleCmd40,
   [C.CONTROLLER_HITANIMATION]: PlayerHandleHitAnimation,
-  [C.CONTROLLER_CANTSWITCH]: PlayerHandleCmdNop,
+  [C.CONTROLLER_CANTSWITCH]: PlayerHandleCmd42,
   [C.CONTROLLER_PLAYSE]: PlayerHandlePlaySE,
   [C.CONTROLLER_PLAYFANFARE]: PlayerHandlePlayFanfare,
   [C.CONTROLLER_FAINTINGCRY]: PlayerHandleFaintingCry,
