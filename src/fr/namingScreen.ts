@@ -2,13 +2,13 @@
 // Target icons, the BG page swap, and cursor/button flashes use C data.
 import * as C from "./generated/constants";
 import { PageToNextGfxId } from "./generated/cdataTableAccessors";
-import { CurrentPageToNextKeyboardId, GetKeyRoleAtCursorPos, MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
+import { CurrentPageToNextKeyboardId, GetKeyRoleAtCursorPos, HandleDpadMovement, MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "./hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
 import { save, varGet, flagGet } from "./save";
 import { getBoxName, getPCBoxToSendMon, isDestinationBoxFull } from "./pokemon/storage";
 import { rom } from "./rom";
-import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON, START_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "./gba/input";
+import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON, START_BUTTON } from "./gba/input";
 import { EOS, stringVars, expandPlaceholders } from "./gba/charmap";
 import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
 import { tasks } from "./gba/tasks";
@@ -32,6 +32,8 @@ const data = <T>(name: string) => cdata<T>("naming_screen", name);
 const text = (name: string) => cdata<number[]>("strings", name);
 // BUTTON_PAGE/BUTTON_BACK/BUTTON_OK/BUTTON_COUNT (naming_screen.c).
 const enum NamingButton { PAGE, BACK, OK, COUNT }
+const enum NamingInputState { DISABLED, ENABLED }
+const enum NamingInputEvent { NONE, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, A_BUTTON, B_BUTTON, LR_BUTTON, SELECT, START }
 let loading: Promise<void> | undefined;
 export function preloadNamingScreen(): Promise<void> {
   return loading ??= Promise.all([
@@ -63,6 +65,9 @@ class NamingScreen {
   private pageSwapAnimState = 0;
   private pageSwapButtonState = 0;
   private pageSwapPage = 0;
+  private inputTaskCreated = false;
+  private inputState = NamingInputState.DISABLED;
+  private keyboardEvent = NamingInputEvent.NONE;
   private callback1 = gMain.callback1;
   private repeatDelay = joy.repeatStartDelay;
   private savedTextFlags = { ...textFlags };
@@ -122,6 +127,7 @@ class NamingScreen {
       gSprites[underscore].callback = sprite => this.SpriteCB_Underscore(sprite);
     }
     this.createInputTargetIcon();
+    this.CreateInputHandlerTask();
     this.CreateButtonFlashTask();
     SetVBlankCallback(() => {
       LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer();
@@ -147,6 +153,39 @@ class NamingScreen {
       }));
     }
     return id;
+  }
+
+  /** CreateInputHandlerTask (naming_screen.c): initialize the field-frame input task state. */
+  private CreateInputHandlerTask(): void {
+    this.inputTaskCreated = true;
+    this.inputState = NamingInputState.DISABLED;
+    this.keyboardEvent = NamingInputEvent.NONE;
+  }
+
+  /** GetInputEvent (naming_screen.c). */
+  private GetInputEvent(): NamingInputEvent { return this.keyboardEvent; }
+
+  /** SetInputState (naming_screen.c). */
+  private SetInputState(state: NamingInputState): void { this.inputState = state; }
+
+  /** Task_HandleInput (naming_screen.c). */
+  private Task_HandleInput(): void {
+    if (!this.inputTaskCreated) return;
+    if (this.inputState === NamingInputState.DISABLED) this.Input_Disabled();
+    else this.Input_Enabled();
+  }
+
+  /** Input_Disabled (naming_screen.c). */
+  private Input_Disabled(): void { this.keyboardEvent = NamingInputEvent.NONE; }
+
+  /** Input_Enabled (naming_screen.c), with D-pad cursor movement before the main state. */
+  private Input_Enabled(): void {
+    this.keyboardEvent = NamingInputEvent.NONE;
+    if (joy.newKeys & A_BUTTON) this.keyboardEvent = NamingInputEvent.A_BUTTON;
+    else if (joy.newKeys & B_BUTTON) this.keyboardEvent = NamingInputEvent.B_BUTTON;
+    else if (joy.newKeys & SELECT_BUTTON) this.keyboardEvent = NamingInputEvent.SELECT;
+    else if (joy.newKeys & START_BUTTON) this.keyboardEvent = NamingInputEvent.START;
+    else if (HandleDpadMovement(this.model, joy.repeated) === "move") this.moveCursor();
   }
 
   /** CreateButtonFlashTask (naming_screen.c). */
@@ -334,6 +373,7 @@ class NamingScreen {
   }
 
   private MainState_StartPageSwap(): void {
+    this.SetInputState(NamingInputState.DISABLED);
     this.TryStartButtonFlash(NamingButton.PAGE, false, true);
     this.state = "pageSwap";
     this.SetCursorInvisibility(true);
@@ -402,6 +442,7 @@ class NamingScreen {
     gSprites[this.pageText].y2 = 0;
     this.SetCursorInvisibility(false);
     this.moveCursor();
+    this.SetInputState(NamingInputState.ENABLED);
     this.state = "input";
   }
 
@@ -493,6 +534,7 @@ class NamingScreen {
   /** MainState_WaitFadeIn (naming_screen.c). */
   private MainState_WaitFadeIn(): void {
     if (!gPaletteFade.active) {
+      this.SetInputState(NamingInputState.ENABLED);
       this.SetCursorFlashing(true);
       this.state = "input";
     }
@@ -500,18 +542,22 @@ class NamingScreen {
 
   /** MainState_HandleInput (naming_screen.c). */
   private MainState_HandleInput(): void {
-    const roleBeforeInput = GetKeyRoleAtCursorPos(this.model);
-    const action = this.model.input(joy.newKeys, joy.repeated);
-    const dpadRepeated = !(joy.newKeys & (A_BUTTON | B_BUTTON | SELECT_BUTTON | START_BUTTON))
-      && !!(joy.repeated & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT));
-    const role = dpadRepeated ? GetKeyRoleAtCursorPos(this.model) : roleBeforeInput;
-    const button = role === "page" ? NamingButton.PAGE : role === "backspace" ? NamingButton.BACK : role === "ok" ? NamingButton.OK : NamingButton.COUNT;
-    if (!(joy.newKeys & (B_BUTTON | SELECT_BUTTON | START_BUTTON))) {
-      this.TryStartButtonFlash(button, button !== NamingButton.COUNT, false);
+    const inputEvent = this.GetInputEvent();
+    const pressed = inputEvent === NamingInputEvent.A_BUTTON ? A_BUTTON
+      : inputEvent === NamingInputEvent.B_BUTTON ? B_BUTTON
+      : inputEvent === NamingInputEvent.SELECT ? SELECT_BUTTON
+      : inputEvent === NamingInputEvent.START ? START_BUTTON : 0;
+    const role = GetKeyRoleAtCursorPos(this.model);
+    if (inputEvent === NamingInputEvent.A_BUTTON || inputEvent === NamingInputEvent.NONE) {
+      if (role === "character") this.TryStartButtonFlash(NamingButton.COUNT, false, false);
+      else if (role === "page") this.TryStartButtonFlash(NamingButton.PAGE, true, false);
+      else if (role === "backspace") this.TryStartButtonFlash(NamingButton.BACK, true, false);
+      else this.TryStartButtonFlash(NamingButton.OK, true, false);
     }
-    if (action === "move") sound.playSE(C.SE_SELECT);
+    const action = this.model.input(pressed, 0);
     if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.MainState_StartPageSwap(); }
     if (action === "moveToOK") {
+      this.SetInputState(NamingInputState.DISABLED);
       StartSpriteAnim(gSprites[this.cursor], 1);
       this.state = "moveToOK";
     }
@@ -533,11 +579,13 @@ class NamingScreen {
     if (!gSprites[this.cursor].animEnded) return;
     MoveCursorToOKButton(this.model);
     this.moveCursor();
+    this.SetInputState(NamingInputState.ENABLED);
     this.state = "input";
   }
 
   /** MainState_PressedOKButton (naming_screen.c). */
   private MainState_PressedOKButton(): void {
+    this.SetInputState(NamingInputState.DISABLED);
     this.model.save();
     this.stopFlashesNextUpdate = true;
     if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
@@ -664,6 +712,7 @@ class NamingScreen {
 
   /** Task_NamingScreen (naming_screen.c): dispatch the active main-state callback. */
   private Task_NamingScreen(): void {
+    this.Task_HandleInput();
     switch (this.state) {
       case "fadeIn": this.MainState_FadeIn(); this.SetSpritesVisible(); break;
       case "waitFadeIn": this.MainState_WaitFadeIn(); break;
