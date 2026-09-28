@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7521/10115 (74.4 %)**.
-- Archivos C con funciones aún sin homólogo: **54**; quedan **2594 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7536/10115 (74.5 %)**.
+- Archivos C con funciones aún sin homólogo: **54**; quedan **2579 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 119.169 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~61.362 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~61.050 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -19,18 +19,18 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `item_use.c` | casi completo | 925 | 72/73 | ~12 |  |
-| 2 | `battle_controller_oak_old_man.c` | casi completo | 2293 | 106/107 | ~21 |  |
-| 3 | `battle_controller_player.c` | casi completo | 2966 | 122/123 | ~24 |  |
-| 4 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
-| 5 | `battle_controller_safari.c` | casi completo | 669 | 66/72 | ~55 |  |
-| 6 | `battle_setup.c` | casi completo | 1070 | 62/66 | ~64 |  |
-| 7 | `battle_controller_opponent.c` | casi completo | 1777 | 83/87 | ~81 |  |
-| 8 | `item_menu.c` | casi completo | 2397 | 112/116 | ~82 |  |
-| 9 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 10 | `field_control_avatar.c` | casi completo | 1182 | 43/49 | ~144 |  |
-| 11 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 12 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
-| 13 | `field_specials.c` | casi completo | 2555 | 106/118 | ~259 |  |
+| 2 | `field_specials.c` | casi completo | 2555 | 117/118 | ~21 |  |
+| 3 | `battle_controller_oak_old_man.c` | casi completo | 2293 | 106/107 | ~21 |  |
+| 4 | `battle_controller_player.c` | casi completo | 2966 | 122/123 | ~24 |  |
+| 5 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
+| 6 | `battle_controller_safari.c` | casi completo | 669 | 66/72 | ~55 |  |
+| 7 | `battle_setup.c` | casi completo | 1070 | 62/66 | ~64 |  |
+| 8 | `battle_controller_opponent.c` | casi completo | 1777 | 83/87 | ~81 |  |
+| 9 | `item_menu.c` | casi completo | 2397 | 112/116 | ~82 |  |
+| 10 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
+| 11 | `field_control_avatar.c` | casi completo | 1182 | 43/49 | ~144 |  |
+| 12 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 13 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
 | 14 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
 | 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 16 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
@@ -38,7 +38,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 18 | `easy_chat.c` | parcial | 730 | 8/39 | ~580 |  |
 | 19 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
 | 20 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
-| 21 | `fieldmap.c` | parcial | 951 | 5/54 | ~862 |  |
+| 21 | `fieldmap.c` | parcial | 951 | 6/54 | ~845 |  |
 | 22 | `battle_main.c` | parcial | 4477 | 84/106 | ~929 |  |
 | 23 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
 | 24 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
@@ -54,7 +54,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 34 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
 | 35 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
 | 36 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
-| 37 | `quest_log.c` | parcial | 1767 | 14/88 | ~1485 |  |
+| 37 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
 | 38 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
 | 39 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
 | 40 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
@@ -66,7 +66,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 46 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
 | 47 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
 | 48 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
-| 49 | `field_effect.c` | parcial | 4033 | 89/239 | ~2531 |  |
+| 49 | `field_effect.c` | parcial | 4033 | 90/239 | ~2514 |  |
 | 50 | `overworld.c` | parcial | 3563 | 61/242 | ~2664 |  |
 | 51 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
 | 52 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |

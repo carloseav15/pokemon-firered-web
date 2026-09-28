@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 38 | 89972 | 1523/3933 |
+| Parcial (< 80 % de funciones) | 38 | 89972 | 1527/3933 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 14 | 26367 | 1085/1169 |
+| Casi completo (≥ 80 % y < 100 %) | 14 | 26367 | 1096/1169 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 155 | 134188 | 4885/4885 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **54** | **119169** | |
-| **Total en alcance** | **211** | **253703** | **7521/10115** |
+| **Total en alcance** | **211** | **253703** | **7536/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -37,7 +37,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon.c` | 6453 | 73/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `battle_main.c` | 4477 | 84/106 | `battle/globals.ts`, `battle/main.ts`, `battle/main_init.ts` … |  |  |
-| `field_effect.c` | 4033 | 89/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `namingScreen.ts` |  |  |
+| `field_effect.c` | 4033 | 90/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `field/fieldPalette.ts` … |  |  |
 | `overworld.c` | 3563 | 61/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
 | `battle_transition.c` | 3037 | 47/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
@@ -52,7 +52,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `daycare.c` | 2155 | 28/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
 | `battle_ai_script_commands.c` | 1970 | 25/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
-| `quest_log.c` | 1767 | 14/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
+| `quest_log.c` | 1767 | 16/88 | `field/trainerSee.ts`, `questLogEvents.ts`, `questLogPalette.ts` |  |  |
 | `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
@@ -67,7 +67,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `berry.c` | 1028 | 5/9 | `pokemon/berry.ts`, `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
 | `field_fadetransition.c` | 965 | 43/59 | `field/fieldControl.ts`, `field/overworld.ts` |  |  |
-| `fieldmap.c` | 951 | 5/54 | `field/fieldmap.ts` |  |  |
+| `fieldmap.c` | 951 | 6/54 | `field/fieldPalette.ts`, `field/fieldmap.ts` |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
 | `easy_chat.c` | 730 | 8/39 | `easyChat.ts`, `pokemon/mail.ts`, `script/specials.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
@@ -84,7 +84,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 |---|---:|---:|---|---|---:|
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
-| `field_specials.c` | 2555 | 106/118 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `field/hiddenItem.ts` … |  |  |
+| `field_specials.c` | 2555 | 117/118 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `field/hiddenItem.ts` … |  |  |
 | `item_menu.c` | 2397 | 112/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 106/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `trainer_card.c` | 1959 | 64/73 | `menus/trainerCard.ts` |  |  |

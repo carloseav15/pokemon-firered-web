@@ -1,8 +1,8 @@
 Modo: tandas integradas por archivo/familia; alcance principal de un jugador. No push.
-Siguiente: continuar `field_specials.c`; priorizar Deoxys cuando estén portados `ApplyGlobalFieldPaletteTint` y el estado de tint global.
-Bloqueo registrado: especiales de Deoxys requieren las paletas `sDeoxysObjectPals` y el tinte global; `field_control_avatar.c` sigue bloqueado en Dive.
+Siguiente: `item_use.c` (73 funciones; queda una sin homólogo), según el orden vivo de `PENDING.md`.
+Bloqueos: `field_control_avatar.c` conserva Dive sin resolver; funciones Link quedan fuera de alcance.
 Validación diferida: recorridos de navegador e historia; sin afirmaciones de paridad runtime.
-Entrega (2026-09-28): callbacks de apodo y movimiento de roca Deoxys integrados; `GetPlayerAvatarBike` alineado con C.
-Nuevas: 4 nombres C (2 callbacks de apodo y `FldEff_MoveDeoxysRock`/`Task_MoveDeoxysRock_Step`).
-Equivalencias: `GetPlayerAvatarBike` prioriza Acro sobre Mach como C; callbacks de apodo conectados a su especial.
-Conteo: 7.521/10.115 (74,4 %), +4 desde 7.517; checks de tanda, build y diff pasaron.
+Entrega (2026-09-28): Quest Log de salidas, tinte/paletas, flujo del triángulo Deoxys, iluminación de Liga, eventos del Centro Pokémon, reset de ciclismo.
+Nuevas: funciones de esos sistemas integradas a rutas activas; también movimiento de roca Deoxys y callbacks de apodo.
+Equivalencias: avatar Acro/Mach, `UpdatePoisonStepCounter` y `TrySetUpWalkIntoSignpostScript` alineados con nombres y orden de C.
+Conteo: 7.536/10.115 (74,5 %), +15 desde 7.521; checks de tanda, build y diff pasaron.
