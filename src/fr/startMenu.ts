@@ -13,6 +13,10 @@ import { FONT_NORMAL } from "./gba/font";
 import { tasks } from "./gba/tasks";
 import { printText } from "./gba/textPrinter";
 import { Window } from "./gba/window";
+import { joy, JOY_NEW, START_BUTTON } from "./gba/input";
+import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
+import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
+import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
 
 enum StartMenuOption {
   STARTMENU_POKEDEX = 0,
@@ -44,6 +48,7 @@ export interface StartMenuItem {
   desc: string;
   action: () => void;
   canChoose?: () => boolean;
+  fadeWhenChosen?: boolean;
 }
 
 export interface StartMenuDrawState {
@@ -54,6 +59,16 @@ export interface StartMenuDrawState {
   createWindow: () => void;
   drawSafariStats: () => void;
   onDrawComplete: () => void;
+}
+
+export interface StartMenuInputState {
+  initialized: boolean;
+  game: Game;
+  menu: Menu;
+  items: StartMenuItem[];
+  printDescription: () => void;
+  pendingAction?: () => void;
+  waitForFade?: boolean;
 }
 
 /** AppendToList (start_menu.c): `cursor` models the C u8 position pointer. */
@@ -201,6 +216,50 @@ export function OpenStartMenuWithFollowupFunc(draw: StartMenuDrawState, followup
   draw.state[0] = 0;
   draw.state[1] = 0;
   return tasks.create((taskId) => task50_startmenu(taskId, draw, followup), 80);
+}
+
+/** StartCB_HandleInput (start_menu.c), using the menu cursor and action table bound to this field scene. */
+export function StartCB_HandleInput(state: StartMenuInputState): boolean {
+  const { game, menu, items } = state;
+  const before = menu.cursorPos;
+  const input = menu.processInput();
+  if (menu.cursorPos !== before) state.printDescription();
+  if (input === MENU_NOTHING_CHOSEN) {
+    if (JOY_NEW(START_BUTTON)) { game.closeStartMenu(); return true; }
+    return false;
+  }
+  if (input === MENU_B_PRESSED) { game.closeStartMenu(); return true; }
+  if (items[input].canChoose?.() === false) return false;
+  game.startMenuCursor = input;
+  state.pendingAction = items[input].action;
+  state.waitForFade = items[input].fadeWhenChosen !== false;
+  StartMenu_FadeScreenIfLeavingOverworld(game, state.waitForFade);
+  return false;
+}
+
+/** StartMenu_FadeScreenIfLeavingOverworld (start_menu.c). */
+export function StartMenu_FadeScreenIfLeavingOverworld(game: Game, shouldFade: boolean): void {
+  if (!shouldFade) return;
+  StopPokemonLeagueLightingEffectTask();
+  paletteFade.fadeScreen(FADE_TO_BLACK, 0);
+}
+
+/** Task_StartMenuHandleInput (start_menu.c): initialize once, then run the active callback each frame. */
+export function Task_StartMenuHandleInput(taskId: number, state: StartMenuInputState): void {
+  if (!state.initialized) {
+    state.initialized = true;
+    return;
+  }
+  if (state.pendingAction) {
+    if (state.waitForFade && paletteFade.active) return;
+    const action = state.pendingAction;
+    state.pendingAction = undefined;
+    state.waitForFade = false;
+    action();
+    tasks.destroy(taskId);
+    return;
+  }
+  if (StartCB_HandleInput(state)) tasks.destroy(taskId);
 }
 
 /** StartMenuPokedexSanityCheck (start_menu.c). */

@@ -57,7 +57,7 @@ import {
   DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
-  StartMenuSaveCallback, type StartMenuDrawState, type StartMenuItem, type StartMenuSetupState,
+  StartMenuSaveCallback, Task_StartMenuHandleInput, type StartMenuDrawState, type StartMenuInputState, type StartMenuItem, type StartMenuSetupState,
 } from "./startMenu";
 import { IsUpdateLinkStateCBActive } from "./linkState";
 import { openSlotMachine } from "./menus/slotMachine";
@@ -380,10 +380,10 @@ export class Game {
       { text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => StartMenuPokemonCallback(this) },
       { text: rom.text("gText_MenuBag"), desc: "gStartMenuDesc_Bag", action: () => StartMenuBagCallback(this) },
       { text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => StartMenuPlayerCallback(this) },
-      { text: rom.text("gText_MenuSave"), desc: "gStartMenuDesc_Save", action: () => StartMenuSaveCallback(this) },
+      { text: rom.text("gText_MenuSave"), desc: "gStartMenuDesc_Save", action: () => StartMenuSaveCallback(this), fadeWhenChosen: false },
       { text: rom.text("gText_MenuOption"), desc: "gStartMenuDesc_Option", action: () => StartMenuOptionCallback(this) },
-      { text: rom.text("gText_MenuExit"), desc: "gStartMenuDesc_Exit", action: () => StartMenuExitCallback(this) },
-      { text: rom.text("gText_MenuRetire"), desc: "gStartMenuDesc_Retire", action: () => StartMenuSafariZoneRetireCallback(this) },
+      { text: rom.text("gText_MenuExit"), desc: "gStartMenuDesc_Exit", action: () => StartMenuExitCallback(this), fadeWhenChosen: false },
+      { text: rom.text("gText_MenuRetire"), desc: "gStartMenuDesc_Retire", action: () => StartMenuSafariZoneRetireCallback(this), fadeWhenChosen: false },
       { text: Uint8Array.from(save.playerName), desc: "gStartMenuDesc_Player", action: () => StartMenuPlayerCallback(this) },
     ];
     const items = startMenu.order.slice(0, startMenu.numItems).map((entry) => actions[entry]!);
@@ -412,30 +412,15 @@ export class Game {
       },
       onDrawComplete: printDesc,
     };
-    const inputReady = { value: drawImmediately };
-    const startInput = (id: number): void => {
-      // Task_StartMenuHandleInput state 0 consumes a frame before input is read.
-      if (!inputReady.value) { inputReady.value = true; return; }
-      const before = menu.cursorPos;
-      const input = menu.processInput();
-      if (menu.cursorPos !== before) printDesc();
-      if (input === MENU_NOTHING_CHOSEN) {
-        if (JOY_NEW(START_BUTTON)) { tasks.destroy(id); this.closeStartMenu(); }
-        return;
-      }
-      if (items[input].canChoose?.() === false) return;
-      tasks.destroy(id);
-      if (input === MENU_B_PRESSED) { this.closeStartMenu(); return; }
-      this.startMenuCursor = input;
-      items[input].action();
-    };
+    const inputState: StartMenuInputState = { initialized: drawImmediately, game: this, menu, items, printDescription: printDesc };
+    const startInput = (id: number): void => Task_StartMenuHandleInput(id, inputState);
     if (drawImmediately) {
       DrawStartMenuInOneGo(draw);
       tasks.create(startInput, 80);
     } else OpenStartMenuWithFollowupFunc(draw, startInput);
   }
 
-  private startMenuCursor = 0;
+  startMenuCursor = 0;
   private startMenuWindows: Window[] = [];
   private startMenuSafariStats: Window | null = null;
 
