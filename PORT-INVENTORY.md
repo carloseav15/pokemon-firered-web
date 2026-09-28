@@ -12,7 +12,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 35 | 83516 | 1452/3764 |
+| Parcial (< 80 % de funciones) | 35 | 83516 | 1463/3764 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 15 | 30870 | 1157/1256 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 157 | 136141 | 4967/4967 |
@@ -20,7 +20,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **52** | **117216** | |
-| **Total en alcance** | **211** | **253703** | **7604/10115** |
+| **Total en alcance** | **211** | **253703** | **7615/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -33,7 +33,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `event_object_movement.c` | 9412 | 525/759 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `menus/fieldMoveMenu.ts` … |  |  |
+| `event_object_movement.c` | 9412 | 529/759 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `pokemon.c` | 6453 | 73/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `field_effect.c` | 4033 | 90/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `field/fieldPalette.ts` … |  |  |
@@ -57,7 +57,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |  |
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
-| `field_effect_helpers.c` | 1421 | 37/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  | 39 |
+| `field_effect_helpers.c` | 1421 | 44/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  | 32 |
 | `easy_chat_2.c` | 1363 | 1/73 |  |  |  |
 | `script_menu.c` | 1341 | 5/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
 | `vs_seeker.c` | 1326 | 12/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
