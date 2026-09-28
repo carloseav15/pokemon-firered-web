@@ -44,6 +44,7 @@ import * as PartyMenu from "../partyMenu";
 import { bagResult, BackUpPlayerBag, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, RemoveUsedItem, RestorePlayerBag, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
 import { gDisableStructs } from "./globals";
+import { ItemUse_SetQuestLogEvent } from "../itemUse";
 
 export { DrawLevelUpWindowPg1, DrawLevelUpWindowPg2, GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
 
@@ -300,10 +301,13 @@ export function CB2_BagMenuFromBattle(): void {
         ctx.exit(() => finish(item));
         return;
       case "BattleUseFunc_PokeFlute": ctx.exit(() => finish(item)); return;
-      case "BattleUseFunc_PokeDoll":
+      case "BattleUseFunc_PokeDoll": {
         if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER) { notNow(); return; }
-        ctx.message(RemoveUsedItem(item), FONT_NORMAL, () => ctx.exit(() => finish(item)));
+        const usedItemMessage = RemoveUsedItem(item);
+        ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
+        ctx.message(usedItemMessage, FONT_NORMAL, () => ctx.exit(() => finish(item)));
         return;
+      }
       case "BattleUseFunc_StatBooster":
         BattleUseFunc_StatBooster(ctx.taskId, item, menuBattler, ctx, () => finish(item));
         return;

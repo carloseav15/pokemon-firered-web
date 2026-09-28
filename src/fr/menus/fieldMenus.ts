@@ -4,7 +4,7 @@ import type { Game } from "../game";
 import { HwScene } from "../hw/runtime";
 import { openMailView } from "./mailView";
 import { blankMail, mailLines } from "../pokemon/mail";
-import { decode } from "../gba/charmap";
+import { decode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
 import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "../pokemon/items";
@@ -35,6 +35,8 @@ import { startItemFinder } from "./itemFinder";
 import { openHardwareMessage } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
 import { flagGet, incrementGameStat } from "../save";
+import { GetBerryPowder } from "../script/specialsExtra";
+import { ItemUse_SetQuestLogEvent } from "../itemUse";
 
 
 export function fieldMenu(game: Game, begin: (close: () => void) => void, closeStartMenu = true): void {
@@ -121,6 +123,7 @@ export function Task_DisplayPokeFluteMessage(taskId: number, isFanfareDone: () =
 /** Task_UseRepel from item_use.c: wait for SE completion before consuming Repel and setting its step counter. */
 export function Task_UseRepel(taskId: number, item: number, onDone: (text: Uint8Array) => void): void {
   if (sound.isSEPlaying()) return;
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
   varSet(C.VAR_REPEL_STEP_COUNT, itemInfo(item)?.holdEffectParam ?? 0);
   const text = RemoveUsedItem(item);
   tasks.destroy(taskId);
@@ -229,7 +232,22 @@ export function ItemUseOutOfBattle_EscapeRope(game: Game, item: number, route: {
     route.notNow();
     return;
   }
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, game.overworld.header.regionMapSection);
   route.onField(() => ItemUseOnFieldCB_EscapeRope(game, item));
+}
+
+/** FieldUseFunc_CoinCase (item_use.c): format the four-digit balance and show it in the caller's context. */
+export function FieldUseFunc_CoinCase(item: number, display: (text: ArrayLike<number>) => void): void {
+  stringVars.var1 = intToDecimal(GetCoins(), STR_CONV_MODE_LEFT_ALIGN, 4);
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
+  display(rom.text("gText_CoinCase"));
+}
+
+/** FieldUseFunc_PowderJar (item_use.c): format the five-digit powder balance and show it in context. */
+export function FieldUseFunc_PowderJar(item: number, display: (text: ArrayLike<number>) => void): void {
+  stringVars.var1 = intToDecimal(GetBerryPowder(), STR_CONV_MODE_LEFT_ALIGN, 5);
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
+  display(rom.text("gText_PowderQty"));
 }
 
 /** ItemUseOnFieldCB_EscapeRope (item_use.c): reset field state, consume the item, and print its message. */
@@ -329,6 +347,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           }
           return;
         case "FieldUseFunc_BlackWhiteFlute": {
+          ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
           const white = item === C.ITEM_WHITE_FLUTE;
           flagSet(white ? C.FLAG_SYS_WHITE_FLUTE_ACTIVE : C.FLAG_SYS_BLACK_FLUTE_ACTIVE);
           flagClear(white ? C.FLAG_SYS_BLACK_FLUTE_ACTIVE : C.FLAG_SYS_WHITE_FLUTE_ACTIVE);
@@ -344,6 +363,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           let woke = false;
           save.party.forEach((mon, i) => { if (!mon.isEgg && !PokemonUseItemEffects(mon as Mon, C.ITEM_AWAKENING, i, 0, false)) woke = true; });
           if (!woke) { message(rom.text("gText_PlayedPokeFluteCatchy")); return; }
+          ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
           message(rom.text("gText_PlayedPokeFlute"), () => {
             tasks.create((taskId) => Task_PlayPokeFlute(taskId, () => sound.isFanfareTaskInactive(), () => {
               message(rom.text("gText_PokeFluteAwakenedMon"));
@@ -351,8 +371,8 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           });
           return;
         }
-        case "FieldUseFunc_CoinCase": stringVars.var1 = encode(String(GetCoins())); message(rom.text("gText_CoinCase")); return;
-        case "FieldUseFunc_PowderJar": stringVars.var1 = encode(String(save.berryPowder ?? 0)); message(rom.text("gText_PowderQty")); return;
+        case "FieldUseFunc_CoinCase": FieldUseFunc_CoinCase(item, message); return;
+        case "FieldUseFunc_PowderJar": FieldUseFunc_PowderJar(item, message); return;
         case "FieldUseFunc_TmCase":
           FieldUseFunc_TmCase(bagCtx !== null,
             () => leave(() => InitTMCaseFromBag(openTmCase)),
@@ -384,8 +404,12 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           if (initialItem !== undefined) onField(() => game.showTownMapFromField());
           else leave(() => openRegionMap(game, REGIONMAP_TYPE_NORMAL, bag));
           return;
-        case "FieldUseFunc_FameChecker": onField(() => game.openFameChecker()); return;
-        case "FieldUseFunc_TeachyTv": onField(() => game.openTeachyTv()); return;
+        case "FieldUseFunc_FameChecker":
+          ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
+          onField(() => game.openFameChecker()); return;
+        case "FieldUseFunc_TeachyTv":
+          ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
+          onField(() => game.openTeachyTv()); return;
         case "FieldUseFunc_VsSeeker": onField(() => game.useVsSeeker()); return;
         case "FieldUseFunc_Mail":
           FieldUseFunc_Mail((checkMail) => leave(checkMail), () => CB2_CheckMail(item, bag));

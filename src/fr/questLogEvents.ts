@@ -46,12 +46,13 @@ export type QuestLogShopEvent = {
 };
 
 export type QuestLogStoryItemEvent = { itemId: number; mapSec: number };
+export type QuestLogItemEvent = { itemId: number; species: number; itemParam: number };
 export type QuestLogTrainerBattleEvent = {
   trainerId: number; speciesOpponent: number; speciesPlayer: number; mapSec: number; hpFractionId: number;
 };
 export type QuestLogWildBattleEvent = { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
 export type QuestLogLinkBattleEvent = { outcome: number; playerNames: number[][] };
-export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent;
+export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent;
 export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
@@ -172,10 +173,15 @@ export function QL_LoadPlayerActionScript(eventIndex: number): QuestLogAction[] 
   return actions;
 }
 
-/** SetQuestLogEvent (quest_log_events.c), currently supporting shop and story-item payloads. */
+/** SetQuestLogEvent (quest_log_events.c), storing source event payloads for supported single-player events. */
 export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void {
   const isShopEvent = eventId === C.QL_EVENT_BOUGHT_ITEM || eventId === C.QL_EVENT_SOLD_ITEM;
   const isStoryItemEvent = eventId === C.QL_EVENT_OBTAINED_STORY_ITEM;
+  const isItemEvent = eventId === C.QL_EVENT_USED_ITEM || eventId === C.QL_EVENT_GAVE_HELD_ITEM
+    || eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG || eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC
+    || eventId === C.QL_EVENT_TOOK_HELD_ITEM || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM
+    || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC || eventId === C.QL_EVENT_DEPOSITED_ITEM_PC
+    || eventId === C.QL_EVENT_WITHDREW_ITEM_PC;
   const isBattleEvent = eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_WILD_MON
     || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER || eventId === C.QL_EVENT_DEFEATED_CHAMPION
     || eventId === C.QL_EVENT_DEFEATED_TRAINER;
@@ -183,7 +189,7 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     || eventId === C.QL_EVENT_LINK_BATTLED_DOUBLE
     || eventId === C.QL_EVENT_LINK_BATTLED_MULTI
     || eventId === C.QL_EVENT_LINK_BATTLED_UNION;
-  if (!isShopEvent && !isStoryItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
+  if (!isShopEvent && !isStoryItemEvent && !isItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;

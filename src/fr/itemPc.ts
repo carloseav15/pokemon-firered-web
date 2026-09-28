@@ -6,11 +6,12 @@
 //    source compaction runs over that compact representation before counting.
 //  - MainCallbacks handed to SetMainCallback2 by this screen are plain
 //    functions that must run once (see runOnce), as in party_menu.
-//  - ItemUse_SetQuestLogEvent (Quest Log) and SetHelpContext (help system) are out of scope.
+//  - SetHelpContext (help system) is out of scope.
 //  - Sprite scroll pointers (&sListMenuState.scroll) are getters.
 // Needs a HwScene host (menus/fieldMenus.ts fieldMenu).
 
 import { sound } from "./audio/sound";
+import { ItemUse_SetQuestLogEvent } from "./itemUse";
 import { expandPlaceholders, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN, stringVars } from "./gba/charmap";
 import { FONT_NORMAL, FONT_SMALL } from "./gba/font";
 import { A_BUTTON, B_BUTTON, JOY_NEW, SELECT_BUTTON } from "./gba/input";
@@ -665,7 +666,7 @@ function ItemPc_DoWithdraw(taskId: number): void {
   const itemId = ItemPc_GetItemIdBySlotId(data[1]);
 
   if (addBagItem(itemId, data[8]) === true) {
-    // ItemUse_SetQuestLogEvent(QL_EVENT_WITHDREW_ITEM_PC, ...): Quest Log is out of scope.
+    ItemUse_SetQuestLogEvent(C.QL_EVENT_WITHDREW_ITEM_PC, null, itemId, 0xffff);
     stringVars.var1 = CopyItemName(itemId);
     stringVars.var2 = intToDecimal(data[8], STR_CONV_MODE_LEFT_ALIGN, 3);
     stringVars.var4 = expandPlaceholders(txt("gText_WithdrewQuantItem"));
