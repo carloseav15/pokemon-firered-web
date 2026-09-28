@@ -43,6 +43,13 @@ export function loadFieldFx(): Promise<FieldFxData> {
   return fxPromise;
 }
 
+/** gFieldEffectObjectTemplatePointers lookup by name, shared with the disconnected
+ * field_effect_helpers.c mirrors in fieldEffectHelpers.ts (dead-code effects with no
+ * caller in FRLG, e.g. FldEff_UnusedGrass/FldEff_Sparkle). */
+export function fieldFxTemplate(name: string) {
+  return fxData?.templates[name];
+}
+
 const SHADOW_TEMPLATES: Record<string, string> = { SHADOW_SIZE_S: "ShadowSmall", SHADOW_SIZE_M: "ShadowMedium", SHADOW_SIZE_L: "ShadowLarge", SHADOW_SIZE_XL: "ShadowExtraLarge" };
 const SHADOW_OFFSETS: Record<string, number> = { SHADOW_SIZE_S: 4, SHADOW_SIZE_M: 4, SHADOW_SIZE_L: 4, SHADOW_SIZE_XL: 16 };
 
