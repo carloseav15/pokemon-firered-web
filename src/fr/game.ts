@@ -786,14 +786,14 @@ export class Game {
   }
 
   /** FieldUseFunc_VsSeeker → Task_VsSeeker_0 */
-  useVsSeeker(): void {
+  useVsSeeker(item: number): void {
     const ow = this.overworld;
     const release = (): void => {
       ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
       ow.objects.unfreezeAll();
       ow.controlsLocked = false;
     };
-    useVsSeeker(this, (text, next) => fieldMessage(this, text, next), release);
+    useVsSeeker(this, item, (text, next) => fieldMessage(this, text, next), release);
   }
   askSaveGame(): void {
     const ow = this.overworld;

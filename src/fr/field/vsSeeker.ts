@@ -13,6 +13,7 @@ import type { Game } from "../game";
 import type { ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { PLAYER_AVATAR_GFX_VSSEEKER } from "./playerAvatar";
+import { ItemUse_SetQuestLogEvent } from "../itemUse";
 
 const MAX_REMATCH_PARTIES = 6;
 const SKIP = 0xffff;
@@ -258,8 +259,13 @@ export function vsSeekerResetObjectMovementAfterChargeComplete(game: Game): void
 
 type TrainerInfo = { script: number; trainerIdx: number; localId: number; object: ObjectEvent | undefined; x: number; y: number; graphicsId: number };
 
+/** Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker (item_use.c). */
+export function Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release: () => void): void {
+  release();
+}
+
 /** Task_VsSeeker_0..3 */
-export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: () => void) => void, release: () => void): void {
+export function useVsSeeker(game: Game, item: number, showMessage: (text: Uint8Array, next: () => void) => void, release: () => void): void {
   const ow = game.overworld;
   const info: TrainerInfo[] = ow.objects.templates
     .filter((t) => t.trainerType === C.TRAINER_TYPE_NORMAL || t.trainerType === C.TRAINER_TYPE_BURIED)
@@ -278,12 +284,14 @@ export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: ()
     // TV_PrintIntToStringVar(0, 100 - steps)
     import("../gba/charmap").then(({ stringVars, encode }) => {
       stringVars.var1 = encode(String(100 - charge));
-      showMessage(rom.text("VSSeeker_Text_BatteryNotChargedNeedXSteps"), release);
+      showMessage(rom.text("VSSeeker_Text_BatteryNotChargedNeedXSteps"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release));
     });
     return;
   }
   const rematchable = info.find((t) => visible(t) && (!hasTrainerBeenFought(t.trainerIdx) || nextAvailableRematchTrainer(t.trainerIdx).j));
-  if (!rematchable) { showMessage(rom.text("VSSeeker_Text_NoTrainersWithinRange"), release); return; }
+  if (!rematchable) { showMessage(rom.text("VSSeeker_Text_NoTrainersWithinRange"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release)); return; }
+
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
 
   // FLDEFF_USE_VS_SEEKER
   ow.controlsLocked = true;
@@ -310,7 +318,7 @@ export function useVsSeeker(game: Game, showMessage: (text: Uint8Array, next: ()
       case 2:
         if (!game.scriptMovement.isFinished(ow.player.object)) break;
         tasks.destroy(id);
-        if (responseCode === 0) { showMessage(rom.text("VSSeeker_Text_TrainersNotReady"), release); return; }
+        if (responseCode === 0) { showMessage(rom.text("VSSeeker_Text_TrainersNotReady"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release)); return; }
         if (responseCode === 2) startAllRespondantIdleMovements();
         release();
         break;

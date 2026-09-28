@@ -359,6 +359,19 @@ export function FieldUseFunc_Rod(game: Game, item: number, route: {
   route.onField(() => ItemUseOnFieldCB_Rod(game, itemInfo(item)?.secondaryId ?? 0));
 }
 
+/** FieldUseFunc_VsSeeker (item_use.c): reject indoor/special maps before the field callback. */
+export function FieldUseFunc_VsSeeker(game: Game, item: number, route: { notNow: () => void; onField: (callback: () => void) => void }): void {
+  const ow = game.overworld;
+  const mapNum = rom.mapNum(ow.mapId);
+  const mapGroup = mapNum >>> 8;
+  const localMapNum = mapNum & 0xff;
+  const prohibited = mapGroup === (rom.mapNum("MAP_VIRIDIAN_FOREST") >>> 8)
+    && ["MAP_VIRIDIAN_FOREST", "MAP_MT_EMBER_EXTERIOR", "MAP_THREE_ISLAND_BERRY_FOREST", "MAP_SIX_ISLAND_PATTERN_BUSH"]
+      .some((id) => localMapNum === (rom.mapNum(id) & 0xff));
+  if ((ow.header.mapType !== C.MAP_TYPE_ROUTE && ow.header.mapType !== C.MAP_TYPE_TOWN && ow.header.mapType !== C.MAP_TYPE_CITY) || prohibited) { route.notNow(); return; }
+  route.onField(() => game.useVsSeeker(item));
+}
+
 export function openFieldBag(game: Game, initialItem?: number): void {
   let post: (() => void) | null = null;
   fieldMenu(game, close => {
@@ -494,7 +507,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_TeachyTv":
           ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
           onField(() => game.openTeachyTv()); return;
-        case "FieldUseFunc_VsSeeker": onField(() => game.useVsSeeker()); return;
+        case "FieldUseFunc_VsSeeker": FieldUseFunc_VsSeeker(game, item, { notNow, onField }); return;
         case "FieldUseFunc_Mail":
           FieldUseFunc_Mail((checkMail) => leave(checkMail), () => CB2_CheckMail(item, bag));
           return;
