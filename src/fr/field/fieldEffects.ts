@@ -530,7 +530,7 @@ export class FieldEffects {
     return false;
   }
 
-  /** StartAshFieldEffect / FldEff_Ash and UpdateAshFieldEffect_Step0..2. */
+  /** StartAshFieldEffect / FldEff_Ash. */
   StartAshFieldEffect(x: number, y: number, metatileId: number, delay: number): void {
     this.FldEff_Ash(x, y, metatileId, delay);
   }
@@ -543,36 +543,51 @@ export class FieldEffects {
     sprite.priority = 1;
     sprite.subpriority = 0x52;
     sprite.data[0] = 0;
-    sprite.data[1] = x;
-    sprite.data[2] = y;
-    sprite.data[3] = metatileId;
-    sprite.data[4] = delay;
+    sprite.data[1] = (x << 16) >> 16;
+    sprite.data[2] = (y << 16) >> 16;
+    sprite.data[3] = metatileId & 0xffff;
+    sprite.data[4] = (delay << 16) >> 16;
     sprite.invisible = true;
     sprite.animPaused = true;
     this.active.add(C.FLDEFF_ASH);
-    sprite.callback = (s) => {
-      switch (s.data[0]) {
-        case 0:
-          if (--s.data[4]! === 0) s.data[0] = 1;
-          break;
-        case 1: {
-          s.invisible = false;
-          s.animPaused = false;
-          this.ow.map.setMetatileIdAt(s.data[1]!, s.data[2]!, s.data[3]!);
-          this.ow.renderer?.invalidate();
-          const player = this.ow.objects.player();
-          if (player) player.triggerGroundEffectsOnMove = true;
-          s.data[0] = 2;
-          break;
-        }
-        case 2:
-          if (s.animEnded) {
-            this.active.delete(C.FLDEFF_ASH);
-            this.ow.sprites.destroy(s);
-          }
-          break;
-      }
-    };
+    sprite.callback = (s) => this.UpdateAshFieldEffect(s);
+  }
+
+  /** UpdateAshFieldEffect; its state value selects one C callback from gAshFieldEffectFuncs. */
+  UpdateAshFieldEffect(sprite: Sprite): void {
+    switch (sprite.data[0]) {
+      case 0: this.UpdateAshFieldEffect_Step0(sprite); break;
+      case 1: this.UpdateAshFieldEffect_Step1(sprite); break;
+      case 2: this.UpdateAshFieldEffect_Step2(sprite); break;
+    }
+  }
+
+  /** UpdateAshFieldEffect_Step0 (field_effect_helpers.c); data[4] is an s16. */
+  UpdateAshFieldEffect_Step0(sprite: Sprite): void {
+    sprite.invisible = true;
+    sprite.animPaused = true;
+    sprite.data[4] = (((sprite.data[4] ?? 0) - 1) << 16) >> 16;
+    if (sprite.data[4] === 0) sprite.data[0] = 1;
+  }
+
+  /** UpdateAshFieldEffect_Step1 (field_effect_helpers.c). */
+  UpdateAshFieldEffect_Step1(sprite: Sprite): void {
+    sprite.invisible = false;
+    sprite.animPaused = false;
+    this.ow.map.setMetatileIdAt(sprite.data[1]!, sprite.data[2]!, sprite.data[3]!);
+    this.ow.renderer?.invalidate();
+    const player = this.ow.objects.player();
+    if (player) player.triggerGroundEffectsOnMove = true;
+    sprite.data[0] = 2;
+  }
+
+  /** UpdateAshFieldEffect_Step2 (field_effect_helpers.c). */
+  UpdateAshFieldEffect_Step2(sprite: Sprite): void {
+    this.UpdateObjectEventSpriteInvisibility(sprite, false);
+    if (sprite.animEnded) {
+      this.active.delete(C.FLDEFF_ASH);
+      this.ow.sprites.destroy(sprite);
+    }
   }
 
   // ---------------------------------------------------------------- ground effects
