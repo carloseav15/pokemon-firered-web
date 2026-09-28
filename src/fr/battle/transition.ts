@@ -177,57 +177,109 @@ const sAngledWipes_EndDelays = [1, 1, 1, 1, 1, 1, 0];
 class AngledWipesEffect implements Effect {
   readonly rowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
   readonly invertWindow = false;
-  private state: "setWipeData" | "doWipe" | "tryEnd" | "startNext" = "setWipeData";
-  private wipe = new BlackWipe();
-  private wipeId = 0;
-  private dir = 0;
-  private delay = 0;
+  readonly workingRowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
+  state = 0;
+  wipe = new BlackWipe();
+  wipeId = 0;
+  dir = 0;
+  delay = 0;
+  vblankDma = false;
+  done = false;
 
   tick(): boolean {
-    for (;;) {
-      if (this.state === "setWipeData") {
-        const [sx, sy, ex, ey, dir] = sAngledWipes_MoveData[this.wipeId]!;
-        this.wipe.init(sx, sy, ex, ey, 1, 1);
-        this.dir = dir;
-        this.state = "doWipe";
-        continue;
-      }
-      if (this.state === "doWipe") {
-        let finished = false;
-        for (let i = 0; i < 16; i++) {
-          // The C's scanline buffer has slack past DISPLAY_HEIGHT; a wipe's start/end Y can
-          // legally sit one row past the last visible one, so skip writes that land there.
-          const y = this.wipe.currY;
-          if (y >= 0 && y < DISPLAY_HEIGHT) {
-            let [left, right] = this.rowBounds[y]!;
-            if (this.dir === 0) {
-              if (left < this.wipe.currX) left = this.wipe.currX;
-              if (left > right) left = right;
-            } else {
-              if (right > this.wipe.currX) right = this.wipe.currX;
-              if (right <= left) right = left;
-            }
-            this.rowBounds[y] = [left, right];
-          }
-          if (finished) { this.state = "tryEnd"; break; }
-          finished = this.wipe.update(true, true);
-        }
-        return false;
-      }
-      if (this.state === "tryEnd") {
-        this.wipeId++;
-        if (this.wipeId < NUM_ANGLED_WIPES) {
-          this.delay = sAngledWipes_EndDelays[this.wipeId - 1]!;
-          this.state = "startNext";
-          continue;
-        }
-        return true;
-      }
-      // startNext
-      if (--this.delay === 0) { this.state = "setWipeData"; continue; }
-      return false;
-    }
+    return Task_AngledWipes(this);
   }
+}
+
+/** Task_AngledWipes (battle_transition.c): run C task states until one yields a frame. */
+function Task_AngledWipes(effect: AngledWipesEffect): boolean {
+  let keepRunning: boolean;
+  do {
+    switch (effect.state) {
+      case 0: keepRunning = AngledWipes_Init(effect); break;
+      case 1: keepRunning = AngledWipes_SetWipeData(effect); break;
+      case 2: keepRunning = AngledWipes_DoWipe(effect); break;
+      case 3: keepRunning = AngledWipes_TryEnd(effect); break;
+      case 4: keepRunning = AngledWipes_StartNext(effect); break;
+      default: keepRunning = false; break;
+    }
+  } while (keepRunning);
+  VBlankCB_AngledWipes(effect);
+  return effect.done;
+}
+
+/** AngledWipes_Init (battle_transition.c); scanline tables become Canvas row bounds. */
+function AngledWipes_Init(effect: AngledWipesEffect): boolean {
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+    effect.workingRowBounds[y] = [0, DISPLAY_WIDTH];
+    effect.rowBounds[y] = [0, DISPLAY_WIDTH];
+  }
+  effect.vblankDma = false;
+  effect.state++;
+  return true;
+}
+
+/** AngledWipes_SetWipeData (battle_transition.c). */
+function AngledWipes_SetWipeData(effect: AngledWipesEffect): boolean {
+  const [startX, startY, endX, endY, direction] = sAngledWipes_MoveData[effect.wipeId]!;
+  effect.wipe.init(startX, startY, endX, endY, 1, 1);
+  effect.dir = direction;
+  effect.state++;
+  return true;
+}
+
+/** AngledWipes_DoWipe (battle_transition.c): update up to 16 Bresenham scanlines. */
+function AngledWipes_DoWipe(effect: AngledWipesEffect): boolean {
+  effect.vblankDma = false;
+  let finished = false;
+  for (let i = 0; i < 16; i++) {
+    // C's scanline buffer has slack past DISPLAY_HEIGHT; ignore the off-screen row at y=160.
+    const y = effect.wipe.currY;
+    if (y >= 0 && y < DISPLAY_HEIGHT) {
+      let [left, right] = effect.workingRowBounds[y]!;
+      if (effect.dir === 0) {
+        if (left < effect.wipe.currX) left = effect.wipe.currX;
+        if (left > right) left = right;
+      } else {
+        if (right > effect.wipe.currX) right = effect.wipe.currX;
+        if (right <= left) right = left;
+      }
+      effect.workingRowBounds[y] = [left, right];
+    }
+    if (finished) {
+      effect.state++;
+      break;
+    }
+    finished = effect.wipe.update(true, true);
+  }
+  effect.vblankDma = true;
+  return false;
+}
+
+/** AngledWipes_TryEnd (battle_transition.c). */
+function AngledWipes_TryEnd(effect: AngledWipesEffect): boolean {
+  if (++effect.wipeId < NUM_ANGLED_WIPES) {
+    effect.state++;
+    effect.delay = sAngledWipes_EndDelays[effect.wipeId - 1]!;
+    return true;
+  }
+  effect.done = true;
+  return false;
+}
+
+/** AngledWipes_StartNext (battle_transition.c). */
+function AngledWipes_StartNext(effect: AngledWipesEffect): boolean {
+  if (--effect.delay === 0) {
+    effect.state = 1;
+    return true;
+  }
+  return false;
+}
+
+/** VBlankCB_AngledWipes (battle_transition.c), adapted to copy scanline bounds for Canvas. */
+function VBlankCB_AngledWipes(effect: AngledWipesEffect): void {
+  if (!effect.vblankDma) return;
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) effect.rowBounds[y] = [...effect.workingRowBounds[y]!];
 }
 
 class ClockwiseWipeEffect implements Effect {
