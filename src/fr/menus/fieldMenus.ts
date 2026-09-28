@@ -2,8 +2,8 @@
 // party menu (partyMenu.ts), with the field side the menus hand off to.
 import type { Game } from "../game";
 import { HwScene } from "../hw/runtime";
-import { openMailView } from "./mailView";
-import { blankMail, mailLines } from "../pokemon/mail";
+import { ReadMail } from "./mailView";
+import { GetMailDataForMon } from "../pokemon/mail";
 import { decode, expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
@@ -166,8 +166,9 @@ function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => v
     }),
     readMail: (slot, done) => {
       const mon = save.party[slot];
-      const msg = mon.mailMessage ?? blankMail();
-      openMailView(decode(itemName(mon.heldItem)), mailLines(msg.words), msg.author.length ? decode(Uint8Array.from(msg.author)) : "", done);
+      const mailData = GetMailDataForMon(mon);
+      if (mailData) ReadMail(mailData, done, true);
+      else done();
     },
     evolve: (mon, target, canStop, slot, done) => BeginEvolutionScene(mon, target, canStop, slot, done),
     relearnableMoves: (mon) => relearnableMoves(mon).length,
@@ -300,7 +301,7 @@ export function FieldUseFunc_Mail(exitToMail: (checkMail: () => void) => void, c
 
 /** CB2_CheckMail (item_use.c): ReadMail uses only itemId when messageExists is FALSE. */
 export function CB2_CheckMail(item: number, returnToBag: () => void): void {
-  openMailView(decode(itemName(item)), [], "", returnToBag);
+  ReadMail({ itemId: item, species: C.SPECIES_NONE, words: [], playerName: [0xff] }, returnToBag, false);
 }
 
 /** ItemUseOnFieldCB_Bicycle (item_use.c): toggle the bike and release field controls. */

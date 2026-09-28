@@ -46,12 +46,10 @@ import {
   gPlayerPcMenuManager, MailboxPC_AddScrollIndicatorArrows, MailboxPC_DestroyListMenuBuffer, MailboxPC_GetAddWindow, MailboxPC_InitBuffers,
   MailboxPC_InitListMenu, MailboxPC_RemoveWindow,
 } from "./mailboxPc";
-import { openMailView } from "./menus/mailView";
-import { ClearPCMailEntry, CountPCMail as CountSavePCMail, GetPCMailEntry, PCMailCompaction as CompactSavePCMail } from "./pokemon/mail";
-import { mailLines } from "./pokemon/mail";
-import { addBagItem, itemName } from "./pokemon/items";
+import { ReadMail } from "./menus/mailView";
+import { ClearPCMailEntry, CountPCMail as CountSavePCMail, GetPCMail, GetPCMailEntry, PCMailCompaction as CompactSavePCMail } from "./pokemon/mail";
+import { addBagItem } from "./pokemon/items";
 import { CalculatePlayerPartyCount } from "./pokemon/mon";
-import { decode } from "./gba/charmap";
 import { rom } from "./rom";
 import { save } from "./save";
 import type { Game } from "./game";
@@ -290,11 +288,11 @@ function Task_WaitFadeAndReadSelectedMail(taskId: number): void {
     // CleanupOverworldWindowsAndTilemaps()
     FreeAllWindowBuffers();
     tasks.destroy(taskId);
-    // ReadMail(&SELECTED_MAIL, CB2_SetCbToReturnToMailbox, 1): the mail viewer adapter (menus/mailView.ts).
-    const slot = GetPCMailEntry(SelectedMailIndex());
-    if (!slot) return;
+    // ReadMail(&SELECTED_MAIL, CB2_SetCbToReturnToMailbox, 1).
+    const mail = GetPCMail(SelectedMailIndex());
+    if (!mail) return;
     SetMainCallback2(null);
-    openMailView(decode(itemName(slot.item)), mailLines(slot.message.words), decode(Uint8Array.from(slot.message.author)), CB2_SetCbToReturnToMailbox);
+    ReadMail(mail, CB2_SetCbToReturnToMailbox, true);
   }
 }
 
