@@ -56,7 +56,7 @@ import {
   BlitBitmapRectToWindow, COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
   FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "../hw/window";
-import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllKantoMons, HasAllMons } from "../pokemon/pokemon";
+import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllHoennMons, HasAllMons } from "../pokemon/pokemon";
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
 import { MailSpeciesToSpecies } from "../pokemon/mail";
 import { rom } from "../rom";
@@ -270,7 +270,7 @@ function SetPlayerCardData(card: TrainerCardFields, _cardType: number): void {
   card.hofDebutSeconds = playTime & 0xff;
 
   card.hasPokedex = flagGet(c.FLAG_SYS_POKEDEX_GET);
-  card.caughtAllHoenn = false;
+  card.caughtAllHoenn = HasAllHoennMons();
   card.caughtMonsCount = GetCaughtMonsCount();
 
   card.trainerId = save.trainerId & 0xffff;
@@ -294,6 +294,16 @@ function GetCappedGameStat(statId: number, maxValue: number): number {
   return Math.min(maxValue >>> 0, statValue) >>> 0;
 }
 
+/** GetTrainerStarCount (trainer_card.c). */
+function GetTrainerStarCount(trainerCard: TrainerCardFields): number {
+  let stars = 0;
+  if (trainerCard.hofDebutHours !== 0 || trainerCard.hofDebutMinutes !== 0 || trainerCard.hofDebutSeconds !== 0) stars++;
+  if (trainerCard.caughtAllHoenn) stars++;
+  if (trainerCard.battleTowerStraightWins > 49) stars++;
+  if (trainerCard.hasAllPaintings) stars++;
+  return stars & 0xff;
+}
+
 /** GetCaughtMonsCount (trainer_card.c): the active National Dex chooses the national count. */
 function GetCaughtMonsCount(): number {
   return (IsNationalPokedexEnabled()
@@ -306,14 +316,6 @@ function TrainerCard_GenerateCardForLinkPlayer(card: TrainerCardFields): void {
   card.version = C.VERSION_FIRE_RED;
   SetPlayerCardData(card, CARD_TYPE_FRLG);
 
-  let stars = 0;
-  if (card.hofDebutHours !== 0 || card.hofDebutMinutes !== 0 || card.hofDebutSeconds !== 0) {
-    stars = 1;
-  }
-
-  // HasAllKantoMons: 150 caught
-  const hasKanto = HasAllKantoMons();
-  card.caughtAllHoenn = hasKanto;
   // HasAllMons: 380 caught (excluding Mew, Lugia, Ho-Oh, Celebi, Jirachi, Deoxys)
   const hasAll = HasAllMons();
   card.hasAllMons = hasAll;
@@ -324,10 +326,7 @@ function TrainerCard_GenerateCardForLinkPlayer(card: TrainerCardFields): void {
   card.unionRoomNum = Math.min(0xffff, GetGameStat(c.GAME_STAT_NUM_UNION_ROOM_BATTLES));
   card.shouldDrawStickers = true;
 
-  if (card.caughtAllHoenn) stars++;
-  if (card.hasAllMons) stars++;
-  if (card.berriesPicked >= 200 && card.jumpsInRow >= 200) stars++;
-  card.stars = Math.min(4, stars);
+  card.stars = GetTrainerStarCount(card);
 
   card.facilityClass = card.gender === C.FEMALE ? C.FACILITY_CLASS_LEAF : C.FACILITY_CLASS_RED;
 
