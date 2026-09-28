@@ -90,6 +90,35 @@ let addressOffset = 0;
 // ScrCmd_waitbuttonpress (scrcmd.c): sQuestLogWaitButtonPressTimer.
 let questLogWaitButtonPressTimer = 0;
 
+/** IsPaletteNotActive, RunPauseTimer and the wait callbacks from scrcmd.c. */
+function IsPaletteNotActive(): boolean { return !paletteFade.active; }
+function RunPauseTimer(): boolean { pauseCounter = (pauseCounter - 1) & 0xffff; return pauseCounter === 0; }
+function WaitForSoundEffectFinish(): boolean { return !sound.isSEPlaying(); }
+function WaitForFanfareFinish(): boolean { return sound.isFanfareTaskInactive(); }
+function WaitForMovementFinish(ctx: ScriptRunner, localId: number, mapNum: number, mapGroup: number): boolean {
+  return ctx.ow.game.scriptMovement.isFinished(ctx.ow.objects.byLocalIdAndMap(localId, mapNum, mapGroup));
+}
+function IsDoorAnimationStopped(ctx: ScriptRunner): boolean { return !ctx.ow.doors.FieldIsDoorAnimationRunning(); }
+function WaitForFieldEffectFinish(ctx: ScriptRunner, effectId: number): boolean { return !ctx.ow.effects.active.has(effectId); }
+function WaitForAorBPress(ctx: ScriptRunner): boolean {
+  if (JOY_NEW(A_BUTTON) || JOY_NEW(B_BUTTON)) return true;
+  if (ScriptContext_NextCommandEndsScript(ctx)) {
+    const qlogInput = ScriptContext_GetQuestLogInput();
+    RegisterQuestLogInput(qlogInput);
+    if (qlogInput !== C.QL_INPUT_OFF && gQuestLogState !== C.QL_STATE_PLAYBACK) {
+      ctx.ow.control.ClearMsgBoxCancelableState();
+      if (qlogInput !== C.QL_INPUT_A && qlogInput !== C.QL_INPUT_B) SetQuestLogInputIsDpadFlag();
+      else { ClearQuestLogInput(); ClearQuestLogInputIsDpadFlag(); }
+      return true;
+    }
+  }
+  if (QL_GetPlaybackState() === C.QL_PLAYBACK_STATE_RUNNING || gQuestLogState === C.QL_STATE_PLAYBACK) {
+    if (questLogWaitButtonPressTimer === 120) return true;
+    questLogWaitButtonPressTimer++;
+  }
+  return false;
+}
+
 /** ScriptSetMonMoveSlot (script_pokemon_util.c); scrcmd.c stores the slot
  * before the move id, while the C helper receives the move id first. */
 function ScriptSetMonMoveSlot(monIndex: number, move: number, slot: number): void {
@@ -198,7 +227,7 @@ function ScrCmd_specialvar(ctx: ScriptRunner): boolean {
 function ScrCmd_waitstate(ctx: ScriptRunner): boolean { ctx.ow.script.ScriptContext_Stop(); return true; }
 function ScrCmd_delay(ctx: ScriptRunner): boolean {
   pauseCounter = ctx.ScriptReadHalfword();
-  ctx.SetupNativeScript(() => --pauseCounter <= 0);
+  ctx.SetupNativeScript(RunPauseTimer);
   return true;
 }
 function ScrCmd_setflag(ctx: ScriptRunner): boolean { flagSet(ctx.ScriptReadHalfword()); return false; }
@@ -208,9 +237,9 @@ function ScrCmd_initclock(ctx: ScriptRunner): boolean { ctx.ScriptReadHalfword()
 function ScrCmd_dotimebasedevents(ctx: ScriptRunner): boolean { return false; }
 function ScrCmd_gettime(ctx: ScriptRunner): boolean { varSet(SV.x8000, 0); varSet(SV.x8001, 0); varSet(SV.x8002, 0); return false; }
 function ScrCmd_playse(ctx: ScriptRunner): boolean { sound.playSE(ctx.ScriptReadHalfword()); return false; }
-function ScrCmd_waitse(ctx: ScriptRunner): boolean { ctx.SetupNativeScript(() => !sound.isSEPlaying()); return true; }
+function ScrCmd_waitse(ctx: ScriptRunner): boolean { ctx.SetupNativeScript(WaitForSoundEffectFinish); return true; }
 function ScrCmd_playfanfare(ctx: ScriptRunner): boolean { sound.playFanfare(ctx.ScriptReadHalfword()); return false; }
-function ScrCmd_waitfanfare(ctx: ScriptRunner): boolean { ctx.SetupNativeScript(() => sound.isFanfareTaskInactive()); return true; }
+function ScrCmd_waitfanfare(ctx: ScriptRunner): boolean { ctx.SetupNativeScript(WaitForFanfareFinish); return true; }
 function ScrCmd_playbgm(ctx: ScriptRunner): boolean {
   const song = ctx.ScriptReadHalfword();
   const saveIt = ctx.readByte();
@@ -300,7 +329,7 @@ function ScrCmd_waitmovement(ctx: ScriptRunner): boolean {
   if (localId !== 0) movingNpcId = localId;
   const id = movingNpcId;
   const { mapNum, mapGroup } = save.location;
-  ctx.SetupNativeScript(() => ctx.ow.game.scriptMovement.isFinished(ctx.ow.objects.byLocalIdAndMap(id, mapNum, mapGroup)));
+  ctx.SetupNativeScript(() => WaitForMovementFinish(ctx, id, mapNum, mapGroup));
   return true;
 }
 function ScrCmd_waitmovementat(ctx: ScriptRunner): boolean {
@@ -309,7 +338,7 @@ function ScrCmd_waitmovementat(ctx: ScriptRunner): boolean {
   const mapGroup = ctx.readByte();
   const mapNum = ctx.readByte();
   const id = movingNpcId;
-  ctx.SetupNativeScript(() => ctx.ow.game.scriptMovement.isFinished(ctx.ow.objects.byLocalIdAndMap(id, mapNum, mapGroup)));
+  ctx.SetupNativeScript(() => WaitForMovementFinish(ctx, id, mapNum, mapGroup));
   return true;
 }
 function ScrCmd_removeobject(ctx: ScriptRunner): boolean { removeObject(ctx, varGet(ctx.ScriptReadHalfword())); return false; }
@@ -447,25 +476,7 @@ function ScrCmd_waitbuttonpress(ctx: ScriptRunner): boolean {
   if (QL_GetPlaybackState() === C.QL_PLAYBACK_STATE_RUNNING || gQuestLogState === C.QL_STATE_PLAYBACK) {
     questLogWaitButtonPressTimer = 0;
   }
-  ctx.SetupNativeScript(() => {
-    if (JOY_NEW(A_BUTTON)) return true;
-    if (JOY_NEW(B_BUTTON)) return true;
-    if (ScriptContext_NextCommandEndsScript(ctx)) {
-      const qlogInput = ScriptContext_GetQuestLogInput();
-      RegisterQuestLogInput(qlogInput);
-      if (qlogInput !== C.QL_INPUT_OFF && gQuestLogState !== C.QL_STATE_PLAYBACK) {
-        ctx.ow.control.ClearMsgBoxCancelableState();
-        if (qlogInput !== C.QL_INPUT_A && qlogInput !== C.QL_INPUT_B) SetQuestLogInputIsDpadFlag();
-        else { ClearQuestLogInput(); ClearQuestLogInputIsDpadFlag(); }
-        return true;
-      }
-    }
-    if (QL_GetPlaybackState() === C.QL_PLAYBACK_STATE_RUNNING || gQuestLogState === C.QL_STATE_PLAYBACK) {
-      if (questLogWaitButtonPressTimer === 120) return true;
-      questLogWaitButtonPressTimer++;
-    }
-    return false;
-  });
+  ctx.SetupNativeScript(() => WaitForAorBPress(ctx));
   return true;
 }
 function ScrCmd_yesnobox(ctx: ScriptRunner): boolean {
@@ -611,14 +622,14 @@ function ScrCmd_contestlinktransfer(ctx: ScriptRunner): boolean { return false; 
 function ScrCmd_getpokenewsactive(ctx: ScriptRunner): boolean { ctx.ScriptReadHalfword(); return false; }
 function ScrCmd_fadescreen(ctx: ScriptRunner): boolean {
   paletteFade.fadeScreen(ctx.readByte(), 0);
-  ctx.SetupNativeScript(() => !paletteFade.active);
+  ctx.SetupNativeScript(IsPaletteNotActive);
   return true;
 }
 function ScrCmd_fadescreenspeed(ctx: ScriptRunner): boolean {
   const mode = ctx.readByte();
   const speed = ctx.readByte();
   paletteFade.fadeScreen(mode, speed);
-  ctx.SetupNativeScript(() => !paletteFade.active);
+  ctx.SetupNativeScript(IsPaletteNotActive);
   return true;
 }
 function ScrCmd_setflashlevel(ctx: ScriptRunner): boolean { const level = varGet(ctx.ScriptReadHalfword()); ctx.ow.flashLevel = level < 0 || level > 4 ? 0 : level; return false; }
@@ -633,7 +644,7 @@ function ScrCmd_setfieldeffectargument(ctx: ScriptRunner): boolean { const n = c
 function ScrCmd_waitfieldeffect(ctx: ScriptRunner): boolean {
   fieldEffectScriptId = varGet(ctx.ScriptReadHalfword());
   const id = fieldEffectScriptId;
-  ctx.SetupNativeScript(() => !ctx.ow.effects.active.has(id));
+  ctx.SetupNativeScript(() => WaitForFieldEffectFinish(ctx, id));
   return true;
 }
 function ScrCmd_setrespawn(ctx: ScriptRunner): boolean { ctx.ow.setLastHealLocationWarp(varGet(ctx.ScriptReadHalfword())); return false; }
@@ -661,7 +672,7 @@ function ScrCmd_opendoor(ctx: ScriptRunner): boolean {
   return false;
 }
 function ScrCmd_closedoor(ctx: ScriptRunner): boolean { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.FieldAnimateDoorClose(x, y); return false; }
-function ScrCmd_waitdooranim(ctx: ScriptRunner): boolean { ctx.SetupNativeScript(() => !ctx.ow.doors.FieldIsDoorAnimationRunning()); return true; }
+function ScrCmd_waitdooranim(ctx: ScriptRunner): boolean { ctx.SetupNativeScript(() => IsDoorAnimationStopped(ctx)); return true; }
 function ScrCmd_setdooropen(ctx: ScriptRunner): boolean { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.FieldSetDoorOpened(x, y); return false; }
 function ScrCmd_setdoorclosed(ctx: ScriptRunner): boolean { const x = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET; ctx.ow.doors.FieldSetDoorClosed(x, y); return false; }
 function ScrCmd_addelevmenuitem(ctx: ScriptRunner): boolean { return false; }
