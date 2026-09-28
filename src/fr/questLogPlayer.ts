@@ -13,6 +13,9 @@ import {
 import type { Overworld } from "./field/overworld";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST } from "./field/objectEvents";
 
+type QLFishMovementTask = { id: number; ow: Overworld; step: number; timer: number };
+type QLVSSeekerMovementTask = { id: number; ow: Overworld; isFinished: () => boolean };
+
 /** QuestLogTryRecordPlayerAvatarGfxTransition (quest_log_player.c). */
 export function QuestLogTryRecordPlayerAvatarGfxTransition(state: number): boolean {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return false;
@@ -22,94 +25,111 @@ export function QuestLogTryRecordPlayerAvatarGfxTransition(state: number): boole
 
 /** QuestLogUpdatePlayerSprite (quest_log_player.c), applied to the active overworld avatar. */
 export function QuestLogUpdatePlayerSprite(ow: Overworld, state: number): void {
-  const player = ow.player;
-  const object = player.object;
-  switch (state) {
-    case C.QL_PLAYER_GFX_NORMAL:
-      player.setState(PLAYER_AVATAR_GFX_NORMAL);
+  const transition = sQLGfxTransitions[state];
+  if (state < sQLGfxTransitions.length) transition?.(ow);
+}
+
+const sQLGfxTransitions: Array<((ow: Overworld) => void) | undefined> = [];
+sQLGfxTransitions[C.QL_PLAYER_GFX_NORMAL] = QL_GfxTransition_Normal;
+sQLGfxTransitions[C.QL_PLAYER_GFX_BIKE] = QL_GfxTransition_Bike;
+sQLGfxTransitions[C.QL_PLAYER_GFX_FISH] = QL_GfxTransition_Fish;
+sQLGfxTransitions[C.QL_PLAYER_GFX_SURF] = QL_GfxTransition_StartSurf;
+sQLGfxTransitions[C.QL_PLAYER_GFX_STOP_SURF_S] = QL_GfxTransition_StopSurfSouth;
+sQLGfxTransitions[C.QL_PLAYER_GFX_STOP_SURF_N] = QL_GfxTransition_StopSurfNorth;
+sQLGfxTransitions[C.QL_PLAYER_GFX_STOP_SURF_W] = QL_GfxTransition_StopSurfWest;
+sQLGfxTransitions[C.QL_PLAYER_GFX_STOP_SURF_E] = QL_GfxTransition_StopSurfEast;
+sQLGfxTransitions[C.QL_PLAYER_GFX_VSSEEKER] = QL_GfxTransition_VSSeeker;
+
+function QL_SetObjectGraphicsId(ow: Overworld, graphicsId: number): void {
+  ow.objects.setGraphicsId(ow.player.object, graphicsId);
+  ow.syncObjectSprites();
+}
+
+function QL_GfxTransition_Normal(ow: Overworld): void {
+  QL_SetObjectGraphicsId(ow, PlayerAvatar.graphicsId(PLAYER_AVATAR_GFX_NORMAL, ow.player.gender));
+  ow.objects.turn(ow.player.object, ow.player.object.movementDirection);
+  ow.player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
+}
+
+function QL_GfxTransition_Bike(ow: Overworld): void {
+  QL_SetObjectGraphicsId(ow, PlayerAvatar.graphicsId(PLAYER_AVATAR_GFX_BIKE, ow.player.gender));
+  ow.objects.turn(ow.player.object, ow.player.object.movementDirection);
+  ow.player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_MACH_BIKE);
+  ow.player.BikeClearState(0, 0);
+}
+
+function QL_GfxTransition_Fish(ow: Overworld): void {
+  const object = ow.player.object;
+  if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING || gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END) {
+    ow.controlsLocked = true;
+    ow.player.preventStep = true;
+    const task: QLFishMovementTask = { id: 0, ow, step: 0, timer: 0 };
+    task.id = tasks.create(() => Task_QLFishMovement(task), 0xff);
+  } else {
+    QL_SetObjectGraphicsId(ow, PlayerAvatar.graphicsId(PLAYER_AVATAR_GFX_FISH, ow.player.gender));
+    object.sprite.startAnim(GetFishingDirectionAnimNum(object.facingDirection));
+  }
+}
+
+function Task_QLFishMovement(task: QLFishMovementTask): void {
+  const { ow } = task, object = ow.player.object, sprite = object.sprite;
+  const alignFishingAnimationFrames = (): void => {
+    const frame = sprite.imageValue;
+    sprite.x2 = frame >= 1 && frame <= 3 ? (object.facingDirection === DIR_WEST ? -8 : 8) : 0;
+    sprite.y2 = frame === 5 ? -8 : frame === 10 || frame === 11 ? 8 : 0;
+    if (ow.player.flags & PLAYER_AVATAR_FLAG_SURFING) ow.effects.setSurfBlobPlayerOffset(true, sprite.y2);
+  };
+  switch (task.step) {
+    case 0:
+      ow.objects.clearHeldMovementIfActive(object);
+      object.enableAnim = true;
+      QL_SetObjectGraphicsId(ow, PlayerAvatar.graphicsId(PLAYER_AVATAR_GFX_FISH, ow.player.gender));
+      sprite.startAnim(GetFishingDirectionAnimNum(object.facingDirection));
+      task.step++; task.timer = 0;
+      break;
+    case 1:
+      alignFishingAnimationFrames();
+      if (task.timer < 60) task.timer++; else task.step++;
+      break;
+    case 2:
+      sprite.startAnim(GetFishingNoCatchDirectionAnimNum(ow.player.object.facingDirection));
+      task.step++;
+      break;
+    case 3:
+      alignFishingAnimationFrames();
+      if (!sprite.animEnded) break;
+      QL_SetObjectGraphicsId(ow, PlayerAvatar.graphicsId(ow.player.flags & PLAYER_AVATAR_FLAG_SURFING ? PLAYER_AVATAR_GFX_RIDE : PLAYER_AVATAR_GFX_NORMAL, ow.player.gender));
       ow.objects.turn(object, object.movementDirection);
-      player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
-      break;
-    case C.QL_PLAYER_GFX_BIKE:
-      player.setState(PLAYER_AVATAR_GFX_BIKE);
-      ow.objects.turn(object, object.movementDirection);
-      player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_MACH_BIKE);
-      player.BikeClearState(0, 0);
-      break;
-    case C.QL_PLAYER_GFX_FISH:
-      if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING || gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END) {
-        ow.controlsLocked = true;
-        player.preventStep = true;
-        let step = 0, delay = 0;
-        const align = (): void => {
-          const frame = object.sprite.imageValue;
-          object.sprite.x2 = frame >= 1 && frame <= 3 ? (object.facingDirection === DIR_WEST ? -8 : 8) : 0;
-          object.sprite.y2 = frame === 5 ? -8 : frame === 10 || frame === 11 ? 8 : 0;
-          if (player.flags & PLAYER_AVATAR_FLAG_SURFING) ow.effects.setSurfBlobPlayerOffset(true, object.sprite.y2);
-        };
-        const id = tasks.create(() => {
-          switch (step) {
-            case 0:
-              ow.objects.clearHeldMovementIfActive(object);
-              object.enableAnim = true;
-              player.setState(PLAYER_AVATAR_GFX_FISH);
-              object.sprite.startAnim(GetFishingDirectionAnimNum(object.facingDirection));
-              delay = 0;
-              step++;
-              break;
-            case 1:
-              align();
-              if (delay < 60) delay++;
-              else step++;
-              break;
-            case 2:
-              object.sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.object.facingDirection));
-              step++;
-              break;
-            case 3:
-              align();
-              if (!object.sprite.animEnded) break;
-              player.setState(player.flags & PLAYER_AVATAR_FLAG_SURFING ? PLAYER_AVATAR_GFX_RIDE : PLAYER_AVATAR_GFX_NORMAL);
-              ow.objects.turn(object, object.movementDirection);
-              object.sprite.x2 = 0;
-              object.sprite.y2 = 0;
-              if (player.flags & PLAYER_AVATAR_FLAG_SURFING) ow.effects.setSurfBlobPlayerOffset(false, 0);
-              player.preventStep = false;
-              ow.controlsLocked = false;
-              tasks.destroy(id);
-              break;
-          }
-        }, 0xff);
-      } else {
-        player.setState(PLAYER_AVATAR_GFX_FISH);
-        object.sprite.startAnim(GetFishingDirectionAnimNum(object.facingDirection));
-      }
-      break;
-    case C.QL_PLAYER_GFX_SURF:
-      if (!(player.flags & PLAYER_AVATAR_FLAG_SURFING)) {
-        player.setState(PLAYER_AVATAR_GFX_RIDE);
-        ow.objects.turn(object, object.movementDirection);
-        player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_SURFING);
-        ow.effects.startSurfBlob(object, C.BOB_PLAYER_AND_MON);
-      }
-      break;
-    case C.QL_PLAYER_GFX_STOP_SURF_S: player.CreateStopSurfingTask_NoMusicChange(DIR_SOUTH); break;
-    case C.QL_PLAYER_GFX_STOP_SURF_N: player.CreateStopSurfingTask_NoMusicChange(DIR_NORTH); break;
-    case C.QL_PLAYER_GFX_STOP_SURF_W: player.CreateStopSurfingTask_NoMusicChange(DIR_WEST); break;
-    case C.QL_PLAYER_GFX_STOP_SURF_E: player.CreateStopSurfingTask_NoMusicChange(DIR_EAST); break;
-    case C.QL_PLAYER_GFX_VSSEEKER:
-      ow.controlsLocked = true;
-      ow.objects.freezeAll();
-      const isFinished = StartVsSeekerFieldEffect(ow);
-      const taskId = tasks.create(() => {
-        if (!isFinished()) return;
-        ow.objects.unfreezeAll();
-        ow.controlsLocked = false;
-        tasks.destroy(taskId);
-      }, 0);
+      sprite.x2 = 0; sprite.y2 = 0;
+      if (ow.player.flags & PLAYER_AVATAR_FLAG_SURFING) ow.effects.setSurfBlobPlayerOffset(false, 0);
+      ow.player.preventStep = false; ow.controlsLocked = false; tasks.destroy(task.id);
       break;
   }
 }
+
+function QL_GfxTransition_StartSurf(ow: Overworld): void {
+  if (ow.player.flags & PLAYER_AVATAR_FLAG_SURFING) return;
+  QL_SetObjectGraphicsId(ow, PlayerAvatar.graphicsId(PLAYER_AVATAR_GFX_RIDE, ow.player.gender));
+  ow.objects.turn(ow.player.object, ow.player.object.movementDirection);
+  ow.player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_SURFING);
+  ow.effects.startSurfBlob(ow.player.object, C.BOB_PLAYER_AND_MON);
+}
+
+function QL_GfxTransition_VSSeeker(ow: Overworld): void {
+  ow.controlsLocked = true; ow.objects.freezeAll();
+  const task: QLVSSeekerMovementTask = { id: 0, ow, isFinished: StartVsSeekerFieldEffect(ow) };
+  task.id = tasks.create(() => Task_QLVSSeekerMovement(task), 0);
+}
+
+function Task_QLVSSeekerMovement(task: QLVSSeekerMovementTask): void {
+  if (!task.isFinished()) return;
+  task.ow.objects.unfreezeAll(); task.ow.controlsLocked = false; tasks.destroy(task.id);
+}
+
+function QL_GfxTransition_StopSurfSouth(ow: Overworld): void { ow.player.CreateStopSurfingTask_NoMusicChange(DIR_SOUTH); }
+function QL_GfxTransition_StopSurfNorth(ow: Overworld): void { ow.player.CreateStopSurfingTask_NoMusicChange(DIR_NORTH); }
+function QL_GfxTransition_StopSurfWest(ow: Overworld): void { ow.player.CreateStopSurfingTask_NoMusicChange(DIR_WEST); }
+function QL_GfxTransition_StopSurfEast(ow: Overworld): void { ow.player.CreateStopSurfingTask_NoMusicChange(DIR_EAST); }
 
 /** QuestLogCallUpdatePlayerSprite (quest_log_player.c). */
 export function QuestLogCallUpdatePlayerSprite(ow: Overworld, state: number): void {
