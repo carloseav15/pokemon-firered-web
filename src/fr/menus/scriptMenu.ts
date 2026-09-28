@@ -10,6 +10,7 @@ import { tasks } from "../gba/tasks";
 import { printText } from "../gba/textPrinter";
 import { Window } from "../gba/window";
 import { DATA_ROOT, rom } from "../rom";
+import { cdata, symName, type SymRef } from "../hw/assets";
 import { flagGet, save, SV, varGet, varSet } from "../save";
 import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP } from "../gba/input";
 import { GridMenu, Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
@@ -20,6 +21,7 @@ import {
 import { addFieldScrollArrows, fieldListSurface } from "./fieldListMenu";
 import type { Overworld } from "../field/overworld";
 import { GetCoins } from "../pokemon/items";
+import { LISTMENU_BADGES, LISTMENU_SILPHCO_FLOORS, LISTMENU_ROCKET_HIDEOUT_FLOORS, LISTMENU_DEPT_STORE_FLOORS, LISTMENU_WIRELESS_LECTURE_HEADERS, LISTMENU_BERRY_POWDER, LISTMENU_TRAINER_TOWER_FLOORS } from "../generated/constants";
 
 const SCR_MENU_UNSET = 0xff;
 const SCR_MENU_CANCEL = 127;
@@ -263,88 +265,132 @@ export class ScriptMenu {
   /** sElevatorScroll / sElevatorCursorPos (InitElevatorFloorSelectMenuPos) */
   elevatorScroll = 0;
   elevatorCursorPos = 0;
-  private listSuspended: { resume: () => void; pending: number } | null = null;
+  private scriptListState = new Map<number, { which: number; window?: Window; listTaskId: number; removeArrows?: () => void; scroll: number }>();
+  private suspendedListTaskId = -1;
 
-  /** special ListMenu: a scrolling list; badge and berry powder lists stay open (ReturnToListMenu). */
-  listMenu(): void {
+  /** ListMenu: field_specials.c; create the C task and its data[0..15]. */
+  ListMenu(): void {
     const which = varGet(SV.x8004);
-    const labels: Record<number, string[]> = {
-      0: ["gText_BoulderBadge", "gText_CascadeBadge", "gText_ThunderBadge", "gText_RainbowBadge", "gText_SoulBadge", "gText_MarshBadge", "gText_VolcanoBadge", "gText_EarthBadge", "gOtherText_Exit"],
-      1: ["gText_11F", "gText_10F", "gText_9F", "gText_8F", "gText_7F", "gText_6F", "gText_5F", "gText_4F", "gText_3F", "gText_2F", "gText_1F", "gOtherText_Exit"],
-      2: ["gText_B1F", "gText_B2F", "gText_B4F", "gOtherText_Exit"],
-      3: ["gText_5F", "gText_4F", "gText_3F", "gText_2F", "gText_1F", "gOtherText_Exit"],
-      4: ["gText_LinkedGamePlay", "gText_DirectCorner", "gText_UnionRoom", "gOtherText_Quit"],
-      5: ["gText_Energypowder_50", "gText_EnergyRoot_80", "gText_HealPowder_50", "gText_RevivalHerb_300", "gText_Protein_1000", "gText_Iron_1000",
-        "gText_Carbos_1000", "gText_Calcium_1000", "gText_Zinc_1000", "gText_HpUp_1000", "gText_PpUp_3000", "gOtherText_Exit"],
-      6: ["gText_Rooftop", "gText_B1F", "gOtherText_Exit"],
+    const layouts: Record<number, number[]> = {
+      [LISTMENU_BADGES]: [4, 9, 1, 1, 12, 7, 1],
+      [LISTMENU_SILPHCO_FLOORS]: [7, 12, 1, 1, 8, 12, 0],
+      [LISTMENU_ROCKET_HIDEOUT_FLOORS]: [4, 4, 1, 1, 8, 8, 0],
+      [LISTMENU_DEPT_STORE_FLOORS]: [4, 6, 1, 1, 8, 8, 0],
+      [LISTMENU_WIRELESS_LECTURE_HEADERS]: [4, 4, 1, 1, 17, 8, 1],
+      [LISTMENU_BERRY_POWDER]: [7, 12, 16, 1, 17, 12, 0],
+      [LISTMENU_TRAINER_TOWER_FLOORS]: [3, 3, 1, 1, 8, 6, 0],
     };
-    // [maxShowed, left, top, height, stays open]
-    const layout: Record<number, [number, number, number, number, boolean]> = {
-      0: [4, 1, 1, 7, true], 1: [7, 1, 1, 12, false], 2: [4, 1, 1, 8, false], 3: [4, 1, 1, 8, false],
-      4: [4, 1, 1, 8, true], 5: [7, 16, 1, 12, false], 6: [3, 1, 1, 6, false],
-    };
-    if (!(which in labels)) { varSet(SV.RESULT, SCR_MENU_CANCEL); this.ow.script.ScriptContext_Enable(); return; }
-    const items = labels[which].map((sym) => expandPlaceholders(rom.text(sym)));
-    const [maxShowed, left0, top, height, staysOpen] = layout[which];
-    let widest = 0;
-    for (const t of items) widest = Math.max(widest, stringWidth(FONT_NORMAL, t, 0));
-    const width = Math.floor((widest + 9) / 8) + 1;
-    const left = left0 + width > 29 ? 29 - width : left0;
-    this.ow.controlsLocked = true;
-    const window = new Window(left, top, width, height);
-    window.frame = "std";
-    window.frameType = this.frameType();
-    this.ow.windows.add(window);
-    const listItems = items.map((label, index) => ({ label, index }));
-    // sListMenuLastScrollPosition, read by the scroll arrows.
-    let lastScroll = which === 1 ? this.elevatorScroll : 0;
-    let listTaskId = -1;
-    // CreateScriptListMenu (sFieldSpecialsListMenuTemplate)
-    const template = listMenuTemplate({
-      items: listItems, windowId: 0, surface: fieldListSurface(window), totalItems: items.length, maxShowed,
+    const layout = layouts[which];
+    if (!layout) {
+      if (which !== 99) { varSet(SV.RESULT, SCR_MENU_CANCEL); this.ow.script.ScriptContext_Enable(); }
+      return;
+    }
+    const id = tasks.create((taskId) => this.Task_CreateScriptListMenu(taskId), 8);
+    const data = tasks.data(id);
+    data.splice(0, 7, ...layout);
+    data[15] = id;
+    if (which === LISTMENU_SILPHCO_FLOORS) { data[7] = this.elevatorScroll; data[8] = this.elevatorCursorPos; }
+    this.scriptListState.set(id, { which, listTaskId: -1, scroll: 0 });
+  }
+
+  /** CreateScriptListMenu: set every field from sFieldSpecialsListMenuTemplate. */
+  private CreateScriptListMenu(items: { label: Uint8Array; index: number }[], maxShowed: number, windowId: number, window: Window, moveCursorFunc: () => void) {
+    return listMenuTemplate({ items, windowId, surface: fieldListSurface(window), totalItems: items.length, maxShowed,
       item_X: 8, cursor_X: 0, upText_Y: 0, cursorPal: 2, fillValue: 1, cursorShadowPal: 3, lettersSpacing: 1, itemVerticalPadding: 0,
-      scrollMultiple: LIST_NO_MULTIPLE_SCROLL, fontId: FONT_NORMAL, cursorKind: 0,
-      // ScriptListMenuMoveCursorFunction
-      moveCursorFunc: () => {
-        sound.playSE(sound.SE_SELECT);
-        if (listTaskId >= 0) lastScroll = ListMenuGetScrollAndRow(listTaskId).cursorPos;
-      },
-    });
-    // Task_CreateMenuRemoveScrollIndicatorArrowPair
-    let removeArrows: (() => void) | null = null;
-    const addArrows = (): void => {
-      if (maxShowed === items.length) return;
-      const x = 4 * width + 8 * left;
-      removeArrows = addFieldScrollArrows(this.ow, SCROLL_ARROW_UP, x, 8, 8 * height + 10, items.length - maxShowed, () => lastScroll);
-    };
-    const removeArrowPair = (): void => { removeArrows?.(); removeArrows = null; };
-    addArrows();
-    listTaskId = ListMenuInitOnSurface(template, which === 1 ? this.elevatorScroll : 0, which === 1 ? this.elevatorCursorPos : 0);
-    let active = true;
-    // Task_DestroyListMenu
-    const finish = (): void => {
-      removeArrowPair();
-      DestroyListMenuTask(listTaskId);
-      this.removeWindow(window);
-      tasks.destroy(id);
-      this.listSuspended = null;
+      scrollMultiple: LIST_NO_MULTIPLE_SCROLL, fontId: FONT_NORMAL, cursorKind: 0, moveCursorFunc });
+  }
+
+  private Task_CreateScriptListMenu(taskId: number): void {
+    const data = tasks.data(taskId), state = this.scriptListState.get(taskId);
+    if (!state) return;
+    this.ow.controlsLocked = true;
+    state.scroll = state.which === LISTMENU_SILPHCO_FLOORS ? this.elevatorScroll : 0;
+    const labels = cdata<SymRef[][]>("field_specials", "sListMenuLabels")[state.which] ?? [];
+    const items = labels.slice(0, data[1]).map((ref, index) => ({ label: expandPlaceholders(rom.text(symName(ref)!)), index }));
+    let maxWidth = 0;
+    for (const item of items) maxWidth = Math.max(maxWidth, stringWidth(FONT_NORMAL, item.label, 0));
+    data[4] = Math.floor((maxWidth + 9) / 8) + 1;
+    if (data[2] + data[4] > 29) data[2] = 29 - data[4];
+    const window = new Window(data[2], data[3], data[4], data[5]);
+    window.frame = "std"; window.frameType = this.frameType();
+    this.ow.windows.add(window); state.window = window;
+    const template = this.CreateScriptListMenu(items, data[0], 0, window, () => this.ScriptListMenuMoveCursorFunction(taskId));
+    state.listTaskId = ListMenuInitOnSurface(template, data[7], data[8]);
+    this.Task_CreateMenuRemoveScrollIndicatorArrowPair(taskId);
+    tasks.setFunc(taskId, this.Task_ListMenuHandleInput);
+  }
+
+  private Task_ListMenuHandleInput = (taskId: number): void => {
+    const state = this.scriptListState.get(taskId);
+    if (!state) return;
+    const input = ListMenu_ProcessInput(state.listTaskId);
+    if (input === LIST_NOTHING_CHOSEN) return;
+    sound.playSE(sound.SE_SELECT);
+    if (input === LIST_CANCEL) { varSet(SV.RESULT, SCR_MENU_CANCEL); this.Task_DestroyListMenu(taskId); return; }
+    varSet(SV.RESULT, input);
+    const data = tasks.data(taskId);
+    if (data[6] === 0 || input === data[1] - 1) this.Task_DestroyListMenu(taskId);
+    else {
+      this.Task_ListMenuRemoveScrollIndicatorArrowPair(taskId);
+      this.suspendedListTaskId = taskId;
+      tasks.setFunc(taskId, this.Task_SuspendListMenu);
       this.ow.script.ScriptContext_Enable();
-    };
-    // Task_ListMenuHandleInput
-    const id = tasks.create(() => {
-      if (!active) return;
-      const input = ListMenu_ProcessInput(listTaskId);
-      if (input === LIST_NOTHING_CHOSEN) return;
-      sound.playSE(sound.SE_SELECT);
-      if (input === LIST_CANCEL) { varSet(SV.RESULT, SCR_MENU_CANCEL); finish(); return; }
-      varSet(SV.RESULT, input);
-      if (!staysOpen || input === items.length - 1) { finish(); return; }
-      // Task_SuspendListMenu until ReturnToListMenu, then Task_RedrawScrollArrowsAndWaitInput.
-      removeArrowPair();
-      active = false;
-      this.listSuspended = { resume: () => { addArrows(); active = true; }, pending: 0 };
-      this.ow.script.ScriptContext_Enable();
-    }, 8);
+    }
+  };
+
+  private Task_DestroyListMenu(taskId: number): void {
+    const state = this.scriptListState.get(taskId);
+    if (state) {
+      this.Task_ListMenuRemoveScrollIndicatorArrowPair(taskId);
+      DestroyListMenuTask(state.listTaskId);
+      if (state.window) { state.window.fill(0); state.window.markDirty(); this.removeWindow(state.window); }
+      this.scriptListState.delete(taskId);
+    }
+    if (this.suspendedListTaskId === taskId) this.suspendedListTaskId = -1;
+    tasks.destroy(taskId);
+    this.ow.script.ScriptContext_Enable();
+  }
+
+  private Task_SuspendListMenu = (taskId: number): void => {
+    const data = tasks.data(taskId);
+    if (data[6] === 2) { data[6] = 1; tasks.setFunc(taskId, this.Task_RedrawScrollArrowsAndWaitInput); }
+  };
+
+  /** ReturnToListMenu */
+  returnToListMenu(): void {
+    const taskId = this.suspendedListTaskId;
+    if (taskId < 0 || !tasks.tasks[taskId]?.isActive) { this.ow.script.ScriptContext_Enable(); return; }
+    tasks.data(taskId)[6]++;
+  }
+
+  private Task_RedrawScrollArrowsAndWaitInput = (taskId: number): void => {
+    this.ow.controlsLocked = true;
+    const state = this.scriptListState.get(taskId);
+    if (!state) return;
+    this.Task_CreateMenuRemoveScrollIndicatorArrowPair(taskId);
+    tasks.setFunc(taskId, this.Task_ListMenuHandleInput);
+  };
+
+  private Task_CreateMenuRemoveScrollIndicatorArrowPair(taskId: number): void {
+    const data = tasks.data(taskId), state = this.scriptListState.get(taskId);
+    if (data[0] === data[1] || !state?.window) return;
+    const x = 4 * data[4] + 8 * data[2];
+    state.removeArrows = addFieldScrollArrows(this.ow, SCROLL_ARROW_UP, x, 8, 8 * data[5] + 10, data[1] - data[0], () => state.scroll);
+  }
+
+  private Task_ListMenuRemoveScrollIndicatorArrowPair(taskId: number): void {
+    const state = this.scriptListState.get(taskId);
+    state?.removeArrows?.();
+    if (state) state.removeArrows = undefined;
+  }
+
+  private ScriptListMenuMoveCursorFunction(taskId: number): void {
+    sound.playSE(sound.SE_SELECT);
+    const listTaskId = this.scriptListState.get(taskId)?.listTaskId ?? -1;
+    if (listTaskId < 0) return;
+    const above = ListMenuGetScrollAndRow(listTaskId).itemsAbove;
+    const state = this.scriptListState.get(taskId);
+    if (state) state.scroll = above;
   }
 
   private brailleSprite?: Sprite;
@@ -360,13 +406,6 @@ export class ScriptMenu {
     s.callback = () => { t++; };
     this.brailleSprite = s;
     this.ow.sprites.add(s);
-  }
-
-  /** special ReturnToListMenu */
-  returnToListMenu(): void {
-    if (!this.listSuspended) { this.ow.script.ScriptContext_Enable(); return; }
-    this.ow.controlsLocked = true;
-    this.listSuspended.resume();
   }
 
   /** script_menu.c CreatePCMenu / CreatePCMenuWindow */
