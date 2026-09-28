@@ -119,21 +119,6 @@ export function ShowWarpArrowSprite(sprites: SpriteManager, spriteId: number, di
   };
 }
 
-/** FldEff_LongGrass */
-export function FldEff_LongGrass(): number {
-  return 0;
-}
-
-/** UpdateLongGrassFieldEffect */
-export function UpdateLongGrassFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
-/** FldEff_JumpLongGrass */
-export function FldEff_JumpLongGrass(): number {
-  return 0;
-}
-
 /** FldEff_UnusedGrass */
 export function FldEff_UnusedGrass(): number {
   return 0;

@@ -4,6 +4,7 @@
 
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
+import { ElevationToPriority } from "../generated/eventObjectAnims";
 import { sound } from "../audio/sound";
 import { Sprite, loadImage } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
@@ -204,6 +205,7 @@ export class FieldEffects {
   private shadowEffects = new WeakMap<ObjectEvent, Sprite>();
   private shadowSprites = new Set<Sprite>();
   private tallGrassSprites = new Set<Sprite>();
+  private longGrassSprites = new Set<Sprite>();
   private shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
   private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
   private sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -346,6 +348,8 @@ export class FieldEffects {
     if (handler) { handler(); return; }
     if (id === C.FLDEFF_TALL_GRASS) { this.FldEff_TallGrass(); return; }
     if (id === C.FLDEFF_JUMP_TALL_GRASS) { this.FldEff_JumpTallGrass(); return; }
+    if (id === C.FLDEFF_LONG_GRASS) { this.FldEff_LongGrass(); return; }
+    if (id === C.FLDEFF_JUMP_LONG_GRASS) { this.FldEff_JumpLongGrass(); return; }
     if (id === C.FLDEFF_MOVE_DEOXYS_ROCK) { this.FldEff_MoveDeoxysRock(); return; }
     if (this.moves.start(id)) return;
     if (!this.startIcon(id)) this.active.delete(id);
@@ -442,6 +446,7 @@ export class FieldEffects {
     this.shadowEffects = new WeakMap<ObjectEvent, Sprite>();
     this.shadowSprites.clear();
     this.tallGrassSprites.clear();
+    this.longGrassSprites.clear();
     this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
     this.hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
     this.sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -637,7 +642,7 @@ export class FieldEffects {
     }
     if (kind === "begin") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.GroundEffect_StepOnTallGrass(object);
-      if (MB.MetatileBehavior_IsLongGrass(cur)) this.spawnLongGrass(object);
+      if (MB.MetatileBehavior_IsLongGrass(cur)) this.GroundEffect_StepOnLongGrass(object);
       if (MB.MetatileBehavior_IsDeepSand(prev)) this.GroundEffect_DeepSandTracks(object);
       else if (MB.MetatileBehavior_IsSand(prev) || MB.MetatileBehavior_IsFootprints(prev)) this.GroundEffect_SandTracks(object);
       if (!object.landingJump && MB.MetatileBehavior_IsPuddle(cur) && MB.MetatileBehavior_IsPuddle(prev)) this.GroundEffect_StepOnPuddle(object);
@@ -648,6 +653,7 @@ export class FieldEffects {
       if (MB.MetatileBehavior_IsSeaweed(cur)) this.GroundEffect_Seaweed(object);
     } else if (kind === "spawn") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.GroundEffect_SpawnOnTallGrass(object);
+      if (MB.MetatileBehavior_IsLongGrass(cur)) this.GroundEffect_SpawnOnLongGrass(object);
     }
   }
 
@@ -1127,16 +1133,107 @@ export class FieldEffects {
     }
   }
 
-  private spawnLongGrass(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("LongGrass", object.currentCoords.x * 16 + 8, object.currentCoords.y * 16 + 8);
-    if (!sprite) return;
-    sprite.priority = object.sprite.priority;
-    sprite.subpriority = object.sprite.subpriority - 1;
-    const x = object.currentCoords.x, y = object.currentCoords.y;
-    sprite.callback = (s) => {
-      if (!object.active || (s.animEnded && (object.currentCoords.x !== x || object.currentCoords.y !== y))) this.ow.sprites.destroy(s);
-      else s.subpriority = object.sprite.subpriority - 1;
-    };
+  /** GroundEffect_SpawnOnLongGrass (event_object_movement.c). */
+  GroundEffect_SpawnOnLongGrass(object: ObjectEvent): void {
+    this.SetLongGrassFieldEffectArguments(object, true);
+    this.start(C.FLDEFF_LONG_GRASS);
+  }
+
+  /** GroundEffect_StepOnLongGrass (event_object_movement.c). */
+  GroundEffect_StepOnLongGrass(object: ObjectEvent): void {
+    this.SetLongGrassFieldEffectArguments(object, false);
+    this.start(C.FLDEFF_LONG_GRASS);
+  }
+
+  private SetLongGrassFieldEffectArguments(object: ObjectEvent, skipAnim: boolean): void {
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = (object.currentCoords.x << 16) >> 16;
+    args[1] = (object.currentCoords.y << 16) >> 16;
+    args[2] = object.previousElevation & 0xff;
+    args[3] = 2;
+    args[4] = (((object.localId & 0xff) << 8) | (object.mapNum & 0xff)) & 0xffff;
+    args[5] = object.mapGroup & 0xff;
+    args[6] = (((this.ow.objects.mapNum & 0xff) << 8) | (this.ow.objects.mapGroup & 0xff)) & 0xffff;
+    args[7] = skipAnim ? 1 : 0;
+  }
+
+  /** FldEff_LongGrass (field_effect_helpers.c). */
+  FldEff_LongGrass(): number {
+    const args = this.ow.game.fieldEffectArguments;
+    const x = (args[0]! << 16) >> 16;
+    const y = (args[1]! << 16) >> 16;
+    const sprite = this.createFromTemplate("LongGrass", x * 16 + 8, y * 16 + 8);
+    if (!sprite) return 0;
+    (sprite as unknown as { fxTile: boolean }).fxTile = true;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = ElevationToPriority(args[2]!);
+    sprite.data[0] = args[2]! & 0xff;
+    sprite.data[1] = x;
+    sprite.data[2] = y;
+    sprite.data[3] = (args[4]! << 16) >> 16;
+    sprite.data[4] = (args[5]! << 16) >> 16;
+    sprite.data[5] = (args[6]! << 16) >> 16;
+    sprite.callback = (s) => this.UpdateLongGrassFieldEffect(s);
+    this.longGrassSprites.add(sprite);
+    this.active.add(C.FLDEFF_LONG_GRASS);
+    if (args[7]) sprite.seekAnim(6);
+    return 0;
+  }
+
+  /** UpdateLongGrassFieldEffect (field_effect_helpers.c). */
+  UpdateLongGrassFieldEffect(sprite: Sprite): void {
+    const savedMapNum = (sprite.data[5]! >>> 8) & 0xff;
+    const savedMapGroup = sprite.data[5]! & 0xff;
+    if (this.ow.objects.mapNum !== savedMapNum || this.ow.objects.mapGroup !== savedMapGroup) {
+      // FieldEffects.shift already applies the camera tile delta to fxTile sprites.
+      sprite.data[5] = ((this.ow.objects.mapNum & 0xff) << 8) | (this.ow.objects.mapGroup & 0xff);
+    }
+    const localId = (sprite.data[3]! >>> 8) & 0xff;
+    const mapNum = sprite.data[3]! & 0xff;
+    const mapGroup = sprite.data[4]! & 0xff;
+    const object = this.ow.objects.byLocalIdAndMap(localId, mapNum, mapGroup);
+    const behavior = this.ow.map.behaviorAt(sprite.data[1]!, sprite.data[2]!);
+    if (!object || !MB.MetatileBehavior_IsLongGrass(behavior) || (sprite.data[7] !== 0 && sprite.animEnded)) {
+      this.stopLongGrassFieldEffect(sprite);
+      return;
+    }
+    if ((object.currentCoords.x !== sprite.data[1] || object.currentCoords.y !== sprite.data[2])
+      && (object.previousCoords.x !== sprite.data[1] || object.previousCoords.y !== sprite.data[2])) {
+      sprite.data[7] = 1;
+    }
+    this.UpdateObjectEventSpriteInvisibility(sprite, false);
+    this.UpdateGrassFieldEffectSubpriority(sprite, sprite.data[0]! & 0xff, 0);
+  }
+
+  /** FldEff_JumpLongGrass (field_effect_helpers.c). */
+  FldEff_JumpLongGrass(): number {
+    const args = this.ow.game.fieldEffectArguments;
+    const x = (args[0]! << 16) >> 16;
+    const y = (args[1]! << 16) >> 16;
+    const sprite = this.createFromTemplate("JumpLongGrass", x * 16 + 8, y * 16 + 8);
+    if (!sprite) return 0;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = args[3]! & 0xff;
+    sprite.data[0] = args[2]! & 0xff;
+    sprite.data[1] = C.FLDEFF_JUMP_LONG_GRASS;
+    sprite.callback = (s) => this.UpdateJumpImpactEffect(s);
+    return 0;
+  }
+
+  /** GroundEffect_JumpOnLongGrass (event_object_movement.c). */
+  GroundEffect_JumpOnLongGrass(object: ObjectEvent): void {
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = (object.currentCoords.x << 16) >> 16;
+    args[1] = (object.currentCoords.y << 16) >> 16;
+    args[2] = object.previousElevation & 0xff;
+    args[3] = 2;
+    this.start(C.FLDEFF_JUMP_LONG_GRASS);
+  }
+
+  private stopLongGrassFieldEffect(sprite: Sprite): void {
+    this.ow.sprites.destroy(sprite);
+    this.longGrassSprites.delete(sprite);
+    if (this.longGrassSprites.size === 0) this.active.delete(C.FLDEFF_LONG_GRASS);
   }
 
   /** DoShadowFieldEffect (event_object_movement.c). */
@@ -1205,13 +1302,7 @@ export class FieldEffects {
       this.FldEff_Dust(object);
       return;
     }
-    const name = MB.MetatileBehavior_IsTallGrass(b) ? "JumpTallGrass" : "JumpLongGrass";
-    const yOff = 12;
-    const sprite = this.createFromTemplate(name, object.currentCoords.x * 16 + 8, object.currentCoords.y * 16 + yOff);
-    if (!sprite) return;
-    sprite.priority = object.sprite.priority;
-    sprite.subpriority = object.sprite.subpriority - 1;
-    sprite.callback = (s) => { if (s.animEnded) this.ow.sprites.destroy(s); else s.subpriority = object.sprite.subpriority - 1; };
+    this.GroundEffect_JumpOnLongGrass(object);
   }
 
   /** FldEff_JumpSmallSplash; the source arguments are current coordinates, previous elevation, and OAM priority. */
