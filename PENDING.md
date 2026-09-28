@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7049/10115 (69.7 %)**.
-- Archivos C con funciones aún sin homólogo: **61**; quedan **3066 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7055/10115 (69.7 %)**.
+- Archivos C con funciones aún sin homólogo: **61**; quedan **3060 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 131.457 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~70.701 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~70.565 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -72,10 +72,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 52 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
 | 53 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
 | 54 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
-| 55 | `overworld.c` | parcial | 3563 | 61/242 | ~2664 |  |
-| 56 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
-| 57 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
-| 58 | `battle_transition.c` | parcial | 3037 | 12/134 | ~2765 |  |
+| 55 | `battle_transition.c` | parcial | 3037 | 18/134 | ~2629 |  |
+| 56 | `overworld.c` | parcial | 3563 | 61/242 | ~2664 |  |
+| 57 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
+| 58 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
 | 59 | `event_object_movement.c` | parcial | 9412 | 525/759 | ~2901 |  |
 | 60 | `pokemon.c` | parcial | 6453 | 71/140 | ~3180 |  |
 | 61 | `field_effect.c` | parcial | 4033 | 24/239 | ~3628 |  |
