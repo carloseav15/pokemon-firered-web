@@ -771,10 +771,7 @@ function BufferTextForCardBack(): void {
     d.strings[TRAINER_CARD_STRING_LINK_LOSSES] = intToDecimal(d.trainerCard.linkBattleLosses, STR_CONV_MODE_RIGHT_ALIGN, 4);
   }
 
-  if (d.hasTrades) {
-    d.strings[TRAINER_CARD_STRING_TRADES] = rom.text("gText_PokemonTrades");
-    d.strings[TRAINER_CARD_STRING_TRADE_COUNT] = intToDecimal(d.trainerCard.pokemonTrades, STR_CONV_MODE_RIGHT_ALIGN, 5);
-  }
+  BufferNumTrades();
 
   if (d.trainerCard.berryCrushPoints) {
     d.strings[TRAINER_CARD_STRING_BERRY_CRUSH] = rom.text("gText_BerryCrushes");
@@ -806,6 +803,15 @@ function BufferHofDebutTime(): void {
   const s = intToDecimal(card.hofDebutSeconds, STR_CONV_MODE_LEADING_ZEROS, 2);
   const colon = rom.text("gText_Colon2");
   sTrainerCardDataPtr.strings[TRAINER_CARD_STRING_HOF_TIME] = concat(h, colon, m, colon, s);
+}
+
+/** BufferNumTrades (trainer_card.c): prepare the trade label and five-column saved trade count. */
+function BufferNumTrades(): void {
+  if (!sTrainerCardDataPtr?.hasTrades) return;
+  sTrainerCardDataPtr.strings[TRAINER_CARD_STRING_TRADES] = rom.text("gText_PokemonTrades");
+  sTrainerCardDataPtr.strings[TRAINER_CARD_STRING_TRADE_COUNT] = intToDecimal(
+    sTrainerCardDataPtr.trainerCard.pokemonTrades, STR_CONV_MODE_RIGHT_ALIGN, 5,
+  );
 }
 
 function PrintNameOnCardBack(): void {
