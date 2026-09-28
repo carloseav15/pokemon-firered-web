@@ -605,21 +605,43 @@ export function RestorePlayerBag(backup: BagBackup): void {
 
 /** InitPokedudeBag for the Teachy TV registration lesson (TTVSCR_REGISTER). */
 export function InitPokedudeBagRegister(done: () => void): void {
+  InitPokedudeBag(C.ITEMMENULOCATION_TTVSCR_REGISTER, done);
+}
+
+/** InitPokedudeBag (item_menu.c), for the Teachy TV bag modes connected by this runtime. */
+export function InitPokedudeBag(location: number, done: () => void, onSkip?: () => void, onReshow?: () => void): void {
+  if (location !== C.ITEMMENULOCATION_TTVSCR_REGISTER && location !== C.ITEMMENULOCATION_TTVSCR_TMS)
+    throw new RangeError(`InitPokedudeBag: unsupported active bag lesson ${location}`);
   const backup = BackUpPlayerBag();
   addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
   addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
-  GoToBagMenu(C.ITEMMENULOCATION_TTVSCR_REGISTER, C.OPEN_BAG_ITEMS, () => { RestorePlayerBag(backup); done(); });
+  if (location === C.ITEMMENULOCATION_TTVSCR_REGISTER) {
+    GoToBagMenu(location, C.OPEN_BAG_ITEMS, () => { RestorePlayerBag(backup); done(); });
+    return;
+  }
+  if (location === C.ITEMMENULOCATION_TTVSCR_TMS) {
+    GoToBagMenu(location, C.OPEN_BAG_ITEMS, () => {
+      RestorePlayerBag(backup);
+      Pokedude_InitTMCase(done, onSkip, onReshow ?? CB2_SetUpReshowBattleScreenAfterMenu);
+    });
+    return;
+  }
 }
 
 /** InitPokedudeBag for the Teachy TV TM lesson: item_menu.c Task_Bag_TeachyTvTMs. */
 export function InitPokedudeBagTMs(done: () => void, onSkip?: () => void, onReshow?: () => void): void {
-  const backup = BackUpPlayerBag();
-  addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
-  addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
-  GoToBagMenu(C.ITEMMENULOCATION_TTVSCR_TMS, C.OPEN_BAG_ITEMS, () => {
-    RestorePlayerBag(backup);
-    Pokedude_InitTMCase(done, onSkip, onReshow ?? CB2_SetUpReshowBattleScreenAfterMenu);
-  });
+  InitPokedudeBag(C.ITEMMENULOCATION_TTVSCR_TMS, done, onSkip, onReshow);
+}
+
+/** Task_Pokedude_FadeFromBag (item_menu.c). */
+function Task_Pokedude_FadeFromBag(taskId: number): void {
+  BeginNormalPaletteFade(PALETTES_ALL, -2, 0, 16, RGB_BLACK);
+  tasks.setFunc(taskId, Task_Pokedude_WaitFadeAndExitBag);
+}
+
+/** Task_Pokedude_WaitFadeAndExitBag (item_menu.c); cleanup includes the Canvas list-menu adapter. */
+function Task_Pokedude_WaitFadeAndExitBag(taskId: number): void {
+  Task_ItemMenu_WaitFadeAndSwitchToExitCallback(taskId);
 }
 
 /** item_menu.c Task_Bag_TeachyTvRegister: scripted registration demonstration. */
@@ -628,7 +650,7 @@ function Task_Bag_TeachyTvRegister(taskId: number): void {
   const data = td(taskId);
   if (joy.newKeys & B_BUTTON) {
     Bag_BeginCloseWin0Animation();
-    tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+    tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
     return;
   }
   switch (data.tutorialFrame) {
@@ -674,7 +696,7 @@ function Task_Bag_TeachyTvRegister(taskId: number): void {
       HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
       CopyWindowToVram(0, COPYWIN_MAP);
       Bag_BeginCloseWin0Animation();
-      tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+      tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
       return;
   }
   data.tutorialFrame++;
@@ -686,7 +708,7 @@ function Task_Bag_TeachyTvTMs(taskId: number): void {
   const data = td(taskId);
   if (joy.newKeys & B_BUTTON) {
     Bag_BeginCloseWin0Animation();
-    tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+    tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
     return;
   }
   switch (data.tutorialFrame) {
@@ -713,7 +735,7 @@ function Task_Bag_TeachyTvTMs(taskId: number): void {
       HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
       CopyWindowToVram(0, COPYWIN_MAP);
       Bag_BeginCloseWin0Animation();
-      tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+      tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
       return;
   }
   data.tutorialFrame++;
@@ -744,7 +766,7 @@ function Task_Bag_OldManTutorial(taskId: number): void {
       PutWindowTilemap(1);
       CopyWindowToVram(0, COPYWIN_MAP);
       Bag_BeginCloseWin0Animation();
-      tasks.setFunc(taskId, ItemMenu_StartFadeToExitCallback);
+      tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
       return;
   }
   data.tutorialFrame++;
