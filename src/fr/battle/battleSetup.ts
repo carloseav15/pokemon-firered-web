@@ -34,15 +34,57 @@ export const RIVAL_BATTLE_TUTORIAL = 3;
 
 export const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_DREW = 3, B_OUTCOME_RAN = 4, B_OUTCOME_PLAYER_TELEPORTED = 5, B_OUTCOME_MON_FLED = 6, B_OUTCOME_CAUGHT = 7;
 
-type Param = "u8" | "u16" | "u32" | "clear" | "ret";
+type Param = "u8" | "u16" | "u32" | "clear8" | "clear16" | "clear32" | "ret";
 
 // Order: mode, opponentA, localId/rivalFlags, intro, defeat, victory, cannotBattle, battleScriptRetAddr, endScript
-const ORDINARY: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear", "clear", "clear", "ret"];
-const CONTINUE_SCRIPT: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear", "clear", "u32", "ret"];
-const DOUBLE: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear", "u32", "clear", "ret"];
-const NO_INTRO: Param[] = ["u8", "u16", "u16", "clear", "u32", "clear", "clear", "clear", "ret"];
-const EARLY_RIVAL: Param[] = ["u8", "u16", "u16", "clear", "u32", "u32", "clear", "clear", "ret"];
-const CONTINUE_DOUBLE: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear", "u32", "u32", "ret"];
+const ORDINARY: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear32", "clear32", "clear32", "ret"];
+const CONTINUE_SCRIPT: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear32", "clear32", "u32", "ret"];
+const DOUBLE: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear32", "u32", "clear32", "ret"];
+const NO_INTRO: Param[] = ["u8", "u16", "u16", "clear32", "u32", "clear32", "clear32", "clear32", "ret"];
+const EARLY_RIVAL: Param[] = ["u8", "u16", "u16", "clear32", "u32", "u32", "clear32", "clear32", "ret"];
+const CONTINUE_DOUBLE: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear32", "u32", "u32", "ret"];
+
+type TrainerBattleArgField = "mode" | "opponentA" | "localId" | "rivalFlags" | "introSpeech" | "defeatSpeech" | "victorySpeech" | "cannotBattleSpeech" | "battleScriptRetAddr" | "endScript";
+type TrainerBattleArgTarget = Record<TrainerBattleArgField, number>;
+
+/** TrainerBattleLoadArg8 (battle_setup.c): load one little-endian unsigned byte. */
+function TrainerBattleLoadArg8(ptr: number): number { return rom.u8(ptr) & 0xff; }
+
+/** TrainerBattleLoadArg16 (battle_setup.c): load one little-endian unsigned halfword. */
+function TrainerBattleLoadArg16(ptr: number): number { return rom.u16(ptr) & 0xffff; }
+
+/** TrainerBattleLoadArg32 (battle_setup.c): load one little-endian unsigned word. */
+function TrainerBattleLoadArg32(ptr: number): number { return rom.u32(ptr) >>> 0; }
+
+/** SetU8 (battle_setup.c): store the low byte in the corresponding saved battle field. */
+function SetU8(target: TrainerBattleArgTarget, field: TrainerBattleArgField, value: number): void { target[field] = value & 0xff; }
+
+/** SetU16 (battle_setup.c): store the low halfword in the corresponding saved battle field. */
+function SetU16(target: TrainerBattleArgTarget, field: TrainerBattleArgField, value: number): void { target[field] = value & 0xffff; }
+
+/** SetU32 (battle_setup.c): store the unsigned word in the corresponding saved battle field. */
+function SetU32(target: TrainerBattleArgTarget, field: TrainerBattleArgField, value: number): void { target[field] = value >>> 0; }
+
+/** SetPtr (battle_setup.c): retain the ROM address as the target's 32-bit script pointer. */
+function SetPtr(target: TrainerBattleArgTarget, field: TrainerBattleArgField, value: number): void { target[field] = value >>> 0; }
+
+/** TrainerBattleLoadArgs (battle_setup.c): consume the exact field widths and stop at the return pointer. */
+function TrainerBattleLoadArgs(target: TrainerBattleArgTarget, specs: readonly Param[], ptr: number): void {
+  const fields: readonly TrainerBattleArgField[] = ["mode", "opponentA", "localId", "introSpeech", "defeatSpeech", "victorySpeech", "cannotBattleSpeech", "battleScriptRetAddr", "endScript"];
+  let data = ptr;
+  for (let i = 0; i < specs.length; i++) {
+    const field = fields[i]!;
+    switch (specs[i]) {
+      case "u8": SetU8(target, field, TrainerBattleLoadArg8(data)); data += 1; break;
+      case "u16": SetU16(target, field, TrainerBattleLoadArg16(data)); data += 2; break;
+      case "u32": SetU32(target, field, TrainerBattleLoadArg32(data)); data += 4; break;
+      case "clear8": SetU8(target, field, 0); break;
+      case "clear16": SetU16(target, field, 0); break;
+      case "clear32": SetU32(target, field, 0); break;
+      case "ret": SetPtr(target, field, data); return;
+    }
+  }
+}
 
 export type BattleRequest = {
   kind: "wild" | "trainer";
@@ -79,21 +121,6 @@ export class BattleSetup {
 
   constructor(private readonly game: Game) {}
 
-  private load(specs: Param[], ptr: number): void {
-    const fields = ["mode", "opponentA", "localId", "introSpeech", "defeatSpeech", "victorySpeech", "cannotBattleSpeech", "battleScriptRetAddr", "endScript"] as const;
-    for (let i = 0; i < specs.length; i++) {
-      const spec = specs[i];
-      const field = fields[i];
-      switch (spec) {
-        case "u8": (this as unknown as Record<string, number>)[field] = rom.u8(ptr); ptr += 1; break;
-        case "u16": (this as unknown as Record<string, number>)[field] = rom.u16(ptr); ptr += 2; break;
-        case "u32": (this as unknown as Record<string, number>)[field] = rom.u32(ptr); ptr += 4; break;
-        case "clear": (this as unknown as Record<string, number>)[field] = 0; break;
-        case "ret": this.endScript = ptr; return;
-      }
-    }
-  }
-
   private setMapVarsToTrainer(): void {
     if (this.localId !== 0) {
       varSet(SV.LAST_TALKED, this.localId);
@@ -110,39 +137,39 @@ export class BattleSetup {
     const mode = rom.u8(ptr);
     switch (mode) {
       case TRAINER_BATTLE_SINGLE_NO_INTRO_TEXT:
-        this.load(NO_INTRO, ptr);
+        TrainerBattleLoadArgs(this, NO_INTRO, ptr);
         return rom.label("EventScript_DoNoIntroTrainerBattle");
       case TRAINER_BATTLE_DOUBLE:
-        this.load(DOUBLE, ptr);
+        TrainerBattleLoadArgs(this, DOUBLE, ptr);
         this.setMapVarsToTrainer();
         return rom.label("EventScript_TryDoDoubleTrainerBattle");
       case TRAINER_BATTLE_CONTINUE_SCRIPT:
       case TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC:
-        this.load(CONTINUE_SCRIPT, ptr);
+        TrainerBattleLoadArgs(this, CONTINUE_SCRIPT, ptr);
         this.setMapVarsToTrainer();
         return rom.label("EventScript_TryDoNormalTrainerBattle");
       case TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE:
       case TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE_NO_MUSIC:
-        this.load(CONTINUE_DOUBLE, ptr);
+        TrainerBattleLoadArgs(this, CONTINUE_DOUBLE, ptr);
         this.setMapVarsToTrainer();
         return rom.label("EventScript_TryDoDoubleTrainerBattle");
       case TRAINER_BATTLE_REMATCH_DOUBLE:
-        this.load(DOUBLE, ptr);
+        TrainerBattleLoadArgs(this, DOUBLE, ptr);
         this.setMapVarsToTrainer();
         this.opponentA = getRematchTrainerId(this.opponentA);
         return rom.label("EventScript_TryDoDoubleRematchBattle");
       case TRAINER_BATTLE_REMATCH:
-        this.load(ORDINARY, ptr);
+        TrainerBattleLoadArgs(this, ORDINARY, ptr);
         this.setMapVarsToTrainer();
         this.opponentA = getRematchTrainerId(this.opponentA);
         return rom.label("EventScript_TryDoRematchBattle");
       case TRAINER_BATTLE_EARLY_RIVAL:
-        this.load(EARLY_RIVAL, ptr);
+        TrainerBattleLoadArgs(this, EARLY_RIVAL, ptr);
         this.rivalFlags = this.localId;
         this.localId = 0;
         return rom.label("EventScript_DoNoIntroTrainerBattle");
       default:
-        this.load(ORDINARY, ptr);
+        TrainerBattleLoadArgs(this, ORDINARY, ptr);
         this.setMapVarsToTrainer();
         return rom.label("EventScript_TryDoNormalTrainerBattle");
     }
