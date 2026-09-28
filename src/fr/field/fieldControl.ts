@@ -106,7 +106,7 @@ export class FieldControl {
     this.FieldGetPlayerInput(input, newKeys, heldKeys);
     this.FieldInput_HandleCancelSignpost(input);
     if (!this.ow.controlsLocked) {
-      if (this.processPlayerFieldInput(input)) {
+      if (this.ProcessPlayerFieldInput(input)) {
         if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) QL_RecordFieldInput(this.recordedPlayerFieldInput);
         this.ow.controlsLocked = true;
         this.ow.mapName.dismiss();
@@ -206,8 +206,8 @@ export class FieldControl {
     return { x: p.currentCoords.x + dx, y: p.currentCoords.y + dy, elevation };
   }
 
-  /** ProcessPlayerFieldInput */
-  processPlayerFieldInput(input: FieldInput): boolean {
+  /** ProcessPlayerFieldInput (field_control_avatar.c). */
+  ProcessPlayerFieldInput(input: FieldInput): boolean {
     this.recordedPlayerFieldInput = { ...emptyInput(), dpadDirection: input.dpadDirection };
     this.resetFacingNpcOrSignpostVars();
     const direction = this.ow.player.object.facingDirection;
@@ -240,7 +240,7 @@ export class FieldControl {
     const front = this.GetInFrontOfPlayerPosition();
     const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
     if (input.heldDirection && input.dpadDirection === direction && this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
-    if (input.pressedAButton && this.tryStartInteractionScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
+    if (input.pressedAButton && this.TryStartInteractionScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
     if (input.heldDirection2 && input.dpadDirection === direction && this.TryDoorWarp(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection2"); return true; }
     if (input.pressedStartButton) {
       flagSet(rom.c("FLAG_OPENED_START_MENU"));
@@ -275,7 +275,8 @@ export class FieldControl {
 
   // ---------------------------------------------------------------- interactions
 
-  private tryStartInteractionScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
+  /** TryStartInteractionScript (field_control_avatar.c). */
+  private TryStartInteractionScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     const script = this.GetInteractionScript(position, behavior, direction);
     if (!script) return false;
     const noSound = [rom.label("PalletTown_PlayersHouse_2F_EventScript_PC"), rom.label("EventScript_PC")];
