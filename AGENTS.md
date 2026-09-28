@@ -27,11 +27,18 @@ El inventario mide nombres, no fidelidad.
    del archivo, p. ej. todos los `MovementAction_*`). Prioriza los archivos de la
    meta principal con más funciones faltantes y dependencias resueltas. No cierres
    tandas de una o dos funciones cuando el resto del archivo está desbloqueado.
+   Si el archivo no cabe entero, toma la familia completa más grande posible
+   (todas las `Task_*`, todos los `SpriteCB_*`, todos los efectos de un tipo…);
+   agrupar 3–10 funciones sueltas por commit no es una tanda válida.
 2. Localiza primero equivalencias TS: comportamiento que ya existe con otro nombre
    o estructura (p. ej. la tabla de comandos de `script/commands.ts` frente a los
    `ScrCmd_*` de `scrcmd.c`). Reestructúralo con el nombre y la forma del C,
    revisando cada función contra el C; es trabajo válido, pero se reporta aparte
-   como **equivalencia**, no como implementación nueva.
+   como **equivalencia**, no como implementación nueva. Un método de una línea
+   que delega en lógica genérica previa (p. ej. `MovementAction_*` →
+   `movementActionStep`) es un **wrapper**: cuenta como equivalencia y su familia
+   se anota en la línea de wrappers de `PORTING-STATUS.md` para revisarla contra
+   el cuerpo C en la fase de revisión.
 3. Lee completas las funciones C seleccionadas, headers/tipos, globals, tablas y
    callers C/TS/scripts relevantes. Lee el archivo entero cuando sus dependencias
    lo exijan; no repitas esa lectura por cada helper.
@@ -88,16 +95,22 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
 
 ## Cierre y documentación mínima
 
-- **Documentación una vez por sesión, no por commit:** al final de la sesión (o
-  cada varias tandas) ejecuta `npm run inventory`, después `npm run pending`, y
-  actualiza `PORTING-STATUS.md`, todo en un único commit de estado. Los commits
-  de tanda contienen solo código. No cambies el algoritmo del inventario para
-  inflar cobertura.
-- Mantén `PORTING-STATUS.md` como estado operativo breve: siguiente tanda,
-  bloqueos, validación diferida y resumen de la última entrega (máximo 8 líneas).
-  Sustituye el resumen anterior; el detalle permanece en Git. No abras otra crónica.
+- **Commits de tanda solo con código.** No toques `PORTING-STATUS.md`,
+  `PENDING.md`, `PORT-INVENTORY.md` ni `KNOWN_GAPS` de `portPending.py` en ellos,
+  y no hagas un commit "Update … status" después de cada tanda.
+- **Estado una vez al final de la sesión** (o, en sesiones largas, como mucho cada
+  cinco tandas): `npm run inventory`, después `npm run pending`, actualizar
+  `PORTING-STATUS.md` y `KNOWN_GAPS`, todo en un único commit de estado. No
+  cambies el algoritmo del inventario para inflar cobertura.
+- Mantén `PORTING-STATUS.md` como estado operativo breve (máximo 8 líneas) con
+  estas líneas fijas: modo, siguiente tanda, bloqueos, validación diferida,
+  última entrega, contador, **acumulado nuevo/equivalencia** y **wrappers a
+  revisar**. Sustituye la última entrega; el detalle permanece en Git. En las
+  líneas de acumulado, validación diferida y wrappers solo se añade o se retira
+  lo revisado: nunca se borran entradas al reescribir. No abras otra crónica.
 - Solo `PENDING.md` y `PORT-INVENTORY.md` contienen las cifras vivas. En el cierre
-  informa el cambio del contador y separa trabajo nuevo de equivalencias existentes.
+  informa el cambio del contador separado en funciones nuevas (cuerpo portado del
+  C) y equivalencias/wrappers, y suma ambas al acumulado de `PORTING-STATUS.md`.
 - Un commit local por tanda integrada, en inglés, imperativo, con fuente C cuando
   corresponda y `Co-Authored-By: OpenAI Codex <codex@openai.com>` si trabaja Codex
   (otros agentes indican su entorno). Sin superlativos ni afirmaciones no probadas.
