@@ -29,6 +29,7 @@ export const METATILE_ATTRIBUTE_BEHAVIOR = 0;
 export const METATILE_ATTRIBUTE_TERRAIN = 1;
 export const METATILE_ATTRIBUTE_ENCOUNTER_TYPE = 4;
 export const METATILE_ATTRIBUTE_LAYER_TYPE = 6;
+export const METATILE_ATTRIBUTE_COUNT = 8;
 
 const ATTR_MASKS = [0x000001ff, 0x00003e00, 0x0003c000, 0x00fc0000, 0x07000000, 0x18000000, 0x60000000, 0x80000000];
 const ATTR_SHIFTS = [0, 9, 14, 18, 24, 27, 29, 31];
@@ -80,7 +81,39 @@ export function GetCurrentFieldMap(): FieldMap | null {
   return sCurrentFieldMap;
 }
 export function MapGridGetMetatileBehaviorAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
-  return map ? map.behaviorAt(x, y) : 0;
+  return map ? map.behaviorAt((x << 16) >> 16, (y << 16) >> 16) : 0;
+}
+
+/** MapGridGetElevationAt (fieldmap.c), with GBA s32 coordinate semantics. */
+export function MapGridGetElevationAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
+  return map ? map.elevationAt(x | 0, y | 0) & 0xff : 0;
+}
+
+/** MapGridGetCollisionAt (fieldmap.c), with GBA s32 coordinate semantics. */
+export function MapGridGetCollisionAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
+  return map ? map.collisionAt(x | 0, y | 0) & 0xff : 1;
+}
+
+/** MapGridGetMetatileIdAt (fieldmap.c), with GBA s32 coordinate semantics. */
+export function MapGridGetMetatileIdAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
+  return map ? map.metatileIdAt(x | 0, y | 0) >>> 0 : 0;
+}
+
+/** ExtractMetatileAttribute (fieldmap.c). METATILE_ATTRIBUTES_ALL returns the raw u32. */
+export function ExtractMetatileAttribute(attributes: number, attributeType: number): number {
+  const value = attributes >>> 0;
+  if ((attributeType & 0xff) >= METATILE_ATTRIBUTE_COUNT) return value;
+  return ((value & ATTR_MASKS[attributeType & 0xff]!) >>> ATTR_SHIFTS[attributeType & 0xff]!) >>> 0;
+}
+
+/** MapGridGetMetatileAttributeAt (fieldmap.c), whose coordinates are s16. */
+export function MapGridGetMetatileAttributeAt(x: number, y: number, attributeType: number, map: FieldMap | null = sCurrentFieldMap): number {
+  return map ? map.attributeAt((x << 16) >> 16, (y << 16) >> 16, attributeType & 0xff) >>> 0 : 0xff;
+}
+
+/** MapGridGetMetatileLayerTypeAt (fieldmap.c). */
+export function MapGridGetMetatileLayerTypeAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
+  return MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_LAYER_TYPE, map) & 0xff;
 }
 
 /** gMapHeader + VMap state. */
@@ -219,9 +252,7 @@ export class FieldMap {
   }
 
   metatileAttribute(metatile: number, type: number): number {
-    const attributes = this.attributesOf(metatile);
-    if (attributes === 0xff && metatile >= NUM_METATILES_TOTAL) return 0xff;
-    return (attributes & ATTR_MASKS[type]) >>> ATTR_SHIFTS[type];
+    return GetAttributeByMetatileIdAndMapLayout(this, metatile, type);
   }
 
   attributeAt(x: number, y: number, type: number): number {
@@ -237,12 +268,6 @@ export class FieldMap {
     const i = x + y * this.xSize;
     this.map[i] = (this.map[i] & MAPGRID_ELEVATION_MASK) | (metatile & ~MAPGRID_ELEVATION_MASK & 0xffff);
     this.onChange?.(x, y);
-  }
-
-  setImpassable(x: number, y: number, impassable: boolean): void {
-    if (!this.inBounds(x, y)) return;
-    if (impassable) this.map[x + this.xSize * y] |= MAPGRID_COLLISION_MASK;
-    else this.map[x + this.xSize * y] &= ~MAPGRID_COLLISION_MASK;
   }
 
   onChange?: (x: number, y: number) => void;
@@ -289,6 +314,20 @@ export class FieldMap {
     }
     return undefined;
   }
+}
+
+/** GetAttributeByMetatileIdAndMapLayout (fieldmap.c). */
+function GetAttributeByMetatileIdAndMapLayout(mapLayout: FieldMap, metatile: number, attributeType: number): number {
+  let attributes: number;
+  if (metatile < NUM_METATILES_IN_PRIMARY) attributes = mapLayout.loaded.primary.attributes[metatile] ?? 0;
+  else if (metatile < NUM_METATILES_TOTAL) attributes = mapLayout.loaded.secondary.attributes[metatile - NUM_METATILES_IN_PRIMARY] ?? 0;
+  else return 0xff;
+  return ExtractMetatileAttribute(attributes, attributeType);
+}
+
+/** MapGridSetMetatileIdAt (fieldmap.c). */
+export function MapGridSetMetatileIdAt(x: number, y: number, metatile: number, map: FieldMap | null = sCurrentFieldMap): void {
+  map?.setMetatileIdAt(x | 0, y | 0, metatile & 0xffff);
 }
 
 export function connectionForDirection(connections: MapConnection[], direction: string): MapConnection | undefined {

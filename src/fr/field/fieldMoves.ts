@@ -18,7 +18,7 @@ import { flagGet, flagSet, incrementGameStat, save, varSet, SV } from "../save";
 import { stringVars } from "../gba/charmap";
 import { IsWeatherNotFadingIn, SetWeatherScreenFadeOut, WeatherProcessingIdle } from "./weather";
 import { canvas, rgb555, spriteSheet, tilemapCanvas } from "./gfx4bpp";
-import { MAP_OFFSET, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
+import { MAP_OFFSET, MapGridGetElevationAt, MapGridGetMetatileAttributeAt, MapGridGetMetatileIdAt, MapGridSetMetatileIdAt, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
@@ -602,7 +602,7 @@ export class FieldMoveEffects {
     const cx = p.currentCoords.x + dx, cy = p.currentCoords.y + dy;
     for (let y = cy - 1; y <= cy + 1; y++) {
       for (let x = cx - 1; x <= cx + 1; x++) {
-        if (ow.map.elevationAt(x, y) !== p.currentElevation) continue;
+        if (MapGridGetElevationAt(x, y, ow.map) !== p.currentElevation) continue;
         if (!MetatileAtCoordsIsGrassTile(ow, x, y)) continue;
         this.SetCutGrassMetatileAt(x, y, mapping);
         ow.objects.EnableObjectGroundEffectsByXY(x, y);
@@ -634,10 +634,10 @@ export class FieldMoveEffects {
 
   /** SetCutGrassMetatileAt: replace a source metatile using the C mapping table. */
   SetCutGrassMetatileAt(x: number, y: number, mapping = cutGrassMapping()): void {
-    const metatileId = this.ow.map.metatileIdAt(x, y);
+    const metatileId = MapGridGetMetatileIdAt(x, y, this.ow.map);
     for (const [from, to] of mapping) {
       if (from === metatileId) {
-        this.ow.map.setMetatileIdAt(x, y, to);
+        MapGridSetMetatileIdAt(x, y, to, this.ow.map);
         return;
       }
     }
@@ -676,7 +676,7 @@ export class FieldMoveEffects {
   /** CutMoveOpenDottedHoleDoor in field_specials.c. */
   private CutMoveOpenDottedHoleDoor(): void {
     const ow = this.ow;
-    ow.map.setMetatileIdAt(31, 31, rom.c("METATILE_SeviiIslands67_DottedHoleDoor_Open"));
+    MapGridSetMetatileIdAt(31, 31, rom.c("METATILE_SeviiIslands67_DottedHoleDoor_Open"), ow.map);
     ow.renderer?.invalidate();
     sound.playSE(C.SE_BANG);
     flagSet(C.FLAG_USED_CUT_ON_RUIN_VALLEY_BRAILLE);
@@ -1144,7 +1144,8 @@ export class FieldMoveEffects {
   /** TrySweetScentEncounter: true if SweetScentWildEncounter starts a battle. */
   TrySweetScentEncounter(): boolean {
     const p = this.ow.player.object;
-    return this.ow.game.wild.sweetScentEncounter(this.ow.map.attributesOf(this.ow.map.metatileIdAt(p.currentCoords.x, p.currentCoords.y)));
+    const attributes = MapGridGetMetatileAttributeAt(p.currentCoords.x, p.currentCoords.y, 0xff, this.ow.map);
+    return this.ow.game.wild.sweetScentEncounter(attributes);
   }
 
   /** FailSweetScentEncounter: restore weather and run the source failure script. */
@@ -1402,7 +1403,7 @@ function cutGrassMapping(): Array<[number, number]> {
 
 /** MetatileAtCoordsIsGrassTile from fldeff_cut.c. */
 export function MetatileAtCoordsIsGrassTile(ow: Overworld, x: number, y: number): boolean {
-  return (ow.map.attributeAt(x, y, METATILE_ATTRIBUTE_TERRAIN) & C.TILE_TERRAIN_GRASS) !== 0;
+  return (MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_TERRAIN, ow.map) & C.TILE_TERRAIN_GRASS) !== 0;
 }
 
 /**
@@ -1423,7 +1424,7 @@ export function SetUpFieldMove_Cut(game: Game): "ruin" | "tree" | "grass" | unde
     const y = destY - 1 + i;
     for (let j = 0; j < 3; j++) {
       const x = destX - 1 + j;
-      if (ow.map.elevationAt(x, y) === p.currentElevation && MetatileAtCoordsIsGrassTile(ow, x, y)) return "grass";
+      if (MapGridGetElevationAt(x, y, ow.map) === p.currentElevation && MetatileAtCoordsIsGrassTile(ow, x, y)) return "grass";
     }
   }
   return undefined;

@@ -17,7 +17,7 @@ import { random } from "../random";
 import { rom } from "../rom";
 import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "../save";
 import { Sprite } from "../gba/sprite";
-import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
+import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { DoPokemonLeagueLightingEffect } from "../field/leagueLighting";
 import { spriteSheet } from "../field/gfx4bpp";
 import { adjustFriendship, getDexFlag, GetPlayerTrainerId, leadMonIndex, nickname, speciesName, type Pokemon } from "../pokemon/pokemon";
@@ -440,8 +440,8 @@ function Task_AnimateElevatorWindowView(taskId: number, ctx: ScriptRunner): void
       ? "sElevatorWindowMetatilesGoingUp" : "sElevatorWindowMetatilesGoingDown");
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
-        ctx.ow.map.setMetatileIdAt(j + 1 + MAP_OFFSET, i + MAP_OFFSET,
-          tables[i]![data[0]! % 3]! | MAPGRID_COLLISION_MASK);
+        MapGridSetMetatileIdAt(j + 1 + MAP_OFFSET, i + MAP_OFFSET,
+          tables[i]![data[0]! % 3]! | MAPGRID_COLLISION_MASK, ctx.ow.map);
       }
     }
     ctx.ow.renderer?.invalidate();

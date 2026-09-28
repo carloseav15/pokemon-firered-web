@@ -11,7 +11,7 @@ import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet, varGet } from "../save";
 import { QL_GetPlaybackState } from "../questLogEvents";
-import { CONNECTION_INVALID, MAP_OFFSET, type FieldMap } from "./fieldmap";
+import { CONNECTION_INVALID, MAP_OFFSET, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
 import { gSineTable } from "../hw/trig";
 
 export const DIR_NONE = 0, DIR_SOUTH = 1, DIR_NORTH = 2, DIR_WEST = 3, DIR_EAST = 4;
@@ -1075,7 +1075,7 @@ export class ObjectEvents {
     direction &= 0xff; // C parameter is u32; the body narrows it to u8.
     const map = this.hooks.map();
     if (this.IsCoordOutsideObjectEventMovementRange(object, x, y)) return COLLISION_OUTSIDE_RANGE;
-    if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID || this.IsMetatileDirectionallyImpassable(object, x, y, direction)) return COLLISION_IMPASSABLE;
+    if (MapGridGetCollisionAt(x, y, map) || map.borderIdAt(x, y) === CONNECTION_INVALID || this.IsMetatileDirectionallyImpassable(object, x, y, direction)) return COLLISION_IMPASSABLE;
     if (object.trackedByCamera && !this.hooks.cameraCanMove(direction)) return COLLISION_IMPASSABLE;
     if (this.IsElevationMismatchAt(object.currentElevation, x, y)) return COLLISION_ELEVATION_MISMATCH;
     if (this.DoesObjectCollideWithObjectAt(object, x, y)) return COLLISION_OBJECT_EVENT;
@@ -1090,7 +1090,7 @@ export class ObjectEvents {
     const map = this.hooks.map();
     let flags = 0;
     if (this.IsCoordOutsideObjectEventMovementRange(object, x, y)) flags |= 1;
-    if (map.collisionAt(x, y) || map.borderIdAt(x, y) === CONNECTION_INVALID
+    if (MapGridGetCollisionAt(x, y, map) || map.borderIdAt(x, y) === CONNECTION_INVALID
       || this.IsMetatileDirectionallyImpassable(object, x, y, direction)
       || (object.trackedByCamera && !this.hooks.cameraCanMove(direction))) flags |= 2;
     if (this.IsElevationMismatchAt(object.currentElevation, x, y)) flags |= 4;
@@ -1142,7 +1142,7 @@ export class ObjectEvents {
     x = (x << 16) >> 16;
     y = (y << 16) >> 16;
     if (elevation === 0) return false;
-    const mapElevation = this.hooks.map().elevationAt(x, y) & 0xff;
+    const mapElevation = MapGridGetElevationAt(x, y, this.hooks.map());
     if (mapElevation === 0 || mapElevation === 15) return false;
     return mapElevation !== elevation;
   }
@@ -1240,8 +1240,8 @@ export class ObjectEvents {
   /** ObjectEventUpdateElevation (event_object_movement.c). */
   ObjectEventUpdateElevation(object: ObjectEvent): void {
     const map = this.hooks.map();
-    const cur = map.elevationAt((object.currentCoords.x << 16) >> 16, (object.currentCoords.y << 16) >> 16) & 0xff;
-    const prev = map.elevationAt((object.previousCoords.x << 16) >> 16, (object.previousCoords.y << 16) >> 16) & 0xff;
+    const cur = MapGridGetElevationAt((object.currentCoords.x << 16) >> 16, (object.currentCoords.y << 16) >> 16, map);
+    const prev = MapGridGetElevationAt((object.previousCoords.x << 16) >> 16, (object.previousCoords.y << 16) >> 16, map);
     if (cur === 15 || prev === 15) return;
     object.currentElevation = cur & 0xf;
     if (cur !== 0 && cur !== 15) object.previousElevation = cur & 0xf;

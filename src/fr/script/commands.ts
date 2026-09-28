@@ -13,7 +13,7 @@ import { tasks } from "../gba/tasks";
 import { b64, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
 import { random } from "../random";
 import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, varGet, varSet } from "../save";
-import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
+import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { LOCALID_PLAYER, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
@@ -656,7 +656,7 @@ function ScrCmd_setmetatile(ctx: ScriptRunner): boolean {
   const y = varGet(ctx.ScriptReadHalfword()) + MAP_OFFSET;
   const metatile = varGet(ctx.ScriptReadHalfword());
   const impassable = varGet(ctx.ScriptReadHalfword());
-  ctx.ow.map.setMetatileIdAt(x, y, impassable ? metatile | MAPGRID_COLLISION_MASK : metatile);
+  MapGridSetMetatileIdAt(x, y, impassable ? metatile | MAPGRID_COLLISION_MASK : metatile, ctx.ow.map);
   return false;
 }
 function ScrCmd_resetweather(ctx: ScriptRunner): boolean { ctx.ow.game.weather.SetSavedWeatherFromCurrMapHeader(ctx.ow.header.weather); return false; }
