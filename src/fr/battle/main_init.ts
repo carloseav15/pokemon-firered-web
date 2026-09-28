@@ -112,7 +112,7 @@ function CB2_InitBattleInternal(): void {
   G.gBattle_BG2_Y = 0;
   G.gBattle_BG3_X = 0;
   G.gBattle_BG3_Y = 0;
-  G.gBattleTerrain = battleHost.terrain();
+  G.gBattleTerrain = battleHost.BattleSetup_GetTerrainId();
   InitBattleBgsVideo();
   LoadBattleTextboxAndBackground();
   ResetSpriteData();

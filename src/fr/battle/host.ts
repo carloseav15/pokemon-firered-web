@@ -20,7 +20,7 @@ export const battleHost = {
   preBattleCallback1: null as MainCallback,
 
   /** BattleSetup_GetTerrainId */
-  terrain(): number {
+  BattleSetup_GetTerrainId(): number {
     if (!game) return C.BATTLE_TERRAIN_PLAIN;
     const ow = game.overworld;
     const { x, y } = ow.player.object.currentCoords;
