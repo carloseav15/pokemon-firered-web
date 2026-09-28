@@ -119,38 +119,6 @@ export function ShowWarpArrowSprite(sprites: SpriteManager, spriteId: number, di
   };
 }
 
-/** FldEff_TallGrass */
-export function FldEff_TallGrass(): number {
-  return 0;
-}
-
-/** UpdateTallGrassFieldEffect */
-export function UpdateTallGrassFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
-/** FldEff_JumpTallGrass */
-export function FldEff_JumpTallGrass(): number {
-  return 0;
-}
-
-/** FindTallGrassFieldEffectSpriteId */
-export function FindTallGrassFieldEffectSpriteId(
-  localId: number,
-  mapNum: number,
-  mapGroup: number,
-  x: number,
-  y: number,
-): number {
-  return 0xff;
-}
-
-/** UpdateGrassFieldEffectSubpriority */
-export function UpdateGrassFieldEffectSubpriority(sprite: Sprite | any, z: number, offset: number): void {
-  if (!sprite) return;
-  sprite.subpriority = (z - offset) & 0xff;
-}
-
 /** FldEff_LongGrass */
 export function FldEff_LongGrass(): number {
   return 0;
