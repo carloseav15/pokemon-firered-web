@@ -178,7 +178,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       if (!SetUpFieldMove_Teleport(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       stringVars.var1 = getMapNameGenericBytes(sectionOfWarp(save.lastHealLocation));
       return { kind: "confirm", message: text("gText_ReturnToHealingSpot"), post: () => {
-        ow.resetStateAfterTeleport();
+        ow.Overworld_ResetStateAfterTeleport();
         args[0] = partyIndex;
         ow.effects.start(C.FLDEFF_USE_TELEPORT);
       } };
@@ -186,7 +186,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       if (!SetUpFieldMove_Dig(ow.header.allowEscaping)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       stringVars.var1 = getMapNameGenericBytes(sectionOfWarp(save.escapeWarp));
       return { kind: "confirm", message: text("gText_EscapeFromHereAndReturnTo"), post: () => {
-        ow.resetStateAfterDigEscRope();
+        ow.Overworld_ResetStateAfterDigEscRope();
         args[0] = partyIndex;
         ow.effects.start(C.FLDEFF_USE_DIG);
       } };

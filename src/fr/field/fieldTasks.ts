@@ -47,6 +47,11 @@ export class PerStepCallback {
   /** New maps start with the dummy callback until their scripts pick one. */
   reset(): void {
     this.ActivatePerStepCallback(C.STEP_CB_DUMMY);
+    this.ChooseAmbientCrySpecies();
+  }
+
+  /** ChooseAmbientCrySpecies (overworld.c). */
+  ChooseAmbientCrySpecies(): void {
     const local = this.ow.game.wild.getLocalWildMon();
     this.ambientCrySpecies = local.species;
     this.ambientCryIsWaterMon = local.isWaterMon;
@@ -83,11 +88,17 @@ export class PerStepCallback {
         : rom.c("METATILE_Lavaridge_NormalGrass"), 4);
   }
 
-  /** Task_RunTimeBasedEvents / UpdateAmbientCry state machine. */
+  /** Task_RunTimeBasedEvents (field_tasks.c): gates UpdateAmbientCry on controls/Quest Log playback. */
   Task_RunTimeBasedEvents(): void {
     const questLogState = (this.ow.game as unknown as { questLogState?: number }).questLogState;
     if (this.ow.controlsLocked || questLogState !== undefined
       && questLogState >= C.QL_STATE_PLAYBACK && questLogState <= C.QL_STATE_PLAYBACK_LAST) return;
+    this.UpdateAmbientCry();
+  }
+
+  /** UpdateAmbientCry (overworld.c): state/delayCounter are instance fields here instead of the
+   * C's s16 and u16 out params (this task has no separate data[] slots to alias). */
+  UpdateAmbientCry(): void {
     switch (this.ambientCryState) {
       case 0: this.ambientCryState = this.ambientCrySpecies === C.SPECIES_NONE ? 4 : 1; break;
       case 1: this.ambientCryDelay = random() % 2400 + 1200; this.ambientCryState = 3; break;

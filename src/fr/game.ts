@@ -15,7 +15,6 @@ import { Overworld } from "./field/overworld";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
-import { onWarpForRoamer } from "./pokemon/roamer";
 import { rom } from "./rom";
 import { ApplyNewEncryptionKeyToGameStats, flagGet, GetGameStat, IncrementGameStat, newSaveData, ResetGameStats, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
@@ -298,7 +297,7 @@ export class Game {
     this.differentSaveFile = false;
     this.wild.seed(takeWildEncounterSeed());
     // Overworld_ResetStateOnContinue runs before the continue warp is applied.
-    onWarpForRoamer();
+    this.overworld.Overworld_ResetStateOnContinue();
     // CB2_ContinueSavedGame: UseContinueGameWarp → SetWarpDestinationToContinueGameWarp
     const flags = save as unknown as { continueGameWarpActive?: boolean };
     if (flags.continueGameWarpActive && save.continueGameWarp.mapGroup !== 0xff) {
@@ -1029,6 +1028,7 @@ export class Game {
     this.scene = null;
     save.money -= computeWhiteOutMoneyLoss();
     for (const mon of save.party) healMon(mon);
+    ow.Overworld_ResetStateAfterWhitingOut();
     const respawn = ow.SetWhiteoutRespawnWarpAndHealerNpc();
     ow.warpDestination = respawn.warp;
     ow.fieldCallback = () => ow.FieldCB_RushInjuredPokemonToCenter();

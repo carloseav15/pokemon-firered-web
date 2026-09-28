@@ -371,8 +371,9 @@ export class Overworld {
     TryRegenerateRenewableHiddenItems(save.location.mapGroup, save.location.mapNum);
   }
 
-  /** Overworld_ResetStateAfterFly / Teleport / DigEscRope / WhitingOut */
-  resetStateAfterWarpOut(): void {
+  /** Shared body of Overworld_ResetStateAfterFly/Teleport/DigEscRope/WhitingOut: the four C
+   * functions are byte-identical, so this port keeps one body instead of four copies. */
+  private resetStateAfterWarpOut(): void {
     this.resetInitialPlayerAvatarState();
     const c = rom.constants;
     flagClear(c.FLAG_SYS_ON_CYCLING_ROAD);
@@ -385,9 +386,20 @@ export class Overworld {
     flagClear(c.FLAG_SYS_QL_DEPARTED);
     varSet(c.VAR_QL_ENTRANCE, 0);
   }
-  resetStateAfterTeleport(): void { this.resetStateAfterWarpOut(); }
-  resetStateAfterDigEscRope(): void { this.resetStateAfterWarpOut(); }
-  resetStateAfterFly(): void { this.resetStateAfterWarpOut(); }
+  Overworld_ResetStateAfterTeleport(): void { this.resetStateAfterWarpOut(); }
+  Overworld_ResetStateAfterDigEscRope(): void { this.resetStateAfterWarpOut(); }
+  Overworld_ResetStateAfterFly(): void { this.resetStateAfterWarpOut(); }
+  Overworld_ResetStateAfterWhitingOut(): void { this.resetStateAfterWarpOut(); }
+
+  /** Overworld_ResetStateOnContinue (overworld.c): run before CB2_ContinueSavedGame and
+   * CB2_EnterFieldFromQuestLog apply their warp (only the former is wired here; Quest Log
+   * playback re-entry is still unmodeled, see PENDING.md). */
+  Overworld_ResetStateOnContinue(): void {
+    flagClear(rom.constants.FLAG_SYS_SAFARI_MODE);
+    varSet(rom.constants.VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 0);
+    this.stepCallback.ChooseAmbientCrySpecies();
+    onWarpForRoamer();
+  }
 
   /** SetWarpDestinationToLastHealLocation */
   SetWarpDestinationToLastHealLocation(): void {

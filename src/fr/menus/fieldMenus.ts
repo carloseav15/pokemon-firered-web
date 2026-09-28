@@ -414,7 +414,7 @@ export function FieldUseFunc_FameChecker(game: Game, item: number, fromBag: bool
 
 /** ItemUseOnFieldCB_EscapeRope (item_use.c): reset field state, consume the item, and print its message. */
 function ItemUseOnFieldCB_EscapeRope(game: Game, item: number): void {
-  game.overworld.resetStateAfterDigEscRope();
+  game.overworld.Overworld_ResetStateAfterDigEscRope();
   fieldMessage(game, RemoveUsedItem(item), () => Task_UseDigEscapeRopeOnField(game));
 }
 

@@ -1184,7 +1184,7 @@ export class FieldMoveEffects {
     ow.controlsLocked = true;
     ow.objects.freezeAll();
     this.flyOut(() => {
-      ow.resetStateAfterFly();
+      ow.Overworld_ResetStateAfterFly();
       ow.fieldCallback = () => {
         ow.playSpecialMapMusic();
         ow.fadeInFromBlack();
