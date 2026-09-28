@@ -60,7 +60,7 @@ import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllKantoMons, HasAllM
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
 import { MailSpeciesToSpecies } from "../pokemon/mail";
 import { rom } from "../rom";
-import { flagGet, GetGameStat, save, varGet } from "../save";
+import { flagGet, GetGameStat, IsNationalPokedexEnabled, save, varGet } from "../save";
 
 const CARD_TYPE_FRLG = 0;
 const TEXT_SKIP_DRAW = 0xff;
@@ -268,15 +268,14 @@ function SetPlayerCardData(card: TrainerCardFields, _cardType: number): void {
   card.hofDebutMinutes = (playTime >>> 8) & 0xff;
   card.hofDebutSeconds = playTime & 0xff;
 
-  const national = varGet(c.VAR_NATIONAL_DEX ?? 0) === 0x6258 && flagGet(c.FLAG_SYS_NATIONAL_DEX);
   card.hasPokedex = flagGet(c.FLAG_SYS_POKEDEX_GET);
   card.caughtAllHoenn = false;
-  card.caughtMonsCount = national ? GetNationalPokedexCount(C.FLAG_GET_CAUGHT) : GetKantoPokedexCount(C.FLAG_GET_CAUGHT);
+  card.caughtMonsCount = GetCaughtMonsCount();
 
   card.trainerId = save.trainerId & 0xffff;
-  card.linkBattleWins = Math.min(9999, GetGameStat(c.GAME_STAT_LINK_BATTLE_WINS));
-  card.linkBattleLosses = Math.min(9999, GetGameStat(c.GAME_STAT_LINK_BATTLE_LOSSES));
-  card.pokemonTrades = Math.min(0xffff, GetGameStat(c.GAME_STAT_POKEMON_TRADES));
+  card.linkBattleWins = GetCappedGameStat(c.GAME_STAT_LINK_BATTLE_WINS, 9999);
+  card.linkBattleLosses = GetCappedGameStat(c.GAME_STAT_LINK_BATTLE_LOSSES, 9999);
+  card.pokemonTrades = GetCappedGameStat(c.GAME_STAT_POKEMON_TRADES, 0xffff);
 
   card.battleTowerWins = 0;
   card.battleTowerStraightWins = 0;
@@ -286,6 +285,19 @@ function SetPlayerCardData(card: TrainerCardFields, _cardType: number): void {
 
   card.money = save.money;
   card.playerName = Uint8Array.from(save.playerName);
+}
+
+/** GetCappedGameStat (trainer_card.c): both parameters and the result are unsigned 32-bit values. */
+function GetCappedGameStat(statId: number, maxValue: number): number {
+  const statValue = GetGameStat(statId & 0xff) >>> 0;
+  return Math.min(maxValue >>> 0, statValue) >>> 0;
+}
+
+/** GetCaughtMonsCount (trainer_card.c): the active National Dex chooses the national count. */
+function GetCaughtMonsCount(): number {
+  return (IsNationalPokedexEnabled()
+    ? GetNationalPokedexCount(C.FLAG_GET_CAUGHT)
+    : GetKantoPokedexCount(C.FLAG_GET_CAUGHT)) & 0xffff;
 }
 
 function TrainerCard_GenerateCardForLinkPlayer(card: TrainerCardFields): void {
@@ -373,6 +385,16 @@ function ResetGpuRegs(): void {
   SetVBlankCallback(null);
   SetHBlankCallback(null);
   SetGpuReg(REG_OFFSET_DISPCNT, 0);
+}
+
+/** DmaClearOam (trainer_card.c): clear the complete 0x400-byte GBA OAM region. */
+function DmaClearOam(): void {
+  ppu.oam.fill(0);
+}
+
+/** DmaClearPltt (trainer_card.c): clear the complete 0x400-byte GBA palette RAM region. */
+function DmaClearPltt(): void {
+  ppu.pltt.fill(0);
 }
 
 function ResetBgRegs(): void {
@@ -1205,11 +1227,11 @@ function CB2_InitTrainerCard(): void {
       gMain.state++;
       break;
     case 2:
-      ppu.oam.fill(0);
+      DmaClearOam();
       gMain.state++;
       break;
     case 3:
-      ppu.pltt.fill(0);
+      DmaClearPltt();
       gMain.state++;
       break;
     case 4:
