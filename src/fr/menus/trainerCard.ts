@@ -63,6 +63,7 @@ import { rom } from "../rom";
 import { flagGet, GetGameStat, IsNationalPokedexEnabled, save, varGet } from "../save";
 
 const CARD_TYPE_FRLG = 0;
+const CARD_TYPE_RSE = 1;
 const TEXT_SKIP_DRAW = 0xff;
 
 // Text IDs for strings buffer
@@ -366,13 +367,19 @@ function InitTrainerCardData(): void {
   d.timeColonInvisible = false;
   d.onBack = false;
   d.flipBlendY = 0;
-  d.cardType = CARD_TYPE_FRLG;
+  d.cardType = GetCardType();
   d.timeColonNeedDraw = false;
   d.allowDMACopy = false;
   d.printState = 0;
   d.gfxLoadState = 0;
   d.bgPalLoadState = 0;
   d.flipDrawState = 0;
+}
+
+/** GetCardType (trainer_card.c): derive the layout from the current card's game version. */
+function GetCardType(): number {
+  const version = sTrainerCardDataPtr?.trainerCard.version ?? C.VERSION_FIRE_RED;
+  return version === C.VERSION_FIRE_RED || version === C.VERSION_LEAF_GREEN ? CARD_TYPE_FRLG : CARD_TYPE_RSE;
 }
 
 // ---------------------------------------------------------------- GPU and Text
