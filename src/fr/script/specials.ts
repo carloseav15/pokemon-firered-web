@@ -29,6 +29,7 @@ import { GetMonsStateToDoubles } from "../pokemon/scriptPokemonUtil";
 import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/specialFieldAnim";
 import { ReadTrainerTowerAndValidate } from "../cereaderTool";
 import { WonderNews_GetRewardInfo } from "../wonderNews";
+import { BufferRandomHobbyOrLifestyleString } from "../easyChat";
 
 type Special = (ctx: ScriptRunner) => number | void;
 
@@ -352,19 +353,7 @@ export const SPECIALS: Record<string, Special> = {
   },
   // ---- easy chat hobby/lifestyle (easy_chat.c:318-323): random enabled word
   // from group 12 (LIFESTYLE) or 13 (HOBBIES) into gStringVar2.
-  BufferRandomHobbyOrLifestyleString: () => {
-    if (!hasCData("easy_chat", "sEasyChatGroup_Hobbies")) {
-      void loadCData("easy_chat").catch(() => undefined);
-      const fallback = ["MUSIC", "SPORTS", "READING", "MOVIES", "TRAVEL", "COOKING"];
-      stringVars.var2 = encode(fallback[random() % fallback.length]);
-      return;
-    }
-    const group = random() & 1 ? "sEasyChatGroup_Hobbies" : "sEasyChatGroup_Lifestyle";
-    const words = cdata<Array<{ text: { $sym: string } }>>("easy_chat", group);
-    const word = words[random() % words.length];
-    const bytes = cdata<number[]>("easy_chat", word.text.$sym);
-    stringVars.var2 = Uint8Array.from(bytes);
-  },
+  BufferRandomHobbyOrLifestyleString,
   // ---- battle tower (battle_tower.c): the tower engine is not ported; gating
   // checks report a valid party so field scripts continue past the desk.
   CheckPartyBattleTowerBanlist: () => { varSet(SV.x8004, 0); },
