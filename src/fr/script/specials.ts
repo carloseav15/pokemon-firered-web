@@ -23,6 +23,7 @@ import { initRoamer } from "../pokemon/roamer";
 import { doSeagallopFerryScene, getSeagallopNumber, getSelectedSeagallopDestination, seagallopDestinationItems } from "../seagallop";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 import { EnterSafariMode, ExitSafariMode } from "../field/safariZone";
+import { GetPlayerFacingDirection } from "../field/playerAvatar";
 import { SetUnlockedPokedexFlags } from "../pokemon/saveLocation";
 import { GetMonsStateToDoubles } from "../pokemon/scriptPokemonUtil";
 import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/specialFieldAnim";
@@ -63,7 +64,7 @@ export const SPECIALS: Record<string, Special> = {
   // link hardware in the browser; the union-room desk simply stays inert.
   InitUnionRoom: () => 0,
   HealPlayerParty: () => { for (const mon of save.party) healMon(mon); },
-  GetPlayerFacingDirection: (ctx) => ctx.ow.player.object.facingDirection,
+  GetPlayerFacingDirection: () => GetPlayerFacingDirection(),
   GetPlayerXY: () => { varSet(SV.x8004, save.pos.x); varSet(SV.x8005, save.pos.y); },
   DrawWholeMapView: (ctx) => { ctx.ow.renderer?.invalidate(); },
   SetHiddenItemFlag: () => { flagSet(varGet(SV.x8004)); },

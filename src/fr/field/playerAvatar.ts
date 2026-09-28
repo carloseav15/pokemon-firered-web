@@ -53,6 +53,35 @@ export function SetPlayerAvatarTransitionFlags(flags: number): void {
   gPlayerAvatar?.setTransitionFlags(flags);
 }
 
+/** GetPlayerFacingDirection / GetPlayerMovementDirection (field_player_avatar.c). */
+export function GetPlayerFacingDirection(): number { return gPlayerAvatar?.object.facingDirection ?? 0; }
+export function GetPlayerMovementDirection(): number { return gPlayerAvatar?.object.movementDirection ?? 0; }
+/** PlayerGetElevation returns the player's previous elevation byte. */
+export function PlayerGetElevation(): number { return gPlayerAvatar?.object.previousElevation ?? 0; }
+export function GetPlayerAvatarFlags(): number { return gPlayerAvatar?.flags ?? 0; }
+export function GetPlayerAvatarGraphicsIdByStateIdAndGender(state: number, gender: number): number {
+  return PlayerAvatar.graphicsId(state, gender);
+}
+export function GetRivalAvatarGraphicsIdByStateIdAndGender(state: number, gender: number): number {
+  return GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gender);
+}
+export function GetRSAvatarGraphicsIdByGender(gender: number): number {
+  return [C.OBJ_EVENT_GFX_RS_BRENDAN, C.OBJ_EVENT_GFX_RS_MAY][gender] ?? 0;
+}
+export function GetPlayerAvatarGraphicsIdByStateId(state: number): number {
+  return GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gPlayerAvatar?.gender ?? 0);
+}
+export function GetPlayerAvatarGenderByGraphicsId(gfxId: number): number {
+  const femaleGraphics = [C.OBJ_EVENT_GFX_GREEN_NORMAL, C.OBJ_EVENT_GFX_GREEN_BIKE, C.OBJ_EVENT_GFX_GREEN_SURF,
+    C.OBJ_EVENT_GFX_GREEN_FIELD_MOVE, C.OBJ_EVENT_GFX_GREEN_FISH];
+  return femaleGraphics.includes(gfxId) ? 1 : 0;
+}
+export function GetPlayerAvatarGraphicsIdByCurrentState(): number {
+  const avatar = gPlayerAvatar;
+  if (!avatar) return 0;
+  return GetPlayerAvatarGraphicsIdByStateId(avatar.currentStateId());
+}
+
 export class PlayerAvatar {
   flags = PLAYER_AVATAR_FLAG_ON_FOOT;
   runningState = NOT_MOVING;
