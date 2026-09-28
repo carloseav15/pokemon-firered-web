@@ -208,6 +208,22 @@ export function FieldUseFunc_Bike(game: Game, route: {
   }
 }
 
+/** ItemUseOnFieldCB_Rod (item_use.c): start the selected rod's fishing state. */
+function ItemUseOnFieldCB_Rod(game: Game, rodType: number): void {
+  startFishing(game.overworld, rodType);
+}
+
+/** FieldUseFunc_Rod (item_use.c): gate the rod, then enter the field callback. */
+export function FieldUseFunc_Rod(game: Game, item: number, route: {
+  notNow: () => void; onField: (callback: () => void) => void;
+}): void {
+  if (!CanFish(game)) {
+    route.notNow();
+    return;
+  }
+  route.onField(() => ItemUseOnFieldCB_Rod(game, itemInfo(item)?.secondaryId ?? 0));
+}
+
 export function openFieldBag(game: Game, initialItem?: number): void {
   let post: (() => void) | null = null;
   fieldMenu(game, close => {
@@ -265,7 +281,6 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       CB2_ChooseMonToGiveItem();
     };
     const use = (item: number): void => {
-      const info = itemInfo(item)!;
       const ow = game.overworld;
       switch (ItemId_GetFieldFunc(item)) {
         case "FieldUseFunc_Medicine": case "FieldUseFunc_Ether": case "FieldUseFunc_PpUp": leave(() => medicine(item)); return;
@@ -325,8 +340,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           });
           return;
         case "FieldUseFunc_Rod":
-          if (!canFish(game)) { notNow(); return; }
-          onField(() => startFishing(ow, info.secondaryId));
+          FieldUseFunc_Rod(game, item, { notNow, onField });
           return;
         case "ItemUseOutOfBattle_EscapeRope":
           if (!ow.header.allowEscaping) { notNow(); return; }
@@ -387,7 +401,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
 }
 
 /** item_use.c CanFish */
-function canFish(game: Game): boolean {
+function CanFish(game: Game): boolean {
   const ow = game.overworld;
   const p = ow.player.object;
   const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
