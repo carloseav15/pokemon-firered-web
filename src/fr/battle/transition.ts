@@ -714,34 +714,72 @@ function safeSin(index: number, amplitude: number): number {
   return Math.round(amplitude * Math.sin((idx * 2 * Math.PI) / 256));
 }
 
-/** Task_Wave / Wave_Main: Sine wave window wipe from left to right. */
+/** Task_Wave: Sine wave window wipe from left to right. */
 class WaveEffect implements Effect {
-  readonly rowBounds: [number, number][] = [];
-  private tX = 0;
-  private tSinIndex = 0;
-
-  constructor() {
-    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
-      this.rowBounds.push([0, DISPLAY_WIDTH]);
-    }
-  }
+  readonly rowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
+  readonly workingRowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [DISPLAY_WIDTH + 2, DISPLAY_WIDTH + 4]);
+  state = 0;
+  tX = 0;
+  tSinIndex = 0;
+  vblankDma = false;
+  done = false;
 
   tick(): boolean {
-    this.tSinIndex = (this.tSinIndex + 16) & 0xff;
-    this.tX += 8;
-    let sinIndex = this.tSinIndex;
-    let finished = true;
-
-    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
-      let x = this.tX + safeSin(sinIndex, 40);
-      sinIndex = (sinIndex + 4) & 0xff;
-      if (x < 0) x = 0;
-      if (x > DISPLAY_WIDTH) x = DISPLAY_WIDTH;
-      this.rowBounds[i] = [x, DISPLAY_WIDTH];
-      if (x < DISPLAY_WIDTH) finished = false;
-    }
-    return finished;
+    return Task_Wave(this);
   }
+}
+
+/** Task_Wave (battle_transition.c): run the C state table until it yields a frame. */
+function Task_Wave(effect: WaveEffect): boolean {
+  let keepRunning: boolean;
+  do {
+    switch (effect.state) {
+      case 0: keepRunning = Wave_Init(effect); break;
+      case 1: keepRunning = Wave_Main(effect); break;
+      default: keepRunning = Wave_End(effect); break;
+    }
+  } while (keepRunning);
+  VBlankCB_Wave(effect);
+  return effect.done;
+}
+
+/** Wave_Init (battle_transition.c). */
+function Wave_Init(effect: WaveEffect): boolean {
+  effect.vblankDma = false;
+  effect.state++;
+  return true;
+}
+
+/** Wave_Main (battle_transition.c): compute the u8 sine index and clipped WIN0H per scanline. */
+function Wave_Main(effect: WaveEffect): boolean {
+  effect.vblankDma = false;
+  effect.tSinIndex = (effect.tSinIndex + 16) & 0xffff;
+  effect.tX = (effect.tX + 8) | 0;
+  let sinIndex = effect.tSinIndex & 0xff;
+  let finished = true;
+  for (let i = 0; i < DISPLAY_HEIGHT; i++) {
+    let x = effect.tX + safeSin(sinIndex, 40);
+    sinIndex = (sinIndex + 4) & 0xff;
+    if (x < 0) x = 0;
+    if (x > DISPLAY_WIDTH) x = DISPLAY_WIDTH;
+    effect.workingRowBounds[i] = [x, DISPLAY_WIDTH + 1];
+    if (x < DISPLAY_WIDTH) finished = false;
+  }
+  if (finished) effect.state++;
+  effect.vblankDma = true;
+  return false;
+}
+
+/** Wave_End (battle_transition.c); the Canvas scene performs the shared black fade. */
+function Wave_End(effect: WaveEffect): boolean {
+  effect.done = true;
+  return false;
+}
+
+/** VBlankCB_Wave (battle_transition.c), adapted to commit scanline bounds for Canvas. */
+function VBlankCB_Wave(effect: WaveEffect): void {
+  if (!effect.vblankDma) return;
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) effect.rowBounds[y] = [...effect.workingRowBounds[y]!];
 }
 
 /** Task_Ripple / Ripple_Main: Vertical scanline sinusoidal ripple, then fade to black. */
