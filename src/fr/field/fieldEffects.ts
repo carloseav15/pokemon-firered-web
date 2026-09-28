@@ -9,7 +9,7 @@ import { Sprite, loadImage } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
 import { DATA_ROOT, rom, type AnimCmd } from "../rom";
 import { flagClear, flagGet, save, varGet, varSet } from "../save";
-import { actionWalkInPlaceNormal, actionWalkSlower, DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, graphicsInfo, type ObjectEvent } from "./objectEvents";
+import { actionWalkInPlaceNormal, actionWalkSlower, DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, ShiftObjectEventCoords, ShiftStillObjectEventCoords, graphicsInfo, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { FieldMoveEffects } from "./fieldMoves";
 import { RestartWildEncounterImmunitySteps } from "./wildEncounter";
@@ -214,6 +214,7 @@ export class FieldEffects {
   private readonly emoteCounts = new Map<number, number>();
   private readonly disguiseSprites = new WeakMap<ObjectEvent, Sprite>();
   private readonly reflectionSprites = new Map<ObjectEvent, Sprite>();
+  private readonly deoxysRockObjects = new Map<number, ObjectEvent>();
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
   poisonMosaicValue = 0;
@@ -340,8 +341,57 @@ export class FieldEffects {
     this.active.add(id);
     const handler = this.handlers.get(id);
     if (handler) { handler(); return; }
+    if (id === C.FLDEFF_MOVE_DEOXYS_ROCK) { this.FldEff_MoveDeoxysRock(); return; }
     if (this.moves.start(id)) return;
     if (!this.startIcon(id)) this.active.delete(id);
+  }
+
+  /** FldEff_MoveDeoxysRock / Task_MoveDeoxysRock_Step from field_effect.c. */
+  private FldEff_MoveDeoxysRock(): void {
+    const args = this.ow.game.fieldEffectArguments;
+    const object = this.ow.objects.byLocalIdAndMap(args[0]! & 0xff, args[1]! & 0xff, args[2]! & 0xff);
+    if (!object) return;
+    const dx = (args[3]! - (object.currentCoords.x - MAP_OFFSET)) * 16;
+    const dy = (args[4]! - (object.currentCoords.y - MAP_OFFSET)) * 16;
+    ShiftObjectEventCoords(object, args[3]! + MAP_OFFSET, args[4]! + MAP_OFFSET);
+    const taskId = tasks.create((id) => this.Task_MoveDeoxysRock_Step(id), 0x50);
+    const data = tasks.data(taskId);
+    data[1] = this.ow.sprites.getId(object.sprite);
+    data[2] = ((object.sprite.x + dx) << 16) >> 16;
+    data[3] = ((object.sprite.y + dy) << 16) >> 16;
+    data[8] = (args[5]! << 16) >> 16;
+    data[9] = (this.ow.objects.indexOf(object) << 16) >> 16;
+    this.deoxysRockObjects.set(taskId, object);
+  }
+
+  private Task_MoveDeoxysRock_Step(taskId: number): void {
+    const data = tasks.data(taskId);
+    const object = this.deoxysRockObjects.get(taskId);
+    if (!object) { this.active.delete(C.FLDEFF_MOVE_DEOXYS_ROCK); tasks.destroy(taskId); return; }
+    const sprite = object.sprite;
+    if (data[0] === 0) {
+      data[4] = (sprite.x << 4 << 16) >> 16;
+      data[5] = (sprite.y << 4 << 16) >> 16;
+      const frames = data[8]!;
+      data[6] = frames !== 0 ? ((((data[2]! << 4) - data[4]!) / frames) << 16) >> 16 : 0;
+      data[7] = frames !== 0 ? ((((data[3]! << 4) - data[5]!) / frames) << 16) >> 16 : 0;
+      data[0] = 1;
+    }
+    if (data[8] !== 0) {
+      data[8] = (data[8]! - 1 << 16) >> 16;
+      data[4] = (data[4]! + data[6]! << 16) >> 16;
+      data[5] = (data[5]! + data[7]! << 16) >> 16;
+      sprite.x = data[4]! >> 4;
+      sprite.y = data[5]! >> 4;
+    } else {
+      sprite.x = data[2]!;
+      sprite.y = data[3]!;
+      ShiftStillObjectEventCoords(object);
+      object.triggerGroundEffectsOnStop = true;
+      this.active.delete(C.FLDEFF_MOVE_DEOXYS_ROCK);
+      this.deoxysRockObjects.delete(taskId);
+      tasks.destroy(taskId);
+    }
   }
 
   /** MovementAction_Emote* and trainer_see.c copy the object identity to field-effect arguments before dispatch. */
