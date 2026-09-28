@@ -121,6 +121,7 @@ export type ObjectEventHooks = {
   unregisterSprite?: (sprite: Sprite) => void;
   cameraOffset?: () => { x: number; y: number };
   startDisguise?: (object: ObjectEvent, kind: "tree" | "mountain") => void;
+  startShadow?: (object: ObjectEvent) => void;
   startDisguiseReveal?: (object: ObjectEvent) => void;
   isDisguiseRevealFinished?: (object: ObjectEvent) => boolean;
 };
@@ -2080,7 +2081,7 @@ export class ObjectEvents {
     object.landingJump = true;
     object.triggerGroundEffectsOnMove = true;
     object.disableCoveringGroundEffects = true;
-    if (shadow) object.hasShadow = true;
+    if (shadow) this.hooks.startShadow?.(object);
   }
 
   /** DoJumpSpriteMovement */

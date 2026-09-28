@@ -201,6 +201,8 @@ export class FieldEffects {
   readonly tasks = tasks;
   private surfBlob?: Sprite;
   private flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
+  private shadowEffects = new WeakMap<ObjectEvent, Sprite>();
+  private shadowSprites = new Set<Sprite>();
   private shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
   private hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
   private sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -434,6 +436,8 @@ export class FieldEffects {
     this.surfBlobHasPlayerOffset = false;
     this.surfBlobPlayerOffset = 0;
     this.flowingWaterEffects = new WeakMap<ObjectEvent, Sprite>();
+    this.shadowEffects = new WeakMap<ObjectEvent, Sprite>();
+    this.shadowSprites.clear();
     this.shortGrassEffects = new WeakMap<ObjectEvent, Sprite>();
     this.hotSpringsEffects = new WeakMap<ObjectEvent, Sprite>();
     this.sandPileEffects = new WeakMap<ObjectEvent, Sprite>();
@@ -630,7 +634,6 @@ export class FieldEffects {
     if (kind === "begin") {
       if (MB.MetatileBehavior_IsTallGrass(cur)) this.spawnTallGrass(object, false);
       if (MB.MetatileBehavior_IsLongGrass(cur)) this.spawnLongGrass(object);
-      if (object.hasShadow) this.spawnShadow(object);
       if (MB.MetatileBehavior_IsDeepSand(prev)) this.GroundEffect_DeepSandTracks(object);
       else if (MB.MetatileBehavior_IsSand(prev) || MB.MetatileBehavior_IsFootprints(prev)) this.GroundEffect_SandTracks(object);
       if (!object.landingJump && MB.MetatileBehavior_IsPuddle(cur) && MB.MetatileBehavior_IsPuddle(prev)) this.GroundEffect_StepOnPuddle(object);
@@ -1010,22 +1013,60 @@ export class FieldEffects {
     };
   }
 
-  private spawnShadow(object: ObjectEvent): void {
-    const raw = rom.objects.gfx[String(object.graphicsId)];
-    const size = raw?.shadowSize ?? "SHADOW_SIZE_M";
-    const sprite = this.createFromTemplate(SHADOW_TEMPLATES[size] ?? "ShadowMedium", object.sprite.x, object.sprite.y);
-    if (!sprite) return;
-    sprite.priority = object.sprite.priority;
-    sprite.subpriority = object.sprite.subpriority + 1;
-    const offset = (object.sprite.height >> 1) - (SHADOW_OFFSETS[size] ?? 4);
-    sprite.callback = (s) => {
-      s.priority = object.sprite.priority;
-      s.subpriority = object.sprite.subpriority + 1;
-      s.x = object.sprite.x;
-      s.y = object.sprite.y + offset;
-      const jumping = object.heldMovementActive && !object.heldMovementFinished && object.sprite.y2 !== 0;
-      if (!object.active || !object.hasShadow || (!jumping && object.sprite.data[2] !== 1)) this.ow.sprites.destroy(s);
-    };
+  /** DoShadowFieldEffect (event_object_movement.c). */
+  DoShadowFieldEffect(object: ObjectEvent): void {
+    if (object.hasShadow) return;
+    object.hasShadow = true;
+    this.FldEff_Shadow(object);
+  }
+
+  /** FldEff_Shadow (field_effect_helpers.c). */
+  FldEff_Shadow(object: ObjectEvent): number {
+    const graphics = graphicsInfo(object.graphicsId);
+    const sprite = this.createFromTemplate(SHADOW_TEMPLATES[graphics.shadowSize] ?? "ShadowMedium", 0, 0);
+    if (!sprite) return 0;
+    sprite.coordOffsetEnabled = true;
+    sprite.subpriority = 0x94;
+    sprite.data[0] = object.localId & 0xff;
+    sprite.data[1] = object.mapNum & 0xff;
+    sprite.data[2] = object.mapGroup & 0xff;
+    sprite.data[3] = (((graphics.height >> 1) - (SHADOW_OFFSETS[graphics.shadowSize] ?? 4)) << 16) >> 16;
+    sprite.callback = (s) => this.UpdateShadowFieldEffect(s);
+    this.shadowEffects.set(object, sprite);
+    this.shadowSprites.add(sprite);
+    this.active.add(C.FLDEFF_SHADOW);
+    return 0;
+  }
+
+  /** UpdateShadowFieldEffect (field_effect_helpers.c). */
+  UpdateShadowFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[0]! & 0xff, sprite.data[1]! & 0xff, sprite.data[2]! & 0xff);
+    if (!object) {
+      this.stopShadowFieldEffect(sprite);
+      return;
+    }
+
+    const linkedSprite = object.sprite;
+    sprite.priority = linkedSprite.priority & 0xff;
+    sprite.x = linkedSprite.x;
+    sprite.y = linkedSprite.y + sprite.data[3]!;
+    const current = object.currentMetatileBehavior;
+    const previous = object.previousMetatileBehavior;
+    if (!object.active || !object.hasShadow
+      || MB.MetatileBehavior_IsPokeGrass(current)
+      || MB.MetatileBehavior_IsSurfable(current)
+      || MB.MetatileBehavior_IsSurfable(previous)
+      || MB.MetatileBehavior_IsReflective(current)
+      || MB.MetatileBehavior_IsReflective(previous)) {
+      this.stopShadowFieldEffect(sprite, object);
+    }
+  }
+
+  private stopShadowFieldEffect(sprite: Sprite, object?: ObjectEvent): void {
+    this.ow.sprites.destroy(sprite);
+    this.shadowSprites.delete(sprite);
+    if (object && this.shadowEffects.get(object) === sprite) this.shadowEffects.delete(object);
+    if (this.shadowSprites.size === 0) this.active.delete(C.FLDEFF_SHADOW);
   }
 
   private spawnJumpLanding(object: ObjectEvent): void {

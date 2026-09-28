@@ -233,6 +233,7 @@ export class Overworld {
       unregisterSprite: (sprite) => this.sprites.destroy(sprite),
       cameraOffset: () => ({ x: this.camX, y: this.camY }),
       startDisguise: (object, kind) => this.effects.StartDisguiseFieldEffect(object, kind),
+      startShadow: (object) => this.effects.DoShadowFieldEffect(object),
       startDisguiseReveal: (object) => this.effects.StartRevealDisguise(object),
       isDisguiseRevealFinished: (object) => this.effects.UpdateRevealDisguise(object),
     });

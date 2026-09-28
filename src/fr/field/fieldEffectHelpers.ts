@@ -119,16 +119,6 @@ export function ShowWarpArrowSprite(sprites: SpriteManager, spriteId: number, di
   };
 }
 
-/** FldEff_Shadow */
-export function FldEff_Shadow(): number {
-  return 0;
-}
-
-/** UpdateShadowFieldEffect */
-export function UpdateShadowFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
 /** FldEff_TallGrass */
 export function FldEff_TallGrass(): number {
   return 0;
