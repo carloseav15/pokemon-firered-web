@@ -851,32 +851,70 @@ class PokeballsTrailEffect implements Effect {
 /** Task_BattleTransition_Intro: two gray blinks (BlendPalettes toward RGB(11,11,11)) before the main effect. */
 class IntroBlink {
   private blend = 0;
-  private growing = true;
-  private fades = 2;
+  private state = 0;
+  private delayTimer: number;
+  private numFades: number;
   done = false;
 
-  /** BlendPalette level for this frame, 0..16 toward gray, or null once finished. */
-  tick(): number | null {
-    if (this.done) return null;
-    if (this.growing) {
-      this.blend = Math.min(16, this.blend + 2);
-      if (this.blend >= 16) this.growing = false;
-    } else {
-      this.blend = Math.max(0, this.blend - 2);
-      if (this.blend === 0) {
-        if (--this.fades === 0) { this.done = true; return null; }
-        this.growing = true;
-      }
-    }
-    return this.blend;
+  constructor(
+    private readonly fadeToGrayDelay: number,
+    private readonly fadeFromGrayDelay: number,
+    numFades: number,
+    private readonly fadeToGraySpeed: number,
+    private readonly fadeFromGraySpeed: number,
+  ) {
+    this.numFades = numFades;
+    this.delayTimer = fadeToGrayDelay;
   }
+
+  /** Task_BattleTransition_Intro dispatches one TransitionIntro stage per frame. */
+  Task_BattleTransition_Intro(): number | null {
+    if (this.done) return null;
+    if (this.state === 0) this.TransitionIntro_FadeToGray();
+    else this.TransitionIntro_FadeFromGray();
+    return this.done ? null : this.blend;
+  }
+
+  /** TransitionIntro_FadeToGray: C task data[7] blend and data[6] delay. */
+  private TransitionIntro_FadeToGray(): void {
+    if (this.delayTimer === 0 || --this.delayTimer === 0) {
+      this.delayTimer = this.fadeToGrayDelay;
+      this.blend += this.fadeToGraySpeed;
+      if (this.blend > 16) this.blend = 16;
+    }
+    if (this.blend >= 16) {
+      this.state++;
+      this.delayTimer = this.fadeFromGrayDelay;
+    }
+  }
+
+  /** TransitionIntro_FadeFromGray: finish each pulse or begin the next one. */
+  private TransitionIntro_FadeFromGray(): void {
+    if (this.delayTimer === 0 || --this.delayTimer === 0) {
+      this.delayTimer = this.fadeFromGrayDelay;
+      this.blend -= this.fadeFromGraySpeed;
+      if (this.blend < 0) this.blend = 0;
+    }
+    if (this.blend === 0) {
+      if (--this.numFades === 0) this.done = true;
+      else { this.delayTimer = this.fadeToGrayDelay; this.state = 0; }
+    }
+  }
+
+  /** IsIntroTaskDone (battle_transition.c). */
+  IsIntroTaskDone(): boolean { return this.done; }
+}
+
+/** CreateIntroTask (battle_transition.c): defaults match the shared transition intro. */
+function CreateIntroTask(fadeToGrayDelay: number, fadeFromGrayDelay: number, numFades: number, fadeToGraySpeed: number, fadeFromGraySpeed: number): IntroBlink {
+  return new IntroBlink(fadeToGrayDelay, fadeFromGrayDelay, numFades, fadeToGraySpeed, fadeFromGraySpeed);
 }
 
 const GRAY = [88, 88, 88]; // RGB(11, 11, 11)
 
 export class BattleTransitionScene implements Scene {
   private readonly snapshot: HTMLCanvasElement;
-  private intro: IntroBlink | null = new IntroBlink();
+  private intro: IntroBlink | null = CreateIntroTask(0, 0, 2, 2, 2);
   private introBlend = 0;
   private effect: Effect | null;
   private readonly hadEffect: boolean;
@@ -906,7 +944,8 @@ export class BattleTransitionScene implements Scene {
   update(): void {
     if (this.done) return;
     if (this.intro) {
-      const blend = this.intro.tick();
+      const blend = this.intro.Task_BattleTransition_Intro();
+      if (this.intro.IsIntroTaskDone()) this.intro = null;
       if (blend === null) { this.intro = null; this.introBlend = 0; } else this.introBlend = blend;
       return;
     }
