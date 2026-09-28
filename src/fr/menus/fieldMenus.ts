@@ -250,6 +250,22 @@ export function FieldUseFunc_PowderJar(item: number, display: (text: ArrayLike<n
   display(rom.text("gText_PowderQty"));
 }
 
+/** UseTownMapFromBag (item_use.c): open the normal map and return to the bag when it closes. */
+export function UseTownMapFromBag(game: Game, returnToBag: () => void): void {
+  openRegionMap(game, REGIONMAP_TYPE_NORMAL, returnToBag);
+}
+
+/** Task_UseTownMapFromField (item_use.c): open the normal map with the field return callback. */
+export function Task_UseTownMapFromField(game: Game): void {
+  game.showTownMapFromField();
+}
+
+/** FieldUseFunc_TownMap (item_use.c): choose the bag or field callback for this use. */
+export function FieldUseFunc_TownMap(fromBag: boolean, route: { openFromBag: () => void; openFromField: () => void }): void {
+  if (fromBag) route.openFromBag();
+  else route.openFromField();
+}
+
 /** ItemUseOnFieldCB_EscapeRope (item_use.c): reset field state, consume the item, and print its message. */
 function ItemUseOnFieldCB_EscapeRope(game: Game, item: number): void {
   game.overworld.resetStateAfterDigEscRope();
@@ -400,9 +416,10 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           ItemUseOutOfBattle_Itemfinder(game, onField);
           return;
         case "FieldUseFunc_TownMap":
-          // From the bag the map returns to the bag (CB2_BagMenuFromStartMenu); a registered use returns to the field.
-          if (initialItem !== undefined) onField(() => game.showTownMapFromField());
-          else leave(() => openRegionMap(game, REGIONMAP_TYPE_NORMAL, bag));
+          FieldUseFunc_TownMap(initialItem === undefined, {
+            openFromBag: () => leave(() => UseTownMapFromBag(game, bag)),
+            openFromField: () => onField(() => Task_UseTownMapFromField(game)),
+          });
           return;
         case "FieldUseFunc_FameChecker":
           ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
