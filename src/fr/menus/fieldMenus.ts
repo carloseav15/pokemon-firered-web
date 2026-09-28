@@ -4,7 +4,7 @@ import type { Game } from "../game";
 import { HwScene } from "../hw/runtime";
 import { openMailView } from "./mailView";
 import { blankMail, mailLines } from "../pokemon/mail";
-import { decode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
+import { decode, expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
 import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "../pokemon/items";
@@ -141,10 +141,22 @@ export function openFieldParty(game: Game): void {
  * While a field function runs from the bag, `bagCtx` is its bag task: plain
  * messages print in the bag, and flows that need another screen leave it first.
  */
-/** FieldUseFunc_OakStopsYou from item_use.c; `display` keeps the caller's bag/pouch context. */
-export function FieldUseFunc_OakStopsYou(display: (text: Uint8Array) => void): void {
+/** DisplayItemMessageInCurrentContext (item_use.c), routed through the active bag or field UI. */
+export function DisplayItemMessageInCurrentContext(
+  text: ArrayLike<number>, fontId: number, display: (text: Uint8Array, fontId: number) => void,
+): void {
+  display(expandPlaceholders(text), fontId);
+}
+
+/** PrintNotTheTimeToUseThat (item_use.c). */
+export function PrintNotTheTimeToUseThat(display: (text: Uint8Array, fontId: number) => void): void {
   stringVars.var1 = Uint8Array.from(save.playerName);
-  display(rom.text("gText_OakForbidsUseOfItemHere"));
+  DisplayItemMessageInCurrentContext(rom.text("gText_OakForbidsUseOfItemHere"), C.FONT_MALE, display);
+}
+
+/** FieldUseFunc_OakStopsYou from item_use.c; `display` keeps the caller's bag/pouch context. */
+export function FieldUseFunc_OakStopsYou(display: (text: Uint8Array, fontId: number) => void): void {
+  PrintNotTheTimeToUseThat(display);
 }
 
 /** Task_UsedBlackWhiteFlute from item_use.c: tick data[8], play after eight frames, then show the context message. */
@@ -394,12 +406,12 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       post = () => { game.overworld.controlsLocked = true; game.overworld.objects.freezeAll(); cb(); };
       finish();
     });
-    const message = (title: string | ArrayLike<number>, next: () => void = back): void => {
+    const message = (title: string | ArrayLike<number>, next: () => void = back, fontId = C.FONT_NORMAL): void => {
       const bytes = typeof title === "string" ? encode(title) : title;
-      if (bagCtx && next === back) { const ctx = bagCtx; bagCtx = null; ctx.message(bytes); return; }
+      if (bagCtx && next === back) { const ctx = bagCtx; bagCtx = null; ctx.message(bytes, fontId); return; }
       leave(() => openHardwareMessage(bytes, next));
     };
-    const notNow = (next: () => void = back): void => FieldUseFunc_OakStopsYou((text) => message(text, next));
+    const notNow = (next: () => void = back): void => FieldUseFunc_OakStopsYou((text, fontId) => message(text, next, fontId));
     /** CB2_ShowPartyMenuForItemUse after SetUpItemUseCallback has finished leaving the bag/pouch. */
     const enterPartyMenuWithItem = (item: number): void => {
       bagResult.itemId = item;
