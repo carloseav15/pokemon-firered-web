@@ -285,6 +285,22 @@ export class Overworld {
     return id;
   }
 
+  /** Overworld_GetMapHeaderByGroupAndId (overworld.c): unlike the GBA's directly-addressable ROM
+   * table, headers here load on demand, so this returns undefined when the destination hasn't
+   * been fetched yet (see rom.cachedMap; used throughout this class for the same reason). */
+  Overworld_GetMapHeaderByGroupAndId(mapGroup: number, mapNum: number): MapHeader | undefined {
+    try {
+      return rom.cachedMap(this.mapIdForWarp({ mapGroup, mapNum, warpId: -1, x: -1, y: -1 }));
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** GetDestinationWarpMapHeader (overworld.c). */
+  GetDestinationWarpMapHeader(): MapHeader | undefined {
+    return this.Overworld_GetMapHeaderByGroupAndId(this.warpDestination.mapGroup, this.warpDestination.mapNum);
+  }
+
   // ---------------------------------------------------------------- warps
 
   /** SetWarpData (overworld.c): arguments are truncated to the source s8 fields. */
@@ -460,6 +476,12 @@ export class Overworld {
     };
   }
 
+  /** Overworld_SetWhiteoutRespawnPoint (overworld.c): the healer/atHome info the real C also
+   * computes stays unused here — DoWhiteOut hasn't been assembled yet (see PORTING-STATUS.md). */
+  Overworld_SetWhiteoutRespawnPoint(): void {
+    this.warpDestination = this.SetWhiteoutRespawnWarpAndHealerNpc().warp;
+  }
+
   updateEscapeWarp(x: number, y: number): void {
     const current = this.header.mapType;
     let destType = MAP_TYPE.NONE;
@@ -506,6 +528,12 @@ export class Overworld {
     this.loadPromise = undefined;
     this.game.setCallbacks(null, () => this.cb2LoadMap());
   }
+
+  /** WarpIntoMap (overworld.c): ApplyCurrentWarp + LoadCurrentMapData + SetPlayerCoordsFromWarp
+   * are synchronous on GBA ROM; here map data loads on demand, so this starts CB2_LoadMap instead
+   * of running the three steps inline (applyCurrentWarp/setPlayerCoordsFromWarp still exist, run
+   * once the fetched header is available). */
+  WarpIntoMap(): void { this.warpIntoMapAndLoad(); }
 
   // ---------------------------------------------------------------- loading
 
@@ -730,6 +758,20 @@ export class Overworld {
     this.objects.templates = templates;
     this.objects.mapNum = save.location.mapNum;
     this.objects.mapGroup = save.location.mapGroup;
+  }
+
+  /** SetObjEventTemplateCoords (overworld.c): equivalent to the inline lookup ScrCmd_setobjectxyperm
+   * already did against ctx.ow.objects.templates. */
+  SetObjEventTemplateCoords(localId: number, x: number, y: number): void {
+    const t = this.objects.templates.find((tt) => tt.localId === localId);
+    if (t) { t.x = (x << 16) >> 16; t.y = (y << 16) >> 16; }
+  }
+
+  /** SetObjEventTemplateMovementType (overworld.c): equivalent to the inline lookup
+   * ScrCmd_setobjectmovementtype already did against ctx.ow.objects.templates. */
+  SetObjEventTemplateMovementType(localId: number, movementType: number): void {
+    const t = this.objects.templates.find((tt) => tt.localId === localId);
+    if (t) t.movementType = movementType;
   }
 
   /** ResumeMap */
@@ -1479,14 +1521,9 @@ export class Overworld {
   }
   tryFadeOutOldMapMusic(): void { this.TryFadeOutOldMapMusic(); }
 
-  /** GetLocationMusic (overworld.c): best-effort — the full map header may not be cached yet
-   * in this port (maps load on demand instead of all living in ROM at once). */
+  /** GetLocationMusic (overworld.c). */
   GetLocationMusic(warp: WarpData): number | undefined {
-    try {
-      return rom.cachedMap(this.mapIdForWarp(warp))?.music;
-    } catch {
-      return undefined;
-    }
+    return this.Overworld_GetMapHeaderByGroupAndId(warp.mapGroup, warp.mapNum)?.music;
   }
 
   /** GetCurrLocationDefaultMusic (overworld.c). */
@@ -1501,11 +1538,8 @@ export class Overworld {
 
   /** GetMapMusicFadeoutSpeed (overworld.c). */
   GetMapMusicFadeoutSpeed(): number {
-    try {
-      return IsMapTypeIndoors(this.peekMapType(this.mapIdForWarp(this.warpDestination))) ? 2 : 4;
-    } catch {
-      return 4;
-    }
+    const mapHeader = this.GetDestinationWarpMapHeader();
+    return mapHeader && IsMapTypeIndoors(mapHeader.mapType) ? 2 : 4;
   }
 
   /** Overworld_ResetMapMusic (overworld.c). */

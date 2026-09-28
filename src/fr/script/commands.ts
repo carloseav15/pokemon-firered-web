@@ -389,8 +389,7 @@ function ScrCmd_setobjectxyperm(ctx: ScriptRunner): boolean {
   const localId = varGet(ctx.ScriptReadHalfword());
   const x = varGet(ctx.ScriptReadHalfword());
   const y = varGet(ctx.ScriptReadHalfword());
-  const t = ctx.ow.objects.templates.find((tt) => tt.localId === localId);
-  if (t) { t.x = x << 16 >> 16; t.y = y << 16 >> 16; }
+  ctx.ow.SetObjEventTemplateCoords(localId, x, y);
   return false;
 }
 function ScrCmd_copyobjectxytoperm(ctx: ScriptRunner): boolean {
@@ -427,8 +426,7 @@ function ScrCmd_turnobject(ctx: ScriptRunner): boolean {
 function ScrCmd_setobjectmovementtype(ctx: ScriptRunner): boolean {
   const localId = varGet(ctx.ScriptReadHalfword());
   const type = ctx.readByte();
-  const t = ctx.ow.objects.templates.find((tt) => tt.localId === localId);
-  if (t) t.movementType = type;
+  ctx.ow.SetObjEventTemplateMovementType(localId, type);
   return false;
 }
 function ScrCmd_createvobject(ctx: ScriptRunner): boolean {
