@@ -348,9 +348,30 @@ export class FieldEffects {
   /** FldEffPoison_IsActive. */
   FldEffPoison_IsActive(): boolean { return this.poisonEffectTaskActive; }
 
+  /** FieldEffectActiveListClear (field_effect.c). */
+  FieldEffectActiveListClear(): void { this.active.clear(); }
+
+  /** FieldEffectActiveListAdd (field_effect.c). */
+  FieldEffectActiveListAdd(fldeff: number): void { this.active.add(fldeff); }
+
+  /** FieldEffectActiveListRemove (field_effect.c). */
+  FieldEffectActiveListRemove(fldeff: number): void { this.active.delete(fldeff); }
+
+  /** FieldEffectActiveListContains (field_effect.c). */
+  FieldEffectActiveListContains(fldeff: number): boolean { return this.active.has(fldeff); }
+
+  /** FieldEffectStop (field_effect.c): frees the sprite (DestroySprite); this port's Sprite has no
+   * shared VRAM tile/palette pool to also free, unlike FieldEffectFreeGraphicsResources's
+   * FieldEffectFreeTilesIfUnused/FieldEffectFreePaletteIfUnused (each sprite owns its own image
+   * reference, and the browser's image cache handles sharing). */
+  FieldEffectStop(sprite: Sprite, fldeff: number): void {
+    this.ow.sprites.destroy(sprite);
+    this.active.delete(fldeff);
+  }
+
   /** FieldEffectStart: marks the effect active and runs its script. */
   start(id: number): void {
-    this.active.add(id);
+    this.FieldEffectActiveListAdd(id);
     const handler = this.handlers.get(id);
     if (handler) { handler(); return; }
     if (id === C.FLDEFF_TALL_GRASS) { this.FldEff_TallGrass(); return; }
