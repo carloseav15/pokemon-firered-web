@@ -32,6 +32,7 @@ import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/speci
 import { ReadTrainerTowerAndValidate } from "../cereaderTool";
 import { WonderNews_GetRewardInfo } from "../wonderNews";
 import { BufferRandomHobbyOrLifestyleString } from "../easyChat";
+import { IsEnigmaBerryValid } from "../pokemon/berry";
 
 type Special = (ctx: ScriptRunner) => number | void;
 
@@ -413,9 +414,8 @@ export const SPECIALS: Record<string, Special> = {
     flagSet(rom.c("FLAG_SYS_RIBBON_GET"));
     SetMonData(mon, rom.c("MON_DATA_EFFORT_RIBBON"), 1);
   },
-  // ---- enigma berry (berry.c:984): no enigma-berry storage in the web save,
-  // so the checksum check can never pass, matching an empty berry slot.
-  IsEnigmaBerryValid: () => 0,
+  // ---- enigma berry (berry.c:984)
+  IsEnigmaBerryValid: () => IsEnigmaBerryValid() ? 1 : 0,
   // ---- bike swap (item.c:458): FireRed only registers the Bicycle, so the
   // Mach/Acro swap is a no-op unless a Mach/Acro bike is registered.
   RegisteredItemHandleBikeSwap: () => {

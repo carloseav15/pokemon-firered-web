@@ -94,6 +94,8 @@ export type SaveData = {
   pokedexCaught: number[];
   gameStats: number[];
   giftRibbons?: number[];
+  /** berry.c EnigmaBerry save block, serialized as its 0x34 GBA bytes. */
+  enigmaBerry: number[];
   battleTower?: number[];
   miniGameResults?: { berryCrush: number[]; pokemonJump: number[]; berryPicking: number[]; berryPowder: number };
   playTimeFrames: number;
@@ -174,6 +176,7 @@ export function newSaveData(): SaveData {
     pokedexCaught: new Array(52).fill(0),
     gameStats: new Array(64).fill(0),
     giftRibbons: new Array(C.GIFT_RIBBONS_COUNT).fill(0),
+    enigmaBerry: new Array(0x34).fill(0),
     battleTower: [],
     miniGameResults: { berryCrush: [], pokemonJump: [], berryPicking: [], berryPowder: 0 },
     playTimeFrames: 0,
@@ -227,6 +230,7 @@ export function setSave(data: SaveData): void {
   data.easyChatBattleStart ??= [C.EC_WORD_ARE, C.EC_WORD_YOU, C.EC_WORD_READY, C.EC_WORD_QUES, C.EC_WORD_HERE_I_COME, C.EC_WORD_EXCL];
   data.easyChatBattleWon ??= new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
   data.easyChatBattleLost ??= new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
+  data.enigmaBerry ??= new Array(0x34).fill(0);
   data.additionalPhrases ??= new Array(C.NUM_ADDITIONAL_PHRASE_BYTES).fill(0);
   data.ramScript ??= emptyRamScript();
   data.questLogEvents ??= [];

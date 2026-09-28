@@ -66,6 +66,7 @@ import { ResetQLPlayedTheSlots } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
+import { ClearEnigmaBerries } from "./pokemon/berry";
 
 /** GetProfOaksRatingMessageByCount (prof_pc.c). */
 function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
@@ -231,6 +232,7 @@ export class Game {
     data.money = 3000;
     data.registeredItem = 0;
     setSave(data);
+    ClearEnigmaBerries();
     ResetGameStats();
     ClearMailData();
     ResetFameChecker();

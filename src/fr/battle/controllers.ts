@@ -4,7 +4,7 @@ import * as C from "../generated/constants";
 import {
   G, gActionSelectionCursor, gBattleBufferA, gBattleBufferB, gBattleMons, gBattlePartyCurrentOrder, gBattleScripting, gBattleStruct,
   gBattleTextBuff1, gBattleTextBuff2, gBattleTextBuff3, gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerPositions, gMoveSelectionCursor,
-  gLinkBattleSendBuffer, gLinkBattleRecvBuffer, gBitTable,
+  gLinkBattleSendBuffer, gLinkBattleRecvBuffer, gBitTable, gEnigmaBerries,
 } from "./globals";
 import { gBattleMoves } from "./macros";
 import { WEATHER_HAS_EFFECT2 } from "./util";
@@ -24,6 +24,8 @@ import {
   gLinkPlayers, GetLinkPlayerCount, getReceivedRemoteLinkPlayers, getWirelessCommType,
   setWirelessCommTypeToRfu, linkTransport, gBlockRecvBuffer,
 } from "../linkState";
+import { GetBerryInfo, IsEnigmaBerryValid } from "../pokemon/berry";
+import { save } from "../save";
 
 export const BUFFER_A = 0;
 export const BUFFER_B = 1;
@@ -68,6 +70,7 @@ export function InitBattleControllers(): void {
 }
 
 function InitSinglePlayerBtlControllers(): void {
+  SetAllPlayersBerryData();
   G.gBattleMainFunc = BeginBattleIntro;
   if (!(G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE)) {
     if (G.gBattleTypeFlags & C.BATTLE_TYPE_SAFARI) gBattlerControllerFuncs[0] = SetControllerToSafari;
@@ -87,6 +90,24 @@ function InitSinglePlayerBtlControllers(): void {
     gBattlerControllerFuncs[3] = SetControllerToOpponent;
     gBattlerPositions[3] = C.B_POSITION_OPPONENT_RIGHT;
     G.gBattlersCount = C.MAX_BATTLERS_COUNT;
+  }
+}
+
+/** SetAllPlayersBerryData (battle_main.c): initialize the single-player battlers' Enigma Berry data. */
+function SetAllPlayersBerryData(): void {
+  const valid = IsEnigmaBerryValid();
+  const berry = valid ? save.enigmaBerry : null;
+  const base = valid ? null : GetBerryInfo(C.ITEM_ENIGMA_BERRY - C.FIRST_BERRY_INDEX + 1);
+  for (const battler of [0, 2]) {
+    const target = gEnigmaBerries[battler];
+    target.name.fill(0xff);
+    const name = base?.name ?? berry!.slice(0, 7);
+    for (let i = 0; i < 6; i++) target.name[i] = name[i] ?? 0;
+    target.name[6] = 0xff;
+    target.itemEffect.fill(0);
+    if (berry) target.itemEffect.set(berry.slice(28, 46));
+    target.holdEffect = berry?.[46] ?? C.HOLD_EFFECT_NONE;
+    target.holdEffectParam = berry?.[47] ?? 0;
   }
 }
 
