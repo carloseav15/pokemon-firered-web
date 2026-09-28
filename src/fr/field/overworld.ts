@@ -18,7 +18,7 @@ import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, 
 import { FieldMap, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
-import { PlayerAvatar, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
+import { PlayerAvatar, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
 import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
@@ -1171,72 +1171,79 @@ export class Overworld {
   doDoorWarp(): void {
     this.controlsLocked = true;
     this.fieldCallback = () => this.fieldCBDefaultWarpExit();
-    let state = 0;
-    let x = 0, y = 0;
-    const id = tasks.create(() => {
-      const p = this.player.object;
-      switch (state) {
+    tasks.create((taskId) => this.Task_DoorWarp(taskId), 10);
+  }
+
+  /** Task_DoorWarp (field_fadetransition.c). */
+  private Task_DoorWarp(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const x = data[2]!, y = data[3]!;
+    const player = this.player.object;
+    switch (data[0]) {
         case 0:
           this.objects.freezeAll();
-          x = p.currentCoords.x;
-          y = p.currentCoords.y;
-          sound.playSE(this.doors.GetDoorSoundEffect(x, y - 1));
-          this.doors.FieldAnimateDoorOpen(x, y - 1);
-          state = 1;
+          ({ x: data[2], y: data[3] } = PlayerGetDestCoords());
+          sound.playSE(this.doors.GetDoorSoundEffect(data[2]!, data[3]! - 1));
+          data[1] = this.doors.FieldAnimateDoorOpen(data[2]!, data[3]! - 1);
+          data[0] = 1;
           break;
         case 1:
-          if (!this.doors.FieldIsDoorAnimationRunning()) {
-            this.objects.clearHeldMovementIfActive(p);
-            this.objects.setHeldMovement(p, 0x11);
-            state = 2;
+          if (data[1]! < 0 || !tasks.tasks[data[1]!]?.isActive) {
+            this.objects.clearHeldMovementIfActive(player);
+            this.objects.setHeldMovement(player, C.MOVEMENT_ACTION_WALK_NORMAL_UP);
+            data[0] = 2;
           }
           break;
         case 2:
           if (this.player.isStandingStill()) {
-            this.doors.FieldAnimateDoorClose(x, y - 1);
-            this.objects.ObjectEventClearHeldMovementIfFinished(p);
+            data[1] = this.doors.FieldAnimateDoorClose(x, y - 1);
+            this.objects.ObjectEventClearHeldMovementIfFinished(player);
             this.player.SetPlayerInvisibility(true);
-            state = 3;
+            data[0] = 3;
           }
           break;
         case 3:
-          if (!this.doors.FieldIsDoorAnimationRunning()) state = 4;
+          if (data[1]! < 0 || !tasks.tasks[data[1]!]?.isActive) data[0] = 4;
           break;
         case 4:
           this.tryFadeOutOldMapMusic();
           this.warpFadeOutScreen();
-          tasks.destroy(id);
-          this.startTeleport2WarpTask();
+          PlayRainStoppingSoundEffect();
+          data[0] = 0;
+          tasks.setFunc(taskId, (id) => this.Task_Teleport2Warp(id));
           break;
-      }
-    }, 10);
+    }
   }
 
   doTeleportWarp(): void {
     this.controlsLocked = true;
     this.tryFadeOutOldMapMusic();
     this.fieldCallback = () => this.fieldCBTeleportWarpIn();
-    const task = { id: -1, state: 0 };
-    task.id = tasks.create(() => {
-      switch (task.state) {
+    tasks.create((taskId) => this.Task_TeleportWarp(taskId), 10);
+  }
+
+  /** Task_TeleportWarp (field_fadetransition.c). */
+  private Task_TeleportWarp(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    switch (data[0]) {
         case 0:
           this.objects.freezeAll();
+          this.controlsLocked = true;
           sound.playSE(sound.c("SE_WARP_IN"));
           this.player.StartTeleportWarpOutPlayerAnim();
-          task.state++;
+          data[0]++;
           break;
         case 1:
-          if (!this.player.WaitTeleportWarpOutPlayerAnim()) { this.warpFadeOutScreen(); task.state++; }
+          if (!this.player.WaitTeleportWarpOutPlayerAnim()) { this.warpFadeOutScreen(); data[0]++; }
           break;
         case 2:
-          if (!paletteFade.active && sound.isBGMPausedOrStopped()) task.state++;
+          if (!this.WaitWarpFadeOutScreen() && sound.isBGMPausedOrStopped()) data[0]++;
           break;
         case 3:
-          tasks.destroy(task.id);
           this.warpIntoMapAndLoad();
+          tasks.destroy(taskId);
           break;
-      }
-    }, 10);
+    }
   }
 
   /** DoTeleport2Warp (field_fadetransition.c): warp with the teleport-in callback only. */
