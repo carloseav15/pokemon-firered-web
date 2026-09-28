@@ -37,6 +37,8 @@ import { BeginEvolutionScene } from "../evolutionScene";
 import { flagGet, incrementGameStat } from "../save";
 import { GetBerryPowder } from "../script/specialsExtra";
 import { ItemUse_SetQuestLogEvent } from "../itemUse";
+import { FADE_FROM_BLACK, paletteFade, RGB_BLACK } from "../gba/fade";
+import { IsWeatherNotFadingIn } from "../field/weather";
 
 
 export function fieldMenu(game: Game, begin: (close: () => void) => void, closeStartMenu = true): void {
@@ -58,6 +60,28 @@ export function SetUpItemUseCallback(context: BagTaskContext | null, enterPartyM
 /** DoSetUpItemUseCallback (item_use.c): the field party-item handlers share this setup path. */
 export function DoSetUpItemUseCallback(context: BagTaskContext | null, enterPartyMenu: () => void): void {
   SetUpItemUseCallback(context, enterPartyMenu);
+}
+
+/** SetUpItemUseOnFieldCallback (item_use.c): bag uses fade back in before their field callback. */
+export function SetUpItemUseOnFieldCallback(fromBag: boolean, onField: (callback: () => void) => void, itemUseOnField: () => void): void {
+  onField(() => {
+    if (fromBag) FieldCB_FadeInFromBlack(itemUseOnField);
+    else itemUseOnField();
+  });
+}
+
+/** FieldCB_FadeInFromBlack (item_use.c). */
+export function FieldCB_FadeInFromBlack(itemUseOnField: () => void): void {
+  paletteFade.fill(RGB_BLACK);
+  paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
+  tasks.create((taskId) => Task_WaitFadeIn_CallItemUseOnFieldCB(taskId, itemUseOnField), 8);
+}
+
+/** Task_WaitFadeIn_CallItemUseOnFieldCB (item_use.c). */
+export function Task_WaitFadeIn_CallItemUseOnFieldCB(taskId: number, itemUseOnField: () => void): void {
+  if (!IsWeatherNotFadingIn()) return;
+  tasks.destroy(taskId);
+  itemUseOnField();
 }
 
 type UsePartyItem = (item: number) => void;
@@ -264,7 +288,7 @@ export function ItemUseOnFieldCB_Bicycle(game: Game): void {
 
 /** FieldUseFunc_Bike (item_use.c): C rail, map-permission and player-ban checks. */
 export function FieldUseFunc_Bike(game: Game, route: {
-  cantDismount: () => void; notNow: () => void; onField: (callback: () => void) => void;
+  cantDismount: () => void; notNow: () => void; fromBag: boolean; onField: (callback: () => void) => void;
 }): void {
   const ow = game.overworld;
   const { x, y } = PlayerGetDestCoords();
@@ -273,7 +297,7 @@ export function FieldUseFunc_Bike(game: Game, route: {
     || MB.MetatileBehavior_IsIsolatedVerticalRail(behavior) || MB.MetatileBehavior_IsIsolatedHorizontalRail(behavior)) {
     route.cantDismount();
   } else if (ow.header.allowCycling && !ow.player.IsBikingDisallowedByPlayer()) {
-    route.onField(() => ItemUseOnFieldCB_Bicycle(game));
+    SetUpItemUseOnFieldCallback(route.fromBag, route.onField, () => ItemUseOnFieldCB_Bicycle(game));
   } else {
     route.notNow();
   }
@@ -285,9 +309,9 @@ function ItemUseOnFieldCB_Rod(game: Game, rodType: number): void {
 }
 
 /** ItemUseOutOfBattle_Itemfinder (item_use.c): count the use before entering its field callback. */
-export function ItemUseOutOfBattle_Itemfinder(game: Game, onField: (callback: () => void) => void): void {
+export function ItemUseOutOfBattle_Itemfinder(game: Game, fromBag: boolean, onField: (callback: () => void) => void): void {
   incrementGameStat(C.GAME_STAT_USED_ITEMFINDER);
-  onField(() => startItemFinder(game));
+  SetUpItemUseOnFieldCallback(fromBag, onField, () => startItemFinder(game));
 }
 
 /** CanUseEscapeRopeOnCurrMap (item_use.c): use the map header's escape gate. */
@@ -297,14 +321,14 @@ export function CanUseEscapeRopeOnCurrMap(game: Game): boolean {
 
 /** ItemUseOutOfBattle_EscapeRope (item_use.c): hand off to the field callback only on allowed maps. */
 export function ItemUseOutOfBattle_EscapeRope(game: Game, item: number, route: {
-  notNow: () => void; onField: (callback: () => void) => void;
+  notNow: () => void; fromBag: boolean; onField: (callback: () => void) => void;
 }): void {
   if (!CanUseEscapeRopeOnCurrMap(game)) {
     route.notNow();
     return;
   }
   ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, game.overworld.header.regionMapSection);
-  route.onField(() => ItemUseOnFieldCB_EscapeRope(game, item));
+  SetUpItemUseOnFieldCallback(route.fromBag, route.onField, () => ItemUseOnFieldCB_EscapeRope(game, item));
 }
 
 /** FieldUseFunc_CoinCase (item_use.c): format the four-digit balance and show it in the caller's context. */
@@ -372,17 +396,17 @@ function Task_UseDigEscapeRopeOnField(game: Game): void {
 
 /** FieldUseFunc_Rod (item_use.c): gate the rod, then enter the field callback. */
 export function FieldUseFunc_Rod(game: Game, item: number, route: {
-  notNow: () => void; onField: (callback: () => void) => void;
+  notNow: () => void; fromBag: boolean; onField: (callback: () => void) => void;
 }): void {
   if (!CanFish(game)) {
     route.notNow();
     return;
   }
-  route.onField(() => ItemUseOnFieldCB_Rod(game, itemInfo(item)?.secondaryId ?? 0));
+  SetUpItemUseOnFieldCallback(route.fromBag, route.onField, () => ItemUseOnFieldCB_Rod(game, itemInfo(item)?.secondaryId ?? 0));
 }
 
 /** FieldUseFunc_VsSeeker (item_use.c): reject indoor/special maps before the field callback. */
-export function FieldUseFunc_VsSeeker(game: Game, item: number, route: { notNow: () => void; onField: (callback: () => void) => void }): void {
+export function FieldUseFunc_VsSeeker(game: Game, item: number, route: { notNow: () => void; fromBag: boolean; onField: (callback: () => void) => void }): void {
   const ow = game.overworld;
   const mapNum = rom.mapNum(ow.mapId);
   const mapGroup = mapNum >>> 8;
@@ -391,7 +415,7 @@ export function FieldUseFunc_VsSeeker(game: Game, item: number, route: { notNow:
     && ["MAP_VIRIDIAN_FOREST", "MAP_MT_EMBER_EXTERIOR", "MAP_THREE_ISLAND_BERRY_FOREST", "MAP_SIX_ISLAND_PATTERN_BUSH"]
       .some((id) => localMapNum === (rom.mapNum(id) & 0xff));
   if ((ow.header.mapType !== C.MAP_TYPE_ROUTE && ow.header.mapType !== C.MAP_TYPE_TOWN && ow.header.mapType !== C.MAP_TYPE_CITY) || prohibited) { route.notNow(); return; }
-  route.onField(() => game.useVsSeeker(item));
+  SetUpItemUseOnFieldCallback(route.fromBag, route.onField, () => game.useVsSeeker(item));
 }
 
 export function openFieldBag(game: Game, initialItem?: number): void {
@@ -502,17 +526,18 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           FieldUseFunc_Bike(game, {
             cantDismount: () => message(rom.text("gText_CantDismountBike")),
             notNow,
+            fromBag: bagCtx !== null,
             onField,
           });
           return;
         case "FieldUseFunc_Rod":
-          FieldUseFunc_Rod(game, item, { notNow, onField });
+          FieldUseFunc_Rod(game, item, { notNow, fromBag: bagCtx !== null, onField });
           return;
         case "ItemUseOutOfBattle_EscapeRope":
-          ItemUseOutOfBattle_EscapeRope(game, item, { notNow, onField });
+          ItemUseOutOfBattle_EscapeRope(game, item, { notNow, fromBag: bagCtx !== null, onField });
           return;
         case "ItemUseOutOfBattle_Itemfinder":
-          ItemUseOutOfBattle_Itemfinder(game, onField);
+          ItemUseOutOfBattle_Itemfinder(game, bagCtx !== null, onField);
           return;
         case "FieldUseFunc_TownMap":
           FieldUseFunc_TownMap(initialItem === undefined, {
@@ -531,7 +556,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           if (bagCtx) leave(() => InitTeachyTvFromBag(game, bag));
           else onField(() => Task_InitTeachyTvFromField(game));
           return;
-        case "FieldUseFunc_VsSeeker": FieldUseFunc_VsSeeker(game, item, { notNow, onField }); return;
+        case "FieldUseFunc_VsSeeker": FieldUseFunc_VsSeeker(game, item, { notNow, fromBag: bagCtx !== null, onField }); return;
         case "FieldUseFunc_Mail":
           FieldUseFunc_Mail((checkMail) => leave(checkMail), () => CB2_CheckMail(item, bag));
           return;
