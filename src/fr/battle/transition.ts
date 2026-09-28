@@ -28,6 +28,7 @@ import { save } from "../save";
 import type { Overworld } from "../field/overworld";
 import { MetatileBehavior_IsSurfable } from "../generated/metatileBehavior";
 import { Sin, gSineTable } from "../hw/trig";
+import { random as Random } from "../random";
 
 const MAP_TYPE_UNDERGROUND = 4;
 const TRANSITION_TYPE_NORMAL = 0;
@@ -816,57 +817,102 @@ class BlurEffect implements Effect {
 
 /** Task_PokeballsTrail / SpriteCB_FldEffPokeballTrail: 5 Pokéballs sliding horizontally wiping trails. */
 class PokeballsTrailEffect implements Effect {
-  private balls: Array<{ x: number; y: number; side: number; delay: number; speed: number; prevX: number; active: boolean }>;
-  private trails: boolean[][];
+  private balls: Array<{ x: number; y: number; side: number; delay: number; speed: number; prevX: number; rotation: number; active: boolean }>;
+  private trails: boolean[][][];
+  private readonly ballImage: HTMLCanvasElement;
+  private state: "init" | "main" | "end" = "init";
   private done = false;
 
   constructor() {
-    const delays = [0, 16, 32, 8, 24];
-    const speeds = [8, -8];
-    const startX = [-16, DISPLAY_WIDTH + 16];
-    let side = 0;
+    this.ballImage = this.FldEff_PokeballTrail_LoadSpriteImage();
     this.balls = [];
-    for (let i = 0; i < 5; i++, side ^= 1) {
-      this.balls.push({
-        x: startX[side]!,
-        y: i * 32 + 16,
-        side,
-        delay: delays[i]!,
-        speed: speeds[side]!,
-        prevX: -1,
-        active: true,
-      });
-    }
-    this.trails = Array.from({ length: 5 }, () => new Array(30).fill(false));
+    this.trails = Array.from({ length: 5 }, () => Array.from({ length: 20 }, () => new Array(30).fill(false)));
   }
 
   tick(): boolean {
+    return this.Task_PokeballsTrail();
+  }
+
+  private Task_PokeballsTrail(): boolean {
+    if (this.state === "init") { this.PokeballsTrail_Init(); this.state = "main"; return false; }
+    if (this.state === "main") { this.PokeballsTrail_Main(); this.state = "end"; return false; }
+    this.PokeballsTrail_End();
+    return this.done;
+  }
+
+  private PokeballsTrail_Init(): void {
+    // C loads the two-tile trail sheet and palette before starting its five field effects.
+    this.balls = [];
+  }
+
+  private PokeballsTrail_Main(): void {
+    const delays = [0, 16, 32, 8, 24];
+    const speeds = [8, -8];
+    const startX = [-16, 256];
+    let side = Random() & 1;
+    for (let i = 0; i < 5; i++, side ^= 1) {
+      this.FldEff_PokeballTrail(startX[side]!, i * 32 + 16, side, delays[i]!, speeds[side]!);
+    }
+  }
+
+  private FldEff_PokeballTrail(x: number, y: number, side: number, delay: number, speed: number): 0 {
+    this.balls.push({ x, y, side, delay, speed, prevX: -1, rotation: 0, active: true });
+    return 0; // FieldEffectStart callback returns FALSE in C.
+  }
+
+  private SpriteCB_FldEffPokeballTrail(b: (typeof this.balls)[number], trailIndex: number): void {
+    if (!b.active) return;
+    b.rotation = (b.rotation + (b.side === 0 ? -4 : 4)) & 0xff;
+    if (b.delay !== 0) {
+      b.delay--;
+      return;
+    }
+    if (b.x >= 0 && b.x <= DISPLAY_WIDTH) {
+      const posX = b.x >> 3;
+      const posY = b.y >> 3;
+      if (posX !== b.prevX) {
+        b.prevX = posX;
+        // C's SET_TILE writes tile 1 in rows posY-2 through posY+1 (palette 15).
+        for (let dy = posY - 2; dy <= posY + 1; dy++) {
+          if (dy >= 0 && dy < 20 && posX >= 0 && posX < 30) this.trails[trailIndex]![dy]![posX] = true;
+        }
+      }
+    }
+    b.x += b.speed;
+    if (b.x < -15 || b.x > DISPLAY_WIDTH + 15) b.active = false;
+  }
+
+  private PokeballsTrail_End(): void {
     let anyActive = false;
     for (let i = 0; i < this.balls.length; i++) {
       const b = this.balls[i]!;
-      if (!b.active) continue;
-      if (b.delay > 0) {
-        b.delay--;
-        anyActive = true;
-        continue;
-      }
-      const posX = b.x >> 3;
-      if (posX >= 0 && posX < 30 && posX !== b.prevX) {
-        b.prevX = posX;
-        this.trails[i]![posX] = true;
-      }
-      b.x += b.speed;
-      if (b.x < -24 || b.x > DISPLAY_WIDTH + 24) {
-        b.active = false;
-      } else {
-        anyActive = true;
-      }
+      this.SpriteCB_FldEffPokeballTrail(b, i);
+      if (b.active) anyActive = true;
     }
-    if (!anyActive) {
-      this.done = true;
-      return true;
+    if (!anyActive) this.done = true;
+  }
+
+  private FldEff_PokeballTrail_LoadSpriteImage(): HTMLCanvasElement {
+    const gfx = incbin("sSlidingPokeball_Gfx");
+    const palette = incbin16("sFieldEffectPal_Pokeball");
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 32;
+    const context = canvas.getContext("2d")!;
+    const image = context.createImageData(32, 32);
+    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      const tile = (y >> 3) * 4 + (x >> 3);
+      const byteIndex = tile * 32 + (y & 7) * 4 + ((x & 7) >> 1);
+      const packed = gfx[byteIndex] ?? 0;
+      const colorIndex = (x & 1) ? packed >> 4 : packed & 15;
+      const color = palette[colorIndex] ?? 0;
+      const p = (y * 32 + x) * 4;
+      image.data[p] = ((color & 31) * 255 / 31) | 0;
+      image.data[p + 1] = (((color >> 5) & 31) * 255 / 31) | 0;
+      image.data[p + 2] = (((color >> 10) & 31) * 255 / 31) | 0;
+      image.data[p + 3] = colorIndex === 0 ? 0 : 255;
     }
-    return false;
+    context.putImageData(image, 0, 0);
+    return canvas;
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
@@ -878,13 +924,8 @@ class PokeballsTrailEffect implements Effect {
     ctx.drawImage(snapshot, 0, 0);
 
     ctx.fillStyle = "#000";
-    for (let i = 0; i < 5; i++) {
-      const y = i * 32;
-      for (let col = 0; col < 30; col++) {
-        if (this.trails[i]![col]) {
-          ctx.fillRect(col * 8, y, 8, 32);
-        }
-      }
+    for (const trail of this.trails) for (let row = 0; row < 20; row++) for (let col = 0; col < 30; col++) {
+      if (trail[row]![col]) ctx.fillRect(col * 8, row * 8, 8, 8);
     }
 
     for (const b of this.balls) {
@@ -892,28 +933,9 @@ class PokeballsTrailEffect implements Effect {
       if (b.x < -16 || b.x > DISPLAY_WIDTH + 16) continue;
       ctx.save();
       ctx.translate(b.x, b.y);
-      ctx.beginPath();
-      ctx.arc(0, 0, 10, 0, Math.PI * 2);
-      ctx.fillStyle = "#000";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, 0, 9, Math.PI, 0);
-      ctx.fillStyle = "#e03020";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, 0, 9, 0, Math.PI);
-      ctx.fillStyle = "#f8f8f8";
-      ctx.fill();
-      ctx.fillStyle = "#000";
-      ctx.fillRect(-9, -2, 18, 4);
-      ctx.beginPath();
-      ctx.arc(0, 0, 4, 0, Math.PI * 2);
-      ctx.fillStyle = "#000";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, 0, 2, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
+      ctx.rotate(b.rotation * (2 * Math.PI / 256));
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.ballImage, -16, -16);
       ctx.restore();
     }
   }
