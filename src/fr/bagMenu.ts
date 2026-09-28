@@ -1004,25 +1004,58 @@ function ItemMenu_SetExitCallback(cb: () => void): void {
 }
 
 /** GoToTMCase_* / GoToBerryPouch_*: the case screen for a give/sell/PC bag, which returns to this bag. */
+function GoToTMCase_Give(done: () => void): void {
+  InitTMCase(C.TMCASE_GIVE_PARTY, ReturnToBagMenuFromSubmenu_Give, false, { giveParty: done });
+}
+
+function GoToBerryPouch_Give(done: () => void): void {
+  InitBerryPouch(C.BERRYPOUCH_FROMPARTYGIVE, ReturnToBagMenuFromSubmenu_Give, 0, { giveParty: done });
+}
+
+function ReturnToBagMenuFromSubmenu_Give(): void {
+  GoToBagMenu(C.ITEMMENULOCATION_PARTY, C.OPEN_BAG_LAST, null);
+}
+
+function GoToTMCase_PCBox(done: () => void): void {
+  InitTMCase(C.TMCASE_GIVE_PC, ReturnToBagMenuFromSubmenu_PCBox, false, { givePc: done });
+}
+
+function GoToBerryPouch_PCBox(done: () => void): void {
+  InitBerryPouch(C.BERRYPOUCH_FROMPOKEMONSTORAGEPC, ReturnToBagMenuFromSubmenu_PCBox, 0, { givePc: done });
+}
+
+function ReturnToBagMenuFromSubmenu_PCBox(): void {
+  GoToBagMenu(C.ITEMMENULOCATION_PCBOX, C.OPEN_BAG_LAST, null);
+}
+
+function GoToTMCase_Sell(): void {
+  InitTMCase(C.TMCASE_SELL, ReturnToBagMenuFromSubmenu_Sell, false, {});
+}
+
+function GoToBerryPouch_Sell(): void {
+  InitBerryPouch(C.BERRYPOUCH_FROMMARTSELL, ReturnToBagMenuFromSubmenu_Sell, 0, {});
+}
+
+function ReturnToBagMenuFromSubmenu_Sell(): void {
+  GoToBagMenu(C.ITEMMENULOCATION_SHOP, C.OPEN_BAG_LAST, null);
+}
+
 function openCaseOrReturn(itemId: number, location: number): () => void {
   return () => {
     if (sHandlers.openCase) { sHandlers.openCase(itemId, location); return; }
+    const done = (): void => gBagMenuState.bagCallback?.();
+    const give = location === C.ITEMMENULOCATION_PARTY;
+    const sell = location === C.ITEMMENULOCATION_SHOP;
     if (itemId === C.ITEM_TM_CASE) {
-      // GoToTMCase_Give / _Sell / _PCBox, returning to this bag (ReturnToBagMenuFromSubmenu_*).
-      const back = (): void => GoToBagMenu(location, C.OPEN_BAG_LAST, null);
-      const done = (): void => gBagMenuState.bagCallback?.();
-      if (location === C.ITEMMENULOCATION_PARTY) InitTMCase(C.TMCASE_GIVE_PARTY, back, false, { giveParty: done });
-      else if (location === C.ITEMMENULOCATION_SHOP) InitTMCase(C.TMCASE_SELL, back, false, {});
-      else InitTMCase(C.TMCASE_GIVE_PC, back, false, { givePc: done });
+      if (give) GoToTMCase_Give(done);
+      else if (sell) GoToTMCase_Sell();
+      else GoToTMCase_PCBox(done);
       return;
     }
     if (itemId === C.ITEM_BERRY_POUCH) {
-      // GoToBerryPouch_Give / _Sell / _PCBox
-      const back = (): void => GoToBagMenu(location, C.OPEN_BAG_LAST, null);
-      const done = (): void => gBagMenuState.bagCallback?.();
-      if (location === C.ITEMMENULOCATION_PARTY) InitBerryPouch(C.BERRYPOUCH_FROMPARTYGIVE, back, 0, { giveParty: done });
-      else if (location === C.ITEMMENULOCATION_SHOP) InitBerryPouch(C.BERRYPOUCH_FROMMARTSELL, back, 0, {});
-      else InitBerryPouch(C.BERRYPOUCH_FROMPOKEMONSTORAGEPC, back, 0, { givePc: done });
+      if (give) GoToBerryPouch_Give(done);
+      else if (sell) GoToBerryPouch_Sell();
+      else GoToBerryPouch_PCBox(done);
       return;
     }
     bagResult.itemId = C.ITEM_NONE;
