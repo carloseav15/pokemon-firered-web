@@ -331,13 +331,16 @@ export class PlayerAvatar {
     return true;
   }
 
-  /** DoPlayerMatJump / PlayerAvatar_DoSecretBaseMatJump. */
+  /** DoPlayerMatJump / DoPlayerAvatarSecretBaseMatJump (field_player_avatar.c): the
+   * sPlayerAvatarSecretBaseMatJump table has a single entry, so the C tight while-loop
+   * (`while (sPlayerAvatarSecretBaseMatJump[data[0]](...))`) reduces to one call. */
   private DoPlayerMatJump(): void {
     let taskId = -1;
     let steps = 0;
-    const tick = (): void => {
+    /** PlayerAvatar_DoSecretBaseMatJump (field_player_avatar.c). */
+    const PlayerAvatar_DoSecretBaseMatJump = (): boolean => {
       this.preventStep = true;
-      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(this.object) === 0) return;
+      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(this.object) === 0) return false;
       sound.playSE(sound.c("SE_LEDGE"));
       this.ow.objects.setHeldMovement(this.object, actionJumpInPlace(this.object.facingDirection));
       steps++;
@@ -346,9 +349,10 @@ export class PlayerAvatar {
         this.setTransitionFlags(PLAYER_AVATAR_FLAG_CONTROLLABLE);
         tasks.destroy(taskId);
       }
+      return false;
     };
-    taskId = this.ow.effects.tasks.create(tick, 0xff);
-    tick();
+    taskId = this.ow.effects.tasks.create(PlayerAvatar_DoSecretBaseMatJump, 0xff);
+    PlayerAvatar_DoSecretBaseMatJump();
   }
 
   /** ForcedMovement_MatSpin (field_player_avatar.c). */
@@ -357,47 +361,56 @@ export class PlayerAvatar {
     return true;
   }
 
-  /** DoPlayerMatSpin / PlayerAvatar_DoSecretBaseMatSpin. */
+  /** DoPlayerMatSpin / PlayerAvatar_DoSecretBaseMatSpin (field_player_avatar.c):
+   * sPlayerAvatarSecretBaseMatSpin = [Step0, Step1, Step2, Step3], run through
+   * task->data[0] by a tight while-loop (Step0 returns TRUE, so it always falls
+   * straight into Step1 the same tick; Step1-3 return FALSE and wait a tick). */
   private DoPlayerMatSpin(): void {
     const object = this.object;
     const directions = [DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
     const delays = [C.MOVEMENT_ACTION_DELAY_1, C.MOVEMENT_ACTION_DELAY_1, C.MOVEMENT_ACTION_DELAY_2, C.MOVEMENT_ACTION_DELAY_4, C.MOVEMENT_ACTION_DELAY_8];
     let taskId = -1;
-    let stage = 0;
-    let initialDirection = DIR_SOUTH;
-    let sameDirectionCount = 0;
-    const tick = (): void => {
-      if (stage === 0) {
-        stage = 1;
-        initialDirection = object.movementDirection;
-        this.preventStep = true;
-        this.ow.controlsLocked = true;
-        sound.playSE(sound.c("SE_WARP_IN"));
-      }
-      if (stage === 1) {
-        if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return;
-        const direction = directions[object.movementDirection - 1];
-        if (direction === undefined) return;
-        this.ow.objects.setHeldMovement(object, actionFace(direction));
-        if (direction === initialDirection) sameDirectionCount++;
-        stage = 2;
-        if (sameDirectionCount > 3 && direction === OPPOSITE[initialDirection]) stage = 3;
-        return;
-      }
-      if (stage === 2) {
-        if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return;
-        this.ow.objects.setHeldMovement(object, delays[sameDirectionCount] ?? delays[4]!);
-        stage = 1;
-        return;
-      }
-      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return;
-      this.ow.objects.setHeldMovement(object, actionWalkSlower(OPPOSITE[initialDirection]));
+    // task->data[0..2]: step index, initial (movement) direction, same-direction count.
+    const data = [0, DIR_SOUTH, 0];
+    const PlayerAvatar_SecretBaseMatSpinStep0 = (): boolean => {
+      data[0]++;
+      data[1] = object.movementDirection;
+      this.preventStep = true;
+      this.ow.controlsLocked = true;
+      sound.playSE(sound.c("SE_WARP_IN"));
+      return true;
+    };
+    const PlayerAvatar_SecretBaseMatSpinStep1 = (): boolean => {
+      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return false;
+      const direction = directions[object.movementDirection - 1];
+      if (direction === undefined) return false;
+      this.ow.objects.setHeldMovement(object, actionFace(direction));
+      if (direction === data[1]) data[2]++;
+      data[0]++;
+      if (data[2] > 3 && direction === OPPOSITE[data[1]]) data[0]++;
+      return false;
+    };
+    const PlayerAvatar_SecretBaseMatSpinStep2 = (): boolean => {
+      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return false;
+      this.ow.objects.setHeldMovement(object, delays[data[2]] ?? delays[4]!);
+      data[0] = 1;
+      return false;
+    };
+    const PlayerAvatar_SecretBaseMatSpinStep3 = (): boolean => {
+      if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(object) === 0) return false;
+      this.ow.objects.setHeldMovement(object, actionWalkSlower(OPPOSITE[data[1]]));
       this.ow.controlsLocked = false;
       this.preventStep = false;
       tasks.destroy(taskId);
+      return false;
     };
-    taskId = this.ow.effects.tasks.create(tick, 0xff);
-    tick();
+    const steps = [PlayerAvatar_SecretBaseMatSpinStep0, PlayerAvatar_SecretBaseMatSpinStep1, PlayerAvatar_SecretBaseMatSpinStep2, PlayerAvatar_SecretBaseMatSpinStep3];
+    /** PlayerAvatar_DoSecretBaseMatSpin (field_player_avatar.c). */
+    const PlayerAvatar_DoSecretBaseMatSpin = (): void => {
+      while (steps[data[0]]!()) { /* tight loop, matching Task_BumpBoulder-style C dispatch */ }
+    };
+    taskId = this.ow.effects.tasks.create(PlayerAvatar_DoSecretBaseMatSpin, 0xff);
+    PlayerAvatar_DoSecretBaseMatSpin();
   }
 
   private tryForcedMovement(): boolean {
@@ -756,7 +769,7 @@ export class PlayerAvatar {
       incrementGameStat(rom.constants.GAME_STAT_JUMPED_DOWN_LEDGES ?? 0);
       return COLLISION_LEDGE_JUMP;
     }
-    if (collision === COLLISION_OBJECT_EVENT && this.tryPushBoulder(x, y, direction)) return COLLISION_PUSHED_BOULDER;
+    if (collision === COLLISION_OBJECT_EVENT && this.TryPushBoulder(x, y, direction)) return COLLISION_PUSHED_BOULDER;
     if (collision === COLLISION_NONE) {
       const acroCollision = this.CheckAcroBikeCollision(this.ow.map.behaviorAt(x, y));
       if (acroCollision !== COLLISION_NONE) return acroCollision;
@@ -823,7 +836,8 @@ export class PlayerAvatar {
     }, 0xff);
   }
 
-  private tryPushBoulder(x: number, y: number, direction: number): boolean {
+  /** TryPushBoulder (field_player_avatar.c). */
+  private TryPushBoulder(x: number, y: number, direction: number): boolean {
     if (!flagGet(rom.constants.FLAG_SYS_USE_STRENGTH ?? 0)) return false;
     const objectEventId = this.ow.objects.GetObjectEventIdByXY(x, y);
     const boulder = objectEventId === OBJECT_EVENTS_COUNT ? undefined : this.ow.objects.objects[objectEventId] ?? undefined;
@@ -833,7 +847,7 @@ export class PlayerAvatar {
     const ty = boulder.currentCoords.y + dy;
     const behavior = this.ow.map.behaviorAt(tx, ty);
     if (behavior === rom.constants.MB_FALL_WARP || (this.ow.objects.GetCollisionAtCoords(boulder, tx, ty, direction) === COLLISION_NONE && !MB.MetatileBehavior_IsNonAnimDoor(behavior))) {
-      this.ow.effects.startStrengthPush(boulder, direction);
+      this.ow.effects.StartStrengthAnim(boulder, direction);
       return true;
     }
     return false;

@@ -9,7 +9,7 @@ import { rom } from "../../src/fr/rom";
 import { ObjectEvents } from "../../src/fr/field/objectEvents";
 import {
   PlayerAvatar, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE,
-  BIKE_STATE_NORMAL, PLAYER_SPEED_STANDING,
+  PLAYER_AVATAR_FLAG_CONTROLLABLE, BIKE_STATE_NORMAL, PLAYER_SPEED_STANDING,
 } from "../../src/fr/field/playerAvatar";
 
 const exported = JSON.parse(readFileSync(resolve("public/fr/cdata/event_object_movement.json"), "utf8")) as {
@@ -28,6 +28,17 @@ rom.objects = {
 };
 
 const mockMap = { collisionAt: () => 0, borderIdAt: () => 0, behaviorAt: () => 0, elevationAt: () => 0 };
+// Minimal task scheduler: create() records the callback and hands back an id;
+// the test drives it explicitly instead of a real per-frame game loop.
+const taskFns = new Map<number, () => void>();
+let nextTaskId = 0;
+const mockTasks = {
+  create: (fn: () => void): number => { const id = nextTaskId++; taskFns.set(id, fn); return id; },
+  destroy: (id: number): void => { taskFns.delete(id); },
+};
+function tickAllTasks(frames = 1): void {
+  for (let i = 0; i < frames; i++) for (const fn of [...taskFns.values()]) fn();
+}
 const ow = {
   map: mockMap,
   header: { regionMapSection: 0, mapType: 0, allowRunning: true },
@@ -35,8 +46,9 @@ const ow = {
   playSpecialMapMusic: () => {},
   controlsLocked: false,
   syncObjectSprites: () => {},
+  effects: { tasks: mockTasks },
 } as any;
-ow.objects = new ObjectEvents({ map: () => mockMap, cameraCanMove: () => true } as any);
+ow.objects = new ObjectEvents({ map: () => mockMap, cameraCanMove: () => true, groundEffect: () => {} } as any);
 
 const avatar = new PlayerAvatar(ow);
 ow.player = avatar;
@@ -61,5 +73,20 @@ assert.ok(!avatar.isOnBike(), "GetOnOffBike must dismount the bike");
 avatar.acroBikeState = 99;
 avatar.GetOnOffBike(PLAYER_AVATAR_FLAG_ACRO_BIKE);
 assert.equal(avatar.acroBikeState, BIKE_STATE_NORMAL, "Acro Bike mount must also call BikeClearState");
+
+// DoPlayerAvatarSecretBaseMatJump / PlayerAvatar_DoSecretBaseMatSpin (ForcedMovement_MatJump/
+// MatSpin): full held-movement simulation needs more map/rom plumbing than this headless
+// harness mocks; verify at least that starting them doesn't throw and leaves a live task.
+{
+  (avatar as any).ForcedMovement_MatJump();
+  assert.ok(taskFns.size > 0, "ForcedMovement_MatJump must schedule a task");
+  tickAllTasks(1);
+}
+taskFns.clear();
+{
+  (avatar as any).ForcedMovement_MatSpin();
+  assert.ok(taskFns.size > 0, "ForcedMovement_MatSpin must schedule a task");
+  tickAllTasks(1);
+}
 
 console.log("field_player_avatar.c PlayerAvatarTransition_*/ForcedMovement_* checks passed");

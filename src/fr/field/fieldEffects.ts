@@ -1103,38 +1103,48 @@ export class FieldEffects {
 
   // ---------------------------------------------------------------- strength
 
-  startStrengthPush(boulder: ObjectEvent, direction: number): void {
+  /**
+   * StartStrengthAnim + Task_BumpBoulder (field_player_avatar.c): sBoulderTaskSteps =
+   * [DoBoulderInit, DoBoulderDust, DoBoulderFinish], stepped through by task->data[0]
+   * (`state` here). DoBoulderInit's lock runs synchronously before the task is even
+   * created, matching Task_BumpBoulder's tight while-loop calling it the same frame.
+   */
+  StartStrengthAnim(boulder: ObjectEvent, direction: number): void {
     const player = this.ow.player.object;
     this.ow.controlsLocked = true;
     this.ow.player.preventStep = true;
-    let state = 0;
+    let state = 1;
     const id = tasks.create(() => {
-      switch (state) {
-        case 0:
-          this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
-          this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
-          if (!this.ow.objects.setHeldMovement(player, actionWalkInPlaceNormal(direction)))
-            QuestLogRecordPlayerStepWithDuration(actionWalkInPlaceNormal(direction), 0);
-          if (!this.ow.objects.setHeldMovement(boulder, actionWalkSlower(direction)))
-            QuestLogRecordNPCStepWithDuration(boulder.localId, boulder.mapNum, boulder.mapGroup, actionWalkSlower(direction), 32);
-          this.startBoulderDust(boulder);
-          sound.playSE(sound.c("SE_M_STRENGTH"));
-          state = 1;
-          break;
-        case 1:
-          if (this.ow.objects.isHeldMovementFinished(player) && this.ow.objects.isHeldMovementFinished(boulder)) {
-            this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
-            this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
-            const b = this.ow.map.behaviorAt(boulder.currentCoords.x, boulder.currentCoords.y);
-            HandleBoulderFallThroughHole(this.ow, boulder, b);
-            HandleBoulderActivateVictoryRoadSwitch(this.ow, boulder.currentCoords.x, boulder.currentCoords.y, b);
-            this.ow.player.preventStep = false;
-            this.ow.controlsLocked = false;
-            tasks.destroy(id);
-          }
-          break;
-      }
+      if (state === 1) { if (this.DoBoulderDust(player, boulder, direction)) state = 2; }
+      else if (this.DoBoulderFinish(player, boulder)) tasks.destroy(id);
     }, 80);
+  }
+
+  /** DoBoulderDust (field_player_avatar.c). */
+  private DoBoulderDust(player: ObjectEvent, boulder: ObjectEvent, direction: number): boolean {
+    if (this.ow.objects.isMovementOverridden(player) || this.ow.objects.isMovementOverridden(boulder)) return false;
+    this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
+    this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
+    if (!this.ow.objects.setHeldMovement(player, actionWalkInPlaceNormal(direction)))
+      QuestLogRecordPlayerStepWithDuration(actionWalkInPlaceNormal(direction), 0);
+    if (!this.ow.objects.setHeldMovement(boulder, actionWalkSlower(direction)))
+      QuestLogRecordNPCStepWithDuration(boulder.localId, boulder.mapNum, boulder.mapGroup, actionWalkSlower(direction), 32);
+    this.startBoulderDust(boulder);
+    sound.playSE(sound.c("SE_M_STRENGTH"));
+    return true;
+  }
+
+  /** DoBoulderFinish (field_player_avatar.c). */
+  private DoBoulderFinish(player: ObjectEvent, boulder: ObjectEvent): boolean {
+    if (!this.ow.objects.isHeldMovementFinished(player) || !this.ow.objects.isHeldMovementFinished(boulder)) return false;
+    this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
+    this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
+    const b = this.ow.map.behaviorAt(boulder.currentCoords.x, boulder.currentCoords.y);
+    HandleBoulderFallThroughHole(this.ow, boulder, b);
+    HandleBoulderActivateVictoryRoadSwitch(this.ow, boulder.currentCoords.x, boulder.currentCoords.y, b);
+    this.ow.player.preventStep = false;
+    this.ow.controlsLocked = false;
+    return true;
   }
 
   private startBoulderDust(boulder: ObjectEvent): void {
