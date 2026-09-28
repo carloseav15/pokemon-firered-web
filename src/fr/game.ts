@@ -5,7 +5,7 @@ import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
 import { BattleTransitionScene, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_NORMAL } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON, ReadKeys } from "./gba/input";
 import { tasks } from "./gba/tasks";
@@ -27,7 +27,6 @@ import { InitPlayerTrainerId, takeWildEncounterSeed } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { healMon } from "./pokemon/pokemon";
 import { GetSetPokedexFlag } from "./pokemon/mon_extra";
-import { SaveStatToString } from "./saveMenuUtil";
 import * as C from "./generated/constants";
 import { CB2_BagMenuFromStartMenu, fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
@@ -54,7 +53,8 @@ import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
-  DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
+  CloseSaveMessageWindow, CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
+  PrintSaveStats,
   SetUpReturnToStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
@@ -430,14 +430,19 @@ export class Game {
   startMenuCursor = 0;
   private startMenuWindows: Window[] = [];
   private startMenuSafariStats: Window | null = null;
+  private startMenuSaveStats: Window | null = null;
 
   private removeStartMenuWindows(): void {
     DestroyHelpMessageWindow(this.overworld.windows, 0);
     const safariStats = this.startMenuSafariStats;
     this.startMenuSafariStats = null;
     if (safariStats && GetSafariZoneFlag()) DestroySafariZoneStatsWindow(this, safariStats);
+    const saveStats = this.startMenuSaveStats;
+    this.startMenuSaveStats = null;
+    if (saveStats) CloseSaveStatsWindow_(this, saveStats);
     for (const w of this.startMenuWindows) {
       if (w === safariStats && GetSafariZoneFlag()) continue;
+      if (w === saveStats) continue;
       this.overworld.windows.remove(w);
     }
     this.startMenuWindows = [];
@@ -455,7 +460,9 @@ export class Game {
   startMenuSave(): void {
     this.removeStartMenuWindows();
     const ow = this.overworld;
-    this.showSaveStats();
+    const saveStats = PrintSaveStats(this);
+    this.startMenuSaveStats = saveStats;
+    this.startMenuWindows.push(saveStats);
     ow.control.MsgSetNotSignpost();
     ow.messageBox.show(rom.text("gText_WouldYouLikeToSaveTheGame"));
     // start_menu.c sSaveDialogCB chain: AskSaveHandleInput -> PrintAskOverwriteText
@@ -465,6 +472,7 @@ export class Game {
     let saveOk = false;
     const cancel = (): void => {
       tasks.destroy(id);
+      CloseSaveMessageWindow(this);
       this.removeStartMenuWindows();
       this.showStartMenu(true);
     };
@@ -534,38 +542,6 @@ export class Game {
           break;
       }
     }, 80);
-  }
-
-  /** PrintSaveStats / SaveStatToString (start_menu.c, save_menu_util.c). */
-  private showSaveStats(): void {
-    const ow = this.overworld;
-    const stats = new Window(1, 1, 14, 9);
-    stats.frame = "std";
-    stats.frameType = save.options.frameType;
-    stats.fill(1);
-
-    const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
-    printText(stats, FONT_NORMAL, location, Math.max(0, (112 - stringWidth(FONT_NORMAL, location)) >> 1), 0);
-    const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y);
-    const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y);
-    label(14, "gSaveStatName_Player");
-    value(14, SaveStatToString(C.SAVE_STAT_NAME, 2));
-
-    label(28, "gSaveStatName_Badges");
-    value(28, SaveStatToString(C.SAVE_STAT_BADGES, 2));
-
-    let y = 42;
-    if (flagGet(rom.c("FLAG_SYS_POKEDEX_GET"))) {
-      label(y, "gSaveStatName_Pokedex");
-      value(y, SaveStatToString(C.SAVE_STAT_POKEDEX, 2));
-      y += 14;
-    }
-
-    label(y, "gSaveStatName_Time");
-    value(y, SaveStatToString(C.SAVE_STAT_TIME, 2));
-
-    ow.windows.add(stats);
-    this.startMenuWindows.push(stats);
   }
 
   private saveWait = 0;

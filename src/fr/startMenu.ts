@@ -5,7 +5,7 @@ import type { Game } from "./game";
 import * as C from "./generated/constants";
 import { PlayRainStoppingSoundEffect } from "./field/weather";
 import { GetNationalPokedexCount } from "./pokemon/pokemon";
-import { IncrementGameStat, save } from "./save";
+import { flagGet, IncrementGameStat, save } from "./save";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { intToDecimal, expandPlaceholders, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { rom } from "./rom";
@@ -17,6 +17,8 @@ import { joy, JOY_NEW, START_BUTTON } from "./gba/input";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
 import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
+import { FONT_SMALL, stringWidth } from "./gba/font";
+import { SaveStatToString } from "./saveMenuUtil";
 
 enum StartMenuOption {
   STARTMENU_POKEDEX = 0,
@@ -270,6 +272,46 @@ export function Task_StartMenuHandleInput(taskId: number, state: StartMenuInputS
   }
   if (StartCB_HandleInput(state)) tasks.destroy(taskId);
 }
+
+/** PrintSaveStats (start_menu.c). */
+export function PrintSaveStats(game: Game): Window {
+  const ow = game.overworld;
+  const stats = new Window(1, 1, 14, 9);
+  stats.frame = "std";
+  stats.frameType = save.options.frameType;
+  stats.fill(1);
+
+  const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
+  printText(stats, FONT_NORMAL, location, (112 - stringWidth(FONT_NORMAL, location)) >> 1, 0);
+  const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y);
+  const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y);
+  label(14, "gSaveStatName_Player");
+  value(14, SaveStatToString(C.SAVE_STAT_NAME, 2));
+  label(28, "gSaveStatName_Badges");
+  value(28, SaveStatToString(C.SAVE_STAT_BADGES, 2));
+
+  let y = 42;
+  if (flagGet(C.FLAG_SYS_POKEDEX_GET)) {
+    label(y, "gSaveStatName_Pokedex");
+    value(y, SaveStatToString(C.SAVE_STAT_POKEDEX, 2));
+    y += 14;
+  }
+  label(y, "gSaveStatName_Time");
+  value(y, SaveStatToString(C.SAVE_STAT_TIME, 2));
+  ow.windows.add(stats);
+  return stats;
+}
+
+/** CloseSaveStatsWindow (start_menu.c): remove the current save summary window. */
+export function CloseSaveStatsWindow(game: Game, window: Window): void {
+  game.overworld.windows.remove(window);
+}
+
+/** CloseSaveStatsWindow_ (start_menu.c): C's small wrapper around the window cleanup. */
+export function CloseSaveStatsWindow_(game: Game, window: Window): void { CloseSaveStatsWindow(game, window); }
+
+/** CloseSaveMessageWindow (start_menu.c), adapted to the active message box. */
+export function CloseSaveMessageWindow(game: Game): void { game.overworld.messageBox.hide(); }
 
 /** StartMenuPokedexSanityCheck (start_menu.c). */
 export function StartMenuPokedexSanityCheck(): boolean {
