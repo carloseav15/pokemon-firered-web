@@ -106,6 +106,7 @@ import {
 } from "./hw/sprite";
 import { RunTextPrinters, IsTextPrinterActive } from "./hw/text";
 import { cdata, incbin, incbin16, loadCData, preloadIncbin } from "./hw/assets";
+import { GetBattleBgTemplateData } from "./battle/bg";
 import { Sin, Cos } from "./hw/trig";
 import { random } from "./random";
 import { rom } from "./rom";
@@ -812,8 +813,8 @@ function RestoreBgAfterAnim(): void {
   G.gBattle_BG1_Y = 0;
   G.gBattle_BG2_X = 0;
   G.gBattle_BG2_Y = 0;
-  SetBgAttribute(1, BG_ATTR_PRIORITY, 0);
-  SetBgAttribute(2, BG_ATTR_PRIORITY, 1);
+  SetBgAttribute(1, BG_ATTR_PRIORITY, GetBattleBgTemplateData(1, 5));
+  SetBgAttribute(2, BG_ATTR_PRIORITY, GetBattleBgTemplateData(2, 5));
   SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_ON | DISPCNT_BG3_ON | DISPCNT_BG0_ON | DISPCNT_OBJ_1D_MAP);
   sBgAnimPal = null;
 }

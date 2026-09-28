@@ -48,6 +48,20 @@ export function CB2_unused(): void {
 }
 
 export const gBattleBgTemplates = (): BgTemplate[] => cdata<BgTemplate[]>("battle_bg", "gBattleBgTemplates");
+/** GetBattleBgTemplateData (battle_main.c): expose the selected u32 field of the GBA BG template. */
+export function GetBattleBgTemplateData(arrayId: number, caseId: number): number {
+  const template = gBattleBgTemplates()[arrayId]!;
+  switch (caseId) {
+    case 0: return template.bg >>> 0;
+    case 1: return template.charBaseIndex >>> 0;
+    case 2: return template.mapBaseIndex >>> 0;
+    case 3: return template.screenSize >>> 0;
+    case 4: return template.paletteMode >>> 0;
+    case 5: return template.priority >>> 0;
+    case 6: return template.baseTile >>> 0;
+    default: return 0;
+  }
+}
 const sStandardBattleWindowTemplates = (): WindowTemplate[] => cdata<WindowTemplate[]>("battle_bg", "sStandardBattleWindowTemplates");
 const sBattleTerrainTable = (): BattleBackground[] => cdata<BattleBackground[]>("battle_bg", "sBattleTerrainTable");
 
