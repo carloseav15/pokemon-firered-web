@@ -26,7 +26,6 @@ import { Sin, gSineTable } from "../hw/trig";
 import { random as Random } from "../random";
 import { MugshotTransitionEffect } from "./mugshotTransition";
 
-const MAP_TYPE_UNDERGROUND = 4;
 const TRANSITION_TYPE_NORMAL = 0;
 const TRANSITION_TYPE_CAVE = 1;
 const TRANSITION_TYPE_FLASH = 2;
@@ -52,7 +51,8 @@ function getBattleTransitionTypeByMap(ow: Overworld): number {
   const behavior = ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
   if (ow.flashLevel) return TRANSITION_TYPE_FLASH;
   if (MetatileBehavior_IsSurfable(behavior)) return TRANSITION_TYPE_WATER;
-  if (ow.header.mapType === MAP_TYPE_UNDERGROUND) return TRANSITION_TYPE_CAVE;
+  if (ow.header.mapType === C.MAP_TYPE_UNDERGROUND) return TRANSITION_TYPE_CAVE;
+  if (ow.header.mapType === C.MAP_TYPE_UNDERWATER) return TRANSITION_TYPE_WATER;
   return TRANSITION_TYPE_NORMAL;
 }
 
