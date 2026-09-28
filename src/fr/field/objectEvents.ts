@@ -335,6 +335,186 @@ export function graphicsInfo(graphicsId: number): GfxInfo {
   return info;
 }
 
+/**
+ * sMovementActionFuncs (event_object_movement.c, data/object_events/movement_action_func_tables.h):
+ * one entry per MOVEMENT_ACTION_* id (0..169, in enum order), each an ordered list of the
+ * MovementAction_*_StepN function names the C dispatcher steps through via
+ * `sMovementActionFuncs[actionId][sprite->data[2]]`. Names repeated across rows (e.g.
+ * MovementAction_PauseSpriteAnim, MovementAction_Finish) are the same shared C function.
+ */
+const MOVEMENT_ACTION_STEPS: readonly (readonly string[])[] = [
+  /* FACE_DOWN */ ["MovementAction_FaceDown_Step0", "MovementAction_PauseSpriteAnim"],
+  /* FACE_UP */ ["MovementAction_FaceUp_Step0", "MovementAction_PauseSpriteAnim"],
+  /* FACE_LEFT */ ["MovementAction_FaceLeft_Step0", "MovementAction_PauseSpriteAnim"],
+  /* FACE_RIGHT */ ["MovementAction_FaceRight_Step0", "MovementAction_PauseSpriteAnim"],
+  /* FACE_DOWN_FAST */ ["MovementAction_FaceDownFast_Step0", "MovementAction_Finish"],
+  /* FACE_UP_FAST */ ["MovementAction_FaceUpFast_Step0", "MovementAction_Finish"],
+  /* FACE_LEFT_FAST */ ["MovementAction_FaceLeftFast_Step0", "MovementAction_Finish"],
+  /* FACE_RIGHT_FAST */ ["MovementAction_FaceRightFast_Step0", "MovementAction_Finish"],
+  /* WALK_SLOWER_DOWN */ ["MovementAction_WalkSlowerDown_Step0", "MovementAction_WalkSlowerDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOWER_UP */ ["MovementAction_WalkSlowerUp_Step0", "MovementAction_WalkSlowerUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOWER_LEFT */ ["MovementAction_WalkSlowerLeft_Step0", "MovementAction_WalkSlowerLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOWER_RIGHT */ ["MovementAction_WalkSlowerRight_Step0", "MovementAction_WalkSlowerRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOW_DOWN */ ["MovementAction_WalkSlowDown_Step0", "MovementAction_WalkSlowDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOW_UP */ ["MovementAction_WalkSlowUp_Step0", "MovementAction_WalkSlowUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOW_LEFT */ ["MovementAction_WalkSlowLeft_Step0", "MovementAction_WalkSlowLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOW_RIGHT */ ["MovementAction_WalkSlowRight_Step0", "MovementAction_WalkSlowRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_NORMAL_DOWN */ ["MovementAction_WalkNormalDown_Step0", "MovementAction_WalkNormalDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_NORMAL_UP */ ["MovementAction_WalkNormalUp_Step0", "MovementAction_WalkNormalUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_NORMAL_LEFT */ ["MovementAction_WalkNormalLeft_Step0", "MovementAction_WalkNormalLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_NORMAL_RIGHT */ ["MovementAction_WalkNormalRight_Step0", "MovementAction_WalkNormalRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_2_DOWN */ ["MovementAction_Jump2Down_Step0", "MovementAction_Jump2Down_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_2_UP */ ["MovementAction_Jump2Up_Step0", "MovementAction_Jump2Up_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_2_LEFT */ ["MovementAction_Jump2Left_Step0", "MovementAction_Jump2Left_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_2_RIGHT */ ["MovementAction_Jump2Right_Step0", "MovementAction_Jump2Right_Step1", "MovementAction_PauseSpriteAnim"],
+  /* DELAY_1 */ ["MovementAction_Delay1_Step0", "MovementAction_Delay_Step1", "MovementAction_Finish"],
+  /* DELAY_2 */ ["MovementAction_Delay2_Step0", "MovementAction_Delay_Step1", "MovementAction_Finish"],
+  /* DELAY_4 */ ["MovementAction_Delay4_Step0", "MovementAction_Delay_Step1", "MovementAction_Finish"],
+  /* DELAY_8 */ ["MovementAction_Delay8_Step0", "MovementAction_Delay_Step1", "MovementAction_Finish"],
+  /* DELAY_16 */ ["MovementAction_Delay16_Step0", "MovementAction_Delay_Step1", "MovementAction_Finish"],
+  /* WALK_FAST_DOWN */ ["MovementAction_WalkFastDown_Step0", "MovementAction_WalkFastDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_FAST_UP */ ["MovementAction_WalkFastUp_Step0", "MovementAction_WalkFastUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_FAST_LEFT */ ["MovementAction_WalkFastLeft_Step0", "MovementAction_WalkFastLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_FAST_RIGHT */ ["MovementAction_WalkFastRight_Step0", "MovementAction_WalkFastRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_SLOW_DOWN */ ["MovementAction_WalkInPlaceSlowDown_Step0", "MovementAction_WalkInPlaceSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_SLOW_UP */ ["MovementAction_WalkInPlaceSlowUp_Step0", "MovementAction_WalkInPlaceSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_SLOW_LEFT */ ["MovementAction_WalkInPlaceSlowLeft_Step0", "MovementAction_WalkInPlaceSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_SLOW_RIGHT */ ["MovementAction_WalkInPlaceSlowRight_Step0", "MovementAction_WalkInPlaceSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_NORMAL_DOWN */ ["MovementAction_WalkInPlaceNormalDown_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_NORMAL_UP */ ["MovementAction_WalkInPlaceNormalUp_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_NORMAL_LEFT */ ["MovementAction_WalkInPlaceNormalLeft_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_NORMAL_RIGHT */ ["MovementAction_WalkInPlaceNormalRight_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FAST_DOWN */ ["MovementAction_WalkInPlaceFastDown_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FAST_UP */ ["MovementAction_WalkInPlaceFastUp_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FAST_LEFT */ ["MovementAction_WalkInPlaceFastLeft_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FAST_RIGHT */ ["MovementAction_WalkInPlaceFastRight_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FASTER_DOWN */ ["MovementAction_WalkInPlaceFasterDown_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FASTER_UP */ ["MovementAction_WalkInPlaceFasterUp_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FASTER_LEFT */ ["MovementAction_WalkInPlaceFasterLeft_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_IN_PLACE_FASTER_RIGHT */ ["MovementAction_WalkInPlaceFasterRight_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* RIDE_WATER_CURRENT_DOWN */ ["MovementAction_RideWaterCurrentDown_Step0", "MovementAction_RideWaterCurrentDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* RIDE_WATER_CURRENT_UP */ ["MovementAction_RideWaterCurrentUp_Step0", "MovementAction_RideWaterCurrentUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* RIDE_WATER_CURRENT_LEFT */ ["MovementAction_RideWaterCurrentLeft_Step0", "MovementAction_RideWaterCurrentLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* RIDE_WATER_CURRENT_RIGHT */ ["MovementAction_RideWaterCurrentRight_Step0", "MovementAction_RideWaterCurrentRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_FASTER_DOWN */ ["MovementAction_WalkFasterDown_Step0", "MovementAction_WalkFasterDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_FASTER_UP */ ["MovementAction_WalkFasterUp_Step0", "MovementAction_WalkFasterUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_FASTER_LEFT */ ["MovementAction_WalkFasterLeft_Step0", "MovementAction_WalkFasterLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_FASTER_RIGHT */ ["MovementAction_WalkFasterRight_Step0", "MovementAction_WalkFasterRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SLIDE_DOWN */ ["MovementAction_SlideDown_Step0", "MovementAction_SlideDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SLIDE_UP */ ["MovementAction_SlideUp_Step0", "MovementAction_SlideUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SLIDE_LEFT */ ["MovementAction_SlideLeft_Step0", "MovementAction_SlideLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SLIDE_RIGHT */ ["MovementAction_SlideRight_Step0", "MovementAction_SlideRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_DOWN */ ["MovementAction_PlayerRunDown_Step0", "MovementAction_PlayerRunDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_UP */ ["MovementAction_PlayerRunUp_Step0", "MovementAction_PlayerRunUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_LEFT */ ["MovementAction_PlayerRunLeft_Step0", "MovementAction_PlayerRunLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_RIGHT */ ["MovementAction_PlayerRunRight_Step0", "MovementAction_PlayerRunRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_DOWN_SLOW */ ["MovementAction_RunDownSlow_Step0", "MovementAction_RunDownSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_UP_SLOW */ ["MovementAction_RunUpSlow_Step0", "MovementAction_RunUpSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_LEFT_SLOW */ ["MovementAction_RunLeftSlow_Step0", "MovementAction_RunLeftSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* PLAYER_RUN_RIGHT_SLOW */ ["MovementAction_RunRightSlow_Step0", "MovementAction_RunRightSlow_Step1", "MovementAction_PauseSpriteAnim"],
+  /* START_ANIM_IN_DIRECTION */ ["MovementAction_StartAnimInDirection_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_SPECIAL_DOWN */ ["MovementAction_JumpSpecialDown_Step0", "MovementAction_JumpSpecialDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_SPECIAL_UP */ ["MovementAction_JumpSpecialUp_Step0", "MovementAction_JumpSpecialUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_SPECIAL_LEFT */ ["MovementAction_JumpSpecialLeft_Step0", "MovementAction_JumpSpecialLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_SPECIAL_RIGHT */ ["MovementAction_JumpSpecialRight_Step0", "MovementAction_JumpSpecialRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* FACE_PLAYER */ ["MovementAction_FacePlayer_Step0", "MovementAction_PauseSpriteAnim"],
+  /* FACE_AWAY_PLAYER */ ["MovementAction_FaceAwayPlayer_Step0", "MovementAction_PauseSpriteAnim"],
+  /* LOCK_FACING_DIRECTION */ ["MovementAction_LockFacingDirection_Step0", "MovementAction_PauseSpriteAnim"],
+  /* UNLOCK_FACING_DIRECTION */ ["MovementAction_UnlockFacingDirection_Step0", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_DOWN */ ["MovementAction_JumpDown_Step0", "MovementAction_JumpDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_UP */ ["MovementAction_JumpUp_Step0", "MovementAction_JumpUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_LEFT */ ["MovementAction_JumpLeft_Step0", "MovementAction_JumpLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_RIGHT */ ["MovementAction_JumpRight_Step0", "MovementAction_JumpRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_DOWN */ ["MovementAction_JumpInPlaceDown_Step0", "MovementAction_JumpInPlaceDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_UP */ ["MovementAction_JumpInPlaceUp_Step0", "MovementAction_JumpInPlaceUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_LEFT */ ["MovementAction_JumpInPlaceLeft_Step0", "MovementAction_JumpInPlaceLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_RIGHT */ ["MovementAction_JumpInPlaceRight_Step0", "MovementAction_JumpInPlaceRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_DOWN_UP */ ["MovementAction_JumpInPlaceDownUp_Step0", "MovementAction_JumpInPlaceDownUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_UP_DOWN */ ["MovementAction_JumpInPlaceUpDown_Step0", "MovementAction_JumpInPlaceUpDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_LEFT_RIGHT */ ["MovementAction_JumpInPlaceLeftRight_Step0", "MovementAction_JumpInPlaceLeftRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_IN_PLACE_RIGHT_LEFT */ ["MovementAction_JumpInPlaceRightLeft_Step0", "MovementAction_JumpInPlaceRightLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* FACE_ORIGINAL_DIRECTION */ ["MovementAction_FaceOriginalDirection_Step0", "MovementAction_PauseSpriteAnim"],
+  /* NURSE_JOY_BOW_DOWN */ ["MovementAction_NurseJoyBowDown_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ENABLE_JUMP_LANDING_GROUND_EFFECT */ ["MovementAction_EnableJumpLandingGroundEffect_Step0", "MovementAction_Finish"],
+  /* DISABLE_JUMP_LANDING_GROUND_EFFECT */ ["MovementAction_DisableJumpLandingGroundEffect_Step0", "MovementAction_Finish"],
+  /* DISABLE_ANIMATION */ ["MovementAction_DisableAnimation_Step0", "MovementAction_Finish"],
+  /* RESTORE_ANIMATION */ ["MovementAction_RestoreAnimation_Step0", "MovementAction_Finish"],
+  /* SET_INVISIBLE */ ["MovementAction_SetInvisible_Step0", "MovementAction_Finish"],
+  /* SET_VISIBLE */ ["MovementAction_SetVisible_Step0", "MovementAction_Finish"],
+  /* EMOTE_EXCLAMATION_MARK */ ["MovementAction_EmoteExclamationMark_Step0", "MovementAction_Finish"],
+  /* EMOTE_QUESTION_MARK */ ["MovementAction_EmoteQuestionMark_Step0", "MovementAction_Finish"],
+  /* EMOTE_X */ ["MovementAction_EmoteX_Step0", "MovementAction_Finish"],
+  /* EMOTE_DOUBLE_EXCL_MARK */ ["MovementAction_EmoteDoubleExclamationMark_Step0", "MovementAction_Finish"],
+  /* EMOTE_SMILE */ ["MovementAction_EmoteSmile_Step0", "MovementAction_Finish"],
+  /* REVEAL_TRAINER */ ["MovementAction_RevealTrainer_Step0", "MovementAction_RevealTrainer_Step1", "MovementAction_Finish"],
+  /* ROCK_SMASH_BREAK */ ["MovementAction_RockSmashBreak_Step0", "MovementAction_RockSmashBreak_Step1", "MovementAction_RockSmashBreak_Step2", "MovementAction_Finish"],
+  /* CUT_TREE */ ["MovementAction_CutTree_Step0", "MovementAction_CutTree_Step1", "MovementAction_CutTree_Step2", "MovementAction_Finish"],
+  /* SET_FIXED_PRIORITY */ ["MovementAction_SetFixedPriority_Step0", "MovementAction_Finish"],
+  /* CLEAR_FIXED_PRIORITY */ ["MovementAction_ClearFixedPriority_Step0", "MovementAction_Finish"],
+  /* INIT_AFFINE_ANIM */ ["MovementAction_InitAffineAnim_Step0", "MovementAction_Finish"],
+  /* CLEAR_AFFINE_ANIM */ ["MovementAction_ClearAffineAnim_Step0", "MovementAction_Finish"],
+  /* WALK_DOWN_START_AFFINE */ ["MovementAction_WalkDownStartAffine_Step0", "MovementAction_WalkDownStartAffine_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_DOWN_AFFINE */ ["MovementAction_WalkDownAffine_Step0", "MovementAction_WalkDownAffine_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_FACE_DOWN */ ["MovementAction_AcroWheelieFaceDown_Step0", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_FACE_UP */ ["MovementAction_AcroWheelieFaceUp_Step0", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_FACE_LEFT */ ["MovementAction_AcroWheelieFaceLeft_Step0", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_FACE_RIGHT */ ["MovementAction_AcroWheelieFaceRight_Step0", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_DOWN */ ["MovementAction_AcroPopWheelieDown_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_UP */ ["MovementAction_AcroPopWheelieUp_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_LEFT */ ["MovementAction_AcroPopWheelieLeft_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_RIGHT */ ["MovementAction_AcroPopWheelieRight_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_END_WHEELIE_FACE_DOWN */ ["MovementAction_AcroEndWheelieFaceDown_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_END_WHEELIE_FACE_UP */ ["MovementAction_AcroEndWheelieFaceUp_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_END_WHEELIE_FACE_LEFT */ ["MovementAction_AcroEndWheelieFaceLeft_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_END_WHEELIE_FACE_RIGHT */ ["MovementAction_AcroEndWheelieFaceRight_Step0", "MovementAction_WaitSpriteAnim", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_FACE_DOWN */ ["MovementAction_AcroWheelieHopFaceDown_Step0", "MovementAction_AcroWheelieHopFaceDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_FACE_UP */ ["MovementAction_AcroWheelieHopFaceUp_Step0", "MovementAction_AcroWheelieHopFaceUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_FACE_LEFT */ ["MovementAction_AcroWheelieHopFaceLeft_Step0", "MovementAction_AcroWheelieHopFaceLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_FACE_RIGHT */ ["MovementAction_AcroWheelieHopFaceRight_Step0", "MovementAction_AcroWheelieHopFaceRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_DOWN */ ["MovementAction_AcroWheelieHopDown_Step0", "MovementAction_AcroWheelieHopDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_UP */ ["MovementAction_AcroWheelieHopUp_Step0", "MovementAction_AcroWheelieHopUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_LEFT */ ["MovementAction_AcroWheelieHopLeft_Step0", "MovementAction_AcroWheelieHopLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_HOP_RIGHT */ ["MovementAction_AcroWheelieHopRight_Step0", "MovementAction_AcroWheelieHopRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_JUMP_DOWN */ ["MovementAction_AcroWheelieJumpDown_Step0", "MovementAction_AcroWheelieJumpDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_JUMP_UP */ ["MovementAction_AcroWheelieJumpUp_Step0", "MovementAction_AcroWheelieJumpUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_JUMP_LEFT */ ["MovementAction_AcroWheelieJumpLeft_Step0", "MovementAction_AcroWheelieJumpLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_JUMP_RIGHT */ ["MovementAction_AcroWheelieJumpRight_Step0", "MovementAction_AcroWheelieJumpRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_IN_PLACE_DOWN */ ["MovementAction_AcroWheelieInPlaceDown_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_IN_PLACE_UP */ ["MovementAction_AcroWheelieInPlaceUp_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_IN_PLACE_LEFT */ ["MovementAction_AcroWheelieInPlaceLeft_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_IN_PLACE_RIGHT */ ["MovementAction_AcroWheelieInPlaceRight_Step0", "MovementAction_WalkInPlace_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_MOVE_DOWN */ ["MovementAction_AcroPopWheelieMoveDown_Step0", "MovementAction_AcroPopWheelieMoveDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_MOVE_UP */ ["MovementAction_AcroPopWheelieMoveUp_Step0", "MovementAction_AcroPopWheelieMoveUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_MOVE_LEFT */ ["MovementAction_AcroPopWheelieMoveLeft_Step0", "MovementAction_AcroPopWheelieMoveLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_POP_WHEELIE_MOVE_RIGHT */ ["MovementAction_AcroPopWheelieMoveRight_Step0", "MovementAction_AcroPopWheelieMoveRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_MOVE_DOWN */ ["MovementAction_AcroWheelieMoveDown_Step0", "MovementAction_AcroWheelieMoveDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_MOVE_UP */ ["MovementAction_AcroWheelieMoveUp_Step0", "MovementAction_AcroWheelieMoveUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_MOVE_LEFT */ ["MovementAction_AcroWheelieMoveLeft_Step0", "MovementAction_AcroWheelieMoveLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* ACRO_WHEELIE_MOVE_RIGHT */ ["MovementAction_AcroWheelieMoveRight_Step0", "MovementAction_AcroWheelieMoveRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SPIN_DOWN */ ["MovementAction_SpinDown_Step0", "MovementAction_SpinDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SPIN_UP */ ["MovementAction_SpinUp_Step0", "MovementAction_SpinUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SPIN_LEFT */ ["MovementAction_SpinLeft_Step0", "MovementAction_SpinLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SPIN_RIGHT */ ["MovementAction_SpinRight_Step0", "MovementAction_SpinRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* RAISE_HAND_AND_STOP */ ["MovementAction_RaiseHand_Step0", "MovementAction_RaiseHandAndStop_Step1"],
+  /* RAISE_HAND_AND_JUMP */ ["MovementAction_RaiseHand_Step0", "MovementAction_RaiseHandAndJump_Step1"],
+  /* RAISE_HAND_AND_SWIM */ ["MovementAction_RaiseHand_Step0", "MovementAction_RaiseHandAndSwim_Step1"],
+  /* WALK_SLOWEST_DOWN */ ["MovementAction_WalkSlowestDown_Step0", "MovementAction_WalkSlowestDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOWEST_UP */ ["MovementAction_WalkSlowestUp_Step0", "MovementAction_WalkSlowestUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOWEST_LEFT */ ["MovementAction_WalkSlowestLeft_Step0", "MovementAction_WalkSlowestLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* WALK_SLOWEST_RIGHT */ ["MovementAction_WalkSlowestRight_Step0", "MovementAction_WalkSlowestRight_Step1", "MovementAction_PauseSpriteAnim"],
+  /* SHAKE_HEAD_OR_WALK_IN_PLACE */ ["MovementAction_ShakeHeadOrWalkInPlace_Step0", "MovementAction_ShakeHeadOrWalkInPlace_Step1"],
+  /* GLIDE_DOWN */ ["MovementAction_GlideDown_Step0", "MovementAction_GlideDown_Step1", "MovementAction_Finish"],
+  /* GLIDE_UP */ ["MovementAction_GlideUp_Step0", "MovementAction_GlideUp_Step1", "MovementAction_Finish"],
+  /* GLIDE_LEFT */ ["MovementAction_GlideLeft_Step0", "MovementAction_GlideLeft_Step1", "MovementAction_Finish"],
+  /* GLIDE_RIGHT */ ["MovementAction_GlideRight_Step0", "MovementAction_GlideRight_Step1", "MovementAction_Finish"],
+  /* FLY_UP */ ["MovementAction_FlyUp_Step0", "MovementAction_FlyUp_Step1", "MovementAction_FlyUp_Step2"],
+  /* FLY_DOWN */ ["MovementAction_FlyDown_Step0", "MovementAction_FlyDown_Step1", "MovementAction_FlyUp_Step2"],
+  /* JUMP_SPECIAL_WITH_EFFECT_DOWN */ ["MovementAction_JumpSpecialWithEffectDown_Step0", "MovementAction_JumpSpecialWithEffectDown_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_SPECIAL_WITH_EFFECT_UP */ ["MovementAction_JumpSpecialWithEffectUp_Step0", "MovementAction_JumpSpecialWithEffectUp_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_SPECIAL_WITH_EFFECT_LEFT */ ["MovementAction_JumpSpecialWithEffectLeft_Step0", "MovementAction_JumpSpecialWithEffectLeft_Step1", "MovementAction_PauseSpriteAnim"],
+  /* JUMP_SPECIAL_WITH_EFFECT_RIGHT */ ["MovementAction_JumpSpecialWithEffectRight_Step0", "MovementAction_JumpSpecialWithEffectRight_Step1", "MovementAction_PauseSpriteAnim"],
+];
+
 export class ObjectEvents {
   readonly objects: Array<ObjectEvent | null> = new Array(OBJECT_EVENTS_COUNT).fill(null);
   /** Installed by TrainerSee for the buried-trainer REVEAL_TRAINER task. */
@@ -1800,13 +1980,25 @@ export class ObjectEvents {
     return false;
   }
 
-  /** Runs one frame of the object's current movement action; true when finished. */
+  /**
+   * ObjectEventExecSingleMovementAction/ObjectEventExecHeldMovementAction driver
+   * (event_object_movement.c): sMovementActionFuncs[actionId][sprite->data[2]](...).
+   * Runs one frame of the object's current movement action; true when finished.
+   */
   execAction(object: ObjectEvent): boolean {
     const id = object.movementActionId;
-    const s = object.sprite;
-    const step = s.data[2];
     if (id === MOVEMENT_ACTION_NONE || id === MOVEMENT_ACTION_STEP_END) return true;
-    if (step === 2 && id !== 0x68 && id !== 0x69 && id !== 0x98 && id !== 0x99 && id !== 0x9a) return true;
+    const steps = MOVEMENT_ACTION_STEPS[id];
+    if (!steps) return true;
+    const step = object.sprite.data[2];
+    const name = steps[Math.min(step, steps.length - 1)] as keyof this;
+    return (this[name] as unknown as (object: ObjectEvent, sprite: Sprite) => boolean).call(this, object, object.sprite);
+  }
+
+  /** Shared body of every MovementAction_*_StepN (event_object_movement.c), parameterized
+   * by the action id and step index instead of reading them off object.sprite.data. */
+  private movementActionStep(object: ObjectEvent, id: number, step: number): boolean {
+    const s = object.sprite;
     const dirOf = (base: number) => [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST][(id - base) & 3];
 
     // Face (0x00-0x07)
@@ -1856,7 +2048,10 @@ export class ObjectEvents {
         const anim = [moveAnim, moveAnim, moveFastAnim, moveFasterAnim][group](dir);
         this.initMoveInPlace(object, dir, anim, [32, 16, 8, 4][group]);
       }
-      return this.updateMoveInPlace(object);
+      // MovementAction_WalkInPlaceSlow_Step1 additionally bumps animDelayCounter on
+      // odd frames (event_object_movement.c); the other speeds tail-call the plain
+      // MovementAction_WalkInPlace_Step1.
+      return group === 0 ? this.MovementAction_WalkInPlaceSlow_Step1(object, s) : this.MovementAction_WalkInPlace_Step1(object, s);
     }
     // Ride water current
     if (id >= 0x31 && id <= 0x34) {
@@ -2224,6 +2419,328 @@ export class ObjectEvents {
     return true;
   }
 
+  // Shared step functions reused across many actions (event_object_movement.c):
+  // the same C function pointer appears in several sMovementActionFuncs_* tables.
+  private MovementAction_PauseSpriteAnim(object: ObjectEvent, sprite: Sprite): boolean {
+    sprite.animPaused = true;
+    return true;
+  }
+
+  private MovementAction_Finish(object: ObjectEvent, sprite: Sprite): boolean {
+    return true;
+  }
+
+  private MovementAction_Delay_Step1(object: ObjectEvent, sprite: Sprite): boolean {
+    if (--sprite.data[3] === 0) { sprite.data[2] = 2; return true; }
+    return false;
+  }
+
+  private MovementAction_WalkInPlace_Step1(object: ObjectEvent, sprite: Sprite): boolean {
+    return this.updateMoveInPlace(object);
+  }
+
+  private MovementAction_WalkInPlaceSlow_Step1(object: ObjectEvent, sprite: Sprite): boolean {
+    if (sprite.data[3] & 1) sprite.animDelayCounter++;
+    return this.updateMoveInPlace(object);
+  }
+
+  private MovementAction_WaitSpriteAnim(object: ObjectEvent, sprite: Sprite): boolean {
+    if (SpriteAnimEnded(sprite)) { sprite.data[2] = 2; return true; }
+    return false;
+  }
+
+  private MovementAction_RaiseHand_Step0(object: ObjectEvent, sprite: Sprite): boolean {
+    sprite.startAnim(ANIM_RAISE_HAND);
+    sprite.animPaused = false;
+    object.disableAnim = false;
+    sprite.data[2] = 1;
+    sprite.data[4] = 0;
+    sprite.data[5] = 0;
+    sprite.data[6] = 0;
+    sprite.data[7] = 0;
+    return false;
+  }
+
+  private MovementAction_FlyUp_Step2(object: ObjectEvent, sprite: Sprite): boolean {
+    return true;
+  }
+
+  // MovementAction_*_StepN wrappers: the id-specific ones keep the C name/signature
+  // (event_object_movement.c) but delegate to the shared movementActionStep body
+  // above with their own fixed action id, matching how the C functions call the
+  // same shared Init*/Update* helpers with a hardcoded direction/speed constant.
+  private MovementAction_FaceDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_DOWN, 0); }
+  private MovementAction_FaceUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_UP, 0); }
+  private MovementAction_FaceLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_LEFT, 0); }
+  private MovementAction_FaceRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_RIGHT, 0); }
+  private MovementAction_FaceDownFast_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_DOWN_FAST, 0); }
+  private MovementAction_FaceUpFast_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_UP_FAST, 0); }
+  private MovementAction_FaceLeftFast_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_LEFT_FAST, 0); }
+  private MovementAction_FaceRightFast_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_RIGHT_FAST, 0); }
+  private MovementAction_WalkSlowerDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_DOWN, 0); }
+  private MovementAction_WalkSlowerDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_DOWN, 1); }
+  private MovementAction_WalkSlowerUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_UP, 0); }
+  private MovementAction_WalkSlowerUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_UP, 1); }
+  private MovementAction_WalkSlowerLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_LEFT, 0); }
+  private MovementAction_WalkSlowerLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_LEFT, 1); }
+  private MovementAction_WalkSlowerRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_RIGHT, 0); }
+  private MovementAction_WalkSlowerRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWER_RIGHT, 1); }
+  private MovementAction_WalkSlowDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_DOWN, 0); }
+  private MovementAction_WalkSlowDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_DOWN, 1); }
+  private MovementAction_WalkSlowUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_UP, 0); }
+  private MovementAction_WalkSlowUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_UP, 1); }
+  private MovementAction_WalkSlowLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_LEFT, 0); }
+  private MovementAction_WalkSlowLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_LEFT, 1); }
+  private MovementAction_WalkSlowRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_RIGHT, 0); }
+  private MovementAction_WalkSlowRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOW_RIGHT, 1); }
+  private MovementAction_WalkNormalDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_DOWN, 0); }
+  private MovementAction_WalkNormalDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_DOWN, 1); }
+  private MovementAction_WalkNormalUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_UP, 0); }
+  private MovementAction_WalkNormalUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_UP, 1); }
+  private MovementAction_WalkNormalLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_LEFT, 0); }
+  private MovementAction_WalkNormalLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_LEFT, 1); }
+  private MovementAction_WalkNormalRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_RIGHT, 0); }
+  private MovementAction_WalkNormalRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_NORMAL_RIGHT, 1); }
+  private MovementAction_Jump2Down_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_DOWN, 0); }
+  private MovementAction_Jump2Down_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_DOWN, 1); }
+  private MovementAction_Jump2Up_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_UP, 0); }
+  private MovementAction_Jump2Up_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_UP, 1); }
+  private MovementAction_Jump2Left_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_LEFT, 0); }
+  private MovementAction_Jump2Left_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_LEFT, 1); }
+  private MovementAction_Jump2Right_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_RIGHT, 0); }
+  private MovementAction_Jump2Right_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_2_RIGHT, 1); }
+  private MovementAction_Delay1_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_DELAY_1, 0); }
+  private MovementAction_Delay2_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_DELAY_2, 0); }
+  private MovementAction_Delay4_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_DELAY_4, 0); }
+  private MovementAction_Delay8_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_DELAY_8, 0); }
+  private MovementAction_Delay16_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_DELAY_16, 0); }
+  private MovementAction_WalkFastDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_DOWN, 0); }
+  private MovementAction_WalkFastDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_DOWN, 1); }
+  private MovementAction_WalkFastUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_UP, 0); }
+  private MovementAction_WalkFastUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_UP, 1); }
+  private MovementAction_WalkFastLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_LEFT, 0); }
+  private MovementAction_WalkFastLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_LEFT, 1); }
+  private MovementAction_WalkFastRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_RIGHT, 0); }
+  private MovementAction_WalkFastRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FAST_RIGHT, 1); }
+  private MovementAction_WalkInPlaceSlowDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_SLOW_DOWN, 0); }
+  private MovementAction_WalkInPlaceSlowUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_SLOW_UP, 0); }
+  private MovementAction_WalkInPlaceSlowLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_SLOW_LEFT, 0); }
+  private MovementAction_WalkInPlaceSlowRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_SLOW_RIGHT, 0); }
+  private MovementAction_WalkInPlaceNormalDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_DOWN, 0); }
+  private MovementAction_WalkInPlaceNormalUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_UP, 0); }
+  private MovementAction_WalkInPlaceNormalLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_LEFT, 0); }
+  private MovementAction_WalkInPlaceNormalRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_RIGHT, 0); }
+  private MovementAction_WalkInPlaceFastDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_DOWN, 0); }
+  private MovementAction_WalkInPlaceFastUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_UP, 0); }
+  private MovementAction_WalkInPlaceFastLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_LEFT, 0); }
+  private MovementAction_WalkInPlaceFastRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_RIGHT, 0); }
+  private MovementAction_WalkInPlaceFasterDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_DOWN, 0); }
+  private MovementAction_WalkInPlaceFasterUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_UP, 0); }
+  private MovementAction_WalkInPlaceFasterLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_LEFT, 0); }
+  private MovementAction_WalkInPlaceFasterRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_RIGHT, 0); }
+  private MovementAction_RideWaterCurrentDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_DOWN, 0); }
+  private MovementAction_RideWaterCurrentDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_DOWN, 1); }
+  private MovementAction_RideWaterCurrentUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_UP, 0); }
+  private MovementAction_RideWaterCurrentUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_UP, 1); }
+  private MovementAction_RideWaterCurrentLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_LEFT, 0); }
+  private MovementAction_RideWaterCurrentLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_LEFT, 1); }
+  private MovementAction_RideWaterCurrentRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_RIGHT, 0); }
+  private MovementAction_RideWaterCurrentRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RIDE_WATER_CURRENT_RIGHT, 1); }
+  private MovementAction_WalkFasterDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_DOWN, 0); }
+  private MovementAction_WalkFasterDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_DOWN, 1); }
+  private MovementAction_WalkFasterUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_UP, 0); }
+  private MovementAction_WalkFasterUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_UP, 1); }
+  private MovementAction_WalkFasterLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_LEFT, 0); }
+  private MovementAction_WalkFasterLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_LEFT, 1); }
+  private MovementAction_WalkFasterRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_RIGHT, 0); }
+  private MovementAction_WalkFasterRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_FASTER_RIGHT, 1); }
+  private MovementAction_SlideDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_DOWN, 0); }
+  private MovementAction_SlideDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_DOWN, 1); }
+  private MovementAction_SlideUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_UP, 0); }
+  private MovementAction_SlideUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_UP, 1); }
+  private MovementAction_SlideLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_LEFT, 0); }
+  private MovementAction_SlideLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_LEFT, 1); }
+  private MovementAction_SlideRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_RIGHT, 0); }
+  private MovementAction_SlideRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SLIDE_RIGHT, 1); }
+  private MovementAction_PlayerRunDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_DOWN, 0); }
+  private MovementAction_PlayerRunDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_DOWN, 1); }
+  private MovementAction_PlayerRunUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_UP, 0); }
+  private MovementAction_PlayerRunUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_UP, 1); }
+  private MovementAction_PlayerRunLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_LEFT, 0); }
+  private MovementAction_PlayerRunLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_LEFT, 1); }
+  private MovementAction_PlayerRunRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_RIGHT, 0); }
+  private MovementAction_PlayerRunRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_RIGHT, 1); }
+  private MovementAction_RunDownSlow_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_DOWN_SLOW, 0); }
+  private MovementAction_RunDownSlow_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_DOWN_SLOW, 1); }
+  private MovementAction_RunUpSlow_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_UP_SLOW, 0); }
+  private MovementAction_RunUpSlow_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_UP_SLOW, 1); }
+  private MovementAction_RunLeftSlow_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_LEFT_SLOW, 0); }
+  private MovementAction_RunLeftSlow_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_LEFT_SLOW, 1); }
+  private MovementAction_RunRightSlow_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_RIGHT_SLOW, 0); }
+  private MovementAction_RunRightSlow_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_PLAYER_RUN_RIGHT_SLOW, 1); }
+  private MovementAction_StartAnimInDirection_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION, 0); }
+  private MovementAction_JumpSpecialDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_DOWN, 0); }
+  private MovementAction_JumpSpecialDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_DOWN, 1); }
+  private MovementAction_JumpSpecialUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_UP, 0); }
+  private MovementAction_JumpSpecialUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_UP, 1); }
+  private MovementAction_JumpSpecialLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_LEFT, 0); }
+  private MovementAction_JumpSpecialLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_LEFT, 1); }
+  private MovementAction_JumpSpecialRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_RIGHT, 0); }
+  private MovementAction_JumpSpecialRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_RIGHT, 1); }
+  private MovementAction_FacePlayer_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_PLAYER, 0); }
+  private MovementAction_FaceAwayPlayer_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_AWAY_PLAYER, 0); }
+  private MovementAction_LockFacingDirection_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_LOCK_FACING_DIRECTION, 0); }
+  private MovementAction_UnlockFacingDirection_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_UNLOCK_FACING_DIRECTION, 0); }
+  private MovementAction_JumpDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_DOWN, 0); }
+  private MovementAction_JumpDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_DOWN, 1); }
+  private MovementAction_JumpUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_UP, 0); }
+  private MovementAction_JumpUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_UP, 1); }
+  private MovementAction_JumpLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_LEFT, 0); }
+  private MovementAction_JumpLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_LEFT, 1); }
+  private MovementAction_JumpRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_RIGHT, 0); }
+  private MovementAction_JumpRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_RIGHT, 1); }
+  private MovementAction_JumpInPlaceDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_DOWN, 0); }
+  private MovementAction_JumpInPlaceDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_DOWN, 1); }
+  private MovementAction_JumpInPlaceUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_UP, 0); }
+  private MovementAction_JumpInPlaceUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_UP, 1); }
+  private MovementAction_JumpInPlaceLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT, 0); }
+  private MovementAction_JumpInPlaceLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT, 1); }
+  private MovementAction_JumpInPlaceRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_RIGHT, 0); }
+  private MovementAction_JumpInPlaceRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_RIGHT, 1); }
+  private MovementAction_JumpInPlaceDownUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_DOWN_UP, 0); }
+  private MovementAction_JumpInPlaceDownUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_DOWN_UP, 1); }
+  private MovementAction_JumpInPlaceUpDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_UP_DOWN, 0); }
+  private MovementAction_JumpInPlaceUpDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_UP_DOWN, 1); }
+  private MovementAction_JumpInPlaceLeftRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT_RIGHT, 0); }
+  private MovementAction_JumpInPlaceLeftRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT_RIGHT, 1); }
+  private MovementAction_JumpInPlaceRightLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_RIGHT_LEFT, 0); }
+  private MovementAction_JumpInPlaceRightLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_IN_PLACE_RIGHT_LEFT, 1); }
+  private MovementAction_FaceOriginalDirection_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FACE_ORIGINAL_DIRECTION, 0); }
+  private MovementAction_NurseJoyBowDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_NURSE_JOY_BOW_DOWN, 0); }
+  private MovementAction_EnableJumpLandingGroundEffect_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ENABLE_JUMP_LANDING_GROUND_EFFECT, 0); }
+  private MovementAction_DisableJumpLandingGroundEffect_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_DISABLE_JUMP_LANDING_GROUND_EFFECT, 0); }
+  private MovementAction_DisableAnimation_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_DISABLE_ANIMATION, 0); }
+  private MovementAction_RestoreAnimation_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RESTORE_ANIMATION, 0); }
+  private MovementAction_SetInvisible_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SET_INVISIBLE, 0); }
+  private MovementAction_SetVisible_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SET_VISIBLE, 0); }
+  private MovementAction_EmoteExclamationMark_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_EMOTE_EXCLAMATION_MARK, 0); }
+  private MovementAction_EmoteQuestionMark_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_EMOTE_QUESTION_MARK, 0); }
+  private MovementAction_EmoteX_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_EMOTE_X, 0); }
+  private MovementAction_EmoteDoubleExclamationMark_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_EMOTE_DOUBLE_EXCL_MARK, 0); }
+  private MovementAction_EmoteSmile_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_EMOTE_SMILE, 0); }
+  private MovementAction_RevealTrainer_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_REVEAL_TRAINER, 0); }
+  private MovementAction_RevealTrainer_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_REVEAL_TRAINER, 1); }
+  private MovementAction_RockSmashBreak_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ROCK_SMASH_BREAK, 0); }
+  private MovementAction_RockSmashBreak_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ROCK_SMASH_BREAK, 1); }
+  private MovementAction_RockSmashBreak_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ROCK_SMASH_BREAK, 2); }
+  private MovementAction_CutTree_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_CUT_TREE, 0); }
+  private MovementAction_CutTree_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_CUT_TREE, 1); }
+  private MovementAction_CutTree_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_CUT_TREE, 2); }
+  private MovementAction_SetFixedPriority_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SET_FIXED_PRIORITY, 0); }
+  private MovementAction_ClearFixedPriority_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_CLEAR_FIXED_PRIORITY, 0); }
+  private MovementAction_InitAffineAnim_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_INIT_AFFINE_ANIM, 0); }
+  private MovementAction_ClearAffineAnim_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_CLEAR_AFFINE_ANIM, 0); }
+  private MovementAction_WalkDownStartAffine_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_DOWN_START_AFFINE, 0); }
+  private MovementAction_WalkDownStartAffine_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_DOWN_START_AFFINE, 1); }
+  private MovementAction_WalkDownAffine_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_DOWN_AFFINE, 0); }
+  private MovementAction_WalkDownAffine_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_DOWN_AFFINE, 1); }
+  private MovementAction_AcroWheelieFaceDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_DOWN, 0); }
+  private MovementAction_AcroWheelieFaceUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_UP, 0); }
+  private MovementAction_AcroWheelieFaceLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_LEFT, 0); }
+  private MovementAction_AcroWheelieFaceRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_RIGHT, 0); }
+  private MovementAction_AcroPopWheelieDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_DOWN, 0); }
+  private MovementAction_AcroPopWheelieUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_UP, 0); }
+  private MovementAction_AcroPopWheelieLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_LEFT, 0); }
+  private MovementAction_AcroPopWheelieRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_RIGHT, 0); }
+  private MovementAction_AcroEndWheelieFaceDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_DOWN, 0); }
+  private MovementAction_AcroEndWheelieFaceUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_UP, 0); }
+  private MovementAction_AcroEndWheelieFaceLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_LEFT, 0); }
+  private MovementAction_AcroEndWheelieFaceRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_RIGHT, 0); }
+  private MovementAction_AcroWheelieHopFaceDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_DOWN, 0); }
+  private MovementAction_AcroWheelieHopFaceDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_DOWN, 1); }
+  private MovementAction_AcroWheelieHopFaceUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_UP, 0); }
+  private MovementAction_AcroWheelieHopFaceUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_UP, 1); }
+  private MovementAction_AcroWheelieHopFaceLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_LEFT, 0); }
+  private MovementAction_AcroWheelieHopFaceLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_LEFT, 1); }
+  private MovementAction_AcroWheelieHopFaceRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_RIGHT, 0); }
+  private MovementAction_AcroWheelieHopFaceRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_RIGHT, 1); }
+  private MovementAction_AcroWheelieHopDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_DOWN, 0); }
+  private MovementAction_AcroWheelieHopDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_DOWN, 1); }
+  private MovementAction_AcroWheelieHopUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_UP, 0); }
+  private MovementAction_AcroWheelieHopUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_UP, 1); }
+  private MovementAction_AcroWheelieHopLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_LEFT, 0); }
+  private MovementAction_AcroWheelieHopLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_LEFT, 1); }
+  private MovementAction_AcroWheelieHopRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_RIGHT, 0); }
+  private MovementAction_AcroWheelieHopRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_RIGHT, 1); }
+  private MovementAction_AcroWheelieJumpDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_DOWN, 0); }
+  private MovementAction_AcroWheelieJumpDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_DOWN, 1); }
+  private MovementAction_AcroWheelieJumpUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_UP, 0); }
+  private MovementAction_AcroWheelieJumpUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_UP, 1); }
+  private MovementAction_AcroWheelieJumpLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_LEFT, 0); }
+  private MovementAction_AcroWheelieJumpLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_LEFT, 1); }
+  private MovementAction_AcroWheelieJumpRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_RIGHT, 0); }
+  private MovementAction_AcroWheelieJumpRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_RIGHT, 1); }
+  private MovementAction_AcroWheelieInPlaceDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_DOWN, 0); }
+  private MovementAction_AcroWheelieInPlaceUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_UP, 0); }
+  private MovementAction_AcroWheelieInPlaceLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_LEFT, 0); }
+  private MovementAction_AcroWheelieInPlaceRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_RIGHT, 0); }
+  private MovementAction_AcroPopWheelieMoveDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_DOWN, 0); }
+  private MovementAction_AcroPopWheelieMoveDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_DOWN, 1); }
+  private MovementAction_AcroPopWheelieMoveUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_UP, 0); }
+  private MovementAction_AcroPopWheelieMoveUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_UP, 1); }
+  private MovementAction_AcroPopWheelieMoveLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_LEFT, 0); }
+  private MovementAction_AcroPopWheelieMoveLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_LEFT, 1); }
+  private MovementAction_AcroPopWheelieMoveRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_RIGHT, 0); }
+  private MovementAction_AcroPopWheelieMoveRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_RIGHT, 1); }
+  private MovementAction_AcroWheelieMoveDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_DOWN, 0); }
+  private MovementAction_AcroWheelieMoveDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_DOWN, 1); }
+  private MovementAction_AcroWheelieMoveUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_UP, 0); }
+  private MovementAction_AcroWheelieMoveUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_UP, 1); }
+  private MovementAction_AcroWheelieMoveLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_LEFT, 0); }
+  private MovementAction_AcroWheelieMoveLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_LEFT, 1); }
+  private MovementAction_AcroWheelieMoveRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_RIGHT, 0); }
+  private MovementAction_AcroWheelieMoveRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_RIGHT, 1); }
+  private MovementAction_SpinDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_DOWN, 0); }
+  private MovementAction_SpinDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_DOWN, 1); }
+  private MovementAction_SpinUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_UP, 0); }
+  private MovementAction_SpinUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_UP, 1); }
+  private MovementAction_SpinLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_LEFT, 0); }
+  private MovementAction_SpinLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_LEFT, 1); }
+  private MovementAction_SpinRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_RIGHT, 0); }
+  private MovementAction_SpinRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SPIN_RIGHT, 1); }
+  private MovementAction_RaiseHandAndStop_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RAISE_HAND_AND_STOP, 1); }
+  private MovementAction_RaiseHandAndJump_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RAISE_HAND_AND_JUMP, 1); }
+  private MovementAction_RaiseHandAndSwim_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_RAISE_HAND_AND_SWIM, 1); }
+  private MovementAction_WalkSlowestDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_DOWN, 0); }
+  private MovementAction_WalkSlowestDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_DOWN, 1); }
+  private MovementAction_WalkSlowestUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_UP, 0); }
+  private MovementAction_WalkSlowestUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_UP, 1); }
+  private MovementAction_WalkSlowestLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_LEFT, 0); }
+  private MovementAction_WalkSlowestLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_LEFT, 1); }
+  private MovementAction_WalkSlowestRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_RIGHT, 0); }
+  private MovementAction_WalkSlowestRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_WALK_SLOWEST_RIGHT, 1); }
+  private MovementAction_ShakeHeadOrWalkInPlace_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SHAKE_HEAD_OR_WALK_IN_PLACE, 0); }
+  private MovementAction_ShakeHeadOrWalkInPlace_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_SHAKE_HEAD_OR_WALK_IN_PLACE, 1); }
+  private MovementAction_GlideDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_DOWN, 0); }
+  private MovementAction_GlideDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_DOWN, 1); }
+  private MovementAction_GlideUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_UP, 0); }
+  private MovementAction_GlideUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_UP, 1); }
+  private MovementAction_GlideLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_LEFT, 0); }
+  private MovementAction_GlideLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_LEFT, 1); }
+  private MovementAction_GlideRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_RIGHT, 0); }
+  private MovementAction_GlideRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_GLIDE_RIGHT, 1); }
+  private MovementAction_FlyUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FLY_UP, 0); }
+  private MovementAction_FlyUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FLY_UP, 1); }
+  private MovementAction_FlyDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FLY_DOWN, 0); }
+  private MovementAction_FlyDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_FLY_DOWN, 1); }
+  private MovementAction_JumpSpecialWithEffectDown_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_DOWN, 0); }
+  private MovementAction_JumpSpecialWithEffectDown_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_DOWN, 1); }
+  private MovementAction_JumpSpecialWithEffectUp_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_UP, 0); }
+  private MovementAction_JumpSpecialWithEffectUp_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_UP, 1); }
+  private MovementAction_JumpSpecialWithEffectLeft_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_LEFT, 0); }
+  private MovementAction_JumpSpecialWithEffectLeft_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_LEFT, 1); }
+  private MovementAction_JumpSpecialWithEffectRight_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_RIGHT, 0); }
+  private MovementAction_JumpSpecialWithEffectRight_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementActionStep(object, C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_RIGHT, 1); }
 }
 
 /** GetCollisionFlagsAtCoords (event_object_movement.c). */
