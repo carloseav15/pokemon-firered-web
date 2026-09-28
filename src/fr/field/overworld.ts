@@ -18,7 +18,7 @@ import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, 
 import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_EAST, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
-import { PlayerAvatar, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
+import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from "./playerAvatar";
 import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
@@ -608,7 +608,7 @@ export class Overworld {
     TrySetMapSaveWarpStatus();
     if (outdoors && "FLAG_SYS_FLASH_ACTIVE" in rom.constants) flagClear(rom.c("FLAG_SYS_FLASH_ACTIVE"));
     this.setDefaultFlashLevel();
-    this.savedMusic = 0;
+    this.Overworld_ClearSavedMusic();
     this.RunOnTransitionMapScript();
     this.initMap();
     this.game.weather.DoCurrentWeather();
@@ -1470,30 +1470,94 @@ export class Overworld {
     }
   }
 
-  /** TryFadeOutOldMapMusic */
-  tryFadeOutOldMapMusic(): void {
-    if (flagGet(rom.constants.FLAG_DONT_TRANSITION_MUSIC ?? 0)) return;
-    const destMusic = this.destinationMusic();
-    if (destMusic !== undefined && destMusic !== sound.currentBGM) sound.fadeOutMapMusic(this.destinationMusicFadeoutSpeed());
+  /** TryFadeOutOldMapMusic (overworld.c). */
+  TryFadeOutOldMapMusic(): void {
+    const warpMusic = this.GetWarpDestinationMusic();
+    if (!flagGet(rom.constants.FLAG_DONT_TRANSITION_MUSIC ?? 0) && warpMusic !== sound.getCurrentMapMusic()) {
+      sound.fadeOutMapMusic(this.GetMapMusicFadeoutSpeed());
+    }
   }
+  tryFadeOutOldMapMusic(): void { this.TryFadeOutOldMapMusic(); }
 
-  /** GetWarpDestinationMusic: music of the map header at warpDestination, when already cached. */
-  private destinationMusic(): number | undefined {
+  /** GetLocationMusic (overworld.c): best-effort — the full map header may not be cached yet
+   * in this port (maps load on demand instead of all living in ROM at once). */
+  GetLocationMusic(warp: WarpData): number | undefined {
     try {
-      const dest = this.mapIdForWarp(this.warpDestination);
-      return rom.cachedMap(dest)?.music;
+      return rom.cachedMap(this.mapIdForWarp(warp))?.music;
     } catch {
       return undefined;
     }
   }
 
-  /** GetMapMusicFadeoutSpeed */
-  private destinationMusicFadeoutSpeed(): number {
+  /** GetCurrLocationDefaultMusic (overworld.c). */
+  GetCurrLocationDefaultMusic(): number | undefined {
+    return this.GetLocationMusic(save.location);
+  }
+
+  /** GetWarpDestinationMusic (overworld.c). */
+  GetWarpDestinationMusic(): number | undefined {
+    return this.GetLocationMusic(this.warpDestination);
+  }
+
+  /** GetMapMusicFadeoutSpeed (overworld.c). */
+  GetMapMusicFadeoutSpeed(): number {
     try {
-      const dest = this.mapIdForWarp(this.warpDestination);
-      return IsMapTypeIndoors(this.peekMapType(dest)) ? 2 : 4;
+      return IsMapTypeIndoors(this.peekMapType(this.mapIdForWarp(this.warpDestination))) ? 2 : 4;
     } catch {
       return 4;
+    }
+  }
+
+  /** Overworld_ResetMapMusic (overworld.c). */
+  Overworld_ResetMapMusic(): void { sound.resetMapMusic(); }
+
+  /** Overworld_SetSavedMusic (overworld.c). */
+  Overworld_SetSavedMusic(songNum: number): void { this.savedMusic = songNum; }
+
+  /** Overworld_ClearSavedMusic (overworld.c). */
+  Overworld_ClearSavedMusic(): void { this.savedMusic = 0; }
+
+  /** Overworld_MusicCanOverrideMapMusic (overworld.c). */
+  Overworld_MusicCanOverrideMapMusic(music: number): boolean {
+    if (music === C.MUS_CYCLING || music === C.MUS_SURF) {
+      if (this.header.regionMapSection === C.MAPSEC_KANTO_VICTORY_ROAD
+        || this.header.regionMapSection === C.MAPSEC_ROUTE_23
+        || this.header.regionMapSection === C.MAPSEC_INDIGO_PLATEAU) return false;
+    }
+    return true;
+  }
+
+  /** Overworld_ChangeMusicToDefault (overworld.c). */
+  Overworld_ChangeMusicToDefault(): void {
+    const currentMusic = sound.getCurrentMapMusic();
+    const defaultMusic = this.GetCurrLocationDefaultMusic();
+    if (defaultMusic !== undefined && currentMusic !== defaultMusic) sound.fadeOutAndPlayNewMapMusic(defaultMusic, 8);
+  }
+
+  /** Overworld_ChangeMusicTo (overworld.c). */
+  Overworld_ChangeMusicTo(newMusic: number): void {
+    if (sound.getCurrentMapMusic() !== newMusic) sound.fadeOutAndPlayNewMapMusic(newMusic, 8);
+  }
+
+  /** BGMusicStopped (overworld.c). */
+  BGMusicStopped(): boolean { return sound.isNotWaitingForBGMStop(); }
+
+  /** Overworld_FadeOutMapMusic (overworld.c). */
+  Overworld_FadeOutMapMusic(): void { sound.fadeOutMapMusic(4); }
+
+  /** Overworld_TryMapConnectionMusicTransition (overworld.c): gDisableMapMusicChangeOnMapLoad's
+   * MUSIC_DISABLE_KEEP case is modeled (keepMusicOnNextLoad); MUSIC_DISABLE_STOP (credits.c/
+   * hall_of_fame.c/quest_log.c only) is not, matching Overworld_PlaySpecialMapMusic's own gap. */
+  Overworld_TryMapConnectionMusicTransition(): void {
+    if (this.keepMusicOnNextLoad) return;
+    if (flagGet(rom.constants.FLAG_DONT_TRANSITION_MUSIC ?? 0)) return;
+    let newMusic = this.GetWarpDestinationMusic();
+    const currentMusic = sound.getCurrentMapMusic();
+    if (currentMusic === C.MUS_SURF) return;
+    if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING) && this.Overworld_MusicCanOverrideMapMusic(C.MUS_SURF)) newMusic = C.MUS_SURF;
+    if (newMusic !== undefined && newMusic !== currentMusic) {
+      if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) sound.fadeOutAndFadeInNewMapMusic(newMusic, 4, 4);
+      else sound.fadeOutAndPlayNewMapMusic(newMusic, 8);
     }
   }
 
@@ -1549,8 +1613,7 @@ export class Overworld {
     const sync = this.syncLoaded.get(mapId);
     if (!sync) throw new Error(`map ${mapId} not prefetched`);
     loaded = sync;
-    // Overworld_TryMapConnectionMusicTransition
-    if (loaded.header.music !== prevHeader.music && loaded.header.music !== sound.currentBGM) sound.playNewMapMusic(loaded.header.music);
+    this.Overworld_TryMapConnectionMusicTransition();
     this.applyCurrentWarp();
     this.loaded = loaded;
     this.mapTypes.set(loaded.header.id, loaded.header.mapType);
@@ -1563,7 +1626,7 @@ export class Overworld {
     onCameraTransitionForRoamer();
     TrySetMapSaveWarpStatus();
     this.setDefaultFlashLevel();
-    this.savedMusic = 0;
+    this.Overworld_ClearSavedMusic();
     this.RunOnTransitionMapScript();
     this.initMap();
     this.renderer = new TileRenderer(loaded.primary, loaded.secondary);
