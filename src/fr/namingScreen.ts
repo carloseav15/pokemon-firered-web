@@ -20,7 +20,7 @@ import { InitGpuRegManager, SetGpuReg } from "./hw/gpu";
 import { DrawDialogueFrame, GetTextWindowPalette, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters } from "./hw/menu";
 import { BeginNormalPaletteFade, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import { BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG2, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
+import { gMain, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
 import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Sprite, type Subsprite } from "./hw/sprite";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
@@ -48,7 +48,7 @@ export function preloadNamingScreen(): Promise<void> {
 export function DoNamingScreen(type: number, destination: NameBuffer, species: number, gender: number, personality: number, returnCallback: () => void): void {
   const screen = new NamingScreen(new NamingModel(type, destination), species, gender, personality, returnCallback);
   // Defer initialization: Oak's caller frees its own windows after this call.
-  SetMainCallback2(() => screen.begin());
+  SetMainCallback2(() => screen.CB2_LoadNamingScreen());
 }
 
 class NamingScreen {
@@ -70,47 +70,98 @@ class NamingScreen {
   private inputTaskCreated = false;
   private inputState = NamingInputState.DISABLED;
   private keyboardEvent = NamingInputEvent.NONE;
-  private callback1 = gMain.callback1;
   private repeatDelay = joy.repeatStartDelay;
   private savedTextFlags = { ...textFlags };
   constructor(private model: NamingModel, private species: number, private gender: number, readonly personality: number, private returnCallback: () => void) {}
 
-  begin(): void {
-    SetMainCallback1(null);
-    this.ResetVHBlank();
+  CB2_LoadNamingScreen(): void {
+    switch (gMain.state) {
+      case 0: this.ResetVHBlank(); this.NamingScreen_Init(); gMain.state++; break;
+      case 1: this.NamingScreen_InitBGs(); gMain.state++; break;
+      case 2: ResetPaletteFade(); gMain.state++; break;
+      case 3: ResetSpriteData(); FreeAllSpritePalettes(); gMain.state++; break;
+      case 4: tasks.reset(); gMain.state++; break;
+      case 5: this.LoadPalettes(); gMain.state++; break;
+      case 6: this.LoadGfx(); gMain.state++; break;
+      case 7:
+        this.CreateSprites();
+        UpdatePaletteFade();
+        this.NamingScreen_ShowBgs();
+        gMain.state++;
+        break;
+      default:
+        this.CreateHelperTasks();
+        this.CreateNamingScreenTask();
+        break;
+    }
+  }
+
+  /** NamingScreen_Init (naming_screen.c): initialize state and the source template's input buffer. */
+  private NamingScreen_Init(): void {
+    this.state = "fadeIn";
+    this.bg1vOffset = 0;
+    this.bg2vOffset = 0;
+    this.bgToReveal = 0;
+    this.activeKeyboardBg = 1;
+    this.pageSwapFrameCount = 0;
+    this.pageSwapAnimState = 0;
+    this.pageSwapButtonState = 0;
+    this.stopFlashesNextUpdate = false;
+    this.inputTaskCreated = false;
+    this.inputState = NamingInputState.DISABLED;
+    this.keyboardEvent = NamingInputEvent.NONE;
+    joy.repeatStartDelay = 16;
+  }
+
+  /** NamingScreen_InitBGs (naming_screen.c). */
+  private NamingScreen_InitBGs(): void {
     InitGpuRegManager();
-    ppu.vram.fill(0); ppu.oam.fill(0); ppu.pltt.fill(0);
-    tasks.reset();
+    ppu.vram.fill(0);
+    ppu.oam.fill(0);
+    ppu.pltt.fill(0);
     FreeAllWindowBuffers();
-    ResetSpriteData(); FreeAllSpritePalettes(); ResetPaletteFade();
     ResetBgsAndClearDma3BusyFlags(false);
     InitBgsFromTemplates(0, data<BgTemplate[]>("sBgTemplates"));
     for (let bg = 0; bg < 4; bg++) {
       SetBgTilemapBuffer(bg, new Uint16Array(1024));
-      ChangeBgX(bg, 0, BG_COORD_SET); ChangeBgY(bg, 0, BG_COORD_SET);
+      ChangeBgX(bg, 0, BG_COORD_SET);
+      ChangeBgY(bg, 0, BG_COORD_SET);
     }
-    InitStandardTextBoxWindows(); InitTextBoxGfxAndPrinters();
+    InitStandardTextBoxWindows();
+    InitTextBoxGfxAndPrinters();
     this.windows = data<WindowTemplate[]>("sWindowTemplates").filter(w => w.bg !== 255).map(w => AddWindow(w));
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_1D_MAP | DISPCNT_OBJ_ON);
+    SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2);
+    SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(12, 8));
+  }
+
+  /** LoadPalettes (naming_screen.c). */
+  private LoadPalettes(): void {
     LoadPalette(incbin("gNamingScreenMenu_Pal"), 0, incbin("gNamingScreenMenu_Pal").length);
     LoadPalette(incbin("gNamingScreenKeyboard_Pal"), 160, 32);
     LoadPalette(GetTextWindowPalette(2), 176, 32);
-    for (let bg = 1; bg <= 3; bg++) {
-      const tiles = incbin("gNamingScreenMenu_Gfx");
-      LoadBgTiles(bg, tiles, tiles.length, 0);
-    }
-    CopyToBgTilemapBuffer(3, incbin("gNamingScreenBackground_Tilemap"), 0, 0);
-    SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2);
-    SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(12, 8));
+  }
+
+  /** LoadGfx (naming_screen.c): the exporter supplies decompressed graphics. */
+  private LoadGfx(): void {
+    const tiles = incbin("gNamingScreenMenu_Gfx");
+    for (let bg = 1; bg <= 3; bg++) LoadBgTiles(bg, tiles, tiles.length, 0);
     for (const sheet of data<Array<{data: SymRef; size: number; tag: number}>>("sSpriteSheets")) {
       if (sheet.data) LoadSpriteSheet({data: incbin(sheet.data.$sym), size: sheet.size, tag: sheet.tag});
     }
     for (const pal of data<Array<{data: SymRef; tag: number}>>("sSpritePalettes")) {
       if (pal.data) LoadSpritePalette({data: incbin(pal.data.$sym).subarray((pal.data.index ?? 0) * 32, ((pal.data.index ?? 0) + 1) * 32), tag: pal.tag});
     }
-    this.CreateSprites();
-    this.CreateHelperTasks();
-    this.CreateNamingScreenTask();
+  }
+
+  /** NamingScreen_ShowBgs (naming_screen.c). */
+  private NamingScreen_ShowBgs(): void {
+    for (let bg = 0; bg < 4; bg++) ShowBg(bg);
+  }
+
+  /** DecompressToBgTilemapBuffer (naming_screen.c): asset data is decompressed by the exporter. */
+  private DecompressToBgTilemapBuffer(bg: number, source: Uint8Array): void {
+    CopyToBgTilemapBuffer(bg, source, 0, 0);
   }
 
   private sprite(name: string, x: number, y: number, order: number, table?: string): number {
@@ -340,7 +391,7 @@ class NamingScreen {
 
   private drawKeyboardPage(bg: number, windowIndex: number, keyboardId: number): void {
     const map = ["Lower", "Upper", "Symbols"][keyboardId];
-    CopyToBgTilemapBuffer(bg, incbin(`gNamingScreenKeyboard${map}_Tilemap`), 0, 0);
+    this.DecompressToBgTilemapBuffer(bg, incbin(`gNamingScreenKeyboard${map}_Tilemap`));
     this.PrintKeyboardKeys(this.windows[windowIndex], keyboardId);
     CopyBgTilemapBufferToVram(bg);
   }
@@ -673,8 +724,9 @@ class NamingScreen {
 
   /** MainState_FadeIn (naming_screen.c). */
   private MainState_FadeIn(): void {
+    this.DecompressToBgTilemapBuffer(3, incbin("gNamingScreenBackground_Tilemap"));
     this.drawPage(); this.DrawTextEntry(); this.DrawTextEntryBox(); this.drawControls();
-    for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
+    for (let bg = 1; bg < 4; bg++) CopyBgTilemapBufferToVram(bg);
     joy.repeatStartDelay = 16;
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
     this.state = "waitFadeIn";
@@ -753,7 +805,7 @@ class NamingScreen {
     joy.repeatStartDelay = this.repeatDelay;
     Object.assign(textFlags, this.savedTextFlags);
     FreeAllWindowBuffers(); DeactivateAllTextPrinters();
-    SetVBlankCallback(null); SetMainCallback1(this.callback1); SetMainCallback2(this.returnCallback);
+    SetVBlankCallback(null); SetMainCallback2(this.returnCallback);
     RestoreHelpContext();
   }
 
