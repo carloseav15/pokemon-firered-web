@@ -1135,6 +1135,24 @@ export class Overworld {
     this.doWarp(false);
   }
 
+  /** FieldCB_SafariZoneRanOutOfBalls (field_fadetransition.c). */
+  FieldCB_SafariZoneRanOutOfBalls(): void {
+    this.controlsLocked = true;
+    this.playSpecialMapMusic();
+    this.fadeInFromBlack();
+    tasks.create((taskId) => this.Task_SafariZoneRanOutOfBalls(taskId), 10);
+  }
+
+  /** Task_SafariZoneRanOutOfBalls (field_fadetransition.c). */
+  private Task_SafariZoneRanOutOfBalls(taskId: number): void {
+    if (!this.FieldFadeTransitionBackgroundEffectIsFinished()) return;
+    this.UnlockPlayerFieldControls();
+    tasks.destroy(taskId);
+    this.objects.ObjectEventClearHeldMovementIfFinished(this.player.object);
+    this.game.scriptMovement.unfreezeAndStop();
+    this.objects.unfreezeAll();
+  }
+
   doFallWarp(): void {
     this.doWarp(false);
     this.fieldCallback = () => this.fieldCBFallWarpExit();

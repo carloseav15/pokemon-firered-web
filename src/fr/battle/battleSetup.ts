@@ -4,8 +4,6 @@
 import { sound } from "../audio/sound";
 import { expandPlaceholders } from "../gba/charmap";
 import { rom } from "../rom";
-import { tasks } from "../gba/tasks";
-import { paletteFade } from "../gba/fade";
 import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
 import { afterRoamerBattle } from "../pokemon/roamer";
 import { CreateScriptedWildMon } from "../pokemon/scriptPokemonUtil";
@@ -452,18 +450,7 @@ export class BattleSetup {
     if (outcome === rom.c("B_OUTCOME_NO_SAFARI_BALLS")) {
       game.scene = null;
       ow.script.RunScriptImmediately(rom.label("SafariZone_EventScript_OutOfBallsMidBattle"));
-      ow.fieldCallback = () => {
-        ow.controlsLocked = true;
-        ow.playSpecialMapMusic();
-        ow.fadeInFromBlack();
-        const id = tasks.create(() => {
-          if (paletteFade.active) return;
-          tasks.destroy(id);
-          ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
-          ow.objects.unfreezeAll();
-          ow.controlsLocked = false;
-        }, 10);
-      };
+      ow.fieldCallback = () => ow.FieldCB_SafariZoneRanOutOfBalls();
       ow.warpIntoMapAndLoad();
       return;
     }
