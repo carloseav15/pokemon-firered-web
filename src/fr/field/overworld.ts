@@ -445,6 +445,26 @@ export class Overworld {
     return this.SetDiveWarp(CONNECTION_DIVE, x, y);
   }
 
+  /** UsedPokemonCenterWarp (field_specials.c): the last warp came from a Pokémon Center's ground
+   * floor or the Union Room. Its only real caller, FieldClearVBlankHBlankCallbacks's CloseLink(),
+   * stays unported (link-only). */
+  UsedPokemonCenterWarp(): boolean {
+    const maps = [
+      "MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F", "MAP_PEWTER_CITY_POKEMON_CENTER_1F",
+      "MAP_CERULEAN_CITY_POKEMON_CENTER_1F", "MAP_LAVENDER_TOWN_POKEMON_CENTER_1F",
+      "MAP_VERMILION_CITY_POKEMON_CENTER_1F", "MAP_CELADON_CITY_POKEMON_CENTER_1F",
+      "MAP_FUCHSIA_CITY_POKEMON_CENTER_1F", "MAP_CINNABAR_ISLAND_POKEMON_CENTER_1F",
+      "MAP_INDIGO_PLATEAU_POKEMON_CENTER_1F", "MAP_SAFFRON_CITY_POKEMON_CENTER_1F",
+      "MAP_ROUTE4_POKEMON_CENTER_1F", "MAP_ROUTE10_POKEMON_CENTER_1F",
+      "MAP_ONE_ISLAND_POKEMON_CENTER_1F", "MAP_TWO_ISLAND_POKEMON_CENTER_1F",
+      "MAP_THREE_ISLAND_POKEMON_CENTER_1F", "MAP_FOUR_ISLAND_POKEMON_CENTER_1F",
+      "MAP_FIVE_ISLAND_POKEMON_CENTER_1F", "MAP_SEVEN_ISLAND_POKEMON_CENTER_1F",
+      "MAP_SIX_ISLAND_POKEMON_CENTER_1F", "MAP_UNION_ROOM",
+    ];
+    const mapno = ((this.lastUsedWarp.mapGroup & 0xff) << 8) | (this.lastUsedWarp.mapNum & 0xff);
+    return maps.some((id) => rom.mapNum(id) === mapno);
+  }
+
   /** SetContinueGameWarp family (overworld.c). */
   private SetContinueGameWarp(mapGroup: number, mapNum: number, warpId: number, x: number, y: number): void {
     this.SetWarpData(save.continueGameWarp, mapGroup, mapNum, warpId, x, y);
