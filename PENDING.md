@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7615/10115 (75.3 %)**.
-- Archivos C con funciones aún sin homólogo: **52**; quedan **2500 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7621/10115 (75.3 %)**.
+- Archivos C con funciones aún sin homólogo: **52**; quedan **2494 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 117.216 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~59.245 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~59.151 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -34,8 +34,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 14 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
 | 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 16 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 17 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
-| 18 | `field_effect_helpers.c` | parcial | 1421 | 44/76 | ~598 |  |
+| 17 | `field_effect_helpers.c` | parcial | 1421 | 47/76 | ~542 |  |
+| 18 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
 | 19 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
 | 20 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
 | 21 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
@@ -68,7 +68,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 48 | `overworld.c` | parcial | 3563 | 61/242 | ~2664 |  |
 | 49 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
 | 50 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
-| 51 | `event_object_movement.c` | parcial | 9412 | 529/759 | ~2852 |  |
+| 51 | `event_object_movement.c` | parcial | 9412 | 532/759 | ~2814 |  |
 | 52 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
 Total: 52 archivos con huecos: 1 sin empezar, 1 adaptador, 15 casi completos y 35 parciales.
@@ -79,8 +79,8 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 
 | Archivo C | Líneas | Portadas | Stubs |
 |---|---:|---:|---:|
-| `field_effect_helpers.c` | 1421 | 44/76 | 32 |
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
+| `field_effect_helpers.c` | 1421 | 47/76 | 29 |
 | `trade.c` | 2958 | 0/66 | 15 |
 | `fame_checker.c` | 1739 | 16/64 | 7 |
 | `trade_scene.c` | 2916 | 35/53 | 3 |
