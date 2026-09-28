@@ -251,7 +251,7 @@ export class FieldControl {
   // ---------------------------------------------------------------- interactions
 
   private tryStartInteractionScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
-    const script = this.interactionScript(position, behavior, direction);
+    const script = this.GetInteractionScript(position, behavior, direction);
     if (!script) return false;
     const noSound = [rom.label("PalletTown_PlayersHouse_2F_EventScript_PC"), rom.label("EventScript_PC")];
     if (!noSound.includes(script)) sound.playSE(sound.SE_SELECT);
@@ -259,14 +259,16 @@ export class FieldControl {
     return true;
   }
 
-  private interactionScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
-    return this.objectEventScript(position, behavior, direction)
-      || this.backgroundEventScript(position, behavior, direction)
-      || this.metatileScript(behavior, direction)
-      || this.waterScript(behavior, direction);
+  /** GetInteractionScript (field_control_avatar.c): preserve the C lookup order. */
+  private GetInteractionScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
+    return this.GetInteractedObjectEventScript(position, behavior, direction)
+      || this.GetInteractedBackgroundEventScript(position, behavior, direction)
+      || this.GetInteractedMetatileScript(behavior, direction)
+      || this.GetInteractedWaterScript(behavior);
   }
 
-  private objectEventScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
+  /** GetInteractedObjectEventScript (field_control_avatar.c), for the single-player map. */
+  private GetInteractedObjectEventScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
     let object = this.ow.objects.objectAtXYZ(position.x, position.y, position.elevation);
     if (!object || object.isPlayer) {
       if (!MB.MetatileBehavior_IsCounter(behavior)) return 0;
@@ -284,7 +286,8 @@ export class FieldControl {
     return this.ow.header.bgs.find((bg) => bg.x === x && bg.y === y && (bg.elevation === elevation || bg.elevation === 0));
   }
 
-  private backgroundEventScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
+  /** GetInteractedBackgroundEventScript (field_control_avatar.c). */
+  private GetInteractedBackgroundEventScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
     const bg = this.backgroundEventAt(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
     if (!bg) return 0;
     if (bg.type === "hidden_item") {
@@ -309,7 +312,8 @@ export class FieldControl {
     return bg.script;
   }
 
-  private metatileScript(behavior: number, direction: number): number {
+  /** GetInteractedMetatileScript (field_control_avatar.c). */
+  private GetInteractedMetatileScript(behavior: number, direction: number): number {
     varSet(SV.FACING, direction);
     const table: Array<[(b: number, d: number) => boolean, string, boolean?]> = [
       [MB.MetatileBehavior_IsPC, "EventScript_PC"],
@@ -356,7 +360,8 @@ export class FieldControl {
     return 0;
   }
 
-  private waterScript(behavior: number, direction: number): number {
+  /** GetInteractedWaterScript (field_control_avatar.c); direction is unused by C. */
+  private GetInteractedWaterScript(behavior: number): number {
     const player = this.ow.player;
     if (MB.MetatileBehavior_IsFastWater(behavior) && player.PartyHasMonWithSurf()) return rom.label("EventScript_CurrentTooFast");
     if (flagGet(rom.c("FLAG_BADGE05_GET")) && player.PartyHasMonWithSurf() && player.IsPlayerFacingSurfableFishableWater()) return rom.label("EventScript_UseSurf");
