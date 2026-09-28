@@ -13,3 +13,8 @@ export function ItemUse_SetQuestLogEvent(eventId: number, pokemon: Mon | null, i
     itemParam: param & 0xffff,
   });
 }
+
+/** Task_ItemUse_CloseMessageBoxAndReturnToField (item_use.c): fieldMessage closes/destroys its UI task before this continuation. */
+export function Task_ItemUse_CloseMessageBoxAndReturnToField(releaseFieldControls: () => void): void {
+  releaseFieldControls();
+}

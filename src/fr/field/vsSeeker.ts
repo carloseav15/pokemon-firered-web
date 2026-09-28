@@ -13,7 +13,7 @@ import type { Game } from "../game";
 import type { ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { PLAYER_AVATAR_GFX_VSSEEKER } from "./playerAvatar";
-import { ItemUse_SetQuestLogEvent } from "../itemUse";
+import { ItemUse_SetQuestLogEvent, Task_ItemUse_CloseMessageBoxAndReturnToField } from "../itemUse";
 
 const MAX_REMATCH_PARTIES = 6;
 const SKIP = 0xffff;
@@ -261,7 +261,7 @@ type TrainerInfo = { script: number; trainerIdx: number; localId: number; object
 
 /** Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker (item_use.c). */
 export function Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release: () => void): void {
-  release();
+  Task_ItemUse_CloseMessageBoxAndReturnToField(release);
 }
 
 /** Task_VsSeeker_0..3 */
