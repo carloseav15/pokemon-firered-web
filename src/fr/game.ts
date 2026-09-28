@@ -1011,7 +1011,9 @@ export class Game {
     CreateBattleStartTask(transitionType, this.battleSetup.battleBgm(request));
   }
 
-  /** CB2_ReturnToFieldContinueScriptPlayMapMusic */
+  /** CB2_ReturnToFieldContinueScript/CB2_ReturnToFieldContinueScriptPlayMapMusic: missing
+   * ReloadObjectsAndRunReturnToFieldMapScript's SpawnObjectEventsOnReturnToField(0, 0) step
+   * (event_object_movement.c, not ported) before RunOnReturnToFieldMapScript. */
   returnToFieldContinueScript(playMusic: boolean): void {
     const ow = this.overworld;
     this.scene = null;
@@ -1021,6 +1023,10 @@ export class Game {
     else ow.FieldCB_ContinueScript();
     ow.objects.unfreezeAll();
   }
+  /** CB2_ReturnToFieldContinueScript (overworld.c). */
+  CB2_ReturnToFieldContinueScript(): void { this.returnToFieldContinueScript(false); }
+  /** CB2_ReturnToFieldContinueScriptPlayMapMusic (overworld.c). */
+  CB2_ReturnToFieldContinueScriptPlayMapMusic(): void { this.returnToFieldContinueScript(true); }
 
   /** CB2_WhiteOut: respawn at the last heal location. */
   whiteOut(): void {
