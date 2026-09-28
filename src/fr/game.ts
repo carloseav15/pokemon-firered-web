@@ -30,7 +30,7 @@ import { healMon } from "./pokemon/pokemon";
 import { GetSetPokedexFlag } from "./pokemon/mon_extra";
 import { SaveStatToString } from "./saveMenuUtil";
 import * as C from "./generated/constants";
-import { fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
+import { CB2_BagMenuFromStartMenu, fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
@@ -570,7 +570,7 @@ export class Game {
   }
 
   openPartyMenu(): void { this.removeStartMenuWindows(); openFieldParty(this); }
-  openBag(): void { this.removeStartMenuWindows(); openFieldBag(this); }
+  openBag(): void { CB2_BagMenuFromStartMenu(this, () => this.removeStartMenuWindows()); }
 
   /** CB2_OptionsMenuFromStartMenu; savedCallback CB2_ReturnToFieldWithOpenMenu reopens the start menu. */
   openOptions(): void {

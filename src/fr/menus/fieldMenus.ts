@@ -544,6 +544,12 @@ export function openFieldBag(game: Game, initialItem?: number): void {
   });
 }
 
+/** CB2_BagMenuFromStartMenu (item_menu.c): enter the bag with the start-menu return path. */
+export function CB2_BagMenuFromStartMenu(game: Game, removeStartMenuWindows: () => void): void {
+  removeStartMenuWindows();
+  openFieldBag(game);
+}
+
 /** item_use.c CanFish */
 function CanFish(game: Game): boolean {
   const ow = game.overworld;
