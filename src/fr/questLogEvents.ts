@@ -66,6 +66,9 @@ export function QuestLogRecordPlayerAvatarGfxTransition(gfxState: number): void 
   if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) sNextActionDelay = 0;
 }
 
+/** QL_AfterRecordFishActionSuccessful (quest_log.c). */
+export function QL_AfterRecordFishActionSuccessful(): void { sNextActionDelay++; }
+
 /** QuestLogRecordPlayerStep (quest_log.c), called after the avatar accepts a held movement. */
 export function QuestLogRecordPlayerStep(movementActionId: number, controlsLocked = false): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING || controlsLocked) return;

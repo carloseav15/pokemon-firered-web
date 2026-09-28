@@ -12,6 +12,8 @@ import { rom } from "../rom";
 import { GetFishingBiteDirectionAnimNum, GetFishingNoCatchDirectionAnimNum } from "../generated/eventObjectAnims";
 import { DIR_WEST } from "./objectEvents";
 import type { Overworld } from "./overworld";
+import { QuestLogTryRecordPlayerAvatarGfxTransition } from "../questLogPlayer";
+import { QL_AfterRecordFishActionSuccessful } from "../questLogEvents";
 
 const START_ROUND = 3, GOT_BITE = 6, ON_HOOK = 9, NO_BITE = 11, GOT_AWAY = 12, SHOW_RESULT = 13;
 
@@ -22,7 +24,7 @@ export function startFishing(ow: Overworld, rod: number): void {
   let window: Window | undefined;
   let printer: TextPrinter | undefined;
 
-  const align = (): void => {
+  function AlignFishingAnimationFrames(): void {
     // AlignFishingAnimationFrames: the player sprite is animated here, then offset by the frame shown.
     sprite.animate();
     sprite.x2 = 0;
@@ -32,7 +34,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     if (frame === 5) sprite.y2 = -8;
     if (frame === 10 || frame === 11) sprite.y2 = 8;
     if (ow.player.isSurfing()) ow.effects.setSurfBlobPlayerOffset(true, sprite.y2);
-  };
+  }
   const openWindow = (): Window => {
     if (!window) {
       window = new Window(2, 15, 26, 4);
@@ -75,7 +77,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     step++;
     return false;
   }
-  function Fishing3(): boolean { align(); if (++frameCounter >= 60) step++; return false; }
+  function Fishing3(): boolean { AlignFishingAnimationFrames(); if (++frameCounter >= 60) step++; return false; }
   function Fishing4(): boolean {
     openWindow().fill(1);
     step++;
@@ -87,7 +89,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     return true;
   }
   function Fishing5(): boolean {
-    align();
+    AlignFishingAnimationFrames();
     if (++frameCounter >= 20) {
       frameCounter = 0;
       if (numDots >= dotsRequired) {
@@ -102,7 +104,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     return false;
   }
   function Fishing6(): boolean {
-    align();
+    AlignFishingAnimationFrames();
     step++;
     if (!ow.game.wild.hasFishingMons() || random() & 1) step = NO_BITE;
     else sprite.startAnim(GetFishingBiteDirectionAnimNum(player.facingDirection));
@@ -111,14 +113,14 @@ export function startFishing(ow: Overworld, rod: number): void {
   function Fishing7(): boolean { step += 3; return false; }
   /** Waits for A or the reel timeout. */
   function Fishing8(): boolean {
-    align();
+    AlignFishingAnimationFrames();
     if (++frameCounter >= [36, 33, 30][rod]) step = GOT_AWAY;
     else if (joy.newKeys & A_BUTTON) step++;
     return false;
   }
   /** Maybe plays another round. */
   function Fishing9(): boolean {
-    align();
+    AlignFishingAnimationFrames();
     step++;
     if (roundsPlayed < minRoundsRequired) step = START_ROUND;
     else if (roundsPlayed < 2) {
@@ -127,13 +129,13 @@ export function startFishing(ow: Overworld, rod: number): void {
     }
     return false;
   }
-  function Fishing10(): boolean { align(); print("gText_PokemonOnHook"); step++; frameCounter = 0; return false; }
+  function Fishing10(): boolean { AlignFishingAnimationFrames(); print("gText_PokemonOnHook"); step++; frameCounter = 0; return false; }
   function Fishing11(): boolean { return onHook(); }
-  function Fishing12(): boolean { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_NotEvenANibble"); step = SHOW_RESULT; return true; }
-  function Fishing13(): boolean { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_ItGotAway"); step++; return true; }
-  function Fishing14(): boolean { align(); step++; return false; }
+  function Fishing12(): boolean { AlignFishingAnimationFrames(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_NotEvenANibble"); step = SHOW_RESULT; return true; }
+  function Fishing13(): boolean { AlignFishingAnimationFrames(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_ItGotAway"); step++; return true; }
+  function Fishing14(): boolean { AlignFishingAnimationFrames(); step++; return false; }
   function Fishing15(): boolean {
-    align();
+    AlignFishingAnimationFrames();
     printer?.run();
     if (sprite.animEnded) { restorePlayer(); step++; }
     return false;
@@ -154,7 +156,7 @@ export function startFishing(ow: Overworld, rod: number): void {
     Fishing9, Fishing10, Fishing11, Fishing12, Fishing13, Fishing14, Fishing15, Fishing16,
   ];
   function onHook(): boolean {
-    if (frameCounter === 0) align();
+    if (frameCounter === 0) AlignFishingAnimationFrames();
     printer?.run();
     if (frameCounter === 0) {
       if (!printer?.active) {
@@ -171,12 +173,13 @@ export function startFishing(ow: Overworld, rod: number): void {
     return false;
   }
   void GOT_BITE; void ON_HOOK;
-  const run = (): void => {
+  const Task_Fishing = (): void => {
     for (;;) {
       const fn = states[step];
       if (!fn || !fn()) break;
     }
   };
-  const id = tasks.create(run, 0xff);
-  run();
+  const id = tasks.create(Task_Fishing, 0xff);
+  Task_Fishing();
+  if (QuestLogTryRecordPlayerAvatarGfxTransition(rom.constants.QL_PLAYER_GFX_FISH)) QL_AfterRecordFishActionSuccessful();
 }
