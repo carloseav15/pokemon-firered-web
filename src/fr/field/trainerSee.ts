@@ -202,7 +202,7 @@ export class TrainerSee {
     this.setTrainerMovement(trainer);
     ow.objects.overrideTemplateCoords(trainer);
     if (!this.isTrainerSeeMovementReady(ow.player.object)) return false;
-    ow.player.cancelForcedMovement();
+    ow.player.CancelPlayerForcedMovement();
     return true;
   }
 

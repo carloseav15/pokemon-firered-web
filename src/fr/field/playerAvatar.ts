@@ -149,7 +149,7 @@ export class PlayerAvatar {
     if (this.isSurfing()) this.ow.effects.setSurfBlobInvisible(invisible);
   }
 
-  isAnimActive(): boolean {
+  PlayerIsAnimActive(): boolean {
     return this.ow.objects.isMovementOverridden(this.object);
   }
 
@@ -158,55 +158,65 @@ export class PlayerAvatar {
     return this.tileTransitionState !== T_TILE_TRANSITION && !(this.object.heldMovementActive && !this.object.heldMovementFinished);
   }
 
-  private animIsMultiFrameStationary(): boolean {
+  private PlayerAnimIsMultiFrameStationary(): boolean {
     const id = this.object.movementActionId;
     return id <= 0x07 || (id >= 0x18 && id <= 0x1c) || (id >= 0x21 && id <= 0x30) || (id >= 0x70 && id <= 0x7b) || (id >= 0x88 && id <= 0x8b);
+  }
+
+  private PlayerAnimIsMultiFrameStationaryAndStateNotTurning(): boolean {
+    return this.PlayerAnimIsMultiFrameStationary() && this.runningState !== TURN_DIRECTION;
+  }
+
+  /** PlayerCheckIfAnimFinishedOrInactive (field_player_avatar.c). */
+  private PlayerCheckIfAnimFinishedOrInactive(): boolean {
+    return this.ow.objects.isHeldMovementFinished(this.object);
   }
 
   /** UpdatePlayerAvatarTransitionState */
   updateTransitionState(): void {
     this.tileTransitionState = T_NOT_MOVING;
-    if (this.isAnimActive()) {
-      if (!this.ow.objects.isHeldMovementFinished(this.object)) {
-        if (!this.animIsMultiFrameStationary()) this.tileTransitionState = T_TILE_TRANSITION;
-      } else if (!(this.animIsMultiFrameStationary() && this.runningState !== TURN_DIRECTION)) {
+    if (this.PlayerIsAnimActive()) {
+      if (!this.PlayerCheckIfAnimFinishedOrInactive()) {
+        if (!this.PlayerAnimIsMultiFrameStationary()) this.tileTransitionState = T_TILE_TRANSITION;
+      } else if (!this.PlayerAnimIsMultiFrameStationaryAndStateNotTurning()) {
         this.tileTransitionState = T_TILE_CENTER;
       }
     }
   }
 
-  setAnimId(actionId: number, copyable: number): void {
-    if (this.isAnimActive()) return;
+  PlayerSetAnimId(actionId: number, copyable: number): void {
+    if (this.PlayerIsAnimActive()) return;
     this.object.playerCopyableMovement = copyable;
     this.ow.objects.setHeldMovement(this.object, actionId);
     QuestLogRecordPlayerStep(actionId, this.ow.controlsLocked);
   }
 
-  forceSetHeldMovement(actionId: number): void {
+  /** PlayerForceSetHeldMovement (field_player_avatar.c). */
+  PlayerForceSetHeldMovement(actionId: number): void {
     this.ow.objects.forceSetHeldMovement(this.object, actionId);
   }
 
-  faceDirection(direction: number): void { this.setAnimId(actionFace(direction), 1); }
-  turnInPlace(direction: number): void { this.setAnimId(actionWalkInPlaceFast(direction), 1); }
-  walkNormal(direction: number): void { this.setAnimId(actionWalkNormal(direction), 2); }
-  walkSlow(direction: number): void { this.setAnimId(actionWalkSlow(direction), 2); }
-  walkFast(direction: number): void { this.setAnimId(actionWalkFast(direction), 2); }
-  run(direction: number): void { this.setAnimId(actionPlayerRun(direction), 2); }
-  runSlow(direction: number): void { this.setAnimId(0x41 + direction - 1, 2); }
-  rideWaterCurrent(direction: number): void { this.setAnimId(actionRideWaterCurrent(direction), 2); }
-  goSpin(direction: number): void { this.setAnimId(actionSpin(direction), 3); }
+  PlayerFaceDirection(direction: number): void { this.PlayerSetAnimId(actionFace(direction), 1); }
+  PlayerTurnInPlace(direction: number): void { this.PlayerSetAnimId(actionWalkInPlaceFast(direction), 1); }
+  PlayerWalkNormal(direction: number): void { this.PlayerSetAnimId(actionWalkNormal(direction), 2); }
+  PlayerWalkSlow(direction: number): void { this.PlayerSetAnimId(actionWalkSlow(direction), 2); }
+  PlayerWalkFast(direction: number): void { this.PlayerSetAnimId(actionWalkFast(direction), 2); }
+  PlayerRun(direction: number): void { this.PlayerSetAnimId(actionPlayerRun(direction), 2); }
+  PlayerRunSlow(direction: number): void { this.PlayerSetAnimId(0x41 + direction - 1, 2); }
+  PlayerRideWaterCurrent(direction: number): void { this.PlayerSetAnimId(actionRideWaterCurrent(direction), 2); }
+  PlayerGoSpin(direction: number): void { this.PlayerSetAnimId(actionSpin(direction), 3); }
 
-  jumpLedge(direction: number): void {
+  PlayerJumpLedge(direction: number): void {
     sound.playSE(sound.c("SE_LEDGE"));
-    this.setAnimId(actionJump2(direction), 8);
+    this.PlayerSetAnimId(actionJump2(direction), 8);
   }
 
-  collide(direction: number): void {
-    this.playCollisionSoundIfNotFacingWarp(direction);
-    this.setAnimId(actionWalkInPlaceSlow(direction), 2);
+  PlayerNotOnBikeCollide(direction: number): void {
+    this.PlayCollisionSoundIfNotFacingWarp(direction);
+    this.PlayerSetAnimId(actionWalkInPlaceSlow(direction), 2);
   }
 
-  playCollisionSoundIfNotFacingWarp(direction: number): void {
+  PlayCollisionSoundIfNotFacingWarp(direction: number): void {
     const behavior = this.object.currentMetatileBehavior;
     const arrowChecks = [MB.MetatileBehavior_IsSouthArrowWarp, MB.MetatileBehavior_IsNorthArrowWarp, MB.MetatileBehavior_IsWestArrowWarp, MB.MetatileBehavior_IsEastArrowWarp];
     if (arrowChecks[direction - 1]?.(behavior)) return;
@@ -259,7 +269,7 @@ export class PlayerAvatar {
         if (MB.MetatileBehavior_IsStopSpinning(o.currentMetatileBehavior)) return false;
         if (MB.MetatileBehavior_IsSpinTile(o.currentMetatileBehavior)) this.lastSpinTile = o.currentMetatileBehavior;
         this.ow.objects.clearHeldMovement(o);
-        this.applyTileForcedMovement(this.lastSpinTile);
+        this.PlayerApplyTileForcedMovement(this.lastSpinTile);
       }
       return true;
     }
@@ -296,20 +306,20 @@ export class PlayerAvatar {
     ];
   }
 
-  private ForcedMovement_Slip(): boolean { return this.DoForcedMovementInCurrentDirection((d) => this.walkFast(d)); }
-  private ForcedMovement_WalkSouth(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.walkNormal(d)); }
-  private ForcedMovement_WalkNorth(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.walkNormal(d)); }
-  private ForcedMovement_WalkWest(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.walkNormal(d)); }
-  private ForcedMovement_WalkEast(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.walkNormal(d)); }
-  private ForcedMovement_PushedSouthByCurrent(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.rideWaterCurrent(d)); }
-  private ForcedMovement_PushedNorthByCurrent(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.rideWaterCurrent(d)); }
-  private ForcedMovement_PushedWestByCurrent(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.rideWaterCurrent(d)); }
-  private ForcedMovement_PushedEastByCurrent(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.rideWaterCurrent(d)); }
+  private ForcedMovement_Slip(): boolean { return this.DoForcedMovementInCurrentDirection((d) => this.PlayerWalkFast(d)); }
+  private ForcedMovement_WalkSouth(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.PlayerWalkNormal(d)); }
+  private ForcedMovement_WalkNorth(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.PlayerWalkNormal(d)); }
+  private ForcedMovement_WalkWest(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.PlayerWalkNormal(d)); }
+  private ForcedMovement_WalkEast(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.PlayerWalkNormal(d)); }
+  private ForcedMovement_PushedSouthByCurrent(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.PlayerRideWaterCurrent(d)); }
+  private ForcedMovement_PushedNorthByCurrent(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.PlayerRideWaterCurrent(d)); }
+  private ForcedMovement_PushedWestByCurrent(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.PlayerRideWaterCurrent(d)); }
+  private ForcedMovement_PushedEastByCurrent(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.PlayerRideWaterCurrent(d)); }
   private PlaySpinSound(): void { sound.playSE(sound.c("SE_M_RAZOR_WIND2")); }
-  private ForcedMovement_SpinRight(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_EAST, (d) => this.goSpin(d)); }
-  private ForcedMovement_SpinLeft(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_WEST, (d) => this.goSpin(d)); }
-  private ForcedMovement_SpinUp(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_NORTH, (d) => this.goSpin(d)); }
-  private ForcedMovement_SpinDown(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_SOUTH, (d) => this.goSpin(d)); }
+  private ForcedMovement_SpinRight(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_EAST, (d) => this.PlayerGoSpin(d)); }
+  private ForcedMovement_SpinLeft(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_WEST, (d) => this.PlayerGoSpin(d)); }
+  private ForcedMovement_SpinUp(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_NORTH, (d) => this.PlayerGoSpin(d)); }
+  private ForcedMovement_SpinDown(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_SOUTH, (d) => this.PlayerGoSpin(d)); }
   private ForcedMovement_SlideSouth(): boolean { return this.ForcedMovement_Slide(DIR_SOUTH); }
   private ForcedMovement_SlideNorth(): boolean { return this.ForcedMovement_Slide(DIR_NORTH); }
   private ForcedMovement_SlideWest(): boolean { return this.ForcedMovement_Slide(DIR_WEST); }
@@ -403,7 +413,7 @@ export class PlayerAvatar {
     return this.ForcedMovement_None();
   }
 
-  private applyTileForcedMovement(behavior: number): void {
+  private PlayerApplyTileForcedMovement(behavior: number): void {
     for (const [check, apply] of this.forcedMovementTable()) if (check(behavior)) apply();
   }
 
@@ -418,7 +428,8 @@ export class PlayerAvatar {
     return false;
   }
 
-  cancelForcedMovement(): void {
+  /** CancelPlayerForcedMovement (field_player_avatar.c). */
+  CancelPlayerForcedMovement(): void {
     this.ForcedMovement_None();
   }
 
@@ -428,7 +439,7 @@ export class PlayerAvatar {
     if (collision) {
       this.ForcedMovement_None();
       if (collision < COLLISION_STOP_SURFING) return false;
-      if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(direction);
+      if (collision === COLLISION_LEDGE_JUMP) this.PlayerJumpLedge(direction);
       this.flags |= PLAYER_AVATAR_FLAG_FORCED;
       this.runningState = MOVING;
       return true;
@@ -446,7 +457,7 @@ export class PlayerAvatar {
   private ForcedMovement_Slide(direction: number): boolean {
     this.object.disableAnim = true;
     this.object.facingDirectionLocked = true;
-    return this.DoForcedMovement(direction, (d) => this.walkFast(d));
+    return this.DoForcedMovement(direction, (d) => this.PlayerWalkFast(d));
   }
 
   // ---------------------------------------------------------------- bike.c
@@ -520,34 +531,40 @@ export class PlayerAvatar {
     this.runningState = MOVING; return BIKE_TRANS_MOVE;
   }
 
-  private BikeTransition_FaceDirection(direction: number): void { this.faceDirection(direction === DIR_NONE ? this.object.movementDirection : direction); }
+  private BikeTransition_FaceDirection(direction: number): void { this.PlayerFaceDirection(direction === DIR_NONE ? this.object.movementDirection : direction); }
 
   private BikeTransition_TurnDirection(direction: number): void {
     direction = this.newDirBackup;
     if (!this.CanBikeFaceDirectionOnRail(direction, this.object.currentMetatileBehavior)) direction = this.object.movementDirection;
-    this.faceDirection(direction);
+    this.PlayerFaceDirection(direction);
   }
 
   private BikeTransition_MoveDirection(direction: number): void {
-    if (!this.CanBikeFaceDirectionOnRail(direction, this.object.currentMetatileBehavior)) { this.faceDirection(this.object.movementDirection); return; }
+    if (!this.CanBikeFaceDirectionOnRail(direction, this.object.currentMetatileBehavior)) { this.PlayerFaceDirection(this.object.movementDirection); return; }
     const collision = this.GetBikeCollision(direction);
     if (collision > COLLISION_NONE && collision <= 11) {
-      if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(direction);
+      if (collision === COLLISION_LEDGE_JUMP) this.PlayerJumpLedge(direction);
       else if (collision !== COLLISION_STOP_SURFING && collision !== COLLISION_PUSHED_BOULDER && collision !== COLLISION_DIRECTIONAL_STAIR_WARP) {
-        this.playCollisionSoundIfNotFacingWarp(direction); this.setAnimId(0x25 + Math.max(0, direction - 1), 2);
+        this.PlayerOnBikeCollide(direction);
       }
-    } else if (collision === 14 || this.isMovingOnRockStairs(direction)) this.walkFast(direction);
-    else this.rideWaterCurrent(direction);
+    } else if (collision === 14 || this.isMovingOnRockStairs(direction)) this.PlayerWalkFast(direction);
+    else this.PlayerRideWaterCurrent(direction);
+  }
+
+  /** PlayerOnBikeCollide (field_player_avatar.c). */
+  private PlayerOnBikeCollide(direction: number): void {
+    this.PlayCollisionSoundIfNotFacingWarp(direction);
+    this.PlayerSetAnimId(0x25 + Math.max(0, direction - 1), 2);
   }
 
   private BikeTransition_Downhill(direction: number): void {
     void direction;
     const collision = this.GetBikeCollision(DIR_SOUTH);
-    if (collision === COLLISION_NONE) this.setAnimId(0x35, 2);
-    else if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(DIR_SOUTH);
+    if (collision === COLLISION_NONE) this.PlayerSetAnimId(0x35, 2);
+    else if (collision === COLLISION_LEDGE_JUMP) this.PlayerJumpLedge(DIR_SOUTH);
   }
 
-  private BikeTransition_Uphill(direction: number): void { if (this.GetBikeCollision(direction) === COLLISION_NONE) this.walkNormal(direction); }
+  private BikeTransition_Uphill(direction: number): void { if (this.GetBikeCollision(direction) === COLLISION_NONE) this.PlayerWalkNormal(direction); }
 
   /** GetBikeCollision / GetBikeCollisionAt */
   private GetBikeCollision(direction: number): number {
@@ -677,36 +694,36 @@ export class PlayerAvatar {
     // CheckMovementInputNotOnBike
     if (direction === DIR_NONE) {
       this.runningState = NOT_MOVING;
-      this.faceDirection(this.object.facingDirection);
+      this.PlayerFaceDirection(this.object.facingDirection);
       return;
     }
     if (direction !== this.object.movementDirection && this.runningState !== MOVING) {
       this.runningState = TURN_DIRECTION;
-      this.turnInPlace(direction);
+      this.PlayerTurnInPlace(direction);
       return;
     }
     this.runningState = MOVING;
     // PlayerNotOnBikeMoving
     const collision = this.checkCollision(direction);
     if (collision !== COLLISION_NONE) {
-      if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(direction);
-      else if (collision === COLLISION_DIRECTIONAL_STAIR_WARP) this.faceDirection(direction);
-      else if (collision !== COLLISION_STOP_SURFING && collision !== COLLISION_PUSHED_BOULDER) this.collide(direction);
+      if (collision === COLLISION_LEDGE_JUMP) this.PlayerJumpLedge(direction);
+      else if (collision === COLLISION_DIRECTIONAL_STAIR_WARP) this.PlayerFaceDirection(direction);
+      else if (collision !== COLLISION_STOP_SURFING && collision !== COLLISION_PUSHED_BOULDER) this.PlayerNotOnBikeCollide(direction);
       return;
     }
     if (this.flags & PLAYER_AVATAR_FLAG_SURFING) {
-      this.walkFast(direction);
+      this.PlayerWalkFast(direction);
       return;
     }
     const canRun = (heldKeys & B_BUTTON) && flagGet(rom.constants.FLAG_SYS_B_DASH) && !this.IsRunningDisallowed(this.object.currentMetatileBehavior);
     if (canRun) {
-      if (this.isMovingOnRockStairs(direction)) this.runSlow(direction);
-      else this.run(direction);
+      if (this.isMovingOnRockStairs(direction)) this.PlayerRunSlow(direction);
+      else this.PlayerRun(direction);
       this.flags |= PLAYER_AVATAR_FLAG_DASH;
     } else if (this.isMovingOnRockStairs(direction)) {
-      this.walkSlow(direction);
+      this.PlayerWalkSlow(direction);
     } else {
-      this.walkNormal(direction);
+      this.PlayerWalkNormal(direction);
     }
   }
 
@@ -847,12 +864,20 @@ export class PlayerAvatar {
     }, 0xff);
   }
 
-  hasMonWithSurf(): boolean {
+  /** PartyHasMonWithSurf (field_player_avatar.c). */
+  PartyHasMonWithSurf(): boolean {
     if (this.isSurfing()) return false;
     return this.ow.game.party().some((mon) => !mon.isEgg && mon.moves.includes(rom.constants.MOVE_SURF));
   }
 
-  isFacingSurfableWater(): boolean {
+  /**
+   * IsPlayerFacingSurfableFishableWater (field_player_avatar.c): the C check gates on
+   * PlayerGetElevation() (the player's OWN previousElevation, e.g. a bridge tile) equal
+   * to 3, not the target tile's elevation; this checks the target tile's elevation
+   * instead, and MetatileBehavior_IsSurfable instead of MetatileAtCoordsIsWaterTile.
+   * Not touched here pending a focused check against the elevation/bridge system.
+   */
+  IsPlayerFacingSurfableFishableWater(): boolean {
     const o = this.object;
     const [dx, dy] = DIRECTION_VECTORS[o.facingDirection];
     const x = o.currentCoords.x + dx, y = o.currentCoords.y + dy;

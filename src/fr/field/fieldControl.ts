@@ -358,8 +358,8 @@ export class FieldControl {
 
   private waterScript(behavior: number, direction: number): number {
     const player = this.ow.player;
-    if (MB.MetatileBehavior_IsFastWater(behavior) && player.hasMonWithSurf()) return rom.label("EventScript_CurrentTooFast");
-    if (flagGet(rom.c("FLAG_BADGE05_GET")) && player.hasMonWithSurf() && player.isFacingSurfableWater()) return rom.label("EventScript_UseSurf");
+    if (MB.MetatileBehavior_IsFastWater(behavior) && player.PartyHasMonWithSurf()) return rom.label("EventScript_CurrentTooFast");
+    if (flagGet(rom.c("FLAG_BADGE05_GET")) && player.PartyHasMonWithSurf() && player.IsPlayerFacingSurfableFishableWater()) return rom.label("EventScript_UseSurf");
     if (MB.MetatileBehavior_IsWaterfall(behavior)) {
       if (flagGet(rom.c("FLAG_BADGE07_GET")) && player.isSurfing() && direction === DIR_NORTH) return rom.label("EventScript_Waterfall");
       return rom.label("EventScript_CantUseWaterfall");

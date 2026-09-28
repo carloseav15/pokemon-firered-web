@@ -158,7 +158,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
     }
     case FIELD_MOVE_SURF: {
       const behavior = ow.map.behaviorAt(fx, fy);
-      if (!MB.MetatileBehavior_IsFastWater(behavior) && ow.player.hasMonWithSurf() && ow.player.isFacingSurfableWater()) {
+      if (!MB.MetatileBehavior_IsFastWater(behavior) && ow.player.PartyHasMonWithSurf() && ow.player.IsPlayerFacingSurfableFishableWater()) {
         return { kind: "close", post: () => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_USE_SURF); } };
       }
       let message = "gText_CantSurfHere";

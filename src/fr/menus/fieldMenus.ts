@@ -335,7 +335,7 @@ function canFish(game: Game): boolean {
   const behavior = ow.map.behaviorAt(x, y);
   if (MB.MetatileBehavior_IsWaterfall(behavior)) return false;
   if (ow.player.flags & PLAYER_AVATAR_FLAG_UNDERWATER) return false;
-  if (!ow.player.isSurfing()) return ow.player.isFacingSurfableWater();
+  if (!ow.player.isSurfing()) return ow.player.IsPlayerFacingSurfableFishableWater();
   if (MB.MetatileBehavior_IsSurfable(behavior) && ow.map.collisionAt(x, y) === 0) return true;
   return MB.MetatileBehavior_IsBridge(behavior);
 }
