@@ -11,6 +11,7 @@ import { SetUpFieldMove_Cut } from "../field/fieldMoves";
 import { flagGet, flagSet, save, varSet, SV, type WarpData } from "../save";
 import type { Game } from "../game";
 import { DIRECTION_VECTORS, DIR_NORTH } from "../field/objectEvents";
+import { Overworld_MapTypeAllowsTeleportAndFly } from "../field/overworld";
 
 export const FIELD_MOVE_FLASH = 0, FIELD_MOVE_CUT = 1, FIELD_MOVE_FLY = 2, FIELD_MOVE_STRENGTH = 3, FIELD_MOVE_SURF = 4,
   FIELD_MOVE_ROCK_SMASH = 5, FIELD_MOVE_WATERFALL = 6, FIELD_MOVE_TELEPORT = 7, FIELD_MOVE_DIG = 8, FIELD_MOVE_MILK_DRINK = 9,
@@ -61,10 +62,6 @@ function sectionOfWarp(w: WarpData): number {
   return name ? rom.c(name) : 0;
 }
 
-function mapTypeAllowsTeleportAndFly(mapType: number): boolean {
-  return mapType === C.MAP_TYPE_ROUTE || mapType === C.MAP_TYPE_TOWN || mapType === C.MAP_TYPE_OCEAN_ROUTE || mapType === C.MAP_TYPE_CITY;
-}
-
 /** fldeff_softboiled.c SetUpFieldMove_SoftBoiled */
 export function SetUpFieldMove_SoftBoiled(partyIndex: number): boolean {
   const mon = save.party[partyIndex];
@@ -80,7 +77,7 @@ export function SetUpFieldMove_SweetScent(postMenuCallback: () => void): boolean
 
 /** fldeff_teleport.c SetUpFieldMove_Teleport; callbacks are installed by the field-menu adapter. */
 export function SetUpFieldMove_Teleport(mapType: number): boolean {
-  return mapTypeAllowsTeleportAndFly(mapType);
+  return Overworld_MapTypeAllowsTeleportAndFly(mapType);
 }
 
 /** fldeff_dig.c SetUpFieldMove_Dig / item_use.c CanUseEscapeRopeOnCurrMap */
@@ -148,7 +145,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
     }
     case FIELD_MOVE_FLY:
-      if (!mapTypeAllowsTeleportAndFly(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      if (!Overworld_MapTypeAllowsTeleportAndFly(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       return { kind: "fly" };
     case FIELD_MOVE_STRENGTH: {
       const boulder = frontObject(C.OBJ_EVENT_GFX_PUSHABLE_BOULDER);

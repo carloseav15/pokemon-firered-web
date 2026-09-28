@@ -81,6 +81,16 @@ export function isMapTypeOutdoors(type: number): boolean {
   return type === MAP_TYPE.ROUTE || type === MAP_TYPE.TOWN || type === MAP_TYPE.UNDERWATER || type === MAP_TYPE.CITY || type === MAP_TYPE.OCEAN_ROUTE;
 }
 
+/** Overworld_MapTypeAllowsTeleportAndFly (overworld.c). */
+export function Overworld_MapTypeAllowsTeleportAndFly(mapType: number): boolean {
+  return mapType === MAP_TYPE.ROUTE || mapType === MAP_TYPE.TOWN || mapType === MAP_TYPE.OCEAN_ROUTE || mapType === MAP_TYPE.CITY;
+}
+
+/** IsMapTypeIndoors (overworld.c). */
+export function IsMapTypeIndoors(mapType: number): boolean {
+  return mapType === MAP_TYPE.INDOOR || mapType === MAP_TYPE.SECRET_BASE;
+}
+
 // MapTransitionIsEnter / MapTransitionIsExit (fldeff_flash.c): mirror the
 // explicit sTransitionTypes rows instead of treating unknown map types as valid.
 const FLASH_TRANSITION_SURFACE_TYPES = new Set([
@@ -1187,7 +1197,7 @@ export class Overworld {
   private destinationMusicFadeoutSpeed(): number {
     try {
       const dest = this.mapIdForWarp(this.warpDestination);
-      return this.peekMapType(dest) === MAP_TYPE.INDOOR ? 2 : 4;
+      return IsMapTypeIndoors(this.peekMapType(dest)) ? 2 : 4;
     } catch {
       return 4;
     }
