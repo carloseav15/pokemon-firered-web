@@ -135,6 +135,15 @@ export function SetUpStartMenu(state: StartMenuSetupState): void {
   else SetUpStartMenu_NormalField(state);
 }
 
+/** ShowStartMenu (start_menu.c); the Game method owns the active Canvas task and menu state. */
+export function ShowStartMenu(game: Game): void { game.showStartMenu(); }
+
+/** SetUpReturnToStartMenu (start_menu.c); returning screens use the same active start-menu entry. */
+export function SetUpReturnToStartMenu(game: Game): void { game.showStartMenu(); }
+
+/** CloseStartMenu (start_menu.c); release and cleanup live on the field Game. */
+export function CloseStartMenu(game: Game): void { game.closeStartMenu(); }
+
 /** DrawSafariZoneStatsWindow (start_menu.c). */
 export function DrawSafariZoneStatsWindow(game: Game): Window {
   const stats = new Window(2, 2, 10, 4);
@@ -225,10 +234,10 @@ export function StartCB_HandleInput(state: StartMenuInputState): boolean {
   const input = menu.processInput();
   if (menu.cursorPos !== before) state.printDescription();
   if (input === MENU_NOTHING_CHOSEN) {
-    if (JOY_NEW(START_BUTTON)) { game.closeStartMenu(); return true; }
+    if (JOY_NEW(START_BUTTON)) { CloseStartMenu(game); return true; }
     return false;
   }
-  if (input === MENU_B_PRESSED) { game.closeStartMenu(); return true; }
+  if (input === MENU_B_PRESSED) { CloseStartMenu(game); return true; }
   if (items[input].canChoose?.() === false) return false;
   game.startMenuCursor = input;
   state.pendingAction = items[input].action;
@@ -303,10 +312,10 @@ export function StartMenuOptionCallback(game: Game): void {
 }
 
 /** StartMenuExitCallback (start_menu.c). */
-export function StartMenuExitCallback(game: Game): void { game.closeStartMenu(); }
+export function StartMenuExitCallback(game: Game): void { CloseStartMenu(game); }
 
 /** StartMenuSafariZoneRetireCallback (start_menu.c). */
 export function StartMenuSafariZoneRetireCallback(game: Game): void {
-  game.closeStartMenu();
+  CloseStartMenu(game);
   SafariZoneRetirePrompt((script) => game.overworld.script.ScriptContext_SetupScript(script));
 }

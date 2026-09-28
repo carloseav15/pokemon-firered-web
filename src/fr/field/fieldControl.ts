@@ -24,6 +24,7 @@ import { IsEscalatorMoving, StartEscalator, StopEscalator } from "./specialField
 import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState } from "../questLogEvents";
 import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
 import { InUnionRoom } from "../unionRoom";
+import { ShowStartMenu } from "../startMenu";
 
 export type FieldInput = {
   pressedAButton: boolean;
@@ -188,7 +189,7 @@ export class FieldControl {
   private Task_QuestLogPlayback_OpenStartMenu(): void {
     if (this.ow.controlsLocked) return;
     sound.playSE(sound.c("SE_WIN_OPEN"));
-    this.ow.game.showStartMenu();
+    ShowStartMenu(this.ow.game);
     if (this.questLogStartMenuTask !== null) tasks.destroy(this.questLogStartMenuTask);
     this.questLogStartMenuTask = null;
   }
@@ -246,7 +247,7 @@ export class FieldControl {
     if (input.pressedStartButton) {
       flagSet(rom.c("FLAG_OPENED_START_MENU"));
       sound.playSE(sound.c("SE_WIN_OPEN"));
-      this.ow.game.showStartMenu();
+      ShowStartMenu(this.ow.game);
       this.recordAcceptedFieldInput("pressedStartButton");
       return true;
     }

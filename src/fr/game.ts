@@ -54,7 +54,8 @@ import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
-  DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc, SetUpStartMenu,
+  DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
+  SetUpReturnToStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
   StartMenuSaveCallback, Task_StartMenuHandleInput, type StartMenuDrawState, type StartMenuInputState, type StartMenuItem, type StartMenuSetupState,
@@ -363,14 +364,19 @@ export class Game {
 
   showStartMenu(drawImmediately = false): void {
     const ow = this.overworld;
-    ow.objects.freezeAll();
+    const linkStateActive = IsUpdateLinkStateCBActive();
+    if (!linkStateActive) {
+      ow.objects.freezeAll();
+      ow.player.HandleEnforcedLookDirectionOnPlayerStopMoving();
+      ow.player.StopPlayerAvatar();
+    }
     const c = rom.constants;
     const safari = GetSafariZoneFlag();
     const startMenu: StartMenuSetupState = {
       order: [], numItems: 0,
       pokedexObtained: flagGet(c.FLAG_SYS_POKEDEX_GET),
       pokemonObtained: flagGet(c.FLAG_SYS_POKEMON_GET),
-      linkStateActive: IsUpdateLinkStateCBActive(),
+      linkStateActive,
       inUnionRoom: InUnionRoom(),
       inSafariZone: safari,
     };
@@ -418,6 +424,7 @@ export class Game {
       DrawStartMenuInOneGo(draw);
       tasks.create(startInput, 80);
     } else OpenStartMenuWithFollowupFunc(draw, startInput);
+    ow.controlsLocked = true;
   }
 
   startMenuCursor = 0;
@@ -583,12 +590,12 @@ export class Game {
   openPokedex(): void {
     StopPokemonLeagueLightingEffectTask();
     this.removeStartMenuWindows();
-    fieldMenu(this, (close) => openPokedexScreen(() => { close(); this.showStartMenu(); }), false);
+    fieldMenu(this, (close) => openPokedexScreen(() => { close(); SetUpReturnToStartMenu(this); }), false);
   }
   openTrainerCard(): void {
     StopPokemonLeagueLightingEffectTask();
     this.removeStartMenuWindows();
-    fieldMenu(this, (close) => openTrainerCardScreen(() => { close(); this.showStartMenu(); }), false);
+    fieldMenu(this, (close) => openTrainerCardScreen(() => { close(); SetUpReturnToStartMenu(this); }), false);
   }
 
   openPartyMenu(): void { StopPokemonLeagueLightingEffectTask(); this.removeStartMenuWindows(); openFieldParty(this); }
@@ -598,7 +605,7 @@ export class Game {
   openOptions(): void {
     StopPokemonLeagueLightingEffectTask();
     this.removeStartMenuWindows();
-    fieldMenu(this, (close) => openOptionMenu(() => { close(); this.showStartMenu(); }), false);
+    fieldMenu(this, (close) => openOptionMenu(() => { close(); SetUpReturnToStartMenu(this); }), false);
   }
 
   UseRegisteredKeyItemOnField(): boolean {
