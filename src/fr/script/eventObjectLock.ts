@@ -21,7 +21,7 @@ export function IsFreezePlayerFinished(ctx: ScriptRunner): boolean {
 /** Task_WaitPlayerStopMoving: native-script completion replaces task destruction. */
 function Task_WaitPlayerStopMoving(ctx: ScriptRunner): boolean {
   if (!walkrunIsStandingStill(ctx)) return false;
-  HandleEnforcedLookDirection(ctx);
+  ctx.ow.player.HandleEnforcedLookDirectionOnPlayerStopMoving();
   return true;
 }
 
@@ -57,7 +57,7 @@ function IsFreezeSelectedObjectAndPlayerFinished(ctx: ScriptRunner, object: type
 /** Task_WaitPlayerAndTargetNPCStopMoving; task data[0..1] becomes retained script state. */
 function Task_WaitPlayerAndTargetNPCStopMoving(ctx: ScriptRunner, object: typeof ctx.ow.player.object | null | undefined, state: FreezeSelectedState): boolean {
   if (!state.playerDone && walkrunIsStandingStill(ctx)) {
-    HandleEnforcedLookDirection(ctx);
+    ctx.ow.player.HandleEnforcedLookDirectionOnPlayerStopMoving();
     state.playerDone = true;
   }
   if (!state.targetDone && object && !object.singleMovementActive) {
@@ -84,13 +84,6 @@ export function UnionRoom_UnlockPlayerAndChatPartner(ctx: ScriptRunner): void {
   ctx.ow.objects.ObjectEventClearHeldMovementIfFinished(ctx.ow.player.object);
   ctx.ow.game.scriptMovement.unfreezeAndStop();
   ctx.ow.objects.unfreezeAll();
-}
-
-function HandleEnforcedLookDirection(ctx: ScriptRunner): void {
-  if (!ctx.ow.player.IsPlayerNotUsingAcroBikeOnBumpySlope()) return;
-  const player = ctx.ow.player.object;
-  player.heldMovementActive = false;
-  ctx.ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
 }
 
 function StopPlayerAvatar(ctx: ScriptRunner): void {

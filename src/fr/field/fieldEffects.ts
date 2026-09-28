@@ -17,7 +17,7 @@ import { SafariZoneTakeStep } from "./safariZone";
 import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
 import { FindTaskIdByFunc } from "../hw/menuHelpers";
 import { MAP_OFFSET } from "./fieldmap";
-import { QuestLog_CutRecording, QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
+import { QuestLog_CutRecording } from "../questLogEvents";
 import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../hw/gpu";
 import {
   DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, DISPLAY_WIDTH, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_DISPCNT,
@@ -1125,10 +1125,8 @@ export class FieldEffects {
     if (this.ow.objects.isMovementOverridden(player) || this.ow.objects.isMovementOverridden(boulder)) return false;
     this.ow.objects.ObjectEventClearHeldMovementIfFinished(player);
     this.ow.objects.ObjectEventClearHeldMovementIfFinished(boulder);
-    if (!this.ow.objects.setHeldMovement(player, actionWalkInPlaceNormal(direction)))
-      QuestLogRecordPlayerStepWithDuration(actionWalkInPlaceNormal(direction), 0);
-    if (!this.ow.objects.setHeldMovement(boulder, actionWalkSlower(direction)))
-      QuestLogRecordNPCStepWithDuration(boulder.localId, boulder.mapNum, boulder.mapGroup, actionWalkSlower(direction), 32);
+    this.ow.player.QL_TryRecordPlayerStepWithDuration0(actionWalkInPlaceNormal(direction));
+    this.ow.player.QL_TryRecordNPCStepWithDuration32(boulder, actionWalkSlower(direction));
     this.startBoulderDust(boulder);
     sound.playSE(sound.c("SE_M_STRENGTH"));
     return true;

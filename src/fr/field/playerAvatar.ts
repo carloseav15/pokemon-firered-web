@@ -9,7 +9,7 @@ import { tasks } from "../gba/tasks";
 import { rom } from "../rom";
 import { flagGet, incrementGameStat } from "../save";
 import { QuestLogApplyPlayerAvatarTransition } from "../questLogPlayer";
-import { QuestLogRecordPlayerStep } from "../questLogEvents";
+import { QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerStep, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
 import {
   actionFace, actionJump2, actionJumpInPlace, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
   actionWalkInPlaceSlow, actionWalkNormal, actionWalkSlow, COLLISION_DIRECTIONAL_STAIR_WARP, COLLISION_ELEVATION_MISMATCH, COLLISION_LEDGE_JUMP,
@@ -50,7 +50,7 @@ export function TestPlayerAvatarFlags(flags: number): number {
 }
 
 export function SetPlayerAvatarTransitionFlags(flags: number): void {
-  gPlayerAvatar?.setTransitionFlags(flags);
+  gPlayerAvatar?.DoPlayerAvatarTransition(flags);
 }
 
 /** GetPlayerFacingDirection / GetPlayerMovementDirection (field_player_avatar.c). */
@@ -137,8 +137,13 @@ export class PlayerAvatar {
       this.flags = (this.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_SURFING)) | (transition & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE));
     }
     if (transition & PLAYER_AVATAR_FLAG_SURFING) this.PlayerAvatarTransition_Surfing();
+    if (transition & PLAYER_AVATAR_FLAG_UNDERWATER) this.PlayerAvatarTransition_Underwater();
     if (transition & PLAYER_AVATAR_FLAG_CONTROLLABLE) this.PlayerAvatarTransition_ReturnToField();
+    if (transition & (PLAYER_AVATAR_FLAG_FORCED | PLAYER_AVATAR_FLAG_DASH)) this.PlayerAvatarTransition_Dummy();
   }
+
+  /** DoPlayerAvatarTransition (field_player_avatar.c); dispatches the requested state bits. */
+  DoPlayerAvatarTransition(flags: number): void { this.setTransitionFlags(flags); }
 
   private PlayerAvatarTransition_Normal(): void { QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_NORMAL); }
   private PlayerAvatarTransition_Bike(): void {
@@ -146,6 +151,10 @@ export class PlayerAvatar {
     this.BikeClearState(0, 0);
   }
   private PlayerAvatarTransition_Surfing(): void { QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_SURF); }
+  /** PlayerAvatarTransition_Underwater (empty FireRed callback). */
+  private PlayerAvatarTransition_Underwater(): void {}
+  /** PlayerAvatarTransition_Dummy (empty FireRed callback). */
+  private PlayerAvatarTransition_Dummy(): void {}
   private PlayerAvatarTransition_ReturnToField(): void { this.flags |= PLAYER_AVATAR_FLAG_CONTROLLABLE; }
 
   setState(state: number): void {
@@ -202,7 +211,7 @@ export class PlayerAvatar {
   }
 
   /** UpdatePlayerAvatarTransitionState */
-  updateTransitionState(): void {
+  UpdatePlayerAvatarTransitionState(): void {
     this.tileTransitionState = T_NOT_MOVING;
     if (this.PlayerIsAnimActive()) {
       if (!this.PlayerCheckIfAnimFinishedOrInactive()) {
@@ -215,9 +224,26 @@ export class PlayerAvatar {
 
   PlayerSetAnimId(actionId: number, copyable: number): void {
     if (this.PlayerIsAnimActive()) return;
-    this.object.playerCopyableMovement = copyable;
+    this.PlayerSetCopyableMovement(copyable);
     this.ow.objects.setHeldMovement(this.object, actionId);
     QuestLogRecordPlayerStep(actionId, this.ow.controlsLocked);
+  }
+
+  /** PlayerSetCopyableMovement (field_player_avatar.c). */
+  private PlayerSetCopyableMovement(movement: number): void { this.object.playerCopyableMovement = movement & 0xff; }
+  /** PlayerGetCopyableMovement (field_player_avatar.c). */
+  PlayerGetCopyableMovement(): number { return this.object.playerCopyableMovement & 0xff; }
+
+  /** QL_TryRecordPlayerStepWithDuration0 (field_player_avatar.c). */
+  QL_TryRecordPlayerStepWithDuration0(movementAction: number): void {
+    if (!this.ow.objects.setHeldMovement(this.object, movementAction)) QuestLogRecordPlayerStepWithDuration(movementAction, 0);
+  }
+
+  /** QL_TryRecordNPCStepWithDuration32 (field_player_avatar.c). */
+  QL_TryRecordNPCStepWithDuration32(object: ObjectEvent, movementAction: number): void {
+    if (!this.ow.objects.setHeldMovement(object, movementAction)) {
+      QuestLogRecordNPCStepWithDuration(object.localId, object.mapNum, object.mapGroup, movementAction, 32);
+    }
   }
 
   /** PlayerForceSetHeldMovement (field_player_avatar.c). */
@@ -234,6 +260,29 @@ export class PlayerAvatar {
   PlayerRunSlow(direction: number): void { this.PlayerSetAnimId(0x41 + direction - 1, 2); }
   PlayerRideWaterCurrent(direction: number): void { this.PlayerSetAnimId(actionRideWaterCurrent(direction), 2); }
   PlayerGoSpin(direction: number): void { this.PlayerSetAnimId(actionSpin(direction), 3); }
+
+  /** PlayerWalkSlower (field_player_avatar.c). */
+  PlayerWalkSlower(direction: number): void { this.PlayerSetAnimId(actionWalkSlower(direction), 2); }
+  /** PlayerGlide (field_player_avatar.c). */
+  PlayerGlide(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_GLIDE_DOWN, C.MOVEMENT_ACTION_GLIDE_DOWN, C.MOVEMENT_ACTION_GLIDE_UP, C.MOVEMENT_ACTION_GLIDE_LEFT, C.MOVEMENT_ACTION_GLIDE_RIGHT]), 2);
+  }
+  /** PlayerWalkFaster (field_player_avatar.c). */
+  PlayerWalkFaster(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_WALK_FASTER_DOWN, C.MOVEMENT_ACTION_WALK_FASTER_DOWN, C.MOVEMENT_ACTION_WALK_FASTER_UP, C.MOVEMENT_ACTION_WALK_FASTER_LEFT, C.MOVEMENT_ACTION_WALK_FASTER_RIGHT]), 2);
+  }
+  /** PlayerFaceDirectionFast (field_player_avatar.c). */
+  PlayerFaceDirectionFast(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_FACE_DOWN_FAST, C.MOVEMENT_ACTION_FACE_DOWN_FAST, C.MOVEMENT_ACTION_FACE_UP_FAST, C.MOVEMENT_ACTION_FACE_LEFT_FAST, C.MOVEMENT_ACTION_FACE_RIGHT_FAST]), 1);
+  }
+  /** PlayerShakeHeadOrWalkInPlace (field_player_avatar.c). */
+  PlayerShakeHeadOrWalkInPlace(): void { this.PlayerSetAnimId(C.MOVEMENT_ACTION_SHAKE_HEAD_OR_WALK_IN_PLACE, 0); }
+
+  /** HandleEnforcedLookDirectionOnPlayerStopMoving (field_player_avatar.c). */
+  HandleEnforcedLookDirectionOnPlayerStopMoving(): void {
+    if ((this.tileTransitionState === T_TILE_CENTER || this.tileTransitionState === T_NOT_MOVING)
+      && this.IsPlayerNotUsingAcroBikeOnBumpySlope()) this.PlayerForceSetHeldMovement(actionFace(this.object.facingDirection));
+  }
 
   private acroMovementAction(direction: number, actions: readonly number[]): number {
     const directionU8 = direction & 0xff;

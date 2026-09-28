@@ -76,7 +76,7 @@ export class FieldControl {
   processFrame(newKeys: number, heldKeys: number): void {
     QL_TryRunActions(this.ow.controlsLocked);
     const player = this.ow.player;
-    player.updateTransitionState();
+    player.UpdatePlayerAvatarTransitionState();
     const input = emptyInput();
     this.getPlayerInput(input, newKeys, heldKeys);
     this.handleCancelSignpost(input);
