@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6720/10115 (66.4 %)**.
-- Archivos C con funciones aún sin homólogo: **61**; quedan **3395 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **6856/10115 (67.8 %)**.
+- Archivos C con funciones aún sin homólogo: **61**; quedan **3259 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 131.457 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~74.982 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~73.295 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -74,11 +74,11 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 54 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
 | 55 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
 | 56 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
-| 57 | `overworld.c` | parcial | 3563 | 42/242 | ~2944 |  |
-| 58 | `battle_transition.c` | parcial | 3037 | 1/134 | ~3014 |  |
-| 59 | `pokemon.c` | parcial | 6453 | 71/140 | ~3180 |  |
-| 60 | `field_effect.c` | parcial | 4033 | 13/239 | ~3813 |  |
-| 61 | `event_object_movement.c` | parcial | 9412 | 389/759 | ~4588 |  |
+| 57 | `event_object_movement.c` | parcial | 9412 | 525/759 | ~2901 |  |
+| 58 | `overworld.c` | parcial | 3563 | 42/242 | ~2944 |  |
+| 59 | `battle_transition.c` | parcial | 3037 | 1/134 | ~3014 |  |
+| 60 | `pokemon.c` | parcial | 6453 | 71/140 | ~3180 |  |
+| 61 | `field_effect.c` | parcial | 4033 | 13/239 | ~3813 |  |
 
 Total: 61 archivos con huecos: 1 sin empezar, 1 adaptador, 10 casi completos y 49 parciales.
 
@@ -127,7 +127,6 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Pantalla de nombres: 34/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.
 - Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
-- `scrcmd.c` y `event_object_movement.c`: el intérprete de scripts y el movimiento de objetos usan la capa de campo antigua (nombres propios).
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
 - Quest Log: el inventario incluye quest_log*.c; los eventos de tienda ya persisten en SaveData, pero faltan el buffer/serialización original, escenas, acciones y reproducción.
