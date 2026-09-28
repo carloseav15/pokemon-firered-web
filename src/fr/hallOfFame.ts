@@ -56,7 +56,7 @@ import { BeginPCScreenEffect_TurnOff, BeginPCScreenEffect_TurnOn, IsPCScreenEffe
 import { GetGenderFromSpeciesAndPersonality, SpeciesToNationalPokedexNum, playerMon } from "./pokemon/mon";
 import { speciesName } from "./pokemon/pokemon";
 import { random } from "./random";
-import { save } from "./save";
+import { GetGameStat, save } from "./save";
 import {
   CreateMonPicSprite_HandleDeoxys, CreateTrainerPicSprite, FreeAndDestroyMonPicSprite, FreeAndDestroyTrainerPicSprite, PlayerGenderToFrontTrainerPicId,
   ResetAllPicSprites,
@@ -242,7 +242,7 @@ function Task_Hof_InitTeamSaveData(taskId: number): void {
 
 function Task_Hof_TrySaveData(taskId: number): void {
   // gGameContinueCallback = CB2_DoHallOfFameScreenDontSaveData; TrySavingData(SAVE_HALL_OF_FAME)
-  sGame.writeSave();
+  sGame.writeSave(true);
   sound.playSE(C.SE_SAVE);
   tasks.tasks[taskId].func = Task_Hof_DelayAfterSave;
   tasks.tasks[taskId].data[3] = 32;
@@ -499,7 +499,7 @@ function Task_HofPC_CopySaveData(taskId: number): void {
     if (i < HALL_OF_FAME_MAX_TEAMS) data[0] = i - 1;
     else data[0] = HALL_OF_FAME_MAX_TEAMS - 1;
 
-    data[1] = save.gameStats[C.GAME_STAT_ENTERED_HOF] ?? 0;
+    data[1] = GetGameStat(C.GAME_STAT_ENTERED_HOF);
 
     tasks.tasks[taskId].func = Task_HofPC_DrawSpritesPrintText;
   }

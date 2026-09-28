@@ -60,7 +60,7 @@ import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllKantoMons, HasAllM
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
 import { MailSpeciesToSpecies } from "../pokemon/mail";
 import { rom } from "../rom";
-import { flagGet, save, varGet } from "../save";
+import { flagGet, GetGameStat, save, varGet } from "../save";
 
 const CARD_TYPE_FRLG = 0;
 const TEXT_SKIP_DRAW = 0xff;
@@ -262,8 +262,8 @@ function SetPlayerCardData(card: TrainerCardFields, _cardType: number): void {
   card.playTimeHours = Math.min(999, Math.floor(totalSeconds / 3600));
   card.playTimeMinutes = Math.floor(totalSeconds / 60) % 60;
 
-  const enteredHof = (save.gameStats[c.GAME_STAT_ENTERED_HOF] ?? 0) > 0;
-  const playTime = enteredHof ? (save.gameStats[c.GAME_STAT_FIRST_HOF_PLAY_TIME] ?? 0) : 0;
+  const enteredHof = GetGameStat(c.GAME_STAT_ENTERED_HOF) > 0;
+  const playTime = enteredHof ? GetGameStat(c.GAME_STAT_FIRST_HOF_PLAY_TIME) : 0;
   card.hofDebutHours = Math.min(999, playTime >>> 16);
   card.hofDebutMinutes = (playTime >>> 8) & 0xff;
   card.hofDebutSeconds = playTime & 0xff;
@@ -274,9 +274,9 @@ function SetPlayerCardData(card: TrainerCardFields, _cardType: number): void {
   card.caughtMonsCount = national ? GetNationalPokedexCount(C.FLAG_GET_CAUGHT) : GetKantoPokedexCount(C.FLAG_GET_CAUGHT);
 
   card.trainerId = save.trainerId & 0xffff;
-  card.linkBattleWins = Math.min(9999, save.gameStats[c.GAME_STAT_LINK_BATTLE_WINS] ?? 0);
-  card.linkBattleLosses = Math.min(9999, save.gameStats[c.GAME_STAT_LINK_BATTLE_LOSSES] ?? 0);
-  card.pokemonTrades = Math.min(0xffff, save.gameStats[c.GAME_STAT_POKEMON_TRADES] ?? 0);
+  card.linkBattleWins = Math.min(9999, GetGameStat(c.GAME_STAT_LINK_BATTLE_WINS));
+  card.linkBattleLosses = Math.min(9999, GetGameStat(c.GAME_STAT_LINK_BATTLE_LOSSES));
+  card.pokemonTrades = Math.min(0xffff, GetGameStat(c.GAME_STAT_POKEMON_TRADES));
 
   card.battleTowerWins = 0;
   card.battleTowerStraightWins = 0;
@@ -307,8 +307,8 @@ function TrainerCard_GenerateCardForLinkPlayer(card: TrainerCardFields): void {
 
   card.berriesPicked = 0;
   card.jumpsInRow = 0;
-  card.berryCrushPoints = Math.min(0xffff, save.gameStats[c.GAME_STAT_BERRY_CRUSH_POINTS] ?? 0);
-  card.unionRoomNum = Math.min(0xffff, save.gameStats[c.GAME_STAT_NUM_UNION_ROOM_BATTLES] ?? 0);
+  card.berryCrushPoints = Math.min(0xffff, GetGameStat(c.GAME_STAT_BERRY_CRUSH_POINTS));
+  card.unionRoomNum = Math.min(0xffff, GetGameStat(c.GAME_STAT_NUM_UNION_ROOM_BATTLES));
   card.shouldDrawStickers = true;
 
   if (card.caughtAllHoenn) stars++;

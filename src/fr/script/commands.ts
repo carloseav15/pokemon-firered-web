@@ -12,7 +12,7 @@ import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD
 import { tasks } from "../gba/tasks";
 import { b64, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
 import { random } from "../random";
-import { flagClear, flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
+import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { LOCALID_PLAYER, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
@@ -675,7 +675,7 @@ function ScrCmd_incrementgamestat(ctx: ScriptRunner): boolean { incrementGameSta
 function ScrCmd_comparestat(ctx: ScriptRunner): boolean {
   const stat = ctx.readByte();
   const value = ctx.ScriptReadWord();
-  ctx.comparisonResult = compare(save.gameStats[stat] ?? 0, value);
+  ctx.comparisonResult = compare(GetGameStat(stat), value);
   return false;
 }
 function ScrCmd_signmsg(ctx: ScriptRunner): boolean { ctx.ow.control.MsgSetSignpost(); return false; }

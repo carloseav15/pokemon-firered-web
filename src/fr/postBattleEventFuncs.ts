@@ -4,7 +4,7 @@
 // (hall_of_fame.c) lives here because it needs the overworld warp API.
 
 import * as C from "./generated/constants";
-import { flagGet, flagSet, save, varSet } from "./save";
+import { flagGet, flagSet, GetGameStat, incrementGameStat, save, SetGameStat, varSet } from "./save";
 import { healMon, type Pokemon } from "./pokemon/pokemon";
 import { addBagItem, checkBagHasItem } from "./pokemon/items";
 import { rom } from "./rom";
@@ -17,10 +17,9 @@ export function enterHallOfFame(game: Game): void {
   for (const mon of save.party) healMon(mon);
   const hadHallOfFameRecords = flagGet(C.FLAG_SYS_GAME_CLEAR);
   flagSet(C.FLAG_SYS_GAME_CLEAR);
-  const stats = save.gameStats;
-  if (!stats[C.GAME_STAT_FIRST_HOF_PLAY_TIME]) {
+  if (!GetGameStat(C.GAME_STAT_FIRST_HOF_PLAY_TIME)) {
     const secs = Math.floor(save.playTimeFrames / 60);
-    stats[C.GAME_STAT_FIRST_HOF_PLAY_TIME] = (Math.floor(secs / 3600) << 16) | ((Math.floor(secs / 60) % 60) << 8) | (secs % 60);
+    SetGameStat(C.GAME_STAT_FIRST_HOF_PLAY_TIME, (Math.floor(secs / 3600) << 16) | ((Math.floor(secs / 60) % 60) << 8) | (secs % 60));
   }
   // SetContinueGameWarpStatus + SetContinueGameWarpToHealLocation(HEAL_LOCATION_PALLET_TOWN)
   (save as unknown as { continueGameWarpActive?: boolean }).continueGameWarpActive = true;
@@ -33,7 +32,7 @@ export function enterHallOfFame(game: Game): void {
     if (!m.ribbons[5]) { m.ribbons[5] = 1; ribbon = true; }
   }
   if (ribbon) {
-    stats[C.GAME_STAT_RECEIVED_RIBBONS] = (stats[C.GAME_STAT_RECEIVED_RIBBONS] ?? 0) + 1;
+    incrementGameStat(C.GAME_STAT_RECEIVED_RIBBONS);
     flagSet(C.FLAG_SYS_RIBBON_GET);
     // REVISION >= 0xA: event tickets are granted with the first ribbon-awarding
     // Hall of Fame entry, unless the Aurora Ticket is already in the bag. Like
@@ -50,7 +49,6 @@ export function enterHallOfFame(game: Game): void {
   ow.script.ScriptContext_Stop();
   // On the first clear the C clears the Hall of Fame sectors before writing the first team.
   if (!hadHallOfFameRecords) (save as unknown as { hallOfFame?: unknown[] }).hallOfFame = [];
-  stats[C.GAME_STAT_ENTERED_HOF] = (stats[C.GAME_STAT_ENTERED_HOF] ?? 0) + 1;
   BeginHallOfFameScreen(game, false);
 }
 

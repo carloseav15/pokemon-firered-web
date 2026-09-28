@@ -433,8 +433,42 @@ export function clearTempFieldEventData(): void {
   }
 }
 
-export function incrementGameStat(index: number): void {
-  if (index < save.gameStats.length) save.gameStats[index] = Math.min(0xffffff, (save.gameStats[index] ?? 0) + 1);
+/** ResetGameStats (overworld.c). */
+export function ResetGameStats(): void {
+  for (let i = 0; i < C.NUM_GAME_STATS; i++) save.gameStats[i] = 0;
+}
+
+/** GetGameStat (overworld.c); SaveData stores logical, decoded values. */
+export function GetGameStat(statId: number): number {
+  statId &= 0xff;
+  if (statId >= C.NUM_USED_GAME_STATS) return 0;
+  return save.gameStats[statId] ?? 0;
+}
+
+/** SetGameStat (overworld.c); the browser save stores the logical value. */
+export function SetGameStat(statId: number, statVal: number): void {
+  statId &= 0xff;
+  if (statId >= C.NUM_USED_GAME_STATS) return;
+  save.gameStats[statId] = statVal >>> 0;
+}
+
+/** IncrementGameStat (overworld.c), retaining the 24-bit cap. */
+export function IncrementGameStat(statId: number): void {
+  statId &= 0xff;
+  if (statId >= C.NUM_USED_GAME_STATS) return;
+  const value = GetGameStat(statId);
+  SetGameStat(statId, value < 0xffffff ? value + 1 : 0xffffff);
+}
+
+export function incrementGameStat(index: number): void { IncrementGameStat(index); }
+
+/**
+ * ApplyNewEncryptionKeyToGameStats (overworld.c): the GBA XORs the physical
+ * SaveBlock array. JSON stores its decoded logical values, so normalize each
+ * entry to the source u32 domain without applying an emulated storage cipher.
+ */
+export function ApplyNewEncryptionKeyToGameStats(_newKey: number): void {
+  for (let i = 0; i < C.NUM_GAME_STATS; i++) save.gameStats[i] = (save.gameStats[i] ?? 0) >>> 0;
 }
 
 export function playerName(): Uint8Array {

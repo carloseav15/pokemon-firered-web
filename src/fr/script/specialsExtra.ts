@@ -15,7 +15,7 @@ import { cdata, incbin } from "../hw/assets";
 import { BG_PLTT_ID } from "../hw/palette";
 import { random } from "../random";
 import { rom } from "../rom";
-import { flagClear, flagGet, flagSet, save, SV, varGet, varSet } from "../save";
+import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "../save";
 import { Sprite } from "../gba/sprite";
 import { MAP_OFFSET } from "../field/fieldmap";
 import { rgb555, spriteSheet } from "../field/gfx4bpp";
@@ -707,7 +707,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     stringVars.var1 = speciesName(varGet(C.VAR_RESORT_GORGEOUS_REQUESTED_MON));
   },
   StickerManGetBragFlags: () => {
-    const stat = (i: number) => save.gameStats[i] ?? 0;
+    const stat = (i: number) => GetGameStat(i);
     varSet(SV.x8004, stat(C.GAME_STAT_ENTERED_HOF));
     varSet(SV.x8005, Math.min(0xffff, stat(C.GAME_STAT_HATCHED_EGGS)));
     varSet(SV.x8006, stat(C.GAME_STAT_LINK_BATTLE_WINS));
@@ -747,7 +747,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     return 1;
   },
   UpdateLoreleiDollCollection: () => {
-    const n = save.gameStats[C.GAME_STAT_ENTERED_HOF] ?? 0;
+    const n = GetGameStat(C.GAME_STAT_ENTERED_HOF);
     if (n < 25) return;
     flagClear(C.FLAG_HIDE_LORELEI_HOUSE_MEOWTH_DOLL);
     if (n >= 50) flagClear(C.FLAG_HIDE_LORELEI_HOUSE_CHANSEY_DOLL);

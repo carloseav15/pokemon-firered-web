@@ -17,7 +17,7 @@ import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
 import { onWarpForRoamer } from "./pokemon/roamer";
 import { rom } from "./rom";
-import { flagGet, newSaveData, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
+import { ApplyNewEncryptionKeyToGameStats, flagGet, GetGameStat, IncrementGameStat, newSaveData, ResetGameStats, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, InitChooseMonsForBattle, Task_ChoosePartyMon } from "./partyMenu";
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
@@ -226,6 +226,7 @@ export class Game {
     data.money = 3000;
     data.registeredItem = 0;
     setSave(data);
+    ResetGameStats();
     ClearMailData();
     ResetFameChecker();
     this.ResetMiniGamesResults();
@@ -310,18 +311,23 @@ export class Game {
     this.overworld.warpIntoMapAndLoad();
   }
 
-  writeSave(): boolean {
+  writeSave(isHallOfFame = false): boolean {
     const p = this.overworld.player.object;
     save.facing = p?.facingDirection ?? 1;
     save.playerAvatarFlags = this.overworld.player.flags;
     save.savedMusic = this.overworld.savedMusic;
     save.options.textSpeed = textOptions.speed;
+    ApplyNewEncryptionKeyToGameStats(save.trainerId);
     ApplyNewEncryptionKeyToBagItems_(save.trainerId);
-    this.overworld.SetContinueGameWarpToDynamicWarp(0);
     const continueFlags = save as SaveData & { continueGameWarpActive?: boolean };
-    continueFlags.continueGameWarpActive = true;
+    if (isHallOfFame) {
+      if (GetGameStat(C.GAME_STAT_ENTERED_HOF) < 999) IncrementGameStat(C.GAME_STAT_ENTERED_HOF);
+    } else {
+      this.overworld.SetContinueGameWarpToDynamicWarp(0);
+      continueFlags.continueGameWarpActive = true;
+    }
     const succeeded = saveStore.write(save);
-    if (succeeded) continueFlags.continueGameWarpActive = false;
+    if (succeeded && !isHallOfFame) continueFlags.continueGameWarpActive = false;
     return succeeded;
   }
 
