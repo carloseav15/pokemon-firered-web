@@ -616,19 +616,7 @@ export class FieldControl {
     this.ow.storeInitialPlayerAvatarState();
     this.setupWarp(warpIndex, position);
     if (MB.MetatileBehavior_IsEscalator(behavior)) {
-      // special_field_anim.c draws the escalator's three transition stages
-      // before the field effect begins the map fade. field_effect.c also moves
-      // the avatar along the rail; this web path preserves the staged tiles
-      // and delays the warp until their source task reaches its final stage.
-      this.ow.controlsLocked = true;
-      this.ow.objects.freezeAll();
-      StartEscalator(this.ow, behavior === MB.MB_UP_ESCALATOR);
-      tasks.create((taskId) => {
-        if (IsEscalatorMoving()) return;
-        StopEscalator();
-        tasks.destroy(taskId);
-        this.ow.doWarp();
-      }, 0);
+      this.DoEscalatorWarp(behavior);
       return true;
     }
     if (MB.MetatileBehavior_IsWarpPad(behavior)) {
@@ -642,6 +630,19 @@ export class FieldControl {
     }
     this.ow.doWarp();
     return true;
+  }
+
+  /** DoEscalatorWarp (field_fadetransition.c): preserve the active staged Canvas animation before warping. */
+  private DoEscalatorWarp(metatileBehavior: number): void {
+    this.ow.controlsLocked = true;
+    this.ow.objects.freezeAll();
+    StartEscalator(this.ow, metatileBehavior === MB.MB_UP_ESCALATOR);
+    tasks.create((taskId) => {
+      if (IsEscalatorMoving()) return;
+      StopEscalator();
+      tasks.destroy(taskId);
+      this.ow.doWarp();
+    }, 0);
   }
 
   /** TryDoorWarp (field_control_avatar.c). */

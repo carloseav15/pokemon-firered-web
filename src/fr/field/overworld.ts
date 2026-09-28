@@ -879,6 +879,12 @@ export class Overworld {
     }
   }
 
+  /** ExitWarpFadeInScreen (field_fadetransition.c). */
+  private ExitWarpFadeInScreen(playerNotMoving: boolean): void {
+    if (!playerNotMoving) this.warpFadeInScreen();
+    else this.fadeInFromBlack();
+  }
+
   /** WarpFadeInScreenWithDelay (field_fadetransition.c). */
   private WarpFadeInScreenWithDelay(delay: number): void {
     this.warpFadeInScreen(delay);
@@ -911,8 +917,7 @@ export class Overworld {
       this.gExitStairsMovementDisabled = false;
       return;
     }
-    if (!playerNotMoving) this.warpFadeInScreen();
-    else this.fadeInFromBlack();
+    this.ExitWarpFadeInScreen(playerNotMoving);
     if (MB.MetatileBehavior_IsNonAnimDoor(behavior)) this.startExitNonAnimDoorTask();
     else if (MB.MetatileBehavior_IsDirectionalStairWarp(behavior) && !this.gExitStairsMovementDisabled) this.startExitStairsTask();
     else this.startExitNonDoorTask();
