@@ -23,6 +23,7 @@ import * as C from "../generated/constants";
 import { paletteFade, FADE_TO_BLACK } from "../gba/fade";
 import type { Pokemon } from "../pokemon/pokemon";
 import { rom } from "../rom";
+import { incbin, incbin16 } from "../hw/assets";
 import { save } from "../save";
 import type { Overworld } from "../field/overworld";
 import { MetatileBehavior_IsSurfable } from "../generated/metatileBehavior";
@@ -518,64 +519,134 @@ class ShuffleEffect implements Effect {
 
 /** B_TRANSITION_BIG_POKEBALL: Task_BigPokeball / PatternWeave_CircularMask. */
 class BigPokeballEffect implements Effect {
+  private phase: "blend1" | "blend2" | "finish" | "mask" | "done" = "blend1";
+  private blendEva = 0;
+  private blendEvb = 16;
+  private blendDelay = 0;
+  private sinIndex = 0;
+  private amplitude = 0x4000;
+  private initialWave = true;
   private radius = 0;
-  private radiusDelta = 3;
-  private closing = false;
-  private done = false;
+  private radiusDelta = 0;
+  private readonly gfx = incbin("sBigPokeball_Gfx");
+  private readonly tilemap = incbin16("sBigPokeball_Tilemap");
+  private readonly palette = incbin16("sFieldEffectPal_Pokeball");
+  private readonly pixels = this.BigPokeball_SetGfx();
+
+  constructor() { this.BigPokeball_Init(); }
+
+  private BigPokeball_Init(): void {
+    this.phase = "blend1";
+    this.blendEva = 0; this.blendEvb = 16; this.blendDelay = 0;
+    this.sinIndex = 0; this.amplitude = 0x4000;
+  }
 
   tick(): boolean {
-    if (!this.closing) {
-      this.radius += this.radiusDelta;
-      if (this.radius >= 140) {
-        this.closing = true;
-      }
-    } else {
-      this.radius -= 6;
-      if (this.radius <= 0) {
-        this.done = true;
-        return true;
-      }
-    }
+    this.initialWave = false;
+    if (this.phase === "blend1") return this.PatternWeave_Blend1();
+    if (this.phase === "blend2") return this.PatternWeave_Blend2();
+    if (this.phase === "finish") return this.PatternWeave_FinishAppear();
+    if (this.phase === "mask") return this.PatternWeave_CircularMask();
     return false;
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
-    if (this.done) {
+    if (this.phase === "done") {
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
       return;
     }
-    ctx.drawImage(snapshot, 0, 0);
-    // Draw outer black mask leaving circular Poké Ball aperture
-    const cx = DISPLAY_WIDTH / 2;
-    const cy = DISPLAY_HEIGHT / 2;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
-    ctx.arc(cx, cy, Math.max(0, this.radius), 0, Math.PI * 2, true);
-    ctx.fillStyle = "#000";
-    ctx.fill();
-
-    // Poké Ball band and center button inside the circle
-    if (this.radius > 15) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, this.radius, 0, Math.PI * 2);
-      ctx.clip();
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-      ctx.fillRect(cx - this.radius, cy - 4, this.radius * 2, 8);
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, 14, 0, Math.PI * 2);
-      ctx.fillStyle = "#000";
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
+    const image = ctx.createImageData(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    const base = this.phase === "mask" ? null : snapshot.getContext("2d")!.getImageData(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT).data;
+    const eva = this.phase === "blend1" ? this.blendEva : 16;
+    const evb = this.phase === "blend1" ? 16 : this.phase === "blend2" ? this.blendEvb : 0;
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      const wave = this.initialWave
+        ? Sin((y * 132) & 0xff, this.amplitude)
+        : this.phase === "blend1" || this.phase === "blend2" || this.phase === "finish"
+          ? Sin((this.sinIndex + y * 132) & 0xff, Math.max(0, this.amplitude >> 8)) : 0;
+      const row = y * DISPLAY_WIDTH;
+      for (let x = 0; x < DISPLAY_WIDTH; x++) {
+        if (this.phase === "mask" && Math.abs(x - DISPLAY_WIDTH / 2) > this.circleHalfWidth(y)) continue;
+        const sx = Math.max(0, Math.min(DISPLAY_WIDTH - 1, x + wave));
+        const color = this.pixels[y * DISPLAY_WIDTH + sx]!;
+        const p = (row + x) * 4;
+        for (let channel = 0; channel < 3; channel++) {
+          const bg = Math.round(color[channel]! * 31 / 255);
+          const field = base ? Math.round(base[p + channel]! * 31 / 255) : 0;
+          image.data[p + channel] = Math.min(31, Math.floor((bg * eva + field * evb) / 16)) * 255 / 31;
+        }
+        image.data[p + 3] = 255;
+      }
     }
-    ctx.restore();
+    ctx.putImageData(image, 0, 0);
+  }
+
+  private circleHalfWidth(y: number): number {
+    const dy = y - DISPLAY_HEIGHT / 2;
+    return Math.abs(dy) >= this.radius ? -1 : Math.sqrt(this.radius * this.radius - dy * dy);
+  }
+
+  private BigPokeball_SetGfx(): [number, number, number][] {
+    const result: [number, number, number][] = Array.from({ length: DISPLAY_WIDTH * DISPLAY_HEIGHT }, () => [0, 0, 0]);
+    for (let y = 0; y < 20; y++) for (let x = 0; x < 30; x++) {
+      const entry = this.tilemap[y * 30 + x] ?? 0;
+      const tile = entry & 0x3ff;
+      const hflip = (entry & 0x400) !== 0, vflip = (entry & 0x800) !== 0;
+      for (let py = 0; py < 8; py++) for (let px = 0; px < 8; px++) {
+        const tx = hflip ? 7 - px : px, ty = vflip ? 7 - py : py;
+        const n = tile * 32 + ty * 4 + (tx >> 1);
+        const packed = this.gfx[n] ?? 0;
+        const index = (tx & 1) ? packed >> 4 : packed & 15;
+        const rgb = this.palette[index] ?? 0;
+        result[(y * 8 + py) * DISPLAY_WIDTH + x * 8 + px] = [((rgb & 31) * 255 / 31) | 0, (((rgb >> 5) & 31) * 255 / 31) | 0, (((rgb >> 10) & 31) * 255 / 31) | 0];
+      }
+    }
+    return result;
+  }
+
+  private PatternWeave_Blend1(): boolean {
+    if (this.blendDelay === 0 || --this.blendDelay === 0) {
+      this.blendEva++;
+      this.blendDelay = 1; // C's condition resets to one, so EVA advances every frame.
+    }
+    this.sinIndex = (this.sinIndex + 12) & 0xffff;
+    this.amplitude -= 384;
+    if (this.blendEva > 15) this.phase = "blend2";
+    return false;
+  }
+
+  private PatternWeave_Blend2(): boolean {
+    if (this.blendDelay === 0 || --this.blendDelay === 0) {
+      this.blendEvb--;
+      this.blendDelay = 2;
+    }
+    if (this.amplitude > 0) {
+      this.sinIndex = (this.sinIndex + 12) & 0xffff;
+      this.amplitude -= 384;
+    } else this.amplitude = 0;
+    if (this.blendEvb === 0) this.phase = "finish";
+    return false;
+  }
+
+  private PatternWeave_FinishAppear(): boolean {
+    if (this.amplitude > 0) {
+      this.sinIndex = (this.sinIndex + 12) & 0xffff;
+      this.amplitude -= 384;
+    } else this.amplitude = 0;
+    if (this.amplitude <= 0) {
+      this.phase = "mask";
+      this.radius = DISPLAY_HEIGHT;
+      this.radiusDelta = 1;
+    }
+    return false;
+  }
+
+  private PatternWeave_CircularMask(): boolean {
+    if (this.radiusDelta < 8) this.radiusDelta++;
+    this.radius = Math.max(0, this.radius - this.radiusDelta);
+    if (this.radius === 0) { this.phase = "done"; return true; }
+    return false;
   }
 }
 
