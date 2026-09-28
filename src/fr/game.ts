@@ -938,6 +938,7 @@ export class Game {
         this.scene = new BattleTransitionScene(transitionId, this.ctx, () => {
           // battle_setup.c Task_BattleStart resets encounter cooldowns after the transition completes.
           this.wild.resetEncounterRateModifiers();
+          ow.control.ClearPoisonStepCounter();
           if (this.battleRunner) {
             this.scene = this.battleRunner(request);
             this.setCallbacks(null, () => this.scene?.update());

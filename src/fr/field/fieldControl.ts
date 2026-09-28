@@ -273,6 +273,11 @@ export class FieldControl {
   MsgSetNotSignpost(): void { this.msgIsSignpost = false; }
   IsMsgSignpost(): boolean { return this.msgIsSignpost; }
 
+  /** ClearPoisonStepCounter (field_control_avatar.c), called after the battle transition. */
+  ClearPoisonStepCounter(): void {
+    varSet(C.VAR_POISON_STEP_COUNTER, 0);
+  }
+
   // ---------------------------------------------------------------- interactions
 
   /** TryStartInteractionScript (field_control_avatar.c). */
