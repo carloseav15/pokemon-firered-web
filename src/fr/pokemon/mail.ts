@@ -258,29 +258,45 @@ function groupWords(group: number): number[] | WordInfo[] | undefined {
   return cdata<number[] | WordInfo[]>("easy_chat", key);
 }
 
-/** CopyEasyChatWord (easy_chat.c), as decoded game text; null represents an EOS-only word. */
-export function CopyEasyChatWord(word: number): string | null {
+/** IsECWordInvalid (easy_chat.c); EC_WORD_UNDEFINED is an allowed empty word. */
+function IsECWordInvalid(word: number): boolean {
   word &= 0xffff;
-  if (word === EC_WORD_UNDEFINED) return null;
-  const group = word >> 9;
+  if (word === EC_WORD_UNDEFINED) return false;
+  const group = (word >> 9) & 0x7f;
   const index = word & 0x1ff;
+  if (group >= C.EC_NUM_GROUPS) return true;
+  const list = groupWords(group);
+  if (!list) return true;
+  if (group === C.EC_GROUP_POKEMON_2 || group === C.EC_GROUP_MOVE_1 || group === C.EC_GROUP_MOVE_2 || group === C.EC_GROUP_POKEMON) {
+    return !(list as number[]).includes(index);
+  }
+  return index >= list.length;
+}
+
+/** GetEasyChatWord (easy_chat.c); caller checks IsECWordInvalid first. */
+function GetEasyChatWord(group: number, index: number): string {
+  if (group === C.EC_GROUP_POKEMON_2 || group === C.EC_GROUP_POKEMON) return decode(speciesName(index));
+  if (group === C.EC_GROUP_MOVE_1 || group === C.EC_GROUP_MOVE_2) {
+    const move = rom.moves[index];
+    if (!move) return "???";
+    return decode(Uint8Array.from(atob(move.name), (ch) => ch.charCodeAt(0)));
+  }
   const list = groupWords(group);
   if (!list) return "???";
-  if (group === 0 || group === 0x12 || group === 0x13 || group === 0x15) {
-    // Pokemon/move groups look text up by species/move id directly
-    // (GetEasyChatWord); the valueList only gates validity (IsECWordInvalid).
-    if (!(list as number[]).includes(index)) return "???";
-    if (group === 0x12 || group === 0x13) {
-      const move = rom.moves[index];
-      if (!move) return "???";
-      return decode(Uint8Array.from(atob(move.name), (ch) => ch.charCodeAt(0)));
-    }
-    return decode(speciesName(index));
-  }
   const entry = (list as WordInfo[])[index];
   const sym = entry?.text?.$sym;
   if (!sym || !hasCData("easy_chat", sym)) return "???";
   return decode(Uint8Array.from(cdata<number[]>("easy_chat", sym)));
+}
+
+/** CopyEasyChatWord (easy_chat.c), as decoded game text; null represents an EOS-only word. */
+export function CopyEasyChatWord(word: number): string | null {
+  word &= 0xffff;
+  if (word === EC_WORD_UNDEFINED) return null;
+  if (IsECWordInvalid(word)) return "???";
+  const group = (word >> 9) & 0x7f;
+  const index = word & 0x1ff;
+  return GetEasyChatWord(group, index);
 }
 
 /** ConvertEasyChatWordsToString (easy_chat.c): separate nonempty preceding words with a space and rows with a newline. */
