@@ -32,7 +32,7 @@ export const T_NOT_MOVING = 0, T_TILE_TRANSITION = 1, T_TILE_CENTER = 2;
 
 export const PLAYER_AVATAR_GFX_NORMAL = 0, PLAYER_AVATAR_GFX_BIKE = 1, PLAYER_AVATAR_GFX_RIDE = 2, PLAYER_AVATAR_GFX_FIELD_MOVE = 3, PLAYER_AVATAR_GFX_FISH = 4, PLAYER_AVATAR_GFX_VSSEEKER = 5;
 const BIKE_TRANS_FACE_DIRECTION = 0, BIKE_TRANS_TURNING = 1, BIKE_TRANS_MOVE = 2, BIKE_TRANS_DOWNHILL = 3, BIKE_TRANS_UPHILL = 4;
-const BIKE_STATE_NORMAL = 0, BIKE_STATE_TURNING = 1, BIKE_STATE_SLOPE = 2;
+export const BIKE_STATE_NORMAL = 0, BIKE_STATE_TURNING = 1, BIKE_STATE_SLOPE = 2;
 export const PLAYER_SPEED_STANDING = 0, PLAYER_SPEED_NORMAL = 1, PLAYER_SPEED_FAST = 2, PLAYER_SPEED_FASTER = 3, PLAYER_SPEED_FASTEST = 4;
 
 export let gPlayerAvatar: PlayerAvatar | null = null;
@@ -94,20 +94,30 @@ export class PlayerAvatar {
     this.ow.objects.turn(object, direction);
   }
 
-  /** SetPlayerAvatarTransitionFlags */
+  /**
+   * SetPlayerAvatarTransitionFlags (field_player_avatar.c): ORs into transitionFlags then
+   * calls DoPlayerAvatarTransition, which dispatches sPlayerAvatarTransitionFuncs bit by
+   * bit. Applied immediately here instead of queued, since every caller already passes
+   * the complete flag set for one transition and DoPlayerAvatarTransition clears
+   * transitionFlags back to 0 before returning either way.
+   */
   setTransitionFlags(transition: number): void {
-    if (transition & PLAYER_AVATAR_FLAG_ON_FOOT) {
-      QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_NORMAL);
-    }
+    if (transition & PLAYER_AVATAR_FLAG_ON_FOOT) this.PlayerAvatarTransition_Normal();
     if (transition & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) {
-      QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_BIKE);
+      this.PlayerAvatarTransition_Bike();
       this.flags = (this.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_SURFING)) | (transition & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE));
     }
-    if (transition & PLAYER_AVATAR_FLAG_SURFING) {
-      QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_SURF);
-    }
-    if (transition & PLAYER_AVATAR_FLAG_CONTROLLABLE) this.flags |= PLAYER_AVATAR_FLAG_CONTROLLABLE;
+    if (transition & PLAYER_AVATAR_FLAG_SURFING) this.PlayerAvatarTransition_Surfing();
+    if (transition & PLAYER_AVATAR_FLAG_CONTROLLABLE) this.PlayerAvatarTransition_ReturnToField();
   }
+
+  private PlayerAvatarTransition_Normal(): void { QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_NORMAL); }
+  private PlayerAvatarTransition_Bike(): void {
+    QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_BIKE);
+    this.BikeClearState(0, 0);
+  }
+  private PlayerAvatarTransition_Surfing(): void { QuestLogApplyPlayerAvatarTransition(this.ow, C.QL_PLAYER_GFX_SURF); }
+  private PlayerAvatarTransition_ReturnToField(): void { this.flags |= PLAYER_AVATAR_FLAG_CONTROLLABLE; }
 
   setState(state: number): void {
     const id = PlayerAvatar.graphicsId(state, this.gender);
@@ -256,31 +266,54 @@ export class PlayerAvatar {
     return false;
   }
 
+  /** sForcedMovementFuncs (field_player_avatar.c); the fallback ForcedMovement_None
+   * entry lives in tryForcedMovement/applyTileForcedMovement, matching the C loop that
+   * stops at the first matching check (or the trailing {NULL, ForcedMovement_None}). */
   private forcedMovementTable(): Array<[(b: number) => boolean, () => boolean]> {
     return [
-      [MB.MetatileBehavior_IsTrickHouseSlipperyFloor, () => this.forcedInCurrentDirection((d) => this.walkFast(d))],
-      [MB.MetatileBehavior_IsIce_2, () => this.forcedInCurrentDirection((d) => this.walkFast(d))],
-      [MB.MetatileBehavior_IsWalkSouth, () => this.doForcedMovement(DIR_SOUTH, (d) => this.walkNormal(d))],
-      [MB.MetatileBehavior_IsWalkNorth, () => this.doForcedMovement(DIR_NORTH, (d) => this.walkNormal(d))],
-      [MB.MetatileBehavior_IsWalkWest, () => this.doForcedMovement(DIR_WEST, (d) => this.walkNormal(d))],
-      [MB.MetatileBehavior_IsWalkEast, () => this.doForcedMovement(DIR_EAST, (d) => this.walkNormal(d))],
-      [MB.MetatileBehavior_IsSouthwardCurrent, () => this.doForcedMovement(DIR_SOUTH, (d) => this.rideWaterCurrent(d))],
-      [MB.MetatileBehavior_IsNorthwardCurrent, () => this.doForcedMovement(DIR_NORTH, (d) => this.rideWaterCurrent(d))],
-      [MB.MetatileBehavior_IsWestwardCurrent, () => this.doForcedMovement(DIR_WEST, (d) => this.rideWaterCurrent(d))],
-      [MB.MetatileBehavior_IsEastwardCurrent, () => this.doForcedMovement(DIR_EAST, (d) => this.rideWaterCurrent(d))],
-      [MB.MetatileBehavior_IsSpinRight, () => { sound.playSE(sound.c("SE_M_RAZOR_WIND2")); return this.doForcedMovement(DIR_EAST, (d) => this.goSpin(d)); }],
-      [MB.MetatileBehavior_IsSpinLeft, () => { sound.playSE(sound.c("SE_M_RAZOR_WIND2")); return this.doForcedMovement(DIR_WEST, (d) => this.goSpin(d)); }],
-      [MB.MetatileBehavior_IsSpinUp, () => { sound.playSE(sound.c("SE_M_RAZOR_WIND2")); return this.doForcedMovement(DIR_NORTH, (d) => this.goSpin(d)); }],
-      [MB.MetatileBehavior_IsSpinDown, () => { sound.playSE(sound.c("SE_M_RAZOR_WIND2")); return this.doForcedMovement(DIR_SOUTH, (d) => this.goSpin(d)); }],
-      [MB.MetatileBehavior_IsSlideSouth, () => this.forcedSlide(DIR_SOUTH)],
-      [MB.MetatileBehavior_IsSlideNorth, () => this.forcedSlide(DIR_NORTH)],
-      [MB.MetatileBehavior_IsSlideWest, () => this.forcedSlide(DIR_WEST)],
-      [MB.MetatileBehavior_IsSlideEast, () => this.forcedSlide(DIR_EAST)],
-      [MB.MetatileBehavior_IsWaterfall, () => this.doForcedMovement(DIR_SOUTH, (d) => this.rideWaterCurrent(d))],
+      [MB.MetatileBehavior_IsTrickHouseSlipperyFloor, () => this.ForcedMovement_Slip()],
+      [MB.MetatileBehavior_IsIce_2, () => this.ForcedMovement_Slip()],
+      [MB.MetatileBehavior_IsWalkSouth, () => this.ForcedMovement_WalkSouth()],
+      [MB.MetatileBehavior_IsWalkNorth, () => this.ForcedMovement_WalkNorth()],
+      [MB.MetatileBehavior_IsWalkWest, () => this.ForcedMovement_WalkWest()],
+      [MB.MetatileBehavior_IsWalkEast, () => this.ForcedMovement_WalkEast()],
+      [MB.MetatileBehavior_IsSouthwardCurrent, () => this.ForcedMovement_PushedSouthByCurrent()],
+      [MB.MetatileBehavior_IsNorthwardCurrent, () => this.ForcedMovement_PushedNorthByCurrent()],
+      [MB.MetatileBehavior_IsWestwardCurrent, () => this.ForcedMovement_PushedWestByCurrent()],
+      [MB.MetatileBehavior_IsEastwardCurrent, () => this.ForcedMovement_PushedEastByCurrent()],
+      [MB.MetatileBehavior_IsSpinRight, () => this.ForcedMovement_SpinRight()],
+      [MB.MetatileBehavior_IsSpinLeft, () => this.ForcedMovement_SpinLeft()],
+      [MB.MetatileBehavior_IsSpinUp, () => this.ForcedMovement_SpinUp()],
+      [MB.MetatileBehavior_IsSpinDown, () => this.ForcedMovement_SpinDown()],
+      [MB.MetatileBehavior_IsSlideSouth, () => this.ForcedMovement_SlideSouth()],
+      [MB.MetatileBehavior_IsSlideNorth, () => this.ForcedMovement_SlideNorth()],
+      [MB.MetatileBehavior_IsSlideWest, () => this.ForcedMovement_SlideWest()],
+      [MB.MetatileBehavior_IsSlideEast, () => this.ForcedMovement_SlideEast()],
+      // MetatileBehavior_IsWaterfall reuses ForcedMovement_PushedSouthByCurrent directly in C.
+      [MB.MetatileBehavior_IsWaterfall, () => this.ForcedMovement_PushedSouthByCurrent()],
       [MB.MetatileBehavior_IsSecretBaseJumpMat, () => this.ForcedMovement_MatJump()],
       [MB.MetatileBehavior_IsSecretBaseSpinMat, () => this.ForcedMovement_MatSpin()],
     ];
   }
+
+  private ForcedMovement_Slip(): boolean { return this.DoForcedMovementInCurrentDirection((d) => this.walkFast(d)); }
+  private ForcedMovement_WalkSouth(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.walkNormal(d)); }
+  private ForcedMovement_WalkNorth(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.walkNormal(d)); }
+  private ForcedMovement_WalkWest(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.walkNormal(d)); }
+  private ForcedMovement_WalkEast(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.walkNormal(d)); }
+  private ForcedMovement_PushedSouthByCurrent(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.rideWaterCurrent(d)); }
+  private ForcedMovement_PushedNorthByCurrent(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.rideWaterCurrent(d)); }
+  private ForcedMovement_PushedWestByCurrent(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.rideWaterCurrent(d)); }
+  private ForcedMovement_PushedEastByCurrent(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.rideWaterCurrent(d)); }
+  private PlaySpinSound(): void { sound.playSE(sound.c("SE_M_RAZOR_WIND2")); }
+  private ForcedMovement_SpinRight(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_EAST, (d) => this.goSpin(d)); }
+  private ForcedMovement_SpinLeft(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_WEST, (d) => this.goSpin(d)); }
+  private ForcedMovement_SpinUp(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_NORTH, (d) => this.goSpin(d)); }
+  private ForcedMovement_SpinDown(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_SOUTH, (d) => this.goSpin(d)); }
+  private ForcedMovement_SlideSouth(): boolean { return this.ForcedMovement_Slide(DIR_SOUTH); }
+  private ForcedMovement_SlideNorth(): boolean { return this.ForcedMovement_Slide(DIR_NORTH); }
+  private ForcedMovement_SlideWest(): boolean { return this.ForcedMovement_Slide(DIR_WEST); }
+  private ForcedMovement_SlideEast(): boolean { return this.ForcedMovement_Slide(DIR_EAST); }
 
   /** ForcedMovement_MatJump (field_player_avatar.c). */
   private ForcedMovement_MatJump(): boolean {
@@ -367,14 +400,14 @@ export class PlayerAvatar {
         }
       }
     }
-    return this.forcedNone();
+    return this.ForcedMovement_None();
   }
 
   private applyTileForcedMovement(behavior: number): void {
     for (const [check, apply] of this.forcedMovementTable()) if (check(behavior)) apply();
   }
 
-  private forcedNone(): boolean {
+  private ForcedMovement_None(): boolean {
     if (this.flags & PLAYER_AVATAR_FLAG_FORCED) {
       const o = this.object;
       o.facingDirectionLocked = false;
@@ -386,14 +419,14 @@ export class PlayerAvatar {
   }
 
   cancelForcedMovement(): void {
-    this.forcedNone();
+    this.ForcedMovement_None();
   }
 
-  private doForcedMovement(direction: number, action: (d: number) => void): boolean {
+  private DoForcedMovement(direction: number, action: (d: number) => void): boolean {
     const collision = this.checkCollision(direction);
     this.flags |= PLAYER_AVATAR_FLAG_FORCED;
     if (collision) {
-      this.forcedNone();
+      this.ForcedMovement_None();
       if (collision < COLLISION_STOP_SURFING) return false;
       if (collision === COLLISION_LEDGE_JUMP) this.jumpLedge(direction);
       this.flags |= PLAYER_AVATAR_FLAG_FORCED;
@@ -405,15 +438,15 @@ export class PlayerAvatar {
     return true;
   }
 
-  private forcedInCurrentDirection(action: (d: number) => void): boolean {
+  private DoForcedMovementInCurrentDirection(action: (d: number) => void): boolean {
     this.object.disableAnim = true;
-    return this.doForcedMovement(this.object.movementDirection, action);
+    return this.DoForcedMovement(this.object.movementDirection, action);
   }
 
-  private forcedSlide(direction: number): boolean {
+  private ForcedMovement_Slide(direction: number): boolean {
     this.object.disableAnim = true;
     this.object.facingDirectionLocked = true;
-    return this.doForcedMovement(direction, (d) => this.walkFast(d));
+    return this.DoForcedMovement(direction, (d) => this.walkFast(d));
   }
 
   // ---------------------------------------------------------------- bike.c

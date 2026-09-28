@@ -63,99 +63,97 @@ export function startFishing(ow: Overworld, rod: number): void {
     sprite.y2 = 0;
   };
 
-  const states: Array<() => boolean> = [
-    () => { ow.controlsLocked = true; ow.player.preventStep = true; step++; return false; },
-    () => {
-      roundsPlayed = 0;
-      minRoundsRequired = [1, 1, 1][rod] + (random() % [1, 3, 6][rod]);
-      playerGfxId = player.graphicsId;
-      ow.objects.clearHeldMovementIfActive(player);
-      player.enableAnim = true;
-      ow.player.setState(PLAYER_AVATAR_GFX_FISH);
-      sprite.startAnim(GetFishingDirectionAnimNum(player.facingDirection));
-      step++;
-      return false;
-    },
-    () => { align(); if (++frameCounter >= 60) step++; return false; },
-    () => {
-      openWindow().fill(1);
-      step++;
+  // sFishingStateFuncs (field_player_avatar.c): Task_Fishing steps through these by
+  // tStep (the local `step` here) until one returns FALSE for the frame.
+  function Fishing1(): boolean { ow.controlsLocked = true; ow.player.preventStep = true; step++; return false; }
+  function Fishing2(): boolean {
+    roundsPlayed = 0;
+    minRoundsRequired = [1, 1, 1][rod] + (random() % [1, 3, 6][rod]);
+    playerGfxId = player.graphicsId;
+    ow.objects.clearHeldMovementIfActive(player);
+    player.enableAnim = true;
+    ow.player.setState(PLAYER_AVATAR_GFX_FISH);
+    sprite.startAnim(GetFishingDirectionAnimNum(player.facingDirection));
+    step++;
+    return false;
+  }
+  function Fishing3(): boolean { align(); if (++frameCounter >= 60) step++; return false; }
+  function Fishing4(): boolean {
+    openWindow().fill(1);
+    step++;
+    frameCounter = 0;
+    numDots = 0;
+    const r = random() % 10;
+    dotsRequired = roundsPlayed === 0 ? r + 4 : r + 1;
+    if (dotsRequired >= 10) dotsRequired = 10;
+    return true;
+  }
+  function Fishing5(): boolean {
+    align();
+    if (++frameCounter >= 20) {
       frameCounter = 0;
-      numDots = 0;
-      const r = random() % 10;
-      dotsRequired = roundsPlayed === 0 ? r + 4 : r + 1;
-      if (dotsRequired >= 10) dotsRequired = 10;
-      return true;
-    },
-    () => {
-      align();
-      if (++frameCounter >= 20) {
-        frameCounter = 0;
-        if (numDots >= dotsRequired) {
-          step++;
-          if (roundsPlayed !== 0) step++;
-          roundsPlayed++;
-        } else {
-          printText(openWindow(), FONT_NORMAL, encode("·"), numDots * 12, 1, { fg: 2, bg: 1, shadow: 3 });
-          numDots++;
-        }
+      if (numDots >= dotsRequired) {
+        step++;
+        if (roundsPlayed !== 0) step++;
+        roundsPlayed++;
+      } else {
+        printText(openWindow(), FONT_NORMAL, encode("·"), numDots * 12, 1, { fg: 2, bg: 1, shadow: 3 });
+        numDots++;
       }
-      return false;
-    },
-    () => {
-      align();
-      step++;
-      if (!ow.game.wild.hasFishingMons() || random() & 1) step = NO_BITE;
-      else sprite.startAnim(GetFishingBiteDirectionAnimNum(player.facingDirection));
-      return true;
-    },
-    // Fishing7
-    () => { step += 3; return false; },
-    // Fishing8: wait for A or the reel timeout
-    () => {
-      align();
-      if (++frameCounter >= [36, 33, 30][rod]) step = GOT_AWAY;
-      else if (joy.newKeys & A_BUTTON) step++;
-      return false;
-    },
-    // Fishing9: maybe play another round
-    () => {
-      align();
-      step++;
-      if (roundsPlayed < minRoundsRequired) step = START_ROUND;
-      else if (roundsPlayed < 2) {
-        const probability = random() % 100;
-        if ([[0, 0], [40, 10], [70, 30]][rod][roundsPlayed] > probability) step = START_ROUND;
-      }
-      return false;
-    },
-    // Fishing10
-    () => { align(); print("gText_PokemonOnHook"); step++; frameCounter = 0; return false; },
-    // Fishing11
-    () => onHook(),
-    // NO_BITE
-    () => { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_NotEvenANibble"); step = SHOW_RESULT; return true; },
-    // GOT_AWAY
-    () => { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_ItGotAway"); step++; return true; },
-    // SHOW_RESULT
-    () => { align(); step++; return false; },
-    () => {
-      align();
-      printer?.run();
-      if (sprite.animEnded) { restorePlayer(); step++; }
-      return false;
-    },
-    () => {
-      printer?.run();
-      if (!printer?.active) {
-        ow.player.preventStep = false;
-        ow.controlsLocked = false;
-        ow.objects.unfreezeAll();
-        closeWindow();
-        tasks.destroy(id);
-      }
-      return false;
-    },
+    }
+    return false;
+  }
+  function Fishing6(): boolean {
+    align();
+    step++;
+    if (!ow.game.wild.hasFishingMons() || random() & 1) step = NO_BITE;
+    else sprite.startAnim(GetFishingBiteDirectionAnimNum(player.facingDirection));
+    return true;
+  }
+  function Fishing7(): boolean { step += 3; return false; }
+  /** Waits for A or the reel timeout. */
+  function Fishing8(): boolean {
+    align();
+    if (++frameCounter >= [36, 33, 30][rod]) step = GOT_AWAY;
+    else if (joy.newKeys & A_BUTTON) step++;
+    return false;
+  }
+  /** Maybe plays another round. */
+  function Fishing9(): boolean {
+    align();
+    step++;
+    if (roundsPlayed < minRoundsRequired) step = START_ROUND;
+    else if (roundsPlayed < 2) {
+      const probability = random() % 100;
+      if ([[0, 0], [40, 10], [70, 30]][rod][roundsPlayed] > probability) step = START_ROUND;
+    }
+    return false;
+  }
+  function Fishing10(): boolean { align(); print("gText_PokemonOnHook"); step++; frameCounter = 0; return false; }
+  function Fishing11(): boolean { return onHook(); }
+  function Fishing12(): boolean { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_NotEvenANibble"); step = SHOW_RESULT; return true; }
+  function Fishing13(): boolean { align(); sprite.startAnim(GetFishingNoCatchDirectionAnimNum(player.facingDirection)); print("gText_ItGotAway"); step++; return true; }
+  function Fishing14(): boolean { align(); step++; return false; }
+  function Fishing15(): boolean {
+    align();
+    printer?.run();
+    if (sprite.animEnded) { restorePlayer(); step++; }
+    return false;
+  }
+  function Fishing16(): boolean {
+    printer?.run();
+    if (!printer?.active) {
+      ow.player.preventStep = false;
+      ow.controlsLocked = false;
+      ow.objects.unfreezeAll();
+      closeWindow();
+      tasks.destroy(id);
+    }
+    return false;
+  }
+  const states: Array<() => boolean> = [
+    Fishing1, Fishing2, Fishing3, Fishing4, Fishing5, Fishing6, Fishing7, Fishing8,
+    Fishing9, Fishing10, Fishing11, Fishing12, Fishing13, Fishing14, Fishing15, Fishing16,
   ];
   function onHook(): boolean {
     if (frameCounter === 0) align();
