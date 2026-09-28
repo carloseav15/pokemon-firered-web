@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7496/10115 (74.1 %)**.
-- Archivos C con funciones aún sin homólogo: **54**; quedan **2619 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7517/10115 (74.3 %)**.
+- Archivos C con funciones aún sin homólogo: **54**; quedan **2598 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 119.169 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~61.893 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~61.439 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -31,12 +31,12 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 11 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 12 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
 | 13 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
-| 14 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 15 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
-| 16 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 17 | `easy_chat.c` | parcial | 730 | 8/39 | ~580 |  |
-| 18 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 19 | `field_specials.c` | parcial | 2555 | 83/118 | ~757 |  |
+| 14 | `field_specials.c` | casi completo | 2555 | 104/118 | ~303 |  |
+| 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
+| 16 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
+| 17 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 18 | `easy_chat.c` | parcial | 730 | 8/39 | ~580 |  |
+| 19 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
 | 20 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
 | 21 | `fieldmap.c` | parcial | 951 | 5/54 | ~862 |  |
 | 22 | `battle_main.c` | parcial | 4477 | 84/106 | ~929 |  |
@@ -73,7 +73,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 53 | `event_object_movement.c` | parcial | 9412 | 525/759 | ~2901 |  |
 | 54 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
-Total: 54 archivos con huecos: 1 sin empezar, 1 adaptador, 13 casi completos y 39 parciales.
+Total: 54 archivos con huecos: 1 sin empezar, 1 adaptador, 14 casi completos y 38 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
