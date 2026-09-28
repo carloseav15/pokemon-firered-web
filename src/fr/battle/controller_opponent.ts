@@ -71,6 +71,25 @@ export function OpponentBufferExecCompleted(): void {
   G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags & ~gBitTable[G.gActiveBattler]) >>> 0;
 }
 
+/** OpponentHandleGetRawMonData/OpponentHandleSetRawMonData (battle_controller_opponent.c): raw
+ * struct Pokemon byte-offset access isn't meaningful for the TS Pokemon objects (matching
+ * PlayerHandleGetRawMonData/PlayerHandleSetRawMonData's own simplification). */
+function OpponentHandleGetRawMonData(): void { OpponentBufferExecCompleted(); }
+function OpponentHandleSetRawMonData(): void { OpponentBufferExecCompleted(); }
+
+/** OpponentHandleLinkStandbyMsg (battle_controller_opponent.c). */
+function OpponentHandleLinkStandbyMsg(): void { OpponentBufferExecCompleted(); }
+
+/** OpponentHandleCmd55 (battle_controller_opponent.c): the link-battle-end callback restoration
+ * (gMain.inBattle/gPreBattleCallback1/gMain.savedCallback) is link-only machinery this port
+ * doesn't model; BATTLE_TYPE_LINK is never set here, so the branch is kept but never taken. */
+function OpponentHandleCmd55(): void {
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_LINK && !(G.gBattleTypeFlags & C.BATTLE_TYPE_IS_MASTER)) {
+    // link battle-end callback restoration: not modeled (see doc comment above).
+  }
+  OpponentBufferExecCompleted();
+}
+
 // These controller commands are explicit completion-only handlers in battle_controller_opponent.c.
 function OpponentHandlePaletteFade(): void { OpponentBufferExecCompleted(); }
 function OpponentHandleSuccessBallThrowAnim(): void { OpponentBufferExecCompleted(); }
@@ -474,10 +493,6 @@ function OpponentHandleFaintAnimation(): void {
   }
 }
 
-function done(): void {
-  OpponentBufferExecCompleted();
-}
-
 function OpponentHandleMoveAnimation(): void {
   const b = G.gActiveBattler;
   if (!IsBattleSEPlaying(b)) {
@@ -810,9 +825,9 @@ function OpponentCmdEnd(): void {}
 
 const sOpponentBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_GETMONDATA]: OpponentHandleGetMonData,
-  [C.CONTROLLER_GETRAWMONDATA]: done,
+  [C.CONTROLLER_GETRAWMONDATA]: OpponentHandleGetRawMonData,
   [C.CONTROLLER_SETMONDATA]: OpponentHandleSetMonData,
-  [C.CONTROLLER_SETRAWMONDATA]: done,
+  [C.CONTROLLER_SETRAWMONDATA]: OpponentHandleSetRawMonData,
   [C.CONTROLLER_LOADMONSPRITE]: OpponentHandleLoadMonSprite,
   [C.CONTROLLER_SWITCHINANIM]: OpponentHandleSwitchInAnim,
   [C.CONTROLLER_RETURNMONTOBALL]: OpponentHandleReturnMonToBall,
@@ -862,8 +877,8 @@ const sOpponentBufferCommands: Record<number, () => void> = {
   [C.CONTROLLER_ENDBOUNCE]: OpponentHandleEndBounceEffect,
   [C.CONTROLLER_SPRITEINVISIBILITY]: OpponentHandleSpriteInvisibility,
   [C.CONTROLLER_BATTLEANIMATION]: OpponentHandleBattleAnimation,
-  [C.CONTROLLER_LINKSTANDBYMSG]: done,
+  [C.CONTROLLER_LINKSTANDBYMSG]: OpponentHandleLinkStandbyMsg,
   [C.CONTROLLER_RESETACTIONMOVESELECTION]: OpponentHandleResetActionMoveSelection,
-  [C.CONTROLLER_ENDLINKBATTLE]: done,
+  [C.CONTROLLER_ENDLINKBATTLE]: OpponentHandleCmd55,
   [C.CONTROLLER_TERMINATOR_NOP]: OpponentCmdEnd,
 };
