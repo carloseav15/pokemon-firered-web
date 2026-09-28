@@ -7,6 +7,7 @@ import { sound } from "../audio/sound";
 import { tasks } from "../gba/tasks";
 import { cdata, incbin } from "../hw/assets";
 import { SetGpuReg } from "../hw/gpu";
+import { CopyToBgTilemapBufferRect_ChangePalette } from "../hw/bg";
 import { FillPalette, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, OBJ_PLTT_OFFSET, PLTT_ID, PLTT_SIZE_4BPP, RGB } from "../hw/palette";
 import { BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_ALL, OBJ_VRAM0, ppu, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT } from "../hw/ppu";
 import {
@@ -72,6 +73,50 @@ const B_EXPBAR_NUM_PIXELS = 64;
 const B_EXPBAR_NUM_TILES = B_EXPBAR_NUM_PIXELS / 8;
 
 const DISPLAY_WIDTH = 240;
+
+/** Debug_DrawNumber (battle_interface.c); kept for the unused GBA healthbox diagnostic. */
+function Debug_DrawNumber(number: number, dest: Uint16Array, singleRow: boolean): void {
+  let value = (number << 16) >> 16;
+  const digits = [0, 0, 0, 0];
+  for (let i = 3; ; i--) {
+    if (value > 0) {
+      digits[i] = value % 10;
+      value = Math.trunc(value / 10);
+    } else {
+      while (i > -1) digits[i--] = 0xff;
+      if (digits[3] === 0xff) digits[3] = 0;
+      break;
+    }
+  }
+  if (!singleRow) {
+    for (let i = 0, j = 0; i < 4; i++, j++) {
+      if (digits[j] === 0xff) {
+        dest[j] = (dest[j] & 0xfc00) | 30;
+        dest[i + 0x20] = (dest[i + 0x20] & 0xfc00) | 30;
+      } else {
+        dest[j] = (dest[j] & 0xfc00) | (20 + digits[j]);
+        dest[i + 0x20] = (dest[i + 0x20] & 0xfc00) | (20 + digits[i] + 32);
+      }
+    }
+  } else {
+    for (let i = 0; i < 4; i++) {
+      if (digits[i] === 0xff) {
+        dest[i] = (dest[i] & 0xfc00) | 30;
+        dest[i + 0x20] = (dest[i + 0x20] & 0xfc00) | 30;
+      } else {
+        dest[i] = (dest[i] & 0xfc00) | (20 + digits[i]);
+        dest[i + 0x20] = (dest[i + 0x20] & 0xfc00) | (20 + digits[i] + 32);
+      }
+    }
+  }
+}
+
+/** Debug_DrawNumberPair (battle_interface.c); unused. */
+function Debug_DrawNumberPair(num1: number, num2: number, dest: Uint16Array): void {
+  dest[4] = 30;
+  Debug_DrawNumber(num2, dest.subarray(0), false);
+  Debug_DrawNumber(num1, dest.subarray(5), true);
+}
 
 // ---------------------------------------------------------------- VRAM helpers
 
@@ -1006,6 +1051,35 @@ function GetReceivedValueInPixels(oldValue: number, receivedValue: number, maxVa
   const oldToMax = s8(Math.trunc((oldValue * totalPixels) / maxValue));
   const newToMax = s8(Math.trunc((newVal * totalPixels) / maxValue));
   return Math.abs(oldToMax - newToMax) & 0xff;
+}
+
+type TestingBar = { maxValue: number; oldValue: number; receivedValue: number; pal: number; tileOffset: number };
+
+/** UpdateAndDrawHealthbarOntoScreen (battle_interface.c); test-only helper. */
+function UpdateAndDrawHealthbarOntoScreen(barInfo: TestingBar, currValue: { value: number }, bg: number, x: number, y: number): number {
+  const hpVal = CalcNewBarValue(barInfo.maxValue | 0, barInfo.oldValue | 0, barInfo.receivedValue | 0, currValue, B_HEALTHBAR_NUM_TILES, 1);
+  DrawHealthbarOntoScreen(barInfo, currValue, bg, x, y);
+  return (hpVal << 16) >> 16;
+}
+
+/** CalcNewHealthbarValue (battle_interface.c); test-only helper. */
+function CalcNewHealthbarValue(barInfo: TestingBar, currValue: { value: number }): number {
+  const value = CalcNewBarValue(barInfo.maxValue | 0, barInfo.oldValue | 0, barInfo.receivedValue | 0, currValue, B_HEALTHBAR_NUM_TILES, 1);
+  return (value << 16) >> 16;
+}
+
+/** DoDrawHealthbarOntoScreen (battle_interface.c); test-only helper. */
+function DoDrawHealthbarOntoScreen(barInfo: TestingBar, currValue: { value: number }, bg: number, x: number, y: number): void {
+  DrawHealthbarOntoScreen(barInfo, currValue, bg, x, y);
+}
+
+/** DrawHealthbarOntoScreen (battle_interface.c); test-only tilemap path. */
+function DrawHealthbarOntoScreen(barInfo: TestingBar, currValue: { value: number }, bg: number, x: number, y: number): void {
+  const filledPixels = new Uint8Array(B_HEALTHBAR_NUM_TILES);
+  CalcBarFilledPixels(barInfo.maxValue | 0, barInfo.oldValue | 0, barInfo.receivedValue | 0, currValue, filledPixels, B_HEALTHBAR_NUM_TILES);
+  const tiles = new Uint16Array(B_HEALTHBAR_NUM_TILES);
+  for (let i = 0; i < tiles.length; i++) tiles[i] = ((((barInfo.pal & 0x1f) << 12) | ((barInfo.tileOffset + filledPixels[i]) >>> 0)) & 0xffff);
+  CopyToBgTilemapBufferRect_ChangePalette(bg & 0xff, tiles, x & 0xff, y & 0xff, B_HEALTHBAR_NUM_TILES, 1, 17);
 }
 
 export function GetScaledHPFraction(hp: number, maxhp: number, scale: number): number {
