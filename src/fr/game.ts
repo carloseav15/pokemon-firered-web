@@ -35,6 +35,7 @@ import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
 import { useVsSeeker } from "./field/vsSeeker";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
+import { InUnionRoom } from "./unionRoom";
 import { FieldWeather } from "./field/weather";
 import { openPlayerPc } from "./menus/playerPc";
 import { CreateHelpMessageWindow, DestroyHelpMessageWindow, DrawHelpMessageWindowWithText, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
@@ -578,13 +579,23 @@ export class Game {
     fieldMenu(this, (close) => openOptionMenu(() => { close(); this.showStartMenu(); }), false);
   }
 
-  useRegisteredKeyItem(): boolean {
-    if (!save.registeredItem || !checkBagHasItem(save.registeredItem, 1)) return false;
+  UseRegisteredKeyItemOnField(): boolean {
+    if (InUnionRoom()) return false;
+    this.overworld.mapName.DismissMapNamePopup();
+    if (save.registeredItem && !checkBagHasItem(save.registeredItem, 1)) save.registeredItem = C.ITEM_NONE;
+    if (!save.registeredItem) {
+      fieldMessage(this, rom.text("Text_BagItemCanBeRegistered"), () => {});
+      return true;
+    }
     this.overworld.controlsLocked = true;
     this.overworld.objects.freezeAll();
+    this.overworld.player.HandleEnforcedLookDirectionOnPlayerStopMoving();
+    this.overworld.player.StopPlayerAvatar();
     openFieldBag(this, save.registeredItem);
     return true;
   }
+
+  useRegisteredKeyItem(): boolean { return this.UseRegisteredKeyItemOnField(); }
 
   shouldEggHatch(): boolean {
     return shouldEggHatch();

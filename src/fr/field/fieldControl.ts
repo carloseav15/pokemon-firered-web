@@ -224,7 +224,7 @@ export class FieldControl {
       this.recordAcceptedFieldInput("pressedStartButton");
       return true;
     }
-    if (input.pressedSelectButton && this.ow.game.useRegisteredKeyItem()) { this.recordAcceptedFieldInput("pressedSelectButton"); return true; }
+    if (input.pressedSelectButton && this.ow.game.UseRegisteredKeyItemOnField()) { this.recordAcceptedFieldInput("pressedSelectButton"); return true; }
     return false;
   }
 
