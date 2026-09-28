@@ -14,6 +14,7 @@ import { encode, stringVars } from "../gba/charmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "../field/objectEvents";
 import { CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
 import { canvas, rgb555 } from "../field/gfx4bpp";
+import { EncodeHiddenItemData, GetHiddenItemAttr } from "../field/hiddenItem";
 import type { Game } from "../game";
 
 type HiddenItem = Extract<MapBgEvent, { type: "hidden_item" }>;
@@ -99,9 +100,12 @@ function HiddenItemIsWithinRangeOfPlayer(game: Game, taskId: number): boolean {
   const x = player.currentCoords.x, y = player.currentCoords.y;
   data[tHiddenItemFound] = 0;
   for (const bg of game.overworld.header.bgs) {
-    if (bg.type !== "hidden_item" || flagGet(bg.flag)) continue;
+    if (bg.type !== "hidden_item") continue;
+    const hiddenItem = EncodeHiddenItemData(bg);
+    const flag = GetHiddenItemAttr(hiddenItem, C.HIDDEN_ITEM_FLAG);
+    if (flagGet(flag)) continue;
     const dx = bg.x + MAP_OFFSET - x, dy = bg.y + MAP_OFFSET - y;
-    if (bg.underfoot) {
+    if (GetHiddenItemAttr(hiddenItem, C.HIDDEN_ITEM_UNDERFOOT) === 1) {
       if (dx === 0 && dy === 0) {
         SetUnderfootHiddenItem(taskId, bg);
         return true;
@@ -120,9 +124,11 @@ function HiddenItemIsWithinRangeOfPlayer(game: Game, taskId: number): boolean {
 
 function SetUnderfootHiddenItem(taskId: number, hiddenItem: HiddenItem): void {
   const data = tasks.data(taskId);
-  varSet(SV.x8004, hiddenItem.flag);
-  varSet(SV.x8005, hiddenItem.item);
-  stringVars.var1 = encode(String(hiddenItem.item)); // TV_PrintIntToStringVar(0, item)
+  const raw = EncodeHiddenItemData(hiddenItem);
+  const item = GetHiddenItemAttr(raw, C.HIDDEN_ITEM_ITEM);
+  varSet(SV.x8004, GetHiddenItemAttr(raw, C.HIDDEN_ITEM_FLAG));
+  varSet(SV.x8005, item);
+  stringVars.var1 = encode(String(item)); // TV_PrintIntToStringVar(0, item)
   // itemfinder.c deliberately ignores the map event quantity for underfoot items.
   varSet(SV.x8006, 1);
   data[tHiddenItemFound] = 1;
@@ -143,7 +149,8 @@ function SetNormalHiddenItem(taskId: number): void {
 function HiddenItemAtPos(events: MapHeader["bgs"], x: number, y: number): boolean {
   for (const bg of events) {
     if (bg.type !== "hidden_item" || x !== bg.x || y !== bg.y) continue;
-    return !bg.underfoot && !flagGet(bg.flag);
+    const raw = EncodeHiddenItemData(bg);
+    return GetHiddenItemAttr(raw, C.HIDDEN_ITEM_UNDERFOOT) !== 1 && !flagGet(GetHiddenItemAttr(raw, C.HIDDEN_ITEM_FLAG));
   }
   return false;
 }

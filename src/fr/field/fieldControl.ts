@@ -14,6 +14,7 @@ import { MOVING, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER
 import type { Overworld } from "./overworld";
 import { updateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
+import { EncodeHiddenItemData, GetHiddenItemAttr } from "./hiddenItem";
 import { WonderNews_IncrementStepCounter } from "../wonderNews";
 import { IncrementBirthIslandRockStepCount, IncrementResortGorgeousStepCounter, RunMassageCooldownStepCounter } from "./fieldStepCounters";
 import { AdjustFriendship } from "../pokemon/mon_extra";
@@ -323,11 +324,12 @@ export class FieldControl {
     const bg = this.GetBackgroundEventAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
     if (!bg) return 0;
     if (bg.type === "hidden_item") {
-      if (bg.underfoot) return 0;
-      varSet(SV.x8005, bg.item);
-      varSet(SV.x8004, bg.flag);
-      varSet(SV.x8006, bg.quantity);
-      if (flagGet(bg.flag)) return 0;
+      const hiddenItem = EncodeHiddenItemData(bg);
+      if (GetHiddenItemAttr(hiddenItem, C.HIDDEN_ITEM_UNDERFOOT) === 1) return 0;
+      varSet(SV.x8005, GetHiddenItemAttr(hiddenItem, C.HIDDEN_ITEM_ITEM));
+      varSet(SV.x8004, GetHiddenItemAttr(hiddenItem, C.HIDDEN_ITEM_FLAG));
+      varSet(SV.x8006, GetHiddenItemAttr(hiddenItem, C.HIDDEN_ITEM_QUANTITY));
+      if (flagGet(varGet(SV.x8004))) return 0;
       varSet(SV.FACING, direction);
       return rom.label("EventScript_HiddenItemScript");
     }
