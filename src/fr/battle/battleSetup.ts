@@ -35,6 +35,22 @@ export const RIVAL_BATTLE_TUTORIAL = 3;
 
 export const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_DREW = 3, B_OUTCOME_RAN = 4, B_OUTCOME_PLAYER_TELEPORTED = 5, B_OUTCOME_MON_FLED = 6, B_OUTCOME_CAUGHT = 7;
 
+/** IsPlayerDefeated (battle_setup.c): only LOST and DREW count as player defeat. */
+function IsPlayerDefeated(battleOutcome: number): boolean {
+  switch (battleOutcome) {
+    case B_OUTCOME_LOST:
+    case B_OUTCOME_DREW:
+      return true;
+    case B_OUTCOME_WON:
+    case B_OUTCOME_RAN:
+    case B_OUTCOME_PLAYER_TELEPORTED:
+    case B_OUTCOME_MON_FLED:
+    case B_OUTCOME_CAUGHT:
+    default:
+      return false;
+  }
+}
+
 type Param = "u8" | "u16" | "u32" | "clear8" | "clear16" | "clear32" | "ret";
 
 // Order: mode, opponentA, localId/rivalFlags, intro, defeat, victory, cannotBattle, battleScriptRetAddr, endScript
@@ -325,7 +341,7 @@ export class BattleSetup {
   }
 
   private endTrainerBattle(outcome: number, rematch = false): void {
-    const lost = outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW;
+    const lost = IsPlayerDefeated(outcome);
     if (this.mode === TRAINER_BATTLE_EARLY_RIVAL) {
       if (lost) {
         varSet(SV.RESULT, 1);
@@ -371,7 +387,7 @@ export class BattleSetup {
       onEnd: outcome => {
         this.game.battleOutcome = outcome;
         if (safari) { this.CB2_EndSafariBattle(outcome); return; }
-        if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
+        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);
       },
     });
@@ -415,7 +431,7 @@ export class BattleSetup {
       onEnd: (outcome) => {
         afterRoamerBattle(gEnemyParty[0] as unknown as Pokemon, outcome);
         this.game.battleOutcome = outcome;
-        if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
+        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);
       },
     });
@@ -428,7 +444,7 @@ export class BattleSetup {
       enemyParty: [enemy],
       onEnd: (outcome) => {
         this.game.battleOutcome = outcome;
-        if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
+        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);
       },
     });
@@ -471,7 +487,7 @@ export class BattleSetup {
       enemyParty: [enemy],
       onEnd: (outcome) => {
         this.game.battleOutcome = outcome;
-        if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
+        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
         else this.game.returnToFieldContinueScript(true);
       },
     });
@@ -500,8 +516,11 @@ export class BattleSetup {
       enemyParty: [marowak],
       onEnd: (outcome) => {
         this.game.battleOutcome = outcome;
-        if (outcome === B_OUTCOME_LOST || outcome === B_OUTCOME_DREW) this.game.whiteOut();
-        else this.game.returnToFieldContinueScript(true);
+        if (IsPlayerDefeated(outcome)) this.game.whiteOut();
+        else {
+          varSet(SV.RESULT, outcome === B_OUTCOME_WON ? 0 : 1);
+          this.game.returnToFieldContinueScript(true);
+        }
       },
     });
   }
