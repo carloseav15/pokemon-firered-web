@@ -13,7 +13,7 @@ import { FONT_NORMAL } from "./gba/font";
 import { tasks } from "./gba/tasks";
 import { printText } from "./gba/textPrinter";
 import { Window } from "./gba/window";
-import { joy, JOY_NEW, START_BUTTON } from "./gba/input";
+import { joy, JOY_NEW, A_BUTTON, START_BUTTON } from "./gba/input";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
@@ -377,6 +377,187 @@ export function StartMenuOptionCallback(game: Game): void {
 
 /** StartMenuExitCallback (start_menu.c). */
 export function StartMenuExitCallback(game: Game): void { CloseStartMenu(game); }
+
+export const SAVECB_RETURN_CONTINUE = 0;
+export const SAVECB_RETURN_OKAY = 1;
+export const SAVECB_RETURN_CANCEL = 2;
+export const SAVECB_RETURN_ERROR = 3;
+
+/** Runtime bridge for the active Start Menu save-dialog callback chain. */
+export interface SaveDialogRuntime {
+  saveDialogCB: (dialog: SaveDialogRuntime) => number;
+  saveDialogDelay: number;
+  saveSucceeded: boolean;
+  differentSaveFile: boolean;
+  messageIsHidden(): boolean;
+  showMessage(text: Uint8Array): void;
+  hideMessage(): void;
+  showYesNo(defaultNo?: boolean): void;
+  processInput(): number;
+  hasUsableSave(): boolean;
+  printStatsAndInitialQuestion(): void;
+  saveGame(): boolean;
+  setDifferentSaveFile(value: boolean): void;
+  playSuccessSE(): void;
+  playErrorSE(): void;
+  playSelectSE(): void;
+  isSEPlaying(): boolean;
+  closeStatsWindow(): void;
+  finish(result: typeof SAVECB_RETURN_OKAY | typeof SAVECB_RETURN_CANCEL | typeof SAVECB_RETURN_ERROR): void;
+}
+
+/** RunSaveDialogCB (start_menu.c): invoke the current source callback. */
+export function RunSaveDialogCB(dialog: SaveDialogRuntime): number {
+  return dialog.saveDialogCB(dialog);
+}
+
+/** SaveDialogCB_PrintAskSaveText (start_menu.c). */
+export function SaveDialogCB_PrintAskSaveText(dialog: SaveDialogRuntime): number {
+  dialog.printStatsAndInitialQuestion();
+  dialog.saveDialogCB = SaveDialogCB_AskSavePrintYesNoMenu;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_AskSavePrintYesNoMenu (start_menu.c). */
+export function SaveDialogCB_AskSavePrintYesNoMenu(dialog: SaveDialogRuntime): number {
+  if (!dialog.messageIsHidden()) return SAVECB_RETURN_CONTINUE;
+  dialog.showYesNo();
+  dialog.saveDialogCB = SaveDialogCB_AskSaveHandleInput;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_AskSaveHandleInput (start_menu.c). */
+export function SaveDialogCB_AskSaveHandleInput(dialog: SaveDialogRuntime): number {
+  const input = dialog.processInput();
+  if (input === -2) return SAVECB_RETURN_CONTINUE;
+  if (input === 1 || input === -1) {
+    dialog.closeStatsWindow();
+    dialog.hideMessage();
+    dialog.finish(SAVECB_RETURN_CANCEL);
+    return SAVECB_RETURN_CANCEL;
+  }
+  if (input === 0) {
+    dialog.hideMessage();
+    if (dialog.hasUsableSave() || !dialog.differentSaveFile) dialog.saveDialogCB = SaveDialogCB_PrintAskOverwriteText;
+    else dialog.saveDialogCB = SaveDialogCB_PrintSavingDontTurnOffPower;
+  }
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_PrintAskOverwriteText (start_menu.c). */
+export function SaveDialogCB_PrintAskOverwriteText(dialog: SaveDialogRuntime): number {
+  dialog.showMessage(rom.text(dialog.differentSaveFile ? "gText_DifferentGameFile" : "gText_AlreadySaveFile_WouldLikeToOverwrite"));
+  dialog.saveDialogCB = dialog.differentSaveFile ? SaveDialogCB_AskReplacePreviousFilePrintYesNoMenu : SaveDialogCB_AskOverwritePrintYesNoMenu;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_AskOverwritePrintYesNoMenu (start_menu.c). */
+export function SaveDialogCB_AskOverwritePrintYesNoMenu(dialog: SaveDialogRuntime): number {
+  if (!dialog.messageIsHidden()) return SAVECB_RETURN_CONTINUE;
+  dialog.showYesNo();
+  dialog.saveDialogCB = SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_AskReplacePreviousFilePrintYesNoMenu (start_menu.c). */
+export function SaveDialogCB_AskReplacePreviousFilePrintYesNoMenu(dialog: SaveDialogRuntime): number {
+  if (!dialog.messageIsHidden()) return SAVECB_RETURN_CONTINUE;
+  dialog.showYesNo(true);
+  dialog.saveDialogCB = SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput (start_menu.c). */
+export function SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput(dialog: SaveDialogRuntime): number {
+  const input = dialog.processInput();
+  if (input === -2) return SAVECB_RETURN_CONTINUE;
+  if (input === 0) dialog.saveDialogCB = SaveDialogCB_PrintSavingDontTurnOffPower;
+  else {
+    dialog.closeStatsWindow();
+    dialog.hideMessage();
+    dialog.finish(SAVECB_RETURN_CANCEL);
+    return SAVECB_RETURN_CANCEL;
+  }
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_PrintSavingDontTurnOffPower (start_menu.c). */
+export function SaveDialogCB_PrintSavingDontTurnOffPower(dialog: SaveDialogRuntime): number {
+  dialog.showMessage(rom.text("gText_SavingDontTurnOffThePower"));
+  dialog.saveDialogCB = SaveDialogCB_DoSave;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_DoSave (start_menu.c). */
+export function SaveDialogCB_DoSave(dialog: SaveDialogRuntime): number {
+  if (!dialog.messageIsHidden()) return SAVECB_RETURN_CONTINUE;
+  dialog.saveSucceeded = dialog.saveGame();
+  dialog.setDifferentSaveFile(false);
+  dialog.saveDialogCB = SaveDialogCB_PrintSaveResult;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_PrintSaveResult (start_menu.c). */
+export function SaveDialogCB_PrintSaveResult(dialog: SaveDialogRuntime): number {
+  stringVars.var1 = Uint8Array.from(save.playerName);
+  dialog.showMessage(rom.text(dialog.saveSucceeded ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory"));
+  SetSaveDialogDelayTo60Frames(dialog);
+  dialog.saveDialogCB = dialog.saveSucceeded ? SaveDialogCB_WaitPrintSuccessAndPlaySE : SaveDialogCB_WaitPrintErrorAndPlaySE;
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_WaitPrintSuccessAndPlaySE (start_menu.c). */
+export function SaveDialogCB_WaitPrintSuccessAndPlaySE(dialog: SaveDialogRuntime): number {
+  if (dialog.messageIsHidden()) {
+    dialog.playSuccessSE();
+    dialog.saveDialogCB = SaveDialogCB_ReturnSuccess;
+  }
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_ReturnSuccess (start_menu.c). */
+export function SaveDialogCB_ReturnSuccess(dialog: SaveDialogRuntime): number {
+  if (dialog.isSEPlaying() || !SaveDialog_Wait60FramesOrAButtonHeld(dialog)) return SAVECB_RETURN_CONTINUE;
+  dialog.closeStatsWindow();
+  dialog.hideMessage();
+  dialog.finish(SAVECB_RETURN_OKAY);
+  return SAVECB_RETURN_OKAY;
+}
+
+/** SaveDialogCB_WaitPrintErrorAndPlaySE (start_menu.c). */
+export function SaveDialogCB_WaitPrintErrorAndPlaySE(dialog: SaveDialogRuntime): number {
+  if (dialog.messageIsHidden()) {
+    dialog.playErrorSE();
+    dialog.saveDialogCB = SaveDialogCB_ReturnError;
+  }
+  return SAVECB_RETURN_CONTINUE;
+}
+
+/** SaveDialogCB_ReturnError (start_menu.c). */
+export function SaveDialogCB_ReturnError(dialog: SaveDialogRuntime): number {
+  if (!SaveDialog_Wait60FramesThenCheckAButtonHeld(dialog)) return SAVECB_RETURN_CONTINUE;
+  dialog.closeStatsWindow();
+  dialog.hideMessage();
+  dialog.finish(SAVECB_RETURN_ERROR);
+  return SAVECB_RETURN_ERROR;
+}
+
+/** SetSaveDialogDelayTo60Frames (start_menu.c): sSaveDialogDelay is u8. */
+export function SetSaveDialogDelayTo60Frames(dialog: SaveDialogRuntime): void { dialog.saveDialogDelay = 60; }
+
+/** SaveDialog_Wait60FramesOrAButtonHeld (start_menu.c): decrement with u8 wrap. */
+export function SaveDialog_Wait60FramesOrAButtonHeld(dialog: SaveDialogRuntime): boolean {
+  dialog.saveDialogDelay = (dialog.saveDialogDelay - 1) & 0xff;
+  if (joy.held & A_BUTTON) { dialog.playSelectSE(); return true; }
+  return dialog.saveDialogDelay === 0;
+}
+
+/** SaveDialog_Wait60FramesThenCheckAButtonHeld (start_menu.c). */
+export function SaveDialog_Wait60FramesThenCheckAButtonHeld(dialog: SaveDialogRuntime): boolean {
+  if (dialog.saveDialogDelay === 0) return (joy.held & A_BUTTON) !== 0;
+  dialog.saveDialogDelay = (dialog.saveDialogDelay - 1) & 0xff;
+  return false;
+}
 
 /** StartMenuSafariZoneRetireCallback (start_menu.c). */
 export function StartMenuSafariZoneRetireCallback(game: Game): void {

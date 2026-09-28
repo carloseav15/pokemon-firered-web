@@ -53,8 +53,8 @@ import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
-  CloseSaveMessageWindow, CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
-  PrintSaveStats,
+  CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
+  PrintSaveStats, RunSaveDialogCB, SaveDialogCB_PrintAskSaveText, type SaveDialogRuntime,
   FadeTransition_FadeInOnReturnToStartMenu, FieldCB_ReturnToFieldOpenStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
@@ -71,7 +71,7 @@ import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
 import { ResetQLPlayedTheSlots } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
-import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
+import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
 import { ClearEnigmaBerries } from "./pokemon/berry";
 import { SaveMapView } from "./field/fieldmap";
@@ -465,93 +465,57 @@ export class Game {
   startMenuSave(): void {
     this.removeStartMenuWindows();
     const ow = this.overworld;
-    const saveStats = PrintSaveStats(this);
-    this.startMenuSaveStats = saveStats;
-    this.startMenuWindows.push(saveStats);
     ow.control.MsgSetNotSignpost();
-    ow.messageBox.show(rom.text("gText_WouldYouLikeToSaveTheGame"));
-    // start_menu.c sSaveDialogCB chain: AskSaveHandleInput -> PrintAskOverwriteText
-    // -> AskOverwrite/ReplacePreviousFile -> PrintSavingDontTurnOffPower -> DoSave
-    // -> PrintSaveResult -> WaitPrintSuccessAndPlaySE -> ReturnSuccess.
-    let state = 0;
-    let saveOk = false;
-    const returnToStartMenu = (): void => {
-      tasks.destroy(id);
-      CloseSaveMessageWindow(this);
-      this.removeStartMenuWindows();
-      this.showStartMenu(true);
+    BackupHelpContext();
+    SetHelpContext(C.HELPCONTEXT_SAVE);
+    SaveMapView(ow.map, save.pos, save.mapView);
+    let taskId = -1;
+    const dialog: SaveDialogRuntime = {
+      saveDialogCB: SaveDialogCB_PrintAskSaveText,
+      saveDialogDelay: 0,
+      saveSucceeded: false,
+      differentSaveFile: this.differentSaveFile,
+      messageIsHidden: () => ow.messageBox.isHidden(),
+      showMessage: (text) => { ow.messageBox.hide(); ow.messageBox.show(expandPlaceholders(text)); },
+      hideMessage: () => ow.messageBox.hide(),
+      showYesNo: (defaultNo = false) => this.scriptMenu.yesNo(0, 0, defaultNo ? 1 : 0),
+      processInput: () => {
+        const result = varGet(0x800d);
+        if (result === 0xff) return -2;
+        if (result === 1) return 0;
+        if (result === 0) return 1;
+        return -1;
+      },
+      hasUsableSave: () => saveStore.load() !== undefined,
+      printStatsAndInitialQuestion: () => {
+        const saveStats = PrintSaveStats(this);
+        this.startMenuSaveStats = saveStats;
+        this.startMenuWindows.push(saveStats);
+        ow.messageBox.show(expandPlaceholders(rom.text("gText_WouldYouLikeToSaveTheGame")));
+      },
+      saveGame: () => { IncrementGameStat(C.GAME_STAT_SAVED_GAME); return this.writeSave(); },
+      setDifferentSaveFile: (value) => { this.differentSaveFile = value; dialog.differentSaveFile = value; },
+      playSuccessSE: () => sound.playSE(sound.c("SE_SAVE")),
+      playErrorSE: () => sound.playSE(sound.c("SE_BOO")),
+      playSelectSE: () => sound.playSE(sound.c("SE_SELECT")),
+      isSEPlaying: () => sound.isSEPlaying(),
+      closeStatsWindow: () => {
+        const stats = this.startMenuSaveStats;
+        if (!stats) return;
+        CloseSaveStatsWindow_(this, stats);
+        this.startMenuSaveStats = null;
+        this.startMenuWindows = this.startMenuWindows.filter((window) => window !== stats);
+      },
+      finish: (result) => {
+        tasks.destroy(taskId);
+        if (result === 2) {
+          this.removeStartMenuWindows();
+          this.showStartMenu(true);
+        } else this.closeStartMenu();
+        RestoreHelpContext();
+      },
     };
-    const finishSave = (): void => {
-      tasks.destroy(id);
-      CloseSaveMessageWindow(this);
-      this.closeStartMenu();
-    };
-    const printSavingDontTurnOffPower = (): void => {
-      ow.messageBox.hide();
-      ow.messageBox.show(rom.text("gText_SavingDontTurnOffThePower"));
-      state = 4;
-    };
-    const id = tasks.create(() => {
-      switch (state) {
-        case 0:
-          if (ow.messageBox.isHidden()) {
-            this.scriptMenu.yesNo(0, 0);
-            state = 1;
-          }
-          break;
-        case 1: // SaveDialogCB_AskSaveHandleInput
-          if (varGet(0x800d) !== 0xff) {
-            const yes = varGet(0x800d) === 1;
-            ow.messageBox.hide();
-            if (!yes) { returnToStartMenu(); return; }
-            if (saveStore.load() || !this.differentSaveFile) {
-              // SaveDialogCB_PrintAskOverwriteText
-              ow.messageBox.show(rom.text(this.differentSaveFile ? "gText_DifferentGameFile" : "gText_AlreadySaveFile_WouldLikeToOverwrite"));
-              state = 2;
-            } else printSavingDontTurnOffPower();
-          }
-          break;
-        case 2:
-          if (ow.messageBox.isHidden()) {
-            // DisplayYesNoMenuDefaultNo for a different file, DefaultYes to overwrite.
-            this.scriptMenu.yesNo(0, 0, this.differentSaveFile ? 1 : 0);
-            state = 3;
-          }
-          break;
-        case 3: // SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput
-          if (varGet(0x800d) !== 0xff) {
-            const yes = varGet(0x800d) === 1;
-            ow.messageBox.hide();
-            if (!yes) { returnToStartMenu(); return; }
-            printSavingDontTurnOffPower();
-          }
-          break;
-        case 4: // SaveDialogCB_DoSave + SaveDialogCB_PrintSaveResult
-          if (ow.messageBox.isHidden()) {
-            saveOk = this.writeSave();
-            this.differentSaveFile = false;
-            stringVars.var1 = Uint8Array.from(save.playerName);
-            ow.messageBox.hide();
-            ow.messageBox.show(expandPlaceholders(rom.text(saveOk ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory")));
-            this.saveWait = 0;
-            state = 5;
-          }
-          break;
-        case 5: // SaveDialogCB_WaitPrintSuccessAndPlaySE: SE once the text is printed
-          if (ow.messageBox.isHidden()) {
-            if (saveOk) sound.playSE(sound.c("SE_SAVE"));
-            state = 6;
-          }
-          break;
-        case 6: // SaveDialogCB_ReturnSuccess: !IsSEPlaying() && (60 frames or A held)
-          if (!sound.isSEPlaying() && (++this.saveWait > 60 || (joy.held & A_BUTTON))) {
-            this.saveWait = 0;
-            ow.messageBox.hide();
-            finishSave();
-          }
-          break;
-      }
-    }, 80);
+    taskId = tasks.create(() => { RunSaveDialogCB(dialog); }, 80);
   }
 
   private saveWait = 0;
