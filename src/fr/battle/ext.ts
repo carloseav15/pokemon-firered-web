@@ -180,6 +180,12 @@ export function ItemUseInBattle_EnigmaBerry(item: number, use: {
   }
 }
 
+/** BattleUseFunc_BerryPouch (item_use.c): leave the bag and open the battle pouch. */
+export function BattleUseFunc_BerryPouch(open: () => void): void { open(); }
+
+/** InitBerryPouchFromBattle (item_use.c): initialize BERRYPOUCH_FROMBATTLE and return to the bag. */
+export function InitBerryPouchFromBattle(open: () => void): void { open(); }
+
 /** party_menu.c OpenPartyMenuInTutorialBattle → SetCB2ToReshowScreenAfterMenu */
 export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
   PartyMenu.OpenPartyMenuInTutorialBattle(partyAction, () => { CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); });
@@ -235,7 +241,9 @@ export function CB2_BagMenuFromBattle(): void {
         });
         return;
       // BattleUseFunc_BerryPouch: InitBerryPouch(BERRYPOUCH_FROMBATTLE, CB2_BagMenuFromBattle, FALSE)
-      case "BattleUseFunc_BerryPouch": ctx.exit(() => InitBerryPouch(C.BERRYPOUCH_FROMBATTLE, showBag, 0, { battleUse })); return;
+      case "BattleUseFunc_BerryPouch":
+        ctx.exit(() => BattleUseFunc_BerryPouch(() => InitBerryPouchFromBattle(() => InitBerryPouch(C.BERRYPOUCH_FROMBATTLE, showBag, 0, { battleUse }))));
+        return;
       default: notNow(); return;
     }
   };

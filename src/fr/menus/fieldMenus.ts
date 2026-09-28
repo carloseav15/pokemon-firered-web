@@ -148,6 +148,28 @@ export function ItemUseOutOfBattle_EnigmaBerry(item: number, use: {
   }
 }
 
+/** FieldUseFunc_TmCase (item_use.c): choose the C bag or field handoff. */
+export function FieldUseFunc_TmCase(fromBag: boolean, fromBagCallback: () => void, fromFieldCallback: () => void): void {
+  (fromBag ? fromBagCallback : fromFieldCallback)();
+}
+
+/** InitTMCaseFromBag (item_use.c): open TMCASE_FIELD with the bag as its return target. */
+export function InitTMCaseFromBag(open: () => void): void { open(); }
+
+/** Task_InitTMCaseFromField (item_use.c): open TMCASE_FIELD with the field as its return target. */
+export function Task_InitTMCaseFromField(open: () => void): void { open(); }
+
+/** FieldUseFunc_BerryPouch (item_use.c): choose the C bag or field handoff. */
+export function FieldUseFunc_BerryPouch(fromBag: boolean, fromBagCallback: () => void, fromFieldCallback: () => void): void {
+  (fromBag ? fromBagCallback : fromFieldCallback)();
+}
+
+/** InitBerryPouchFromBag (item_use.c): open the pouch with the bag as its return target. */
+export function InitBerryPouchFromBag(open: () => void): void { open(); }
+
+/** Task_InitBerryPouchFromField (item_use.c): open the pouch with the field as its return target. */
+export function Task_InitBerryPouchFromField(open: () => void): void { open(); }
+
 export function openFieldBag(game: Game, initialItem?: number): void {
   let post: (() => void) | null = null;
   fieldMenu(game, close => {
@@ -247,8 +269,16 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         }
         case "FieldUseFunc_CoinCase": stringVars.var1 = encode(String(GetCoins())); message(rom.text("gText_CoinCase")); return;
         case "FieldUseFunc_PowderJar": stringVars.var1 = encode(String(save.berryPowder ?? 0)); message(rom.text("gText_PowderQty")); return;
-        case "FieldUseFunc_TmCase": leave(openTmCase); return;
-        case "FieldUseFunc_BerryPouch": leave(berryPouch); return;
+        case "FieldUseFunc_TmCase":
+          FieldUseFunc_TmCase(bagCtx !== null,
+            () => leave(() => InitTMCaseFromBag(openTmCase)),
+            () => onField(() => Task_InitTMCaseFromField(() => InitTMCase(C.TMCASE_FIELD, finish, true, tmHandlers))));
+          return;
+        case "FieldUseFunc_BerryPouch":
+          FieldUseFunc_BerryPouch(bagCtx !== null,
+            () => leave(() => InitBerryPouchFromBag(berryPouch)),
+            () => onField(() => Task_InitBerryPouchFromField(() => InitBerryPouch(C.BERRYPOUCH_FROMFIELD, finish, 1, pouchHandlers))));
+          return;
         case "FieldUseFunc_Bike": {
           const p = ow.player.object;
           const behavior = ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
