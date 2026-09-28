@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 34 | 82095 | 1422/3688 |
+| Parcial (< 80 % de funciones) | 34 | 82095 | 1431/3688 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 16 | 32291 | 1224/1332 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 157 | 136141 | 4967/4967 |
+| Casi completo (≥ 80 % y < 100 %) | 15 | 30870 | 1157/1256 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 158 | 137562 | 5043/5043 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
-| **Pendiente de portar** | **52** | **117216** | |
-| **Total en alcance** | **211** | **253703** | **7641/10115** |
+| **Pendiente de portar** | **51** | **115795** | |
+| **Total en alcance** | **211** | **253703** | **7659/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -33,11 +33,11 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `event_object_movement.c` | 9412 | 532/759 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `menus/fieldMoveMenu.ts` … |  |  |
+| `event_object_movement.c` | 9412 | 533/759 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts`, `field/objectEvents.ts` … |  |  |
 | `pokemon.c` | 6453 | 73/140 | `battle/ai.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 281/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `field_effect.c` | 4033 | 90/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `field/fieldPalette.ts` … |  |  |
-| `overworld.c` | 3563 | 61/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
+| `overworld.c` | 3563 | 69/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
 | `battle_transition.c` | 3037 | 47/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
 | `intro.c` | 2805 | 2/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
@@ -87,7 +87,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `trainer_card.c` | 1959 | 64/73 | `menus/trainerCard.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 83/87 | `battle/controller_opponent.ts` |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
-| `field_effect_helpers.c` | 1421 | 67/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  | 9 |
 | `field_control_avatar.c` | 1182 | 43/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_setup.c` | 1070 | 62/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
@@ -124,6 +123,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |  |
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
 | `credits.c` | 1446 | 16/16 | `credits.ts` |  |  |
+| `field_effect_helpers.c` | 1421 | 76/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  |  |
 | `pokeball.c` | 1334 | 37/37 | `battle/pokeball.ts` |  |  |
 | `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |  |
 | `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |  |
@@ -137,7 +137,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `shop.c` | 1145 | 60/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 48/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
-| `metatile_behavior.c` | 1039 | 115/115 | `generated/metatileBehavior.ts` |  |  |
+| `metatile_behavior.c` | 1039 | 115/115 | `field/fieldEffectHelpers.ts`, `generated/metatileBehavior.ts` |  |  |
 | `berry.c` | 1028 | 9/9 | `pokemon/berry.ts`, `save.ts`, `script/specials.ts` |  |  |
 | `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
 | `palette.c` | 994 | 41/41 | `hw/palette.ts` |  |  |

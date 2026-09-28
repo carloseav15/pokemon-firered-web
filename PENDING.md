@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7641/10115 (75.5 %)**.
-- Archivos C con funciones aún sin homólogo: **52**; quedan **2474 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7659/10115 (75.7 %)**.
+- Archivos C con funciones aún sin homólogo: **51**; quedan **2456 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
-- Estos archivos contienen 117.216 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~58.777 líneas** (aproximación por proporción de funciones).
+- Estos archivos contienen 115.795 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
+- Estimación ponderada del C sin homólogo: **~58.480 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -29,49 +29,48 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 9 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 10 | `fieldmap.c` | casi completo | 951 | 48/54 | ~105 |  |
 | 11 | `field_control_avatar.c` | casi completo | 1182 | 43/49 | ~144 |  |
-| 12 | `field_effect_helpers.c` | casi completo | 1421 | 67/76 | ~168 |  |
-| 13 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 14 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
-| 15 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
-| 16 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 17 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 18 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
-| 19 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
-| 20 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
-| 21 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
-| 22 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
-| 23 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
-| 24 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
-| 25 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
-| 26 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
-| 27 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
-| 28 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
-| 29 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
-| 30 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
-| 31 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
-| 32 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
-| 33 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
-| 34 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
-| 35 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
-| 36 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
-| 37 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
-| 38 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
-| 39 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
-| 40 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 41 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
-| 42 | `battle_controller_pokedude.c` | parcial | 2698 | 32/108 | ~1898 |  |
-| 43 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
-| 44 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
-| 45 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
-| 46 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
-| 47 | `field_effect.c` | parcial | 4033 | 90/239 | ~2514 |  |
-| 48 | `overworld.c` | parcial | 3563 | 61/242 | ~2664 |  |
-| 49 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
-| 50 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
-| 51 | `event_object_movement.c` | parcial | 9412 | 532/759 | ~2814 |  |
-| 52 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
+| 12 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 13 | `trainer_card.c` | casi completo | 1959 | 64/73 | ~241 |  |
+| 14 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
+| 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
+| 16 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 17 | `easy_chat.c` | parcial | 730 | 10/39 | ~542 |  |
+| 18 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
+| 19 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
+| 20 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
+| 21 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
+| 22 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
+| 23 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
+| 24 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
+| 25 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
+| 26 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
+| 27 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
+| 28 | `title_screen.c` | parcial | 1315 | 2/39 | ~1247 |  |
+| 29 | `fame_checker.c` | parcial | 1739 | 16/64 | ~1304 |  |
+| 30 | `easy_chat_2.c` | parcial | 1363 | 1/73 | ~1344 |  |
+| 31 | `party_menu.c` | parcial | 6342 | 281/357 | ~1350 |  |
+| 32 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
+| 33 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
+| 34 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
+| 35 | `battle_ai_script_commands.c` | parcial | 1970 | 25/105 | ~1500 |  |
+| 36 | `daycare.c` | parcial | 2155 | 28/93 | ~1506 |  |
+| 37 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
+| 38 | `naming_screen.c` | parcial | 2509 | 38/109 | ~1634 |  |
+| 39 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
+| 40 | `help_system.c` | parcial | 2480 | 10/41 | ~1875 |  |
+| 41 | `battle_controller_pokedude.c` | parcial | 2698 | 32/108 | ~1898 |  |
+| 42 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
+| 43 | `battle_transition.c` | parcial | 3037 | 47/134 | ~1971 |  |
+| 44 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
+| 45 | `easy_chat_3.c` | parcial | 2316 | 1/92 | ~2290 |  |
+| 46 | `field_effect.c` | parcial | 4033 | 90/239 | ~2514 |  |
+| 47 | `overworld.c` | parcial | 3563 | 69/242 | ~2547 |  |
+| 48 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
+| 49 | `intro.c` | parcial | 2805 | 2/79 | ~2733 |  |
+| 50 | `event_object_movement.c` | parcial | 9412 | 533/759 | ~2802 |  |
+| 51 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
-Total: 52 archivos con huecos: 1 sin empezar, 1 adaptador, 16 casi completos y 34 parciales.
+Total: 51 archivos con huecos: 1 sin empezar, 1 adaptador, 15 casi completos y 34 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -81,7 +80,6 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 |---|---:|---:|---:|
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
 | `trade.c` | 2958 | 0/66 | 15 |
-| `field_effect_helpers.c` | 1421 | 67/76 | 9 |
 | `fame_checker.c` | 1739 | 16/64 | 7 |
 | `trade_scene.c` | 2916 | 35/53 | 3 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
@@ -116,7 +114,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
 - Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
 - Pantalla de nombres: 34/109 funciones (`naming_screen.c`); reglas de entrada y buffer con nombres C, cuatro iconos de destino, transición de página y destellos de botones/cursor; quedan otras funciones de la pantalla.
-- Efectos de campo: `field_effect_helpers.c` son stubs (ver tabla de stubs); `field_effect.c` parcial.
+- Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
