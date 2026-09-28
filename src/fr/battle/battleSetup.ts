@@ -186,7 +186,7 @@ export class BattleSetup {
   /** GetTrainerFlagFromScriptPointer (battle_setup.c). */
   GetTrainerFlagFromScriptPointer(data: number): boolean {
     const trainerId = rom.u16(data + 2);
-    return flagGet(rom.c("TRAINER_FLAGS_START") + trainerId);
+    return this.HasTrainerBeenFought(trainerId);
   }
 
   /** ConfigureAndSetUpOneTrainerBattle (battle_setup.c), called when a trainer spots the player. */
@@ -200,17 +200,26 @@ export class BattleSetup {
     ow.controlsLocked = true;
   }
 
-  trainerFlag(trainerId = this.opponentA): number {
+  private GetTrainerAFlag(): number {
+    return rom.c("TRAINER_FLAGS_START") + this.opponentA;
+  }
+
+  /** Script_HasTrainerBeenFought (battle_setup.c): read the current trainer A flag. */
+  Script_HasTrainerBeenFought(): boolean {
+    return flagGet(this.GetTrainerAFlag());
+  }
+
+  private trainerFlag(trainerId: number): number {
     return rom.c("TRAINER_FLAGS_START") + trainerId;
   }
 
-  hasTrainerBeenFought(trainerId: number): boolean {
+  HasTrainerBeenFought(trainerId: number): boolean {
     return flagGet(this.trainerFlag(trainerId));
   }
 
-  setTrainerFlag(trainerId: number): void { flagSet(this.trainerFlag(trainerId)); }
-  clearTrainerFlag(trainerId: number): void { flagClear(this.trainerFlag(trainerId)); }
-  setBattledTrainerFlag(): void { flagSet(this.trainerFlag()); }
+  SetTrainerFlag(trainerId: number): void { flagSet(this.trainerFlag(trainerId)); }
+  ClearTrainerFlag(trainerId: number): void { flagClear(this.trainerFlag(trainerId)); }
+  SetBattledTrainerFlag(): void { flagSet(this.GetTrainerAFlag()); }
 
   /** pokemon.c GetBattleBGM, with explicit CreateBattleStartTask song overrides. */
   battleBgm(request: BattleRequest): number {
@@ -312,7 +321,7 @@ export class BattleSetup {
       } else {
         varSet(SV.RESULT, 0);
       }
-      this.setBattledTrainerFlag();
+      this.SetBattledTrainerFlag();
       this.game.returnToFieldContinueScript(true);
       return;
     }
@@ -320,7 +329,7 @@ export class BattleSetup {
       this.game.whiteOut();
       return;
     }
-    this.setBattledTrainerFlag();
+    this.SetBattledTrainerFlag();
     if (rematch) clearRematchStateOfLastTalked(); // CB2_EndRematchBattle
     this.game.returnToFieldContinueScript(true);
   }

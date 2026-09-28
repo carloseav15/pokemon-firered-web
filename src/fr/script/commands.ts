@@ -601,9 +601,9 @@ function ScrCmd_trainerbattle(ctx: ScriptRunner): boolean { ctx.scriptPtr = ctx.
 function ScrCmd_dotrainerbattle(ctx: ScriptRunner): boolean { ctx.ow.game.battleSetup.startTrainerBattle(); return true; }
 function ScrCmd_gotopostbattlescript(ctx: ScriptRunner): boolean { ctx.scriptPtr = ctx.ow.game.battleSetup.scriptAddrAfterBattle(); return false; }
 function ScrCmd_gotobeatenscript(ctx: ScriptRunner): boolean { ctx.scriptPtr = ctx.ow.game.battleSetup.trainerPostBattleScript(); return false; }
-function ScrCmd_checktrainerflag(ctx: ScriptRunner): boolean { ctx.comparisonResult = ctx.ow.game.battleSetup.hasTrainerBeenFought(varGet(ctx.ScriptReadHalfword())) ? 1 : 0; return false; }
-function ScrCmd_settrainerflag(ctx: ScriptRunner): boolean { ctx.ow.game.battleSetup.setTrainerFlag(varGet(ctx.ScriptReadHalfword())); return false; }
-function ScrCmd_cleartrainerflag(ctx: ScriptRunner): boolean { ctx.ow.game.battleSetup.clearTrainerFlag(varGet(ctx.ScriptReadHalfword())); return false; }
+function ScrCmd_checktrainerflag(ctx: ScriptRunner): boolean { ctx.comparisonResult = ctx.ow.game.battleSetup.HasTrainerBeenFought(varGet(ctx.ScriptReadHalfword())) ? 1 : 0; return false; }
+function ScrCmd_settrainerflag(ctx: ScriptRunner): boolean { ctx.ow.game.battleSetup.SetTrainerFlag(varGet(ctx.ScriptReadHalfword())); return false; }
+function ScrCmd_cleartrainerflag(ctx: ScriptRunner): boolean { ctx.ow.game.battleSetup.ClearTrainerFlag(varGet(ctx.ScriptReadHalfword())); return false; }
 function ScrCmd_setwildbattle(ctx: ScriptRunner): boolean {
   const species = ctx.ScriptReadHalfword(); const level = ctx.readByte(); const item = ctx.ScriptReadHalfword();
   ctx.ow.game.battleSetup.createScriptedWildMon(species, level, item);
