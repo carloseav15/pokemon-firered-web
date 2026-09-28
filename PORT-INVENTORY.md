@@ -12,7 +12,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 47 | 103136 | 1842/4588 |
+| Parcial (< 80 % de funciones) | 47 | 103136 | 1849/4588 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 6 | 13937 | 463/524 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 154 | 133454 | 4875/4875 |
@@ -20,7 +20,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **55** | **119903** | |
-| **Total en alcance** | **211** | **253703** | **7208/10115** |
+| **Total en alcance** | **211** | **253703** | **7215/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -74,7 +74,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
 | `field_fadetransition.c` | 965 | 16/59 | `field/overworld.ts` |  |  |
 | `fieldmap.c` | 951 | 5/54 | `field/fieldmap.ts` |  |  |
-| `item_use.c` | 925 | 38/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
+| `item_use.c` | 925 | 45/73 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
 | `mail.c` | 734 | 1/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |

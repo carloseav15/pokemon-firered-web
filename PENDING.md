@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7208/10115 (71.3 %)**.
-- Archivos C con funciones aún sin homólogo: **55**; quedan **2907 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7215/10115 (71.3 %)**.
+- Archivos C con funciones aún sin homólogo: **55**; quedan **2900 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 119.903 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~67.532 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~67.443 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -22,7 +22,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 2 | `sprite.c` | casi completo | 1745 | 100/103 | ~50 |  |
 | 3 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 4 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 5 | `item_use.c` | parcial | 925 | 38/73 | ~443 |  |
+| 5 | `item_use.c` | parcial | 925 | 45/73 | ~354 |  |
 | 6 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
 | 7 | `item_menu.c` | casi completo | 2397 | 93/116 | ~475 |  |
 | 8 | `trainer_card.c` | parcial | 1959 | 55/73 | ~483 |  |
@@ -125,7 +125,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
 - Quest Log: el inventario incluye quest_log*.c; los eventos de tienda ya persisten en SaveData, pero faltan el buffer/serialización original, escenas, acciones y reproducción.
 - Trainer Tower: `trainer_tower.c` y sus llamadas `InitTrainerTowerBattleStruct`/`FreeTrainerTowerBattleStruct` aún no están portadas; `battle_util2.c` tiene recursos normales cubiertos, pero ese branch queda pendiente.
-- Uso de objetos (`item_use.c`): dispatch de baya Enigma de campo/combate, rechazo de Oak, consumo diferido de Repel hasta acabar SE, retardo de ocho frames de las flautas y espera de fanfarria de la Poké Flauta están conectados. Quest Log al usar objetos y el retardo/mensaje/botones de `BattleUseFunc_StatBooster` siguen adaptados; quedan 32/73 funciones sin homólogo.
+- Uso de objetos (`item_use.c`): dispatch de baya Enigma de campo/combate, rechazo de Oak, consumo diferido de Repel hasta acabar SE, retardo de ocho frames de las flautas y espera de fanfarria de la Poké Flauta están conectados. Se integraron los callbacks de TM Case, Berry Pouch, Mail y Bike; Quest Log y el retardo/mensaje/botones de `BattleUseFunc_StatBooster` siguen adaptados; faltan 28/73 nombres.
 
 ## 5. Portado pero sin probar en navegador
 
