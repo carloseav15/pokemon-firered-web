@@ -5,8 +5,14 @@ import type { Game } from "./game";
 import * as C from "./generated/constants";
 import { PlayRainStoppingSoundEffect } from "./field/weather";
 import { GetNationalPokedexCount } from "./pokemon/pokemon";
-import { IncrementGameStat } from "./save";
-import { SafariZoneRetirePrompt } from "./field/safariZone";
+import { IncrementGameStat, save } from "./save";
+import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
+import { intToDecimal, expandPlaceholders, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
+import { rom } from "./rom";
+import { FONT_NORMAL } from "./gba/font";
+import { tasks } from "./gba/tasks";
+import { printText } from "./gba/textPrinter";
+import { Window } from "./gba/window";
 
 enum StartMenuOption {
   STARTMENU_POKEDEX = 0,
@@ -31,6 +37,23 @@ export interface StartMenuSetupState extends StartMenuList {
   linkStateActive: boolean;
   inUnionRoom: boolean;
   inSafariZone: boolean;
+}
+
+export interface StartMenuItem {
+  text: Uint8Array;
+  desc: string;
+  action: () => void;
+  canChoose?: () => boolean;
+}
+
+export interface StartMenuDrawState {
+  state: [number, number];
+  items: StartMenuItem[];
+  window: Window;
+  safari: boolean;
+  createWindow: () => void;
+  drawSafariStats: () => void;
+  onDrawComplete: () => void;
 }
 
 /** AppendToList (start_menu.c): `cursor` models the C u8 position pointer. */
@@ -95,6 +118,89 @@ export function SetUpStartMenu(state: StartMenuSetupState): void {
   else if (state.inUnionRoom) SetUpStartMenu_UnionRoom(state);
   else if (state.inSafariZone) SetUpStartMenu_SafariZone(state);
   else SetUpStartMenu_NormalField(state);
+}
+
+/** DrawSafariZoneStatsWindow (start_menu.c). */
+export function DrawSafariZoneStatsWindow(game: Game): Window {
+  const stats = new Window(2, 2, 10, 4);
+  stats.frame = "std";
+  stats.frameType = save.options.frameType;
+  stats.fill(1);
+  stringVars.var1 = intToDecimal(game.safariSteps ?? 0, STR_CONV_MODE_RIGHT_ALIGN, 3);
+  stringVars.var2 = intToDecimal(600, STR_CONV_MODE_RIGHT_ALIGN, 3);
+  stringVars.var3 = intToDecimal(game.safariBalls, STR_CONV_MODE_RIGHT_ALIGN, 2);
+  printText(stats, FONT_NORMAL, expandPlaceholders(rom.text("gText_MenuSafariStats")), 4, 3);
+  game.overworld.windows.add(stats);
+  return stats;
+}
+
+/** DestroySafariZoneStatsWindow (start_menu.c). */
+export function DestroySafariZoneStatsWindow(game: Game, window: Window | null): void {
+  if (!GetSafariZoneFlag() || !window) return;
+  game.overworld.windows.remove(window);
+}
+
+/** PrintStartMenuItems (start_menu.c): print at most nitems and keep the signed cursor. */
+export function PrintStartMenuItems(draw: StartMenuDrawState, nitems: number): boolean {
+  let i = draw.state[1];
+  do {
+    const item = draw.items[i]!;
+    printText(draw.window, FONT_NORMAL, item.text, 8, i * 15);
+    i++;
+    if (i >= draw.items.length) {
+      draw.state[1] = i;
+      return true;
+    }
+  } while (--nitems !== 0);
+  draw.state[1] = i;
+  return false;
+}
+
+/** DoDrawStartMenu (start_menu.c): retain the six C drawing states and two rows per frame. */
+export function DoDrawStartMenu(draw: StartMenuDrawState): boolean {
+  switch (draw.state[0]) {
+    case 0:
+      draw.state[0]++;
+      break;
+    case 1:
+      // SetUpStartMenu has already built the item order before the Canvas window is allocated.
+      draw.state[0]++;
+      break;
+    case 2:
+      draw.createWindow();
+      draw.state[0]++;
+      break;
+    case 3:
+      if (draw.safari) draw.drawSafariStats();
+      draw.state[0]++;
+      break;
+    case 4:
+      if (PrintStartMenuItems(draw, 2)) draw.state[0]++;
+      break;
+    case 5:
+      draw.onDrawComplete();
+      return true;
+  }
+  return false;
+}
+
+/** DrawStartMenuInOneGo (start_menu.c): reset the state and run each draw state synchronously. */
+export function DrawStartMenuInOneGo(draw: StartMenuDrawState): void {
+  draw.state[0] = 0;
+  draw.state[1] = 0;
+  while (!DoDrawStartMenu(draw)) { /* C busy-loops until state 5. */ }
+}
+
+/** task50_startmenu (start_menu.c): switch this task to the caller's follow-up once drawing ends. */
+export function task50_startmenu(taskId: number, draw: StartMenuDrawState, followup: (taskId: number) => void): void {
+  if (DoDrawStartMenu(draw)) tasks.setFunc(taskId, followup);
+}
+
+/** OpenStartMenuWithFollowupFunc (start_menu.c). */
+export function OpenStartMenuWithFollowupFunc(draw: StartMenuDrawState, followup: (taskId: number) => void): number {
+  draw.state[0] = 0;
+  draw.state[1] = 0;
+  return tasks.create((taskId) => task50_startmenu(taskId, draw, followup), 80);
 }
 
 /** StartMenuPokedexSanityCheck (start_menu.c). */

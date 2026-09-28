@@ -54,9 +54,10 @@ import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
-  SetUpStartMenu, StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
+  DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc, SetUpStartMenu,
+  StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
-  StartMenuSaveCallback, type StartMenuSetupState,
+  StartMenuSaveCallback, type StartMenuDrawState, type StartMenuItem, type StartMenuSetupState,
 } from "./startMenu";
 import { IsUpdateLinkStateCBActive } from "./linkState";
 import { openSlotMachine } from "./menus/slotMachine";
@@ -360,7 +361,7 @@ export class Game {
 
   // ---------------------------------------------------------------- start menu
 
-  showStartMenu(): void {
+  showStartMenu(drawImmediately = false): void {
     const ow = this.overworld;
     ow.objects.freezeAll();
     const c = rom.constants;
@@ -374,7 +375,7 @@ export class Game {
       inSafariZone: safari,
     };
     SetUpStartMenu(startMenu);
-    const actions: Array<{ text: Uint8Array; desc: string; action: () => void; canChoose?: () => boolean }> = [
+    const actions: StartMenuItem[] = [
       { text: rom.text("gText_MenuPokedex"), desc: "gStartMenuDesc_Pokedex", action: () => StartMenuPokedexCallback(this), canChoose: StartMenuPokedexSanityCheck },
       { text: rom.text("gText_MenuPokemon"), desc: "gStartMenuDesc_Pokemon", action: () => StartMenuPokemonCallback(this) },
       { text: rom.text("gText_MenuBag"), desc: "gStartMenuDesc_Bag", action: () => StartMenuBagCallback(this) },
@@ -387,11 +388,6 @@ export class Game {
     ];
     const items = startMenu.order.slice(0, startMenu.numItems).map((entry) => actions[entry]!);
     const window = new Window(22, 1, 7, items.length * 2 - 1);
-    window.frame = "std";
-    window.frameType = save.options.frameType;
-    window.fill(1);
-    items.forEach((item, i) => printText(window, FONT_NORMAL, item.text, 8, i * 15));
-    ow.windows.add(window);
     // DrawHelpMessageWindowWithText (help_message.c).
     const desc = CreateHelpMessageWindow(ow.windows);
     const menu = new Menu(window, FONT_NORMAL, 0, 0, 15, items.length, this.startMenuCursor);
@@ -399,29 +395,27 @@ export class Game {
       const sym = items[menu.cursorPos].desc;
       DrawHelpMessageWindowWithText(ow.windows, rom.strings[sym] ? rom.text(sym) : [0xff]);
     };
-    printDesc();
     this.startMenuWindows = [window, desc];
-    if (safari) {
-      // DrawSafariZoneStatsWindow
-      const stats = new Window(2, 2, 10, 4);
-      stats.frame = "std";
-      stats.frameType = save.options.frameType;
-      stats.fill(1);
-      stringVars.var1 = intToDecimal(this.safariSteps ?? 0, STR_CONV_MODE_RIGHT_ALIGN, 3);
-      stringVars.var2 = encode("600");
-      stringVars.var3 = intToDecimal(this.safariBalls, STR_CONV_MODE_RIGHT_ALIGN, 2);
-      printText(stats, FONT_NORMAL, expandPlaceholders(rom.text("gText_MenuSafariStats")), 4, 3);
-      ow.windows.add(stats);
-      this.startMenuWindows.push(stats);
-    }
-    // task50_startmenu: DoDrawStartMenu states 0-3, PrintStartMenuItems (two
-    // items per frame) and state 5 each take a frame, then
-    // Task_StartMenuHandleInput spends one frame in state 0. Only after that
-    // does StartCB_HandleInput read JOY_NEW, so the START press that opened
-    // the menu cannot also close it. The windows are drawn at once here.
-    let drawFrames = 4 + Math.ceil(items.length / 2) + 1 + 1;
-    const id = tasks.create(() => {
-      if (drawFrames > 0) { drawFrames--; return; }
+    this.startMenuSafariStats = null;
+    const draw: StartMenuDrawState = {
+      state: [0, 0], items, window, safari,
+      createWindow: () => {
+        window.frame = "std";
+        window.frameType = save.options.frameType;
+        window.fill(1);
+        ow.windows.add(window);
+      },
+      drawSafariStats: () => {
+        const stats = DrawSafariZoneStatsWindow(this);
+        this.startMenuSafariStats = stats;
+        this.startMenuWindows.push(stats);
+      },
+      onDrawComplete: printDesc,
+    };
+    const inputReady = { value: drawImmediately };
+    const startInput = (id: number): void => {
+      // Task_StartMenuHandleInput state 0 consumes a frame before input is read.
+      if (!inputReady.value) { inputReady.value = true; return; }
       const before = menu.cursorPos;
       const input = menu.processInput();
       if (menu.cursorPos !== before) printDesc();
@@ -434,15 +428,26 @@ export class Game {
       if (input === MENU_B_PRESSED) { this.closeStartMenu(); return; }
       this.startMenuCursor = input;
       items[input].action();
-    }, 80);
+    };
+    if (drawImmediately) {
+      DrawStartMenuInOneGo(draw);
+      tasks.create(startInput, 80);
+    } else OpenStartMenuWithFollowupFunc(draw, startInput);
   }
 
   private startMenuCursor = 0;
   private startMenuWindows: Window[] = [];
+  private startMenuSafariStats: Window | null = null;
 
   private removeStartMenuWindows(): void {
     DestroyHelpMessageWindow(this.overworld.windows, 0);
-    for (const w of this.startMenuWindows) this.overworld.windows.remove(w);
+    const safariStats = this.startMenuSafariStats;
+    this.startMenuSafariStats = null;
+    if (safariStats && GetSafariZoneFlag()) DestroySafariZoneStatsWindow(this, safariStats);
+    for (const w of this.startMenuWindows) {
+      if (w === safariStats && GetSafariZoneFlag()) continue;
+      this.overworld.windows.remove(w);
+    }
     this.startMenuWindows = [];
   }
 
@@ -466,7 +471,11 @@ export class Game {
     // -> PrintSaveResult -> WaitPrintSuccessAndPlaySE -> ReturnSuccess.
     let state = 0;
     let saveOk = false;
-    const cancel = (): void => { tasks.destroy(id); this.closeStartMenu(); };
+    const cancel = (): void => {
+      tasks.destroy(id);
+      this.removeStartMenuWindows();
+      this.showStartMenu(true);
+    };
     const printSavingDontTurnOffPower = (): void => {
       ow.messageBox.hide();
       ow.messageBox.show(rom.text("gText_SavingDontTurnOffThePower"));
