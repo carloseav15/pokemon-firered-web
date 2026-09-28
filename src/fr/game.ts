@@ -470,11 +470,16 @@ export class Game {
     // -> PrintSaveResult -> WaitPrintSuccessAndPlaySE -> ReturnSuccess.
     let state = 0;
     let saveOk = false;
-    const cancel = (): void => {
+    const returnToStartMenu = (): void => {
       tasks.destroy(id);
       CloseSaveMessageWindow(this);
       this.removeStartMenuWindows();
       this.showStartMenu(true);
+    };
+    const finishSave = (): void => {
+      tasks.destroy(id);
+      CloseSaveMessageWindow(this);
+      this.closeStartMenu();
     };
     const printSavingDontTurnOffPower = (): void => {
       ow.messageBox.hide();
@@ -493,7 +498,7 @@ export class Game {
           if (varGet(0x800d) !== 0xff) {
             const yes = varGet(0x800d) === 1;
             ow.messageBox.hide();
-            if (!yes) { cancel(); return; }
+            if (!yes) { returnToStartMenu(); return; }
             if (saveStore.load() || !this.differentSaveFile) {
               // SaveDialogCB_PrintAskOverwriteText
               ow.messageBox.show(rom.text(this.differentSaveFile ? "gText_DifferentGameFile" : "gText_AlreadySaveFile_WouldLikeToOverwrite"));
@@ -512,7 +517,7 @@ export class Game {
           if (varGet(0x800d) !== 0xff) {
             const yes = varGet(0x800d) === 1;
             ow.messageBox.hide();
-            if (!yes) { cancel(); return; }
+            if (!yes) { returnToStartMenu(); return; }
             printSavingDontTurnOffPower();
           }
           break;
@@ -537,7 +542,7 @@ export class Game {
           if (!sound.isSEPlaying() && (++this.saveWait > 60 || (joy.held & A_BUTTON))) {
             this.saveWait = 0;
             ow.messageBox.hide();
-            cancel();
+            finishSave();
           }
           break;
       }
