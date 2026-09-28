@@ -10,6 +10,7 @@ import { save, varGet } from "../save";
 import { CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, IsDma3ManagerBusyWithBgCopy } from "../hw/bg";
 import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK } from "../hw/palette";
 import { gMain } from "../hw/runtime";
+import { battleHost } from "./host";
 import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag,
   FreeSpriteTilesByTag, gSprites, SpriteCallbackDummy, StartSpriteAnim } from "../hw/sprite";
 import { FreeAllWindowBuffers } from "../hw/window";
@@ -1056,6 +1057,19 @@ function OakOldManHandleCmd55(): void {
   sound.fadeOutBGM(5);
   BeginFastPaletteFade(3);
   OakOldManBufferExecCompleted();
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_LINK && !(G.gBattleTypeFlags & C.BATTLE_TYPE_IS_MASTER)) {
+    gBattlerControllerFuncs[G.gActiveBattler] = OakOldManSetBattleEndCallbacks;
+  }
+}
+
+/** OakOldManSetBattleEndCallbacks (battle_controller_oak_old_man.c): the link-only branch above
+ * is kept structurally but never taken (no link battles). */
+function OakOldManSetBattleEndCallbacks(): void {
+  if (!gPaletteFade.active) {
+    gMain.inBattle = false;
+    gMain.callback1 = battleHost.preBattleCallback1;
+    battleHost.finish(G.gBattleOutcome);
+  }
 }
 
 function OakOldManCmdEnd(): void {}
