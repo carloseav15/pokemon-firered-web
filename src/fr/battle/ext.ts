@@ -203,6 +203,12 @@ export function BattleUseFunc_Medicine(context: BagTaskContext, item: number, ba
   ItemUse_SwitchToPartyMenuInBattle(context, () => chooseMon(item, PartyMenu.ItemUseCB_MedicineStep, back));
 }
 
+/** BattleUseFunc_SacredAsh (item_use.c): source-unused battle path; select a party member with the Sacred Ash callback. */
+export function BattleUseFunc_SacredAsh(context: BagTaskContext, item: number, back: () => void,
+  chooseMon: (item: number, cb: typeof PartyMenu.ItemUseCB_SacredAsh, back: () => void) => void): void {
+  ItemUse_SwitchToPartyMenuInBattle(context, () => chooseMon(item, PartyMenu.ItemUseCB_SacredAsh, back));
+}
+
 /** BattleUseFunc_Ether (item_use.c): choose a party member for the PP restore callback. */
 export function BattleUseFunc_Ether(context: BagTaskContext, item: number, back: () => void,
   chooseMon: (item: number, cb: typeof PartyMenu.ItemUseCB_Medicine, back: () => void) => void): void {
