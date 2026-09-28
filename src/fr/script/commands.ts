@@ -230,7 +230,7 @@ function ScrCmd_fadeoutbgm(ctx: ScriptRunner): boolean {
 }
 function ScrCmd_fadeinbgm(ctx: ScriptRunner): boolean {
   const speed = ctx.readByte();
-  if (gQuestLogState !== C.QL_STATE_PLAYBACK) sound.fadeInBGM(speed ? 4 * speed : 4);
+  if (gQuestLogState !== C.QL_STATE_PLAYBACK) sound.FadeInBGM(speed ? 4 * speed : 4);
   return false;
 }
 function ScrCmd_warp(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.doWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }

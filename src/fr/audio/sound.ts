@@ -361,6 +361,17 @@ class Sound {
     return !this.fanfareTaskActive;
   }
 
+  /** WaitFanfare from sound.c; stop selects MUS_DUMMY instead of resuming BGM. */
+  WaitFanfare(stop: boolean): boolean {
+    if (this.fanfareTimer !== 0) { this.fanfareTimer--; return false; }
+    if (!stop) this.resumeBGM();
+    else this.backend?.playSong("fanfare", this.constants.MUS_DUMMY ?? 0);
+    return true;
+  }
+
+  /** FadeInBGM from sound.c. */
+  FadeInBGM(speed: number): void { this.fadeInBGM(speed & 0xff); }
+
   playCry(species: number, mode = C.CRY_MODE_NORMAL, pan = 0, volume = C.CRY_VOLUME, priority = C.CRY_PRIORITY_NORMAL): void {
     this.cryTimer = 30;
     this.backend?.playCry(species, mode, pan, volume, priority);
@@ -432,6 +443,13 @@ class Sound {
     if (tasks.isActive(this.taskDuckBgmForPokemonCryFunc)) return false;
     if (this.backend) return !this.backend.isCryPlaying();
     return this.cryTimer === 0;
+  }
+
+  /** IsCryFinished from sound.c clears the completed cry tables before returning TRUE. */
+  IsCryFinished(): boolean {
+    if (!this.isCryFinished()) return false;
+    ClearPokemonCrySongs();
+    return true;
   }
 
   /** m4aSongNumStop for a sound effect. */
