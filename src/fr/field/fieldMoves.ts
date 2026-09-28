@@ -80,7 +80,7 @@ export class FieldMoveEffects {
     this.remove(C.FLDEFF_USE_CUT_ON_GRASS);
     if (this.scheduleOpenDottedHole) {
       this.scheduleOpenDottedHole = false;
-      this.openDottedHoleDoor();
+      this.CutMoveOpenDottedHoleDoor();
     } else this.FldEff_CutGrass();
   }
 
@@ -674,7 +674,7 @@ export class FieldMoveEffects {
   }
 
   /** CutMoveOpenDottedHoleDoor in field_specials.c. */
-  private openDottedHoleDoor(): void {
+  private CutMoveOpenDottedHoleDoor(): void {
     const ow = this.ow;
     ow.map.setMetatileIdAt(31, 31, rom.c("METATILE_SeviiIslands67_DottedHoleDoor_Open"));
     ow.renderer?.invalidate();
@@ -1411,11 +1411,7 @@ export function MetatileAtCoordsIsGrassTile(ow: Overworld, x: number, y: number)
  */
 export function SetUpFieldMove_Cut(game: Game): "ruin" | "tree" | "grass" | undefined {
   const ow = game.overworld, p = ow.player.object;
-  if (!flagGet(C.FLAG_USED_CUT_ON_RUIN_VALLEY_BRAILLE)
-    && ow.mapId === "MAP_SIX_ISLAND_RUIN_VALLEY"
-    && p.currentCoords.x - MAP_OFFSET === 24
-    && p.currentCoords.y - MAP_OFFSET === 25
-    && p.facingDirection === DIR_NORTH) return "ruin";
+  if (CutMoveRuinValleyCheck(ow)) return "ruin";
   const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
   const destX = p.currentCoords.x + dx, destY = p.currentCoords.y + dy;
   const tree = ow.objects.objectAtXYZ(destX, destY, p.currentElevation);
@@ -1431,6 +1427,16 @@ export function SetUpFieldMove_Cut(game: Game): "ruin" | "tree" | "grass" | unde
     }
   }
   return undefined;
+}
+
+/** CutMoveRuinValleyCheck from field_specials.c. */
+export function CutMoveRuinValleyCheck(ow: Overworld): boolean {
+  const p = ow.player.object;
+  return !flagGet(C.FLAG_USED_CUT_ON_RUIN_VALLEY_BRAILLE)
+    && ow.mapId === "MAP_SIX_ISLAND_RUIN_VALLEY"
+    && p.currentCoords.x - MAP_OFFSET === 24
+    && p.currentCoords.y - MAP_OFFSET === 25
+    && p.facingDirection === DIR_NORTH;
 }
 
 // Referenced for completeness of the palette helpers.
