@@ -1,8 +1,8 @@
 Modo: tandas integradas por archivo/familia; alcance principal de un jugador. No push.
-Siguiente: continuar `fieldmap.c` con cámara/tilesets restantes; antes, `field_specials.c` está bloqueado porque `UsedPokemonCenterWarp` solo alimenta `CloseLink`.
-Bloqueos: callbacks Link/Cable Club; Dive sin mapas FireRed; raw `struct Sprite`/Pokemon sin layout GBA activo; UI Pokéblock Case/Teachy TV sin ruta conectada; Battle/Trainer Tower pendientes.
-Validación diferida: recorridos de navegador e historia. Berry Enigma: slots de puntero descriptivo no conservan direcciones GBA; no afirmar paridad runtime.
-Entrega (2026-09-28): `fieldmap.c`, guardado/restauración del área de mapa y flujo de inicialización/copia de layouts y conexiones conectados a continuar y transiciones.
-Funciones nuevas: 0 algoritmos nuevos; 13 equivalencias C añadidas sobre rutas activas, incluido el solapamiento de mapa persistido.
-Conteo: 7.573/10.115 (74,9 %), +13 nombres desde 7.560; `fieldmap.c` queda 37/54; tanda checks/build/diff pasaron.
-Pendiente del archivo: copia de tilesets hardware; Dive/Emerge sin mapas FireRed; `SetMetatileEntryAt` sin caller C single-player.
+Siguiente: retomar los warps individuales de `field_fadetransition.c`; revisar la ruta TS y completar una familia conectada.
+Bloqueos: restos tempranos de `fieldmap.c`, callbacks Link, Pokéblock Case sin UI, raw `struct Sprite`/Pokemon sin layout GBA activo, Dive sin mapas FireRed.
+Validación diferida: recorridos de navegador e historia; Berry Enigma no conserva direcciones GBA de punteros y no se afirma paridad runtime.
+Entrega (2026-09-28): carga/copia de tilesets y paletas de `fieldmap.c`, integrada en `TileRenderer`.
+Funciones nuevas: 11 equivalencias C conectadas, sin algoritmos nuevos; incluye aplicación de tint global sobre buffers GBA.
+Conteo: 7.584/10.115 (75,0 %), +11 nombres desde 7.573; `fieldmap.c` queda 48/54. Checks/build/diff pasaron.
+Pendiente: setters sin caller de `fieldmap.c`; Dive/Emerge y entradas Link/Union Room fuera o sin datos/ruta para la meta principal.

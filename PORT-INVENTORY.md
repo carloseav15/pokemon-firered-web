@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 36 | 84467 | 1469/3818 |
+| Parcial (< 80 % de funciones) | 35 | 83516 | 1432/3764 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 14 | 29919 | 1109/1202 |
+| Casi completo (≥ 80 % y < 100 %) | 15 | 30870 | 1157/1256 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 157 | 136141 | 4967/4967 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **52** | **117216** | |
-| **Total en alcance** | **211** | **253703** | **7573/10115** |
+| **Total en alcance** | **211** | **253703** | **7584/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -65,7 +65,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `start_menu.c` | 1016 | 3/65 | `game.ts` |  |  |
 | `field_fadetransition.c` | 965 | 43/59 | `field/fieldControl.ts`, `field/overworld.ts` |  |  |
-| `fieldmap.c` | 951 | 37/54 | `field/fieldPalette.ts`, `field/fieldmap.ts`, `field/overworld.ts` … |  |  |
 | `help_system_util.c` | 848 | 1/41 |  |  |  |
 | `easy_chat.c` | 730 | 8/39 | `easyChat.ts`, `pokemon/mail.ts`, `script/specials.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
@@ -92,6 +91,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `field_control_avatar.c` | 1182 | 43/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `battle_setup.c` | 1070 | 62/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
+| `fieldmap.c` | 951 | 48/54 | `field/fieldPalette.ts`, `field/fieldmap.ts`, `field/overworld.ts` … |  |  |
 | `battle_controller_safari.c` | 669 | 66/72 | `battle/controller_safari.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 
