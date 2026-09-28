@@ -20,7 +20,6 @@ import {
 } from "../partyMenu";
 import { relearnableMoves } from "../pokemon/partyRules";
 import { encode, stringVars } from "../gba/charmap";
-type ItemUseCB = Parameters<typeof SetItemUseCB>[0] & {};
 import { PokemonUseItemEffects } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
 import * as C from "../generated/constants";
@@ -48,6 +47,55 @@ export function fieldMenu(game: Game, begin: (close: () => void) => void, closeS
     game.setCallbacks(() => game.overworld.cb1(), () => game.overworld.cb2());
     if (closeStartMenu) game.closeStartMenu();
   });
+}
+
+/** SetUpItemUseCallback (item_use.c): leave the active bag or berry pouch before entering the party menu. */
+export function SetUpItemUseCallback(context: BagTaskContext | null, enterPartyMenu: () => void): void {
+  if (context) context.exit(enterPartyMenu);
+  else enterPartyMenu();
+}
+
+/** DoSetUpItemUseCallback (item_use.c): the field party-item handlers share this setup path. */
+export function DoSetUpItemUseCallback(context: BagTaskContext | null, enterPartyMenu: () => void): void {
+  SetUpItemUseCallback(context, enterPartyMenu);
+}
+
+type UsePartyItem = (item: number) => void;
+
+/** FieldUseFunc_Medicine (item_use.c). */
+export function FieldUseFunc_Medicine(item: number, context: BagTaskContext | null, enterPartyMenu: UsePartyItem): void {
+  SetItemUseCB(ItemUseCB_Medicine);
+  DoSetUpItemUseCallback(context, () => enterPartyMenu(item));
+}
+
+/** FieldUseFunc_Ether (item_use.c). */
+export function FieldUseFunc_Ether(item: number, context: BagTaskContext | null, enterPartyMenu: UsePartyItem): void {
+  SetItemUseCB(ItemUseCB_TryRestorePP);
+  DoSetUpItemUseCallback(context, () => enterPartyMenu(item));
+}
+
+/** FieldUseFunc_PpUp (item_use.c). */
+export function FieldUseFunc_PpUp(item: number, context: BagTaskContext | null, enterPartyMenu: UsePartyItem): void {
+  SetItemUseCB(ItemUseCB_PPUp);
+  DoSetUpItemUseCallback(context, () => enterPartyMenu(item));
+}
+
+/** FieldUseFunc_RareCandy (item_use.c). */
+export function FieldUseFunc_RareCandy(item: number, context: BagTaskContext | null, enterPartyMenu: UsePartyItem): void {
+  SetItemUseCB(ItemUseCB_RareCandy);
+  DoSetUpItemUseCallback(context, () => enterPartyMenu(item));
+}
+
+/** FieldUseFunc_EvoItem (item_use.c). */
+export function FieldUseFunc_EvoItem(item: number, context: BagTaskContext | null, enterPartyMenu: UsePartyItem): void {
+  SetItemUseCB(ItemUseCB_EvolutionStone);
+  DoSetUpItemUseCallback(context, () => enterPartyMenu(item));
+}
+
+/** FieldUseFunc_SacredAsh (item_use.c): this field-only callback uses SetUpItemUseCallback directly. */
+export function FieldUseFunc_SacredAsh(item: number, context: BagTaskContext | null, enterPartyMenu: UsePartyItem): void {
+  SetItemUseCB(ItemUseCB_SacredAsh);
+  SetUpItemUseCallback(context, () => enterPartyMenu(item));
 }
 
 /** The field side of party_menu.c: field moves, the fly map, mail and evolution. */
@@ -339,19 +387,11 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       leave(() => openHardwareMessage(bytes, next));
     };
     const notNow = (next: () => void = back): void => FieldUseFunc_OakStopsYou((text) => message(text, next));
-    /** gItemUseCB = cb; CB2_ShowPartyMenuForItemUse, back to the bag / TM case / berry pouch. */
-    const partyItemUse = (item: number, cb: ItemUseCB): void => leave(() => {
+    /** CB2_ShowPartyMenuForItemUse after SetUpItemUseCallback has finished leaving the bag/pouch. */
+    const enterPartyMenuWithItem = (item: number): void => {
       bagResult.itemId = item;
-      SetItemUseCB(cb);
       CB2_ShowPartyMenuForItemUse();
-    });
-    const medicine = (item: number): void => {
-      const func = ItemId_GetFieldFunc(item);
-      partyItemUse(item, func === "FieldUseFunc_PpUp" ? ItemUseCB_PPUp : func === "FieldUseFunc_Ether" ? ItemUseCB_TryRestorePP : ItemUseCB_Medicine);
     };
-    const rareCandy = (item: number): void => partyItemUse(item, ItemUseCB_RareCandy);
-    const evolutionStone = (item: number): void => partyItemUse(item, ItemUseCB_EvolutionStone);
-    const sacredAsh = (item: number): void => partyItemUse(item, ItemUseCB_SacredAsh);
     /** tm_case.c UseTM: after "Booted up a TM", the party menu with ItemUseCB_TMHM. */
     const useTM = (item: number): void => {
       bagResult.itemId = item;
@@ -370,10 +410,12 @@ export function openFieldBag(game: Game, initialItem?: number): void {
     const use = (item: number): void => {
       const ow = game.overworld;
       switch (ItemId_GetFieldFunc(item)) {
-        case "FieldUseFunc_Medicine": case "FieldUseFunc_Ether": case "FieldUseFunc_PpUp": leave(() => medicine(item)); return;
-        case "FieldUseFunc_RareCandy": leave(() => rareCandy(item)); return;
-        case "FieldUseFunc_EvoItem": leave(() => evolutionStone(item)); return;
-        case "FieldUseFunc_SacredAsh": leave(() => sacredAsh(item)); return;
+        case "FieldUseFunc_Medicine": FieldUseFunc_Medicine(item, bagCtx, enterPartyMenuWithItem); return;
+        case "FieldUseFunc_Ether": FieldUseFunc_Ether(item, bagCtx, enterPartyMenuWithItem); return;
+        case "FieldUseFunc_PpUp": FieldUseFunc_PpUp(item, bagCtx, enterPartyMenuWithItem); return;
+        case "FieldUseFunc_RareCandy": FieldUseFunc_RareCandy(item, bagCtx, enterPartyMenuWithItem); return;
+        case "FieldUseFunc_EvoItem": FieldUseFunc_EvoItem(item, bagCtx, enterPartyMenuWithItem); return;
+        case "FieldUseFunc_SacredAsh": FieldUseFunc_SacredAsh(item, bagCtx, enterPartyMenuWithItem); return;
         case "FieldUseFunc_Repel":
           if (varGet(C.VAR_REPEL_STEP_COUNT)) { message(rom.text("gText_RepelEffectsLingered")); return; }
           sound.playSE(C.SE_REPEL);
@@ -458,11 +500,11 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           return;
         case "ItemUseOutOfBattle_EnigmaBerry":
           ItemUseOutOfBattle_EnigmaBerry(item, {
-            medicine: () => leave(() => medicine(item)),
-            sacredAsh: () => leave(() => sacredAsh(item)),
-            rareCandy: () => leave(() => rareCandy(item)),
-            ppUp: () => leave(() => partyItemUse(item, ItemUseCB_PPUp)),
-            ether: () => leave(() => partyItemUse(item, ItemUseCB_TryRestorePP)),
+            medicine: () => FieldUseFunc_Medicine(item, bagCtx, enterPartyMenuWithItem),
+            sacredAsh: () => FieldUseFunc_SacredAsh(item, bagCtx, enterPartyMenuWithItem),
+            rareCandy: () => FieldUseFunc_RareCandy(item, bagCtx, enterPartyMenuWithItem),
+            ppUp: () => FieldUseFunc_PpUp(item, bagCtx, enterPartyMenuWithItem),
+            ether: () => FieldUseFunc_Ether(item, bagCtx, enterPartyMenuWithItem),
             oakStopsYou: () => notNow(),
           });
           return;
