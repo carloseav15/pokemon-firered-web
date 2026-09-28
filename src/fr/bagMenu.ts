@@ -425,6 +425,8 @@ let sBagMenuDisplay: BagMenuDisplay | null = null;
 const disp = (): BagMenuDisplay => sBagMenuDisplay!;
 let sBagBgTilemapBuffer: Uint16Array | null = null;
 let gMultiuseListMenuTemplate: ListMenuTemplate | null = null;
+let sListMenuItems: ListMenuItem[] | null = null;
+let sListMenuItemStrings: Uint8Array[] | null = null;
 let sContextMenuItemsPtr: number[] = [];
 let sContextMenuNumItems = 0;
 let sItemListTilemap: Uint16Array = new Uint16Array(0);
@@ -443,6 +445,8 @@ function NullBagMenuBufferPtrs(): void {
   sBagMenuDisplay = null;
   sBagBgTilemapBuffer = null;
   gMultiuseListMenuTemplate = null;
+  sListMenuItems = null;
+  sListMenuItemStrings = null;
 }
 
 /**
@@ -507,7 +511,10 @@ function LoadBagMenuGraphics(): boolean {
     case 8: if (DoLoadBagGraphics()) gMain.state++; break;
     case 9: InitBagWindows(); gMain.state++; break;
     case 10: All_CalculateNItemsAndMaxShowed(); CalculateInitialCursorPosAndItemsAbove(); UpdatePocketScrollPositions(); gMain.state++; break;
-    case 11: gMain.state++; break; // TryAllocListMenuBuffers
+    case 11:
+      if (!TryAllocListMenuBuffers()) { FadeOutOfBagMenu(); return true; }
+      gMain.state++;
+      break;
     case 12: Bag_BuildListMenuTemplate(gBagMenuState.pocket); gMain.state++; break;
     case 13:
       if (gBagMenuState.location !== C.ITEMMENULOCATION_ITEMPC) PrintBagPocketName();
@@ -546,6 +553,39 @@ function BagMenuInitBgsAndAllocTilemapBuffer(): void {
   ShowBg(0);
   ShowBg(1);
   SetGpuReg(REG_OFFSET_BLDCNT, 0);
+}
+
+/** TryAllocListMenuBuffers (item_menu.c): allocate the largest bag-pocket list plus CANCEL. */
+function TryAllocListMenuBuffers(): boolean {
+  const capacity = C.BAG_ITEMS_COUNT + 1;
+  try {
+    sListMenuItems = Array.from({ length: capacity }, () => ({ label: Uint8Array.of(0xff), index: 0 }));
+    sListMenuItemStrings = Array.from({ length: capacity }, () => new Uint8Array(19));
+    return true;
+  } catch {
+    sListMenuItems = null;
+    sListMenuItemStrings = null;
+    return false;
+  }
+}
+
+/** FadeOutOfBagMenu (item_menu.c), used when a bag initialization allocation fails. */
+function FadeOutOfBagMenu(): void {
+  BeginNormalPaletteFade(PALETTES_ALL, -2, 0, 16, RGB_BLACK);
+  tasks.create(Task_WaitFadeOutOfBagMenu, 0);
+  SetVBlankCallback(VBlankCB_BagMenuRun);
+  SetMainCallback2(CB2_BagMenuRun);
+}
+
+/** Task_WaitFadeOutOfBagMenu (item_menu.c). */
+function Task_WaitFadeOutOfBagMenu(taskId: number): void {
+  if (gPaletteFade.active) return;
+  const callback = gBagMenuState.bagCallback;
+  DestroyBagMenuResources();
+  tasks.destroy(taskId);
+  SetVBlankCallback(null);
+  SetMainCallback2(null);
+  callback?.();
 }
 
 function DoLoadBagGraphics(): boolean {
@@ -786,10 +826,21 @@ function Task_Bag_OldManTutorial(taskId: number): void {
 
 function Bag_BuildListMenuTemplate(pocket: number): void {
   const d = disp();
-  const items: ListMenuItem[] = [];
+  const items = sListMenuItems;
+  const itemStrings = sListMenuItemStrings;
+  if (!items || !itemStrings) throw new Error("Bag_BuildListMenuTemplate: list buffers are not allocated");
   const slots = pocketSlots(pocket + 1);
-  for (let i = 0; i < d.nItems[pocket]; i++) items.push({ label: BagListMenuGetItemNameColored(slots[i].item), index: i });
-  items.push({ label: cat(rd<number[]>("item_menu", "sListItemTextColor_RegularItem"), text("gFameCheckerText_Cancel")), index: items.length });
+  for (let i = 0; i < d.nItems[pocket]; i++) {
+    const label = BagListMenuGetItemNameColored(slots[i].item);
+    itemStrings[i]!.fill(0);
+    itemStrings[i]!.set(label.subarray(0, itemStrings[i]!.length));
+    items[i] = { label: itemStrings[i]!, index: i };
+  }
+  const cancelIndex = d.nItems[pocket];
+  const cancelLabel = cat(rd<number[]>("item_menu", "sListItemTextColor_RegularItem"), text("gFameCheckerText_Cancel"));
+  itemStrings[cancelIndex]!.fill(0);
+  itemStrings[cancelIndex]!.set(cancelLabel.subarray(0, itemStrings[cancelIndex]!.length));
+  items[cancelIndex] = { label: itemStrings[cancelIndex]!, index: cancelIndex };
   gMultiuseListMenuTemplate = listMenuTemplate({
     items, totalItems: d.nItems[pocket] + 1, windowId: 0, header_X: 0, item_X: 9, cursor_X: 1, lettersSpacing: 0, itemVerticalPadding: 2, upText_Y: 2,
     maxShowed: d.maxShowed[pocket], fontId: FONT_NORMAL, cursorPal: 2, fillValue: 0, cursorShadowPal: 3,
@@ -942,6 +993,8 @@ function DestroyBagMenuResources(): void {
   sBagMenuDisplay = null;
   sBagBgTilemapBuffer = null;
   gMultiuseListMenuTemplate = null;
+  sListMenuItems = null;
+  sListMenuItemStrings = null;
   FreeAllWindowBuffers();
 }
 
