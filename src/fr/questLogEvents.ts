@@ -9,8 +9,9 @@ import {
   QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd,
   type LoadedQuestLogAction, type QuestLogAction,
 } from "./questLogActions";
-import { flagSet, save, varGet, varSet } from "./save";
+import { flagClear, flagGet, flagSet, save, varGet, varSet } from "./save";
 import { QuestLog_InitPalettesBackup as initQuestLogPalettesBackup } from "./questLogPalette";
+import { rom } from "./rom";
 
 let sPlayedTheSlots = false;
 export let gQuestLogState = 0;
@@ -39,7 +40,10 @@ export function QL_GetPlaybackState(): number {
 }
 let gQuestLogDefeatedWildMonRecord: unknown | null = null;
 let gQuestLogRecordingPointer: unknown | null = null;
-let sStepRecordingMode = 0;
+const STEP_RECORDING_MODE_ENABLED = 0;
+const STEP_RECORDING_MODE_DISABLED = 1;
+const STEP_RECORDING_MODE_DISABLED_UNTIL_DEPART = 2;
+let sStepRecordingMode = STEP_RECORDING_MODE_ENABLED;
 let sNewlyEnteredMap = false;
 let sLastDepartedLocation = 0;
 export const gQuestLogRepeatEventTracker = { id: 0, numRepeats: 0, counter: 0 };
@@ -63,7 +67,8 @@ export type QuestLogTrainerBattleEvent = {
 };
 export type QuestLogWildBattleEvent = { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
 export type QuestLogLinkBattleEvent = { outcome: number; playerNames: number[][] };
-export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent;
+export type QuestLogDepartedEvent = { mapSec: number; locationId: number };
+export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent | QuestLogDepartedEvent;
 export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
@@ -80,6 +85,61 @@ export function QuestLog_CheckDepartingIndoorsMap(): void {
       flagSet(C.FLAG_SYS_QL_DEPARTED);
     }
     break;
+  }
+}
+
+function GetMapRegionSection(mapGroup: number, mapNum: number): number {
+  const mapId = rom.mapIdByNum((mapGroup << 8) | mapNum);
+  const section = mapId ? rom.mapIndex.maps[mapId]?.section : undefined;
+  if (!section) throw new Error(`missing region-map section for map ${mapGroup}:${mapNum}`);
+  return rom.c(section);
+}
+
+/** QuestLog_TryRecordDepartedLocation (field_specials.c), called after the indoor marker on map entry. */
+export function QuestLog_TryRecordDepartedLocation(): void {
+  let locationId = varGet(C.VAR_QL_ENTRANCE) & 0xffff;
+  if (!flagGet(C.FLAG_SYS_QL_DEPARTED)) return;
+  let data: QuestLogDepartedEvent = { mapSec: 0, locationId: 0 };
+  const mapGroup = save.location.mapGroup, mapNum = save.location.mapNum;
+
+  if (locationId === C.QL_LOCATION_VIRIDIAN_FOREST_1) {
+    const south = rom.mapNum("MAP_ROUTE2_VIRIDIAN_FOREST_SOUTH_ENTRANCE");
+    const north = rom.mapNum("MAP_ROUTE2_VIRIDIAN_FOREST_NORTH_ENTRANCE");
+    if (mapGroup === (south >>> 8) && (mapNum === (south & 0xff) || mapNum === (north & 0xff))) {
+      data.mapSec = C.MAPSEC_ROUTE_2;
+      data.locationId = mapNum === (south & 0xff) ? locationId : (locationId + 1) & 0xff;
+      SetQuestLogEvent(C.QL_EVENT_DEPARTED, data);
+      flagClear(C.FLAG_SYS_QL_DEPARTED);
+      return;
+    }
+  } else if (locationId === C.QL_LOCATION_LEAGUE_GATE_1) {
+    const route22 = rom.mapNum("MAP_ROUTE22"), route23 = rom.mapNum("MAP_ROUTE23");
+    if (mapGroup === (route22 >>> 8) && (mapNum === (route22 & 0xff) || mapNum === (route23 & 0xff))) {
+      const pairs = cdata<number[][]>("field_specials", "sInsideOutsidePairs");
+      const inside = pairs[locationId]!;
+      data.mapSec = GetMapRegionSection(inside[0]!, inside[1]!);
+      data.locationId = mapNum === (route22 & 0xff) ? locationId : (locationId + 1) & 0xff;
+      SetQuestLogEvent(C.QL_EVENT_DEPARTED, data);
+      flagClear(C.FLAG_SYS_QL_DEPARTED);
+      return;
+    }
+  }
+
+  const pairs = cdata<number[][]>("field_specials", "sInsideOutsidePairs");
+  const [insideGroup, insideNum, outsideGroup, outsideNum] = pairs[locationId]!;
+  if (mapGroup !== outsideGroup || mapNum !== outsideNum) return;
+  data.mapSec = GetMapRegionSection(insideGroup!, insideNum!);
+  data.locationId = locationId & 0xff;
+  if (locationId === C.QL_LOCATION_ROCK_TUNNEL_1) {
+    if (save.pos.x !== 15 || save.pos.y !== 26) data.locationId = (data.locationId + 1) & 0xff;
+  } else if (locationId === C.QL_LOCATION_SEAFOAM_ISLANDS_1) {
+    if (save.pos.x !== 67 || save.pos.y !== 15) data.locationId = (data.locationId + 1) & 0xff;
+  }
+  SetQuestLogEvent(C.QL_EVENT_DEPARTED, data);
+  flagClear(C.FLAG_SYS_QL_DEPARTED);
+  if (locationId === C.QL_LOCATION_ROCKET_HIDEOUT) {
+    varSet(C.VAR_QL_ENTRANCE, C.QL_LOCATION_GAME_CORNER);
+    flagSet(C.FLAG_SYS_QL_DEPARTED);
   }
 }
 
@@ -200,8 +260,13 @@ export function QL_LoadPlayerActionScript(eventIndex: number): QuestLogAction[] 
 
 /** SetQuestLogEvent (quest_log_events.c), storing source event payloads for supported single-player events. */
 export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void {
+  if (eventId === C.QL_EVENT_DEPARTED && sStepRecordingMode === STEP_RECORDING_MODE_DISABLED_UNTIL_DEPART) {
+    QL_EnableRecordingSteps();
+    return;
+  }
   const isShopEvent = eventId === C.QL_EVENT_BOUGHT_ITEM || eventId === C.QL_EVENT_SOLD_ITEM;
   const isStoryItemEvent = eventId === C.QL_EVENT_OBTAINED_STORY_ITEM;
+  const isDepartedEvent = eventId === C.QL_EVENT_DEPARTED;
   const isItemEvent = eventId === C.QL_EVENT_USED_ITEM || eventId === C.QL_EVENT_GAVE_HELD_ITEM
     || eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG || eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC
     || eventId === C.QL_EVENT_TOOK_HELD_ITEM || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM
@@ -214,11 +279,14 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     || eventId === C.QL_EVENT_LINK_BATTLED_DOUBLE
     || eventId === C.QL_EVENT_LINK_BATTLED_MULTI
     || eventId === C.QL_EVENT_LINK_BATTLED_UNION;
-  if (!isShopEvent && !isStoryItemEvent && !isItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
+  if (!isShopEvent && !isStoryItemEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;
   getQuestLogEvents().push({ eventId, data: { ...data } });
+  if (eventId === C.QL_EVENT_DEPARTED && (data as QuestLogDepartedEvent).locationId === C.QL_LOCATION_SAFARI_ZONE) {
+    sStepRecordingMode = STEP_RECORDING_MODE_DISABLED;
+  }
   if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED) {
     gQuestLogState = C.QL_STATE_RECORDING;
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING;
@@ -255,7 +323,7 @@ export function QuestLog_ShouldEndSceneOnMapChange(): boolean {
 }
 
 /** QL_EnableRecordingSteps (quest_log_events.c). */
-export function QL_EnableRecordingSteps(): void { sStepRecordingMode = 1; }
+export function QL_EnableRecordingSteps(): void { sStepRecordingMode = STEP_RECORDING_MODE_ENABLED; }
 
 /** QL_ResetRepeatEventTracker (quest_log_events.c). */
 export function QL_ResetRepeatEventTracker(): void {
@@ -309,7 +377,7 @@ export function SetQLPlayedTheSlots(): void {
 /** Reset the modeled slot flag when ResetQuestLog resets event state. */
 export function ResetQLPlayedTheSlots(): void {
   QL_ResetEventStates();
-  sStepRecordingMode = 0;
+  sStepRecordingMode = STEP_RECORDING_MODE_ENABLED;
   QL_ResetRepeatEventTracker();
   getQuestLogEvents().length = 0;
   (save.questLogPlayerGfxActions ??= []).length = 0;

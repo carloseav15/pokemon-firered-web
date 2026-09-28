@@ -121,6 +121,7 @@ export type SaveData = {
     eventId: number;
     data: { totalMoney: number; lastItemId: number; itemQuantity: number; mapSec: number; hasMultipleTransactions: boolean; logEventId: number }
       | { itemId: number; mapSec: number }
+      | { mapSec: number; locationId: number }
       | { trainerId: number; speciesOpponent: number; speciesPlayer: number; mapSec: number; hpFractionId: number }
       | { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
   }>;
