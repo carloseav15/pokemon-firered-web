@@ -761,15 +761,8 @@ function PrintAllOnCardFront(): boolean {
 function BufferTextForCardBack(): void {
   if (!sTrainerCardDataPtr) return;
   const d = sTrainerCardDataPtr;
-  d.strings[TRAINER_CARD_STRING_NAME] = copy(d.trainerCard.playerName);
-
-  if (d.hasHofResult) {
-    const h = intToDecimal(d.trainerCard.hofDebutHours, STR_CONV_MODE_RIGHT_ALIGN, 3);
-    const m = intToDecimal(d.trainerCard.hofDebutMinutes, STR_CONV_MODE_LEADING_ZEROS, 2);
-    const s = intToDecimal(d.trainerCard.hofDebutSeconds, STR_CONV_MODE_LEADING_ZEROS, 2);
-    const colon = rom.text("gText_Colon2");
-    d.strings[TRAINER_CARD_STRING_HOF_TIME] = concat(h, colon, m, colon, s);
-  }
+  BufferNameForCardBack();
+  BufferHofDebutTime();
 
   if (d.hasLinkResults) {
     d.strings[TRAINER_CARD_STRING_LINK_RECORD] = rom.text("gText_LinkBattles");
@@ -792,6 +785,27 @@ function BufferTextForCardBack(): void {
     d.strings[TRAINER_CARD_STRING_UNION_ROOM] = rom.text("gText_UnionRoomTradesBattles");
     d.strings[TRAINER_CARD_STRING_UNION_ROOM_NUM] = intToDecimal(d.trainerCard.unionRoomNum, STR_CONV_MODE_RIGHT_ALIGN, 5);
   }
+}
+
+/** BufferNameForCardBack (trainer_card.c): copy the player name into the card-back string slot. */
+function BufferNameForCardBack(): void {
+  if (!sTrainerCardDataPtr) return;
+  const d = sTrainerCardDataPtr;
+  d.strings[TRAINER_CARD_STRING_NAME] = copy(d.trainerCard.playerName);
+  if (d.cardType !== CARD_TYPE_FRLG) {
+    d.strings[TRAINER_CARD_STRING_NAME] = concat(d.strings[TRAINER_CARD_STRING_NAME], rom.text("gText_Var1sTrainerCard"));
+  }
+}
+
+/** BufferHofDebutTime (trainer_card.c): format hours and zero-padded minutes/seconds for the back. */
+function BufferHofDebutTime(): void {
+  if (!sTrainerCardDataPtr?.hasHofResult) return;
+  const card = sTrainerCardDataPtr.trainerCard;
+  const h = intToDecimal(card.hofDebutHours, STR_CONV_MODE_RIGHT_ALIGN, 3);
+  const m = intToDecimal(card.hofDebutMinutes, STR_CONV_MODE_LEADING_ZEROS, 2);
+  const s = intToDecimal(card.hofDebutSeconds, STR_CONV_MODE_LEADING_ZEROS, 2);
+  const colon = rom.text("gText_Colon2");
+  sTrainerCardDataPtr.strings[TRAINER_CARD_STRING_HOF_TIME] = concat(h, colon, m, colon, s);
 }
 
 function PrintNameOnCardBack(): void {
