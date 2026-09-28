@@ -192,6 +192,23 @@ export function BattleUseFunc_BerryPouch(open: () => void): void { open(); }
 /** InitBerryPouchFromBattle (item_use.c): initialize BERRYPOUCH_FROMBATTLE and return to the bag. */
 export function InitBerryPouchFromBattle(open: () => void): void { open(); }
 
+/** ItemUse_SwitchToPartyMenuInBattle (item_use.c): fade the active bag or berry pouch before party entry. */
+export function ItemUse_SwitchToPartyMenuInBattle(context: BagTaskContext, enterPartyMenu: () => void): void {
+  context.exit(enterPartyMenu);
+}
+
+/** BattleUseFunc_Medicine (item_use.c): use the battle-specific HP count-up callback. */
+export function BattleUseFunc_Medicine(context: BagTaskContext, item: number, back: () => void,
+  chooseMon: (item: number, cb: typeof PartyMenu.ItemUseCB_Medicine, back: () => void) => void): void {
+  ItemUse_SwitchToPartyMenuInBattle(context, () => chooseMon(item, PartyMenu.ItemUseCB_MedicineStep, back));
+}
+
+/** BattleUseFunc_Ether (item_use.c): choose a party member for the PP restore callback. */
+export function BattleUseFunc_Ether(context: BagTaskContext, item: number, back: () => void,
+  chooseMon: (item: number, cb: typeof PartyMenu.ItemUseCB_Medicine, back: () => void) => void): void {
+  ItemUse_SwitchToPartyMenuInBattle(context, () => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back));
+}
+
 /** BufferStatRoseMessage (pokemon.c): prepare the target stat and expand gText_DefendersStatRose. */
 function BufferStatRoseMessage(statIndex: number): void {
   G.gBattlerTarget = G.gBattlerInMenuId;
@@ -311,13 +328,13 @@ export function CB2_BagMenuFromBattle(): void {
       case "BattleUseFunc_StatBooster":
         BattleUseFunc_StatBooster(ctx.taskId, item, menuBattler, ctx, () => finish(item));
         return;
-      case "BattleUseFunc_Medicine": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_Medicine, back)); return;
-      case "BattleUseFunc_Ether": ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back)); return;
+      case "BattleUseFunc_Medicine": BattleUseFunc_Medicine(ctx, item, back, chooseMon); return;
+      case "BattleUseFunc_Ether": BattleUseFunc_Ether(ctx, item, back, chooseMon); return;
       case "ItemUseInBattle_EnigmaBerry":
         ItemUseInBattle_EnigmaBerry(item, {
           statBooster: () => BattleUseFunc_StatBooster(ctx.taskId, item, menuBattler, ctx, () => finish(item)),
-          medicine: () => ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_Medicine, back)),
-          ether: () => ctx.exit(() => chooseMon(item, PartyMenu.ItemUseCB_TryRestorePP, back)),
+          medicine: () => BattleUseFunc_Medicine(ctx, item, back, chooseMon),
+          ether: () => BattleUseFunc_Ether(ctx, item, back, chooseMon),
           oakStopsYou: notNow,
         });
         return;
