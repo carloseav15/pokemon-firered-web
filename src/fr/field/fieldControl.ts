@@ -12,7 +12,7 @@ import { MAP_OFFSET } from "./fieldmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
 import { GetPlayerMovementDirection, MOVING, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_SPEED_FASTEST, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
 import type { Overworld } from "./overworld";
-import { updateVsSeekerStepCounter } from "./vsSeeker";
+import { UpdateVsSeekerStepCounter } from "./vsSeeker";
 import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems";
 import { EncodeHiddenItemData, GetHiddenItemAttr } from "./hiddenItem";
 import { WonderNews_IncrementStepCounter } from "../wonderNews";
@@ -518,7 +518,7 @@ export class FieldControl {
     if (InUnionRoom() || gQuestLogState === C.QL_STATE_PLAYBACK) return false;
     this.UpdateHappinessStepCounter();
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior)) {
-      if (updateVsSeekerStepCounter()) {
+      if (UpdateVsSeekerStepCounter()) {
         this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_VsSeekerChargingDone"));
         return true;
       }

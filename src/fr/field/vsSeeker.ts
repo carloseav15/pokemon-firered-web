@@ -67,21 +67,33 @@ function rematches(): number[] {
 function stepCounter(): number { return save.trainerRematchStepCounter ?? 0; }
 function setStepCounter(v: number): void { save.trainerRematchStepCounter = v & 0xffff; }
 
+/** VsSeekerResetInBagStepCounter. */
+function VsSeekerResetInBagStepCounter(): void { setStepCounter(stepCounter() & 0xff00); }
+
+/** VsSeekerSetStepCounterInBagFull. */
+function VsSeekerSetStepCounterInBagFull(): void { setStepCounter((stepCounter() & 0xff00) | 100); }
+
+/** VsSeekerResetChargingStepCounter. */
+function VsSeekerResetChargingStepCounter(): void { setStepCounter(stepCounter() & 0x00ff); }
+
+/** VsSeekerSetStepCounterFullyCharged. */
+function VsSeekerSetStepCounterFullyCharged(): void { setStepCounter((stepCounter() & 0x00ff) | (100 << 8)); }
+
 const hasTrainerBeenFought = (trainerId: number): boolean => flagGet(C.TRAINER_FLAGS_START + trainerId);
 
 /** GetTrainerFlagFromScript: the trainer id is at +2 of a script that starts with trainerbattle. */
-function trainerFlagFromScript(script: number): number {
+function GetTrainerFlagFromScript(script: number): number {
   return script ? rom.u8(script + 2) | (rom.u8(script + 3) << 8) : 0;
 }
 
-function randomFaceDirectionMovementType(): number {
+function GetRandomFaceDirectionMovementType(): number {
   return [C.MOVEMENT_TYPE_FACE_UP, C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_LEFT, C.MOVEMENT_TYPE_FACE_RIGHT][random() % 4];
 }
 
 const isRaiseHand = (type: number): boolean =>
   type === C.MOVEMENT_TYPE_RAISE_HAND_AND_STOP || type === C.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP || type === C.MOVEMENT_TYPE_RAISE_HAND_AND_SWIM;
 
-function runningBehaviorFromGraphicsId(gfx: number): number {
+function GetRunningBehaviorFromGraphicsId(gfx: number): number {
   const jumpers = ["LITTLE_GIRL", "YOUNGSTER", "BOY", "BUG_CATCHER", "LASS", "WOMAN_1", "CRUSH_GIRL", "MAN", "ROCKER", "WOMAN_2", "BEAUTY",
     "BALDING_MAN", "TUBER_F", "CAMPER", "PICNICKER", "COOLTRAINER_M", "COOLTRAINER_F", "SWIMMER_M_LAND", "SWIMMER_F_LAND", "BLACK_BELT", "HIKER", "SAILOR"];
   if (jumpers.some((n) => rom.constants[`OBJ_EVENT_GFX_${n}`] === gfx)) return C.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP;
@@ -89,7 +101,7 @@ function runningBehaviorFromGraphicsId(gfx: number): number {
   return C.MOVEMENT_TYPE_RAISE_HAND_AND_STOP;
 }
 
-function nextAvailableRematchTrainer(trainerFlagNo: number): { idx: number; j: number } {
+function GetNextAvailableRematchTrainer(trainerFlagNo: number): { idx: number; j: number } {
   const table = sRematches();
   for (let i = 0; i < table.length; i++) {
     const ids = table[i].trainerIdxs;
@@ -107,7 +119,7 @@ function nextAvailableRematchTrainer(trainerFlagNo: number): { idx: number; j: n
   return { idx: 0, j: 0 };
 }
 
-function lookupOpponent(trainerId: number): number {
+function LookupVsSeekerOpponentInArray(trainerId: number): number {
   const table = sRematches();
   for (let i = 0; i < table.length; i++) {
     for (let j = 0; j < MAX_REMATCH_PARTIES; j++) {
@@ -120,12 +132,12 @@ function lookupOpponent(trainerId: number): number {
   return -1;
 }
 
-function rematchIdx(trainerFlagIdx: number): number {
+function GetRematchIdx(trainerFlagIdx: number): number {
   return sRematches().findIndex((r) => r.trainerIdxs[0] === trainerFlagIdx);
 }
 
-/** TryGetRematchTrainerIdGivenGameState */
-function rematchIdGivenGameState(ids: number[], rematch: number): number {
+/** GetRematchTrainerIdGivenGameState. */
+function GetRematchTrainerIdGivenGameState(ids: number[], rematch: number): number {
   const back = (idx: number): number => {
     while (--idx !== 0) if ((ids[idx] ?? 0) !== SKIP) return idx;
     return 0;
@@ -140,27 +152,51 @@ function rematchIdGivenGameState(ids: number[], rematch: number): number {
   return rematch;
 }
 
+/** TryGetRematchTrainerIdGivenGameState; return the C in/out index after progression gates. */
+function TryGetRematchTrainerIdGivenGameState(ids: number[], rematch: number): number {
+  switch (rematch) {
+    case 1: if (!flagGet(C.FLAG_GOT_VS_SEEKER)) return GetRematchTrainerIdGivenGameState(ids, rematch); break;
+    case 2: if (!flagGet(C.FLAG_WORLD_MAP_CELADON_CITY)) return GetRematchTrainerIdGivenGameState(ids, rematch); break;
+    case 3: if (!flagGet(C.FLAG_WORLD_MAP_FUCHSIA_CITY)) return GetRematchTrainerIdGivenGameState(ids, rematch); break;
+    case 4: if (!flagGet(C.FLAG_SYS_GAME_CLEAR)) return GetRematchTrainerIdGivenGameState(ids, rematch); break;
+    case 5: if (!flagGet(C.FLAG_SYS_CAN_LINK_WITH_RS)) return GetRematchTrainerIdGivenGameState(ids, rematch); break;
+  }
+  return rematch;
+}
+
 /** GetRematchTrainerId */
 export function getRematchTrainerId(trainerId: number): number {
-  const { idx, j } = nextAvailableRematchTrainer(trainerId);
+  const { idx, j } = GetNextAvailableRematchTrainer(trainerId);
   if (!j) return 0;
-  return sRematches()[idx].trainerIdxs[rematchIdGivenGameState(sRematches()[idx].trainerIdxs, j)];
+  return sRematches()[idx].trainerIdxs[TryGetRematchTrainerIdGivenGameState(sRematches()[idx].trainerIdxs, j)];
 }
 
 const isThisTrainerRematchable = (localId: number): boolean => !!rematches()[localId];
 
 /** ShouldTryRematchBattle */
 export function shouldTryRematchBattle(opponent: number): boolean {
-  const idx = rematchIdx(opponent);
-  if (idx !== -1 && isThisTrainerRematchable(varGet(SV.LAST_TALKED))) return true;
-  if (idx === -1) return false;
-  return hasTrainerBeenFought(sRematches()[idx].trainerIdxs[0]);
+  if (ShouldTryRematchBattleInternal(opponent)) return true;
+  return HasRematchTrainerAlreadyBeenFought(opponent);
 }
 
 /** IsTrainerReadyForRematch */
 export function isTrainerReadyForRematch(opponent: number): boolean {
-  const idx = lookupOpponent(opponent);
-  return idx !== -1 && isThisTrainerRematchable(varGet(SV.LAST_TALKED));
+  return IsTrainerReadyForRematchInternal(opponent);
+}
+
+function ShouldTryRematchBattleInternal(trainerBattleOpponent: number): boolean {
+  const idx = GetRematchIdx(trainerBattleOpponent);
+  return idx >= 0 && idx < sRematches().length && isThisTrainerRematchable(varGet(SV.LAST_TALKED));
+}
+
+function HasRematchTrainerAlreadyBeenFought(trainerBattleOpponent: number): boolean {
+  const idx = GetRematchIdx(trainerBattleOpponent);
+  return idx !== -1 && hasTrainerBeenFought(sRematches()[idx].trainerIdxs[0]);
+}
+
+function IsTrainerReadyForRematchInternal(trainerId: number): boolean {
+  const idx = LookupVsSeekerOpponentInArray(trainerId);
+  return idx !== -1 && idx < sRematches().length && isThisTrainerRematchable(varGet(SV.LAST_TALKED));
 }
 
 /** ClearRematchStateOfLastTalked */
@@ -170,17 +206,17 @@ export function clearRematchStateOfLastTalked(): void {
 
 /** ClearRematchStateByTrainerId */
 export function clearRematchStateByTrainerId(game: Game, opponent: number): void {
-  const idx = lookupOpponent(opponent);
+  const idx = LookupVsSeekerOpponentInArray(opponent);
   if (idx === -1) return;
   const ow = game.overworld;
   const faceTypes = [C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_UP, C.MOVEMENT_TYPE_FACE_LEFT, C.MOVEMENT_TYPE_FACE_RIGHT];
   for (const t of ow.objects.templates) {
     if (t.trainerType !== C.TRAINER_TYPE_NORMAL && t.trainerType !== C.TRAINER_TYPE_BURIED) continue;
-    if (lookupOpponent(trainerFlagFromScript(t.script)) !== idx) continue;
+    if (LookupVsSeekerOpponentInArray(GetTrainerFlagFromScript(t.script)) !== idx) continue;
     const o = ow.objects.byLocalIdAndMap(t.localId, save.location.mapNum, save.location.mapGroup);
     rematches()[t.localId] = 0;
     if (!o) continue;
-    randomFaceDirectionMovementType();
+    GetRandomFaceDirectionMovementType();
     t.movementType = faceTypes[o.facingDirection];
     o.movementType = ow.objects.objects[ow.selectedObject] === o ? faceTypes[o.facingDirection] : C.MOVEMENT_TYPE_FACE_DOWN;
   }
@@ -191,7 +227,7 @@ function clearAllTrainerRematchStates(): void {
 }
 
 /** UpdateVsSeekerStepCounter: true when the charge completes. */
-export function updateVsSeekerStepCounter(): boolean {
+export function UpdateVsSeekerStepCounter(): boolean {
   let counter = stepCounter();
   if (checkBagHasItem(C.ITEM_VS_SEEKER, 1) && (counter & 0xff) < 100) counter++;
   setStepCounter(counter);
@@ -208,7 +244,7 @@ export function updateVsSeekerStepCounter(): boolean {
 }
 
 /** MapResetTrainerRematches (on every map load) */
-export function mapResetTrainerRematches(game: Game): void {
+export function MapResetTrainerRematches(game: Game): void {
   flagClear(C.FLAG_SYS_VS_SEEKER_CHARGING);
   setStepCounter(stepCounter() & 0xff);
   clearAllTrainerRematchStates();
@@ -216,12 +252,12 @@ export function mapResetTrainerRematches(game: Game): void {
     if (!isRaiseHand(o.movementType)) continue;
     o.sprite.x2 = 0;
     o.sprite.y2 = 0;
-    game.overworld.objects.setTrainerMovementType(o, randomFaceDirectionMovementType());
+    game.overworld.objects.setTrainerMovementType(o, GetRandomFaceDirectionMovementType());
   }
 }
 
 /** VsSeekerFreezeObjectsAfterChargeComplete */
-export function vsSeekerFreezeObjectsAfterChargeComplete(game: Game): void {
+export function Task_ResetObjectsRematchWantedState(game: Game): void {
   const ow = game.overworld;
   let standing = 0, frozen = 0;
   const id = tasks.create(() => {
@@ -244,142 +280,220 @@ export function vsSeekerFreezeObjectsAfterChargeComplete(game: Game): void {
   }, 80);
 }
 
+/** VsSeekerFreezeObjectsAfterChargeComplete; the C task helper requires this runtime's game context. */
+export function VsSeekerFreezeObjectsAfterChargeComplete(game: Game): void {
+  Task_ResetObjectsRematchWantedState(game);
+}
+
 /** VsSeekerResetObjectMovementAfterChargeComplete */
-export function vsSeekerResetObjectMovementAfterChargeComplete(game: Game): void {
+export function ResetMovementOfRematchableTrainers(game: Game): void {
   const ow = game.overworld;
   for (const t of ow.objects.templates) {
     if (t.trainerType !== C.TRAINER_TYPE_NORMAL && t.trainerType !== C.TRAINER_TYPE_BURIED) continue;
     if (!isRaiseHand(t.movementType)) continue;
-    const type = randomFaceDirectionMovementType();
+    const type = GetRandomFaceDirectionMovementType();
     const o = ow.objects.byLocalIdAndMap(t.localId, save.location.mapNum, save.location.mapGroup);
     if (o) ow.objects.setTrainerMovementType(o, type);
     t.movementType = type;
   }
 }
 
+/** VsSeekerResetObjectMovementAfterChargeComplete. */
+export function VsSeekerResetObjectMovementAfterChargeComplete(game: Game): void {
+  ResetMovementOfRematchableTrainers(game);
+}
+
 type TrainerInfo = { script: number; trainerIdx: number; localId: number; object: ObjectEvent | undefined; x: number; y: number; graphicsId: number };
+
+type VsSeekerResponse = { code: number; wantsRematch: Array<{ trainerIdx: number; behavior: number }> };
+
+/** GatherNearbyTrainerInfo; retain loaded trainer templates in map order. */
+function GatherNearbyTrainerInfo(game: Game): TrainerInfo[] {
+  const ow = game.overworld;
+  return ow.objects.templates
+    .filter((t) => t.trainerType === C.TRAINER_TYPE_NORMAL || t.trainerType === C.TRAINER_TYPE_BURIED)
+    .map((t) => {
+      const object = ow.objects.byLocalIdAndMap(t.localId, save.location.mapNum, save.location.mapGroup);
+      return { script: t.script, trainerIdx: GetTrainerFlagFromScript(t.script), localId: t.localId, object,
+        x: (object?.currentCoords.x ?? 0) - 7, y: (object?.currentCoords.y ?? 0) - 7, graphicsId: t.graphicsId };
+    });
+}
+
+/** ObjectEventIdIsSane: object identity is represented by a live event reference in this runtime. */
+function ObjectEventIdIsSane(info: TrainerInfo): boolean { return !!info.object?.active; }
+
+/** IsTrainerVisibleOnScreen with the source's 15 by 11 tile search rectangle. */
+function IsTrainerVisibleOnScreen(ow: Overworld, info: TrainerInfo): boolean {
+  const p = ow.player.object;
+  const x = p.currentCoords.x - 7, y = p.currentCoords.y - 7;
+  return x - 7 <= info.x && x + 7 >= info.x && y - 5 <= info.y && y + 5 >= info.y && ObjectEventIdIsSane(info);
+}
+
+/** GetRematchableTrainerLocalId. */
+function GetRematchableTrainerLocalId(ow: Overworld, info: TrainerInfo[]): number {
+  for (const trainer of info) {
+    if (IsTrainerVisibleOnScreen(ow, trainer)
+      && (!hasTrainerBeenFought(trainer.trainerIdx) || GetNextAvailableRematchTrainer(trainer.trainerIdx).j))
+      return trainer.localId;
+  }
+  return 0xff;
+}
+
+/** CanUseVsSeeker returns the source enum: 0 not charged, 1 no trainers, 2 usable. */
+function CanUseVsSeeker(ow: Overworld, info: TrainerInfo[]): number {
+  if ((stepCounter() & 0xff) !== 100) return 0;
+  return GetRematchableTrainerLocalId(ow, info) === 0xff ? 1 : 2;
+}
+
+/** StartTrainerObjectMovementScript. */
+function StartTrainerObjectMovementScript(game: Game, info: TrainerInfo, bytes: number[]): void {
+  if (info.object) game.overworld.objects.unfreeze(info.object);
+  game.scriptMovement.startBytes(info.object, bytes);
+}
+
+/** GetCurVsSeekerResponse: a visible earlier copy of this trainer decides later copies. */
+function GetCurVsSeekerResponse(ow: Overworld, info: TrainerInfo[], index: number, trainerIdx: number, accepted: number[]): number {
+  for (let i = 0; i < index; i++) {
+    if (!IsTrainerVisibleOnScreen(ow, info[i]) || info[i].trainerIdx !== trainerIdx) continue;
+    return accepted.includes(trainerIdx) ? 2 : 1;
+  }
+  return 0;
+}
+
+/** GetVsSeekerResponseInArea; response values are no response, unfought, and found rematches. */
+function GetVsSeekerResponseInArea(game: Game, info: TrainerInfo[]): VsSeekerResponse {
+  const ow = game.overworld;
+  let notYetFought = false;
+  let wantsAnyRematch = false;
+  const wantsRematch: VsSeekerResponse["wantsRematch"] = [];
+  info.forEach((trainer, index) => {
+    if (!IsTrainerVisibleOnScreen(ow, trainer)) return;
+    if (!hasTrainerBeenFought(trainer.trainerIdx)) {
+      StartTrainerObjectMovementScript(game, trainer, [C.MOVEMENT_ACTION_EMOTE_EXCLAMATION_MARK, C.MOVEMENT_ACTION_STEP_END]);
+      notYetFought = true;
+      return;
+    }
+    const rematchTrainerIdx = GetNextAvailableRematchTrainer(trainer.trainerIdx).j;
+    if (!rematchTrainerIdx) {
+      StartTrainerObjectMovementScript(game, trainer, [C.MOVEMENT_ACTION_EMOTE_X, C.MOVEMENT_ACTION_STEP_END]);
+      return;
+    }
+    const rval = random() % 100; // C advances RNG even when an earlier copy decides the result.
+    const response = GetCurVsSeekerResponse(ow, info, index, trainer.trainerIdx, wantsRematch.map((w) => w.trainerIdx));
+    const wants = response === 2 || (response === 0 && rval >= 30);
+    if (!wants) {
+      StartTrainerObjectMovementScript(game, trainer, [C.MOVEMENT_ACTION_EMOTE_X, C.MOVEMENT_ACTION_STEP_END]);
+      return;
+    }
+    rematches()[trainer.localId] = rematchTrainerIdx;
+    if (trainer.object) ow.objects.shiftStill(trainer.object);
+    StartTrainerObjectMovementScript(game, trainer, [C.MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_DOWN, C.MOVEMENT_ACTION_EMOTE_DOUBLE_EXCL_MARK, C.MOVEMENT_ACTION_STEP_END]);
+    wantsRematch.push({ trainerIdx: trainer.trainerIdx, behavior: GetRunningBehaviorFromGraphicsId(trainer.graphicsId) });
+    wantsAnyRematch = true;
+  });
+  if (wantsAnyRematch) {
+    sound.playSE(C.SE_PIN);
+    flagSet(C.FLAG_SYS_VS_SEEKER_CHARGING);
+    VsSeekerResetChargingStepCounter();
+    return { code: 2, wantsRematch };
+  }
+  return { code: notYetFought ? 1 : 0, wantsRematch };
+}
 
 /** Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker (item_use.c). */
 export function Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release: () => void): void {
   Task_ItemUse_CloseMessageBoxAndReturnToField(release);
 }
 
-/** Task_VsSeeker_0..3 */
-export function useVsSeeker(game: Game, item: number, showMessage: (text: Uint8Array, next: () => void) => void, release: () => void): void {
+type VsSeekerTask = {
+  game: Game;
+  info: TrainerInfo[];
+  showMessage: (text: Uint8Array, next: () => void) => void;
+  release: () => void;
+  isAnimFinished: () => boolean;
+  d0: number;
+  d1: number;
+  d2: number;
+  response: VsSeekerResponse;
+};
+
+const vsSeekerTasks = new Map<number, VsSeekerTask>();
+
+/** Task_VsSeeker_0; task id and global callbacks are adapted to the active field runtime. */
+export function Task_VsSeeker_0(game: Game, item: number, showMessage: (text: Uint8Array, next: () => void) => void, release: () => void): void {
   const ow = game.overworld;
-  const info: TrainerInfo[] = ow.objects.templates
-    .filter((t) => t.trainerType === C.TRAINER_TYPE_NORMAL || t.trainerType === C.TRAINER_TYPE_BURIED)
-    .map((t) => {
-      const object = ow.objects.byLocalIdAndMap(t.localId, save.location.mapNum, save.location.mapGroup);
-      return { script: t.script, trainerIdx: trainerFlagFromScript(t.script), localId: t.localId, object,
-        x: (object?.currentCoords.x ?? 0) - 7, y: (object?.currentCoords.y ?? 0) - 7, graphicsId: t.graphicsId };
-    });
-  const visible = (t: TrainerInfo): boolean => {
-    const p = ow.player.object;
-    const x = p.currentCoords.x - 7, y = p.currentCoords.y - 7;
-    return x - 7 <= t.x && x + 7 >= t.x && y - 5 <= t.y && y + 5 >= t.y && !!t.object?.active;
-  };
-  const charge = stepCounter() & 0xff;
-  if (charge !== 100) {
-    // TV_PrintIntToStringVar(0, 100 - steps)
+  const info = GatherNearbyTrainerInfo(game);
+  const useState = CanUseVsSeeker(ow, info);
+  if (useState === 0) {
+    const charge = stepCounter() & 0xff;
     import("../gba/charmap").then(({ TV_PrintIntToStringVar }) => {
       TV_PrintIntToStringVar(0, 100 - charge);
       showMessage(rom.text("VSSeeker_Text_BatteryNotChargedNeedXSteps"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release));
     });
     return;
   }
-  const rematchable = info.find((t) => visible(t) && (!hasTrainerBeenFought(t.trainerIdx) || nextAvailableRematchTrainer(t.trainerIdx).j));
-  if (!rematchable) { showMessage(rom.text("VSSeeker_Text_NoTrainersWithinRange"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release)); return; }
+  if (useState === 1) {
+    showMessage(rom.text("VSSeeker_Text_NoTrainersWithinRange"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release));
+    return;
+  }
 
   ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
-
-  // FLDEFF_USE_VS_SEEKER
   ow.controlsLocked = true;
   ow.objects.freezeAll();
-  let state = 0, d0 = 15, d1 = 0, d2 = 0;
-  const isVsSeekerAnimFinished = StartVsSeekerFieldEffect(ow);
+  const id = tasks.create(Task_VsSeeker_1, 80);
+  vsSeekerTasks.set(id, {
+    game, info, showMessage, release, isAnimFinished: StartVsSeekerFieldEffect(ow),
+    d0: 15, d1: 0, d2: 0, response: { code: 0, wantsRematch: [] },
+  });
+}
 
-  let responseCode = 0;
-  const wantsRematch: Array<{ trainerIdx: number; behavior: number }> = [];
-  const id = tasks.create(() => {
-    switch (state) {
-      case 0:
-        if (--d0 === 0) { state = 1; d1 = 16; }
-        break;
-      case 1:
-        if (d2 !== 2 && --d1 === 0) { sound.playSE(C.SE_CONTEST_MONS_TURN); d1 = 11; d2++; }
-        if (isVsSeekerAnimFinished()) {
-          setStepCounter(stepCounter() & 0xff00);
-          responseCode = responseInArea();
-          game.scriptMovement.startBytes(ow.player.object, [C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_STEP_END]);
-          state = 2;
-        }
-        break;
-      case 2:
-        if (!game.scriptMovement.isFinished(ow.player.object)) break;
-        tasks.destroy(id);
-        if (responseCode === 0) { showMessage(rom.text("VSSeeker_Text_TrainersNotReady"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release)); return; }
-        if (responseCode === 2) startAllRespondantIdleMovements();
-        release();
-        break;
-    }
-  }, 80);
+/** Task_VsSeeker_1: wait 15 frames, then arm the response sound timer. */
+export function Task_VsSeeker_1(taskId: number): void {
+  const flow = vsSeekerTasks.get(taskId);
+  if (!flow || --flow.d0 !== 0) return;
+  flow.d1 = 16;
+  tasks.setFunc(taskId, Task_VsSeeker_2);
+}
 
-  const startMovement = (t: TrainerInfo, bytes: number[]): void => {
-    if (t.object) ow.objects.unfreeze(t.object);
-    game.scriptMovement.startBytes(t.object, bytes);
-  };
-  const responseInArea = (): number => {
-    let notYet = false, noRematch = false, yes = false;
-    info.forEach((t, index) => {
-      if (!visible(t)) return;
-      if (!hasTrainerBeenFought(t.trainerIdx)) {
-        startMovement(t, [C.MOVEMENT_ACTION_EMOTE_EXCLAMATION_MARK, C.MOVEMENT_ACTION_STEP_END]);
-        notYet = true;
-        return;
-      }
-      const rematchTrainerIdx = nextAvailableRematchTrainer(t.trainerIdx).j;
-      if (rematchTrainerIdx === 0) {
-        startMovement(t, [C.MOVEMENT_ACTION_EMOTE_X, C.MOVEMENT_ACTION_STEP_END]);
-        noRematch = true;
-        return;
-      }
-      let rval = random() % 100;
-      // GetCurVsSeekerResponse: an earlier copy of the same trainer decides this one.
-      for (let i = 0; i < index; i++) {
-        if (visible(info[i]) && info[i].trainerIdx === t.trainerIdx) {
-          rval = wantsRematch.some((w) => w.trainerIdx === t.trainerIdx) ? 100 : 0;
-          break;
-        }
-      }
-      if (rval < 30) {
-        startMovement(t, [C.MOVEMENT_ACTION_EMOTE_X, C.MOVEMENT_ACTION_STEP_END]);
-        noRematch = true;
-      } else {
-        rematches()[t.localId] = rematchTrainerIdx;
-        if (t.object) ow.objects.shiftStill(t.object);
-        startMovement(t, [C.MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_DOWN, C.MOVEMENT_ACTION_EMOTE_DOUBLE_EXCL_MARK, C.MOVEMENT_ACTION_STEP_END]);
-        wantsRematch.push({ trainerIdx: t.trainerIdx, behavior: runningBehaviorFromGraphicsId(t.graphicsId) });
-        yes = true;
-      }
-    });
-    void noRematch;
-    if (yes) {
-      sound.playSE(C.SE_PIN);
-      flagSet(C.FLAG_SYS_VS_SEEKER_CHARGING);
-      setStepCounter(stepCounter() & 0xff);
-      return 2;
+/** Task_VsSeeker_2: wait for the avatar effect, gather responses, then wait for the player movement. */
+export function Task_VsSeeker_2(taskId: number): void {
+  const flow = vsSeekerTasks.get(taskId);
+  if (!flow) return;
+  if (flow.d2 !== 2 && --flow.d1 === 0) {
+    sound.playSE(C.SE_CONTEST_MONS_TURN);
+    flow.d1 = 11;
+    flow.d2++;
+  }
+  if (!flow.isAnimFinished()) return;
+  VsSeekerResetInBagStepCounter();
+  flow.response = GetVsSeekerResponseInArea(flow.game, flow.info);
+  flow.game.scriptMovement.startBytes(flow.game.overworld.player.object, [C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_DELAY_16, C.MOVEMENT_ACTION_STEP_END]);
+  tasks.setFunc(taskId, Task_VsSeeker_3);
+}
+
+/** Task_VsSeeker_3: finish the player movement and release the field. */
+export function Task_VsSeeker_3(taskId: number): void {
+  const flow = vsSeekerTasks.get(taskId);
+  if (!flow || !flow.game.scriptMovement.isFinished(flow.game.overworld.player.object)) return;
+  tasks.destroy(taskId);
+  vsSeekerTasks.delete(taskId);
+  if (flow.response.code === 0) {
+    flow.showMessage(rom.text("VSSeeker_Text_TrainersNotReady"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(flow.release));
+    return;
+  }
+  if (flow.response.code === 2) StartAllRespondantIdleMovements(flow.game, flow.info, flow.response.wantsRematch);
+  flow.release();
+}
+
+/** StartAllRespondantIdleMovements. */
+function StartAllRespondantIdleMovements(game: Game, info: TrainerInfo[], wantsRematch: VsSeekerResponse["wantsRematch"]): void {
+  const ow = game.overworld;
+  for (const response of wantsRematch) {
+    for (const trainer of info) {
+      if (trainer.trainerIdx !== response.trainerIdx || !trainer.object) continue;
+      ow.objects.setTrainerMovementType(trainer.object, response.behavior);
+      ow.objects.overrideTemplateMovementType(trainer.object, response.behavior);
+      rematches()[trainer.localId] = GetNextAvailableRematchTrainer(trainer.trainerIdx).j;
     }
-    return notYet ? 1 : 0;
-  };
-  const startAllRespondantIdleMovements = (): void => {
-    for (const w of wantsRematch) {
-      for (const t of info) {
-        if (t.trainerIdx !== w.trainerIdx || !t.object) continue;
-        ow.objects.setTrainerMovementType(t.object, w.behavior);
-        ow.objects.overrideTemplateMovementType(t.object, w.behavior);
-        rematches()[t.localId] = nextAvailableRematchTrainer(t.trainerIdx).j;
-      }
-    }
-  };
+  }
 }

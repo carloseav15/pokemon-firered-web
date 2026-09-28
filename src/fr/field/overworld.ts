@@ -30,7 +30,7 @@ import { MapPreviewManager, MapHasPreviewScreen, MapHasPreviewScreen_HandleQLSta
 import { ScriptContext } from "../script/context";
 import { FieldCB_ShowPortholeView } from "../script/specials";
 import type { Game } from "../game";
-import { mapResetTrainerRematches } from "./vsSeeker";
+import { MapResetTrainerRematches } from "./vsSeeker";
 import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer";
 import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
@@ -488,7 +488,7 @@ export class Overworld {
     this.objects.ClearVirtualObjects();
     this.stepCallback.reset();
     ResetCyclingRoadChallengeData();
-    mapResetTrainerRematches(this.game);
+    MapResetTrainerRematches(this.game);
     TryRegenerateRenewableHiddenItems(save.location.mapGroup, save.location.mapNum);
   }
 

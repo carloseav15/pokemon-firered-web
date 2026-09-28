@@ -31,7 +31,7 @@ import { SaveStatToString } from "./saveMenuUtil";
 import * as C from "./generated/constants";
 import { CB2_BagMenuFromStartMenu, fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
-import { useVsSeeker } from "./field/vsSeeker";
+import { Task_VsSeeker_0 } from "./field/vsSeeker";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
 import { InUnionRoom } from "./unionRoom";
@@ -841,7 +841,7 @@ export class Game {
       ow.objects.unfreezeAll();
       ow.controlsLocked = false;
     };
-    useVsSeeker(this, item, (text, next) => fieldMessage(this, text, next), release);
+    Task_VsSeeker_0(this, item, (text, next) => fieldMessage(this, text, next), release);
   }
   askSaveGame(): void {
     const ow = this.overworld;

@@ -23,7 +23,7 @@ import { EXTRA_SPECIALS } from "./specialsExtra";
 import { DAYCARE_SPECIALS, hatchPartyEgg } from "../pokemon/daycare";
 import { initRoamer } from "../pokemon/roamer";
 import { doSeagallopFerryScene, getSeagallopNumber, getSelectedSeagallopDestination, seagallopDestinationItems } from "../seagallop";
-import { isTrainerReadyForRematch, shouldTryRematchBattle, vsSeekerFreezeObjectsAfterChargeComplete, vsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
+import { isTrainerReadyForRematch, shouldTryRematchBattle, VsSeekerFreezeObjectsAfterChargeComplete, VsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 import { EnterSafariMode, ExitSafariMode } from "../field/safariZone";
 import { GetPlayerAvatarBike, GetPlayerFacingDirection } from "../field/playerAvatar";
 import { SetUnlockedPokedexFlags } from "../pokemon/saveLocation";
@@ -327,8 +327,8 @@ export const SPECIALS: Record<string, Special> = {
   ShouldTryRematchBattle: (ctx) => (shouldTryRematchBattle(ctx.ow.game.battleSetup.opponentA) ? 1 : 0),
   IsTrainerReadyForRematch: (ctx) => (isTrainerReadyForRematch(ctx.ow.game.battleSetup.opponentA) ? 1 : 0),
   StartRematchBattle: (ctx) => { ctx.ow.game.battleSetup.startTrainerBattle(true); ctx.ow.script.ScriptContext_Stop(); },
-  VsSeekerFreezeObjectsAfterChargeComplete: (ctx) => { vsSeekerFreezeObjectsAfterChargeComplete(ctx.ow.game); },
-  VsSeekerResetObjectMovementAfterChargeComplete: (ctx) => { vsSeekerResetObjectMovementAfterChargeComplete(ctx.ow.game); },
+  VsSeekerFreezeObjectsAfterChargeComplete: (ctx) => { VsSeekerFreezeObjectsAfterChargeComplete(ctx.ow.game); },
+  VsSeekerResetObjectMovementAfterChargeComplete: (ctx) => { VsSeekerResetObjectMovementAfterChargeComplete(ctx.ow.game); },
   GetBattleOutcome: (ctx) => ctx.ow.game.battleOutcome,
   GetTrainerBattleMode: (ctx) => ctx.ow.game.battleSetup.mode,
   ShowTrainerIntroSpeech: (ctx) => { ctx.ow.game.battleSetup.ShowTrainerIntroSpeech(); },
