@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7557/10115 (74.7 %)**.
-- Archivos C con funciones aún sin homólogo: **52**; quedan **2558 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7560/10115 (74.7 %)**.
+- Archivos C con funciones aún sin homólogo: **52**; quedan **2555 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 117.216 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~60.275 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~60.222 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -33,8 +33,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 13 | `field_fadetransition.c` | parcial | 965 | 43/59 | ~261 |  |
 | 14 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 15 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 16 | `easy_chat.c` | parcial | 730 | 8/39 | ~580 |  |
-| 17 | `fieldmap.c` | parcial | 951 | 21/54 | ~581 |  |
+| 16 | `fieldmap.c` | parcial | 951 | 24/54 | ~528 |  |
+| 17 | `easy_chat.c` | parcial | 730 | 8/39 | ~580 |  |
 | 18 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
 | 19 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
 | 20 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
