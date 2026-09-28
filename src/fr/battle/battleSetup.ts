@@ -336,7 +336,7 @@ export class BattleSetup {
       enemyParty: this.trainerParty(this.opponentA),
       isFirstBattle: firstBattle,
       isDouble: !!trainer?.double && this.mode !== TRAINER_BATTLE_EARLY_RIVAL,
-      onEnd: (outcome) => this.endTrainerBattle(outcome, rematch),
+      onEnd: (outcome) => rematch ? this.CB2_EndRematchBattle(outcome) : this.CB2_EndTrainerBattle(outcome),
     });
   }
 
@@ -347,7 +347,8 @@ export class BattleSetup {
     this.game.startBattle(request);
   }
 
-  private endTrainerBattle(outcome: number, rematch = false): void {
+  private CB2_EndTrainerBattle(outcome: number): void {
+    this.game.battleOutcome = outcome;
     const lost = IsPlayerDefeated(outcome);
     if (this.mode === TRAINER_BATTLE_EARLY_RIVAL) {
       if (lost) {
@@ -365,13 +366,30 @@ export class BattleSetup {
       this.game.returnToFieldContinueScript(true);
       return;
     }
+    if (this.opponentA === rom.c("TRAINER_SECRET_BASE")) {
+      this.game.returnToFieldContinueScript(true);
+      return;
+    }
     if (lost) {
       this.game.whiteOut();
       return;
     }
     this.SetBattledTrainerFlag();
-    if (rematch) clearRematchStateOfLastTalked(); // CB2_EndRematchBattle
     this.game.returnToFieldContinueScript(true);
+  }
+
+  /** CB2_EndRematchBattle (battle_setup.c). */
+  private CB2_EndRematchBattle(outcome: number): void {
+    this.game.battleOutcome = outcome;
+    if (this.opponentA === rom.c("TRAINER_SECRET_BASE")) {
+      this.game.returnToFieldContinueScript(true);
+    } else if (IsPlayerDefeated(outcome)) {
+      this.game.whiteOut();
+    } else {
+      this.game.returnToFieldContinueScript(true);
+      this.SetBattledTrainerFlag();
+      clearRematchStateOfLastTalked();
+    }
   }
 
   createScriptedWildMon(species: number, level: number, item: number): void {
