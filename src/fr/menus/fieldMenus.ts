@@ -210,6 +210,12 @@ function ItemUseOnFieldCB_Rod(game: Game, rodType: number): void {
   startFishing(game.overworld, rodType);
 }
 
+/** ItemUseOutOfBattle_Itemfinder (item_use.c): count the use before entering its field callback. */
+export function ItemUseOutOfBattle_Itemfinder(game: Game, onField: (callback: () => void) => void): void {
+  incrementGameStat(C.GAME_STAT_USED_ITEMFINDER);
+  onField(() => startItemFinder(game));
+}
+
 /** FieldUseFunc_Rod (item_use.c): gate the rod, then enter the field callback. */
 export function FieldUseFunc_Rod(game: Game, item: number, route: {
   notNow: () => void; onField: (callback: () => void) => void;
@@ -347,8 +353,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
           });
           return;
         case "ItemUseOutOfBattle_Itemfinder":
-          incrementGameStat(C.GAME_STAT_USED_ITEMFINDER);
-          onField(() => startItemFinder(game));
+          ItemUseOutOfBattle_Itemfinder(game, onField);
           return;
         case "FieldUseFunc_TownMap":
           // From the bag the map returns to the bag (CB2_BagMenuFromStartMenu); a registered use returns to the field.
