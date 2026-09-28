@@ -30,6 +30,50 @@ function SafariBufferExecCompleted(): void {
   G.gBattleControllerExecFlags = (G.gBattleControllerExecFlags & ~gBitTable[G.gActiveBattler]) >>> 0;
 }
 
+// These Safari commands are explicit no-op handlers in battle_controller_safari.c.
+// Keeping their C names and dispatch entries documents that the controller consumes them.
+function SafariHandleGetMonData(): void { SafariBufferExecCompleted(); }
+function SafariHandleGetRawMonData(): void { SafariBufferExecCompleted(); }
+function SafariHandleSetMonData(): void { SafariBufferExecCompleted(); }
+function SafariHandleSetRawMonData(): void { SafariBufferExecCompleted(); }
+function SafariHandleLoadMonSprite(): void { SafariBufferExecCompleted(); }
+function SafariHandleSwitchInAnim(): void { SafariBufferExecCompleted(); }
+function SafariHandleReturnMonToBall(): void { SafariBufferExecCompleted(); }
+function SafariHandleTrainerSlide(): void { SafariBufferExecCompleted(); }
+function SafariHandleTrainerSlideBack(): void { SafariBufferExecCompleted(); }
+function SafariHandleFaintAnimation(): void { SafariBufferExecCompleted(); }
+function SafariHandlePaletteFade(): void { SafariBufferExecCompleted(); }
+function SafariHandlePause(): void { SafariBufferExecCompleted(); }
+function SafariHandleMoveAnimation(): void { SafariBufferExecCompleted(); }
+function SafariHandleUnknownYesNoBox(): void { SafariBufferExecCompleted(); }
+function SafariHandleChooseMove(): void { SafariBufferExecCompleted(); }
+function SafariHandleChoosePokemon(): void { SafariBufferExecCompleted(); }
+function SafariHandleCmd23(): void { SafariBufferExecCompleted(); }
+function SafariHandleHealthBarUpdate(): void { SafariBufferExecCompleted(); }
+function SafariHandleExpUpdate(): void { SafariBufferExecCompleted(); }
+function SafariHandleStatusAnimation(): void { SafariBufferExecCompleted(); }
+function SafariHandleStatusXor(): void { SafariBufferExecCompleted(); }
+function SafariHandleDataTransfer(): void { SafariBufferExecCompleted(); }
+function SafariHandleDMA3Transfer(): void { SafariBufferExecCompleted(); }
+function SafariHandlePlayBGM(): void { SafariBufferExecCompleted(); }
+function SafariHandleCmd32(): void { SafariBufferExecCompleted(); }
+function SafariHandleTwoReturnValues(): void { SafariBufferExecCompleted(); }
+function SafariHandleChosenMonReturnValue(): void { SafariBufferExecCompleted(); }
+function SafariHandleOneReturnValue(): void { SafariBufferExecCompleted(); }
+function SafariHandleOneReturnValue_Duplicate(): void { SafariBufferExecCompleted(); }
+function SafariHandleCmd37(): void { SafariBufferExecCompleted(); }
+function SafariHandleCmd38(): void { SafariBufferExecCompleted(); }
+function SafariHandleCmd39(): void { SafariBufferExecCompleted(); }
+function SafariHandleCmd40(): void { SafariBufferExecCompleted(); }
+function SafariHandleHitAnimation(): void { SafariBufferExecCompleted(); }
+function SafariHandleCmd42(): void { SafariBufferExecCompleted(); }
+function SafariHandleDrawPartyStatusSummary(): void { SafariBufferExecCompleted(); }
+function SafariHandleHidePartyStatusSummary(): void { SafariBufferExecCompleted(); }
+function SafariHandleEndBounceEffect(): void { SafariBufferExecCompleted(); }
+function SafariHandleSpriteInvisibility(): void { SafariBufferExecCompleted(); }
+function SafariHandleLinkStandbyMsg(): void { SafariBufferExecCompleted(); }
+function SafariHandleResetActionMoveSelection(): void { SafariBufferExecCompleted(); }
+
 function SafariBufferRunCommand(): void {
   if (G.gBattleControllerExecFlags & gBitTable[G.gActiveBattler]) {
     const fn = COMMANDS[gBattleBufferA[G.gActiveBattler][0]];
@@ -130,6 +174,47 @@ function SafariHandleChooseAction(): void {
 const done = (): void => SafariBufferExecCompleted();
 
 const COMMANDS: Record<number, () => void> = {
+  [C.CONTROLLER_GETMONDATA]: SafariHandleGetMonData,
+  [C.CONTROLLER_GETRAWMONDATA]: SafariHandleGetRawMonData,
+  [C.CONTROLLER_SETMONDATA]: SafariHandleSetMonData,
+  [C.CONTROLLER_SETRAWMONDATA]: SafariHandleSetRawMonData,
+  [C.CONTROLLER_LOADMONSPRITE]: SafariHandleLoadMonSprite,
+  [C.CONTROLLER_SWITCHINANIM]: SafariHandleSwitchInAnim,
+  [C.CONTROLLER_RETURNMONTOBALL]: SafariHandleReturnMonToBall,
+  [C.CONTROLLER_TRAINERSLIDE]: SafariHandleTrainerSlide,
+  [C.CONTROLLER_TRAINERSLIDEBACK]: SafariHandleTrainerSlideBack,
+  [C.CONTROLLER_FAINTANIMATION]: SafariHandleFaintAnimation,
+  [C.CONTROLLER_PALETTEFADE]: SafariHandlePaletteFade,
+  [C.CONTROLLER_PAUSE]: SafariHandlePause,
+  [C.CONTROLLER_MOVEANIMATION]: SafariHandleMoveAnimation,
+  [C.CONTROLLER_UNKNOWNYESNOBOX]: SafariHandleUnknownYesNoBox,
+  [C.CONTROLLER_CHOOSEMOVE]: SafariHandleChooseMove,
+  [C.CONTROLLER_CHOOSEPOKEMON]: SafariHandleChoosePokemon,
+  [C.CONTROLLER_23]: SafariHandleCmd23,
+  [C.CONTROLLER_HEALTHBARUPDATE]: SafariHandleHealthBarUpdate,
+  [C.CONTROLLER_EXPUPDATE]: SafariHandleExpUpdate,
+  [C.CONTROLLER_STATUSANIMATION]: SafariHandleStatusAnimation,
+  [C.CONTROLLER_STATUSXOR]: SafariHandleStatusXor,
+  [C.CONTROLLER_DATATRANSFER]: SafariHandleDataTransfer,
+  [C.CONTROLLER_DMA3TRANSFER]: SafariHandleDMA3Transfer,
+  [C.CONTROLLER_PLAYBGM]: SafariHandlePlayBGM,
+  [C.CONTROLLER_32]: SafariHandleCmd32,
+  [C.CONTROLLER_TWORETURNVALUES]: SafariHandleTwoReturnValues,
+  [C.CONTROLLER_CHOSENMONRETURNVALUE]: SafariHandleChosenMonReturnValue,
+  [C.CONTROLLER_ONERETURNVALUE]: SafariHandleOneReturnValue,
+  [C.CONTROLLER_ONERETURNVALUE_DUPLICATE]: SafariHandleOneReturnValue_Duplicate,
+  [C.CONTROLLER_CLEARUNKVAR]: SafariHandleCmd37,
+  [C.CONTROLLER_SETUNKVAR]: SafariHandleCmd38,
+  [C.CONTROLLER_CLEARUNKFLAG]: SafariHandleCmd39,
+  [C.CONTROLLER_TOGGLEUNKFLAG]: SafariHandleCmd40,
+  [C.CONTROLLER_HITANIMATION]: SafariHandleHitAnimation,
+  [C.CONTROLLER_CANTSWITCH]: SafariHandleCmd42,
+  [C.CONTROLLER_DRAWPARTYSTATUSSUMMARY]: SafariHandleDrawPartyStatusSummary,
+  [C.CONTROLLER_HIDEPARTYSTATUSSUMMARY]: SafariHandleHidePartyStatusSummary,
+  [C.CONTROLLER_ENDBOUNCE]: SafariHandleEndBounceEffect,
+  [C.CONTROLLER_SPRITEINVISIBILITY]: SafariHandleSpriteInvisibility,
+  [C.CONTROLLER_LINKSTANDBYMSG]: SafariHandleLinkStandbyMsg,
+  [C.CONTROLLER_RESETACTIONMOVESELECTION]: SafariHandleResetActionMoveSelection,
   [C.CONTROLLER_DRAWTRAINERPIC]: SafariHandleDrawTrainerPic,
   [C.CONTROLLER_SUCCESSBALLTHROWANIM]: () => ballThrow(C.BALL_3_SHAKES_SUCCESS),
   [C.CONTROLLER_BALLTHROWANIM]: () => ballThrow(gBattleBufferA[G.gActiveBattler][1]),
