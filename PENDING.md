@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7368/10115 (72.8 %)**.
-- Archivos C con funciones aún sin homólogo: **55**; quedan **2747 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7405/10115 (73.2 %)**.
+- Archivos C con funciones aún sin homólogo: **55**; quedan **2710 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 119.903 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~64.754 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~64.086 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -18,21 +18,21 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
-| 1 | `battle_controller_player.c` | casi completo | 2966 | 122/123 | ~24 |  |
-| 2 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
-| 3 | `item_use.c` | casi completo | 925 | 69/73 | ~50 |  |
-| 4 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 5 | `battle_controller_opponent.c` | casi completo | 1777 | 82/87 | ~102 |  |
-| 6 | `battle_controller_safari.c` | parcial | 669 | 55/72 | ~157 |  |
-| 7 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 8 | `item_menu.c` | casi completo | 2397 | 105/116 | ~227 |  |
-| 9 | `trainer_card.c` | casi completo | 1959 | 63/73 | ~268 |  |
-| 10 | `field_fadetransition.c` | parcial | 965 | 39/59 | ~327 |  |
-| 11 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 12 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
-| 13 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 14 | `battle_setup.c` | parcial | 1070 | 34/66 | ~518 |  |
-| 15 | `field_control_avatar.c` | parcial | 1182 | 26/49 | ~554 |  |
+| 1 | `item_use.c` | casi completo | 925 | 72/73 | ~12 |  |
+| 2 | `battle_controller_player.c` | casi completo | 2966 | 122/123 | ~24 |  |
+| 3 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
+| 4 | `battle_controller_safari.c` | casi completo | 669 | 66/72 | ~55 |  |
+| 5 | `battle_controller_opponent.c` | casi completo | 1777 | 83/87 | ~81 |  |
+| 6 | `item_menu.c` | casi completo | 2397 | 112/116 | ~82 |  |
+| 7 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
+| 8 | `field_control_avatar.c` | casi completo | 1182 | 41/49 | ~192 |  |
+| 9 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 10 | `trainer_card.c` | casi completo | 1959 | 63/73 | ~268 |  |
+| 11 | `field_fadetransition.c` | parcial | 965 | 39/59 | ~327 |  |
+| 12 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
+| 13 | `berry.c` | parcial | 1028 | 5/9 | ~456 |  |
+| 14 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
+| 15 | `battle_setup.c` | parcial | 1070 | 34/66 | ~518 |  |
 | 16 | `mail.c` | parcial | 734 | 2/10 | ~587 |  |
 | 17 | `battle_controller_oak_old_man.c` | parcial | 2293 | 74/107 | ~707 |  |
 | 18 | `easy_chat.c` | parcial | 730 | 1/39 | ~711 |  |
@@ -74,7 +74,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 54 | `event_object_movement.c` | parcial | 9412 | 525/759 | ~2901 |  |
 | 55 | `pokemon.c` | parcial | 6453 | 73/140 | ~3088 |  |
 
-Total: 55 archivos con huecos: 1 sin empezar, 1 adaptador, 9 casi completos y 44 parciales.
+Total: 55 archivos con huecos: 1 sin empezar, 1 adaptador, 11 casi completos y 42 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
