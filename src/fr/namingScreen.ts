@@ -52,7 +52,7 @@ class NamingScreen {
   private cursor = 0;
   private pageText = 0;
   private pageButton = 0;
-  private state: "fadeIn" | "input" | "moveToOK" | "pageSwap" | "pressedOK" | "message" | "fadeOut" = "fadeIn";
+  private state: "fadeIn" | "waitFadeIn" | "input" | "moveToOK" | "pageSwap" | "pressedOK" | "waitSentToPCMessage" | "fadeOut" | "exit" = "fadeIn";
   private activeKeyboardBg = 1;
   private bgToReveal = 0;
   private bg1vOffset = 0;
@@ -113,19 +113,15 @@ class NamingScreen {
     gSprites[this.sprite("sSpriteTemplate_InputArrow", baseX - 5, 56, 0)].oam.priority = 3;
     for (let i = 0; i < this.model.template.maxChars; i++) gSprites[this.sprite("sSpriteTemplate_Underscore", baseX + i * 8 + 3, 60, 0)].oam.priority = 3;
     this.createInputTargetIcon();
-    this.drawPage(); this.drawEntry(); this.drawTitle(); this.drawControls();
     this.buttonFlashTaskId = tasks.create(taskId => this.Task_UpdateButtonFlash(taskId), 3);
     tasks.data(this.buttonFlashTaskId)[0] = NamingButton.COUNT;
-    for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
-    joy.repeatStartDelay = 16;
-    BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
-    this.SetCursorInvisibility(false);
+    this.MainState_FadeIn();
     SetVBlankCallback(() => {
       LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer();
       SetGpuReg(REG_OFFSET_BG1VOFS, this.bg1vOffset);
       SetGpuReg(REG_OFFSET_BG2VOFS, this.bg2vOffset);
     });
-    SetMainCallback2(() => this.update());
+    SetMainCallback2(() => this.Task_NamingScreen());
   }
 
   private sprite(name: string, x: number, y: number, order: number, table?: string): number {
@@ -434,9 +430,83 @@ class NamingScreen {
     sprite.data[3] = sprite.data[1]!; // sPrevY
   }
 
-  private fadeOut(): void {
+  /** MainState_FadeIn (naming_screen.c). */
+  private MainState_FadeIn(): void {
+    this.drawPage(); this.drawEntry(); this.drawTitle(); this.drawControls();
+    for (let bg = 0; bg < 4; bg++) { CopyBgTilemapBufferToVram(bg); ShowBg(bg); }
+    joy.repeatStartDelay = 16;
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
+    this.SetCursorInvisibility(false);
+    this.state = "waitFadeIn";
+  }
+
+  /** MainState_WaitFadeIn (naming_screen.c). */
+  private MainState_WaitFadeIn(): void {
+    if (!gPaletteFade.active) {
+      this.SetCursorFlashing(true);
+      this.state = "input";
+    }
+  }
+
+  /** MainState_HandleInput (naming_screen.c). */
+  private MainState_HandleInput(): void {
+    const roleBeforeInput = GetKeyRoleAtCursorPos(this.model);
+    const action = this.model.input(joy.newKeys, joy.repeated);
+    const dpadRepeated = !(joy.newKeys & (A_BUTTON | B_BUTTON | SELECT_BUTTON | START_BUTTON))
+      && !!(joy.repeated & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT));
+    const role = dpadRepeated ? GetKeyRoleAtCursorPos(this.model) : roleBeforeInput;
+    const button = role === "page" ? NamingButton.PAGE : role === "backspace" ? NamingButton.BACK : role === "ok" ? NamingButton.OK : NamingButton.COUNT;
+    if (!(joy.newKeys & (B_BUTTON | SELECT_BUTTON | START_BUTTON))) {
+      this.TryStartButtonFlash(button, button !== NamingButton.COUNT, false);
+    }
+    if (action === "move") sound.playSE(C.SE_SELECT);
+    if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.MainState_StartPageSwap(); }
+    if (action === "moveToOK") {
+      StartSpriteAnim(gSprites[this.cursor], 1);
+      this.state = "moveToOK";
+    }
+    if (action === "delete") {
+      if (role === "character" || role === "backspace") this.TryStartButtonFlash(NamingButton.BACK, false, true);
+    }
+    if (action === "character" || action === "moveToOK" || action === "delete") {
+      sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.drawEntry();
+    }
+    if (action !== "none" && action !== "moveToOK") this.moveCursor();
+    if (action === "confirm") {
+      sound.playSE(C.SE_SELECT);
+      this.state = "pressedOK";
+    }
+  }
+
+  /** MainState_MoveToOKButton (naming_screen.c). */
+  private MainState_MoveToOKButton(): void {
+    if (!gSprites[this.cursor].animEnded) return;
+    MoveCursorToOKButton(this.model);
+    this.moveCursor();
+    this.state = "input";
+  }
+
+  /** MainState_PressedOKButton (naming_screen.c). */
+  private MainState_PressedOKButton(): void {
+    this.model.save();
+    this.stopFlashesNextUpdate = true;
+    if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
+    else this.state = "fadeOut";
+  }
+
+  /** MainState_FadeOut (naming_screen.c). */
+  private MainState_FadeOut(): void {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
-    this.state = "fadeOut";
+    this.state = "exit";
+  }
+
+  /** MainState_Exit (naming_screen.c). */
+  private MainState_Exit(): void {
+    if (gPaletteFade.active) return;
+    joy.repeatStartDelay = this.repeatDelay;
+    Object.assign(textFlags, this.savedTextFlags);
+    FreeAllWindowBuffers(); DeactivateAllTextPrinters();
+    SetVBlankCallback(null); SetMainCallback1(this.callback1); SetMainCallback2(this.returnCallback);
   }
 
   private showPCMessage(): void {
@@ -452,7 +522,13 @@ class NamingScreen {
     textFlags.autoScroll = false;
     AddTextPrinterParameterized2(0, FONT_NORMAL, expandPlaceholders(rom.text(labels[index])), getTextSpeedSetting(), null, 2, 1, 3);
     CopyWindowToVram(0, COPYWIN_FULL);
-    this.state = "message";
+    this.state = "waitSentToPCMessage";
+  }
+
+  /** MainState_WaitSentToPCMessage (naming_screen.c). */
+  private MainState_WaitSentToPCMessage(): void {
+    RunTextPrinters();
+    if (!IsTextPrinterActive(0) && joy.newKeys & A_BUTTON) this.state = "fadeOut";
   }
 
   /** TryStartButtonFlash (naming_screen.c). */
@@ -536,60 +612,17 @@ class NamingScreen {
       | (blue + (((0x1f - blue) * b) >> 4)) << 10;
   }
 
-  private update(): void {
-    if (this.state === "fadeIn" && !gPaletteFade.active) {
-      this.SetCursorFlashing(true);
-      this.state = "input";
-    }
-    else if (this.state === "input") {
-      const roleBeforeInput = GetKeyRoleAtCursorPos(this.model);
-      const action = this.model.input(joy.newKeys, joy.repeated);
-      const dpadRepeated = !(joy.newKeys & (A_BUTTON | B_BUTTON | SELECT_BUTTON | START_BUTTON))
-        && !!(joy.repeated & (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT));
-      const role = dpadRepeated ? GetKeyRoleAtCursorPos(this.model) : roleBeforeInput;
-      const button = role === "page" ? NamingButton.PAGE : role === "backspace" ? NamingButton.BACK : role === "ok" ? NamingButton.OK : NamingButton.COUNT;
-      if (!(joy.newKeys & (B_BUTTON | SELECT_BUTTON | START_BUTTON))) {
-        this.TryStartButtonFlash(button, button !== NamingButton.COUNT, false);
-      }
-      if (action === "move") sound.playSE(C.SE_SELECT);
-      if (action === "page") { sound.playSE(C.SE_WIN_OPEN); this.MainState_StartPageSwap(); }
-      if (action === "moveToOK") {
-        StartSpriteAnim(gSprites[this.cursor], 1);
-        this.state = "moveToOK";
-      }
-      if (action === "delete") {
-        if (role === "character" || role === "backspace") this.TryStartButtonFlash(NamingButton.BACK, false, true);
-      }
-      if (action === "character" || action === "moveToOK" || action === "delete") {
-        sound.playSE(action === "delete" ? C.SE_BALL : C.SE_SELECT); this.drawEntry();
-      }
-      if (action !== "none" && action !== "moveToOK") this.moveCursor();
-      if (action === "confirm") {
-        sound.playSE(C.SE_SELECT);
-        this.state = "pressedOK";
-      }
-    } else if (this.state === "pressedOK") {
-      this.model.save();
-      this.stopFlashesNextUpdate = true;
-      if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
-      else this.fadeOut();
-    } else if (this.state === "moveToOK") {
-      if (gSprites[this.cursor].animEnded) {
-        MoveCursorToOKButton(this.model);
-        this.moveCursor();
-        this.state = "input";
-      }
-    } else if (this.state === "pageSwap") {
-      this.MainState_WaitPageSwap();
-    } else if (this.state === "message") {
-      RunTextPrinters();
-      if (!IsTextPrinterActive(0) && joy.newKeys & A_BUTTON) this.fadeOut();
-    } else if (this.state === "fadeOut" && !gPaletteFade.active) {
-      joy.repeatStartDelay = this.repeatDelay;
-      Object.assign(textFlags, this.savedTextFlags);
-      FreeAllWindowBuffers(); DeactivateAllTextPrinters();
-      SetVBlankCallback(null); SetMainCallback1(this.callback1); SetMainCallback2(this.returnCallback);
-      return;
+  /** Task_NamingScreen (naming_screen.c): dispatch the active main-state callback. */
+  private Task_NamingScreen(): void {
+    switch (this.state) {
+      case "waitFadeIn": this.MainState_WaitFadeIn(); break;
+      case "input": this.MainState_HandleInput(); break;
+      case "moveToOK": this.MainState_MoveToOKButton(); break;
+      case "pageSwap": this.MainState_WaitPageSwap(); break;
+      case "pressedOK": this.MainState_PressedOKButton(); break;
+      case "waitSentToPCMessage": this.MainState_WaitSentToPCMessage(); break;
+      case "fadeOut": this.MainState_FadeOut(); break;
+      case "exit": this.MainState_Exit(); break;
     }
     this.Task_HandlePageSwapAnim();
     this.SpriteCB_PageSwap();
