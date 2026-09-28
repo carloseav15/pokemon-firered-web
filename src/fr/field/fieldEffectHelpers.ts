@@ -309,16 +309,6 @@ export function FldEff_Ripple(): number {
   return 0;
 }
 
-/** FldEff_Splash */
-export function FldEff_Splash(): number {
-  return 0;
-}
-
-/** UpdateSplashFieldEffect */
-export function UpdateSplashFieldEffect(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
 /** FldEff_FeetInFlowingWater */
 export function FldEff_FeetInFlowingWater(): number {
   return 0;

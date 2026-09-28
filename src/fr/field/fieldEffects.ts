@@ -864,22 +864,35 @@ export class FieldEffects {
 
   /** GroundEffect_StepOnPuddle (event_object_movement.c): play the linked splash on a puddle step. */
   GroundEffect_StepOnPuddle(object: ObjectEvent): void {
-    const sprite = this.createFromTemplate("Splash", object.sprite.x, object.sprite.y);
+    this.FldEff_Splash(object);
+  }
+
+  /** FldEff_Splash (field_effect_helpers.c), called by StartFieldEffectForObjectEvent. */
+  FldEff_Splash(object: ObjectEvent): void {
+    const sprite = this.createFromTemplate("Splash", 0, 0);
     if (!sprite) return;
     sprite.coordOffsetEnabled = true;
-    sprite.priority = object.sprite.priority;
-    sprite.y2 = (object.sprite.height >> 1) - 4;
-    sprite.startAnim(1);
+    sprite.priority = object.sprite.priority & 0xff;
+    sprite.data[0] = object.localId & 0xff;
+    sprite.data[1] = object.mapNum & 0xff;
+    sprite.data[2] = object.mapGroup & 0xff;
+    sprite.y2 = ((graphicsInfo(object.graphicsId).height >> 1) - 4 << 16) >> 16;
+    this.active.add(C.FLDEFF_SPLASH);
     sound.playSE(sound.c("SE_PUDDLE"));
-    sprite.callback = (s) => {
-      if (!object.active || s.animEnded) {
-        this.ow.sprites.destroy(s);
-        return;
-      }
-      s.x = object.sprite.x;
-      s.y = object.sprite.y;
-      s.invisible = object.sprite.invisible;
-    };
+    sprite.callback = (s) => this.UpdateSplashFieldEffect(s);
+  }
+
+  /** UpdateSplashFieldEffect (field_effect_helpers.c). */
+  UpdateSplashFieldEffect(sprite: Sprite): void {
+    const object = this.ow.objects.byLocalIdAndMap(sprite.data[0]! & 0xff, sprite.data[1]! & 0xff, sprite.data[2]! & 0xff);
+    if (sprite.animEnded || !object) {
+      this.active.delete(C.FLDEFF_SPLASH);
+      this.ow.sprites.destroy(sprite);
+    } else {
+      sprite.x = object.sprite.x;
+      sprite.y = object.sprite.y;
+      this.UpdateObjectEventSpriteInvisibility(sprite, false);
+    }
   }
 
   /** GroundEffect_Ripple / DoRippleFieldEffect: emit the source ripple at the object's feet. */
