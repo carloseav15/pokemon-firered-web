@@ -48,6 +48,11 @@ const CONTINUE_DOUBLE: Param[] = ["u8", "u16", "u16", "u32", "u32", "clear32", "
 type TrainerBattleArgField = "mode" | "opponentA" | "localId" | "rivalFlags" | "introSpeech" | "defeatSpeech" | "victorySpeech" | "cannotBattleSpeech" | "battleScriptRetAddr" | "endScript";
 type TrainerBattleArgTarget = Record<TrainerBattleArgField, number>;
 
+/** ReturnEmptyStringIfNull (battle_setup.c): gString_Dummy is a one-byte EOS string. */
+function ReturnEmptyStringIfNull(value: Uint8Array | null | undefined): Uint8Array {
+  return value ?? new Uint8Array([0xff]);
+}
+
 /** TrainerBattleLoadArg8 (battle_setup.c): load one little-endian unsigned byte. */
 function TrainerBattleLoadArg8(ptr: number): number { return rom.u8(ptr) & 0xff; }
 
@@ -235,28 +240,40 @@ export class BattleSetup {
     return c.MUS_VS_TRAINER;
   }
 
-  scriptAddrAfterBattle(): number {
+  BattleSetup_GetScriptAddrAfterBattle(): number {
     return this.endScript || rom.label("EventScript_TestSignpostMsg");
   }
 
-  trainerPostBattleScript(): number {
+  BattleSetup_GetTrainerPostBattleScript(): number {
     return this.battleScriptRetAddr || rom.label("EventScript_TestSignpostMsg");
   }
 
-  showIntroSpeech(): void {
-    this.game.overworld.messageBox.show(this.introSpeech ? rom.stringAt(this.introSpeech) : new Uint8Array([0xff]));
+  /** GetIntroSpeechOfApproachingTrainer (battle_setup.c). */
+  private GetIntroSpeechOfApproachingTrainer(): Uint8Array {
+    return ReturnEmptyStringIfNull(this.introSpeech ? rom.stringAt(this.introSpeech) : null);
   }
 
-  showCantBattleSpeech(): void {
-    this.game.overworld.messageBox.show(this.cannotBattleSpeech ? rom.stringAt(this.cannotBattleSpeech) : new Uint8Array([0xff]));
+  ShowTrainerIntroSpeech(): void {
+    this.game.overworld.messageBox.show(this.GetIntroSpeechOfApproachingTrainer());
   }
 
-  loseText(): Uint8Array {
-    return expandPlaceholders(this.defeatSpeech ? rom.stringAt(this.defeatSpeech) : new Uint8Array([0xff]));
+  /** GetTrainerCantBattleSpeech (battle_setup.c). */
+  private GetTrainerCantBattleSpeech(): Uint8Array {
+    return ReturnEmptyStringIfNull(this.cannotBattleSpeech ? rom.stringAt(this.cannotBattleSpeech) : null);
   }
 
-  wonText(): Uint8Array {
-    return expandPlaceholders(this.victorySpeech ? rom.stringAt(this.victorySpeech) : new Uint8Array([0xff]));
+  ShowTrainerCantBattleSpeech(): void {
+    this.game.overworld.messageBox.show(this.GetTrainerCantBattleSpeech());
+  }
+
+  GetTrainerALoseText(): Uint8Array {
+    const string = this.defeatSpeech ? rom.stringAt(this.defeatSpeech) : null;
+    return expandPlaceholders(ReturnEmptyStringIfNull(string));
+  }
+
+  GetTrainerWonSpeech(): Uint8Array {
+    const string = this.victorySpeech ? rom.stringAt(this.victorySpeech) : null;
+    return expandPlaceholders(ReturnEmptyStringIfNull(string));
   }
 
   playEncounterMusic(): void {

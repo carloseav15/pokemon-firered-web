@@ -90,10 +90,10 @@ export const battleHost = {
 
   /** battle_setup.c GetTrainerALoseText / GetTrainerWonSpeech (already placeholder-expanded). */
   trainerLoseText(): Uint8Array {
-    return game ? game.battleSetup.loseText() : new Uint8Array([0xff]);
+    return game ? game.battleSetup.GetTrainerALoseText() : new Uint8Array([0xff]);
   },
   trainerWonText(): Uint8Array {
-    return game ? game.battleSetup.wonText() : new Uint8Array([0xff]);
+    return game ? game.battleSetup.GetTrainerWonSpeech() : new Uint8Array([0xff]);
   },
 
   /** pokemon.c SetWildMonHeldItem */
