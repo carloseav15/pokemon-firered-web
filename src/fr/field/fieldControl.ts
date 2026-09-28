@@ -231,7 +231,7 @@ export class FieldControl {
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {
       const front = this.GetInFrontOfPlayerPosition();
       const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
-      if (this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
+      if (this.TrySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
       position = this.GetPlayerPosition();
       behavior = this.ow.map.behaviorAt(position.x, position.y);
     }
@@ -240,7 +240,7 @@ export class FieldControl {
 
     const front = this.GetInFrontOfPlayerPosition();
     const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
-    if (input.heldDirection && input.dpadDirection === direction && this.trySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
+    if (input.heldDirection && input.dpadDirection === direction && this.TrySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
     if (input.pressedAButton && this.TryStartInteractionScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
     if (input.heldDirection2 && input.dpadDirection === direction && this.TryDoorWarp(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection2"); return true; }
     if (input.pressedStartButton) {
@@ -479,7 +479,7 @@ export class FieldControl {
         this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_VsSeekerChargingDone"));
         return true;
       }
-      if (this.ow.effects.updatePoisonStepCounter()) {
+      if (this.ow.effects.UpdatePoisonStepCounter()) {
         this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_FieldPoison"));
         return true;
       }
@@ -523,7 +523,7 @@ export class FieldControl {
     this.MsgSetSignpost();
   }
 
-  private trySetUpWalkIntoSignpostScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
+  private TrySetUpWalkIntoSignpostScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
     if (JOY_HELD(DPAD_LEFT | DPAD_RIGHT)) return false;
     if (direction === DIR_EAST || direction === DIR_WEST) return false;
     const type = this.GetFacingSignpostType(behavior, direction);

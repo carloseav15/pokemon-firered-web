@@ -1286,7 +1286,7 @@ export class FieldEffects {
     return false;
   }
 
-  updatePoisonStepCounter(): boolean {
+  UpdatePoisonStepCounter(): boolean {
     if (this.ow.header.mapType === 9) return false;
     const id = rom.c("VAR_POISON_STEP_COUNTER");
     const value = (varGet(id) + 1) % 5;
