@@ -2,7 +2,7 @@
 // Target icons, the BG page swap, and cursor/button flashes use C data.
 import * as C from "./generated/constants";
 import { PageToNextGfxId } from "./generated/cdataTableAccessors";
-import { CurrentPageToNextKeyboardId, GetKeyRoleAtCursorPos, HandleDpadMovement, MoveCursorToOKButton, NamingModel, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
+import { CurrentPageToNextKeyboardId, GetKeyRoleAtCursorPos, HandleDpadMovement, MoveCursorToOKButton, NamingModel, SaveInputText, SwapKeyboardPage, type NameBuffer } from "./menus/namingModel";
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "./hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
 import { save, varGet, flagGet } from "./save";
@@ -735,7 +735,7 @@ class NamingScreen {
   /** MainState_PressedOKButton (naming_screen.c). */
   private MainState_PressedOKButton(): void {
     this.SetInputState(NamingInputState.DISABLED);
-    this.model.save();
+    SaveInputText(this.model);
     this.stopFlashesNextUpdate = true;
     if (this.model.type === C.NAMING_SCREEN_CAUGHT_MON && save.party.length >= C.PARTY_SIZE) this.showPCMessage();
     else this.state = "fadeOut";

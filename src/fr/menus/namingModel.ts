@@ -38,6 +38,16 @@ export function GetTextEntryPosition(model: NamingModel): number {
   return model.template.maxChars - 1;
 }
 
+/** GetCharAtKeyboardPos (naming_screen.c): read the u8 cell from sKeyboardChars. */
+export function GetCharAtKeyboardPos(model: NamingModel, x: number, y: number): number {
+  return (data<number[][][]>("sKeyboardChars")[model.keyboardId][y]?.[x] ?? EOS) & 0xff;
+}
+
+/** BufferCharacter (naming_screen.c): store one u8 at the current text caret. */
+export function BufferCharacter(model: NamingModel, character: number): void {
+  model.text[GetTextEntryPosition(model)] = character & 0xff;
+}
+
 /** GetPreviousTextCaretPosition (naming_screen.c). */
 export function GetPreviousTextCaretPosition(model: NamingModel): number {
   for (let i = model.template.maxChars - 1; i > 0; i--) {
@@ -65,7 +75,18 @@ export function DeleteTextCharacter(model: NamingModel): void {
 
 /** AddTextCharacter (naming_screen.c); returns true when the text buffer is full. */
 export function AddTextCharacter(model: NamingModel): boolean {
-  return model.addCharacter();
+  BufferCharacter(model, GetCharAtKeyboardPos(model, model.x, model.y));
+  return GetPreviousTextCaretPosition(model) === model.template.maxChars - 1;
+}
+
+/** SaveInputText (naming_screen.c): leave an all-space buffer untouched and copy maxChars + 1 bytes. */
+export function SaveInputText(model: NamingModel): void {
+  for (let i = 0; i < model.template.maxChars; i++) {
+    if (model.text[i] !== CHAR_SPACE && model.text[i] !== EOS) {
+      for (let j = 0; j <= model.template.maxChars; j++) model.destination[j] = model.text[j]!;
+      return;
+    }
+  }
 }
 
 /** SwapKeyboardPage (naming_screen.c). */
@@ -192,23 +213,6 @@ export class NamingModel {
   }
 
   deleteCharacter(): void { this.text[GetPreviousTextCaretPosition(this)] = EOS; }
-
-  addCharacter(): boolean {
-    // C pads the short rows of sKeyboardChars[3][4][8] with zero/CHAR_SPACE.
-    const rows = data<number[][][]>("sKeyboardChars");
-    this.text[this.caret] = rows[this.keyboardId][this.y][this.x] ?? CHAR_SPACE;
-    return GetPreviousTextCaretPosition(this) === this.template.maxChars - 1;
-  }
-
-  save(): void {
-    if (!this.text.some(ch => ch !== EOS && ch !== CHAR_SPACE)) return;
-    // SaveInputText tests for non-whitespace but copies the whole buffer,
-    // including leading spaces. It does not trim the name.
-    for (let i = 0; i <= this.template.maxChars; i++) {
-      this.destination[i] = this.text[i];
-      if (this.text[i] === EOS) break;
-    }
-  }
 
   input(pressed: number, repeated: number): NamingAction {
     return HandleKeyboardEvent(this, pressed, repeated);
