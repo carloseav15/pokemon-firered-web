@@ -133,13 +133,75 @@ function SafariHandleDrawTrainerPic(): void {
   gBattlerControllerFuncs[b] = CompleteOnBattlerSpriteCallbackDummy;
 }
 
-function ballThrow(caseId: number): void {
+function SafariHandleSuccessBallThrowAnim(): void {
+  startBallThrowAnimation(C.BALL_3_SHAKES_SUCCESS);
+}
+
+function SafariHandleBallThrowAnim(): void {
+  startBallThrowAnimation(gBattleBufferA[G.gActiveBattler][1]);
+}
+
+function startBallThrowAnimation(caseId: number): void {
   const b = G.gActiveBattler;
   gBattleSpritesDataPtr.animationData.ballThrowCaseId = caseId;
   G.gDoingBattleAnim = true;
   InitAndLaunchSpecialAnimation(b, b, GetBattlerAtPosition(C.B_POSITION_OPPONENT_LEFT), C.B_ANIM_BALL_THROW_WITH_TRAINER);
   gBattlerControllerFuncs[b] = CompleteOnSpecialAnimDone;
 }
+
+function SafariHandlePrintSelectionString(): void {
+  if (GetBattlerSide(G.gActiveBattler) === C.B_SIDE_PLAYER) SafariHandlePrintString();
+  else SafariBufferExecCompleted();
+}
+
+function SafariHandleStatusIconUpdate(): void {
+  const b = G.gActiveBattler;
+  UpdateHealthboxAttribute(gHealthboxSpriteIds[b], playerMon(gBattlerPartyIndexes[b]), C.HEALTHBOX_SAFARI_BALLS_TEXT);
+  SafariBufferExecCompleted();
+}
+
+function SafariHandlePlaySE(): void {
+  const b = G.gActiveBattler;
+  const pan = GetBattlerSide(b) === C.B_SIDE_PLAYER ? C.SOUND_PAN_ATTACKER : C.SOUND_PAN_TARGET;
+  PlaySE12WithPanning(gBattleBufferA[b][1] | (gBattleBufferA[b][2] << 8), pan);
+  SafariBufferExecCompleted();
+}
+
+function SafariHandlePlayFanfareOrBGM(): void {
+  const b = G.gActiveBattler;
+  sound.playFanfare(gBattleBufferA[b][1] | (gBattleBufferA[b][2] << 8));
+  SafariBufferExecCompleted();
+}
+
+function SafariHandleFaintingCry(): void {
+  const b = G.gActiveBattler;
+  sound.PlayCry_Normal(GetMonData(playerMon(gBattlerPartyIndexes[b]), C.MON_DATA_SPECIES), 25);
+  SafariBufferExecCompleted();
+}
+
+function SafariHandleIntroSlide(): void {
+  HandleIntroSlide(gBattleBufferA[G.gActiveBattler][1]);
+  G.gIntroSlideFlags |= 1;
+  SafariBufferExecCompleted();
+}
+
+function SafariHandleIntroTrainerBallThrow(): void {
+  const b = G.gActiveBattler;
+  UpdateHealthboxAttribute(gHealthboxSpriteIds[b], playerMon(gBattlerPartyIndexes[b]), C.HEALTHBOX_SAFARI_ALL_TEXT);
+  StartHealthboxSlideIn(b);
+  SetHealthboxSpriteVisible(gHealthboxSpriteIds[b]);
+  gBattlerControllerFuncs[b] = CompleteOnHealthboxSpriteCallbackDummy;
+}
+
+function SafariHandleBattleAnimation(): void {
+  const b = G.gActiveBattler;
+  const argument = gBattleBufferA[b][2] | (gBattleBufferA[b][3] << 8);
+  if (TryHandleLaunchBattleTableAnimation(b, b, b, gBattleBufferA[b][1], argument)) SafariBufferExecCompleted();
+  else gBattlerControllerFuncs[b] = CompleteOnFinishedBattleAnimation;
+}
+
+/** SafariCmdEnd (battle_controller_safari.c) is the terminator's empty handler. */
+function SafariCmdEnd(): void {}
 
 function SafariHandlePrintString(): void {
   const b = G.gActiveBattler;
@@ -216,52 +278,23 @@ const COMMANDS: Record<number, () => void> = {
   [C.CONTROLLER_LINKSTANDBYMSG]: SafariHandleLinkStandbyMsg,
   [C.CONTROLLER_RESETACTIONMOVESELECTION]: SafariHandleResetActionMoveSelection,
   [C.CONTROLLER_DRAWTRAINERPIC]: SafariHandleDrawTrainerPic,
-  [C.CONTROLLER_SUCCESSBALLTHROWANIM]: () => ballThrow(C.BALL_3_SHAKES_SUCCESS),
-  [C.CONTROLLER_BALLTHROWANIM]: () => ballThrow(gBattleBufferA[G.gActiveBattler][1]),
+  [C.CONTROLLER_SUCCESSBALLTHROWANIM]: SafariHandleSuccessBallThrowAnim,
+  [C.CONTROLLER_BALLTHROWANIM]: SafariHandleBallThrowAnim,
   [C.CONTROLLER_PRINTSTRING]: SafariHandlePrintString,
-  [C.CONTROLLER_PRINTSTRINGPLAYERONLY]: () => { if (GetBattlerSide(G.gActiveBattler) === C.B_SIDE_PLAYER) SafariHandlePrintString(); else done(); },
+  [C.CONTROLLER_PRINTSTRINGPLAYERONLY]: SafariHandlePrintSelectionString,
   [C.CONTROLLER_CHOOSEACTION]: SafariHandleChooseAction,
-  [C.CONTROLLER_STATUSICONUPDATE]: () => {
-    UpdateHealthboxAttribute(gHealthboxSpriteIds[G.gActiveBattler], playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.HEALTHBOX_SAFARI_BALLS_TEXT);
-    done();
-  },
-  [C.CONTROLLER_PLAYSE]: () => {
-    const b = G.gActiveBattler;
-    PlaySE12WithPanning(gBattleBufferA[b][1] | (gBattleBufferA[b][2] << 8), GetBattlerSide(b) === C.B_SIDE_PLAYER ? C.SOUND_PAN_ATTACKER : C.SOUND_PAN_TARGET);
-    done();
-  },
-  [C.CONTROLLER_PLAYFANFARE]: () => {
-    const b = G.gActiveBattler;
-    sound.playFanfare(gBattleBufferA[b][1] | (gBattleBufferA[b][2] << 8));
-    done();
-  },
-  [C.CONTROLLER_FAINTINGCRY]: () => {
-  sound.PlayCry_Normal(GetMonData(playerMon(gBattlerPartyIndexes[G.gActiveBattler]), C.MON_DATA_SPECIES), 25);
-    done();
-  },
-  [C.CONTROLLER_INTROSLIDE]: () => {
-    HandleIntroSlide(gBattleBufferA[G.gActiveBattler][1]);
-    G.gIntroSlideFlags |= 1;
-    done();
-  },
-  [C.CONTROLLER_INTROTRAINERBALLTHROW]: () => {
-    const b = G.gActiveBattler;
-    UpdateHealthboxAttribute(gHealthboxSpriteIds[b], playerMon(gBattlerPartyIndexes[b]), C.HEALTHBOX_SAFARI_ALL_TEXT);
-    StartHealthboxSlideIn(b);
-    SetHealthboxSpriteVisible(gHealthboxSpriteIds[b]);
-    gBattlerControllerFuncs[b] = CompleteOnHealthboxSpriteCallbackDummy;
-  },
-  [C.CONTROLLER_BATTLEANIMATION]: () => {
-    const b = G.gActiveBattler;
-    const argument = gBattleBufferA[b][2] | (gBattleBufferA[b][3] << 8);
-    if (TryHandleLaunchBattleTableAnimation(b, b, b, gBattleBufferA[b][1], argument)) done();
-    else gBattlerControllerFuncs[b] = CompleteOnFinishedBattleAnimation;
-  },
+  [C.CONTROLLER_STATUSICONUPDATE]: SafariHandleStatusIconUpdate,
+  [C.CONTROLLER_PLAYSE]: SafariHandlePlaySE,
+  [C.CONTROLLER_PLAYFANFARE]: SafariHandlePlayFanfareOrBGM,
+  [C.CONTROLLER_FAINTINGCRY]: SafariHandleFaintingCry,
+  [C.CONTROLLER_INTROSLIDE]: SafariHandleIntroSlide,
+  [C.CONTROLLER_INTROTRAINERBALLTHROW]: SafariHandleIntroTrainerBallThrow,
+  [C.CONTROLLER_BATTLEANIMATION]: SafariHandleBattleAnimation,
   [C.CONTROLLER_ENDLINKBATTLE]: () => {
     G.gBattleOutcome = gBattleBufferA[G.gActiveBattler][1];
     sound.fadeOutBGM(5);
     BeginFastPaletteFade(3);
     done();
   },
-  [C.CONTROLLER_TERMINATOR_NOP]: () => {},
+  [C.CONTROLLER_TERMINATOR_NOP]: SafariCmdEnd,
 };
