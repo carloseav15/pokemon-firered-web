@@ -170,6 +170,16 @@ export function InitBerryPouchFromBag(open: () => void): void { open(); }
 /** Task_InitBerryPouchFromField (item_use.c): open the pouch with the field as its return target. */
 export function Task_InitBerryPouchFromField(open: () => void): void { open(); }
 
+/** FieldUseFunc_Mail (item_use.c): fade the bag out, then run CB2_CheckMail. */
+export function FieldUseFunc_Mail(exitToMail: (checkMail: () => void) => void, checkMail: () => void): void {
+  exitToMail(checkMail);
+}
+
+/** CB2_CheckMail (item_use.c): ReadMail uses only itemId when messageExists is FALSE. */
+export function CB2_CheckMail(item: number, returnToBag: () => void): void {
+  openMailView(decode(itemName(item)), [], "", returnToBag);
+}
+
 export function openFieldBag(game: Game, initialItem?: number): void {
   let post: (() => void) | null = null;
   fieldMenu(game, close => {
@@ -322,7 +332,9 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         case "FieldUseFunc_FameChecker": onField(() => game.openFameChecker()); return;
         case "FieldUseFunc_TeachyTv": onField(() => game.openTeachyTv()); return;
         case "FieldUseFunc_VsSeeker": onField(() => game.useVsSeeker()); return;
-        case "FieldUseFunc_Mail": leave(() => openMailView(decode(itemName(item)), [], "", bag)); return;
+        case "FieldUseFunc_Mail":
+          FieldUseFunc_Mail((checkMail) => leave(checkMail), () => CB2_CheckMail(item, bag));
+          return;
         case "ItemUseOutOfBattle_EnigmaBerry":
           ItemUseOutOfBattle_EnigmaBerry(item, {
             medicine: () => leave(() => medicine(item)),
