@@ -948,19 +948,59 @@ export class FieldEffects {
 
   private spawnJumpLanding(object: ObjectEvent): void {
     const b = object.currentMetatileBehavior;
-    let name = "GroundImpactDust";
-    let yOff = 12;
-    if (MB.MetatileBehavior_IsTallGrass(b)) name = "JumpTallGrass";
-    else if (MB.MetatileBehavior_IsLongGrass(b)) name = "JumpLongGrass";
-    else if (MB.MetatileBehavior_IsShallowFlowingWater?.(b)) name = "JumpSmallSplash";
-    else if (MB.MetatileBehavior_IsSurfable(b)) name = "JumpBigSplash";
-    else if (MB.MetatileBehavior_IsPuddle?.(b)) name = "JumpSmallSplash";
-    if (name === "GroundImpactDust") yOff = 12;
+    if (MB.MetatileBehavior_IsShallowFlowingWater?.(b)) { this.FldEff_JumpSmallSplash(object); return; }
+    if (MB.MetatileBehavior_IsSurfable(b)) { this.FldEff_JumpBigSplash(object); return; }
+    if (MB.MetatileBehavior_IsPuddle?.(b)) { this.FldEff_JumpSmallSplash(object); return; }
+    if (!MB.MetatileBehavior_IsTallGrass(b) && !MB.MetatileBehavior_IsLongGrass(b)) {
+      this.FldEff_Dust(object);
+      return;
+    }
+    const name = MB.MetatileBehavior_IsTallGrass(b) ? "JumpTallGrass" : "JumpLongGrass";
+    const yOff = 12;
     const sprite = this.createFromTemplate(name, object.currentCoords.x * 16 + 8, object.currentCoords.y * 16 + yOff);
     if (!sprite) return;
     sprite.priority = object.sprite.priority;
     sprite.subpriority = object.sprite.subpriority - 1;
     sprite.callback = (s) => { if (s.animEnded) this.ow.sprites.destroy(s); else s.subpriority = object.sprite.subpriority - 1; };
+  }
+
+  /** FldEff_JumpSmallSplash; the source arguments are current coordinates, previous elevation, and OAM priority. */
+  FldEff_JumpSmallSplash(object: ObjectEvent): void {
+    this.FldEff_JumpImpact(object, "JumpSmallSplash", 12, C.FLDEFF_JUMP_SMALL_SPLASH);
+  }
+
+  /** FldEff_JumpBigSplash. */
+  FldEff_JumpBigSplash(object: ObjectEvent): void {
+    this.FldEff_JumpImpact(object, "JumpBigSplash", 8, C.FLDEFF_JUMP_BIG_SPLASH);
+  }
+
+  /** FldEff_Dust. */
+  FldEff_Dust(object: ObjectEvent): void {
+    this.FldEff_JumpImpact(object, "GroundImpactDust", 12, C.FLDEFF_DUST);
+  }
+
+  private FldEff_JumpImpact(object: ObjectEvent, template: string, yOffset: number, fieldEffect: number): void {
+    const x = object.currentCoords.x;
+    const y = object.currentCoords.y;
+    const sprite = this.createFromTemplate(template, x * 16 + 8, y * 16 + yOffset);
+    if (!sprite) return;
+    sprite.coordOffsetEnabled = true;
+    sprite.priority = object.sprite.priority & 0xff;
+    sprite.data[0] = object.previousElevation & 0xff;
+    sprite.data[1] = fieldEffect & 0xffff;
+    this.active.add(fieldEffect);
+    sprite.callback = (s) => this.UpdateJumpImpactEffect(s);
+  }
+
+  /** UpdateJumpImpactEffect (field_effect_helpers.c). */
+  UpdateJumpImpactEffect(sprite: Sprite): void {
+    if (sprite.animEnded) {
+      this.active.delete(sprite.data[1]! & 0xffff);
+      this.ow.sprites.destroy(sprite);
+    } else {
+      this.UpdateObjectEventSpriteInvisibility(sprite, false);
+      this.ow.objects.SetObjectSubpriorityByElevation(sprite.data[0]!, sprite, 0, this.ow.sprites.offsetY);
+    }
   }
 
   private spawnFootprints(object: ObjectEvent): void {

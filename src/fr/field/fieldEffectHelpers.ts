@@ -304,11 +304,6 @@ export function SpriteCB_UnderwaterSurfBlob(sprite: Sprite | any): void {
   if (!sprite) return;
 }
 
-/** FldEff_Dust */
-export function FldEff_Dust(): number {
-  return 0;
-}
-
 /** FldEff_Ripple */
 export function FldEff_Ripple(): number {
   return 0;
@@ -322,16 +317,6 @@ export function FldEff_Splash(): number {
 /** UpdateSplashFieldEffect */
 export function UpdateSplashFieldEffect(sprite: Sprite | any): void {
   if (!sprite) return;
-}
-
-/** FldEff_JumpSmallSplash */
-export function FldEff_JumpSmallSplash(): number {
-  return 0;
-}
-
-/** FldEff_JumpBigSplash */
-export function FldEff_JumpBigSplash(): number {
-  return 0;
 }
 
 /** FldEff_FeetInFlowingWater */
@@ -431,11 +416,6 @@ export function StartRevealDisguise(sprite: Sprite | any): void {
 
 /** UpdateRevealDisguise */
 export function UpdateRevealDisguise(sprite: Sprite | any): void {
-  if (!sprite) return;
-}
-
-/** UpdateJumpImpactEffect */
-export function UpdateJumpImpactEffect(sprite: Sprite | any): void {
   if (!sprite) return;
 }
 
