@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7586/10115 (75.0 %)**.
-- Archivos C con funciones aún sin homólogo: **52**; quedan **2529 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **7594/10115 (75.1 %)**.
+- Archivos C con funciones aún sin homólogo: **52**; quedan **2521 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 117.216 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~59.761 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~59.612 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -38,11 +38,11 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 18 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
 | 19 | `help_system_util.c` | parcial | 848 | 1/41 | ~827 |  |
 | 20 | `battle_main.c` | casi completo | 4477 | 85/106 | ~886 |  |
-| 21 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
-| 22 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
-| 23 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
-| 24 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
-| 25 | `field_effect_helpers.c` | parcial | 1421 | 19/76 | ~1065 |  |
+| 21 | `field_effect_helpers.c` | parcial | 1421 | 27/76 | ~916 |  |
+| 22 | `vs_seeker.c` | parcial | 1326 | 12/41 | ~937 |  |
+| 23 | `start_menu.c` | parcial | 1016 | 3/65 | ~969 |  |
+| 24 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
+| 25 | `pokemon_summary_screen.c` | casi completo | 5224 | 111/137 | ~991 |  |
 | 26 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
 | 27 | `script_menu.c` | parcial | 1341 | 5/29 | ~1109 |  |
 | 28 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
@@ -79,7 +79,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 
 | Archivo C | Líneas | Portadas | Stubs |
 |---|---:|---:|---:|
-| `field_effect_helpers.c` | 1421 | 19/76 | 53 |
+| `field_effect_helpers.c` | 1421 | 27/76 | 49 |
 | `teachy_tv.c` | 1400 | 28/58 | 30 |
 | `trade.c` | 2958 | 0/66 | 15 |
 | `fame_checker.c` | 1739 | 16/64 | 7 |
