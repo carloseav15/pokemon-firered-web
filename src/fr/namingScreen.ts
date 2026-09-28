@@ -308,13 +308,25 @@ class NamingScreen {
   private drawKeyboardPage(bg: number, windowIndex: number, keyboardId: number): void {
     const map = ["Lower", "Upper", "Symbols"][keyboardId];
     CopyToBgTilemapBuffer(bg, incbin(`gNamingScreenKeyboard${map}_Tilemap`), 0, 0);
-    const win = this.windows[windowIndex];
-    const fill = [14, 13, 15][keyboardId];
-    FillWindowPixelBuffer(win, PIXEL_FILL(fill));
-    const rows = data<SymRef[][]>("sNamingScreenKeyboardText")[keyboardId];
-    rows.forEach((row, i) => AddTextPrinterParameterized3(win, C.FONT_NORMAL_COPY_1, 0, i * 16 + 1, [fill, 1, 2], 0, cdata<number[]>("keyboard_text", row.$sym)));
-    PutWindowTilemap(win); CopyWindowToVram(win, COPYWIN_FULL);
+    this.PrintKeyboardKeys(this.windows[windowIndex], keyboardId);
     CopyBgTilemapBufferToVram(bg);
+  }
+
+  /** PrintKeyboardKeys (naming_screen.c): draw each source row with its page-specific colors. */
+  private PrintKeyboardKeys(window: number, page: number): void {
+    const fill = [14, 13, 15][page]!;
+    const colors = [
+      [C.TEXT_DYNAMIC_COLOR_5, C.TEXT_COLOR_WHITE, C.TEXT_COLOR_DARK_GRAY],
+      [C.TEXT_DYNAMIC_COLOR_4, C.TEXT_COLOR_WHITE, C.TEXT_COLOR_DARK_GRAY],
+      [C.TEXT_DYNAMIC_COLOR_6, C.TEXT_COLOR_WHITE, C.TEXT_COLOR_DARK_GRAY],
+    ][page]!;
+    FillWindowPixelBuffer(window, PIXEL_FILL(fill));
+    const rows = data<SymRef[][]>("sNamingScreenKeyboardText")[page]!;
+    for (let i = 0; i < rows.length; i++) {
+      AddTextPrinterParameterized3(window, C.FONT_NORMAL_COPY_1, 0, i * 16 + 1, colors, 0,
+        cdata<number[]>("keyboard_text", rows[i]!.$sym));
+    }
+    PutWindowTilemap(window);
   }
 
   private setPageSwapButtonGfx(page: number): void {
@@ -443,7 +455,9 @@ class NamingScreen {
   }
 
   private DrawKeyboardPageOnDeck(): void {
-    const hiddenBg = this.activeKeyboardBg === 1 ? 2 : 1;
+    const bg1Priority = GetBgAttribute(1, BG_ATTR_PRIORITY);
+    const bg2Priority = GetBgAttribute(2, BG_ATTR_PRIORITY);
+    const hiddenBg = bg1Priority > bg2Priority ? 1 : 2;
     const hiddenWindow = hiddenBg === 1 ? 0 : 1;
     const nextKeyboard = CurrentPageToNextKeyboardId(this.model);
     this.drawKeyboardPage(hiddenBg, hiddenWindow, nextKeyboard);
