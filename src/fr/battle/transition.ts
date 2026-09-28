@@ -157,6 +157,8 @@ interface Effect {
   readonly invertWindow?: boolean;
   /** Advance one VBlank frame. Returns true once the wipe is done and FadeScreenBlack should start. */
   tick(): boolean;
+  /** True when the effect's own C state machine already completed the fade to black. */
+  readonly completesScreenFade?: boolean;
   /** Optional custom per-frame renderer when an effect does more than basic window clipping. */
   render?(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void;
 }
@@ -895,24 +897,16 @@ class SwirlEffect implements Effect {
 
 /** Task_Blur / Blur_Main: GBA mosaic zoom and fade to black. */
 class BlurEffect implements Effect {
-  private delay = 2;
-  private counter = 0;
-  private blackLevel = 0;
+  readonly completesScreenFade = true;
+  delay = 0;
+  counter = 0;
+  blackLevel = 0;
+  state = 0;
+  fadeStarted = false;
+  done = false;
 
   tick(): boolean {
-    if (this.delay !== 0) {
-      this.delay--;
-    } else {
-      this.delay = 2;
-      this.counter++;
-      if (this.counter >= 10) {
-        this.blackLevel = Math.min(16, this.blackLevel + 2);
-      }
-      if (this.counter > 14 && this.blackLevel >= 16) {
-        return true;
-      }
-    }
-    return false;
+    return Task_Blur(this);
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
@@ -933,6 +927,44 @@ class BlurEffect implements Effect {
       ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
     }
   }
+}
+
+/** Task_Blur (battle_transition.c): dispatch task states while preserving task-frame delays. */
+function Task_Blur(effect: BlurEffect): boolean {
+  if (effect.fadeStarted && effect.blackLevel < 16) effect.blackLevel++;
+  let keepRunning: boolean;
+  do {
+    switch (effect.state) {
+      case 0: keepRunning = Blur_Init(effect); break;
+      case 1: keepRunning = Blur_Main(effect); break;
+      default: keepRunning = Blur_End(effect); break;
+    }
+  } while (keepRunning);
+  return effect.done;
+}
+
+/** Blur_Init (battle_transition.c); Canvas rendering supplies the mosaic effect. */
+function Blur_Init(effect: BlurEffect): boolean {
+  effect.state++;
+  return true;
+}
+
+/** Blur_Main (battle_transition.c). */
+function Blur_Main(effect: BlurEffect): boolean {
+  if (effect.delay !== 0) {
+    effect.delay--;
+  } else {
+    effect.delay = 2;
+    if (++effect.counter === 10) effect.fadeStarted = true;
+    if (effect.counter > 14) effect.state++;
+  }
+  return false;
+}
+
+/** Blur_End (battle_transition.c): wait for the fade started by Blur_Main. */
+function Blur_End(effect: BlurEffect): boolean {
+  if (effect.blackLevel >= 16) effect.done = true;
+  return false;
 }
 
 /** Task_PokeballsTrail / SpriteCB_FldEffPokeballTrail: 5 Pokéballs sliding horizontally wiping trails. */
@@ -1164,7 +1196,14 @@ export class BattleTransitionScene implements Scene {
       return;
     }
     if (this.effect) {
-      if (this.effect.tick()) this.effect = null; // main effect finished; fade to black below
+      if (this.effect.tick()) {
+        const alreadyFaded = this.effect.completesScreenFade === true;
+        this.effect = null;
+        if (alreadyFaded) {
+          this.done = true;
+          this.onDone();
+        }
+      }
       return;
     }
     if (!paletteFade.active && paletteFade.level < 16) { paletteFade.fadeScreen(FADE_TO_BLACK, 0); return; }
