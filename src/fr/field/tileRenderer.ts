@@ -4,6 +4,9 @@
 
 import type { TilesetData } from "../rom";
 import { NUM_METATILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY } from "./fieldmap";
+import { NUM_PALS_IN_PRIMARY, NUM_PALS_TOTAL, NUM_TILES_TOTAL } from "../generated/constants";
+import { GET_B, GET_G, GET_R, LoadPalette, gPlttBufferFaded } from "../hw/palette";
+import { ApplyGlobalTintToPaletteEntries } from "./fieldPalette";
 
 export type Rgb = number[];
 
@@ -19,17 +22,68 @@ export class TileRenderer {
   tint: ((c: Rgb) => Rgb) | null = null;
 
   constructor(readonly primary: TilesetData, readonly secondary: TilesetData) {
-    this.tiles.set(primary.tiles.subarray(0, NUM_TILES_IN_PRIMARY * TILE_BYTES), 0);
-    this.tiles.set(secondary.tiles.subarray(0, (1024 - NUM_TILES_IN_PRIMARY) * TILE_BYTES), NUM_TILES_IN_PRIMARY * TILE_BYTES);
+    this.CopyMapTilesetsToVram();
+    this.LoadMapTilesetPalettes();
+  }
+
+  /** CopyTilesetToVram / CopyTilesetToVramUsingHeap. ROM tiles are already decompressed. */
+  CopyTilesetToVram(tileset: TilesetData | null, numTiles: number, offset: number): void {
+    if (tileset) this.tiles.set(tileset.tiles.subarray(0, (numTiles & 0xffff) * TILE_BYTES), (offset & 0xffff) * TILE_BYTES);
+  }
+
+  CopyTilesetToVramUsingHeap(tileset: TilesetData | null, numTiles: number, offset: number): void {
+    this.CopyTilesetToVram(tileset, numTiles, offset);
+  }
+
+  CopyPrimaryTilesetToVram(): void { this.CopyTilesetToVram(this.primary, NUM_TILES_IN_PRIMARY, 0); }
+  CopySecondaryTilesetToVram(): void { this.CopyTilesetToVram(this.secondary, NUM_TILES_TOTAL - NUM_TILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY); }
+  CopySecondaryTilesetToVramUsingHeap(): void { this.CopyTilesetToVramUsingHeap(this.secondary, NUM_TILES_TOTAL - NUM_TILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY); }
+
+  CopyMapTilesetsToVram(): void {
+    this.CopyTilesetToVramUsingHeap(this.primary, NUM_TILES_IN_PRIMARY, 0);
+    this.CopySecondaryTilesetToVramUsingHeap();
+  }
+
+  /** LoadTilesetPalette; offsets and sizes retain the C API's color/byte units. */
+  LoadTilesetPalette(tileset: TilesetData | null, destOffset: number, size: number): void {
+    if (!tileset) return;
+    const paletteStart = tileset.isSecondary ? NUM_PALS_IN_PRIMARY : 0;
+    const paletteCount = tileset.isSecondary ? NUM_PALS_TOTAL - NUM_PALS_IN_PRIMARY : NUM_PALS_IN_PRIMARY;
+    const source = tileset.palettes.slice(paletteStart, paletteStart + paletteCount).flat();
+    const srcStart = tileset.isSecondary ? 0 : 1;
+    const count = tileset.isSecondary ? size >> 1 : Math.max(0, (size - 2) >> 1);
+    const packed = new Uint16Array(count);
+    for (let i = 0; i < count; i++) {
+      const [r, g, b] = source[srcStart + i] ?? [0, 0, 0];
+      packed[i] = (r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10);
+    }
+    if (!tileset.isSecondary) LoadPalette([0], destOffset, 2);
+    LoadPalette(packed, destOffset + (tileset.isSecondary ? 0 : 1), size - (tileset.isSecondary ? 0 : 2));
+    const tintOffset = destOffset + (tileset.isSecondary ? 0 : 1);
+    ApplyGlobalTintToPaletteEntries(tintOffset, tileset.isSecondary ? size >> 1 : (size - 2) >> 1);
+  }
+
+  LoadPrimaryTilesetPalette(): void { this.LoadTilesetPalette(this.primary, 0, NUM_PALS_IN_PRIMARY * 32); }
+  LoadSecondaryTilesetPalette(): void { this.LoadTilesetPalette(this.secondary, NUM_PALS_IN_PRIMARY * 16, (NUM_PALS_TOTAL - NUM_PALS_IN_PRIMARY) * 32); }
+
+  /** LoadMapTilesetPalettes: load and tint both source palette ranges. */
+  LoadMapTilesetPalettes(): void {
+    this.LoadPrimaryTilesetPalette();
+    this.LoadSecondaryTilesetPalette();
     this.reloadPalettes();
   }
 
-  /** LoadMapTilesetPalettes: primary palettes 0-6, secondary 7-12. */
+  /** Rebuild renderer RGB palettes from the GBA-format faded palette buffer. */
   reloadPalettes(): void {
     const palettes: Rgb[][] = [];
-    for (let i = 0; i < 7; i++) palettes.push(this.primary.palettes[i].map((c) => [...c]));
-    palettes[0][0] = [0, 0, 0];
-    for (let i = 7; i < 13; i++) palettes.push(this.secondary.palettes[i].map((c) => [...c]));
+    for (let i = 0; i < NUM_PALS_TOTAL; i++) {
+      const colors: Rgb[] = [];
+      for (let j = 0; j < 16; j++) {
+        const color = gPlttBufferFaded[i * 16 + j];
+        colors.push([GET_R(color) << 3, GET_G(color) << 3, GET_B(color) << 3]);
+      }
+      palettes.push(colors);
+    }
     for (let i = 13; i < 16; i++) palettes.push(new Array(16).fill([0, 0, 0]));
     this.palettes = palettes;
     this.cache.clear();
