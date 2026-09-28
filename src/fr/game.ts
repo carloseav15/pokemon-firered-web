@@ -845,28 +845,46 @@ export class Game {
   turnVirtualObject(virtualObjId: number, direction: number): void {
     this.overworld.objects.TurnVirtualObject(virtualObjId, direction);
   }
-  /** AnimatePcTurnOn (flickers five times) / AnimatePcTurnOff: the PC metatile in front of the player. */
-  animatePc(on: boolean): void {
-    const ow = this.overworld;
-    const dir = ow.player.object.facingDirection;
-    const [dx, dy] = dir === 2 ? [0, -1] : dir === 3 ? [-1, -1] : dir === 4 ? [1, -1] : [0, 0];
-    const which = varGet(SV.x8004);
-    const tile = (off: boolean) => rom.c(which === 0 ? (off ? "METATILE_Building_PCOff" : "METATILE_Building_PCOn") : (off ? "METATILE_GenericBuilding1_PlayersPCOff" : "METATILE_GenericBuilding1_PlayersPCOn"));
-    const set = (off: boolean) => {
-      ow.map.setMetatileIdAt(save.pos.x + dx + 7, save.pos.y + dy + 7, tile(off) | 0x0c00);
-      ow.renderer?.invalidate();
-    };
-    if (!on) { set(true); return; }
-    let timer = 0, state = 0;
-    const id = tasks.create(() => {
-      if (timer === 6) {
-        set((state & 1) === 1);
-        timer = 0;
-        state++;
-        if (state === 5) tasks.destroy(id);
+  private pcTurnOnTaskId: number | undefined;
+  /** AnimatePcTurnOn (field_specials.c). */
+  AnimatePcTurnOn(): void {
+    if (this.pcTurnOnTaskId !== undefined && tasks.tasks[this.pcTurnOnTaskId]?.isActive) return;
+    const taskId = tasks.create((id) => this.Task_AnimatePcTurnOn(id), 8);
+    this.pcTurnOnTaskId = taskId;
+    tasks.tasks[taskId].data[0] = 0;
+    tasks.tasks[taskId].data[1] = 0;
+  }
+  /** Task_AnimatePcTurnOn (field_specials.c). */
+  private Task_AnimatePcTurnOn(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    if (data[1] === 6) {
+      this.PcTurnOnUpdateMetatileId((data[0]! & 1) !== 0);
+      this.overworld.renderer?.invalidate();
+      data[1] = 0;
+      data[0] = data[0]! + 1;
+      if (data[0] === 5) {
+        tasks.destroy(taskId);
+        this.pcTurnOnTaskId = undefined;
       }
-      timer++;
-    }, 8);
+    }
+    data[1] = data[1]! + 1;
+  }
+  /** PcTurnOnUpdateMetatileId (field_specials.c). */
+  private PcTurnOnUpdateMetatileId(flickerOff: boolean): void {
+    const direction = this.overworld.player.object.facingDirection;
+    const [dx, dy] = direction === C.DIR_NORTH ? [0, -1]
+      : direction === C.DIR_WEST ? [-1, -1]
+        : direction === C.DIR_EAST ? [1, -1] : [0, 0];
+    const which = varGet(SV.x8004);
+    let metatileId = 0;
+    if (which === 0) metatileId = rom.c(flickerOff ? "METATILE_Building_PCOff" : "METATILE_Building_PCOn");
+    else if (which === 1 || which === 2) metatileId = rom.c(flickerOff ? "METATILE_GenericBuilding1_PlayersPCOff" : "METATILE_GenericBuilding1_PlayersPCOn");
+    this.overworld.map.setMetatileIdAt(save.pos.x + dx + 7, save.pos.y + dy + 7, metatileId | 0x0c00);
+  }
+  /** AnimatePcTurnOff (field_specials.c). */
+  AnimatePcTurnOff(): void {
+    this.PcTurnOnUpdateMetatileId(true);
+    this.overworld.renderer?.invalidate();
   }
   /** prof_pc.c GetProfOaksRatingMessage: shows the rating for VAR_0x8004 caught mons; RESULT = complete. */
   profOakRating(): number {

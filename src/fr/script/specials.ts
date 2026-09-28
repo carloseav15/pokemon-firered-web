@@ -193,8 +193,8 @@ export const SPECIALS: Record<string, Special> = {
   },
   GetPlayerAvatarBike: (ctx) => ((ctx.ow.player.flags & 2) ? 1 : (ctx.ow.player.flags & 4) ? 2 : 0),
   ForcePlayerToStartSurfing: (ctx) => { SetHelpContext(C.HELPCONTEXT_SURFING); ctx.ow.player.setTransitionFlags(C.PLAYER_AVATAR_FLAG_SURFING); },
-  AnimatePcTurnOn: (ctx) => { ctx.ow.game.animatePc(true); },
-  AnimatePcTurnOff: (ctx) => { ctx.ow.game.animatePc(false); },
+  AnimatePcTurnOn: (ctx) => { ctx.ow.game.AnimatePcTurnOn(); },
+  AnimatePcTurnOff: (ctx) => { ctx.ow.game.AnimatePcTurnOff(); },
   SetVermilionTrashCans: () => {
     const first = (random() % 15) + 1;
     const neighbors = first === 1 ? [1, 5]
