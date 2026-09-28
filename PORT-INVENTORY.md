@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 48 | 103333 | 1838/4603 |
+| Parcial (< 80 % de funciones) | 47 | 103136 | 1836/4588 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 9 | 22381 | 798/892 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 150 | 124813 | 4492/4492 |
+| Casi completo (≥ 80 % y < 100 %) | 9 | 22381 | 804/892 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 151 | 125010 | 4507/4507 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 27/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
-| **Pendiente de portar** | **59** | **128544** | |
-| **Total en alcance** | **211** | **253703** | **7156/10115** |
+| **Pendiente de portar** | **58** | **128347** | |
+| **Total en alcance** | **211** | **253703** | **7175/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Falta (sin funciones portadas)
@@ -56,7 +56,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `trainer_card.c` | 1959 | 55/73 | `menus/trainerCard.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 56/87 | `battle/controller_opponent.ts` |  |  |
-| `quest_log.c` | 1767 | 12/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
+| `quest_log.c` | 1767 | 13/88 | `field/trainerSee.ts`, `questLogEvents.ts` |  |  |
 | `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `evolution_scene.c` | 1704 | 14/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
@@ -80,7 +80,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `easy_chat.c` | 730 | 1/39 | `script/specials.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 14/72 | `battle/controller_safari.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
-| `quest_log_player.c` | 197 | 3/15 | `questLogPlayer.ts` |  |  |
 
 ## Adaptador (UI simplificada)
 
@@ -94,10 +93,10 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 |---|---:|---:|---|---|---:|
 | `pokemon_summary_screen.c` | 5224 | 111/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `region_map.c` | 4036 | 128/140 | `regionMap.ts` |  |  |
-| `battle_controller_player.c` | 2966 | 111/123 | `battle/controller_player.ts` |  |  |
+| `battle_controller_player.c` | 2966 | 116/123 | `battle/controller_player.ts` |  |  |
 | `item_menu.c` | 2397 | 93/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/hardwareChoice.ts` |  |  |
 | `battle_interface.c` | 2240 | 46/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
-| `field_player_avatar.c` | 2168 | 172/176 | `field/fieldEffects.ts`, `field/fishing.ts`, `field/playerAvatar.ts` … |  |  |
+| `field_player_avatar.c` | 2168 | 173/176 | `field/fieldEffects.ts`, `field/fishing.ts`, `field/objectEvents.ts` … |  |  |
 | `sprite.c` | 1745 | 100/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
@@ -218,6 +217,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `buy_menu_helpers.c` | 205 | 7/7 | `buyMenuHelpers.ts` |  |  |
 | `ss_anne.c` | 200 | 8/8 | `script/specialsExtra.ts` |  |  |
 | `battle_anim_smokescreen.c` | 197 | 3/3 | `battle/anims/smokescreen.ts` |  |  |
+| `quest_log_player.c` | 197 | 15/15 | `questLogPlayer.ts` |  |  |
 | `mail_data.c` | 187 | 12/12 | `pokemon/mail.ts` |  |  |
 | `pc_screen_effect.c` | 179 | 7/7 | `pcScreenEffect.ts` |  |  |
 | `text_window.c` | 177 | 19/19 | `battle/bg.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` |  |  |
