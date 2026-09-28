@@ -770,7 +770,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     varSet(SV.x8006, stat(C.GAME_STAT_LINK_BATTLE_WINS));
     return (varGet(SV.x8004) ? 1 : 0) | (varGet(SV.x8005) ? 2 : 0) | (varGet(SV.x8006) ? 4 : 0);
   },
-  ChangeBoxPokemonNickname: (ctx) => { ctx.ow.game.changeBoxNickname(varGet(SV.MON_BOX_ID), varGet(SV.MON_BOX_POS)); },
+  ChangeBoxPokemonNickname: (ctx) => { ctx.ow.game.ChangeBoxPokemonNickname(); },
   CapeBrinkGetMoveToTeachLeadPokemon: () => {
     const lead = leadMonIndex();
     varSet(SV.x8007, lead);

@@ -111,6 +111,7 @@ export class Game {
   callback2: Callback = null;
   /** Full-screen scene drawn instead of the field (battle, menus). */
   scene: Scene | null = null;
+  private nicknameScene: HwScene | null = null;
   battleOutcome = 0;
   safariSteps: number | undefined;
   safariBalls = 0;
@@ -685,23 +686,34 @@ export class Game {
     }
   }
 
-  changeNickname(index: number): void {
+  ChangePokemonNickname(): void {
+    const index = varGet(SV.x8004);
     const mon = save.party[index];
     if (!mon || mon.isEgg) { this.overworld.script.ScriptContext_Enable(); return; }
     stringVars.var3 = Uint8Array.from(mon.nickname);
     stringVars.var2 = Uint8Array.from(mon.nickname);
     this.overworld.script.ScriptContext_Stop();
     const scene = new HwScene();
+    this.nicknameScene = scene;
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
-    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
-      stringVars.var2 = Uint8Array.from(mon.nickname);
-      scene.leave();
-      this.scene = null;
-      this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
-      this.overworld.script.ScriptContext_Enable();
-    });
+    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, stringVars.var2, mon.species, pokemonGender(mon), mon.personality, () => this.ChangePokemonNickname_CB());
+  }
+
+  /** ChangePokemonNickname_CB from field_specials.c. */
+  private ChangePokemonNickname_CB(): void {
+    const mon = save.party[varGet(SV.x8004)];
+    if (mon) mon.nickname = Array.from(stringVars.var2);
+    this.returnFromNicknameScreen();
+  }
+
+  private returnFromNicknameScreen(): void {
+    this.nicknameScene?.leave();
+    this.nicknameScene = null;
+    this.scene = null;
+    this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
+    this.overworld.script.ScriptContext_Enable();
   }
   openPokemonStorage(): void { openStorageMenu(this); }
   openPlayerPC(bedroom: boolean): void { openPlayerPc(this, bedroom); }
@@ -771,23 +783,26 @@ export class Game {
   }
 
   /** field_specials.c ChangeBoxPokemonNickname */
-  changeBoxNickname(box: number, pos: number): void {
+  ChangeBoxPokemonNickname(): void {
+    const box = varGet(SV.MON_BOX_ID), pos = varGet(SV.MON_BOX_POS);
     const mon = save.boxes[box]?.[pos];
     if (!mon) { this.overworld.script.ScriptContext_Enable(); return; }
     stringVars.var3 = Uint8Array.from(mon.nickname);
     stringVars.var2 = Uint8Array.from(mon.nickname);
     this.overworld.script.ScriptContext_Stop();
     const scene = new HwScene();
+    this.nicknameScene = scene;
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
-    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, () => {
-      stringVars.var2 = Uint8Array.from(mon.nickname);
-      scene.leave();
-      this.scene = null;
-      this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
-      this.overworld.script.ScriptContext_Enable();
-    });
+    DoNamingScreen(C.NAMING_SCREEN_NICKNAME, stringVars.var2, mon.species, pokemonGender(mon), mon.personality, () => this.ChangeBoxPokemonNickname_CB());
+  }
+
+  /** ChangeBoxPokemonNickname_CB from field_specials.c. */
+  private ChangeBoxPokemonNickname_CB(): void {
+    const mon = save.boxes[varGet(SV.MON_BOX_ID)]?.[varGet(SV.MON_BOX_POS)];
+    if (mon) mon.nickname = Array.from(stringVars.var2);
+    this.returnFromNicknameScreen();
   }
 
   doCredits(): void { this.overworld.script.ScriptContext_Stop(); sound.playNewMapMusic(C.MUS_CREDITS); DoCredits(this); }
