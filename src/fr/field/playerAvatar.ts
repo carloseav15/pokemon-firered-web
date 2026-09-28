@@ -165,6 +165,28 @@ export class PlayerAvatar {
     this.DoPlayerAvatarTransition(state | (extras & 0xff));
   }
 
+  /** MovePlayerToMapCoords (field_player_avatar.c). */
+  MovePlayerToMapCoords(x: number, y: number): void { this.ow.objects.MoveObjectEventToMapCoords(this.object, x, y); }
+
+  /** player_get_pos_including_state_based_drift (field_player_avatar.c). */
+  player_get_pos_including_state_based_drift(): { x: number; y: number; valid: boolean } {
+    const o = this.object;
+    if (o.heldMovementActive && !o.heldMovementFinished && !o.sprite.data[2]) {
+      let { x, y } = o.currentCoords;
+      switch (o.movementActionId & 0xff) {
+        case C.MOVEMENT_ACTION_WALK_NORMAL_DOWN:
+        case C.MOVEMENT_ACTION_PLAYER_RUN_DOWN: y++; return { x, y, valid: true };
+        case C.MOVEMENT_ACTION_WALK_NORMAL_UP:
+        case C.MOVEMENT_ACTION_PLAYER_RUN_UP: y--; return { x, y, valid: true };
+        case C.MOVEMENT_ACTION_WALK_NORMAL_LEFT:
+        case C.MOVEMENT_ACTION_PLAYER_RUN_LEFT: x--; return { x, y, valid: true };
+        case C.MOVEMENT_ACTION_WALK_NORMAL_RIGHT:
+        case C.MOVEMENT_ACTION_PLAYER_RUN_RIGHT: x++; return { x, y, valid: true };
+      }
+    }
+    return { x: -1, y: -1, valid: false };
+  }
+
   /**
    * SetPlayerAvatarTransitionFlags (field_player_avatar.c): ORs into transitionFlags then
    * calls DoPlayerAvatarTransition, which dispatches sPlayerAvatarTransitionFuncs bit by
@@ -539,14 +561,14 @@ export class PlayerAvatar {
 
   /** ForcedMovement_MatJump (field_player_avatar.c). */
   private ForcedMovement_MatJump(): boolean {
-    this.DoPlayerMatJump();
+    this.DoPlayerAvatarSecretBaseMatJump();
     return true;
   }
 
-  /** DoPlayerMatJump / DoPlayerAvatarSecretBaseMatJump (field_player_avatar.c): the
+  /** DoPlayerAvatarSecretBaseMatJump (field_player_avatar.c): the
    * sPlayerAvatarSecretBaseMatJump table has a single entry, so the C tight while-loop
    * (`while (sPlayerAvatarSecretBaseMatJump[data[0]](...))`) reduces to one call. */
-  private DoPlayerMatJump(): void {
+  private DoPlayerAvatarSecretBaseMatJump(): void {
     let taskId = -1;
     let steps = 0;
     /** PlayerAvatar_DoSecretBaseMatJump (field_player_avatar.c). */
@@ -566,6 +588,7 @@ export class PlayerAvatar {
     taskId = this.ow.effects.tasks.create(PlayerAvatar_DoSecretBaseMatJump, 0xff);
     PlayerAvatar_DoSecretBaseMatJump();
   }
+
 
   /** ForcedMovement_MatSpin (field_player_avatar.c). */
   private ForcedMovement_MatSpin(): boolean {
@@ -898,9 +921,12 @@ export class PlayerAvatar {
     const { x, y } = this.object.currentCoords;
     if (MB.MetatileBehavior_IsBumpySlope(this.ow.map.behaviorAt(x, y))) {
       this.acroBikeState = BIKE_STATE_SLOPE;
-      // PlayerUseAcroBikeOnBumpySlope has an empty body in FireRed's C source.
+      this.PlayerUseAcroBikeOnBumpySlope(this.object.movementDirection);
     }
   }
+
+  /** PlayerUseAcroBikeOnBumpySlope has an empty body in FireRed. */
+  private PlayerUseAcroBikeOnBumpySlope(direction: number): void { void direction; }
 
   StopPlayerAvatar(): void {
     const o = this.object;
@@ -1054,6 +1080,9 @@ export class PlayerAvatar {
       }
     }, 0xff);
   }
+
+  /** CreateStopSurfingTask_NoMusicChange (field_player_avatar.c). */
+  CreateStopSurfingTask_NoMusicChange(direction: number): void { this.createStopSurfingTask(direction, false); }
 
   /** TryPushBoulder (field_player_avatar.c). */
   private TryPushBoulder(x: number, y: number, direction: number): boolean {

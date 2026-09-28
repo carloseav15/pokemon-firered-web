@@ -93,10 +93,10 @@ export function QuestLogUpdatePlayerSprite(ow: Overworld, state: number): void {
         ow.effects.startSurfBlob(object, C.BOB_PLAYER_AND_MON);
       }
       break;
-    case C.QL_PLAYER_GFX_STOP_SURF_S: player.createStopSurfingTask(DIR_SOUTH, false); break;
-    case C.QL_PLAYER_GFX_STOP_SURF_N: player.createStopSurfingTask(DIR_NORTH, false); break;
-    case C.QL_PLAYER_GFX_STOP_SURF_W: player.createStopSurfingTask(DIR_WEST, false); break;
-    case C.QL_PLAYER_GFX_STOP_SURF_E: player.createStopSurfingTask(DIR_EAST, false); break;
+    case C.QL_PLAYER_GFX_STOP_SURF_S: player.CreateStopSurfingTask_NoMusicChange(DIR_SOUTH); break;
+    case C.QL_PLAYER_GFX_STOP_SURF_N: player.CreateStopSurfingTask_NoMusicChange(DIR_NORTH); break;
+    case C.QL_PLAYER_GFX_STOP_SURF_W: player.CreateStopSurfingTask_NoMusicChange(DIR_WEST); break;
+    case C.QL_PLAYER_GFX_STOP_SURF_E: player.CreateStopSurfingTask_NoMusicChange(DIR_EAST); break;
     case C.QL_PLAYER_GFX_VSSEEKER:
       ow.controlsLocked = true;
       ow.objects.freezeAll();
