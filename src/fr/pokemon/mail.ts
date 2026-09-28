@@ -282,12 +282,27 @@ export function ecWordText(word: number): string | null {
   return decode(Uint8Array.from(cdata<number[]>("easy_chat", sym)));
 }
 
-/** ConvertEasyChatWordsToString over the 5x2 mail arrangement (5 + 4 words). */
+/** BufferMailMessage's active 5x2 layout: ConvertEasyChatWordsToString for
+ * each row (two words in rows 0..3, one word in row 4). C appends a space
+ * after the first defined word even when the second word is undefined. */
+export function BufferMailMessage(words: number[]): string[] {
+  const lines: string[] = [];
+  for (let row = 0; row < 5; row++) {
+    const columns = row < 4 ? 2 : 1;
+    const first = words[row * 2] ?? C.EC_WORD_UNDEFINED;
+    let line = ecWordText(first) ?? "";
+    if (columns > 1) {
+      if (first !== C.EC_WORD_UNDEFINED) line += " ";
+      line += ecWordText(words[row * 2 + 1] ?? C.EC_WORD_UNDEFINED) ?? "";
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+/** Rows AddMailMessagePrinters displays, omitting EOS/leading-space rows. */
 export function mailLines(words: number[]): string[] {
-  const text = (w: number): string => ecWordText(w) ?? "";
-  const line1 = words.slice(0, 5).map(text).filter((s) => s !== "").join(" ");
-  const line2 = words.slice(5, 9).map(text).filter((s) => s !== "").join(" ");
-  return [line1, line2].filter((s) => s !== "");
+  return BufferMailMessage(words).filter((line) => line !== "" && line[0] !== " ");
 }
 
 // ---------------------------------------------------------------- attach / take
