@@ -235,6 +235,57 @@ export class PlayerAvatar {
   PlayerRideWaterCurrent(direction: number): void { this.PlayerSetAnimId(actionRideWaterCurrent(direction), 2); }
   PlayerGoSpin(direction: number): void { this.PlayerSetAnimId(actionSpin(direction), 3); }
 
+  private acroMovementAction(direction: number, actions: readonly number[]): number {
+    const directionU8 = direction & 0xff;
+    return actions[directionU8 > DIR_EAST ? DIR_NONE : directionU8]!;
+  }
+
+  /** PlayerIdleWheelie (field_player_avatar.c). */
+  private PlayerIdleWheelie(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_UP, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_LEFT, C.MOVEMENT_ACTION_ACRO_WHEELIE_FACE_RIGHT]), 1);
+  }
+  /** PlayerStartWheelie (field_player_avatar.c). */
+  private PlayerStartWheelie(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_DOWN, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_DOWN, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_UP, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_LEFT, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_RIGHT]), 1);
+  }
+  /** PlayerEndWheelie (field_player_avatar.c). */
+  private PlayerEndWheelie(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_DOWN, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_DOWN, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_UP, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_LEFT, C.MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_RIGHT]), 1);
+  }
+  /** PlayerStandingHoppingWheelie (field_player_avatar.c). */
+  private PlayerStandingHoppingWheelie(direction: number): void {
+    sound.playSE(sound.c("SE_BIKE_HOP"));
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_UP, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_LEFT, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_RIGHT]), 1);
+  }
+  /** PlayerMovingHoppingWheelie (field_player_avatar.c). */
+  private PlayerMovingHoppingWheelie(direction: number): void {
+    sound.playSE(sound.c("SE_BIKE_HOP"));
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_UP, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_LEFT, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_RIGHT]), 2);
+  }
+  /** PlayerLedgeHoppingWheelie (field_player_avatar.c). */
+  private PlayerLedgeHoppingWheelie(direction: number): void {
+    sound.playSE(sound.c("SE_BIKE_HOP"));
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_UP, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_LEFT, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_RIGHT]), 8);
+  }
+  /** PlayerAcroTurnJump (field_player_avatar.c). */
+  private PlayerAcroTurnJump(direction: number): void {
+    sound.playSE(sound.c("SE_BIKE_HOP"));
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_JUMP_IN_PLACE_UP_DOWN, C.MOVEMENT_ACTION_JUMP_IN_PLACE_UP_DOWN, C.MOVEMENT_ACTION_JUMP_IN_PLACE_DOWN_UP, C.MOVEMENT_ACTION_JUMP_IN_PLACE_RIGHT_LEFT, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT_RIGHT]), 1);
+  }
+  /** PlayerAcroWheelieCollide (field_player_avatar.c). */
+  private PlayerAcroWheelieCollide(direction: number): void {
+    sound.playSE(sound.c("SE_WALL_HIT"));
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_UP, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_LEFT, C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_RIGHT]), 2);
+  }
+  /** PlayerAcroPopWheelie (field_player_avatar.c). */
+  private PlayerAcroPopWheelie(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_DOWN, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_DOWN, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_UP, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_LEFT, C.MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_RIGHT]), 2);
+  }
+  /** PlayerAcroWheelieMove (field_player_avatar.c). */
+  private PlayerAcroWheelieMove(direction: number): void {
+    this.PlayerSetAnimId(this.acroMovementAction(direction, [C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_UP, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_LEFT, C.MOVEMENT_ACTION_ACRO_WHEELIE_MOVE_RIGHT]), 2);
+  }
+
   PlayerJumpLedge(direction: number): void {
     sound.playSE(sound.c("SE_LEDGE"));
     this.PlayerSetAnimId(actionJump2(direction), 8);
