@@ -291,6 +291,9 @@ export class Game {
     this.overworld.lastUsedWarp = { ...save.location };
   }
 
+  /** CB2_ContinueSavedGame (overworld.c). `data` replaces the C's implicit already-loaded
+   * gSaveBlock1Ptr (this port loads the save data explicitly instead of always keeping it
+   * resident). */
   continueGame(data: SaveData): void {
     setSave(data);
     this.overworld.restoreMapViewOnNextInit = true;
@@ -300,11 +303,13 @@ export class Game {
     this.overworld.Overworld_ResetStateOnContinue();
     // CB2_ContinueSavedGame: UseContinueGameWarp → SetWarpDestinationToContinueGameWarp
     const flags = save as unknown as { continueGameWarpActive?: boolean };
+    let usedContinueGameWarp = false;
     if (flags.continueGameWarpActive && save.continueGameWarp.mapGroup !== 0xff) {
       flags.continueGameWarpActive = false;
       this.overworld.SetWarpDestinationToContinueGameWarp();
       save.location = { ...this.overworld.warpDestination };
       save.pos = { x: this.overworld.warpDestination.x, y: this.overworld.warpDestination.y };
+      usedContinueGameWarp = true;
     }
     textOptions.speed = save.options.textSpeed;
     joy.buttonMode = save.options.buttonMode;
@@ -314,11 +319,17 @@ export class Game {
     this.overworld.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };
     this.overworld.savedMusic = save.savedMusic;
     this.overworld.script.ScriptContext_Init();
-    this.overworld.fieldCallback = () => this.overworld.fieldCBWarpExitFadeFromBlack();
+    // The continue-warp branch goes through a plain WarpIntoMap+CB2_LoadMap in the C (no map
+    // name popup); the other branch runs FieldCB_ShowMapNameOnContinue first.
+    this.overworld.fieldCallback = usedContinueGameWarp
+      ? () => this.overworld.fieldCBWarpExitFadeFromBlack()
+      : () => this.overworld.FieldCB_ShowMapNameOnContinue();
     paletteFade.fill(RGB_BLACK);
     PlayTimeCounter_Start();
     this.overworld.warpIntoMapAndLoad();
   }
+  /** CB2_ContinueSavedGame (overworld.c). */
+  CB2_ContinueSavedGame(data: SaveData): void { this.continueGame(data); }
 
   writeSave(isHallOfFame = false): boolean {
     const p = this.overworld.player.object;

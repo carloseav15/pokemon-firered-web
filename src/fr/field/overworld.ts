@@ -1069,6 +1069,12 @@ export class Overworld {
     this.controlsLocked = true;
   }
 
+  /** FieldCB_ShowMapNameOnContinue (overworld.c). */
+  FieldCB_ShowMapNameOnContinue(): void {
+    if (this.header.showMapName) this.mapName.ShowMapNamePopup(false);
+    this.fieldCBWarpExitFadeFromBlack();
+  }
+
   /** FieldCB_ContinueScriptHandleMusic (field_fadetransition.c). */
   FieldCB_ContinueScriptHandleMusic(): void {
     this.continueScriptAfterFade(true);
