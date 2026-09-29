@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **8934/10115 (88.3 %)**.
-- Archivos C con funciones aún sin homólogo: **29**; quedan **1181 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **8964/10115 (88.6 %)**.
+- Archivos C con funciones aún sin homólogo: **28**; quedan **1151 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
-- Estos archivos contienen 77.425 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~25.798 líneas** (aproximación por proporción de funciones).
+- Estos archivos contienen 75.730 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
+- Estimación ponderada del C sin homólogo: **~24.424 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -38,17 +38,16 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 18 | `party_menu.c` | casi completo | 6342 | 300/357 | ~1012 |  |
 | 19 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
 | 20 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
-| 21 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
-| 22 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
-| 23 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
-| 24 | `overworld.c` | parcial | 3563 | 123/242 | ~1752 |  |
-| 25 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 26 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
-| 27 | `field_effect.c` | parcial | 4033 | 95/239 | ~2429 |  |
-| 28 | `intro.c` | parcial | 2805 | 3/79 | ~2698 |  |
-| 29 | `event_object_movement.c` | parcial | 9412 | 539/759 | ~2728 |  |
+| 21 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
+| 22 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
+| 23 | `overworld.c` | parcial | 3563 | 123/242 | ~1752 |  |
+| 24 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
+| 25 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
+| 26 | `field_effect.c` | parcial | 4033 | 95/239 | ~2429 |  |
+| 27 | `intro.c` | parcial | 2805 | 3/79 | ~2698 |  |
+| 28 | `event_object_movement.c` | parcial | 9412 | 539/759 | ~2728 |  |
 
-Total: 29 archivos con huecos: 0 sin empezar, 0 adaptador, 15 casi completos y 14 parciales.
+Total: 28 archivos con huecos: 0 sin empezar, 0 adaptador, 15 casi completos y 13 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -101,6 +100,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Menú de guardado (`start_menu.c`): el commit de Quest Log necesita el buffer/serialización original de escenas (`SaveQuestLogData` en `quest_log.c`); la escena y reproducción de Quest Log siguen pendientes.
 - Summary Pokémon: el cambio de mon usa una lista TS compacta; el C distingue `monList.boxMons`, huecos, huevos y party multi. La selección de caja/party requiere adaptar esos datos antes de portar `PokeSum_SeekToNextMon` y `Task_PokeSum_SwitchDisplayedPokemon`.
 - pokemon.c (2026-09-29): 135/140; los cinco huecos son de enlace (`GetLinkTrainerFlankId`, `GetBattlerMultiplayerId`, `GetUnionRoomTrainerPic`, `GetUnionRoomTrainerClass`) y `GetTrainerPartnerName`, que necesita `GetMultiplayerId` de `link.c`. Sin caller tampoco en el C: `CreateSecretBaseEnemyParty`, `DrawSpindaSpotsUnused`, `GetMonFlavorRelation`, `EncryptBoxMon`/`DecryptBoxMon`/`CalculateBoxMonChecksum`/`GetSubstruct`; `RandomlyGivePartyPokerus`/`UpdatePartyPokerusTime`/`PartySpreadPokerus` son no-op porque el cuerpo C también lo es (comentario de RS en `pokemon.c:5608`). Sin cablear en la ruta TS: `SetDeoxysStats` (sus dos callers C son de `battle_main.c` en enlace) y `SpeciesToCryId` (su caller C es `PlayCryInternal` en `sound.c:476`, mientras `audio/sound.ts` manda la especie a la tabla WAV `cries.json` sin pasar por ella).
+- text.c (2026-09-29): 37/37 con `GetStringWidth`/`GetStringWidthFixedWidthFont`, las familias `FontFunc_*`, `TextPrinter*`, `GetGlyphWidth_*` y `DecompressGlyph_*`, `RenderText` y los iconos de keypad en `gba/font.ts`/`gba/textPrinter.ts`. Las ramas japonesas y el relleno de `glyphId == 0` con los colores del printer están portadas pero no se ejercitan (la ruta TS corre en latín); `FONT_BOLD` (fontId 7) no tiene `fontFunction` en el C y TS lanza si se pinta con él, sin llamadores; con un placeholder dinámico inexistente `GetStringWidth` mide en vez de leer el puntero nulo que el C desreferenciaría. Paridad headless: `DecompressGlyph_*` coincide con los PNG exportados en 6 fuentes x 512 glifos y las anchuras de `text.c` con `fonts.json`; `check:arrow` y `check:braille` pasan (ambos necesitaban `setupNodeGbaMock.ts`); sin prueba en navegador.
 
 ## 5. Portado pero sin probar en navegador
 
@@ -124,6 +124,7 @@ Verificado solo con `check:port`, `build`, paridad de cdata/incbin/textos o chec
 - item.c (compactación de PC y bolsillos) → `pokemon/items.ts, itemPc.ts, bagMenu.ts, tmCase.ts`
 - trainer_see.c (revelación de entrenador enterrado) → `field/trainerSee.ts, field/objectEvents.ts`
 - braille_text.c (callback de impresora Braille) → `gba/textPrinter.ts, gba/font.ts`
+- text.c (impresoras, glifos latinos e iconos de keypad) → `gba/textPrinter.ts, gba/font.ts`
 - script.c (estado de entrada Quest Log) → `script/context.ts`
 - teachy_tv.c (los seis programas y el menú) → `teachyTv.ts`
 - oak_speech.c + pokemon.c (naming, manager de sprites de combate, flauta/estimulante) → `oakSpeech.ts, battle/anim.ts, menus/fieldMenus.ts`
