@@ -159,6 +159,8 @@ interface Effect {
   tick(): boolean;
   /** True when the effect's own C state machine already completed the fade to black. */
   readonly completesScreenFade?: boolean;
+  /** True when the C effect starts and advances its own palette fade while running. */
+  readonly updatesPaletteFade?: boolean;
   /** Optional custom per-frame renderer when an effect does more than basic window clipping. */
   render?(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void;
 }
@@ -565,41 +567,72 @@ function GridSquares_End(effect: GridSquaresEffect): boolean {
 
 /** B_TRANSITION_SHUFFLE: Task_Shuffle / Shuffle_End. */
 class ShuffleEffect implements Effect {
-  private sinVal = 0;
-  private amplitude = 0;
-  private fadeFrame = 0;
-  private maxFadeFrames = 64;
+  readonly completesScreenFade = true;
+  readonly updatesPaletteFade = true;
+  readonly workingOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly rowOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  state = 0;
+  sinVal = 0;
+  amplitude = 0;
+  done = false;
 
   tick(): boolean {
-    this.sinVal += 4224;
-    this.amplitude += 384;
-    this.fadeFrame++;
-    return this.fadeFrame >= this.maxFadeFrames;
+    return Task_Shuffle(this);
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
-    const amp = this.amplitude >> 8;
-    let sin = this.sinVal;
-    for (let y = 0; y < DISPLAY_HEIGHT; y++, sin += 4224) {
-      const shift = Math.round(Math.sin((sin & 0xffff) * ((2 * Math.PI) / 65536)) * amp);
-      ctx.drawImage(snapshot, 0, y, DISPLAY_WIDTH, 1, shift, y, DISPLAY_WIDTH, 1);
-      if (shift > 0) {
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, y, shift, 1);
-      } else if (shift < 0) {
-        ctx.fillStyle = "#000";
-        ctx.fillRect(DISPLAY_WIDTH + shift, y, -shift, 1);
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      const sourceY = y + HBlankCB_Shuffle(this, y);
+      if (sourceY >= 0 && sourceY < DISPLAY_HEIGHT) {
+        ctx.drawImage(snapshot, 0, sourceY, DISPLAY_WIDTH, 1, 0, y, DISPLAY_WIDTH, 1);
       }
     }
-    const alpha = Math.min(1, this.fadeFrame / (this.maxFadeFrames * 0.75));
-    if (alpha > 0) {
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
-      ctx.restore();
-    }
   }
+}
+
+/** Task_Shuffle (battle_transition.c): dispatch until the state waits for another frame. */
+function Task_Shuffle(effect: ShuffleEffect): boolean {
+  let keepRunning: boolean;
+  do {
+    keepRunning = effect.state === 0 ? Shuffle_Init(effect) : Shuffle_End(effect);
+  } while (keepRunning);
+  return effect.done;
+}
+
+/** Shuffle_Init (battle_transition.c). */
+function Shuffle_Init(effect: ShuffleEffect): boolean {
+  effect.sinVal = 0;
+  effect.amplitude = 0;
+  effect.workingOffsets.fill(0);
+  effect.rowOffsets.fill(0);
+  paletteFade.fadeScreen(FADE_TO_BLACK, 4);
+  effect.state++;
+  return false;
+}
+
+/** Shuffle_End (battle_transition.c): update sine-table vertical offsets until C palette fade ends. */
+function Shuffle_End(effect: ShuffleEffect): boolean {
+  const amplitude = effect.amplitude >> 8;
+  let sinVal = effect.sinVal & 0xffff;
+  effect.sinVal = (effect.sinVal + 4224) & 0xffff;
+  effect.amplitude = (effect.amplitude + 384) << 16 >> 16;
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+    effect.workingOffsets[y] = safeSin(sinVal >>> 8, amplitude);
+    sinVal = (sinVal + 4224) & 0xffff;
+  }
+  if (!paletteFade.active) effect.done = true;
+  VBlankCB_Shuffle(effect);
+  return false;
+}
+
+/** VBlankCB_Shuffle (battle_transition.c), adapted to commit offsets for Canvas. */
+function VBlankCB_Shuffle(effect: ShuffleEffect): void {
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) effect.rowOffsets[y] = effect.workingOffsets[y]!;
+}
+
+/** HBlankCB_Shuffle (battle_transition.c); Canvas consumes this per-row BG offset. */
+function HBlankCB_Shuffle(effect: ShuffleEffect, scanline: number): number {
+  return effect.rowOffsets[scanline] ?? 0;
 }
 
 /** B_TRANSITION_BIG_POKEBALL: Task_BigPokeball / PatternWeave_CircularMask. */
@@ -1196,8 +1229,11 @@ export class BattleTransitionScene implements Scene {
       return;
     }
     if (this.effect) {
-      if (this.effect.tick()) {
-        const alreadyFaded = this.effect.completesScreenFade === true;
+      const effect = this.effect;
+      const effectFinished = effect.tick();
+      if (effect.updatesPaletteFade) paletteFade.update();
+      if (effectFinished) {
+        const alreadyFaded = effect.completesScreenFade === true;
         this.effect = null;
         if (alreadyFaded) {
           this.done = true;
