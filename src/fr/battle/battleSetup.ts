@@ -583,4 +583,46 @@ export class BattleSetup {
       onEnd: () => this.game.returnToFieldContinueScript(true),
     });
   }
+
+  /** StartPokedudeBattle (battle_setup.c:411) */
+  startPokedudeBattle(): void {
+    const ow = this.game.overworld;
+    ow.script.ScriptContext_Stop();
+    this.game.startBattle({
+      kind: "wild",
+      enemyParty: [createMon(rom.c("SPECIES_RATTATA"), 3)],
+      onEnd: (outcome) => this.EndPokedudeBattle(outcome),
+    });
+  }
+
+  /** EndPokedudeBattle (battle_setup.c:404) */
+  EndPokedudeBattle(outcome: number): void {
+    this.CB2_EndWildBattle(outcome);
+  }
+}
+
+/** BattleSetup_GetBattleTowerBattleTransition (battle_setup.c:660) */
+export function BattleSetup_GetBattleTowerBattleTransition(): number {
+  const enemyLevel = gEnemyParty[0]?.level ?? 1;
+  let playerLevel = 0;
+  for (const mon of save.party) {
+    if (mon.isEgg || mon.species === 0 || mon.hp === 0) continue;
+    playerLevel = (playerLevel + mon.level) & 0xff;
+    break;
+  }
+  if (enemyLevel < playerLevel) {
+    return rom.c("B_TRANSITION_POKEBALLS_TRAIL");
+  } else {
+    return rom.c("B_TRANSITION_BIG_POKEBALL");
+  }
+}
+
+/** StartPokedudeBattle (battle_setup.c:411) */
+export function StartPokedudeBattle(setup?: BattleSetup): void {
+  setup?.startPokedudeBattle();
+}
+
+/** EndPokedudeBattle (battle_setup.c:404) */
+export function EndPokedudeBattle(setup?: BattleSetup, outcome: number = B_OUTCOME_WON): void {
+  setup?.EndPokedudeBattle(outcome);
 }
