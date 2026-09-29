@@ -48,7 +48,7 @@ export const sDigits = [
 export function GetExtCtrlCodeLength(code: number): number {
   const lengths = [1, 2, 2, 2, 4, 2, 2, 1, 2, 1, 1, 3, 2, 2, 2, 1, 3, 2, 2, 2, 2, 1, 1, 1, 1];
   let length = 0;
-  if (code < (lengths.length)) {
+  if (code < lengths.length) {
     length = lengths[code];
   }
   return length;
@@ -69,7 +69,7 @@ export function StringLength(str: ArrayLike<number>, strOffset = 0): number {
   let str_idx = strOffset;
   let length = 0;
   while (str[str_idx + length] !== EOS) {
-    length++;
+    length = (length + 1) & 0xffff;
   }
   return length;
 }
@@ -101,7 +101,7 @@ export function StringCopyN(dest: Uint8Array, src: ArrayLike<number>, n: number,
   let dest_idx = destOffset;
   let src_idx = srcOffset;
   let i = 0;
-  for (i = 0; i < n; i++) {
+  for (i = 0; i < n; i = (i + 1) & 0xffff) {
     dest[dest_idx + i] = src[src_idx + i];
   }
   return dest_idx + n;
@@ -141,7 +141,7 @@ export function StringCompareN(str1: ArrayLike<number>, str2: ArrayLike<number>,
       }
       str1_idx++;
       str2_idx++;
-      if (--n === 0) {
+      if ((n = (n - 1) >>> 0) === 0) {
         return 0;
       }
     }
@@ -152,7 +152,7 @@ export function StringCompareN(str1: ArrayLike<number>, str2: ArrayLike<number>,
 export function StringFill(dest: Uint8Array, c: number, n: number, destOffset = 0): number {
   let dest_idx = destOffset;
   let i = 0;
-  for (i = 0; i < n; i++) {
+  for (i = 0; i < n; i = (i + 1) & 0xffff) {
     dest[dest_idx++] = c;
   }
   dest[dest_idx] = EOS;
@@ -171,15 +171,15 @@ export function StringCopyPadded(dest: Uint8Array, src: ArrayLike<number>, c: nu
     {
       dest[dest_idx++] = src[src_idx++];
       if (n) {
-        n--;
+        n = (n - 1) & 0xffff;
       }
     }
   }
-  n--;
-  while (n !== -1) {
+  n = (n - 1) & 0xffff;
+  while (n !== 65535) {
     {
       dest[dest_idx++] = c;
-      n--;
+      n = (n - 1) & 0xffff;
     }
   }
   dest[dest_idx] = EOS;
@@ -194,12 +194,12 @@ export function StripExtCtrlCodes(str: Uint8Array, strOffset = 0): void {
     {
       if (str[str_idx + srcIndex] === EXT_CTRL_CODE_BEGIN) {
         {
-          srcIndex++;
-          srcIndex += GetExtCtrlCodeLength(str[str_idx + srcIndex]);
+          srcIndex = (srcIndex + 1) & 0xffff;
+          srcIndex = (srcIndex + GetExtCtrlCodeLength(str[str_idx + srcIndex])) & 0xffff;
         }
       } else {
         {
-          str[str_idx + destIndex++] = str[str_idx + srcIndex++];
+          str[str_idx + (destIndex = (destIndex + 1) & 0xffff, (destIndex - 1) & 0xffff)] = str[str_idx + (srcIndex = (srcIndex + 1) & 0xffff, (srcIndex - 1) & 0xffff)];
         }
       }
     }
@@ -245,7 +245,7 @@ export function StringCopy_Nickname(dest: Uint8Array, src: ArrayLike<number>, de
   let src_idx = srcOffset;
   let i = 0;
   let limit = 10;
-  for (i = 0; i < limit; i++) {
+  for (i = 0; i < limit; i = (i + 1) & 0xff) {
     {
       dest[dest_idx + i] = src[src_idx + i];
       if (dest[dest_idx + i] === EOS) {
@@ -261,7 +261,7 @@ export function StringGet_Nickname(str: Uint8Array, strOffset = 0): number {
   let str_idx = strOffset;
   let i = 0;
   let limit = 10;
-  for (i = 0; i < limit; i++) {
+  for (i = 0; i < limit; i = (i + 1) & 0xff) {
     if (str[str_idx + i] === EOS) {
       return str_idx + i;
     }
@@ -275,7 +275,7 @@ export function StringCopy_PlayerName(dest: Uint8Array, src: ArrayLike<number>, 
   let src_idx = srcOffset;
   let i = 0;
   let limit = 7;
-  for (i = 0; i < limit; i++) {
+  for (i = 0; i < limit; i = (i + 1) | 0) {
     {
       dest[dest_idx + i] = src[src_idx + i];
       if (dest[dest_idx + i] === EOS) {
@@ -299,12 +299,12 @@ export function ConvertIntToDecimalStringN(dest: Uint8Array, value: number, mode
   if (mode === STR_CONV_MODE_LEADING_ZEROS) {
     state = WRITING_DIGITS;
   }
-  for (powerOfTen = largestPowerOfTen; powerOfTen > 0; powerOfTen = Math.trunc(powerOfTen / 10)) {
+  for (powerOfTen = largestPowerOfTen; powerOfTen > 0; powerOfTen = Math.trunc(powerOfTen / 10) | 0) {
     {
       let out_idx = 0;
       let c = 0;
-      let digit = Math.trunc(value / powerOfTen);
-      let temp = value - (powerOfTen * digit);
+      let digit = Math.trunc(value / powerOfTen) & 0xffff;
+      let temp = (value - Math.imul(powerOfTen, digit)) | 0;
       if (state === WRITING_DIGITS) {
         {
           out_idx = dest_idx++;
@@ -348,8 +348,8 @@ export function ConvertIntToHexStringN(dest: Uint8Array, value: number, mode: nu
   let i = 0;
   let powerOfSixteen = 0;
   let largestPowerOfSixteen = 1;
-  for (i = 1; i < n; i++) {
-    largestPowerOfSixteen *= 16;
+  for (i = 1; i < n; i = (i + 1) & 0xff) {
+    largestPowerOfSixteen = Math.imul(largestPowerOfSixteen, 16);
   }
   state = WAITING_FOR_NONZERO_DIGIT;
   if (mode === STR_CONV_MODE_RIGHT_ALIGN) {
@@ -358,11 +358,11 @@ export function ConvertIntToHexStringN(dest: Uint8Array, value: number, mode: nu
   if (mode === STR_CONV_MODE_LEADING_ZEROS) {
     state = WRITING_DIGITS;
   }
-  for (powerOfSixteen = largestPowerOfSixteen; powerOfSixteen > 0; powerOfSixteen = Math.trunc(powerOfSixteen / 16)) {
+  for (powerOfSixteen = largestPowerOfSixteen; powerOfSixteen > 0; powerOfSixteen = Math.trunc(powerOfSixteen / 16) | 0) {
     {
       let out_idx = 0;
       let c = 0;
-      let digit = Math.trunc(value / powerOfSixteen);
+      let digit = Math.trunc(value / powerOfSixteen) >>> 0;
       let temp = value % powerOfSixteen;
       if (state === WRITING_DIGITS) {
         {
@@ -405,7 +405,7 @@ export function StringCopyN_Multibyte(dest: Uint8Array, src: ArrayLike<number>, 
   let dest_idx = destOffset;
   let src_idx = srcOffset;
   let i = 0;
-  for (i = n - 1; i !== -1; i--) {
+  for (i = (n - 1) >>> 0; i !== 4294967295; i = (i - 1) >>> 0) {
     {
       if (src[src_idx] === EOS) {
         {
@@ -434,7 +434,7 @@ export function StringLength_Multibyte(str: ArrayLike<number>, strOffset = 0): n
         str_idx++;
       }
       str_idx++;
-      length++;
+      length = (length + 1) >>> 0;
     }
   }
   return length;
@@ -470,15 +470,15 @@ export function ConvertInternationalString(s: Uint8Array, language: number, sOff
     {
       let i = 0;
       StripExtCtrlCodes(s, s_idx);
-      i = StringLength(s, s_idx);
-      s[s_idx + i++] = EXT_CTRL_CODE_BEGIN;
-      s[s_idx + i++] = 22;
-      s[s_idx + i++] = EOS;
-      i--;
-      while (i !== -1) {
+      i = StringLength(s, s_idx) & 0xff;
+      s[s_idx + (i = (i + 1) & 0xff, (i - 1) & 0xff)] = EXT_CTRL_CODE_BEGIN;
+      s[s_idx + (i = (i + 1) & 0xff, (i - 1) & 0xff)] = 22;
+      s[s_idx + (i = (i + 1) & 0xff, (i - 1) & 0xff)] = EOS;
+      i = (i - 1) & 0xff;
+      while (i !== 255) {
         {
           s[s_idx + i + 2] = s[s_idx + i];
-          i--;
+          i = (i - 1) & 0xff;
         }
       }
       s[s_idx + 0] = EXT_CTRL_CODE_BEGIN;
@@ -554,7 +554,7 @@ export function StringBraille(dest: Uint8Array, src: ArrayLike<number>, destOffs
         break;
         default:
           dest[dest_idx++] = c;
-        dest[dest_idx++] = c + 64;
+        dest[dest_idx++] = (c + 64) & 0xff;
         break;
       }
     }
@@ -635,7 +635,7 @@ export function ExpandPlaceholder_Kyogre(): ArrayLike<number> {
 
 export function GetExpandedPlaceholder(id: number): ArrayLike<number> {
   const funcs = [ExpandPlaceholder_UnknownStringVar, ExpandPlaceholder_PlayerName, ExpandPlaceholder_StringVar1, ExpandPlaceholder_StringVar2, ExpandPlaceholder_StringVar3, ExpandPlaceholder_KunChan, ExpandPlaceholder_RivalName, ExpandPlaceholder_Version, ExpandPlaceholder_Magma, ExpandPlaceholder_Aqua, ExpandPlaceholder_Maxie, ExpandPlaceholder_Archie, ExpandPlaceholder_Groudon, ExpandPlaceholder_Kyogre];
-  if (id >= (funcs.length)) {
+  if (id >= funcs.length) {
     return rom.text("gExpandedPlaceholder_Empty");
   } else {
     return funcs[id]();

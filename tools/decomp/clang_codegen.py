@@ -20,6 +20,7 @@ from typing import Any
 
 from common import ROOT
 import clang_ast
+import clang_intsem as I
 
 
 class UnsupportedAstError(Exception):
@@ -98,6 +99,8 @@ class ClangTsEmitter:
         func: clang_ast.AstFunction,
         models: dict[str, str] | None = None,
         known_functions: set[str] | None = None,
+        named_constants: bool = True,
+        enums: dict[str, int] | None = None,
     ):
         self.c_file = c_file
         self.func = func
@@ -113,6 +116,15 @@ class ClangTsEmitter:
         self.pointer_kind: dict[str, str] = {}
         self.indent_level = 0
         self.lines: list[str] = []
+        # INT: integer literals map to the string_util constants only when asked to (compatibility with stringUtil.ts)
+        self.named_constants = named_constants
+        self.enums: dict[str, int] = enums or {}
+        # `static` locals become module-level variables so their state survives between calls
+        self.pre_decls: list[str] = []
+        self.static_names: dict[str, str] = {}
+        for node in _iter_nodes(func.body):
+            if node.get("kind") == "VarDecl" and node.get("storageClass") == "static" and "const" not in node.get("type", {}).get("qualType", ""):
+                self.static_names[node.get("id", "")] = f"{func.name}_{node.get('name', '')}"
 
         # Identify pointer parameters in declaration order
         for pname, ptype in func.params:
@@ -199,7 +211,8 @@ class ClangTsEmitter:
 
         self.indent_level -= 1
         self.emit_line("}")
-        return "\n".join(self.lines)
+        text = "\n".join(self.lines)
+        return "\n".join([*self.pre_decls, "", text]) if self.pre_decls else text
 
     def _check_supported(self, node: dict[str, Any]) -> None:
         k = node.get("kind")
@@ -231,6 +244,12 @@ class ClangTsEmitter:
                     vname = child.get("name", "")
                     vtype = child.get("type", {}).get("qualType", "")
                     inits = child.get("inner", [])
+                    if child.get("storageClass") == "static" and child.get("id", "") in self.static_names:  # mutable static
+                        if "[" in vtype or "*" in vtype:
+                            self.reject("static local arrays and pointers are not supported")
+                        init_expr = self.emit_expr(inits[0]) if inits else "0"
+                        self.pre_decls.append(f"let {self.static_names[child.get('id', '')]} = {init_expr};")
+                        continue
                     if "*" in vtype:
                         self.pointer_locals.add(vname)
                         if vname in self.buffer_locals:
@@ -274,7 +293,7 @@ class ClangTsEmitter:
                             self.emit_line(f"let {vname} = 0;")
         elif k == "IfStmt":
             inner = node.get("inner", [])
-            cond_expr = self.emit_expr(inner[0])
+            cond_expr = self.emit_cond(inner[0])
             then_stmt = inner[1]
             has_else = len(inner) > 2
             self.emit_line(f"if ({cond_expr}) {{")
@@ -289,7 +308,7 @@ class ClangTsEmitter:
             self.emit_line("}")
         elif k == "WhileStmt":
             inner = node.get("inner", [])
-            cond_expr = self.emit_expr(inner[0])
+            cond_expr = self.emit_cond(inner[0])
             body_stmt = inner[1]
             self.emit_line(f"while ({cond_expr}) {{")
             self.indent_level += 1
@@ -304,9 +323,9 @@ class ClangTsEmitter:
             inc_node = inner[3] if len(inner) > 3 and inner[3] is not None and inner[3].get("kind") is not None else None
             body_node = inner[4] if len(inner) > 4 else inner[-1]
 
-            init_str = self.emit_expr(init_node) if init_node else ""
-            cond_str = self.emit_expr(cond_node) if cond_node else ""
-            inc_str = self.emit_expr(inc_node) if inc_node else ""
+            init_str = self.emit_expr_stmt(init_node) if init_node else ""
+            cond_str = self.emit_cond(cond_node) if cond_node else ""
+            inc_str = self.emit_expr_stmt(inc_node) if inc_node else ""
 
             self.emit_line(f"for ({init_str}; {cond_str}; {inc_str}) {{")
             self.indent_level += 1
@@ -357,12 +376,196 @@ class ClangTsEmitter:
                 self.emit_stmt(inner[0])
                 self.indent_level -= 1
         elif k in ("BinaryOperator", "CompoundAssignOperator", "UnaryOperator", "CallExpr"):
-            expr = self.emit_expr(node)
-            self.emit_line(f"{expr};")
+            self.emit_line(f"{self.emit_expr_stmt(node)};")
         else:
             self.reject(f"unsupported statement kind: {k}")
 
-    def emit_expr(self, node: dict[str, Any]) -> str:
+    # ------------------------------------------------------------------ INT: type-directed integer expressions
+    def _tinfo(self, node: dict[str, Any]) -> I.Cty | None:
+        try:
+            return I.type_info(node.get("type", {}))
+        except I.UnsupportedInt as exc:
+            self.reject(str(exc))
+        return None
+
+    def emit_expr(self, node: dict[str, Any], min_prec: int = I.COMMA + 1) -> str:
+        """Value context: integer expressions come out normalised to their C type."""
+        ix = self._ix(node)
+        if ix is None:
+            return self.emit_expr_legacy(node)
+        return I.norm(I.as_int(ix)).at(min_prec)
+
+    def emit_cond(self, node: dict[str, Any]) -> str:
+        ix = self._ix(node)
+        if ix is None:
+            return self.emit_expr_legacy(node)
+        return I.as_cond(ix).code
+
+    def emit_expr_stmt(self, node: dict[str, Any]) -> str:
+        """Expression evaluated for its effect: assignments and ++/-- print without surrounding parentheses."""
+        ix = self._ix(node)
+        if ix is None:
+            return self.emit_expr_legacy(node)
+        return ix.stmt or ix.code
+
+    def _legacy_ix(self, node: dict[str, Any], ti: I.Cty) -> I.Ix:
+        return I.from_type(self.emit_expr_legacy(node), I.ATOM, ti)
+
+    def _ix_or_legacy(self, node: dict[str, Any]) -> I.Ix:
+        ix = self._ix(node)
+        if ix is None:
+            self.reject(f"non-integer operand in an integer expression ({node.get('kind')})")
+        return ix
+
+    def _cond_of(self, node: dict[str, Any]) -> I.Ix:
+        """Truthiness of any scalar operand: integers by value, pointers/others through the legacy pointer model."""
+        ix = self._ix(node)
+        if ix is not None:
+            return I.as_cond(ix)
+        return I.Ix(self.emit_expr_legacy(node), I.ATOM, (32, True), 0, 1, isbool=True)
+
+    def _lvalue(self, node: dict[str, Any]) -> str:
+        while node.get("kind") == "ParenExpr":
+            node = node["inner"][0]
+        if node.get("kind") == "DeclRefExpr":
+            ref = node.get("referencedDecl", {})
+            if ref.get("id") in self.static_names:
+                return self.static_names[ref["id"]]
+            return SYMBOL_MAP.get(ref.get("name", ""), ref.get("name", ""))
+        return self.emit_expr_legacy(node)
+
+    def _ix(self, node: dict[str, Any]) -> I.Ix | None:
+        """Integer view of an expression, or None when it is not an integer (pointer, struct, void, float)."""
+        k = node.get("kind")
+        if k == "ParenExpr":
+            return self._ix(node["inner"][0])
+        if k == "ConstantExpr":
+            ix = self._ix(node["inner"][0])
+            ti = self._tinfo(node)
+            if ix is None and ti is not None and "value" in node:
+                return I.literal(int(node["value"]), ti)
+            return ix
+        ti = self._tinfo(node)
+        if ti is None:
+            return None
+        if k in ("IntegerLiteral", "CharacterLiteral"):
+            value = int(node.get("value", "0"))
+            name = CONSTANTS_MAP.get(value) if (self.named_constants and k == "IntegerLiteral") else None
+            return I.literal(value, ti, name)
+        if k in ("ImplicitCastExpr", "CStyleCastExpr"):
+            return self._ix_cast(node, ti)
+        if k == "DeclRefExpr":
+            return self._ix_ref(node, ti)
+        if k == "BinaryOperator":
+            return self._ix_binary(node, ti)
+        if k == "CompoundAssignOperator":
+            return self._ix_compound(node, ti)
+        if k == "UnaryOperator":
+            return self._ix_unary(node, ti)
+        if k == "ConditionalOperator":
+            cond, a, b = node["inner"]
+            c = self._cond_of(cond)
+            x, y = I.as_int(self._ix_or_legacy(a)), I.as_int(self._ix_or_legacy(b))
+            return I.Ix(f"{c.at(I.COND + 1)} ? {x.at(I.ASSIGN)} : {y.at(I.ASSIGN)}", I.COND, ti, min(x.lo, y.lo), max(x.hi, y.hi))
+        return self._legacy_ix(node, ti)
+
+    def _ix_ref(self, node: dict[str, Any], ti: I.Cty) -> I.Ix:
+        ref = node.get("referencedDecl", {})
+        name = ref.get("name", "")
+        if ref.get("kind") == "EnumConstantDecl":
+            if name in self.enums:
+                v = self.enums[name]
+                return I.literal(v, ti, name if self.named_constants else None)
+            return I.from_type(SYMBOL_MAP.get(name, name), I.ATOM, ti)
+        if ref.get("id") in self.static_names:
+            return I.from_type(self.static_names[ref["id"]], I.ATOM, ti)
+        return self._legacy_ix(node, ti)
+
+    def _ix_cast(self, node: dict[str, Any], ti: I.Cty) -> I.Ix:
+        kind = node.get("castKind")
+        inner = node["inner"][0]
+        if kind in ("LValueToRValue", "NoOp"):
+            ix = self._ix(inner)
+            return ix if ix is not None else self._legacy_ix(node, ti)
+        if kind == "IntegralCast":
+            return I.convert(self._ix_or_legacy(inner), ti)
+        if kind == "IntegralToBoolean":
+            c = I.as_cond(self._ix_or_legacy(inner))
+            return I.Ix(c.code, c.prec, ti, 0, 1, isbool=True)
+        if kind == "BooleanToSignedIntegral":
+            return I.as_int(self._ix_or_legacy(inner))
+        return self._legacy_ix(node, ti)
+
+    _ARITH = ("+", "-", "*", "/", "%", "<<", ">>", "&", "|", "^")
+    _CMP = ("<", ">", "<=", ">=", "==", "!=")
+
+    def _ix_binary(self, node: dict[str, Any], ti: I.Cty) -> I.Ix:
+        op = node.get("opcode")
+        lhs, rhs = node["inner"][0], node["inner"][1]
+        if op == "/" and lhs.get("kind") == "UnaryExprOrTypeTraitExpr":
+            return self._legacy_ix(node, ti)  # sizeof(array) / sizeof(element)
+        if op == "=":
+            lval = self._lvalue(lhs)
+            code = f"{lval} = {self.emit_expr(rhs, I.ASSIGN)}"
+            lo, hi = I.type_range(ti)
+            return I.Ix(code, I.ASSIGN, ti, lo, hi, stmt=code)
+        if op == ",":
+            left = self.emit_expr_stmt(lhs)
+            right = self._ix_or_legacy(rhs)
+            return I.Ix(f"({left}, {right.at(I.ASSIGN)})", I.ATOM, ti, right.lo, right.hi)
+        if op in ("&&", "||"):
+            a = self._cond_of(lhs)
+            b = self._cond_of(rhs)
+            prec = I.AND if op == "&&" else I.OR
+            return I.Ix(f"{a.at(prec)} {op} {b.at(prec + 1)}", prec, ti, 0, 1, isbool=True)
+        if self._tinfo(lhs) is None or self._tinfo(rhs) is None:
+            return self._legacy_ix(node, ti)  # pointer comparison / pointer difference
+        a, b = self._ix_or_legacy(lhs), self._ix_or_legacy(rhs)
+        if op in self._CMP:
+            return I.compare(op, a, b, ti)
+        if op in self._ARITH:
+            return I.arith(op, a, b, ti)
+        self.reject(f"unsupported integer binary operator {op}")
+        raise AssertionError
+
+    def _ix_compound(self, node: dict[str, Any], ti: I.Cty) -> I.Ix:
+        op = node["opcode"][:-1]
+        lhs, rhs = node["inner"][0], node["inner"][1]
+        t1 = I.type_info(node.get("computeLHSType", {})) or ti
+        t2 = I.type_info(node.get("computeResultType", {})) or t1
+        lval = self._lvalue(lhs)
+        a = I.convert(I.from_type(lval, I.ATOM, ti), t1)
+        res = I.convert(I.arith(op, a, self._ix_or_legacy(rhs), t2), ti)
+        code = f"{lval} = {res.at(I.ASSIGN)}"
+        return I.Ix(code, I.ASSIGN, ti, res.lo, res.hi, stmt=code)
+
+    def _ix_unary(self, node: dict[str, Any], ti: I.Cty) -> I.Ix:
+        op = node.get("opcode")
+        sub = node["inner"][0]
+        if op in ("++", "--"):
+            lval = self._lvalue(sub)
+            lo, hi = I.type_range(ti)
+            sign, inv = ("+", "-") if op == "++" else ("-", "+")
+            d = 1 if op == "++" else -1
+            new = I.convert(I.Ix(f"{lval} {sign} 1", I.ADD, ti, lo + d, hi + d), ti)
+            stmt = f"{lval} = {new.at(I.ASSIGN)}"
+            if node.get("isPostfix", False):
+                old = I.convert(I.Ix(f"{lval} {inv} 1", I.ADD, ti, lo - d, hi - d), ti)
+                return I.Ix(f"({stmt}, {old.at(I.ASSIGN)})", I.ATOM, ti, lo, hi, stmt=stmt)
+            return I.Ix(stmt, I.ASSIGN, ti, lo, hi, stmt=stmt)
+        if op == "!":
+            c = self._cond_of(sub)
+            return I.Ix(f"!{c.at(I.UNARY)}", I.UNARY, ti, 0, 1, isbool=True)
+        if op in ("-", "+", "~") and self._tinfo(sub) is not None:
+            a = self._ix_or_legacy(sub)
+            if op == "-":
+                return I.negate(a, ti)
+            if op == "+":
+                return I.as_int(a)
+            return I.bit_not(a, ti)
+        return self._legacy_ix(node, ti)  # dereference and friends keep the pointer model
+
+    def emit_expr_legacy(self, node: dict[str, Any]) -> str:
         k = node.get("kind")
         if k == "ImplicitCastExpr":
             return self.emit_expr(node["inner"][0])
@@ -765,6 +968,7 @@ def generate_string_util_ts() -> str:
     c_path = ROOT.parent / "pokefirered" / "src" / "string_util.c"
     ast = clang_ast.dump_clang_ast_json(c_path)
     funcs = clang_ast.extract_functions(ast)
+    enums = I.enum_constants(ast)
 
     target_funcs = [
         "GetExtCtrlCodeLength",
@@ -827,7 +1031,7 @@ def generate_string_util_ts() -> str:
         for name, f in target.items():
             if name in models:
                 continue
-            model = ClangTsEmitter("string_util.c", f, models, set(target)).return_model
+            model = ClangTsEmitter("string_util.c", f, models, set(target), enums=enums).return_model
             if model is None:
                 continue
             models[name] = model
@@ -886,7 +1090,7 @@ def generate_string_util_ts() -> str:
 
     for name in target_funcs:
         f = target[name]
-        emitter = ClangTsEmitter("string_util.c", f, models, set(target))
+        emitter = ClangTsEmitter("string_util.c", f, models, set(target), enums=enums)
         code = emitter.emit_function()
         out_lines.append(code)
         out_lines.append("")
