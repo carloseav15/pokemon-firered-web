@@ -83,7 +83,8 @@ const PLTT_SIZE_4BPP = 32;
 const RGB_TITLE = RGB(30, 30, 31);
 
 const KEYSTROKE_DELSAVE = B_BUTTON | SELECT_BUTTON | DPAD_UP;
-// KEYSTROKE_BERRY_FIX (B + SELECT) opens the GBA-link Berry Program Update (removed in REVISION >= 0xA), so it is not built.
+const KEYSTROKE_BERRY_FIX = B_BUTTON | SELECT_BUTTON;
+const sStreakYPositions = [40, 80, 110, 60, 90, 70, 100, 50];
 
 type ExtractedAnim = { frame?: { imageValue: number; duration: number }; jump?: { target: number } };
 type SymRef = { $sym: string };
@@ -375,6 +376,10 @@ function SetTitleScreenScene_Run(data: number[]): void {
         DeactivateSlashSprite(data[tSlashSpriteId]);
         tasks.destroy(tasks.findByFunc(Task_TitleScreenMain));
         SetMainCallback2(CB2_FadeOutTransitionToSaveClearScreen);
+      } else if ((joy.held & KEYSTROKE_BERRY_FIX) === KEYSTROKE_BERRY_FIX) {
+        DeactivateSlashSprite(data[tSlashSpriteId]);
+        tasks.destroy(tasks.findByFunc(Task_TitleScreenMain));
+        SetMainCallback2(CB2_FadeOutTransitionToBerryFix);
       } else if ((joy.newKeys & (A_BUTTON | START_BUTTON)) !== 0) {
         SetTitleScreenScene(data, TITLESCREENSCENE_CRY);
       } else if (!tasks.isActive(Task_TitleScreenTimer)) {
@@ -613,6 +618,15 @@ function CB2_FadeOutTransitionToSaveClearScreen(): void {
   }
 }
 
+/** CB2_FadeOutTransitionToBerryFix (title_screen.c). */
+function CB2_FadeOutTransitionToBerryFix(): void {
+  if (!UpdatePaletteFade()) {
+    sound.m4aMPlayAllStop();
+    sExit = "clearsave";
+    SetMainCallback2(null);
+  }
+}
+
 /** LoadSpriteGfxAndPals (title_screen.c). */
 function LoadSpriteGfxAndPals(): void {
   LoadSpriteSheet({ data: incbin("title_screen.c:sFlames_Gfx"), size: 0x500, tag: TILE_TAG_FLAME_OR_LEAF });
@@ -726,6 +740,104 @@ function TitleScreen_rand(taskId: number, field: number): number {
   rngval = (Math.imul(rngval, 1103515245) + 24691) >>> 0;
   tasks.setWordArg(taskId, field, rngval);
   return rngval >>> 16;
+}
+
+// ---------------------------------------------------------------- leaves & streaks (LeafGreen)
+
+/** SpriteCallback_TitleScreenLeaf (title_screen.c). */
+function SpriteCallback_TitleScreenLeaf(sprite: Sprite): void {
+  const data = sprite.data;
+  data[sPosX] -= data[sSpeedX];
+  sprite.x = data[sPosX] >> 4;
+  if (sprite.x < -8) {
+    DestroySprite(sprite);
+    return;
+  }
+  data[sPosY] += data[sSpeedY];
+  sprite.y = data[sPosY] >> 4;
+  if (sprite.y < 16 || sprite.y > 200) {
+    DestroySprite(sprite);
+    return;
+  }
+  if (!data[5]) {
+    data[6]++;
+    let r2 = data[sSpeedX] * data[6];
+    let r1 = data[sSpeedY] * data[6];
+    r2 = (r2 * r2) >> 4;
+    r1 = (r1 * r1) >> 4;
+    if (r2 + r1 >= 81 << 4) {
+      data[5] = 1;
+    }
+  }
+}
+
+/** CreateLeafSprite (title_screen.c). */
+function CreateLeafSprite(y: number, xspeed: number, yspeed: number): void {
+  const template = spriteTemplate("sSpriteTemplate_FlameOrLeaf", "sOamData_FlameOrLeaf", "sSpriteAnim_FlameOrLeaf");
+  const spriteId = CreateSprite(template, DISPLAY_WIDTH, y, 0);
+  if (spriteId !== MAX_SPRITES) {
+    const sprite = gSprites[spriteId];
+    sprite.data[sPosX] = DISPLAY_WIDTH * 16;
+    sprite.data[sSpeedX] = xspeed;
+    sprite.data[sPosY] = y * 16;
+    sprite.data[sSpeedY] = yspeed;
+    sprite.callback = SpriteCallback_TitleScreenLeaf;
+  }
+}
+
+/** SpriteCallback_Streak (title_screen.c). */
+function SpriteCallback_Streak(sprite: Sprite): void {
+  sprite.x -= 7;
+  if (sprite.x < -16) {
+    sprite.x = DISPLAY_WIDTH + 16;
+    sprite.data[7]++;
+    if (sprite.data[7] >= sStreakYPositions.length) {
+      sprite.data[7] = 0;
+    }
+    sprite.y = sStreakYPositions[sprite.data[7]];
+  }
+}
+
+/** CreateStreakSprites (title_screen.c). */
+function CreateStreakSprites(): void {
+  const template = spriteTemplate("sSpriteTemplate_BlankFlame", "sOamData_FlameOrLeaf", null);
+  for (let i = 0; i < 4; i++) {
+    const spriteId = CreateSprite(template, DISPLAY_WIDTH + 16 + 40 * i, sStreakYPositions[i], 0xff);
+    if (spriteId !== MAX_SPRITES) {
+      gSprites[spriteId].data[7] = i;
+      gSprites[spriteId].callback = SpriteCallback_Streak;
+    }
+  }
+}
+
+/** Task_LeafSpawner (title_screen.c). */
+function Task_LeafSpawner(taskId: number): void {
+  const data = tasks.data(taskId);
+  switch (data[tFlameState]) {
+    case 0:
+      CreateStreakSprites();
+      TitleScreen_srand(taskId, tOff_Seed, 30840);
+      data[tFlameState]++;
+      break;
+    case 1:
+      data[tTimer]++;
+      if (data[tTimer] >= data[tDelay]) {
+        data[tTimer] = 0;
+        data[tDelay] = (TitleScreen_rand(taskId, tOff_Seed) % 6) + 6;
+        const rval = TitleScreen_rand(taskId, tOff_Seed) % 30;
+        let xspeed = 16;
+        if (rval >= 6) {
+          xspeed = 48;
+          if (rval < 12) {
+            xspeed = 24;
+          }
+        }
+        const yspeed = (TitleScreen_rand(taskId, tOff_Seed) % 4) - 2;
+        const y = (TitleScreen_rand(taskId, tOff_Seed) % 88) + 32;
+        CreateLeafSprite(y, xspeed, yspeed);
+      }
+      break;
+  }
 }
 
 // ---------------------------------------------------------------- blank sprite and slash
