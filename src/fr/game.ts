@@ -73,6 +73,8 @@ import { ResetQLPlayedTheSlots } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
+import { IsHelpSystemActive, preloadHelpSystem, RunHelpSystemCallback } from "./helpSystemUtil";
+import { renderHw } from "./hw/runtime";
 import { ClearEnigmaBerries } from "./pokemon/berry";
 import { SaveMapView } from "./field/fieldmap";
 
@@ -172,6 +174,7 @@ export class Game {
 
   start(): void {
     joy.attach();
+    void preloadHelpSystem();
     this.lastTime = performance.now();
     const loop = (now: number) => {
       const delta = Math.min(250, now - this.lastTime);
@@ -195,14 +198,18 @@ export class Game {
     joy.buttonMode = save.options.buttonMode;
     ReadKeys();
     this.frameCount++;
-    this.callback1?.();
-    this.callback2?.();
+    // main.c CallCallbacks: the help overlay pre-empts callback1/callback2 while it runs.
+    if (!RunHelpSystemCallback()) {
+      this.callback1?.();
+      this.callback2?.();
+    }
     PlayTimeCounter_Update();
     sound.frame();
   }
 
   render(): void {
-    if (this.scene) this.scene.render(this.ctx);
+    if (IsHelpSystemActive()) renderHw(this.ctx);
+    else if (this.scene) this.scene.render(this.ctx);
     else if (this.overworld.loaded) this.overworld.render(this.ctx);
     else {
       this.ctx.fillStyle = "#000";

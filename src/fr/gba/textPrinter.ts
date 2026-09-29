@@ -98,7 +98,16 @@ function downArrow(): { pixels: Uint8Array; width: number } {
 
 let keypadPixels: Uint8Array | undefined;
 let keypadWidth = 0;
-const KEYPAD_ICONS: Record<number, [number, number, number]> = {
+/** text.c gKeypadIconTiles sheet ({ pixels: one palette index per byte, width }) and sKeypadIcons: [tileOffset, width, height]. */
+export function GetKeypadIconSheet(): { pixels: Uint8Array; width: number } {
+  if (!keypadPixels) {
+    const raw = rom.fonts.keypad_icons;
+    keypadPixels = b64(raw.pixels);
+    keypadWidth = raw.width;
+  }
+  return { pixels: keypadPixels, width: keypadWidth };
+}
+export const KEYPAD_ICONS: Record<number, [number, number, number]> = {
   0x00: [0x0, 8, 12], 0x01: [0x1, 8, 12], 0x02: [0x2, 16, 12], 0x03: [0x4, 16, 12], 0x04: [0x6, 24, 12], 0x05: [0x9, 24, 12],
   0x06: [0xc, 8, 12], 0x07: [0xd, 8, 12], 0x08: [0xe, 8, 12], 0x09: [0xf, 8, 12], 0x0a: [0x20, 8, 12], 0x0b: [0x21, 8, 12], 0x0c: [0x22, 8, 12],
 };

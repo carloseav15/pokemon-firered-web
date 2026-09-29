@@ -11,16 +11,16 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 2 | 2278 | 0/111 |
-| Parcial (< 80 % de funciones) | 24 | 63733 | 1145/2804 |
+| Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
+| Parcial (< 80 % de funciones) | 23 | 61253 | 1136/2763 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 12 | 28796 | 1005/1156 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 170 | 157150 | 5986/5986 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 172 | 160478 | 6068/6068 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
-| **Pendiente de portar** | **39** | **96207** | |
-| **Total en alcance** | **211** | **253703** | **8164/10115** |
+| **Pendiente de portar** | **37** | **92879** | |
+| **Total en alcance** | **211** | **253703** | **8237/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Falta (sin funciones portadas)
@@ -28,7 +28,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `pokemon_storage_system_misc.c` | 1430 | 0/70 |  |  |  |
-| `help_system_util.c` | 848 | 0/41 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
 
@@ -43,14 +42,13 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `intro.c` | 2805 | 3/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 2/82 |  |  |  |
 | `battle_controller_pokedude.c` | 2698 | 32/108 |  |  |  |
-| `help_system.c` | 2480 | 10/41 | `helpSystem.ts`, `introTitle.ts` |  |  |
 | `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 71/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `quest_log.c` | 1767 | 16/88 | `field/overworld.ts`, `field/trainerSee.ts`, `questLogEvents.ts` … |  |  |
-| `fame_checker.c` | 1739 | 16/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
+| `fame_checker.c` | 1739 | 17/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |  |
@@ -98,6 +96,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `field_specials.c` | 2555 | 118/118 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `field/hiddenItem.ts` … |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
 | `naming_screen.c` | 2509 | 109/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
+| `help_system.c` | 2480 | 41/41 | `helpSystem.ts`, `introTitle.ts` |  |  |
 | `item_menu.c` | 2397 | 116/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `battle_anim_mons.c` | 2360 | 128/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |  |
 | `field_weather_effects.c` | 2346 | 93/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  |  |
@@ -146,6 +145,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `item_use.c` | 925 | 73/73 | `bagMenu.ts`, `battle/ext.ts`, `field/vsSeeker.ts` … |  |  |
 | `battle_anim_dark.c` | 923 | 25/25 | `battle/anims/dark.ts` |  |  |
 | `menu.c` | 872 | 49/49 | `gba/window.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` … |  |  |
+| `help_system_util.c` | 848 | 41/41 | `helpSystemUtil.ts` |  |  |
 | `battle_anim_rock.c` | 822 | 22/22 | `battle/anims/rock.ts` |  |  |
 | `main_menu.c` | 788 | 29/29 | `mainMenu.ts` |  |  |
 | `wild_encounter.c` | 784 | 36/36 | `field/wildEncounter.ts` |  |  |
