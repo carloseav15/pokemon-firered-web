@@ -60,6 +60,12 @@ import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFu
 import { b64, rom } from "./rom";
 import { Pokedude_InitTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
+import { ItemUseCB_MedicineStep, SetItemUseCB } from "./partyMenu";
+import { Pokedude_ChooseMonForInBattleItem } from "./battle/ext";
+import { CB2_ReturnToTeachyTV, SetTeachyTvControllerModeToResume } from "./teachyTv";
+import { FreeRestoreBattleData } from "./battle/main_init";
+import { SetCB2ToReshowScreenAfterMenu2 } from "./battle/reshow";
+import { LoadPlayerParty } from "./loadSave";
 import { save } from "./save";
 
 // ---------------------------------------------------------------- public state and hooks
@@ -119,6 +125,8 @@ export type BagHandlers = {
 let sHandlers: BagHandlers = {};
 let sPokedudeBagRestore: (() => void) | undefined;
 let sPokedudeBagResume: (() => void) | undefined;
+/** Where a B press interrupts the lesson (CB2_ReturnToTeachyTV); by default the bag's own callback. */
+let sPokedudeBagInterruptExit: (() => void) | undefined;
 
 // ---------------------------------------------------------------- data
 
@@ -660,8 +668,9 @@ export function InitPokedudeBagRegister(done: () => void, onSkip?: () => void): 
 }
 
 /** InitPokedudeBag (item_menu.c), for the Teachy TV bag modes connected by this runtime. */
-export function InitPokedudeBag(location: number, done: () => void, onSkip?: () => void, onReshow?: () => void): void {
-  if (location !== C.ITEMMENULOCATION_TTVSCR_REGISTER && location !== C.ITEMMENULOCATION_TTVSCR_TMS)
+export function InitPokedudeBag(location: number, done: () => void = () => {}, onSkip?: () => void, onReshow?: () => void): void {
+  const inBattle = location === C.ITEMMENULOCATION_TTVSCR_STATUS || location === C.ITEMMENULOCATION_TTVSCR_CATCHING;
+  if (!inBattle && location !== C.ITEMMENULOCATION_TTVSCR_REGISTER && location !== C.ITEMMENULOCATION_TTVSCR_TMS)
     throw new RangeError(`InitPokedudeBag: unsupported active bag lesson ${location}`);
   const backup = BackUpPlayerBag();
   let restored = false;
@@ -672,8 +681,21 @@ export function InitPokedudeBag(location: number, done: () => void, onSkip?: () 
   };
   sPokedudeBagRestore = restore;
   sPokedudeBagResume = onSkip;
+  sPokedudeBagInterruptExit = undefined;
   addBagItem(C.ITEM_POTION, 1); addBagItem(C.ITEM_ANTIDOTE, 1); addBagItem(C.ITEM_TEACHY_TV, 1);
   addBagItem(C.ITEM_TM_CASE, 1); addBagItem(C.ITEM_POKE_BALL, 5); addBagItem(C.ITEM_GREAT_BALL, 1); addBagItem(C.ITEM_NEST_BALL, 1);
+  if (inBattle) {
+    // The lesson runs inside the demo battle: a normal exit reshows the battle screen (SetCB2ToReshowScreenAfterMenu2), a B press
+    // abandons the battle (Task_BButtonInterruptTeachyTv → FreeRestoreBattleData, LoadPlayerParty, CB2_ReturnToTeachyTV).
+    sPokedudeBagResume = () => { SetTeachyTvControllerModeToResume(); FreeRestoreBattleData(); LoadPlayerParty(); };
+    sPokedudeBagInterruptExit = CB2_ReturnToTeachyTV;
+    GoToBagMenu(location, C.OPEN_BAG_ITEMS, () => {
+      restore(); sPokedudeBagRestore = undefined; sPokedudeBagResume = undefined; sPokedudeBagInterruptExit = undefined;
+      CB2_SetUpReshowBattleScreenAfterMenu();
+      SetCB2ToReshowScreenAfterMenu2();
+    });
+    return;
+  }
   if (location === C.ITEMMENULOCATION_TTVSCR_REGISTER) {
     GoToBagMenu(location, C.OPEN_BAG_ITEMS, () => { restore(); sPokedudeBagRestore = undefined; sPokedudeBagResume = undefined; done(); });
     return;
@@ -708,7 +730,7 @@ function Task_BButtonInterruptTeachyTv(taskId: number): boolean {
   if (!(joy.newKeys & B_BUTTON)) return false;
   sPokedudeBagRestore?.();
   sPokedudeBagResume?.();
-  disp().exitCB = gBagMenuState.bagCallback;
+  disp().exitCB = sPokedudeBagInterruptExit ?? gBagMenuState.bagCallback;
   tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
   return true;
 }
@@ -873,6 +895,12 @@ function Task_Bag_TeachyTvStatus(taskId: number): void {
       HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
       CopyWindowToVram(0, COPYWIN_MAP);
       DestroyListMenuTask(data.listTaskId);
+      sPokedudeBagRestore?.();
+      SetItemUseCB(ItemUseCB_MedicineStep);
+      ItemMenu_SetExitCallback(() => {
+        sPokedudeBagRestore = undefined; sPokedudeBagResume = undefined; sPokedudeBagInterruptExit = undefined;
+        Pokedude_ChooseMonForInBattleItem();
+      });
       tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
       return;
   }

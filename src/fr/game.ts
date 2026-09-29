@@ -29,7 +29,8 @@ import { healMon } from "./pokemon/pokemon";
 import { GetSetPokedexFlag } from "./pokemon/mon_extra";
 import * as C from "./generated/constants";
 import { CB2_BagMenuFromStartMenu, fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
-import { openFameChecker, openTeachyTv } from "./menus/keyItemScreens";
+import { openFameChecker } from "./menus/keyItemScreens";
+import { StartTeachyTv } from "./teachyTv";
 import { Task_VsSeeker_0 } from "./field/vsSeeker";
 import { GetSafariZoneFlag } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
@@ -148,7 +149,7 @@ export class Game {
   private accumulator = 0;
   private lastTime = 0;
   frameCount = 0;
-  private ctx: CanvasRenderingContext2D;
+  readonly ctx: CanvasRenderingContext2D;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext("2d")!;
@@ -721,8 +722,8 @@ export class Game {
     fieldMenu(this, (close) => { void openFameChecker(close); });
   }
 
-  openTeachyTv(done?: () => void): void {
-    fieldMenu(this, (close) => openTeachyTv(() => { close(); done?.(); }));
+  openTeachyTv(done?: () => void, fromStartMenuBag = false): void {
+    fieldMenu(this, (close) => StartTeachyTv(this, () => { close(); done?.(); }, fromStartMenuBag));
   }
 
   /** party_menu_specials.c SelectMoveDeleterMove: VAR_0x8005 = move slot, or MAX_MON_MOVES when cancelled. */

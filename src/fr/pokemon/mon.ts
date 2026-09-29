@@ -347,6 +347,24 @@ export function CreateMon(mon: Mon, species: number, level: number, fixedIV: num
   CalculateMonStats(mon);
 }
 
+/** CreateMonWithGenderNatureLetter (pokemon.c) */
+export function CreateMonWithGenderNatureLetter(mon: Mon, species: number, level: number, fixedIV: number, gender: number, nature: number, unownLetter: number): void {
+  let personality: number;
+  if (((unownLetter - 1) & 0xff) < C.NUM_UNOWN_FORMS) {
+    let actualLetter: number;
+    do {
+      personality = random32();
+      // GET_UNOWN_LETTER
+      actualLetter = ((((personality & 0x03000000) >>> 18) | ((personality & 0x00030000) >>> 12) | ((personality & 0x00000300) >>> 6) | (personality & 0x00000003)) >>> 0) % C.NUM_UNOWN_FORMS;
+    } while (nature !== GetNatureFromPersonality(personality) || gender !== GetGenderFromSpeciesAndPersonality(species, personality) || actualLetter !== unownLetter - 1);
+  } else {
+    do {
+      personality = random32();
+    } while (nature !== GetNatureFromPersonality(personality) || gender !== GetGenderFromSpeciesAndPersonality(species, personality));
+  }
+  CreateMon(mon, species, level, fixedIV, true, personality, OT_ID_PLAYER_ID, 0);
+}
+
 let regionMapSection = () => 0;
 export function setRegionMapSectionProvider(fn: () => number): void {
   regionMapSection = fn;

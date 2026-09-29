@@ -84,6 +84,9 @@ import { HandleBattleLowHpMusicChange } from "./battle/gfx_sfx_util";
 import { BattleStringExpandPlaceholders } from "./battle/message";
 import { BtlCtrl_OakOldMan_SetState2Flag, BtlCtrl_OakOldMan_TestState2Flag } from "./battle/controller_oak_old_man";
 import { AppendToList } from "./startMenu";
+import { FreeRestoreBattleData } from "./battle/main_init";
+import { LoadPlayerParty } from "./loadSave";
+import { CB2_ReturnToTeachyTV, SetTeachyTvControllerModeToResume } from "./teachyTv";
 
 // ---------------------------------------------------------------- constants
 
@@ -3176,6 +3179,79 @@ export function OpenPartyMenuInTutorialBattle(partyAction: number, reshow: () =>
     InitPartyMenu(C.PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), partyAction, false, C.PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, reshow);
   }
   UpdatePartyToBattleOrder();
+}
+
+/** Pokedude_OpenPartyMenuInBattle: `reshow` is SetCB2ToReshowScreenAfterMenu. */
+export function Pokedude_OpenPartyMenuInBattle(reshow: () => void): void {
+  InitPartyMenu(C.PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), C.PARTY_ACTION_CHOOSE_MON, false, C.PARTY_MSG_CHOOSE_MON, Task_PartyMenu_Pokedude, reshow);
+  UpdatePartyToBattleOrder();
+}
+
+/** Pokedude_ChooseMonForInBattleItem: `success` is CB2_SetUpExitToBattleScreen and `back` CB2_BagMenuFromBattle. */
+export function Pokedude_ChooseMonForInBattleItem(success: () => void, back: () => void): void {
+  sBattleExit.success = success;
+  InitPartyMenu(C.PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), C.PARTY_ACTION_REUSABLE_ITEM, false, C.PARTY_MSG_USE_ON_WHICH_MON, Task_PartyMenuFromBag_Pokedude, back);
+  UpdatePartyToBattleOrder();
+}
+
+// Pokedude switches Pokemon
+function Task_PartyMenu_Pokedude(taskId: number): void {
+  tasks.tasks[taskId].data[0] = 0;
+  tasks.setFunc(taskId, Task_PartyMenu_PokedudeStep);
+}
+
+function Task_PartyMenu_PokedudeStep(taskId: number): void {
+  const data = tasks.tasks[taskId].data;
+  if (!gPaletteFade.active && !PartyMenuPokedudeIsCancelled(taskId)) {
+    switch (data[0]) {
+      case 80:
+        UpdateCurrentPartySelection({ get: () => gPartyMenu.slotId, set: (v) => { gPartyMenu.slotId = v; } }, MENU_DIR_RIGHT);
+        break;
+      case 160:
+        sound.playSE(C.SE_SELECT);
+        CreateSelectionWindow();
+        break;
+      case 240:
+        PartyMenuRemoveWindow(2);
+        runCursorOption(pmi().actions[0], taskId);
+        break;
+    }
+    ++data[0];
+  }
+}
+
+function PartyMenuPokedudeIsCancelled(taskId: number): boolean {
+  if (joy.newKeys & B_BUTTON) {
+    pmi().exitCallback = PartyMenuHandlePokedudeCancel;
+    Task_ClosePartyMenu(taskId);
+    return true;
+  }
+  return false;
+}
+
+function PartyMenuHandlePokedudeCancel(): void {
+  FreeRestoreBattleData();
+  LoadPlayerParty();
+  SetTeachyTvControllerModeToResume();
+  SetMainCallback2(CB2_ReturnToTeachyTV);
+}
+
+// Pokedude uses item on his own Pokemon
+function Task_PartyMenuFromBag_Pokedude(taskId: number): void {
+  tasks.tasks[taskId].data[0] = 0;
+  tasks.setFunc(taskId, Task_PartyMenuFromBag_PokedudeStep);
+}
+
+function Task_PartyMenuFromBag_PokedudeStep(taskId: number): void {
+  const data = tasks.tasks[taskId].data;
+  if (!gPaletteFade.active && !PartyMenuPokedudeIsCancelled(taskId)) {
+    if (data[0] !== 80) {
+      ++data[0];
+    } else {
+      pmi().exitCallback = sBattleExit.success;
+      gItemUseCB?.(taskId, Task_ClosePartyMenuAfterText);
+    }
+  }
 }
 
 /**

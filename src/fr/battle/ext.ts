@@ -299,6 +299,16 @@ export function OpenPartyMenuInTutorialBattle(partyAction: number): void {
   PartyMenu.OpenPartyMenuInTutorialBattle(partyAction, () => { CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); });
 }
 
+/** party_menu.c Pokedude_OpenPartyMenuInBattle → SetCB2ToReshowScreenAfterMenu */
+export function Pokedude_OpenPartyMenuInBattle(): void {
+  PartyMenu.Pokedude_OpenPartyMenuInBattle(() => { CB2_SetUpReshowBattleScreenAfterMenu(); ReshowBattleScreenAfterMenu(); });
+}
+
+/** party_menu.c Pokedude_ChooseMonForInBattleItem: the party's exit is CB2_SetUpExitToBattleScreen, its back path the battle bag. */
+export function Pokedude_ChooseMonForInBattleItem(): void {
+  PartyMenu.Pokedude_ChooseMonForInBattleItem(() => { CB2_SetUpReshowBattleScreenAfterMenu(); SetCB2ToReshowScreenAfterMenu2(); }, CB2_BagMenuFromBattle);
+}
+
 /** item_use.c battle handlers. Selection and effects finish before returning to battle. */
 export function CB2_BagMenuFromBattle(): void {
   varSet(C.VAR_ITEM_ID, C.ITEM_NONE);

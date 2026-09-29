@@ -288,7 +288,7 @@ export function Task_InitBerryPouchFromField(open: () => void): void { open(); }
 
 /** InitTeachyTvFromBag (item_use.c): the current Teachy TV adapter returns to the bag callback. */
 export function InitTeachyTvFromBag(game: Game, returnToBag: () => void): void {
-  game.openTeachyTv(returnToBag);
+  game.openTeachyTv(returnToBag, true);
 }
 
 /** Task_InitTeachyTvFromField (item_use.c): open the field-returning Teachy TV route. */

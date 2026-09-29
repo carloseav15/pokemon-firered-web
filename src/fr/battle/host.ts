@@ -15,6 +15,8 @@ import { CB2_InitBattle } from "./main_init";
 
 let game: Game | null = null;
 let current: { request: BattleRequest; scene: HwScene } | null = null;
+/** gMain.savedCallback of a battle entered from a hardware scene that keeps running (Teachy TV). */
+let embeddedSavedCallback: MainCallback = null;
 
 export const battleHost = {
   preBattleCallback1: null as MainCallback,
@@ -111,6 +113,17 @@ export const battleHost = {
 
   /** Final step of the battle: SetMainCallback2(gMain.savedCallback) back to the field. */
   finish(outcome: number): void {
+    if (embeddedSavedCallback) {
+      // SetMainCallback2(gMain.savedCallback): the entering scene continues where it left off.
+      const savedCallback = embeddedSavedCallback;
+      embeddedSavedCallback = null;
+      gMain.inBattle = false;
+      gMain.callback1 = null;
+      FreeMonSpritesGfx();
+      FreeBattleSpritesData();
+      SetMainCallback2(savedCallback);
+      return;
+    }
     const c = current;
     if (!c || !game) return;
     current = null;
@@ -160,6 +173,19 @@ function runBattle(request: BattleRequest): Scene {
   gMain.savedCallback = null;
   SetMainCallback2(CB2_InitBattle);
   return scene;
+}
+
+/**
+ * CB2_InitBattle for a battle started from a hardware scene (the Teachy TV demos): the caller has already set the
+ * battle type flags and both parties, and gets `savedCallback` back when the battle ends.
+ */
+export function StartBattleFromHwScene(savedCallback: MainCallback): void {
+  resetBattleStructs();
+  AllocateBattleSpritesData();
+  AllocateMonSpritesGfx();
+  gMain.savedCallback = savedCallback;
+  embeddedSavedCallback = savedCallback;
+  SetMainCallback2(CB2_InitBattle);
 }
 
 export function installBattleHost(g: Game): void {
