@@ -23,7 +23,7 @@
 
 import { sound } from "../audio/sound";
 import { concat, copy, EOS, intToDecimal, length, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
-import { FONT_NORMAL } from "../gba/font";
+import { FONT_NORMAL, GetStringWidth } from "../gba/font";
 import { A_BUTTON, B_BUTTON, joy } from "../gba/input";
 import { tasks, TAIL_SENTINEL } from "../gba/tasks";
 import * as C from "../generated/constants";
@@ -61,6 +61,9 @@ import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } fr
 import { MailSpeciesToSpecies } from "../pokemon/mail";
 import { rom } from "../rom";
 import { flagGet, GetGameStat, IsNationalPokedexEnabled, save, varGet } from "../save";
+import { CopyEasyChatWord } from "../easyChat";
+import { encode } from "../gba/charmap";
+import { gLinkPlayers } from "../linkState";
 
 const CARD_TYPE_FRLG = 0;
 const CARD_TYPE_RSE = 1;
@@ -153,6 +156,7 @@ interface TrainerCardData {
   var_F: boolean;
   hasTrades: boolean;
   hasBadge: boolean[];
+  easyChatProfile: Uint8Array[];
   strings: Uint8Array[];
   monIconPals: Uint16Array;
   flipBlendY: number;
@@ -245,6 +249,7 @@ function emptyData(): TrainerCardData {
     var_F: false,
     hasTrades: false,
     hasBadge: new Array(8).fill(false),
+    easyChatProfile: Array.from({ length: 4 }, () => new Uint8Array([EOS])),
     strings: Array.from({ length: 12 }, () => new Uint8Array(0)),
     monIconPals: new Uint16Array(96),
     flipBlendY: 0,
@@ -297,6 +302,8 @@ function SetPlayerCardData(card: TrainerCardFields, _cardType: number): void {
   card.hasAllPaintings = false;
 
   card.money = save.money;
+  const profile = save.easyChatProfile ?? [C.EC_WORD_I_AM, C.EC_WORD_A, C.EC_WORD_POKEMON, C.EC_WORD_FRIEND];
+  for (let i = 0; i < 4; i++) card.easyChatProfile[i] = profile[i] ?? 0;
   card.playerName = Uint8Array.from(save.playerName);
 }
 
@@ -385,6 +392,12 @@ function InitTrainerCardData(): void {
   d.gfxLoadState = 0;
   d.bgPalLoadState = 0;
   d.flipDrawState = 0;
+
+  for (let i = 0; i < 4; i++) {
+    const word = d.trainerCard.easyChatProfile[i] ?? 0;
+    const text = CopyEasyChatWord(word);
+    d.easyChatProfile[i] = text !== null ? encode(text) : new Uint8Array([EOS]);
+  }
 }
 
 /** GetCardType (trainer_card.c): derive the layout from the current card's game version. */
@@ -398,6 +411,9 @@ function GetCardType(): number {
 const sTrainerCardTextColors = [0, 2, 3];
 const sTrainerCardStatColors = [0, 4, 5];
 const sTimeColonInvisibleTextColors = [0, 0, 0];
+const sTrainerCardProfilePhraseXPositions = [0x73, 0x69];
+const sTrainerCardProfilePhraseYPositions = [0x82, 0x78];
+const sLinkTrainerCardRecordStrings = ["gText_LinkBattles", "gText_LinkCableBattles"];
 
 function ResetGpuRegs(): void {
   SetVBlankCallback(null);
@@ -748,6 +764,18 @@ function PrintTimeOnCard(): void {
   AddTextPrinterParameterized3(1, FONT_NORMAL, 124, 88, sTrainerCardTextColors, TEXT_SKIP_DRAW, bufMinutes);
 }
 
+function PrintProfilePhraseOnCard(): void {
+  if (!sTrainerCardDataPtr?.isLink) return;
+  const d = sTrainerCardDataPtr;
+  const x = sTrainerCardProfilePhraseXPositions[d.cardType];
+  const y = sTrainerCardProfilePhraseYPositions[d.cardType];
+
+  AddTextPrinterParameterized3(1, FONT_NORMAL, 10, x, sTrainerCardTextColors, TEXT_SKIP_DRAW, d.easyChatProfile[0]);
+  AddTextPrinterParameterized3(1, FONT_NORMAL, GetStringWidth(FONT_NORMAL, d.easyChatProfile[0], 0) + 16, x, sTrainerCardTextColors, TEXT_SKIP_DRAW, d.easyChatProfile[1]);
+  AddTextPrinterParameterized3(1, FONT_NORMAL, 10, y, sTrainerCardTextColors, TEXT_SKIP_DRAW, d.easyChatProfile[2]);
+  AddTextPrinterParameterized3(1, FONT_NORMAL, GetStringWidth(FONT_NORMAL, d.easyChatProfile[2], 0) + 16, y, sTrainerCardTextColors, TEXT_SKIP_DRAW, d.easyChatProfile[3]);
+}
+
 function PrintAllOnCardFront(): boolean {
   if (!sTrainerCardDataPtr) return true;
   switch (sTrainerCardDataPtr.printState) {
@@ -767,6 +795,7 @@ function PrintAllOnCardFront(): boolean {
       PrintTimeOnCard();
       break;
     case 5:
+      PrintProfilePhraseOnCard();
       break;
     default:
       sTrainerCardDataPtr.printState = 0;
@@ -776,30 +805,40 @@ function PrintAllOnCardFront(): boolean {
   return false;
 }
 
-function BufferTextForCardBack(): void {
+function BufferLinkBattleResults(): void {
+  if (!sTrainerCardDataPtr?.hasLinkResults) return;
+  const d = sTrainerCardDataPtr;
+  d.strings[TRAINER_CARD_STRING_LINK_RECORD] = rom.text(sLinkTrainerCardRecordStrings[d.cardType]);
+  d.strings[TRAINER_CARD_STRING_WIN_LOSS] = rom.text("gText_WinLossRatio");
+  d.strings[TRAINER_CARD_STRING_LINK_WINS] = intToDecimal(d.trainerCard.linkBattleWins, STR_CONV_MODE_RIGHT_ALIGN, 4);
+  d.strings[TRAINER_CARD_STRING_LINK_LOSSES] = intToDecimal(d.trainerCard.linkBattleLosses, STR_CONV_MODE_RIGHT_ALIGN, 4);
+}
+
+function BufferBerryCrushPoints(): void {
   if (!sTrainerCardDataPtr) return;
   const d = sTrainerCardDataPtr;
-  BufferNameForCardBack();
-  BufferHofDebutTime();
-
-  if (d.hasLinkResults) {
-    d.strings[TRAINER_CARD_STRING_LINK_RECORD] = rom.text("gText_LinkBattles");
-    d.strings[TRAINER_CARD_STRING_WIN_LOSS] = rom.text("gText_WinLossRatio");
-    d.strings[TRAINER_CARD_STRING_LINK_WINS] = intToDecimal(d.trainerCard.linkBattleWins, STR_CONV_MODE_RIGHT_ALIGN, 4);
-    d.strings[TRAINER_CARD_STRING_LINK_LOSSES] = intToDecimal(d.trainerCard.linkBattleLosses, STR_CONV_MODE_RIGHT_ALIGN, 4);
-  }
-
-  BufferNumTrades();
-
-  if (d.trainerCard.berryCrushPoints) {
+  if (d.cardType !== CARD_TYPE_RSE) {
     d.strings[TRAINER_CARD_STRING_BERRY_CRUSH] = rom.text("gText_BerryCrushes");
     d.strings[TRAINER_CARD_STRING_BERRY_CRUSH_COUNT] = intToDecimal(d.trainerCard.berryCrushPoints, STR_CONV_MODE_RIGHT_ALIGN, 5);
   }
+}
 
-  if (d.trainerCard.unionRoomNum) {
+function BufferUnionRoomStats(): void {
+  if (!sTrainerCardDataPtr) return;
+  const d = sTrainerCardDataPtr;
+  if (d.cardType !== CARD_TYPE_RSE) {
     d.strings[TRAINER_CARD_STRING_UNION_ROOM] = rom.text("gText_UnionRoomTradesBattles");
     d.strings[TRAINER_CARD_STRING_UNION_ROOM_NUM] = intToDecimal(d.trainerCard.unionRoomNum, STR_CONV_MODE_RIGHT_ALIGN, 5);
   }
+}
+
+function BufferTextForCardBack(): void {
+  BufferNameForCardBack();
+  BufferHofDebutTime();
+  BufferLinkBattleResults();
+  BufferNumTrades();
+  BufferBerryCrushPoints();
+  BufferUnionRoomStats();
 }
 
 /** BufferNameForCardBack (trainer_card.c): copy the player name into the card-back string slot. */
@@ -1315,7 +1354,97 @@ function CB2_InitTrainerCard(): void {
   }
 }
 
-// ---------------------------------------------------------------- Entry Points
+const sLinkPlayerTrainerCardTemplate1: TrainerCardFields = {
+  gender: C.MALE,
+  stars: 4,
+  hasPokedex: true,
+  caughtAllHoenn: true,
+  hasAllPaintings: true,
+  hofDebutHours: 999,
+  hofDebutMinutes: 59,
+  hofDebutSeconds: 59,
+  caughtMonsCount: 200,
+  trainerId: 0x6072,
+  playTimeHours: 999,
+  playTimeMinutes: 59,
+  linkBattleWins: 5535,
+  linkBattleLosses: 5535,
+  battleTowerWins: 5535,
+  battleTowerStraightWins: 5535,
+  contestsWithFriends: 55555,
+  pokeblocksWithFriends: 44444,
+  pokemonTrades: 33333,
+  money: 999999,
+  easyChatProfile: [0, 0, 0, 0],
+  playerName: new Uint8Array([1, 6, 32, 0, 69, 40, 5, 255]), // _("あかみ どりお")
+  version: C.VERSION_FIRE_RED,
+  hasAllFrontierSymbols: false,
+  berryCrushPoints: 5555,
+  unionRoomNum: 8500,
+  berriesPicked: 5456,
+  jumpsInRow: 6300,
+  shouldDrawStickers: true,
+  hasAllMons: true,
+  monIconTint: C.MON_ICON_TINT_PINK,
+  facilityClass: 0,
+  stickers: [1, 2, 3],
+  monSpecies: [C.SPECIES_CHARIZARD, C.SPECIES_DIGLETT, C.SPECIES_NIDORINA, C.SPECIES_FEAROW, C.SPECIES_PARAS, C.SPECIES_SLOWBRO],
+};
+
+const sLinkPlayerTrainerCardTemplate2: TrainerCardFields = {
+  gender: C.FEMALE,
+  stars: 2,
+  hasPokedex: true,
+  caughtAllHoenn: true,
+  hasAllPaintings: true,
+  hofDebutHours: 999,
+  hofDebutMinutes: 59,
+  hofDebutSeconds: 59,
+  caughtMonsCount: 200,
+  trainerId: 0x6072,
+  playTimeHours: 999,
+  playTimeMinutes: 59,
+  linkBattleWins: 5535,
+  linkBattleLosses: 5535,
+  battleTowerWins: 65535,
+  battleTowerStraightWins: 65535,
+  contestsWithFriends: 55555,
+  pokeblocksWithFriends: 44444,
+  pokemonTrades: 33333,
+  money: 999999,
+  easyChatProfile: [0, 0, 0, 0],
+  playerName: new Uint8Array([41, 71, 11, 28, 47, 10, 171, 255]), // _("るびさふぁこ！")
+  version: 0,
+  hasAllFrontierSymbols: false,
+  berryCrushPoints: 555,
+  unionRoomNum: 500,
+  berriesPicked: 456,
+  jumpsInRow: 300,
+  shouldDrawStickers: true,
+  hasAllMons: true,
+  monIconTint: C.MON_ICON_TINT_PINK,
+  facilityClass: 0,
+  stickers: [1, 2, 3],
+  monSpecies: [C.SPECIES_CHARIZARD, C.SPECIES_DIGLETT, C.SPECIES_NIDORINA, C.SPECIES_FEAROW, C.SPECIES_PARAS, C.SPECIES_SLOWBRO],
+};
+
+/**
+ * ShowTrainerCardInLink from trainer_card.c.
+ */
+export function ShowTrainerCardInLink(cardId: number, callback: (() => void) | null = null): void {
+  sTrainerCardDataPtr = emptyData();
+  sTrainerCardDataPtr.callback2 = callback;
+  sTrainerCardDataPtr.isLink = true;
+  sTrainerCardDataPtr.trainerCard = {
+    ...gTrainerCards[cardId],
+    easyChatProfile: [...gTrainerCards[cardId].easyChatProfile],
+    stickers: [...gTrainerCards[cardId].stickers],
+    monSpecies: [...gTrainerCards[cardId].monSpecies],
+    playerName: new Uint8Array(gTrainerCards[cardId].playerName),
+  };
+  sTrainerCardDataPtr.language = gLinkPlayers[cardId]?.language ?? 2;
+  SetMainCallback2(CB2_InitTrainerCard);
+}
 
 /**
  * ShowPlayerTrainerCard from trainer_card.c.
@@ -1333,6 +1462,32 @@ export function ShowPlayerTrainerCard(callback: (() => void) | null = null): voi
  * also does the SetMainCallback2(CB2_InitTrainerCard) this function adds on top of it in C. */
 export function Unref_InitTrainerCard(callback: (() => void) | null = null): void {
   ShowPlayerTrainerCard(callback);
+}
+
+/** Unref_InitTrainerCardLink (trainer_card.c) */
+export function Unref_InitTrainerCardLink(callback: (() => void) | null = null): void {
+  gTrainerCards[0] = {
+    ...sLinkPlayerTrainerCardTemplate1,
+    easyChatProfile: [...sLinkPlayerTrainerCardTemplate1.easyChatProfile],
+    stickers: [...sLinkPlayerTrainerCardTemplate1.stickers],
+    monSpecies: [...sLinkPlayerTrainerCardTemplate1.monSpecies],
+    playerName: new Uint8Array(sLinkPlayerTrainerCardTemplate1.playerName),
+  };
+  ShowTrainerCardInLink(CARD_TYPE_FRLG, callback);
+  SetMainCallback2(CB2_InitTrainerCard);
+}
+
+/** Unref_InitTrainerCardLink2 (trainer_card.c) */
+export function Unref_InitTrainerCardLink2(callback: (() => void) | null = null): void {
+  gTrainerCards[0] = {
+    ...sLinkPlayerTrainerCardTemplate2,
+    easyChatProfile: [...sLinkPlayerTrainerCardTemplate2.easyChatProfile],
+    stickers: [...sLinkPlayerTrainerCardTemplate2.stickers],
+    monSpecies: [...sLinkPlayerTrainerCardTemplate2.monSpecies],
+    playerName: new Uint8Array(sLinkPlayerTrainerCardTemplate2.playerName),
+  };
+  ShowTrainerCardInLink(CARD_TYPE_FRLG, callback);
+  SetMainCallback2(CB2_InitTrainerCard);
 }
 
 /** TrainerCardNull (trainer_card.c): empty in the source. */
