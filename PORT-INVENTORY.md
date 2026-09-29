@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 21 | 57574 | 1134/2598 |
+| Parcial (< 80 % de funciones) | 20 | 55419 | 1063/2505 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 12 | 28796 | 1005/1156 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 174 | 164157 | 6233/6233 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 175 | 166312 | 6326/6326 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
-| **Pendiente de portar** | **35** | **89200** | |
-| **Total en alcance** | **211** | **253703** | **8400/10115** |
+| **Pendiente de portar** | **34** | **87045** | |
+| **Total en alcance** | **211** | **253703** | **8422/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Falta (sin funciones portadas)
@@ -44,7 +44,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_controller_pokedude.c` | 2698 | 32/108 |  |  |  |
 | `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
-| `daycare.c` | 2155 | 71/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `quest_log.c` | 1767 | 16/88 | `field/overworld.ts`, `field/trainerSee.ts`, `questLogEvents.ts` … |  |  |
 | `fame_checker.c` | 1739 | 17/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  | 7 |
@@ -105,6 +104,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_interface.c` | 2240 | 52/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `field_player_avatar.c` | 2168 | 176/176 | `field/fieldEffects.ts`, `field/fishing.ts`, `field/objectEvents.ts` … |  |  |
+| `daycare.c` | 2155 | 93/93 | `eggHatch.ts`, `game.ts`, `pokemon/daycare.ts` … |  |  |
 | `battle_ai_script_commands.c` | 1970 | 105/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 87/87 | `battle/controller_opponent.ts` |  |  |
 | `tm_case.c` | 1737 | 73/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |

@@ -64,7 +64,7 @@ function DecompressPic_HandleDeoxys(species: number, personality: number, isFron
 }
 
 /** GetMonSpritePalStructFromOtIdPersonality (pokemon.c) */
-function GetMonSpritePalStructFromOtIdPersonality(species: number, otId: number, personality: number): { data: Uint16Array; tag: number } {
+export function GetMonSpritePalStructFromOtIdPersonality(species: number, otId: number, personality: number): { data: Uint16Array; tag: number } {
   const table = cdata<Array<{ data: unknown; tag: number }>>("data", IsShinyOtIdPersonality(otId, personality) ? "gMonShinyPaletteTable" : "gMonPaletteTable");
   const pal = table[species];
   return { data: symPalette(pal.data), tag: pal.tag };

@@ -39,6 +39,7 @@ import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
 import { openPlayerPc } from "./menus/playerPc";
 import { CreateHelpMessageWindow, DestroyHelpMessageWindow, DrawHelpMessageWindowWithText, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
+import { EggHatch, preloadEggHatch } from "./eggHatch";
 import { DoCredits } from "./credits";
 import { BeginHallOfFamePC } from "./hallOfFame";
 import { enterHallOfFame } from "./postBattleEventFuncs";
@@ -587,47 +588,53 @@ export class Game {
     return shouldEggHatch();
   }
 
+  /** DaycareAddTextPrinter (daycare.c): the level menu window is a Canvas script window (FONT_NORMAL stands for FONT_NORMAL_COPY_2). */
+  DaycareAddTextPrinter(window: ReturnType<ScriptMenu["createFramedWindow"]>, text: Uint8Array, x: number, y: number): void {
+    printText(window, FONT_NORMAL, text, x, y);
+  }
+
+  /** DaycarePrintMonNickname (daycare.c). */
+  DaycarePrintMonNickname(window: ReturnType<ScriptMenu["createFramedWindow"]>, row: { name: Uint8Array }, y: number): void {
+    this.DaycareAddTextPrinter(window, row.name, 8, y);
+  }
+
+  /** DaycarePrintMonLvl (daycare.c). */
+  DaycarePrintMonLvl(window: ReturnType<ScriptMenu["createFramedWindow"]>, row: { level: number }, y: number): void {
+    const lvl = encode(`Lv${row.level}`);
+    this.DaycareAddTextPrinter(window, lvl, 132 - lvl.length * 6, y);
+  }
+
+  /** DaycarePrintMonInfo (daycare.c). */
+  DaycarePrintMonInfo(window: ReturnType<ScriptMenu["createFramedWindow"]>, row: { name: Uint8Array; level: number }, y: number): void {
+    this.DaycarePrintMonNickname(window, row, y);
+    this.DaycarePrintMonLvl(window, row, y);
+  }
+
   /** daycare.c ShowDaycareLevelMenu: the two stored mons with their current levels. */
   showDaycareLevelMenu(): void {
     const ow = this.overworld;
     const rows = daycareLevelMenuRows();
     const window = this.scriptMenu.createFramedWindow(11, 0, 17, 5);
-    rows.forEach((r, i) => {
-      printText(window, FONT_NORMAL, r.name, 8, i * 16 + 1);
-      const lv = encode(`Lv${r.level}`);
-      printText(window, FONT_NORMAL, lv, 132 - lv.length * 6, i * 16 + 1);
-    });
+    rows.forEach((r, i) => this.DaycarePrintMonInfo(window, r, i * 16 + 1));
     printText(window, FONT_NORMAL, rom.text("gOtherText_Exit"), 8, 33);
     const menu = new Menu(window, FONT_NORMAL, 0, 1, 16, 3, 0);
-    const id = tasks.create(() => {
-      const input = menu.processInputNoWrap();
-      if (input === MENU_NOTHING_CHOSEN) return;
-      varSet(SV.RESULT, input === MENU_B_PRESSED || input === 2 ? C.DAYCARE_EXITED_LEVEL_MENU : input);
-      this.scriptMenu.removeWindow(window);
-      tasks.destroy(id);
-      ow.script.ScriptContext_Enable();
-    }, 3);
+    const id = tasks.create(() => this.Task_HandleDaycareLevelMenuInput(id, menu, window), 3);
   }
 
-  /** daycare.c EggHatch (CB2_EggHatch): the hatch, its fanfare and the nickname prompt. */
+  /** Task_HandleDaycareLevelMenuInput (daycare.c). */
+  Task_HandleDaycareLevelMenuInput(taskId: number, menu: Menu, window: ReturnType<ScriptMenu["createFramedWindow"]>): void {
+    const input = menu.processInputNoWrap();
+    if (input === MENU_NOTHING_CHOSEN) return;
+    varSet(SV.RESULT, input === MENU_B_PRESSED || input === 2 ? C.DAYCARE_EXITED_LEVEL_MENU : input);
+    this.scriptMenu.removeWindow(window);
+    tasks.destroy(taskId);
+    this.overworld.script.ScriptContext_Enable();
+  }
+
+  /** daycare.c EggHatch: the hatching hardware scene (eggHatch.ts). */
   eggHatch(): void {
-    const ow = this.overworld;
-    const index = varGet(SV.x8004);
-    hatchPartyEgg(index, ow.header.regionMapSection);
-    const mon = save.party[index];
-    fieldMenu(this, (close) => {
-      sound.playFanfare(rom.c("MUS_EVOLVED"));
-      sound.PlayCry_Normal(mon.species, 0);
-      stringVars.var1 = Uint8Array.from(mon.nickname);
-      openHardwareMessage(rom.text("gText_HatchedFromEgg"), () => {
-        stringVars.var1 = Uint8Array.from(mon.nickname);
-        openHardwareChoice(rom.text("gText_NickHatchPrompt"), [{ label: "YES", value: 1 }, { label: "NO", value: 0 }], false, (yes) => {
-          const done = (): void => { close(); ow.script.ScriptContext_Enable(); };
-          if (yes !== 1) { done(); return; }
-          DoNamingScreen(C.NAMING_SCREEN_NICKNAME, mon.nickname, mon.species, pokemonGender(mon), mon.personality, done);
-        });
-      });
-    }, false);
+    this.overworld.script.ScriptContext_Stop();
+    void preloadEggHatch().then(() => EggHatch(this));
   }
 
   // ---------------------------------------------------------------- script-driven screens
