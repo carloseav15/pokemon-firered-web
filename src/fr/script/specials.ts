@@ -22,7 +22,8 @@ import type { ScriptRunner } from "./context";
 import { EXTRA_SPECIALS } from "./specialsExtra";
 import { DAYCARE_SPECIALS, hatchPartyEgg } from "../pokemon/daycare";
 import { initRoamer } from "../pokemon/roamer";
-import { doSeagallopFerryScene, getSeagallopNumber, getSelectedSeagallopDestination, seagallopDestinationItems } from "../seagallop";
+import { doSeagallopFerryScene, getSeagallopNumber } from "../seagallop";
+import { DrawSeagallopDestinationMenu, GetSelectedSeagallopDestination } from "../menus/scriptMenu";
 import { isTrainerReadyForRematch, shouldTryRematchBattle, VsSeekerFreezeObjectsAfterChargeComplete, VsSeekerResetObjectMovementAfterChargeComplete } from "../field/vsSeeker";
 import { EnterSafariMode, ExitSafariMode } from "../field/safariZone";
 import { GetPlayerAvatarBike, GetPlayerFacingDirection } from "../field/playerAvatar";
@@ -191,11 +192,8 @@ export const SPECIALS: Record<string, Special> = {
   ...DAYCARE_SPECIALS,
   GetSeagallopNumber: () => getSeagallopNumber(),
   DoSeagallopFerryScene: (ctx) => { doSeagallopFerryScene(ctx.ow.game); },
-  DrawSeagallopDestinationMenu: (ctx) => {
-    const { labels, numItems, top } = seagallopDestinationItems();
-    ctx.ow.game.scriptMenu.customChoice(labels, 17, top, 11, numItems * 2);
-  },
-  GetSelectedSeagallopDestination: () => getSelectedSeagallopDestination(varGet(SV.RESULT)),
+  DrawSeagallopDestinationMenu: () => { DrawSeagallopDestinationMenu(); },
+  GetSelectedSeagallopDestination: () => GetSelectedSeagallopDestination(),
   ShowDaycareLevelMenu: (ctx) => { ctx.ow.game.showDaycareLevelMenu(); },
   EggHatch: (ctx) => { ctx.ow.game.eggHatch(); },
   NullFieldSpecial: () => 0,
