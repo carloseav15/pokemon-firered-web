@@ -213,13 +213,6 @@ class Startup {
     }
     // The main menu and the save-clear screen read the GBA keypad (joy) like the rest of the hardware layer.
     if (this.stage === "menu" || this.stage === "clearsave" || this.stage === "oak") return;
-    if (!["Enter", " ", "a", "A"].includes(key)) return;
-    if (this.stage === "title") {
-      // Source: button during INIT/FLASH/FADEIN skips to RUN; A/START in RUN
-      // plays the cry and fades to the main menu.
-      if (this.titleScreen.inRun) this.titleScreen.pressStart();
-      else this.titleScreen.skipToRun();
-    }
   };
 
   private enterGame(options: LaunchOptions): void {
