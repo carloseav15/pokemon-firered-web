@@ -1043,13 +1043,13 @@ function CalcBarFilledPixels(maxValue: number, oldValue: number, receivedValue: 
 }
 
 function GetReceivedValueInPixels(oldValue: number, receivedValue: number, maxValue: number, totalPixels: number): number {
-  totalPixels *= 8;
-  let newVal = oldValue - receivedValue;
+  totalPixels = (totalPixels * 8) & 0xff; // u8 totalPixels *= 8
+  let newVal = (oldValue - receivedValue) | 0; // s32 difference wraps
   if (newVal < 0) newVal = 0;
   else if (newVal > maxValue) newVal = maxValue;
   const s8 = (v: number) => (v << 24) >> 24;
-  const oldToMax = s8(Math.trunc((oldValue * totalPixels) / maxValue));
-  const newToMax = s8(Math.trunc((newVal * totalPixels) / maxValue));
+  const oldToMax = s8(Math.trunc(Math.imul(oldValue, totalPixels) / maxValue)); // s32 product wraps
+  const newToMax = s8(Math.trunc(Math.imul(newVal, totalPixels) / maxValue));
   return Math.abs(oldToMax - newToMax) & 0xff;
 }
 
