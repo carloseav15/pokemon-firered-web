@@ -146,7 +146,7 @@ export function doSeagallopFerryScene(game: Game): void {
     scene.leave();
     game.scene = null;
     ow.setWarpDestination(group, num, -1, x, y);
-    ow.fieldCallback = () => ow.fieldCBDefaultWarpExit();
+    ow.fieldCallback = () => ow.FieldCB_DefaultWarpExit();
     ow.resetInitialPlayerAvatarState();
     ow.warpIntoMapAndLoad();
   }

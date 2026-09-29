@@ -335,14 +335,14 @@ export class FieldControl {
     if (this.ow.header.mapType === C.MAP_TYPE_UNDERWATER && !MB.MetatileBehavior_IsUnableToEmerge(metatileBehavior)) {
       if (this.ow.SetDiveWarpEmerge(position.x - MAP_OFFSET, position.y - MAP_OFFSET)) {
         this.ow.storeInitialPlayerAvatarState();
-        this.ow.doDiveWarp();
+        this.ow.DoDiveWarp();
         sound.playSE(sound.c("SE_M_DIVE"));
         return true;
       }
     } else if (MB.MetatileBehavior_IsDiveable(metatileBehavior)) {
       if (this.ow.SetDiveWarpDive(position.x - MAP_OFFSET, position.y - MAP_OFFSET)) {
         this.ow.storeInitialPlayerAvatarState();
-        this.ow.doDiveWarp();
+        this.ow.DoDiveWarp();
         sound.playSE(sound.c("SE_M_DIVE"));
         return true;
       }
@@ -649,7 +649,7 @@ export class FieldControl {
     if (this.IsArrowWarpMetatileBehavior(behavior, direction)) {
       this.ow.storeInitialPlayerAvatarState();
       this.setupWarp(warpIndex, position);
-      this.ow.doWarp();
+      this.ow.DoWarp();
       return true;
     }
     if (this.ow.player.IsDirectionalStairWarpMetatileBehavior(behavior, direction)) {
@@ -660,7 +660,7 @@ export class FieldControl {
       }
       this.ow.storeInitialPlayerAvatarState();
       this.setupWarp(warpIndex, position);
-      this.ow.doStairWarp(behavior, delay);
+      this.ow.DoStairWarp(behavior, delay);
       return true;
     }
     return false;
@@ -677,7 +677,7 @@ export class FieldControl {
       return true;
     }
     if (MB.MetatileBehavior_IsWarpPad(behavior)) {
-      this.ow.doTeleportWarp();
+      this.ow.DoTeleportWarp();
       return true;
     }
     if (MB.MetatileBehavior_IsFallWarp(behavior)) {
@@ -685,7 +685,7 @@ export class FieldControl {
       this.ow.script.ScriptContext_SetupScript(rom.label("EventScript_DoFallWarp"));
       return true;
     }
-    this.ow.doWarp();
+    this.ow.DoWarp();
     return true;
   }
 
@@ -698,7 +698,7 @@ export class FieldControl {
       if (IsEscalatorMoving()) return;
       StopEscalator();
       tasks.destroy(taskId);
-      this.ow.doWarp();
+      this.ow.DoWarp();
     }, 0);
   }
 
@@ -709,7 +709,7 @@ export class FieldControl {
     if (warpIndex < 0 || !this.IsWarpMetatileBehavior(behavior)) return false;
     this.ow.storeInitialPlayerAvatarState();
     this.setupWarp(warpIndex, position);
-    this.ow.doDoorWarp();
+    this.ow.DoDoorWarp();
     return true;
   }
 }

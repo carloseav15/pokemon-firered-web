@@ -739,7 +739,7 @@ export class FieldMoveEffects {
   private escapeRopeExit(): void {
     const ow = this.ow;
     ow.playSpecialMapMusic();
-    ow.warpFadeInScreen();
+    ow.WarpFadeInScreen();
     ow.controlsLocked = true;
     ow.objects.freezeAll();
     const p = ow.player.object;
@@ -843,7 +843,7 @@ export class FieldMoveEffects {
 
   /** FieldCallback_TeleportIn (field_effect.c). */
   private FieldCallback_TeleportIn(): void {
-    this.ow.playSpecialMapMusic(); this.ow.warpFadeInScreen();
+    this.ow.playSpecialMapMusic(); this.ow.WarpFadeInScreen();
     this.ow.controlsLocked = true; this.ow.objects.freezeAll();
     this.ow.player.SetPlayerInvisibility(true);
     this.teleportInTaskData = new Array<number>(16).fill(0);

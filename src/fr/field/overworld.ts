@@ -1064,7 +1064,7 @@ export class Overworld {
       if (this.fieldCallback2()) { this.fieldCallback2 = null; this.fieldCallback = null; }
       return;
     }
-    const callback = this.fieldCallback ?? (() => this.fieldCBDefaultWarpExit());
+    const callback = this.fieldCallback ?? (() => this.FieldCB_DefaultWarpExit());
     this.fieldCallback = null;
     callback();
   }
@@ -1078,13 +1078,13 @@ export class Overworld {
     if (music && music !== sound.currentBGM) sound.playNewMapMusic(music);
   }
 
-  fieldCBDefaultWarpExit(): void {
+  FieldCB_DefaultWarpExit(): void {
     this.playSpecialMapMusic();
     this.setUpWarpExitTask(false);
     this.controlsLocked = true;
   }
 
-  fieldCBWarpExitFadeFromBlack(): void {
+  FieldCB_WarpExitFadeFromBlack(): void {
     this.playSpecialMapMusic();
     this.setUpWarpExitTask(true);
     this.controlsLocked = true;
@@ -1093,7 +1093,7 @@ export class Overworld {
   /** FieldCB_ShowMapNameOnContinue (overworld.c). */
   FieldCB_ShowMapNameOnContinue(): void {
     if (this.header.showMapName) this.mapName.ShowMapNamePopup(false);
-    this.fieldCBWarpExitFadeFromBlack();
+    this.FieldCB_WarpExitFadeFromBlack();
   }
 
   /** FieldCB_ContinueScriptHandleMusic (field_fadetransition.c). */
@@ -1127,7 +1127,7 @@ export class Overworld {
     palette_bg_faded_fill_black();
   }
 
-  warpFadeInScreen(delay = 0): void {
+  WarpFadeInScreen(delay = 0): void {
     const lastType = this.lastUsedWarpType();
     if (MapTransitionIsExit(lastType, this.header.mapType)) {
       palette_bg_faded_fill_white();
@@ -1142,13 +1142,13 @@ export class Overworld {
 
   /** ExitWarpFadeInScreen (field_fadetransition.c). */
   private ExitWarpFadeInScreen(playerNotMoving: boolean): void {
-    if (!playerNotMoving) this.warpFadeInScreen();
+    if (!playerNotMoving) this.WarpFadeInScreen();
     else this.fadeInFromBlack();
   }
 
   /** WarpFadeInScreenWithDelay (field_fadetransition.c). */
   private WarpFadeInScreenWithDelay(delay: number): void {
-    this.warpFadeInScreen(delay);
+    this.WarpFadeInScreen(delay);
   }
 
   /** WarpFadeOutScreen (field_fadetransition.c). */
@@ -1254,7 +1254,7 @@ export class Overworld {
     const data = tasks.tasks[taskId].data;
     if (data[0] === 0) {
       this.playSpecialMapMusic();
-      this.warpFadeInScreen();
+      this.WarpFadeInScreen();
       this.controlsLocked = true;
       this.ExitStairsMovement(taskId);
       data[0]++;
@@ -1399,18 +1399,25 @@ export class Overworld {
 
   // Warp starters (field_fadetransition.c)
 
-  /** DoWarp */
-  doWarp(playExitSE = true): void {
+  /** DoWarp (field_fadetransition.c). */
+  DoWarp(): void {
     this.controlsLocked = true;
     this.tryFadeOutOldMapMusic();
     this.warpFadeOutScreen();
-    if (playExitSE) sound.playSE(sound.c("SE_EXIT"));
-    this.fieldCallback = () => this.fieldCBDefaultWarpExit();
+    PlayRainStoppingSoundEffect();
+    sound.playSE(sound.c("SE_EXIT"));
+    this.fieldCallback = () => this.FieldCB_DefaultWarpExit();
     this.startTeleport2WarpTask();
   }
 
-  doDiveWarp(): void {
-    this.doWarp(false);
+  /** DoDiveWarp (field_fadetransition.c): DoWarp without the exit sound. */
+  DoDiveWarp(): void {
+    this.controlsLocked = true;
+    this.tryFadeOutOldMapMusic();
+    this.warpFadeOutScreen();
+    PlayRainStoppingSoundEffect();
+    this.fieldCallback = () => this.FieldCB_DefaultWarpExit();
+    this.startTeleport2WarpTask();
   }
 
   /** FieldCB_SafariZoneRanOutOfBalls (field_fadetransition.c). */
@@ -1431,14 +1438,14 @@ export class Overworld {
     this.objects.unfreezeAll();
   }
 
-  doFallWarp(): void {
-    this.doWarp(false);
-    this.fieldCallback = () => this.fieldCBFallWarpExit();
+  DoFallWarp(): void {
+    this.DoDiveWarp();
+    this.fieldCallback = () => this.FieldCB_FallWarpExit();
   }
 
-  private fieldCBFallWarpExit(): void {
+  private FieldCB_FallWarpExit(): void {
     this.playSpecialMapMusic();
-    this.warpFadeInScreen();
+    this.WarpFadeInScreen();
     this.controlsLocked = true;
     this.objects.freezeAll();
     const p = this.player.object;
@@ -1464,9 +1471,9 @@ export class Overworld {
     }, 10);
   }
 
-  doDoorWarp(): void {
+  DoDoorWarp(): void {
     this.controlsLocked = true;
-    this.fieldCallback = () => this.fieldCBDefaultWarpExit();
+    this.fieldCallback = () => this.FieldCB_DefaultWarpExit();
     tasks.create((taskId) => this.Task_DoorWarp(taskId), 10);
   }
 
@@ -1511,10 +1518,10 @@ export class Overworld {
     }
   }
 
-  doTeleportWarp(): void {
+  DoTeleportWarp(): void {
     this.controlsLocked = true;
     this.tryFadeOutOldMapMusic();
-    this.fieldCallback = () => this.fieldCBTeleportWarpIn();
+    this.fieldCallback = () => this.FieldCB_TeleportWarpIn();
     tasks.create((taskId) => this.Task_TeleportWarp(taskId), 10);
   }
 
@@ -1546,12 +1553,12 @@ export class Overworld {
   DoTeleport2Warp(): void {
     this.controlsLocked = true;
     this.startTeleport2WarpTask();
-    this.fieldCallback = () => this.fieldCBTeleportWarpIn();
+    this.fieldCallback = () => this.FieldCB_TeleportWarpIn();
   }
 
-  fieldCBTeleportWarpIn(): void {
+  FieldCB_TeleportWarpIn(): void {
     this.playSpecialMapMusic();
-    this.warpFadeInScreen();
+    this.WarpFadeInScreen();
     sound.playSE(sound.c("SE_WARP_OUT"));
     this.controlsLocked = true;
     tasks.create((taskId) => this.Task_TeleportWarpIn(taskId), 10);
@@ -1577,7 +1584,7 @@ export class Overworld {
     }
   }
 
-  doStairWarp(behavior: number, delay: number): void {
+  DoStairWarp(behavior: number, delay: number): void {
     const taskId = tasks.create((id) => this.Task_StairWarp(id), 10);
     tasks.tasks[taskId].data[1] = behavior & 0xffff;
     tasks.tasks[taskId].data[15] = delay & 0xffff;
@@ -1655,7 +1662,7 @@ export class Overworld {
         if (!this.WaitWarpFadeOutScreen() && sound.isBGMPausedOrStopped()) data[0]++;
         break;
       default:
-        this.fieldCallback = () => this.fieldCBDefaultWarpExit();
+        this.fieldCallback = () => this.FieldCB_DefaultWarpExit();
         this.warpIntoMapAndLoad();
         tasks.destroy(taskId);
         break;

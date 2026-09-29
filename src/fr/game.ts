@@ -217,7 +217,7 @@ export class Game {
     setName("player", encode(playerName.slice(0, 7)));
     setName("rival", encode(rivalName.slice(0, 7)));
     this.overworld.resetInitialPlayerAvatarState();
-    this.overworld.fieldCallback = () => this.overworld.fieldCBWarpExitFadeFromBlack();
+    this.overworld.fieldCallback = () => this.overworld.FieldCB_WarpExitFadeFromBlack();
     this.overworld.script.ScriptContext_Init();
     paletteFade.fill(RGB_BLACK);
     PlayTimeCounter_Start();
@@ -330,7 +330,7 @@ export class Game {
     // The continue-warp branch goes through a plain WarpIntoMap+CB2_LoadMap in the C (no map
     // name popup); the other branch runs FieldCB_ShowMapNameOnContinue first.
     this.overworld.fieldCallback = usedContinueGameWarp
-      ? () => this.overworld.fieldCBWarpExitFadeFromBlack()
+      ? () => this.overworld.FieldCB_WarpExitFadeFromBlack()
       : () => this.overworld.FieldCB_ShowMapNameOnContinue();
     paletteFade.fill(RGB_BLACK);
     PlayTimeCounter_Start();

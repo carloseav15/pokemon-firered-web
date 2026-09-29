@@ -262,9 +262,9 @@ function ScrCmd_fadeinbgm(ctx: ScriptRunner): boolean {
   if (gQuestLogState !== C.QL_STATE_PLAYBACK) sound.FadeInBGM(speed ? 4 * speed : 4);
   return false;
 }
-function ScrCmd_warp(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.doWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
-function ScrCmd_warpsilent(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.doDiveWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
-function ScrCmd_warpdoor(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.doDoorWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
+function ScrCmd_warp(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
+function ScrCmd_warpsilent(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoDiveWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
+function ScrCmd_warpdoor(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoDoorWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_warphole(ctx: ScriptRunner): boolean {
   const group = ctx.readByte();
   const num = ctx.readByte();
@@ -272,11 +272,11 @@ function ScrCmd_warphole(ctx: ScriptRunner): boolean {
   const x = p.currentCoords.x - MAP_OFFSET, y = p.currentCoords.y - MAP_OFFSET;
   if (group === 0x7f && num === 0x7f) ctx.ow.SetWarpDestinationToFixedHoleWarp(x, y);
   else ctx.ow.SetWarpDestination(group, num, -1, x, y);
-  ctx.ow.doFallWarp();
+  ctx.ow.DoFallWarp();
   ctx.ow.resetInitialPlayerAvatarState();
   return true;
 }
-function ScrCmd_warpteleport(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.doTeleportWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
+function ScrCmd_warpteleport(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoTeleportWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_warpspinenter(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.setInitialPlayerAvatarStateWithDirection(ctx.ow.player.object.facingDirection); ctx.ow.DoTeleport2Warp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_setwarp(ctx: ScriptRunner): boolean { readWarp(ctx); return false; }
 function ScrCmd_setdynamicwarp(ctx: ScriptRunner): boolean { const w = readWarpData(ctx); ctx.ow.SetDynamicWarpWithCoords(0, w.mapGroup, w.mapNum, w.warpId, w.x, w.y); return false; }

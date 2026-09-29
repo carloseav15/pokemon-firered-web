@@ -846,7 +846,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   DoSSAnneDepartureCutscene: (ctx) => { ssAnneDeparture(ctx); },
   DoPokemonLeagueLightingEffect: () => DoPokemonLeagueLightingEffect(),
   LoopWingFlapSound: () => { LoopWingFlapSound(); },
-  DoFallWarp: (ctx) => { ctx.ow.doFallWarp(); },
+  DoFallWarp: (ctx) => { ctx.ow.DoFallWarp(); },
   OpenMuseumFossilPic: () => (OpenMuseumFossilPic() ? 1 : 0),
   CloseMuseumFossilPic: () => (CloseMuseumFossilPic() ? 1 : 0),
   // link, wireless and e-Reader: no hardware

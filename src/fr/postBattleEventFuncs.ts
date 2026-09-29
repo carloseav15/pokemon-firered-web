@@ -60,6 +60,6 @@ export function SetWarpsToRollCredits(game: Game): void {
   const num = rom.c("MAP_INDIGO_PLATEAU_EXTERIOR");
   ow.keepMusicOnNextLoad = true; // gDisableMapMusicChangeOnMapLoad = 2
   ow.setWarpDestination(num >> 8, num & 0xff, -1, 11, 6);
-  ow.doWarp();
+  ow.DoWarp();
   ow.resetInitialPlayerAvatarState();
 }
