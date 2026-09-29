@@ -17,7 +17,7 @@ import { joy, JOY_NEW, A_BUTTON, START_BUTTON } from "./gba/input";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
 import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
-import { FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_SMALL, GetStringWidth } from "./gba/font";
 import { SaveStatToString } from "./saveMenuUtil";
 
 enum StartMenuOption {
@@ -311,7 +311,7 @@ export function PrintSaveStats(game: Game): Window {
   stats.fill(1);
 
   const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
-  printText(stats, FONT_NORMAL, location, (112 - stringWidth(FONT_NORMAL, location)) >> 1, 0);
+  printText(stats, FONT_NORMAL, location, (112 - GetStringWidth(FONT_NORMAL, location)) >> 1, 0);
   const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y);
   const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y);
   label(14, "gSaveStatName_Player");

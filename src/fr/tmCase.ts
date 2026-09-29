@@ -7,7 +7,7 @@
 import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, SELECT_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
@@ -916,7 +916,7 @@ function PrintMessageWithFollowupTask(taskId: number, fontId: number, str: Array
 
 function PrintTitle(): void {
   const title = text("gText_TMCase");
-  const distance = 72 - stringWidth(FONT_NORMAL_COPY_1, title, 0);
+  const distance = 72 - GetStringWidth(FONT_NORMAL_COPY_1, title, 0);
   AddTextPrinterParameterized3(WIN_TITLE, FONT_NORMAL_COPY_1, Math.floor(distance / 2), 1, sTextColors[COLOR_LIGHT], 0, title);
 }
 

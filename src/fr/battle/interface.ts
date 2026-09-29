@@ -19,7 +19,7 @@ import {
 import { AddTextPrinterParameterized4 } from "../hw/text";
 import { AddWindow, FillWindowPixelBuffer, gWindows, PIXEL_FILL, RemoveWindow, type WindowTemplate } from "../hw/window";
 import { EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
-import { FONT_SMALL, stringWidth } from "../gba/font";
+import { FONT_SMALL, GetStringWidth } from "../gba/font";
 import { rom, b64 } from "../rom";
 import { GetMonData, GetMonGender, GetNature, gEnemyParty, playerMon, SpeciesToNationalPokedexNum, type Mon } from "../pokemon/mon";
 import { GetSetPokedexFlag } from "../pokemon/mon_extra";
@@ -871,7 +871,7 @@ function UpdateLeftNoOfBallsTextOnHealthbox(healthboxSpriteId: number): void {
   let n = 0;
   for (; prefix[n] !== EOS; n++) text[n] = prefix[n];
   writeNumber(text, n, G.gNumSafariBalls, STR_CONV_MODE_LEFT_ALIGN, 2);
-  const win = AddTextPrinterAndCreateWindowOnHealthbox(text, 47 - stringWidth(FONT_SMALL, text, 0), 3);
+  const win = AddTextPrinterAndCreateWindowOnHealthbox(text, 47 - GetStringWidth(FONT_SMALL, text, 0), 3);
   const spriteTileNum = gSprites[healthboxSpriteId].oam.tileNum * TILE_SIZE_4BPP;
   SafariTextIntoHealthboxObject(OBJ_VRAM0 + 0x2c0 + spriteTileNum, win.tileData, 2);
   SafariTextIntoHealthboxObject(OBJ_VRAM0 + 0xa00 + spriteTileNum, win.tileData.subarray(0x40), 4);

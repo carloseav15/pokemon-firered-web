@@ -15,7 +15,7 @@
 import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, START_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
@@ -1041,7 +1041,7 @@ function CreateCancelConfirmWindows(chooseMultiple: boolean): void {
     const confirmWindowId = AddWindow(rd<WindowTemplate>("sConfirmButtonWindowTemplate"));
     FillWindowPixelBuffer(confirmWindowId, PIXEL_FILL(0));
     const ok = text("gText_PartyMenu_OK");
-    AddTextPrinterParameterized4(confirmWindowId, FONT_SMALL, Math.floor((48 - stringWidth(FONT_SMALL, ok, 0)) / 2), 1, 0, 0, colors[0], -1, ok);
+    AddTextPrinterParameterized4(confirmWindowId, FONT_SMALL, Math.floor((48 - GetStringWidth(FONT_SMALL, ok, 0)) / 2), 1, 0, 0, colors[0], -1, ok);
     PutWindowTilemap(confirmWindowId);
     CopyWindowToVram(confirmWindowId, COPYWIN_GFX);
     cancelWindowId = AddWindow(rd<WindowTemplate>("sMultiCancelButtonWindowTemplate"));
@@ -1052,7 +1052,7 @@ function CreateCancelConfirmWindows(chooseMultiple: boolean): void {
   }
   FillWindowPixelBuffer(cancelWindowId, PIXEL_FILL(0));
   const cancel = text("gFameCheckerText_Cancel");
-  offset += Math.floor((48 - stringWidth(FONT_SMALL, cancel, 0)) / 2);
+  offset += Math.floor((48 - GetStringWidth(FONT_SMALL, cancel, 0)) / 2);
   AddTextPrinterParameterized3(cancelWindowId, FONT_SMALL, offset, 1, colors[0], -1, cancel);
   PutWindowTilemap(cancelWindowId);
   CopyWindowToVram(cancelWindowId, COPYWIN_GFX);

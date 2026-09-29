@@ -3,7 +3,7 @@
 // easy_chat_2.c issues through EasyChatInterfaceCommand_Setup/Run.
 import * as C from "./generated/constants";
 import { encode } from "./gba/charmap";
-import { FONT_NORMAL_COPY_1, stringWidth as GetStringWidth } from "./gba/font";
+import { FONT_NORMAL_COPY_1, GetStringWidth } from "./gba/font";
 import { cdata, incbin, incbin16, preloadIncbin, loadCData, type SymRef } from "./hw/assets";
 import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
 import {

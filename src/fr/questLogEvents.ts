@@ -11,12 +11,14 @@ import {
 } from "./questLogActions";
 import { flagClear, flagGet, flagSet, save, varGet, varSet } from "./save";
 import { QuestLog_InitPalettesBackup as initQuestLogPalettesBackup } from "./questLogPalette";
+import { gQuestLogState, WriteQuestLogState } from "./questLogState";
 import { rom } from "./rom";
 
+export { gQuestLogState };
+
 let sPlayedTheSlots = false;
-export let gQuestLogState = 0;
 export function SetQuestLogState(state: number): void {
-  gQuestLogState = state;
+  WriteQuestLogState(state);
   SetGlobalFieldTintMode(state === C.QL_STATE_PLAYBACK ? C.QL_TINT_GRAYSCALE
     : state === C.QL_STATE_PLAYBACK_LAST ? C.QL_TINT_BACKUP_GRAYSCALE : C.QL_TINT_NONE);
 }
@@ -291,7 +293,7 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     sStepRecordingMode = STEP_RECORDING_MODE_DISABLED;
   }
   if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED) {
-    gQuestLogState = C.QL_STATE_RECORDING;
+    WriteQuestLogState(C.QL_STATE_RECORDING);
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING;
     sNextActionDelay = 0;
     sLastPlayerMovementActionId = -1;
@@ -348,7 +350,7 @@ export function QuestLog_CutRecording(): void {
     const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
     if (script) QL_RecordAction_SceneEnd(script);
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-    gQuestLogState = 0;
+    WriteQuestLogState(0);
     sActivePlayerActionScript = -1;
   }
   gQuestLogDefeatedWildMonRecord = null;
@@ -362,7 +364,7 @@ export function QL_FinishRecordingScene(): void {
   if (gQuestLogState !== C.QL_STATE_RECORDING) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (script) QL_RecordAction_SceneEnd(script);
-  gQuestLogState = 0;
+  WriteQuestLogState(0);
   sActivePlayerActionScript = -1;
   gQuestLogDefeatedWildMonRecord = null;
   gQuestLogRecordingPointer = null;
@@ -387,7 +389,7 @@ export function ResetQLPlayedTheSlots(): void {
   sActivePlayerActionScript = -1;
   sNextActionDelay = 0;
   sLastPlayerMovementActionId = -1;
-  gQuestLogState = 0;
+  WriteQuestLogState(0);
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
   gQuestLogDefeatedWildMonRecord = null;
   gQuestLogRecordingPointer = null;

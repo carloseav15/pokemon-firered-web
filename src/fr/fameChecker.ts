@@ -3,7 +3,7 @@
 import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { expandPlaceholders } from "./gba/charmap";
-import { FONT_NORMAL, FONT_SMALL, stringWidth as GetStringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, SELECT_BUTTON, START_BUTTON } from "./gba/input";
 import { tasks } from "./gba/tasks";
 import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";

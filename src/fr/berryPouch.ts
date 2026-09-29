@@ -6,7 +6,7 @@
 import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
@@ -368,7 +368,7 @@ function DestroyScrollIndicatorArrows(): void {
 
 function PrintBerryPouchHeaderCentered(): void {
   const title = text("gText_BerryPouch");
-  const slack = 72 - stringWidth(FONT_NORMAL_COPY_1, title, 0);
+  const slack = 72 - GetStringWidth(FONT_NORMAL_COPY_1, title, 0);
   BerryPouchPrint(2, FONT_NORMAL_COPY_1, title, Math.floor(slack / 2), 1, 0, 0, 0, 0);
 }
 

@@ -3,7 +3,7 @@
 
 import { sound } from "../audio/sound";
 import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "../gba/font";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "../gba/font";
 import { paletteFade } from "../gba/fade";
 import { Sprite } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
@@ -83,7 +83,7 @@ let sNextWindowId = 1;
 
 export function GetStringTilesWide(str: Uint8Array | string): number {
   const bytes = typeof str === "string" ? expandPlaceholders(rom.text(str)) : str;
-  return Math.floor((stringWidth(FONT_NORMAL_COPY_1, bytes, 0) + 7) / 8);
+  return Math.floor((GetStringWidth(FONT_NORMAL_COPY_1, bytes, 0) + 7) / 8);
 }
 
 export function GetMenuWidthFromList(items: (Uint8Array | string)[], count?: number): number {
@@ -228,7 +228,7 @@ export function DrawVerticalMultichoiceMenu(left: number, top: number, mcId: num
   const texts = list.map((sym) => expandPlaceholders(rom.text(sym)));
   let strWidth = 0;
   for (const t of texts) {
-    const w = stringWidth(FONT_NORMAL, t, 0);
+    const w = GetStringWidth(FONT_NORMAL, t, 0);
     if (w > strWidth) strWidth = w;
   }
   const width = Math.floor((strWidth + 9) / 8) + 1;
@@ -725,7 +725,7 @@ export class ScriptMenu {
     printText(window, FONT_NORMAL, rom.text("gText_TrainerCardMoney"), 0, 0);
     stringVars.var1 = intToDecimal(save.money, STR_CONV_MODE_LEFT_ALIGN, 6);
     const text = expandPlaceholders(rom.text("gText_PokedollarVar1"));
-    printText(window, FONT_SMALL, text, 64 - stringWidth(FONT_SMALL, text, 0), 12);
+    printText(window, FONT_SMALL, text, 64 - GetStringWidth(FONT_SMALL, text, 0), 12);
   }
 
   hideMoneyBox(): void {
@@ -749,7 +749,7 @@ export class ScriptMenu {
     printText(window, FONT_NORMAL, rom.text("gText_Coins_2"), 0, 0);
     stringVars.var1 = intToDecimal(GetCoins(), STR_CONV_MODE_RIGHT_ALIGN, 4);
     const text = expandPlaceholders(rom.text("gText_Coins"));
-    printText(window, FONT_SMALL, text, 64 - stringWidth(FONT_SMALL, text, 0), 12);
+    printText(window, FONT_SMALL, text, 64 - GetStringWidth(FONT_SMALL, text, 0), 12);
   }
 
   hideCoinsBox(): void {
@@ -814,7 +814,7 @@ export class ScriptMenu {
     const labels = cdata<SymRef[][]>("field_specials", "sListMenuLabels")[state.which] ?? [];
     const items = labels.slice(0, data[1]).map((ref, index) => ({ label: expandPlaceholders(rom.text(symName(ref)!)), index }));
     let maxWidth = 0;
-    for (const item of items) maxWidth = Math.max(maxWidth, stringWidth(FONT_NORMAL, item.label, 0));
+    for (const item of items) maxWidth = Math.max(maxWidth, GetStringWidth(FONT_NORMAL, item.label, 0));
     data[4] = Math.floor((maxWidth + 9) / 8) + 1;
     if (data[2] + data[4] > 29) data[2] = 29 - data[4];
     const window = new Window(data[2], data[3], data[4], data[5]);

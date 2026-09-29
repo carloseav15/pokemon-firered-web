@@ -17,7 +17,7 @@ import { CreateMonIcon_HandleDeoxys, DestroyMonIcon, FreeMonIconPalette as freeI
 import { MailSpeciesToIconSpecies } from "./trainerCard";
 import { mailLines, MailSpeciesToSpecies } from "../pokemon/mail";
 import { AddTextPrinterParameterized3, RunTextPrinters, DeactivateAllTextPrinters } from "../hw/text";
-import { FONT_NORMAL_COPY_1, stringWidth } from "../gba/font";
+import { FONT_NORMAL_COPY_1, GetStringWidth } from "../gba/font";
 import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap, type WindowTemplate } from "../hw/window";
 import { rom } from "../rom";
 import { save } from "../save";
@@ -161,7 +161,7 @@ function AddMailMessagePrinters(): void {
     }
   }
   const from = rom.text("gText_From");
-  const labelWidth = stringWidth(FONT_NORMAL_COPY_1, from, 0);
+  const labelWidth = GetStringWidth(FONT_NORMAL_COPY_1, from, 0);
   AddTextPrinterParameterized3(1, FONT_NORMAL_COPY_1, r.nameX, r.layout.nameY, colors, SPEED_INSTANT, from);
   AddTextPrinterParameterized3(1, FONT_NORMAL_COPY_1, r.nameX + labelWidth, r.layout.nameY, colors, SPEED_INSTANT, encode(r.author));
   CopyWindowToVram(0, COPYWIN_FULL); CopyWindowToVram(1, COPYWIN_FULL);

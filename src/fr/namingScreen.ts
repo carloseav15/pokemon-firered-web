@@ -10,7 +10,7 @@ import { getBoxName, getPCBoxToSendMon, isDestinationBoxFull } from "./pokemon/s
 import { rom } from "./rom";
 import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON, START_BUTTON } from "./gba/input";
 import { EOS, stringVars, expandPlaceholders } from "./gba/charmap";
-import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { tasks } from "./gba/tasks";
 import { sound } from "./audio/sound";
 import { speciesName } from "./pokemon/pokemon";
@@ -650,7 +650,7 @@ class NamingScreen {
   private PrintControls(): void {
     const win = this.windows[4], label = text("gText_MoveOkBack");
     FillWindowPixelBuffer(win, PIXEL_FILL(15));
-    AddTextPrinterParameterized3(win, FONT_SMALL, 236 - stringWidth(FONT_SMALL, label, 0), 0, [15, 1, 2], 0, label);
+    AddTextPrinterParameterized3(win, FONT_SMALL, 236 - GetStringWidth(FONT_SMALL, label, 0), 0, [15, 1, 2], 0, label);
     PutWindowTilemap(win); CopyWindowToVram(win, COPYWIN_FULL);
   }
 

@@ -55,7 +55,7 @@ import {
 } from "./hw/window";
 import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import { BlitMenuInfoIcon, ListMenuLoadStdPalAt } from "./hw/listMenu";
-import { FONT_NORMAL, FONT_SMALL, stringWidth as GetStringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { EOS, encode, intToDecimal, StringCompareWithoutExtCtrlCodes, StringCopy, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { TEXT_SKIP_DRAW } from "./gba/textPrinter";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, L_BUTTON, R_BUTTON } from "./gba/input";

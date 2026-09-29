@@ -1,10 +1,14 @@
-// Port of text.c RenderText / text_printer.c for the latin fonts.
+// Port of text.c and text_printer.c: the printer state machine, its font
+// functions and the glyph decompression shared by every latin font.
 
 import { sound } from "../audio/sound";
+import * as C from "../generated/constants";
 import { CHAR_EXTRA_SYMBOL, CHAR_KEYPAD_ICON, CHAR_NEWLINE, CHAR_PROMPT_CLEAR, CHAR_PROMPT_SCROLL, EOS, EXT_CTRL_CODE_BEGIN, PLACEHOLDER_BEGIN } from "./charmap";
-import { FONT_BRAILLE, FONT_INFOS, FONT_NORMAL, glyph, type FontInfo } from "./font";
+import { FONT_BRAILLE, FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, DecompressGlyphTile, GetGlyphWidth_Female, GetGlyphWidth_Male, GetGlyphWidth_Normal, GetGlyphWidth_NormalCopy1, GetGlyphWidth_NormalCopy2, GetGlyphWidth_Small, GetKeypadIconSheet, KEYPAD_ICONS, glyph, type FontInfo } from "./font";
 import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "./input";
 import { b64, rom } from "../rom";
+import { gQuestLogState } from "../questLogState";
+import { incbin16 } from "../hw/assets";
 import type { Window } from "./window";
 
 /** Anything a text printer can draw on (overworld windows, GBA window tile buffers). */
@@ -30,6 +34,10 @@ const RENDER_UPDATE = 3;
 
 const enum State { HandleChar, Wait, Clear, ScrollStart, Scroll, WaitSe, Pause }
 
+const CURSOR_DELAY = 8;
+// text.c DARK_DOWN_ARROW_OFFSET is 256 bytes (8 tiles of sDownArrowTiles); the
+// exported down_arrows sheet is 16 tiles wide, so that is x=64 pixels.
+const DARK_DOWN_ARROW_X = 64;
 const DOWN_ARROW_X = [0, 16, 32, 16];
 const SCROLL_SPEEDS = [1, 2, 4];
 
@@ -96,22 +104,6 @@ function downArrow(): { pixels: Uint8Array; width: number } {
   return { pixels: downArrowPixels, width: downArrowWidth };
 }
 
-let keypadPixels: Uint8Array | undefined;
-let keypadWidth = 0;
-/** text.c gKeypadIconTiles sheet ({ pixels: one palette index per byte, width }) and sKeypadIcons: [tileOffset, width, height]. */
-export function GetKeypadIconSheet(): { pixels: Uint8Array; width: number } {
-  if (!keypadPixels) {
-    const raw = rom.fonts.keypad_icons;
-    keypadPixels = b64(raw.pixels);
-    keypadWidth = raw.width;
-  }
-  return { pixels: keypadPixels, width: keypadWidth };
-}
-export const KEYPAD_ICONS: Record<number, [number, number, number]> = {
-  0x00: [0x0, 8, 12], 0x01: [0x1, 8, 12], 0x02: [0x2, 16, 12], 0x03: [0x4, 16, 12], 0x04: [0x6, 24, 12], 0x05: [0x9, 24, 12],
-  0x06: [0xc, 8, 12], 0x07: [0xd, 8, 12], 0x08: [0xe, 8, 12], 0x09: [0xf, 8, 12], 0x0a: [0x20, 8, 12], 0x0b: [0x21, 8, 12], 0x0c: [0x22, 8, 12],
-};
-
 export type PrinterOptions = {
   x?: number;
   y?: number;
@@ -126,15 +118,19 @@ export type PrinterOptions = {
 
 export class TextPrinter {
   active = true;
-  private state = State.HandleChar;
-  private pos = 0;
-  private delayCounter = 0;
-  private scrollDistance = 0;
-  private textSpeed: number;
-  private sped = false;
-  private downArrowDelay = 0;
-  private downArrowIndex = 0;
-  private minLetterSpacing = 0;
+  state = State.HandleChar;
+  pos = 0;
+  delayCounter = 0;
+  scrollDistance = 0;
+  textSpeed: number;
+  sped = false;
+  downArrowDelay = 0;
+  downArrowIndex = 0;
+  autoScrollDelay = 0;
+  minLetterSpacing = 0;
+  glyphId = 0;
+  hasGlyphIdBeenSet = false;
+  japanese = false;
   fontId: number;
   x: number;
   y: number;
@@ -163,7 +159,7 @@ export class TextPrinter {
       this.textSpeed = speed - 1;
     } else {
       this.textSpeed = 0;
-      for (let j = 0; j < 0x400; j++) if (this.renderFont() === RENDER_FINISH) break;
+      for (let j = 0; j < 0x400; j++) if (RenderFont(this) === RENDER_FINISH) break;
       this.active = false;
     }
     this.onUpdate = options.onUpdate;
@@ -174,370 +170,742 @@ export class TextPrinter {
   /** RunTextPrinters for this printer (one call per frame). */
   run(): void {
     if (!this.active) return;
-    const cmd = this.renderFont();
+    const cmd = RenderFont(this);
     if (cmd === RENDER_FINISH) this.active = false;
     else this.onUpdate?.(this, cmd);
   }
 
+  /** The next string byte (text_printer.c printerTemplate.currentChar++). */
+  next(): number { return this.str[this.pos++] ?? EOS; }
+
   /** One gFonts[fontId].fontFunction call, before RenderFont's repeat loop. */
-  renderFrame(): number { return this.render(); }
+  renderFrame(): number { return fontFunctionFor(this.fontId)(this); }
   /** text_printer.c RenderFont's repeat-until-non-RENDER_REPEAT loop. */
-  renderUntilUpdate(): number { return this.renderFont(); }
+  renderUntilUpdate(): number { return RenderFont(this); }
   /** Draw the most recently decompressed glyph into this printer's window. */
-  copyCurrentGlyph(): void { this.copyGlyph(gGlyphInfo.pixels, gGlyphInfo.width, gGlyphInfo.height); }
+  copyCurrentGlyph(): void { CopyGlyphToWindow(this); }
+}
 
-  private renderFont(): number {
-    for (;;) {
-      const ret = this.render();
-      if (ret !== RENDER_REPEAT) return ret;
-    }
-  }
+// ---------------------------------------------------------------- text.c FontFunc_*
 
-  private next(): number {
-    return this.str[this.pos++] ?? EOS;
-  }
-
-  private render(): number {
-    if (this.fontId === FONT_BRAILLE) return this.FontFunc_Braille();
-    switch (this.state) {
-      case State.HandleChar: {
-        if (JOY_HELD(A_BUTTON | B_BUTTON) && this.sped) this.delayCounter = 0;
-        if (this.delayCounter && this.textSpeed) {
-          this.delayCounter--;
-          if (textFlags.canABSpeedUpPrint && JOY_NEW(A_BUTTON | B_BUTTON)) {
-            this.sped = true;
-            this.delayCounter = 0;
-          }
-          return RENDER_UPDATE;
-        }
-        this.delayCounter = textFlags.autoScroll ? 1 : this.textSpeed;
-        let c = this.next();
-        switch (c) {
-          case CHAR_NEWLINE:
-            this.currentX = this.x;
-            this.currentY += (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
-            return RENDER_REPEAT;
-          case PLACEHOLDER_BEGIN:
-            this.pos++;
-            return RENDER_REPEAT;
-          case EXT_CTRL_CODE_BEGIN: {
-            const code = this.next();
-            switch (code) {
-              case 0x01: this.fg = this.next(); return RENDER_REPEAT;
-              case 0x02: this.bg = this.next(); return RENDER_REPEAT;
-              case 0x03: this.shadow = this.next(); return RENDER_REPEAT;
-              case 0x04: this.fg = this.next(); this.bg = this.next(); this.shadow = this.next(); return RENDER_REPEAT;
-              case 0x05: this.pos++; return RENDER_REPEAT;
-              case 0x06: this.fontId = this.next(); return RENDER_REPEAT;
-              case 0x07: return RENDER_REPEAT;
-              case 0x08: this.delayCounter = this.next(); this.state = State.Pause; return RENDER_REPEAT;
-              case 0x09: this.state = State.Wait; return RENDER_UPDATE;
-              case 0x0a: this.state = State.WaitSe; return RENDER_UPDATE;
-              case 0x0b: { const song = this.next() | (this.next() << 8); sound.playBGM(song); return RENDER_REPEAT; }
-              case 0x0c: c = this.next(); break;
-              case 0x0d: this.currentX = this.x + this.next(); return RENDER_REPEAT;
-              case 0x0e: this.currentY = this.y + this.next(); return RENDER_REPEAT;
-              case 0x0f: this.window.fill(this.bg); return RENDER_REPEAT;
-              case 0x10: { const se = this.next() | (this.next() << 8); sound.playSE(se); return RENDER_REPEAT; }
-              case 0x11: {
-                const width = this.next();
-                if (width > 0) { this.clearSpan(width); this.currentX += width; return RENDER_PRINT; }
-                return RENDER_REPEAT;
-              }
-              case 0x12: this.currentX = this.next() + this.x; return RENDER_REPEAT;
-              case 0x13: {
-                const width = this.next() + this.x - this.currentX;
-                if (width > 0) { this.clearSpan(width); this.currentX += width; return RENDER_PRINT; }
-                return RENDER_REPEAT;
-              }
-              case 0x14: this.minLetterSpacing = this.next(); return RENDER_REPEAT;
-              case 0x15: case 0x16: return RENDER_REPEAT;
-              case 0x17: sound.pauseBGM(); return RENDER_REPEAT;
-              case 0x18: sound.resumeBGM(); return RENDER_REPEAT;
-              default: return RENDER_REPEAT;
-            }
-            break;
-          }
-          case CHAR_PROMPT_CLEAR:
-            this.state = State.Clear;
-            this.downArrowDelay = 0;
-            this.downArrowIndex = 0;
-            return RENDER_UPDATE;
-          case CHAR_PROMPT_SCROLL:
-            this.state = State.ScrollStart;
-            this.downArrowDelay = 0;
-            this.downArrowIndex = 0;
-            return RENDER_UPDATE;
-          case CHAR_EXTRA_SYMBOL:
-            c = this.next() | 0x100;
-            break;
-          case CHAR_KEYPAD_ICON: {
-            const icon = this.next();
-            const width = this.drawKeypadIcon(icon);
-            this.currentX += width + this.letterSpacing;
-            return RENDER_PRINT;
-          }
-          case EOS:
-            return RENDER_FINISH;
-        }
-        const g = glyph(this.fontId, c);
-        gGlyphInfo.pixels = g.pixels;
-        gGlyphInfo.width = g.width;
-        gGlyphInfo.height = g.height;
-        this.copyGlyph(g.pixels, g.width, g.height);
-        if (this.minLetterSpacing) {
-          this.currentX += g.width;
-          const width = this.minLetterSpacing - g.width;
-          if (width > 0) { this.clearSpan(width); this.currentX += width; }
-        } else {
-          this.currentX += g.width;
-        }
-        return RENDER_PRINT;
-      }
-      case State.Wait:
-        if (this.waitForButton()) this.state = State.HandleChar;
-        return RENDER_UPDATE;
-      case State.Clear:
-        if (this.waitWithDownArrow()) {
-          this.window.fill(this.bg);
-          this.currentX = this.x;
-          this.currentY = this.y;
-          this.state = State.HandleChar;
-        }
-        return RENDER_UPDATE;
-      case State.ScrollStart:
-        if (this.waitWithDownArrow()) {
-          this.window.fillRect(this.bg, this.currentX, this.currentY, 10, 12);
-          this.scrollDistance = (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
-          this.currentX = this.x;
-          this.state = State.Scroll;
-        }
-        return RENDER_UPDATE;
-      case State.Scroll:
-        if (this.scrollDistance) {
-          const speed = SCROLL_SPEEDS[textOptions.speed] ?? 2;
-          const step = Math.min(this.scrollDistance, speed);
-          this.window.scroll(step, this.bg);
-          this.scrollDistance -= step;
-        } else {
-          this.state = State.HandleChar;
-        }
-        return RENDER_UPDATE;
-      case State.WaitSe:
-        if (!sound.isSEPlaying()) this.state = State.HandleChar;
-        return RENDER_UPDATE;
-      case State.Pause:
-        if (this.delayCounter !== 0) this.delayCounter--;
-        else this.state = State.HandleChar;
-        return RENDER_UPDATE;
-    }
-    return RENDER_FINISH;
-  }
-
-  /**
-   * FontFunc_Braille (braille_text.c): the same printer states as the normal
-   * font, with Braille-specific character handling and glyph data.
-   */
-  private FontFunc_Braille(): number {
-    switch (this.state) {
-      case State.HandleChar:
-        return this.FontFunc_Braille_HandleChar();
-      case State.Wait:
-        if (this.waitForButton()) this.state = State.HandleChar;
-        return RENDER_UPDATE;
-      case State.Clear:
-        if (this.waitWithDownArrow()) {
-          this.window.fill(this.bg);
-          this.currentX = this.x;
-          this.currentY = this.y;
-          this.state = State.HandleChar;
-        }
-        return RENDER_UPDATE;
-      case State.ScrollStart:
-        if (this.waitWithDownArrow()) {
-          this.window.fillRect(this.bg, this.currentX, this.currentY, 10, 12);
-          this.scrollDistance = (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
-          this.currentX = this.x;
-          this.state = State.Scroll;
-        }
-        return RENDER_UPDATE;
-      case State.Scroll:
-        if (this.scrollDistance) {
-          const speed = SCROLL_SPEEDS[textOptions.speed] ?? 2;
-          const step = Math.min(this.scrollDistance, speed);
-          this.window.scroll(step, this.bg);
-          this.scrollDistance -= step;
-        } else {
-          this.state = State.HandleChar;
-        }
-        return RENDER_UPDATE;
-      case State.WaitSe:
-        if (!sound.isSEPlaying()) this.state = State.HandleChar;
-        return RENDER_UPDATE;
-      case State.Pause:
-        if (this.delayCounter !== 0) this.delayCounter--;
-        else this.state = State.HandleChar;
-        return RENDER_UPDATE;
-    }
-    return RENDER_FINISH;
-  }
-
-  /**
-   * FontFunc_Braille's RENDER_STATE_HANDLE_CHAR behavior. Differences from
-   * normal text: sounds are skipped, keypad icons draw nothing, unknown
-   * control codes print as glyphs, and every glyph is 16 px wide.
-   */
-  private FontFunc_Braille_HandleChar(): number {
-    if (JOY_HELD(A_BUTTON | B_BUTTON) && this.sped) this.delayCounter = 0;
-    if (this.delayCounter && this.textSpeed) {
-      this.delayCounter--;
-      if (textFlags.canABSpeedUpPrint && JOY_NEW(A_BUTTON | B_BUTTON)) {
-        this.sped = true;
-        this.delayCounter = 0;
-      }
-      return RENDER_UPDATE;
-    }
-    this.delayCounter = textFlags.autoScroll ? 1 : this.textSpeed;
-    let c = this.next();
-    switch (c) {
-      case EOS:
-        return RENDER_FINISH;
-      case CHAR_NEWLINE:
-        this.currentX = this.x;
-        this.currentY += (gFonts ?? FONT_INFOS)[this.fontId].maxLetterHeight + this.lineSpacing;
-        return RENDER_REPEAT;
-      case PLACEHOLDER_BEGIN:
-        this.pos++;
-        return RENDER_REPEAT;
-      case EXT_CTRL_CODE_BEGIN:
-        c = this.next();
-        switch (c) {
-          case 0x01: this.fg = this.next(); return RENDER_REPEAT;
-          case 0x02: this.bg = this.next(); return RENDER_REPEAT;
-          case 0x03: this.shadow = this.next(); return RENDER_REPEAT;
-          case 0x04: this.fg = this.next(); this.bg = this.next(); this.shadow = this.next(); return RENDER_REPEAT;
-          case 0x05: this.pos++; return RENDER_REPEAT;
-          case 0x06: this.pos++; return RENDER_REPEAT; // sub->glyphId = font; unused by the braille font
-          case 0x07: return RENDER_REPEAT;
-          case 0x08: this.delayCounter = this.next(); this.state = State.Pause; return RENDER_REPEAT;
-          case 0x09:
-            this.state = State.Wait;
-            if (textFlags.autoScroll) this.autoScrollDelay = 0;
-            return RENDER_UPDATE;
-          case 0x0a: this.state = State.WaitSe; return RENDER_UPDATE;
-          case 0x0b: case 0x10: this.pos += 2; return RENDER_REPEAT;
-          case 0x0c: this.pos++; c = this.str[this.pos] ?? EOS; break;
-          case 0x0d: this.currentX = this.x + this.next(); return RENDER_REPEAT;
-          case 0x0e: this.currentY = this.y + this.next(); return RENDER_REPEAT;
-          case 0x0f: this.window.fill(this.bg); return RENDER_REPEAT;
-        }
-        break;
-      case CHAR_PROMPT_CLEAR:
-        this.state = State.Clear;
-        this.downArrowDelay = 0;
-        this.downArrowIndex = 0;
-        return RENDER_UPDATE;
-      case CHAR_PROMPT_SCROLL:
-        this.state = State.ScrollStart;
-        this.downArrowDelay = 0;
-        this.downArrowIndex = 0;
-        return RENDER_UPDATE;
-      case CHAR_EXTRA_SYMBOL:
-        c = this.next() | 0x100;
-        break;
-      case CHAR_KEYPAD_ICON:
-        this.pos++;
-        return RENDER_PRINT;
-    }
-    const g = glyph(FONT_BRAILLE, c);
-    gGlyphInfo.pixels = g.pixels;
-    gGlyphInfo.width = g.width;
-    gGlyphInfo.height = g.height;
-    this.copyGlyph(g.pixels, g.width, g.height);
-    this.currentX += g.width + this.letterSpacing;
-    return RENDER_PRINT;
-  }
-
-  private waitForButton(): boolean {
-    if (textFlags.autoScroll) return this.autoWait();
-    if (JOY_NEW(A_BUTTON | B_BUTTON)) {
-      sound.playSE(sound.SE_SELECT);
-      return true;
-    }
-    return false;
-  }
-
-  private autoScrollDelay = 0;
-  private autoWait(): boolean {
-    if (this.autoScrollDelay === 120) return true;
-    this.autoScrollDelay++;
-    return false;
-  }
-
-  private waitWithDownArrow(): boolean {
-    if (textFlags.autoScroll) return this.autoWait();
-    this.drawDownArrow();
-    if (JOY_NEW(A_BUTTON | B_BUTTON)) {
-      sound.playSE(sound.SE_SELECT);
-      return true;
-    }
-    return false;
-  }
-
-  private drawDownArrow(): void {
-    if (this.downArrowDelay !== 0) {
-      this.downArrowDelay--;
-      return;
-    }
-    this.window.fillRect(this.bg, this.currentX, this.currentY, 10, 12);
-    const arrow = downArrow();
-    // text.c: DARK_DOWN_ARROW_OFFSET is 256 bytes (8 tiles), i.e. x=64
-    // in the exported 128-pixel-wide, row-major image, not a second row.
-    const srcX = (textFlags.useAlternateDownArrow ? 64 : 0) + DOWN_ARROW_X[this.downArrowIndex & 3];
-    this.window.blit(arrow.pixels, arrow.width, srcX, 0, this.currentX, this.currentY, 10, 12, true);
-    this.downArrowDelay = 8;
-    this.downArrowIndex = (this.downArrowIndex + 1) & 3;
-  }
-
-  private clearSpan(_width: number): void {
-    ClearTextSpan(this, _width);
-  }
-
-  private copyGlyph(pixels: Uint8Array, width: number, height: number): void {
-    const colors = [this.bg, this.fg, this.shadow];
-    const maxW = Math.min(width, this.window.pixelWidth - this.currentX);
-    const maxH = Math.min(height, this.window.pixelHeight - this.currentY);
-    for (let y = 0; y < maxH; y++) {
-      for (let x = 0; x < maxW; x++) {
-        // GLYPH_COPY: pixels whose final color is 0 leave the window untouched.
-        const color = colors[pixels[y * 16 + x]] ?? this.bg;
-        if (color !== 0) this.window.setPixel(this.currentX + x, this.currentY + y, color);
-      }
-    }
-  }
-
-  private drawKeypadIcon(icon: number): number {
-    const info = KEYPAD_ICONS[icon];
-    if (!info) return 0;
-    if (!keypadPixels) {
-      const raw = rom.fonts.keypad_icons;
-      keypadPixels = b64(raw.pixels);
-      keypadWidth = raw.width;
-    }
-    const [tile, w, h] = info;
-    const cols = keypadWidth / 8;
-    const sx = (tile % cols) * 8;
-    const sy = Math.floor(tile / cols) * 8;
-    this.window.blit(keypadPixels, keypadWidth, sx, sy, this.currentX, this.currentY, w, h, true);
-    return w;
+/** gFontInfos[].fontFunction (new_menu_helpers.c); FONT_BOLD is NULL in C. */
+function fontFunctionFor(fontId: number): (printer: TextPrinter) => number {
+  switch (fontId) {
+    case FONT_SMALL: return FontFunc_Small;
+    case FONT_NORMAL_COPY_1: return FontFunc_NormalCopy1;
+    case FONT_NORMAL: return FontFunc_Normal;
+    case FONT_NORMAL_COPY_2: return FontFunc_NormalCopy2;
+    case FONT_MALE: return FontFunc_Male;
+    case FONT_FEMALE: return FontFunc_Female;
+    case FONT_BRAILLE: return FontFunc_Braille;
+    default: throw new Error(`gFontInfos[${fontId}].fontFunction is NULL`);
   }
 }
 
+/** text.c FontFunc_Small. */
+export function FontFunc_Small(printer: TextPrinter): number {
+  if (!printer.hasGlyphIdBeenSet) {
+    printer.glyphId = FONT_SMALL;
+    printer.hasGlyphIdBeenSet = true;
+  }
+  return RenderText(printer);
+}
+
+/** text.c FontFunc_NormalCopy1. */
+export function FontFunc_NormalCopy1(printer: TextPrinter): number {
+  if (!printer.hasGlyphIdBeenSet) {
+    printer.glyphId = FONT_NORMAL_COPY_1;
+    printer.hasGlyphIdBeenSet = true;
+  }
+  return RenderText(printer);
+}
+
+/** text.c FontFunc_Normal. */
+export function FontFunc_Normal(printer: TextPrinter): number {
+  if (!printer.hasGlyphIdBeenSet) {
+    printer.glyphId = FONT_NORMAL;
+    printer.hasGlyphIdBeenSet = true;
+  }
+  return RenderText(printer);
+}
+
+/** text.c FontFunc_NormalCopy2. */
+export function FontFunc_NormalCopy2(printer: TextPrinter): number {
+  if (!printer.hasGlyphIdBeenSet) {
+    printer.glyphId = FONT_NORMAL_COPY_2;
+    printer.hasGlyphIdBeenSet = true;
+  }
+  return RenderText(printer);
+}
+
+/** text.c FontFunc_Male. */
+export function FontFunc_Male(printer: TextPrinter): number {
+  if (!printer.hasGlyphIdBeenSet) {
+    printer.glyphId = FONT_MALE;
+    printer.hasGlyphIdBeenSet = true;
+  }
+  return RenderText(printer);
+}
+
+/** text.c FontFunc_Female. */
+export function FontFunc_Female(printer: TextPrinter): number {
+  if (!printer.hasGlyphIdBeenSet) {
+    printer.glyphId = FONT_FEMALE;
+    printer.hasGlyphIdBeenSet = true;
+  }
+  return RenderText(printer);
+}
+
+// ---------------------------------------------------------------- text.c down arrow
+
+/** text.c TextPrinterInitDownArrowCounters. */
+export function TextPrinterInitDownArrowCounters(printer: TextPrinter): void {
+  if (textFlags.autoScroll) {
+    printer.autoScrollDelay = 0;
+  } else {
+    printer.downArrowIndex = 0;
+    printer.downArrowDelay = 0;
+  }
+}
+
+/** text.c TextPrinterDrawDownArrow (the delay branch only decrements the counter). */
+export function TextPrinterDrawDownArrow(printer: TextPrinter): void {
+  if (textFlags.autoScroll) return;
+  if (printer.downArrowDelay !== 0) {
+    printer.downArrowDelay--;
+    return;
+  }
+  printer.window.fillRect(printer.bg, printer.currentX, printer.currentY, 10, 12);
+  const arrow = downArrow();
+  const srcX = (textFlags.useAlternateDownArrow ? DARK_DOWN_ARROW_X : 0) + DOWN_ARROW_X[printer.downArrowIndex & 3];
+  printer.window.blit(arrow.pixels, arrow.width, srcX, 0, printer.currentX, printer.currentY, 10, 12, true);
+  printer.downArrowDelay = CURSOR_DELAY;
+  printer.downArrowIndex = (printer.downArrowIndex + 1) & 3;
+}
+
+/** text.c TextPrinterClearDownArrow. */
+export function TextPrinterClearDownArrow(printer: TextPrinter): void {
+  printer.window.fillRect(printer.bg, printer.currentX, printer.currentY, 10, 12);
+}
+
+/** text.c TextPrinterWaitAutoMode: 50 frames during quest log playback, else 120. */
+export function TextPrinterWaitAutoMode(printer: TextPrinter): boolean {
+  const delay = gQuestLogState === C.QL_STATE_PLAYBACK ? 50 : 120;
+  if (printer.autoScrollDelay === delay) return true;
+  printer.autoScrollDelay++;
+  return false;
+}
+
+/** text.c TextPrinterWaitWithDownArrow. */
+export function TextPrinterWaitWithDownArrow(printer: TextPrinter): boolean {
+  if (textFlags.autoScroll) return TextPrinterWaitAutoMode(printer);
+  TextPrinterDrawDownArrow(printer);
+  if (JOY_NEW(A_BUTTON | B_BUTTON)) {
+    sound.playSE(sound.SE_SELECT);
+    return true;
+  }
+  return false;
+}
+
+/** text.c TextPrinterWait. */
+export function TextPrinterWait(printer: TextPrinter): boolean {
+  if (textFlags.autoScroll) return TextPrinterWaitAutoMode(printer);
+  if (JOY_NEW(A_BUTTON | B_BUTTON)) {
+    sound.playSE(sound.SE_SELECT);
+    return true;
+  }
+  return false;
+}
+
+/** text.c DrawDownArrow; the C's windowId and u8* counters are adapted to a surface and counter records. */
+export function DrawDownArrow(window: TextSurface, x: number, y: number, bgColor: number, drawArrow: boolean, counter: { value: number }, yCoordIndex: { value: number }): void {
+  if (counter.value !== 0) {
+    counter.value--;
+    return;
+  }
+  window.fillRect(bgColor, x, y, 10, 12);
+  if (!drawArrow) {
+    const arrow = downArrow();
+    const srcX = (textFlags.useAlternateDownArrow ? DARK_DOWN_ARROW_X : 0) + DOWN_ARROW_X[yCoordIndex.value & 3];
+    window.blit(arrow.pixels, arrow.width, srcX, 0, x, y, 10, 12, true);
+    counter.value = CURSOR_DELAY;
+    yCoordIndex.value++;
+  }
+}
+
+// ---------------------------------------------------------------- text.c RenderText
+
+/** text.c RenderText: the printer state machine behind gFonts[fontId].fontFunction. */
+export function RenderText(printer: TextPrinter): number {
+  switch (printer.state) {
+    case State.HandleChar: {
+      if (JOY_HELD(A_BUTTON | B_BUTTON) && printer.sped) printer.delayCounter = 0;
+      if (printer.delayCounter && printer.textSpeed) {
+        printer.delayCounter--;
+        if (textFlags.canABSpeedUpPrint && JOY_NEW(A_BUTTON | B_BUTTON)) {
+          printer.sped = true;
+          printer.delayCounter = 0;
+        }
+        return RENDER_UPDATE;
+      }
+      printer.delayCounter = textFlags.autoScroll ? 1 : printer.textSpeed;
+      let currChar = printer.next();
+      switch (currChar) {
+        case CHAR_NEWLINE:
+          printer.currentX = printer.x;
+          printer.currentY += (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+          return RENDER_REPEAT;
+        case PLACEHOLDER_BEGIN:
+          printer.pos++;
+          return RENDER_REPEAT;
+        case EXT_CTRL_CODE_BEGIN: {
+          const code = printer.next();
+          switch (code) {
+            case C.EXT_CTRL_CODE_COLOR:
+              printer.fg = printer.next();
+              GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow);
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_HIGHLIGHT:
+              printer.bg = printer.next();
+              GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow);
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_SHADOW:
+              printer.shadow = printer.next();
+              GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow);
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_COLOR_HIGHLIGHT_SHADOW:
+              printer.fg = printer.next();
+              printer.bg = printer.next();
+              printer.shadow = printer.next();
+              GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow);
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_PALETTE:
+              printer.pos++;
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_FONT:
+              printer.glyphId = printer.next();
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_RESET_FONT:
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_PAUSE:
+              printer.delayCounter = printer.next();
+              printer.state = State.Pause;
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_PAUSE_UNTIL_PRESS:
+              printer.state = State.Wait;
+              if (textFlags.autoScroll) printer.autoScrollDelay = 0;
+              return RENDER_UPDATE;
+            case C.EXT_CTRL_CODE_WAIT_SE:
+              printer.state = State.WaitSe;
+              return RENDER_UPDATE;
+            case C.EXT_CTRL_CODE_PLAY_BGM: {
+              const song = printer.next() | (printer.next() << 8);
+              if (gQuestLogState !== C.QL_STATE_PLAYBACK) sound.playBGM(song);
+              return RENDER_REPEAT;
+            }
+            case C.EXT_CTRL_CODE_PLAY_SE:
+              sound.playSE(printer.next() | (printer.next() << 8));
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_ESCAPE:
+              printer.pos++;
+              currChar = printer.next();
+              break;
+            case C.EXT_CTRL_CODE_SHIFT_RIGHT:
+              printer.currentX = printer.x + printer.next();
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_SHIFT_DOWN:
+              printer.currentY = printer.y + printer.next();
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_FILL_WINDOW:
+              printer.window.fill(printer.bg);
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_PAUSE_MUSIC:
+              sound.pauseBGM();
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_RESUME_MUSIC:
+              sound.resumeBGM();
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_CLEAR: {
+              const width = printer.next();
+              if (width > 0) {
+                ClearTextSpan(printer, width);
+                printer.currentX += width;
+                return RENDER_PRINT;
+              }
+              return RENDER_REPEAT;
+            }
+            case C.EXT_CTRL_CODE_SKIP:
+              printer.currentX = printer.next() + printer.x;
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_CLEAR_TO: {
+              const widthHelper = printer.next() + printer.x;
+              const width = widthHelper - printer.currentX;
+              if (width > 0) {
+                ClearTextSpan(printer, width);
+                printer.currentX += width;
+                return RENDER_PRINT;
+              }
+              return RENDER_REPEAT;
+            }
+            case C.EXT_CTRL_CODE_MIN_LETTER_SPACING:
+              printer.minLetterSpacing = printer.next();
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_JPN:
+              printer.japanese = true;
+              return RENDER_REPEAT;
+            case C.EXT_CTRL_CODE_ENG:
+              printer.japanese = false;
+              return RENDER_REPEAT;
+          }
+          break;
+        }
+        case CHAR_PROMPT_CLEAR:
+          printer.state = State.Clear;
+          TextPrinterInitDownArrowCounters(printer);
+          return RENDER_UPDATE;
+        case CHAR_PROMPT_SCROLL:
+          printer.state = State.ScrollStart;
+          TextPrinterInitDownArrowCounters(printer);
+          return RENDER_UPDATE;
+        case CHAR_EXTRA_SYMBOL:
+          currChar = printer.next() | 0x100;
+          break;
+        case CHAR_KEYPAD_ICON: {
+          const keypadIconId = printer.next();
+          gGlyphInfo.width = DrawKeypadIcon(printer.window, keypadIconId, printer.currentX, printer.currentY);
+          printer.currentX += gGlyphInfo.width + printer.letterSpacing;
+          return RENDER_PRINT;
+        }
+        case EOS:
+          return RENDER_FINISH;
+      }
+
+      switch (printer.glyphId) {
+        case FONT_SMALL:
+          DecompressGlyph_Small(currChar, printer.japanese);
+          break;
+        case FONT_NORMAL_COPY_1:
+          DecompressGlyph_NormalCopy1(currChar, printer.japanese);
+          break;
+        case FONT_NORMAL:
+          DecompressGlyph_Normal(currChar, printer.japanese);
+          break;
+        case FONT_NORMAL_COPY_2:
+          DecompressGlyph_NormalCopy2(currChar, printer.japanese);
+          break;
+        case FONT_MALE:
+          DecompressGlyph_Male(currChar, printer.japanese);
+          break;
+        case FONT_FEMALE:
+          DecompressGlyph_Female(currChar, printer.japanese);
+          break;
+      }
+
+      CopyGlyphToWindow(printer);
+
+      if (printer.minLetterSpacing) {
+        printer.currentX += gGlyphInfo.width;
+        const width = printer.minLetterSpacing - gGlyphInfo.width;
+        if (width > 0) {
+          ClearTextSpan(printer, width);
+          printer.currentX += width;
+        }
+      } else if (printer.japanese) {
+        printer.currentX += gGlyphInfo.width + printer.letterSpacing;
+      } else {
+        printer.currentX += gGlyphInfo.width;
+      }
+      return RENDER_PRINT;
+    }
+    case State.Wait:
+      if (TextPrinterWait(printer)) printer.state = State.HandleChar;
+      return RENDER_UPDATE;
+    case State.Clear:
+      if (TextPrinterWaitWithDownArrow(printer)) {
+        printer.window.fill(printer.bg);
+        printer.currentX = printer.x;
+        printer.currentY = printer.y;
+        printer.state = State.HandleChar;
+      }
+      return RENDER_UPDATE;
+    case State.ScrollStart:
+      if (TextPrinterWaitWithDownArrow(printer)) {
+        TextPrinterClearDownArrow(printer);
+        printer.scrollDistance = (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+        printer.currentX = printer.x;
+        printer.state = State.Scroll;
+      }
+      return RENDER_UPDATE;
+    case State.Scroll:
+      if (printer.scrollDistance) {
+        const speed = SCROLL_SPEEDS[textOptions.speed] ?? 2;
+        const step = Math.min(printer.scrollDistance, speed);
+        printer.window.scroll(step, printer.bg);
+        printer.scrollDistance -= step;
+      } else {
+        printer.state = State.HandleChar;
+      }
+      return RENDER_UPDATE;
+    case State.WaitSe:
+      if (!sound.isSEPlaying()) printer.state = State.HandleChar;
+      return RENDER_UPDATE;
+    case State.Pause:
+      if (printer.delayCounter !== 0) printer.delayCounter--;
+      else printer.state = State.HandleChar;
+      return RENDER_UPDATE;
+  }
+  return RENDER_FINISH;
+}
+
+/**
+ * braille_text.c FontFunc_Braille: the same printer states as RenderText, with
+ * Braille-specific character handling and glyph data.
+ */
+export function FontFunc_Braille(printer: TextPrinter): number {
+  switch (printer.state) {
+    case State.HandleChar:
+      return FontFunc_Braille_HandleChar(printer);
+    case State.Wait:
+      if (TextPrinterWait(printer)) printer.state = State.HandleChar;
+      return RENDER_UPDATE;
+    case State.Clear:
+      if (TextPrinterWaitWithDownArrow(printer)) {
+        printer.window.fill(printer.bg);
+        printer.currentX = printer.x;
+        printer.currentY = printer.y;
+        printer.state = State.HandleChar;
+      }
+      return RENDER_UPDATE;
+    case State.ScrollStart:
+      if (TextPrinterWaitWithDownArrow(printer)) {
+        TextPrinterClearDownArrow(printer);
+        printer.scrollDistance = (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+        printer.currentX = printer.x;
+        printer.state = State.Scroll;
+      }
+      return RENDER_UPDATE;
+    case State.Scroll:
+      if (printer.scrollDistance) {
+        const speed = SCROLL_SPEEDS[textOptions.speed] ?? 2;
+        const step = Math.min(printer.scrollDistance, speed);
+        printer.window.scroll(step, printer.bg);
+        printer.scrollDistance -= step;
+      } else {
+        printer.state = State.HandleChar;
+      }
+      return RENDER_UPDATE;
+    case State.WaitSe:
+      if (!sound.isSEPlaying()) printer.state = State.HandleChar;
+      return RENDER_UPDATE;
+    case State.Pause:
+      if (printer.delayCounter !== 0) printer.delayCounter--;
+      else printer.state = State.HandleChar;
+      return RENDER_UPDATE;
+  }
+  return RENDER_FINISH;
+}
+
+/**
+ * FontFunc_Braille's RENDER_STATE_HANDLE_CHAR behavior. Differences from
+ * normal text: sounds are skipped, keypad icons draw nothing, unknown
+ * control codes print as glyphs, and every glyph is 16 px wide.
+ */
+function FontFunc_Braille_HandleChar(printer: TextPrinter): number {
+  if (JOY_HELD(A_BUTTON | B_BUTTON) && printer.sped) printer.delayCounter = 0;
+  if (printer.delayCounter && printer.textSpeed) {
+    printer.delayCounter--;
+    if (textFlags.canABSpeedUpPrint && JOY_NEW(A_BUTTON | B_BUTTON)) {
+      printer.sped = true;
+      printer.delayCounter = 0;
+    }
+    return RENDER_UPDATE;
+  }
+  printer.delayCounter = textFlags.autoScroll ? 1 : printer.textSpeed;
+  let c = printer.next();
+  switch (c) {
+    case EOS:
+      return RENDER_FINISH;
+    case CHAR_NEWLINE:
+      printer.currentX = printer.x;
+      printer.currentY += (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+      return RENDER_REPEAT;
+    case PLACEHOLDER_BEGIN:
+      printer.pos++;
+      return RENDER_REPEAT;
+    case EXT_CTRL_CODE_BEGIN:
+      c = printer.next();
+      switch (c) {
+        case 0x01: printer.fg = printer.next(); GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow); return RENDER_REPEAT;
+        case 0x02: printer.bg = printer.next(); GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow); return RENDER_REPEAT;
+        case 0x03: printer.shadow = printer.next(); GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow); return RENDER_REPEAT;
+        case 0x04: printer.fg = printer.next(); printer.bg = printer.next(); printer.shadow = printer.next(); GenerateFontHalfRowLookupTable(printer.fg, printer.bg, printer.shadow); return RENDER_REPEAT;
+        case 0x05: printer.pos++; return RENDER_REPEAT;
+        case 0x06: printer.pos++; return RENDER_REPEAT; // sub->glyphId = font; unused by the braille font
+        case 0x07: return RENDER_REPEAT;
+        case 0x08: printer.delayCounter = printer.next(); printer.state = State.Pause; return RENDER_REPEAT;
+        case 0x09:
+          printer.state = State.Wait;
+          if (textFlags.autoScroll) printer.autoScrollDelay = 0;
+          return RENDER_UPDATE;
+        case 0x0a: printer.state = State.WaitSe; return RENDER_UPDATE;
+        case 0x0b: case 0x10: printer.pos += 2; return RENDER_REPEAT;
+        case 0x0c: c = printer.next(); break;
+        case 0x0d: printer.currentX = printer.x + printer.next(); return RENDER_REPEAT;
+        case 0x0e: printer.currentY = printer.y + printer.next(); return RENDER_REPEAT;
+        case 0x0f: printer.window.fill(printer.bg); return RENDER_REPEAT;
+      }
+      break;
+    case CHAR_PROMPT_CLEAR:
+      printer.state = State.Clear;
+      TextPrinterInitDownArrowCounters(printer);
+      return RENDER_UPDATE;
+    case CHAR_PROMPT_SCROLL:
+      printer.state = State.ScrollStart;
+      TextPrinterInitDownArrowCounters(printer);
+      return RENDER_UPDATE;
+    case CHAR_EXTRA_SYMBOL:
+      c = printer.next() | 0x100;
+      break;
+    case CHAR_KEYPAD_ICON:
+      printer.pos++;
+      return RENDER_PRINT;
+  }
+  const g = glyph(FONT_BRAILLE, c);
+  gGlyphInfo.pixels = g.pixels;
+  gGlyphInfo.width = g.width;
+  gGlyphInfo.height = g.height;
+  CopyGlyphToWindow(printer);
+  printer.currentX += g.width + printer.letterSpacing;
+  return RENDER_PRINT;
+}
+
+// ---------------------------------------------------------------- text.c glyph decompression
+
+const glyphTables = new Map<string, Uint16Array>();
+
+/** The u16 INCBIN glyph data of text.c (sFont*Glyphs), cached. */
+function glyphTable(name: string): Uint16Array {
+  let table = glyphTables.get(name);
+  if (!table) {
+    table = incbin16(name);
+    glyphTables.set(name, table);
+  }
+  return table;
+}
+
+/**
+ * The text.c `if (glyphId == 0)` branches fill every pixel of gGlyphInfo with
+ * GetLastTextColor(2), the background color: role 0 is the bg color when the
+ * glyph is copied into a window.
+ */
+function fillGlyphInfo(width: number, height: number): void {
+  gGlyphInfo.pixels.fill(0);
+  gGlyphInfo.width = width;
+  gGlyphInfo.height = height;
+}
+
+/** text.c DecompressGlyph_Small. */
+export function DecompressGlyph_Small(glyphId: number, isJapanese: boolean): void {
+  if (isJapanese === true) {
+    const glyphs = glyphTable("sFontSmallJapaneseGlyphs");
+    const base = 0x100 * (glyphId >> 4) + 0x8 * (glyphId & 0xF);
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x80, gGlyphInfo.pixels, 0, 8);
+    gGlyphInfo.width = 8;
+    gGlyphInfo.height = 12;
+  } else {
+    const glyphs = glyphTable("sFontSmallLatinGlyphs");
+    const base = 0x10 * glyphId;
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 0, 8);
+    gGlyphInfo.width = GetGlyphWidth_Small(glyphId, false);
+    gGlyphInfo.height = 13;
+  }
+}
+
+/** text.c DecompressGlyph_NormalCopy1. */
+export function DecompressGlyph_NormalCopy1(glyphId: number, isJapanese: boolean): void {
+  if (isJapanese === true) {
+    const glyphs = glyphTable("sFontTallJapaneseGlyphs");
+    const base = 0x100 * (glyphId >> 4) + 0x8 * (glyphId & 0xF);
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x80, gGlyphInfo.pixels, 0, 8);
+    gGlyphInfo.width = 8;
+    gGlyphInfo.height = 16;
+  } else {
+    const glyphs = glyphTable("sFontNormalCopy1LatinGlyphs");
+    const base = 0x20 * glyphId;
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x10, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x18, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_NormalCopy1(glyphId, false);
+    gGlyphInfo.height = 14;
+  }
+}
+
+/** text.c DecompressGlyph_Normal. */
+export function DecompressGlyph_Normal(glyphId: number, isJapanese: boolean): void {
+  if (isJapanese === true) {
+    if (glyphId === 0) {
+      fillGlyphInfo(10, 12);
+      return;
+    }
+    const glyphs = glyphTable("sFontNormalJapaneseGlyphs");
+    const base = 0x100 * (glyphId >> 3) + 0x10 * (glyphId & 0x7);
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x80, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x88, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_Normal(glyphId, true);
+    gGlyphInfo.height = 12;
+  } else {
+    if (glyphId === 0) {
+      fillGlyphInfo(GetGlyphWidth_Normal(0, false), 14);
+      return;
+    }
+    const glyphs = glyphTable("sFontNormalLatinGlyphs");
+    const base = 0x20 * glyphId;
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x10, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x18, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_Normal(glyphId, false);
+    gGlyphInfo.height = 14;
+  }
+}
+
+/** text.c DecompressGlyph_NormalCopy2. */
+export function DecompressGlyph_NormalCopy2(glyphId: number, isJapanese: boolean): void {
+  if (isJapanese === true) {
+    if (glyphId === 0) {
+      fillGlyphInfo(10, 12);
+      return;
+    }
+    const glyphs = glyphTable("sFontNormalJapaneseGlyphs");
+    const base = 0x100 * (glyphId >> 3) + 0x10 * (glyphId & 0x7);
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x80, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x88, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_NormalCopy2(glyphId, true);
+    gGlyphInfo.height = 12;
+  } else {
+    DecompressGlyph_Normal(glyphId, isJapanese);
+  }
+}
+
+/** text.c DecompressGlyph_Male. */
+export function DecompressGlyph_Male(glyphId: number, isJapanese: boolean): void {
+  if (isJapanese === true) {
+    if (glyphId === 0) {
+      fillGlyphInfo(10, 12);
+      return;
+    }
+    const glyphs = glyphTable("sFontMaleJapaneseGlyphs");
+    const base = 0x100 * (glyphId >> 3) + 0x10 * (glyphId & 0x7);
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x80, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x88, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_Male(glyphId, true);
+    gGlyphInfo.height = 12;
+  } else {
+    if (glyphId === 0) {
+      fillGlyphInfo(GetGlyphWidth_Male(0, false), 14);
+      return;
+    }
+    const glyphs = glyphTable("sFontMaleLatinGlyphs");
+    const base = 0x20 * glyphId;
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x10, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x18, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_Male(glyphId, false);
+    gGlyphInfo.height = 14;
+  }
+}
+
+/** text.c DecompressGlyph_Female. */
+export function DecompressGlyph_Female(glyphId: number, isJapanese: boolean): void {
+  if (isJapanese === true) {
+    if (glyphId === 0) {
+      fillGlyphInfo(10, 12);
+      return;
+    }
+    const glyphs = glyphTable("sFontFemaleJapaneseGlyphs");
+    const base = 0x100 * (glyphId >> 3) + 0x10 * (glyphId & 0x7);
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x80, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x88, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_Female(glyphId, true);
+    gGlyphInfo.height = 12;
+  } else {
+    if (glyphId === 0) {
+      fillGlyphInfo(GetGlyphWidth_Female(0, false), 14);
+      return;
+    }
+    const glyphs = glyphTable("sFontFemaleLatinGlyphs");
+    const base = 0x20 * glyphId;
+    DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+    DecompressGlyphTile(glyphs, base + 0x8, gGlyphInfo.pixels, 8, 0);
+    DecompressGlyphTile(glyphs, base + 0x10, gGlyphInfo.pixels, 0, 8);
+    DecompressGlyphTile(glyphs, base + 0x18, gGlyphInfo.pixels, 8, 8);
+    gGlyphInfo.width = GetGlyphWidth_Female(glyphId, false);
+    gGlyphInfo.height = 14;
+  }
+}
+
+/** text.c DecompressGlyph_Bold (only RenderTextHandleBold uses it in C). */
+export function DecompressGlyph_Bold(glyphId: number): void {
+  const glyphs = glyphTable("sFontBoldJapaneseGlyphs");
+  const base = 0x100 * (glyphId >> 4) + 0x8 * (glyphId & 0xF);
+  DecompressGlyphTile(glyphs, base, gGlyphInfo.pixels, 0, 0);
+  DecompressGlyphTile(glyphs, base + 0x80, gGlyphInfo.pixels, 0, 8);
+  gGlyphInfo.width = 8;
+  gGlyphInfo.height = 12;
+}
+
+// ---------------------------------------------------------------- text.c keypad icons
+
+/** text.c DrawKeypadIcon: blits sKeypadIcons[id] and returns its width. */
+export function DrawKeypadIcon(window: TextSurface, keypadIconId: number, x: number, y: number): number {
+  const info = KEYPAD_ICONS[keypadIconId];
+  if (!info) return 0;
+  const sheet = GetKeypadIconSheet();
+  const [tile, width, height] = info;
+  const cols = sheet.width / 8;
+  const sx = (tile % cols) * 8;
+  const sy = Math.floor(tile / cols) * 8;
+  window.blit(sheet.pixels, sheet.width, sx, sy, x, y, width, height, true);
+  return width;
+}
+
+// ---------------------------------------------------------------- text_printer.c entry points
+
 /** text_printer.c RenderFont. */
-export function RenderFont(printer: TextPrinter): number { return printer.renderUntilUpdate(); }
+export function RenderFont(printer: TextPrinter): number {
+  for (;;) {
+    const ret = fontFunctionFor(printer.fontId)(printer);
+    if (ret !== RENDER_REPEAT) return ret;
+  }
+}
 
 /** text_printer.c CopyGlyphToWindow, adapted to the current window surface. */
-export function CopyGlyphToWindow(printer: TextPrinter): void { printer.copyCurrentGlyph(); }
+export function CopyGlyphToWindow(printer: TextPrinter): void {
+  const colors = [printer.bg, printer.fg, printer.shadow];
+  const pixels = gGlyphInfo.pixels;
+  const maxW = Math.min(gGlyphInfo.width, printer.window.pixelWidth - printer.currentX);
+  const maxH = Math.min(gGlyphInfo.height, printer.window.pixelHeight - printer.currentY);
+  for (let y = 0; y < maxH; y++) {
+    for (let x = 0; x < maxW; x++) {
+      // GLYPH_COPY: pixels whose final color is 0 leave the window untouched.
+      const color = colors[pixels[y * 16 + x]] ?? printer.bg;
+      if (color !== 0) printer.window.setPixel(printer.currentX + x, printer.currentY + y, color);
+    }
+  }
+}
 
 /** text_printer.c CopyGlyphToWindow_Parameterized, writing 4bpp tile bytes. */
 export function CopyGlyphToWindow_Parameterized(tileData: Uint8Array, currentX: number, currentY: number, width: number, height: number): void {

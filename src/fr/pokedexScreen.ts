@@ -10,7 +10,7 @@
 // list now occupying that task slot, as the C does with the stale task data.
 
 import { sound } from "./audio/sound";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, L_BUTTON, R_BUTTON, START_BUTTON } from "./gba/input";
 import { intToDecimal, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { tasks } from "./gba/tasks";
@@ -1386,7 +1386,7 @@ function DexScreen_GetDexCount(caseId: number, whichDex: number): number {
 }
 
 function DexScreen_PrintControlInfo(src: ArrayLike<number>): void {
-  DexScreen_AddTextPrinterParameterized(1, FONT_SMALL, src, 236 - stringWidth(FONT_SMALL, src, 0), 2, 4);
+  DexScreen_AddTextPrinterParameterized(1, FONT_SMALL, src, 236 - GetStringWidth(FONT_SMALL, src, 0), 2, 4);
 }
 
 function DexScreen_DrawMonPicInCategoryPage(species: number, slot: number, numSlots: number): boolean {
@@ -1713,7 +1713,7 @@ export function DexScreen_PrintMonCategory(windowId: number, species: number, x:
   categoryStr[index] = EOS;
 
   DexScreen_AddTextPrinterParameterized(windowId, FONT_SMALL, categoryStr, x, y, 0);
-  x += stringWidth(FONT_SMALL, categoryStr, 0);
+  x += GetStringWidth(FONT_SMALL, categoryStr, 0);
   DexScreen_AddTextPrinterParameterized(windowId, FONT_SMALL, txt("gText_PokedexPokemon"), x, y, 0);
 }
 
@@ -1786,7 +1786,7 @@ export function DexScreen_PrintMonFlavorText(windowId: number, species: number, 
   species = SpeciesToNationalPokedexNum(species);
   if (DexScreen_GetSetPokedexFlag(species, C.FLAG_GET_CAUGHT, false)) {
     const description = rd<number[]>(symName(gPokedexEntries()[species].description)!);
-    const length = stringWidth(FONT_NORMAL, description, 0) & 0xffff;
+    const length = GetStringWidth(FONT_NORMAL, description, 0) & 0xffff;
     const xCenter = x + Math.trunc((240 - length) / 2);
     if (xCenter > 0) x = xCenter & 0xff;
     else x = 0;
@@ -1948,7 +1948,7 @@ export function DexScreen_DrawMonAreaPage(): number {
   FillWindowPixelBuffer(d.windowIds[9], PIXEL_FILL(0));
   {
     const sizeText = txt("gText_Size");
-    const strWidth = stringWidth(FONT_SMALL, sizeText, 0);
+    const strWidth = GetStringWidth(FONT_SMALL, sizeText, 0);
     DexScreen_AddTextPrinterParameterized(d.windowIds[9], FONT_SMALL, sizeText, Math.trunc((win("sWindowTemplate_AreaMap_Size").width * 8 - strWidth) / 2), 4, 0);
   }
   PutWindowTilemap(d.windowIds[9]);
@@ -1958,7 +1958,7 @@ export function DexScreen_DrawMonAreaPage(): number {
   FillWindowPixelBuffer(d.windowIds[10], PIXEL_FILL(0));
   {
     const areaText = txt("gText_Area");
-    const strWidth = stringWidth(FONT_SMALL, areaText, 0);
+    const strWidth = GetStringWidth(FONT_SMALL, areaText, 0);
     DexScreen_AddTextPrinterParameterized(d.windowIds[10], FONT_SMALL, areaText, Math.trunc((win("sWindowTemplate_AreaMap_Area").width * 8 - strWidth) / 2), 4, 0);
   }
   SetWindowAttribute(d.windowIds[10], WINDOW_TILEMAP_TOP, GetWindowAttribute(d.windowIds[10], WINDOW_TILEMAP_TOP) + kantoMapVoff);
@@ -2017,7 +2017,7 @@ export function DexScreen_DrawMonAreaPage(): number {
     // No markers, display "Area Unknown"
     BlitBitmapRectToWindow(d.windowIds[0], incbin("sBlitTiles_WideEllipse"), 0, 0, 88, 16, 4, 28, 88, 16);
     const areaUnknown = txt("gText_AreaUnknown");
-    const strWidth = stringWidth(FONT_SMALL, areaUnknown, 0);
+    const strWidth = GetStringWidth(FONT_SMALL, areaUnknown, 0);
     DexScreen_AddTextPrinterParameterized(d.windowIds[0], FONT_SMALL, areaUnknown, Math.trunc((96 - strWidth) / 2), 29, 0);
   }
   CopyWindowToVram(d.windowIds[0], COPYWIN_GFX);
@@ -2258,11 +2258,11 @@ export function DexScreen_PrintStringWithAlignment(str: ArrayLike<number>, mode:
       x = 8;
       break;
     case TEXT_CENTER:
-      x = ((240 - stringWidth(FONT_NORMAL, str, 0)) >>> 0) / 2;
+      x = ((240 - GetStringWidth(FONT_NORMAL, str, 0)) >>> 0) / 2;
       break;
     case TEXT_RIGHT:
     default:
-      x = 232 - stringWidth(FONT_NORMAL, str, 0);
+      x = 232 - GetStringWidth(FONT_NORMAL, str, 0);
       break;
   }
   DexScreen_AddTextPrinterParameterized(0, FONT_NORMAL, str, Math.trunc(x), 2, 4);

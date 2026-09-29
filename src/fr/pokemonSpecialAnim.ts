@@ -18,7 +18,7 @@
 
 import { sound } from "./audio/sound";
 import { concat, copy, EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, GetStringWidth } from "./gba/font";
 import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "./gba/input";
 import { getTextSpeedSetting } from "./gba/textPrinter";
 import { tasks, type TaskFunc } from "./gba/tasks";
@@ -791,10 +791,10 @@ export function PSA_PrintMessage(messageId: number): void {
       str = DynamicPlaceholderTextUtil_ExpandPlaceholders(txt("gText_MonLearnedTMHM"));
       break;
     case 4:
-      strWidth += stringWidth(FONT_NORMAL, txt("gText_Counting_2And"), -1);
+      strWidth += GetStringWidth(FONT_NORMAL, txt("gText_Counting_2And"), -1);
       // fallthrough
     case 3:
-      strWidth += stringWidth(FONT_NORMAL, txt("gText_Counting_1"), -1);
+      strWidth += GetStringWidth(FONT_NORMAL, txt("gText_Counting_1"), -1);
       // fallthrough
     case 2: // 1
       str = copy(s1_2_and_Poof_textPtrs()[messageId - 2]);

@@ -7,7 +7,7 @@ import { gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
 import { AddTextPrinter } from "../hw/text";
 import { CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, PutWindowTilemap } from "../hw/window";
 import { getTextSpeedSetting, textFlags } from "../gba/textPrinter";
-import { stringWidth as GetStringWidth } from "../gba/font";
+import { GetStringWidth } from "../gba/font";
 import { battleHost } from "./host";
 import { rom, b64 } from "../rom";
 import { save } from "../save";

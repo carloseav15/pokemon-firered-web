@@ -18,7 +18,7 @@
 
 import { IsCryPlayingOrClearCrySongs, sound, StopCryAndClearCrySongs } from "./audio/sound";
 import { concat, EOS, expandPlaceholders as expand, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, stringVars } from "./gba/charmap";
-import { FONT_NORMAL, stringWidth as stringWidthOf } from "./gba/font";
+import { FONT_NORMAL, GetStringWidth as stringWidthOf } from "./gba/font";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "./gba/input";
 import { tasks } from "./gba/tasks";
 import * as C from "./generated/constants";

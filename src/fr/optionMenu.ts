@@ -5,7 +5,7 @@
 
 import { sound } from "./audio/sound";
 import { intToDecimal, STR_CONV_MODE_LEADING_ZEROS } from "./gba/charmap";
-import { FONT_NORMAL, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP } from "./gba/input";
 import { tasks } from "./gba/tasks";
 import { textOptions } from "./gba/textPrinter";
@@ -161,7 +161,7 @@ function InitOptionMenuBg(): void {
 
 function OptionMenu_PickSwitchCancel(): void {
   const str = rom.text("gText_PickSwitchCancel");
-  const x = 0xe4 - stringWidth(FONT_SMALL, str, 0);
+  const x = 0xe4 - GetStringWidth(FONT_SMALL, str, 0);
   FillWindowPixelBuffer(2, PIXEL_FILL(15));
   AddTextPrinterParameterized3(2, FONT_SMALL, x, 0, sOptionMenuPickSwitchCancelTextColor, 0, str);
   PutWindowTilemap(2);

@@ -2,7 +2,7 @@
 // animations, wallpaper loading, box titles and the box scroll arrows.
 import * as C from "./generated/constants";
 import { StringCopyPadded } from "./generated/stringUtil";
-import { FONT_NORMAL_COPY_1, stringWidth as GetStringWidth } from "./gba/font";
+import { FONT_NORMAL_COPY_1, GetStringWidth } from "./gba/font";
 import { tasks } from "./gba/tasks";
 import { cdata, incbin, incbin16, symName } from "./hw/assets";
 import {

@@ -4,12 +4,13 @@
 // the decomp builds that font from. Also prints a braille message.
 // Run with: npm run check:braille
 
+import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 import assert from 'node:assert/strict';
 import * as C from '../../src/fr/generated/constants.ts';
 import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
-import { FONT_BRAILLE, glyph, stringWidth } from '../../src/fr/gba/font.ts';
+import { FONT_BRAILLE, glyph, GetStringWidth } from '../../src/fr/gba/font.ts';
 import { TextPrinter } from '../../src/fr/gba/textPrinter.ts';
 
 const root = process.cwd() + '/public/fr/';
@@ -89,6 +90,6 @@ const surface: any = {
 };
 const msg = [C.BRAILLE_CHAR_A, C.BRAILLE_CHAR_B, C.BRAILLE_CHAR_C, 0xfe, C.BRAILLE_CHAR_D, 0xff];
 new TextPrinter(surface, FONT_BRAILLE, msg, { x: 0, y: 1, speed: 0 });
-assert.equal(stringWidth(FONT_BRAILLE, msg), 48);
+assert.equal(GetStringWidth(FONT_BRAILLE, msg), 48);
 assert.ok(pixels.some((v) => v !== 1));
 console.log(`PASS: ${compared} braille pixels match braille.png (${glyphsPerRow * rows} glyphs, index map ${JSON.stringify([...mapping])}); message printed, width 48.`);

@@ -13,7 +13,7 @@
 
 import { sound } from "./audio/sound";
 import { stringVars, expandPlaceholders } from "./gba/charmap";
-import { FONT_NORMAL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, GetStringWidth } from "./gba/font";
 import { tasks } from "./gba/tasks";
 import { getTextSpeedSetting } from "./gba/textPrinter";
 import * as C from "./generated/constants";
@@ -196,7 +196,7 @@ const SelectedMailIndex = () => gPlayerPcMenuManager.cursorPos + gPlayerPcMenuMa
 
 function Task_DrawMailboxPcMenu(taskId: number): void {
   const windowId = MailboxPC_GetAddWindow(0);
-  const width = stringWidth(FONT_NORMAL, rom.text("gText_Mailbox"), 0);
+  const width = GetStringWidth(FONT_NORMAL, rom.text("gText_Mailbox"), 0);
   MailboxPC_GetAddWindow(1);
   AddTextPrinterParameterized(windowId, FONT_NORMAL, rom.text("gText_Mailbox"), Math.trunc((80 - width) / 2), 2, 0, null);
   ScheduleBgCopyTilemapToVram(0);

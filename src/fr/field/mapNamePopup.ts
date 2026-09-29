@@ -4,7 +4,7 @@ import { b64, rom } from "../rom";
 import * as C from "../generated/constants";
 import { flagGet } from "../save";
 import { concat, encode } from "../gba/charmap";
-import { FONT_NORMAL, stringWidth } from "../gba/font";
+import { FONT_NORMAL, GetStringWidth } from "../gba/font";
 import { printText } from "../gba/textPrinter";
 import { Window } from "../gba/window";
 import type { Overworld } from "./overworld";
@@ -84,7 +84,7 @@ export class MapNamePopup {
     const floor = this.ow.header.floorNumber;
     const maxWidth = floor ? (floor === FLOOR_ROOFTOP ? 176 : 152) : 112;
     const name = this.mapName();
-    const x = Math.max(0, Math.floor((maxWidth - stringWidth(FONT_NORMAL, name)) / 2));
+    const x = Math.max(0, Math.floor((maxWidth - GetStringWidth(FONT_NORMAL, name)) / 2));
     this.window.fill(1);
     printText(this.window, FONT_NORMAL, name, x, 2);
   }

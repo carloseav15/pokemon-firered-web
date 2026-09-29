@@ -3,9 +3,9 @@
 // block 3 image: tile data plus the screen at 0x3800) and commits it to VRAM like the C DMA copies.
 import { sound } from "./audio/sound";
 import * as C from "./generated/constants";
-import { FONT_FEMALE, FONT_SMALL, glyph, stringWidth as GetStringWidth } from "./gba/font";
+import { FONT_FEMALE, FONT_SMALL, GetKeypadIconSheet, KEYPAD_ICONS, glyph, GetStringWidth } from "./gba/font";
 import { L_BUTTON, R_BUTTON, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy } from "./gba/input";
-import { GenerateFontHalfRowLookupTable, GetKeypadIconSheet, GetLastTextColor, KEYPAD_ICONS, RestoreTextColors, SaveTextColors } from "./gba/textPrinter";
+import { GenerateFontHalfRowLookupTable, GetLastTextColor, RestoreTextColors, SaveTextColors } from "./gba/textPrinter";
 import { incbin, incbin16, loadCData, preloadIncbin } from "./hw/assets";
 import { GetGpuReg, SetGpuReg } from "./hw/gpu";
 import { FillBitmapRect4Bit } from "./hw/window";

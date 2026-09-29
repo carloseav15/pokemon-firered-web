@@ -9,7 +9,7 @@
 import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "./gba/font";
 import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, SELECT_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
@@ -198,14 +198,14 @@ function BagPrintTextOnWindow(windowId: number, fontId: number, str: ArrayLike<n
 }
 
 function BagPrintTextOnWin1CenteredColor0(str: ArrayLike<number>): void {
-  const x = 0x48 - stringWidth(FONT_NORMAL_COPY_1, str, 0);
+  const x = 0x48 - GetStringWidth(FONT_NORMAL_COPY_1, str, 0);
   AddTextPrinterParameterized3(2, FONT_NORMAL_COPY_1, Math.floor(x / 2), 1, sTextColors[0], 0, str);
 }
 
 function BagDrawDepositItemTextBox(): void {
   DrawStdFrameWithCustomTileAndPalette(2, false, 0x081, 12);
   const str = text("gText_DepositItem");
-  const x = 0x40 - stringWidth(FONT_SMALL, str, 0);
+  const x = 0x40 - GetStringWidth(FONT_SMALL, str, 0);
   AddTextPrinterParameterized(2, FONT_SMALL, str, Math.floor(x / 2), 1, 0, null);
 }
 

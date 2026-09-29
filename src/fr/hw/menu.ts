@@ -3,7 +3,7 @@
 
 import { sound } from "../audio/sound";
 import { A_BUTTON, B_BUTTON, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, JOY_NEW, L_BUTTON, R_BUTTON } from "../gba/input";
-import { FONT_INFOS, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "../gba/font";
+import { FONT_INFOS, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "../gba/font";
 import { expandPlaceholders, stringVars } from "../gba/charmap";
 import { tasks } from "../gba/tasks";
 import { cdata, incbin, incbin16 } from "./assets";
@@ -711,7 +711,7 @@ export function TopBarWindowPrintString(str: ArrayLike<number>, _unused: number,
   if (sTopBarWindowId === 0xff) return;
   PutWindowTilemap(sTopBarWindowId);
   FillWindowPixelBuffer(sTopBarWindowId, PIXEL_FILL(15));
-  const width = stringWidth(FONT_SMALL, str, 0);
+  const width = GetStringWidth(FONT_SMALL, str, 0);
   AddTextPrinterParameterized3(sTopBarWindowId, FONT_SMALL, (-20 - width) & 0xff, 1, sTopBarWindowTextColors, 0, str);
   if (copyToVram) CopyWindowToVram(sTopBarWindowId, COPYWIN_FULL);
 }
@@ -722,7 +722,7 @@ export function TopBarWindowPrintTwoStrings(str: ArrayLike<number>, str2: ArrayL
   PutWindowTilemap(sTopBarWindowId);
   FillWindowPixelBuffer(sTopBarWindowId, PIXEL_FILL(15));
   if (str2) {
-    const width = stringWidth(FONT_SMALL, str2, 0);
+    const width = GetStringWidth(FONT_SMALL, str2, 0);
     AddTextPrinterParameterized3(sTopBarWindowId, FONT_SMALL, (-20 - width) & 0xff, 1, color, 0, str2);
   }
   AddTextPrinterParameterized4(sTopBarWindowId, FONT_NORMAL_COPY_1, 4, 1, 0, 0, color, 0, str);

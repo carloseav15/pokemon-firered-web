@@ -3,7 +3,7 @@
 // the ScrCmd_ names so COMMANDS can be indexed directly by the ROM's
 // gScriptCmdTable symbol names (rom.scriptMeta.commands).
 
-import { FONT_BRAILLE, stringWidth } from "../gba/font";
+import { FONT_BRAILLE, GetStringWidth } from "../gba/font";
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { concat, copy, countDigits, encode, intToDecimal, length, stringVars, STR_CONV_MODE_LEFT_ALIGN, EOS } from "../gba/charmap";
@@ -516,7 +516,7 @@ function ScrCmd_hidemonpic(ctx: ScriptRunner): boolean {
 }
 function ScrCmd_showcontestpainting(ctx: ScriptRunner): boolean { ctx.readByte(); return false; }
 function ScrCmd_braillemessage(ctx: ScriptRunner): boolean { ctx.ow.messageBox.showBraille(rom.stringAt(textPtr(ctx))); return false; }
-function ScrCmd_getbraillestringwidth(ctx: ScriptRunner): boolean { varSet(SV.x8004, stringWidth(FONT_BRAILLE, rom.stringAt(textPtr(ctx)), -1)); return false; }
+function ScrCmd_getbraillestringwidth(ctx: ScriptRunner): boolean { varSet(SV.x8004, GetStringWidth(FONT_BRAILLE, rom.stringAt(textPtr(ctx)), -1)); return false; }
 function ScrCmd_bufferspeciesname(ctx: ScriptRunner): boolean { const i = ctx.readByte(); stringVarSet(i, speciesName(varGet(ctx.ScriptReadHalfword()))); return false; }
 function ScrCmd_bufferleadmonspeciesname(ctx: ScriptRunner): boolean { const i = ctx.readByte(); const mon = save.party[leadMonIndex()]; stringVarSet(i, speciesName(mon?.species ?? 0)); return false; }
 function ScrCmd_bufferpartymonnick(ctx: ScriptRunner): boolean { const i = ctx.readByte(); const idx = varGet(ctx.ScriptReadHalfword()); const mon = save.party[idx]; stringVarSet(i, mon ? nickname(mon) : encode("")); return false; }

@@ -7,7 +7,7 @@ import { cdata, incbin, incbin16, symName } from "./hw/assets";
 import { flagGet, flagSet } from "./save";
 import { rom } from "./rom";
 import { Window } from "./gba/window";
-import { FONT_NORMAL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, GetStringWidth } from "./gba/font";
 import { printText, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "./gba/textPrinter";
 import { tilemapCanvas } from "./field/gfx4bpp";
 import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_WHITE, paletteFade, RGB_BLACK } from "./gba/fade";
@@ -154,7 +154,7 @@ export function MapPreview_CreateMapNameWindow(mapsec: number): Window {
   const win = new Window(0, 0, 13, 2);
   win.fill(TEXT_COLOR_WHITE);
   const name = getMapNameGenericBytes(mapsec);
-  const width = stringWidth(FONT_NORMAL, name);
+  const width = GetStringWidth(FONT_NORMAL, name);
   const x = Math.max(0, Math.floor((104 - width) / 2));
   printText(win, FONT_NORMAL, name, x, 2, {
     fg: TEXT_COLOR_RED,

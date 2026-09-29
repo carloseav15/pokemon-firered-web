@@ -3,7 +3,7 @@
 // Clefairy mascot animations, coin display digits, help window, line lights
 // and winning line flashing all follow the decomp.
 
-import { FONT_NORMAL, FONT_SMALL, stringWidth as GetStringWidth } from "../gba/font";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "../gba/font";
 import { A_BUTTON, B_BUTTON, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, JOY_HELD, JOY_NEW, R_BUTTON, START_BUTTON } from "../gba/input";
 import { tasks, type TaskFunc } from "../gba/tasks";
 import {

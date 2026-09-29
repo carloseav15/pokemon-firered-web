@@ -2,7 +2,7 @@
 
 import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
-import { FONT_NORMAL, stringWidth } from "./gba/font";
+import { FONT_NORMAL, GetStringWidth } from "./gba/font";
 import { joy, A_BUTTON } from "./gba/input";
 import { tasks } from "./gba/tasks";
 import { incbin } from "./hw/assets";
@@ -143,9 +143,9 @@ class DiplomaScreen {
     const placeholders = [Uint8Array.from(save.playerName), rom.text(this.hasAllMons ? "gText_Diploma_National" : "gText_Diploma_Kanto")];
     FillWindowPixelBuffer(0, 0);
     let str = expandDynamic(rom.text("gText_Diploma_Player"), placeholders);
-    AddTextPrinterParameterized3(0, FONT_NORMAL, 120 - Math.floor(stringWidth(FONT_NORMAL, str, -1) / 2), 4, colors, -1, str);
+    AddTextPrinterParameterized3(0, FONT_NORMAL, 120 - Math.floor(GetStringWidth(FONT_NORMAL, str, -1) / 2), 4, colors, -1, str);
     str = expandDynamic(rom.text("gText_Diploma_ThisDocument"), placeholders);
-    AddTextPrinterParameterized3(0, FONT_NORMAL, 120 - Math.floor(stringWidth(FONT_NORMAL, str, -1) / 2), 30, colors, -1, str);
+    AddTextPrinterParameterized3(0, FONT_NORMAL, 120 - Math.floor(GetStringWidth(FONT_NORMAL, str, -1) / 2), 30, colors, -1, str);
     AddTextPrinterParameterized3(0, FONT_NORMAL, 120, 105, colors, 0, rom.text("gText_Diploma_GameFreak"));
     PutWindowTilemap(0);
   }

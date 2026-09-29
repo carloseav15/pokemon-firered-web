@@ -5,7 +5,7 @@
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
-import { FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_SMALL, stringWidth } from "../gba/font";
+import { FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_SMALL, GetStringWidth } from "../gba/font";
 import { joy, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON } from "../gba/input";
 import { tasks, type TaskFunc } from "../gba/tasks";
 import { SetFontsPointer, textFlags } from "../gba/textPrinter";
@@ -192,7 +192,7 @@ function moneyString(amount: number): Uint8Array {
 
 export function PrintMoneyAmountInMoneyBox(windowId: number, amount: number, speed: number): void {
   const str = moneyString(amount);
-  AddTextPrinterParameterized(windowId, FONT_SMALL, str, 64 - stringWidth(FONT_SMALL, str, 0), 0xc, speed, null);
+  AddTextPrinterParameterized(windowId, FONT_SMALL, str, 64 - GetStringWidth(FONT_SMALL, str, 0), 0xc, speed, null);
 }
 
 export function PrintMoneyAmount(windowId: number, x: number, y: number, amount: number, speed: number): void {
@@ -251,7 +251,7 @@ function ShowCoinsWindow_Parameterized(windowId: number, tileStart: number, pale
 /** PrintCoinsString (coins.c), right aligned within the 64 pixel window. */
 export function PrintCoinsString(amount: number): void {
   const string = coinsString(amount);
-  const width = stringWidth(FONT_SMALL, string, 0);
+  const width = GetStringWidth(FONT_SMALL, string, 0);
   AddTextPrinterParameterized(sCoinsWindowId, FONT_SMALL, string, 64 - width, 0x0c, 0, null);
 }
 
