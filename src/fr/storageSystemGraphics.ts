@@ -575,7 +575,9 @@ export function ResetReleaseMonSpritePtr(): boolean {
 
 /** SetMovingMonPriority */
 export function SetMovingMonPriority(priority: number): void {
-  gS().movingMonSprite!.oam.priority = priority;
+  // The C writes through movingMonSprite unconditionally; with no mon in hand that store lands in unmapped memory.
+  const sprite = gS().movingMonSprite;
+  if (sprite) sprite.oam.priority = priority;
 }
 
 function SpriteCB_HeldMon(sprite: Sprite): void {

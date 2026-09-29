@@ -21,7 +21,7 @@ import { sound } from "../audio/sound";
 import { save, varGet, SV } from "../save";
 import * as C from "../generated/constants";
 import { rom } from "../rom";
-import { cdata, incbin } from "../hw/assets";
+import { incbin } from "../hw/assets";
 import { FONT_NORMAL, FONT_NORMAL_COPY_1 } from "../gba/font";
 import { printText, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "../gba/textPrinter";
 import { Window } from "../gba/window";
@@ -68,7 +68,7 @@ const sMainMenuTexts = [
   { text: "gText_SeeYa", desc: "gText_SeeYaDescription" },
 ];
 
-const sWindowTemplate_MainMenu = (): WindowTemplate => cdata<WindowTemplate>("pokemon_storage_system_menu", "sWindowTemplate_MainMenu");
+const sWindowTemplate_MainMenu = (): WindowTemplate => ({ bg: 0, tilemapLeft: 1, tilemapTop: 1, width: 17, height: 10, paletteNum: 15, baseBlock: 0x001 });
 
 /** DrawTextWindowAndBufferTiles: render `string` into a 24x2 tile window and copy its first tiles into `dst`. */
 export function DrawTextWindowAndBufferTiles(
@@ -375,6 +375,7 @@ export function Task_PCMainMenu(taskId: number): void {
 /** ShowPokemonStorageSystemPC */
 export function ShowPokemonStorageSystemPC(game?: Game): void {
   if (game) activeGameInstance = game;
+  void preloadStorageSystem(); // the box screen's data loads while the main menu is up
   const taskId = tasks.create(Task_PCMainMenu, 80);
   const task = tasks.tasks[taskId];
   if (task) {

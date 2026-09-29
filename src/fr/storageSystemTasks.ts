@@ -225,11 +225,14 @@ function VBlankCB_PokeStorage(): void {
   ProcessSpriteCopyRequests();
   UnkUtil_Run();
   TransferPlttBuffer();
-  SetGpuReg(REG_OFFSET_BG2HOFS, gS().bg2_X);
+  // gStorage is NULL between FreePokeStorageData and the next screen's VBlank callback; the C reads unmapped memory there.
+  if (stState.gStorage) SetGpuReg(REG_OFFSET_BG2HOFS, stState.gStorage.bg2_X);
 }
 
 function CB2_PokeStorage(): void {
   tasks.run();
+  // Task_ChangeScreen frees gStorage; the rest of this frame would read it through a null pointer (harmless on hardware).
+  if (stState.gStorage === null) return;
   DoScheduledBgTilemapCopiesToVram();
   ScrollBackground();
   UpdateCloseBoxButtonFlash();
@@ -321,6 +324,10 @@ function Task_InitPokeStorage(_taskId: number): void {
     case 0:
       SetVBlankCallback(null);
       SetGpuReg(REG_OFFSET_DISPCNT, 0);
+      // Browser adaptation: on hardware the field's BG setup is still in place when TilemapUtil_SetTilemap reads BG 1's
+      // size/type; the fresh hardware scene starts from the same template layout instead.
+      ResetBgsAndClearDma3BusyFlags(false);
+      InitBgsFromTemplates(0, sc<BgTemplate[]>("sBgTemplates"));
       ResetForPokeStorage();
       if (g.isReopening) {
         switch (sWhichToReshow) {
