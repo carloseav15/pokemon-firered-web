@@ -15,6 +15,7 @@ import { AbilityBattleEffects, CheckMoveLimitations, GetBattlerAtPosition, GetBa
 import { GetWhoStrikesFirst } from "./main";
 import { AI_CalcDmg, AI_TypeCalc, TypeCalc } from "./cmds/part1";
 import { GetGenderFromSpeciesAndPersonality, GetMonData, gEnemyParty, playerMon, type Mon } from "../pokemon/mon";
+import { GetItemEffectParamOffset } from "../pokemon/mon_extra";
 
 const AI_ACTION_DONE = 0x01;
 const AI_ACTION_FLEE = 0x02;
@@ -1089,29 +1090,6 @@ function GetAI_ItemType(itemId: number, e: number[]): number {
   return C.AI_ITEM_NOT_RECOGNIZABLE;
 }
 
-/** pokemon.c GetItemEffectParamOffset, for effect byte 4 (the only one the AI asks about). */
-function GetItemEffectParamOffset4(e: number[], effectBit: number): number {
-  let offset = C.ITEM_EFFECT_ARG_START;
-  let val = e[4] & ~C.ITEM4_PP_UP;
-  for (let j = 0; val; j++, val >>= 1, effectBit >>= 1) {
-    if (!(val & 1)) continue;
-    switch (j) {
-      case 2:
-        if (val & (C.ITEM4_REVIVE >> 2)) val &= ~(C.ITEM4_REVIVE >> 2);
-      // fallthrough
-      case 0:
-      case 1:
-      case 3:
-        if (val & effectBit) return offset;
-        offset++;
-        break;
-      case 7:
-        return 0;
-    }
-  }
-  return 0;
-}
-
 function ShouldUseItem(): boolean {
   const a = G.gActiveBattler;
   const m = gBattleMons[a];
@@ -1132,7 +1110,7 @@ function ShouldUseItem(): boolean {
         shouldUse = true;
         break;
       case C.AI_ITEM_HEAL_HP: {
-        const paramOffset = GetItemEffectParamOffset4(e, 4);
+        const paramOffset = GetItemEffectParamOffset(item, 4, 4);
         if (paramOffset === 0 || m.hp === 0) break;
         if (m.hp < (m.maxHP >> 2) || m.maxHP - m.hp > e[paramOffset]) shouldUse = true;
         break;

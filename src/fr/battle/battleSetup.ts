@@ -8,7 +8,7 @@ import * as C from "../generated/constants";
 import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
 import { afterRoamerBattle } from "../pokemon/roamer";
 import { CreateScriptedWildMon } from "../pokemon/scriptPokemonUtil";
-import { gEnemyParty } from "../pokemon/mon";
+import { CreateEnemyEventMon, GetTrainerEncounterMusicId, gEnemyParty } from "../pokemon/mon";
 import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "../save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
@@ -296,7 +296,7 @@ export class BattleSetup {
   playEncounterMusic(): void {
     if (this.mode === TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC || this.mode === TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE_NO_MUSIC) return;
     const c = rom.constants;
-    const music = rom.trainers[this.opponentA]?.music ?? 0;
+    const music = GetTrainerEncounterMusicId(this.opponentA);
     let song = c.MUS_ENCOUNTER_ROCKET;
     if ([c.TRAINER_ENCOUNTER_MUSIC_FEMALE, c.TRAINER_ENCOUNTER_MUSIC_GIRL, c.TRAINER_ENCOUNTER_MUSIC_TWINS].includes(music)) song = c.MUS_ENCOUNTER_GIRL;
     else if ([c.TRAINER_ENCOUNTER_MUSIC_MALE, c.TRAINER_ENCOUNTER_MUSIC_INTENSE, c.TRAINER_ENCOUNTER_MUSIC_COOL, c.TRAINER_ENCOUNTER_MUSIC_SWIMMER, c.TRAINER_ENCOUNTER_MUSIC_ELITE_FOUR, c.TRAINER_ENCOUNTER_MUSIC_HIKER, c.TRAINER_ENCOUNTER_MUSIC_INTERVIEWER, c.TRAINER_ENCOUNTER_MUSIC_RICH].includes(music)) song = c.MUS_ENCOUNTER_BOY;
@@ -395,6 +395,12 @@ export class BattleSetup {
 
   createScriptedWildMon(species: number, level: number, item: number): void {
     CreateScriptedWildMon(species, level, item);
+    this.scriptedWild = structuredClone(gEnemyParty[0]);
+  }
+
+  /** CreateEnemyEventMon (pokemon.c): special var driven mon for event scripts. */
+  createEnemyEventMon(): void {
+    CreateEnemyEventMon();
     this.scriptedWild = structuredClone(gEnemyParty[0]);
   }
 

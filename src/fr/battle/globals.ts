@@ -201,6 +201,47 @@ export const gPokedudeBattlerStates = structArray(PokedudeBattlerState, 4);
 export const gBattleAnimBgTileBuffer = new Uint8Array(0x2000);
 export const gBattleAnimBgTilemapBuffer = new Uint16Array(0x800);
 
+/** struct SecretBaseRecord (global.h); only fields the game reads are modelled. */
+export type SecretBaseRecord = {
+  secretBaseId: number;
+  gender: number;
+  trainerName: Uint8Array;
+  trainerId: Uint8Array;
+  language: number;
+  numSecretBasesReceived: number;
+  numTimesEntered: number;
+  decorations: Uint8Array;
+  decorationPos: Uint8Array;
+  party: {
+    personality: Uint32Array;
+    moves: Uint16Array;
+    species: Uint16Array;
+    heldItems: Uint16Array;
+    levels: Uint8Array;
+    EVs: Uint8Array;
+  };
+};
+
+/** AllocZeroed(sizeof(struct SecretBaseRecord)). */
+export function newSecretBaseRecord(): SecretBaseRecord {
+  return {
+    secretBaseId: 0, gender: 0,
+    trainerName: new Uint8Array(C.PLAYER_NAME_LENGTH),
+    trainerId: new Uint8Array(C.TRAINER_ID_LENGTH),
+    language: 0, numSecretBasesReceived: 0, numTimesEntered: 0,
+    decorations: new Uint8Array(C.DECOR_MAX_SECRET_BASE),
+    decorationPos: new Uint8Array(C.DECOR_MAX_SECRET_BASE),
+    party: {
+      personality: new Uint32Array(C.PARTY_SIZE),
+      moves: new Uint16Array(C.PARTY_SIZE * C.MAX_MON_MOVES),
+      species: new Uint16Array(C.PARTY_SIZE),
+      heldItems: new Uint16Array(C.PARTY_SIZE),
+      levels: new Uint8Array(C.PARTY_SIZE),
+      EVs: new Uint8Array(C.PARTY_SIZE),
+    },
+  };
+}
+
 /** struct BattleResources */
 export const gBattleResources = {
   flags: { flags: new Uint32Array(4) },
@@ -210,6 +251,7 @@ export const gBattleResources = {
   ai: structArray(AI_ThinkingStruct, 1)[0],
   battleHistory: structArray(BattleHistory, 1)[0],
   AI_ScriptsStack: { ptr: new Uint32Array(8), size: 0 },
+  secretBase: newSecretBaseRecord(),
 };
 
 /** struct BattleSpriteData */
@@ -264,6 +306,7 @@ function clearBattleResourceStorage(): void {
   for (const s of [gBattleResources.ai, gBattleResources.battleHistory]) s.bytes.fill(0);
   gBattleResources.AI_ScriptsStack.ptr.fill(0);
   gBattleResources.AI_ScriptsStack.size = 0;
+  gBattleResources.secretBase = newSecretBaseRecord();
   gBattleAnimBgTileBuffer.fill(0);
   gBattleAnimBgTilemapBuffer.fill(0);
 }

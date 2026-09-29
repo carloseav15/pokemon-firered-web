@@ -46,8 +46,7 @@ import { random } from "./random";
 import { Q_8_8_inv } from "./mathUtil";
 import { rom } from "./rom";
 import { gMonFrontPicTable, DecompressPicFromTable, symPalette } from "./pokemon/pics";
-import { gMonSpritesGfxPtr } from "./battle/globals";
-import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
+import { CreateMonSpritesGfxManager, DestroyMonSpritesGfxManager, gMultiuseSpriteTemplate, MonSpritesGfxManager_GetSpritePtr, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
 import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "./battle/pokeball";
 import { preloadBattleAssets } from "./battle/preload";
 
@@ -200,7 +199,8 @@ function Task_NewGameScene(taskId: number): void {
       FreeAllSpritePalettes();
       break;
     case 1:
-      // AllocZeroed(sOakSpeechResources) + CreateMonSpritesGfxManager
+      // sOakSpeechResources = AllocZeroed(sizeof(*sOakSpeechResources))
+      CreateMonSpritesGfxManager(1, 1);
       res.hasPlayerBeenNamed = false;
       res.currentPage = 0;
       res.windowIds.fill(0);
@@ -970,6 +970,7 @@ function Task_OakSpeech_WaitForFade(taskId: number): void {
 
 function Task_OakSpeech_FreeResources(taskId: number): void {
   FreeAllWindowBuffers();
+  DestroyMonSpritesGfxManager();
   textFlags.canABSpeedUpPrint = false;
   SetMainCallback2(CB2_NewGame);
   tasks.destroy(taskId);
@@ -1056,7 +1057,7 @@ export function returnFromNamingScreen(): void {
 // ---------------------------------------------------------------- sprites and pics
 
 function CreateNidoranFSprite(taskId: number): void {
-  DecompressPicFromTable(gMonFrontPicTable()[INTRO_SPECIES], gMonSpritesGfxPtr.sprites[0], INTRO_SPECIES);
+  DecompressPicFromTable(gMonFrontPicTable()[INTRO_SPECIES], MonSpritesGfxManager_GetSpritePtr(0), INTRO_SPECIES);
   const pal = cdata<Array<{ data: unknown; tag: number }>>("data", "gMonPaletteTable")[INTRO_SPECIES];
   LoadSpritePalette({ data: symPalette(pal.data), tag: pal.tag });
   SetMultiuseSpriteTemplateToPokemon(INTRO_SPECIES, 0);

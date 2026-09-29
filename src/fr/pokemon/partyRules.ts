@@ -3,6 +3,7 @@ import { rom } from "../rom";
 import * as C from "../generated/constants";
 import { flagGet, save } from "../save";
 import type { Pokemon } from "./pokemon";
+import { GetPlayerPartyHighestLevel } from "./mon";
 
 /** GetMoveRelearnerMoves (pokemon.c): preserve learnset order and skip known or repeated moves. */
 export function GetMoveRelearnerMoves(mon: Pokemon): number[] {
@@ -35,6 +36,5 @@ export function CountBadgesForOverworldWhiteOutLossCalculation(): number {
 export function computeWhiteOutMoneyLoss(): number {
   const multipliers = [2, 4, 6, 9, 12, 16, 20, 25, 30];
   const badges = CountBadgesForOverworldWhiteOutLossCalculation();
-  const topLevel = save.party.reduce((level, mon) => mon.species && !mon.isEgg ? Math.max(level, mon.level) : level, 1);
-  return Math.min(save.money, topLevel * 4 * multipliers[badges]);
+  return Math.min(save.money, GetPlayerPartyHighestLevel() * 4 * multipliers[badges]);
 }

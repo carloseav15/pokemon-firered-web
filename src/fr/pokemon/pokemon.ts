@@ -1,6 +1,9 @@
 // struct Pokemon and the pokemon.c helpers the field and battle code use.
 
 import { EOS, length } from "../gba/charmap";
+import * as C from "../generated/constants";
+import { StringCompare } from "../generated/stringUtil";
+import { cdata } from "../hw/assets";
 import { random, random32 } from "../random";
 import { b64, rom } from "../rom";
 import { sendMonToPC } from "./storage";
@@ -119,7 +122,7 @@ export function TryIncrementMonLevel(mon: Pokemon): boolean {
   return false;
 }
 
-function modifyStatByNature(n: number, value: number, statIndex: number): number {
+export function modifyStatByNature(n: number, value: number, statIndex: number): number {
   if (statIndex <= STAT_HP || statIndex > 5) return value;
   const effect = NATURE_STAT_TABLE[n][statIndex - 1];
   if (effect === 1) return Math.floor((value * 110) / 100) & 0xffff;
@@ -369,12 +372,44 @@ export function GetKantoPokedexCount(caseId: number): number {
   return count;
 }
 
-function HoennToNationalOrder(hoennDexNo: number): number {
-  const constants = rom.constants as Record<string, number>;
-  const dexKey = Object.keys(constants).find((key) => key.startsWith("HOENN_DEX_") && constants[key] === hoennDexNo);
-  if (!dexKey) return 0;
-  const species = constants[`SPECIES_${dexKey.slice("HOENN_DEX_".length)}`];
-  return species === undefined ? 0 : rom.species[species]?.national ?? 0;
+/** HoennPokedexNumToSpecies (pokemon.c) */
+export function HoennPokedexNumToSpecies(hoennNum: number): number {
+  if (!hoennNum) return 0;
+  const table = cdata<number[]>("pokemon", "sSpeciesToHoennPokedexNum");
+  let species = 0;
+  while (species < C.NUM_SPECIES - 1 && table[species] !== hoennNum) species++;
+  if (species === C.NUM_SPECIES - 1) return 0;
+  return species + 1;
+}
+
+/** NationalToHoennOrder (pokemon.c) */
+export function NationalToHoennOrder(nationalNum: number): number {
+  if (!nationalNum) return 0;
+  const table = cdata<number[]>("pokemon", "sHoennToNationalOrder");
+  let hoennNum = 0;
+  while (hoennNum < C.NUM_SPECIES - 1 && table[hoennNum] !== nationalNum) hoennNum++;
+  if (hoennNum === C.NUM_SPECIES - 1) return 0;
+  return hoennNum + 1;
+}
+
+/** SpeciesToHoennPokedexNum (pokemon.c) */
+export function SpeciesToHoennPokedexNum(species: number): number {
+  if (!species) return 0;
+  return cdata<number[]>("pokemon", "sSpeciesToHoennPokedexNum")[species - 1];
+}
+
+/** HoennToNationalOrder (pokemon.c) */
+export function HoennToNationalOrder(hoennNum: number): number {
+  if (!hoennNum) return 0;
+  return cdata<number[]>("pokemon", "sHoennToNationalOrder")[hoennNum - 1];
+}
+
+/** SpeciesToCryId (pokemon.c): maps the Old Unown forms onto Unown and the Hoenn ids onto the
+ *  135-entry cry table. No caller in this port: the audio backend keys the WAVs by species. */
+export function SpeciesToCryId(species: number): number {
+  if (species < C.SPECIES_OLD_UNOWN_B - 1) return species;
+  if (species <= C.SPECIES_OLD_UNOWN_Z - 1) return C.SPECIES_UNOWN - 1;
+  return cdata<number[]>("pokemon", "sHoennSpeciesIdToCryId")[species - ((C.SPECIES_OLD_UNOWN_Z + 1) - 1)];
 }
 
 /** HasAllHoennMons (pokedex.c), excluding Jirachi and Deoxys from the Hoenn dex. */
@@ -467,13 +502,20 @@ export function tradeEvolution(mon: Pokemon): number {
   return 0;
 }
 
+/** EvolutionRenameMon (pokemon.c): the nickname is the old species name only in this game's
+ *  language, and then it follows the new species. */
+export function EvolutionRenameMon(mon: Pokemon, oldSpecies: number, newSpecies: number): void {
+  const language = mon.language ?? C.LANGUAGE_ENGLISH;
+  if (language !== C.GAME_LANGUAGE) return;
+  if (StringCompare(speciesName(oldSpecies), nickname(mon)) !== 0) return;
+  mon.nickname = Array.from(speciesName(newSpecies));
+}
+
 /** Evolve in place, keeping the nickname unless it matched the species name. */
 export function evolveMon(mon: Pokemon, target: number): void {
-  const oldName = speciesName(mon.species);
-  const nick = nickname(mon);
-  const renamed = oldName.length !== nick.length || oldName.some((b, i) => b !== nick[i]);
+  const oldSpecies = mon.species;
   mon.species = target;
-  if (!renamed) mon.nickname = Array.from(speciesName(target));
+  EvolutionRenameMon(mon, oldSpecies, target);
   calculateStats(mon);
   setDexFlag(target, true);
 }

@@ -13,11 +13,11 @@ import { rom, b64 } from "../rom";
 import { save } from "../save";
 import { intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import {
-  G, gBattleBufferA, gBattleMons, gBattleScripting, gBattleStruct, gBattleTextBuff1, gBattleTextBuff2, gBattleTextBuff3, gBattlerPartyIndexes,
+  G, gBattleBufferA, gBattleMons, gBattleResources, gBattleScripting, gBattleStruct, gBattleTextBuff1, gBattleTextBuff2, gBattleTextBuff3, gBattlerPartyIndexes,
   gDisplayedStringBattle, gMoveSelectionCursor,
 } from "./globals";
 import { GetBattlerAtPosition, GetBattlerSide } from "./util";
-import { GetMonData, gEnemyParty, playerMon } from "../pokemon/mon";
+import { GetMonData, GetSecretBaseTrainerNameIndex, gEnemyParty, playerMon } from "../pokemon/mon";
 
 export const B_BUFF_STRING = 0;
 export const B_BUFF_NUMBER = 1;
@@ -366,11 +366,17 @@ export function BattleStringExpandPlaceholders(src: ArrayLike<number>, dst: Uint
         case C.B_TXT_SCR_ACTIVE_ABILITY: toCpy = abilityName(sBattlerAbilities[gBattleScripting.battler]); break;
         case C.B_TXT_EFF_ABILITY: toCpy = abilityName(sBattlerAbilities[G.gEffectBattler]); break;
         case C.B_TXT_TRAINER1_CLASS: {
-          const cls = rom.trainers[G.gTrainerBattleOpponent_A]?.class ?? 0;
+          const cls = G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
+            ? GetSecretBaseTrainerNameIndex()
+            : rom.trainers[G.gTrainerBattleOpponent_A]?.class ?? 0;
           toCpy = strip(b64(rom.trainerClasses[cls]));
           break;
         }
-        case C.B_TXT_TRAINER1_NAME: toCpy = trainerName(); break;
+        case C.B_TXT_TRAINER1_NAME:
+          toCpy = G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
+            ? strip(gBattleResources.secretBase.trainerName)
+            : trainerName();
+          break;
         case C.B_TXT_PLAYER_NAME: toCpy = save.playerName; break;
         case C.B_TXT_TRAINER1_LOSE_TEXT: toCpy = battleHost.trainerLoseText(); break;
         case C.B_TXT_TRAINER1_WIN_TEXT: toCpy = battleHost.trainerWonText(); break;

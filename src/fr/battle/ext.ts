@@ -24,7 +24,8 @@ import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "
 import {
   CalculateMonStats, CalculatePPWithBonus, currentRegionMapSection, GetMonData, GetMonEVCount, gEnemyParty, playerMon, SetMonData, type Mon,
 } from "../pokemon/mon";
-import { GetSetPokedexFlag } from "../pokemon/mon_extra";
+import { GetSetPokedexFlag, PartyMonHasStatus } from "../pokemon/mon_extra";
+import { IsPokemonStorageFull } from "../pokemon/storage";
 import { symPalette } from "../pokemon/pics";
 import { rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, varGet, varSet } from "../save";
@@ -261,7 +262,7 @@ const sStatBoosterTasks = new Map<number, StatBoosterTaskState>();
 /** BattleUseFunc_StatBooster (item_use.c): apply first, then run the source's eight-frame/message/input sequence. */
 export function BattleUseFunc_StatBooster(taskId: number, itemId: number, battlerId: number, context: BagTaskContext, finish: () => void): void {
   const partyIndex = gBattlerPartyIndexes[battlerId];
-  if (PokemonUseItemEffects(playerMon(partyIndex), itemId, partyIndex, 0, false)) {
+  if (ExecuteTableBasedItemEffect(playerMon(partyIndex), itemId, partyIndex, 0)) {
     context.message(rom.text("gText_WontHaveEffect"));
     return;
   }
@@ -412,8 +413,8 @@ export function GiveMonToPlayer(mon: Mon): number {
 }
 
 export function IsPlayerPartyAndPokemonStorageFull(): boolean {
-  if (save.party.length < C.PARTY_SIZE) return false;
-  return save.boxes.every((box) => box.every((slot) => slot !== null));
+  for (let i = 0; i < C.PARTY_SIZE; i++) if (GetMonData(playerMon(i), C.MON_DATA_SPECIES) === C.SPECIES_NONE) return false;
+  return IsPokemonStorageFull();
 }
 
 /** pokedex.c GetPokedexHeightWeight(dexNum, 0 = height, 1 = weight) */
@@ -465,6 +466,11 @@ function CopyPlayerPartyMonToBattleData(battlerId: number, partyIndex: number): 
 }
 
 /** Returns FALSE (0) when the item had an effect, TRUE when it did nothing (as in the original). */
+/** ExecuteTableBasedItemEffect (pokemon.c) */
+export function ExecuteTableBasedItemEffect(mon: Mon, item: number, partyIndex: number, moveIndex: number): boolean {
+  return PokemonUseItemEffects(mon, item, partyIndex, moveIndex, false);
+}
+
 export function PokemonUseItemEffects(mon: Mon, item: number, partyIndex: number, moveIndex: number, usedByAI: boolean): boolean {
   let retVal = true;
   let idx = C.ITEM_EFFECT_ARG_START;
@@ -562,14 +568,27 @@ export function PokemonUseItemEffects(mon: Mon, item: number, partyIndex: number
           CalculateMonStats(mon);
           retVal = false;
         }
-        if (e & C.ITEM3_SLEEP && HealStatusConditions(mon, C.STATUS1_SLEEP, battleMonId) === 0) {
+        if (e & C.ITEM3_SLEEP && PartyMonHasStatus(mon, partyIndex, C.STATUS1_SLEEP, battleMonId)) {
+          HealStatusConditions(mon, C.STATUS1_SLEEP, battleMonId);
           if (battleMonId !== 4) gBattleMons[battleMonId].status2 &= ~C.STATUS2_NIGHTMARE;
           retVal = false;
         }
-        if (e & C.ITEM3_POISON && HealStatusConditions(mon, C.STATUS1_PSN_ANY | C.STATUS1_TOXIC_COUNTER, battleMonId) === 0) retVal = false;
-        if (e & C.ITEM3_BURN && HealStatusConditions(mon, C.STATUS1_BURN, battleMonId) === 0) retVal = false;
-        if (e & C.ITEM3_FREEZE && HealStatusConditions(mon, C.STATUS1_FREEZE, battleMonId) === 0) retVal = false;
-        if (e & C.ITEM3_PARALYSIS && HealStatusConditions(mon, C.STATUS1_PARALYSIS, battleMonId) === 0) retVal = false;
+        if (e & C.ITEM3_POISON && PartyMonHasStatus(mon, partyIndex, C.STATUS1_PSN_ANY | C.STATUS1_TOXIC_COUNTER, battleMonId)) {
+          HealStatusConditions(mon, C.STATUS1_PSN_ANY | C.STATUS1_TOXIC_COUNTER, battleMonId);
+          retVal = false;
+        }
+        if (e & C.ITEM3_BURN && PartyMonHasStatus(mon, partyIndex, C.STATUS1_BURN, battleMonId)) {
+          HealStatusConditions(mon, C.STATUS1_BURN, battleMonId);
+          retVal = false;
+        }
+        if (e & C.ITEM3_FREEZE && PartyMonHasStatus(mon, partyIndex, C.STATUS1_FREEZE, battleMonId)) {
+          HealStatusConditions(mon, C.STATUS1_FREEZE, battleMonId);
+          retVal = false;
+        }
+        if (e & C.ITEM3_PARALYSIS && PartyMonHasStatus(mon, partyIndex, C.STATUS1_PARALYSIS, battleMonId)) {
+          HealStatusConditions(mon, C.STATUS1_PARALYSIS, battleMonId);
+          retVal = false;
+        }
         if (e & C.ITEM3_CONFUSION && gMain.inBattle && battleMonId !== 4 && gBattleMons[battleMonId].status2 & C.STATUS2_CONFUSION) {
           gBattleMons[battleMonId].status2 &= ~C.STATUS2_CONFUSION;
           retVal = false;

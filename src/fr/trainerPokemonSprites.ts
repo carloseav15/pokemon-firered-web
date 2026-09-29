@@ -17,7 +17,7 @@ import {
   DecompressPicFromTable, GetMonSpritePalFromSpeciesAndPersonality, gTrainerBackPicTable,
   gTrainerFrontPicPaletteTable, gTrainerFrontPicTable, LoadSpecialPokePic, LoadSpecialPokePic_DontHandleDeoxys, symPalette,
 } from "./pokemon/pics";
-import { IsShinyOtIdPersonality } from "./pokemon/mon";
+import { GetMonData, IsShinyOtIdPersonality, type Mon } from "./pokemon/mon";
 
 type PicData = { frames: Uint8Array | null; images: SpriteFrameImage[] | null; paletteTag: number; spriteId: number; active: boolean };
 
@@ -68,6 +68,14 @@ export function GetMonSpritePalStructFromOtIdPersonality(species: number, otId: 
   const table = cdata<Array<{ data: unknown; tag: number }>>("data", IsShinyOtIdPersonality(otId, personality) ? "gMonShinyPaletteTable" : "gMonPaletteTable");
   const pal = table[species];
   return { data: symPalette(pal.data), tag: pal.tag };
+}
+
+/** GetMonSpritePalStruct (pokemon.c) */
+export function GetMonSpritePalStruct(mon: Mon): { data: Uint16Array; tag: number } {
+  const species = GetMonData(mon, C.MON_DATA_SPECIES);
+  const otId = GetMonData(mon, C.MON_DATA_OT_ID);
+  const personality = GetMonData(mon, C.MON_DATA_PERSONALITY);
+  return GetMonSpritePalStructFromOtIdPersonality(species, otId, personality);
 }
 
 export function LoadPicPaletteByTagOrSlot(species: number, otId: number, personality: number, paletteSlot: number, paletteTag: number, isTrainer: boolean): void {

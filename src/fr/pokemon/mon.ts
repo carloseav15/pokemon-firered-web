@@ -3,10 +3,12 @@
 
 import { EOS } from "../gba/charmap";
 import * as C from "../generated/constants";
+import { cdata } from "../hw/assets";
 import { random, random32 } from "../random";
 import { b64, rom } from "../rom";
-import { save } from "../save";
-import { calculateStats, type Pokemon } from "./pokemon";
+import { save, SV, varGet } from "../save";
+import { G, gBattleResources, type SecretBaseRecord } from "../battle/globals";
+import { calculateStats, modifyStatByNature, type Pokemon } from "./pokemon";
 
 export type Mon = Pokemon & {
   language?: number;
@@ -91,18 +93,24 @@ function copyName(src: number[], dest: Uint8Array | number[] | undefined, max: n
 let textEgg: number[] | undefined;
 let textBadEgg: number[] | undefined;
 
-export function GetMonData(mon: Mon, field: number, data?: Uint8Array | number[]): number {
+/** GetMonData3: the three-argument GetMonData body (pokemon.c); GetMonData dispatches to it. */
+export function GetMonData3(mon: Mon, field: number, data?: Uint8Array | number[]): number {
   const species = mon.species;
   switch (field) {
     case C.MON_DATA_STATUS: return mon.status >>> 0;
     case C.MON_DATA_LEVEL: return mon.level;
     case C.MON_DATA_HP: return mon.hp;
     case C.MON_DATA_MAX_HP: return mon.stats[0];
-    case C.MON_DATA_ATK: case C.MON_DATA_ATK2: return mon.stats[1];
-    case C.MON_DATA_DEF: case C.MON_DATA_DEF2: return mon.stats[2];
-    case C.MON_DATA_SPEED: case C.MON_DATA_SPEED2: return mon.stats[3];
-    case C.MON_DATA_SPATK: case C.MON_DATA_SPATK2: return mon.stats[4];
-    case C.MON_DATA_SPDEF: case C.MON_DATA_SPDEF2: return mon.stats[5];
+    case C.MON_DATA_ATK: return GetDeoxysStat(mon, C.STAT_ATK) || mon.stats[1];
+    case C.MON_DATA_DEF: return GetDeoxysStat(mon, C.STAT_DEF) || mon.stats[2];
+    case C.MON_DATA_SPEED: return GetDeoxysStat(mon, C.STAT_SPEED) || mon.stats[3];
+    case C.MON_DATA_SPATK: return GetDeoxysStat(mon, C.STAT_SPATK) || mon.stats[4];
+    case C.MON_DATA_SPDEF: return GetDeoxysStat(mon, C.STAT_SPDEF) || mon.stats[5];
+    case C.MON_DATA_ATK2: return mon.stats[1];
+    case C.MON_DATA_DEF2: return mon.stats[2];
+    case C.MON_DATA_SPEED2: return mon.stats[3];
+    case C.MON_DATA_SPATK2: return mon.stats[4];
+    case C.MON_DATA_SPDEF2: return mon.stats[5];
     case C.MON_DATA_MAIL: return mon.mail ?? C.MAIL_NONE;
     case C.MON_DATA_PERSONALITY: return mon.personality >>> 0;
     case C.MON_DATA_OT_ID: return mon.otId >>> 0;
@@ -192,6 +200,21 @@ export function GetMonData(mon: Mon, field: number, data?: Uint8Array | number[]
       }
       return 0;
   }
+}
+
+/** GetMonData (pokemon.c): the GetMonData2/3 dispatching macro, inlined as a call. */
+export function GetMonData(mon: Mon, field: number, data?: Uint8Array | number[]): number {
+  return GetMonData3(mon, field, data);
+}
+
+/** GetBoxMonData3: a boxed mon is a struct Pokemon in this port, so the substruct read is GetMonData3. */
+export function GetBoxMonData3(boxMon: Mon, field: number, data?: Uint8Array | number[]): number {
+  return GetMonData3(boxMon, field, data);
+}
+
+/** SetBoxMonData: writes go through SetMonData; the C checksum/encryption gate needs no cipher here. */
+export function SetBoxMonData(boxMon: Mon, field: number, value: number | ArrayLike<number>): void {
+  SetMonData(boxMon, field, value);
 }
 
 const RIBBON_INDEX: Record<number, number> = {};
@@ -305,11 +328,40 @@ function trainerIdBytes(): number {
   return save.trainerId >>> 0;
 }
 
-/** CreateMon (pokemon.c) */
-export function CreateMon(mon: Mon, species: number, level: number, fixedIV: number, hasFixedPersonality: boolean | number, fixedPersonality: number, otIdType: number, fixedOtId: number): void {
-  Object.assign(mon, zeroMon());
+/** BoxMon: struct BoxPokemon is the box half of struct Pokemon, which this port keeps as one object. */
+export type BoxMon = Mon;
+
+/** ZeroBoxMonData (pokemon.c): clears the box half only; status/level/hp/stats/mail belong to struct Pokemon. */
+export function ZeroBoxMonData(boxMon: BoxMon): void {
+  const battle = { status: boxMon.status, level: boxMon.level, hp: boxMon.hp, stats: boxMon.stats, mail: boxMon.mail };
+  Object.assign(boxMon, zeroMon(), battle);
+  boxMon.hasSpecies = false;
+  delete boxMon.isBadEgg;
+  delete boxMon.contest;
+  delete boxMon.ribbons;
+  delete boxMon.modernFatefulEncounter;
+}
+
+/** ZeroMonData (pokemon.c) */
+export function ZeroMonData(mon: Mon): void {
+  ZeroBoxMonData(mon);
+  SetMonData(mon, C.MON_DATA_STATUS, 0);
+  SetMonData(mon, C.MON_DATA_LEVEL, 0);
+  SetMonData(mon, C.MON_DATA_HP, 0);
+  SetMonData(mon, C.MON_DATA_MAX_HP, 0);
+  SetMonData(mon, C.MON_DATA_ATK, 0);
+  SetMonData(mon, C.MON_DATA_DEF, 0);
+  SetMonData(mon, C.MON_DATA_SPEED, 0);
+  SetMonData(mon, C.MON_DATA_SPATK, 0);
+  SetMonData(mon, C.MON_DATA_SPDEF, 0);
+  SetMonData(mon, C.MON_DATA_MAIL, C.MAIL_NONE);
+}
+
+/** CreateBoxMon (pokemon.c): every field of the source body that lives in struct BoxPokemon. */
+export function CreateBoxMon(boxMon: BoxMon, species: number, level: number, fixedIV: number, hasFixedPersonality: boolean | number, fixedPersonality: number, otIdType: number, fixedOtId: number): void {
+  ZeroBoxMonData(boxMon);
   const personality = hasFixedPersonality ? fixedPersonality >>> 0 : random32();
-  mon.personality = personality;
+  boxMon.personality = personality;
   let value: number;
   if (otIdType === OT_ID_RANDOM_NO_SHINY) {
     do {
@@ -320,31 +372,46 @@ export function CreateMon(mon: Mon, species: number, level: number, fixedIV: num
   } else {
     value = trainerIdBytes();
   }
-  mon.otId = value;
-  mon.nickname = GetSpeciesName(species);
-  mon.language = C.LANGUAGE_ENGLISH;
-  mon.otName = [...save.playerName];
-  mon.species = species;
-  mon.hasSpecies = true;
-  mon.exp = rom.expTables[rom.species[species].growthRate][level];
-  mon.friendship = rom.species[species].friendship;
-  mon.metLocation = currentRegionMapSection();
-  mon.metLevel = level;
-  mon.metGame = C.VERSION_FIRE_RED;
-  mon.pokeball = C.ITEM_POKE_BALL;
-  mon.otGender = save.playerGender;
+  boxMon.otId = value;
+  boxMon.nickname = GetSpeciesName(species);
+  boxMon.language = C.LANGUAGE_ENGLISH;
+  boxMon.otName = [...save.playerName];
+  boxMon.species = species;
+  boxMon.hasSpecies = true;
+  boxMon.exp = rom.expTables[rom.species[species].growthRate][level];
+  boxMon.friendship = rom.species[species].friendship;
+  boxMon.metLocation = currentRegionMapSection();
+  boxMon.metLevel = level;
+  boxMon.metGame = C.VERSION_FIRE_RED;
+  boxMon.pokeball = C.ITEM_POKE_BALL;
+  boxMon.otGender = save.playerGender;
   if (fixedIV < USE_RANDOM_IVS) {
-    mon.ivs = [fixedIV, fixedIV, fixedIV, fixedIV, fixedIV, fixedIV];
+    boxMon.ivs = [fixedIV, fixedIV, fixedIV, fixedIV, fixedIV, fixedIV];
   } else {
     const a = random();
     const b = random();
-    mon.ivs = [a & 31, (a >> 5) & 31, (a >> 10) & 31, b & 31, (b >> 5) & 31, (b >> 10) & 31];
+    boxMon.ivs = [a & 31, (a >> 5) & 31, (a >> 10) & 31, b & 31, (b >> 5) & 31, (b >> 10) & 31];
   }
-  if (rom.species[species].abilities[1]) mon.abilityNum = personality & 1;
-  GiveMonInitialMoveset(mon);
-  mon.level = level;
-  mon.mail = C.MAIL_NONE;
+  if (rom.species[species].abilities[1]) boxMon.abilityNum = personality & 1;
+  GiveBoxMonInitialMoveset(boxMon);
+}
+
+/** CreateMon (pokemon.c) */
+export function CreateMon(mon: Mon, species: number, level: number, fixedIV: number, hasFixedPersonality: boolean | number, fixedPersonality: number, otIdType: number, fixedOtId: number): void {
+  ZeroMonData(mon);
+  CreateBoxMon(mon, species, level, fixedIV, hasFixedPersonality, fixedPersonality, otIdType, fixedOtId);
+  SetMonData(mon, C.MON_DATA_LEVEL, level);
+  SetMonData(mon, C.MON_DATA_MAIL, C.MAIL_NONE);
   CalculateMonStats(mon);
+}
+
+/** CreateMonWithNature (pokemon.c) */
+export function CreateMonWithNature(mon: Mon, species: number, level: number, fixedIV: number, nature: number): void {
+  let personality: number;
+  do {
+    personality = random32();
+  } while (nature !== GetNatureFromPersonality(personality));
+  CreateMon(mon, species, level, fixedIV, true, personality, OT_ID_PLAYER_ID, 0);
 }
 
 /** CreateMonWithGenderNatureLetter (pokemon.c) */
@@ -365,6 +432,165 @@ export function CreateMonWithGenderNatureLetter(mon: Mon, species: number, level
   CreateMon(mon, species, level, fixedIV, true, personality, OT_ID_PLAYER_ID, 0);
 }
 
+/** CreateMonWithIVsPersonality (pokemon.c) */
+export function CreateMonWithIVsPersonality(mon: Mon, species: number, level: number, ivs: number, personality: number): void {
+  CreateMon(mon, species, level, 0, true, personality, OT_ID_PLAYER_ID, 0);
+  SetMonData(mon, C.MON_DATA_IVS, ivs);
+  CalculateMonStats(mon);
+}
+
+/** CreateMonWithIVsOTID (pokemon.c) */
+export function CreateMonWithIVsOTID(mon: Mon, species: number, level: number, ivs: number[], otId: number): void {
+  CreateMon(mon, species, level, 0, false, 0, OT_ID_PRESET, otId);
+  SetMonData(mon, C.MON_DATA_HP_IV, ivs[C.STAT_HP]);
+  SetMonData(mon, C.MON_DATA_ATK_IV, ivs[C.STAT_ATK]);
+  SetMonData(mon, C.MON_DATA_DEF_IV, ivs[C.STAT_DEF]);
+  SetMonData(mon, C.MON_DATA_SPEED_IV, ivs[C.STAT_SPEED]);
+  SetMonData(mon, C.MON_DATA_SPATK_IV, ivs[C.STAT_SPATK]);
+  SetMonData(mon, C.MON_DATA_SPDEF_IV, ivs[C.STAT_SPDEF]);
+  CalculateMonStats(mon);
+}
+
+/** CreateMonWithEVSpread (pokemon.c): spreads MAX_TOTAL_EVS evenly over the EVs set in evSpread. */
+export function CreateMonWithEVSpread(mon: Mon, species: number, level: number, fixedIV: number, evSpread: number): void {
+  CreateMon(mon, species, level, fixedIV, false, 0, OT_ID_PLAYER_ID, 0);
+  let statCount = 0;
+  for (let i = 0, evsBits = evSpread >>> 0; i < C.NUM_STATS; i++) {
+    if (evsBits & 1) statCount++;
+    evsBits >>= 1;
+  }
+  // u16 evAmount in C; with statCount 0 the loop below never reads it.
+  const evAmount = (C.MAX_TOTAL_EVS / statCount) & 0xffff;
+  for (let i = 0, evsBits = 1; i < C.NUM_STATS; i++, evsBits <<= 1) {
+    if (evSpread & evsBits) SetMonData(mon, C.MON_DATA_HP_EV + i, evAmount);
+  }
+  CalculateMonStats(mon);
+}
+
+/** struct BattleTowerPokemon (pokemon.h): the box half of a Battle Tower entry. */
+export type BattleTowerPokemon = {
+  species: number;
+  heldItem: number;
+  moves: number[];
+  level: number;
+  ppBonuses: number;
+  hpEV: number;
+  attackEV: number;
+  defenseEV: number;
+  speedEV: number;
+  spAttackEV: number;
+  spDefenseEV: number;
+  otId: number;
+  hpIV: number;
+  attackIV: number;
+  defenseIV: number;
+  speedIV: number;
+  spAttackIV: number;
+  spDefenseIV: number;
+  abilityNum: number;
+  personality: number;
+  nickname: number[];
+  friendship: number;
+};
+
+/** CreateBattleTowerMon (pokemon.c): the FR/LG language/nickname block stays commented out as in C. */
+export function CreateBattleTowerMon(mon: Mon, src: BattleTowerPokemon): void {
+  CreateMon(mon, src.species, src.level, 0, true, src.personality, OT_ID_PRESET, src.otId);
+  for (let i = 0; i < C.MAX_MON_MOVES; i++) SetMonMoveSlot(mon, src.moves[i], i);
+  SetMonData(mon, C.MON_DATA_PP_BONUSES, src.ppBonuses);
+  SetMonData(mon, C.MON_DATA_HELD_ITEM, src.heldItem);
+  SetMonData(mon, C.MON_DATA_NICKNAME, src.nickname);
+  SetMonData(mon, C.MON_DATA_FRIENDSHIP, src.friendship);
+  SetMonData(mon, C.MON_DATA_HP_EV, src.hpEV);
+  SetMonData(mon, C.MON_DATA_ATK_EV, src.attackEV);
+  SetMonData(mon, C.MON_DATA_DEF_EV, src.defenseEV);
+  SetMonData(mon, C.MON_DATA_SPEED_EV, src.speedEV);
+  SetMonData(mon, C.MON_DATA_SPATK_EV, src.spAttackEV);
+  SetMonData(mon, C.MON_DATA_SPDEF_EV, src.spDefenseEV);
+  SetMonData(mon, C.MON_DATA_ABILITY_NUM, src.abilityNum);
+  SetMonData(mon, C.MON_DATA_HP_IV, src.hpIV);
+  SetMonData(mon, C.MON_DATA_ATK_IV, src.attackIV);
+  SetMonData(mon, C.MON_DATA_DEF_IV, src.defenseIV);
+  SetMonData(mon, C.MON_DATA_SPEED_IV, src.speedIV);
+  SetMonData(mon, C.MON_DATA_SPATK_IV, src.spAttackIV);
+  SetMonData(mon, C.MON_DATA_SPDEF_IV, src.spDefenseIV);
+  CalculateMonStats(mon);
+}
+
+/** CreateEventMon (pokemon.c) */
+export function CreateEventMon(mon: Mon, species: number, level: number, fixedIV: number, hasFixedPersonality: boolean | number, fixedPersonality: number, otIdType: number, fixedOtId: number): void {
+  CreateMon(mon, species, level, fixedIV, hasFixedPersonality, fixedPersonality, otIdType, fixedOtId);
+  SetMonData(mon, C.MON_DATA_MODERN_FATEFUL_ENCOUNTER, 1);
+}
+
+/** CreateEnemyEventMon (pokemon.c): reads gSpecialVar_0x8004/5/6, then party slot 0 is the event mon. */
+export function CreateEnemyEventMon(): void {
+  const species = varGet(SV.x8004);
+  const level = varGet(SV.x8005);
+  const itemId = varGet(SV.x8006);
+  ZeroEnemyPartyMons();
+  CreateEventMon(gEnemyParty[0], species, level, USE_RANDOM_IVS, false, 0, OT_ID_PLAYER_ID, 0);
+  if (itemId) SetMonData(gEnemyParty[0], C.MON_DATA_HELD_ITEM, itemId & 0xffff);
+}
+
+/** CreateSecretBaseEnemyParty (pokemon.c): R/S leftover; this game never calls it. */
+export function CreateSecretBaseEnemyParty(secretBaseRecord: SecretBaseRecord): void {
+  ZeroEnemyPartyMons();
+  gBattleResources.secretBase = structuredClone(secretBaseRecord);
+  const sb = gBattleResources.secretBase;
+  for (let i = 0; i < C.PARTY_SIZE; i++) {
+    if (sb.party.species[i]) {
+      CreateMon(gEnemyParty[i], sb.party.species[i], sb.party.levels[i], 15, true, sb.party.personality[i], C.OT_ID_RANDOM_NO_SHINY, 0);
+      SetMonData(gEnemyParty[i], C.MON_DATA_HELD_ITEM, sb.party.heldItems[i]);
+      for (let j = 0; j < C.NUM_STATS; j++) SetMonData(gEnemyParty[i], C.MON_DATA_HP_EV + j, sb.party.EVs[i]);
+      for (let j = 0; j < C.MAX_MON_MOVES; j++) {
+        const move = sb.party.moves[i * C.MAX_MON_MOVES + j];
+        SetMonData(gEnemyParty[i], C.MON_DATA_MOVE1 + j, move);
+        SetMonData(gEnemyParty[i], C.MON_DATA_PP1 + j, rom.moves[move].pp);
+      }
+    }
+  }
+  G.gBattleTypeFlags = C.BATTLE_TYPE_TRAINER;
+  G.gTrainerBattleOpponent_A = C.TRAINER_SECRET_BASE;
+}
+
+/** ConvertPokemonToBattleTowerPokemon (pokemon.c) */
+export function ConvertPokemonToBattleTowerPokemon(mon: Mon, dest: BattleTowerPokemon): void {
+  let heldItem = GetMonData(mon, C.MON_DATA_HELD_ITEM);
+  if (heldItem === C.ITEM_ENIGMA_BERRY) heldItem = 0;
+  dest.species = GetMonData(mon, C.MON_DATA_SPECIES);
+  dest.heldItem = heldItem;
+  for (let i = 0; i < C.MAX_MON_MOVES; i++) dest.moves[i] = GetMonData(mon, C.MON_DATA_MOVE1 + i);
+  dest.level = GetMonData(mon, C.MON_DATA_LEVEL);
+  dest.ppBonuses = GetMonData(mon, C.MON_DATA_PP_BONUSES);
+  dest.otId = GetMonData(mon, C.MON_DATA_OT_ID);
+  dest.hpEV = GetMonData(mon, C.MON_DATA_HP_EV);
+  dest.attackEV = GetMonData(mon, C.MON_DATA_ATK_EV);
+  dest.defenseEV = GetMonData(mon, C.MON_DATA_DEF_EV);
+  dest.speedEV = GetMonData(mon, C.MON_DATA_SPEED_EV);
+  dest.spAttackEV = GetMonData(mon, C.MON_DATA_SPATK_EV);
+  dest.spDefenseEV = GetMonData(mon, C.MON_DATA_SPDEF_EV);
+  dest.friendship = GetMonData(mon, C.MON_DATA_FRIENDSHIP);
+  dest.hpIV = GetMonData(mon, C.MON_DATA_HP_IV);
+  dest.attackIV = GetMonData(mon, C.MON_DATA_ATK_IV);
+  dest.defenseIV = GetMonData(mon, C.MON_DATA_DEF_IV);
+  dest.speedIV = GetMonData(mon, C.MON_DATA_SPEED_IV);
+  dest.spAttackIV = GetMonData(mon, C.MON_DATA_SPATK_IV);
+  dest.spDefenseIV = GetMonData(mon, C.MON_DATA_SPDEF_IV);
+  dest.abilityNum = GetMonData(mon, C.MON_DATA_ABILITY_NUM);
+  dest.personality = GetMonData(mon, C.MON_DATA_PERSONALITY);
+  GetMonData(mon, C.MON_DATA_NICKNAME, dest.nickname);
+}
+
+/** BoxMonToMon (pokemon.c): copies the box half, clears the battle-only fields, then recomputes. */
+export function BoxMonToMon(src: BoxMon, dest: Mon): void {
+  Object.assign(dest, structuredClone(src));
+  SetMonData(dest, C.MON_DATA_STATUS, 0);
+  SetMonData(dest, C.MON_DATA_HP, 0);
+  SetMonData(dest, C.MON_DATA_MAX_HP, 0);
+  SetMonData(dest, C.MON_DATA_MAIL, C.MAIL_NONE);
+  CalculateMonStats(dest);
+}
 let regionMapSection = () => 0;
 export function setRegionMapSectionProvider(fn: () => number): void {
   regionMapSection = fn;
@@ -391,12 +617,18 @@ export function GetLevelFromMonExp(mon: Mon): number {
   return level - 1;
 }
 
-export function GiveMoveToMon(mon: Mon, move: number): number {
+/** GetLevelFromBoxMonExp (pokemon.c): reads species and experience from the boxed mon. */
+export function GetLevelFromBoxMonExp(boxMon: BoxMon): number {
+  return GetLevelFromMonExp(boxMon);
+}
+
+/** GiveMoveToBoxMon (pokemon.c): GiveMoveToMon dispatches here. */
+export function GiveMoveToBoxMon(boxMon: BoxMon, move: number): number {
   for (let i = 0; i < 4; i++) {
-    const existing = mon.moves[i];
+    const existing = boxMon.moves[i];
     if (!existing) {
-      mon.moves[i] = move;
-      mon.pp[i] = rom.moves[move].pp;
+      boxMon.moves[i] = move;
+      boxMon.pp[i] = rom.moves[move].pp;
       return move;
     }
     if (existing === move) return C.MON_ALREADY_KNOWS_MOVE;
@@ -404,25 +636,39 @@ export function GiveMoveToMon(mon: Mon, move: number): number {
   return C.MON_HAS_MAX_MOVES;
 }
 
+export function GiveMoveToMon(mon: Mon, move: number): number {
+  return GiveMoveToBoxMon(mon, move);
+}
+
 export function SetMonMoveSlot(mon: Mon, move: number, slot: number): void {
   mon.moves[slot] = move;
   mon.pp[slot] = rom.moves[move].pp;
 }
 
+/** DeleteFirstMoveAndGiveMoveToBoxMon (pokemon.c) */
+export function DeleteFirstMoveAndGiveMoveToBoxMon(boxMon: BoxMon, move: number): void {
+  const moves = [boxMon.moves[1], boxMon.moves[2], boxMon.moves[3], move];
+  const pp = [boxMon.pp[1], boxMon.pp[2], boxMon.pp[3], rom.moves[move].pp];
+  boxMon.moves = moves;
+  boxMon.pp = pp;
+  boxMon.ppBonuses = (boxMon.ppBonuses >> 2) & 0xff;
+}
+
 export function DeleteFirstMoveAndGiveMoveToMon(mon: Mon, move: number): void {
-  const moves = [mon.moves[1], mon.moves[2], mon.moves[3], move];
-  const pp = [mon.pp[1], mon.pp[2], mon.pp[3], rom.moves[move].pp];
-  mon.moves = moves;
-  mon.pp = pp;
-  mon.ppBonuses = (mon.ppBonuses >> 2) & 0xff;
+  DeleteFirstMoveAndGiveMoveToBoxMon(mon, move);
+}
+
+/** GiveBoxMonInitialMoveset (pokemon.c): GiveMonInitialMoveset dispatches here. */
+export function GiveBoxMonInitialMoveset(boxMon: BoxMon): void {
+  const level = GetLevelFromBoxMonExp(boxMon);
+  for (const [moveLevel, move] of rom.species[boxMon.species].learnset) {
+    if (moveLevel > level) break;
+    if (GiveMoveToBoxMon(boxMon, move) === C.MON_HAS_MAX_MOVES) DeleteFirstMoveAndGiveMoveToBoxMon(boxMon, move);
+  }
 }
 
 export function GiveMonInitialMoveset(mon: Mon): void {
-  const level = GetLevelFromMonExp(mon);
-  for (const [moveLevel, move] of rom.species[mon.species].learnset) {
-    if (moveLevel > level) break;
-    if (GiveMoveToMon(mon, move) === C.MON_HAS_MAX_MOVES) DeleteFirstMoveAndGiveMoveToMon(mon, move);
-  }
+  GiveBoxMonInitialMoveset(mon);
 }
 
 let sLearningMoveTableID = 0;
@@ -446,8 +692,13 @@ export function MonTryLearningNewMove(mon: Mon, firstMove: boolean, setMoveToLea
   return C.MOVE_NONE;
 }
 
+/** GetBoxMonGender (pokemon.c) */
+export function GetBoxMonGender(boxMon: BoxMon): number {
+  return GetGenderFromSpeciesAndPersonality(boxMon.species, boxMon.personality);
+}
+
 export function GetMonGender(mon: Mon): number {
-  return GetGenderFromSpeciesAndPersonality(mon.species, mon.personality);
+  return GetBoxMonGender(mon);
 }
 
 export function GetGenderFromSpeciesAndPersonality(species: number, personality: number): number {
@@ -497,10 +748,15 @@ export function NationalPokedexNumToSpecies(nationalNum: number): number {
   return i < 0 ? 0 : i;
 }
 
-export function MonRestorePP(mon: Mon): void {
+/** BoxMonRestorePP (pokemon.c) */
+export function BoxMonRestorePP(boxMon: BoxMon): void {
   for (let i = 0; i < 4; i++) {
-    if (mon.moves[i]) mon.pp[i] = CalculatePPWithBonus(mon.moves[i], mon.ppBonuses, i);
+    if (boxMon.moves[i]) boxMon.pp[i] = CalculatePPWithBonus(boxMon.moves[i], boxMon.ppBonuses, i);
   }
+}
+
+export function MonRestorePP(mon: Mon): void {
+  BoxMonRestorePP(mon);
 }
 
 export function GetMonEVCount(mon: Mon): number {
@@ -509,4 +765,113 @@ export function GetMonEVCount(mon: Mon): number {
 
 export function CopyMon(dest: Mon, src: Mon): void {
   Object.assign(dest, JSON.parse(JSON.stringify(src)));
+}
+
+/** The encryption half of struct BoxPokemon as the C crypto functions see it: secure.raw holds
+ *  the four 12-byte substructs (6 little-endian u32 words each) of struct BoxPokemon.secure.
+ *  This port keeps box data in plaintext fields, so the payload is only built explicitly. */
+export type BoxMonSecure = {
+  personality: number;
+  otId: number;
+  secure: { raw: number[] };
+};
+
+/** physical slot of each logical substruct for personality % 24 (SUBSTRUCT_CASE table in pokemon.c) */
+const SUBSTRUCT_ORDER: number[][] = [
+  [0, 1, 2, 3], [0, 1, 3, 2], [0, 2, 1, 3], [0, 3, 1, 2], [0, 2, 3, 1], [0, 3, 2, 1],
+  [1, 0, 2, 3], [1, 0, 3, 2], [2, 0, 1, 3], [3, 0, 1, 2], [2, 0, 3, 1], [3, 0, 2, 1],
+  [1, 2, 0, 3], [1, 3, 0, 2], [2, 1, 0, 3], [3, 1, 0, 2], [2, 3, 0, 1], [3, 2, 0, 1],
+  [1, 2, 3, 0], [1, 3, 2, 0], [2, 1, 3, 0], [3, 1, 2, 0], [2, 3, 1, 0], [3, 2, 1, 0],
+];
+
+/** GetSubstruct (pokemon.c): returns the physical substruct words for the requested logical one;
+ *  C hands back a pointer into secure, this returns a copy of those u32 words. */
+export function GetSubstruct(boxMon: BoxMonSecure, personality: number, substructType: number): number[] {
+  const slot = SUBSTRUCT_ORDER[personality % 24][substructType];
+  return boxMon.secure.raw.slice(slot * 6, slot * 6 + 6);
+}
+
+/** EncryptBoxMon (pokemon.c) */
+export function EncryptBoxMon(boxMon: BoxMonSecure): void {
+  for (let i = 0; i < boxMon.secure.raw.length; i++) {
+    boxMon.secure.raw[i] = (boxMon.secure.raw[i] ^ boxMon.personality) >>> 0;
+    boxMon.secure.raw[i] = (boxMon.secure.raw[i] ^ boxMon.otId) >>> 0;
+  }
+}
+
+/** DecryptBoxMon (pokemon.c) */
+export function DecryptBoxMon(boxMon: BoxMonSecure): void {
+  for (let i = 0; i < boxMon.secure.raw.length; i++) {
+    boxMon.secure.raw[i] = (boxMon.secure.raw[i] ^ boxMon.otId) >>> 0;
+    boxMon.secure.raw[i] = (boxMon.secure.raw[i] ^ boxMon.personality) >>> 0;
+  }
+}
+
+/** CalculateBoxMonChecksum (pokemon.c): sum of the u16 words of the four substructs. */
+export function CalculateBoxMonChecksum(boxMon: BoxMonSecure): number {
+  let checksum = 0;
+  for (let s = 0; s < 4; s++) {
+    const words = GetSubstruct(boxMon, boxMon.personality, s);
+    for (const word of words) {
+      checksum = (checksum + (word & 0xffff)) & 0xffff;
+      checksum = (checksum + (word >>> 16)) & 0xffff;
+    }
+  }
+  return checksum;
+}
+
+/** GetDeoxysStat (pokemon.c): Deoxys stats are read from the IV/EV of that stat instead of the
+ *  stored stat, and are 0 outside of the cases where Deoxys may appear. */
+function GetDeoxysStat(mon: Mon, statId: number): number {
+  if ((G.gBattleTypeFlags & C.BATTLE_TYPE_LINK_IN_BATTLE) || GetMonData(mon, C.MON_DATA_SPECIES) !== C.SPECIES_DEOXYS) return 0;
+  const ivVal = GetMonData(mon, C.MON_DATA_HP_IV + statId);
+  const evVal = GetMonData(mon, C.MON_DATA_HP_EV + statId);
+  const baseStats = cdata<number[]>("pokemon", "sDeoxysBaseStats");
+  const statValue = Math.trunc(((baseStats[statId] * 2 + ivVal + Math.trunc(evVal / 4)) * mon.level) / 100) + 5;
+  return modifyStatByNature(GetNature(mon), statValue, statId);
+}
+
+/** SetDeoxysStats (pokemon.c): rewrites the stored stats of every Deoxys in the player party;
+ *  the C callers are in the link battle code, so this port has no caller yet. */
+export function SetDeoxysStats(): void {
+  for (let i = 0; i < C.PARTY_SIZE; i++) {
+    const mon = playerMon(i);
+    if (GetMonData(mon, C.MON_DATA_SPECIES) !== C.SPECIES_DEOXYS) continue;
+    for (const field of [C.MON_DATA_ATK, C.MON_DATA_DEF, C.MON_DATA_SPEED, C.MON_DATA_SPATK, C.MON_DATA_SPDEF]) {
+      const value = GetMonData(mon, field);
+      SetMonData(mon, field, value);
+    }
+  }
+}
+
+/** GetPlayerPartyHighestLevel (pokemon.c) */
+export function GetPlayerPartyHighestLevel(): number {
+  let level = 1;
+  for (let slot = 0; slot < C.PARTY_SIZE; slot++) {
+    const mon = playerMon(slot);
+    if (GetMonData(mon, C.MON_DATA_SANITY_HAS_SPECIES) === 1 && !GetMonData(mon, C.MON_DATA_SANITY_IS_EGG)) {
+      const monLevel = GetMonData(mon, C.MON_DATA_LEVEL);
+      if (monLevel > level) level = monLevel;
+    }
+  }
+  return level;
+}
+
+/** GetSecretBaseTrainerPicIndex (pokemon.c) */
+export function GetSecretBaseTrainerPicIndex(): number {
+  const sb = gBattleResources.secretBase;
+  const facilityClass = cdata<number[][]>("pokemon", "sSecretBaseFacilityClasses")[sb.gender][sb.trainerId[0] % 5];
+  return cdata<number[]>("pokemon", "gFacilityClassToPicIndex")[facilityClass];
+}
+
+/** GetSecretBaseTrainerNameIndex (pokemon.c) */
+export function GetSecretBaseTrainerNameIndex(): number {
+  const sb = gBattleResources.secretBase;
+  const facilityClass = cdata<number[][]>("pokemon", "sSecretBaseFacilityClasses")[sb.gender][sb.trainerId[0] % 5];
+  return cdata<number[]>("pokemon", "gFacilityClassToTrainerClass")[facilityClass];
+}
+
+/** GetTrainerEncounterMusicId (pokemon.c): TRAINER_ENCOUNTER_MUSIC(trainerId). */
+export function GetTrainerEncounterMusicId(trainerId: number): number {
+  return (rom.trainers[trainerId]?.music ?? 0) & 0x7F;
 }

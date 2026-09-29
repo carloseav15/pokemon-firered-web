@@ -4,7 +4,8 @@ import * as C from "../generated/constants";
 import { random } from "../random";
 import { rom } from "../rom";
 import { save, varGet } from "../save";
-import { calculateStats, createMon, type Pokemon } from "./pokemon";
+import { createMon, type Pokemon } from "./pokemon";
+import { CreateMonWithIVsPersonality, zeroMon } from "./mon";
 
 const ROAMER_MAP_GROUP = 3;
 type RoamerSave = {
@@ -122,9 +123,10 @@ export function IsRoamerAt(mapGroup: number, mapNum: number): boolean {
 
 export function CreateRoamerMonInstance(): Pokemon {
   const r = roamer();
-  const mon = createMon(r.species, r.level, { personality: r.personality });
-  mon.ivs = [...r.ivs];
-  calculateStats(mon);
+  const mon = zeroMon();
+  let ivs = 0;
+  for (let i = 0; i < r.ivs.length; i++) ivs |= (r.ivs[i] & 31) << (i * 5);
+  CreateMonWithIVsPersonality(mon, r.species, r.level, ivs >>> 0, r.personality);
   mon.status = r.status;
   mon.hp = r.hp;
   mon.contest = [r.cool, r.beauty, r.cute, r.smart, r.tough, 0];

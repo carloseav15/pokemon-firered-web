@@ -21,7 +21,7 @@ import {
 } from "../partyMenu";
 import { GetNumberOfRelearnableMoves } from "../pokemon/partyRules";
 import { encode, stringVars } from "../gba/charmap";
-import { PokemonUseItemEffects } from "../battle/ext";
+import { ExecuteTableBasedItemEffect } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
@@ -544,7 +544,7 @@ export function openFieldBag(game: Game, initialItem?: number): void {
         }
         case "FieldUseFunc_PokeFlute": {
           let woke = false;
-          save.party.forEach((mon, i) => { if (!mon.isEgg && !PokemonUseItemEffects(mon as Mon, C.ITEM_AWAKENING, i, 0, false)) woke = true; });
+          save.party.forEach((mon, i) => { if (!mon.isEgg && !ExecuteTableBasedItemEffect(mon as Mon, C.ITEM_AWAKENING, i, 0)) woke = true; });
           if (!woke) { message(rom.text("gText_PlayedPokeFluteCatchy")); return; }
           ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, null, item, 0xffff);
           message(rom.text("gText_PlayedPokeFlute"), () => {

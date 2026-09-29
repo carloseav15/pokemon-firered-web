@@ -6,7 +6,8 @@ import { MetatileBehavior_IsBridge } from "../generated/metatileBehavior";
 import { cdata, type SymRef } from "../hw/assets";
 import { random, random32 } from "../random";
 import { flagGet, incrementGameStat, save, varGet, varSet } from "../save";
-import { ability, createMon, type Pokemon } from "../pokemon/pokemon";
+import { createMon, type Pokemon } from "../pokemon/pokemon";
+import { GetMonAbility } from "../pokemon/mon_extra";
 import { roamerLevel, tryStartRoamerEncounter } from "../pokemon/roamer";
 
 export const MAX_ENCOUNTER_RATE = 1600;
@@ -335,7 +336,7 @@ export function GetAbilityEncounterRateModType(): number {
   sWildEncounterData.abilityEffect = 0;
   const lead = save.party[0];
   if (lead && !lead.isEgg) {
-    const ab = ability(lead);
+    const ab = GetMonAbility(lead);
     if (ab === C.ABILITY_STENCH)
       sWildEncounterData.abilityEffect = 1;
     else if (ab === C.ABILITY_ILLUMINATE)

@@ -71,7 +71,7 @@ import {
 import { speciesName, type Pokemon } from "./pokemon/pokemon";
 import { itemName } from "./pokemon/items";
 import { GetHPBarLevel } from "./battle/interface";
-import { GetMonSpritePalFromSpeciesAndPersonality, LoadSpecialPokePic } from "./pokemon/pics";
+import { GetMonSpritePalFromSpeciesAndPersonality, IsMonSpriteNotFlipped, LoadSpecialPokePic } from "./pokemon/pics";
 import { CreateMonIcon, DestroyMonIcon, SafeFreeMonIconPalette, SafeLoadMonIconPalette } from "./pokemonIcon";
 import { FreeBallGfx, gBallSpriteTemplates, ItemIdToBallId, LoadBallGfx } from "./battle/pokeball";
 import { ShouldPlayNormalMonCry } from "./battle/gfx_sfx_util";
@@ -1561,7 +1561,7 @@ function PokeSum_CreateMonPicSprite(): void {
   };
 
   const spriteId = CreateSprite(template, 60, 65, 0);
-  const noFlip = !!rom.species[species]?.noFlip;
+  const noFlip = IsMonSpriteNotFlipped(species);
   gSprites[spriteId].hFlip = noFlip ? 0 : 1;
   pss.monPicSpriteId = spriteId;
 
@@ -1691,7 +1691,7 @@ function PokeSum_CreateMonIconSprite(): void {
 
   SafeLoadMonIconPalette(species);
   pss.monIconSpriteId = CreateMonIcon(species, SpriteCallbackDummy, 24, 32, 0, pss.currentMon.personality, 1);
-  const noFlip = !!rom.species[species]?.noFlip;
+  const noFlip = IsMonSpriteNotFlipped(species);
   gSprites[pss.monIconSpriteId].hFlip = noFlip ? 0 : 1;
   PokeSum_ShowOrHideMonIconSprite(true);
 }

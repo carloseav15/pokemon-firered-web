@@ -1357,6 +1357,129 @@ export function gMultiuseSpriteTemplate(): SpriteTemplate {
 
 const battlerSpriteCallbacks = () => ({ SpriteCB_AllyMon, SpriteCB_EnemyMon });
 
+// ---------------------------------------------------------------- MonSpritesGfxManager (pokemon.c)
+
+/** struct MonSpritesGfxManager (pokemon.c:44): the out-of-battle mon pic buffers. */
+type MonSpritesGfxManager = {
+  numSprites: number;
+  battlePosition: number;
+  numFrames: number;
+  active: number;
+  mode: number;
+  dataSize: number;
+  spriteBuffer: Uint8Array;
+  spritePointers: Uint8Array[];
+  templates: SpriteTemplate[];
+  frameImages: SpriteFrameImage[];
+};
+
+const GFX_MANAGER_ACTIVE = 0xa3; // arbitrary value chosen in C
+
+let sMonSpritesGfxManager: MonSpritesGfxManager | null = null;
+
+/** InitMonSpritesGfx_Mode1 (pokemon.c): gSpriteTemplates_Battlers over the manager's own buffer. */
+function InitMonSpritesGfx_Mode1(structPtr: MonSpritesGfxManager, battlePosition: number): void {
+  const battlers = cdata<CSpriteTemplate[]>("pokemon", "gSpriteTemplates_Battlers");
+  if (battlePosition >= C.MAX_BATTLERS_COUNT) {
+    for (let i = 0; i < structPtr.numSprites; i++) {
+      const images = structPtr.frameImages.slice(i * structPtr.numFrames, (i + 1) * structPtr.numFrames);
+      structPtr.templates[i] = templateFrom(battlers[i], battlerSpriteCallbacks(), images);
+      for (let j = 0; j < structPtr.numFrames; j++) {
+        images[j].data = structPtr.spritePointers[i].subarray(j * MON_PIC_SIZE, (j + 1) * MON_PIC_SIZE);
+      }
+    }
+  } else {
+    const images = structPtr.frameImages.slice(0, structPtr.numFrames);
+    structPtr.templates[0] = templateFrom(battlers[battlePosition], battlerSpriteCallbacks(), images);
+    for (let j = 0; j < structPtr.numFrames; j++) {
+      images[j].data = structPtr.spritePointers[0].subarray(j * MON_PIC_SIZE, (j + 1) * MON_PIC_SIZE);
+    }
+  }
+}
+
+/** InitMonSpritesGfx_Mode0 (pokemon.c, unused by the game): sSpriteTemplate_64x64 over the buffer.
+ *  The `i * numSprites + j` image index is the one C has (it comments that numFrames was meant). */
+function InitMonSpritesGfx_Mode0(structPtr: MonSpritesGfxManager): void {
+  const base = templateFrom(cdata<CSpriteTemplate>("pokemon", "sSpriteTemplate_64x64"), battlerSpriteCallbacks());
+  for (let i = 0; i < structPtr.numSprites; i++) {
+    structPtr.templates[i] = { ...base };
+    for (let j = 0; j < structPtr.numFrames; j++) {
+      structPtr.frameImages[i * structPtr.numSprites + j].data = structPtr.spritePointers[i].subarray(j * MON_PIC_SIZE, (j + 1) * MON_PIC_SIZE);
+    }
+    structPtr.templates[i].images = structPtr.frameImages.slice(i * structPtr.numSprites, i * structPtr.numSprites + structPtr.numFrames);
+    structPtr.templates[i].anims = gAnims_MonPic();
+    structPtr.templates[i].paletteTag = i;
+  }
+}
+
+/** CreateMonSpritesGfxManager (pokemon.c): C's AllocZeroed failure paths (ALLOC_FAIL_*) cannot
+ *  happen here — a JS allocation throws instead of returning NULL. */
+export function CreateMonSpritesGfxManager(battlePositionArg: number, mode: number): MonSpritesGfxManager | null {
+  let battlePosition = battlePositionArg;
+  if (sMonSpritesGfxManager) {
+    if (sMonSpritesGfxManager.active === GFX_MANAGER_ACTIVE) return null;
+    sMonSpritesGfxManager = null; // C memsets the stale manager and frees it
+  }
+  const mgr: MonSpritesGfxManager = {
+    numSprites: 0, battlePosition: 0, numFrames: 0, active: 0, mode: 0, dataSize: 0,
+    spriteBuffer: new Uint8Array(0), spritePointers: [], templates: [], frameImages: [],
+  };
+  sMonSpritesGfxManager = mgr;
+
+  switch (mode) {
+    case 1:
+      if (battlePosition === C.MAX_BATTLERS_COUNT) {
+        mgr.numSprites = C.MAX_BATTLERS_COUNT;
+        mgr.battlePosition = C.MAX_BATTLERS_COUNT;
+      } else {
+        if (battlePosition > C.MAX_BATTLERS_COUNT) battlePosition = 0;
+        mgr.numSprites = 1;
+        mgr.battlePosition = 1;
+      }
+      mgr.numFrames = C.MAX_MON_PIC_FRAMES;
+      mgr.mode = 1;
+      break;
+    case 0:
+    default:
+      if (!battlePosition) battlePosition = 1;
+      if (battlePosition > 8) battlePosition = 8;
+      mgr.numSprites = battlePosition;
+      mgr.battlePosition = battlePosition;
+      mgr.numFrames = 4;
+      mgr.mode = 0;
+      break;
+  }
+
+  mgr.dataSize = mgr.numFrames * MON_PIC_SIZE;
+  mgr.spriteBuffer = new Uint8Array(mgr.numSprites * mgr.dataSize);
+  for (let i = 0; i < mgr.numSprites; i++) {
+    mgr.spritePointers.push(mgr.spriteBuffer.subarray(mgr.dataSize * i, mgr.dataSize * (i + 1)));
+  }
+
+  mgr.templates = Array.from({ length: mgr.numSprites }, () => ({}) as SpriteTemplate);
+  mgr.frameImages = Array.from({ length: mgr.numSprites * mgr.numFrames }, () => ({ data: new Uint8Array(0), size: MON_PIC_SIZE }));
+  if (mgr.mode === 1) InitMonSpritesGfx_Mode1(mgr, battlePosition);
+  else InitMonSpritesGfx_Mode0(mgr);
+
+  mgr.active = GFX_MANAGER_ACTIVE;
+  return mgr;
+}
+
+/** DestroyMonSpritesGfxManager (pokemon.c): both C branches (active or not) end with the manager freed. */
+export function DestroyMonSpritesGfxManager(): void {
+  if (!sMonSpritesGfxManager) return;
+  sMonSpritesGfxManager = null;
+}
+
+/** MonSpritesGfxManager_GetSpritePtr (pokemon.c): the buffer DecompressPicFromTable writes into;
+ *  C reads the pointer without a NULL check, this returns an empty view instead. */
+export function MonSpritesGfxManager_GetSpritePtr(spriteNum: number): Uint8Array {
+  const mgr = sMonSpritesGfxManager;
+  if (!mgr || mgr.active !== GFX_MANAGER_ACTIVE) return new Uint8Array(0);
+  if (spriteNum >= mgr.numSprites) spriteNum = 0;
+  return mgr.spritePointers[spriteNum];
+}
+
 /** gMonSpritesGfxPtr->templates[i]: gSpriteTemplates_Battlers[i] with images pointing at the decompression buffers. */
 function battlerTemplates(): SpriteTemplate[] {
   const templates = cdata<CSpriteTemplate[]>("pokemon", "gSpriteTemplates_Battlers");
@@ -1370,8 +1493,18 @@ let monPicAnims: AnimCmd[][] | null = null;
 const gAnims_MonPic = () => (monPicAnims ??= animsFrom({ $sym: "gAnims_MonPic" }));
 
 export function SetMultiuseSpriteTemplateToPokemon(speciesTag: number, battlerPosition: number): void {
-  if (battlerPosition >= 4) battlerPosition = 0;
-  multiuse = { ...battlerTemplates()[battlerPosition], paletteTag: speciesTag, anims: gAnims_MonPic() };
+  // C picks gMonSpritesGfxPtr->templates first, then sMonSpritesGfxManager, then the static table.
+  // gMonSpritesGfxPtr never becomes NULL in this port, so the manager (created outside battle, by
+  // oak speech) is tested first; during battle there is no manager and the result is the same.
+  let base: SpriteTemplate;
+  if (sMonSpritesGfxManager) {
+    if (battlerPosition >= sMonSpritesGfxManager.battlePosition) battlerPosition = 0;
+    base = sMonSpritesGfxManager.templates[battlerPosition];
+  } else {
+    if (battlerPosition >= 4) battlerPosition = 0;
+    base = battlerTemplates()[battlerPosition];
+  }
+  multiuse = { ...base, paletteTag: speciesTag, anims: gAnims_MonPic() };
 }
 
 /** SpriteFrameImage table from a C initializer: [ptr, size, ptr, size, ...]. */

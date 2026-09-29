@@ -4,6 +4,8 @@
 
 import * as C from "../generated/constants";
 import { cdata, incbin, symName } from "../hw/assets";
+import { rom } from "../rom";
+import { gMonSpritesGfxPtr } from "../battle/globals";
 import { GetMonData, IsShinyOtIdPersonality, type Mon } from "./mon";
 
 type CSheet = { data: unknown; size: number; tag: number };
@@ -112,8 +114,7 @@ const sSpindaSpotGraphics = [
   { x: 34, y: 26, image: [60, 126, 255, 255, 255, 255, 255, 126, 60, 0, 0, 0, 0, 0, 0, 0] },
 ];
 
-export function DrawSpindaSpots(species: number, personality: number, dest: Uint8Array, isFrontPic: boolean): void {
-  if (species !== C.SPECIES_SPINDA || !isFrontPic) return;
+function drawSpindaSpots(personality: number, dest: Uint8Array): void {
   let p = personality >>> 0;
   for (const spot of sSpindaSpotGraphics) {
     const x = (spot.x + ((p & 0x0f) - 8)) & 0xff;
@@ -135,4 +136,23 @@ export function DrawSpindaSpots(species: number, personality: number, dest: Uint
     }
     p >>>= 8;
   }
+}
+
+export function DrawSpindaSpots(species: number, personality: number, dest: Uint8Array, isFrontPic: boolean): void {
+  if (species !== C.SPECIES_SPINDA || !isFrontPic) return;
+  drawSpindaSpots(personality, dest);
+}
+
+/** DrawSpindaSpotsUnused (pokemon.c): same drawing, but decides for itself whether dest is the
+ *  back pic by comparing it with the battler buffers instead of taking an isFrontPic flag. */
+export function DrawSpindaSpotsUnused(species: number, personality: number, dest: Uint8Array): void {
+  if (species !== C.SPECIES_SPINDA) return;
+  if (dest === gMonSpritesGfxPtr.sprites[C.B_POSITION_PLAYER_LEFT]) return;
+  if (dest === gMonSpritesGfxPtr.sprites[C.B_POSITION_PLAYER_RIGHT]) return;
+  drawSpindaSpots(personality, dest);
+}
+
+/** IsMonSpriteNotFlipped (pokemon.c) */
+export function IsMonSpriteNotFlipped(species: number): boolean {
+  return !!rom.species[species]?.noFlip;
 }

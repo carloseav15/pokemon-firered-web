@@ -6,9 +6,10 @@ import { gMain } from "../hw/runtime";
 import { random } from "../random";
 import { rom } from "../rom";
 import { save } from "../save";
-import { currentRegionMapSection, GetMonData, GetNatureFromPersonality, NationalPokedexNumToSpecies, playerMon, SetMonData, type Mon } from "./mon";
+import { currentRegionMapSection, GetMonData, GetNature, GetNatureFromPersonality, gPPUpClearMask, NationalPokedexNumToSpecies, playerMon, SetMonData, type Mon } from "./mon";
 import { G, gBattleMons, gBattlerPartyIndexes, gEnigmaBerries } from "../battle/globals";
-import { GetBattlerAtPosition, ItemId_GetHoldEffect } from "../battle/util";
+import { GetAbilityBySpecies, GetBattlerAtPosition, ItemId_GetHoldEffect } from "../battle/util";
+import type { BattlePokemon } from "../generated/structs";
 
 const HM_MOVES_END = 0xffff;
 
@@ -152,4 +153,128 @@ export function IsTradedMon(mon: Mon): boolean {
   const otName: number[] = [];
   GetMonData(mon, C.MON_DATA_OT_NAME, otName);
   return IsOtherTrainer(GetMonData(mon, C.MON_DATA_OT_ID), otName);
+}
+
+/** GetMonAbility (pokemon.c) */
+export function GetMonAbility(mon: Mon): number {
+  return GetAbilityBySpecies(GetMonData(mon, C.MON_DATA_SPECIES), GetMonData(mon, C.MON_DATA_ABILITY_NUM));
+}
+
+/** RemoveBattleMonPPBonus (pokemon.c) */
+export function RemoveBattleMonPPBonus(mon: BattlePokemon, moveIndex: number): void {
+  mon.ppBonuses &= gPPUpClearMask[moveIndex];
+}
+
+/** PartyMonHasStatus (pokemon.c): partyIndex and battleId are unused in the C body. */
+export function PartyMonHasStatus(mon: Mon, _partyIndex: number, healMask: number, _battleId: number): boolean {
+  return (GetMonData(mon, C.MON_DATA_STATUS) & healMask) !== 0;
+}
+
+/** GetItemEffectParamOffset (pokemon.c): offset of effectBit inside effectByte of the item's effect,
+ *  ITEM_EFFECT_ARG_START when the byte carries that effect, 0 when it must not be used. */
+export function GetItemEffectParamOffset(itemId: number, effectByte: number, effectBit: number): number {
+  let offset = C.ITEM_EFFECT_ARG_START;
+  let itemEffect: number[] | Uint8Array | null = rom.itemEffects[itemId - C.ITEM_POTION] ?? null;
+
+  if (!itemEffect && itemId !== C.ITEM_ENIGMA_BERRY) return 0;
+  if (itemId === C.ITEM_ENIGMA_BERRY) itemEffect = gEnigmaBerries[G.gActiveBattler].itemEffect;
+  // C works with a pointer that it has already proven non-NULL.
+  if (!itemEffect) return 0;
+
+  for (let i = 0; i < C.ITEM_EFFECT_ARG_START; i++) {
+    switch (i) {
+      case 0:
+      case 1:
+      case 2:
+      case 3:
+        if (i === effectByte) return 0;
+        break;
+      case 4: {
+        let val = itemEffect[4];
+        if (val & C.ITEM4_PP_UP) val &= ~C.ITEM4_PP_UP;
+        let j = 0;
+        while (val) {
+          if (val & 1) {
+            switch (j) {
+              case 2: // ITEM4_HEAL_HP
+                if (val & (C.ITEM4_REVIVE >> 2)) val &= ~(C.ITEM4_REVIVE >> 2);
+              // fallthrough
+              case 0: // ITEM4_EV_HP
+                if (i === effectByte && (val & effectBit)) return offset;
+                offset++;
+                break;
+              case 1: // ITEM4_EV_ATK
+                if (i === effectByte && (val & effectBit)) return offset;
+                offset++;
+                break;
+              case 3: // ITEM4_HEAL_PP
+                if (i === effectByte && (val & effectBit)) return offset;
+                offset++;
+                break;
+              case 7: // ITEM4_EVO_STONE
+                if (i === effectByte) return 0;
+                break;
+            }
+          }
+          j++;
+          val >>= 1;
+          if (i === effectByte) effectBit >>= 1;
+        }
+        break;
+      }
+      case 5: {
+        let val = itemEffect[5];
+        let j = 0;
+        while (val) {
+          if (val & 1) {
+            switch (j) {
+              case 0: // ITEM5_EV_DEF
+              case 1: // ITEM5_EV_SPEED
+              case 2: // ITEM5_EV_SPDEF
+              case 3: // ITEM5_EV_SPATK
+              case 4: // ITEM5_PP_MAX
+              case 5: // ITEM5_FRIENDSHIP_LOW
+              case 6: // ITEM5_FRIENDSHIP_MID
+                if (i === effectByte && (val & effectBit)) return offset;
+                offset++;
+                break;
+              case 7: // ITEM5_FRIENDSHIP_HIGH
+                if (i === effectByte) return 0;
+                break;
+            }
+          }
+          j++;
+          val >>= 1;
+          if (i === effectByte) effectBit >>= 1;
+        }
+        break;
+      }
+    }
+  }
+
+  return offset;
+}
+
+/** RandomlyGivePartyPokerus (pokemon.c): the C body is the RS stub that only reserves a stack slot. */
+export function RandomlyGivePartyPokerus(_party: Mon[]): void {
+  let foo = 0;
+  foo;
+}
+
+/** UpdatePartyPokerusTime (pokemon.c): same RS stub as RandomlyGivePartyPokerus. */
+export function UpdatePartyPokerusTime(_party: Mon[]): void {
+  let foo = 0;
+  foo;
+}
+
+/** PartySpreadPokerus (pokemon.c): same RS stub as RandomlyGivePartyPokerus. */
+export function PartySpreadPokerus(_party: Mon[]): void {
+  let foo = 0;
+  foo;
+}
+
+/** GetMonFlavorRelation (pokemon.c) */
+export function GetMonFlavorRelation(mon: Mon, flavor: number): number {
+  const nature = GetNature(mon);
+  return cdata<number[]>("pokemon", "sPokeblockFlavorCompatibilityTable")[nature * C.FLAVOR_COUNT + flavor];
 }

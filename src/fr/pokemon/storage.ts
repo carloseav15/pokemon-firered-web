@@ -2,8 +2,8 @@
 import { concat, EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { rom } from "../rom";
 import { flagClear, flagGet, flagSet, save, SV, varGet, varSet, type SaveData } from "../save";
-import { calculatePPWithBonus, calculateStats, createMon, type Pokemon } from "./pokemon";
-import { GetMonData, SetMonData, zeroMon, type Mon } from "./mon";
+import { calculatePPWithBonus, createMon, type Pokemon } from "./pokemon";
+import { BoxMonToMon, GetMonData, SetMonData, zeroMon, type Mon } from "./mon";
 import * as C from "../generated/constants";
 
 export type PokemonStorage = Pick<SaveData, "currentBox" | "boxes" | "boxNames" | "boxWallpapers">;
@@ -113,16 +113,22 @@ export function ZeroBoxMonAt(boxId: number, boxPosition: number): void {
   if (validBoxSlot(boxId, boxPosition)) save.boxes[boxId][boxPosition] = null;
 }
 
-/** BoxMonAtToMon: restore battle-only fields and recalculate current stats. */
+/** BoxMonAtToMon (pokemon_storage_system.c): moves the boxed mon into a party slot. */
 export function BoxMonAtToMon(boxId: number, boxPosition: number, dst: Pokemon): void {
   if (!validBoxSlot(boxId, boxPosition)) return;
   const boxed = save.boxes[boxId][boxPosition];
   if (!boxed) { Object.assign(dst, zeroMon()); return; }
-  Object.assign(dst, structuredClone(boxed));
-  dst.status = 0;
-  dst.mail = C.MAIL_NONE;
-  calculateStats(dst);
-  dst.hp = dst.stats[0];
+  BoxMonToMon(boxed, dst);
+}
+
+/** IsPokemonStorageFull (pokemon.c) */
+export function IsPokemonStorageFull(): boolean {
+  for (let i = 0; i < C.TOTAL_BOXES_COUNT; i++) {
+    for (let j = 0; j < C.IN_BOX_COUNT; j++) {
+      if (GetBoxMonDataAt(i, j, C.MON_DATA_SPECIES) === C.SPECIES_NONE) return false;
+    }
+  }
+  return true;
 }
 
 /** GetBoxedMonPtr: direct reference to the modeled BoxPokemon, if the slot exists. */

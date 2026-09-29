@@ -23,7 +23,7 @@ import {
   div, gBattleMoves,
 } from "../macros";
 import {
-  CalculatePlayerPartyCount, GetMonData, MonTryLearningNewMove, RemoveMonPPBonus, SetMonMoveSlot, gEnemyParty, playerMon, gPPUpClearMask,
+  CalculatePlayerPartyCount, GetMonData, MonTryLearningNewMove, RemoveMonPPBonus, SetMonMoveSlot, gEnemyParty, playerMon,
   type Mon, SpeciesToNationalPokedexNum,
 } from "../../pokemon/mon";
 import {
@@ -44,7 +44,7 @@ import { SwitchInClearSetData, UpdatePartyOwnerOnSwitch_NonMulti } from "../main
 import { BattleMainCB2 } from "../main_init";
 import { AttacksThisTurn } from "./helpers";
 import { u32bytes } from "./part1";
-import { HandleSetPokedexFlag, IsHMMove2 } from "../../pokemon/mon_extra";
+import { HandleSetPokedexFlag, IsHMMove2, RemoveBattleMonPPBonus } from "../../pokemon/mon_extra";
 import { UpdateSentPokesToOpponentValue } from "../util";
 import { ShowSelectMovePokemonSummaryScreen, GetMoveSlotToReplace } from "../ext";
 import { ReshowBattleScreenAfterMenu } from "../reshow";
@@ -1098,11 +1098,11 @@ export function Cmd_yesnoboxlearnmove(): void {
             RemoveMonPPBonus(mon, movePosition);
             SetMonMoveSlot(mon, G.gMoveToLearn, movePosition);
             if (gBattlerPartyIndexes[0] === gBattleStruct.expGetterMonId && MOVE_IS_PERMANENT(0, movePosition, gDisableStructs[0])) {
-              gBattleMons[0].ppBonuses &= gPPUpClearMask[movePosition];
+              RemoveBattleMonPPBonus(gBattleMons[0], movePosition);
               SetBattleMonMoveSlot(0, G.gMoveToLearn, movePosition);
             }
             if (G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE && gBattlerPartyIndexes[2] === gBattleStruct.expGetterMonId && MOVE_IS_PERMANENT(2, movePosition, gDisableStructs[2])) {
-              gBattleMons[2].ppBonuses &= gPPUpClearMask[movePosition];
+              RemoveBattleMonPPBonus(gBattleMons[2], movePosition);
               SetBattleMonMoveSlot(2, G.gMoveToLearn, movePosition);
             }
           }
