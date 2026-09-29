@@ -10,6 +10,7 @@ import { rom } from "../rom";
 import { GetUnownLetterByPersonality } from "../pokemonIcon";
 import { save, type MailData, type PcMailEntry } from "../save";
 import { speciesName, type Pokemon } from "./pokemon";
+import { ConvertEasyChatWordsToString, CopyEasyChatWord } from "../easyChat";
 
 export const MAIL_WORDS_COUNT = C.MAIL_WORDS_COUNT;
 export const EC_WORD_UNDEFINED = C.EC_WORD_UNDEFINED;
@@ -234,86 +235,8 @@ export function hasMessageText(msg: MailMessage | undefined): boolean {
 }
 
 // ---------------------------------------------------------------- easy-chat words
-
-/** EC_GROUP ids 0x0..0x15 in sEasyChatGroups order (easy_chat_groups.h). */
-const EC_GROUP_KEYS = [
-  "sEasyChatGroup_Pokemon", "sEasyChatGroup_Trainer", "sEasyChatGroup_Status",
-  "sEasyChatGroup_Battle", "sEasyChatGroup_Greetings", "sEasyChatGroup_People",
-  "sEasyChatGroup_Voices", "sEasyChatGroup_Speech", "sEasyChatGroup_Endings",
-  "sEasyChatGroup_Feelings", "sEasyChatGroup_Conditions", "sEasyChatGroup_Actions",
-  "sEasyChatGroup_Lifestyle", "sEasyChatGroup_Hobbies", "sEasyChatGroup_Time",
-  "sEasyChatGroup_Misc", "sEasyChatGroup_Adjectives", "sEasyChatGroup_Events",
-  "sEasyChatGroup_Move1", "sEasyChatGroup_Move2", "sEasyChatGroup_TrendySaying",
-  "sEasyChatGroup_Pokemon2",
-];
-
-type WordInfo = { text: SymRef };
-
-function groupWords(group: number): number[] | WordInfo[] | undefined {
-  const key = EC_GROUP_KEYS[group];
-  if (!hasCData("easy_chat", key)) {
-    void loadCData("easy_chat").catch(() => undefined);
-    return undefined;
-  }
-  return cdata<number[] | WordInfo[]>("easy_chat", key);
-}
-
-/** IsECWordInvalid (easy_chat.c); EC_WORD_UNDEFINED is an allowed empty word. */
-function IsECWordInvalid(word: number): boolean {
-  word &= 0xffff;
-  if (word === EC_WORD_UNDEFINED) return false;
-  const group = (word >> 9) & 0x7f;
-  const index = word & 0x1ff;
-  if (group >= C.EC_NUM_GROUPS) return true;
-  const list = groupWords(group);
-  if (!list) return true;
-  if (group === C.EC_GROUP_POKEMON_2 || group === C.EC_GROUP_MOVE_1 || group === C.EC_GROUP_MOVE_2 || group === C.EC_GROUP_POKEMON) {
-    return !(list as number[]).includes(index);
-  }
-  return index >= list.length;
-}
-
-/** GetEasyChatWord (easy_chat.c); caller checks IsECWordInvalid first. */
-function GetEasyChatWord(group: number, index: number): string {
-  if (group === C.EC_GROUP_POKEMON_2 || group === C.EC_GROUP_POKEMON) return decode(speciesName(index));
-  if (group === C.EC_GROUP_MOVE_1 || group === C.EC_GROUP_MOVE_2) {
-    const move = rom.moves[index];
-    if (!move) return "???";
-    return decode(Uint8Array.from(atob(move.name), (ch) => ch.charCodeAt(0)));
-  }
-  const list = groupWords(group);
-  if (!list) return "???";
-  const entry = (list as WordInfo[])[index];
-  const sym = entry?.text?.$sym;
-  if (!sym || !hasCData("easy_chat", sym)) return "???";
-  return decode(Uint8Array.from(cdata<number[]>("easy_chat", sym)));
-}
-
-/** CopyEasyChatWord (easy_chat.c), as decoded game text; null represents an EOS-only word. */
-export function CopyEasyChatWord(word: number): string | null {
-  word &= 0xffff;
-  if (word === EC_WORD_UNDEFINED) return null;
-  if (IsECWordInvalid(word)) return "???";
-  const group = (word >> 9) & 0x7f;
-  const index = word & 0x1ff;
-  return GetEasyChatWord(group, index);
-}
-
-/** ConvertEasyChatWordsToString (easy_chat.c): separate nonempty preceding words with a space and rows with a newline. */
-export function ConvertEasyChatWordsToString(words: number[], columns: number, rows: number): string {
-  const lines: string[] = [];
-  let index = 0;
-  for (let row = 0; row < rows; row++) {
-    let line = "";
-    for (let column = 0; column < columns; column++) {
-      const word = words[index++] ?? C.EC_WORD_UNDEFINED;
-      line += CopyEasyChatWord(word) ?? "";
-      if (column < columns - 1 && word !== C.EC_WORD_UNDEFINED) line += " ";
-    }
-    lines.push(line);
-  }
-  return lines.join("\n");
-}
+// CopyEasyChatWord / ConvertEasyChatWordsToString live in easyChat.ts (easy_chat.c).
+export { CopyEasyChatWord, ConvertEasyChatWordsToString };
 
 /** BufferMailMessage's active 5x2 layout: ConvertEasyChatWordsToString for
  * each row (two words in rows 0..3, one word in row 4). C appends a space

@@ -32,7 +32,7 @@ import { GetMonsStateToDoubles } from "../pokemon/scriptPokemonUtil";
 import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/specialFieldAnim";
 import { ReadTrainerTowerAndValidate } from "../cereaderTool";
 import { WonderNews_GetRewardInfo } from "../wonderNews";
-import { BufferRandomHobbyOrLifestyleString } from "../easyChat";
+import { BufferRandomHobbyOrLifestyleString, ShowEasyChatMessage } from "../easyChat";
 import { IsEnigmaBerryValid } from "../pokemon/berry";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -447,6 +447,7 @@ export const SPECIALS: Record<string, Special> = {
   // ---- easy chat hobby/lifestyle (easy_chat.c:318-323): random enabled word
   // from group 12 (LIFESTYLE) or 13 (HOBBIES) into gStringVar2.
   BufferRandomHobbyOrLifestyleString,
+  ShowEasyChatMessage: (ctx) => { ShowEasyChatMessage((text) => { ctx.ow.messageBox.show(text, true); }); },
   // ---- battle tower (battle_tower.c): the tower engine is not ported; gating
   // checks report a valid party so field scripts continue past the desk.
   CheckPartyBattleTowerBanlist: () => { varSet(SV.x8004, 0); },
