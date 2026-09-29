@@ -7,66 +7,60 @@
 // - Party and box counting functions: CountMonsInBox, CountPartyMons, CountPartyNonEggMons, etc.
 // - Integration with pokemon/storage.ts rules for the underlying box operations.
 
+// pokemon_storage_system_menu.c: the PC main menu (Task_PCMainMenu), the tile-buffer text helpers, the party/box counters and
+// the Deposit/Jump "choose box" popup. The box screen itself (EnterPokeStorage) is storageSystemTasks.ts.
+//
+// Browser adaptation: Task_PCMainMenu runs on the overworld's canvas windows (the field stays visible behind the menu, as
+// on hardware), and entering the box screen hosts the hardware scene through fieldMenu; CB2_ExitPokeStorage returns to
+// the field and re-opens the main menu (FieldTask_ReturnToPcMenu).
+
 import type { Game } from "../game";
-import { HwScene } from "../hw/runtime";
-import { tasks, type Task } from "../gba/tasks";
-import { joy, JOY_NEW, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, A_BUTTON, B_BUTTON } from "../gba/input";
+import { tasks } from "../gba/tasks";
+import { DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, A_BUTTON, B_BUTTON, JOY_NEW } from "../gba/input";
 import { sound } from "../audio/sound";
-import { openHardwareChoice } from "./hardwareChoice";
-import {
-  depositMon, getBoxName, getBoxWallpaper, giveHeldItem, moveMon, releaseMon,
-  setBoxWallpaper, WALLPAPER_NAMES, withdrawMon,
-  type StorageLocation, type StorageResult,
-} from "../pokemon/storage";
-import { addBagItem } from "../pokemon/items";
-import { isMailItem } from "../pokemon/mail";
-import { decode, encode } from "../gba/charmap";
-import { DoNamingScreen } from "../namingScreen";
 import { save, varGet, SV } from "../save";
 import * as C from "../generated/constants";
 import { rom } from "../rom";
-import { cdata, loadCData } from "../hw/assets";
-import { FONT_NORMAL } from "../gba/font";
+import { cdata, incbin } from "../hw/assets";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1 } from "../gba/font";
 import { printText, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "../gba/textPrinter";
 import { Window } from "../gba/window";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "../gba/fade";
-import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
+import { Menu, MENU_NOTHING_CHOSEN } from "./menu";
+import { MENU_B_PRESSED } from "../hw/menu";
 import { GetMenuCursorDimensionByFont } from "../hw/menu";
+import { StringCopy, StringLength_Multibyte, ConvertIntToDecimalStringN } from "../generated/stringUtil";
+import { STR_CONV_MODE_RIGHT_ALIGN, CHAR_SPACE, EOS, encode } from "../gba/charmap";
+import { GetBoxMonDataAt, GetBoxNamePtr } from "../pokemon/storage";
+import { resetPokemonStorageSystem } from "../pokemon/storage";
+import { AddWindow, FillWindowPixelBuffer, gWindows, PIXEL_FILL, RemoveWindow, type WindowTemplate } from "../hw/window";
+import { AddTextPrinterParameterized4 } from "../hw/text";
+import { affineAnimsFrom, animsFrom, oamFrom } from "../hw/cdataSprite";
+import {
+  CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpriteTileStartByTag, gDummySpriteAffineAnimTable,
+  gDummySpriteAnimTable, gSprites, LoadSpritePalette, LoadSpriteSheets, oamData, SPRITE_SHAPE, SPRITE_SIZE, SpriteCallbackDummy,
+  StartSpriteAnim, type Sprite, type SpriteTemplate,
+} from "../hw/sprite";
+import { ppu } from "../hw/ppu";
+import { fieldMenu } from "./fieldMenus";
+import { CreateChooseBoxArrows } from "../storageSystemGraphics";
+import { EnterPokeStorage, GetCurrentBoxOption, preloadStorageSystem } from "../storageSystemTasks";
+import {
+  BOX_NAME_LENGTH, BOXID_CANCELED, BOXID_NONE_CHOSEN, type ChooseBoxMenu, IN_BOX_COUNT, OPTION_DEPOSIT, OPTION_EXIT, OPTION_WITHDRAW,
+  OPTIONS_COUNT, PARTY_SIZE, TOTAL_BOXES_COUNT,
+} from "../storageSystemInternal";
 
-export const TOTAL_BOXES_COUNT = 14;
-export const IN_BOX_ROWS = 5;
-export const IN_BOX_COLUMNS = 6;
-export const IN_BOX_COUNT = IN_BOX_ROWS * IN_BOX_COLUMNS; // 30
-export const BOX_NAME_LENGTH = 8;
-export const PARTY_SIZE = 6;
+export { BOXID_CANCELED, BOXID_NONE_CHOSEN, IN_BOX_COUNT, OPTIONS_COUNT, PARTY_SIZE, TOTAL_BOXES_COUNT };
 
-export const OPTION_WITHDRAW = 0;
-export const OPTION_DEPOSIT = 1;
-export const OPTION_MOVE_MONS = 2;
-export const OPTION_MOVE_ITEMS = 3;
-export const OPTION_EXIT = 4;
-export const OPTIONS_COUNT = 5;
+const TEXT_DYNAMIC_COLOR_5 = 14;
+const TEXT_DYNAMIC_COLOR_6 = 15;
 
-export const BOXID_NONE_CHOSEN = 254;
-export const BOXID_CANCELED = 255;
+let sPreviousBoxOption = 0;
+let sChooseBoxMenu: ChooseBoxMenu | null = null;
+/** How the box screen hands the player back to the field (the fieldMenu scene's `close`). */
+let sReturnToField: (() => void) | null = null;
 
-export interface ChooseBoxMenu {
-  menuSprite?: any;
-  menuCornerSprites: any[];
-  arrowSprites: any[];
-  strbuf: Uint8Array;
-  buffer: Uint8Array;
-  tileTag: number;
-  paletteTag: number;
-  curBox: number;
-  subpriority: number;
-  loadedPalette: boolean;
-}
-
-export let sPreviousBoxOption = 0;
-export let sChooseBoxMenu: ChooseBoxMenu | null = null;
-
-export const sMainMenuTexts = [
+const sMainMenuTexts = [
   { text: "gText_WithdrawPokemon", desc: "gText_WithdrawMonDescription" },
   { text: "gText_DepositPokemon", desc: "gText_DepositMonDescription" },
   { text: "gText_MovePokemon", desc: "gText_MoveMonDescription" },
@@ -74,37 +68,80 @@ export const sMainMenuTexts = [
   { text: "gText_SeeYa", desc: "gText_SeeYaDescription" },
 ];
 
-export const sWindowTemplate_MainMenu = {
-  bg: 0,
-  tilemapLeft: 1,
-  tilemapTop: 1,
-  width: 17,
-  height: 10,
-  paletteNum: 15,
-  baseBlock: 0x001,
-};
+const sWindowTemplate_MainMenu = (): WindowTemplate => cdata<WindowTemplate>("pokemon_storage_system_menu", "sWindowTemplate_MainMenu");
+
+/** DrawTextWindowAndBufferTiles: render `string` into a 24x2 tile window and copy its first tiles into `dst`. */
+export function DrawTextWindowAndBufferTiles(
+  string: ArrayLike<number>,
+  dst: Uint8Array,
+  zero1: number,
+  zero2: number,
+  _unused: unknown,
+  bytesToBuffer: number,
+): void {
+  const winTemplate: WindowTemplate = { bg: 0, tilemapLeft: 0, tilemapTop: 0, width: 24, height: 2, paletteNum: 0, baseBlock: 0 };
+  const windowId = AddWindow(winTemplate);
+  FillWindowPixelBuffer(windowId, PIXEL_FILL(zero2));
+  const tileData = gWindows[windowId].tileData!;
+  let tileData1 = 0;
+  let tileData2 = winTemplate.width * 32;
+  const txtColor = [!zero1 ? C.TEXT_COLOR_TRANSPARENT : zero2, TEXT_DYNAMIC_COLOR_6, TEXT_DYNAMIC_COLOR_5];
+  AddTextPrinterParameterized4(windowId, FONT_NORMAL_COPY_1, 0, 2, 0, 0, txtColor, -1, string);
+  let tileBytesToBuffer = bytesToBuffer;
+  if (tileBytesToBuffer > 6) tileBytesToBuffer = 6;
+  const remainingBytes = bytesToBuffer - 6;
+  let d = 0;
+  if (tileBytesToBuffer > 0) {
+    for (let i = tileBytesToBuffer; i !== 0; i--) {
+      dst.set(tileData.subarray(tileData1, tileData1 + 0x80), d);
+      dst.set(tileData.subarray(tileData2, tileData2 + 0x80), d + 0x80);
+      tileData1 += 0x80;
+      tileData2 += 0x80;
+      d += 0x100;
+    }
+  }
+  // Never used. bytesToBuffer is always passed <= 6, so remainingBytes is always <= 0 here
+  if (remainingBytes > 0) dst.fill((zero2 << 4) | zero2, d, d + remainingBytes * 0x100);
+  RemoveWindow(windowId);
+}
+
+/** PrintStringToBufferCopyNow: render `string` into a temporary window and copy both tile rows into `dst`. */
+export function PrintStringToBufferCopyNow(
+  string: ArrayLike<number>,
+  dst: Uint8Array,
+  offset: number,
+  bgColor: number,
+  fgColor: number,
+  shadowColor: number,
+  _unused: unknown,
+): void {
+  const winTemplate: WindowTemplate = { bg: 0, tilemapLeft: 0, tilemapTop: 0, width: StringLength_Multibyte(string), height: 2, paletteNum: 0, baseBlock: 0 };
+  const size = winTemplate.width * 32;
+  const windowId = AddWindow(winTemplate);
+  FillWindowPixelBuffer(windowId, PIXEL_FILL(bgColor));
+  const tileData = gWindows[windowId].tileData!;
+  const txtColor = [bgColor, fgColor, shadowColor];
+  AddTextPrinterParameterized4(windowId, FONT_NORMAL_COPY_1, 0, 2, 0, 0, txtColor, -1, string);
+  dst.set(tileData.subarray(0, size), 0);
+  dst.set(tileData.subarray(size, size * 2), offset);
+  RemoveWindow(windowId);
+}
 
 /** CountMonsInBox */
 export function CountMonsInBox(boxId: number): number {
-  if (boxId < 0 || boxId >= (save.boxes?.length || TOTAL_BOXES_COUNT)) return 0;
-  const box = save.boxes[boxId];
-  if (!box) return 0;
   let count = 0;
   for (let i = 0; i < IN_BOX_COUNT; i++) {
-    if (box[i]?.species) count++;
+    if (GetBoxMonDataAt(boxId, i, C.MON_DATA_SPECIES) !== C.SPECIES_NONE) count++;
   }
   return count;
 }
 
 /** GetFirstFreeBoxSpot */
 export function GetFirstFreeBoxSpot(boxId: number): number {
-  if (boxId < 0 || boxId >= (save.boxes?.length || TOTAL_BOXES_COUNT)) return -1;
-  const box = save.boxes[boxId];
-  if (!box) return -1;
   for (let i = 0; i < IN_BOX_COUNT; i++) {
-    if (!box[i]?.species) return i;
+    if (GetBoxMonDataAt(boxId, i, C.MON_DATA_SPECIES) === C.SPECIES_NONE) return i;
   }
-  return -1;
+  return -1; // all spots are taken
 }
 
 /** CountPartyNonEggMons */
@@ -144,53 +181,11 @@ export function CountPartyMons(): number {
 }
 
 /** StringCopyAndFillWithSpaces */
-export function StringCopyAndFillWithSpaces(dst: Uint8Array, src: Uint8Array, n: number): Uint8Array {
-  let i = 0;
-  while (i < src.length && src[i] !== 0xff && i < n) {
-    dst[i] = src[i]!;
-    i++;
-  }
-  while (i < n) {
-    dst[i] = 0x00; // CHAR_SPACE in GBA charmap
-    i++;
-  }
-  if (i < dst.length) dst[i] = 0xff; // EOS
-  return dst;
-}
-
-/** DrawTextWindowAndBufferTiles */
-export function DrawTextWindowAndBufferTiles(
-  string: Uint8Array,
-  dst: Uint8Array,
-  zero1: number,
-  zero2: number,
-  unused: unknown,
-  bytesToBuffer: number,
-): void {
-  // Buffers rendered text glyphs to dst tile buffer
-  const maxBytes = Math.min(bytesToBuffer, 6);
-  if (dst && maxBytes > 0) {
-    dst.fill(zero2, 0, maxBytes * 0x100);
-  }
-}
-
-/** PrintStringToBufferCopyNow */
-export function PrintStringToBufferCopyNow(
-  string: Uint8Array | string,
-  dst: Uint8Array,
-  offset: number,
-  bgColor: number,
-  fgColor: number,
-  shadowColor: number,
-  unused: unknown,
-): void {
-  const bytes = typeof string === "string" ? encode(string) : string;
-  if (dst) {
-    const len = Math.min(bytes.length, dst.length);
-    for (let i = 0; i < len; i++) {
-      dst[i] = bytes[i]!;
-    }
-  }
+export function StringCopyAndFillWithSpaces(dst: Uint8Array, src: ArrayLike<number>, n: number): number {
+  let str = StringCopy(dst, src);
+  for (; str < n; str++) dst[str] = CHAR_SPACE;
+  dst[str] = EOS;
+  return str;
 }
 
 /** UnusedWriteRectCpu */
@@ -268,7 +263,7 @@ function printPcMenuMessage(text: ArrayLike<number>): void {
 /** CreatePCMainMenu: sWindowTemplate_MainMenu with a std frame, PrintTextArray and Menu_InitCursor. */
 export function CreatePCMainMenu(whichMenu: number, windowIdPtr: { id: number }): void {
   if (!activeGameInstance) return;
-  const t = sWindowTemplate_MainMenu;
+  const t = sWindowTemplate_MainMenu();
   const w = new Window(t.tilemapLeft, t.tilemapTop, t.width, t.height);
   w.frame = "std";
   w.frameType = save.options.frameType;
@@ -371,7 +366,7 @@ export function Task_PCMainMenu(taskId: number): void {
         // The storage screen loads its own palettes (ResetPaletteFade in its
         // init); the canvas field fade must not stay over it.
         paletteFade.clear();
-        if (activeGameInstance) runStorageOptionFlow(activeGameInstance, choice);
+        if (activeGameInstance) EnterPokeStorageScene(activeGameInstance, choice);
       }
       break;
   }
@@ -401,34 +396,43 @@ export function FieldTask_ReturnToPcMenu(): void {
   }
 }
 
+/** Host the box screen in a hardware scene (EnterPokeStorage), returning to the PC menu when it closes. */
+function EnterPokeStorageScene(game: Game, option: number): void {
+  sPreviousBoxOption = option;
+  void preloadStorageSystem().then(() => {
+    fieldMenu(game, (close) => {
+      sReturnToField = () => {
+        // CB2_ReturnToField: the field comes back from black (FieldTask_ReturnToPcMenu fades it in).
+        paletteFade.fill(RGB_BLACK);
+        close();
+        FieldTask_ReturnToPcMenu();
+      };
+      EnterPokeStorage(option);
+    }, false);
+  });
+}
+
 /** CB2_ExitPokeStorage */
 export function CB2_ExitPokeStorage(): void {
-  FieldTask_ReturnToPcMenu();
+  sPreviousBoxOption = GetCurrentBoxOption();
+  const returnToField = sReturnToField;
+  sReturnToField = null;
+  returnToField?.();
 }
 
 /** ResetPokemonStorageSystem */
 export function ResetPokemonStorageSystem(): void {
-  save.currentBox = 0;
-  save.boxes = Array.from({ length: TOTAL_BOXES_COUNT }, () => Array.from({ length: IN_BOX_COUNT }, () => null));
-  save.boxNames = Array.from({ length: TOTAL_BOXES_COUNT }, (_, i) => {
-    try {
-      if (rom.charmap?.chars) {
-        return Array.from(encode(`BOX ${i + 1}`));
-      }
-    } catch {}
-    return [0xbc, 0xd9, 0xe2, 0x00, 0xa1 + i, 0xff];
-  });
-  save.boxWallpapers = Array.from({ length: TOTAL_BOXES_COUNT }, (_, i) => i % 16);
+  resetPokemonStorageSystem();
 }
 
 /** LoadChooseBoxMenuGfx */
-export function LoadChooseBoxMenuGfx(
-  menu: ChooseBoxMenu,
-  tileTag: number,
-  palTag: number,
-  subpriority: number,
-  loadPal: boolean,
-): void {
+export function LoadChooseBoxMenuGfx(menu: ChooseBoxMenu, tileTag: number, palTag: number, subpriority: number, loadPal: boolean): void {
+  const g = "pokemon_storage_system_menu.c:";
+  if (loadPal) LoadSpritePalette({ data: incbin(g + "sChooseBoxMenu_Pal"), tag: palTag }); // Always false
+  LoadSpriteSheets([
+    { data: incbin(g + "sChooseBoxMenuCenter_Gfx"), size: 0x800, tag: tileTag },
+    { data: incbin(g + "sChooseBoxMenuCorners_Gfx"), size: 0x180, tag: tileTag + 1 },
+  ]);
   sChooseBoxMenu = menu;
   menu.tileTag = tileTag;
   menu.paletteTag = palTag;
@@ -438,9 +442,9 @@ export function LoadChooseBoxMenuGfx(
 
 /** FreeBoxSelectionPopupSpriteGfx */
 export function FreeBoxSelectionPopupSpriteGfx(): void {
-  if (sChooseBoxMenu) {
-    sChooseBoxMenu.loadedPalette = false;
-  }
+  if (sChooseBoxMenu!.loadedPalette) FreeSpritePaletteByTag(sChooseBoxMenu!.paletteTag);
+  FreeSpriteTilesByTag(sChooseBoxMenu!.tileTag);
+  FreeSpriteTilesByTag(sChooseBoxMenu!.tileTag + 1);
 }
 
 /** CreateChooseBoxMenuSprites */
@@ -455,14 +459,13 @@ export function DestroyChooseBoxMenuSprites(): void {
 
 /** HandleBoxChooseSelectionInput */
 export function HandleBoxChooseSelectionInput(): number {
-  if (!sChooseBoxMenu) return BOXID_NONE_CHOSEN;
   if (JOY_NEW(B_BUTTON)) {
     sound.playSE(C.SE_SELECT);
     return BOXID_CANCELED;
   }
   if (JOY_NEW(A_BUTTON)) {
     sound.playSE(C.SE_SELECT);
-    return sChooseBoxMenu.curBox;
+    return sChooseBoxMenu!.curBox;
   }
   if (JOY_NEW(DPAD_LEFT)) {
     sound.playSE(C.SE_SELECT);
@@ -475,72 +478,106 @@ export function HandleBoxChooseSelectionInput(): number {
 }
 
 /** ChooseBoxMenu_CreateSprites */
-export function ChooseBoxMenu_CreateSprites(curBox: number): void {
-  if (!sChooseBoxMenu) {
-    sChooseBoxMenu = {
-      menuCornerSprites: [],
-      arrowSprites: [],
-      strbuf: new Uint8Array(20),
-      buffer: new Uint8Array(0x800),
-      tileTag: 0,
-      paletteTag: 0,
-      curBox,
-      subpriority: 0,
-      loadedPalette: false,
-    };
+function ChooseBoxMenu_CreateSprites(curBox: number): void {
+  const m = sChooseBoxMenu!;
+  const sText_OutOf30 = encode("/30");
+  const oamCenter = oamData({ size: SPRITE_SIZE("64x64"), paletteNum: 1 });
+  const oamCorner = oamData({ shape: SPRITE_SHAPE("8x32"), size: SPRITE_SIZE("8x32"), paletteNum: 1 });
+  const template: SpriteTemplate = {
+    tileTag: m.tileTag, paletteTag: m.paletteTag, oam: oamCenter, anims: gDummySpriteAnimTable, images: null,
+    affineAnims: gDummySpriteAffineAnimTable, callback: SpriteCallbackDummy,
+  };
+  m.curBox = curBox;
+  let spriteId = CreateSprite(template, 160, 96, 0);
+  m.menuSprite = gSprites[spriteId];
+
+  template.oam = oamCorner;
+  template.tileTag = m.tileTag + 1;
+  template.anims = animsFrom({ $sym: "sAnims_ChooseBoxMenu" });
+  for (let i = 0; i < m.menuCornerSprites.length; i++) {
+    // corner sprites are created in order of top left, bottom left, top right, bottom right
+    spriteId = CreateSprite(template, 124, 80, m.subpriority); // place at top left
+    const corner = gSprites[spriteId];
+    m.menuCornerSprites[i] = corner;
+    let animNum = 0;
+    if (i & 2) {
+      corner.x = 196; // move to right
+      animNum = 2;
+    }
+    if (i & 1) {
+      corner.y = 112; // move to bottom
+      corner.oam.size = SPRITE_SIZE("8x16");
+      animNum++;
+    }
+    StartSpriteAnim(corner, animNum);
   }
-  sChooseBoxMenu.curBox = curBox;
-  sChooseBoxMenu.arrowSprites = [
-    { x: 124, y: 88, data: [-1, 0, 0], x2: 0, callback: SpriteCB_ChooseBoxArrow },
-    { x: 196, y: 88, data: [1, 0, 0], x2: 0, callback: SpriteCB_ChooseBoxArrow },
-  ];
+  for (let i = 0; i < m.arrowSprites.length; i++) {
+    m.arrowSprites[i] = CreateChooseBoxArrows(72 * i + 124, 88, i, 0, m.subpriority);
+    if (m.arrowSprites[i]) {
+      m.arrowSprites[i]!.data[0] = i === 0 ? -1 : 1;
+      m.arrowSprites[i]!.callback = SpriteCB_ChooseBoxArrow;
+    }
+  }
   ChooseBoxMenu_PrintBoxNameAndCount();
+  ChooseBoxMenu_PrintTextToSprite(sText_OutOf30, 5, 3);
 }
 
 /** ChooseBoxMenu_DestroySprites */
-export function ChooseBoxMenu_DestroySprites(): void {
-  if (sChooseBoxMenu) {
-    sChooseBoxMenu.menuSprite = undefined;
-    sChooseBoxMenu.menuCornerSprites = [];
-    sChooseBoxMenu.arrowSprites = [];
+function ChooseBoxMenu_DestroySprites(): void {
+  const m = sChooseBoxMenu!;
+  if (m.menuSprite) {
+    DestroySprite(m.menuSprite);
+    m.menuSprite = null;
+  }
+  for (let i = 0; i < m.menuCornerSprites.length; i++) {
+    if (m.menuCornerSprites[i]) {
+      DestroySprite(m.menuCornerSprites[i]!);
+      m.menuCornerSprites[i] = null;
+    }
+  }
+  for (let i = 0; i < m.arrowSprites.length; i++) {
+    if (m.arrowSprites[i]) DestroySprite(m.arrowSprites[i]!);
   }
 }
 
 /** ChooseBoxMenu_MoveRight */
-export function ChooseBoxMenu_MoveRight(): void {
-  if (!sChooseBoxMenu) return;
-  sChooseBoxMenu.curBox = (sChooseBoxMenu.curBox + 1) % TOTAL_BOXES_COUNT;
+function ChooseBoxMenu_MoveRight(): void {
+  const m = sChooseBoxMenu!;
+  if (++m.curBox >= TOTAL_BOXES_COUNT) m.curBox = 0;
   ChooseBoxMenu_PrintBoxNameAndCount();
 }
 
 /** ChooseBoxMenu_MoveLeft */
-export function ChooseBoxMenu_MoveLeft(): void {
-  if (!sChooseBoxMenu) return;
-  sChooseBoxMenu.curBox = sChooseBoxMenu.curBox === 0 ? TOTAL_BOXES_COUNT - 1 : sChooseBoxMenu.curBox - 1;
+function ChooseBoxMenu_MoveLeft(): void {
+  const m = sChooseBoxMenu!;
+  m.curBox = m.curBox === 0 ? TOTAL_BOXES_COUNT - 1 : m.curBox - 1;
   ChooseBoxMenu_PrintBoxNameAndCount();
 }
 
 /** ChooseBoxMenu_PrintBoxNameAndCount */
-export function ChooseBoxMenu_PrintBoxNameAndCount(): void {
-  if (!sChooseBoxMenu) return;
-  const numMons = CountMonsInBox(sChooseBoxMenu.curBox);
-  const nameBytes = getBoxName(sChooseBoxMenu.curBox);
-  const str = `${decode(nameBytes)}  ${numMons}/30`;
-  ChooseBoxMenu_PrintTextToSprite(str, 0, 1);
+function ChooseBoxMenu_PrintBoxNameAndCount(): void {
+  const m = sChooseBoxMenu!;
+  const numMonInBox = CountMonsInBox(m.curBox);
+  let boxName = StringCopy(m.strbuf, GetBoxNamePtr(m.curBox)!);
+  while (boxName < BOX_NAME_LENGTH) m.strbuf[boxName++] = CHAR_SPACE;
+  m.strbuf[boxName] = EOS;
+  ChooseBoxMenu_PrintTextToSprite(m.strbuf, 0, 1);
+  ConvertIntToDecimalStringN(m.strbuf, numMonInBox, STR_CONV_MODE_RIGHT_ALIGN, 2);
+  ChooseBoxMenu_PrintTextToSprite(m.strbuf, 3, 3);
 }
 
-/** ChooseBoxMenu_PrintTextToSprite */
-export function ChooseBoxMenu_PrintTextToSprite(str: Uint8Array | string, x: number, y: number): void {
-  if (!sChooseBoxMenu) return;
-  PrintStringToBufferCopyNow(str, sChooseBoxMenu.buffer, 0x100, 1, 2, 3, null);
+/** ChooseBoxMenu_PrintTextToSprite: the text is rendered straight into the popup sprite's tiles in OBJ VRAM. */
+function ChooseBoxMenu_PrintTextToSprite(str: ArrayLike<number>, x: number, y: number): void {
+  const OBJ_VRAM0 = 0x10000;
+  const dst = ppu.vram.subarray(OBJ_VRAM0 + GetSpriteTileStartByTag(sChooseBoxMenu!.tileTag) * 32 + 256 * y + 32 * x);
+  PrintStringToBufferCopyNow(str, dst, 0x100, C.TEXT_COLOR_RED, TEXT_DYNAMIC_COLOR_6, TEXT_DYNAMIC_COLOR_5, null);
 }
 
 /** SpriteCB_ChooseBoxArrow */
-export function SpriteCB_ChooseBoxArrow(sprite: any): void {
-  if (!sprite || !sprite.data) return;
+function SpriteCB_ChooseBoxArrow(sprite: Sprite): void {
   if (++sprite.data[1] > 3) {
     sprite.data[1] = 0;
-    sprite.x2 = (sprite.x2 || 0) + sprite.data[0];
+    sprite.x2 += sprite.data[0];
     if (++sprite.data[2] > 5) {
       sprite.data[2] = 0;
       sprite.x2 = 0;
@@ -548,136 +585,7 @@ export function SpriteCB_ChooseBoxArrow(sprite: any): void {
   }
 }
 
-// -------------------------------------------------------------
-// Interactive Storage Sub-menu Dispatcher
-// -------------------------------------------------------------
-
-function runStorageOptionFlow(game: Game, option: number): void {
-  sPreviousBoxOption = option;
-  const scene = new HwScene();
-  scene.enter();
-  game.scene = scene;
-  game.setCallbacks(null, () => scene.update());
-
-  const closeToPc = (): void => {
-    // CB2_ReturnToField: the field comes back from black (FieldTask_ReturnToPcMenu fades it in).
-    paletteFade.fill(RGB_BLACK);
-    scene.leave();
-    game.scene = null;
-    game.setCallbacks(() => game.overworld.cb1(), () => game.overworld.cb2());
-    FieldTask_ReturnToPcMenu();
-  };
-
-  const say = (label: string, next: () => void): void =>
-    openHardwareChoice(label, [{ label: "OK", value: 0 }], false, next);
-
-  const result = (value: StorageResult, next: () => void): void => {
-    if (value === "ok") { next(); return; }
-    const labels: Record<Exclude<StorageResult, "ok">, string> = {
-      invalid: "No POKéMON selected.", partyFull: "Your party is full.", boxFull: "That BOX is full.",
-      lastUsable: "That's your last POKéMON!", mail: "Please remove the MAIL.", egg: "You can't release an EGG.",
-      neededMove: "It came back!", bagFull: "Your BAG is full.",
-    };
-    say(labels[value], next);
-  };
-
-  const boxLabel = (box: number): string =>
-    `${decode(getBoxName(box))} ${save.boxes[box]?.filter((mon) => !!mon?.species).length || 0}/30 ${WALLPAPER_NAMES[getBoxWallpaper(box)]}`;
-
-  const monLabel = (box: number, slot: number): string => {
-    const mon = box === -1 ? save.party[slot] : save.boxes[box]?.[slot];
-    const head = `#${slot + 1}`;
-    if (!mon?.species) return `${head} ---`;
-    return `${head} ${decode(mon.nickname)} Lv${mon.level}`;
-  };
-
-  const chooseBox = (done: (box: number | null) => void): void => openHardwareChoice(
-    "Choose a BOX.",
-    save.boxes.map((_, i) => ({ value: i, label: boxLabel(i) })),
-    true,
-    done,
-  );
-
-  const choosePartyMon = (title: string, filter: (slot: number) => boolean, done: (slot: number | null) => void): void => {
-    const slots = save.party.map((_, i) => i).filter(filter);
-    if (!slots.length) { say("No POKéMON qualifies.", closeToPc); return; }
-    openHardwareChoice(title, slots.map((i) => ({ value: i, label: monLabel(-1, i) })), true, done);
-  };
-
-  const chooseBoxSlot = (box: number, title: string, occupiedOnly: boolean, done: (slot: number | null) => void): void => {
-    const slots = save.boxes[box].map((_, i) => i).filter((i) => !occupiedOnly || save.boxes[box][i]?.species);
-    if (!slots.length) { say("The BOX is empty.", closeToPc); return; }
-    save.currentBox = box;
-    openHardwareChoice(title, slots.map((i) => ({ value: i, label: monLabel(box, i) })), true, done);
-  };
-
-  const chooseLocation = (title: string, occupiedOnly: boolean, done: (loc: StorageLocation | null) => void): void => {
-    openHardwareChoice(title, [{ label: "PARTY", value: 0 }, { label: "BOX", value: 1 }], true, (area) => {
-      if (area === null) { done(null); return; }
-      if (area === 0) {
-        choosePartyMon(title, () => true, (slot) => done(slot === null ? null : { box: -1, slot }));
-        return;
-      }
-      chooseBox((box) => {
-        if (box === null) { done(null); return; }
-        chooseBoxSlot(box, title, occupiedOnly, (slot) => done(slot === null ? null : { box, slot }));
-      });
-    });
-  };
-
-  if (option === OPTION_WITHDRAW) {
-    chooseBox((box) => {
-      if (box === null) { closeToPc(); return; }
-      chooseBoxSlot(box, decode(getBoxName(box)), true, (slot) => {
-        if (slot === null) { closeToPc(); return; }
-        result(withdrawMon(box, slot), closeToPc);
-      });
-    });
-  } else if (option === OPTION_DEPOSIT) {
-    openHardwareChoice("Deposit which POKéMON?", save.party.map((mon, value) => ({ label: decode(mon.nickname), value })), true, (slot) => {
-      if (slot === null) { closeToPc(); return; }
-      chooseBox((box) => {
-        if (box === null) closeToPc();
-        else result(depositMon(slot, box), closeToPc);
-      });
-    });
-  } else if (option === OPTION_MOVE_MONS) {
-    chooseLocation("Move which POKéMON?", true, (from) => {
-      if (!from) { closeToPc(); return; }
-      chooseLocation("Move it where?", false, (to) => {
-        if (!to) { closeToPc(); return; }
-        result(moveMon(from, to), closeToPc);
-      });
-    });
-  } else if (option === OPTION_MOVE_ITEMS) {
-    chooseLocation("Whose ITEM?", true, (from) => {
-      if (!from) { closeToPc(); return; }
-      const holder = from.box === -1 ? save.party[from.slot] : save.boxes[from.box]?.[from.slot];
-      if (!holder?.species || !holder.heldItem || isMailItem(holder.heldItem)) {
-        say(holder?.heldItem ? "MAIL can't be moved here." : "It's not holding anything.", closeToPc);
-        return;
-      }
-      openHardwareChoice("Do what with it?", [{ label: "GIVE TO", value: 0 }, { label: "TAKE TO BAG", value: 1 }], true, (action) => {
-        if (action === null) { closeToPc(); return; }
-        if (action === 1) {
-          if (!addBagItem(holder.heldItem, 1)) { result("bagFull", closeToPc); return; }
-          holder.heldItem = 0;
-          holder.mailMessage = undefined;
-          say("Placed in BAG.", closeToPc);
-          return;
-        }
-        chooseLocation("Give it to whom?", true, (to) => {
-          if (!to) { closeToPc(); return; }
-          result(giveHeldItem(from, to), closeToPc);
-        });
-      });
-    });
-  } else {
-    closeToPc();
-  }
-}
-
-/** Legacy wrapper kept for backward compatibility */
+/** ShowPokemonStorageSystemPC entry used by the PC script special. */
 export function openStorageMenu(game: Game): void {
   ShowPokemonStorageSystemPC(game);
 }
