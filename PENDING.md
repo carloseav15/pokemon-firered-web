@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **8400/10115 (83.0 %)**.
-- Archivos C con funciones aún sin homólogo: **35**; quedan **1715 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **8881/10115 (87.8 %)**.
+- Archivos C con funciones aún sin homólogo: **29**; quedan **1234 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
-- Estos archivos contienen 89.200 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~40.638 líneas** (aproximación por proporción de funciones).
+- Estos archivos contienen 77.425 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
+- Estimación ponderada del C sin homólogo: **~28.241 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -19,42 +19,36 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | # | Archivo C | Estado | Líneas | Funciones | Líneas sin cubrir (est.) | Nota |
 |---:|---|---|---:|---:|---:|---|
 | 1 | `battle_controller_player.c` | casi completo | 2966 | 122/123 | ~24 |  |
-| 2 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
-| 3 | `field_control_avatar.c` | casi completo | 1182 | 47/49 | ~48 |  |
-| 4 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 5 | `start_menu.c` | casi completo | 1016 | 56/65 | ~140 |  |
-| 6 | `field_fadetransition.c` | casi completo | 965 | 48/59 | ~179 |  |
-| 7 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
-| 8 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 9 | `title_screen.c` | casi completo | 1315 | 33/39 | ~202 |  |
-| 10 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 11 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
-| 12 | `daycare.c` | parcial | 2155 | 71/93 | ~509 |  |
-| 13 | `teachy_tv.c` | adaptador | 1400 | 28/58 | ~724 | menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado |
+| 2 | `battle_controller_pokedude.c` | casi completo | 2698 | 107/108 | ~24 |  |
+| 3 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
+| 4 | `field_control_avatar.c` | casi completo | 1182 | 47/49 | ~48 |  |
+| 5 | `pokemon_storage_system_misc.c` | casi completo | 1430 | 66/70 | ~81 |  |
+| 6 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
+| 7 | `start_menu.c` | casi completo | 1016 | 56/65 | ~140 |  |
+| 8 | `field_fadetransition.c` | casi completo | 965 | 48/59 | ~179 |  |
+| 9 | `trainer_card.c` | casi completo | 1959 | 66/73 | ~187 |  |
+| 10 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 11 | `title_screen.c` | casi completo | 1315 | 33/39 | ~202 |  |
+| 12 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
+| 13 | `battle_records.c` | parcial | 568 | 4/31 | ~494 |  |
 | 14 | `pokemon_summary_screen.c` | casi completo | 5224 | 117/137 | ~762 |  |
 | 15 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
 | 16 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
-| 17 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
-| 18 | `party_menu.c` | casi completo | 6342 | 292/357 | ~1154 |  |
+| 17 | `party_menu.c` | casi completo | 6342 | 300/357 | ~1012 |  |
+| 18 | `trainer_tower.c` | parcial | 1095 | 1/43 | ~1069 |  |
 | 19 | `battle_tower.c` | parcial | 1425 | 7/45 | ~1203 |  |
-| 20 | `fame_checker.c` | parcial | 1739 | 17/64 | ~1277 |  |
-| 21 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
-| 22 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
-| 23 | `pokemon_storage_system_misc.c` | sin empezar | 1430 | 0/70 | ~1430 |  |
-| 24 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
-| 25 | `pokemon_storage_system_graphics.c` | parcial | 1546 | 1/65 | ~1522 |  |
-| 26 | `overworld.c` | parcial | 3563 | 123/242 | ~1752 |  |
-| 27 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 28 | `battle_controller_pokedude.c` | parcial | 2698 | 32/108 | ~1898 |  |
-| 29 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
-| 30 | `pokemon_storage_system_data.c` | parcial | 2165 | 3/83 | ~2086 |  |
-| 31 | `field_effect.c` | parcial | 4033 | 95/239 | ~2429 |  |
-| 32 | `intro.c` | parcial | 2805 | 3/79 | ~2698 |  |
-| 33 | `pokemon_storage_system_tasks.c` | parcial | 2770 | 2/82 | ~2702 |  |
-| 34 | `event_object_movement.c` | parcial | 9412 | 533/759 | ~2802 |  |
-| 35 | `pokemon.c` | parcial | 6453 | 79/140 | ~2811 |  |
+| 20 | `text.c` | parcial | 1695 | 7/37 | ~1374 |  |
+| 21 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
+| 22 | `quest_log.c` | parcial | 1767 | 16/88 | ~1445 |  |
+| 23 | `overworld.c` | parcial | 3563 | 123/242 | ~1752 |  |
+| 24 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
+| 25 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
+| 26 | `field_effect.c` | parcial | 4033 | 95/239 | ~2429 |  |
+| 27 | `pokemon.c` | parcial | 6453 | 82/140 | ~2673 |  |
+| 28 | `intro.c` | parcial | 2805 | 3/79 | ~2698 |  |
+| 29 | `event_object_movement.c` | parcial | 9412 | 539/759 | ~2728 |  |
 
-Total: 35 archivos con huecos: 1 sin empezar, 1 adaptador, 12 casi completos y 21 parciales.
+Total: 29 archivos con huecos: 0 sin empezar, 0 adaptador, 14 casi completos y 15 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -62,9 +56,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 
 | Archivo C | Líneas | Portadas | Stubs |
 |---|---:|---:|---:|
-| `teachy_tv.c` | 1400 | 28/58 | 30 |
 | `trade.c` | 2958 | 0/66 | 15 |
-| `fame_checker.c` | 1739 | 17/64 | 7 |
 | `trade_scene.c` | 2916 | 35/53 | 3 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
 | `union_room.c` | 4761 | 6/110 | 1 |
@@ -74,7 +66,6 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 
 | Archivo C | TS | Motivo |
 |---|---|---|
-| `teachy_tv.c` | `teachyTv.ts` | el juego abre la lista de texto de `menus/keyItemScreens.ts` |
 | `field_effect_helpers.c` | `field/fieldEffectHelpers.ts` | los efectos reales siguen en `field/fieldEffects.ts` |
 | `slot_machine.c (reglas)` | `game/slots.ts` | duplicado sin uso; el juego usa `menus/slotMachine.ts` |
 | `image_processing_effects.c` | `imageProcessingEffects.ts` | sin llamador en FireRed de un jugador |
@@ -90,9 +81,9 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Intercambios: `pokemon/ingameTrade.ts` porta la escena de `trade_scene.c` (sin probar); de `trade.c` solo hay stubs de la parte de enlace.
 - Enlace: `linkState.ts` modela estado, identidad del callback y umbrales de cola de `menu_helpers.c`, `link.c` y `overworld.c`; todavía no hay productor de comandos ni transporte cable/RFU que alimente ese estado.
 - Combate de enlace: `battle_controllers.c` 68/68 con la ruta de buffers `LINK_BUFF_*` y las tareas de envío/recepción, pero `SetControllerToLinkOpponent`/`SetControllerToLinkPartner` (parciales en sus archivos) quedan sustituidos por `BattleControllerDummy` y `linkTransport` no envía paquetes; un enlace real no tendría controladores propios ni transporte.
-- Almacenamiento de cajas con listas en vez de la interfaz real (`pokemon_storage_system_tasks.c`, `_graphics.c`, `_misc.c`, `_data.c`).
-- Teachy TV: sigue siendo el adaptador de texto de `menus/keyItemScreens.ts`; `teachyTv.ts` tiene 30 stubs y no está conectado.
-- Fame Checker: `fameChecker.ts` está conectado pero sus funciones de gráficos (ventanas, flechas, info box) son stubs.
+- Almacenamiento de cajas: la interfaz real está portada (`pokemon_storage_system_tasks.c`/`_graphics.c`/`_data.c` 100 %, `_misc.c` 66/70) y probada solo en la entrada/salida del PC y la retirada de un mon; el resto del flujo de cajas sin recorrer en navegador.
+- Teachy TV: `teachyTv.ts` está conectado (`Game.openTeachyTv` → `StartTeachyTv`); `keyItemScreens.openTeachyTv` (lista de texto) queda sin llamadores. Pantalla sin probar en navegador.
+- Fame Checker: `fameChecker.ts` está conectado y sus gráficos (ventanas, flechas, info box) tienen cuerpo; sin prueba de navegador.
 - Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
 - Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona). Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
@@ -105,7 +96,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Quest Log: el inventario incluye quest_log*.c; los eventos de tienda ya persisten en SaveData, pero faltan el buffer/serialización original, escenas, acciones y reproducción.
 - Trainer Tower: `trainer_tower.c` y sus llamadas `InitTrainerTowerBattleStruct`/`FreeTrainerTowerBattleStruct` aún no están portadas; `battle_util2.c` tiene recursos normales cubiertos, pero ese branch queda pendiente.
 - Uso de objetos (`item_use.c`): dispatch Enigma, rechazo de Oak, consumo/mensaje común de Repel, Escape Rope y Poké Doll, flautas, cañas, Item Finder, TM Case, Berry Pouch, Mail, Bike y la secuencia de potenciadores de combate están conectados. El helper registra payloads de uso en las rutas activas; faltan 12/73 nombres y la reproducción/serialización original de Quest Log.
-- Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller y Battle Tower sigue sin portar; los huecos de `battle_bg.c`, `evolution_scene.c` y `battle_records.c` son de enlace/intercambio; `help_system_util.c` requiere la UI GBA de ayuda aún no conectada.
+- Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller y Battle Tower sigue sin portar; los huecos de `battle_bg.c`, `evolution_scene.c` y `battle_records.c` son de enlace/intercambio.
 - Bloqueo de tanda (2026-09-28): los cinco `Debug_NamingScreen*` restantes son funciones estáticas sin callers en `naming_screen.c`; los últimos huecos de `field_control_avatar.c` son interacciones de jugadores de enlace y `SetCableClubWarp` es solo Cable Club, fuera de la meta principal.
 - Menú de guardado (`start_menu.c`): el commit de Quest Log necesita el buffer/serialización original de escenas (`SaveQuestLogData` en `quest_log.c`); la escena y reproducción de Quest Log siguen pendientes.
 - Summary Pokémon: el cambio de mon usa una lista TS compacta; el C distingue `monList.boxMons`, huecos, huevos y party multi. La selección de caja/party requiere adaptar esos datos antes de portar `PokeSum_SeekToNextMon` y `Task_PokeSum_SwitchDisplayedPokemon`.
@@ -133,6 +124,7 @@ Verificado solo con `check:port`, `build`, paridad de cdata/incbin/textos o chec
 - trainer_see.c (revelación de entrenador enterrado) → `field/trainerSee.ts, field/objectEvents.ts`
 - braille_text.c (callback de impresora Braille) → `gba/textPrinter.ts, gba/font.ts`
 - script.c (estado de entrada Quest Log) → `script/context.ts`
+- teachy_tv.c (los seis programas y el menú) → `teachyTv.ts`
 
 ## 6. Fase final (después de portar)
 

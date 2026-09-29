@@ -79,9 +79,7 @@ LINK: set[str] = {
 }
 
 # Files cited by TS whose screen is still a simplified adapter (AGENTS.md §5).
-ADAPTERS: dict[str, str] = {
-    "teachy_tv": "menus/keyItemScreens.ts: lista de texto; teachyTv.ts no está conectado",
-}
+ADAPTERS: dict[str, str] = {}
 
 
 FUNC_RE = re.compile(
