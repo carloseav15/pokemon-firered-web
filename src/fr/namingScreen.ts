@@ -941,3 +941,31 @@ class NamingScreen {
     AnimateSprites(); BuildOamBuffer(); UpdatePaletteFade();
   }
 }
+
+// --------------------------------------------------
+// Unused debug functions (naming_screen.c:2057-2080)
+// --------------------------------------------------
+
+function CB2_ReturnToFieldWithOpenMenu(): void {
+  gMain.savedCallback = null;
+}
+
+export function Debug_NamingScreenPlayer(): void {
+  DoNamingScreen(C.NAMING_SCREEN_PLAYER, save.playerName, save.playerGender, 0, 0, CB2_ReturnToFieldWithOpenMenu);
+}
+
+export function Debug_NamingScreenBox(): void {
+  DoNamingScreen(C.NAMING_SCREEN_BOX, save.playerName, save.playerGender, 0, 0, CB2_ReturnToFieldWithOpenMenu);
+}
+
+export function Debug_NamingScreenCaughtMon(): void {
+  DoNamingScreen(C.NAMING_SCREEN_CAUGHT_MON, save.playerName, save.playerGender, 0, 0, CB2_ReturnToFieldWithOpenMenu);
+}
+
+export function Debug_NamingScreenNickname(): void {
+  DoNamingScreen(C.NAMING_SCREEN_NICKNAME, save.playerName, save.playerGender, 0, 0, CB2_ReturnToFieldWithOpenMenu);
+}
+
+export function Debug_NamingScreenRival(): void {
+  DoNamingScreen(C.NAMING_SCREEN_RIVAL, save.playerName, save.playerGender, 0, 0, CB2_ReturnToFieldWithOpenMenu);
+}
