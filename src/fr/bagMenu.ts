@@ -10,7 +10,7 @@ import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, stringWidth } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, SELECT_BUTTON } from "./gba/input";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, SELECT_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
 import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";
@@ -620,9 +620,12 @@ function CreateBagInputHandlerTask(_location: number): number {
   const handler = gBagMenuState.location === C.ITEMMENULOCATION_OLD_MAN ? Task_Bag_OldManTutorial
     : gBagMenuState.location === C.ITEMMENULOCATION_TTVSCR_REGISTER ? Task_Bag_TeachyTvRegister
       : gBagMenuState.location === C.ITEMMENULOCATION_TTVSCR_TMS ? Task_Bag_TeachyTvTMs
-      : Task_BagMenu_HandleInput;
+        : gBagMenuState.location === C.ITEMMENULOCATION_TTVSCR_STATUS ? Task_Bag_TeachyTvStatus
+          : gBagMenuState.location === C.ITEMMENULOCATION_TTVSCR_CATCHING ? Task_Bag_TeachyTvCatching
+            : Task_BagMenu_HandleInput;
   return tasks.create(handler, 0);
 }
+
 
 type BagBackup = {
   items: typeof save.bag.items; keyItems: typeof save.bag.keyItems; pokeBalls: typeof save.bag.pokeBalls;
@@ -793,6 +796,83 @@ function Task_Bag_TeachyTvTMs(taskId: number): void {
       HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
       CopyWindowToVram(0, COPYWIN_MAP);
       Bag_BeginCloseWin0Animation();
+      tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
+      return;
+  }
+  data.tutorialFrame++;
+}
+
+/** item_menu.c Task_Bag_TeachyTvCatching: scripted pocket switch and poke ball selection. */
+function Task_Bag_TeachyTvCatching(taskId: number): void {
+  if (gPaletteFade.active) return;
+  const data = td(taskId);
+  if (Task_BButtonInterruptTeachyTv(taskId)) return;
+  switch (data.tutorialFrame) {
+    case 102:
+    case 204:
+      sound.playSE(C.SE_BAG_POCKET);
+      SwitchPockets(taskId, 1, false);
+      break;
+    case 306:
+    case 408: {
+      const oldNew = joy.newKeys, oldRepeated = joy.repeated;
+      joy.newKeys = 0; joy.repeated = DPAD_DOWN;
+      ListMenu_ProcessInput(data.listTaskId);
+      joy.newKeys = oldNew; joy.repeated = oldRepeated;
+      break;
+    }
+    case 510:
+    case 612: {
+      const oldNew = joy.newKeys, oldRepeated = joy.repeated;
+      joy.newKeys = 0; joy.repeated = DPAD_UP;
+      ListMenu_ProcessInput(data.listTaskId);
+      joy.newKeys = oldNew; joy.repeated = oldRepeated;
+      break;
+    }
+    case 714:
+      sound.playSE(C.SE_SELECT);
+      bag_menu_print_cursor_(data.listTaskId, 2);
+      Bag_FillMessageBoxWithPalette(1);
+      bagResult.itemId = C.ITEM_POKE_BALL;
+      OpenContextMenu(taskId);
+      break;
+    case 816:
+      sound.playSE(C.SE_SELECT);
+      HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
+      CopyWindowToVram(0, COPYWIN_MAP);
+      DestroyListMenuTask(data.listTaskId);
+      Bag_BeginCloseWin0Animation();
+      tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
+      return;
+  }
+  data.tutorialFrame++;
+}
+
+/** item_menu.c Task_Bag_TeachyTvStatus: antidote selection and context menu. */
+function Task_Bag_TeachyTvStatus(taskId: number): void {
+  if (gPaletteFade.active) return;
+  const data = td(taskId);
+  if (Task_BButtonInterruptTeachyTv(taskId)) return;
+  switch (data.tutorialFrame) {
+    case 102: {
+      const oldNew = joy.newKeys, oldRepeated = joy.repeated;
+      joy.newKeys = 0; joy.repeated = DPAD_DOWN;
+      ListMenu_ProcessInput(data.listTaskId);
+      joy.newKeys = oldNew; joy.repeated = oldRepeated;
+      break;
+    }
+    case 204:
+      sound.playSE(C.SE_SELECT);
+      bag_menu_print_cursor_(data.listTaskId, 2);
+      Bag_FillMessageBoxWithPalette(1);
+      bagResult.itemId = C.ITEM_ANTIDOTE;
+      OpenContextMenu(taskId);
+      break;
+    case 306:
+      sound.playSE(C.SE_SELECT);
+      HideBagWindow(10); HideBagWindow(6); PutWindowTilemap(0); PutWindowTilemap(1);
+      CopyWindowToVram(0, COPYWIN_MAP);
+      DestroyListMenuTask(data.listTaskId);
       tasks.setFunc(taskId, Task_Pokedude_FadeFromBag);
       return;
   }
@@ -1659,6 +1739,17 @@ export function Task_ReturnToBagFromContextMenu(taskId: number): void {
   reinitList(taskId);
   ScheduleBgCopyTilemapToVram(0);
   bag_menu_print_cursor_(td(taskId).listTaskId, 1);
+  Task_RedrawArrowsAndReturnToBagMenuSelect(taskId);
+}
+
+/** Task_UnusedReturnToBag (item_menu.c:1662) */
+export function Task_UnusedReturnToBag(taskId: number): void {
+  const data = td(taskId);
+  const pos = ListMenuGetScrollAndRow(data.listTaskId);
+  PrintItemDescriptionOnMessageWindow(pos.cursorPos + pos.itemsAbove);
+  PutWindowTilemap(0);
+  ScheduleBgCopyTilemapToVram(0);
+  bag_menu_print_cursor_(data.listTaskId, 1);
   Task_RedrawArrowsAndReturnToBagMenuSelect(taskId);
 }
 
