@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 23 | 61253 | 1136/2763 |
+| Parcial (< 80 % de funciones) | 21 | 57574 | 1134/2598 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 12 | 28796 | 1005/1156 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 172 | 160478 | 6068/6068 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 174 | 164157 | 6233/6233 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
-| **Pendiente de portar** | **37** | **92879** | |
-| **Total en alcance** | **211** | **253703** | **8237/10115** |
+| **Pendiente de portar** | **35** | **89200** | |
+| **Total en alcance** | **211** | **253703** | **8400/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Falta (sin funciones portadas)
@@ -42,7 +42,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `intro.c` | 2805 | 3/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 2/82 |  |  |  |
 | `battle_controller_pokedude.c` | 2698 | 32/108 |  |  |  |
-| `easy_chat_3.c` | 2316 | 1/92 |  |  |  |
 | `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
 | `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `daycare.c` | 2155 | 71/93 | `game.ts`, `pokemon/daycare.ts`, `script/specials.ts` |  |  |
@@ -53,7 +52,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
 | `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |  |
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
-| `easy_chat_2.c` | 1363 | 1/73 |  |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
 
@@ -100,6 +98,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `item_menu.c` | 2397 | 116/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `battle_anim_mons.c` | 2360 | 128/128 | `battle/anim.ts`, `battle/anims/fight.ts`, `battle/anims/mons.ts` |  |  |
 | `field_weather_effects.c` | 2346 | 93/93 | `field/weather.ts`, `field/weatherEffects.ts`, `script/specials.ts` |  |  |
+| `easy_chat_3.c` | 2316 | 92/92 | `easyChat2.ts`, `easyChat3.ts` |  |  |
 | `battle_anim_special.c` | 2304 | 81/81 | `battle/anims/special.ts`, `battle/gfx_sfx_util.ts`, `battle/interface.ts` … |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 107/107 | `battle/controller_oak_old_man.ts` |  |  |
 | `scrcmd.c` | 2264 | 224/224 | `field/messageBox.ts`, `script/commands.ts`, `script/eventObjectLock.ts` |  |  |
@@ -117,6 +116,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
 | `credits.c` | 1446 | 16/16 | `credits.ts`, `field/overworld.ts` |  |  |
 | `field_effect_helpers.c` | 1421 | 76/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  |  |
+| `easy_chat_2.c` | 1363 | 73/73 | `easyChat2.ts`, `easyChat3.ts`, `script/specialsExtra.ts` |  |  |
 | `script_menu.c` | 1341 | 29/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
 | `pokeball.c` | 1334 | 37/37 | `battle/pokeball.ts` |  |  |
 | `vs_seeker.c` | 1326 | 41/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
@@ -320,7 +320,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `link_rfu_3.c` | 1192 | 0/30 |  | 0/30 |  |
 | `cable_club.c` | 1036 | 9/54 | `script/specials.ts`, `script/specialsExtra.ts` | 9/54 | 2 |
 | `librfu_stwi.c` | 650 | 0/48 |  | 0/48 |  |
-| `mystery_gift.c` | 634 | 9/45 | `easyChat.ts`, `mysteryGift.ts` | 9/45 |  |
+| `mystery_gift.c` | 634 | 9/45 | `easyChat.ts`, `easyChat2.ts`, `mysteryGift.ts` | 9/45 |  |
 | `union_room_player_avatar.c` | 624 | 0/38 |  | 0/38 |  |
 | `union_room_message.c` | 576 | — |  |  |  |
 | `wireless_communication_status_screen.c` | 522 | 1/12 |  | 1/12 |  |

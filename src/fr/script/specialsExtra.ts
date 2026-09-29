@@ -31,6 +31,8 @@ import { GetPCBoxToSendMon, getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullM
 import { CalculatePlayerPartyCount, GetMonData, gPPUpGetMask, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
 import { SpeciesToMailSpecies } from "../pokemon/mail";
 import { OpenMuseumFossilPic, CloseMuseumFossilPic } from "../menus/scriptMenu";
+import { ShowEasyChatScreen } from "../easyChat2";
+import { preloadEasyChatScreen } from "../easyChat3";
 import type { ScriptRunner } from "./context";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -871,7 +873,11 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   StartSpecialBattle: (ctx) => { enableLater(ctx); },
   BufferEReaderTrainerGreeting: () => { stringVars.var1 = encode(""); },
   BufferEReaderTrainerName: () => { stringVars.var1 = encode(""); },
-  ShowEasyChatScreen: (ctx) => { enableLater(ctx); },
+  // easy_chat_2.c ShowEasyChatScreen: the exported screen data loads first, then the hardware scene opens.
+  ShowEasyChatScreen: (ctx) => {
+    ctx.ow.script.ScriptContext_Stop();
+    void preloadEasyChatScreen().then(() => ShowEasyChatScreen(ctx.ow.game));
+  },
   // records (no link or minigame history exists)
   ShowBattleRecords: (ctx) => {
     stringVars.var1 = encode("0"); stringVars.var2 = encode("0"); stringVars.var3 = encode("0");
