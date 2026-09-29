@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 2 | 2278 | 0/111 |
-| Parcial (< 80 % de funciones) | 26 | 65778 | 1156/2882 |
+| Parcial (< 80 % de funciones) | 25 | 65048 | 1146/2843 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
 | Casi completo (≥ 80 % y < 100 %) | 11 | 27481 | 972/1117 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 169 | 156420 | 5947/5947 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 170 | 157150 | 5986/5986 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
-| **Pendiente de portar** | **40** | **96937** | |
-| **Total en alcance** | **211** | **253703** | **8103/10115** |
+| **Pendiente de portar** | **39** | **96207** | |
+| **Total en alcance** | **211** | **253703** | **8132/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Falta (sin funciones portadas)
@@ -58,7 +58,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `easy_chat_2.c` | 1363 | 1/73 |  |  |  |
 | `title_screen.c` | 1315 | 2/39 | `introTitle.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
-| `easy_chat.c` | 730 | 10/39 | `easyChat.ts`, `pokemon/mail.ts`, `script/specials.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
 
 ## Adaptador (UI simplificada)
@@ -156,6 +155,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `trainer_see.c` | 750 | 37/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |
 | `mail.c` | 734 | 10/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
+| `easy_chat.c` | 730 | 39/39 | `easyChat.ts`, `pokemon/mail.ts`, `script/specials.ts` |  |  |
 | `string_util.c` | 726 | 40/40 | `gba/charmap.ts`, `gba/stringBuffers.ts`, `generated/stringUtil.ts` |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |  |
 | `item.c` | 680 | 49/49 | `hw/menuHelpers.ts`, `pokemon/items.ts`, `script/specials.ts` … |  |  |
@@ -270,7 +270,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 |---|---:|---:|---|---|---:|
 | `trainer_tower_sets.c` | 8997 | — |  | exportador (cdata) |  |
 | `graphics.c` | 1380 | — |  | exportador (incbin) |  |
-| `strings.c` | 1335 | — | `oakSpeech.ts` | exportador (textos) |  |
+| `strings.c` | 1335 | — | `easyChat.ts`, `oakSpeech.ts` | exportador (textos) |  |
 | `save.c` | 963 | 0/33 |  | save.ts (formato propio) |  |
 | `move_descriptions.c` | 714 | — |  | exportador (textos) |  |
 | `field_camera.c` | 572 | 10/29 | `field/overworld.ts`, `overworldCredits.ts` | field/overworld.ts + fieldmap.ts + tileRenderer.ts + doors.ts + battle/transition.ts: el seguimiento/paneo del jugador está conectado; el viewport Canvas recompone los metatiles desde FieldMap y omite el ring buffer BG/VRAM, doors.ts dibuja el overlay y las transiciones usan una captura de pantalla. Cámara de créditos en overworldCredits.ts; MoveCameraAndRedrawMap está unused en C |  |
@@ -320,7 +320,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `link_rfu_3.c` | 1192 | 0/30 |  | 0/30 |  |
 | `cable_club.c` | 1036 | 9/54 | `script/specials.ts`, `script/specialsExtra.ts` | 9/54 | 2 |
 | `librfu_stwi.c` | 650 | 0/48 |  | 0/48 |  |
-| `mystery_gift.c` | 634 | 9/45 | `mysteryGift.ts` | 9/45 |  |
+| `mystery_gift.c` | 634 | 9/45 | `easyChat.ts`, `mysteryGift.ts` | 9/45 |  |
 | `union_room_player_avatar.c` | 624 | 0/38 |  | 0/38 |  |
 | `union_room_message.c` | 576 | — |  |  |  |
 | `wireless_communication_status_screen.c` | 522 | 1/12 |  | 1/12 |  |
