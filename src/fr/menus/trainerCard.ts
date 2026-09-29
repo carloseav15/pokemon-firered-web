@@ -22,7 +22,7 @@
 //   - Blinking play time colon (60 frames cycle)
 
 import { sound } from "../audio/sound";
-import { concat, copy, intToDecimal, length, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
+import { concat, copy, EOS, intToDecimal, length, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
 import { FONT_NORMAL } from "../gba/font";
 import { A_BUTTON, B_BUTTON, joy } from "../gba/input";
 import { tasks, TAIL_SENTINEL } from "../gba/tasks";
@@ -212,6 +212,18 @@ function emptyTrainerCard(): TrainerCardFields {
     monSpecies: [0, 0, 0, 0, 0, 0],
   };
 }
+
+/** trainer_card.c EWRAM_DATA gTrainerCards[4]: the link card slots. cable_club.c and
+ *  union_room.c fill received cards into them; battle_records.c increments
+ *  linkBattleWins/linkBattleLosses. C zero-fills the struct and StringCopy scans to
+ *  EOS, so the port keeps byte 0 of an unfilled name as EOS: the name stays empty
+ *  without reading past the field (the C would scan adjacent struct bytes). */
+export const gTrainerCards: TrainerCardFields[] = Array.from({ length: 4 }, () => {
+  const card = emptyTrainerCard();
+  card.playerName = new Uint8Array(C.PLAYER_NAME_LENGTH + 1);
+  card.playerName[0] = EOS;
+  return card;
+});
 
 function emptyData(): TrainerCardData {
   return {

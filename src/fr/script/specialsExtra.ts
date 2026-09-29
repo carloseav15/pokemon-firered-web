@@ -6,7 +6,7 @@
 
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
-import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
+import { concat, encode, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
 import { FONT_SMALL } from "../gba/font";
 import { tasks } from "../gba/tasks";
 import { printText } from "../gba/textPrinter";
@@ -33,6 +33,7 @@ import { SpeciesToMailSpecies } from "../pokemon/mail";
 import { OpenMuseumFossilPic, CloseMuseumFossilPic } from "../menus/scriptMenu";
 import { ShowEasyChatScreen } from "../easyChat2";
 import { preloadEasyChatScreen } from "../easyChat3";
+import { preloadBattleRecords, ShowBattleRecords } from "../battleRecords";
 import type { ScriptRunner } from "./context";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -878,12 +879,11 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     ctx.ow.script.ScriptContext_Stop();
     void preloadEasyChatScreen().then(() => ShowEasyChatScreen(ctx.ow.game));
   },
-  // records (no link or minigame history exists)
+  // battle_records.c ShowBattleRecords: the exported screen data loads first, then the
+  // hardware scene opens. The script waits in its waitstate (no ScriptContext_Stop);
+  // the scene's return callback re-enables it after releaseall.
   ShowBattleRecords: (ctx) => {
-    stringVars.var1 = encode("0"); stringVars.var2 = encode("0"); stringVars.var3 = encode("0");
-    const title = expandPlaceholders(rom.text("gString_BattleRecords_PlayersBattleResults"));
-    const total = expandPlaceholders(rom.text("gString_BattleRecords_TotalRecord"));
-    ctx.ow.game.showMessageThenEnable(Uint8Array.from([...title.subarray(0, title.indexOf(0xff)), 0xfe, ...total]));
+    void preloadBattleRecords().then(() => ShowBattleRecords(ctx.ow.game));
   },
   ShowBerryCrushRankings: (ctx) => { ctx.ow.game.showMessageThenEnable(encode("BERRY CRUSH\n----")); },
   ShowDodrioBerryPickingRecords: (ctx) => { ctx.ow.game.showMessageThenEnable(Uint8Array.from([...rom.text("gText_BerryPickingRecords").filter((b) => b !== 0xff), 0xfe, ...encode("----")])); },

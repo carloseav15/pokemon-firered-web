@@ -4,6 +4,7 @@
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
 import { BattleTransitionScene, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
+import { ClearPlayerLinkBattleRecords } from "./battleRecords";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL } from "./gba/font";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
@@ -254,6 +255,7 @@ export class Game {
     setSave(data);
     ClearEnigmaBerries();
     ResetGameStats();
+    ClearPlayerLinkBattleRecords();
     ClearMailData();
     ResetFameChecker();
     this.ResetMiniGamesResults();

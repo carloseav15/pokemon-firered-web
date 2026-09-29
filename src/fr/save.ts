@@ -74,6 +74,21 @@ export type TrainerTowerSave = {
   validated: boolean;
 };
 
+/** global.h struct LinkBattleRecord (SaveBlock2.linkBattleRecords.entries[LINK_B_RECORDS_COUNT]). */
+export type LinkBattleRecordSave = {
+  name: number[];
+  trainerId: number;
+  wins: number;
+  losses: number;
+  draws: number;
+};
+
+/** global.h struct LinkBattleRecords (SaveBlock2.linkBattleRecords). */
+export type LinkBattleRecordsSave = {
+  entries: LinkBattleRecordSave[];
+  languages: number[];
+};
+
 export type SaveData = {
   version: 2;
   playerName: number[];
@@ -120,6 +135,8 @@ export type SaveData = {
   towerChallengeId: number;
   /** SaveBlock2.encryptionKey, XOR key for SaveBlock1.trainerTower[].bestTime. */
   encryptionKey: number;
+  /** global.h SaveBlock2.linkBattleRecords, the five opponent records of the Battle Records screen. */
+  linkBattleRecords: LinkBattleRecordsSave;
   playTimeFrames: number;
   options: { textSpeed: number; battleScene: boolean; battleStyle: number; sound: number; buttonMode: number; frameType: number };
   savedMusic: number;
@@ -181,6 +198,20 @@ function newTrainerTowerRecords(): TrainerTowerSave[] {
   }));
 }
 
+/** global.h SaveBlock2.linkBattleRecords: LINK_B_RECORDS_COUNT zeroed entries. */
+function newLinkBattleRecords(): LinkBattleRecordsSave {
+  return {
+    entries: Array.from({ length: C.LINK_B_RECORDS_COUNT }, () => ({
+      name: new Array(C.PLAYER_NAME_LENGTH + 1).fill(0),
+      trainerId: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+    })),
+    languages: new Array(C.LINK_B_RECORDS_COUNT).fill(0),
+  };
+}
+
 export function newSaveData(): SaveData {
   return {
     version: 2,
@@ -222,6 +253,7 @@ export function newSaveData(): SaveData {
     trainerTower: newTrainerTowerRecords(),
     towerChallengeId: 0,
     encryptionKey: 0,
+    linkBattleRecords: newLinkBattleRecords(),
     playTimeFrames: 0,
     options: { textSpeed: 1, battleScene: true, battleStyle: 0, sound: 0, buttonMode: 0, frameType: 0 },
     savedMusic: 0,
@@ -281,6 +313,8 @@ export function setSave(data: SaveData): void {
   data.trainerTower ??= newTrainerTowerRecords();
   data.towerChallengeId ??= 0;
   data.encryptionKey ??= 0;
+  // Migrate browser saves created before SaveBlock2.linkBattleRecords was represented.
+  data.linkBattleRecords ??= newLinkBattleRecords();
   data.questLogEvents ??= [];
   data.questLogPlayerGfxActions ??= [];
   data.questLogPlayerGfxActions = data.questLogPlayerGfxActions.filter((entry): entry is { eventIndex: number; script: number[] } =>
