@@ -60,6 +60,20 @@ function mailTrainerId(id: number): number[] {
   return [value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff];
 }
 
+/** global.h struct TrainerTower (SaveBlock1.trainerTower[NUM_TOWER_CHALLENGE_TYPES]). */
+export type TrainerTowerSave = {
+  timer: number;
+  bestTime: number;
+  floorsCleared: number;
+  unk9: number;
+  receivedPrize: boolean;
+  checkedFinalTime: boolean;
+  spokeToOwner: boolean;
+  hasLost: boolean;
+  unkA_4: boolean;
+  validated: boolean;
+};
+
 export type SaveData = {
   version: 2;
   playerName: number[];
@@ -100,6 +114,12 @@ export type SaveData = {
   mapView: number[];
   battleTower?: number[];
   miniGameResults?: { berryCrush: number[]; pokemonJump: number[]; berryPicking: number[]; berryPowder: number };
+  /** SaveBlock1.trainerTower, the four challenge records. */
+  trainerTower: TrainerTowerSave[];
+  /** SaveBlock1.towerChallengeId, the challenge the field scripts are running. */
+  towerChallengeId: number;
+  /** SaveBlock2.encryptionKey, XOR key for SaveBlock1.trainerTower[].bestTime. */
+  encryptionKey: number;
   playTimeFrames: number;
   options: { textSpeed: number; battleScene: boolean; battleStyle: number; sound: number; buttonMode: number; frameType: number };
   savedMusic: number;
@@ -144,6 +164,23 @@ function emptyWarp(): WarpData {
   return { mapGroup: 0xff, mapNum: 0xff, warpId: 0xff, x: -1, y: -1 };
 }
 
+function newTrainerTowerRecords(): TrainerTowerSave[] {
+  // NewGameInitData leaves the records as ResetTrainerTowerResults writes them: every bestTime
+  // holds TRAINER_TOWER_MAX_TIME XOR the (zero) encryption key of a fresh SaveBlock2.
+  return Array.from({ length: C.NUM_TOWER_CHALLENGE_TYPES }, () => ({
+    timer: 0,
+    bestTime: C.TRAINER_TOWER_MAX_TIME,
+    floorsCleared: 0,
+    unk9: 0,
+    receivedPrize: false,
+    checkedFinalTime: false,
+    spokeToOwner: false,
+    hasLost: false,
+    unkA_4: false,
+    validated: false,
+  }));
+}
+
 export function newSaveData(): SaveData {
   return {
     version: 2,
@@ -182,6 +219,9 @@ export function newSaveData(): SaveData {
     mapView: new Array(0x100).fill(0),
     battleTower: [],
     miniGameResults: { berryCrush: [], pokemonJump: [], berryPicking: [], berryPowder: 0 },
+    trainerTower: newTrainerTowerRecords(),
+    towerChallengeId: 0,
+    encryptionKey: 0,
     playTimeFrames: 0,
     options: { textSpeed: 1, battleScene: true, battleStyle: 0, sound: 0, buttonMode: 0, frameType: 0 },
     savedMusic: 0,
@@ -237,6 +277,10 @@ export function setSave(data: SaveData): void {
   data.mapView ??= new Array(0x100).fill(0);
   data.additionalPhrases ??= new Array(C.NUM_ADDITIONAL_PHRASE_BYTES).fill(0);
   data.ramScript ??= emptyRamScript();
+  // Migrate browser saves created before the Trainer Tower records were represented.
+  data.trainerTower ??= newTrainerTowerRecords();
+  data.towerChallengeId ??= 0;
+  data.encryptionKey ??= 0;
   data.questLogEvents ??= [];
   data.questLogPlayerGfxActions ??= [];
   data.questLogPlayerGfxActions = data.questLogPlayerGfxActions.filter((entry): entry is { eventIndex: number; script: number[] } =>

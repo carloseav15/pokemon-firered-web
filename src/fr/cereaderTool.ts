@@ -27,6 +27,15 @@ export interface TrainerTowerFloor {
   rawBytes?: Uint8Array;
 }
 
+/** cereader_tool.h struct EReaderTrainerTowerSetSubstruct: the header memcpy'd into the
+ *  data set by SetUpTrainerTowerDataStruct (dummy/checksum are absent from the export). */
+export interface EReaderTrainerTowerSetSubstruct {
+  numFloors: number;
+  id: number;
+  dummy?: number;
+  checksum?: number;
+}
+
 export interface EReaderTrainerTowerSet {
   numFloors: number;
   id: number;
@@ -50,8 +59,7 @@ let sLoadedTrainerTowerSet: EReaderTrainerTowerSet | null = null;
 
 /** GetTrainerHillUnkVal (cereader_tool.c). */
 export function GetTrainerHillUnkVal(): number {
-  const tower = (save as unknown as { trainerTower?: Array<{ unk9?: number }> }).trainerTower;
-  const unk9 = tower?.[0]?.unk9 ?? 0;
+  const unk9 = save.trainerTower?.[0]?.unk9 ?? 0;
   return (unk9 + 1) % 256;
 }
 

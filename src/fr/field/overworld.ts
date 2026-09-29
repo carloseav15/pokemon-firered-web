@@ -541,8 +541,7 @@ export class Overworld {
   /** SetWhiteoutRespawnWarpAndHealerNpc (heal_location.c). */
   SetWhiteoutRespawnWarpAndHealerNpc(): { warp: WarpData; healerLocalId: number; atHome: boolean } {
     if (varGet(rom.constants.VAR_MAP_SCENE_TRAINER_TOWER) === 1) {
-      const towerSave = save as typeof save & { trainerTower?: Array<{ spokeToOwner?: boolean }>; towerChallengeId?: number };
-      const spokeToOwner = towerSave.trainerTower?.[towerSave.towerChallengeId ?? 0]?.spokeToOwner ?? false;
+      const spokeToOwner = save.trainerTower?.[save.towerChallengeId ?? 0]?.spokeToOwner ?? false;
       if (!spokeToOwner) varSet(rom.constants.VAR_MAP_SCENE_TRAINER_TOWER, 0);
       varSet(SV.LAST_TALKED, 1);
       return {

@@ -31,6 +31,7 @@ import * as C from "./generated/constants";
 import { CB2_BagMenuFromStartMenu, fieldMenu, fieldMessage, openFieldBag, openFieldParty } from "./menus/fieldMenus";
 import { openFameChecker } from "./menus/keyItemScreens";
 import { StartTeachyTv } from "./teachyTv";
+import { ResetTrainerTowerResults } from "./trainerTower";
 import { Task_VsSeeker_0 } from "./field/vsSeeker";
 import { GetSafariZoneFlag } from "./field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
@@ -240,6 +241,8 @@ export class Game {
     this.Sav2_ClearSetDefault();
     this.differentSaveFile = true;
     const data = newSaveData();
+    // new_game.c NewGameInitData: gSaveBlock2Ptr->encryptionKey = 0.
+    data.encryptionKey = 0;
     data.trainerId = InitPlayerTrainerId();
     data.playerGender = gender;
     data.playerName = Array.from(encode(playerName.slice(0, 7)));
@@ -265,6 +268,7 @@ export class Game {
     this.wild.seed(takeWildEncounterSeed());
     this.WarpToPlayersRoom();
     this.overworld.script.RunScriptImmediately(rom.label("EventScript_ResetAllMapFlags"));
+    ResetTrainerTowerResults();
   }
 
   /** new_game.c SetDefaultOptions. */
