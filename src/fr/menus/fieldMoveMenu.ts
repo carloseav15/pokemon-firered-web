@@ -112,6 +112,53 @@ export function FieldCallback_UseRockSmash(game: Game, partyIndex: number): void
   game.overworld.script.ScriptContext_SetupScript(rom.label("EventScript_FldEffRockSmash"));
 }
 
+/** FieldCallback_Surf and SetUpFieldMove_Surf (party_menu.c). */
+export function FieldCallback_Surf(game: Game, partyIndex: number): void {
+  game.fieldEffectArguments[0] = partyIndex;
+  game.overworld.effects.start(C.FLDEFF_USE_SURF);
+}
+
+export function SetUpFieldMove_Surf(game: Game, partyIndex: number): FieldMoveResult | null {
+  const ow = game.overworld;
+  const player = ow.player.object;
+  const [dx, dy] = DIRECTION_VECTORS[player.facingDirection];
+  const behavior = ow.map.behaviorAt(player.currentCoords.x + dx, player.currentCoords.y + dy);
+  if (MB.MetatileBehavior_IsFastWater(behavior) || !ow.player.PartyHasMonWithSurf() || !ow.player.IsPlayerFacingSurfableFishableWater()) return null;
+  return { kind: "close", post: () => FieldCallback_Surf(game, partyIndex) };
+}
+
+/** DisplayCantUseSurfMessage (party_menu.c), represented as the field-menu text. */
+export function DisplayCantUseSurfMessage(game: Game): string {
+  const ow = game.overworld;
+  if (ow.player.isSurfing()) return text("gText_AlreadySurfing");
+  const player = ow.player.object;
+  const [dx, dy] = DIRECTION_VECTORS[player.facingDirection];
+  const behavior = ow.map.behaviorAt(player.currentCoords.x + dx, player.currentCoords.y + dy);
+  if (MB.MetatileBehavior_IsFastWater(behavior)) return text("gText_CurrentIsTooFast");
+  if (ow.mapId === "MAP_ROUTE17" || ow.mapId === "MAP_ROUTE18") return text("gText_EnjoyCycling");
+  return text("gText_CantSurfHere");
+}
+
+/** SetUpFieldMove_Fly (party_menu.c). */
+export function SetUpFieldMove_Fly(game: Game): boolean {
+  return Overworld_MapTypeAllowsTeleportAndFly(game.overworld.header.mapType);
+}
+
+/** FieldCallback_Waterfall and SetUpFieldMove_Waterfall (party_menu.c). */
+export function FieldCallback_Waterfall(game: Game, partyIndex: number): void {
+  game.fieldEffectArguments[0] = partyIndex;
+  game.overworld.effects.start(C.FLDEFF_USE_WATERFALL);
+}
+
+export function SetUpFieldMove_Waterfall(game: Game, partyIndex: number): FieldMoveResult | null {
+  const ow = game.overworld;
+  const player = ow.player.object;
+  const [dx, dy] = DIRECTION_VECTORS[player.facingDirection];
+  const behavior = ow.map.behaviorAt(player.currentCoords.x + dx, player.currentCoords.y + dy);
+  if (!MB.MetatileBehavior_IsWaterfall(behavior) || !ow.player.IsPlayerSurfingNorth()) return null;
+  return { kind: "close", post: () => FieldCallback_Waterfall(game, partyIndex) };
+}
+
 /** CursorCB_FieldMove's badge check and the SetUpFieldMove_* dispatch. */
 export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: number): FieldMoveResult {
   const ow = game.overworld;
@@ -146,7 +193,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
     }
     case FIELD_MOVE_FLY:
-      if (!Overworld_MapTypeAllowsTeleportAndFly(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      if (!SetUpFieldMove_Fly(game)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       return { kind: "fly" };
     case FIELD_MOVE_STRENGTH: {
       const boulder = frontObject(C.OBJ_EVENT_GFX_PUSHABLE_BOULDER);
@@ -154,26 +201,14 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       varSet(SV.RESULT, partyIndex);
       return { kind: "close", post: () => { args[0] = partyIndex; ow.script.ScriptContext_SetupScript(rom.label("EventScript_FldEffStrength")); } };
     }
-    case FIELD_MOVE_SURF: {
-      const behavior = ow.map.behaviorAt(fx, fy);
-      if (!MB.MetatileBehavior_IsFastWater(behavior) && ow.player.PartyHasMonWithSurf() && ow.player.IsPlayerFacingSurfableFishableWater()) {
-        return { kind: "close", post: () => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_USE_SURF); } };
-      }
-      let message = "gText_CantSurfHere";
-      if (ow.player.isSurfing()) message = "gText_AlreadySurfing";
-      else if (MB.MetatileBehavior_IsFastWater(behavior)) message = "gText_CurrentIsTooFast";
-      else if (ow.mapId === "MAP_ROUTE17" || ow.mapId === "MAP_ROUTE18") message = "gText_EnjoyCycling";
-      return { kind: "fail", message: text(message) };
-    }
+    case FIELD_MOVE_SURF:
+      return SetUpFieldMove_Surf(game, partyIndex) ?? { kind: "fail", message: DisplayCantUseSurfMessage(game) };
     case FIELD_MOVE_ROCK_SMASH: {
       if (!SetUpFieldMove_RockSmash(game)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       return { kind: "close", post: () => FieldCallback_UseRockSmash(game, partyIndex) };
     }
     case FIELD_MOVE_WATERFALL:
-      if (MB.MetatileBehavior_IsWaterfall(ow.map.behaviorAt(fx, fy)) && ow.player.IsPlayerSurfingNorth()) {
-        return { kind: "close", post: () => { args[0] = partyIndex; ow.effects.start(C.FLDEFF_USE_WATERFALL); } };
-      }
-      return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
+      return SetUpFieldMove_Waterfall(game, partyIndex) ?? { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
     case FIELD_MOVE_TELEPORT:
       if (!SetUpFieldMove_Teleport(ow.header.mapType)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       stringVars.var1 = getMapNameGenericBytes(sectionOfWarp(save.lastHealLocation));

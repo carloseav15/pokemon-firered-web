@@ -9,10 +9,11 @@ import { rom } from "../rom";
 import { flagSet, save, SV, varGet, varSet, type MailData } from "../save";
 import { ClearMailStruct, GetMailDataForMon, GiveMailToMon2, MonHasMail, TakeMailFromMon } from "./mail";
 import {
-  calculateStats, canLearnTMHM, createMon, deleteFirstMoveAndGive, genderFromPersonality, giveMove, levelFromExp, MON_HAS_MAX_MOVES,
-  movesLearnedAtLevel, nickname, setDexFlag, speciesName, MON_FEMALE, MON_GENDERLESS, MON_MALE, type Pokemon,
+  calculateStats, CanMonLearnTMHM, createMon, deleteFirstMoveAndGive, genderFromPersonality, giveMove, levelFromExp, MON_HAS_MAX_MOVES,
+  movesLearnedAtLevel, nickname, setDexFlag, speciesName, TryIncrementMonLevel, MON_FEMALE, MON_GENDERLESS, MON_MALE, type Pokemon,
 } from "./pokemon";
 import { tmhmMove } from "../menus/monProgress";
+import { GetLevelUpMovesBySpecies } from "./partyRules";
 
 export type DaycareMon = { mon: Pokemon | null; steps: number; mail?: MailData; mailOtName?: number[]; mailMonName?: number[] };
 export type DayCare = { mons: [DaycareMon, DaycareMon]; offspringPersonality: number; stepCounter: number };
@@ -170,9 +171,7 @@ function ShiftDaycareSlots(daycare: DayCare): void {
 /** ApplyDaycareExperience: level up one level at a time, learning the moves of each level. */
 function ApplyDaycareExperience(mon: Pokemon): void {
   for (let i = 0; i < MAX_LEVEL; i++) {
-    // TryIncrementMonLevel
-    if (levelFromExp(mon.species, mon.exp) <= mon.level) break;
-    mon.level++;
+    if (!TryIncrementMonLevel(mon)) break;
     // MonTryLearningNewMove: a full moveset forgets its first move
     for (const move of movesLearnedAtLevel(mon.species, mon.level)) {
       if (giveMove(mon, move) === MON_HAS_MAX_MOVES) deleteFirstMoveAndGive(mon, move);
@@ -325,7 +324,7 @@ function BuildEggMoveset(egg: Pokemon, father: Pokemon, mother: Pokemon): void {
   const eggMoves: number[] = [];
   const fatherMoves = [...father.moves];
   const motherMoves = [...mother.moves];
-  const levelUpMoves = rom.species[egg.species].learnset.map(([, move]) => move); // GetLevelUpMovesBySpecies
+  const levelUpMoves = GetLevelUpMovesBySpecies(egg.species);
   const numLevelUpMoves = levelUpMoves.length;
   const give = (move: number) => { if (giveMove(egg, move) === MON_HAS_MAX_MOVES) deleteFirstMoveAndGive(egg, move); };
   const numEggMoves = GetEggMoves(egg, eggMoves);
@@ -339,7 +338,7 @@ function BuildEggMoveset(egg: Pokemon, father: Pokemon, mother: Pokemon): void {
   for (let i = 0; i < MAX_MON_MOVES; i++) {
     if (fatherMoves[i] !== C.MOVE_NONE) {
       for (let j = 0; j < NUM_TECHNICAL_MACHINES + NUM_HIDDEN_MACHINES; j++) {
-        if (fatherMoves[i] === tmhmMove(C.ITEM_TM01 + j) && canLearnTMHM(egg.species, j)) give(fatherMoves[i]);
+        if (fatherMoves[i] === tmhmMove(C.ITEM_TM01 + j) && CanMonLearnTMHM(egg, j)) give(fatherMoves[i]);
       }
     }
   }

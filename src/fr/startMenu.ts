@@ -143,6 +143,13 @@ export function ShowStartMenu(game: Game): void { game.showStartMenu(); }
 /** SetUpReturnToStartMenu (start_menu.c); return through the source fade-in and input-task sequence. */
 export function SetUpReturnToStartMenu(game: Game): void { game.showStartMenu(false, true); }
 
+/** FieldCB2_DrawStartMenu (start_menu.c): finish drawing before the return fade starts. */
+export function FieldCB2_DrawStartMenu(draw: StartMenuDrawState, game: Game, startInput: (taskId: number) => void): boolean {
+  if (!DoDrawStartMenu(draw)) return false;
+  FadeTransition_FadeInOnReturnToStartMenu(game, startInput);
+  return true;
+}
+
 /** Task_WaitFadeAndCreateStartMenuTask (field_fadetransition.c). */
 export function Task_WaitFadeAndCreateStartMenuTask(taskId: number, game: Game, startInput: (taskId: number) => void): void {
   if (!IsWeatherNotFadingIn() || !game.overworld.mapPreview.ForestMapPreviewScreenIsRunning()) return;

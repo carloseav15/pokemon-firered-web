@@ -480,22 +480,22 @@ function ScrCmd_waitbuttonpress(ctx: ScriptRunner): boolean {
 function ScrCmd_yesnobox(ctx: ScriptRunner): boolean {
   const left = ctx.readByte();
   const top = ctx.readByte();
-  if (ctx.ow.game.scriptMenu.yesNo(left, top)) { ctx.ow.script.ScriptContext_Stop(); return true; }
+  if (ctx.ow.game.scriptMenu.ScriptMenu_YesNo(left, top)) { ctx.ow.script.ScriptContext_Stop(); return true; }
   return false;
 }
 function ScrCmd_multichoice(ctx: ScriptRunner): boolean {
   const left = ctx.readByte(); const top = ctx.readByte(); const id = ctx.readByte(); const ignoreB = ctx.readByte();
-  if (ctx.ow.game.scriptMenu.multichoice(left, top, id, ignoreB !== 0, 0)) { ctx.ow.script.ScriptContext_Stop(); return true; }
+  if (ctx.ow.game.scriptMenu.ScriptMenu_Multichoice(left, top, id, ignoreB !== 0)) { ctx.ow.script.ScriptContext_Stop(); return true; }
   return false;
 }
 function ScrCmd_multichoicedefault(ctx: ScriptRunner): boolean {
   const left = ctx.readByte(); const top = ctx.readByte(); const id = ctx.readByte(); const def = ctx.readByte(); const ignoreB = ctx.readByte();
-  if (ctx.ow.game.scriptMenu.multichoice(left, top, id, ignoreB !== 0, def)) { ctx.ow.script.ScriptContext_Stop(); return true; }
+  if (ctx.ow.game.scriptMenu.ScriptMenu_MultichoiceWithDefault(left, top, id, ignoreB !== 0, def)) { ctx.ow.script.ScriptContext_Stop(); return true; }
   return false;
 }
 function ScrCmd_multichoicegrid(ctx: ScriptRunner): boolean {
   const left = ctx.readByte(); const top = ctx.readByte(); const id = ctx.readByte(); const cols = ctx.readByte(); const ignoreB = ctx.readByte();
-  if (ctx.ow.game.scriptMenu.multichoiceGrid(left, top, id, ignoreB !== 0, cols)) { ctx.ow.script.ScriptContext_Stop(); return true; }
+  if (ctx.ow.game.scriptMenu.ScriptMenu_MultichoiceGrid(left, top, id, ignoreB !== 0, cols)) { ctx.ow.script.ScriptContext_Stop(); return true; }
   return false;
 }
 function ScrCmd_drawbox(ctx: ScriptRunner): boolean { return false; }
@@ -504,12 +504,12 @@ function ScrCmd_drawboxtext(ctx: ScriptRunner): boolean { return false; }
 function ScrCmd_showmonpic(ctx: ScriptRunner): boolean {
   const species = varGet(ctx.ScriptReadHalfword());
   const x = ctx.readByte(); const y = ctx.readByte();
-  ctx.ow.game.scriptMenu.showMonPic(species, x, y);
+  ctx.ow.game.scriptMenu.ScriptMenu_ShowPokemonPic(species, x, y);
   sound.PlayCry_Script(species, C.CRY_MODE_NORMAL);
   return false;
 }
 function ScrCmd_hidemonpic(ctx: ScriptRunner): boolean {
-  const wait = ctx.ow.game.scriptMenu.hideMonPic();
+  const wait = ctx.ow.game.scriptMenu.ScriptMenu_HidePokemonPic();
   if (!wait) return false;
   ctx.SetupNativeScript(wait);
   return true;

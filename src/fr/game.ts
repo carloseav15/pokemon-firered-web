@@ -20,7 +20,7 @@ import { ApplyNewEncryptionKeyToGameStats, flagGet, GetGameStat, IncrementGameSt
 import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, InitChooseMonsForBattle, Task_ChoosePartyMon } from "./partyMenu";
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
-import { computeWhiteOutMoneyLoss, relearnableMoves } from "./pokemon/partyRules";
+import { computeWhiteOutMoneyLoss, GetMoveRelearnerMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { RestartWildEncounterImmunitySteps, WildEncounter } from "./field/wildEncounter";
 import { InitPlayerTrainerId, takeWildEncounterSeed } from "./random";
@@ -55,7 +55,7 @@ import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
   CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
   PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, StartCB_Save2, type SaveDialogRuntime,
-  FadeTransition_FadeInOnReturnToStartMenu, FieldCB_ReturnToFieldOpenStartMenu, SetUpStartMenu,
+  FieldCB2_DrawStartMenu, FieldCB_ReturnToFieldOpenStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
   StartMenuSaveCallback, Task_StartMenuHandleInput, type StartMenuDrawState, type StartMenuInputState, type StartMenuItem, type StartMenuSetupState,
@@ -424,10 +424,9 @@ export class Game {
       DrawStartMenuInOneGo(draw);
       tasks.create(startInput, 80);
     } else if (fadeInAfterDrawing) {
-      OpenStartMenuWithFollowupFunc(draw, (taskId) => {
-        tasks.destroy(taskId);
-        FadeTransition_FadeInOnReturnToStartMenu(this, startInput);
-      });
+      tasks.create((taskId) => {
+        if (FieldCB2_DrawStartMenu(draw, this, startInput)) tasks.destroy(taskId);
+      }, 80);
     } else OpenStartMenuWithFollowupFunc(draw, startInput);
     ow.controlsLocked = true;
   }
@@ -476,7 +475,7 @@ export class Game {
       messageIsHidden: () => ow.messageBox.isHidden(),
       showMessage: (text) => { ow.messageBox.hide(); ow.messageBox.show(expandPlaceholders(text)); },
       hideMessage: () => ow.messageBox.hide(),
-      showYesNo: (defaultNo = false) => this.scriptMenu.yesNo(0, 0, defaultNo ? 1 : 0),
+      showYesNo: (defaultNo = false) => this.scriptMenu.ScriptMenu_YesNo(0, 0, defaultNo ? 1 : 0),
       processInput: () => {
         const result = varGet(0x800d);
         if (result === 0xff) return -2;
@@ -738,7 +737,7 @@ export class Game {
       const finish = (learned: boolean): void => { varSet(SV.x8004, learned ? 1 : 0); close(); ow.script.ScriptContext_Enable(); };
       if (!mon) { finish(false); return; }
       stringVars.var1 = Uint8Array.from(mon.nickname);
-      const moves = relearnableMoves(mon);
+      const moves = GetMoveRelearnerMoves(mon);
       const confirmStop = (): void => {
         stringVars.var1 = Uint8Array.from(mon.nickname);
         askMoveRelearnerQuestion(rom.text("gText_GiveUpTryingToTeachNewMove"), (yes) => {

@@ -366,8 +366,8 @@ export const SPECIALS: Record<string, Special> = {
   HallOfFamePCBeginFade: (ctx) => { ctx.ow.game.openHallOfFamePc(); },
   ListMenu: (ctx) => { ctx.ow.game.scriptMenu.ListMenu(); },
   ReturnToListMenu: (ctx) => { ctx.ow.game.scriptMenu.returnToListMenu(); },
-  DoPicboxCancel: (ctx) => { ctx.ow.game.scriptMenu.hideMonPic(); },
-  CreatePCMenu: (ctx) => { ctx.ow.game.scriptMenu.pcMenu(); },
+  DoPicboxCancel: (ctx) => { ctx.ow.game.scriptMenu.PicboxCancel(); },
+  CreatePCMenu: (ctx) => (ctx.ow.game.scriptMenu.CreatePCMenu() ? 1 : 0),
   // ---- in-game trades
   GetInGameTradeSpeciesInfo: (ctx) => ctx.ow.game.trades.getSpeciesInfo(),
   GetTradeSpecies: (ctx) => ctx.ow.game.trades.getTradeSpecies(),

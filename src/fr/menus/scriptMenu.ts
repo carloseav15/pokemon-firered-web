@@ -44,13 +44,19 @@ export class ScriptMenu {
     return save.options.frameType ?? 0;
   }
 
+  /** CreateWindowFromRect (script_menu.c): source coordinates exclude the border. */
+  CreateWindowFromRect(left: number, top: number, width: number, height: number): Window {
+    const window = new Window(left + 1, top + 1, width, height);
+    this.ow.windows.add(window);
+    return window;
+  }
+
   /** CreateWindowFromRect + SetStdWindowBorderStyle */
   createFramedWindow(left: number, top: number, width: number, height: number): Window {
-    const window = new Window(left + 1, top + 1, width, height);
+    const window = this.CreateWindowFromRect(left, top, width, height);
     window.frame = "std";
     window.frameType = this.frameType();
     window.fill(1);
-    this.ow.windows.add(window);
     return window;
   }
 
@@ -58,8 +64,15 @@ export class ScriptMenu {
     this.ow.windows.remove(window);
   }
 
-  yesNo(_left: number, _top: number, defaultChoice = 0): boolean {
-    if (tasks.isActive(this.yesNoTask)) return false;
+  DestroyScriptMenuWindow(window: Window | undefined): void {
+    if (!window) return;
+    window.fill(0);
+    window.markDirty();
+    this.removeWindow(window);
+  }
+
+  ScriptMenu_YesNo(_left: number, _top: number, defaultChoice = 0): boolean {
+    if (tasks.isActive(this.Task_YesNoMenu_HandleInput)) return false;
     varSet(SV.RESULT, SCR_MENU_UNSET);
     const window = new Window(21, 9, 6, 4);
     window.frame = "std";
@@ -68,20 +81,20 @@ export class ScriptMenu {
     printText(window, FONT_NORMAL, rom.text("gText_YesNo"), 10, 2);
     this.ow.windows.add(window);
     const menu = new Menu(window, FONT_NORMAL, 0, 2, 14, 2, defaultChoice);
-    const id = tasks.create(this.yesNoTask, 80);
+    const id = tasks.create(this.Task_YesNoMenu_HandleInput, 80);
     this.yesNoState.set(id, { window, menu, timer: 0 });
     return true;
   }
 
   private yesNoState = new Map<number, { window: Window; menu: Menu; timer: number }>();
 
-  private yesNoTask = (taskId: number): void => {
+  private Task_YesNoMenu_HandleInput = (taskId: number): void => {
     const state = this.yesNoState.get(taskId);
     if (!state) { tasks.destroy(taskId); return; }
     if (state.timer < 5) { state.timer++; return; }
     const input = state.menu.processInputNoWrap();
     if (input === MENU_NOTHING_CHOSEN) return;
-    this.removeWindow(state.window);
+    this.DestroyScriptMenuWindow(state.window);
     if (input === MENU_B_PRESSED || input === 1) {
       sound.playSE(sound.SE_SELECT);
       varSet(SV.RESULT, 0);
@@ -98,27 +111,54 @@ export class ScriptMenu {
     return list.map((sym) => expandPlaceholders(rom.text(sym)));
   }
 
-  multichoice(left: number, top: number, id: number, ignoreB: boolean, initPos: number): boolean {
-    if (tasks.isActive(this.multichoiceTask)) return false;
+  private GetStringTilesWide(text: Uint8Array): number {
+    return Math.floor((stringWidth(FONT_NORMAL_COPY_1, text, 0) + 7) / 8);
+  }
+
+  private GetMenuWidthFromList(items: Uint8Array[]): number {
+    let width = this.GetStringTilesWide(items[0]);
+    for (let i = 1; i < items.length; i++) width = Math.max(width, this.GetStringTilesWide(items[i]));
+    return width;
+  }
+
+  ScriptMenu_Multichoice(left: number, top: number, id: number, ignoreB: boolean): boolean {
+    if (tasks.isActive(this.Task_MultichoiceMenu_HandleInput)) return false;
     varSet(SV.RESULT, SCR_MENU_UNSET);
+    this.DrawVerticalMultichoiceMenu(left, top, id, ignoreB, 0);
+    return true;
+  }
+
+  ScriptMenu_MultichoiceWithDefault(left: number, top: number, id: number, ignoreB: boolean, initPos: number): boolean {
+    if (tasks.isActive(this.Task_MultichoiceMenu_HandleInput)) return false;
+    varSet(SV.RESULT, SCR_MENU_UNSET);
+    this.DrawVerticalMultichoiceMenu(left, top, id, ignoreB, initPos);
+    return true;
+  }
+
+  private GetMCWindowHeight(count: number): number { return MC_HEIGHTS[count] ?? 1; }
+
+  private DrawVerticalMultichoiceMenu(left: number, top: number, id: number, ignoreB: boolean, initPos: number): void {
     const texts = this.listTexts(id);
     const count = texts.length;
     let strWidth = 0;
     for (const t of texts) strWidth = Math.max(strWidth, stringWidth(FONT_NORMAL, t, 0));
     const width = Math.floor((strWidth + 9) / 8) + 1;
     if (left + width > 28) left = 28 - width;
-    const height = MC_HEIGHTS[count] ?? 1;
+    const height = this.GetMCWindowHeight(count);
     const window = this.createFramedWindow(left, top, width, height);
     texts.forEach((t, i) => printText(window, FONT_NORMAL, t, 8, 2 + i * 14));
     const menu = new Menu(window, FONT_NORMAL, 0, 2, 14, count, initPos);
-    const taskId = tasks.create(this.multichoiceTask, 80);
-    this.mcState.set(taskId, { window, menu, ignoreB, wrap: count > 3 });
-    return true;
+    this.CreateMCMenuInputHandlerTask(ignoreB, count, window, menu);
   }
 
   private mcState = new Map<number, { window: Window; menu: Menu; ignoreB: boolean; wrap: boolean }>();
 
-  private multichoiceTask = (taskId: number): void => {
+  private CreateMCMenuInputHandlerTask(ignoreB: boolean, count: number, window: Window, menu: Menu): void {
+    const taskId = tasks.create(this.Task_MultichoiceMenu_HandleInput, 80);
+    this.mcState.set(taskId, { window, menu, ignoreB, wrap: count > 3 });
+  }
+
+  private Task_MultichoiceMenu_HandleInput = (taskId: number): void => {
     const state = this.mcState.get(taskId);
     if (!state) { tasks.destroy(taskId); return; }
     if (paletteFade.active) return;
@@ -131,7 +171,7 @@ export class ScriptMenu {
     } else {
       varSet(SV.RESULT, input);
     }
-    this.removeWindow(state.window);
+    this.DestroyScriptMenuWindow(state.window);
     this.mcState.delete(taskId);
     tasks.destroy(taskId);
     this.ow.script.ScriptContext_Enable();
@@ -143,34 +183,40 @@ export class ScriptMenu {
     const window = this.createFramedWindow(left, top, width, height);
     symbols.forEach((sym, i) => printText(window, FONT_NORMAL, expandPlaceholders(rom.text(sym)), 8, i * 16 + 2));
     const menu = new Menu(window, FONT_NORMAL, 0, 2, 16, symbols.length, 0);
-    const taskId = tasks.create(this.multichoiceTask, 80);
-    this.mcState.set(taskId, { window, menu, ignoreB: false, wrap: symbols.length > 3 });
+    this.CreateMCMenuInputHandlerTask(false, symbols.length, window, menu);
   }
 
-  multichoiceGrid(left: number, top: number, id: number, ignoreB: boolean, columns: number): boolean {
+  ScriptMenu_MultichoiceGrid(left: number, top: number, id: number, ignoreB: boolean, columns: number): boolean {
+    if (tasks.isActive(this.Hask_MultichoiceGridMenu_HandleInput)) return false;
     varSet(SV.RESULT, SCR_MENU_UNSET);
     const texts = this.listTexts(id);
-    let widest = 0;
-    for (const t of texts) widest = Math.max(widest, Math.floor((stringWidth(FONT_NORMAL_COPY_1, t, 0) + 7) / 8));
-    const width = widest + 1;
+    const width = this.GetMenuWidthFromList(texts) + 1;
     const rows = Math.floor(texts.length / columns);
     const window = this.createFramedWindow(left, top, width * columns, rows * 2);
     texts.forEach((t, i) => printText(window, FONT_NORMAL_COPY_1, t, (i % columns) * width * 8 + 8, Math.floor(i / columns) * 16 + 1));
     const menu = new GridMenu(window, FONT_NORMAL_COPY_1, 0, 1, width * 8, 16, columns, rows);
-    const id2 = tasks.create(() => {
-      const input = menu.processInput();
-      if (input === MENU_NOTHING_CHOSEN) return;
-      if (input === MENU_B_PRESSED) {
-        if (ignoreB) return;
-        sound.playSE(sound.SE_SELECT);
-        varSet(SV.RESULT, SCR_MENU_CANCEL);
-      } else varSet(SV.RESULT, input);
-      this.removeWindow(window);
-      tasks.destroy(id2);
-      this.ow.script.ScriptContext_Enable();
-    }, 80);
+    const id2 = tasks.create(this.Hask_MultichoiceGridMenu_HandleInput, 80);
+    this.gridState.set(id2, { window, menu, ignoreB });
     return true;
   }
+
+  private gridState = new Map<number, { window: Window; menu: GridMenu; ignoreB: boolean }>();
+
+  private Hask_MultichoiceGridMenu_HandleInput = (taskId: number): void => {
+    const state = this.gridState.get(taskId);
+    if (!state) { tasks.destroy(taskId); return; }
+    const input = state.menu.processInput();
+    if (input === MENU_NOTHING_CHOSEN) return;
+    if (input === MENU_B_PRESSED) {
+      if (state.ignoreB) return;
+      sound.playSE(sound.SE_SELECT);
+      varSet(SV.RESULT, SCR_MENU_CANCEL);
+    } else varSet(SV.RESULT, input);
+    this.DestroyScriptMenuWindow(state.window);
+    this.gridState.delete(taskId);
+    tasks.destroy(taskId);
+    this.ow.script.ScriptContext_Enable();
+  };
 
   // ---------------------------------------------------------------- money / coins
 
@@ -227,8 +273,8 @@ export class ScriptMenu {
   private picWindow?: Window;
   private picSprite?: Sprite;
 
-  showMonPic(species: number, x: number, y: number): void {
-    if (this.picTask >= 0 && tasks.tasks[this.picTask]?.isActive) return;
+  ScriptMenu_ShowPokemonPic(species: number, x: number, y: number): boolean {
+    if (this.picTask >= 0 && tasks.tasks[this.picTask]?.isActive) return false;
     this.picWindow = this.createFramedWindow(x, y, 8, 8);
     const sprite = new Sprite();
     sprite.frameImages = [{ url: `${DATA_ROOT}/gfx/pokemon/front/${species}.png`, index: 0, width: 64, height: 64 }];
@@ -244,20 +290,44 @@ export class ScriptMenu {
     this.picSprite = sprite;
     this.ow.sprites.add(sprite);
     this.picState = 0;
-    this.picTask = tasks.create(() => {
-      switch (this.picState) {
-        case 0: this.picState = 1; break;
-        case 1: break;
-        case 2: this.ow.sprites.destroy(this.picSprite); this.picState = 3; break;
-        case 3: this.removeWindow(this.picWindow); tasks.destroy(this.picTask); this.picTask = -1; break;
-      }
-    }, 80);
+    this.picTask = tasks.create(this.Task_ScriptShowMonPic, 80);
+    return true;
   }
 
-  hideMonPic(): (() => boolean) | null {
+  private Task_ScriptShowMonPic = (taskId: number): void => {
+    switch (this.picState) {
+      case 0: this.picState = 1; break;
+      case 1: break;
+      case 2:
+        if (this.picSprite) this.ow.sprites.destroy(this.picSprite);
+        this.picSprite = undefined;
+        this.picState = 3;
+        break;
+      case 3:
+        this.DestroyScriptMenuWindow(this.picWindow);
+        this.picWindow = undefined;
+        tasks.destroy(taskId);
+        this.picTask = -1;
+        break;
+    }
+  };
+
+  ScriptMenu_HidePokemonPic(): (() => boolean) | null {
     if (this.picTask < 0 || !tasks.tasks[this.picTask]?.isActive) return null;
     this.picState++;
-    return () => this.picTask < 0;
+    return this.PicboxWait;
+  }
+
+  private PicboxWait = (): boolean => this.picTask < 0;
+
+  PicboxCancel(): void {
+    if (this.picTask < 0 || !tasks.tasks[this.picTask]?.isActive) return;
+    if (this.picState < 3 && this.picSprite) this.ow.sprites.destroy(this.picSprite);
+    this.picSprite = undefined;
+    this.DestroyScriptMenuWindow(this.picWindow);
+    this.picWindow = undefined;
+    tasks.destroy(this.picTask);
+    this.picTask = -1;
   }
 
   // ---------------------------------------------------------------- field_specials.c ListMenu
@@ -409,13 +479,20 @@ export class ScriptMenu {
   }
 
   /** script_menu.c CreatePCMenu / CreatePCMenuWindow */
-  pcMenu(): void {
+  CreatePCMenu(): boolean {
+    if (tasks.isActive(this.Task_MultichoiceMenu_HandleInput)) return false;
     varSet(SV.RESULT, SCR_MENU_UNSET);
+    this.CreatePCMenuWindow();
+    return true;
+  }
+
+  private CreatePCMenuWindow(): void {
     const k = rom.constants;
     const dex = flagGet(k.FLAG_SYS_POKEDEX_GET);
     const clear = flagGet(k.FLAG_SYS_GAME_CLEAR);
     const numItems = clear ? 5 : dex ? 4 : 3;
-    const width = dex ? 14 : 13;
+    const pcTextTiles = this.GetStringTilesWide(expandPlaceholders(rom.text("gText_SPc")));
+    const width = pcTextTiles === 9 || pcTextTiles === 10 || dex ? 14 : 13;
     const window = this.createFramedWindow(0, 0, width, clear ? 10 : numItems * 2);
     printText(window, FONT_NORMAL, rom.text(flagGet(k.FLAG_SYS_NOT_SOMEONES_PC) ? "gText_BillSPc" : "gText_SomeoneSPc"), 8, 2);
     printText(window, FONT_NORMAL, expandPlaceholders(rom.text("gText_SPc")), 8, 18);
@@ -428,7 +505,11 @@ export class ScriptMenu {
       printText(window, FONT_NORMAL, rom.text("gText_LogOff"), 8, 2 + 16 * (numItems - 1));
     }
     const menu = new Menu(window, FONT_NORMAL, 0, 2, 16, numItems, 0);
-    const taskId = tasks.create(this.multichoiceTask, 80);
-    this.mcState.set(taskId, { window, menu, ignoreB: false, wrap: numItems > 3 });
+    this.CreateMCMenuInputHandlerTask(false, numItems, window, menu);
+  }
+
+  /** ScriptMenu_DisplayPCStartupPrompt: print the PC prompt when returning from Hall of Fame PC. */
+  ScriptMenu_DisplayPCStartupPrompt(): void {
+    this.ow.messageBox.show(rom.text("Text_AccessWhichPC"));
   }
 }

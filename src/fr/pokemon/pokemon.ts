@@ -95,6 +95,30 @@ export function levelFromExp(species: number, exp: number): number {
   return level - 1;
 }
 
+/** SetMonExpWithMaxLevelCheck (pokemon.c): clamp experience above the level-100 table entry. */
+function SetMonExpWithMaxLevelCheck(mon: Pokemon, species: number, _unused: number, data: number): void {
+  const maxExp = expForLevel(species, MAX_LEVEL);
+  if (data > maxExp) mon.exp = maxExp;
+}
+
+/** TryIncrementMonLevel (pokemon.c): the source requires experience strictly above the next threshold. */
+export function TryIncrementMonLevel(mon: Pokemon): boolean {
+  const species = mon.species;
+  const level = mon.level & 0xff;
+  const nextLevel = (level + 1) & 0xff;
+  const exp = mon.exp >>> 0;
+  if (level < MAX_LEVEL) {
+    if (exp > expForLevel(species, nextLevel)) {
+      mon.level = nextLevel;
+      SetMonExpWithMaxLevelCheck(mon, species, nextLevel, exp);
+      return true;
+    }
+    return false;
+  }
+  SetMonExpWithMaxLevelCheck(mon, species, level, exp);
+  return false;
+}
+
 function modifyStatByNature(n: number, value: number, statIndex: number): number {
   if (statIndex <= STAT_HP || statIndex > 5) return value;
   const effect = NATURE_STAT_TABLE[n][statIndex - 1];
@@ -459,10 +483,12 @@ export function movesLearnedAtLevel(species: number, level: number): number[] {
   return rom.species[species].learnset.filter(([l]) => l === level).map(([, move]) => move);
 }
 
-export function canLearnTMHM(species: number, index: number): boolean {
-  const [lo, hi] = rom.species[species].tmhm;
-  if (index < 32) return ((lo >>> index) & 1) === 1;
-  return ((hi >>> (index - 32)) & 1) === 1;
+/** CanMonLearnTMHM (pokemon.c): return the source bit mask, including the high bit. */
+export function CanMonLearnTMHM(mon: Pokemon, tm: number): number {
+  if (mon.isEgg) return 0;
+  const [lo, hi] = rom.species[mon.species].tmhm;
+  const index = tm & 0xff;
+  return index < 32 ? ((lo & (1 << index)) >>> 0) : ((hi & (1 << (index - 32))) >>> 0);
 }
 
 /** AdjustFriendship for the common field events. */

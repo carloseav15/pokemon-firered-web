@@ -634,7 +634,8 @@ function Task_HofPC_HandleExit(taskId: number): void {
     const close = sCloseScene;
     sCloseScene = null;
     close?.();
-    sGame.scriptMenu.pcMenu();
+    sGame.scriptMenu.CreatePCMenu();
+    sGame.scriptMenu.ScriptMenu_DisplayPCStartupPrompt();
   }
 }
 

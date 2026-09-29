@@ -19,7 +19,7 @@ import {
   ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, GetItemEffectType, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
   type PartyMenuFieldHooks,
 } from "../partyMenu";
-import { relearnableMoves } from "../pokemon/partyRules";
+import { GetNumberOfRelearnableMoves } from "../pokemon/partyRules";
 import { encode, stringVars } from "../gba/charmap";
 import { PokemonUseItemEffects } from "../battle/ext";
 import type { Mon } from "../pokemon/mon";
@@ -173,7 +173,7 @@ function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => v
       else done();
     },
     evolve: (mon, target, canStop, slot, done) => BeginEvolutionScene(mon, target, canStop, slot, done),
-    relearnableMoves: (mon) => relearnableMoves(mon).length,
+    relearnableMoves: GetNumberOfRelearnableMoves,
   };
 }
 

@@ -1,16 +1,27 @@
 // pokemon.c / overworld.c rules shared by field menus and battle.
 import { rom } from "../rom";
+import * as C from "../generated/constants";
 import { flagGet, save } from "../save";
 import type { Pokemon } from "./pokemon";
 
-/** GetNumberOfRelearnableMoves/GetMoveRelearnerMoves: species, level, no duplicates. */
-export function relearnableMoves(mon: Pokemon): number[] {
-  if (mon.isEgg || !mon.species) return [];
+/** GetMoveRelearnerMoves (pokemon.c): preserve learnset order and skip known or repeated moves. */
+export function GetMoveRelearnerMoves(mon: Pokemon): number[] {
+  if (!mon.species) return [];
   const result: number[] = [];
-  for (const [level, move] of rom.species[mon.species].learnset) {
-    if (level <= mon.level && !mon.moves.includes(move) && !result.includes(move)) result.push(move);
+  for (const [level, move] of rom.species[mon.species].learnset.slice(0, C.MAX_LEVEL_UP_MOVES)) {
+    if (level <= mon.level && !mon.moves.slice(0, C.MAX_MON_MOVES).includes(move) && !result.includes(move)) result.push(move);
   }
   return result;
+}
+
+/** GetLevelUpMovesBySpecies (pokemon.c): all level-up moves, including duplicates. */
+export function GetLevelUpMovesBySpecies(species: number): number[] {
+  return rom.species[species].learnset.slice(0, C.MAX_LEVEL_UP_MOVES).map(([, move]) => move);
+}
+
+/** GetNumberOfRelearnableMoves (pokemon.c): eggs have no relearnable moves. */
+export function GetNumberOfRelearnableMoves(mon: Pokemon): number {
+  return mon.isEgg ? 0 : GetMoveRelearnerMoves(mon).length;
 }
 
 /** CountBadgesForOverworldWhiteOutLossCalculation (overworld.c). */

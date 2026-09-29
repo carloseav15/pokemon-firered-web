@@ -671,7 +671,30 @@ function SampleResortGorgeousReward(): number {
 
 // ---------------------------------------------------------------- museum fossil pic (script_menu.c)
 
-let fossilPic: { window: Window; sprite: Sprite; state: number } | undefined;
+let fossilPic: { window: Window; sprite?: Sprite; state: number; taskId: number; ctx: ScriptRunner } | undefined;
+
+/** Task_WaitMuseumFossilPic (script_menu.c): close advances through sprite and window cleanup. */
+function Task_WaitMuseumFossilPic(taskId: number): void {
+  const pic = fossilPic;
+  if (!pic || pic.taskId !== taskId) { tasks.destroy(taskId); return; }
+  switch (pic.state) {
+    case 0:
+      pic.state++;
+      break;
+    case 1:
+      break;
+    case 2:
+      if (pic.sprite) pic.ctx.ow.sprites.destroy(pic.sprite);
+      pic.sprite = undefined;
+      pic.state++;
+      break;
+    case 3:
+      pic.ctx.ow.game.scriptMenu.DestroyScriptMenuWindow(pic.window);
+      tasks.destroy(taskId);
+      fossilPic = undefined;
+      break;
+  }
+}
 
 /** LoopWingFlapSound and Task_WingFlapSound from field_specials.c. */
 function LoopWingFlapSound(): void {
@@ -848,6 +871,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   LoopWingFlapSound: () => { LoopWingFlapSound(); },
   DoFallWarp: (ctx) => { ctx.ow.doFallWarp(); },
   OpenMuseumFossilPic: (ctx) => {
+    if (fossilPic && tasks.tasks[fossilPic.taskId]?.isActive) return 0;
     const species = varGet(SV.x8004);
     if (species !== C.SPECIES_KABUTOPS && species !== C.SPECIES_AERODACTYL) return 0;
     const name = species === C.SPECIES_KABUTOPS ? "Kabutops" : "Aerodactyl";
@@ -861,14 +885,13 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
     sprite.x = x * 8 + 40; sprite.y = y * 8 + 40; sprite.coordOffsetEnabled = false; sprite.priority = 0; sprite.aboveWindows = true;
     sprite.draw = (c, dx, dy) => c.drawImage(image, dx, dy);
     ctx.ow.sprites.add(sprite);
-    fossilPic = { window, sprite, state: 0 };
+    const taskId = tasks.create(Task_WaitMuseumFossilPic, 80);
+    fossilPic = { window, sprite, state: 0, taskId, ctx };
     return 1;
   },
-  CloseMuseumFossilPic: (ctx) => {
+  CloseMuseumFossilPic: () => {
     if (!fossilPic) return 0;
-    ctx.ow.sprites.destroy(fossilPic.sprite);
-    ctx.ow.game.scriptMenu.removeWindow(fossilPic.window);
-    fossilPic = undefined;
+    fossilPic.state++;
     return 1;
   },
   // link, wireless and e-Reader: no hardware

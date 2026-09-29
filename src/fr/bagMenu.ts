@@ -71,6 +71,12 @@ export const gBagMenuState = {
   bagCallback: null as (() => void) | null,
 };
 
+/** GetSelectedItemIndex (item_menu.c): no caller anywhere in pokefirered, not even within
+ * item_menu.c itself. */
+function GetSelectedItemIndex(pocket: number): number {
+  return gBagMenuState.cursorPos[pocket]! + gBagMenuState.itemsAbove[pocket]!;
+}
+
 /** gSpecialVar_ItemId as the bag leaves it. */
 export const bagResult = { itemId: 0 };
 

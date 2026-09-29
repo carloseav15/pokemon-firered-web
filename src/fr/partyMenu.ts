@@ -64,7 +64,7 @@ import {
 } from "./pokemon/mon";
 import { addBagItem, addPCItem, CheckIfItemIsTMHMOrEvolutionStone, itemInfo, removeBagItem, removePCItem } from "./pokemon/items";
 import { ClearPCMailEntry, GetPCMail, GiveMailToMon, GiveMailToMon2, isMailItem, TakeMailFromMon, TakeMailFromMon2 } from "./pokemon/mail";
-import { canLearnTMHM, speciesName } from "./pokemon/pokemon";
+import { CanMonLearnTMHM, speciesName } from "./pokemon/pokemon";
 import { tmhmMove } from "./menus/monProgress";
 import { gPlayerPcMenuManager } from "./mailboxPc";
 import {
@@ -173,9 +173,7 @@ export function SetPartyMenuFieldHooks(hooks: PartyMenuFieldHooks): void { sFiel
 
 /** InitPartyMenu(menuType, layout, partyAction, keepCursorPos, messageId, task, callback) */
 export function InitPartyMenu(menuType: number, layout: number, partyAction: number, keepCursorPos: boolean, messageId: number, task: TaskFunc, callback: MainCB): void {
-  sPartyMenuInternal = null;
-  sPartyBgTilemapBuffer = null;
-  sPartyMenuBoxes = [];
+  ResetPartyMenu();
   SetMainCallback2WhenLoaded(Promise.all([
     preloadPokemonSpecialAnim(),
     loadCData("party_menu", "battle_tower", "pokemon_icon", "pokemon_special_anim_scene", "strings", "text_window_graphics"),
@@ -197,6 +195,14 @@ export function InitPartyMenu(menuType: number, layout: number, partyAction: num
     gMain.state = 0;
     SetMainCallback2(CB2_InitPartyMenu);
   });
+}
+
+/** ResetPartyMenu (party_menu.c): discard the four allocations owned by this menu. */
+function ResetPartyMenu(): void {
+  sPartyMenuInternal = null;
+  sPartyBgTilemapBuffer = null;
+  sPartyMenuBoxes = [];
+  sPartyBgGfxTilemap = new Uint8Array(0);
 }
 
 /** party_menu.c InitChooseMonsForBattle; the caller owns the saved callback. */
@@ -495,7 +501,8 @@ export function IsMultiBattle(): boolean {
   return !!(f & C.BATTLE_TYPE_MULTI && f & C.BATTLE_TYPE_DOUBLE && f & C.BATTLE_TYPE_TRAINER && f & C.BATTLE_TYPE_LINK);
 }
 
-function swapParty(a: number, b: number): void {
+/** SwapPartyPokemon (party_menu.c): TS party slots stand in for the two Pokemon pointers. */
+function SwapPartyPokemon(a: number, b: number): void {
   const pa = mon(a), pb = mon(b);
   const party = save.party as Mon[];
   const full = Array.from({ length: PARTY_SIZE }, (_, i) => party[i] ?? zeroMon());
@@ -526,7 +533,7 @@ export function GetPartyMenuType(): number { return gPartyMenu.menuType; }
 /** Task_HandleChooseMonInput */
 export function Task_HandleChooseMonInput(taskId: number): void {
   if (gPaletteFade.active) return;
-  const slot = slotRef();
+  const slot = GetCurrentPartySlotPtr();
   switch (PartyMenuButtonHandler(slot)) {
     case A_BUTTON: HandleChooseMonSelection(taskId, slot); break;
     case B_BUTTON: HandleChooseMonCancel(taskId, slot); break;
@@ -580,7 +587,8 @@ function Task_ContinueChoosingMonsForBattle(taskId: number): void {
 
 type SlotRef = { get(): number; set(v: number): void };
 /** GetCurrentPartySlotPtr */
-function slotRef(): SlotRef {
+/** GetCurrentPartySlotPtr (party_menu.c): a mutable slot reference models the C s8 pointer. */
+function GetCurrentPartySlotPtr(): SlotRef {
   if (gPartyMenu.action === C.PARTY_ACTION_SWITCH || gPartyMenu.action === C.PARTY_ACTION_SOFTBOILED) {
     return { get: () => gPartyMenu.slotId2, set: (v) => { gPartyMenu.slotId2 = v; } };
   }
@@ -932,7 +940,7 @@ function CanMonLearnTMTutor(m: Mon, item: number, tutor: number): number {
   if (GetMonData(m, C.MON_DATA_IS_EGG)) return CANNOT_LEARN_MOVE_IS_EGG;
   let move: number;
   if (item >= C.ITEM_TM01) {
-    if (!canLearnTMHM(GetMonData(m, C.MON_DATA_SPECIES), item - C.ITEM_TM01)) return CANNOT_LEARN_MOVE;
+    if (!CanMonLearnTMHM(m, item - C.ITEM_TM01)) return CANNOT_LEARN_MOVE;
     move = ItemIdToBattleMoveId(item);
   } else if (!CanLearnTutorMove(GetMonData(m, C.MON_DATA_SPECIES), tutor)) {
     return CANNOT_LEARN_MOVE;
@@ -1739,7 +1747,7 @@ function SwitchMenuBoxSprites(box0: PartyMenuBox, box1: PartyMenuBox, key: "poke
 
 function SwitchPartyMon(): void {
   const b0 = sPartyMenuBoxes[gPartyMenu.slotId], b1 = sPartyMenuBoxes[gPartyMenu.slotId2];
-  swapParty(gPartyMenu.slotId, gPartyMenu.slotId2);
+  SwapPartyPokemon(gPartyMenu.slotId, gPartyMenu.slotId2);
   SwitchMenuBoxSprites(b0, b1, "pokeballSpriteId");
   SwitchMenuBoxSprites(b0, b1, "itemSpriteId");
   SwitchMenuBoxSprites(b0, b1, "monSpriteId");
@@ -2776,11 +2784,7 @@ function UpdateMonDisplayInfoAfterRareCandy(slot: number, m: Mon): void {
 function Task_DisplayLevelUpStatsPg1(taskId: number): void {
   if (sound.isFanfareTaskInactive() && !IsPartyMenuTextPrinterActive() && joy.newKeys & (A_BUTTON | B_BUTTON)) {
     sound.playSE(C.SE_SELECT);
-    const data = pmi().data;
-    data[12] = CreateLevelUpStatsWindow();
-    DrawLevelUpWindowPg1(data[12], data.slice(0, 6), data.slice(6, 12), 1, 2, 3);
-    CopyWindowToVram(data[12], COPYWIN_GFX);
-    ScheduleBgCopyTilemapToVram(2);
+    DisplayLevelUpStatsPg1(taskId);
     tasks.setFunc(taskId, Task_DisplayLevelUpStatsPg2);
   }
 }
@@ -2788,12 +2792,25 @@ function Task_DisplayLevelUpStatsPg1(taskId: number): void {
 function Task_DisplayLevelUpStatsPg2(taskId: number): void {
   if (joy.newKeys & (A_BUTTON | B_BUTTON)) {
     sound.playSE(C.SE_SELECT);
-    const data = pmi().data;
-    DrawLevelUpWindowPg2(data[12], data.slice(6, 12), 1, 2, 3);
-    CopyWindowToVram(data[12], COPYWIN_GFX);
-    ScheduleBgCopyTilemapToVram(2);
+    DisplayLevelUpStatsPg2(taskId);
     tasks.setFunc(taskId, Task_TryLearnNewMoves);
   }
+}
+
+/** DisplayLevelUpStatsPg1 / DisplayLevelUpStatsPg2 (party_menu.c). */
+function DisplayLevelUpStatsPg1(_taskId: number): void {
+  const data = pmi().data;
+  data[12] = CreateLevelUpStatsWindow();
+  DrawLevelUpWindowPg1(data[12], data.slice(0, 6), data.slice(6, 12), 1, 2, 3);
+  CopyWindowToVram(data[12], COPYWIN_GFX);
+  ScheduleBgCopyTilemapToVram(2);
+}
+
+function DisplayLevelUpStatsPg2(_taskId: number): void {
+  const data = pmi().data;
+  DrawLevelUpWindowPg2(data[12], data.slice(6, 12), 1, 2, 3);
+  CopyWindowToVram(data[12], COPYWIN_GFX);
+  ScheduleBgCopyTilemapToVram(2);
 }
 
 let sMoveToLearn = 0;
@@ -3213,7 +3230,7 @@ function TrySwitchInPokemon(): boolean {
   partyMenuResult.useExitCallback = true;
   const newSlot = GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[G.gBattlerInMenuId]);
   SwitchPartyMonSlots(newSlot, slot);
-  swapParty(newSlot, slot);
+  SwapPartyPokemon(newSlot, slot);
   return true;
 }
 
