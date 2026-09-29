@@ -874,4 +874,3 @@ function TeachyTvLoadMapPalette(primaryPalettes: number[][][], secondaryPalettes
     LoadPalette(dest.map(rgb555), BG_PLTT_ID(15 - i), PLTT_SIZE_4BPP);
   }
 }
-

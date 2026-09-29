@@ -11,23 +11,17 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
-| Falta (sin funciones portadas) | 1 | 1430 | 0/70 |
-| Parcial (< 80 % de funciones) | 19 | 53680 | 1052/2441 |
+| Falta (sin funciones portadas) | 0 | 0 | 0/0 |
+| Parcial (< 80 % de funciones) | 16 | 47199 | 1046/2211 |
 | Adaptador (UI simplificada) | 1 | 1400 | 28/58 |
-| Casi completo (≥ 80 % y < 100 %) | 12 | 28796 | 1005/1156 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 176 | 168051 | 6390/6390 |
+| Casi completo (≥ 80 % y < 100 %) | 13 | 30226 | 1071/1226 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 179 | 174532 | 6620/6620 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 32/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
-| **Pendiente de portar** | **33** | **85306** | |
-| **Total en alcance** | **211** | **253703** | **8475/10115** |
+| **Pendiente de portar** | **30** | **78825** | |
+| **Total en alcance** | **211** | **253703** | **8765/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
-
-## Falta (sin funciones portadas)
-
-| Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
-|---|---:|---:|---|---|---:|
-| `pokemon_storage_system_misc.c` | 1430 | 0/70 |  |  |  |
 
 ## Parcial (< 80 % de funciones)
 
@@ -40,15 +34,12 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_transition.c` | 3037 | 72/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
 | `intro.c` | 2805 | 3/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
-| `pokemon_storage_system_tasks.c` | 2770 | 2/82 |  |  |  |
 | `battle_controller_pokedude.c` | 2698 | 32/108 |  |  |  |
 | `quest_log_events.c` | 2247 | 15/118 | `questLogActions.ts`, `questLogEvents.ts` |  |  |
-| `pokemon_storage_system_data.c` | 2165 | 3/83 | `pokemon/storage.ts` |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `quest_log.c` | 1767 | 16/88 | `field/overworld.ts`, `field/trainerSee.ts`, `questLogEvents.ts` … |  |  |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 7/37 | `battle/interface.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
-| `pokemon_storage_system_graphics.c` | 1546 | 1/65 |  |  |  |
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
 | `trainer_tower.c` | 1095 | 1/43 | `script/specials.ts` |  |  |
 | `battle_records.c` | 568 | 4/31 |  |  |  |
@@ -69,6 +60,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
 | `trainer_card.c` | 1959 | 66/73 | `menus/trainerCard.ts` |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
+| `pokemon_storage_system_misc.c` | 1430 | 66/70 | `storageSystemMisc.ts` |  |  |
 | `title_screen.c` | 1315 | 33/39 | `introTitle.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
@@ -89,6 +81,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokedex_screen.c` | 3452 | 66/66 | `pokedexScreen.ts`, `pokemon/mon_extra.ts` |  |  |
 | `battle_util.c` | 3252 | 37/37 | `battle/util.ts` |  |  |
 | `battle_message.c` | 2855 | 10/10 | `battle/message.ts` |  |  |
+| `pokemon_storage_system_tasks.c` | 2770 | 82/82 | `storageSystemTasks.ts` |  |  |
 | `field_specials.c` | 2555 | 118/118 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `field/hiddenItem.ts` … |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
 | `naming_screen.c` | 2509 | 109/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
@@ -103,6 +96,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_interface.c` | 2240 | 52/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `field_player_avatar.c` | 2168 | 176/176 | `field/fieldEffects.ts`, `field/fishing.ts`, `field/objectEvents.ts` … |  |  |
+| `pokemon_storage_system_data.c` | 2165 | 83/83 | `pokemon/storage.ts`, `storageSystemData.ts` |  |  |
 | `daycare.c` | 2155 | 93/93 | `eggHatch.ts`, `game.ts`, `pokemon/daycare.ts` … |  |  |
 | `battle_ai_script_commands.c` | 1970 | 105/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 87/87 | `battle/controller_opponent.ts` |  |  |
@@ -111,6 +105,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
 | `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
 | `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `pokemonSpecialAnim.ts` |  |  |
+| `pokemon_storage_system_graphics.c` | 1546 | 65/65 | `storageSystemGraphics.ts` |  |  |
 | `berry_pouch.c` | 1529 | 77/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |  |
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
@@ -162,7 +157,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_ai_switch_items.c` | 674 | 13/13 | `battle/ai.ts` |  |  |
 | `menu2.c` | 671 | 10/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 72/72 | `battle/controller_safari.ts` |  |  |
-| `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts` |  |  |
+| `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts`, `storageSystemData.ts` |  |  |
 | `itemfinder.c` | 658 | 24/24 | `menus/itemFinder.ts` |  |  |
 | `menu_indicators.c` | 656 | 20/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `sound.c` | 649 | 48/48 | `audio/m4a.ts`, `audio/sound.ts`, `battle/animScript.ts` … |  |  |
