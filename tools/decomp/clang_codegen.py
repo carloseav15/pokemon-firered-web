@@ -21,14 +21,18 @@ from typing import Any
 from common import ROOT
 import clang_ast
 import clang_intsem as I
+import clang_support
 
 
 class UnsupportedAstError(Exception):
-    def __init__(self, c_file: str, func_name: str, reason: str):
+    """A construct outside the generator's model. `reason` starts with an UNSUPPORTED_* code; `codes` lists all of them."""
+
+    def __init__(self, c_file: str, func_name: str, reason: str, codes: list[str] | None = None):
         super().__init__(f"[{c_file}:{func_name}] Unsupported AST: {reason}")
         self.c_file = c_file
         self.func_name = func_name
         self.reason = reason
+        self.codes = codes or [reason.split(":", 1)[0]]
 
 
 # Supported GBA constants mapped to TS constants
@@ -57,6 +61,9 @@ for _ph in (
     "Archie", "Maxie", "Kyogre", "Groudon", "Red", "Green",
 ):
     SYMBOL_MAP[f"gExpandedPlaceholder_{_ph}"] = f'rom.text("gExpandedPlaceholder_{_ph}")'
+
+# Members of the two save-block pointers the TS side provides (gba/stringBuffers.ts SaveBlocks). Any other member is unmodeled.
+MODELED_MEMBERS = {"playerName", "playerGender", "rivalName"}
 
 MODULE_IMPORTS = [
     'import { rom } from "../rom";',
@@ -159,10 +166,26 @@ class ClangTsEmitter:
         return self.pointer_buffer.get(name, name)
 
     def reject(self, reason: str) -> None:
+        if not reason.startswith("UNSUPPORTED_"):  # backstop rejects of the emitter itself get a code too
+            code = ("UNSUPPORTED_LONG_LONG" if "64-bit" in reason else "UNSUPPORTED_STATEMENT" if "statement kind" in reason
+                    else "UNSUPPORTED_FUNCTION_TABLE" if "table" in reason else "UNSUPPORTED_POINTER_RETURN" if "return" in reason
+                    else "UNSUPPORTED_POINTER_MODEL" if "pointer" in reason else "UNSUPPORTED_EXPRESSION")
+            reason = f"{code}: {reason}"
         raise UnsupportedAstError(self.c_file, self.func_name, reason)
 
+    def _audit(self) -> None:
+        """Fail closed: refuse any construct the emitter does not model (see clang_support.py)."""
+        found = clang_support.audit(self.func, modeled_globals=set(SYMBOL_MAP), known_functions=self.known_functions, modeled_members=MODELED_MEMBERS)
+        if not found:
+            return
+        code, detail = clang_support.primary(found)
+        codes = sorted({c for c, _ in found}, key=lambda c: clang_support.PRIORITY.index(c) if c in clang_support.PRIORITY else 99)
+        extra = f" (also: {', '.join(c for c in codes if c != code)})" if len(codes) > 1 else ""
+        raise UnsupportedAstError(self.c_file, self.func_name, f"{code}: {detail}{extra}", codes)
+
     def emit_function(self) -> str:
-        # Pre-scan body for unsupported nodes
+        # Fail closed before emitting anything (goto/asm keep their own backstop in _check_supported)
+        self._audit()
         self._check_supported(self.func.body)
 
         # Signature: buffer and scalar params first, followed by optional offset params
@@ -217,9 +240,9 @@ class ClangTsEmitter:
     def _check_supported(self, node: dict[str, Any]) -> None:
         k = node.get("kind")
         if k == "GotoStmt":
-            self.reject("goto statements are not supported")
+            self.reject("UNSUPPORTED_GOTO: goto statements are not supported")
         elif k == "GCCAsmStmt":
-            self.reject("inline assembly is not supported")
+            self.reject("UNSUPPORTED_ASM: inline assembly is not supported")
         for child in node.get("inner") or []:
             if isinstance(child, dict):
                 self._check_supported(child)

@@ -100,6 +100,35 @@ but nothing enforces it: a future hand-written caller can pass 300 to a `u8` par
   it, but needs the FieldDecl (not done).
 * 622 accepted functions have a line longer than 160 characters (mostly long `||` chains).
 
+## Fail-closed audit ([clang_support.py](clang_support.py))
+
+`ClangTsEmitter.emit_function` first runs `clang_support.audit`, a structural walk over the Clang AST (node kinds, types, cast
+kinds; never text). Anything outside the modeled subset is rejected with a code `UNSUPPORTED_*`; no support was added.
+"Supported" means *every construct is inside the model*, not that the output is proven equivalent.
+
+Modeled subset: INT expressions; byte (`u8`/`char`) pointer cursors passed as `(buffer, offset)`; the `gStringVar*`,
+`gSaveBlock1/2Ptr.{playerName,playerGender,rivalName}` and `gExpandedPlaceholder_*` symbols; const scalar arrays with a full
+initialiser; a local table of function references with an indirect call; `sizeof(a)/sizeof(*a)`; scalar globals by name;
+calls to functions generated under the same convention.
+
+Rejected (primary code by priority): ASM, GOTO, HARDWARE_ACCESS, LONG_LONG, FLOAT, UNION, STRUCT_VALUE, STRUCT_ACCESS,
+STRUCT_POINTER, ADDRESS_OF_{LOCAL,MEMBER,ELEMENT,GLOBAL}, POINTER_{INTEGER_CAST,CAST,ARITHMETIC,COMPARE,NULL,ASSIGN,RETURN,MODEL,
+TO_POINTER,DEREFERENCE}, WIDE_POINTER, VOID_POINTER, CALL_POINTER_ARGS, INDIRECT_CALL (incl. function-pointer parameters and
+returns), VARARGS, LOCAL_ARRAY (no or partial initialiser), MULTIDIM_ARRAY, SIZEOF, STATEMENT(_EXPRESSION), FUNCTION_TABLE.
+
+Defects found by sampling the "supported" set and closed here: function-pointer parameters treated as byte cursors; pointer
+locals initialised from a call or a table element (the offset was lost); global pointer variables incremented as cursors
+(`sBattleAnimScriptPtr++`); partially initialised local arrays (`= {0}` emitted as `[]`); pointer returns other than a global
+array or a cursor.
+
+Measured on the 11,991 C functions (see the delivery report for the table): SUPPORTED 2,124; 0 functions are supported that the
+pre-fail-closed generator rejected. Regressions kept passing: `check:string-util`, `check:event-object-anims`,
+`check:cdata-table-accessors`, `check:incbin-row-accessors`, oracle `--group controls,real`.
+
+## Known unrelated failure
+
+`npm run check:honesty` reports unpushed commit `9ecc74f` ("complete" in its message body). It predates this work and is not touched.
+
 ## Assumptions
 
 * Function parameters arrive normalised (the C ABI does this at the call site; generated callers do it through the argument casts).
