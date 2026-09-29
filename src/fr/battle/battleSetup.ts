@@ -4,6 +4,7 @@
 import { sound } from "../audio/sound";
 import { expandPlaceholders } from "../gba/charmap";
 import { rom } from "../rom";
+import * as C from "../generated/constants";
 import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
 import { afterRoamerBattle } from "../pokemon/roamer";
 import { CreateScriptedWildMon } from "../pokemon/scriptPokemonUtil";
@@ -611,9 +612,9 @@ export function BattleSetup_GetBattleTowerBattleTransition(): number {
     break;
   }
   if (enemyLevel < playerLevel) {
-    return rom.c("B_TRANSITION_POKEBALLS_TRAIL");
+    return C.B_TRANSITION_POKEBALLS_TRAIL;
   } else {
-    return rom.c("B_TRANSITION_BIG_POKEBALL");
+    return C.B_TRANSITION_BIG_POKEBALL;
   }
 }
 
