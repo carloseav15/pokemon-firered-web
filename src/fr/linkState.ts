@@ -3,6 +3,7 @@
 // feeds complete per-frame player command rows through ReceiveLinkCommand and
 // registers the exact CB1 callback it installs in gMain.
 
+import * as C from "./generated/constants";
 import { gMain, type MainCallback } from "./hw/runtime";
 
 const CMD_LENGTH = 8; // link.h
@@ -162,3 +163,66 @@ export const linkTransport = {
 /** link.c gBlockRecvBuffer. 4 players × BLOCK_BUFFER_SIZE/2 halfwords. */
 const BLOCK_BUFFER_SIZE = 0x100;
 export const gBlockRecvBuffer: Uint16Array[] = Array.from({ length: 4 }, () => new Uint16Array(BLOCK_BUFFER_SIZE / 2));
+
+// ---------------------------------------------------------------------------
+// overworld.c link key/facing helpers, generated with clang_codegen from the C
+// body and given the C constant names. The link command handlers that call
+// them (HandleLinkPlayerKeyInput, FacingHandler_*, SetKeyInterceptCallback
+// users) are not ported, so no runtime path reaches these yet.
+// ---------------------------------------------------------------------------
+
+/** overworld.c enum LinkFacing (file-local in the C). */
+export const FACING_NONE = 0;
+export const FACING_UP = 1;
+export const FACING_DOWN = 2;
+export const FACING_LEFT = 3;
+export const FACING_RIGHT = 4;
+export const FACING_FORCED_UP = 7;
+export const FACING_FORCED_DOWN = 8;
+export const FACING_FORCED_LEFT = 9;
+export const FACING_FORCED_RIGHT = 10;
+
+/** overworld.c GetDirectionForDpadKey. */
+export function GetDirectionForDpadKey(a1: number): number {
+  switch (a1 & 0xffff) {
+    case C.LINK_KEY_CODE_DPAD_RIGHT:
+      return FACING_RIGHT;
+    case C.LINK_KEY_CODE_DPAD_LEFT:
+      return FACING_LEFT;
+    case C.LINK_KEY_CODE_DPAD_UP:
+      return FACING_UP;
+    case C.LINK_KEY_CODE_DPAD_DOWN:
+      return FACING_DOWN;
+    default:
+      return FACING_NONE;
+  }
+}
+
+/** overworld.c FlipVerticalAndClearForced. */
+export function FlipVerticalAndClearForced(newFacing: number, oldFacing: number): number {
+  switch (newFacing & 0xff) {
+    case FACING_UP:
+    case FACING_FORCED_UP:
+      return C.DIR_NORTH;
+    case FACING_DOWN:
+    case FACING_FORCED_DOWN:
+      return C.DIR_SOUTH;
+    case FACING_LEFT:
+    case FACING_FORCED_LEFT:
+      return C.DIR_WEST;
+    case FACING_RIGHT:
+    case FACING_FORCED_RIGHT:
+      return C.DIR_EAST;
+  }
+  return oldFacing & 0xff;
+}
+
+/** overworld.c KeyInterCB_SendNothing. */
+export function KeyInterCB_SendNothing(_key: number): number {
+  return C.LINK_KEY_CODE_EMPTY;
+}
+
+/** overworld.c KeyInterCB_SendNothing_2 (duplicate of KeyInterCB_SendNothing in the C). */
+export function KeyInterCB_SendNothing_2(_key: number): number {
+  return C.LINK_KEY_CODE_EMPTY;
+}
