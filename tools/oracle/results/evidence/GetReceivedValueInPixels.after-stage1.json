@@ -1,0 +1,90 @@
+{
+ "function": "GetReceivedValueInPixels",
+ "impl": "battle/interface.ts",
+ "label": "after-stage1",
+ "domain": "type",
+ "capturedAt": "2026-09-29T00:33:55.829Z",
+ "cases": [
+  {
+   "args": [
+    0,
+    -1,
+    127,
+    128
+   ],
+   "result": "MATCH_OBSERVED",
+   "hint": null,
+   "verdict": null,
+   "c_wasm": {
+    "v": 0
+   },
+   "ts": {
+    "v": 0
+   },
+   "reproduce": "node tools/oracle/run.mjs --fn GetReceivedValueInPixels --impl battle/interface.ts --case '[0,-1,127,128]' --domain type"
+  },
+  {
+   "args": [
+    13430257,
+    -11968182,
+    16707093,
+    25
+   ],
+   "result": "MATCH_OBSERVED",
+   "hint": null,
+   "verdict": null,
+   "c_wasm": {
+    "v": 39
+   },
+   "ts": {
+    "v": 39
+   },
+   "reproduce": "node tools/oracle/run.mjs --fn GetReceivedValueInPixels --impl battle/interface.ts --case '[13430257,-11968182,16707093,25]' --domain type"
+  },
+  {
+   "args": [
+    1,
+    -2147483648,
+    -1,
+    1
+   ],
+   "result": "NEEDS_TRIAGE(TS_DIVERGENCE)",
+   "hint": "value-differs",
+   "verdict": "TS_DIVERGENCE",
+   "c_wasm": {
+    "v": 8
+   },
+   "ts": {
+    "v": 16
+   },
+   "reproduce": "node tools/oracle/run.mjs --fn GetReceivedValueInPixels --impl battle/interface.ts --case '[1,-2147483648,-1,1]' --domain type"
+  }
+ ],
+ "clustersInLatest": [
+  {
+   "domain": "type",
+   "boundary": 20000,
+   "fuzz": 2000,
+   "result": "NEEDS_TRIAGE",
+   "mismatches": 11559,
+   "clusters": {
+    "value-differs": {
+     "count": 10930,
+     "verdict": "TS_DIVERGENCE"
+    },
+    "c-trap": {
+     "count": 629,
+     "verdict": "UNDEFINED_BEHAVIOR"
+    }
+   }
+  },
+  {
+   "domain": "realistic",
+   "boundary": 1900,
+   "fuzz": 2000,
+   "result": "MATCH_OBSERVED",
+   "mismatches": 0,
+   "clusters": {}
+  }
+ ]
+}

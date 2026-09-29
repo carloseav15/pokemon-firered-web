@@ -1,0 +1,291 @@
+[
+  {
+    "fn": "Sin",
+    "impl": "hw/trig.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "negative index reads gSineTable out of bounds; wasm traps far below the table, GBA would read neighbouring ROM"
+  },
+  {
+    "fn": "Sin",
+    "impl": "hw/trig.ts",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "index 441..496 is past the 320-entry table; C reads adjacent memory, TS reads undefined. Structural domain (index 0..255) has 0 mismatches"
+  },
+  {
+    "fn": "GetTileMapIndexFromCoords",
+    "impl": "hw/bg.ts",
+    "cluster": "missing-truncation-to-u32",
+    "verdict": "INVALID_DOMAIN",
+    "reason": "needs screenWidth/Height outside {32,64} (mask with high bits) so y*0x20+x leaves u32 range; structural domain (widths 32/64, full s32 x/y) has 0 mismatches. The width set is an ASSUMED domain. Latent pattern: TS return is not truncated to u32"
+  },
+  {
+    "fn": "CalculatePanIncrement",
+    "impl": "battle/animScript.ts",
+    "cluster": "missing-truncation-to-s16",
+    "verdict": "TS_DIVERGENCE",
+    "reason": "only incrementPan = -32768: C stores -(-32768) = 32768 in an s16 (-32768), TS returns 32768. Latent: unreachable in the realistic domain (0 mismatches)"
+  },
+  {
+    "fn": "GetGenderFromSpeciesAndPersonality",
+    "impl": "pokemon/mon.ts",
+    "cluster": "ts-threw",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species >= 412 indexes past gSpeciesInfo (NUM_SPECIES = 412); C reads out of bounds, TS throws"
+  },
+  {
+    "fn": "ModifyStatByNature",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "value-differs",
+    "verdict": "TS_DIVERGENCE",
+    "reason": "stat >= 596 with a +10% nature (>= 729 with -10%): C (BUGFIX undefined) keeps the u16 intermediate `stat * 110`, TS computes the exact product. Documented C quirk; unreachable in game (pokemon.c:5406-5411). Realistic domain has 0 mismatches"
+  },
+  {
+    "fn": "ModifyStatByNature",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "ts-threw",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "nature >= 25 indexes past sNatureStatTable"
+  },
+  {
+    "fn": "CalculatePPWithBonus",
+    "impl": "pokemon/mon.ts",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "moveIndex >= 4 reads past gPPUpGetMask and move >= 355 past gBattleMoves; the structural domain (valid indices) has 0 mismatches"
+  },
+  {
+    "fn": "CalculatePPWithBonus",
+    "impl": "pokemon/mon.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "move >= 14475 reads outside wasm memory: out-of-bounds gBattleMoves access"
+  },
+  {
+    "fn": "GetHPBarLevel",
+    "impl": "battle/interface.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxhp = 0: integer division by zero inside GetScaledHPFraction (wasm traps; behaviour is undefined in C)"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "battle/interface.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxhp = 0 divides by zero"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "battle/util.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxhp = 0 divides by zero"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "battle/interface.ts",
+    "domain": "call",
+    "cluster": "value-differs",
+    "verdict": "INVALID_DOMAIN",
+    "reason": "CALL domain is speculative (TS callers passing unnormalised numbers); no such caller was audited. This copy normalises neither the s16 hp/maxhp nor the u8 scale"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "battle/util.ts",
+    "domain": "call",
+    "cluster": "value-differs",
+    "verdict": "INVALID_DOMAIN",
+    "reason": "CALL domain is speculative. This copy normalises hp/maxhp to s16 but not the u8 scale"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "battle/interface.ts",
+    "domain": "call",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxhp converts to 0: division by zero"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "battle/util.ts",
+    "domain": "call",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxhp converts to 0: division by zero"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "pair(battle/interface.ts vs battle/util.ts)",
+    "domain": "call",
+    "cluster": "A-differs-from-B",
+    "verdict": "INVALID_DOMAIN",
+    "reason": "the two copies agree on every s16/u8 input (type and realistic domains: 0 differences); they differ only when handed unnormalised numbers"
+  },
+  {
+    "fn": "GetReceivedValueInPixels",
+    "impl": "battle/interface.ts",
+    "cluster": "value-differs",
+    "verdict": "TS_DIVERGENCE",
+    "reason": "two causes, both latent: `totalPixels *= 8` is not truncated to u8 (986/1000 mismatches for totalPixels >= 32), and oldValue * totalPixels is not wrapped to 32 bits (mismatches once values reach ~2^25). Realistic domain (totalPixels = 8, values below the exp cap) has 0 mismatches",
+    "fixedBy": "working-tree edit of GetReceivedValueInPixels in src/fr/battle/interface.ts (uncommitted); evidence in results/evidence/GetReceivedValueInPixels.{before,after-stage1,after}.json"
+  },
+  {
+    "fn": "GetReceivedValueInPixels",
+    "impl": "battle/interface.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxValue = 0 divides by zero"
+  },
+  {
+    "fn": "GetAnchorCoord",
+    "impl": "hw/sprite.ts",
+    "cluster": "value-differs",
+    "verdict": "TS_DIVERGENCE",
+    "reason": "latent: xformed - baseDim and the final subtraction are not wrapped to s32 (needs |baseDim| near 2^31). Realistic domain (baseDim in {2048..16384}, |xformed| <= 2^19) has 0 mismatches"
+  },
+  {
+    "fn": "GetAnchorCoord",
+    "impl": "hw/sprite.ts",
+    "cluster": "missing-truncation-to-s32",
+    "verdict": "TS_DIVERGENCE",
+    "reason": "latent: `modifier - (...)` is not truncated to s32 when the u32 quotient exceeds 2^31"
+  },
+  {
+    "fn": "GetAnchorCoord",
+    "impl": "hw/sprite.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "baseDim = 0 divides by zero"
+  },
+  {
+    "fn": "GetPlayerDirectionTowardsHiddenItem",
+    "impl": "menus/itemFinder.ts",
+    "cluster": "value-differs",
+    "verdict": "TS_DIVERGENCE",
+    "reason": "only itemX or itemY = -32768: C stores `itemX * -1` (32768) in an s16 (-32768), TS uses Math.abs. Latent; realistic +-16 has 0 mismatches"
+  },
+  {
+    "fn": "WasUnableToUseMove",
+    "impl": "battle/util.ts",
+    "cluster": "ts-threw",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "battler >= 4 indexes past gProtectStructs[4]: C reads the adjacent wasm memory, TS reads an undefined element. Structural and realistic domains (battler 0..3) have 0 mismatches over 4056 cases each"
+  },
+  {
+    "fn": "BtlCtrl_OakOldMan_TestState2Flag",
+    "impl": "battle/controller_oak_old_man.ts",
+    "domain": "realistic",
+    "cluster": "value-differs",
+    "verdict": "HARNESS_ERROR",
+    "status": "fixed in harness before the final run",
+    "reason": "first run: 398 realistic / 857 type mismatches. C `bool8 f(mask) { return x & mask; }` returned the mask bit (2, 4, 8) while TS returned true (mapped to 1). Every C caller only tests truthiness (`!Test...`), so the comparison of a TS boolean against a C bool8 is now by truthiness (compare.mjs sameValue). The raw mismatch is kept here as history"
+  },
+  {
+    "fn": "BtlCtrl_OakOldMan_SetState2Flag",
+    "impl": "layout:struct BattleStruct",
+    "cluster": "field-layout-differs",
+    "verdict": "HARNESS_ERROR",
+    "status": "fixed in harness before the final run",
+    "reason": "first run: 8 findings. (a) the probe filled u16/s16 array views with 0xff instead of -1, setting only half of the bits; (b) after that, 2 remaining findings were u8 members followed by padding whose size was taken as the distance to the next member. Both were harness bugs; the struct layout itself matches"
+  },
+  {
+    "fn": "GetAbilityBySpecies",
+    "impl": "battle/util.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species >= 412 indexes past gSpeciesInfo; far indexes leave wasm memory"
+  },
+  {
+    "fn": "GetAbilityBySpecies",
+    "impl": "battle/util.ts",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species 752..1585 read adjacent memory in C (the table has 412 entries); structural and realistic domains (species 0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpecialStatusesClear",
+    "impl": "battle/main.ts",
+    "cluster": "global-differs:gActiveBattler",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "gBattlersCount 5..8 (type domain capped at 8 to protect the oracle): the C memset runs past gSpecialStatuses[4], TS throws at index 4 and leaves gActiveBattler at 4. Structural/realistic counts 0..4 have 0 mismatches"
+  },
+  {
+    "fn": "Cmd_endselectionscript",
+    "impl": "battle/cmds/part2.ts",
+    "cluster": "bytes-differ",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "gBattlerAttacker >= 4 makes C write TRUE at selectionScriptFinished[idx], i.e. into other BattleStruct members; the TS typed-array view drops the out-of-range write. Structural/realistic (0..3): 0 mismatches"
+  },
+  {
+    "fn": "ModifyStatByNature",
+    "impl": "generated (INT)",
+    "cluster": "ts-threw",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "nature >= 25 indexes past sNatureStatTable (the generated code reads the cdata copy of the table)"
+  },
+  {
+    "fn": "GetScaledHPFraction",
+    "impl": "generated (INT)",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxhp = 0 divides by zero"
+  },
+  {
+    "fn": "GetHPBarLevel",
+    "impl": "generated (INT)",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxhp = 0 divides by zero inside GetScaledHPFraction"
+  },
+  {
+    "fn": "GetReceivedValueInPixels",
+    "impl": "generated (INT)",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxValue = 0 divides by zero"
+  },
+  {
+    "fn": "GetAnchorCoord",
+    "impl": "generated (INT)",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "baseDim = 0 divides by zero"
+  },
+  {
+    "fn": "Sin",
+    "impl": "generated (INT)",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "negative index reads gSineTable out of bounds"
+  },
+  {
+    "fn": "Sin",
+    "impl": "generated (INT)",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "index 441..496 is past the 320-entry table (C reads adjacent memory, the generated module reads undefined)"
+  },
+  {
+    "fn": "Cos",
+    "impl": "generated (INT)",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "index + 64 outside the table"
+  },
+  {
+    "fn": "Cos",
+    "impl": "generated (INT)",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "index 257..267: index + 64 is past the 320-entry table"
+  },
+  {
+    "fn": "GetReceivedValueInPixels",
+    "impl": "hand port (battle/interface.ts)",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "maxValue = 0 divides by zero (same cluster as the generated variant: hand port and generator now agree everywhere else)"
+  }
+]
