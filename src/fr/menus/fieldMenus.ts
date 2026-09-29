@@ -395,7 +395,7 @@ export function FieldUseFunc_TownMap(fromBag: boolean, route: { openFromBag: () 
 /** UseFameCheckerFromBag (item_use.c): keep a bag return callback while the Fame Checker is open. */
 export function UseFameCheckerFromBag(game: Game, returnToBag: () => void): void {
   fieldMenu(game, (close) => {
-    void openFameChecker(() => { close(); returnToBag(); });
+    void openFameChecker(() => { close(); returnToBag(); }, true);
   }, false);
 }
 

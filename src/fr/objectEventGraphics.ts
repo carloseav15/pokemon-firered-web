@@ -10,8 +10,13 @@
 
 import { cdata, incbin, symName, type SymRef } from "./hw/assets";
 import { affineAnimsFrom, animsFrom, oamFrom } from "./hw/cdataSprite";
+import * as C from "./generated/constants";
+import { GetFaceDirectionAnimNum } from "./generated/eventObjectAnims";
+import { ApplyGlobalFieldPaletteTint } from "./field/fieldPalette";
+import { LoadPalette, OBJ_PLTT_ID } from "./hw/palette";
 import {
-  CreateSprite, IndexOfSpritePaletteTag, LoadSpritePalette, MAX_SPRITES, gSprites, SetSubspriteTables, SUBSPRITES_IGNORE_PRIORITY, TAG_NONE,
+  CreateSprite, CreateSpriteAtEnd, FreeAllSpritePalettes, IndexOfSpritePaletteTag, LoadSpritePalette, MAX_SPRITES, gSprites, SetSubspriteTables,
+  spriteState, StartSpriteAnim, SUBSPRITES_IGNORE_PRIORITY, TAG_NONE,
   type Sprite, type SpriteCallback, type SpriteFrameImage, type SpriteTemplate, type Subsprite, type SubspriteTable,
 } from "./hw/sprite";
 
@@ -113,4 +118,83 @@ function FindObjectEventPaletteIndexByTag(tag: number): number {
     if (palettes[i].tag === tag) return i;
   }
   return 0xff;
+}
+
+// ---------------------------------------------------------------- palette slots (event_object_movement.c)
+
+let sCurrentSpecialObjectPaletteTag = OBJ_EVENT_PAL_TAG_NONE;
+let sCurrentReflectionType = 0;
+
+/** FreeAndReserveObjectSpritePalettes (event_object_movement.c). */
+export function FreeAndReserveObjectSpritePalettes(): void {
+  FreeAllSpritePalettes();
+  spriteState.gReservedSpritePaletteCount = C.OBJ_PALSLOT_COUNT;
+}
+
+/** PatchObjectPalette (event_object_movement.c). */
+export function PatchObjectPalette(paletteTag: number, paletteSlot: number): void {
+  const paletteIndex = FindObjectEventPaletteIndexByTag(paletteTag);
+  LoadPalette(incbin(symName(sObjectEventSpritePalettes()[paletteIndex].data)!), OBJ_PLTT_ID(paletteSlot), 32);
+  ApplyGlobalFieldPaletteTint(paletteSlot);
+}
+
+/** PatchObjectPaletteRange (event_object_movement.c). */
+export function PatchObjectPaletteRange(paletteTags: readonly number[], minSlot: number, maxSlot: number): void {
+  let i = 0;
+  while (minSlot < maxSlot) {
+    PatchObjectPalette(paletteTags[i], minSlot);
+    i++;
+    minSlot++;
+  }
+}
+
+/** InitObjectEventPalettes (event_object_movement.c). */
+export function InitObjectEventPalettes(palSlot: number): void {
+  FreeAndReserveObjectSpritePalettes();
+  sCurrentSpecialObjectPaletteTag = OBJ_EVENT_PAL_TAG_NONE;
+  sCurrentReflectionType = palSlot;
+  const tagSets = rd<SymRef[]>("gObjectPaletteTagSets");
+  const tags = rd<number[]>(symName(tagSets[sCurrentReflectionType])!);
+  if (palSlot === 1) {
+    PatchObjectPaletteRange(tags, 0, 6);
+    spriteState.gReservedSpritePaletteCount = 8;
+  } else {
+    PatchObjectPaletteRange(tags, 0, 10);
+  }
+}
+
+/** LoadSpecialObjectReflectionPalette (event_object_movement.c). */
+export function LoadSpecialObjectReflectionPalette(tag: number, slot: number): void {
+  sCurrentSpecialObjectPaletteTag = tag;
+  PatchObjectPalette(tag, slot);
+  const sets = rd<Array<{ tag: number; data: SymRef }>>("gSpecialObjectReflectionPaletteSets");
+  const map = rd<number[]>("gReflectionEffectPaletteMap");
+  for (let i = 0; sets[i] && sets[i].tag !== OBJ_EVENT_PAL_TAG_NONE && sets[i].tag !== undefined; i++) {
+    if (sets[i].tag === tag) {
+      PatchObjectPalette(rd<number[]>(symName(sets[i].data)!)[sCurrentReflectionType], map[slot]);
+      return;
+    }
+  }
+}
+
+/** CreateFameCheckerObject (event_object_movement.c): an NPC picture sprite for the Fame Checker flavor-text icons. */
+export function CreateFameCheckerObject(graphicsId: number, localId: number, x: number, y: number): number {
+  const graphicsInfo = GetObjectEventGraphicsInfo(graphicsId);
+  const { spriteTemplate, subspriteTables } = CopyObjectGraphicsInfoToSpriteTemplate(graphicsId, () => {});
+  spriteTemplate.paletteTag = TAG_NONE;
+  const spriteId = CreateSpriteAtEnd(spriteTemplate, x, y, 0);
+  if (spriteId !== MAX_SPRITES) {
+    const sprite = gSprites[spriteId];
+    sprite.centerToCornerVecY = -(graphicsInfo.height >> 1);
+    sprite.y += sprite.centerToCornerVecY;
+    sprite.oam.paletteNum = graphicsInfo.paletteSlot;
+    sprite.data[0] = localId;
+    if (graphicsInfo.paletteSlot === C.PALSLOT_NPC_SPECIAL) LoadSpecialObjectReflectionPalette(graphicsInfo.paletteTag, graphicsInfo.paletteSlot);
+    if (subspriteTables !== null) {
+      SetSubspriteTables(sprite as Sprite, subspriteTables);
+      sprite.subspriteMode = SUBSPRITES_IGNORE_PRIORITY;
+    }
+    StartSpriteAnim(sprite, GetFaceDirectionAnimNum(C.DIR_SOUTH));
+  }
+  return spriteId;
 }

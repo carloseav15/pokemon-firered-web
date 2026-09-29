@@ -11,9 +11,9 @@ import { preloadFameCheckerAssets, UseFameChecker, resetFameChecker, fullyUnlock
 export { resetFameChecker, fullyUnlockFameChecker, setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005, NUM_FAMECHECKER_PERSONS };
 
 /** Task_FameCheckerMain: use full faithful fame checker screen */
-export async function openFameChecker(done: () => void): Promise<void> {
+export async function openFameChecker(done: () => void, fromStartMenuBag = false): Promise<void> {
   await preloadFameCheckerAssets();
-  UseFameChecker(done);
+  UseFameChecker(done, fromStartMenuBag);
 }
 
 /** teachy_tv.c: the six programs (sTeachyTvOptions) and their narration. */
