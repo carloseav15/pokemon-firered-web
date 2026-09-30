@@ -1194,7 +1194,14 @@ export class ObjectEvents {
     object.triggerGroundEffectsOnMove = true;
   }
 
-  remove(object: ObjectEvent | undefined): void {
+  /** RemoveObjectEventInternal (event_object_movement.c): detach the sprite and its field effect. */
+  RemoveObjectEventInternal(object: ObjectEvent): void {
+    object.sprite.destroyed = true;
+    if (object.fieldEffectSprite) object.fieldEffectSprite.destroyed = true;
+  }
+
+  /** RemoveObjectEvent (event_object_movement.c): deactivate the slot before tearing down its sprite. */
+  RemoveObjectEvent(object: ObjectEvent | undefined): void {
     if (!object) return;
     object.active = false;
     const index = this.objects.indexOf(object);
@@ -1203,15 +1210,17 @@ export class ObjectEvents {
       gObjectEvents[index] = new ObjectEvent();
       gObjectEvents[index].active = false;
     }
-    object.sprite.destroyed = true;
-    if (object.fieldEffectSprite) object.fieldEffectSprite.destroyed = true;
+    this.RemoveObjectEventInternal(object);
   }
+
+  /** Existing lower-case API retained for engine callers. */
+  remove(object: ObjectEvent | undefined): void { this.RemoveObjectEvent(object); }
 
   removeAll(keepPlayer = false): void {
     for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
       const o = this.objects[i];
       if (!o || (keepPlayer && o.isPlayer)) continue;
-      this.remove(o);
+      this.RemoveObjectEvent(o);
     }
   }
 
@@ -1234,15 +1243,19 @@ export class ObjectEvents {
   /** RemoveObjectEventsOutsideView */
   removeOutsideView(cameraX: number, cameraY: number): void { this.RemoveObjectEventsOutsideView(cameraX, cameraY); }
 
-  /** RemoveObjectEventsOutsideView (event_object_movement.c), excluding the player in single-player mode. */
+  /** RemoveObjectEventsOutsideView (event_object_movement.c), with LINK players out of this single-player route. */
   RemoveObjectEventsOutsideView(cameraX: number, cameraY: number): void {
-    const left = cameraX - 2, right = cameraX + 15 + 2, top = cameraY, bottom = cameraY + 14 + 2;
-    for (const o of this.list) {
-      if (o.isPlayer) continue;
-      const inView = (p: { x: number; y: number }) => p.x >= left && p.x <= right && p.y >= top && p.y <= bottom;
-      if (inView(o.currentCoords) || inView(o.initialCoords)) continue;
-      this.remove(o);
+    for (const object of this.list) {
+      if (!object.isPlayer) this.RemoveObjectEventIfOutsideView(object, cameraX, cameraY);
     }
+  }
+
+  /** RemoveObjectEventIfOutsideView (event_object_movement.c). */
+  RemoveObjectEventIfOutsideView(object: ObjectEvent, cameraX: number, cameraY: number): void {
+    const left = cameraX - 2, right = cameraX + 15 + 2, top = cameraY, bottom = cameraY + 14 + 2;
+      const inView = (p: { x: number; y: number }) => p.x >= left && p.x <= right && p.y >= top && p.y <= bottom;
+    if (inView(object.currentCoords) || inView(object.initialCoords)) return;
+    this.RemoveObjectEvent(object);
   }
 
   /** Shift every object when the camera crosses into a connected map. */
