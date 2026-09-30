@@ -81,6 +81,18 @@ export function Scene3_Task_GengarBounce(scene: IntroScene3): void { scene.taskG
 export function Scene3_PauseGengarBounce(scene: IntroScene3): void { scene.pauseGengarBounce(); }
 export function Scene3_ResumeGengarBounce(scene: IntroScene3): void { scene.resumeGengarBounce(); }
 export function Scene3_IsGengarMidBounce(scene: IntroScene3): number { return scene.isGengarMidBounce(); }
+/** C-name adapters for Nidorino's cry, recoil, hop, and attack callbacks. */
+export function Scene3_StartNidorinoCry(scene: IntroScene3, sprite: Sprite): void { scene.startNidorinoCry(sprite); }
+export function SpriteCB_NidorinoCry(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackNidorinoCry(sprite); }
+export function Scene3_StartNidorinoRecoil(scene: IntroScene3, sprite: Sprite): void { scene.startNidorinoRecoil(sprite); }
+export function SpriteCB_NidorinoRecoil(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackNidorinoRecoil(sprite); }
+export function Scene3_NidorinoAnimIsRunning(_scene: IntroScene3, sprite: Sprite): boolean { return sprite.callback !== SpriteCallbackDummy; }
+export function CreateNidorinoRecoilDustSprites(scene: IntroScene3, x: number, y: number, seed: number): void { scene.createRecoilDust(x, y, seed); }
+export function SpriteCB_RecoilDust(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackRecoilDust(sprite); }
+export function Scene3_StartNidorinoHop(scene: IntroScene3, sprite: Sprite, time: number, targetX: number, heightShift: number): void { scene.startNidorinoHop(sprite, time, targetX, heightShift); }
+export function SpriteCB_NidorinoHop(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackNidorinoHop(sprite); }
+export function Scene3_StartNidorinoAttack(scene: IntroScene3, sprite: Sprite): void { scene.startNidorinoAttack(sprite); }
+export function SpriteCB_NidorinoAttack(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackNidorinoAttack(sprite); }
 
 export class IntroScene3 {
   private phase: "entrance" | "fight" | "exit" = "entrance";
@@ -297,10 +309,10 @@ export class IntroScene3 {
         this.state++;
         break;
       case 1:
-        if (++this.timer > 30) { this.startNidorinoCry(nidorino); this.state++; }
+        if (++this.timer > 30) { Scene3_StartNidorinoCry(this, nidorino); this.state++; }
         break;
       case 2:
-        if (nidorino.callback === SpriteCallbackDummy) { this.timer = 0; this.state++; }
+        if (!Scene3_NidorinoAnimIsRunning(this, nidorino)) { this.timer = 0; this.state++; }
         break;
       case 3:
         if (++this.timer > 30) {
@@ -311,26 +323,26 @@ export class IntroScene3 {
         }
         break;
       case 4:
-        if (this.attackLanded) { this.startNidorinoRecoil(nidorino); this.state++; }
+        if (this.attackLanded) { Scene3_StartNidorinoRecoil(this, nidorino); this.state++; }
         break;
       case 5:
-        if (nidorino.callback === SpriteCallbackDummy) {
+        if (!Scene3_NidorinoAnimIsRunning(this, nidorino)) {
           Scene3_ResumeGengarBounce(this);
           this.timer = 0;
           this.state++;
         }
         break;
       case 6:
-        if (++this.timer > 16) { this.startNidorinoHop(nidorino, 8, 12, 5); this.state++; }
+        if (++this.timer > 16) { Scene3_StartNidorinoHop(this, nidorino, 8, 12, 5); this.state++; }
         break;
       case 7:
-        if (nidorino.callback === SpriteCallbackDummy) { this.startNidorinoHop(nidorino, 8, 12, 5); this.state++; }
+        if (!Scene3_NidorinoAnimIsRunning(this, nidorino)) { Scene3_StartNidorinoHop(this, nidorino, 8, 12, 5); this.state++; }
         break;
       case 8:
-        if (nidorino.callback === SpriteCallbackDummy) { this.timer = 0; this.state++; }
+        if (!Scene3_NidorinoAnimIsRunning(this, nidorino)) { this.timer = 0; this.state++; }
         break;
       case 9:
-        if (++this.timer > 20) { this.startNidorinoAttack(nidorino); this.timer = 0; this.state++; }
+        if (++this.timer > 20) { Scene3_StartNidorinoAttack(this, nidorino); this.timer = 0; this.state++; }
         break;
       case 10:
         if (!Scene3_IsGengarMidBounce(this)) { Scene3_PauseGengarBounce(this); this.createGengarBackSprites(); this.state++; }
@@ -381,29 +393,31 @@ export class IntroScene3 {
     else this.done = true;
   }
 
-  private startNidorinoCry(sprite: Sprite): void {
+  startNidorinoCry(sprite: Sprite): void {
     StartSpriteAnim(sprite, 2);
     sprite.data[0] = sprite.data[1] = sprite.data[2] = 0;
     sprite.y2 = 3;
-    sprite.callback = (s) => {
-      const d = s.data;
-      if (d[0] === 0 && ++d[1] > 8) {
-        StartSpriteAnim(s, 1);
+    sprite.callback = (s) => SpriteCB_NidorinoCry(this, s);
+  }
+
+  spriteCallbackNidorinoCry(s: Sprite): void {
+    const d = s.data;
+    if (d[0] === 0 && ++d[1] > 8) {
+      StartSpriteAnim(s, 1);
+      s.y2 = 0;
+      d[0] = 1;
+    } else if (d[0] === 1) {
+      sound.PlayCry_ByMode(SPECIES_NIDORINO, 0x3f, CRY_MODE_DOUBLES);
+      d[1] = 0;
+      d[0] = 2;
+    } else if (d[0] === 2) {
+      if (++d[2] > 1) { d[2] = 0; s.y2 = s.y2 === 0 ? 1 : 0; }
+      if (++d[1] > 48) {
+        StartSpriteAnim(s, 0);
         s.y2 = 0;
-        d[0] = 1;
-      } else if (d[0] === 1) {
-        sound.PlayCry_ByMode(SPECIES_NIDORINO, 0x3f, CRY_MODE_DOUBLES);
-        d[1] = 0;
-        d[0] = 2;
-      } else if (d[0] === 2) {
-        if (++d[2] > 1) { d[2] = 0; s.y2 = s.y2 === 0 ? 1 : 0; }
-        if (++d[1] > 48) {
-          StartSpriteAnim(s, 0);
-          s.y2 = 0;
-          s.callback = SpriteCallbackDummy;
-        }
+        s.callback = SpriteCallbackDummy;
       }
-    };
+    }
   }
 
   private startGengarAttack(): void {
@@ -488,60 +502,53 @@ export class IntroScene3 {
     }
   }
 
-  private startNidorinoRecoil(sprite: Sprite): void {
+  startNidorinoRecoil(sprite: Sprite): void {
     StartSpriteAnim(sprite, 2);
     sprite.data.fill(0);
     sprite.data[7] = 40;
-    sprite.callback = (s) => {
-      const d = s.data;
-      switch (d[0]) {
-        case 0:
-          if (++d[1] > 4) { StartSpriteAnim(s, 3); d[0]++; }
-          break;
-        case 1:
-          d[2] += d[7];
-          d[3] += 8;
-          s.x2 = d[2] >> 4;
-          s.y2 = -((gSineTable[d[3]] * 3) >> 5);
-          if (++d[5] > 0) { d[5] = 0; d[7]--; }
-          if (++d[4] > 15) {
-            StartSpriteAnim(s, 2);
-            d[1] = 0;
-            d[6] = 0x4757;
-            d[7] = 28;
-            d[0]++;
-          }
-          break;
-        case 2:
-          d[2] += d[7];
-          s.x2 = d[2] >> 4;
-          if (++d[1] > 6) {
-            this.createRecoilDust(s.x + s.x2, s.y + s.y2, d[6]);
-            d[6] = Math.imul(d[6], 1103515245);
-          }
-          if (d[1] > 12) { StartSpriteAnim(s, 0); d[1] = 0; d[0]++; }
-          break;
-        case 3:
-          if (++d[1] > 16) this.startNidorinoHop(s, 16, -s.x2, 4);
-          break;
-      }
-    };
+    sprite.callback = (s) => SpriteCB_NidorinoRecoil(this, s);
   }
 
-  private createRecoilDust(x: number, y: number, initialSeed: number): void {
+  spriteCallbackNidorinoRecoil(s: Sprite): void {
+    const d = s.data;
+    switch (d[0]) {
+      case 0:
+        if (++d[1] > 4) { StartSpriteAnim(s, 3); d[0]++; }
+        break;
+      case 1:
+        d[2] += d[7];
+        d[3] += 8;
+        s.x2 = d[2] >> 4;
+        s.y2 = -((gSineTable[d[3]] * 3) >> 5);
+        if (++d[5] > 0) { d[5] = 0; d[7]--; }
+        if (++d[4] > 15) {
+          StartSpriteAnim(s, 2);
+          d[1] = 0;
+          d[6] = 0x4757;
+          d[7] = 28;
+          d[0]++;
+        }
+        break;
+      case 2:
+        d[2] += d[7];
+        s.x2 = d[2] >> 4;
+        if (++d[1] > 6) {
+          CreateNidorinoRecoilDustSprites(this, s.x + s.x2, s.y + s.y2, d[6]);
+          d[6] = (Math.imul(d[6], 1103515245) << 16) >> 16;
+        }
+        if (d[1] > 12) { StartSpriteAnim(s, 0); d[1] = 0; d[0]++; }
+        break;
+      case 3:
+        if (++d[1] > 16) Scene3_StartNidorinoHop(this, s, 16, -s.x2, 4);
+        break;
+    }
+  }
+
+  createRecoilDust(x: number, y: number, initialSeed: number): void {
     let seed = initialSeed;
     for (let i = 0; i < 2; i++) {
       const id = CreateSprite(spriteTemplate("sSpriteTemplate_NidorinoRecoilDust", "sOam_RecoilDust",
-        "sAnims_RecoilDust", (sprite) => {
-          const d = sprite.data;
-          if (d[0] === 0) { d[1] = sprite.x << 4; d[2] = sprite.y << 4; d[0] = 1; }
-          d[1] -= d[3];
-          d[2] += d[4];
-          sprite.x = d[1] >> 4;
-          sprite.y = d[2] >> 4;
-          if (sprite.animEnded) { DestroySprite(sprite); return; }
-          if (++d[7] > 1) { d[7] = 0; sprite.invisible = !sprite.invisible; }
-        }), x - 22, y + 24, 10);
+        "sAnims_RecoilDust", (sprite) => SpriteCB_RecoilDust(this, sprite)), x - 22, y + 24, 10);
       if (id !== MAX_SPRITES) {
         const d = gSprites[id].data;
         d[3] = seed % 13 + 8;
@@ -552,7 +559,18 @@ export class IntroScene3 {
     }
   }
 
-  private startNidorinoHop(sprite: Sprite, time: number, targetX: number, heightShift: number): void {
+  spriteCallbackRecoilDust(sprite: Sprite): void {
+    const d = sprite.data;
+    if (d[0] === 0) { d[1] = sprite.x << 4; d[2] = sprite.y << 4; d[0] = 1; }
+    d[1] -= d[3];
+    d[2] += d[4];
+    sprite.x = d[1] >> 4;
+    sprite.y = d[2] >> 4;
+    if (sprite.animEnded) DestroySprite(sprite);
+    if (++d[7] > 1) { d[7] = 0; sprite.invisible = !sprite.invisible; }
+  }
+
+  startNidorinoHop(sprite: Sprite, time: number, targetX: number, heightShift: number): void {
     const d = sprite.data;
     d[0] = 0;
     d[1] = time;
@@ -563,7 +581,10 @@ export class IntroScene3 {
     d[6] = 0;
     d[7] = heightShift;
     StartSpriteAnim(sprite, 2);
-    sprite.callback = (s) => {
+    sprite.callback = (s) => SpriteCB_NidorinoHop(this, s);
+  }
+
+  spriteCallbackNidorinoHop(s: Sprite): void {
       const data = s.data;
       switch (data[0]) {
         case 0:
@@ -587,16 +608,18 @@ export class IntroScene3 {
           if (++data[6] > 4) { StartSpriteAnim(s, 0); s.callback = SpriteCallbackDummy; }
           break;
       }
-    };
   }
 
-  private startNidorinoAttack(sprite: Sprite): void {
+  startNidorinoAttack(sprite: Sprite): void {
     sprite.data.fill(0);
     sprite.x += sprite.x2;
     sprite.x2 = 0;
     sprite.data[7] = 36;
     StartSpriteAnim(sprite, 2);
-    sprite.callback = (s) => {
+    sprite.callback = (s) => SpriteCB_NidorinoAttack(this, s);
+  }
+
+  spriteCallbackNidorinoAttack(s: Sprite): void {
       const d = s.data;
       switch (d[0]) {
         case 0:
@@ -615,7 +638,6 @@ export class IntroScene3 {
           if ((d[1] >> 4) > 63) s.callback = SpriteCallbackDummy;
           break;
       }
-    };
   }
 
   render(ctx: CanvasRenderingContext2D): void {
