@@ -926,6 +926,21 @@ export class ObjectEvents {
     return this.objects.indexOf(object);
   }
 
+  /** GetAvailableObjectEventId (event_object_movement.c). */
+  GetAvailableObjectEventId(localId: number, mapNum: number, mapGroup: number): number {
+    let i = 0;
+    for (; i < OBJECT_EVENTS_COUNT && this.objects[i]?.active; i++) {
+      const object = this.objects[i]!;
+      if (object.localId === (localId & 0xff) && object.mapNum === (mapNum & 0xff) && object.mapGroup === (mapGroup & 0xff)) return OBJECT_EVENTS_COUNT;
+    }
+    if (i >= OBJECT_EVENTS_COUNT) return OBJECT_EVENTS_COUNT;
+    for (; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (object?.active && object.localId === (localId & 0xff) && object.mapNum === (mapNum & 0xff) && object.mapGroup === (mapGroup & 0xff)) return OBJECT_EVENTS_COUNT;
+    }
+    return i;
+  }
+
   private freeSlot(): number {
     const objectEventId = GetFirstInactiveObjectEventId(this);
     return objectEventId === OBJECT_EVENTS_COUNT ? -1 : objectEventId;
@@ -972,9 +987,14 @@ export class ObjectEvents {
 
   /** InitObjectEventStateFromTemplate + sprite creation */
   spawnFromTemplate(template: MapObjectTemplate, mapNum = this.mapNum, mapGroup = this.mapGroup): ObjectEvent | undefined {
+    return this.TrySpawnObjectEventTemplate(template, mapNum, mapGroup);
+  }
+
+  /** TrySpawnObjectEventTemplate (event_object_movement.c), integrated into the active spawn route. */
+  TrySpawnObjectEventTemplate(template: MapObjectTemplate, mapNum = this.mapNum, mapGroup = this.mapGroup): ObjectEvent | undefined {
     if (this.byLocalIdAndMap(template.localId, mapNum, mapGroup)) return undefined;
-    const slot = this.freeSlot();
-    if (slot < 0) return undefined;
+    const slot = this.GetAvailableObjectEventId(template.localId, mapNum, mapGroup);
+    if (slot === OBJECT_EVENTS_COUNT) return undefined;
     const object = new ObjectEvent();
     object.template = template;
     object.localId = template.localId;
@@ -999,7 +1019,12 @@ export class ObjectEvents {
     object.previousMovementDirection = facing;
     this.objects[slot] = object;
     gObjectEvents[slot] = object;
-    this.setupSprite(object);
+    if (this.TrySetupObjectEventSprite(object) === OBJECT_EVENTS_COUNT) {
+      this.objects[slot] = null;
+      gObjectEvents[slot] = new ObjectEvent();
+      gObjectEvents[slot]!.active = false;
+      return undefined;
+    }
     return object;
   }
 
@@ -1056,6 +1081,12 @@ export class ObjectEvents {
     object.previousMetatileBehavior = object.currentMetatileBehavior;
     this.InitObjectPriorityByElevation(sprite, object.previousElevation);
     this.updatePriority(object);
+  }
+
+  /** TrySetupObjectEventSprite (event_object_movement.c), after object state initialization. */
+  TrySetupObjectEventSprite(object: ObjectEvent): number {
+    this.setupSprite(object);
+    return this.indexOf(object) < 0 ? OBJECT_EVENTS_COUNT : this.indexOf(object);
   }
 
   placeSprite(object: ObjectEvent): void {
@@ -1145,7 +1176,10 @@ export class ObjectEvents {
   }
 
   /** TrySpawnObjectEvents: spawn templates within the camera view window. */
-  trySpawnInView(cameraX: number, cameraY: number): void {
+  trySpawnInView(cameraX: number, cameraY: number): void { this.TrySpawnObjectEvents(cameraX, cameraY); }
+
+  /** TrySpawnObjectEvents (event_object_movement.c). */
+  TrySpawnObjectEvents(cameraX: number, cameraY: number): void {
     const left = cameraX - 2;
     const right = cameraX + 15 + 2;
     const top = cameraY;
@@ -1158,7 +1192,10 @@ export class ObjectEvents {
   }
 
   /** RemoveObjectEventsOutsideView */
-  removeOutsideView(cameraX: number, cameraY: number): void {
+  removeOutsideView(cameraX: number, cameraY: number): void { this.RemoveObjectEventsOutsideView(cameraX, cameraY); }
+
+  /** RemoveObjectEventsOutsideView (event_object_movement.c), excluding the player in single-player mode. */
+  RemoveObjectEventsOutsideView(cameraX: number, cameraY: number): void {
     const left = cameraX - 2, right = cameraX + 15 + 2, top = cameraY, bottom = cameraY + 14 + 2;
     for (const o of this.list) {
       if (o.isPlayer) continue;
