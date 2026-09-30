@@ -805,7 +805,11 @@ export class FieldEffects {
   // ---------------------------------------------------------------- ground effects
 
   groundEffect(object: ObjectEvent, kind: "spawn" | "begin" | "finish"): void {
-    if (kind !== "finish") this.updateObjectReflection(object);
+    if (kind !== "finish") {
+      const reflectionType = this.objectReflectionType(object);
+      if (reflectionType === 1) this.GroundEffect_IceReflection(object, object.sprite);
+      else if (reflectionType === 2) this.GroundEffect_WaterReflection(object, object.sprite);
+    }
     if (!fxData) return;
     const cur = object.currentMetatileBehavior;
     const prev = object.previousMetatileBehavior;
@@ -906,6 +910,16 @@ export class FieldEffects {
     };
     this.reflectionSprites.set(object, sprite);
     this.ow.sprites.add(sprite);
+  }
+
+  /** GroundEffect_WaterReflection (event_object_movement.c). */
+  GroundEffect_WaterReflection(object: ObjectEvent, _sprite: Sprite): void {
+    this.updateObjectReflection(object);
+  }
+
+  /** GroundEffect_IceReflection (event_object_movement.c). */
+  GroundEffect_IceReflection(object: ObjectEvent, _sprite: Sprite): void {
+    this.updateObjectReflection(object);
   }
 
   /** Scans the two metatile rows beneath the current and previous object tile. */
@@ -1515,15 +1529,30 @@ export class FieldEffects {
 
   private spawnJumpLanding(object: ObjectEvent): void {
     const b = object.currentMetatileBehavior;
-    if (MB.MetatileBehavior_IsShallowFlowingWater?.(b)) { this.FldEff_JumpSmallSplash(object); return; }
-    if (MB.MetatileBehavior_IsSurfable(b)) { this.FldEff_JumpBigSplash(object); return; }
-    if (MB.MetatileBehavior_IsPuddle?.(b)) { this.FldEff_JumpSmallSplash(object); return; }
+    if (MB.MetatileBehavior_IsShallowFlowingWater?.(b)) { this.GroundEffect_JumpOnShallowWater(object, object.sprite); return; }
+    if (MB.MetatileBehavior_IsSurfable(b)) { this.GroundEffect_JumpOnWater(object, object.sprite); return; }
+    if (MB.MetatileBehavior_IsPuddle?.(b)) { this.GroundEffect_JumpOnShallowWater(object, object.sprite); return; }
     if (MB.MetatileBehavior_IsTallGrass(b)) { this.GroundEffect_JumpOnTallGrass(object); return; }
     if (!MB.MetatileBehavior_IsLongGrass(b)) {
-      this.FldEff_Dust(object);
+      this.GroundEffect_JumpLandingDust(object, object.sprite);
       return;
     }
     this.GroundEffect_JumpOnLongGrass(object);
+  }
+
+  /** GroundEffect_JumpOnShallowWater (event_object_movement.c). */
+  GroundEffect_JumpOnShallowWater(object: ObjectEvent, _sprite: Sprite): void {
+    this.FldEff_JumpSmallSplash(object);
+  }
+
+  /** GroundEffect_JumpOnWater (event_object_movement.c). */
+  GroundEffect_JumpOnWater(object: ObjectEvent, _sprite: Sprite): void {
+    this.FldEff_JumpBigSplash(object);
+  }
+
+  /** GroundEffect_JumpLandingDust (event_object_movement.c). */
+  GroundEffect_JumpLandingDust(object: ObjectEvent, _sprite: Sprite): void {
+    this.FldEff_Dust(object);
   }
 
   /** FldEff_JumpSmallSplash; the source arguments are current coordinates, previous elevation, and OAM priority. */
