@@ -234,10 +234,17 @@ export class FieldMoveEffects {
     task.id = tasks.create(() => outdoors ? this.Task_ShowMon_Outdoors(task) : this.Task_ShowMon_Indoors(task), 0xff);
   }
 
-  /** InitFieldMoveMonSprite (field_effect.c), with the existing canvas sprite loader. */
+  /** InitFieldMoveMonSprite (field_effect.c): decode the Cry flag around the source sprite helper. */
   private InitFieldMoveMonSprite(speciesAndFlags: number, otId: number, personality: number): Sprite {
     const playCry = (speciesAndFlags & SHOW_MON_CRY_NO_DUCKING) >>> 16;
     const species = speciesAndFlags & 0x7fffffff;
+    const sprite = this.CreateMonSprite_FieldMove(species, otId, personality, 0x140, 0x50, 0);
+    sprite.data[6] = playCry;
+    return sprite;
+  }
+
+  /** CreateMonSprite_FieldMove (field_effect.c); Canvas keeps the exported PNG as the sprite image. */
+  CreateMonSprite_FieldMove(species: number, otId: number, personality: number, x: number, y: number, subpriority: number): Sprite {
     const sprite = new Sprite();
     const shiny = (((otId >>> 16) ^ (otId & 0xffff) ^ (personality >>> 16) ^ (personality & 0xffff)) & 0xffff) < 8;
     sprite.frameImages = [{ url: `${DATA_ROOT}/gfx/pokemon/${shiny ? "front_shiny" : "front"}/${species}.png`, index: 0, width: 64, height: 64 }];
@@ -245,13 +252,13 @@ export class FieldMoveEffects {
     sprite.height = 64;
     sprite.centerToCornerVecX = -32;
     sprite.centerToCornerVecY = -32;
-    sprite.x = 0x140;
-    sprite.y = 0x50;
+    sprite.x = x;
+    sprite.y = y;
     sprite.coordOffsetEnabled = false;
     sprite.priority = 0;
+    sprite.subpriority = subpriority & 0xff;
     sprite.aboveWindows = true;
     sprite.data[0] = species;
-    sprite.data[6] = playCry;
     sprite.callback = () => {};
     this.ow.sprites.add(sprite);
     return sprite;

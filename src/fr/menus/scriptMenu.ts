@@ -452,17 +452,7 @@ export function ScriptMenu_ShowPokemonPic(species: number, x: number, y: number)
   if (!sm) return false;
   if (QL_AvoidDisplay(sm.getOverworld(), QL_DestroyAbortedDisplay)) return true;
   const windowId = CreateWindowFromRect(x, y, 8, 8);
-  const sprite = new Sprite();
-  sprite.frameImages = [{ url: `${DATA_ROOT}/gfx/pokemon/front/${species}.png`, index: 0, width: 64, height: 64 }];
-  sprite.width = 64;
-  sprite.height = 64;
-  sprite.centerToCornerVecX = -32;
-  sprite.centerToCornerVecY = -32;
-  sprite.x = 8 * x + 40;
-  sprite.y = 8 * y + 40;
-  sprite.coordOffsetEnabled = false;
-  sprite.priority = 0;
-  sprite.aboveWindows = true;
+  const sprite = CreateMonSprite_PicBox(species, 8 * x + 40, 8 * y + 40, 0);
   sm.getOverworld().sprites.add(sprite);
   sMonPicTaskId = tasks.create(Task_ScriptShowMonPic, 80);
   sMonPicState = {
@@ -472,6 +462,23 @@ export function ScriptMenu_ShowPokemonPic(species: number, x: number, y: number)
     species,
   };
   return true;
+}
+
+/** CreateMonSprite_PicBox (field_effect.c), using the same pre-rendered front-pic asset as Canvas. */
+export function CreateMonSprite_PicBox(species: number, x: number, y: number, subpriority: number): Sprite {
+  const sprite = new Sprite();
+  sprite.frameImages = [{ url: `${DATA_ROOT}/gfx/pokemon/front/${species}.png`, index: 0, width: 64, height: 64 }];
+  sprite.width = 64;
+  sprite.height = 64;
+  sprite.centerToCornerVecX = -32;
+  sprite.centerToCornerVecY = -32;
+  sprite.x = x;
+  sprite.y = y;
+  sprite.coordOffsetEnabled = false;
+  sprite.priority = 0;
+  sprite.subpriority = subpriority & 0xff;
+  sprite.aboveWindows = true;
+  return sprite;
 }
 
 export function PicboxWait(): boolean {
