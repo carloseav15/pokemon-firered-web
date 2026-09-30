@@ -846,46 +846,79 @@ function VBlankCB_Wave(effect: WaveEffect): void {
 
 /** Task_Ripple / Ripple_Main: Vertical scanline sinusoidal ripple, then fade to black. */
 class RippleEffect implements Effect {
-  private sinVal = 0;
-  private amplitude = 0;
-  private timer = 0;
-  private blackLevel = 0;
-  private readonly offsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly updatesPaletteFade = true;
+  readonly completesScreenFade = true;
+  state = 0;
+  sinVal = 0;
+  amplitude = 0;
+  timer = 0;
+  fadeStarted = false;
+  dmaPending = false;
+  done = false;
+  readonly offsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly workingOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
 
   tick(): boolean {
-    const amp = this.amplitude >> 8;
-    let sVal = this.sinVal;
-    const speed = 384;
-    this.sinVal = (this.sinVal + 0x400) & 0xffff;
-    if (this.amplitude <= 0x1fff) this.amplitude += 384;
-
-    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
-      const sinIndex = (sVal >> 8) & 0xff;
-      sVal = (sVal + speed) & 0xffff;
-      this.offsets[i] = safeSin(sinIndex, amp);
-    }
-
-    this.timer++;
-    if (this.timer >= 41) {
-      this.blackLevel = Math.min(16, this.blackLevel + 1);
-      if (this.blackLevel >= 16) return true;
-    }
-    return false;
+    return Task_Ripple(this);
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
     for (let y = 0; y < DISPLAY_HEIGHT; y++) {
-      const ofs = this.offsets[y] || 0;
+      const ofs = HBlankCB_Ripple(this, y);
       const sy = Math.max(0, Math.min(DISPLAY_HEIGHT - 1, y + ofs));
       ctx.drawImage(snapshot, 0, sy, DISPLAY_WIDTH, 1, 0, y, DISPLAY_WIDTH, 1);
     }
-    if (this.blackLevel > 0) {
-      ctx.fillStyle = `rgba(0, 0, 0, ${this.blackLevel / 16})`;
-      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
-    }
   }
+}
+
+/** Task_Ripple (battle_transition.c): Ripple_Init continues directly into Ripple_Main. */
+function Task_Ripple(effect: RippleEffect): boolean {
+  if (effect.state === 0 && !Ripple_Init(effect)) return effect.done;
+  return Ripple_Main(effect);
+}
+
+/** Ripple_Init (battle_transition.c): initialize both scanline buffers at the snapshot origin. */
+function Ripple_Init(effect: RippleEffect): boolean {
+  effect.offsets.fill(0);
+  effect.workingOffsets.fill(0);
+  effect.dmaPending = false;
+  effect.state++;
+  return true;
+}
+
+/** Ripple_Main (battle_transition.c): update vertical offsets, then fade after 41 frames. */
+function Ripple_Main(effect: RippleEffect): boolean {
+  effect.dmaPending = false;
+  const amplitude = effect.amplitude >> 8;
+  let sinVal = effect.sinVal;
+  const speed = 384;
+  effect.sinVal = (effect.sinVal + 0x400) & 0xffff;
+  if (effect.amplitude <= 0x1fff) effect.amplitude = (effect.amplitude + 384) & 0xffff;
+  for (let i = 0; i < DISPLAY_HEIGHT; i++) {
+    effect.workingOffsets[i] = safeSin((sinVal >> 8) & 0xff, amplitude);
+    sinVal = (sinVal + speed) & 0xffff;
+  }
+  if (++effect.timer === 41) {
+    effect.fadeStarted = true;
+    paletteFade.fadeScreen(FADE_TO_BLACK, -8);
+  }
+  if (effect.fadeStarted && !paletteFade.active) effect.done = true;
+  effect.dmaPending = true;
+  VBlankCB_Ripple(effect);
+  return effect.done;
+}
+
+/** VBlankCB_Ripple (battle_transition.c): commit pending offsets to the displayed rows. */
+function VBlankCB_Ripple(effect: RippleEffect): void {
+  if (!effect.dmaPending) return;
+  for (let i = 0; i < DISPLAY_HEIGHT; i++) effect.offsets[i] = effect.workingOffsets[i]!;
+}
+
+/** HBlankCB_Ripple (battle_transition.c): return the vertical BG offset for this scanline. */
+function HBlankCB_Ripple(effect: RippleEffect, scanline: number): number {
+  return effect.offsets[scanline] ?? 0;
 }
 
 /** Task_Swirl / Swirl_End: Horizontal scanline sinusoidal swirl with simultaneous fade to black. */
