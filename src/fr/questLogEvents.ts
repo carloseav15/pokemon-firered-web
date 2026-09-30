@@ -166,8 +166,11 @@ export function QL_StartRecordingAction(eventId: number, eventIndex: number): Qu
     eventIndex,
     actionIndex: 0,
   };
+  SetPokemonCounts();
   SetPlayerInitialCoordsAtScene(scene);
   SetNPCInitialCoordsAtScene(scene);
+  BackUpTrainerRematches();
+  BackUpMapLayout();
   SetGameStateAtScene(scene);
   const facing = scene.objectEvents.find((objectEvent) => objectEvent.isPlayer)?.facingDirection ?? save.facing;
   const movement = facing === C.DIR_EAST ? C.MOVEMENT_ACTION_FACE_RIGHT
@@ -188,6 +191,35 @@ export function QL_StartRecordingAction(eventId: number, eventIndex: number): Qu
   actions.length = 0;
   actions.push(...retainedActions);
   return scene;
+}
+
+/** SetPokemonCounts (quest_log.c): pack party and PC occupancy into VAR_QUEST_LOG_MON_COUNTS. */
+export function SetPokemonCounts(): void {
+  const partyCount = save.party.reduce((count, mon) => count + Number(mon.species !== C.SPECIES_NONE && (mon as typeof mon & { hasSpecies?: boolean }).hasSpecies !== false), 0);
+  const boxMonCount = save.boxes.reduce((count, box) => count + box.reduce((boxCount, mon) =>
+    boxCount + Number(mon !== null && mon.species !== C.SPECIES_NONE && (mon as typeof mon & { hasSpecies?: boolean }).hasSpecies !== false), 0), 0);
+  varSet(C.VAR_QUEST_LOG_MON_COUNTS, ((partyCount << 12) + boxMonCount) & 0xffff);
+}
+
+/** BackUpTrainerRematches (quest_log.c): pack 64 available-rematch flags into four vars. */
+export function BackUpTrainerRematches(): void {
+  const rematches = save.trainerRematches ?? [];
+  for (let varIndex = 0; varIndex < 4; varIndex++) {
+    let packed = 0;
+    for (let bit = 0; bit < 16; bit++) {
+      if (rematches[varIndex * 16 + bit]) packed |= 1 << bit;
+    }
+    varSet(C.VAR_QLBAK_TRAINER_REMATCHES + varIndex, packed);
+  }
+}
+
+/** BackUpMapLayout (quest_log.c), using the map layout index used by gMapHeader. */
+export function BackUpMapLayout(): void {
+  const mapId = rom.mapIdByNum((save.location.mapGroup << 8) | save.location.mapNum);
+  if (mapId === undefined) throw new Error(`missing map id for Quest Log snapshot ${save.location.mapGroup}:${save.location.mapNum}`);
+  const map = rom.mapIndex.maps[mapId];
+  if (!map) throw new Error(`missing map header for Quest Log snapshot ${save.location.mapGroup}:${save.location.mapNum}`);
+  varSet(C.VAR_QLBAK_MAP_LAYOUT, rom.mapIndex.layouts[map.layout] ?? 0);
 }
 
 /** QuestLog_CheckDepartingIndoorsMap (field_specials.c), called after InitObjectEventsLocal on map entry. */
