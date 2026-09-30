@@ -490,7 +490,7 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     const move = (data as QuestLogFieldMoveEvent).fieldMove;
     sStepRecordingMode = move === C.FIELD_MOVE_TELEPORT || move === C.FIELD_MOVE_DIG
       ? STEP_RECORDING_MODE_DISABLED_UNTIL_DEPART : STEP_RECORDING_MODE_DISABLED;
-  } else if (eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER
+  } else if (eventId === C.QL_EVENT_DEFEATED_TRAINER || eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER
     || eventId === C.QL_EVENT_DEFEATED_CHAMPION) {
     sStepRecordingMode = STEP_RECORDING_MODE_DISABLED;
   }
