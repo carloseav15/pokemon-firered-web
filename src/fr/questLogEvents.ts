@@ -118,7 +118,9 @@ export function ShouldRegisterEvent_HandlePartyActions(eventId: number, data: Qu
     || eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG || eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC
     || eventId === C.QL_EVENT_TOOK_HELD_ITEM || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM
     || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC;
-  return !flagGet(C.FLAG_SYS_CAN_LINK_WITH_RS) && isPartyItemEvent;
+  const isPartyStorageEvent = eventId === C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON
+    || eventId === C.QL_EVENT_WITHDREW_MON_PC || eventId === C.QL_EVENT_DEPOSITED_MON_PC;
+  return !flagGet(C.FLAG_SYS_CAN_LINK_WITH_RS) && (isPartyItemEvent || isPartyStorageEvent);
 }
 
 /** ShouldRegisterEvent_HandleDeparted (quest_log_events.c). */
@@ -415,12 +417,17 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
   const isBattleEvent = eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_WILD_MON
     || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER || eventId === C.QL_EVENT_DEFEATED_CHAMPION
     || eventId === C.QL_EVENT_DEFEATED_TRAINER;
+  const isStorageEvent = eventId === C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES
+    || eventId === C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX || eventId === C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON
+    || eventId === C.QL_EVENT_MOVED_MON_BETWEEN_BOXES || eventId === C.QL_EVENT_MOVED_MON_WITHIN_BOX
+    || eventId === C.QL_EVENT_WITHDREW_MON_PC || eventId === C.QL_EVENT_DEPOSITED_MON_PC
+    || eventId === C.QL_EVENT_SWITCHED_MULTIPLE_MONS;
   const isLinkBattleEvent = eventId === C.QL_EVENT_LINK_BATTLED_SINGLE
     || eventId === C.QL_EVENT_LINK_BATTLED_DOUBLE
     || eventId === C.QL_EVENT_LINK_BATTLED_MULTI
     || eventId === C.QL_EVENT_LINK_BATTLED_UNION;
   if (!isShopEvent && !isPokemonCenterEvent && !isStoryItemEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent
-    && !isLinkBattleEvent && !isSwitchedPartyOrder && !isFieldMove) return;
+    && !isLinkBattleEvent && !isSwitchedPartyOrder && !isFieldMove && !isStorageEvent) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;

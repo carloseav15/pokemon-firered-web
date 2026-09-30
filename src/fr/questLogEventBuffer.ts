@@ -202,6 +202,40 @@ export function RecordEvent_ObtainedStoryItem(script: number[], actionIndex: num
   return record(C.QL_EVENT_OBTAINED_STORY_ITEM, [u16(data.itemId as number), u16(data.mapSec as number)], script, actionIndex, tracker);
 }
 
+function packBytes(first: number, second = 0): number {
+  return (first & 0xff) | ((second & 0xff) << 8);
+}
+
+/** RecordEvent_SwitchedMonsBetweenBoxes / RecordEvent_SwitchedMonsWithinBox. */
+export function RecordEvent_SwitchedMons(eventId: number, script: number[], actionIndex: number, tracker: QuestLogEventRepeatState, data: EventData): number | null {
+  return record(eventId, [u16(data.species1 as number), u16(data.species2 as number), packBytes(data.box1 as number, data.box2 as number)], script, actionIndex, tracker);
+}
+
+/** RecordEvent_SwitchedPartyMonForPCMon. */
+export function RecordEvent_SwitchedPartyMonForPCMon(script: number[], actionIndex: number, tracker: QuestLogEventRepeatState, data: EventData): number | null {
+  const partyIndex = C.TOTAL_BOXES_COUNT;
+  const partyMonIsFirst = data.box1 === partyIndex;
+  const species1 = partyMonIsFirst ? data.species2 as number : data.species1 as number;
+  const species2 = partyMonIsFirst ? data.species1 as number : data.species2 as number;
+  const box = partyMonIsFirst ? data.box2 as number : data.box1 as number;
+  return record(C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON, [u16(species1), u16(species2), packBytes(box)], script, actionIndex, tracker);
+}
+
+/** RecordEvent_MovedMonBetweenBoxes. */
+export function RecordEvent_MovedMonBetweenBoxes(script: number[], actionIndex: number, tracker: QuestLogEventRepeatState, data: EventData): number | null {
+  return record(C.QL_EVENT_MOVED_MON_BETWEEN_BOXES, [u16(data.species1 as number), packBytes(data.box1 as number, data.box2 as number)], script, actionIndex, tracker);
+}
+
+/** RecordEvent_MovedMonWithinBox / RecordEvent_WithdrewMonFromPC / RecordEvent_DepositedMonInPC. */
+export function RecordEvent_MovedMon(eventId: number, script: number[], actionIndex: number, tracker: QuestLogEventRepeatState, data: EventData): number | null {
+  return record(eventId, [u16(data.species1 as number), packBytes(data.box1 as number)], script, actionIndex, tracker);
+}
+
+/** RecordEvent_SwitchedMultipleMons. */
+export function RecordEvent_SwitchedMultipleMons(script: number[], actionIndex: number, tracker: QuestLogEventRepeatState, data: EventData): number | null {
+  return record(C.QL_EVENT_SWITCHED_MULTIPLE_MONS, [packBytes(data.box1 as number, data.box2 as number)], script, actionIndex, tracker);
+}
+
 /** RecordQuestLogEvent: the active single-player event writers from quest_log_events.c. */
 export function RecordQuestLogEvent(eventId: number, script: number[], actionIndex: number, tracker: QuestLogEventRepeatState, data: EventData): number | null {
   switch (eventId) {
@@ -226,6 +260,14 @@ export function RecordQuestLogEvent(eventId: number, script: number[], actionInd
     case C.QL_EVENT_BOUGHT_ITEM: return RecordEvent_BoughtItem(script, actionIndex, tracker, data);
     case C.QL_EVENT_SOLD_ITEM: return RecordEvent_SoldItem(script, actionIndex, tracker, data);
     case C.QL_EVENT_OBTAINED_STORY_ITEM: return RecordEvent_ObtainedStoryItem(script, actionIndex, tracker, data);
+    case C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES:
+    case C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX: return RecordEvent_SwitchedMons(eventId, script, actionIndex, tracker, data);
+    case C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON: return RecordEvent_SwitchedPartyMonForPCMon(script, actionIndex, tracker, data);
+    case C.QL_EVENT_MOVED_MON_BETWEEN_BOXES: return RecordEvent_MovedMonBetweenBoxes(script, actionIndex, tracker, data);
+    case C.QL_EVENT_MOVED_MON_WITHIN_BOX:
+    case C.QL_EVENT_WITHDREW_MON_PC:
+    case C.QL_EVENT_DEPOSITED_MON_PC: return RecordEvent_MovedMon(eventId, script, actionIndex, tracker, data);
+    case C.QL_EVENT_SWITCHED_MULTIPLE_MONS: return RecordEvent_SwitchedMultipleMons(script, actionIndex, tracker, data);
     default: return null;
   }
 }
@@ -246,7 +288,12 @@ export function QL_SkipCommand(script: readonly number[], cursor: number): numbe
           : eventId === C.QL_EVENT_USED_ITEM || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM
             || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC ? 10
             : eventId === C.QL_EVENT_USED_PKMN_CENTER ? 4
-              : eventId === C.QL_EVENT_DEPOSITED_ITEM_PC || eventId === C.QL_EVENT_WITHDREW_ITEM_PC ? 6
+                          : eventId === C.QL_EVENT_DEPOSITED_ITEM_PC || eventId === C.QL_EVENT_WITHDREW_ITEM_PC ? 6
+                : eventId === C.QL_EVENT_MOVED_MON_BETWEEN_BOXES || eventId === C.QL_EVENT_MOVED_MON_WITHIN_BOX
+                  || eventId === C.QL_EVENT_WITHDREW_MON_PC || eventId === C.QL_EVENT_DEPOSITED_MON_PC ? 8
+                  : eventId === C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES || eventId === C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX
+                    || eventId === C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON ? 10
+                    : eventId === C.QL_EVENT_SWITCHED_MULTIPLE_MONS ? 6
                 : eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_WILD_MON
                   || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER || eventId === C.QL_EVENT_DEFEATED_TRAINER ? 12
                   : eventId === C.QL_EVENT_DEFEATED_CHAMPION ? 10
