@@ -1604,7 +1604,7 @@ function PokeSum_SetMonPicSpriteCallback(spriteId: number): void {
 
   if (pss.curMonStatusAilment !== AILMENT_NONE && pss.curMonStatusAilment !== AILMENT_PKRS) {
     if (pss.curMonStatusAilment === AILMENT_FNT) return;
-    gSprites[spriteId].callback = SpriteCallbackDummy;
+    gSprites[spriteId].callback = SpriteCB_MonPicDummy;
     return;
   }
 
@@ -1617,6 +1617,9 @@ function PokeSum_SetMonPicSpriteCallback(spriteId: number): void {
 
   gSprites[spriteId].callback = SpriteCB_PokeSum_MonPicSprite;
 }
+
+/** SpriteCB_MonPicDummy (pokemon_summary_screen.c): the settled portrait is not animated. */
+function SpriteCB_MonPicDummy(_sprite: Sprite): void {}
 
 function SpriteCB_PokeSum_MonPicSprite(sprite: Sprite): void {
   if (!sMonSummaryScreen || !sMonPicBounceState) return;
