@@ -1895,36 +1895,12 @@ export class ObjectEvents {
           if (!player || player.movementActionId === MOVEMENT_ACTION_NONE || player.tileTransitionState === 2) return false; // T_TILE_CENTER
           const moveDir = player.movementDirection;
           const playerInit = object.directionSequenceIndex;
-          const copyableMovement = player.copyableMovement;
-          if (copyableMovement === 0 || copyableMovement === 9 || copyableMovement === 10) return false;
           if (!playerInit || !moveDir || playerInit > 4 || moveDir > 4) return false;
-          const direction = GetCopyDirection(copyInit, playerInit, moveDir);
-          const vector = DIRECTION_VECTORS[direction]!;
-          const destination = ObjectEventMoveDestCoords(object, direction);
-          const target = copyableMovement === 8
-            ? { x: ((object.currentCoords.x + vector[0] * 2) << 16) >> 16, y: ((object.currentCoords.y + vector[1] * 2) << 16) >> 16 }
-            : destination;
-          let action: number;
-          switch (copyableMovement) {
-            case 1: action = actionFace(direction); break;
-            case 2: action = actionWalkNormal(direction); break;
-            case 3: action = actionWalkFast(direction); break;
-            case 4: action = actionWalkFaster(direction); break;
-            case 5: action = actionSlide(direction); break;
-            case 6: action = actionJumpInPlace(direction); break;
-            case 7: action = actionJump(direction); break;
-            case 8: action = actionJump2(direction); break;
-            default: return false;
-          }
-          if (copyableMovement !== 1 && copyableMovement !== 6) {
-            const blocked = this.GetCollisionAtCoords(object, target.x, target.y, direction)
-              || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(target.x, target.y)));
-            if (blocked) action = actionFace(direction);
-          }
-          this.setSingle(object, action);
-          object.singleMovementActive = true;
-          s.data[1] = 2;
-          return true;
+          const movement = player.copyableMovement;
+          const copyDirection = GetCopyDirection(copyInit, playerInit, moveDir);
+          const didStart = this.runCopyablePlayerMovement(object, movement, copyDirection, inGrass);
+          if (didStart) s.data[1] = 2;
+          return didStart;
         }
         case 2:
           if (this.execSingle(object)) { object.singleMovementActive = false; s.data[1] = 1; }
@@ -1945,6 +1921,92 @@ export class ObjectEvents {
       return false;
     }
     return false;
+  }
+
+  /** Dispatches gCopyPlayerMovementFuncs (event_object_movement.c). */
+  private runCopyablePlayerMovement(object: ObjectEvent, movement: number, direction: number, inGrass: boolean): boolean {
+    switch (movement) {
+      case 0:
+      case 9:
+      case 10: return this.CopyablePlayerMovement_None();
+      case 1: return this.CopyablePlayerMovement_FaceDirection(object, direction);
+      case 2: return this.CopyablePlayerMovement_GoSpeed0(object, direction, inGrass);
+      case 3: return this.CopyablePlayerMovement_GoSpeed1(object, direction, inGrass);
+      case 4: return this.CopyablePlayerMovement_GoSpeed2(object, direction, inGrass);
+      case 5: return this.CopyablePlayerMovement_Slide(object, direction, inGrass);
+      case 6: return this.cph_IM_DIFFERENT(object, direction);
+      case 7: return this.CopyablePlayerMovement_GoSpeed4(object, direction, inGrass);
+      case 8: return this.CopyablePlayerMovement_Jump(object, direction, inGrass);
+      default: return false;
+    }
+  }
+
+  /** CopyablePlayerMovement_None (event_object_movement.c). */
+  private CopyablePlayerMovement_None(): boolean { return false; }
+
+  /** CopyablePlayerMovement_FaceDirection (event_object_movement.c). */
+  private CopyablePlayerMovement_FaceDirection(object: ObjectEvent, direction: number): boolean {
+    this.setSingle(object, actionFace(direction));
+    object.singleMovementActive = true;
+    object.sprite.data[1] = 2;
+    return true;
+  }
+
+  /** Shared collision and movement setup used by the C walk/slide copy callbacks. */
+  private CopyablePlayerMovement_SetStep(object: ObjectEvent, direction: number, action: number, inGrass: boolean): boolean {
+    const destination = ObjectEventMoveDestCoords(object, direction);
+    const blocked = this.GetCollisionAtCoords(object, destination.x, destination.y, direction)
+      || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(destination.x, destination.y)));
+    this.setSingle(object, blocked ? actionFace(direction) : action);
+    object.singleMovementActive = true;
+    object.sprite.data[1] = 2;
+    return true;
+  }
+
+  /** CopyablePlayerMovement_GoSpeed0 (event_object_movement.c). */
+  private CopyablePlayerMovement_GoSpeed0(object: ObjectEvent, direction: number, inGrass: boolean): boolean {
+    return this.CopyablePlayerMovement_SetStep(object, direction, actionWalkNormal(direction), inGrass);
+  }
+
+  /** CopyablePlayerMovement_GoSpeed1 (event_object_movement.c). */
+  private CopyablePlayerMovement_GoSpeed1(object: ObjectEvent, direction: number, inGrass: boolean): boolean {
+    return this.CopyablePlayerMovement_SetStep(object, direction, actionWalkFast(direction), inGrass);
+  }
+
+  /** CopyablePlayerMovement_GoSpeed2 (event_object_movement.c). */
+  private CopyablePlayerMovement_GoSpeed2(object: ObjectEvent, direction: number, inGrass: boolean): boolean {
+    return this.CopyablePlayerMovement_SetStep(object, direction, actionWalkFaster(direction), inGrass);
+  }
+
+  /** CopyablePlayerMovement_Slide (event_object_movement.c). */
+  private CopyablePlayerMovement_Slide(object: ObjectEvent, direction: number, inGrass: boolean): boolean {
+    return this.CopyablePlayerMovement_SetStep(object, direction, actionSlide(direction), inGrass);
+  }
+
+  /** cph_IM_DIFFERENT (event_object_movement.c). */
+  private cph_IM_DIFFERENT(object: ObjectEvent, direction: number): boolean {
+    this.setSingle(object, actionJumpInPlace(direction));
+    object.singleMovementActive = true;
+    object.sprite.data[1] = 2;
+    return true;
+  }
+
+  /** CopyablePlayerMovement_GoSpeed4 (event_object_movement.c). */
+  private CopyablePlayerMovement_GoSpeed4(object: ObjectEvent, direction: number, inGrass: boolean): boolean {
+    return this.CopyablePlayerMovement_SetStep(object, direction, actionJump(direction), inGrass);
+  }
+
+  /** CopyablePlayerMovement_Jump (event_object_movement.c). */
+  private CopyablePlayerMovement_Jump(object: ObjectEvent, direction: number, inGrass: boolean): boolean {
+    const vector = DIRECTION_VECTORS[direction]!;
+    const x = ((object.currentCoords.x + vector[0] * 2) << 16) >> 16;
+    const y = ((object.currentCoords.y + vector[1] * 2) << 16) >> 16;
+    const blocked = this.GetCollisionAtCoords(object, x, y, direction)
+      || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(x, y)));
+    this.setSingle(object, blocked ? actionFace(direction) : actionJump2(direction));
+    object.singleMovementActive = true;
+    object.sprite.data[1] = 2;
+    return true;
   }
 
   clearMovement(object: ObjectEvent): void {
