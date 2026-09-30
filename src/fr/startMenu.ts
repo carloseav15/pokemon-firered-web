@@ -428,8 +428,8 @@ export function StartCB_Save1(dialog: SaveDialogRuntime): false {
   return false;
 }
 
-/** task50_save_game (start_menu.c): dispatch the current dialog callback and finish the script task. */
-export function task50_save_game(dialog: SaveDialogRuntime): boolean {
+/** StartCB_Save2 (start_menu.c): dispatch the save callback and restore the start-menu flow. */
+export function StartCB_Save2(dialog: SaveDialogRuntime): boolean {
   const result = RunSaveDialogCB(dialog);
   if (result === SAVECB_RETURN_OKAY || result === SAVECB_RETURN_ERROR || result === SAVECB_RETURN_CANCEL) {
     dialog.finish(result);

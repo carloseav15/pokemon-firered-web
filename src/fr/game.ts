@@ -58,7 +58,7 @@ import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
   CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
-  PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, task50_save_game, type SaveDialogRuntime,
+  PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, StartCB_Save2, type SaveDialogRuntime,
   FieldCB2_DrawStartMenu, FieldCB_ReturnToFieldOpenStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
@@ -536,7 +536,7 @@ export class Game {
     };
     taskId = tasks.create(() => {
       if (startCallback(dialog)) return;
-      startCallback = task50_save_game;
+      startCallback = StartCB_Save2;
     }, 80);
   }
 
