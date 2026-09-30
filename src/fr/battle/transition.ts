@@ -637,35 +637,62 @@ function HBlankCB_Shuffle(effect: ShuffleEffect, scanline: number): number {
 
 /** B_TRANSITION_BIG_POKEBALL: Task_BigPokeball / PatternWeave_CircularMask. */
 class BigPokeballEffect implements Effect {
-  private phase: "blend1" | "blend2" | "finish" | "mask" | "done" = "blend1";
+  readonly completesScreenFade = true;
+  phase: "init" | "setGfx" | "blend1" | "blend2" | "finish" | "mask" | "done" = "init";
   private blendEva = 0;
   private blendEvb = 16;
   private blendDelay = 0;
   private sinIndex = 0;
   private amplitude = 0x4000;
-  private initialWave = true;
   private radius = 0;
   private radiusDelta = 0;
+  private dmaPending = false;
+  appliedEva = 0;
+  appliedEvb = 16;
+  readonly rowOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly workingRowOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly maskHalfWidths: number[] = new Array(DISPLAY_HEIGHT).fill(DISPLAY_WIDTH);
   private readonly gfx = incbin("sBigPokeball_Gfx");
   private readonly tilemap = incbin16("sBigPokeball_Tilemap");
   private readonly palette = incbin16("sFieldEffectPal_Pokeball");
-  private readonly pixels = this.BigPokeball_SetGfx();
+  private readonly pixels = this.BuildBigPokeballPixels();
 
-  constructor() { this.BigPokeball_Init(); }
+  commitWinAndBlend(): void {
+    this.appliedEva = this.blendEva;
+    this.appliedEvb = this.blendEvb;
+  }
 
   private BigPokeball_Init(): void {
-    this.phase = "blend1";
+    this.phase = "setGfx";
     this.blendEva = 0; this.blendEvb = 16; this.blendDelay = 0;
     this.sinIndex = 0; this.amplitude = 0x4000;
+    this.dmaPending = false;
+    this.rowOffsets.fill(0);
+    this.workingRowOffsets.fill(0);
+    this.appliedEva = 0;
+    this.appliedEvb = 16;
   }
 
   tick(): boolean {
-    this.initialWave = false;
-    if (this.phase === "blend1") return this.PatternWeave_Blend1();
-    if (this.phase === "blend2") return this.PatternWeave_Blend2();
-    if (this.phase === "finish") return this.PatternWeave_FinishAppear();
-    if (this.phase === "mask") return this.PatternWeave_CircularMask();
-    return false;
+    return Task_BigPokeball(this);
+  }
+
+  runTask(): boolean {
+    let continueTask: boolean;
+    do {
+      switch (this.phase) {
+        case "init": this.BigPokeball_Init(); continueTask = false; break;
+        case "setGfx": continueTask = this.BigPokeball_SetGfx(); break;
+        case "blend1": continueTask = this.PatternWeave_Blend1(); break;
+        case "blend2": continueTask = this.PatternWeave_Blend2(); break;
+        case "finish": continueTask = this.PatternWeave_FinishAppear(); break;
+        case "mask": continueTask = this.PatternWeave_CircularMask(); break;
+        default: continueTask = false; break;
+      }
+    } while (continueTask);
+    if (this.phase === "mask" || this.phase === "done") VBlankCB_CircularMask(this);
+    else VBlankCB_PatternWeave(this);
+    return this.phase === "done";
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
@@ -676,16 +703,13 @@ class BigPokeballEffect implements Effect {
     }
     const image = ctx.createImageData(DISPLAY_WIDTH, DISPLAY_HEIGHT);
     const base = this.phase === "mask" ? null : snapshot.getContext("2d")!.getImageData(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT).data;
-    const eva = this.phase === "blend1" ? this.blendEva : 16;
-    const evb = this.phase === "blend1" ? 16 : this.phase === "blend2" ? this.blendEvb : 0;
+    const eva = this.appliedEva;
+    const evb = this.appliedEvb;
     for (let y = 0; y < DISPLAY_HEIGHT; y++) {
-      const wave = this.initialWave
-        ? Sin((y * 132) & 0xff, this.amplitude)
-        : this.phase === "blend1" || this.phase === "blend2" || this.phase === "finish"
-          ? Sin((this.sinIndex + y * 132) & 0xff, Math.max(0, this.amplitude >> 8)) : 0;
+      const wave = this.rowOffsets[y]!;
       const row = y * DISPLAY_WIDTH;
       for (let x = 0; x < DISPLAY_WIDTH; x++) {
-        if (this.phase === "mask" && Math.abs(x - DISPLAY_WIDTH / 2) > this.circleHalfWidth(y)) continue;
+        if ((this.phase as string === "mask" || this.phase as string === "done") && Math.abs(x - DISPLAY_WIDTH / 2) > this.maskHalfWidths[y]!) continue;
         const sx = Math.max(0, Math.min(DISPLAY_WIDTH - 1, x + wave));
         const color = this.pixels[y * DISPLAY_WIDTH + sx]!;
         const p = (row + x) * 4;
@@ -705,7 +729,14 @@ class BigPokeballEffect implements Effect {
     return Math.abs(dy) >= this.radius ? -1 : Math.sqrt(this.radius * this.radius - dy * dy);
   }
 
-  private BigPokeball_SetGfx(): [number, number, number][] {
+  private BigPokeball_SetGfx(): boolean {
+    this.updatePatternWeaveRows();
+    this.phase = "blend1";
+    this.dmaPending = true;
+    return true;
+  }
+
+  private BuildBigPokeballPixels(): [number, number, number][] {
     const result: [number, number, number][] = Array.from({ length: DISPLAY_WIDTH * DISPLAY_HEIGHT }, () => [0, 0, 0]);
     for (let y = 0; y < 20; y++) for (let x = 0; x < 30; x++) {
       const entry = this.tilemap[y * 30 + x] ?? 0;
@@ -723,6 +754,24 @@ class BigPokeballEffect implements Effect {
     return result;
   }
 
+  updatePatternWeaveRows(): void {
+    const amplitude = this.amplitude >> 8;
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      this.workingRowOffsets[y] = Sin((this.sinIndex + y * 132) & 0xff, amplitude);
+    }
+  }
+
+  commitPatternWeaveRows(): void {
+    if (!this.dmaPending) return;
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) this.rowOffsets[y] = this.workingRowOffsets[y]!;
+    this.dmaPending = false;
+  }
+
+  commitCircularMask(): void {
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) this.maskHalfWidths[y] = this.circleHalfWidth(y);
+    this.dmaPending = false;
+  }
+
   private PatternWeave_Blend1(): boolean {
     if (this.blendDelay === 0 || --this.blendDelay === 0) {
       this.blendEva++;
@@ -730,6 +779,8 @@ class BigPokeballEffect implements Effect {
     }
     this.sinIndex = (this.sinIndex + 12) & 0xffff;
     this.amplitude -= 384;
+    this.updatePatternWeaveRows();
+    this.dmaPending = true;
     if (this.blendEva > 15) this.phase = "blend2";
     return false;
   }
@@ -743,6 +794,8 @@ class BigPokeballEffect implements Effect {
       this.sinIndex = (this.sinIndex + 12) & 0xffff;
       this.amplitude -= 384;
     } else this.amplitude = 0;
+    this.updatePatternWeaveRows();
+    this.dmaPending = true;
     if (this.blendEvb === 0) this.phase = "finish";
     return false;
   }
@@ -752,20 +805,41 @@ class BigPokeballEffect implements Effect {
       this.sinIndex = (this.sinIndex + 12) & 0xffff;
       this.amplitude -= 384;
     } else this.amplitude = 0;
+    this.updatePatternWeaveRows();
+    this.dmaPending = true;
     if (this.amplitude <= 0) {
       this.phase = "mask";
       this.radius = DISPLAY_HEIGHT;
-      this.radiusDelta = 1;
+      this.radiusDelta = 1 << 8;
     }
     return false;
   }
 
   private PatternWeave_CircularMask(): boolean {
-    if (this.radiusDelta < 8) this.radiusDelta++;
-    this.radius = Math.max(0, this.radius - this.radiusDelta);
+    this.dmaPending = false;
+    if (this.radiusDelta < (8 << 8)) this.radiusDelta += (1 << 8);
+    if (this.radius !== 0) this.radius = Math.max(0, this.radius - (this.radiusDelta >> 8));
     if (this.radius === 0) { this.phase = "done"; return true; }
     return false;
   }
+}
+
+function Task_BigPokeball(effect: BigPokeballEffect): boolean {
+  return effect.runTask();
+}
+
+function VBlankCB_SetWinAndBlend(effect: BigPokeballEffect): void {
+  effect.commitWinAndBlend();
+}
+
+function VBlankCB_PatternWeave(effect: BigPokeballEffect): void {
+  VBlankCB_SetWinAndBlend(effect);
+  effect.commitPatternWeaveRows();
+}
+
+function VBlankCB_CircularMask(effect: BigPokeballEffect): void {
+  VBlankCB_SetWinAndBlend(effect);
+  effect.commitCircularMask();
 }
 
 function safeSin(index: number, amplitude: number): number {
