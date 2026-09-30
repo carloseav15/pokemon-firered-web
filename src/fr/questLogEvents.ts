@@ -14,6 +14,10 @@ import { gQuestLogState, WriteQuestLogState } from "./questLogState";
 import { SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
 import { rom } from "./rom";
+import { expandPlaceholders } from "./gba/charmap";
+import { stringVars } from "./gba/stringBuffers";
+import { ItemId_GetName } from "./pokemon/items";
+import { speciesName } from "./pokemon/pokemon";
 
 export { gQuestLogState };
 
@@ -80,7 +84,9 @@ export type QuestLogArrivedEvent = { mapSec: number };
 export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogSwappedHeldItemEvent
   | QuestLogSwitchedPartyOrderEvent | QuestLogFieldMoveEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent
   | QuestLogLinkBattleEvent | QuestLogDepartedEvent | QuestLogArrivedEvent | Record<string, never>;
-export type QuestLogScriptEvent = { eventId: number; actionIndex: number; repeats: number; payloads: number[][]; cursor: number };
+export type QuestLogScriptEvent = {
+  eventId: number; actionIndex: number; repeats: number; payloads: number[][]; cursor: number; texts?: Uint8Array[];
+};
 export type QuestLogScriptEntry = { kind: "action"; action: QuestLogAction } | { kind: "event"; event: QuestLogScriptEvent };
 
 function nextQuestLogSceneIndex(): number {
@@ -430,6 +436,72 @@ export function QL_UpdateLastDepartedLocation(eventData: ArrayLike<number> | nul
   sLastDepartedLocation = ((((eventData[2] ?? 0) & 0xffff) >>> 8) & 0xff) + 1;
 }
 
+function QuestLog_GetSpeciesName(species: number): Uint8Array {
+  return species === C.SPECIES_EGG ? rom.text("gText_EggNickname") : speciesName(species);
+}
+
+function expandQuestLogEventText(template: string, vars: Partial<Record<"var1" | "var2" | "var3", ArrayLike<number>>>): Uint8Array {
+  stringVars.var1 = Uint8Array.from(vars.var1 ?? [0xff]);
+  stringVars.var2 = Uint8Array.from(vars.var2 ?? [0xff]);
+  stringVars.var3 = Uint8Array.from(vars.var3 ?? [0xff]);
+  return expandPlaceholders(rom.text(template));
+}
+
+/** LoadEvent_GaveHeldItemFromPartyMenu (quest_log_events.c). */
+export function LoadEvent_GaveHeldItemFromPartyMenu(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_GaveMonHeldItem", {
+    var1: QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE), var2: ItemId_GetName(payload[0] ?? C.ITEM_NONE),
+  });
+}
+
+/** LoadEvent_GaveHeldItemFromBagMenu (quest_log_events.c). */
+export function LoadEvent_GaveHeldItemFromBagMenu(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_GaveMonHeldItem2", {
+    var1: QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE), var2: ItemId_GetName(payload[0] ?? C.ITEM_NONE),
+  });
+}
+
+/** LoadEvent_GaveHeldItemFromPC (quest_log_events.c). */
+export function LoadEvent_GaveHeldItemFromPC(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_GaveMonHeldItemFromPC", {
+    var1: ItemId_GetName(payload[0] ?? C.ITEM_NONE), var2: QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE),
+  });
+}
+
+/** LoadEvent_TookHeldItem (quest_log_events.c). */
+export function LoadEvent_TookHeldItem(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_TookHeldItemFromMon", {
+    var1: QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE), var2: ItemId_GetName(payload[0] ?? C.ITEM_NONE),
+  });
+}
+
+/** LoadEvent_SwappedHeldItem (quest_log_events.c). */
+export function LoadEvent_SwappedHeldItem(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_SwappedHeldItemsOnMon", {
+    var1: QuestLog_GetSpeciesName(payload[2] ?? C.SPECIES_NONE),
+    var2: ItemId_GetName(payload[0] ?? C.ITEM_NONE), var3: ItemId_GetName(payload[1] ?? C.ITEM_NONE),
+  });
+}
+
+/** LoadEvent_SwappedHeldItemFromPC (quest_log_events.c). */
+export function LoadEvent_SwappedHeldItemFromPC(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_SwappedHeldItemFromPC", {
+    var1: ItemId_GetName(payload[1] ?? C.ITEM_NONE), var2: QuestLog_GetSpeciesName(payload[2] ?? C.SPECIES_NONE),
+    var3: ItemId_GetName(payload[0] ?? C.ITEM_NONE),
+  });
+}
+
+/** LoadQuestLogEventText: build each repeat's event description from the saved payloads. */
+export function LoadQuestLogEventText(event: QuestLogScriptEvent): Uint8Array[] | null {
+  const load = event.eventId === C.QL_EVENT_GAVE_HELD_ITEM ? LoadEvent_GaveHeldItemFromPartyMenu
+      : event.eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG ? LoadEvent_GaveHeldItemFromBagMenu
+        : event.eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC ? LoadEvent_GaveHeldItemFromPC
+          : event.eventId === C.QL_EVENT_TOOK_HELD_ITEM ? LoadEvent_TookHeldItem
+            : event.eventId === C.QL_EVENT_SWAPPED_HELD_ITEM ? LoadEvent_SwappedHeldItem
+              : event.eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC ? LoadEvent_SwappedHeldItemFromPC : null;
+  return load === null ? null : event.payloads.map(load);
+}
+
 /** ReadQuestLogScriptFromSav1 (quest_log.c): separate packed actions and event records in script order. */
 export function ReadQuestLogScriptFromSav1(eventIndex: number): QuestLogScriptEntry[] {
   const scene = save.questLogScenes?.find((entry) => entry.eventIndex === eventIndex);
@@ -462,6 +534,7 @@ export function ReadQuestLogScriptFromSav1(eventIndex: number): QuestLogScriptEn
         payloads,
         cursor,
       };
+      event.texts = LoadQuestLogEventText(event) ?? undefined;
       entries.push({ kind: "event", event });
       if (eventNum++ === 0) QL_UpdateLastDepartedLocation(script.slice(cursor));
       cursor = next;
