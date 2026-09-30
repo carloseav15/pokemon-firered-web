@@ -294,6 +294,16 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;
+  // SetQuestLogEvent -> ShouldRegisterEvent_HandlePartyActions (quest_log_events.c).
+  // These restrictions apply only when a new scene would be started; once recording
+  // is active, the same event ids are written into that scene by the source.
+  if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED) {
+    if (isFieldMove || isPokemonCenterEvent) return;
+    if (!flagGet(C.FLAG_SYS_GAME_CLEAR)) {
+      if (isSwitchedPartyOrder || eventId === C.QL_EVENT_DEFEATED_WILD_MON) return;
+    }
+    if (!flagGet(C.FLAG_SYS_CAN_LINK_WITH_RS) && isItemEvent) return;
+  }
   if (isPokemonCenterEvent && gQuestLogRepeatEventTracker.id === C.QL_EVENT_USED_PKMN_CENTER
     && gQuestLogRepeatEventTracker.numRepeats !== 0) return;
   getQuestLogEvents().push({ eventId, data: { ...data } });
