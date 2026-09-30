@@ -2845,33 +2845,38 @@ export class ObjectEvents {
     sprite.startAnim(GetJumpSpecialDirectionAnimNum(direction));
   }
 
-  /** DoJumpSpriteMovement */
-  private doJump(object: ObjectEvent, special = false, sprite = object.sprite): number {
-    const s = sprite;
-    const distance = s.data[4];
-    let phase = 0;
-    if (!special) {
-      const time = [16, 16, 32][distance];
-      const shift = [0, 0, 1][distance];
-      if (distance !== JUMP_DISTANCE_IN_PLACE) this.stepSprite(object, 1, s.data[3]);
-      s.y2 = GetJumpY(s.data[6] >> shift, s.data[5]) ?? 0;
-      s.data[6]++;
-      if (s.data[6] === time >> 1) phase = JUMP_HALFWAY;
-      if (s.data[6] >= time) { s.y2 = 0; phase = JUMP_FINISHED; }
-    } else {
-      const time = [0x20, 0x20, 0x40][distance];
-      const shift = [1, 1, 2][distance];
-      if (distance !== JUMP_DISTANCE_IN_PLACE && !(s.data[6] & 1)) this.stepSprite(object, 1, s.data[3]);
-      s.y2 = GetJumpY(s.data[6] >> shift, s.data[5]) ?? 0;
-      s.data[6]++;
-      if (s.data[6] === time >> 1) phase = JUMP_HALFWAY;
-      if (s.data[6] >= time) { s.y2 = 0; phase = JUMP_FINISHED; }
+  /** DoJumpSpriteMovement (event_object_movement.c): apply regular jump displacement and phase timing. */
+  DoJumpSpriteMovement(sprite: Sprite): number {
+    const distance = sprite.data[4];
+    const distanceToTime = [16, 16, 32];
+    const distanceToShift = [0, 0, 1];
+    let jumpPhase = 0;
+    if (distance !== JUMP_DISTANCE_IN_PLACE) applySpriteStep(sprite, sprite.data[3], 1);
+    sprite.y2 = GetJumpY(sprite.data[6]! >> distanceToShift[distance]!, sprite.data[5]!);
+    sprite.data[6] = sprite.data[6]! + 1;
+    if (sprite.data[6] === (distanceToTime[distance]! >> 1)) jumpPhase = JUMP_HALFWAY;
+    if (sprite.data[6]! >= distanceToTime[distance]!) {
+      sprite.y2 = 0;
+      jumpPhase = JUMP_FINISHED;
     }
-    return phase;
+    return jumpPhase;
   }
 
-  private updateJump(object: ObjectEvent, special = false): number {
-    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.doJump(object, special, sprite));
+  /** DoJumpSpecialSpriteMovement (event_object_movement.c): apply special jump displacement and timing. */
+  DoJumpSpecialSpriteMovement(sprite: Sprite): number {
+    const distance = sprite.data[4];
+    const duration = [0x20, 0x20, 0x40];
+    const shifts = [1, 1, 2];
+    let jumpPhase = 0;
+    if (distance !== JUMP_DISTANCE_IN_PLACE && !(sprite.data[6]! & 1)) applySpriteStep(sprite, sprite.data[3], 1);
+    sprite.y2 = GetJumpY(sprite.data[6]! >> shifts[distance]!, sprite.data[5]!);
+    sprite.data[6] = sprite.data[6]! + 1;
+    if (sprite.data[6] === (duration[distance]! >> 1)) jumpPhase = JUMP_HALFWAY;
+    if (sprite.data[6]! >= duration[distance]!) {
+      sprite.y2 = 0;
+      jumpPhase = JUMP_FINISHED;
+    }
+    return jumpPhase;
   }
 
   /** UpdateJumpAnim (event_object_movement.c): apply halfway and landing coordinate transitions. */
@@ -2901,27 +2906,27 @@ export class ObjectEvents {
 
   /** event_object_movement.c DoJumpAnimStep. */
   private DoJumpAnimStep(object: ObjectEvent): number {
-    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.doJump(object, false, sprite));
+    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.DoJumpSpriteMovement(sprite));
   }
 
   /** event_object_movement.c DoJumpSpecialAnimStep. */
   private DoJumpSpecialAnimStep(object: ObjectEvent): number {
-    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.doJump(object, true, sprite));
+    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.DoJumpSpecialSpriteMovement(sprite));
   }
 
   /** DoJumpAnim (event_object_movement.c). */
   DoJumpAnim(object: ObjectEvent, sprite: Sprite): boolean {
-    return this.UpdateJumpAnim(object, sprite, (currentSprite) => this.doJump(object, false, currentSprite)) === JUMP_FINISHED;
+    return this.UpdateJumpAnim(object, sprite, (currentSprite) => this.DoJumpSpriteMovement(currentSprite)) === JUMP_FINISHED;
   }
 
   /** DoJumpSpecialAnim (event_object_movement.c). */
   DoJumpSpecialAnim(object: ObjectEvent, sprite: Sprite): boolean {
-    return this.UpdateJumpAnim(object, sprite, (currentSprite) => this.doJump(object, true, currentSprite)) === JUMP_FINISHED;
+    return this.UpdateJumpAnim(object, sprite, (currentSprite) => this.DoJumpSpecialSpriteMovement(currentSprite)) === JUMP_FINISHED;
   }
 
   /** DoJumpInPlaceAnim (event_object_movement.c). */
   DoJumpInPlaceAnim(object: ObjectEvent, sprite: Sprite): boolean {
-    const phase = this.UpdateJumpAnim(object, sprite, (currentSprite) => this.doJump(object, false, currentSprite));
+    const phase = this.UpdateJumpAnim(object, sprite, (currentSprite) => this.DoJumpSpriteMovement(currentSprite));
     if (phase === JUMP_HALFWAY) {
       this.SetObjectEventDirection(object, OPPOSITE[object.movementDirection]);
       this.setStepAnim(object, moveAnim(object.facingDirection));
