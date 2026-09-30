@@ -1745,27 +1745,42 @@ export class FieldEffects {
 
   /** GroundEffect_SandTracks (event_object_movement.c). */
   GroundEffect_SandTracks(object: ObjectEvent): void {
-    this.DoTracksGroundEffect(object, false);
+    this.DoTracksGroundEffect(object, 0);
   }
 
   /** GroundEffect_DeepSandTracks (event_object_movement.c). */
   GroundEffect_DeepSandTracks(object: ObjectEvent): void {
-    this.DoTracksGroundEffect(object, true);
+    this.DoTracksGroundEffect(object, 1);
   }
 
-  private DoTracksGroundEffect(object: ObjectEvent, deepSand: boolean): void {
+  private DoTracksGroundEffect(object: ObjectEvent, deepSand: number): void {
     const tracks = rom.objects.gfx[String(object.graphicsId)]?.tracks;
-    if (tracks !== "TRACKS_FOOT" && tracks !== "TRACKS_BIKE_TIRE") return;
+    if (tracks === "TRACKS_NONE" || tracks === undefined) return this.DoTracksGroundEffect_None(object, object.sprite, deepSand);
+    if (tracks === "TRACKS_FOOT") return this.DoTracksGroundEffect_Footprints(object, object.sprite, deepSand);
+    if (tracks === "TRACKS_BIKE_TIRE") return this.DoTracksGroundEffect_BikeTireTracks(object, object.sprite, deepSand);
+  }
+
+  /** DoTracksGroundEffect_None (event_object_movement.c). */
+  DoTracksGroundEffect_None(_object: ObjectEvent, _sprite: Sprite, _deepSand: number): void {}
+
+  /** DoTracksGroundEffect_Footprints (event_object_movement.c). */
+  DoTracksGroundEffect_Footprints(object: ObjectEvent, _sprite: Sprite, deepSand: number): void {
     const args = this.ow.game.fieldEffectArguments;
     args[0] = (object.previousCoords.x << 16) >> 16;
     args[1] = (object.previousCoords.y << 16) >> 16;
     args[2] = 149;
     args[3] = 2;
-    if (tracks === "TRACKS_FOOT") {
-      args[4] = object.facingDirection & 0xff;
-      this.start(deepSand ? C.FLDEFF_DEEP_SAND_FOOTPRINTS : C.FLDEFF_SAND_FOOTPRINTS);
-      return;
-    }
+    args[4] = object.facingDirection & 0xff;
+    this.start(deepSand ? C.FLDEFF_DEEP_SAND_FOOTPRINTS : C.FLDEFF_SAND_FOOTPRINTS);
+  }
+
+  /** DoTracksGroundEffect_BikeTireTracks (event_object_movement.c). */
+  DoTracksGroundEffect_BikeTireTracks(object: ObjectEvent, _sprite: Sprite, _deepSand: number): void {
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = (object.previousCoords.x << 16) >> 16;
+    args[1] = (object.previousCoords.y << 16) >> 16;
+    args[2] = 149;
+    args[3] = 2;
     if (object.currentCoords.x === object.previousCoords.x && object.currentCoords.y === object.previousCoords.y) return;
     const transitions = [
       [1, 2, 7, 8],
