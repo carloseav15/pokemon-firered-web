@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9084/10115 (89.8 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **1031 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9091/10115 (89.9 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **1024 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~21.269 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~21.153 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -25,7 +25,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 5 | `pokemon_storage_system_misc.c` | casi completo | 1430 | 66/70 | ~81 |  |
 | 6 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 7 | `start_menu.c` | casi completo | 1016 | 56/65 | ~140 |  |
-| 8 | `field_fadetransition.c` | casi completo | 965 | 48/59 | ~179 |  |
+| 8 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
 | 9 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 10 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 11 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
@@ -38,7 +38,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 18 | `overworld.c` | parcial | 3563 | 123/242 | ~1752 |  |
 | 19 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 | 20 | `quest_log_events.c` | parcial | 2247 | 15/118 | ~1961 |  |
-| 21 | `field_effect.c` | parcial | 4033 | 95/239 | ~2429 |  |
+| 21 | `field_effect.c` | parcial | 4033 | 100/239 | ~2345 |  |
 | 22 | `intro.c` | parcial | 2805 | 3/79 | ~2698 |  |
 | 23 | `event_object_movement.c` | parcial | 9412 | 539/759 | ~2728 |  |
 
