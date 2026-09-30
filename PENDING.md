@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9186/10115 (90.8 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **929 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9196/10115 (90.9 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **919 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~19.132 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~18.942 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -30,7 +30,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 10 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 11 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 12 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 13 | `quest_log_events.c` | parcial | 2247 | 74/118 | ~837 |  |
+| 13 | `quest_log_events.c` | parcial | 2247 | 84/118 | ~647 |  |
 | 14 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
 | 15 | `party_menu.c` | casi completo | 6342 | 304/357 | ~941 |  |
 | 16 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
@@ -87,7 +87,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
-- Quest Log: el parser conserva acciones/eventos y carga textos por repetición para held-item y viajes; `quest_log_events` se precarga. `QL_StartRecordingAction` respalda party/cajas, rematches, layout, flags/vars y objetos. Faltan conectar textos a la UI, cargadores de PC/combate/tienda, restauración/carga de escena y driver de acciones/playback en Game.
+- Quest Log: el parser conserva acciones/eventos y carga textos por repetición para held-item, viajes y eventos PC; `quest_log_events` se precarga. `QL_StartRecordingAction` respalda party/cajas, rematches, layout, flags/vars y objetos. Faltan cargadores de combate/tienda, conectar textos a la UI, restauración/carga de escena y driver de acciones/playback en Game.
 - Trainer Tower: `trainer_tower.c` queda en 43/43 nombres y conectado al dispatcher de scripts y al ciclo de recursos de batalla; gameplay/navegador siguen pendientes de revisión.
 - Uso de objetos (`item_use.c`): dispatch Enigma, rechazo de Oak, consumo/mensaje común de Repel, Escape Rope y Poké Doll, flautas, cañas, Item Finder, TM Case, Berry Pouch, Mail, Bike y la secuencia de potenciadores de combate están conectados. El helper registra eventos en el buffer de escena; faltan 12/73 nombres y la carga/reproducción de esos eventos.
 - Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller; los huecos de `battle_bg.c` y `evolution_scene.c` son de enlace/intercambio.
