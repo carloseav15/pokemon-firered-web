@@ -2567,17 +2567,27 @@ export class ObjectEvents {
     object.sprite.data[2] = 1;
   }
 
-  private initNpcForMovement(object: ObjectEvent, direction: number, speed: number): void {
+  private initNpcForMovement(object: ObjectEvent, direction: number, speed: number, sprite = object.sprite): void {
     this.setDirection(object, direction);
     const [dx, dy] = DIRECTION_VECTORS[direction];
     this.shiftCoords(object, object.currentCoords.x + dx, object.currentCoords.y + dy);
-    const s = object.sprite;
-    s.data[3] = direction;
-    s.data[4] = speed;
-    s.data[5] = 0;
-    s.animPaused = false;
+    this.SetSpriteDataForNormalStep(sprite, direction, speed);
+    sprite.animPaused = false;
     object.triggerGroundEffectsOnMove = true;
-    s.data[2] = 1;
+    sprite.data[2] = 1;
+  }
+
+  /** SetSpriteDataForNormalStep (event_object_movement.c): initialize the sprite step fields. */
+  SetSpriteDataForNormalStep(sprite: Sprite, direction: number, speed: number): void {
+    sprite.data[3] = direction & 0xff;
+    sprite.data[4] = speed & 0xff;
+    sprite.data[5] = 0;
+  }
+
+  /** StartRunningAnim (event_object_movement.c): run at FAST_1 speed with alternating run frames. */
+  StartRunningAnim(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.initNpcForMovement(object, direction, MOVE_SPEED_FAST_1, sprite);
+    this.setStepAnimHandleAlternation(object, runAnim(object.facingDirection));
   }
 
   private initMovementNormal(object: ObjectEvent, direction: number, speed: number): void {
@@ -3012,10 +3022,7 @@ export class ObjectEvents {
     }
     // Player run
     if (id >= 0x3d && id <= 0x40) {
-      if (step === 0) {
-        this.initNpcForMovement(object, dirOf(0x3d), MOVE_SPEED_FAST_1);
-        this.setStepAnimHandleAlternation(object, runAnim(object.facingDirection));
-      }
+      if (step === 0) this.StartRunningAnim(object, s, dirOf(0x3d));
       if (this.updateMovementNormal(object)) return this.finishStep(object);
       return false;
     }
