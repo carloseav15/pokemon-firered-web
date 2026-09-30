@@ -10,6 +10,7 @@ import { flagClear, flagSet, save, varGet, varSet } from "../save";
 import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "../pokemon/items";
 import { trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
+import { SetUsedFieldMoveQuestLogEvent, SetUsedFlyQuestLogEvent } from "../questLogEvents";
 import { bagResult, GoToBagMenu, RemoveUsedItem, type BagHandlers, type BagTaskContext } from "../bagMenu";
 import { InitTMCase } from "../tmCase";
 import { InitBerryPouch } from "../berryPouch";
@@ -22,7 +23,7 @@ import {
 import { GetNumberOfRelearnableMoves } from "../pokemon/partyRules";
 import { encode, stringVars } from "../gba/charmap";
 import { ExecuteTableBasedItemEffect } from "../battle/ext";
-import type { Mon } from "../pokemon/mon";
+import { GetMonData, type Mon } from "../pokemon/mon";
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
 import * as MB from "../generated/metatileBehavior";
@@ -156,10 +157,26 @@ export function FieldUseFunc_SacredAsh(item: number, context: BagTaskContext | n
 function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => void): PartyMenuFieldHooks {
   return {
     setUpFieldMove: (fieldMove, slot) => trySetUpFieldMove(game, fieldMove, slot),
+    recordUsedFieldMove: (fieldMove, slot) => {
+      let mapSec = 0xff;
+      if (fieldMove === C.FIELD_MOVE_TELEPORT) {
+        const location = save.lastHealLocation;
+        const header = game.overworld.Overworld_GetMapHeaderByGroupAndId(location.mapGroup, location.mapNum);
+        if (!header) throw new Error(`missing region-map section for Teleport destination ${location.mapGroup}:${location.mapNum}`);
+        mapSec = header.regionMapSection;
+      } else if (fieldMove === C.FIELD_MOVE_DIG) {
+        mapSec = game.overworld.header.regionMapSection;
+      }
+      SetUsedFieldMoveQuestLogEvent(GetMonData(save.party[slot], C.MON_DATA_SPECIES_OR_EGG), fieldMove, mapSec);
+    },
     returnToField: (post) => leaveWith(post),
     // CB2_OpenFlyMap: ReturnToFieldFromFlyMapSelect (FieldCallback_UseFly) or back to the party.
     openFlyMap: (slot, done) => openFlyMap(game, (selected) => {
       if (!selected) { done(false); return; }
+      const destination = game.overworld.warpDestination;
+      const header = game.overworld.Overworld_GetMapHeaderByGroupAndId(destination.mapGroup, destination.mapNum);
+      if (!header) throw new Error(`missing region-map section for Fly destination ${destination.mapGroup}:${destination.mapNum}`);
+      SetUsedFlyQuestLogEvent(GetMonData(save.party[slot], C.MON_DATA_SPECIES_OR_EGG), header.regionMapSection);
       done(true);
       leaveWith(() => {
         game.fieldEffectArguments[0] = slot;

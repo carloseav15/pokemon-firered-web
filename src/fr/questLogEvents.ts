@@ -64,13 +64,18 @@ export type QuestLogShopEvent = {
 
 export type QuestLogStoryItemEvent = { itemId: number; mapSec: number };
 export type QuestLogItemEvent = { itemId: number; species: number; itemParam: number };
+export type QuestLogSwappedHeldItemEvent = { species: number; takenItemId: number; givenItemId: number };
+export type QuestLogSwitchedPartyOrderEvent = { species1: number; species2: number };
+export type QuestLogFieldMoveEvent = { species: number; fieldMove: number; mapSec: number };
 export type QuestLogTrainerBattleEvent = {
   trainerId: number; speciesOpponent: number; speciesPlayer: number; mapSec: number; hpFractionId: number;
 };
 export type QuestLogWildBattleEvent = { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
 export type QuestLogLinkBattleEvent = { outcome: number; playerNames: number[][] };
 export type QuestLogDepartedEvent = { mapSec: number; locationId: number };
-export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent | QuestLogLinkBattleEvent | QuestLogDepartedEvent | Record<string, never>;
+export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogSwappedHeldItemEvent
+  | QuestLogSwitchedPartyOrderEvent | QuestLogFieldMoveEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent
+  | QuestLogLinkBattleEvent | QuestLogDepartedEvent | Record<string, never>;
 export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
@@ -275,6 +280,8 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     || eventId === C.QL_EVENT_TOOK_HELD_ITEM || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM
     || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC || eventId === C.QL_EVENT_DEPOSITED_ITEM_PC
     || eventId === C.QL_EVENT_WITHDREW_ITEM_PC;
+  const isSwitchedPartyOrder = eventId === C.QL_EVENT_SWITCHED_PARTY_ORDER;
+  const isFieldMove = eventId === C.QL_EVENT_USED_FIELD_MOVE;
   const isBattleEvent = eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_WILD_MON
     || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER || eventId === C.QL_EVENT_DEFEATED_CHAMPION
     || eventId === C.QL_EVENT_DEFEATED_TRAINER;
@@ -282,7 +289,8 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     || eventId === C.QL_EVENT_LINK_BATTLED_DOUBLE
     || eventId === C.QL_EVENT_LINK_BATTLED_MULTI
     || eventId === C.QL_EVENT_LINK_BATTLED_UNION;
-  if (!isShopEvent && !isPokemonCenterEvent && !isStoryItemEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent && !isLinkBattleEvent) return;
+  if (!isShopEvent && !isPokemonCenterEvent && !isStoryItemEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent
+    && !isLinkBattleEvent && !isSwitchedPartyOrder && !isFieldMove) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;
@@ -301,6 +309,26 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     scripts.push({ eventIndex: getQuestLogEvents().length - 1, script: [] });
     sActivePlayerActionScript = scripts.length - 1;
   }
+}
+
+/** SetSwitchedPartyOrderQuestLogEvent (party_menu.c). */
+export function SetSwitchedPartyOrderQuestLogEvent(species1: number, species2: number): void {
+  SetQuestLogEvent(C.QL_EVENT_SWITCHED_PARTY_ORDER, { species1, species2 });
+}
+
+/** SetSwappedHeldItemQuestLogEvent (party_menu.c). */
+export function SetSwappedHeldItemQuestLogEvent(eventId: number, species: number, takenItemId: number, givenItemId: number): void {
+  SetQuestLogEvent(eventId, { species, takenItemId, givenItemId });
+}
+
+/** SetUsedFieldMoveQuestLogEvent (party_menu.c), with the source map-section id resolved by the caller. */
+export function SetUsedFieldMoveQuestLogEvent(species: number, fieldMove: number, mapSec: number): void {
+  SetQuestLogEvent(C.QL_EVENT_USED_FIELD_MOVE, { species, fieldMove, mapSec });
+}
+
+/** SetUsedFlyQuestLogEvent (party_menu.c), with the selected destination's map-section id resolved by the caller. */
+export function SetUsedFlyQuestLogEvent(species: number, mapSec: number): void {
+  SetUsedFieldMoveQuestLogEvent(species, C.FIELD_MOVE_FLY, mapSec);
 }
 
 /** InQuestLogDisabledLocation (quest_log_events.c). */

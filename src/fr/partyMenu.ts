@@ -84,6 +84,7 @@ import { HandleBattleLowHpMusicChange } from "./battle/gfx_sfx_util";
 import { BattleStringExpandPlaceholders } from "./battle/message";
 import { BtlCtrl_OakOldMan_SetState2Flag, BtlCtrl_OakOldMan_TestState2Flag } from "./battle/controller_oak_old_man";
 import { AppendToList } from "./startMenu";
+import { SetSwappedHeldItemQuestLogEvent, SetSwitchedPartyOrderQuestLogEvent } from "./questLogEvents";
 import { FreeRestoreBattleData } from "./battle/main_init";
 import { LoadPlayerParty } from "./loadSave";
 import { CB2_ReturnToTeachyTV, SetTeachyTvControllerModeToResume } from "./teachyTv";
@@ -158,6 +159,8 @@ export type PartyMenuFieldHooks = {
     | { kind: "confirm"; message: string | ArrayLike<number>; post: () => void }
     | { kind: "fly" }
     | { kind: "softboiled" };
+  /** SetUsedFieldMoveQuestLogEvent (party_menu.c), after field-move confirmation when needed. */
+  recordUsedFieldMove(fieldMove: number, slot: number): void;
   /** CB2_OpenFlyMap → ReturnToFieldFromFlyMapSelect(done(true)) or CB2_ReturnToPartyMenuFromFlyMap(done(false)). */
   openFlyMap(slot: number, done: (flying: boolean) => void): void;
   /** CB2_ReturnToField after a field move, with the post-menu field callback. */
@@ -855,6 +858,10 @@ function DisplayAlreadyHoldingItemSwitchMessage(m: Mon, item: number, keepOpen: 
 }
 
 function DisplaySwitchedHeldItemMessage(item: number, item2: number, keepOpen: boolean): void {
+  SetSwappedHeldItemQuestLogEvent(
+    gPartyMenu.action === C.PARTY_ACTION_GIVE_PC_ITEM ? C.QL_EVENT_SWAPPED_HELD_ITEM_PC : C.QL_EVENT_SWAPPED_HELD_ITEM,
+    GetMonData(mon(gPartyMenu.slotId), C.MON_DATA_SPECIES_OR_EGG), item2, item,
+  );
   stringVars.var1 = CopyItemName(item);
   stringVars.var2 = CopyItemName(item2);
   stringVars.var4 = expandPlaceholders(text("gText_SwitchedPkmnItem"));
@@ -1641,6 +1648,10 @@ function CursorCB_Switch(taskId: number): void {
 function SwitchSelectedMons(taskId: number): void {
   const data = tasks.tasks[taskId].data;
   if (gPartyMenu.slotId2 === gPartyMenu.slotId) { FinishTwoMonAction(taskId); return; }
+  SetSwitchedPartyOrderQuestLogEvent(
+    GetMonData(mon(gPartyMenu.slotId), C.MON_DATA_SPECIES_OR_EGG),
+    GetMonData(mon(gPartyMenu.slotId2), C.MON_DATA_SPECIES_OR_EGG),
+  );
   const w0 = sPartyMenuBoxes[gPartyMenu.slotId].windowId, w1 = sPartyMenuBoxes[gPartyMenu.slotId2].windowId;
   data[0] = GetWindowAttribute(w0, WINDOW_TILEMAP_LEFT); data[1] = GetWindowAttribute(w0, WINDOW_TILEMAP_TOP);
   data[2] = GetWindowAttribute(w0, WINDOW_WIDTH); data[3] = GetWindowAttribute(w0, WINDOW_HEIGHT);
@@ -2083,6 +2094,7 @@ function CursorCB_FieldMove(taskId: number): void {
       Task_ClosePartyMenu(taskId);
       break;
     case "close": {
+      sFieldHooks.recordUsedFieldMove(fieldMove, gPartyMenu.slotId);
       const post = result.post;
       gPartyMenu.exitCallback = () => sFieldHooks?.returnToField(post);
       Task_ClosePartyMenu(taskId);
@@ -2111,6 +2123,7 @@ function Task_FieldMoveExitAreaYesNo(taskId: number): void {
 function Task_HandleFieldMoveExitAreaYesNoInput(taskId: number): void {
   switch (Menu_ProcessInputNoWrapClearOnChoose()) {
     case 0: {
+      sFieldHooks?.recordUsedFieldMove(pmi().data[0], gPartyMenu.slotId);
       const post = sPostMenuFieldCallback;
       gPartyMenu.exitCallback = () => sFieldHooks?.returnToField(post);
       Task_ClosePartyMenu(taskId);
