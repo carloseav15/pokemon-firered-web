@@ -3,6 +3,7 @@
 import type { Game } from "../game";
 import { HwScene } from "../hw/runtime";
 import { ReadMail } from "./mailView";
+import { DoEasyChatScreen } from "../easyChat2";
 import { GetMailDataForMon } from "../pokemon/mail";
 import { decode, expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
 import { rom } from "../rom";
@@ -187,6 +188,16 @@ function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => v
       const mailData = GetMailDataForMon(mon);
       if (mailData) ReadMail(mailData, done, true);
       else done();
+    },
+    writeMail: (slot, done) => {
+      const mailId = GetMonData(save.party[slot], C.MON_DATA_MAIL);
+      if (mailId < 0 || mailId >= save.mail.length) throw new Error(`party slot ${slot} has no allocated mail record`);
+      const previousScene = game.scene;
+      DoEasyChatScreen(game, C.EASY_CHAT_TYPE_MAIL, save.mail[mailId].words, () => {
+        game.scene = previousScene;
+        game.setCallbacks(null, () => previousScene?.update());
+        done();
+      });
     },
     evolve: (mon, target, canStop, slot, done) => BeginEvolutionScene(mon, target, canStop, slot, done),
     relearnableMoves: GetNumberOfRelearnableMoves,

@@ -8,8 +8,7 @@
 // Adaptations: pokemon_special_anim.c (the "use item" mon scene) is pending,
 // so StartUseItemAnim_* continue straight to their callbacks and
 // PSA_IsCancelDisabled() is FALSE (the in-menu learn messages show). The
-// summary screen and mail reader are text adapters; Easy Chat is pending, so
-// given mail keeps a blank message. Link, Union Room, minigame and the Teachy
+// summary screen and mail reader are text adapters. Link, Union Room, minigame and the Teachy
 // TV scripted menus are not reachable in the port.
 
 import * as C from "./generated/constants";
@@ -167,6 +166,8 @@ export type PartyMenuFieldHooks = {
   returnToField(post: (() => void) | null): void;
   /** ReadMail */
   readMail(slot: number, done: () => void): void;
+  /** DoEasyChatScreen (easy_chat_2.c), editing the held mail record in place. */
+  writeMail(slot: number, done: () => void): void;
   /** BeginEvolutionScene; `done` is gCB2_AfterEvolution. */
   evolve(mon: Mon, target: number, canStop: boolean, slot: number, done: () => void): void;
   /** GetNumberOfRelearnableMoves */
@@ -869,7 +870,7 @@ function DisplaySwitchedHeldItemMessage(item: number, item2: number, keepOpen: b
   ScheduleBgCopyTilemapToVram(2);
 }
 
-/** GiveItemToMon (GiveMailToMon attaches a blank message until Easy Chat is ported). */
+/** GiveItemToMon (party_menu.c): allocate a mail record when the held item is mail. */
 function GiveItemToMon(m: Mon, item: number): void {
   if (isMailItem(item) && GiveMailToMon(m, item) === C.MAIL_NONE) return;
   SetMonData(m, C.MON_DATA_HELD_ITEM, item);
@@ -1816,11 +1817,35 @@ export function CB2_GiveHoldItem(): void {
   sPartyMenuItemId = GetMonData(mon(gPartyMenu.slotId), C.MON_DATA_HELD_ITEM);
   if (sPartyMenuItemId !== C.ITEM_NONE) task(Task_SwitchHoldItemsPrompt);
   else if (isMailItem(bagResult.itemId)) {
-    // Mail: the Easy Chat writer is pending, so the mail goes on with a blank message.
     removeBagItem(bagResult.itemId, 1);
     GiveItemToMon(mon(gPartyMenu.slotId), bagResult.itemId);
-    task(Task_DisplayGaveMailFromPartyMessage);
+    CB2_WriteMailToGiveMon();
   } else task(Task_GiveHoldItem);
+}
+
+function WriteMailToSelectedMon(done: () => void): void {
+  if (!sFieldHooks) throw new Error("party menu mail composition requires the active field hooks");
+  sFieldHooks.writeMail(gPartyMenu.slotId, done);
+}
+
+/** CB2_WriteMailToGiveMon (party_menu.c). */
+function CB2_WriteMailToGiveMon(): void {
+  WriteMailToSelectedMon(CB2_ReturnToPartyMenuFromWritingMail);
+}
+
+/** CB2_ReturnToPartyMenuFromWritingMail (party_menu.c). */
+function CB2_ReturnToPartyMenuFromWritingMail(): void {
+  if (!varGet(SV.RESULT)) {
+    const m = mon(gPartyMenu.slotId);
+    const item = GetMonData(m, C.MON_DATA_HELD_ITEM);
+    TakeMailFromMon(m);
+    SetMonData(m, C.MON_DATA_HELD_ITEM, sPartyMenuItemId);
+    removeBagItem(sPartyMenuItemId, 1);
+    addBagItem(item, 1);
+    InitPartyMenu(gPartyMenu.menuType, C.KEEP_PARTY_LAYOUT, gPartyMenu.action, true, C.PARTY_MSG_CHOOSE_MON, Task_TryCreateSelectionWindow, gPartyMenu.exitCallback);
+  } else {
+    InitPartyMenu(gPartyMenu.menuType, C.KEEP_PARTY_LAYOUT, gPartyMenu.action, true, C.PARTY_MSG_CHOOSE_MON, Task_DisplayGaveMailFromPartyMessage, gPartyMenu.exitCallback);
+  }
 }
 
 function Task_GiveHoldItem(taskId: number): void {
@@ -1854,8 +1879,7 @@ function Task_HandleSwitchItemsYesNoInput(taskId: number): void {
       } else if (isMailItem(bagResult.itemId)) {
         if (isMailItem(sPartyMenuItemId)) TakeMailFromMon(mon(gPartyMenu.slotId));
         GiveItemToMon(mon(gPartyMenu.slotId), bagResult.itemId);
-        DisplaySwitchedHeldItemMessage(bagResult.itemId, sPartyMenuItemId, true);
-        tasks.setFunc(taskId, Task_UpdateHeldItemSprite);
+        tasks.setFunc(taskId, Task_WriteMailToGiveMonAfterText);
       } else {
         if (isMailItem(sPartyMenuItemId)) TakeMailFromMon(mon(gPartyMenu.slotId));
         GiveItemToMon(mon(gPartyMenu.slotId), bagResult.itemId);
@@ -1865,6 +1889,14 @@ function Task_HandleSwitchItemsYesNoInput(taskId: number): void {
       break;
     case MENU_B_PRESSED: sound.playSE(C.SE_SELECT); tasks.setFunc(taskId, Task_ReturnToChooseMonAfterText); break;
     case 1: tasks.setFunc(taskId, Task_ReturnToChooseMonAfterText); break;
+  }
+}
+
+/** Task_WriteMailToGiveMonAfterText (party_menu.c). */
+function Task_WriteMailToGiveMonAfterText(taskId: number): void {
+  if (!IsPartyMenuTextPrinterActive()) {
+    pmi().exitCallback = CB2_WriteMailToGiveMon;
+    Task_ClosePartyMenu(taskId);
   }
 }
 
@@ -3052,8 +3084,42 @@ function TryGiveItemOrMailToSelectedMon(taskId: number): void {
 }
 
 function GiveItemOrMailToSelectedMon(taskId: number): void {
-  // Mail goes on directly (blank message) while the Easy Chat writer is pending.
+  if (isMailItem(gPartyMenu.bagItem)) {
+    RemoveItemToGiveFromBag(gPartyMenu.bagItem);
+    pmi().exitCallback = CB2_WriteMailToGiveMonFromBag;
+    Task_ClosePartyMenu(taskId);
+    return;
+  }
   GiveItemToSelectedMon(taskId);
+}
+
+/** CB2_WriteMailToGiveMonFromBag (party_menu.c). */
+function CB2_WriteMailToGiveMonFromBag(): void {
+  GiveItemToMon(mon(gPartyMenu.slotId), gPartyMenu.bagItem);
+  WriteMailToSelectedMon(CB2_ReturnToPartyOrBagMenuFromWritingMail);
+}
+
+/** CB2_ReturnToPartyOrBagMenuFromWritingMail (party_menu.c). */
+function CB2_ReturnToPartyOrBagMenuFromWritingMail(): void {
+  const m = mon(gPartyMenu.slotId);
+  const item = GetMonData(m, C.MON_DATA_HELD_ITEM);
+  if (!varGet(SV.RESULT)) {
+    TakeMailFromMon(m);
+    SetMonData(m, C.MON_DATA_HELD_ITEM, sPartyMenuItemId);
+    removeBagItem(sPartyMenuItemId, 1);
+    ReturnGiveItemToBagOrPC(item);
+    gPartyMenu.exitCallback?.();
+  } else {
+    InitPartyMenu(gPartyMenu.menuType, C.KEEP_PARTY_LAYOUT, gPartyMenu.action, true, C.PARTY_MSG_NONE, Task_DisplayGaveMailFromBagMessage, gPartyMenu.exitCallback);
+  }
+}
+
+/** Task_DisplayGaveMailFromBagMessage (party_menu.c). */
+function Task_DisplayGaveMailFromBagMessage(taskId: number): void {
+  if (gPaletteFade.active) return;
+  if (sPartyMenuItemId !== C.ITEM_NONE) DisplaySwitchedHeldItemMessage(gPartyMenu.bagItem, sPartyMenuItemId, false);
+  else DisplayGaveHeldItemMessage(mon(gPartyMenu.slotId), gPartyMenu.bagItem, false);
+  tasks.setFunc(taskId, Task_UpdateHeldItemSpriteAndClosePartyMenu);
 }
 
 function GiveItemToSelectedMon(taskId: number): void {
@@ -3088,6 +3154,11 @@ function Task_HandleSwitchItemsFromBagYesNoInput(taskId: number): void {
         DisplayPartyMenuMessage(stringVars.var4, false);
       } else {
         if (isMailItem(sPartyMenuItemId)) TakeMailFromMon(mon(gPartyMenu.slotId));
+        if (isMailItem(item)) {
+          pmi().exitCallback = CB2_WriteMailToGiveMonFromBag;
+          Task_ClosePartyMenu(taskId);
+          break;
+        }
         GiveItemToMon(mon(gPartyMenu.slotId), item);
         DisplaySwitchedHeldItemMessage(item, sPartyMenuItemId, true);
       }
