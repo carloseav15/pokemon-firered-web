@@ -61,10 +61,12 @@ import { TEXT_SKIP_DRAW } from "./gba/textPrinter";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, L_BUTTON, R_BUTTON } from "./gba/input";
 import { tasks, type TaskFunc } from "./gba/tasks";
 import { SetMainCallback2, SetMainCallback2WhenLoaded, SetVBlankCallback, SetHBlankCallback } from "./hw/runtime";
+import { ScanlineEffect_Stop } from "./hw/scanline";
 import { sound } from "./audio/sound";
 import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr } from "./dynamicPlaceholderTextUtil";
 import { rom } from "./rom";
 import { save } from "./save";
+import { SetHelpContext } from "./helpSystem";
 import {
   CalculatePPWithBonus, GetMonData, GetMonGender, IsMonShiny, zeroMon, type Mon,
 } from "./pokemon/mon";
@@ -578,16 +580,13 @@ function CB2_SetUpPSS(): void {
 
   switch (pss.summarySetupStep) {
     case 0:
-      SetVBlankCallback(null);
-      SetHBlankCallback(null);
+      PokeSum_Setup_ResetCallbacks();
       break;
     case 1:
       PokeSum_Setup_InitGpu();
       break;
     case 2:
-      ResetSpriteData();
-      ResetPaletteFade();
-      FreeAllSpritePalettes();
+      PokeSum_Setup_SpritesReset();
       break;
     case 3:
       if (!PokeSum_HandleLoadBgGfx()) return;
@@ -667,11 +666,30 @@ function CB2_SetUpPSS(): void {
       HideShowShinyStar(false);
       break;
     default:
-      SetVBlankCallback(VBlankCB_PokemonSummaryScreen);
+      PokeSum_Setup_SetVBlankCallback();
       PokeSum_FinishSetup();
       return;
   }
   pss.summarySetupStep++;
+}
+
+/** PokeSum_Setup_ResetCallbacks (pokemon_summary_screen.c). */
+function PokeSum_Setup_ResetCallbacks(): void {
+  SetVBlankCallback(null);
+  SetHBlankCallback(null);
+}
+
+/** PokeSum_Setup_SpritesReset (pokemon_summary_screen.c). */
+function PokeSum_Setup_SpritesReset(): void {
+  ResetSpriteData();
+  ResetPaletteFade();
+  FreeAllSpritePalettes();
+  ScanlineEffect_Stop();
+}
+
+/** PokeSum_Setup_SetVBlankCallback (pokemon_summary_screen.c). */
+function PokeSum_Setup_SetVBlankCallback(): void {
+  SetVBlankCallback(VBlankCB_PokemonSummaryScreen);
 }
 
 function PokeSum_Setup_InitGpu(): void {
@@ -2229,7 +2247,7 @@ function IsPageFlipInput(direction: number): boolean {
     sMonSummaryScreen.lastPageFlipDirection = 0xff;
     return true;
   }
-  if (sMonSummaryScreen.inhibitPageFlipInput && sMonSummaryScreen.pageFlipDirection !== direction) return false;
+  if (PageFlipInputIsDisabled(direction)) return false;
 
   switch (direction) {
     case 1:
@@ -2240,6 +2258,12 @@ function IsPageFlipInput(direction: number): boolean {
       break;
   }
   return false;
+}
+
+/** PageFlipInputIsDisabled (pokemon_summary_screen.c). */
+function PageFlipInputIsDisabled(direction: number): boolean {
+  return !!sMonSummaryScreen?.inhibitPageFlipInput
+    && sMonSummaryScreen.pageFlipDirection !== direction;
 }
 
 function Task_InputHandler_Info(taskId: number): void {
@@ -2405,6 +2429,7 @@ function Task_PokeSum_FlipPages(taskId: number): void {
       if (pss.curPageIndex === PokemonSummaryScreenPage.PSS_PAGE_MOVES_INFO) {
         tasks.tasks[pss.inputHandlerTaskId].func = Task_HandleInput_SelectMove;
       }
+      PokeSum_SetHelpContext();
       tasks.destroy(taskId);
       data[0] = 0;
       pss.lockMovesFlag = false;
@@ -2481,6 +2506,7 @@ function Task_FlipPages_FromInfo(_taskId: number): void {
       CopyBgTilemapBufferToVram(1);
       break;
     default:
+      PokeSum_SetHelpContext();
       tasks.tasks[pss.inputHandlerTaskId].func = Task_HandleInput_SelectMove;
       pss.state3284 = 0;
       pss.lockMovesFlag = false;
@@ -2545,6 +2571,7 @@ function Task_BackOutOfSelectMove(_taskId: number): void {
       ShowBg(0);
       break;
     default:
+      PokeSum_SetHelpContext();
       tasks.tasks[pss.inputHandlerTaskId].func = Task_InputHandler_Info;
       pss.state3284 = 0;
       pss.lockMovesFlag = false;
@@ -2552,6 +2579,23 @@ function Task_BackOutOfSelectMove(_taskId: number): void {
       return;
   }
   pss.state3284++;
+}
+
+/** PokeSum_SetHelpContext (pokemon_summary_screen.c). */
+function PokeSum_SetHelpContext(): void {
+  if (!sMonSummaryScreen) return;
+  switch (sMonSummaryScreen.curPageIndex) {
+    case PokemonSummaryScreenPage.PSS_PAGE_INFO:
+      SetHelpContext(C.HELPCONTEXT_POKEMON_INFO);
+      break;
+    case PokemonSummaryScreenPage.PSS_PAGE_SKILLS:
+      SetHelpContext(C.HELPCONTEXT_POKEMON_SKILLS);
+      break;
+    case PokemonSummaryScreenPage.PSS_PAGE_MOVES:
+    case PokemonSummaryScreenPage.PSS_PAGE_MOVES_INFO:
+      SetHelpContext(C.HELPCONTEXT_POKEMON_MOVES);
+      break;
+  }
 }
 
 // ---------------------------------------------------------------- page sliding & priority
@@ -2776,38 +2820,42 @@ function PokeSum_FlipPages_HandleBgHofs(): void {
 
   if (pss.pageFlipDirection === 1) {
     if (pss.curPageIndex !== PokemonSummaryScreenPage.PSS_PAGE_MOVES_INFO) {
-      // Slide layer left
-      if (pss.flipPagesBgHofs < 240) {
-        pss.flipPagesBgHofs = Math.min(240, pss.flipPagesBgHofs + 60);
-        const reg = pss.whichBgLayerToTranslate === 0 ? REG_OFFSET_BG2HOFS : REG_OFFSET_BG1HOFS;
-        SetGpuReg(reg, -pss.flipPagesBgHofs);
-      }
+      PokeSum_FlipPages_SlideLayerLeft();
     } else {
-      // Slide layer right
-      if (pss.flipPagesBgHofs >= 60) {
-        pss.flipPagesBgHofs = Math.max(0, pss.flipPagesBgHofs - 60);
-        const reg = pss.whichBgLayerToTranslate === 0 ? REG_OFFSET_BG1HOFS : REG_OFFSET_BG2HOFS;
-        SetGpuReg(reg, -pss.flipPagesBgHofs);
-      }
+      PokeSum_FlipPages_SlideLayeRight();
     }
   } else {
     if (pss.curPageIndex !== PokemonSummaryScreenPage.PSS_PAGE_MOVES) {
-      // Slide layer right
-      if (pss.flipPagesBgHofs >= 60) {
-        pss.flipPagesBgHofs = Math.max(0, pss.flipPagesBgHofs - 60);
-        const reg = pss.whichBgLayerToTranslate === 0 ? REG_OFFSET_BG1HOFS : REG_OFFSET_BG2HOFS;
-        SetGpuReg(reg, -pss.flipPagesBgHofs);
-        if (pss.curPageIndex !== PokemonSummaryScreenPage.PSS_PAGE_MOVES_INFO) {
-          SetGpuReg(REG_OFFSET_BG0HOFS, -pss.flipPagesBgHofs);
-        }
-      }
+      PokeSum_FlipPages_SlideLayeRight();
     } else {
-      // Slide layer left
-      if (pss.flipPagesBgHofs < 240) {
-        pss.flipPagesBgHofs = Math.min(240, pss.flipPagesBgHofs + 60);
-        const reg = pss.whichBgLayerToTranslate === 0 ? REG_OFFSET_BG2HOFS : REG_OFFSET_BG1HOFS;
-        SetGpuReg(reg, -pss.flipPagesBgHofs);
-      }
+      PokeSum_FlipPages_SlideLayerLeft();
+    }
+  }
+}
+
+/** PokeSum_FlipPages_SlideLayerLeft (pokemon_summary_screen.c). */
+function PokeSum_FlipPages_SlideLayerLeft(): void {
+  if (!sMonSummaryScreen) return;
+  const pss = sMonSummaryScreen;
+  if (pss.flipPagesBgHofs < 240) {
+    pss.flipPagesBgHofs += 60;
+    if (pss.flipPagesBgHofs > 240) pss.flipPagesBgHofs = 240;
+    const reg = pss.whichBgLayerToTranslate === 0 ? REG_OFFSET_BG2HOFS : REG_OFFSET_BG1HOFS;
+    SetGpuReg(reg, -pss.flipPagesBgHofs);
+  }
+}
+
+/** PokeSum_FlipPages_SlideLayeRight (pokemon_summary_screen.c; source spelling retained). */
+function PokeSum_FlipPages_SlideLayeRight(): void {
+  if (!sMonSummaryScreen) return;
+  const pss = sMonSummaryScreen;
+  if (pss.flipPagesBgHofs >= 60) {
+    pss.flipPagesBgHofs -= 60;
+    if (pss.flipPagesBgHofs < 0) pss.flipPagesBgHofs = 0;
+    const reg = pss.whichBgLayerToTranslate === 0 ? REG_OFFSET_BG1HOFS : REG_OFFSET_BG2HOFS;
+    SetGpuReg(reg, -pss.flipPagesBgHofs);
+    if (pss.curPageIndex !== PokemonSummaryScreenPage.PSS_PAGE_MOVES_INFO) {
+      SetGpuReg(REG_OFFSET_BG0HOFS, -pss.flipPagesBgHofs);
     }
   }
 }
