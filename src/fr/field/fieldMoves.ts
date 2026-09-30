@@ -22,7 +22,7 @@ import { MAP_OFFSET, MapGridGetElevationAt, MapGridGetMetatileAttributeAt, MapGr
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, type ObjectEvent } from "./objectEvents";
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
-import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_RIDE } from "./playerAvatar";
+import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_NORMAL, PLAYER_AVATAR_GFX_RIDE } from "./playerAvatar";
 import { SetHelpContext } from "../helpSystem";
 import { CalculatePlayerPartyCount } from "../pokemon/mon";
 import { QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode } from "../questLogEvents";
@@ -38,6 +38,7 @@ export class FieldMoveEffects {
   readonly overlays = new Set<Overlay>();
   private readonly pokeballGlowSprites = new Map<Sprite, PokeballGlowSprite>();
   private readonly pokeballGlowBallOwners = new WeakMap<Sprite, Sprite>();
+  private readonly flyBirdPlayerSprites = new WeakMap<Sprite, Sprite>();
   private cutGrassSprites: Sprite[] = [];
   private cutGrassCleanupDone = false;
   /** FLDEFF_SET_FUNC_TO_DATA: the callback run once the show-mon sequence is over. */
@@ -1262,47 +1263,210 @@ export class FieldMoveEffects {
     const ow = this.ow;
     ow.controlsLocked = true;
     ow.objects.freezeAll();
-    this.flyOut(() => {
+    this.FldEff_FlyOut(() => {
       ow.Overworld_ResetStateAfterFly();
       ow.fieldCallback = () => {
         ow.playSpecialMapMusic();
         ow.fadeInFromBlack();
+        if (ow.player.isSurfing()) ow.objects.turn(ow.player.object, DIR_WEST);
         ow.player.SetPlayerInvisibility(true);
         ow.controlsLocked = true;
         ow.objects.freezeAll();
         const wait = tasks.create(() => {
           if (paletteFade.active) return;
           tasks.destroy(wait);
-          this.flyIn(() => { ow.controlsLocked = false; ow.objects.unfreezeAll(); });
+          this.FldEff_FlyIn(() => { ow.controlsLocked = false; ow.objects.unfreezeAll(); });
         }, 0);
       };
       ow.warpIntoMapAndLoad();
     });
   }
 
-  private createBird(): Sprite | undefined {
+  /** CreateFlyBirdSprite (field_effect.c). */
+  private CreateFlyBirdSprite(): Sprite | undefined {
     const bird = this.ow.effects.createFromTemplate("Bird", 255, 180);
     if (!bird) return undefined;
     bird.coordOffsetEnabled = false;
     bird.priority = 1;
     bird.startAnim(0);
+    bird.data[7] = 0;
+    bird.callback = (sprite) => this.SpriteCB_FlyBirdLeaveBall(sprite);
     return bird;
   }
 
-  /** FldEff_FlyOut (sFlyOutFieldEffectFuncs) */
-  private flyOut(done: () => void): void {
+  /** GetFlyBirdAnimCompleted (field_effect.c). */
+  private GetFlyBirdAnimCompleted(sprite: Sprite | undefined): boolean {
+    return sprite !== undefined && sprite.data[7] !== 0;
+  }
+
+  /** SetFlyBirdPlayerSpriteId (field_effect.c). */
+  private SetFlyBirdPlayerSpriteId(bird: Sprite, player: Sprite | undefined): void {
+    if (player) this.flyBirdPlayerSprites.set(bird, player);
+    else this.flyBirdPlayerSprites.delete(bird);
+  }
+
+  /** StartFlyBirdSwoopDown (field_effect.c). */
+  private StartFlyBirdSwoopDown(bird: Sprite): void {
+    bird.callback = (sprite) => this.SpriteCB_FlyBirdSwoopDown(sprite);
+    bird.x = 120;
+    bird.y = 0;
+    bird.x2 = 0;
+    bird.y2 = 0;
+    bird.data.fill(0);
+    bird.data[6] = 0xff;
+    bird.data[7] = 0;
+    this.SetFlyBirdPlayerSpriteId(bird, undefined);
+  }
+
+  /** SpriteCB_FlyBirdLeaveBall (field_effect.c). */
+  private SpriteCB_FlyBirdLeaveBall(sprite: Sprite): void {
+    if (sprite.data[7] !== 0) return;
+    if (sprite.data[0] === 0) {
+      sprite.affineMode = 2;
+      sprite.affineScaleX = 8 / 256;
+      sprite.affineScaleY = 8 / 256;
+      sprite.affineRotation = -30;
+      sprite.x = save.playerGender ? 118 : 128;
+      sprite.y = -48;
+      sprite.data[0] = 1;
+      sprite.data[1] = 64;
+      sprite.data[2] = 256;
+    }
+    sprite.data[1] = (sprite.data[1] ?? 0) + ((sprite.data[2] ?? 0) >> 8);
+    sprite.x2 = Math.round(Math.cos((sprite.data[1]! & 0xff) * Math.PI / 128) * 120);
+    sprite.y2 = Math.round(Math.sin((sprite.data[1]! & 0xff) * Math.PI / 128) * 120);
+    if (sprite.data[2]! < 2048) sprite.data[2] = sprite.data[2]! + 96;
+    // The source affine commands start at 8/256, then add 28/256 for 30 frames.
+    if (sprite.data[3] === 0) {
+      sprite.data[3] = 1;
+      sprite.data[4] = 0;
+    } else if (sprite.data[4]! < 30) {
+      sprite.data[4] = sprite.data[4]! + 1;
+      const t = sprite.data[4]! / 30;
+      sprite.affineScaleX = (8 + 28 * 30 * t) / 256;
+      sprite.affineScaleY = (8 + 28 * 30 * t) / 256;
+      sprite.affineRotation = -30;
+    } else {
+      sprite.affineScaleX = 1;
+      sprite.affineScaleY = 1;
+      sprite.affineRotation = 0;
+    }
+    if (sprite.data[1]! > 129) {
+      sprite.data[7] = 1;
+      sprite.affineMode = 0;
+      sprite.affineScaleX = 1;
+      sprite.affineScaleY = 1;
+    }
+  }
+
+  /** SpriteCB_FlyBirdSwoopDown (field_effect.c). */
+  private SpriteCB_FlyBirdSwoopDown(sprite: Sprite): void {
+    sprite.x2 = Math.round(Math.cos(sprite.data[2]! * Math.PI / 128) * 140);
+    sprite.y2 = Math.round(Math.sin(sprite.data[2]! * Math.PI / 128) * 72);
+    sprite.data[2] = (sprite.data[2]! + 4) & 0xff;
+    this.UpdateFlyBirdPlayerPosition(sprite);
+    if (sprite.data[2]! >= 128) sprite.data[7] = 1;
+  }
+
+  /** SpriteCB_FlyBirdWithPlayer (field_effect.c). */
+  private SpriteCB_FlyBirdWithPlayer(sprite: Sprite): void {
+    if (sprite.data[11] === 1 && sprite.affineMode !== 0) {
+      const scale = Math.max(1, sprite.affineScaleX - 16 / 256);
+      sprite.affineScaleX = scale;
+      sprite.affineScaleY = scale;
+    } else if (sprite.data[11] === 0 && sprite.affineMode !== 0) {
+      sprite.affineScaleX += 24 / 256;
+      sprite.affineScaleY += 24 / 256;
+    }
+    sprite.x2 = Math.round(Math.cos(sprite.data[2]! * Math.PI / 128) * 180);
+    sprite.y2 = Math.round(Math.sin(sprite.data[2]! * Math.PI / 128) * 72);
+    sprite.data[2] = (sprite.data[2]! + 2) & 0xff;
+    this.UpdateFlyBirdPlayerPosition(sprite);
+    if (sprite.data[2]! >= 128) {
+      sprite.data[7] = 1;
+      sprite.affineMode = 0;
+      sprite.affineScaleX = 1;
+      sprite.affineScaleY = 1;
+    }
+  }
+
+  /** DoBirdSpriteWithPlayerAffineAnim (field_effect.c). */
+  private DoBirdSpriteWithPlayerAffineAnim(sprite: Sprite, affineAnimId: number): void {
+    sprite.affineMode = 2;
+    sprite.affineScaleX = affineAnimId === 0 ? 1 : 2;
+    sprite.affineScaleY = sprite.affineScaleX;
+    sprite.data[11] = affineAnimId;
+  }
+
+  /** TryChangeBirdSprite (field_effect.c): end the entry scale animation at identity. */
+  private TryChangeBirdSprite(sprite: Sprite): void {
+    if (sprite.affineMode !== 0 && sprite.affineScaleX === 1) {
+      sprite.affineMode = 0;
+      sprite.startAnim(0);
+      sprite.callback = (s) => this.SpriteCB_FlyBirdSwoopDown(s);
+    }
+  }
+
+  /** StartFlyBirdReturnToBall (field_effect.c). */
+  private StartFlyBirdReturnToBall(sprite: Sprite): void {
+    this.StartFlyBirdSwoopDown(sprite);
+    sprite.callback = (s) => this.SpriteCB_FlyBirdReturnToBall(s);
+  }
+
+  /** SpriteCB_FlyBirdReturnToBall (field_effect.c). */
+  private SpriteCB_FlyBirdReturnToBall(sprite: Sprite): void {
+    if (sprite.data[7] !== 0) return;
+    if (sprite.data[0] === 0) {
+      sprite.affineMode = 2;
+      sprite.affineScaleX = 1;
+      sprite.affineScaleY = 1;
+      sprite.data[0] = 1;
+      sprite.data[1] = 240;
+      sprite.data[2] = 2048;
+      sprite.data[3] = 0;
+      sprite.data[4] = 128;
+      sprite.x = save.playerGender ? 100 : 112;
+      sprite.y = -32;
+    }
+    sprite.data[1] = (sprite.data[1]! + (sprite.data[2]! >> 8)) & 0xff;
+    sprite.data[3] = (sprite.data[3]! + (sprite.data[2]! >> 8)) & 0xffff;
+    sprite.x2 = Math.round(Math.cos(sprite.data[1]! * Math.PI / 128) * 32);
+    sprite.y2 = Math.round(Math.sin(sprite.data[1]! * Math.PI / 128) * 120);
+    if (sprite.data[2]! > 256) sprite.data[2] = sprite.data[2]! - sprite.data[4]!;
+    if (sprite.data[4]! < 256) sprite.data[4] = sprite.data[4]! + 24;
+    if (sprite.data[2]! < 256) sprite.data[2] = 256;
+    if (sprite.data[3]! >= 60) {
+      sprite.data[7] = 1;
+      sprite.affineMode = 0;
+      sprite.invisible = true;
+    }
+  }
+
+  private UpdateFlyBirdPlayerPosition(sprite: Sprite): void {
+    const playerSprite = this.flyBirdPlayerSprites.get(sprite);
+    if (!playerSprite) return;
+    playerSprite.coordOffsetEnabled = false;
+    playerSprite.x = sprite.x + sprite.x2;
+    playerSprite.y = sprite.y + sprite.y2 - 8;
+    playerSprite.x2 = 0;
+    playerSprite.y2 = 0;
+  }
+
+  /** FldEff_FlyOut (field_effect.c). */
+  private FldEff_FlyOut(done: () => void): void {
     const ow = this.ow;
     const player = ow.player.object;
     const wasSurfing = ow.player.isSurfing();
     const partyIndex = this.args[0] < 6 ? this.args[0] : 0;
     let state = 0, timer = 0;
     let bird: Sprite | undefined;
-    let t1 = 0, t2 = 0;
+
     const id = tasks.create(() => {
       switch (state) {
         case 0:
           if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             ow.player.preventStep = true;
+            ow.player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
             ow.player.StartPlayerAvatarSummonMonForFieldMoveAnim();
             ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
             state = 1;
@@ -1322,20 +1486,12 @@ export class FieldMoveEffects {
               ow.effects.setSurfBlobDontSyncAnim(false);
             }
             // SpriteCB_FlyBirdLeaveBall: the bird circles up out of the ball.
-            bird = this.createBird();
-            if (bird) { bird.x = save.playerGender ? 118 : 128; bird.y = -48; }
-            t1 = 64; t2 = 256;
+            bird = this.CreateFlyBirdSprite();
             state = 3;
           }
           break;
         case 3:
-          if (bird) {
-            t1 += t2 >> 8;
-            bird.x2 = Math.round(Math.cos((t1 & 0xff) * Math.PI / 128) * 120);
-            bird.y2 = Math.round(Math.sin((t1 & 0xff) * Math.PI / 128) * 120);
-            if (t2 < 2048) t2 += 96;
-          }
-          if (!bird || t1 > 129) {
+          if (this.GetFlyBirdAnimCompleted(bird)) {
             ow.player.setTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT);
             ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_FACE_LEFT);
             timer = 16;
@@ -1345,92 +1501,143 @@ export class FieldMoveEffects {
         case 4:
           if ((timer === 0 || --timer === 0) && ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
             sound.playSE(C.SE_M_FLY);
-            if (bird) { bird.x = 120; bird.y = 0; bird.x2 = 0; bird.y2 = 0; }
-            t2 = 0; timer = 0;
+            if (bird) this.StartFlyBirdSwoopDown(bird);
+            timer = 0;
             state = 5;
           }
           break;
         case 5:
-          // SpriteCB_FlyBirdSwoopDown, then the player jumps on at frame 8 and rides off at 18.
-          this.swoop(bird, t2, false);
-          t2 = (t2 + 4) & 0xff;
           timer++;
-          if (timer === 8) {
+          if (timer >= 8) {
             ow.player.setState(PLAYER_AVATAR_GFX_RIDE);
+            player.sprite.startAnim(C.ANIM_GET_ON_OFF_POKEMON_WEST);
+            player.inanimate = true;
             ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT);
+            timer = 0;
+            state = 6;
           }
-          if (timer === 18) {
-            ow.objects.clearHeldMovementIfActive(player);
-            ow.player.SetPlayerInvisibility(true);
-            bird?.startAnim(save.playerGender * 2 + 1);
-          }
-          if (t2 >= 128 || t2 === 0) { ow.tryFadeOutOldMapMusic(); ow.warpFadeOutScreen(); state = 6; }
           break;
         case 6:
-          this.swoop(bird, t2, false);
-          t2 = Math.min(255, t2 + 4);
+          if (++timer >= 10) {
+            ow.objects.clearHeldMovementIfActive(player);
+            player.inanimate = false;
+            player.hasShadow = false;
+            bird?.startAnim(save.playerGender * 2 + 1);
+            if (bird) {
+              this.SetFlyBirdPlayerSpriteId(bird, player.sprite);
+              this.DoBirdSpriteWithPlayerAffineAnim(bird, 0);
+              bird.callback = (sprite) => this.SpriteCB_FlyBirdWithPlayer(sprite);
+            }
+            state = 7;
+          }
+          break;
+        case 7:
+          if (this.GetFlyBirdAnimCompleted(bird)) { ow.warpFadeOutScreen(); state = 8; }
+          break;
+        case 8:
           if (!paletteFade.active) {
             if (bird) ow.sprites.destroy(bird);
             ow.player.SetPlayerInvisibility(false);
             ow.player.preventStep = false;
+            this.active.delete(C.FLDEFF_FLY_OUT);
             tasks.destroy(id);
             done();
           }
           break;
       }
     }, 0xfe);
+    this.active.add(C.FLDEFF_FLY_OUT);
   }
 
-  private swoop(bird: Sprite | undefined, angle: number, _returning: boolean): void {
-    if (!bird) return;
-    bird.x2 = Math.round(Math.cos(angle * Math.PI / 128) * 140);
-    bird.y2 = Math.round(Math.sin(angle * Math.PI / 128) * 72);
-  }
-
-  /** FldEff_FlyIn (sFlyInFieldEffectFuncs): the bird carries the player down and flies off. */
-  private flyIn(done: () => void): void {
+  /** FldEff_FlyIn (field_effect.c): the bird carries the player down and flies off. */
+  private FldEff_FlyIn(done: () => void): void {
     const ow = this.ow;
     const player = ow.player.object;
     const wasSurfing = ow.player.isSurfing();
-    if (wasSurfing) ow.effects.setSurfBlobBobState(C.BOB_NONE);
-    const bird = this.createBird();
-    if (bird) { bird.x = 120; bird.y = 0; bird.startAnim(save.playerGender * 2 + 1); }
-    sound.playSE(C.SE_M_FLY);
-    let angle = 128, state = 0, timer = 0;
+    const avatarFlags = ow.player.flags;
+    const jumpOffsets = [-2, -4, -5, -6, -7, -8, -8, -8, -7, -7, -6, -5, -3, -2, 0, 2, 4, 8];
+    let state = 0, timer = 0;
+    let bird: Sprite | undefined;
     const id = tasks.create(() => {
       switch (state) {
         case 0:
-          // Swoop in from the right to the player's position.
-          this.swoop(bird, angle, true);
-          angle = (angle + 4) & 0xff;
-          if (angle === 0 || angle >= 252) {
-            if (bird) { bird.startAnim(0); }
-            ow.player.SetPlayerInvisibility(false);
+          if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
+            ow.player.preventStep = true;
+            ow.player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
+            if (wasSurfing) ow.effects.setSurfBlobBobState(C.BOB_NONE);
             ow.player.setState(PLAYER_AVATAR_GFX_RIDE);
             ow.objects.turn(player, DIR_WEST);
-            ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT);
+            player.sprite.startAnim(C.ANIM_GET_ON_OFF_POKEMON_WEST);
+            ow.player.SetPlayerInvisibility(false);
+            bird = this.CreateFlyBirdSprite();
+            if (bird) {
+              this.StartFlyBirdSwoopDown(bird);
+              this.SetFlyBirdPlayerSpriteId(bird, player.sprite);
+              bird.startAnim(save.playerGender * 2 + 2);
+              this.DoBirdSpriteWithPlayerAffineAnim(bird, 1);
+              bird.callback = (sprite) => this.SpriteCB_FlyBirdWithPlayer(sprite);
+            }
+            timer = 33;
             state = 1;
           }
           break;
         case 1:
-          if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-            ow.player.setState(wasSurfing ? PLAYER_AVATAR_GFX_RIDE : ow.player.currentStateId());
-            ow.objects.turn(player, DIR_SOUTH);
+          if (bird) this.TryChangeBirdSprite(bird);
+          if (timer === 0 || --timer === 0) {
+            if (bird) this.SetFlyBirdPlayerSpriteId(bird, undefined);
+            player.sprite.x += player.sprite.x2;
+            player.sprite.y += player.sprite.y2;
+            player.sprite.x2 = 0;
+            player.sprite.y2 = 0;
             timer = 0;
             state = 2;
           }
           break;
         case 2:
-          if (bird) { bird.y2 -= 6; bird.x2 += 2; }
-          if (++timer >= 30) {
-            if (bird) ow.sprites.destroy(bird);
+          player.sprite.y2 = jumpOffsets[timer] ?? 0;
+          if (++timer >= jumpOffsets.length) state = 3;
+          break;
+        case 3:
+          if (this.GetFlyBirdAnimCompleted(bird)) {
+            player.inanimate = false;
+            ow.player.MovePlayerToMapCoords(player.currentCoords.x, player.currentCoords.y);
+            player.sprite.x2 = 0;
+            player.sprite.y2 = 0;
+            player.sprite.coordOffsetEnabled = true;
+            ow.player.StartPlayerAvatarSummonMonForFieldMoveAnim();
+            ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
+            state = 4;
+          }
+          break;
+        case 4:
+          if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
+            if (bird) this.StartFlyBirdReturnToBall(bird);
+            state = 5;
+          }
+          break;
+        case 5:
+          if (this.GetFlyBirdAnimCompleted(bird)) {
+            ow.sprites.destroy(bird);
+            bird = undefined;
+            timer = 16;
+            state = 6;
+          }
+          break;
+        case 6:
+          if (--timer === 0) {
+            ow.player.setState(wasSurfing ? PLAYER_AVATAR_GFX_RIDE : PLAYER_AVATAR_GFX_NORMAL);
             if (wasSurfing) ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
+            ow.objects.turn(player, DIR_SOUTH);
+            ow.player.flags = avatarFlags;
+            ow.player.preventStep = false;
+            this.active.delete(C.FLDEFF_FLY_IN);
             tasks.destroy(id);
             done();
           }
           break;
       }
     }, 0xfe);
+    this.active.add(C.FLDEFF_FLY_IN);
   }
 
   render(ctx: CanvasRenderingContext2D): void {
