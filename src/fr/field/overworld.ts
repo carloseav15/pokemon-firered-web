@@ -516,9 +516,8 @@ export class Overworld {
   Overworld_ResetStateAfterFly(): void { this.resetStateAfterWarpOut(); }
   Overworld_ResetStateAfterWhitingOut(): void { this.resetStateAfterWarpOut(); }
 
-  /** Overworld_ResetStateOnContinue (overworld.c): run before CB2_ContinueSavedGame and
-   * CB2_EnterFieldFromQuestLog apply their warp (only the former is wired here; Quest Log
-   * playback re-entry is still unmodeled, see PENDING.md). */
+  /** Overworld_ResetStateOnContinue (overworld.c): restore Safari/roamer state before
+   * saved-game continuation and the Quest Log playback return warp. */
   Overworld_ResetStateOnContinue(): void {
     flagClear(rom.constants.FLAG_SYS_SAFARI_MODE);
     varSet(rom.constants.VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 0);
