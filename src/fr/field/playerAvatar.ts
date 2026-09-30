@@ -15,7 +15,7 @@ import {
   actionFace, actionJump2, actionJumpInPlace, actionJumpSpecial, actionPlayerRun, actionRideWaterCurrent, actionSpin, actionWalkFast, actionWalkInPlaceFast,
   actionWalkInPlaceSlow, actionWalkNormal, actionWalkSlow, COLLISION_DIRECTIONAL_STAIR_WARP, COLLISION_ELEVATION_MISMATCH, COLLISION_LEDGE_JUMP,
   actionWalkSlower, COLLISION_NONE, COLLISION_OBJECT_EVENT, COLLISION_PUSHED_BOULDER, COLLISION_STOP_SURFING, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, OPPOSITE,
-  DIRECTION_VECTORS, graphicsInfo, OBJECT_EVENTS_COUNT, type ObjectEvent,
+  DIRECTION_VECTORS, GetObjectEventIdByXY, graphicsInfo, OBJECT_EVENTS_COUNT, type ObjectEvent,
 } from "./objectEvents";
 import type { Overworld } from "./overworld";
 
@@ -1278,7 +1278,7 @@ export class PlayerAvatar {
   /** TryPushBoulder (field_player_avatar.c). */
   private TryPushBoulder(x: number, y: number, direction: number): boolean {
     if (!flagGet(rom.constants.FLAG_SYS_USE_STRENGTH ?? 0)) return false;
-    const objectEventId = this.ow.objects.GetObjectEventIdByXY(x, y);
+    const objectEventId = GetObjectEventIdByXY(this.ow.objects, x, y);
     const boulder = objectEventId === OBJECT_EVENTS_COUNT ? undefined : this.ow.objects.objects[objectEventId] ?? undefined;
     if (!boulder || boulder.graphicsId !== rom.constants.OBJ_EVENT_GFX_PUSHABLE_BOULDER) return false;
     const [dx, dy] = DIRECTION_VECTORS[direction];

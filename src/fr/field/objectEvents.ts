@@ -800,7 +800,7 @@ export class ObjectEvents {
   /** GetObjectEventIdByLocalIdAndMap: reserved IDs do not use map identity. */
   byLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): ObjectEvent | undefined {
     const objectEventId = { value: OBJECT_EVENTS_COUNT };
-    if (this.TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, objectEventId)) return undefined;
+    if (TryGetObjectEventIdByLocalIdAndMap(this, localId, mapNum, mapGroup, objectEventId)) return undefined;
     return this.objects[objectEventId.value] ?? undefined;
   }
 
@@ -809,7 +809,7 @@ export class ObjectEvents {
   }
 
   private freeSlot(): number {
-    const objectEventId = this.GetFirstInactiveObjectEventId();
+    const objectEventId = GetFirstInactiveObjectEventId(this);
     return objectEventId === OBJECT_EVENTS_COUNT ? -1 : objectEventId;
   }
 
@@ -842,13 +842,13 @@ export class ObjectEvents {
 
   GetObjectEventIdByLocalIdAndMap(localId: number, mapNum: number, mapGroupId: number): number {
     localId &= 0xff;
-    if (localId < LOCALID_PLAYER) return this.GetObjectEventIdByLocalIdAndMapInternal(localId, mapNum, mapGroupId);
-    return this.GetObjectEventIdByLocalId(localId);
+    if (localId < LOCALID_PLAYER) return GetObjectEventIdByLocalIdAndMapInternal(this, localId, mapNum, mapGroupId);
+    return GetObjectEventIdByLocalId(this, localId);
   }
 
   /** The C helper returns TRUE when the object is absent and writes the sentinel ID. */
   TryGetObjectEventIdByLocalIdAndMap(localId: number, mapNum: number, mapGroupId: number, objectEventId: { value: number }): boolean {
-    objectEventId.value = this.GetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroupId);
+    objectEventId.value = GetObjectEventIdByLocalIdAndMap(this, localId, mapNum, mapGroupId);
     return objectEventId.value === OBJECT_EVENTS_COUNT;
   }
 
@@ -1178,7 +1178,7 @@ export class ObjectEvents {
     for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
       const object = this.objects[i];
       if (object?.active && object.currentCoords.x === x && object.currentCoords.y === y
-        && this.ObjectEventDoesElevationMatch(object, elevation)) return i;
+        && ObjectEventDoesElevationMatch(this, object, elevation)) return i;
     }
     return OBJECT_EVENTS_COUNT;
   }
@@ -1196,18 +1196,18 @@ export class ObjectEvents {
 
   /** EnableObjectGroundEffectsByXY (event_object_movement.c). */
   EnableObjectGroundEffectsByXY(x: number, y: number): void {
-    const objectEventId = this.GetObjectEventIdByXY(x, y);
+    const objectEventId = GetObjectEventIdByXY(this, x, y);
     if (objectEventId !== OBJECT_EVENTS_COUNT) this.objects[objectEventId]!.triggerGroundEffectsOnMove = true;
   }
 
   /** ObjectEventDoesElevationMatch (event_object_movement.c). */
-  private ObjectEventDoesElevationMatch(object: ObjectEvent, elevation: number): boolean {
+  objectEventDoesElevationMatch(object: ObjectEvent, elevation: number): boolean {
     return object.currentElevation === 0 || elevation === 0 || object.currentElevation === elevation;
   }
 
   /** Return the object at the C GetObjectEventIdByPosition coordinates. */
   objectAtXYZ(x: number, y: number, elevation: number): ObjectEvent | undefined {
-    const objectId = this.GetObjectEventIdByPosition(x, y, elevation);
+    const objectId = GetObjectEventIdByPosition(this, x, y, elevation);
     return objectId === OBJECT_EVENTS_COUNT ? undefined : this.objects[objectId] ?? undefined;
   }
 
@@ -3129,6 +3129,26 @@ export class ObjectEvents {
   private MovementType_RaiseHandAndMove_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
   private MovementType_RaiseHandAndSwim_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
 }
+
+/** event_object_movement.c object lookup family; callers retain the ObjectEvents runtime context. */
+export function GetObjectEventIdByPosition(events: ObjectEvents, x: number, y: number, elevation: number): number {
+  return events.GetObjectEventIdByPosition(x & 0xffff, y & 0xffff, elevation & 0xff);
+}
+export function ObjectEventDoesElevationMatch(events: ObjectEvents, object: ObjectEvent, elevation: number): boolean {
+  return events.objectEventDoesElevationMatch(object, elevation & 0xff);
+}
+export function GetFirstInactiveObjectEventId(events: ObjectEvents): number { return events.GetFirstInactiveObjectEventId(); }
+export function GetObjectEventIdByLocalIdAndMap(events: ObjectEvents, localId: number, mapNum: number, mapGroupId: number): number {
+  return events.GetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroupId);
+}
+export function TryGetObjectEventIdByLocalIdAndMap(events: ObjectEvents, localId: number, mapNum: number, mapGroupId: number, objectEventId: { value: number }): boolean {
+  return events.TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroupId, objectEventId);
+}
+export function GetObjectEventIdByXY(events: ObjectEvents, x: number, y: number): number { return events.GetObjectEventIdByXY(x, y); }
+export function GetObjectEventIdByLocalIdAndMapInternal(events: ObjectEvents, localId: number, mapNum: number, mapGroupId: number): number {
+  return events.GetObjectEventIdByLocalIdAndMapInternal(localId, mapNum, mapGroupId);
+}
+export function GetObjectEventIdByLocalId(events: ObjectEvents, localId: number): number { return events.GetObjectEventIdByLocalId(localId); }
 
 /** GetCollisionFlagsAtCoords (event_object_movement.c). */
 export function GetCollisionFlagsAtCoords(objects: ObjectEvents, object: ObjectEvent, x: number, y: number, direction: number): number {

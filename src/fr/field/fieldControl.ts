@@ -9,7 +9,7 @@ import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD
 import { rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET } from "./fieldmap";
-import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
+import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, GetObjectEventIdByLocalId, GetObjectEventIdByLocalIdAndMap } from "./objectEvents";
 import { GetPlayerMovementDirection, MOVING, PlayerGetDestCoords, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_FORCED, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_SPEED_FASTEST, T_NOT_MOVING, T_TILE_CENTER } from "./playerAvatar";
 import type { Overworld } from "./overworld";
 import { UpdateVsSeekerStepCounter } from "./vsSeeker";
@@ -175,8 +175,8 @@ export class FieldControl {
 
   private applyQuestLogCommands(commands: QuestLogPlaybackCommands): void {
     for (const command of commands.movements) {
-      const objectId = command.localId === 0 ? this.ow.objects.GetObjectEventIdByLocalId(0)
-        : this.ow.objects.GetObjectEventIdByLocalIdAndMap(command.localId, command.mapNum, command.mapGroup);
+      const objectId = command.localId === 0 ? GetObjectEventIdByLocalId(this.ow.objects, 0)
+        : GetObjectEventIdByLocalIdAndMap(this.ow.objects, command.localId, command.mapNum, command.mapGroup);
       const object = this.ow.objects.objects[objectId];
       if (object?.active) this.ow.objects.setHeldMovement(object, command.movementActionId);
     }
