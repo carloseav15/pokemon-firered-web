@@ -50,6 +50,24 @@ type MapPosition = { x: number; y: number; elevation: number };
 export function GetPlayerPosition(control: FieldControl): MapPosition { return control.getPlayerPosition(); }
 export function GetInFrontOfPlayerPosition(control: FieldControl): MapPosition { return control.getInFrontOfPlayerPosition(); }
 export function GetPlayerCurMetatileBehavior(control: FieldControl): number { return control.getPlayerCurMetatileBehavior(); }
+export function TryStartInteractionScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): boolean {
+  return control.tryStartInteractionScript(position, behavior, direction);
+}
+export function GetInteractionScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): number {
+  return control.getInteractionScript(position, behavior, direction);
+}
+export function GetInteractedObjectEventScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): number {
+  return control.getInteractedObjectEventScript(position, behavior, direction);
+}
+export function GetInteractedBackgroundEventScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): number {
+  return control.getInteractedBackgroundEventScript(position, behavior, direction);
+}
+export function GetInteractedMetatileScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): number {
+  return control.getInteractedMetatileScript(position, behavior, direction);
+}
+export function GetInteractedWaterScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): number {
+  return control.getInteractedWaterScript(position, behavior, direction);
+}
 
 function emptyInput(): FieldInput {
   const input = {} as FieldInput;
@@ -281,7 +299,7 @@ export class FieldControl {
     const front = GetInFrontOfPlayerPosition(this);
     const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
     if (input.heldDirection && input.dpadDirection === direction && this.TrySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
-    if (input.pressedAButton && this.TryStartInteractionScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
+    if (input.pressedAButton && TryStartInteractionScript(this, front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
     if (input.heldDirection2 && input.dpadDirection === direction && this.TryDoorWarp(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection2"); return true; }
     if (input.pressedStartButton) {
       flagSet(rom.c("FLAG_OPENED_START_MENU"));
@@ -327,8 +345,8 @@ export class FieldControl {
   // ---------------------------------------------------------------- interactions
 
   /** TryStartInteractionScript (field_control_avatar.c). */
-  private TryStartInteractionScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): boolean {
-    const script = this.GetInteractionScript(position, behavior, direction);
+  tryStartInteractionScript(position: MapPosition, behavior: number, direction: number): boolean {
+    const script = GetInteractionScript(this, position, behavior, direction);
     if (!script) return false;
     const noSound = [rom.label("PalletTown_PlayersHouse_2F_EventScript_PC"), rom.label("EventScript_PC")];
     if (!noSound.includes(script)) sound.playSE(sound.SE_SELECT);
@@ -337,15 +355,15 @@ export class FieldControl {
   }
 
   /** GetInteractionScript (field_control_avatar.c): preserve the C lookup order. */
-  private GetInteractionScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
-    return this.GetInteractedObjectEventScript(position, behavior, direction)
-      || this.GetInteractedBackgroundEventScript(position, behavior, direction)
-      || this.GetInteractedMetatileScript(behavior, direction)
-      || this.GetInteractedWaterScript(behavior);
+  getInteractionScript(position: MapPosition, behavior: number, direction: number): number {
+    return GetInteractedObjectEventScript(this, position, behavior, direction)
+      || GetInteractedBackgroundEventScript(this, position, behavior, direction)
+      || GetInteractedMetatileScript(this, position, behavior, direction)
+      || GetInteractedWaterScript(this, position, behavior, direction);
   }
 
   /** GetInteractedObjectEventScript (field_control_avatar.c), for the single-player map. */
-  private GetInteractedObjectEventScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
+  getInteractedObjectEventScript(position: MapPosition, behavior: number, direction: number): number {
     let object = this.ow.objects.objectAtXYZ(position.x, position.y, position.elevation);
     if (!object || object.isPlayer) {
       if (!MB.MetatileBehavior_IsCounter(behavior)) return 0;
@@ -365,7 +383,7 @@ export class FieldControl {
     const direction = GetPlayerMovementDirection();
     const position = GetInFrontOfPlayerPosition(this);
     const behavior = this.ow.map.behaviorAt(position.x, position.y);
-    return this.GetInteractedObjectEventScript(position, behavior, direction);
+    return GetInteractedObjectEventScript(this, position, behavior, direction);
   }
 
   /** dive_warp (field_control_avatar.c): the generic C Dive task calls this after showing the
@@ -407,7 +425,7 @@ export class FieldControl {
   }
 
   /** GetInteractedBackgroundEventScript (field_control_avatar.c). */
-  private GetInteractedBackgroundEventScript(position: { x: number; y: number; elevation: number }, behavior: number, direction: number): number {
+  getInteractedBackgroundEventScript(position: MapPosition, behavior: number, direction: number): number {
     const bg = this.GetBackgroundEventAtPosition(position.x - MAP_OFFSET, position.y - MAP_OFFSET, position.elevation);
     if (!bg) return 0;
     if (bg.type === "hidden_item") {
@@ -434,7 +452,7 @@ export class FieldControl {
   }
 
   /** GetInteractedMetatileScript (field_control_avatar.c). */
-  private GetInteractedMetatileScript(behavior: number, direction: number): number {
+  getInteractedMetatileScript(_position: MapPosition, behavior: number, direction: number): number {
     varSet(SV.FACING, direction);
     const table: Array<[(b: number, d: number) => boolean, string, boolean?]> = [
       [MB.MetatileBehavior_IsPC, "EventScript_PC"],
@@ -482,7 +500,7 @@ export class FieldControl {
   }
 
   /** GetInteractedWaterScript (field_control_avatar.c); direction is unused by C. */
-  private GetInteractedWaterScript(behavior: number): number {
+  getInteractedWaterScript(_position: MapPosition, behavior: number, _direction: number): number {
     const player = this.ow.player;
     if (MB.MetatileBehavior_IsFastWater(behavior) && player.PartyHasMonWithSurf()) return rom.label("EventScript_CurrentTooFast");
     if (flagGet(rom.c("FLAG_BADGE05_GET")) && player.PartyHasMonWithSurf() && player.IsPlayerFacingSurfableFishableWater()) return rom.label("EventScript_UseSurf");
