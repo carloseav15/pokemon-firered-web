@@ -8,7 +8,7 @@ import { cdata } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
-import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
+import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet, flagSet, varGet } from "../save";
 import { gQuestLogPlaybackState, QL_GetPlaybackState, QuestLogRecordNPCStep } from "../questLogEvents";
 import { CONNECTION_INVALID, MAP_OFFSET, MAP_OFFSET_H, MAP_OFFSET_W, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
@@ -2666,15 +2666,27 @@ export class ObjectEvents {
     SetJumpSpriteData(s, direction, distance, type);
     s.data[2] = 1;
     s.animPaused = false;
-    object.landingJump = true;
     object.triggerGroundEffectsOnMove = true;
     object.disableCoveringGroundEffects = true;
     if (shadow) this.hooks.startShadow?.(object);
   }
 
+  /** InitJumpRegular (event_object_movement.c). */
+  InitJumpRegular(object: ObjectEvent, sprite: Sprite, direction: number, distance: number, type: number): void {
+    this.initJump(object, direction, distance, type);
+    this.setStepAnimHandleAlternation(object, moveAnim(object.facingDirection));
+    this.hooks.startShadow?.(object);
+  }
+
+  /** InitJumpSpecial (event_object_movement.c). */
+  InitJumpSpecial(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.initJump(object, direction, JUMP_DISTANCE_NORMAL, JUMP_TYPE_HIGH);
+    sprite.startAnim(GetJumpSpecialDirectionAnimNum(direction));
+  }
+
   /** DoJumpSpriteMovement */
-  private doJump(object: ObjectEvent, special = false): number {
-    const s = object.sprite;
+  private doJump(object: ObjectEvent, special = false, sprite = object.sprite): number {
+    const s = sprite;
     const distance = s.data[4];
     let phase = 0;
     if (!special) {
@@ -2698,9 +2710,14 @@ export class ObjectEvents {
   }
 
   private updateJump(object: ObjectEvent, special = false): number {
-    const phase = this.doJump(object, special);
-    if (phase === JUMP_HALFWAY && object.sprite.data[4] !== JUMP_DISTANCE_IN_PLACE) {
-      const displacement = [0, 0, 1][object.sprite.data[4]] ?? 0;
+    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.doJump(object, special, sprite));
+  }
+
+  /** UpdateJumpAnim (event_object_movement.c): apply halfway and landing coordinate transitions. */
+  UpdateJumpAnim(object: ObjectEvent, sprite: Sprite, callback: (sprite: Sprite) => number): number {
+    const phase = callback(sprite);
+    if (phase === JUMP_HALFWAY && sprite.data[4] !== JUMP_DISTANCE_IN_PLACE) {
+      const displacement = [0, 0, 1][sprite.data[4]] ?? 0;
       if (displacement !== 0) {
         const [dx, dy] = DIRECTION_VECTORS[object.movementDirection & 0xff]!;
         this.shiftCoords(
@@ -2716,20 +2733,39 @@ export class ObjectEvents {
       this.shiftStill(object);
       object.triggerGroundEffectsOnStop = true;
       object.landingJump = true;
-      object.hasShadow = false;
-      object.sprite.animPaused = true;
+      sprite.animPaused = true;
     }
     return phase;
   }
 
   /** event_object_movement.c DoJumpAnimStep. */
   private DoJumpAnimStep(object: ObjectEvent): number {
-    return this.updateJump(object);
+    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.doJump(object, false, sprite));
   }
 
   /** event_object_movement.c DoJumpSpecialAnimStep. */
   private DoJumpSpecialAnimStep(object: ObjectEvent): number {
-    return this.updateJump(object, true);
+    return this.UpdateJumpAnim(object, object.sprite, (sprite) => this.doJump(object, true, sprite));
+  }
+
+  /** DoJumpAnim (event_object_movement.c). */
+  DoJumpAnim(object: ObjectEvent, sprite: Sprite): boolean {
+    return this.UpdateJumpAnim(object, sprite, (currentSprite) => this.doJump(object, false, currentSprite)) === JUMP_FINISHED;
+  }
+
+  /** DoJumpSpecialAnim (event_object_movement.c). */
+  DoJumpSpecialAnim(object: ObjectEvent, sprite: Sprite): boolean {
+    return this.UpdateJumpAnim(object, sprite, (currentSprite) => this.doJump(object, true, currentSprite)) === JUMP_FINISHED;
+  }
+
+  /** DoJumpInPlaceAnim (event_object_movement.c). */
+  DoJumpInPlaceAnim(object: ObjectEvent, sprite: Sprite): boolean {
+    const phase = this.UpdateJumpAnim(object, sprite, (currentSprite) => this.doJump(object, false, currentSprite));
+    if (phase === JUMP_HALFWAY) {
+      this.SetObjectEventDirection(object, OPPOSITE[object.movementDirection]);
+      this.setStepAnim(object, moveAnim(object.facingDirection));
+    }
+    return phase === JUMP_FINISHED;
   }
 
   private initMoveInPlace(object: ObjectEvent, direction: number, anim: number, duration: number): void {
@@ -2795,10 +2831,9 @@ export class ObjectEvents {
     // Jump 2 (far jump)
     if (id >= 0x14 && id <= 0x17) {
       if (step === 0) {
-        this.initJump(object, dirOf(0x14), JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH, true);
-        this.setStepAnim(object, moveAnim(object.facingDirection));
+        this.InitJumpRegular(object, s, dirOf(0x14), JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
       }
-      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
+      if (this.DoJumpAnim(object, s)) { object.hasShadow = false; return this.finishStep(object); }
       return false;
     }
     // Delays
@@ -2875,11 +2910,8 @@ export class ObjectEvents {
     }
     // Jump special (ledge-like hops with special timing)
     if (id >= 0x46 && id <= 0x49) {
-      if (step === 0) {
-        this.initJump(object, dirOf(0x46), JUMP_DISTANCE_NORMAL, JUMP_TYPE_HIGH);
-        this.setStepAnim(object, moveAnim(object.facingDirection));
-      }
-      if (this.DoJumpSpecialAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
+      if (step === 0) this.InitJumpSpecial(object, s, dirOf(0x46));
+      if (this.DoJumpSpecialAnim(object, s)) { object.landingJump = false; return this.finishStep(object); }
       return false;
     }
     // Face player / away
@@ -2894,11 +2926,8 @@ export class ObjectEvents {
     if (id === 0x4d) { object.facingDirectionLocked = false; return this.finishStep(object); }
     // Jump (ledges)
     if (id >= 0x4e && id <= 0x51) {
-      if (step === 0) {
-        this.initJump(object, dirOf(0x4e), JUMP_DISTANCE_NORMAL, JUMP_TYPE_NORMAL, true);
-        this.setStepAnim(object, moveAnim(object.facingDirection));
-      }
-      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
+      if (step === 0) this.InitJumpRegular(object, s, dirOf(0x4e), JUMP_DISTANCE_NORMAL, JUMP_TYPE_NORMAL);
+      if (this.DoJumpAnim(object, s)) { object.hasShadow = false; return this.finishStep(object); }
       return false;
     }
     // Jump in place
@@ -2906,15 +2935,10 @@ export class ObjectEvents {
       const pairs: Array<[number, number]> = [[DIR_SOUTH, DIR_SOUTH], [DIR_NORTH, DIR_NORTH], [DIR_WEST, DIR_WEST], [DIR_EAST, DIR_EAST], [DIR_SOUTH, DIR_NORTH], [DIR_NORTH, DIR_SOUTH], [DIR_WEST, DIR_EAST], [DIR_EAST, DIR_WEST]];
       const [first, second] = pairs[id - 0x52];
       if (step === 0) {
-        this.initJump(object, first, JUMP_DISTANCE_IN_PLACE, JUMP_TYPE_LOW, true);
-        this.setStepAnim(object, moveAnim(object.facingDirection));
+        this.InitJumpRegular(object, s, first, JUMP_DISTANCE_IN_PLACE, first === second ? JUMP_TYPE_HIGH : JUMP_TYPE_NORMAL);
       }
-      const phase = this.DoJumpAnimStep(object);
-      if (phase === JUMP_HALFWAY && first !== second) {
-        this.setDirection(object, second);
-        this.setStepAnim(object, moveAnim(object.facingDirection));
-      }
-      if (phase === JUMP_FINISHED) { object.landingJump = false; return this.finishStep(object); }
+      const finished = first === second ? this.DoJumpAnim(object, s) : this.DoJumpInPlaceAnim(object, s);
+      if (finished) { object.hasShadow = false; return this.finishStep(object); }
       return false;
     }
     if (id === 0x5a) {
@@ -3120,11 +3144,8 @@ export class ObjectEvents {
       return false;
     }
     if (id >= 0xa6 && id <= 0xa9) {
-      if (step === 0) {
-        this.initJump(object, dirOf(0xa6), JUMP_DISTANCE_NORMAL, JUMP_TYPE_HIGH);
-        this.setStepAnim(object, moveAnim(object.facingDirection));
-      }
-      if (this.DoJumpSpecialAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
+      if (step === 0) this.InitJumpSpecial(object, s, dirOf(0xa6));
+      if (this.DoJumpSpecialAnim(object, s)) return this.finishStep(object);
       return false;
     }
     // Acro bike movement actions (event_object_movement.c).
