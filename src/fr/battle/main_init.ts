@@ -125,7 +125,7 @@ function CB2_InitBattleInternal(): void {
   SetMainCallback2(CB2_HandleStartBattle);
   if (!(G.gBattleTypeFlags & C.BATTLE_TYPE_LINK)) {
     CreateNPCTrainerParty(G.gTrainerBattleOpponent_A);
-    battleHost.setWildMonHeldItem();
+    battleHost.SetWildMonHeldItem();
   }
   gMain.inBattle = true;
   for (let p = 0; p < 6; p++) AdjustFriendship(playerMon(p), C.FRIENDSHIP_EVENT_LEAGUE_BATTLE);

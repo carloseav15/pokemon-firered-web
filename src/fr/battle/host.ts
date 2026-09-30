@@ -98,8 +98,8 @@ export const battleHost = {
     return game ? game.battleSetup.GetTrainerWonSpeech() : new Uint8Array([0xff]);
   },
 
-  /** pokemon.c SetWildMonHeldItem */
-  setWildMonHeldItem(): void {
+  /** SetWildMonHeldItem (pokemon.c), invoked after creating the wild opponent. */
+  SetWildMonHeldItem(): void {
     if (G.gBattleTypeFlags & (C.BATTLE_TYPE_POKEDUDE | C.BATTLE_TYPE_LEGENDARY | C.BATTLE_TYPE_TRAINER)) return;
     const rnd = random() % 100;
     const species = GetMonData(gEnemyParty[0], C.MON_DATA_SPECIES);
