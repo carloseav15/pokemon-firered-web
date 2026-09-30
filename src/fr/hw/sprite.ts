@@ -95,7 +95,7 @@ function s16(v: number): number {
   return (v << 16) >> 16;
 }
 
-export const SpriteCallbackDummy: SpriteCallback = () => {};
+export function SpriteCallbackDummy(_sprite: Sprite): void {}
 
 export const gDummyOamData: OamData = oamData({ y: 160, x: 304, priority: 3 });
 export const gDummySpriteAnimTable: AnimCmd[][] = [[ANIMCMD_END]];
