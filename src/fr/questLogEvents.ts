@@ -420,6 +420,16 @@ export function QL_TryRunActions(controlsLocked: boolean): void {
   sNextActionDelay = (sNextActionDelay + 1) & 0xffff;
 }
 
+/** QL_UpdateLastDepartedLocation (quest_log_events.c): read locationId from the packed event body. */
+export function QL_UpdateLastDepartedLocation(eventData: ArrayLike<number> | null): void {
+  if (eventData === null || ((eventData[0] ?? 0) & C.QL_CMD_EVENT_MASK) !== C.QL_EVENT_DEPARTED) {
+    sLastDepartedLocation = 0;
+    return;
+  }
+  // QL_EVENT_DEPARTED stores mapSec and locationId in adjacent bytes of its first u16.
+  sLastDepartedLocation = ((((eventData[2] ?? 0) & 0xffff) >>> 8) & 0xff) + 1;
+}
+
 /** ReadQuestLogScriptFromSav1 (quest_log.c): separate packed actions and event records in script order. */
 export function ReadQuestLogScriptFromSav1(eventIndex: number): QuestLogScriptEntry[] {
   const scene = save.questLogScenes?.find((entry) => entry.eventIndex === eventIndex);
@@ -453,10 +463,7 @@ export function ReadQuestLogScriptFromSav1(eventIndex: number): QuestLogScriptEn
         cursor,
       };
       entries.push({ kind: "event", event });
-      if (eventNum++ === 0) {
-        if (command === C.QL_EVENT_DEPARTED) sLastDepartedLocation = ((payloads[0]?.[0] ?? 0) >>> 8) + 1;
-        else sLastDepartedLocation = 0;
-      }
+      if (eventNum++ === 0) QL_UpdateLastDepartedLocation(script.slice(cursor));
       cursor = next;
       continue;
     }
