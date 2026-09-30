@@ -36,6 +36,8 @@ export function VBlankCB_Copyright(): void {
 export function CB2_WaitFadeBeforeSetUpIntro(screen: IntroCopyright): boolean {
   return screen.waitFadeBeforeSetupIntro();
 }
+/** intro.c SetUpCopyrightScreen single-player path; GameCube multiboot uses serial callbacks. */
+export function SetUpCopyrightScreen(screen: IntroCopyright): void { screen.begin(); }
 
 export class IntroCopyright {
   private frame = 0;

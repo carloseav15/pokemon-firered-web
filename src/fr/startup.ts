@@ -2,7 +2,7 @@
 // constants, callbacks and the GBA-style TS hardware layer; Oak and naming
 // use oak_speech.c / naming_screen.c texts, options and flow.
 import { launchFireRed, type LaunchOptions } from "./boot";
-import { CB2_WaitFadeBeforeSetUpIntro, IntroCopyright } from "./introCopyright";
+import { CB2_WaitFadeBeforeSetUpIntro, IntroCopyright, SetUpCopyrightScreen } from "./introCopyright";
 import { CB2_Intro, CB2_SetUpIntro, IntroGameFreak, StartIntroSequence } from "./introGameFreak";
 import { IntroScene1 } from "./introScene1";
 import { IntroScene2 } from "./introScene2";
@@ -78,7 +78,7 @@ class Startup {
       }
       joy.release(buttons);
     };
-    this.copyright.begin();
+    SetUpCopyrightScreen(this.copyright);
     window.addEventListener("keydown", this.keydown);
     this.raf = requestAnimationFrame(this.tick);
     this.canvas.focus();
