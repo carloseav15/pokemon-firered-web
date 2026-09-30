@@ -890,23 +890,18 @@ class RippleEffect implements Effect {
 
 /** Task_Swirl / Swirl_End: Horizontal scanline sinusoidal swirl with simultaneous fade to black. */
 class SwirlEffect implements Effect {
-  private sinIndex = 0;
-  private amplitude = 0;
-  private blackLevel = 0;
-  private timer = 0;
-  private readonly offsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly updatesPaletteFade = true;
+  readonly completesScreenFade = true;
+  state = 0;
+  sinIndex = 0;
+  amplitude = 0;
+  dmaPending = false;
+  done = false;
+  readonly offsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly workingOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
 
   tick(): boolean {
-    this.sinIndex = (this.sinIndex + 4) & 0xff;
-    this.amplitude += 8;
-    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
-      this.offsets[y] = safeSin((this.sinIndex + y * 2) & 0xff, this.amplitude);
-    }
-    this.timer++;
-    if (this.timer % 4 === 0) {
-      this.blackLevel = Math.min(16, this.blackLevel + 1);
-    }
-    return this.blackLevel >= 16;
+    return Task_Swirl(this);
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
@@ -921,11 +916,43 @@ class SwirlEffect implements Effect {
         ctx.drawImage(snapshot, 0, y, -ofs, 1, DISPLAY_WIDTH + ofs, y, -ofs, 1);
       }
     }
-    if (this.blackLevel > 0) {
-      ctx.fillStyle = `rgba(0, 0, 0, ${this.blackLevel / 16})`;
-      ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
-    }
   }
+}
+
+/** Task_Swirl (battle_transition.c): dispatch the init state, then yield each frame. */
+function Task_Swirl(effect: SwirlEffect): boolean {
+  if (effect.state === 0) return Swirl_Init(effect);
+  return Swirl_End(effect);
+}
+
+/** Swirl_Init (battle_transition.c): the two GBA scanline buffers map to Canvas row offsets. */
+function Swirl_Init(effect: SwirlEffect): boolean {
+  effect.offsets.fill(0);
+  effect.workingOffsets.fill(0);
+  effect.dmaPending = false;
+  paletteFade.fadeScreen(FADE_TO_BLACK, 4);
+  effect.state++;
+  return false;
+}
+
+/** Swirl_End (battle_transition.c): advance the sine wave and wait for the palette fade. */
+function Swirl_End(effect: SwirlEffect): boolean {
+  effect.dmaPending = false;
+  effect.sinIndex = (effect.sinIndex + 4) & 0xffff;
+  effect.amplitude = (effect.amplitude + 8) & 0xffff;
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+    effect.workingOffsets[y] = safeSin((effect.sinIndex + y * 2) & 0xff, effect.amplitude);
+  }
+  if (!paletteFade.active) effect.done = true;
+  effect.dmaPending = true;
+  VBlankCB_Swirl(effect);
+  return effect.done;
+}
+
+/** VBlankCB_Swirl (battle_transition.c): copy the prepared scanline offsets. */
+function VBlankCB_Swirl(effect: SwirlEffect): void {
+  if (!effect.dmaPending) return;
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) effect.offsets[y] = effect.workingOffsets[y]!;
 }
 
 /** Task_Blur / Blur_Main: GBA mosaic zoom and fade to black. */
