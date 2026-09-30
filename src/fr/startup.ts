@@ -3,7 +3,7 @@
 // use oak_speech.c / naming_screen.c texts, options and flow.
 import { launchFireRed, type LaunchOptions } from "./boot";
 import { CB2_WaitFadeBeforeSetUpIntro, IntroCopyright } from "./introCopyright";
-import { CB2_Intro, IntroGameFreak, StartIntroSequence } from "./introGameFreak";
+import { CB2_Intro, CB2_SetUpIntro, IntroGameFreak, StartIntroSequence } from "./introGameFreak";
 import { IntroScene1 } from "./introScene1";
 import { IntroScene2 } from "./introScene2";
 import { IntroScene3 } from "./introScene3";
@@ -173,7 +173,10 @@ class Startup {
                     false)) {
         this.introIndex++;
         this.set(introStages[this.introIndex] ?? "title");
-        if (this.stage === "logo") StartIntroSequence(this.gameFreak);
+        if (this.stage === "logo") {
+          CB2_SetUpIntro(this.gameFreak);
+          StartIntroSequence(this.gameFreak);
+        }
         if (this.stage === "grass") this.scene1.begin();
         if (this.stage === "forest") this.scene2.begin();
         if (this.stage === "scene3") this.scene3.begin();

@@ -22,7 +22,7 @@ import {
 import {
   ANIMCMD_END, ANIMCMD_FRAME, ANIMCMD_JUMP, AnimateSprites,
   BuildOamBuffer, CreateSprite, DestroySprite, gDummySpriteAffineAnimTable,
-  gDummySpriteAnimTable, gSprites, LoadOam, LoadSpritePalette,
+  gDummySpriteAnimTable, gSprites, LoadOam, ProcessSpriteCopyRequests, LoadSpritePalette,
   LoadSpriteSheet, MAX_SPRITES, oamData, ResetSpriteData, FreeAllSpritePalettes,
   SpriteCallbackDummy, StartSpriteAnim,
   type AnimCmd, type OamData, type Sprite, type SpriteTemplate,
@@ -64,10 +64,12 @@ function spriteTemplate(name: string, oamName: string, animName: string | null, 
 type Callback = "open" | "star" | "name" | "logo";
 
 /** intro.c startup and per-frame callback driver entrypoints. */
-export function StartIntroSequence(scene: IntroGameFreak): void { scene.begin(); }
+export function CB2_SetUpIntro(scene: IntroGameFreak): void { scene.begin(); }
+export function StartIntroSequence(scene: IntroGameFreak): void { scene.startIntroSequence(); }
 export function SetIntroCB(scene: IntroGameFreak, callback: Callback): void { scene.setIntroCallback(callback); }
 export function Task_CallIntroCallback(scene: IntroGameFreak): void { scene.callIntroCallback(); }
 export function CB2_Intro(scene: IntroGameFreak): void { scene.updateFrame(); }
+export function VBlankCB_Intro(): void { LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer(); }
 
 /** intro.c Game Freak star and text sparkle helpers. */
 export function GFScene_LoadGfxCreateStar(scene: IntroGameFreak): void { scene.loadGfxCreateStar(); }
@@ -155,6 +157,11 @@ export class IntroGameFreak {
     this.state = 0;
   }
 
+  startIntroSequence(): void {
+    this.callback = "open";
+    this.state = this.timer = 0;
+  }
+
   update(): void { CB2_Intro(this); }
 
   updateFrame(): void {
@@ -162,9 +169,8 @@ export class IntroGameFreak {
     Task_CallIntroCallback(this);
     AnimateSprites();
     BuildOamBuffer();
-    LoadOam();
+    VBlankCB_Intro();
     CopyBufferedValuesToGpuRegs();
-    TransferPlttBuffer();
   }
 
   callIntroCallback(): void {
