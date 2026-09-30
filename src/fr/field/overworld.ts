@@ -36,7 +36,7 @@ import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 
-import { gQuestLogState, QL_InitSceneObjectsAndActions, QL_ResetDefeatedWildMonRecord, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
+import { gQuestLogState, QL_InitSceneObjectsAndActions, QL_ResetDefeatedWildMonRecord, QuestLog_AdvancePlayhead_, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
 
@@ -674,7 +674,7 @@ export class Overworld {
     this.resumeMap();
     // C checks whether playback must advance here; the browser port currently
     // uses the call to cut recording in Quest Log-disabled locations.
-    QuestLog_ShouldEndSceneOnMapChange();
+    const advanceQuestLog = QuestLog_ShouldEndSceneOnMapChange();
     this.initObjectEventsLocal();
     if (gQuestLogState === C.QL_STATE_PLAYBACK) QL_InitSceneObjectsAndActions(this);
     if (gQuestLogState !== C.QL_STATE_PLAYBACK) {
@@ -691,6 +691,10 @@ export class Overworld {
       this.mapName.show(false);
     }
     this.runFieldCallback();
+    if (advanceQuestLog) {
+      QuestLog_AdvancePlayhead_(this);
+      return;
+    }
     const afterMapLoad = this.afterMapLoadCallback;
     this.afterMapLoadCallback = null;
     afterMapLoad?.();

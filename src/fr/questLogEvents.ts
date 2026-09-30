@@ -756,6 +756,22 @@ export function QuestLogPlayback_RunCB(ow: Overworld, newKeys: number): void {
   }
 }
 
+/** QuestLog_AdvancePlayhead_ (quest_log.c): continue at the next saved scene after a disabled-map warp. */
+export function QuestLog_AdvancePlayhead_(ow: Overworld): void {
+  if (paletteFade.active) {
+    ow.game.setCallbacks(() => ow.cb1(), () => {
+      ow.cb2();
+      if (!paletteFade.active) QuestLog_AdvancePlayhead_(ow);
+    });
+    return;
+  }
+  ow.LockPlayerFieldControls();
+  const current = sPlaybackSceneOrder.indexOf(sCurrentPlaybackSceneIndex);
+  const nextScene = sPlaybackSceneOrder[current + 1];
+  if (nextScene !== undefined) startQuestLogScene(ow, nextScene);
+  else finishQuestLogPlayback(ow);
+}
+
 /** QuestLogScenePlaybackIsEnding (quest_log.c). */
 export function QuestLogScenePlaybackIsEnding(): boolean { return sPlaybackEndMode !== 0; }
 
