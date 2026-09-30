@@ -417,7 +417,7 @@ class ClockwiseWipeEffect implements Effect {
   }
 
   end(): boolean {
-    FadeScreenBlack(this);
+    FadeScreenBlack();
     this.state = "done";
     return false;
   }
@@ -432,17 +432,48 @@ function ClockwiseWipe_Left(effect: ClockwiseWipeEffect): boolean { return effec
 function ClockwiseWipe_TopLeft(effect: ClockwiseWipeEffect): boolean { return effect.stepTopLeft(); }
 function ClockwiseWipe_End(effect: ClockwiseWipeEffect): boolean { return effect.end(); }
 function VBlankCB_ClockwiseWipe(effect: ClockwiseWipeEffect): void { effect.copyScanlineBuffer(); }
-function FadeScreenBlack(_effect: ClockwiseWipeEffect): void { paletteFade.fill(RGB_BLACK); }
+function FadeScreenBlack(): void { paletteFade.fill(RGB_BLACK); }
 
 class SliceEffect implements Effect {
   readonly rowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
+  readonly workingRowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
   readonly rowOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
+  readonly workingOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
   readonly invertWindow = false;
-  private effectX = 0;
-  private speed = 1 << 8;
-  private accel = 1;
+  readonly completesScreenFade = true;
+  state: "init" | "main" | "end" | "done" = "init";
+  effectX = 0;
+  speed = 0;
+  accel = 0;
+  cameraX = 0;
+  vblankDma = false;
 
   tick(): boolean {
+    return Task_Slice(this);
+  }
+
+  runTask(): boolean {
+    let continueTask: boolean;
+    do {
+      switch (this.state) {
+        case "init": continueTask = Slice_Init(this); break;
+        case "main": continueTask = Slice_Main(this); break;
+        default: continueTask = Slice_End(this); break;
+      }
+    } while (continueTask);
+    if (this.state !== "done") VBlankCB_Slice(this);
+    return this.state === "done";
+  }
+
+  initialize(): boolean {
+    this.speed = 1 << 8;
+    this.accel = 1;
+    this.state = "main";
+    return true;
+  }
+
+  updateMain(): boolean {
+    this.vblankDma = false;
     this.effectX += this.speed >> 8;
     if (this.effectX > DISPLAY_WIDTH) this.effectX = DISPLAY_WIDTH;
     if (this.speed <= 0xFFF) this.speed += this.accel;
@@ -450,18 +481,42 @@ class SliceEffect implements Effect {
 
     for (let i = 0; i < DISPLAY_HEIGHT; i++) {
       if (i & 1) {
-        // Odd rows: slide right, window is [0, DISPLAY_WIDTH - effectX)
-        this.rowOffsets[i] = this.effectX;
-        this.rowBounds[i] = [0, DISPLAY_WIDTH - this.effectX];
+        this.workingOffsets[i] = this.cameraX + this.effectX;
+        this.workingRowBounds[i] = [0, DISPLAY_WIDTH - this.effectX];
       } else {
-        // Even rows: slide left, window is [effectX, DISPLAY_WIDTH)
-        this.rowOffsets[i] = -this.effectX;
-        this.rowBounds[i] = [this.effectX, DISPLAY_WIDTH];
+        this.workingOffsets[i] = this.cameraX - this.effectX;
+        this.workingRowBounds[i] = [this.effectX, DISPLAY_WIDTH + 1];
       }
     }
-    return this.effectX >= DISPLAY_WIDTH;
+    if (this.effectX >= DISPLAY_WIDTH) this.state = "end";
+    this.vblankDma = true;
+    return false;
   }
+
+  end(): boolean {
+    FadeScreenBlack();
+    this.state = "done";
+    return false;
+  }
+
+  vblank(): void {
+    if (!this.vblankDma) return;
+    for (let i = 0; i < DISPLAY_HEIGHT; i++) {
+      this.rowBounds[i] = [...this.workingRowBounds[i]!];
+      this.rowOffsets[i] = this.workingOffsets[i]!;
+    }
+    this.vblankDma = false;
+  }
+
+  hblank(scanline: number): number { return this.rowOffsets[scanline] ?? 0; }
 }
+
+function Task_Slice(effect: SliceEffect): boolean { return effect.runTask(); }
+function Slice_Init(effect: SliceEffect): boolean { return effect.initialize(); }
+function Slice_Main(effect: SliceEffect): boolean { return effect.updateMain(); }
+function Slice_End(effect: SliceEffect): boolean { return effect.end(); }
+function VBlankCB_Slice(effect: SliceEffect): void { effect.vblank(); }
+function HBlankCB_Slice(effect: SliceEffect, scanline: number): number { return effect.hblank(scanline); }
 
 const NUM_WHITE_BARS = 6;
 const WHITE_BAR_HEIGHT = 1 + Math.floor(DISPLAY_HEIGHT / NUM_WHITE_BARS); // 27
@@ -1460,7 +1515,7 @@ export class BattleTransitionScene implements Scene {
         for (let y = 0; y < DISPLAY_HEIGHT; y++) {
           const [rawLeft, rawRight] = rowBounds[y]!;
           const [left, right] = WIN_RANGE(rawLeft, rawRight);
-          const ofs = rowOffsets ? rowOffsets[y]! : 0;
+          const ofs = this.effect instanceof SliceEffect ? HBlankCB_Slice(this.effect, y) : rowOffsets ? rowOffsets[y]! : 0;
           if (invertWindow) {
             if (left > 0) ctx.drawImage(this.snapshot, 0, y, left, 1, 0, y, left, 1);
             if (right < DISPLAY_WIDTH) ctx.drawImage(this.snapshot, right, y, DISPLAY_WIDTH - right, 1, right, y, DISPLAY_WIDTH - right, 1);
