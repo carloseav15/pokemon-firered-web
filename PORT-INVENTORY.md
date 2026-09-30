@@ -12,7 +12,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (< 80 % de funciones) | 9 | 31018 | 956/1689 |
+| Parcial (< 80 % de funciones) | 9 | 31018 | 964/1689 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
 | Casi completo (≥ 80 % y < 100 %) | 14 | 38350 | 1340/1480 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
@@ -20,7 +20,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
 | **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9242/10115** |
+| **Total en alcance** | **211** | **253703** | **9250/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Parcial (< 80 % de funciones)
@@ -28,7 +28,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `event_object_movement.c` | 9412 | 548/759 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts`, `field/objectEvents.ts` … |  |  |
-| `field_effect.c` | 4033 | 100/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `field/fieldPalette.ts` … |  |  |
+| `field_effect.c` | 4033 | 108/239 | `field/fieldEffects.ts`, `field/fieldMoves.ts`, `field/fieldPalette.ts` … |  |  |
 | `overworld.c` | 3563 | 125/242 | `battle/host.ts`, `field/fieldMoves.ts`, `field/fieldTasks.ts` … |  |  |
 | `battle_transition.c` | 3037 | 72/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
