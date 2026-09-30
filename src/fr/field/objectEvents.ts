@@ -1888,7 +1888,19 @@ export class ObjectEvents {
 
   private doGroundEffect(object: ObjectEvent, kind: "spawn" | "begin" | "finish"): void {
     this.updateMetatileBehaviors(object);
+    this.UpdateObjectEventElevationAndPriority(object);
+    this.SetObjectEventSpriteOamTableForLongGrass(object);
     this.hooks.groundEffect(object, kind);
+  }
+
+  /** SetObjectEventSpriteOamTableForLongGrass (event_object_movement.c). */
+  SetObjectEventSpriteOamTableForLongGrass(object: ObjectEvent): void {
+    if (object.disableCoveringGroundEffects
+      || !MB.MetatileBehavior_IsLongGrass(object.currentMetatileBehavior)
+      || !MB.MetatileBehavior_IsLongGrass(object.previousMetatileBehavior)) return;
+    object.sprite.subspriteTableNum = 4;
+    const priorities = cdata<number[]>("event_object_movement", "sElevationToPriority");
+    if (priorities[object.previousElevation & 0xff] === 1) object.sprite.subspriteTableNum = 5;
   }
 
   /** TryEnableObjectEventAnim (event_object_movement.c). */
