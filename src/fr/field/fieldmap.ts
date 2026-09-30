@@ -56,8 +56,11 @@ const ALTERNATE_LAYOUTS: Record<string, string[]> = {
   MAP_SEVEN_ISLAND_HOUSE_ROOM1: ["LAYOUT_SEVEN_ISLAND_HOUSE_ROOM1_DOOR_OPEN"],
 };
 
-export async function loadMap(mapId: string): Promise<LoadedMap> {
-  const header = await rom.loadMap(mapId);
+export async function loadMap(mapId: string, layoutOverride?: string): Promise<LoadedMap> {
+  const loadedHeader = await rom.loadMap(mapId);
+  const header = layoutOverride && layoutOverride !== loadedHeader.layout
+    ? { ...loadedHeader, layout: layoutOverride }
+    : loadedHeader;
   const layout = await rom.loadLayout(header.layout);
   await Promise.all((ALTERNATE_LAYOUTS[mapId] ?? []).map(async (id) => {
     const alt = await rom.loadLayout(id);

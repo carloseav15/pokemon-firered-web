@@ -278,8 +278,9 @@ export class Overworld {
   }
 
   /** Load a map and prefetch its neighbours so camera transitions are synchronous. */
-  async prepareMap(mapId: string): Promise<LoadedMap> {
-    const loaded = await this.fetchMap(mapId);
+  async prepareMap(mapId: string, mapLayoutId?: number): Promise<LoadedMap> {
+    const layoutOverride = mapLayoutId === undefined ? undefined : rom.layoutIdByIndex_(mapLayoutId);
+    const loaded = layoutOverride ? await loadMap(mapId, layoutOverride) : await this.fetchMap(mapId);
     this.syncLoaded.set(loaded.header.id, loaded);
     const neighbours = await Promise.all(loaded.connections.map((c) => this.fetchMap(c.mapId)));
     for (const n of neighbours) this.syncLoaded.set(n.header.id, n);
@@ -646,7 +647,7 @@ export class Overworld {
       case 0: {
         const mapId = this.mapIdForWarp(save.location);
         this.loadError = undefined;
-        this.loadPromise = this.prepareMap(mapId);
+        this.loadPromise = this.prepareMap(mapId, gQuestLogState === C.QL_STATE_PLAYBACK ? save.mapLayoutId : undefined);
         this.loadPromise.then(() => { this.loadState = 2; }, (error) => { this.loadError = error; console.error(error); });
         this.loadState = 1;
         break;
