@@ -397,7 +397,8 @@ export class FieldControl {
     this.ow.selectedObject = this.ow.objects.indexOf(object);
     varSet(SV.LAST_TALKED, object.localId);
     varSet(SV.FACING, direction);
-    return GetRamScript(object.localId, object.template?.script ?? 0);
+    const script = this.ow.objects.GetObjectEventScriptPointerByObjectEventId(this.ow.objects.indexOf(object));
+    return GetRamScript(object.localId, script);
   }
 
   /** GetObjectEventScriptPointerPlayerFacing (field_control_avatar.c): no caller anywhere in

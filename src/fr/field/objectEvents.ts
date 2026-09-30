@@ -9,7 +9,7 @@ import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
-import { flagGet, varGet } from "../save";
+import { flagGet, flagSet, varGet } from "../save";
 import { gQuestLogPlaybackState, QL_GetPlaybackState, QuestLogRecordNPCStep } from "../questLogEvents";
 import { CONNECTION_INVALID, MAP_OFFSET, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
 import { gSineTable } from "../hw/trig";
@@ -847,6 +847,81 @@ export class ObjectEvents {
     return this.objects[objectEventId.value] ?? undefined;
   }
 
+  /** FindObjectEventTemplateByLocalId (event_object_movement.c). */
+  FindObjectEventTemplateByLocalId(localId: number, templates: MapObjectTemplate[] = this.templates, count = templates.length): MapObjectTemplate | undefined {
+    for (let i = 0; i < count; i++) if (templates[i]?.localId === (localId & 0xff)) return templates[i];
+    return undefined;
+  }
+
+  /** GetObjectEventTemplateByLocalIdAndMap (event_object_movement.c). */
+  GetObjectEventTemplateByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): MapObjectTemplate | undefined {
+    if (mapNum === this.mapNum && mapGroup === this.mapGroup) return this.FindObjectEventTemplateByLocalId(localId);
+    return this.byLocalIdAndMap(localId, mapNum, mapGroup)?.template;
+  }
+
+  /** GetObjectEventScriptPointerByLocalIdAndMap (event_object_movement.c). */
+  GetObjectEventScriptPointerByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): number {
+    return this.GetObjectEventTemplateByLocalIdAndMap(localId, mapNum, mapGroup)?.script ?? 0;
+  }
+
+  /** GetObjectEventScriptPointerByObjectEventId (event_object_movement.c). */
+  GetObjectEventScriptPointerByObjectEventId(objectEventId: number): number {
+    const object = this.objects[objectEventId & 0xff];
+    if (!object?.active) return 0;
+    return this.GetObjectEventScriptPointerByLocalIdAndMap(object.localId, object.mapNum, object.mapGroup);
+  }
+
+  /** GetObjectEventFlagIdByLocalIdAndMap (event_object_movement.c; UBFIX null-template result). */
+  GetObjectEventFlagIdByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): number {
+    return this.GetObjectEventTemplateByLocalIdAndMap(localId, mapNum, mapGroup)?.flag ?? 0;
+  }
+
+  /** GetObjectEventFlagIdByObjectEventId (event_object_movement.c). */
+  GetObjectEventFlagIdByObjectEventId(objectEventId: number): number {
+    const object = this.objects[objectEventId & 0xff];
+    if (!object?.active) return 0;
+    return this.GetObjectEventFlagIdByLocalIdAndMap(object.localId, object.mapNum, object.mapGroup);
+  }
+
+  /** GetBoulderRevealFlagByLocalIdAndMap (event_object_movement.c). */
+  GetBoulderRevealFlagByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): number {
+    return this.GetObjectEventTemplateByLocalIdAndMap(localId, mapNum, mapGroup)?.trainerType ?? 0;
+  }
+
+  /** RemoveObjectEventByLocalIdAndMap (event_object_movement.c). */
+  RemoveObjectEventByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): void {
+    const object = this.byLocalIdAndMap(localId, mapNum, mapGroup);
+    if (!object || object.isPlayer) return;
+    flagSet(this.GetObjectEventFlagIdByObjectEventId(this.indexOf(object)));
+    this.remove(object);
+  }
+
+  /** GetBaseTemplateForObjectEvent (event_object_movement.c). */
+  GetBaseTemplateForObjectEvent(object: ObjectEvent): MapObjectTemplate | undefined {
+    if (object.mapNum !== this.mapNum || object.mapGroup !== this.mapGroup) return undefined;
+    return this.FindObjectEventTemplateByLocalId(object.localId);
+  }
+
+  /** OverrideTemplateCoordsForObjectEvent (event_object_movement.c). */
+  OverrideTemplateCoordsForObjectEvent(object: ObjectEvent): void {
+    const template = this.GetBaseTemplateForObjectEvent(object);
+    if (!template) return;
+    template.x = object.currentCoords.x - MAP_OFFSET;
+    template.y = object.currentCoords.y - MAP_OFFSET;
+  }
+
+  /** OverrideMovementTypeForObjectEvent (event_object_movement.c). */
+  OverrideMovementTypeForObjectEvent(object: ObjectEvent, movementType: number): void {
+    const template = this.GetBaseTemplateForObjectEvent(object);
+    if (template) template.movementType = movementType & 0xff;
+  }
+
+  /** TryOverrideObjectEventTemplateCoords (event_object_movement.c). */
+  TryOverrideObjectEventTemplateCoords(localId: number, mapNum: number, mapGroup: number): void {
+    const object = this.byLocalIdAndMap(localId, mapNum, mapGroup);
+    if (object) this.OverrideTemplateCoordsForObjectEvent(object);
+  }
+
   indexOf(object: ObjectEvent): number {
     return this.objects.indexOf(object);
   }
@@ -1021,19 +1096,12 @@ export class ObjectEvents {
 
   /** OverrideMovementTypeForObjectEvent: the saved template keeps the new movement type. */
   overrideTemplateMovementType(object: ObjectEvent, movementType: number): void {
-    // GetBaseTemplateForObjectEvent never changes another map's local template.
-    if (object.mapNum !== this.mapNum || object.mapGroup !== this.mapGroup) return;
-    const template = this.templates.find((t) => t.localId === object.localId);
-    if (template) template.movementType = movementType;
+    this.OverrideMovementTypeForObjectEvent(object, movementType);
   }
 
   /** OverrideTemplateCoordsForObjectEvent / GetBaseTemplateForObjectEvent. */
   overrideTemplateCoords(object: ObjectEvent): void {
-    if (object.mapNum !== this.mapNum || object.mapGroup !== this.mapGroup) return;
-    const template = this.templates.find((t) => t.localId === object.localId);
-    if (!template) return;
-    template.x = object.currentCoords.x - MAP_OFFSET;
-    template.y = object.currentCoords.y - MAP_OFFSET;
+    this.OverrideTemplateCoordsForObjectEvent(object);
   }
 
   setGraphicsId(object: ObjectEvent, graphicsId: number): void {

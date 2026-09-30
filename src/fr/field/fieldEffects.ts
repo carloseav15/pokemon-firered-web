@@ -2285,8 +2285,8 @@ export class FieldEffects {
 export function HandleBoulderFallThroughHole(ow: Overworld, object: ObjectEvent, metatileBehavior = ow.map.behaviorAt(object.currentCoords.x, object.currentCoords.y)): void {
   if (metatileBehavior !== C.MB_FALL_WARP) return;
   sound.playSE(sound.c("SE_FALL"));
-  ow.objects.remove(object);
-  flagClear(object.trainerType);
+  ow.objects.RemoveObjectEventByLocalIdAndMap(object.localId, ow.objects.mapNum, ow.objects.mapGroup);
+  flagClear(ow.objects.GetBoulderRevealFlagByLocalIdAndMap(object.localId, ow.objects.mapNum, ow.objects.mapGroup));
 }
 
 /** HandleBoulderActivateVictoryRoadSwitch (field_control_avatar.c). */

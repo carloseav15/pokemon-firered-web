@@ -394,8 +394,7 @@ function ScrCmd_setobjectxyperm(ctx: ScriptRunner): boolean {
 }
 function ScrCmd_copyobjectxytoperm(ctx: ScriptRunner): boolean {
   const localId = varGet(ctx.ScriptReadHalfword());
-  const o = localIdObject(ctx, localId);
-  if (o) ctx.ow.objects.overrideTemplateCoords(o);
+  ctx.ow.objects.TryOverrideObjectEventTemplateCoords(localId, ctx.ow.objects.mapNum, ctx.ow.objects.mapGroup);
   return false;
 }
 function ScrCmd_showobjectat(ctx: ScriptRunner): boolean { const o = readObjectAt(ctx); if (o) o.invisible = false; return false; }
@@ -760,9 +759,7 @@ function removeObject(ctx: ScriptRunner, localId: number): void {
 
 function removeResolvedObject(ctx: ScriptRunner, o: ReturnType<typeof localIdObject>): void {
   if (!o || o.isPlayer) return;
-  const flag = o.template?.flag;
-  if (flag) flagSet(flag);
-  ctx.ow.objects.remove(o);
+  ctx.ow.objects.RemoveObjectEventByLocalIdAndMap(o.localId, o.mapNum, o.mapGroup);
   ctx.ow.syncObjectSprites();
 }
 
