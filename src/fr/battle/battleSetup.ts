@@ -16,7 +16,7 @@ import { createMaleMon, createMon, genderFromPersonality, healMon, MON_FEMALE, t
 import { random32 } from "../random";
 import type { Game } from "../game";
 import { GetSafariZoneFlag } from "../field/safariZone";
-import { QL_FinishRecordingScene } from "../questLogEvents";
+import { QL_FinishRecordingScene, QuestLogEvents_HandleEndTrainerBattle } from "../questLogEvents";
 
 export const TRAINER_BATTLE_SINGLE = 0;
 export const TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC = 1;
@@ -366,6 +366,7 @@ export class BattleSetup {
         varSet(SV.RESULT, 0);
       }
       this.SetBattledTrainerFlag();
+      QuestLogEvents_HandleEndTrainerBattle();
       this.game.returnToFieldContinueScript(true);
       return;
     }
@@ -378,6 +379,7 @@ export class BattleSetup {
       return;
     }
     this.SetBattledTrainerFlag();
+    QuestLogEvents_HandleEndTrainerBattle();
     this.game.returnToFieldContinueScript(true);
   }
 

@@ -1,18 +1,18 @@
-// Partial state port for quest_log_events.c. Shop-event payloads are persisted
-// in the browser save; the scene/action recorder and playback are not yet ported.
+// quest_log_events.c: single-player event payloads and scene-script recording.
 
 import * as C from "./generated/constants";
 import { cdata } from "./hw/assets";
 import { SetGlobalFieldTintMode } from "./field/fieldPalette";
 import {
   QL_LoadAction_Input, QL_LoadAction_MovementOrGfxChange, QL_LoadAction_SceneEnd, QL_LoadAction_Wait,
-  QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd,
+  QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd, QL_RecordAction_Wait,
   type LoadedQuestLogAction, type QuestLogAction,
 } from "./questLogActions";
 import { flagClear, flagGet, flagSet, save, varGet, varSet } from "./save";
 import { QuestLog_InitPalettesBackup as initQuestLogPalettesBackup } from "./questLogPalette";
 import { gQuestLogState, WriteQuestLogState } from "./questLogState";
 import { SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
+import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
 import { rom } from "./rom";
 
 export { gQuestLogState };
@@ -43,13 +43,15 @@ export function QL_GetPlaybackState(): number {
 }
 let gQuestLogDefeatedWildMonRecord: unknown | null = null;
 let gQuestLogRecordingPointer: unknown | null = null;
+let sDeferredTrainerBattleEvent: { eventId: number; data: QuestLogEventData } | null = null;
+let sRecordingDeferredTrainerBattle = false;
 const STEP_RECORDING_MODE_ENABLED = 0;
 const STEP_RECORDING_MODE_DISABLED = 1;
 const STEP_RECORDING_MODE_DISABLED_UNTIL_DEPART = 2;
 let sStepRecordingMode = STEP_RECORDING_MODE_ENABLED;
 let sNewlyEnteredMap = false;
 let sLastDepartedLocation = 0;
-export const gQuestLogRepeatEventTracker = { id: 0, numRepeats: 0, counter: 0 };
+export const gQuestLogRepeatEventTracker: QuestLogEventRepeatState = { id: 0, numRepeats: 0, counter: 0 };
 let sActivePlayerActionScript = -1;
 let sNextActionDelay = 0;
 let sLastPlayerMovementActionId = -1;
@@ -77,23 +79,105 @@ export type QuestLogDepartedEvent = { mapSec: number; locationId: number };
 export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogSwappedHeldItemEvent
   | QuestLogSwitchedPartyOrderEvent | QuestLogFieldMoveEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent
   | QuestLogLinkBattleEvent | QuestLogDepartedEvent | Record<string, never>;
-export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
-export function getQuestLogEvents(): QuestLogEventRecord[] {
-  return save.questLogEvents ??= [];
+
+function nextQuestLogSceneIndex(): number {
+  const last = save.questLogScenes?.at(-1)?.eventIndex;
+  return last === undefined ? 0 : last + 1;
+}
+
+/** IsSpeciesFromSpecialEncounter (quest_log_events.c). */
+export function IsSpeciesFromSpecialEncounter(species: number): boolean {
+  return species === C.SPECIES_SNORLAX || species === C.SPECIES_ARTICUNO || species === C.SPECIES_ZAPDOS
+    || species === C.SPECIES_MOLTRES || species === C.SPECIES_MEWTWO || species === C.SPECIES_LUGIA
+    || species === C.SPECIES_HO_OH || species === C.SPECIES_DEOXYS;
+}
+
+/** IsEventWithSpecialEncounterSpecies (quest_log_events.c). */
+export function IsEventWithSpecialEncounterSpecies(eventId: number, data: QuestLogEventData): boolean {
+  if (eventId !== C.QL_EVENT_DEFEATED_WILD_MON) return false;
+  const battle = data as QuestLogWildBattleEvent;
+  return IsSpeciesFromSpecialEncounter(battle.defeatedSpecies) || IsSpeciesFromSpecialEncounter(battle.caughtSpecies);
+}
+
+/** ShouldRegisterEvent_HandleBeatStoryTrainer (quest_log_events.c). */
+export function ShouldRegisterEvent_HandleBeatStoryTrainer(eventId: number, data: QuestLogEventData): boolean {
+  if (eventId !== C.QL_EVENT_DEFEATED_TRAINER) return false;
+  const trainerClass = rom.trainers[(data as QuestLogTrainerBattleEvent).trainerId]?.class;
+  return trainerClass !== C.TRAINER_CLASS_RIVAL_EARLY && trainerClass !== C.TRAINER_CLASS_RIVAL_LATE
+    && trainerClass !== C.TRAINER_CLASS_CHAMPION && trainerClass !== C.TRAINER_CLASS_BOSS;
+}
+
+/** ShouldRegisterEvent_HandlePartyActions (quest_log_events.c). */
+export function ShouldRegisterEvent_HandlePartyActions(eventId: number, data: QuestLogEventData): boolean {
+  if (eventId === C.QL_EVENT_USED_FIELD_MOVE || eventId === C.QL_EVENT_USED_PKMN_CENTER) return true;
+  if (!flagGet(C.FLAG_SYS_GAME_CLEAR)) {
+    if (eventId === C.QL_EVENT_SWITCHED_PARTY_ORDER || eventId === C.QL_EVENT_DEFEATED_WILD_MON
+      || ShouldRegisterEvent_HandleBeatStoryTrainer(eventId, data)) return true;
+  }
+  const isPartyItemEvent = eventId === C.QL_EVENT_USED_ITEM || eventId === C.QL_EVENT_GAVE_HELD_ITEM
+    || eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG || eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC
+    || eventId === C.QL_EVENT_TOOK_HELD_ITEM || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM
+    || eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC;
+  return !flagGet(C.FLAG_SYS_CAN_LINK_WITH_RS) && isPartyItemEvent;
+}
+
+/** ShouldRegisterEvent_HandleDeparted (quest_log_events.c). */
+export function ShouldRegisterEvent_HandleDeparted(eventId: number, data: QuestLogEventData): boolean {
+  if (eventId !== C.QL_EVENT_DEPARTED) {
+    sLastDepartedLocation = 0;
+    return true;
+  }
+  const location = (data as QuestLogDepartedEvent).locationId;
+  if (sLastDepartedLocation === location + 1) return false;
+  sLastDepartedLocation = location + 1;
+  return true;
+}
+
+/** ShouldRegisterEvent_DepartedGameCorner (quest_log_events.c). */
+export function ShouldRegisterEvent_DepartedGameCorner(eventId: number, data: QuestLogEventData): boolean {
+  if (eventId !== C.QL_EVENT_DEPARTED) return true;
+  if ((data as QuestLogDepartedEvent).locationId === C.QL_LOCATION_GAME_CORNER && !sPlayedTheSlots) return false;
+  sPlayedTheSlots = false;
+  return true;
+}
+
+/** TryDeferTrainerBattleEvent (quest_log_events.c). */
+export function TryDeferTrainerBattleEvent(eventId: number, data: QuestLogEventData): boolean {
+  if (eventId !== C.QL_EVENT_DEFEATED_TRAINER && eventId !== C.QL_EVENT_DEFEATED_GYM_LEADER
+    && eventId !== C.QL_EVENT_DEFEATED_E4_MEMBER && eventId !== C.QL_EVENT_DEFEATED_CHAMPION) return false;
+  sDeferredTrainerBattleEvent = null;
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_STOPPED || flagGet(C.FLAG_SYS_GAME_CLEAR)
+    || !ShouldRegisterEvent_HandleBeatStoryTrainer(eventId, data)) {
+    sDeferredTrainerBattleEvent = { eventId, data: { ...data } };
+  }
+  return true;
 }
 
 /** QL_StartRecordingAction (quest_log.c): allocate the current SaveBlock1 scene slot and snapshot it. */
 export function QL_StartRecordingAction(eventId: number, eventIndex: number): QuestLogScene {
+  QL_ResetRepeatEventTracker();
   const scenes = save.questLogScenes ??= [];
   const scene: QuestLogScene = {
     startType: eventId === C.QL_EVENT_DEPARTED ? C.QL_START_WARP : C.QL_START_NORMAL,
     objectEvents: [],
     script: [],
     eventIndex,
+    actionIndex: 0,
   };
   SetPlayerInitialCoordsAtScene(scene);
   SetNPCInitialCoordsAtScene(scene);
   SetGameStateAtScene(scene);
+  const facing = scene.objectEvents.find((objectEvent) => objectEvent.isPlayer)?.facingDirection ?? save.facing;
+  const movement = facing === C.DIR_EAST ? C.MOVEMENT_ACTION_FACE_RIGHT
+    : facing === C.DIR_NORTH ? C.MOVEMENT_ACTION_FACE_UP
+      : facing === C.DIR_WEST ? C.MOVEMENT_ACTION_FACE_LEFT : C.MOVEMENT_ACTION_FACE_DOWN;
+  const cursor = QL_RecordAction_MovementOrGfxChange(scene.script as number[], {
+    type: C.QL_ACTION_MOVEMENT, duration: 0, data: [0, 0, 0, movement],
+  });
+  if (cursor !== null) {
+    scene.actionIndex = 1;
+    gQuestLogRecordingPointer = cursor;
+  }
   scenes.push(scene);
   if (scenes.length > C.QUEST_LOG_SCENE_COUNT) scenes.splice(0, scenes.length - C.QUEST_LOG_SCENE_COUNT);
   const retainedEvents = new Set(scenes.map((entry) => entry.eventIndex));
@@ -179,7 +263,10 @@ export function QuestLogRecordPlayerAvatarGfxTransition(gfxState: number): void 
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   const action: QuestLogAction = { type: C.QL_ACTION_GFX_CHANGE, duration: sNextActionDelay, data: [0, 0, 0, gfxState & 0xff] };
-  if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) sNextActionDelay = 0;
+  if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) {
+    IncrementQuestLogActionIndex();
+    sNextActionDelay = 0;
+  }
 }
 
 /** QuestLogRecordPlayerAvatarGfxTransitionWithDuration (quest_log.c). */
@@ -188,7 +275,10 @@ export function QuestLogRecordPlayerAvatarGfxTransitionWithDuration(gfxState: nu
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   const action: QuestLogAction = { type: C.QL_ACTION_GFX_CHANGE, duration: sNextActionDelay, data: [0, 0, 0, gfxState & 0xff] };
-  if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) sNextActionDelay = duration & 0xff;
+  if (QL_RecordAction_MovementOrGfxChange(script, action) !== null) {
+    IncrementQuestLogActionIndex();
+    sNextActionDelay = duration & 0xff;
+  }
 }
 
 /** QL_AfterRecordFishActionSuccessful (quest_log.c). */
@@ -204,6 +294,7 @@ export function QuestLogRecordPlayerStep(movementActionId: number, controlsLocke
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
     return;
   }
+  IncrementQuestLogActionIndex();
   sNextActionDelay = 0;
   sLastPlayerMovementActionId = movementActionId & 0xff;
 }
@@ -217,6 +308,7 @@ export function QuestLogRecordPlayerStepWithDuration(movementActionId: number, d
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
     return;
   }
+  IncrementQuestLogActionIndex();
   sLastPlayerMovementActionId = movementActionId & 0xff;
   sNextActionDelay = duration & 0xffff;
 }
@@ -233,6 +325,7 @@ export function QuestLogRecordNPCStepWithDuration(localId: number, mapNum: numbe
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
     return;
   }
+  IncrementQuestLogActionIndex();
   sNextActionDelay = duration & 0xffff;
 }
 
@@ -251,7 +344,16 @@ export function QL_RecordFieldInput(input: {
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
     return;
   }
+  IncrementQuestLogActionIndex();
   sNextActionDelay = 0;
+}
+
+function IncrementQuestLogActionIndex(): void {
+  const scene = save.questLogScenes?.at(-1);
+  if (scene && gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) {
+    scene.actionIndex = ((scene.actionIndex ?? 0) + 1) & 0xffff;
+    gQuestLogRecordingPointer = (scene.script as number[] | undefined)?.length ?? 0;
+  }
 }
 
 /** QL_TryRunActions recording branch (quest_log.c): count unlocked overworld frames between actions. */
@@ -273,13 +375,18 @@ export function QL_LoadPlayerActionScript(eventIndex: number): QuestLogAction[] 
   const actions: QuestLogAction[] = [];
   let cursor = 0;
   while (cursor < script.length) {
-    const command = script[cursor];
+    const command = (script[cursor] ?? 0) & 0x0fff;
     let loaded: LoadedQuestLogAction | null;
     if (command === C.QL_EVENT_MOVEMENT || command === C.QL_EVENT_GFX_CHANGE) loaded = QL_LoadAction_MovementOrGfxChange(script, cursor);
     else if (command === C.QL_EVENT_INPUT) loaded = QL_LoadAction_Input(script, cursor);
     else if (command === C.QL_EVENT_WAIT) loaded = QL_LoadAction_Wait(script, cursor);
     else if (command === C.QL_EVENT_SCENE_END) loaded = QL_LoadAction_SceneEnd(script, cursor);
-    else break;
+    else {
+      const next = QL_SkipCommand(script, cursor);
+      if (next === null) break;
+      cursor = next;
+      continue;
+    }
     if (!loaded) break;
     actions.push(loaded.action);
     cursor = loaded.next;
@@ -317,19 +424,21 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;
   if (InQuestLogDisabledLocation()) return;
-  // SetQuestLogEvent -> ShouldRegisterEvent_HandlePartyActions (quest_log_events.c).
-  // These restrictions apply only when a new scene would be started; once recording
-  // is active, the same event ids are written into that scene by the source.
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_STOPPED && isStoryItemEvent) return;
+  if (isLinkBattleEvent || IsEventWithSpecialEncounterSpecies(eventId, data)) return;
+  if (!sRecordingDeferredTrainerBattle && TryDeferTrainerBattleEvent(eventId, data)) return;
+  if (!ShouldRegisterEvent_DepartedGameCorner(eventId, data)) return;
   if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED) {
-    if (isFieldMove || isPokemonCenterEvent) return;
-    if (!flagGet(C.FLAG_SYS_GAME_CLEAR)) {
-      if (isSwitchedPartyOrder || eventId === C.QL_EVENT_DEFEATED_WILD_MON) return;
-    }
-    if (!flagGet(C.FLAG_SYS_CAN_LINK_WITH_RS) && isItemEvent) return;
+    if (ShouldRegisterEvent_HandlePartyActions(eventId, data)) return;
+    if ((eventId !== C.QL_EVENT_DEFEATED_WILD_MON || gQuestLogDefeatedWildMonRecord === null)
+      && !ShouldRegisterEvent_HandleDeparted(eventId, data)) return;
+  }
+  if (eventId !== C.QL_EVENT_DEFEATED_WILD_MON) {
+    gQuestLogDefeatedWildMonRecord = null;
+    delete gQuestLogRepeatEventTracker.wildRecordStart;
   }
   if (isPokemonCenterEvent && gQuestLogRepeatEventTracker.id === C.QL_EVENT_USED_PKMN_CENTER
     && gQuestLogRepeatEventTracker.numRepeats !== 0) return;
-  getQuestLogEvents().push({ eventId, data: { ...data } });
   if (eventId === C.QL_EVENT_DEPARTED && (data as QuestLogDepartedEvent).locationId === C.QL_LOCATION_SAFARI_ZONE) {
     sStepRecordingMode = STEP_RECORDING_MODE_DISABLED;
   }
@@ -339,11 +448,46 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     sNextActionDelay = 0;
     sLastPlayerMovementActionId = -1;
     const scripts = save.questLogPlayerGfxActions ??= [];
-    const eventIndex = getQuestLogEvents().length - 1;
+    const eventIndex = nextQuestLogSceneIndex();
     const scene = QL_StartRecordingAction(eventId, eventIndex);
+    for (let i = scripts.length - 1; i >= 0; i--) if (scripts[i]!.eventIndex === eventIndex) scripts.splice(i, 1);
     scripts.push({ eventIndex, script: scene.script as number[] });
     sActivePlayerActionScript = scripts.length - 1;
   }
+
+  let scene = save.questLogScenes?.at(-1);
+  if (!scene) return;
+  let script = scene.script as number[];
+  let next = RecordQuestLogEvent(eventId, script, scene.actionIndex ?? 0, gQuestLogRepeatEventTracker, data as Record<string, number | boolean>);
+  if (next === null) {
+    QL_FinishRecordingScene();
+    if (ShouldRegisterEvent_HandlePartyActions(eventId, data)
+      || !ShouldRegisterEvent_HandleDeparted(eventId, data)) return;
+    WriteQuestLogState(C.QL_STATE_RECORDING);
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING;
+    const eventIndex = nextQuestLogSceneIndex();
+    scene = QL_StartRecordingAction(eventId, eventIndex);
+    script = scene.script as number[];
+    const scripts = save.questLogPlayerGfxActions ??= [];
+    for (let i = scripts.length - 1; i >= 0; i--) if (scripts[i]!.eventIndex === eventIndex) scripts.splice(i, 1);
+    scripts.push({ eventIndex, script });
+    sActivePlayerActionScript = scripts.length - 1;
+    next = RecordQuestLogEvent(eventId, script, scene.actionIndex ?? 0, gQuestLogRepeatEventTracker, data as Record<string, number | boolean>);
+    if (next === null) return;
+  }
+  if (eventId === C.QL_EVENT_DEFEATED_WILD_MON) gQuestLogDefeatedWildMonRecord = gQuestLogRepeatEventTracker.wildRecordStart ?? null;
+  gQuestLogRecordingPointer = next;
+  if (eventId === C.QL_EVENT_USED_ITEM && (data as QuestLogItemEvent).itemId === C.ITEM_ESCAPE_ROPE) {
+    sStepRecordingMode = STEP_RECORDING_MODE_DISABLED_UNTIL_DEPART;
+  } else if (eventId === C.QL_EVENT_USED_FIELD_MOVE) {
+    const move = (data as QuestLogFieldMoveEvent).fieldMove;
+    sStepRecordingMode = move === C.FIELD_MOVE_TELEPORT || move === C.FIELD_MOVE_DIG
+      ? STEP_RECORDING_MODE_DISABLED_UNTIL_DEPART : STEP_RECORDING_MODE_DISABLED;
+  } else if (eventId === C.QL_EVENT_DEFEATED_GYM_LEADER || eventId === C.QL_EVENT_DEFEATED_E4_MEMBER
+    || eventId === C.QL_EVENT_DEFEATED_CHAMPION) {
+    sStepRecordingMode = STEP_RECORDING_MODE_DISABLED;
+  }
+  if (sStepRecordingMode !== STEP_RECORDING_MODE_ENABLED) QL_FinishRecordingScene();
 }
 
 /** SetSwitchedPartyOrderQuestLogEvent (party_menu.c). */
@@ -398,6 +542,9 @@ export function QL_ResetRepeatEventTracker(): void {
   gQuestLogRepeatEventTracker.id = 0;
   gQuestLogRepeatEventTracker.numRepeats = 0;
   gQuestLogRepeatEventTracker.counter = 0;
+  delete gQuestLogRepeatEventTracker.recordStart;
+  delete gQuestLogRepeatEventTracker.recordPayloadWords;
+  delete gQuestLogRepeatEventTracker.wildRecordStart;
 }
 
 /** QL_ResetEventStates (quest_log_events.c). */
@@ -407,11 +554,45 @@ export function QL_ResetEventStates(): void {
   sPlayedTheSlots = false;
 }
 
+/** QL_RecordWait (quest_log_events.c): append a timed wait command to the active scene. */
+export function QL_RecordWait(duration: number): void {
+  if (gQuestLogRecordingPointer === null) return;
+  const script = save.questLogScenes?.at(-1)?.script as number[] | undefined;
+  if (!script) return;
+  const next = QL_RecordAction_Wait(script, duration & 0xffff);
+  if (next === null) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    return;
+  }
+  gQuestLogRecordingPointer = next;
+  IncrementQuestLogActionIndex();
+}
+
+/** QuestLogEvents_HandleEndTrainerBattle (quest_log_events.c), called by battle_setup.c on eligible exits. */
+export function QuestLogEvents_HandleEndTrainerBattle(): void {
+  const deferred = sDeferredTrainerBattleEvent;
+  if (!deferred) return;
+  sDeferredTrainerBattleEvent = null;
+  if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED) sLastDepartedLocation = 0;
+  sRecordingDeferredTrainerBattle = true;
+  try {
+    SetQuestLogEvent(deferred.eventId, deferred.data);
+  } finally {
+    sRecordingDeferredTrainerBattle = false;
+  }
+  QL_RecordWait(1);
+  QL_FinishRecordingScene();
+}
+
 /** QuestLog_CutRecording (quest_log.c): close recording state and clear transient pointers. */
 export function QuestLog_CutRecording(): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_STOPPED && gQuestLogState === C.QL_STATE_RECORDING) {
     const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
-    if (script) QL_RecordAction_SceneEnd(script);
+    QL_RecordWait(1);
+    if (script) {
+      QL_RecordAction_SceneEnd(script);
+      gQuestLogRecordingPointer = script.length;
+    }
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
     WriteQuestLogState(0);
     sActivePlayerActionScript = -1;
@@ -426,7 +607,10 @@ export function QuestLog_CutRecording(): void {
 export function QL_FinishRecordingScene(): void {
   if (gQuestLogState !== C.QL_STATE_RECORDING) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
-  if (script) QL_RecordAction_SceneEnd(script);
+  if (script) {
+    QL_RecordAction_SceneEnd(script);
+    gQuestLogRecordingPointer = script.length;
+  }
   WriteQuestLogState(0);
   sActivePlayerActionScript = -1;
   gQuestLogDefeatedWildMonRecord = null;
@@ -454,7 +638,7 @@ export function ResetQLPlayedTheSlots(): void {
   QL_ResetEventStates();
   sStepRecordingMode = STEP_RECORDING_MODE_ENABLED;
   QL_ResetRepeatEventTracker();
-  getQuestLogEvents().length = 0;
+  (save.questLogScenes ??= []).length = 0;
   (save.questLogPlayerGfxActions ??= []).length = 0;
   sActivePlayerActionScript = -1;
   sNextActionDelay = 0;

@@ -60,8 +60,10 @@ export interface QuestLogObjectEventTemplate {
 }
 
 export interface QuestLogScene {
-  /** Browser-save index linking this scene snapshot to the triggering event payload. */
+  /** Browser-save index linking this scene snapshot to its action/event command stream. */
   eventIndex?: number;
+  /** gQuestLogCurActionIdx captured by quest_log.c while recording this scene. */
+  actionIndex?: number;
   startType?: number;
   mapGroup?: number;
   mapNum?: number;
