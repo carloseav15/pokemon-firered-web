@@ -12,7 +12,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (< 80 % de funciones) | 10 | 33265 | 1008/1807 |
+| Parcial (< 80 % de funciones) | 10 | 33265 | 1018/1807 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
 | Casi completo (≥ 80 % y < 100 %) | 13 | 36103 | 1242/1362 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
@@ -20,7 +20,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
 | **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9196/10115** |
+| **Total en alcance** | **211** | **253703** | **9206/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Parcial (< 80 % de funciones)
@@ -33,7 +33,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_transition.c` | 3037 | 72/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
 | `trade_scene.c` | 2916 | 35/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 3 |
 | `intro.c` | 2805 | 3/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
-| `quest_log_events.c` | 2247 | 84/118 | `questLogActions.ts`, `questLogEventBuffer.ts`, `questLogEvents.ts` … |  |  |
+| `quest_log_events.c` | 2247 | 94/118 | `questLogActions.ts`, `questLogEventBuffer.ts`, `questLogEvents.ts` … |  |  |
 | `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
 | `quest_log.c` | 1767 | 25/88 | `field/overworld.ts`, `field/trainerSee.ts`, `questLogEvents.ts` … |  |  |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
