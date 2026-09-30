@@ -73,7 +73,7 @@ import { ResetFameChecker } from "./fameChecker";
 import { ClearRoamerData } from "./pokemon/roamer";
 import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
-import { ResetQLPlayedTheSlots, SaveQuestLogData, TryStartQuestLogPlayback } from "./questLogEvents";
+import { QuestLog_CutRecording, ResetQLPlayedTheSlots, SaveQuestLogData, TryStartQuestLogPlayback } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
@@ -137,6 +137,7 @@ export class Game {
   battleRunner?: (request: BattleRequest) => Scene;
   /** new_game.c gDifferentSaveFile: preserve a prior save until the new file is confirmed. */
   private differentSaveFile = false;
+  private whiteOutFrames = 0;
   readonly weather = new FieldWeather();
   readonly trades = {
     getSpeciesInfo: () => getInGameTradeSpeciesInfo(),
@@ -1023,14 +1024,24 @@ export class Game {
 
   /** CB2_WhiteOut: respawn at the last heal location. */
   whiteOut(): void {
+    this.whiteOutFrames = 0;
+    this.setCallbacks(null, () => {
+      // CB2_WhiteOut increments gMain.state and waits until it reaches 120.
+      if (++this.whiteOutFrames >= 120) this.DoWhiteOut();
+    });
+  }
+
+  private DoWhiteOut(): void {
     const ow = this.overworld;
     this.scene = null;
+    ow.script.RunScriptImmediately(rom.label("EventScript_ResetEliteFourEnd"));
     save.money -= computeWhiteOutMoneyLoss();
     for (const mon of save.party) healMon(mon);
     ow.Overworld_ResetStateAfterWhitingOut();
     const respawn = ow.SetWhiteoutRespawnWarpAndHealerNpc();
     ow.warpDestination = respawn.warp;
     ow.fieldCallback = () => ow.FieldCB_RushInjuredPokemonToCenter();
+    ow.afterMapLoadCallback = () => QuestLog_CutRecording();
     ow.script.ScriptContext_Init();
     paletteFade.fill(RGB_BLACK);
     ow.warpIntoMapAndLoad();

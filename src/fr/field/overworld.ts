@@ -186,6 +186,7 @@ export class Overworld {
   fixedDiveWarp: WarpData = dummyWarp();
   fixedHoleWarp: WarpData = dummyWarp();
   fieldCallback: FieldCallback | null = null;
+  afterMapLoadCallback: (() => void) | null = null;
   /** gFieldCallback2: runs during map load until it returns true */
   fieldCallback2: (() => boolean) | null = null;
   controlsLocked = false;
@@ -689,6 +690,9 @@ export class Overworld {
       this.mapName.show(false);
     }
     this.runFieldCallback();
+    const afterMapLoad = this.afterMapLoadCallback;
+    this.afterMapLoadCallback = null;
+    afterMapLoad?.();
     this.game.setCallbacks(() => this.cb1(), () => this.cb2());
   }
 
