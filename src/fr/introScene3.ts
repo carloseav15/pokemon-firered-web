@@ -102,6 +102,16 @@ export function Scene3_ApplyGengarAnim(scene: IntroScene3, frame: number, xSub: 
 export function Scene3_Task_GengarAttack(scene: IntroScene3): void { scene.taskGengarAttack(); }
 export function Scene3_CreateGengarSwipeSprites(scene: IntroScene3): void { scene.createGengarSwipeSprites(); }
 export function SpriteCB_GengarSwipe(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackGengarSwipe(sprite); }
+/** intro.c Nidorino/Gengar entrance and foreground grass callbacks. */
+export function Scene3_CreateNidorinoSprite(scene: IntroScene3): void { scene.createNidorinoSprite(); }
+export function Scene3_StartNidorinoEntrance(scene: IntroScene3, sprite: Sprite, xStart: number, xEnd: number, time: number): void {
+  scene.startNidorinoEntrance(sprite, xStart, xEnd, time);
+}
+export function Scene3_SpriteCB_NidorinoEnter(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackNidorinoEnter(sprite); }
+export function Scene3_IsNidorinoEntering(scene: IntroScene3): boolean { return scene.isNidorinoEntering(); }
+export function Scene3_Task_GengarEnter(scene: IntroScene3): void { scene.taskGengarEnter(); }
+export function Scene3_CreateGrassSprite(scene: IntroScene3): void { scene.createGrassSprite(); }
+export function SpriteCB_Grass(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackGrass(sprite); }
 
 export class IntroScene3 {
   private phase: "entrance" | "fight" | "exit" = "entrance";
@@ -113,10 +123,11 @@ export class IntroScene3 {
   private bounceTaskActive = false;
   private gengarSpeed = 0x400;
   private gengarMoves = 0;
-  private gengarEntering = false;
+  private gengarEnterTaskActive = false;
   private scrollSlow = false;
   private bgScrollTaskActive = false;
   private nidorinoSprite = MAX_SPRITES;
+  private grassSprite = MAX_SPRITES;
   private readonly gengarSprites: number[] = [];
   private attackState = -1;
   private attackTimer = 0;
@@ -137,12 +148,14 @@ export class IntroScene3 {
     this.state = this.timer = this.bounceTimer = this.bounceFrame = 0;
     this.gengarSpeed = 0x400;
     this.gengarMoves = 0;
-    this.gengarEntering = false;
+    this.gengarEnterTaskActive = false;
     this.scrollSlow = false;
     this.bouncePaused = false;
     this.bounceTaskActive = false;
     this.bgScrollTaskActive = false;
     this.nidorinoSprite = MAX_SPRITES;
+    this.nidorinoEntering = false;
+    this.grassSprite = MAX_SPRITES;
     this.gengarSprites.length = 0;
     this.attackState = -1;
     this.attackLanded = false;
@@ -209,26 +222,19 @@ export class IntroScene3 {
       case 2:
         BlendPalettes(PALETTES_ALL & ~1, 0, RGB_WHITE);
         ShowBg(0);
-        this.nidorinoSprite = CreateSprite(spriteTemplate(
-          "sSpriteTemplate_Scene3_Nidorino", "sOam_Scene3_Nidorino",
-          "sAnims_Scene3_Nidorino", (sprite) => this.nidorinoEnter(sprite), true), 0, 100, 9);
+        Scene3_CreateNidorinoSprite(this);
         if (this.nidorinoSprite !== MAX_SPRITES) {
-          const sprite = gSprites[this.nidorinoSprite];
-          sprite.data[0] = 0;
-          sprite.data[1] = Math.trunc((180 << 4) / 52);
-          sprite.data[3] = 180;
-          sprite.data[4] = 0;
+          Scene3_StartNidorinoEntrance(this, gSprites[this.nidorinoSprite], 0, 180, 52);
         }
-        this.gengarEntering = true;
+        this.gengarEnterTaskActive = true;
         this.bounceTaskActive = true;
         Scene3_StartBgScroll(this);
         this.timer = 0;
         this.state++;
         break;
       case 3:
-        if (++this.timer === 16) this.createGrass();
-        if (!this.gengarEntering &&
-            (this.nidorinoSprite === MAX_SPRITES || gSprites[this.nidorinoSprite].callback === SpriteCallbackDummy)) {
+        if (++this.timer === 16) Scene3_CreateGrassSprite(this);
+        if (!Scene3_IsNidorinoEntering(this) && !this.gengarEnterTaskActive) {
           this.phase = "fight";
           this.state = 0;
         }
@@ -239,15 +245,7 @@ export class IntroScene3 {
   private runSceneTasks(): void {
     if (this.bgScrollTaskActive) Scene3_Task_BgScroll(this);
     if (this.bounceTaskActive) Scene3_Task_GengarBounce(this);
-    if (this.gengarEntering) {
-      if (++this.gengarMoves >= 40 && this.gengarSpeed > 16) this.gengarSpeed -= 16;
-      const scroll = ChangeBgX(0, this.gengarSpeed, BG_COORD_ADD);
-      if (scroll >= 0x8000) ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
-      if (scroll >= 0xef00) {
-        ChangeBgX(0, 0xef00, BG_COORD_SET);
-        this.gengarEntering = false;
-      }
-    }
+    if (this.gengarEnterTaskActive) Scene3_Task_GengarEnter(this);
     if (this.attackState >= 0) Scene3_Task_GengarAttack(this);
   }
 
@@ -275,23 +273,55 @@ export class IntroScene3 {
   resumeGengarBounce(): void { this.bouncePaused = false; }
   isGengarMidBounce(): number { return this.bounceFrame; }
 
-  private nidorinoEnter(sprite: Sprite): void {
+  createNidorinoSprite(): void {
+    this.nidorinoSprite = CreateSprite(spriteTemplate(
+      "sSpriteTemplate_Scene3_Nidorino", "sOam_Scene3_Nidorino",
+      "sAnims_Scene3_Nidorino", (sprite) => Scene3_SpriteCB_NidorinoEnter(this, sprite), true), 0, 0, 9);
+  }
+
+  startNidorinoEntrance(sprite: Sprite, xStart: number, xEnd: number, time: number): void {
+    sprite.data[0] = xStart << 4;
+    sprite.data[1] = Math.trunc(((xEnd - xStart) << 4) / time);
+    sprite.data[2] = time;
+    sprite.data[3] = xEnd;
+    sprite.data[4] = 0;
+    sprite.x = xStart;
+    sprite.y = 100;
+    this.nidorinoEntering = true;
+  }
+
+  private nidorinoEntering = false;
+
+  spriteCallbackNidorinoEnter(sprite: Sprite): void {
     const data = sprite.data;
     if (++data[4] >= 40 && data[1] > 1) data[1]--;
     data[0] += data[1];
     sprite.x = data[0] >> 4;
     if (sprite.x >= data[3]) {
       sprite.x = data[3];
+      this.nidorinoEntering = false;
       sprite.callback = SpriteCallbackDummy;
     }
   }
 
-  private createGrass(): void {
-    CreateSprite(spriteTemplate("sSpriteTemplate_Grass", "sOam_Grass",
-      "sAnims_Grass", (sprite) => this.grassMove(sprite)), 296, 112, 7);
+  isNidorinoEntering(): boolean { return this.nidorinoEntering; }
+
+  taskGengarEnter(): void {
+    if (++this.gengarMoves >= 40 && this.gengarSpeed > 16) this.gengarSpeed -= 16;
+    const scroll = ChangeBgX(0, this.gengarSpeed, BG_COORD_ADD);
+    if (scroll >= 0x8000) ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
+    if (scroll >= 0xef00) {
+      ChangeBgX(0, 0xef00, BG_COORD_SET);
+      this.gengarEnterTaskActive = false;
+    }
   }
 
-  private grassMove(sprite: Sprite): void {
+  createGrassSprite(): void {
+    this.grassSprite = CreateSprite(spriteTemplate("sSpriteTemplate_Grass", "sOam_Grass",
+      "sAnims_Grass", (sprite) => SpriteCB_Grass(this, sprite)), 296, 112, 7);
+  }
+
+  spriteCallbackGrass(sprite: Sprite): void {
     const data = sprite.data;
     if (data[0] === 0) {
       data[1] = sprite.x << 5;
