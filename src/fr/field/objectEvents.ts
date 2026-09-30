@@ -37,13 +37,25 @@ const JUMP_DISTANCE_IN_PLACE = 0, JUMP_DISTANCE_NORMAL = 1, JUMP_DISTANCE_FAR = 
 const JUMP_TYPE_HIGH = 0, JUMP_TYPE_LOW = 1, JUMP_TYPE_NORMAL = 2;
 const JUMP_HALFWAY = 1, JUMP_FINISHED = 0xff;
 
-const STEP_SIZES: number[][] = [
-  new Array(16).fill(1),
-  new Array(8).fill(2),
-  [2, 3, 3, 2, 3, 3],
-  [4, 4, 4, 4],
-  [8, 8],
-];
+type SpriteStepFunc = (sprite: Sprite, direction: number) => void;
+function applySpriteStep(sprite: Sprite, direction: number, amount: number): void {
+  const [dx, dy] = DIRECTION_VECTORS[direction]!;
+  sprite.x = ((sprite.x + dx * amount) << 16) >> 16;
+  sprite.y = ((sprite.y + dy * amount) << 16) >> 16;
+}
+function Step1(sprite: Sprite, direction: number): void { applySpriteStep(sprite, direction, 1); }
+function Step2(sprite: Sprite, direction: number): void { applySpriteStep(sprite, direction, 2); }
+function Step3(sprite: Sprite, direction: number): void { applySpriteStep(sprite, direction, 3); }
+function Step4(sprite: Sprite, direction: number): void { applySpriteStep(sprite, direction, 4); }
+function Step8(sprite: Sprite, direction: number): void { applySpriteStep(sprite, direction, 8); }
+
+const sSpeedNormalStepFuncs: SpriteStepFunc[] = Array(16).fill(Step1);
+const sSpeedFast1StepFuncs: SpriteStepFunc[] = Array(8).fill(Step2);
+const sSpeedFast2StepFuncs: SpriteStepFunc[] = [Step2, Step3, Step3, Step2, Step3, Step3];
+const sSpeedFasterStepFuncs: SpriteStepFunc[] = Array(4).fill(Step4);
+const sSpeedFastestStepFuncs: SpriteStepFunc[] = [Step8, Step8];
+const sNpcStepFuncTables: SpriteStepFunc[][] = [sSpeedNormalStepFuncs, sSpeedFast1StepFuncs,
+  sSpeedFast2StepFuncs, sSpeedFasterStepFuncs, sSpeedFastestStepFuncs];
 const DELAYS_MEDIUM = [32, 64, 96, 128];
 const DELAYS_SHORT = [32, 48, 64, 80];
 const INITIAL_FACING: Record<number, number> = {};
@@ -2540,11 +2552,11 @@ export class ObjectEvents {
   /** NpcTakeStep */
   private npcTakeStep(object: ObjectEvent): boolean {
     const s = object.sprite;
-    const sizes = STEP_SIZES[s.data[4]];
-    if (s.data[5] >= sizes.length) return false;
-    this.stepSprite(object, sizes[s.data[5]], s.data[3]);
+    const steps = sNpcStepFuncTables[s.data[4]];
+    if (!steps || s.data[5] >= steps.length) return false;
+    steps[s.data[5]]!(s, s.data[3]);
     s.data[5]++;
-    return s.data[5] >= sizes.length;
+    return s.data[5] >= steps.length;
   }
 
   private updateMovementNormal(object: ObjectEvent): boolean {
