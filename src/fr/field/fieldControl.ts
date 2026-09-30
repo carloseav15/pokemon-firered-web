@@ -78,6 +78,19 @@ export function FieldInput_HandleCancelSignpost(control: FieldControl, input: Fi
 export function ProcessPlayerFieldInput(control: FieldControl, input: FieldInput): boolean {
   return control.ProcessPlayerFieldInput(input);
 }
+/** field_control_avatar.c step script dispatch family; preserve source call order. */
+export function TryStartStepBasedScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): boolean {
+  return control.tryStartStepBasedScript(position, behavior, direction);
+}
+export function TryStartCoordEventScript(control: FieldControl, position: MapPosition): boolean {
+  return control.tryStartCoordEventScript(position);
+}
+export function TryStartStepCountScript(control: FieldControl, behavior: number): boolean {
+  return control.tryStartStepCountScript(behavior);
+}
+export function TryStartWarpEventScript(control: FieldControl, position: MapPosition, behavior: number): boolean {
+  return control.tryStartWarpEventScript(position, behavior);
+}
 
 function emptyInput(): FieldInput {
   const input = {} as FieldInput;
@@ -294,7 +307,7 @@ export class FieldControl {
       RunMassageCooldownStepCounter();
       IncrementResortGorgeousStepCounter();
       IncrementBirthIslandRockStepCount();
-      if (this.TryStartStepBasedScript(position, behavior, direction)) { this.recordAcceptedFieldInput("tookStep"); return true; }
+      if (TryStartStepBasedScript(this, position, behavior, direction)) { this.recordAcceptedFieldInput("tookStep"); return true; }
     }
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {
       const front = GetInFrontOfPlayerPosition(this);
@@ -529,17 +542,17 @@ export class FieldControl {
   }
 
   /** TryStartStepBasedScript (field_control_avatar.c). */
-  private TryStartStepBasedScript(position: { x: number; y: number; elevation: number }, behavior: number, _direction: number): boolean {
-    if (this.TryStartCoordEventScript(position)) return true;
-    if (this.TryStartWarpEventScript(position, behavior)) return true;
+  tryStartStepBasedScript(position: MapPosition, behavior: number, _direction: number): boolean {
+    if (TryStartCoordEventScript(this, position)) return true;
+    if (TryStartWarpEventScript(this, position, behavior)) return true;
     if (this.TryStartMiscWalkingScripts(behavior)) return true;
-    if (this.TryStartStepCountScript(behavior)) return true;
+    if (TryStartStepCountScript(this, behavior)) return true;
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior) && this.ow.effects.updateRepelCounter()) return true;
     return false;
   }
 
   /** TryStartCoordEventScript (field_control_avatar.c). */
-  private TryStartCoordEventScript(position: { x: number; y: number; elevation: number }): boolean {
+  tryStartCoordEventScript(position: MapPosition): boolean {
     const script = this.GetCoordEventScriptAtMapPosition(position);
     if (!script) return false;
     this.ow.script.ScriptContext_SetupScript(script);
@@ -581,7 +594,7 @@ export class FieldControl {
   }
 
   /** TryStartStepCountScript (field_control_avatar.c). */
-  private TryStartStepCountScript(behavior: number): boolean {
+  tryStartStepCountScript(behavior: number): boolean {
     if (InUnionRoom() || gQuestLogState === C.QL_STATE_PLAYBACK) return false;
     this.UpdateHappinessStepCounter();
     if (!(this.ow.player.flags & PLAYER_AVATAR_FLAG_FORCED) && !MB.MetatileBehavior_IsForcedMovementTile(behavior)) {
@@ -733,7 +746,7 @@ export class FieldControl {
   }
 
   /** TryStartWarpEventScript (field_control_avatar.c). */
-  private TryStartWarpEventScript(position: { x: number; y: number; elevation: number }, behavior: number): boolean {
+  tryStartWarpEventScript(position: MapPosition, behavior: number): boolean {
     const warpIndex = this.GetWarpEventAtMapPosition(position);
     if (warpIndex < 0 || !this.IsWarpMetatileBehavior(behavior)) return false;
     this.ow.storeInitialPlayerAvatarState();
