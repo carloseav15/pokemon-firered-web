@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9431/10115 (93.2 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **684 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9443/10115 (93.4 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **672 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~13.475 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~13.326 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -40,7 +40,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 20 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
 | 21 | `overworld.c` | parcial | 3563 | 125/242 | ~1722 |  |
 | 22 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 23 | `event_object_movement.c` | parcial | 9412 | 548/759 | ~2616 |  |
+| 23 | `event_object_movement.c` | parcial | 9412 | 560/759 | ~2467 |  |
 
 Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 16 casi completos y 7 parciales.
 
