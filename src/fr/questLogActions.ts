@@ -15,6 +15,16 @@ function hasRoom(script: readonly number[], cursor: number, bytes: number): bool
   return cursor >= 0 && cursor <= script.length && (cursor * 2 + bytes <= SCRIPT_CAPACITY_BYTES);
 }
 
+/** QL_IsRoomToSaveEvent (quest_log.c), with the scene script and offset standing in for the C pointer. */
+export function QL_IsRoomToSaveEvent(script: readonly number[], cursor: number, size: number): boolean {
+  return hasRoom(script, cursor, size);
+}
+
+/** QL_IsRoomToSaveAction (quest_log.c): identical room check for action records. */
+export function QL_IsRoomToSaveAction(script: readonly number[], cursor: number, size: number): boolean {
+  return hasRoom(script, cursor, size);
+}
+
 function hasStored(script: readonly number[], cursor: number, bytes: number): boolean {
   return cursor >= 0 && cursor + bytes / 2 <= script.length;
 }
@@ -30,7 +40,7 @@ function unpackWords(script: readonly number[], cursor: number): [number, number
 
 /** QL_RecordAction_SceneEnd: writes the 2-byte scene-end command. */
 export function QL_RecordAction_SceneEnd(script: number[], cursor = script.length): number | null {
-  if (!hasRoom(script, cursor, 2)) return null;
+  if (!QL_IsRoomToSaveAction(script, cursor, 2)) return null;
   script[cursor] = C.QL_EVENT_SCENE_END;
   return cursor + 1;
 }
@@ -43,7 +53,7 @@ export function QL_LoadAction_SceneEnd(script: readonly number[], cursor: number
 
 /** QL_RecordAction_Wait. */
 export function QL_RecordAction_Wait(script: number[], duration: number, cursor = script.length): number | null {
-  if (!hasRoom(script, cursor, 4)) return null;
+  if (!QL_IsRoomToSaveAction(script, cursor, 4)) return null;
   script[cursor] = C.QL_EVENT_WAIT;
   script[cursor + 1] = duration & 0xffff;
   return cursor + 2;
@@ -57,7 +67,7 @@ export function QL_LoadAction_Wait(script: readonly number[], cursor: number): L
 
 /** QL_RecordAction_Input. Data bytes match the four-byte FieldInput union. */
 export function QL_RecordAction_Input(script: number[], action: QuestLogAction, cursor = script.length): number | null {
-  if (!hasRoom(script, cursor, 8)) return null;
+  if (!QL_IsRoomToSaveAction(script, cursor, 8)) return null;
   const [a, b] = packBytes(action.data);
   script[cursor] = C.QL_EVENT_INPUT;
   script[cursor + 1] = action.duration & 0xffff;
@@ -74,7 +84,7 @@ export function QL_LoadAction_Input(script: readonly number[], cursor: number): 
 
 /** QL_RecordAction_MovementOrGfxChange. */
 export function QL_RecordAction_MovementOrGfxChange(script: number[], action: QuestLogAction, cursor = script.length): number | null {
-  if (!hasRoom(script, cursor, 8)) return null;
+  if (!QL_IsRoomToSaveAction(script, cursor, 8)) return null;
   const [a, b] = packBytes(action.data);
   script[cursor] = action.type === C.QL_ACTION_MOVEMENT ? C.QL_EVENT_MOVEMENT : C.QL_EVENT_GFX_CHANGE;
   script[cursor + 1] = action.duration & 0xffff;

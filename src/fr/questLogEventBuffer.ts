@@ -1,6 +1,7 @@
 // quest_log_events.c: single-player event records in QuestLogScene.script.
 
 import * as C from "./generated/constants";
+import { QL_IsRoomToSaveEvent } from "./questLogActions";
 
 export interface QuestLogEventRepeatState {
   id: number;
@@ -12,7 +13,6 @@ export interface QuestLogEventRepeatState {
 }
 
 const CMD_HEADER_WORDS = 2;
-const SCRIPT_WORD_CAPACITY = 128;
 const MAX_CMD_REPEAT = 4;
 
 function u16(value: number | undefined): number { return (value ?? 0) & 0xffff; }
@@ -40,7 +40,7 @@ export function RecordEventHeader(
   if (tracker.recordPayloadWords !== undefined && tracker.recordPayloadWords !== payload.length) return null;
 
   if (repeatCount === 0) {
-    if (script.length + headerWords + payload.length > SCRIPT_WORD_CAPACITY) return null;
+    if (!QL_IsRoomToSaveEvent(script, script.length, (headerWords + payload.length) * 2)) return null;
     tracker.recordStart = script.length;
     tracker.recordPayloadWords = payload.length;
     script.push((eventId & 0x0fff) + (repeatCount << C.QL_CMD_COUNT_SHIFT), actionIndex & 0xffff, ...payload.map(u16));
@@ -53,7 +53,7 @@ export function RecordEventHeader(
   const expectedLength = start + CMD_HEADER_WORDS + payloadWords * repeatCount;
   if (script.length !== expectedLength) return null;
   if (repeatCount <= MAX_CMD_REPEAT) {
-    if (script.length + payload.length > SCRIPT_WORD_CAPACITY) return null;
+    if (!QL_IsRoomToSaveEvent(script, script.length, payload.length * 2)) return null;
     script[start] = (eventId & 0x0fff) + (repeatCount << C.QL_CMD_COUNT_SHIFT);
     script.push(...payload.map(u16));
   } else {
@@ -139,7 +139,7 @@ export const RecordEvent_DefeatedEliteFourMember: Recorder = (script, actionInde
 /** RecordEvent_DefeatedChampion: the source stores one payload and replays it three times. */
 export const RecordEvent_DefeatedChampion: Recorder = (script, actionIndex, tracker, data) => {
   UpdateRepeatEventCounter(C.QL_EVENT_DEFEATED_CHAMPION, actionIndex, tracker);
-  if (script.length + 5 > SCRIPT_WORD_CAPACITY) return null;
+  if (!QL_IsRoomToSaveEvent(script, script.length, 5 * 2)) return null;
   script.push(C.QL_EVENT_DEFEATED_CHAMPION | (2 << C.QL_CMD_COUNT_SHIFT), actionIndex & 0xffff,
     u16(data.speciesOpponent as number), u16(data.speciesPlayer as number), u16(data.hpFractionId as number));
   return script.length;
@@ -164,7 +164,7 @@ export function RecordEvent_DefeatedWildMon(script: number[], actionIndex: numbe
     script[previous + 5] = u16(data.mapSec as number);
     return script.length;
   }
-  if (script.length + 6 > SCRIPT_WORD_CAPACITY) return null;
+  if (!QL_IsRoomToSaveEvent(script, script.length, 6 * 2)) return null;
   tracker.wildRecordStart = script.length;
   script.push(C.QL_EVENT_DEFEATED_WILD_MON, actionIndex & 0xffff,
     u16(data.defeatedSpecies as number), u16(data.caughtSpecies as number),
