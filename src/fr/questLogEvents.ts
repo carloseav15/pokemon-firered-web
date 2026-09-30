@@ -434,6 +434,22 @@ export function QuestLogRecordNPCStepWithDuration(localId: number, mapNum: numbe
   sNextActionDelay = duration & 0xffff;
 }
 
+/** QuestLogRecordNPCStep (quest_log.c): record a single object movement without adding a delay. */
+export function QuestLogRecordNPCStep(localId: number, mapNum: number, mapGroup: number, movementActionId: number, controlsLocked = false): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING || controlsLocked) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script) return;
+  if (QL_RecordAction_MovementOrGfxChange(script, {
+    type: C.QL_ACTION_MOVEMENT, duration: sNextActionDelay,
+    data: [localId & 0xff, mapNum & 0xff, mapGroup & 0xff, movementActionId & 0xff],
+  }) === null) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    return;
+  }
+  IncrementQuestLogActionIndex();
+  sNextActionDelay = 0;
+}
+
 /** QL_RecordFieldInput (quest_log.c): preserve only the C bitfield mask and direction byte. */
 export function QL_RecordFieldInput(input: {
   pressedAButton: boolean; checkStandardWildEncounter: boolean; heldDirection: boolean;

@@ -227,6 +227,7 @@ export class Overworld {
         return p ? { ...p.currentCoords } : { x: 0, y: 0 };
       },
       playerIsRunning: () => this.player.isDashing(),
+      fieldControlsLocked: () => this.controlsLocked,
       cameraObjectReset: (object) => { if (this.cameraTarget === object) this.updateCameraPixels(); },
       playerInfo: () => {
         const p = this.objects.player();

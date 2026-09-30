@@ -10,7 +10,7 @@ import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet, varGet } from "../save";
-import { QL_GetPlaybackState } from "../questLogEvents";
+import { gQuestLogPlaybackState, QL_GetPlaybackState, QuestLogRecordNPCStep } from "../questLogEvents";
 import { CONNECTION_INVALID, MAP_OFFSET, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
 import { gSineTable } from "../hw/trig";
 
@@ -124,6 +124,7 @@ export type ObjectEventHooks = {
   startShadow?: (object: ObjectEvent) => void;
   startDisguiseReveal?: (object: ObjectEvent) => void;
   isDisguiseRevealFinished?: (object: ObjectEvent) => boolean;
+  fieldControlsLocked?: () => boolean;
 };
 
 type VirtualObject = { sprite: Sprite; id: number; elevation: number; invisible: boolean; animNum: number; animState: number };
@@ -1504,6 +1505,9 @@ export class ObjectEvents {
   private setSingle(object: ObjectEvent, actionId: number): void {
     object.movementActionId = actionId;
     object.sprite.data[2] = 0;
+    if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) {
+      QuestLogRecordNPCStep(object.localId, object.mapNum, object.mapGroup, actionId, this.hooks.fieldControlsLocked?.() ?? false);
+    }
   }
 
   private execSingle(object: ObjectEvent): boolean {
