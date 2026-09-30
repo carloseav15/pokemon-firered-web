@@ -340,10 +340,10 @@ class ClockwiseWipeEffect implements Effect {
 
   stepTopRight(): boolean {
     this.dmaPending = false;
-      this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, this.endX, -1, 1, 1);
+      InitBlackWipe(this.wipe, DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, this.endX, -1, 1, 1);
       do {
         this.setRow(this.wipe.currY, DISPLAY_WIDTH / 2, this.wipe.currX + 1);
-      } while (!this.wipe.update(true, true));
+      } while (!UpdateBlackWipe(this.wipe, true, true));
       this.endX += 32;
       if (this.endX >= DISPLAY_WIDTH) { this.endY = 0; this.state = "right"; }
     this.dmaPending = true;
@@ -352,7 +352,7 @@ class ClockwiseWipeEffect implements Effect {
 
   stepRight(): boolean {
     this.dmaPending = false;
-      this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, DISPLAY_WIDTH, this.endY, 1, 1);
+      InitBlackWipe(this.wipe, DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, DISPLAY_WIDTH, this.endY, 1, 1);
       let start = 0, end = 0, finished = false;
       for (;;) {
         start = DISPLAY_WIDTH / 2;
@@ -360,7 +360,7 @@ class ClockwiseWipeEffect implements Effect {
         if (this.endY >= DISPLAY_HEIGHT / 2) { start = this.wipe.currX; end = DISPLAY_WIDTH; }
         this.setRow(this.wipe.currY, start, end);
         if (finished) break;
-        finished = this.wipe.update(true, true);
+        finished = UpdateBlackWipe(this.wipe, true, true);
       }
       this.endY += 16;
       if (this.endY >= DISPLAY_HEIGHT) { this.endX = DISPLAY_WIDTH; this.state = "bottom"; }
@@ -371,10 +371,10 @@ class ClockwiseWipeEffect implements Effect {
 
   stepBottom(): boolean {
     this.dmaPending = false;
-      this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, this.endX, DISPLAY_HEIGHT, 1, 1);
+      InitBlackWipe(this.wipe, DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, this.endX, DISPLAY_HEIGHT, 1, 1);
       do {
         this.setRow(this.wipe.currY, this.wipe.currX, DISPLAY_WIDTH);
-      } while (!this.wipe.update(true, true));
+      } while (!UpdateBlackWipe(this.wipe, true, true));
       this.endX -= 32;
       if (this.endX <= 0) { this.endY = DISPLAY_HEIGHT; this.state = "left"; }
     this.dmaPending = true;
@@ -383,7 +383,7 @@ class ClockwiseWipeEffect implements Effect {
 
   stepLeft(): boolean {
     this.dmaPending = false;
-      this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, 0, this.endY, 1, 1);
+      InitBlackWipe(this.wipe, DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, 0, this.endY, 1, 1);
       let start = 0, end = 0, finished = false;
       for (;;) {
         end = this.getRow(this.wipe.currY)[1];
@@ -391,7 +391,7 @@ class ClockwiseWipeEffect implements Effect {
         if (this.endY <= DISPLAY_HEIGHT / 2) { start = DISPLAY_WIDTH / 2; end = this.wipe.currX; }
         this.setRow(this.wipe.currY, start, end);
         if (finished) break;
-        finished = this.wipe.update(true, true);
+        finished = UpdateBlackWipe(this.wipe, true, true);
       }
       this.endY -= 16;
       if (this.endY <= 0) { this.endX = 0; this.state = "topLeft"; }
@@ -402,13 +402,13 @@ class ClockwiseWipeEffect implements Effect {
 
   stepTopLeft(): boolean {
     this.dmaPending = false;
-    this.wipe.init(120, 80, this.endX, 0, 1, 1);
+    InitBlackWipe(this.wipe, 120, 80, this.endX, 0, 1, 1);
     let finished2 = false;
     do {
       let start = DISPLAY_WIDTH / 2, end = this.wipe.currX;
       if (this.wipe.currX >= 120) { start = 0; end = DISPLAY_WIDTH; }
       this.setRow(this.wipe.currY, start, end);
-      finished2 = this.wipe.update(true, true);
+      finished2 = UpdateBlackWipe(this.wipe, true, true);
     } while (!finished2);
     this.endX += 32;
     if (this.wipe.currX > DISPLAY_WIDTH / 2) this.state = "end";
@@ -433,6 +433,10 @@ function ClockwiseWipe_TopLeft(effect: ClockwiseWipeEffect): boolean { return ef
 function ClockwiseWipe_End(effect: ClockwiseWipeEffect): boolean { return effect.end(); }
 function VBlankCB_ClockwiseWipe(effect: ClockwiseWipeEffect): void { effect.copyScanlineBuffer(); }
 function FadeScreenBlack(): void { paletteFade.fill(RGB_BLACK); }
+function InitBlackWipe(wipe: BlackWipe, startX: number, startY: number, endX: number, endY: number, stepX: number, stepY: number): void {
+  wipe.init(startX, startY, endX, endY, stepX, stepY);
+}
+function UpdateBlackWipe(wipe: BlackWipe, xExact: boolean, yExact: boolean): boolean { return wipe.update(xExact, yExact); }
 
 class SliceEffect implements Effect {
   readonly rowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
@@ -847,7 +851,7 @@ class BigPokeballEffect implements Effect {
   appliedEvb = 16;
   readonly rowOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
   readonly workingRowOffsets: number[] = new Array(DISPLAY_HEIGHT).fill(0);
-  readonly maskHalfWidths: number[] = new Array(DISPLAY_HEIGHT).fill(DISPLAY_WIDTH);
+  readonly maskBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [10, 10]);
   private readonly gfx = incbin("sBigPokeball_Gfx");
   private readonly tilemap = incbin16("sBigPokeball_Tilemap");
   private readonly palette = incbin16("sFieldEffectPal_Pokeball");
@@ -905,7 +909,7 @@ class BigPokeballEffect implements Effect {
       const wave = this.rowOffsets[y]!;
       const row = y * DISPLAY_WIDTH;
       for (let x = 0; x < DISPLAY_WIDTH; x++) {
-        if ((this.phase as string === "mask" || this.phase as string === "done") && Math.abs(x - DISPLAY_WIDTH / 2) > this.maskHalfWidths[y]!) continue;
+        if ((this.phase as string === "mask" || this.phase as string === "done") && (x < this.maskBounds[y]![0] || x >= this.maskBounds[y]![1])) continue;
         const sx = Math.max(0, Math.min(DISPLAY_WIDTH - 1, x + wave));
         const color = this.pixels[y * DISPLAY_WIDTH + sx]!;
         const p = (row + x) * 4;
@@ -920,13 +924,8 @@ class BigPokeballEffect implements Effect {
     ctx.putImageData(image, 0, 0);
   }
 
-  private circleHalfWidth(y: number): number {
-    const dy = y - DISPLAY_HEIGHT / 2;
-    return Math.abs(dy) >= this.radius ? -1 : Math.sqrt(this.radius * this.radius - dy * dy);
-  }
-
   private BigPokeball_SetGfx(): boolean {
-    this.updatePatternWeaveRows();
+    SetSinWave(this.workingRowOffsets, 0, this.sinIndex, 132, this.amplitude >> 8, DISPLAY_HEIGHT);
     this.phase = "blend1";
     this.dmaPending = true;
     return true;
@@ -950,13 +949,6 @@ class BigPokeballEffect implements Effect {
     return result;
   }
 
-  updatePatternWeaveRows(): void {
-    const amplitude = this.amplitude >> 8;
-    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
-      this.workingRowOffsets[y] = Sin((this.sinIndex + y * 132) & 0xff, amplitude);
-    }
-  }
-
   commitPatternWeaveRows(): void {
     if (!this.dmaPending) return;
     for (let y = 0; y < DISPLAY_HEIGHT; y++) this.rowOffsets[y] = this.workingRowOffsets[y]!;
@@ -964,7 +956,12 @@ class BigPokeballEffect implements Effect {
   }
 
   commitCircularMask(): void {
-    for (let y = 0; y < DISPLAY_HEIGHT; y++) this.maskHalfWidths[y] = this.circleHalfWidth(y);
+    const scanlines = new Uint16Array(DISPLAY_HEIGHT);
+    SetCircularMask(scanlines, DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, this.radius);
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      const packed = scanlines[y]!;
+      this.maskBounds[y] = [(packed >> 8) & 0xff, packed & 0xff];
+    }
     this.dmaPending = false;
   }
 
@@ -975,7 +972,7 @@ class BigPokeballEffect implements Effect {
     }
     this.sinIndex = (this.sinIndex + 12) & 0xffff;
     this.amplitude -= 384;
-    this.updatePatternWeaveRows();
+    SetSinWave(this.workingRowOffsets, 0, this.sinIndex, 132, this.amplitude >> 8, DISPLAY_HEIGHT);
     this.dmaPending = true;
     if (this.blendEva > 15) this.phase = "blend2";
     return false;
@@ -990,7 +987,7 @@ class BigPokeballEffect implements Effect {
       this.sinIndex = (this.sinIndex + 12) & 0xffff;
       this.amplitude -= 384;
     } else this.amplitude = 0;
-    this.updatePatternWeaveRows();
+    SetSinWave(this.workingRowOffsets, 0, this.sinIndex, 132, this.amplitude >> 8, DISPLAY_HEIGHT);
     this.dmaPending = true;
     if (this.blendEvb === 0) this.phase = "finish";
     return false;
@@ -1001,7 +998,7 @@ class BigPokeballEffect implements Effect {
       this.sinIndex = (this.sinIndex + 12) & 0xffff;
       this.amplitude -= 384;
     } else this.amplitude = 0;
-    this.updatePatternWeaveRows();
+    SetSinWave(this.workingRowOffsets, 0, this.sinIndex, 132, this.amplitude >> 8, DISPLAY_HEIGHT);
     this.dmaPending = true;
     if (this.amplitude <= 0) {
       this.phase = "mask";
@@ -1017,6 +1014,37 @@ class BigPokeballEffect implements Effect {
     if (this.radius !== 0) this.radius = Math.max(0, this.radius - (this.radiusDelta >> 8));
     if (this.radius === 0) { this.phase = "done"; return true; }
     return false;
+  }
+}
+
+function SetSinWave(buffer: number[], offset: number, index: number, frequency: number, amplitude: number, bufSize: number): void {
+  let sinIndex = index;
+  for (let i = 0; i < bufSize; i++, sinIndex += frequency)
+    buffer[i] = offset + safeSin(sinIndex & 0xff, amplitude);
+}
+
+function SetCircularMask(buffer: Uint16Array, x: number, y: number, radius: number): void {
+  buffer.fill(0x0a0a);
+  for (let i = 0; i < 64; i++) {
+    const sinResult = safeSin(i, radius);
+    const cosResult = safeSin(i + 64, radius);
+    let leftX = x - sinResult, rightX = x + sinResult;
+    let topY = y - cosResult, bottomY = y + cosResult;
+    if (leftX < 0) leftX = 0;
+    if (rightX > DISPLAY_WIDTH) rightX = DISPLAY_WIDTH;
+    if (topY < 0) topY = 0;
+    if (bottomY > DISPLAY_HEIGHT - 1) bottomY = DISPLAY_HEIGHT - 1;
+    const winVal = ((leftX << 8) | rightX) & 0xffff;
+    buffer[topY] = winVal;
+    buffer[bottomY] = winVal;
+    const nextCos = safeSin(i + 65, radius);
+    let nextTopY = y - nextCos, nextBottomY = y + nextCos;
+    if (nextTopY < 0) nextTopY = 0;
+    if (nextBottomY > DISPLAY_HEIGHT - 1) nextBottomY = DISPLAY_HEIGHT - 1;
+    while (topY > nextTopY) buffer[--topY] = winVal;
+    while (topY < nextTopY) buffer[++topY] = winVal;
+    while (bottomY > nextBottomY) buffer[--bottomY] = winVal;
+    while (bottomY < nextBottomY) buffer[++bottomY] = winVal;
   }
 }
 
