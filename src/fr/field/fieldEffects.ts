@@ -8,6 +8,8 @@ import { ElevationToPriority } from "../generated/eventObjectAnims";
 import { sound } from "../audio/sound";
 import { Sprite, loadImage } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
+import { incbin } from "../hw/assets";
+import { BeginNormalPaletteFade, BlendPalettes, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_BG, RGB_WHITE, gPaletteFade } from "../hw/palette";
 import { DATA_ROOT, rom, type AnimCmd } from "../rom";
 import { flagClear, flagGet, save, varGet, varSet } from "../save";
 import { actionWalkInPlaceNormal, actionWalkSlower, DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, ShiftObjectEventCoords, ShiftStillObjectEventCoords, graphicsInfo, type ObjectEvent } from "./objectEvents";
@@ -19,6 +21,7 @@ import { SafariZoneTakeStep } from "./safariZone";
 import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
 import { FindTaskIdByFunc } from "../hw/menuHelpers";
 import { MAP_OFFSET } from "./fieldmap";
+import { spriteSheet } from "./gfx4bpp";
 import { QuestLog_CutRecording } from "../questLogEvents";
 import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../hw/gpu";
 import {
@@ -227,6 +230,7 @@ export class FieldEffects {
   private readonly disguiseSpriteSet = new Set<Sprite>();
   private readonly reflectionSprites = new Map<ObjectEvent, Sprite>();
   private readonly deoxysRockObjects = new Map<number, ObjectEvent>();
+  private readonly deoxysDestroyObjects = new Map<number, ObjectEvent>();
   /** Registered handlers for FLDEFF_* ids (field moves, etc.) */
   readonly handlers = new Map<number, () => void>();
   poisonMosaicValue = 0;
@@ -383,6 +387,7 @@ export class FieldEffects {
     if (id === C.FLDEFF_BIKE_TIRE_TRACKS) { this.FldEff_BikeTireTracks(); return; }
     if (id === C.FLDEFF_SAND_PILE) { this.FldEff_SandPile(); return; }
     if (id === C.FLDEFF_MOVE_DEOXYS_ROCK) { this.FldEff_MoveDeoxysRock(); return; }
+    if (id === C.FLDEFF_DESTROY_DEOXYS_ROCK) { this.FldEff_DestroyDeoxysRock(); return; }
     if (this.moves.start(id)) return;
     if (!this.startIcon(id)) this.active.delete(id);
   }
@@ -433,6 +438,120 @@ export class FieldEffects {
       this.deoxysRockObjects.delete(taskId);
       tasks.destroy(taskId);
     }
+  }
+
+  /** FldEff_DestroyDeoxysRock (field_effect.c). */
+  FldEff_DestroyDeoxysRock(): void {
+    const args = this.ow.game.fieldEffectArguments;
+    const object = this.ow.objects.byLocalIdAndMap(args[0]! & 0xff, args[1]! & 0xff, args[2]! & 0xff);
+    if (!object) { this.active.delete(C.FLDEFF_DESTROY_DEOXYS_ROCK); return; }
+    const taskId = tasks.create((id) => this.Task_DestroyDeoxysRock(id), 80);
+    const data = tasks.data(taskId);
+    data[2] = (this.ow.objects.indexOf(object) << 16) >> 16;
+    data[6] = args[0]! & 0xff;
+    data[7] = args[1]! & 0xff;
+    data[8] = args[2]! & 0xff;
+    this.deoxysDestroyObjects.set(taskId, object);
+  }
+
+  /** Task_DeoxysRockCameraShake (field_effect.c). */
+  Task_DeoxysRockCameraShake(taskId: number): void {
+    const data = tasks.data(taskId);
+    if (data[7] !== 0) {
+      data[6]++;
+      if (data[6]! > 20) {
+        data[6] = 0;
+        if (data[5] !== 0) data[5]--;
+      }
+    } else data[5] = 4;
+    data[0]++;
+    if (data[0]! > 1) {
+      data[0] = 0;
+      data[1]++;
+      this.ow.SetCameraPanning(0, data[1]! & 1 ? -data[5]! : data[5]!);
+    }
+    this.ow.UpdateCameraPanning();
+    if (data[5] === 0) tasks.destroy(taskId);
+  }
+
+  /** StartEndingDeoxysRockCameraShake (field_effect.c). */
+  StartEndingDeoxysRockCameraShake(taskId: number): void { tasks.data(taskId)[7] = 1; }
+
+  /** Task_DestroyDeoxysRock / DestroyDeoxysRockEffect_* (field_effect.c). */
+  Task_DestroyDeoxysRock(taskId: number): void {
+    const data = tasks.data(taskId);
+    this.ow.InstallCameraPanAheadCallback();
+    this.ow.SetCameraPanningCallback(null);
+    switch (data[1]) {
+      case 0: this.DestroyDeoxysRockEffect_CameraShake(data, taskId); break;
+      case 1: this.DestroyDeoxysRockEffect_RockFragments(data, taskId); break;
+      case 2: this.DestroyDeoxysRockEffect_WaitAndEnd(data, taskId); break;
+    }
+  }
+
+  DestroyDeoxysRockEffect_CameraShake(data: number[], taskId: number): void {
+    const cameraTaskId = tasks.create((id) => this.Task_DeoxysRockCameraShake(id), 90);
+    sound.playSE(C.SE_THUNDER2);
+    data[5] = cameraTaskId;
+    data[1]++;
+  }
+
+  DestroyDeoxysRockEffect_RockFragments(data: number[], taskId: number): void {
+    if (++data[3]! <= 120) return;
+    const object = this.deoxysDestroyObjects.get(taskId);
+    if (!object) { this.active.delete(C.FLDEFF_DESTROY_DEOXYS_ROCK); tasks.destroy(taskId); return; }
+    object.invisible = true;
+    BlendPalettes(PALETTES_BG, 0x10, RGB_WHITE);
+    BeginNormalPaletteFade(PALETTES_BG, 0, 0x10, 0, RGB_WHITE);
+    this.CreateDeoxysRockFragments(object.sprite);
+    sound.playSE(C.SE_THUNDER);
+    this.StartEndingDeoxysRockCameraShake(data[5]!);
+    data[3] = 0;
+    data[1]++;
+  }
+
+  DestroyDeoxysRockEffect_WaitAndEnd(data: number[], taskId: number): void {
+    const cameraTaskId = data[5]!;
+    if (gPaletteFade.active || tasks.tasks[cameraTaskId]?.isActive) return;
+    this.ow.InstallCameraPanAheadCallback();
+    this.ow.objects.remove(this.deoxysDestroyObjects.get(taskId));
+    this.deoxysDestroyObjects.delete(taskId);
+    this.active.delete(C.FLDEFF_DESTROY_DEOXYS_ROCK);
+    tasks.destroy(taskId);
+  }
+
+  /** CreateDeoxysRockFragments (field_effect.c); each fragment uses its exported C INCBIN. */
+  CreateDeoxysRockFragments(source: Sprite): void {
+    const fragments = ["sRockFragment_TopLeft", "sRockFragment_TopRight", "sRockFragment_BottomLeft", "sRockFragment_BottomRight"];
+    const paletteStart = OBJ_PLTT_ID(10);
+    const palette = gPlttBufferUnfaded.subarray(paletteStart, paletteStart + 16);
+    for (let i = 0; i < fragments.length; i++) {
+      const image = spriteSheet(incbin(fragments[i]!), palette, 8, 8);
+      const sprite = new Sprite();
+      sprite.width = sprite.height = 8;
+      sprite.centerToCornerVecX = sprite.centerToCornerVecY = -4;
+      sprite.x = source.x + source.x2;
+      sprite.y = source.y + source.y2 - 4;
+      sprite.coordOffsetEnabled = source.coordOffsetEnabled;
+      sprite.priority = 0;
+      sprite.data[0] = i;
+      sprite.draw = (ctx, x, y) => ctx.drawImage(image, x, y);
+      sprite.callback = (s) => this.SpriteCB_DeoxysRockFragment(s);
+      this.ow.sprites.add(sprite);
+    }
+  }
+
+  /** SpriteCB_DeoxysRockFragment (field_effect.c). */
+  SpriteCB_DeoxysRockFragment(sprite: Sprite): void {
+    switch (sprite.data[0]) {
+      case 0: sprite.x -= 16; sprite.y -= 12; break;
+      case 1: sprite.x += 16; sprite.y -= 12; break;
+      case 2: sprite.x -= 16; sprite.y += 12; break;
+      case 3: sprite.x += 16; sprite.y += 12; break;
+    }
+    const x = sprite.x + sprite.x2 + (sprite.coordOffsetEnabled ? this.ow.sprites.offsetX : 0);
+    const y = sprite.y + sprite.y2 + (sprite.coordOffsetEnabled ? this.ow.sprites.offsetY : 0);
+    if (x < -4 || x > 244 || y < -4 || y > 164) this.ow.sprites.destroy(sprite);
   }
 
   /** MovementAction_Emote* and trainer_see.c copy the object identity to field-effect arguments before dispatch. */
