@@ -1145,7 +1145,8 @@ function PlayerHandleChooseAction(): void {
   BattlePutTextOnWindow(gDisplayedStringBattle, C.B_WIN_ACTION_PROMPT);
 }
 
-function PlayerHandleUnknownYesNoBox(): void {}
+/** player controller no-op from battle_controller_player.c. */
+export function PlayerHandleUnknownYesNoBox(): void {}
 
 function HandleChooseMoveAfterDma3(): void {
   if (!IsDma3ManagerBusyWithBgCopy()) {
@@ -1479,7 +1480,8 @@ function PlayerHandleCmd55(): void {
   gBattlerControllerFuncs[G.gActiveBattler] = SetBattleEndCallbacks;
 }
 
-function PlayerCmdEnd(): void {}
+/** player controller terminator no-op from battle_controller_player.c. */
+export function PlayerCmdEnd(): void {}
 
 function PreviewDeterminativeMoveTargets(): void {
   if (!(G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE)) return;
