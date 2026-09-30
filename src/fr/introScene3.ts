@@ -93,6 +93,15 @@ export function Scene3_StartNidorinoHop(scene: IntroScene3, sprite: Sprite, time
 export function SpriteCB_NidorinoHop(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackNidorinoHop(sprite); }
 export function Scene3_StartNidorinoAttack(scene: IntroScene3, sprite: Sprite): void { scene.startNidorinoAttack(sprite); }
 export function SpriteCB_NidorinoAttack(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackNidorinoAttack(sprite); }
+/** intro.c Gengar attack callback and task/sprite helper family. */
+export function IntroCB_Scene3_Fight(scene: IntroScene3): void { scene.updateFight(); }
+export function Scene3_StartGengarAttack(scene: IntroScene3): void { scene.startGengarAttack(); }
+export function Scene3_ApplyGengarAnim(scene: IntroScene3, frame: number, xSub: number, ySub: number, xBase: number): void {
+  scene.applyGengarAnim(frame, xSub, ySub, xBase);
+}
+export function Scene3_Task_GengarAttack(scene: IntroScene3): void { scene.taskGengarAttack(); }
+export function Scene3_CreateGengarSwipeSprites(scene: IntroScene3): void { scene.createGengarSwipeSprites(); }
+export function SpriteCB_GengarSwipe(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackGengarSwipe(sprite); }
 
 export class IntroScene3 {
   private phase: "entrance" | "fight" | "exit" = "entrance";
@@ -154,7 +163,7 @@ export class IntroScene3 {
   update(): void {
     if (this.done) return;
     if (this.phase !== "exit" && (this.phase === "fight" || this.state >= 3)) this.runSceneTasks();
-    if (this.phase === "fight") this.updateFight();
+    if (this.phase === "fight") IntroCB_Scene3_Fight(this);
     else if (this.phase === "exit") this.updateExit();
     else IntroCB_Scene3_Entrance(this);
     AnimateSprites();
@@ -239,7 +248,7 @@ export class IntroScene3 {
         this.gengarEntering = false;
       }
     }
-    if (this.attackState >= 0) this.runGengarAttack();
+    if (this.attackState >= 0) Scene3_Task_GengarAttack(this);
   }
 
   taskBgScroll(): void {
@@ -300,7 +309,7 @@ export class IntroScene3 {
     }
   }
 
-  private updateFight(): void {
+  updateFight(): void {
     const nidorino = gSprites[this.nidorinoSprite];
     if (!nidorino?.inUse) { this.done = true; return; }
     switch (this.state) {
@@ -317,7 +326,7 @@ export class IntroScene3 {
       case 3:
         if (++this.timer > 30) {
           Scene3_PauseGengarBounce(this);
-          this.startGengarAttack();
+          Scene3_StartGengarAttack(this);
           this.timer = 0;
           this.state++;
         }
@@ -420,14 +429,14 @@ export class IntroScene3 {
     }
   }
 
-  private startGengarAttack(): void {
+  startGengarAttack(): void {
     this.attackLanded = false;
     this.attackState = 0;
     this.attackSin = 64;
     this.attackBaseX = GetBgX(0);
   }
 
-  private runGengarAttack(): void {
+  taskGengarAttack(): void {
     switch (this.attackState) {
       case 0:
         this.attackFrame = 2;
@@ -447,7 +456,7 @@ export class IntroScene3 {
       case 3:
         this.attackSin += 8;
         if (++this.attackTimer === 4) {
-          this.createGengarSwipeSprites();
+          Scene3_CreateGengarSwipeSprites(this);
           this.attackMultY = 32;
           this.attackMultX = 48;
           this.attackFrame = 3;
@@ -469,15 +478,19 @@ export class IntroScene3 {
     }
     const xSub = -((gSineTable[this.attackSin + 64] * this.attackMultX) >> 8);
     const ySub = this.attackMultY - ((gSineTable[this.attackSin] * this.attackMultY) >> 8);
-    ChangeBgY(0, (this.attackFrame << 15) + 0x1f000 - (ySub << 8), BG_COORD_SET);
-    ChangeBgX(0, this.attackBaseX - (xSub << 8), BG_COORD_SET);
+    Scene3_ApplyGengarAnim(this, this.attackFrame, xSub, ySub, this.attackBaseX);
   }
 
-  private createGengarSwipeSprites(): void {
-    const make = () => spriteTemplate("sSpriteTemplate_GengarSwipe", "sOam_Swipe", "sAnims_Swipe", (sprite) => {
-      sprite.invisible = !sprite.invisible;
-      if (sprite.animEnded) DestroySprite(sprite);
-    });
+  applyGengarAnim(frame: number, xSub: number, ySub: number, xBase: number): void {
+    ChangeBgY(0, (frame << 15) + 0x1f000, BG_COORD_SET);
+    ChangeBgX(0, xBase, BG_COORD_SET);
+    ChangeBgX(0, xSub << 8, BG_COORD_SUB);
+    ChangeBgY(0, ySub << 8, BG_COORD_SUB);
+  }
+
+  createGengarSwipeSprites(): void {
+    const make = () => spriteTemplate("sSpriteTemplate_GengarSwipe", "sOam_Swipe", "sAnims_Swipe",
+      (sprite) => SpriteCB_GengarSwipe(this, sprite));
     CreateSprite(make(), 132, 78, 6);
     const second = CreateSprite(make(), 132, 118, 6);
     if (second !== MAX_SPRITES) {
@@ -487,6 +500,11 @@ export class IntroScene3 {
       CalcCenterToCornerVec(sprite, sprite.oam.shape, sprite.oam.size, sprite.oam.affineMode);
       StartSpriteAnim(sprite, 1);
     }
+  }
+
+  spriteCallbackGengarSwipe(sprite: Sprite): void {
+    sprite.invisible = !sprite.invisible;
+    if (sprite.animEnded) DestroySprite(sprite);
   }
 
   private createGengarBackSprites(): void {
