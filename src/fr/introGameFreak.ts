@@ -63,6 +63,12 @@ function spriteTemplate(name: string, oamName: string, animName: string | null, 
 
 type Callback = "open" | "star" | "name" | "logo";
 
+/** intro.c startup and per-frame callback driver entrypoints. */
+export function StartIntroSequence(scene: IntroGameFreak): void { scene.begin(); }
+export function SetIntroCB(scene: IntroGameFreak, callback: Callback): void { scene.setIntroCallback(callback); }
+export function Task_CallIntroCallback(scene: IntroGameFreak): void { scene.callIntroCallback(); }
+export function CB2_Intro(scene: IntroGameFreak): void { scene.updateFrame(); }
+
 /** intro.c Game Freak star and text sparkle helpers. */
 export function GFScene_LoadGfxCreateStar(scene: IntroGameFreak): void { scene.loadGfxCreateStar(); }
 export function GFScene_CreateStarSparkle(scene: IntroGameFreak, x: number, y: number, random: number): void {
@@ -144,25 +150,31 @@ export class IntroGameFreak {
     CopyBufferedValuesToGpuRegs();
   }
 
-  private next(callback: Callback): void {
+  setIntroCallback(callback: Callback): void {
     this.callback = callback;
     this.state = 0;
     this.timer = 0;
   }
 
-  update(): void {
+  update(): void { CB2_Intro(this); }
+
+  updateFrame(): void {
     if (this.done) return;
+    Task_CallIntroCallback(this);
+    AnimateSprites();
+    BuildOamBuffer();
+    LoadOam();
+    CopyBufferedValuesToGpuRegs();
+    TransferPlttBuffer();
+  }
+
+  callIntroCallback(): void {
     if (this.smallSparkleTask) GFScene_Task_NameSparklesSmall(this);
     if (this.bigSparkleTask) GFScene_Task_NameSparklesBig(this);
     if (this.callback === "open") IntroCB_GF_OpenWindow(this);
     else if (this.callback === "star") IntroCB_GF_Star(this);
     else if (this.callback === "name") IntroCB_GF_RevealName(this);
     else IntroCB_GF_RevealLogo(this);
-    AnimateSprites();
-    BuildOamBuffer();
-    LoadOam();
-    CopyBufferedValuesToGpuRegs();
-    TransferPlttBuffer();
   }
 
   openWindow(): void {
@@ -182,7 +194,7 @@ export class IntroGameFreak {
     } else {
       this.timer = Math.min(48, this.timer + 8);
       SetGpuReg(REG_OFFSET_WIN1V, WIN_RANGE(80 - this.timer, 80 + this.timer));
-      if (this.timer === 48) this.next("star");
+      if (this.timer === 48) SetIntroCB(this, "star");
     }
   }
 
@@ -199,7 +211,7 @@ export class IntroGameFreak {
       this.state = 2;
       this.timer = 0;
     }
-    else if (this.state === 2 && ++this.timer === 90) this.next("name");
+    else if (this.state === 2 && ++this.timer === 90) SetIntroCB(this, "name");
   }
 
   private createStar(): void {
@@ -356,7 +368,7 @@ export class IntroGameFreak {
     } else if (this.state === 3) {
       this.blend(48, false);
       if (this.blendFrame >= 48) { SetGpuReg(REG_OFFSET_BLDCNT, 0); this.state = 4; this.timer = 0; }
-    } else if (++this.timer > 50) this.next("logo");
+    } else if (++this.timer > 50) SetIntroCB(this, "logo");
   }
 
   private logoSprite = -1;
