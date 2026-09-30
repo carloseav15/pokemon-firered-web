@@ -8,7 +8,7 @@ import { cdata } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
-import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
+import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum, GetSpinDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet, flagSet, varGet } from "../save";
 import { gQuestLogPlaybackState, QL_GetPlaybackState, QuestLogRecordNPCStep } from "../questLogEvents";
 import { CONNECTION_INVALID, MAP_OFFSET, MAP_OFFSET_H, MAP_OFFSET_W, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
@@ -2494,6 +2494,42 @@ export class ObjectEvents {
     this.setStepAnimHandleAlternation(object, anim);
   }
 
+  /** AcroWheelieFaceDirection (event_object_movement.c). */
+  AcroWheelieFaceDirection(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.setDirection(object, direction);
+    this.shiftStill(object);
+    this.setStepAnim(object, GetAcroWheeliePedalDirectionAnimNum(direction));
+    sprite.animPaused = true;
+    sprite.data[2] = 1;
+  }
+
+  /** InitAcroWheelieJump (event_object_movement.c). */
+  InitAcroWheelieJump(object: ObjectEvent, sprite: Sprite, direction: number, distance: number, type: number): void {
+    this.initJump(object, direction, distance, type, true);
+    const anim = GetAcroWheelieDirectionAnimNum(direction);
+    if (sprite.animNum !== anim) sprite.startAnim(anim);
+  }
+
+  /** InitAcroPopWheelie (event_object_movement.c). */
+  InitAcroPopWheelie(object: ObjectEvent, sprite: Sprite, direction: number, speed: number): void {
+    this.initNpcForMovement(object, direction, speed);
+    sprite.startAnim(GetAcroWheelieDirectionAnimNum(object.facingDirection));
+    sprite.seekAnim(0);
+  }
+
+  /** InitAcroWheelieMove (event_object_movement.c). */
+  InitAcroWheelieMove(object: ObjectEvent, sprite: Sprite, direction: number, speed: number): void {
+    this.initNpcForMovement(object, direction, speed);
+    this.setStepAnimHandleAlternation(object, GetAcroWheeliePedalDirectionAnimNum(object.facingDirection));
+  }
+
+  /** InitSpin (event_object_movement.c). */
+  InitSpin(object: ObjectEvent, sprite: Sprite, direction: number, speed: number): void {
+    this.initNpcForMovement(object, direction, speed);
+    this.setStepAnimHandleAlternation(object, GetSpinDirectionAnimNum(object.facingDirection));
+    sprite.seekAnim(0);
+  }
+
   /** NpcTakeStep */
   private npcTakeStep(object: ObjectEvent): boolean {
     const s = object.sprite;
@@ -3054,8 +3090,7 @@ export class ObjectEvents {
     // Spin (Rocket Hideout spinner tiles)
     if (id >= 0x94 && id <= 0x97) {
       if (step === 0) {
-        this.initNpcForMovement(object, dirOf(0x94), MOVE_SPEED_FAST_1);
-        this.setStepAnimHandleAlternation(object, ANIM_RUN + 4 + dirIndex(object.facingDirection));
+        this.InitSpin(object, s, dirOf(0x94), MOVE_SPEED_FAST_1);
       }
       if (this.updateMovementNormal(object)) return this.finishStep(object);
       return false;
@@ -3151,13 +3186,7 @@ export class ObjectEvents {
     // Acro bike movement actions (event_object_movement.c).
     if (id >= 0x70 && id <= 0x73) {
       const dir = dirOf(0x70);
-      if (step === 0) {
-        this.setDirection(object, dir);
-        this.shiftStill(object);
-        this.setStepAnim(object, GetAcroWheeliePedalDirectionAnimNum(dir));
-        s.animPaused = true;
-        s.data[2] = 1;
-      }
+      if (step === 0) this.AcroWheelieFaceDirection(object, s, dir);
       return true;
     }
     if (id >= 0x74 && id <= 0x7b) {
@@ -3176,8 +3205,7 @@ export class ObjectEvents {
       const dir = dirOf(base);
       if (step === 0) {
         if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
-        this.initJump(object, dir, face ? JUMP_DISTANCE_IN_PLACE : JUMP_DISTANCE_NORMAL, JUMP_TYPE_LOW, true);
-        this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
+        this.InitAcroWheelieJump(object, s, dir, face ? JUMP_DISTANCE_IN_PLACE : JUMP_DISTANCE_NORMAL, JUMP_TYPE_LOW);
       }
       if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
       return false;
@@ -3186,8 +3214,7 @@ export class ObjectEvents {
       const dir = dirOf(0x84);
       if (step === 0) {
         if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
-        this.initJump(object, dir, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH, true);
-        this.setAndStartSpriteAnim(object.sprite, GetAcroWheelieDirectionAnimNum(dir), 0);
+        this.InitAcroWheelieJump(object, s, dir, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
       }
       if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
       return false;
@@ -3204,10 +3231,8 @@ export class ObjectEvents {
       const base = pop ? 0x8c : 0x90;
       const dir = dirOf(base);
       if (step === 0) {
-        this.initNpcForMovement(object, dir, MOVE_SPEED_FAST_1);
-        const anim = GetAcroWheelieDirectionAnimNum(object.facingDirection);
-        if (pop) this.setAndStartSpriteAnim(s, anim, 0);
-        else this.setStepAnimHandleAlternation(object, GetAcroWheeliePedalDirectionAnimNum(object.facingDirection));
+        if (pop) this.InitAcroPopWheelie(object, s, dir, MOVE_SPEED_FAST_1);
+        else this.InitAcroWheelieMove(object, s, dir, MOVE_SPEED_FAST_1);
       }
       if (this.updateMovementNormal(object)) return this.finishStep(object);
       return false;
