@@ -63,12 +63,31 @@ function spriteTemplate(name: string, oamName: string, animName: string | null, 
 
 type Callback = "open" | "star" | "name" | "logo";
 
+/** intro.c Game Freak star and text sparkle helpers. */
+export function GFScene_LoadGfxCreateStar(scene: IntroGameFreak): void { scene.loadGfxCreateStar(); }
+export function GFScene_CreateStarSparkle(scene: IntroGameFreak, x: number, y: number, random: number): void {
+  scene.createStarSparkle(x, y, random);
+}
+export function GFScene_StartNameSparklesSmall(scene: IntroGameFreak): void { scene.startNameSparklesSmall(); }
+export function GFScene_Task_NameSparklesSmall(scene: IntroGameFreak): void { scene.taskNameSparklesSmall(); }
+export function GFScene_StartNameSparklesBig(scene: IntroGameFreak): void { scene.startNameSparklesBig(); }
+export function GFScene_Task_NameSparklesBig(scene: IntroGameFreak): void { scene.taskNameSparklesBig(); }
+export function GFScene_CreateLogoSprite(scene: IntroGameFreak): number { return scene.createLogoSprite(); }
+export function GFScene_CreatePresentsSprite(scene: IntroGameFreak): void { scene.createPresentsSprites(); }
+export function SpriteCB_Star(scene: IntroGameFreak, sprite: Sprite): void { scene.spriteCallbackStar(sprite); }
+export function SpriteCB_SparklesSmall_Star(scene: IntroGameFreak, sprite: Sprite): void { scene.spriteCallbackStarSparkle(sprite); }
+export function SpriteCB_SparklesSmall_Name(scene: IntroGameFreak, sprite: Sprite): void { scene.spriteCallbackNameSparkle(sprite); }
+export function SpriteCB_SparklesBig(_scene: IntroGameFreak, sprite: Sprite): void {
+  if (sprite.animEnded) DestroySprite(sprite);
+}
+
 export class IntroGameFreak {
   private callback: Callback = "open";
   private state = 0;
   private timer = 0;
   private blendFrame = 0;
   private sparkleYMod = 0;
+  private starSparkleSeed = 354128453;
   private smallSparkleIndex = 0;
   private smallSparkleLoops = 0;
   private smallSparkleTimer = 0;
@@ -89,7 +108,6 @@ export class IntroGameFreak {
     this.timer = 0;
     this.done = false;
     this.logoSprite = -1;
-    this.sparkleYMod = 0;
     this.smallSparkleIndex = this.smallSparkleLoops = this.smallSparkleTimer = 0;
     this.bigSparkleIndex = this.bigSparkleCount = this.bigSparkleTimer = 0;
     this.smallSparkleTask = this.bigSparkleTask = false;
@@ -134,7 +152,8 @@ export class IntroGameFreak {
 
   update(): void {
     if (this.done) return;
-    this.runSparkleTasks();
+    if (this.smallSparkleTask) GFScene_Task_NameSparklesSmall(this);
+    if (this.bigSparkleTask) GFScene_Task_NameSparklesBig(this);
     if (this.callback === "open") IntroCB_GF_OpenWindow(this);
     else if (this.callback === "star") IntroCB_GF_Star(this);
     else if (this.callback === "name") IntroCB_GF_RevealName(this);
@@ -171,13 +190,12 @@ export class IntroGameFreak {
     // IntroCB_GF_Star.
     if (this.state === 0) {
       sound.playSE(C.MUS_GAME_FREAK);
-      this.createStar();
+      GFScene_LoadGfxCreateStar(this);
       this.state = 1;
       this.timer = 0;
     }
     else if (this.state === 1 && ++this.timer === 30) {
-      this.smallSparkleTask = true;
-      this.smallSparkleIndex = this.smallSparkleLoops = this.smallSparkleTimer = 0;
+      GFScene_StartNameSparklesSmall(this);
       this.state = 2;
       this.timer = 0;
     }
@@ -186,19 +204,21 @@ export class IntroGameFreak {
 
   private createStar(): void {
     const id = CreateSprite(spriteTemplate("sSpriteTemplate_Star", "sOam_Star", null,
-      (sprite) => this.starCallback(sprite)), 248, 55, 0);
+      (sprite) => SpriteCB_Star(this, sprite)), 248, 55, 0);
     if (id === MAX_SPRITES) return;
     const data = gSprites[id].data;
     data[0] = 248 << 4;
     data[1] = 55 << 4;
     data[2] = 96;
     data[3] = 16;
-    const seed = 354128453;
+    const seed = this.starSparkleSeed;
     data[6] = seed & 0xffff;
     data[7] = seed >>> 16;
   }
 
-  private starCallback(sprite: Sprite): void {
+  loadGfxCreateStar(): void { this.createStar(); }
+
+  spriteCallbackStar(sprite: Sprite): void {
     const data = sprite.data;
     data[0] -= data[2];
     data[1] += data[3];
@@ -212,12 +232,12 @@ export class IntroGameFreak {
       const next = (Math.imul(1103515245, previous) + 24691) >>> 0;
       data[6] = next & 0xffff;
       data[7] = next >>> 16;
-      this.createStarSparkle(sprite.x, sprite.y + sprite.y2, next >>> 16);
+      GFScene_CreateStarSparkle(this, sprite.x, sprite.y + sprite.y2, next >>> 16);
     }
     if (sprite.x < -8) DestroySprite(sprite);
   }
 
-  private createStarSparkle(x: number, y: number, random: number): void {
+  createStarSparkle(x: number, y: number, random: number): void {
     const xMod = (random & 7) + 2;
     const yMod = this.sparkleYMod;
     if (++this.sparkleYMod > 3) this.sparkleYMod = -3;
@@ -225,7 +245,7 @@ export class IntroGameFreak {
     y += yMod;
     if (x <= 0 || x >= 240) return;
     const id = CreateSprite(spriteTemplate("sSpriteTemplate_SparklesSmall", "sOam_SparklesSmall",
-      "sAnims_SparklesSmall", (sprite) => this.starSparkleCallback(sprite)), x, y, 1);
+      "sAnims_SparklesSmall", (sprite) => SpriteCB_SparklesSmall_Star(this, sprite)), x, y, 1);
     if (id === MAX_SPRITES) return;
     const data = gSprites[id].data;
     data[0] = x << 5;
@@ -234,7 +254,7 @@ export class IntroGameFreak {
     data[3] = yMod;
   }
 
-  private starSparkleCallback(sprite: Sprite): void {
+  spriteCallbackStarSparkle(sprite: Sprite): void {
     const data = sprite.data;
     data[0] += data[2];
     data[1] += data[3];
@@ -250,13 +270,18 @@ export class IntroGameFreak {
     if (sprite.y + sprite.y2 < 0 || sprite.y + sprite.y2 > 160) DestroySprite(sprite);
   }
 
-  private runSparkleTasks(): void {
+  startNameSparklesSmall(): void {
+    this.smallSparkleTask = true;
+    this.smallSparkleIndex = this.smallSparkleLoops = this.smallSparkleTimer = 0;
+  }
+
+  taskNameSparklesSmall(): void {
     const coords = cdata<Coord[]>("intro", "sTextSparkleCoords");
-    if (this.smallSparkleTask && ++this.smallSparkleTimer > 6) {
+    if (++this.smallSparkleTimer > 6) {
       this.smallSparkleTimer = 0;
       const point = coords[this.smallSparkleIndex];
       const id = CreateSprite(spriteTemplate("sSpriteTemplate_SparklesSmall", "sOam_SparklesSmall",
-        "sAnims_SparklesSmall", (sprite) => this.nameSparkleCallback(sprite)), point.x, point.y, 2);
+        "sAnims_SparklesSmall", (sprite) => SpriteCB_SparklesSmall_Name(this, sprite)), point.x, point.y, 2);
       if (id !== MAX_SPRITES) {
         const sprite = gSprites[id];
         StartSpriteAnim(sprite, 1);
@@ -269,21 +294,26 @@ export class IntroGameFreak {
         else this.smallSparkleIndex = 0;
       }
     }
-    if (this.bigSparkleTask) {
-      if (this.bigSparkleTimer === 0) {
-        const point = coords[this.bigSparkleIndex];
-        CreateSprite(spriteTemplate("sSpriteTemplate_SparklesBig", "sOam_SparklesBig",
-          "sAnims_SparklesBig", (sprite) => {
-            if (sprite.animEnded) DestroySprite(sprite);
-          }), point.x, point.y, 3);
-        this.bigSparkleIndex = (this.bigSparkleIndex + 4) % coords.length;
-        if (++this.bigSparkleCount >= coords.length) this.bigSparkleTask = false;
-      }
-      if (++this.bigSparkleTimer > 9) this.bigSparkleTimer = 0;
-    }
   }
 
-  private nameSparkleCallback(sprite: Sprite): void {
+  startNameSparklesBig(): void {
+    this.bigSparkleTask = true;
+    this.bigSparkleIndex = this.bigSparkleCount = this.bigSparkleTimer = 0;
+  }
+
+  taskNameSparklesBig(): void {
+    const coords = cdata<Coord[]>("intro", "sTextSparkleCoords");
+    if (this.bigSparkleTimer === 0) {
+      const point = coords[this.bigSparkleIndex];
+      CreateSprite(spriteTemplate("sSpriteTemplate_SparklesBig", "sOam_SparklesBig",
+        "sAnims_SparklesBig", (sprite) => SpriteCB_SparklesBig(this, sprite)), point.x, point.y, 3);
+      this.bigSparkleIndex = (this.bigSparkleIndex + 4) % coords.length;
+      if (++this.bigSparkleCount >= coords.length) this.bigSparkleTask = false;
+    }
+    if (++this.bigSparkleTimer > 9) this.bigSparkleTimer = 0;
+  }
+
+  spriteCallbackNameSparkle(sprite: Sprite): void {
     const data = sprite.data;
     if (data[2]) {
       data[2]--;
@@ -301,7 +331,7 @@ export class IntroGameFreak {
         StartSpriteAnim(sprite, 1);
       }
     } else {
-      if (data[3]) { DestroySprite(sprite); return; }
+      if (data[3]) DestroySprite(sprite);
       if (sprite.animEnded) StartSpriteAnim(sprite, 0);
       data[1] += 4;
       sprite.y = data[1] >> 4;
@@ -312,8 +342,7 @@ export class IntroGameFreak {
   revealName(): void {
     // IntroCB_GF_RevealName; BG2 fades in over the already visible BG3.
     if (this.state === 0) {
-      this.bigSparkleTask = true;
-      this.bigSparkleIndex = this.bigSparkleCount = this.bigSparkleTimer = 0;
+      GFScene_StartNameSparklesBig(this);
       this.state = 1;
       this.timer = 0;
     }
@@ -332,14 +361,15 @@ export class IntroGameFreak {
 
   private logoSprite = -1;
 
-  private createLogoSprite(): void {
+  createLogoSprite(): number {
     // GFScene_CreateLogoSprite: 32x64 art sprite at (120, 70).
     const id = CreateSprite(spriteTemplate("sSpriteTemplate_GameFreakLogoArt", "sOam_GameFreakLogo",
       null, SpriteCallbackDummy), 120, 70, 4);
     this.logoSprite = id === MAX_SPRITES ? -1 : id;
+    return this.logoSprite;
   }
 
-  private createPresentsSprites(): void {
+  createPresentsSprites(): void {
     // GFScene_CreatePresentsSprite (REVISION >= 1): two 32x8 text sprites.
     for (let i = 0; i < 2; i++) {
       const id = CreateSprite(spriteTemplate("sSpriteTemplate_Presents", "sOam_PresentsText",
@@ -357,7 +387,7 @@ export class IntroGameFreak {
       this.logoSprite = -1;
       this.state = 1;
     } else if (this.state === 1) {
-      this.createLogoSprite();
+      this.logoSprite = GFScene_CreateLogoSprite(this);
       this.state = 2;
     } else if (this.state === 2) {
       if (!IsBlendTaskActive()) {
@@ -369,7 +399,7 @@ export class IntroGameFreak {
     } else if (this.state === 3) {
       // CopyWindowToVram is synchronous here, so the DMA-busy wait is trivially satisfied.
       if (this.logoSprite >= 0) { DestroySprite(gSprites[this.logoSprite]); this.logoSprite = -1; }
-      this.createPresentsSprites();
+      GFScene_CreatePresentsSprite(this);
       this.timer = 0;
       this.state = 4;
     } else if (this.state === 4) {
