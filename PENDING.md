@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9425/10115 (93.2 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **690 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9431/10115 (93.2 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **684 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~13.688 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~13.475 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -22,14 +22,14 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 2 | `battle_controller_pokedude.c` | casi completo | 2698 | 107/108 | ~24 |  |
 | 3 | `sprite.c` | casi completo | 1745 | 101/103 | ~33 |  |
 | 4 | `field_control_avatar.c` | casi completo | 1182 | 47/49 | ~48 |  |
-| 5 | `pokemon_storage_system_misc.c` | casi completo | 1430 | 66/70 | ~81 |  |
-| 6 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 7 | `start_menu.c` | casi completo | 1016 | 57/65 | ~125 |  |
-| 8 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
-| 9 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 10 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
-| 11 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
-| 12 | `intro.c` | casi completo | 2805 | 71/79 | ~284 |  |
+| 5 | `intro.c` | casi completo | 2805 | 77/79 | ~71 |  |
+| 6 | `pokemon_storage_system_misc.c` | casi completo | 1430 | 66/70 | ~81 |  |
+| 7 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
+| 8 | `start_menu.c` | casi completo | 1016 | 57/65 | ~125 |  |
+| 9 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
+| 10 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 11 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
+| 12 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 13 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
 | 14 | `field_effect.c` | casi completo | 4033 | 214/239 | ~421 |  |
 | 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
