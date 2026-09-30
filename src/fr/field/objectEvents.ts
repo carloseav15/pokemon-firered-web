@@ -1434,8 +1434,13 @@ export class ObjectEvents {
   }
 
   updateSubpriority(object: ObjectEvent, cameraY: number): void {
+    this.ObjectEventUpdateSubpriority(object, object.sprite, cameraY);
+  }
+
+  /** ObjectEventUpdateSubpriority (event_object_movement.c). */
+  ObjectEventUpdateSubpriority(object: ObjectEvent, sprite: Sprite, cameraY: number): void {
     if (object.fixedPriority) return;
-    this.SetObjectSubpriorityByElevation(object.previousElevation, object.sprite, 1, cameraY);
+    this.SetObjectSubpriorityByElevation(object.previousElevation, sprite, 1, cameraY);
   }
 
   updateMetatileBehaviors(object: ObjectEvent): void {
@@ -1627,11 +1632,7 @@ export class ObjectEvents {
         object.triggerGroundEffectsOnMove = false;
       }
       // TryEnableObjectEventAnim runs before the movement callback in C.
-      if (object.enableAnim) {
-        sprite.animPaused = false;
-        object.disableAnim = false;
-        object.enableAnim = false;
-      }
+      this.TryEnableObjectEventAnim(object, sprite);
       if (object.isPlayer) {
         this.MovementType_Player(object, sprite);
       } else if (!object.frozen) {
@@ -1657,10 +1658,10 @@ export class ObjectEvents {
         object.triggerGroundEffectsOnStop = false;
         object.landingJump = false;
       }
-      this.updateVisibility(object, cameraX, cameraY);
-      this.updateSubpriority(object, cameraY);
+      this.UpdateObjectEventSpriteAnimPause(object, sprite);
+      this.UpdateObjectEventVisibility(object, sprite, cameraX, cameraY);
+      this.ObjectEventUpdateSubpriority(object, sprite, cameraY);
       this.UpdateObjectEventElevationAndPriority(object);
-      if (object.disableAnim) sprite.animPaused = true;
     }
   }
 
@@ -1669,20 +1670,46 @@ export class ObjectEvents {
     this.hooks.groundEffect(object, kind);
   }
 
-  private updateVisibility(object: ObjectEvent, offsetX: number, offsetY: number): void {
-    const s = object.sprite;
-    const x = (((s.x + s.x2 + s.centerToCornerVecX + (s.coordOffsetEnabled ? offsetX : 0)) & 0xffff) << 16) >> 16;
-    const y = (((s.y + s.y2 + s.centerToCornerVecY + (s.coordOffsetEnabled ? offsetY : 0)) & 0xffff) << 16) >> 16;
-    const right = ((x + s.width) << 16) >> 16;
-    const bottom = ((y + s.height) << 16) >> 16;
+  /** TryEnableObjectEventAnim (event_object_movement.c). */
+  TryEnableObjectEventAnim(object: ObjectEvent, sprite: Sprite): void {
+    if (!object.enableAnim) return;
+    sprite.animPaused = false;
+    object.disableAnim = false;
+    object.enableAnim = false;
+  }
+
+  /** UpdateObjectEventSpriteAnimPause (event_object_movement.c). */
+  UpdateObjectEventSpriteAnimPause(object: ObjectEvent, sprite: Sprite): void {
+    if (object.disableAnim) sprite.animPaused = true;
+  }
+
+  /** UpdateObjectEventVisibility (event_object_movement.c). */
+  UpdateObjectEventVisibility(object: ObjectEvent, sprite: Sprite, offsetX: number, offsetY: number): void {
+    this.CalcWhetherObjectIsOffscreen(object, sprite, offsetX, offsetY);
+    this.UpdateObjEventSpriteVisibility(object, sprite);
+  }
+
+  /** CalcWhetherObjectIsOffscreen (event_object_movement.c), preserving u16 position and s16 bound casts. */
+  CalcWhetherObjectIsOffscreen(object: ObjectEvent, sprite: Sprite, offsetX: number, offsetY: number): void {
+    object.offScreen = false;
+    const graphics = graphicsInfo(object.graphicsId);
+    const x = ((sprite.x + sprite.x2 + sprite.centerToCornerVecX + (sprite.coordOffsetEnabled ? offsetX : 0)) & 0xffff) << 16 >> 16;
+    const y = ((sprite.y + sprite.y2 + sprite.centerToCornerVecY + (sprite.coordOffsetEnabled ? offsetY : 0)) & 0xffff) << 16 >> 16;
+    const right = ((graphics.width + x) << 16) >> 16;
+    const bottom = ((graphics.height + y) << 16) >> 16;
     this.ssAnneExteriorMapNumber ??= rom.mapNum("MAP_SSANNE_EXTERIOR");
     const ssAnneMap = this.ssAnneExteriorMapNumber;
     const onSsAnneExterior = object.localId === C.LOCALID_SS_ANNE
       && this.mapGroup === (ssAnneMap >>> 8)
       && this.mapNum === (ssAnneMap & 0xff);
     const minX = onSsAnneExterior ? -32 : -16;
-    object.offScreen = x >= C.DISPLAY_WIDTH + 16 || right < minX || y >= C.DISPLAY_HEIGHT + 16 || bottom < -16;
-    s.invisible = object.invisible || object.offScreen;
+    if (x >= C.DISPLAY_WIDTH + 16 || right < minX || y >= C.DISPLAY_HEIGHT + 16 || bottom < -16) object.offScreen = true;
+  }
+
+  /** UpdateObjEventSpriteVisibility (event_object_movement.c). */
+  UpdateObjEventSpriteVisibility(object: ObjectEvent, sprite: Sprite): void {
+    sprite.invisible = false;
+    if (object.invisible || object.offScreen) sprite.invisible = true;
   }
 
   private execHeld(object: ObjectEvent): void {
