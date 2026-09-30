@@ -970,6 +970,19 @@ export class Overworld {
     this.updateCameraPixels();
   }
 
+  /** SpawnObjectEventsOnReturnToField (event_object_movement.c), before the return-to-field map script. */
+  SpawnObjectEventsOnReturnToField(x: number, y: number): void {
+    this.player.ClearPlayerAvatarInfo();
+    this.objects.SpawnObjectEventsOnReturnToField(x, y);
+    this.syncObjectSprites();
+    const objectEventId = this.objects.indexOf(this.player.object);
+    if (objectEventId >= 0) {
+      this.player.SetPlayerAvatarObjectEventIdAndObjectId(objectEventId, this.sprites.getId(this.player.object.sprite));
+      this.player.InitWarpArrowSprite();
+      this.syncObjectSprites();
+    }
+  }
+
   private initView(): void {
     this.renderer = new TileRenderer(this.loaded.primary, this.loaded.secondary);
     this.animator = new TilesetAnimator(this.renderer);

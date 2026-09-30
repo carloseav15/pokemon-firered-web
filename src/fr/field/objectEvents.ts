@@ -1153,6 +1153,34 @@ export class ObjectEvents {
     object.currentCoords = { x, y };
   }
 
+  /** ResetObjectEventFldEffData (event_object_movement.c). */
+  ResetObjectEventFldEffData(object: ObjectEvent): void {
+    object.singleMovementActive = false;
+    object.triggerGroundEffectsOnMove = true;
+    object.hasShadow = false;
+    object.hasReflection = false;
+    object.inShortGrass = false;
+    object.inShallowFlowingWater = false;
+    object.inSandPile = false;
+    object.inHotSprings = false;
+    ObjectEventClearHeldMovement(object);
+  }
+
+  /** SpawnObjectEventOnReturnToField: rebuild the renderer-owned sprite for one active object. */
+  SpawnObjectEventOnReturnToField(objectEventId: number, x: number, y: number): void {
+    const object = this.objects[objectEventId & 0xff];
+    if (!object?.active) return;
+    this.setupSprite(object);
+    object.sprite.x += ((x << 16) >> 16) * 16;
+    object.sprite.y += ((y << 16) >> 16) * 16;
+    this.ResetObjectEventFldEffData(object);
+  }
+
+  /** Rebuild active single-player object sprites after a battle or other scene returns to the field. */
+  SpawnObjectEventsOnReturnToField(x: number, y: number): void {
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) this.SpawnObjectEventOnReturnToField(i, x, y);
+  }
+
   /** MoveObjectEventToMapCoords (event_object_movement.c). */
   MoveObjectEventToMapCoords(object: ObjectEvent, x: number, y: number): void {
     x = (x << 16) >> 16;

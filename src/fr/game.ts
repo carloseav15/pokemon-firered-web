@@ -1012,6 +1012,7 @@ export class Game {
     const ow = this.overworld;
     this.scene = null;
     this.setCallbacks(() => ow.cb1(), () => ow.cb2());
+    ow.SpawnObjectEventsOnReturnToField(0, 0);
     ow.RunOnReturnToFieldMapScript();
     if (playMusic) ow.FieldCB_ContinueScriptHandleMusic();
     else ow.FieldCB_ContinueScript();

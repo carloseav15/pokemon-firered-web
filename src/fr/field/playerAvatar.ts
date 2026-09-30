@@ -102,6 +102,8 @@ export function GetPlayerAvatarGraphicsIdByCurrentState(): number {
 
 export class PlayerAvatar {
   flags = PLAYER_AVATAR_FLAG_ON_FOOT;
+  objectEventId = 0;
+  spriteId = 0;
   runningState = NOT_MOVING;
   tileTransitionState = T_NOT_MOVING;
   gender = 0;
@@ -134,6 +136,7 @@ export class PlayerAvatar {
     this.ClearPlayerAvatarInfo();
     this.gender = gender;
     this.object = object;
+    this.objectEventId = this.ow.objects.indexOf(object);
     this.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_CONTROLLABLE | PLAYER_AVATAR_FLAG_ON_FOOT);
     this.runningState = NOT_MOVING;
     this.tileTransitionState = T_NOT_MOVING;
@@ -148,6 +151,7 @@ export class PlayerAvatar {
   /** InitPlayerAvatar's CreateWarpArrowSprite call, after the player sprite has entered OAM. */
   InitWarpArrowSprite(): void {
     this.ow.sprites.add(this.object.sprite);
+    this.spriteId = this.ow.sprites.getId(this.object.sprite);
     this.object.warpArrowSpriteId = CreateWarpArrowSprite(this.ow.sprites);
   }
 
@@ -159,6 +163,8 @@ export class PlayerAvatar {
   /** ClearPlayerAvatarInfo (field_player_avatar.c): clear the PlayerAvatar state block. */
   ClearPlayerAvatarInfo(): void {
     this.flags = 0;
+    this.objectEventId = 0;
+    this.spriteId = 0;
     this.runningState = NOT_MOVING;
     this.tileTransitionState = T_NOT_MOVING;
     this.gender = 0;
@@ -171,6 +177,17 @@ export class PlayerAvatar {
     this.directionHistory = 0;
     this.abStartSelectHistory = 0;
     this.dirTimerHistory.fill(0);
+  }
+
+  /** SetPlayerAvatarObjectEventIdAndObjectId (event_object_movement.c), using renderer-owned sprite IDs. */
+  SetPlayerAvatarObjectEventIdAndObjectId(objectEventId: number, spriteId: number): void {
+    const object = this.ow.objects.objects[objectEventId & 0xff];
+    if (!object?.active) return;
+    this.object = object;
+    this.objectEventId = objectEventId & 0xff;
+    this.spriteId = spriteId & 0xff;
+    this.gender = GetPlayerAvatarGenderByGraphicsId(object.graphicsId);
+    this.SetPlayerAvatarExtraStateTransition(object.graphicsId, PLAYER_AVATAR_FLAG_CONTROLLABLE);
   }
 
   /** SetPlayerAvatarStateMask (field_player_avatar.c). */
