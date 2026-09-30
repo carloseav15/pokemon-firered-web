@@ -10,7 +10,9 @@ import { BlendPalettes, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, 
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_TGT1_BG2, BLDCNT_TGT1_OBJ, BLDCNT_TGT2_ALL,
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN1_ON, ppu,
-  REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT,
+  REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS,
+  REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS,
+  REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_DISPCNT,
   REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
   WININ_WIN1_ALL, WIN_RANGE,
 } from "./hw/ppu";
@@ -65,6 +67,13 @@ type Callback = "open" | "star" | "name" | "logo";
 
 /** intro.c startup and per-frame callback driver entrypoints. */
 export function CB2_SetUpIntro(scene: IntroGameFreak): void { scene.begin(); }
+export function Intro_ResetGpuRegs(): void {
+  for (const offset of [REG_OFFSET_DISPCNT, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY,
+    REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS,
+    REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS]) SetGpuReg(offset, 0);
+  SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_OBJ_1D_MAP | DISPCNT_OBJ_ON);
+}
+export function IntroCB_Init(scene: IntroGameFreak): void { scene.initializeIntroText(); }
 export function StartIntroSequence(scene: IntroGameFreak): void { scene.startIntroSequence(); }
 export function SetIntroCB(scene: IntroGameFreak, callback: Callback): void { scene.setIntroCallback(callback); }
 export function Task_CallIntroCallback(scene: IntroGameFreak): void { scene.callIntroCallback(); }
@@ -124,11 +133,11 @@ export class IntroGameFreak {
     ppu.oam.fill(0);
     ppu.pltt.fill(0);
     InitGpuRegManager();
+    Intro_ResetGpuRegs();
     ResetPaletteFade();
     ResetSpriteData();
     ResetBgsAndClearDma3BusyFlags(false);
     InitBgsFromTemplates(0, cdata<BgTemplate[]>("intro", "sBgTemplates_GameFreakScene"));
-    SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_1D_MAP | DISPCNT_OBJ_ON);
     LoadPalette(incbin("sGameFreakBg_Pal"), 0, 32);
     LoadBgTiles(3, incbin("sGameFreakBg_Gfx"), incbin("sGameFreakBg_Gfx").length, 0);
     LoadBgTilemap(3, incbin("sGameFreakBg_Map"), incbin("sGameFreakBg_Map").length, 0);
@@ -142,14 +151,18 @@ export class IntroGameFreak {
     LoadSpritePalette({ data: incbin("sSparkles_Pal"), tag: 1 });
     LoadSpritePalette({ data: incbin("sGameFreakLogo_Pal"), tag: 3 });
 
+    IntroCB_Init(this);
+    BlendPalettes(PALETTES_ALL, 16, RGB_BLACK);
+    TransferPlttBuffer();
+    CopyBufferedValuesToGpuRegs();
+  }
+
+  initializeIntroText(): void {
     InitWindows(cdata<WindowTemplate[]>("intro", "sWindowTemplates"));
     FillWindowPixelBuffer(0, PIXEL_FILL(0));
     BlitBitmapToWindow(0, incbin("sGameFreakText_Gfx"), 0, 40, 144, 16);
     PutWindowTilemap(0);
     CopyWindowToVram(0, COPYWIN_FULL);
-    BlendPalettes(PALETTES_ALL, 16, RGB_BLACK);
-    TransferPlttBuffer();
-    CopyBufferedValuesToGpuRegs();
   }
 
   setIntroCallback(callback: Callback): void {
