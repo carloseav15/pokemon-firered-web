@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9568/10115 (94.6 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **547 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9573/10115 (94.6 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **542 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~11.776 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~11.714 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -35,7 +35,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 16 | `quest_log.c` | parcial | 1767 | 56/88 | ~642 |  |
 | 17 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
-| 18 | `event_object_movement.c` | casi completo | 9412 | 685/759 | ~917 |  |
+| 18 | `event_object_movement.c` | casi completo | 9412 | 690/759 | ~855 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 304/357 | ~941 |  |
 | 20 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
 | 21 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
