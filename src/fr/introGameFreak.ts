@@ -1,6 +1,8 @@
 // intro.c: CB2_SetUpIntro and the Game Freak scene's BG, window, logo-art,
 // Presents (rev1) and star/sparkle sprite callbacks.
 import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
+import * as C from "./generated/constants";
+import { sound } from "./audio/sound";
 import { type BgTemplate, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, ShowBg, HideBg } from "./hw/bg";
 import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
 import { IsBlendTaskActive, StartBlendTask } from "./hw/menu";
@@ -21,7 +23,7 @@ import {
   ANIMCMD_END, ANIMCMD_FRAME, ANIMCMD_JUMP, AnimateSprites,
   BuildOamBuffer, CreateSprite, DestroySprite, gDummySpriteAffineAnimTable,
   gDummySpriteAnimTable, gSprites, LoadOam, LoadSpritePalette,
-  LoadSpriteSheet, MAX_SPRITES, oamData, ResetSpriteData,
+  LoadSpriteSheet, MAX_SPRITES, oamData, ResetSpriteData, FreeAllSpritePalettes,
   SpriteCallbackDummy, StartSpriteAnim,
   type AnimCmd, type OamData, type Sprite, type SpriteTemplate,
 } from "./hw/sprite";
@@ -133,10 +135,10 @@ export class IntroGameFreak {
   update(): void {
     if (this.done) return;
     this.runSparkleTasks();
-    if (this.callback === "open") this.openWindow();
-    else if (this.callback === "star") this.starTiming();
-    else if (this.callback === "name") this.revealName();
-    else this.revealLogo();
+    if (this.callback === "open") IntroCB_GF_OpenWindow(this);
+    else if (this.callback === "star") IntroCB_GF_Star(this);
+    else if (this.callback === "name") IntroCB_GF_RevealName(this);
+    else IntroCB_GF_RevealLogo(this);
     AnimateSprites();
     BuildOamBuffer();
     LoadOam();
@@ -144,9 +146,10 @@ export class IntroGameFreak {
     TransferPlttBuffer();
   }
 
-  private openWindow(): void {
+  openWindow(): void {
     // IntroCB_GF_OpenWindow, states 0-2.
     if (this.state === 0) {
+      this.timer = 0;
       SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN1_ON);
       SetGpuReg(REG_OFFSET_WININ, WININ_WIN1_ALL);
       SetGpuReg(REG_OFFSET_WINOUT, 0);
@@ -164,9 +167,14 @@ export class IntroGameFreak {
     }
   }
 
-  private starTiming(): void {
+  starTiming(): void {
     // IntroCB_GF_Star.
-    if (this.state === 0) { this.createStar(); this.state = 1; this.timer = 0; }
+    if (this.state === 0) {
+      sound.playSE(C.MUS_GAME_FREAK);
+      this.createStar();
+      this.state = 1;
+      this.timer = 0;
+    }
     else if (this.state === 1 && ++this.timer === 30) {
       this.smallSparkleTask = true;
       this.smallSparkleIndex = this.smallSparkleLoops = this.smallSparkleTimer = 0;
@@ -301,7 +309,7 @@ export class IntroGameFreak {
     }
   }
 
-  private revealName(): void {
+  revealName(): void {
     // IntroCB_GF_RevealName; BG2 fades in over the already visible BG3.
     if (this.state === 0) {
       this.bigSparkleTask = true;
@@ -340,7 +348,7 @@ export class IntroGameFreak {
     }
   }
 
-  private revealLogo(): void {
+  revealLogo(): void {
     // IntroCB_GF_RevealLogo, states 0-7.
     if (this.state === 0) {
       SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_OBJ | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_ALL);
@@ -377,6 +385,7 @@ export class IntroGameFreak {
       }
     } else if (this.state === 6) {
       ResetSpriteData();
+      FreeAllSpritePalettes();
       this.timer = 0;
       this.state = 7;
     } else if (++this.timer > 20) {
@@ -395,3 +404,9 @@ export class IntroGameFreak {
     ctx.putImageData(ppu.renderFrame(), 0, 0);
   }
 }
+
+/** intro.c callback adapters; Startup's frame loop dispatches these active callbacks. */
+export function IntroCB_GF_OpenWindow(intro: IntroGameFreak): void { intro.openWindow(); }
+export function IntroCB_GF_Star(intro: IntroGameFreak): void { intro.starTiming(); }
+export function IntroCB_GF_RevealName(intro: IntroGameFreak): void { intro.revealName(); }
+export function IntroCB_GF_RevealLogo(intro: IntroGameFreak): void { intro.revealLogo(); }
