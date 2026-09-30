@@ -62,6 +62,8 @@ let sStepRecordingMode = STEP_RECORDING_MODE_ENABLED;
 let sNewlyEnteredMap = false;
 let sLastDepartedLocation = 0;
 export const gQuestLogRepeatEventTracker: QuestLogEventRepeatState = { id: 0, numRepeats: 0, counter: 0 };
+let sLoadedQuestLogEvent: QuestLogScriptEvent | null = null;
+let sLoadedQuestLogEventTexts: Uint8Array[] = [];
 let sActivePlayerActionScript = -1;
 let sNextActionDelay = 0;
 let sLastPlayerMovementActionId = -1;
@@ -847,7 +849,41 @@ export function LoadQuestLogEventText(event: QuestLogScriptEvent): Uint8Array[] 
                                                   : event.eventId === C.QL_EVENT_SWITCHED_MULTIPLE_MONS ? LoadEvent_SwitchedMultipleMons
                                                     : event.eventId === C.QL_EVENT_DEPOSITED_ITEM_PC ? LoadEvent_DepositedItemInPC
                                                       : event.eventId === C.QL_EVENT_WITHDREW_ITEM_PC ? LoadEvent_WithdrewItemFromPC : null;
-  return load === null ? null : event.payloads.map(load);
+  return load === null ? null : event.payloads.map((_payload, repeatIndex) => {
+    const payload = LoadEvent(event.eventId, event, repeatIndex);
+    return payload === null ? new Uint8Array([C.EOS]) : load(payload);
+  });
+}
+
+/** LoadEvent (quest_log_events.c): select one decoded record repeat from the saved event stream. */
+export function LoadEvent(eventId: number, event: QuestLogScriptEvent, repeatIndex = 0): readonly number[] | null {
+  if (event.eventId !== eventId || repeatIndex < 0) return null;
+  return event.payloads[repeatIndex] ?? null;
+}
+
+/** QL_LoadEvent (quest_log_events.c): expose the first text and prime the repeat cursor. */
+export function QL_LoadEvent(event: QuestLogScriptEvent, currentActionIndex: number): Uint8Array | null {
+  if (event.actionIndex > currentActionIndex) return null;
+  QL_ResetRepeatEventTracker();
+  sLoadedQuestLogEvent = event;
+  sLoadedQuestLogEventTexts = LoadQuestLogEventText(event) ?? [];
+  if (sLoadedQuestLogEventTexts.length === 0) return null;
+  // The Champion record stores one body but its loader emits three sequential lines.
+  const repeats = event.eventId === C.QL_EVENT_DEFEATED_CHAMPION ? 2 : event.repeats;
+  gQuestLogRepeatEventTracker.id = event.eventId;
+  gQuestLogRepeatEventTracker.numRepeats = repeats;
+  gQuestLogRepeatEventTracker.counter = repeats > 0 ? 1 : 0;
+  return sLoadedQuestLogEventTexts[0] ?? null;
+}
+
+/** QL_TryRepeatEvent (quest_log_events.c): return the next text line for a repeated event. */
+export function QL_TryRepeatEvent(event: QuestLogScriptEvent): Uint8Array | null {
+  const tracker = gQuestLogRepeatEventTracker;
+  if (sLoadedQuestLogEvent !== event || tracker.counter === 0 || tracker.id !== event.eventId) return null;
+  const text = sLoadedQuestLogEventTexts[tracker.counter] ?? null;
+  tracker.counter++;
+  if (tracker.counter > tracker.numRepeats) QL_ResetRepeatEventTracker();
+  return text;
 }
 
 /** ReadQuestLogScriptFromSav1 (quest_log.c): separate packed actions and event records in script order. */
@@ -882,7 +918,15 @@ export function ReadQuestLogScriptFromSav1(eventIndex: number): QuestLogScriptEn
         payloads,
         cursor,
       };
-      event.texts = LoadQuestLogEventText(event) ?? undefined;
+      const firstText = QL_LoadEvent(event, scene?.actionIndex ?? event.actionIndex);
+      if (firstText) {
+        event.texts = [firstText];
+        while (true) {
+          const repeatedText = QL_TryRepeatEvent(event);
+          if (!repeatedText) break;
+          event.texts.push(repeatedText);
+        }
+      }
       entries.push({ kind: "event", event });
       if (eventNum++ === 0) QL_UpdateLastDepartedLocation(script.slice(cursor));
       cursor = next;
