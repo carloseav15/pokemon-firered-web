@@ -126,6 +126,8 @@ export type SaveData = {
   rivalName: number[];
   location: WarpData;
   pos: { x: number; y: number };
+  /** global.h SaveBlock1.mapLayoutId, retained for Quest Log scene restoration. */
+  mapLayoutId?: number;
   continueGameWarp: WarpData;
   dynamicWarp: WarpData;
   lastHealLocation: WarpData;

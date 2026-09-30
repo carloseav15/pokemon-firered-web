@@ -8,22 +8,30 @@ import {
   QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd, QL_RecordAction_Wait,
   type LoadedQuestLogAction, type QuestLogAction,
 } from "./questLogActions";
-import { flagClear, flagGet, flagSet, save, varGet, varSet } from "./save";
+import { flagClear, flagGet, flagSet, ResetSpecialVars, save, setSave, varGet, varSet, type SaveData } from "./save";
 import { QuestLog_InitPalettesBackup as initQuestLogPalettesBackup } from "./questLogPalette";
 import { gQuestLogState, WriteQuestLogState } from "./questLogState";
-import { SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
+import { QL_LoadObjects, SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
 import { rom } from "./rom";
-import { expandPlaceholders, GetExpandedPlaceholder, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
+import type { Overworld } from "./field/overworld";
+import type { MapObjectTemplate } from "./rom";
+import { CHAR_NEWLINE, EOS, expandPlaceholders, GetExpandedPlaceholder, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
 import { stringVars } from "./gba/stringBuffers";
-import { ItemId_GetName, ItemId_GetPocket, POCKET_BERRY_POUCH, POCKET_ITEMS, POCKET_KEY_ITEMS, POCKET_POKE_BALLS, POCKET_TM_CASE } from "./pokemon/items";
-import { speciesName } from "./pokemon/pokemon";
+import { FONT_NORMAL } from "./gba/font";
+import { TextPrinter, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "./gba/textPrinter";
+import { Window, stdPalette } from "./gba/window";
+import { incbin16 } from "./hw/assets";
+import { ClearBag, ClearPCItemSlots, ItemId_GetName, ItemId_GetPocket, POCKET_BERRY_POUCH, POCKET_ITEMS, POCKET_KEY_ITEMS, POCKET_POKE_BALLS, POCKET_TM_CASE } from "./pokemon/items";
+import { createMon, speciesName } from "./pokemon/pokemon";
 import { GetBoxNamePtr } from "./pokemon/storage";
 import { getMapNameGenericBytes } from "./regionMap";
 import {
   DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset,
   DynamicPlaceholderTextUtil_SetPlaceholderPtr,
 } from "./dynamicPlaceholderTextUtil";
+import { FadeScreen } from "./field/weather";
+import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
 
 export { gQuestLogState };
 
@@ -71,6 +79,21 @@ let sPlaybackActions: QuestLogAction[] = [];
 let sPlaybackActionIndex = 0;
 let sPlaybackActionDelay = 0;
 let sPlaybackInitialMovement: QuestLogPlaybackCommands["movements"][number] | null = null;
+let sCurrentPlaybackSceneIndex = -1;
+let sPlaybackSceneCount = 0;
+let sPlaybackSceneOrder: number[] = [];
+let sPlaybackOriginalSave: SaveData | null = null;
+let sPlaybackTransitionStarted = false;
+let sPlaybackEvents: QuestLogScriptEvent[] = [];
+let sPlaybackEventCursor = 0;
+let sPlaybackActiveEvent: QuestLogScriptEvent | null = null;
+let sPlaybackTextTimer = 0;
+let sPlaybackOverlapTimer = 0;
+let sPlaybackPlayingEvent = false;
+let sPlaybackEndMode = 0;
+let sPlaybackWindows: { header: Window; footer: Window; description: Window; ow: Overworld } | null = null;
+let sPlaybackPrinter: TextPrinter | null = null;
+const sQuestLogTextLineYCoords = [17, 10, 3];
 
 export type QuestLogPlaybackCommands = {
   fieldInput: { flags: number; direction: number } | null;
@@ -442,6 +465,344 @@ export function QL_StartActionPlayback(actions: readonly QuestLogAction[]): void
     ? { localId: firstAction.data[0], mapNum: firstAction.data[1], mapGroup: firstAction.data[2], movementActionId: firstAction.data[3] }
     : null;
   gQuestLogPlaybackState = actions.length === 0 ? C.QL_PLAYBACK_STATE_STOPPED : C.QL_PLAYBACK_STATE_RUNNING;
+}
+
+/** RestoreTrainerRematches (quest_log.c): expand the four packed vars into the first 64 rematch slots. */
+export function RestoreTrainerRematches(): void {
+  const rematches = save.trainerRematches ??= new Array(100).fill(0);
+  for (let varIndex = 0; varIndex < 4; varIndex++) {
+    const packed = varGet(C.VAR_QLBAK_TRAINER_REMATCHES + varIndex);
+    for (let bit = 0; bit < 16; bit++) rematches[varIndex * 16 + bit] = (packed & (1 << bit)) !== 0 ? 30 : 0;
+  }
+}
+
+/** QL_CopySaveState (quest_log.c): restore the selected scene's flags, vars, and rematch state. */
+export function QL_CopySaveState(sceneIndex = sCurrentPlaybackSceneIndex): void {
+  const scene = save.questLogScenes?.[sceneIndex];
+  if (!scene) return;
+  if (scene.flags) save.flags = Array.from(scene.flags, (value) => value & 0xff);
+  if (scene.vars) save.vars = Array.from(scene.vars, (value) => value & 0xffff);
+  RestoreTrainerRematches();
+}
+
+/** QL_ResetPartyAndPC (quest_log.c): match party and PC occupancy to the recorded scene counts. */
+export function QL_ResetPartyAndPC(): void {
+  const packedCounts = varGet(C.VAR_QUEST_LOG_MON_COUNTS) & 0xffff;
+  const targetPartyCount = packedCounts >>> 12;
+  const targetBoxCount = packedCounts & 0x0fff;
+  const placeholder = createMon(C.SPECIES_RATTATA, 1);
+  const copyPlaceholder = () => structuredClone(placeholder);
+  const hasSpecies = (mon: { species: number; hasSpecies?: boolean } | null): boolean =>
+    mon !== null && mon.species !== C.SPECIES_NONE && mon.hasSpecies !== false;
+  let partyCount = save.party.filter((mon) => hasSpecies(mon)).length;
+  while (partyCount > targetPartyCount) {
+    let index = save.party.length - 1;
+    while (index >= 0 && !hasSpecies(save.party[index]!)) index--;
+    if (index < 0) break;
+    save.party.splice(index, 1);
+    partyCount--;
+  }
+  while (partyCount < targetPartyCount && save.party.length < C.PARTY_SIZE) {
+    save.party.push(copyPlaceholder());
+    partyCount++;
+  }
+
+  let boxCount = save.boxes.reduce((count, box) => count + box.filter((mon) => hasSpecies(mon)).length, 0);
+  if (boxCount > targetBoxCount) {
+    for (const box of save.boxes) for (let slot = 0; slot < box.length; slot++) {
+      if (!hasSpecies(box[slot])) continue;
+      box[slot] = null;
+      if (--boxCount === targetBoxCount) return;
+    }
+  } else if (boxCount < targetBoxCount) {
+    for (const box of save.boxes) for (let slot = 0; slot < box.length; slot++) {
+      if (hasSpecies(box[slot])) continue;
+      box[slot] = copyPlaceholder();
+      if (++boxCount === targetBoxCount) return;
+    }
+  }
+}
+
+/** QL_RestoreMapLayoutId (quest_log.c): restore the backed-up map layout, falling back to the map header. */
+export function QL_RestoreMapLayoutId(): number {
+  let layoutId = varGet(C.VAR_QLBAK_MAP_LAYOUT) & 0xffff;
+  if (layoutId === 0) {
+    const mapNum = (save.location.mapGroup << 8) | save.location.mapNum;
+    const mapId = rom.mapIdByNum(mapNum);
+    const map = mapId === undefined ? undefined : rom.mapIndex.maps[mapId];
+    if (map) layoutId = rom.mapIndex.layouts[map.layout] ?? 0;
+  }
+  save.mapLayoutId = layoutId;
+  return layoutId;
+}
+
+/** QLPlayback_SetInitialPlayerPosition (quest_log.c). */
+export function QLPlayback_SetInitialPlayerPosition(sceneIndex: number, isWarp: boolean, ow: Overworld): void {
+  const scene = save.questLogScenes?.[sceneIndex];
+  if (!scene) return;
+  const mapGroup = scene.mapGroup ?? 0;
+  const mapNum = scene.mapNum ?? 0;
+  const warpId = scene.warpId ?? -1;
+  const x = scene.x ?? -1;
+  const y = scene.y ?? -1;
+  if (!isWarp) {
+    save.location = { ...save.location, mapGroup, mapNum, warpId };
+    save.pos = { x, y };
+  } else {
+    ow.Overworld_SetWarpDestinationFromWarp({ mapGroup, mapNum, warpId, x, y });
+  }
+  sCurrentPlaybackSceneIndex = sceneIndex;
+}
+
+/** QL_LoadObjectsAndTemplates (quest_log.c): restore map object templates and the scene's object-event snapshot. */
+export function QL_LoadObjectsAndTemplates(ow: Overworld, sceneIndex = sCurrentPlaybackSceneIndex): void {
+  const scene = save.questLogScenes?.[sceneIndex];
+  if (!scene) return;
+  const templates = save.objectEventTemplates ?? [];
+  for (let index = 0; index < C.OBJECT_EVENT_TEMPLATES_COUNT; index++) {
+    const snapshot = scene.objectEventTemplates?.[index];
+    const template = templates[index];
+    if (!snapshot || !template || template.clone) continue;
+    templates[index] = {
+      ...template,
+      x: snapshot.negx ? -(snapshot.x & 0xff) : snapshot.x & 0xff,
+      y: snapshot.negy ? -(snapshot.y & 0xff) : snapshot.y & 0xff,
+      elevation: snapshot.elevation & 0x3f,
+      movementType: snapshot.movementType & 0xff,
+    };
+  }
+  ow.objects.templates = templates;
+  QL_LoadObjects(scene, templates as MapObjectTemplate[]);
+  ow.syncObjectSprites();
+}
+
+/** QL_InitSceneObjectsAndActions (quest_log.c): decode the saved stream and prepare its action driver. */
+export function QL_InitSceneObjectsAndActions(ow: Overworld, sceneIndex = sCurrentPlaybackSceneIndex): void {
+  const scene = save.questLogScenes?.[sceneIndex];
+  if (!scene) return;
+  sCurrentPlaybackSceneIndex = sceneIndex;
+  QL_ResetRepeatEventTracker();
+  QL_LoadObjectsAndTemplates(ow, sceneIndex);
+  const entries = ReadQuestLogScriptFromSav1(scene.eventIndex ?? sceneIndex);
+  sPlaybackEvents = entries.flatMap((entry) => entry.kind === "event" ? [entry.event] : []);
+  sPlaybackEventCursor = 0;
+  sPlaybackActiveEvent = null;
+  sPlaybackTextTimer = 0;
+  sPlaybackOverlapTimer = 0;
+  sPlaybackPlayingEvent = false;
+  sPlaybackEndMode = 0;
+  QL_ResetRepeatEventTracker();
+  QL_StartActionPlayback(entries.flatMap((entry) => entry.kind === "action" ? [entry.action] : []));
+  QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow);
+}
+
+/** DrawPreviouslyOnQuestHeader (quest_log.c), with the source window positions and description tiles. */
+export function QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow: Overworld): void {
+  if (gQuestLogState !== C.QL_STATE_PLAYBACK) return;
+  const windows = {
+    header: ow.windows.add(new Window(0, 0, 30, 2, stdPalette(0))),
+    footer: ow.windows.add(new Window(0, 18, 30, 2, stdPalette(0))),
+    description: ow.windows.add(new Window(0, 14, 30, 6, stdPalette(0))),
+    ow,
+  };
+  windows.header.fill(15);
+  windows.footer.fill(15);
+  drawQuestLogDescriptionBackground(windows.description);
+  sPlaybackWindows = windows;
+  const title = Array.from(expandPlaceholders(rom.text("gText_QuestLog_PreviouslyOnYourQuest"))).filter((byte) => byte !== EOS);
+  const sceneNumber = sPlaybackSceneCount - sCurrentPlaybackSceneIndex;
+  if (sceneNumber > 0) title.push(...intToDecimal(sceneNumber, STR_CONV_MODE_LEFT_ALIGN, 1).filter((byte) => byte !== EOS));
+  title.push(EOS);
+  new TextPrinter(windows.header, FONT_NORMAL, title, { x: 2, y: 2, speed: 0, fg: TEXT_COLOR_WHITE, bg: 0, shadow: TEXT_COLOR_LIGHT_GRAY });
+}
+
+function drawQuestLogDescriptionBackground(window: Window): void {
+  const gfx = incbin16("quest_log.c:sDescriptionWindow_Gfx");
+  for (let tileY = 0; tileY < 6; tileY++) {
+    const sourceTileY = tileY === 0 ? 0 : tileY === 5 ? 2 : 1;
+    for (let tileX = 0; tileX < 30; tileX++) {
+      for (let py = 0; py < 8; py++) for (let px = 0; px < 8; px++) {
+        const word = gfx[sourceTileY * 16 + py * 2 + (px >>> 2)] ?? 0;
+        window.setPixel(tileX * 8 + px, tileY * 8 + py, (word >>> ((px & 3) * 4)) & 0xf);
+      }
+    }
+  }
+}
+
+/** GetQuestLogTextDisplayDuration (quest_log.c). */
+export function GetQuestLogTextDisplayDuration(text: ArrayLike<number>): number {
+  let count = 0;
+  for (let i = 0; i < 0x400 && text[i] !== undefined && text[i] !== EOS; i++) {
+    if (text[i] !== CHAR_NEWLINE) count++;
+  }
+  if (count < 20) return 0x5f;
+  if (count < 36) return 0x7f;
+  if (count < 46) return 0xbf;
+  return 0xff;
+}
+
+/** DrawSceneDescription (quest_log.c), using the exact six-row description window art. */
+function DrawSceneDescription(text: Uint8Array): void {
+  const window = sPlaybackWindows?.description;
+  if (!window) return;
+  drawQuestLogDescriptionBackground(window);
+  let numLines = 0;
+  for (let i = 0; i < 0x100 && text[i] !== undefined && text[i] !== EOS; i++) if (text[i] === CHAR_NEWLINE) numLines++;
+  const y = sQuestLogTextLineYCoords[numLines] ?? sQuestLogTextLineYCoords[2]!;
+  sPlaybackPrinter = new TextPrinter(window, FONT_NORMAL, text, { x: 2, y, speed: 0, fg: TEXT_COLOR_WHITE, bg: 0, shadow: TEXT_COLOR_LIGHT_GRAY });
+  if (sPlaybackPrinter.active) sPlaybackPrinter.run();
+}
+
+function QuestLog_CloseTextWindow(): void {
+  const window = sPlaybackWindows?.description;
+  if (!window) return;
+  drawQuestLogDescriptionBackground(window);
+  window.markDirty();
+  sPlaybackPrinter = null;
+}
+
+/** TogglePlaybackStateForOverworldLock (quest_log.c). */
+export function TogglePlaybackStateForOverworldLock(lock: boolean): void {
+  if (lock && gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING) gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_ACTION_END;
+  else if (!lock && gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END) gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RUNNING;
+}
+
+/** QL_HandleInput and QLogCB_Playback (quest_log.c); called by DoCB1_Overworld_QuestLogPlayback. */
+export function QuestLogPlayback_RunCB(ow: Overworld, newKeys: number): void {
+  if (sPlaybackEndMode === 0) {
+    if (newKeys & 1) {
+      sPlaybackEndMode = 1;
+      gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+      FadeScreen(FADE_TO_BLACK, -3);
+      sPlaybackTransitionStarted = true;
+    } else if (newKeys & 2) {
+      sPlaybackEndMode = 2;
+      gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+      FadeScreen(FADE_TO_BLACK, -3);
+      sPlaybackTransitionStarted = true;
+    }
+  }
+  if (sPlaybackEndMode !== 0) {
+    if (!sPlaybackTransitionStarted) {
+      FadeScreen(FADE_TO_BLACK, 0);
+      sPlaybackTransitionStarted = true;
+    }
+    if (paletteFade.active) return;
+    const next = sPlaybackEndMode === 1 ? sPlaybackSceneOrder.indexOf(sCurrentPlaybackSceneIndex) + 1 : sPlaybackSceneOrder.length;
+    if (next < sPlaybackSceneOrder.length) startQuestLogScene(ow, sPlaybackSceneOrder[next]!);
+    else finishQuestLogPlayback(ow);
+    return;
+  }
+
+  if (sPlaybackTextTimer > 0) {
+    if (--sPlaybackTextTimer === 0) {
+      sPlaybackPlayingEvent = true;
+      TogglePlaybackStateForOverworldLock(false);
+    }
+  }
+  if (sPlaybackPlayingEvent && ++sPlaybackOverlapTimer > 15) {
+    QuestLog_CloseTextWindow();
+    sPlaybackPlayingEvent = false;
+    sPlaybackOverlapTimer = 0;
+  }
+
+  if (sPlaybackTextTimer !== 0 || gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END) return;
+  let text: Uint8Array | null = null;
+  if (sPlaybackActiveEvent) {
+    text = QL_TryRepeatEvent(sPlaybackActiveEvent);
+    if (!text) {
+      sPlaybackActiveEvent = null;
+      sPlaybackEventCursor++;
+    }
+  }
+  const event = sPlaybackEvents[sPlaybackEventCursor];
+  if (!text && event && event.actionIndex <= sPlaybackActionIndex) {
+    text = QL_LoadEvent(event, sPlaybackActionIndex);
+    if (text) sPlaybackActiveEvent = event;
+  }
+  if (text) {
+    DrawSceneDescription(text);
+    sPlaybackTextTimer = GetQuestLogTextDisplayDuration(text);
+    sPlaybackOverlapTimer = 0;
+    sPlaybackPlayingEvent = false;
+    TogglePlaybackStateForOverworldLock(true);
+    return;
+  }
+  if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED && sPlaybackEventCursor >= sPlaybackEvents.length) {
+    sPlaybackEndMode = 1;
+    sPlaybackTransitionStarted = false;
+  }
+}
+
+/** QuestLogScenePlaybackIsEnding (quest_log.c). */
+export function QuestLogScenePlaybackIsEnding(): boolean { return sPlaybackEndMode !== 0; }
+
+function clearQuestLogPlaybackWindows(): void {
+  const windows = sPlaybackWindows;
+  if (windows) {
+    windows.ow.windows.remove(windows.header);
+    windows.ow.windows.remove(windows.footer);
+    windows.ow.windows.remove(windows.description);
+  }
+  sPlaybackWindows = null;
+  sPlaybackPrinter = null;
+}
+
+function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
+  const scene = save.questLogScenes?.[sceneIndex];
+  if (!scene) { finishQuestLogPlayback(ow); return; }
+  clearQuestLogPlaybackWindows();
+  sCurrentPlaybackSceneIndex = sceneIndex;
+  sPlaybackEndMode = 0;
+  sPlaybackTransitionStarted = false;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+  ResetSpecialVars();
+  ClearBag();
+  ClearPCItemSlots();
+  SetQuestLogState(C.QL_STATE_PLAYBACK);
+  QLPlayback_SetInitialPlayerPosition(sceneIndex, (scene.startType ?? C.QL_START_NORMAL) === C.QL_START_WARP, ow);
+  QL_CopySaveState(sceneIndex);
+  QL_ResetPartyAndPC();
+  QL_RestoreMapLayoutId();
+  ow.setWarpDestination(scene.mapGroup ?? save.location.mapGroup, scene.mapNum ?? save.location.mapNum,
+    scene.warpId ?? -1, scene.x ?? save.pos.x, scene.y ?? save.pos.y);
+  ow.keepMusicOnNextLoad = true;
+  ow.fieldCallback = (scene.startType ?? C.QL_START_NORMAL) === C.QL_START_WARP
+    ? () => ow.FieldCB_DefaultWarpExit()
+    : () => ow.FieldCB_WarpExitFadeFromBlack();
+  ow.warpIntoMapAndLoad();
+}
+
+function finishQuestLogPlayback(ow: Overworld): void {
+  clearQuestLogPlaybackWindows();
+  if (sPlaybackOriginalSave) setSave(structuredClone(sPlaybackOriginalSave));
+  sPlaybackOriginalSave = null;
+  sPlaybackSceneOrder = [];
+  sPlaybackEndMode = 0;
+  sPlaybackTransitionStarted = false;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+  SetQuestLogState(0);
+  ow.Overworld_ResetStateOnContinue();
+  const location = save.location;
+  ow.setWarpDestination(location.mapGroup, location.mapNum, -1, save.pos.x, save.pos.y);
+  ow.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };
+  ow.savedMusic = save.savedMusic;
+  ow.fieldCallback = () => ow.FieldCB_ShowMapNameOnContinue();
+  ow.warpIntoMapAndLoad();
+}
+
+/** TryStartQuestLogPlayback / Task_BeginQuestLogPlayback (quest_log.c): enter the oldest retained scene. */
+export function TryStartQuestLogPlayback(ow: Overworld): boolean {
+  const scenes = (save.questLogScenes ?? []).filter((scene) => (scene.startType ?? 0) !== 0)
+    .sort((a, b) => (a.eventIndex ?? 0) - (b.eventIndex ?? 0));
+  if (scenes.length === 0) return false;
+  sPlaybackOriginalSave = structuredClone(save);
+  sPlaybackSceneOrder = scenes.map((scene) => save.questLogScenes!.indexOf(scene));
+  const sceneIndex = sPlaybackSceneOrder[0];
+  if (sceneIndex === undefined || sceneIndex < 0) return false;
+  sPlaybackSceneCount = scenes.length;
+  startQuestLogScene(ow, sceneIndex);
+  return true;
 }
 
 /** QL_TryRunActions (quest_log.c): consume timed actions or count recorded idle frames. */

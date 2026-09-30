@@ -73,7 +73,7 @@ import { ResetFameChecker } from "./fameChecker";
 import { ClearRoamerData } from "./pokemon/roamer";
 import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
-import { ResetQLPlayedTheSlots, SaveQuestLogData } from "./questLogEvents";
+import { ResetQLPlayedTheSlots, SaveQuestLogData, TryStartQuestLogPlayback } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
@@ -342,6 +342,11 @@ export class Game {
     this.overworld.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };
     this.overworld.savedMusic = save.savedMusic;
     this.overworld.script.ScriptContext_Init();
+    if (TryStartQuestLogPlayback(this.overworld)) {
+      paletteFade.fill(RGB_BLACK);
+      PlayTimeCounter_Start();
+      return;
+    }
     // The continue-warp branch goes through a plain WarpIntoMap+CB2_LoadMap in the C (no map
     // name popup); the other branch runs FieldCB_ShowMapNameOnContinue first.
     this.overworld.fieldCallback = usedContinueGameWarp

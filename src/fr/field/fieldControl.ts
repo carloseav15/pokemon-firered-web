@@ -21,7 +21,7 @@ import { AdjustFriendship } from "../pokemon/mon_extra";
 import { tasks } from "../gba/tasks";
 import { GetRamScript } from "../script/context";
 import { IsEscalatorMoving, StartEscalator, StopEscalator } from "./specialFieldAnim";
-import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, type QuestLogPlaybackCommands } from "../questLogEvents";
+import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, QuestLogPlayback_RunCB, QuestLogScenePlaybackIsEnding, type QuestLogPlaybackCommands } from "../questLogEvents";
 import { QuestLogUpdatePlayerSprite } from "../questLogPlayer";
 import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
 import { InUnionRoom } from "../unionRoom";
@@ -109,6 +109,7 @@ export class FieldControl {
     const input = emptyInput();
     const playback = gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING
       || gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END;
+    let startedFieldAction = false;
     if (playback) {
       const field = questLogCommands.fieldInput;
       if (field) {
@@ -127,10 +128,13 @@ export class FieldControl {
         if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) QL_RecordFieldInput(this.recordedPlayerFieldInput);
         this.ow.controlsLocked = true;
         this.ow.mapName.dismiss();
+        startedFieldAction = true;
       } else {
         player.player_step(input.dpadDirection, newKeys, heldKeys);
       }
     }
+    if (gQuestLogState === C.QL_STATE_PLAYBACK && !startedFieldAction
+      && (!this.ow.controlsLocked || QuestLogScenePlaybackIsEnding())) QuestLogPlayback_RunCB(this.ow, newKeys);
   }
 
   private applyQuestLogCommands(commands: QuestLogPlaybackCommands): void {
