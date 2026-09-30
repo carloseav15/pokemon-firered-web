@@ -2259,46 +2259,131 @@ export class ObjectEvents {
     return true;
   }
 
-  private initWalkSlowStyle(object: ObjectEvent, direction: number, anim: number): void {
-    this.setDirection(object, direction);
-    const [dx, dy] = DIRECTION_VECTORS[direction];
-    this.shiftCoords(object, object.currentCoords.x + dx, object.currentCoords.y + dy);
-    const s = object.sprite;
-    s.data[3] = direction;
-    s.data[4] = 0;
-    s.data[5] = 0;
-    this.setStepAnimHandleAlternation(object, anim);
-    s.animPaused = false;
-    object.triggerGroundEffectsOnMove = true;
-    s.data[2] = 1;
+  private objectForMovementSprite(sprite: Sprite): ObjectEvent | undefined {
+    return this.objects.find((object): object is ObjectEvent => object !== null && object.sprite === sprite);
   }
 
-  private updateWalkSlowStyle(object: ObjectEvent, kind: "slow" | "slower" | "slowest" | "runSlow"): boolean {
-    const s = object.sprite;
-    const dir = s.data[3];
+  private InitNpcForSlowStyle(object: ObjectEvent, sprite: Sprite, direction: number, setData: (sprite: Sprite, direction: number) => void): void {
+    direction &= 0xff;
+    this.setDirection(object, direction);
+    const [dx, dy] = DIRECTION_VECTORS[direction] ?? [0, 0];
+    this.shiftCoords(object, object.currentCoords.x + dx, object.currentCoords.y + dy);
+    setData(sprite, direction);
+    sprite.animPaused = false;
+    object.triggerGroundEffectsOnMove = true;
+    sprite.data[2] = 1;
+  }
+
+  private InitWalkStyle(object: ObjectEvent, sprite: Sprite, direction: number, initNpc: (object: ObjectEvent, sprite: Sprite, direction: number) => void, anim: (object: ObjectEvent) => number): void {
+    initNpc(object, sprite, direction);
+    this.setStepAnimHandleAlternation(object, anim(object));
+  }
+
+  private UpdateWalkStyle(object: ObjectEvent, sprite: Sprite, updateAnim: (sprite: Sprite) => boolean): boolean {
+    if (!updateAnim(sprite)) return false;
+    this.shiftStill(object);
+    object.triggerGroundEffectsOnStop = true;
+    sprite.animPaused = true;
+    return true;
+  }
+
+  /** SetWalkSlowerSpriteData (event_object_movement.c). */
+  SetWalkSlowerSpriteData(sprite: Sprite, direction: number): void {
+    sprite.data[3] = direction & 0xff;
+    sprite.data[4] = 0;
+    sprite.data[5] = 0;
+  }
+
+  /** SetWalkSlowSpriteData (event_object_movement.c). */
+  SetWalkSlowSpriteData(sprite: Sprite, direction: number): void {
+    this.SetWalkSlowerSpriteData(sprite, direction);
+  }
+
+  /** SetWalkSlowestSpriteData (event_object_movement.c). */
+  SetWalkSlowestSpriteData(sprite: Sprite, direction: number): void {
+    this.SetWalkSlowerSpriteData(sprite, direction);
+  }
+
+  /** SetRunSlowSpriteData (event_object_movement.c). */
+  SetRunSlowSpriteData(sprite: Sprite, direction: number): void {
+    this.SetWalkSlowerSpriteData(sprite, direction);
+  }
+
+  private UpdateSlowStyleAnim(sprite: Sprite, kind: "slow" | "slower" | "slowest" | "runSlow"): boolean {
+    const object = this.objectForMovementSprite(sprite);
+    if (!object) return false;
+    const direction = sprite.data[3];
     switch (kind) {
       case "slower":
-        if (!(s.data[4] & 1)) { this.stepSprite(object, 1, dir); s.data[5]++; }
-        s.data[4]++;
+        if (!(sprite.data[4] & 1)) { this.stepSprite(object, 1, direction); sprite.data[5]++; }
+        sprite.data[4]++;
         break;
       case "slow":
-        if (++s.data[4] < 3) { this.stepSprite(object, 1, dir); s.data[5]++; } else s.data[4] = 0;
+        if (++sprite.data[4] < 3) { this.stepSprite(object, 1, direction); sprite.data[5]++; }
+        else sprite.data[4] = 0;
         break;
       case "slowest":
-        if (++s.data[4] > 9) { s.data[4] = 0; this.stepSprite(object, 1, dir); s.data[5]++; }
+        if (++sprite.data[4] > 9) { sprite.data[4] = 0; this.stepSprite(object, 1, direction); sprite.data[5]++; }
         break;
       case "runSlow":
-        if ((++s.data[4]) & 1) { this.stepSprite(object, 1, dir); s.data[5]++; } else { this.stepSprite(object, 2, dir); s.data[5] += 2; }
+        if ((++sprite.data[4]) & 1) { this.stepSprite(object, 1, direction); sprite.data[5]++; }
+        else { this.stepSprite(object, 2, direction); sprite.data[5] += 2; }
         break;
     }
-    if (s.data[5] > 15) {
-      this.shiftStill(object);
-      object.triggerGroundEffectsOnStop = true;
-      s.animPaused = true;
-      return true;
-    }
-    return false;
+    return sprite.data[5] > 15;
   }
+
+  /** UpdateWalkSlowerAnim (event_object_movement.c). */
+  UpdateWalkSlowerAnim(sprite: Sprite): boolean { return this.UpdateSlowStyleAnim(sprite, "slower"); }
+  /** UpdateWalkSlowAnim (event_object_movement.c). */
+  UpdateWalkSlowAnim(sprite: Sprite): boolean { return this.UpdateSlowStyleAnim(sprite, "slow"); }
+  /** UpdateWalkSlowestAnim (event_object_movement.c). */
+  UpdateWalkSlowestAnim(sprite: Sprite): boolean { return this.UpdateSlowStyleAnim(sprite, "slowest"); }
+  /** UpdateRunSlowAnim (event_object_movement.c). */
+  UpdateRunSlowAnim(sprite: Sprite): boolean { return this.UpdateSlowStyleAnim(sprite, "runSlow"); }
+
+  /** InitNpcForWalkSlower (event_object_movement.c). */
+  InitNpcForWalkSlower(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitNpcForSlowStyle(object, sprite, direction, (s, d) => this.SetWalkSlowerSpriteData(s, d));
+  }
+  /** InitNpcForWalkSlow (event_object_movement.c). */
+  InitNpcForWalkSlow(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitNpcForSlowStyle(object, sprite, direction, (s, d) => this.SetWalkSlowSpriteData(s, d));
+  }
+  /** InitNpcForWalkSlowest (event_object_movement.c). */
+  InitNpcForWalkSlowest(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitNpcForSlowStyle(object, sprite, direction, (s, d) => this.SetWalkSlowestSpriteData(s, d));
+  }
+  /** InitNpcForRunSlow (event_object_movement.c). */
+  InitNpcForRunSlow(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitNpcForSlowStyle(object, sprite, direction, (s, d) => this.SetRunSlowSpriteData(s, d));
+  }
+
+  /** InitWalkSlower (event_object_movement.c). */
+  InitWalkSlower(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitWalkStyle(object, sprite, direction, (o, s, d) => this.InitNpcForWalkSlower(o, s, d), (o) => moveAnim(o.facingDirection));
+  }
+  /** InitWalkSlow (event_object_movement.c). */
+  InitWalkSlow(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitWalkStyle(object, sprite, direction, (o, s, d) => this.InitNpcForWalkSlow(o, s, d), (o) => moveAnim(o.facingDirection));
+  }
+  /** InitWalkSlowest (event_object_movement.c). */
+  InitWalkSlowest(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitWalkStyle(object, sprite, direction, (o, s, d) => this.InitNpcForWalkSlowest(o, s, d), (o) => moveAnim(o.facingDirection));
+  }
+  /** InitRunSlow (event_object_movement.c). */
+  InitRunSlow(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.InitWalkStyle(object, sprite, direction, (o, s, d) => this.InitNpcForRunSlow(o, s, d), (o) => runAnim(o.facingDirection));
+  }
+
+  /** UpdateWalkSlower (event_object_movement.c). */
+  UpdateWalkSlower(object: ObjectEvent, sprite: Sprite): boolean { return this.UpdateWalkStyle(object, sprite, (s) => this.UpdateWalkSlowerAnim(s)); }
+  /** UpdateWalkSlow (event_object_movement.c). */
+  UpdateWalkSlow(object: ObjectEvent, sprite: Sprite): boolean { return this.UpdateWalkStyle(object, sprite, (s) => this.UpdateWalkSlowAnim(s)); }
+  /** UpdateWalkSlowest (event_object_movement.c). */
+  UpdateWalkSlowest(object: ObjectEvent, sprite: Sprite): boolean { return this.UpdateWalkStyle(object, sprite, (s) => this.UpdateWalkSlowestAnim(s)); }
+  /** UpdateRunSlow (event_object_movement.c). */
+  UpdateRunSlow(object: ObjectEvent, sprite: Sprite): boolean { return this.UpdateWalkStyle(object, sprite, (s) => this.UpdateRunSlowAnim(s)); }
 
   private initJump(object: ObjectEvent, direction: number, distance: number, type: number, shadow = false): void {
     const displacement = [0, 1, 1][distance];
@@ -2423,8 +2508,12 @@ export class ObjectEvents {
     // Walk slower (0x08-0x0B), slow (0x0C-0x0F)
     if (id >= 0x08 && id <= 0x0f) {
       const slower = id <= 0x0b;
-      if (step === 0) this.initWalkSlowStyle(object, dirOf(slower ? 0x08 : 0x0c), moveAnim(dirOf(slower ? 0x08 : 0x0c)));
-      if (this.updateWalkSlowStyle(object, slower ? "slower" : "slow")) return this.finishStep(object);
+      const direction = dirOf(slower ? 0x08 : 0x0c);
+      if (step === 0) {
+        if (slower) this.InitWalkSlower(object, s, direction);
+        else this.InitWalkSlow(object, s, direction);
+      }
+      if (slower ? this.UpdateWalkSlower(object, s) : this.UpdateWalkSlow(object, s)) return this.finishStep(object);
       return false;
     }
     // Walk normal
@@ -2499,8 +2588,9 @@ export class ObjectEvents {
     }
     // Player run slow
     if (id >= 0x41 && id <= 0x44) {
-      if (step === 0) this.initWalkSlowStyle(object, dirOf(0x41), runAnim(dirOf(0x41)));
-      if (this.updateWalkSlowStyle(object, "runSlow")) return this.finishStep(object);
+      const direction = dirOf(0x41);
+      if (step === 0) this.InitRunSlow(object, s, direction);
+      if (this.UpdateRunSlow(object, s)) return this.finishStep(object);
       return false;
     }
     // Start anim in direction
@@ -2657,11 +2747,11 @@ export class ObjectEvents {
       // south at the slower step cadence. FRLG object graphics all point to
       // the one-command dummy affine table; the visual matrix remains identity.
       if (step === 0) {
-        this.initWalkSlowStyle(object, DIR_SOUTH, moveAnim(DIR_SOUTH));
+        this.InitWalkSlower(object, s, DIR_SOUTH);
         s.affineAnimPaused = false;
         s.affineAnimNum = id === 0x6e ? 0 : 1;
       }
-      if (this.updateWalkSlowStyle(object, "slower")) {
+      if (this.UpdateWalkSlower(object, s)) {
         s.affineAnimPaused = true;
         return this.finishStep(object);
       }
@@ -2727,8 +2817,9 @@ export class ObjectEvents {
     }
     // Walk slowest
     if (id >= 0x9b && id <= 0x9e) {
-      if (step === 0) this.initWalkSlowStyle(object, dirOf(0x9b), moveAnim(dirOf(0x9b)));
-      if (this.updateWalkSlowStyle(object, "slowest")) return this.finishStep(object);
+      const direction = dirOf(0x9b);
+      if (step === 0) this.InitWalkSlowest(object, s, direction);
+      if (this.UpdateWalkSlowest(object, s)) return this.finishStep(object);
       return false;
     }
     if (id === 0x9f) {
