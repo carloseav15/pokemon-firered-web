@@ -237,7 +237,7 @@ export class ObjectEvent {
   trackedByCamera = false;
   isPlayer = false;
   hasShadow = false;
-  disableJumpLandingGroundEffect = true;
+  disableJumpLandingGroundEffect = false;
   fixedPriority = false;
   inShortGrass = false;
   inHotSprings = false;
@@ -1090,6 +1090,8 @@ export class ObjectEvents {
     if (slot === OBJECT_EVENTS_COUNT) return OBJECT_EVENTS_COUNT;
     if (!this.ShouldInitObjectEventStateFromTemplate(template, cloneCoords !== undefined, cloneCoords?.x ?? 0, cloneCoords?.y ?? 0)) return OBJECT_EVENTS_COUNT;
     const object = new ObjectEvent();
+    this.ClearObjectEvent(object);
+    object.active = true;
     object.template = template;
     object.triggerGroundEffectsOnMove = true;
     object.localId = template.localId;
@@ -1116,6 +1118,32 @@ export class ObjectEvents {
     this.objects[slot] = object;
     gObjectEvents[slot] = object;
     return slot;
+  }
+
+  /** ClearObjectEvent (event_object_movement.c): zero the state and restore C sentinels. */
+  ClearObjectEvent(objectEvent: ObjectEvent): void {
+    Object.assign(objectEvent, new ObjectEvent());
+    objectEvent.active = false;
+    objectEvent.disableJumpLandingGroundEffect = false;
+    objectEvent.localId = LOCALID_PLAYER;
+    objectEvent.mapNum = C.MAP_UNDEFINED & 0xff;
+    objectEvent.mapGroup = C.MAP_UNDEFINED & 0xff;
+    objectEvent.movementActionId = MOVEMENT_ACTION_NONE;
+  }
+
+  /** ClearAllObjectEvents (event_object_movement.c): clear every fixed C object slot. */
+  ClearAllObjectEvents(): void {
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      this.ClearObjectEvent(gObjectEvents[i]!);
+      this.objects[i] = null;
+    }
+  }
+
+  /** ResetObjectEvents (event_object_movement.c), with web sprite teardown before clearing slots. */
+  ResetObjectEvents(): void {
+    this.removeAll();
+    this.ClearAllObjectEvents();
+    this.ClearVirtualObjects();
   }
 
   /** VAR_OBJ_GFX_ID_0.. for dynamic graphics (OBJ_EVENT_GFX_VAR_0..F) */

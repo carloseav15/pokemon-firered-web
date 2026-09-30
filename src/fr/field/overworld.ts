@@ -953,7 +953,7 @@ export class Overworld {
 
   /** InitObjectEventsLocal + SetCameraToTrackPlayer */
   private initObjectEventsLocal(): void {
-    this.objects.removeAll();
+    this.objects.ResetObjectEvents();
     const x = save.pos.x + MAP_OFFSET;
     const y = save.pos.y + MAP_OFFSET;
     const state = this.GetInitialPlayerAvatarState();
