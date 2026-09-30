@@ -1863,45 +1863,50 @@ export class ObjectEvents {
   /** UpdateObjectEventCallback / ObjectEventCB for every object. */
   update(cameraX: number, cameraY: number): void {
     for (const object of this.list) {
-      const sprite = object.sprite;
-      // UpdateObjectEventCurrentMovement calls DoGroundEffects_OnSpawn before
-      // enabling animation or dispatching this object's movement callback.
-      if (object.triggerGroundEffectsOnMove) {
-        this.doGroundEffect(object, "spawn");
-        object.triggerGroundEffectsOnMove = false;
-      }
-      // TryEnableObjectEventAnim runs before the movement callback in C.
-      this.TryEnableObjectEventAnim(object, sprite);
-      if (object.isPlayer) {
-        this.MovementType_Player(object, sprite);
-      } else if (!object.frozen) {
-        if (ObjectEventIsHeldMovementActive(object)) {
-          if (!object.heldMovementFinished) {
-            if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING) {
-              if (!sprite.animBeginning) this.QuestLogObjectEventExecHeldMovementAction(object, sprite);
-            } else {
-              this.execHeld(object);
-            }
-          }
-        } else {
-          this.runMovementType(object);
-        }
-      }
-      // C processes begin/finish flags immediately after this object's callback.
-      if (object.triggerGroundEffectsOnMove) {
-        this.doGroundEffect(object, "begin");
-        object.triggerGroundEffectsOnMove = false;
-      }
-      if (object.triggerGroundEffectsOnStop) {
-        this.doGroundEffect(object, "finish");
-        object.triggerGroundEffectsOnStop = false;
-        object.landingJump = false;
-      }
-      this.UpdateObjectEventSpriteAnimPause(object, sprite);
-      this.UpdateObjectEventVisibility(object, sprite, cameraX, cameraY);
-      this.ObjectEventUpdateSubpriority(object, sprite, cameraY);
+      this.UpdateObjectEventCurrentMovement(object, cameraX, cameraY);
       this.UpdateObjectEventElevationAndPriority(object);
     }
+  }
+
+  /** UpdateObjectEventCurrentMovement (event_object_movement.c), adapted to this per-object browser driver. */
+  UpdateObjectEventCurrentMovement(object: ObjectEvent, cameraX: number, cameraY: number): void {
+    const sprite = object.sprite;
+    // UpdateObjectEventCurrentMovement calls DoGroundEffects_OnSpawn before
+    // enabling animation or dispatching this object's movement callback.
+    if (object.triggerGroundEffectsOnMove) {
+      this.doGroundEffect(object, "spawn");
+      object.triggerGroundEffectsOnMove = false;
+    }
+    // TryEnableObjectEventAnim runs before the movement callback in C.
+    this.TryEnableObjectEventAnim(object, sprite);
+    if (object.isPlayer) {
+      this.MovementType_Player(object, sprite);
+    } else if (!object.frozen) {
+      if (ObjectEventIsHeldMovementActive(object)) {
+        if (!object.heldMovementFinished) {
+          if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING) {
+            if (!sprite.animBeginning) this.QuestLogObjectEventExecHeldMovementAction(object, sprite);
+          } else {
+            this.execHeld(object);
+          }
+        }
+      } else {
+        this.runMovementType(object);
+      }
+    }
+    // C processes begin/finish flags immediately after this object's callback.
+    if (object.triggerGroundEffectsOnMove) {
+      this.doGroundEffect(object, "begin");
+      object.triggerGroundEffectsOnMove = false;
+    }
+    if (object.triggerGroundEffectsOnStop) {
+      this.doGroundEffect(object, "finish");
+      object.triggerGroundEffectsOnStop = false;
+      object.landingJump = false;
+    }
+    this.UpdateObjectEventSpriteAnimPause(object, sprite);
+    this.UpdateObjectEventVisibility(object, sprite, cameraX, cameraY);
+    this.ObjectEventUpdateSubpriority(object, sprite, cameraY);
   }
 
   private doGroundEffect(object: ObjectEvent, kind: "spawn" | "begin" | "finish"): void {
