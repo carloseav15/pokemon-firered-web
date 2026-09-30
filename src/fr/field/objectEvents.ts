@@ -336,6 +336,12 @@ export function SetMovementDelay(sprite: Sprite, delay: number): void {
   sprite.data[3] = (delay << 16) >> 16;
 }
 
+/** InitMovementDelay (event_object_movement.c): set the step and u16 duration fields. */
+export function InitMovementDelay(sprite: Sprite, duration: number): void {
+  sprite.data[2] = 1;
+  sprite.data[3] = duration & 0xffff;
+}
+
 /** event_object_movement.c WaitForMovementDelay. */
 export function WaitForMovementDelay(sprite: Sprite): boolean {
   sprite.data[3] = ((sprite.data[3] - 1) << 16) >> 16;
@@ -3001,7 +3007,7 @@ export class ObjectEvents {
     }
     // Delays
     if (id >= 0x18 && id <= 0x1c) {
-      if (step === 0) { s.data[3] = [1, 2, 4, 8, 16][id - 0x18]; s.data[2] = 1; }
+      if (step === 0) InitMovementDelay(s, [1, 2, 4, 8, 16][id - 0x18]!);
       if (--s.data[3] === 0) return this.finishStep(object);
       return false;
     }
