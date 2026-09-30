@@ -1923,6 +1923,10 @@ export class ObjectEvents {
   private movementTypeCallback(object: ObjectEvent): boolean {
     const name = MOVEMENT_TYPE_CALLBACKS[object.movementType];
     if (!name) return false;
+    if (object.movementType === rom.constants.MOVEMENT_TYPE_BURIED) return this.MovementType_Buried_Callback(object, object.sprite);
+    if (object.movementType === rom.constants.MOVEMENT_TYPE_RAISE_HAND_AND_STOP) return this.MovementType_RaiseHandAndStop_Callback(object, object.sprite);
+    if (object.movementType === rom.constants.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP) return this.MovementType_RaiseHandAndJump_Callback(object, object.sprite);
+    if (object.movementType === rom.constants.MOVEMENT_TYPE_RAISE_HAND_AND_SWIM) return this.MovementType_RaiseHandAndSwim_Callback(object, object.sprite);
     const steps = MOVEMENT_TYPE_STEPS[name];
     if (!steps) return this.movementTypeBranch(object);
     const step = object.sprite.data[1];
@@ -1954,15 +1958,6 @@ export class ObjectEvents {
     const type = object.movementType;
     const step = s.data[1];
 
-    // MovementType_Buried initializes its fixed layer once before dispatching
-    // the buried callback (event_object_movement.c).
-    if (type === c.MOVEMENT_TYPE_BURIED && !s.data[7]) {
-      object.fixedPriority = true;
-      s.subspriteMode = c.SUBSPRITES_IGNORE_PRIORITY;
-      s.priority = 3;
-      s.data[7]++;
-    }
-
     // Static facing types
     if (type === c.MOVEMENT_TYPE_NONE || type === c.MOVEMENT_TYPE_BERRY_TREE_GROWTH) {
       return false;
@@ -1985,8 +1980,7 @@ export class ObjectEvents {
         object.directionSequenceIndex = 1;
         s.data[7]++;
       }
-      this.clearMovement(object);
-      return false;
+      return this.MovementType_Disguise_Callback(object, s);
     }
     if (type === c.MOVEMENT_TYPE_BURIED) {
       if (step === 0) this.clearMovement(object);
@@ -2207,6 +2201,46 @@ export class ObjectEvents {
       return false;
     }
     return false;
+  }
+
+  /** MovementType_Disguise_Callback (event_object_movement.c). */
+  private MovementType_Disguise_Callback(object: ObjectEvent, sprite: Sprite): boolean {
+    this.clearMovement(object);
+    return false;
+  }
+
+  /** MovementType_Buried_Callback dispatches the C step table by sprite->data[1]. */
+  private MovementType_Buried_Callback(object: ObjectEvent, sprite: Sprite): boolean {
+    if (!sprite.data[7]) {
+      object.fixedPriority = true;
+      sprite.subspriteMode = rom.constants.SUBSPRITES_IGNORE_PRIORITY;
+      sprite.priority = 3;
+      sprite.data[7]++;
+    }
+    return this.MovementType_Buried_Step0(object, sprite);
+  }
+
+  /** MovementType_RaiseHandAndStop_Callback dispatches its three C movement steps. */
+  private MovementType_RaiseHandAndStop_Callback(object: ObjectEvent, sprite: Sprite): boolean {
+    switch (sprite.data[1]) {
+      case 0: return this.MovementType_RaiseHandAndStop_Step0(object, sprite);
+      case 1: return this.MovementType_RaiseHandAndStop_Step1(object, sprite);
+      default: return this.MovementType_RaiseHandAndStop_Step2(object, sprite);
+    }
+  }
+
+  /** MovementType_RaiseHandAndJump_Callback dispatches the C movement-step table. */
+  private MovementType_RaiseHandAndJump_Callback(object: ObjectEvent, sprite: Sprite): boolean {
+    return sprite.data[1] === 0
+      ? this.MovementType_RaiseHandAndJump_Step0(object, sprite)
+      : this.MovementType_RaiseHandAndMove_Step1(object, sprite);
+  }
+
+  /** MovementType_RaiseHandAndSwim_Callback dispatches the C movement-step table. */
+  private MovementType_RaiseHandAndSwim_Callback(object: ObjectEvent, sprite: Sprite): boolean {
+    return sprite.data[1] === 0
+      ? this.MovementType_RaiseHandAndSwim_Step0(object, sprite)
+      : this.MovementType_RaiseHandAndMove_Step1(object, sprite);
   }
 
   /** Dispatches gCopyPlayerMovementFuncs (event_object_movement.c). */
