@@ -35,6 +35,7 @@ import { CallTrainerTowerFunc } from "../trainerTower";
 import { WonderNews_GetRewardInfo } from "../wonderNews";
 import { BufferRandomHobbyOrLifestyleString, ShowEasyChatMessage } from "../easyChat";
 import { IsEnigmaBerryValid } from "../pokemon/berry";
+import { BattleTowerMapScript2, BattleTowerUtil, CheckPartyBattleTowerBanlist, GiveBattleTowerPrize, AwardBattleTowerRibbons, ValidateEReaderTrainer } from "../battleTower";
 
 type Special = (ctx: ScriptRunner) => number | void;
 
@@ -379,7 +380,7 @@ export const SPECIALS: Record<string, Special> = {
     stringVars.var1 = mon ? nickname(mon) : encode("");
     return decode(stringVars.var3) === decode(stringVars.var1) ? 0 : 1;
   },
-  ValidateEReaderTrainer: () => 1,
+  ValidateEReaderTrainer: () => ValidateEReaderTrainer(),
   GetMysteryGiftCardStat: () => 0,
   ValidateSavedWonderCard: () => 0,
   WonderNews_GetRewardInfo: () => WonderNews_GetRewardInfo(),
@@ -449,12 +450,12 @@ export const SPECIALS: Record<string, Special> = {
   // from group 12 (LIFESTYLE) or 13 (HOBBIES) into gStringVar2.
   BufferRandomHobbyOrLifestyleString,
   ShowEasyChatMessage: (ctx) => { ShowEasyChatMessage((text) => { ctx.ow.messageBox.show(text, true); }); },
-  // ---- battle tower (battle_tower.c): the tower engine is not ported; gating
-  // checks report a valid party so field scripts continue past the desk.
-  CheckPartyBattleTowerBanlist: () => { varSet(SV.x8004, 0); },
-  GiveBattleTowerPrize: () => 0,
-  AwardBattleTowerRibbons: () => 0,
-  BattleTowerUtil: () => 0,
+  // ---- battle tower (battle_tower.c)
+  BattleTowerMapScript2: () => { BattleTowerMapScript2(); },
+  CheckPartyBattleTowerBanlist: () => { CheckPartyBattleTowerBanlist(); },
+  GiveBattleTowerPrize: () => GiveBattleTowerPrize(),
+  AwardBattleTowerRibbons: () => AwardBattleTowerRibbons(),
+  BattleTowerUtil: () => { BattleTowerUtil(); },
   // ---- trainer tower (trainer_tower.c:438, cereader_tool.c:93): e-Reader data
   // is stubbed FALSE in FireRed itself, so validation always fails here too.
   CallTrainerTowerFunc: (ctx) => { CallTrainerTowerFunc(ctx); },

@@ -22,6 +22,33 @@ export type BagPocket = Array<{ item: number; quantity: number }>;
 export type PcMailEntry = { item: number; message: { words: number[]; author: number[]; authorId: number } };
 export type MailData = { words: number[]; playerName: number[]; trainerId: number[]; species: number; itemId: number };
 export type RamScriptSave = { checksum: number; data: { magic: number; mapGroup: number; mapNum: number; objectId: number; script: number[] } };
+/** pokemon.h BattleTowerPokemon: the persistent party snapshot used by Battle Tower records. */
+export type BattleTowerPokemonSave = {
+  species: number; heldItem: number; moves: number[]; level: number; ppBonuses: number;
+  hpEV: number; attackEV: number; defenseEV: number; speedEV: number; spAttackEV: number; spDefenseEV: number;
+  otId: number; hpIV: number; attackIV: number; defenseIV: number; speedIV: number; spAttackIV: number; spDefenseIV: number;
+  abilityNum: number; personality: number; nickname: number[]; friendship: number;
+};
+/** global.h BattleTowerRecord: R/S record-mixing payload retained in SaveBlock2. */
+export type BattleTowerRecordSave = {
+  battleTowerLevelType: number; trainerClass: number; winStreak: number; name: number[]; trainerId: number[];
+  greeting: number[]; party: BattleTowerPokemonSave[]; checksum: number;
+};
+/** global.h BattleTowerEReaderTrainer: external e-Reader payload retained in SaveBlock2. */
+export type BattleTowerEReaderTrainerSave = {
+  unk0: number; trainerClass: number; winStreak: number; name: number[]; trainerId: number[];
+  greeting: number[]; farewellPlayerLost: number[]; farewellPlayerWon: number[];
+  party: BattleTowerPokemonSave[]; checksum: number;
+};
+/** global.h BattleTowerData (0x7E8 bytes); browser JSON stores its typed logical fields. */
+export type BattleTowerDataSave = {
+  playerRecord: BattleTowerRecordSave; records: BattleTowerRecordSave[]; firstMonSpecies: number; defeatedBySpecies: number;
+  defeatedByTrainerName: number[]; firstMonNickname: number[]; ereaderTrainer: BattleTowerEReaderTrainerSave;
+  battleTowerLevelType: number; unk_554: number; battleOutcome: number; var_4AE: number[];
+  curChallengeBattleNum: number[]; curStreakChallengesNum: number[]; recordWinStreaks: number[];
+  battleTowerTrainerId: number; selectedPartyMons: number[]; prizeItem: number; battledTrainerIds: number[];
+  totalBattleTowerWins: number; bestBattleTowerWinStreak: number; currentWinStreaks: number[]; lastStreakLevelType: number;
+};
 export interface WonderNewsMetadata {
   newsType: number;
   sentRewardCounter: number;
@@ -127,7 +154,7 @@ export type SaveData = {
   enigmaBerry: number[];
   /** fieldmap.c SaveBlock2.mapView, a 0x100-entry u16 snapshot of the current map view. */
   mapView: number[];
-  battleTower?: number[];
+  battleTower: BattleTowerDataSave;
   miniGameResults?: { berryCrush: number[]; pokemonJump: number[]; berryPicking: number[]; berryPowder: number };
   /** SaveBlock1.trainerTower, the four challenge records. */
   trainerTower: TrainerTowerSave[];
@@ -212,6 +239,46 @@ function newLinkBattleRecords(): LinkBattleRecordsSave {
   };
 }
 
+function emptyBattleTowerPokemon(): BattleTowerPokemonSave {
+  return {
+    species: 0, heldItem: 0, moves: new Array(C.MAX_MON_MOVES).fill(0), level: 0, ppBonuses: 0,
+    hpEV: 0, attackEV: 0, defenseEV: 0, speedEV: 0, spAttackEV: 0, spDefenseEV: 0,
+    otId: 0, hpIV: 0, attackIV: 0, defenseIV: 0, speedIV: 0, spAttackIV: 0, spDefenseIV: 0,
+    abilityNum: 0, personality: 0, nickname: new Array(C.POKEMON_NAME_LENGTH + 1).fill(0), friendship: 0,
+  };
+}
+
+function emptyBattleTowerRecord(): BattleTowerRecordSave {
+  return {
+    battleTowerLevelType: 0, trainerClass: 0, winStreak: 0,
+    name: new Array(C.PLAYER_NAME_LENGTH + 1).fill(0), trainerId: new Array(C.TRAINER_ID_LENGTH).fill(0),
+    greeting: new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(0),
+    party: Array.from({ length: C.MULTI_PARTY_SIZE }, emptyBattleTowerPokemon), checksum: 0,
+  };
+}
+
+function emptyEReaderTrainer(): BattleTowerEReaderTrainerSave {
+  return {
+    unk0: 0, trainerClass: 0, winStreak: 0, name: new Array(8).fill(0),
+    trainerId: new Array(C.TRAINER_ID_LENGTH).fill(0), greeting: new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(0),
+    farewellPlayerLost: new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(0),
+    farewellPlayerWon: new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(0),
+    party: Array.from({ length: C.MULTI_PARTY_SIZE }, emptyBattleTowerPokemon), checksum: 0,
+  };
+}
+
+export function newBattleTowerData(): BattleTowerDataSave {
+  return {
+    playerRecord: emptyBattleTowerRecord(), records: Array.from({ length: 5 }, emptyBattleTowerRecord),
+    firstMonSpecies: 0, defeatedBySpecies: 0, defeatedByTrainerName: new Array(8).fill(0),
+    firstMonNickname: new Array(C.POKEMON_NAME_LENGTH).fill(0), ereaderTrainer: emptyEReaderTrainer(),
+    battleTowerLevelType: 0, unk_554: 0, battleOutcome: 0, var_4AE: [0, 0],
+    curChallengeBattleNum: [0, 0], curStreakChallengesNum: [0, 0], recordWinStreaks: [0, 0],
+    battleTowerTrainerId: 0, selectedPartyMons: [0, 0, 0], prizeItem: 0, battledTrainerIds: new Array(C.MULTI_PARTY_SIZE * 2).fill(0),
+    totalBattleTowerWins: 0, bestBattleTowerWinStreak: 0, currentWinStreaks: [0, 0], lastStreakLevelType: 0,
+  };
+}
+
 export function newSaveData(): SaveData {
   return {
     version: 2,
@@ -248,7 +315,7 @@ export function newSaveData(): SaveData {
     giftRibbons: new Array(C.GIFT_RIBBONS_COUNT).fill(0),
     enigmaBerry: new Array(0x34).fill(0),
     mapView: new Array(0x100).fill(0),
-    battleTower: [],
+    battleTower: newBattleTowerData(),
     miniGameResults: { berryCrush: [], pokemonJump: [], berryPicking: [], berryPowder: 0 },
     trainerTower: newTrainerTowerRecords(),
     towerChallengeId: 0,
@@ -307,6 +374,8 @@ export function setSave(data: SaveData): void {
   data.easyChatBattleLost ??= new Array(C.EASY_CHAT_BATTLE_WORDS_COUNT).fill(C.EC_WORD_UNDEFINED);
   data.enigmaBerry ??= new Array(0x34).fill(0);
   data.mapView ??= new Array(0x100).fill(0);
+  // Migrate browser saves created before global.h BattleTowerData was represented.
+  if (!data.battleTower || !Array.isArray((data.battleTower as unknown as { records?: unknown }).records)) data.battleTower = newBattleTowerData();
   data.additionalPhrases ??= new Array(C.NUM_ADDITIONAL_PHRASE_BYTES).fill(0);
   data.ramScript ??= emptyRamScript();
   // Migrate browser saves created before the Trainer Tower records were represented.

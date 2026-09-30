@@ -19,6 +19,7 @@ import {
 import { GetBattlerAtPosition, GetBattlerSide } from "./util";
 import { GetMonData, GetSecretBaseTrainerNameIndex, gEnemyParty, playerMon } from "../pokemon/mon";
 import { GetTrainerTowerOpponentClass, GetTrainerTowerOpponentName, GetTrainerTowerOpponentLoseText, GetTrainerTowerOpponentWinText, GetTrainerTowerOpponentGender } from "../trainerTower";
+import { GetBattleTowerTrainerClassNameId, GetBattleTowerTrainerName, GetEreaderTrainerClassId, CopyEReaderTrainerName5 } from "../battleTower";
 
 export const B_BUFF_STRING = 0;
 export const B_BUFF_NUMBER = 1;
@@ -367,7 +368,11 @@ export function BattleStringExpandPlaceholders(src: ArrayLike<number>, dst: Uint
         case C.B_TXT_SCR_ACTIVE_ABILITY: toCpy = abilityName(sBattlerAbilities[gBattleScripting.battler]); break;
         case C.B_TXT_EFF_ABILITY: toCpy = abilityName(sBattlerAbilities[G.gEffectBattler]); break;
         case C.B_TXT_TRAINER1_CLASS: {
-          const cls = G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER
+          const cls = G.gBattleTypeFlags & C.BATTLE_TYPE_BATTLE_TOWER
+            ? GetBattleTowerTrainerClassNameId()
+            : G.gBattleTypeFlags & C.BATTLE_TYPE_EREADER_TRAINER
+            ? GetEreaderTrainerClassId()
+            : G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER
             ? GetTrainerTowerOpponentClass()
             : G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
             ? GetSecretBaseTrainerNameIndex()
@@ -376,7 +381,11 @@ export function BattleStringExpandPlaceholders(src: ArrayLike<number>, dst: Uint
           break;
         }
         case C.B_TXT_TRAINER1_NAME:
-          toCpy = G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER
+          if (G.gBattleTypeFlags & C.BATTLE_TYPE_BATTLE_TOWER) {
+            const name = new Uint8Array(8); GetBattleTowerTrainerName(name); toCpy = Array.from(name);
+          } else if (G.gBattleTypeFlags & C.BATTLE_TYPE_EREADER_TRAINER) {
+            const name = new Uint8Array(8); CopyEReaderTrainerName5(name); toCpy = Array.from(name);
+          } else toCpy = G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER
             ? GetTrainerTowerOpponentName()
             : G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
             ? strip(gBattleResources.secretBase.trainerName)

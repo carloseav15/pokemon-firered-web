@@ -8,7 +8,7 @@ const CDATA_FILES = [
   "renewable_hidden_items", "pokemon_summary_screen", "pokedex_screen", "trainer_card", "evolution_scene", "hall_of_fame", "daycare", "trade", "trade_scene",
   "roamer", "seagallop", "field_weather", "field_weather_effects", "battle_transition", "learn_move", "tm_case", "berry_pouch",
   "shop", "item_pc", "pokemon_storage_system_graphics", "pokemon_storage_system_data", "diploma", "credits", "slot_machine",
-  "trainer_tower", "trainer_tower_sets", "help_system", "teachy_tv", "easy_chat", "itemfinder", "ss_anne", "script_menu", "field_tasks", "field_door", "event_object_movement",
+  "trainer_tower", "trainer_tower_sets", "battle_tower", "help_system", "teachy_tv", "easy_chat", "itemfinder", "ss_anne", "script_menu", "field_tasks", "field_door", "event_object_movement",
 ];
 
 const PACKS = [

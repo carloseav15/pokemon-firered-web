@@ -17,7 +17,7 @@ import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
 import { rom } from "./rom";
-import { ApplyNewEncryptionKeyToGameStats, flagGet, GetGameStat, IncrementGameStat, newSaveData, ResetGameStats, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
+import { ApplyNewEncryptionKeyToGameStats, flagGet, GetGameStat, IncrementGameStat, newBattleTowerData, newSaveData, ResetGameStats, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, InitChooseMonsForBattle, Task_ChoosePartyMon } from "./partyMenu";
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
@@ -284,9 +284,9 @@ export class Game {
     data.pokedexSeen.fill(0);
   }
 
-  /** new_game.c ClearBattleTower; this port currently models no tower records. */
+  /** new_game.c ClearBattleTower. */
   ClearBattleTower(data: SaveData = save): void {
-    data.battleTower = [];
+    data.battleTower = newBattleTowerData();
   }
 
   /** new_game.c Sav2_ClearSetDefault. A fresh SaveBlock2 is represented by newSaveData. */

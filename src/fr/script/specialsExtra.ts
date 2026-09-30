@@ -34,6 +34,7 @@ import { OpenMuseumFossilPic, CloseMuseumFossilPic } from "../menus/scriptMenu";
 import { ShowEasyChatScreen } from "../easyChat2";
 import { preloadEasyChatScreen } from "../easyChat3";
 import { preloadBattleRecords, ShowBattleRecords } from "../battleRecords";
+import { BufferEReaderTrainerGreeting, SetEReaderTrainerGfxId, StartSpecialBattle } from "../battleTower";
 import type { ScriptRunner } from "./context";
 
 type Special = (ctx: ScriptRunner) => number | void;
@@ -871,9 +872,10 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   EnterTradeSeat: (ctx) => { enableLater(ctx); },
   DoCableClubWarp: (ctx) => { enableLater(ctx); },
   Script_ShowLinkTrainerCard: (ctx) => { enableLater(ctx); },
-  StartSpecialBattle: (ctx) => { enableLater(ctx); },
-  BufferEReaderTrainerGreeting: () => { stringVars.var1 = encode(""); },
-  BufferEReaderTrainerName: () => { stringVars.var1 = encode(""); },
+  SetEReaderTrainerGfxId: () => { SetEReaderTrainerGfxId(); },
+  StartSpecialBattle: (ctx) => { StartSpecialBattle(ctx.ow.game); ctx.ow.script.ScriptContext_Stop(); },
+  BufferEReaderTrainerGreeting: () => { BufferEReaderTrainerGreeting(); },
+  BufferEReaderTrainerName: () => { stringVars.var1 = Uint8Array.from(save.battleTower.ereaderTrainer.name.slice(0, 5)); stringVars.var1[5] = C.EOS; },
   // easy_chat_2.c ShowEasyChatScreen: the exported screen data loads first, then the hardware scene opens.
   ShowEasyChatScreen: (ctx) => {
     ctx.ow.script.ScriptContext_Stop();
