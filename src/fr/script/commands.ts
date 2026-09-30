@@ -378,11 +378,7 @@ function ScrCmd_setobjectxy(ctx: ScriptRunner): boolean {
   const localId = varGet(ctx.ScriptReadHalfword());
   const x = varGet(ctx.ScriptReadHalfword());
   const y = varGet(ctx.ScriptReadHalfword());
-  const o = localIdObject(ctx, localId);
-  if (o) {
-    const vx = (x << 16 >> 16) + MAP_OFFSET, vy = (y << 16 >> 16) + MAP_OFFSET;
-    ctx.ow.objects.MoveObjectEventToMapCoords(o, vx, vy);
-  }
+  ctx.ow.objects.TryMoveObjectEventToMapCoords(localId, ctx.ow.objects.mapNum, ctx.ow.objects.mapGroup, x, y);
   return false;
 }
 function ScrCmd_setobjectxyperm(ctx: ScriptRunner): boolean {

@@ -1097,12 +1097,19 @@ export class ObjectEvents {
     s.y = object.currentCoords.y * 16 + 16 + s.centerToCornerVecY;
   }
 
-  /** MoveObjectEventToMapCoords (event_object_movement.c). */
-  MoveObjectEventToMapCoords(object: ObjectEvent, x: number, y: number): void {
+  /** SetObjectEventCoords (event_object_movement.c): assign both current and previous tile coordinates. */
+  SetObjectEventCoords(object: ObjectEvent, x: number, y: number): void {
     x = (x << 16) >> 16;
     y = (y << 16) >> 16;
     object.previousCoords = { x, y };
     object.currentCoords = { x, y };
+  }
+
+  /** MoveObjectEventToMapCoords (event_object_movement.c). */
+  MoveObjectEventToMapCoords(object: ObjectEvent, x: number, y: number): void {
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    this.SetObjectEventCoords(object, x, y);
     const info = graphicsInfo(object.graphicsId);
     object.sprite.centerToCornerVecX = -(info.width >> 1);
     object.sprite.centerToCornerVecY = -(info.height >> 1);
@@ -1117,6 +1124,13 @@ export class ObjectEvents {
     object.inSandPile = false;
     ObjectEventClearHeldMovement(object);
     if (object.trackedByCamera) this.hooks.cameraObjectReset?.(object);
+  }
+
+  /** TryMoveObjectEventToMapCoords (event_object_movement.c); C coordinates are map-local signed 16-bit values. */
+  TryMoveObjectEventToMapCoords(localId: number, mapNum: number, mapGroup: number, x: number, y: number): void {
+    const object = this.byLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    if (!object) return;
+    this.MoveObjectEventToMapCoords(object, ((x << 16) >> 16) + MAP_OFFSET, ((y << 16) >> 16) + MAP_OFFSET);
   }
 
   /** SetTrainerMovementType */
