@@ -80,6 +80,8 @@ export type QuestLogArrivedEvent = { mapSec: number };
 export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogSwappedHeldItemEvent
   | QuestLogSwitchedPartyOrderEvent | QuestLogFieldMoveEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent
   | QuestLogLinkBattleEvent | QuestLogDepartedEvent | QuestLogArrivedEvent | Record<string, never>;
+export type QuestLogScriptEvent = { eventId: number; actionIndex: number; repeats: number; payloads: number[][]; cursor: number };
+export type QuestLogScriptEntry = { kind: "action"; action: QuestLogAction } | { kind: "event"; event: QuestLogScriptEvent };
 
 function nextQuestLogSceneIndex(): number {
   const last = save.questLogScenes?.at(-1)?.eventIndex;
@@ -418,12 +420,15 @@ export function QL_TryRunActions(controlsLocked: boolean): void {
   sNextActionDelay = (sNextActionDelay + 1) & 0xffff;
 }
 
-/** Decode one saved action buffer using the source QL_LoadAction_* command format. */
-export function QL_LoadPlayerActionScript(eventIndex: number): QuestLogAction[] {
-  const script = save.questLogPlayerGfxActions?.find((entry) => entry.eventIndex === eventIndex)?.script;
+/** ReadQuestLogScriptFromSav1 (quest_log.c): separate packed actions and event records in script order. */
+export function ReadQuestLogScriptFromSav1(eventIndex: number): QuestLogScriptEntry[] {
+  const scene = save.questLogScenes?.find((entry) => entry.eventIndex === eventIndex);
+  const script = (scene?.script as number[] | undefined)
+    ?? save.questLogPlayerGfxActions?.find((entry) => entry.eventIndex === eventIndex)?.script;
   if (!script) return [];
-  const actions: QuestLogAction[] = [];
+  const entries: QuestLogScriptEntry[] = [];
   let cursor = 0;
+  let eventNum = 0;
   while (cursor < script.length) {
     const command = (script[cursor] ?? 0) & 0x0fff;
     let loaded: LoadedQuestLogAction | null;
@@ -434,15 +439,38 @@ export function QL_LoadPlayerActionScript(eventIndex: number): QuestLogAction[] 
     else {
       const next = QL_SkipCommand(script, cursor);
       if (next === null) break;
+      const encodedRepeats = ((script[cursor] ?? 0) & 0xffff) >>> C.QL_CMD_COUNT_SHIFT;
+      const repeats = command === C.QL_EVENT_DEFEATED_CHAMPION ? 0 : encodedRepeats;
+      const bodyStart = cursor + 2;
+      const bodyWords = Math.floor((next - bodyStart) / (repeats + 1));
+      const payloads = Array.from({ length: repeats + 1 }, (_, index) =>
+        script.slice(bodyStart + index * bodyWords, bodyStart + (index + 1) * bodyWords));
+      const event: QuestLogScriptEvent = {
+        eventId: command,
+        actionIndex: (script[cursor + 1] ?? 0) & 0xffff,
+        repeats,
+        payloads,
+        cursor,
+      };
+      entries.push({ kind: "event", event });
+      if (eventNum++ === 0) {
+        if (command === C.QL_EVENT_DEPARTED) sLastDepartedLocation = ((payloads[0]?.[0] ?? 0) >>> 8) + 1;
+        else sLastDepartedLocation = 0;
+      }
       cursor = next;
       continue;
     }
     if (!loaded) break;
-    actions.push(loaded.action);
+    entries.push({ kind: "action", action: loaded.action });
     cursor = loaded.next;
     if (loaded.action.type === C.QL_ACTION_SCENE_END) break;
   }
-  return actions;
+  return entries;
+}
+
+/** Decode the action subset for the existing action consumers. */
+export function QL_LoadPlayerActionScript(eventIndex: number): QuestLogAction[] {
+  return ReadQuestLogScriptFromSav1(eventIndex).flatMap((entry) => entry.kind === "action" ? [entry.action] : []);
 }
 
 /** SetQuestLogEvent (quest_log_events.c), storing source event payloads for supported single-player events. */
