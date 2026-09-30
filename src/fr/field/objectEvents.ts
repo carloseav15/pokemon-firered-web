@@ -2567,6 +2567,14 @@ export class ObjectEvents {
     object.sprite.data[2] = 1;
   }
 
+  /** FaceDirectionFast (event_object_movement.c): turn immediately and let the next sprite tick run. */
+  FaceDirectionFast(object: ObjectEvent, sprite: Sprite, direction: number): void {
+    this.setDirection(object, direction);
+    this.shiftStill(object);
+    sprite.animPaused = false;
+    sprite.data[2] = 1;
+  }
+
   private initNpcForMovement(object: ObjectEvent, direction: number, speed: number, sprite = object.sprite): void {
     this.setDirection(object, direction);
     const [dx, dy] = DIRECTION_VECTORS[direction];
@@ -2944,9 +2952,17 @@ export class ObjectEvents {
     const s = object.sprite;
     const dirOf = (base: number) => [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST][(id - base) & 3];
 
-    // Face (0x00-0x07)
-    if (id <= 0x07) {
-      this.faceDirection(object, dirOf(id <= 3 ? 0 : 4));
+    // Face fast (0x04-0x07): animate only when changing direction, then finish next step.
+    if (id >= 0x04 && id <= 0x07) {
+      const direction = dirOf(0x04);
+      if (object.facingDirection !== direction) s.startAnim(GetFaceDirectionAnimNum(direction));
+      s.animate();
+      this.FaceDirectionFast(object, s, direction);
+      return true;
+    }
+    // Face
+    if (id <= 0x03) {
+      this.faceDirection(object, dirOf(0));
       return true;
     }
     // Walk slower (0x08-0x0B), slow (0x0C-0x0F)
