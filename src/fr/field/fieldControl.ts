@@ -44,6 +44,13 @@ export type FieldInput = {
   dpadDirection: number;
 };
 
+type MapPosition = { x: number; y: number; elevation: number };
+
+/** field_control_avatar.c position and behavior query helpers. */
+export function GetPlayerPosition(control: FieldControl): MapPosition { return control.getPlayerPosition(); }
+export function GetInFrontOfPlayerPosition(control: FieldControl): MapPosition { return control.getInFrontOfPlayerPosition(); }
+export function GetPlayerCurMetatileBehavior(control: FieldControl): number { return control.getPlayerCurMetatileBehavior(); }
+
 function emptyInput(): FieldInput {
   const input = {} as FieldInput;
   FieldClearPlayerInput(input);
@@ -151,7 +158,7 @@ export class FieldControl {
   }
 
   /** GetPlayerCurMetatileBehavior (field_control_avatar.c). */
-  private GetPlayerCurMetatileBehavior(): number {
+  getPlayerCurMetatileBehavior(): number {
     const p = this.ow.player.object;
     return this.ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
   }
@@ -159,7 +166,7 @@ export class FieldControl {
   /** FieldGetPlayerInput (field_control_avatar.c). */
   FieldGetPlayerInput(input: FieldInput, newKeys: number, heldKeys: number): void {
     const player = this.ow.player;
-    const forcedMove = MB.MetatileBehavior_IsForcedMovementTile(this.GetPlayerCurMetatileBehavior());
+    const forcedMove = MB.MetatileBehavior_IsForcedMovementTile(GetPlayerCurMetatileBehavior(this));
     const tile = player.tileTransitionState;
     if (!this.ow.script.ScriptContext_IsEnabled() && IsQuestLogInputDpad()) {
       ({ newKeys, heldKeys } = QuestLogOverrideJoyVars(newKeys, heldKeys));
@@ -227,13 +234,13 @@ export class FieldControl {
   }
 
   /** GetPlayerPosition (field_control_avatar.c). */
-  private GetPlayerPosition(): { x: number; y: number; elevation: number } {
+  getPlayerPosition(): MapPosition {
     const p = this.ow.player.object;
     return { x: p.currentCoords.x, y: p.currentCoords.y, elevation: p.previousElevation };
   }
 
   /** GetInFrontOfPlayerPosition (field_control_avatar.c). */
-  private GetInFrontOfPlayerPosition(): { x: number; y: number; elevation: number } {
+  getInFrontOfPlayerPosition(): MapPosition {
     const p = this.ow.player.object;
     const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
     const elevation = this.ow.map.elevationAt(p.currentCoords.x, p.currentCoords.y) !== 0 ? p.previousElevation : 0;
@@ -245,7 +252,7 @@ export class FieldControl {
     this.recordedPlayerFieldInput = { ...emptyInput(), dpadDirection: input.dpadDirection };
     this.resetFacingNpcOrSignpostVars();
     const direction = this.ow.player.object.facingDirection;
-    let position = this.GetPlayerPosition();
+    let position = GetPlayerPosition(this);
     const attributes = this.ow.map.attributesOf(this.ow.map.metatileIdAt(position.x, position.y));
     let behavior = this.ow.map.behaviorAt(position.x, position.y);
 
@@ -262,16 +269,16 @@ export class FieldControl {
       if (this.TryStartStepBasedScript(position, behavior, direction)) { this.recordAcceptedFieldInput("tookStep"); return true; }
     }
     if (input.checkStandardWildEncounter && (input.dpadDirection === 0 || input.dpadDirection === direction)) {
-      const front = this.GetInFrontOfPlayerPosition();
+      const front = GetInFrontOfPlayerPosition(this);
       const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
       if (this.TrySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
-      position = this.GetPlayerPosition();
+      position = GetPlayerPosition(this);
       behavior = this.ow.map.behaviorAt(position.x, position.y);
     }
     if (input.checkStandardWildEncounter && this.CheckStandardWildEncounter(attributes)) { this.recordAcceptedFieldInput("checkStandardWildEncounter"); return true; }
     if (input.heldDirection && input.dpadDirection === direction && this.TryArrowWarp(position, behavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
 
-    const front = this.GetInFrontOfPlayerPosition();
+    const front = GetInFrontOfPlayerPosition(this);
     const frontBehavior = this.ow.map.behaviorAt(front.x, front.y);
     if (input.heldDirection && input.dpadDirection === direction && this.TrySetUpWalkIntoSignpostScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("heldDirection"); return true; }
     if (input.pressedAButton && this.TryStartInteractionScript(front, frontBehavior, direction)) { this.recordAcceptedFieldInput("pressedAButton"); return true; }
@@ -356,7 +363,7 @@ export class FieldControl {
    * pokefirered. */
   private GetObjectEventScriptPointerPlayerFacing(): number {
     const direction = GetPlayerMovementDirection();
-    const position = this.GetInFrontOfPlayerPosition();
+    const position = GetInFrontOfPlayerPosition(this);
     const behavior = this.ow.map.behaviorAt(position.x, position.y);
     return this.GetInteractedObjectEventScript(position, behavior, direction);
   }
