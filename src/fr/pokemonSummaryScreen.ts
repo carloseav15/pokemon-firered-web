@@ -977,7 +977,7 @@ function BufferMonMoveI(i: number): void {
   const xp = sMonSkillsPrinterXpos;
 
   if (i < 4) {
-    pss.moveIds[i] = mon.moves[i] ?? 0;
+    pss.moveIds[i] = GetMonMoveBySlotId(mon, i);
   }
 
   const moveId = pss.moveIds[i];
@@ -996,7 +996,7 @@ function BufferMonMoveI(i: number): void {
   strCopy(sum.moveNameStrBufs[i], rom.moveName(moveId));
 
   const basePP = rom.moves[moveId]?.pp ?? 0;
-  let curPP = mon.pp[i] ?? basePP;
+  let curPP = i < 4 ? GetMonPpByMoveSlot(mon, i) : basePP;
   let maxPP = CalculatePPWithBonus(moveId, mon.ppBonuses, i);
   if (i >= 4 && pss.mode === PokemonSummaryScreenMode.PSS_MODE_SELECT_MOVE) {
     curPP = basePP;
@@ -2943,8 +2943,9 @@ function Task_HandleInput_SelectMove(_taskId: number): void {
         } else {
           pss.isSwappingMoves = false;
           if (sMoveSelectionCursorPos === sMoveSwapCursorPos) return;
-          SwapMonMoveSlots();
-          BufferSelectedMonData(pss.currentMon);
+          if (pss.isBoxMon) SwapBoxMonMoveSlots();
+          else SwapMonMoveSlots();
+          UpdateCurrentMonBufferFromPartyOrBox(pss.currentMon);
           BufferMonMoves();
           pss.selectMoveInputHandlerState = 2;
           return;
@@ -2990,10 +2991,20 @@ function Task_HandleInput_SelectMove(_taskId: number): void {
 
 function SwapMonMoveSlots(): void {
   if (!sMonSummaryScreen) return;
-  const pss = sMonSummaryScreen;
-  const mon = pss.monList[sLastViewedMonIndex];
+  const mon = sMonSummaryScreen.monList[sLastViewedMonIndex];
   if (!mon) return;
+  SwapMoveSlotsInMon(mon);
+}
 
+/** SwapBoxMonMoveSlots (pokemon_summary_screen.c); BoxPokemon uses the same modeled move fields. */
+function SwapBoxMonMoveSlots(): void {
+  if (!sMonSummaryScreen) return;
+  const mon = sMonSummaryScreen.monList[sLastViewedMonIndex];
+  if (!mon) return;
+  SwapMoveSlotsInMon(mon);
+}
+
+function SwapMoveSlotsInMon(mon: Mon): void {
   const p1 = sMoveSelectionCursorPos;
   const p2 = sMoveSwapCursorPos;
 
@@ -3011,6 +3022,28 @@ function SwapMonMoveSlots(): void {
   const b2 = (mon.ppBonuses >>> (p2 * 2)) & 3;
   mon.ppBonuses &= ~((3 << (p1 * 2)) | (3 << (p2 * 2)));
   mon.ppBonuses |= (b1 << (p2 * 2)) | (b2 << (p1 * 2));
+}
+
+/** GetMonMoveBySlotId (pokemon_summary_screen.c). */
+function GetMonMoveBySlotId(mon: Mon, moveSlot: number): number {
+  return GetMonData(mon, C.MON_DATA_MOVE1 + Math.min(moveSlot, 3));
+}
+
+/** GetMonPpByMoveSlot (pokemon_summary_screen.c). */
+function GetMonPpByMoveSlot(mon: Mon, moveSlot: number): number {
+  return GetMonData(mon, C.MON_DATA_PP1 + Math.min(moveSlot, 3));
+}
+
+/** PokeSum_CanForgetSelectedMove (pokemon_summary_screen.c). */
+function PokeSum_CanForgetSelectedMove(): boolean {
+  if (!sMonSummaryScreen) return false;
+  const move = GetMonMoveBySlotId(sMonSummaryScreen.currentMon, sMoveSelectionCursorPos);
+  return !isHMMove(move) || sMonSummaryScreen.mode === PokemonSummaryScreenMode.PSS_MODE_FORGET_MOVE;
+}
+
+/** UpdateCurrentMonBufferFromPartyOrBox (pokemon_summary_screen.c). */
+function UpdateCurrentMonBufferFromPartyOrBox(mon: Pokemon): void {
+  BufferSelectedMonData(mon);
 }
 
 function Task_InputHandler_SelectOrForgetMove(taskId: number): void {
@@ -3065,7 +3098,7 @@ function Task_InputHandler_SelectOrForgetMove(taskId: number): void {
           return;
         }
       } else if (JOY_NEW(A_BUTTON)) {
-        const canForget = !isHMMove(pss.moveIds[sMoveSelectionCursorPos]);
+        const canForget = PokeSum_CanForgetSelectedMove();
         if (canForget || sMoveSelectionCursorPos === 4) {
           sound.playSE(C.SE_SELECT);
           sMoveSwapCursorPos = sMoveSelectionCursorPos;
