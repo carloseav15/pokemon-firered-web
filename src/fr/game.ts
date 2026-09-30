@@ -73,7 +73,7 @@ import { ResetFameChecker } from "./fameChecker";
 import { ClearRoamerData } from "./pokemon/roamer";
 import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
-import { QuestLog_CutRecording, ResetQLPlayedTheSlots, SaveQuestLogData, TryStartQuestLogPlayback } from "./questLogEvents";
+import { QuestLog_CutRecording, ResetQuestLog, SaveQuestLogData, TryStartQuestLogPlayback } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
@@ -238,7 +238,6 @@ export class Game {
 
   /** new_game.c: initialize the modeled SaveBlock state for a new game. */
   NewGameInitData(playerName: string, gender: number, rivalName: string): void {
-    ResetQLPlayedTheSlots();
     this.ResetMenuAndMonGlobals();
     this.Sav2_ClearSetDefault();
     this.differentSaveFile = true;
@@ -306,6 +305,7 @@ export class Game {
     this.differentSaveFile = false;
     ResetBagCursorPositions();
     ResetTMCaseCursorPos();
+    ResetQuestLog();
   }
 
   /** new_game.c WarpToPlayersRoom. */

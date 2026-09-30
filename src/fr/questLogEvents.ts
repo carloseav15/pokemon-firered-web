@@ -1755,11 +1755,12 @@ export function SetQLPlayedTheSlots(): void {
   sPlayedTheSlots = true;
 }
 
-/** Reset the modeled slot flag when ResetQuestLog resets event state. */
-export function ResetQLPlayedTheSlots(): void {
+/** ResetQuestLog (quest_log.c): clear the scene ring and recording/playback globals. */
+export function ResetQuestLog(): void {
   QL_ResetEventStates();
   sStepRecordingMode = STEP_RECORDING_MODE_ENABLED;
   QL_ResetRepeatEventTracker();
+  sDeferredTrainerBattleEvent = null;
   (save.questLogScenes ??= []).length = 0;
   (save.questLogPlayerGfxActions ??= []).length = 0;
   sActivePlayerActionScript = -1;
