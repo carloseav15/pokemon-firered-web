@@ -13,6 +13,7 @@ import { paletteFade } from "../gba/fade";
 import { Sprite } from "../gba/sprite";
 import { tasks } from "../gba/tasks";
 import { cdata, incbin } from "../hw/assets";
+import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, PALETTES_ALL, RGB_WHITE } from "../hw/palette";
 import { DATA_ROOT, rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, varSet, SV } from "../save";
 import { stringVars } from "../gba/charmap";
@@ -127,7 +128,7 @@ export class FieldMoveEffects {
       case C.FLDEFF_POKECENTER_HEAL: this.FldEff_PokecenterHeal(); return true;
       case C.FLDEFF_HALL_OF_FAME_RECORD: this.FldEff_HallOfFameRecord(); return true;
       case C.FLDEFF_SWEET_SCENT: this.FieldCallback_SweetScent(); return true;
-      case C.FLDEFF_PHOTO_FLASH: this.photoFlash(); return true;
+      case C.FLDEFF_PHOTO_FLASH: this.FldEff_PhotoFlash(); return true;
       case C.FLDEFF_PCTURN_ON: this.remove(id); return true;
       default: return false;
     }
@@ -1241,21 +1242,18 @@ export class FieldMoveEffects {
     tasks.destroy(taskId);
   }
 
-  /** FldEff_PhotoFlash (Trainer card photo / Celadon photographer): a white flash. */
-  private photoFlash(): void {
-    let t = 0;
-    const flash: Overlay = (ctx) => {
-      ctx.fillStyle = `rgba(255,255,255,${Math.max(0, 1 - t / 16)})`;
-      ctx.fillRect(0, 0, 240, 160);
-    };
-    this.overlays.add(flash);
-    sound.playSE(C.SE_M_MEGA_KICK);
-    const id = tasks.create(() => {
-      if (++t < 16) return;
-      this.overlays.delete(flash);
-      tasks.destroy(id);
-      this.remove(C.FLDEFF_PHOTO_FLASH);
-    }, 0);
+  /** FldEff_PhotoFlash (field_effect.c). */
+  FldEff_PhotoFlash(): void {
+    BlendPalettes(PALETTES_ALL, 0x10, RGB_WHITE);
+    BeginNormalPaletteFade(PALETTES_ALL, -1, 0x0f, 0x00, RGB_WHITE);
+    tasks.create((taskId) => this.Task_PhotoFlash(taskId), 90);
+  }
+
+  /** Task_PhotoFlash (field_effect.c). */
+  Task_PhotoFlash(taskId: number): void {
+    if (gPaletteFade.active) return;
+    this.remove(C.FLDEFF_PHOTO_FLASH);
+    tasks.destroy(taskId);
   }
 
   // ---------------------------------------------------------------- fly
