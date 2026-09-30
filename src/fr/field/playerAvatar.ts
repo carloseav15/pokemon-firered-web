@@ -1205,7 +1205,7 @@ export class PlayerAvatar {
   CheckForObjectEventCollision(object: ObjectEvent, x: number, y: number, direction: number): number {
     const collision = this.ow.objects.GetCollisionAtCoords(object, x, y, direction);
     if (collision === COLLISION_ELEVATION_MISMATCH && this.CanStopSurfing(x, y, direction)) return COLLISION_STOP_SURFING;
-    if (this.GetLedgeJumpDirection(x, y, direction) !== DIR_NONE) {
+    if (this.ShouldJumpLedge(x, y, direction)) {
       incrementGameStat(rom.constants.GAME_STAT_JUMPED_DOWN_LEDGES ?? 0);
       return COLLISION_LEDGE_JUMP;
     }
@@ -1239,6 +1239,11 @@ export class PlayerAvatar {
     if (index > DIR_EAST) index -= DIR_EAST;
     index--;
     return checks[index]?.(behavior) ? index + 1 : DIR_NONE;
+  }
+
+  /** ShouldJumpLedge (field_player_avatar.c): C's boolean wrapper around GetLedgeJumpDirection. */
+  private ShouldJumpLedge(x: number, y: number, direction: number): boolean {
+    return this.GetLedgeJumpDirection(x, y, direction) !== DIR_NONE;
   }
 
   /** CanStopSurfing (field_player_avatar.c): records the dismount action before starting it. */
