@@ -1239,7 +1239,7 @@ class SwirlEffect implements Effect {
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
     for (let y = 0; y < DISPLAY_HEIGHT; y++) {
-      const ofs = this.offsets[y] || 0;
+      const ofs = HBlankCB_Swirl(this, y);
       ctx.drawImage(snapshot, 0, y, DISPLAY_WIDTH, 1, ofs, y, DISPLAY_WIDTH, 1);
       if (ofs > 0) {
         ctx.drawImage(snapshot, DISPLAY_WIDTH - ofs, y, ofs, 1, 0, y, ofs, 1);
@@ -1284,6 +1284,11 @@ function Swirl_End(effect: SwirlEffect): boolean {
 function VBlankCB_Swirl(effect: SwirlEffect): void {
   if (!effect.dmaPending) return;
   for (let y = 0; y < DISPLAY_HEIGHT; y++) effect.offsets[y] = effect.workingOffsets[y]!;
+}
+
+/** HBlankCB_Swirl (battle_transition.c): apply the committed BG offset for the current scanline. */
+function HBlankCB_Swirl(effect: SwirlEffect, scanline: number): number {
+  return effect.offsets[scanline] ?? 0;
 }
 
 /** Task_Blur / Blur_Main: GBA mosaic zoom and fade to black. */
