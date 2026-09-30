@@ -1,7 +1,7 @@
 // quest_log_events.c: single-player event payloads and scene-script recording.
 
 import * as C from "./generated/constants";
-import { cdata } from "./hw/assets";
+import { cdata, symName, type SymRef } from "./hw/assets";
 import { SetGlobalFieldTintMode } from "./field/fieldPalette";
 import {
   QL_LoadAction_Input, QL_LoadAction_MovementOrGfxChange, QL_LoadAction_SceneEnd, QL_LoadAction_Wait,
@@ -18,6 +18,7 @@ import { expandPlaceholders } from "./gba/charmap";
 import { stringVars } from "./gba/stringBuffers";
 import { ItemId_GetName } from "./pokemon/items";
 import { speciesName } from "./pokemon/pokemon";
+import { getMapNameGenericBytes } from "./regionMap";
 
 export { gQuestLogState };
 
@@ -440,11 +441,79 @@ function QuestLog_GetSpeciesName(species: number): Uint8Array {
   return species === C.SPECIES_EGG ? rom.text("gText_EggNickname") : speciesName(species);
 }
 
+function expandQuestLogText(template: ArrayLike<number>, vars: Partial<Record<"var1" | "var2" | "var3", ArrayLike<number>>>): Uint8Array {
+  if (vars.var1) stringVars.var1 = Uint8Array.from(vars.var1);
+  if (vars.var2) stringVars.var2 = Uint8Array.from(vars.var2);
+  if (vars.var3) stringVars.var3 = Uint8Array.from(vars.var3);
+  return expandPlaceholders(template);
+}
+
 function expandQuestLogEventText(template: string, vars: Partial<Record<"var1" | "var2" | "var3", ArrayLike<number>>>): Uint8Array {
-  stringVars.var1 = Uint8Array.from(vars.var1 ?? [0xff]);
-  stringVars.var2 = Uint8Array.from(vars.var2 ?? [0xff]);
-  stringVars.var3 = Uint8Array.from(vars.var3 ?? [0xff]);
-  return expandPlaceholders(rom.text(template));
+  return expandQuestLogText(rom.text(template), vars);
+}
+
+function questLogTextFromSymbolArray(name: string, index: number): Uint8Array {
+  const symbol = cdata<Array<SymRef | number>>("quest_log_events", name)[index];
+  if (typeof symbol !== "object" || symbol === null) throw new Error(`${name}[${index}] is not a text symbol`);
+  const textName = symName(symbol);
+  if (textName === null) throw new Error(`${name}[${index}] has no symbol name`);
+  return rom.text(textName);
+}
+
+/** LoadEvent_DepartedLocation (quest_log_events.c). */
+export function LoadEvent_DepartedLocation(payload: readonly number[]): Uint8Array {
+  const packed = payload[0] ?? 0;
+  const mapSec = packed & 0xff;
+  const locationId = packed >>> 8;
+  const typeIds = cdata<number[]>("quest_log_events", "sLocationToDepartedTextId");
+  const departedTextId = typeIds[locationId] ?? 0;
+  let template: ArrayLike<number>;
+  if (departedTextId === C.QL_DEPARTED_GYM) {
+    const gymMapSecs = cdata<number[]>("quest_log_events", "sGymCityMapSecs");
+    const gymIndex = gymMapSecs.indexOf(mapSec);
+    if (gymIndex >= 0) {
+      template = rom.text(flagGet(C.FLAG_BADGE01_GET + gymIndex)
+        ? "gText_QuestLog_DepartedGym" : "gText_QuestLog_GymWasFullOfToughTrainers");
+    } else {
+      template = questLogTextFromSymbolArray("sDepartedLocationTexts", departedTextId);
+    }
+  } else {
+    template = questLogTextFromSymbolArray("sDepartedLocationTexts", departedTextId);
+  }
+  stringVars.var1 = getMapNameGenericBytes(mapSec);
+  stringVars.var2 = questLogTextFromSymbolArray("sLocationNameTexts", locationId);
+  return expandPlaceholders(template);
+}
+
+/** LoadEvent_UsedFieldMove (quest_log_events.c). */
+export function LoadEvent_UsedFieldMove(payload: readonly number[]): Uint8Array {
+  const species = payload[0] ?? C.SPECIES_NONE;
+  const packedMoveAndMap = payload[1] ?? 0;
+  const fieldMove = packedMoveAndMap & 0xff;
+  const mapSec = packedMoveAndMap >>> 8;
+  const vars: Partial<Record<"var1" | "var2" | "var3", ArrayLike<number>>> = {
+    var1: QuestLog_GetSpeciesName(species),
+  };
+  if (mapSec !== 0xff) vars.var2 = getMapNameGenericBytes(mapSec);
+  if (fieldMove === C.FIELD_MOVE_TELEPORT) {
+    vars.var3 = rom.text(mapSec === C.MAPSEC_PALLET_TOWN ? "gText_QuestLog_Home" : "gText_PokemonCenter");
+  }
+  return expandQuestLogText(questLogTextFromSymbolArray("sUsedFieldMoveTexts", fieldMove), vars);
+}
+
+/** LoadEvent_ObtainedStoryItem (quest_log_events.c). */
+export function LoadEvent_ObtainedStoryItem(payload: readonly number[]): Uint8Array {
+  const packed = payload[1] ?? 0;
+  return expandQuestLogEventText("gText_QuestLog_ObtainedItemInLocation", {
+    var1: getMapNameGenericBytes(packed & 0xff), var2: ItemId_GetName(payload[0] ?? C.ITEM_NONE),
+  });
+}
+
+/** LoadEvent_ArrivedInLocation (quest_log_events.c). */
+export function LoadEvent_ArrivedInLocation(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_ArrivedInLocation", {
+    var1: getMapNameGenericBytes((payload[0] ?? 0) & 0xff),
+  });
 }
 
 /** LoadEvent_GaveHeldItemFromPartyMenu (quest_log_events.c). */
@@ -496,9 +565,13 @@ export function LoadQuestLogEventText(event: QuestLogScriptEvent): Uint8Array[] 
   const load = event.eventId === C.QL_EVENT_GAVE_HELD_ITEM ? LoadEvent_GaveHeldItemFromPartyMenu
       : event.eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG ? LoadEvent_GaveHeldItemFromBagMenu
         : event.eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC ? LoadEvent_GaveHeldItemFromPC
-          : event.eventId === C.QL_EVENT_TOOK_HELD_ITEM ? LoadEvent_TookHeldItem
+        : event.eventId === C.QL_EVENT_TOOK_HELD_ITEM ? LoadEvent_TookHeldItem
             : event.eventId === C.QL_EVENT_SWAPPED_HELD_ITEM ? LoadEvent_SwappedHeldItem
-              : event.eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC ? LoadEvent_SwappedHeldItemFromPC : null;
+              : event.eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC ? LoadEvent_SwappedHeldItemFromPC
+                : event.eventId === C.QL_EVENT_DEPARTED ? LoadEvent_DepartedLocation
+                  : event.eventId === C.QL_EVENT_USED_FIELD_MOVE ? LoadEvent_UsedFieldMove
+                    : event.eventId === C.QL_EVENT_OBTAINED_STORY_ITEM ? LoadEvent_ObtainedStoryItem
+                      : event.eventId === C.QL_EVENT_ARRIVED ? LoadEvent_ArrivedInLocation : null;
   return load === null ? null : event.payloads.map(load);
 }
 
