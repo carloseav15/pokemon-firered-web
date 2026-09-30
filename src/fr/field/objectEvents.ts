@@ -157,6 +157,7 @@ export type ObjectEventHooks = {
   playerInfo: () => { facing: number; movementDirection: number; movementActionId: number; copyableMovement: number; tileTransitionState: number } | undefined;
   cameraObjectReset?: (object: ObjectEvent) => void;
   groundEffect: (object: ObjectEvent, kind: "spawn" | "begin" | "finish") => void;
+  boulderFallThroughHole?: (object: ObjectEvent) => void;
   emote: (object: ObjectEvent, kind: number) => void;
   playSE: (name: string) => void;
   cameraCanMove: (direction: number) => boolean;
@@ -1495,9 +1496,41 @@ export class ObjectEvents {
     return false;
   }
 
+  /** ObjectEventSetHeldMovement (event_object_movement.c). */
+  ObjectEventSetHeldMovement(object: ObjectEvent, movementActionId: number): boolean {
+    return this.setHeldMovement(object, movementActionId);
+  }
+
   forceSetHeldMovement(object: ObjectEvent, actionId: number): void {
+    this.ObjectEventForceSetHeldMovement(object, actionId);
+  }
+
+  /** ObjectEventForceSetHeldMovement (event_object_movement.c). */
+  ObjectEventForceSetHeldMovement(object: ObjectEvent, movementActionId: number): void {
     this.clearHeldMovementIfActive(object);
-    this.setHeldMovement(object, actionId);
+    this.ObjectEventSetHeldMovement(object, movementActionId);
+  }
+
+  /** ObjectEventGetHeldMovementActionId (event_object_movement.c). */
+  ObjectEventGetHeldMovementActionId(object: ObjectEvent): number {
+    return object.heldMovementActive ? object.movementActionId : MOVEMENT_ACTION_NONE;
+  }
+
+  /** GetWalkSlowestMovementAction (event_object_movement.c), with u32-to-u8 semantics. */
+  GetWalkSlowestMovementAction(idx: number): number {
+    const direction = idx & 0xff;
+    return [0x9b, 0x9b, 0x9c, 0x9d, 0x9e][direction <= DIR_EAST ? direction : DIR_NONE];
+  }
+
+  /** ObjectEventFaceOppositeDirection (event_object_movement.c). */
+  ObjectEventFaceOppositeDirection(object: ObjectEvent, direction: number): boolean {
+    return this.ObjectEventSetHeldMovement(object, actionFace(this.GetOppositeDirection(direction & 0xff)));
+  }
+
+  /** GetOppositeDirection (event_object_movement.c); invalid inputs pass through. */
+  GetOppositeDirection(direction: number): number {
+    const value = direction & 0xff;
+    return value >= DIR_SOUTH && value <= DIR_EAST ? OPPOSITE[value] : value;
   }
 
   clearHeldMovementIfActive(object: ObjectEvent): void {
@@ -1603,7 +1636,13 @@ export class ObjectEvents {
         this.MovementType_Player(object, sprite);
       } else if (!object.frozen) {
         if (ObjectEventIsHeldMovementActive(object)) {
-          if (!object.heldMovementFinished) this.execHeld(object);
+          if (!object.heldMovementFinished) {
+            if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING) {
+              if (!sprite.animBeginning) this.QuestLogObjectEventExecHeldMovementAction(object, sprite);
+            } else {
+              this.execHeld(object);
+            }
+          }
         } else {
           this.runMovementType(object);
         }
@@ -1647,7 +1686,20 @@ export class ObjectEvents {
   }
 
   private execHeld(object: ObjectEvent): void {
+    this.ObjectEventExecHeldMovementAction(object, object.sprite);
+  }
+
+  /** ObjectEventExecHeldMovementAction (event_object_movement.c). */
+  ObjectEventExecHeldMovementAction(object: ObjectEvent, _sprite: Sprite): void {
     if (this.execAction(object)) object.heldMovementFinished = true;
+  }
+
+  /** QuestLogObjectEventExecHeldMovementAction (event_object_movement.c). */
+  QuestLogObjectEventExecHeldMovementAction(object: ObjectEvent, _sprite: Sprite): void {
+    if (this.execAction(object)) {
+      object.heldMovementFinished = true;
+      if (object.graphicsId === C.OBJ_EVENT_GFX_PUSHABLE_BOULDER) this.hooks.boulderFallThroughHole?.(object);
+    }
   }
 
   private setSingle(object: ObjectEvent, actionId: number): void {

@@ -23,7 +23,7 @@ import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR
 import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
-import { DoOutwardBarnDoorWipe, FieldEffects, MAX_FLASH_LEVEL, Task_BarnDoorWipe, WriteFlashScanlineEffectBuffer } from "./fieldEffects";
+import { DoOutwardBarnDoorWipe, FieldEffects, HandleBoulderFallThroughHole, MAX_FLASH_LEVEL, Task_BarnDoorWipe, WriteFlashScanlineEffectBuffer } from "./fieldEffects";
 import { ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "../hw/scanline";
 import { REG_OFFSET_WIN0H } from "../hw/ppu";
 import { MapNamePopup } from "./mapNamePopup";
@@ -237,6 +237,7 @@ export class Overworld {
         return { facing: p.facingDirection, movementDirection: p.movementDirection, movementActionId: p.movementActionId, copyableMovement: p.playerCopyableMovement, tileTransitionState: this.player.tileTransitionState };
       },
       groundEffect: (object, kind) => this.effects.groundEffect(object, kind),
+      boulderFallThroughHole: (object) => HandleBoulderFallThroughHole(this, object),
       emote: (object, kind) => this.effects.startEmoteForObjectEvent(object, kind),
       playSE: (name) => sound.playSE(sound.c(name)),
       cameraCanMove: (direction) => this.CanCameraMoveInDirection(direction),
