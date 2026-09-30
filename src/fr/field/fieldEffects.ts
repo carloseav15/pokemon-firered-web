@@ -805,59 +805,221 @@ export class FieldEffects {
   // ---------------------------------------------------------------- ground effects
 
   groundEffect(object: ObjectEvent, kind: "spawn" | "begin" | "finish"): void {
-    if (kind !== "finish") {
-      const reflectionType = this.objectReflectionType(object);
-      if (reflectionType === 1) this.GroundEffect_IceReflection(object, object.sprite);
-      else if (reflectionType === 2) this.GroundEffect_WaterReflection(object, object.sprite);
-    }
     if (!fxData) return;
-    const cur = object.currentMetatileBehavior;
-    const prev = object.previousMetatileBehavior;
-    const isShallowFlowing = MB.MetatileBehavior_IsShallowFlowingWater(cur)
-      && MB.MetatileBehavior_IsShallowFlowingWater(prev);
-    const isShortGrass = MB.MetatileBehavior_IsShortGrass(cur) && MB.MetatileBehavior_IsShortGrass(prev);
-    const isHotSprings = MB.MetatileBehavior_IsHotSprings(cur) && MB.MetatileBehavior_IsHotSprings(prev);
-    const isSandPile = MB.MetatileBehavior_IsDeepSand(cur) && MB.MetatileBehavior_IsDeepSand(prev);
-    if (object.disableCoveringGroundEffects) {
-      object.inShortGrass = false;
-      object.inHotSprings = false;
-      object.inShallowFlowingWater = false;
-      object.inSandPile = false;
-    } else {
-      if (isShortGrass && !object.inShortGrass) {
-        object.inShortGrass = true;
-        this.GroundEffect_ShortGrass(object);
-      } else if (!isShortGrass) object.inShortGrass = false;
-      if (isHotSprings && !object.inHotSprings) {
-        object.inHotSprings = true;
-        this.GroundEffect_HotSprings(object);
-      } else if (!isHotSprings) object.inHotSprings = false;
-      if (isSandPile && !object.inSandPile) {
-        object.inSandPile = true;
-        this.GroundEffect_SandHeap(object);
-      } else if (!isSandPile) object.inSandPile = false;
-    }
-    if (isShallowFlowing && !object.disableCoveringGroundEffects && !object.inShallowFlowingWater) {
-      object.inShallowFlowingWater = true;
-      this.GroundEffect_FlowingWater(object);
-    } else if (!isShallowFlowing || object.disableCoveringGroundEffects) {
-      object.inShallowFlowingWater = false;
-    }
-    if (kind === "begin") {
-      if (MB.MetatileBehavior_IsTallGrass(cur)) this.GroundEffect_StepOnTallGrass(object);
-      if (MB.MetatileBehavior_IsLongGrass(cur)) this.GroundEffect_StepOnLongGrass(object);
-      if (MB.MetatileBehavior_IsDeepSand(prev)) this.GroundEffect_DeepSandTracks(object);
-      else if (MB.MetatileBehavior_IsSand(prev) || MB.MetatileBehavior_IsFootprints(prev)) this.GroundEffect_SandTracks(object);
-      if (!object.landingJump && MB.MetatileBehavior_IsPuddle(cur) && MB.MetatileBehavior_IsPuddle(prev)) this.GroundEffect_StepOnPuddle(object);
-    } else if (kind === "finish") {
-      if (object.landingJump && !object.disableJumpLandingGroundEffect) this.spawnJumpLanding(object);
-      else if (object.landingJump && object.isPlayer) this.spawnJumpLanding(object);
-      if (MB.MetatileBehavior_HasRipples(cur)) this.GroundEffect_Ripple(object);
-      if (MB.MetatileBehavior_IsSeaweed(cur)) this.GroundEffect_Seaweed(object);
-    } else if (kind === "spawn") {
-      if (MB.MetatileBehavior_IsTallGrass(cur)) this.GroundEffect_SpawnOnTallGrass(object);
-      if (MB.MetatileBehavior_IsLongGrass(cur)) this.GroundEffect_SpawnOnLongGrass(object);
-    }
+    if (kind === "spawn") this.DoGroundEffects_OnSpawn(object);
+    else if (kind === "begin") this.DoGroundEffects_OnBeginStep(object);
+    else this.DoGroundEffects_OnFinishStep(object);
+  }
+
+  private addGroundEffectFlag(flags: { value: number }, flag: number): void { flags.value |= flag; }
+
+  /** ObjectEventUpdateMetatileBehaviors (event_object_movement.c). */
+  ObjectEventUpdateMetatileBehaviors(object: ObjectEvent): void {
+    object.previousMetatileBehavior = this.ow.map.behaviorAt(object.previousCoords.x, object.previousCoords.y);
+    object.currentMetatileBehavior = this.ow.map.behaviorAt(object.currentCoords.x, object.currentCoords.y);
+  }
+
+  /** GetAllGroundEffectFlags_OnSpawn (event_object_movement.c). */
+  GetAllGroundEffectFlags_OnSpawn(object: ObjectEvent, flags: { value: number }): void {
+    this.ObjectEventUpdateMetatileBehaviors(object);
+    this.GetGroundEffectFlags_Reflection(object, flags);
+    this.GetGroundEffectFlags_TallGrassOnSpawn(object, flags);
+    this.GetGroundEffectFlags_LongGrassOnSpawn(object, flags);
+    this.GetGroundEffectFlags_SandHeap(object, flags);
+    this.GetGroundEffectFlags_ShallowFlowingWater(object, flags);
+    this.GetGroundEffectFlags_ShortGrass(object, flags);
+    this.GetGroundEffectFlags_HotSprings(object, flags);
+  }
+
+  /** GetAllGroundEffectFlags_OnBeginStep (event_object_movement.c). */
+  GetAllGroundEffectFlags_OnBeginStep(object: ObjectEvent, flags: { value: number }): void {
+    this.ObjectEventUpdateMetatileBehaviors(object);
+    this.GetGroundEffectFlags_Reflection(object, flags);
+    this.GetGroundEffectFlags_TallGrassOnBeginStep(object, flags);
+    this.GetGroundEffectFlags_LongGrassOnBeginStep(object, flags);
+    this.GetGroundEffectFlags_Tracks(object, flags);
+    this.GetGroundEffectFlags_SandHeap(object, flags);
+    this.GetGroundEffectFlags_ShallowFlowingWater(object, flags);
+    this.GetGroundEffectFlags_Puddle(object, flags);
+    this.GetGroundEffectFlags_ShortGrass(object, flags);
+    this.GetGroundEffectFlags_HotSprings(object, flags);
+  }
+
+  /** GetAllGroundEffectFlags_OnFinishStep (event_object_movement.c). */
+  GetAllGroundEffectFlags_OnFinishStep(object: ObjectEvent, flags: { value: number }): void {
+    this.ObjectEventUpdateMetatileBehaviors(object);
+    this.GetGroundEffectFlags_ShallowFlowingWater(object, flags);
+    this.GetGroundEffectFlags_SandHeap(object, flags);
+    this.GetGroundEffectFlags_Puddle(object, flags);
+    this.GetGroundEffectFlags_Ripple(object, flags);
+    this.GetGroundEffectFlags_ShortGrass(object, flags);
+    this.GetGroundEffectFlags_HotSprings(object, flags);
+    this.GetGroundEffectFlags_Seaweed(object, flags);
+    this.GetGroundEffectFlags_JumpLanding(object, flags);
+  }
+
+  /** GetGroundEffectFlags_Reflection (event_object_movement.c). */
+  GetGroundEffectFlags_Reflection(object: ObjectEvent, flags: { value: number }): void {
+    const type = this.ObjectEventCheckForReflectiveSurface(object);
+    if (type && !object.hasReflection) {
+      // The original flag table intentionally maps type 1 (ice) to bit 5,
+      // whose dispatch slot is GroundEffect_IceReflection.
+      this.addGroundEffectFlag(flags, type === 1 ? C.GROUND_EFFECT_FLAG_REFLECTION : C.GROUND_EFFECT_FLAG_ICE_REFLECTION);
+    } else if (!type) object.hasReflection = false;
+  }
+
+  /** GetGroundEffectFlags_TallGrassOnSpawn (event_object_movement.c). */
+  GetGroundEffectFlags_TallGrassOnSpawn(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsTallGrass(object.currentMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_TALL_GRASS_ON_SPAWN);
+  }
+
+  /** GetGroundEffectFlags_TallGrassOnBeginStep (event_object_movement.c). */
+  GetGroundEffectFlags_TallGrassOnBeginStep(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsTallGrass(object.currentMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_TALL_GRASS_ON_MOVE);
+  }
+
+  /** GetGroundEffectFlags_LongGrassOnSpawn (event_object_movement.c). */
+  GetGroundEffectFlags_LongGrassOnSpawn(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsLongGrass(object.currentMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LONG_GRASS_ON_SPAWN);
+  }
+
+  /** GetGroundEffectFlags_LongGrassOnBeginStep (event_object_movement.c). */
+  GetGroundEffectFlags_LongGrassOnBeginStep(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsLongGrass(object.currentMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LONG_GRASS_ON_MOVE);
+  }
+
+  /** GetGroundEffectFlags_Tracks (event_object_movement.c). */
+  GetGroundEffectFlags_Tracks(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsDeepSand(object.previousMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_DEEP_SAND);
+    else if (MB.MetatileBehavior_IsSand(object.previousMetatileBehavior) || MB.MetatileBehavior_IsFootprints(object.previousMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_SAND);
+  }
+
+  /** GetGroundEffectFlags_SandHeap (event_object_movement.c). */
+  GetGroundEffectFlags_SandHeap(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsDeepSand(object.currentMetatileBehavior) && MB.MetatileBehavior_IsDeepSand(object.previousMetatileBehavior)) {
+      if (!object.inSandPile) { object.inSandPile = true; this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_SAND_PILE); }
+    } else object.inSandPile = false;
+  }
+
+  /** GetGroundEffectFlags_ShallowFlowingWater (event_object_movement.c). */
+  GetGroundEffectFlags_ShallowFlowingWater(object: ObjectEvent, flags: { value: number }): void {
+    const current = object.currentMetatileBehavior, previous = object.previousMetatileBehavior;
+    const bothFlowing = MB.MetatileBehavior_IsShallowFlowingWater(current) && MB.MetatileBehavior_IsShallowFlowingWater(previous);
+    const bothLogs = MB.MetatileBehavior_IsPacifidlogLog(current) && MB.MetatileBehavior_IsPacifidlogLog(previous);
+    if (bothFlowing || bothLogs) {
+      if (!object.inShallowFlowingWater) { object.inShallowFlowingWater = true; this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_SHALLOW_FLOWING_WATER); }
+    } else object.inShallowFlowingWater = false;
+  }
+
+  /** GetGroundEffectFlags_Puddle (event_object_movement.c). */
+  GetGroundEffectFlags_Puddle(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsPuddle(object.currentMetatileBehavior) && MB.MetatileBehavior_IsPuddle(object.previousMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_PUDDLE);
+  }
+
+  /** GetGroundEffectFlags_Ripple (event_object_movement.c). */
+  GetGroundEffectFlags_Ripple(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_HasRipples(object.currentMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_RIPPLES);
+  }
+
+  /** GetGroundEffectFlags_ShortGrass (event_object_movement.c). */
+  GetGroundEffectFlags_ShortGrass(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsShortGrass(object.currentMetatileBehavior) && MB.MetatileBehavior_IsShortGrass(object.previousMetatileBehavior)) {
+      if (!object.inShortGrass) { object.inShortGrass = true; this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_SHORT_GRASS); }
+    } else object.inShortGrass = false;
+  }
+
+  /** GetGroundEffectFlags_HotSprings (event_object_movement.c). */
+  GetGroundEffectFlags_HotSprings(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsHotSprings(object.currentMetatileBehavior) && MB.MetatileBehavior_IsHotSprings(object.previousMetatileBehavior)) {
+      if (!object.inHotSprings) { object.inHotSprings = true; this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_HOT_SPRINGS); }
+    } else object.inHotSprings = false;
+  }
+
+  /** GetGroundEffectFlags_Seaweed (event_object_movement.c). */
+  GetGroundEffectFlags_Seaweed(object: ObjectEvent, flags: { value: number }): void {
+    if (MB.MetatileBehavior_IsSeaweed(object.currentMetatileBehavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_SEAWEED);
+  }
+
+  /** GetGroundEffectFlags_JumpLanding (event_object_movement.c). */
+  GetGroundEffectFlags_JumpLanding(object: ObjectEvent, flags: { value: number }): void {
+    if (!object.landingJump || object.disableJumpLandingGroundEffect) return;
+    const behavior = object.currentMetatileBehavior;
+    if (MB.MetatileBehavior_IsTallGrass(behavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LAND_IN_TALL_GRASS);
+    else if (MB.MetatileBehavior_IsLongGrass(behavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LAND_IN_LONG_GRASS);
+    else if (MB.MetatileBehavior_IsPuddle(behavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LAND_IN_SHALLOW_WATER);
+    else if (MB.MetatileBehavior_IsSurfable(behavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LAND_IN_DEEP_WATER);
+    else if (MB.MetatileBehavior_IsShallowFlowingWater(behavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LAND_IN_SHALLOW_WATER);
+    else if (MB.MetatileBehavior_IsATile(behavior)) this.addGroundEffectFlag(flags, C.GROUND_EFFECT_FLAG_LAND_ON_NORMAL_GROUND);
+  }
+
+  /** ObjectEventCheckForReflectiveSurface (event_object_movement.c). */
+  ObjectEventCheckForReflectiveSurface(object: ObjectEvent): number { return this.objectReflectionType(object); }
+
+  /** GetReflectionTypeByMetatileBehavior (event_object_movement.c). */
+  GetReflectionTypeByMetatileBehavior(behavior: number): number {
+    if (MB.MetatileBehavior_IsIce(behavior)) return 1;
+    if (MB.MetatileBehavior_IsReflective(behavior)) return 2;
+    return 0;
+  }
+
+  /** filters_out_some_ground_effects (event_object_movement.c). */
+  filters_out_some_ground_effects(object: ObjectEvent, flags: { value: number }): void {
+    if (!object.disableCoveringGroundEffects) return;
+    object.inShortGrass = false;
+    object.inSandPile = false;
+    object.inShallowFlowingWater = false;
+    object.inHotSprings = false;
+    flags.value &= ~(C.GROUND_EFFECT_FLAG_HOT_SPRINGS | C.GROUND_EFFECT_FLAG_SHORT_GRASS | C.GROUND_EFFECT_FLAG_SAND_PILE
+      | C.GROUND_EFFECT_FLAG_SHALLOW_FLOWING_WATER | C.GROUND_EFFECT_FLAG_TALL_GRASS_ON_MOVE);
+  }
+
+  /** FilterOutStepOnPuddleGroundEffectIfJumping (event_object_movement.c). */
+  FilterOutStepOnPuddleGroundEffectIfJumping(object: ObjectEvent, flags: { value: number }): void {
+    if (object.landingJump) flags.value &= ~C.GROUND_EFFECT_FLAG_PUDDLE;
+  }
+
+  /** DoFlaggedGroundEffects (event_object_movement.c), in sGroundEffectFuncs bit order. */
+  DoFlaggedGroundEffects(object: ObjectEvent, flags: number): void {
+    if (object.localId === C.LOCALID_CAMERA && object.invisible) return;
+    const effects: Array<(() => void) | undefined> = [
+      () => this.GroundEffect_SpawnOnTallGrass(object), () => this.GroundEffect_StepOnTallGrass(object),
+      () => this.GroundEffect_SpawnOnLongGrass(object), () => this.GroundEffect_StepOnLongGrass(object),
+      () => this.GroundEffect_WaterReflection(object, object.sprite), () => this.GroundEffect_IceReflection(object, object.sprite),
+      () => this.GroundEffect_FlowingWater(object), () => this.GroundEffect_SandTracks(object),
+      () => this.GroundEffect_DeepSandTracks(object), () => this.GroundEffect_Ripple(object),
+      () => this.GroundEffect_StepOnPuddle(object), () => this.GroundEffect_SandHeap(object),
+      () => this.GroundEffect_JumpOnTallGrass(object), () => this.GroundEffect_JumpOnLongGrass(object),
+      () => this.GroundEffect_JumpOnShallowWater(object, object.sprite), () => this.GroundEffect_JumpOnWater(object, object.sprite),
+      () => this.GroundEffect_JumpLandingDust(object, object.sprite), () => this.GroundEffect_ShortGrass(object),
+      () => this.GroundEffect_HotSprings(object), () => this.GroundEffect_Seaweed(object),
+    ];
+    for (let i = 0; i < effects.length; i++) if (flags & (1 << i)) effects[i]?.();
+  }
+
+  /** DoGroundEffects_OnSpawn (event_object_movement.c); caller owns the trigger bit. */
+  DoGroundEffects_OnSpawn(object: ObjectEvent): void {
+    const flags = { value: 0 };
+    this.GetAllGroundEffectFlags_OnSpawn(object, flags);
+    this.DoFlaggedGroundEffects(object, flags.value);
+    object.disableCoveringGroundEffects = false;
+  }
+
+  /** DoGroundEffects_OnBeginStep (event_object_movement.c); caller owns the trigger bit. */
+  DoGroundEffects_OnBeginStep(object: ObjectEvent): void {
+    const flags = { value: 0 };
+    this.GetAllGroundEffectFlags_OnBeginStep(object, flags);
+    this.filters_out_some_ground_effects(object, flags);
+    this.DoFlaggedGroundEffects(object, flags.value);
+    object.disableCoveringGroundEffects = false;
+  }
+
+  /** DoGroundEffects_OnFinishStep (event_object_movement.c); caller owns the trigger bit. */
+  DoGroundEffects_OnFinishStep(object: ObjectEvent): void {
+    const flags = { value: 0 };
+    this.GetAllGroundEffectFlags_OnFinishStep(object, flags);
+    this.FilterOutStepOnPuddleGroundEffectIfJumping(object, flags);
+    this.DoFlaggedGroundEffects(object, flags.value);
+    object.landingJump = false;
   }
 
   /** ObjectEventCheckForReflectiveSurface and GetGroundEffectFlags_Reflection. */
@@ -930,8 +1092,8 @@ export class FieldEffects {
         const x = (position.x << 16) >> 16;
         const y = ((position.y + yOffset) << 16) >> 16;
         const behavior = this.ow.map.behaviorAt(x, y);
-        if (MB.MetatileBehavior_IsIce(behavior)) return 1;
-        if (MB.MetatileBehavior_IsReflective(behavior)) return 2;
+        const reflectionType = this.GetReflectionTypeByMetatileBehavior(behavior);
+        if (reflectionType !== 0) return reflectionType;
       }
     }
     return 0;
@@ -1525,19 +1687,6 @@ export class FieldEffects {
     this.shadowSprites.delete(sprite);
     if (object && this.shadowEffects.get(object) === sprite) this.shadowEffects.delete(object);
     if (this.shadowSprites.size === 0) this.active.delete(C.FLDEFF_SHADOW);
-  }
-
-  private spawnJumpLanding(object: ObjectEvent): void {
-    const b = object.currentMetatileBehavior;
-    if (MB.MetatileBehavior_IsShallowFlowingWater?.(b)) { this.GroundEffect_JumpOnShallowWater(object, object.sprite); return; }
-    if (MB.MetatileBehavior_IsSurfable(b)) { this.GroundEffect_JumpOnWater(object, object.sprite); return; }
-    if (MB.MetatileBehavior_IsPuddle?.(b)) { this.GroundEffect_JumpOnShallowWater(object, object.sprite); return; }
-    if (MB.MetatileBehavior_IsTallGrass(b)) { this.GroundEffect_JumpOnTallGrass(object); return; }
-    if (!MB.MetatileBehavior_IsLongGrass(b)) {
-      this.GroundEffect_JumpLandingDust(object, object.sprite);
-      return;
-    }
-    this.GroundEffect_JumpOnLongGrass(object);
   }
 
   /** GroundEffect_JumpOnShallowWater (event_object_movement.c). */
