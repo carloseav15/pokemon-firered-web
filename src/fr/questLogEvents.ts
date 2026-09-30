@@ -16,7 +16,7 @@ import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } fr
 import { rom } from "./rom";
 import { expandPlaceholders, GetExpandedPlaceholder, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
 import { stringVars } from "./gba/stringBuffers";
-import { ItemId_GetName } from "./pokemon/items";
+import { ItemId_GetName, ItemId_GetPocket, POCKET_BERRY_POUCH, POCKET_ITEMS, POCKET_KEY_ITEMS, POCKET_POKE_BALLS, POCKET_TM_CASE } from "./pokemon/items";
 import { speciesName } from "./pokemon/pokemon";
 import { GetBoxNamePtr } from "./pokemon/storage";
 import { getMapNameGenericBytes } from "./regionMap";
@@ -457,6 +457,56 @@ function expandQuestLogEventText(template: string, vars: Partial<Record<"var1" |
   return expandQuestLogText(rom.text(template), vars);
 }
 
+/** LoadEvent_SwitchedPartyOrder (quest_log_events.c). */
+export function LoadEvent_SwitchedPartyOrder(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_SwitchMon1WithMon2", {
+    var1: QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+    var2: QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE),
+  });
+}
+
+/** LoadEvent_UsedItem (quest_log_events.c). */
+export function LoadEvent_UsedItem(payload: readonly number[]): Uint8Array {
+  const itemId = payload[0] ?? C.ITEM_NONE;
+  const species = payload[1] ?? C.SPECIES_NONE;
+  const itemParam = payload[2] ?? C.SPECIES_NONE;
+  const pocket = ItemId_GetPocket(itemId);
+  const itemName = ItemId_GetName(itemId);
+  if (pocket === POCKET_ITEMS || pocket === POCKET_POKE_BALLS || pocket === POCKET_BERRY_POUCH) {
+    if (itemId === C.ITEM_ESCAPE_ROPE) {
+      return expandQuestLogEventText("gText_QuestLog_UsedEscapeRope", {
+        var1: save.playerName, var2: getMapNameGenericBytes(itemParam & 0xff),
+      });
+    }
+    if (species !== C.SPECIES_NONE) {
+      return expandQuestLogEventText("gText_QuestLog_UsedItemOnMonAtThisLocation", {
+        var1: itemName, var2: QuestLog_GetSpeciesName(species),
+      });
+    }
+    return expandQuestLogEventText("gText_QuestLog_UsedTheItem", { var1: itemName });
+  }
+  if (pocket === POCKET_KEY_ITEMS) return expandQuestLogEventText("gText_QuestLog_UsedTheKeyItem", { var1: itemName });
+  if (pocket === POCKET_TM_CASE) {
+    const tmhmMoves = cdata<number[]>("party_menu", "sTMHMMoves");
+    const move = tmhmMoves[itemId - C.ITEM_TM01] ?? C.MOVE_NONE;
+    const hm = itemId >= C.ITEM_HM01;
+    const replacedMove = itemParam !== C.SPECIES_NONE;
+    const template = hm
+      ? replacedMove ? "gText_QuestLog_MonReplacedMoveWithHM" : "gText_QuestLog_MonLearnedMoveFromHM"
+      : replacedMove ? "gText_QuestLog_MonReplacedMoveWithTM" : "gText_QuestLog_MonLearnedMoveFromTM";
+    return expandQuestLogEventText(template, {
+      var1: QuestLog_GetSpeciesName(species), var2: rom.moveName(move),
+      var3: replacedMove ? rom.moveName(itemParam) : undefined,
+    });
+  }
+  return new Uint8Array([C.EOS]);
+}
+
+/** LoadEvent_UsedPkmnCenter (quest_log_events.c). */
+export function LoadEvent_UsedPkmnCenter(_payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_MonsWereFullyRestoredAtCenter", {});
+}
+
 function questLogTextFromSymbolArray(name: string, index: number): Uint8Array {
   const symbol = cdata<Array<SymRef | number>>("quest_log_events", name)[index];
   if (typeof symbol !== "object" || symbol === null) throw new Error(`${name}[${index}] is not a text symbol`);
@@ -782,8 +832,11 @@ export function LoadQuestLogEventText(event: QuestLogScriptEvent): Uint8Array[] 
                           : event.eventId === C.QL_EVENT_DEFEATED_WILD_MON ? LoadEvent_DefeatedWildMon
                             : event.eventId === C.QL_EVENT_DEFEATED_E4_MEMBER ? LoadEvent_DefeatedEliteFourMember
                               : event.eventId === C.QL_EVENT_DEFEATED_TRAINER ? LoadEvent_DefeatedTrainer
-                                : event.eventId === C.QL_EVENT_BOUGHT_ITEM ? LoadEvent_BoughtItem
+                : event.eventId === C.QL_EVENT_BOUGHT_ITEM ? LoadEvent_BoughtItem
                                   : event.eventId === C.QL_EVENT_SOLD_ITEM ? LoadEvent_SoldItem
+                                    : event.eventId === C.QL_EVENT_SWITCHED_PARTY_ORDER ? LoadEvent_SwitchedPartyOrder
+                                      : event.eventId === C.QL_EVENT_USED_ITEM ? LoadEvent_UsedItem
+                                        : event.eventId === C.QL_EVENT_USED_PKMN_CENTER ? LoadEvent_UsedPkmnCenter
                                     : event.eventId === C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES ? LoadEvent_SwitchedMonsBetweenBoxes
                                       : event.eventId === C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX ? LoadEvent_SwitchedMonsWithinBox
                                         : event.eventId === C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON ? LoadEvent_SwitchedPartyMonForPCMon
