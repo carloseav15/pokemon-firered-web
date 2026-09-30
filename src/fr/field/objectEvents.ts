@@ -86,6 +86,49 @@ export function moveFasterAnim(direction: number): number { return GetMoveDirect
 export function moveFastestAnim(direction: number): number { return GetMoveDirectionFastestAnimNum(direction); }
 export function runAnim(direction: number): number { return GetRunningDirectionAnimNum(direction); }
 
+// C functions from event_object_movement.c used by trainer movement callbacks.
+export function GetVectorDirection(dx: number, dy: number, absdx: number, absdy: number): number {
+  return absdx > absdy ? dx < 0 ? DIR_WEST : DIR_EAST : dy < 0 ? DIR_NORTH : DIR_SOUTH;
+}
+export function GetLimitedVectorDirection_SouthNorth(_dx: number, dy: number, _absdx: number, _absdy: number): number { return dy < 0 ? DIR_NORTH : DIR_SOUTH; }
+export function GetLimitedVectorDirection_WestEast(dx: number, _dy: number, _absdx: number, _absdy: number): number { return dx < 0 ? DIR_WEST : DIR_EAST; }
+export function GetLimitedVectorDirection_WestNorth(dx: number, dy: number, absdx: number, absdy: number): number {
+  let direction = GetVectorDirection(dx, dy, absdx, absdy);
+  if (direction === DIR_SOUTH) { direction = GetLimitedVectorDirection_WestEast(dx, dy, absdx, absdy); if (direction === DIR_EAST) direction = DIR_NORTH; }
+  else if (direction === DIR_EAST) { direction = GetLimitedVectorDirection_SouthNorth(dx, dy, absdx, absdy); if (direction === DIR_SOUTH) direction = DIR_NORTH; }
+  return direction;
+}
+export function GetLimitedVectorDirection_EastNorth(dx: number, dy: number, absdx: number, absdy: number): number {
+  let direction = GetVectorDirection(dx, dy, absdx, absdy);
+  if (direction === DIR_SOUTH) { direction = GetLimitedVectorDirection_WestEast(dx, dy, absdx, absdy); if (direction === DIR_WEST) direction = DIR_NORTH; }
+  else if (direction === DIR_WEST) { direction = GetLimitedVectorDirection_SouthNorth(dx, dy, absdx, absdy); if (direction === DIR_SOUTH) direction = DIR_NORTH; }
+  return direction;
+}
+export function GetLimitedVectorDirection_WestSouth(dx: number, dy: number, absdx: number, absdy: number): number {
+  let direction = GetVectorDirection(dx, dy, absdx, absdy);
+  if (direction === DIR_NORTH) { direction = GetLimitedVectorDirection_WestEast(dx, dy, absdx, absdy); if (direction === DIR_EAST) direction = DIR_SOUTH; }
+  else if (direction === DIR_EAST) { direction = GetLimitedVectorDirection_SouthNorth(dx, dy, absdx, absdy); if (direction === DIR_NORTH) direction = DIR_SOUTH; }
+  return direction;
+}
+export function GetLimitedVectorDirection_EastSouth(dx: number, dy: number, absdx: number, absdy: number): number {
+  let direction = GetVectorDirection(dx, dy, absdx, absdy);
+  if (direction === DIR_NORTH) { direction = GetLimitedVectorDirection_WestEast(dx, dy, absdx, absdy); if (direction === DIR_WEST) direction = DIR_SOUTH; }
+  else if (direction === DIR_WEST) { direction = GetLimitedVectorDirection_SouthNorth(dx, dy, absdx, absdy); if (direction === DIR_NORTH) direction = DIR_SOUTH; }
+  return direction;
+}
+export function GetLimitedVectorDirection_SouthNorthWest(dx: number, dy: number, absdx: number, absdy: number): number {
+  const direction = GetVectorDirection(dx, dy, absdx, absdy); return direction === DIR_EAST ? GetLimitedVectorDirection_SouthNorth(dx, dy, absdx, absdy) : direction;
+}
+export function GetLimitedVectorDirection_SouthNorthEast(dx: number, dy: number, absdx: number, absdy: number): number {
+  const direction = GetVectorDirection(dx, dy, absdx, absdy); return direction === DIR_WEST ? GetLimitedVectorDirection_SouthNorth(dx, dy, absdx, absdy) : direction;
+}
+export function GetLimitedVectorDirection_NorthWestEast(dx: number, dy: number, absdx: number, absdy: number): number {
+  const direction = GetVectorDirection(dx, dy, absdx, absdy); return direction === DIR_SOUTH ? GetLimitedVectorDirection_WestEast(dx, dy, absdx, absdy) : direction;
+}
+export function GetLimitedVectorDirection_SouthWestEast(dx: number, dy: number, absdx: number, absdy: number): number {
+  const direction = GetVectorDirection(dx, dy, absdx, absdy); return direction === DIR_NORTH ? GetLimitedVectorDirection_WestEast(dx, dy, absdx, absdy) : direction;
+}
+
 export function actionFace(direction: number): number { return [0, 0, 1, 2, 3][direction] ?? 0; }
 export function actionWalkNormal(direction: number): number { return 0x10 + dirIndex(direction); }
 export function actionWalkSlow(direction: number): number { return 0x0c + dirIndex(direction); }
@@ -1541,7 +1584,7 @@ export class ObjectEvents {
   }
 
   /** Mirrors gGetVectorDirectionFuncs in movement_type_func_tables.h. */
-  private trainerEncounterDirection(object: ObjectEvent, mode: number): number {
+  TryGetTrainerEncounterDirection(object: ObjectEvent, mode: number): number {
     if (!this.trainerCloseToPlayer(object)) return DIR_NONE;
     const p = this.hooks.playerDestCoords();
     // The C locals are s16; keep the same wrapping before abs/comparison.
@@ -1550,51 +1593,18 @@ export class ObjectEvents {
     // The C absdx/absdy locals are also s16: abs(-32768) wraps back to -32768.
     const absDx = (Math.abs(dx) << 16) >> 16;
     const absDy = (Math.abs(dy) << 16) >> 16;
-    const vector = (): number => absDx > absDy
-      ? dx < 0 ? DIR_WEST : DIR_EAST
-      : dy < 0 ? DIR_NORTH : DIR_SOUTH;
-    const northSouth = (): number => dy < 0 ? DIR_NORTH : DIR_SOUTH;
-    const westEast = (): number => dx < 0 ? DIR_WEST : DIR_EAST;
     switch (mode) {
-      case rom.constants.RUNFOLLOW_NORTH_SOUTH: return northSouth();
-      case rom.constants.RUNFOLLOW_EAST_WEST: return westEast();
-      case rom.constants.RUNFOLLOW_NORTH_WEST: {
-        const dir = vector();
-        if (dir === DIR_SOUTH) return dx < 0 ? DIR_WEST : DIR_NORTH;
-        if (dir === DIR_EAST) return dy < 0 ? DIR_NORTH : DIR_NORTH;
-        return dir;
-      }
-      case rom.constants.RUNFOLLOW_NORTH_EAST: {
-        const dir = vector();
-        if (dir === DIR_SOUTH) return dx < 0 ? DIR_NORTH : DIR_EAST;
-        if (dir === DIR_WEST) return dy < 0 ? DIR_NORTH : DIR_NORTH;
-        return dir;
-      }
-      case rom.constants.RUNFOLLOW_SOUTH_WEST: {
-        const dir = vector();
-        if (dir === DIR_NORTH) return dx < 0 ? DIR_WEST : DIR_SOUTH;
-        if (dir === DIR_EAST) return dy < 0 ? DIR_SOUTH : DIR_SOUTH;
-        return dir;
-      }
-      case rom.constants.RUNFOLLOW_SOUTH_EAST: {
-        const dir = vector();
-        if (dir === DIR_NORTH) return dx < 0 ? DIR_SOUTH : DIR_EAST;
-        if (dir === DIR_WEST) return dy < 0 ? DIR_SOUTH : DIR_SOUTH;
-        return dir;
-      }
-      case rom.constants.RUNFOLLOW_NORTH_SOUTH_WEST: {
-        const dir = vector(); return dir === DIR_EAST ? northSouth() : dir;
-      }
-      case rom.constants.RUNFOLLOW_NORTH_SOUTH_EAST: {
-        const dir = vector(); return dir === DIR_WEST ? northSouth() : dir;
-      }
-      case rom.constants.RUNFOLLOW_NORTH_EAST_WEST: {
-        const dir = vector(); return dir === DIR_SOUTH ? westEast() : dir;
-      }
-      case rom.constants.RUNFOLLOW_SOUTH_EAST_WEST: {
-        const dir = vector(); return dir === DIR_NORTH ? westEast() : dir;
-      }
-      default: return vector();
+      case rom.constants.RUNFOLLOW_NORTH_SOUTH: return GetLimitedVectorDirection_SouthNorth(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_EAST_WEST: return GetLimitedVectorDirection_WestEast(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_NORTH_WEST: return GetLimitedVectorDirection_WestNorth(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_NORTH_EAST: return GetLimitedVectorDirection_EastNorth(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_SOUTH_WEST: return GetLimitedVectorDirection_WestSouth(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_SOUTH_EAST: return GetLimitedVectorDirection_EastSouth(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_NORTH_SOUTH_WEST: return GetLimitedVectorDirection_SouthNorthWest(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_NORTH_SOUTH_EAST: return GetLimitedVectorDirection_SouthNorthEast(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_NORTH_EAST_WEST: return GetLimitedVectorDirection_NorthWestEast(dx, dy, absDx, absDy);
+      case rom.constants.RUNFOLLOW_SOUTH_EAST_WEST: return GetLimitedVectorDirection_SouthWestEast(dx, dy, absDx, absDy);
+      default: return GetVectorDirection(dx, dy, absDx, absDy);
     }
   }
 
@@ -1754,7 +1764,7 @@ export class ObjectEvents {
           if (this.waitDelay(object) || this.trainerCloseToPlayer(object)) { s.data[1] = 4; return true; }
           return false;
         case 4: {
-          let direction = this.trainerEncounterDirection(object, this.trainerDirectionMode(type));
+          let direction = this.TryGetTrainerEncounterDirection(object, this.trainerDirectionMode(type));
           if (direction === DIR_NONE) direction = faceDirs.length === 2 ? faceDirs[random() & 1] : faceDirs[random() & 3];
           this.setDirection(object, direction);
           s.data[1] = 1;
@@ -1806,7 +1816,7 @@ export class ObjectEvents {
         case 1: if (this.execSingle(object)) { this.setDelay(object, 48); s.data[1] = 2; } return false;
         case 2: if (this.waitDelay(object) || this.trainerCloseToPlayer(object)) s.data[1] = 3; return false;
         case 3: {
-          let direction = this.trainerEncounterDirection(object, rom.constants.RUNFOLLOW_ANY);
+          let direction = this.TryGetTrainerEncounterDirection(object, rom.constants.RUNFOLLOW_ANY);
           if (direction === DIR_NONE) direction = (type === c.MOVEMENT_TYPE_ROTATE_CLOCKWISE ? CLOCKWISE : COUNTERCLOCKWISE)[object.facingDirection];
           this.setDirection(object, direction);
           s.data[1] = 0;
