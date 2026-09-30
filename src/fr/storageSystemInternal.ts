@@ -303,7 +303,7 @@ export type PokemonStorageSystemData = {
   summaryCursorPos: number;
   summaryScreenMode: number;
   /** summaryMonPtr: the party slots or the current box, as the summary screen's `party` list. */
-  summaryMons: Mon[];
+  summaryMons: (Mon | null)[];
   actionText: Uint8Array;
   boxTitleText: Uint8Array;
   releaseMonName: Uint8Array;

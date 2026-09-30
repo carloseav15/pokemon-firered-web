@@ -66,8 +66,9 @@ import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUt
 import { rom } from "./rom";
 import { save } from "./save";
 import {
-  CalculatePPWithBonus, GetMonData, GetMonGender, IsMonShiny, type Mon,
+  CalculatePPWithBonus, GetMonData, GetMonGender, IsMonShiny, zeroMon, type Mon,
 } from "./pokemon/mon";
+import { SeekToNextMonInBox } from "./pokemon/storage";
 import { speciesName, type Pokemon } from "./pokemon/pokemon";
 import { itemName } from "./pokemon/items";
 import { GetHPBarLevel } from "./battle/interface";
@@ -282,7 +283,7 @@ interface PokemonSummaryScreenData {
   switchMonTaskState: number;
 
   currentMon: Pokemon;
-  monList: Pokemon[];
+  monList: (Mon | null)[];
   savedCallback: () => void;
   markingSprite: Sprite | null;
   lastPageFlipDirection: number;
@@ -401,13 +402,13 @@ export async function preloadSummaryScreen(): Promise<void> {
  * (cursorPos, lastIdx, callback, mode).
  */
 export function ShowPokemonSummaryScreen(
-  partyOrSlot: Pokemon[] | number,
+  partyOrSlot: (Mon | null)[] | number,
   cursorPosOrLastIdx: number,
   lastIdxOrCallback: number | (() => void),
   callbackOrMode?: (() => void) | number,
   modeArg = 0,
 ): void {
-  let party: Pokemon[];
+  let party: (Mon | null)[];
   let cursorPos: number;
   let lastIdx: number;
   let savedCallback: () => void;
@@ -485,7 +486,7 @@ export function ShowSelectMovePokemonSummaryScreen(
 // ---------------------------------------------------------------- screen initialization
 
 function InitSummaryScreenState(
-  party: Pokemon[],
+  party: (Mon | null)[],
   cursorPos: number,
   lastIdx: number,
   savedCallback: () => void,
@@ -541,7 +542,7 @@ function InitSummaryScreenState(
     state3284: 0,
     selectMoveInputHandlerState: 0,
     switchMonTaskState: 0,
-    currentMon: { ...party[cursorPos] },
+    currentMon: { ...(party[cursorPos] ?? zeroMon()) },
     monList: party,
     savedCallback,
     markingSprite: null,
@@ -566,7 +567,7 @@ function InitSummaryScreenState(
 function BufferSelectedMonData(mon: Pokemon): void {
   if (!sMonSummaryScreen) return;
   const source = sMonSummaryScreen.monList[sLastViewedMonIndex];
-  if (source) Object.assign(mon, source);
+  Object.assign(mon, source ?? zeroMon());
 }
 
 // ---------------------------------------------------------------- setup sequence (CB2_SetUpPSS)
@@ -3121,21 +3122,38 @@ function Task_InputHandler_SelectOrForgetMove(taskId: number): void {
 function PokeSum_SeekToNextMon(_taskId: number, direction: number): void {
   if (!sMonSummaryScreen) return;
   const pss = sMonSummaryScreen;
-  const count = pss.lastIndex + 1;
-
-  let target = sLastViewedMonIndex;
-  while (true) {
-    target += direction;
-    if (target < 0 || target >= count) return;
-    const mon = pss.monList[target];
-    if (!mon || mon.species === C.SPECIES_NONE) return;
-    if (pss.curPageIndex !== PokemonSummaryScreenPage.PSS_PAGE_INFO && mon.isEgg) continue;
-    break;
-  }
+  const target = pss.isBoxMon
+    ? SeekToNextMonInBox(
+      pss.monList,
+      sLastViewedMonIndex,
+      pss.lastIndex,
+      (pss.curPageIndex === PokemonSummaryScreenPage.PSS_PAGE_INFO ? 1 : 0) | (direction < 0 ? 2 : 0),
+    )
+    : SeekToNextMonInSingleParty(direction);
+  if (target < 0) return;
 
   sLastViewedMonIndex = target;
   tasks.create(Task_PokeSum_SwitchDisplayedPokemon, 0);
   pss.switchMonTaskState = 0;
+}
+
+/** SeekToNextMonInSingleParty (pokemon_summary_screen.c). */
+function SeekToNextMonInSingleParty(direction: number): number {
+  const pss = sMonSummaryScreen!;
+  if (pss.curPageIndex === PokemonSummaryScreenPage.PSS_PAGE_INFO) {
+    if ((direction === -1 && sLastViewedMonIndex === 0)
+      || (direction === 1 && sLastViewedMonIndex >= pss.lastIndex)) return -1;
+    return sLastViewedMonIndex + direction;
+  }
+
+  let seekDelta = 0;
+  while (true) {
+    seekDelta += direction;
+    const target = sLastViewedMonIndex + seekDelta;
+    if (target < 0 || target > pss.lastIndex) return -1;
+    const mon = pss.monList[target];
+    if (mon && !GetMonData(mon, C.MON_DATA_IS_EGG)) return target;
+  }
 }
 
 function Task_PokeSum_SwitchDisplayedPokemon(taskId: number): void {

@@ -1687,8 +1687,6 @@ function Task_ChangeScreen(taskId: number): void {
       const cursorPos = g.summaryCursorPos;
       const lastIndex = g.summaryLastIndex;
       const mode = g.summaryScreenMode;
-      // The summary screen reads the box's slots as mons; empty ones are zeroed.
-      if (mode === C.PSS_MODE_BOX) for (let i = 0; i < party.length; i++) party[i] ??= zeroMon();
       FreePokeStorageData();
       ShowPokemonSummaryScreen(party, cursorPos, lastIndex, CB2_ReturnToPokeStorage, mode);
       break;

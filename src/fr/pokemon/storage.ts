@@ -156,13 +156,14 @@ export function SetBoxWallpaper(boxId: number, wallpaperId: number): void {
   setBoxWallpaper(boxId, wallpaperId);
 }
 
-/** SeekToNextMonInBox, respecting the source's egg and direction flags. */
-export function SeekToNextMonInBox(boxMons: Array<Pokemon | null>, curIndex: number, maxIndex: number, flags: number): number {
+/** SeekToNextMonInBox (pokemon_storage_system.c), respecting the source flags and BoxMon fields. */
+export function SeekToNextMonInBox(boxMons: readonly (Mon | null)[], curIndex: number, maxIndex: number, flags: number): number {
   const adder = flags === 0 || flags === 1 ? 1 : -1;
   const allowEggs = flags === 1 || flags === 3;
   for (let i = curIndex + adder; i >= 0 && i <= maxIndex; i += adder) {
     const mon = boxMons[i];
-    if (mon?.species && (allowEggs || !mon.isEgg)) return i;
+    if (mon && GetMonData(mon, C.MON_DATA_SPECIES) !== C.SPECIES_NONE
+      && (allowEggs || !GetMonData(mon, C.MON_DATA_IS_EGG))) return i;
   }
   return -1;
 }
