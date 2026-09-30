@@ -18,6 +18,16 @@ export const DIR_NONE = 0, DIR_SOUTH = 1, DIR_NORTH = 2, DIR_WEST = 3, DIR_EAST 
 export const DIR_SOUTHWEST = 5, DIR_SOUTHEAST = 6, DIR_NORTHWEST = 7, DIR_NORTHEAST = 8;
 export const DIRECTION_VECTORS: Array<[number, number]> = [[0, 0], [0, 1], [0, -1], [-1, 0], [1, 0], [-1, 1], [1, 1], [-1, -1], [1, -1]];
 export const OPPOSITE: number[] = [DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_EAST, DIR_WEST, DIR_NORTHEAST, DIR_NORTHWEST, DIR_SOUTHEAST, DIR_SOUTHWEST];
+const TRAINER_FACING_DIRECTION_MOVEMENT_TYPES = [
+  C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_UP,
+  C.MOVEMENT_TYPE_FACE_LEFT, C.MOVEMENT_TYPE_FACE_RIGHT, C.MOVEMENT_TYPE_FACE_DOWN,
+  C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_UP, C.MOVEMENT_TYPE_FACE_UP,
+];
+
+/** GetTrainerFacingDirectionMovementType (event_object_movement.c). */
+export function GetTrainerFacingDirectionMovementType(direction: number): number {
+  return TRAINER_FACING_DIRECTION_MOVEMENT_TYPES[direction & 0xff]!;
+}
 
 export const COLLISION_NONE = 0;
 export const COLLISION_OUTSIDE_RANGE = 1;

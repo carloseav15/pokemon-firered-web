@@ -7,7 +7,7 @@ import type { Sprite } from "../gba/sprite";
 import { rom } from "../rom";
 import { countAliveNonEggMons } from "../pokemon/pokemon";
 import { MAP_OFFSET } from "./fieldmap";
-import { actionFace, actionJumpInPlace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, LOCALID_CAMERA, OBJECT_EVENTS_COUNT, type ObjectEvent, type ObjectEvents } from "./objectEvents";
+import { actionFace, actionJumpInPlace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, GetTrainerFacingDirectionMovementType, LOCALID_CAMERA, OBJECT_EVENTS_COUNT, type ObjectEvent, type ObjectEvents } from "./objectEvents";
 
 type TrainerApproachFunc = (objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number) => number;
 
@@ -502,7 +502,7 @@ export class TrainerSee {
     if (trainer) this.setTrainerMovement(trainer);
   }
   private setTrainerMovement(trainer: ObjectEvent): void {
-    const movementType = [C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_UP, C.MOVEMENT_TYPE_FACE_LEFT, C.MOVEMENT_TYPE_FACE_RIGHT][trainer.facingDirection];
+    const movementType = GetTrainerFacingDirectionMovementType(trainer.facingDirection);
     const objects = this.game.overworld.objects;
     objects.setTrainerMovementType(trainer, movementType);
     objects.overrideTemplateMovementType(trainer, movementType);
