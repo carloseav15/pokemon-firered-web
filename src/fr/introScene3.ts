@@ -72,6 +72,16 @@ function spriteTemplate(name: string, oamName: string, animName: string, callbac
   };
 }
 
+/** intro.c entrance and background-task callbacks, dispatched by the startup loop. */
+export function IntroCB_Scene3_Entrance(scene: IntroScene3): void { scene.updateEntrance(); }
+export function Scene3_Task_BgScroll(scene: IntroScene3): void { scene.taskBgScroll(); }
+export function Scene3_StartBgScroll(scene: IntroScene3): void { scene.startBgScroll(); }
+export function Scene3_SlowBgScroll(scene: IntroScene3): void { scene.slowBgScroll(); }
+export function Scene3_Task_GengarBounce(scene: IntroScene3): void { scene.taskGengarBounce(); }
+export function Scene3_PauseGengarBounce(scene: IntroScene3): void { scene.pauseGengarBounce(); }
+export function Scene3_ResumeGengarBounce(scene: IntroScene3): void { scene.resumeGengarBounce(); }
+export function Scene3_IsGengarMidBounce(scene: IntroScene3): number { return scene.isGengarMidBounce(); }
+
 export class IntroScene3 {
   private phase: "entrance" | "fight" | "exit" = "entrance";
   private state = 0;
@@ -79,10 +89,12 @@ export class IntroScene3 {
   private bounceTimer = 0;
   private bounceFrame = 0;
   private bouncePaused = false;
+  private bounceTaskActive = false;
   private gengarSpeed = 0x400;
   private gengarMoves = 0;
   private gengarEntering = false;
   private scrollSlow = false;
+  private bgScrollTaskActive = false;
   private nidorinoSprite = MAX_SPRITES;
   private readonly gengarSprites: number[] = [];
   private attackState = -1;
@@ -107,6 +119,8 @@ export class IntroScene3 {
     this.gengarEntering = false;
     this.scrollSlow = false;
     this.bouncePaused = false;
+    this.bounceTaskActive = false;
+    this.bgScrollTaskActive = false;
     this.nidorinoSprite = MAX_SPRITES;
     this.gengarSprites.length = 0;
     this.attackState = -1;
@@ -130,7 +144,7 @@ export class IntroScene3 {
     if (this.phase !== "exit" && (this.phase === "fight" || this.state >= 3)) this.runSceneTasks();
     if (this.phase === "fight") this.updateFight();
     else if (this.phase === "exit") this.updateExit();
-    else this.updateEntrance();
+    else IntroCB_Scene3_Entrance(this);
     AnimateSprites();
     BuildOamBuffer();
     LoadOam();
@@ -139,7 +153,7 @@ export class IntroScene3 {
     TransferPlttBuffer();
   }
 
-  private updateEntrance(): void {
+  updateEntrance(): void {
     switch (this.state) {
       case 0:
         LoadPalette(incbin("sScene3_Bg_Pal"), 16, incbin("sScene3_Bg_Pal").length);
@@ -185,6 +199,8 @@ export class IntroScene3 {
           sprite.data[4] = 0;
         }
         this.gengarEntering = true;
+        this.bounceTaskActive = true;
+        Scene3_StartBgScroll(this);
         this.timer = 0;
         this.state++;
         break;
@@ -200,12 +216,8 @@ export class IntroScene3 {
   }
 
   private runSceneTasks(): void {
-    ChangeBgX(1, this.scrollSlow ? 0x20 : 0x400, BG_COORD_SUB);
-    if (!this.bouncePaused && ++this.bounceTimer >= 30) {
-      this.bounceTimer = 0;
-      this.bounceFrame ^= 1;
-      ChangeBgY(0, (this.bounceFrame << 15) + 0x1f000, BG_COORD_SET);
-    }
+    if (this.bgScrollTaskActive) Scene3_Task_BgScroll(this);
+    if (this.bounceTaskActive) Scene3_Task_GengarBounce(this);
     if (this.gengarEntering) {
       if (++this.gengarMoves >= 40 && this.gengarSpeed > 16) this.gengarSpeed -= 16;
       const scroll = ChangeBgX(0, this.gengarSpeed, BG_COORD_ADD);
@@ -217,6 +229,30 @@ export class IntroScene3 {
     }
     if (this.attackState >= 0) this.runGengarAttack();
   }
+
+  taskBgScroll(): void {
+    ChangeBgX(1, this.scrollSlow ? 0x20 : 0x400, BG_COORD_SUB);
+  }
+
+  startBgScroll(): void {
+    this.bgScrollTaskActive = true;
+  }
+
+  slowBgScroll(): void {
+    this.scrollSlow = true;
+  }
+
+  taskGengarBounce(): void {
+    if (!this.bouncePaused && ++this.bounceTimer >= 30) {
+      this.bounceTimer = 0;
+      this.bounceFrame ^= 1;
+      ChangeBgY(0, (this.bounceFrame << 15) + 0x1f000, BG_COORD_SET);
+    }
+  }
+
+  pauseGengarBounce(): void { this.bouncePaused = true; }
+  resumeGengarBounce(): void { this.bouncePaused = false; }
+  isGengarMidBounce(): number { return this.bounceFrame; }
 
   private nidorinoEnter(sprite: Sprite): void {
     const data = sprite.data;
@@ -244,7 +280,7 @@ export class IntroScene3 {
     if (data[0] === 1) {
       data[1] -= data[2];
       sprite.x = data[1] >> 5;
-      if (sprite.x <= 52) { this.scrollSlow = true; data[0] = 2; }
+      if (sprite.x <= 52) { Scene3_SlowBgScroll(this); data[0] = 2; }
     } else if (data[0] === 2) {
       data[1] -= 32;
       sprite.x = data[1] >> 5;
@@ -268,7 +304,7 @@ export class IntroScene3 {
         break;
       case 3:
         if (++this.timer > 30) {
-          this.bouncePaused = true;
+          Scene3_PauseGengarBounce(this);
           this.startGengarAttack();
           this.timer = 0;
           this.state++;
@@ -279,7 +315,7 @@ export class IntroScene3 {
         break;
       case 5:
         if (nidorino.callback === SpriteCallbackDummy) {
-          this.bouncePaused = false;
+          Scene3_ResumeGengarBounce(this);
           this.timer = 0;
           this.state++;
         }
@@ -297,7 +333,7 @@ export class IntroScene3 {
         if (++this.timer > 20) { this.startNidorinoAttack(nidorino); this.timer = 0; this.state++; }
         break;
       case 10:
-        if (!this.bounceFrame) { this.bouncePaused = true; this.createGengarBackSprites(); this.state++; }
+        if (!Scene3_IsGengarMidBounce(this)) { Scene3_PauseGengarBounce(this); this.createGengarBackSprites(); this.state++; }
         break;
       case 11:
         HideBg(0);
