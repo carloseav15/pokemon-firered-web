@@ -618,7 +618,7 @@ export function QL_LoadObjectsAndTemplates(ow: Overworld, sceneIndex = sCurrentP
       movementType: snapshot.movementType & 0xff,
     };
   }
-  ow.objects.templates = templates;
+  ow.loadObjEventTemplatesFromHeader(templates);
   QL_LoadObjects(scene, templates as MapObjectTemplate[]);
   ow.syncObjectSprites();
 }

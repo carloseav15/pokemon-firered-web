@@ -224,6 +224,8 @@ export class Overworld {
     setVarGetter(varGet);
     this.objects = new ObjectEvents({
       map: () => this.map,
+      mapType: () => this.header.mapType,
+      playerMapPosition: () => ({ x: save.pos.x, y: save.pos.y }),
       playerDestCoords: () => {
         const p = this.objects.player();
         return p ? { ...p.currentCoords } : { x: 0, y: 0 };
@@ -885,13 +887,31 @@ export class Overworld {
     this.RunOnLoadMapScript();
   }
 
-  loadObjEventTemplatesFromHeader(): void {
+  loadObjEventTemplatesFromHeader(templateOverrides?: MapObjectTemplate[]): void {
     const templates: MapObjectTemplate[] = [];
+    const spawnTemplates: Array<{ template: MapObjectTemplate; x: number; y: number; mapNum: number; mapGroup: number; isClone: boolean }> = [];
     for (const obj of this.header.objects) {
-      if (obj.clone) continue; // clones only mirror NPCs of the connected map
-      templates.push({ ...obj });
+      if (!obj.clone) {
+        const template = { ...(templateOverrides?.find((candidate) => candidate.localId === obj.localId) ?? obj) };
+        templates.push(template);
+        spawnTemplates.push({ template, x: obj.x, y: obj.y, mapNum: save.location.mapNum, mapGroup: save.location.mapGroup, isClone: false });
+        continue;
+      }
+      const connection = this.loaded.connections.find((connected) => connected.mapId === obj.targetMap);
+      if (!connection) throw new Error(`Clone target ${obj.targetMap} is not a loaded connection of ${this.header.id}`);
+      const source = connection.header.objects.find((candidate) => !candidate.clone && candidate.localId === obj.targetLocalId);
+      if (!source || source.clone) throw new Error(`Clone ${this.header.id} -> ${obj.targetMap} localId ${obj.targetLocalId} has no object template`);
+      spawnTemplates.push({
+        template: { ...source },
+        x: obj.x,
+        y: obj.y,
+        mapNum: connection.header.num & 0xff,
+        mapGroup: (connection.header.num >>> 8) & 0xff,
+        isClone: true,
+      });
     }
     this.objects.templates = templates;
+    this.objects.spawnTemplates = spawnTemplates;
     save.objectEventTemplates = templates.map((template) => ({ ...template }));
     this.objects.mapNum = save.location.mapNum;
     this.objects.mapGroup = save.location.mapGroup;

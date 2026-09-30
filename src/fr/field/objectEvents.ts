@@ -11,7 +11,7 @@ import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet, flagSet, varGet } from "../save";
 import { gQuestLogPlaybackState, QL_GetPlaybackState, QuestLogRecordNPCStep } from "../questLogEvents";
-import { CONNECTION_INVALID, MAP_OFFSET, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
+import { CONNECTION_INVALID, MAP_OFFSET, MAP_OFFSET_H, MAP_OFFSET_W, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
 import { gSineTable } from "../hw/trig";
 
 export const DIR_NONE = 0, DIR_SOUTH = 1, DIR_NORTH = 2, DIR_WEST = 3, DIR_EAST = 4;
@@ -152,6 +152,8 @@ export const MOVEMENT_ACTION_STEP_END = 0xfe;
 
 export type ObjectEventHooks = {
   map: () => FieldMap;
+  mapType: () => number;
+  playerMapPosition: () => { x: number; y: number };
   playerDestCoords: () => { x: number; y: number };
   playerIsRunning: () => boolean;
   playerInfo: () => { facing: number; movementDirection: number; movementActionId: number; copyableMovement: number; tileTransitionState: number } | undefined;
@@ -172,6 +174,7 @@ export type ObjectEventHooks = {
 };
 
 type VirtualObject = { sprite: Sprite; id: number; elevation: number; invisible: boolean; animNum: number; animState: number };
+type SpawnObjectEventTemplate = { template: MapObjectTemplate; x: number; y: number; mapNum: number; mapGroup: number; isClone: boolean };
 
 export class ObjectEvent {
   active = true;
@@ -721,6 +724,7 @@ export class ObjectEvents {
   private readonly virtualObjects = new Map<number, VirtualObject>();
   private ssAnneExteriorMapNumber?: number;
   templates: MapObjectTemplate[] = [];
+  spawnTemplates: SpawnObjectEventTemplate[] = [];
   mapNum = 0;
   mapGroup = 0;
   /** Set by lock/lockall (FreezeObjectEvents) */
@@ -992,12 +996,27 @@ export class ObjectEvents {
   }
 
   /** TrySpawnObjectEventTemplate (event_object_movement.c), integrated into the active spawn route. */
-  TrySpawnObjectEventTemplate(template: MapObjectTemplate, mapNum = this.mapNum, mapGroup = this.mapGroup): ObjectEvent | undefined {
-    if (this.byLocalIdAndMap(template.localId, mapNum, mapGroup)) return undefined;
-    const slot = this.GetAvailableObjectEventId(template.localId, mapNum, mapGroup);
+  TrySpawnObjectEventTemplate(template: MapObjectTemplate, mapNum = this.mapNum, mapGroup = this.mapGroup, cloneCoords?: { x: number; y: number }): ObjectEvent | undefined {
+    const slot = this.InitObjectEventStateFromTemplate(template, mapNum, mapGroup, cloneCoords);
     if (slot === OBJECT_EVENTS_COUNT) return undefined;
+    const object = this.objects[slot]!;
+    if (this.TrySetupObjectEventSprite(object) === OBJECT_EVENTS_COUNT) {
+      this.objects[slot] = null;
+      gObjectEvents[slot] = new ObjectEvent();
+      gObjectEvents[slot]!.active = false;
+      return undefined;
+    }
+    return object;
+  }
+
+  /** InitObjectEventStateFromTemplate (event_object_movement.c), including source-map identity for clones. */
+  InitObjectEventStateFromTemplate(template: MapObjectTemplate, mapNum: number, mapGroup: number, cloneCoords?: { x: number; y: number }): number {
+    const slot = this.GetAvailableObjectEventId(template.localId, mapNum, mapGroup);
+    if (slot === OBJECT_EVENTS_COUNT) return OBJECT_EVENTS_COUNT;
+    if (!this.ShouldInitObjectEventStateFromTemplate(template, cloneCoords !== undefined, cloneCoords?.x ?? 0, cloneCoords?.y ?? 0)) return OBJECT_EVENTS_COUNT;
     const object = new ObjectEvent();
     object.template = template;
+    object.triggerGroundEffectsOnMove = true;
     object.localId = template.localId;
     object.mapNum = mapNum;
     object.mapGroup = mapGroup;
@@ -1008,8 +1027,8 @@ export class ObjectEvents {
     object.trainerRange = template.trainerRange;
     object.rangeX = template.rangeX;
     object.rangeY = template.rangeY;
-    const x = template.x + MAP_OFFSET;
-    const y = template.y + MAP_OFFSET;
+    const x = (cloneCoords?.x ?? template.x) + MAP_OFFSET;
+    const y = (cloneCoords?.y ?? template.y) + MAP_OFFSET;
     object.initialCoords = { x, y };
     object.currentCoords = { x, y };
     object.previousCoords = { x, y };
@@ -1021,13 +1040,7 @@ export class ObjectEvents {
     object.previousMovementDirection = facing;
     this.objects[slot] = object;
     gObjectEvents[slot] = object;
-    if (this.TrySetupObjectEventSprite(object) === OBJECT_EVENTS_COUNT) {
-      this.objects[slot] = null;
-      gObjectEvents[slot] = new ObjectEvent();
-      gObjectEvents[slot]!.active = false;
-      return undefined;
-    }
-    return object;
+    return slot;
   }
 
   /** VAR_OBJ_GFX_ID_0.. for dynamic graphics (OBJ_EVENT_GFX_VAR_0..F) */
@@ -1247,11 +1260,56 @@ export class ObjectEvents {
     const right = cameraX + 15 + 2;
     const top = cameraY;
     const bottom = cameraY + 14 + 2;
-    for (const template of this.templates) {
-      const x = template.x + MAP_OFFSET;
-      const y = template.y + MAP_OFFSET;
-      if (top <= y && bottom >= y && left <= x && right >= x && !flagGet(template.flag)) this.spawnFromTemplate(template);
+    for (const entry of this.spawnTemplates) {
+      const x = entry.x + MAP_OFFSET;
+      const y = entry.y + MAP_OFFSET;
+      if (top <= y && bottom >= y && left <= x && right >= x && !flagGet(entry.template.flag)) {
+        this.TrySpawnObjectEventTemplate(entry.template, entry.mapNum, entry.mapGroup, entry.isClone ? entry : undefined);
+      }
     }
+  }
+
+  /** ShouldInitObjectEventStateFromTemplate (event_object_movement.c). */
+  ShouldInitObjectEventStateFromTemplate(template: MapObjectTemplate, isClone: boolean, x: number, y: number): boolean {
+    if (isClone && !this.TemplateIsObstacleAndWithinView(template, x, y)) return false;
+    return this.TemplateIsObstacleAndVisibleFromConnectingMap(template, x, y);
+  }
+
+  /** TemplateIsObstacleAndWithinView (event_object_movement.c). */
+  TemplateIsObstacleAndWithinView(template: MapObjectTemplate, x: number, y: number): boolean {
+    if (template.graphicsId !== C.OBJ_EVENT_GFX_CUT_TREE && template.graphicsId !== C.OBJ_EVENT_GFX_ROCK_SMASH_ROCK) return true;
+    const player = this.hooks.playerMapPosition();
+    x = (x << 16) >> 16;
+    y = (y << 16) >> 16;
+    if (player.x < x) {
+      if (player.x + (MAP_OFFSET + 1) < x) return true;
+      if (player.y - (MAP_OFFSET - 1) <= y && player.y + (MAP_OFFSET - 1) >= y) return false;
+    } else {
+      if (player.x - (MAP_OFFSET + 1) > x) return true;
+      if (player.y - (MAP_OFFSET - 1) <= y && player.y + (MAP_OFFSET - 1) >= y) return false;
+    }
+    return true;
+  }
+
+  /** TemplateIsObstacleAndVisibleFromConnectingMap (event_object_movement.c). */
+  TemplateIsObstacleAndVisibleFromConnectingMap(template: MapObjectTemplate, _x: number, _y: number): boolean {
+    const type = this.hooks.mapType();
+    if (type !== C.MAP_TYPE_ROUTE && type !== C.MAP_TYPE_TOWN && type !== C.MAP_TYPE_UNDERWATER && type !== C.MAP_TYPE_CITY && type !== C.MAP_TYPE_OCEAN_ROUTE) return true;
+    if (template.graphicsId !== C.OBJ_EVENT_GFX_CUT_TREE && template.graphicsId !== C.OBJ_EVENT_GFX_ROCK_SMASH_ROCK) return true;
+    const map = this.hooks.map();
+    const width = map.xSize - MAP_OFFSET_W - 1;
+    const height = map.ySize - MAP_OFFSET_H - 1;
+    const player = this.hooks.playerMapPosition();
+    if (player.x === 0 && template.x <= MAP_OFFSET + 1) { this.SetHideObstacleFlag(template); return false; }
+    if (player.x === width && template.x >= width - (MAP_OFFSET + 1)) { this.SetHideObstacleFlag(template); return false; }
+    if (player.y === 0 && template.y <= MAP_OFFSET - 1) { this.SetHideObstacleFlag(template); return false; }
+    if (player.y === height && template.y >= height - (MAP_OFFSET - 1)) { this.SetHideObstacleFlag(template); return false; }
+    return true;
+  }
+
+  /** SetHideObstacleFlag (event_object_movement.c). */
+  SetHideObstacleFlag(template: MapObjectTemplate): void {
+    if (template.flag >= C.FLAG_TEMP_11 && template.flag <= C.FLAG_TEMP_1F) flagSet(template.flag);
   }
 
   /** RemoveObjectEventsOutsideView */
