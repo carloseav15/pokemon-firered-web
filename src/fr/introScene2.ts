@@ -47,6 +47,13 @@ function spriteTemplate(name: string): SpriteTemplate {
   };
 }
 
+/** intro.c Scene 2 callbacks, dispatched by the active startup frame loop. */
+export function IntroCB_Scene2(scene: IntroScene2): void { scene.updateScene(); }
+export function Scene2_Task_PanForest(scene: IntroScene2): void { scene.panForest(); }
+export function Scene2_Task_PanMons(scene: IntroScene2): void { scene.panMons(); }
+export function Scene2_CreateMonSprites(scene: IntroScene2): void { scene.createMonSprites(); }
+export function Scene2_DestroyMonSprites(scene: IntroScene2): void { scene.destroyMonSprites(); }
+
 export class IntroScene2 {
   private state = 0;
   private timer = 0;
@@ -77,14 +84,19 @@ export class IntroScene2 {
     if (this.done) return;
     // RunTasks precedes the intro callback in CB2_Intro. The pan tasks were
     // created in state 1, and the close-up pan begins after state 4.
-    if (this.state >= 2 && this.state <= 4) {
-      ChangeBgX(3, 0xe0, BG_COORD_SUB);
-      ChangeBgX(0, 0x110, BG_COORD_ADD);
-    } else if (this.state === 6) {
-      ChangeBgY(2, 0x20, BG_COORD_ADD);
-      ChangeBgY(1, 0x24, BG_COORD_SUB);
-    }
+    if (this.state >= 2 && this.state <= 4) Scene2_Task_PanForest(this);
+    else if (this.state === 5 || this.state === 6) Scene2_Task_PanMons(this);
 
+    IntroCB_Scene2(this);
+    AnimateSprites();
+    BuildOamBuffer();
+    LoadOam();
+    UpdatePaletteFade();
+    CopyBufferedValuesToGpuRegs();
+    TransferPlttBuffer();
+  }
+
+  updateScene(): void {
     switch (this.state) {
       case 0:
         BlendPalettes(PALETTES_ALL & ~1, 16, RGB_WHITE);
@@ -110,8 +122,7 @@ export class IntroScene2 {
         HideBg(2);
         ChangeBgY(2, 0x1ce00, BG_COORD_SET);
         ChangeBgY(1, 0x2800, BG_COORD_SET);
-        this.nidorinoSprite = CreateSprite(spriteTemplate("sSpriteTemplate_Scene2_Nidorino"), 168, 80, 11);
-        this.gengarSprite = CreateSprite(spriteTemplate("sSpriteTemplate_Scene2_Gengar"), 72, 80, 12);
+        Scene2_CreateMonSprites(this);
         this.state++;
         break;
       case 2:
@@ -123,7 +134,7 @@ export class IntroScene2 {
         break;
       case 4:
         if (++this.timer >= 60) {
-          this.destroyWideShotSprites();
+          Scene2_DestroyMonSprites(this);
           ChangeBgY(3, 0x10000, BG_COORD_SET);
           HideBg(0);
           ShowBg(3);
@@ -140,15 +151,24 @@ export class IntroScene2 {
         if (++this.timer >= 60) this.done = true;
         break;
     }
-    AnimateSprites();
-    BuildOamBuffer();
-    LoadOam();
-    UpdatePaletteFade();
-    CopyBufferedValuesToGpuRegs();
-    TransferPlttBuffer();
   }
 
-  private destroyWideShotSprites(): void {
+  panForest(): void {
+    ChangeBgX(3, 0xe0, BG_COORD_SUB);
+    ChangeBgX(0, 0x110, BG_COORD_ADD);
+  }
+
+  panMons(): void {
+    ChangeBgY(2, 0x20, BG_COORD_ADD);
+    ChangeBgY(1, 0x24, BG_COORD_SUB);
+  }
+
+  createMonSprites(): void {
+    this.nidorinoSprite = CreateSprite(spriteTemplate("sSpriteTemplate_Scene2_Nidorino"), 168, 80, 11);
+    this.gengarSprite = CreateSprite(spriteTemplate("sSpriteTemplate_Scene2_Gengar"), 72, 80, 12);
+  }
+
+  destroyMonSprites(): void {
     if (this.nidorinoSprite !== MAX_SPRITES) DestroySprite(gSprites[this.nidorinoSprite]);
     if (this.gengarSprite !== MAX_SPRITES) DestroySprite(gSprites[this.gengarSprite]);
   }
