@@ -179,8 +179,7 @@ function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => v
       SetUsedFlyQuestLogEvent(GetMonData(save.party[slot], C.MON_DATA_SPECIES_OR_EGG), header.regionMapSection);
       done(true);
       leaveWith(() => {
-        game.fieldEffectArguments[0] = slot;
-        game.overworld.effects.moves.startFly();
+        game.overworld.effects.moves.ReturnToFieldFromFlyMapSelect(slot);
       });
     }),
     readMail: (slot, done) => {
