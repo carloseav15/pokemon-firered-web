@@ -196,13 +196,21 @@ export class MugshotTransitionEffect {
 
   private Mugshots_CreateTrainerPics(): void {
     const picId = this.picIds[this.mugshotId]!;
-    const opponentCanvas = this.decodeTrainerPic(picId);
-    const playerPicId = PlayerGenderToFrontTrainerPicId(this.playerGender, true);
-    const playerCanvas = this.decodeTrainerPic(playerPicId);
     const coords = this.opponentCoords[this.mugshotId]!;
     const scale = this.opponentScales[this.mugshotId]!;
-    this.opponent = { image: opponentCanvas, x: coords[0]! - 32, y: coords[1]! + 42, scaleX: scale[0]!, scaleY: scale[1]!, state: 0, slideSpeed: 0, slideAccel: 0, done: false, slideDir: 0 };
-    this.player = { image: playerCanvas, x: W + 32, y: 106, scaleX: -512, scaleY: 512, state: 0, slideSpeed: 0, slideAccel: 0, done: false, slideDir: 1 };
+    this.opponent = this.CreateTrainerSprite(picId, coords[0]! - 32, coords[1]! + 42, 0, null);
+    this.opponent.scaleX = scale[0]!;
+    this.opponent.scaleY = scale[1]!;
+    const playerPicId = PlayerGenderToFrontTrainerPicId(this.playerGender, true);
+    this.player = this.CreateTrainerSprite(playerPicId, W + 32, 106, 0, null);
+    this.player.scaleX = -512;
+    this.player.scaleY = 512;
+    this.player.slideDir = 1;
+  }
+
+  /** CreateTrainerSprite (field_effect.c); buffer-backed GBA sprites render from decoded Canvas images here. */
+  CreateTrainerSprite(trainerSpriteId: number, x: number, y: number, _subpriority: number, _buffer: Uint8Array | null): TrainerPic {
+    return { image: this.decodeTrainerPic(trainerSpriteId), x, y, scaleX: 256, scaleY: 256, state: 0, slideSpeed: 0, slideAccel: 0, done: false, slideDir: 0 };
   }
 
   private SetTrainerPicSlideDirection(sprite: TrainerPic, dir: number): void { sprite.slideDir = dir; }
