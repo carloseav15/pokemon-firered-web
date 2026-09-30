@@ -9,7 +9,7 @@ import {
   type LoadedQuestLogAction, type QuestLogAction,
 } from "./questLogActions";
 import { flagClear, flagGet, flagSet, ResetSpecialVars, save, setSave, varGet, varSet, type SaveData } from "./save";
-import { QuestLog_InitPalettesBackup as initQuestLogPalettesBackup } from "./questLogPalette";
+import { QL_SlightlyDarkenSomePals, QuestLog_InitPalettesBackup as initQuestLogPalettesBackup, RestoreQuestLogPalettes } from "./questLogPalette";
 import { gQuestLogState, WriteQuestLogState } from "./questLogState";
 import { QL_LoadObjects, SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
@@ -32,6 +32,9 @@ import {
 } from "./dynamicPlaceholderTextUtil";
 import { FadeScreen } from "./field/weather";
 import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
+import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from "./hw/palette";
+import { DisableWildEncounters } from "./field/wildEncounter";
+import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
 
 export { gQuestLogState };
 
@@ -84,6 +87,9 @@ let sPlaybackSceneCount = 0;
 let sPlaybackSceneOrder: number[] = [];
 let sPlaybackOriginalSave: SaveData | null = null;
 let sPlaybackTransitionStarted = false;
+let sPlaybackFinalStage = -1;
+let sPlaybackFinalTimer = 0;
+let sPlaybackFinalEndMode = 0;
 let sPlaybackEvents: QuestLogScriptEvent[] = [];
 let sPlaybackEventCursor = 0;
 let sPlaybackActiveEvent: QuestLogScriptEvent | null = null;
@@ -598,7 +604,7 @@ export function QL_InitSceneObjectsAndActions(ow: Overworld, sceneIndex = sCurre
 
 /** DrawPreviouslyOnQuestHeader (quest_log.c), with the source window positions and description tiles. */
 export function QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow: Overworld): void {
-  if (gQuestLogState !== C.QL_STATE_PLAYBACK) return;
+  if (gQuestLogState !== C.QL_STATE_PLAYBACK && gQuestLogState !== C.QL_STATE_PLAYBACK_LAST) return;
   const windows = {
     header: ow.windows.add(new Window(0, 0, 30, 2, stdPalette(0))),
     footer: ow.windows.add(new Window(0, 18, 30, 2, stdPalette(0))),
@@ -610,7 +616,7 @@ export function QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow: Overwor
   drawQuestLogDescriptionBackground(windows.description);
   sPlaybackWindows = windows;
   const title = Array.from(expandPlaceholders(rom.text("gText_QuestLog_PreviouslyOnYourQuest"))).filter((byte) => byte !== EOS);
-  const sceneNumber = sPlaybackSceneCount - sCurrentPlaybackSceneIndex;
+  const sceneNumber = gQuestLogState === C.QL_STATE_PLAYBACK ? sPlaybackSceneCount - sCurrentPlaybackSceneIndex : 0;
   if (sceneNumber > 0) title.push(...intToDecimal(sceneNumber, STR_CONV_MODE_LEFT_ALIGN, 1).filter((byte) => byte !== EOS));
   title.push(EOS);
   new TextPrinter(windows.header, FONT_NORMAL, title, { x: 2, y: 2, speed: 0, fg: TEXT_COLOR_WHITE, bg: 0, shadow: TEXT_COLOR_LIGHT_GRAY });
@@ -775,20 +781,128 @@ function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
 
 function finishQuestLogPlayback(ow: Overworld): void {
   clearQuestLogPlaybackWindows();
+  sPlaybackFinalEndMode = sPlaybackEndMode;
+  sPlaybackFinalStage = 0;
+  sPlaybackFinalTimer = 0;
   if (sPlaybackOriginalSave) setSave(structuredClone(sPlaybackOriginalSave));
   sPlaybackOriginalSave = null;
   sPlaybackSceneOrder = [];
+  sPlaybackSceneCount = 0;
   sPlaybackEndMode = 0;
   sPlaybackTransitionStarted = false;
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-  SetQuestLogState(0);
+  SetQuestLogState(C.QL_STATE_PLAYBACK_LAST);
   ow.Overworld_ResetStateOnContinue();
   const location = save.location;
   ow.setWarpDestination(location.mapGroup, location.mapNum, -1, save.pos.x, save.pos.y);
   ow.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };
   ow.savedMusic = save.savedMusic;
-  ow.fieldCallback = () => ow.FieldCB_ShowMapNameOnContinue();
+  ow.fieldCallback = () => ow.FieldCB_DefaultWarpExit();
+  ow.fieldCallback2 = () => FieldCB2_FinalScene(ow);
   ow.warpIntoMapAndLoad();
+}
+
+/** FieldCB2_FinalScene (quest_log.c): restore the header and begin the saved-game return fade. */
+export function FieldCB2_FinalScene(ow: Overworld): boolean {
+  QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow);
+  ow.FieldCB_WarpExitFadeFromBlack();
+  sPlaybackFinalStage = 0;
+  return true;
+}
+
+/** Task_FinalScene_WaitFade (quest_log.c). */
+export function Task_FinalScene_WaitFade(ow: Overworld): void {
+  if (sPlaybackFinalStage !== 0 || ow.controlsLocked) return;
+  ow.objects.freezeAll();
+  ow.controlsLocked = true;
+  sPlaybackFinalStage = 1;
+}
+
+/** Task_QuestLogScene_SavedGame (quest_log.c). */
+export function Task_QuestLogScene_SavedGame(ow: Overworld): void {
+  if (sPlaybackFinalStage !== 1 || paletteFade.active) return;
+  if (sPlaybackFinalEndMode !== 2) {
+    const text = expandQuestLogDynamicText("gText_QuestLog_SavedGameAtLocation", [getMapNameGenericBytes(ow.header.regionMapSection)]);
+    DrawSceneDescription(text);
+  }
+  sPlaybackFinalTimer = 0;
+  sPlaybackFinalStage = 2;
+}
+
+/** Task_WaitAtEndOfQuestLog (quest_log.c): wait for A/B or the source 128-frame timeout. */
+export function Task_WaitAtEndOfQuestLog(ow: Overworld, newKeys: number): void {
+  if (sPlaybackFinalStage !== 2) return;
+  if ((newKeys & 3) !== 0 || sPlaybackFinalTimer >= 127 || sPlaybackFinalEndMode === 2) {
+    QuestLog_CloseTextWindow();
+    WriteQuestLogState(0);
+    sPlaybackFinalTimer = 0;
+    sPlaybackFinalStage = 3;
+  } else sPlaybackFinalTimer++;
+  void ow;
+}
+
+/** RestoreScreenAfterPlayback (quest_log.c): restore the backed-up tint while sliding both bars away. */
+export function RestoreScreenAfterPlayback(): boolean {
+  if (sPlaybackFinalTimer > 15) return true;
+  const timer = sPlaybackFinalTimer;
+  const bgOffset = BG_PLTT_ID(0) + 1;
+  const objOffset = OBJ_PLTT_ID(0);
+  CopyPaletteInvertedTint(gPlttBufferUnfaded.subarray(bgOffset), gPlttBufferFaded.subarray(bgOffset), 0xdf, 15 - timer);
+  CopyPaletteInvertedTint(gPlttBufferUnfaded.subarray(objOffset), gPlttBufferFaded.subarray(objOffset), 0x100, 15 - timer);
+  const windows = sPlaybackWindows;
+  if (windows) {
+    windows.header.fillRect(0, 0, Math.max(0, windows.header.pixelHeight - 1 - timer), windows.header.pixelWidth, 1);
+    windows.footer.fillRect(0, 0, timer, windows.footer.pixelWidth, 1);
+    windows.header.markDirty();
+    windows.footer.markDirty();
+  }
+  sPlaybackFinalTimer++;
+  return false;
+}
+
+/** Task_EndQuestLog (quest_log.c): restore palette, windows, objects, help, and field control. */
+export function Task_EndQuestLog(ow: Overworld): void {
+  switch (sPlaybackFinalStage) {
+    case 3:
+      ow.keepMusicOnNextLoad = false;
+      ow.playSpecialMapMusic();
+      QL_SlightlyDarkenSomePals();
+      sPlaybackWindows?.header.fill(15);
+      sPlaybackFinalTimer = 0;
+      sPlaybackFinalStage = 4;
+      break;
+    case 4:
+      if (RestoreScreenAfterPlayback()) {
+        clearQuestLogPlaybackWindows();
+        sPlaybackFinalTimer = 0;
+        sPlaybackFinalStage = 5;
+      }
+      break;
+    case 5:
+      if (++sPlaybackFinalTimer >= 32) sPlaybackFinalStage = 6;
+      break;
+    case 6:
+      if (sPlaybackFinalEndMode === 2) ow.mapName.show(true);
+      RestoreQuestLogPalettes();
+      ow.objects.unfreezeAll();
+      ow.controlsLocked = false;
+      DisableWildEncounters(false);
+      HelpSystem_Enable();
+      SetQuestLogState(0);
+      sPlaybackFinalStage = -1;
+      sPlaybackFinalTimer = 0;
+      sPlaybackFinalEndMode = 0;
+      break;
+  }
+}
+
+/** Called once per field frame while the final Quest Log scene is active. */
+export function QuestLogPlayback_FinalSceneRunCB(ow: Overworld, newKeys: number): void {
+  if (sPlaybackFinalStage < 0) return;
+  Task_FinalScene_WaitFade(ow);
+  Task_QuestLogScene_SavedGame(ow);
+  Task_WaitAtEndOfQuestLog(ow, newKeys);
+  Task_EndQuestLog(ow);
 }
 
 /** TryStartQuestLogPlayback / Task_BeginQuestLogPlayback (quest_log.c): enter the oldest retained scene. */
@@ -801,6 +915,8 @@ export function TryStartQuestLogPlayback(ow: Overworld): boolean {
   const sceneIndex = sPlaybackSceneOrder[0];
   if (sceneIndex === undefined || sceneIndex < 0) return false;
   sPlaybackSceneCount = scenes.length;
+  DisableWildEncounters(true);
+  HelpSystem_Disable();
   startQuestLogScene(ow, sceneIndex);
   return true;
 }
