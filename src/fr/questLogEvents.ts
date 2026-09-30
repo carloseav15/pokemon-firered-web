@@ -63,6 +63,30 @@ export function QL_GetPlaybackState(): number {
       return C.QL_PLAYBACK_STATE_STOPPED;
   }
 }
+
+/** QuestLog_OnEscalatorWarp (quest_log.c): split the timed record around the map transition. */
+export function QuestLog_OnEscalatorWarp(direction: number): void {
+  const state = QL_GetPlaybackState();
+  if (direction === C.QL_ESCALATOR_OUT) {
+    if (state === C.QL_PLAYBACK_STATE_RUNNING) {
+      gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_ACTION_END;
+    } else if (state === C.QL_PLAYBACK_STATE_RECORDING) {
+      const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+      if (script && QL_RecordAction_Input(script, {
+        type: C.QL_ACTION_EMPTY, duration: sNextActionDelay, data: [0, 0, 0, 0],
+      }) === null) {
+        gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+        return;
+      }
+      if (script) IncrementQuestLogActionIndex();
+      sNextActionDelay = 0;
+      gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING_NO_DELAY;
+    }
+  } else if (direction === C.QL_ESCALATOR_IN) {
+    if (state === C.QL_PLAYBACK_STATE_RUNNING) gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RUNNING;
+    else if (state === C.QL_PLAYBACK_STATE_RECORDING) gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING;
+  }
+}
 let gQuestLogDefeatedWildMonRecord: unknown | null = null;
 let gQuestLogRecordingPointer: unknown | null = null;
 let sDeferredTrainerBattleEvent: { eventId: number; data: QuestLogEventData } | null = null;

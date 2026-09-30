@@ -20,7 +20,7 @@ import { IncrementBirthIslandRockStepCount, IncrementResortGorgeousStepCounter, 
 import { AdjustFriendship } from "../pokemon/mon_extra";
 import { tasks } from "../gba/tasks";
 import { GetRamScript } from "../script/context";
-import { IsEscalatorMoving, StartEscalator, StopEscalator } from "./specialFieldAnim";
+import { StartEscalatorWarp } from "./escalatorWarp";
 import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, QuestLogPlayback_FinalSceneRunCB, QuestLogPlayback_RunCB, QuestLogScenePlaybackIsEnding, type QuestLogPlaybackCommands } from "../questLogEvents";
 import { QuestLogUpdatePlayerSprite } from "../questLogPlayer";
 import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
@@ -730,15 +730,8 @@ export class FieldControl {
 
   /** DoEscalatorWarp (field_fadetransition.c): preserve the active staged Canvas animation before warping. */
   private DoEscalatorWarp(metatileBehavior: number): void {
-    this.ow.controlsLocked = true;
-    this.ow.objects.freezeAll();
-    StartEscalator(this.ow, metatileBehavior === MB.MB_UP_ESCALATOR);
-    tasks.create((taskId) => {
-      if (IsEscalatorMoving()) return;
-      StopEscalator();
-      tasks.destroy(taskId);
-      this.ow.DoWarp();
-    }, 0);
+    this.ow.LockPlayerFieldControls();
+    StartEscalatorWarp(this.ow, metatileBehavior, 10);
   }
 
   /** TryDoorWarp (field_control_avatar.c). */
