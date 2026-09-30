@@ -16,7 +16,7 @@ import { sound } from "../audio/sound";
 import { rom, type MapConnection, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
 import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_DIVE, CONNECTION_EAST, CONNECTION_EMERGE, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
-import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
+import { actionJump, actionWalkInPlaceFaster, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
 import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_FLAG_UNDERWATER } from "./playerAvatar";
 import { FieldControl } from "./fieldControl";
@@ -1407,6 +1407,183 @@ export class Overworld {
     sound.playSE(sound.c("SE_EXIT"));
     this.fieldCallback = () => this.FieldCB_DefaultWarpExit();
     this.startTeleport2WarpTask();
+  }
+
+  /** DoLavaridgeGymB1FWarp (field_fadetransition.c). */
+  DoLavaridgeGymB1FWarp(): void {
+    tasks.create((taskId) => this.Task_LavaridgeGymB1FWarp(taskId), 10);
+  }
+
+  /** Task_LavaridgeGymB1FWarp and its six source states (field_effect.c). */
+  private Task_LavaridgeGymB1FWarp(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    const sprite = player.sprite;
+    for (;;) {
+      switch (data[0]) {
+        case 0:
+          this.objects.freezeAll();
+          this.SetCameraPanning(0, 0);
+          this.SetCameraPanningCallback(null);
+          this.player.preventStep = true;
+          player.fixedPriority = true;
+          data[1] = 1;
+          data[0]++;
+          continue;
+        case 1:
+          this.SetCameraPanning(0, data[1]!);
+          data[1] = -data[1]!;
+          data[2]++;
+          if (data[2]! > 7) { data[2] = 0; data[0]++; }
+          return;
+        case 2:
+          sprite.y2 = 0;
+          data[3] = 1;
+          this.effects.startLavaridgeGymWarpEffect(player);
+          sound.playSE(sound.c("SE_M_EXPLOSION"));
+          data[0]++;
+          continue;
+        case 3: {
+          this.SetCameraPanning(0, data[1]!);
+          data[1] = -data[1]!;
+          data[2]++;
+          if (data[2]! <= 17) {
+            if (!(data[2]! & 1) && data[1]! <= 3) data[1] = data[1]! << 1;
+          } else if (!(data[2]! & 4) && data[1]! > 0) data[1] = data[1]! >> 1;
+          if (data[2]! > 6) {
+            const target = -(sprite.y + sprite.centerToCornerVecY + this.sprites.offsetY + (sprite.centerToCornerVecY << 1));
+            if (sprite.y2 > target) {
+              sprite.y2 -= data[3]!;
+              if (data[3]! <= 7) data[3] = data[3]! + 1;
+            } else data[4] = 1;
+          }
+          if (data[5] === 0 && sprite.y2 < -0x10) {
+            data[5] = 1;
+            player.fixedPriority = true;
+            sprite.priority = 1;
+            sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY;
+          }
+          if (data[1] === 0 && data[4] !== 0) data[0]++;
+          return;
+        }
+        case 4:
+          this.SetCameraPanning(0, 0);
+          this.TryFadeOutOldMapMusic();
+          this.warpFadeOutScreen();
+          data[0]++;
+          return;
+        case 5:
+          if (!paletteFade.active && this.BGMusicStopped()) {
+            this.fieldCallback = () => this.FieldCB_LavaridgeGymB1FWarpExit();
+            this.warpIntoMapAndLoad();
+            tasks.destroy(taskId);
+          }
+          return;
+        default:
+          return;
+      }
+    }
+  }
+
+  /** DoLavaridgeGym1FWarp (field_fadetransition.c). */
+  DoLavaridgeGym1FWarp(): void {
+    this.fieldCallback = () => this.FieldCB_FallWarpExit();
+    tasks.create((taskId) => this.Task_LavaridgeGym1FWarp(taskId), 10);
+  }
+
+  /** Task_LavaridgeGym1FWarp and its five source states (field_effect.c). */
+  private Task_LavaridgeGym1FWarp(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    const sprite = player.sprite;
+    switch (data[0]) {
+      case 0:
+        this.objects.freezeAll();
+        this.SetCameraPanning(0, 0);
+        this.player.preventStep = true;
+        player.fixedPriority = true;
+        data[0]++;
+        break;
+      case 1:
+        if (this.objects.ObjectEventClearHeldMovementIfFinished(player) === 0) break;
+        if (data[1]! > 3) {
+          const ash = this.effects.popOutOfAsh(player, player.sprite.priority);
+          data[1] = ash ? this.sprites.getId(ash) : -1;
+          data[0]++;
+        } else {
+          data[1] = data[1]! + 1;
+          this.objects.setHeldMovement(player, actionWalkInPlaceFaster(player.facingDirection));
+          sound.playSE(sound.c("SE_LAVARIDGE_FALL_WARP"));
+        }
+        break;
+      case 2:
+        if (data[1]! >= 0 && this.sprites.sprites[data[1]!]?.animCmdIndex === 2) {
+          player.invisible = true;
+          data[0]++;
+        }
+        break;
+      case 3:
+        if (!this.effects.active.has(C.FLDEFF_POP_OUT_OF_ASH)) {
+          this.TryFadeOutOldMapMusic();
+          this.warpFadeOutScreen();
+          data[0]++;
+        }
+        break;
+      case 4:
+        if (!paletteFade.active && this.BGMusicStopped()) {
+          this.warpIntoMapAndLoad();
+          tasks.destroy(taskId);
+        }
+        break;
+    }
+  }
+
+  /** FieldCB_LavaridgeGymB1FWarpExit (field_effect.c). */
+  private FieldCB_LavaridgeGymB1FWarpExit(): void {
+    this.playSpecialMapMusic();
+    this.WarpFadeInScreen();
+    this.controlsLocked = true;
+    this.fieldCallback = null;
+    tasks.create((taskId) => this.Task_LavaridgeGymB1FWarpExit(taskId), 0);
+  }
+
+  /** Task_LavaridgeGymB1FWarpExit and its four source states (field_effect.c). */
+  private Task_LavaridgeGymB1FWarpExit(taskId: number): void {
+    const data = tasks.tasks[taskId].data;
+    const player = this.player.object;
+    switch (data[0]) {
+      case 0:
+        this.objects.freezeAll();
+        this.SetCameraPanning(0, 0);
+        this.player.preventStep = true;
+        player.invisible = true;
+        data[0]++;
+        break;
+      case 1:
+        if (IsWeatherNotFadingIn()) {
+          const ash = this.effects.popOutOfAsh(player, player.sprite.priority);
+          data[1] = ash ? this.sprites.getId(ash) : -1;
+          data[0]++;
+        }
+        break;
+      case 2:
+        if (data[1]! >= 0 && (this.sprites.sprites[data[1]!]?.animCmdIndex ?? 0) > 1) {
+          data[0]++;
+          player.invisible = false;
+          this.SetCameraPanning(0, 0);
+          sound.playSE(sound.c("SE_M_DIG"));
+          this.objects.setHeldMovement(player, actionJump(DIR_EAST));
+        }
+        break;
+      case 3:
+        if (this.objects.ObjectEventClearHeldMovementIfFinished(player) !== 0) {
+          this.player.preventStep = false;
+          this.controlsLocked = false;
+          this.objects.unfreezeAll();
+          tasks.destroy(taskId);
+        }
+        break;
+    }
   }
 
   /** DoDiveWarp (field_fadetransition.c): DoWarp without the exit sound. */

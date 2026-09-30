@@ -329,8 +329,8 @@ export class FieldControl {
     return this.GetInteractedObjectEventScript(position, behavior, direction);
   }
 
-  /** dive_warp (field_control_avatar.c): called from field_effect.c's UpdateFeetInFlowingWater-
-   * adjacent surf/dive check, not ported yet — no caller here either. */
+  /** dive_warp (field_control_avatar.c): the generic C Dive task calls this after showing the
+   * Pokémon, but FLDEFF_USE_DIVE is a no-op in this FireRed port and its maps have no Dive links. */
   dive_warp(position: { x: number; y: number }, metatileBehavior: number): boolean {
     if (this.ow.header.mapType === C.MAP_TYPE_UNDERWATER && !MB.MetatileBehavior_IsUnableToEmerge(metatileBehavior)) {
       if (this.ow.SetDiveWarpEmerge(position.x - MAP_OFFSET, position.y - MAP_OFFSET)) {
@@ -350,8 +350,7 @@ export class FieldControl {
     return false;
   }
 
-  /** TrySetDiveWarp (field_control_avatar.c): no caller anywhere in pokefirered (dive_warp above
-   * does the same job at its own call site). */
+  /** TrySetDiveWarp (field_control_avatar.c): no caller anywhere in pokefirered. */
   private TrySetDiveWarp(): number {
     const { x, y } = PlayerGetDestCoords();
     const metatileBehavior = this.ow.map.behaviorAt(x, y);
@@ -674,6 +673,14 @@ export class FieldControl {
     this.setupWarp(warpIndex, position);
     if (MB.MetatileBehavior_IsEscalator(behavior)) {
       this.DoEscalatorWarp(behavior);
+      return true;
+    }
+    if (MB.MetatileBehavior_IsLavaridgeB1FWarp(behavior)) {
+      this.ow.DoLavaridgeGymB1FWarp();
+      return true;
+    }
+    if (MB.MetatileBehavior_IsLavaridge1FWarp(behavior)) {
+      this.ow.DoLavaridgeGym1FWarp();
       return true;
     }
     if (MB.MetatileBehavior_IsWarpPad(behavior)) {
