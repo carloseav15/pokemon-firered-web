@@ -402,7 +402,7 @@ export interface SaveDialogRuntime {
   showYesNo(defaultNo?: boolean): void;
   processInput(): number;
   hasUsableSave(): boolean;
-  printStatsAndInitialQuestion(): void;
+  printSaveStats(): void;
   saveGame(): boolean;
   setDifferentSaveFile(value: boolean): void;
   playSuccessSE(): void;
@@ -428,8 +428,8 @@ export function StartCB_Save1(dialog: SaveDialogRuntime): false {
   return false;
 }
 
-/** StartCB_Save2 (start_menu.c): dispatch the callback result to the parent flow. */
-export function StartCB_Save2(dialog: SaveDialogRuntime): boolean {
+/** task50_save_game (start_menu.c): dispatch the current dialog callback and finish the script task. */
+export function task50_save_game(dialog: SaveDialogRuntime): boolean {
   const result = RunSaveDialogCB(dialog);
   if (result === SAVECB_RETURN_OKAY || result === SAVECB_RETURN_ERROR || result === SAVECB_RETURN_CANCEL) {
     dialog.finish(result);
@@ -443,10 +443,20 @@ export function RunSaveDialogCB(dialog: SaveDialogRuntime): number {
   return dialog.saveDialogCB(dialog);
 }
 
+/** PrintSaveTextWithFollowupFunc (start_menu.c). */
+export function PrintSaveTextWithFollowupFunc(
+  dialog: SaveDialogRuntime,
+  text: string,
+  followup: SaveDialogRuntime["saveDialogCB"],
+): void {
+  dialog.showMessage(rom.text(text));
+  dialog.saveDialogCB = followup;
+}
+
 /** SaveDialogCB_PrintAskSaveText (start_menu.c). */
 export function SaveDialogCB_PrintAskSaveText(dialog: SaveDialogRuntime): number {
-  dialog.printStatsAndInitialQuestion();
-  dialog.saveDialogCB = SaveDialogCB_AskSavePrintYesNoMenu;
+  dialog.printSaveStats();
+  PrintSaveTextWithFollowupFunc(dialog, "gText_WouldYouLikeToSaveTheGame", SaveDialogCB_AskSavePrintYesNoMenu);
   return SAVECB_RETURN_CONTINUE;
 }
 
@@ -477,8 +487,11 @@ export function SaveDialogCB_AskSaveHandleInput(dialog: SaveDialogRuntime): numb
 
 /** SaveDialogCB_PrintAskOverwriteText (start_menu.c). */
 export function SaveDialogCB_PrintAskOverwriteText(dialog: SaveDialogRuntime): number {
-  dialog.showMessage(rom.text(dialog.differentSaveFile ? "gText_DifferentGameFile" : "gText_AlreadySaveFile_WouldLikeToOverwrite"));
-  dialog.saveDialogCB = dialog.differentSaveFile ? SaveDialogCB_AskReplacePreviousFilePrintYesNoMenu : SaveDialogCB_AskOverwritePrintYesNoMenu;
+  PrintSaveTextWithFollowupFunc(
+    dialog,
+    dialog.differentSaveFile ? "gText_DifferentGameFile" : "gText_AlreadySaveFile_WouldLikeToOverwrite",
+    dialog.differentSaveFile ? SaveDialogCB_AskReplacePreviousFilePrintYesNoMenu : SaveDialogCB_AskOverwritePrintYesNoMenu,
+  );
   return SAVECB_RETURN_CONTINUE;
 }
 
@@ -513,8 +526,7 @@ export function SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput(dialog
 
 /** SaveDialogCB_PrintSavingDontTurnOffPower (start_menu.c). */
 export function SaveDialogCB_PrintSavingDontTurnOffPower(dialog: SaveDialogRuntime): number {
-  dialog.showMessage(rom.text("gText_SavingDontTurnOffThePower"));
-  dialog.saveDialogCB = SaveDialogCB_DoSave;
+  PrintSaveTextWithFollowupFunc(dialog, "gText_SavingDontTurnOffThePower", SaveDialogCB_DoSave);
   return SAVECB_RETURN_CONTINUE;
 }
 
@@ -530,9 +542,12 @@ export function SaveDialogCB_DoSave(dialog: SaveDialogRuntime): number {
 /** SaveDialogCB_PrintSaveResult (start_menu.c). */
 export function SaveDialogCB_PrintSaveResult(dialog: SaveDialogRuntime): number {
   stringVars.var1 = Uint8Array.from(save.playerName);
-  dialog.showMessage(rom.text(dialog.saveSucceeded ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory"));
   SetSaveDialogDelayTo60Frames(dialog);
-  dialog.saveDialogCB = dialog.saveSucceeded ? SaveDialogCB_WaitPrintSuccessAndPlaySE : SaveDialogCB_WaitPrintErrorAndPlaySE;
+  PrintSaveTextWithFollowupFunc(
+    dialog,
+    dialog.saveSucceeded ? "gText_PlayerSavedTheGame" : "gText_SaveError_PleaseExchangeBackupMemory",
+    dialog.saveSucceeded ? SaveDialogCB_WaitPrintSuccessAndPlaySE : SaveDialogCB_WaitPrintErrorAndPlaySE,
+  );
   return SAVECB_RETURN_CONTINUE;
 }
 

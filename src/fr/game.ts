@@ -58,7 +58,7 @@ import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
   CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
-  PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, StartCB_Save2, type SaveDialogRuntime,
+  PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, task50_save_game, type SaveDialogRuntime,
   FieldCB2_DrawStartMenu, FieldCB_ReturnToFieldOpenStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
@@ -505,11 +505,10 @@ export class Game {
         return -1;
       },
       hasUsableSave: () => saveStore.load() !== undefined,
-      printStatsAndInitialQuestion: () => {
+      printSaveStats: () => {
         const saveStats = PrintSaveStats(this);
         this.startMenuSaveStats = saveStats;
         this.startMenuWindows.push(saveStats);
-        ow.messageBox.show(expandPlaceholders(rom.text("gText_WouldYouLikeToSaveTheGame")));
       },
       saveGame: () => { IncrementGameStat(C.GAME_STAT_SAVED_GAME); return this.writeSave(); },
       setDifferentSaveFile: (value) => { this.differentSaveFile = value; dialog.differentSaveFile = value; },
@@ -537,7 +536,7 @@ export class Game {
     };
     taskId = tasks.create(() => {
       if (startCallback(dialog)) return;
-      startCallback = StartCB_Save2;
+      startCallback = task50_save_game;
     }, 80);
   }
 
