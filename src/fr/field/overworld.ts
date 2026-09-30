@@ -6,7 +6,7 @@ import * as C from "../generated/constants";
 import { paletteFade, FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_WHITE, RGB_BLACK, RGB_WHITE } from "../gba/fade";
 import { gPlttBufferFaded } from "../hw/palette";
 import { joy } from "../gba/input";
-import { SpriteManager } from "../gba/sprite";
+import { SpriteManager, type Sprite } from "../gba/sprite";
 import { spriteState } from "../hw/sprite";
 import { tasks } from "../gba/tasks";
 import { Window, WindowLayer, stdPalette } from "../gba/window";
@@ -1437,73 +1437,97 @@ export class Overworld {
 
   /** Task_LavaridgeGymB1FWarp and its six source states (field_effect.c). */
   private Task_LavaridgeGymB1FWarp(taskId: number): void {
-    const data = tasks.tasks[taskId].data;
     const player = this.player.object;
     const sprite = player.sprite;
-    for (;;) {
+    const data = tasks.tasks[taskId].data;
+    while (true) {
+      let shouldContinue: boolean;
       switch (data[0]) {
-        case 0:
-          this.objects.freezeAll();
-          this.SetCameraPanning(0, 0);
-          this.SetCameraPanningCallback(null);
-          this.player.preventStep = true;
-          player.fixedPriority = true;
-          data[1] = 1;
-          data[0]++;
-          continue;
-        case 1:
-          this.SetCameraPanning(0, data[1]!);
-          data[1] = -data[1]!;
-          data[2]++;
-          if (data[2]! > 7) { data[2] = 0; data[0]++; }
-          return;
-        case 2:
-          sprite.y2 = 0;
-          data[3] = 1;
-          this.effects.startLavaridgeGymWarpEffect(player);
-          sound.playSE(sound.c("SE_M_EXPLOSION"));
-          data[0]++;
-          continue;
-        case 3: {
-          this.SetCameraPanning(0, data[1]!);
-          data[1] = -data[1]!;
-          data[2]++;
-          if (data[2]! <= 17) {
-            if (!(data[2]! & 1) && data[1]! <= 3) data[1] = data[1]! << 1;
-          } else if (!(data[2]! & 4) && data[1]! > 0) data[1] = data[1]! >> 1;
-          if (data[2]! > 6) {
-            const target = -(sprite.y + sprite.centerToCornerVecY + this.sprites.offsetY + (sprite.centerToCornerVecY << 1));
-            if (sprite.y2 > target) {
-              sprite.y2 -= data[3]!;
-              if (data[3]! <= 7) data[3] = data[3]! + 1;
-            } else data[4] = 1;
-          }
-          if (data[5] === 0 && sprite.y2 < -0x10) {
-            data[5] = 1;
-            player.fixedPriority = true;
-            sprite.priority = 1;
-            sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY;
-          }
-          if (data[1] === 0 && data[4] !== 0) data[0]++;
-          return;
-        }
-        case 4:
-          this.SetCameraPanning(0, 0);
-          this.TryFadeOutOldMapMusic();
-          this.warpFadeOutScreen();
-          data[0]++;
-          return;
-        case 5:
-          if (!paletteFade.active && this.BGMusicStopped()) {
-            this.fieldCallback = () => this.FieldCB_LavaridgeGymB1FWarpExit();
-            this.warpIntoMapAndLoad();
-            tasks.destroy(taskId);
-          }
-          return;
-        default:
-          return;
+        case 0: shouldContinue = this.LavaridgeGymB1FWarpEffect_1(taskId, player, sprite); break;
+        case 1: shouldContinue = this.LavaridgeGymB1FWarpEffect_2(taskId, player, sprite); break;
+        case 2: shouldContinue = this.LavaridgeGymB1FWarpEffect_3(taskId, player, sprite); break;
+        case 3: shouldContinue = this.LavaridgeGymB1FWarpEffect_4(taskId, player, sprite); break;
+        case 4: shouldContinue = this.LavaridgeGymB1FWarpEffect_5(taskId, player, sprite); break;
+        case 5: shouldContinue = this.LavaridgeGymB1FWarpEffect_6(taskId, player, sprite); break;
+        default: return;
       }
+      if (!shouldContinue) return;
     }
+  }
+
+  LavaridgeGymB1FWarpEffect_1(taskId: number, player: ObjectEvent, _sprite: Sprite): boolean {
+    const data = tasks.tasks[taskId].data;
+    this.objects.freezeAll();
+    this.SetCameraPanning(0, 0);
+    this.SetCameraPanningCallback(null);
+    this.player.preventStep = true;
+    player.fixedPriority = true;
+    data[1] = 1;
+    data[0]++;
+    return true;
+  }
+
+  LavaridgeGymB1FWarpEffect_2(taskId: number, _player: ObjectEvent, _sprite: Sprite): boolean {
+    const data = tasks.tasks[taskId].data;
+    this.SetCameraPanning(0, data[1]!);
+    data[1] = -data[1]!;
+    data[2]++;
+    if (data[2]! > 7) { data[2] = 0; data[0]++; }
+    return false;
+  }
+
+  LavaridgeGymB1FWarpEffect_3(taskId: number, player: ObjectEvent, sprite: Sprite): boolean {
+    const data = tasks.tasks[taskId].data;
+    sprite.y2 = 0;
+    data[3] = 1;
+    this.effects.startLavaridgeGymWarpEffect(player);
+    sound.playSE(sound.c("SE_M_EXPLOSION"));
+    data[0]++;
+    return true;
+  }
+
+  LavaridgeGymB1FWarpEffect_4(taskId: number, player: ObjectEvent, sprite: Sprite): boolean {
+    const data = tasks.tasks[taskId].data;
+    this.SetCameraPanning(0, data[1]!);
+    data[1] = -data[1]!;
+    data[2]++;
+    if (data[2]! <= 17) {
+      if (!(data[2]! & 1) && data[1]! <= 3) data[1] = data[1]! << 1;
+    } else if (!(data[2]! & 4) && data[1]! > 0) data[1] = data[1]! >> 1;
+    if (data[2]! > 6) {
+      const target = -(sprite.y + sprite.centerToCornerVecY + this.sprites.offsetY + (sprite.centerToCornerVecY << 1));
+      if (sprite.y2 > target) {
+        sprite.y2 -= data[3]!;
+        if (data[3]! <= 7) data[3] = data[3]! + 1;
+      } else data[4] = 1;
+    }
+    if (data[5] === 0 && sprite.y2 < -0x10) {
+      data[5] = 1;
+      player.fixedPriority = true;
+      sprite.priority = 1;
+      sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY;
+    }
+    if (data[1] === 0 && data[4] !== 0) data[0]++;
+    return false;
+  }
+
+  LavaridgeGymB1FWarpEffect_5(taskId: number, _player: ObjectEvent, _sprite: Sprite): boolean {
+    const data = tasks.tasks[taskId].data;
+    this.SetCameraPanning(0, 0);
+    this.TryFadeOutOldMapMusic();
+    this.warpFadeOutScreen();
+    data[0]++;
+    return false;
+  }
+
+  LavaridgeGymB1FWarpEffect_6(taskId: number, _player: ObjectEvent, _sprite: Sprite): boolean {
+    const data = tasks.tasks[taskId].data;
+    if (!paletteFade.active && this.BGMusicStopped()) {
+      this.fieldCallback = () => this.FieldCB_LavaridgeGymB1FWarpExit();
+      this.warpIntoMapAndLoad();
+      tasks.destroy(taskId);
+    }
+    return false;
   }
 
   /** DoLavaridgeGym1FWarp (field_fadetransition.c). */
@@ -1563,6 +1587,7 @@ export class Overworld {
   private FieldCB_LavaridgeGymB1FWarpExit(): void {
     this.playSpecialMapMusic();
     this.WarpFadeInScreen();
+    QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(this);
     this.controlsLocked = true;
     this.fieldCallback = null;
     tasks.create((taskId) => this.Task_LavaridgeGymB1FWarpExit(taskId), 0);
@@ -1573,38 +1598,46 @@ export class Overworld {
     const data = tasks.tasks[taskId].data;
     const player = this.player.object;
     switch (data[0]) {
-      case 0:
-        this.objects.freezeAll();
-        this.SetCameraPanning(0, 0);
-        this.player.preventStep = true;
-        player.invisible = true;
-        data[0]++;
-        break;
-      case 1:
-        if (IsWeatherNotFadingIn()) {
-          const ash = this.effects.popOutOfAsh(player, player.sprite.priority);
-          data[1] = ash ? this.sprites.getId(ash) : -1;
-          data[0]++;
-        }
-        break;
-      case 2:
-        if (data[1]! >= 0 && (this.sprites.sprites[data[1]!]?.animCmdIndex ?? 0) > 1) {
-          data[0]++;
-          player.invisible = false;
-          this.SetCameraPanning(0, 0);
-          sound.playSE(sound.c("SE_M_DIG"));
-          this.objects.setHeldMovement(player, actionJump(DIR_EAST));
-        }
-        break;
-      case 3:
-        if (this.objects.ObjectEventClearHeldMovementIfFinished(player) !== 0) {
-          this.player.preventStep = false;
-          this.controlsLocked = false;
-          this.objects.unfreezeAll();
-          tasks.destroy(taskId);
-        }
-        break;
+      case 0: this.LavaridgeGymB1FWarpExitEffect_1(taskId, player, player.sprite); break;
+      case 1: this.LavaridgeGymB1FWarpExitEffect_2(taskId, player, player.sprite); break;
+      case 2: this.LavaridgeGymB1FWarpExitEffect_3(taskId, player, player.sprite); break;
+      case 3: this.LavaridgeGymB1FWarpExitEffect_4(taskId, player, player.sprite); break;
     }
+  }
+
+  LavaridgeGymB1FWarpExitEffect_1(taskId: number, player: ObjectEvent, _sprite: Sprite): void {
+    const data = tasks.tasks[taskId].data;
+    this.objects.freezeAll();
+    this.SetCameraPanning(0, 0);
+    this.player.preventStep = true;
+    player.invisible = true;
+    data[0]++;
+  }
+
+  LavaridgeGymB1FWarpExitEffect_2(taskId: number, player: ObjectEvent, _sprite: Sprite): void {
+    const data = tasks.tasks[taskId].data;
+    if (!IsWeatherNotFadingIn()) return;
+    const ash = this.effects.popOutOfAsh(player, player.sprite.priority);
+    data[1] = ash ? this.sprites.getId(ash) : -1;
+    data[0]++;
+  }
+
+  LavaridgeGymB1FWarpExitEffect_3(taskId: number, player: ObjectEvent, _sprite: Sprite): void {
+    const data = tasks.tasks[taskId].data;
+    if (data[1]! < 0 || (this.sprites.sprites[data[1]!]?.animCmdIndex ?? 0) <= 1) return;
+    data[0]++;
+    player.invisible = false;
+    this.SetCameraPanning(0, 0);
+    sound.playSE(sound.c("SE_M_DIG"));
+    this.objects.setHeldMovement(player, actionJump(DIR_EAST));
+  }
+
+  LavaridgeGymB1FWarpExitEffect_4(taskId: number, player: ObjectEvent, _sprite: Sprite): void {
+    if (!this.objects.ObjectEventClearHeldMovementIfFinished(player)) return;
+    this.player.preventStep = false;
+    this.controlsLocked = false;
+    this.objects.unfreezeAll();
+    tasks.destroy(taskId);
   }
 
   /** DoDiveWarp (field_fadetransition.c): DoWarp without the exit sound. */
