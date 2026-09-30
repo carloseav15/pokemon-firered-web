@@ -7,6 +7,7 @@ import { paletteFade, FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_W
 import { gPlttBufferFaded } from "../hw/palette";
 import { joy } from "../gba/input";
 import { SpriteManager } from "../gba/sprite";
+import { spriteState } from "../hw/sprite";
 import { tasks } from "../gba/tasks";
 import { Window, WindowLayer, stdPalette } from "../gba/window";
 import { FONT_NORMAL } from "../gba/font";
@@ -15,7 +16,7 @@ import { TextPrinter, textFlags } from "../gba/textPrinter";
 import { sound } from "../audio/sound";
 import { rom, type MapConnection, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
-import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_DIVE, CONNECTION_EAST, CONNECTION_EMERGE, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
+import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MapGridGetMetatileBehaviorAt, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_DIVE, CONNECTION_EAST, CONNECTION_EMERGE, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
 import { actionJump, actionWalkInPlaceFaster, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
 import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_FLAG_UNDERWATER } from "./playerAvatar";
@@ -35,8 +36,9 @@ import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer"
 import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
+import { SetHelpContext } from "../helpSystem";
 
-import { gQuestLogState, QL_InitSceneObjectsAndActions, QL_ResetDefeatedWildMonRecord, QuestLog_AdvancePlayhead_, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
+import { gQuestLogState, QL_InitSceneObjectsAndActions, QL_ResetDefeatedWildMonRecord, QuestLog_AdvancePlayhead_, QuestLog_CheckDepartingIndoorsMap, QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
 
@@ -1638,32 +1640,115 @@ export class Overworld {
     this.fieldCallback = () => this.FieldCB_FallWarpExit();
   }
 
+  /** FieldCB_FallWarpExit (field_effect.c): restore map music, fade, and start the source task. */
   private FieldCB_FallWarpExit(): void {
+    this.fieldCallback = null;
     this.playSpecialMapMusic();
     this.WarpFadeInScreen();
     this.controlsLocked = true;
     this.objects.freezeAll();
-    const p = this.player.object;
-    this.player.SetPlayerInvisibility(true);
-    let state = 0;
-    let fallY = -160;
-    const id = tasks.create(() => {
-      switch (state) {
-        case 0:
-          if (!paletteFade.active) { this.player.SetPlayerInvisibility(false); state = 1; }
-          break;
-        case 1:
-          fallY += 8;
-          p.sprite.y2 = Math.min(0, fallY);
-          if (fallY >= 0) { p.sprite.y2 = 0; sound.playSE(sound.c("SE_M_STRENGTH")); state = 2; }
-          break;
-        case 2:
-          this.objects.unfreezeAll();
-          this.controlsLocked = false;
-          tasks.destroy(id);
-          break;
-      }
-    }, 10);
+    QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(this);
+    const taskId = tasks.create((taskId) => this.Task_FallWarpFieldEffect(taskId), 0);
+    tasks.data(taskId)[15] = taskId;
+  }
+
+  /** Task_FallWarpFieldEffect (field_effect.c): run consecutive source stages in one frame when requested. */
+  private Task_FallWarpFieldEffect(taskId: number): void {
+    const data = tasks.data(taskId);
+    const steps = [this.FallWarpEffect_1, this.FallWarpEffect_2, this.FallWarpEffect_3, this.FallWarpEffect_4,
+      this.FallWarpEffect_5, this.FallWarpEffect_6, this.FallWarpEffect_7] as const;
+    while (data[0]! < steps.length && steps[data[0]!]!.call(this, data)) { /* C step returned TRUE: continue this frame. */ }
+  }
+
+  private FallWarpEffect_1(data: number[]): boolean {
+    const object = this.player.object;
+    const sprite = object.sprite;
+    // CameraObjectReset2 is a no-op in this renderer, which tracks the player directly.
+    object.invisible = true;
+    this.player.preventStep = true;
+    const faceAction = object.facingDirection === DIR_NORTH ? C.MOVEMENT_ACTION_FACE_UP
+      : object.facingDirection === DIR_WEST ? C.MOVEMENT_ACTION_FACE_LEFT
+        : object.facingDirection === DIR_EAST ? C.MOVEMENT_ACTION_FACE_RIGHT : C.MOVEMENT_ACTION_FACE_DOWN;
+    this.objects.setHeldMovement(object, faceAction);
+    data[4] = sprite.subspriteMode;
+    object.fixedPriority = true;
+    sprite.priority = 1;
+    sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY;
+    data[0] = data[0]! + 1;
+    return true;
+  }
+
+  private FallWarpEffect_2(data: number[]): boolean {
+    if (IsWeatherNotFadingIn()) data[0] = data[0]! + 1;
+    return false;
+  }
+
+  private FallWarpEffect_3(data: number[]): boolean {
+    const sprite = this.player.object.sprite;
+    sprite.y2 = -(sprite.y - sprite.centerToCornerVecY + spriteState.gSpriteCoordOffsetY);
+    data[1] = 1;
+    data[2] = 0;
+    this.player.object.invisible = false;
+    sound.playSE(sound.c("SE_FALL"));
+    data[0] = data[0]! + 1;
+    return false;
+  }
+
+  private FallWarpEffect_4(data: number[]): boolean {
+    const object = this.player.object;
+    const sprite = object.sprite;
+    sprite.y2 += data[1]!;
+    if (data[1]! < 8) {
+      data[2] = data[2]! + data[1]!;
+      if (data[2]! & 0xf) data[1] = data[1]! << 1;
+    }
+    if (data[3] === 0 && sprite.y2 >= -16) {
+      data[3] = 1;
+      object.fixedPriority = false;
+      sprite.subspriteMode = data[4]!;
+      object.triggerGroundEffectsOnMove = true;
+    }
+    if (sprite.y2 >= 0) {
+      sound.playSE(sound.c("SE_M_STRENGTH"));
+      object.triggerGroundEffectsOnStop = true;
+      object.landingJump = true;
+      sprite.y2 = 0;
+      data[0] = data[0]! + 1;
+    }
+    return false;
+  }
+
+  private FallWarpEffect_5(data: number[]): boolean {
+    data[0] = data[0]! + 1;
+    data[1] = 4;
+    data[2] = 0;
+    this.SetCameraPanningCallback(null);
+    return true;
+  }
+
+  private FallWarpEffect_6(data: number[]): boolean {
+    this.SetCameraPanning(0, data[1]!);
+    data[1] = -data[1]!;
+    data[2] = data[2]! + 1;
+    if ((data[2]! & 3) === 0) data[1] = data[1]! >> 1;
+    if (data[1] === 0) data[0] = data[0]! + 1;
+    return false;
+  }
+
+  private FallWarpEffect_7(data: number[]): boolean {
+    this.player.preventStep = false;
+    this.UnlockPlayerFieldControls();
+    this.SetCameraPanning(0, 0);
+    this.InstallCameraPanAheadCallback();
+    this.objects.unfreezeAll();
+    const dest = PlayerGetDestCoords();
+    if (this.MetatileBehavior_IsSurfableInSeafoamIslands(MapGridGetMetatileBehaviorAt(dest.x, dest.y, this.map))) {
+      varSet(C.VAR_TEMP_1, 1);
+      this.player.setTransitionFlags(PLAYER_AVATAR_FLAG_SURFING);
+      SetHelpContext(C.HELPCONTEXT_SURFING);
+    }
+    tasks.destroy(data[15]!);
+    return false;
   }
 
   DoDoorWarp(): void {
