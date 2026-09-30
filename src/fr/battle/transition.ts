@@ -15,7 +15,7 @@
 
 import type { Scene } from "../game";
 import * as C from "../generated/constants";
-import { paletteFade, FADE_TO_BLACK } from "../gba/fade";
+import { paletteFade, FADE_TO_BLACK, RGB_BLACK } from "../gba/fade";
 import type { Pokemon } from "../pokemon/pokemon";
 import { rom } from "../rom";
 import { incbin, incbin16 } from "../hw/assets";
@@ -289,30 +289,69 @@ function VBlankCB_AngledWipes(effect: AngledWipesEffect): void {
 class ClockwiseWipeEffect implements Effect {
   readonly rowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [DISPLAY_WIDTH + 3, DISPLAY_WIDTH + 4]);
   readonly invertWindow = true;
-  private state: "topRight" | "right" | "bottom" | "left" | "topLeft" = "topRight";
+  readonly completesScreenFade = true;
+  readonly workingRowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [DISPLAY_WIDTH + 3, DISPLAY_WIDTH + 4]);
+  state: "init" | "topRight" | "right" | "bottom" | "left" | "topLeft" | "end" | "done" = "init";
   private wipe = new BlackWipe();
   private endX = DISPLAY_WIDTH / 2;
   private endY = 0;
+  private dmaPending = false;
 
   private setRow(y: number, left: number, right: number): void {
-    if (y >= 0 && y < DISPLAY_HEIGHT) this.rowBounds[y] = [left, right];
+    if (y >= 0 && y < DISPLAY_HEIGHT) this.workingRowBounds[y] = [left, right];
   }
 
   private getRow(y: number): [number, number] {
-    return y >= 0 && y < DISPLAY_HEIGHT ? this.rowBounds[y]! : [DISPLAY_WIDTH + 3, DISPLAY_WIDTH + 4];
+    return y >= 0 && y < DISPLAY_HEIGHT ? this.workingRowBounds[y]! : [DISPLAY_WIDTH + 3, DISPLAY_WIDTH + 4];
   }
 
   tick(): boolean {
-    if (this.state === "topRight") {
+    return Task_ClockwiseWipe(this);
+  }
+
+  runTask(): boolean {
+    let continueTask: boolean;
+    do {
+      switch (this.state) {
+        case "init": continueTask = ClockwiseWipe_Init(this); break;
+        case "topRight": continueTask = ClockwiseWipe_TopRight(this); break;
+        case "right": continueTask = ClockwiseWipe_Right(this); break;
+        case "bottom": continueTask = ClockwiseWipe_Bottom(this); break;
+        case "left": continueTask = ClockwiseWipe_Left(this); break;
+        case "topLeft": continueTask = ClockwiseWipe_TopLeft(this); break;
+        case "end": continueTask = ClockwiseWipe_End(this); break;
+        default: continueTask = false; break;
+      }
+    } while (continueTask);
+    VBlankCB_ClockwiseWipe(this);
+    return this.state === "done";
+  }
+
+  initialize(): boolean {
+    this.endX = DISPLAY_WIDTH / 2;
+    this.endY = 0;
+    this.state = "topRight";
+    return true;
+  }
+
+  copyScanlineBuffer(): void {
+    if (this.dmaPending) for (let y = 0; y < DISPLAY_HEIGHT; y++) this.rowBounds[y] = [...this.workingRowBounds[y]!];
+  }
+
+  stepTopRight(): boolean {
+    this.dmaPending = false;
       this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, this.endX, -1, 1, 1);
       do {
         this.setRow(this.wipe.currY, DISPLAY_WIDTH / 2, this.wipe.currX + 1);
       } while (!this.wipe.update(true, true));
       this.endX += 32;
       if (this.endX >= DISPLAY_WIDTH) { this.endY = 0; this.state = "right"; }
+    this.dmaPending = true;
       return false;
-    }
-    if (this.state === "right") {
+  }
+
+  stepRight(): boolean {
+    this.dmaPending = false;
       this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, DISPLAY_WIDTH, this.endY, 1, 1);
       let start = 0, end = 0, finished = false;
       for (;;) {
@@ -326,18 +365,24 @@ class ClockwiseWipeEffect implements Effect {
       this.endY += 16;
       if (this.endY >= DISPLAY_HEIGHT) { this.endX = DISPLAY_WIDTH; this.state = "bottom"; }
       else while (this.wipe.currY < this.endY) { this.wipe.currY++; this.setRow(this.wipe.currY, start, end); }
+    this.dmaPending = true;
       return false;
-    }
-    if (this.state === "bottom") {
+  }
+
+  stepBottom(): boolean {
+    this.dmaPending = false;
       this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, this.endX, DISPLAY_HEIGHT, 1, 1);
       do {
         this.setRow(this.wipe.currY, this.wipe.currX, DISPLAY_WIDTH);
       } while (!this.wipe.update(true, true));
       this.endX -= 32;
       if (this.endX <= 0) { this.endY = DISPLAY_HEIGHT; this.state = "left"; }
+    this.dmaPending = true;
       return false;
-    }
-    if (this.state === "left") {
+  }
+
+  stepLeft(): boolean {
+    this.dmaPending = false;
       this.wipe.init(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, 0, this.endY, 1, 1);
       let start = 0, end = 0, finished = false;
       for (;;) {
@@ -351,9 +396,12 @@ class ClockwiseWipeEffect implements Effect {
       this.endY -= 16;
       if (this.endY <= 0) { this.endX = 0; this.state = "topLeft"; }
       else while (this.wipe.currY > this.endY) { this.wipe.currY--; this.setRow(this.wipe.currY, start, end); }
+    this.dmaPending = true;
       return false;
-    }
-    // topLeft
+  }
+
+  stepTopLeft(): boolean {
+    this.dmaPending = false;
     this.wipe.init(120, 80, this.endX, 0, 1, 1);
     let finished2 = false;
     do {
@@ -363,9 +411,28 @@ class ClockwiseWipeEffect implements Effect {
       finished2 = this.wipe.update(true, true);
     } while (!finished2);
     this.endX += 32;
-    return this.wipe.currX > DISPLAY_WIDTH / 2;
+    if (this.wipe.currX > DISPLAY_WIDTH / 2) this.state = "end";
+    this.dmaPending = true;
+    return false;
+  }
+
+  end(): boolean {
+    FadeScreenBlack(this);
+    this.state = "done";
+    return false;
   }
 }
+
+function Task_ClockwiseWipe(effect: ClockwiseWipeEffect): boolean { return effect.runTask(); }
+function ClockwiseWipe_Init(effect: ClockwiseWipeEffect): boolean { return effect.initialize(); }
+function ClockwiseWipe_TopRight(effect: ClockwiseWipeEffect): boolean { return effect.stepTopRight(); }
+function ClockwiseWipe_Right(effect: ClockwiseWipeEffect): boolean { return effect.stepRight(); }
+function ClockwiseWipe_Bottom(effect: ClockwiseWipeEffect): boolean { return effect.stepBottom(); }
+function ClockwiseWipe_Left(effect: ClockwiseWipeEffect): boolean { return effect.stepLeft(); }
+function ClockwiseWipe_TopLeft(effect: ClockwiseWipeEffect): boolean { return effect.stepTopLeft(); }
+function ClockwiseWipe_End(effect: ClockwiseWipeEffect): boolean { return effect.end(); }
+function VBlankCB_ClockwiseWipe(effect: ClockwiseWipeEffect): void { effect.copyScanlineBuffer(); }
+function FadeScreenBlack(_effect: ClockwiseWipeEffect): void { paletteFade.fill(RGB_BLACK); }
 
 class SliceEffect implements Effect {
   readonly rowBounds: [number, number][] = Array.from({ length: DISPLAY_HEIGHT }, () => [0, DISPLAY_WIDTH]);
