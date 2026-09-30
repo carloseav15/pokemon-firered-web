@@ -11,11 +11,15 @@ import {
   BeginNormalPaletteFade, BlendPalettes, gPaletteFade, LoadPalette,
   PALETTES_ALL, RGB_WHITE, TransferPlttBuffer, UpdatePaletteFade,
 } from "./hw/palette";
+import { LoadSpritePalette, LoadSpriteSheet } from "./hw/sprite";
 import { ppu } from "./hw/ppu";
 
 const symbols = [
   "sScene1_Grass_Pal", "sScene1_Bg_Pal", "sScene1_Bg_Gfx",
   "sScene1_Bg_Map", "sScene1_Grass_Gfx", "sScene1_Grass_Map",
+  "sScene2_Gengar_Gfx", "sScene2_Nidorino_Gfx", "sGengar_Pal", "sNidorino_Pal",
+  "sScene3_Nidorino_Gfx", "sScene3_Grass_Gfx", "sScene3_Grass_Pal", "sScene3_GengarStatic_Gfx",
+  "sScene3_Swipe_Gfx", "sScene3_Swipe_Pal", "sScene3_RecoilDust_Gfx", "sScene3_RecoilDust_Pal",
 ];
 const scenePalettes = (1 << 1) | (1 << 2);
 
@@ -24,6 +28,21 @@ export function IntroCB_Scene1(scene: IntroScene1): void { scene.updateScene(); 
 export function Scene1_Task_AnimateGrass(scene: IntroScene1): void { scene.animateGrassTask(); }
 export function Scene1_StartGrassScrolling(scene: IntroScene1): void { scene.startGrassScrolling(); }
 export function Scene1_Task_BgZoom(scene: IntroScene1): void { scene.animateBackgroundZoom(); }
+/** intro.c LoadFightSceneSpriteGraphics; scene 2/3 reload after their sprite reset. */
+export function LoadFightSceneSpriteGraphics(): void {
+  LoadSpriteSheet({ data: incbin("sScene2_Gengar_Gfx"), size: 0x800, tag: 6 });
+  LoadSpriteSheet({ data: incbin("sScene2_Nidorino_Gfx"), size: 0x800, tag: 7 });
+  LoadSpriteSheet({ data: incbin("sScene3_Nidorino_Gfx"), size: 0x2800, tag: 5 });
+  LoadSpriteSheet({ data: incbin("sScene3_Grass_Gfx"), size: 0x800, tag: 8 });
+  LoadSpriteSheet({ data: incbin("sScene3_GengarStatic_Gfx"), size: 0x1800, tag: 9 });
+  LoadSpriteSheet({ data: incbin("sScene3_Swipe_Gfx"), size: 0xa00, tag: 10 });
+  LoadSpriteSheet({ data: incbin("sScene3_RecoilDust_Gfx"), size: 0x200, tag: 11 });
+  LoadSpritePalette({ data: incbin("sGengar_Pal"), tag: 6 });
+  LoadSpritePalette({ data: incbin("sNidorino_Pal"), tag: 7 });
+  LoadSpritePalette({ data: incbin("sScene3_Grass_Pal"), tag: 8 });
+  LoadSpritePalette({ data: incbin("sScene3_Swipe_Pal"), tag: 10 });
+  LoadSpritePalette({ data: incbin("sScene3_RecoilDust_Pal"), tag: 11 });
+}
 
 export class IntroScene1 {
   private state = 0;
@@ -81,6 +100,7 @@ export class IntroScene1 {
         HideBg(0);
         HideBg(2);
         HideBg(3);
+        LoadFightSceneSpriteGraphics();
         this.state++;
         break;
       case 1:
