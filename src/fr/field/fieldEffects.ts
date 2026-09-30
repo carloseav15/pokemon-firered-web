@@ -392,6 +392,21 @@ export class FieldEffects {
     if (!this.startIcon(id)) this.active.delete(id);
   }
 
+  /** StartFieldEffectForObjectEvent (event_object_movement.c): pack localId/map arguments and start the C-selected effect. */
+  StartFieldEffectForObjectEvent(fieldEffectId: number, object: ObjectEvent): number {
+    const args = this.ow.game.fieldEffectArguments;
+    ObjectEventGetLocalIdAndMap(object, args);
+    switch (fieldEffectId & 0xff) {
+      case C.FLDEFF_FEET_IN_FLOWING_WATER: this.FldEff_FeetInFlowingWater(object); return 0;
+      case C.FLDEFF_SPLASH: this.FldEff_Splash(object); return 0;
+      case C.FLDEFF_SAND_PILE: return this.FldEff_SandPile();
+      case C.FLDEFF_SHORT_GRASS: return this.FldEff_ShortGrass(object);
+      case C.FLDEFF_HOT_SPRINGS_WATER: return this.FldEff_HotSpringsWater(object);
+      case C.FLDEFF_SHADOW: return this.FldEff_Shadow(object);
+      default: this.start(fieldEffectId & 0xff); return 0;
+    }
+  }
+
   /** FldEff_MoveDeoxysRock / Task_MoveDeoxysRock_Step from field_effect.c. */
   private FldEff_MoveDeoxysRock(): void {
     const args = this.ow.game.fieldEffectArguments;
@@ -1101,7 +1116,7 @@ export class FieldEffects {
 
   /** GroundEffect_FlowingWater / FldEff_FeetInFlowingWater. */
   GroundEffect_FlowingWater(object: ObjectEvent): void {
-    this.FldEff_FeetInFlowingWater(object);
+    this.StartFieldEffectForObjectEvent(C.FLDEFF_FEET_IN_FLOWING_WATER, object);
   }
 
   /** FldEff_FeetInFlowingWater (field_effect_helpers.c). */
@@ -1144,7 +1159,7 @@ export class FieldEffects {
 
   /** GroundEffect_ShortGrass / FldEff_ShortGrass. */
   GroundEffect_ShortGrass(object: ObjectEvent): void {
-    this.FldEff_ShortGrass(object);
+    this.StartFieldEffectForObjectEvent(C.FLDEFF_SHORT_GRASS, object);
   }
 
   /** FldEff_ShortGrass (field_effect_helpers.c). */
@@ -1193,7 +1208,7 @@ export class FieldEffects {
 
   /** GroundEffect_HotSprings / FldEff_HotSpringsWater. */
   GroundEffect_HotSprings(object: ObjectEvent): void {
-    this.FldEff_HotSpringsWater(object);
+    this.StartFieldEffectForObjectEvent(C.FLDEFF_HOT_SPRINGS_WATER, object);
   }
 
   /** FldEff_HotSpringsWater (field_effect_helpers.c). */
@@ -1232,11 +1247,7 @@ export class FieldEffects {
 
   /** GroundEffect_SandHeap (event_object_movement.c). */
   GroundEffect_SandHeap(object: ObjectEvent): void {
-    const args = this.ow.game.fieldEffectArguments;
-    args[0] = object.localId & 0xff;
-    args[1] = object.mapNum & 0xff;
-    args[2] = object.mapGroup & 0xff;
-    this.start(C.FLDEFF_SAND_PILE);
+    this.StartFieldEffectForObjectEvent(C.FLDEFF_SAND_PILE, object);
   }
 
   /** FldEff_SandPile (field_effect_helpers.c). */
@@ -1326,7 +1337,7 @@ export class FieldEffects {
 
   /** GroundEffect_StepOnPuddle (event_object_movement.c): play the linked splash on a puddle step. */
   GroundEffect_StepOnPuddle(object: ObjectEvent): void {
-    this.FldEff_Splash(object);
+    this.StartFieldEffectForObjectEvent(C.FLDEFF_SPLASH, object);
   }
 
   /** FldEff_Splash (field_effect_helpers.c), called by StartFieldEffectForObjectEvent. */
@@ -1359,7 +1370,17 @@ export class FieldEffects {
 
   /** GroundEffect_Ripple / DoRippleFieldEffect: emit the source ripple at the object's feet. */
   GroundEffect_Ripple(object: ObjectEvent): void {
-    this.FldEff_Ripple(object.sprite.x, object.sprite.y + (graphicsInfo(object.graphicsId).height >> 1) - 2, 151, 3);
+    this.DoRippleFieldEffect(object, object.sprite);
+  }
+
+  /** DoRippleFieldEffect (event_object_movement.c): populate C arguments before FldEff_Ripple. */
+  private DoRippleFieldEffect(object: ObjectEvent, sprite: Sprite): void {
+    const args = this.ow.game.fieldEffectArguments;
+    args[0] = sprite.x;
+    args[1] = sprite.y + (graphicsInfo(object.graphicsId).height >> 1) - 2;
+    args[2] = 151;
+    args[3] = 3;
+    this.FldEff_Ripple(args[0]!, args[1]!, args[2]!, args[3]!);
   }
 
   /** FldEff_Ripple (field_effect_helpers.c). */
@@ -1637,7 +1658,7 @@ export class FieldEffects {
   DoShadowFieldEffect(object: ObjectEvent): void {
     if (object.hasShadow) return;
     object.hasShadow = true;
-    this.FldEff_Shadow(object);
+    this.StartFieldEffectForObjectEvent(C.FLDEFF_SHADOW, object);
   }
 
   /** FldEff_Shadow (field_effect_helpers.c). */
