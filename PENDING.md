@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9091/10115 (89.9 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **1024 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9105/10115 (90.0 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **1010 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~21.153 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~20.619 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -27,9 +27,9 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 7 | `start_menu.c` | casi completo | 1016 | 56/65 | ~140 |  |
 | 8 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
 | 9 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 10 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
-| 11 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 12 | `pokemon_summary_screen.c` | casi completo | 5224 | 117/137 | ~762 |  |
+| 10 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
+| 11 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
+| 12 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 13 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
 | 14 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
 | 15 | `party_menu.c` | casi completo | 6342 | 300/357 | ~1012 |  |
@@ -75,7 +75,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Intercambios: `pokemon/ingameTrade.ts` porta la escena de `trade_scene.c` (sin probar); de `trade.c` solo hay stubs de la parte de enlace.
 - Enlace: `linkState.ts` modela estado, identidad del callback y umbrales de cola de `menu_helpers.c`, `link.c` y `overworld.c`; todavía no hay productor de comandos ni transporte cable/RFU que alimente ese estado.
 - Combate de enlace: `battle_controllers.c` 68/68 con la ruta de buffers `LINK_BUFF_*` y las tareas de envío/recepción, pero `SetControllerToLinkOpponent`/`SetControllerToLinkPartner` (parciales en sus archivos) quedan sustituidos por `BattleControllerDummy` y `linkTransport` no envía paquetes; un enlace real no tendría controladores propios ni transporte.
-- Almacenamiento de cajas: la interfaz real está portada (`pokemon_storage_system_tasks.c`/`_graphics.c`/`_data.c` 100 %, `_misc.c` 66/70) y probada solo en la entrada/salida del PC y la retirada de un mon; el resto del flujo de cajas sin recorrer en navegador.
+- Almacenamiento de cajas: `pokemon_storage_system_misc.c` conserva cuatro helpers estáticos `UnkUtil_CpuAdd/Run` y `UnkUtil_DmaAdd/Run`; el C los describe como cola funcionalmente sin uso y los Add no tienen callers. La navegación del resumen usa ranuras nullable y filtra especie/huevo según el C; cajas y resumen siguen pendientes de revisión en navegador.
 - Teachy TV: `teachyTv.ts` está conectado (`Game.openTeachyTv` → `StartTeachyTv`); `keyItemScreens.openTeachyTv` (lista de texto) queda sin llamadores. Pantalla sin probar en navegador.
 - Fame Checker: `fameChecker.ts` está conectado y sus gráficos (ventanas, flechas, info box) tienen cuerpo; sin prueba de navegador.
 - Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
@@ -93,7 +93,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller; los huecos de `battle_bg.c` y `evolution_scene.c` son de enlace/intercambio.
 - Bloqueo de tanda (2026-09-28): los cinco `Debug_NamingScreen*` restantes son funciones estáticas sin callers en `naming_screen.c`; los últimos huecos de `field_control_avatar.c` son interacciones de jugadores de enlace y `SetCableClubWarp` es solo Cable Club, fuera de la meta principal.
 - Menú de guardado (`start_menu.c`): el commit de Quest Log necesita el buffer/serialización original de escenas (`SaveQuestLogData` en `quest_log.c`); la escena y reproducción de Quest Log siguen pendientes.
-- Summary Pokémon: el cambio de mon usa una lista TS compacta; el C distingue `monList.boxMons`, huecos, huevos y party multi. La selección de caja/party requiere adaptar esos datos antes de portar `PokeSum_SeekToNextMon` y `Task_PokeSum_SwitchDisplayedPokemon`.
+- Summary Pokémon: la ruta activa preserva ranuras vacías de caja, filtra especie/huevo según la página y porta navegación de party individual, selección/cambio de movimiento, transición de páginas y callback dummy del retrato. Los seek de party multi son de enlace; quedan seis nombres por caller ausente o alcance LINK. El recorrido de caja/resumen aún no se ha validado en navegador.
 - pokemon.c (2026-09-29): 135/140; los cinco huecos son de enlace (`GetLinkTrainerFlankId`, `GetBattlerMultiplayerId`, `GetUnionRoomTrainerPic`, `GetUnionRoomTrainerClass`) y `GetTrainerPartnerName`, que necesita `GetMultiplayerId` de `link.c`. Sin caller tampoco en el C: `CreateSecretBaseEnemyParty`, `DrawSpindaSpotsUnused`, `GetMonFlavorRelation`, `EncryptBoxMon`/`DecryptBoxMon`/`CalculateBoxMonChecksum`/`GetSubstruct`; `RandomlyGivePartyPokerus`/`UpdatePartyPokerusTime`/`PartySpreadPokerus` son no-op porque el cuerpo C también lo es (comentario de RS en `pokemon.c:5608`). Sin cablear en la ruta TS: `SetDeoxysStats` (sus dos callers C son de `battle_main.c` en enlace) y `SpeciesToCryId` (su caller C es `PlayCryInternal` en `sound.c:476`, mientras `audio/sound.ts` manda la especie a la tabla WAV `cries.json` sin pasar por ella).
 - text.c (2026-09-29): 37/37 con `GetStringWidth`/`GetStringWidthFixedWidthFont`, las familias `FontFunc_*`, `TextPrinter*`, `GetGlyphWidth_*` y `DecompressGlyph_*`, `RenderText` y los iconos de keypad en `gba/font.ts`/`gba/textPrinter.ts`. Las ramas japonesas y el relleno de `glyphId == 0` con los colores del printer están portadas pero no se ejercitan (la ruta TS corre en latín); `FONT_BOLD` (fontId 7) no tiene `fontFunction` en el C y TS lanza si se pinta con él, sin llamadores; con un placeholder dinámico inexistente `GetStringWidth` mide en vez de leer el puntero nulo que el C desreferenciaría. Paridad headless: `DecompressGlyph_*` coincide con los PNG exportados en 6 fuentes x 512 glifos y las anchuras de `text.c` con `fonts.json`; `check:arrow` y `check:braille` pasan (ambos necesitaban `setupNodeGbaMock.ts`); sin prueba en navegador.
 - battle_records.c (2026-09-29): 31/31 en `battleRecords.ts` con la pantalla HwScene, el save `SaveBlock2.linkBattleRecords` (`save.ts` con backfill) y `gTrainerCards` (`menus/trainerCard.ts`); el especial `ShowBattleRecords` sustituye al adaptador y `ClearPlayerLinkBattleRecords` corre en `NewGameInitData`. `UpdatePlayerLinkBattleRecords` solo lo llama `cable_club.c` `CB2_ReturnFromCableClubBattle`, sin portar (9/54), así que la actualización de récords no se dispara por ninguna ruta viva; el lado `ShowTrainerCardInLink` de `gTrainerCards` sigue pendiente en `trainer_card.c` (66/73). Check focalizado temporal (backfill, borrado, alta/evicción/orden/prefijo japonés, apertura de pantalla, A y salida) pasó y se borró; sin prueba en navegador.
