@@ -1025,10 +1025,12 @@ export class Game {
   /** CB2_WhiteOut: respawn at the last heal location. */
   whiteOut(): void {
     this.whiteOutFrames = 0;
-    this.setCallbacks(null, () => {
-      // CB2_WhiteOut increments gMain.state and waits until it reaches 120.
-      if (++this.whiteOutFrames >= 120) this.DoWhiteOut();
-    });
+    this.setCallbacks(null, () => this.CB2_WhiteOut());
+  }
+
+  /** CB2_WhiteOut (overworld.c): wait 120 frames before starting recovery. */
+  private CB2_WhiteOut(): void {
+    if (++this.whiteOutFrames >= 120) this.DoWhiteOut();
   }
 
   private DoWhiteOut(): void {
