@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9614/10115 (95.0 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **501 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9624/10115 (95.1 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **491 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~10.881 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~10.654 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -33,8 +33,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 13 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
 | 14 | `field_effect.c` | casi completo | 4033 | 214/239 | ~421 |  |
 | 15 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 16 | `quest_log.c` | parcial | 1767 | 56/88 | ~642 |  |
-| 17 | `battle_transition.c` | parcial | 3037 | 100/134 | ~770 |  |
+| 16 | `battle_transition.c` | casi completo | 3037 | 110/134 | ~543 |  |
+| 17 | `quest_log.c` | parcial | 1767 | 56/88 | ~642 |  |
 | 18 | `event_object_movement.c` | casi completo | 9412 | 696/759 | ~781 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 311/357 | ~817 |  |
 | 20 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
@@ -42,7 +42,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 22 | `overworld.c` | parcial | 3563 | 125/242 | ~1722 |  |
 | 23 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 
-Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 17 casi completos y 6 parciales.
+Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 18 casi completos y 5 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
