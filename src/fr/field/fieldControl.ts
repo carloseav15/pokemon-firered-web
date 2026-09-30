@@ -68,6 +68,16 @@ export function GetInteractedMetatileScript(control: FieldControl, position: Map
 export function GetInteractedWaterScript(control: FieldControl, position: MapPosition, behavior: number, direction: number): number {
   return control.getInteractedWaterScript(position, behavior, direction);
 }
+/** field_control_avatar.c player input entrypoints, preserving the FieldInput record. */
+export function FieldGetPlayerInput(control: FieldControl, input: FieldInput, newKeys: number, heldKeys: number): void {
+  control.FieldGetPlayerInput(input, newKeys, heldKeys);
+}
+export function FieldInput_HandleCancelSignpost(control: FieldControl, input: FieldInput): void {
+  control.FieldInput_HandleCancelSignpost(input);
+}
+export function ProcessPlayerFieldInput(control: FieldControl, input: FieldInput): boolean {
+  return control.ProcessPlayerFieldInput(input);
+}
 
 function emptyInput(): FieldInput {
   const input = {} as FieldInput;
@@ -146,10 +156,10 @@ export class FieldControl {
         input.pressedBButton = (field.flags & 0x80) !== 0;
         input.dpadDirection = field.direction;
       }
-    } else this.FieldGetPlayerInput(input, newKeys, heldKeys);
-    this.FieldInput_HandleCancelSignpost(input);
+    } else FieldGetPlayerInput(this, input, newKeys, heldKeys);
+    FieldInput_HandleCancelSignpost(this, input);
     if (!this.ow.controlsLocked) {
-      if (this.ProcessPlayerFieldInput(input)) {
+      if (ProcessPlayerFieldInput(this, input)) {
         if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) QL_RecordFieldInput(this.recordedPlayerFieldInput);
         this.ow.controlsLocked = true;
         this.ow.mapName.dismiss();
