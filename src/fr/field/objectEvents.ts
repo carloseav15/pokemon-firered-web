@@ -1001,7 +1001,8 @@ export class ObjectEvents {
     object.localId = template.localId;
     object.mapNum = mapNum;
     object.mapGroup = mapGroup;
-    object.graphicsId = this.resolveGraphicsId(template.graphicsId);
+    object.graphicsId = template.graphicsId & 0xff;
+    this.SetObjectEventDynamicGraphicsId(object);
     object.movementType = template.movementType;
     object.trainerType = template.trainerType;
     object.trainerRange = template.trainerRange;
@@ -1137,6 +1138,11 @@ export class ObjectEvents {
   }
 
   setGraphicsId(object: ObjectEvent, graphicsId: number): void {
+    this.ObjectEventSetGraphicsId(object, graphicsId);
+  }
+
+  /** ObjectEventSetGraphicsId (event_object_movement.c), with renderer-owned sprite resources. */
+  ObjectEventSetGraphicsId(object: ObjectEvent, graphicsId: number): void {
     graphicsId &= 0xff;
     const info = graphicsInfo(graphicsId);
     object.graphicsId = graphicsId;
@@ -1153,6 +1159,39 @@ export class ObjectEvents {
     // retaining animNum, animCmdIndex, imageValue, flips and pause state.
     this.placeSprite(object);
     if (object.trackedByCamera) this.hooks.cameraObjectReset?.(object);
+  }
+
+  /** ObjectEventSetGraphicsIdByLocalIdAndMap (event_object_movement.c). */
+  ObjectEventSetGraphicsIdByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number, graphicsId: number): void {
+    const object = this.byLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    if (object) this.ObjectEventSetGraphicsId(object, graphicsId & 0xff);
+  }
+
+  /** SetObjectEventDynamicGraphicsId (event_object_movement.c). */
+  SetObjectEventDynamicGraphicsId(object: ObjectEvent): void {
+    object.graphicsId = this.resolveGraphicsId(object.graphicsId & 0xff);
+  }
+
+  /** SetObjectInvisibility (event_object_movement.c). */
+  SetObjectInvisibility(localId: number, mapNum: number, mapGroup: number, state: number): void {
+    const object = this.byLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    if (object) object.invisible = !!(state & 0xff);
+  }
+
+  /** SetObjectSubpriority (event_object_movement.c). */
+  SetObjectSubpriority(localId: number, mapNum: number, mapGroup: number, subpriority: number): void {
+    const object = this.byLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    if (!object) return;
+    object.fixedPriority = true;
+    object.sprite.subpriority = subpriority & 0xff;
+  }
+
+  /** ResetObjectSubpriority (event_object_movement.c). */
+  ResetObjectSubpriority(localId: number, mapNum: number, mapGroup: number): void {
+    const object = this.byLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    if (!object) return;
+    object.fixedPriority = false;
+    object.triggerGroundEffectsOnMove = true;
   }
 
   remove(object: ObjectEvent | undefined): void {
@@ -1375,6 +1414,12 @@ export class ObjectEvents {
   }
 
   setDirection(object: ObjectEvent, direction: number): void {
+    this.SetObjectEventDirection(object, direction);
+  }
+
+  /** SetObjectEventDirection (event_object_movement.c). */
+  SetObjectEventDirection(object: ObjectEvent, direction: number): void {
+    direction &= 0xff;
     object.previousMovementDirection = object.facingDirection;
     if (!object.facingDirectionLocked) object.facingDirection = direction;
     object.movementDirection = direction;
@@ -1472,11 +1517,27 @@ export class ObjectEvents {
   }
 
   turn(object: ObjectEvent, direction: number): void {
-    this.setDirection(object, direction);
+    this.ObjectEventTurn(object, direction);
+  }
+
+  /** ObjectEventTurn (event_object_movement.c). */
+  ObjectEventTurn(object: ObjectEvent, direction: number): void {
+    this.SetObjectEventDirection(object, direction);
     if (!object.inanimate) {
       object.sprite.startAnim(faceAnim(object.facingDirection));
       object.sprite.seekAnim(0);
     }
+  }
+
+  /** ObjectEventTurnByLocalIdAndMap (event_object_movement.c). */
+  ObjectEventTurnByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number, direction: number): void {
+    const object = this.byLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    if (object) this.ObjectEventTurn(object, direction & 0xff);
+  }
+
+  /** PlayerObjectTurn (event_object_movement.c), using the active player's object directly. */
+  PlayerObjectTurn(object: ObjectEvent, direction: number): void {
+    this.ObjectEventTurn(object, direction);
   }
 
   // ---------------------------------------------------------------- held movement API

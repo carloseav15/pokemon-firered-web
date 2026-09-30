@@ -139,7 +139,7 @@ export class PlayerAvatar {
     this.tileTransitionState = T_NOT_MOVING;
     this.preventStep = false;
     object.hasShadow = false;
-    this.ow.objects.turn(object, direction);
+    this.ow.objects.PlayerObjectTurn(object, direction);
   }
 
   /** InitPlayerAvatar (field_player_avatar.c), wired from the active overworld setup. */
@@ -1308,7 +1308,7 @@ export class PlayerAvatar {
         state = 1;
       } else if (this.ow.objects.ObjectEventClearHeldMovementIfFinished(o)) {
         this.ow.effects.setSurfBlobBobState(C.BOB_PLAYER_AND_MON);
-        this.ow.objects.turn(o, direction);
+        this.ow.objects.PlayerObjectTurn(o, direction);
         this.ow.objects.unfreezeAll();
         this.ow.controlsLocked = false;
         this.ow.script.ScriptContext_Enable();

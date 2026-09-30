@@ -397,17 +397,17 @@ function ScrCmd_copyobjectxytoperm(ctx: ScriptRunner): boolean {
   ctx.ow.objects.TryOverrideObjectEventTemplateCoords(localId, ctx.ow.objects.mapNum, ctx.ow.objects.mapGroup);
   return false;
 }
-function ScrCmd_showobjectat(ctx: ScriptRunner): boolean { const o = readObjectAt(ctx); if (o) o.invisible = false; return false; }
-function ScrCmd_hideobjectat(ctx: ScriptRunner): boolean { const o = readObjectAt(ctx); if (o) o.invisible = true; return false; }
+function ScrCmd_showobjectat(ctx: ScriptRunner): boolean { const o = readObjectAt(ctx); if (o) ctx.ow.objects.SetObjectInvisibility(o.localId, o.mapNum, o.mapGroup, 0); return false; }
+function ScrCmd_hideobjectat(ctx: ScriptRunner): boolean { const o = readObjectAt(ctx); if (o) ctx.ow.objects.SetObjectInvisibility(o.localId, o.mapNum, o.mapGroup, 1); return false; }
 function ScrCmd_setobjectsubpriority(ctx: ScriptRunner): boolean {
   const o = readObjectAt(ctx);
   const p = ctx.readByte();
-  if (o) { o.fixedPriority = true; o.sprite.subpriority = (p + 83) & 0xff; }
+  if (o) ctx.ow.objects.SetObjectSubpriority(o.localId, o.mapNum, o.mapGroup, (p + 83) & 0xff);
   return false;
 }
 function ScrCmd_resetobjectsubpriority(ctx: ScriptRunner): boolean {
   const o = readObjectAt(ctx);
-  if (o) { o.fixedPriority = false; o.triggerGroundEffectsOnMove = true; }
+  if (o) ctx.ow.objects.ResetObjectSubpriority(o.localId, o.mapNum, o.mapGroup);
   return false;
 }
 function ScrCmd_faceplayer(ctx: ScriptRunner): boolean {
