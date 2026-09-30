@@ -14,7 +14,7 @@ import { b64, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
 import { random } from "../random";
 import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
-import { LOCALID_PLAYER, OPPOSITE } from "../field/objectEvents";
+import { LOCALID_PLAYER, OBJECT_EVENTS_COUNT, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
@@ -760,10 +760,8 @@ function removeResolvedObject(ctx: ScriptRunner, o: ReturnType<typeof localIdObj
 }
 
 function addObject(ctx: ScriptRunner, localId: number): void {
-  const template = ctx.ow.objects.templates.find((t) => t.localId === localId);
-  if (!template) return;
-  const o = ctx.ow.objects.spawnFromTemplate(template);
-  if (o) ctx.ow.syncObjectSprites();
+  const objectEventId = ctx.ow.objects.TrySpawnObjectEvent(localId, ctx.ow.objects.mapNum, ctx.ow.objects.mapGroup);
+  if (objectEventId !== OBJECT_EVENTS_COUNT) ctx.ow.syncObjectSprites();
 }
 
 export { LOCALID_PLAYER, copy, EOS, tasks };

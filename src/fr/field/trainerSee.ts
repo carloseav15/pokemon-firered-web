@@ -324,7 +324,8 @@ export class TrainerSee {
   /** TrainerSeeFunc_OffscreenAboveTrainerCreateCameraObj; SpawnSpecialObjectEventParameterized adaptation. */
   private TrainerSeeFunc_OffscreenAboveTrainerCreateCameraObj(): ObjectEvent | undefined {
     const ow = this.game.overworld, player = ow.player.object;
-    const camera = ow.objects.spawnFromTemplate({localId: LOCALID_CAMERA, graphicsId: C.OBJ_EVENT_GFX_YOUNGSTER, graphicsName: "", x: player.currentCoords.x - MAP_OFFSET, y: player.currentCoords.y - MAP_OFFSET, elevation: 3, movementType: 7, rangeX: 0, rangeY: 0, trainerType: 0, trainerRange: 0, script: 0, scriptName: null, flag: 0});
+    const objectEventId = ow.objects.SpawnSpecialObjectEventParameterized(C.OBJ_EVENT_GFX_YOUNGSTER, 7, LOCALID_CAMERA, player.currentCoords.x, player.currentCoords.y, 3);
+    const camera = objectEventId === OBJECT_EVENTS_COUNT ? undefined : ow.objects.objects[objectEventId] ?? undefined;
     if (camera) {
       camera.invisible = true;
       ow.cameraTarget = camera;

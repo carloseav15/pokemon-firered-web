@@ -1009,6 +1009,41 @@ export class ObjectEvents {
     return object;
   }
 
+  /** TrySpawnObjectEvent (event_object_movement.c): look up an object template and return its u8 slot/sentinel. */
+  TrySpawnObjectEvent(localId: number, mapNum: number, mapGroup: number): number {
+    const template = this.GetObjectEventTemplateByLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    if (!template) return OBJECT_EVENTS_COUNT;
+    const object = this.TrySpawnObjectEventTemplate(template, mapNum, mapGroup);
+    return object ? this.indexOf(object) : OBJECT_EVENTS_COUNT;
+  }
+
+  /** SpawnSpecialObjectEvent (event_object_movement.c), using the active field's map identity. */
+  SpawnSpecialObjectEvent(template: MapObjectTemplate): number {
+    const object = this.TrySpawnObjectEventTemplate(template, this.mapNum, this.mapGroup);
+    return object ? this.indexOf(object) : OBJECT_EVENTS_COUNT;
+  }
+
+  /** SpawnSpecialObjectEventParameterized (event_object_movement.c). Inputs are GBA map coordinates. */
+  SpawnSpecialObjectEventParameterized(graphicsId: number, movementType: number, localId: number, x: number, y: number, elevation: number): number {
+    const template: MapObjectTemplate = {
+      localId: localId & 0xff,
+      graphicsId: graphicsId & 0xff,
+      graphicsName: "",
+      x: ((x - MAP_OFFSET) << 16) >> 16,
+      y: ((y - MAP_OFFSET) << 16) >> 16,
+      elevation: elevation & 0xff,
+      movementType: movementType & 0xff,
+      rangeX: 0,
+      rangeY: 0,
+      trainerType: C.TRAINER_TYPE_NONE,
+      trainerRange: 0,
+      script: 0,
+      scriptName: null,
+      flag: 0,
+    };
+    return this.SpawnSpecialObjectEvent(template);
+  }
+
   /** InitObjectEventStateFromTemplate (event_object_movement.c), including source-map identity for clones. */
   InitObjectEventStateFromTemplate(template: MapObjectTemplate, mapNum: number, mapGroup: number, cloneCoords?: { x: number; y: number }): number {
     const slot = this.GetAvailableObjectEventId(template.localId, mapNum, mapGroup);
