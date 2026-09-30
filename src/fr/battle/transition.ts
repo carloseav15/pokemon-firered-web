@@ -525,88 +525,151 @@ const FADE_TARGET = 16 << 8;
 
 interface WhiteBar {
   y: number;
-  height: number;
   x: number;
   fade: number;
   delay: number;
   finished: boolean;
+  main: boolean;
+  active: boolean;
 }
 
 class WhiteBarsFadeEffect implements Effect {
-  private bars: WhiteBar[];
-  private state: "bars" | "fadeToBlack" = "bars";
-  private blackBlendCounter = 0;
-  private blackBldY = 0;
-
-  constructor() {
-    this.bars = Array.from({ length: NUM_WHITE_BARS }, (_, i) => {
-      const y = i * WHITE_BAR_HEIGHT;
-      const height = i === NUM_WHITE_BARS - 1 ? DISPLAY_HEIGHT - y : WHITE_BAR_HEIGHT;
-      return {
-        y,
-        height,
-        x: DISPLAY_WIDTH,
-        fade: 0,
-        delay: sWhiteBarsFade_StartDelays[i]!,
-        finished: false,
-      };
-    });
-  }
+  readonly completesScreenFade = true;
+  bars: WhiteBar[] = [];
+  state: "init" | "startBars" | "waitBars" | "blendToBlack" | "end" | "done" = "init";
+  readonly scanlineBldY = new Uint16Array(DISPLAY_HEIGHT);
+  readonly workingBldY = new Uint16Array(DISPLAY_HEIGHT);
+  readonly scanlineWin0H = new Uint16Array(DISPLAY_HEIGHT).fill(DISPLAY_WIDTH);
+  readonly workingWin0H = new Uint16Array(DISPLAY_HEIGHT).fill(DISPLAY_WIDTH);
+  vblankDma = false;
+  counter = 0;
+  blackBldY = 0;
+  appliedBlackBldY = 0;
 
   tick(): boolean {
-    if (this.state === "bars") {
-      let allFinished = true;
-      for (const bar of this.bars) {
-        if (bar.delay > 0) {
-          bar.delay--;
-          allFinished = false;
-        } else {
-          if (bar.x === 0 && bar.fade === FADE_TARGET) {
-            bar.finished = true;
-          } else {
-            allFinished = false;
-            bar.x = Math.max(0, bar.x - 24);
-            bar.fade = Math.min(FADE_TARGET, bar.fade + 192);
-          }
-        }
+    return Task_WhiteBarsFade(this);
+  }
+
+  runTask(): boolean {
+    let keepRunning: boolean;
+    do {
+      switch (this.state) {
+        case "init": keepRunning = WhiteBarsFade_Init(this); break;
+        case "startBars": keepRunning = WhiteBarsFade_StartBars(this); break;
+        case "waitBars": keepRunning = WhiteBarsFade_WaitBars(this); break;
+        case "blendToBlack": keepRunning = WhiteBarsFade_BlendToBlack(this); break;
+        default: keepRunning = WhiteBarsFade_End(this); break;
       }
-      if (allFinished) {
-        this.state = "fadeToBlack";
-      }
-      return false;
+    } while (keepRunning);
+    for (const bar of this.bars) SpriteCB_WhiteBarFade(this, bar);
+    if (this.state === "blendToBlack" || this.state === "end") VBlankCB_WhiteBarsFade_Blend(this);
+    else if (this.state !== "done") VBlankCB_WhiteBarsFade(this);
+    return this.state === "done";
+  }
+
+  initialize(): boolean { this.state = "startBars"; return false; }
+
+  startBars(): boolean {
+    this.bars = Array.from({ length: NUM_WHITE_BARS }, (_, i) => ({
+      y: i * WHITE_BAR_HEIGHT,
+      x: DISPLAY_WIDTH,
+      fade: 0,
+      delay: sWhiteBarsFade_StartDelays[i]!,
+      finished: false,
+      main: i === NUM_WHITE_BARS - 1,
+      active: true,
+    }));
+    this.state = "waitBars";
+    return false;
+  }
+
+  waitBars(): boolean {
+    this.vblankDma = false;
+    if (this.counter >= NUM_WHITE_BARS) this.state = "blendToBlack";
+    return false;
+  }
+
+  blendToBlack(): boolean {
+    this.vblankDma = false;
+    this.state = "end";
+    this.blackBldY = 0;
+    this.counter = 0;
+    return false;
+  }
+
+  end(): boolean {
+    this.counter += 480;
+    this.blackBldY = this.counter >> 8;
+    if (this.blackBldY > 16) {
+      FadeScreenBlack();
+      this.state = "done";
     }
-    // fadeToBlack (WhiteBarsFade_End)
-    this.blackBlendCounter += 480;
-    this.blackBldY = this.blackBlendCounter >> 8;
-    return this.blackBldY > 16;
+    return false;
+  }
+
+  stepBar(bar: WhiteBar): void {
+    if (!bar.active) return;
+    if (bar.delay) {
+      bar.delay--;
+      if (bar.main) this.vblankDma = true;
+      return;
+    }
+    const rows = bar.main ? WHITE_BAR_HEIGHT - 2 : WHITE_BAR_HEIGHT;
+    for (let i = 0; i < rows && bar.y + i < DISPLAY_HEIGHT; i++) {
+      this.workingBldY[bar.y + i] = bar.fade >> 8;
+      this.workingWin0H[bar.y + i] = bar.x & 0xff;
+    }
+    if (bar.x === 0 && bar.fade === FADE_TARGET) bar.finished = true;
+    bar.x -= 24;
+    bar.fade += 192;
+    if (bar.x < 0) bar.x = 0;
+    if (bar.fade > FADE_TARGET) bar.fade = FADE_TARGET;
+    if (bar.main) this.vblankDma = true;
+    if (bar.finished && (!bar.main || this.counter > 4)) {
+      this.counter++;
+      bar.active = false;
+    }
+  }
+
+  vblank(): void {
+    if (this.state === "blendToBlack" || this.state === "end") {
+      VBlankCB_WhiteBarsFade_Blend(this);
+      return;
+    }
+    VBlankCB_WhiteBarsFade(this);
+  }
+
+  copyScanlineBuffers(): void {
+    if (!this.vblankDma) return;
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      this.scanlineBldY[y] = this.workingBldY[y]!;
+      this.scanlineWin0H[y] = this.workingWin0H[y]!;
+    }
+  }
+
+  hblank(scanline: number): number {
+    const index = scanline === 227 ? 0 : scanline;
+    return this.scanlineBldY[index] ?? 0;
   }
 
   render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
-    if (this.state === "bars") {
-      for (const bar of this.bars) {
-        // Left portion: game snapshot with lighten blend
-        if (bar.x > 0) {
-          ctx.drawImage(snapshot, 0, bar.y, bar.x, bar.height, 0, bar.y, bar.x, bar.height);
-          const alpha = (bar.fade >> 8) / 16;
-          if (alpha > 0) {
-            ctx.save();
-            ctx.globalAlpha = alpha;
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(0, bar.y, bar.x, bar.height);
-            ctx.restore();
-          }
+    if (this.state === "init" || this.state === "startBars" || this.state === "waitBars") {
+      for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+        const right = Math.max(0, Math.min(DISPLAY_WIDTH, this.scanlineWin0H[y]!));
+        ctx.drawImage(snapshot, 0, y, right, 1, 0, y, right, 1);
+        const alpha = Math.min(1, HBlankCB_WhiteBarsFade(this, y) / 16);
+        if (alpha > 0) {
+          ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = "#fff";
+          ctx.fillRect(0, y, right, 1); ctx.restore();
         }
-        // Right portion: white bar that has passed
-        if (bar.x < DISPLAY_WIDTH) {
-          ctx.fillStyle = "#fff";
-          ctx.fillRect(bar.x, bar.y, DISPLAY_WIDTH - bar.x, bar.height);
+        if (right < DISPLAY_WIDTH) {
+          ctx.fillStyle = "#fff"; ctx.fillRect(right, y, DISPLAY_WIDTH - right, 1);
         }
       }
     } else {
-      // Fade white screen to black
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
-      const alpha = Math.min(1, this.blackBldY / 16);
+      const alpha = Math.min(1, this.appliedBlackBldY / 16);
       if (alpha > 0) {
         ctx.save();
         ctx.globalAlpha = alpha;
@@ -617,6 +680,17 @@ class WhiteBarsFadeEffect implements Effect {
     }
   }
 }
+
+function Task_WhiteBarsFade(effect: WhiteBarsFadeEffect): boolean { return effect.runTask(); }
+function WhiteBarsFade_Init(effect: WhiteBarsFadeEffect): boolean { return effect.initialize(); }
+function WhiteBarsFade_StartBars(effect: WhiteBarsFadeEffect): boolean { return effect.startBars(); }
+function WhiteBarsFade_WaitBars(effect: WhiteBarsFadeEffect): boolean { return effect.waitBars(); }
+function WhiteBarsFade_BlendToBlack(effect: WhiteBarsFadeEffect): boolean { return effect.blendToBlack(); }
+function WhiteBarsFade_End(effect: WhiteBarsFadeEffect): boolean { return effect.end(); }
+function SpriteCB_WhiteBarFade(effect: WhiteBarsFadeEffect, bar: WhiteBar): void { effect.stepBar(bar); }
+function VBlankCB_WhiteBarsFade(effect: WhiteBarsFadeEffect): void { effect.copyScanlineBuffers(); }
+function VBlankCB_WhiteBarsFade_Blend(effect: WhiteBarsFadeEffect): void { effect.appliedBlackBldY = Math.min(effect.blackBldY, 16); }
+function HBlankCB_WhiteBarsFade(effect: WhiteBarsFadeEffect, scanline: number): number { return effect.hblank(scanline); }
 
 /** B_TRANSITION_GRID_SQUARES: Task_GridSquares / GridSquares_Main. */
 class GridSquaresEffect implements Effect {
