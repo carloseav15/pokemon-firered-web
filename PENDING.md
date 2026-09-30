@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9250/10115 (91.4 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **865 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9283/10115 (91.8 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **832 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~17.911 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~17.351 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -31,14 +31,14 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 11 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 12 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
 | 13 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 14 | `quest_log.c` | parcial | 1767 | 55/88 | ~662 |  |
+| 14 | `quest_log.c` | parcial | 1767 | 56/88 | ~642 |  |
 | 15 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
 | 16 | `party_menu.c` | casi completo | 6342 | 304/357 | ~941 |  |
 | 17 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
 | 18 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
-| 19 | `overworld.c` | parcial | 3563 | 125/242 | ~1722 |  |
-| 20 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
-| 21 | `field_effect.c` | parcial | 4033 | 108/239 | ~2210 |  |
+| 19 | `field_effect.c` | parcial | 4033 | 140/239 | ~1670 |  |
+| 20 | `overworld.c` | parcial | 3563 | 125/242 | ~1722 |  |
+| 21 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 | 22 | `event_object_movement.c` | parcial | 9412 | 548/759 | ~2616 |  |
 | 23 | `intro.c` | parcial | 2805 | 3/79 | ~2698 |  |
 
