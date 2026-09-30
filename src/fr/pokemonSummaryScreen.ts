@@ -78,7 +78,7 @@ import { GetMonSpritePalFromSpeciesAndPersonality, IsMonSpriteNotFlipped, LoadSp
 import { CreateMonIcon, DestroyMonIcon, SafeFreeMonIconPalette, SafeLoadMonIconPalette } from "./pokemonIcon";
 import { FreeBallGfx, gBallSpriteTemplates, ItemIdToBallId, LoadBallGfx } from "./battle/pokeball";
 import { ShouldPlayNormalMonCry } from "./battle/gfx_sfx_util";
-import { isHMMove } from "./menus/monProgress";
+import { IsMoveHm } from "./menus/monProgress";
 import { getMapNameGenericBytes } from "./regionMap";
 import { fieldMenu } from "./menus/fieldMenus";
 
@@ -3089,7 +3089,7 @@ function GetMonPpByMoveSlot(mon: Mon, moveSlot: number): number {
 function PokeSum_CanForgetSelectedMove(): boolean {
   if (!sMonSummaryScreen) return false;
   const move = GetMonMoveBySlotId(sMonSummaryScreen.currentMon, sMoveSelectionCursorPos);
-  return !isHMMove(move) || sMonSummaryScreen.mode === PokemonSummaryScreenMode.PSS_MODE_FORGET_MOVE;
+  return !IsMoveHm(move) || sMonSummaryScreen.mode === PokemonSummaryScreenMode.PSS_MODE_FORGET_MOVE;
 }
 
 /** UpdateCurrentMonBufferFromPartyOrBox (pokemon_summary_screen.c). */

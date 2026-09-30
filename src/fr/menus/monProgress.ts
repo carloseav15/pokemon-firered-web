@@ -39,6 +39,15 @@ export function isHMMove(move: number): boolean {
   return moves.indexOf(move) >= 50;
 }
 
+/** IsMoveHm (party_menu.c): FireRed's move summary HM gate excludes Dive. */
+export function IsMoveHm(move: number): boolean {
+  const moves = sTMHMMoves();
+  for (let i = 0; i < C.NUM_HIDDEN_MACHINES - 1; i++) {
+    if (moves[i + C.NUM_TECHNICAL_MACHINES] === move) return true;
+  }
+  return false;
+}
+
 function setVars(mon: Pokemon, move: number): void {
   stringVars.var1 = Uint8Array.from(mon.nickname);
   stringVars.var2 = rom.moveName(move);
