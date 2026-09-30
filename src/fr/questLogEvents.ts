@@ -18,7 +18,12 @@ import { expandPlaceholders } from "./gba/charmap";
 import { stringVars } from "./gba/stringBuffers";
 import { ItemId_GetName } from "./pokemon/items";
 import { speciesName } from "./pokemon/pokemon";
+import { GetBoxNamePtr } from "./pokemon/storage";
 import { getMapNameGenericBytes } from "./regionMap";
+import {
+  DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset,
+  DynamicPlaceholderTextUtil_SetPlaceholderPtr,
+} from "./dynamicPlaceholderTextUtil";
 
 export { gQuestLogState };
 
@@ -516,6 +521,92 @@ export function LoadEvent_ArrivedInLocation(payload: readonly number[]): Uint8Ar
   });
 }
 
+function boxName(boxId: number): ArrayLike<number> {
+  const name = GetBoxNamePtr(boxId);
+  if (name === null) throw new RangeError(`invalid Quest Log box id ${boxId}`);
+  return name;
+}
+
+function packedByte(word: number, byte: 0 | 1): number { return ((word ?? 0) >>> (byte * 8)) & 0xff; }
+
+function expandQuestLogDynamicText(template: string, placeholders: ArrayLike<number>[]): Uint8Array {
+  DynamicPlaceholderTextUtil_Reset();
+  placeholders.forEach((text, index) => DynamicPlaceholderTextUtil_SetPlaceholderPtr(index, text));
+  return DynamicPlaceholderTextUtil_ExpandPlaceholders(rom.text(template));
+}
+
+/** LoadEvent_SwitchedMonsBetweenBoxes (quest_log_events.c). */
+export function LoadEvent_SwitchedMonsBetweenBoxes(payload: readonly number[]): Uint8Array {
+  return expandQuestLogDynamicText("gText_QuestLog_SwitchedMonsBetweenBoxes", [
+    boxName(packedByte(payload[2] ?? 0, 0)), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+    boxName(packedByte(payload[2] ?? 0, 1)), QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE),
+  ]);
+}
+
+/** LoadEvent_SwitchedMonsWithinBox (quest_log_events.c). */
+export function LoadEvent_SwitchedMonsWithinBox(payload: readonly number[]): Uint8Array {
+  return expandQuestLogDynamicText("gText_QuestLog_SwitchedMonsWithinBox", [
+    boxName(packedByte(payload[2] ?? 0, 0)), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+    QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE),
+  ]);
+}
+
+/** LoadEvent_SwitchedPartyMonForPCMon (quest_log_events.c). */
+export function LoadEvent_SwitchedPartyMonForPCMon(payload: readonly number[]): Uint8Array {
+  return expandQuestLogDynamicText("gText_QuestLog_SwitchedPartyMonForPCMon", [
+    boxName(packedByte(payload[2] ?? 0, 0)), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+    QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE),
+  ]);
+}
+
+/** LoadEvent_MovedMonBetweenBoxes (quest_log_events.c). */
+export function LoadEvent_MovedMonBetweenBoxes(payload: readonly number[]): Uint8Array {
+  return expandQuestLogDynamicText("gText_QuestLog_MovedMonToNewBox", [
+    boxName(packedByte(payload[1] ?? 0, 0)), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+    boxName(packedByte(payload[1] ?? 0, 1)),
+  ]);
+}
+
+/** LoadEvent_MovedMonWithinBox (quest_log_events.c). */
+export function LoadEvent_MovedMonWithinBox(payload: readonly number[]): Uint8Array {
+  return expandQuestLogDynamicText("gText_QuestLog_MovedMonWithinBox", [
+    boxName(packedByte(payload[1] ?? 0, 0)), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+  ]);
+}
+
+/** LoadEvent_WithdrewMonFromPC (quest_log_events.c). */
+export function LoadEvent_WithdrewMonFromPC(payload: readonly number[]): Uint8Array {
+  return expandQuestLogDynamicText("gText_QuestLog_WithdrewMonFromPC", [
+    boxName(packedByte(payload[1] ?? 0, 0)), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+  ]);
+}
+
+/** LoadEvent_DepositedMonInPC (quest_log_events.c). */
+export function LoadEvent_DepositedMonInPC(payload: readonly number[]): Uint8Array {
+  return expandQuestLogDynamicText("gText_QuestLog_DepositedMonInPC", [
+    QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE), boxName(packedByte(payload[1] ?? 0, 0)),
+  ]);
+}
+
+/** LoadEvent_SwitchedMultipleMons (quest_log_events.c). */
+export function LoadEvent_SwitchedMultipleMons(payload: readonly number[]): Uint8Array {
+  const box1 = packedByte(payload[0] ?? 0, 0);
+  const box2 = packedByte(payload[0] ?? 0, 1);
+  return expandQuestLogDynamicText("gText_QuestLog_SwitchedMultipleMons", [
+    boxName(box1), box1 === box2 ? rom.text("gText_QuestLog_ADifferentSpot") : boxName(box2),
+  ]);
+}
+
+/** LoadEvent_DepositedItemInPC (quest_log_events.c). */
+export function LoadEvent_DepositedItemInPC(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_StoredItemInPC", { var1: ItemId_GetName(payload[0] ?? C.ITEM_NONE) });
+}
+
+/** LoadEvent_WithdrewItemFromPC (quest_log_events.c). */
+export function LoadEvent_WithdrewItemFromPC(payload: readonly number[]): Uint8Array {
+  return expandQuestLogEventText("gText_QuestLog_WithdrewItemFromPC", { var1: ItemId_GetName(payload[0] ?? C.ITEM_NONE) });
+}
+
 /** LoadEvent_GaveHeldItemFromPartyMenu (quest_log_events.c). */
 export function LoadEvent_GaveHeldItemFromPartyMenu(payload: readonly number[]): Uint8Array {
   return expandQuestLogEventText("gText_QuestLog_GaveMonHeldItem", {
@@ -570,8 +661,18 @@ export function LoadQuestLogEventText(event: QuestLogScriptEvent): Uint8Array[] 
               : event.eventId === C.QL_EVENT_SWAPPED_HELD_ITEM_PC ? LoadEvent_SwappedHeldItemFromPC
                 : event.eventId === C.QL_EVENT_DEPARTED ? LoadEvent_DepartedLocation
                   : event.eventId === C.QL_EVENT_USED_FIELD_MOVE ? LoadEvent_UsedFieldMove
-                    : event.eventId === C.QL_EVENT_OBTAINED_STORY_ITEM ? LoadEvent_ObtainedStoryItem
-                      : event.eventId === C.QL_EVENT_ARRIVED ? LoadEvent_ArrivedInLocation : null;
+                      : event.eventId === C.QL_EVENT_OBTAINED_STORY_ITEM ? LoadEvent_ObtainedStoryItem
+                      : event.eventId === C.QL_EVENT_ARRIVED ? LoadEvent_ArrivedInLocation
+                        : event.eventId === C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES ? LoadEvent_SwitchedMonsBetweenBoxes
+                          : event.eventId === C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX ? LoadEvent_SwitchedMonsWithinBox
+                            : event.eventId === C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON ? LoadEvent_SwitchedPartyMonForPCMon
+                              : event.eventId === C.QL_EVENT_MOVED_MON_BETWEEN_BOXES ? LoadEvent_MovedMonBetweenBoxes
+                                : event.eventId === C.QL_EVENT_MOVED_MON_WITHIN_BOX ? LoadEvent_MovedMonWithinBox
+                                  : event.eventId === C.QL_EVENT_WITHDREW_MON_PC ? LoadEvent_WithdrewMonFromPC
+                                    : event.eventId === C.QL_EVENT_DEPOSITED_MON_PC ? LoadEvent_DepositedMonInPC
+                                      : event.eventId === C.QL_EVENT_SWITCHED_MULTIPLE_MONS ? LoadEvent_SwitchedMultipleMons
+                                        : event.eventId === C.QL_EVENT_DEPOSITED_ITEM_PC ? LoadEvent_DepositedItemInPC
+                                          : event.eventId === C.QL_EVENT_WITHDREW_ITEM_PC ? LoadEvent_WithdrewItemFromPC : null;
   return load === null ? null : event.payloads.map(load);
 }
 
