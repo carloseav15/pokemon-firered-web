@@ -1432,7 +1432,12 @@ export class Overworld {
 
   /** DoLavaridgeGymB1FWarp (field_fadetransition.c). */
   DoLavaridgeGymB1FWarp(): void {
-    tasks.create((taskId) => this.Task_LavaridgeGymB1FWarp(taskId), 10);
+    this.StartLavaridgeGymB1FWarp(10);
+  }
+
+  /** StartLavaridgeGymB1FWarp (field_effect.c). */
+  StartLavaridgeGymB1FWarp(priority: number): void {
+    tasks.create((taskId) => this.Task_LavaridgeGymB1FWarp(taskId), priority & 0xff);
   }
 
   /** Task_LavaridgeGymB1FWarp and its six source states (field_effect.c). */
@@ -1532,7 +1537,12 @@ export class Overworld {
 
   /** DoLavaridgeGym1FWarp (field_fadetransition.c). */
   DoLavaridgeGym1FWarp(): void {
-    tasks.create((taskId) => this.Task_LavaridgeGym1FWarp(taskId), 10);
+    this.StartLavaridgeGym1FWarp(10);
+  }
+
+  /** StartLavaridgeGym1FWarp (field_effect.c). */
+  StartLavaridgeGym1FWarp(priority: number): void {
+    tasks.create((taskId) => this.Task_LavaridgeGym1FWarp(taskId), priority & 0xff);
   }
 
   /** Task_LavaridgeGym1FWarp and its five source states (field_effect.c). */
