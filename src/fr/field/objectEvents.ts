@@ -1963,7 +1963,8 @@ export class ObjectEvents {
     return WaitForMovementDelay(object.sprite);
   }
 
-  private trainerCloseToPlayer(object: ObjectEvent): boolean {
+  /** ObjectEventIsTrainerAndCloseToPlayer (event_object_movement.c). */
+  ObjectEventIsTrainerAndCloseToPlayer(object: ObjectEvent): boolean {
     if (!this.hooks.playerIsRunning()) return false;
     if (object.trainerType !== C.TRAINER_TYPE_NORMAL && object.trainerType !== C.TRAINER_TYPE_BURIED) return false;
     const p = this.hooks.playerDestCoords();
@@ -1976,9 +1977,31 @@ export class ObjectEvents {
     return !(minX > p.x || maxX < p.x || minY > p.y || maxY < p.y);
   }
 
+  /** MoveNextDirectionInSequence (event_object_movement.c). */
+  MoveNextDirectionInSequence(object: ObjectEvent, sprite: Sprite, route: readonly number[]): boolean {
+    if (object.directionSequenceIndex === 3 && object.initialCoords.x === object.currentCoords.x && object.initialCoords.y === object.currentCoords.y)
+      object.directionSequenceIndex = 0;
+
+    this.setDirection(object, route[object.directionSequenceIndex]!);
+    let movementActionId = actionWalkNormal(object.movementDirection);
+    let collision = this.GetCollisionInDirection(object, object.movementDirection);
+    if (collision === COLLISION_OUTSIDE_RANGE) {
+      object.directionSequenceIndex = (object.directionSequenceIndex + 1) & 0xff;
+      this.setDirection(object, route[object.directionSequenceIndex & 3]!);
+      movementActionId = actionWalkNormal(object.movementDirection);
+      collision = this.GetCollisionInDirection(object, object.movementDirection);
+    }
+
+    if (collision) movementActionId = actionWalkInPlaceNormal(object.facingDirection);
+    this.setSingle(object, movementActionId);
+    object.singleMovementActive = true;
+    sprite.data[1] = 2;
+    return true;
+  }
+
   /** Mirrors gGetVectorDirectionFuncs in movement_type_func_tables.h. */
   TryGetTrainerEncounterDirection(object: ObjectEvent, mode: number): number {
-    if (!this.trainerCloseToPlayer(object)) return DIR_NONE;
+    if (!this.ObjectEventIsTrainerAndCloseToPlayer(object)) return DIR_NONE;
     const p = this.hooks.playerDestCoords();
     // The C locals are s16; keep the same wrapping before abs/comparison.
     const dx = (p.x - object.currentCoords.x) << 16 >> 16;
@@ -2148,7 +2171,7 @@ export class ObjectEvents {
           }
           return false;
         case 3:
-          if (this.waitDelay(object) || this.trainerCloseToPlayer(object)) { s.data[1] = 4; return true; }
+          if (this.waitDelay(object) || this.ObjectEventIsTrainerAndCloseToPlayer(object)) { s.data[1] = 4; return true; }
           return false;
         case 4: {
           let direction = this.TryGetTrainerEncounterDirection(object, this.trainerDirectionMode(type));
@@ -2201,7 +2224,7 @@ export class ObjectEvents {
       switch (step) {
         case 0: this.clearMovement(object); this.setSingle(object, actionFace(object.facingDirection)); s.data[1] = 1; return true;
         case 1: if (this.execSingle(object)) { this.setDelay(object, 48); s.data[1] = 2; } return false;
-        case 2: if (this.waitDelay(object) || this.trainerCloseToPlayer(object)) s.data[1] = 3; return false;
+        case 2: if (this.waitDelay(object) || this.ObjectEventIsTrainerAndCloseToPlayer(object)) s.data[1] = 3; return false;
         case 3: {
           let direction = this.TryGetTrainerEncounterDirection(object, rom.constants.RUNFOLLOW_ANY);
           if (direction === DIR_NONE) direction = (type === c.MOVEMENT_TYPE_ROTATE_CLOCKWISE ? CLOCKWISE : COUNTERCLOCKWISE)[object.facingDirection];
@@ -2253,30 +2276,12 @@ export class ObjectEvents {
     // Walk sequences
     if (type >= 0x1d && type <= 0x34) {
       const [route, checkIndex, axis] = SEQUENCES[type - 0x1d];
-      switch (step) {
-        case 0: this.clearMovement(object); s.data[1] = 1; return true;
-        case 1: {
-          if (object.directionSequenceIndex === checkIndex && object.initialCoords[axis] === object.currentCoords[axis]) object.directionSequenceIndex = checkIndex + 1;
-          if (object.directionSequenceIndex === 3 && object.initialCoords.x === object.currentCoords.x && object.initialCoords.y === object.currentCoords.y) object.directionSequenceIndex = 0;
-          this.setDirection(object, route[object.directionSequenceIndex]);
-          let action = actionWalkNormal(object.movementDirection);
-          let collision = this.GetCollisionInDirection(object, object.movementDirection);
-          if (collision === COLLISION_OUTSIDE_RANGE) {
-            object.directionSequenceIndex++;
-            this.setDirection(object, route[object.directionSequenceIndex & 3]);
-            action = actionWalkNormal(object.movementDirection);
-            collision = this.GetCollisionInDirection(object, object.movementDirection);
-          }
-          if (collision) action = actionWalkInPlaceNormal(object.facingDirection);
-          this.setSingle(object, action);
-          object.singleMovementActive = true;
-          s.data[1] = 2;
-          return true;
-        }
-        case 2:
-          if (this.execSingle(object)) { object.singleMovementActive = false; s.data[1] = 1; }
-          return false;
+      if (step === 0) { this.clearMovement(object); s.data[1] = 1; return true; }
+      if (step === 1) {
+        if (object.directionSequenceIndex === checkIndex && object.initialCoords[axis] === object.currentCoords[axis]) object.directionSequenceIndex = checkIndex + 1;
+        return this.MoveNextDirectionInSequence(object, s, route);
       }
+      if (step === 2 && this.execSingle(object)) { object.singleMovementActive = false; s.data[1] = 1; }
       return false;
     }
 
