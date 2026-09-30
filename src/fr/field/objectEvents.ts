@@ -798,7 +798,7 @@ export class ObjectEvents {
     sprite.startAnim(faceAnim(direction & 0xff));
     const virtual: VirtualObject = { sprite, id: virtualObjId, elevation: elevation & 0xff, invisible: false, animNum: 0, animState: 0 };
     sprite.callback = () => {
-      this.updateVirtualObject(virtual);
+      this.SpriteCB_VirtualObject(virtual);
     };
     this.virtualObjects.set(virtualObjId, virtual);
     return this.hooks.registerSprite?.(sprite) ?? -1;
@@ -849,27 +849,36 @@ export class ObjectEvents {
     this.virtualObjects.clear();
   }
 
-  private updateVirtualObject(virtual: VirtualObject): void {
+  /** SpriteCB_VirtualObject (event_object_movement.c): animate and place a virtual object each frame. */
+  SpriteCB_VirtualObject(virtual: VirtualObject): void {
+    this.VirtualObject_UpdateAnim(virtual);
     const { sprite } = virtual;
     const offset = this.hooks.cameraOffset?.() ?? { x: 0, y: 0 };
-    if (virtual.animNum === 1 || virtual.animNum === 2) {
-      if (virtual.animState === 0) {
-        sprite.y2 = virtual.animNum === 1 ? -160 : 0;
-        virtual.animState = 1;
-      }
-      sprite.y2 += virtual.animNum === 1 ? 8 : -8;
-      if (sprite.y2 === (virtual.animNum === 1 ? 0 : -160)) {
-        sprite.y2 = 0;
-        if (virtual.animNum === 2) virtual.invisible = true;
-        virtual.animNum = 0;
-        virtual.animState = 0;
-      }
-    }
     this.SetObjectSubpriorityByElevation(virtual.elevation, sprite, 1, -offset.y);
     sprite.invisible = virtual.invisible;
     const x = sprite.x + sprite.x2 + sprite.centerToCornerVecX - offset.x;
     const y = sprite.y + sprite.y2 + sprite.centerToCornerVecY - offset.y;
     if (x >= 256 || x - (sprite.centerToCornerVecX >> 1) < -16 || y >= 176 || y - (sprite.centerToCornerVecY >> 1) < -16) sprite.invisible = true;
+  }
+
+  /** VirtualObject_UpdateAnim (event_object_movement.c): apply Union Room spawn-in/out motion. */
+  VirtualObject_UpdateAnim(virtual: VirtualObject): void {
+    const { sprite } = virtual;
+    if (virtual.animNum !== 1 && virtual.animNum !== 2) {
+      virtual.animNum = 0;
+      return;
+    }
+    if (virtual.animState === 0) {
+      sprite.y2 = virtual.animNum === 1 ? -160 : 0;
+      virtual.animState = 1;
+    }
+    sprite.y2 += virtual.animNum === 1 ? 8 : -8;
+    if (sprite.y2 === (virtual.animNum === 1 ? 0 : -160)) {
+      sprite.y2 = 0;
+      if (virtual.animNum === 2) virtual.invisible = true;
+      virtual.animNum = 0;
+      virtual.animState = 0;
+    }
   }
 
   get list(): ObjectEvent[] {
