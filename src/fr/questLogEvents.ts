@@ -1655,6 +1655,11 @@ export function QL_ResetEventStates(): void {
   sPlayedTheSlots = false;
 }
 
+/** QL_ResetDefeatedWildMonRecord (quest_log.c): the map loader invalidates the active wild-event record. */
+export function QL_ResetDefeatedWildMonRecord(): void {
+  gQuestLogDefeatedWildMonRecord = null;
+}
+
 /** QL_RecordWait (quest_log_events.c): append a timed wait command to the active scene. */
 export function QL_RecordWait(duration: number): void {
   if (gQuestLogRecordingPointer === null) return;

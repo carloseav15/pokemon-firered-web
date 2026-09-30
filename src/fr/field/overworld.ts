@@ -36,7 +36,7 @@ import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 
-import { gQuestLogState, QL_InitSceneObjectsAndActions, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
+import { gQuestLogState, QL_InitSceneObjectsAndActions, QL_ResetDefeatedWildMonRecord, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
 
@@ -486,6 +486,7 @@ export class Overworld {
 
   /** Per-map resets shared by LoadMapFromWarp and LoadMapFromCameraTransition. */
   private onMapLoad(): void {
+    QL_ResetDefeatedWildMonRecord();
     this.objects.ClearVirtualObjects();
     this.stepCallback.reset();
     ResetCyclingRoadChallengeData();
