@@ -153,7 +153,6 @@ export class IntroGameFreak {
   setIntroCallback(callback: Callback): void {
     this.callback = callback;
     this.state = 0;
-    this.timer = 0;
   }
 
   update(): void { CB2_Intro(this); }

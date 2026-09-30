@@ -32,10 +32,17 @@ export function VBlankCB_Copyright(): void {
   TransferPlttBuffer();
 }
 
+/** intro.c CB2_WaitFadeBeforeSetUpIntro transition condition. */
+export function CB2_WaitFadeBeforeSetUpIntro(screen: IntroCopyright): boolean {
+  return screen.waitFadeBeforeSetupIntro();
+}
+
 export class IntroCopyright {
   private frame = 0;
   private fadingOut = false;
   done = false;
+
+  waitFadeBeforeSetupIntro(): boolean { return this.done; }
 
   static async preload(): Promise<void> {
     await preloadIncbin(symbols);

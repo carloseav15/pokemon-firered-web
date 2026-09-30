@@ -2,7 +2,7 @@
 // constants, callbacks and the GBA-style TS hardware layer; Oak and naming
 // use oak_speech.c / naming_screen.c texts, options and flow.
 import { launchFireRed, type LaunchOptions } from "./boot";
-import { IntroCopyright } from "./introCopyright";
+import { CB2_WaitFadeBeforeSetUpIntro, IntroCopyright } from "./introCopyright";
 import { CB2_Intro, IntroGameFreak, StartIntroSequence } from "./introGameFreak";
 import { IntroScene1 } from "./introScene1";
 import { IntroScene2 } from "./introScene2";
@@ -165,7 +165,7 @@ class Startup {
         }
       }
       if (this.introIndex < introStages.length &&
-          (this.stage === "copyright" ? this.copyright.done :
+          (this.stage === "copyright" ? CB2_WaitFadeBeforeSetUpIntro(this.copyright) :
             this.stage === "logo" ? this.gameFreak.done :
               this.stage === "grass" ? this.scene1.done :
                 this.stage === "forest" ? this.scene2.done :
