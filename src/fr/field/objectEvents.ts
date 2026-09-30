@@ -1938,7 +1938,8 @@ export class ObjectEvents {
     }
   }
 
-  private setSingle(object: ObjectEvent, actionId: number): void {
+  /** ObjectEventSetSingleMovement (event_object_movement.c). */
+  ObjectEventSetSingleMovement(object: ObjectEvent, actionId: number): void {
     object.movementActionId = actionId;
     object.sprite.data[2] = 0;
     if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) {
@@ -1946,7 +1947,8 @@ export class ObjectEvents {
     }
   }
 
-  private execSingle(object: ObjectEvent): boolean {
+  /** ObjectEventExecSingleMovementAction (event_object_movement.c). */
+  ObjectEventExecSingleMovementAction(object: ObjectEvent): boolean {
     if (this.execAction(object)) {
       object.movementActionId = MOVEMENT_ACTION_NONE;
       object.sprite.data[2] = 0;
@@ -1993,7 +1995,7 @@ export class ObjectEvents {
     }
 
     if (collision) movementActionId = actionWalkInPlaceNormal(object.facingDirection);
-    this.setSingle(object, movementActionId);
+    this.ObjectEventSetSingleMovement(object, movementActionId);
     object.singleMovementActive = true;
     sprite.data[1] = 2;
     return true;
@@ -2108,13 +2110,13 @@ export class ObjectEvents {
     }
     if (type === c.MOVEMENT_TYPE_INVISIBLE) {
       if (step === 0) {
-        this.clearMovement(object);
-        this.setSingle(object, actionFace(object.facingDirection));
+        this.ClearObjectEventMovement(object);
+        this.ObjectEventSetSingleMovement(object, actionFace(object.facingDirection));
         object.invisible = true;
         s.data[1] = 1;
         return true;
       }
-      if (step === 1 && this.execSingle(object)) { s.data[1] = 2; return true; }
+      if (step === 1 && this.ObjectEventExecSingleMovementAction(object)) { s.data[1] = 2; return true; }
       if (step === 2) object.singleMovementActive = false;
       return false;
     }
@@ -2127,33 +2129,33 @@ export class ObjectEvents {
       return this.MovementType_Disguise_Callback(object, s);
     }
     if (type === c.MOVEMENT_TYPE_BURIED) {
-      if (step === 0) this.clearMovement(object);
+      if (step === 0) this.ClearObjectEventMovement(object);
       return false;
     }
     if ([c.MOVEMENT_TYPE_FACE_UP, c.MOVEMENT_TYPE_FACE_DOWN, c.MOVEMENT_TYPE_FACE_LEFT, c.MOVEMENT_TYPE_FACE_RIGHT].includes(type)) {
       if (step === 0) {
-        this.clearMovement(object);
-        this.setSingle(object, actionFace(INITIAL_FACING[type] ?? object.facingDirection));
+        this.ClearObjectEventMovement(object);
+        this.ObjectEventSetSingleMovement(object, actionFace(INITIAL_FACING[type] ?? object.facingDirection));
         s.data[1] = 1;
         return true;
       }
-      if (step === 1 && this.execSingle(object)) s.data[1] = 2;
+      if (step === 1 && this.ObjectEventExecSingleMovementAction(object)) s.data[1] = 2;
       return false;
     }
     if (type === c.MOVEMENT_TYPE_RAISE_HAND_AND_STOP) {
-      if (step === 0) { this.clearMovement(object); this.setSingle(object, c.MOVEMENT_ACTION_RAISE_HAND_AND_STOP); s.data[1] = 1; return true; }
-      if (step === 1 && this.execSingle(object)) { s.data[1] = 2; return true; }
+      if (step === 0) { this.ClearObjectEventMovement(object); this.ObjectEventSetSingleMovement(object, c.MOVEMENT_ACTION_RAISE_HAND_AND_STOP); s.data[1] = 1; return true; }
+      if (step === 1 && this.ObjectEventExecSingleMovementAction(object)) { s.data[1] = 2; return true; }
       if (step === 2) object.singleMovementActive = false;
       return false;
     }
     if (type === c.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP || type === c.MOVEMENT_TYPE_RAISE_HAND_AND_SWIM) {
       if (step === 0) {
-        this.clearMovement(object);
-        this.setSingle(object, type === c.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP ? c.MOVEMENT_ACTION_RAISE_HAND_AND_JUMP : c.MOVEMENT_ACTION_RAISE_HAND_AND_SWIM);
+        this.ClearObjectEventMovement(object);
+        this.ObjectEventSetSingleMovement(object, type === c.MOVEMENT_TYPE_RAISE_HAND_AND_JUMP ? c.MOVEMENT_ACTION_RAISE_HAND_AND_JUMP : c.MOVEMENT_ACTION_RAISE_HAND_AND_SWIM);
         s.data[1] = 1;
         return false;
       }
-      if (step === 1 && this.execSingle(object)) s.data[1] = 0;
+      if (step === 1 && this.ObjectEventExecSingleMovementAction(object)) s.data[1] = 0;
       return false;
     }
 
@@ -2161,10 +2163,10 @@ export class ObjectEvents {
     const faceDirs = this.faceTypeDirections(type);
     if (faceDirs) {
       switch (step) {
-        case 0: this.clearMovement(object); s.data[1] = 1; return true;
-        case 1: this.setSingle(object, actionFace(object.facingDirection)); s.data[1] = 2; return true;
+        case 0: this.ClearObjectEventMovement(object); s.data[1] = 1; return true;
+        case 1: this.ObjectEventSetSingleMovement(object, actionFace(object.facingDirection)); s.data[1] = 2; return true;
         case 2:
-          if (this.execSingle(object)) {
+          if (this.ObjectEventExecSingleMovementAction(object)) {
             this.setDelay(object, (type === c.MOVEMENT_TYPE_LOOK_AROUND ? DELAYS_MEDIUM : DELAYS_SHORT)[random() & 3]);
             object.singleMovementActive = false;
             s.data[1] = 3;
@@ -2190,10 +2192,10 @@ export class ObjectEvents {
         : type === c.MOVEMENT_TYPE_WANDER_LEFT_AND_RIGHT || type === c.MOVEMENT_TYPE_WANDER_RIGHT_AND_LEFT ? [DIR_WEST, DIR_EAST] : undefined;
     if (wanderDirs) {
       switch (step) {
-        case 0: this.clearMovement(object); s.data[1] = 1; return true;
-        case 1: this.setSingle(object, actionFace(object.facingDirection)); s.data[1] = 2; return true;
+        case 0: this.ClearObjectEventMovement(object); s.data[1] = 1; return true;
+        case 1: this.ObjectEventSetSingleMovement(object, actionFace(object.facingDirection)); s.data[1] = 2; return true;
         case 2:
-          if (!this.execSingle(object)) return false;
+          if (!this.ObjectEventExecSingleMovementAction(object)) return false;
           this.setDelay(object, DELAYS_MEDIUM[random() & 3]);
           s.data[1] = 3;
           return true;
@@ -2208,12 +2210,12 @@ export class ObjectEvents {
           return true;
         }
         case 5:
-          this.setSingle(object, type === c.MOVEMENT_TYPE_WANDER_AROUND_SLOWER ? actionWalkSlower(object.movementDirection) : actionWalkNormal(object.movementDirection));
+          this.ObjectEventSetSingleMovement(object, type === c.MOVEMENT_TYPE_WANDER_AROUND_SLOWER ? actionWalkSlower(object.movementDirection) : actionWalkNormal(object.movementDirection));
           object.singleMovementActive = true;
           s.data[1] = 6;
           return true;
         case 6:
-          if (this.execSingle(object)) { object.singleMovementActive = false; s.data[1] = 1; }
+          if (this.ObjectEventExecSingleMovementAction(object)) { object.singleMovementActive = false; s.data[1] = 1; }
           return false;
       }
       return false;
@@ -2222,8 +2224,8 @@ export class ObjectEvents {
     // Rotation
     if (type === c.MOVEMENT_TYPE_ROTATE_COUNTERCLOCKWISE || type === c.MOVEMENT_TYPE_ROTATE_CLOCKWISE) {
       switch (step) {
-        case 0: this.clearMovement(object); this.setSingle(object, actionFace(object.facingDirection)); s.data[1] = 1; return true;
-        case 1: if (this.execSingle(object)) { this.setDelay(object, 48); s.data[1] = 2; } return false;
+        case 0: this.ClearObjectEventMovement(object); this.ObjectEventSetSingleMovement(object, actionFace(object.facingDirection)); s.data[1] = 1; return true;
+        case 1: if (this.ObjectEventExecSingleMovementAction(object)) { this.setDelay(object, 48); s.data[1] = 2; } return false;
         case 2: if (this.waitDelay(object) || this.ObjectEventIsTrainerAndCloseToPlayer(object)) s.data[1] = 3; return false;
         case 3: {
           let direction = this.TryGetTrainerEncounterDirection(object, rom.constants.RUNFOLLOW_ANY);
@@ -2239,7 +2241,7 @@ export class ObjectEvents {
     // Walk back and forth
     if (type >= c.MOVEMENT_TYPE_WALK_UP_AND_DOWN && type <= c.MOVEMENT_TYPE_WALK_RIGHT_AND_LEFT) {
       switch (step) {
-        case 0: this.clearMovement(object); s.data[1] = 1; return true;
+        case 0: this.ClearObjectEventMovement(object); s.data[1] = 1; return true;
         case 1: {
           let direction = INITIAL_FACING[type];
           if (object.directionSequenceIndex) direction = OPPOSITE[direction];
@@ -2261,13 +2263,13 @@ export class ObjectEvents {
             collision = this.GetCollisionInDirection(object, object.movementDirection);
           }
           if (collision) action = actionWalkInPlaceNormal(object.facingDirection);
-          this.setSingle(object, action);
+          this.ObjectEventSetSingleMovement(object, action);
           object.singleMovementActive = true;
           s.data[1] = 3;
           return true;
         }
         case 3:
-          if (this.execSingle(object)) { object.singleMovementActive = false; s.data[1] = 1; }
+          if (this.ObjectEventExecSingleMovementAction(object)) { object.singleMovementActive = false; s.data[1] = 1; }
           return false;
       }
       return false;
@@ -2276,12 +2278,12 @@ export class ObjectEvents {
     // Walk sequences
     if (type >= 0x1d && type <= 0x34) {
       const [route, checkIndex, axis] = SEQUENCES[type - 0x1d];
-      if (step === 0) { this.clearMovement(object); s.data[1] = 1; return true; }
+      if (step === 0) { this.ClearObjectEventMovement(object); s.data[1] = 1; return true; }
       if (step === 1) {
         if (object.directionSequenceIndex === checkIndex && object.initialCoords[axis] === object.currentCoords[axis]) object.directionSequenceIndex = checkIndex + 1;
         return this.MoveNextDirectionInSequence(object, s, route);
       }
-      if (step === 2 && this.execSingle(object)) { object.singleMovementActive = false; s.data[1] = 1; }
+      if (step === 2 && this.ObjectEventExecSingleMovementAction(object)) { object.singleMovementActive = false; s.data[1] = 1; }
       return false;
     }
 
@@ -2291,7 +2293,7 @@ export class ObjectEvents {
       const copyInit = INITIAL_FACING[type];
       switch (step) {
         case 0: {
-          this.clearMovement(object);
+          this.ClearObjectEventMovement(object);
           if (object.directionSequenceIndex === 0) object.directionSequenceIndex = this.hooks.playerInfo()?.facing ?? DIR_SOUTH;
           s.data[1] = 1;
           return true;
@@ -2309,7 +2311,7 @@ export class ObjectEvents {
           return didStart;
         }
         case 2:
-          if (this.execSingle(object)) { object.singleMovementActive = false; s.data[1] = 1; }
+          if (this.ObjectEventExecSingleMovementAction(object)) { object.singleMovementActive = false; s.data[1] = 1; }
           return false;
       }
       return false;
@@ -2320,10 +2322,10 @@ export class ObjectEvents {
       const dir = [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST][(type - c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN) & 3];
       const group = Math.floor((type - c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN) / 4);
       if (step === 0) {
-        this.clearMovement(object);
-        this.setSingle(object, group === 0 ? actionWalkInPlaceNormal(dir) : group === 1 ? actionWalkInPlaceFast(dir) : actionWalkInPlaceFaster(dir));
+        this.ClearObjectEventMovement(object);
+        this.ObjectEventSetSingleMovement(object, group === 0 ? actionWalkInPlaceNormal(dir) : group === 1 ? actionWalkInPlaceFast(dir) : actionWalkInPlaceFaster(dir));
         s.data[1] = 1;
-      } else if (this.execSingle(object)) s.data[1] = 0;
+      } else if (this.ObjectEventExecSingleMovementAction(object)) s.data[1] = 0;
       return false;
     }
     return false;
@@ -2331,7 +2333,7 @@ export class ObjectEvents {
 
   /** MovementType_Disguise_Callback (event_object_movement.c). */
   private MovementType_Disguise_Callback(object: ObjectEvent, sprite: Sprite): boolean {
-    this.clearMovement(object);
+    this.ClearObjectEventMovement(object);
     return false;
   }
 
@@ -2392,7 +2394,7 @@ export class ObjectEvents {
 
   /** CopyablePlayerMovement_FaceDirection (event_object_movement.c). */
   private CopyablePlayerMovement_FaceDirection(object: ObjectEvent, direction: number): boolean {
-    this.setSingle(object, actionFace(direction));
+    this.ObjectEventSetSingleMovement(object, actionFace(direction));
     object.singleMovementActive = true;
     object.sprite.data[1] = 2;
     return true;
@@ -2403,7 +2405,7 @@ export class ObjectEvents {
     const destination = ObjectEventMoveDestCoords(object, direction);
     const blocked = this.GetCollisionAtCoords(object, destination.x, destination.y, direction)
       || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(destination.x, destination.y)));
-    this.setSingle(object, blocked ? actionFace(direction) : action);
+    this.ObjectEventSetSingleMovement(object, blocked ? actionFace(direction) : action);
     object.singleMovementActive = true;
     object.sprite.data[1] = 2;
     return true;
@@ -2431,7 +2433,7 @@ export class ObjectEvents {
 
   /** cph_IM_DIFFERENT (event_object_movement.c). */
   private cph_IM_DIFFERENT(object: ObjectEvent, direction: number): boolean {
-    this.setSingle(object, actionJumpInPlace(direction));
+    this.ObjectEventSetSingleMovement(object, actionJumpInPlace(direction));
     object.singleMovementActive = true;
     object.sprite.data[1] = 2;
     return true;
@@ -2449,19 +2451,19 @@ export class ObjectEvents {
     const y = ((object.currentCoords.y + vector[1] * 2) << 16) >> 16;
     const blocked = this.GetCollisionAtCoords(object, x, y, direction)
       || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(x, y)));
-    this.setSingle(object, blocked ? actionFace(direction) : actionJump2(direction));
+    this.ObjectEventSetSingleMovement(object, blocked ? actionFace(direction) : actionJump2(direction));
     object.singleMovementActive = true;
     object.sprite.data[1] = 2;
     return true;
   }
 
-  clearMovement(object: ObjectEvent): void {
+  /** ClearObjectEventMovement (event_object_movement.c). */
+  ClearObjectEventMovement(object: ObjectEvent): void {
     object.singleMovementActive = false;
     object.heldMovementActive = false;
     object.heldMovementFinished = false;
     object.movementActionId = MOVEMENT_ACTION_NONE;
     object.sprite.data[1] = 0;
-    object.sprite.data[2] = 0;
   }
 
   // ---------------------------------------------------------------- movement actions
