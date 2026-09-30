@@ -4,6 +4,7 @@
 
 import { allocU16Array, allocU8Array, defineScalars } from "./ram";
 import * as C from "../generated/constants";
+import { FreeTrainerTowerBattleStruct, InitTrainerTowerBattleStruct } from "../trainerTower";
 import {
   AI_ThinkingStruct, BattleHealthboxInfo, BattleAnimationInfo, BattleBarInfo, BattleHistory, BattlePokemon, BattleResults,
   BattleScripting, BattleSpriteInfo, BattleStruct, DisableStruct, ProtectStruct, SideTimer, SpecialStatus, WishFutureKnock,
@@ -315,6 +316,10 @@ function clearBattleResourceStorage(): void {
 export function AllocateBattleResources(): void {
   gBattleStruct.clear();
   clearBattleResourceStorage();
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER) {
+    // battle_util2.c: the tower opponent record is allocated with battle resources.
+    InitTrainerTowerBattleStruct();
+  }
   if (G.gBattleTypeFlags & C.BATTLE_TYPE_POKEDUDE) {
     for (const s of gPokedudeBattlerStates) s.bytes.fill(0);
   }
@@ -322,6 +327,9 @@ export function AllocateBattleResources(): void {
 
 /** battle_util2.c FreeBattleResources; scrub the static browser storage at the end of its lifetime. */
 export function FreeBattleResources(): void {
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER) {
+    FreeTrainerTowerBattleStruct();
+  }
   gBattleStruct.clear();
   clearBattleResourceStorage();
   if (G.gBattleTypeFlags & C.BATTLE_TYPE_POKEDUDE) {

@@ -31,6 +31,7 @@ import { SetUnlockedPokedexFlags } from "../pokemon/saveLocation";
 import { GetMonsStateToDoubles } from "../pokemon/scriptPokemonUtil";
 import { AnimateTeleporterCable, AnimateTeleporterHousing } from "../field/specialFieldAnim";
 import { ReadTrainerTowerAndValidate } from "../cereaderTool";
+import { CallTrainerTowerFunc } from "../trainerTower";
 import { WonderNews_GetRewardInfo } from "../wonderNews";
 import { BufferRandomHobbyOrLifestyleString, ShowEasyChatMessage } from "../easyChat";
 import { IsEnigmaBerryValid } from "../pokemon/berry";
@@ -456,7 +457,7 @@ export const SPECIALS: Record<string, Special> = {
   BattleTowerUtil: () => 0,
   // ---- trainer tower (trainer_tower.c:438, cereader_tool.c:93): e-Reader data
   // is stubbed FALSE in FireRed itself, so validation always fails here too.
-  CallTrainerTowerFunc: () => 0,
+  CallTrainerTowerFunc: (ctx) => { CallTrainerTowerFunc(ctx); },
   ReadTrainerTowerAndValidate: () => (ReadTrainerTowerAndValidate() ? 1 : 0),
   // ---- link activities (cable_club.c:532-545,958): no link hardware, report the
   // same LINKUP_CONNECTION_ERROR (6) as an unplugged cable.

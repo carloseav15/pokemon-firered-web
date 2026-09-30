@@ -122,6 +122,8 @@ export type BattleRequest = {
   isSafari?: boolean;
   isRoamer?: boolean;
   isDouble?: boolean;
+  isTrainerTower?: boolean;
+  transition?: number;
   terrain?: string;
   music?: number;
   onEnd: (outcome: number) => void;
@@ -610,7 +612,7 @@ export class BattleSetup {
 
 /** BattleSetup_GetBattleTowerBattleTransition (battle_setup.c:660) */
 export function BattleSetup_GetBattleTowerBattleTransition(): number {
-  const enemyLevel = gEnemyParty[0]?.level ?? 1;
+  const enemyLevel = gEnemyParty[0]?.level ?? 0;
   let playerLevel = 0;
   for (const mon of save.party) {
     if (mon.isEgg || mon.species === 0 || mon.hp === 0) continue;

@@ -152,6 +152,7 @@ function battleTypeFlags(request: BattleRequest): number {
   if (request.isSafari) flags |= C.BATTLE_TYPE_SAFARI;
   if (request.isDouble) flags |= C.BATTLE_TYPE_DOUBLE;
   if (request.isRoamer) flags |= C.BATTLE_TYPE_ROAMER;
+  if (request.isTrainerTower) flags |= C.BATTLE_TYPE_TRAINER_TOWER;
   return flags;
 }
 
@@ -160,11 +161,11 @@ function runBattle(request: BattleRequest): Scene {
   const scene = new HwScene();
   scene.enter();
   current = { request, scene };
+  G.gBattleTypeFlags = battleTypeFlags(request);
+  G.gTrainerBattleOpponent_A = request.trainerId ?? 0;
   resetBattleStructs();
   AllocateBattleSpritesData();
   AllocateMonSpritesGfx();
-  G.gBattleTypeFlags = battleTypeFlags(request);
-  G.gTrainerBattleOpponent_A = request.trainerId ?? 0;
   if (game && request.isSafari) G.gNumSafariBalls = game.safariBalls;
   ZeroEnemyPartyMons();
   request.enemyParty.forEach((mon, i) => {

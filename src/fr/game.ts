@@ -993,9 +993,9 @@ export class Game {
       const taskId = tasks.create(Task_BattleStart, 1);
       sound.playBattleBGM(song);
     }
-    const transitionType = request.kind === "trainer"
+    const transitionType = request.transition ?? (request.kind === "trainer"
       ? GetTrainerBattleTransition(ow, request.trainerId ?? 0)
-      : GetWildBattleTransition(ow, request.enemyParty);
+      : GetWildBattleTransition(ow, request.enemyParty));
     CreateBattleStartTask(transitionType, this.battleSetup.battleBgm(request));
   }
 

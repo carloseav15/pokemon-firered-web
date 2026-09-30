@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (< 80 % de funciones) | 12 | 35785 | 931/1895 |
+| Parcial (< 80 % de funciones) | 11 | 34690 | 923/1852 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
-| Casi completo (≥ 80 % y < 100 %) | 15 | 39377 | 1321/1474 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 182 | 178195 | 6746/6746 |
+| Casi completo (≥ 80 % y < 100 %) | 13 | 36103 | 1222/1362 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 185 | 182564 | 6901/6901 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
-| **Pendiente de portar** | **27** | **75162** | |
-| **Total en alcance** | **211** | **253703** | **8998/10115** |
+| **Pendiente de portar** | **24** | **70793** | |
+| **Total en alcance** | **211** | **253703** | **9046/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **102/1711** |
 
 ## Parcial (< 80 % de funciones)
@@ -38,7 +38,6 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `quest_log.c` | 1767 | 16/88 | `field/overworld.ts`, `field/trainerSee.ts`, `questLogEvents.ts` … |  |  |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `battle_tower.c` | 1425 | 7/45 | `script/specials.ts` |  |  |
-| `trainer_tower.c` | 1095 | 8/43 | `script/specials.ts`, `trainerTower.ts` |  |  |
 
 ## Casi completo (≥ 80 % y < 100 %)
 
@@ -50,10 +49,8 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_main.c` | 4477 | 86/106 | `battle/bg.ts`, `battle/controllers.ts`, `battle/globals.ts` … |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
 | `battle_controller_pokedude.c` | 2698 | 107/108 | `battle/controller_pokedude.ts`, `teachyTv.ts` |  |  |
-| `trainer_card.c` | 1959 | 66/73 | `menus/trainerCard.ts` |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `pokemon_storage_system_misc.c` | 1430 | 66/70 | `storageSystemMisc.ts` |  |  |
-| `title_screen.c` | 1315 | 33/39 | `introTitle.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `start_menu.c` | 1016 | 56/65 | `startMenu.ts` |  |  |
@@ -91,6 +88,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon_storage_system_data.c` | 2165 | 83/83 | `pokemon/storage.ts`, `storageSystemData.ts` |  |  |
 | `daycare.c` | 2155 | 93/93 | `eggHatch.ts`, `game.ts`, `pokemon/daycare.ts` … |  |  |
 | `battle_ai_script_commands.c` | 1970 | 105/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
+| `trainer_card.c` | 1959 | 73/73 | `menus/trainerCard.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 87/87 | `battle/controller_opponent.ts` |  |  |
 | `fame_checker.c` | 1739 | 64/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  |  |
 | `tm_case.c` | 1737 | 73/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
@@ -109,6 +107,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `script_menu.c` | 1341 | 29/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
 | `pokeball.c` | 1334 | 37/37 | `battle/pokeball.ts` |  |  |
 | `vs_seeker.c` | 1326 | 41/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
+| `title_screen.c` | 1315 | 39/39 | `introTitle.ts` |  |  |
 | `battle_anim_flying.c` | 1289 | 33/33 | `battle/anims/flying.ts` |  |  |
 | `battle_anim_fire.c` | 1286 | 35/35 | `battle/anims/fire.ts` |  |  |
 | `hall_of_fame.c` | 1286 | 42/42 | `field/overworld.ts`, `hallOfFame.ts`, `postBattleEventFuncs.ts` |  |  |
@@ -119,6 +118,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `field_weather.c` | 1147 | 50/50 | `field/weather.ts`, `gba/fade.ts` |  |  |
 | `item_pc.c` | 1145 | 59/59 | `itemPc.ts`, `menus/hardwareChoice.ts`, `menus/playerPc.ts` |  |  |
 | `shop.c` | 1145 | 60/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |
+| `trainer_tower.c` | 1095 | 43/43 | `script/specials.ts`, `trainerTower.ts` |  |  |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `battle/anims/psychic.ts` |  |  |
 | `battle_setup.c` | 1070 | 66/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 48/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |

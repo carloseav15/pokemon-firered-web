@@ -18,6 +18,7 @@ import {
 } from "./globals";
 import { GetBattlerAtPosition, GetBattlerSide } from "./util";
 import { GetMonData, GetSecretBaseTrainerNameIndex, gEnemyParty, playerMon } from "../pokemon/mon";
+import { GetTrainerTowerOpponentClass, GetTrainerTowerOpponentName, GetTrainerTowerOpponentLoseText, GetTrainerTowerOpponentWinText, GetTrainerTowerOpponentGender } from "../trainerTower";
 
 export const B_BUFF_STRING = 0;
 export const B_BUFF_NUMBER = 1;
@@ -366,20 +367,26 @@ export function BattleStringExpandPlaceholders(src: ArrayLike<number>, dst: Uint
         case C.B_TXT_SCR_ACTIVE_ABILITY: toCpy = abilityName(sBattlerAbilities[gBattleScripting.battler]); break;
         case C.B_TXT_EFF_ABILITY: toCpy = abilityName(sBattlerAbilities[G.gEffectBattler]); break;
         case C.B_TXT_TRAINER1_CLASS: {
-          const cls = G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
+          const cls = G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER
+            ? GetTrainerTowerOpponentClass()
+            : G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
             ? GetSecretBaseTrainerNameIndex()
             : rom.trainers[G.gTrainerBattleOpponent_A]?.class ?? 0;
           toCpy = strip(b64(rom.trainerClasses[cls]));
           break;
         }
         case C.B_TXT_TRAINER1_NAME:
-          toCpy = G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
+          toCpy = G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER
+            ? GetTrainerTowerOpponentName()
+            : G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE
             ? strip(gBattleResources.secretBase.trainerName)
             : trainerName();
           break;
         case C.B_TXT_PLAYER_NAME: toCpy = save.playerName; break;
-        case C.B_TXT_TRAINER1_LOSE_TEXT: toCpy = battleHost.trainerLoseText(); break;
-        case C.B_TXT_TRAINER1_WIN_TEXT: toCpy = battleHost.trainerWonText(); break;
+        case C.B_TXT_TRAINER1_LOSE_TEXT: toCpy = G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER ? GetTrainerTowerOpponentLoseText(0) : battleHost.trainerLoseText(); break;
+        case C.B_TXT_TRAINER1_WIN_TEXT: toCpy = G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER ? GetTrainerTowerOpponentWinText(0) : battleHost.trainerWonText(); break;
+        case C.B_TXT_TRAINER2_LOSE_TEXT: toCpy = GetTrainerTowerOpponentLoseText(1); break;
+        case C.B_TXT_TRAINER2_WIN_TEXT: toCpy = GetTrainerTowerOpponentWinText(1); break;
         case C.B_TXT_26: toCpy = nicknameWithPrefix(gBattleScripting.battler, gBattleStruct.scriptPartyIdx); break;
         case C.B_TXT_PC_CREATOR_NAME: toCpy = S(flagGet(C.FLAG_SYS_NOT_SOMEONES_PC) ? "sText_Bills" : "sText_Someones"); break;
         case C.B_TXT_ATK_PREFIX2: toCpy = prefix2(G.gBattlerAttacker, "sText_AllyPkmnPrefix2", "sText_FoePkmnPrefix3"); break;
@@ -512,6 +519,7 @@ const sTextOnWindowsInfo_Normal = (): BattleWindowText[] => cdata<BattleWindowTe
 
 /** ContextNpcGetTextColor for the opponent trainer: NPC_TEXT_COLOR_MALE / FEMALE -> FONT_MALE / FONT_FEMALE. */
 function npcContextFont(): number {
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER) return GetTrainerTowerOpponentGender() === C.FEMALE ? C.FONT_FEMALE : C.FONT_MALE;
   return rom.trainers[G.gTrainerBattleOpponent_A]?.female ? C.FONT_FEMALE : C.FONT_MALE;
 }
 

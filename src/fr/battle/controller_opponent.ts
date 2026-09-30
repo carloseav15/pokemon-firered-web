@@ -21,6 +21,7 @@ import {
 import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
 import { SpriteCB_FaintOpponentMon } from "./main_init";
 import { GetMonData, GetSecretBaseTrainerPicIndex, gEnemyParty } from "../pokemon/mon";
+import { GetTrainerTowerOpponentPic } from "../trainerTower";
 import {
   BattleLoadOpponentMonSpriteGfx, ClearTemporarySpeciesSpriteData, CopyAllBattleSpritesInvisibilities, CopyBattleSpriteInvisibility,
   DecompressGhostFrontPic, DecompressTrainerFrontPic, FreeTrainerFrontPicPaletteAndTile, HideBattlerShadowSprite, InitAndLaunchChosenStatusAnimation,
@@ -435,6 +436,7 @@ function DoSwitchOutAnimation(): void {
 }
 
 function opponentTrainerPic(): number {
+  if (G.gBattleTypeFlags & C.BATTLE_TYPE_TRAINER_TOWER) return GetTrainerTowerOpponentPic();
   if (G.gTrainerBattleOpponent_A === C.TRAINER_SECRET_BASE) return GetSecretBaseTrainerPicIndex();
   return rom.trainers[G.gTrainerBattleOpponent_A]?.pic ?? 0;
 }
