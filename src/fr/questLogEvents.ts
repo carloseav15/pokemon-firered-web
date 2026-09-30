@@ -14,7 +14,7 @@ import { gQuestLogState, WriteQuestLogState } from "./questLogState";
 import { SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
 import { rom } from "./rom";
-import { expandPlaceholders } from "./gba/charmap";
+import { expandPlaceholders, GetExpandedPlaceholder, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
 import { stringVars } from "./gba/stringBuffers";
 import { ItemId_GetName } from "./pokemon/items";
 import { speciesName } from "./pokemon/pokemon";
@@ -535,6 +535,120 @@ function expandQuestLogDynamicText(template: string, placeholders: ArrayLike<num
   return DynamicPlaceholderTextUtil_ExpandPlaceholders(rom.text(template));
 }
 
+function trainerNameBytes(trainerId: number): Uint8Array {
+  const encoded = rom.trainers[trainerId]?.name;
+  return encoded ? Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0)) : Uint8Array.of(C.EOS);
+}
+
+function defeatedOpponentFlavor(index: number): Uint8Array {
+  const texts = ["gText_QuestLog_Handily", "gText_QuestLog_Tenaciously", "gText_QuestLog_Somehow"];
+  return rom.text(texts[index] ?? texts[0]!);
+}
+
+function defeatedChampionFlavor(index: number): Uint8Array {
+  const texts = ["gText_QuestLog_Coolly", "gText_QuestLog_Somehow", "gText_QuestLog_Barely"];
+  return rom.text(texts[index] ?? texts[0]!);
+}
+
+function loadTrainerBattleText(payload: readonly number[], template: string, rivalMayBeNamed: boolean): Uint8Array {
+  const packed = payload[3] ?? 0;
+  const trainerId = payload[2] ?? 0;
+  const trainerClass = rom.trainers[trainerId]?.class;
+  const trainerName = rivalMayBeNamed && (trainerClass === C.TRAINER_CLASS_RIVAL_EARLY
+    || trainerClass === C.TRAINER_CLASS_RIVAL_LATE || trainerClass === C.TRAINER_CLASS_CHAMPION)
+    ? GetExpandedPlaceholder(C.PLACEHOLDER_ID_RIVAL) : trainerNameBytes(trainerId);
+  return expandQuestLogDynamicText(template, [
+    getMapNameGenericBytes(packedByte(packed, 0)), trainerName,
+    QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE), QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE),
+    defeatedOpponentFlavor(packedByte(packed, 1)),
+  ]);
+}
+
+/** LoadEvent_DefeatedGymLeader (quest_log_events.c). */
+export function LoadEvent_DefeatedGymLeader(payload: readonly number[]): Uint8Array {
+  return loadTrainerBattleText(payload, "gText_QuestLog_TookOnGymLeadersMonWithMonAndWon", false);
+}
+
+/** LoadEvent_DefeatedEliteFourMember (quest_log_events.c). */
+export function LoadEvent_DefeatedEliteFourMember(payload: readonly number[]): Uint8Array {
+  const packed = payload[3] ?? 0;
+  return expandQuestLogDynamicText("gText_QuestLog_TookOnEliteFoursMonWithMonAndWon", [
+    trainerNameBytes(payload[2] ?? 0), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+    QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE), defeatedOpponentFlavor(packedByte(packed, 1)),
+  ]);
+}
+
+/** LoadEvent_DefeatedTrainer (quest_log_events.c). */
+export function LoadEvent_DefeatedTrainer(payload: readonly number[]): Uint8Array {
+  return loadTrainerBattleText(payload, "gText_QuestLog_TookOnTrainersMonWithMonAndWon", true);
+}
+
+/** LoadEvent_DefeatedWildMon (quest_log_events.c). */
+export function LoadEvent_DefeatedWildMon(payload: readonly number[]): Uint8Array {
+  const counts = payload[2] ?? 0;
+  const defeated = packedByte(counts, 0);
+  const caught = packedByte(counts, 1);
+  const template = defeated === 0 ? caught === 1 ? "gText_QuestLog_CaughtWildMon" : "gText_QuestLog_CaughtWildMons"
+    : caught === 0 ? defeated === 1 ? "gText_QuestLog_DefeatedWildMon" : "gText_QuestLog_DefeatedWildMons"
+      : defeated === 1 ? caught === 1 ? "gText_QuestLog_DefeatedWildMonAndCaughtWildMon" : "gText_QuestLog_DefeatedWildMonAndCaughtWildMons"
+        : caught === 1 ? "gText_QuestLog_DefeatedWildMonsAndCaughtWildMon" : "gText_QuestLog_DefeatedWildMonsAndCaughtWildMons";
+  return expandQuestLogDynamicText(template, [
+    getMapNameGenericBytes(packedByte(payload[3] ?? 0, 0)), QuestLog_GetSpeciesName(payload[0] ?? C.SPECIES_NONE),
+    intToDecimal(defeated, STR_CONV_MODE_LEFT_ALIGN, 3), QuestLog_GetSpeciesName(payload[1] ?? C.SPECIES_NONE),
+    intToDecimal(caught, STR_CONV_MODE_LEFT_ALIGN, 3), save.playerName,
+  ]);
+}
+
+/** LoadEvent_DefeatedChampion (quest_log_events.c), producing its three sequential scene lines. */
+export function LoadEvent_DefeatedChampion(payload: readonly number[]): Uint8Array[] {
+  const opponent = payload[0] ?? C.SPECIES_NONE;
+  const playerMon = payload[1] ?? C.SPECIES_NONE;
+  const flavor = defeatedChampionFlavor(packedByte(payload[2] ?? 0, 0));
+  return [
+    expandQuestLogDynamicText("gText_QuestLog_PlayerBattledChampionRival", [save.playerName, save.rivalName]),
+    expandQuestLogDynamicText("gText_QuestLog_PlayerSentOutMon1RivalSentOutMon2", [
+      save.rivalName, QuestLog_GetSpeciesName(opponent), save.playerName, QuestLog_GetSpeciesName(playerMon),
+    ]),
+    expandQuestLogDynamicText("gText_QuestLog_WonTheMatchAsAResult", [flavor]),
+  ];
+}
+
+/** LoadEvent_BoughtItem (quest_log_events.c). */
+export function LoadEvent_BoughtItem(payload: readonly number[]): Uint8Array {
+  const totalMoney = ((payload[2] ?? 0) & 0xffff) * 0x10000 + ((payload[3] ?? 0) & 0xffff);
+  const mapSec = packedByte(payload[4] ?? 0, 0);
+  const itemName = ItemId_GetName(payload[0] ?? C.ITEM_NONE);
+  if ((payload[1] ?? 0) < 2) {
+    return expandQuestLogDynamicText("gText_QuestLog_BoughtItem", [getMapNameGenericBytes(mapSec), itemName]);
+  }
+  return expandQuestLogDynamicText("gText_QuestLog_BoughtItemsIncludingItem", [
+    getMapNameGenericBytes(mapSec), itemName, intToDecimal(totalMoney, STR_CONV_MODE_LEFT_ALIGN, 6),
+  ]);
+}
+
+/** LoadEvent_SoldItem (quest_log_events.c). */
+export function LoadEvent_SoldItem(payload: readonly number[]): Uint8Array {
+  const totalMoney = ((payload[2] ?? 0) & 0xffff) * 0x10000 + ((payload[3] ?? 0) & 0xffff);
+  const packed = payload[4] ?? 0;
+  const mapName = getMapNameGenericBytes(packedByte(packed, 0));
+  const itemName = ItemId_GetName(payload[0] ?? C.ITEM_NONE);
+  if (packedByte(packed, 1) !== 0) {
+    return expandQuestLogDynamicText("gText_QuestLog_SoldItemsIncludingItem", [
+      mapName, itemName, intToDecimal(totalMoney, STR_CONV_MODE_LEFT_ALIGN, 6),
+    ]);
+  }
+  const quantity = payload[1] ?? 0;
+  let quantityText = rom.text("gText_QuestLog_JustOne");
+  if (quantity !== 1) {
+    DynamicPlaceholderTextUtil_Reset();
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(4, intToDecimal(quantity, STR_CONV_MODE_LEFT_ALIGN, 3));
+    quantityText = DynamicPlaceholderTextUtil_ExpandPlaceholders(rom.text("gText_QuestLog_Num"));
+  }
+  return expandQuestLogDynamicText("gText_QuestLog_SoldNumOfItem", [
+    save.playerName, mapName, itemName, quantityText,
+  ]);
+}
+
 /** LoadEvent_SwitchedMonsBetweenBoxes (quest_log_events.c). */
 export function LoadEvent_SwitchedMonsBetweenBoxes(payload: readonly number[]): Uint8Array {
   return expandQuestLogDynamicText("gText_QuestLog_SwitchedMonsBetweenBoxes", [
@@ -653,6 +767,7 @@ export function LoadEvent_SwappedHeldItemFromPC(payload: readonly number[]): Uin
 
 /** LoadQuestLogEventText: build each repeat's event description from the saved payloads. */
 export function LoadQuestLogEventText(event: QuestLogScriptEvent): Uint8Array[] | null {
+  if (event.eventId === C.QL_EVENT_DEFEATED_CHAMPION) return LoadEvent_DefeatedChampion(event.payloads[0] ?? []);
   const load = event.eventId === C.QL_EVENT_GAVE_HELD_ITEM ? LoadEvent_GaveHeldItemFromPartyMenu
       : event.eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG ? LoadEvent_GaveHeldItemFromBagMenu
         : event.eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC ? LoadEvent_GaveHeldItemFromPC
@@ -663,16 +778,22 @@ export function LoadQuestLogEventText(event: QuestLogScriptEvent): Uint8Array[] 
                   : event.eventId === C.QL_EVENT_USED_FIELD_MOVE ? LoadEvent_UsedFieldMove
                       : event.eventId === C.QL_EVENT_OBTAINED_STORY_ITEM ? LoadEvent_ObtainedStoryItem
                       : event.eventId === C.QL_EVENT_ARRIVED ? LoadEvent_ArrivedInLocation
-                        : event.eventId === C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES ? LoadEvent_SwitchedMonsBetweenBoxes
-                          : event.eventId === C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX ? LoadEvent_SwitchedMonsWithinBox
-                            : event.eventId === C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON ? LoadEvent_SwitchedPartyMonForPCMon
-                              : event.eventId === C.QL_EVENT_MOVED_MON_BETWEEN_BOXES ? LoadEvent_MovedMonBetweenBoxes
-                                : event.eventId === C.QL_EVENT_MOVED_MON_WITHIN_BOX ? LoadEvent_MovedMonWithinBox
-                                  : event.eventId === C.QL_EVENT_WITHDREW_MON_PC ? LoadEvent_WithdrewMonFromPC
-                                    : event.eventId === C.QL_EVENT_DEPOSITED_MON_PC ? LoadEvent_DepositedMonInPC
-                                      : event.eventId === C.QL_EVENT_SWITCHED_MULTIPLE_MONS ? LoadEvent_SwitchedMultipleMons
-                                        : event.eventId === C.QL_EVENT_DEPOSITED_ITEM_PC ? LoadEvent_DepositedItemInPC
-                                          : event.eventId === C.QL_EVENT_WITHDREW_ITEM_PC ? LoadEvent_WithdrewItemFromPC : null;
+                        : event.eventId === C.QL_EVENT_DEFEATED_GYM_LEADER ? LoadEvent_DefeatedGymLeader
+                          : event.eventId === C.QL_EVENT_DEFEATED_WILD_MON ? LoadEvent_DefeatedWildMon
+                            : event.eventId === C.QL_EVENT_DEFEATED_E4_MEMBER ? LoadEvent_DefeatedEliteFourMember
+                              : event.eventId === C.QL_EVENT_DEFEATED_TRAINER ? LoadEvent_DefeatedTrainer
+                                : event.eventId === C.QL_EVENT_BOUGHT_ITEM ? LoadEvent_BoughtItem
+                                  : event.eventId === C.QL_EVENT_SOLD_ITEM ? LoadEvent_SoldItem
+                                    : event.eventId === C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES ? LoadEvent_SwitchedMonsBetweenBoxes
+                                      : event.eventId === C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX ? LoadEvent_SwitchedMonsWithinBox
+                                        : event.eventId === C.QL_EVENT_SWITCHED_PARTY_MON_FOR_PC_MON ? LoadEvent_SwitchedPartyMonForPCMon
+                                          : event.eventId === C.QL_EVENT_MOVED_MON_BETWEEN_BOXES ? LoadEvent_MovedMonBetweenBoxes
+                                            : event.eventId === C.QL_EVENT_MOVED_MON_WITHIN_BOX ? LoadEvent_MovedMonWithinBox
+                                              : event.eventId === C.QL_EVENT_WITHDREW_MON_PC ? LoadEvent_WithdrewMonFromPC
+                                                : event.eventId === C.QL_EVENT_DEPOSITED_MON_PC ? LoadEvent_DepositedMonInPC
+                                                  : event.eventId === C.QL_EVENT_SWITCHED_MULTIPLE_MONS ? LoadEvent_SwitchedMultipleMons
+                                                    : event.eventId === C.QL_EVENT_DEPOSITED_ITEM_PC ? LoadEvent_DepositedItemInPC
+                                                      : event.eventId === C.QL_EVENT_WITHDREW_ITEM_PC ? LoadEvent_WithdrewItemFromPC : null;
   return load === null ? null : event.payloads.map(load);
 }
 
