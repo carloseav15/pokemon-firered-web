@@ -19,12 +19,13 @@ import { stringVars } from "../gba/charmap";
 import { IsWeatherNotFadingIn, SetWeatherScreenFadeOut, WeatherProcessingIdle } from "./weather";
 import { canvas, rgb555, spriteSheet, tilemapCanvas } from "./gfx4bpp";
 import { MAP_OFFSET, MapGridGetElevationAt, MapGridGetMetatileAttributeAt, MapGridGetMetatileIdAt, MapGridSetMetatileIdAt, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
-import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./objectEvents";
+import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, type ObjectEvent } from "./objectEvents";
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
 import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_RIDE } from "./playerAvatar";
 import { SetHelpContext } from "../helpSystem";
 import { CalculatePlayerPartyCount } from "../pokemon/mon";
+import { QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode } from "../questLogEvents";
 
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
 type FieldMoveShowMonTask = { id: number; data: Int16Array; mon: Sprite; outdoors: boolean; image?: HTMLCanvasElement; overlay?: Overlay };
@@ -686,98 +687,176 @@ export class FieldMoveEffects {
 
   // ---------------------------------------------------------------- escape rope / dig / teleport
 
-  /** StartEscapeRopeFieldEffect (Task_EscapeRopeWarpOut) */
-  startEscapeRope(): void {
-    const ow = this.ow;
-    ow.controlsLocked = true;
-    ow.objects.freezeAll();
-    const player = ow.player.object;
-    let timer = 0, offscreen = false, movingState = 0, offsetY = 0;
-    const spin = { delay: 0, turns: 0 };
-    const id = tasks.create(() => {
-      this.spinPlayer(spin);
-      if (timer < 60) {
-        timer++;
-        if (timer === 20) sound.playSE(C.SE_WARP_IN);
-      } else if (!offscreen) {
-        // WarpOutObjectEventUpwards
-        if (movingState < 2) {
-          player.sprite.y2 -= 8; offsetY -= 8;
-          if (movingState === 0 && offsetY <= -16) { player.fixedPriority = true; player.sprite.priority = 1; player.sprite.subpriority = 0; movingState = 1; }
-          if (offsetY <= -88) movingState = 2;
-        } else {
-          ow.tryFadeOutOldMapMusic();
-          ow.warpFadeOutScreen();
-          offscreen = true;
-        }
-      }
-      if (offscreen && !paletteFade.active && sound.isBGMPausedOrStopped()) {
-        ow.SetWarpDestinationToEscapeWarp();
-        ow.fieldCallback = () => this.escapeRopeExit();
-        tasks.destroy(id);
-        ow.warpIntoMapAndLoad();
-      }
-    }, 80);
+  /** StartEscapeRopeFieldEffect (field_effect.c). */
+  StartEscapeRopeFieldEffect(): void {
+    this.ow.LockPlayerFieldControls();
+    this.ow.objects.freezeAll();
+    tasks.create((taskId) => this.Task_EscapeRopeWarpOut(taskId), 80);
   }
 
-  /** SpinObjectEvent with sSpinDirections (S→W→N? table indexed by facing) */
-  private spinPlayer(spin: { delay: number; turns: number }): number {
-    const ow = this.ow;
-    const p = ow.player.object;
-    const next = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
-    if (!ow.objects.isMovementOverridden(p) || ow.objects.ObjectEventClearHeldMovementIfFinished(p)) {
-      if (spin.delay !== 0 && --spin.delay !== 0) return p.facingDirection;
-      ow.objects.setHeldMovement(p, actionFace(next[p.facingDirection]));
-      if (spin.turns < 12) spin.turns++;
-      spin.delay = 12 >> spin.turns;
-      return next[p.facingDirection];
+  startEscapeRope(): void { this.StartEscapeRopeFieldEffect(); }
+
+  private Task_EscapeRopeWarpOut(taskId: number): void {
+    const data = tasks.data(taskId);
+    if (data[0] === 0) this.EscapeRopeWarpOutEffect_Init(data);
+    else this.EscapeRopeWarpOutEffect_Spin(taskId);
+  }
+
+  private EscapeRopeWarpOutEffect_Init(data: number[]): void {
+    data[0]++;
+    data[13] = 64;
+    data[14] = this.ow.player.object.facingDirection;
+    data[15] = DIR_NONE;
+  }
+
+  private EscapeRopeWarpOutEffect_Spin(taskId: number): void {
+    const data = tasks.data(taskId);
+    const player = this.ow.player.object;
+    this.SpinObjectEvent(player, data, 1, 2);
+    if (data[3]! < 60) {
+      data[3] = data[3]! + 1;
+      if (data[3] === 20) sound.playSE(C.SE_WARP_IN);
+    } else if (data[4] === 0 && !this.WarpOutObjectEventUpwards(player, data)) {
+      this.ow.TryFadeOutOldMapMusic();
+      this.ow.warpFadeOutScreen();
+      data[4] = 1;
     }
-    return p.facingDirection;
+    if (data[4] === 1 && !paletteFade.active && this.ow.BGMusicStopped()) {
+      this.ow.objects.setDirection(player, data[15]!);
+      this.ow.SetWarpDestinationToEscapeWarp();
+      this.ow.fieldCallback = () => this.FieldCallback_EscapeRopeExit();
+      this.ow.warpIntoMapAndLoad();
+      tasks.destroy(taskId);
+    }
   }
 
-  /** FieldCallback_EscapeRopeExit + Task_EscapeRopeWarpIn */
-  private escapeRopeExit(): void {
+  /** SpinObjectEvent (field_effect.c): advance through the source facing table and acceleration. */
+  private SpinObjectEvent(player: ObjectEvent, data: number[], delayIndex: number, turnsIndex: number): number {
+    const directions = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
+    if (!this.ow.objects.isMovementOverridden(player) || this.ow.objects.ObjectEventClearHeldMovementIfFinished(player) !== 0) {
+      if (data[delayIndex] !== 0 && --data[delayIndex]! !== 0) return player.facingDirection;
+      const direction = directions[player.facingDirection] ?? DIR_SOUTH;
+      this.ow.objects.setHeldMovement(player, actionFace(direction));
+      if (data[turnsIndex]! < 12) data[turnsIndex] = data[turnsIndex]! + 1;
+      data[delayIndex] = 12 >> data[turnsIndex]!;
+      return direction;
+    }
+    return player.facingDirection;
+  }
+
+  /** WarpOutObjectEventUpwards (field_effect.c): rise in 8-pixel steps and restore priority at the cutoff. */
+  private WarpOutObjectEventUpwards(player: ObjectEvent, data: number[]): boolean {
+    const sprite = player.sprite;
+    switch (data[5]) {
+      case 0:
+        data[5] = 1; // CameraObjectReset2 is a no-op in this renderer.
+        // fall through
+      case 1:
+        sprite.y2 -= 8;
+        data[6] = data[6]! - 8;
+        if (data[6]! <= -16) {
+          player.fixedPriority = true;
+          sprite.priority = 1;
+          sprite.subpriority = 0;
+          sprite.subspriteMode = C.SUBSPRITES_OFF;
+          data[5] = 2;
+        }
+        break;
+      case 2:
+        sprite.y2 -= 8;
+        data[6] = data[6]! - 8;
+        if (data[6]! <= -88) { data[5] = 3; return false; }
+        break;
+      case 3: return false;
+    }
+    return true;
+  }
+
+  /** FieldCallback_EscapeRopeExit (field_effect.c). */
+  private FieldCallback_EscapeRopeExit(): void {
     const ow = this.ow;
+    ow.fieldCallback = null;
     ow.playSpecialMapMusic();
     ow.WarpFadeInScreen();
-    ow.controlsLocked = true;
+    QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow);
+    ow.LockPlayerFieldControls();
     ow.objects.freezeAll();
-    const p = ow.player.object;
-    ow.player.SetPlayerInvisibility(true);
-    let state = 0, timer = 0, spinEnded = false, originalDir = DIR_SOUTH, currentDir = DIR_SOUTH;
-    let movingState = 0, offsetY = 0;
-    const spin = { delay: 0, turns: 0 };
-    const id = tasks.create(() => {
-      if (state === 0) {
-        sound.playSE(C.SE_WARP_OUT);
-        originalDir = p.facingDirection;
-        currentDir = originalDir;
-        state = 1;
-        return;
-      }
-      // WarpInObjectEventDownwards
-      let moving = true;
-      if (movingState === 0) { offsetY = -88; p.sprite.y2 -= 88; p.fixedPriority = true; p.sprite.priority = 1; p.sprite.subpriority = 0; movingState = 1; }
-      if (movingState === 1 || movingState === 2) {
-        p.sprite.y2 += 4; offsetY += 4;
-        if (movingState === 1 && offsetY >= -16) movingState = 2;
-        if (offsetY >= 0) { p.sprite.y2 = 0; sound.playSE(C.SE_CLICK); movingState = 3; }
-      }
-      if (movingState === 3) moving = false;
-      ow.player.SetPlayerInvisibility(false);
-      if (timer < 8) timer++;
-      else if (!spinEnded) {
-        timer++;
-        currentDir = this.spinPlayer(spin);
-        if (timer >= 50 && currentDir === originalDir) spinEnded = true;
-      }
-      if (!moving && currentDir === originalDir && ow.objects.isHeldMovementFinished(p)) {
-        p.fixedPriority = false;
-        ow.controlsLocked = false;
-        ow.objects.unfreezeAll();
-        tasks.destroy(id);
-      }
-    }, 0);
+    ow.player.object.invisible = true;
+    tasks.create((taskId) => this.Task_EscapeRopeWarpIn(taskId), 0);
+  }
+
+  private Task_EscapeRopeWarpIn(taskId: number): void {
+    const data = tasks.data(taskId);
+    if (data[0] === 0) this.EscapeRopeWarpInEffect_Init(data);
+    else this.EscapeRopeWarpInEffect_Spin(taskId);
+  }
+
+  private EscapeRopeWarpInEffect_Init(data: number[]): void {
+    if (!IsWeatherNotFadingIn()) return;
+    sound.playSE(C.SE_WARP_OUT);
+    data[15] = this.ow.player.object.facingDirection;
+    data[0]++;
+  }
+
+  private EscapeRopeWarpInEffect_Spin(taskId: number): void {
+    const data = tasks.data(taskId);
+    const player = this.ow.player.object;
+    const moving = this.WarpInObjectEventDownwards(player, data);
+    player.invisible = false;
+    if (data[6]! < 8) data[6] = data[6]! + 1;
+    else if (data[7] === 0) {
+      data[6] = data[6]! + 1;
+      data[8] = this.SpinObjectEvent(player, data, 9, 10);
+      if (data[6]! >= 50 && data[8] === data[15]) data[7] = 1;
+    }
+    if (!moving && data[8] === data[15] && this.ow.objects.ObjectEventCheckHeldMovementStatus(player) === 1) {
+      player.invisible = false;
+      player.fixedPriority = false;
+      this.ow.UnlockPlayerFieldControls();
+      this.ow.objects.unfreezeAll();
+      tasks.destroy(taskId);
+    }
+  }
+
+  /** WarpInObjectEventDownwards (field_effect.c): descend and restore the original sprite layout. */
+  private WarpInObjectEventDownwards(player: ObjectEvent, data: number[]): boolean {
+    const sprite = player.sprite;
+    switch (data[1]) {
+      case 0:
+        data[2] = -88;
+        sprite.y2 -= 88;
+        data[3] = sprite.priority;
+        data[4] = sprite.subpriority;
+        data[5] = sprite.subspriteMode;
+        player.fixedPriority = true;
+        sprite.priority = 1;
+        sprite.subpriority = 0;
+        sprite.subspriteMode = C.SUBSPRITES_OFF;
+        data[1] = 1;
+        // fall through
+      case 1:
+        sprite.y2 += 4;
+        data[2] = data[2]! + 4;
+        if (data[2]! >= -16) {
+          sprite.priority = data[3]!;
+          sprite.subpriority = data[4]!;
+          sprite.subspriteMode = data[5]!;
+          data[1] = 2;
+        }
+        break;
+      case 2:
+        sprite.y2 += 4;
+        data[2] = data[2]! + 4;
+        if (data[2]! >= 0) {
+          sprite.y2 = 0;
+          sound.playSE(C.SE_CLICK);
+          data[1] = 3;
+          return false;
+        }
+        break;
+      case 3: return false;
+    }
+    return true;
   }
 
   /** CreateTeleportFieldEffectTask (TeleportFieldEffectTask1-4) */
