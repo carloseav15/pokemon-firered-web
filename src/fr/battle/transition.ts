@@ -1546,6 +1546,11 @@ class IntroBlink {
   IsIntroTaskDone(): boolean { return this.done; }
 }
 
+function Task_Intro(intro: IntroBlink): { blend: number | null; done: boolean } {
+  const blend = intro.Task_BattleTransition_Intro();
+  return { blend, done: intro.IsIntroTaskDone() };
+}
+
 /** CreateIntroTask (battle_transition.c): defaults match the shared transition intro. */
 function CreateIntroTask(fadeToGrayDelay: number, fadeFromGrayDelay: number, numFades: number, fadeToGraySpeed: number, fadeFromGraySpeed: number): IntroBlink {
   return new IntroBlink(fadeToGrayDelay, fadeFromGrayDelay, numFades, fadeToGraySpeed, fadeFromGraySpeed);
@@ -1555,17 +1560,46 @@ const GRAY = [88, 88, 88]; // RGB(11, 11, 11)
 
 export class BattleTransitionScene implements Scene {
   private readonly snapshot: HTMLCanvasElement;
-  private intro: IntroBlink | null = CreateIntroTask(0, 0, 2, 2, 2);
+  private intro: IntroBlink | null;
   private introBlend = 0;
-  private effect: Effect | null;
+  private effect: Effect | null = null;
   private readonly hadEffect: boolean;
   private done = false;
+  private readonly transitionId: number;
 
   constructor(transitionId: number, sourceCtx: CanvasRenderingContext2D, private readonly onDone: () => void) {
+    this.transitionId = transitionId;
     this.snapshot = document.createElement("canvas");
     this.snapshot.width = DISPLAY_WIDTH;
     this.snapshot.height = DISPLAY_HEIGHT;
     this.snapshot.getContext("2d")!.drawImage(sourceCtx.canvas, 0, 0);
+    this.hadEffect = IsSupportedBattleTransition(transitionId);
+    this.intro = Transition_StartIntro();
+  }
+
+  update(): void { Task_BattleTransition(this); }
+
+  runTask(): void {
+    if (IsBattleTransitionDone(this)) return;
+    if (this.intro) { Transition_WaitForIntro(this); return; }
+    if (this.effect) { Transition_WaitForMain(this); return; }
+    if (!paletteFade.active && paletteFade.level < 16) { paletteFade.fadeScreen(FADE_TO_BLACK, 0); return; }
+    if (paletteFade.active) { paletteFade.update(); return; }
+    this.finish();
+  }
+
+  advanceIntro(): void {
+    if (!this.intro) return;
+    const result = Task_Intro(this.intro);
+    if (result.done || result.blend === null) {
+      this.intro = null;
+      this.introBlend = 0;
+      Transition_StartMain(this);
+    } else this.introBlend = result.blend;
+  }
+
+  startMain(): void {
+    const transitionId = this.transitionId;
     this.effect = transitionId === C.B_TRANSITION_ANGLED_WIPES ? new AngledWipesEffect()
       : transitionId === C.B_TRANSITION_CLOCKWISE_WIPE ? new ClockwiseWipeEffect()
       : transitionId === C.B_TRANSITION_SLICE ? new SliceEffect()
@@ -1580,36 +1614,23 @@ export class BattleTransitionScene implements Scene {
       : transitionId === C.B_TRANSITION_POKEBALLS_TRAIL ? new PokeballsTrailEffect()
       : transitionId >= C.B_TRANSITION_LORELEI && transitionId <= C.B_TRANSITION_BLUE ? new MugshotTransitionEffect(transitionId, save.playerGender)
       : null;
-    this.hadEffect = this.effect !== null;
   }
 
-  update(): void {
-    if (this.done) return;
-    if (this.intro) {
-      const blend = this.intro.Task_BattleTransition_Intro();
-      if (this.intro.IsIntroTaskDone()) this.intro = null;
-      if (blend === null) { this.intro = null; this.introBlend = 0; } else this.introBlend = blend;
-      return;
+  advanceMain(): void {
+    if (!this.effect) return;
+    const effect = this.effect;
+    const effectFinished = effect.tick();
+    if (effect.updatesPaletteFade) paletteFade.update();
+    if (effectFinished) {
+      const alreadyFaded = effect.completesScreenFade === true;
+      this.effect = null;
+      if (alreadyFaded) this.finish();
     }
-    if (this.effect) {
-      const effect = this.effect;
-      const effectFinished = effect.tick();
-      if (effect.updatesPaletteFade) paletteFade.update();
-      if (effectFinished) {
-        const alreadyFaded = effect.completesScreenFade === true;
-        this.effect = null;
-        if (alreadyFaded) {
-          this.done = true;
-          this.onDone();
-        }
-      }
-      return;
-    }
-    if (!paletteFade.active && paletteFade.level < 16) { paletteFade.fadeScreen(FADE_TO_BLACK, 0); return; }
-    if (paletteFade.active) { paletteFade.update(); return; }
-    this.done = true;
-    this.onDone();
   }
+
+  isDone(): boolean { return this.done; }
+  getIntro(): IntroBlink | null { return this.intro; }
+  finish(): void { if (!this.done) { this.done = true; this.onDone(); } }
 
   render(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = "#000";
@@ -1633,7 +1654,7 @@ export class BattleTransitionScene implements Scene {
           }
         }
       }
-    } else if (!this.hadEffect && !this.done) {
+    } else if ((!this.hadEffect || this.intro !== null) && !this.done) {
       // No wipe implemented for this transition id: keep the pre-existing plain-fade behavior.
       ctx.drawImage(this.snapshot, 0, 0);
     }
@@ -1648,3 +1669,31 @@ export class BattleTransitionScene implements Scene {
     paletteFade.render(ctx);
   }
 }
+
+function IsSupportedBattleTransition(transitionId: number): boolean {
+  return transitionId === C.B_TRANSITION_ANGLED_WIPES || transitionId === C.B_TRANSITION_CLOCKWISE_WIPE
+    || transitionId === C.B_TRANSITION_SLICE || transitionId === C.B_TRANSITION_WHITE_BARS_FADE
+    || transitionId === C.B_TRANSITION_GRID_SQUARES || transitionId === C.B_TRANSITION_SHUFFLE
+    || transitionId === C.B_TRANSITION_BIG_POKEBALL || transitionId === C.B_TRANSITION_WAVE
+    || transitionId === C.B_TRANSITION_RIPPLE || transitionId === C.B_TRANSITION_SWIRL
+    || transitionId === C.B_TRANSITION_BLUR || transitionId === C.B_TRANSITION_POKEBALLS_TRAIL
+    || (transitionId >= C.B_TRANSITION_LORELEI && transitionId <= C.B_TRANSITION_BLUE);
+}
+
+/** BattleTransition_StartOnField: create the browser scene from the chosen C transition ID. */
+export function BattleTransition_StartOnField(transitionId: number, sourceCtx: CanvasRenderingContext2D, onDone: () => void): BattleTransitionScene {
+  return LaunchBattleTransitionTask(transitionId, sourceCtx, onDone);
+}
+
+/** LaunchBattleTransitionTask: instantiate the shared transition task driver. */
+function LaunchBattleTransitionTask(transitionId: number, sourceCtx: CanvasRenderingContext2D, onDone: () => void): BattleTransitionScene {
+  return new BattleTransitionScene(transitionId, sourceCtx, onDone);
+}
+
+/** Task_BattleTransition: run the intro/effect/fade task state for one frame. */
+function Task_BattleTransition(scene: BattleTransitionScene): void { scene.runTask(); }
+function IsBattleTransitionDone(scene: BattleTransitionScene): boolean { return scene.isDone(); }
+function Transition_StartIntro(): IntroBlink { return CreateIntroTask(0, 0, 2, 2, 2); }
+function Transition_WaitForIntro(scene: BattleTransitionScene): void { scene.advanceIntro(); }
+function Transition_StartMain(scene: BattleTransitionScene): void { scene.startMain(); }
+function Transition_WaitForMain(scene: BattleTransitionScene): void { scene.advanceMain(); }

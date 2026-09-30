@@ -3,7 +3,7 @@
 
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
-import { BattleTransitionScene, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
+import { BattleTransition_StartOnField, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
 import { ClearPlayerLinkBattleRecords } from "./battleRecords";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { FONT_NORMAL } from "./gba/font";
@@ -972,7 +972,7 @@ export class Game {
           // battle_setup.c waits for FldEffPoison_IsActive before disabling help and starting the transition.
           if (ow.effects.FldEffPoison_IsActive()) return;
           HelpSystem_Disable();
-          game.scene = new BattleTransitionScene(transition, game.ctx, () => {
+          game.scene = BattleTransition_StartOnField(transition, game.ctx, () => {
             transitionDone = true;
             Task_BattleStart(taskId);
           });
