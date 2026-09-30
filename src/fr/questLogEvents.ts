@@ -12,6 +12,7 @@ import {
 import { flagClear, flagGet, flagSet, save, varGet, varSet } from "./save";
 import { QuestLog_InitPalettesBackup as initQuestLogPalettesBackup } from "./questLogPalette";
 import { gQuestLogState, WriteQuestLogState } from "./questLogState";
+import { SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { rom } from "./rom";
 
 export { gQuestLogState };
@@ -79,6 +80,28 @@ export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | Que
 export type QuestLogEventRecord = { eventId: number; data: QuestLogEventData };
 export function getQuestLogEvents(): QuestLogEventRecord[] {
   return save.questLogEvents ??= [];
+}
+
+/** QL_StartRecordingAction (quest_log.c): allocate the current SaveBlock1 scene slot and snapshot it. */
+export function QL_StartRecordingAction(eventId: number, eventIndex: number): QuestLogScene {
+  const scenes = save.questLogScenes ??= [];
+  const scene: QuestLogScene = {
+    startType: eventId === C.QL_EVENT_DEPARTED ? C.QL_START_WARP : C.QL_START_NORMAL,
+    objectEvents: [],
+    script: [],
+    eventIndex,
+  };
+  SetPlayerInitialCoordsAtScene(scene);
+  SetNPCInitialCoordsAtScene(scene);
+  SetGameStateAtScene(scene);
+  scenes.push(scene);
+  if (scenes.length > C.QUEST_LOG_SCENE_COUNT) scenes.splice(0, scenes.length - C.QUEST_LOG_SCENE_COUNT);
+  const retainedEvents = new Set(scenes.map((entry) => entry.eventIndex));
+  const actions = save.questLogPlayerGfxActions ??= [];
+  const retainedActions = actions.filter((entry) => retainedEvents.has(entry.eventIndex));
+  actions.length = 0;
+  actions.push(...retainedActions);
+  return scene;
 }
 
 /** QuestLog_CheckDepartingIndoorsMap (field_specials.c), called after InitObjectEventsLocal on map entry. */
@@ -316,7 +339,9 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     sNextActionDelay = 0;
     sLastPlayerMovementActionId = -1;
     const scripts = save.questLogPlayerGfxActions ??= [];
-    scripts.push({ eventIndex: getQuestLogEvents().length - 1, script: [] });
+    const eventIndex = getQuestLogEvents().length - 1;
+    const scene = QL_StartRecordingAction(eventId, eventIndex);
+    scripts.push({ eventIndex, script: scene.script as number[] });
     sActivePlayerActionScript = scripts.length - 1;
   }
 }
@@ -407,6 +432,13 @@ export function QL_FinishRecordingScene(): void {
   gQuestLogDefeatedWildMonRecord = null;
   gQuestLogRecordingPointer = null;
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+}
+
+/** SaveQuestLogData (quest_log.c): close the active action stream and order the retained scene ring. */
+export function SaveQuestLogData(): void {
+  QuestLog_CutRecording();
+  const scenes = save.questLogScenes ??= [];
+  scenes.sort((a, b) => (a.eventIndex ?? 0) - (b.eventIndex ?? 0));
 }
 
 /** GetQuestLogState returns the C global consumed by `specialvar`. */

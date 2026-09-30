@@ -5,6 +5,8 @@ import { bindSaveBlockReader } from "./gba/stringBuffers";
 import { rom } from "./rom";
 import type { Pokemon } from "./pokemon/pokemon";
 import * as C from "./generated/constants";
+import type { QuestLogScene } from "./questLogObjects";
+import type { MapObjectTemplate } from "./rom";
 
 export const VARS_START = 0x4000;
 export const VARS_END = 0x40ff;
@@ -174,7 +176,7 @@ export type SaveData = {
   nationalDexMagic?: number;
   nationalDexRseMagic?: number;
   objectEvents?: unknown;
-  objectEventTemplates?: unknown;
+  objectEventTemplates?: MapObjectTemplate[];
   daycare?: unknown;
   berryPowder?: number;
   trainerRematchStepCounter?: number;
@@ -197,6 +199,8 @@ export type SaveData = {
       | { trainerId: number; speciesOpponent: number; speciesPlayer: number; mapSec: number; hpFractionId: number }
       | { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
   }>;
+  /** Four most recent C-style QuestLogScene snapshots stored in SaveBlock1. */
+  questLogScenes?: QuestLogScene[];
   /** Serialized avatar graphics actions captured while Quest Log recording is active. */
   questLogPlayerGfxActions?: Array<{ eventIndex: number; script: number[] }>;
 };
@@ -388,6 +392,10 @@ export function setSave(data: SaveData): void {
   // Migrate browser saves created before SaveBlock2.linkBattleRecords was represented.
   data.linkBattleRecords ??= newLinkBattleRecords();
   data.questLogEvents ??= [];
+  if (!Array.isArray(data.objectEventTemplates)) data.objectEventTemplates = [];
+  data.questLogScenes ??= [];
+  data.questLogScenes = data.questLogScenes.filter((scene): scene is QuestLogScene =>
+    !!scene && typeof scene === "object" && Array.isArray(scene.objectEvents));
   data.questLogPlayerGfxActions ??= [];
   data.questLogPlayerGfxActions = data.questLogPlayerGfxActions.filter((entry): entry is { eventIndex: number; script: number[] } =>
     !!entry && typeof entry === "object" && Number.isInteger(entry.eventIndex) && Array.isArray(entry.script));

@@ -878,6 +878,7 @@ export class Overworld {
       templates.push({ ...obj });
     }
     this.objects.templates = templates;
+    save.objectEventTemplates = templates.map((template) => ({ ...template }));
     this.objects.mapNum = save.location.mapNum;
     this.objects.mapGroup = save.location.mapGroup;
   }
@@ -886,14 +887,21 @@ export class Overworld {
    * already did against ctx.ow.objects.templates. */
   SetObjEventTemplateCoords(localId: number, x: number, y: number): void {
     const t = this.objects.templates.find((tt) => tt.localId === localId);
-    if (t) { t.x = (x << 16) >> 16; t.y = (y << 16) >> 16; }
+    if (t) {
+      t.x = (x << 16) >> 16;
+      t.y = (y << 16) >> 16;
+      save.objectEventTemplates = this.objects.templates.map((template) => ({ ...template }));
+    }
   }
 
   /** SetObjEventTemplateMovementType (overworld.c): equivalent to the inline lookup
    * ScrCmd_setobjectmovementtype already did against ctx.ow.objects.templates. */
   SetObjEventTemplateMovementType(localId: number, movementType: number): void {
     const t = this.objects.templates.find((tt) => tt.localId === localId);
-    if (t) t.movementType = movementType;
+    if (t) {
+      t.movementType = movementType;
+      save.objectEventTemplates = this.objects.templates.map((template) => ({ ...template }));
+    }
   }
 
   /** ResumeMap */

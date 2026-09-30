@@ -73,7 +73,7 @@ import { ResetFameChecker } from "./fameChecker";
 import { ClearRoamerData } from "./pokemon/roamer";
 import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
-import { ResetQLPlayedTheSlots } from "./questLogEvents";
+import { ResetQLPlayedTheSlots, SaveQuestLogData } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
@@ -355,6 +355,7 @@ export class Game {
   CB2_ContinueSavedGame(data: SaveData): void { this.continueGame(data); }
 
   writeSave(isHallOfFame = false): boolean {
+    if (!isHallOfFame) SaveQuestLogData();
     const p = this.overworld.player.object;
     save.facing = p?.facingDirection ?? 1;
     save.playerAvatarFlags = this.overworld.player.flags;

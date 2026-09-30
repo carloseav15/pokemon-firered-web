@@ -50,7 +50,18 @@ export interface QuestLogObjectEvent {
   animId: number;
 }
 
+export interface QuestLogObjectEventTemplate {
+  x: number;
+  negx: boolean;
+  y: number;
+  negy: boolean;
+  elevation: number;
+  movementType: number;
+}
+
 export interface QuestLogScene {
+  /** Browser-save index linking this scene snapshot to the triggering event payload. */
+  eventIndex?: number;
   startType?: number;
   mapGroup?: number;
   mapNum?: number;
@@ -58,9 +69,43 @@ export interface QuestLogScene {
   x?: number;
   y?: number;
   objectEvents: QuestLogObjectEvent[];
+  objectEventTemplates?: QuestLogObjectEventTemplate[];
   flags?: Uint8Array | number[];
   vars?: Uint16Array | number[];
   script?: Uint16Array | number[];
+}
+
+/** SetPlayerInitialCoordsAtScene (quest_log.c). */
+export function SetPlayerInitialCoordsAtScene(questLog: QuestLogScene): void {
+  questLog.mapGroup = save.location.mapGroup;
+  questLog.mapNum = save.location.mapNum;
+  questLog.warpId = save.location.warpId;
+  questLog.x = save.pos.x;
+  questLog.y = save.pos.y;
+}
+
+/** SetGameStateAtScene (quest_log.c). */
+export function SetGameStateAtScene(questLog: QuestLogScene): void {
+  questLog.flags = [...save.flags];
+  questLog.vars = [...save.vars];
+}
+
+/** SetNPCInitialCoordsAtScene (quest_log.c). */
+export function SetNPCInitialCoordsAtScene(questLog: QuestLogScene): void {
+  QL_RecordObjects(questLog);
+  const templates = save.objectEventTemplates ?? [];
+  questLog.objectEventTemplates = Array.from({ length: C.OBJECT_EVENT_TEMPLATES_COUNT }, (_, i) => {
+    const template = templates[i];
+    const x = template?.x ?? 0, y = template?.y ?? 0;
+    return {
+      x: Math.abs(x) & 0xff,
+      negx: x < 0,
+      y: Math.abs(y) & 0xff,
+      negy: y < 0,
+      elevation: (template?.elevation ?? 0) & 0x3f,
+      movementType: (template?.movementType ?? 0) & 0xff,
+    };
+  });
 }
 
 export function QL_RecordObjects(questLog: QuestLogScene): void {
