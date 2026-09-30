@@ -112,6 +112,13 @@ export function Scene3_IsNidorinoEntering(scene: IntroScene3): boolean { return 
 export function Scene3_Task_GengarEnter(scene: IntroScene3): void { scene.taskGengarEnter(); }
 export function Scene3_CreateGrassSprite(scene: IntroScene3): void { scene.createGrassSprite(); }
 export function SpriteCB_Grass(scene: IntroScene3, sprite: Sprite): void { scene.spriteCallbackGrass(sprite); }
+/** intro.c scene 3 zoom and title exit helpers. */
+export function Scene3_CalcCenterToCornerVec(sprite: Sprite): void { CalcCenterToCornerVec(sprite, sprite.oam.shape, sprite.oam.size, sprite.oam.affineMode); }
+export function Scene3_CreateGengarSprite(scene: IntroScene3): void { scene.createGengarSprites(); }
+export function Scene3_NidorinoZoom(scene: IntroScene3): void { scene.zoomNidorino(); }
+export function SpriteCB_Idle(_sprite: Sprite): void {}
+export function Scene3_GengarZoom(scene: IntroScene3): void { scene.zoomGengar(); }
+export function IntroCB_ExitToTitleScreen(scene: IntroScene3): void { scene.updateExit(); }
 
 export class IntroScene3 {
   private phase: "entrance" | "fight" | "exit" = "entrance";
@@ -177,7 +184,7 @@ export class IntroScene3 {
     if (this.done) return;
     if (this.phase !== "exit" && (this.phase === "fight" || this.state >= 3)) this.runSceneTasks();
     if (this.phase === "fight") IntroCB_Scene3_Fight(this);
-    else if (this.phase === "exit") this.updateExit();
+    else if (this.phase === "exit") IntroCB_ExitToTitleScreen(this);
     else IntroCB_Scene3_Entrance(this);
     AnimateSprites();
     BuildOamBuffer();
@@ -384,7 +391,7 @@ export class IntroScene3 {
         if (++this.timer > 20) { Scene3_StartNidorinoAttack(this, nidorino); this.timer = 0; this.state++; }
         break;
       case 10:
-        if (!Scene3_IsGengarMidBounce(this)) { Scene3_PauseGengarBounce(this); this.createGengarBackSprites(); this.state++; }
+        if (!Scene3_IsGengarMidBounce(this)) { Scene3_PauseGengarBounce(this); Scene3_CreateGengarSprite(this); this.state++; }
         break;
       case 11:
         HideBg(0);
@@ -394,19 +401,8 @@ export class IntroScene3 {
       case 12:
         if (++this.timer === 48) BeginNormalPaletteFade((1 << 1) | (1 << 2), 2, 0, 16, RGB_WHITE);
         if (this.timer > 120) {
-          nidorino.x += nidorino.x2;
-          nidorino.y += nidorino.y2;
-          SetSpriteMatrixAnchor(nidorino, 0, 42);
-          nidorino.callback = SpriteCallbackDummy;
-          StartSpriteAffineAnim(nidorino, 1);
-          const anchors = cdata<number[][]>("intro", "sGengarZoomMatrixAnchors");
-          this.gengarSprites.forEach((id, i) => {
-            const sprite = gSprites[id];
-            if (!sprite?.inUse) return;
-            StartSpriteAffineAnim(sprite, 1);
-            sprite.callback = SpriteCallbackDummy;
-            SetSpriteMatrixAnchor(sprite, anchors[i][0], anchors[i][1]);
-          });
+          Scene3_NidorinoZoom(this);
+          Scene3_GengarZoom(this);
           this.timer = 0;
           this.state++;
         }
@@ -427,7 +423,7 @@ export class IntroScene3 {
     }
   }
 
-  private updateExit(): void {
+  updateExit(): void {
     if (this.state++ === 0) FillPalette(RGB_BLACK, 0, 0x200);
     else this.done = true;
   }
@@ -537,7 +533,7 @@ export class IntroScene3 {
     if (sprite.animEnded) DestroySprite(sprite);
   }
 
-  private createGengarBackSprites(): void {
+  createGengarSprites(): void {
     for (let i = 0; i < 4; i++) {
       const id = CreateSprite(spriteTemplate("sSpriteTemplate_Scene3_Gengar", "sOam_Scene3_Gengar",
         "sAnims_Scene3_Gengar", SpriteCallbackDummy, true), (i & 1) * 48 + 49, Math.floor(i / 2) * 64 + 72, 8);
@@ -545,9 +541,29 @@ export class IntroScene3 {
       const sprite = gSprites[id];
       StartSpriteAnim(sprite, i);
       if (i & 1) sprite.oam.shape = SPRITE_SHAPE("32x64");
-      CalcCenterToCornerVec(sprite, sprite.oam.shape, sprite.oam.size, sprite.oam.affineMode);
+      Scene3_CalcCenterToCornerVec(sprite);
       this.gengarSprites.push(id);
     }
+  }
+
+  zoomNidorino(): void {
+    const sprite = gSprites[this.nidorinoSprite];
+    sprite.x += sprite.x2;
+    sprite.y += sprite.y2;
+    SetSpriteMatrixAnchor(sprite, 0, 42);
+    sprite.callback = SpriteCallbackDummy;
+    StartSpriteAffineAnim(sprite, 1);
+  }
+
+  zoomGengar(): void {
+    const anchors = cdata<number[][]>("intro", "sGengarZoomMatrixAnchors");
+    this.gengarSprites.forEach((id, i) => {
+      const sprite = gSprites[id];
+      if (!sprite?.inUse) return;
+      StartSpriteAffineAnim(sprite, 1);
+      sprite.callback = SpriteCB_Idle;
+      SetSpriteMatrixAnchor(sprite, anchors[i][0], anchors[i][1]);
+    });
   }
 
   startNidorinoRecoil(sprite: Sprite): void {
