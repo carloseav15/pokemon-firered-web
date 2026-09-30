@@ -21,7 +21,8 @@ import { AdjustFriendship } from "../pokemon/mon_extra";
 import { tasks } from "../gba/tasks";
 import { GetRamScript } from "../script/context";
 import { IsEscalatorMoving, StartEscalator, StopEscalator } from "./specialFieldAnim";
-import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState } from "../questLogEvents";
+import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, type QuestLogPlaybackCommands } from "../questLogEvents";
+import { QuestLogUpdatePlayerSprite } from "../questLogPlayer";
 import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
 import { InUnionRoom } from "../unionRoom";
 import { ShowStartMenu } from "../startMenu";
@@ -101,11 +102,25 @@ export class FieldControl {
 
   /** DoCB1_Overworld */
   processFrame(newKeys: number, heldKeys: number): void {
-    QL_TryRunActions(this.ow.controlsLocked);
+    const questLogCommands = QL_TryRunActions(this.ow.controlsLocked, !this.ow.script.ScriptContext_IsEnabled());
+    this.applyQuestLogCommands(questLogCommands);
     const player = this.ow.player;
     player.UpdatePlayerAvatarTransitionState();
     const input = emptyInput();
-    this.FieldGetPlayerInput(input, newKeys, heldKeys);
+    const playback = gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING
+      || gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END;
+    if (playback) {
+      const field = questLogCommands.fieldInput;
+      if (field) {
+        input.pressedAButton = (field.flags & 1) !== 0;
+        input.checkStandardWildEncounter = (field.flags & 2) !== 0;
+        input.heldDirection = (field.flags & 0x10) !== 0;
+        input.heldDirection2 = (field.flags & 0x20) !== 0;
+        input.tookStep = (field.flags & 0x40) !== 0;
+        input.pressedBButton = (field.flags & 0x80) !== 0;
+        input.dpadDirection = field.direction;
+      }
+    } else this.FieldGetPlayerInput(input, newKeys, heldKeys);
     this.FieldInput_HandleCancelSignpost(input);
     if (!this.ow.controlsLocked) {
       if (this.ProcessPlayerFieldInput(input)) {
@@ -115,6 +130,18 @@ export class FieldControl {
       } else {
         player.player_step(input.dpadDirection, newKeys, heldKeys);
       }
+    }
+  }
+
+  private applyQuestLogCommands(commands: QuestLogPlaybackCommands): void {
+    for (const command of commands.movements) {
+      const objectId = command.localId === 0 ? this.ow.objects.GetObjectEventIdByLocalId(0)
+        : this.ow.objects.GetObjectEventIdByLocalIdAndMap(command.localId, command.mapNum, command.mapGroup);
+      const object = this.ow.objects.objects[objectId];
+      if (object?.active) this.ow.objects.setHeldMovement(object, command.movementActionId);
+    }
+    for (const command of commands.graphics) {
+      if (command.localId === 0) QuestLogUpdatePlayerSprite(this.ow, command.gfxState);
     }
   }
 

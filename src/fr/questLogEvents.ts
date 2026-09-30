@@ -67,6 +67,16 @@ let sLoadedQuestLogEventTexts: Uint8Array[] = [];
 let sActivePlayerActionScript = -1;
 let sNextActionDelay = 0;
 let sLastPlayerMovementActionId = -1;
+let sPlaybackActions: QuestLogAction[] = [];
+let sPlaybackActionIndex = 0;
+let sPlaybackActionDelay = 0;
+let sPlaybackInitialMovement: QuestLogPlaybackCommands["movements"][number] | null = null;
+
+export type QuestLogPlaybackCommands = {
+  fieldInput: { flags: number; direction: number } | null;
+  movements: Array<{ localId: number; mapNum: number; mapGroup: number; movementActionId: number }>;
+  graphics: Array<{ localId: number; gfxState: number }>;
+};
 
 export type QuestLogShopEvent = {
   totalMoney: number;
@@ -422,16 +432,74 @@ function IncrementQuestLogActionIndex(): void {
   }
 }
 
-/** QL_TryRunActions recording branch (quest_log.c): count unlocked overworld frames between actions. */
-export function QL_TryRunActions(controlsLocked: boolean): void {
-  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
-  if (controlsLocked) return;
-  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
-  if (script && script.length >= 128) {
-    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-    return;
+/** ResetActions(QL_PLAYBACK_STATE_RUNNING, ...): prepare the decoded scene action stream. */
+export function QL_StartActionPlayback(actions: readonly QuestLogAction[]): void {
+  sPlaybackActions = [...actions];
+  sPlaybackActionIndex = 0;
+  sPlaybackActionDelay = actions[0]?.duration ?? 0;
+  const firstAction = actions[0];
+  sPlaybackInitialMovement = firstAction?.type === C.QL_ACTION_MOVEMENT
+    ? { localId: firstAction.data[0], mapNum: firstAction.data[1], mapGroup: firstAction.data[2], movementActionId: firstAction.data[3] }
+    : null;
+  gQuestLogPlaybackState = actions.length === 0 ? C.QL_PLAYBACK_STATE_STOPPED : C.QL_PLAYBACK_STATE_RUNNING;
+}
+
+/** QL_TryRunActions (quest_log.c): consume timed actions or count recorded idle frames. */
+export function QL_TryRunActions(controlsLocked: boolean, scriptContextIdle = true): QuestLogPlaybackCommands {
+  const commands: QuestLogPlaybackCommands = { fieldInput: null, movements: [], graphics: [] };
+  if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING && sPlaybackInitialMovement) {
+    commands.movements.push(sPlaybackInitialMovement);
+    sPlaybackInitialMovement = null;
   }
-  sNextActionDelay = (sNextActionDelay + 1) & 0xffff;
+  if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) {
+    if (controlsLocked) return commands;
+    const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+    if (script && script.length >= 128) gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    else sNextActionDelay = (sNextActionDelay + 1) & 0xffff;
+    return commands;
+  }
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RUNNING || controlsLocked || !scriptContextIdle) return commands;
+  if (sPlaybackActionDelay !== 0) {
+    sPlaybackActionDelay = (sPlaybackActionDelay - 1) & 0xffff;
+    return commands;
+  }
+  for (let guard = 0; guard < sPlaybackActions.length; guard++) {
+    const action = sPlaybackActions[sPlaybackActionIndex];
+    if (!action) { gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED; break; }
+    const [localId, mapNum, mapGroup, value] = action.data;
+    switch (action.type) {
+      case C.QL_ACTION_MOVEMENT:
+        commands.movements.push({ localId, mapNum, mapGroup, movementActionId: value });
+        break;
+      case C.QL_ACTION_GFX_CHANGE:
+        commands.graphics.push({ localId, gfxState: value });
+        break;
+      case C.QL_ACTION_INPUT:
+        commands.fieldInput = { flags: localId, direction: mapGroup };
+        break;
+      case C.QL_ACTION_EMPTY:
+        gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_ACTION_END;
+        break;
+      case C.QL_ACTION_SCENE_END:
+        gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+        break;
+      case C.QL_ACTION_WAIT:
+        break;
+      default:
+        gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+        break;
+    }
+    if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED) break;
+    sPlaybackActionIndex++;
+    if (sPlaybackActionIndex >= sPlaybackActions.length) {
+      gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+      break;
+    }
+    sPlaybackActionDelay = sPlaybackActions[sPlaybackActionIndex]!.duration & 0xffff;
+    if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END) break;
+    if (sPlaybackActionDelay !== 0 && sPlaybackActionDelay !== 0xffff) break;
+  }
+  return commands;
 }
 
 /** QL_UpdateLastDepartedLocation (quest_log_events.c): read locationId from the packed event body. */
