@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9223/10115 (91.2 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **892 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9230/10115 (91.3 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **885 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 102/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~18.412 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~18.272 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -31,9 +31,9 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 11 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 12 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
 | 13 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 14 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
-| 15 | `party_menu.c` | casi completo | 6342 | 304/357 | ~941 |  |
-| 16 | `quest_log.c` | parcial | 1767 | 39/88 | ~983 |  |
+| 14 | `quest_log.c` | parcial | 1767 | 46/88 | ~843 |  |
+| 15 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
+| 16 | `party_menu.c` | casi completo | 6342 | 304/357 | ~941 |  |
 | 17 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
 | 18 | `battle_transition.c` | parcial | 3037 | 72/134 | ~1405 |  |
 | 19 | `overworld.c` | parcial | 3563 | 123/242 | ~1752 |  |
@@ -87,7 +87,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
-- Quest Log: el playback restaura flags/vars, rematches, party/cajas, objetos y layout; carga acciones y textos, avanza las escenas retenidas y restaura el save al final. Sigue pendiente la pantalla final exacta del C, revisar la paridad del ciclo normal/warp y validar reproducción/UI en navegador.
+- Quest Log: el playback restaura flags/vars, rematches, party/cajas, objetos y layout; carga acciones y textos, avanza las escenas retenidas, restaura el save y ejecuta la escena final guardada del C. Falta revisar la paridad del ciclo normal/warp y validar reproducción/UI en navegador.
 - Trainer Tower: `trainer_tower.c` queda en 43/43 nombres y conectado al dispatcher de scripts y al ciclo de recursos de batalla; gameplay/navegador siguen pendientes de revisión.
 - Uso de objetos (`item_use.c`): dispatch Enigma, rechazo de Oak, consumo/mensaje común de Repel, Escape Rope y Poké Doll, flautas, cañas, Item Finder, TM Case, Berry Pouch, Mail, Bike y la secuencia de potenciadores de combate están conectados. El helper registra eventos en el buffer de escena; faltan 12/73 nombres y la carga/reproducción de esos eventos.
 - Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller; los huecos de `battle_bg.c` y `evolution_scene.c` son de enlace/intercambio.
