@@ -14,14 +14,14 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (< 80 % de funciones) | 5 | 11731 | 234/478 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
-| Casi completo (≥ 80 % y < 100 %) | 18 | 57637 | 2470/2691 |
+| Casi completo (≥ 80 % y < 100 %) | 18 | 57637 | 2478/2691 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
-| Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 102/1711 |
+| Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9650/10115** |
-| **Enlace (aparte)** | **42** | **49339** | **102/1711** |
+| **Total en alcance** | **211** | **253703** | **9658/10115** |
+| **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Parcial (< 80 % de funciones)
 
@@ -37,7 +37,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `event_object_movement.c` | 9412 | 708/759 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts`, `field/objectEvents.ts` … |  |  |
+| `event_object_movement.c` | 9412 | 716/759 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts`, `field/objectEvents.ts` … |  |  |
 | `pokemon.c` | 6453 | 135/140 | `battle/anim.ts`, `battle/battleSetup.ts`, `battle/damage.ts` … |  |  |
 | `party_menu.c` | 6342 | 311/357 | `battle/ext.ts`, `menus/fieldMenus.ts`, `menus/fieldMoveMenu.ts` … |  |  |
 | `pokemon_summary_screen.c` | 5224 | 131/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
@@ -295,7 +295,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 |---|---:|---:|---|---|---:|
 | `dodrio_berry_picking.c` | 4954 | 8/147 |  | 8/147 |  |
 | `union_room.c` | 4761 | 6/110 | `menus/trainerCard.ts`, `script/eventObjectLock.ts`, `script/specials.ts` … | 6/110 | 1 |
-| `pokemon_jump.c` | 4582 | 5/186 |  | 5/186 |  |
+| `pokemon_jump.c` | 4582 | 4/186 |  | 4/186 |  |
 | `berry_crush.c` | 3488 | 4/73 |  | 4/73 |  |
 | `link_rfu_2.c` | 3163 | 0/149 |  | 0/149 |  |
 | `trade.c` | 2958 | 0/66 | `pokemon/ingameTrade.ts` | 0/66 | 15 |
