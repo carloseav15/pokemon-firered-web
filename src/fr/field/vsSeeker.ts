@@ -14,43 +14,73 @@ import type { ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
 import { PLAYER_AVATAR_GFX_VSSEEKER } from "./playerAvatar";
 import { ItemUse_SetQuestLogEvent, Task_ItemUse_CloseMessageBoxAndReturnToField } from "../itemUse";
+import { gQuestLogState, QuestLogRecordPlayerAvatarGfxTransitionWithDuration } from "../questLogEvents";
 
 const MAX_REMATCH_PARTIES = 6;
 const SKIP = 0xffff;
 const MAX_REMATCH_ENTRIES = 100;
 type RematchData = { trainerIdxs: number[]; mapGroup: number; mapNum: number };
 
-/** FLDEFF_USE_VS_SEEKER avatar animation shared by the item flow and Quest Log playback. */
+/** FldEff_UseVsSeeker (field_effect.c), shared by the item flow and Quest Log playback. */
+export function FldEff_UseVsSeeker(ow: Overworld): () => boolean {
+  if (questLogRecording()) QuestLogRecordPlayerAvatarGfxTransitionWithDuration(8, 89);
+  const id = tasks.create((taskId) => Task_FldEffUseVsSeeker(taskId, ow), 0xff);
+  ow.effects.active.add(C.FLDEFF_USE_VS_SEEKER);
+  return () => !tasks.tasks[id]?.isActive;
+}
+
+/** Existing shared entry point for callers that need a completion predicate. */
 export function StartVsSeekerFieldEffect(ow: Overworld): () => boolean {
-  const player = ow.player.object;
+  return FldEff_UseVsSeeker(ow);
+}
+
+function questLogRecording(): boolean {
+  return gQuestLogState === C.QL_STATE_RECORDING;
+}
+
+/** Task_FldEffUseVsSeeker: dispatch the four source stages through task data[0]. */
+export function Task_FldEffUseVsSeeker(taskId: number, ow: Overworld): void {
+  const task = tasks.data(taskId);
+  switch (task[0]) {
+    case 0: UseVsSeekerEffect_1(taskId, ow); break;
+    case 1: UseVsSeekerEffect_2(taskId, ow); break;
+    case 2: UseVsSeekerEffect_3(taskId, ow); break;
+    case 3: UseVsSeekerEffect_4(taskId, ow); break;
+  }
+}
+
+/** UseVsSeekerEffect_1 (field_effect.c). */
+export function UseVsSeekerEffect_1(taskId: number, ow: Overworld): void {
+  ow.LockPlayerFieldControls();
+  ow.objects.freezeAll();
   ow.player.preventStep = true;
-  let state = 0;
-  const id = tasks.create(() => {
-    switch (state) {
-      case 0:
-        if (!ow.objects.isMovementOverridden(player) || ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-          ow.player.StartPlayerAvatarVsSeekerAnim();
-          ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
-          state++;
-        }
-        break;
-      case 1:
-        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-          ow.player.setState(ow.player.currentStateId());
-          ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
-          state++;
-        }
-        break;
-      case 2:
-        if (ow.objects.ObjectEventClearHeldMovementIfFinished(player)) {
-          ow.player.preventStep = false;
-          state++;
-          tasks.destroy(id);
-        }
-        break;
-    }
-  }, 0xff);
-  return () => state === 3;
+  tasks.data(taskId)[0]++;
+}
+
+/** UseVsSeekerEffect_2 (field_effect.c). */
+export function UseVsSeekerEffect_2(taskId: number, ow: Overworld): void {
+  const player = ow.player.object;
+  if (ow.objects.isMovementOverridden(player) && !ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return;
+  ow.player.StartPlayerAvatarVsSeekerAnim();
+  ow.objects.setHeldMovement(player, C.MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
+  tasks.data(taskId)[0]++;
+}
+
+/** UseVsSeekerEffect_3 (field_effect.c). */
+export function UseVsSeekerEffect_3(taskId: number, ow: Overworld): void {
+  const player = ow.player.object;
+  if (!ow.objects.ObjectEventClearHeldMovementIfFinished(player)) return;
+  ow.player.setState(ow.player.currentStateId());
+  ow.objects.forceSetHeldMovement(player, [0, 0, 1, 2, 3][player.facingDirection] ?? 0);
+  tasks.data(taskId)[0]++;
+}
+
+/** UseVsSeekerEffect_4 (field_effect.c). */
+export function UseVsSeekerEffect_4(taskId: number, ow: Overworld): void {
+  if (!ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object)) return;
+  ow.player.preventStep = false;
+  ow.effects.active.delete(C.FLDEFF_USE_VS_SEEKER);
+  tasks.destroy(taskId);
 }
 
 let rematchTable: RematchData[] | undefined;

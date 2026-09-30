@@ -27,6 +27,7 @@ import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVA
 import { SetHelpContext } from "../helpSystem";
 import { CalculatePlayerPartyCount } from "../pokemon/mon";
 import { QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode } from "../questLogEvents";
+import { FldEff_UseVsSeeker } from "./vsSeeker";
 
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
 type FieldMoveShowMonTask = { id: number; data: Int16Array; mon: Sprite; outdoors: boolean; image?: HTMLCanvasElement; overlay?: Overlay };
@@ -128,6 +129,7 @@ export class FieldMoveEffects {
       case C.FLDEFF_POKECENTER_HEAL: this.FldEff_PokecenterHeal(); return true;
       case C.FLDEFF_HALL_OF_FAME_RECORD: this.FldEff_HallOfFameRecord(); return true;
       case C.FLDEFF_SWEET_SCENT: this.FieldCallback_SweetScent(); return true;
+      case C.FLDEFF_USE_VS_SEEKER: FldEff_UseVsSeeker(this.ow); return true;
       case C.FLDEFF_PHOTO_FLASH: this.FldEff_PhotoFlash(); return true;
       case C.FLDEFF_PCTURN_ON: this.remove(id); return true;
       default: return false;
