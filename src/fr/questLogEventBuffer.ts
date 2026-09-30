@@ -202,6 +202,11 @@ export function RecordEvent_ObtainedStoryItem(script: number[], actionIndex: num
   return record(C.QL_EVENT_OBTAINED_STORY_ITEM, [u16(data.itemId as number), u16(data.mapSec as number)], script, actionIndex, tracker);
 }
 
+/** RecordEvent_ArrivedInLocation. */
+export function RecordEvent_ArrivedInLocation(script: number[], actionIndex: number, tracker: QuestLogEventRepeatState, data: EventData): number | null {
+  return record(C.QL_EVENT_ARRIVED, [u16(data.mapSec as number)], script, actionIndex, tracker);
+}
+
 function packBytes(first: number, second = 0): number {
   return (first & 0xff) | ((second & 0xff) << 8);
 }
@@ -270,6 +275,7 @@ export function RecordQuestLogEvent(eventId: number, script: number[], actionInd
     case C.QL_EVENT_BOUGHT_ITEM: return RecordEvent_BoughtItem(script, actionIndex, tracker, data);
     case C.QL_EVENT_SOLD_ITEM: return RecordEvent_SoldItem(script, actionIndex, tracker, data);
     case C.QL_EVENT_OBTAINED_STORY_ITEM: return RecordEvent_ObtainedStoryItem(script, actionIndex, tracker, data);
+    case C.QL_EVENT_ARRIVED: return RecordEvent_ArrivedInLocation(script, actionIndex, tracker, data);
     case C.QL_EVENT_SWITCHED_MONS_BETWEEN_BOXES:
       return RecordEvent_SwitchedMonsBetweenBoxes(script, actionIndex, tracker, data);
     case C.QL_EVENT_SWITCHED_MONS_WITHIN_BOX: return RecordEvent_SwitchedMonsWithinBox(script, actionIndex, tracker, data);
@@ -310,7 +316,8 @@ export function QL_SkipCommand(script: readonly number[], cursor: number): numbe
                   : eventId === C.QL_EVENT_DEFEATED_CHAMPION ? 10
                     : eventId === C.QL_EVENT_DEPARTED ? 6
                       : eventId === C.QL_EVENT_BOUGHT_ITEM || eventId === C.QL_EVENT_SOLD_ITEM ? 14
-                        : eventId === C.QL_EVENT_OBTAINED_STORY_ITEM ? 8 : 0;
+                        : eventId === C.QL_EVENT_OBTAINED_STORY_ITEM ? 8
+                          : eventId === C.QL_EVENT_ARRIVED ? 6 : 0;
   if (baseBytes === 0) return null;
   const next = cursor + (baseBytes + (baseBytes - 4) * repeats) / 2;
   return next <= script.length ? next : null;

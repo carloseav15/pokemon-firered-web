@@ -76,9 +76,10 @@ export type QuestLogTrainerBattleEvent = {
 export type QuestLogWildBattleEvent = { defeatedSpecies: number; caughtSpecies: number; mapSec: number };
 export type QuestLogLinkBattleEvent = { outcome: number; playerNames: number[][] };
 export type QuestLogDepartedEvent = { mapSec: number; locationId: number };
+export type QuestLogArrivedEvent = { mapSec: number };
 export type QuestLogEventData = QuestLogShopEvent | QuestLogStoryItemEvent | QuestLogItemEvent | QuestLogSwappedHeldItemEvent
   | QuestLogSwitchedPartyOrderEvent | QuestLogFieldMoveEvent | QuestLogTrainerBattleEvent | QuestLogWildBattleEvent
-  | QuestLogLinkBattleEvent | QuestLogDepartedEvent | Record<string, never>;
+  | QuestLogLinkBattleEvent | QuestLogDepartedEvent | QuestLogArrivedEvent | Record<string, never>;
 
 function nextQuestLogSceneIndex(): number {
   const last = save.questLogScenes?.at(-1)?.eventIndex;
@@ -291,6 +292,21 @@ export function QuestLog_TryRecordDepartedLocation(): void {
   }
 }
 
+/** QuestLog_RecordEnteredMap (quest_log_events.c), called before setting a world-map flag. */
+export function QuestLog_RecordEnteredMap(worldMapFlag: number): void {
+  if (gQuestLogState === C.QL_STATE_PLAYBACK || gQuestLogState === C.QL_STATE_PLAYBACK_LAST) return;
+  const worldMapFlags = cdata<number[]>("quest_log_events", "sWorldMapFlags");
+  if (!worldMapFlags.includes(worldMapFlag)) return;
+  sNewlyEnteredMap = !flagGet(worldMapFlag);
+}
+
+/** SetQuestLogEvent_Arrived (quest_log_events.c), called once per qualifying map visit. */
+export function SetQuestLogEvent_Arrived(): void {
+  if (gQuestLogState === C.QL_STATE_PLAYBACK || gQuestLogState === C.QL_STATE_PLAYBACK_LAST || !sNewlyEnteredMap) return;
+  SetQuestLogEvent(C.QL_EVENT_ARRIVED, { mapSec: GetMapRegionSection(save.location.mapGroup, save.location.mapNum) });
+  sNewlyEnteredMap = false;
+}
+
 /** QuestLogRecordPlayerAvatarGfxTransition (quest_log.c): record the source gfx state byte. */
 export function QuestLogRecordPlayerAvatarGfxTransition(gfxState: number): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
@@ -438,6 +454,7 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
   const isShopEvent = eventId === C.QL_EVENT_BOUGHT_ITEM || eventId === C.QL_EVENT_SOLD_ITEM;
   const isPokemonCenterEvent = eventId === C.QL_EVENT_USED_PKMN_CENTER;
   const isStoryItemEvent = eventId === C.QL_EVENT_OBTAINED_STORY_ITEM;
+  const isArrivedEvent = eventId === C.QL_EVENT_ARRIVED;
   const isDepartedEvent = eventId === C.QL_EVENT_DEPARTED;
   const isItemEvent = eventId === C.QL_EVENT_USED_ITEM || eventId === C.QL_EVENT_GAVE_HELD_ITEM
     || eventId === C.QL_EVENT_GAVE_HELD_ITEM_BAG || eventId === C.QL_EVENT_GAVE_HELD_ITEM_PC
@@ -458,7 +475,7 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
     || eventId === C.QL_EVENT_LINK_BATTLED_DOUBLE
     || eventId === C.QL_EVENT_LINK_BATTLED_MULTI
     || eventId === C.QL_EVENT_LINK_BATTLED_UNION;
-  if (!isShopEvent && !isPokemonCenterEvent && !isStoryItemEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent
+  if (!isShopEvent && !isPokemonCenterEvent && !isStoryItemEvent && !isArrivedEvent && !isDepartedEvent && !isItemEvent && !isBattleEvent
     && !isLinkBattleEvent && !isSwitchedPartyOrder && !isFieldMove && !isStorageEvent) return;
   QL_EnableRecordingSteps();
   if (gQuestLogState === C.QL_STATE_PLAYBACK) return;

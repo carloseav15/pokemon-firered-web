@@ -36,7 +36,7 @@ import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
 
-import { gQuestLogState, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation } from "../questLogEvents";
+import { gQuestLogState, QuestLog_CheckDepartingIndoorsMap, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./weather";
 
@@ -2191,6 +2191,7 @@ export class Overworld {
     this.game.weather.update(this);
     this.sprites.update();
     this.cameraUpdate();
+    SetQuestLogEvent_Arrived();
     this.messageBox.update();
     this.mapName.update();
     this.mapPreview.update();

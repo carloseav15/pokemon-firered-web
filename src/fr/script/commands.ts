@@ -19,7 +19,7 @@ import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "./specials";
-import { gQuestLogState, QL_GetPlaybackState } from "../questLogEvents";
+import { gQuestLogState, QL_GetPlaybackState, QuestLog_RecordEnteredMap } from "../questLogEvents";
 import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "../mapPreviewScreen";
 import { DestroyHelpMessageWindow, DrawHelpMessageWindowWithText } from "../menus/helpMessage";
@@ -691,7 +691,7 @@ function ScrCmd_signmsg(ctx: ScriptRunner): boolean { ctx.ow.control.MsgSetSignp
 function ScrCmd_normalmsg(ctx: ScriptRunner): boolean { ctx.ow.control.MsgSetNotSignpost(); return false; }
 function ScrCmd_setmonmodernfatefulencounter(ctx: ScriptRunner): boolean { const i = varGet(ctx.ScriptReadHalfword()); if (save.party[i]) save.party[i].modernFatefulEncounter = true; return false; }
 function ScrCmd_checkmonmodernfatefulencounter(ctx: ScriptRunner): boolean { const i = varGet(ctx.ScriptReadHalfword()); varSet(SV.RESULT, save.party[i]?.modernFatefulEncounter ? 1 : 0); return false; }
-function ScrCmd_setworldmapflag(ctx: ScriptRunner): boolean { MapPreview_SetFlag(ctx.ScriptReadHalfword()); return false; }
+function ScrCmd_setworldmapflag(ctx: ScriptRunner): boolean { const flag = ctx.ScriptReadHalfword(); QuestLog_RecordEnteredMap(flag); MapPreview_SetFlag(flag); return false; }
 function ScrCmd_setmonmetlocation(ctx: ScriptRunner): boolean { const i = varGet(ctx.ScriptReadHalfword()); const loc = ctx.readByte(); if (save.party[i]) save.party[i].metLocation = loc; return false; }
 
 export const COMMANDS: Record<string, ScriptCommand> = {
