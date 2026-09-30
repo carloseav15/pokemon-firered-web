@@ -38,10 +38,30 @@ const JUMP_TYPE_HIGH = 0, JUMP_TYPE_LOW = 1, JUMP_TYPE_NORMAL = 2;
 const JUMP_HALFWAY = 1, JUMP_FINISHED = 0xff;
 
 type SpriteStepFunc = (sprite: Sprite, direction: number) => void;
+
+/** MoveCoords (event_object_movement.c): advance signed 16-bit map coordinates by one direction vector. */
+export function MoveCoords(direction: number, coords: { x: number; y: number }): void {
+  const [dx, dy] = DIRECTION_VECTORS[direction & 0xff]!;
+  coords.x = ((coords.x + dx) << 16) >> 16;
+  coords.y = ((coords.y + dy) << 16) >> 16;
+}
+
+/** MoveCoordsInDirection (event_object_movement.c): advance signed 16-bit coordinates by directional distances. */
+export function MoveCoordsInDirection(direction: number, coords: { x: number; y: number }, deltaX: number, deltaY: number): void {
+  const [dx, dy] = DIRECTION_VECTORS[direction & 0xff]!;
+  const xDelta = (deltaX << 16) >>> 16;
+  const yDelta = (deltaY << 16) >>> 16;
+  if (dx > 0) coords.x = ((coords.x + xDelta) << 16) >> 16;
+  if (dx < 0) coords.x = ((coords.x - xDelta) << 16) >> 16;
+  if (dy > 0) coords.y = ((coords.y + yDelta) << 16) >> 16;
+  if (dy < 0) coords.y = ((coords.y - yDelta) << 16) >> 16;
+}
+
 function applySpriteStep(sprite: Sprite, direction: number, amount: number): void {
-  const [dx, dy] = DIRECTION_VECTORS[direction]!;
-  sprite.x = ((sprite.x + dx * amount) << 16) >> 16;
-  sprite.y = ((sprite.y + dy * amount) << 16) >> 16;
+  const coords = { x: sprite.x, y: sprite.y };
+  MoveCoordsInDirection(direction, coords, amount, amount);
+  sprite.x = coords.x;
+  sprite.y = coords.y;
 }
 function Step1(sprite: Sprite, direction: number): void { applySpriteStep(sprite, direction, 1); }
 function Step2(sprite: Sprite, direction: number): void { applySpriteStep(sprite, direction, 2); }
@@ -288,11 +308,9 @@ export function GetDirectionToFace(x1: number, y1: number, x2: number, y2: numbe
 
 /** event_object_movement.c ObjectEventMoveDestCoords: advance one tile using its u8 direction. */
 export function ObjectEventMoveDestCoords(objectEvent: ObjectEvent, direction: number): { x: number; y: number } {
-  const [dx, dy] = DIRECTION_VECTORS[direction & 0xff]!;
-  return {
-    x: ((objectEvent.currentCoords.x + dx) << 16) >> 16,
-    y: ((objectEvent.currentCoords.y + dy) << 16) >> 16,
-  };
+  const coords = { x: objectEvent.currentCoords.x, y: objectEvent.currentCoords.y };
+  MoveCoords(direction, coords);
+  return coords;
 }
 
 /** event_object_movement.c SetJumpSpriteData. */
