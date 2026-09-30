@@ -1735,33 +1735,45 @@ export class FieldEffects {
 
   /** FldEff_PopOutOfAsh / SpriteCB_PopOutOfAsh: source AshPuff template, priority 2. */
   popOutOfAsh(object: ObjectEvent, priority = 2): Sprite | undefined {
+    return this.FldEff_PopOutOfAsh(object, priority);
+  }
+
+  FldEff_PopOutOfAsh(object: ObjectEvent, priority = 2): Sprite | undefined {
     const sprite = this.createFromTemplate("AshPuff", object.sprite.x, object.sprite.y);
     if (!sprite) return undefined;
     sprite.priority = priority;
     sprite.subpriority = object.sprite.subpriority - 1;
     this.active.add(C.FLDEFF_POP_OUT_OF_ASH);
-    sprite.callback = (s) => {
-      if (!s.animEnded) return;
-      this.active.delete(C.FLDEFF_POP_OUT_OF_ASH);
-      this.ow.sprites.destroy(s);
-    };
+    sprite.callback = (s) => this.SpriteCB_PopOutOfAsh(s);
     return sprite;
+  }
+
+  SpriteCB_PopOutOfAsh(sprite: Sprite): void {
+    if (!sprite.animEnded) return;
+    this.active.delete(C.FLDEFF_POP_OUT_OF_ASH);
+    this.ow.sprites.destroy(sprite);
   }
 
   /** FldEff_LavaridgeGymWarp / SpriteCB_AshLaunch (field_effect.c). */
   startLavaridgeGymWarpEffect(object: ObjectEvent): Sprite | undefined {
+    return this.FldEff_LavaridgeGymWarp(object);
+  }
+
+  FldEff_LavaridgeGymWarp(object: ObjectEvent): Sprite | undefined {
     const sprite = this.createFromTemplate("AshLaunch", object.sprite.x, object.sprite.y);
     if (!sprite) return undefined;
     sprite.priority = object.sprite.priority;
     sprite.subpriority = object.sprite.subpriority - 1;
     sprite.coordOffsetEnabled = true;
     this.active.add(C.FLDEFF_LAVARIDGE_GYM_WARP);
-    sprite.callback = (s) => {
-      if (!s.animEnded) return;
-      this.active.delete(C.FLDEFF_LAVARIDGE_GYM_WARP);
-      this.ow.sprites.destroy(s);
-    };
+    sprite.callback = (s) => this.SpriteCB_AshLaunch(s);
     return sprite;
+  }
+
+  SpriteCB_AshLaunch(sprite: Sprite): void {
+    if (!sprite.animEnded) return;
+    this.active.delete(C.FLDEFF_LAVARIDGE_GYM_WARP);
+    this.ow.sprites.destroy(sprite);
   }
 
   // ---------------------------------------------------------------- surf blob
