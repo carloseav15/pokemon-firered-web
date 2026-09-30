@@ -35,6 +35,7 @@ import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
 import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from "./hw/palette";
 import { DisableWildEncounters } from "./field/wildEncounter";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
+import { tasks } from "./gba/tasks";
 
 export { gQuestLogState };
 
@@ -770,6 +771,41 @@ export function QuestLog_AdvancePlayhead_(ow: Overworld): void {
   const nextScene = sPlaybackSceneOrder[current + 1];
   if (nextScene !== undefined) startQuestLogScene(ow, nextScene);
   else finishQuestLogPlayback(ow);
+}
+
+type AvoidDisplayTask = { ow: Overworld; callback: (() => void) | null; timer: number; state: number };
+const sAvoidDisplayTasks = new Map<number, AvoidDisplayTask>();
+
+/** QL_AvoidDisplay / Task_AvoidDisplay (quest_log.c). */
+export function QL_AvoidDisplay(ow: Overworld, callback: (() => void) | null): boolean {
+  if (gQuestLogState === C.QL_STATE_RECORDING) {
+    QuestLog_CutRecording();
+    return false;
+  }
+  if (gQuestLogState !== C.QL_STATE_PLAYBACK) return false;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_ACTION_END;
+  const taskId = tasks.create(Task_AvoidDisplay, 80);
+  sAvoidDisplayTasks.set(taskId, { ow, callback, timer: 0, state: 0 });
+  return true;
+}
+
+function Task_AvoidDisplay(taskId: number): void {
+  const state = sAvoidDisplayTasks.get(taskId);
+  if (!state) { tasks.destroy(taskId); return; }
+  if (state.state === 0) {
+    if (++state.timer === 127) {
+      FadeScreen(FADE_TO_BLACK, 0);
+      sPlaybackEndMode = 1;
+      state.state++;
+    }
+    return;
+  }
+  if (paletteFade.active) return;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+  state.callback?.();
+  tasks.destroy(taskId);
+  sAvoidDisplayTasks.delete(taskId);
+  QuestLog_AdvancePlayhead_(state.ow);
 }
 
 /** QuestLogScenePlaybackIsEnding (quest_log.c). */

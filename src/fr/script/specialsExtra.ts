@@ -30,7 +30,8 @@ import { GetBerryNameByBerryType, ItemIdToBerryType } from "../pokemon/berry";
 import { GetPCBoxToSendMon, getBoxName, getPCBoxToSendMon, shouldShowBoxWasFullMessage } from "../pokemon/storage";
 import { CalculatePlayerPartyCount, GetMonData, gPPUpGetMask, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot, type Mon } from "../pokemon/mon";
 import { SpeciesToMailSpecies } from "../pokemon/mail";
-import { OpenMuseumFossilPic, CloseMuseumFossilPic } from "../menus/scriptMenu";
+import { OpenMuseumFossilPic, CloseMuseumFossilPic, QL_DestroyAbortedDisplay } from "../menus/scriptMenu";
+import { QL_AvoidDisplay } from "../questLogEvents";
 import { ShowEasyChatScreen } from "../easyChat2";
 import { preloadEasyChatScreen } from "../easyChat3";
 import { preloadBattleRecords, ShowBattleRecords } from "../battleRecords";
@@ -519,6 +520,7 @@ function Script_TakeBerryPowder(): number {
 
 /** DisplayBerryPowderVendorMenu (berry_powder.c), adapted to a Canvas field window. */
 function DisplayBerryPowderVendorMenu(ctx: ScriptRunner): void {
+  if (QL_AvoidDisplay(ctx.ow, QL_DestroyAbortedDisplay)) return;
   powderWindow = new Window(2, 2, 8, 3);
   ctx.ow.windows.add(powderWindow);
   DrawPlayerPowderAmount(powderWindow, 0x21d, BG_PLTT_ID(13), GetBerryPowder());
@@ -814,6 +816,7 @@ export const EXTRA_SPECIALS: Record<string, Special> = {
   GetElevatorFloor: () => { varSet(C.VAR_ELEVATOR_FLOOR, elevatorFloor()); },
   InitElevatorFloorSelectMenuPos: (ctx) => initElevatorFloorSelectMenuPos(ctx),
   DrawElevatorCurrentFloorWindow: (ctx) => {
+    if (QL_AvoidDisplay(ctx.ow, QL_DestroyAbortedDisplay)) return;
     const window = new Window(22, 2, 7, 4);
     window.frame = "std";
     window.frameType = save.options.frameType;

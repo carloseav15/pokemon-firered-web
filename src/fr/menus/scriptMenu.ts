@@ -30,6 +30,7 @@ import {
 } from "../generated/constants";
 import * as C from "../generated/constants";
 import { spriteSheet } from "../field/gfx4bpp";
+import { QL_AvoidDisplay } from "../questLogEvents";
 
 export const SCR_MENU_UNSET = 0xff;
 export const SCR_MENU_CANCEL = 127;
@@ -223,6 +224,7 @@ export function MultiChoicePrintHelpDescription(mcId: number): void {
 export function DrawVerticalMultichoiceMenu(left: number, top: number, mcId: number, ignoreBpress: boolean | number, initPos: number): void {
   const sm = sActiveScriptMenu;
   if (!sm) return;
+  if (!(Number(ignoreBpress) & 2) && QL_AvoidDisplay(sm.getOverworld(), QL_DestroyAbortedDisplay)) return;
   const list = (rom.scriptMenu.multichoice[String(mcId)] ?? []) as string[];
   const count = list.length;
   const texts = list.map((sym) => expandPlaceholders(rom.text(sym)));
@@ -276,6 +278,7 @@ export function IsScriptActive(): boolean {
 
 export function ScriptMenu_YesNo(_unused = 0, _stuff = 0, defaultChoice = 0): boolean {
   if (tasks.isActive(Task_YesNoMenu_HandleInput)) return false;
+  if (sActiveScriptMenu && QL_AvoidDisplay(sActiveScriptMenu.getOverworld(), QL_DestroyAbortedDisplay)) return true;
   varSet(SV.RESULT, SCR_MENU_UNSET);
   const windowId = CreateWindowFromRect(20, 8, 6, 4);
   const window = sWindows.get(windowId);
@@ -325,6 +328,7 @@ const sGridState = new Map<number, GridState>();
 
 export function ScriptMenu_MultichoiceGrid(left: number, top: number, multichoiceId: number, ignoreBpress: boolean | number, columnCount: number): boolean {
   if (tasks.isActive(Hask_MultichoiceGridMenu_HandleInput)) return false;
+  if (sActiveScriptMenu && QL_AvoidDisplay(sActiveScriptMenu.getOverworld(), QL_DestroyAbortedDisplay)) return true;
   varSet(SV.RESULT, SCR_MENU_UNSET);
   const list = (rom.scriptMenu.multichoice[String(multichoiceId)] ?? []) as string[];
   const count = list.length;
@@ -446,6 +450,7 @@ export function ScriptMenu_ShowPokemonPic(species: number, x: number, y: number)
   if (sMonPicTaskId >= 0 && tasks.tasks[sMonPicTaskId]?.isActive) return false;
   const sm = sActiveScriptMenu;
   if (!sm) return false;
+  if (QL_AvoidDisplay(sm.getOverworld(), QL_DestroyAbortedDisplay)) return true;
   const windowId = CreateWindowFromRect(x, y, 8, 8);
   const sprite = new Sprite();
   sprite.frameImages = [{ url: `${DATA_ROOT}/gfx/pokemon/front/${species}.png`, index: 0, width: 64, height: 64 }];
@@ -527,6 +532,7 @@ export function OpenMuseumFossilPic(): boolean {
   if (sMuseumFossilTaskId >= 0 && tasks.tasks[sMuseumFossilTaskId]?.isActive) return false;
   const sm = sActiveScriptMenu;
   if (!sm) return false;
+  if (QL_AvoidDisplay(sm.getOverworld(), QL_DestroyAbortedDisplay)) return true;
   const species = varGet(SV.x8004);
   if (species !== C.SPECIES_KABUTOPS && species !== C.SPECIES_AERODACTYL) return false;
   const name = species === C.SPECIES_KABUTOPS ? "Kabutops" : "Aerodactyl";
@@ -564,6 +570,7 @@ export function CloseMuseumFossilPic(): boolean {
 }
 
 export function QL_DestroyAbortedDisplay(): void {
+  sActiveScriptMenu?.getOverworld().script.ScriptContext_SetupScript(rom.label("EventScript_ReleaseEnd"));
   PicboxCancel();
   if (sMuseumFossilState && sMuseumFossilTaskId >= 0) {
     if (sMuseumFossilState.state < 2) {
@@ -583,6 +590,7 @@ export function DrawSeagallopDestinationMenu(): void {
   let numItems: number;
   let top: number;
   varSet(SV.RESULT, SCR_MENU_UNSET);
+  if (sActiveScriptMenu && QL_AvoidDisplay(sActiveScriptMenu.getOverworld(), QL_DestroyAbortedDisplay)) return;
 
   if (page === 1) {
     if (origin < SEAGALLOP_FIVE_ISLAND) destinationId = SEAGALLOP_FIVE_ISLAND;
@@ -710,6 +718,7 @@ export class ScriptMenu {
   }
 
   showMoneyBox(x: number, y: number): void {
+    if (QL_AvoidDisplay(this.getOverworld(), QL_DestroyAbortedDisplay)) return;
     this.hideMoneyBox();
     const window = new Window(x + 1, y + 1, 8, 3);
     window.frame = "stdwin";
@@ -734,6 +743,7 @@ export class ScriptMenu {
   }
 
   showCoinsBox(x: number, y: number): void {
+    if (QL_AvoidDisplay(this.getOverworld(), QL_DestroyAbortedDisplay)) return;
     this.hideCoinsBox();
     const window = new Window(x + 1, y + 1, 8, 3);
     window.frame = "stdwin";
@@ -777,6 +787,7 @@ export class ScriptMenu {
   private suspendedListTaskId = -1;
 
   ListMenu(): void {
+    if (QL_AvoidDisplay(this.getOverworld(), QL_DestroyAbortedDisplay)) return;
     const which = varGet(SV.x8004);
     const layouts: Record<number, number[]> = {
       [LISTMENU_BADGES]: [4, 9, 1, 1, 12, 7, 1],
