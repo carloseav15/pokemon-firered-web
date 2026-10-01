@@ -185,6 +185,12 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   encuentros salvajes, los scripts de eventos y los textos del teléfono/radio, en
   qué formato y si están descompilados. Si hace falta ampliar el sparse, hazlo en
   `sources.json` y explica por qué.
+  - Entrenadores: `files/poketool/trainer/trainers.json` es la tabla JSON fuente; `trdata.json.txt` y `trpoke.json.txt` son plantillas que `trainer.mk` convierte en los NARC de atributos y equipos. La lógica de lectura está en `src/trainer_data.c` (C legible).
+  - Encuentros: `files/fielddata/encountdata/gs_enc_data.json` contiene las tablas por mapa y método; `gs_enc_data.json.txt` sirve de plantilla para generar los NARC separados de HeartGold y SoulSilver. La carga/selección se implementa en `src/encounter.c` y `src/field/encounter_check.c` (C legible).
+  - Eventos de mapa: `files/fielddata/eventdata/zone_event/*.json` describe objetos, warps y eventos de fondo; JSONPROC y el ensamblador los convierten en datos del NARC. Secuencias de eventos: `files/fielddata/script/scr_seq/*.s`, código ensamblador legible con comandos y etiquetas simbólicos, compilado a binarios/NARC. No son tablas C.
+  - Teléfono: `src/application/pokegear/phone/scripts/phone_scripts_*.c` contiene guiones de llamadas en C legible; `src/phonebook_dat.c` mapea contactos a mensajes. Textos fuente en `files/msgdata/msg/msg_0NNN.gmm` (filas XML con IDs de mensaje); la agenda de contactos está en `files/tel/pmtel_book.json` y su plantilla `.json.txt`.
+  - Radio: los programas están implementados en `src/application/pokegear/radio/shows/*.c` (C legible) y cargan mensajes por NARC/ID; los textos están en los mismos `.gmm`, por ejemplo `msg_0414.gmm` (Pokémon Talk) y `msg_0420.gmm` (perfiles de entrenadores).
+  - Sparse: no se amplió. `sources.json` mantiene `/src/` y `/include/`; los datos citados están bajo `/files/`. Para este inventario bastó consultar el árbol y ejemplos del commit fijado sin extraer datos. Una futura tarea de extracción deberá añadir solo los subdirectorios `/files/` que consuma.
 - [ ] **R8 Datos de Emerald con el exportador** [avanzado]. Evaluar si
   `tools/decomp/export.py` puede apuntar a pokeemerald (especies, movimientos,
   objetos, mapas) sin modificar su comportamiento para FireRed. Entregar un informe
