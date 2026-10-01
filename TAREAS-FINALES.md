@@ -2,55 +2,190 @@
 
 Lista única de lo que queda para dar por terminado el port de un jugador
 (auditoría del 2026-10-01). Las cifras vivas están en [PENDING.md](PENDING.md);
-el estado breve, en [PORTING-STATUS.md](PORTING-STATUS.md). Marca `[x]` al
-cerrar una tarea y retira la línea solo cuando esté revisada; no borres entradas
-sin resolverlas.
+el estado breve, en [PORTING-STATUS.md](PORTING-STATUS.md).
 
 Por nombres, el juego de un jugador está completo: los 354 nombres que faltan
 son de enlace/multijugador, hardware GBA sustituido por Canvas/WebAudio o
-funciones sin caller en el propio C. Lo pendiente es cerrar los huecos de
-abajo, revisar las equivalencias y validar en navegador.
+funciones sin caller en el propio C. Lo pendiente es cerrar los huecos de la
+sección 1, revisar las equivalencias (2), validar en navegador (3) y recorrer
+la historia (4).
+
+## 0. Cómo trabajar (léelo entero antes de empezar)
+
+Este archivo está pensado para que cualquier agente lo siga paso a paso. Si una
+instrucción de aquí choca con [AGENTS.md](AGENTS.md), manda AGENTS.md.
+
+### Orden
+
+1. Sección 1, en el orden en que aparecen (de fácil a difícil). Las marcadas
+   **[avanzado]** déjalas a un agente de mayor capacidad si no entiendes el C.
+2. Sección 2, un bloque de archivo por sesión.
+3. Sección 3, un bloque por sesión.
+4. Sección 4.
+
+### Al empezar cada sesión
+
+```bash
+git switch main
+git pull --ff-only
+git status --short
+```
+
+`git status` debe salir vacío. Si no, para y pregunta al usuario: no son tus cambios.
+Elige **una** tarea sin marcar y trabaja solo en ella.
+
+### Dónde está cada cosa
+
+- C original: `../pokefirered/src/<archivo>.c` (resuelto por `tools/decomp/common.py`).
+  Buscar una función: `grep -n "Nombre(" ../pokefirered/src/archivo.c`.
+- Port TS: `src/fr/`. Buscar: `grep -rn "Nombre" src/fr --exclude-dir=generated`.
+- Datos generados: `src/fr/generated/` y `public/fr/`. **No se editan a mano.**
+- Checks headless: `tools/checks/*.ts`, se lanzan con `npm run check:<nombre>`
+  (lista en `package.json`).
+
+### Reglas que no se rompen
+
+- Lee el cuerpo C completo antes de cambiar código. No inventes comportamiento.
+- Conserva los nombres C, el orden de estados y callbacks, y la aritmética
+  (u8 → `& 0xFF`, s16 → `(x << 16) >> 16`, división entera → `Math.trunc`).
+- No cambies `tools/portInventory.py`, las baselines de `check:honesty` ni las
+  aserciones de un check para que pase.
+- No borres una tarea sin hacerla. Si no puedes terminarla, escribe debajo una
+  línea `BLOQUEADO: <motivo concreto>` y pasa a la siguiente.
+- Si llevas dos intentos fallidos con el mismo error, para y anótalo como bloqueado.
+- Nada de `git push` ni de borrar ramas sin permiso del usuario.
+
+### Comprobaciones al terminar una tarea de código
+
+```bash
+npm run check:port
+npm run check:honesty
+npm run build
+git diff --check
+```
+
+Además, el check focalizado que indique la tarea. Todo debe salir sin errores.
+Si una tarea solo toca documentos, basta con `npm run check:honesty` y `git diff --check`.
+
+### Commit de la tarea (solo código)
+
+No incluyas en este commit `TAREAS-FINALES.md`, `PORTING-STATUS.md`, `PENDING.md`,
+`PORT-INVENTORY.md` ni `tools/portPending.py`.
+
+```bash
+git add <archivos de código>
+git commit -m "<Verbo en inglés> <qué> (<archivo>.c)" -m "Co-Authored-By: <tu agente> <correo>"
+```
+
+Ejemplo: `Rename ally mon slide callback to its C name (battle_main.c)`.
+
+### Cierre de sesión (un único commit de estado)
+
+```bash
+npm run inventory
+npm run pending
+```
+
+Después marca `[x]` en las tareas hechas aquí y actualiza en `PORTING-STATUS.md`
+solo las líneas "Última revisión" y "Contador" (además del acumulado si sumaste
+funciones nuevas o equivalencias). Luego commit:
+`git commit -m "Update final task status"`.
 
 ## 1. Código de un jugador por cerrar
 
-- [ ] **Grabación del Quest Log** (`quest_log.c`): `TryRecordActionSequence`,
+- [ ] **1.1 Checks headless rotos** [básico]. `npm run check:movement-actions` y
+  `npm run check:questlog-objects` fallan con
+  `Cannot read properties of undefined (reading 'chars')` porque no cargan
+  `rom.charmap`.
+  - Pasos: copia en `tools/checks/movementActions.ts` y
+    `tools/checks/questLogObjects.ts` la carga que ya hace
+    `tools/checks/tradeScene.ts` (línea `(rom as any).charmap = JSON.parse(readFileSync(root + 'charmap.json', 'utf8'));`),
+    con su `import { readFileSync } from "node:fs"` y su ruta `root`, si faltan.
+  - Terminada cuando: los dos checks llegan al final sin excepción. Si ahora falla
+    una aserción, no la toques: anota la aserción y el valor obtenido como
+    `BLOQUEADO` (es un fallo real del port).
+- [ ] **1.2 Renombrar dos equivalencias al nombre C** [básico].
+  - `src/fr/battle/main_init.ts:371` y `:374`: `SpriteCB_AllyMonSlide` → `oac_poke_ally_`
+    (C: `battle_main.c`, `static void oac_poke_ally_`). Añade el comentario
+    `/** oac_poke_ally_ (battle_main.c). */`.
+  - `src/fr/pokemon/ingameTrade.ts:355`: mueve el cuerpo de `LoadTradeAnimGfx` a una
+    función nueva `TradeAnimInit_LoadGfx()` y deja `LoadTradeAnimGfx` llamándola,
+    igual que el C (`trade_scene.c`, `void LoadTradeAnimGfx(void) { TradeAnimInit_LoadGfx(); }`).
+  - Check focalizado: `npm run check:trade`. Terminada cuando: `npm run inventory`
+    muestra `battle_main.c` 87/106 y `trade_scene.c` 39/53 (+2 equivalencias).
+- [ ] **1.3 Huecos conocidos obsoletos** [básico, solo documentos]. En `KNOWN_GAPS`
+  de `tools/portPending.py` hay frases que ya no son ciertas. Comprueba cada una con
+  `grep` y corrige o borra la frase; después `npm run pending`.
+  - `item_use.c` "faltan 12/73 nombres": el inventario ya marca 73/73.
+  - Transiciones "faltan las mugshots": existen en `battle/mugshotTransition.ts`
+    (llamadas desde `battle/transition.ts`).
+  - Easy Chat "las cartas quedan en blanco": `partyMenu.ts` expone `writeMail` →
+    `DoEasyChatScreen`. Confirma que GIVE de una carta abre el editor; si es así,
+    corrige también el comentario de cabecera de `src/fr/pokemon/mail.ts`.
+  - `PLAN-RECORRIDO.md` tramo 12 dice que las mugshots no están portadas: corrígelo.
+- [ ] **1.4 Whiteout** [básico]. `Overworld_SetWhiteoutRespawnPoint`
+  (`src/fr/field/overworld.ts`, ~línea 612) dice que descarta `healerLocalId`/`atHome`.
+  - Pasos: lee `Overworld_SetWhiteoutRespawnPoint` y `SetWhiteoutRespawnWarpAndHealerNpc`
+    en `../pokefirered/src/overworld.c` y busca dónde usa el C ese dato del curandero
+    (`grep -rn "VAR_RESPAWN\|healer" ../pokefirered/src/*.c`). Compara con
+    `DoWhiteOut` en `src/fr/game.ts` (~línea 1092).
+  - Si el TS ya usa el dato por otro camino: corrige solo el comentario. Si no, porta
+    la parte que falta siguiendo el C.
+- [ ] **1.5 Módulos sin caller** [medio]. Para cada módulo, busca su caller en C
+  (`grep -rnw <Función> ../pokefirered/src`) y en TS (`grep -rn "from \".*<módulo>\"" src/fr`).
+  - Duplicados sin uso (`game/slots.ts`, la función `openTeachyTv` de `keyItemScreens`):
+    si nada los importa, bórralos.
+  - Los demás (`field/fieldEffectHelpers.ts`, `paletteUtil.ts`, `monMarkings.ts`,
+    `cableCarUtil.ts`, `hw/tilemapUtil.ts`, `hw/bgRegs.ts`, `imageProcessingEffects.ts`):
+    no los borres (cuentan en el inventario). Si el C los llama desde una ruta de un
+    jugador que el TS hace de otra forma, anota aquí la ruta para conectarlos
+    [avanzado]. Si el C tampoco los llama, anota "sin caller en C" y marca la tarea.
+- [ ] **1.6 Clima en pantalla** [verificar primero]. `field/weather.ts` solo dibuja
+  la niebla (`renderFog`, llamada desde `field/fieldEffects.ts`). Comprueba en
+  navegador (sección 3) si lluvia, nieve, sol y tormenta de arena se ven en un mapa
+  con ese clima. Si no se ven, la tarea pasa a ser [avanzado]: conectar los sprites
+  del clima al render.
+- [ ] **1.7 Evolución tras intercambio con NPC** [avanzado]. En C, `STATE_TRY_EVOLUTION`
+  (`trade_scene.c`) llama `TradeEvolutionScene` con `gCB2_AfterEvolution = CB2_InGameTrade`.
+  El TS (`pokemon/ingameTrade.ts`, ~línea 1054) usa `evolveWithMessages` después del
+  fundido y comprueba la Everstone aparte. Con los datos de FireRed no ocurre nunca,
+  porque ningún Pokémon recibido evoluciona por intercambio, pero diverge.
+  - Pasos: portar a `evolutionScene.ts` la familia `TradeEvolutionScene` de
+    `evolution_scene.c` (`CB2_TradeEvolutionSceneLoadGraphics`, `TradeEvolutionScene`,
+    `CB2_TradeEvolutionSceneUpdate`, `Task_TradeEvolutionScene`, `EvoDummyFunc`,
+    `VBlankCB_TradeEvolutionScene`), tomando como modelo la `EvolutionScene` ya portada.
+    Después cambiar `STATE_TRY_EVOLUTION` para que siga el C.
+  - Checks: `npm run check:evolution`, `npm run check:trade`.
+- [ ] **1.8 Grabación del Quest Log** [avanzado]. `TryRecordActionSequence`,
   `ResetActions`, `RecordHeadAtEndOfEntry`, `RecordHeadAtEndOfEntryOrScriptContext2Enabled`,
-  `ClearSavedScene` y `Task_BeginQuestLogPlayback` son lógica activa en C. El TS
-  escribe las acciones directamente en `scene.script` y guarda las escenas en un
-  array (`push`/`splice`) en lugar del anillo de escenas con buffer de acciones.
-  Revisar volcado, límites y rotación de escenas contra C (`questLogEvents.ts`).
-- [ ] **Evolución tras intercambio con NPC**: en C, `STATE_TRY_EVOLUTION` llama
-  `TradeEvolutionScene` con `gCB2_AfterEvolution = CB2_InGameTrade`; el TS
-  (`pokemon/ingameTrade.ts`) usa `evolveWithMessages` tras el fundido y comprueba
-  Everstone aparte. Inalcanzable con los datos FireRed (ningún Pokémon recibido
-  evoluciona por intercambio), pero diverge. Portar la familia `TradeEvolutionScene`
-  de `evolution_scene.c` (6 nombres) también desbloquea el intercambio por enlace.
-- [ ] **Renombrar equivalencias existentes** al nombre C: `oac_poke_ally_`
-  (hoy `SpriteCB_AllyMonSlide`, `battle/main_init.ts`) y `TradeAnimInit_LoadGfx`
-  (detrás de `LoadTradeAnimGfx`, `trade_scene.c`).
-- [ ] **Easy Chat**: escribir cartas (`easy_chat*.c`); hoy quedan en blanco.
-- [ ] **Clima**: conectar `field/weather.ts` al render Canvas2D.
-- [ ] **Créditos**: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
-- [ ] **Audio M4A**: chorus/ADSR, arbitraje de cuatro voces, reverb/duty/sweep/keysplit
-  (cries con WAV). Los 47 nombres restantes de `m4a.c` son driver interno.
-- [ ] **Checks headless rotos**: `check:questlog-objects` y `check:movement-actions`
-  fallan antes de sus aserciones porque `rom.charmap` no está definido en Node.
-- [ ] **Whiteout**: `Overworld_SetWhiteoutRespawnPoint` (`field/overworld.ts`) descarta
-  la información de curandero/casa que calcula el C; confirmar contra `DoWhiteOut`
-  y actualizar el comentario.
-- [ ] **Módulos sin caller** (sección 3c de PENDING.md): decidir conectar o borrar
-  `game/slots.ts` (duplicado de `menus/slotMachine.ts`), `field/fieldEffectHelpers.ts`
-  (los efectos reales están en `field/fieldEffects.ts`), `paletteUtil.ts`,
-  `monMarkings.ts`, `cableCarUtil.ts`, `hw/tilemapUtil.ts`, `hw/bgRegs.ts`,
-  `imageProcessingEffects.ts` y `keyItemScreens.openTeachyTv`.
-- [ ] **Huecos conocidos posiblemente obsoletos**: comprobar y actualizar en
-  `KNOWN_GAPS` (`tools/portPending.py`) las notas de `item_use.c` ("faltan 12/73")
-  y de mugshots de Alto Mando/Campeón en transiciones de combate.
+  `ClearSavedScene` y `Task_BeginQuestLogPlayback` (`quest_log.c`) son lógica activa en C.
+  El TS (`questLogEvents.ts`, `QL_StartRecordingAction` ~línea 263) escribe las acciones
+  directamente en `scene.script` y guarda las escenas en un array (`push`/`splice`) en
+  lugar del anillo de escenas con buffer de acciones.
+  - Revisar contra el C: el volcado del buffer, los límites y la rotación de escenas.
+    Si cambia el formato del save, debe seguir cargando partidas viejas.
+  - Check: `npm run check:questlog-objects` y `npm run check:questlog-battle`.
+- [ ] **1.9 Créditos** [avanzado]. Las escenas de mapa de `overworldCredits.ts` no
+  ejecutan NPCs, clima ni animación de tilesets.
+- [ ] **1.10 Audio M4A** [avanzado]. Faltan chorus/ADSR, el arbitraje de cuatro voces
+  y reverb/duty/sweep/keysplit (los cries usan WAV). Los 47 nombres restantes de
+  `m4a.c` son el driver interno: no hace falta portarlos uno a uno.
 
 ## 2. Revisión de equivalencias y wrappers contra el cuerpo C
 
-Funciones con nombre C que delegan en lógica genérica o adaptada. Revisar cada una
-contra el C y retirar la línea al confirmarla.
+Funciones con nombre C que delegan en lógica genérica o adaptada. Trabaja un
+bloque de archivo por sesión.
+
+Receta para cada línea:
+1. Abre el cuerpo C (`grep -n "Nombre(" ../pokefirered/src/<archivo>.c`) y el TS
+   (`grep -rn "Nombre" src/fr --exclude-dir=generated`).
+2. Compara punto por punto: mismas ramas y condiciones, mismo orden de llamadas,
+   mismas constantes (`C.NOMBRE`), mismos anchos de entero y divisiones, mismos
+   callbacks/tareas asignados y en el mismo frame.
+3. Si es igual, marca `[x]`. Si la diferencia es pequeña y hay un check que la
+   cubre, corrígela (commit de código). Si no, escribe debajo
+   `DIFERENCIA: <qué hace el C> / <qué hace el TS>` y deja la casilla sin marcar.
+4. No marques nada que no hayas leído en los dos lados.
 
 **`event_object_movement.c`** (`field/objectEvents.ts`, `fieldEffects.ts`)
 - [ ] `MovementAction_*` y `MovementType_*` (delegan en `movementActionStep`).
@@ -145,6 +280,20 @@ contra el C y retirar la línea al confirmarla.
 
 Todo lo siguiente solo se ha comparado de forma estática o con checks headless.
 
+Receta (métodos detallados en la [guía técnica §6](docs/PORTING-GUIDE.md#6-cómo-se-prueba-y-valida)):
+1. Arranca el servidor: `preview_start` con el nombre `vite` (o `npm run dev`) y
+   abre `http://localhost:5173/?fr=continue` (o `?fr=new` para partida nueva).
+2. En la consola de la página: `const { H } = await import("/tools/playtest/driver.js"); await H.init();`
+   Las partidas guardadas del repo están en `tools/playtest/saves/` (`H.importSave(nombre)`).
+3. Lleva el juego hasta la pantalla o mecánica (driver: `H.goto`, `H.talk`,
+   `H.battle`, `frDebug.press("A")`…) y lee el estado (`frDebug.state()`, `H.st()`)
+   en vez de adivinar.
+4. Revisa la consola (sin errores) y haz una captura en el momento clave.
+5. Terminada cuando: se ve y se comporta como el juego original y no hay errores
+   en consola. Marca `[x]` y apunta en el informe qué partida usaste.
+6. Si algo falla, no lo arregles en la misma sesión salvo que sea trivial: añádelo
+   como tarea nueva en la sección 1 con los pasos para reproducirlo.
+
 **Campo y movimiento**
 - [ ] Movimiento normal/carrera, giro rápido, delays, saltos, ledge/Acro, Step*,
   hierba larga y elevación; frames Canvas y virtual objects.
@@ -172,6 +321,10 @@ Todo lo siguiente solo se ha comparado de forma estática o con checks headless.
   Hall of Fame, créditos, tragaperras, Item Finder, intercambio NPC, etc.).
 
 ## 4. Recorrido de historia
+
+Sigue [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md): un tramo por sesión, punto de control
+antes de cada tramo y partida exportada a `tools/playtest/saves/` al terminarlo. Lo
+primero es terminar el tramo 1 (salida de Monte Moon a la Ruta 4).
 
 - [ ] Recorrido zona por zona de Kanto y Sevii según [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md)
   (desde Ruta 3; incluye Monte Moon), con partidas de regresión por tramo.
