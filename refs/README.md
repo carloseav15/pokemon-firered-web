@@ -152,7 +152,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   `refs/emerald/summary.json`: por archivo `{lines, identical, different,
   emerald_only, firered_only}`, ordenado por `different + emerald_only` descendente.
   Sirve para planificar el port de Emerald. No necesita la fuente.
-- [ ] **R5 Validar PokéAPI con Platinum** [medio, requiere R1 y R2]. Amplía
+- [x] **R5 Validar PokéAPI con Platinum** [medio, requiere R1 y R2]. Amplía
   `compare_pokeapi.py` con `--generation 4`: reconstruye los valores de PokéAPI para
   Platinum (version group `platinum`, id en `version_groups.csv`) y compáralos con
   `refs/platinum/*.json`. Reporta como en Gen 3: errores reales, historial incompleto
