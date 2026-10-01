@@ -19,6 +19,7 @@ import { RestartWildEncounterImmunitySteps } from "./wildEncounter";
 import { DoPoisonFieldEffect } from "./poison";
 import { SafariZoneTakeStep } from "./safariZone";
 import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
+import { Cos, Sin } from "../hw/trig";
 import { FindTaskIdByFunc } from "../hw/menuHelpers";
 import { MAP_OFFSET } from "./fieldmap";
 import { spriteSheet } from "./gfx4bpp";
@@ -373,6 +374,40 @@ export class FieldEffects {
     this.active.delete(fldeff);
   }
 
+  /** FldEff_NpcFlyOut (field_effect.c): create the Bird sprite used by scripted NPC departures. */
+  FldEff_NpcFlyOut(): number {
+    const sprite = this.createFromTemplate("Bird", 120, 0);
+    if (!sprite) {
+      this.active.delete(C.FLDEFF_NPCFLY_OUT);
+      return C.MAX_SPRITES;
+    }
+    sprite.priority = 1;
+    sprite.subpriority = 1;
+    sprite.coordOffsetEnabled = false;
+    sprite.data[1] = this.ow.game.fieldEffectArguments[0]! & 0xff;
+    sprite.callback = (s) => this.SpriteCB_NPCFlyOut(s);
+    sound.playSE(C.SE_M_FLY);
+    return this.ow.sprites.getId(sprite);
+  }
+
+  /** SpriteCB_NPCFlyOut (field_effect.c): orbit the Bird and carry the referenced NPC sprite. */
+  SpriteCB_NPCFlyOut(sprite: Sprite): void {
+    sprite.x2 = Cos(sprite.data[2]!, 0x8c);
+    sprite.y2 = Sin(sprite.data[2]!, 0x48);
+    sprite.data[2] = (sprite.data[2]! + 4) & 0xff;
+    if (sprite.data[0]) {
+      const npcSprite = this.ow.sprites.getById(sprite.data[1]!);
+      if (npcSprite) {
+        npcSprite.coordOffsetEnabled = false;
+        npcSprite.x = sprite.x + sprite.x2;
+        npcSprite.y = sprite.y + sprite.y2 - 8;
+        npcSprite.x2 = 0;
+        npcSprite.y2 = 0;
+      }
+    }
+    if (sprite.data[2]! >= 0x80) this.FieldEffectStop(sprite, C.FLDEFF_NPCFLY_OUT);
+  }
+
   /** FieldEffectStart: marks the effect active and runs its script. */
   start(id: number): void {
     this.FieldEffectActiveListAdd(id);
@@ -388,6 +423,7 @@ export class FieldEffects {
     if (id === C.FLDEFF_SAND_PILE) { this.FldEff_SandPile(); return; }
     if (id === C.FLDEFF_MOVE_DEOXYS_ROCK) { this.FldEff_MoveDeoxysRock(); return; }
     if (id === C.FLDEFF_DESTROY_DEOXYS_ROCK) { this.FldEff_DestroyDeoxysRock(); return; }
+    if (id === C.FLDEFF_NPCFLY_OUT) { this.FldEff_NpcFlyOut(); return; }
     if (this.moves.start(id)) return;
     if (!this.startIcon(id)) this.active.delete(id);
   }
