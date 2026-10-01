@@ -88,6 +88,13 @@ git commit -m "<Verbo en inglés> <qué> (<archivo>.c)" -m "Co-Authored-By: <tu 
 
 Ejemplo: `Rename ally mon slide callback to its C name (battle_main.c)`.
 
+**Todo commit lleva `Co-Authored-By`**, también los de estado y los solo de
+documentos. Así se sabe qué agente hizo cada cosa. Usa tu entorno real, por ejemplo:
+`Co-Authored-By: OpenAI Codex <codex@openai.com>`,
+`Co-Authored-By: opencode <noreply@opencode.ai>`,
+`Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Compruébalo con
+`git log -1 --format=%B` antes de seguir.
+
 ### Cierre de sesión (un único commit de estado)
 
 ```bash
@@ -98,7 +105,31 @@ npm run pending
 Después marca `[x]` en las tareas hechas aquí y actualiza en `PORTING-STATUS.md`
 solo las líneas "Última revisión" y "Contador" (además del acumulado si sumaste
 funciones nuevas o equivalencias). Luego commit:
-`git commit -m "Update final task status"`.
+`git commit -m "Update final task status" -m "Co-Authored-By: <tu agente> <correo>"`.
+**Uno por sesión**, no uno por tarea.
+
+### Lecciones de las revisiones (2026-10-01)
+
+Errores reales vistos al revisar el trabajo de agentes. Evítalos:
+
+- **"Renombrar" o "mover" también exige comparar el cuerpo con el C.** En 1.2 se
+  renombró `TradeAnimInit_LoadGfx` sin notar que su cuerpo no carga el textbox que
+  carga el C. Si el cuerpo difiere, añade una línea `DIFERENCIA` en la sección 2.
+- **Al tocar una función, lee entera la función C que la llama.** En 1.4 se anotó
+  que faltaban `StopMapMusic` y `UnlockPlayerFieldControls`, pero no
+  `ResetSafariZoneFlag_`, que estaba en las mismas líneas de `CB2_WhiteOut`.
+- **No mezcles código y documentos en un commit**, aunque el cambio de código sea
+  un comentario.
+- **Marca `[x]` solo si se cumple el "Terminada cuando".** Si queda una parte, deja
+  la casilla sin marcar y escribe `PARCIAL: <qué falta>`.
+- **Atribuye bien.** En el resumen de estado no digas "hechas en esta sesión" de
+  tareas que hizo otro agente; cita su commit.
+- **Di qué nivel verificaste**: tipos, check headless o navegador. "Compila" no
+  significa "funciona".
+- **Tareas de navegador sin navegador**: escribe `REQUIERE NAVEGADOR` y pasa a otra.
+  No intentes rodearlo con snippets en la consola del usuario.
+- Bien hecho y a repetir: investigar la causa de fondo (1.1, `sText_100`), comprobar
+  callers antes de retirar una entrada (1.5) y documentar bloqueos con precisión.
 
 ## 1. Código de un jugador por cerrar
 
@@ -242,6 +273,21 @@ funciones nuevas o equivalencias). Luego commit:
     (snippets IIFE con `importSave("pewter")`+`ready()`). No reintentar con
     agentes sin navegador; el posible [avanzado] (sprites del clima al render)
     se decidirá con esa evidencia manual.**
+  - **2026-10-01 (Claude, navegador, evidencia preliminar):** en Pewter City con la
+    partida `pewter`, `frGame.weather.setWeather(N); frGame.weather.DoCurrentWeather()`.
+    Lluvia (3): se ven trazos diagonales (también dentro del Centro Pokémon). Nieve (4):
+    nada visible tras 150 frames. Arena (8): sin partículas tras 550 frames, pero la
+    paleta se aclara. Lluvia otra vez tras la arena: apenas visible. Encadenar climas
+    en la misma carga mezcla transiciones: repetir **un clima por recarga** antes de
+    concluir. El clima forzado se pierde al cambiar de mapa (vuelve el de la cabecera).
+  - **Alcance corregido (2026-10-01, comprobado en el decomp):** FireRed solo usa
+    `WEATHER_NONE` (333 mapas), `WEATHER_SUNNY` (66, sin efecto visual por diseño),
+    `WEATHER_FOG_HORIZONTAL` (19: Torre Pokémon 3F–7F, Cueva Perdida…) y
+    `WEATHER_SHADE` (7 mapas + `setweather WEATHER_SHADE` en un script: Bosque Verde,
+    Mansión Pokémon, Roca Ombligo). Lluvia, nieve, tormenta, ceniza y arena están
+    marcadas `// unused` en `include/constants/weather.h` y ningún mapa ni script las
+    usa. **Para la meta de un jugador basta validar niebla y sombra** en sus mapas
+    reales; el resto queda para Emerald (fase futura) y no bloquea esta tarea.
 - [x] **1.7 Evolución tras intercambio con NPC** [avanzado]. En C, `STATE_TRY_EVOLUTION`
   (`trade_scene.c`) llama `TradeEvolutionScene` con `gCB2_AfterEvolution = CB2_InGameTrade`.
   El TS (`pokemon/ingameTrade.ts`, ~línea 1054) usa `evolveWithMessages` después del
@@ -425,8 +471,19 @@ Todo lo siguiente solo se ha comparado de forma estática o con checks headless.
 Receta (métodos detallados en la [guía técnica §6](docs/PORTING-GUIDE.md#6-cómo-se-prueba-y-valida)):
 1. Arranca el servidor: `preview_start` con el nombre `vite` (o `npm run dev`) y
    abre `http://localhost:5173/?fr=continue` (o `?fr=new` para partida nueva).
-2. En la consola de la página: `const { H } = await import("/tools/playtest/driver.js"); await H.init();`
-   Las partidas guardadas del repo están en `tools/playtest/saves/` (`H.importSave(nombre)`).
+2. Carga una partida del repo (`tools/playtest/saves/`) **en dos pasos**, porque
+   `importSave` recarga la página. Partidas: `lab-done` (laboratorio de Oak),
+   `oldman` (Ciudad Verde), `pewter` (Centro Pokémon de Plateada), `brock-done`
+   (gimnasio de Plateada, Brock vencido), `route3` (Ruta 3).
+   ```js
+   // paso 1
+   (async () => { const { H } = await import("/tools/playtest/driver.js"); await H.importSave("pewter"); })();
+   // paso 2, cuando la página haya recargado (unos segundos)
+   (async () => { const { H } = await import("/tools/playtest/driver.js"); window.H = H; console.log(await H.ready()); })();
+   ```
+   Con `pewter` debe imprimir `MAP_PEWTER_CITY_POKEMON_CENTER_1F`, posición (7, 4),
+   y `H.party()` da `1:L12:33/33` (comprobado el 2026-10-01). Si tu consola no
+   acepta `await` suelto, usa siempre la forma `(async () => { ... })();`.
 3. Lleva el juego hasta la pantalla o mecánica (driver: `H.goto`, `H.talk`,
    `H.battle`, `frDebug.press("A")`…) y lee el estado (`frDebug.state()`, `H.st()`)
    en vez de adivinar.
@@ -435,6 +492,57 @@ Receta (métodos detallados en la [guía técnica §6](docs/PORTING-GUIDE.md#6-c
    en consola. Marca `[x]` y apunta en el informe qué partida usaste.
 6. Si algo falla, no lo arregles en la misma sesión salvo que sea trivial: añádelo
    como tarea nueva en la sección 1 con los pasos para reproducirlo.
+
+### 3.0 Checklist prioritario (hacer primero, en este orden)
+
+Lo mínimo para saber si el juego funciona de principio a fin en lo esencial. Cada
+punto: **OK** o **FALLO** con partida, pasos, esperado/observado, errores de consola
+y captura. Un FALLO se añade como tarea nueva en la sección 1 con su reproducción.
+
+- [ ] **C1 Arranque completo** (`http://localhost:5173/`): copyright → logo Game Freak
+  → intro → título con música → START → menú principal (con CONTINUAR si hay save).
+  Sin errores en consola.
+- [ ] **C2 Partida nueva** (`?fr=new`): aparece en `MAP_PALLET_TOWN_PLAYERS_HOUSE_2F`
+  (6, 6). Bajar, salir, ir hacia la hierba al norte de Pueblo Paleta → Oak te detiene
+  → laboratorio → elegir inicial → combate con el rival → vuelta al control.
+- [ ] **C3 Guardar y continuar**: START → GUARDAR → recargar con `?fr=continue`.
+  Misma posición, equipo (`H.party()`) y dinero (`frDebug.save.save.money`).
+- [ ] **C4 Quest Log** (cambiado en 1.8): tras C3, al continuar se reproduce el
+  resumen de la sesión anterior, termina y devuelve el control en la posición
+  guardada.
+- [ ] **C5 Combate salvaje**: en hierba alta, atacar, huir y capturar con Poké Ball.
+  El capturado aparece en el equipo o en el PC.
+- [ ] **C6 Combate de entrenador**: partida `pewter` → gimnasio → Brock. Transición
+  de entrada, IA, victoria, medalla y dinero recibido.
+- [ ] **C7 Derrota (whiteout)** (cambiado en 1.4): perder un combate. Reaparece en el
+  último Centro Pokémon **mirando al norte**, equipo curado y dinero reducido.
+- [ ] **C8 Centro Pokémon y PC**: curar con la enfermera; depositar y retirar un
+  Pokémon en el PC.
+- [ ] **C9 Tienda** (Pewter, partida `pewter`): comprar y vender; el dinero cambia.
+- [ ] **C10 Menús**: Pokédex, Pokémon (resumen, mover, dar objeto), Mochila (usar
+  Poción fuera de combate), Ficha de entrenador, Opciones y salir.
+- [ ] **C11 Evolución por nivel**: subir de nivel un Pokémon hasta que evolucione
+  (`H.grind`). Ver la escena, cancelar una vez con B y aceptar la siguiente.
+- [ ] **C12 Mapas y transiciones**: puertas, escaleras, paso entre mapas conectados
+  andando, cartel con el nombre del mapa y entrada a cueva (`route3` → Monte Moon).
+- [ ] **C13 Audio**: la música cambia al cambiar de mapa y al entrar en combate;
+  efectos de menú y gritos suenan.
+- [ ] **C14 Clima** (tarea 1.6): FireRed solo usa niebla y sombra. Niebla: entrar en
+  la Torre Pokémon 3F (Pueblo Lavanda); debe verse la niebla horizontal moviéndose.
+  Sombra: entrar en el Bosque Verde (partida `oldman` y caminar al norte); la
+  pantalla debe oscurecerse. Para probar sin llegar allí:
+  `frGame.weather.setWeather(6)` (niebla) o `(11)` (sombra) y después
+  `frGame.weather.DoCurrentWeather()`, un clima por recarga.
+
+Trampas comprobadas: un warp tarda unos 300 frames (`await frDebug.wait(300)`); si
+reinicias el servidor, recarga la pestaña (si no, la consola se llena de
+`ERR_CONNECTION_REFUSED` que no son del juego); el clima forzado se pierde al cambiar
+de mapa.
+
+Lo que depende de avanzar en la historia (MO, bici, pesca, S.S. Anne, Alto Mando,
+Salón de la Fama, créditos) se valida en el recorrido de la sección 4.
+
+### 3.1 Lista completa por áreas
 
 **Campo y movimiento**
 - [ ] Movimiento normal/carrera, giro rápido, delays, saltos, ledge/Acro, Step*,

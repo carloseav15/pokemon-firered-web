@@ -93,8 +93,26 @@ git commit -m "Extract <qué> from <fuente> into refs" -m "Co-Authored-By: <tu a
 npm run check:honesty
 ```
 
-Al cerrar la sesión, marca `[x]` en las tareas hechas de este archivo en un commit
-aparte (`Update refs task status`).
+**Todo commit lleva `Co-Authored-By`**, también el de estado (`Update refs task
+status`) y los solo de documentos. Compruébalo con `git log -1 --format=%B`.
+
+Al cerrar la sesión, marca `[x]` en las tareas hechas de este archivo en **un único**
+commit aparte (`Update refs task status`), no uno por tarea.
+
+### Lecciones de las revisiones (2026-10-01)
+
+- **Bien hecho y a repetir:** R5 separó errores reales, historial incompleto y
+  diferencias de representación; R3 emparejó habilidades por nombre y así evitó el
+  desfase de ids de Gen 3; R6–R8 documentaron bloqueos con rutas y formatos concretos.
+- **No ejecutes `tools/decomp/` (el exportador de FireRed) contra otra fuente.**
+  Comparte `.decomp-build/` y `public/fr/` con el juego: un fallo a medias puede dejar
+  datos de otro juego donde FireRed los lee. Para otras fuentes, escribe un extractor
+  propio en `tools/refs/`. (R6 y R8 lo intentaron; se comprobó que no dejaron restos.)
+- **Compara siempre "real" frente a "representación"** cuando cruces dos fuentes: el
+  mismo dato se guarda distinto (precisión 0 o 100 para "nunca falla", ids
+  desplazados, enums frente a números).
+- **Un dato raro es una pregunta, no una conclusión:** antes de escribir un número en
+  la guía, ejecútalo y mira una muestra de casos.
 
 ## 1. Fuentes
 
@@ -176,10 +194,35 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   Venganza (Bide) 0 → +1.
 - [ ] **R6 Entrenadores de Emerald** [medio]. `src/data/` ya está en el sparse de
   `pokeemerald`. Extrae `src/data/trainers.h` y
-  `src/data/trainer_parties.h` a `refs/emerald/trainers.json`. Son inicializadores C:
-  intenta primero reutilizar el exportador de FireRed (`tools/decomp/`, sin
-  modificarlo); si no encaja, anota `BLOQUEADO` y por qué.
+  `src/data/trainer_parties.h` a `refs/emerald/trainers.json`. Son inicializadores C.
+  (La versión original pedía probar el exportador de FireRed; **ya no**: sigue el
+  enfoque de "DESBLOQUEADA" de abajo.)
   - BLOQUEADO: `step_data.dump_trainers()` con `POKEFIRERED` apuntando al checkout fijado falla al incluir `map_groups.h`. El checkout sparse solo contiene `src/` e `include/`; `step_setup.generate_headers()` requiere también `data/maps/map_groups.json`, `data/layouts/layouts.json` y los mapas, que no están disponibles. Además, el dumper usa defines `FIRERED` y la ruta de build/salida compartida con el port FireRed. No se generó una salida parcial.
+  - **DESBLOQUEADA (2026-10-01): nuevo enfoque sin el exportador.** No hace falta
+    ampliar el sparse: `src/data/trainers.h` y `src/data/trainer_parties.h` ya están.
+    Crea `tools/refs/emerald_trainers.py` que lea esos dos archivos con expresiones
+    regulares (son inicializadores C muy regulares). Datos comprobados en el commit
+    fijado:
+    * `trainers.h`: 855 entradas `[TRAINER_X] = { ... }`, incluida `TRAINER_NONE`
+      (sin equipo, `.partySize = 0`). Campos: `.trainerClass`, `.encounterMusic_gender`,
+      `.trainerPic`, `.trainerName = _("...")`, `.items`, `.doubleBattle`, `.aiFlags`
+      (constantes unidas con `|`) y `.party = MACRO(sParty_X)`.
+    * Las 4 macros de `.party` (definidas en `include/data.h`) y su recuento:
+      `NO_ITEM_DEFAULT_MOVES` 672, `NO_ITEM_CUSTOM_MOVES` 87, `ITEM_DEFAULT_MOVES` 31,
+      `ITEM_CUSTOM_MOVES` 64 (854 equipos).
+    * `trainer_parties.h`: `static const struct TrainerMon<Tipo> sParty_X[] = { {...}, ... };`
+      con `.iv`, `.lvl`, `.species` y, según el tipo, `.heldItem` y
+      `.moves = {MOVE_A, MOVE_B, MOVE_C, MOVE_D}`.
+    * Ejemplos para comprobar tu salida: `TRAINER_SAWYER_1` → clase
+      `TRAINER_CLASS_HIKER`, nombre `SAWYER`, un Pokémon `SPECIES_GEODUDE` nivel 21 iv 0;
+      `TRAINER_RANDALL` → `ITEM_CUSTOM_MOVES`, `SPECIES_SWELLOW` nivel 26 iv 255,
+      `ITEM_NONE`, movimientos `QUICK_ATTACK`, `AGILITY`, `WING_ATTACK`, `NONE`.
+    * Salida: `refs/emerald/trainers.json`, lista en el orden del archivo, con
+      `{const, class, name, pic, music_gender, items, double, ai_flags, party_type,
+      party: [...]}`. Guarda las constantes como texto (`"SPECIES_GEODUDE"`); no las
+      conviertas a números. Si un equipo citado no existe, `raise SystemExit`.
+    * Terminada cuando: 855 entradas, 854 con equipo, los dos ejemplos coinciden,
+      md5 estable y `refs:check` en verde. Comando `refs:emerald-trainers`.
 - [x] **R7 Inventario de datos de HeartGold** [avanzado]. Sin extraer nada todavía:
   documenta en esta sección dónde están en `pokeheartgold` los entrenadores, los
   encuentros salvajes, los scripts de eventos y los textos del teléfono/radio, en
