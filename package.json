@@ -22,6 +22,7 @@
     "refs:pokeapi": "python3 tools/refs/compare_pokeapi.py",
     "refs:emerald-functions": "python3 tools/refs/emerald_functions.py",
     "refs:emerald-summary": "python3 tools/refs/emerald_summary.py",
+    "refs:emerald-trainers": "python3 tools/refs/emerald_trainers.py",
     "refs:platinum-moves": "python3 tools/refs/platinum_moves.py",
     "refs:platinum-species": "python3 tools/refs/platinum_species.py",
     "refs:platinum-moves-vs-firered": "python3 tools/refs/compare_platinum_moves.py",
