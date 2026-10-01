@@ -277,13 +277,15 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   - Marca en `_meta`/docstring que PokéAPI **no es fuente de verdad**.
   - Nueve megaformas carecen de filas en `pokemon_abilities.csv`; la salida conserva
     `abilities: []` y representa `base_experience`/`order` vacíos como `null`.
-- [ ] **R14 Entrenadores y encuentros de HeartGold** [medio]. Añade al sparse de
+- [x] **R14 Entrenadores y encuentros de HeartGold** [medio]. Añade al sparse de
   `pokeheartgold` en `sources.json` `/files/poketool/trainer/` y
   `/files/fielddata/encountdata/` (rutas comprobadas en el commit fijado; R7 explica
   sus formatos), ejecuta `refs:fetch -- pokeheartgold` y extrae
   `files/poketool/trainer/trainers.json` y `files/fielddata/encountdata/gs_enc_data.json`
   a `refs/heartgold/trainers.json` y `refs/heartgold/encounters.json`, normalizados
   como R6. Ampliar el sparse no cambia el commit fijado: no requiere permiso.
+  Genera 738 entrenadores (737 con equipos) y encuentros de 142 mapas; valida la
+  regeneración determinista, `refs:check` y `refs:all`.
 - [ ] **R15 Inventario de mapas de Emerald** [medio]. Añade `/data/maps/` y
   `/data/layouts/` al sparse de `pokeemerald` y genera `refs/emerald/maps.json` con
   los 518 `map.json` (nombre, tipo, música, clima, conexiones y número de warps,
