@@ -26,6 +26,7 @@
     "refs:emerald-functions": "python3 tools/refs/emerald_functions.py",
     "refs:emerald-summary": "python3 tools/refs/emerald_summary.py",
     "refs:emerald-systems": "python3 tools/refs/emerald_systems.py",
+    "refs:emerald-scripts": "python3 tools/refs/emerald_scripts.py",
     "refs:emerald-trainers": "python3 tools/refs/emerald_trainers.py",
     "refs:emerald-data": "python3 tools/refs/emerald_data.py",
     "refs:emerald-maps": "python3 tools/refs/emerald_maps.py",

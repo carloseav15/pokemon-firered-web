@@ -19,6 +19,7 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | `emerald/maps.json` | pokeemerald | 518 | `tools/refs/emerald_maps.py` |
 | `emerald/moves.json` | pokeemerald | 355 | `tools/refs/emerald_data.py` |
 | `emerald/moves_vs_firered.json` | pokeemerald | 1 | `tools/refs/compare_emerald.py` |
+| `emerald/scripts.json` | pokeemerald | 468 | `tools/refs/emerald_scripts.py` |
 | `emerald/species.json` | pokeemerald | 412 | `tools/refs/emerald_data.py` |
 | `emerald/species_vs_firered.json` | pokeemerald | 0 | `tools/refs/compare_emerald.py` |
 | `emerald/summary.json` | pokeemerald | 310 | `tools/refs/emerald_summary.py` |
