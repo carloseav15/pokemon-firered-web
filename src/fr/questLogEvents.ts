@@ -32,10 +32,11 @@ import {
 } from "./dynamicPlaceholderTextUtil";
 import { FadeScreen } from "./field/weather";
 import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
-import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from "./hw/palette";
+import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "./hw/palette";
 import { DisableWildEncounters } from "./field/wildEncounter";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
 import { tasks } from "./gba/tasks";
+import { GetTextWindowPalette } from "./hw/menu";
 
 export { gQuestLogState };
 
@@ -873,9 +874,9 @@ function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
   ClearBag();
   ClearPCItemSlots();
   SetQuestLogState(C.QL_STATE_PLAYBACK);
-  ow.questLogStartType = scene.startType ?? C.QL_START_NORMAL;
+  ow.questLogStartType = GetQuestLogStartType(sceneIndex);
   ow.restoreMapViewOnNextInit = false;
-  QLPlayback_SetInitialPlayerPosition(sceneIndex, (scene.startType ?? C.QL_START_NORMAL) === C.QL_START_WARP, ow);
+  QLPlayback_SetInitialPlayerPosition(sceneIndex, GetQuestLogStartType(sceneIndex) === C.QL_START_WARP, ow);
   QL_CopySaveState(sceneIndex);
   QL_ResetPartyAndPC();
   QL_RestoreMapLayoutId();
@@ -883,13 +884,34 @@ function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
     scene.warpId ?? -1, scene.x ?? save.pos.x, scene.y ?? save.pos.y);
   ow.keepMusicOnNextLoad = true;
   ow.fieldCallback = null;
-  ow.fieldCallback2 = () => {
-    if (scene.startType === C.QL_START_WARP) ow.FieldCB_DefaultWarpExit();
-    else ow.FieldCB_WarpExitFadeFromBlack();
-    return true;
-  };
+  ow.fieldCallback2 = GetQuestLogStartType(sceneIndex) === C.QL_START_WARP
+    ? () => FieldCB2_QuestLogStartPlaybackWithWarpExit(ow, sceneIndex)
+    : () => FieldCB2_QuestLogStartPlaybackStandingInPlace(ow, sceneIndex);
   ow.warpIntoMapAndLoad();
   ow.afterMapLoadCallback = () => ow.CB2_LoadMapForQLPlayback();
+}
+
+/** GetQuestLogStartType (quest_log.c): return the saved scene's map-entry mode. */
+export function GetQuestLogStartType(sceneIndex = sCurrentPlaybackSceneIndex): number {
+  return save.questLogScenes?.[sceneIndex]?.startType ?? C.QL_START_NORMAL;
+}
+
+/** FieldCB2_QuestLogStartPlaybackWithWarpExit (quest_log.c). */
+export function FieldCB2_QuestLogStartPlaybackWithWarpExit(ow: Overworld, sceneIndex = sCurrentPlaybackSceneIndex): boolean {
+  LoadPalette(GetTextWindowPalette(4), BG_PLTT_ID(15), PLTT_SIZE_4BPP);
+  SetQuestLogState(C.QL_STATE_PLAYBACK);
+  ow.questLogStartType = GetQuestLogStartType(sceneIndex);
+  ow.FieldCB_DefaultWarpExit();
+  return true;
+}
+
+/** FieldCB2_QuestLogStartPlaybackStandingInPlace (quest_log.c). */
+export function FieldCB2_QuestLogStartPlaybackStandingInPlace(ow: Overworld, sceneIndex = sCurrentPlaybackSceneIndex): boolean {
+  LoadPalette(GetTextWindowPalette(4), BG_PLTT_ID(15), PLTT_SIZE_4BPP);
+  SetQuestLogState(C.QL_STATE_PLAYBACK);
+  ow.questLogStartType = GetQuestLogStartType(sceneIndex);
+  ow.FieldCB_WarpExitFadeFromBlack();
+  return true;
 }
 
 function finishQuestLogPlayback(ow: Overworld): void {
