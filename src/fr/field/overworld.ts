@@ -749,7 +749,9 @@ export class Overworld {
     this.mapTypes.set(loaded.header.id, loaded.header.mapType);
     this.sectionCache.set(loaded.header.id, loaded.header.regionMapSection);
     for (const c of loaded.connections) this.mapTypes.set(c.mapId, c.header.mapType);
-    this.loadObjEventTemplatesFromHeader();
+    const savedTemplates = this.restoreMapViewOnNextInit ? save.objectEventTemplates : undefined;
+    this.loadObjEventTemplatesFromHeader(savedTemplates);
+    if (savedTemplates) this.LoadSaveblockObjEventScripts();
     const outdoors = isMapTypeOutdoors(this.header.mapType);
     clearTempFieldEventData();
     this.effects.resetEncounterImmunity();
@@ -932,6 +934,21 @@ export class Overworld {
     save.objectEventTemplates = templates.map((template) => ({ ...template }));
     this.objects.mapNum = save.location.mapNum;
     this.objects.mapGroup = save.location.mapGroup;
+  }
+
+  /** LoadSaveblockObjEventScripts (overworld.c): restore script pointers after saved templates load. */
+  private LoadSaveblockObjEventScripts(): void {
+    const sourceByLocalId = new Map(this.header.objects
+      .filter((object): object is MapObjectTemplate => !object.clone)
+      .map((object) => [object.localId, object]));
+    for (const template of this.objects.templates) {
+      const source = sourceByLocalId.get(template.localId);
+      if (source) {
+        template.script = source.script;
+        template.scriptName = source.scriptName;
+      }
+    }
+    save.objectEventTemplates = this.objects.templates.map((template) => ({ ...template }));
   }
 
   /** SetObjEventTemplateCoords (overworld.c): equivalent to the inline lookup ScrCmd_setobjectxyperm
