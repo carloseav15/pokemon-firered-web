@@ -132,6 +132,12 @@ class Sound {
   }
 
   playBGM(song: number): void {
+    this.m4aSongNumStart(song);
+  }
+
+  /** m4aSongNumStart on the browser's dedicated BGM player. */
+  m4aSongNumStart(song: number): void {
+    song &= 0xffff;
     this.currentBGM = song;
     this.fallbackBgmPlaying = song !== 0 && song !== this.c("MUS_NONE");
     this.fallbackBgmPaused = false;
@@ -140,19 +146,16 @@ class Sound {
     this.backend?.playSong("bgm", song);
   }
 
-  /** m4aSongNumStart: start the song on the BGM player. */
-  m4aSongNumStart(song: number): void { this.playBGM(song & 0xffff); }
-
   /** m4aSongNumStartOrChange: replace the BGM only when it differs. */
   m4aSongNumStartOrChange(song: number): void {
     song &= 0xffff;
-    if (song !== this.currentBGM || this.isBGMPausedOrStopped()) this.playBGM(song);
+    if (song !== this.currentBGM || this.isBGMPausedOrStopped()) this.m4aSongNumStart(song);
   }
 
   /** m4aSongNumStartOrContinue: start a different song or resume the same one. */
   m4aSongNumStartOrContinue(song: number): void {
     song &= 0xffff;
-    if (song !== this.currentBGM || this.isBGMStopped()) this.playBGM(song);
+    if (song !== this.currentBGM || this.isBGMStopped()) this.m4aSongNumStart(song);
     else if (this.backend?.isPaused("bgm")) this.resumeBGM();
   }
 
@@ -285,9 +288,20 @@ class Sound {
   }
 
   pauseBGM(): void { this.backend?.pause("bgm"); this.fallbackBgmPaused = true; }
-  resumeBGM(): void { this.backend?.resume("bgm"); this.fallbackBgmPaused = false; }
+  resumeBGM(): void { this.m4aMPlayContinue(); }
+
+  /** m4aMPlayContinue(&gMPlayInfo_BGM): continue the field music player. */
+  m4aMPlayContinue(): void {
+    this.backend?.resume("bgm");
+    this.fallbackBgmPaused = false;
+  }
 
   fadeOutBGM(speed: number): void {
+    this.m4aMPlayFadeOut(speed);
+  }
+
+  /** m4aMPlayFadeOut(&gMPlayInfo_BGM, speed). */
+  m4aMPlayFadeOut(speed: number): void {
     speed &= 0xff;
     if (speed === 0) return;
     this.backend?.fadeOut("bgm", speed);
@@ -297,6 +311,11 @@ class Sound {
 
   /** FadeOutBGMTemporarily from sound.c: fade the current track, then pause it for fadeinbgm. */
   FadeOutBGMTemporarily(speed: number): void {
+    this.m4aMPlayFadeOutTemporarily(speed);
+  }
+
+  /** m4aMPlayFadeOutTemporarily(&gMPlayInfo_BGM, speed). */
+  m4aMPlayFadeOutTemporarily(speed: number): void {
     speed &= 0xff;
     if (speed === 0) return;
     this.backend?.fadeOutTemporarily("bgm", speed);
@@ -318,6 +337,11 @@ class Sound {
   }
 
   fadeInBGM(speed: number): void {
+    this.m4aMPlayFadeIn(speed);
+  }
+
+  /** m4aMPlayFadeIn(&gMPlayInfo_BGM, speed). */
+  m4aMPlayFadeIn(speed: number): void {
     speed &= 0xff;
     this.backend?.fadeIn("bgm", speed);
     if (!this.fallbackBgmPlaying && this.currentBGM !== 0) this.fallbackBgmPlaying = true;
@@ -490,6 +514,11 @@ class Sound {
 
   /** m4aMPlayVolumeControl(&gMPlayInfo_BGM, TRACKS_ALL, volume); 256 = full. */
   setBgmVolume(volume: number): void {
+    this.m4aMPlayVolumeControl(volume);
+  }
+
+  /** m4aMPlayVolumeControl(&gMPlayInfo_BGM, TRACKS_ALL, volume). */
+  m4aMPlayVolumeControl(volume: number): void {
     this.backend?.setVolume("bgm", volume & 0xffff);
   }
 
