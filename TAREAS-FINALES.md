@@ -149,6 +149,7 @@ funciones nuevas o equivalencias). Luego commit:
     `DIR_NORTH`, como `CB2_WhiteOut`. Divergencias sin portar de `CB2_WhiteOut`:
     `StopMapMusic()` y `UnlockPlayerFieldControls()` — el fade del script previo y
     el `releaseall` final los cubren en la práctica; revisar en la fase de revisión.
+    Tampoco está `ResetSafariZoneFlag_()` de `CB2_WhiteOut` (revisión 2026-10-01).
 - [ ] **1.5 Módulos sin caller** [medio]. Para cada módulo, busca su caller en C
   (`grep -rnw <Función> ../pokefirered/src`) y en TS (`grep -rn "from \".*<módulo>\"" src/fr`).
   - Duplicados sin uso (`game/slots.ts`, la función `openTeachyTv` de `keyItemScreens`):
@@ -314,6 +315,10 @@ Receta para cada línea:
   `CB2_EndTrainerTowerBattle`, `Task_DoTrainerTowerBattle`.
 - [ ] `battle_tower.c`: `Task_WaitBT` (adapta el scheduler a `game.startBattle`).
 - [ ] `trade_scene.c`: `LoadTradeAnimGfx`; `mail.c`: `GetInGameTradeMail` (`attachTradeMail`).
+- [ ] `trade_scene.c`: `TradeAnimInit_LoadGfx` (renombrado en 1.2) no sigue el cuerpo C:
+  el C hace `ChangeBgX/Y(0, 0, 0)`, carga dos veces gráficos, tilemap y paleta del
+  textbox de combate (`gBattleInterface_Textbox_*`) y no asigna buffer a BG2; el TS
+  asigna BG2 y no carga el textbox. Comprobar si esa carga ocurre en otro sitio.
 - [ ] `metatile_behavior.c`: fachada de predicados en `fieldmap.ts`.
 
 ## 3. Validación en navegador
