@@ -167,7 +167,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   Platinum (version group `platinum`, id en `version_groups.csv`) y compáralos con
   `refs/platinum/*.json`. Reporta como en Gen 3: errores reales, historial incompleto
   y diferencias de representación.
-- [ ] **R9 Separar representación en `moves_vs_firered`** [básico]. La salida de R2
+- [x] **R9 Separar representación en `moves_vs_firered`** [básico]. La salida de R2
   mezcla cambios reales con diferencias de formato. Añade a cada cambio un campo
   `"kind": "real"` o `"kind": "representation"` y resume ambos por separado. Reutiliza
   las reglas que ya aplica `tools/refs/compare_pokeapi_gen4.py` (precisión 0 = nunca
