@@ -280,12 +280,18 @@ export function QL_StartRecordingAction(eventId: number, eventIndex: number): Qu
   const movement = facing === C.DIR_EAST ? C.MOVEMENT_ACTION_FACE_RIGHT
     : facing === C.DIR_NORTH ? C.MOVEMENT_ACTION_FACE_UP
       : facing === C.DIR_WEST ? C.MOVEMENT_ACTION_FACE_LEFT : C.MOVEMENT_ACTION_FACE_DOWN;
+  // ResetActions(QL_PLAYBACK_STATE_RECORDING, quest_log.c): the action buffer
+  // starts with the facing movement plus an empty input, so recorded event
+  // headers stamp actionIndex 2 for the first event.
   const cursor = QL_RecordAction_MovementOrGfxChange(scene.script as number[], {
     type: C.QL_ACTION_MOVEMENT, duration: 0, data: [0, 0, 0, movement],
   });
   if (cursor !== null) {
-    scene.actionIndex = 1;
-    gQuestLogRecordingPointer = cursor;
+    const inputCursor = QL_RecordAction_Input(scene.script as number[], {
+      type: C.QL_ACTION_INPUT, duration: 0, data: [0, 0, 0, 0],
+    }, cursor);
+    scene.actionIndex = inputCursor !== null ? 2 : 1;
+    gQuestLogRecordingPointer = inputCursor ?? cursor;
   }
   scenes.push(scene);
   if (scenes.length > C.QUEST_LOG_SCENE_COUNT) scenes.splice(0, scenes.length - C.QUEST_LOG_SCENE_COUNT);
@@ -427,6 +433,7 @@ export function SetQuestLogEvent_Arrived(): void {
 /** QuestLogRecordPlayerAvatarGfxTransition (quest_log.c): record the source gfx state byte. */
 export function QuestLogRecordPlayerAvatarGfxTransition(gfxState: number): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (RecordHeadAtEndOfEntry()) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   const action: QuestLogAction = { type: C.QL_ACTION_GFX_CHANGE, duration: sNextActionDelay, data: [0, 0, 0, gfxState & 0xff] };
@@ -439,6 +446,7 @@ export function QuestLogRecordPlayerAvatarGfxTransition(gfxState: number): void 
 /** QuestLogRecordPlayerAvatarGfxTransitionWithDuration (quest_log.c). */
 export function QuestLogRecordPlayerAvatarGfxTransitionWithDuration(gfxState: number, duration: number): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (RecordHeadAtEndOfEntry()) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   const action: QuestLogAction = { type: C.QL_ACTION_GFX_CHANGE, duration: sNextActionDelay, data: [0, 0, 0, gfxState & 0xff] };
@@ -453,7 +461,8 @@ export function QL_AfterRecordFishActionSuccessful(): void { sNextActionDelay++;
 
 /** QuestLogRecordPlayerStep (quest_log.c), called after the avatar accepts a held movement. */
 export function QuestLogRecordPlayerStep(movementActionId: number, controlsLocked = false): void {
-  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING || controlsLocked) return;
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (RecordHeadAtEndOfEntryOrScriptContext2Enabled(controlsLocked)) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   if (movementActionId <= C.MOVEMENT_ACTION_FACE_RIGHT && sLastPlayerMovementActionId === movementActionId) return;
@@ -469,6 +478,7 @@ export function QuestLogRecordPlayerStep(movementActionId: number, controlsLocke
 /** QuestLogRecordPlayerStepWithDuration (quest_log.c). */
 export function QuestLogRecordPlayerStepWithDuration(movementActionId: number, duration: number): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (RecordHeadAtEndOfEntry()) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   if (QL_RecordAction_MovementOrGfxChange(script, { type: C.QL_ACTION_MOVEMENT, duration: sNextActionDelay, data: [0, 0, 0, movementActionId & 0xff] }) === null) {
@@ -483,6 +493,7 @@ export function QuestLogRecordPlayerStepWithDuration(movementActionId: number, d
 /** QuestLogRecordNPCStepWithDuration (quest_log.c). */
 export function QuestLogRecordNPCStepWithDuration(localId: number, mapNum: number, mapGroup: number, movementActionId: number, duration: number): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (RecordHeadAtEndOfEntry()) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   if (QL_RecordAction_MovementOrGfxChange(script, {
@@ -498,7 +509,8 @@ export function QuestLogRecordNPCStepWithDuration(localId: number, mapNum: numbe
 
 /** QuestLogRecordNPCStep (quest_log.c): record a single object movement without adding a delay. */
 export function QuestLogRecordNPCStep(localId: number, mapNum: number, mapGroup: number, movementActionId: number, controlsLocked = false): void {
-  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING || controlsLocked) return;
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (RecordHeadAtEndOfEntryOrScriptContext2Enabled(controlsLocked)) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   if (QL_RecordAction_MovementOrGfxChange(script, {
@@ -518,6 +530,7 @@ export function QL_RecordFieldInput(input: {
   heldDirection2: boolean; tookStep: boolean; pressedBButton: boolean; dpadDirection: number;
 }): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (RecordHeadAtEndOfEntry()) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
   if (!script) return;
   const flags = (input.pressedAButton ? 1 : 0) | (input.checkStandardWildEncounter ? 2 : 0)
@@ -537,6 +550,23 @@ function IncrementQuestLogActionIndex(): void {
     scene.actionIndex = ((scene.actionIndex ?? 0) + 1) & 0xffff;
     gQuestLogRecordingPointer = (scene.script as number[] | undefined)?.length ?? 0;
   }
+}
+
+/**
+ * SCRIPT_BUFFER_SIZE (quest_log.c): the record buffer holds one scene script
+ * worth of actions (128 words of 8-byte QuestLogAction records).
+ */
+const MAX_QUEST_LOG_ACTIONS_PER_SCENE = (128 * 2) / 8;
+
+/** RecordHeadAtEndOfEntry (quest_log.c): the action buffer is full, so the C drops the action. */
+function RecordHeadAtEndOfEntry(): boolean {
+  return (save.questLogScenes?.at(-1)?.actionIndex ?? 0) >= MAX_QUEST_LOG_ACTIONS_PER_SCENE;
+}
+
+/** RecordHeadAtEndOfEntryOrScriptContext2Enabled (quest_log.c). */
+function RecordHeadAtEndOfEntryOrScriptContext2Enabled(controlsLocked: boolean): boolean {
+  if (RecordHeadAtEndOfEntry() || controlsLocked) return true;
+  return false;
 }
 
 /** ResetActions(QL_PLAYBACK_STATE_RUNNING, ...): prepare the decoded scene action stream. */
