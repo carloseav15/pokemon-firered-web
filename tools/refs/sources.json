@@ -2,7 +2,7 @@
   "pokeemerald": {
     "repo": "https://github.com/pret/pokeemerald.git",
     "commit": "fe1d8e51b265851676b65885818b1f5f62586135",
-    "sparse": ["/src/", "/include/"],
+    "sparse": ["/src/", "/include/", "/data/maps/", "/data/layouts/"],
     "note": "GBA, C completo. Fuente de verdad de Emerald."
   },
   "pokeplatinum": {
