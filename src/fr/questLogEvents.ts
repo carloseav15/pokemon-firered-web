@@ -226,6 +226,25 @@ export function ShouldRegisterEvent_DepartedGameCorner(eventId: number, data: Qu
   return true;
 }
 
+/** ShouldRegisterEvent (quest_log_events.c): start a new scene only for events the source records after a full buffer. */
+function ShouldRegisterEvent(eventId: number, data: QuestLogEventData): number | null {
+  if (ShouldRegisterEvent_HandlePartyActions(eventId, data)
+    || !ShouldRegisterEvent_HandleDeparted(eventId, data)) return null;
+  WriteQuestLogState(C.QL_STATE_RECORDING);
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING;
+  sNextActionDelay = 0;
+  sLastPlayerMovementActionId = -1;
+  const scripts = save.questLogPlayerGfxActions ??= [];
+  const eventIndex = nextQuestLogSceneIndex();
+  const scene = QL_StartRecordingAction(eventId, eventIndex);
+  for (let i = scripts.length - 1; i >= 0; i--) if (scripts[i]!.eventIndex === eventIndex) scripts.splice(i, 1);
+  const script = scene.script as number[];
+  scripts.push({ eventIndex, script });
+  sActivePlayerActionScript = scripts.length - 1;
+  return RecordQuestLogEvent(eventId, script, scene.actionIndex ?? 0, gQuestLogRepeatEventTracker,
+    data as Record<string, number | boolean>);
+}
+
 /** TryDeferTrainerBattleEvent (quest_log_events.c). */
 export function TryDeferTrainerBattleEvent(eventId: number, data: QuestLogEventData): boolean {
   if (eventId !== C.QL_EVENT_DEFEATED_TRAINER && eventId !== C.QL_EVENT_DEFEATED_GYM_LEADER
@@ -1755,18 +1774,7 @@ export function SetQuestLogEvent(eventId: number, data: QuestLogEventData): void
   let next = RecordQuestLogEvent(eventId, script, scene.actionIndex ?? 0, gQuestLogRepeatEventTracker, data as Record<string, number | boolean>);
   if (next === null) {
     QL_FinishRecordingScene();
-    if (ShouldRegisterEvent_HandlePartyActions(eventId, data)
-      || !ShouldRegisterEvent_HandleDeparted(eventId, data)) return;
-    WriteQuestLogState(C.QL_STATE_RECORDING);
-    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RECORDING;
-    const eventIndex = nextQuestLogSceneIndex();
-    scene = QL_StartRecordingAction(eventId, eventIndex);
-    script = scene.script as number[];
-    const scripts = save.questLogPlayerGfxActions ??= [];
-    for (let i = scripts.length - 1; i >= 0; i--) if (scripts[i]!.eventIndex === eventIndex) scripts.splice(i, 1);
-    scripts.push({ eventIndex, script });
-    sActivePlayerActionScript = scripts.length - 1;
-    next = RecordQuestLogEvent(eventId, script, scene.actionIndex ?? 0, gQuestLogRepeatEventTracker, data as Record<string, number | boolean>);
+    next = ShouldRegisterEvent(eventId, data);
     if (next === null) return;
   }
   if (eventId === C.QL_EVENT_DEFEATED_WILD_MON) gQuestLogDefeatedWildMonRecord = gQuestLogRepeatEventTracker.wildRecordStart ?? null;
