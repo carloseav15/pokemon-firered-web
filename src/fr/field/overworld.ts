@@ -654,7 +654,8 @@ export class Overworld {
       case 0: {
         const mapId = this.mapIdForWarp(save.location);
         this.loadError = undefined;
-        this.loadPromise = this.prepareMap(mapId, gQuestLogState === C.QL_STATE_PLAYBACK ? save.mapLayoutId : undefined);
+        const restoreLayout = gQuestLogState === C.QL_STATE_PLAYBACK || this.restoreMapViewOnNextInit;
+        this.loadPromise = this.prepareMap(mapId, restoreLayout ? save.mapLayoutId : undefined);
         this.loadPromise.then(() => { this.loadState = 2; }, (error) => { this.loadError = error; console.error(error); });
         this.loadState = 1;
         break;
@@ -743,7 +744,8 @@ export class Overworld {
 
   /** LoadMapFromWarp */
   private loadMapFromWarp(loaded: LoadedMap): void {
-    this.loaded = loaded;
+    if (this.restoreMapViewOnNextInit) this.LoadSaveblockMapHeader(loaded);
+    else this.LoadCurrentMapData(loaded);
     this.mapTypes.set(loaded.header.id, loaded.header.mapType);
     this.sectionCache.set(loaded.header.id, loaded.header.regionMapSection);
     for (const c of loaded.connections) this.mapTypes.set(c.mapId, c.header.mapType);
@@ -761,6 +763,20 @@ export class Overworld {
     this.RunOnTransitionMapScript();
     this.initMap();
     this.game.weather.DoCurrentWeather();
+  }
+
+  /** LoadCurrentMapData (overworld.c), after the web fetch supplies its MapHeader and layout. */
+  private LoadCurrentMapData(loaded: LoadedMap): void {
+    this.loaded = loaded;
+    if (gQuestLogState !== C.QL_STATE_PLAYBACK) {
+      const layoutIndex = rom.layoutIndexById_(loaded.layout.id);
+      if (layoutIndex !== undefined) save.mapLayoutId = layoutIndex;
+    }
+  }
+
+  /** LoadSaveblockMapHeader (overworld.c): the fetched layout already reflects SaveBlock1.mapLayoutId. */
+  private LoadSaveblockMapHeader(loaded: LoadedMap): void {
+    this.loaded = loaded;
   }
 
   private setDefaultFlashLevel(): void {

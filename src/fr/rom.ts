@@ -202,6 +202,7 @@ export class Rom {
   private maps = new Map<string, MapHeader>();
   private layouts = new Map<string, LayoutData>();
   private layoutIdByIndex = new Map<number, string>();
+  private layoutIndexById = new Map<string, number>();
   private tilesets = new Map<string, TilesetData>();
   objects!: { gfx: Record<string, ObjectGfxInfo>; animTables: Record<string, Array<string | null>>; anims: Record<string, AnimCmd[]> };
   species!: SpeciesInfo[];
@@ -254,7 +255,10 @@ export class Rom {
     progress?.("maps");
     this.mapIndex = await json("maps.json");
     for (const [id, entry] of Object.entries(this.mapIndex.maps)) this.mapById.set(entry.num, id);
-    for (const [layoutId, index] of Object.entries(this.mapIndex.layouts)) this.layoutIdByIndex.set(index, layoutId);
+    for (const [layoutId, index] of Object.entries(this.mapIndex.layouts)) {
+      this.layoutIdByIndex.set(index, layoutId);
+      this.layoutIndexById.set(layoutId, index);
+    }
     progress?.("graphics");
     [this.objects, this.gfx, this.fonts, this.windows, this.doors] = await Promise.all([
       json<Rom["objects"]>("objects.json"),
@@ -432,6 +436,10 @@ export class Rom {
 
   layoutIdByIndex_(index: number): string | undefined {
     return this.layoutIdByIndex.get(index);
+  }
+
+  layoutIndexById_(layoutId: string): number | undefined {
+    return this.layoutIndexById.get(layoutId);
   }
 
   cachedTileset(name: string): TilesetData | undefined {
