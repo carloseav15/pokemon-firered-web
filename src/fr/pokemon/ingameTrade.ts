@@ -351,8 +351,8 @@ export function InitTradeSequenceBgGpuRegs(): void {
   SetTradeSequenceBgGpuRegs(0);
 }
 
-/** LoadTradeAnimGfx (trade_scene.c): initialize the common trade animation layers and text window. */
-export function LoadTradeAnimGfx(): void {
+/** TradeAnimInit_LoadGfx (trade_scene.c): initialize the common trade animation layers and text window. */
+function TradeAnimInit_LoadGfx(): void {
   SetGpuReg(REG_OFFSET_DISPCNT, 0);
   ResetBgsAndClearDma3BusyFlags(false);
   InitBgsFromTemplates(0, rd<BgTemplate[]>("sBgTemplates"), 4);
@@ -362,6 +362,11 @@ export function LoadTradeAnimGfx(): void {
   SetBgTilemapBuffer(3, new Uint16Array(BG_SCREEN_SIZE));
   DeactivateAllTextPrinters();
   InitWindows(rd<WindowTemplate[]>("sTradeMessageWindowTemplates"));
+}
+
+/** LoadTradeAnimGfx (trade_scene.c). */
+export function LoadTradeAnimGfx(): void {
+  TradeAnimInit_LoadGfx();
 }
 
 export function DrawTextOnTradeWindow(windowId: number, str: Uint8Array | number[], speed: number): void {

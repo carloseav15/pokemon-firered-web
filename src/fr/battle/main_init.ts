@@ -368,10 +368,11 @@ export function SpriteCB_HideAsMoveTarget(sprite: Sprite): void {
 }
 
 export function SpriteCB_AllyMon(sprite: Sprite): void {
-  sprite.callback = SpriteCB_AllyMonSlide;
+  sprite.callback = oac_poke_ally_;
 }
 
-function SpriteCB_AllyMonSlide(sprite: Sprite): void {
+/** oac_poke_ally_ (battle_main.c). */
+function oac_poke_ally_(sprite: Sprite): void {
   if (!(G.gIntroSlideFlags & 1)) {
     sprite.x2 -= 2;
     if (sprite.x2 === 0) {
