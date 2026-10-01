@@ -215,6 +215,9 @@ export class Overworld {
   pendingLoad = false;
   /** InitMapFromSavedGame restores the saved VMap window on the first continue load. */
   restoreMapViewOnNextInit = false;
+  questLogStartType: number | undefined;
+  /** Set after a QL scene warp, before the staged playback-map restoration begins. */
+  private questLogMapLoadState: number | null = null;
   /** Selected object (gSelectedObjectEvent) */
   selectedObject = 0;
   /** Field-wide hooks for other modules (battle start etc.) */
@@ -675,6 +678,11 @@ export class Overworld {
   /** CB2_LoadMap2 (overworld.c): async map bytes are already fetched in the browser port. */
   private CB2_LoadMap2(loaded: LoadedMap): void {
     this.setPlayerCoordsFromWarp(loaded.header, loaded.layout.width, loaded.layout.height);
+    if (gQuestLogState === C.QL_STATE_PLAYBACK) {
+      this.loaded = loaded;
+      this.game.setCallbacks(null, () => this.CB2_LoadMapForQLPlayback());
+      return;
+    }
     this.loadMapFromWarp(loaded);
     QuestLog_InitPalettesBackup();
     this.ResumeMap();
@@ -682,7 +690,6 @@ export class Overworld {
     // uses the call to cut recording in Quest Log-disabled locations.
     const advanceQuestLog = QuestLog_ShouldEndSceneOnMapChange();
     this.initObjectEventsLocal();
-    if (gQuestLogState === C.QL_STATE_PLAYBACK) QL_InitSceneObjectsAndActions(this);
     if (gQuestLogState !== C.QL_STATE_PLAYBACK) {
       QuestLog_CheckDepartingIndoorsMap();
       QuestLog_TryRecordDepartedLocation();
@@ -706,6 +713,75 @@ export class Overworld {
     afterMapLoad?.();
     this.game.setCallbacks(() => this.cb1(), () => this.cb2());
   }
+
+  /** CB2_LoadMapForQLPlayback / LoadMap_QLPlayback (overworld.c). */
+  CB2_LoadMapForQLPlayback(): void {
+    if (this.questLogMapLoadState === null) this.questLogMapLoadState = 0;
+    this.DoLoadMap_QLPlayback();
+    if (this.questLogMapLoadState === null) {
+      const afterMapLoad = this.afterMapLoadCallback;
+      this.afterMapLoadCallback = null;
+      afterMapLoad?.();
+      this.game.setCallbacks(() => this.cb1(), () => this.cb2());
+    }
+  }
+
+  /** Async browser counterpart to the C tight loop; each graphics/scene stage yields a frame. */
+  private DoLoadMap_QLPlayback(): void {
+    switch (this.questLogMapLoadState) {
+      case 0:
+        QuestLog_InitPalettesBackup();
+        this.questLogMapLoadState = 1;
+        if (this.questLogStartType === C.QL_START_WARP) {
+          // Warp playback uses the already loaded map and runs the normal warp loader.
+          this.loadMapFromWarp(this.loaded);
+        } else {
+          this.QL_LoadMapNormal(this.loaded);
+        }
+        break;
+      case 1:
+        QL_InitSceneObjectsAndActions(this);
+        this.questLogMapLoadState++;
+        break;
+      case 2:
+        this.ResumeMap();
+        this.questLogMapLoadState++;
+        break;
+      case 3:
+        this.ReloadObjectsAndRunReturnToFieldMapScript();
+        this.SetCameraToTrackPlayer();
+        this.questLogMapLoadState++;
+        break;
+      case 4:
+        this.InitViewGraphics();
+        this.questLogMapLoadState++;
+        break;
+      case 5:
+      case 6:
+        this.questLogMapLoadState++;
+        break;
+      case 7:
+        // Primary and secondary tile uploads are synchronous from browser cdata.
+        this.questLogMapLoadState++;
+        break;
+      case 8:
+        this.DrawWholeMapView();
+        this.questLogMapLoadState++;
+        break;
+      case 9:
+        this.animator?.InitTilesetAnimations();
+        QL_TryStopSurfing();
+        this.questLogMapLoadState++;
+        break;
+      default:
+        if (!this.RunFieldCallback()) break;
+        this.questLogMapLoadState = null;
+        break;
+    }
+  }
+
+  /** DrawWholeMapView (field_camera.c): Canvas composes the visible map at render time. */
+  private DrawWholeMapView(): void { this.renderer?.invalidate(); }
 
   private lastUsedWarpSection(): number {
     try {
@@ -779,6 +855,22 @@ export class Overworld {
   /** LoadSaveblockMapHeader (overworld.c): the fetched layout already reflects SaveBlock1.mapLayoutId. */
   private LoadSaveblockMapHeader(loaded: LoadedMap): void {
     this.loaded = loaded;
+  }
+
+  /** QL_LoadMapNormal (overworld.c): load the current-map playback scene without warp scripts. */
+  private QL_LoadMapNormal(loaded: LoadedMap): void {
+    this.LoadCurrentMapData(loaded);
+    this.mapTypes.set(loaded.header.id, loaded.header.mapType);
+    this.sectionCache.set(loaded.header.id, loaded.header.regionMapSection);
+    for (const connection of loaded.connections) this.mapTypes.set(connection.mapId, connection.header.mapType);
+    this.loadObjEventTemplatesFromHeader();
+    TrySetMapSaveWarpStatus();
+    this.game.weather.SetSavedWeatherFromCurrMapHeader(loaded.header.weather);
+    this.stepCallback.ChooseAmbientCrySpecies();
+    this.setDefaultFlashLevel();
+    QL_ResetDefeatedWildMonRecord();
+    this.LoadSaveblockMapHeader(loaded);
+    this.initMap();
   }
 
   private setDefaultFlashLevel(): void {
@@ -980,6 +1072,8 @@ export class Overworld {
     paletteFade.clear();
     this.InstallCameraPanAheadCallback();
     this.effects.reset();
+    this.stepCallback.reset();
+    this.stepCallback.ResetFieldTasksArgs();
     this.game.weather.resumePausedWeather();
     this.messageBox.reset();
     this.RunOnResumeMapScript();

@@ -858,6 +858,8 @@ function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
   ClearBag();
   ClearPCItemSlots();
   SetQuestLogState(C.QL_STATE_PLAYBACK);
+  ow.questLogStartType = scene.startType ?? C.QL_START_NORMAL;
+  ow.restoreMapViewOnNextInit = false;
   QLPlayback_SetInitialPlayerPosition(sceneIndex, (scene.startType ?? C.QL_START_NORMAL) === C.QL_START_WARP, ow);
   QL_CopySaveState(sceneIndex);
   QL_ResetPartyAndPC();
@@ -865,10 +867,14 @@ function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
   ow.setWarpDestination(scene.mapGroup ?? save.location.mapGroup, scene.mapNum ?? save.location.mapNum,
     scene.warpId ?? -1, scene.x ?? save.pos.x, scene.y ?? save.pos.y);
   ow.keepMusicOnNextLoad = true;
-  ow.fieldCallback = (scene.startType ?? C.QL_START_NORMAL) === C.QL_START_WARP
-    ? () => ow.FieldCB_DefaultWarpExit()
-    : () => ow.FieldCB_WarpExitFadeFromBlack();
+  ow.fieldCallback = null;
+  ow.fieldCallback2 = () => {
+    if (scene.startType === C.QL_START_WARP) ow.FieldCB_DefaultWarpExit();
+    else ow.FieldCB_WarpExitFadeFromBlack();
+    return true;
+  };
   ow.warpIntoMapAndLoad();
+  ow.afterMapLoadCallback = () => ow.CB2_LoadMapForQLPlayback();
 }
 
 function finishQuestLogPlayback(ow: Overworld): void {
