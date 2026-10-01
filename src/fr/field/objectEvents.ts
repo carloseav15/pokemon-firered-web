@@ -1924,10 +1924,16 @@ export class ObjectEvents {
   update(cameraX: number, cameraY: number): void {
     for (const object of this.list) {
       if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING)
-        this.QL_UpdateObjectEventCurrentMovement(object, cameraX, cameraY);
+        this.QL_UpdateObject(object, cameraX, cameraY);
       else this.UpdateObjectEventCurrentMovement(object, cameraX, cameraY);
       this.UpdateObjectEventElevationAndPriority(object);
     }
+  }
+
+  /** QL_UpdateObject (quest_log.c): the playback callback after queued movement and graphics
+   * commands have been applied by FieldControl.DoCB1_Overworld. */
+  QL_UpdateObject(object: ObjectEvent, cameraX: number, cameraY: number): void {
+    this.QL_UpdateObjectEventCurrentMovement(object, cameraX, cameraY);
   }
 
   /** QL_UpdateObjectEventCurrentMovement (event_object_movement.c): Quest Log's object callback. */
