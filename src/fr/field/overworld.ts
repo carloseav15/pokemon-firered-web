@@ -209,6 +209,7 @@ export class Overworld {
   private loadState = 0;
   private loadPromise?: Promise<LoadedMap>;
   private loadError?: unknown;
+  private restoreQuestLogSaveOnNextLoad = false;
   initialAvatar = { direction: DIR_SOUTH, transitionFlags: PLAYER_AVATAR_FLAG_ON_FOOT, hasDirectionSet: false };
   savedMusic = 0;
   /** Set when a map-changing event needs the load callback (CB2_LoadMap) */
@@ -677,6 +678,23 @@ export class Overworld {
 
   /** CB2_LoadMap2 (overworld.c): async map bytes are already fetched in the browser port. */
   private CB2_LoadMap2(loaded: LoadedMap): void {
+    if (this.restoreQuestLogSaveOnNextLoad) {
+      this.restoreQuestLogSaveOnNextLoad = false;
+      this.loaded = loaded;
+      this.mapTypes.set(loaded.header.id, loaded.header.mapType);
+      this.sectionCache.set(loaded.header.id, loaded.header.regionMapSection);
+      for (const connection of loaded.connections) this.mapTypes.set(connection.mapId, connection.header.mapType);
+      this.LoadSaveblockMapHeader(loaded);
+      this.loadObjEventTemplatesFromHeader(save.objectEventTemplates);
+      this.LoadSaveblockObjEventScripts();
+      this.objects.unfreezeAll();
+      this.Overworld_ResetStateOnContinue();
+      this.gExitStairsMovementDisabled = true;
+      this.script.ScriptContext_Init();
+      this.initMap();
+      this.game.CB2_ReturnToField();
+      return;
+    }
     this.setPlayerCoordsFromWarp(loaded.header, loaded.layout.width, loaded.layout.height);
     if (gQuestLogState === C.QL_STATE_PLAYBACK) {
       this.loaded = loaded;
@@ -871,6 +889,13 @@ export class Overworld {
     QL_ResetDefeatedWildMonRecord();
     this.LoadSaveblockMapHeader(loaded);
     this.initMap();
+  }
+
+  /** CB2_EnterFieldFromQuestLog (overworld.c): restore the saved map and local field state. */
+  CB2_EnterFieldFromQuestLog(): void {
+    this.restoreMapViewOnNextInit = true;
+    this.restoreQuestLogSaveOnNextLoad = true;
+    this.warpIntoMapAndLoad();
   }
 
   private setDefaultFlashLevel(): void {

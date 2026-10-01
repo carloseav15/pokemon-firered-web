@@ -905,14 +905,11 @@ function finishQuestLogPlayback(ow: Overworld): void {
   sPlaybackTransitionStarted = false;
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
   SetQuestLogState(C.QL_STATE_PLAYBACK_LAST);
-  ow.Overworld_ResetStateOnContinue();
-  const location = save.location;
-  ow.setWarpDestination(location.mapGroup, location.mapNum, -1, save.pos.x, save.pos.y);
   ow.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };
   ow.savedMusic = save.savedMusic;
-  ow.fieldCallback = () => ow.FieldCB_DefaultWarpExit();
+  ow.fieldCallback = null;
   ow.fieldCallback2 = () => FieldCB2_FinalScene(ow);
-  ow.warpIntoMapAndLoad();
+  ow.CB2_EnterFieldFromQuestLog();
 }
 
 /** FieldCB2_FinalScene (quest_log.c): restore the header and begin the saved-game return fade. */
