@@ -12,7 +12,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (< 80 % de funciones) | 4 | 9964 | 201/390 |
+| Parcial (< 80 % de funciones) | 4 | 9964 | 213/390 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
 | Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2574/2779 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
@@ -20,16 +20,16 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9721/10115** |
+| **Total en alcance** | **211** | **253703** | **9733/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Parcial (< 80 % de funciones)
 
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
-| `overworld.c` | 3563 | 145/242 | `battle/host.ts`, `field/fieldControl.ts`, `field/fieldMoves.ts` … |  |  |
+| `overworld.c` | 3563 | 147/242 | `battle/host.ts`, `field/fieldControl.ts`, `field/fieldMoves.ts` … |  |  |
 | `trade_scene.c` | 2916 | 38/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 1 |
-| `m4a.c` | 1781 | 1/72 | `audio/m4a.ts` |  |  |
+| `m4a.c` | 1781 | 11/72 | `audio/m4a.ts` |  |  |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 
 ## Casi completo (≥ 80 % y < 100 %)

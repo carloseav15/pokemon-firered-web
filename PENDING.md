@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9721/10115 (96.1 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **394 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9733/10115 (96.2 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **382 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~8.881 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~8.603 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -39,8 +39,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
 | 20 | `trade_scene.c` | parcial | 2916 | 38/53 | ~825 |  |
 | 21 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
-| 22 | `overworld.c` | parcial | 3563 | 145/242 | ~1428 |  |
-| 23 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
+| 22 | `overworld.c` | parcial | 3563 | 147/242 | ~1398 |  |
+| 23 | `m4a.c` | parcial | 1781 | 11/72 | ~1508 |  |
 
 Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 4 parciales.
 
