@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9761/10115 (96.5 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **354 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9763/10115 (96.5 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **352 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~7.994 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~7.897 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -37,8 +37,8 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 18 | `event_object_movement.c` | casi completo | 9412 | 718/759 | ~508 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
-| 20 | `trade_scene.c` | parcial | 2916 | 38/53 | ~825 |  |
-| 21 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
+| 20 | `trade_scene.c` | parcial | 2916 | 39/53 | ~770 |  |
+| 21 | `battle_main.c` | casi completo | 4477 | 87/106 | ~802 |  |
 | 22 | `m4a.c` | parcial | 1781 | 25/72 | ~1162 |  |
 | 23 | `overworld.c` | parcial | 3563 | 149/242 | ~1369 |  |
 
@@ -52,7 +52,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 |---|---:|---:|---:|
 | `trade.c` | 2958 | 0/66 | 15 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
-| `trade_scene.c` | 2916 | 38/53 | 1 |
+| `trade_scene.c` | 2916 | 39/53 | 1 |
 | `union_room.c` | 4761 | 6/110 | 1 |
 | `link.c` | 2202 | 4/114 | 1 |
 

@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (< 80 % de funciones) | 4 | 9964 | 229/390 |
+| Parcial (< 80 % de funciones) | 4 | 9964 | 230/390 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
-| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2586/2779 |
+| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2587/2779 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9761/10115** |
+| **Total en alcance** | **211** | **253703** | **9763/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Parcial (< 80 % de funciones)
@@ -28,7 +28,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `overworld.c` | 3563 | 149/242 | `battle/host.ts`, `field/fieldControl.ts`, `field/fieldMoves.ts` … |  |  |
-| `trade_scene.c` | 2916 | 38/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 1 |
+| `trade_scene.c` | 2916 | 39/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 1 |
 | `m4a.c` | 1781 | 25/72 | `audio/m4a.ts`, `audio/sound.ts` |  |  |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 
@@ -40,7 +40,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon.c` | 6453 | 135/140 | `battle/anim.ts`, `battle/battleSetup.ts`, `battle/damage.ts` … |  |  |
 | `party_menu.c` | 6342 | 326/357 | `battle/ext.ts`, `field/overworld.ts`, `menus/fieldMenus.ts` … |  |  |
 | `pokemon_summary_screen.c` | 5224 | 131/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
-| `battle_main.c` | 4477 | 86/106 | `battle/bg.ts`, `battle/controllers.ts`, `battle/globals.ts` … |  |  |
+| `battle_main.c` | 4477 | 87/106 | `battle/bg.ts`, `battle/controllers.ts`, `battle/globals.ts` … |  |  |
 | `field_effect.c` | 4033 | 220/239 | `battle/mugshotTransition.ts`, `field/escalatorWarp.ts`, `field/fieldEffects.ts` … |  |  |
 | `battle_transition.c` | 3037 | 129/134 | `battle/mugshotTransition.ts`, `battle/transition.ts` |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |

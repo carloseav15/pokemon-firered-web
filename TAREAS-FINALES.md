@@ -109,7 +109,7 @@ funciones nuevas o equivalencias). Luego commit:
     check corriera); hizo falta hacerlo perezoso y, en el harness, registrar el
     objeto del check y el `DoPlayerAvatarTransition` del mock. Los dos checks
     pasan sin tocar aserciones; los 12 checks que siguen rotos están en §1.11.
-- [ ] **1.2 Renombrar dos equivalencias al nombre C** [básico].
+- [x] **1.2 Renombrar dos equivalencias al nombre C** [básico].
   - `src/fr/battle/main_init.ts:371` y `:374`: `SpriteCB_AllyMonSlide` → `oac_poke_ally_`
     (C: `battle_main.c`, `static void oac_poke_ally_`). Añade el comentario
     `/** oac_poke_ally_ (battle_main.c). */`.
@@ -118,7 +118,9 @@ funciones nuevas o equivalencias). Luego commit:
     igual que el C (`trade_scene.c`, `void LoadTradeAnimGfx(void) { TradeAnimInit_LoadGfx(); }`).
   - Check focalizado: `npm run check:trade`. Terminada cuando: `npm run inventory`
     muestra `battle_main.c` 87/106 y `trade_scene.c` 39/53 (+2 equivalencias).
-- [ ] **1.3 Huecos conocidos obsoletos** [básico, solo documentos]. En `KNOWN_GAPS`
+  - Hecha 2026-10-01 (commit `5b304853`): renombrado en `main_init.ts` y
+    `TradeAnimInit_LoadGfx` en `ingameTrade.ts`; inventario 87/106 y 39/53.
+- [x] **1.3 Huecos conocidos obsoletos** [básico, solo documentos]. En `KNOWN_GAPS`
   de `tools/portPending.py` hay frases que ya no son ciertas. Comprueba cada una con
   `grep` y corrige o borra la frase; después `npm run pending`.
   - `item_use.c` "faltan 12/73 nombres": el inventario ya marca 73/73.
@@ -128,7 +130,10 @@ funciones nuevas o equivalencias). Luego commit:
     `DoEasyChatScreen`. Confirma que GIVE de una carta abre el editor; si es así,
     corrige también el comentario de cabecera de `src/fr/pokemon/mail.ts`.
   - `PLAN-RECORRIDO.md` tramo 12 dice que las mugshots no están portadas: corrígelo.
-- [ ] **1.4 Whiteout** [básico]. `Overworld_SetWhiteoutRespawnPoint`
+  - Hecha 2026-10-01 (commit `bc7e3e9f`): corregidas las líneas 65/72/87 de
+    `KNOWN_GAPS`, `PLAN-RECORRIDO.md:71` y la cabecera de `mail.ts`; `PENDING.md`
+    regenerado.
+- [x] **1.4 Whiteout** [básico]. `Overworld_SetWhiteoutRespawnPoint`
   (`src/fr/field/overworld.ts`, ~línea 612) dice que descarta `healerLocalId`/`atHome`.
   - Pasos: lee `Overworld_SetWhiteoutRespawnPoint` y `SetWhiteoutRespawnWarpAndHealerNpc`
     en `../pokefirered/src/overworld.c` y busca dónde usa el C ese dato del curandero
@@ -136,6 +141,14 @@ funciones nuevas o equivalencias). Luego commit:
     `DoWhiteOut` en `src/fr/game.ts` (~línea 1092).
   - Si el TS ya usa el dato por otro camino: corrige solo el comentario. Si no, porta
     la parte que falta siguiendo el C.
+  - Hecha 2026-10-01 (commit `b41615cd`): el TS ya usa el dato (curandero →
+    `SV.LAST_TALKED` → `applymovement VAR_LAST_TALKED`; casa/centro en
+    `Task_RushInjuredPokemonToCenter`), así que se reescribió el comentario;
+    además `DoWhiteOut` ahora llama a `Overworld_SetWhiteoutRespawnPoint()` en vez
+    de saltárselo (el wrapper no tenía callers) y fija el avatar inicial a
+    `DIR_NORTH`, como `CB2_WhiteOut`. Divergencias sin portar de `CB2_WhiteOut`:
+    `StopMapMusic()` y `UnlockPlayerFieldControls()` — el fade del script previo y
+    el `releaseall` final los cubren en la práctica; revisar en la fase de revisión.
 - [ ] **1.5 Módulos sin caller** [medio]. Para cada módulo, busca su caller en C
   (`grep -rnw <Función> ../pokefirered/src`) y en TS (`grep -rn "from \".*<módulo>\"" src/fr`).
   - Duplicados sin uso (`game/slots.ts`, la función `openTeachyTv` de `keyItemScreens`):
