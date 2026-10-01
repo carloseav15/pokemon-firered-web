@@ -68,7 +68,7 @@ texto ilegible > visual**. Lo visual va a PENDING.md §4 y no para el tramo.
 | 9 | Surf → Isla Canela → Mansión → Blaine | rocas de Fuerza, llave de la Mansión, Blaine (medalla 7), laboratorio (fósil) |
 | 10 | Islas Sevii 1-3 (viaje con Bill) | ferry Seagallop (ya portado), guion de Celio, Mt. Ember |
 | 11 | Gimnasio de Verde → Ruta 22/23 → Calle Victoria | Giovanni (medalla 8), rival, rocas de Fuerza, guardias de medallas |
-| 12 | Alto Mando → Campeón → Salón de la Fama → créditos | transiciones de **mugshot** (no portadas: hoy caen en BLUE; es visual, no bloquea), Salón de la Fama y créditos (portados, sin probar) |
+| 12 | Alto Mando → Campeón → Salón de la Fama → créditos | transiciones de **mugshot** (portadas en `battle/mugshotTransition.ts`, sin probar en navegador), Salón de la Fama y créditos (portados, sin probar) |
 
 Riesgos a comprobar pronto con un check headless barato (antes de llegar):
 efectos de campo de MO (`field_effect.c` 39/239), bicicleta y baldosas

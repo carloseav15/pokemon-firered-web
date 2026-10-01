@@ -1,7 +1,7 @@
 // mail.c / mailbox_pc.c / trade_scene.c (in-game trade mail): held-mail
-// messages as easy-chat words. Reading, taking and the field-use view are
-// ported; composing a new message (the Easy Chat writer) is pending, so mail
-// attached through GIVE carries a blank message.
+// messages as easy-chat words. Reading, taking, the field-use view and
+// composing a new message (the Easy Chat writer, via the party menu GIVE
+// path → DoEasyChatScreen) are connected.
 
 import { CHAR_SPACE, decode, EOS } from "../gba/charmap";
 import * as C from "../generated/constants";
