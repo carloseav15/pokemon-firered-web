@@ -1887,10 +1887,7 @@ export function QuestLog_CutRecording(): void {
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_STOPPED && gQuestLogState === C.QL_STATE_RECORDING) {
     const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
     QL_RecordWait(1);
-    if (script) {
-      QL_RecordAction_SceneEnd(script);
-      gQuestLogRecordingPointer = script.length;
-    }
+    if (script) RecordSceneEnd(script);
     gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
     WriteQuestLogState(0);
     sActivePlayerActionScript = -1;
@@ -1905,10 +1902,7 @@ export function QuestLog_CutRecording(): void {
 export function QL_FinishRecordingScene(): void {
   if (gQuestLogState !== C.QL_STATE_RECORDING) return;
   const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
-  if (script) {
-    QL_RecordAction_SceneEnd(script);
-    gQuestLogRecordingPointer = script.length;
-  }
+  if (script) RecordSceneEnd(script);
   WriteQuestLogState(0);
   sActivePlayerActionScript = -1;
   gQuestLogDefeatedWildMonRecord = null;
@@ -1919,6 +1913,17 @@ export function QL_FinishRecordingScene(): void {
 /** SaveQuestLogData (quest_log.c): close the active action stream and order the retained scene ring. */
 export function SaveQuestLogData(): void {
   QuestLog_CutRecording();
+  SortQuestLogInSav1();
+}
+
+/** RecordSceneEnd (quest_log.c): append the scene terminator and advance its stream cursor. */
+function RecordSceneEnd(script: number[]): void {
+  QL_RecordAction_SceneEnd(script);
+  gQuestLogRecordingPointer = script.length;
+}
+
+/** SortQuestLogInSav1 (quest_log.c): store retained scenes in chronological save order. */
+function SortQuestLogInSav1(): void {
   const scenes = save.questLogScenes ??= [];
   scenes.sort((a, b) => (a.eventIndex ?? 0) - (b.eventIndex ?? 0));
 }
