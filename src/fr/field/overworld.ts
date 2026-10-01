@@ -696,7 +696,7 @@ export class Overworld {
     if (!ranMapTransition && this.header.showMapName && prevSection !== currSection) {
       this.mapName.show(false);
     }
-    this.runFieldCallback();
+    this.RunFieldCallback();
     if (advanceQuestLog) {
       QuestLog_AdvancePlayhead_(this);
       return;
@@ -1174,15 +1174,16 @@ export class Overworld {
 
   // ---------------------------------------------------------------- field callbacks
 
-  private runFieldCallback(): void {
+  RunFieldCallback(): boolean {
     if (this.fieldCallback2) {
       // Only used by special cases; run once here.
-      if (this.fieldCallback2()) { this.fieldCallback2 = null; this.fieldCallback = null; }
-      return;
+      if (this.fieldCallback2()) { this.fieldCallback2 = null; this.fieldCallback = null; return true; }
+      return false;
     }
     const callback = this.fieldCallback ?? (() => this.FieldCB_DefaultWarpExit());
     this.fieldCallback = null;
     callback();
+    return true;
   }
 
   /** gDisableMapMusicChangeOnMapLoad == MUSIC_DISABLE_KEEP for the next load. */

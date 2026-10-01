@@ -138,6 +138,7 @@ export class Game {
   /** new_game.c gDifferentSaveFile: preserve a prior save until the new file is confirmed. */
   private differentSaveFile = false;
   private whiteOutFrames = 0;
+  private returnToFieldState = 0;
   readonly weather = new FieldWeather();
   readonly trades = {
     getSpeciesInfo: () => getInGameTradeSpeciesInfo(),
@@ -1005,32 +1006,62 @@ export class Game {
   returnToFieldContinueScript(playMusic: boolean): void {
     const ow = this.overworld;
     this.scene = null;
-    this.setCallbacks(() => ow.cb1(), () => ow.cb2());
-    ow.ResumeMap();
-    ow.ReloadObjectsAndRunReturnToFieldMapScript();
-    ow.SetCameraToTrackPlayer();
-    ow.InitViewGraphics();
-    ow.SetHelpContextForMap();
-    if (playMusic) ow.FieldCB_ContinueScriptHandleMusic();
-    else ow.FieldCB_ContinueScript();
-    ow.objects.unfreezeAll();
+    ow.fieldCallback = () => {
+      if (playMusic) ow.FieldCB_ContinueScriptHandleMusic();
+      else ow.FieldCB_ContinueScript();
+    };
+    this.CB2_ReturnToField();
   }
   /** CB2_ReturnToFieldContinueScript (overworld.c). */
   CB2_ReturnToFieldContinueScript(): void { this.returnToFieldContinueScript(false); }
   /** CB2_ReturnToFieldContinueScriptPlayMapMusic (overworld.c). */
   CB2_ReturnToFieldContinueScriptPlayMapMusic(): void { this.returnToFieldContinueScript(true); }
 
+  /** CB2_ReturnToField (overworld.c), local single-player path. */
+  CB2_ReturnToField(): void {
+    this.returnToFieldState = 0;
+    this.setCallbacks(null, () => this.CB2_ReturnToFieldLocal());
+  }
+
+  /** CB2_ReturnToFieldLocal (overworld.c): resume the normal frame callbacks after restoration. */
+  private CB2_ReturnToFieldLocal(): void {
+    if (this.ReturnToFieldLocal()) {
+      this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
+    }
+  }
+
+  /** ReturnToFieldLocal (overworld.c), advanced one local field restore stage per frame. */
+  private ReturnToFieldLocal(): boolean {
+    const ow = this.overworld;
+    switch (this.returnToFieldState) {
+      case 0:
+        ow.ResumeMap();
+        ow.ReloadObjectsAndRunReturnToFieldMapScript();
+        ow.SetCameraToTrackPlayer();
+        this.returnToFieldState++;
+        break;
+      case 1:
+        this.returnToFieldState++;
+        break;
+      case 2:
+        ow.InitViewGraphics();
+        ow.SetHelpContextForMap();
+        this.returnToFieldState++;
+        break;
+      case 3:
+        if (ow.RunFieldCallback()) this.returnToFieldState++;
+        break;
+      case 4:
+        return true;
+    }
+    return false;
+  }
+
   /** CB2_ReturnToFieldFromDiploma: restore local field objects/map scripts before warp-exit. */
   CB2_ReturnToFieldFromDiploma(): void {
     const ow = this.overworld;
-    ow.ResumeMap();
-    ow.ReloadObjectsAndRunReturnToFieldMapScript();
-    ow.SetCameraToTrackPlayer();
-    ow.InitViewGraphics();
-    ow.SetHelpContextForMap();
-    ow.FieldCB_WarpExitFadeFromBlack();
-    ow.objects.unfreezeAll();
-    this.setCallbacks(() => ow.cb1(), () => ow.cb2());
+    ow.fieldCallback = () => ow.FieldCB_WarpExitFadeFromBlack();
+    this.CB2_ReturnToField();
   }
 
   /** CB2_WhiteOut: respawn at the last heal location. */
