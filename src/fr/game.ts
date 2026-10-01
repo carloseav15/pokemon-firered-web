@@ -848,13 +848,7 @@ export class Game {
   setStepCallback(id: number): void { this.overworld.stepCallback.activate(id); }
   /** SetCurrentMapLayout: used from ON_TRANSITION scripts, before InitMap builds the grid. */
   setMapLayoutIndex(index: number): void {
-    const ow = this.overworld;
-    const id = rom.layoutIdByIndex_(index);
-    const layout = id ? rom.cachedLayout(id) : undefined;
-    if (!layout || !ow.loaded) return;
-    const primary = rom.cachedTileset(layout.primary) ?? ow.loaded.primary;
-    const secondary = rom.cachedTileset(layout.secondary) ?? ow.loaded.secondary;
-    ow.loaded = { ...ow.loaded, layout, primary, secondary };
+    this.overworld.SetCurrentMapLayout(index);
   }
   createVirtualObject(graphicsId: number, virtualObjId: number, x: number, y: number, elevation: number, direction: number): void {
     this.overworld.objects.CreateVirtualObject(graphicsId, virtualObjId, x, y, elevation, direction);

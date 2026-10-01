@@ -992,6 +992,22 @@ export class Overworld {
     this.doors.reset();
   }
 
+  /** GetMapLayout (overworld.c): resolve the save block's one-based layout ID. */
+  GetMapLayout(): LoadedMap["layout"] | undefined {
+    const layoutId = rom.layoutIdByIndex_(save.mapLayoutId ?? 0);
+    return layoutId ? rom.cachedLayout(layoutId) : undefined;
+  }
+
+  /** SetCurrentMapLayout (overworld.c): update the saved layout and active header before InitMap. */
+  SetCurrentMapLayout(mapLayoutId: number): void {
+    save.mapLayoutId = mapLayoutId & 0xffff;
+    const layout = this.GetMapLayout();
+    if (!layout || !this.loaded) return;
+    const primary = rom.cachedTileset(layout.primary) ?? this.loaded.primary;
+    const secondary = rom.cachedTileset(layout.secondary) ?? this.loaded.secondary;
+    this.loaded = { ...this.loaded, layout, primary, secondary };
+  }
+
   /** GetInitialPlayerAvatarState (overworld.c): unlike the C, this returns the new state instead
    * of also storing it into sInitialPlayerAvatarState — the one caller resets initialAvatar right
    * after using it, so there's nothing left to read gInitialPlayerAvatarState's persisted copy. */
