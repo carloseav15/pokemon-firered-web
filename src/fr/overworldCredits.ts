@@ -244,6 +244,7 @@ function SetUpScrollSceneForCredits(state: { value: number }, _unused: number): 
       return false;
     }
     case 2:
+      if (FieldCB2_Credits_WaitFade()) break;
       if (MapLdr_Credits()) {
         state.value++;
         return false;
@@ -255,6 +256,11 @@ function SetUpScrollSceneForCredits(state: { value: number }, _unused: number): 
       return true;
   }
   return false;
+}
+
+/** FieldCB2_Credits_WaitFade (overworld.c): hold map loading during the previous fade. */
+export function FieldCB2_Credits_WaitFade(): boolean {
+  return !!gPaletteFade.active;
 }
 
 function MapLdr_Credits(): boolean {
