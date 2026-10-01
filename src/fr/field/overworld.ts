@@ -277,6 +277,22 @@ export class Overworld {
   UnlockPlayerFieldControls(): void { this.controlsLocked = false; }
   ArePlayerFieldControlsLocked(): boolean { return this.controlsLocked; }
 
+  /** CB2_FadeFromPartyMenu (party_menu.c): fade the field back in after the menu exits. */
+  CB2_FadeFromPartyMenu(): boolean {
+    this.controlsLocked = true;
+    this.fadeInFromBlack();
+    tasks.create(this.Task_PartyMenuWaitForFade, 10);
+    return true;
+  }
+
+  /** Task_PartyMenuWaitForFade (party_menu.c): resume field controls and scripts after the fade settles. */
+  Task_PartyMenuWaitForFade = (taskId: number): void => {
+    if (!IsWeatherNotFadingIn()) return;
+    tasks.destroy(taskId);
+    this.UnlockPlayerFieldControls();
+    this.script.ScriptContext_Enable();
+  };
+
   // ---------------------------------------------------------------- map data
 
   fetchMap(mapId: string): Promise<LoadedMap> {

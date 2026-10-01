@@ -679,7 +679,7 @@ export class Game {
       scene.leave();
       this.scene = null;
       this.setCallbacks(() => this.overworld.cb1(), () => this.overworld.cb2());
-      this.overworld.script.ScriptContext_Enable();
+      this.overworld.CB2_FadeFromPartyMenu();
     };
     switch (mode) {
       case "moveTutor": ChooseMonForMoveTutor(exit); break;
