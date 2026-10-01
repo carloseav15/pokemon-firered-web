@@ -276,10 +276,24 @@ export function QL_StartRecordingAction(eventId: number, eventIndex: number): Qu
 
 /** SetPokemonCounts (quest_log.c): pack party and PC occupancy into VAR_QUEST_LOG_MON_COUNTS. */
 export function SetPokemonCounts(): void {
-  const partyCount = save.party.reduce((count, mon) => count + Number(mon.species !== C.SPECIES_NONE && (mon as typeof mon & { hasSpecies?: boolean }).hasSpecies !== false), 0);
-  const boxMonCount = save.boxes.reduce((count, box) => count + box.reduce((boxCount, mon) =>
-    boxCount + Number(mon !== null && mon.species !== C.SPECIES_NONE && (mon as typeof mon & { hasSpecies?: boolean }).hasSpecies !== false), 0), 0);
+  const partyCount = QuestLog_GetPartyCount();
+  const boxMonCount = QuestLog_GetBoxMonCount();
   varSet(C.VAR_QUEST_LOG_MON_COUNTS, ((partyCount << 12) + boxMonCount) & 0xffff);
+}
+
+function hasQuestLogSpecies(mon: { species: number; hasSpecies?: boolean } | null): boolean {
+  return mon !== null && mon.species !== C.SPECIES_NONE && mon.hasSpecies !== false;
+}
+
+/** QuestLog_GetPartyCount (quest_log.c): count party slots with a valid species. */
+export function QuestLog_GetPartyCount(): number {
+  return save.party.reduce((count, mon) => count + Number(hasQuestLogSpecies(mon)), 0);
+}
+
+/** QuestLog_GetBoxMonCount (quest_log.c): count valid Pokémon across every PC box. */
+export function QuestLog_GetBoxMonCount(): number {
+  return save.boxes.reduce((count, box) => count + box.reduce((boxCount, mon) =>
+    boxCount + Number(hasQuestLogSpecies(mon)), 0), 0);
 }
 
 /** BackUpTrainerRematches (quest_log.c): pack 64 available-rematch flags into four vars. */
@@ -539,12 +553,10 @@ export function QL_ResetPartyAndPC(): void {
   const targetBoxCount = packedCounts & 0x0fff;
   const placeholder = createMon(C.SPECIES_RATTATA, 1);
   const copyPlaceholder = () => structuredClone(placeholder);
-  const hasSpecies = (mon: { species: number; hasSpecies?: boolean } | null): boolean =>
-    mon !== null && mon.species !== C.SPECIES_NONE && mon.hasSpecies !== false;
-  let partyCount = save.party.filter((mon) => hasSpecies(mon)).length;
+  let partyCount = QuestLog_GetPartyCount();
   while (partyCount > targetPartyCount) {
     let index = save.party.length - 1;
-    while (index >= 0 && !hasSpecies(save.party[index]!)) index--;
+    while (index >= 0 && !hasQuestLogSpecies(save.party[index]!)) index--;
     if (index < 0) break;
     save.party.splice(index, 1);
     partyCount--;
@@ -554,16 +566,16 @@ export function QL_ResetPartyAndPC(): void {
     partyCount++;
   }
 
-  let boxCount = save.boxes.reduce((count, box) => count + box.filter((mon) => hasSpecies(mon)).length, 0);
+  let boxCount = QuestLog_GetBoxMonCount();
   if (boxCount > targetBoxCount) {
     for (const box of save.boxes) for (let slot = 0; slot < box.length; slot++) {
-      if (!hasSpecies(box[slot])) continue;
+      if (!hasQuestLogSpecies(box[slot])) continue;
       box[slot] = null;
       if (--boxCount === targetBoxCount) return;
     }
   } else if (boxCount < targetBoxCount) {
     for (const box of save.boxes) for (let slot = 0; slot < box.length; slot++) {
-      if (hasSpecies(box[slot])) continue;
+      if (hasQuestLogSpecies(box[slot])) continue;
       box[slot] = copyPlaceholder();
       if (++boxCount === targetBoxCount) return;
     }
