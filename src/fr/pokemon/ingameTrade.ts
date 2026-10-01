@@ -351,7 +351,8 @@ export function InitTradeSequenceBgGpuRegs(): void {
   SetTradeSequenceBgGpuRegs(0);
 }
 
-function TradeAnimInit_LoadGfx(): void {
+/** LoadTradeAnimGfx (trade_scene.c): initialize the common trade animation layers and text window. */
+export function LoadTradeAnimGfx(): void {
   SetGpuReg(REG_OFFSET_DISPCNT, 0);
   ResetBgsAndClearDma3BusyFlags(false);
   InitBgsFromTemplates(0, rd<BgTemplate[]>("sBgTemplates"), 4);
@@ -1163,7 +1164,7 @@ export function CB2_InitInGameTrade(): void {
       ResetSpriteData();
       FreeAllSpritePalettes();
       SetVBlankCallback(VBlankCB_TradeAnim);
-      TradeAnimInit_LoadGfx();
+      LoadTradeAnimGfx();
       gMain.state = 5;
       break;
     case 5:
