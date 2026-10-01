@@ -13,15 +13,17 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 
-from common import ROOT, write_output
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import portInventory as P  # noqa: E402
+from common import ROOT, write_output  # noqa: E402
 
 NATIONAL_COUNT = 386
 STAT_ORDER = ("hp", "attack", "defense", "speed", "special_attack", "special_defense")
 FIELDS = ("stats", "types", "abilities", "egg_groups", "catch_rate", "learnset")
-FIRERED_CONSTANTS = ROOT.parent / "pokefirered/include/constants"
 
 
 def constants(path: Path, prefix: str) -> dict[str, int]:
@@ -56,10 +58,11 @@ def main() -> None:
     if missing_national:
         raise SystemExit(f"FireRed data missing national numbers: {missing_national}")
 
-    pokemon_constants = FIRERED_CONSTANTS / "pokemon.h"
+    firered_constants = P.DECOMP / "include/constants"
+    pokemon_constants = firered_constants / "pokemon.h"
     type_ids = constants(pokemon_constants, "TYPE_")
     egg_group_ids = constants(pokemon_constants, "EGG_GROUP_")
-    ability_ids = constants(FIRERED_CONSTANTS / "abilities.h", "ABILITY_")
+    ability_ids = constants(firered_constants / "abilities.h", "ABILITY_")
     move_ids = {move["const"]: move["id"] for move in moves}
     if len(move_ids) != len(moves):
         raise SystemExit("refs/platinum/moves.json: duplicate move constants")

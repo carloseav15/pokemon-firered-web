@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 
-from common import ROOT, source_path, write_output
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import portInventory as P  # noqa: E402
+from common import ROOT, source_path, write_output  # noqa: E402
 
-FIRERED_CONSTANTS = ROOT.parent / "pokefirered/include/constants"
 SPECIES_FIELDS = (
     "stats", "types", "abilities", "egg_groups", "catch_rate",
 )
@@ -63,11 +65,15 @@ def species_differences() -> tuple[list[dict], Counter, Counter]:
     if len(emerald) != 412 or len(firered) != 412:
         raise SystemExit(f"expected 412 species in both datasets, found Emerald={len(emerald)} FireRed={len(firered)}")
 
-    source = source_path("pokeemerald") / "include/constants"
+    emerald_constants = source_path("pokeemerald") / "include/constants"
+    firered_constants = P.DECOMP / "include/constants"
+    firered_type_ids = defines(firered_constants / "pokemon.h", "TYPE_")
+    firered_ability_ids = defines(firered_constants / "abilities.h", "ABILITY_")
+    firered_egg_ids = defines(firered_constants / "pokemon.h", "EGG_GROUP_")
     tables = {
-        "type": defines(source / "pokemon.h", "TYPE_"),
-        "ability": defines(source / "abilities.h", "ABILITY_"),
-        "egg": defines(source / "pokemon.h", "EGG_GROUP_"),
+        "type": defines(emerald_constants / "pokemon.h", "TYPE_"),
+        "ability": defines(emerald_constants / "abilities.h", "ABILITY_"),
+        "egg": defines(emerald_constants / "pokemon.h", "EGG_GROUP_"),
     }
     fr_by_id = {index: row for index, row in enumerate(firered)}
     out = []
@@ -79,6 +85,14 @@ def species_differences() -> tuple[list[dict], Counter, Counter]:
             raise SystemExit(f"{p['const']}: no matching FireRed species index {sid}")
         f = fr_by_id[sid]
         ev = normalized_species(p, tables)
+        for field, allowed in (
+            ("types", set(firered_type_ids.values())),
+            ("abilities", set(firered_ability_ids.values())),
+            ("eggGroups", set(firered_egg_ids.values())),
+        ):
+            for value in f[field]:
+                if value not in allowed:
+                    raise SystemExit(f"FireRed species {sid}: {field} id {value} absent from {P.DECOMP}")
         fv = {
             "stats": f["base"], "types": f["types"], "abilities": f["abilities"],
             "egg_groups": f["eggGroups"], "catch_rate": f["catchRate"],
@@ -89,9 +103,9 @@ def species_differences() -> tuple[list[dict], Counter, Counter]:
         }
         changes = {}
         for field in SPECIES_FIELDS:
-            if fv[field] == ev[field] and fv[field] == raw[field]:
+            if fv[field] == ev[field]:
                 continue
-            kind = "representation" if fv[field] == ev[field] else "real"
+            kind = "real"
             changes[field] = {"values": [fv[field], raw[field]], "kind": kind}
             kinds[kind] += 1
             kind_fields[(kind, field)] += 1
@@ -126,11 +140,11 @@ def move_differences() -> tuple[list[dict], Counter, Counter]:
         changes = {}
         for field in MOVE_FIELDS:
             comparable_emerald = values[field]
-            if field == "accuracy" and comparable_emerald == 0 and firered_values[field] == 100:
-                comparable_emerald = 100  # Both encodings mean that the move cannot miss.
-            kind = "representation" if comparable_emerald == firered_values[field] else "real"
-            if kind == "representation" and raw[field] == firered_values[field]:
+            # Resolve C constants before comparison: equal type ids are not data
+            # differences merely because Emerald spells the type symbolically.
+            if comparable_emerald == firered_values[field]:
                 continue
+            kind = "real"
             changes[field] = {"values": [firered_values[field], raw[field]], "kind": kind}
             kinds[kind] += 1
             kind_fields[(kind, field)] += 1
@@ -140,7 +154,7 @@ def move_differences() -> tuple[list[dict], Counter, Counter]:
 
 
 def report(label: str, differences: list[dict], kinds: Counter, kind_fields: Counter, fields: tuple[str, ...]) -> None:
-    print(f"{label}: {len(differences)} entries differ; {sum(kinds.values())} field differences")
+    print(f"{label}: {kinds['real']} real differences; {len(differences)} entries differ; {sum(kinds.values())} field differences")
     for kind in ("real", "representation"):
         print(f"  {kind}: {kinds[kind]}")
         for field in fields:
