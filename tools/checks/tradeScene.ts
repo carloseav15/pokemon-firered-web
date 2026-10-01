@@ -8,7 +8,7 @@ import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/h
 import { rom } from '../../src/fr/rom.ts';
 import { gMain } from '../../src/fr/hw/runtime.ts';
 import { tasks } from '../../src/fr/gba/tasks.ts';
-import { save, SV, varSet } from '../../src/fr/save.ts';
+import { flagClear, flagGet, save, SV, varSet } from '../../src/fr/save.ts';
 import * as C from '../../src/fr/generated/constants.ts';
 
 const root = process.cwd() + '/public/fr/';
@@ -93,6 +93,17 @@ assert.equal(ball.data[0], -36, 'vertical speed reflects and gravity is applied'
 assert.equal(ball.data[3], 1, 'the bounce count advances');
 assert.equal(ball.data[1], 0, 'horizontal speed stops at the center');
 console.log('✓ Base bouncing Poké Ball matches the C update step');
+
+console.log('--- 2c. Testing received ribbon flag ---');
+flagClear(C.FLAG_SYS_RIBBON_GET);
+const receivedMon = createMon(requested, 10) as ReturnType<typeof createMon> & { ribbons: number[] };
+receivedMon.ribbons = new Array(18).fill(0);
+Trade.CheckPartnersMonForRibbons(receivedMon);
+assert.equal(flagGet(C.FLAG_SYS_RIBBON_GET), false, 'no ribbons leave the save flag clear');
+receivedMon.ribbons[5] = 1; // MON_DATA_CHAMPION_RIBBON
+Trade.CheckPartnersMonForRibbons(receivedMon);
+assert.equal(flagGet(C.FLAG_SYS_RIBBON_GET), true, 'any received ribbon sets FLAG_SYS_RIBBON_GET');
+console.log('✓ Received ribbon flag matches the C ribbon range');
 
 console.log('--- 3. Testing trade scene initialization and animation stepping ---');
 Trade.CB2_InitInGameTrade();

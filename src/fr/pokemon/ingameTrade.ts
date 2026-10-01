@@ -1091,10 +1091,10 @@ export function DoTradeAnim(): boolean {
   return sTradeAnim.isCableTrade ? DoTradeAnim_Cable() : DoTradeAnim_Wireless();
 }
 
-function CheckPartnersMonForRibbons(): void {
-  if (!tradeMon) return;
+export function CheckPartnersMonForRibbons(mon: Pokemon | null = tradeMon): void {
+  if (!mon) return;
   for (let field = C.MON_DATA_CHAMPION_RIBBON; field < C.MON_DATA_UNUSED_RIBBONS; field++) {
-    if (GetMonData(tradeMon, field)) {
+    if (GetMonData(mon, field)) {
       flagSet(C.FLAG_SYS_RIBBON_GET);
       return;
     }
