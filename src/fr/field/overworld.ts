@@ -686,7 +686,7 @@ export class Overworld {
       QuestLog_CheckDepartingIndoorsMap();
       QuestLog_TryRecordDepartedLocation();
     }
-    this.InitMapView();
+    this.InitViewGraphics();
     QL_TryStopSurfing();
     const prevSection = this.lastUsedWarpSection();
     const currSection = this.header.regionMapSection;
@@ -1011,6 +1011,12 @@ export class Overworld {
     this.renderer = new TileRenderer(this.loaded.primary, this.loaded.secondary);
     this.animator = new TilesetAnimator(this.renderer);
     this.doors.reset();
+  }
+
+  /** InitViewGraphics (overworld.c): install the flash scanline effect and rebuild the Canvas map view. */
+  InitViewGraphics(): void {
+    this.InitCurrentFlashLevelScanlineEffect();
+    this.InitMapView();
   }
 
   /** GetMapLayout (overworld.c): resolve the save block's one-based layout ID. */

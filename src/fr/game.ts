@@ -1009,6 +1009,7 @@ export class Game {
     ow.ResumeMap();
     ow.ReloadObjectsAndRunReturnToFieldMapScript();
     ow.SetCameraToTrackPlayer();
+    ow.InitViewGraphics();
     ow.SetHelpContextForMap();
     if (playMusic) ow.FieldCB_ContinueScriptHandleMusic();
     else ow.FieldCB_ContinueScript();
@@ -1025,6 +1026,7 @@ export class Game {
     ow.ResumeMap();
     ow.ReloadObjectsAndRunReturnToFieldMapScript();
     ow.SetCameraToTrackPlayer();
+    ow.InitViewGraphics();
     ow.SetHelpContextForMap();
     ow.FieldCB_WarpExitFadeFromBlack();
     ow.objects.unfreezeAll();
