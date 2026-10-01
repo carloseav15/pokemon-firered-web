@@ -23,7 +23,7 @@ import { MAP_OFFSET, MapGridGetElevationAt, MapGridGetMetatileAttributeAt, MapGr
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, type ObjectEvent } from "./objectEvents";
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
-import { PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_NORMAL, PLAYER_AVATAR_GFX_RIDE } from "./playerAvatar";
+import { PlayerGetDestCoords, PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_NORMAL, PLAYER_AVATAR_GFX_RIDE } from "./playerAvatar";
 import { SetHelpContext } from "../helpSystem";
 import { CalculatePlayerPartyCount } from "../pokemon/mon";
 import { QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode } from "../questLogEvents";
@@ -32,6 +32,7 @@ import { FldEff_UseVsSeeker } from "./vsSeeker";
 type Overlay = (ctx: CanvasRenderingContext2D) => void;
 type FieldMoveShowMonTask = { id: number; data: Int16Array; mon: Sprite; outdoors: boolean; image?: HTMLCanvasElement; overlay?: Overlay };
 type PokeballGlowTask = { id: number; data: Int16Array; glow: Sprite; monitor?: Sprite };
+type UseDiveTask = { id: number; data: Int16Array };
 type PokeballGlowSprite = { palette: Uint16Array; unfaded: Uint16Array; gfx: Uint8Array; cacheKey: string; image?: HTMLCanvasElement };
 /** gFieldEffectArguments[0] bit 31: play the cry without ducking (Surf). */
 const SHOW_MON_CRY_NO_DUCKING = 0x80000000;
@@ -125,7 +126,7 @@ export class FieldMoveEffects {
         return true;
       case C.FLDEFF_USE_SURF: this.FldEff_UseSurf(); return true;
       case C.FLDEFF_USE_WATERFALL: this.FldEff_UseWaterfall(); return true;
-      case C.FLDEFF_USE_DIVE: this.remove(id); return true; // no Dive maps in FireRed
+      case C.FLDEFF_USE_DIVE: this.FldEff_UseDive(); return true;
       case C.FLDEFF_POKECENTER_HEAL: this.FldEff_PokecenterHeal(); return true;
       case C.FLDEFF_HALL_OF_FAME_RECORD: this.FldEff_HallOfFameRecord(); return true;
       case C.FLDEFF_SWEET_SCENT: this.FieldCallback_SweetScent(); return true;
@@ -470,6 +471,36 @@ export class FieldMoveEffects {
     ow.savedMusic = 0;
     if (musicCanOverrideMapMusic(ow, C.MUS_SURF)) sound.playNewMapMusic(C.MUS_SURF);
     task.id = tasks.create(() => this.Task_FldEffUseSurf(task), 0xff);
+  }
+
+  /** FldEff_UseDive / Task_UseDive (field_effect.c); FireRed has no map Dive links. */
+  private FldEff_UseDive(): void {
+    const task: UseDiveTask = { id: 0, data: new Int16Array(16) };
+    task.data[15] = this.args[0]!;
+    task.data[14] = this.args[1]!;
+    task.id = tasks.create(() => this.Task_UseDive(task), 0xff);
+    this.Task_UseDive(task);
+  }
+
+  private Task_UseDive(task: UseDiveTask): void {
+    switch (task.data[0]) {
+      case 0:
+        this.ow.player.preventStep = true;
+        task.data[0]++;
+        break;
+      case 1:
+        this.ow.LockPlayerFieldControls();
+        this.args[0] = task.data[15]!;
+        this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
+        task.data[0]++;
+        break;
+      case 2:
+        if (this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) break;
+        this.ow.control.dive_warp(PlayerGetDestCoords(), this.ow.player.object.currentMetatileBehavior);
+        tasks.destroy(task.id);
+        this.remove(C.FLDEFF_USE_DIVE);
+        break;
+    }
   }
 
   private Task_FldEffUseSurf(task: { id: number; data: Int16Array }): void {
