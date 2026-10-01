@@ -336,13 +336,11 @@ export function Overworld_DoScrollSceneForCredits(state_p: { value: number }, sc
 function SetUpScrollSceneForCredits(state: { value: number }, _unused: number): boolean {
   switch (state.value) {
     case 0:
-      console.log("CREDITDBG RESET", sCreditsOverworld_Script[0], state.value);
       sCreditsOverworld_CmdIndex = 0;
       sCreditsOverworld_CmdLength = 0;
       state.value++;
       return false;
     case 1: {
-      console.log("CREDITDBG LOAD", sCreditsOverworld_CmdIndex, sCreditsOverworld_Script[sCreditsOverworld_CmdIndex], sCreditsOverworld_Script.length);
       const group = sCreditsOverworld_Script[sCreditsOverworld_CmdIndex].unk_2;
       const num = sCreditsOverworld_Script[sCreditsOverworld_CmdIndex].unk_4;
       sCreditsOverworld_CmdIndex++;

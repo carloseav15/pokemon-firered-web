@@ -211,7 +211,7 @@ export const H = {
       if (x === tx && y === ty) break;
       for (const [dx, dy, dir, , name] of DIRS) {
         let nx = x + dx, ny = y + dy;
-        const c = objects.collisionAt(player, nx, ny, dir);
+        const c = objects.GetCollisionAtCoords(player, nx, ny, dir);
         if (c === COLLISION_LEDGE_JUMP) { nx += dx; ny += dy; }
         else if (c !== COLLISION_NONE && !(nx === tx && ny === ty && c === COLLISION_OBJECT_EVENT)) continue;
         const k = key(nx, ny);
