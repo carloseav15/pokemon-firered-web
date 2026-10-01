@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9717/10115 (96.1 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **398 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9721/10115 (96.1 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **394 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~8.944 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~8.881 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -32,10 +32,10 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 12 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 13 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 14 | `quest_log.c` | casi completo | 1767 | 76/88 | ~240 |  |
-| 15 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
-| 16 | `field_effect.c` | casi completo | 4033 | 215/239 | ~404 |  |
+| 15 | `field_effect.c` | casi completo | 4033 | 218/239 | ~354 |  |
+| 16 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
 | 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 18 | `event_object_movement.c` | casi completo | 9412 | 716/759 | ~533 |  |
+| 18 | `event_object_movement.c` | casi completo | 9412 | 717/759 | ~520 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
 | 20 | `trade_scene.c` | parcial | 2916 | 38/53 | ~825 |  |
 | 21 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
@@ -85,6 +85,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Pantalla de nombres: 104/109 funciones (`naming_screen.c`); estados, sprites, iconos, renderizado, teclado y callbacks conectados. Quedan cinco `Debug_NamingScreen*` estáticos sin callers en el C; pantalla e historia sin validar en navegador.
 - Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial; Dive conserva la secuencia single-player heredada, pero los mapas FireRed no definen conexiones Dive.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
+- Huecos de caller individual revisados: `quest_log.c` conserva helpers de punteros/layout GBA y callback de objeto sustituido por el driver web; `event_object_movement.c` mantiene la cámara, reflexiones, plantillas de hardware y helpers sin caller detrás del render Canvas; `field_effect.c` conserva el VM GBA y la gestión de tiles/paletas, mientras el renderer web posee los recursos de imagen.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
 - Quest Log: el playback restaura flags/vars, rematches, party/cajas, objetos y layout; las cargas normal/warp usan el driver escalonado de C, avanzan escenas y restauran el save. El retorno al mapa guardado está conectado; faltan validar ese retorno y la reproducción/UI en navegador.
