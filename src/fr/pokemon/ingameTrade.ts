@@ -11,7 +11,7 @@
 //  - GBA affine zoom in/out with hardware REG_BG2 registers and screen flash
 //  - Mon release animation using CreatePokeballSpriteToReleaseMon
 //  - TradeMons updating party, friendship (70), and Pokedex flags
-//  - Post-trade evolution checking (tradeEvolution & evolveWithMessages)
+//  - Post-trade evolution checking (STATE_TRY_EVOLUTION → TradeEvolutionScene)
 
 import * as C from "../generated/constants";
 import { sound } from "../audio/sound";
@@ -55,11 +55,12 @@ import {
 import { rom } from "../rom";
 import { flagSet, save, SV, varGet } from "../save";
 import { GetMonData } from "./mon";
-import { calculateStats, createMon, nickname, setDexFlag, speciesName, tradeEvolution, type Pokemon } from "./pokemon";
+import { calculateStats, createMon, nickname, setDexFlag, speciesName, type Pokemon } from "./pokemon";
 import { GetInGameTradeMail } from "./mail";
 import { GetMonFrontSpritePal, LoadSpecialPokePic } from "./pics";
-import { evolveWithMessages } from "../menus/monProgress";
 import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "../battle/pokeball";
+import { GetEvolutionTargetSpecies } from "../battle/ext";
+import { SetCB2AfterEvolution, TradeEvolutionScene } from "../evolutionScene";
 
 const DISPLAY_WIDTH = 240;
 const DISPLAY_HEIGHT = 160;
@@ -374,6 +375,13 @@ export function DrawTextOnTradeWindow(windowId: number, str: Uint8Array | number
   const textColor = [15, 1, 6];
   AddTextPrinterParameterized4(windowId, FONT_NORMAL, 0, 2, 0, 2, textColor, speed, str);
   CopyWindowToVram(windowId, COPYWIN_FULL);
+}
+
+/** LinkTradeDrawWindow (trade_scene.c). */
+export function LinkTradeDrawWindow(): void {
+  FillWindowPixelBuffer(0, PIXEL_FILL(15));
+  PutWindowTilemap(0);
+  CopyWindowToVram(0, COPYWIN_FULL);
 }
 
 // ---------------------------------------------------------------- Sprites & Templates
@@ -1057,8 +1065,17 @@ export function DoTradeAnim_Cable(): boolean {
       }
       break;
     case STATE_TRY_EVOLUTION: {
+      // Only for in-game trades; link trades use CB2_TryLinkTradeEvolution (link, out of scope).
       const playerSlot = varGet(SV.x8005);
       TradeMons(playerSlot, 0);
+      SetCB2AfterEvolution(CB2_InGameTrade);
+      const received = save.party[playerSlot];
+      const evoTarget = received && !received.isEgg
+        ? GetEvolutionTargetSpecies(received, C.EVO_MODE_TRADE, C.ITEM_NONE)
+        : C.SPECIES_NONE;
+      if (evoTarget !== C.SPECIES_NONE && received) {
+        TradeEvolutionScene(received, evoTarget, sTradeAnim.monSpriteIds[TRADE_PARTNER], playerSlot);
+      }
       sTradeAnim.state++;
       break;
     }
@@ -1071,16 +1088,9 @@ export function DoTradeAnim_Cable(): boolean {
         sound.playBGM(sTradeAnim.cachedMapMusic);
         FreeAllWindowBuffers();
         const cb = sTradeAnim.tradeCallback;
-        const received = save.party[varGet(SV.x8005)];
         sTradeAnim = null;
         tradeMon = null;
-
-        const evoTarget = received && !received.isEgg ? tradeEvolution(received) : 0;
-        if (evoTarget && received.heldItem !== C.ITEM_EVERSTONE) {
-          evolveWithMessages(received, evoTarget, () => { if (cb) cb(); });
-        } else {
-          if (cb) cb();
-        }
+        if (cb) cb();
         return true;
       }
       break;

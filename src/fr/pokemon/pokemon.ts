@@ -493,15 +493,6 @@ export function itemEvolution(mon: Pokemon, item: number): number {
   return 0;
 }
 
-export function tradeEvolution(mon: Pokemon): number {
-  const c = rom.constants;
-  for (const [method, param, target] of rom.species[mon.species].evolutions) {
-    if (method === c.EVO_TRADE) return target;
-    if (method === c.EVO_TRADE_ITEM && mon.heldItem === param) return target;
-  }
-  return 0;
-}
-
 /** EvolutionRenameMon (pokemon.c): the nickname is the old species name only in this game's
  *  language, and then it follows the new species. */
 export function EvolutionRenameMon(mon: Pokemon, oldSpecies: number, newSpecies: number): void {

@@ -28,7 +28,7 @@ import { GetSetPokedexFlag, PartyMonHasStatus } from "../pokemon/mon_extra";
 import { IsPokemonStorageFull } from "../pokemon/storage";
 import { symPalette } from "../pokemon/pics";
 import { rom } from "../rom";
-import { flagGet, flagSet, incrementGameStat, save, varGet, varSet } from "../save";
+import { flagGet, flagSet, incrementGameStat, IsNationalPokedexEnabled, save, varGet, varSet } from "../save";
 import { BattlePokemon } from "../generated/structs";
 import {
   G, gBattleMons, gBattlePartyCurrentOrder, gBattleTextBuff1, gBattleTextBuff2, gBattlerPartyIndexes, gBattleResults, gBattleScripting, gBattleStruct,
@@ -402,10 +402,32 @@ export { EvolutionScene };
 
 export function GetEvolutionTargetSpecies(mon: Mon, mode: number, evolutionItem: number): number {
   const heldItem = GetMonData(mon, C.MON_DATA_HELD_ITEM);
-  if (ItemId_GetHoldEffect(heldItem) === C.HOLD_EFFECT_PREVENT_EVOLVE && mode !== C.EVO_MODE_TRADE) return C.SPECIES_NONE;
+  // pokemon.c: Everstone blocks every mode except EVO_MODE_ITEM_CHECK.
+  if (ItemId_GetHoldEffect(heldItem) === C.HOLD_EFFECT_PREVENT_EVOLVE && mode !== C.EVO_MODE_ITEM_CHECK) return C.SPECIES_NONE;
   if (mode === C.EVO_MODE_NORMAL) return levelUpEvolution(mon as Pokemon);
   if (mode === C.EVO_MODE_ITEM_USE || mode === C.EVO_MODE_ITEM_CHECK) return itemEvolution(mon as Pokemon, evolutionItem);
+  if (mode === C.EVO_MODE_TRADE) return tradeModeEvolution(mon);
   return C.SPECIES_NONE;
+}
+
+/** pokemon.c GetEvolutionTargetSpecies, EVO_MODE_TRADE branch (trade_scene.c STATE_TRY_EVOLUTION). */
+function tradeModeEvolution(mon: Mon): number {
+  const species = GetMonData(mon, C.MON_DATA_SPECIES);
+  const heldItem = GetMonData(mon, C.MON_DATA_HELD_ITEM);
+  let target = C.SPECIES_NONE;
+  for (const [method, param, evoTarget] of rom.species[species]?.evolutions ?? []) {
+    if (method === C.EVO_TRADE) {
+      target = evoTarget;
+    } else if (method === C.EVO_TRADE_ITEM && param === heldItem) {
+      target = evoTarget;
+      // Prevent cross-generational evolutions like Scizor and Steelix until the National Pokedex is obtained.
+      if (IsNationalPokedexEnabled() || evoTarget <= C.KANTO_SPECIES_END) {
+        SetMonData(mon, C.MON_DATA_HELD_ITEM, C.ITEM_NONE);
+        target = evoTarget;
+      }
+    }
+  }
+  return target;
 }
 
 export function GiveMonToPlayer(mon: Mon): number {
