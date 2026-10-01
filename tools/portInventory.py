@@ -22,7 +22,11 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DECOMP = Path(os.environ.get("POKEFIRERED", ROOT.parent / "pokefirered")).resolve()
+if os.environ.get("POKEFIRERED"):
+    DECOMP = Path(os.environ["POKEFIRERED"]).resolve()
+else:
+    sibling = ROOT.parent / "pokefirered"
+    DECOMP = (sibling if sibling.exists() else ROOT / "pokefirered").resolve()
 SRC = ROOT / "src" / "fr"
 OUT = ROOT / "PORT-INVENTORY.md"
 

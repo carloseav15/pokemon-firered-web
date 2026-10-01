@@ -53,7 +53,8 @@ import {
   InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "../hw/window";
 import { rom } from "../rom";
-import { save, SV, varGet } from "../save";
+import { flagSet, save, SV, varGet } from "../save";
+import { GetMonData } from "./mon";
 import { calculateStats, createMon, nickname, setDexFlag, speciesName, tradeEvolution, type Pokemon } from "./pokemon";
 import { attachTradeMail } from "./mail";
 import { GetMonFrontSpritePal, LoadSpecialPokePic } from "./pics";
@@ -426,7 +427,22 @@ export function SpriteCB_GbaScreen(sprite: Sprite): void {
 }
 
 export function SpriteCB_BouncingPokeball(sprite: Sprite): void {
-  // dummy / base
+  // trade_scene.c stores these values in s16 Sprite.data slots and s16 x/y.
+  const s16 = (value: number) => (value << 16) >> 16;
+  sprite.y = s16(sprite.y + Math.trunc(sprite.data[0] / 10));
+  sprite.data[5] = s16(sprite.data[5] + sprite.data[1]);
+  sprite.x = s16(Math.trunc(sprite.data[5] / 10));
+  if (sprite.y > 76) {
+    sprite.y = 76;
+    sprite.data[0] = s16(Math.trunc(-(sprite.data[0] * sprite.data[2]) / 100));
+    sprite.data[3] = s16(sprite.data[3] + 1);
+  }
+  if (sprite.x === 120) sprite.data[1] = 0;
+  sprite.data[0] = s16(sprite.data[0] + sprite.data[4]);
+  if (sprite.data[3] === 4) {
+    sprite.data[7] = 1;
+    sprite.callback = SpriteCallbackDummy;
+  }
 }
 
 export function SpriteCB_BouncingPokeballDepart(sprite: Sprite): void {
@@ -1076,7 +1092,13 @@ export function DoTradeAnim(): boolean {
 }
 
 function CheckPartnersMonForRibbons(): void {
-  // Flag ribbon logic if applicable
+  if (!tradeMon) return;
+  for (let field = C.MON_DATA_CHAMPION_RIBBON; field < C.MON_DATA_UNUSED_RIBBONS; field++) {
+    if (GetMonData(tradeMon, field)) {
+      flagSet(C.FLAG_SYS_RIBBON_GET);
+      return;
+    }
+  }
 }
 
 export function UpdatePokedexForReceivedMon(partyIdx: number): void {
