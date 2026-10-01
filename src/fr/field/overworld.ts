@@ -665,13 +665,14 @@ export class Overworld {
       case 2:
         this.loadState = 3;
         void this.loadPromise!.then((loaded) => {
-          this.finishMapLoad(loaded);
+          this.CB2_LoadMap2(loaded);
         });
         break;
     }
   }
 
-  private finishMapLoad(loaded: LoadedMap): void {
+  /** CB2_LoadMap2 (overworld.c): async map bytes are already fetched in the browser port. */
+  private CB2_LoadMap2(loaded: LoadedMap): void {
     this.setPlayerCoordsFromWarp(loaded.header, loaded.layout.width, loaded.layout.height);
     this.loadMapFromWarp(loaded);
     QuestLog_InitPalettesBackup();
