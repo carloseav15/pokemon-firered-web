@@ -483,24 +483,40 @@ export class FieldMoveEffects {
   }
 
   private Task_UseDive(task: UseDiveTask): void {
-    switch (task.data[0]) {
-      case 0:
-        this.ow.player.preventStep = true;
-        task.data[0]++;
-        break;
-      case 1:
-        this.ow.LockPlayerFieldControls();
-        this.args[0] = task.data[15]!;
-        this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
-        task.data[0]++;
-        break;
-      case 2:
-        if (this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) break;
-        this.ow.control.dive_warp(PlayerGetDestCoords(), this.ow.player.object.currentMetatileBehavior);
-        tasks.destroy(task.id);
-        this.remove(C.FLDEFF_USE_DIVE);
-        break;
-    }
+    let advance: boolean;
+    do {
+      switch (task.data[0]) {
+        case 0: advance = this.DiveFieldEffect_Init(task); break;
+        case 1: advance = this.DiveFieldEffect_ShowMon(task); break;
+        case 2: advance = this.DiveFieldEffect_TryWarp(task); break;
+        default: advance = false; break;
+      }
+    } while (advance);
+  }
+
+  /** DiveFieldEffect_Init (field_effect.c). */
+  private DiveFieldEffect_Init(task: UseDiveTask): boolean {
+    this.ow.player.preventStep = true;
+    task.data[0]++;
+    return false;
+  }
+
+  /** DiveFieldEffect_ShowMon (field_effect.c). */
+  private DiveFieldEffect_ShowMon(task: UseDiveTask): boolean {
+    this.ow.LockPlayerFieldControls();
+    this.args[0] = task.data[15]!;
+    this.fieldEffectStart(C.FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
+    task.data[0]++;
+    return false;
+  }
+
+  /** DiveFieldEffect_TryWarp (field_effect.c). */
+  private DiveFieldEffect_TryWarp(task: UseDiveTask): boolean {
+    if (this.active.has(C.FLDEFF_FIELD_MOVE_SHOW_MON)) return false;
+    this.ow.control.dive_warp(PlayerGetDestCoords(), this.ow.player.object.currentMetatileBehavior);
+    tasks.destroy(task.id);
+    this.remove(C.FLDEFF_USE_DIVE);
+    return false;
   }
 
   private Task_FldEffUseSurf(task: { id: number; data: Int16Array }): void {
