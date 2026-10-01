@@ -72,8 +72,13 @@ ln -s ../pokemon/.decomp-build .decomp-build
 - Lee el cuerpo C completo antes de cambiar código. No inventes comportamiento.
 - Conserva los nombres C, el orden de estados y callbacks, y la aritmética
   (u8 → `& 0xFF`, s16 → `(x << 16) >> 16`, división entera → `Math.trunc`).
-- No cambies `tools/portInventory.py`, las baselines de `check:honesty` ni las
-  aserciones de un check para que pase.
+- No cambies `tools/portInventory.py` ni las baselines de `check:honesty`.
+- **Aserciones de un check:** no las cambies para que un check pase. **Sí corrígelas
+  cuando contradigan al C**: cita en un comentario la línea exacta del C, márcalo
+  `PISTA INCORRECTA` y explica en el commit qué decía y qué dice el C. El C es la
+  verdad; un check que exige algo distinto del C está mal. (Caso 2026-10-01: tres
+  aserciones corregidas hacia el C se revirtieron por error y se restauraron.)
+- **No añadas entradas a `tools/checks/known-failing.json`** sin permiso del usuario.
 - No borres una tarea sin hacerla. Si no puedes terminarla, escribe debajo una
   línea `BLOQUEADO: <motivo concreto>` y pasa a la siguiente.
 - Si llevas dos intentos fallidos con el mismo error, para y anótalo como bloqueado.
@@ -394,9 +399,11 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
 - [ ] **1.11 Checks headless con fallos propios** [básico/medio]. El 2026-10-01 se
   hizo perezoso `sText_100` (`battle_tower.c`), que se codificaba en ámbito de módulo
   y rompía la carga de 26 checks; 18 pasaban. En esta sesión se repararon escenarios
-  de datos, exports C y mocks; ahora pasan 8 de los 12 fallos conocidos. Cuatro
-  continúan bloqueados por checks/API fuera del alcance o expectativas que contradicen
-  el C; no alterar sus aserciones ni ampliar baselines.
+  de datos, exports C y mocks. **Estado 2026-10-01 (revisión de Claude):** 11 de los
+  12 resueltos. `evolution`, `famechecker` y `transitions` pasan con sus aserciones
+  corregidas hacia el C (commit que revierte `3ba1e38b`); solo queda
+  `check:questlog-battle` en `known-failing.json`. Las notas de "BLOQUEADO" de esos
+  tres checks, más abajo, quedan superadas.
   - **Hechos (commits `d9effcdd`, `54d16cb0` y esta sesión):** `anims`, `slots`, `weather`,
     `earlybattles`, `brock-action`, `card`, `teachytv`, `trainer-see`. Datos
     cdata/incbin/packs registrados como hace
