@@ -21,7 +21,7 @@ import { AdjustFriendship } from "../pokemon/mon_extra";
 import { tasks } from "../gba/tasks";
 import { GetRamScript } from "../script/context";
 import { StartEscalatorWarp } from "./escalatorWarp";
-import { QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, QuestLogPlayback_FinalSceneRunCB, QuestLogPlayback_RunCB, QuestLogScenePlaybackIsEnding, type QuestLogPlaybackCommands } from "../questLogEvents";
+import { QL_HandleInput, QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, QuestLogPlayback_FinalSceneRunCB, QuestLogPlayback_RunCB, QuestLogScenePlaybackIsEnding, type QuestLogPlaybackCommands } from "../questLogEvents";
 import { QuestLogUpdatePlayerSprite } from "../questLogPlayer";
 import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
 import { InUnionRoom } from "../unionRoom";
@@ -154,6 +154,7 @@ export class FieldControl {
     this.applyQuestLogCommands(questLogCommands);
     const player = this.ow.player;
     player.UpdatePlayerAvatarTransitionState();
+    if (gQuestLogState === C.QL_STATE_PLAYBACK) QL_HandleInput(newKeys);
     const input = emptyInput();
     const playback = gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING
       || gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END;
@@ -182,7 +183,7 @@ export class FieldControl {
       }
     }
     if (gQuestLogState === C.QL_STATE_PLAYBACK && !startedFieldAction
-      && (!this.ow.controlsLocked || QuestLogScenePlaybackIsEnding())) QuestLogPlayback_RunCB(this.ow, newKeys);
+      && (!this.ow.controlsLocked || QuestLogScenePlaybackIsEnding())) QuestLogPlayback_RunCB(this.ow);
     QuestLogPlayback_FinalSceneRunCB(this.ow, newKeys);
   }
 

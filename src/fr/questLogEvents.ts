@@ -726,21 +726,24 @@ export function TogglePlaybackStateForOverworldLock(lock: boolean): void {
   else if (!lock && gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_ACTION_END) gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_RUNNING;
 }
 
-/** QL_HandleInput and QLogCB_Playback (quest_log.c); called by DoCB1_Overworld_QuestLogPlayback. */
-export function QuestLogPlayback_RunCB(ow: Overworld, newKeys: number): void {
-  if (sPlaybackEndMode === 0) {
-    if (newKeys & 1) {
-      sPlaybackEndMode = 1;
-      gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-      FadeScreen(FADE_TO_BLACK, -3);
-      sPlaybackTransitionStarted = true;
-    } else if (newKeys & 2) {
-      sPlaybackEndMode = 2;
-      gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-      FadeScreen(FADE_TO_BLACK, -3);
-      sPlaybackTransitionStarted = true;
-    }
+/** QL_HandleInput (quest_log.c): A skips the current scene; B ends the playback. */
+export function QL_HandleInput(newKeys: number): void {
+  if (gQuestLogState !== C.QL_STATE_PLAYBACK || sPlaybackEndMode !== 0) return;
+  if (newKeys & 1) {
+    sPlaybackEndMode = 1;
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    FadeScreen(FADE_TO_BLACK, -3);
+    sPlaybackTransitionStarted = true;
+  } else if (newKeys & 2) {
+    sPlaybackEndMode = 2;
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    FadeScreen(FADE_TO_BLACK, -3);
+    sPlaybackTransitionStarted = true;
   }
+}
+
+/** QLogCB_Playback (quest_log.c): advance timed event text and end states. */
+export function QuestLogPlayback_RunCB(ow: Overworld): void {
   if (sPlaybackEndMode !== 0) {
     if (!sPlaybackTransitionStarted) {
       FadeScreen(FADE_TO_BLACK, 0);
