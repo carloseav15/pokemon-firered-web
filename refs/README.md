@@ -28,7 +28,9 @@ npm run refs:check
   primera vez. Para una sola fuente: `npm run refs:fetch -- pokeplatinum`.
 - `refs:check` debe decir `PASS`. Si falla antes de tocar nada, para y avisa.
 
-Elige **una** tarea sin marcar de la sección 3 y trabaja solo en ella.
+Elige **una** tarea sin marcar de la sección 3 y trabaja solo en ella. Si hay otro
+agente activo, trabaja en tu propia carpeta y rama (ver "Trabajo en paralelo" en
+`TAREAS-FINALES.md` §0).
 
 ### Reglas que no se rompen
 
@@ -319,3 +321,28 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   - Verificado: 0 especies y 1 movimiento con diferencias reales; el movimiento es
     `MOVE_NATURE_POWER` (precisión FireRed 0, Emerald 95). `refs:all` pasa también
     desde un worktree en otra carpeta con `POKEFIRERED` y `REFS_SRC` explícitos.
+- [ ] **R17 Catálogo de sistemas exclusivos de Emerald** [básico]. Lee
+  `refs/emerald/functions.json` (no la fuente) y agrupa los 103 archivos con
+  `status: "emerald_only"` (123.905 líneas, comprobado) en sistemas: Frente Batalla
+  (`battle_dome`, `battle_factory*`, `battle_pike`, `battle_pyramid*`, `battle_arena`,
+  `battle_palace`, `frontier_*`, `apprentice`, `trainer_hill`…), concursos
+  (`contest*`), Pokécubos y bayas (`pokeblock*`, `use_pokeblock`, `berry_blender`,
+  `berry_tag_screen`), PokéNav y Match Call (`pokenav*`, `match_call`), bases secretas
+  (`secret_base`), TV y personajes (`tv`, `mauville_old_man`, `lilycove_lady`…),
+  escenas de historia (`rayquaza_scene`, `mirage_tower`, `faraway_island`…), reloj
+  (`wallclock`, `reset_rtc_screen`, `rtc`), enlace/grabación (`record_mixing`,
+  `recorded_battle`, `battle_controller_recorded_*`) y "otros". Salida
+  `refs/emerald/systems.json`: por sistema, archivos, líneas y funciones. Terminada
+  cuando: cada uno de los 103 archivos aparece en exactamente un sistema y los totales
+  suman 103 archivos y 123.905 líneas.
+- [ ] **R18 Scripts de mapas de Emerald** [medio]. Los 468 `data/maps/*/scripts.inc`
+  ya están en el sparse. Genera `refs/emerald/scripts.json` con, por mapa: número de
+  etiquetas de script, `special` y `specialvar` llamados, y flags y vars usados
+  (`setflag`, `checkflag`, `goto_if_set`, `setvar`, `compare`…). Después compara la
+  lista de specials con los de FireRed (`../pokefirered/data/specials.inc`) y marca
+  cuáles no existen en FireRed: es la lista de trabajo del futuro port de Emerald.
+- [ ] **R19 Eventos de zona de HeartGold** [medio]. Añade
+  `/files/fielddata/eventdata/zone_event/` al sparse de `pokeheartgold` (491 JSON en
+  el commit fijado) y genera `refs/heartgold/zone_events.json` con, por zona, el
+  número de objetos, warps, eventos de fondo y de coordenadas, más los warps con su
+  destino. R7 describe el formato.

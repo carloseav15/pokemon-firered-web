@@ -34,6 +34,30 @@ git status --short
 `git status` debe salir vacío. Si no, para y pregunta al usuario: no son tus cambios.
 Elige **una** tarea sin marcar y trabaja solo en ella.
 
+### Trabajo en paralelo (varios agentes a la vez)
+
+Si hay más de un agente activo, **cada uno trabaja en su propia carpeta y rama**
+(worktree). Nunca dos agentes en la misma carpeta: se pisan cambios sin commitear
+(el 2026-10-01 se perdió un arreglo y hubo un `stash` sobre trabajo ajeno).
+
+```bash
+# una vez por agente, desde la carpeta principal ../pokemon
+git worktree add ../pokemon-<agente> -b <agente>/<tarea> main
+cd ../pokemon-<agente>
+ln -s ../pokemon/node_modules node_modules
+ln -s ../pokemon/.decomp-build .decomp-build
+```
+
+- La carpeta debe ser **hermana** de `pokemon` (`../pokemon-<agente>`): así los
+  scripts encuentran solos `../pokefirered` y `../refs-src`. Comprobado: `check:port`,
+  `build`, `refs:check` y los checks de Clang pasan desde ahí.
+- Trabaja y haz commit **en tu rama**; no hagas `git switch main`, `merge` ni `push`.
+  La revisión y la fusión en `main` las hace el revisor (Claude o el usuario).
+- Antes de empezar una tarea nueva, trae lo último: `git rebase main` desde tu rama
+  (si choca, para y avisa).
+- Las tareas de un agente no deben tocar archivos que esté editando otro. Si dudas,
+  pregunta antes de empezar.
+
 ### Dónde está cada cosa
 
 - C original: `../pokefirered/src/<archivo>.c` (resuelto por `tools/decomp/common.py`).

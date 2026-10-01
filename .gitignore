@@ -1,10 +1,10 @@
-node_modules/
+node_modules
 dist/
 .DS_Store
 assets/gba-reference/
 
 # Generated build and Python caches
-.decomp-build/
+.decomp-build
 *.tsbuildinfo
 __pycache__/
 *.py[cod]
