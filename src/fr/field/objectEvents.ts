@@ -1923,9 +1923,39 @@ export class ObjectEvents {
   /** UpdateObjectEventCallback / ObjectEventCB for every object. */
   update(cameraX: number, cameraY: number): void {
     for (const object of this.list) {
-      this.UpdateObjectEventCurrentMovement(object, cameraX, cameraY);
+      if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING)
+        this.QL_UpdateObjectEventCurrentMovement(object, cameraX, cameraY);
+      else this.UpdateObjectEventCurrentMovement(object, cameraX, cameraY);
       this.UpdateObjectEventElevationAndPriority(object);
     }
+  }
+
+  /** QL_UpdateObjectEventCurrentMovement (event_object_movement.c): Quest Log's object callback. */
+  QL_UpdateObjectEventCurrentMovement(object: ObjectEvent, cameraX: number, cameraY: number): void {
+    const sprite = object.sprite;
+    if (object.triggerGroundEffectsOnMove) {
+      this.doGroundEffect(object, "spawn");
+      object.triggerGroundEffectsOnMove = false;
+    }
+    this.TryEnableObjectEventAnim(object, sprite);
+    if (ObjectEventIsHeldMovementActive(object) && !sprite.animBeginning)
+      this.QuestLogObjectEventExecHeldMovementAction(object, sprite);
+
+    object.disableAnim = MB.MetatileBehavior_IsIce_2(object.currentMetatileBehavior)
+      || MB.MetatileBehavior_IsTrickHouseSlipperyFloor(object.currentMetatileBehavior);
+
+    if (object.triggerGroundEffectsOnMove) {
+      this.doGroundEffect(object, "begin");
+      object.triggerGroundEffectsOnMove = false;
+    }
+    if (object.triggerGroundEffectsOnStop) {
+      this.doGroundEffect(object, "finish");
+      object.triggerGroundEffectsOnStop = false;
+      object.landingJump = false;
+    }
+    this.UpdateObjectEventSpriteAnimPause(object, sprite);
+    this.UpdateObjectEventVisibility(object, sprite, cameraX, cameraY);
+    this.ObjectEventUpdateSubpriority(object, sprite, cameraY);
   }
 
   /** UpdateObjectEventCurrentMovement (event_object_movement.c), adapted to this per-object browser driver. */
