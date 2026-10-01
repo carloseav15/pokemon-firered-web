@@ -59,6 +59,39 @@ Límites de las fuentes: pret solo tiene datos hasta Gen 4 (493 Pokémon). Hada,
 Megaevoluciones y Pokémon posteriores no tienen decomp de referencia: habría que
 crearlos como contenido propio (estadísticas, gráficos, gritos).
 
+## Johto (fase 5): editor de equivalencias de baldosas
+
+Idea del usuario (2026-10-01): en lugar de redibujar Johto entero, un editor donde
+se ve cada pieza de Johto y se elige con un clic la pieza de Kanto o Hoenn (GBA) que
+la sustituye. Solo se dibuja a mano lo que no tenga equivalente.
+
+**Por qué es viable** (medido en pokecrystal `5beda23f`):
+- Los 388 mapas de Crystal se construyen con 37 tilesets que suman 2.664 bloques de
+  32×32 px (302 archivos `.blk`; varios mapas comparten bloques). Esos bloques se
+  descomponen en unas 2.500 piezas únicas de 16×16, el tamaño de las metatiles de
+  FireRed/Emerald. Varios tilesets no hacen falta (beta, sin uso, el Kanto de Crystal).
+- Los tilesets se reutilizan mucho (casas: 57 mapas; Centro Pokémon: 33; tiendas: 28):
+  **cada pieza se empareja una vez y se aplica a todos los mapas que la usan**.
+- Crystal guarda la colisión por cuarto de bloque (`tilecoll FLOOR, WALL, WATER,
+  TALL_GRASS…`), equivalente a los comportamientos de metatile de GBA.
+
+**Cómo sería:**
+1. Izquierda: la pieza de Johto, con un trozo de mapa donde aparece y su colisión.
+2. Derecha: piezas de FireRed y Emerald ordenadas automáticamente por parecido
+   (color, forma y colisión). Un clic o un atajo de teclado asigna.
+3. "Sin equivalente": la pieza pasa a la lista de arte pendiente (Torre Campana,
+   casas de Ciudad Iris…).
+4. Vista previa en vivo de un mapa de Johto convertido con lo asignado.
+5. Salida: un archivo de equivalencias que un convertidor usa para generar los
+   mapas GBA. Cambiar una equivalencia regenera todos los mapas.
+6. El mismo patrón sirve después para sprites de personajes.
+
+**Dependencias:** Crystal extraído a `refs/` (tarea R20 de `refs/README.md`),
+piezas de Emerald exportadas (requiere adaptar el exportador) y el editor como
+página web del proyecto (Vite). Porymap, el editor de mapas de pret, sirve para
+retocar a mano los mapas ya convertidos. Se puede prototipar solo con las piezas de
+FireRed antes de tener Emerald; su valor completo llega con Emerald exportado.
+
 ## Mundo unificado (fase 6): qué hay que resolver
 
 1. **Espacios de IDs:** flags, vars, mapas, entrenadores y objetos de cada región
