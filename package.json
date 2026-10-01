@@ -32,6 +32,7 @@
     "refs:emerald-maps": "python3 tools/refs/emerald_maps.py",
     "refs:emerald-vs-firered": "python3 tools/refs/compare_emerald.py",
     "refs:heartgold-data": "python3 tools/refs/heartgold_data.py",
+    "refs:heartgold-zone-events": "python3 tools/refs/heartgold_zone_events.py",
     "refs:platinum-moves": "python3 tools/refs/platinum_moves.py",
     "refs:platinum-species": "python3 tools/refs/platinum_species.py",
     "refs:platinum-moves-vs-firered": "python3 tools/refs/compare_platinum_moves.py",
