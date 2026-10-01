@@ -10,21 +10,27 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | [pokeplatinum](https://github.com/pret/pokeplatinum) | `c248fb3f8c` | DS, C en progreso. Datos JSON de Gen 4. |
 | [pokeheartgold](https://github.com/pret/pokeheartgold) | `9d8b7591f0` | DS, C + ensamblador, en progreso. Fijado; sin extractores todavía. |
 | [pokeapi](https://github.com/PokeAPI/pokeapi) | `bc92d3b602` | CSV de datos de todas las generaciones. No es fuente de verdad. |
+| [pokecrystal](https://github.com/pret/pokecrystal) | `5beda23ffa` | GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta. |
 
 ## Salidas
 
 | Archivo | Fuente | Entradas | Generador |
 |---|---|---:|---|
+| `crystal/maps.json` | pokecrystal | 388 | `tools/refs/crystal_maps.py` |
+| `crystal/tilesets.json` | pokecrystal | 37 | `tools/refs/crystal_maps.py` |
 | `emerald/functions.json` | pokeemerald | 17889 | `tools/refs/emerald_functions.py` |
 | `emerald/maps.json` | pokeemerald | 518 | `tools/refs/emerald_maps.py` |
 | `emerald/moves.json` | pokeemerald | 355 | `tools/refs/emerald_data.py` |
 | `emerald/moves_vs_firered.json` | pokeemerald | 1 | `tools/refs/compare_emerald.py` |
+| `emerald/scripts.json` | pokeemerald | 468 | `tools/refs/emerald_scripts.py` |
 | `emerald/species.json` | pokeemerald | 412 | `tools/refs/emerald_data.py` |
 | `emerald/species_vs_firered.json` | pokeemerald | 0 | `tools/refs/compare_emerald.py` |
 | `emerald/summary.json` | pokeemerald | 310 | `tools/refs/emerald_summary.py` |
+| `emerald/systems.json` | pokeemerald | 10 | `tools/refs/emerald_systems.py` |
 | `emerald/trainers.json` | pokeemerald | 855 | `tools/refs/emerald_trainers.py` |
 | `heartgold/encounters.json` | pokeheartgold | 142 | `tools/refs/heartgold_data.py` |
 | `heartgold/trainers.json` | pokeheartgold | 738 | `tools/refs/heartgold_data.py` |
+| `heartgold/zone_events.json` | pokeheartgold | 491 | `tools/refs/heartgold_zone_events.py` |
 | `platinum/moves.json` | pokeplatinum | 468 | `tools/refs/platinum_moves.py` |
 | `platinum/moves_vs_firered.json` | pokeplatinum | 71 | `tools/refs/compare_platinum_moves.py` |
 | `platinum/species.json` | pokeplatinum | 496 | `tools/refs/platinum_species.py` |

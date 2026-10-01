@@ -428,19 +428,12 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
   - `known-failing.json` conserva estos cuatro checks; `npm run check:all` los separa
     de regresiones.
 
-- [ ] **1.12 Flores y agua de la orilla no se animan** [básico]. Fallo real comprobado
-  el 2026-10-01. En C, `QueueAnimTiles_*` recibe un `u16`, así que `timer / 16` es
-  división entera. En TS `timer / 16` da decimales cuando `timer % 16` es 1 o 2, y
-  `frames[1.0625]` es `undefined`: el fotograma se descarta en silencio.
-  - Dónde: `src/fr/field/tileRenderer.ts` líneas 300–301 (`TilesetAnim_General`: agua
-    de corriente/orilla y flores) y la copia en `src/fr/overworldCredits.ts`
-    (`TilesetAnim_General`). Las llamadas con `timer % N === 0` (arena, fuentes,
-    vapor, puerta del gimnasio) son exactas y funcionan.
-  - Arreglo: `Math.trunc(timer / 16)` en esas llamadas (y, por coherencia, en todas
-    las `timer / N` de ambos archivos).
-  - Comprobación: `node -e "const f=['a','b','c','d']; console.log(f[(17/16)%4], f[Math.trunc(17/16)%4])"`
-    imprime `undefined b`. En navegador (C12 de §3.0), las flores de Pueblo Paleta
-    deben moverse. `npm run check:all` sin regresiones.
+- [x] **1.12 Flores y agua de la orilla no se animan** [básico]. Corregido el
+  2026-10-01 en la parte de campo: todas las divisiones timer/N pasadas a
+  `QueueAnimTiles_*` en `src/fr/field/tileRenderer.ts:299-301,319,336,353,370,387`
+  usan `Math.trunc`, como la división entera del C. `overworldCredits.ts` ya estaba
+  corregido y no se modificó. `check:port`, `build` pasan; `check:all`: 28 PASS,
+  3 fallos conocidos, 9 checks arreglados, 0 regresiones.
 - [ ] **1.13 Animaciones de baldosas duplicadas en créditos** [medio, requiere 1.12].
   El commit `f926b597` reimplementó `tileset_anims.c` dentro de
   `src/fr/overworldCredits.ts`, aunque ya estaba portado (28/28) en
@@ -449,6 +442,10 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
   lógica común (contadores, `TilesetAnim_*`, `QueueAnimTiles_*`) para que ambos la
   usen con un destino distinto, y borra la copia. Revisa que la Fuente de Azulona y
   el resto de callbacks secundarios sigan conectados en el campo.
+- [ ] **1.14 PC no abre el almacenamiento** [básico, navegador]. Con Vite en 5174,
+  cargar `pewter-pc`, interactuar con el PC y esperar 120 frames. Esperado: menú
+  de almacenamiento; observado: `script:true`, `locked:true`, equipo/cajas iguales
+  y sin menú. Captura al fallar: `/tmp/pw/smoke/C8/C8-pc-stuck.png`.
 
 ## 2. Revisión de equivalencias y wrappers contra el cuerpo C
 
@@ -507,17 +504,23 @@ Receta para cada línea:
 
 **`overworld.c`** (`field/overworld.ts`, `fieldControl.ts`)
 - [ ] `Overworld_ResetStateAfterFly/Teleport/DigEscRope/WhitingOut` (delegan en `resetStateAfterWarpOut`).
+  - [x] Revisión 2026-10-01: los cuatro cuerpos C son idénticos (`overworld.c:289-342`); llaman `ResetInitialPlayerAvatarState` y limpian los mismos flags/vars en el mismo orden. TS comparte esa secuencia en `overworld.ts:524-542`.
 - [ ] `WarpIntoMap`/`TryFadeOutOldMapMusic` (alias de `warpIntoMapAndLoad`/`tryFadeOutOldMapMusic`).
+  - DIFERENCIA: `WarpIntoMap` ejecuta `ApplyCurrentWarp`, `LoadCurrentMapData` y `SetPlayerCoordsFromWarp` sincrónicamente (`overworld.c:583-588`); TS inicia `warpIntoMapAndLoad` y carga el mapa por etapas asíncronas (`overworld.ts:641-673`). `TryFadeOutOldMapMusic` conserva la condición y llamada de fade (`overworld.c:1112-1118`, `overworld.ts:2342-2349`).
 - [ ] `GetMapTypeByGroupAndId`, `GetLastUsedWarpMapType`, `GetSavedWarpRegionMapSectionId`,
   `GetCurrentRegionMapSectionId`, `GetCurrentMapBattleScene`.
+  - DIFERENCIA: en mapa válido los getters corresponden; el C desreferencia directamente el header (`overworld.c:1203-1206,1260-1273`), mientras TS usa `?.` y permite `undefined` en mapas inválidos (`overworld.ts:339-371`).
 - [ ] `SetDiveWarpEmerge`/`SetDiveWarpDive`; `cb1`/`cb2`;
   `CB2_ReturnToFieldContinueScript(PlayMapMusic)`/`CB2_ContinueSavedGame`.
+  - DIFERENCIA: Dive mantiene la rama conexión/mapa y dummy warp (`overworld.c:722-747`, `overworld.ts:453-475`), pero falta cotejar anchos/casts de coords (`u16` a `s8` en `SetWarpDestination`). Los CB2 ContinueScript limpian callbacks y eligen callback de campo (`overworld.c:1663-1675`); TS comparte ese dispatch y ejecuta la carga local del campo (`game.ts:1017-1037`), con la diferencia ya anotada de `SpawnObjectEventsOnReturnToField` ausente. ContinueSavedGame conserva orden esencial y distingue continue-warp/map-name (`overworld.c:1691-1719`, `game.ts:319-362`), adaptando save explícito y carga asíncrona.
 - [ ] `DoCB1_Overworld_QuestLogPlayback`, `LoadMap_QLPlayback`,
   `CB2_SetUpOverworldForQLPlayback*`, `QL_UpdateObject`/`QL_UpdateObjectEventCurrentMovement`.
+  - DIFERENCIA: las callbacks C configuran callbacks GBA y `DoLoadMap_QLPlayback` consume la máquina de estados hasta terminar en el mismo callback (`overworld.c:2210-2250`); TS distribuye etapas entre frames y colapsa cargas de gráficos ya residentes (`overworld.ts:792-840`). `QL_UpdateObject` en C aplica movimiento y gfx pendientes antes de actualizar (`quest_log.c:1340-1365`); TS aplica comandos en `fieldControl.ts:204-214` antes del driver por objeto (`objectEvents.ts:1923-1965`).
 
 **`quest_log.c`**
 - [ ] Callbacks de entrada/fin de playback, `RunQuestLogCB`, `QLogCB_Playback`,
   `QuestLog_PlayCurrentEvent`, `HandleShowQuestLogMessage`, callback de grabación en `QL_TryRunActions`.
+  - DIFERENCIA: el C cierra escena al agotar eventos bajo `END_MODE_NONE` y transición bloqueante (`quest_log.c:270-289`); TS representa fin/modo de transición con `sPlaybackEndMode` y orden de escenas (`questLogEvents.ts:824-849`). Timer, overlap de 15 frames y duración de mensaje corresponden en estructura (`quest_log.c:916-980`, `questLogEvents.ts:851-897`). `QL_TryRunActions` del C escribe movimiento/gfx/input a estado global y bloquea según `RecordHeadAtEndOfEntryOrScriptContext2Enabled` (`quest_log.c:1594-1669`); TS devuelve comandos al driver, añade guardia de contexto idle y los aplica después (`questLogEvents.ts:1168-1221`, `fieldControl.ts:167-214`). Mantener sin marcar para revisar semántica de frames/cursor.
 
 **`battle_transition.c`** (`battle/transition.ts`)
 - [ ] Driver de intro y transición; helpers de scanline y HBlank/VBlank; `SetSinWave`/`SetCircularMask`.
@@ -537,15 +540,39 @@ Receta para cada línea:
   `PartyMenuStartSpriteAnim`, los tres `CB2_ReturnTo*Menu`, `CB2_SetUpExitToBattleScreen`.
 
 **`pokemon.c`**
-- [ ] `GetLevelFromBoxMonExp`, `GetBoxMonGender`, `GetBoxMonData3`, `SetBoxMonData`,
+- [x] `GetLevelFromBoxMonExp`, `GetBoxMonGender`, `GetBoxMonData3`, `SetBoxMonData`,
   `GetMonAbility`, `GetMonSpritePalStruct` (delegan en sus equivalentes de Mon).
+  Revisión 2026-10-01: los otros cinco cuerpos mantienen las lecturas y
+  delegaciones del C: `pokemon.c:2196-2205` frente a `mon.ts:621-623`,
+  `pokemon.c:2714-2730` frente a `mon.ts:696-698`, `pokemon.c:2976-2985`
+  frente a `mon.ts:211-213`, `pokemon.c:3406-3422` frente a `mon.ts:215-218`
+  (el modelo TS no cifra ni valida checksum de BoxMon), y `pokemon.c:3801-3805`
+  frente a `mon_extra.ts:159-160`. Corregí el sexto wrapper en el commit de código
+  siguiente: `pokemon.c:5918-5923` lee `MON_DATA_SPECIES_OR_EGG`, ahora igual que
+  `trainerPokemonSprites.ts:74-78`; `mon.ts:181-182` implementa ese campo para
+  devolver `SPECIES_EGG` a huevos y bad eggs.
 
 **`pokemon_summary_screen.c`**
 - [ ] `SwapBoxMonMoveSlots`, `UpdateCurrentMonBufferFromPartyOrBox`, transición de
   páginas, setup y `SpriteCB_MonPicDummy`.
 
 **`text.c`** (`gba/textPrinter.ts`, `gba/font.ts`)
-- [ ] `DecompressGlyph_NormalCopy2`, `TextPrinter*` ×6 y `RenderText`.
+- [x] `DecompressGlyph_NormalCopy2`: misma rama japonesa, glifo cero, cuatro
+  bloques y fallback a `DecompressGlyph_Normal`; `glyphId` corresponde a `u16`.
+- [x] `TextPrinterInitDownArrowCounters`, `TextPrinterWaitAutoMode`,
+  `TextPrinterWaitWithDownArrow`, `TextPrinterWait`: mismos estados, límites 50/120,
+  eventos A/B, sonido y orden de llamada; el retraso de flecha es `u8` de 5 bits
+  en C (8 cabe sin recorte).
+- [ ] `TextPrinterDrawDownArrow`, `TextPrinterClearDownArrow`.
+  DIFERENCIA: el C rellena la ventana y luego llama `CopyWindowToVram(..., 0x2)`
+  tras dibujar o limpiar; el TS modifica directamente el surface Canvas y no tiene
+  la copia explícita a VRAM. El índice sí conserva el bitfield C de 2 bits con `& 3`.
+- [ ] `RenderText`.
+  DIFERENCIA: las ramas y el orden de comandos/glyphs corresponden en el driver,
+  pero el C en `RENDER_STATE_SCROLL` llama `ScrollWindow` por hasta
+  `sWindowVerticalScrollSpeeds[optionsTextSpeed]` y luego `CopyWindowToVram` cada
+  frame. El TS usa `window.scroll` sobre Canvas y velocidades `[1, 2, 4]` con un
+  fallback `2`; la adaptación no demuestra equivalencia de opción/VRAM.
 
 **`m4a.c`** (`audio/sound.ts`, `audio/m4a.ts`)
 - [ ] `m4aSongNumStart*`, `m4aSongNumStop/Continue`, `m4aMPlayContinue/FadeOut/
@@ -644,6 +671,18 @@ Trampas comprobadas: un warp tarda unos 300 frames (`await frDebug.wait(300)`); 
 reinicias el servidor, recarga la pestaña (si no, la consola se llena de
 `ERR_CONNECTION_REFUSED` que no son del juego); el clima forzado se pierde al cambiar
 de mapa.
+
+**Ejecución automatizada 2026-10-01**: `npm run play:smoke` con Playwright,
+`PW_BASE=http://localhost:5174/`, servidor `npx vite --port 5174 --strictPort`,
+jobs `tools/playtest/smoke/C1.mjs` … `C14.mjs`, `tools/playtest/pw.mjs`
+idéntico a la copia original. C3 OK con `pewter`: guardó y continuó con mapa,
+posición, dinero y equipo iguales. C8 FALLO con `pewter-pc`: ver tarea 1.14;
+captura solo al fallar. C7 MANUAL: la partida `forest-sammy` no inicia combate
+con la secuencia automatizada, por lo que no se pudo provocar derrota. C9 MANUAL:
+`H.talk` falla porque el driver accede a `objects.collisionAt`, que no existe.
+C1, C2, C4–C6 y C10–C14 MANUAL: requieren progresión, intervención o estado de
+partida que el driver actual no ofrece. No se afirma resultado funcional para
+esos puntos.
 
 Lo que depende de avanzar en la historia (MO, bici, pesca, S.S. Anne, Alto Mando,
 Salón de la Fama, créditos) se valida en el recorrido de la sección 4.

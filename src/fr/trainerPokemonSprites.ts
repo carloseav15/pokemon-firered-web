@@ -72,7 +72,7 @@ export function GetMonSpritePalStructFromOtIdPersonality(species: number, otId: 
 
 /** GetMonSpritePalStruct (pokemon.c) */
 export function GetMonSpritePalStruct(mon: Mon): { data: Uint16Array; tag: number } {
-  const species = GetMonData(mon, C.MON_DATA_SPECIES);
+  const species = GetMonData(mon, C.MON_DATA_SPECIES_OR_EGG);
   const otId = GetMonData(mon, C.MON_DATA_OT_ID);
   const personality = GetMonData(mon, C.MON_DATA_PERSONALITY);
   return GetMonSpritePalStructFromOtIdPersonality(species, otId, personality);

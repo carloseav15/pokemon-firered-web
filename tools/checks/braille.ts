@@ -13,14 +13,14 @@ import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/h
 import { FONT_BRAILLE, glyph, GetStringWidth } from '../../src/fr/gba/font.ts';
 import { TextPrinter } from '../../src/fr/gba/textPrinter.ts';
 
-const root = process.cwd() + '/public/fr/';
-const decomp = process.env.POKEFIRERED ?? process.cwd() + '/pokefirered';
+const root = process.cwd();
+const decomp = process.env.POKEFIRERED ?? `${root}/../pokefirered`;
 
 // Load the incbin pack and the text_printer cdata the way loadCData/preloadPacks do.
-const index = JSON.parse(readFileSync(root + 'incbin/index.json', 'utf8'));
+const index = JSON.parse(readFileSync(`${root}/public/fr/incbin/index.json`, 'utf8'));
 registerIncbinIndex(index);
-registerPack('graphics_fonts', new Uint8Array(readFileSync(root + 'incbin/graphics_fonts.bin')));
-registerCData('text_printer', JSON.parse(readFileSync(root + 'cdata/text_printer.json', 'utf8')).defs);
+registerPack('graphics_fonts', new Uint8Array(readFileSync(`${root}/public/fr/incbin/graphics_fonts.bin`)));
+registerCData('text_printer', JSON.parse(readFileSync(`${root}/public/fr/cdata/text_printer.json`, 'utf8')).defs);
 
 function readIndexedPng(path: string): { width: number; height: number; px: Uint8Array } {
   const buf = readFileSync(path);
