@@ -2395,10 +2395,9 @@ export class Overworld {
 
   // ---------------------------------------------------------------- frame
 
-  /** CB1_Overworld: DoCB1_Overworld_QuestLogPlayback's branch (Quest Log playback re-driving
-   * field input from a recording) isn't modeled — see PORTING-STATUS.md. */
+  /** CB1_Overworld: use the local field-input driver while the overworld callback is active. */
   CB1_Overworld(): void {
-    this.control.processFrame(joy.newKeys, joy.held);
+    this.control.DoCB1_Overworld(joy.newKeys, joy.held);
   }
   cb1(): void { this.CB1_Overworld(); }
 

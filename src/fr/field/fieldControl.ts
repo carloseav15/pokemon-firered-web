@@ -148,8 +148,8 @@ export class FieldControl {
 
   constructor(private readonly ow: Overworld) {}
 
-  /** DoCB1_Overworld */
-  processFrame(newKeys: number, heldKeys: number): void {
+  /** DoCB1_Overworld (overworld.c), with Quest Log input handled by the shared browser driver. */
+  DoCB1_Overworld(newKeys: number, heldKeys: number): void {
     const questLogCommands = QL_TryRunActions(this.ow.controlsLocked, !this.ow.script.ScriptContext_IsEnabled());
     this.applyQuestLogCommands(questLogCommands);
     const player = this.ow.player;
