@@ -10,6 +10,8 @@
     "check:port": "tsc --noEmit --project tsconfig.port.json",
     "check:honesty": "python3 tools/checks/honesty.py",
     "check:all": "python3 tools/checks/all.py",
+    "check:m4a": "esbuild tools/checks/m4aAudio.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/m4aAudio.mjs && node .decomp-build/checks/m4aAudio.mjs",
+    "playwright:install": "playwright install chromium --only-shell",
     "check:arrow": "esbuild tools/checks/downArrow.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/downArrow.mjs && node .decomp-build/checks/downArrow.mjs",
     "check:renewable": "esbuild tools/checks/renewableHiddenItems.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/renewableHiddenItems.mjs && node .decomp-build/checks/renewableHiddenItems.mjs",
     "check:preview": "esbuild tools/checks/mapPreviewScreen.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/mapPreviewScreen.mjs && node .decomp-build/checks/mapPreviewScreen.mjs",
@@ -74,6 +76,7 @@
     "check:player-avatar-transitions": "esbuild tools/checks/playerAvatarTransitions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/playerAvatarTransitions.mjs && node .decomp-build/checks/playerAvatarTransitions.mjs"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "typescript": "^5.8.0",
     "vite": "^7.0.0"
   }
