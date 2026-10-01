@@ -32,6 +32,8 @@ Elige **una** tarea sin marcar de la sección 3 y trabaja solo en ella. Si hay o
 agente activo, trabaja en tu propia carpeta y rama (ver "Trabajo en paralelo" en
 `TAREAS-FINALES.md` §0).
 
+Las reglas de eficiencia de `TAREAS-FINALES.md` §0 ("Eficiencia") también se aplican aquí.
+
 ### Reglas que no se rompen
 
 1. **Nada de `src/` importa `refs/`.** `refs:check` lo comprueba.

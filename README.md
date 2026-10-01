@@ -40,6 +40,7 @@ reexportar si cambias `tools/decomp/`.
 | [PORT-INVENTORY.md](PORT-INVENTORY.md) | Avance por archivo `.c` (generado con `npm run inventory`) |
 | [PORTING-STATUS.md](PORTING-STATUS.md) | Estado operativo breve y siguiente tanda |
 | [TAREAS-FINALES.md](TAREAS-FINALES.md) | **Lista de tareas finales** del juego de un jugador: código, equivalencias y validación |
+| [docs/REVIEW-LOCATIONS.md](docs/REVIEW-LOCATIONS.md) | Dónde está cada función de la revisión (C y TS), generado con `npm run review:where` |
 | [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) | Recorrido para la fase de revisión funcional |
 | [refs/README.md](refs/README.md) | Datos y catálogos extraídos de otros decomps (Emerald, Platinum, HeartGold, PokéAPI); el juego no los usa |
 | [docs/VISION.md](docs/VISION.md) | Ideas futuras: Emerald, Johto, reglas modernas y mundo unificado (no activas) |

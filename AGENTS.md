@@ -114,12 +114,15 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
   estas líneas fijas: modo, siguiente tanda, bloqueos, validación diferida,
   última entrega, contador, **acumulado nuevo/equivalencia** y **wrappers a
   revisar**; las dos últimas listas viven en `TAREAS-FINALES.md` y la línea solo
-  las enlaza. Sustituye la última entrega; el detalle permanece en Git. En el
-  acumulado y en `TAREAS-FINALES.md` solo se añade o se retira lo revisado:
-  nunca se borran entradas al reescribir. No abras otra crónica.
+  las enlaza. Sustituye la última entrega; el detalle permanece en Git. El
+  acumulado es una sola frase con el total y el cambio de la última sesión (el
+  desglose histórico vive en Git; decisión del usuario, 2026-10-01). En
+  `TAREAS-FINALES.md` las tareas abiertas no se borran sin resolverse; las hechas
+  quedan en una línea con su commit. No abras otra crónica.
 - Solo `PENDING.md` y `PORT-INVENTORY.md` contienen las cifras vivas. En el cierre
   informa el cambio del contador separado en funciones nuevas (cuerpo portado del
-  C) y equivalencias/wrappers, y suma ambas al acumulado de `PORTING-STATUS.md`.
+  C) y equivalencias/wrappers, y actualiza con ellas la frase de acumulado de
+  `PORTING-STATUS.md`.
 - Un commit local por tanda integrada, en inglés, imperativo, con fuente C cuando
   corresponda y `Co-Authored-By: OpenAI Codex <codex@openai.com>` si trabaja Codex
   (otros agentes indican su entorno). Sin superlativos ni afirmaciones no probadas.
