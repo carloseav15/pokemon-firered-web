@@ -351,7 +351,7 @@ function RollCredits(): number {
           m.mainseqno = CreditsSceneIdx.CREDITSSCENE_WAITBUTTON;
           break;
       }
-      m.timer = sCreditsScript()[m.scrcmdidx].duration;
+      m.timer = sCreditsScript()[m.scrcmdidx].duration ?? 0;
       m.scrcmdidx++;
       return 0;
     case CreditsSceneIdx.CREDITSSCENE_PRINT_ADDPRINTER1:
@@ -365,7 +365,7 @@ function RollCredits(): number {
       return m.canSpeedThrough;
     case CreditsSceneIdx.CREDITSSCENE_PRINT_DELAY:
       CopyWindowToVram(m.windowId, COPYWIN_GFX);
-      m.timer = sCreditsScript()[m.scrcmdidx].duration;
+      m.timer = sCreditsScript()[m.scrcmdidx].duration ?? 0;
       m.scrcmdidx++;
       BeginNormalPaletteFade(0x00008000, 0, 16, 0, RGB_BLACK);
       m.mainseqno = CreditsSceneIdx.CREDITSSCENE_EXEC_CMD;
