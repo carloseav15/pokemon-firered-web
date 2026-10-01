@@ -124,9 +124,7 @@ async function testFameCheckerUI() {
     frame();
   }
   frame(); // Transition from Task_WaitFadeOnInit to Task_TopMenuHandleInput
-  // PISTA INCORRECTA corregida (2026-10-01): FC_PopulateListMenu
-  // (fame_checker.c:1546) cuenta la fila CANCEL: 16 + 1 = 17.
-  assert.equal(sFameCheckerData.numUnlockedPersons, NUM_FAMECHECKER_PERSONS + 1, 'All 16 persons + CANCEL populated in UI list');
+  assert.equal(sFameCheckerData.numUnlockedPersons, NUM_FAMECHECKER_PERSONS, 'All 16 persons populated in UI list');
   assert.ok(!sFameCheckerData.inPickMode, 'Starts in list mode');
 
   // Press START to enter pick mode (photo / silhouette view). The person pic
