@@ -63,7 +63,7 @@ UNWIRED = [
 # Known functional gaps that the per-function count does not show.
 KNOWN_GAPS = [
     "Easy Chat: escribir cartas (`easy_chat*.c`); hoy las cartas quedan en blanco.",
-    "Intercambios: `pokemon/ingameTrade.ts` porta la escena de `trade_scene.c` (sin probar); de `trade.c` solo hay stubs de la parte de enlace.",
+    "Intercambios de NPC: `pokemon/ingameTrade.ts` porta la animación; `SpriteCB_BouncingPokeball` y la detección de cintas se compararon estáticamente con C. `check:trade` falla antes de ejecutar la prueba porque sus imports inicializan texto antes de asignar `rom.charmap`; pantalla pendiente de navegador. De `trade.c` solo hay stubs de la parte de enlace.",
     "Enlace: `linkState.ts` modela estado, identidad del callback y umbrales de cola de `menu_helpers.c`, `link.c` y `overworld.c`; todavía no hay productor de comandos ni transporte cable/RFU que alimente ese estado.",
     "Combate de enlace: `battle_controllers.c` 68/68 con la ruta de buffers `LINK_BUFF_*` y las tareas de envío/recepción, pero `SetControllerToLinkOpponent`/`SetControllerToLinkPartner` (parciales en sus archivos) quedan sustituidos por `BattleControllerDummy` y `linkTransport` no envía paquetes; un enlace real no tendría controladores propios ni transporte.",
     "Almacenamiento de cajas: `pokemon_storage_system_misc.c` conserva cuatro helpers estáticos `UnkUtil_CpuAdd/Run` y `UnkUtil_DmaAdd/Run`; el C los describe como cola funcionalmente sin uso y los Add no tienen callers. La navegación del resumen usa ranuras nullable y filtra especie/huevo según el C; cajas y resumen siguen pendientes de revisión en navegador.",

@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9658/10115 (95.5 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **457 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9660/10115 (95.5 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **455 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~10.089 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~9.979 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -38,7 +38,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 18 | `quest_log.c` | parcial | 1767 | 56/88 | ~642 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 311/357 | ~817 |  |
 | 20 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
-| 21 | `trade_scene.c` | parcial | 2916 | 35/53 | ~990 |  |
+| 21 | `trade_scene.c` | parcial | 2916 | 37/53 | ~880 |  |
 | 22 | `overworld.c` | parcial | 3563 | 125/242 | ~1722 |  |
 | 23 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 
@@ -51,8 +51,8 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | Archivo C | Líneas | Portadas | Stubs |
 |---|---:|---:|---:|
 | `trade.c` | 2958 | 0/66 | 15 |
-| `trade_scene.c` | 2916 | 35/53 | 3 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
+| `trade_scene.c` | 2916 | 37/53 | 1 |
 | `union_room.c` | 4761 | 6/110 | 1 |
 | `link.c` | 2202 | 4/114 | 1 |
 
@@ -72,7 +72,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 ## 4. Huecos conocidos que el conteo no muestra
 
 - Easy Chat: escribir cartas (`easy_chat*.c`); hoy las cartas quedan en blanco.
-- Intercambios: `pokemon/ingameTrade.ts` porta la escena de `trade_scene.c` (sin probar); de `trade.c` solo hay stubs de la parte de enlace.
+- Intercambios de NPC: `pokemon/ingameTrade.ts` porta la animación; `SpriteCB_BouncingPokeball` y la detección de cintas se compararon estáticamente con C. `check:trade` falla antes de ejecutar la prueba porque sus imports inicializan texto antes de asignar `rom.charmap`; pantalla pendiente de navegador. De `trade.c` solo hay stubs de la parte de enlace.
 - Enlace: `linkState.ts` modela estado, identidad del callback y umbrales de cola de `menu_helpers.c`, `link.c` y `overworld.c`; todavía no hay productor de comandos ni transporte cable/RFU que alimente ese estado.
 - Combate de enlace: `battle_controllers.c` 68/68 con la ruta de buffers `LINK_BUFF_*` y las tareas de envío/recepción, pero `SetControllerToLinkOpponent`/`SetControllerToLinkPartner` (parciales en sus archivos) quedan sustituidos por `BattleControllerDummy` y `linkTransport` no envía paquetes; un enlace real no tendría controladores propios ni transporte.
 - Almacenamiento de cajas: `pokemon_storage_system_misc.c` conserva cuatro helpers estáticos `UnkUtil_CpuAdd/Run` y `UnkUtil_DmaAdd/Run`; el C los describe como cola funcionalmente sin uso y los Add no tienen callers. La navegación del resumen usa ranuras nullable y filtra especie/huevo según el C; cajas y resumen siguen pendientes de revisión en navegador.
