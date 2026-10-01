@@ -1,0 +1,2490 @@
+{
+ "_meta": {
+  "commit": "fe1d8e51b265851676b65885818b1f5f62586135",
+  "entries": 310,
+  "generator": "tools/refs/emerald_summary.py",
+  "source": "pokeemerald"
+ },
+ "data": [
+  {
+   "different": 383,
+   "emerald_only": 88,
+   "file": "event_object_movement",
+   "firered_only": 129,
+   "identical": 247,
+   "lines": 8950
+  },
+  {
+   "different": 2,
+   "emerald_only": 360,
+   "file": "pokemon_storage_system",
+   "firered_only": 1,
+   "identical": 18,
+   "lines": 10059
+  },
+  {
+   "different": 2,
+   "emerald_only": 252,
+   "file": "slot_machine",
+   "firered_only": 75,
+   "identical": 0,
+   "lines": 7955
+  },
+  {
+   "different": 10,
+   "emerald_only": 235,
+   "file": "easy_chat",
+   "firered_only": 26,
+   "identical": 3,
+   "lines": 5874
+  },
+  {
+   "different": 0,
+   "emerald_only": 240,
+   "file": "pokemon_animation",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 5544
+  },
+  {
+   "different": 146,
+   "emerald_only": 67,
+   "file": "party_menu",
+   "firered_only": 70,
+   "identical": 141,
+   "lines": 6430
+  },
+  {
+   "different": 0,
+   "emerald_only": 207,
+   "file": "tv",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 6828
+  },
+  {
+   "different": 0,
+   "emerald_only": 205,
+   "file": "contest",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 6125
+  },
+  {
+   "different": 94,
+   "emerald_only": 95,
+   "file": "field_effect",
+   "firered_only": 109,
+   "identical": 36,
+   "lines": 3918
+  },
+  {
+   "different": 16,
+   "emerald_only": 169,
+   "file": "field_specials",
+   "firered_only": 96,
+   "identical": 6,
+   "lines": 4270
+  },
+  {
+   "different": 77,
+   "emerald_only": 86,
+   "file": "battle_transition",
+   "firered_only": 10,
+   "identical": 47,
+   "lines": 4774
+  },
+  {
+   "different": 0,
+   "emerald_only": 142,
+   "file": "contest_ai",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1785
+  },
+  {
+   "different": 3,
+   "emerald_only": 136,
+   "file": "pokemon_summary_screen",
+   "firered_only": 134,
+   "identical": 0,
+   "lines": 4183
+  },
+  {
+   "different": 0,
+   "emerald_only": 135,
+   "file": "decoration",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 2748
+  },
+  {
+   "different": 1,
+   "emerald_only": 132,
+   "file": "pokedex",
+   "firered_only": 0,
+   "identical": 7,
+   "lines": 5661
+  },
+  {
+   "different": 116,
+   "emerald_only": 5,
+   "file": "battle_script_commands",
+   "firered_only": 3,
+   "identical": 165,
+   "lines": 10326
+  },
+  {
+   "different": 15,
+   "emerald_only": 106,
+   "file": "union_room_chat",
+   "firered_only": 35,
+   "identical": 1,
+   "lines": 3321
+  },
+  {
+   "different": 12,
+   "emerald_only": 108,
+   "file": "item_menu",
+   "firered_only": 102,
+   "identical": 2,
+   "lines": 2596
+  },
+  {
+   "different": 93,
+   "emerald_only": 26,
+   "file": "overworld",
+   "firered_only": 44,
+   "identical": 105,
+   "lines": 3218
+  },
+  {
+   "different": 0,
+   "emerald_only": 118,
+   "file": "battle_factory_screen",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 4314
+  },
+  {
+   "different": 47,
+   "emerald_only": 70,
+   "file": "trade",
+   "firered_only": 2,
+   "identical": 17,
+   "lines": 5100
+  },
+  {
+   "different": 64,
+   "emerald_only": 51,
+   "file": "field_player_avatar",
+   "firered_only": 61,
+   "identical": 51,
+   "lines": 2243
+  },
+  {
+   "different": 17,
+   "emerald_only": 98,
+   "file": "menu",
+   "firered_only": 24,
+   "identical": 8,
+   "lines": 2147
+  },
+  {
+   "different": 88,
+   "emerald_only": 24,
+   "file": "battle_ai_script_commands",
+   "firered_only": 14,
+   "identical": 3,
+   "lines": 2308
+  },
+  {
+   "different": 0,
+   "emerald_only": 111,
+   "file": "contest_util",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 2782
+  },
+  {
+   "different": 23,
+   "emerald_only": 87,
+   "file": "metatile_behavior",
+   "firered_only": 58,
+   "identical": 34,
+   "lines": 1402
+  },
+  {
+   "different": 0,
+   "emerald_only": 106,
+   "file": "field_weather_effect",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 2636
+  },
+  {
+   "different": 0,
+   "emerald_only": 104,
+   "file": "roulette",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 4775
+  },
+  {
+   "different": 0,
+   "emerald_only": 99,
+   "file": "secret_base",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 2074
+  },
+  {
+   "different": 62,
+   "emerald_only": 32,
+   "file": "pokemon",
+   "firered_only": 10,
+   "identical": 68,
+   "lines": 7185
+  },
+  {
+   "different": 0,
+   "emerald_only": 92,
+   "file": "battle_controller_player_partner",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1935
+  },
+  {
+   "different": 0,
+   "emerald_only": 92,
+   "file": "frontier_util",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 2632
+  },
+  {
+   "different": 0,
+   "emerald_only": 87,
+   "file": "battle_controller_recorded_opponent",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1788
+  },
+  {
+   "different": 68,
+   "emerald_only": 19,
+   "file": "scrcmd",
+   "firered_only": 12,
+   "identical": 144,
+   "lines": 2308
+  },
+  {
+   "different": 69,
+   "emerald_only": 17,
+   "file": "battle_controller_player",
+   "firered_only": 17,
+   "identical": 37,
+   "lines": 3132
+  },
+  {
+   "different": 0,
+   "emerald_only": 86,
+   "file": "battle_controller_recorded_player",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1812
+  },
+  {
+   "different": 4,
+   "emerald_only": 81,
+   "file": "player_pc",
+   "firered_only": 43,
+   "identical": 0,
+   "lines": 1509
+  },
+  {
+   "different": 69,
+   "emerald_only": 12,
+   "file": "battle_anim_mons",
+   "firered_only": 12,
+   "identical": 47,
+   "lines": 2554
+  },
+  {
+   "different": 0,
+   "emerald_only": 81,
+   "file": "battle_controller_wally",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1570
+  },
+  {
+   "different": 0,
+   "emerald_only": 81,
+   "file": "battle_pyramid_bag",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1608
+  },
+  {
+   "different": 25,
+   "emerald_only": 56,
+   "file": "battle_setup",
+   "firered_only": 20,
+   "identical": 21,
+   "lines": 1889
+  },
+  {
+   "different": 12,
+   "emerald_only": 69,
+   "file": "battle_tower",
+   "firered_only": 33,
+   "identical": 0,
+   "lines": 3548
+  },
+  {
+   "different": 0,
+   "emerald_only": 81,
+   "file": "berry_blender",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 3904
+  },
+  {
+   "different": 1,
+   "emerald_only": 79,
+   "file": "main_menu",
+   "firered_only": 26,
+   "identical": 2,
+   "lines": 2302
+  },
+  {
+   "different": 10,
+   "emerald_only": 70,
+   "file": "start_menu",
+   "firered_only": 55,
+   "identical": 0,
+   "lines": 1439
+  },
+  {
+   "different": 77,
+   "emerald_only": 1,
+   "file": "battle_anim_effects_1",
+   "firered_only": 1,
+   "identical": 76,
+   "lines": 5646
+  },
+  {
+   "different": 0,
+   "emerald_only": 78,
+   "file": "battle_anim_throw",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 2507
+  },
+  {
+   "different": 3,
+   "emerald_only": 73,
+   "file": "tileset_anims",
+   "firered_only": 17,
+   "identical": 8,
+   "lines": 1188
+  },
+  {
+   "different": 47,
+   "emerald_only": 28,
+   "file": "battle_main",
+   "firered_only": 29,
+   "identical": 30,
+   "lines": 5270
+  },
+  {
+   "different": 14,
+   "emerald_only": 59,
+   "file": "item_use",
+   "firered_only": 58,
+   "identical": 1,
+   "lines": 1128
+  },
+  {
+   "different": 0,
+   "emerald_only": 72,
+   "file": "lilycove_lady",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 785
+  },
+  {
+   "different": 0,
+   "emerald_only": 72,
+   "file": "rayquaza_scene",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 3190
+  },
+  {
+   "different": 52,
+   "emerald_only": 20,
+   "file": "trainer_card",
+   "firered_only": 15,
+   "identical": 6,
+   "lines": 1902
+  },
+  {
+   "different": 0,
+   "emerald_only": 71,
+   "file": "battle_dome",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 6176
+  },
+  {
+   "different": 4,
+   "emerald_only": 67,
+   "file": "field_screen_effect",
+   "firered_only": 9,
+   "identical": 6,
+   "lines": 1266
+  },
+  {
+   "different": 60,
+   "emerald_only": 10,
+   "file": "field_effect_helpers",
+   "firered_only": 7,
+   "identical": 9,
+   "lines": 1717
+  },
+  {
+   "different": 65,
+   "emerald_only": 5,
+   "file": "link_rfu_2",
+   "firered_only": 4,
+   "identical": 80,
+   "lines": 3011
+  },
+  {
+   "different": 56,
+   "emerald_only": 13,
+   "file": "link",
+   "firered_only": 2,
+   "identical": 56,
+   "lines": 2382
+  },
+  {
+   "different": 5,
+   "emerald_only": 63,
+   "file": "intro",
+   "firered_only": 73,
+   "identical": 1,
+   "lines": 3435
+  },
+  {
+   "different": 63,
+   "emerald_only": 4,
+   "file": "union_room",
+   "firered_only": 3,
+   "identical": 44,
+   "lines": 4507
+  },
+  {
+   "different": 0,
+   "emerald_only": 65,
+   "file": "pokenav_match_call_gfx",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1301
+  },
+  {
+   "different": 58,
+   "emerald_only": 4,
+   "file": "berry_crush",
+   "firered_only": 4,
+   "identical": 11,
+   "lines": 3507
+  },
+  {
+   "different": 0,
+   "emerald_only": 62,
+   "file": "fldeff_misc",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1326
+  },
+  {
+   "different": 6,
+   "emerald_only": 54,
+   "file": "region_map",
+   "firered_only": 134,
+   "identical": 0,
+   "lines": 2027
+  },
+  {
+   "different": 0,
+   "emerald_only": 59,
+   "file": "mauville_old_man",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1482
+  },
+  {
+   "different": 0,
+   "emerald_only": 59,
+   "file": "trainer_hill",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1090
+  },
+  {
+   "different": 0,
+   "emerald_only": 58,
+   "file": "pokeblock",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1456
+  },
+  {
+   "different": 0,
+   "emerald_only": 57,
+   "file": "menu_specialized",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1626
+  },
+  {
+   "different": 45,
+   "emerald_only": 11,
+   "file": "dodrio_berry_picking",
+   "firered_only": 1,
+   "identical": 101,
+   "lines": 5224
+  },
+  {
+   "different": 0,
+   "emerald_only": 56,
+   "file": "pokenav_menu_handler_gfx",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1380
+  },
+  {
+   "different": 0,
+   "emerald_only": 55,
+   "file": "pokenav_ribbons_summary",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1271
+  },
+  {
+   "different": 0,
+   "emerald_only": 54,
+   "file": "battle_pike",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1656
+  },
+  {
+   "different": 0,
+   "emerald_only": 54,
+   "file": "match_call",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 2112
+  },
+  {
+   "different": 0,
+   "emerald_only": 53,
+   "file": "apprentice",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1311
+  },
+  {
+   "different": 38,
+   "emerald_only": 15,
+   "file": "shop",
+   "firered_only": 18,
+   "identical": 4,
+   "lines": 1269
+  },
+  {
+   "different": 20,
+   "emerald_only": 32,
+   "file": "item",
+   "firered_only": 29,
+   "identical": 0,
+   "lines": 943
+  },
+  {
+   "different": 0,
+   "emerald_only": 52,
+   "file": "pokenav_match_call_data",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1161
+  },
+  {
+   "different": 0,
+   "emerald_only": 51,
+   "file": "battle_pyramid",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1983
+  },
+  {
+   "different": 12,
+   "emerald_only": 39,
+   "file": "bike",
+   "firered_only": 11,
+   "identical": 1,
+   "lines": 1062
+  },
+  {
+   "different": 0,
+   "emerald_only": 51,
+   "file": "contest_effect",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1093
+  },
+  {
+   "different": 0,
+   "emerald_only": 51,
+   "file": "use_pokeblock",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1677
+  },
+  {
+   "different": 36,
+   "emerald_only": 12,
+   "file": "battle_interface",
+   "firered_only": 11,
+   "identical": 5,
+   "lines": 2602
+  },
+  {
+   "different": 17,
+   "emerald_only": 31,
+   "file": "text",
+   "firered_only": 15,
+   "identical": 5,
+   "lines": 1904
+  },
+  {
+   "different": 0,
+   "emerald_only": 47,
+   "file": "pokenav_list",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1003
+  },
+  {
+   "different": 42,
+   "emerald_only": 3,
+   "file": "bg",
+   "firered_only": 1,
+   "identical": 7,
+   "lines": 1247
+  },
+  {
+   "different": 0,
+   "emerald_only": 45,
+   "file": "pokenav_main_menu",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 849
+  },
+  {
+   "different": 34,
+   "emerald_only": 10,
+   "file": "battle_controller_opponent",
+   "firered_only": 10,
+   "identical": 43,
+   "lines": 2027
+  },
+  {
+   "different": 29,
+   "emerald_only": 15,
+   "file": "cable_club",
+   "firered_only": 7,
+   "identical": 18,
+   "lines": 1330
+  },
+  {
+   "different": 23,
+   "emerald_only": 21,
+   "file": "list_menu",
+   "firered_only": 4,
+   "identical": 4,
+   "lines": 1447
+  },
+  {
+   "different": 23,
+   "emerald_only": 20,
+   "file": "hall_of_fame",
+   "firered_only": 17,
+   "identical": 2,
+   "lines": 1512
+  },
+  {
+   "different": 0,
+   "emerald_only": 43,
+   "file": "record_mixing",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1408
+  },
+  {
+   "different": 39,
+   "emerald_only": 3,
+   "file": "battle_anim_effects_2",
+   "firered_only": 3,
+   "identical": 79,
+   "lines": 3832
+  },
+  {
+   "different": 0,
+   "emerald_only": 42,
+   "file": "recorded_battle",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 866
+  },
+  {
+   "different": 37,
+   "emerald_only": 4,
+   "file": "naming_screen",
+   "firered_only": 3,
+   "identical": 69,
+   "lines": 2588
+  },
+  {
+   "different": 29,
+   "emerald_only": 11,
+   "file": "battle_gfx_sfx_util",
+   "firered_only": 6,
+   "identical": 13,
+   "lines": 1344
+  },
+  {
+   "different": 23,
+   "emerald_only": 15,
+   "file": "battle_util",
+   "firered_only": 1,
+   "identical": 13,
+   "lines": 4024
+  },
+  {
+   "different": 1,
+   "emerald_only": 37,
+   "file": "credits",
+   "firered_only": 15,
+   "identical": 0,
+   "lines": 1633
+  },
+  {
+   "different": 8,
+   "emerald_only": 29,
+   "file": "evolution_graphics",
+   "firered_only": 29,
+   "identical": 0,
+   "lines": 693
+  },
+  {
+   "different": 33,
+   "emerald_only": 4,
+   "file": "fieldmap",
+   "firered_only": 3,
+   "identical": 18,
+   "lines": 897
+  },
+  {
+   "different": 0,
+   "emerald_only": 37,
+   "file": "frontier_pass",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1774
+  },
+  {
+   "different": 0,
+   "emerald_only": 37,
+   "file": "pokenav_region_map",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 742
+  },
+  {
+   "different": 0,
+   "emerald_only": 37,
+   "file": "pokenav_ribbons_list",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 745
+  },
+  {
+   "different": 35,
+   "emerald_only": 1,
+   "file": "battle_anim_effects_3",
+   "firered_only": 1,
+   "identical": 104,
+   "lines": 5547
+  },
+  {
+   "different": 8,
+   "emerald_only": 28,
+   "file": "berry",
+   "firered_only": 1,
+   "identical": 0,
+   "lines": 1351
+  },
+  {
+   "different": 0,
+   "emerald_only": 36,
+   "file": "pokenav_conditions_search_results",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 745
+  },
+  {
+   "different": 0,
+   "emerald_only": 34,
+   "file": "battle_transition_frontier",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 674
+  },
+  {
+   "different": 9,
+   "emerald_only": 24,
+   "file": "trainer_see",
+   "firered_only": 25,
+   "identical": 3,
+   "lines": 814
+  },
+  {
+   "different": 29,
+   "emerald_only": 3,
+   "file": "battle_anim_utility_funcs",
+   "firered_only": 1,
+   "identical": 12,
+   "lines": 1163
+  },
+  {
+   "different": 0,
+   "emerald_only": 32,
+   "file": "pokenav_conditions",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 630
+  },
+  {
+   "different": 24,
+   "emerald_only": 7,
+   "file": "daycare",
+   "firered_only": 33,
+   "identical": 36,
+   "lines": 1298
+  },
+  {
+   "different": 7,
+   "emerald_only": 23,
+   "file": "battle_records",
+   "firered_only": 23,
+   "identical": 1,
+   "lines": 524
+  },
+  {
+   "different": 25,
+   "emerald_only": 5,
+   "file": "field_control_avatar",
+   "firered_only": 13,
+   "identical": 11,
+   "lines": 1004
+  },
+  {
+   "different": 8,
+   "emerald_only": 22,
+   "file": "script_menu",
+   "firered_only": 21,
+   "identical": 0,
+   "lines": 765
+  },
+  {
+   "different": 0,
+   "emerald_only": 29,
+   "file": "battle_tent",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 426
+  },
+  {
+   "different": 0,
+   "emerald_only": 29,
+   "file": "pokenav_match_call_list",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 517
+  },
+  {
+   "different": 26,
+   "emerald_only": 2,
+   "file": "battle_anim",
+   "firered_only": 1,
+   "identical": 50,
+   "lines": 1841
+  },
+  {
+   "different": 21,
+   "emerald_only": 7,
+   "file": "mystery_event_script",
+   "firered_only": 2,
+   "identical": 2,
+   "lines": 400
+  },
+  {
+   "different": 0,
+   "emerald_only": 28,
+   "file": "pokeblock_feed",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1193
+  },
+  {
+   "different": 0,
+   "emerald_only": 28,
+   "file": "pokenav",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 590
+  },
+  {
+   "different": 0,
+   "emerald_only": 28,
+   "file": "pokenav_conditions_gfx",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 894
+  },
+  {
+   "different": 26,
+   "emerald_only": 2,
+   "file": "save",
+   "firered_only": 0,
+   "identical": 7,
+   "lines": 1052
+  },
+  {
+   "different": 22,
+   "emerald_only": 5,
+   "file": "battle_anim_normal",
+   "firered_only": 5,
+   "identical": 9,
+   "lines": 1115
+  },
+  {
+   "different": 0,
+   "emerald_only": 27,
+   "file": "berry_tag_screen",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 694
+  },
+  {
+   "different": 0,
+   "emerald_only": 27,
+   "file": "mirage_tower",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 792
+  },
+  {
+   "different": 0,
+   "emerald_only": 27,
+   "file": "pokenav_menu_handler",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 513
+  },
+  {
+   "different": 23,
+   "emerald_only": 4,
+   "file": "string_util",
+   "firered_only": 0,
+   "identical": 17,
+   "lines": 781
+  },
+  {
+   "different": 12,
+   "emerald_only": 15,
+   "file": "wild_encounter",
+   "firered_only": 18,
+   "identical": 6,
+   "lines": 967
+  },
+  {
+   "different": 0,
+   "emerald_only": 26,
+   "file": "battle_factory",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 919
+  },
+  {
+   "different": 26,
+   "emerald_only": 0,
+   "file": "pokemon_jump",
+   "firered_only": 10,
+   "identical": 150,
+   "lines": 4241
+  },
+  {
+   "different": 0,
+   "emerald_only": 26,
+   "file": "rtc",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 346
+  },
+  {
+   "different": 0,
+   "emerald_only": 25,
+   "file": "egg_hatch",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 946
+  },
+  {
+   "different": 14,
+   "emerald_only": 11,
+   "file": "field_weather",
+   "firered_only": 13,
+   "identical": 23,
+   "lines": 1105
+  },
+  {
+   "different": 0,
+   "emerald_only": 25,
+   "file": "wallclock",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1101
+  },
+  {
+   "different": 22,
+   "emerald_only": 2,
+   "file": "battle_anim_mon_movement",
+   "firered_only": 2,
+   "identical": 10,
+   "lines": 1048
+  },
+  {
+   "different": 21,
+   "emerald_only": 3,
+   "file": "battle_controller_link_opponent",
+   "firered_only": 2,
+   "identical": 63,
+   "lines": 1851
+  },
+  {
+   "different": 21,
+   "emerald_only": 3,
+   "file": "battle_controller_link_partner",
+   "firered_only": 3,
+   "identical": 61,
+   "lines": 1697
+  },
+  {
+   "different": 6,
+   "emerald_only": 18,
+   "file": "field_tasks",
+   "firered_only": 2,
+   "identical": 4,
+   "lines": 957
+  },
+  {
+   "different": 1,
+   "emerald_only": 23,
+   "file": "option_menu",
+   "firered_only": 18,
+   "identical": 0,
+   "lines": 668
+  },
+  {
+   "different": 24,
+   "emerald_only": 0,
+   "file": "palette",
+   "firered_only": 1,
+   "identical": 16,
+   "lines": 1038
+  },
+  {
+   "different": 22,
+   "emerald_only": 1,
+   "file": "battle_anim_ice",
+   "firered_only": 1,
+   "identical": 9,
+   "lines": 1615
+  },
+  {
+   "different": 20,
+   "emerald_only": 3,
+   "file": "link_rfu_3",
+   "firered_only": 3,
+   "identical": 7,
+   "lines": 985
+  },
+  {
+   "different": 0,
+   "emerald_only": 22,
+   "file": "cable_car",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1061
+  },
+  {
+   "different": 22,
+   "emerald_only": 0,
+   "file": "sprite",
+   "firered_only": 1,
+   "identical": 80,
+   "lines": 1755
+  },
+  {
+   "different": 12,
+   "emerald_only": 9,
+   "file": "battle_controller_safari",
+   "firered_only": 9,
+   "identical": 51,
+   "lines": 691
+  },
+  {
+   "different": 16,
+   "emerald_only": 5,
+   "file": "event_data",
+   "firered_only": 6,
+   "identical": 4,
+   "lines": 233
+  },
+  {
+   "different": 4,
+   "emerald_only": 17,
+   "file": "item_menu_icons",
+   "firered_only": 13,
+   "identical": 0,
+   "lines": 662
+  },
+  {
+   "different": 0,
+   "emerald_only": 21,
+   "file": "rotating_gate",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1032
+  },
+  {
+   "different": 19,
+   "emerald_only": 1,
+   "file": "battle_anim_ghost",
+   "firered_only": 5,
+   "identical": 17,
+   "lines": 1340
+  },
+  {
+   "different": 17,
+   "emerald_only": 3,
+   "file": "battle_controllers",
+   "firered_only": 3,
+   "identical": 48,
+   "lines": 1583
+  },
+  {
+   "different": 0,
+   "emerald_only": 20,
+   "file": "contest_painting",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 600
+  },
+  {
+   "different": 16,
+   "emerald_only": 4,
+   "file": "field_door",
+   "firered_only": 2,
+   "identical": 3,
+   "lines": 572
+  },
+  {
+   "different": 0,
+   "emerald_only": 20,
+   "file": "intro_credits_graphics",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1172
+  },
+  {
+   "different": 9,
+   "emerald_only": 11,
+   "file": "menu_helpers",
+   "firered_only": 3,
+   "identical": 5,
+   "lines": 453
+  },
+  {
+   "different": 15,
+   "emerald_only": 5,
+   "file": "mystery_gift_menu",
+   "firered_only": 4,
+   "identical": 15,
+   "lines": 1626
+  },
+  {
+   "different": 2,
+   "emerald_only": 18,
+   "file": "title_screen",
+   "firered_only": 37,
+   "identical": 0,
+   "lines": 869
+  },
+  {
+   "different": 19,
+   "emerald_only": 0,
+   "file": "battle_anim_electric",
+   "firered_only": 0,
+   "identical": 18,
+   "lines": 1335
+  },
+  {
+   "different": 9,
+   "emerald_only": 10,
+   "file": "ereader_helpers",
+   "firered_only": 1,
+   "identical": 7,
+   "lines": 875
+  },
+  {
+   "different": 0,
+   "emerald_only": 19,
+   "file": "move_relearner",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 959
+  },
+  {
+   "different": 0,
+   "emerald_only": 19,
+   "file": "pokedex_area_screen",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 797
+  },
+  {
+   "different": 0,
+   "emerald_only": 19,
+   "file": "reset_rtc_screen",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 740
+  },
+  {
+   "different": 18,
+   "emerald_only": 1,
+   "file": "union_room_player_avatar",
+   "firered_only": 1,
+   "identical": 19,
+   "lines": 602
+  },
+  {
+   "different": 18,
+   "emerald_only": 0,
+   "file": "battle_anim_dark",
+   "firered_only": 0,
+   "identical": 7,
+   "lines": 1001
+  },
+  {
+   "different": 0,
+   "emerald_only": 18,
+   "file": "battle_arena",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 819
+  },
+  {
+   "different": 0,
+   "emerald_only": 18,
+   "file": "braille_puzzles",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 343
+  },
+  {
+   "different": 5,
+   "emerald_only": 13,
+   "file": "fldeff_flash",
+   "firered_only": 15,
+   "identical": 2,
+   "lines": 360
+  },
+  {
+   "different": 0,
+   "emerald_only": 18,
+   "file": "mystery_gift_view",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 935
+  },
+  {
+   "different": 0,
+   "emerald_only": 18,
+   "file": "starter_choose",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 667
+  },
+  {
+   "different": 8,
+   "emerald_only": 10,
+   "file": "window",
+   "firered_only": 1,
+   "identical": 12,
+   "lines": 714
+  },
+  {
+   "different": 16,
+   "emerald_only": 1,
+   "file": "battle_anim_psychic",
+   "firered_only": 0,
+   "identical": 10,
+   "lines": 1166
+  },
+  {
+   "different": 0,
+   "emerald_only": 17,
+   "file": "contest_link",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 563
+  },
+  {
+   "different": 8,
+   "emerald_only": 9,
+   "file": "field_message_box",
+   "firered_only": 6,
+   "identical": 0,
+   "lines": 161
+  },
+  {
+   "different": 6,
+   "emerald_only": 11,
+   "file": "minigame_countdown",
+   "firered_only": 1,
+   "identical": 3,
+   "lines": 760
+  },
+  {
+   "different": 16,
+   "emerald_only": 1,
+   "file": "mystery_gift",
+   "firered_only": 1,
+   "identical": 28,
+   "lines": 666
+  },
+  {
+   "different": 16,
+   "emerald_only": 0,
+   "file": "battle_anim_flying",
+   "firered_only": 2,
+   "identical": 15,
+   "lines": 1236
+  },
+  {
+   "different": 14,
+   "emerald_only": 2,
+   "file": "battle_anim_ground",
+   "firered_only": 2,
+   "identical": 9,
+   "lines": 778
+  },
+  {
+   "different": 5,
+   "emerald_only": 11,
+   "file": "fldeff_cut",
+   "firered_only": 7,
+   "identical": 1,
+   "lines": 645
+  },
+  {
+   "different": 0,
+   "emerald_only": 16,
+   "file": "international_string_util",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 233
+  },
+  {
+   "different": 0,
+   "emerald_only": 16,
+   "file": "libisagbprn",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 257
+  },
+  {
+   "different": 16,
+   "emerald_only": 0,
+   "file": "librfu_rfu",
+   "firered_only": 0,
+   "identical": 70,
+   "lines": 2323
+  },
+  {
+   "different": 0,
+   "emerald_only": 16,
+   "file": "siirtc",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 463
+  },
+  {
+   "different": 13,
+   "emerald_only": 2,
+   "file": "battle_anim_fight",
+   "firered_only": 2,
+   "identical": 16,
+   "lines": 1035
+  },
+  {
+   "different": 0,
+   "emerald_only": 15,
+   "file": "faraway_island",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 464
+  },
+  {
+   "different": 10,
+   "emerald_only": 5,
+   "file": "field_camera",
+   "firered_only": 6,
+   "identical": 13,
+   "lines": 507
+  },
+  {
+   "different": 10,
+   "emerald_only": 5,
+   "file": "pokemon_icon",
+   "firered_only": 5,
+   "identical": 8,
+   "lines": 1302
+  },
+  {
+   "different": 14,
+   "emerald_only": 0,
+   "file": "battle_anim_fire",
+   "firered_only": 0,
+   "identical": 21,
+   "lines": 1376
+  },
+  {
+   "different": 14,
+   "emerald_only": 0,
+   "file": "battle_anim_water",
+   "firered_only": 0,
+   "identical": 34,
+   "lines": 1599
+  },
+  {
+   "different": 1,
+   "emerald_only": 13,
+   "file": "coord_event_weather",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 119
+  },
+  {
+   "different": 0,
+   "emerald_only": 14,
+   "file": "pokedex_cry_screen",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 580
+  },
+  {
+   "different": 13,
+   "emerald_only": 1,
+   "file": "script",
+   "firered_only": 17,
+   "identical": 25,
+   "lines": 470
+  },
+  {
+   "different": 0,
+   "emerald_only": 14,
+   "file": "walda_phrase",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 274
+  },
+  {
+   "different": 13,
+   "emerald_only": 0,
+   "file": "battle_ai_switch_items",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 944
+  },
+  {
+   "different": 13,
+   "emerald_only": 0,
+   "file": "battle_anim_rock",
+   "firered_only": 0,
+   "identical": 9,
+   "lines": 887
+  },
+  {
+   "different": 0,
+   "emerald_only": 13,
+   "file": "dewford_trend",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 419
+  },
+  {
+   "different": 2,
+   "emerald_only": 11,
+   "file": "field_special_scene",
+   "firered_only": 4,
+   "identical": 0,
+   "lines": 385
+  },
+  {
+   "different": 10,
+   "emerald_only": 3,
+   "file": "main",
+   "firered_only": 2,
+   "identical": 16,
+   "lines": 443
+  },
+  {
+   "different": 4,
+   "emerald_only": 9,
+   "file": "safari_zone",
+   "firered_only": 0,
+   "identical": 4,
+   "lines": 257
+  },
+  {
+   "different": 0,
+   "emerald_only": 13,
+   "file": "trader",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 215
+  },
+  {
+   "different": 10,
+   "emerald_only": 2,
+   "file": "battle_bg",
+   "firered_only": 7,
+   "identical": 0,
+   "lines": 1417
+  },
+  {
+   "different": 0,
+   "emerald_only": 12,
+   "file": "battle_tv",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1604
+  },
+  {
+   "different": 0,
+   "emerald_only": 12,
+   "file": "contest_link_util",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 344
+  },
+  {
+   "different": 5,
+   "emerald_only": 7,
+   "file": "event_object_lock",
+   "firered_only": 4,
+   "identical": 2,
+   "lines": 208
+  },
+  {
+   "different": 9,
+   "emerald_only": 3,
+   "file": "evolution_scene",
+   "firered_only": 1,
+   "identical": 13,
+   "lines": 1685
+  },
+  {
+   "different": 3,
+   "emerald_only": 9,
+   "file": "save_failed_screen",
+   "firered_only": 11,
+   "identical": 0,
+   "lines": 403
+  },
+  {
+   "different": 0,
+   "emerald_only": 11,
+   "file": "battle_palace",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 212
+  },
+  {
+   "different": 9,
+   "emerald_only": 2,
+   "file": "berry_powder",
+   "firered_only": 2,
+   "identical": 3,
+   "lines": 239
+  },
+  {
+   "different": 8,
+   "emerald_only": 3,
+   "file": "decompress",
+   "firered_only": 0,
+   "identical": 10,
+   "lines": 411
+  },
+  {
+   "different": 0,
+   "emerald_only": 11,
+   "file": "decoration_inventory",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 159
+  },
+  {
+   "different": 6,
+   "emerald_only": 5,
+   "file": "new_game",
+   "firered_only": 3,
+   "identical": 2,
+   "lines": 215
+  },
+  {
+   "different": 11,
+   "emerald_only": 0,
+   "file": "pokeball",
+   "firered_only": 0,
+   "identical": 26,
+   "lines": 1348
+  },
+  {
+   "different": 1,
+   "emerald_only": 9,
+   "file": "diploma",
+   "firered_only": 9,
+   "identical": 0,
+   "lines": 209
+  },
+  {
+   "different": 3,
+   "emerald_only": 7,
+   "file": "fldeff_rocksmash",
+   "firered_only": 7,
+   "identical": 0,
+   "lines": 166
+  },
+  {
+   "different": 1,
+   "emerald_only": 9,
+   "file": "mail",
+   "firered_only": 9,
+   "identical": 0,
+   "lines": 753
+  },
+  {
+   "different": 0,
+   "emerald_only": 10,
+   "file": "time_events",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 118
+  },
+  {
+   "different": 9,
+   "emerald_only": 0,
+   "file": "battle_anim_bug",
+   "firered_only": 0,
+   "identical": 4,
+   "lines": 482
+  },
+  {
+   "different": 9,
+   "emerald_only": 0,
+   "file": "battle_anim_dragon",
+   "firered_only": 0,
+   "identical": 2,
+   "lines": 451
+  },
+  {
+   "different": 6,
+   "emerald_only": 3,
+   "file": "battle_message",
+   "firered_only": 3,
+   "identical": 1,
+   "lines": 3078
+  },
+  {
+   "different": 0,
+   "emerald_only": 9,
+   "file": "clear_save_data_screen",
+   "firered_only": 8,
+   "identical": 0,
+   "lines": 209
+  },
+  {
+   "different": 5,
+   "emerald_only": 4,
+   "file": "mail_data",
+   "firered_only": 4,
+   "identical": 3,
+   "lines": 205
+  },
+  {
+   "different": 0,
+   "emerald_only": 9,
+   "file": "math_util",
+   "firered_only": 9,
+   "identical": 0,
+   "lines": 86
+  },
+  {
+   "different": 3,
+   "emerald_only": 6,
+   "file": "pokemon_size_record",
+   "firered_only": 7,
+   "identical": 3,
+   "lines": 188
+  },
+  {
+   "different": 2,
+   "emerald_only": 7,
+   "file": "text_window",
+   "firered_only": 15,
+   "identical": 2,
+   "lines": 197
+  },
+  {
+   "different": 6,
+   "emerald_only": 2,
+   "file": "battle_intro",
+   "firered_only": 3,
+   "identical": 1,
+   "lines": 551
+  },
+  {
+   "different": 0,
+   "emerald_only": 8,
+   "file": "confetti_util",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 181
+  },
+  {
+   "different": 7,
+   "emerald_only": 1,
+   "file": "ereader_screen",
+   "firered_only": 1,
+   "identical": 3,
+   "lines": 536
+  },
+  {
+   "different": 0,
+   "emerald_only": 8,
+   "file": "lottery_corner",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 168
+  },
+  {
+   "different": 5,
+   "emerald_only": 3,
+   "file": "script_pokemon_util",
+   "firered_only": 3,
+   "identical": 5,
+   "lines": 228
+  },
+  {
+   "different": 7,
+   "emerald_only": 1,
+   "file": "wireless_communication_status_screen",
+   "firered_only": 1,
+   "identical": 4,
+   "lines": 471
+  },
+  {
+   "different": 6,
+   "emerald_only": 1,
+   "file": "AgbRfu_LinkManager",
+   "firered_only": 0,
+   "identical": 27,
+   "lines": 1400
+  },
+  {
+   "different": 7,
+   "emerald_only": 0,
+   "file": "battle_anim_sound_tasks",
+   "firered_only": 0,
+   "identical": 8,
+   "lines": 407
+  },
+  {
+   "different": 5,
+   "emerald_only": 2,
+   "file": "load_save",
+   "firered_only": 2,
+   "identical": 14,
+   "lines": 293
+  },
+  {
+   "different": 1,
+   "emerald_only": 6,
+   "file": "map_name_popup",
+   "firered_only": 6,
+   "identical": 0,
+   "lines": 426
+  },
+  {
+   "different": 5,
+   "emerald_only": 2,
+   "file": "money",
+   "firered_only": 0,
+   "identical": 8,
+   "lines": 197
+  },
+  {
+   "different": 5,
+   "emerald_only": 2,
+   "file": "trainer_pokemon_sprites",
+   "firered_only": 1,
+   "identical": 16,
+   "lines": 395
+  },
+  {
+   "different": 1,
+   "emerald_only": 5,
+   "file": "berry_fix_program",
+   "firered_only": 3,
+   "identical": 0,
+   "lines": 382
+  },
+  {
+   "different": 0,
+   "emerald_only": 6,
+   "file": "clock",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 86
+  },
+  {
+   "different": 0,
+   "emerald_only": 6,
+   "file": "field_region_map",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 215
+  },
+  {
+   "different": 0,
+   "emerald_only": 6,
+   "file": "fldeff_escalator",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 193
+  },
+  {
+   "different": 0,
+   "emerald_only": 6,
+   "file": "item_icon",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 168
+  },
+  {
+   "different": 6,
+   "emerald_only": 0,
+   "file": "multiboot",
+   "firered_only": 0,
+   "identical": 3,
+   "lines": 471
+  },
+  {
+   "different": 0,
+   "emerald_only": 6,
+   "file": "mystery_event_menu",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 321
+  },
+  {
+   "different": 6,
+   "emerald_only": 0,
+   "file": "mystery_gift_server",
+   "firered_only": 0,
+   "identical": 8,
+   "lines": 290
+  },
+  {
+   "different": 4,
+   "emerald_only": 2,
+   "file": "palette_util",
+   "firered_only": 0,
+   "identical": 13,
+   "lines": 503
+  },
+  {
+   "different": 5,
+   "emerald_only": 1,
+   "file": "reshow_battle_screen",
+   "firered_only": 1,
+   "identical": 1,
+   "lines": 316
+  },
+  {
+   "different": 0,
+   "emerald_only": 6,
+   "file": "rotating_tile_puzzle",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 381
+  },
+  {
+   "different": 5,
+   "emerald_only": 1,
+   "file": "save_location",
+   "firered_only": 1,
+   "identical": 4,
+   "lines": 139
+  },
+  {
+   "different": 3,
+   "emerald_only": 2,
+   "file": "battle_util2",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 215
+  },
+  {
+   "different": 5,
+   "emerald_only": 0,
+   "file": "coins",
+   "firered_only": 2,
+   "identical": 2,
+   "lines": 82
+  },
+  {
+   "different": 4,
+   "emerald_only": 1,
+   "file": "dma3_manager",
+   "firered_only": 1,
+   "identical": 0,
+   "lines": 183
+  },
+  {
+   "different": 5,
+   "emerald_only": 0,
+   "file": "field_poison",
+   "firered_only": 0,
+   "identical": 2,
+   "lines": 154
+  },
+  {
+   "different": 5,
+   "emerald_only": 0,
+   "file": "mon_markings",
+   "firered_only": 0,
+   "identical": 10,
+   "lines": 616
+  },
+  {
+   "different": 5,
+   "emerald_only": 0,
+   "file": "script_movement",
+   "firered_only": 0,
+   "identical": 14,
+   "lines": 231
+  },
+  {
+   "different": 4,
+   "emerald_only": 1,
+   "file": "sound",
+   "firered_only": 2,
+   "identical": 42,
+   "lines": 631
+  },
+  {
+   "different": 4,
+   "emerald_only": 1,
+   "file": "util",
+   "firered_only": 0,
+   "identical": 6,
+   "lines": 279
+  },
+  {
+   "different": 4,
+   "emerald_only": 0,
+   "file": "battle_anim_status_effects",
+   "firered_only": 0,
+   "identical": 8,
+   "lines": 562
+  },
+  {
+   "different": 4,
+   "emerald_only": 0,
+   "file": "fldeff_softboiled",
+   "firered_only": 0,
+   "identical": 4,
+   "lines": 111
+  },
+  {
+   "different": 2,
+   "emerald_only": 2,
+   "file": "fldeff_strength",
+   "firered_only": 2,
+   "identical": 0,
+   "lines": 50
+  },
+  {
+   "different": 4,
+   "emerald_only": 0,
+   "file": "fldeff_sweetscent",
+   "firered_only": 1,
+   "identical": 2,
+   "lines": 99
+  },
+  {
+   "different": 4,
+   "emerald_only": 0,
+   "file": "malloc",
+   "firered_only": 0,
+   "identical": 8,
+   "lines": 224
+  },
+  {
+   "different": 3,
+   "emerald_only": 1,
+   "file": "mini_printf",
+   "firered_only": 0,
+   "identical": 5,
+   "lines": 419
+  },
+  {
+   "different": 0,
+   "emerald_only": 4,
+   "file": "pokedex_area_region_map",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 69
+  },
+  {
+   "different": 2,
+   "emerald_only": 2,
+   "file": "random",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 33
+  },
+  {
+   "different": 3,
+   "emerald_only": 1,
+   "file": "roamer",
+   "firered_only": 1,
+   "identical": 9,
+   "lines": 246
+  },
+  {
+   "different": 4,
+   "emerald_only": 0,
+   "file": "task",
+   "firered_only": 0,
+   "identical": 10,
+   "lines": 204
+  },
+  {
+   "different": 1,
+   "emerald_only": 3,
+   "file": "union_room_battle",
+   "firered_only": 3,
+   "identical": 1,
+   "lines": 233
+  },
+  {
+   "different": 0,
+   "emerald_only": 3,
+   "file": "bard_music",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 247
+  },
+  {
+   "different": 0,
+   "emerald_only": 3,
+   "file": "birch_pc",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 88
+  },
+  {
+   "different": 0,
+   "emerald_only": 3,
+   "file": "braille",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 212
+  },
+  {
+   "different": 3,
+   "emerald_only": 0,
+   "file": "dynamic_placeholder_text_util",
+   "firered_only": 1,
+   "identical": 1,
+   "lines": 48
+  },
+  {
+   "different": 3,
+   "emerald_only": 0,
+   "file": "fldeff_dig",
+   "firered_only": 0,
+   "identical": 1,
+   "lines": 63
+  },
+  {
+   "different": 0,
+   "emerald_only": 3,
+   "file": "gym_leader_rematch",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 105
+  },
+  {
+   "different": 1,
+   "emerald_only": 2,
+   "file": "heal_location",
+   "firered_only": 4,
+   "identical": 0,
+   "lines": 37
+  },
+  {
+   "different": 3,
+   "emerald_only": 0,
+   "file": "mystery_gift_client",
+   "firered_only": 0,
+   "identical": 15,
+   "lines": 302
+  },
+  {
+   "different": 3,
+   "emerald_only": 0,
+   "file": "scanline_effect",
+   "firered_only": 0,
+   "identical": 6,
+   "lines": 254
+  },
+  {
+   "different": 2,
+   "emerald_only": 0,
+   "file": "battle_anim_poison",
+   "firered_only": 0,
+   "identical": 7,
+   "lines": 311
+  },
+  {
+   "different": 2,
+   "emerald_only": 0,
+   "file": "digit_obj_util",
+   "firered_only": 0,
+   "identical": 12,
+   "lines": 450
+  },
+  {
+   "different": 2,
+   "emerald_only": 0,
+   "file": "fldeff_teleport",
+   "firered_only": 0,
+   "identical": 2,
+   "lines": 44
+  },
+  {
+   "different": 1,
+   "emerald_only": 1,
+   "file": "hof_pc",
+   "firered_only": 2,
+   "identical": 2,
+   "lines": 40
+  },
+  {
+   "different": 0,
+   "emerald_only": 2,
+   "file": "landmark",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 446
+  },
+  {
+   "different": 2,
+   "emerald_only": 0,
+   "file": "librfu_intr",
+   "firered_only": 0,
+   "identical": 7,
+   "lines": 418
+  },
+  {
+   "different": 2,
+   "emerald_only": 0,
+   "file": "wonder_news",
+   "firered_only": 0,
+   "identical": 7,
+   "lines": 156
+  },
+  {
+   "different": 1,
+   "emerald_only": 0,
+   "file": "agb_flash",
+   "firered_only": 0,
+   "identical": 14,
+   "lines": 296
+  },
+  {
+   "different": 0,
+   "emerald_only": 1,
+   "file": "berry_fix_graphics",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 49
+  },
+  {
+   "different": 1,
+   "emerald_only": 0,
+   "file": "blit",
+   "firered_only": 0,
+   "identical": 4,
+   "lines": 209
+  },
+  {
+   "different": 0,
+   "emerald_only": 1,
+   "file": "give_gift_ribbon_to_party",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 38
+  },
+  {
+   "different": 0,
+   "emerald_only": 1,
+   "file": "gpu_regs",
+   "firered_only": 0,
+   "identical": 11,
+   "lines": 195
+  },
+  {
+   "different": 1,
+   "emerald_only": 0,
+   "file": "image_processing_effects",
+   "firered_only": 0,
+   "identical": 37,
+   "lines": 1228
+  },
+  {
+   "different": 1,
+   "emerald_only": 0,
+   "file": "librfu_sio32id",
+   "firered_only": 0,
+   "identical": 3,
+   "lines": 171
+  },
+  {
+   "different": 1,
+   "emerald_only": 0,
+   "file": "m4a",
+   "firered_only": 0,
+   "identical": 71,
+   "lines": 1781
+  },
+  {
+   "different": 1,
+   "emerald_only": 0,
+   "file": "play_time",
+   "firered_only": 0,
+   "identical": 4,
+   "lines": 73
+  },
+  {
+   "different": 0,
+   "emerald_only": 1,
+   "file": "post_battle_event_funcs",
+   "firered_only": 1,
+   "identical": 1,
+   "lines": 92
+  },
+  {
+   "different": 0,
+   "emerald_only": 1,
+   "file": "reload_save",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 30
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "agb_flash_1m",
+   "firered_only": 0,
+   "identical": 2,
+   "lines": 86
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "agb_flash_le",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 31
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "agb_flash_mx",
+   "firered_only": 0,
+   "identical": 5,
+   "lines": 193
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "anim_mon_front_pics",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 424
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "battle_anim_smokescreen",
+   "firered_only": 0,
+   "identical": 3,
+   "lines": 231
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "data",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 328
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "fonts",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 292
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "graphics",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1537
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "io_reg",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 36
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "librfu_stwi",
+   "firered_only": 0,
+   "identical": 48,
+   "lines": 650
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "m4a_tables",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 307
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "mystery_event_msg",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 13
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "mystery_gift_link",
+   "firered_only": 0,
+   "identical": 10,
+   "lines": 222
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "mystery_gift_scripts",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 217
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "rom_header_gf",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 175
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "strings",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 1821
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "text_input_strings",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 64
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "tilesets",
+   "firered_only": 0,
+   "identical": 0,
+   "lines": 7
+  },
+  {
+   "different": 0,
+   "emerald_only": 0,
+   "file": "trig",
+   "firered_only": 0,
+   "identical": 4,
+   "lines": 543
+  }
+ ]
+}
