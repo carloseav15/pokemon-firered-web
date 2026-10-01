@@ -20,6 +20,7 @@
     "pending": "python3 tools/portPending.py",
     "refs:fetch": "python3 tools/refs/fetch.py",
     "refs:check": "python3 tools/refs/check.py",
+    "refs:all": "python3 tools/refs/all.py",
     "refs:pokeapi": "python3 tools/refs/compare_pokeapi.py",
     "refs:emerald-functions": "python3 tools/refs/emerald_functions.py",
     "refs:emerald-summary": "python3 tools/refs/emerald_summary.py",
