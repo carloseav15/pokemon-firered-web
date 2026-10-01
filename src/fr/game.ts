@@ -1006,8 +1006,10 @@ export class Game {
     const ow = this.overworld;
     this.scene = null;
     this.setCallbacks(() => ow.cb1(), () => ow.cb2());
-    ow.SpawnObjectEventsOnReturnToField(0, 0);
-    ow.RunOnReturnToFieldMapScript();
+    ow.ResumeMap();
+    ow.ReloadObjectsAndRunReturnToFieldMapScript();
+    ow.SetCameraToTrackPlayer();
+    ow.SetHelpContextForMap();
     if (playMusic) ow.FieldCB_ContinueScriptHandleMusic();
     else ow.FieldCB_ContinueScript();
     ow.objects.unfreezeAll();
@@ -1020,8 +1022,10 @@ export class Game {
   /** CB2_ReturnToFieldFromDiploma: restore local field objects/map scripts before warp-exit. */
   CB2_ReturnToFieldFromDiploma(): void {
     const ow = this.overworld;
-    ow.SpawnObjectEventsOnReturnToField(0, 0);
-    ow.RunOnReturnToFieldMapScript();
+    ow.ResumeMap();
+    ow.ReloadObjectsAndRunReturnToFieldMapScript();
+    ow.SetCameraToTrackPlayer();
+    ow.SetHelpContextForMap();
     ow.FieldCB_WarpExitFadeFromBlack();
     ow.objects.unfreezeAll();
     this.setCallbacks(() => ow.cb1(), () => ow.cb2());

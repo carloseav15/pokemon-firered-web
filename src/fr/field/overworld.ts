@@ -36,7 +36,7 @@ import { onCameraTransitionForRoamer, onWarpForRoamer } from "../pokemon/roamer"
 import { TrySetMapSaveWarpStatus } from "../pokemon/saveLocation";
 import { TryRegenerateRenewableHiddenItems } from "../renewableHiddenItems";
 import { PerStepCallback } from "./fieldTasks";
-import { SetHelpContext } from "../helpSystem";
+import { SetHelpContext, SetHelpContextForMap } from "../helpSystem";
 
 import { gQuestLogState, QL_InitSceneObjectsAndActions, QL_ResetDefeatedWildMonRecord, QuestLog_AdvancePlayhead_, QuestLog_CheckDepartingIndoorsMap, QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode, QuestLog_InitPalettesBackup, QuestLog_ShouldEndSceneOnMapChange, QuestLog_TryRecordDepartedLocation, SetQuestLogEvent_Arrived } from "../questLogEvents";
 import { QL_TryStopSurfing } from "../questLogObjects";
@@ -676,7 +676,7 @@ export class Overworld {
     this.setPlayerCoordsFromWarp(loaded.header, loaded.layout.width, loaded.layout.height);
     this.loadMapFromWarp(loaded);
     QuestLog_InitPalettesBackup();
-    this.resumeMap();
+    this.ResumeMap();
     // C checks whether playback must advance here; the browser port currently
     // uses the call to cut recording in Quest Log-disabled locations.
     const advanceQuestLog = QuestLog_ShouldEndSceneOnMapChange();
@@ -939,8 +939,8 @@ export class Overworld {
     }
   }
 
-  /** ResumeMap */
-  private resumeMap(): void {
+  /** ResumeMap (overworld.c): restore shared map tasks, sprites, effects, weather and ON_RESUME. */
+  ResumeMap(): void {
     tasks.reset();
     this.sprites.clear();
     this.windows.clear();
@@ -950,6 +950,25 @@ export class Overworld {
     this.game.weather.resumePausedWeather();
     this.messageBox.reset();
     this.RunOnResumeMapScript();
+  }
+
+  /** ReloadObjectsAndRunReturnToFieldMapScript (overworld.c). */
+  ReloadObjectsAndRunReturnToFieldMapScript(): void {
+    this.SpawnObjectEventsOnReturnToField(0, 0);
+    this.RunOnReturnToFieldMapScript();
+  }
+
+  /** SetCameraToTrackPlayer (overworld.c). */
+  SetCameraToTrackPlayer(): void {
+    this.cameraTarget = this.player.object;
+    this.cameraObject = null;
+    this.InstallCameraPanAheadCallback();
+    this.updateCameraPixels();
+  }
+
+  /** SetHelpContextForMap (help_system.c), reselected whenever the local map is restored. */
+  SetHelpContextForMap(): void {
+    SetHelpContextForMap(this);
   }
 
   /** InitObjectEventsLocal + SetCameraToTrackPlayer */
