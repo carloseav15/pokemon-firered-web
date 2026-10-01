@@ -139,7 +139,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
     Anulación 55 → 80 de precisión. Placaje (35/95) y la prioridad de Protección (+3)
     no cambian en Gen 4. Si tus cifras no coinciden, revisa la conversión antes de
     sospechar de los datos.
-- [ ] **R3 Especies: Platinum frente a FireRed** [básico, requiere R1]. Igual que R2
+- [x] **R3 Especies: Platinum frente a FireRed** [básico, requiere R1]. Igual que R2
   para los 386 primeros: estadísticas, tipos, habilidades, grupos huevo, ratio de
   captura y movimientos por nivel. Usa el campo `national` de
   `public/fr/data/species.json` para emparejar (el índice interno de FireRed no es
