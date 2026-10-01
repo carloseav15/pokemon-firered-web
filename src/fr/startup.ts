@@ -67,6 +67,7 @@ class Startup {
     void rom.load().then(() => { this.romReady = true; });
     void OakSpeech.preload().then(() => { this.oakLoaded = true; });
     InitMainCallbacks();
+    sound.initMapMusic();
     joy.attach();
     (window as unknown as { frStartup: unknown }).frStartup = this; // debug hook
     (window as unknown as { frStartupStep: unknown }).frStartupStep = (frames: number, buttons = 0): void => {
