@@ -24,6 +24,7 @@
     "refs:platinum-moves": "python3 tools/refs/platinum_moves.py",
     "refs:platinum-species": "python3 tools/refs/platinum_species.py",
     "refs:platinum-moves-vs-firered": "python3 tools/refs/compare_platinum_moves.py",
+    "refs:platinum-species-vs-firered": "python3 tools/refs/compare_platinum_species.py",
     "check:braille": "esbuild tools/checks/braille.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/braille.mjs && node .decomp-build/checks/braille.mjs",
     "check:anims": "esbuild tools/checks/battleAnims.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/battleAnims.mjs && node .decomp-build/checks/battleAnims.mjs",
     "check:transitions": "esbuild tools/checks/fieldAndBattleTransitions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/fieldAndBattleTransitions.mjs && node .decomp-build/checks/fieldAndBattleTransitions.mjs",
