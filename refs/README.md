@@ -244,3 +244,45 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   - Objetos: existen las tablas C de `src/data/object_events/` y `src/event_object_movement.c`; el extractor usa regex específicas de FireRed para referencias INCBIN y paletas. Compatibilidad no verificada.
   - Mapas: Emerald contiene `data/layouts/layouts.json`, `data/maps/map_groups.json` y mapas JSON que el lector de `step_maps.py` consume directamente. La preparación aún fija el modo `firered`, y el lector depende de constantes y etiquetas de `scripts.json`; no se probó su equivalencia para Emerald.
   - Bloqueo común: `common.py` fija `CPP_DEFINES` a `FIRERED` y comparte `.decomp-build` y `public/fr`; `step_setup.py` y `step_maps.py` también codifican convenciones FireRed. El paso de ítems espera `src/data/items.json`, ausente en Emerald, que usa `src/data/items.h`; el exportador de encuentros filtra además etiquetas `_FireRed`. Conclusión: el exportador no sirve por simple cambio de ruta. Requiere un modo/fuentes/salidas separados y adaptaciones por datos; no se modificó código en este informe.
+- [ ] **R10 Pulir `emerald_trainers.py`** [básico]. Dos ajustes de la revisión de R6:
+  - `iv` y `lvl` se guardan como texto (`"21"`); deben ser números (`21`). Comprobado:
+    en `trainer_parties.h` todos los `.iv` y `.lvl` son literales numéricos, así que
+    basta `int(...)` y un `raise SystemExit` si alguno no lo es.
+  - Para `TRAINER_NONE` el script rellena valores por defecto inventados
+    (`TRAINER_PIC_HIKER`, etc.) si falta un campo. El C sí los define: léelos como los
+    demás y falla si falta alguno, sin valores por defecto.
+  - Actualiza los ejemplos internos (`"lvl": 21`, `"iv": 0`, `255`, `26`). Terminada
+    cuando: salida regenerada, md5 estable, `refs:check` en verde.
+- [ ] **R11 `refs:all`: regenerar y comprobar todo** [básico]. Crea
+  `tools/refs/all.py` (comando `refs:all`) que ejecute cada `refs:*` que escribe en
+  `refs/` (no `fetch`, `check` ni `pokeapi`), después `refs:check -- --write`, y falle
+  si `git status --short refs/` muestra cambios (salida desactualizada o no
+  determinista). Así cualquier agente valida todas las salidas con un comando.
+- [ ] **R12 Datos de Emerald frente a FireRed** [medio]. Extrae con un parser propio
+  (como R6) `src/data/pokemon/species_info.h` (412 entradas `[SPECIES_X]`) y
+  `src/data/battle_moves.h` (355 entradas `[MOVE_X]`, incluida `MOVE_NONE`) a
+  `refs/emerald/species.json` y `refs/emerald/moves.json`, y compáralos con
+  `public/fr/data/` como en R2/R3 (`*_vs_firered.json`, separando real y
+  representación). Ejemplo comprobado: `SPECIES_BULBASAUR` 45/49/49/45/65/65
+  (PS/Ata/Def/Vel/AtE/DefE), tipos `TYPE_GRASS`/`TYPE_POISON`. Se esperan muy pocas
+  diferencias reales: es el mismo motor; cada una es información valiosa.
+- [ ] **R13 PokéAPI: nombres en español y Megas** [básico]. Extractor
+  `tools/refs/pokeapi_extras.py` que lea los CSV fijados:
+  - `refs/pokeapi/names_es.json` con `local_language_id = 7` (`es`) de
+    `pokemon_species_names.csv` (1.025 filas), `move_names.csv` (937),
+    `item_names.csv` (2.219) y `ability_names.csv` (311).
+  - `refs/pokeapi/megas.json`: formas de `pokemon.csv` cuyo identificador contiene
+    `-mega` (97: 48 de X/Y y ROZA con id < 10100, y 49 posteriores, incluidas 3
+    `-mega-z`), con estadísticas, tipos y habilidades de sus tablas.
+  - Marca en `_meta`/docstring que PokéAPI **no es fuente de verdad**.
+- [ ] **R14 Entrenadores y encuentros de HeartGold** [medio]. Añade al sparse de
+  `pokeheartgold` en `sources.json` `/files/poketool/trainer/` y
+  `/files/fielddata/encountdata/` (rutas comprobadas en el commit fijado; R7 explica
+  sus formatos), ejecuta `refs:fetch -- pokeheartgold` y extrae
+  `files/poketool/trainer/trainers.json` y `files/fielddata/encountdata/gs_enc_data.json`
+  a `refs/heartgold/trainers.json` y `refs/heartgold/encounters.json`, normalizados
+  como R6. Ampliar el sparse no cambia el commit fijado: no requiere permiso.
+- [ ] **R15 Inventario de mapas de Emerald** [medio]. Añade `/data/maps/` y
+  `/data/layouts/` al sparse de `pokeemerald` y genera `refs/emerald/maps.json` con
+  los 518 `map.json` (nombre, tipo, música, clima, conexiones y número de warps,
+  objetos y eventos). Sirve para planificar el port de Emerald.

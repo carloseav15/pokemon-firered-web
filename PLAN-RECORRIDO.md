@@ -107,9 +107,9 @@ Monte Moon). Objetivo: tramo 12.
   evitando la entrada de 1F). El explorador ya retrocede por la escalera menos
   usada, pero no se llegó a comprobar tras ese cambio. Ver en el camino: guion
   de Miguel y el fósil (B2F, coord event en 14,11), Team Rocket.
-- **Exportar al repo** los puntos de control nuevos (`route3-start`, `route4`,
-  `mtmoon-1f`, `pidgey-L9`, `pewter-saved`): solo están en el localStorage de
-  la máquina de la sesión. `H.exportSave(nombre)` + `base64 -d | gunzip`.
+- ~~Exportar al repo los puntos de control nuevos~~: hecho el 2026-10-01; los 24
+  puntos de control están en `tools/playtest/saves/` (actualizar el registro del
+  tramo 1: tarea 4.1 de `TAREAS-FINALES.md`).
 - Driver sin probar a fondo: `H.explore` con retroceso y el modo `"switch"`
   cuando el segundo Pokémon también cae.
 - `tools/playtest/driver.js` `H.battle` registra `outcome: 0` en combates de

@@ -64,6 +64,20 @@ Elige **una** tarea sin marcar y trabaja solo en ella.
   un comando que hayas ejecutado sobre los datos, y la pista debe decir qué cuenta
   exactamente (p. ej. "cambios reales" frente a "diferencias de formato").
 
+### Herramientas automáticas (desde 2026-10-01)
+
+- `npm run check:all`: ejecuta los 40 checks headless y separa los 12 fallos
+  conocidos (`tools/checks/known-failing.json`, tarea 1.11) de las **regresiones**.
+  Sale con error solo si hay una regresión. Si dice `FIXED`, quita ese check de la
+  lista en el mismo commit que lo arregló. **Nunca añadas entradas** sin permiso del
+  usuario. Para uno solo: `npm run check:all -- weather`.
+- `npm run check:honesty` ahora **rechaza commits sin subir que no lleven
+  `Co-Authored-By`**. Si falla por eso, corrige el mensaje con
+  `git commit --amend` (solo tu último commit, antes de subirlo).
+- **Si `git status` muestra cambios que no son tuyos, otro agente está trabajando**:
+  no hagas `stash`, `checkout` ni `reset` sobre ellos, no los incluyas en tu commit
+  (`git add` solo de tus archivos) y avisa al usuario.
+
 ### Comprobaciones al terminar una tarea de código
 
 ```bash
@@ -71,6 +85,7 @@ npm run check:port
 npm run check:honesty
 npm run build
 git diff --check
+npm run check:all
 ```
 
 Además, el check focalizado que indique la tarea. Todo debe salir sin errores.
@@ -355,6 +370,11 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
 Funciones con nombre C que delegan en lógica genérica o adaptada. Trabaja un
 bloque de archivo por sesión.
 
+Orden recomendado (de más a menos riesgo para la partida): `pokemon.c` → `text.c` →
+`quest_log.c` y `overworld.c` (guardado y warps) → `event_object_movement.c` →
+`party_menu.c` y `pokemon_summary_screen.c` → `battle_transition.c` →
+`field_effect.c` → `intro.c` → `m4a.c` → otros.
+
 Receta para cada línea:
 1. Abre el cuerpo C (`grep -n "Nombre(" ../pokefirered/src/<archivo>.c`) y el TS
    (`grep -rn "Nombre" src/fr --exclude-dir=generated`).
@@ -579,6 +599,21 @@ primero es terminar el tramo 1 (salida de Monte Moon a la Ruta 4).
 - [ ] Recorrido zona por zona de Kanto y Sevii según [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md)
   (desde Ruta 3; incluye Monte Moon), con partidas de regresión por tramo.
 - [ ] Checks headless por sistema en `tools/checks/` donde falten.
+- [ ] **4.1 Actualizar el registro del tramo 1** [básico, navegador]. El 2026-10-01 se
+  exportaron al repo 19 puntos de control que solo vivían en el navegador del
+  escritorio (ahora hay 24 en `tools/playtest/saves/`). Entre ellos están `route4`
+  (Ruta 4, equipo de 2 Pokémon a nivel 12 y 17) y `mtmoon-1f-healed` (Monte Moon B1F),
+  así que el tramo 1 parece terminado. Carga `route4` con la receta de §3, confirma
+  que el mapa es `MAP_ROUTE4` y actualiza la tabla "Registro de tramos" de
+  `PLAN-RECORRIDO.md` (tramo 1 jugado; fallos y ayudas: ninguno conocido).
+- [ ] **4.2 Comparación con el juego original en emulador** [avanzado]. La capa de
+  validación más fiable (ver `docs/VISION.md`): compilar la ROM del decomp (`make` en
+  `../pokefirered`; requiere su toolchain), ejecutarla en un emulador con scripting
+  (mGBA), reproducir las mismas pulsaciones por frame en los dos juegos con la misma
+  semilla aleatoria y comparar en puntos fijos flags, variables, equipo, dinero,
+  posición y mapa. Primer objetivo: del inicio al final del laboratorio de Oak.
+  Entregar primero un informe de viabilidad (toolchain, emulador, cómo fijar la
+  semilla) antes de escribir código.
 - [ ] Decisión de diseño postgame (tickets de Mew/Deoxys).
 
 ## 5. Fuera de la meta principal (después)
