@@ -144,7 +144,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   captura y movimientos por nivel. Usa el campo `national` de
   `public/fr/data/species.json` para emparejar (el índice interno de FireRed no es
   el número nacional a partir de Treecko). Salida `refs/platinum/species_vs_firered.json`.
-- [ ] **R4 Resumen de Emerald por archivo** [básico]. Crea
+- [x] **R4 Resumen de Emerald por archivo** [básico]. Crea
   `tools/refs/emerald_summary.py`, que lee `refs/emerald/functions.json` y escribe
   `refs/emerald/summary.json`: por archivo `{lines, identical, different,
   emerald_only, firered_only}`, ordenado por `different + emerald_only` descendente.
