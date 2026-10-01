@@ -100,8 +100,9 @@ class DiplomaScreen {
     FreeAllWindowBuffers();
     this.scene.leave();
     this.game.scene = null;
-    this.game.setCallbacks(() => this.ow.cb1(), () => this.ow.cb2());
-    this.ow.FieldCB_ContinueScriptHandleMusic();
+    // CB2_ReturnToFieldFromDiploma selects the warp-exit field callback and
+    // then runs the ordinary local CB2_ReturnToField load/restore sequence.
+    this.game.CB2_ReturnToFieldFromDiploma();
   }
 
   /** DiplomaReset. */

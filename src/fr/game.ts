@@ -1023,6 +1023,16 @@ export class Game {
   /** CB2_ReturnToFieldContinueScriptPlayMapMusic (overworld.c). */
   CB2_ReturnToFieldContinueScriptPlayMapMusic(): void { this.returnToFieldContinueScript(true); }
 
+  /** CB2_ReturnToFieldFromDiploma: restore local field objects/map scripts before warp-exit. */
+  CB2_ReturnToFieldFromDiploma(): void {
+    const ow = this.overworld;
+    ow.SpawnObjectEventsOnReturnToField(0, 0);
+    ow.RunOnReturnToFieldMapScript();
+    ow.FieldCB_WarpExitFadeFromBlack();
+    ow.objects.unfreezeAll();
+    this.setCallbacks(() => ow.cb1(), () => ow.cb2());
+  }
+
   /** CB2_WhiteOut: respawn at the last heal location. */
   whiteOut(): void {
     this.whiteOutFrames = 0;

@@ -975,6 +975,9 @@ export class Overworld {
     this.player.ClearPlayerAvatarInfo();
     this.objects.SpawnObjectEventsOnReturnToField(x, y);
     this.syncObjectSprites();
+    // C calls CreateReflectionEffectSprites here after rebuilding all object
+    // sprites; ground-effect spawn dispatch recreates each visible reflection.
+    for (const object of this.objects.list) object.triggerGroundEffectsOnMove = true;
     const objectEventId = this.objects.indexOf(this.player.object);
     if (objectEventId >= 0) {
       this.player.SetPlayerAvatarObjectEventIdAndObjectId(objectEventId, this.sprites.getId(this.player.object.sprite));
