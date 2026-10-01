@@ -39,6 +39,17 @@ FIELDS = ("type", "power", "accuracy", "pp", "priority", "effect_chance")
 MOVE_COUNT = 355  # ids 0-354; compare ids 1-354
 
 
+def change_kind(field: str, firered: int, platinum: int) -> str:
+    """Separate target data conventions from actual value changes."""
+    if field == "accuracy" and platinum == 0 and firered == 100:
+        return "representation"  # Platinum uses 0 for moves that never miss.
+    if field == "power" and platinum == 1:
+        return "representation"  # Platinum marks variable-power moves with 1.
+    if field == "effect_chance" and platinum == 0 and firered == 100:
+        return "representation"  # Platinum uses 0 for guaranteed effects.
+    return "real"
+
+
 def main() -> None:
     platinum = json.loads((ROOT / "refs/platinum/moves.json").read_text())["data"]
     firered = json.loads((ROOT / "public/fr/data/moves.json").read_text())["moves"]
@@ -50,7 +61,8 @@ def main() -> None:
 
     differences = []
     counts: Counter[str] = Counter()
-    power_accuracy_pp_moves = 0
+    kinds: Counter[str] = Counter()
+    kind_fields: Counter[tuple[str, str]] = Counter()
     for move_id in range(1, MOVE_COUNT):
         p = platinum[move_id]
         f = firered[move_id]
@@ -81,12 +93,16 @@ def main() -> None:
         changes = {}
         for field in FIELDS:
             if firered_values[field] != platinum_values[field]:
-                changes[field] = [firered_values[field], platinum_values[field]]
+                kind = change_kind(field, firered_values[field], platinum_values[field])
+                changes[field] = {
+                    "values": [firered_values[field], platinum_values[field]],
+                    "kind": kind,
+                }
                 counts[field] += 1
+                kinds[kind] += 1
+                kind_fields[(kind, field)] += 1
         if changes:
             differences.append({"id": move_id, "const": p["const"], "cambios": changes})
-        if any(field in changes for field in ("power", "accuracy", "pp")):
-            power_accuracy_pp_moves += 1
 
     write_output(
         "platinum",
@@ -95,7 +111,12 @@ def main() -> None:
         "pokeplatinum",
         "tools/refs/compare_platinum_moves.py",
     )
-    print(f"{len(differences)} moves differ; {power_accuracy_pp_moves} change power, accuracy, or PP")
+    print(f"{len(differences)} moves differ; {sum(kinds.values())} field changes")
+    for kind in ("real", "representation"):
+        print(f"{kind}: {kinds[kind]} field changes")
+        for field in FIELDS:
+            if kind_fields[(kind, field)]:
+                print(f"  {field}: {kind_fields[(kind, field)]}")
     for field in FIELDS:
         print(f"{field}: {counts[field]} moves differ")
 
