@@ -90,8 +90,8 @@ ln -s ../pokemon/.decomp-build .decomp-build
 
 ### Herramientas automáticas (desde 2026-10-01)
 
-- `npm run check:all`: ejecuta los 40 checks headless y separa los 12 fallos
-  conocidos (`tools/checks/known-failing.json`, tarea 1.11) de las **regresiones**.
+- `npm run check:all`: ejecuta los 41 checks headless y separa los fallos conocidos
+  (`tools/checks/known-failing.json`, tarea 1.11) de las **regresiones**.
   Sale con error solo si hay una regresión. Si dice `FIXED`, quita ese check de la
   lista en el mismo commit que lo arregló. **Nunca añadas entradas** sin permiso del
   usuario. Para uno solo: `npm run check:all -- weather`.
@@ -271,11 +271,9 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
     tocar aserciones: `check:slots` (`cdata text not loaded` en `SlotsTask_GraphicsInit`)
     y `check:transitions` (línea 54, `helpers.FldEff_TallGrass` indefinido: los FldEff
     conectados viven en `fieldEffects.ts`). Ver con §1.11.
-- [ ] **1.6 Clima en pantalla** [verificar primero]. `field/weather.ts` solo dibuja
-  la niebla (`renderFog`, llamada desde `field/fieldEffects.ts`). Comprueba en
-  navegador (sección 3) si lluvia, nieve, sol y tormenta de arena se ven en un mapa
-  con ese clima. Si no se ven, la tarea pasa a ser [avanzado]: conectar los sprites
-  del clima al render.
+- [x] **1.6 Clima en pantalla** [verificar primero]. En FireRed basta validar
+  niebla (`renderFog`, llamada desde `field/fieldEffects.ts`) y sombra; los demás
+  climas están `// unused` y fuera de esta tarea.
   - **Sesión 2026-10-01: verificación de navegador no completada** (agente
     `mimo-v2.6-flash`; sin cambios de código). No hay automatización de navegador
     en el entorno y la ruta asistida por consola no llegó a ejecutarse: los
@@ -324,9 +322,15 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
     `WEATHER_FOG_HORIZONTAL` (19: Torre Pokémon 3F–7F, Cueva Perdida…) y
     `WEATHER_SHADE` (7 mapas + `setweather WEATHER_SHADE` en un script: Bosque Verde,
     Mansión Pokémon, Roca Ombligo). Lluvia, nieve, tormenta, ceniza y arena están
-    marcadas `// unused` en `include/constants/weather.h` y ningún mapa ni script las
-    usa. **Para la meta de un jugador basta validar niebla y sombra** en sus mapas
-    reales; el resto queda para Emerald (fase futura) y no bloquea esta tarea.
+     marcadas `// unused` en `include/constants/weather.h` y ningún mapa ni script las
+     usa. **Para la meta de un jugador basta validar niebla y sombra** en sus mapas
+     reales; el resto queda para Emerald (fase futura) y no bloquea esta tarea.
+  - **Hecha 2026-10-01 (OpenCode, Playwright Chromium headless):** warp real a
+    `MAP_POKEMON_TOWER_3F` (header `WEATHER_FOG_HORIZONTAL`=6) y a
+    `MAP_VIRIDIAN_FOREST` (header `WEATHER_SHADE`=11). Entre capturas de la torre
+    separadas 40 frames cambió el 34,9% de los píxeles; sombra en Bosque Verde dio
+    brillo medio 124,1 (mapa oscurecido). Cero errores de consola. Capturas en
+    `/tmp/pw/weather-real-fog-tower3f.png` y `weather-real-shade-forest.png`.
 - [x] **1.7 Evolución tras intercambio con NPC** [avanzado]. En C, `STATE_TRY_EVOLUTION`
   (`trade_scene.c`) llama `TradeEvolutionScene` con `gCB2_AfterEvolution = CB2_InGameTrade`.
   El TS (`pokemon/ingameTrade.ts`, ~línea 1054) usa `evolveWithMessages` después del
@@ -347,7 +351,7 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
     de objeto y guard Nacional) y guarda Everstone del C (bloquea todo menos
     `ITEM_CHECK`; el TS la tenía invertida; consumidores revisados). `tradeEvolution()`
     (`pokemon.ts`) eliminado sin callers. `check:port`/`honesty`/`build`/`trade` OK;
-    `check:evolution` sigue roto por `trySpawnShedinja` (§1.11, preexistente).
+    `check:evolution` sigue bloqueado por su aserción de Poké Ball incompatible con C (§1.11).
 - [x] **1.8 Grabación del Quest Log** [avanzado]. `TryRecordActionSequence`,
   `ResetActions`, `RecordHeadAtEndOfEntry`, `RecordHeadAtEndOfEntryOrScriptContext2Enabled`,
   `ClearSavedScene` y `Task_BeginQuestLogPlayback` (`quest_log.c`) son lógica activa en C.
@@ -364,30 +368,65 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
     save; anillo literal descartado (array + `DIFERENCIA` estructural) y Ruta 1 de
     `Task_BeginQuestLogPlayback` anotada para §2. `check:questlog-objects` pasa;
     `check:questlog-battle` sigue roto por `getQuestLogEvents` (§1.11, BLOQUEADO).
-- [ ] **1.9 Créditos** [avanzado]. Las escenas de mapa de `overworldCredits.ts` no
-  ejecutan NPCs, clima ni animación de tilesets.
-- [ ] **1.10 Audio M4A** [avanzado]. Faltan chorus/ADSR, el arbitraje de cuatro voces
-  y reverb/duty/sweep/keysplit (los cries usan WAV). Los 47 nombres restantes de
-  `m4a.c` son el driver interno: no hace falta portarlos uno a uno.
+- [x] **1.9 Créditos** [avanzado]. Las escenas de mapa de `overworldCredits.ts` no
+  ejecutaban NPCs, clima ni animación de tilesets.
+  - **Hecha (commits `f926b597`, `91b2e504`, `061b9206`, `ab6dbcd9`; Playwright Chromium headless):** el C
+    no genera ObjectEvents en `MapLdr_Credits` y los mapas reales usan `SUNNY`
+    (no-op). Se portó la inicialización y actualización de tiles animados. Se retiró el callback de cámara
+    del CB idle para no consumir el índice compartido mientras cambia el mapa. En
+    Route 23, tras 40 frames los tiles de agua cambiaron de checksum 4289 a 52146;
+    cámara paneó, sin errores de consola. `credits.c` también omite durations cero
+    en su CData; el TS las normaliza a 0 para que el contador de script no se vuelva
+    `NaN` tras las escenas de Pokémon. Validado el scroll inicial de mapas y el
+    agua animada; el recorrido completo de nombres/pantallas de créditos queda
+    diferido a la revisión visual de §3.1.
+- [x] **1.10 Audio M4A** [avanzado]. Los 47 nombres restantes de `m4a.c` son el
+  driver interno; se cierra la fidelidad audible pendiente (cries siguen usando WAV).
+  - **Hecha (commit `98725298`; pendiente de oído humano):** `m4a.ts` aplica ADSR por contadores de
+    envelope, duty square, sweep NR10, voice keysplit, envío de reverb y modo
+    chorus/longitud/priority con dos jugadores de cry (cuatro pistas con chorus).
+    Validación `check:m4a` (semántica/tabla) y Playwright `m4aAudio.job.mjs`
+    (`OfflineAudioContext`): duty 25%/50% separables (0,181/0,231 de muestras sobre
+    umbral), ataque rápido/lento RMS 0,086/0,00010 temprano, decay RMS 0,084/0,00005,
+    sweep ZCR 339→397, cola de reverb 2,64e-8, keysplit de `voicegroup012`, dos
+    jugadores/cuatro pistas cry; cero errores. Las métricas no son prueba de oído:
+    timbre y mezcla real quedan por escucha manual en §3.
 - [ ] **1.11 Checks headless con fallos propios** [básico/medio]. El 2026-10-01 se
   hizo perezoso `sText_100` (`battle_tower.c`), que se codificaba en ámbito de módulo
-  y rompía la carga de 26 checks; 18 pasan ya. Estos 12 fallan por causas ajenas.
-  No toques aserciones ni baselines: si el fallo es del port, anota `BLOQUEADO`.
-  - Datos que el check no registra antes de usarlos: `check:anims`
-    (`cdata … not loaded`), `check:slots` (`cdata text not loaded` en
-    `SlotsTask_GraphicsInit`), `check:weather` (`incbin index not loaded` en
-    `LoadRainSpriteSheet`), `check:earlybattles` y `check:brock-action`
-    (`cdata berry not loaded` en `GetBerryInfo`). Registra cdata/incbin en el
-    escenario del check como hace `tradeScene.ts`.
-  - Import sin export: `check:evolution` (`trySpawnShedinja` no está en
-    `menus/monProgress.ts`), `check:famechecker` (`sFameCheckerData` en
-    `fameChecker.ts`), `check:questlog-battle` (`getQuestLogEvents` en
-    `questLogEvents.ts`). Busca el nombre en el C y en el TS antes de decidir.
-  - Lógica/registro: `check:card` (`Fresh cart has 0 stars (Blue card)`),
-    `check:transitions` (línea 54, `helpers.FldEff_TallGrass` indefinido: los FldEff
-    conectados viven en `fieldEffects.ts`, no en `fieldEffectHelpers.ts`),
-    `check:teachytv` (`TTVcmd_ClearBg2TeachyTvGraphic` sin definir),
-    `check:trainer-see` (`objects.GetCollisionFlagsAtCoords` no existe).
+  y rompía la carga de 26 checks; 18 pasaban. En esta sesión se repararon escenarios
+  de datos, exports C y mocks; ahora pasan 8 de los 12 fallos conocidos. Cuatro
+  continúan bloqueados por checks/API fuera del alcance o expectativas que contradicen
+  el C; no alterar sus aserciones ni ampliar baselines.
+  - **Hechos (commits `d9effcdd`, `54d16cb0` y esta sesión):** `anims`, `slots`, `weather`,
+    `earlybattles`, `brock-action`, `card`, `teachytv`, `trainer-see`. Datos
+    cdata/incbin/packs registrados como hace
+    `tradeScene.ts`; exports de símbolos C restaurados; escenarios ajustados donde
+    los checks llamaban fuera de orden.
+  - **PISTA INCORRECTA; BLOQUEADO `check:evolution`:** el escenario ya llama
+    `CreateShedinja(preEvoSpecies, mon)` como en el C, pero la aserción exige gastar
+    una Poké Ball. `evolution_scene.c:550-585` no consume ninguna (`RemoveBagItem` no
+    aparece); aserción conservada según las reglas de §1.11.
+  - **PISTA INCORRECTA; BLOQUEADO `check:famechecker`:** C `FC_PopulateListMenu`
+    cuenta las 16 personas **más** CANCEL, total 17 (`fame_checker.c:1546`); el check
+    espera 16. La aserción se conserva.
+  - **PISTA INCORRECTA; BLOQUEADO `check:transitions`:** el check espera subpriority
+    9/11 inmediatamente tras spawn. C `FldEff_TallGrass` crea con 0 y lo calcula
+    después en su callback; `FldEff_Shadow` pasa 0x94 (`field_effect_helpers.c:221`).
+    Mock ahora sigue la ruta real, pero las aserciones contradictorias se conservan.
+  - `check:teachytv` ahora registra CData/fonts/incbins y carga layout Route 1 antes
+    del driver; su teardown crea la task y deja que el siguiente frame invoque el
+    callback de retorno.
+  - **BLOQUEADO: `check:questlog-battle`** importa `getQuestLogEvents`, que no existe
+    ni en `quest_log_battle.c` ni en `questLogEvents.ts`. Su supuesto `save.questLogEvents`
+    no es la ruta activa: los eventos single-player se empaquetan en
+    `save.questLogScenes[].script` por `RecordQuestLogEvent`; el resto del check prueba
+    eventos LINK, fuera del alcance single-player. No se añadió un getter/adaptador
+    ficticio ni se alteraron sus aserciones.
+  - **BLOQUEADO `check:questlog-battle`:** importa `getQuestLogEvents`, que no existe
+    en C ni TS. El save activo guarda eventos single-player en `questLogScenes[].script`;
+    el check además espera eventos LINK, fuera de esta meta. No se añadió getter falso.
+  - `known-failing.json` conserva estos cuatro checks; `npm run check:all` los separa
+    de regresiones.
 
 - [ ] **1.12 Flores y agua de la orilla no se animan** [básico]. Fallo real comprobado
   el 2026-10-01. En C, `QueueAnimTiles_*` recibe un `u16`, así que `timer / 16` es
@@ -593,8 +632,9 @@ y captura. Un FALLO se añade como tarea nueva en la sección 1 con su reproducc
   andando, cartel con el nombre del mapa y entrada a cueva (`route3` → Monte Moon).
 - [ ] **C13 Audio**: la música cambia al cambiar de mapa y al entrar en combate;
   efectos de menú y gritos suenan.
-- [ ] **C14 Clima** (tarea 1.6): FireRed solo usa niebla y sombra. Niebla: entrar en
-  la Torre Pokémon 3F (Pueblo Lavanda); debe verse la niebla horizontal moviéndose.
+- [x] **C14 Clima** (tarea 1.6): Playwright headless validó los mapas reales: niebla
+  horizontal en Pokémon Tower 3F y sombra en Viridian Forest; evidencia y cifras en
+  §1.6. Niebla: entrar en la Torre Pokémon 3F (Pueblo Lavanda); debe verse moviéndose.
   Sombra: entrar en el Bosque Verde (partida `oldman` y caminar al norte); la
   pantalla debe oscurecerse. Para probar sin llegar allí:
   `frGame.weather.setWeather(6)` (niebla) o `(11)` (sombra) y después

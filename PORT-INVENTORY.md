@@ -99,7 +99,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `berry_pouch.c` | 1529 | 77/77 | `berryPouch.ts`, `menus/fieldMenus.ts` |  |  |
 | `battle_anim_ghost.c` | 1484 | 41/41 | `battle/anims/ghost.ts` |  |  |
 | `battle_anim_ice.c` | 1474 | 32/32 | `battle/anims/ice.ts` |  |  |
-| `credits.c` | 1446 | 16/16 | `credits.ts`, `field/overworld.ts` |  |  |
+| `credits.c` | 1446 | 16/16 | `credits.ts`, `field/overworld.ts`, `overworldCredits.ts` |  |  |
 | `battle_tower.c` | 1425 | 45/45 | `battleTower.ts`, `script/specials.ts` |  |  |
 | `field_effect_helpers.c` | 1421 | 76/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  |  |
 | `teachy_tv.c` | 1400 | 58/58 | `teachyTv.ts` |  |  |
@@ -181,7 +181,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `special_field_anim.c` | 341 | 10/10 | `field/specialFieldAnim.ts`, `script/specialsExtra.ts` |  |  |
 | `event_data.c` | 336 | 26/26 | `save.ts` |  |  |
 | `battle_anim_sound_tasks.c` | 332 | 15/15 | `battle/anims/soundTasks.ts` |  |  |
-| `tileset_anims.c` | 332 | 28/28 | `field/tileRenderer.ts` |  |  |
+| `tileset_anims.c` | 332 | 28/28 | `field/tileRenderer.ts`, `overworldCredits.ts` |  |  |
 | `text_printer.c` | 326 | 15/15 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
 | `wild_pokemon_area.c` | 317 | 7/7 | `pokedexArea.ts` |  |  |
 | `reshow_battle_screen.c` | 314 | 7/7 | `battle/bg.ts`, `battle/reshow.ts` |  |  |
