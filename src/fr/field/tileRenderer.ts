@@ -296,9 +296,9 @@ export class TilesetAnimator {
 
   /** TilesetAnim_General. */
   TilesetAnim_General(timer: number): void {
-    if (timer % 8 === 0) this.QueueAnimTiles_General_SandWatersEdge(timer / 8);
-    if (timer % 16 === 1) this.QueueAnimTiles_General_Water_Current_LandWatersEdge(timer / 16);
-    if (timer % 16 === 2) this.QueueAnimTiles_General_Flower(timer / 16);
+    if (timer % 8 === 0) this.QueueAnimTiles_General_SandWatersEdge(Math.trunc(timer / 8));
+    if (timer % 16 === 1) this.QueueAnimTiles_General_Water_Current_LandWatersEdge(Math.trunc(timer / 16));
+    if (timer % 16 === 2) this.QueueAnimTiles_General_Flower(Math.trunc(timer / 16));
   }
 
   /** InitTilesetAnim_General. */
@@ -316,7 +316,7 @@ export class TilesetAnimator {
 
   /** TilesetAnim_CeladonCity. */
   TilesetAnim_CeladonCity(timer: number): void {
-    if (timer % 12 === 0) this.QueueAnimTiles_CeladonCity_Fountain(timer / 12);
+    if (timer % 12 === 0) this.QueueAnimTiles_CeladonCity_Fountain(Math.trunc(timer / 12));
   }
 
   /** InitTilesetAnim_CeladonCity. */
@@ -333,7 +333,7 @@ export class TilesetAnimator {
 
   /** TilesetAnim_SilphCo. */
   TilesetAnim_SilphCo(timer: number): void {
-    if (timer % 10 === 0) this.QueueAnimTiles_SilphCo_Fountain(timer / 10);
+    if (timer % 10 === 0) this.QueueAnimTiles_SilphCo_Fountain(Math.trunc(timer / 10));
   }
 
   /** InitTilesetAnim_SilphCo. */
@@ -350,7 +350,7 @@ export class TilesetAnimator {
 
   /** TilesetAnim_MtEmber. */
   TilesetAnim_MtEmber(timer: number): void {
-    if (timer % 16 === 0) this.QueueAnimTiles_MtEmber_Steam(timer / 16);
+    if (timer % 16 === 0) this.QueueAnimTiles_MtEmber_Steam(Math.trunc(timer / 16));
   }
 
   /** InitTilesetAnim_MtEmber. */
@@ -367,7 +367,7 @@ export class TilesetAnimator {
 
   /** TilesetAnim_VermilionGym. */
   TilesetAnim_VermilionGym(timer: number): void {
-    if (timer % 2 === 0) this.QueueAnimTiles_VermilionGym_MotorizedDoor(timer / 2);
+    if (timer % 2 === 0) this.QueueAnimTiles_VermilionGym_MotorizedDoor(Math.trunc(timer / 2));
   }
 
   /** InitTilesetAnim_VermilionGym. */
@@ -384,7 +384,7 @@ export class TilesetAnimator {
 
   /** TilesetAnim_CeladonGym. */
   TilesetAnim_CeladonGym(timer: number): void {
-    if (timer % 16 === 0) this.QueueAnimTiles_CeladonGym_Flowers(timer / 16);
+    if (timer % 16 === 0) this.QueueAnimTiles_CeladonGym_Flowers(Math.trunc(timer / 16));
   }
 
   /** InitTilesetAnim_CeladonGym. */
