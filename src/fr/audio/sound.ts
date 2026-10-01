@@ -140,6 +140,35 @@ class Sound {
     this.backend?.playSong("bgm", song);
   }
 
+  /** m4aSongNumStart: start the song on the BGM player. */
+  m4aSongNumStart(song: number): void { this.playBGM(song & 0xffff); }
+
+  /** m4aSongNumStartOrChange: replace the BGM only when it differs. */
+  m4aSongNumStartOrChange(song: number): void {
+    song &= 0xffff;
+    if (song !== this.currentBGM || this.isBGMPausedOrStopped()) this.playBGM(song);
+  }
+
+  /** m4aSongNumStartOrContinue: start a different song or resume the same one. */
+  m4aSongNumStartOrContinue(song: number): void {
+    song &= 0xffff;
+    if (song !== this.currentBGM || this.isBGMStopped()) this.playBGM(song);
+    else if (this.backend?.isPaused("bgm")) this.resumeBGM();
+  }
+
+  /** m4aSongNumStop: stop the current BGM when its song number matches. */
+  m4aSongNumStop(song: number): void {
+    if ((song & 0xffff) !== this.currentBGM) return;
+    this.fallbackBgmPlaying = false;
+    this.fallbackBgmPaused = false;
+    this.backend?.stop("bgm");
+  }
+
+  /** m4aSongNumContinue: resume the matching current song. */
+  m4aSongNumContinue(song: number): void {
+    if ((song & 0xffff) === this.currentBGM) this.resumeBGM();
+  }
+
   /** PlayMapChosenOrBattleBGM resets map-music state and stops the previous BGM first. */
   playBattleBGM(song: number): void {
     for (const player of ["bgm", "se1", "se2", "fanfare"] as const) this.backend?.stop(player);
