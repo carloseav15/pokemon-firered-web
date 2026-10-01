@@ -21,7 +21,7 @@ import { AdjustFriendship } from "../pokemon/mon_extra";
 import { tasks } from "../gba/tasks";
 import { GetRamScript } from "../script/context";
 import { StartEscalatorWarp } from "./escalatorWarp";
-import { QL_HandleInput, QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, QuestLogPlayback_FinalSceneRunCB, QuestLogPlayback_RunCB, QuestLogScenePlaybackIsEnding, type QuestLogPlaybackCommands } from "../questLogEvents";
+import { QL_HandleInput, QL_RecordFieldInput, QL_TryRunActions, gQuestLogPlaybackState, gQuestLogState, QuestLogPlayback_FinalSceneRunCB, QLogCB_Playback, QuestLogScenePlaybackIsEnding, type QuestLogPlaybackCommands } from "../questLogEvents";
 import { QuestLogUpdatePlayerSprite } from "../questLogPlayer";
 import { ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, GetRegisteredQuestLogInput, IsQuestLogInputDpad, RegisterQuestLogInput } from "../script/context";
 import { InUnionRoom } from "../unionRoom";
@@ -183,7 +183,7 @@ export class FieldControl {
       }
     }
     if (gQuestLogState === C.QL_STATE_PLAYBACK && !startedFieldAction
-      && (!this.ow.controlsLocked || QuestLogScenePlaybackIsEnding())) QuestLogPlayback_RunCB(this.ow);
+      && (!this.ow.controlsLocked || QuestLogScenePlaybackIsEnding())) QLogCB_Playback(this.ow);
     QuestLogPlayback_FinalSceneRunCB(this.ow, newKeys);
   }
 

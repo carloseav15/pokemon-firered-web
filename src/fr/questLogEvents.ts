@@ -731,20 +731,30 @@ export function TogglePlaybackStateForOverworldLock(lock: boolean): void {
 export function QL_HandleInput(newKeys: number): void {
   if (gQuestLogState !== C.QL_STATE_PLAYBACK || sPlaybackEndMode !== 0) return;
   if (newKeys & 1) {
-    sPlaybackEndMode = 1;
-    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-    FadeScreen(FADE_TO_BLACK, -3);
-    sPlaybackTransitionStarted = true;
+    DoSceneEndTransition(-3);
   } else if (newKeys & 2) {
-    sPlaybackEndMode = 2;
-    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-    FadeScreen(FADE_TO_BLACK, -3);
-    sPlaybackTransitionStarted = true;
+    DoSkipToEndTransition(-3);
   }
 }
 
+/** DoSceneEndTransition (quest_log.c): fade out and advance to the next saved scene. */
+function DoSceneEndTransition(delay: number): void {
+  sPlaybackEndMode = 1;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+  FadeScreen(FADE_TO_BLACK, delay);
+  sPlaybackTransitionStarted = true;
+}
+
+/** DoSkipToEndTransition (quest_log.c): fade out and finish playback after this scene. */
+function DoSkipToEndTransition(delay: number): void {
+  sPlaybackEndMode = 2;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+  FadeScreen(FADE_TO_BLACK, delay);
+  sPlaybackTransitionStarted = true;
+}
+
 /** QLogCB_Playback (quest_log.c): advance timed event text and end states. */
-export function QuestLogPlayback_RunCB(ow: Overworld): void {
+export function QLogCB_Playback(ow: Overworld): void {
   if (sPlaybackEndMode !== 0) {
     if (!sPlaybackTransitionStarted) {
       FadeScreen(FADE_TO_BLACK, 0);
@@ -792,8 +802,7 @@ export function QuestLogPlayback_RunCB(ow: Overworld): void {
     return;
   }
   if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED && sPlaybackEventCursor >= sPlaybackEvents.length) {
-    sPlaybackEndMode = 1;
-    sPlaybackTransitionStarted = false;
+    DoSceneEndTransition(0);
   }
 }
 
