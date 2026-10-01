@@ -8,7 +8,7 @@ import { registerCData } from '../../src/fr/hw/assets.ts';
 import { rom } from '../../src/fr/rom.ts';
 import * as C from '../../src/fr/generated/constants.ts';
 import { createMon, speciesName, type Pokemon } from '../../src/fr/pokemon/pokemon.ts';
-import { trySpawnShedinja } from '../../src/fr/menus/monProgress.ts';
+import { CreateShedinja as trySpawnShedinja } from '../../src/fr/evolutionScene.ts';
 import { save } from '../../src/fr/save.ts';
 
 const root = process.cwd() + '/public/fr/';
@@ -112,9 +112,12 @@ save.bag = { pokeBalls: [{ item: C.ITEM_POKE_BALL, quantity: 5 }] } as unknown a
 const nincada = createMon(C.SPECIES_NINCADA, 20);
 save.party.push(nincada);
 
-trySpawnShedinja(nincada, C.SPECIES_NINCADA);
+// C convention: CreateShedinja(preEvoSpecies, mon).
+trySpawnShedinja(C.SPECIES_NINCADA, nincada);
 assert.equal(save.party.length, 2, 'Shedinja was added to party');
 assert.equal(save.party[1].species, C.SPECIES_SHEDINJA, 'New party member is Shedinja');
-assert.equal(save.bag.pokeBalls[0].quantity, 4, 'Used one Poké Ball for Shedinja');
+// PISTA INCORRECTA corregida (2026-10-01): evolution_scene.c CreateShedinja
+// (:550-585) no consume Poké Ball (sin RemoveBagItem); la bola solo debe existir.
+assert.equal(save.bag.pokeBalls[0].quantity, 5, 'Shedinja consumes no Poke Ball (evolution_scene.c)');
 
 console.log('✓ All evolutionScene parity checks passed!');

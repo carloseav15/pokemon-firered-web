@@ -23,6 +23,7 @@ import { G, resetBattleStructs } from '../../src/fr/battle/globals.ts';
 import { CB2_InitBattle, FreeRestoreBattleData } from '../../src/fr/battle/main_init.ts';
 import { createMon, giveMonToPlayer } from '../../src/fr/pokemon/pokemon.ts';
 import { save, newSaveData, setSave } from '../../src/fr/save.ts';
+import { registerCData } from '../../src/fr/hw/assets.ts';
 import { GetTrainerBattleTransition } from '../../src/fr/battle/transition.ts';
 import type { Overworld } from '../../src/fr/field/overworld.ts';
 
@@ -71,6 +72,12 @@ async function initData() {
   rom.items = itemsRaw.items;
   rom.itemEffects = itemsRaw.effects;
   rom.fonts = JSON.parse(readFileSync(fr + 'gfx/fonts.json', 'utf8'));
+
+  // Battle boot reads berry data (GetBerryInfo via SetAllPlayersBerryData).
+  registerCData('berry', JSON.parse(readFileSync(fr + 'cdata/berry.json', 'utf8')).defs);
+  // Battle messages print via the text printer tables.
+  registerCData('text', JSON.parse(readFileSync(fr + 'cdata/text.json', 'utf8')).defs);
+  registerCData('text_printer', JSON.parse(readFileSync(fr + 'cdata/text_printer.json', 'utf8')).defs);
 
   sound.init(rom.constants);
   await loadTrig();

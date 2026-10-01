@@ -4,7 +4,7 @@
 import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { registerCData } from '../../src/fr/hw/assets.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
 import * as Trig from '../../src/fr/hw/trig.ts';
 import * as Weather from '../../src/fr/field/weather.ts';
 import { sound } from '../../src/fr/audio/sound.ts';
@@ -16,6 +16,11 @@ const root = process.cwd() + '/public/fr/';
 const trigCData = JSON.parse(readFileSync(root + 'cdata/trig.json', 'utf8'));
 registerCData('trig', trigCData.defs);
 Trig.initTrig();
+
+// Rain/snow sprite sheets (LoadRainSpriteSheet and friends) come from incbin.
+registerIncbinIndex(JSON.parse(readFileSync(root + 'incbin/index.json', 'utf8')));
+const weatherBin = readFileSync(root + 'incbin/graphics_weather.bin');
+registerPack('graphics_weather', new Uint8Array(weatherBin.buffer, weatherBin.byteOffset, weatherBin.byteLength));
 
 console.log('--- 0. Testing rain sound state and fade-out guard ---');
 const playedRainSounds: number[] = [];

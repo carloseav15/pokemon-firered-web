@@ -21,6 +21,10 @@ const root = process.cwd() + '/public/fr/';
 
 // 1. Load constants, strings, species, charmap, incbin index
 rom.constants = JSON.parse(readFileSync(root + 'constants.json', 'utf8'));
+// Dex sizes are compile-time C constants absent from constants.json; the dex
+// completion predicates need them (else HasAllHoennMons is vacuously true).
+for (const k of ['HOENN_DEX_COUNT', 'KANTO_DEX_COUNT', 'NATIONAL_DEX_COUNT'] as const)
+  if ((rom.constants as any)[k] === undefined) (rom.constants as any)[k] = (C as any)[k];
 rom.charmap = JSON.parse(readFileSync(root + 'charmap.json', 'utf8'));
 rom.strings = JSON.parse(readFileSync(root + 'data/strings.json', 'utf8'));
 const speciesRaw = JSON.parse(readFileSync(root + 'data/species.json', 'utf8'));
@@ -29,6 +33,11 @@ rom.pokedex = speciesRaw.pokedex;
 rom.fonts = JSON.parse(readFileSync(root + 'gfx/fonts.json', 'utf8'));
 
 registerIncbinIndex(JSON.parse(readFileSync(root + 'incbin/index.json', 'utf8')));
+// Font glyphs for the card screen text.
+for (const pack of ['graphics_fonts', 'graphics_interface', 'graphics_text_window']) {
+  const buf = readFileSync(root + `incbin/${pack}.bin`);
+  registerPack(pack, new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+}
 registerPack('graphics_trainer_card', new Uint8Array(readFileSync(root + 'incbin/graphics_trainer_card.bin')));
 registerPack('graphics_trainers', new Uint8Array(readFileSync(root + 'incbin/graphics_trainers.bin')));
 registerPack('pokemon', new Uint8Array(readFileSync(root + 'incbin/pokemon.bin')));
@@ -40,6 +49,13 @@ const trainerCardCData = JSON.parse(readFileSync(root + 'cdata/trainer_card.json
 registerCData('trainer_card', trainerCardCData.defs);
 const pokemonIconCData = JSON.parse(readFileSync(root + 'cdata/pokemon_icon.json', 'utf8'));
 registerCData('pokemon_icon', pokemonIconCData.defs);
+// Species/cry tables read by MailSpeciesToIconSpecies and dex predicates.
+const pokemonCData = JSON.parse(readFileSync(root + 'cdata/pokemon.json', 'utf8'));
+registerCData('pokemon', pokemonCData.defs);
+// Card screen text prints via the text printer tables.
+for (const file of ['text', 'text_printer', 'text_window_graphics']) {
+  registerCData(file, JSON.parse(readFileSync(root + `cdata/${file}.json`, 'utf8')).defs);
+}
 const textWindowGfxCData = JSON.parse(readFileSync(root + 'cdata/text_window_graphics.json', 'utf8'));
 registerCData('text_window_graphics', textWindowGfxCData.defs);
 

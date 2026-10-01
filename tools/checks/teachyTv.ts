@@ -2,12 +2,26 @@
 // Run with: npm run check:teachytv
 
 import './setupNodeGbaMock.ts';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/fr/hw/assets.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
+import { rom } from '../../src/fr/rom.ts';
 import * as TeachyTv from '../../src/fr/teachyTv.ts';
 
 const root = process.cwd() + '/public/fr/';
+(globalThis as any).fetch = async (url: string) => {
+  let norm = String(url).replace(/^\/?/, '/');
+  if (!norm.startsWith('/fr/')) norm = '/fr' + norm;
+  const path = process.cwd() + '/public' + norm;
+  if (!existsSync(path)) throw new Error(`fetch 404: ${url} -> ${path}`);
+  const buf = readFileSync(path);
+  return {
+    ok: true,
+    json: async () => JSON.parse(buf.toString('utf8')),
+    arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+    text: async () => buf.toString('utf8'),
+  };
+};
 
 console.log('--- 1. Testing teachy_tv cdata & incbin assets ---');
 const teachyTvCData = JSON.parse(readFileSync(root + 'cdata/teachy_tv.json', 'utf8'));
@@ -18,6 +32,15 @@ assert.ok(teachyTvCData.defs.sListMenuTemplate, 'sListMenuTemplate must exist in
 assert.ok(teachyTvCData.defs.sListMenuItems, 'sListMenuItems must exist in cdata');
 
 const incbinIndex = JSON.parse(readFileSync(root + 'incbin/index.json', 'utf8'));
+registerIncbinIndex(incbinIndex);
+// Same packs as preloadTeachyTv (graphics_object_events missing as a pack is fine:
+// registerPack only for files that exist).
+for (const pack of ['graphics_teachy_tv', 'graphics_object_events', 'graphics_text_window', 'graphics_fonts', 'graphics_field_effects', 'graphics_interface', 'graphics_field_effect_objects', 'graphics_pokemon_storage', 'graphics_pokedude', 'graphics_battle_interface', 'pokemon']) {
+  try {
+    const buf = readFileSync(root + `incbin/${pack}.bin`);
+    registerPack(pack, new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+  } catch { /* pack file absent: symbols resolve only if present */ }
+}
 assert.ok(incbinIndex.symbols['gTeachyTvScreen_Tilemap'], 'gTeachyTvScreen_Tilemap in incbin');
 assert.ok(incbinIndex.symbols['gTeachyTvTitle_Tilemap'], 'gTeachyTvTitle_Tilemap in incbin');
 assert.ok(incbinIndex.symbols['gTeachyTv_Border_Gfx'], 'gTeachyTv_Border_Gfx in incbin');
@@ -93,6 +116,20 @@ for (const fnName of expectedFns) {
 console.log(`✓ All ${expectedFns.length} functions defined with 1:1 C matching names`);
 
 console.log('--- 3. Testing TeachyTv initialization and teardown ---');
+// TeachyTvLoadBg3Map draws the Route 1 layout (same as preloadTeachyTv).
+(rom as any).strings = JSON.parse(readFileSync(root + 'data/strings.json', 'utf8'));
+(rom as any).charmap = JSON.parse(readFileSync(root + 'charmap.json', 'utf8'));
+(rom as any).fonts = JSON.parse(readFileSync(root + 'gfx/fonts.json', 'utf8'));
+{
+  const speciesRaw = JSON.parse(readFileSync(root + 'data/species.json', 'utf8'));
+  (rom as any).species = speciesRaw.species;
+  const movesRaw = JSON.parse(readFileSync(root + 'data/moves.json', 'utf8'));
+  (rom as any).moves = movesRaw.moves;
+  const itemsRaw = JSON.parse(readFileSync(root + 'data/items.json', 'utf8'));
+  (rom as any).items = itemsRaw.items;
+}
+const tvLayout = await rom.loadLayout('LAYOUT_ROUTE1');
+await Promise.all([rom.loadTileset(tvLayout.primary), rom.loadTileset(tvLayout.secondary)]);
 let exited = false;
 TeachyTv.InitTeachyTvController(0, () => {
   exited = true;

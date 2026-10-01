@@ -112,7 +112,8 @@ type FameCheckerData = {
 let sBg3TilemapBuffer: Uint16Array | null = null;
 let sBg1TilemapBuffer: Uint16Array | null = null;
 let sBg2TilemapBuffer: Uint16Array | null = null;
-let sFameCheckerData: FameCheckerData | null = null;
+/** fame_checker.c sFameCheckerData (static in C; exported for the headless check). */
+export let sFameCheckerData: FameCheckerData | null = null;
 let sListMenuItems: ListMenuItem[] = [];
 let sLastMenuIdx = 0;
 const gFameChecker_ListMenuTemplate: ListMenuTemplate = {

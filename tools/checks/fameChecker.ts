@@ -53,9 +53,25 @@ async function initData() {
   rom.charmap = JSON.parse(readFileSync(fr + 'charmap.json', 'utf8'));
   rom.strings = JSON.parse(readFileSync(fr + 'data/strings.json', 'utf8'));
   rom.trainers = JSON.parse(readFileSync(fr + 'data/trainers.json', 'utf8'));
+  (rom as any).fonts = JSON.parse(readFileSync(fr + 'gfx/fonts.json', 'utf8'));
+  // Flavor texts resolve through script labels (same subset rom.load() reads).
+  (rom as any).scriptMeta = JSON.parse(readFileSync(fr + 'scripts.json', 'utf8'));
+  {
+    const buf = readFileSync(fr + 'scripts.bin');
+    (rom as any).scripts = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  }
   sound.init(rom.constants);
   await loadTrig();
   await preloadFameCheckerAssets();
+  // Menu/palette assets the UI run reads beyond preloadFameCheckerAssets.
+  const { registerCData, registerPack } = await import('../../src/fr/hw/assets.ts');
+  for (const pack of ['graphics_interface', 'graphics_text_window', 'graphics_fonts']) {
+    const buf = readFileSync(fr + `incbin/${pack}.bin`);
+    registerPack(pack, new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+  }
+  for (const file of ['text_window_graphics', 'text', 'text_printer']) {
+    registerCData(file, JSON.parse(readFileSync(fr + `cdata/${file}.json`, 'utf8')).defs);
+  }
 }
 
 async function testFameCheckerDataState() {
@@ -97,9 +113,10 @@ async function testFameCheckerUI() {
   };
 
   UseFameChecker(onExit);
-  assert.equal(sFameCheckerData.numUnlockedPersons, NUM_FAMECHECKER_PERSONS, 'All 16 persons populated in UI list');
 
-  // Run frames through loading states until fade is complete
+  // Run frames through loading states until fade is complete. In the C the UI
+  // list is populated by the loader states (FC_PopulateListMenu), not by
+  // UseFameChecker itself, so the count is only valid afterwards.
   for (let i = 0; i < 20; i++) {
     frame();
   }
@@ -107,21 +124,26 @@ async function testFameCheckerUI() {
     frame();
   }
   frame(); // Transition from Task_WaitFadeOnInit to Task_TopMenuHandleInput
+  // PISTA INCORRECTA corregida (2026-10-01): FC_PopulateListMenu
+  // (fame_checker.c:1546) cuenta la fila CANCEL: 16 + 1 = 17.
+  assert.equal(sFameCheckerData.numUnlockedPersons, NUM_FAMECHECKER_PERSONS + 1, 'All 16 persons + CANCEL populated in UI list');
   assert.ok(!sFameCheckerData.inPickMode, 'Starts in list mode');
 
-  // Press START to enter pick mode (photo / silhouette view)
+  // Press START to enter pick mode (photo / silhouette view). The person pic
+  // slides in at 10px/frame from x2=240 (SpriteCB_FCSpinningPokeball), so the
+  // C animation needs ~24+ frames before Task_EnterPickMode flips the flag.
   joy.press(START_BUTTON);
   frame();
   joy.release(START_BUTTON);
-  for (let i = 0; i < 10; i++) frame();
+  for (let i = 0; i < 80 && !sFameCheckerData.inPickMode; i++) frame();
   assert.ok(sFameCheckerData.inPickMode, 'Entered pick mode on START press');
   console.log('✓ Enter pick mode on START key verified');
 
-  // Press B to exit pick mode
+  // Press B to exit pick mode (same slide-out animation in reverse)
   joy.press(B_BUTTON);
   frame();
   joy.release(B_BUTTON);
-  for (let i = 0; i < 10; i++) frame();
+  for (let i = 0; i < 80 && sFameCheckerData.inPickMode; i++) frame();
   assert.ok(!sFameCheckerData.inPickMode, 'Exited pick mode on B key');
   console.log('✓ Exit pick mode on B key verified');
 

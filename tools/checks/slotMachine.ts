@@ -31,6 +31,12 @@ registerCData('trig', trigCData.defs);
 const textWinCData = JSON.parse(readFileSync(root + 'cdata/text_window_graphics.json', 'utf8'));
 registerCData('text_window_graphics', textWinCData.defs);
 
+// SlotsTask_GraphicsInit prints via the text printer tables.
+const textCData = JSON.parse(readFileSync(root + 'cdata/text.json', 'utf8'));
+registerCData('text', textCData.defs);
+const textPrinterCData = JSON.parse(readFileSync(root + 'cdata/text_printer.json', 'utf8'));
+registerCData('text_printer', textPrinterCData.defs);
+
 const stringsJson = JSON.parse(readFileSync(root + 'data/strings.json', 'utf8'));
 (rom as any).strings = stringsJson;
 (rom as any).fonts = JSON.parse(readFileSync(root + 'gfx/fonts.json', 'utf8'));
@@ -44,6 +50,12 @@ registerPack('graphics_slot_machine', new Uint8Array(packBuf.buffer, packBuf.byt
 
 const textWinBuf = readFileSync(root + 'incbin/graphics_text_window.bin');
 registerPack('graphics_text_window', new Uint8Array(textWinBuf.buffer, textWinBuf.byteOffset, textWinBuf.byteLength));
+
+// Text printing needs the font glyphs.
+for (const pack of ['graphics_fonts', 'graphics_interface']) {
+  const buf = readFileSync(root + `incbin/${pack}.bin`);
+  registerPack(pack, new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+}
 
 
 assert.ok(incbinIndex.symbols['slot_machine.c:sBg_Tiles'], 'sBg_Tiles in incbin');

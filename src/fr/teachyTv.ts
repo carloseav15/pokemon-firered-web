@@ -80,8 +80,9 @@ type TeachyTvBuf = {
   scrollIndicatorArrowPairId: number;
 };
 
-const sStaticResources: TeachyTvCtrlBlk = { callback: null, mode: 0, whichScript: 0, scrollOffset: 0, selectedRow: 0 };
-let sResources: TeachyTvBuf | null = null;
+/** teachy_tv.c statics (file-private in C; exported for the headless check). */
+export const sStaticResources: TeachyTvCtrlBlk = { callback: null, mode: 0, whichScript: 0, scrollOffset: 0, selectedRow: 0 };
+export let sResources: TeachyTvBuf | null = null;
 
 /** Browser adaptation: the Game and the hardware scene hosting the screen (for the pre-battle transition and the exit). */
 let sHost: { game: Game; scene: Game["scene"] } | null = null;
@@ -580,7 +581,8 @@ function TeachyTvClearBg1EndGraphicText(): void {
   ScheduleBgCopyTilemapToVram(1);
 }
 
-function TTVcmd_End(taskId: number): void {
+/** teachy_tv.c TTVcmd_End (also exported under its C name for the headless check). */
+export function TTVcmd_End(taskId: number): void {
   const data = tasks.tasks[taskId].data;
   if (data[2] === 0) sound.playNewMapMusic(C.MUS_TEACHY_TV_MENU);
   TeachyTvBg2AnimController();
@@ -619,6 +621,25 @@ TTVcmds.TTVcmd_TaskBattleOrFadeByOptionChosen = function TTVcmd_TaskBattleOrFade
       break;
   }
 };
+
+/** teachy_tv.c TTVcmd_* table entries, also exported under their C names for the headless check. */
+export const {
+  TTVcmd_TransitionRenderBg2TeachyTvGraphicInitNpcPos,
+  TTVcmd_ClearBg2TeachyTvGraphic,
+  TTVcmd_NpcMoveAndSetupTextPrinter,
+  TTVcmd_IdleIfTextPrinterIsActive,
+  TTVcmd_TextPrinterSwitchStringByOptionChosen,
+  TTVcmd_TextPrinterSwitchStringByOptionChosen2,
+  TTVcmd_IdleIfTextPrinterIsActive2,
+  TTVcmd_EraseTextWindowIfKeyPressed,
+  TTVcmd_StartAnimNpcWalkIntoGrass,
+  TTVcmd_DudeMoveUp,
+  TTVcmd_DudeMoveRight,
+  TTVcmd_DudeTurnLeft,
+  TTVcmd_DudeMoveLeft,
+  TTVcmd_RenderAndRemoveBg1EndGraphic,
+  TTVcmd_TaskBattleOrFadeByOptionChosen,
+} = TTVcmds;
 
 function TeachyTvSetupBagItemsByOptionChosen(): void {
   if (sStaticResources.whichScript === TTVSCR_TMS) InitPokedudeBagTMs(() => CB2_ReturnToTeachyTV(), SetTeachyTvControllerModeToResume);
@@ -874,3 +895,46 @@ function TeachyTvLoadMapPalette(primaryPalettes: number[][][], secondaryPalettes
     LoadPalette(dest.map(rgb555), BG_PLTT_ID(15 - i), PLTT_SIZE_4BPP);
   }
 }
+
+/** teachy_tv.c file-private functions, exported under their C names for the headless check. */
+export {
+  TeachyTvAudioByInput,
+  TeachyTvBg2AnimController,
+  TeachyTvCallback,
+  TeachyTvClearBg1EndGraphicText,
+  TeachyTvClearWindowRegs,
+  TeachyTvComputeMapTilesFromTilesetAndMetaTiles,
+  TeachyTvComputePalIndexArrayEntryByMetaTile,
+  TeachyTvComputeSingleMapTileBlockFromTilesetAndMetaTiles,
+  TeachyTvCreateAndRenderRbox,
+  TeachyTvFree,
+  TeachyTvGrassAnimationCheckIfNeedsToGenerateGrassObj,
+  TeachyTvGrassAnimationMain,
+  TeachyTvGrassAnimationObjCallback,
+  TeachyTvInitIo,
+  TeachyTvInitTextPrinter,
+  TeachyTvLoadBg3Map,
+  TeachyTvLoadGraphic,
+  TeachyTvLoadMapPalette,
+  TeachyTvLoadMapTilesetToBuffer,
+  TeachyTvMainCallback,
+  TeachyTvOptionListController,
+  TeachyTvPostBattleFadeControl,
+  TeachyTvPreBattleAnimAndSetBattleCallback,
+  TeachyTvPrepBattle,
+  TeachyTvPushBackNewMapPalIndexArrayEntry,
+  TeachyTvQuitBeginFade,
+  TeachyTvQuitFadeControlAndTaskDel,
+  TeachyTvRemoveScrollIndicatorArrowPair,
+  TeachyTvRenderMsgAndSwitchClusterFuncs,
+  TeachyTvRestorePlayerPartyCallback,
+  TeachyTvSetSpriteCoordsAndSwitchFrame,
+  TeachyTvSetWindowRegs,
+  TeachyTvSetupBagItemsByOptionChosen,
+  TeachyTvSetupBg,
+  TeachyTvSetupObjEventAndOam,
+  TeachyTvSetupPostBattleWindowAndObj,
+  TeachyTvSetupScrollIndicatorArrowPair,
+  TeachyTvSetupWindow,
+  TeachyTvVblankHandler,
+};

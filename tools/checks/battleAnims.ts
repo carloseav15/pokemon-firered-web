@@ -45,6 +45,12 @@ console.warn = (...args: unknown[]) => {
 };
 
 await rom.load();
+// Battle boot reads berry data (GetBerryInfo via SetAllPlayersBerryData),
+// and battle messages print via the text printer tables.
+const { registerCData } = await import('../../src/fr/hw/assets.ts');
+registerCData('berry', JSON.parse(readFileSync(root + '/fr/cdata/berry.json', 'utf8')).defs);
+registerCData('text', JSON.parse(readFileSync(root + '/fr/cdata/text.json', 'utf8')).defs);
+registerCData('text_printer', JSON.parse(readFileSync(root + '/fr/cdata/text_printer.json', 'utf8')).defs);
 // Import the runtime only after ROM constants are available. Some field modules
 // build constant lookup tables at module scope with rom.c(...).
 const [{ sound }, { loadTrig }, { runHwFrame, SetMainCallback2 }, { ppu }, { DestroySprite, gSprites, MAX_SPRITES },

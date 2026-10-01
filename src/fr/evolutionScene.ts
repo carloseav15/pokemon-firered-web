@@ -165,8 +165,10 @@ const TAG_POST_EVO = 1003;
 const DISPCNT_BG_ALL_ON = DISPCNT_BG0_ON | DISPCNT_BG1_ON | DISPCNT_BG2_ON | DISPCNT_BG3_ON;
 
 /** evolution_scene.c CreateShedinja. Nincada's second evolution is granted
- * after the Ninjask evolution, using the evolved mon as the source record. */
-function CreateShedinja(preEvoSpecies: number, mon: Pokemon): void {
+ * after the Ninjask evolution, using the evolved mon as the source record.
+ * Exported under its C name for the headless evolution check; the C keeps it
+ * static and consumes no Poké Ball (no RemoveBagItem in evolution_scene.c). */
+export function CreateShedinja(preEvoSpecies: number, mon: Pokemon): void {
   const evolutions = rom.species[preEvoSpecies]?.evolutions;
   const ninjaskEvolution = evolutions?.[0];
   const shedinjaEvolution = evolutions?.[1];

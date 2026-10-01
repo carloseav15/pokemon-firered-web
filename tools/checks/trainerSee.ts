@@ -36,8 +36,11 @@ assert.equal(defs.sDirectionalApproachDistanceFuncs.value[3].$sym, "GetTrainerAp
 // 2. Test directional distance calculations
 const mockObjects = {
   list: [],
-  collisionAt: (_trainer: ObjectEvent, _x: number, _y: number, _dir: number) => COLLISION_OBJECT_EVENT,
-  collisionFlagsAt: (_trainer: ObjectEvent, _x: number, _y: number, _dir: number) => 0,
+  // ObjectEvents.GetCollisionAtCoords (event_object_movement.c): the player tile
+  // collides as an object event; the path itself is open (flags 0 below).
+  GetCollisionAtCoords: (_trainer: ObjectEvent, _x: number, _y: number, _dir: number) => COLLISION_OBJECT_EVENT,
+  // ObjectEvents.GetCollisionFlagsAtCoords (event_object_movement.c): open path here.
+  GetCollisionFlagsAtCoords: (_trainer: ObjectEvent, _x: number, _y: number, _dir: number) => 0,
   isMovementOverridden: (_obj: ObjectEvent) => false,
   ObjectEventClearHeldMovementIfFinished: (_obj: ObjectEvent) => 1,
   setHeldMovement: (_obj: ObjectEvent, action: number) => { (_obj as any).heldMovement = action; },
