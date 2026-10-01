@@ -498,15 +498,35 @@ Receta para cada línea:
   `PartyMenuStartSpriteAnim`, los tres `CB2_ReturnTo*Menu`, `CB2_SetUpExitToBattleScreen`.
 
 **`pokemon.c`**
-- [ ] `GetLevelFromBoxMonExp`, `GetBoxMonGender`, `GetBoxMonData3`, `SetBoxMonData`,
+- [x] `GetLevelFromBoxMonExp`, `GetBoxMonGender`, `GetBoxMonData3`, `SetBoxMonData`,
   `GetMonAbility`, `GetMonSpritePalStruct` (delegan en sus equivalentes de Mon).
+  Revisión 2026-10-01: se compararon los seis cuerpos y tipos con `pokemon.c`.
+  El límite de checksum/cifrado de BoxMon está expresamente adaptado en el modelo
+  TS y no forma parte del wrapper. `GetMonSpritePalStruct` lee
+  `MON_DATA_SPECIES`, como el C; la variante `SPECIES_OR_EGG` pertenece a otro
+  helper de carga, no a este cuerpo.
 
 **`pokemon_summary_screen.c`**
 - [ ] `SwapBoxMonMoveSlots`, `UpdateCurrentMonBufferFromPartyOrBox`, transición de
   páginas, setup y `SpriteCB_MonPicDummy`.
 
 **`text.c`** (`gba/textPrinter.ts`, `gba/font.ts`)
-- [ ] `DecompressGlyph_NormalCopy2`, `TextPrinter*` ×6 y `RenderText`.
+- [x] `DecompressGlyph_NormalCopy2`: misma rama japonesa, glifo cero, cuatro
+  bloques y fallback a `DecompressGlyph_Normal`; `glyphId` corresponde a `u16`.
+- [x] `TextPrinterInitDownArrowCounters`, `TextPrinterWaitAutoMode`,
+  `TextPrinterWaitWithDownArrow`, `TextPrinterWait`: mismos estados, límites 50/120,
+  eventos A/B, sonido y orden de llamada; el retraso de flecha es `u8` de 5 bits
+  en C (8 cabe sin recorte).
+- [ ] `TextPrinterDrawDownArrow`, `TextPrinterClearDownArrow`.
+  DIFERENCIA: el C rellena la ventana y luego llama `CopyWindowToVram(..., 0x2)`
+  tras dibujar o limpiar; el TS modifica directamente el surface Canvas y no tiene
+  la copia explícita a VRAM. El índice sí conserva el bitfield C de 2 bits con `& 3`.
+- [ ] `RenderText`.
+  DIFERENCIA: las ramas y el orden de comandos/glyphs corresponden en el driver,
+  pero el C en `RENDER_STATE_SCROLL` llama `ScrollWindow` por hasta
+  `sWindowVerticalScrollSpeeds[optionsTextSpeed]` y luego `CopyWindowToVram` cada
+  frame. El TS usa `window.scroll` sobre Canvas y velocidades `[1, 2, 4]` con un
+  fallback `2`; la adaptación no demuestra equivalencia de opción/VRAM.
 
 **`m4a.c`** (`audio/sound.ts`, `audio/m4a.ts`)
 - [ ] `m4aSongNumStart*`, `m4aSongNumStop/Continue`, `m4aMPlayContinue/FadeOut/
