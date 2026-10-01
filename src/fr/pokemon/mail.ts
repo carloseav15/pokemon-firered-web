@@ -275,6 +275,11 @@ export function attachTradeMail(mon: Pokemon, mailNum: number, otName: number[],
   GiveMailToMon2(mon, mail);
 }
 
+/** GetInGameTradeMail (trade_scene.c): build the mail record from the scripted trader. */
+export function GetInGameTradeMail(mon: Pokemon, mailNum: number, otName: number[], otId: number): void {
+  attachTradeMail(mon, mailNum, otName, otId);
+}
+
 /** TakeMailFromMon: clears the held mail item and its message. */
 export function takeMail(mon: Pokemon): number {
   const item = mon.heldItem;
