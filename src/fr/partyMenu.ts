@@ -2289,9 +2289,14 @@ export type ItemUseReturns = { bag: () => void; tmCase: () => void; berryPouch: 
 let sItemUseReturns: ItemUseReturns | null = null;
 export function SetItemUseReturns(r: ItemUseReturns): void { sItemUseReturns = r; }
 
+/** Return targets used by the C callbacks after item selection in the party menu. */
+function CB2_ReturnToBagMenu(): void { sItemUseReturns?.bag(); }
+function CB2_ReturnToTMCaseMenu(): void { sItemUseReturns?.tmCase(); }
+function CB2_ReturnToBerryPouchMenu(): void { sItemUseReturns?.berryPouch(); }
+
 /** CB2_ShowPartyMenuForItemUse */
 export function CB2_ShowPartyMenuForItemUse(): void {
-  let callback: MainCB = () => sItemUseReturns?.bag();
+  let callback: MainCB = CB2_ReturnToBagMenu;
   let partyLayout: number, menuType: number, msgId: number, task: TaskFunc;
   if (gMain.inBattle) { menuType = C.PARTY_MENU_TYPE_IN_BATTLE; partyLayout = GetPartyLayoutFromBattleType(); }
   else { menuType = C.PARTY_MENU_TYPE_FIELD; partyLayout = C.PARTY_LAYOUT_SINGLE; }
@@ -2301,13 +2306,13 @@ export function CB2_ShowPartyMenuForItemUse(): void {
     for (let i = 0; i < PARTY_SIZE; i++) {
       if (GetMonData(mon(i), C.MON_DATA_SPECIES) !== C.SPECIES_NONE && GetMonData(mon(i), C.MON_DATA_HP) === 0) { gPartyMenu.slotId = i; break; }
     }
-    if (pocket === C.POCKET_BERRY_POUCH) callback = () => sItemUseReturns?.berryPouch();
+    if (pocket === C.POCKET_BERRY_POUCH) callback = CB2_ReturnToBerryPouchMenu;
     task = Task_SetSacredAshCB;
     msgId = C.PARTY_MSG_NONE;
   } else {
     msgId = C.PARTY_MSG_USE_ON_WHICH_MON;
-    if (pocket === C.POCKET_TM_CASE) { msgId = C.PARTY_MSG_TEACH_WHICH_MON; callback = () => sItemUseReturns?.tmCase(); }
-    else if (pocket === C.POCKET_BERRY_POUCH) callback = () => sItemUseReturns?.berryPouch();
+    if (pocket === C.POCKET_TM_CASE) { msgId = C.PARTY_MSG_TEACH_WHICH_MON; callback = CB2_ReturnToTMCaseMenu; }
+    else if (pocket === C.POCKET_BERRY_POUCH) callback = CB2_ReturnToBerryPouchMenu;
     task = Task_HandleChooseMonInput;
   }
   InitPartyMenu(menuType, partyLayout, C.PARTY_ACTION_USE_ITEM, true, msgId, task, callback);
@@ -3097,8 +3102,8 @@ export function CB2_PartyMenuFromStartMenu(exit: () => void): void {
 /** CB2_ChooseMonToGiveItem: GIVE from the bag / TM case / berry pouch. */
 export function CB2_ChooseMonToGiveItem(): void {
   const pocket = itemInfo(bagResult.itemId)?.pocket ?? 0;
-  const callback: MainCB = pocket === C.POCKET_TM_CASE ? () => sItemUseReturns?.tmCase()
-    : pocket === C.POCKET_BERRY_POUCH ? () => sItemUseReturns?.berryPouch() : () => sItemUseReturns?.bag();
+  const callback: MainCB = pocket === C.POCKET_TM_CASE ? CB2_ReturnToTMCaseMenu
+    : pocket === C.POCKET_BERRY_POUCH ? CB2_ReturnToBerryPouchMenu : CB2_ReturnToBagMenu;
   InitPartyMenu(C.PARTY_MENU_TYPE_FIELD, C.PARTY_LAYOUT_SINGLE, C.PARTY_ACTION_GIVE_ITEM, false, C.PARTY_MSG_GIVE_TO_WHICH_MON, Task_HandleChooseMonInput, callback);
   gPartyMenu.bagItem = bagResult.itemId;
 }
