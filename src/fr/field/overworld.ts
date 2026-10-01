@@ -608,8 +608,12 @@ export class Overworld {
     };
   }
 
-  /** Overworld_SetWhiteoutRespawnPoint (overworld.c): the healer/atHome info the real C also
-   * computes stays unused here — DoWhiteOut hasn't been assembled yet (see PORTING-STATUS.md). */
+  /** Overworld_SetWhiteoutRespawnPoint (overworld.c): stores the respawn warp only, as the C
+   * does with gSaveBlock1Ptr->escapeWarp. The healer id is not discarded: the C writes it to
+   * gSpecialVar_LastTalked (SetWhiteoutRespawnHealerNpcAsLastTalked), and EventScript_AfterWhiteOutHeal
+   * consumes it via `applymovement VAR_LAST_TALKED, Movement_Bow`; here that path is
+   * SetWhiteoutRespawnHealerNpcAsLastTalked -> varSet(SV.LAST_TALKED). The home-vs-center decision
+   * also lives elsewhere, in Task_RushInjuredPokemonToCenter, as in field_screen_effect.c. */
   Overworld_SetWhiteoutRespawnPoint(): void {
     this.warpDestination = this.SetWhiteoutRespawnWarpAndHealerNpc().warp;
   }

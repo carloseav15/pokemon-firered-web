@@ -1096,8 +1096,8 @@ export class Game {
     save.money -= computeWhiteOutMoneyLoss();
     for (const mon of save.party) healMon(mon);
     ow.Overworld_ResetStateAfterWhitingOut();
-    const respawn = ow.SetWhiteoutRespawnWarpAndHealerNpc();
-    ow.warpDestination = respawn.warp;
+    ow.Overworld_SetWhiteoutRespawnPoint();
+    ow.setInitialPlayerAvatarStateWithDirection(C.DIR_NORTH);
     ow.fieldCallback = () => ow.FieldCB_RushInjuredPokemonToCenter();
     ow.afterMapLoadCallback = () => QuestLog_CutRecording();
     ow.script.ScriptContext_Init();
