@@ -253,7 +253,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
     demás y falla si falta alguno, sin valores por defecto.
   - Actualiza los ejemplos internos (`"lvl": 21`, `"iv": 0`, `255`, `26`). Terminada
     cuando: salida regenerada, md5 estable, `refs:check` en verde.
-- [ ] **R11 `refs:all`: regenerar y comprobar todo** [básico]. Crea
+- [x] **R11 `refs:all`: regenerar y comprobar todo** [básico]. Crea
   `tools/refs/all.py` (comando `refs:all`) que ejecute cada `refs:*` que escribe en
   `refs/` (no `fetch`, `check` ni `pokeapi`), después `refs:check -- --write`, y falle
   si `git status --short refs/` muestra cambios (salida desactualizada o no
