@@ -164,8 +164,10 @@ export type QuestLogScriptEvent = {
 export type QuestLogScriptEntry = { kind: "action"; action: QuestLogAction } | { kind: "event"; event: QuestLogScriptEvent };
 
 function nextQuestLogSceneIndex(): number {
-  const last = save.questLogScenes?.at(-1)?.eventIndex;
-  return last === undefined ? 0 : last + 1;
+  const scenes = save.questLogScenes ?? [];
+  if (scenes.length < C.QUEST_LOG_SCENE_COUNT) return scenes.length;
+  const first = scenes[0]?.eventIndex ?? 0;
+  return first >= C.QUEST_LOG_SCENE_COUNT - 1 ? 0 : first + 1;
 }
 
 /** IsSpeciesFromSpecialEncounter (quest_log_events.c). */
