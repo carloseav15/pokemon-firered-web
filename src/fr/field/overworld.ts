@@ -685,7 +685,7 @@ export class Overworld {
       QuestLog_CheckDepartingIndoorsMap();
       QuestLog_TryRecordDepartedLocation();
     }
-    this.initView();
+    this.InitMapView();
     QL_TryStopSurfing();
     const prevSection = this.lastUsedWarpSection();
     const currSection = this.header.regionMapSection;
@@ -986,7 +986,8 @@ export class Overworld {
     }
   }
 
-  private initView(): void {
+  /** InitMapView (overworld.c): the Canvas renderer rebuilds its tile view from the active layout. */
+  InitMapView(): void {
     this.renderer = new TileRenderer(this.loaded.primary, this.loaded.secondary);
     this.animator = new TilesetAnimator(this.renderer);
     this.doors.reset();
