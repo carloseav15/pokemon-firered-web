@@ -1,0 +1,5603 @@
+{
+ "_meta": {
+  "commit": "bc92d3b6029ef1abe9e7ad424c400b338f3c11fe",
+  "entries": 97,
+  "generator": "tools/refs/pokeapi_extras.py",
+  "source": "pokeapi"
+ },
+ "data": [
+  {
+   "abilities": [
+    {
+     "ability_id": 47,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 281,
+   "height": 24,
+   "id": 10033,
+   "identifier": "venusaur-mega",
+   "is_default": false,
+   "order": 4,
+   "species_id": 3,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 123,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 122,
+     "effort": 2,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 120,
+     "effort": 1,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 12
+    },
+    {
+     "slot": 2,
+     "type_id": 4
+    }
+   ],
+   "weight": 1555
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 181,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 285,
+   "height": 17,
+   "id": 10034,
+   "identifier": "charizard-mega-x",
+   "is_default": false,
+   "order": 8,
+   "species_id": 6,
+   "stats": [
+    {
+     "base_stat": 78,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 111,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 130,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 16
+    }
+   ],
+   "weight": 1105
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 70,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 285,
+   "height": 17,
+   "id": 10035,
+   "identifier": "charizard-mega-y",
+   "is_default": false,
+   "order": 9,
+   "species_id": 6,
+   "stats": [
+    {
+     "base_stat": 78,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 104,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 78,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 159,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 1005
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 178,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 284,
+   "height": 16,
+   "id": 10036,
+   "identifier": "blastoise-mega",
+   "is_default": false,
+   "order": 13,
+   "species_id": 9,
+   "stats": [
+    {
+     "base_stat": 79,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 103,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 3,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 78,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    }
+   ],
+   "weight": 1011
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 36,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 270,
+   "height": 12,
+   "id": 10037,
+   "identifier": "alakazam-mega",
+   "is_default": false,
+   "order": 106,
+   "species_id": 65,
+   "stats": [
+    {
+     "base_stat": 55,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 175,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 150,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    }
+   ],
+   "weight": 480
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 23,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 270,
+   "height": 14,
+   "id": 10038,
+   "identifier": "gengar-mega",
+   "is_default": false,
+   "order": 150,
+   "species_id": 94,
+   "stats": [
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 170,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 8
+    },
+    {
+     "slot": 2,
+     "type_id": 4
+    }
+   ],
+   "weight": 405
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 185,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 207,
+   "height": 22,
+   "id": 10039,
+   "identifier": "kangaskhan-mega",
+   "is_default": false,
+   "order": 185,
+   "species_id": 115,
+   "stats": [
+    {
+     "base_stat": 105,
+     "effort": 2,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 1
+    }
+   ],
+   "weight": 1000
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 184,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 210,
+   "height": 17,
+   "id": 10040,
+   "identifier": "pinsir-mega",
+   "is_default": false,
+   "order": 208,
+   "species_id": 127,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 155,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 7
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 590
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 104,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 224,
+   "height": 65,
+   "id": 10041,
+   "identifier": "gyarados-mega",
+   "is_default": false,
+   "order": 212,
+   "species_id": 130,
+   "stats": [
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 155,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 109,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 81,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    },
+    {
+     "slot": 2,
+     "type_id": 17
+    }
+   ],
+   "weight": 3050
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 181,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 215,
+   "height": 21,
+   "id": 10042,
+   "identifier": "aerodactyl-mega",
+   "is_default": false,
+   "order": 233,
+   "species_id": 142,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 150,
+     "effort": 2,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 6
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 790
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 80,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 351,
+   "height": 23,
+   "id": 10043,
+   "identifier": "mewtwo-mega-x",
+   "is_default": false,
+   "order": 246,
+   "species_id": 150,
+   "stats": [
+    {
+     "base_stat": 106,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 190,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 154,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 1270
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 15,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 351,
+   "height": 15,
+   "id": 10044,
+   "identifier": "mewtwo-mega-y",
+   "is_default": false,
+   "order": 247,
+   "species_id": 150,
+   "stats": [
+    {
+     "base_stat": 106,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 150,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 194,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    }
+   ],
+   "weight": 330
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 104,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 275,
+   "height": 14,
+   "id": 10045,
+   "identifier": "ampharos-mega",
+   "is_default": false,
+   "order": 276,
+   "species_id": 181,
+   "stats": [
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 165,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 45,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 13
+    },
+    {
+     "slot": 2,
+     "type_id": 16
+    }
+   ],
+   "weight": 615
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 101,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 210,
+   "height": 20,
+   "id": 10046,
+   "identifier": "scizor-mega",
+   "is_default": false,
+   "order": 198,
+   "species_id": 212,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 150,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 7
+    },
+    {
+     "slot": 2,
+     "type_id": 9
+    }
+   ],
+   "weight": 1250
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 92,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 210,
+   "height": 17,
+   "id": 10047,
+   "identifier": "heracross-mega",
+   "is_default": false,
+   "order": 311,
+   "species_id": 214,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 185,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 40,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 7
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 625
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 94,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 210,
+   "height": 19,
+   "id": 10048,
+   "identifier": "houndoom-mega",
+   "is_default": false,
+   "order": 331,
+   "species_id": 229,
+   "stats": [
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 140,
+     "effort": 2,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 17
+    },
+    {
+     "slot": 2,
+     "type_id": 10
+    }
+   ],
+   "weight": 495
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 45,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 315,
+   "height": 25,
+   "id": 10049,
+   "identifier": "tyranitar-mega",
+   "is_default": false,
+   "order": 343,
+   "species_id": 248,
+   "stats": [
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 164,
+     "effort": 3,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 150,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 71,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 6
+    },
+    {
+     "slot": 2,
+     "type_id": 17
+    }
+   ],
+   "weight": 2550
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 3,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 284,
+   "height": 19,
+   "id": 10050,
+   "identifier": "blaziken-mega",
+   "is_default": false,
+   "order": 354,
+   "species_id": 257,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 160,
+     "effort": 3,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 520
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 182,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 278,
+   "height": 16,
+   "id": 10051,
+   "identifier": "gardevoir-mega",
+   "is_default": false,
+   "order": 383,
+   "species_id": 282,
+   "stats": [
+    {
+     "base_stat": 68,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 165,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 484
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 37,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 168,
+   "height": 10,
+   "id": 10052,
+   "identifier": "mawile-mega",
+   "is_default": false,
+   "order": 408,
+   "species_id": 303,
+   "stats": [
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 105,
+     "effort": 1,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 125,
+     "effort": 1,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 55,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 9
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 235
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 111,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 284,
+   "height": 22,
+   "id": 10053,
+   "identifier": "aggron-mega",
+   "is_default": false,
+   "order": 412,
+   "species_id": 306,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 230,
+     "effort": 3,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 9
+    }
+   ],
+   "weight": 3950
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 74,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 179,
+   "height": 13,
+   "id": 10054,
+   "identifier": "medicham-mega",
+   "is_default": false,
+   "order": 415,
+   "species_id": 308,
+   "stats": [
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 2,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 2
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 315
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 22,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 201,
+   "height": 18,
+   "id": 10055,
+   "identifier": "manectric-mega",
+   "is_default": false,
+   "order": 418,
+   "species_id": 310,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 135,
+     "effort": 2,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 13
+    }
+   ],
+   "weight": 440
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 158,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 194,
+   "height": 12,
+   "id": 10056,
+   "identifier": "banette-mega",
+   "is_default": false,
+   "order": 471,
+   "species_id": 354,
+   "stats": [
+    {
+     "base_stat": 64,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 165,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 93,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 83,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 8
+    }
+   ],
+   "weight": 130
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 156,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 198,
+   "height": 12,
+   "id": 10057,
+   "identifier": "absol-mega",
+   "is_default": false,
+   "order": 479,
+   "species_id": 359,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 150,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 17
+    }
+   ],
+   "weight": 490
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 159,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 315,
+   "height": 19,
+   "id": 10058,
+   "identifier": "garchomp-mega",
+   "is_default": false,
+   "order": 571,
+   "species_id": 445,
+   "stats": [
+    {
+     "base_stat": 108,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 170,
+     "effort": 3,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 92,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 5
+    }
+   ],
+   "weight": 950
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 91,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 219,
+   "height": 13,
+   "id": 10059,
+   "identifier": "lucario-mega",
+   "is_default": false,
+   "order": 574,
+   "species_id": 448,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 145,
+     "effort": 1,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 88,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 140,
+     "effort": 1,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 112,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 2
+    },
+    {
+     "slot": 2,
+     "type_id": 9
+    }
+   ],
+   "weight": 575
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 117,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 208,
+   "height": 27,
+   "id": 10060,
+   "identifier": "abomasnow-mega",
+   "is_default": false,
+   "order": 586,
+   "species_id": 460,
+   "stats": [
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 132,
+     "effort": 1,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 132,
+     "effort": 1,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 30,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 12
+    },
+    {
+     "slot": 2,
+     "type_id": 15
+    }
+   ],
+   "weight": 1850
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 26,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 315,
+   "height": 18,
+   "id": 10062,
+   "identifier": "latias-mega",
+   "is_default": false,
+   "order": 504,
+   "species_id": 380,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 150,
+     "effort": 3,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 520
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 26,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 315,
+   "height": 23,
+   "id": 10063,
+   "identifier": "latios-mega",
+   "is_default": false,
+   "order": 506,
+   "species_id": 381,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 160,
+     "effort": 3,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 700
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 33,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 286,
+   "height": 19,
+   "id": 10064,
+   "identifier": "swampert-mega",
+   "is_default": false,
+   "order": 358,
+   "species_id": 260,
+   "stats": [
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 150,
+     "effort": 3,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    },
+    {
+     "slot": 2,
+     "type_id": 5
+    }
+   ],
+   "weight": 1020
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 31,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 284,
+   "height": 19,
+   "id": 10065,
+   "identifier": "sceptile-mega",
+   "is_default": false,
+   "order": 350,
+   "species_id": 254,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 145,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 145,
+     "effort": 3,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 12
+    },
+    {
+     "slot": 2,
+     "type_id": 16
+    }
+   ],
+   "weight": 552
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 156,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 168,
+   "height": 5,
+   "id": 10066,
+   "identifier": "sableye-mega",
+   "is_default": false,
+   "order": 406,
+   "species_id": 302,
+   "stats": [
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 85,
+     "effort": 1,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 125,
+     "effort": 1,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 20,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 17
+    },
+    {
+     "slot": 2,
+     "type_id": 8
+    }
+   ],
+   "weight": 1610
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 182,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 207,
+   "height": 15,
+   "id": 10067,
+   "identifier": "altaria-mega",
+   "is_default": false,
+   "order": 447,
+   "species_id": 334,
+   "stats": [
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 105,
+     "effort": 2,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 206
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 39,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 278,
+   "height": 16,
+   "id": 10068,
+   "identifier": "gallade-mega",
+   "is_default": false,
+   "order": 385,
+   "species_id": 475,
+   "stats": [
+    {
+     "base_stat": 68,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 165,
+     "effort": 3,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 564
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 131,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 425,
+   "height": 15,
+   "id": 10069,
+   "identifier": "audino-mega",
+   "is_default": false,
+   "order": 647,
+   "species_id": 531,
+   "stats": [
+    {
+     "base_stat": 103,
+     "effort": 2,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 126,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 126,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 1
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 320
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 173,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 196,
+   "height": 25,
+   "id": 10070,
+   "identifier": "sharpedo-mega",
+   "is_default": false,
+   "order": 430,
+   "species_id": 319,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 140,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    },
+    {
+     "slot": 2,
+     "type_id": 17
+    }
+   ],
+   "weight": 1303
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 75,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 207,
+   "height": 20,
+   "id": 10071,
+   "identifier": "slowbro-mega",
+   "is_default": false,
+   "order": 128,
+   "species_id": 80,
+   "stats": [
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 180,
+     "effort": 2,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 30,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 1200
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 159,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 214,
+   "height": 105,
+   "id": 10072,
+   "identifier": "steelix-mega",
+   "is_default": false,
+   "order": 153,
+   "species_id": 208,
+   "stats": [
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 230,
+     "effort": 2,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 55,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 30,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 9
+    },
+    {
+     "slot": 2,
+     "type_id": 5
+    }
+   ],
+   "weight": 7400
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 99,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 261,
+   "height": 22,
+   "id": 10073,
+   "identifier": "pidgeot-mega",
+   "is_default": false,
+   "order": 24,
+   "species_id": 18,
+   "stats": [
+    {
+     "base_stat": 83,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 121,
+     "effort": 3,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 1
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 505
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 174,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 203,
+   "height": 21,
+   "id": 10074,
+   "identifier": "glalie-mega",
+   "is_default": false,
+   "order": 482,
+   "species_id": 362,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 2,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 15
+    }
+   ],
+   "weight": 3502
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 156,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 315,
+   "height": 11,
+   "id": 10075,
+   "identifier": "diancie-mega",
+   "is_default": false,
+   "order": 864,
+   "species_id": 719,
+   "stats": [
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 160,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 110,
+     "effort": 1,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 160,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 110,
+     "effort": 2,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 6
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 278
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 181,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 315,
+   "height": 25,
+   "id": 10076,
+   "identifier": "metagross-mega",
+   "is_default": false,
+   "order": 499,
+   "species_id": 376,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 145,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 150,
+     "effort": 3,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 9
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 9429
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 191,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 351,
+   "height": 108,
+   "id": 10079,
+   "identifier": "rayquaza-mega",
+   "is_default": false,
+   "order": 512,
+   "species_id": 384,
+   "stats": [
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 180,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 180,
+     "effort": 1,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 3920
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 125,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 196,
+   "height": 25,
+   "id": 10087,
+   "identifier": "camerupt-mega",
+   "is_default": false,
+   "order": 435,
+   "species_id": 323,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 120,
+     "effort": 1,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 145,
+     "effort": 1,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 20,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 5
+    }
+   ],
+   "weight": 3205
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 113,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 203,
+   "height": 13,
+   "id": 10088,
+   "identifier": "lopunny-mega",
+   "is_default": false,
+   "order": 559,
+   "species_id": 428,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 136,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 94,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 54,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 96,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 135,
+     "effort": 2,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 1
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 283
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 184,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 315,
+   "height": 18,
+   "id": 10089,
+   "identifier": "salamence-mega",
+   "is_default": false,
+   "order": 495,
+   "species_id": 373,
+   "stats": [
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 145,
+     "effort": 3,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 1126
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 91,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": 223,
+   "height": 14,
+   "id": 10090,
+   "identifier": "beedrill-mega",
+   "is_default": false,
+   "order": 20,
+   "species_id": 15,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 150,
+     "effort": 2,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 40,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 15,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 1,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 145,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 7
+    },
+    {
+     "slot": 2,
+     "type_id": 4
+    }
+   ],
+   "weight": 405
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 156,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 17,
+   "id": 10278,
+   "identifier": "clefable-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 36,
+   "stats": [
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 93,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 18
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 423
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 215,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 45,
+   "id": 10279,
+   "identifier": "victreebel-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 71,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 12
+    },
+    {
+     "slot": 2,
+     "type_id": 4
+    }
+   ],
+   "weight": 1255
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 37,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 23,
+   "id": 10280,
+   "identifier": "starmie-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 121,
+   "stats": [
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 800
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 136,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 22,
+   "id": 10281,
+   "identifier": "dragonite-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 149,
+   "stats": [
+    {
+     "base_stat": 91,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 124,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 145,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 2900
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 310,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 24,
+   "id": 10282,
+   "identifier": "meganium-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 154,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 92,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 143,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 12
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 2010
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 309,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 23,
+   "id": 10283,
+   "identifier": "feraligatr-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 160,
+   "stats": [
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 160,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 89,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 93,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 78,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    },
+    {
+     "slot": 2,
+     "type_id": 16
+    }
+   ],
+   "weight": 1088
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 242,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 17,
+   "id": 10284,
+   "identifier": "skarmory-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 227,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 40,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 9
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 404
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 117,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 26,
+   "id": 10285,
+   "identifier": "froslass-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 478,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 15
+    },
+    {
+     "slot": 2,
+     "type_id": 8
+    }
+   ],
+   "weight": 296
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 104,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 18,
+   "id": 10286,
+   "identifier": "emboar-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 500,
+   "stats": [
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 148,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 1803
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 308,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 9,
+   "id": 10287,
+   "identifier": "excadrill-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 530,
+   "stats": [
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 165,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 103,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 5
+    },
+    {
+     "slot": 2,
+     "type_id": 9
+    }
+   ],
+   "weight": 600
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 75,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 32,
+   "id": 10288,
+   "identifier": "scolipede-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 545,
+   "stats": [
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 149,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 99,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 62,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 7
+    },
+    {
+     "slot": 2,
+     "type_id": 4
+    }
+   ],
+   "weight": 2305
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 22,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 11,
+   "id": 10289,
+   "identifier": "scrafty-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 560,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 55,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 68,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 17
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 310
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 312,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 30,
+   "id": 10290,
+   "identifier": "eelektross-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 604,
+   "stats": [
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 145,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 13
+    }
+   ],
+   "weight": 1800
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 151,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 25,
+   "id": 10291,
+   "identifier": "chandelure-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 609,
+   "stats": [
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 175,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 8
+    },
+    {
+     "slot": 2,
+     "type_id": 10
+    }
+   ],
+   "weight": 696
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 171,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 16,
+   "id": 10292,
+   "identifier": "chesnaught-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 652,
+   "stats": [
+    {
+     "base_stat": 88,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 137,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 172,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 74,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 44,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 12
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 900
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 26,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 15,
+   "id": 10293,
+   "identifier": "delphox-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 655,
+   "stats": [
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 69,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 72,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 159,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 134,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 390
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 168,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 15,
+   "id": 10294,
+   "identifier": "greninja-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 658,
+   "stats": [
+    {
+     "base_stat": 72,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 77,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 133,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 81,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 142,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 11
+    },
+    {
+     "slot": 2,
+     "type_id": 17
+    }
+   ],
+   "weight": 400
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 313,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 15,
+   "id": 10295,
+   "identifier": "pyroar-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 668,
+   "stats": [
+    {
+     "base_stat": 86,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 88,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 92,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 129,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 86,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 126,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 1
+    }
+   ],
+   "weight": 933
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 187,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 2,
+   "id": 10296,
+   "identifier": "floette-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 670,
+   "stats": [
+    {
+     "base_stat": 74,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 87,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 155,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 148,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 102,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 18
+    }
+   ],
+   "weight": 1008
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 126,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 29,
+   "id": 10297,
+   "identifier": "malamar-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 687,
+   "stats": [
+    {
+     "base_stat": 86,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 102,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 88,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 98,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 88,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 17
+    },
+    {
+     "slot": 2,
+     "type_id": 14
+    }
+   ],
+   "weight": 698
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 181,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 22,
+   "id": 10298,
+   "identifier": "barbaracle-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 689,
+   "stats": [
+    {
+     "base_stat": 72,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 64,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 106,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 88,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 6
+    },
+    {
+     "slot": 2,
+     "type_id": 2
+    }
+   ],
+   "weight": 1000
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 144,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 21,
+   "id": 10299,
+   "identifier": "dragalge-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 691,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 132,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 163,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 44,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 4
+    },
+    {
+     "slot": 2,
+     "type_id": 16
+    }
+   ],
+   "weight": 1003
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 99,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 10,
+   "id": 10300,
+   "identifier": "hawlucha-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 701,
+   "stats": [
+    {
+     "base_stat": 78,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 137,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 74,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 93,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 118,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 2
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 250
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 77,
+   "id": 10301,
+   "identifier": "zygarde-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 718,
+   "stats": [
+    {
+     "base_stat": 216,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 91,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 216,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 5
+    }
+   ],
+   "weight": 6100
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 201,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 30,
+   "id": 10302,
+   "identifier": "drampa-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 780,
+   "stats": [
+    {
+     "base_stat": 78,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 160,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 116,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 36,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 1
+    },
+    {
+     "slot": 2,
+     "type_id": 16
+    }
+   ],
+   "weight": 2405
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 128,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 16,
+   "id": 10303,
+   "identifier": "falinks-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 870,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 2
+    }
+   ],
+   "weight": 990
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 226,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 12,
+   "id": 10304,
+   "identifier": "raichu-mega-x",
+   "is_default": false,
+   "order": null,
+   "species_id": 26,
+   "stats": [
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 13
+    }
+   ],
+   "weight": 380
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 99,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 10,
+   "id": 10305,
+   "identifier": "raichu-mega-y",
+   "is_default": false,
+   "order": null,
+   "species_id": 26,
+   "stats": [
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 55,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 160,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 13
+    }
+   ],
+   "weight": 260
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 26,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 12,
+   "id": 10306,
+   "identifier": "chimecho-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 358,
+   "stats": [
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 50,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    },
+    {
+     "slot": 2,
+     "type_id": 9
+    }
+   ],
+   "weight": 80
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 292,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 12,
+   "id": 10307,
+   "identifier": "absol-mega-z",
+   "is_default": false,
+   "order": null,
+   "species_id": 359,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 154,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 151,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 17
+    },
+    {
+     "slot": 2,
+     "type_id": 8
+    }
+   ],
+   "weight": 490
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 126,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 19,
+   "id": 10308,
+   "identifier": "staraptor-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 398,
+   "stats": [
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 140,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 60,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 110,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 2
+    },
+    {
+     "slot": 2,
+     "type_id": 3
+    }
+   ],
+   "weight": 500
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 26,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 19,
+   "id": 10309,
+   "identifier": "garchomp-mega-z",
+   "is_default": false,
+   "order": null,
+   "species_id": 445,
+   "stats": [
+    {
+     "base_stat": 108,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 141,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 151,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    }
+   ],
+   "weight": 990
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 314,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 13,
+   "id": 10310,
+   "identifier": "lucario-mega-z",
+   "is_default": false,
+   "order": null,
+   "species_id": 448,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 100,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 164,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 151,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 2
+    },
+    {
+     "slot": 2,
+     "type_id": 9
+    }
+   ],
+   "weight": 494
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 28,
+   "id": 10311,
+   "identifier": "heatran-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 485,
+   "stats": [
+    {
+     "base_stat": 91,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 106,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 175,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 141,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 67,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 10
+    },
+    {
+     "slot": 2,
+     "type_id": 9
+    }
+   ],
+   "weight": 5700
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 30,
+   "id": 10312,
+   "identifier": "darkrai-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 491,
+   "stats": [
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 165,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 130,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 17
+    }
+   ],
+   "weight": 2400
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 260,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 40,
+   "id": 10313,
+   "identifier": "golurk-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 623,
+   "stats": [
+    {
+     "base_stat": 89,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 159,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 55,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 5
+    },
+    {
+     "slot": 2,
+     "type_id": 8
+    }
+   ],
+   "weight": 3300
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 36,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 8,
+   "id": 10314,
+   "identifier": "meowstic-male-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 678,
+   "stats": [
+    {
+     "base_stat": 74,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 48,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 76,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 143,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 101,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 124,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    }
+   ],
+   "weight": 101
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 89,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 26,
+   "id": 10315,
+   "identifier": "crabominable-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 740,
+   "stats": [
+    {
+     "base_stat": 97,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 157,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 122,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 62,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 107,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 33,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 2
+    },
+    {
+     "slot": 2,
+     "type_id": 15
+    }
+   ],
+   "weight": 2528
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 181,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 23,
+   "id": 10316,
+   "identifier": "golisopod-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 768,
+   "stats": [
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 150,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 175,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 70,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 120,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 40,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 7
+    },
+    {
+     "slot": 2,
+     "type_id": 9
+    }
+   ],
+   "weight": 1480
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 13,
+   "id": 10317,
+   "identifier": "magearna-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 801,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 170,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 9
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 2481
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 13,
+   "id": 10318,
+   "identifier": "magearna-original-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 801,
+   "stats": [
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 170,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 95,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 9
+    },
+    {
+     "slot": 2,
+     "type_id": 18
+    }
+   ],
+   "weight": 2481
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 15,
+   "id": 10319,
+   "identifier": "zeraora-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 807,
+   "stats": [
+    {
+     "base_stat": 88,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 157,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 147,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 80,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 153,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 13
+    }
+   ],
+   "weight": 445
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 311,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 12,
+   "id": 10320,
+   "identifier": "scovillain-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 952,
+   "stats": [
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 138,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 138,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 85,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 75,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 12
+    },
+    {
+     "slot": 2,
+     "type_id": 10
+    }
+   ],
+   "weight": 220
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 91,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 28,
+   "id": 10321,
+   "identifier": "glimmora-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 970,
+   "stats": [
+    {
+     "base_stat": 83,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 150,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 96,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 101,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 6
+    },
+    {
+     "slot": 2,
+     "type_id": 4
+    }
+   ],
+   "weight": 770
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 6,
+   "id": 10322,
+   "identifier": "tatsugiri-curly-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 978,
+   "stats": [
+    {
+     "base_stat": 68,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 92,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 11
+    }
+   ],
+   "weight": 240
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 6,
+   "id": 10323,
+   "identifier": "tatsugiri-droopy-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 978,
+   "stats": [
+    {
+     "base_stat": 68,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 92,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 11
+    }
+   ],
+   "weight": 240
+  },
+  {
+   "abilities": [],
+   "base_experience": null,
+   "height": 6,
+   "id": 10324,
+   "identifier": "tatsugiri-stretchy-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 978,
+   "stats": [
+    {
+     "base_stat": 68,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 65,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 90,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 135,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 125,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 92,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 11
+    }
+   ],
+   "weight": 240
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 270,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 21,
+   "id": 10325,
+   "identifier": "baxcalibur-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 998,
+   "stats": [
+    {
+     "base_stat": 115,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 175,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 117,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 105,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 101,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 87,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 16
+    },
+    {
+     "slot": 2,
+     "type_id": 15
+    }
+   ],
+   "weight": 3150
+  },
+  {
+   "abilities": [
+    {
+     "ability_id": 36,
+     "is_hidden": false,
+     "slot": 1
+    }
+   ],
+   "base_experience": null,
+   "height": 8,
+   "id": 10326,
+   "identifier": "meowstic-female-mega",
+   "is_default": false,
+   "order": null,
+   "species_id": 678,
+   "stats": [
+    {
+     "base_stat": 74,
+     "effort": 0,
+     "stat_id": 1
+    },
+    {
+     "base_stat": 48,
+     "effort": 0,
+     "stat_id": 2
+    },
+    {
+     "base_stat": 76,
+     "effort": 0,
+     "stat_id": 3
+    },
+    {
+     "base_stat": 143,
+     "effort": 0,
+     "stat_id": 4
+    },
+    {
+     "base_stat": 101,
+     "effort": 0,
+     "stat_id": 5
+    },
+    {
+     "base_stat": 124,
+     "effort": 0,
+     "stat_id": 6
+    }
+   ],
+   "types": [
+    {
+     "slot": 1,
+     "type_id": 14
+    }
+   ],
+   "weight": 101
+  }
+ ]
+}

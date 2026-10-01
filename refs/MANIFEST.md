@@ -26,3 +26,5 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | `platinum/moves_vs_firered.json` | pokeplatinum | 71 | `tools/refs/compare_platinum_moves.py` |
 | `platinum/species.json` | pokeplatinum | 496 | `tools/refs/platinum_species.py` |
 | `platinum/species_vs_firered.json` | pokeplatinum | 362 | `tools/refs/compare_platinum_species.py` |
+| `pokeapi/megas.json` | pokeapi | 97 | `tools/refs/pokeapi_extras.py` |
+| `pokeapi/names_es.json` | pokeapi | 4 | `tools/refs/pokeapi_extras.py` |
