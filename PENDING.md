@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9753/10115 (96.4 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **362 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9760/10115 (96.5 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **355 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~8.161 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~8.014 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -26,13 +26,13 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 6 | `pokemon_storage_system_misc.c` | casi completo | 1430 | 66/70 | ~81 |  |
 | 7 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
 | 8 | `start_menu.c` | casi completo | 1016 | 58/65 | ~109 |  |
-| 9 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
-| 10 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 11 | `quest_log.c` | casi completo | 1767 | 77/88 | ~220 |  |
-| 12 | `battle_transition.c` | casi completo | 3037 | 124/134 | ~226 |  |
+| 9 | `battle_transition.c` | casi completo | 3037 | 129/134 | ~113 |  |
+| 10 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
+| 11 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
+| 12 | `quest_log.c` | casi completo | 1767 | 77/88 | ~220 |  |
 | 13 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 14 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
-| 15 | `field_effect.c` | casi completo | 4033 | 218/239 | ~354 |  |
+| 15 | `field_effect.c` | casi completo | 4033 | 220/239 | ~320 |  |
 | 16 | `quest_log_events.c` | casi completo | 2247 | 98/118 | ~380 |  |
 | 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 18 | `event_object_movement.c` | casi completo | 9412 | 718/759 | ~508 |  |
