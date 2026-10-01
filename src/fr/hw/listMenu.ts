@@ -276,7 +276,9 @@ function ListMenuPrintEntries(list: ListMenu, startIndex: number, yOffset: numbe
     const item = t.items[startIndex];
     const x = item.index !== LIST_HEADER ? t.item_X : t.header_X;
     const y = (yOffset + i) * yMultiplier + t.upText_Y;
-    t.itemPrintFunc?.(t.windowId, item.index, y);
+    // CData's null function pointers are serialized as 0. Treat both JS null
+    // and that decoded C null as absent rather than invoking a number.
+    if (typeof t.itemPrintFunc === "function") t.itemPrintFunc(t.windowId, item.index, y);
     ListMenuPrint(list, item.label, x, y);
     startIndex++;
   }
@@ -408,7 +410,8 @@ function ListMenuChangeSelection(list: ListMenu, update: boolean, count: number,
 }
 
 function ListMenuCallSelectionChangedCallback(list: ListMenu, onInit: boolean): void {
-  list.template.moveCursorFunc?.(list.template.items[list.cursorPos + list.itemsAbove].index, onInit, list);
+  if (typeof list.template.moveCursorFunc === "function")
+    list.template.moveCursorFunc(list.template.items[list.cursorPos + list.itemsAbove].index, onInit, list);
 }
 
 export function ListMenuOverrideSetColors(cursorPal: number, fillValue: number, cursorShadowPal: number): void {

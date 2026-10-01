@@ -5,6 +5,8 @@ import './setupNodeGbaMock.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
+import { tasks } from '../../src/fr/gba/tasks.ts';
+import { runHwFrame } from '../../src/fr/hw/runtime.ts';
 import { rom } from '../../src/fr/rom.ts';
 import * as TeachyTv from '../../src/fr/teachyTv.ts';
 
@@ -40,6 +42,10 @@ for (const pack of ['graphics_teachy_tv', 'graphics_object_events', 'graphics_te
     const buf = readFileSync(root + `incbin/${pack}.bin`);
     registerPack(pack, new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
   } catch { /* pack file absent: symbols resolve only if present */ }
+}
+// The init/exit lifecycle shares the screen's CData and loads glyph tables.
+for (const file of ['graphics', 'strings', 'event_object_movement', 'data', 'trainer_pokemon_sprites', 'text', 'text_printer', 'text_window_graphics']) {
+  registerCData(file, JSON.parse(readFileSync(root + `cdata/${file}.json`, 'utf8')).defs);
 }
 assert.ok(incbinIndex.symbols['gTeachyTvScreen_Tilemap'], 'gTeachyTvScreen_Tilemap in incbin');
 assert.ok(incbinIndex.symbols['gTeachyTvTitle_Tilemap'], 'gTeachyTvTitle_Tilemap in incbin');
@@ -144,7 +150,10 @@ for (let state = 0; state < 9; state++) {
 assert.ok(TeachyTv.sResources, 'sResources allocated');
 
 // Exit flow
-TeachyTv.TeachyTvQuitFadeControlAndTaskDel();
+const quitTaskId = tasks.create(() => {}, 0);
+TeachyTv.TeachyTvQuitFadeControlAndTaskDel(quitTaskId);
+// The C installs the saved callback; it is invoked on the next main frame.
+runHwFrame();
 assert.ok(exited, 'Exit callback invoked');
 assert.equal(TeachyTv.sResources, null, 'sResources freed on quit');
 

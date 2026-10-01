@@ -4,6 +4,7 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
 import * as C from '../../src/fr/generated/constants.ts';
 import { rom, type MapHeader } from '../../src/fr/rom.ts';
 import { save } from '../../src/fr/save.ts';
@@ -35,6 +36,13 @@ const root = process.cwd() + '/public';
     text: async () => buf.toString('utf8'),
   };
 };
+
+// Big Poké Ball transition graphics loaded when executing the transition path.
+registerIncbinIndex(JSON.parse(readFileSync(root + '/fr/incbin/index.json', 'utf8')));
+{
+  const pack = readFileSync(root + '/fr/incbin/graphics_battle_transitions.bin');
+  registerPack('graphics_battle_transitions', new Uint8Array(pack.buffer, pack.byteOffset, pack.byteLength));
+}
 
 console.log('--- 1. Testing fieldfx.json data integrity ---');
 rom.objects = JSON.parse(readFileSync(process.cwd() + '/public/fr/objects.json', 'utf8'));
@@ -68,9 +76,10 @@ async function testFieldEffects() {
 
   // Mock minimal Overworld environment
   const mockSprites = new SpriteManager();
+  let mockBehavior = C.MB_TALL_GRASS;
   const mockMap = {
     behaviorAt: (x: number, y: number) => {
-      if (x === 10 && y === 10) return C.MB_TALL_GRASS;
+      if (x === 10 && y === 10) return mockBehavior;
       return C.MB_NORMAL;
     },
   } as unknown as FieldMap;
@@ -109,25 +118,33 @@ async function testFieldEffects() {
   assert.equal(mockSprites.sprites.length, 1, 'Tall grass sprite must be spawned on begin in tall grass');
   const grassSprite = mockSprites.sprites[0]!;
   assert.equal(grassSprite.priority, 2, 'Grass sprite priority matches object');
-  assert.equal(grassSprite.subpriority, 9, 'Grass sprite subpriority is object.subpriority - 1 (in front of feet)');
+  // PISTA INCORRECTA: this check inspects the just-created sprite before its
+  // UpdateTallGrassFieldEffect callback. The C FldEff_TallGrass passes subpriority
+  // 0 to CreateSpriteAtEnd and only computes elevation subpriority on later frames.
+  assert.equal(grassSprite.subpriority, 0, 'Tall-grass sprite starts at CreateSpriteAtEnd subpriority 0');
 
-  // 2b. Object jumping (spawn shadow)
+  // 2b. A jump starts a shadow through DoShadowFieldEffect, outside the
+  // begin-step ground-effect bit dispatcher (event_object_movement.c:5745).
   mockSprites.sprites.length = 0;
+  mockBehavior = C.MB_NORMAL;
   obj.currentMetatileBehavior = C.MB_NORMAL;
   obj.landingJump = true;
-  fe.groundEffect(obj, "begin");
+  fe.DoShadowFieldEffect(obj);
   assert.equal(mockSprites.sprites.length, 1, 'Shadow sprite must be spawned during jump');
   const shadowSprite = mockSprites.sprites[0]!;
-  assert.equal(shadowSprite.subpriority, 11, 'Shadow sprite subpriority is object.subpriority + 1 (under feet)');
+  // FldEff_Shadow (field_effect_helpers.c:221) passes 0x94 to CreateSpriteAtEnd.
+  assert.equal(shadowSprite.subpriority, 0x94, 'Shadow starts at C subpriority 0x94');
 
   // 2c. Jump landing ("finish") in tall grass vs normal ground
   mockSprites.sprites.length = 0;
+  mockBehavior = C.MB_NORMAL;
   obj.currentMetatileBehavior = C.MB_NORMAL;
   obj.landingJump = true;
   fe.groundEffect(obj, "finish");
   assert.equal(mockSprites.sprites.length, 1, 'Landing dust must be spawned on normal ground landing');
 
   mockSprites.sprites.length = 0;
+  mockBehavior = C.MB_TALL_GRASS;
   obj.currentMetatileBehavior = C.MB_TALL_GRASS;
   obj.landingJump = true;
   fe.groundEffect(obj, "finish");
@@ -194,6 +211,8 @@ async function testBattleTransitions() {
       fillStyle: '',
       fillRect: () => {},
       drawImage: () => {},
+      createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4), width: w, height: h }),
+      putImageData: () => {},
       save: () => {},
       restore: () => {},
       globalAlpha: 1,
