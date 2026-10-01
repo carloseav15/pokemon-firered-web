@@ -2157,10 +2157,16 @@ function CursorCB_FieldMove(taskId: number): void {
       break;
     }
     case "fail":
-      displayStdMessage(C.PARTY_MSG_CANT_USE_HERE, bytesOf(result.message));
+      if (fieldMove === C.FIELD_MOVE_FLASH) DisplayCantUseFlashMessage();
+      else displayStdMessage(C.PARTY_MSG_CANT_USE_HERE, bytesOf(result.message));
       tasks.setFunc(taskId, Task_CancelAfterAorBPress);
       break;
   }
+}
+
+/** DisplayCantUseFlashMessage (party_menu.c): distinguish an active Flash effect from an unusable map. */
+function DisplayCantUseFlashMessage(): void {
+  DisplayPartyMenuStdMessage(flagGet(C.FLAG_SYS_FLASH_ACTIVE) ? C.PARTY_MSG_ALREADY_IN_USE : C.PARTY_MSG_CANT_USE_HERE);
 }
 
 const bytesOf = (m: string | ArrayLike<number>): ArrayLike<number> => (typeof m === "string" ? encode(m) : m);
