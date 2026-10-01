@@ -150,6 +150,20 @@ export class FieldControl {
 
   /** DoCB1_Overworld (overworld.c), with Quest Log input handled by the shared browser driver. */
   DoCB1_Overworld(newKeys: number, heldKeys: number): void {
+    if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RUNNING || gQuestLogState === C.QL_STATE_PLAYBACK) {
+      this.DoCB1_Overworld_QuestLogPlayback(newKeys, heldKeys);
+      return;
+    }
+    this.doCB1Overworld(newKeys, heldKeys);
+  }
+
+  /** DoCB1_Overworld_QuestLogPlayback (overworld.c): dispatch playback frames through
+   * the shared field driver, which supplies the recorded field input and playback actions. */
+  DoCB1_Overworld_QuestLogPlayback(newKeys: number, heldKeys: number): void {
+    this.doCB1Overworld(newKeys, heldKeys);
+  }
+
+  private doCB1Overworld(newKeys: number, heldKeys: number): void {
     const questLogCommands = QL_TryRunActions(this.ow.controlsLocked, !this.ow.script.ScriptContext_IsEnabled());
     this.applyQuestLogCommands(questLogCommands);
     const player = this.ow.player;
