@@ -20,6 +20,7 @@
     "check:card": "esbuild tools/checks/trainerCard.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/trainerCard.mjs && node .decomp-build/checks/trainerCard.mjs",
     "inventory": "python3 tools/portInventory.py",
     "pending": "python3 tools/portPending.py",
+    "review:where": "python3 tools/review_locations.py",
     "refs:fetch": "python3 tools/refs/fetch.py",
     "refs:check": "python3 tools/refs/check.py",
     "refs:all": "python3 tools/refs/all.py",
