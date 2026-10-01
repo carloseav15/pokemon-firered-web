@@ -2,6 +2,8 @@
 // connections copied from neighbouring maps, borders and metatile attributes.
 
 import { rom, type LayoutData, type MapConnection, type MapHeader, type TilesetData } from "../rom";
+import * as C from "../generated/constants";
+import * as MB from "../generated/metatileBehavior";
 
 export const MAP_OFFSET = 7;
 export const MAP_OFFSET_W = MAP_OFFSET * 2 + 1;
@@ -115,6 +117,26 @@ export function ExtractMetatileAttribute(attributes: number, attributeType: numb
 export function MapGridGetMetatileAttributeAt(x: number, y: number, attributeType: number, map: FieldMap | null = sCurrentFieldMap): number {
   return map ? map.attributeAt((x << 16) >> 16, (y << 16) >> 16, attributeType & 0xff) >>> 0 : 0xff;
 }
+
+/** TestMetatileAttributeBit (metatile_behavior.c), used by cut and Dive terrain checks. */
+export function TestMetatileAttributeBit(attribute: number, bitmask: number): boolean {
+  return ((attribute >>> 0) & (bitmask & 0xff)) !== 0;
+}
+
+/** MetatileAtCoordsIsWaterTile (field_player_avatar.c). */
+export function MetatileAtCoordsIsWaterTile(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): boolean {
+  return TestMetatileAttributeBit(MapGridGetMetatileAttributeAt(x, y, METATILE_ATTRIBUTE_TERRAIN, map), C.TILE_TERRAIN_WATER);
+}
+
+// C-named behavior predicates are re-exported here as the fieldmap API surface.
+export function MetatileBehavior_IsArrowWarp(behavior: number): boolean { return MB.MetatileBehavior_IsArrowWarp(behavior); }
+export function MetatileBehavior_IsUnused01(behavior: number): boolean { return MB.MetatileBehavior_IsUnused01(behavior); }
+export function MetatileBehavior_UnusedIsTallGrass(behavior: number): boolean { return MB.MetatileBehavior_UnusedIsTallGrass(behavior); }
+export function MetatileBehavior_IsUnusedWater(behavior: number): boolean { return MB.MetatileBehavior_IsUnusedWater(behavior); }
+export function MetatileBehavior_IsSurfableAndNotWaterfall(behavior: number): boolean { return MB.MetatileBehavior_IsSurfableAndNotWaterfall(behavior); }
+export function MetatileBehavior_IsWater(behavior: number): boolean { return MB.MetatileBehavior_IsWater(behavior); }
+export function MetatileBehavior_IsCyclingRoadPullDownTileGrass(behavior: number): boolean { return MB.MetatileBehavior_IsCyclingRoadPullDownTileGrass(behavior); }
+export function MetatileBehavior_IsStrengthButton(behavior: number): boolean { return MB.MetatileBehavior_IsStrengthButton(behavior); }
 
 /** MapGridGetMetatileLayerTypeAt (fieldmap.c). */
 export function MapGridGetMetatileLayerTypeAt(x: number, y: number, map: FieldMap | null = sCurrentFieldMap): number {
