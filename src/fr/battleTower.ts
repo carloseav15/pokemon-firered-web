@@ -21,7 +21,7 @@ import { gSelectedOrderFromParty } from "./partyMenu";
 import { ReducePlayerPartyToThree } from "./pokemon/scriptPokemonUtil";
 import type { Game } from "./game";
 
-const sText_100 = encode("100");
+const sText_100 = (): Uint8Array => encode("100");
 const sBattleTowerHeldItems = (): number[] => cdata("battle_tower", "sBattleTowerHeldItems");
 const sBattleTowerTrainers = (): Array<{ trainerClass: number; name: number[]; teamFlags: number; greeting: number[] }> => cdata("battle_tower", "sBattleTowerTrainers");
 const gBattleTowerLevel50Mons = (): Array<{ species: number; heldItem: number; teamFlags: number; moves: number[]; evSpread: number; nature: number }> => cdata("battle_tower", "gBattleTowerLevel50Mons");
@@ -583,4 +583,4 @@ export function Dummy_TryEnableBravoTrainerBattleTower(): void { for (let i = 0;
 
 /** Static C count helpers useful to the battle integration. */
 export function battleTowerCurrentTrainerName(): Uint8Array { const out = new Uint8Array(8); GetBattleTowerTrainerName(out); return out; }
-export function battleTowerLevelName(): Uint8Array { return copy(sText_100); }
+export function battleTowerLevelName(): Uint8Array { return copy(sText_100()); }

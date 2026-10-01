@@ -1,5 +1,6 @@
 // Headless check for quest_log_objects.c (Quest Log scene object events serialization and surf dismount).
 import "./setupNodeGbaMock.ts";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import * as C from "../../src/fr/generated/constants.ts";
 import * as MB from "../../src/fr/generated/metatileBehavior.ts";
@@ -20,6 +21,10 @@ import {
   type QuestLogScene,
 } from "../../src/fr/questLogObjects.ts";
 import type { MapObjectTemplate } from "../../src/fr/rom.ts";
+import { rom } from "../../src/fr/rom.ts";
+
+const root = process.cwd() + "/public/fr/";
+(rom as any).charmap = JSON.parse(readFileSync(root + "charmap.json", "utf8"));
 
 console.log("Checking quest_log_objects.c headless logic...");
 
@@ -147,6 +152,10 @@ const mockAvatar = {
     if (transition & PLAYER_AVATAR_FLAG_ON_FOOT) {
       this.flags = (this.flags & ~PLAYER_AVATAR_FLAG_SURFING) | PLAYER_AVATAR_FLAG_ON_FOOT;
     }
+  },
+  // DoPlayerAvatarTransition (field_player_avatar.c), the entry SetPlayerAvatarTransitionFlags uses.
+  DoPlayerAvatarTransition(flags: number) {
+    this.setTransitionFlags(flags);
   },
 } as unknown as PlayerAvatar;
 

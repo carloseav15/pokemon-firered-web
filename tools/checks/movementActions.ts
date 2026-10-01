@@ -9,6 +9,9 @@ import { rom } from "../../src/fr/rom";
 import * as C from "../../src/fr/generated/constants";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, ObjectEvent, ObjectEvents } from "../../src/fr/field/objectEvents";
 
+const root = process.cwd() + "/public/fr/";
+(rom as any).charmap = JSON.parse(readFileSync(root + "charmap.json", "utf8"));
+
 const exported = JSON.parse(readFileSync(resolve("public/fr/cdata/event_object_movement.json"), "utf8")) as {
   defs: Record<string, { type: string; value: unknown[] }>;
 };
@@ -49,6 +52,9 @@ function run(actionId: number, maxFrames = 200): { object: ObjectEvent; frames: 
   object.sprite.anims = anims;
   object.movementActionId = actionId;
   object.sprite.data[2] = 0;
+  // Steps that resolve the object from its sprite (UpdateSlowStyleAnim) look the entry up
+  // in ObjectEvents.objects, exactly as the game does for a live gObjectEvents slot.
+  objects.objects[0] = object;
   for (let frame = 0; frame < maxFrames; frame++) {
     const finished = objects.execAction(object);
     object.sprite.animate();
