@@ -84,6 +84,9 @@ crearlos como contenido propio (estadísticas, gráficos, gritos).
 
 ## Primeros pasos cuando toque
 
+La extracción de referencias ya tiene base y guía propias en
+[refs/README.md](../refs/README.md) y puede avanzar en paralelo.
+
 1. Validar FireRed (`TAREAS-FINALES.md`), incluida la comparación con emulador.
 2. Con el script de comparación de cuerpos C, decidir qué va a `core/` y qué es
    propio de cada juego.

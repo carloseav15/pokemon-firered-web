@@ -8,22 +8,25 @@ generation 3 with its *_past and move_changelog tables before comparing.
 Usage:
   python3 tools/refs/compare_pokeapi.py [--csv DIR] [--out diffs.json]
 
---csv defaults to $POKEAPI_CSV, then ../pokeapi/data/v2/csv. Get the CSVs with:
-  git clone --depth 1 https://github.com/PokeAPI/pokeapi.git ../pokeapi
+--csv defaults to the pinned checkout (`npm run refs:fetch -- pokeapi`).
 First run (2026-10-01) against PokeAPI/pokeapi bc92d3b: 7.528 values compared.
 Known mapping gaps (not PokéAPI errors): gen 3 ability ids >= 77 are shifted by
 one (ABILITY_CACOPHONY 76), FireRed Deoxys is the Attack Forme in PokéAPI, the
 three ultimate-move tutors are not in sTutorMoves, and the decomp stores
 100/0 where PokéAPI leaves accuracy or effect chance empty.
 """
-import argparse, csv, json, os
+import argparse, csv, json, sys
 from collections import defaultdict, Counter
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 ap = argparse.ArgumentParser()
-ap.add_argument("--csv", default=os.environ.get("POKEAPI_CSV", str(ROOT.parent / "pokeapi/data/v2/csv")))
+ap.add_argument("--csv", default=None, help="PokéAPI data/v2/csv directory (default: pinned checkout)")
 ap.add_argument("--out", default=None, help="write every difference to this JSON file")
 args = ap.parse_args()
+if args.csv is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from common import source_path
+    args.csv = source_path("pokeapi") / "data/v2/csv"
 CSV = Path(args.csv); FR = ROOT / "public/fr"
 if not (CSV / "moves.csv").exists(): raise SystemExit(f"PokéAPI CSVs not found in {CSV}")
 VG, GEN = 7, 3

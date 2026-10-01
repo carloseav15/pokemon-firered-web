@@ -13,6 +13,9 @@ Responde en español.
 - Consulta las filas relevantes de [PENDING.md](PENDING.md) y el código de la tanda.
 - [Referencia técnica](docs/PORTING-GUIDE.md): mapa, datos, semántica C y driver;
   lee únicamente la sección necesaria. No releas el historial al iniciar una tarea.
+- [refs/README.md](refs/README.md): extracción de otros decomps (Emerald, Platinum,
+  HeartGold, PokéAPI) para fases futuras. Trabajo aparte con su propia guía;
+  `src/` nunca importa `refs/`.
 - `PLAN-RECORRIDO.md` se reserva para la revisión. El proceso anterior está solo
   en el historial de Git; no lo recuperes como guía.
 
