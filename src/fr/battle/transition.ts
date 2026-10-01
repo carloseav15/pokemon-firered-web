@@ -22,7 +22,7 @@ import { incbin, incbin16 } from "../hw/assets";
 import { save } from "../save";
 import type { Overworld } from "../field/overworld";
 import { MetatileBehavior_IsSurfable } from "../generated/metatileBehavior";
-import { Sin, gSineTable } from "../hw/trig";
+import { Cos, Sin, gSineTable } from "../hw/trig";
 import { random as Random } from "../random";
 import { MugshotTransitionEffect } from "./mugshotTransition";
 
@@ -1291,6 +1291,153 @@ function HBlankCB_Swirl(effect: SwirlEffect, scanline: number): number {
   return effect.offsets[scanline] ?? 0;
 }
 
+const sSpiral_AngleData = [0, 0x26e, 0x100, 0x69, 0, -0x69, -0x100, -0x266e, 0, 0x26e, 0x100, 0x69, 0, -0x69, -0x100, -0x266e];
+type SpiralBounds = [number, number][];
+
+/** Task_Spiral (battle_transition.c): run init/end states and commit the VBlank row windows. */
+class SpiralEffect implements Effect {
+  readonly completesScreenFade = true;
+  state = 0;
+  angle = 0;
+  radius = 0;
+  dmaPending = false;
+  done = false;
+  readonly bounds: [SpiralBounds, SpiralBounds] = [makeSpiralBounds(), makeSpiralBounds()];
+  readonly workingBounds: [SpiralBounds, SpiralBounds] = [makeSpiralBounds(), makeSpiralBounds()];
+  readonly vertical: [[number, number], [number, number]] = [[48, 112], [16, 144]];
+  readonly workingVertical: [[number, number], [number, number]] = [[48, 112], [16, 144]];
+
+  tick(): boolean { return Task_Spiral(this); }
+
+  render(ctx: CanvasRenderingContext2D, snapshot: HTMLCanvasElement): void {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) {
+      const visible: [number, number][] = [];
+      for (let win = 0; win < 2; win++) {
+        // Spiral_Init sets WININ=0 (black) and enables WIN0 only in WINOUT.
+        if (win === 1) continue;
+        const [top, bottom] = this.vertical[win]!;
+        if (y < top || y >= bottom) continue;
+        let [left, right] = this.bounds[win]![y]!;
+        left = Math.max(0, Math.min(DISPLAY_WIDTH, left));
+        right = Math.max(0, Math.min(DISPLAY_WIDTH, right));
+        if (left < right) visible.push([left, right]);
+      }
+      visible.sort((a, b) => a[0] - b[0]);
+      for (const [left, right] of visible) {
+        ctx.drawImage(snapshot, left, y, right - left, 1, left, y, right - left, 1);
+      }
+    }
+  }
+}
+
+function makeSpiralBounds(): SpiralBounds {
+  return Array.from({ length: DISPLAY_HEIGHT }, () => [DISPLAY_WIDTH >> 1, DISPLAY_WIDTH >> 1]);
+}
+
+/** Task_Spiral (battle_transition.c): execute state callbacks until one yields a frame. */
+function Task_Spiral(effect: SpiralEffect): boolean {
+  let keepRunning: boolean;
+  do {
+    keepRunning = effect.state === 0 ? Spiral_Init(effect) : Spiral_End(effect);
+  } while (keepRunning);
+  VBlankCB_Spiral(effect);
+  return effect.done;
+}
+
+/** Spiral_Init (battle_transition.c): establish the centered pair of scanline windows. */
+function Spiral_Init(effect: SpiralEffect): boolean {
+  effect.bounds[0].forEach((_, y) => { effect.bounds[0][y] = [120, 120]; effect.bounds[1][y] = [120, 120]; });
+  effect.workingBounds[0].forEach((_, y) => { effect.workingBounds[0][y] = [120, 120]; effect.workingBounds[1][y] = [120, 120]; });
+  effect.vertical[0] = [48, DISPLAY_HEIGHT - 48];
+  effect.vertical[1] = [16, DISPLAY_HEIGHT - 16];
+  effect.workingVertical[0] = [...effect.vertical[0]];
+  effect.workingVertical[1] = [...effect.vertical[1]];
+  effect.angle = 0;
+  effect.radius = 0;
+  effect.state++;
+  return false;
+}
+
+/** Spiral_UpdateFrame (battle_transition.c): rasterize one signed sine turn into a WIN0/WIN1 row pair. */
+function Spiral_UpdateFrame(effect: SpiralEffect, initRadius: number, deltaAngleMax: number, window: number): void {
+  const first = Array<number>(DISPLAY_HEIGHT).fill(120);
+  const second = Array<number>(DISPLAY_HEIGHT).fill(120);
+  for (let i = 0; i < deltaAngleMax * 16; i++) {
+    const amplitude1 = initRadius + (i >> 3);
+    const amplitude2 = amplitude1 + Number((i >> 3) !== ((i + 1) >> 3));
+    let y1 = 80 - safeSin(i, amplitude1);
+    let x1 = Cos(i & 0xff, amplitude1) + 120;
+    let y2 = 80 - safeSin(i + 1, amplitude2);
+    let x2 = Cos((i + 1) & 0xff, amplitude2) + 120;
+    if (y1 < 0 && y2 < 0 || y1 > DISPLAY_HEIGHT - 1 && y2 > DISPLAY_HEIGHT - 1) continue;
+    y1 = Math.max(0, Math.min(DISPLAY_HEIGHT - 1, y1));
+    x1 = Math.max(0, Math.min(255, x1));
+    y2 = Math.max(0, Math.min(DISPLAY_HEIGHT - 1, y2)) - y1;
+    x2 = Math.max(0, Math.min(255, x2));
+    const target = i >= 64 && i < 64 * 3 ? first : second;
+    target[y1] = x1;
+    if (y2 === 0) continue;
+    x2 -= x1;
+    if (x2 < -1 && x1 > 1) x1--;
+    else if (x2 > 1 && x1 < 255) x1++;
+    if (y2 < 0) for (let y = y2; y < 0; y++) target[y1 + y] = x1;
+    else for (let y = y2; y > 0; y--) target[y1 + y] = x1;
+  }
+
+  if (window !== 0 && deltaAngleMax % 4 !== 0) {
+    let y1 = safeSin(deltaAngleMax * 16, initRadius + (deltaAngleMax << 1));
+    const direction = deltaAngleMax >> 2;
+    if (direction < 2) y1 = Math.min(80, y1);
+    else y1 = Math.max(-(80 - 1), y1);
+    const end = direction < 2 ? 1 : 0;
+    const step = direction < 2 ? -1 : 1;
+    for (let i = y1; direction < 2 ? i > end : i <= end; i += step) {
+      const row = 80 - i;
+      const x = ((i * sSpiral_AngleData[deltaAngleMax]!) >> 8) + 120;
+      if (x < 0 || x > 255 || row < 0 || row >= DISPLAY_HEIGHT) continue;
+      if (direction === 0) {
+        if (second[row]! < x) second[row] = 120;
+        else if (first[row]! < x) first[row] = x;
+      } else if (direction === 1) {
+        if (first[row]! < x) first[row] = x;
+      } else if (direction === 2) {
+        if (first[row]! >= x) first[row] = 120;
+        else if (second[row]! > x) second[row] = x;
+      } else if (direction === 3 && second[row]! > x) second[row] = x;
+    }
+  }
+  const rows = effect.workingBounds[window]!;
+  for (let y = 0; y < DISPLAY_HEIGHT; y++) rows[y] = [first[y]!, second[y]!];
+}
+
+/** Spiral_End (battle_transition.c): advance the angle, then widen both vertical windows by 32 pixels. */
+function Spiral_End(effect: SpiralEffect): boolean {
+  Spiral_UpdateFrame(effect, effect.radius, effect.angle, 1);
+  effect.dmaPending = true;
+  if (++effect.angle === sSpiral_AngleData.length + 1) {
+    Spiral_UpdateFrame(effect, effect.radius, 16, 0);
+    effect.workingVertical[0] = [Math.max(0, 48 - effect.radius), Math.min(255, effect.radius + 112)];
+    effect.radius += 32;
+    effect.angle = 0;
+    Spiral_UpdateFrame(effect, effect.radius, 0, 1);
+    effect.workingVertical[1] = [Math.max(0, 16 - effect.radius), Math.min(255, effect.radius + 144)];
+    if (effect.radius >= DISPLAY_HEIGHT) effect.done = true;
+  }
+  return false;
+}
+
+/** VBlankCB_Spiral (battle_transition.c): publish both prepared scanline window tables. */
+function VBlankCB_Spiral(effect: SpiralEffect): void {
+  if (!effect.dmaPending) return;
+  for (let window = 0; window < 2; window++) {
+    for (let y = 0; y < DISPLAY_HEIGHT; y++) effect.bounds[window]![y] = [...effect.workingBounds[window]![y]!];
+    effect.vertical[window] = [...effect.workingVertical[window]!];
+  }
+  effect.dmaPending = false;
+}
+
 /** Task_Blur / Blur_Main: GBA mosaic zoom and fade to black. */
 class BlurEffect implements Effect {
   readonly completesScreenFade = true;
@@ -1610,6 +1757,7 @@ export class BattleTransitionScene implements Scene {
       : transitionId === C.B_TRANSITION_WAVE ? new WaveEffect()
       : transitionId === C.B_TRANSITION_RIPPLE ? new RippleEffect()
       : transitionId === C.B_TRANSITION_SWIRL ? new SwirlEffect()
+      : transitionId === C.B_TRANSITION_SPIRAL ? new SpiralEffect()
       : transitionId === C.B_TRANSITION_BLUR ? new BlurEffect()
       : transitionId === C.B_TRANSITION_POKEBALLS_TRAIL ? new PokeballsTrailEffect()
       : transitionId >= C.B_TRANSITION_LORELEI && transitionId <= C.B_TRANSITION_BLUE ? new MugshotTransitionEffect(transitionId, save.playerGender)
@@ -1675,7 +1823,7 @@ function IsSupportedBattleTransition(transitionId: number): boolean {
     || transitionId === C.B_TRANSITION_SLICE || transitionId === C.B_TRANSITION_WHITE_BARS_FADE
     || transitionId === C.B_TRANSITION_GRID_SQUARES || transitionId === C.B_TRANSITION_SHUFFLE
     || transitionId === C.B_TRANSITION_BIG_POKEBALL || transitionId === C.B_TRANSITION_WAVE
-    || transitionId === C.B_TRANSITION_RIPPLE || transitionId === C.B_TRANSITION_SWIRL
+    || transitionId === C.B_TRANSITION_RIPPLE || transitionId === C.B_TRANSITION_SWIRL || transitionId === C.B_TRANSITION_SPIRAL
     || transitionId === C.B_TRANSITION_BLUR || transitionId === C.B_TRANSITION_POKEBALLS_TRAIL
     || (transitionId >= C.B_TRANSITION_LORELEI && transitionId <= C.B_TRANSITION_BLUE);
 }
