@@ -111,6 +111,8 @@ commit aparte (`Update refs task status`), no uno por tarea.
 - **Compara siempre "real" frente a "representación"** cuando cruces dos fuentes: el
   mismo dato se guarda distinto (precisión 0 o 100 para "nunca falla", ids
   desplazados, enums frente a números).
+- **Un solo commit de estado por sesión.** Marca todas las tareas hechas al final, en
+  un único `Update refs task status`. El 2026-10-01 se hicieron 6 en una sesión.
 - **Un dato raro es una pregunta, no una conclusión:** antes de escribir un número en
   la guía, ejecútalo y mira una muestra de casos.
 
@@ -292,3 +294,25 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   objetos y eventos). Sirve para planificar el port de Emerald. Los 11 mapas con
   eventos compartidos conservan la referencia y usan `null` para conteos locales
   omitidos; los demás conteos se calculan de las listas fuente.
+- [ ] **R16 Comparaciones sin ruido y sin rutas fijas** [básico]. Dos defectos de la
+  revisión del 2026-10-01:
+  - **Ruta fija:** `tools/refs/compare_emerald.py` (línea 18) y
+    `tools/refs/compare_platinum_species.py` (línea 24) usan
+    `ROOT.parent / "pokefirered/include/constants"` e ignoran `POKEFIRERED`. Usa la
+    misma resolución que el resto: `P.DECOMP` de `tools/portInventory.py` (como
+    `emerald_functions.py`). Comprobación: copia el repo a otra carpeta (por ejemplo
+    con `git worktree add`) y ejecuta `POKEFIRERED=<ruta real> npm run refs:all`;
+    debe terminar en `PASS`.
+  - **Ruido en R12:** `refs/emerald/species_vs_firered.json` lista 411 especies y
+    1.233 "diferencias", y `moves_vs_firered.json` 354 movimientos, aunque todas
+    salvo una son el mismo valor escrito de dos formas (`TYPE_GRASS` frente a `12`).
+    Si un valor es igual después de resolver la constante, **no es una diferencia**:
+    no lo guardes ni lo cuentes. Deja la clase `representation` solo para formatos
+    que de verdad cambian el dato guardado (como precisión 0 frente a 100 en
+    Platinum).
+  - Resultado esperado (comprobado en los dos decomps): **0 especies con diferencias
+    reales y 1 movimiento**, `MOVE_NATURE_POWER`, precisión 0 en FireRed y 95 en
+    Emerald (`src/data/battle_moves.h` de cada uno). El resumen impreso debe empezar
+    por esas cifras reales.
+  - Terminada cuando: las dos salidas regeneradas, `npm run refs:all` en `PASS` y la
+    comprobación de la otra carpeta también en `PASS`.
