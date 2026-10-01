@@ -3,11 +3,20 @@
 // CameraCB_CreditsPan, Task_OvwldCredits_FadeOut/WaitFade, and the
 // field_camera.c view drawing they need (DrawWholeMapView / DrawMetatile) —
 // the map scrolls behind the credits text as hardware BGs.
+// The tileset animations of the loaded map run (tileset_anims.c:
+// InitTilesetAnimations / UpdateTilesetAnimations, writing into ppu.vram).
 // Adaptations:
 //  - The maps come from a preloaded cache (preloadCreditsMaps) and are drawn
 //    from FieldMap + CopyMapTilesetsToHw instead of the field's own VRAM.
-//  - Object events (NPCs), the player avatar, weather and tileset animations of
-//    the loaded map are not run: the scrolls show the static map.
+//  - Object events (NPCs) and the player avatar of the loaded map are not run:
+//    the C's MapLdr_Credits never calls InitObjectEventsLocal/TrySpawnObjectEvents,
+//    so the scrolls show the map without its NPCs, as in the original.
+//  - Weather and field tasks (StartWeather/ResumePausedWeather/SetUpFieldTasks,
+//    skipped in MapLdr_Credits case 1) are not run: every sOverworldMapScenes map
+//    is WEATHER_SUNNY (visual no-op by design: Sunny_Main is empty) and the field
+//    tasks are a dummy per-step callback plus ambient cries, with no visible effect
+//    on these maps. ON_TRANSITION scripts are likewise skipped: they only touch
+//    object positions/flags and the world map, invisible without object events.
 //  - The camera is a pixel offset (gFieldCamera.x/y) scrolled with the C's
 //    speed/length commands; BGxHOFS/VOFS are that offset modulo the 256-pixel
 //    tilemap (metatiles are drawn wrapped into the 32x32 tilemap).
@@ -26,7 +35,7 @@ import { SetGpuReg } from "./hw/gpu";
 import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "./hw/palette";
 import {
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS,
-  REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT,
+  REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT, ppu,
 } from "./hw/ppu";
 import { gMain, SetMainCallback2 } from "./hw/runtime";
 import { AnimateSprites, BuildOamBuffer } from "./hw/sprite";
@@ -181,6 +190,114 @@ function CameraUpdateNoObjectRefresh(): void {
   FieldUpdateBgTilemapScroll();
 }
 
+// ---------------------------------------------------------------- tileset_anims.c
+
+const TILE_SIZE_4BPP = 32;
+
+let sPrimaryTilesetAnimCounter = 0;
+let sPrimaryTilesetAnimCounterMax = 0;
+let sPrimaryTilesetAnimCallback: ((timer: number) => void) | null = null;
+let sSecondaryTilesetAnimCounter = 0;
+let sSecondaryTilesetAnimCounterMax = 0;
+let sSecondaryTilesetAnimCallback: ((timer: number) => void) | null = null;
+type TilesetAnimTransfer = { src: Uint8Array; dest: number; size: number };
+const sTilesetDMA3TransferBuffer: TilesetAnimTransfer[] = [];
+
+/** ResetTilesetAnimBuffer. */
+function ResetTilesetAnimBuffer(): void {
+  sTilesetDMA3TransferBuffer.length = 0;
+}
+
+/** AppendTilesetAnimToBuffer. Synchronous ppu.vram write is the browser's DMA3 transfer. */
+function AppendTilesetAnimToBuffer(src: Uint8Array | undefined, destTile: number, size: number): void {
+  if (!src || sTilesetDMA3TransferBuffer.length >= 20) return;
+  sTilesetDMA3TransferBuffer.push({ src, dest: destTile * TILE_SIZE_4BPP, size });
+}
+
+/** TransferTilesetAnimsBuffer. */
+function TransferTilesetAnimsBuffer(): void {
+  for (const transfer of sTilesetDMA3TransferBuffer)
+    ppu.vram.set(transfer.src.subarray(0, transfer.size), transfer.dest);
+  sTilesetDMA3TransferBuffer.length = 0;
+}
+
+function QueueAnimTiles_General_Flower(timer: number): void {
+  const frames = sMap?.loaded.primary.anims["flower"];
+  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 508, 4 * TILE_SIZE_4BPP);
+}
+
+function QueueAnimTiles_General_Water_Current_LandWatersEdge(timer: number): void {
+  const frames = sMap?.loaded.primary.anims["water_current_landwatersedge"];
+  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 416, 48 * TILE_SIZE_4BPP);
+}
+
+function QueueAnimTiles_General_SandWatersEdge(timer: number): void {
+  const frames = sMap?.loaded.primary.anims["sandwatersedge"];
+  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 464, 18 * TILE_SIZE_4BPP);
+}
+
+function TilesetAnim_General(timer: number): void {
+  if (timer % 8 === 0) QueueAnimTiles_General_SandWatersEdge(timer / 8);
+  if (timer % 16 === 1) QueueAnimTiles_General_Water_Current_LandWatersEdge(timer / 16);
+  if (timer % 16 === 2) QueueAnimTiles_General_Flower(timer / 16);
+}
+
+/** InitTilesetAnim_General. */
+function InitTilesetAnim_General(): void {
+  sPrimaryTilesetAnimCounter = 0;
+  sPrimaryTilesetAnimCounterMax = 640;
+  sPrimaryTilesetAnimCallback = TilesetAnim_General;
+}
+
+function QueueAnimTiles_CeladonCity_Fountain(timer: number): void {
+  const frames = sMap?.loaded.secondary.anims["fountain"];
+  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 744, 8 * TILE_SIZE_4BPP);
+}
+
+function TilesetAnim_CeladonCity(timer: number): void {
+  if (timer % 12 === 0) QueueAnimTiles_CeladonCity_Fountain(timer / 12);
+}
+
+function InitTilesetAnim_CeladonCity(): void {
+  sSecondaryTilesetAnimCounter = 0;
+  sSecondaryTilesetAnimCounterMax = 120;
+  sSecondaryTilesetAnimCallback = TilesetAnim_CeladonCity;
+}
+
+function _InitPrimaryTilesetAnimation(): void {
+  sPrimaryTilesetAnimCounter = 0;
+  sPrimaryTilesetAnimCounterMax = 0;
+  sPrimaryTilesetAnimCallback = null;
+  if (sMap?.loaded.primary.callback === "InitTilesetAnim_General") InitTilesetAnim_General();
+}
+
+function _InitSecondaryTilesetAnimation(): void {
+  sSecondaryTilesetAnimCounter = 0;
+  sSecondaryTilesetAnimCounterMax = 0;
+  sSecondaryTilesetAnimCallback = null;
+  // Only InitTilesetAnim_CeladonCity is reachable: every credits map uses
+  // gTileset_General as primary, and Celadon City is the only credits secondary
+  // with an animation callback.
+  if (sMap?.loaded.secondary.callback === "InitTilesetAnim_CeladonCity") InitTilesetAnim_CeladonCity();
+}
+
+/** InitTilesetAnimations. */
+function InitTilesetAnimations(): void {
+  ResetTilesetAnimBuffer();
+  _InitPrimaryTilesetAnimation();
+  _InitSecondaryTilesetAnimation();
+}
+
+/** UpdateTilesetAnimations. */
+function UpdateTilesetAnimations(): void {
+  ResetTilesetAnimBuffer();
+  if (++sPrimaryTilesetAnimCounter >= sPrimaryTilesetAnimCounterMax) sPrimaryTilesetAnimCounter = 0;
+  if (++sSecondaryTilesetAnimCounter >= sSecondaryTilesetAnimCounterMax) sSecondaryTilesetAnimCounter = 0;
+  sPrimaryTilesetAnimCallback?.(sPrimaryTilesetAnimCounter);
+  sSecondaryTilesetAnimCallback?.(sSecondaryTilesetAnimCounter);
+  TransferTilesetAnimsBuffer();
+}
+
 /** Overworld_CreditsMainCB */
 export function Overworld_CreditsMainCB(): void {
   const fading = !!gPaletteFade.active;
@@ -191,6 +308,7 @@ export function Overworld_CreditsMainCB(): void {
   CameraUpdateNoObjectRefresh();
   BuildOamBuffer();
   UpdatePaletteFade();
+  UpdateTilesetAnimations();
   DoScheduledBgTilemapCopiesToVram();
 }
 
@@ -319,7 +437,8 @@ function MapLdr_Credits(): boolean {
       gMain.state++;
       break;
     case 8:
-      // InitTilesetAnimations(); gPaletteFade.bufferTransferDisabled = FALSE;
+      InitTilesetAnimations();
+      // gPaletteFade.bufferTransferDisabled = FALSE;
       FadeSelectedPals(0, 0, 0x3fffffff); // FADE_FROM_BLACK
       gMain.state++;
       break;
@@ -355,6 +474,7 @@ export function DrawCurrentFieldForCredits(): void {
   CopyMapTilesetsToHw(cur.map.loaded.primary, cur.map.loaded.secondary);
   DrawWholeMapView();
   FieldUpdateBgTilemapScroll();
+  InitTilesetAnimations();
 }
 
 function CameraCB_CreditsPan(): void {

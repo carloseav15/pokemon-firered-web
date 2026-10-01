@@ -5,8 +5,10 @@
 // Adaptations:
 //  - The scene is a hardware scene hosted by fieldMenu; its first background is
 //    the map the field shows at the Indigo Plateau (overworldCredits.ts).
-//  - The map scrolls (Overworld_DoScrollSceneForCredits) draw static maps: no
-//    NPCs, weather or tileset animations (see overworldCredits.ts).
+//  - The map scrolls (Overworld_DoScrollSceneForCredits) show the map without its
+//    NPCs and without weather, as in the C (MapLdr_Credits spawns no object events;
+//    every credits map is WEATHER_SUNNY, a visual no-op). Tileset animations do run
+//    (see overworldCredits.ts).
 //  - The `while (!DoOverworldMapScrollScene()) {}` of the map-with-sprites case
 //    runs the (synchronous) scroll set-up frame by frame.
 //  - SoftReset(RESET_ALL) reloads the page (back to the title screen).
