@@ -58,7 +58,7 @@ import { openPokedexScreen } from "./pokedexScreen";
 import { openTrainerCardScreen } from "./menus/trainerCard";
 import {
   CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
-  PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, StartCB_Save2, type SaveDialogRuntime,
+  PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, StartCB_Save2, StartMenu_PrepareForSave, task50_save_game, type SaveDialogRuntime,
   FieldCB2_DrawStartMenu, FieldCB_ReturnToFieldOpenStartMenu, SetUpStartMenu,
   StartMenuBagCallback, StartMenuExitCallback, StartMenuOptionCallback, StartMenuPlayerCallback,
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
@@ -490,6 +490,22 @@ export class Game {
     ow.control.MsgSetNotSignpost();
     let taskId = -1;
     let startCallback: (dialog: SaveDialogRuntime) => boolean = StartCB_Save1;
+    const dialog = this.createSaveDialog((result) => {
+      tasks.destroy(taskId);
+      if (result === 2) {
+        this.removeStartMenuWindows();
+        this.showStartMenu(true);
+      } else this.closeStartMenu();
+      RestoreHelpContext();
+    });
+    taskId = tasks.create(() => {
+      if (startCallback(dialog)) return;
+      startCallback = StartCB_Save2;
+    }, 80);
+  }
+
+  private createSaveDialog(finish: SaveDialogRuntime["finish"]): SaveDialogRuntime {
+    const ow = this.overworld;
     const dialog: SaveDialogRuntime = {
       saveDialogCB: SaveDialogCB_PrintAskSaveText,
       saveDialogDelay: 0,
@@ -527,19 +543,9 @@ export class Game {
         this.startMenuSaveStats = null;
         this.startMenuWindows = this.startMenuWindows.filter((window) => window !== stats);
       },
-      finish: (result) => {
-        tasks.destroy(taskId);
-        if (result === 2) {
-          this.removeStartMenuWindows();
-          this.showStartMenu(true);
-        } else this.closeStartMenu();
-        RestoreHelpContext();
-      },
+      finish,
     };
-    taskId = tasks.create(() => {
-      if (startCallback(dialog)) return;
-      startCallback = StartCB_Save2;
-    }, 80);
+    return dialog;
   }
 
   // ---------------------------------------------------------------- placeholder screens
@@ -829,10 +835,18 @@ export class Game {
   }
   askSaveGame(): void {
     const ow = this.overworld;
-    import("./save").then(({ varSet }) => {
-      varSet(0x800d, this.writeSave() ? 1 : 0);
-      ow.script.ScriptContext_Enable();
-    });
+    ow.control.MsgSetNotSignpost();
+    BackupHelpContext();
+    SetHelpContext(C.HELPCONTEXT_SAVE);
+    const dialog = this.createSaveDialog(() => {});
+    StartMenu_PrepareForSave(dialog);
+    tasks.create((taskId) => task50_save_game(
+      taskId,
+      dialog,
+      (success) => varSet(0x800d, success ? 1 : 0),
+      () => ow.script.ScriptContext_Enable(),
+      RestoreHelpContext,
+    ), 80);
   }
   showDiploma(): void { showDiploma(this); }
   enterHallOfFame(): void { enterHallOfFame(this); }

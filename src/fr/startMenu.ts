@@ -443,6 +443,22 @@ export function RunSaveDialogCB(dialog: SaveDialogRuntime): number {
   return dialog.saveDialogCB(dialog);
 }
 
+/** task50_save_game (start_menu.c): finish the field save prompt and resume its script. */
+export function task50_save_game(
+  taskId: number,
+  dialog: SaveDialogRuntime,
+  setResult: (success: boolean) => void,
+  enableScript: () => void,
+  restoreHelpContext: () => void,
+): void {
+  const result = RunSaveDialogCB(dialog);
+  if (result === SAVECB_RETURN_CONTINUE) return;
+  setResult(result === SAVECB_RETURN_OKAY);
+  tasks.destroy(taskId);
+  enableScript();
+  restoreHelpContext();
+}
+
 /** PrintSaveTextWithFollowupFunc (start_menu.c). */
 export function PrintSaveTextWithFollowupFunc(
   dialog: SaveDialogRuntime,
