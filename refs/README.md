@@ -48,6 +48,15 @@ Elige **una** tarea sin marcar de la sección 3 y trabaja solo en ella.
 8. Si llevas dos intentos fallidos con el mismo error, anota `BLOQUEADO: <motivo>`
    bajo la tarea y pasa a otra.
 9. Nada de `git push` sin permiso del usuario.
+10. **Las pistas y cifras "esperadas" de una tarea son ayudas, no la verdad.** Si tu
+   resultado coincide con la pista, comprueba también por qué: revisa una muestra de
+   casos a mano. Si no coincide, o la pista mezcla cosas distintas, investiga y
+   escribe `PISTA INCORRECTA: <qué dice> / <qué muestran los datos>` bajo la tarea;
+   no ajustes tu resultado para que encaje. (Caso real 2026-10-01: la pista de R2
+   contaba 53 cambios de Gen 4 y solo unos 18 eran reales.)
+11. **Si escribes o editas una tarea**, cada cifra o ejemplo de la pista debe salir de
+   un comando que hayas ejecutado sobre los datos, y la pista debe decir qué cuenta
+   exactamente (p. ej. "cambios reales" frente a "diferencias de formato").
 
 ### Receta: crear un extractor nuevo
 

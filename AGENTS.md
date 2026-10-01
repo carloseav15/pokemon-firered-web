@@ -89,6 +89,9 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
   comprobación focalizada antes de construir más código sobre ellos.
 - No crees pruebas que solo repitan la implementación. Nunca prepares el resultado
   que luego afirmas verificar; identifica las ayudas legítimas con `PREPARED`.
+- Las cifras y ejemplos "esperados" de una guía o tarea se verifican con los datos
+  antes de escribirlos, y quien los sigue los contrasta en vez de ajustar su
+  resultado para que encajen (ver `TAREAS-FINALES.md` §0).
 - Navegador, capturas y recorridos quedan para revisión posterior, salvo petición
   del usuario o diagnóstico de un fallo concreto. No son requisito por pantalla
   durante esta fase. Anota de forma compacta qué quedó sin validar.
