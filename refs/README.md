@@ -266,7 +266,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   representación). Ejemplo comprobado: `SPECIES_BULBASAUR` 45/49/49/45/65/65
   (PS/Ata/Def/Vel/AtE/DefE), tipos `TYPE_GRASS`/`TYPE_POISON`. Se esperan muy pocas
   diferencias reales: es el mismo motor; cada una es información valiosa.
-- [ ] **R13 PokéAPI: nombres en español y Megas** [básico]. Extractor
+- [x] **R13 PokéAPI: nombres en español y Megas** [básico]. Extractor
   `tools/refs/pokeapi_extras.py` que lea los CSV fijados:
   - `refs/pokeapi/names_es.json` con `local_language_id = 7` (`es`) de
     `pokemon_species_names.csv` (1.025 filas), `move_names.csv` (937),
@@ -275,6 +275,8 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
     `-mega` (97: 48 de X/Y y ROZA con id < 10100, y 49 posteriores, incluidas 3
     `-mega-z`), con estadísticas, tipos y habilidades de sus tablas.
   - Marca en `_meta`/docstring que PokéAPI **no es fuente de verdad**.
+  - Nueve megaformas carecen de filas en `pokemon_abilities.csv`; la salida conserva
+    `abilities: []` y representa `base_experience`/`order` vacíos como `null`.
 - [ ] **R14 Entrenadores y encuentros de HeartGold** [medio]. Añade al sparse de
   `pokeheartgold` en `sources.json` `/files/poketool/trainer/` y
   `/files/fielddata/encountdata/` (rutas comprobadas en el commit fijado; R7 explica
