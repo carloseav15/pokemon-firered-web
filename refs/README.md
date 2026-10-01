@@ -191,7 +191,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   - Teléfono: `src/application/pokegear/phone/scripts/phone_scripts_*.c` contiene guiones de llamadas en C legible; `src/phonebook_dat.c` mapea contactos a mensajes. Textos fuente en `files/msgdata/msg/msg_0NNN.gmm` (filas XML con IDs de mensaje); la agenda de contactos está en `files/tel/pmtel_book.json` y su plantilla `.json.txt`.
   - Radio: los programas están implementados en `src/application/pokegear/radio/shows/*.c` (C legible) y cargan mensajes por NARC/ID; los textos están en los mismos `.gmm`, por ejemplo `msg_0414.gmm` (Pokémon Talk) y `msg_0420.gmm` (perfiles de entrenadores).
   - Sparse: no se amplió. `sources.json` mantiene `/src/` y `/include/`; los datos citados están bajo `/files/`. Para este inventario bastó consultar el árbol y ejemplos del commit fijado sin extraer datos. Una futura tarea de extracción deberá añadir solo los subdirectorios `/files/` que consuma.
-- [ ] **R8 Datos de Emerald con el exportador** [avanzado]. Evaluar si
+- [x] **R8 Datos de Emerald con el exportador** [avanzado]. Evaluar si
   `tools/decomp/export.py` puede apuntar a pokeemerald (especies, movimientos,
   objetos, mapas) sin modificar su comportamiento para FireRed. Entregar un informe
   con lo que funciona y lo que no, antes de escribir código.
