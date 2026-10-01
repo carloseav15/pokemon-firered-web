@@ -118,7 +118,10 @@ async function testFieldEffects() {
   assert.equal(mockSprites.sprites.length, 1, 'Tall grass sprite must be spawned on begin in tall grass');
   const grassSprite = mockSprites.sprites[0]!;
   assert.equal(grassSprite.priority, 2, 'Grass sprite priority matches object');
-  assert.equal(grassSprite.subpriority, 9, 'Grass sprite subpriority is object.subpriority - 1 (in front of feet)');
+  // PISTA INCORRECTA: this check inspects the just-created sprite before its
+  // UpdateTallGrassFieldEffect callback. The C FldEff_TallGrass passes subpriority
+  // 0 to CreateSpriteAtEnd and only computes elevation subpriority on later frames.
+  assert.equal(grassSprite.subpriority, 0, 'Tall-grass sprite starts at CreateSpriteAtEnd subpriority 0');
 
   // 2b. A jump starts a shadow through DoShadowFieldEffect, outside the
   // begin-step ground-effect bit dispatcher (event_object_movement.c:5745).
@@ -129,7 +132,8 @@ async function testFieldEffects() {
   fe.DoShadowFieldEffect(obj);
   assert.equal(mockSprites.sprites.length, 1, 'Shadow sprite must be spawned during jump');
   const shadowSprite = mockSprites.sprites[0]!;
-  assert.equal(shadowSprite.subpriority, 11, 'Shadow sprite subpriority is object.subpriority + 1 (under feet)');
+  // FldEff_Shadow (field_effect_helpers.c:221) passes 0x94 to CreateSpriteAtEnd.
+  assert.equal(shadowSprite.subpriority, 0x94, 'Shadow starts at C subpriority 0x94');
 
   // 2c. Jump landing ("finish") in tall grass vs normal ground
   mockSprites.sprites.length = 0;
