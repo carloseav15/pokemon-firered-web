@@ -785,7 +785,7 @@ export class Overworld {
     }
   }
 
-  /** CB2_LoadMapForQLPlayback / LoadMap_QLPlayback (overworld.c). */
+  /** CB2_LoadMapForQLPlayback (overworld.c). */
   CB2_LoadMapForQLPlayback(): void {
     if (this.questLogMapLoadState === null) this.questLogMapLoadState = 0;
     this.DoLoadMap_QLPlayback();
@@ -799,6 +799,12 @@ export class Overworld {
 
   /** Async browser counterpart to the C tight loop; each graphics/scene stage yields a frame. */
   private DoLoadMap_QLPlayback(): void {
+    if (this.LoadMap_QLPlayback()) this.questLogMapLoadState = null;
+  }
+
+  /** LoadMap_QLPlayback (overworld.c): run one browser frame of the C load-state machine.
+   * Hardware tile uploads are already resident in browser cdata, so those C stages are collapsed. */
+  private LoadMap_QLPlayback(): boolean {
     switch (this.questLogMapLoadState) {
       case 0:
         QuestLog_InitPalettesBackup();
@@ -841,10 +847,9 @@ export class Overworld {
         this.questLogMapLoadState++;
         break;
       default:
-        if (!this.RunFieldCallback()) break;
-        this.questLogMapLoadState = null;
-        break;
+        return this.RunFieldCallback();
     }
+    return false;
   }
 
   /** DrawWholeMapView (field_camera.c): Canvas composes the visible map at render time. */
