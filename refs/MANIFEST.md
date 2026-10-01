@@ -10,11 +10,14 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | [pokeplatinum](https://github.com/pret/pokeplatinum) | `c248fb3f8c` | DS, C en progreso. Datos JSON de Gen 4. |
 | [pokeheartgold](https://github.com/pret/pokeheartgold) | `9d8b7591f0` | DS, C + ensamblador, en progreso. Fijado; sin extractores todavía. |
 | [pokeapi](https://github.com/PokeAPI/pokeapi) | `bc92d3b602` | CSV de datos de todas las generaciones. No es fuente de verdad. |
+| [pokecrystal](https://github.com/pret/pokecrystal) | `5beda23ffa` | GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta. |
 
 ## Salidas
 
 | Archivo | Fuente | Entradas | Generador |
 |---|---|---:|---|
+| `crystal/maps.json` | pokecrystal | 388 | `tools/refs/crystal_maps.py` |
+| `crystal/tilesets.json` | pokecrystal | 37 | `tools/refs/crystal_maps.py` |
 | `emerald/functions.json` | pokeemerald | 17889 | `tools/refs/emerald_functions.py` |
 | `emerald/maps.json` | pokeemerald | 518 | `tools/refs/emerald_maps.py` |
 | `emerald/moves.json` | pokeemerald | 355 | `tools/refs/emerald_data.py` |

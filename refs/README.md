@@ -346,3 +346,4 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   el commit fijado) y genera `refs/heartgold/zone_events.json` con, por zona, el
   número de objetos, warps, eventos de fondo y de coordenadas, más los warps con su
   destino. R7 describe el formato.
+- [x] **R20 Extraer Crystal (tilesets y mapas)** [medio]. Base del editor de equivalencias de Johto (docs/VISION.md, fase 5). Ejecuta `npm run refs:fetch -- pokecrystal` y `npm run refs:crystal-maps`; genera 37 tilesets (2.664 bloques) y 388 mapas (302 archivos `.blk` en `maps/`) con sus dimensiones, rejillas, atributos y conexiones.
