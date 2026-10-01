@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9697/10115 (95.9 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **418 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9709/10115 (96.0 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **406 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~9.372 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~9.131 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -31,18 +31,18 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 11 | `battle_transition.c` | casi completo | 3037 | 124/134 | ~226 |  |
 | 12 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 13 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
-| 14 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
-| 15 | `field_effect.c` | casi completo | 4033 | 214/239 | ~421 |  |
-| 16 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 17 | `event_object_movement.c` | casi completo | 9412 | 716/759 | ~533 |  |
-| 18 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
-| 19 | `quest_log.c` | parcial | 1767 | 59/88 | ~582 |  |
+| 14 | `quest_log.c` | casi completo | 1767 | 71/88 | ~341 |  |
+| 15 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
+| 16 | `field_effect.c` | casi completo | 4033 | 214/239 | ~421 |  |
+| 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
+| 18 | `event_object_movement.c` | casi completo | 9412 | 716/759 | ~533 |  |
+| 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
 | 20 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
 | 21 | `trade_scene.c` | parcial | 2916 | 37/53 | ~880 |  |
 | 22 | `overworld.c` | parcial | 3563 | 144/242 | ~1442 |  |
 | 23 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 
-Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 18 casi completos y 5 parciales.
+Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 4 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -79,7 +79,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Teachy TV: `teachyTv.ts` está conectado (`Game.openTeachyTv` → `StartTeachyTv`); `keyItemScreens.openTeachyTv` (lista de texto) queda sin llamadores. Pantalla sin probar en navegador.
 - Fame Checker: `fameChecker.ts` está conectado y sus gráficos (ventanas, flechas, info box) tienen cuerpo; sin prueba de navegador.
 - Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; faltan las mugshots (Alto Mando/Campeón) y el resto de `battle_transition.c`.
-- Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El playback de Quest Log no está modelado por completo en Game (los campos se leen si el runtime los proporciona). Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
+- Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El gate `QL_IsTrainerSightDisabled` ya lee el estado activo del playback del Quest Log. Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
 - Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
 - Pantalla de nombres: 104/109 funciones (`naming_screen.c`); estados, sprites, iconos, renderizado, teclado y callbacks conectados. Quedan cinco `Debug_NamingScreen*` estáticos sin callers en el C; pantalla e historia sin validar en navegador.
