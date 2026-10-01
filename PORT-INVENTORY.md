@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (< 80 % de funciones) | 4 | 9964 | 217/390 |
+| Parcial (< 80 % de funciones) | 4 | 9964 | 229/390 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
-| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2576/2779 |
+| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2578/2779 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9739/10115** |
+| **Total en alcance** | **211** | **253703** | **9753/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Parcial (< 80 % de funciones)
@@ -29,7 +29,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 |---|---:|---:|---|---|---:|
 | `overworld.c` | 3563 | 149/242 | `battle/host.ts`, `field/fieldControl.ts`, `field/fieldMoves.ts` … |  |  |
 | `trade_scene.c` | 2916 | 38/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 1 |
-| `m4a.c` | 1781 | 13/72 | `audio/m4a.ts`, `audio/sound.ts` |  |  |
+| `m4a.c` | 1781 | 25/72 | `audio/m4a.ts`, `audio/sound.ts` |  |  |
 | `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 
 ## Casi completo (≥ 80 % y < 100 %)
@@ -46,13 +46,13 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_controller_player.c` | 2966 | 122/123 | `battle/controller_player.ts`, `battle/reshow.ts` |  |  |
 | `intro.c` | 2805 | 77/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
 | `battle_controller_pokedude.c` | 2698 | 107/108 | `battle/controller_pokedude.ts`, `teachyTv.ts` |  |  |
-| `quest_log_events.c` | 2247 | 97/118 | `questLogActions.ts`, `questLogEventBuffer.ts`, `questLogEvents.ts` … |  |  |
+| `quest_log_events.c` | 2247 | 98/118 | `questLogActions.ts`, `questLogEventBuffer.ts`, `questLogEvents.ts` … |  |  |
 | `quest_log.c` | 1767 | 77/88 | `field/objectEvents.ts`, `field/overworld.ts`, `questLogActions.ts` … |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `pokemon_storage_system_misc.c` | 1430 | 66/70 | `storageSystemMisc.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
-| `start_menu.c` | 1016 | 57/65 | `startMenu.ts` |  |  |
+| `start_menu.c` | 1016 | 58/65 | `startMenu.ts` |  |  |
 | `field_fadetransition.c` | 965 | 50/59 | `field/fieldControl.ts`, `field/overworld.ts`, `startMenu.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 

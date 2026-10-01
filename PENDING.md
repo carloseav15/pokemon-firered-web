@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9739/10115 (96.3 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **376 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9753/10115 (96.4 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **362 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~8.493 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~8.161 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -25,7 +25,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 5 | `intro.c` | casi completo | 2805 | 77/79 | ~71 |  |
 | 6 | `pokemon_storage_system_misc.c` | casi completo | 1430 | 66/70 | ~81 |  |
 | 7 | `main.c` | casi completo | 494 | 23/28 | ~88 |  |
-| 8 | `start_menu.c` | casi completo | 1016 | 57/65 | ~125 |  |
+| 8 | `start_menu.c` | casi completo | 1016 | 58/65 | ~109 |  |
 | 9 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
 | 10 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 11 | `quest_log.c` | casi completo | 1767 | 77/88 | ~220 |  |
@@ -33,14 +33,14 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 13 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 14 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 15 | `field_effect.c` | casi completo | 4033 | 218/239 | ~354 |  |
-| 16 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
+| 16 | `quest_log_events.c` | casi completo | 2247 | 98/118 | ~380 |  |
 | 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 18 | `event_object_movement.c` | casi completo | 9412 | 718/759 | ~508 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
 | 20 | `trade_scene.c` | parcial | 2916 | 38/53 | ~825 |  |
 | 21 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
-| 22 | `overworld.c` | parcial | 3563 | 149/242 | ~1369 |  |
-| 23 | `m4a.c` | parcial | 1781 | 13/72 | ~1459 |  |
+| 22 | `m4a.c` | parcial | 1781 | 25/72 | ~1162 |  |
+| 23 | `overworld.c` | parcial | 3563 | 149/242 | ~1369 |  |
 
 Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 4 parciales.
 
@@ -87,7 +87,8 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - Huecos de caller individual revisados: `quest_log.c` conserva helpers de punteros/layout GBA y callback de objeto sustituido por el driver web; `event_object_movement.c` mantiene la cámara, reflexiones, plantillas de hardware y helpers sin caller detrás del render Canvas; `field_effect.c` conserva el VM GBA y la gestión de tiles/paletas, mientras el renderer web posee los recursos de imagen.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
-- Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
+- Audio fino (`m4a*.c`): cry usa WAV con pitch, duración, reverse, volumen y pan configurados; chorus/ADSR no reproducen el sintetizador M4A, la prioridad no arbitra cuatro voces y siguen faltando reverb/duty/sweep/keysplit.
+- Guardado desde scripts de campo (`Field_AskSaveTheGame`): confirmación, cancelación, escritura y retorno del resultado del script ya están conectados; flujo pendiente de revisión en navegador.
 - Quest Log: el playback restaura flags/vars, rematches, party/cajas, objetos y layout; las cargas normal/warp usan el driver escalonado de C, avanzan escenas y restauran el save. El retorno al mapa guardado está conectado; faltan validar ese retorno y la reproducción/UI en navegador.
 - Party menu: retorno desde la selección del Pokémon conectado a fade y espera de clima como en `CB2_FadeFromPartyMenu`/`Task_PartyMenuWaitForFade`; validación de pantalla pendiente en navegador.
 - Trainer Tower: `trainer_tower.c` queda en 43/43 nombres y conectado al dispatcher de scripts y al ciclo de recursos de batalla; gameplay/navegador siguen pendientes de revisión.
