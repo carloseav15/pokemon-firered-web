@@ -64,6 +64,12 @@ def constants(value: str) -> list[str]:
     return re.findall(r"\b[A-Z][A-Z0-9_]*\b", value)
 
 
+def integer(value: str, context: str) -> int:
+    if not re.fullmatch(r"\d+", value):
+        raise SystemExit(f"{context}: expected a numeric literal, got {value!r}")
+    return int(value)
+
+
 def read_parties(text: str) -> dict[str, list[dict]]:
     text = strip_comments(text)
     pattern = re.compile(r"static\s+const\s+struct\s+TrainerMon([A-Za-z]+)\s+(sParty_[A-Za-z0-9_]+)\[\]\s*=\s*\{")
@@ -79,7 +85,11 @@ def read_parties(text: str) -> dict[str, list[dict]]:
                 continue
             if not all(key in f for key in ("iv", "lvl", "species")):
                 raise SystemExit(f"{name}: incomplete party member: {f}")
-            mon = {"iv": f["iv"], "lvl": f["lvl"], "species": f["species"]}
+            mon = {
+                "iv": integer(f["iv"], f"{name}.iv"),
+                "lvl": integer(f["lvl"], f"{name}.lvl"),
+                "species": f["species"],
+            }
             if kind.startswith("Item"):
                 if "heldItem" not in f:
                     raise SystemExit(f"{name}: missing heldItem")
@@ -122,19 +132,21 @@ def read_trainers(text: str, parties: dict[str, list[dict]]) -> list[dict]:
         else:
             raise SystemExit(f"{const}: unsupported party initializer {party_expr!r}")
         name_match = re.fullmatch(r'_\("((?:[^"\\]|\\.)*)"\)', f.get("trainerName", ""))
-        required = ("trainerClass", "trainerPic", "encounterMusic_gender", "items", "doubleBattle", "aiFlags")
+        required = ("trainerClass", "trainerPic", "encounterMusic_gender", "trainerName", "items", "doubleBattle", "aiFlags")
         missing = [key for key in required if key not in f]
-        if missing and const != "TRAINER_NONE":
+        if missing:
             raise SystemExit(f"{const}: missing fields {missing}")
+        if not name_match:
+            raise SystemExit(f"{const}: unsupported trainerName initializer {f['trainerName']!r}")
         entries.append({
             "const": const,
-            "class": f.get("trainerClass", "TRAINER_CLASS_PKMN_TRAINER_1"),
-            "name": name_match.group(1) if name_match else "",
-            "pic": f.get("trainerPic", "TRAINER_PIC_HIKER"),
-            "music_gender": f.get("encounterMusic_gender", "TRAINER_ENCOUNTER_MUSIC_MALE"),
-            "items": constants(f.get("items", "")),
-            "double": f.get("doubleBattle", "FALSE"),
-            "ai_flags": constants(f.get("aiFlags", "0")),
+            "class": f["trainerClass"],
+            "name": name_match.group(1),
+            "pic": f["trainerPic"],
+            "music_gender": f["encounterMusic_gender"],
+            "items": constants(f["items"]),
+            "double": f["doubleBattle"],
+            "ai_flags": constants(f["aiFlags"]),
             "party_type": party_type,
             "party": party,
         })
@@ -152,11 +164,11 @@ def main() -> None:
         raise SystemExit(f"expected 854 trainers with parties, found {with_party}")
     by_const = {t["const"]: t for t in trainers}
     sawyer = by_const.get("TRAINER_SAWYER_1")
-    expected_sawyer = {"class": "TRAINER_CLASS_HIKER", "name": "SAWYER", "party": [{"iv": "0", "lvl": "21", "species": "SPECIES_GEODUDE"}]}
+    expected_sawyer = {"class": "TRAINER_CLASS_HIKER", "name": "SAWYER", "party": [{"iv": 0, "lvl": 21, "species": "SPECIES_GEODUDE"}]}
     if not sawyer or any(sawyer[k] != v for k, v in expected_sawyer.items()):
         raise SystemExit(f"TRAINER_SAWYER_1 mismatch: {sawyer}")
     randall = by_const.get("TRAINER_RANDALL")
-    expected_randall = {"party_type": "ITEM_CUSTOM_MOVES", "party": [{"iv": "255", "lvl": "26", "species": "SPECIES_SWELLOW", "held_item": "ITEM_NONE", "moves": ["MOVE_QUICK_ATTACK", "MOVE_AGILITY", "MOVE_WING_ATTACK", "MOVE_NONE"]}]}
+    expected_randall = {"party_type": "ITEM_CUSTOM_MOVES", "party": [{"iv": 255, "lvl": 26, "species": "SPECIES_SWELLOW", "held_item": "ITEM_NONE", "moves": ["MOVE_QUICK_ATTACK", "MOVE_AGILITY", "MOVE_WING_ATTACK", "MOVE_NONE"]}]}
     if not randall or any(randall[k] != v for k, v in expected_randall.items()):
         raise SystemExit(f"TRAINER_RANDALL mismatch: {randall}")
     write_output("emerald", "trainers.json", trainers, "pokeemerald", "tools/refs/emerald_trainers.py")
