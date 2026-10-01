@@ -120,7 +120,7 @@ commit aparte (`Update refs task status`), no uno por tarea.
 |---|---|---|---|
 | `pokeemerald` | GBA, C completo | Catálogo de lógica frente a FireRed; datos de Emerald | Fuente de verdad de Emerald |
 | `pokeplatinum` | DS, C en progreso, datos JSON | Reglas y datos de Gen 4 (físico/especial, 493 especies) | Muy fiable en datos |
-| `pokeheartgold` | DS, C + ensamblador | Johto: entrenadores, encuentros, teléfono, radio | Solo fijado; extracción más adelante |
+| `pokeheartgold` | DS, C + ensamblador | Johto: entrenadores, encuentros, teléfono, radio | Entrenadores y encuentros extraídos; teléfono/radio pendientes |
 | `pokeapi` | CSV de todas las generaciones | Megas, especies posteriores, nombres en español | **No es fuente de verdad**: errores medidos en `compare_pokeapi.py` |
 
 ## 2. Salidas actuales
@@ -286,7 +286,9 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   como R6. Ampliar el sparse no cambia el commit fijado: no requiere permiso.
   Genera 738 entrenadores (737 con equipos) y encuentros de 142 mapas; valida la
   regeneración determinista, `refs:check` y `refs:all`.
-- [ ] **R15 Inventario de mapas de Emerald** [medio]. Añade `/data/maps/` y
+- [x] **R15 Inventario de mapas de Emerald** [medio]. Añade `/data/maps/` y
   `/data/layouts/` al sparse de `pokeemerald` y genera `refs/emerald/maps.json` con
   los 518 `map.json` (nombre, tipo, música, clima, conexiones y número de warps,
-  objetos y eventos). Sirve para planificar el port de Emerald.
+  objetos y eventos). Sirve para planificar el port de Emerald. Los 11 mapas con
+  eventos compartidos conservan la referencia y usan `null` para conteos locales
+  omitidos; los demás conteos se calculan de las listas fuente.
