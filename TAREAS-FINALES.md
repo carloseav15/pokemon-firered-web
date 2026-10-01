@@ -500,11 +500,15 @@ Receta para cada línea:
 **`pokemon.c`**
 - [x] `GetLevelFromBoxMonExp`, `GetBoxMonGender`, `GetBoxMonData3`, `SetBoxMonData`,
   `GetMonAbility`, `GetMonSpritePalStruct` (delegan en sus equivalentes de Mon).
-  Revisión 2026-10-01: se compararon los seis cuerpos y tipos con `pokemon.c`.
-  El límite de checksum/cifrado de BoxMon está expresamente adaptado en el modelo
-  TS y no forma parte del wrapper. `GetMonSpritePalStruct` lee
-  `MON_DATA_SPECIES`, como el C; la variante `SPECIES_OR_EGG` pertenece a otro
-  helper de carga, no a este cuerpo.
+  Revisión 2026-10-01: los otros cinco cuerpos mantienen las lecturas y
+  delegaciones del C: `pokemon.c:2196-2205` frente a `mon.ts:621-623`,
+  `pokemon.c:2714-2730` frente a `mon.ts:696-698`, `pokemon.c:2976-2985`
+  frente a `mon.ts:211-213`, `pokemon.c:3406-3422` frente a `mon.ts:215-218`
+  (el modelo TS no cifra ni valida checksum de BoxMon), y `pokemon.c:3801-3805`
+  frente a `mon_extra.ts:159-160`. Corregí el sexto wrapper en el commit de código
+  siguiente: `pokemon.c:5918-5923` lee `MON_DATA_SPECIES_OR_EGG`, ahora igual que
+  `trainerPokemonSprites.ts:74-78`; `mon.ts:181-182` implementa ese campo para
+  devolver `SPECIES_EGG` a huevos y bad eggs.
 
 **`pokemon_summary_screen.c`**
 - [ ] `SwapBoxMonMoveSlots`, `UpdateCurrentMonBufferFromPartyOrBox`, transición de
