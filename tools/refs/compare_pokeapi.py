@@ -2,11 +2,13 @@
 """Compare the FireRed data exported from the decomp (public/fr) with PokéAPI.
 
 The decomp is the source of truth; this measures how reliable PokéAPI is for
-FireRed/LeafGreen (version group 7). PokéAPI values are rolled back to
-generation 3 with its *_past and move_changelog tables before comparing.
+FireRed/LeafGreen (generation 3) or Platinum (generation 4). PokéAPI values
+are reconstructed from the selected version group using its *_past and
+move_changelog tables before comparing.
 
 Usage:
   python3 tools/refs/compare_pokeapi.py [--csv DIR] [--out diffs.json]
+  python3 tools/refs/compare_pokeapi.py --generation 4 [--csv DIR] [--out diffs.json]
 
 --csv defaults to the pinned checkout (`npm run refs:fetch -- pokeapi`).
 First run (2026-10-01) against PokeAPI/pokeapi bc92d3b: 7.528 values compared.
@@ -21,7 +23,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 ap = argparse.ArgumentParser()
 ap.add_argument("--csv", default=None, help="PokéAPI data/v2/csv directory (default: pinned checkout)")
-ap.add_argument("--out", default=None, help="write every difference to this JSON file")
+ap.add_argument("--out", default=None, help="write comparison details to this JSON file")
+ap.add_argument("--generation", type=int, choices=(3, 4), default=3, help="Pokémon generation to compare (default: 3)")
 args = ap.parse_args()
 if args.csv is None:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -29,6 +32,10 @@ if args.csv is None:
     args.csv = source_path("pokeapi") / "data/v2/csv"
 CSV = Path(args.csv); FR = ROOT / "public/fr"
 if not (CSV / "moves.csv").exists(): raise SystemExit(f"PokéAPI CSVs not found in {CSV}")
+if args.generation == 4:
+    from compare_pokeapi_gen4 import compare_platinum
+    compare_platinum(CSV, ROOT, args.out)
+    raise SystemExit(0)
 VG, GEN = 7, 3
 def rows(n): return list(csv.DictReader(open(CSV / f"{n}.csv", encoding="utf8")))
 vg_order = {int(r["id"]): int(r["order"]) for r in rows("version_groups")}

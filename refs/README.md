@@ -105,7 +105,10 @@ aparte (`Update refs task status`).
   mismos ids que FireRed) con clase física/especial, tipo, potencia, precisión, PP,
   prioridad, efecto y flags.
 - `npm run refs:pokeapi`: comparación de PokéAPI con los datos de FireRed (solo
-  imprime; no escribe en `refs/` salvo con `--out`).
+  imprime; no escribe en `refs/` salvo con `--out`). Con
+  `npm run refs:pokeapi -- --generation 4` reconstruye el grupo `platinum` y
+  compara movimientos/especies con `refs/platinum/`, separando diferencias,
+  huecos de historial y normalizaciones de representación.
 
 ## 3. Tareas
 
