@@ -313,10 +313,12 @@ export function Overworld_CreditsMainCB(): void {
   DoScheduledBgTilemapCopiesToVram();
 }
 
-/** The frames on which the camera does not move: RunTasks, AnimateSprites (with the camera callback), BuildOamBuffer, UpdatePaletteFade. */
+/** Frames without map scroll (credits.c CB2_Credits case 0): RunTasks, AnimateSprites,
+ * BuildOamBuffer, UpdatePaletteFade. The C freezes the pan while a new scroll
+ * scene loads (MAPNEXT_LOADMAP returns 0); running CameraCB here reads the new
+ * scene's command buffer using the previous scene's index and skips its LOADMAP. */
 export function Overworld_CreditsIdleCB(): void {
   tasks.run();
-  gFieldCamera.callback?.();
   AnimateSprites();
   BuildOamBuffer();
   UpdatePaletteFade();
@@ -334,11 +336,13 @@ export function Overworld_DoScrollSceneForCredits(state_p: { value: number }, sc
 function SetUpScrollSceneForCredits(state: { value: number }, _unused: number): boolean {
   switch (state.value) {
     case 0:
+      console.log("CREDITDBG RESET", sCreditsOverworld_Script[0], state.value);
       sCreditsOverworld_CmdIndex = 0;
       sCreditsOverworld_CmdLength = 0;
       state.value++;
       return false;
     case 1: {
+      console.log("CREDITDBG LOAD", sCreditsOverworld_CmdIndex, sCreditsOverworld_Script[sCreditsOverworld_CmdIndex], sCreditsOverworld_Script.length);
       const group = sCreditsOverworld_Script[sCreditsOverworld_CmdIndex].unk_2;
       const num = sCreditsOverworld_Script[sCreditsOverworld_CmdIndex].unk_4;
       sCreditsOverworld_CmdIndex++;
