@@ -11,6 +11,7 @@ import { ChangeBgX, ChangeBgY, FillBgTilemapBufferRect, LoadBgTiles } from "./bg
 import { LoadPalette } from "./palette";
 import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized3, AddTextPrinterParameterized4, AddTextPrinterParameterized5, DeactivateAllTextPrinters } from "./text";
 import { save } from "../save";
+import { CommitQuestLogWindow1, gQuestLogState } from "../questLogState";
 import * as C from "../generated/constants";
 import { SetGpuReg } from "./gpu";
 import { REG_OFFSET_BLDALPHA } from "./ppu";
@@ -664,6 +665,7 @@ export function ClearDialogWindowAndFrame(windowId: number, copyToVram: boolean)
   FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
   ClearWindowTilemap(windowId);
   if (copyToVram) CopyWindowToVram(windowId, COPYWIN_FULL);
+  if (gQuestLogState === C.QL_STATE_PLAYBACK) CommitQuestLogWindow1();
 }
 
 export function ClearStdWindowAndFrame(windowId: number, copyToVram: boolean): void {

@@ -10,7 +10,7 @@ import {
 } from "./questLogActions";
 import { flagClear, flagGet, flagSet, ResetSpecialVars, save, setSave, varGet, varSet, type SaveData } from "./save";
 import { QL_SlightlyDarkenSomePals, QuestLog_InitPalettesBackup as initQuestLogPalettesBackup, RestoreQuestLogPalettes } from "./questLogPalette";
-import { gQuestLogState, WriteQuestLogState } from "./questLogState";
+import { gQuestLogState, SetQuestLogWindow1Committer, WriteQuestLogState } from "./questLogState";
 import { QL_LoadObjects, SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
 import { rom } from "./rom";
@@ -660,6 +660,12 @@ export function QL_InitSceneObjectsAndActions(ow: Overworld, sceneIndex = sCurre
 /** DrawPreviouslyOnQuestHeader (quest_log.c), with the source window positions and description tiles. */
 export function QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow: Overworld): void {
   if (gQuestLogState !== C.QL_STATE_PLAYBACK && gQuestLogState !== C.QL_STATE_PLAYBACK_LAST) return;
+  const sceneNumber = gQuestLogState === C.QL_STATE_PLAYBACK ? sPlaybackSceneCount - sCurrentPlaybackSceneIndex : 0;
+  DrawPreviouslyOnQuestHeader(ow, sceneNumber);
+}
+
+/** DrawPreviouslyOnQuestHeader (quest_log.c): create the playback header, footer, and description windows. */
+export function DrawPreviouslyOnQuestHeader(ow: Overworld, sceneNumber: number): void {
   const windows = {
     header: ow.windows.add(new Window(0, 0, 30, 2, stdPalette(0))),
     footer: ow.windows.add(new Window(0, 18, 30, 2, stdPalette(0))),
@@ -668,16 +674,17 @@ export function QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(ow: Overwor
   };
   windows.header.fill(15);
   windows.footer.fill(15);
-  drawQuestLogDescriptionBackground(windows.description);
+  CopyDescriptionWindowTiles(windows.description);
   sPlaybackWindows = windows;
+  SetQuestLogWindow1Committer(() => { windows.footer.visible = true; windows.footer.markDirty(); });
   const title = Array.from(expandPlaceholders(rom.text("gText_QuestLog_PreviouslyOnYourQuest"))).filter((byte) => byte !== EOS);
-  const sceneNumber = gQuestLogState === C.QL_STATE_PLAYBACK ? sPlaybackSceneCount - sCurrentPlaybackSceneIndex : 0;
   if (sceneNumber > 0) title.push(...intToDecimal(sceneNumber, STR_CONV_MODE_LEFT_ALIGN, 1).filter((byte) => byte !== EOS));
   title.push(EOS);
   new TextPrinter(windows.header, FONT_NORMAL, title, { x: 2, y: 2, speed: 0, fg: TEXT_COLOR_WHITE, bg: 0, shadow: TEXT_COLOR_LIGHT_GRAY });
 }
 
-function drawQuestLogDescriptionBackground(window: Window): void {
+/** CopyDescriptionWindowTiles (quest_log.c): draw the source top/middle/bottom tile rows. */
+export function CopyDescriptionWindowTiles(window: Window): void {
   const gfx = incbin16("quest_log.c:sDescriptionWindow_Gfx");
   for (let tileY = 0; tileY < 6; tileY++) {
     const sourceTileY = tileY === 0 ? 0 : tileY === 5 ? 2 : 1;
@@ -706,7 +713,7 @@ export function GetQuestLogTextDisplayDuration(text: ArrayLike<number>): number 
 function DrawSceneDescription(text: Uint8Array): void {
   const window = sPlaybackWindows?.description;
   if (!window) return;
-  drawQuestLogDescriptionBackground(window);
+  CopyDescriptionWindowTiles(window);
   let numLines = 0;
   for (let i = 0; i < 0x100 && text[i] !== undefined && text[i] !== EOS; i++) if (text[i] === CHAR_NEWLINE) numLines++;
   const y = sQuestLogTextLineYCoords[numLines] ?? sQuestLogTextLineYCoords[2]!;
@@ -717,7 +724,7 @@ function DrawSceneDescription(text: Uint8Array): void {
 function QuestLog_CloseTextWindow(): void {
   const window = sPlaybackWindows?.description;
   if (!window) return;
-  drawQuestLogDescriptionBackground(window);
+  CopyDescriptionWindowTiles(window);
   window.markDirty();
   sPlaybackPrinter = null;
 }
@@ -901,6 +908,7 @@ function clearQuestLogPlaybackWindows(): void {
   }
   sPlaybackWindows = null;
   sPlaybackPrinter = null;
+  SetQuestLogWindow1Committer(null);
 }
 
 /** QLPlayback_InitOverworldState (quest_log.c): restore the recorded scene and initiate its map load. */
