@@ -782,6 +782,16 @@ export function QLogCB_Playback(ow: Overworld): void {
     return;
   }
 
+  QuestLog_PlayCurrentEvent();
+}
+
+/** RunQuestLogCB (quest_log.c): execute the callback installed for playback state. */
+export function RunQuestLogCB(ow: Overworld): void {
+  if (gQuestLogState === C.QL_STATE_PLAYBACK) QLogCB_Playback(ow);
+}
+
+/** QuestLog_PlayCurrentEvent (quest_log.c): advance event text, overlap timing, and end detection. */
+export function QuestLog_PlayCurrentEvent(): void {
   if (sPlaybackTextTimer > 0) {
     if (--sPlaybackTextTimer === 0) {
       sPlaybackPlayingEvent = true;
@@ -810,17 +820,22 @@ export function QLogCB_Playback(ow: Overworld): void {
     if (text) sPlaybackActiveEvent = event;
   }
   if (text) {
-    DrawSceneDescription(text);
-    sPlaybackTextTimer = GetQuestLogTextDisplayDuration(text);
-    sPlaybackOverlapTimer = 0;
-    sPlaybackPlayingEvent = false;
-    sPlaybackControlState = 1;
-    TogglePlaybackStateForOverworldLock(true);
+    HandleShowQuestLogMessage(text);
     return;
   }
   if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED && sPlaybackEventCursor >= sPlaybackEvents.length) {
     DoSceneEndTransition(0);
   }
+}
+
+/** HandleShowQuestLogMessage (quest_log.c): show event text and lock playback until its timer expires. */
+export function HandleShowQuestLogMessage(text: Uint8Array): void {
+  DrawSceneDescription(text);
+  sPlaybackTextTimer = GetQuestLogTextDisplayDuration(text);
+  sPlaybackOverlapTimer = 0;
+  sPlaybackPlayingEvent = false;
+  sPlaybackControlState = 1;
+  TogglePlaybackStateForOverworldLock(true);
 }
 
 /** QuestLog_AdvancePlayhead_ (quest_log.c): continue at the next saved scene after a disabled-map warp. */
