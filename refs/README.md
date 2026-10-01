@@ -244,7 +244,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   - Objetos: existen las tablas C de `src/data/object_events/` y `src/event_object_movement.c`; el extractor usa regex específicas de FireRed para referencias INCBIN y paletas. Compatibilidad no verificada.
   - Mapas: Emerald contiene `data/layouts/layouts.json`, `data/maps/map_groups.json` y mapas JSON que el lector de `step_maps.py` consume directamente. La preparación aún fija el modo `firered`, y el lector depende de constantes y etiquetas de `scripts.json`; no se probó su equivalencia para Emerald.
   - Bloqueo común: `common.py` fija `CPP_DEFINES` a `FIRERED` y comparte `.decomp-build` y `public/fr`; `step_setup.py` y `step_maps.py` también codifican convenciones FireRed. El paso de ítems espera `src/data/items.json`, ausente en Emerald, que usa `src/data/items.h`; el exportador de encuentros filtra además etiquetas `_FireRed`. Conclusión: el exportador no sirve por simple cambio de ruta. Requiere un modo/fuentes/salidas separados y adaptaciones por datos; no se modificó código en este informe.
-- [ ] **R10 Pulir `emerald_trainers.py`** [básico]. Dos ajustes de la revisión de R6:
+- [x] **R10 Pulir `emerald_trainers.py`** [básico]. Dos ajustes de la revisión de R6:
   - `iv` y `lvl` se guardan como texto (`"21"`); deben ser números (`21`). Comprobado:
     en `trainer_parties.h` todos los `.iv` y `.lvl` son literales numéricos, así que
     basta `int(...)` y un `raise SystemExit` si alguno no lo es.
