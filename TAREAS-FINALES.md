@@ -365,6 +365,28 @@ Errores reales vistos al revisar el trabajo de agentes. Evítalos:
     `check:teachytv` (`TTVcmd_ClearBg2TeachyTvGraphic` sin definir),
     `check:trainer-see` (`objects.GetCollisionFlagsAtCoords` no existe).
 
+- [ ] **1.12 Flores y agua de la orilla no se animan** [básico]. Fallo real comprobado
+  el 2026-10-01. En C, `QueueAnimTiles_*` recibe un `u16`, así que `timer / 16` es
+  división entera. En TS `timer / 16` da decimales cuando `timer % 16` es 1 o 2, y
+  `frames[1.0625]` es `undefined`: el fotograma se descarta en silencio.
+  - Dónde: `src/fr/field/tileRenderer.ts` líneas 300–301 (`TilesetAnim_General`: agua
+    de corriente/orilla y flores) y la copia en `src/fr/overworldCredits.ts`
+    (`TilesetAnim_General`). Las llamadas con `timer % N === 0` (arena, fuentes,
+    vapor, puerta del gimnasio) son exactas y funcionan.
+  - Arreglo: `Math.trunc(timer / 16)` en esas llamadas (y, por coherencia, en todas
+    las `timer / N` de ambos archivos).
+  - Comprobación: `node -e "const f=['a','b','c','d']; console.log(f[(17/16)%4], f[Math.trunc(17/16)%4])"`
+    imprime `undefined b`. En navegador (C12 de §3.0), las flores de Pueblo Paleta
+    deben moverse. `npm run check:all` sin regresiones.
+- [ ] **1.13 Animaciones de baldosas duplicadas en créditos** [medio, requiere 1.12].
+  El commit `f926b597` reimplementó `tileset_anims.c` dentro de
+  `src/fr/overworldCredits.ts`, aunque ya estaba portado (28/28) en
+  `src/fr/field/tileRenderer.ts`. La diferencia real es el destino: el campo escribe
+  en la caché de baldosas del renderer y los créditos en `ppu.vram`. Extrae la
+  lógica común (contadores, `TilesetAnim_*`, `QueueAnimTiles_*`) para que ambos la
+  usen con un destino distinto, y borra la copia. Revisa que la Fuente de Azulona y
+  el resto de callbacks secundarios sigan conectados en el campo.
+
 ## 2. Revisión de equivalencias y wrappers contra el cuerpo C
 
 Funciones con nombre C que delegan en lógica genérica o adaptada. Trabaja un
