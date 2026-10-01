@@ -180,7 +180,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   intenta primero reutilizar el exportador de FireRed (`tools/decomp/`, sin
   modificarlo); si no encaja, anota `BLOQUEADO` y por qué.
   - BLOQUEADO: `step_data.dump_trainers()` con `POKEFIRERED` apuntando al checkout fijado falla al incluir `map_groups.h`. El checkout sparse solo contiene `src/` e `include/`; `step_setup.generate_headers()` requiere también `data/maps/map_groups.json`, `data/layouts/layouts.json` y los mapas, que no están disponibles. Además, el dumper usa defines `FIRERED` y la ruta de build/salida compartida con el port FireRed. No se generó una salida parcial.
-- [ ] **R7 Inventario de datos de HeartGold** [avanzado]. Sin extraer nada todavía:
+- [x] **R7 Inventario de datos de HeartGold** [avanzado]. Sin extraer nada todavía:
   documenta en esta sección dónde están en `pokeheartgold` los entrenadores, los
   encuentros salvajes, los scripts de eventos y los textos del teléfono/radio, en
   qué formato y si están descompilados. Si hace falta ampliar el sparse, hazlo en
