@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9733/10115 (96.2 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **382 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9739/10115 (96.3 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **376 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~8.603 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~8.493 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -28,19 +28,19 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 8 | `start_menu.c` | casi completo | 1016 | 57/65 | ~125 |  |
 | 9 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
 | 10 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 11 | `battle_transition.c` | casi completo | 3037 | 124/134 | ~226 |  |
-| 12 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
-| 13 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
-| 14 | `quest_log.c` | casi completo | 1767 | 76/88 | ~240 |  |
+| 11 | `quest_log.c` | casi completo | 1767 | 77/88 | ~220 |  |
+| 12 | `battle_transition.c` | casi completo | 3037 | 124/134 | ~226 |  |
+| 13 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
+| 14 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 15 | `field_effect.c` | casi completo | 4033 | 218/239 | ~354 |  |
 | 16 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
 | 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 18 | `event_object_movement.c` | casi completo | 9412 | 717/759 | ~520 |  |
+| 18 | `event_object_movement.c` | casi completo | 9412 | 718/759 | ~508 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
 | 20 | `trade_scene.c` | parcial | 2916 | 38/53 | ~825 |  |
 | 21 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
-| 22 | `overworld.c` | parcial | 3563 | 147/242 | ~1398 |  |
-| 23 | `m4a.c` | parcial | 1781 | 11/72 | ~1508 |  |
+| 22 | `overworld.c` | parcial | 3563 | 149/242 | ~1369 |  |
+| 23 | `m4a.c` | parcial | 1781 | 13/72 | ~1459 |  |
 
 Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 4 parciales.
 
