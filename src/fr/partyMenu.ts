@@ -615,7 +615,7 @@ function HandleChooseMonSelection(taskId: number, slot: SlotRef): void {
       break;
     case C.PARTY_ACTION_USE_ITEM:
       if (IsSelectedMonNotEgg(slot.get())) {
-        if (gPartyMenu.menuType === C.PARTY_MENU_TYPE_IN_BATTLE) pmi().exitCallback = sBattleExit.success;
+        if (gPartyMenu.menuType === C.PARTY_MENU_TYPE_IN_BATTLE) pmi().exitCallback = CB2_SetUpExitToBattleScreen;
         gItemUseCB?.(taskId, Task_ClosePartyMenuAfterText);
       }
       break;
@@ -2358,7 +2358,7 @@ function CB2_UseItem(): void {
 
 function Task_SetSacredAshCB(taskId: number): void {
   if (gPaletteFade.active) return;
-  if (gPartyMenu.menuType === C.PARTY_MENU_TYPE_IN_BATTLE) pmi().exitCallback = sBattleExit.success;
+  if (gPartyMenu.menuType === C.PARTY_MENU_TYPE_IN_BATTLE) pmi().exitCallback = CB2_SetUpExitToBattleScreen;
   gItemUseCB?.(taskId, Task_ClosePartyMenuAfterText);
 }
 
@@ -3289,6 +3289,9 @@ function GetPartyLayoutFromBattleType(): number {
 /** The battle's exits: CB2_SetUpExitToBattleScreen (success) and the menu's exit callback. */
 const sBattleExit: { success: MainCB } = { success: null };
 
+/** CB2_SetUpExitToBattleScreen (party_menu.c): resume the battle after item use. */
+function CB2_SetUpExitToBattleScreen(): void { sBattleExit.success?.(); }
+
 /** OpenPartyMenuInTutorialBattle: `reshow` is SetCB2ToReshowScreenAfterMenu. */
 export function OpenPartyMenuInTutorialBattle(partyAction: number, reshow: () => void): void {
   if (!BtlCtrl_OakOldMan_TestState2Flag(FIRST_BATTLE_MSG_FLAG_PARTY_MENU) && G.gBattleTypeFlags & C.BATTLE_TYPE_FIRST_BATTLE) {
@@ -3367,7 +3370,7 @@ function Task_PartyMenuFromBag_PokedudeStep(taskId: number): void {
     if (data[0] !== 80) {
       ++data[0];
     } else {
-      pmi().exitCallback = sBattleExit.success;
+      pmi().exitCallback = CB2_SetUpExitToBattleScreen;
       gItemUseCB?.(taskId, Task_ClosePartyMenuAfterText);
     }
   }
