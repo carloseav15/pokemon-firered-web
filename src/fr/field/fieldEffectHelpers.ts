@@ -1,11 +1,13 @@
-// Remaining field_effect_helpers.c routines are listed in PENDING.md §3b.
-// Connected ground effects are implemented in fieldEffects.ts.
-// Field effect helper routines:
-// - Water reflections and bridge reflection palettes (SetUpReflection, UpdateObjectReflectionSprite)
+// field_effect_helpers.c routines kept for the inventory. Only the warp arrows
+// are wired (playerAvatar.ts); the connected ground effects live in
+// fieldEffects.ts. Contents:
+// - Water reflections and bridge reflection palettes (SetUpReflection,
+//   UpdateObjectReflectionSprite): live in C via GroundEffect_WaterReflection/
+//   GroundEffect_IceReflection, superseded in TS by fieldEffects.ts
+//   updateObjectReflection, so these helpers have no TS caller.
 // - Warp arrow sprites (CreateWarpArrowSprite, ShowWarpArrowSprite, SetSpriteInvisible)
-// - Ground and grass effects (FldEff_TallGrass, FldEff_LongGrass, FldEff_Shadow, FldEff_Dust)
-// - Footprints, bike tire tracks, ash, ripple, splash, bubbles, disguise
-// - Bobbing and surf blob synchronization (FldEff_SurfBlob, SynchroniseSurfAnim, SynchroniseSurfPosition)
+// - FldEff_UnusedGrass/UnusedGrass2/UnusedSand/UnusedWaterSurfacing/Sparkle/
+//   BerryTreeGrowthSparkle: no FieldEffectStart(id) caller in C either.
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
