@@ -7,6 +7,7 @@ import type { Sprite } from "../gba/sprite";
 import { rom } from "../rom";
 import { countAliveNonEggMons } from "../pokemon/pokemon";
 import { MAP_OFFSET } from "./fieldmap";
+import { QL_IsTrainerSightDisabled } from "../questLogEvents";
 import { actionFace, actionJumpInPlace, actionWalkFast, actionWalkNormal, COLLISION_OBJECT_EVENT, DIRECTION_VECTORS, DIR_NORTH, DIR_SOUTH, GetCollisionFlagsAtCoords, GetTrainerFacingDirectionMovementType, LOCALID_CAMERA, OBJECT_EVENTS_COUNT, type ObjectEvent, type ObjectEvents } from "./objectEvents";
 
 type TrainerApproachFunc = (objects: ObjectEvents, trainer: ObjectEvent, range: number, x: number, y: number) => number;
@@ -110,21 +111,6 @@ export class TrainerSee {
 
   constructor(private game: Game) {
     game.overworld.objects.revealTrainerMovementAction = (trainer) => this.MovementAction_RevealTrainer_RunTrainerSeeFuncList(trainer);
-  }
-
-  /** QL_IsTrainerSightDisabled (quest_log.c): Quest Log playback owns these state fields when active. */
-  private QL_IsTrainerSightDisabled(): boolean {
-    const questLog = this.game as Game & {
-      questLogState?: number;
-      questLogPlaybackState?: number;
-      questLogPlaybackControlState?: number;
-    };
-    if (questLog.questLogState !== C.QL_STATE_PLAYBACK) return false;
-    const playbackState = questLog.questLogPlaybackState ?? C.QL_PLAYBACK_STATE_STOPPED;
-    const playbackControlState = questLog.questLogPlaybackControlState ?? 0;
-    return playbackState === C.QL_PLAYBACK_STATE_STOPPED
-      || playbackControlState === 1
-      || playbackControlState === 2;
   }
 
   /** CheckTrainer (trainer_see.c): flag, approach range, and double-battle eligibility. */
@@ -365,7 +351,7 @@ export class TrainerSee {
   }
 
   checkForTrainersWantingBattle(): boolean {
-    if (this.QL_IsTrainerSightDisabled() || this.approaching) return false;
+    if (QL_IsTrainerSightDisabled() || this.approaching) return false;
     const ow = this.game.overworld;
     for (const trainer of ow.objects.list) {
       if (trainer.trainerType !== C.TRAINER_TYPE_NORMAL && trainer.trainerType !== C.TRAINER_TYPE_BURIED) continue;

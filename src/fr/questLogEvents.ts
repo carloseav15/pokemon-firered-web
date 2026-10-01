@@ -123,6 +123,7 @@ let sPlaybackTextTimer = 0;
 let sPlaybackOverlapTimer = 0;
 let sPlaybackPlayingEvent = false;
 let sPlaybackEndMode = 0;
+let sPlaybackControlState = 0;
 let sPlaybackWindows: { header: Window; footer: Window; description: Window; ow: Overworld } | null = null;
 let sPlaybackPrinter: TextPrinter | null = null;
 const sQuestLogTextLineYCoords = [17, 10, 3];
@@ -737,6 +738,15 @@ export function QL_HandleInput(newKeys: number): void {
   }
 }
 
+/** QL_IsTrainerSightDisabled (quest_log.c): block trainer encounters while playback owns field control. */
+export function QL_IsTrainerSightDisabled(): boolean {
+  if (gQuestLogState !== C.QL_STATE_PLAYBACK) return false;
+  return gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_STOPPED
+    || sPlaybackControlState === 1
+    || sPlaybackControlState === 2
+    || sPlaybackEndMode !== 0;
+}
+
 /** DoSceneEndTransition (quest_log.c): fade out and advance to the next saved scene. */
 function DoSceneEndTransition(delay: number): void {
   sPlaybackEndMode = 1;
@@ -755,6 +765,7 @@ function DoSkipToEndTransition(delay: number): void {
 
 /** QLogCB_Playback (quest_log.c): advance timed event text and end states. */
 export function QLogCB_Playback(ow: Overworld): void {
+  if (sPlaybackControlState === 2) sPlaybackControlState = 0;
   if (sPlaybackEndMode !== 0) {
     if (!sPlaybackTransitionStarted) {
       FadeScreen(FADE_TO_BLACK, 0);
@@ -770,6 +781,7 @@ export function QLogCB_Playback(ow: Overworld): void {
   if (sPlaybackTextTimer > 0) {
     if (--sPlaybackTextTimer === 0) {
       sPlaybackPlayingEvent = true;
+      sPlaybackControlState = 0;
       TogglePlaybackStateForOverworldLock(false);
     }
   }
@@ -798,6 +810,7 @@ export function QLogCB_Playback(ow: Overworld): void {
     sPlaybackTextTimer = GetQuestLogTextDisplayDuration(text);
     sPlaybackOverlapTimer = 0;
     sPlaybackPlayingEvent = false;
+    sPlaybackControlState = 1;
     TogglePlaybackStateForOverworldLock(true);
     return;
   }
@@ -879,6 +892,7 @@ function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
   sPlaybackEndMode = 0;
   sPlaybackTransitionStarted = false;
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+  sPlaybackControlState = 2;
   ResetSpecialVars();
   ClearBag();
   ClearPCItemSlots();
@@ -933,6 +947,7 @@ function finishQuestLogPlayback(ow: Overworld): void {
   sPlaybackSceneOrder = [];
   sPlaybackSceneCount = 0;
   sPlaybackEndMode = 0;
+  sPlaybackControlState = 0;
   sPlaybackTransitionStarted = false;
   gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
   SetQuestLogState(C.QL_STATE_PLAYBACK_LAST);
