@@ -14,7 +14,7 @@
   "pokeheartgold": {
     "repo": "https://github.com/pret/pokeheartgold.git",
     "commit": "9d8b7591f09b65804da2fb2dfd56f320633e0d36",
-    "sparse": ["/src/", "/include/"],
+    "sparse": ["/src/", "/include/", "/files/poketool/trainer/", "/files/fielddata/encountdata/"],
     "note": "DS, C + ensamblador, en progreso. Fijado; sin extractores todavía."
   },
   "pokeapi": {
