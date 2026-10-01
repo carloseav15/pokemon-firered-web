@@ -71,7 +71,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_message.c` | 2855 | 10/10 | `battle/message.ts`, `trainerTower.ts` |  |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 82/82 | `storageSystemTasks.ts` |  |  |
 | `field_specials.c` | 2555 | 118/118 | `field/fieldControl.ts`, `field/fieldMoves.ts`, `field/hiddenItem.ts` … |  |  |
-| `slot_machine.c` | 2527 | 77/77 | `game/slots.ts`, `menus/slotMachine.ts` |  |  |
+| `slot_machine.c` | 2527 | 77/77 | `menus/slotMachine.ts` |  |  |
 | `naming_screen.c` | 2509 | 109/109 | `gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
 | `help_system.c` | 2480 | 41/41 | `field/overworld.ts`, `helpSystem.ts`, `introTitle.ts` |  |  |
 | `item_menu.c` | 2397 | 116/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
@@ -102,7 +102,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `credits.c` | 1446 | 16/16 | `credits.ts`, `field/overworld.ts` |  |  |
 | `battle_tower.c` | 1425 | 45/45 | `battleTower.ts`, `script/specials.ts` |  |  |
 | `field_effect_helpers.c` | 1421 | 76/76 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts` |  |  |
-| `teachy_tv.c` | 1400 | 58/58 | `menus/keyItemScreens.ts`, `teachyTv.ts` |  |  |
+| `teachy_tv.c` | 1400 | 58/58 | `teachyTv.ts` |  |  |
 | `easy_chat_2.c` | 1363 | 73/73 | `easyChat2.ts`, `easyChat3.ts`, `partyMenu.ts` … |  |  |
 | `script_menu.c` | 1341 | 29/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
 | `pokeball.c` | 1334 | 37/37 | `battle/pokeball.ts` |  |  |

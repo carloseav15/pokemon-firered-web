@@ -150,7 +150,7 @@ funciones nuevas o equivalencias). Luego commit:
     `StopMapMusic()` y `UnlockPlayerFieldControls()` — el fade del script previo y
     el `releaseall` final los cubren en la práctica; revisar en la fase de revisión.
     Tampoco está `ResetSafariZoneFlag_()` de `CB2_WhiteOut` (revisión 2026-10-01).
-- [ ] **1.5 Módulos sin caller** [medio]. Para cada módulo, busca su caller en C
+- [x] **1.5 Módulos sin caller** [medio]. Para cada módulo, busca su caller en C
   (`grep -rnw <Función> ../pokefirered/src`) y en TS (`grep -rn "from \".*<módulo>\"" src/fr`).
   - Duplicados sin uso (`game/slots.ts`, la función `openTeachyTv` de `keyItemScreens`):
     si nada los importa, bórralos.
@@ -159,6 +159,39 @@ funciones nuevas o equivalencias). Luego commit:
     no los borres (cuentan en el inventario). Si el C los llama desde una ruta de un
     jugador que el TS hace de otra forma, anota aquí la ruta para conectarlos
     [avanzado]. Si el C tampoco los llama, anota "sin caller en C" y marca la tarea.
+  - Hecha 2026-10-01 (commit `f6680d05`): borrados `game/slots.ts` (duplicado de
+    `menus/slotMachine.ts`, que sí tiene los nombres C; `slot_machine.c` sigue 77/77)
+    y `keyItemScreens.openTeachyTv` (sustituido por `teachyTv.ts` vía
+    `Game.openTeachyTv`; `teachy_tv.c` 58/58), con sus imports muertos y la
+    cabecera del archivo. El inventario solo cambia en las columnas de procedencia.
+  - `paletteUtil.ts`, `cableCarUtil.ts`, `imageProcessingEffects.ts`: **sin caller en C**
+    (`RouletteFlash_*`/`PulseBlend`/`FillTilemapRect`, `CableCarUtil_*` (ambas `static`),
+    `ApplyImageProcessing*`/`ConvertImageProcessingToGBA` no se usan fuera de su `.c/.h`).
+  - `hw/bgRegs.ts`: en C solo se lee `gOverworldBackgroundLayerFlags` en
+    `InitOverworldGraphicsRegisters` (`overworld.c:2071`, registros GBA que el TS
+    sustituye por Canvas; `overworldCredits.ts:288` lo comenta y `fieldEffects.ts`
+    maneja `BLDCNT` por su cuenta) y `gBGControlRegOffsets` en `link.c` (enlace).
+    Ruta anotada [avanzado]: decidir en revisión si se declara hardware sustituido
+    o se conecta `InitOverworldGraphicsRegisters`.
+  - `field/fieldEffectHelpers.ts`: cableado por `field/playerAvatar.ts` (flechas de
+    warp; mismos callers C: `field_player_avatar.c`, `event_object_movement.c`).
+    Reflexiones: en C siguen vivas vía `GroundEffect_WaterReflection`/
+    `GroundEffect_IceReflection` → `SetUpReflection`, pero el TS las resuelve en
+    `fieldEffects.ts` (`updateObjectReflection`), así que los helpers de reflexión
+    de este archivo quedan sin caller TS. `FldEff_UnusedGrass`/`UnusedGrass2`/
+    `UnusedSand`/`UnusedWaterSurfacing`/`Sparkle`/`BerryTreeGrowthSparkle`: **sin
+    caller en C** (ningún `FieldEffectStart(id)` ni script `dofieldeffect`; el cuerpo
+    de `FldEff_BerryTreeGrowthSparkle` está comentado en el C).
+  - `monMarkings.ts`: cableado por `storageSystemTasks.ts` (misma ruta que el C,
+    `pokemon_storage_system_tasks.c`); `CreateMonMarkingAllCombosSprite` (C:
+    `pokemon_summary_screen.c`) está resuelto inline en `pokemonSummaryScreen.ts`
+    (`PokeSum_CreateMonMarkingsSprite`).
+  - `hw/tilemapUtil.ts`: cableado por `storageSystemTasks.ts` (misma ruta C);
+    `TilemapUtil_UpdateAll` y `TilemapUtil_SetSavedMap` **sin caller en C**.
+  - Checks: `check:port`, `check:honesty` y `build` sin errores. Preexistentes y sin
+    tocar aserciones: `check:slots` (`cdata text not loaded` en `SlotsTask_GraphicsInit`)
+    y `check:transitions` (línea 54, `helpers.FldEff_TallGrass` indefinido: los FldEff
+    conectados viven en `fieldEffects.ts`). Ver con §1.11.
 - [ ] **1.6 Clima en pantalla** [verificar primero]. `field/weather.ts` solo dibuja
   la niebla (`renderFog`, llamada desde `field/fieldEffects.ts`). Comprueba en
   navegador (sección 3) si lluvia, nieve, sol y tormenta de arena se ven en un mapa
@@ -193,8 +226,9 @@ funciones nuevas o equivalencias). Luego commit:
   hizo perezoso `sText_100` (`battle_tower.c`), que se codificaba en ámbito de módulo
   y rompía la carga de 26 checks; 18 pasan ya. Estos 12 fallan por causas ajenas.
   No toques aserciones ni baselines: si el fallo es del port, anota `BLOQUEADO`.
-  - Datos que el check no registra antes de usarlos: `check:anims` y `check:slots`
-    (`cdata … not loaded`), `check:weather` (`incbin index not loaded` en
+  - Datos que el check no registra antes de usarlos: `check:anims`
+    (`cdata … not loaded`), `check:slots` (`cdata text not loaded` en
+    `SlotsTask_GraphicsInit`), `check:weather` (`incbin index not loaded` en
     `LoadRainSpriteSheet`), `check:earlybattles` y `check:brock-action`
     (`cdata berry not loaded` en `GetBerryInfo`). Registra cdata/incbin en el
     escenario del check como hace `tradeScene.ts`.
@@ -203,9 +237,10 @@ funciones nuevas o equivalencias). Luego commit:
     `fameChecker.ts`), `check:questlog-battle` (`getQuestLogEvents` en
     `questLogEvents.ts`). Busca el nombre en el C y en el TS antes de decidir.
   - Lógica/registro: `check:card` (`Fresh cart has 0 stars (Blue card)`),
-    `check:transitions` (aserción de valores), `check:teachytv`
-    (`TTVcmd_ClearBg2TeachyTvGraphic` sin definir), `check:trainer-see`
-    (`objects.GetCollisionFlagsAtCoords` no existe).
+    `check:transitions` (línea 54, `helpers.FldEff_TallGrass` indefinido: los FldEff
+    conectados viven en `fieldEffects.ts`, no en `fieldEffectHelpers.ts`),
+    `check:teachytv` (`TTVcmd_ClearBg2TeachyTvGraphic` sin definir),
+    `check:trainer-see` (`objects.GetCollisionFlagsAtCoords` no existe).
 
 ## 2. Revisión de equivalencias y wrappers contra el cuerpo C
 

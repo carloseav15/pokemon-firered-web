@@ -50,14 +50,10 @@ UNTESTED = [
 
 # Ported modules that nothing in the game imports yet (dead until wired).
 UNWIRED = [
-    ("field_effect_helpers.c", "field/fieldEffectHelpers.ts", "los efectos reales siguen en `field/fieldEffects.ts`"),
-    ("slot_machine.c (reglas)", "game/slots.ts", "duplicado sin uso; el juego usa `menus/slotMachine.ts`"),
-    ("image_processing_effects.c", "imageProcessingEffects.ts", "sin llamador en FireRed de un jugador"),
-    ("palette_util.c", "paletteUtil.ts", "sin llamador todavía"),
-    ("mon_markings.c", "monMarkings.ts", "el resumen no abre el menú de marcas todavía"),
-    ("cable_car_util.c", "cableCarUtil.ts", "sin llamador todavía"),
-    ("tilemap_util.c", "hw/tilemapUtil.ts", "sin llamador todavía"),
-    ("(registros BG)", "hw/bgRegs.ts", "sin llamador todavía"),
+    ("image_processing_effects.c", "imageProcessingEffects.ts", "sin caller en el C (solo su .c/.h)"),
+    ("palette_util.c", "paletteUtil.ts", "sin caller en el C (RouletteFlash/PulseBlend/rectángulos)"),
+    ("cable_car_util.c", "cableCarUtil.ts", "sin caller en el C (helpers static sin uso)"),
+    ("(registros BG)", "hw/bgRegs.ts", "solo lo lee InitOverworldGraphicsRegisters (registros GBA) y link.c"),
 ]
 
 # Known functional gaps that the per-function count does not show.
@@ -67,15 +63,17 @@ KNOWN_GAPS = [
     "Enlace: `linkState.ts` modela estado, identidad del callback y umbrales de cola de `menu_helpers.c`, `link.c` y `overworld.c`; todavía no hay productor de comandos ni transporte cable/RFU que alimente ese estado.",
     "Combate de enlace: `battle_controllers.c` 68/68 con la ruta de buffers `LINK_BUFF_*` y las tareas de envío/recepción, pero `SetControllerToLinkOpponent`/`SetControllerToLinkPartner` (parciales en sus archivos) quedan sustituidos por `BattleControllerDummy` y `linkTransport` no envía paquetes; un enlace real no tendría controladores propios ni transporte.",
     "Almacenamiento de cajas: `pokemon_storage_system_misc.c` conserva cuatro helpers estáticos `UnkUtil_CpuAdd/Run` y `UnkUtil_DmaAdd/Run`; el C los describe como cola funcionalmente sin uso y los Add no tienen callers. La navegación del resumen usa ranuras nullable y filtra especie/huevo según el C; cajas y resumen siguen pendientes de revisión en navegador.",
-    "Teachy TV: `teachyTv.ts` está conectado (`Game.openTeachyTv` → `StartTeachyTv`); `keyItemScreens.openTeachyTv` (lista de texto) queda sin llamadores. Pantalla sin probar en navegador.",
+    "Teachy TV: `teachyTv.ts` está conectado (`Game.openTeachyTv` → `StartTeachyTv`); la lista de texto `keyItemScreens.openTeachyTv` se borró el 2026-10-01 por duplicada. Pantalla sin probar en navegador.",
     "Fame Checker: `fameChecker.ts` está conectado y sus gráficos (ventanas, flechas, info box) tienen cuerpo; sin prueba de navegador.",
     "Transiciones de combate: 12 efectos de las tablas salvaje/entrenador dibujados sobre una instantánea del canvas; las mugshots (Alto Mando/Campeón) están portadas en `battle/mugshotTransition.ts` y seleccionadas desde `battle/transition.ts` (rango LORELEI–BLUE), sin probar en navegador. `battle_transition.c` 129/134: faltan cinco nombres internos (`BattleTransition_Start`, `InitTransitionData`, `VBlankCB_BattleTransition`, `GetBg0TilesDst`, `GetBg0TilemapDst`).",
     "Visión de entrenadores: `trainer_see.c` porta la vista direccional, el chequeo de ruta, la compuerta QL_IsTrainerSightDisabled, los cinco iconos/emote, SpriteCB_TrainerIcons y la revelación enterrada con AshPuff, salto y continuación de acercamiento; falta prueba de runtime. El gate `QL_IsTrainerSightDisabled` ya lee el estado activo del playback del Quest Log. Dos handlers de disfraz no se usan en FRLG y TrainerSeeFunc_Dummy es vacío en C.",
     "Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.",
     "Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.",
     "Pantalla de nombres: 104/109 funciones (`naming_screen.c`); estados, sprites, iconos, renderizado, teclado y callbacks conectados. Quedan cinco `Debug_NamingScreen*` estáticos sin callers en el C; pantalla e historia sin validar en navegador.",
-    "Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos "
-    "reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial; Dive conserva la secuencia single-player heredada, pero los mapas FireRed no definen conexiones Dive.",
+    "Efectos de campo: `field_effect_helpers.c` 76/76 con solo las flechas de warp conectadas "
+    "(`field/fieldEffectHelpers.ts` ← `playerAvatar.ts`); los efectos reales viven en `field/fieldEffects.ts` "
+    "y los helpers de reflexión de `fieldEffectHelpers.ts` quedan sin caller TS; `field_effect.c` parcial; "
+    "Dive conserva la secuencia single-player heredada, pero los mapas FireRed no definen conexiones Dive.",
     "Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.",
     "Huecos de caller individual revisados: `quest_log.c` conserva helpers de punteros/layout GBA y callback de objeto sustituido por el driver web; `event_object_movement.c` mantiene la cámara, reflexiones, plantillas de hardware y helpers sin caller detrás del render Canvas; `field_effect.c` conserva el VM GBA y la gestión de tiles/paletas, mientras el renderer web posee los recursos de imagen.",
     "Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.",
