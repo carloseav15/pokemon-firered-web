@@ -2,25 +2,55 @@
   "pokeemerald": {
     "repo": "https://github.com/pret/pokeemerald.git",
     "commit": "fe1d8e51b265851676b65885818b1f5f62586135",
-    "sparse": ["/src/", "/include/", "/data/maps/", "/data/layouts/"],
+    "sparse": [
+      "/src/",
+      "/include/",
+      "/data/maps/",
+      "/data/layouts/"
+    ],
     "note": "GBA, C completo. Fuente de verdad de Emerald."
   },
   "pokeplatinum": {
     "repo": "https://github.com/pret/pokeplatinum.git",
     "commit": "c248fb3f8cc9934ded800e489567c5c0eeee92eb",
-    "sparse": ["/res/moves/*/data.json", "/res/pokemon/*/data.json", "/generated/", "/include/constants/"],
+    "sparse": [
+      "/res/moves/*/data.json",
+      "/res/pokemon/*/data.json",
+      "/generated/",
+      "/include/constants/"
+    ],
     "note": "DS, C en progreso. Datos JSON de Gen 4."
   },
   "pokeheartgold": {
     "repo": "https://github.com/pret/pokeheartgold.git",
     "commit": "9d8b7591f09b65804da2fb2dfd56f320633e0d36",
-    "sparse": ["/src/", "/include/", "/files/poketool/trainer/", "/files/fielddata/encountdata/", "/files/fielddata/eventdata/zone_event/"],
+    "sparse": [
+      "/src/",
+      "/include/",
+      "/files/poketool/trainer/",
+      "/files/fielddata/encountdata/",
+      "/files/fielddata/eventdata/zone_event/"
+    ],
     "note": "DS, C + ensamblador, en progreso. Fijado; sin extractores todavía."
   },
   "pokeapi": {
     "repo": "https://github.com/PokeAPI/pokeapi.git",
     "commit": "bc92d3b6029ef1abe9e7ad424c400b338f3c11fe",
-    "sparse": ["/data/v2/csv/"],
+    "sparse": [
+      "/data/v2/csv/"
+    ],
     "note": "CSV de datos de todas las generaciones. No es fuente de verdad."
+  },
+  "pokecrystal": {
+    "repo": "https://github.com/pret/pokecrystal.git",
+    "commit": "5beda23ffa505f62e1dad7e3d7c214d1737b3358",
+    "sparse": [
+      "/data/tilesets/",
+      "/data/maps/",
+      "/maps/",
+      "/constants/",
+      "/gfx/tilesets/"
+    ],
+    "note": "GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta."
   }
 }

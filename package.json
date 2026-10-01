@@ -74,7 +74,8 @@
     "check:battle-controllers": "esbuild tools/checks/battleControllers.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/battleControllers.mjs && node .decomp-build/checks/battleControllers.mjs",
     "check:movement-actions": "esbuild tools/checks/movementActions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/movementActions.mjs && node .decomp-build/checks/movementActions.mjs",
     "check:movement-types": "esbuild tools/checks/movementTypes.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/movementTypes.mjs && node .decomp-build/checks/movementTypes.mjs",
-    "check:player-avatar-transitions": "esbuild tools/checks/playerAvatarTransitions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/playerAvatarTransitions.mjs && node .decomp-build/checks/playerAvatarTransitions.mjs"
+    "check:player-avatar-transitions": "esbuild tools/checks/playerAvatarTransitions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/playerAvatarTransitions.mjs && node .decomp-build/checks/playerAvatarTransitions.mjs",
+    "refs:crystal-maps": "python3 tools/refs/crystal_maps.py"
   },
   "devDependencies": {
     "typescript": "^5.8.0",
