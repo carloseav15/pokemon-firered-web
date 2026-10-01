@@ -18,7 +18,7 @@ import { InitBerryPouch } from "../berryPouch";
 import { StopPokemonLeagueLightingEffectTask } from "../field/leagueLighting";
 import {
   CB2_ChooseMonToGiveItem, CB2_PartyMenuFromStartMenu, CB2_ShowPartyMenuForItemUse, ItemUseCB_EvolutionStone, ItemUseCB_Medicine, ItemUseCB_PPUp,
-  ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, GetItemEffectType, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
+  ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, GetCursorSelectionMonId, GetItemEffectType, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
   type PartyMenuFieldHooks,
 } from "../partyMenu";
 import { GetNumberOfRelearnableMoves } from "../pokemon/partyRules";
@@ -170,7 +170,7 @@ function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => v
       }
       SetUsedFieldMoveQuestLogEvent(GetMonData(save.party[slot], C.MON_DATA_SPECIES_OR_EGG), fieldMove, mapSec);
     },
-    returnToField: (post) => leaveWith(post),
+    returnToField: (post) => leaveWith(post ? () => FieldCallback_PrepareFadeInFromMenu(game, post) : null),
     // CB2_OpenFlyMap: ReturnToFieldFromFlyMapSelect (FieldCallback_UseFly) or back to the party.
     openFlyMap: (slot, done) => openFlyMap(game, (selected) => {
       if (!selected) { done(false); return; }
@@ -202,6 +202,27 @@ function fieldPartyHooks(game: Game, leaveWith: (post: (() => void) | null) => v
     evolve: (mon, target, canStop, slot, done) => BeginEvolutionScene(mon, target, canStop, slot, done),
     relearnableMoves: GetNumberOfRelearnableMoves,
   };
+}
+
+/** FieldCallback_PrepareFadeInFromMenu (party_menu.c), shared field move return. */
+export function FieldCallback_PrepareFadeInFromMenu(game: Game, postMenuCallback: () => void): boolean {
+  paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
+  tasks.create((taskId) => Task_FieldMoveWaitForFade(taskId, game, postMenuCallback), 8);
+  return true;
+}
+
+/** Task_FieldMoveWaitForFade (party_menu.c): wait for weather to finish before the move callback. */
+export function Task_FieldMoveWaitForFade(taskId: number, game: Game, postMenuCallback: () => void): void {
+  if (!IsWeatherNotFadingIn()) return;
+  game.fieldEffectArguments[0] = GetFieldMoveMonSpecies();
+  postMenuCallback();
+  tasks.destroy(taskId);
+}
+
+/** GetFieldMoveMonSpecies (party_menu.c). */
+export function GetFieldMoveMonSpecies(): number {
+  const mon = save.party[GetCursorSelectionMonId()];
+  return mon ? GetMonData(mon as Mon, C.MON_DATA_SPECIES) : C.SPECIES_NONE;
 }
 
 /** CB2_PartyMenuFromStartMenu → CB2_ReturnToFieldWithOpenMenu (or a field move's callback). */
