@@ -58,7 +58,7 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
   }
   status.remove();
   sound.init(rom.constants);
-  sound.backend = createM4aBackend();
+  sound.m4aSoundInit(createM4aBackend());
   const game = new Game(canvas);
   installBattleHost(game);
   running = game;

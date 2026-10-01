@@ -84,6 +84,11 @@ class Sound {
     }
   }
 
+  /** m4aSoundInit (m4a.c): install the browser audio player after game constants load. */
+  m4aSoundInit(backend: SoundBackend): void {
+    this.backend = backend;
+  }
+
   c(name: string): number {
     return this.constants[name] ?? 0;
   }
@@ -100,6 +105,11 @@ class Sound {
     if (this.seTimer > 0) this.seTimer--;
     if (this.specialSETimer > 0) this.specialSETimer--;
     if (this.cryTimer > 0) this.cryTimer--;
+    this.m4aSoundMain();
+  }
+
+  /** m4aSoundMain (m4a.c): advance the audio scheduler once per game frame. */
+  m4aSoundMain(): void {
     this.backend?.frame();
   }
 
