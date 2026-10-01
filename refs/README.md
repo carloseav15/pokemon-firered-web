@@ -258,7 +258,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   `refs/` (no `fetch`, `check` ni `pokeapi`), después `refs:check -- --write`, y falle
   si `git status --short refs/` muestra cambios (salida desactualizada o no
   determinista). Así cualquier agente valida todas las salidas con un comando.
-- [ ] **R12 Datos de Emerald frente a FireRed** [medio]. Extrae con un parser propio
+- [x] **R12 Datos de Emerald frente a FireRed** [medio]. Extrae con un parser propio
   (como R6) `src/data/pokemon/species_info.h` (412 entradas `[SPECIES_X]`) y
   `src/data/battle_moves.h` (355 entradas `[MOVE_X]`, incluida `MOVE_NONE`) a
   `refs/emerald/species.json` y `refs/emerald/moves.json`, y compáralos con
