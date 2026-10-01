@@ -772,9 +772,13 @@ export function QLogCB_Playback(ow: Overworld): void {
       sPlaybackTransitionStarted = true;
     }
     if (paletteFade.active) return;
-    const next = sPlaybackEndMode === 1 ? sPlaybackSceneOrder.indexOf(sCurrentPlaybackSceneIndex) + 1 : sPlaybackSceneOrder.length;
-    if (next < sPlaybackSceneOrder.length) startQuestLogScene(ow, sPlaybackSceneOrder[next]!);
-    else finishQuestLogPlayback(ow);
+    if (sPlaybackEndMode === 2) {
+      QuestLog_WaitFadeAndCancelPlayback(ow);
+    } else {
+      const next = sPlaybackSceneOrder.indexOf(sCurrentPlaybackSceneIndex) + 1;
+      if (next < sPlaybackSceneOrder.length) QLPlayback_InitOverworldState(ow, sPlaybackSceneOrder[next]!);
+      else QuestLog_StartFinalScene(ow);
+    }
     return;
   }
 
@@ -831,8 +835,8 @@ export function QuestLog_AdvancePlayhead_(ow: Overworld): void {
   ow.LockPlayerFieldControls();
   const current = sPlaybackSceneOrder.indexOf(sCurrentPlaybackSceneIndex);
   const nextScene = sPlaybackSceneOrder[current + 1];
-  if (nextScene !== undefined) startQuestLogScene(ow, nextScene);
-  else finishQuestLogPlayback(ow);
+  if (nextScene !== undefined) QLPlayback_InitOverworldState(ow, nextScene);
+  else QuestLog_StartFinalScene(ow);
 }
 
 type AvoidDisplayTask = { ow: Overworld; callback: (() => void) | null; timer: number; state: number };
@@ -884,9 +888,10 @@ function clearQuestLogPlaybackWindows(): void {
   sPlaybackPrinter = null;
 }
 
-function startQuestLogScene(ow: Overworld, sceneIndex: number): void {
+/** QLPlayback_InitOverworldState (quest_log.c): restore the recorded scene and initiate its map load. */
+export function QLPlayback_InitOverworldState(ow: Overworld, sceneIndex: number): void {
   const scene = save.questLogScenes?.[sceneIndex];
-  if (!scene) { finishQuestLogPlayback(ow); return; }
+  if (!scene) { QuestLog_StartFinalScene(ow); return; }
   clearQuestLogPlaybackWindows();
   sCurrentPlaybackSceneIndex = sceneIndex;
   sPlaybackEndMode = 0;
@@ -937,7 +942,8 @@ export function FieldCB2_QuestLogStartPlaybackStandingInPlace(ow: Overworld, sce
   return true;
 }
 
-function finishQuestLogPlayback(ow: Overworld): void {
+/** QuestLog_StartFinalScene (quest_log.c): restore the save and return to its field after playback. */
+export function QuestLog_StartFinalScene(ow: Overworld): void {
   clearQuestLogPlaybackWindows();
   sPlaybackFinalEndMode = sPlaybackEndMode;
   sPlaybackFinalStage = 0;
@@ -956,6 +962,13 @@ function finishQuestLogPlayback(ow: Overworld): void {
   ow.fieldCallback = null;
   ow.fieldCallback2 = () => FieldCB2_FinalScene(ow);
   ow.CB2_EnterFieldFromQuestLog();
+}
+
+/** QuestLog_WaitFadeAndCancelPlayback (quest_log.c): finish after the requested skip fade. */
+export function QuestLog_WaitFadeAndCancelPlayback(ow: Overworld): void {
+  if (paletteFade.active) return;
+  gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+  QuestLog_StartFinalScene(ow);
 }
 
 /** FieldCB2_FinalScene (quest_log.c): restore the header and begin the saved-game return fade. */
@@ -1073,7 +1086,7 @@ export function TryStartQuestLogPlayback(ow: Overworld): boolean {
   sPlaybackSceneCount = scenes.length;
   DisableWildEncounters(true);
   HelpSystem_Disable();
-  startQuestLogScene(ow, sceneIndex);
+  QLPlayback_InitOverworldState(ow, sceneIndex);
   return true;
 }
 
