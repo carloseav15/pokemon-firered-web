@@ -93,7 +93,7 @@ funciones nuevas o equivalencias). Luego commit:
 
 ## 1. Código de un jugador por cerrar
 
-- [ ] **1.1 Checks headless rotos** [básico]. `npm run check:movement-actions` y
+- [x] **1.1 Checks headless rotos** [básico]. `npm run check:movement-actions` y
   `npm run check:questlog-objects` fallan con
   `Cannot read properties of undefined (reading 'chars')` porque no cargan
   `rom.charmap`.
@@ -104,6 +104,11 @@ funciones nuevas o equivalencias). Luego commit:
   - Terminada cuando: los dos checks llegan al final sin excepción. Si ahora falla
     una aserción, no la toques: anota la aserción y el valor obtenido como
     `BLOQUEADO` (es un fallo real del port).
+  - Hecha 2026-10-01: la copia de `rom.charmap` no bastaba (`sText_100` se
+    codificaba en ámbito de módulo en `battleTower.ts` antes de que el cuerpo del
+    check corriera); hizo falta hacerlo perezoso y, en el harness, registrar el
+    objeto del check y el `DoPlayerAvatarTransition` del mock. Los dos checks
+    pasan sin tocar aserciones; los 12 checks que siguen rotos están en §1.11.
 - [ ] **1.2 Renombrar dos equivalencias al nombre C** [básico].
   - `src/fr/battle/main_init.ts:371` y `:374`: `SpriteCB_AllyMonSlide` → `oac_poke_ally_`
     (C: `battle_main.c`, `static void oac_poke_ally_`). Añade el comentario
