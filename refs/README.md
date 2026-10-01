@@ -192,7 +192,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   falla, potencia variable, probabilidad 0 = efecto garantizado). Terminada cuando el
   resumen muestre unos 18 cambios reales de potencia/precisión/PP y la prioridad de
   Venganza (Bide) 0 → +1.
-- [ ] **R6 Entrenadores de Emerald** [medio]. `src/data/` ya está en el sparse de
+- [x] **R6 Entrenadores de Emerald** [medio]. `src/data/` ya está en el sparse de
   `pokeemerald`. Extrae `src/data/trainers.h` y
   `src/data/trainer_parties.h` a `refs/emerald/trainers.json`. Son inicializadores C.
   (La versión original pedía probar el exportador de FireRed; **ya no**: sigue el
