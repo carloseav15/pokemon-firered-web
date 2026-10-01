@@ -75,7 +75,7 @@ KNOWN_GAPS = [
     "Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.",
     "Pantalla de nombres: 104/109 funciones (`naming_screen.c`); estados, sprites, iconos, renderizado, teclado y callbacks conectados. Quedan cinco `Debug_NamingScreen*` estáticos sin callers en el C; pantalla e historia sin validar en navegador.",
     "Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos "
-    "reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial.",
+    "reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial; Dive conserva la secuencia single-player heredada, pero los mapas FireRed no definen conexiones Dive.",
     "Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.",
     "Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.",
     "Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.",

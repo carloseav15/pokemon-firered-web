@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9709/10115 (96.0 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **406 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9717/10115 (96.1 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **398 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~9.131 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~8.944 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -31,15 +31,15 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 11 | `battle_transition.c` | casi completo | 3037 | 124/134 | ~226 |  |
 | 12 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 13 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
-| 14 | `quest_log.c` | casi completo | 1767 | 71/88 | ~341 |  |
+| 14 | `quest_log.c` | casi completo | 1767 | 76/88 | ~240 |  |
 | 15 | `quest_log_events.c` | casi completo | 2247 | 97/118 | ~399 |  |
-| 16 | `field_effect.c` | casi completo | 4033 | 214/239 | ~421 |  |
+| 16 | `field_effect.c` | casi completo | 4033 | 215/239 | ~404 |  |
 | 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
 | 18 | `event_object_movement.c` | casi completo | 9412 | 716/759 | ~533 |  |
 | 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
-| 20 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
-| 21 | `trade_scene.c` | parcial | 2916 | 37/53 | ~880 |  |
-| 22 | `overworld.c` | parcial | 3563 | 144/242 | ~1442 |  |
+| 20 | `trade_scene.c` | parcial | 2916 | 38/53 | ~825 |  |
+| 21 | `battle_main.c` | casi completo | 4477 | 86/106 | ~844 |  |
+| 22 | `overworld.c` | parcial | 3563 | 145/242 | ~1428 |  |
 | 23 | `m4a.c` | parcial | 1781 | 1/72 | ~1756 |  |
 
 Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 4 parciales.
@@ -52,7 +52,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 |---|---:|---:|---:|
 | `trade.c` | 2958 | 0/66 | 15 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
-| `trade_scene.c` | 2916 | 37/53 | 1 |
+| `trade_scene.c` | 2916 | 38/53 | 1 |
 | `union_room.c` | 4761 | 6/110 | 1 |
 | `link.c` | 2202 | 4/114 | 1 |
 
@@ -83,7 +83,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Save cifrado: `ApplyNewEncryptionKeyToBagItems` y su alias recorren cantidades almacenadas con XOR por la clave del SaveBlock. El save web guarda las cantidades descifradas en JSON y no modela ese layout físico GBA.
 - Scripts RAM: `GetSavedRamScriptIfValid` aún depende de `ValidateSavedWonderCard`, cuya tarjeta Wonder no está implementada; el slot RAM y su checksum sí existen en `script/context.ts`.
 - Pantalla de nombres: 104/109 funciones (`naming_screen.c`); estados, sprites, iconos, renderizado, teclado y callbacks conectados. Quedan cinco `Debug_NamingScreen*` estáticos sin callers en el C; pantalla e historia sin validar en navegador.
-- Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial.
+- Efectos de campo: `field_effect_helpers.c` 76/76 pero sin conectar (ver tabla 3c, los efectos reales siguen en `field/fieldEffects.ts`); `field_effect.c` parcial; Dive conserva la secuencia single-player heredada, pero los mapas FireRed no definen conexiones Dive.
 - Clima: `field/weather.ts` porta tablas, aplicación/mezcla gamma, hooks BG/OBJ, dispatcher, fundidos, oscurecimiento de paletas de quest log y la máquina de gamma de sequía; en FRLG `LoadDroughtWeatherPalette` es no-op y `Drought_Main` se atasca en el paso 2. La conexión a Canvas2D sigue pendiente.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): reverb, ADSR exacto, duty/sweep, keysplit, paneo.
