@@ -1411,11 +1411,15 @@ const tmpl = (name: string) => templateFrom(rd<CSpriteTemplate>(name));
 
 function CreatePartyMonIconSprite(m: Mon, box: PartyMenuBox): void {
   const species = GetMonData(m, C.MON_DATA_SPECIES_OR_EGG);
-  if (species !== C.SPECIES_NONE) {
-    box.monSpriteId = CreateMonIcon(species, SpriteCB_UpdatePartyMonIcon, box.spriteCoords[0], box.spriteCoords[1], 4, GetMonData(m, C.MON_DATA_PERSONALITY), true);
-    gSprites[box.monSpriteId].oam.priority = 1;
-  }
+  CreatePartyMonIconSpriteParameterized(species, GetMonData(m, C.MON_DATA_PERSONALITY), box, 1, true);
   UpdatePartyMonHPBar(box.monSpriteId, m);
+}
+
+/** CreatePartyMonIconSpriteParameterized (party_menu.c). */
+export function CreatePartyMonIconSpriteParameterized(species: number, pid: number, box: PartyMenuBox, priority: number, handleDeoxys: boolean): void {
+  if (species === C.SPECIES_NONE) return;
+  box.monSpriteId = CreateMonIcon(species, SpriteCB_UpdatePartyMonIcon, box.spriteCoords[0], box.spriteCoords[1], 4, pid, handleDeoxys);
+  gSprites[box.monSpriteId].oam.priority = priority;
 }
 
 function UpdateHPBar(spriteId: number, hp: number, maxhp: number): void {
@@ -1450,10 +1454,15 @@ function SpriteCB_UpdatePartyMonIcon(sprite: Sprite): void {
 }
 
 function CreatePartyMonHeldItemSprite(m: Mon, box: PartyMenuBox): void {
-  if (GetMonData(m, C.MON_DATA_SPECIES) !== C.SPECIES_NONE) {
-    box.itemSpriteId = CreateSprite(tmpl("sSpriteTemplate_HeldItem"), box.spriteCoords[2], box.spriteCoords[3], 0);
-    UpdatePartyMonHeldItemSprite(m, box);
-  }
+  CreatePartyMonHeldItemSpriteParameterized(GetMonData(m, C.MON_DATA_SPECIES), GetMonData(m, C.MON_DATA_HELD_ITEM), box);
+}
+
+/** CreatePartyMonHeldItemSpriteParameterized (party_menu.c). */
+export function CreatePartyMonHeldItemSpriteParameterized(species: number, item: number, box: PartyMenuBox): void {
+  if (species === C.SPECIES_NONE) return;
+  box.itemSpriteId = CreateSprite(tmpl("sSpriteTemplate_HeldItem"), box.spriteCoords[2], box.spriteCoords[3], 0);
+  gSprites[box.itemSpriteId].oam.priority = 0;
+  ShowOrHideHeldItemSprite(item, box);
 }
 
 function UpdatePartyMonHeldItemSprite(m: Mon, box: PartyMenuBox): void {
@@ -1473,9 +1482,14 @@ export function LoadHeldItemIcons(): void {
 }
 
 function CreatePartyMonPokeballSprite(m: Mon, box: PartyMenuBox): void {
-  if (GetMonData(m, C.MON_DATA_SPECIES) !== C.SPECIES_NONE) {
-    box.pokeballSpriteId = CreateSprite(tmpl("sSpriteTemplate_MenuPokeball"), box.spriteCoords[6], box.spriteCoords[7], 8);
-  }
+  CreatePartyMonPokeballSpriteParameterized(GetMonData(m, C.MON_DATA_SPECIES), box);
+}
+
+/** CreatePartyMonPokeballSpriteParameterized (party_menu.c). */
+export function CreatePartyMonPokeballSpriteParameterized(species: number, box: PartyMenuBox): void {
+  if (species === C.SPECIES_NONE) return;
+  box.pokeballSpriteId = CreateSprite(tmpl("sSpriteTemplate_MenuPokeball"), box.spriteCoords[6], box.spriteCoords[7], 8);
+  gSprites[box.pokeballSpriteId].oam.priority = 0;
 }
 
 function CreatePokeballButtonSprite(x: number, y: number): number {
@@ -1495,10 +1509,15 @@ function LoadPartyMenuPokeballGfx(): void {
 }
 
 function CreatePartyMonStatusSprite(m: Mon, box: PartyMenuBox): void {
-  if (GetMonData(m, C.MON_DATA_SPECIES) !== C.SPECIES_NONE) {
-    box.statusSpriteId = CreateSprite(tmpl("sSpriteTemplate_StatusIcons"), box.spriteCoords[4], box.spriteCoords[5], 0);
-    SetPartyMonAilmentGfx(m, box);
-  }
+  CreatePartyMonStatusSpriteParameterized(GetMonData(m, C.MON_DATA_SPECIES), GetMonAilment(m), box);
+}
+
+/** CreatePartyMonStatusSpriteParameterized (party_menu.c). */
+export function CreatePartyMonStatusSpriteParameterized(species: number, status: number, box: PartyMenuBox): void {
+  if (species === C.SPECIES_NONE) return;
+  box.statusSpriteId = CreateSprite(tmpl("sSpriteTemplate_StatusIcons"), box.spriteCoords[4], box.spriteCoords[5], 0);
+  UpdatePartyMonAilmentGfx(status, box);
+  gSprites[box.statusSpriteId].oam.priority = 0;
 }
 
 function SetPartyMonAilmentGfx(m: Mon, box: PartyMenuBox): void {
