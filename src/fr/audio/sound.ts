@@ -19,11 +19,20 @@ export interface SoundBackend {
   fadeIn(player: "bgm", speed: number): void;
   setVolume(player: "bgm", volume: number): void;
   setPan?(player: "se1" | "se2", pan: number): void;
-  playCry(species: number, mode: number, pan?: number, volume?: number, priority?: number): void;
+  playCry(species: number, mode: number, pan?: number, volume?: number, priority?: number, settings?: PokemonCrySettings): void;
   isCryPlaying(): boolean;
   stopCry?(): void;
   frame(): void;
   setStereo?(stereo: boolean): void;
+}
+
+export interface PokemonCrySettings {
+  pitch: number;
+  length: number;
+  release: number;
+  progress: number;
+  chorus: number;
+  reverse: boolean;
 }
 
 // Fanfare lengths in frames from sound.c sFanfares.
@@ -71,6 +80,14 @@ class Sound {
   private fallbackBgmPaused = false;
   private fallbackFadeTemporary = false;
   private pokemonCryBGMDuckingCounter = 0;
+  private pokemonCryVolume = 127;
+  private pokemonCryPanpot = 64;
+  private pokemonCryPitch = 15360;
+  private pokemonCryLength = 60;
+  private pokemonCryRelease = 0;
+  private pokemonCryProgress = 0;
+  private pokemonCryChorus = 0;
+  private pokemonCryPriority = 255;
   private readonly taskDuckBgmForPokemonCryFunc: TaskFunc = (taskId) => this.Task_DuckBGMForPokemonCry(taskId);
 
   init(constants: Record<string, number>): void {
@@ -119,6 +136,9 @@ class Sound {
     this.stereo = stereo;
     this.backend?.setStereo?.(stereo);
   }
+
+  /** SetPokemonCryStereo (m4a.c): route the C option to the browser output mode. */
+  SetPokemonCryStereo(value: number): void { this.setStereo((value >>> 0) !== 0); }
 
   playSE(song: number): void {
     this.seTimer = 12;
@@ -436,13 +456,89 @@ class Sound {
   FadeInBGM(speed: number): void { this.fadeInBGM(speed & 0xff); }
 
   playCry(species: number, mode = C.CRY_MODE_NORMAL, pan = 0, volume = C.CRY_VOLUME, priority = C.CRY_PRIORITY_NORMAL): void {
-    this.cryTimer = 30;
-    this.backend?.playCry(species, mode, pan, volume, priority);
+    this.PlayCryInternal(species, pan, volume, priority, mode);
   }
 
   /** PlayCryInternal; cry waveforms and DSP are adapted to exported WAVs/Web Audio. */
   PlayCryInternal(species: number, pan: number, volume: number, priority: number, mode: number): void {
-    this.playCry(species, mode & 0xff, (pan << 24) >> 24, volume & 0xff, priority & 0xff);
+    mode &= 0xff;
+    let length = 140;
+    let reverse = false;
+    let release = 0;
+    let pitch = 15360;
+    let chorus = 0;
+    switch (mode) {
+      case C.CRY_MODE_DOUBLES: length = 20; release = 225; break;
+      case C.CRY_MODE_ENCOUNTER: release = 225; pitch = 15600; chorus = 20; volume = 90; break;
+      case C.CRY_MODE_HIGH_PITCH: length = 50; release = 200; pitch = 15800; chorus = 20; volume = 90; break;
+      case C.CRY_MODE_ECHO_START: length = 25; reverse = true; release = 100; pitch = 15600; chorus = 192; volume = 90; break;
+      case C.CRY_MODE_FAINT: release = 200; pitch = 14440; break;
+      case C.CRY_MODE_ECHO_END: release = 220; pitch = 15555; chorus = 192; volume = 90; break;
+      case C.CRY_MODE_ROAR_1: length = 10; release = 100; pitch = 14848; break;
+      case C.CRY_MODE_ROAR_2: length = 60; release = 225; pitch = 15616; break;
+      case C.CRY_MODE_GROWL_1: length = 15; reverse = true; release = 125; pitch = 15200; break;
+      case C.CRY_MODE_GROWL_2: length = 100; release = 225; pitch = 15200; break;
+      case C.CRY_MODE_WEAK_DOUBLES: length = 20; release = 225; pitch = 15000; break;
+      case C.CRY_MODE_WEAK: pitch = 15000; break;
+    }
+    this.SetPokemonCryVolume(volume);
+    this.SetPokemonCryPanpot((pan << 24) >> 24);
+    this.SetPokemonCryPitch(pitch);
+    this.SetPokemonCryLength(length);
+    this.SetPokemonCryProgress(0);
+    this.SetPokemonCryRelease(release);
+    this.SetPokemonCryChorus(chorus);
+    this.SetPokemonCryPriority(priority);
+    this.SetPokemonCryTone(species, mode, reverse);
+  }
+
+  /** SetPokemonCryVolume (m4a.c). */
+  SetPokemonCryVolume(value: number): void { this.pokemonCryVolume = value & 0x7f; }
+
+  /** SetPokemonCryPanpot (m4a.c), centered at C_V before passing to WebAudio. */
+  SetPokemonCryPanpot(value: number): void { this.pokemonCryPanpot = (((value << 24) >> 24) + 64) & 0x7f; }
+
+  /** SetPokemonCryPitch (m4a.c); pitch is adapted to the WAV playback rate. */
+  SetPokemonCryPitch(value: number): void { this.pokemonCryPitch = ((value << 16) >> 16) & 0xffff; }
+
+  /** SetPokemonCryLength (m4a.c). */
+  SetPokemonCryLength(value: number): void { this.pokemonCryLength = value & 0xffff; }
+
+  /** SetPokemonCryRelease (m4a.c). */
+  SetPokemonCryRelease(value: number): void { this.pokemonCryRelease = value & 0xff; }
+
+  /** SetPokemonCryProgress (m4a.c). */
+  SetPokemonCryProgress(value: number): void { this.pokemonCryProgress = value >>> 0; }
+
+  /** SetPokemonCryChorus (m4a.c). */
+  SetPokemonCryChorus(value: number): void { this.pokemonCryChorus = (value << 24) >> 24; }
+
+  /** SetPokemonCryPriority (m4a.c); priority arbitration is limited by the single WAV voice. */
+  SetPokemonCryPriority(value: number): void { this.pokemonCryPriority = value & 0xff; }
+
+  /** SetPokemonCryTone (m4a.c): select the species WAV in place of the C tone-table pointer. */
+  SetPokemonCryTone(species: number, mode: number, reverse: boolean): void {
+    this.cryTimer = 30;
+    this.backend?.playCry(
+      species,
+      mode,
+      this.pokemonCryPanpot - 64,
+      this.pokemonCryVolume,
+      this.pokemonCryPriority,
+      {
+        pitch: this.pokemonCryPitch,
+        length: this.pokemonCryLength,
+        release: this.pokemonCryRelease,
+        progress: this.pokemonCryProgress,
+        chorus: this.pokemonCryChorus,
+        reverse,
+      },
+    );
+  }
+
+  /** IsPokemonCryPlaying (m4a.c): the browser backend owns the active cry voice. */
+  IsPokemonCryPlaying(_musicPlayer?: unknown): boolean {
+    return this.backend ? this.backend.isCryPlaying() : this.cryTimer > 0;
   }
 
   PlayCry_Normal(species: number, pan: number): void {
@@ -504,7 +600,7 @@ class Sound {
 
   isCryFinished(): boolean {
     if (tasks.isActive(this.taskDuckBgmForPokemonCryFunc)) return false;
-    if (this.backend) return !this.backend.isCryPlaying();
+    if (this.backend) return !this.IsPokemonCryPlaying();
     return this.cryTimer === 0;
   }
 
@@ -563,7 +659,7 @@ class Sound {
 
   /** IsCryPlayingOrClearCrySongs from sound.c: clear the cry state when idle. */
   IsCryPlayingOrClearCrySongs(): boolean {
-    const playing = this.backend ? this.backend.isCryPlaying() : this.cryTimer > 0;
+    const playing = this.IsPokemonCryPlaying();
     if (!playing) ClearPokemonCrySongs();
     return playing;
   }

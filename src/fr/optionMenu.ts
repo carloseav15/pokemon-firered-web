@@ -277,7 +277,7 @@ function CloseAndSaveOptionMenu(taskId: number): void {
     sound: o.option[MENUITEM_SOUND], buttonMode: o.option[MENUITEM_BUTTONMODE], frameType: o.option[MENUITEM_FRAMETYPE],
   });
   // SetPokemonCryStereo, plus the live copies the port keeps of these options.
-  sound.setStereo(save.options.sound === 1);
+  sound.SetPokemonCryStereo(save.options.sound === 1 ? 1 : 0);
   textOptions.speed = save.options.textSpeed;
   joy.buttonMode = save.options.buttonMode;
   tasks.destroy(taskId);

@@ -338,7 +338,7 @@ export class Game {
     }
     textOptions.speed = save.options.textSpeed;
     joy.buttonMode = save.options.buttonMode;
-    sound.setStereo(save.options.sound === 1);
+    sound.SetPokemonCryStereo(save.options.sound === 1 ? 1 : 0);
     const w = save.location;
     this.overworld.setWarpDestination(w.mapGroup, w.mapNum, -1, save.pos.x, save.pos.y);
     this.overworld.initialAvatar = { direction: save.facing || 1, transitionFlags: save.playerAvatarFlags & 0x0f || 1, hasDirectionSet: true };

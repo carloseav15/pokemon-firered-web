@@ -7,7 +7,7 @@
 
 import { DATA_ROOT } from "../rom";
 import * as C from "../generated/constants";
-import type { SoundBackend } from "./sound";
+import type { PokemonCrySettings, SoundBackend } from "./sound";
 
 const AUDIO_ROOT = `${DATA_ROOT}/audio`;
 
@@ -567,7 +567,7 @@ export class M4aBackend implements SoundBackend {
     this.players.get(player)?.setMasterVolume(this.master);
   }
 
-  playCry(species: number, mode: number, pan = 0, volume = 120, priority = 10): void {
+  playCry(species: number, mode: number, pan = 0, volume = 120, priority = 10, settings?: PokemonCrySettings): void {
     void priority; // C voice priority arbitrates its four cry players; this backend uses a single current buffer.
     if (!this.ensure() || !this.ctx || !this.out) return;
     const generation = ++this.cryGeneration;
@@ -608,11 +608,11 @@ export class M4aBackend implements SoundBackend {
         [C.CRY_MODE_WEAK]: 15000,
         [C.CRY_MODE_WEAK_DOUBLES]: 15000,
       };
-      const rate = (pitchByMode[mode] ?? 15360) / 15360;
-      const modeVolume = mode === C.CRY_MODE_ENCOUNTER || mode === C.CRY_MODE_HIGH_PITCH
+      const rate = (settings?.pitch ?? pitchByMode[mode] ?? 15360) / 15360;
+      const modeVolume = settings ? volume : mode === C.CRY_MODE_ENCOUNTER || mode === C.CRY_MODE_HIGH_PITCH
         || mode === C.CRY_MODE_ECHO_START || mode === C.CRY_MODE_ECHO_END ? 90 : volume;
       const src = this.ctx.createBufferSource();
-      const reverse = mode === C.CRY_MODE_ECHO_START || mode === C.CRY_MODE_GROWL_1;
+      const reverse = settings?.reverse ?? (mode === C.CRY_MODE_ECHO_START || mode === C.CRY_MODE_GROWL_1);
       src.buffer = reverse ? this.reversedCryBuffer(file, buffer) : buffer;
       src.playbackRate.value = rate;
       const gain = this.ctx.createGain();
@@ -624,7 +624,13 @@ export class M4aBackend implements SoundBackend {
       panner.connect(this.out);
       this.crySource = src;
       const dur = buffer.duration / rate;
-      const play = mode === 1 ? Math.min(dur, 0.4) : dur;
+      const play = settings ? Math.min(dur, (settings.length & 0xffff) / 60) : mode === 1 ? Math.min(dur, 0.4) : dur;
+      const now = this.ctx.currentTime;
+      const release = settings ? Math.min(play, (settings.release & 0xff) / 60) : 0;
+      if (release > 0) {
+        gain.gain.setValueAtTime(gain.gain.value, now + play - release);
+        gain.gain.linearRampToValueAtTime(0, now + play);
+      }
       this.cryUntil = this.ctx.currentTime + play;
       src.start();
       src.stop(this.ctx.currentTime + play + 0.05);
