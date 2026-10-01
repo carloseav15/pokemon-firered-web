@@ -41,6 +41,7 @@ reexportar si cambias `tools/decomp/`.
 | [PORTING-STATUS.md](PORTING-STATUS.md) | Estado operativo breve y siguiente tanda |
 | [TAREAS-FINALES.md](TAREAS-FINALES.md) | **Lista de tareas finales** del juego de un jugador: código, equivalencias y validación |
 | [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) | Recorrido para la fase de revisión funcional |
+| [docs/VISION.md](docs/VISION.md) | Ideas futuras: Emerald, Johto, reglas modernas y mundo unificado (no activas) |
 
 ## Estado
 
