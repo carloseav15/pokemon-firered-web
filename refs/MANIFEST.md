@@ -17,4 +17,5 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 |---|---|---:|---|
 | `emerald/functions.json` | pokeemerald | 17889 | `tools/refs/emerald_functions.py` |
 | `platinum/moves.json` | pokeplatinum | 468 | `tools/refs/platinum_moves.py` |
+| `platinum/moves_vs_firered.json` | pokeplatinum | 71 | `tools/refs/compare_platinum_moves.py` |
 | `platinum/species.json` | pokeplatinum | 496 | `tools/refs/platinum_species.py` |

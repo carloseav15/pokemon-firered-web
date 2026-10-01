@@ -1,0 +1,732 @@
+{
+ "_meta": {
+  "commit": "c248fb3f8cc9934ded800e489567c5c0eeee92eb",
+  "entries": 71,
+  "generator": "tools/refs/compare_platinum_moves.py",
+  "source": "pokeplatinum"
+ },
+ "data": [
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_PAY_DAY",
+   "id": 6
+  },
+  {
+   "cambios": {
+    "power": [
+     70,
+     90
+    ]
+   },
+   "const": "MOVE_FLY",
+   "id": 19
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_BIND",
+   "id": 20
+  },
+  {
+   "cambios": {
+    "pp": [
+     10,
+     15
+    ]
+   },
+   "const": "MOVE_VINE_WHIP",
+   "id": 22
+  },
+  {
+   "cambios": {
+    "power": [
+     70,
+     85
+    ]
+   },
+   "const": "MOVE_JUMP_KICK",
+   "id": 26
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_WRAP",
+   "id": 35
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_THRASH",
+   "id": 37
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     55,
+     80
+    ]
+   },
+   "const": "MOVE_DISABLE",
+   "id": 50
+  },
+  {
+   "cambios": {
+    "pp": [
+     20,
+     25
+    ]
+   },
+   "const": "MOVE_ABSORB",
+   "id": 71
+  },
+  {
+   "cambios": {
+    "pp": [
+     10,
+     15
+    ]
+   },
+   "const": "MOVE_MEGA_DRAIN",
+   "id": 72
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ],
+    "power": [
+     70,
+     90
+    ]
+   },
+   "const": "MOVE_PETAL_DANCE",
+   "id": 80
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_FIRE_SPIN",
+   "id": 83
+  },
+  {
+   "cambios": {
+    "power": [
+     60,
+     80
+    ]
+   },
+   "const": "MOVE_DIG",
+   "id": 91
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_TOXIC",
+   "id": 92
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_MIMIC",
+   "id": 102
+  },
+  {
+   "cambios": {
+    "pp": [
+     20,
+     10
+    ]
+   },
+   "const": "MOVE_RECOVER",
+   "id": 105
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ],
+    "priority": [
+     0,
+     1
+    ]
+   },
+   "const": "MOVE_BIDE",
+   "id": 117
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     0,
+     20
+    ]
+   },
+   "const": "MOVE_WATERFALL",
+   "id": 127
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_CLAMP",
+   "id": 128
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     0,
+     100
+    ]
+   },
+   "const": "MOVE_SKULL_BASH",
+   "id": 130
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_SOFTBOILED",
+   "id": 135
+  },
+  {
+   "cambios": {
+    "power": [
+     85,
+     100
+    ]
+   },
+   "const": "MOVE_HI_JUMP_KICK",
+   "id": 136
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     70,
+     100
+    ]
+   },
+   "const": "MOVE_FLASH",
+   "id": 148
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_STRUGGLE",
+   "id": 165
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_THIEF",
+   "id": 168
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_SPIDER_WEB",
+   "id": 169
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_MIND_READER",
+   "id": 170
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_CONVERSION_2",
+   "id": 176
+  },
+  {
+   "cambios": {
+    "power": [
+     100,
+     120
+    ]
+   },
+   "const": "MOVE_ZAP_CANNON",
+   "id": 192
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_FORESIGHT",
+   "id": 193
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_LOCK_ON",
+   "id": 199
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ],
+    "power": [
+     90,
+     120
+    ]
+   },
+   "const": "MOVE_OUTRAGE",
+   "id": 200
+  },
+  {
+   "cambios": {
+    "pp": [
+     5,
+     10
+    ]
+   },
+   "const": "MOVE_GIGA_DRAIN",
+   "id": 202
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_SWAGGER",
+   "id": 207
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_MEAN_LOOK",
+   "id": 212
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_PAIN_SPLIT",
+   "id": 220
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_VITAL_THROW",
+   "id": 233
+  },
+  {
+   "cambios": {
+    "power": [
+     20,
+     40
+    ]
+   },
+   "const": "MOVE_ROCK_SMASH",
+   "id": 249
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_WHIRLPOOL",
+   "id": 250
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     0,
+     100
+    ]
+   },
+   "const": "MOVE_FAKE_OUT",
+   "id": 252
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_UPROAR",
+   "id": 253
+  },
+  {
+   "cambios": {
+    "pp": [
+     10,
+     20
+    ]
+   },
+   "const": "MOVE_STOCKPILE",
+   "id": 254
+  },
+  {
+   "cambios": {
+    "power": [
+     100,
+     1
+    ]
+   },
+   "const": "MOVE_SPIT_UP",
+   "id": 255
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_FOLLOW_ME",
+   "id": 266
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_CHARGE",
+   "id": 268
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_HELPING_HAND",
+   "id": 270
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_ROLE_PLAY",
+   "id": 272
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_WISH",
+   "id": 273
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_ASSIST",
+   "id": 274
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_INGRAIN",
+   "id": 275
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_MAGIC_COAT",
+   "id": 277
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_RECYCLE",
+   "id": 278
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_YAWN",
+   "id": 281
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_KNOCK_OFF",
+   "id": 282
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_SKILL_SWAP",
+   "id": 285
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_IMPRISON",
+   "id": 286
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_REFRESH",
+   "id": 287
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_GRUDGE",
+   "id": 288
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_SNATCH",
+   "id": 289
+  },
+  {
+   "cambios": {
+    "power": [
+     60,
+     80
+    ]
+   },
+   "const": "MOVE_DIVE",
+   "id": 291
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_CAMOUFLAGE",
+   "id": 293
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_TAIL_GLOW",
+   "id": 294
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_MUD_SPORT",
+   "id": 300
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_SLACK_OFF",
+   "id": 303
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_ODOR_SLEUTH",
+   "id": 316
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_SAND_TOMB",
+   "id": 328
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_BLOCK",
+   "id": 335
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_COVET",
+   "id": 343
+  },
+  {
+   "cambios": {
+    "effect_chance": [
+     0,
+     10
+    ]
+   },
+   "const": "MOVE_VOLT_TACKLE",
+   "id": 344
+  },
+  {
+   "cambios": {
+    "accuracy": [
+     100,
+     0
+    ]
+   },
+   "const": "MOVE_WATER_SPORT",
+   "id": 346
+  },
+  {
+   "cambios": {
+    "power": [
+     70,
+     90
+    ]
+   },
+   "const": "MOVE_LEAF_BLADE",
+   "id": 348
+  }
+ ]
+}
