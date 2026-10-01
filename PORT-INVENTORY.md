@@ -12,15 +12,15 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Estado | Archivos | Líneas C | Funciones con nombre en TS |
 |---|---:|---:|---:|
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
-| Parcial (< 80 % de funciones) | 4 | 9964 | 230/390 |
+| Parcial (< 80 % de funciones) | 3 | 8260 | 214/367 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
-| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2587/2779 |
-| Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
+| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2589/2779 |
+| Sin huecos de nombre (100 %; fidelidad no medida) | 187 | 185693 | 6969/6969 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
-| **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9763/10115** |
+| **Pendiente de portar** | **22** | **67664** | |
+| **Total en alcance** | **211** | **253703** | **9772/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Parcial (< 80 % de funciones)
@@ -28,9 +28,8 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `overworld.c` | 3563 | 149/242 | `battle/host.ts`, `field/fieldControl.ts`, `field/fieldMoves.ts` … |  |  |
-| `trade_scene.c` | 2916 | 39/53 | `pokemon/ingameTrade.ts`, `pokemon/mail.ts` |  | 1 |
+| `trade_scene.c` | 2916 | 40/53 | `battle/ext.ts`, `evolutionScene.ts`, `pokemon/ingameTrade.ts` … |  | 1 |
 | `m4a.c` | 1781 | 25/72 | `audio/m4a.ts`, `audio/sound.ts` |  |  |
-| `evolution_scene.c` | 1704 | 17/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 
 ## Casi completo (≥ 80 % y < 100 %)
 
@@ -47,7 +46,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `intro.c` | 2805 | 77/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
 | `battle_controller_pokedude.c` | 2698 | 107/108 | `battle/controller_pokedude.ts`, `teachyTv.ts` |  |  |
 | `quest_log_events.c` | 2247 | 98/118 | `questLogActions.ts`, `questLogEventBuffer.ts`, `questLogEvents.ts` … |  |  |
-| `quest_log.c` | 1767 | 78/88 | `field/objectEvents.ts`, `field/overworld.ts`, `questLogActions.ts` … |  |  |
+| `quest_log.c` | 1767 | 80/88 | `field/objectEvents.ts`, `field/overworld.ts`, `questLogActions.ts` … |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `pokemon_storage_system_misc.c` | 1430 | 66/70 | `storageSystemMisc.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
@@ -92,6 +91,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `fame_checker.c` | 1739 | 64/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  |  |
 | `tm_case.c` | 1737 | 73/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
 | `battle_anim.c` | 1725 | 77/77 | `battle/anim.ts`, `battle/animArgs.ts`, `battle/animScript.ts` … |  |  |
+| `evolution_scene.c` | 1704 | 23/23 | `battle/evoScene.ts`, `battle/ext.ts`, `evolutionScene.ts` … |  |  |
 | `text.c` | 1695 | 37/37 | `battle/interface.ts`, `boot.ts`, `gba/font.ts` … |  |  |
 | `battle_anim_water.c` | 1591 | 48/48 | `battle/anims/water.ts` |  |  |
 | `pokemon_special_anim_scene.c` | 1563 | 67/67 | `battle/anim.ts`, `pokemonSpecialAnim.ts` |  |  |

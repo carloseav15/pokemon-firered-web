@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9763/10115 (96.5 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **352 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9772/10115 (96.6 %)**.
+- Archivos C con funciones aún sin homólogo: **22**; quedan **343 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
-- Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~7.897 líneas** (aproximación por proporción de funciones).
+- Estos archivos contienen 67.664 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
+- Estimación ponderada del C sin homólogo: **~7.358 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -28,21 +28,20 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 8 | `start_menu.c` | casi completo | 1016 | 58/65 | ~109 |  |
 | 9 | `battle_transition.c` | casi completo | 3037 | 129/134 | ~113 |  |
 | 10 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
-| 11 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 12 | `quest_log.c` | casi completo | 1767 | 78/88 | ~200 |  |
+| 11 | `quest_log.c` | casi completo | 1767 | 80/88 | ~160 |  |
+| 12 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
 | 13 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 14 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 15 | `field_effect.c` | casi completo | 4033 | 220/239 | ~320 |  |
 | 16 | `quest_log_events.c` | casi completo | 2247 | 98/118 | ~380 |  |
-| 17 | `evolution_scene.c` | parcial | 1704 | 17/23 | ~444 |  |
-| 18 | `event_object_movement.c` | casi completo | 9412 | 718/759 | ~508 |  |
-| 19 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
-| 20 | `trade_scene.c` | parcial | 2916 | 39/53 | ~770 |  |
-| 21 | `battle_main.c` | casi completo | 4477 | 87/106 | ~802 |  |
-| 22 | `m4a.c` | parcial | 1781 | 25/72 | ~1162 |  |
-| 23 | `overworld.c` | parcial | 3563 | 149/242 | ~1369 |  |
+| 17 | `event_object_movement.c` | casi completo | 9412 | 718/759 | ~508 |  |
+| 18 | `party_menu.c` | casi completo | 6342 | 326/357 | ~550 |  |
+| 19 | `trade_scene.c` | parcial | 2916 | 40/53 | ~715 |  |
+| 20 | `battle_main.c` | casi completo | 4477 | 87/106 | ~802 |  |
+| 21 | `m4a.c` | parcial | 1781 | 25/72 | ~1162 |  |
+| 22 | `overworld.c` | parcial | 3563 | 149/242 | ~1369 |  |
 
-Total: 23 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 4 parciales.
+Total: 22 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 3 parciales.
 
 ## 3b. Funciones stub (nombre del C con cuerpo vacío o `return 0;`)
 
@@ -52,7 +51,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 |---|---:|---:|---:|
 | `trade.c` | 2958 | 0/66 | 15 |
 | `cable_club.c` | 1036 | 9/54 | 2 |
-| `trade_scene.c` | 2916 | 39/53 | 1 |
+| `trade_scene.c` | 2916 | 40/53 | 1 |
 | `union_room.c` | 4761 | 6/110 | 1 |
 | `link.c` | 2202 | 4/114 | 1 |
 
@@ -68,7 +67,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 ## 4. Huecos conocidos que el conteo no muestra
 
 - Easy Chat: escribir cartas conectado (`partyMenu.ts` → `fieldMenus.writeMail` → `DoEasyChatScreen` de `easy_chat_2.c`, con `CommitECWords` escribiendo en `save.mail`); editor sin probar en navegador.
-- Intercambios de NPC: `pokemon/ingameTrade.ts` porta la animación; `SpriteCB_BouncingPokeball` se comparó con C y `check:trade` valida el rebote y el ciclo de escena. `GetInGameTradeMail` se adapta como `attachTradeMail`; animación pendiente de revisión visual en navegador. De `trade.c` solo hay stubs de la parte de enlace.
+- Intercambios de NPC: `pokemon/ingameTrade.ts` porta la animación; `SpriteCB_BouncingPokeball` se comparó con C y `check:trade` valida el rebote y el ciclo de escena. `GetInGameTradeMail` se adapta como `attachTradeMail`; `STATE_TRY_EVOLUTION` sigue al C vía `TradeEvolutionScene` (`evolution_scene.c`, tarea 1.7, 2026-10-01); animación pendiente de revisión visual en navegador. De `trade.c` solo hay stubs de la parte de enlace.
 - Enlace: `linkState.ts` modela estado, identidad del callback y umbrales de cola de `menu_helpers.c`, `link.c` y `overworld.c`; todavía no hay productor de comandos ni transporte cable/RFU que alimente ese estado.
 - Combate de enlace: `battle_controllers.c` 68/68 con la ruta de buffers `LINK_BUFF_*` y las tareas de envío/recepción, pero `SetControllerToLinkOpponent`/`SetControllerToLinkPartner` (parciales en sus archivos) quedan sustituidos por `BattleControllerDummy` y `linkTransport` no envía paquetes; un enlace real no tendría controladores propios ni transporte.
 - Almacenamiento de cajas: `pokemon_storage_system_misc.c` conserva cuatro helpers estáticos `UnkUtil_CpuAdd/Run` y `UnkUtil_DmaAdd/Run`; el C los describe como cola funcionalmente sin uso y los Add no tienen callers. La navegación del resumen usa ranuras nullable y filtra especie/huevo según el C; cajas y resumen siguen pendientes de revisión en navegador.
@@ -85,11 +84,11 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 - Créditos: las escenas de mapa no ejecutan NPCs, clima ni animación de tilesets.
 - Audio fino (`m4a*.c`): cry usa WAV con pitch, duración, reverse, volumen y pan configurados; chorus/ADSR no reproducen el sintetizador M4A, la prioridad no arbitra cuatro voces y siguen faltando reverb/duty/sweep/keysplit.
 - Guardado desde scripts de campo (`Field_AskSaveTheGame`): confirmación, cancelación, escritura y retorno del resultado del script ya están conectados; flujo pendiente de revisión en navegador.
-- Quest Log: el playback restaura flags/vars, rematches, party/cajas, objetos y layout; las cargas normal/warp usan el driver escalonado de C, avanzan escenas y restauran el save. El retorno al mapa guardado está conectado; faltan validar ese retorno y la reproducción/UI en navegador.
+- Quest Log: el playback restaura flags/vars, rematches, party/cajas, objetos y layout; las cargas normal/warp usan el driver escalonado de C, avanzan escenas y restauran el save. La grabación siembra input vacío (índice 2) y descarta acciones pasado el tope 32 del buffer (tarea 1.8, 2026-10-01). El retorno al mapa guardado está conectado; faltan validar ese retorno y la reproducción/UI en navegador.
 - Party menu: retorno desde la selección del Pokémon conectado a fade y espera de clima como en `CB2_FadeFromPartyMenu`/`Task_PartyMenuWaitForFade`; validación de pantalla pendiente en navegador.
 - Trainer Tower: `trainer_tower.c` queda en 43/43 nombres y conectado al dispatcher de scripts y al ciclo de recursos de batalla; gameplay/navegador siguen pendientes de revisión.
 - Uso de objetos (`item_use.c`): dispatch Enigma, rechazo de Oak, consumo/mensaje común de Repel, Escape Rope y Poké Doll, flautas, cañas, Item Finder, TM Case, Berry Pouch, Mail, Bike y la secuencia de potenciadores de combate están conectados. El helper registra eventos en el buffer de escena (`questLogEventBuffer.ts`) y la carga/reproducción de esos eventos existe (`LoadEvent_UsedItem` y `QuestLog_PlayCurrentEvent`); sin probar en navegador.
-- Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller; los huecos de `battle_bg.c` y `evolution_scene.c` son de enlace/intercambio.
+- Barrido de candidatos (2026-09-28): `item_menu.c` conserva Teachy TV Catching/Status sin ruta conectada y `Task_UnusedReturnToBag` no tiene caller; `main.c` conserva solo inicialización/interrupciones de GBA ya adaptadas o sin equivalente de navegador; `sprite.c` CopyFrom/ToSprites copia el layout crudo de Sprite y no tiene callers; `battle_setup.c` PokéDude no tiene caller; los huecos de `battle_bg.c` son de enlace y los de `evolution_scene.c` quedan solo en enlace (la familia Trade de intercambio interno se portó en la tarea 1.7).
 - Bloqueo de tanda (2026-09-28): los cinco `Debug_NamingScreen*` restantes son funciones estáticas sin callers en `naming_screen.c`; los últimos huecos de `field_control_avatar.c` son interacciones de jugadores de enlace y `SetCableClubWarp` es solo Cable Club, fuera de la meta principal.
 - Menú de guardado (`start_menu.c`): `SaveQuestLogData` cierra y ordena escenas. La restauración y el playback del Quest Log ya están conectados; la pantalla final y la revisión de fidelidad del flujo siguen pendientes.
 - Summary Pokémon: la ruta activa preserva ranuras vacías de caja, filtra especie/huevo según la página y porta navegación de party individual, selección/cambio de movimiento, transición de páginas y callback dummy del retrato. Los seek de party multi son de enlace; quedan seis nombres por caller ausente o alcance LINK. El recorrido de caja/resumen aún no se ha validado en navegador.

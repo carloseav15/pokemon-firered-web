@@ -242,7 +242,7 @@ funciones nuevas o equivalencias). Luego commit:
     (snippets IIFE con `importSave("pewter")`+`ready()`). No reintentar con
     agentes sin navegador; el posible [avanzado] (sprites del clima al render)
     se decidirá con esa evidencia manual.**
-- [ ] **1.7 Evolución tras intercambio con NPC** [avanzado]. En C, `STATE_TRY_EVOLUTION`
+- [x] **1.7 Evolución tras intercambio con NPC** [avanzado]. En C, `STATE_TRY_EVOLUTION`
   (`trade_scene.c`) llama `TradeEvolutionScene` con `gCB2_AfterEvolution = CB2_InGameTrade`.
   El TS (`pokemon/ingameTrade.ts`, ~línea 1054) usa `evolveWithMessages` después del
   fundido y comprueba la Everstone aparte. Con los datos de FireRed no ocurre nunca,
@@ -253,7 +253,17 @@ funciones nuevas o equivalencias). Luego commit:
     `VBlankCB_TradeEvolutionScene`), tomando como modelo la `EvolutionScene` ya portada.
     Después cambiar `STATE_TRY_EVOLUTION` para que siga el C.
   - Checks: `npm run check:evolution`, `npm run check:trade`.
-- [ ] **1.8 Grabación del Quest Log** [avanzado]. `TryRecordActionSequence`,
+  - Hecha 2026-10-01 (commit `a061b06e`): familia Trade en `evolutionScene.ts`
+    (21 estados `T_EVOSTATE_*` + 12 `T_MVSTATE_*`, literales del C incluido el
+    enum cruzado de `:1103` y el bug del cry; ramas inalámbricas omitidas con
+    comentario, LINK fuera de alcance), `LinkTradeDrawWindow` en `ingameTrade.ts`,
+    `STATE_TRY_EVOLUTION`/`STATE_WAIT_FADE_OUT_END` como el C, rama
+    `EVO_MODE_TRADE` en `GetEvolutionTargetSpecies` (`battle/ext.ts`, con consumo
+    de objeto y guard Nacional) y guarda Everstone del C (bloquea todo menos
+    `ITEM_CHECK`; el TS la tenía invertida; consumidores revisados). `tradeEvolution()`
+    (`pokemon.ts`) eliminado sin callers. `check:port`/`honesty`/`build`/`trade` OK;
+    `check:evolution` sigue roto por `trySpawnShedinja` (§1.11, preexistente).
+- [x] **1.8 Grabación del Quest Log** [avanzado]. `TryRecordActionSequence`,
   `ResetActions`, `RecordHeadAtEndOfEntry`, `RecordHeadAtEndOfEntryOrScriptContext2Enabled`,
   `ClearSavedScene` y `Task_BeginQuestLogPlayback` (`quest_log.c`) son lógica activa en C.
   El TS (`questLogEvents.ts`, `QL_StartRecordingAction` ~línea 263) escribe las acciones
@@ -262,6 +272,13 @@ funciones nuevas o equivalencias). Luego commit:
   - Revisar contra el C: el volcado del buffer, los límites y la rotación de escenas.
     Si cambia el formato del save, debe seguir cargando partidas viejas.
   - Check: `npm run check:questlog-objects` y `npm run check:questlog-battle`.
+  - Hecha 2026-10-01 (commit `1431d1cc`): `QL_StartRecordingAction` siembra el
+    input vacío (`ResetActions` RECORDING) y arranca `actionIndex` en 2; guards
+    `RecordHeadAtEndOfEntry*` con tope 32 (`SCRIPT_BUFFER_SIZE`) aplicados a los
+    7 grabadores (al llenarse se descarta, como el C). Sin cambios de formato de
+    save; anillo literal descartado (array + `DIFERENCIA` estructural) y Ruta 1 de
+    `Task_BeginQuestLogPlayback` anotada para §2. `check:questlog-objects` pasa;
+    `check:questlog-battle` sigue roto por `getQuestLogEvents` (§1.11, BLOQUEADO).
 - [ ] **1.9 Créditos** [avanzado]. Las escenas de mapa de `overworldCredits.ts` no
   ejecutan NPCs, clima ni animación de tilesets.
 - [ ] **1.10 Audio M4A** [avanzado]. Faltan chorus/ADSR, el arbitraje de cuatro voces
