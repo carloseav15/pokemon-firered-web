@@ -170,6 +170,23 @@ funciones nuevas o equivalencias). Luego commit:
 - [ ] **1.10 Audio M4A** [avanzado]. Faltan chorus/ADSR, el arbitraje de cuatro voces
   y reverb/duty/sweep/keysplit (los cries usan WAV). Los 47 nombres restantes de
   `m4a.c` son el driver interno: no hace falta portarlos uno a uno.
+- [ ] **1.11 Checks headless con fallos propios** [básico/medio]. El 2026-10-01 se
+  hizo perezoso `sText_100` (`battle_tower.c`), que se codificaba en ámbito de módulo
+  y rompía la carga de 26 checks; 18 pasan ya. Estos 12 fallan por causas ajenas.
+  No toques aserciones ni baselines: si el fallo es del port, anota `BLOQUEADO`.
+  - Datos que el check no registra antes de usarlos: `check:anims` y `check:slots`
+    (`cdata … not loaded`), `check:weather` (`incbin index not loaded` en
+    `LoadRainSpriteSheet`), `check:earlybattles` y `check:brock-action`
+    (`cdata berry not loaded` en `GetBerryInfo`). Registra cdata/incbin en el
+    escenario del check como hace `tradeScene.ts`.
+  - Import sin export: `check:evolution` (`trySpawnShedinja` no está en
+    `menus/monProgress.ts`), `check:famechecker` (`sFameCheckerData` en
+    `fameChecker.ts`), `check:questlog-battle` (`getQuestLogEvents` en
+    `questLogEvents.ts`). Busca el nombre en el C y en el TS antes de decidir.
+  - Lógica/registro: `check:card` (`Fresh cart has 0 stars (Blue card)`),
+    `check:transitions` (aserción de valores), `check:teachytv`
+    (`TTVcmd_ClearBg2TeachyTvGraphic` sin definir), `check:trainer-see`
+    (`objects.GetCollisionFlagsAtCoords` no existe).
 
 ## 2. Revisión de equivalencias y wrappers contra el cuerpo C
 
@@ -202,6 +219,11 @@ Receta para cada línea:
   `ObjectEventFaceOppositeDirection` y ambos drivers del movimiento retenido.
 - [ ] `InitNpcForWalk*`/`InitWalk*`/`UpdateWalk*`, `InitRunSlow`/`UpdateRunSlow`;
   `Step1/2/3/4/8` y tablas de velocidad frente a `NpcTakeStep`; OAM de hierba larga.
+  - DIFERENCIA: el C (`UpdateWalkSlowerAnim`) solo mueve el sprite (`Step1`);
+    el TS (`UpdateSlowStyleAnim`) además resuelve el objeto desde el sprite
+    (`objectForMovementSprite`) y devuelve `false` si no está en
+    `ObjectEvents.objects`. En juego siempre lo está; `check:movement-actions`
+    registra el objeto para ese motivo.
 - [ ] `StartFieldEffectForObjectEvent` y `DoRippleFieldEffect` (dispatch y scripts de efecto).
 - [ ] `UpdateObjectEventVisibility` y `ObjectEventUpdateSubpriority` (orden del ciclo de frame).
 - [ ] `ObjectEventSetGraphicsId*`, `ObjectEventTurn*`, `PlayerObjectTurn`, `SetObjectEventDirection`.
