@@ -137,11 +137,12 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
     Guarda con `write_output("platinum", "moves_vs_firered.json", ...)` una entrada
     por movimiento que cambie: `{id, const, cambios: {campo: [firered, platinum]}}`.
   - Imprime el resumen por campo, como `compare_pokeapi.py`.
-  - Esperado (para comprobar que lo hiciste bien): 53 movimientos cambian potencia,
-    precisión o PP; por ejemplo Vuelo 70 → 90 de potencia, Látigo Cepa 10 → 15 PP y
-    Anulación 55 → 80 de precisión. Placaje (35/95) y la prioridad de Protección (+3)
-    no cambian en Gen 4. Si tus cifras no coinciden, revisa la conversión antes de
-    sospechar de los datos.
+  - Esperado: 53 movimientos difieren en potencia, precisión o PP, pero solo unos 18
+    son cambios reales de Gen 4 (10 de potencia, como Vuelo 70 → 90; 6 de PP, como
+    Látigo Cepa 10 → 15; 2 de precisión: Anulación 55 → 80 y Destello 70 → 100). El
+    resto es representación: 34 movimientos que nunca fallan (FireRed guarda 100,
+    Platinum 0) y Escupir (potencia 100 frente a 1). Corrección del 2026-10-01: la
+    primera versión de esta pista daba 53 como cambios reales; ver R9.
 - [x] **R3 Especies: Platinum frente a FireRed** [básico, requiere R1]. Igual que R2
   para los 386 primeros: estadísticas, tipos, habilidades, grupos huevo, ratio de
   captura y movimientos por nivel. Usa el campo `national` de
@@ -157,6 +158,13 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   Platinum (version group `platinum`, id en `version_groups.csv`) y compáralos con
   `refs/platinum/*.json`. Reporta como en Gen 3: errores reales, historial incompleto
   y diferencias de representación.
+- [ ] **R9 Separar representación en `moves_vs_firered`** [básico]. La salida de R2
+  mezcla cambios reales con diferencias de formato. Añade a cada cambio un campo
+  `"kind": "real"` o `"kind": "representation"` y resume ambos por separado. Reutiliza
+  las reglas que ya aplica `tools/refs/compare_pokeapi_gen4.py` (precisión 0 = nunca
+  falla, potencia variable, probabilidad 0 = efecto garantizado). Terminada cuando el
+  resumen muestre unos 18 cambios reales de potencia/precisión/PP y la prioridad de
+  Venganza (Bide) 0 → +1.
 - [ ] **R6 Entrenadores de Emerald** [medio]. `src/data/` ya está en el sparse de
   `pokeemerald`. Extrae `src/data/trainers.h` y
   `src/data/trainer_parties.h` a `refs/emerald/trainers.json`. Son inicializadores C:
