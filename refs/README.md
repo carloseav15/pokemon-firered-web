@@ -124,7 +124,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   - Salida: `refs/platinum/species.json`, lista indexada por id. Comando
     `refs:platinum-species`.
   - Terminada cuando: 496 entradas (0–495), md5 estable y `refs:check` en verde.
-- [ ] **R2 Movimientos: Platinum frente a FireRed** [básico]. Crea
+- [x] **R2 Movimientos: Platinum frente a FireRed** [básico]. Crea
   `tools/refs/compare_platinum_moves.py` copiando la estructura de `compare_pokeapi.py`.
   - Lee `refs/platinum/moves.json` (no la fuente) y `public/fr/data/moves.json`.
     Ids 1–354 en ambos. Tipos de FireRed: el número Gen 3 (0–17, 9 = `???`); Platinum
