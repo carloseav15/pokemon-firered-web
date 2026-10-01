@@ -237,6 +237,11 @@ funciones nuevas o equivalencias). Luego commit:
       (29,62)), Pokémon Tower 3F (grupo 1, num 90 = 346, warp (4,10)).
     * `specials.ts` `StartDroughtWeatherBlend` sigue vacío, pero ningún script lo
       llama (sin caller) y `check:weather` (roto, §1.11) cubre su lógica.
+  - **2026-10-01 (OpenCode): OMITIDA PARA OPENCODE — sin conexión propia a
+    navegador; queda como verificación manual del usuario con la receta §3
+    (snippets IIFE con `importSave("pewter")`+`ready()`). No reintentar con
+    agentes sin navegador; el posible [avanzado] (sprites del clima al render)
+    se decidirá con esa evidencia manual.**
 - [ ] **1.7 Evolución tras intercambio con NPC** [avanzado]. En C, `STATE_TRY_EVOLUTION`
   (`trade_scene.c`) llama `TradeEvolutionScene` con `gCB2_AfterEvolution = CB2_InGameTrade`.
   El TS (`pokemon/ingameTrade.ts`, ~línea 1054) usa `evolveWithMessages` después del
