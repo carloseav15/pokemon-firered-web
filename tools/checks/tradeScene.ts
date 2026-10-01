@@ -6,11 +6,9 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
 import { rom } from '../../src/fr/rom.ts';
-import * as Trade from '../../src/fr/pokemon/ingameTrade.ts';
 import { gMain } from '../../src/fr/hw/runtime.ts';
 import { tasks } from '../../src/fr/gba/tasks.ts';
 import { save, SV, varSet } from '../../src/fr/save.ts';
-import { createMon } from '../../src/fr/pokemon/pokemon.ts';
 import * as C from '../../src/fr/generated/constants.ts';
 
 const root = process.cwd() + '/public/fr/';
@@ -53,6 +51,10 @@ const itemsRaw = JSON.parse(readFileSync(root + 'data/items.json', 'utf8'));
 const incbinIndex = JSON.parse(readFileSync(root + 'incbin/index.json', 'utf8'));
 registerIncbinIndex(incbinIndex);
 
+// Populate ROM text data before evaluating modules that encode strings at load time.
+const { createMon } = await import('../../src/fr/pokemon/pokemon.ts');
+const Trade = await import('../../src/fr/pokemon/ingameTrade.ts');
+
 const tradePack = readFileSync(root + 'incbin/graphics_trade.bin');
 registerPack('graphics_trade', new Uint8Array(tradePack.buffer, tradePack.byteOffset, tradePack.byteLength));
 
@@ -78,6 +80,19 @@ assert.equal(Trade.getTradeSpecies(), requested, 'getTradeSpecies matches offere
 
 Trade.createInGameTradePokemon();
 console.log('✓ Trade pokemon created successfully');
+
+console.log('--- 2b. Testing base bouncing Poké Ball physics ---');
+const ball = { x: 120, y: 70, data: new Array(8).fill(0), callback: null } as any;
+ball.data[0] = 80; // vertical velocity
+ball.data[2] = 50; // bounce attenuation
+ball.data[4] = 4; // gravity
+ball.data[5] = 1200; // fixed-point horizontal position (12.0 px)
+Trade.SpriteCB_BouncingPokeball(ball);
+assert.equal(ball.y, 76, 'the ball clamps to its bounce floor');
+assert.equal(ball.data[0], -36, 'vertical speed reflects and gravity is applied');
+assert.equal(ball.data[3], 1, 'the bounce count advances');
+assert.equal(ball.data[1], 0, 'horizontal speed stops at the center');
+console.log('✓ Base bouncing Poké Ball matches the C update step');
 
 console.log('--- 3. Testing trade scene initialization and animation stepping ---');
 Trade.CB2_InitInGameTrade();
