@@ -294,7 +294,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   objetos y eventos). Sirve para planificar el port de Emerald. Los 11 mapas con
   eventos compartidos conservan la referencia y usan `null` para conteos locales
   omitidos; los demás conteos se calculan de las listas fuente.
-- [ ] **R16 Comparaciones sin ruido y sin rutas fijas** [básico]. Dos defectos de la
+- [x] **R16 Comparaciones sin ruido y sin rutas fijas** [básico]. Dos defectos de la
   revisión del 2026-10-01:
   - **Ruta fija:** `tools/refs/compare_emerald.py` (línea 18) y
     `tools/refs/compare_platinum_species.py` (línea 24) usan
@@ -316,3 +316,6 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
     por esas cifras reales.
   - Terminada cuando: las dos salidas regeneradas, `npm run refs:all` en `PASS` y la
     comprobación de la otra carpeta también en `PASS`.
+  - Verificado: 0 especies y 1 movimiento con diferencias reales; el movimiento es
+    `MOVE_NATURE_POWER` (precisión FireRed 0, Emerald 95). `refs:all` pasa también
+    desde un worktree en otra carpeta con `POKEFIRERED` y `REFS_SRC` explícitos.
