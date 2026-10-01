@@ -16,6 +16,10 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | Archivo | Fuente | Entradas | Generador |
 |---|---|---:|---|
 | `emerald/functions.json` | pokeemerald | 17889 | `tools/refs/emerald_functions.py` |
+| `emerald/moves.json` | pokeemerald | 355 | `tools/refs/emerald_data.py` |
+| `emerald/moves_vs_firered.json` | pokeemerald | 354 | `tools/refs/compare_emerald.py` |
+| `emerald/species.json` | pokeemerald | 412 | `tools/refs/emerald_data.py` |
+| `emerald/species_vs_firered.json` | pokeemerald | 411 | `tools/refs/compare_emerald.py` |
 | `emerald/summary.json` | pokeemerald | 310 | `tools/refs/emerald_summary.py` |
 | `emerald/trainers.json` | pokeemerald | 855 | `tools/refs/emerald_trainers.py` |
 | `platinum/moves.json` | pokeplatinum | 468 | `tools/refs/platinum_moves.py` |

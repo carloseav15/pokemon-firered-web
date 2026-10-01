@@ -25,6 +25,8 @@
     "refs:emerald-functions": "python3 tools/refs/emerald_functions.py",
     "refs:emerald-summary": "python3 tools/refs/emerald_summary.py",
     "refs:emerald-trainers": "python3 tools/refs/emerald_trainers.py",
+    "refs:emerald-data": "python3 tools/refs/emerald_data.py",
+    "refs:emerald-vs-firered": "python3 tools/refs/compare_emerald.py",
     "refs:platinum-moves": "python3 tools/refs/platinum_moves.py",
     "refs:platinum-species": "python3 tools/refs/platinum_species.py",
     "refs:platinum-moves-vs-firered": "python3 tools/refs/compare_platinum_moves.py",
