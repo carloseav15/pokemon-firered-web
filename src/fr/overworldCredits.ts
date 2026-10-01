@@ -237,9 +237,10 @@ function QueueAnimTiles_General_SandWatersEdge(timer: number): void {
 }
 
 function TilesetAnim_General(timer: number): void {
-  if (timer % 8 === 0) QueueAnimTiles_General_SandWatersEdge(timer / 8);
-  if (timer % 16 === 1) QueueAnimTiles_General_Water_Current_LandWatersEdge(timer / 16);
-  if (timer % 16 === 2) QueueAnimTiles_General_Flower(timer / 16);
+  // C divides integers (u16); JS must truncate or frames[timer / 16] is undefined.
+  if (timer % 8 === 0) QueueAnimTiles_General_SandWatersEdge(Math.trunc(timer / 8));
+  if (timer % 16 === 1) QueueAnimTiles_General_Water_Current_LandWatersEdge(Math.trunc(timer / 16));
+  if (timer % 16 === 2) QueueAnimTiles_General_Flower(Math.trunc(timer / 16));
 }
 
 /** InitTilesetAnim_General. */
@@ -255,7 +256,7 @@ function QueueAnimTiles_CeladonCity_Fountain(timer: number): void {
 }
 
 function TilesetAnim_CeladonCity(timer: number): void {
-  if (timer % 12 === 0) QueueAnimTiles_CeladonCity_Fountain(timer / 12);
+  if (timer % 12 === 0) QueueAnimTiles_CeladonCity_Fountain(Math.trunc(timer / 12));
 }
 
 function InitTilesetAnim_CeladonCity(): void {
