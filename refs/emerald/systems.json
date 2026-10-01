@@ -1,0 +1,605 @@
+{
+ "_meta": {
+  "commit": "fe1d8e51b265851676b65885818b1f5f62586135",
+  "entries": 10,
+  "generator": "tools/refs/emerald_systems.py",
+  "source": "pokeemerald"
+ },
+ "data": [
+  {
+   "file_count": 14,
+   "files": [
+    {
+     "file": "apprentice",
+     "functions": 53,
+     "lines": 1311
+    },
+    {
+     "file": "battle_arena",
+     "functions": 18,
+     "lines": 819
+    },
+    {
+     "file": "battle_dome",
+     "functions": 71,
+     "lines": 6176
+    },
+    {
+     "file": "battle_factory",
+     "functions": 26,
+     "lines": 919
+    },
+    {
+     "file": "battle_factory_screen",
+     "functions": 118,
+     "lines": 4314
+    },
+    {
+     "file": "battle_palace",
+     "functions": 11,
+     "lines": 212
+    },
+    {
+     "file": "battle_pike",
+     "functions": 54,
+     "lines": 1656
+    },
+    {
+     "file": "battle_pyramid",
+     "functions": 51,
+     "lines": 1983
+    },
+    {
+     "file": "battle_pyramid_bag",
+     "functions": 81,
+     "lines": 1608
+    },
+    {
+     "file": "battle_tent",
+     "functions": 29,
+     "lines": 426
+    },
+    {
+     "file": "battle_transition_frontier",
+     "functions": 34,
+     "lines": 674
+    },
+    {
+     "file": "frontier_pass",
+     "functions": 37,
+     "lines": 1774
+    },
+    {
+     "file": "frontier_util",
+     "functions": 92,
+     "lines": 2632
+    },
+    {
+     "file": "trainer_hill",
+     "functions": 59,
+     "lines": 1090
+    }
+   ],
+   "functions": 734,
+   "lines": 25594,
+   "system": "battle_frontier"
+  },
+  {
+   "file_count": 6,
+   "files": [
+    {
+     "file": "clock",
+     "functions": 6,
+     "lines": 86
+    },
+    {
+     "file": "reset_rtc_screen",
+     "functions": 19,
+     "lines": 740
+    },
+    {
+     "file": "rtc",
+     "functions": 26,
+     "lines": 346
+    },
+    {
+     "file": "siirtc",
+     "functions": 16,
+     "lines": 463
+    },
+    {
+     "file": "time_events",
+     "functions": 10,
+     "lines": 118
+    },
+    {
+     "file": "wallclock",
+     "functions": 25,
+     "lines": 1101
+    }
+   ],
+   "functions": 102,
+   "lines": 2854,
+   "system": "clock_rtc"
+  },
+  {
+   "file_count": 7,
+   "files": [
+    {
+     "file": "contest",
+     "functions": 205,
+     "lines": 6125
+    },
+    {
+     "file": "contest_ai",
+     "functions": 142,
+     "lines": 1785
+    },
+    {
+     "file": "contest_effect",
+     "functions": 51,
+     "lines": 1093
+    },
+    {
+     "file": "contest_link",
+     "functions": 17,
+     "lines": 563
+    },
+    {
+     "file": "contest_link_util",
+     "functions": 12,
+     "lines": 344
+    },
+    {
+     "file": "contest_painting",
+     "functions": 20,
+     "lines": 600
+    },
+    {
+     "file": "contest_util",
+     "functions": 111,
+     "lines": 2782
+    }
+   ],
+   "functions": 558,
+   "lines": 13292,
+   "system": "contests"
+  },
+  {
+   "file_count": 4,
+   "files": [
+    {
+     "file": "battle_controller_recorded_opponent",
+     "functions": 87,
+     "lines": 1788
+    },
+    {
+     "file": "battle_controller_recorded_player",
+     "functions": 86,
+     "lines": 1812
+    },
+    {
+     "file": "record_mixing",
+     "functions": 43,
+     "lines": 1408
+    },
+    {
+     "file": "recorded_battle",
+     "functions": 42,
+     "lines": 866
+    }
+   ],
+   "functions": 258,
+   "lines": 5874,
+   "system": "link_recording"
+  },
+  {
+   "file_count": 37,
+   "files": [
+    {
+     "file": "anim_mon_front_pics",
+     "functions": 0,
+     "lines": 424
+    },
+    {
+     "file": "battle_anim_throw",
+     "functions": 78,
+     "lines": 2507
+    },
+    {
+     "file": "battle_controller_player_partner",
+     "functions": 92,
+     "lines": 1935
+    },
+    {
+     "file": "battle_controller_wally",
+     "functions": 81,
+     "lines": 1570
+    },
+    {
+     "file": "battle_tv",
+     "functions": 12,
+     "lines": 1604
+    },
+    {
+     "file": "berry_fix_graphics",
+     "functions": 1,
+     "lines": 49
+    },
+    {
+     "file": "birch_pc",
+     "functions": 3,
+     "lines": 88
+    },
+    {
+     "file": "confetti_util",
+     "functions": 8,
+     "lines": 181
+    },
+    {
+     "file": "decoration_inventory",
+     "functions": 11,
+     "lines": 159
+    },
+    {
+     "file": "egg_hatch",
+     "functions": 25,
+     "lines": 946
+    },
+    {
+     "file": "field_region_map",
+     "functions": 6,
+     "lines": 215
+    },
+    {
+     "file": "field_weather_effect",
+     "functions": 106,
+     "lines": 2636
+    },
+    {
+     "file": "fldeff_escalator",
+     "functions": 6,
+     "lines": 193
+    },
+    {
+     "file": "fldeff_misc",
+     "functions": 62,
+     "lines": 1326
+    },
+    {
+     "file": "fonts",
+     "functions": 0,
+     "lines": 292
+    },
+    {
+     "file": "give_gift_ribbon_to_party",
+     "functions": 1,
+     "lines": 38
+    },
+    {
+     "file": "gym_leader_rematch",
+     "functions": 3,
+     "lines": 105
+    },
+    {
+     "file": "international_string_util",
+     "functions": 16,
+     "lines": 233
+    },
+    {
+     "file": "intro_credits_graphics",
+     "functions": 20,
+     "lines": 1172
+    },
+    {
+     "file": "io_reg",
+     "functions": 0,
+     "lines": 36
+    },
+    {
+     "file": "item_icon",
+     "functions": 6,
+     "lines": 168
+    },
+    {
+     "file": "landmark",
+     "functions": 2,
+     "lines": 446
+    },
+    {
+     "file": "libisagbprn",
+     "functions": 16,
+     "lines": 257
+    },
+    {
+     "file": "lottery_corner",
+     "functions": 8,
+     "lines": 168
+    },
+    {
+     "file": "menu_specialized",
+     "functions": 57,
+     "lines": 1626
+    },
+    {
+     "file": "move_relearner",
+     "functions": 19,
+     "lines": 959
+    },
+    {
+     "file": "mystery_event_menu",
+     "functions": 6,
+     "lines": 321
+    },
+    {
+     "file": "mystery_gift_view",
+     "functions": 18,
+     "lines": 935
+    },
+    {
+     "file": "pokedex_area_region_map",
+     "functions": 4,
+     "lines": 69
+    },
+    {
+     "file": "pokedex_area_screen",
+     "functions": 19,
+     "lines": 797
+    },
+    {
+     "file": "pokedex_cry_screen",
+     "functions": 14,
+     "lines": 580
+    },
+    {
+     "file": "pokemon_animation",
+     "functions": 240,
+     "lines": 5544
+    },
+    {
+     "file": "reload_save",
+     "functions": 1,
+     "lines": 30
+    },
+    {
+     "file": "roulette",
+     "functions": 104,
+     "lines": 4775
+    },
+    {
+     "file": "starter_choose",
+     "functions": 18,
+     "lines": 667
+    },
+    {
+     "file": "text_input_strings",
+     "functions": 0,
+     "lines": 64
+    },
+    {
+     "file": "trader",
+     "functions": 13,
+     "lines": 215
+    }
+   ],
+   "functions": 1076,
+   "lines": 33330,
+   "system": "other"
+  },
+  {
+   "file_count": 5,
+   "files": [
+    {
+     "file": "berry_blender",
+     "functions": 81,
+     "lines": 3904
+    },
+    {
+     "file": "berry_tag_screen",
+     "functions": 27,
+     "lines": 694
+    },
+    {
+     "file": "pokeblock",
+     "functions": 58,
+     "lines": 1456
+    },
+    {
+     "file": "pokeblock_feed",
+     "functions": 28,
+     "lines": 1193
+    },
+    {
+     "file": "use_pokeblock",
+     "functions": 51,
+     "lines": 1677
+    }
+   ],
+   "functions": 245,
+   "lines": 8924,
+   "system": "pokeblocks_berries"
+  },
+  {
+   "file_count": 15,
+   "files": [
+    {
+     "file": "match_call",
+     "functions": 54,
+     "lines": 2112
+    },
+    {
+     "file": "pokenav",
+     "functions": 28,
+     "lines": 590
+    },
+    {
+     "file": "pokenav_conditions",
+     "functions": 32,
+     "lines": 630
+    },
+    {
+     "file": "pokenav_conditions_gfx",
+     "functions": 28,
+     "lines": 894
+    },
+    {
+     "file": "pokenav_conditions_search_results",
+     "functions": 36,
+     "lines": 745
+    },
+    {
+     "file": "pokenav_list",
+     "functions": 47,
+     "lines": 1003
+    },
+    {
+     "file": "pokenav_main_menu",
+     "functions": 45,
+     "lines": 849
+    },
+    {
+     "file": "pokenav_match_call_data",
+     "functions": 52,
+     "lines": 1161
+    },
+    {
+     "file": "pokenav_match_call_gfx",
+     "functions": 65,
+     "lines": 1301
+    },
+    {
+     "file": "pokenav_match_call_list",
+     "functions": 29,
+     "lines": 517
+    },
+    {
+     "file": "pokenav_menu_handler",
+     "functions": 27,
+     "lines": 513
+    },
+    {
+     "file": "pokenav_menu_handler_gfx",
+     "functions": 56,
+     "lines": 1380
+    },
+    {
+     "file": "pokenav_region_map",
+     "functions": 37,
+     "lines": 742
+    },
+    {
+     "file": "pokenav_ribbons_list",
+     "functions": 37,
+     "lines": 745
+    },
+    {
+     "file": "pokenav_ribbons_summary",
+     "functions": 55,
+     "lines": 1271
+    }
+   ],
+   "functions": 628,
+   "lines": 14453,
+   "system": "pokenav_match_call"
+  },
+  {
+   "file_count": 1,
+   "files": [
+    {
+     "file": "secret_base",
+     "functions": 99,
+     "lines": 2074
+    }
+   ],
+   "functions": 99,
+   "lines": 2074,
+   "system": "secret_bases"
+  },
+  {
+   "file_count": 8,
+   "files": [
+    {
+     "file": "braille",
+     "functions": 3,
+     "lines": 212
+    },
+    {
+     "file": "braille_puzzles",
+     "functions": 18,
+     "lines": 343
+    },
+    {
+     "file": "cable_car",
+     "functions": 22,
+     "lines": 1061
+    },
+    {
+     "file": "faraway_island",
+     "functions": 15,
+     "lines": 464
+    },
+    {
+     "file": "mirage_tower",
+     "functions": 27,
+     "lines": 792
+    },
+    {
+     "file": "rayquaza_scene",
+     "functions": 72,
+     "lines": 3190
+    },
+    {
+     "file": "rotating_gate",
+     "functions": 21,
+     "lines": 1032
+    },
+    {
+     "file": "rotating_tile_puzzle",
+     "functions": 6,
+     "lines": 381
+    }
+   ],
+   "functions": 184,
+   "lines": 7475,
+   "system": "story_scenes"
+  },
+  {
+   "file_count": 6,
+   "files": [
+    {
+     "file": "bard_music",
+     "functions": 3,
+     "lines": 247
+    },
+    {
+     "file": "dewford_trend",
+     "functions": 13,
+     "lines": 419
+    },
+    {
+     "file": "lilycove_lady",
+     "functions": 72,
+     "lines": 785
+    },
+    {
+     "file": "mauville_old_man",
+     "functions": 59,
+     "lines": 1482
+    },
+    {
+     "file": "tv",
+     "functions": 207,
+     "lines": 6828
+    },
+    {
+     "file": "walda_phrase",
+     "functions": 14,
+     "lines": 274
+    }
+   ],
+   "functions": 368,
+   "lines": 10035,
+   "system": "tv_characters"
+  }
+ ]
+}

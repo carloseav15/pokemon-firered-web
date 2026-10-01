@@ -22,6 +22,7 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | `emerald/species.json` | pokeemerald | 412 | `tools/refs/emerald_data.py` |
 | `emerald/species_vs_firered.json` | pokeemerald | 0 | `tools/refs/compare_emerald.py` |
 | `emerald/summary.json` | pokeemerald | 310 | `tools/refs/emerald_summary.py` |
+| `emerald/systems.json` | pokeemerald | 10 | `tools/refs/emerald_systems.py` |
 | `emerald/trainers.json` | pokeemerald | 855 | `tools/refs/emerald_trainers.py` |
 | `heartgold/encounters.json` | pokeheartgold | 142 | `tools/refs/heartgold_data.py` |
 | `heartgold/trainers.json` | pokeheartgold | 738 | `tools/refs/heartgold_data.py` |
