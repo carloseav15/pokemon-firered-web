@@ -785,6 +785,17 @@ export class Overworld {
     }
   }
 
+  /** CB2_SetUpOverworldForQLPlayback (overworld.c): start the browser's staged map fetch. */
+  CB2_SetUpOverworldForQLPlayback(): void {
+    this.warpIntoMapAndLoad();
+  }
+
+  /** CB2_SetUpOverworldForQLPlaybackWithWarpExit (overworld.c): the browser map fetch is
+   * asynchronous, so both C callbacks start the staged load and retain their distinct field callback. */
+  CB2_SetUpOverworldForQLPlaybackWithWarpExit(): void {
+    this.warpIntoMapAndLoad();
+  }
+
   /** CB2_LoadMapForQLPlayback (overworld.c). */
   CB2_LoadMapForQLPlayback(): void {
     if (this.questLogMapLoadState === null) this.questLogMapLoadState = 0;

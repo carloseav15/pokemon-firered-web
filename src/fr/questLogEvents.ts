@@ -938,7 +938,8 @@ export function QLPlayback_InitOverworldState(ow: Overworld, sceneIndex: number)
   ow.fieldCallback2 = GetQuestLogStartType(sceneIndex) === C.QL_START_WARP
     ? () => FieldCB2_QuestLogStartPlaybackWithWarpExit(ow, sceneIndex)
     : () => FieldCB2_QuestLogStartPlaybackStandingInPlace(ow, sceneIndex);
-  ow.warpIntoMapAndLoad();
+  if (GetQuestLogStartType(sceneIndex) === C.QL_START_WARP) ow.CB2_SetUpOverworldForQLPlaybackWithWarpExit();
+  else ow.CB2_SetUpOverworldForQLPlayback();
   ow.afterMapLoadCallback = () => ow.CB2_LoadMapForQLPlayback();
 }
 
