@@ -1,0 +1,17 @@
+{
+  "note": "Checks que fallan antes del 2026-10-01 por causas documentadas en TAREAS-FINALES.md §1.11. Solo se quitan entradas al arreglarlas; añadir requiere permiso del usuario.",
+  "checks": [
+    "check:anims",
+    "check:brock-action",
+    "check:card",
+    "check:earlybattles",
+    "check:evolution",
+    "check:famechecker",
+    "check:questlog-battle",
+    "check:slots",
+    "check:teachytv",
+    "check:trainer-see",
+    "check:transitions",
+    "check:weather"
+  ]
+}

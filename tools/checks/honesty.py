@@ -17,7 +17,8 @@ See AGENTS.md (Clang y fidelidad; Verificación). Four checks:
    at run time (crashes found in the browser: NAMING_SCREEN_NICKNAME,
    MAIL_NONE). Use C.NAME from generated/constants.ts.
 4. Commit messages not yet pushed: no "faithful(ly)", "complete(ly)",
-   "fully", "all remaining", "1:1" or "100%".
+   "fully", "all remaining", "1:1" or "100%", and each one carries a
+   Co-Authored-By trailer naming the agent environment.
 
 Usage: python3 tools/checks/honesty.py [--shrink-baselines]
   --shrink-baselines rewrites both baselines when they only lost entries
@@ -151,6 +152,9 @@ def commit_messages() -> list[str]:
         if "\x00" not in block:
             continue
         sha, msg = block.strip().split("\x00", 1)
+        # Every agent commit names its environment (AGENTS.md, Cierre y documentación mínima).
+        if not re.search(r"^Co-Authored-By: .+", msg, re.M):
+            bad.append(f"{sha}: missing Co-Authored-By trailer (name the agent environment)")
         for line in msg.splitlines():
             if line.startswith("Co-Authored-By"):
                 continue
