@@ -469,7 +469,7 @@ export function AnimatePartySlot(slot: number, animNum: number): void {
       if (GetMonData(mon(slot), C.MON_DATA_SPECIES) !== C.SPECIES_NONE) {
         LoadPartyBoxPalette(sPartyMenuBoxes[slot], GetPartyBoxPaletteFlags(slot, animNum));
         AnimateSelectedPartyIcon(sPartyMenuBoxes[slot].monSpriteId, animNum);
-        StartSpriteAnim(gSprites[sPartyMenuBoxes[slot].pokeballSpriteId], animNum);
+        PartyMenuStartSpriteAnim(sPartyMenuBoxes[slot].pokeballSpriteId, animNum);
       }
       return;
     case SLOT_CONFIRM:
@@ -482,8 +482,13 @@ export function AnimatePartySlot(slot: number, animNum: number): void {
       spriteId = pmi().spriteIdCancelPokeball;
       break;
   }
-  StartSpriteAnim(gSprites[spriteId], animNum);
+  PartyMenuStartSpriteAnim(spriteId, animNum);
   ScheduleBgCopyTilemapToVram(1);
+}
+
+/** PartyMenuStartSpriteAnim (party_menu.c): start the selected Poké Ball sprite animation. */
+function PartyMenuStartSpriteAnim(spriteId: number, animNum: number): void {
+  StartSpriteAnim(gSprites[spriteId]!, animNum);
 }
 
 function GetPartyBoxPaletteFlags(slot: number, animNum: number): number {
