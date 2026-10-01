@@ -321,7 +321,7 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   - Verificado: 0 especies y 1 movimiento con diferencias reales; el movimiento es
     `MOVE_NATURE_POWER` (precisión FireRed 0, Emerald 95). `refs:all` pasa también
     desde un worktree en otra carpeta con `POKEFIRERED` y `REFS_SRC` explícitos.
-- [ ] **R17 Catálogo de sistemas exclusivos de Emerald** [básico]. Lee
+- [x] **R17 Catálogo de sistemas exclusivos de Emerald** [básico]. Lee
   `refs/emerald/functions.json` (no la fuente) y agrupa los 103 archivos con
   `status: "emerald_only"` (123.905 líneas, comprobado) en sistemas: Frente Batalla
   (`battle_dome`, `battle_factory*`, `battle_pike`, `battle_pyramid*`, `battle_arena`,
@@ -335,13 +335,13 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   `refs/emerald/systems.json`: por sistema, archivos, líneas y funciones. Terminada
   cuando: cada uno de los 103 archivos aparece en exactamente un sistema y los totales
   suman 103 archivos y 123.905 líneas.
-- [ ] **R18 Scripts de mapas de Emerald** [medio]. Los 468 `data/maps/*/scripts.inc`
+- [x] **R18 Scripts de mapas de Emerald** [medio]. Los 468 `data/maps/*/scripts.inc`
   ya están en el sparse. Genera `refs/emerald/scripts.json` con, por mapa: número de
   etiquetas de script, `special` y `specialvar` llamados, y flags y vars usados
   (`setflag`, `checkflag`, `goto_if_set`, `setvar`, `compare`…). Después compara la
   lista de specials con los de FireRed (`../pokefirered/data/specials.inc`) y marca
   cuáles no existen en FireRed: es la lista de trabajo del futuro port de Emerald.
-- [ ] **R19 Eventos de zona de HeartGold** [medio]. Añade
+- [x] **R19 Eventos de zona de HeartGold** [medio]. Añade
   `/files/fielddata/eventdata/zone_event/` al sparse de `pokeheartgold` (491 JSON en
   el commit fijado) y genera `refs/heartgold/zone_events.json` con, por zona, el
   número de objetos, warps, eventos de fondo y de coordenadas, más los warps con su
