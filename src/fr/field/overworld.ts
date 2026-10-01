@@ -657,6 +657,7 @@ export class Overworld {
   warpIntoMapAndLoad(): void {
     this.applyCurrentWarp();
     this.loadState = 0;
+    this.mapLoadStep = 0;
     this.loadPromise = undefined;
     this.game.setCallbacks(null, () => this.cb2LoadMap());
   }
@@ -717,35 +718,71 @@ export class Overworld {
       this.game.setCallbacks(null, () => this.CB2_LoadMapForQLPlayback());
       return;
     }
-    this.loadMapFromWarp(loaded);
-    QuestLog_InitPalettesBackup();
-    this.ResumeMap();
-    // C checks whether playback must advance here; the browser port currently
-    // uses the call to cut recording in Quest Log-disabled locations.
-    const advanceQuestLog = QuestLog_ShouldEndSceneOnMapChange();
-    this.initObjectEventsLocal();
-    if (gQuestLogState !== C.QL_STATE_PLAYBACK) {
-      QuestLog_CheckDepartingIndoorsMap();
-      QuestLog_TryRecordDepartedLocation();
+    this.loaded = loaded;
+    this.mapLoadStep = 0;
+    this.game.setCallbacks(null, () => this.LoadMapInStepsLocal());
+  }
+
+  private mapLoadStep = 0;
+
+  /** LoadMapInStepsLocal (overworld.c): advance one local warp load stage per browser frame. */
+  private LoadMapInStepsLocal(): void {
+    switch (this.mapLoadStep) {
+      case 0:
+        this.loadMapFromWarp(this.loaded);
+        this.mapLoadStep++;
+        break;
+      case 1:
+        QuestLog_InitPalettesBackup();
+        this.mapLoadStep++;
+        break;
+      case 2:
+        this.ResumeMap();
+        this.mapLoadStep++;
+        break;
+      case 3:
+        if (QuestLog_ShouldEndSceneOnMapChange()) {
+          this.mapLoadStep = 0;
+          QuestLog_AdvancePlayhead_(this);
+          return;
+        }
+        this.mapLoadStep++;
+        break;
+      case 4:
+        this.initObjectEventsLocal();
+        this.SetCameraToTrackPlayer();
+        if (gQuestLogState !== C.QL_STATE_PLAYBACK) {
+          QuestLog_CheckDepartingIndoorsMap();
+          QuestLog_TryRecordDepartedLocation();
+        }
+        this.mapLoadStep++;
+        break;
+      case 5:
+        this.InitViewGraphics();
+        this.mapLoadStep++;
+        break;
+      case 6:
+        QL_TryStopSurfing();
+        this.mapLoadStep++;
+        break;
+      case 7: {
+        const prevSection = this.lastUsedWarpSection();
+        const currSection = this.header.regionMapSection;
+        const questLogState = (this.game as unknown as { questLogState?: number }).questLogState;
+        const ranMapTransition = CB2_DoChangeMap(() => this.TryDoMapTransition(prevSection, currSection, questLogState));
+        if (!ranMapTransition && this.header.showMapName && prevSection !== currSection) this.mapName.show(false);
+        this.mapLoadStep++;
+        break;
+      }
+      default:
+        if (!this.RunFieldCallback()) return;
+        this.mapLoadStep = 0;
+        const afterMapLoad = this.afterMapLoadCallback;
+        this.afterMapLoadCallback = null;
+        afterMapLoad?.();
+        this.game.setCallbacks(() => this.cb1(), () => this.cb2());
+        break;
     }
-    this.InitViewGraphics();
-    QL_TryStopSurfing();
-    const prevSection = this.lastUsedWarpSection();
-    const currSection = this.header.regionMapSection;
-    const questLogState = (this.game as unknown as { questLogState?: number }).questLogState;
-    const ranMapTransition = CB2_DoChangeMap(() => this.TryDoMapTransition(prevSection, currSection, questLogState));
-    if (!ranMapTransition && this.header.showMapName && prevSection !== currSection) {
-      this.mapName.show(false);
-    }
-    this.RunFieldCallback();
-    if (advanceQuestLog) {
-      QuestLog_AdvancePlayhead_(this);
-      return;
-    }
-    const afterMapLoad = this.afterMapLoadCallback;
-    this.afterMapLoadCallback = null;
-    afterMapLoad?.();
-    this.game.setCallbacks(() => this.cb1(), () => this.cb2());
   }
 
   /** CB2_LoadMapForQLPlayback / LoadMap_QLPlayback (overworld.c). */
@@ -766,12 +803,8 @@ export class Overworld {
       case 0:
         QuestLog_InitPalettesBackup();
         this.questLogMapLoadState = 1;
-        if (this.questLogStartType === C.QL_START_WARP) {
-          // Warp playback uses the already loaded map and runs the normal warp loader.
-          this.loadMapFromWarp(this.loaded);
-        } else {
-          this.QL_LoadMapNormal(this.loaded);
-        }
+        if (this.questLogStartType === C.QL_START_WARP) this.loadMapFromWarp(this.loaded);
+        else this.QL_LoadMapNormal(this.loaded);
         break;
       case 1:
         QL_InitSceneObjectsAndActions(this);
