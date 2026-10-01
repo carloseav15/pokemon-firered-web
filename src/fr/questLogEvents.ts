@@ -1143,10 +1143,7 @@ export function QL_TryRunActions(controlsLocked: boolean, scriptContextIdle = tr
     sPlaybackInitialMovement = null;
   }
   if (gQuestLogPlaybackState === C.QL_PLAYBACK_STATE_RECORDING) {
-    if (controlsLocked) return commands;
-    const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
-    if (script && script.length >= 128) gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
-    else sNextActionDelay = (sNextActionDelay + 1) & 0xffff;
+    QLogCB_Recording(controlsLocked);
     return commands;
   }
   if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RUNNING || controlsLocked || !scriptContextIdle) return commands;
@@ -1191,6 +1188,19 @@ export function QL_TryRunActions(controlsLocked: boolean, scriptContextIdle = tr
     if (sPlaybackActionDelay !== 0 && sPlaybackActionDelay !== 0xffff) break;
   }
   return commands;
+}
+
+/** QLogCB_Recording (quest_log.c): count idle frames and close a full action stream. */
+export function QLogCB_Recording(controlsLocked = false): void {
+  if (gQuestLogPlaybackState !== C.QL_PLAYBACK_STATE_RECORDING) return;
+  if (controlsLocked) return;
+  const script = save.questLogPlayerGfxActions?.[sActivePlayerActionScript]?.script;
+  if (!script || script.length >= 128) {
+    gQuestLogPlaybackState = C.QL_PLAYBACK_STATE_STOPPED;
+    QL_FinishRecordingScene();
+    return;
+  }
+  sNextActionDelay = (sNextActionDelay + 1) & 0xffff;
 }
 
 /** QL_UpdateLastDepartedLocation (quest_log_events.c): read locationId from the packed event body. */
