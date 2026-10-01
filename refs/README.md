@@ -112,7 +112,7 @@ aparte (`Update refs task status`).
 Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar campos.
 **[medio]**: hay que entender formatos nuevos. **[avanzado]**: para un agente capaz.
 
-- [ ] **R1 Especies de Platinum** [básico]. Crea `tools/refs/platinum_species.py`
+- [x] **R1 Especies de Platinum** [básico]. Crea `tools/refs/platinum_species.py`
   copiando `platinum_moves.py`.
   - Fuente: `generated/species.txt` (orden = id; `SPECIES_NONE` = 0, terminan en
     `SPECIES_EGG` y `SPECIES_BAD_EGG`) y `res/pokemon/<nombre>/data.json`, donde
