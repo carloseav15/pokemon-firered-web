@@ -672,8 +672,14 @@ class Sound {
 
   /** SE12PanpotControl from sound.c; both SE players receive the track pan. */
   SE12PanpotControl(pan: number): void {
-    this.backend?.setPan?.("se1", pan);
-    this.backend?.setPan?.("se2", pan);
+    this.m4aMPlayPanpotControl("se1", C.TRACKS_ALL, pan);
+    this.m4aMPlayPanpotControl("se2", C.TRACKS_ALL, pan);
+  }
+
+  /** m4aMPlayPanpotControl (m4a.c): apply the selected tracks' pan to a browser SE player. */
+  m4aMPlayPanpotControl(player: "se1" | "se2", trackBits: number, pan: number): void {
+    if ((trackBits & 0xffff) === 0) return;
+    this.backend?.setPan?.(player, (pan << 24) >> 24);
   }
 
   saveBGM(song: number): void { this.savedBGM = song; }
