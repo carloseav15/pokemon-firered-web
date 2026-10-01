@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9760/10115 (96.5 %)**.
-- Archivos C con funciones aún sin homólogo: **23**; quedan **355 nombres**.
+- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9761/10115 (96.5 %)**.
+- Archivos C con funciones aún sin homólogo: **23**; quedan **354 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 69.368 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~8.014 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~7.994 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -29,7 +29,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 9 | `battle_transition.c` | casi completo | 3037 | 129/134 | ~113 |  |
 | 10 | `field_fadetransition.c` | casi completo | 965 | 50/59 | ~147 |  |
 | 11 | `battle_bg.c` | casi completo | 1111 | 14/17 | ~196 |  |
-| 12 | `quest_log.c` | casi completo | 1767 | 77/88 | ~220 |  |
+| 12 | `quest_log.c` | casi completo | 1767 | 78/88 | ~200 |  |
 | 13 | `pokemon_summary_screen.c` | casi completo | 5224 | 131/137 | ~228 |  |
 | 14 | `pokemon.c` | casi completo | 6453 | 135/140 | ~230 |  |
 | 15 | `field_effect.c` | casi completo | 4033 | 220/239 | ~320 |  |

@@ -14,13 +14,13 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Falta (sin funciones portadas) | 0 | 0 | 0/0 |
 | Parcial (< 80 % de funciones) | 4 | 9964 | 229/390 |
 | Adaptador (UI simplificada) | 0 | 0 | 0/0 |
-| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2585/2779 |
+| Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2586/2779 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 186 | 183989 | 6946/6946 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
 | Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **23** | **69368** | |
-| **Total en alcance** | **211** | **253703** | **9760/10115** |
+| **Total en alcance** | **211** | **253703** | **9761/10115** |
 | **Enlace (aparte)** | **42** | **49339** | **101/1711** |
 
 ## Parcial (< 80 % de funciones)
@@ -47,7 +47,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `intro.c` | 2805 | 77/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
 | `battle_controller_pokedude.c` | 2698 | 107/108 | `battle/controller_pokedude.ts`, `teachyTv.ts` |  |  |
 | `quest_log_events.c` | 2247 | 98/118 | `questLogActions.ts`, `questLogEventBuffer.ts`, `questLogEvents.ts` … |  |  |
-| `quest_log.c` | 1767 | 77/88 | `field/objectEvents.ts`, `field/overworld.ts`, `questLogActions.ts` … |  |  |
+| `quest_log.c` | 1767 | 78/88 | `field/objectEvents.ts`, `field/overworld.ts`, `questLogActions.ts` … |  |  |
 | `sprite.c` | 1745 | 101/103 | `gba/sprite.ts`, `hw/sprite.ts` |  |  |
 | `pokemon_storage_system_misc.c` | 1430 | 66/70 | `storageSystemMisc.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
