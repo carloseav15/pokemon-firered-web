@@ -197,6 +197,37 @@ funciones nuevas o equivalencias). Luego commit:
   navegador (sección 3) si lluvia, nieve, sol y tormenta de arena se ven en un mapa
   con ese clima. Si no se ven, la tarea pasa a ser [avanzado]: conectar los sprites
   del clima al render.
+  - **Sesión 2026-10-01: verificación de navegador no completada** (agente
+    `mimo-v2.6-flash`; sin cambios de código). No hay automatización de navegador
+    en el entorno y la ruta asistida por consola no llegó a ejecutarse: los
+    snippets iniciales fallaron en la consola del usuario (`SyntaxError` con
+    top-level `await`, `ReferenceError` por no ejecutar la base) y el
+    teletransporte a Viridian Forest (`SetWarpDestination(1,0,0,29,62); DoWarp()`)
+    no se pudo confirmar — la captura mostraba Pewter City tras los intentos, sin
+    la línea `wst` de consola. Tarea pendiente de rehacer con la receta §3.
+  - Hallazgos de código (lectura, sin validar en pantalla; reutilizar en la próxima
+    sesión, `npm run dev` y driver `window.H` con `importSave("pewter")`+`ready()`):
+    * `renderFog` (`weather.ts:1041`, llamado por `fieldEffects.renderOverlays` ←
+      `overworld.ts:2731`) pinta niebla (`gWeatherFogHorizontalTiles`), lluvia
+      (líneas), tormenta de arena (puntos) y ceniza (puntos); **no pinta nieve,
+      nubes ni burbujas**.
+    * `weatherEffects.ts` (93/93 nombres) construye `WeatherSpriteRecord` en
+      `weatherSprites.*` que nadie dibuja: `LoadSpriteSheet` de lluvia/ceniza se
+      llama pero no hay `CreateSprite`/draw. Es el candidato a [avanzado]
+      "conectar los sprites del clima al render" (`renderOverlays` es el punto).
+    * Tormenta eléctrica: `Thunderstorm_Main` TS solo llama `Rain_Main` +
+      `UpdateThunderSound` (trueno sonoro); el C además hace flash de gamma
+      (`WeatherShiftGammaIfPalStateIdle(19)` en su máquina de estados, `field_weather_effects.c:1047`).
+    * Mapas FRLG por cabecera: `WEATHER_SUNNY`(2) ×66, `WEATHER_FOG_H`(6) ×19
+      (Pokémon Tower 3F–7F, Lost Cave), `WEATHER_SHADE`(11) ×7 (Viridian Forest,
+      Pokémon Mansion, Navel Rock). **Ninguno declara lluvia/nieve/arena/ceniza**:
+      hay que forzarlos con `frGame.weather.setWeather(N); DoCurrentWeather();`.
+    * `SUNNY` es vacío por diseño (`Sunny_Main` C vacío, `GAMMA_TARGETS[2]=0`);
+      `SHADE`/`RAIN` usan gamma 3 (`renderer.tint` + `spriteFilter` con
+      `SPRITE_BRIGHTNESS`). Destinos útiles: Viridian Forest (grupo 1, num 0, warp
+      (29,62)), Pokémon Tower 3F (grupo 1, num 90 = 346, warp (4,10)).
+    * `specials.ts` `StartDroughtWeatherBlend` sigue vacío, pero ningún script lo
+      llama (sin caller) y `check:weather` (roto, §1.11) cubre su lógica.
 - [ ] **1.7 Evolución tras intercambio con NPC** [avanzado]. En C, `STATE_TRY_EVOLUTION`
   (`trade_scene.c`) llama `TradeEvolutionScene` con `gCB2_AfterEvolution = CB2_InGameTrade`.
   El TS (`pokemon/ingameTrade.ts`, ~línea 1054) usa `evolveWithMessages` después del
