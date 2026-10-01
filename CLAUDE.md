@@ -10,5 +10,5 @@
   para el servidor. No es un paso rutinario durante el portado.
 - Commits de tanda solo con código; estado (inventario, pending, KNOWN_GAPS y
   PORTING-STATUS.md) una vez al final de la sesión. Reporta aparte funciones
-  nuevas y equivalencias/wrappers, y no borres entradas de validación diferida.
+  nuevas y equivalencias/wrappers, y no borres entradas de `TAREAS-FINALES.md` sin resolverlas.
 - Usa lecturas por rangos en módulos grandes. Indica Claude en `Co-Authored-By`.

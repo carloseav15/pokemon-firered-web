@@ -13,6 +13,6 @@
 - Si el archivo no cabe entero, toma la familia completa más grande posible; no
   agrupes 3–10 funciones sueltas por commit.
 - Reporta aparte funciones nuevas y equivalencias/wrappers, súmalas al acumulado
-  de PORTING-STATUS.md y no borres entradas de validación diferida ni de wrappers.
+  de PORTING-STATUS.md y no borres entradas de `TAREAS-FINALES.md` sin resolverlas.
 - Usa lecturas por rangos en módulos grandes. Indica Gemini en `Co-Authored-By`
   (`Co-Authored-By: Gemini <noreply@google.com>`).

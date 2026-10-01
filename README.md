@@ -38,7 +38,8 @@ reexportar si cambias `tools/decomp/`.
 | [Guía técnica](docs/PORTING-GUIDE.md) | Consulta bajo demanda: mapa, exportador, semántica C y driver |
 | [PENDING.md](PENDING.md) | **Faltantes** (generado): sin empezar, adaptadores, parciales, huecos conocidos, pantallas sin probar |
 | [PORT-INVENTORY.md](PORT-INVENTORY.md) | Avance por archivo `.c` (generado con `npm run inventory`) |
-| [PORTING-STATUS.md](PORTING-STATUS.md) | Estado operativo breve, siguiente tanda y validación pendiente |
+| [PORTING-STATUS.md](PORTING-STATUS.md) | Estado operativo breve y siguiente tanda |
+| [TAREAS-FINALES.md](TAREAS-FINALES.md) | **Lista de tareas finales** del juego de un jugador: código, equivalencias y validación |
 | [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) | Recorrido para la fase de revisión funcional |
 
 ## Estado

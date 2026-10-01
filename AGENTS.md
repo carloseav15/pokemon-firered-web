@@ -8,6 +8,8 @@ Responde en español.
 ## Lectura inicial
 
 - Lee este archivo y [PORTING-STATUS.md](PORTING-STATUS.md), y comprueba `git status`.
+- [TAREAS-FINALES.md](TAREAS-FINALES.md) es la lista única de lo que queda del
+  juego de un jugador: código por cerrar, equivalencias/wrappers y validación.
 - Consulta las filas relevantes de [PENDING.md](PENDING.md) y el código de la tanda.
 - [Referencia técnica](docs/PORTING-GUIDE.md): mapa, datos, semántica C y driver;
   lee únicamente la sección necesaria. No releas el historial al iniciar una tarea.
@@ -37,7 +39,7 @@ El inventario mide nombres, no fidelidad.
    como **equivalencia**, no como implementación nueva. Un método de una línea
    que delega en lógica genérica previa (p. ej. `MovementAction_*` →
    `movementActionStep`) es un **wrapper**: cuenta como equivalencia y su familia
-   se anota en la línea de wrappers de `PORTING-STATUS.md` para revisarla contra
+   se anota en la sección 2 de `TAREAS-FINALES.md` para revisarla contra
    el cuerpo C en la fase de revisión.
 3. Lee completas las funciones C seleccionadas, headers/tipos, globals, tablas y
    callers C/TS/scripts relevantes. Lee el archivo entero cuando sus dependencias
@@ -73,7 +75,7 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
 - Al cerrar una tanda de código: `npm run check:port`, `npm run check:honesty`,
   `npm run build` y `git diff --check`. Repite solo lo afectado por cambios posteriores.
 - Las correcciones de fidelidad menores detectadas fuera de la tanda (anchos,
-  orden de callbacks, etc.) se anotan en una línea en `PORTING-STATUS.md` y se
+  orden de callbacks, etc.) se anotan en una línea en `TAREAS-FINALES.md` y se
   resuelven en la revisión, salvo que rompan algo que la tanda necesita.
 - Comprueba los cdata/INCBIN nuevos que se usan. Ejecuta el check focalizado existente
   si cubre una regla modificada; no ejecutes todas las suites por rutina.
@@ -96,18 +98,19 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
 ## Cierre y documentación mínima
 
 - **Commits de tanda solo con código.** No toques `PORTING-STATUS.md`,
-  `PENDING.md`, `PORT-INVENTORY.md` ni `KNOWN_GAPS` de `portPending.py` en ellos,
+  `TAREAS-FINALES.md`, `PENDING.md`, `PORT-INVENTORY.md` ni `KNOWN_GAPS` de `portPending.py` en ellos,
   y no hagas un commit "Update … status" después de cada tanda.
 - **Estado una vez al final de la sesión** (o, en sesiones largas, como mucho cada
   cinco tandas): `npm run inventory`, después `npm run pending`, actualizar
-  `PORTING-STATUS.md` y `KNOWN_GAPS`, todo en un único commit de estado. No
+  `PORTING-STATUS.md`, `TAREAS-FINALES.md` y `KNOWN_GAPS`, todo en un único commit de estado. No
   cambies el algoritmo del inventario para inflar cobertura.
 - Mantén `PORTING-STATUS.md` como estado operativo breve (máximo 8 líneas) con
   estas líneas fijas: modo, siguiente tanda, bloqueos, validación diferida,
   última entrega, contador, **acumulado nuevo/equivalencia** y **wrappers a
-  revisar**. Sustituye la última entrega; el detalle permanece en Git. En las
-  líneas de acumulado, validación diferida y wrappers solo se añade o se retira
-  lo revisado: nunca se borran entradas al reescribir. No abras otra crónica.
+  revisar**; las dos últimas listas viven en `TAREAS-FINALES.md` y la línea solo
+  las enlaza. Sustituye la última entrega; el detalle permanece en Git. En el
+  acumulado y en `TAREAS-FINALES.md` solo se añade o se retira lo revisado:
+  nunca se borran entradas al reescribir. No abras otra crónica.
 - Solo `PENDING.md` y `PORT-INVENTORY.md` contienen las cifras vivas. En el cierre
   informa el cambio del contador separado en funciones nuevas (cuerpo portado del
   C) y equivalencias/wrappers, y suma ambas al acumulado de `PORTING-STATUS.md`.
@@ -124,4 +127,4 @@ Implementado, integrado y validado son estados distintos. Terminar la fase de
 portado requiere revisar huecos, stubs, adaptadores y dependencias de todo el
 alcance principal, no solo alcanzar todos los nombres. Después usar `PLAN-RECORRIDO.md`
 y los checks para revisar historia, sistemas opcionales, gráficos y temporización.
-No borres de la cola una validación pendiente al sustituir el resumen de entrega.
+No borres de `TAREAS-FINALES.md` una validación pendiente al sustituir el resumen de entrega.

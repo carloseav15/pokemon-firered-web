@@ -389,8 +389,8 @@ export class Overworld {
     this.SetWarpDestination(mapGroup, mapNum, warpId, x, y);
   }
 
-  /** Overworld_SetWarpDestinationFromWarp (overworld.c). No caller yet: the one real call site is
-   * quest_log.c's playback, not ported (see PORTING-STATUS.md). */
+  /** Overworld_SetWarpDestinationFromWarp (overworld.c): called from the Quest Log playback
+   * warp start (questLogEvents.ts), as in quest_log.c. */
   Overworld_SetWarpDestinationFromWarp(warp: WarpData): void {
     this.warpDestination = { ...warp };
   }
