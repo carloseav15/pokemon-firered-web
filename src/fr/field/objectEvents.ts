@@ -4,7 +4,7 @@
 
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
-import { cdata } from "../hw/assets";
+import { cdata, symName, type SymRef } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
 import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
@@ -115,7 +115,6 @@ const CLOCKWISE = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
 // Anim numbers (constants/event_object_movement.h)
 const ANIM_FACE = 0, ANIM_GO = 4, ANIM_GO_FAST = 8, ANIM_GO_FASTER = 12, ANIM_GO_FASTEST = 16, ANIM_RUN = 20;
 const ANIM_RAISE_HAND = C.ANIM_RAISE_HAND, ANIM_NURSE_BOW = C.ANIM_NURSE_BOW;
-const STEP_ANIM_TABLES = new Set(["sAnimTable_QuintyPlump", "sAnimTable_Standard", "sAnimTable_RedGreenNormal", "sAnimTable_AcroBike", "sAnimTable_RedGreenSurf", "sAnimTable_Nurse", "sAnimTable_RedGreenFish"]);
 
 export function dirIndex(direction: number): number {
   return Math.max(0, Math.min(3, direction - 1));
@@ -1725,24 +1724,32 @@ export class ObjectEvents {
     object.currentMetatileBehavior = map.behaviorAt(object.currentCoords.x, object.currentCoords.y);
   }
 
-  private stepAnimTable(object: ObjectEvent): boolean {
-    return STEP_ANIM_TABLES.has(object.animTableName);
+  /** GetStepAnimTable (event_object_movement.c): find the table by animation-table identity. */
+  private GetStepAnimTable(anims: string): number[] | null {
+    const tables = cdata<{ anims?: SymRef; animPos: number[] }[]>("event_object_movement", "sStepAnimTables");
+    for (const table of tables) {
+      if (!table.anims) break;
+      if (symName(table.anims) === anims) return table.animPos;
+    }
+    return null;
   }
 
   setStepAnim(object: ObjectEvent, animNum: number): void {
     if (object.inanimate) return;
     const s = object.sprite;
     s.animNum = animNum;
-    if (this.stepAnimTable(object)) s.seekAnim(s.animCmdIndex <= 1 ? 1 : 3);
+    const stepTable = this.GetStepAnimTable(object.animTableName);
+    if (stepTable) s.seekAnim(s.animCmdIndex <= stepTable[0]! ? stepTable[0]! : stepTable[1]!);
   }
 
   setStepAnimHandleAlternation(object: ObjectEvent, animNum: number): void {
     if (object.inanimate) return;
     const s = object.sprite;
     s.animNum = animNum;
-    if (this.stepAnimTable(object)) {
-      if (s.animCmdIndex === 1) s.animCmdIndex = 2;
-      else if (s.animCmdIndex === 3) s.animCmdIndex = 0;
+    const stepTable = this.GetStepAnimTable(object.animTableName);
+    if (stepTable) {
+      if (s.animCmdIndex === stepTable[0]) s.animCmdIndex = stepTable[3]!;
+      else if (s.animCmdIndex === stepTable[1]) s.animCmdIndex = stepTable[2]!;
     }
     s.seekAnim(s.animCmdIndex);
   }
