@@ -25,6 +25,7 @@
 // Needs loadCData("credits") and preloadCreditsMaps().
 
 import { tasks } from "./gba/tasks";
+import { TilesetAnimator } from "./field/tilesetAnimator";
 import { SetGlobalFieldTintMode } from "./field/fieldPalette";
 import { cdata } from "./hw/assets";
 import {
@@ -192,111 +193,23 @@ function CameraUpdateNoObjectRefresh(): void {
 
 // ---------------------------------------------------------------- tileset_anims.c
 
-const TILE_SIZE_4BPP = 32;
+let sTilesetAnimator: TilesetAnimator | null = null;
 
-let sPrimaryTilesetAnimCounter = 0;
-let sPrimaryTilesetAnimCounterMax = 0;
-let sPrimaryTilesetAnimCallback: ((timer: number) => void) | null = null;
-let sSecondaryTilesetAnimCounter = 0;
-let sSecondaryTilesetAnimCounterMax = 0;
-let sSecondaryTilesetAnimCallback: ((timer: number) => void) | null = null;
-type TilesetAnimTransfer = { src: Uint8Array; dest: number; size: number };
-const sTilesetDMA3TransferBuffer: TilesetAnimTransfer[] = [];
-
-/** ResetTilesetAnimBuffer. */
-function ResetTilesetAnimBuffer(): void {
-  sTilesetDMA3TransferBuffer.length = 0;
-}
-
-/** AppendTilesetAnimToBuffer. Synchronous ppu.vram write is the browser's DMA3 transfer. */
-function AppendTilesetAnimToBuffer(src: Uint8Array | undefined, destTile: number, size: number): void {
-  if (!src || sTilesetDMA3TransferBuffer.length >= 20) return;
-  sTilesetDMA3TransferBuffer.push({ src, dest: destTile * TILE_SIZE_4BPP, size });
-}
-
-/** TransferTilesetAnimsBuffer. */
-function TransferTilesetAnimsBuffer(): void {
-  for (const transfer of sTilesetDMA3TransferBuffer)
-    ppu.vram.set(transfer.src.subarray(0, transfer.size), transfer.dest);
-  sTilesetDMA3TransferBuffer.length = 0;
-}
-
-function QueueAnimTiles_General_Flower(timer: number): void {
-  const frames = sMap?.loaded.primary.anims["flower"];
-  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 508, 4 * TILE_SIZE_4BPP);
-}
-
-function QueueAnimTiles_General_Water_Current_LandWatersEdge(timer: number): void {
-  const frames = sMap?.loaded.primary.anims["water_current_landwatersedge"];
-  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 416, 48 * TILE_SIZE_4BPP);
-}
-
-function QueueAnimTiles_General_SandWatersEdge(timer: number): void {
-  const frames = sMap?.loaded.primary.anims["sandwatersedge"];
-  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 464, 18 * TILE_SIZE_4BPP);
-}
-
-function TilesetAnim_General(timer: number): void {
-  // C divides integers (u16); JS must truncate or frames[timer / 16] is undefined.
-  if (timer % 8 === 0) QueueAnimTiles_General_SandWatersEdge(Math.trunc(timer / 8));
-  if (timer % 16 === 1) QueueAnimTiles_General_Water_Current_LandWatersEdge(Math.trunc(timer / 16));
-  if (timer % 16 === 2) QueueAnimTiles_General_Flower(Math.trunc(timer / 16));
-}
-
-/** InitTilesetAnim_General. */
-function InitTilesetAnim_General(): void {
-  sPrimaryTilesetAnimCounter = 0;
-  sPrimaryTilesetAnimCounterMax = 640;
-  sPrimaryTilesetAnimCallback = TilesetAnim_General;
-}
-
-function QueueAnimTiles_CeladonCity_Fountain(timer: number): void {
-  const frames = sMap?.loaded.secondary.anims["fountain"];
-  if (frames?.length) AppendTilesetAnimToBuffer(frames[timer % frames.length], 744, 8 * TILE_SIZE_4BPP);
-}
-
-function TilesetAnim_CeladonCity(timer: number): void {
-  if (timer % 12 === 0) QueueAnimTiles_CeladonCity_Fountain(Math.trunc(timer / 12));
-}
-
-function InitTilesetAnim_CeladonCity(): void {
-  sSecondaryTilesetAnimCounter = 0;
-  sSecondaryTilesetAnimCounterMax = 120;
-  sSecondaryTilesetAnimCallback = TilesetAnim_CeladonCity;
-}
-
-function _InitPrimaryTilesetAnimation(): void {
-  sPrimaryTilesetAnimCounter = 0;
-  sPrimaryTilesetAnimCounterMax = 0;
-  sPrimaryTilesetAnimCallback = null;
-  if (sMap?.loaded.primary.callback === "InitTilesetAnim_General") InitTilesetAnim_General();
-}
-
-function _InitSecondaryTilesetAnimation(): void {
-  sSecondaryTilesetAnimCounter = 0;
-  sSecondaryTilesetAnimCounterMax = 0;
-  sSecondaryTilesetAnimCallback = null;
-  // Only InitTilesetAnim_CeladonCity is reachable: every credits map uses
-  // gTileset_General as primary, and Celadon City is the only credits secondary
-  // with an animation callback.
-  if (sMap?.loaded.secondary.callback === "InitTilesetAnim_CeladonCity") InitTilesetAnim_CeladonCity();
-}
-
-/** InitTilesetAnimations. */
+/** InitTilesetAnimations; credits transfer animated tiles into BG VRAM. */
 function InitTilesetAnimations(): void {
-  ResetTilesetAnimBuffer();
-  _InitPrimaryTilesetAnimation();
-  _InitSecondaryTilesetAnimation();
+  const loaded = sMap?.loaded;
+  sTilesetAnimator = loaded ? new TilesetAnimator({
+    primary: loaded.primary,
+    secondary: loaded.secondary,
+    writeTiles(destTile, data, count = data.length / 32): void {
+      ppu.vram.set(data.subarray(0, count * 32), destTile * 32);
+    },
+  }) : null;
 }
 
 /** UpdateTilesetAnimations. */
 function UpdateTilesetAnimations(): void {
-  ResetTilesetAnimBuffer();
-  if (++sPrimaryTilesetAnimCounter >= sPrimaryTilesetAnimCounterMax) sPrimaryTilesetAnimCounter = 0;
-  if (++sSecondaryTilesetAnimCounter >= sSecondaryTilesetAnimCounterMax) sSecondaryTilesetAnimCounter = 0;
-  sPrimaryTilesetAnimCallback?.(sPrimaryTilesetAnimCounter);
-  sSecondaryTilesetAnimCallback?.(sSecondaryTilesetAnimCounter);
-  TransferTilesetAnimsBuffer();
+  sTilesetAnimator?.UpdateTilesetAnimations();
 }
 
 /** Overworld_CreditsMainCB */
