@@ -298,8 +298,11 @@ Receta manual (si un punto no se puede automatizar):
 
 ### 3.0 Checklist prioritario
 - [ ] **C1 Arranque completo** (`/`): copyright → Game Freak → intro → título → menú principal.
-- [ ] **C2 Partida nueva** (`?fr=new`): `MAP_PALLET_TOWN_PLAYERS_HOUSE_2F` (6, 6) → Oak
-  te detiene en la hierba → laboratorio → inicial → combate con el rival.
+- [ ] **C2 Partida nueva** (desde `/`, no `?fr=new`): título → NUEVA PARTIDA →
+  discurso de Oak y nombres → habitación (`MAP_PALLET_TOWN_PLAYERS_HOUSE_2F` (6, 6)) →
+  Oak te detiene en la hierba → laboratorio → inicial → combate con el rival.
+  `?fr=new` se salta el discurso de Oak y empieza en la habitación: sirve para la
+  segunda mitad del recorrido, no para la primera.
 - [x] **C3 Guardar y continuar**: misma posición, equipo y dinero — `play:smoke` con `pewter` (`190efec3`).
 - [ ] **C4 Quest Log**: tras continuar se reproduce el resumen y devuelve el control.
 - [ ] **C5 Combate salvaje**: atacar, huir y capturar; el capturado aparece en equipo o PC.
@@ -307,8 +310,9 @@ Receta manual (si un punto no se puede automatizar):
 - [ ] **C7 Derrota (whiteout)**: reaparece en el Centro Pokémon **mirando al norte**,
   equipo curado y dinero reducido.
 - [ ] **C8 Centro Pokémon y PC**: curar y abrir cajas automatizado; depósito/retiro pendiente.
-- [ ] **C9 Tienda** (partida `mart`): comprar y vender; el dinero cambia. El driver ya
-  funciona (`63bfecc8`): se puede automatizar.
+- [ ] **C9 Tienda** (partida `mart`): el dependiente aparece, comprar y vender; el
+  dinero cambia. Antes de `e4f1b331` (`GetAvailableObjectEventId`) el dependiente no
+  aparecía: compruébalo primero.
 - [ ] **C10 Menús**: Pokédex, Pokémon (resumen, mover, objeto), Mochila (Poción),
   Ficha, Opciones.
 - [ ] **C11 Evolución por nivel** (`H.grind`): ver la escena, cancelar con B y aceptar.
@@ -367,3 +371,18 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
 Enlace e inalámbrico (tabla `LINK` de `tools/portInventory.py`): combate e intercambio
 por cable/RFU, Union Room, Mystery Gift/Wonder Card (bloquea `GetSavedRamScriptIfValid`),
 e-Reader, minijuegos multijugador, Battle Records por Cable Club y el enlace de `trade.c`.
+
+## 6. Preparación para Emerald (cuando §3.0 esté en verde)
+
+Empiezan cuando `npm run play:smoke` dé OK en todo lo automatizable, que es la red
+que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
+
+- [ ] **6.1 Informe: separación del motor** [avanzado]. Proponer qué va a `core/` y qué a
+  `games/firered/`, apoyándose en `refs/emerald/functions.json` (3.677 funciones
+  idénticas entre Emerald y FireRed) y en los imports reales de `src/fr/`. Entregar
+  la lista de módulos, el orden de traslado en pasos pequeños (cada paso con
+  `check:all` y `play:smoke` en verde) y los riesgos. Sin mover código todavía.
+- [ ] **6.2 Informe: exportador para Emerald** [avanzado]. Partiendo del informe R8 de
+  `refs/README.md`, proponer cómo parametrizar `tools/decomp/` por juego (rutas,
+  `CPP_DEFINES`, `.decomp-build/<juego>`, `public/<juego>/`) sin cambiar lo que genera
+  para FireRed: la regeneración de FireRed debe dar archivos idénticos. Sin código todavía.
