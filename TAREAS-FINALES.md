@@ -124,24 +124,14 @@ Hechas (detalle en cada commit):
 - [x] 1.12 Flores y agua animadas (`Math.trunc` en `tileRenderer.ts`) — `0bf58c37`.
 
 Abiertas:
-- [ ] **1.11 Último check roto: `check:questlog-battle`** [medio]. Importa
-  `getQuestLogEvents`, que no existe ni en `quest_log_battle.c` ni en el TS; los
-  eventos de un jugador viven en `save.questLogScenes[].script` y el resto del check
-  prueba eventos de enlace (fuera de alcance). Reescribe el check sobre la ruta real
-  (`RecordQuestLogEvent`) para los eventos de un jugador, o propón al usuario
-  retirarlo. Los otros 11 checks ya pasan (`d9effcdd`, `54d16cb0`, `de760953`).
-- [ ] **1.13 Animaciones de baldosas duplicadas en créditos** [medio]. `f926b597`
-  reimplementó `tileset_anims.c` en `src/fr/overworldCredits.ts` aunque ya estaba en
-  `src/fr/field/tileRenderer.ts` (28/28). Extrae la lógica común (contadores,
-  `TilesetAnim_*`, `QueueAnimTiles_*`) con dos destinos (caché del renderer y
-  `ppu.vram`) y borra la copia. Comprueba que la Fuente de Azulona y los demás
-  callbacks secundarios siguen en el campo.
-- [ ] **1.14 El PC no abre el almacenamiento** [básico, navegador]. Partida
-  `pewter-pc`, interactuar con el PC y esperar 120 frames. Esperado: menú de cajas;
-  observado: `script:true`, `locked:true`, sin menú. Lo detectó `play:smoke` (C8).
+- [x] 1.11 `check:questlog-battle` comprueba eventos de un jugador en escenas guardadas (`87675830`). Los eventos de enlace se excluyen por alcance.
+- [x] 1.13 Animaciones de tiles compartidas entre campo y créditos; agua verificada en ambos (`10c5c535`).
+- [x] 1.14 C8 abre el almacenamiento y valida `CB2_PokeStorage`/`Task_PokeStorageMain` (`fbb30c01`).
 - [ ] **1.15 Registros BG del campo** [avanzado]. En C, `gOverworldBackgroundLayerFlags`
   (`hw/bgRegs.ts`) solo lo lee `InitOverworldGraphicsRegisters` (`overworld.c:2071`).
   Decidir si se declara hardware sustituido por Canvas o se conecta.
+  DECISIÓN DEL USUARIO — Opciones: declarar los masks de blend BG sustituidos por Canvas, o modelar mezcla alfa por capa y conectar su selección al renderer.
+  Recomendación: declararlos sustituidos; C solo combina BG1–BG3 en `BLDCNT` (`overworld.c:2071-2073`), sin registro equivalente en Canvas. No cambia código hasta que elijas.
 
 ## 2. Revisión de equivalencias y wrappers contra el C
 
@@ -315,7 +305,7 @@ Receta manual (si un punto no se puede automatizar):
 - [ ] **C6 Combate de entrenador**: partida `pewter` → gimnasio → Brock; medalla y dinero.
 - [ ] **C7 Derrota (whiteout)**: reaparece en el Centro Pokémon **mirando al norte**,
   equipo curado y dinero reducido.
-- [ ] **C8 Centro Pokémon y PC**: curar; depositar y retirar (bloqueado por 1.14).
+- [ ] **C8 Centro Pokémon y PC**: curar y abrir cajas automatizado; depósito/retiro pendiente.
 - [ ] **C9 Tienda** (partida `mart`): comprar y vender; el dinero cambia. El driver ya
   funciona (`63bfecc8`): se puede automatizar.
 - [ ] **C10 Menús**: Pokédex, Pokémon (resumen, mover, objeto), Mochila (Poción),

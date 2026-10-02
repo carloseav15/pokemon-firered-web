@@ -181,7 +181,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `special_field_anim.c` | 341 | 10/10 | `field/specialFieldAnim.ts`, `script/specialsExtra.ts` |  |  |
 | `event_data.c` | 336 | 26/26 | `save.ts` |  |  |
 | `battle_anim_sound_tasks.c` | 332 | 15/15 | `battle/anims/soundTasks.ts` |  |  |
-| `tileset_anims.c` | 332 | 28/28 | `field/tileRenderer.ts`, `overworldCredits.ts` |  |  |
+| `tileset_anims.c` | 332 | 28/28 | `field/tileRenderer.ts`, `field/tilesetAnimator.ts`, `overworldCredits.ts` |  |  |
 | `text_printer.c` | 326 | 15/15 | `boot.ts`, `gba/font.ts`, `gba/textPrinter.ts` … |  |  |
 | `wild_pokemon_area.c` | 317 | 7/7 | `pokedexArea.ts` |  |  |
 | `reshow_battle_screen.c` | 314 | 7/7 | `battle/bg.ts`, `battle/reshow.ts` |  |  |
