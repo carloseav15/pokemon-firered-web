@@ -183,7 +183,7 @@ function Task_EndScreenShake(taskId: number, ctx: ScriptRunner): void {
 
 /** Task_EnableScriptAfterMusicFade from field_screen_effect.c. */
 function Task_EnableScriptAfterMusicFade(taskId: number, ctx: ScriptRunner): void {
-  if (sound.isBGMPausedOrStopped()) {
+  if (sound.isNotWaitingForBGMStop()) {
     tasks.destroy(taskId);
     ctx.ow.script.ScriptContext_Enable();
   }

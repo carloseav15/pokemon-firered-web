@@ -972,7 +972,7 @@ export class FieldMoveEffects {
   }
 
   private TeleportFieldEffectTask4(): void {
-    if (!paletteFade.active && sound.isBGMPausedOrStopped()) {
+    if (!paletteFade.active && sound.isNotWaitingForBGMStop()) {
       this.ow.SetWarpDestinationToLastHealLocation();
       this.ow.fieldCallback = () => this.FieldCallback_TeleportIn();
       tasks.destroy(this.teleportFieldTaskId);

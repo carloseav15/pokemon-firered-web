@@ -161,7 +161,7 @@ export function doSeagallopFerryScene(game: Game): void {
   }
   function Task_Seagallop_2(id: number): void {
     scrollBg();
-    if (sound.isBGMPausedOrStopped() && !gPaletteFade.active) {
+    if (sound.isNotWaitingForBGMStop() && !gPaletteFade.active) {
       Task_Seagallop_3();
       tasks.destroy(id);
     }
