@@ -130,6 +130,17 @@ Abiertas:
   recorre el menú hasta `CB2_PokeStorage` (`fbb30c01`).
 - [x] 1.15 Registros BG del campo (`hw/bgRegs.ts`): declarados sustituidos por Canvas, por
   decisión del usuario (2026-10-01); el navegador no tiene `BLDCNT` (`overworld.c:2071-2073`).
+- [ ] 1.16 **Poké Ball desde la mochila en combate** [medio]. Con `route2-north`, en un
+  combate salvaje: BOLSA → bolsillo de Poké Balls → A abre el menú contextual
+  (`Task_FieldItemContextMenuHandleInput`) y el siguiente A vuelve a la mochila sin
+  lanzar la ball. Decidir primero si es fallo del juego o del driver: comparar
+  `bagMenu.ts` `OpenContextMenu` (rama `ITEMMENULOCATION_BATTLE`) y
+  `Task_ItemMenuAction_BattleUse` con `item_menu.c:1338-1360` y `sItemMenuContextActions`,
+  y mirar `gBagMenuState.location` al abrir la mochila desde combate. Desbloquea C5
+  (borrador en `tools/playtest/smoke/drafts/C5-wild-battle.draft.mjs`).
+- [ ] 1.17 **Brock no inicia el combate con `H.talk`** [medio]. Con `gym-camper`, según
+  el trabajo de C6 la interacción queda bloqueada antes del combate. Sin reproducir
+  por el revisor: reproducir primero y decidir si es fallo del juego o del driver.
 
 ## 2. Revisión de equivalencias y wrappers contra el C
 
@@ -278,6 +289,37 @@ Receta:
 devuelve OK, FALLO o MANUAL en una línea. Amplía los trabajos de
 `tools/playtest/smoke/` antes que probar a mano.
 
+### Estrategia de prueba para agentes
+
+Lo que funcionó (C3, C7, C9 y C10 de `fea0682e`) y conviene repetir:
+1. **Un trabajo por punto** en `tools/playtest/smoke/C<n>-*.job.mjs`, que parte de
+   una partida de `tools/playtest/saves/` y usa los helpers de `smoke/lib.mjs`
+   (`openStart`, `tap`, `until`, `bagCount`).
+2. **Pulsaciones reales, no llamadas internas.** Pulsa botones y espera estados
+   (`H.cb2()`, tareas activas, `H.st()`), como haría un jugador. Si para llegar a la
+   situación hay que tocar el estado (p. ej. resetear un cursor), márcalo `PREPARED`.
+3. **Comprueba el resultado en el estado guardado** (dinero, bolsa, equipo, mapa,
+   orientación) y, si hay fórmula en el C, compárala (en C7 la pérdida de 96 =
+   nivel 12 × 8 sin medallas). Las capturas solo sirven para diagnosticar.
+4. **Todo bucle lleva tope.** `run.mjs` corta cada trabajo a los 120 s; un `for` sin
+   tope deja colgado el diagnóstico (le pasó al borrador de C5).
+5. **Si falla, primero decide quién falla: el juego o la prueba.** Reprodúcelo por
+   etapas en el navegador integrado (`preview_start` con `vite`, `H.importSave`, y
+   cada etapa con `javascript_tool`) y compara con el C. Fallo del juego → tarea en
+   §1 con su reproducción. Fallo de la prueba → corrige la prueba.
+6. **MANUAL honesto.** Si solo se verifica una parte, el trabajo devuelve `manual`
+   diciendo qué falta; nunca OK parcial.
+7. **Un agente por punto**, cada uno en su worktree (§0). En la Fase B dos agentes
+   hicieron el mismo trabajo en paralelo y una rama quedó sin fusionar.
+
+Reparto por dificultad:
+- **Agentes básicos (Sonnet, Codex, opencode):** puntos con partida justo antes de la
+  acción y un resultado medible: C8 (curar y depositar/retirar), C13 (música de
+  combate, efectos y gritos por estado de `sound`) y ampliar C1.
+- **Agente avanzado o revisor:** puntos donde la prueba destapa fallos del juego y hay
+  que leer el C: 1.16 → C5, 1.17 → C6, C2 (Oak completo hasta el rival), C4 (Quest
+  Log), C11 (evolución) y C12 (ruta con puertas, conexiones y cueva).
+
 Receta manual (si un punto no se puede automatizar):
 1. Servidor (`npm run dev` o `preview_start` con `vite`) y `http://localhost:5173/?fr=new`.
 2. Carga una partida de `tools/playtest/saves/` en dos pasos (`importSave` recarga la página):
@@ -295,27 +337,32 @@ Receta manual (si un punto no se puede automatizar):
 
 ### 3.0 Checklist prioritario
 - [ ] **C1 Arranque completo** (`/`): copyright → Game Freak → intro → título → menú principal.
+  PARCIAL: `play:smoke` OK por estado (logo, escenas, título, menú); falta ver la secuencia.
 - [ ] **C2 Partida nueva** (desde `/`, no `?fr=new`): título → NUEVA PARTIDA →
   discurso de Oak y nombres → habitación (`MAP_PALLET_TOWN_PLAYERS_HOUSE_2F` (6, 6)) →
   Oak te detiene en la hierba → laboratorio → inicial → combate con el rival.
   `?fr=new` se salta el discurso de Oak y empieza en la habitación: sirve para la
   segunda mitad del recorrido, no para la primera.
+  PARCIAL: el smoke llega del título a Oak (`da01814a`); no alcanza el campo.
 - [x] **C3 Guardar y continuar**: misma posición, equipo y dinero — `play:smoke` con `pewter` (`190efec3`).
 - [ ] **C4 Quest Log**: tras continuar se reproduce el resumen y devuelve el control.
 - [ ] **C5 Combate salvaje**: atacar, huir y capturar; el capturado aparece en equipo o PC.
+  PARCIAL: luchar y huir pasan en el borrador; la captura espera a 1.16.
 - [ ] **C6 Combate de entrenador**: partida `pewter` → gimnasio → Brock; medalla y dinero.
-- [ ] **C7 Derrota (whiteout)**: reaparece en el Centro Pokémon **mirando al norte**,
-  equipo curado y dinero reducido.
+  PARCIAL: carga `gym-camper`; el combate espera a 1.17.
+- [x] **C7 Derrota (whiteout)**: reaparece en el Centro Pokémon **mirando al norte**,
+  equipo curado y dinero reducido — `play:smoke` pierde un combate real (`fea0682e`).
 - [ ] **C8 Centro Pokémon y PC**: curar y abrir cajas automatizado; depósito/retiro pendiente.
-- [ ] **C9 Tienda** (partida `mart`): el dependiente aparece, comprar y vender; el
-  dinero cambia. Antes de `e4f1b331` (`GetAvailableObjectEventId`) el dependiente no
-  aparecía: compruébalo primero.
-- [ ] **C10 Menús**: Pokédex, Pokémon (resumen, mover, objeto), Mochila (Poción),
-  Ficha, Opciones.
+  PARCIAL: el smoke entra en `CB2_PokeStorage` y lo devuelve como MANUAL.
+- [x] **C9 Tienda** (partida `mart`): el dependiente aparece, comprar y vender; el
+  dinero cambia — `play:smoke` compra 200 y vende 150 (`fea0682e`, con el arreglo de `shop.c` `06b08838`).
+- [x] **C10 Menús**: Pokédex, Pokémon (resumen, mover, objeto), Mochila (Poción),
+  Ficha, Opciones — `play:smoke` con pulsaciones reales (`fea0682e`).
 - [ ] **C11 Evolución por nivel** (`H.grind`): ver la escena, cancelar con B y aceptar.
 - [ ] **C12 Mapas y transiciones**: puertas, escaleras, mapas conectados, cartel de
   nombre y cueva (`route3` → Monte Moon); flores y agua animadas.
 - [ ] **C13 Audio**: música por mapa y combate, efectos y gritos; escucha humana del M4A.
+  PARCIAL: el smoke comprueba la música del mapa en WebAudio; falta lo demás.
 - [x] **C14 Clima**: niebla y sombra en mapas reales (1.6).
 
 ### 3.1 Lista completa por áreas
@@ -374,12 +421,17 @@ e-Reader, minijuegos multijugador, Battle Records por Cable Club y el enlace de 
 Empiezan cuando `npm run play:smoke` dé OK en todo lo automatizable, que es la red
 que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 
-- [ ] **6.1 Informe: separación del motor** [avanzado]. Proponer qué va a `core/` y qué a
+- [x] **6.1 Informe: separación del motor** [avanzado] — [docs/SEPARACION-MOTOR.md](docs/SEPARACION-MOTOR.md)
+  (`ec6f0747`, cifras en `tools/engineSplit.py`). Antes de mover código: permiso para tocar la ruta en `portInventory.py`. Proponer qué va a `core/` y qué a
   `games/firered/`, apoyándose en `refs/emerald/functions.json` (3.677 funciones
   idénticas entre Emerald y FireRed) y en los imports reales de `src/fr/`. Entregar
   la lista de módulos, el orden de traslado en pasos pequeños (cada paso con
   `check:all` y `play:smoke` en verde) y los riesgos. Sin mover código todavía.
-- [ ] **6.2 Informe: exportador para Emerald** [avanzado]. Partiendo del informe R8 de
+- [x] **6.2 Informe: exportador para Emerald** [avanzado] — [docs/EXPORTADOR-EMERALD.md](docs/EXPORTADOR-EMERALD.md)
+  (Codex, `58cfe2a9`; cifra de constantes corregida en `54b6157f`). Partiendo del informe R8 de
   `refs/README.md`, proponer cómo parametrizar `tools/decomp/` por juego (rutas,
   `CPP_DEFINES`, `.decomp-build/<juego>`, `public/<juego>/`) sin cambiar lo que genera
   para FireRed: la regeneración de FireRed debe dar archivos idénticos. Sin código todavía.
+- [x] **6.3 Informe: nombres simbólicos** [avanzado] — [docs/NOMBRES-SIMBOLICOS.md](docs/NOMBRES-SIMBOLICOS.md)
+  (Codex, `3a1b4425`). Qué salidas conservan nombres y propuesta de `symbols.json` y
+  tabla de operandos tipados para la fase 6; comandos reproducidos por el revisor.
