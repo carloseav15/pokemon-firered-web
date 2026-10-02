@@ -37,7 +37,7 @@ export default async function run(ctx) {
       || JSON.stringify(after.flags) !== JSON.stringify(before.flags))
       throw new Error(`Opening the PC unexpectedly changed saved field state: ${JSON.stringify({ before, after })}`);
     if (ctx.errors().length) throw new Error(`browser errors: ${ctx.errors().join("; ")}`);
-    return { initial, before, after };
+    return { manual: `PC entry verified at ${after.callback}; nurse healing and depositing/withdrawing Pokémon remain unverified.` };
   } catch (error) {
     if (!String(error).includes("C8-pc-stuck")) await ctx.shot("C8-failure");
     throw error;
