@@ -62,7 +62,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 | `image_processing_effects.c` | `imageProcessingEffects.ts` | sin caller en el C (solo su .c/.h) |
 | `palette_util.c` | `paletteUtil.ts` | sin caller en el C (RouletteFlash/PulseBlend/rectángulos) |
 | `cable_car_util.c` | `cableCarUtil.ts` | sin caller en el C (helpers static sin uso) |
-| `(registros BG)` | `hw/bgRegs.ts` | solo lo lee InitOverworldGraphicsRegisters (registros GBA) y link.c |
+| `(registros BG)` | `hw/bgRegs.ts` | registros GBA sustituidos por Canvas (decisión del usuario, 2026-10-01); en C solo los lee InitOverworldGraphicsRegisters y link.c |
 
 ## 4. Huecos conocidos que el conteo no muestra
 
