@@ -126,7 +126,8 @@ Hechas (detalle en cada commit):
 Abiertas:
 - [x] 1.11 `check:questlog-battle` comprueba eventos de un jugador en escenas guardadas (`87675830`). Los eventos de enlace se excluyen por alcance.
 - [x] 1.13 Animaciones de tiles compartidas entre campo y créditos; agua verificada en ambos (`10c5c535`).
-- [x] 1.14 C8 abre el almacenamiento y valida `CB2_PokeStorage`/`Task_PokeStorageMain` (`fbb30c01`).
+- [x] 1.14 Falsa alarma: el juego sí abre el PC; la prueba pulsaba A una sola vez. C8 ahora
+  recorre el menú hasta `CB2_PokeStorage` (`fbb30c01`).
 - [ ] **1.15 Registros BG del campo** [avanzado]. En C, `gOverworldBackgroundLayerFlags`
   (`hw/bgRegs.ts`) solo lo lee `InitOverworldGraphicsRegisters` (`overworld.c:2071`).
   Decidir si se declara hardware sustituido por Canvas o se conecta.
