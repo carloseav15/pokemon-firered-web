@@ -351,15 +351,15 @@ function GetPokedexFlagForCount(nationalDexNo: number, caseId: number): boolean 
   const mask = 1 << (index & 7);
   const seen = (save.pokedexSeen[index >> 3] ?? 0) & mask;
   const caught = (save.pokedexCaught[index >> 3] ?? 0) & mask;
-  if (caseId === rom.constants.FLAG_GET_SEEN) return seen !== 0;
-  if (caseId === rom.constants.FLAG_GET_CAUGHT) return caught !== 0 && caught === seen;
+  if (caseId === C.FLAG_GET_SEEN) return seen !== 0;
+  if (caseId === C.FLAG_GET_CAUGHT) return caught !== 0 && caught === seen;
   return false;
 }
 
 /** GetNationalPokedexCount (pokedex.c), including the C caught/seen parity check. */
 export function GetNationalPokedexCount(caseId: number): number {
   let count = 0;
-  for (let national = 1; national <= rom.constants.NATIONAL_DEX_COUNT; national++)
+  for (let national = 1; national <= C.NATIONAL_DEX_COUNT; national++)
     if (GetPokedexFlagForCount(national, caseId)) count++;
   return count;
 }
@@ -367,7 +367,7 @@ export function GetNationalPokedexCount(caseId: number): number {
 /** GetKantoPokedexCount (pokedex.c). */
 export function GetKantoPokedexCount(caseId: number): number {
   let count = 0;
-  for (let national = 1; national <= rom.constants.KANTO_DEX_COUNT; national++)
+  for (let national = 1; national <= C.KANTO_DEX_COUNT; national++)
     if (GetPokedexFlagForCount(national, caseId)) count++;
   return count;
 }
@@ -414,16 +414,16 @@ export function SpeciesToCryId(species: number): number {
 
 /** HasAllHoennMons (pokedex.c), excluding Jirachi and Deoxys from the Hoenn dex. */
 export function HasAllHoennMons(): boolean {
-  for (let hoennDexNo = 1; hoennDexNo < rom.constants.HOENN_DEX_COUNT - 1; hoennDexNo++) {
+  for (let hoennDexNo = 1; hoennDexNo < C.HOENN_DEX_COUNT - 1; hoennDexNo++) {
     const national = HoennToNationalOrder(hoennDexNo);
-    if (!national || !GetPokedexFlagForCount(national, rom.constants.FLAG_GET_CAUGHT)) return false;
+    if (!national || !GetPokedexFlagForCount(national, C.FLAG_GET_CAUGHT)) return false;
   }
   return true;
 }
 
 /** Exact dex completion predicates from pokedex.c (all checks use National Dex indices). */
 function hasCaughtNationalDexNumber(national: number): boolean {
-  return GetPokedexFlagForCount(national, rom.constants.FLAG_GET_CAUGHT);
+  return GetPokedexFlagForCount(national, C.FLAG_GET_CAUGHT);
 }
 
 export function hasAllKantoDexSpecies(): boolean {

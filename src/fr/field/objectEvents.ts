@@ -2156,16 +2156,16 @@ export class ObjectEvents {
     const absDx = (Math.abs(dx) << 16) >> 16;
     const absDy = (Math.abs(dy) << 16) >> 16;
     switch (mode) {
-      case rom.constants.RUNFOLLOW_NORTH_SOUTH: return GetLimitedVectorDirection_SouthNorth(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_EAST_WEST: return GetLimitedVectorDirection_WestEast(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_NORTH_WEST: return GetLimitedVectorDirection_WestNorth(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_NORTH_EAST: return GetLimitedVectorDirection_EastNorth(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_SOUTH_WEST: return GetLimitedVectorDirection_WestSouth(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_SOUTH_EAST: return GetLimitedVectorDirection_EastSouth(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_NORTH_SOUTH_WEST: return GetLimitedVectorDirection_SouthNorthWest(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_NORTH_SOUTH_EAST: return GetLimitedVectorDirection_SouthNorthEast(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_NORTH_EAST_WEST: return GetLimitedVectorDirection_NorthWestEast(dx, dy, absDx, absDy);
-      case rom.constants.RUNFOLLOW_SOUTH_EAST_WEST: return GetLimitedVectorDirection_SouthWestEast(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_NORTH_SOUTH: return GetLimitedVectorDirection_SouthNorth(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_EAST_WEST: return GetLimitedVectorDirection_WestEast(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_NORTH_WEST: return GetLimitedVectorDirection_WestNorth(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_NORTH_EAST: return GetLimitedVectorDirection_EastNorth(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_SOUTH_WEST: return GetLimitedVectorDirection_WestSouth(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_SOUTH_EAST: return GetLimitedVectorDirection_EastSouth(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_NORTH_SOUTH_WEST: return GetLimitedVectorDirection_SouthNorthWest(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_NORTH_SOUTH_EAST: return GetLimitedVectorDirection_SouthNorthEast(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_NORTH_EAST_WEST: return GetLimitedVectorDirection_NorthWestEast(dx, dy, absDx, absDy);
+      case C.RUNFOLLOW_SOUTH_EAST_WEST: return GetLimitedVectorDirection_SouthWestEast(dx, dy, absDx, absDy);
       default: return GetVectorDirection(dx, dy, absDx, absDy);
     }
   }
@@ -2173,17 +2173,17 @@ export class ObjectEvents {
   private trainerDirectionMode(type: number): number {
     const c = rom.constants;
     switch (type) {
-      case c.MOVEMENT_TYPE_FACE_DOWN_AND_UP: return c.RUNFOLLOW_NORTH_SOUTH;
-      case c.MOVEMENT_TYPE_FACE_LEFT_AND_RIGHT: return c.RUNFOLLOW_EAST_WEST;
-      case c.MOVEMENT_TYPE_FACE_UP_AND_LEFT: return c.RUNFOLLOW_NORTH_WEST;
-      case c.MOVEMENT_TYPE_FACE_UP_AND_RIGHT: return c.RUNFOLLOW_NORTH_EAST;
-      case c.MOVEMENT_TYPE_FACE_DOWN_AND_LEFT: return c.RUNFOLLOW_SOUTH_WEST;
-      case c.MOVEMENT_TYPE_FACE_DOWN_AND_RIGHT: return c.RUNFOLLOW_SOUTH_EAST;
-      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_LEFT: return c.RUNFOLLOW_NORTH_SOUTH_WEST;
-      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_RIGHT: return c.RUNFOLLOW_NORTH_SOUTH_EAST;
-      case c.MOVEMENT_TYPE_FACE_UP_LEFT_AND_RIGHT: return c.RUNFOLLOW_NORTH_EAST_WEST;
-      case c.MOVEMENT_TYPE_FACE_DOWN_LEFT_AND_RIGHT: return c.RUNFOLLOW_SOUTH_EAST_WEST;
-      default: return c.RUNFOLLOW_ANY;
+      case c.MOVEMENT_TYPE_FACE_DOWN_AND_UP: return C.RUNFOLLOW_NORTH_SOUTH;
+      case c.MOVEMENT_TYPE_FACE_LEFT_AND_RIGHT: return C.RUNFOLLOW_EAST_WEST;
+      case c.MOVEMENT_TYPE_FACE_UP_AND_LEFT: return C.RUNFOLLOW_NORTH_WEST;
+      case c.MOVEMENT_TYPE_FACE_UP_AND_RIGHT: return C.RUNFOLLOW_NORTH_EAST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_AND_LEFT: return C.RUNFOLLOW_SOUTH_WEST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_AND_RIGHT: return C.RUNFOLLOW_SOUTH_EAST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_LEFT: return C.RUNFOLLOW_NORTH_SOUTH_WEST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_UP_AND_RIGHT: return C.RUNFOLLOW_NORTH_SOUTH_EAST;
+      case c.MOVEMENT_TYPE_FACE_UP_LEFT_AND_RIGHT: return C.RUNFOLLOW_NORTH_EAST_WEST;
+      case c.MOVEMENT_TYPE_FACE_DOWN_LEFT_AND_RIGHT: return C.RUNFOLLOW_SOUTH_EAST_WEST;
+      default: return C.RUNFOLLOW_ANY;
     }
   }
 
@@ -2372,7 +2372,7 @@ export class ObjectEvents {
         case 1: if (this.ObjectEventExecSingleMovementAction(object)) { this.setDelay(object, 48); s.data[1] = 2; } return false;
         case 2: if (this.waitDelay(object) || this.ObjectEventIsTrainerAndCloseToPlayer(object)) s.data[1] = 3; return false;
         case 3: {
-          let direction = this.TryGetTrainerEncounterDirection(object, rom.constants.RUNFOLLOW_ANY);
+          let direction = this.TryGetTrainerEncounterDirection(object, C.RUNFOLLOW_ANY);
           if (direction === DIR_NONE) direction = (type === c.MOVEMENT_TYPE_ROTATE_CLOCKWISE ? CLOCKWISE : COUNTERCLOCKWISE)[object.facingDirection];
           this.setDirection(object, direction);
           s.data[1] = 0;
@@ -2485,7 +2485,7 @@ export class ObjectEvents {
   private MovementType_Buried_Callback(object: ObjectEvent, sprite: Sprite): boolean {
     if (!sprite.data[7]) {
       object.fixedPriority = true;
-      sprite.subspriteMode = rom.constants.SUBSPRITES_IGNORE_PRIORITY;
+      sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY;
       sprite.priority = 3;
       sprite.data[7]++;
     }

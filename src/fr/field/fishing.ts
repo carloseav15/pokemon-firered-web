@@ -1,6 +1,7 @@
 // field_player_avatar.c StartFishing / Task_Fishing (sFishingStateFuncs) and
 // AlignFishingAnimationFrames: the dot game, bite window and encounter.
 
+import * as C from "../generated/constants";
 import { encode } from "../gba/charmap";
 import { FONT_NORMAL } from "../gba/font";
 import { joy, A_BUTTON } from "../gba/input";
@@ -181,5 +182,5 @@ export function startFishing(ow: Overworld, rod: number): void {
   };
   const id = tasks.create(Task_Fishing, 0xff);
   Task_Fishing();
-  if (QuestLogTryRecordPlayerAvatarGfxTransition(rom.constants.QL_PLAYER_GFX_FISH)) QL_AfterRecordFishActionSuccessful();
+  if (QuestLogTryRecordPlayerAvatarGfxTransition(C.QL_PLAYER_GFX_FISH)) QL_AfterRecordFishActionSuccessful();
 }
