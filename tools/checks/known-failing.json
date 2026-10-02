@@ -1,6 +1,4 @@
 {
   "note": "Fallos conocidos documentados en TAREAS-FINALES.md §1.11. Solo se quitan entradas al arreglarlas; añadir requiere permiso del usuario.",
-  "checks": [
-    "check:questlog-battle"
-  ]
+  "checks": []
 }
