@@ -151,7 +151,7 @@ export class OakSpeech {
     return Promise.all([
       rom.load(),
       preloadNamingScreen(),
-      loadCData("oak_speech", "strings", "text_window_graphics", "menu"),
+      loadCData("oak_speech", "strings", "text_printer", "text", "text_window_graphics", "menu"),
       preloadPacks(["graphics_oak_speech", "graphics_text_window", "graphics_fonts", "graphics_interface", "pokemon"]),
       preloadBattleAssets(),
     ]);
