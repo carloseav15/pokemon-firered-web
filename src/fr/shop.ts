@@ -229,7 +229,7 @@ function Task_GoToBuyOrSellMenu(taskId: number): void {
   void preloadShop().then(() => {
     fieldMenu(sGame, (close) => {
       sCloseScene = close;
-      callback();
+      SetMainCallback2(callback);
     }, false);
   });
 }
