@@ -1,7 +1,7 @@
 const SAVE_KEY = "pokemon-gba-web-lab.firered.v2";
-const updown = async (ctx, bits) => {
-  await ctx.runEval(`await frDebug.wait(2, ${bits})`);
-  await ctx.wait(4);
+const tap = async (ctx, bits) => {
+  await ctx.runEval(`await frDebug.wait(2, ${bits}); await frDebug.wait(2)`);
+  await ctx.wait(12);
 };
 
 export default async function run(ctx) {
@@ -16,15 +16,19 @@ export default async function run(ctx) {
 
     // Pewter has Pokédex, Pokémon, Bag, Trainer, Save in that order.
     await ctx.press("START");
-    await ctx.wait(16);
-    for (let i = 0; i < 4; i++) await updown(ctx, 0x80);
-    await ctx.press("A");
     await ctx.wait(120);
-    // Confirm save, overwrite the imported checkpoint, and dismiss the result.
-    for (let i = 0; i < 4; i++) {
-      await ctx.press("A");
-      await ctx.wait(i === 3 ? 100 : 100);
-    }
+    for (let i = 0; i < 4; i++) await tap(ctx, 0x80);
+    await tap(ctx, 1);
+    await ctx.wait(120);
+    // Advance the save prompt, move to YES on overwrite, confirm, then acknowledge success.
+    await tap(ctx, 1);
+    await ctx.wait(100);
+    await tap(ctx, 0x40);
+    await ctx.wait(100);
+    await tap(ctx, 1);
+    await ctx.wait(100);
+    await tap(ctx, 1);
+    await ctx.wait(100);
     const written = await ctx.runEval(`return {
       money: frDebug.save.save.money,
       pos: { ...frDebug.save.save.pos },
@@ -32,7 +36,7 @@ export default async function run(ctx) {
       saveStat: frDebug.save.save.gameStats[${(await import("../../../src/fr/generated/constants.ts")).GAME_STAT_SAVED_GAME}],
       raw: localStorage.getItem("${SAVE_KEY}"),
     }`);
-    if (!written.raw || written.saveStat <= before.saveStat) throw new Error("in-game save did not update storage/save statistic");
+    if (!written.raw || written.saveStat <= before.saveStat) throw new Error(`in-game save did not update storage/save statistic: ${JSON.stringify({ saveStat: written.saveStat, state: written.pos })}`);
 
     const base = process.env.PW_BASE ?? "http://localhost:5173/";
     await ctx.page.goto(`${base}?fr=continue`, { waitUntil: "load" });
