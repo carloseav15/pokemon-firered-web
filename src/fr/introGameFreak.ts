@@ -6,7 +6,8 @@ import { sound } from "./audio/sound";
 import { type BgTemplate, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, ShowBg, HideBg } from "./hw/bg";
 import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
 import { IsBlendTaskActive, StartBlendTask } from "./hw/menu";
-import { BlendPalettes, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer } from "./hw/palette";
+import { tasks } from "./gba/tasks";
+import { BlendPalettes, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_TGT1_BG2, BLDCNT_TGT1_OBJ, BLDCNT_TGT2_ALL,
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN1_ON, ppu,
@@ -179,9 +180,11 @@ export class IntroGameFreak {
 
   updateFrame(): void {
     if (this.done) return;
+    tasks.run();
     Task_CallIntroCallback(this);
     AnimateSprites();
     BuildOamBuffer();
+    UpdatePaletteFade();
     VBlankCB_Intro();
     CopyBufferedValuesToGpuRegs();
   }
