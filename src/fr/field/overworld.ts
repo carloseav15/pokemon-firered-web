@@ -2178,7 +2178,7 @@ export class Overworld {
           if (!this.player.WaitTeleportWarpOutPlayerAnim()) { this.warpFadeOutScreen(); data[0]++; }
           break;
         case 2:
-          if (!this.WaitWarpFadeOutScreen() && sound.isBGMPausedOrStopped()) data[0]++;
+          if (!this.WaitWarpFadeOutScreen() && sound.isNotWaitingForBGMStop()) data[0]++;
           break;
         case 3:
           this.warpIntoMapAndLoad();
@@ -2297,7 +2297,7 @@ export class Overworld {
         break;
       case 3:
         this.UpdateStairsMovement(taskId);
-        if (!this.WaitWarpFadeOutScreen() && sound.isBGMPausedOrStopped()) data[0]++;
+        if (!this.WaitWarpFadeOutScreen() && sound.isNotWaitingForBGMStop()) data[0]++;
         break;
       default:
         this.fieldCallback = () => this.FieldCB_DefaultWarpExit();
@@ -2330,7 +2330,7 @@ export class Overworld {
           data[0]++;
           break;
         case 1:
-          if (!paletteFade.active && sound.isBGMPausedOrStopped()) data[0]++;
+          if (!paletteFade.active && sound.isNotWaitingForBGMStop()) data[0]++;
           break;
         case 2:
           tasks.destroy(taskId);
