@@ -993,11 +993,12 @@ export class ObjectEvents {
       if (object.localId === (localId & 0xff) && object.mapNum === (mapNum & 0xff) && object.mapGroup === (mapGroup & 0xff)) return OBJECT_EVENTS_COUNT;
     }
     if (i >= OBJECT_EVENTS_COUNT) return OBJECT_EVENTS_COUNT;
-    for (; i < OBJECT_EVENTS_COUNT; i++) {
-      const object = this.objects[i];
+    const availableId = i;
+    for (let j = i; j < OBJECT_EVENTS_COUNT; j++) {
+      const object = this.objects[j];
       if (object?.active && object.localId === (localId & 0xff) && object.mapNum === (mapNum & 0xff) && object.mapGroup === (mapGroup & 0xff)) return OBJECT_EVENTS_COUNT;
     }
-    return i;
+    return availableId;
   }
 
   private freeSlot(): number {

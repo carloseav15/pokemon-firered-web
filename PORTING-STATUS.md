@@ -1,8 +1,8 @@
-Modo: una tanda = archivo C completo o familia completa; commits de tanda solo código; estado una vez al final de la sesión. Meta principal de un jugador. No push.
-Siguiente: §1 de [TAREAS-FINALES.md](TAREAS-FINALES.md): 1.11 (4 checks conocidos), 1.13 (duplicado de créditos) y 1.14 (PC no abre el almacenamiento); después §2 desde `event_object_movement.c` y validación de §3 con `npm run play:smoke`.
-Bloqueos: LINK queda fuera de alcance; los 93 nombres de `overworld.c` auditados son LINK/multijugador o callbacks BG/IRQ GBA. Los 19 de `field_effect.c` son VM/hardware o helpers sin caller. En §1.11, `questlog-battle` tiene API inexistente/LINK y tres checks contienen expectativas incompatibles con C. Audio M4A usa aproximaciones WebAudio; cries siguen en WAV y oído humano queda pendiente en §3.
-Validación diferida: lista completa en la sección 3 de [TAREAS-FINALES.md](TAREAS-FINALES.md) (trasladada el 2026-10-01; se añade y retira allí).
-Última entrega (2026-10-01, OpenCode y Codex, fusión revisada): OpenCode cerró 1.6 (niebla/sombra en mapas reales), 1.9 (créditos: agua animada, cámara en espera, duración CData cero) y 1.10 (M4A) y arregló 8 checks headless; Codex corrigió timer/N del renderer de campo (1.12), la ruta de check:braille, añadió `play:smoke` C1–C14 (C3 OK, C8 fallo → 1.14, resto MANUAL) y anotó la revisión de Quest Log/overworld; extrajo Crystal (R20). Sin nuevos nombres C.
-Contador: 9.772/10.115 (96,6 %), 343 nombres pendientes en los 22 archivos con huecos; enlace aparte. Inventario y pendientes regenerados. Cambio esta sesión: 0 nuevas, 0 equivalencias/wrappers.
-Acumulado desde 6.234 (2026-09-27): +3.538 nombres hasta 9.772 (2026-10-01; diferencia del contador del inventario). Desglose por tanda en el historial de Git (`git log -p PORTING-STATUS.md`); compresión aprobada por el usuario el 2026-10-01.
-Wrappers a revisar contra el cuerpo C: lista completa por archivo en la sección 2 de [TAREAS-FINALES.md](TAREAS-FINALES.md) (trasladada el 2026-10-01; se añade y retira allí).
+Modo: una tanda = archivo C completo o familia; commits de código por tarea; estado por fase; meta principal de un jugador.
+Siguiente: Fase B, automatizar C1–C13 de `play:smoke` en `tools/playtest/smoke/`.
+Bloqueos: 1.15 requiere decisión del usuario (opciones en §1); enlace queda fuera del alcance principal.
+Validación diferida: escucha humana del audio C13; validación de historia §4 y revisión completa §2.
+Última entrega: Fase A cerró 1.11 (`87675830`), 1.13 (`10c5c535`) y 1.14 (`fbb30c01`); C8 abre almacenamiento.
+Contador: 9.772/10.115 (96,6 %), 343 pendientes en 22 archivos; inventario y pendientes regenerados.
+Acumulado desde 6.234: +3.538 hasta 9.772; esta sesión 0 nuevas, 0 equivalencias/wrappers contables.
+Wrappers a revisar: lista por archivo en §2 de [TAREAS-FINALES.md](TAREAS-FINALES.md).
