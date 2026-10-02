@@ -76,13 +76,17 @@ enlace (7). La lista completa la da `tools/engineSplit.py`.
 
 `src/fr/generated/constants.ts` tiene 14.057 constantes y lo importan 188 módulos.
 Comparé los `#define NOMBRE número` literales de `include/constants/*.h` en los dos
-decomps:
+decomps (`python3 tools/engineSplit.py --constants`):
 
-- FireRed tiene 6.730 defines literales.
-- 3.746 nombres existen en los dos juegos; **737 tienen otro valor** en Emerald.
+- FireRed tiene 7.641 defines literales.
+- 3.783 nombres existen en los dos juegos; **740 tienen otro valor** en Emerald.
   Sobre todo están en `songs.h` (250), `trainers.h` (194),
   `event_object_movement.h` (135), `flags.h` (51) y `vars.h` (16).
-- 2.984 solo existen en FireRed.
+- 3.858 solo existen en FireRed.
+
+La primera versión de este informe daba 737 con un patrón que no se guardó; el
+informe 6.2 lo señaló. La cifra depende del patrón: si no se aceptan comentarios al
+final de la línea, salen 485, porque `songs.h` comenta casi todos sus defines.
 
 Así que el núcleo no puede importar las constantes de FireRed: tiene que importar
 las del juego que se compila. Esta medición no cuenta los defines con expresiones.

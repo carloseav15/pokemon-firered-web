@@ -62,27 +62,15 @@ Comandos usados: `git -C ../refs-src/pokeemerald rev-parse HEAD`, `git -C ../ref
 
 ### 2.3 Cifra de defines
 
-6.1 afirma 737 discrepancias entre 3.746 comunes ([SEPARACION-MOTOR.md §2.3](SEPARACION-MOTOR.md#23-las-constantes-son-de-cada-juego)). Reconté headers directos `include/constants/*.h` de ambos checkouts, aceptando líneas literales `#define <identificador> <entero decimal o hexadecimal>`, resolviendo por nombre y comparando valores. Comando ejecutado:
-
-```bash
-python3 - <<'PY'
-import re
-from pathlib import Path
-def read(root):
-    out = {}
-    for path in (Path(root) / "include/constants").glob("*.h"):
-        for name, value in re.findall(r'^\s*#\s*define\s+([A-Za-z_]\w*)\s+(-?(?:0[xX][0-9A-Fa-f]+|\d+))\s*$', path.read_text(errors="replace"), re.M):
-            out[name] = int(value, 0)
-    return out
-fr, em = read("../pokefirered"), read("../refs-src/pokeemerald")
-common = fr.keys() & em.keys()
-different = sorted(n for n in common if fr[n] != em[n])
-print(len(fr), len(em), len(common), len(different))
-print([(n, fr[n], em[n]) for n in different[:8]])
-PY
-```
-
-Salida: 7.641 FireRed, 10.634 Emerald, 3.783 comunes, 740 discrepantes. Muestra: `BAG_BERRIES_COUNT` 43/46, `BAG_ITEMS_COUNT` 42/30, `BAG_POKEBALLS_COUNT` 13/16. **PISTA INCORRECTA: 737 / 740** con este patrón literal; el conteo de 6.1 no se reproduce. La diferencia metodológica que explica los dos conteos no está registrada; 740 es el resultado de este comando, no una medida de todos los símbolos usados por el port.
+6.1 daba 737 discrepancias entre 3.746 comunes sin dejar el comando. El comando que
+estaba escrito aquí (patrón sin comentarios al final de línea) da 7.154 FireRed,
+9.649 Emerald, 3.386 comunes y **485** discrepantes, no la salida que se citaba.
+La salida citada (7.641, 10.634, 3.783 y 740) corresponde al patrón que también
+acepta comentarios `//` o `/* */` al final de la línea. Ese patrón es el que ahora
+usa `python3 tools/engineSplit.py --constants`, y 6.1 quedó corregido a 740.
+Muestra: `BAG_BERRIES_COUNT` 43/46, `BAG_ITEMS_COUNT` 42/30,
+`BAG_POKEBALLS_COUNT` 13/16. Es una medida de defines literales directos, no de
+todos los símbolos que usa el port (corrección del revisor, 2026-10-01).
 
 ### 2.4 Tamaño y consumidores
 
@@ -128,7 +116,7 @@ Cada paso pequeño se verifica con §5 y se detiene si FireRed difiere sin expli
 
 ## 5. Riesgos y procedimiento de equivalencia FireRed
 
-- **Constantes:** 740 discrepancias en el conteo de §2.3; la pista de 737 no cuadra. Resolverlas desde headers del juego, no desde constantes FireRed compartidas.
+- **Constantes:** 740 discrepancias en defines literales (§2.3). Resolverlas desde headers del juego, no desde constantes FireRed compartidas.
 - **Charmap/texto:** `step_setup.py:144-160` lee y transforma `charmap.txt`; `step_data.py:20-42,271-320` codifica textos. Sparse no incluye charmap. Igualdad de formato no prueba códigos/textos iguales: `SIN VERIFICAR`.
 - **Build:** `common.py:27-29` comparte `.decomp-build`; headers/probes/cachés contaminados pueden cruzar juegos. Mantener uno por juego y no enlazar el build principal.
 - **Tamaño:** FireRed mide 32M en disco; Emerald `SIN VERIFICAR`.
