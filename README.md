@@ -44,6 +44,7 @@ reexportar si cambias `tools/decomp/`.
 | [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) | Recorrido para la fase de revisión funcional |
 | [refs/README.md](refs/README.md) | Datos y catálogos extraídos de otros decomps (Emerald, Platinum, HeartGold, PokéAPI); el juego no los usa |
 | [docs/VISION.md](docs/VISION.md) | Ideas futuras: Emerald, Johto, reglas modernas y mundo unificado (no activas) |
+| [docs/REPOS-COMUNITARIOS.md](docs/REPOS-COMUNITARIOS.md) | Repositorios comunitarios revisados, versiones, aportes posibles, límites y guía de comparación por archivos |
 
 ## Estado
 

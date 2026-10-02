@@ -3,6 +3,11 @@
 No son tareas activas. Nada de esto empieza hasta cerrar [TAREAS-FINALES.md](../TAREAS-FINALES.md)
 (FireRed fiel y validado). Análisis del 2026-10-01 a partir de los repos de pret.
 
+Investigación complementaria: [repositorios comunitarios](REPOS-COMUNITARIOS.md)
+(2026-10-02), con fuentes/versiones, evidencia, límites y procedimiento de comparación.
+Incluye candidatos para integración regional, Johto GBA y reglas modernas; no activa
+las fases futuras ni cambia la prioridad de FireRed.
+
 ## Objetivo final
 
 Un solo juego con **libertad total**: un único mundo donde el jugador puede recorrer
