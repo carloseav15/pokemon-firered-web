@@ -17,7 +17,11 @@ Module bucket: share = (identical+different+moved) / mapped functions;
   the judgment calls listed in NO_C/OVERRIDES are fixed by hand (see
   docs/SEPARACION-MOTOR.md for the reasons).
 
-Usage: python3 tools/engineSplit.py [--modules]
+--constants compares literal `#define NAME <integer>` lines (optionally followed by a
+// or /* */ comment) of include/constants/*.h in pokefirered and pokeemerald. Defines
+with expressions, enums and generated headers are not counted.
+
+Usage: python3 tools/engineSplit.py [--modules] [--constants]
 """
 
 from __future__ import annotations
@@ -35,6 +39,10 @@ import portInventory as P  # noqa: E402  (read-only reuse of the C parser)
 ROOT = P.ROOT
 SRC = ROOT / "src" / "fr"
 EMERALD = ROOT / "refs" / "emerald" / "functions.json"
+EMERALD_DECOMP = ROOT.parent / "refs-src" / "pokeemerald"
+DEFINE_RE = re.compile(
+    r"^\s*#\s*define\s+([A-Za-z_]\w*)\s+(-?(?:0[xX][0-9A-Fa-f]+|\d+))\s*(?://.*|/\*.*\*/)?\s*$", re.M
+)
 IMPORT_RE = re.compile(r"""(?:import|export)\s[^;]*?from\s+["']([^"']+)["']""", re.S)
 
 # TS modules without a C homologue (runtime written for the browser, tables, glue).
@@ -146,6 +154,27 @@ def largest_cycle(mods: dict[str, dict]) -> int:
     return best[0]
 
 
+def literal_defines(decomp: Path) -> dict[str, tuple[int, str]]:
+    out: dict[str, tuple[int, str]] = {}
+    for path in sorted((decomp / "include" / "constants").glob("*.h")):
+        for name, value in DEFINE_RE.findall(path.read_text(errors="replace")):
+            out[name] = (int(value, 0), path.name)
+    return out
+
+
+def compare_constants() -> None:
+    if not EMERALD_DECOMP.exists():
+        raise SystemExit(f"{EMERALD_DECOMP} missing: run npm run refs:fetch -- pokeemerald")
+    fr = literal_defines(P.DECOMP)
+    em = literal_defines(EMERALD_DECOMP)
+    common = fr.keys() & em.keys()
+    diff = sorted(n for n in common if fr[n][0] != em[n][0])
+    print(f"\nLiteral defines: FireRed {len(fr)}, Emerald {len(em)}, common {len(common)}, "
+          f"different value {len(diff)}, FireRed only {len(fr.keys() - em.keys())}")
+    by_header = Counter(fr[n][1] for n in diff)
+    print("  by FireRed header: " + ", ".join(f"{h} {c}" for h, c in by_header.most_common(6)))
+
+
 def main() -> None:
     status, totals = c_status()
     mods = modules(status)
@@ -172,6 +201,8 @@ def main() -> None:
     for target, srcs in sorted(edges.items(), key=lambda x: (-len(x[1]), x[0])):
         print(f"  {target} [{buckets[target]}] <- {len(srcs)}: {', '.join(sorted(srcs))}")
 
+    if "--constants" in sys.argv:
+        compare_constants()
     if "--modules" in sys.argv:
         for b in ("core", "variant", "firered", "link"):
             print(f"\n{b}: " + " ".join(sorted(k for k, x in buckets.items() if x == b)))
