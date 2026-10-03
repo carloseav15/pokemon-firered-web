@@ -55,7 +55,7 @@ function parseHash(): void {
   // aplicarlo aqui se pierde porque el viewport aun no tiene scroll maximo.
   startX = h.get("x") !== null && Number.isFinite(x) ? x : null;
   startY = h.get("y") !== null && Number.isFinite(y) ? y : null;
-  if (z !== 0 && Number.isFinite(z)) zoom = Math.min(4, Math.max(0.25, z));
+  if (z !== 0 && Number.isFinite(z)) zoom = Math.min(4, Math.max(0.25, Math.round(z * 1000) / 1000));
   const capas = h.get("capas");
   if (capas) {
     active.clear();
@@ -64,7 +64,8 @@ function parseHash(): void {
 }
 
 function setZoom(next: number): void {
-  zoom = Math.min(4, Math.max(0.25, next));
+  // Redondeado a 3 decimales: sin esto la URL muestra z=0.6400000000000001.
+  zoom = Math.round(Math.min(4, Math.max(0.25, next)) * 1000) / 1000;
   content.style.transform = `scale(${zoom})`;
   content.style.width = `${index.world.width * TILE * zoom}px`;
   content.style.height = `${index.world.height * TILE * zoom}px`;
@@ -247,6 +248,26 @@ function writersHtml(key: string | number): string {
   return `<ul>${list.map((w) => `<li>${writerText(w)} — ${w.map}, <i>${w.label}</i>, línea ${w.line}</li>`).join("")}</ul>`;
 }
 
+function centerOnMap(id: string): boolean {
+  const mapEl = content.querySelector<HTMLElement>(`[data-map="${id}"]`);
+  const info = index.maps[id];
+  if (!mapEl || !info) return false;
+  viewport.scrollLeft = (mapEl.offsetLeft + (info.width * TILE) / 2) * zoom - viewport.clientWidth / 2;
+  viewport.scrollTop = (mapEl.offsetTop + (info.height * TILE) / 2) * zoom - viewport.clientHeight / 2;
+  writeHash();
+  return true;
+}
+
+function resolveMap(query: string): string | null {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+  if (index.maps[query.trim()]) return query.trim();
+  for (const [id, m] of Object.entries(index.maps)) {
+    if (id.toLowerCase() === q || m.title.toLowerCase() === q || m.section.toLowerCase() === q) return id;
+  }
+  return null;
+}
+
 function showAt(worldX: number, worldY: number): void {
   const mx = Math.floor(worldX / TILE) + minX;
   const my = Math.floor(worldY / TILE) + minY;
@@ -269,7 +290,13 @@ function showAt(worldX: number, worldY: number): void {
     html += `<h3>${e.layer}${e.localId !== undefined ? ` #${e.localId}` : ""}</h3>`;
     if (e.graphics) html += `<p>Gráficos: ${e.graphics}</p>`;
     // El indice omite flag cuando el objeto no tiene: no se muestra nada.
-    if (e.flag !== undefined) html += `<p>Flag: ${e.flag}</p>${writersHtml(e.flag)}`;
+    if (e.flag !== undefined) {
+      html += `<p>Flag: ${e.flag}</p>${writersHtml(e.flag)}`;
+      const line = typeof e.flag === "string" ? index.initialFlags[e.flag] : undefined;
+      html += e.startsHidden && line !== undefined
+        ? `<p>Al iniciar partida: oculto (setflag en EventScript_ResetAllMapFlags, data/event_scripts.s:${line}).</p>`
+        : "<p>Al iniciar partida: visible.</p>";
+    }
     if (e.movedByScript) html += "<p>Se mueve por script (setobjectxyperm).</p>";
     if (e.trainer) html += `<p>Combate: ${e.trainer}</p>`;
     if (e.trainerRange !== undefined) {
@@ -277,12 +304,22 @@ function showAt(worldX: number, worldY: number): void {
         ? `<p>Rango de visión: ${e.trainerRange} hacia ${e.direction}.</p>`
         : `<p>Rango de visión: ${e.trainerRange} (dirección variable en juego).</p>`;
     }
-    if (e.destMap) html += `<p>Destino: ${e.destMap}</p>`;
+    if (e.destMap) {
+      const exterior = e.destMap in index.maps;
+      html += exterior
+        ? `<p>Destino: ${e.destMap} (exterior).</p>`
+        : `<p>Destino: ${e.destMap} — interior: ${e.destName ?? e.destMap}.</p>`;
+    }
   }
   for (const t of trs) {
     html += `<h3>activador</h3><p>Condición: ${t.var} == ${t.value}</p><p>Script: ${t.script}</p>${writersHtml(t.var)}`;
   }
   panel.innerHTML = html;
+  // La puerta centra la vista si el destino es exterior (en V1 todos los
+  // destinos son interiores: 0 de 95 dan a otro mapa exterior).
+  for (const e of els) {
+    if (e.layer === "puerta" && e.destMap && e.destMap in index.maps) centerOnMap(e.destMap);
+  }
 }
 
 function setupUi(): void {
@@ -305,19 +342,30 @@ function setupUi(): void {
     layerBox.appendChild(label);
   }
   const list = document.getElementById("maplist") as HTMLDataListElement;
-  const names = Object.keys(index.maps).sort();
-  for (const n of names) {
+  for (const id of Object.keys(index.maps).sort()) {
     const opt = document.createElement("option");
-    opt.value = n;
+    opt.value = id;
     list.appendChild(opt);
   }
+  // Nombres legibles (7.4): el valor del datalist es lo que recibe el buscador.
+  for (const [id, m] of Object.entries(index.maps).sort()) {
+    if (m.title && m.title !== id) {
+      const opt = document.createElement("option");
+      opt.value = m.title;
+      opt.label = id;
+      list.appendChild(opt);
+    }
+    if (m.section && m.section !== id) {
+      const opt = document.createElement("option");
+      opt.value = m.section;
+      opt.label = id;
+      list.appendChild(opt);
+    }
+  }
   search.addEventListener("change", () => {
-    const id = search.value;
-    const mapEl = content.querySelector<HTMLElement>(`[data-map="${id}"]`);
-    if (!mapEl) return;
-    viewport.scrollLeft = mapEl.offsetLeft * zoom - viewport.clientWidth / 2;
-    viewport.scrollTop = mapEl.offsetTop * zoom - viewport.clientHeight / 2;
-    writeHash();
+    const id = resolveMap(search.value);
+    if (!id) return;
+    centerOnMap(id);
   });
 
   let dragX = 0;

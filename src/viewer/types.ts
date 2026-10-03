@@ -1,6 +1,6 @@
 // Tipos del indice generado por tools/viewer/world_index.py (docs/VISOR-MUNDO.md par. 4.4).
 
-export type WorldMap = { x: number; y: number; width: number; height: number; layout: string };
+export type WorldMap = { x: number; y: number; width: number; height: number; layout: string; title: string; section: string };
 export type Conflict = { from: string; to: string; placed: [number, number]; proposed: [number, number] };
 export type Element = {
   map: string;
@@ -15,6 +15,8 @@ export type Element = {
   trainer?: string;
   direction?: string;
   destMap?: string;
+  destName?: string;
+  startsHidden?: boolean;
 };
 export type Trigger = { map: string; x: number; y: number; var: string; value: number; script: string };
 export type Writer =
@@ -30,4 +32,5 @@ export type KantoIndex = {
   elements: Element[];
   triggers: Trigger[];
   writers: Record<string, Writer[]>;
+  initialFlags: Record<string, number>;
 };

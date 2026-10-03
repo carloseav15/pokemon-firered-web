@@ -219,6 +219,33 @@ def parse_scripts():
     return dict(sorted(writers.items())), trainer_of
 
 
+def initial_flags() -> dict[str, int]:
+    """Flags activos al iniciar partida (7.4): los setflag de
+    EventScript_ResetAllMapFlags (data/event_scripts.s), que new_game.c:149
+    ejecuta con RunScriptImmediately al crear la partida. Un objeto con uno
+    de estos flags empieza oculto. Devuelve flag -> linea en event_scripts.s.
+    """
+    path = DECOMP / "data" / "event_scripts.s"
+    found: dict[str, int] = {}
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return found
+    inside = False
+    for i, line in enumerate(lines, start=1):
+        s = line.strip()
+        if s == "EventScript_ResetAllMapFlags::":
+            inside = True
+            continue
+        if inside:
+            if s == "end":
+                break
+            m = SETFLAG_RE.match(line)
+            if m and m.group(1) not in found:
+                found[m.group(1)] = i
+    return dict(sorted(found.items()))
+
+
 def to_int(v, default=0):
     try:
         return int(v)
@@ -246,11 +273,14 @@ def main() -> int:
             "width": lay["width"],
             "height": lay["height"],
             "layout": maps[mid]["layout"],
+            "title": maps[mid]["name"],
+            "section": maps[mid].get("regionMapSectionName", ""),
         }
 
     elements: list[dict] = []
     triggers: list[dict] = []
     writers, trainer_of = parse_scripts()
+    hidden_at_start = initial_flags()
     for mid in sorted(pos):
         pub = maps[mid]
         folder = pub["name"]
@@ -297,6 +327,8 @@ def main() -> int:
             }
             if flag_name != "0":
                 el["flag"] = flag_name
+                if flag_name in hidden_at_start:
+                    el["startsHidden"] = True
             if layer == "entrenador":
                 el["trainerRange"] = to_int(obj.get("trainerRange", 0))
                 script_name = obj.get("scriptName") or (dobj.get("script", "") if isinstance(dobj, dict) else "")
@@ -320,13 +352,15 @@ def main() -> int:
                     }
                 )
             for w in dm.get("warp_events", []):
+                dest = w.get("dest_map", "")
                 elements.append(
                     {
                         "map": mid,
                         "x": to_int(w.get("x", 0)),
                         "y": to_int(w.get("y", 0)),
                         "layer": "puerta",
-                        "destMap": w.get("dest_map", ""),
+                        "destMap": dest,
+                        "destName": maps[dest]["name"] if dest in maps else dest,
                     }
                 )
         else:
@@ -342,13 +376,15 @@ def main() -> int:
                     }
                 )
             for w in pub.get("warps", []):
+                dest = w.get("destMap", "")
                 elements.append(
                     {
                         "map": mid,
                         "x": w.get("x", 0),
                         "y": w.get("y", 0),
                         "layer": "puerta",
-                        "destMap": w.get("destMap", ""),
+                        "destMap": dest,
+                        "destName": maps[dest]["name"] if dest in maps else dest,
                     }
                 )
 
@@ -372,6 +408,7 @@ def main() -> int:
         "elements": elements,
         "triggers": triggers,
         "writers": writers,
+        "initialFlags": hidden_at_start,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(
