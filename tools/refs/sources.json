@@ -52,5 +52,15 @@
       "/gfx/tilesets/"
     ],
     "note": "GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta."
+  },
+  "pokeemerald-expansion": {
+    "repo": "https://github.com/rh-hideout/pokeemerald-expansion.git",
+    "commit": "dfb0f84374230f4d462191601179b742f9f077df",
+    "sparse": [
+      "/src/",
+      "/include/",
+      "/test/"
+    ],
+    "note": "GBA, C. Base comunitaria que compila Emerald y FRLG (IS_FRLG) y trae tests de combate. No es fuente de verdad de ningún juego."
   }
 }

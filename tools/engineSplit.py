@@ -21,7 +21,12 @@ Module bucket: share = (identical+different+moved) / mapped functions;
 // or /* */ comment) of include/constants/*.h in pokefirered and pokeemerald. Defines
 with expressions, enums and generated headers are not counted.
 
-Usage: python3 tools/engineSplit.py [--modules] [--constants]
+--expansion crosses refs/expansion/frlg_split.json (refs:expansion-frlg): for each
+function that pokeemerald-expansion branches on IS_FRLG and that pokefirered defines,
+the TS module that defines it (function, class method or object property) and that
+module's bucket. A community choice of where to branch, not proof of FireRed behavior.
+
+Usage: python3 tools/engineSplit.py [--modules] [--constants] [--expansion]
 """
 
 from __future__ import annotations
@@ -175,6 +180,37 @@ def compare_constants() -> None:
     print("  by FireRed header: " + ", ".join(f"{h} {c}" for h, c in by_header.most_common(6)))
 
 
+def expansion_cross(buckets: dict[str, str]) -> None:
+    path = ROOT / "refs" / "expansion" / "frlg_split.json"
+    if not path.exists():
+        raise SystemExit(f"{path} missing: run npm run refs:expansion-frlg")
+    texts = {str(p.relative_to(SRC))[:-3]: P.strip_c_comments(p.read_text()) for p in sorted(SRC.rglob("*.ts"))}
+
+    def defined_in(name: str) -> list[str]:
+        pat = re.compile(
+            rf"(?:\bfunction\s+{name}\s*\(|^\s*(?:(?:private|public|protected|static|async)\s+)*{name}\s*"
+            rf"\([^;]*?\)\s*(?::[^;{{=]*)?\{{|^\s*{name}\s*:\s*(?:async\s*)?\()",
+            re.M,
+        )
+        return [m for m, t in texts.items() if pat.search(t)]
+
+    rows: dict[str, list[str]] = defaultdict(list)
+    for key, entry in sorted(json.loads(path.read_text())["data"]["functions"].items()):
+        if not entry["firered_file"]:
+            continue
+        found = defined_in(key.split(":")[1])
+        target = buckets[found[0]] if len(found) == 1 else "ambiguous" if found else "no TS"
+        rows[target].append(f"{key} [{entry['emerald_catalog']}] -> {', '.join(found) or '-'}")
+    total = sum(map(len, rows.values()))
+    print(f"\nExpansion IS_FRLG functions defined in pokefirered: {total}")
+    for b in ("core", "variant", "firered", "link", "generated", "ambiguous", "no TS"):
+        if rows.get(b):
+            print(f"  {b}: {len(rows[b])}")
+            if b != "firered":
+                for line in rows[b]:
+                    print(f"    {line}")
+
+
 def main() -> None:
     status, totals = c_status()
     mods = modules(status)
@@ -203,6 +239,8 @@ def main() -> None:
 
     if "--constants" in sys.argv:
         compare_constants()
+    if "--expansion" in sys.argv:
+        expansion_cross(buckets)
     if "--modules" in sys.argv:
         for b in ("core", "variant", "firered", "link"):
             print(f"\n{b}: " + " ".join(sorted(k for k, x in buckets.items() if x == b)))

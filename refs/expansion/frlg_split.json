@@ -1,0 +1,2079 @@
+{
+ "_meta": {
+  "commit": "dfb0f84374230f4d462191601179b742f9f077df",
+  "entries": 270,
+  "generator": "tools/refs/expansion_frlg.py",
+  "source": "pokeemerald-expansion"
+ },
+ "data": {
+  "file_level": {
+   "bg.c": [
+    43
+   ],
+   "credits_frlg.c": [
+    25
+   ],
+   "data.c": [
+    232
+   ],
+   "event_object_movement.c": [
+    534
+   ],
+   "field_door.c": [
+    152,
+    315,
+    354
+   ],
+   "field_move.c": [
+    56,
+    65,
+    74,
+    101,
+    119
+   ],
+   "oak_speech.c": [
+    595,
+    626,
+    654
+   ],
+   "quickstart.c": [
+    22,
+    24
+   ],
+   "reshow_battle_screen.c": [
+    28
+   ],
+   "starter_choose.c": [
+    113,
+    114,
+    115
+   ],
+   "title_screen_frlg.c": [
+    40,
+    42,
+    71,
+    74,
+    89,
+    91,
+    97,
+    101,
+    107,
+    120,
+    144,
+    172,
+    216,
+    227,
+    328,
+    346,
+    1119
+   ],
+   "trainer_tower.c": [
+    93
+   ]
+  },
+  "firered_only_files": {
+   "bag.c": null,
+   "battle_anim_special.c": null,
+   "battle_controller_oak_old_man.c": "battle_controller_oak_old_man.c",
+   "battle_controller_pokedude.c": null,
+   "berry_pouch.c": null,
+   "bg_regs.c": null,
+   "blend_palette.c": null,
+   "braille_text.c": null,
+   "buy_menu_helpers.c": null,
+   "cable_car_util.c": null,
+   "cereader_tool.c": null,
+   "dodrio_berry_picking_comm.c": null,
+   "easy_chat_2.c": null,
+   "easy_chat_3.c": null,
+   "fame_checker.c": "fame_checker.c",
+   "field_fadetransition.c": null,
+   "field_weather_effects.c": null,
+   "field_weather_util.c": null,
+   "fldeff_berrytree.c": null,
+   "fldeff_poison.c": null,
+   "help_message.c": null,
+   "help_system.c": null,
+   "help_system_util.c": null,
+   "isagbprn.c": null,
+   "item_pc.c": null,
+   "itemfinder.c": null,
+   "keyboard_text.c": null,
+   "learn_move.c": null,
+   "mailbox_pc.c": null,
+   "map_preview_screen.c": "map_preview_screen.c",
+   "menu2.c": null,
+   "menu_indicators.c": null,
+   "move_descriptions.c": null,
+   "mystery_gift_show_card.c": null,
+   "mystery_gift_show_news.c": null,
+   "new_menu_helpers.c": null,
+   "oak_speech.c": "oak_speech.c",
+   "party_menu_specials.c": null,
+   "pc_screen_effect.c": null,
+   "pokedex_area_markers.c": null,
+   "pokedex_screen.c": null,
+   "pokemon_special_anim.c": null,
+   "pokemon_special_anim_scene.c": null,
+   "pokemon_storage_system_data.c": null,
+   "pokemon_storage_system_graphics.c": null,
+   "pokemon_storage_system_menu.c": null,
+   "pokemon_storage_system_misc.c": null,
+   "pokemon_storage_system_tasks.c": null,
+   "prof_pc.c": null,
+   "quest_log.c": null,
+   "quest_log_battle.c": null,
+   "quest_log_events.c": null,
+   "quest_log_objects.c": null,
+   "quest_log_player.c": null,
+   "renewable_hidden_items.c": null,
+   "reset_save_heap.c": null,
+   "save_menu_util.c": null,
+   "seagallop.c": "seagallop.c",
+   "sloopsvc.c": null,
+   "special_field_anim.c": null,
+   "ss_anne.c": "ss_anne.c",
+   "teachy_tv.c": null,
+   "text_printer.c": null,
+   "text_window_graphics.c": null,
+   "tilemap_util.c": null,
+   "tm_case.c": null,
+   "trade_scene.c": null,
+   "trainer_fan_club.c": "trainer_fan_club.c",
+   "trainer_tower.c": "trainer_tower.c",
+   "trainer_tower_sets.c": "trainer_tower_sets.c",
+   "union_room_chat_display.c": null,
+   "union_room_chat_objects.c": null,
+   "union_room_message.c": null,
+   "vs_seeker.c": "vs_seeker.c",
+   "wild_pokemon_area.c": null,
+   "window_8bpp.c": null
+  },
+  "frlg_files": [
+   "credits_frlg.c",
+   "hall_of_fame_frlg.c",
+   "intro_frlg.c",
+   "title_screen_frlg.c"
+  ],
+  "functions": {
+   "battle_ai_main.c:AI_FirstBattle": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     6727
+    ]
+   },
+   "battle_bg.c:BattleInitBgsAndWindows": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_bg.c",
+    "lines": [
+     947
+    ]
+   },
+   "battle_bg.c:LoadBattleMenuWindowGfx": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_bg.c",
+    "lines": [
+     978
+    ]
+   },
+   "battle_controller_link_opponent.c:LinkOpponentHandleDrawTrainerPic": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_controller_link_opponent.c",
+    "lines": [
+     298,
+     299,
+     327,
+     328
+    ]
+   },
+   "battle_controller_oak_old_man.c:CompleteWhenChoseItem": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_controller_oak_old_man.c",
+    "lines": [
+     340
+    ]
+   },
+   "battle_controller_oak_old_man.c:OakOldManHandlePrintString": {
+    "emerald_catalog": "absent",
+    "firered_file": "battle_controller_oak_old_man.c",
+    "lines": [
+     729
+    ]
+   },
+   "battle_controller_player.c:HandleMoveSwitching": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_controller_player.c",
+    "lines": [
+     1087
+    ]
+   },
+   "battle_controller_safari.c:SafariHandleChooseAction": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_controller_safari.c",
+    "lines": [
+     301
+    ]
+   },
+   "battle_controllers.c:Controller_WaitForHealthBar": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     2204
+    ]
+   },
+   "battle_controllers.c:InitBtlControllersInternal": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     293,
+     294
+    ]
+   },
+   "battle_controllers.c:SetUpBattleVarsAndBirchZigzagoon": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     162
+    ]
+   },
+   "battle_main.c:HandleTurnActionSelectionState": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_main.c",
+    "lines": [
+     3982,
+     4191
+    ]
+   },
+   "battle_message.c:BattleStringExpandPlaceholders": {
+    "emerald_catalog": "different",
+    "firered_file": "battle_message.c",
+    "lines": [
+     3397,
+     3556
+    ]
+   },
+   "battle_move_resolution.c:ShouldSkipFRLGAccuracyCheck": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     2447
+    ]
+   },
+   "battle_util.c:HandleAction_GoNear": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     927
+    ]
+   },
+   "battle_util.c:HandleAction_ThrowPokeblock": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     877
+    ]
+   },
+   "battle_util.c:HandleAction_WatchesCarefully": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": "battle_main.c",
+    "lines": [
+     808
+    ]
+   },
+   "battle_util.c:IsCriticalHit": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     8039
+    ]
+   },
+   "bg.c:BgTileAllocOpUnchecked": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     294
+    ]
+   },
+   "bg.c:InitBgFromTemplate": {
+    "emerald_catalog": "different",
+    "firered_file": "bg.c",
+    "lines": [
+     424
+    ]
+   },
+   "bg.c:InitBgsFromTemplates": {
+    "emerald_catalog": "different",
+    "firered_file": "bg.c",
+    "lines": [
+     396
+    ]
+   },
+   "bg.c:ResetBgsAndClearDma3BusyFlags": {
+    "emerald_catalog": "different",
+    "firered_file": "bg.c",
+    "lines": [
+     360
+    ]
+   },
+   "bike.c:GetOnOffBike": {
+    "emerald_catalog": "different",
+    "firered_file": "bike.c",
+    "lines": [
+     1292,
+     1293
+    ]
+   },
+   "cable_club.c:CB2_ReturnFromUnionRoomBattle": {
+    "emerald_catalog": "different",
+    "firered_file": "cable_club.c",
+    "lines": [
+     960
+    ]
+   },
+   "credits.c:CB2_Credits": {
+    "emerald_catalog": "different",
+    "firered_file": "credits.c",
+    "lines": [
+     333
+    ]
+   },
+   "credits.c:CB2_StartCreditsSequence": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     397
+    ]
+   },
+   "credits.c:CheckChangeScene": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     823
+    ]
+   },
+   "credits.c:CreateCreditsMonSprite": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1505
+    ]
+   },
+   "credits.c:DeterminePokemonToShow": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1543
+    ]
+   },
+   "credits.c:DrawLetterMapTiles": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1309
+    ]
+   },
+   "credits.c:DrawTheEnd": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1321
+    ]
+   },
+   "credits.c:FreeCreditsBgsAndWindows": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     364
+    ]
+   },
+   "credits.c:GetLetterMapTile": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1294
+    ]
+   },
+   "credits.c:InitCreditsBgsAndWindows": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     351
+    ]
+   },
+   "credits.c:LoadBikeScene": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1174
+    ]
+   },
+   "credits.c:LoadTheEndScreen": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1280
+    ]
+   },
+   "credits.c:PrintCreditsText": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     373
+    ]
+   },
+   "credits.c:ResetCreditsTasks": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1247
+    ]
+   },
+   "credits.c:ResetGpuAndVram": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     693
+    ]
+   },
+   "credits.c:SetBikeScene": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1091
+    ]
+   },
+   "credits.c:SpriteCB_CreditsMon": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1416
+    ]
+   },
+   "credits.c:SpriteCB_CreditsMonBg": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1525
+    ]
+   },
+   "credits.c:SpriteCB_Player": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1339
+    ]
+   },
+   "credits.c:SpriteCB_Rival": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1376
+    ]
+   },
+   "credits.c:Task_BikeScene": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     947
+    ]
+   },
+   "credits.c:Task_CreditsMain": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     455
+    ]
+   },
+   "credits.c:Task_CreditsSoftReset": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     687
+    ]
+   },
+   "credits.c:Task_CreditsTheEnd1": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     593
+    ]
+   },
+   "credits.c:Task_CreditsTheEnd2": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     605
+    ]
+   },
+   "credits.c:Task_CreditsTheEnd3": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     616
+    ]
+   },
+   "credits.c:Task_CreditsTheEnd4": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     639
+    ]
+   },
+   "credits.c:Task_CreditsTheEnd5": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     651
+    ]
+   },
+   "credits.c:Task_CreditsTheEnd6": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     663
+    ]
+   },
+   "credits.c:Task_CycleSceneryPalette": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1034
+    ]
+   },
+   "credits.c:Task_LoadShowMons": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     524
+    ]
+   },
+   "credits.c:Task_ReadyBikeScene": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     489
+    ]
+   },
+   "credits.c:Task_ReadyShowMons": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     512
+    ]
+   },
+   "credits.c:Task_SetBikeScene": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     499
+    ]
+   },
+   "credits.c:Task_ShowMons": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     890
+    ]
+   },
+   "credits.c:Task_UpdatePage": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     718
+    ]
+   },
+   "credits.c:Task_WaitPaletteFade": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     449
+    ]
+   },
+   "credits.c:VBlankCB_Credits": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     326
+    ]
+   },
+   "credits_frlg.c:CB2_Credits": {
+    "emerald_catalog": "different",
+    "firered_file": "credits.c",
+    "lines": [
+     831
+    ]
+   },
+   "credits_frlg.c:CB2_StartCreditsSequence": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     821
+    ]
+   },
+   "credits_frlg.c:CreateCreditsWindow": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     879
+    ]
+   },
+   "credits_frlg.c:DestroyCreditsWindow": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     888
+    ]
+   },
+   "credits_frlg.c:DestroyPlayerOrRivalSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     1432
+    ]
+   },
+   "credits_frlg.c:DoCopyrightOrTheEndGfxScene": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     1340
+    ]
+   },
+   "credits_frlg.c:DoCreditsMonScene": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     1211
+    ]
+   },
+   "credits_frlg.c:DoOverworldMapScrollScene": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     898
+    ]
+   },
+   "credits_frlg.c:GetCreditsMonSpecies": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     1194
+    ]
+   },
+   "credits_frlg.c:InitBgDarkenEffect": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     872
+    ]
+   },
+   "credits_frlg.c:LoadCreditsMonPic": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     1156
+    ]
+   },
+   "credits_frlg.c:LoadPlayerOrRivalSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     1446
+    ]
+   },
+   "credits_frlg.c:RollCredits": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     925
+    ]
+   },
+   "credits_frlg.c:SwitchWin1OffWin0On": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     864
+    ]
+   },
+   "credits_frlg.c:Task_MovePlayerAndGroundSprites": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "credits.c",
+    "lines": [
+     1390
+    ]
+   },
+   "credits_frlg.c:VBlankCB": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "battle_records.c",
+    "lines": [
+     1149
+    ]
+   },
+   "daycare.c:GetCostToWithdrawRoute5DaycareMon": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "daycare.c",
+    "lines": [
+     1524
+    ]
+   },
+   "daycare.c:GetNumLevelsGainedForRoute5DaycareMon": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "daycare.c",
+    "lines": [
+     1544
+    ]
+   },
+   "daycare.c:IncrementDaycareSteps": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     1094
+    ]
+   },
+   "daycare.c:IsThereMonInRoute5Daycare": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "daycare.c",
+    "lines": [
+     1534
+    ]
+   },
+   "daycare.c:PutMonInRoute5Daycare": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "daycare.c",
+    "lines": [
+     1516
+    ]
+   },
+   "daycare.c:TakePokemonFromRoute5Daycare": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "daycare.c",
+    "lines": [
+     1553
+    ]
+   },
+   "debug.c:DebugAction_Util_CheatStart": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     2004
+    ]
+   },
+   "expansion_intro.c:Task_HandleExpansionIntro": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     279
+    ]
+   },
+   "field_control_avatar.c:GetInteractedMetatileScript": {
+    "emerald_catalog": "different",
+    "firered_file": "field_control_avatar.c",
+    "lines": [
+     484,
+     527
+    ]
+   },
+   "field_effect.c:CreatePokecenterMonitorSprite": {
+    "emerald_catalog": "different",
+    "firered_file": "field_effect.c",
+    "lines": [
+     1392
+    ]
+   },
+   "field_effect.c:FldEff_HallOfFameRecord": {
+    "emerald_catalog": "different",
+    "firered_file": "field_effect.c",
+    "lines": [
+     1192
+    ]
+   },
+   "field_effect.c:FldEff_UseSurf": {
+    "emerald_catalog": "different",
+    "firered_file": "field_effect.c",
+    "lines": [
+     3343
+    ]
+   },
+   "field_effect.c:HallOfFameRecordEffect_Init": {
+    "emerald_catalog": "different",
+    "firered_file": "field_effect.c",
+    "lines": [
+     1208
+    ]
+   },
+   "field_effect.c:HallOfFameRecordEffect_WaitForBallPlacement": {
+    "emerald_catalog": "different",
+    "firered_file": "field_effect.c",
+    "lines": [
+     1223
+    ]
+   },
+   "field_effect.c:HallOfFameRecordEffect_WaitForSoundAndEnd": {
+    "emerald_catalog": "different",
+    "firered_file": "field_effect.c",
+    "lines": [
+     1243
+    ]
+   },
+   "field_player_avatar.c:GetRivalAvatarGraphicsIdByStateIdAndGender": {
+    "emerald_catalog": "different",
+    "firered_file": "field_player_avatar.c",
+    "lines": [
+     1565
+    ]
+   },
+   "field_player_avatar.c:PlayerAvatarTransition_AcroBike": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1146
+    ]
+   },
+   "field_player_avatar.c:PlayerAvatarTransition_MachBike": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1135
+    ]
+   },
+   "field_region_map.c:PrintTitleWindowText": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     235
+    ]
+   },
+   "field_screen_effect.c:Task_RushInjuredPokemonToCenter": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "field_screen_effect.c",
+    "lines": [
+     1468,
+     1474
+    ]
+   },
+   "field_specials.c:ForcePlayerOntoBike": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "field_specials.c",
+    "lines": [
+     5399,
+     5400
+    ]
+   },
+   "field_specials.c:IsBuildingPCTile": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     1021
+    ]
+   },
+   "field_specials.c:IsBuildingPCTileFrlg": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     1029
+    ]
+   },
+   "field_specials.c:IsPlayerHousePCTile": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     1037
+    ]
+   },
+   "field_specials.c:IsPlayerHousePCTileFrlg": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     1049
+    ]
+   },
+   "field_specials.c:PCTurnOffEffect": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1206
+    ]
+   },
+   "field_specials.c:PCTurnOnEffect_SetMetatile": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1147,
+     1159
+    ]
+   },
+   "hof_pc.c:AccessHallOfFamePC": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     17
+    ]
+   },
+   "intro.c:SetUpCopyrightScreen": {
+    "emerald_catalog": "different",
+    "firered_file": "intro.c",
+    "lines": [
+     1054
+    ]
+   },
+   "link.c:Link_AnyPartnersPlayingFRLG_JP": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     768
+    ]
+   },
+   "main_menu.c:Task_HandleMainMenuAPressed": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1080
+    ]
+   },
+   "menu.c:HofPCTopBar_AddWindow": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     540
+    ]
+   },
+   "new_game.c:NewGameInitData": {
+    "emerald_catalog": "different",
+    "firered_file": "new_game.c",
+    "lines": [
+     163,
+     169,
+     215,
+     219
+    ]
+   },
+   "new_game.c:WarpToTruck": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     138
+    ]
+   },
+   "oak_speech.c:CB2_NewGameScene": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     682
+    ]
+   },
+   "oak_speech.c:CB2_ReturnFromNamingScreen": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1793
+    ]
+   },
+   "oak_speech.c:ClearTrainerPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     2007
+    ]
+   },
+   "oak_speech.c:ControlsGuide_LoadPage1": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     801
+    ]
+   },
+   "oak_speech.c:CreateFadeInTask": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     2050
+    ]
+   },
+   "oak_speech.c:CreateFadeOutTask": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     2102
+    ]
+   },
+   "oak_speech.c:CreateNidoranFSprite": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1888
+    ]
+   },
+   "oak_speech.c:CreatePikachuOrPlatformSprites": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1909
+    ]
+   },
+   "oak_speech.c:DestroyPikachuOrPlatformSprites": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1950
+    ]
+   },
+   "oak_speech.c:GetDefaultName": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     2143
+    ]
+   },
+   "oak_speech.c:LoadTrainerPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1971
+    ]
+   },
+   "oak_speech.c:OakSpeechPrintMessage": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     1128
+    ]
+   },
+   "oak_speech.c:PrintNameChoiceOptions": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     2122
+    ]
+   },
+   "oak_speech.c:SpriteCB_Pikachu": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1904
+    ]
+   },
+   "oak_speech.c:StartNewGameSceneFrlg": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     691
+    ]
+   },
+   "oak_speech.c:Task_ControlsGuide_ChangePage": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     871
+    ]
+   },
+   "oak_speech.c:Task_ControlsGuide_Clear": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     911
+    ]
+   },
+   "oak_speech.c:Task_ControlsGuide_HandleInput": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     843
+    ]
+   },
+   "oak_speech.c:Task_ControlsGuide_LoadPage": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     813
+    ]
+   },
+   "oak_speech.c:Task_NewGameScene": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     713
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_AskPlayerGender": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1272
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_AskRivalsName": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1561
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ClearGenderWindows": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1333
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ConfirmName": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1465
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_DestroyPlatformSprites": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1690
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_DoNamingScreen": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1445
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadeInRivalPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1551
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadeOutBGM": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1610
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadeOutForPlayerNamingScreen": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1375
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadeOutOak": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1259
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadeOutPlayerPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1527
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadeOutRivalPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1541
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadePlayerPicToBlack": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1763
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FadePlayerPicWhite": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1734
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_FreeResources": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1782
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_HandleConfirmNameInput": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1495
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_HandleGenderInput": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1314
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_HandleRivalNameInput": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1418
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_IStudyPokemon": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1206
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_Init": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1103
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_IsInhabitedFarAndWide": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1188
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_LetsGo": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1599
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_LoadPlayerPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1345
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_MoveRivalDisplayNameOptions": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1385
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ReleaseNidoranFFromPokeBall": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1170
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_RepeatNameQuestion": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1406
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ReshowPlayersPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1573
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ReturnNidoranFToPokeBall": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1215
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_SetUpDestroyPlatformSprites": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1679
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_SetUpExitAnimation": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1629
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_SetUpFadePlayerPicWhite": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1723
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_SetUpShrinkPlayerPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1641
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ShowGenderOptions": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1292
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ShrinkPlayerPic": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1652
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_TellMeALittleAboutYourself": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1230
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_ThisWorld": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1160
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_WaitForFade": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1776
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_WelcomeToTheWorld": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1143
+    ]
+   },
+   "oak_speech.c:Task_OakSpeech_YourNameWhatIsIt": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1356
+    ]
+   },
+   "oak_speech.c:Task_PikachuIntro_Clear": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     1084
+    ]
+   },
+   "oak_speech.c:Task_PikachuIntro_HandleInput": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     981
+    ]
+   },
+   "oak_speech.c:Task_PikachuIntro_LoadPage1": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     945
+    ]
+   },
+   "oak_speech.c:Task_SlowFadeIn": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     2019
+    ]
+   },
+   "oak_speech.c:Task_SlowFadeOut": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     2069
+    ]
+   },
+   "oak_speech.c:VBlankCB_NewGameScene": {
+    "emerald_catalog": "absent",
+    "firered_file": "oak_speech.c",
+    "lines": [
+     675
+    ]
+   },
+   "overworld.c:CB2_NewGame": {
+    "emerald_catalog": "different",
+    "firered_file": "overworld.c",
+    "lines": [
+     1941
+    ]
+   },
+   "overworld.c:CreateLinkPlayerSprite": {
+    "emerald_catalog": "different",
+    "firered_file": "overworld.c",
+    "lines": [
+     3632,
+     3633
+    ]
+   },
+   "overworld.c:Overworld_PlaySpecialMapMusic": {
+    "emerald_catalog": "different",
+    "firered_file": "overworld.c",
+    "lines": [
+     1307
+    ]
+   },
+   "overworld.c:TransitionMapMusic": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1342,
+     1345
+    ]
+   },
+   "party_menu.c:OpenPartyMenuInBattle": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     7495
+    ]
+   },
+   "pokedex.c:GetRegionalPokedexCount": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     4541
+    ]
+   },
+   "pokedex.c:HasAllRegionalMons": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     4592
+    ]
+   },
+   "pokemon.c:IsSpeciesInRegionalDex": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     5054
+    ]
+   },
+   "pokemon.c:NationalToRegionalOrder": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     4643
+    ]
+   },
+   "pokemon.c:PlayerGenderToFrontTrainerPicId": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": "trainer_pokemon_sprites.c",
+    "lines": [
+     5649,
+     5651
+    ]
+   },
+   "pokemon.c:RegionalToNationalOrder": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     4716
+    ]
+   },
+   "pokemon.c:SpeciesToRegionalPokedexNum": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     4695
+    ]
+   },
+   "pokemon_summary_screen.c:DidMonComeFromGBAGames": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     3641
+    ]
+   },
+   "quickstart.c:CB2_SkipToNewGame": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     77,
+     92
+    ]
+   },
+   "region_map.c:CreateRegionMapPlayerIcon": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1747,
+     1757
+    ]
+   },
+   "safari_zone.c:EnterSafariMode": {
+    "emerald_catalog": "different",
+    "firered_file": "safari_zone.c",
+    "lines": [
+     61
+    ]
+   },
+   "save_location.c:SetUnlockedPokedexFlags": {
+    "emerald_catalog": "different",
+    "firered_file": "save_location.c",
+    "lines": [
+     127
+    ]
+   },
+   "script_menu.c:CreatePCMultichoice": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     774
+    ]
+   },
+   "start_menu.c:ShowSafariBallsWindow": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     436
+    ]
+   },
+   "string_util.c:ExpandPlaceholder_Region": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     518
+    ]
+   },
+   "string_util.c:ExpandPlaceholder_RivalName": {
+    "emerald_catalog": "different",
+    "firered_file": "string_util.c",
+    "lines": [
+     470,
+     476,
+     478
+    ]
+   },
+   "title_screen.c:CB2_InitTitleScreen": {
+    "emerald_catalog": "different",
+    "firered_file": "title_screen.c",
+    "lines": [
+     566
+    ]
+   },
+   "title_screen_frlg.c:CB2_FadeOutTransitionToBerryFix": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     976
+    ]
+   },
+   "title_screen_frlg.c:CB2_FadeOutTransitionToResetRtcScreen": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     705
+    ]
+   },
+   "title_screen_frlg.c:CB2_FadeOutTransitionToSaveClearScreen": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     970
+    ]
+   },
+   "title_screen_frlg.c:CB2_InitTitleScreenFrlg": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     381
+    ]
+   },
+   "title_screen_frlg.c:CB2_TitleScreenRun": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     451
+    ]
+   },
+   "title_screen_frlg.c:CreateBlankSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1267
+    ]
+   },
+   "title_screen_frlg.c:CreateFlameSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1030
+    ]
+   },
+   "title_screen_frlg.c:CreateLeafSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1157
+    ]
+   },
+   "title_screen_frlg.c:CreateSlashSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1290
+    ]
+   },
+   "title_screen_frlg.c:CreateStreakSprites": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1188
+    ]
+   },
+   "title_screen_frlg.c:DeactivateSlashSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1301
+    ]
+   },
+   "title_screen_frlg.c:IsSlashSpriteDeactivated": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1307
+    ]
+   },
+   "title_screen_frlg.c:LoadMainTitleScreenPalsAndResetBgs": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     948
+    ]
+   },
+   "title_screen_frlg.c:LoadSpriteGfxAndPals": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     985
+    ]
+   },
+   "title_screen_frlg.c:ResetGpuRegs": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "region_map.c",
+    "lines": [
+     435
+    ]
+   },
+   "title_screen_frlg.c:ScheduleStopScanlineEffect": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     940
+    ]
+   },
+   "title_screen_frlg.c:SetGpuRegsForTitleScreenRun": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     714
+    ]
+   },
+   "title_screen_frlg.c:SetPalOnOrCreateBlankSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1273
+    ]
+   },
+   "title_screen_frlg.c:SetTitleScreenScene": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     505
+    ]
+   },
+   "title_screen_frlg.c:SetTitleScreenScene_Cry": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     762
+    ]
+   },
+   "title_screen_frlg.c:SetTitleScreenScene_FadeIn": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     560
+    ]
+   },
+   "title_screen_frlg.c:SetTitleScreenScene_FlashSprite": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     533
+    ]
+   },
+   "title_screen_frlg.c:SetTitleScreenScene_Init": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     511
+    ]
+   },
+   "title_screen_frlg.c:SetTitleScreenScene_Restart": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     722
+    ]
+   },
+   "title_screen_frlg.c:SetTitleScreenScene_Run": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     653,
+     661,
+     663
+    ]
+   },
+   "title_screen_frlg.c:SignalEndTitleScreenPaletteSomethingTask": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     904
+    ]
+   },
+   "title_screen_frlg.c:SpriteCallback_Slash": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1315
+    ]
+   },
+   "title_screen_frlg.c:SpriteCallback_Streak": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1175
+    ]
+   },
+   "title_screen_frlg.c:SpriteCallback_TitleScreenFlame": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1001
+    ]
+   },
+   "title_screen_frlg.c:SpriteCallback_TitleScreenLeaf": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1126
+    ]
+   },
+   "title_screen_frlg.c:Task_FlameSpawner": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1064
+    ]
+   },
+   "title_screen_frlg.c:Task_LeafSpawner": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1208
+    ]
+   },
+   "title_screen_frlg.c:Task_TitleScreenMain": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     487
+    ]
+   },
+   "title_screen_frlg.c:Task_TitleScreenTimer": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     470
+    ]
+   },
+   "title_screen_frlg.c:Task_TitleScreen_BlinkPressStart": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     860
+    ]
+   },
+   "title_screen_frlg.c:Task_TitleScreen_SlideWin0": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     801
+    ]
+   },
+   "title_screen_frlg.c:TitleScreen_rand": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1257
+    ]
+   },
+   "title_screen_frlg.c:TitleScreen_srand": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     1252
+    ]
+   },
+   "title_screen_frlg.c:UpdateScanlineEffectRegBuffer": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "title_screen.c",
+    "lines": [
+     910
+    ]
+   },
+   "title_screen_frlg.c:VBlankCB": {
+    "emerald_catalog": "firered_only",
+    "firered_file": "battle_records.c",
+    "lines": [
+     459
+    ]
+   },
+   "trade.c:CanSpinTradeMon": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     2590,
+     2591
+    ]
+   },
+   "trade.c:GetGameProgressForLinkTrade": {
+    "emerald_catalog": "different",
+    "firered_file": "trade.c",
+    "lines": [
+     2460
+    ]
+   },
+   "trainer.c:GetPlayerTrainerPic": {
+    "emerald_catalog": "absent",
+    "firered_file": null,
+    "lines": [
+     25,
+     26
+    ]
+   },
+   "trainer_card.c:CountPlayerTrainerStars": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     672
+    ]
+   },
+   "trainer_card.c:DrawStarsAndBadgesOnCard": {
+    "emerald_catalog": "different",
+    "firered_file": "trainer_card.c",
+    "lines": [
+     1524
+    ]
+   },
+   "trainer_card.c:GetSetCardType": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1859,
+     1868
+    ]
+   },
+   "trainer_card.c:TrainerCard_GenerateCardForLinkPlayer": {
+    "emerald_catalog": "different",
+    "firered_file": "trainer_card.c",
+    "lines": [
+     793
+    ]
+   },
+   "trainer_card.c:TrainerCard_GenerateCardForPlayer": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     775
+    ]
+   },
+   "trainer_card.c:VersionToCardType": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": null,
+    "lines": [
+     1888
+    ]
+   },
+   "trainer_fan_club.c:BufferFanClubTrainerName": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": "trainer_fan_club.c",
+    "lines": [
+     288,
+     304,
+     339
+    ]
+   },
+   "trainer_tower.c:BuildEnemyParty": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     953
+    ]
+   },
+   "trainer_tower.c:CheckFinalTime": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     758
+    ]
+   },
+   "trainer_tower.c:CloseResultsBoard": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     883
+    ]
+   },
+   "trainer_tower.c:GetCurrentTime": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     839
+    ]
+   },
+   "trainer_tower.c:GetFloorAlreadyCleared": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     687
+    ]
+   },
+   "trainer_tower.c:GetOwnerState": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     717
+    ]
+   },
+   "trainer_tower.c:GetTrainerTowerChallengeStatus": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     801
+    ]
+   },
+   "trainer_tower.c:GetTrainerTowerRecordTime": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     1047
+    ]
+   },
+   "trainer_tower.c:GiveChallengePrize": {
+    "emerald_catalog": "emerald_only",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     734
+    ]
+   },
+   "trainer_tower.c:HasSpokenToOwner": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     944
+    ]
+   },
+   "trainer_tower.c:InitTrainerTowerBattleStruct": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     403
+    ]
+   },
+   "trainer_tower.c:PrintTrainerTowerRecords": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     1023
+    ]
+   },
+   "trainer_tower.c:ResetTrainerTowerResults": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     1060
+    ]
+   },
+   "trainer_tower.c:SetTrainerTowerRecordTime": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     1052
+    ]
+   },
+   "trainer_tower.c:SetUpTrainerTowerDataStruct": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     436
+    ]
+   },
+   "trainer_tower.c:ShowResultsBoard": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     856
+    ]
+   },
+   "trainer_tower.c:StartTrainerTowerChallenge": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     701
+    ]
+   },
+   "trainer_tower.c:TrainerTowerAddFloorCleared": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     679
+    ]
+   },
+   "trainer_tower.c:TrainerTowerResumeTimer": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     781
+    ]
+   },
+   "trainer_tower.c:TrainerTowerSetPlayerLost": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     794
+    ]
+   },
+   "trainer_tower.c:ValidateOrResetCurTrainerTowerRecord": {
+    "emerald_catalog": "absent",
+    "firered_file": "trainer_tower.c",
+    "lines": [
+     1011
+    ]
+   }
+  }
+ }
+}

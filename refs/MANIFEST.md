@@ -11,6 +11,7 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | [pokeheartgold](https://github.com/pret/pokeheartgold) | `9d8b7591f0` | DS, C + ensamblador, en progreso. Fijado; sin extractores todavía. |
 | [pokeapi](https://github.com/PokeAPI/pokeapi) | `bc92d3b602` | CSV de datos de todas las generaciones. No es fuente de verdad. |
 | [pokecrystal](https://github.com/pret/pokecrystal) | `5beda23ffa` | GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta. |
+| [pokeemerald-expansion](https://github.com/rh-hideout/pokeemerald-expansion) | `dfb0f84374` | GBA, C. Base comunitaria que compila Emerald y FRLG (IS_FRLG) y trae tests de combate. No es fuente de verdad de ningún juego. |
 
 ## Salidas
 
@@ -28,6 +29,7 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | `emerald/summary.json` | pokeemerald | 310 | `tools/refs/emerald_summary.py` |
 | `emerald/systems.json` | pokeemerald | 10 | `tools/refs/emerald_systems.py` |
 | `emerald/trainers.json` | pokeemerald | 855 | `tools/refs/emerald_trainers.py` |
+| `expansion/frlg_split.json` | pokeemerald-expansion | 270 | `tools/refs/expansion_frlg.py` |
 | `heartgold/encounters.json` | pokeheartgold | 142 | `tools/refs/heartgold_data.py` |
 | `heartgold/trainers.json` | pokeheartgold | 738 | `tools/refs/heartgold_data.py` |
 | `heartgold/zone_events.json` | pokeheartgold | 491 | `tools/refs/heartgold_zone_events.py` |

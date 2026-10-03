@@ -349,3 +349,10 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   número de objetos, warps, eventos de fondo y de coordenadas, más los warps con su
   destino. R7 describe el formato.
 - [x] **R20 Extraer Crystal (tilesets y mapas)** [medio]. Base del editor de equivalencias de Johto (docs/VISION.md, fase 5). Ejecuta `npm run refs:fetch -- pokecrystal` y `npm run refs:crystal-maps`; genera 37 tilesets (2.664 bloques) y 388 mapas (302 archivos `.blk` en `maps/`) con sus dimensiones, rejillas, atributos y conexiones.
+- [x] **R21 Dónde separa Expansion FRLG de Emerald** [medio]. Fuente
+  `pokeemerald-expansion` (`dfb0f843`, sparse `src/`, `include/`, `test/`) y
+  `npm run refs:expansion-frlg`: genera `refs/expansion/frlg_split.json` con cada
+  función que prueba `IS_FRLG`/`FIRERED`/`LEAFGREEN` (270), su estado en
+  `refs/emerald/functions.json` y su archivo en pokefirered. El cruce con los módulos
+  TS es `python3 tools/engineSplit.py --expansion`; conclusiones en
+  [docs/REPOS-COMUNITARIOS.md](../docs/REPOS-COMUNITARIOS.md) §8.
