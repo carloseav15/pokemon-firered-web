@@ -64,12 +64,17 @@ function parseHash(): void {
   }
 }
 
-function setZoom(next: number): void {
+/** Cambia el zoom manteniendo fijo el punto del viewport (ax, ay); por defecto, el centro. */
+function setZoom(next: number, ax = viewport.clientWidth / 2, ay = viewport.clientHeight / 2): void {
+  const worldX = (viewport.scrollLeft + ax) / zoom;
+  const worldY = (viewport.scrollTop + ay) / zoom;
   // Redondeado a 3 decimales: sin esto la URL muestra z=0.6400000000000001.
   zoom = Math.round(Math.min(4, Math.max(0.25, next)) * 1000) / 1000;
   content.style.transform = `scale(${zoom})`;
   content.style.width = `${index.world.width * TILE * zoom}px`;
   content.style.height = `${index.world.height * TILE * zoom}px`;
+  viewport.scrollLeft = worldX * zoom - ax;
+  viewport.scrollTop = worldY * zoom - ay;
   writeHash();
 }
 
@@ -134,44 +139,218 @@ type AnimatedMap = {
   renderer: TileRenderer;
   animator: TilesetAnimator;
   bctx: CanvasRenderingContext2D;
-  cells: Array<{ x: number; y: number; mt: number }>;
+  // Rectángulo del mapa en píxeles del mundo (sin zoom), para saber si se ve.
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  // Bit i = la casilla usa tiles del rango i de `ranges`; dirty acumula los rangos
+  // reescritos desde el último redibujado.
+  cells: Array<{ x: number; y: number; mt: number; mask: number }>;
+  dirty: number;
 };
 const animatedMaps: AnimatedMap[] = [];
 let animOn = false;
 let animFrame = 0;
+let animLast = 0;
+let animAccumulator = 0;
+// Fotograma de la GBA: 280896 ciclos a 16,78 MHz (59,73 por segundo). Mismo valor que
+// FRAME_MS en src/fr/game.ts:112; el juego avanza con este paso fijo y no con el
+// refresco de la pantalla (que en un Mac puede ser 120 Hz).
+const GBA_FRAME_MS = 1000 / (16777216 / 280896);
+let fpsFrames = 0;
+let fpsSince = 0;
+let fpsValue = 0;
 
-function metatileUsesAnim(primary: TilesetData, secondary: TilesetData, ranges: Array<[number, number]>, mt: number): boolean {
+function rangeMask(primary: TilesetData, secondary: TilesetData, ranges: Array<[number, number]>, mt: number): number {
   let entries: Uint16Array;
   if (mt < NUM_METATILES_IN_PRIMARY) entries = primary.metatiles.subarray(mt * 8, mt * 8 + 8);
   else {
     const local = mt - NUM_METATILES_IN_PRIMARY;
-    if (local * 8 >= secondary.metatiles.length) return false;
+    if (local * 8 >= secondary.metatiles.length) return 0;
     entries = secondary.metatiles.subarray(local * 8, local * 8 + 8);
   }
+  let mask = 0;
   for (const entry of entries) {
     const tile = entry & 0x3ff;
-    for (const [lo, hi] of ranges) if (tile >= lo && tile < hi) return true;
+    ranges.forEach(([lo, hi], i) => {
+      if (tile >= lo && tile < hi) mask |= 1 << i;
+    });
   }
-  return false;
+  return mask;
 }
 
 function animRangesFor(primary: TilesetData, secondary: TilesetData): Array<[number, number]> {
   return [...(ANIM_RANGES[primary.callback ?? ""] ?? []), ...(ANIM_RANGES[secondary.callback ?? ""] ?? [])];
 }
 
-function tickAnimations(): void {
+function mapVisible(m: AnimatedMap): boolean {
+  const left = viewport.scrollLeft / zoom;
+  const top = viewport.scrollTop / zoom;
+  const right = left + viewport.clientWidth / zoom;
+  const bottom = top + viewport.clientHeight / zoom;
+  return m.left < right && m.left + m.width > left && m.top < bottom && m.top + m.height > top;
+}
+
+function tickAnimations(now: number): void {
   if (!animOn) return;
-  // Mismo ritmo que el C: UpdateTilesetAnimations una vez por frame (60/s,
-  // overworld.c:1470); cada mapa lleva sus contadores como el juego.
+  // Paso fijo de la GBA, como el bucle del juego (src/fr/game.ts:184-199):
+  // UpdateTilesetAnimations una vez por fotograma de GBA (overworld.c:1470).
+  animAccumulator += Math.min(now - animLast, 250);
+  animLast = now;
+  let steps = 0;
+  while (animAccumulator >= GBA_FRAME_MS && steps < 8) {
+    animAccumulator -= GBA_FRAME_MS;
+    steps++;
+    for (const m of animatedMaps) m.animator.update();
+  }
+  // Los tiles cambian cada 8 o 16 fotogramas (TilesetAnim_General): solo se
+  // redibujan las casillas cuyos tiles cambiaron, y solo en los mapas visibles;
+  // los demás conservan su `dirty` hasta que entran en pantalla.
   for (const m of animatedMaps) {
-    m.animator.update();
+    if (!m.dirty || !mapVisible(m)) continue;
+    // Una imagen combinada (capa inferior + superior) por metatile y redibujado:
+    // muchas casillas comparten metatile (el agua), así se compone una vez.
+    const composed = new Map<number, HTMLCanvasElement>();
     for (const c of m.cells) {
-      const { bottom, top } = m.renderer.metatile(c.mt);
-      m.bctx.drawImage(bottom, c.x * TILE, c.y * TILE);
-      m.bctx.drawImage(top, c.x * TILE, c.y * TILE);
+      if (!(c.mask & m.dirty)) continue;
+      let img = composed.get(c.mt);
+      if (!img) {
+        const { bottom, top } = m.renderer.metatile(c.mt);
+        img = document.createElement("canvas");
+        img.width = TILE;
+        img.height = TILE;
+        const ctx = img.getContext("2d")!;
+        ctx.drawImage(bottom, 0, 0);
+        ctx.drawImage(top, 0, 0);
+        composed.set(c.mt, img);
+      }
+      m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
+      m.bctx.drawImage(img, c.x * TILE, c.y * TILE);
     }
+    m.dirty = 0;
+  }
+  fpsFrames++;
+  if (now - fpsSince >= 1000) {
+    fpsValue = (fpsFrames * 1000) / (now - fpsSince);
+    fpsFrames = 0;
+    fpsSince = now;
+    updateMeta();
   }
   animFrame = requestAnimationFrame(tickAnimations);
+}
+
+function updateMeta(): void {
+  const meta = document.getElementById("meta");
+  if (!meta || !index) return;
+  const count = Object.keys(index.maps).length;
+  const w = index.world.width;
+  const h = index.world.height;
+  let text = `${count} mapas · ${w}×${h} metatiles (${w * TILE}×${h * TILE} px) · ${index.conflicts.length} conflicto(s) · decomp ${index._meta.decomp_commit.slice(0, 8)}`;
+  if (index.conflicts.length > 0) {
+    const c = index.conflicts[0];
+    text += ` · conflicto: ${c.from}→${c.to} previa (${c.placed}) propuesta (${c.proposed})`;
+  }
+  if (animOn) text += ` · animaciones: ${fpsValue.toFixed(0)} FPS de pantalla, ${(1000 / GBA_FRAME_MS).toFixed(2)} pasos/s de GBA`;
+  meta.textContent = text;
+}
+
+// Relleno de las zonas sin mapa: cada casilla vacía muestra el bloque de borde del
+// mapa más cercano, repetido como lo repite el juego fuera de los límites
+// (GetBorderBlockAt, fieldmap.c:39-57: (x - MAP_OFFSET) mod borderWidth, ídem en y).
+// Es solo visual: el borde nunca es transitable.
+type FillSource = { info: KantoIndex["maps"][string]; layout: Awaited<ReturnType<typeof rom.loadLayout>>; renderer: TileRenderer };
+let nearestFill: Int16Array | null = null;
+let fillIds: string[] = [];
+
+function drawFill(sources: Map<string, FillSource>): void {
+  const W = index.world.width;
+  const H = index.world.height;
+  const ids = [...sources.keys()].sort();
+  fillIds = ids;
+  const rects = ids.map((id) => {
+    const m = index.maps[id];
+    return { x0: m.x - minX, y0: m.y - minY, x1: m.x - minX + m.width, y1: m.y - minY + m.height };
+  });
+  const occupied = new Uint8Array(W * H);
+  for (const r of rects) for (let y = r.y0; y < r.y1; y++) occupied.fill(1, y * W + r.x0, y * W + r.x1);
+  const nearest = new Int16Array(W * H).fill(-1);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (occupied[y * W + x]) continue;
+      let best = -1;
+      let bestD = Infinity;
+      rects.forEach((r, i) => {
+        const dx = x < r.x0 ? r.x0 - x : x >= r.x1 ? x - r.x1 + 1 : 0;
+        const dy = y < r.y0 ? r.y0 - y : y >= r.y1 ? y - r.y1 + 1 : 0;
+        const d = dx * dx + dy * dy;
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      nearest[y * W + x] = best;
+    }
+  }
+  nearestFill = nearest;
+
+  // Un patrón por mapa: su borde de borderWidth×borderHeight metatiles.
+  const patterns = ids.map((id) => {
+    const { layout, renderer } = sources.get(id)!;
+    const c = document.createElement("canvas");
+    c.width = layout.borderWidth * TILE;
+    c.height = layout.borderHeight * TILE;
+    const ctx = c.getContext("2d")!;
+    for (let by = 0; by < layout.borderHeight; by++) {
+      for (let bx = 0; bx < layout.borderWidth; bx++) {
+        const { bottom, top } = renderer.metatile(layout.border[bx + by * layout.borderWidth]! & 0x3ff);
+        ctx.drawImage(bottom, bx * TILE, by * TILE);
+        ctx.drawImage(top, bx * TILE, by * TILE);
+      }
+    }
+    return { url: c.toDataURL(), w: c.width, h: c.height };
+  });
+
+  // Tramos horizontales del mismo mapa, unidos en vertical cuando coinciden.
+  const fill = document.createElement("div");
+  fill.className = "fill";
+  let open = new Map<string, { x0: number; x1: number; y0: number; y1: number; i: number }>();
+  const flush = (r: { x0: number; x1: number; y0: number; y1: number; i: number }) => {
+    const p = patterns[r.i]!;
+    const mr = rects[r.i]!;
+    const left = r.x0 * TILE;
+    const top = r.y0 * TILE;
+    const ox = (((mr.x0 * TILE - left) % p.w) + p.w) % p.w;
+    const oy = (((mr.y0 * TILE - top) % p.h) + p.h) % p.h;
+    const d = document.createElement("div");
+    d.style.cssText = `position:absolute;left:${left}px;top:${top}px;width:${(r.x1 - r.x0) * TILE}px;height:${(r.y1 - r.y0) * TILE}px;background-image:url(${p.url});background-position:${ox}px ${oy}px;image-rendering:pixelated`;
+    fill.appendChild(d);
+  };
+  for (let y = 0; y < H; y++) {
+    const next = new Map<string, { x0: number; x1: number; y0: number; y1: number; i: number }>();
+    let x = 0;
+    while (x < W) {
+      const i = nearest[y * W + x]!;
+      if (i < 0) {
+        x++;
+        continue;
+      }
+      let x1 = x + 1;
+      while (x1 < W && nearest[y * W + x1] === i) x1++;
+      const key = `${x}:${x1}:${i}`;
+      const prev = open.get(key);
+      if (prev) {
+        prev.y1 = y + 1;
+        next.set(key, prev);
+        open.delete(key);
+      } else next.set(key, { x0: x, x1, y0: y, y1: y + 1, i });
+      x = x1;
+    }
+    for (const r of open.values()) flush(r);
+    open = next;
+  }
+  for (const r of open.values()) flush(r);
+  content.prepend(fill);
 }
 
 async function build(): Promise<void> {
@@ -201,6 +380,7 @@ async function build(): Promise<void> {
     triggersByMap.get(t.map)!.push(t);
   }
 
+  const fillSources = new Map<string, FillSource>();
   // Por par de tilesets: paletas antes de dibujar sus mapas, uno a uno (par. 5.2).
   for (const ids of byPair.values()) {
     for (const id of ids) {
@@ -286,15 +466,39 @@ async function build(): Promise<void> {
         for (let y = 0; y < info.height; y++) {
           for (let x = 0; x < info.width; x++) {
             const mt = layout.blocks[y * info.width + x]! & 0x3ff;
-            if (metatileUsesAnim(primary, secondary, ranges, mt)) cells.push({ x, y, mt });
+            const mask = rangeMask(primary, secondary, ranges, mt);
+            if (mask) cells.push({ x, y, mt, mask });
           }
         }
-        if (cells.length > 0) animatedMaps.push({ renderer, animator: new TilesetAnimator(renderer), bctx, cells });
+        if (cells.length > 0) {
+          const entry: AnimatedMap = {
+            renderer, bctx, cells, dirty: 0,
+            left: (info.x - minX) * TILE, top: (info.y - minY) * TILE,
+            width: info.width * TILE, height: info.height * TILE,
+            animator: undefined as unknown as TilesetAnimator,
+          };
+          // El animador escribe a través de este destino para marcar qué rangos
+          // cambiaron; TileRenderer recibe la escritura sin modificar.
+          entry.animator = new TilesetAnimator({
+            primary, secondary,
+            writeTiles(destTile: number, data: Uint8Array, count?: number) {
+              renderer.writeTiles(destTile, data, count);
+              const n = count ?? data.length / 32;
+              ranges.forEach(([lo, hi], i) => {
+                if (destTile < hi && destTile + n > lo) entry.dirty |= 1 << i;
+              });
+            },
+          });
+          animatedMaps.push(entry);
+        }
       }
+      fillSources.set(id, { info, layout, renderer });
 
       content.appendChild(wrap);
     }
   }
+
+  drawFill(fillSources);
 
   const worldW = index.world.width * TILE;
   const worldH = index.world.height * TILE;
@@ -344,7 +548,12 @@ function showAt(worldX: number, worldY: number): void {
   const my = Math.floor(worldY / TILE) + minY;
   const entry = Object.entries(index.maps).find(([, m]) => mx >= m.x && mx < m.x + m.width && my >= m.y && my < m.y + m.height);
   if (!entry) {
-    panel.innerHTML = "<p>Fuera de los mapas.</p>";
+    const fx = mx - minX;
+    const fy = my - minY;
+    const i = nearestFill && fx >= 0 && fy >= 0 && fx < index.world.width && fy < index.world.height ? nearestFill[fy * index.world.width + fx]! : -1;
+    panel.innerHTML = i >= 0
+      ? `<p>Fuera de los mapas: relleno visual con el borde de ${fillIds[i]} (el mapa más cercano). No es transitable.</p>`
+      : "<p>Fuera de los mapas.</p>";
     return;
   }
   const [id, m] = entry;
@@ -398,8 +607,13 @@ function setupUi(): void {
   animBox.checked = false;
   animBox.addEventListener("change", () => {
     animOn = animBox.checked;
-    if (animOn) animFrame = requestAnimationFrame(tickAnimations);
-    else cancelAnimationFrame(animFrame);
+    if (animOn) {
+      animLast = fpsSince = performance.now();
+      animAccumulator = 0;
+      fpsFrames = 0;
+      animFrame = requestAnimationFrame(tickAnimations);
+    } else cancelAnimationFrame(animFrame);
+    updateMeta();
   });
   for (const layer of LAYERS) {
     const label = document.createElement("label");
@@ -479,11 +693,32 @@ function setupUi(): void {
   viewport.addEventListener(
     "wheel",
     (ev) => {
+      // Trackpad de Mac: deslizar con dos dedos desplaza (scroll nativo del
+      // viewport) y pellizcar hace zoom (el navegador lo envía con ctrlKey).
+      // Rueda de ratón: zoom. Se distingue por el delta: la rueda avanza a saltos
+      // (modo línea en Firefox; múltiplos de 120 en wheelDeltaY en Chrome/Safari) y
+      // sin componente horizontal; el trackpad envía deltas pequeños y continuos.
+      const legacy = (ev as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY ?? 0;
+      const mouseWheel = ev.deltaMode === 1 || (ev.deltaX === 0 && legacy !== 0 && legacy % 120 === 0 && Math.abs(ev.deltaY) >= 50);
+      // ⌘ + rueda (o deslizamiento) hace zoom siempre, por si el ratón no se reconoce.
+      if (!ev.ctrlKey && !ev.metaKey && !mouseWheel) return;
       ev.preventDefault();
-      setZoom(zoom * (ev.deltaY > 0 ? 0.9 : 1.1));
+      const r = viewport.getBoundingClientRect();
+      const factor = ev.ctrlKey ? Math.exp(-ev.deltaY * 0.01) : ev.deltaY > 0 ? 0.9 : 1.1;
+      setZoom(zoom * factor, ev.clientX - r.left, ev.clientY - r.top);
     },
     { passive: false },
   );
+  // El desplazamiento nativo (trackpad, barras) también guarda la posición en la URL.
+  let hashPending = false;
+  viewport.addEventListener("scroll", () => {
+    if (hashPending) return;
+    hashPending = true;
+    setTimeout(() => {
+      hashPending = false;
+      writeHash();
+    }, 200);
+  });
   document.getElementById("zoom-in")!.addEventListener("click", () => setZoom(zoom * 1.25));
   document.getElementById("zoom-out")!.addEventListener("click", () => setZoom(zoom * 0.8));
 }
@@ -491,13 +726,7 @@ function setupUi(): void {
 build()
   .then(() => {
     setupUi();
-    const meta = document.getElementById("meta")!;
-    const count = Object.keys(index.maps).length;
-    meta.textContent = `${count} mapas · ${index.world.width}×${index.world.height} metatiles · ${index.conflicts.length} conflicto(s) · decomp ${index._meta.decomp_commit.slice(0, 8)}`;
-    if (index.conflicts.length > 0) {
-      const c = index.conflicts[0];
-      meta.textContent += ` · conflicto: ${c.from}→${c.to} previa (${c.placed}) propuesta (${c.proposed})`;
-    }
+    updateMeta();
   })
   .catch((err) => {
     panel.innerHTML = `<p>Error: ${String(err)}</p>`;
