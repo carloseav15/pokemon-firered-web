@@ -198,3 +198,94 @@ de los `map.json` del decomp.
   Es la herramienta para comprobar que el modo libre no deja callejones sin salida.
 - **Islas Sete y otras regiones:** el formato de mapas de Emerald, HnS y PKMN-World
   es el mismo de pret (Crystal ya está en `refs/crystal/`).
+
+## 8. Versión 1.1: "Jugar aquí" (tarea 7.3)
+
+Plan escrito por Claude el 2026-10-02, tras revisar 7.1 y 7.2. Objetivo: pinchar una
+casilla del visor y abrir **el juego real** con el jugador en esa casilla, eligiendo
+chico o chica y un punto de la historia. Así se ve qué pasa de verdad (activadores,
+NPCs, colisiones, animaciones) sin reimplementar nada en el visor.
+
+### 8.1 Cómo coloca el juego al jugador (comprobado)
+
+- "Continuar" (`src/fr/boot.ts:125-128`) lee la partida con `saveStore.load()` y llama a
+  `game.continueGame(data)`.
+- `continueGame` (`src/fr/game.ts:322-359`) pone al jugador en `save.location`
+  (`mapGroup`, `mapNum`) y `save.pos` (`x`, `y`), salvo que esté activo
+  `continueGameWarpActive`, que solo se activa tras el Salón de la Fama.
+- **Pista**: `save.pos` son coordenadas locales del mapa, sin el +7 de la rejilla
+  interna. `tools/playtest/saves/route3.json` tiene `location` (3, 21) y `pos` (0, 11).
+- **Pista**: `mapGroup` y `mapNum` son la posición del nombre del mapa en
+  `public/fr/maps.json` → `groups` (Route3 = grupo 3, índice 21).
+- `playerGender` (0 chico, 1 chica) está en la partida. Comprueba en el navegador que
+  el sprite de Leaf aparece al continuar con 1.
+- Si la partida tiene escenas de Quest Log, al continuar se reproducen primero
+  (`TryStartQuestLogPlayback`, `src/fr/questLogEvents.ts:1153`). En la partida de
+  prueba vacía `questLogScenes` para entrar directo.
+
+### 8.2 Riesgo: no pisar la partida real
+
+La partida vive en **una sola clave** de `localStorage`, `pokemon-gba-web-lab.firered.v2`
+(`src/fr/save.ts:214`). Escribir ahí una partida de prueba borraría la del usuario, y
+guardar dentro del juego de prueba también.
+
+Solución propuesta (**toca `src/fr/`: necesita permiso del usuario antes de empezar**):
+- Un modo `sandbox` en `LaunchOptions` (`boot.ts`) que recibe la partida ya preparada y
+  llama a `game.continueGame(data)`.
+- `saveStore` con clave configurable; en `sandbox` usa
+  `pokemon-gba-web-lab.firered.sandbox`. Sin el modo, nada cambia.
+- `src/main.ts` acepta `?fr=sandbox` y lee la partida preparada de `sessionStorage`
+  (clave `fr-sandbox-save`), que escribe el visor antes de abrir la pestaña.
+
+Si el usuario no da permiso, para y avisa: no hay alternativa limpia sin tocar el juego.
+
+### 8.3 Partidas base
+
+- El índice (`world_index.py`) copia las 24 partidas de `tools/playtest/saves/` a
+  `public/viewer/saves/` (generadas, no a mano) y escribe un manifiesto con, por
+  partida: nombre, mapa y posición, número de medallas (`FLAG_BADGE01_GET` a `08`) y
+  las variables de escena que tenga activas.
+- En el visor: un selector "punto de la historia" con esas partidas, ordenado por
+  medallas, y un selector chico/chica.
+
+### 8.4 Botón en la ficha
+
+- Botón "Jugar aquí" en la ficha de cualquier casilla.
+- Si la casilla tiene colisión o es agua, avisa y propone la casilla pasable más
+  cercana del mismo mapa.
+- Prepara la partida: copia de la base, `location` y `pos` del clic,
+  `playerGender`, `facing` hacia abajo, `questLogScenes` vacío. La guarda en
+  `sessionStorage` y abre `/?fr=sandbox` en otra pestaña.
+
+### 8.5 Terminada cuando
+
+Cada punto comprobado en el navegador:
+- La partida real no cambia: compara el valor de `pokemon-gba-web-lab.firered.v2`
+  antes y después de jugar y guardar en la prueba.
+- En Ciudad Verde, con la partida `parcel` el anciano bloquea el camino al norte, y
+  con `oldman` el camino está libre.
+- Chico y chica se ven con su sprite correcto.
+- Entrar desde el visor en la Ruta 3 deja al jugador en la casilla pinchada.
+- `check:port`, `build`, `git diff --check` y `check:honesty` en verde.
+
+## 9. Mejoras pequeñas pendientes (tarea 7.4)
+
+- Pinchar una puerta centra la vista en su destino si es exterior, o nombra el
+  interior si no lo es.
+- Buscador también por nombre legible del mapa (`regionMapSectionName` o el nombre del
+  mapa sin `MAP_`).
+- Zoom de la URL redondeado (hoy sale `z=0.6400000000000001`).
+- Estado inicial de los NPC condicionales: si su flag empieza activo al iniciar
+  partida (búscalo en los `setflag` de los scripts de nueva partida) y, por tanto,
+  si el NPC aparece o desaparece.
+
+## 10. Animaciones del mundo en el visor (opcional, tarea 7.5)
+
+FireRed solo anima 5 de sus 68 tilesets (**pista**, de `anims` en `public/fr/tilesets/`):
+`General` (flores, orilla de arena y agua, corriente de agua), `CeladonCity` (fuente),
+`CeladonGym` (flores), `MtEmber` (vapor) y `VermilionGym` (puerta). Los árboles no se
+mueven en el original.
+
+El visor podría animarlas reutilizando `TilesetAnimator` (`src/fr/field/tilesetAnimator.ts`)
+y redibujando solo las casillas que usan metatiles animados. Es cosmético: no aporta a
+la revisión. Hazlo solo si el usuario lo pide.

@@ -446,3 +446,8 @@ No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones
 - [x] **7.2 Visor: correcciones y fichas para el modo libre** [básico] — opencode,
   `ee5d81ec`. Zoom, hash, flags y leyenda corregidos; `TRAINER_` y dirección de visión en
   los 164 entrenadores; writers con `addvar`/`copyvar`.
+- [ ] **7.3 Visor: "Jugar aquí"** [medio] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §8.
+  Abre el juego real en la casilla pinchada, con chico/chica y partida base, sin tocar
+  la partida del usuario. **Toca `src/fr/boot.ts` y `src/fr/save.ts`: pedir permiso al
+  usuario antes de empezar.**
+- [ ] **7.4 Visor: mejoras pequeñas** [básico] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §9.
