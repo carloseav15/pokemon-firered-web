@@ -29,10 +29,17 @@ ORIGIN = "MAP_PALLET_TOWN"
 DIRS = ("up", "down", "left", "right")
 
 SETVAR_RE = re.compile(r"^\s*setvar\s+(\w+)\s*,\s*(\w+)")
+ADDVAR_RE = re.compile(r"^\s*addvar\s+(\w+)\s*,\s*(\w+)")
+COPYVAR_RE = re.compile(r"^\s*copyvar\s+(\w+)\s*,\s*(\w+)")
 SETFLAG_RE = re.compile(r"^\s*setflag\s+(\w+)")
 CLEARFLAG_RE = re.compile(r"^\s*clearflag\s+(\w+)")
 SETOBJECTXY_RE = re.compile(r"^\s*setobjectxyperm\s+(\w+)\s*,")
+TRAINERBATTLE_RE = re.compile(r"^\s*trainerbattle\w*\s+([\w, ]+)")
+TRAINER_CONST_RE = re.compile(r"\b(TRAINER_[A-Z0-9_]+)\b")
 LABEL_RE = re.compile(r"^(\S.*?)(::|:)\s*$")
+
+# movementType numerico del exportado -> direccion de mirada (FACE_* del C).
+FACING_BY_MOVEMENT = {7: "up", 8: "down", 9: "left", 10: "right"}
 
 
 def load_public():
@@ -118,8 +125,14 @@ def moved_localids(folder: str) -> set[str]:
     return found
 
 
-def parse_writers():
+def parse_scripts():
+    """Writers (setvar/addvar/copyvar/setflag/clearflag) y etiqueta -> TRAINER_.
+
+    El TRAINER_ sale de la primera constante TRAINER_* (que no sea
+    TRAINER_BATTLE_*) en una linea trainerbattle* del cuerpo de la etiqueta.
+    """
     writers: dict[str, list[dict]] = {}
+    trainer_of: dict[str, str] = {}
 
     def add_var(var, value, area, label, line):
         try:
@@ -128,6 +141,20 @@ def parse_writers():
             v = value
         writers.setdefault(var, []).append(
             {"value": v, "map": area, "label": label, "line": line}
+        )
+
+    def add_addvar(var, value, area, label, line):
+        try:
+            v = int(value, 0)
+        except ValueError:
+            v = value
+        writers.setdefault(var, []).append(
+            {"action": "add", "value": v, "map": area, "label": label, "line": line}
+        )
+
+    def add_copyvar(dest, src, area, label, line):
+        writers.setdefault(dest, []).append(
+            {"action": "copy", "from": src, "map": area, "label": label, "line": line}
         )
 
     def add_flag(flag, action, area, label, line):
@@ -159,9 +186,19 @@ def parse_writers():
             if lm:
                 label = lm.group(1)
                 continue
+            if not label:
+                continue
             m = SETVAR_RE.match(line)
             if m:
                 add_var(m.group(1), m.group(2), area, label, i)
+                continue
+            m = ADDVAR_RE.match(line)
+            if m:
+                add_addvar(m.group(1), m.group(2), area, label, i)
+                continue
+            m = COPYVAR_RE.match(line)
+            if m:
+                add_copyvar(m.group(1), m.group(2), area, label, i)
                 continue
             m = SETFLAG_RE.match(line)
             if m:
@@ -171,9 +208,15 @@ def parse_writers():
             if m:
                 add_flag(m.group(1), "clear", area, label, i)
                 continue
+            m = TRAINERBATTLE_RE.match(line)
+            if m and label not in trainer_of:
+                consts = [c for c in TRAINER_CONST_RE.findall(m.group(1)) if not c.startswith("TRAINER_BATTLE_")]
+                if consts:
+                    trainer_of[label] = consts[0]
+                continue
     for k in writers:
         writers[k].sort(key=lambda e: (e["map"], e["label"], e["line"]))
-    return dict(sorted(writers.items()))
+    return dict(sorted(writers.items())), trainer_of
 
 
 def to_int(v, default=0):
@@ -207,6 +250,7 @@ def main() -> int:
 
     elements: list[dict] = []
     triggers: list[dict] = []
+    writers, trainer_of = parse_scripts()
     for mid in sorted(pos):
         pub = maps[mid]
         folder = pub["name"]
@@ -249,11 +293,18 @@ def main() -> int:
                 "layer": layer,
                 "localId": obj.get("localId", idx + 1),
                 "graphics": gfx,
-                "flag": flag_name if flag_name != "0" else 0,
                 "movedByScript": local_name in moved if local_name else False,
             }
+            if flag_name != "0":
+                el["flag"] = flag_name
             if layer == "entrenador":
                 el["trainerRange"] = to_int(obj.get("trainerRange", 0))
+                script_name = obj.get("scriptName") or (dobj.get("script", "") if isinstance(dobj, dict) else "")
+                if script_name and script_name in trainer_of:
+                    el["trainer"] = trainer_of[script_name]
+                facing = FACING_BY_MOVEMENT.get(to_int(obj.get("movementType", 0), -1))
+                if facing:
+                    el["direction"] = facing
             elements.append(el)
         # activadores y puertas: nombres simbolicos del decomp
         if dm:
@@ -305,7 +356,6 @@ def main() -> int:
         key=lambda e: (e["map"], e["y"], e["x"], e["layer"], e.get("localId", 0))
     )
     triggers.sort(key=lambda t: (t["map"], t["y"], t["x"], t["script"]))
-    writers = parse_writers()
 
     out = {
         "_meta": {
