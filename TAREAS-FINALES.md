@@ -451,6 +451,6 @@ No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones
   la partida del usuario. **Toca `src/fr/boot.ts` y `src/fr/save.ts`: pedir permiso al
   usuario antes de empezar.**
 - [ ] **7.4 Visor: mejoras pequeñas** [básico] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §9.
-- [ ] **7.5 Visor: animaciones de tiles** [básico] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §10.
-  Flores, agua, fuente, vapor y puerta animados con `TilesetAnimator`, sin tocar
-  `src/fr/`; interruptor "animaciones" apagado por defecto.
+- [x] **7.5 Visor: animaciones de tiles** [básico] — `58fd3472` (rama
+  `muse/visor-anim`). `TilesetAnimator` sin tocar `src/fr/`; flores (5 estados) y fuente
+  verificadas contra el juego real; interruptor apagado por defecto.
