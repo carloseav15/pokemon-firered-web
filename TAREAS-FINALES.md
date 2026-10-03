@@ -443,3 +443,12 @@ No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones
 - [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama
   `muse/visor`). Pistas §4.1–4.3 cuadran con datos (sin PISTA INCORRECTA); §6 verificado
   en navegador contra partidas reales (Verde) + capturas de mundo y ficha.
+- [ ] **7.2 Visor: correcciones y fichas para el modo libre** [básico]. Revisión de 7.1
+  (2026-10-02, comprobado en navegador). Fallos: los botones +/− no actualizan el tamaño
+  de `#content` (la rueda sí); la posición `x`/`y` del hash se aplica antes de dimensionar
+  `#content` y se pierde al recargar; los objetos sin flag muestran "Flag: 0" y writers.
+  Mejoras: leyenda con color por capa, colisión apagada por defecto, visión del
+  entrenador en línea según su dirección, texto de cabecera leído del índice; en
+  `tools/viewer/world_index.py`, el `TRAINER_` de cada entrenador (de `trainerbattle` en
+  su script) y `addvar`/`copyvar` en writers. Terminada cuando cada punto se comprueba
+  en el navegador.
