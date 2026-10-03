@@ -440,7 +440,6 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 
 No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones 1–4.
 
-- [ ] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — plan completo en
-  [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md). Página `viewer.html` con los 37 mapas
-  exteriores unidos, capas de bloqueos y activadores, y ficha de quién los desactiva.
-  Terminada cuando se cumple §6 del plan.
+- [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama
+  `muse/visor`). Pistas §4.1–4.3 cuadran con datos (sin PISTA INCORRECTA); §6 verificado
+  en navegador contra partidas reales (Verde) + capturas de mundo y ficha.
