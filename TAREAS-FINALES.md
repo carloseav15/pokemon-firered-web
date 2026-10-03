@@ -453,6 +453,6 @@ No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones
 - [x] **7.4 Visor: mejoras pequeñas** [básico] — `cd675c45` (rama `muse/visor-2`).
   Puertas nombran interior, buscador legible, zoom redondeado, estado inicial NPC con
   cita (`event_scripts.s:1013`); verificado por punto en navegador.
-- [ ] **7.5 Visor: animaciones de tiles** [básico] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §10.
-  Flores, agua, fuente, vapor y puerta animados con `TilesetAnimator`, sin tocar
-  `src/fr/`; interruptor "animaciones" apagado por defecto.
+- [x] **7.5 Visor: animaciones de tiles** [básico] — `58fd3472` (rama
+  `muse/visor-anim`). `TilesetAnimator` sin tocar `src/fr/`; flores (5 estados) y fuente
+  verificadas contra el juego real; interruptor apagado por defecto.

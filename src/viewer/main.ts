@@ -2,8 +2,9 @@
 // Solo lectura sobre el juego: importa rom, TileRenderer y metatileBehavior; no
 // modifica src/fr/ ni public/fr/. Datos: public/viewer/kanto.json (generado).
 
-import { rom } from "../fr/rom";
+import { rom, type TilesetData } from "../fr/rom";
 import { TileRenderer } from "../fr/field/tileRenderer";
+import { TilesetAnimator } from "../fr/field/tilesetAnimator";
 import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY } from "../fr/field/fieldmap";
 import * as MB from "../fr/generated/metatileBehavior";
 import type { Element, KantoIndex, Trigger, Writer } from "./types";
@@ -118,6 +119,61 @@ function mark(ctx: CanvasRenderingContext2D, x: number, y: number, color: string
   }
 }
 
+// 7.5: rangos de tiles VRAM que cada callback de TilesetAnimator reescribe
+// (destTile y tamano de tilesetAnimator.ts; el C los aplica una vez por frame).
+const ANIM_RANGES: Record<string, Array<[number, number]>> = {
+  InitTilesetAnim_General: [[416, 464], [464, 482], [508, 512]],
+  InitTilesetAnim_CeladonCity: [[744, 752]],
+  InitTilesetAnim_SilphCo: [[976, 984]],
+  InitTilesetAnim_MtEmber: [[896, 904]],
+  InitTilesetAnim_VermilionGym: [[880, 887]],
+  InitTilesetAnim_CeladonGym: [[739, 743]],
+};
+
+type AnimatedMap = {
+  renderer: TileRenderer;
+  animator: TilesetAnimator;
+  bctx: CanvasRenderingContext2D;
+  cells: Array<{ x: number; y: number; mt: number }>;
+};
+const animatedMaps: AnimatedMap[] = [];
+let animOn = false;
+let animFrame = 0;
+
+function metatileUsesAnim(primary: TilesetData, secondary: TilesetData, ranges: Array<[number, number]>, mt: number): boolean {
+  let entries: Uint16Array;
+  if (mt < NUM_METATILES_IN_PRIMARY) entries = primary.metatiles.subarray(mt * 8, mt * 8 + 8);
+  else {
+    const local = mt - NUM_METATILES_IN_PRIMARY;
+    if (local * 8 >= secondary.metatiles.length) return false;
+    entries = secondary.metatiles.subarray(local * 8, local * 8 + 8);
+  }
+  for (const entry of entries) {
+    const tile = entry & 0x3ff;
+    for (const [lo, hi] of ranges) if (tile >= lo && tile < hi) return true;
+  }
+  return false;
+}
+
+function animRangesFor(primary: TilesetData, secondary: TilesetData): Array<[number, number]> {
+  return [...(ANIM_RANGES[primary.callback ?? ""] ?? []), ...(ANIM_RANGES[secondary.callback ?? ""] ?? [])];
+}
+
+function tickAnimations(): void {
+  if (!animOn) return;
+  // Mismo ritmo que el C: UpdateTilesetAnimations una vez por frame (60/s,
+  // overworld.c:1470); cada mapa lleva sus contadores como el juego.
+  for (const m of animatedMaps) {
+    m.animator.update();
+    for (const c of m.cells) {
+      const { bottom, top } = m.renderer.metatile(c.mt);
+      m.bctx.drawImage(bottom, c.x * TILE, c.y * TILE);
+      m.bctx.drawImage(top, c.x * TILE, c.y * TILE);
+    }
+  }
+  animFrame = requestAnimationFrame(tickAnimations);
+}
+
 async function build(): Promise<void> {
   const res = await fetch("/viewer/kanto.json");
   if (!res.ok) throw new Error("falta public/viewer/kanto.json: ejecuta npm run viewer:index");
@@ -221,6 +277,21 @@ async function build(): Promise<void> {
       }
       for (const t of triggersByMap.get(id) ?? []) mark(ctxFor("activador"), t.x, t.y, LAYER_COLORS.activador);
 
+      // 7.5: registra las casillas con tiles animados de este par de tilesets.
+      // TileRenderer invalida su cache al recibir writeTiles, asi solo se
+      // redibuja lo que cambio de frame.
+      const ranges = animRangesFor(primary, secondary);
+      if (ranges.length > 0) {
+        const cells: AnimatedMap["cells"] = [];
+        for (let y = 0; y < info.height; y++) {
+          for (let x = 0; x < info.width; x++) {
+            const mt = layout.blocks[y * info.width + x]! & 0x3ff;
+            if (metatileUsesAnim(primary, secondary, ranges, mt)) cells.push({ x, y, mt });
+          }
+        }
+        if (cells.length > 0) animatedMaps.push({ renderer, animator: new TilesetAnimator(renderer), bctx, cells });
+      }
+
       content.appendChild(wrap);
     }
   }
@@ -323,6 +394,13 @@ function showAt(worldX: number, worldY: number): void {
 }
 
 function setupUi(): void {
+  const animBox = document.getElementById("anim-toggle") as HTMLInputElement;
+  animBox.checked = false;
+  animBox.addEventListener("change", () => {
+    animOn = animBox.checked;
+    if (animOn) animFrame = requestAnimationFrame(tickAnimations);
+    else cancelAnimationFrame(animFrame);
+  });
   for (const layer of LAYERS) {
     const label = document.createElement("label");
     const swatch = document.createElement("span");
