@@ -450,7 +450,9 @@ No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones
   Abre el juego real en la casilla pinchada, con chico/chica y partida base, sin tocar
   la partida del usuario. **Toca `src/fr/boot.ts` y `src/fr/save.ts`: pedir permiso al
   usuario antes de empezar.**
-- [ ] **7.4 Visor: mejoras pequeñas** [básico] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §9.
+- [x] **7.4 Visor: mejoras pequeñas** [básico] — `cd675c45` (rama `muse/visor-2`).
+  Puertas nombran interior, buscador legible, zoom redondeado, estado inicial NPC con
+  cita (`event_scripts.s:1013`); verificado por punto en navegador.
 - [ ] **7.5 Visor: animaciones de tiles** [básico] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §10.
   Flores, agua, fuente, vapor y puerta animados con `TilesetAnimator`, sin tocar
   `src/fr/`; interruptor "animaciones" apagado por defecto.
