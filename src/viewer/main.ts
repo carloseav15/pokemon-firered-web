@@ -173,6 +173,8 @@ let animOn = false;
 let animFrame = 0;
 let animLast = 0;
 let animAccumulator = 0;
+let animStartTime = 0;
+let animDisabledNotice = "";
 // Fotograma de la GBA: 280896 ciclos a 16,78 MHz (59,73 por segundo). Mismo valor que
 // FRAME_MS en src/fr/game.ts:112; el juego avanza con este paso fijo y no con el
 // refresco de la pantalla (que en un Mac puede ser 120 Hz).
@@ -236,40 +238,44 @@ function tickAnimations(now: number): void {
     return;
   }
 
-  // Rectángulo del viewport visible en coordenadas mundiales (píxeles sin zoom):
-  // solo se simulan mapas visibles y solo se redibujan celdas dentro del área.
-  const viewLeft = viewport.scrollLeft / zoom;
-  const viewTop = viewport.scrollTop / zoom;
-  const viewRight = viewLeft + viewport.clientWidth / zoom;
-  const viewBottom = viewTop + viewport.clientHeight / zoom;
+  // En zoom muy lejano (< 0.5), el viewport abarca casi todo el mapa. Pausar el
+  // redibujado de celdas a zoom lejano protege la GPU y evita caídas de FPS.
+  if (zoom >= 0.5) {
+    // Rectángulo del viewport visible en coordenadas mundiales (píxeles sin zoom):
+    // solo se simulan mapas visibles y solo se redibujan celdas dentro del área.
+    const viewLeft = viewport.scrollLeft / zoom;
+    const viewTop = viewport.scrollTop / zoom;
+    const viewRight = viewLeft + viewport.clientWidth / zoom;
+    const viewBottom = viewTop + viewport.clientHeight / zoom;
 
-  for (const m of animatedMaps) {
-    // Si el mapa entero está fuera de la pantalla, no gastamos CPU
-    if (!mapVisible(m)) continue;
+    for (const m of animatedMaps) {
+      // Si el mapa entero está fuera de la pantalla, no gastamos CPU
+      if (!mapVisible(m)) continue;
 
-    m.dirtyMask = 0;
-    for (let s = 0; s < steps; s++) {
-      m.animator.update();
-    }
-
-    // Si ningún tile de este mapa cambió en este tick, omitimos todo el redibujado
-    if (m.dirtyMask === 0) continue;
-
-    // Redibujar únicamente las casillas visibles que usan los rangos modificados
-    for (const c of m.cells) {
-      if (!(c.mask & m.dirtyMask)) continue;
-
-      const cellLeft = m.left + c.x * TILE;
-      const cellTop = m.top + c.y * TILE;
-      if (cellLeft + TILE < viewLeft || cellLeft > viewRight || cellTop + TILE < viewTop || cellTop > viewBottom) {
-        continue;
+      m.dirtyMask = 0;
+      for (let s = 0; s < steps; s++) {
+        m.animator.update();
       }
 
-      // Dibujo directo sin allocations intermedias de canvas
-      const { bottom, top } = m.renderer.metatile(c.mt);
-      m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
-      m.bctx.drawImage(bottom, c.x * TILE, c.y * TILE);
-      m.bctx.drawImage(top, c.x * TILE, c.y * TILE);
+      // Si ningún tile de este mapa cambió en este tick, omitimos todo el redibujado
+      if (m.dirtyMask === 0) continue;
+
+      // Redibujar únicamente las casillas visibles que usan los rangos modificados
+      for (const c of m.cells) {
+        if (!(c.mask & m.dirtyMask)) continue;
+
+        const cellLeft = m.left + c.x * TILE;
+        const cellTop = m.top + c.y * TILE;
+        if (cellLeft + TILE < viewLeft || cellLeft > viewRight || cellTop + TILE < viewTop || cellTop > viewBottom) {
+          continue;
+        }
+
+        // Dibujo directo sin allocations intermedias de canvas
+        const { bottom, top } = m.renderer.metatile(c.mt);
+        m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
+        m.bctx.drawImage(bottom, c.x * TILE, c.y * TILE);
+        m.bctx.drawImage(top, c.x * TILE, c.y * TILE);
+      }
     }
   }
 
@@ -278,6 +284,19 @@ function tickAnimations(now: number): void {
     fpsValue = (fpsFrames * 1000) / (now - fpsSince);
     fpsFrames = 0;
     fpsSince = now;
+
+    // Protección de rendimiento: anular animaciones si caen por debajo de 30 FPS
+    // tras un periodo de warmup de 1.5 segundos para evitar falsos positivos
+    if (now - animStartTime > 1500 && fpsValue < 30) {
+      animOn = false;
+      const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
+      if (animBox) animBox.checked = false;
+      cancelAnimationFrame(animFrame);
+      animDisabledNotice = ` · animaciones anuladas automáticamente (${fpsValue.toFixed(0)} FPS < 30 FPS)`;
+      updateMeta();
+      return;
+    }
+
     updateMeta();
   }
   animFrame = requestAnimationFrame(tickAnimations);
@@ -294,7 +313,11 @@ function updateMeta(): void {
     const c = index.conflicts[0];
     text += ` · conflicto: ${c.from}→${c.to} previa (${c.placed}) propuesta (${c.proposed})`;
   }
-  if (animOn) text += ` · animaciones: ${fpsValue.toFixed(0)} FPS de pantalla, ${(1000 / GBA_FRAME_MS).toFixed(2)} pasos/s de GBA`;
+  if (animOn) {
+    text += ` · animaciones: ${fpsValue.toFixed(0)} FPS de pantalla, ${(1000 / GBA_FRAME_MS).toFixed(2)} pasos/s de GBA`;
+  } else if (animDisabledNotice) {
+    text += animDisabledNotice;
+  }
   meta.textContent = text;
 }
 
@@ -313,33 +336,27 @@ const BIOME_MOUNTAIN = 2;
 const BIOME_NAMES = ["bosque (árboles densos)", "marítimo (océano)", "montañoso (cordillera)"] as const;
 
 function biomeAt(x: number, y: number): number {
-  // 1. Zonas marítimas (Océano)
-  // Mar del sur (rodeando Isla Canela, Ruta 19, 20 y bajo Fucsia)
-  if (y >= 335) return BIOME_OCEAN;
-  // Mar al sur y oeste de Pueblo Paleta (Ruta 21)
-  if (x < 105 && y >= 275) return BIOME_OCEAN;
-  // Bahía al sur del puerto de Ciudad Carmín
-  if (x >= 260 && x <= 315 && y >= 235 && y < 310) return BIOME_OCEAN;
-  // Océano abierto al este de la costa (Rutas 12, 13, 14)
-  if (x >= 390 && y >= 145) return BIOME_OCEAN;
-  // Bahía al sur de Ruta 13 / este de Ruta 14
-  if (x >= 330 && y >= 285 && y < 335) return BIOME_OCEAN;
+  // 1. Zonas marítimas reales (Océano)
+  // Mar del sur abierto (Canela, Ruta 20 y bajo Fuchsia / Ruta 19)
+  if (y >= 340) return BIOME_OCEAN;
+  // Mar costero al oeste de la Ruta 21
+  if (x < 60 && y >= 280) return BIOME_OCEAN;
   // Canal de agua marina bajo la Senda Bici (Ruta 17)
-  if (x >= 120 && x <= 165 && y >= 145 && y <= 315) return BIOME_OCEAN;
+  if (x >= 128 && x <= 160 && y >= 150 && y <= 310) return BIOME_OCEAN;
+  // Bahía al sur del puerto de Ciudad Carmín
+  if (x >= 264 && x <= 312 && y >= 240 && y <= 310) return BIOME_OCEAN;
+  // Océano abierto al este de la costa este (Ruta 12, 13)
+  if (x >= 408 && y >= 150) return BIOME_OCEAN;
 
-  // 2. Zonas montañosas (Cordilleras)
-  // Cordillera Oeste (Ruta 23 e Indigo Plateau)
-  if (x <= 45 && y <= 215) return BIOME_MOUNTAIN;
-  // Cordillera Norte (extremo norte de Kanto)
-  if (y <= 45) return BIOME_MOUNTAIN;
-  // Cordillera de Mt. Moon (Ruta 3 y 4)
-  if (x >= 90 && x <= 260 && y <= 75) return BIOME_MOUNTAIN;
-  // Cordillera de Cerulean / Ruta 9
-  if (x >= 310 && y <= 75) return BIOME_MOUNTAIN;
-  // Cordillera de Rock Tunnel (Ruta 10 norte)
-  if (x >= 380 && y <= 135) return BIOME_MOUNTAIN;
+  // 2. Zonas montañosas reales (Cordillera Norte de Mt. Moon y Rock Tunnel)
+  // Cresta de Mt. Moon (sobre Ruta 3 y 4)
+  if (x >= 110 && x <= 260 && y <= 60) return BIOME_MOUNTAIN;
+  // Acantilados al norte del Cabo de Celeste (Ruta 24 y 25)
+  if (x >= 280 && x <= 375 && y <= 15) return BIOME_MOUNTAIN;
+  // Cresta de Rock Tunnel (sobre Ruta 9 y 10)
+  if (x >= 320 && x <= 408 && y <= 60) return BIOME_MOUNTAIN;
 
-  // 3. Todo el resto es el continente interior de Kanto (Bosque)
+  // 3. Todo el resto de Kanto (incluyendo Meseta Añil, valles y llanuras) es Bosque
   return BIOME_TREES;
 }
 
@@ -689,11 +706,14 @@ function setupUi(): void {
   animBox.addEventListener("change", () => {
     animOn = animBox.checked;
     if (animOn) {
-      animLast = fpsSince = performance.now();
+      animLast = fpsSince = animStartTime = performance.now();
       animAccumulator = 0;
       fpsFrames = 0;
+      animDisabledNotice = "";
       animFrame = requestAnimationFrame(tickAnimations);
-    } else cancelAnimationFrame(animFrame);
+    } else {
+      cancelAnimationFrame(animFrame);
+    }
     updateMeta();
   });
   const fillSelect = document.getElementById("fill-mode") as HTMLSelectElement | null;
