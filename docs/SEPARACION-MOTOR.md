@@ -47,6 +47,8 @@ Revisé a mano 17 funciones marcadas `different` en `bg.c`, `palette.c`, `sound.
     Quest Log.
   - `ClearSaveData` borra los sectores de otra manera.
 - **1 sin clasificar:** `BgTileAllocOp`, reescrita.
+  Después (2026-10-02): es una diferencia de comportamiento, ver
+  [REPOS-COMUNITARIOS.md §8.2](REPOS-COMUNITARIOS.md#82-cruce-is_frlg-con-la-separación-del-motor-61).
 
 Al revés también pasa: una función idéntica en texto puede leer constantes con otro
 valor (§2.3). La comparación cuerpo a cuerpo corresponde a la fase 3, función por

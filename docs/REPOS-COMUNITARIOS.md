@@ -332,3 +332,75 @@ no cambia `sources.json`, no ejecuta exportadores ni modifica reglas del juego.
 La próxima investigación útil es una comparación con evidencia por archivo de
 PKMN-World/HnS, seguida de una estimación de dependencias; todavía no se puede
 cuantificar el ahorro ni garantizar fidelidad o campañas completas.
+
+## 8. Triaje de beneficio y cruce `IS_FRLG` (Claude, 2026-10-02)
+
+Segunda pasada sobre clones locales. Se contaron archivos y se leyeron fragmentos;
+nada se compiló ni se ejecutó. Revisiones: Expansion `dfb0f84374230f4d462191601179b742f9f077df`
+(ahora fuente fijada de `refs/`, R21), PKMN-World `15d3888b0d81322a04d3c71b0bce18948761ee44`
+(posterior al SHA de §2), HnS `751823abaf677020bcd72c45fe3e7cb2b8a576e4`, Rogue `5ccb74cf`.
+
+### 8.1 Qué aporta cada uno, por fase
+
+| Repo | Beneficio | Fase | Dato medido |
+|---|---|---|---|
+| Expansion | Alto | 2–4 | Compila Emerald y FRLG desde el mismo árbol (`make firered`, desde 1.15; su changelog 1.15.0 dice "jugable, pero le faltan funciones"). ~5.000 tests de combate: `SINGLE_BATTLE_TEST` 3.496, `DOUBLE_BATTLE_TEST` 953, `AI_*` 543, `WILD_*` 56, `MULTI_*` 21; más 920 `TEST`. 1.029 carpetas de sprites de especies en `graphics/pokemon`. `migration_scripts/frlg_metatile_behavior_converter.py` traduce comportamientos de baldosa FRLG → Emerald |
+| HnS | Alto | 5 | Johto de HGSS con Kanto de postgame, sobre Emerald. 956 `map.json`, unos 200 de Johto (filtro por nombre de ciudad/ruta). Tilesets primarios `johto_*` y `kanto_*`. 176 MIDI `mus_hg_*`. Sin archivo de licencia. Contenido adaptado (50 MT, sin buscaobjetos ni objetos ocultos, otra curva de niveles), no fiel a HGSS |
+| PKMN-World | Medio | 6 | Bancos de flags y vars por región en `event_data.c` (en `SaveBlock3`) y `region_switch.c` (539 líneas). Su Johto viene de HnS: para mapas, ir a HnS |
+| Rogue | Bajo | 4+ | Solo `rogue_query.c` (2.188 líneas) es aislable; `rogue_controller.c` tiene 10.413 |
+| Polished Crystal, Pokemon-World-GBA | Bajo | 5 | Ensamblador GBC (Crystal ya está en `refs/`, R20) / referencia secundaria |
+
+Compatibilidad con nuestras herramientas, comprobada por formato y no por ejecución:
+
+- **Mapas:** HnS y PKMN-World usan `map.json`, `layouts.json` y `map_groups.json` de
+  pret, los mismos que lee `tools/decomp/step_maps.py`. Las baldosas usan los
+  comportamientos y atributos de Emerald; hay que convertirlas a FRLG (la tabla de
+  Expansion sirve de punto de partida, invertida y revisada).
+- **Música:** `step_audio.py` lee `.mid` y voicegroups igual que HnS, pero HnS no tiene
+  `sound/songs/midi/midi.cfg`; la configuración por canción está en otro sitio.
+
+### 8.2 Cruce `IS_FRLG` con la separación del motor (6.1)
+
+`npm run refs:expansion-frlg` y `python3 tools/engineSplit.py --expansion`:
+
+- 298 pruebas del juego en 270 funciones, más 39 fuera de funciones (tablas y macros).
+  182 de esas funciones existen en pokefirered.
+- **Ninguna está marcada `identical`** en `refs/emerald/functions.json`: Expansion no
+  separa nada que el catálogo textual dé por igual. No aparece ningún caso del
+  riesgo R1 de la 6.1 por esta vía (no prueba que no los haya).
+- **19 funciones están en módulos que la 6.1 llama núcleo puro.** Candidatas a
+  variante en la fase 3:
+  - `hw/bg`: `InitBgFromTemplate`, `InitBgsFromTemplates`, `ResetBgsAndClearDma3BusyFlags`.
+    Es el mapa de reserva de tiles `gpu_tile_allocation_map_bg`, que pret FireRed tiene
+    (`bg.c:44`, usado en 305–356) y pret Emerald no. **Resuelve el caso "sin
+    clasificar" de la 6.1 (`BgTileAllocOp`): es una diferencia de comportamiento.**
+  - Combate: `HandleTurnActionSelectionState`, `HandleAction_WatchesCarefully`
+    (`battle/main`), `HandleMoveSwitching`, `SafariHandleChooseAction`,
+    `BattleStringExpandPlaceholders`.
+  - Campo: `GetInteractedMetatileScript` (TV y comida de FRLG), `GetOnOffBike`,
+    `GetRivalAvatarGraphicsIdByStateIdAndGender`; las 5 funciones de la guardería de
+    la Ruta 5 (`pokemon/daycare`).
+  - Otros: `DrawStarsAndBadgesOnCard`, `TrainerCard_GenerateCardForLinkPlayer`,
+    `PlayerGenderToFrontTrainerPicId`.
+- 11 caen en módulos `variant`, como ya preveía la 6.1, y 140 en módulos de FireRed.
+  1 está en `generated/`, 7 son ambiguas (el nombre existe en varios módulos TS) y 4 no
+  tienen TS (son de enlace).
+- De los 76 `.c` de pokefirered que no existen en pret Emerald, Expansion tiene 10
+  (`fame_checker`, `oak_speech`, `seagallop`, `ss_anne`, `trainer_tower`, `vs_seeker`…).
+  No tiene Quest Log, Sistema de Ayuda, Teachy TV, Caja MT, Bolsa de Bayas ni la
+  Pokédex y la Mochila de FireRed: ahí su FRLG usa las pantallas de Emerald. Es la
+  medida de lo que "le faltan funciones".
+
+Límite: dónde ramifica Expansion es una decisión comunitaria. Las 3.680 funciones
+`different` que Expansion **no** ramifica se comportan como en Emerald en su FRLG; no
+demuestra que la diferencia sea de estilo. La fuente de fidelidad sigue siendo pret.
+
+### 8.3 Siguientes pasos (no activos; FireRed tiene prioridad)
+
+1. **Fase 2/3:** al definir el contrato `@game/*`, tratar las 19 funciones de §8.2
+   como variantes conocidas, empezando por `hw/bg`.
+2. **Fase 4:** extraer a `refs/` un catálogo de los tests de Expansion (nombre,
+   movimiento/habilidad/objeto, generación de la regla) como especificación de la capa
+   de reglas. El sparse `test/` ya está descargado.
+3. **Fase 5:** antes del editor de equivalencias, medir qué parte del Johto de HnS se
+   importa con `step_maps.py` tras convertir los comportamientos de baldosa.
