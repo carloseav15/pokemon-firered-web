@@ -12,12 +12,16 @@ export type Element = {
   flag?: string | number;
   movedByScript?: boolean;
   trainerRange?: number;
+  trainer?: string;
+  direction?: string;
   destMap?: string;
 };
 export type Trigger = { map: string; x: number; y: number; var: string; value: number; script: string };
 export type Writer =
   | { value: number | string; map: string; label: string; line: number }
-  | { action: string; map: string; label: string; line: number };
+  | { action: "set" | "clear"; map: string; label: string; line: number }
+  | { action: "add"; value: number | string; map: string; label: string; line: number }
+  | { action: "copy"; from: string; map: string; label: string; line: number };
 export type KantoIndex = {
   _meta: { generator: string; decomp_commit: string };
   world: { width: number; height: number; origin: string };

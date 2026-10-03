@@ -6,7 +6,7 @@ import { rom } from "../fr/rom";
 import { TileRenderer } from "../fr/field/tileRenderer";
 import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY } from "../fr/field/fieldmap";
 import * as MB from "../fr/generated/metatileBehavior";
-import type { Element, KantoIndex, Trigger } from "./types";
+import type { Element, KantoIndex, Trigger, Writer } from "./types";
 
 const TILE = 16;
 const LAYERS = ["colision", "agua", "salientes", "corte", "fuerza", "golpe_roca", "snorlax", "entrenador", "npc_condicional", "npc", "activador", "puerta"] as const;
@@ -36,7 +36,10 @@ let index: KantoIndex;
 let minX = 0;
 let minY = 0;
 let zoom = 1;
-const active = new Set<Layer>(LAYERS as unknown as Layer[]);
+let startX: number | null = null;
+let startY: number | null = null;
+// Colision apagada por defecto (capa ruidosa); el hash ?capas= sigue mandando.
+const active = new Set<Layer>((LAYERS as unknown as Layer[]).filter((l) => l !== "colision"));
 
 function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: number): number {
   const raw = id < NUM_METATILES_IN_PRIMARY ? (primaryAttrs[id] ?? 0) : (secondaryAttrs[id - NUM_METATILES_IN_PRIMARY] ?? 0);
@@ -48,14 +51,24 @@ function parseHash(): void {
   const x = Number(h.get("x"));
   const y = Number(h.get("y"));
   const z = Number(h.get("z"));
-  if (Number.isFinite(x)) viewport.scrollLeft = x;
-  if (Number.isFinite(y)) viewport.scrollTop = y;
+  // El scroll x/y se aplica al final de build(), cuando #content ya tiene tamano;
+  // aplicarlo aqui se pierde porque el viewport aun no tiene scroll maximo.
+  startX = h.get("x") !== null && Number.isFinite(x) ? x : null;
+  startY = h.get("y") !== null && Number.isFinite(y) ? y : null;
   if (z !== 0 && Number.isFinite(z)) zoom = Math.min(4, Math.max(0.25, z));
   const capas = h.get("capas");
   if (capas) {
     active.clear();
     for (const c of capas.split(",")) if ((LAYERS as readonly string[]).includes(c)) active.add(c as Layer);
   }
+}
+
+function setZoom(next: number): void {
+  zoom = Math.min(4, Math.max(0.25, next));
+  content.style.transform = `scale(${zoom})`;
+  content.style.width = `${index.world.width * TILE * zoom}px`;
+  content.style.height = `${index.world.height * TILE * zoom}px`;
+  writeHash();
 }
 
 function writeHash(): void {
@@ -189,11 +202,17 @@ async function build(): Promise<void> {
         if (e.layer === "puerta") {
           mark(ctxFor("puerta"), e.x, e.y, LAYER_COLORS.puerta);
         } else if (e.layer === "entrenador") {
-          mark(ctxFor("entrenador"), e.x, e.y, LAYER_COLORS.entrenador);
-          const r = e.trainerRange ?? 0;
           const ctx = ctxFor("entrenador");
-          ctx.fillStyle = "rgba(255,0,255,0.25)";
-          ctx.fillRect((e.x - r) * TILE, (e.y - r) * TILE, (r * 2 + 1) * TILE, (r * 2 + 1) * TILE);
+          const r = e.trainerRange ?? 0;
+          // Vision en linea segun su direccion (del movementType FACE_* del C);
+          // sin direccion estatica solo se marca la casilla.
+          const dir = e.direction === "up" || e.direction === "down" || e.direction === "left" || e.direction === "right" ? e.direction : null;
+          if (dir) {
+            ctx.fillStyle = "rgba(255,0,255,0.30)";
+            const dx = dir === "left" ? -1 : dir === "right" ? 1 : 0;
+            const dy = dir === "up" ? -1 : dir === "down" ? 1 : 0;
+            for (let i = 1; i <= r; i++) ctx.fillRect((e.x + dx * i) * TILE, (e.y + dy * i) * TILE, TILE, TILE);
+          }
           mark(ctx, e.x, e.y, LAYER_COLORS.entrenador);
         } else {
           mark(ctxFor(e.layer as Layer), e.x, e.y, LAYER_COLORS[e.layer as Layer]);
@@ -210,13 +229,22 @@ async function build(): Promise<void> {
   content.style.width = `${worldW * zoom}px`;
   content.style.height = `${worldH * zoom}px`;
   content.style.transform = `scale(${zoom})`;
+  if (startX !== null) viewport.scrollLeft = startX;
+  if (startY !== null) viewport.scrollTop = startY;
   applyLayerVisibility();
+}
+
+function writerText(w: Writer): string {
+  if ("value" in w && !("action" in w)) return `valor ${w.value}`;
+  if (w.action === "add") return `+= ${w.value}`;
+  if (w.action === "copy") return `= ${w.from}`;
+  return w.action;
 }
 
 function writersHtml(key: string | number): string {
   const list = index.writers[String(key)] ?? [];
   if (list.length === 0) return "<p>Se cambia fuera de los scripts de mapa.</p>";
-  return `<ul>${list.map((w) => `<li>${"value" in w ? `valor ${w.value}` : w.action} — ${w.map}, <i>${w.label}</i>, línea ${w.line}</li>`).join("")}</ul>`;
+  return `<ul>${list.map((w) => `<li>${writerText(w)} — ${w.map}, <i>${w.label}</i>, línea ${w.line}</li>`).join("")}</ul>`;
 }
 
 function showAt(worldX: number, worldY: number): void {
@@ -240,9 +268,15 @@ function showAt(worldX: number, worldY: number): void {
   for (const e of els) {
     html += `<h3>${e.layer}${e.localId !== undefined ? ` #${e.localId}` : ""}</h3>`;
     if (e.graphics) html += `<p>Gráficos: ${e.graphics}</p>`;
+    // El indice omite flag cuando el objeto no tiene: no se muestra nada.
     if (e.flag !== undefined) html += `<p>Flag: ${e.flag}</p>${writersHtml(e.flag)}`;
     if (e.movedByScript) html += "<p>Se mueve por script (setobjectxyperm).</p>";
-    if (e.trainerRange !== undefined) html += `<p>Rango de visión: ${e.trainerRange} (cuadrado orientativo; la dirección la da su movimiento en juego).</p>`;
+    if (e.trainer) html += `<p>Combate: ${e.trainer}</p>`;
+    if (e.trainerRange !== undefined) {
+      html += e.direction
+        ? `<p>Rango de visión: ${e.trainerRange} hacia ${e.direction}.</p>`
+        : `<p>Rango de visión: ${e.trainerRange} (dirección variable en juego).</p>`;
+    }
     if (e.destMap) html += `<p>Destino: ${e.destMap}</p>`;
   }
   for (const t of trs) {
@@ -254,6 +288,9 @@ function showAt(worldX: number, worldY: number): void {
 function setupUi(): void {
   for (const layer of LAYERS) {
     const label = document.createElement("label");
+    const swatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.style.background = LAYER_COLORS[layer];
     const box = document.createElement("input");
     box.type = "checkbox";
     box.id = `layer-${layer}`;
@@ -264,7 +301,7 @@ function setupUi(): void {
       applyLayerVisibility();
       writeHash();
     });
-    label.append(box, ` ${layer}`);
+    label.append(box, swatch, ` ${layer}`);
     layerBox.appendChild(label);
   }
   const list = document.getElementById("maplist") as HTMLDataListElement;
@@ -317,32 +354,20 @@ function setupUi(): void {
     "wheel",
     (ev) => {
       ev.preventDefault();
-      const f = ev.deltaY > 0 ? 0.9 : 1.1;
-      zoom = Math.min(4, Math.max(0.25, zoom * f));
-      content.style.transform = `scale(${zoom})`;
-      content.style.width = `${index.world.width * TILE * zoom}px`;
-      content.style.height = `${index.world.height * TILE * zoom}px`;
-      writeHash();
+      setZoom(zoom * (ev.deltaY > 0 ? 0.9 : 1.1));
     },
     { passive: false },
   );
-  document.getElementById("zoom-in")!.addEventListener("click", () => {
-    zoom = Math.min(4, zoom * 1.25);
-    content.style.transform = `scale(${zoom})`;
-    writeHash();
-  });
-  document.getElementById("zoom-out")!.addEventListener("click", () => {
-    zoom = Math.max(0.25, zoom * 0.8);
-    content.style.transform = `scale(${zoom})`;
-    writeHash();
-  });
+  document.getElementById("zoom-in")!.addEventListener("click", () => setZoom(zoom * 1.25));
+  document.getElementById("zoom-out")!.addEventListener("click", () => setZoom(zoom * 0.8));
 }
 
 build()
   .then(() => {
     setupUi();
     const meta = document.getElementById("meta")!;
-    meta.textContent = `37 mapas · ${index.world.width}×${index.world.height} metatiles · ${index.conflicts.length} conflicto(s) · decomp ${index._meta.decomp_commit.slice(0, 8)}`;
+    const count = Object.keys(index.maps).length;
+    meta.textContent = `${count} mapas · ${index.world.width}×${index.world.height} metatiles · ${index.conflicts.length} conflicto(s) · decomp ${index._meta.decomp_commit.slice(0, 8)}`;
     if (index.conflicts.length > 0) {
       const c = index.conflicts[0];
       meta.textContent += ` · conflicto: ${c.from}→${c.to} previa (${c.placed}) propuesta (${c.proposed})`;
