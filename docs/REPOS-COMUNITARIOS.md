@@ -347,6 +347,7 @@ nada se compiló ni se ejecutó. Revisiones: Expansion `dfb0f84374230f4d46219160
 | Expansion | Alto | 2–4 | Compila Emerald y FRLG desde el mismo árbol (`make firered`, desde 1.15; su changelog 1.15.0 dice "jugable, pero le faltan funciones"). ~5.000 tests de combate: `SINGLE_BATTLE_TEST` 3.496, `DOUBLE_BATTLE_TEST` 953, `AI_*` 543, `WILD_*` 56, `MULTI_*` 21; más 920 `TEST`. 1.029 carpetas de sprites de especies en `graphics/pokemon`. `migration_scripts/frlg_metatile_behavior_converter.py` traduce comportamientos de baldosa FRLG → Emerald |
 | HnS | Alto | 5 | Johto de HGSS con Kanto de postgame, sobre Emerald. 956 `map.json`, unos 200 de Johto (filtro por nombre de ciudad/ruta). Tilesets primarios `johto_*` y `kanto_*`. 176 MIDI `mus_hg_*`. Sin archivo de licencia. Contenido adaptado (50 MT, sin buscaobjetos ni objetos ocultos, otra curva de niveles), no fiel a HGSS |
 | PKMN-World | Medio | 6 | Bancos de flags y vars por región en `event_data.c` (en `SaveBlock3`) y `region_switch.c` (539 líneas). Su Johto viene de HnS: para mapas, ir a HnS |
+| Showdown | Alto | 4 | MIT. Cambios de reglas por generación resueltos con su Dex (§8.4, R22) |
 | Rogue | Bajo | 4+ | Solo `rogue_query.c` (2.188 líneas) es aislable; `rogue_controller.c` tiene 10.413 |
 | Polished Crystal, Pokemon-World-GBA | Bajo | 5 | Ensamblador GBC (Crystal ya está en `refs/`, R20) / referencia secundaria |
 
@@ -404,3 +405,44 @@ demuestra que la diferencia sea de estilo. La fuente de fidelidad sigue siendo p
    de reglas. El sparse `test/` ya está descargado.
 3. **Fase 5:** antes del editor de equivalencias, medir qué parte del Johto de HnS se
    importa con `step_maps.py` tras convertir los comportamientos de baldosa.
+
+### 8.4 Pokémon Showdown (R22)
+
+[smogon/pokemon-showdown](https://github.com/smogon/pokemon-showdown) `3661ce40`.
+**Licencia MIT**: es la única fuente de este documento con permiso explícito de
+reutilización. Simulador de combate en TypeScript; el cliente web es otro repo.
+
+Qué aporta: cada generación es un mod que hereda de la siguiente y solo declara sus
+diferencias (`gen3frlg` → `gen3` → … → `gen9`). `npm run refs:showdown-gens` resuelve
+todo con su propio Dex y lo guarda desde la base Gen 3:
+
+| Gen 3 | Entradas | Cambian en gen4 / 5 / 6 / 7 / 8 / 9 | De ellas, con comportamiento distinto |
+|---|---:|---|---|
+| Movimientos | 354 | 103 / 89 / 83 / 12 / 66 / 35 | 27 / 50 / 17 / 2 / 9 / 4 |
+| Habilidades | 76 | 20 / 35 / 4 / 2 / 4 / 2 | 19 / 34 / 4 / 2 / 4 / 1 |
+| Objetos | 128 | 45 / 19 / 44 / 26 / 29 / 8 | 38 / 12 / 0 / 6 / 5 / 0 |
+
+"Cambian" incluye disponibilidad (`isNonstandard`, p. ej. lo retirado en gen8): no
+todo es mecánica. Las especies cambian sobre todo por habilidades ocultas (gen5) y
+disponibilidad; la tabla de tipos cambia en gen6 (Hada, Acero). `added` lista lo
+introducido en cada generación (p. ej. 113 movimientos en gen4).
+
+**Contraste con FireRed** (`gen3_vs_firered.json`): las 386 especies coinciden en
+estadísticas, tipos y habilidades. De 354 movimientos, 71 diferencias son de
+representación (precisión "nunca falla", poder 1 para daño variable, efectos fuera
+de `secondaries`) y 2 son reales: **Endure** tiene prioridad +3 en el decomp
+(`battle_moves.h`, como Protect y Detect) y +4 en el mod gen3 de Showdown; y
+**Nature Power**, precisión 0 en el decomp y 95 en Showdown. Manda el decomp.
+
+Qué no aporta: Showdown usa su propio RNG (sodium o el de Gen 5) y un motor de
+eventos; no reproduce el orden de llamadas ni los frames de la GBA. Para fidelidad de
+Gen 3 sigue mandando el oracle sobre el C real (`tools/oracle/`). Sus tests (358
+archivos en `test/sim`, 18 mencionan Gen 3) se centran en la generación actual; para
+mecánicas en formato GBA son mejores los de Expansion.
+
+Para la fase 4 interesa sobre todo la idea: **reglas como ganchos sobre un motor
+fijo**, no copias del motor. Expansion elige la generación de cada mecánica al
+compilar (`B_* = GEN_3`…); Showdown, por mod completo. Para reglas elegibles por
+partida, lo natural es un ajuste por mecánica en tiempo de ejecución, consultado en
+puntos concretos de nuestro motor con forma de C, con `gen_changes.json` como lista
+de esos puntos.
