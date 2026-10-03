@@ -41,6 +41,7 @@ let startX: number | null = null;
 let startY: number | null = null;
 // Colision apagada por defecto (capa ruidosa); el hash ?capas= sigue mandando.
 const active = new Set<Layer>((LAYERS as unknown as Layer[]).filter((l) => l !== "colision"));
+let fillMode: "full" | "dim" | "off" = "full";
 
 function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: number): number {
   const raw = id < NUM_METATILES_IN_PRIMARY ? (primaryAttrs[id] ?? 0) : (secondaryAttrs[id - NUM_METATILES_IN_PRIMARY] ?? 0);
@@ -62,6 +63,8 @@ function parseHash(): void {
     active.clear();
     for (const c of capas.split(",")) if ((LAYERS as readonly string[]).includes(c)) active.add(c as Layer);
   }
+  const relleno = h.get("relleno");
+  if (relleno === "full" || relleno === "dim" || relleno === "off") fillMode = relleno;
 }
 
 /** Cambia el zoom manteniendo fijo el punto del viewport (ax, ay); por defecto, el centro. */
@@ -84,7 +87,18 @@ function writeHash(): void {
   h.set("y", String(Math.round(viewport.scrollTop)));
   h.set("z", String(zoom));
   h.set("capas", [...active].join(","));
+  if (fillMode !== "full") h.set("relleno", fillMode);
   history.replaceState(null, "", `#${h.toString()}`);
+}
+
+function applyFillMode(): void {
+  const fillEl = content.querySelector(".fill") as HTMLElement | null;
+  if (fillEl) {
+    fillEl.classList.toggle("dimmed", fillMode === "dim");
+    fillEl.classList.toggle("hidden", fillMode === "off");
+  }
+  const select = document.getElementById("fill-mode") as HTMLSelectElement | null;
+  if (select && select.value !== fillMode) select.value = fillMode;
 }
 
 function applyLayerVisibility(): void {
@@ -135,6 +149,14 @@ const ANIM_RANGES: Record<string, Array<[number, number]>> = {
   InitTilesetAnim_CeladonGym: [[739, 743]],
 };
 
+type AnimatedCell = {
+  x: number;
+  y: number;
+  mt: number;
+  mask: number;
+  version: number;
+};
+
 type AnimatedMap = {
   renderer: TileRenderer;
   animator: TilesetAnimator;
@@ -144,16 +166,16 @@ type AnimatedMap = {
   top: number;
   width: number;
   height: number;
-  // Bit i = la casilla usa tiles del rango i de `ranges`; dirty acumula los rangos
-  // reescritos desde el último redibujado.
-  cells: Array<{ x: number; y: number; mt: number; mask: number }>;
-  dirty: number;
+  cells: AnimatedCell[];
+  rangeVersions: Uint32Array;
+  animStep: number;
 };
 const animatedMaps: AnimatedMap[] = [];
 let animOn = false;
 let animFrame = 0;
 let animLast = 0;
 let animAccumulator = 0;
+let globalAnimStep = 0;
 // Fotograma de la GBA: 280896 ciclos a 16,78 MHz (59,73 por segundo). Mismo valor que
 // FRAME_MS en src/fr/game.ts:112; el juego avanza con este paso fijo y no con el
 // refresco de la pantalla (que en un Mac puede ser 120 Hz).
@@ -202,18 +224,47 @@ function tickAnimations(now: number): void {
   while (animAccumulator >= GBA_FRAME_MS && steps < 8) {
     animAccumulator -= GBA_FRAME_MS;
     steps++;
-    for (const m of animatedMaps) m.animator.update();
+    globalAnimStep++;
   }
-  // Los tiles cambian cada 8 o 16 fotogramas (TilesetAnim_General): solo se
-  // redibujan las casillas cuyos tiles cambiaron, y solo en los mapas visibles;
-  // los demás conservan su `dirty` hasta que entran en pantalla.
+
+  // Rectángulo del viewport visible en coordenadas mundiales (píxeles sin zoom):
+  // solo se simulan mapas visibles y solo se redibujan celdas dentro del área.
+  const viewLeft = viewport.scrollLeft / zoom;
+  const viewTop = viewport.scrollTop / zoom;
+  const viewRight = viewLeft + viewport.clientWidth / zoom;
+  const viewBottom = viewTop + viewport.clientHeight / zoom;
+
   for (const m of animatedMaps) {
-    if (!m.dirty || !mapVisible(m)) continue;
-    // Una imagen combinada (capa inferior + superior) por metatile y redibujado:
-    // muchas casillas comparten metatile (el agua), así se compone una vez.
+    // Si el mapa entero está fuera de la pantalla, no gastamos CPU en actualizarlo.
+    if (!mapVisible(m)) continue;
+
+    // Si el mapa es visible y le faltan pasos respecto al reloj global (ej. acaba
+    // de entrar en pantalla tras un scroll), se sincroniza su animador al instante.
+    let missing = globalAnimStep - m.animStep;
+    if (missing > 0) {
+      if (missing > 1920) missing = (missing % 1920) + 1920;
+      for (let s = 0; s < missing; s++) m.animator.update();
+      m.animStep = globalAnimStep;
+    }
+
+    // Redibujar únicamente las casillas visibles que cambiaron de fotograma
     const composed = new Map<number, HTMLCanvasElement>();
     for (const c of m.cells) {
-      if (!(c.mask & m.dirty)) continue;
+      let currentVersion = 0;
+      for (let i = 0; i < m.rangeVersions.length; i++) {
+        if (c.mask & (1 << i)) {
+          if (m.rangeVersions[i]! > currentVersion) currentVersion = m.rangeVersions[i]!;
+        }
+      }
+      if (c.version >= currentVersion) continue;
+
+      // Culling a nivel de celda: omitir si está fuera del viewport visible
+      const cellLeft = m.left + c.x * TILE;
+      const cellTop = m.top + c.y * TILE;
+      if (cellLeft + TILE < viewLeft || cellLeft > viewRight || cellTop + TILE < viewTop || cellTop > viewBottom) {
+        continue;
+      }
+
       let img = composed.get(c.mt);
       if (!img) {
         const { bottom, top } = m.renderer.metatile(c.mt);
@@ -227,8 +278,8 @@ function tickAnimations(now: number): void {
       }
       m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
       m.bctx.drawImage(img, c.x * TILE, c.y * TILE);
+      c.version = currentVersion;
     }
-    m.dirty = 0;
   }
   fpsFrames++;
   if (now - fpsSince >= 1000) {
@@ -317,11 +368,13 @@ function drawFill(sources: Map<string, FillSource>): void {
   let open = new Map<string, { x0: number; x1: number; y0: number; y1: number; i: number }>();
   const flush = (r: { x0: number; x1: number; y0: number; y1: number; i: number }) => {
     const p = patterns[r.i]!;
-    const mr = rects[r.i]!;
     const left = r.x0 * TILE;
     const top = r.y0 * TILE;
-    const ox = (((mr.x0 * TILE - left) % p.w) + p.w) % p.w;
-    const oy = (((mr.y0 * TILE - top) % p.h) + p.h) % p.h;
+    // Alineación global de la textura: anclada a las coordenadas (0,0) del mundo
+    // para que mapas adyacentes con el mismo patrón (ej. árboles 2x2) encajen
+    // sin cortes o costuras por desfases de posición local.
+    const ox = (((-left) % p.w) + p.w) % p.w;
+    const oy = (((-top) % p.h) + p.h) % p.h;
     const d = document.createElement("div");
     d.style.cssText = `position:absolute;left:${left}px;top:${top}px;width:${(r.x1 - r.x0) * TILE}px;height:${(r.y1 - r.y0) * TILE}px;background-image:url(${p.url});background-position:${ox}px ${oy}px;image-rendering:pixelated`;
     fill.appendChild(d);
@@ -351,6 +404,7 @@ function drawFill(sources: Map<string, FillSource>): void {
   }
   for (const r of open.values()) flush(r);
   content.prepend(fill);
+  applyFillMode();
 }
 
 async function build(): Promise<void> {
@@ -467,25 +521,28 @@ async function build(): Promise<void> {
           for (let x = 0; x < info.width; x++) {
             const mt = layout.blocks[y * info.width + x]! & 0x3ff;
             const mask = rangeMask(primary, secondary, ranges, mt);
-            if (mask) cells.push({ x, y, mt, mask });
+            if (mask) cells.push({ x, y, mt, mask, version: 0 });
           }
         }
         if (cells.length > 0) {
+          const rangeVersions = new Uint32Array(ranges.length);
           const entry: AnimatedMap = {
-            renderer, bctx, cells, dirty: 0,
+            renderer, bctx, cells,
+            rangeVersions,
+            animStep: 0,
             left: (info.x - minX) * TILE, top: (info.y - minY) * TILE,
             width: info.width * TILE, height: info.height * TILE,
             animator: undefined as unknown as TilesetAnimator,
           };
           // El animador escribe a través de este destino para marcar qué rangos
-          // cambiaron; TileRenderer recibe la escritura sin modificar.
+          // cambiaron de versión; TileRenderer recibe la escritura sin modificar.
           entry.animator = new TilesetAnimator({
             primary, secondary,
             writeTiles(destTile: number, data: Uint8Array, count?: number) {
               renderer.writeTiles(destTile, data, count);
               const n = count ?? data.length / 32;
               ranges.forEach(([lo, hi], i) => {
-                if (destTile < hi && destTile + n > lo) entry.dirty |= 1 << i;
+                if (destTile < hi && destTile + n > lo) rangeVersions[i]++;
               });
             },
           });
@@ -615,6 +672,15 @@ function setupUi(): void {
     } else cancelAnimationFrame(animFrame);
     updateMeta();
   });
+  const fillSelect = document.getElementById("fill-mode") as HTMLSelectElement | null;
+  if (fillSelect) {
+    fillSelect.value = fillMode;
+    fillSelect.addEventListener("change", () => {
+      fillMode = (fillSelect.value as "full" | "dim" | "off") || "full";
+      applyFillMode();
+      writeHash();
+    });
+  }
   for (const layer of LAYERS) {
     const label = document.createElement("label");
     const swatch = document.createElement("span");
