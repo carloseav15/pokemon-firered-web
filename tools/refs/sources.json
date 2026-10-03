@@ -62,5 +62,13 @@
       "/test/"
     ],
     "note": "GBA, C. Base comunitaria que compila Emerald y FRLG (IS_FRLG) y trae tests de combate. No es fuente de verdad de ningún juego."
+  },
+  "pokemon-showdown": {
+    "repo": "https://github.com/smogon/pokemon-showdown.git",
+    "commit": "3661ce40bf9001d185ce078b8920e12304204609",
+    "sparse": [
+      "/*"
+    ],
+    "note": "Simulador de combate en TypeScript (MIT). Datos y mecánicas por generación (data/mods). No reproduce el RNG ni el orden de llamadas de la GBA."
   }
 }

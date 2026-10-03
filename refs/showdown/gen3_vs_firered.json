@@ -1,0 +1,529 @@
+{
+ "_meta": {
+  "commit": "3661ce40bf9001d185ce078b8920e12304204609",
+  "entries": 73,
+  "generator": "tools/refs/showdown_gens.py",
+  "source": "pokemon-showdown"
+ },
+ "data": {
+  "moves": {
+   "assist": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "bide": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "bind": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "block": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "camouflage": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "charge": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "clamp": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "conversion2": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "counter": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "covet": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "dragonrage": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "endeavor": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "endure": {
+    "priority": {
+     "firered": 3,
+     "kind": "real",
+     "showdown": 4
+    }
+   },
+   "firespin": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "fissure": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "flail": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "followme": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "frustration": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "grudge": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "guillotine": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "helpinghand": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "hiddenpower": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 70
+    },
+    "type": {
+     "firered": "Normal",
+     "kind": "representation",
+     "showdown": "Water"
+    }
+   },
+   "horndrill": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "imprison": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "ingrain": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "knockoff": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "lowkick": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "magiccoat": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "magnitude": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "meanlook": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "memento": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "mimic": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "mirrorcoat": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "mudsport": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "naturepower": {
+    "accuracy": {
+     "firered": 0,
+     "kind": "real",
+     "showdown": 95
+    }
+   },
+   "nightmare": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "nightshade": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "outrage": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "overheat": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "painsplit": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "payday": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "petaldance": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "present": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "psychoboost": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "psywave": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "recycle": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "refresh": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "return": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "reversal": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "roleplay": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "sandtomb": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "seismictoss": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "sheercold": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "skillswap": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "slackoff": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "snatch": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "softboiled": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "sonicboom": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "spiderweb": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "spitup": {
+    "power": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "superfang": {
+    "power": {
+     "firered": 1,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "swagger": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "tailglow": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "thief": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "thrash": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "toxic": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "uproar": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "vitalthrow": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "watersport": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "whirlpool": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "wish": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   },
+   "wrap": {
+    "effect_chance": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": null
+    }
+   },
+   "yawn": {
+    "accuracy": {
+     "firered": 100,
+     "kind": "representation",
+     "showdown": 0
+    }
+   }
+  },
+  "species": {}
+ }
+}

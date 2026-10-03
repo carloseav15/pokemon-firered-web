@@ -356,3 +356,12 @@ Orden recomendado de arriba abajo. **[básico]**: copiar un ejemplo y adaptar ca
   `refs/emerald/functions.json` y su archivo en pokefirered. El cruce con los módulos
   TS es `python3 tools/engineSplit.py --expansion`; conclusiones en
   [docs/REPOS-COMUNITARIOS.md](../docs/REPOS-COMUNITARIOS.md) §8.
+- [x] **R22 Cambios de reglas por generación (Showdown)** [medio]. Fuente
+  `pokemon-showdown` (`3661ce40`, MIT). Se compila una vez fuera del repo
+  (`npm install --omit=dev --ignore-scripts && node build` en su checkout) y
+  `npm run refs:showdown-gens` resuelve con su propio Dex los movimientos, habilidades,
+  objetos, especies y tabla de tipos de gen3 a gen9. Genera
+  `refs/showdown/gen_changes.json` (valores de Gen 3 y solo lo que cambia después;
+  el código de cada manejador se guarda como hash) y `refs/showdown/gen3_vs_firered.json`
+  (contraste con `public/fr/data`). Conclusiones en
+  [docs/REPOS-COMUNITARIOS.md](../docs/REPOS-COMUNITARIOS.md) §8.4.

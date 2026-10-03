@@ -12,6 +12,7 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | [pokeapi](https://github.com/PokeAPI/pokeapi) | `bc92d3b602` | CSV de datos de todas las generaciones. No es fuente de verdad. |
 | [pokecrystal](https://github.com/pret/pokecrystal) | `5beda23ffa` | GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta. |
 | [pokeemerald-expansion](https://github.com/rh-hideout/pokeemerald-expansion) | `dfb0f84374` | GBA, C. Base comunitaria que compila Emerald y FRLG (IS_FRLG) y trae tests de combate. No es fuente de verdad de ningún juego. |
+| [pokemon-showdown](https://github.com/smogon/pokemon-showdown) | `3661ce40bf` | Simulador de combate en TypeScript (MIT). Datos y mecánicas por generación (data/mods). No reproduce el RNG ni el orden de llamadas de la GBA. |
 
 ## Salidas
 
@@ -39,3 +40,5 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | `platinum/species_vs_firered.json` | pokeplatinum | 362 | `tools/refs/compare_platinum_species.py` |
 | `pokeapi/megas.json` | pokeapi | 97 | `tools/refs/pokeapi_extras.py` |
 | `pokeapi/names_es.json` | pokeapi | 4 | `tools/refs/pokeapi_extras.py` |
+| `showdown/gen3_vs_firered.json` | pokemon-showdown | 73 | `tools/refs/showdown_gens.py` |
+| `showdown/gen_changes.json` | pokemon-showdown | 963 | `tools/refs/showdown_gens.py` |
