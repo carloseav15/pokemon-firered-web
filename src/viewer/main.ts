@@ -154,7 +154,6 @@ type AnimatedCell = {
   y: number;
   mt: number;
   mask: number;
-  version: number;
 };
 
 type AnimatedMap = {
@@ -167,15 +166,13 @@ type AnimatedMap = {
   width: number;
   height: number;
   cells: AnimatedCell[];
-  rangeVersions: Uint32Array;
-  animStep: number;
+  dirtyMask: number;
 };
 const animatedMaps: AnimatedMap[] = [];
 let animOn = false;
 let animFrame = 0;
 let animLast = 0;
 let animAccumulator = 0;
-let globalAnimStep = 0;
 // Fotograma de la GBA: 280896 ciclos a 16,78 MHz (59,73 por segundo). Mismo valor que
 // FRAME_MS en src/fr/game.ts:112; el juego avanza con este paso fijo y no con el
 // refresco de la pantalla (que en un Mac puede ser 120 Hz).
@@ -224,7 +221,19 @@ function tickAnimations(now: number): void {
   while (animAccumulator >= GBA_FRAME_MS && steps < 8) {
     animAccumulator -= GBA_FRAME_MS;
     steps++;
-    globalAnimStep++;
+  }
+
+  // Si no hubo avance de GBA en este fotograma de refresco, terminamos inmediatamente
+  if (steps === 0) {
+    fpsFrames++;
+    if (now - fpsSince >= 1000) {
+      fpsValue = (fpsFrames * 1000) / (now - fpsSince);
+      fpsFrames = 0;
+      fpsSince = now;
+      updateMeta();
+    }
+    animFrame = requestAnimationFrame(tickAnimations);
+    return;
   }
 
   // Rectángulo del viewport visible en coordenadas mundiales (píxeles sin zoom):
@@ -235,52 +244,35 @@ function tickAnimations(now: number): void {
   const viewBottom = viewTop + viewport.clientHeight / zoom;
 
   for (const m of animatedMaps) {
-    // Si el mapa entero está fuera de la pantalla, no gastamos CPU en actualizarlo.
+    // Si el mapa entero está fuera de la pantalla, no gastamos CPU
     if (!mapVisible(m)) continue;
 
-    // Si el mapa es visible y le faltan pasos respecto al reloj global (ej. acaba
-    // de entrar en pantalla tras un scroll), se sincroniza su animador al instante.
-    let missing = globalAnimStep - m.animStep;
-    if (missing > 0) {
-      if (missing > 1920) missing = (missing % 1920) + 1920;
-      for (let s = 0; s < missing; s++) m.animator.update();
-      m.animStep = globalAnimStep;
+    m.dirtyMask = 0;
+    for (let s = 0; s < steps; s++) {
+      m.animator.update();
     }
 
-    // Redibujar únicamente las casillas visibles que cambiaron de fotograma
-    const composed = new Map<number, HTMLCanvasElement>();
-    for (const c of m.cells) {
-      let currentVersion = 0;
-      for (let i = 0; i < m.rangeVersions.length; i++) {
-        if (c.mask & (1 << i)) {
-          if (m.rangeVersions[i]! > currentVersion) currentVersion = m.rangeVersions[i]!;
-        }
-      }
-      if (c.version >= currentVersion) continue;
+    // Si ningún tile de este mapa cambió en este tick, omitimos todo el redibujado
+    if (m.dirtyMask === 0) continue;
 
-      // Culling a nivel de celda: omitir si está fuera del viewport visible
+    // Redibujar únicamente las casillas visibles que usan los rangos modificados
+    for (const c of m.cells) {
+      if (!(c.mask & m.dirtyMask)) continue;
+
       const cellLeft = m.left + c.x * TILE;
       const cellTop = m.top + c.y * TILE;
       if (cellLeft + TILE < viewLeft || cellLeft > viewRight || cellTop + TILE < viewTop || cellTop > viewBottom) {
         continue;
       }
 
-      let img = composed.get(c.mt);
-      if (!img) {
-        const { bottom, top } = m.renderer.metatile(c.mt);
-        img = document.createElement("canvas");
-        img.width = TILE;
-        img.height = TILE;
-        const ctx = img.getContext("2d")!;
-        ctx.drawImage(bottom, 0, 0);
-        ctx.drawImage(top, 0, 0);
-        composed.set(c.mt, img);
-      }
+      // Dibujo directo sin allocations intermedias de canvas
+      const { bottom, top } = m.renderer.metatile(c.mt);
       m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
-      m.bctx.drawImage(img, c.x * TILE, c.y * TILE);
-      c.version = currentVersion;
+      m.bctx.drawImage(bottom, c.x * TILE, c.y * TILE);
+      m.bctx.drawImage(top, c.x * TILE, c.y * TILE);
     }
   }
+
   fpsFrames++;
   if (now - fpsSince >= 1000) {
     fpsValue = (fpsFrames * 1000) / (now - fpsSince);
@@ -310,57 +302,93 @@ function updateMeta(): void {
 // mapa más cercano, repetido como lo repite el juego fuera de los límites
 // (GetBorderBlockAt, fieldmap.c:39-57: (x - MAP_OFFSET) mod borderWidth, ídem en y).
 // Es solo visual: el borde nunca es transitable.
+// Biomas canónicos del exterior de Kanto para el relleno de espacios vacíos.
+// Todos los metatiles provienen del tileset primario gTileset_General:
+// - BIOME_TREES: bloque 2x2 de árboles densos (copa y tronco: metatiles 28, 29, 20, 21).
+// - BIOME_OCEAN: bloque 2x2 de agua marina (metatile 473, MB_OCEAN_WATER).
+// - BIOME_MOUNTAIN: bloque 2x2 de montaña escarpada (metatile 113).
+const BIOME_TREES = 0;
+const BIOME_OCEAN = 1;
+const BIOME_MOUNTAIN = 2;
+const BIOME_NAMES = ["bosque (árboles densos)", "marítimo (océano)", "montañoso (cordillera)"] as const;
+
+function biomeAt(x: number, y: number): number {
+  // 1. Zonas marítimas (Océano)
+  // Mar del sur (rodeando Isla Canela, Ruta 19, 20 y bajo Fucsia)
+  if (y >= 335) return BIOME_OCEAN;
+  // Mar al sur y oeste de Pueblo Paleta (Ruta 21)
+  if (x < 105 && y >= 275) return BIOME_OCEAN;
+  // Bahía al sur del puerto de Ciudad Carmín
+  if (x >= 260 && x <= 315 && y >= 235 && y < 310) return BIOME_OCEAN;
+  // Océano abierto al este de la costa (Rutas 12, 13, 14)
+  if (x >= 390 && y >= 145) return BIOME_OCEAN;
+  // Bahía al sur de Ruta 13 / este de Ruta 14
+  if (x >= 330 && y >= 285 && y < 335) return BIOME_OCEAN;
+  // Canal de agua marina bajo la Senda Bici (Ruta 17)
+  if (x >= 120 && x <= 165 && y >= 145 && y <= 315) return BIOME_OCEAN;
+
+  // 2. Zonas montañosas (Cordilleras)
+  // Cordillera Oeste (Ruta 23 e Indigo Plateau)
+  if (x <= 45 && y <= 215) return BIOME_MOUNTAIN;
+  // Cordillera Norte (extremo norte de Kanto)
+  if (y <= 45) return BIOME_MOUNTAIN;
+  // Cordillera de Mt. Moon (Ruta 3 y 4)
+  if (x >= 90 && x <= 260 && y <= 75) return BIOME_MOUNTAIN;
+  // Cordillera de Cerulean / Ruta 9
+  if (x >= 310 && y <= 75) return BIOME_MOUNTAIN;
+  // Cordillera de Rock Tunnel (Ruta 10 norte)
+  if (x >= 380 && y <= 135) return BIOME_MOUNTAIN;
+
+  // 3. Todo el resto es el continente interior de Kanto (Bosque)
+  return BIOME_TREES;
+}
+
 type FillSource = { info: KantoIndex["maps"][string]; layout: Awaited<ReturnType<typeof rom.loadLayout>>; renderer: TileRenderer };
 let nearestFill: Int16Array | null = null;
-let fillIds: string[] = [];
 
 function drawFill(sources: Map<string, FillSource>): void {
   const W = index.world.width;
   const H = index.world.height;
-  const ids = [...sources.keys()].sort();
-  fillIds = ids;
-  const rects = ids.map((id) => {
-    const m = index.maps[id];
-    return { x0: m.x - minX, y0: m.y - minY, x1: m.x - minX + m.width, y1: m.y - minY + m.height };
-  });
+  const rects = Object.values(index.maps).map((m) => ({
+    x0: m.x - minX,
+    y0: m.y - minY,
+    x1: m.x - minX + m.width,
+    y1: m.y - minY + m.height,
+  }));
   const occupied = new Uint8Array(W * H);
   for (const r of rects) for (let y = r.y0; y < r.y1; y++) occupied.fill(1, y * W + r.x0, y * W + r.x1);
+
   const nearest = new Int16Array(W * H).fill(-1);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      if (occupied[y * W + x]) continue;
-      let best = -1;
-      let bestD = Infinity;
-      rects.forEach((r, i) => {
-        const dx = x < r.x0 ? r.x0 - x : x >= r.x1 ? x - r.x1 + 1 : 0;
-        const dy = y < r.y0 ? r.y0 - y : y >= r.y1 ? y - r.y1 + 1 : 0;
-        const d = dx * dx + dy * dy;
-        if (d < bestD) {
-          bestD = d;
-          best = i;
-        }
-      });
-      nearest[y * W + x] = best;
+      if (!occupied[y * W + x]) nearest[y * W + x] = biomeAt(x, y);
     }
   }
   nearestFill = nearest;
 
-  // Un patrón por mapa: su borde de borderWidth×borderHeight metatiles.
-  const patterns = ids.map((id) => {
-    const { layout, renderer } = sources.get(id)!;
+  const baseRenderer = sources.values().next().value?.renderer;
+  if (!baseRenderer) return;
+
+  const createPattern = (metatiles: number[]): { url: string; w: number; h: number } => {
     const c = document.createElement("canvas");
-    c.width = layout.borderWidth * TILE;
-    c.height = layout.borderHeight * TILE;
+    c.width = 2 * TILE;
+    c.height = 2 * TILE;
     const ctx = c.getContext("2d")!;
-    for (let by = 0; by < layout.borderHeight; by++) {
-      for (let bx = 0; bx < layout.borderWidth; bx++) {
-        const { bottom, top } = renderer.metatile(layout.border[bx + by * layout.borderWidth]! & 0x3ff);
+    for (let by = 0; by < 2; by++) {
+      for (let bx = 0; bx < 2; bx++) {
+        const { bottom, top } = baseRenderer.metatile(metatiles[bx + by * 2]!);
         ctx.drawImage(bottom, bx * TILE, by * TILE);
         ctx.drawImage(top, bx * TILE, by * TILE);
       }
     }
     return { url: c.toDataURL(), w: c.width, h: c.height };
-  });
+  };
+
+  const patterns = [
+    createPattern([28, 29, 20, 21]), // BIOME_TREES
+    createPattern([473, 473, 473, 473]), // BIOME_OCEAN
+    createPattern([113, 113, 113, 113]), // BIOME_MOUNTAIN
+  ];
 
   // Tramos horizontales del mismo mapa, unidos en vertical cuando coinciden.
   const fill = document.createElement("div");
@@ -521,28 +549,24 @@ async function build(): Promise<void> {
           for (let x = 0; x < info.width; x++) {
             const mt = layout.blocks[y * info.width + x]! & 0x3ff;
             const mask = rangeMask(primary, secondary, ranges, mt);
-            if (mask) cells.push({ x, y, mt, mask, version: 0 });
+            if (mask) cells.push({ x, y, mt, mask });
           }
         }
         if (cells.length > 0) {
-          const rangeVersions = new Uint32Array(ranges.length);
           const entry: AnimatedMap = {
             renderer, bctx, cells,
-            rangeVersions,
-            animStep: 0,
+            dirtyMask: 0,
             left: (info.x - minX) * TILE, top: (info.y - minY) * TILE,
             width: info.width * TILE, height: info.height * TILE,
             animator: undefined as unknown as TilesetAnimator,
           };
-          // El animador escribe a través de este destino para marcar qué rangos
-          // cambiaron de versión; TileRenderer recibe la escritura sin modificar.
           entry.animator = new TilesetAnimator({
             primary, secondary,
             writeTiles(destTile: number, data: Uint8Array, count?: number) {
               renderer.writeTiles(destTile, data, count);
               const n = count ?? data.length / 32;
               ranges.forEach(([lo, hi], i) => {
-                if (destTile < hi && destTile + n > lo) rangeVersions[i]++;
+                if (destTile < hi && destTile + n > lo) entry.dirtyMask |= 1 << i;
               });
             },
           });
@@ -608,8 +632,8 @@ function showAt(worldX: number, worldY: number): void {
     const fx = mx - minX;
     const fy = my - minY;
     const i = nearestFill && fx >= 0 && fy >= 0 && fx < index.world.width && fy < index.world.height ? nearestFill[fy * index.world.width + fx]! : -1;
-    panel.innerHTML = i >= 0
-      ? `<p>Fuera de los mapas: relleno visual con el borde de ${fillIds[i]} (el mapa más cercano). No es transitable.</p>`
+    panel.innerHTML = i >= 0 && i < BIOME_NAMES.length
+      ? `<p>Fuera de los mapas: bioma de ${BIOME_NAMES[i]}. No es transitable.</p>`
       : "<p>Fuera de los mapas.</p>";
     return;
   }
