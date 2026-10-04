@@ -1,6 +1,7 @@
 // Visor del mundo: 37 mapas exteriores de Kanto unidos (docs/VISOR-MUNDO.md).
 // Navegación nativa sobre el lienzo de Kanto con avatar de jugador (Red/Leaf),
-// colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo) e interacción con NPCs.
+// colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
+// interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
 import { rom } from "../fr/rom";
 import { TileRenderer } from "../fr/field/tileRenderer";
@@ -23,6 +24,7 @@ import { getPlayerSpriteSheet, type Direction, GFX_MAP } from "./render/sprites"
 import { spawnFieldFx } from "./render/fieldFx";
 import { EntityManager, type LiveEntity } from "./render/entities";
 import { DialogManager } from "./ui/dialog";
+import { ViewerAudioController } from "./audio/audioController";
 
 const viewport = document.getElementById("viewport")!;
 const content = document.getElementById("content")!;
@@ -45,6 +47,7 @@ let animController: TileAnimationController;
 let minimapController: MinimapController | null = null;
 let entityManager: EntityManager;
 let dialogManager: DialogManager;
+const audioController = new ViewerAudioController();
 
 let zoom = 1;
 let startX: number | null = null;
@@ -154,6 +157,7 @@ function centerOnMap(id: string): boolean {
   viewport.scrollLeft = (mapEl.offsetLeft + (info.width * TILE) / 2) * zoom - viewport.clientWidth / 2;
   viewport.scrollTop = (mapEl.offsetTop + (info.height * TILE) / 2) * zoom - viewport.clientHeight / 2;
   minimapController?.updateRadar();
+  checkCurrentMapMusic();
   scheduleHashWrite();
   return true;
 }
@@ -161,6 +165,27 @@ function centerOnMap(id: string): boolean {
 function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: number): number {
   const raw = id < NUM_METATILES_IN_PRIMARY ? (primaryAttrs[id] ?? 0) : (secondaryAttrs[id - NUM_METATILES_IN_PRIMARY] ?? 0);
   return ExtractMetatileAttribute(raw, METATILE_ATTRIBUTE_BEHAVIOR);
+}
+
+function findMapAt(gx: number, gy: number): [string, KantoIndex["maps"][string]] | undefined {
+  if (!index) return undefined;
+  return Object.entries(index.maps).find(
+    ([, m]) => gx >= m.x && gx < m.x + m.width && gy >= m.y && gy < m.y + m.height
+  );
+}
+
+function checkCurrentMapMusic(): void {
+  if (!audioController.isEnabled()) return;
+  const centerGx = Math.floor((viewport.scrollLeft / zoom + viewport.clientWidth / (2 * zoom)) / TILE) + minX;
+  const centerGy = Math.floor((viewport.scrollTop / zoom + viewport.clientHeight / (2 * zoom)) / TILE) + minY;
+  const curGx = playerActive ? playerX : centerGx;
+  const curGy = playerActive ? playerY : centerGy;
+
+  const found = findMapAt(curGx, curGy);
+  if (found) {
+    const [mapId, m] = found;
+    audioController.updateMap(mapId, m.music);
+  }
 }
 
 // --- Lógica del Avatar del Jugador ---
@@ -229,6 +254,7 @@ function updatePlayerDisplay(): void {
   minimapController?.updateRadar();
 
   updateEntitiesView();
+  checkCurrentMapMusic();
 }
 
 function updateEntitiesView(): void {
@@ -247,6 +273,7 @@ function updateEntitiesView(): void {
 }
 
 function interactWithEntity(ent: LiveEntity): void {
+  audioController.playSelect();
   entityManager.faceTowards(ent, playerX, playerY);
 
   const title = ent.element.trainer ? `${ent.element.trainer}` : `${ent.element.map.replace("MAP_", "")}`;
@@ -278,6 +305,7 @@ function checkTrainerSight(): void {
     else if (ent.dir === "east" && playerY === ent.gy && playerX > ent.gx && playerX <= ent.gx + r) inSight = true;
 
     if (inSight) {
+      audioController.playExclamation();
       entityManager.showAlert(ent);
       interactWithEntity(ent);
       break;
@@ -320,6 +348,7 @@ function startExploration(targetGx?: number, targetGy?: number): void {
   playerVisualX = (playerX - minX) * TILE;
   playerVisualY = (playerY - minY) * TILE;
   updatePlayerDisplay();
+  checkCurrentMapMusic();
 }
 
 function stopExploration(): void {
@@ -345,6 +374,9 @@ function toggleBike(): void {
   const bikeBtn = document.getElementById("bike-btn");
   if (bikeBtn) {
     bikeBtn.style.background = playerMode === "bike" ? "#f59e0b" : "";
+  }
+  if (playerMode === "bike") {
+    audioController.playBikeBell();
   }
   updatePlayerDisplay();
 }
@@ -408,9 +440,16 @@ function processPlayerStep(): void {
     const destPxX = (targetX - minX) * TILE;
     const destPxY = (targetY - minY) * TILE;
 
+    if (isLedgeJump) {
+      audioController.playLedgeJump();
+    }
+
     if (worldGrid.isGrassTile(targetX, targetY) && playerMode !== "surf") {
       spawnFieldFx(content, destPxX, destPxY, "grass");
+    } else if (worldGrid.isSandTile(targetX, targetY) && playerMode !== "surf") {
+      spawnFieldFx(content, destPxX, destPxY, playerMode === "bike" ? "tire" : "sand");
     }
+
     if (playerMode === "surf" && Math.random() < 0.3) {
       spawnFieldFx(content, destPxX, destPxY, "ripple");
     }
@@ -458,6 +497,7 @@ function processPlayerStep(): void {
     if (!isStepping) {
       isStepping = true;
       playerMoving = true;
+      audioController.playWallBump();
       playerStep = (playerStep + 1) % 4;
       const basePxX = (playerX - minX) * TILE;
       const basePxY = (playerY - minY) * TILE;
@@ -507,7 +547,7 @@ function showAt(worldX: number, worldY: number): void {
   const mx = cellX + minX;
   const my = cellY + minY;
 
-  const entry = Object.entries(index.maps).find(([, m]) => mx >= m.x && mx < m.x + m.width && my >= m.y && my < m.y + m.height);
+  const entry = findMapAt(mx, my);
   if (!entry) {
     const fx = mx - minX;
     const fy = my - minY;
@@ -585,7 +625,13 @@ async function build(): Promise<void> {
       height: viewport.clientHeight,
       zoom,
     }),
-    () => updateMeta()
+    () => updateMeta(),
+    () => {
+      audioController.frame();
+      if (playerActive) {
+        entityManager.updateAutonomousBehaviors(performance.now(), playerX, playerY);
+      }
+    }
   );
 
   let processedCount = 0;
@@ -637,6 +683,7 @@ async function build(): Promise<void> {
             MB.MetatileBehavior_IsPokeGrass(beh) ||
             MB.MetatileBehavior_IsTallGrass(beh) ||
             MB.MetatileBehavior_IsLongGrass(beh);
+          const isSand = MB.MetatileBehavior_IsSand(beh) || MB.MetatileBehavior_IsSandOrShallowFlowingWater(beh);
           if (isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
 
           const gwx = info.x + x;
@@ -646,6 +693,7 @@ async function build(): Promise<void> {
             worldGrid.solid[idx] = hasCollision ? 1 : 0;
             if (isWater) worldGrid.water[idx] = 1;
             if (isGrass) worldGrid.grass[idx] = 1;
+            if (isSand) worldGrid.sand[idx] = 1;
             worldGrid.metatiles[idx] = mt;
           }
 
@@ -775,6 +823,11 @@ async function build(): Promise<void> {
 
   applyLayerVisibility();
 
+  if (state.audio) {
+    audioController.enable();
+    checkCurrentMapMusic();
+  }
+
   if (loadingOverlay) {
     loadingOverlay.classList.add("hidden");
     setTimeout(() => loadingOverlay.remove(), 400);
@@ -827,6 +880,37 @@ function setupUi(): void {
       state.saveStored();
     });
   }
+
+  const audioBtn = document.getElementById("audio-btn");
+  const audioToggle = document.getElementById("audio-toggle") as HTMLInputElement | null;
+
+  const updateAudioUi = () => {
+    const on = audioController.isEnabled();
+    if (audioBtn) {
+      audioBtn.textContent = on ? "🔊 Audio" : "🔇 Audio";
+      audioBtn.classList.toggle("active-mode", on);
+    }
+    if (audioToggle) {
+      audioToggle.checked = on;
+    }
+  };
+
+  const toggleAudio = () => {
+    if (audioController.isEnabled()) {
+      audioController.disable();
+      state.audio = false;
+    } else {
+      audioController.enable();
+      state.audio = true;
+      checkCurrentMapMusic();
+    }
+    state.saveStored();
+    updateAudioUi();
+  };
+
+  audioBtn?.addEventListener("click", toggleAudio);
+  audioToggle?.addEventListener("change", toggleAudio);
+  updateAudioUi();
 
   for (const layer of LAYERS) {
     const label = document.createElement("label");
@@ -892,7 +976,10 @@ function setupUi(): void {
     minY,
     viewport,
     () => zoom,
-    () => scheduleHashWrite(),
+    () => {
+      checkCurrentMapMusic();
+      scheduleHashWrite();
+    },
     () => ({ active: playerActive, x: playerX, y: playerY })
   );
 
@@ -932,6 +1019,10 @@ function setupUi(): void {
     if (tag === "input" || tag === "select" || tag === "textarea") return;
     const key = e.key.toLowerCase();
 
+    if (key === "m") {
+      toggleAudio();
+      return;
+    }
     if (key === "b" && playerActive) {
       toggleBike();
       return;
@@ -943,6 +1034,7 @@ function setupUi(): void {
       if (dialogManager.isOpen()) {
         e.preventDefault();
         dialogManager.close();
+        audioController.playSelect();
         return;
       } else if (playerActive) {
         e.preventDefault();
@@ -1025,6 +1117,7 @@ function setupUi(): void {
     dragY = ev.clientY;
     minimapController?.updateRadar();
     updateEntitiesView();
+    checkCurrentMapMusic();
   });
 
   viewport.addEventListener("pointerup", (ev) => {
@@ -1055,6 +1148,7 @@ function setupUi(): void {
   viewport.addEventListener("scroll", () => {
     minimapController?.updateRadar();
     updateEntitiesView();
+    checkCurrentMapMusic();
     scheduleHashWrite();
   });
 

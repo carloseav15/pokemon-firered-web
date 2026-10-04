@@ -27,6 +27,7 @@ export type StoredSettings = {
   activeLayers?: Layer[];
   radar?: boolean;
   playerChar?: PlayerCharacter;
+  audio?: boolean;
 };
 
 export class ViewerState {
@@ -37,6 +38,7 @@ export class ViewerState {
   fillBiomeOverride: FillBiomeOverride = "auto";
   radar = true;
   playerChar: PlayerCharacter = "red";
+  audio = false;
 
   anim: AnimState = {
     on: false,
@@ -53,6 +55,7 @@ export class ViewerState {
       if (s.fillBiomeOverride) this.fillBiomeOverride = s.fillBiomeOverride;
       if (s.radar !== undefined) this.radar = s.radar;
       if (s.playerChar) this.playerChar = s.playerChar;
+      if (s.audio !== undefined) this.audio = s.audio;
       if (Array.isArray(s.activeLayers)) {
         this.activeLayers.clear();
         for (const l of s.activeLayers) {
@@ -71,6 +74,7 @@ export class ViewerState {
         fillBiomeOverride: this.fillBiomeOverride,
         radar: this.radar,
         playerChar: this.playerChar,
+        audio: this.audio,
         activeLayers: [...this.activeLayers],
       };
       localStorage.setItem(VIEWER_STORAGE_KEY, JSON.stringify(s));

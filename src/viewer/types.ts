@@ -1,6 +1,17 @@
 // Tipos del indice generado por tools/viewer/world_index.py (docs/VISOR-MUNDO.md par. 4.4).
 
-export type WorldMap = { x: number; y: number; width: number; height: number; layout: string; title: string; section: string };
+export type WorldMap = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  layout: string;
+  title: string;
+  section: string;
+  music?: number;
+  musicName?: string;
+  weather?: number;
+};
 export type Conflict = { from: string; to: string; placed: [number, number]; proposed: [number, number] };
 export type Element = {
   map: string;

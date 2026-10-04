@@ -61,7 +61,8 @@ export class TileAnimationController {
 
   constructor(
     private readonly getViewportRect: () => { left: number; top: number; width: number; height: number; zoom: number },
-    private readonly onFpsUpdate: () => void
+    private readonly onFpsUpdate: () => void,
+    private readonly onFrame?: () => void
   ) {}
 
   addMap(map: AnimatedMap): void {
@@ -141,6 +142,7 @@ export class TileAnimationController {
     }
 
     this.recordFps(now);
+    this.onFrame?.();
     if (this.animOn) {
       this.animFrame = requestAnimationFrame((n) => this.tick(n));
     }

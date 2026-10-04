@@ -270,14 +270,18 @@ def main() -> int:
     for mid in sorted(pos):
         x, y = pos[mid]
         lay = layouts[maps[mid]["layout"]]
+        pub_m = maps[mid]
         maps_out[mid] = {
             "x": x,
             "y": y,
             "width": lay["width"],
             "height": lay["height"],
-            "layout": maps[mid]["layout"],
-            "title": maps[mid]["name"],
-            "section": maps[mid].get("regionMapSectionName", ""),
+            "layout": pub_m["layout"],
+            "title": pub_m["name"],
+            "section": pub_m.get("regionMapSectionName", ""),
+            "music": pub_m.get("music", 0),
+            "musicName": pub_m.get("musicName", ""),
+            "weather": pub_m.get("weather", 2),
         }
 
     elements: list[dict] = []

@@ -8,6 +8,7 @@ export class WorldGrid {
   readonly water: Uint8Array;
   readonly ledge: Uint8Array;
   readonly grass: Uint8Array;
+  readonly sand: Uint8Array;
   readonly npc: Uint8Array;
   readonly metatiles: Int16Array;
 
@@ -22,6 +23,7 @@ export class WorldGrid {
     this.water = new Uint8Array(size);
     this.ledge = new Uint8Array(size);
     this.grass = new Uint8Array(size);
+    this.sand = new Uint8Array(size);
     this.npc = new Uint8Array(size);
     this.metatiles = new Int16Array(size).fill(-1);
   }
@@ -46,6 +48,11 @@ export class WorldGrid {
   isGrassTile(gx: number, gy: number): boolean {
     if (!this.inBounds(gx, gy)) return false;
     return this.grass[this.idx(gx, gy)] === 1;
+  }
+
+  isSandTile(gx: number, gy: number): boolean {
+    if (!this.inBounds(gx, gy)) return false;
+    return this.sand[this.idx(gx, gy)] === 1;
   }
 
   ledgeDirection(gx: number, gy: number): number {

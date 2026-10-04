@@ -125,4 +125,31 @@ export class EntityManager {
       setTimeout(() => balloon.remove(), 1200);
     }
   }
+
+  updateAutonomousBehaviors(now: number, playerGx: number, playerGy: number): void {
+    // Los NPCs con movimiento miran ocasionalmente a los lados o dan un pequeño paso
+    // sin abandonar su área ni superponerse con el jugador
+    for (const ent of this.entities) {
+      if (!ent.el || ent.element.trainer || ent.element.layer === "puerta") continue;
+      // Probabilidad baja por tick para emular los descansos de GBA
+      if (Math.random() < 0.003) {
+        const dirs: Direction[] = ["south", "north", "west", "east"];
+        const nextDir = dirs[Math.floor(Math.random() * dirs.length)]!;
+        if (nextDir !== ent.dir) {
+          ent.dir = nextDir;
+          const gfxInfo = GFX_MAP[ent.element.graphics ?? ""] ?? { w: 16, h: 32 };
+          let frame = 0;
+          let flip = false;
+          if (ent.dir === "north") frame = 1;
+          else if (ent.dir === "west") frame = 2;
+          else if (ent.dir === "east") {
+            frame = 2;
+            flip = true;
+          }
+          ent.el.style.backgroundPosition = `-${frame * gfxInfo.w}px 0px`;
+          ent.el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+        }
+      }
+    }
+  }
 }

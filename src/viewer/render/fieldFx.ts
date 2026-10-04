@@ -1,4 +1,9 @@
-export function spawnFieldFx(content: HTMLElement, xPx: number, yPx: number, type: "grass" | "dust" | "ripple"): void {
+export function spawnFieldFx(
+  content: HTMLElement,
+  xPx: number,
+  yPx: number,
+  type: "grass" | "dust" | "ripple" | "sand" | "tire"
+): void {
   const fx = document.createElement("div");
   fx.className = "field-fx";
   fx.style.left = `${xPx}px`;
@@ -54,5 +59,31 @@ export function spawnFieldFx(content: HTMLElement, xPx: number, yPx: number, typ
         fx.remove();
       }
     }, 70);
+  } else if (type === "sand") {
+    fx.style.top = `${yPx + 8}px`;
+    fx.style.width = "16px";
+    fx.style.height = "8px";
+    fx.style.backgroundImage = "url(/fr/fieldfx/sandfootprints__ette0.png)";
+    fx.style.backgroundPosition = "0px 0px";
+    fx.style.opacity = "0.7";
+    content.appendChild(fx);
+    setTimeout(() => {
+      fx.style.transition = "opacity 0.6s ease-out";
+      fx.style.opacity = "0";
+      setTimeout(() => fx.remove(), 600);
+    }, 1200);
+  } else if (type === "tire") {
+    fx.style.top = `${yPx + 8}px`;
+    fx.style.width = "16px";
+    fx.style.height = "8px";
+    fx.style.backgroundImage = "url(/fr/fieldfx/biketiretracks__ette0.png)";
+    fx.style.backgroundPosition = "0px 0px";
+    fx.style.opacity = "0.7";
+    content.appendChild(fx);
+    setTimeout(() => {
+      fx.style.transition = "opacity 0.6s ease-out";
+      fx.style.opacity = "0";
+      setTimeout(() => fx.remove(), 600);
+    }, 1200);
   }
 }

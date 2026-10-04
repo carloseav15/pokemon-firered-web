@@ -47,7 +47,9 @@ export function renderTilePanel(
   trs: Trigger[],
   onExploreHere?: () => void
 ): void {
-  let html = `<h2>${escapeHtml(id)}</h2><p style="color:#a1a1aa;margin-bottom:8px">Casilla local: <b>(${lx}, ${ly})</b> · Mundo: (${mx}, ${my})</p>`;
+  const mapInfo = index.maps[id];
+  const musicLabel = mapInfo?.musicName ? ` · 🎵 ${escapeHtml(mapInfo.musicName)}` : "";
+  let html = `<h2>${escapeHtml(mapInfo?.title ?? id)}</h2><p style="color:#a1a1aa;margin-bottom:8px">Casilla local: <b>(${lx}, ${ly})</b> · Mundo: (${mx}, ${my})${musicLabel}</p>`;
   if (els.length === 0 && trs.length === 0) {
     panel.innerHTML = html + "<p style='color:#71717a'>Sin elementos del índice en esta casilla.</p>";
     return;
