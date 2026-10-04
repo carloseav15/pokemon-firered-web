@@ -86,6 +86,40 @@ html, body {
   padding: 1px 4px;
   pointer-events: none;
 }
+.search-results {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: rgba(24, 24, 27, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+.search-item {
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.search-item:hover, .search-item.selected {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent);
+}
+.search-item-id {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
 .btn {
   display: inline-flex;
   align-items: center;
@@ -242,6 +276,56 @@ html, body {
   display: flex;
   height: calc(100% - 76px);
   position: relative;
+}
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transition: opacity 0.3s ease;
+}
+.loading-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(56, 189, 248, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+.explore-iframe-container {
+  position: absolute;
+  width: 240px;
+  height: 160px;
+  z-index: 40;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.85), 0 0 0 2px var(--accent);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+}
+.explore-iframe-container iframe {
+  width: 240px;
+  height: 160px;
+  border: none;
+  display: block;
 }
 #viewport {
   flex: 1;

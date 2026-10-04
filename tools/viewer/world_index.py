@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 import sys
 from collections import deque
@@ -23,7 +24,9 @@ from common import DECOMP, ROOT  # noqa: E402
 
 PUBLIC_MAPS = ROOT / "public" / "fr" / "maps"
 PUBLIC_LAYOUTS = ROOT / "public" / "fr" / "layouts"
+PLAYTEST_SAVES = ROOT / "tools" / "playtest" / "saves"
 OUT = ROOT / "public" / "viewer" / "kanto.json"
+SAVES_OUT = ROOT / "public" / "viewer" / "saves"
 
 ORIGIN = "MAP_PALLET_TOWN"
 DIRS = ("up", "down", "left", "right")
@@ -415,6 +418,10 @@ def main() -> int:
         json.dumps(out, separators=(",", ":"), ensure_ascii=False, sort_keys=False)
         + "\n"
     )
+    if PLAYTEST_SAVES.is_dir():
+        SAVES_OUT.mkdir(parents=True, exist_ok=True)
+        for s in PLAYTEST_SAVES.glob("*.json"):
+            shutil.copy2(s, SAVES_OUT / s.name)
     print(f"{len(pos)} mapas, mundo {maxx - minx}x{maxy - miny}, "
           f"{len(conflicts)} conflictos, {len(elements)} elementos, "
           f"{len(triggers)} activadores -> {OUT}")

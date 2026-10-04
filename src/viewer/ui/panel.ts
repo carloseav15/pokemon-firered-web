@@ -24,17 +24,12 @@ export function renderBiomePanel(
   panel: HTMLElement,
   biomeIdx: number,
   mx: number,
-  my: number,
-  onCloneBiome?: () => void
+  my: number
 ): void {
   if (biomeIdx >= 0 && biomeIdx < BIOME_NAMES.length) {
     panel.innerHTML = `<h2>Exterior de Kanto</h2><p><span class="badge badge-trigger">BIOMA</span> ${escapeHtml(
       BIOME_NAMES[biomeIdx]
-    )}</p><p style="color:#71717a">Coordenadas mundo: (${mx}, ${my}) · No es transitable.</p><p style="margin-top:12px"><button id="btn-set-brush" class="btn" style="width:100%">🖌️ Clonar este bioma</button></p>`;
-    const btnSetBrush = document.getElementById("btn-set-brush");
-    if (btnSetBrush && onCloneBiome) {
-      btnSetBrush.addEventListener("click", onCloneBiome);
-    }
+    )}</p><p style="color:#71717a">Coordenadas mundo: (${mx}, ${my}) · No es transitable.</p>`;
   } else {
     panel.innerHTML = `<h2>Exterior de Kanto</h2><p>Fuera de los mapas.</p>`;
   }
@@ -49,7 +44,8 @@ export function renderTilePanel(
   mx: number,
   my: number,
   els: Element[],
-  trs: Trigger[]
+  trs: Trigger[],
+  onExploreHere?: () => void
 ): void {
   let html = `<h2>${escapeHtml(id)}</h2><p style="color:#a1a1aa;margin-bottom:8px">Casilla local: <b>(${lx}, ${ly})</b> · Mundo: (${mx}, ${my})</p>`;
   if (els.length === 0 && trs.length === 0) {
@@ -98,5 +94,11 @@ export function renderTilePanel(
     )} == ${t.value}</code></p><p><b>Script:</b> <code>${escapeHtml(t.script)}</code></p>${writersHtml(index, t.var)}`;
   }
 
+  html += `<div style="margin-top:16px"><button id="btn-explore-here" class="btn" style="width:100%;background:#0284c7;color:#fff;border-color:#0369a1;font-weight:600">🎮 Explorar aquí con FireRed</button></div>`;
+
   panel.innerHTML = html;
+  if (onExploreHere) {
+    const btn = document.getElementById("btn-explore-here");
+    btn?.addEventListener("click", onExploreHere);
+  }
 }

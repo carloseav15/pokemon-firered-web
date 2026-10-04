@@ -1,213 +1,72 @@
-// Visor del mundo v1: 37 mapas exteriores de Kanto unidos (docs/VISOR-MUNDO.md par. 5).
-// Solo lectura sobre el juego: importa rom, TileRenderer y metatileBehavior; no
-// modifica src/fr/ ni public/fr/. Datos: public/viewer/kanto.json (generado).
+// Visor del mundo: 37 mapas exteriores de Kanto unidos (docs/VISOR-MUNDO.md).
+// Solo lectura sobre el juego: importa rom, TileRenderer y metatileBehavior.
+// Modo exploración: embebe el motor canónico FireRed (?fr=sandbox) sobre el mapa.
 
-import { rom, type TilesetData } from "../fr/rom";
+import { rom } from "../fr/rom";
 import { TileRenderer } from "../fr/field/tileRenderer";
 import { TilesetAnimator } from "../fr/field/tilesetAnimator";
 import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY } from "../fr/field/fieldmap";
 import * as MB from "../fr/generated/metatileBehavior";
-import type { Element, KantoIndex, Trigger, Writer } from "./types";
-
-const TILE = 16;
-const LAYERS = ["colision", "agua", "salientes", "corte", "fuerza", "golpe_roca", "snorlax", "entrenador", "npc_condicional", "npc", "activador", "puerta"] as const;
-type Layer = (typeof LAYERS)[number];
-const LAYER_COLORS: Record<Layer, string> = {
-  colision: "rgba(255,0,0,0.35)",
-  agua: "rgba(0,120,255,0.35)",
-  salientes: "rgba(255,200,0,0.45)",
-  corte: "rgba(0,200,0,0.55)",
-  fuerza: "rgba(150,75,0,0.55)",
-  golpe_roca: "rgba(150,150,150,0.55)",
-  snorlax: "rgba(0,150,150,0.6)",
-  entrenador: "rgba(255,0,255,0.45)",
-  npc_condicional: "rgba(255,165,0,0.5)",
-  npc: "rgba(255,255,255,0.5)",
-  activador: "rgba(0,255,255,0.5)",
-  puerta: "rgba(180,0,255,0.55)",
-};
+import { TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
+import type { Element, KantoIndex, Trigger } from "./types";
+import { state } from "./state";
+import { fetchWorldIndex } from "./data/worldIndex";
+import { WorldGrid } from "./data/worldGrid";
+import { overlayCanvas, mark } from "./render/overlays";
+import { renderWorldFill, type FillSource } from "./render/fill";
+import { TileAnimationController, animRangesFor, rangeMask, type AnimatedMap } from "./render/tileAnim";
+import { renderTilePanel, renderBiomePanel } from "./ui/panel";
+import { setupSearch } from "./ui/search";
+import { setupMinimap, type MinimapController } from "./ui/minimap";
+import { setupPopovers } from "./ui/popover";
+import { SANDBOX_STORAGE_KEY } from "../fr/save";
 
 const viewport = document.getElementById("viewport")!;
 const content = document.getElementById("content")!;
 const panel = document.getElementById("panel")!;
-const search = document.getElementById("search") as HTMLInputElement;
+const searchInput = document.getElementById("search") as HTMLInputElement;
+const searchResults = document.getElementById("search-results") as HTMLElement;
 const layerBox = document.getElementById("layers-menu")!;
+const loadingOverlay = document.getElementById("loading-overlay");
+const loadingText = document.getElementById("loading-text");
+const statusMeta = document.getElementById("status-meta");
+const statusPos = document.getElementById("status-pos");
 
 let index: KantoIndex;
 let minX = 0;
 let minY = 0;
+let worldGrid: WorldGrid;
+let fillSources = new Map<string, FillSource>();
+let fillNearest: Int16Array | null = null;
+let animController: TileAnimationController;
+let minimapController: MinimapController | null = null;
+
 let zoom = 1;
 let startX: number | null = null;
 let startY: number | null = null;
-// Colision apagada por defecto (capa ruidosa); el hash ?capas= sigue mandando.
-const active = new Set<Layer>((LAYERS as unknown as Layer[]).filter((l) => l !== "colision"));
-let fillMode: "full" | "dim" | "off" = "full";
-let fillBiomeOverride: "auto" | "ocean" | "trees" | "mountain" = "auto";
-let cachedFillSources: Map<string, FillSource> | null = null;
 
-// Modos del Visor: Visor libre, Exploración interactiva, o Edición/Clonado de tiles
-type AppMode = "viewer" | "explore" | "edit";
-let appMode: AppMode = "viewer";
-
-// --- Modo Exploración (Personaje Jugador) ---
-let playerActive = false;
-let playerChar: "red" | "leaf" = "red";
-let playerMode: "walk" | "bike" | "surf" = "walk";
-let playerX = 0; // coordenadas globales de mundo
-let playerY = 0;
-let playerVisualX = 0; // interpolación visual en píxeles
-let playerVisualY = 0;
-let playerDir: "south" | "north" | "west" | "east" = "south";
-let playerStep = 0;
-let playerMoving = false;
-let playerRunning = false;
-let playerSpriteImg: HTMLImageElement | null = null;
-let playerEl: HTMLElement | null = null;
-let solidCollisionGrid: Uint8Array | null = null; // 1 si bloqueado (sólido)
-let waterGrid: Uint8Array | null = null;          // 1 si es agua surfeable
-let ledgeGrid: Uint8Array | null = null;          // 1:S, 2:N, 3:W, 4:E
-let grassGrid: Uint8Array | null = null;          // 1 si es hierba alta (pokegrass / tallgrass)
-let npcCollisionGrid: Uint8Array | null = null;    // 1 si hay un NPC bloqueando la casilla
-
-// Mapeo canónico de nombres gráficos de objetos a sus archivos de sprites
-const GFX_MAP: Record<string, { file: string; w: number; h: number; frames?: number }> = {
-  OBJ_EVENT_GFX_BALDING_MAN: { file: "objects/baldingman__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_BEAUTY: { file: "objects/beauty__npcblue.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_BIKER: { file: "objects/biker__npcpink.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_BILL: { file: "objects/bill__npcblue.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_BLACK_BELT: { file: "objects/blackbelt__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_BLUE: { file: "objects/blue__npcgreen.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_BOY: { file: "objects/boy__npcgreen.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_BUG_CATCHER: { file: "objects/bugcatcher__npcgreen.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_CAMPER: { file: "objects/camper__npcgreen.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_COOLTRAINER_M: { file: "objects/cooltrainerm__npcblue.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_CRUSH_GIRL: { file: "objects/crushgirl__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_CUT_TREE: { file: "objects/cuttree__npcgreen.png", w: 16, h: 16 },
-  OBJ_EVENT_GFX_FISHER: { file: "objects/fisher__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_HIKER: { file: "objects/hiker__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_ITEM_BALL: { file: "objects/itemball__npcwhite.png", w: 16, h: 16 },
-  OBJ_EVENT_GFX_LASS: { file: "objects/lass__npcblue.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_LITTLE_GIRL: { file: "objects/littlegirl__npcpink.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_MAN: { file: "objects/man__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_OLD_MAN_1: { file: "objects/oldman1__npcpink.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_PICNICKER: { file: "objects/picnicker__npcgreen.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_POKE_MANIAC: { file: "objects/pokemaniac__npcpink.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_POLICEMAN: { file: "objects/policeman__npcblue.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_PROF_OAK: { file: "objects/profoak__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_ROCKER: { file: "objects/rocker__npcblue.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_ROCKET_M: { file: "objects/rocketm__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_SCIENTIST: { file: "objects/scientist__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_SEAGALLOP: { file: "objects/seagallop__seagallop.png", w: 64, h: 64 },
-  OBJ_EVENT_GFX_SLOWBRO: { file: "objects/slowbro__npcpink.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_SNORLAX: { file: "objects/snorlax__npcblue.png", w: 32, h: 32 },
-  OBJ_EVENT_GFX_SWIMMER_F_WATER: { file: "objects/swimmerfwater__npcgreen.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_SWIMMER_M_LAND: { file: "objects/swimmermland__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_SWIMMER_M_WATER: { file: "objects/swimmermwater__npcwhite.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_TUBER_M_WATER: { file: "objects/tubermwater__npcblue.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_VAR_0: { file: "objects/oldmanlyingdown__npcpink.png", w: 32, h: 16 },
-  OBJ_EVENT_GFX_WOMAN_1: { file: "objects/woman1__npcgreen.png", w: 16, h: 32 },
-  OBJ_EVENT_GFX_YOUNGSTER: { file: "objects/youngster__npcblue.png", w: 16, h: 32 },
-};
-
-// Instancias de entidades vivas en el mapa
-type LiveEntity = {
-  element: Element;
-  gx: number; // coordenadas de mundo
-  gy: number;
-  dir: "south" | "north" | "west" | "east";
-  el?: HTMLElement;
-  defeated?: boolean;
-};
-const liveEntities: LiveEntity[] = [];
-
-// Rejilla global de metatiles del mundo para clonar con el cuentagotas
-let globalMetatileGrid: Int16Array | null = null;
-
-// Modo Pincel y Edición Potente (Tile Cloner & Painter)
-let selectedMetatile = 28; // metatile del tileset primario
-let eyedropperActive = false;
-const customPaintedTiles = new Map<string, number>(); // "x,y" => mt
-
-function isWaterTile(gx: number, gy: number): boolean {
-  if (!waterGrid || !index) return false;
-  const lx = gx - minX;
-  const ly = gy - minY;
-  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return false;
-  return waterGrid[ly * index.world.width + lx] === 1;
-}
-
-function isGrassTile(gx: number, gy: number): boolean {
-  if (!grassGrid || !index) return false;
-  const lx = gx - minX;
-  const ly = gy - minY;
-  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return false;
-  return grassGrid[ly * index.world.width + lx] === 1;
-}
-
-function ledgeDirection(gx: number, gy: number): number {
-  if (!ledgeGrid || !index) return 0;
-  const lx = gx - minX;
-  const ly = gy - minY;
-  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return 0;
-  return ledgeGrid[ly * index.world.width + lx]!;
-}
-
-function isWalkable(gx: number, gy: number, mode: "walk" | "bike" | "surf"): boolean {
-  if (!solidCollisionGrid || !index) return true;
-  const lx = gx - minX;
-  const ly = gy - minY;
-  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return false;
-  const idx = ly * index.world.width + lx;
-  const solid = solidCollisionGrid[idx] === 1;
-  const water = waterGrid ? waterGrid[idx] === 1 : false;
-  const npcBlocked = npcCollisionGrid ? npcCollisionGrid[idx] === 1 : false;
-
-  if (npcBlocked) return false;
-
-  if (mode === "surf") {
-    // En surf solo se navega por agua, o se puede desembarcar en tierra transitable (no sólida)
-    return water || !solid;
-  }
-  // A pie o en bici: no se puede entrar a casillas sólidas ni al agua directamente
-  return !solid && !water;
-}
-
-function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: number): number {
-  const raw = id < NUM_METATILES_IN_PRIMARY ? (primaryAttrs[id] ?? 0) : (secondaryAttrs[id - NUM_METATILES_IN_PRIMARY] ?? 0);
-  return ExtractMetatileAttribute(raw, METATILE_ATTRIBUTE_BEHAVIOR);
-}
+// Modo exploración canónico
+let exploreActive = false;
+let explorePos = { x: 0, y: 0 };
+let exploreIframe: HTMLIFrameElement | null = null;
 
 function parseHash(): void {
   const h = new URLSearchParams(location.hash.slice(1));
   const x = Number(h.get("x"));
   const y = Number(h.get("y"));
   const z = Number(h.get("z"));
-  // El scroll x/y se aplica al final de build(), cuando #content ya tiene tamano;
-  // aplicarlo aqui se pierde porque el viewport aun no tiene scroll maximo.
   startX = h.get("x") !== null && Number.isFinite(x) ? x : null;
   startY = h.get("y") !== null && Number.isFinite(y) ? y : null;
   if (z !== 0 && Number.isFinite(z)) zoom = Math.min(4, Math.max(0.25, Math.round(z * 1000) / 1000));
   const capas = h.get("capas");
   if (capas) {
-    active.clear();
-    for (const c of capas.split(",")) if ((LAYERS as readonly string[]).includes(c)) active.add(c as Layer);
+    state.activeLayers.clear();
+    for (const c of capas.split(",")) {
+      if ((LAYERS as readonly string[]).includes(c)) state.activeLayers.add(c as Layer);
+    }
   }
   const relleno = h.get("relleno");
-  if (relleno === "full" || relleno === "dim" || relleno === "off") fillMode = relleno;
-}
-
-/** Cambia el zoom manteniendo fijo el punto del viewport (ax, ay); por defecto, el centro. */
-function setZoom(next: number, ax = viewport.clientWidth / 2, ay = viewport.clientHeight / 2): void {
-  const worldX = (viewport.scrollLeft + ax) / zoom;
-  const worldY = (viewport.scrollTop + ay) / zoom;
-  // Redondeado a 3 decimales: sin esto la URL muestra z=0.6400000000000001.
-  zoom = Math.round(Math.min(4, Math.max(0.25, next)) * 1000) / 1000;
-  content.style.transform = `scale(${zoom})`;
-  content.style.width = `${index.world.width * TILE * zoom}px`;
-  content.style.height = `${index.world.height * TILE * zoom}px`;
-  viewport.scrollLeft = worldX * zoom - ax;
-  viewport.scrollTop = worldY * zoom - ay;
-  scheduleHashWrite();
+  if (relleno === "full" || relleno === "dim" || relleno === "off") state.fillMode = relleno;
 }
 
 let hashTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -224,24 +83,37 @@ function writeHash(): void {
   h.set("x", String(Math.round(viewport.scrollLeft)));
   h.set("y", String(Math.round(viewport.scrollTop)));
   h.set("z", String(zoom));
-  h.set("capas", [...active].join(","));
-  if (fillMode !== "full") h.set("relleno", fillMode);
+  h.set("capas", [...state.activeLayers].join(","));
+  if (state.fillMode !== "full") h.set("relleno", state.fillMode);
   history.replaceState(null, "", `#${h.toString()}`);
+}
+
+function setZoom(next: number, ax = viewport.clientWidth / 2, ay = viewport.clientHeight / 2): void {
+  const worldX = (viewport.scrollLeft + ax) / zoom;
+  const worldY = (viewport.scrollTop + ay) / zoom;
+  zoom = Math.round(Math.min(4, Math.max(0.25, next)) * 1000) / 1000;
+  content.style.transform = `scale(${zoom})`;
+  content.style.width = `${index.world.width * TILE * zoom}px`;
+  content.style.height = `${index.world.height * TILE * zoom}px`;
+  viewport.scrollLeft = worldX * zoom - ax;
+  viewport.scrollTop = worldY * zoom - ay;
+  minimapController?.updateRadar();
+  scheduleHashWrite();
 }
 
 function applyFillMode(): void {
   const fillEl = content.querySelector(".fill") as HTMLElement | null;
   if (fillEl) {
-    fillEl.classList.toggle("dimmed", fillMode === "dim");
-    fillEl.classList.toggle("hidden", fillMode === "off");
+    fillEl.classList.toggle("dimmed", state.fillMode === "dim");
+    fillEl.classList.toggle("hidden", state.fillMode === "off");
   }
   const select = document.getElementById("fill-mode") as HTMLSelectElement | null;
-  if (select && select.value !== fillMode) select.value = fillMode;
+  if (select && select.value !== state.fillMode) select.value = state.fillMode;
 }
 
 function applyLayerVisibility(): void {
   for (const layer of LAYERS) {
-    const on = active.has(layer);
+    const on = state.activeLayers.has(layer);
     content.querySelectorAll<HTMLElement>(`[data-layer="${layer}"]`).forEach((el) => {
       el.style.display = on ? "" : "none";
     });
@@ -250,372 +122,199 @@ function applyLayerVisibility(): void {
   }
 }
 
-function overlayCanvas(w: number, h: number, layer: Layer): [HTMLCanvasElement, CanvasRenderingContext2D] {
-  const c = document.createElement("canvas");
-  c.width = w * TILE;
-  c.height = h * TILE;
-  c.className = "overlay";
-  c.dataset.layer = layer;
-  return [c, c.getContext("2d")!];
-}
-
-function mark(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, arrow?: string): void {
-  ctx.fillStyle = color;
-  ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
-  if (arrow) {
-    ctx.fillStyle = "rgba(0,0,0,0.8)";
-    const cx = x * TILE + 8;
-    const cy = y * TILE + 8;
-    ctx.beginPath();
-    if (arrow === "E") ctx.moveTo(cx + 5, cy), ctx.lineTo(cx - 3, cy - 4), ctx.lineTo(cx - 3, cy + 4);
-    else if (arrow === "W") ctx.moveTo(cx - 5, cy), ctx.lineTo(cx + 3, cy - 4), ctx.lineTo(cx + 3, cy + 4);
-    else if (arrow === "S") ctx.moveTo(cx, cy + 5), ctx.lineTo(cx - 4, cy - 3), ctx.lineTo(cx + 4, cy - 3);
-    else ctx.moveTo(cx, cy - 5), ctx.lineTo(cx - 4, cy + 3), ctx.lineTo(cx + 4, cy + 3);
-    ctx.closePath();
-    ctx.fill();
+function updateMeta(): void {
+  if (!statusMeta) return;
+  const base = `${Object.keys(index?.maps ?? {}).length || 37} mapas exteriores · Kanto GBA`;
+  if (animController?.animOn) {
+    const fpsText = animController.fpsValue > 0 ? ` · ${animController.fpsValue.toFixed(0)} FPS` : " · 60 FPS";
+    statusMeta.textContent = `${base}${fpsText}`;
+  } else {
+    statusMeta.textContent = `${base}${animController?.animDisabledNotice ?? ""}`;
   }
 }
 
-// 7.5: rangos de tiles VRAM que cada callback de TilesetAnimator reescribe
-// (destTile y tamano de tilesetAnimator.ts; el C los aplica una vez por frame).
-const ANIM_RANGES: Record<string, Array<[number, number]>> = {
-  InitTilesetAnim_General: [[416, 464], [464, 482], [508, 512]],
-  InitTilesetAnim_CeladonCity: [[744, 752]],
-  InitTilesetAnim_SilphCo: [[976, 984]],
-  InitTilesetAnim_MtEmber: [[896, 904]],
-  InitTilesetAnim_VermilionGym: [[880, 887]],
-  InitTilesetAnim_CeladonGym: [[739, 743]],
-};
-
-type AnimatedCell = {
-  x: number;
-  y: number;
-  mt: number;
-  mask: number;
-};
-
-type AnimatedMap = {
-  renderer: TileRenderer;
-  animator: TilesetAnimator;
-  bctx: CanvasRenderingContext2D;
-  // Rectángulo del mapa en píxeles del mundo (sin zoom), para saber si se ve.
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  cells: AnimatedCell[];
-  dirtyMask: number;
-};
-const animatedMaps: AnimatedMap[] = [];
-let animOn = false;
-let animFrame = 0;
-let animLast = 0;
-let animAccumulator = 0;
-let animStartTime = 0;
-let animDisabledNotice = "";
-// Fotograma de la GBA: 280896 ciclos a 16,78 MHz (59,73 por segundo). Mismo valor que
-// FRAME_MS en src/fr/game.ts:112; el juego avanza con este paso fijo y no con el
-// refresco de la pantalla (que en un Mac puede ser 120 Hz).
-const GBA_FRAME_MS = 1000 / (16777216 / 280896);
-let fpsFrames = 0;
-let fpsSince = 0;
-let fpsValue = 0;
-
-function rangeMask(primary: TilesetData, secondary: TilesetData, ranges: Array<[number, number]>, mt: number): number {
-  let entries: Uint16Array;
-  if (mt < NUM_METATILES_IN_PRIMARY) entries = primary.metatiles.subarray(mt * 8, mt * 8 + 8);
-  else {
-    const local = mt - NUM_METATILES_IN_PRIMARY;
-    if (local * 8 >= secondary.metatiles.length) return 0;
-    entries = secondary.metatiles.subarray(local * 8, local * 8 + 8);
-  }
-  let mask = 0;
-  for (const entry of entries) {
-    const tile = entry & 0x3ff;
-    ranges.forEach(([lo, hi], i) => {
-      if (tile >= lo && tile < hi) mask |= 1 << i;
-    });
-  }
-  return mask;
+function centerOnMap(id: string): boolean {
+  const mapEl = content.querySelector<HTMLElement>(`[data-map="${id}"]`);
+  const info = index.maps[id];
+  if (!mapEl || !info) return false;
+  viewport.scrollLeft = (mapEl.offsetLeft + (info.width * TILE) / 2) * zoom - viewport.clientWidth / 2;
+  viewport.scrollTop = (mapEl.offsetTop + (info.height * TILE) / 2) * zoom - viewport.clientHeight / 2;
+  minimapController?.updateRadar();
+  scheduleHashWrite();
+  return true;
 }
 
-function animRangesFor(primary: TilesetData, secondary: TilesetData): Array<[number, number]> {
-  return [...(ANIM_RANGES[primary.callback ?? ""] ?? []), ...(ANIM_RANGES[secondary.callback ?? ""] ?? [])];
+function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: number): number {
+  const raw = id < NUM_METATILES_IN_PRIMARY ? (primaryAttrs[id] ?? 0) : (secondaryAttrs[id - NUM_METATILES_IN_PRIMARY] ?? 0);
+  return ExtractMetatileAttribute(raw, METATILE_ATTRIBUTE_BEHAVIOR);
 }
 
-function mapVisible(m: AnimatedMap): boolean {
-  const left = viewport.scrollLeft / zoom;
-  const top = viewport.scrollTop / zoom;
-  const right = left + viewport.clientWidth / zoom;
-  const bottom = top + viewport.clientHeight / zoom;
-  return m.left < right && m.left + m.width > left && m.top < bottom && m.top + m.height > top;
-}
-
-function tickAnimations(now: number): void {
-  if (!animOn) return;
-  // Paso fijo de la GBA, como el bucle del juego (src/fr/game.ts:184-199):
-  // UpdateTilesetAnimations una vez por fotograma de GBA (overworld.c:1470).
-  animAccumulator += Math.min(now - animLast, 250);
-  animLast = now;
-  let steps = 0;
-  while (animAccumulator >= GBA_FRAME_MS && steps < 8) {
-    animAccumulator -= GBA_FRAME_MS;
-    steps++;
+function showAt(worldX: number, worldY: number): void {
+  const cellX = Math.floor(worldX / TILE);
+  const cellY = Math.floor(worldY / TILE);
+  const selBox = document.getElementById("selection-box");
+  if (selBox) {
+    selBox.style.display = "block";
+    selBox.style.left = `${cellX * TILE}px`;
+    selBox.style.top = `${cellY * TILE}px`;
+    selBox.style.width = `${TILE}px`;
+    selBox.style.height = `${TILE}px`;
   }
 
-  // Si no hubo avance de GBA en este fotograma de refresco, terminamos inmediatamente
-  if (steps === 0) {
-    fpsFrames++;
-    if (now - fpsSince >= 1000) {
-      fpsValue = (fpsFrames * 1000) / (now - fpsSince);
-      fpsFrames = 0;
-      fpsSince = now;
-      updateMeta();
-    }
-    animFrame = requestAnimationFrame(tickAnimations);
+  if (panel.classList.contains("collapsed")) {
+    panel.classList.remove("collapsed");
+  }
+
+  const mx = cellX + minX;
+  const my = cellY + minY;
+
+  const entry = Object.entries(index.maps).find(([, m]) => mx >= m.x && mx < m.x + m.width && my >= m.y && my < m.y + m.height);
+  if (!entry) {
+    const fx = mx - minX;
+    const fy = my - minY;
+    const biomeIdx = fillNearest && fx >= 0 && fy >= 0 && fx < index.world.width && fy < index.world.height ? fillNearest[fy * index.world.width + fx]! : -1;
+    renderBiomePanel(panel, biomeIdx, mx, my);
     return;
   }
 
-  // En zoom muy lejano (< 0.5), el viewport abarca casi todo el mapa. Pausar el
-  // redibujado de celdas a zoom lejano protege la GPU y evita caídas de FPS.
-  if (zoom >= 0.5) {
-    // Rectángulo del viewport visible en coordenadas mundiales (píxeles sin zoom):
-    // solo se simulan mapas visibles y solo se redibujan celdas dentro del área.
-    const viewLeft = viewport.scrollLeft / zoom;
-    const viewTop = viewport.scrollTop / zoom;
-    const viewRight = viewLeft + viewport.clientWidth / zoom;
-    const viewBottom = viewTop + viewport.clientHeight / zoom;
+  const [id, m] = entry;
+  const lx = mx - m.x;
+  const ly = my - m.y;
+  const els = index.elements.filter((e) => e.map === id && e.x === lx && e.y === ly);
+  const trs = index.triggers.filter((t) => t.map === id && t.x === lx && t.y === ly);
 
-    for (const m of animatedMaps) {
-      // Si el mapa entero está fuera de la pantalla, no gastamos CPU
-      if (!mapVisible(m)) continue;
-
-      m.dirtyMask = 0;
-      for (let s = 0; s < steps; s++) {
-        m.animator.update();
-      }
-
-      // Si ningún tile de este mapa cambió en este tick, omitimos todo el redibujado
-      if (m.dirtyMask === 0) continue;
-
-      // Cache de metatiles compuestos para este tick: muchas casillas comparten metatile
-      // (ej. cientos de casillas de mar 473). Componerlo una sola vez ahorra 50%+ de drawImage.
-      const composed = new Map<number, HTMLCanvasElement>();
-
-      // Redibujar únicamente las casillas visibles que usan los rangos modificados
-      for (const c of m.cells) {
-        if (!(c.mask & m.dirtyMask)) continue;
-
-        const cellLeft = m.left + c.x * TILE;
-        const cellTop = m.top + c.y * TILE;
-        if (cellLeft + TILE < viewLeft || cellLeft > viewRight || cellTop + TILE < viewTop || cellTop > viewBottom) {
-          continue;
-        }
-
-        let tileCanvas = composed.get(c.mt);
-        if (!tileCanvas) {
-          const { bottom, top } = m.renderer.metatile(c.mt);
-          tileCanvas = document.createElement("canvas");
-          tileCanvas.width = TILE;
-          tileCanvas.height = TILE;
-          const tctx = tileCanvas.getContext("2d")!;
-          tctx.drawImage(bottom, 0, 0);
-          tctx.drawImage(top, 0, 0);
-          composed.set(c.mt, tileCanvas);
-        }
-
-        m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
-        m.bctx.drawImage(tileCanvas, c.x * TILE, c.y * TILE);
-      }
-    }
-  }
-
-  fpsFrames++;
-  if (now - fpsSince >= 1000) {
-    fpsValue = (fpsFrames * 1000) / (now - fpsSince);
-    fpsFrames = 0;
-    fpsSince = now;
-
-    // Protección de rendimiento: anular animaciones si caen por debajo de 30 FPS
-    // tras un periodo de warmup de 1.5 segundos para evitar falsos positivos
-    if (now - animStartTime > 1500 && fpsValue < 30) {
-      animOn = false;
-      const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
-      if (animBox) animBox.checked = false;
-      cancelAnimationFrame(animFrame);
-      animDisabledNotice = ` · animaciones anuladas automáticamente (${fpsValue.toFixed(0)} FPS < 30 FPS)`;
-      updateMeta();
-      return;
-    }
-
-    updateMeta();
-  }
-  animFrame = requestAnimationFrame(tickAnimations);
-}
-
-function updateMeta(): void {
-  const meta = document.getElementById("status-meta");
-  if (!meta || !index) return;
-  const count = Object.keys(index.maps).length;
-  const w = index.world.width;
-  const h = index.world.height;
-  let text = `${count} mapas · ${w}×${h} metatiles · decomp ${index._meta.decomp_commit.slice(0, 8)}`;
-  if (index.conflicts.length > 0) {
-    const c = index.conflicts[0];
-    text += ` · conflicto: ${c.from}→${c.to}`;
-  }
-  if (animOn) {
-    text += ` · animaciones: ${fpsValue.toFixed(0)} FPS`;
-  } else if (animDisabledNotice) {
-    text += animDisabledNotice;
-  }
-  meta.textContent = text;
-}
-
-// Relleno de las zonas sin mapa: cada casilla vacía muestra el bloque de borde del
-// mapa más cercano, repetido como lo repite el juego fuera de los límites
-// (GetBorderBlockAt, fieldmap.c:39-57: (x - MAP_OFFSET) mod borderWidth, ídem en y).
-// Es solo visual: el borde nunca es transitable.
-// Biomas canónicos del exterior de Kanto para el relleno de espacios vacíos.
-// Todos los metatiles provienen del tileset primario gTileset_General:
-// - BIOME_TREES: bloque 2x2 de árboles densos (copa y tronco: metatiles 28, 29, 20, 21).
-// - BIOME_OCEAN: bloque 2x2 de agua marina (metatile 473, MB_OCEAN_WATER).
-// - BIOME_MOUNTAIN: bloque 2x2 de montaña escarpada (metatile 113).
-const BIOME_TREES = 0;
-const BIOME_OCEAN = 1;
-const BIOME_MOUNTAIN = 2;
-const BIOME_NAMES = ["bosque (árboles densos)", "marítimo (océano)", "montañoso (cordillera)"] as const;
-
-type FillSource = { info: KantoIndex["maps"][string]; layout: Awaited<ReturnType<typeof rom.loadLayout>>; renderer: TileRenderer };
-let nearestFill: Int16Array | null = null;
-
-function drawFill(sources: Map<string, FillSource>): void {
-  const W = index.world.width;
-  const H = index.world.height;
-  const rects = Object.values(index.maps).map((m) => ({
-    x0: m.x - minX,
-    y0: m.y - minY,
-    x1: m.x - minX + m.width,
-    y1: m.y - minY + m.height,
-  }));
-  const occupied = new Uint8Array(W * H);
-  for (const r of rects) for (let y = r.y0; y < r.y1; y++) occupied.fill(1, y * W + r.x0, y * W + r.x1);
-
-  // Mapa canónico de bordes GBA: cada mapa exterior tiene su bloque oficial de 2x2 metatiles
-  // (árboles [28,29,20,21], montaña [113,113,113,113], u océano [473,473,473,473]).
-  const mapBorderType = new Int8Array(rects.length);
-  const ids = Object.keys(index.maps);
-  ids.forEach((id, i) => {
-    const src = sources.get(id);
-    if (!src) return;
-    const borderTiles = src.layout.border.slice(0, 4).map((t) => t & 0x3ff);
-    if (borderTiles[0] === 473) mapBorderType[i] = BIOME_OCEAN;
-    else if (borderTiles[0] === 113) mapBorderType[i] = BIOME_MOUNTAIN;
-    else mapBorderType[i] = BIOME_TREES;
+  renderTilePanel(panel, index, id, lx, ly, mx, my, els, trs, () => {
+    startCanonicalExploration(id, lx, ly);
   });
 
-  // Distancia euclidiana exacta en casillas al mapa más cercano y dueño en un solo paso
-  const dist = new Float32Array(W * H).fill(9999);
-  const nearest = new Int16Array(W * H).fill(-1);
-
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const idx = y * W + x;
-      if (occupied[idx]) {
-        dist[idx] = 0;
-        continue;
-      }
-      let minD = 9999;
-      let owner = -1;
-      rects.forEach((r, i) => {
-        const dx = x < r.x0 ? r.x0 - x : x >= r.x1 ? x - r.x1 + 1 : 0;
-        const dy = y < r.y0 ? r.y0 - y : y >= r.y1 ? y - r.y1 + 1 : 0;
-        const d = Math.hypot(dx, dy);
-        if (d < minD) {
-          minD = d;
-          owner = i;
-        }
-      });
-      dist[idx] = minD;
-      const b = owner >= 0 ? mapBorderType[owner]! : BIOME_TREES;
-      // En océano extendemos la masa de agua natural, en tierra desvanecemos suavemente
-      if (b === BIOME_OCEAN || minD <= 8) {
-        nearest[idx] = b;
-      }
+  for (const e of els) {
+    if (e.layer === "puerta" && e.destMap && e.destMap in index.maps) {
+      centerOnMap(e.destMap);
     }
   }
-  cachedFillSources = sources;
-  nearestFill = nearest;
+}
 
-  const baseRenderer = sources.values().next().value?.renderer;
-  if (!baseRenderer) return;
+async function prepareSandboxSave(mapId: string, lx: number, ly: number): Promise<void> {
+  const mapNum = rom.mapNum(mapId);
+  const mapGroup = mapNum >>> 8;
+  const mapLocalNum = mapNum & 0xff;
 
-  // Limpiar canvas de relleno existente si se vuelve a generar
-  const existingFill = content.querySelector(".fill");
-  if (existingFill) existingFill.remove();
+  let baseSave: Record<string, unknown> = {};
+  try {
+    const res = await fetch("/viewer/saves/pokedex.json");
+    if (res.ok) {
+      baseSave = (await res.json()) as Record<string, unknown>;
+    }
+  } catch {
+    // Si falla el fetch de la plantilla, usamos datos básicos
+  }
 
-  // Canvas de relleno unificado: dibuja los patrones de bioma y desvanece
-  // suavemente los bordes de tierra con transparencia hacia el fondo oscuro
-  const fillCanvas = document.createElement("canvas");
-  fillCanvas.width = W * TILE;
-  fillCanvas.height = H * TILE;
-  fillCanvas.className = "fill";
-  fillCanvas.style.cssText = `position:absolute;left:0;top:0;width:${W * TILE}px;height:${H * TILE}px;pointer-events:none;image-rendering:pixelated;`;
-  const fctx = fillCanvas.getContext("2d")!;
+  baseSave.location = {
+    mapGroup,
+    mapNum: mapLocalNum,
+    warpId: -1,
+    x: lx,
+    y: ly,
+  };
+  baseSave.pos = { x: lx, y: ly };
+  baseSave.continueGameWarpActive = false;
 
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      if (occupied[y * W + x]) continue;
-      let b = nearest[y * W + x]!;
-      if (fillBiomeOverride === "ocean") b = BIOME_OCEAN;
-      else if (fillBiomeOverride === "trees") b = BIOME_TREES;
-      else if (fillBiomeOverride === "mountain") b = BIOME_MOUNTAIN;
-      if (b < 0) continue;
-      const d = dist[y * W + x]!;
+  try {
+    localStorage.setItem(SANDBOX_STORAGE_KEY, JSON.stringify(baseSave));
+  } catch {
+    // Ignorar restricciones locales de cuota
+  }
+}
 
-      // Opacidad orgánica según distancia euclidiana
-      let alpha = 1.0;
-      if (b !== BIOME_OCEAN && d > 2) {
-        alpha = Math.max(0, 1 - (d - 2) / 6);
-      }
-      if (alpha <= 0.02) continue;
+function startCanonicalExploration(mapId?: string, lx?: number, ly?: number): void {
+  const container = document.getElementById("explore-iframe-container");
+  if (!container) return;
 
-      fctx.globalAlpha = alpha;
-      // Metatile del patrón según coordenadas globales (alineación continua)
-      let mt = 28;
-      const px = x % 2;
-      const py = y % 2;
-      if (b === BIOME_OCEAN) {
-        mt = 473;
-      } else if (b === BIOME_MOUNTAIN) {
-        mt = 113;
-      } else {
-        const treeTiles = [28, 29, 20, 21];
-        mt = treeTiles[px + py * 2]!;
-      }
-      const { bottom, top } = baseRenderer.metatile(mt);
-      fctx.drawImage(bottom, x * TILE, y * TILE);
-      fctx.drawImage(top, x * TILE, y * TILE);
+  exploreActive = true;
+  const modeViewerBtn = document.getElementById("mode-viewer-btn");
+  const modeExploreBtn = document.getElementById("mode-explore-btn");
+  modeViewerBtn?.classList.remove("active-mode");
+  modeExploreBtn?.classList.add("active-mode");
+
+  let targetMap = mapId ?? "MAP_PALLET_TOWN";
+  let targetX = lx ?? 8;
+  let targetY = ly ?? 8;
+
+  if (!mapId) {
+    const m = index.maps[targetMap];
+    if (m) {
+      explorePos = { x: m.x + targetX, y: m.y + targetY };
+    }
+  } else {
+    const m = index.maps[targetMap];
+    if (m) {
+      explorePos = { x: m.x + targetX, y: m.y + targetY };
     }
   }
-  fctx.globalAlpha = 1.0;
 
-  content.prepend(fillCanvas);
-  applyFillMode();
+  const px = (explorePos.x - minX) * TILE;
+  const py = (explorePos.y - minY) * TILE;
+
+  container.style.display = "block";
+  container.style.left = `${px - 120 + 8}px`;
+  container.style.top = `${py - 80 + 8}px`;
+
+  void prepareSandboxSave(targetMap, targetX, targetY).then(() => {
+    container.innerHTML = "";
+    exploreIframe = document.createElement("iframe");
+    exploreIframe.src = "/?fr=sandbox";
+    exploreIframe.tabIndex = 0;
+    container.appendChild(exploreIframe);
+
+    exploreIframe.onload = () => {
+      exploreIframe?.focus();
+    };
+
+    viewport.scrollLeft = (px + TILE / 2) * zoom - viewport.clientWidth / 2;
+    viewport.scrollTop = (py + TILE / 2) * zoom - viewport.clientHeight / 2;
+    minimapController?.updateRadar();
+  });
+}
+
+function stopCanonicalExploration(): void {
+  exploreActive = false;
+  const modeViewerBtn = document.getElementById("mode-viewer-btn");
+  const modeExploreBtn = document.getElementById("mode-explore-btn");
+  modeViewerBtn?.classList.add("active-mode");
+  modeExploreBtn?.classList.remove("active-mode");
+
+  const container = document.getElementById("explore-iframe-container");
+  if (container) {
+    container.style.display = "none";
+    container.innerHTML = "";
+    exploreIframe = null;
+  }
+  minimapController?.updateRadar();
 }
 
 async function build(): Promise<void> {
-  const res = await fetch("/viewer/kanto.json");
-  if (!res.ok) throw new Error("falta public/viewer/kanto.json: ejecuta npm run viewer:index");
-  index = (await res.json()) as KantoIndex;
-  minX = Math.min(...Object.values(index.maps).map((m) => m.x));
-  minY = Math.min(...Object.values(index.maps).map((m) => m.y));
+  state.loadStored();
   parseHash();
+
+  if (loadingText) loadingText.textContent = "Descargando índice cartográfico de Kanto…";
+  const worldData = await fetchWorldIndex();
+  index = worldData.index;
+  minX = worldData.minX;
+  minY = worldData.minY;
+
+  worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY);
 
   const byPair = new Map<string, string[]>();
   const layoutsByMap = new Map<string, Awaited<ReturnType<typeof rom.loadLayout>>>();
-  for (const [id, m] of Object.entries(index.maps)) {
+
+  if (loadingText) loadingText.textContent = "Cargando layouts de mapas…";
+  const mapEntries = Object.entries(index.maps);
+  const loadedLayouts = await Promise.all(mapEntries.map(async ([id, m]) => {
     const layout = await rom.loadLayout(m.layout);
+    return { id, layout };
+  }));
+
+  for (const { id, layout } of loadedLayouts) {
     layoutsByMap.set(id, layout);
     const key = `${layout.primary}|${layout.secondary}`;
     if (!byPair.has(key)) byPair.set(key, []);
@@ -633,16 +332,18 @@ async function build(): Promise<void> {
     triggersByMap.get(t.map)!.push(t);
   }
 
-  const fillSources = new Map<string, FillSource>();
-  // Rejillas globales de colisión, agua, salientes y metatiles originales para clonado
-  solidCollisionGrid = new Uint8Array(index.world.width * index.world.height).fill(1); // por defecto vacío = sólido
-  waterGrid = new Uint8Array(index.world.width * index.world.height);
-  ledgeGrid = new Uint8Array(index.world.width * index.world.height);
-  grassGrid = new Uint8Array(index.world.width * index.world.height);
-  npcCollisionGrid = new Uint8Array(index.world.width * index.world.height);
-  globalMetatileGrid = new Int16Array(index.world.width * index.world.height).fill(-1);
+  animController = new TileAnimationController(
+    () => ({
+      left: viewport.scrollLeft,
+      top: viewport.scrollTop,
+      width: viewport.clientWidth,
+      height: viewport.clientHeight,
+      zoom,
+    }),
+    () => updateMeta()
+  );
 
-  // Por par de tilesets: paletas antes de dibujar sus mapas, uno a uno (par. 5.2).
+  let processedCount = 0;
   for (const ids of byPair.values()) {
     for (const id of ids) {
       const info = index.maps[id];
@@ -656,6 +357,7 @@ async function build(): Promise<void> {
       wrap.style.left = `${(info.x - minX) * TILE}px`;
       wrap.style.top = `${(info.y - minY) * TILE}px`;
       wrap.dataset.map = id;
+
       const base = document.createElement("canvas");
       base.width = info.width * TILE;
       base.height = info.height * TILE;
@@ -689,16 +391,16 @@ async function build(): Promise<void> {
           const isGrass = MB.MetatileBehavior_IsPokeGrass(beh) || MB.MetatileBehavior_IsTallGrass(beh) || MB.MetatileBehavior_IsLongGrass(beh);
           if (isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
 
-          // Actualizar colisión, agua, hierba y metatile para el jugador y editor
-          const gwx = (info.x - minX) + x;
-          const gwy = (info.y - minY) + y;
-          if (gwx >= 0 && gwy >= 0 && gwx < index.world.width && gwy < index.world.height) {
-            const idx = gwy * index.world.width + gwx;
-            solidCollisionGrid[idx] = hasCollision ? 1 : 0;
-            if (isWater) waterGrid[idx] = 1;
-            if (isGrass) grassGrid![idx] = 1;
-            globalMetatileGrid[idx] = mt;
+          const gwx = info.x + x;
+          const gwy = info.y + y;
+          if (worldGrid.inBounds(gwx, gwy)) {
+            const idx = worldGrid.idx(gwx, gwy);
+            worldGrid.solid[idx] = hasCollision ? 1 : 0;
+            if (isWater) worldGrid.water[idx] = 1;
+            if (isGrass) worldGrid.grass[idx] = 1;
+            worldGrid.metatiles[idx] = mt;
           }
+
           let arrow: string | undefined;
           let ledgeVal = 0;
           if (MB.MetatileBehavior_IsJumpEast(beh)) { arrow = "E"; ledgeVal = 4; }
@@ -707,28 +409,19 @@ async function build(): Promise<void> {
           else if (MB.MetatileBehavior_IsJumpNorth(beh)) { arrow = "N"; ledgeVal = 2; }
           if (arrow) {
             mark(ctxFor("salientes"), x, y, LAYER_COLORS.salientes, arrow);
-            if (gwx >= 0 && gwy >= 0 && gwx < index.world.width && gwy < index.world.height) {
-              ledgeGrid[gwy * index.world.width + gwx] = ledgeVal;
+            if (worldGrid.inBounds(gwx, gwy)) {
+              worldGrid.ledge[worldGrid.idx(gwx, gwy)] = ledgeVal;
             }
           }
         }
       }
 
       for (const e of elementsByMap.get(id) ?? []) {
-        // Bloquear casillas y crear entidades vivas para NPCs, entrenadores, objetos
-        const egwx = (info.x - minX) + e.x;
-        const egwy = (info.y - minY) + e.y;
-        const eidx = egwy * index.world.width + egwx;
+        const egwx = info.x + e.x;
+        const egwy = info.y + e.y;
         const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
-        if (isSolidEntity && egwx >= 0 && egwy >= 0 && egwx < index.world.width && egwy < index.world.height) {
-          npcCollisionGrid![eidx] = 1;
-          let dir: "south" | "north" | "west" | "east" = "south";
-          if (e.direction === "up") dir = "north";
-          else if (e.direction === "down") dir = "south";
-          else if (e.direction === "left") dir = "west";
-          else if (e.direction === "right") dir = "east";
-
-          liveEntities.push({ element: e, gx: info.x + e.x, gy: info.y + e.y, dir });
+        if (isSolidEntity && worldGrid.inBounds(egwx, egwy)) {
+          worldGrid.npc[worldGrid.idx(egwx, egwy)] = 1;
         }
 
         if (e.layer === "puerta") {
@@ -736,8 +429,6 @@ async function build(): Promise<void> {
         } else if (e.layer === "entrenador") {
           const ctx = ctxFor("entrenador");
           const r = e.trainerRange ?? 0;
-          // Vision en linea segun su direccion (del movementType FACE_* del C);
-          // sin direccion estatica solo se marca la casilla.
           const dir = e.direction === "up" || e.direction === "down" || e.direction === "left" || e.direction === "right" ? e.direction : null;
           if (dir) {
             ctx.fillStyle = "rgba(255,0,255,0.30)";
@@ -750,11 +441,11 @@ async function build(): Promise<void> {
           mark(ctxFor(e.layer as Layer), e.x, e.y, LAYER_COLORS[e.layer as Layer]);
         }
       }
-      for (const t of triggersByMap.get(id) ?? []) mark(ctxFor("activador"), t.x, t.y, LAYER_COLORS.activador);
 
-      // 7.5: registra las casillas con tiles animados de este par de tilesets.
-      // TileRenderer invalida su cache al recibir writeTiles, asi solo se
-      // redibuja lo que cambio de frame.
+      for (const t of triggersByMap.get(id) ?? []) {
+        mark(ctxFor("activador"), t.x, t.y, LAYER_COLORS.activador);
+      }
+
       const ranges = animRangesFor(primary, secondary);
       if (ranges.length > 0) {
         const cells: AnimatedMap["cells"] = [];
@@ -767,14 +458,19 @@ async function build(): Promise<void> {
         }
         if (cells.length > 0) {
           const entry: AnimatedMap = {
-            renderer, bctx, cells,
+            renderer,
+            bctx,
+            cells,
             dirtyMask: 0,
-            left: (info.x - minX) * TILE, top: (info.y - minY) * TILE,
-            width: info.width * TILE, height: info.height * TILE,
+            left: (info.x - minX) * TILE,
+            top: (info.y - minY) * TILE,
+            width: info.width * TILE,
+            height: info.height * TILE,
             animator: undefined as unknown as TilesetAnimator,
           };
           entry.animator = new TilesetAnimator({
-            primary, secondary,
+            primary,
+            secondary,
             writeTiles(destTile: number, data: Uint8Array, count?: number) {
               renderer.writeTiles(destTile, data, count);
               const n = count ?? data.length / 32;
@@ -783,247 +479,77 @@ async function build(): Promise<void> {
               });
             },
           });
-          animatedMaps.push(entry);
+          animController.addMap(entry);
         }
       }
-      fillSources.set(id, { info, layout, renderer });
 
+      fillSources.set(id, { info, layout, renderer });
       content.appendChild(wrap);
+
+      processedCount++;
+      if (loadingText) loadingText.textContent = `Renderizando mapas (${processedCount}/${mapEntries.length})…`;
     }
   }
 
-  drawFill(fillSources);
+  const fillResult = renderWorldFill(index, minX, minY, fillSources, state.fillBiomeOverride);
+  fillNearest = fillResult.nearest;
+  content.prepend(fillResult.canvas);
+  applyFillMode();
 
   const worldW = index.world.width * TILE;
   const worldH = index.world.height * TILE;
   content.style.width = `${worldW * zoom}px`;
   content.style.height = `${worldH * zoom}px`;
   content.style.transform = `scale(${zoom})`;
+
   if (startX !== null) viewport.scrollLeft = startX;
   if (startY !== null) viewport.scrollTop = startY;
+
   applyLayerVisibility();
-}
 
-function writerText(w: Writer): string {
-  if ("value" in w && !("action" in w)) return `valor ${w.value}`;
-  if (w.action === "add") return `+= ${w.value}`;
-  if (w.action === "copy") return `= ${w.from}`;
-  return w.action;
-}
-
-function writersHtml(key: string | number): string {
-  const list = index.writers[String(key)] ?? [];
-  if (list.length === 0) return "<p>Se cambia fuera de los scripts de mapa.</p>";
-  return `<ul>${list.map((w) => `<li>${writerText(w)} — ${w.map}, <i>${w.label}</i>, línea ${w.line}</li>`).join("")}</ul>`;
-}
-
-function centerOnMap(id: string): boolean {
-  const mapEl = content.querySelector<HTMLElement>(`[data-map="${id}"]`);
-  const info = index.maps[id];
-  if (!mapEl || !info) return false;
-  viewport.scrollLeft = (mapEl.offsetLeft + (info.width * TILE) / 2) * zoom - viewport.clientWidth / 2;
-  viewport.scrollTop = (mapEl.offsetTop + (info.height * TILE) / 2) * zoom - viewport.clientHeight / 2;
-  writeHash();
-  return true;
-}
-
-function resolveMap(query: string): string | null {
-  const q = query.trim().toLowerCase();
-  if (!q) return null;
-  if (index.maps[query.trim()]) return query.trim();
-  for (const [id, m] of Object.entries(index.maps)) {
-    if (id.toLowerCase() === q || m.title.toLowerCase() === q || m.section.toLowerCase() === q) return id;
-  }
-  return null;
-}
-
-function updateBrushPreview(): void {
-  const preview = document.getElementById("tile-brush-preview");
-  const label = document.getElementById("tile-brush-label");
-  if (label) {
-    label.textContent = `Tile: #${selectedMetatile}`;
-  }
-  if (!preview || !cachedFillSources) return;
-  const baseRenderer = cachedFillSources.values().next().value?.renderer;
-  if (!baseRenderer) return;
-  const { bottom, top } = baseRenderer.metatile(selectedMetatile);
-  const cvs = document.createElement("canvas");
-  cvs.width = TILE;
-  cvs.height = TILE;
-  const c = cvs.getContext("2d")!;
-  c.drawImage(bottom, 0, 0);
-  c.drawImage(top, 0, 0);
-  preview.innerHTML = "";
-  cvs.style.width = "100%";
-  cvs.style.height = "100%";
-  cvs.style.imageRendering = "pixelated";
-  preview.appendChild(cvs);
-}
-
-function showAt(worldX: number, worldY: number): void {
-  const cellX = Math.floor(worldX / TILE);
-  const cellY = Math.floor(worldY / TILE);
-  const selBox = document.getElementById("selection-box");
-  if (selBox) {
-    selBox.style.display = "block";
-    selBox.style.left = `${cellX * TILE}px`;
-    selBox.style.top = `${cellY * TILE}px`;
-    selBox.style.width = `${TILE}px`;
-    selBox.style.height = `${TILE}px`;
-  }
-
-  // Auto-desplegar panel si el usuario pincha una casilla
-  if (panel.classList.contains("collapsed")) {
-    panel.classList.remove("collapsed");
-  }
-
-  const mx = cellX + minX;
-  const my = cellY + minY;
-  const worldIdx = cellY * index.world.width + cellX;
-
-  // Si estamos en modo clonar (cuentagotas) o modo edición sobre un mapa de Kanto, clonar su tile
-  if (appMode === "edit" || eyedropperActive) {
-    if (globalMetatileGrid && worldIdx >= 0 && worldIdx < globalMetatileGrid.length) {
-      const clonedMt = globalMetatileGrid[worldIdx]!;
-      if (clonedMt >= 0) {
-        selectedMetatile = clonedMt;
-        updateBrushPreview();
-        if (eyedropperActive) {
-          eyedropperActive = false;
-          viewport.classList.remove("mode-eyedropper");
-          const eyeBtn = document.getElementById("eyedropper-btn");
-          if (eyeBtn) eyeBtn.classList.remove("active-mode");
-        }
-      }
-    }
-  }
-
-  // Si estamos en modo edición y se hace clic en el lienzo, pintar esa casilla con el tile clonado
-  if (appMode === "edit" && cachedFillSources) {
-    const key = `${cellX},${cellY}`;
-    customPaintedTiles.set(key, selectedMetatile);
-    const fillCanvas = content.querySelector(".fill") as HTMLCanvasElement | null;
-    if (fillCanvas) {
-      const fctx = fillCanvas.getContext("2d")!;
-      const baseRenderer = cachedFillSources.values().next().value?.renderer;
-      if (baseRenderer) {
-        const { bottom, top } = baseRenderer.metatile(selectedMetatile);
-        fctx.clearRect(cellX * TILE, cellY * TILE, TILE, TILE);
-        fctx.drawImage(bottom, cellX * TILE, cellY * TILE);
-        fctx.drawImage(top, cellX * TILE, cellY * TILE);
-      }
-    }
-  }
-
-  const entry = Object.entries(index.maps).find(([, m]) => mx >= m.x && mx < m.x + m.width && my >= m.y && my < m.y + m.height);
-  if (!entry) {
-    const fx = mx - minX;
-    const fy = my - minY;
-    const i = nearestFill && fx >= 0 && fy >= 0 && fx < index.world.width && fy < index.world.height ? nearestFill[fy * index.world.width + fx]! : -1;
-    panel.innerHTML = i >= 0 && i < BIOME_NAMES.length
-      ? `<h2>Exterior de Kanto</h2><p><span class="badge badge-trigger">BIOMA</span> ${BIOME_NAMES[i]}</p><p style="color:#71717a">Coordenadas mundo: (${mx}, ${my}) · No es transitable.</p><p style="margin-top:12px"><button id="btn-set-brush" class="btn" style="width:100%">🖌️ Clonar este bioma</button></p>`
-      : `<h2>Exterior de Kanto</h2><p>Fuera de los mapas.</p>`;
-    const btnSetBrush = document.getElementById("btn-set-brush");
-    if (btnSetBrush) {
-      btnSetBrush.addEventListener("click", () => {
-        if (i === 1) selectedMetatile = 473; // océano
-        else if (i === 2) selectedMetatile = 113; // montaña
-        else selectedMetatile = 28; // árboles
-        updateBrushPreview();
-      });
-    }
-    return;
-  }
-  const [id, m] = entry;
-  const lx = mx - m.x;
-  const ly = my - m.y;
-  const els = index.elements.filter((e) => e.map === id && e.x === lx && e.y === ly);
-  const trs = index.triggers.filter((t) => t.map === id && t.x === lx && t.y === ly);
-  let html = `<h2>${id}</h2><p style="color:#a1a1aa;margin-bottom:8px">Casilla local: <b>(${lx}, ${ly})</b> · Mundo: (${mx}, ${my})</p>`;
-  if (els.length === 0 && trs.length === 0) {
-    panel.innerHTML = html + "<p style='color:#71717a'>Sin elementos del índice en esta casilla.</p>";
-    return;
-  }
-  for (const e of els) {
-    let badgeClass = "badge-flag";
-    if (e.layer === "entrenador") badgeClass = "badge-trainer";
-    else if (e.layer === "puerta") badgeClass = "badge-warp";
-    html += `<h3><span class="badge ${badgeClass}">${e.layer.toUpperCase()}</span>${e.localId !== undefined ? ` #${e.localId}` : ""}</h3>`;
-    if (e.graphics) html += `<p><b>Gráficos:</b> <code>${e.graphics}</code></p>`;
-    // El indice omite flag cuando el objeto no tiene: no se muestra nada.
-    if (e.flag !== undefined) {
-      const line = typeof e.flag === "string" ? index.initialFlags[e.flag] : undefined;
-      const initStatus = e.startsHidden && line !== undefined ? "Oculto" : "Visible";
-      html += `<p><b>Flag:</b> <code>${e.flag}</code> (Inicial: <span class="badge badge-flag">${initStatus}</span>)</p>${writersHtml(e.flag)}`;
-    }
-    if (e.movedByScript) html += "<p><i>Se mueve por script (setobjectxyperm).</i></p>";
-    if (e.trainer) html += `<p><b>Combate:</b> <code>${e.trainer}</code></p>`;
-    if (e.trainerRange !== undefined) {
-      html += e.direction
-        ? `<p><b>Rango de visión:</b> ${e.trainerRange} casillas hacia <b>${e.direction}</b>.</p>`
-        : `<p><b>Rango de visión:</b> ${e.trainerRange} casillas (dirección variable en juego).</p>`;
-    }
-    if (e.destMap) {
-      const exterior = e.destMap in index.maps;
-      html += exterior
-        ? `<p><span class="badge badge-warp">DESTINO</span> ${e.destMap} (exterior)</p>`
-        : `<p><span class="badge badge-warp">DESTINO</span> ${e.destMap} — interior: <i>${e.destName ?? e.destMap}</i></p>`;
-    }
-  }
-  for (const t of trs) {
-    html += `<h3><span class="badge badge-trigger">ACTIVADOR</span></h3><p><b>Condición:</b> <code>${t.var} == ${t.value}</code></p><p><b>Script:</b> <code>${t.script}</code></p>${writersHtml(t.var)}`;
-  }
-  panel.innerHTML = html;
-  // La puerta centra la vista si el destino es exterior (en V1 todos los
-  // destinos son interiores: 0 de 95 dan a otro mapa exterior).
-  for (const e of els) {
-    if (e.layer === "puerta" && e.destMap && e.destMap in index.maps) centerOnMap(e.destMap);
+  if (loadingOverlay) {
+    loadingOverlay.classList.add("hidden");
+    setTimeout(() => loadingOverlay.remove(), 400);
   }
 }
 
 function setupUi(): void {
   const animBox = document.getElementById("anim-toggle") as HTMLInputElement;
-  animBox.checked = false;
-  animBox.addEventListener("change", () => {
-    animOn = animBox.checked;
-    if (animOn) {
-      animLast = fpsSince = animStartTime = performance.now();
-      animAccumulator = 0;
-      fpsFrames = 0;
-      animDisabledNotice = "";
-      animFrame = requestAnimationFrame(tickAnimations);
-    } else {
-      cancelAnimationFrame(animFrame);
-    }
-    updateMeta();
-  });
+  if (animBox) {
+    animBox.checked = false;
+    animBox.addEventListener("change", () => {
+      if (animBox.checked) animController.start();
+      else animController.stop();
+      updateMeta();
+    });
+  }
+
   const fillSelect = document.getElementById("fill-mode") as HTMLSelectElement | null;
   if (fillSelect) {
-    fillSelect.value = fillMode;
+    fillSelect.value = state.fillMode;
     fillSelect.addEventListener("change", () => {
-      fillMode = (fillSelect.value as "full" | "dim" | "off") || "full";
+      state.fillMode = (fillSelect.value as "full" | "dim" | "off") || "full";
       applyFillMode();
+      state.saveStored();
       scheduleHashWrite();
     });
   }
 
   const biomeSelect = document.getElementById("fill-biome") as HTMLSelectElement | null;
   if (biomeSelect) {
-    biomeSelect.value = fillBiomeOverride;
+    biomeSelect.value = state.fillBiomeOverride;
     biomeSelect.addEventListener("change", () => {
-      fillBiomeOverride = (biomeSelect.value as "auto" | "ocean" | "trees" | "mountain") || "auto";
-      if (cachedFillSources) drawFill(cachedFillSources);
+      state.fillBiomeOverride = (biomeSelect.value as "auto" | "ocean" | "trees" | "mountain") || "auto";
+      const oldCanvas = content.querySelector(".fill");
+      oldCanvas?.remove();
+      const fillResult = renderWorldFill(index, minX, minY, fillSources, state.fillBiomeOverride);
+      fillNearest = fillResult.nearest;
+      content.prepend(fillResult.canvas);
+      applyFillMode();
+      state.saveStored();
     });
   }
 
-  const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
-  if (charSelect) {
-    charSelect.value = playerChar;
-    charSelect.addEventListener("change", () => {
-      playerChar = (charSelect.value as "red" | "leaf") || "red";
-      loadPlayerSprite();
-    });
-  }
   for (const layer of LAYERS) {
     const label = document.createElement("label");
     const swatch = document.createElement("span");
@@ -1032,178 +558,75 @@ function setupUi(): void {
     const box = document.createElement("input");
     box.type = "checkbox";
     box.id = `layer-${layer}`;
-    box.checked = active.has(layer);
+    box.checked = state.activeLayers.has(layer);
     box.addEventListener("change", () => {
-      if (box.checked) active.add(layer);
-      else active.delete(layer);
+      if (box.checked) state.activeLayers.add(layer);
+      else state.activeLayers.delete(layer);
       applyLayerVisibility();
+      state.saveStored();
       scheduleHashWrite();
       updateLayersBtnText();
     });
-    label.append(box, swatch, ` ${layer}`);
+    label.append(box, swatch, ` ${LAYER_LABELS[layer] ?? layer}`);
     layerBox.appendChild(label);
   }
 
   const updateLayersBtnText = () => {
     const btn = document.getElementById("layers-btn");
-    if (btn) btn.textContent = `Capas (${active.size}/${LAYERS.length}) ▾`;
+    if (btn) btn.textContent = `Capas (${state.activeLayers.size}/${LAYERS.length}) ▾`;
   };
   updateLayersBtnText();
 
   document.getElementById("layers-all")?.addEventListener("click", () => {
-    for (const l of LAYERS) active.add(l as Layer);
+    for (const l of LAYERS) state.activeLayers.add(l as Layer);
     for (const l of LAYERS) {
       const b = document.getElementById(`layer-${l}`) as HTMLInputElement | null;
       if (b) b.checked = true;
     }
     applyLayerVisibility();
+    state.saveStored();
     scheduleHashWrite();
     updateLayersBtnText();
   });
 
   document.getElementById("layers-none")?.addEventListener("click", () => {
-    active.clear();
+    state.activeLayers.clear();
     for (const l of LAYERS) {
       const b = document.getElementById(`layer-${l}`) as HTMLInputElement | null;
       if (b) b.checked = false;
     }
     applyLayerVisibility();
+    state.saveStored();
     scheduleHashWrite();
     updateLayersBtnText();
   });
 
-  // --- Posicionamiento y fallback para Popover nativo ---
-  const layersBtn = document.getElementById("layers-btn");
-  const overflowBtn = document.getElementById("overflow-btn");
-  const overflowMenu = document.getElementById("overflow-menu");
+  setupPopovers(
+    document.getElementById("layers-btn"),
+    layerBox,
+    document.getElementById("overflow-btn"),
+    document.getElementById("overflow-menu")
+  );
 
-  const positionPopover = (btn: HTMLElement, menu: HTMLElement) => {
-    const rect = btn.getBoundingClientRect();
-    menu.style.top = `${rect.bottom + 6}px`;
-    if (menu.id === "overflow-menu") {
-      menu.style.right = `${window.innerWidth - rect.right}px`;
-      menu.style.left = "auto";
-    } else {
-      menu.style.left = `${rect.left}px`;
-      menu.style.right = "auto";
-    }
-  };
-
-  if (layersBtn) {
-    layersBtn.addEventListener("click", () => {
-      positionPopover(layersBtn, layerBox);
-      // Fallback si el navegador no soporta popover nativo
-      if (!("popover" in HTMLElement.prototype)) {
-        overflowMenu?.classList.remove("popover-open");
-        layerBox.classList.toggle("popover-open");
-      }
-    });
-  }
-  if (overflowBtn && overflowMenu) {
-    overflowBtn.addEventListener("click", () => {
-      positionPopover(overflowBtn, overflowMenu);
-      // Fallback si el navegador no soporta popover nativo
-      if (!("popover" in HTMLElement.prototype)) {
-        layerBox.classList.remove("popover-open");
-        overflowMenu.classList.toggle("popover-open");
-      }
-    });
-  }
-  if (!("popover" in HTMLElement.prototype)) {
-    document.addEventListener("click", (e) => {
-      const target = e.target as Node;
-      if (!layerBox.contains(target) && !layersBtn?.contains(target)) {
-        layerBox.classList.remove("popover-open");
-      }
-      if (!overflowMenu?.contains(target) && !overflowBtn?.contains(target)) {
-        overflowMenu?.classList.remove("popover-open");
-      }
-    });
-  }
+  minimapController = setupMinimap(
+    index,
+    minX,
+    minY,
+    viewport,
+    () => zoom,
+    () => scheduleHashWrite(),
+    () => ({ active: exploreActive, x: explorePos.x, y: explorePos.y })
+  );
 
   const radarToggle = document.getElementById("radar-toggle") as HTMLInputElement | null;
   const minimapWrap = document.getElementById("minimap-wrap");
   if (radarToggle && minimapWrap) {
+    radarToggle.checked = state.radar;
+    minimapWrap.style.display = state.radar ? "flex" : "none";
     radarToggle.addEventListener("change", () => {
-      minimapWrap.style.display = radarToggle.checked ? "flex" : "none";
-    });
-  }
-
-  // --- Minimapa Radar de Navegación ---
-  const minimapCanvas = document.getElementById("minimap-canvas") as HTMLCanvasElement | null;
-  const minimapBox = document.getElementById("minimap-viewbox");
-  const minimapCanvasWrap = document.getElementById("minimap-canvas-wrap");
-  if (minimapCanvas && minimapBox && minimapCanvasWrap && index) {
-    const mctx = minimapCanvas.getContext("2d")!;
-    const mw = minimapCanvas.width;
-    const mh = minimapCanvas.height;
-    const worldW = index.world.width;
-    const worldH = index.world.height;
-    const scaleX = mw / worldW;
-    const scaleY = mh / worldH;
-
-    // Dibujar silueta de mapas de Kanto en el minimapa
-    mctx.fillStyle = "#18181b";
-    mctx.fillRect(0, 0, mw, mh);
-    mctx.fillStyle = "#065f46"; // Tierras / rutas
-    for (const m of Object.values(index.maps)) {
-      const rx = (m.x - minX) * scaleX;
-      const ry = (m.y - minY) * scaleY;
-      const rw = Math.max(1, m.width * scaleX);
-      const rh = Math.max(1, m.height * scaleY);
-      mctx.fillRect(rx, ry, rw, rh);
-    }
-
-    const playerDot = document.getElementById("minimap-player-dot");
-    const updateRadar = () => {
-      const worldPxW = worldW * TILE;
-      const worldPxH = worldH * TILE;
-      const vx = (viewport.scrollLeft / zoom) / worldPxW;
-      const vy = (viewport.scrollTop / zoom) / worldPxH;
-      const vw = (viewport.clientWidth / zoom) / worldPxW;
-      const vh = (viewport.clientHeight / zoom) / worldPxH;
-
-      minimapBox.style.left = `${Math.max(0, Math.min(mw, vx * mw))}px`;
-      minimapBox.style.top = `${Math.max(0, Math.min(mh, vy * mh))}px`;
-      minimapBox.style.width = `${Math.max(4, Math.min(mw, vw * mw))}px`;
-      minimapBox.style.height = `${Math.max(4, Math.min(mh, vh * mh))}px`;
-
-      if (playerDot) {
-        if (playerActive) {
-          playerDot.style.display = "block";
-          const px = (playerX - minX) * scaleX;
-          const py = (playerY - minY) * scaleY;
-          playerDot.style.left = `${px}px`;
-          playerDot.style.top = `${py}px`;
-        } else {
-          playerDot.style.display = "none";
-        }
-      }
-    };
-
-    viewport.addEventListener("scroll", updateRadar);
-    updateRadar();
-
-    // Click o arrastrar en minimapa para teletransportarse
-    const navigateMini = (e: MouseEvent) => {
-      const rect = minimapCanvasWrap.getBoundingClientRect();
-      const clickX = (e.clientX - rect.left) / rect.width;
-      const clickY = (e.clientY - rect.top) / rect.height;
-      viewport.scrollLeft = clickX * (worldW * TILE) * zoom - viewport.clientWidth / 2;
-      viewport.scrollTop = clickY * (worldH * TILE) * zoom - viewport.clientHeight / 2;
-      scheduleHashWrite();
-      updateRadar();
-    };
-    let miniDragging = false;
-    minimapCanvasWrap.addEventListener("mousedown", (e) => {
-      miniDragging = true;
-      navigateMini(e);
-    });
-    window.addEventListener("mousemove", (e) => {
-      if (miniDragging) navigateMini(e);
-    });
-    window.addEventListener("mouseup", () => {
-      miniDragging = false;
+      state.radar = radarToggle.checked;
+      minimapWrap.style.display = state.radar ? "flex" : "none";
+      state.saveStored();
     });
   }
 
@@ -1214,626 +637,27 @@ function setupUi(): void {
     });
   }
 
-  const list = document.getElementById("maplist") as HTMLDataListElement;
-  for (const id of Object.keys(index.maps).sort()) {
-    const opt = document.createElement("option");
-    opt.value = id;
-    list.appendChild(opt);
-  }
-  // Nombres legibles (7.4): el valor del datalist es lo que recibe el buscador.
-  for (const [id, m] of Object.entries(index.maps).sort()) {
-    if (m.title && m.title !== id) {
-      const opt = document.createElement("option");
-      opt.value = m.title;
-      opt.label = id;
-      list.appendChild(opt);
-    }
-    if (m.section && m.section !== id) {
-      const opt = document.createElement("option");
-      opt.value = m.section;
-      opt.label = id;
-      list.appendChild(opt);
-    }
-  }
-  search.addEventListener("change", () => {
-    const id = resolveMap(search.value);
-    if (!id) return;
-    centerOnMap(id);
+  setupSearch(index, searchInput, searchResults, (mapId) => {
+    centerOnMap(mapId);
   });
-
-  // --- Inicialización y Lógica del Modo Exploración con Avatar ---
-  playerEl = document.getElementById("player-sprite");
-
-  function getSpriteSheet(): string {
-    const isLeaf = playerChar === "leaf";
-    if (playerMode === "bike") return isLeaf ? "/fr/objects/greenbike__player.png" : "/fr/objects/redbike__player.png";
-    if (playerMode === "surf") return isLeaf ? "/fr/objects/greensurfrun__player.png" : "/fr/objects/redsurfrun__player.png";
-    if (playerRunning && playerMoving) return isLeaf ? "/fr/objects/greensurfrun__player.png" : "/fr/objects/redsurfrun__player.png";
-    return isLeaf ? "/fr/objects/greennormal__player.png" : "/fr/objects/rednormal__player.png";
-  }
-
-  function loadPlayerSprite(): void {
-    playerSpriteImg = new Image();
-    playerSpriteImg.src = getSpriteSheet();
-    playerSpriteImg.onload = () => updatePlayerDisplay();
-  }
-  loadPlayerSprite();
-
-  function updatePlayerDisplay(): void {
-    if (!playerEl || !playerActive) return;
-    const px = playerVisualX;
-    const py = playerVisualY;
-
-    // Dimensiones según vehículo: Bici = 32x32, a pie / surf = 16x32
-    const isBike = playerMode === "bike";
-    const spriteW = isBike ? 32 : 16;
-    const spriteH = 32;
-
-    playerEl.style.width = `${spriteW}px`;
-    playerEl.style.height = `${spriteH}px`;
-    playerEl.style.left = `${isBike ? px - 8 : px}px`;
-    playerEl.style.top = `${py - 16}px`;
-    playerEl.style.display = "block";
-
-    let frameIdx = 0;
-    let flip = false;
-    if (isBike) {
-      // redbike: 9 frames (32x32). 0: frente, 1: espalda, 2: perfil, 3..8: pedaleo
-      if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
-      else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
-      else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
-      else if (playerDir === "east") { frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2; flip = true; }
-    } else if (playerMode === "surf") {
-      // redsurfrun: frames 0..2 reposo/surf (0: sur, 1: norte, 2: oeste/este)
-      if (playerDir === "south") frameIdx = 0;
-      else if (playerDir === "north") frameIdx = 1;
-      else if (playerDir === "west") frameIdx = 2;
-      else if (playerDir === "east") { frameIdx = 2; flip = true; }
-    } else if (playerRunning && playerMoving) {
-      // Zapatillas de correr (redsurfrun/greensurfrun):
-      // frames 3..4: Correr Sur, 5..6: Correr Norte, 7..8: Correr Perfil
-      if (playerDir === "south") frameIdx = playerStep % 2 === 0 ? 3 : 4;
-      else if (playerDir === "north") frameIdx = playerStep % 2 === 0 ? 5 : 6;
-      else if (playerDir === "west") frameIdx = playerStep % 2 === 0 ? 7 : 8;
-      else if (playerDir === "east") { frameIdx = playerStep % 2 === 0 ? 7 : 8; flip = true; }
-    } else {
-      // Normal: 0 frente, 1 espalda, 2 perfil, 3..8 pasos normales
-      if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
-      else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
-      else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
-      else if (playerDir === "east") { frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2; flip = true; }
-    }
-
-    // Si el jugador está en hierba alta, hundir los pies 4px emulando prioridad OAM de GBA
-    const inGrass = isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
-    if (inGrass) {
-      playerEl.style.clipPath = "inset(0 0 4px 0)";
-    } else {
-      playerEl.style.clipPath = "none";
-    }
-
-    playerEl.style.backgroundImage = `url(${getSpriteSheet()})`;
-    playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
-    playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
-
-    // Centrar cámara en el personaje durante exploración
-    viewport.scrollLeft = (px + TILE / 2) * zoom - viewport.clientWidth / 2;
-    viewport.scrollTop = (py + TILE / 2) * zoom - viewport.clientHeight / 2;
-
-    // Actualizar NPCs y entidades visibles
-    updateLiveEntities();
-  }
-
-  // --- Sistema de Efectos de Campo (Field FX) ---
-  function spawnFieldFx(xPx: number, yPx: number, type: "grass" | "dust" | "ripple"): void {
-    const fx = document.createElement("div");
-    fx.className = "field-fx";
-    fx.style.left = `${xPx}px`;
-
-    if (type === "grass") {
-      fx.style.top = `${yPx + 2}px`;
-      fx.style.width = "16px";
-      fx.style.height = "16px";
-      fx.style.backgroundImage = "url(/fr/fieldfx/tallgrass__ette1.png)";
-      fx.style.backgroundPosition = "0px 0px";
-      content.appendChild(fx);
-      let f = 0;
-      const animInterval = setInterval(() => {
-        f++;
-        if (f < 5) {
-          fx.style.backgroundPosition = `0px -${f * 16}px`;
-        } else {
-          clearInterval(animInterval);
-          fx.remove();
-        }
-      }, 50);
-    } else if (type === "dust") {
-      fx.style.top = `${yPx + 8}px`;
-      fx.style.width = "16px";
-      fx.style.height = "8px";
-      fx.style.backgroundImage = "url(/fr/fieldfx/groundimpactdust__ette0.png)";
-      fx.style.backgroundPosition = "0px 0px";
-      content.appendChild(fx);
-      let f = 0;
-      const animInterval = setInterval(() => {
-        f++;
-        if (f < 3) {
-          fx.style.backgroundPosition = `0px -${f * 8}px`;
-        } else {
-          clearInterval(animInterval);
-          fx.remove();
-        }
-      }, 60);
-    } else if (type === "ripple") {
-      fx.style.top = `${yPx + 4}px`;
-      fx.style.width = "16px";
-      fx.style.height = "16px";
-      fx.style.backgroundImage = "url(/fr/fieldfx/ripple__ette1.png)";
-      fx.style.backgroundPosition = "0px 0px";
-      content.appendChild(fx);
-      let f = 0;
-      const animInterval = setInterval(() => {
-        f++;
-        if (f < 5) {
-          fx.style.backgroundPosition = `0px -${f * 16}px`;
-        } else {
-          clearInterval(animInterval);
-          fx.remove();
-        }
-      }, 70);
-    }
-  }
-
-  // --- Gestión de Entidades Vivas y Viewport Culling ---
-  let entitiesContainer: HTMLElement | null = null;
-  function updateLiveEntities(): void {
-    if (!playerActive) {
-      if (entitiesContainer) entitiesContainer.style.display = "none";
-      return;
-    }
-    if (!entitiesContainer) {
-      entitiesContainer = document.createElement("div");
-      entitiesContainer.id = "entities-container";
-      entitiesContainer.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;";
-      content.appendChild(entitiesContainer);
-    }
-    entitiesContainer.style.display = "block";
-
-    const viewLeft = viewport.scrollLeft / zoom - 64;
-    const viewTop = viewport.scrollTop / zoom - 64;
-    const viewRight = viewLeft + viewport.clientWidth / zoom + 128;
-    const viewBottom = viewTop + viewport.clientHeight / zoom + 128;
-
-    for (const ent of liveEntities) {
-      const px = (ent.gx - minX) * TILE;
-      const py = (ent.gy - minY) * TILE;
-
-      const inView = px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
-      if (!inView) {
-        if (ent.el) {
-          ent.el.remove();
-          ent.el = undefined;
-        }
-        continue;
-      }
-
-      if (!ent.el) {
-        const gfxKey = ent.element.graphics ?? "";
-        const gfxInfo = GFX_MAP[gfxKey] ?? { file: "objects/woman1__npcgreen.png", w: 16, h: 32 };
-        const el = document.createElement("div");
-        el.className = "world-npc";
-        el.style.width = `${gfxInfo.w}px`;
-        el.style.height = `${gfxInfo.h}px`;
-        el.style.left = `${px - (gfxInfo.w > 16 ? (gfxInfo.w - 16) / 2 : 0)}px`;
-        el.style.top = `${py - (gfxInfo.h - 16)}px`;
-        el.style.backgroundImage = `url(/fr/${gfxInfo.file})`;
-
-        // Orientación inicial según su dirección
-        let frameIdx = 0;
-        let flip = false;
-        if (ent.dir === "north") frameIdx = 1;
-        else if (ent.dir === "west") frameIdx = 2;
-        else if (ent.dir === "east") { frameIdx = 2; flip = true; }
-        el.style.backgroundPosition = `-${frameIdx * gfxInfo.w}px 0px`;
-        el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
-
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          interactWithEntity(ent);
-        });
-
-        entitiesContainer.appendChild(el);
-        ent.el = el;
-      }
-    }
-  }
-
-  // --- Sistema de Diálogo GBA e Interacción ---
-  let activeDialog = false;
-  const dialogBox = document.getElementById("dialog-box");
-  const dialogTitle = document.getElementById("dialog-title");
-  const dialogText = document.getElementById("dialog-text");
-
-  function showDialog(title: string, text: string): void {
-    if (!dialogBox || !dialogTitle || !dialogText) return;
-    dialogTitle.textContent = title;
-    dialogText.innerHTML = text;
-    dialogBox.classList.add("open");
-    activeDialog = true;
-  }
-
-  function closeDialog(): void {
-    if (!dialogBox) return;
-    dialogBox.classList.remove("open");
-    activeDialog = false;
-  }
-
-  function interactWithEntity(ent: LiveEntity): void {
-    // Girar al NPC hacia el jugador
-    const dx = playerX - ent.gx;
-    const dy = playerY - ent.gy;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      ent.dir = dx > 0 ? "east" : "west";
-    } else {
-      ent.dir = dy > 0 ? "south" : "north";
-    }
-    if (ent.el) {
-      const gfxInfo = GFX_MAP[ent.element.graphics ?? ""] ?? { w: 16, h: 32 };
-      let frame = 0;
-      let flip = false;
-      if (ent.dir === "north") frame = 1;
-      else if (ent.dir === "west") frame = 2;
-      else if (ent.dir === "east") { frame = 2; flip = true; }
-      ent.el.style.backgroundPosition = `-${frame * gfxInfo.w}px 0px`;
-      ent.el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
-    }
-
-    const title = ent.element.trainer ? `${ent.element.trainer}` : `${ent.element.map.replace("MAP_", "")}`;
-    let msg = "";
-    if (ent.element.layer === "snorlax") {
-      msg = "¡Un enorme Pokémon duerme plácidamente en medio del camino! Está bloqueando el paso... Necesitas una Poké Flauta.";
-    } else if (ent.element.layer === "corte") {
-      msg = "¡Un árbol pequeño bloquea el paso! Un Pokémon podría cortarlo con la MO Corte.";
-    } else if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL") {
-      msg = `¡Has encontrado un objeto en el suelo! (${ent.element.flag ?? "Objeto misterioso"}).`;
-    } else if (ent.element.trainer) {
-      msg = `¡El entrenador <b>${ent.element.trainer}</b> te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`;
-    } else {
-      msg = `Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?`;
-    }
-    showDialog(title, msg);
-  }
-
-  // Comprobar si el jugador entra en la línea de visión de un entrenador
-  function checkTrainerSight(): void {
-    for (const ent of liveEntities) {
-      if (!ent.element.trainer || ent.defeated) continue;
-      const r = ent.element.trainerRange ?? 0;
-      if (r <= 0) continue;
-
-      let inSight = false;
-      if (ent.dir === "south" && playerX === ent.gx && playerY > ent.gy && playerY <= ent.gy + r) inSight = true;
-      else if (ent.dir === "north" && playerX === ent.gx && playerY < ent.gy && playerY >= ent.gy - r) inSight = true;
-      else if (ent.dir === "west" && playerY === ent.gy && playerX < ent.gx && playerX >= ent.gx - r) inSight = true;
-      else if (ent.dir === "east" && playerY === ent.gy && playerX > ent.gx && playerX <= ent.gx + r) inSight = true;
-
-      if (inSight) {
-        // Alerta con signo de exclamación (!)
-        if (ent.el && !ent.el.querySelector(".emoticon-balloon")) {
-          const balloon = document.createElement("div");
-          balloon.className = "emoticon-balloon";
-          balloon.style.left = "0px";
-          balloon.style.top = "-16px";
-          ent.el.appendChild(balloon);
-          setTimeout(() => balloon.remove(), 1200);
-        }
-        interactWithEntity(ent);
-        break;
-      }
-    }
-  }
-
-  function startExploration(): void {
-    playerActive = true;
-    // Asegurar que las animaciones de tiles (agua, flores) estén encendidas para máxima inmersión
-    if (!animOn) {
-      animOn = true;
-      const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
-      if (animBox) animBox.checked = true;
-      animLast = fpsSince = animStartTime = performance.now();
-      animAccumulator = 0;
-      fpsFrames = 0;
-      animFrame = requestAnimationFrame(tickAnimations);
-    }
-    // Ubicar en Pueblo Paleta por defecto si es inicio
-    if (playerX === 0 && playerY === 0) {
-      const paleta = index.maps["MAP_PALLET_TOWN"];
-      if (paleta) {
-        playerX = paleta.x + 8;
-        playerY = paleta.y + 8;
-      } else {
-        playerX = minX + Math.floor(index.world.width / 2);
-        playerY = minY + Math.floor(index.world.height / 2);
-      }
-    }
-    playerVisualX = (playerX - minX) * TILE;
-    playerVisualY = (playerY - minY) * TILE;
-    updatePlayerDisplay();
-  }
-
-  function stopExploration(): void {
-    playerActive = false;
-    if (playerEl) playerEl.style.display = "none";
-  }
-
-  function setAppMode(nextMode: AppMode): void {
-    appMode = nextMode;
-
-    const modeViewerBtn = document.getElementById("mode-viewer-btn");
-    const modeExploreBtn = document.getElementById("mode-explore-btn");
-    const modeEditBtn = document.getElementById("mode-edit-btn");
-    const editToolbar = document.getElementById("edit-toolbar");
-    const bikeBtn = document.getElementById("bike-btn");
-    const eyeBtn = document.getElementById("eyedropper-btn");
-
-    modeViewerBtn?.classList.toggle("active-mode", appMode === "viewer");
-    modeExploreBtn?.classList.toggle("active-mode", appMode === "explore");
-    modeEditBtn?.classList.toggle("active-mode", appMode === "edit");
-
-    viewport.classList.remove("mode-edit", "mode-eyedropper");
-    eyedropperActive = false;
-    eyeBtn?.classList.remove("active-mode");
-
-    if (appMode === "explore") {
-      if (editToolbar) editToolbar.style.display = "none";
-      if (bikeBtn) bikeBtn.style.display = "inline-flex";
-      startExploration();
-    } else {
-      stopExploration();
-      if (bikeBtn) bikeBtn.style.display = "none";
-      if (appMode === "edit") {
-        if (editToolbar) editToolbar.style.display = "inline-flex";
-        viewport.classList.add("mode-edit");
-        updateBrushPreview();
-      } else {
-        if (editToolbar) editToolbar.style.display = "none";
-      }
-    }
-  }
 
   const modeViewerBtn = document.getElementById("mode-viewer-btn");
   const modeExploreBtn = document.getElementById("mode-explore-btn");
-  const modeEditBtn = document.getElementById("mode-edit-btn");
-  const eyedropperBtn = document.getElementById("eyedropper-btn");
+  modeViewerBtn?.addEventListener("click", () => stopCanonicalExploration());
+  modeExploreBtn?.addEventListener("click", () => startCanonicalExploration());
 
-  modeViewerBtn?.addEventListener("click", () => setAppMode("viewer"));
-  modeExploreBtn?.addEventListener("click", () => setAppMode("explore"));
-  modeEditBtn?.addEventListener("click", () => setAppMode("edit"));
-
-  eyedropperBtn?.addEventListener("click", () => {
-    eyedropperActive = !eyedropperActive;
-    eyedropperBtn.classList.toggle("active-mode", eyedropperActive);
-    viewport.classList.toggle("mode-eyedropper", eyedropperActive);
-  });
-
-  // Botón Bici
-  const bikeBtn = document.getElementById("bike-btn");
-  function toggleBike(): void {
-    if (playerMode === "surf") return; // No se puede usar bici en el agua
-    playerMode = playerMode === "bike" ? "walk" : "bike";
-    if (bikeBtn) {
-      bikeBtn.style.background = playerMode === "bike" ? "#f59e0b" : "";
-    }
-    loadPlayerSprite();
-  }
-  if (bikeBtn) bikeBtn.addEventListener("click", toggleBike);
-
-  // Teclado para controlar avatar (WASD / Flechas / Shift / B)
-  const keysDown = new Set<string>();
   window.addEventListener("keydown", (e) => {
     const tag = document.activeElement?.tagName?.toLowerCase();
     if (tag === "input" || tag === "select" || tag === "textarea") return;
-    const key = e.key.toLowerCase();
-    if (key === "b" && playerActive) {
-      toggleBike();
-      return;
-    }
-    if (key === "shift") {
-      playerRunning = true;
-    }
-    if (key === " " || key === "enter" || key === "z") {
-      if (activeDialog) {
-        e.preventDefault();
-        closeDialog();
-        return;
-      } else if (playerActive) {
-        e.preventDefault();
-        // Buscar entidad justo enfrente de donde mira el jugador
-        let fx = playerX;
-        let fy = playerY;
-        if (playerDir === "north") fy--;
-        else if (playerDir === "south") fy++;
-        else if (playerDir === "west") fx--;
-        else if (playerDir === "east") fx++;
-
-        const frontEnt = liveEntities.find((ent) => ent.gx === fx && ent.gy === fy);
-        if (frontEnt) {
-          interactWithEntity(frontEnt);
-          return;
-        }
-      }
-    }
-    if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) {
-      if (playerActive) e.preventDefault();
-      if (activeDialog) closeDialog();
-      keysDown.add(key);
-      processPlayerStep();
-    }
-  });
-
-  window.addEventListener("keyup", (e) => {
-    const key = e.key.toLowerCase();
-    keysDown.delete(key);
-    if (key === "shift") playerRunning = false;
-    if (!["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].some((k) => keysDown.has(k))) {
-      playerMoving = false;
-      updatePlayerDisplay();
-    }
-  });
-
-  let isStepping = false;
-  function processPlayerStep(): void {
-    if (!playerActive || isStepping || activeDialog) return;
-
-    let dx = 0;
-    let dy = 0;
-    let targetDir = playerDir;
-    if (keysDown.has("arrowup") || keysDown.has("w")) { dy = -1; targetDir = "north"; }
-    else if (keysDown.has("arrowdown") || keysDown.has("s")) { dy = 1; targetDir = "south"; }
-    else if (keysDown.has("arrowleft") || keysDown.has("a")) { dx = -1; targetDir = "west"; }
-    else if (keysDown.has("arrowright") || keysDown.has("d")) { dx = 1; targetDir = "east"; }
-
-    playerDir = targetDir;
-    if (dx === 0 && dy === 0) return;
-
-    let targetX = playerX + dx;
-    let targetY = playerY + dy;
-
-    // Comprobar si hay salto de saliente (Ledge jump)
-    const ledge = ledgeDirection(playerX, playerY);
-    let isLedgeJump = false;
-    if (
-      (ledge === 1 && dy === 1) ||  // Salto sur
-      (ledge === 2 && dy === -1) || // Salto norte
-      (ledge === 3 && dx === -1) || // Salto oeste
-      (ledge === 4 && dx === 1)     // Salto este
-    ) {
-      targetX = playerX + dx * 2;
-      targetY = playerY + dy * 2;
-      isLedgeJump = true;
-    }
-
-    // Comprobar entrada a agua para activar surf automáticamente
-    const targetIsWater = isWaterTile(targetX, targetY);
-    if (targetIsWater && playerMode !== "surf") {
-      playerMode = "surf";
-      loadPlayerSprite();
-      spawnFieldFx((targetX - minX) * TILE, (targetY - minY) * TILE, "ripple");
-    } else if (!targetIsWater && playerMode === "surf" && isWalkable(targetX, targetY, "walk")) {
-      // Desembarcar de surf a tierra
-      playerMode = "walk";
-      loadPlayerSprite();
-    }
-
-    if (isLedgeJump || isWalkable(targetX, targetY, playerMode)) {
-      isStepping = true;
-      playerMoving = true;
-      playerStep = (playerStep + 1) % 4;
-
-      const startPxX = (playerX - minX) * TILE;
-      const startPxY = (playerY - minY) * TILE;
-      const destPxX = (targetX - minX) * TILE;
-      const destPxY = (targetY - minY) * TILE;
-
-      // Efecto de pisar hierba alta al entrar
-      if (isGrassTile(targetX, targetY) && playerMode !== "surf") {
-        spawnFieldFx(destPxX, destPxY, "grass");
-      }
-      // Ondas en agua al surfear
-      if (playerMode === "surf" && Math.random() < 0.3) {
-        spawnFieldFx(destPxX, destPxY, "ripple");
-      }
-
-      const duration = playerMode === "bike" ? 100 : playerRunning ? 120 : 160;
-      const startTime = performance.now();
-
-      const animateStep = (now: number) => {
-        const elapsed = now - startTime;
-        const t = Math.min(1, elapsed / duration);
-        playerVisualX = startPxX + (destPxX - startPxX) * t;
-        playerVisualY = startPxY + (destPxY - startPxY) * t;
-
-        // Salto con arco si es saliente
-        if (isLedgeJump) {
-          playerVisualY -= Math.sin(t * Math.PI) * 12;
-        }
-
-        updatePlayerDisplay();
-
-        if (t < 1) {
-          requestAnimationFrame(animateStep);
-        } else {
-          playerX = targetX;
-          playerY = targetY;
-          playerVisualX = destPxX;
-          playerVisualY = destPxY;
-          isStepping = false;
-
-          // Polvo de impacto tras salto de cornisa
-          if (isLedgeJump) {
-            spawnFieldFx(destPxX, destPxY, "dust");
-          }
-
-          // Comprobar entrenadores en línea de visión
-          checkTrainerSight();
-
-          if (keysDown.size > 0 && !activeDialog) {
-            processPlayerStep();
-          } else {
-            playerMoving = false;
-            updatePlayerDisplay();
-          }
-        }
-      };
-      requestAnimationFrame(animateStep);
-    } else {
-      // Animación de choque elástico contra pared o NPC (Wall Bump)
-      if (!isStepping) {
-        isStepping = true;
-        playerMoving = true;
-        playerStep = (playerStep + 1) % 4;
-        const basePxX = (playerX - minX) * TILE;
-        const basePxY = (playerY - minY) * TILE;
-        const bumpDist = 3;
-        const bumpDuration = 90;
-        const bumpStartTime = performance.now();
-
-        const animateBump = (now: number) => {
-          const elapsed = now - bumpStartTime;
-          const t = Math.min(1, elapsed / bumpDuration);
-          const offset = Math.sin(t * Math.PI) * bumpDist;
-          playerVisualX = basePxX + dx * offset;
-          playerVisualY = basePxY + dy * offset;
-          updatePlayerDisplay();
-
-          if (t < 1) {
-            requestAnimationFrame(animateBump);
-          } else {
-            playerVisualX = basePxX;
-            playerVisualY = basePxY;
-            isStepping = false;
-            playerMoving = false;
-            updatePlayerDisplay();
-          }
-        };
-        requestAnimationFrame(animateBump);
-      }
-    }
-  }
-
-  // Atajo de teclado '/' o '⌘K' para enfocar búsqueda
-  window.addEventListener("keydown", (e) => {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    if (tag === "input" || tag === "select" || tag === "textarea") return;
-    if (e.key === "/" && document.activeElement !== search) {
+    if (e.key === "/" && document.activeElement !== searchInput) {
       e.preventDefault();
-      search.focus();
-      search.select();
+      searchInput.focus();
+      searchInput.select();
     }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
-      search.focus();
-      search.select();
+      searchInput.focus();
+      searchInput.select();
     }
   });
 
@@ -1848,9 +672,8 @@ function setupUi(): void {
     dragY = ev.clientY;
     viewport.setPointerCapture(ev.pointerId);
   });
-  const statusPos = document.getElementById("status-pos");
+
   viewport.addEventListener("pointermove", (ev) => {
-    // Coordenadas en tiempo real para el status bar
     if (statusPos) {
       const rect = content.getBoundingClientRect();
       const worldPxX = (ev.clientX - rect.left) / zoom;
@@ -1873,7 +696,9 @@ function setupUi(): void {
     viewport.scrollTop -= dy;
     dragX = ev.clientX;
     dragY = ev.clientY;
+    minimapController?.updateRadar();
   });
+
   viewport.addEventListener("pointerup", (ev) => {
     dragging = false;
     if (moved) {
@@ -1883,29 +708,26 @@ function setupUi(): void {
     const rect = content.getBoundingClientRect();
     showAt((ev.clientX - rect.left) / zoom, (ev.clientY - rect.top) / zoom);
   });
+
   viewport.addEventListener(
     "wheel",
     (ev) => {
-      // Trackpad de Mac: deslizar con dos dedos desplaza (scroll nativo del
-      // viewport) y pellizcar hace zoom (el navegador lo envía con ctrlKey).
-      // Rueda de ratón: zoom. Se distingue por el delta: la rueda avanza a saltos
-      // (modo línea en Firefox; múltiplos de 120 en wheelDeltaY en Chrome/Safari) y
-      // sin componente horizontal; el trackpad envía deltas pequeños y continuos.
       const legacy = (ev as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY ?? 0;
       const mouseWheel = ev.deltaMode === 1 || (ev.deltaX === 0 && legacy !== 0 && legacy % 120 === 0 && Math.abs(ev.deltaY) >= 50);
-      // ⌘ + rueda (o deslizamiento) hace zoom siempre, por si el ratón no se reconoce.
       if (!ev.ctrlKey && !ev.metaKey && !mouseWheel) return;
       ev.preventDefault();
       const r = viewport.getBoundingClientRect();
       const factor = ev.ctrlKey ? Math.exp(-ev.deltaY * 0.01) : ev.deltaY > 0 ? 0.9 : 1.1;
       setZoom(zoom * factor, ev.clientX - r.left, ev.clientY - r.top);
     },
-    { passive: false },
+    { passive: false }
   );
-  // El desplazamiento nativo (trackpad, barras) también guarda la posición en la URL debounced.
+
   viewport.addEventListener("scroll", () => {
+    minimapController?.updateRadar();
     scheduleHashWrite();
   });
+
   document.getElementById("zoom-in")!.addEventListener("click", () => setZoom(zoom * 1.25));
   document.getElementById("zoom-out")!.addEventListener("click", () => setZoom(zoom * 0.8));
 }
@@ -1916,6 +738,7 @@ build()
     updateMeta();
   })
   .catch((err) => {
-    panel.innerHTML = `<p>Error: ${String(err)}</p>`;
+    panel.innerHTML = `<p>Error al cargar el visor: ${String(err)}</p>`;
+    if (loadingOverlay) loadingOverlay.remove();
     throw err;
   });

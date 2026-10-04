@@ -1,5 +1,5 @@
-import { TILE } from "./constants";
-import type { TileRenderer } from "../fr/field/tileRenderer";
+import { TILE } from "../constants";
+import type { TileRenderer } from "../../fr/field/tileRenderer";
 
 const metatileCache = new WeakMap<TileRenderer, Map<number, HTMLCanvasElement>>();
 
@@ -26,5 +26,12 @@ export function composeMetatile(renderer: TileRenderer, mt: number): HTMLCanvasE
 export function clearMetatileCache(renderer?: TileRenderer): void {
   if (renderer) {
     metatileCache.delete(renderer);
+  }
+}
+
+export function invalidateMetatile(renderer: TileRenderer, mt: number): void {
+  const cache = metatileCache.get(renderer);
+  if (cache) {
+    cache.delete(mt);
   }
 }

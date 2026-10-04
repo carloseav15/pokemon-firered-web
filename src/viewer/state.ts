@@ -1,35 +1,14 @@
 import type { Layer } from "./constants";
 import { LAYERS } from "./constants";
 
-export type AppMode = "viewer" | "explore" | "edit";
+export type AppMode = "viewer" | "explore";
 export type FillMode = "full" | "dim" | "off";
 export type FillBiomeOverride = "auto" | "ocean" | "trees" | "mountain";
-export type Direction = "south" | "north" | "west" | "east";
 
 export type ViewState = {
   zoom: number;
   scrollLeft: number;
   scrollTop: number;
-};
-
-export type PlayerState = {
-  active: boolean;
-  char: "red" | "leaf";
-  mode: "walk" | "bike" | "surf";
-  x: number;
-  y: number;
-  visualX: number;
-  visualY: number;
-  dir: Direction;
-  step: number;
-  moving: boolean;
-  running: boolean;
-};
-
-export type EditState = {
-  selectedMetatile: number;
-  eyedropperActive: boolean;
-  customPaintedTiles: Map<string, number>;
 };
 
 export type AnimState = {
@@ -38,38 +17,61 @@ export type AnimState = {
   disabledNotice: string;
 };
 
+export const VIEWER_STORAGE_KEY = "pokemon-gba-web-lab.viewer.v1";
+
+export type StoredSettings = {
+  fillMode?: FillMode;
+  fillBiomeOverride?: FillBiomeOverride;
+  activeLayers?: Layer[];
+  radar?: boolean;
+};
+
 export class ViewerState {
   appMode: AppMode = "viewer";
   view: ViewState = { zoom: 1, scrollLeft: 0, scrollTop: 0 };
   activeLayers = new Set<Layer>((LAYERS as unknown as Layer[]).filter((l) => l !== "colision"));
   fillMode: FillMode = "full";
   fillBiomeOverride: FillBiomeOverride = "auto";
-
-  player: PlayerState = {
-    active: false,
-    char: "red",
-    mode: "walk",
-    x: 0,
-    y: 0,
-    visualX: 0,
-    visualY: 0,
-    dir: "south",
-    step: 0,
-    moving: false,
-    running: false,
-  };
-
-  edit: EditState = {
-    selectedMetatile: 28,
-    eyedropperActive: false,
-    customPaintedTiles: new Map(),
-  };
+  radar = true;
 
   anim: AnimState = {
     on: false,
     fps: 0,
     disabledNotice: "",
   };
+
+  loadStored(): void {
+    try {
+      const raw = localStorage.getItem(VIEWER_STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw) as StoredSettings;
+      if (s.fillMode) this.fillMode = s.fillMode;
+      if (s.fillBiomeOverride) this.fillBiomeOverride = s.fillBiomeOverride;
+      if (s.radar !== undefined) this.radar = s.radar;
+      if (Array.isArray(s.activeLayers)) {
+        this.activeLayers.clear();
+        for (const l of s.activeLayers) {
+          if ((LAYERS as readonly string[]).includes(l)) this.activeLayers.add(l);
+        }
+      }
+    } catch {
+      // Ignore invalid localStorage
+    }
+  }
+
+  saveStored(): void {
+    try {
+      const s: StoredSettings = {
+        fillMode: this.fillMode,
+        fillBiomeOverride: this.fillBiomeOverride,
+        radar: this.radar,
+        activeLayers: [...this.activeLayers],
+      };
+      localStorage.setItem(VIEWER_STORAGE_KEY, JSON.stringify(s));
+    } catch {
+      // Storage unavailable
+    }
+  }
 }
 
 export const state = new ViewerState();

@@ -211,7 +211,18 @@ function emptyRamScript(): RamScriptSave {
   return { checksum: 0, data: { magic: 0, mapGroup: 0, mapNum: 0, objectId: 0, script: new Array(995).fill(0) } };
 }
 
-const STORAGE_KEY = "pokemon-gba-web-lab.firered.v2";
+export const CANONICAL_STORAGE_KEY = "pokemon-gba-web-lab.firered.v2";
+export const SANDBOX_STORAGE_KEY = "pokemon-gba-web-lab.firered.sandbox";
+
+let activeStorageKey = CANONICAL_STORAGE_KEY;
+
+export function setSaveStorageKey(key: string): void {
+  activeStorageKey = key;
+}
+
+export function getSaveStorageKey(): string {
+  return activeStorageKey;
+}
 
 function emptyWarp(): WarpData {
   return { mapGroup: 0xff, mapNum: 0xff, warpId: 0xff, x: -1, y: -1 };
@@ -674,11 +685,11 @@ export function setName(target: "player" | "rival", name: Uint8Array): void {
 
 export const saveStore = {
   exists(): boolean {
-    try { return !!localStorage.getItem(STORAGE_KEY); } catch { return false; }
+    try { return !!localStorage.getItem(activeStorageKey); } catch { return false; }
   },
   load(): SaveData | undefined {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(activeStorageKey);
       if (!raw) return undefined;
       const data = JSON.parse(raw) as SaveData;
       if (data.version !== 2) return undefined;
@@ -689,11 +700,11 @@ export const saveStore = {
   },
   /** ClearSaveData */
   clear(): void {
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage unavailable */ }
+    try { localStorage.removeItem(activeStorageKey); } catch { /* storage unavailable */ }
   },
   write(data: SaveData = save): boolean {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(activeStorageKey, JSON.stringify(data));
       return true;
     } catch {
       return false;

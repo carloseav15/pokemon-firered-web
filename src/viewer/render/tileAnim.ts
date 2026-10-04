@@ -3,6 +3,7 @@ import type { TileRenderer } from "../../fr/field/tileRenderer";
 import type { TilesetAnimator } from "../../fr/field/tilesetAnimator";
 import type { TilesetData } from "../../fr/rom";
 import { NUM_METATILES_IN_PRIMARY } from "../../fr/field/fieldmap";
+import { composeMetatile, invalidateMetatile } from "./metatile";
 
 export type AnimatedCell = {
   x: number;
@@ -121,7 +122,6 @@ export class TileAnimationController {
 
         if (m.dirtyMask === 0) continue;
 
-        const composed = new Map<number, HTMLCanvasElement>();
 
         for (const c of m.cells) {
           if (!(c.mask & m.dirtyMask)) continue;
@@ -132,18 +132,8 @@ export class TileAnimationController {
             continue;
           }
 
-          let tileCanvas = composed.get(c.mt);
-          if (!tileCanvas) {
-            const { bottom, top: mTop } = m.renderer.metatile(c.mt);
-            tileCanvas = document.createElement("canvas");
-            tileCanvas.width = TILE;
-            tileCanvas.height = TILE;
-            const tctx = tileCanvas.getContext("2d")!;
-            tctx.drawImage(bottom, 0, 0);
-            tctx.drawImage(mTop, 0, 0);
-            composed.set(c.mt, tileCanvas);
-          }
-
+          invalidateMetatile(m.renderer, c.mt);
+          const tileCanvas = composeMetatile(m.renderer, c.mt);
           m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
           m.bctx.drawImage(tileCanvas, c.x * TILE, c.y * TILE);
         }

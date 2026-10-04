@@ -19,7 +19,8 @@ import { RIVAL_BATTLE_HEAL_AFTER, RIVAL_BATTLE_TUTORIAL } from "./generated/cons
 
 export type LaunchOptions =
   | { mode: "new"; playerName: string; gender: number; rivalName: string }
-  | { mode: "continue" };
+  | { mode: "continue" }
+  | { mode: "sandbox" };
 
 let running: Game | undefined;
 
@@ -122,7 +123,12 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
       return object && { x: object.currentCoords.x - 7, y: object.currentCoords.y - 7, facing: object.facingDirection, map: game.overworld.loaded?.header.id, script: game.overworld.script.isActive?.() };
     },
   };
-  if (options.mode === "continue") {
+  if (options.mode === "sandbox") {
+    saveModule.setSaveStorageKey(saveModule.SANDBOX_STORAGE_KEY);
+    const data = saveStore.load();
+    if (data) game.continueGame(data);
+    else game.newGame("RED", 0, "GREEN");
+  } else if (options.mode === "continue") {
     const data = saveStore.load();
     if (data) game.continueGame(data);
     else game.newGame("RED", 0, "GREEN");

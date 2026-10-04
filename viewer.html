@@ -10,9 +10,9 @@
     <header id="bar">
       <div class="app-title"><span></span> Kanto Exterior</div>
       <div class="search-wrap">
-        <input id="search" type="search" list="maplist" placeholder="Buscar mapa..." title="Presiona '/' para buscar rápido" />
+        <input id="search" type="search" placeholder="Buscar mapa..." title="Presiona '/' para buscar rápido" autocomplete="off" />
         <span class="search-shortcut">/</span>
-        <datalist id="maplist"></datalist>
+        <div id="search-results" class="search-results" style="display:none;"></div>
       </div>
 
       <div class="btn-group">
@@ -38,25 +38,10 @@
         <button id="mode-viewer-btn" class="btn active-mode" title="Modo Visor: Navegar libremente y consultar mapas">
           🗺️ Visor
         </button>
-        <button id="mode-explore-btn" class="btn" title="Modo Exploración: Controlar al protagonista (WASD / Bici / Surf)">
-          🏃 Explorar
-        </button>
-        <button id="mode-edit-btn" class="btn" title="Modo Edición: Clonar y pintar tiles en el mapa o relleno">
-          🖌️ Editar
+        <button id="mode-explore-btn" class="btn" title="Modo Exploración: Motor canónico FireRed embebido">
+          🎮 Explorar con FireRed
         </button>
       </div>
-
-      <div id="edit-toolbar" style="display: none; align-items: center; gap: 8px;">
-        <div id="tile-brush-preview" title="Tile seleccionado para clonar/pintar" style="width: 24px; height: 24px; border: 1.5px solid #f59e0b; border-radius: 4px; background: #000; image-rendering: pixelated; display: flex; align-items: center; justify-content: center; font-size: 10px;"></div>
-        <span id="tile-brush-label" style="font-size: 11px; color: #fbbf24; font-family: var(--font-mono);">Tile: #28</span>
-        <button id="eyedropper-btn" class="btn" title="Clic en cualquier casilla del mapa original para clonar su tile">
-          🔍 Clonar tile
-        </button>
-      </div>
-
-      <button id="bike-btn" class="btn" style="display: none;" title="Subir / bajar de la bicicleta (Tecla B)">
-        🚲 Bici
-      </button>
 
       <button id="panel-toggle" class="btn" title="Ocultar/mostrar panel lateral">Panel ◨</button>
       <div style="flex: 1"></div>
@@ -87,22 +72,20 @@
             <option value="off">Desactivado</option>
           </select>
         </label>
-        <label for="player-char" style="display:flex; justify-content:space-between; gap:12px;">
-          Protagonista:
-          <select id="player-char">
-            <option value="red">Rojo (Red)</option>
-            <option value="leaf">Hoja (Leaf)</option>
-          </select>
-        </label>
         <label><input id="radar-toggle" type="checkbox" checked /> Minimapa Radar</label>
       </div>
     </header>
 
     <main id="main">
+      <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div id="loading-text" class="loading-text">Cargando mapas de Kanto…</div>
+      </div>
       <div id="viewport">
         <div id="content">
           <div id="selection-box"></div>
           <div id="player-sprite"></div>
+          <div id="explore-iframe-container" class="explore-iframe-container" style="display:none;"></div>
         </div>
       </div>
       <div id="minimap-wrap">
@@ -112,11 +95,6 @@
           <div id="minimap-viewbox"></div>
           <div id="minimap-player-dot"></div>
         </div>
-      </div>
-      <div id="dialog-box">
-        <div id="dialog-title"></div>
-        <div id="dialog-text"></div>
-        <div id="dialog-prompt">Presiona [Espacio] o [Enter] para continuar ▾</div>
       </div>
       <aside id="panel"><p>Pincha una casilla para ver su ficha.</p></aside>
     </main>
