@@ -24,20 +24,36 @@ export function setupMinimap(
   const mh = minimapCanvas.height;
   const worldW = index.world.width;
   const worldH = index.world.height;
-  const scaleX = mw / worldW;
-  const scaleY = mh / worldH;
+
+  // Escala uniforme del mundo dentro del canvas, con márgenes centrados.
+  // Una sola transformación para dibujo, viewbox, jugador y navegación.
+  const view = () => {
+    const scale = Math.min(mw / worldW, mh / worldH);
+    return {
+      scale,
+      offX: (mw - worldW * scale) / 2,
+      offY: (mh - worldH * scale) / 2,
+    };
+  };
+  const toMini = (wx: number, wy: number) => {
+    const v = view();
+    return { x: v.offX + (wx - minX) * v.scale, y: v.offY + (wy - minY) * v.scale };
+  };
 
   // Dibujar silueta de mapas de Kanto en el minimapa
-  mctx.fillStyle = "#18181b";
-  mctx.fillRect(0, 0, mw, mh);
-  mctx.fillStyle = "#065f46"; // Tierras / rutas
-  for (const m of Object.values(index.maps)) {
-    const rx = (m.x - minX) * scaleX;
-    const ry = (m.y - minY) * scaleY;
-    const rw = Math.max(1, m.width * scaleX);
-    const rh = Math.max(1, m.height * scaleY);
-    mctx.fillRect(rx, ry, rw, rh);
-  }
+  const drawMaps = () => {
+    const v = view();
+    mctx.fillStyle = "#18181b";
+    mctx.fillRect(0, 0, mw, mh);
+    mctx.fillStyle = "#065f46"; // Tierras / rutas
+    for (const m of Object.values(index.maps)) {
+      const p = toMini(m.x, m.y);
+      const rw = Math.max(1, m.width * v.scale);
+      const rh = Math.max(1, m.height * v.scale);
+      mctx.fillRect(p.x, p.y, rw, rh);
+    }
+  };
+  drawMaps();
 
   const playerDot = document.getElementById("minimap-player-dot");
 
@@ -45,24 +61,26 @@ export function setupMinimap(
     const zoom = getZoom();
     const worldPxW = worldW * TILE;
     const worldPxH = worldH * TILE;
-    const vx = viewport.scrollLeft / zoom / worldPxW;
-    const vy = viewport.scrollTop / zoom / worldPxH;
-    const vw = viewport.clientWidth / zoom / worldPxW;
-    const vh = viewport.clientHeight / zoom / worldPxH;
+    // Esquinas del viewport visible, en coordenadas de mundo (metatiles).
+    const x0 = minX + viewport.scrollLeft / zoom / TILE;
+    const y0 = minY + viewport.scrollTop / zoom / TILE;
+    const x1 = minX + (viewport.scrollLeft + viewport.clientWidth) / zoom / TILE;
+    const y1 = minY + (viewport.scrollTop + viewport.clientHeight) / zoom / TILE;
+    const a = toMini(x0, y0);
+    const b = toMini(x1, y1);
 
-    minimapBox.style.left = `${Math.max(0, Math.min(mw, vx * mw))}px`;
-    minimapBox.style.top = `${Math.max(0, Math.min(mh, vy * mh))}px`;
-    minimapBox.style.width = `${Math.max(4, Math.min(mw, vw * mw))}px`;
-    minimapBox.style.height = `${Math.max(4, Math.min(mh, vh * mh))}px`;
+    minimapBox.style.left = `${Math.max(0, Math.min(mw, a.x))}px`;
+    minimapBox.style.top = `${Math.max(0, Math.min(mh, a.y))}px`;
+    minimapBox.style.width = `${Math.max(4, Math.min(mw, b.x - a.x))}px`;
+    minimapBox.style.height = `${Math.max(4, Math.min(mh, b.y - a.y))}px`;
 
     if (playerDot) {
       const p = getExplorePos ? getExplorePos() : { active: false, x: 0, y: 0 };
       if (p.active) {
         playerDot.style.display = "block";
-        const px = (p.x - minX) * scaleX;
-        const py = (p.y - minY) * scaleY;
-        playerDot.style.left = `${px}px`;
-        playerDot.style.top = `${py}px`;
+        const px = toMini(p.x, p.y);
+        playerDot.style.left = `${px.x}px`;
+        playerDot.style.top = `${px.y}px`;
       } else {
         playerDot.style.display = "none";
       }
@@ -72,27 +90,67 @@ export function setupMinimap(
   viewport.addEventListener("scroll", updateRadar);
   updateRadar();
 
-  const navigateMini = (e: MouseEvent) => {
+  const miniPoint = (clientX: number, clientY: number) => {
+    const rect = minimapCanvas.getBoundingClientRect();
+    // De píxeles CSS a píxeles del canvas (misma transformación para navegar).
+    const mx = ((clientX - rect.left) / rect.width) * mw;
+    const my = ((clientY - rect.top) / rect.height) * mh;
+    const v = view();
+    // Recortar al rectángulo útil del mundo.
+    const cx = Math.max(v.offX, Math.min(v.offX + worldW * v.scale, mx));
+    const cy = Math.max(v.offY, Math.min(v.offY + worldH * v.scale, my));
+    return {
+      wx: minX + (cx - v.offX) / v.scale,
+      wy: minY + (cy - v.offY) / v.scale,
+    };
+  };
+
+  const navigateMini = (clientX: number, clientY: number) => {
     const zoom = getZoom();
-    const rect = minimapCanvasWrap.getBoundingClientRect();
-    const clickX = (e.clientX - rect.left) / rect.width;
-    const clickY = (e.clientY - rect.top) / rect.height;
-    viewport.scrollLeft = clickX * (worldW * TILE) * zoom - viewport.clientWidth / 2;
-    viewport.scrollTop = clickY * (worldH * TILE) * zoom - viewport.clientHeight / 2;
+    const { wx, wy } = miniPoint(clientX, clientY);
+    viewport.scrollLeft = (wx - minX) * TILE * zoom - viewport.clientWidth / 2;
+    viewport.scrollTop = (wy - minY) * TILE * zoom - viewport.clientHeight / 2;
     onNavigate();
     updateRadar();
   };
 
-  let miniDragging = false;
-  minimapCanvasWrap.addEventListener("mousedown", (e) => {
-    miniDragging = true;
-    navigateMini(e);
+  let dragPointerId: number | null = null;
+  const endDrag = () => {
+    dragPointerId = null;
+  };
+
+  minimapCanvasWrap.style.touchAction = "none";
+  minimapCanvasWrap.addEventListener("pointerdown", (e) => {
+    dragPointerId = e.pointerId;
+    try {
+      minimapCanvasWrap.setPointerCapture(e.pointerId);
+    } catch {
+      // Sin captura: el arrastre sigue hasta pointerup/cancel en el wrap.
+    }
+    navigateMini(e.clientX, e.clientY);
   });
-  window.addEventListener("mousemove", (e) => {
-    if (miniDragging) navigateMini(e);
+  minimapCanvasWrap.addEventListener("pointermove", (e) => {
+    if (dragPointerId !== e.pointerId) return;
+    navigateMini(e.clientX, e.clientY);
   });
-  window.addEventListener("mouseup", () => {
-    miniDragging = false;
+  minimapCanvasWrap.addEventListener("pointerup", (e) => {
+    if (dragPointerId !== e.pointerId) return;
+    try {
+      if (minimapCanvasWrap.hasPointerCapture(e.pointerId)) {
+        minimapCanvasWrap.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // Liberación no disponible; basta con terminar el arrastre.
+    }
+    endDrag();
+  });
+  minimapCanvasWrap.addEventListener("pointercancel", (e) => {
+    if (dragPointerId !== e.pointerId) return;
+    endDrag();
+  });
+  minimapCanvasWrap.addEventListener("lostpointercapture", (e) => {
+    if (dragPointerId !== e.pointerId) return;
+    endDrag();
   });
 
   return { updateRadar };
