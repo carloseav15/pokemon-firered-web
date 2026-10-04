@@ -67,6 +67,59 @@ let playerEl: HTMLElement | null = null;
 let solidCollisionGrid: Uint8Array | null = null; // 1 si bloqueado (sólido)
 let waterGrid: Uint8Array | null = null;          // 1 si es agua surfeable
 let ledgeGrid: Uint8Array | null = null;          // 1:S, 2:N, 3:W, 4:E
+let grassGrid: Uint8Array | null = null;          // 1 si es hierba alta (pokegrass / tallgrass)
+let npcCollisionGrid: Uint8Array | null = null;    // 1 si hay un NPC bloqueando la casilla
+
+// Mapeo canónico de nombres gráficos de objetos a sus archivos de sprites
+const GFX_MAP: Record<string, { file: string; w: number; h: number; frames?: number }> = {
+  OBJ_EVENT_GFX_BALDING_MAN: { file: "objects/baldingman__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_BEAUTY: { file: "objects/beauty__npcblue.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_BIKER: { file: "objects/biker__npcpink.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_BILL: { file: "objects/bill__npcblue.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_BLACK_BELT: { file: "objects/blackbelt__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_BLUE: { file: "objects/blue__npcgreen.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_BOY: { file: "objects/boy__npcgreen.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_BUG_CATCHER: { file: "objects/bugcatcher__npcgreen.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_CAMPER: { file: "objects/camper__npcgreen.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_COOLTRAINER_M: { file: "objects/cooltrainerm__npcblue.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_CRUSH_GIRL: { file: "objects/crushgirl__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_CUT_TREE: { file: "objects/cuttree__npcgreen.png", w: 16, h: 16 },
+  OBJ_EVENT_GFX_FISHER: { file: "objects/fisher__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_HIKER: { file: "objects/hiker__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_ITEM_BALL: { file: "objects/itemball__npcwhite.png", w: 16, h: 16 },
+  OBJ_EVENT_GFX_LASS: { file: "objects/lass__npcblue.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_LITTLE_GIRL: { file: "objects/littlegirl__npcpink.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_MAN: { file: "objects/man__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_OLD_MAN_1: { file: "objects/oldman1__npcpink.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_PICNICKER: { file: "objects/picnicker__npcgreen.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_POKE_MANIAC: { file: "objects/pokemaniac__npcpink.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_POLICEMAN: { file: "objects/policeman__npcblue.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_PROF_OAK: { file: "objects/profoak__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_ROCKER: { file: "objects/rocker__npcblue.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_ROCKET_M: { file: "objects/rocketm__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_SCIENTIST: { file: "objects/scientist__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_SEAGALLOP: { file: "objects/seagallop__seagallop.png", w: 64, h: 64 },
+  OBJ_EVENT_GFX_SLOWBRO: { file: "objects/slowbro__npcpink.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_SNORLAX: { file: "objects/snorlax__npcblue.png", w: 32, h: 32 },
+  OBJ_EVENT_GFX_SWIMMER_F_WATER: { file: "objects/swimmerfwater__npcgreen.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_SWIMMER_M_LAND: { file: "objects/swimmermland__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_SWIMMER_M_WATER: { file: "objects/swimmermwater__npcwhite.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_TUBER_M_WATER: { file: "objects/tubermwater__npcblue.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_VAR_0: { file: "objects/oldmanlyingdown__npcpink.png", w: 32, h: 16 },
+  OBJ_EVENT_GFX_WOMAN_1: { file: "objects/woman1__npcgreen.png", w: 16, h: 32 },
+  OBJ_EVENT_GFX_YOUNGSTER: { file: "objects/youngster__npcblue.png", w: 16, h: 32 },
+};
+
+// Instancias de entidades vivas en el mapa
+type LiveEntity = {
+  element: Element;
+  gx: number; // coordenadas de mundo
+  gy: number;
+  dir: "south" | "north" | "west" | "east";
+  el?: HTMLElement;
+  defeated?: boolean;
+};
+const liveEntities: LiveEntity[] = [];
 
 // Rejilla global de metatiles del mundo para clonar con el cuentagotas
 let globalMetatileGrid: Int16Array | null = null;
@@ -84,6 +137,14 @@ function isWaterTile(gx: number, gy: number): boolean {
   return waterGrid[ly * index.world.width + lx] === 1;
 }
 
+function isGrassTile(gx: number, gy: number): boolean {
+  if (!grassGrid || !index) return false;
+  const lx = gx - minX;
+  const ly = gy - minY;
+  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return false;
+  return grassGrid[ly * index.world.width + lx] === 1;
+}
+
 function ledgeDirection(gx: number, gy: number): number {
   if (!ledgeGrid || !index) return 0;
   const lx = gx - minX;
@@ -97,8 +158,12 @@ function isWalkable(gx: number, gy: number, mode: "walk" | "bike" | "surf"): boo
   const lx = gx - minX;
   const ly = gy - minY;
   if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return false;
-  const solid = solidCollisionGrid[ly * index.world.width + lx] === 1;
-  const water = waterGrid ? waterGrid[ly * index.world.width + lx] === 1 : false;
+  const idx = ly * index.world.width + lx;
+  const solid = solidCollisionGrid[idx] === 1;
+  const water = waterGrid ? waterGrid[idx] === 1 : false;
+  const npcBlocked = npcCollisionGrid ? npcCollisionGrid[idx] === 1 : false;
+
+  if (npcBlocked) return false;
 
   if (mode === "surf") {
     // En surf solo se navega por agua, o se puede desembarcar en tierra transitable (no sólida)
@@ -603,6 +668,8 @@ async function build(): Promise<void> {
   solidCollisionGrid = new Uint8Array(index.world.width * index.world.height).fill(1); // por defecto vacío = sólido
   waterGrid = new Uint8Array(index.world.width * index.world.height);
   ledgeGrid = new Uint8Array(index.world.width * index.world.height);
+  grassGrid = new Uint8Array(index.world.width * index.world.height);
+  npcCollisionGrid = new Uint8Array(index.world.width * index.world.height);
   globalMetatileGrid = new Int16Array(index.world.width * index.world.height).fill(-1);
 
   // Por par de tilesets: paletas antes de dibujar sus mapas, uno a uno (par. 5.2).
@@ -651,15 +718,17 @@ async function build(): Promise<void> {
           if (hasCollision) mark(ctxFor("colision"), x, y, LAYER_COLORS.colision);
           const beh = behaviorOf(primary.attributes, secondary.attributes, mt);
           const isWater = MB.MetatileBehavior_IsSurfable(beh);
+          const isGrass = MB.MetatileBehavior_IsPokeGrass(beh) || MB.MetatileBehavior_IsTallGrass(beh) || MB.MetatileBehavior_IsLongGrass(beh);
           if (isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
 
-          // Actualizar colisión, agua y metatile para el jugador y editor
+          // Actualizar colisión, agua, hierba y metatile para el jugador y editor
           const gwx = (info.x - minX) + x;
           const gwy = (info.y - minY) + y;
           if (gwx >= 0 && gwy >= 0 && gwx < index.world.width && gwy < index.world.height) {
             const idx = gwy * index.world.width + gwx;
             solidCollisionGrid[idx] = hasCollision ? 1 : 0;
             if (isWater) waterGrid[idx] = 1;
+            if (isGrass) grassGrid![idx] = 1;
             globalMetatileGrid[idx] = mt;
           }
           let arrow: string | undefined;
@@ -678,6 +747,22 @@ async function build(): Promise<void> {
       }
 
       for (const e of elementsByMap.get(id) ?? []) {
+        // Bloquear casillas y crear entidades vivas para NPCs, entrenadores, objetos
+        const egwx = (info.x - minX) + e.x;
+        const egwy = (info.y - minY) + e.y;
+        const eidx = egwy * index.world.width + egwx;
+        const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
+        if (isSolidEntity && egwx >= 0 && egwy >= 0 && egwx < index.world.width && egwy < index.world.height) {
+          npcCollisionGrid![eidx] = 1;
+          let dir: "south" | "north" | "west" | "east" = "south";
+          if (e.direction === "up") dir = "north";
+          else if (e.direction === "down") dir = "south";
+          else if (e.direction === "left") dir = "west";
+          else if (e.direction === "right") dir = "east";
+
+          liveEntities.push({ element: e, gx: info.x + e.x, gy: info.y + e.y, dir });
+        }
+
         if (e.layer === "puerta") {
           mark(ctxFor("puerta"), e.x, e.y, LAYER_COLORS.puerta);
         } else if (e.layer === "entrenador") {
@@ -1251,6 +1336,14 @@ function setupUi(): void {
       else if (playerDir === "east") { frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2; flip = true; }
     }
 
+    // Si el jugador está en hierba alta, hundir los pies 4px emulando prioridad OAM de GBA
+    const inGrass = isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
+    if (inGrass) {
+      playerEl.style.clipPath = "inset(0 0 4px 0)";
+    } else {
+      playerEl.style.clipPath = "none";
+    }
+
     playerEl.style.backgroundImage = `url(${getSpriteSheet()})`;
     playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
     playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
@@ -1258,6 +1351,218 @@ function setupUi(): void {
     // Centrar cámara en el personaje durante exploración
     viewport.scrollLeft = (px + TILE / 2) * zoom - viewport.clientWidth / 2;
     viewport.scrollTop = (py + TILE / 2) * zoom - viewport.clientHeight / 2;
+
+    // Actualizar NPCs y entidades visibles
+    updateLiveEntities();
+  }
+
+  // --- Sistema de Efectos de Campo (Field FX) ---
+  function spawnFieldFx(xPx: number, yPx: number, type: "grass" | "dust" | "ripple"): void {
+    const fx = document.createElement("div");
+    fx.className = "field-fx";
+    fx.style.left = `${xPx}px`;
+
+    if (type === "grass") {
+      fx.style.top = `${yPx + 2}px`;
+      fx.style.width = "16px";
+      fx.style.height = "16px";
+      fx.style.backgroundImage = "url(/fr/fieldfx/tallgrass__ette1.png)";
+      fx.style.backgroundPosition = "0px 0px";
+      content.appendChild(fx);
+      let f = 0;
+      const animInterval = setInterval(() => {
+        f++;
+        if (f < 5) {
+          fx.style.backgroundPosition = `0px -${f * 16}px`;
+        } else {
+          clearInterval(animInterval);
+          fx.remove();
+        }
+      }, 50);
+    } else if (type === "dust") {
+      fx.style.top = `${yPx + 8}px`;
+      fx.style.width = "16px";
+      fx.style.height = "8px";
+      fx.style.backgroundImage = "url(/fr/fieldfx/groundimpactdust__ette0.png)";
+      fx.style.backgroundPosition = "0px 0px";
+      content.appendChild(fx);
+      let f = 0;
+      const animInterval = setInterval(() => {
+        f++;
+        if (f < 3) {
+          fx.style.backgroundPosition = `0px -${f * 8}px`;
+        } else {
+          clearInterval(animInterval);
+          fx.remove();
+        }
+      }, 60);
+    } else if (type === "ripple") {
+      fx.style.top = `${yPx + 4}px`;
+      fx.style.width = "16px";
+      fx.style.height = "16px";
+      fx.style.backgroundImage = "url(/fr/fieldfx/ripple__ette1.png)";
+      fx.style.backgroundPosition = "0px 0px";
+      content.appendChild(fx);
+      let f = 0;
+      const animInterval = setInterval(() => {
+        f++;
+        if (f < 5) {
+          fx.style.backgroundPosition = `0px -${f * 16}px`;
+        } else {
+          clearInterval(animInterval);
+          fx.remove();
+        }
+      }, 70);
+    }
+  }
+
+  // --- Gestión de Entidades Vivas y Viewport Culling ---
+  let entitiesContainer: HTMLElement | null = null;
+  function updateLiveEntities(): void {
+    if (!playerActive) {
+      if (entitiesContainer) entitiesContainer.style.display = "none";
+      return;
+    }
+    if (!entitiesContainer) {
+      entitiesContainer = document.createElement("div");
+      entitiesContainer.id = "entities-container";
+      entitiesContainer.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;";
+      content.appendChild(entitiesContainer);
+    }
+    entitiesContainer.style.display = "block";
+
+    const viewLeft = viewport.scrollLeft / zoom - 64;
+    const viewTop = viewport.scrollTop / zoom - 64;
+    const viewRight = viewLeft + viewport.clientWidth / zoom + 128;
+    const viewBottom = viewTop + viewport.clientHeight / zoom + 128;
+
+    for (const ent of liveEntities) {
+      const px = (ent.gx - minX) * TILE;
+      const py = (ent.gy - minY) * TILE;
+
+      const inView = px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
+      if (!inView) {
+        if (ent.el) {
+          ent.el.remove();
+          ent.el = undefined;
+        }
+        continue;
+      }
+
+      if (!ent.el) {
+        const gfxKey = ent.element.graphics ?? "";
+        const gfxInfo = GFX_MAP[gfxKey] ?? { file: "objects/woman1__npcgreen.png", w: 16, h: 32 };
+        const el = document.createElement("div");
+        el.className = "world-npc";
+        el.style.width = `${gfxInfo.w}px`;
+        el.style.height = `${gfxInfo.h}px`;
+        el.style.left = `${px - (gfxInfo.w > 16 ? (gfxInfo.w - 16) / 2 : 0)}px`;
+        el.style.top = `${py - (gfxInfo.h - 16)}px`;
+        el.style.backgroundImage = `url(/fr/${gfxInfo.file})`;
+
+        // Orientación inicial según su dirección
+        let frameIdx = 0;
+        let flip = false;
+        if (ent.dir === "north") frameIdx = 1;
+        else if (ent.dir === "west") frameIdx = 2;
+        else if (ent.dir === "east") { frameIdx = 2; flip = true; }
+        el.style.backgroundPosition = `-${frameIdx * gfxInfo.w}px 0px`;
+        el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          interactWithEntity(ent);
+        });
+
+        entitiesContainer.appendChild(el);
+        ent.el = el;
+      }
+    }
+  }
+
+  // --- Sistema de Diálogo GBA e Interacción ---
+  let activeDialog = false;
+  const dialogBox = document.getElementById("dialog-box");
+  const dialogTitle = document.getElementById("dialog-title");
+  const dialogText = document.getElementById("dialog-text");
+
+  function showDialog(title: string, text: string): void {
+    if (!dialogBox || !dialogTitle || !dialogText) return;
+    dialogTitle.textContent = title;
+    dialogText.innerHTML = text;
+    dialogBox.classList.add("open");
+    activeDialog = true;
+  }
+
+  function closeDialog(): void {
+    if (!dialogBox) return;
+    dialogBox.classList.remove("open");
+    activeDialog = false;
+  }
+
+  function interactWithEntity(ent: LiveEntity): void {
+    // Girar al NPC hacia el jugador
+    const dx = playerX - ent.gx;
+    const dy = playerY - ent.gy;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      ent.dir = dx > 0 ? "east" : "west";
+    } else {
+      ent.dir = dy > 0 ? "south" : "north";
+    }
+    if (ent.el) {
+      const gfxInfo = GFX_MAP[ent.element.graphics ?? ""] ?? { w: 16, h: 32 };
+      let frame = 0;
+      let flip = false;
+      if (ent.dir === "north") frame = 1;
+      else if (ent.dir === "west") frame = 2;
+      else if (ent.dir === "east") { frame = 2; flip = true; }
+      ent.el.style.backgroundPosition = `-${frame * gfxInfo.w}px 0px`;
+      ent.el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+    }
+
+    const title = ent.element.trainer ? `${ent.element.trainer}` : `${ent.element.map.replace("MAP_", "")}`;
+    let msg = "";
+    if (ent.element.layer === "snorlax") {
+      msg = "¡Un enorme Pokémon duerme plácidamente en medio del camino! Está bloqueando el paso... Necesitas una Poké Flauta.";
+    } else if (ent.element.layer === "corte") {
+      msg = "¡Un árbol pequeño bloquea el paso! Un Pokémon podría cortarlo con la MO Corte.";
+    } else if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL") {
+      msg = `¡Has encontrado un objeto en el suelo! (${ent.element.flag ?? "Objeto misterioso"}).`;
+    } else if (ent.element.trainer) {
+      msg = `¡El entrenador <b>${ent.element.trainer}</b> te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`;
+    } else {
+      msg = `Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?`;
+    }
+    showDialog(title, msg);
+  }
+
+  // Comprobar si el jugador entra en la línea de visión de un entrenador
+  function checkTrainerSight(): void {
+    for (const ent of liveEntities) {
+      if (!ent.element.trainer || ent.defeated) continue;
+      const r = ent.element.trainerRange ?? 0;
+      if (r <= 0) continue;
+
+      let inSight = false;
+      if (ent.dir === "south" && playerX === ent.gx && playerY > ent.gy && playerY <= ent.gy + r) inSight = true;
+      else if (ent.dir === "north" && playerX === ent.gx && playerY < ent.gy && playerY >= ent.gy - r) inSight = true;
+      else if (ent.dir === "west" && playerY === ent.gy && playerX < ent.gx && playerX >= ent.gx - r) inSight = true;
+      else if (ent.dir === "east" && playerY === ent.gy && playerX > ent.gx && playerX <= ent.gx + r) inSight = true;
+
+      if (inSight) {
+        // Alerta con signo de exclamación (!)
+        if (ent.el && !ent.el.querySelector(".emoticon-balloon")) {
+          const balloon = document.createElement("div");
+          balloon.className = "emoticon-balloon";
+          balloon.style.left = "0px";
+          balloon.style.top = "-16px";
+          ent.el.appendChild(balloon);
+          setTimeout(() => balloon.remove(), 1200);
+        }
+        interactWithEntity(ent);
+        break;
+      }
+    }
   }
 
   function startExploration(): void {
@@ -1372,8 +1677,31 @@ function setupUi(): void {
     if (key === "shift") {
       playerRunning = true;
     }
+    if (key === " " || key === "enter" || key === "z") {
+      if (activeDialog) {
+        e.preventDefault();
+        closeDialog();
+        return;
+      } else if (playerActive) {
+        e.preventDefault();
+        // Buscar entidad justo enfrente de donde mira el jugador
+        let fx = playerX;
+        let fy = playerY;
+        if (playerDir === "north") fy--;
+        else if (playerDir === "south") fy++;
+        else if (playerDir === "west") fx--;
+        else if (playerDir === "east") fx++;
+
+        const frontEnt = liveEntities.find((ent) => ent.gx === fx && ent.gy === fy);
+        if (frontEnt) {
+          interactWithEntity(frontEnt);
+          return;
+        }
+      }
+    }
     if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) {
       if (playerActive) e.preventDefault();
+      if (activeDialog) closeDialog();
       keysDown.add(key);
       processPlayerStep();
     }
@@ -1391,7 +1719,7 @@ function setupUi(): void {
 
   let isStepping = false;
   function processPlayerStep(): void {
-    if (!playerActive || isStepping) return;
+    if (!playerActive || isStepping || activeDialog) return;
 
     let dx = 0;
     let dy = 0;
@@ -1426,6 +1754,7 @@ function setupUi(): void {
     if (targetIsWater && playerMode !== "surf") {
       playerMode = "surf";
       loadPlayerSprite();
+      spawnFieldFx((targetX - minX) * TILE, (targetY - minY) * TILE, "ripple");
     } else if (!targetIsWater && playerMode === "surf" && isWalkable(targetX, targetY, "walk")) {
       // Desembarcar de surf a tierra
       playerMode = "walk";
@@ -1442,6 +1771,15 @@ function setupUi(): void {
       const destPxX = (targetX - minX) * TILE;
       const destPxY = (targetY - minY) * TILE;
 
+      // Efecto de pisar hierba alta al entrar
+      if (isGrassTile(targetX, targetY) && playerMode !== "surf") {
+        spawnFieldFx(destPxX, destPxY, "grass");
+      }
+      // Ondas en agua al surfear
+      if (playerMode === "surf" && Math.random() < 0.3) {
+        spawnFieldFx(destPxX, destPxY, "ripple");
+      }
+
       const duration = playerMode === "bike" ? 100 : playerRunning ? 120 : 160;
       const startTime = performance.now();
 
@@ -1453,7 +1791,7 @@ function setupUi(): void {
 
         // Salto con arco si es saliente
         if (isLedgeJump) {
-          playerVisualY -= Math.sin(t * Math.PI) * 10;
+          playerVisualY -= Math.sin(t * Math.PI) * 12;
         }
 
         updatePlayerDisplay();
@@ -1466,7 +1804,16 @@ function setupUi(): void {
           playerVisualX = destPxX;
           playerVisualY = destPxY;
           isStepping = false;
-          if (keysDown.size > 0) {
+
+          // Polvo de impacto tras salto de cornisa
+          if (isLedgeJump) {
+            spawnFieldFx(destPxX, destPxY, "dust");
+          }
+
+          // Comprobar entrenadores en línea de visión
+          checkTrainerSight();
+
+          if (keysDown.size > 0 && !activeDialog) {
             processPlayerStep();
           } else {
             playerMoving = false;
@@ -1476,8 +1823,37 @@ function setupUi(): void {
       };
       requestAnimationFrame(animateStep);
     } else {
-      playerMoving = false;
-      updatePlayerDisplay();
+      // Animación de choque elástico contra pared o NPC (Wall Bump)
+      if (!isStepping) {
+        isStepping = true;
+        playerMoving = true;
+        playerStep = (playerStep + 1) % 4;
+        const basePxX = (playerX - minX) * TILE;
+        const basePxY = (playerY - minY) * TILE;
+        const bumpDist = 3;
+        const bumpDuration = 90;
+        const bumpStartTime = performance.now();
+
+        const animateBump = (now: number) => {
+          const elapsed = now - bumpStartTime;
+          const t = Math.min(1, elapsed / bumpDuration);
+          const offset = Math.sin(t * Math.PI) * bumpDist;
+          playerVisualX = basePxX + dx * offset;
+          playerVisualY = basePxY + dy * offset;
+          updatePlayerDisplay();
+
+          if (t < 1) {
+            requestAnimationFrame(animateBump);
+          } else {
+            playerVisualX = basePxX;
+            playerVisualY = basePxY;
+            isStepping = false;
+            playerMoving = false;
+            updatePlayerDisplay();
+          }
+        };
+        requestAnimationFrame(animateBump);
+      }
     }
   }
 

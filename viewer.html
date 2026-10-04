@@ -348,6 +348,87 @@
       .badge-warp { background: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
       .badge-trigger { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
 
+      /* Entidades del Mundo (NPCs, Objetos, Entrenadores) */
+      .world-npc {
+        position: absolute;
+        z-index: 24;
+        image-rendering: pixelated;
+        pointer-events: auto;
+        cursor: pointer;
+        transform-origin: bottom center;
+        transition: transform 0.1s linear;
+      }
+      .world-npc:hover {
+        filter: drop-shadow(0 0 4px #38bdf8);
+      }
+
+      /* Efectos de Campo (Hierba Alta, Polvo de Salto, Ondas de Agua) */
+      .field-fx {
+        position: absolute;
+        pointer-events: none;
+        image-rendering: pixelated;
+        z-index: 26;
+      }
+
+      /* Emoticono de Alerta / Exclamación (!) */
+      .emoticon-balloon {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background-image: url("/fr/fieldfx/emoticons.png");
+        background-position: 0 0;
+        z-index: 28;
+        pointer-events: none;
+        image-rendering: pixelated;
+        animation: emoticonBounce 0.4s ease-out;
+      }
+      @keyframes emoticonBounce {
+        0% { transform: translateY(0) scale(0.5); opacity: 0; }
+        50% { transform: translateY(-8px) scale(1.2); opacity: 1; }
+        100% { transform: translateY(-4px) scale(1); opacity: 1; }
+      }
+
+      /* Caja de Diálogo GBA Flotante en Modo Exploración */
+      #dialog-box {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(520px, calc(100% - 48px));
+        background: #f8fafc;
+        border: 4px solid #334155;
+        border-radius: 8px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), inset 0 0 0 2px #94a3b8;
+        padding: 12px 18px;
+        color: #0f172a;
+        font-family: var(--font-sans);
+        z-index: 35;
+        display: none;
+        user-select: none;
+      }
+      #dialog-box.open { display: block; }
+      #dialog-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #0284c7;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      #dialog-text {
+        font-size: 14px;
+        line-height: 1.4;
+        font-weight: 500;
+        color: #1e293b;
+      }
+      #dialog-prompt {
+        font-size: 10px;
+        color: #64748b;
+        text-align: right;
+        margin-top: 6px;
+        font-family: var(--font-mono);
+      }
+
       /* Radar Minimapa */
       #minimap-wrap {
         position: absolute;
@@ -535,6 +616,11 @@
           <div id="minimap-viewbox"></div>
           <div id="minimap-player-dot"></div>
         </div>
+      </div>
+      <div id="dialog-box">
+        <div id="dialog-title">Pallet Town</div>
+        <div id="dialog-text">¡Hola! La tecnología es increíble...</div>
+        <div id="dialog-prompt">Presiona [Espacio] o [Enter] para continuar ▾</div>
       </div>
       <aside id="panel"><p>Pincha una casilla para ver su ficha.</p></aside>
     </main>
