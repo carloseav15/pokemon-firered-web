@@ -31,7 +31,7 @@ const viewport = document.getElementById("viewport")!;
 const content = document.getElementById("content")!;
 const panel = document.getElementById("panel")!;
 const search = document.getElementById("search") as HTMLInputElement;
-const layerBox = document.getElementById("layers")!;
+const layerBox = document.getElementById("layers-menu")!;
 
 let index: KantoIndex;
 let minX = 0;
@@ -42,6 +42,71 @@ let startY: number | null = null;
 // Colision apagada por defecto (capa ruidosa); el hash ?capas= sigue mandando.
 const active = new Set<Layer>((LAYERS as unknown as Layer[]).filter((l) => l !== "colision"));
 let fillMode: "full" | "dim" | "off" = "full";
+let fillBiomeOverride: "auto" | "ocean" | "trees" | "mountain" = "auto";
+let cachedFillSources: Map<string, FillSource> | null = null;
+
+// Modos del Visor: Visor libre, Exploración interactiva, o Edición/Clonado de tiles
+type AppMode = "viewer" | "explore" | "edit";
+let appMode: AppMode = "viewer";
+
+// --- Modo Exploración (Personaje Jugador) ---
+let playerActive = false;
+let playerChar: "red" | "leaf" = "red";
+let playerMode: "walk" | "bike" | "surf" = "walk";
+let playerX = 0; // coordenadas globales de mundo
+let playerY = 0;
+let playerVisualX = 0; // interpolación visual en píxeles
+let playerVisualY = 0;
+let playerDir: "south" | "north" | "west" | "east" = "south";
+let playerStep = 0;
+let playerMoving = false;
+let playerRunning = false;
+let playerAnimFrame = 0;
+let playerSpriteImg: HTMLImageElement | null = null;
+let playerEl: HTMLElement | null = null;
+let solidCollisionGrid: Uint8Array | null = null; // 1 si bloqueado (sólido)
+let waterGrid: Uint8Array | null = null;          // 1 si es agua surfeable
+let ledgeGrid: Uint8Array | null = null;          // 1:S, 2:N, 3:W, 4:E
+
+// Rejilla global de metatiles del mundo para clonar con el cuentagotas
+let globalMetatileGrid: Int16Array | null = null;
+
+// Modo Pincel y Edición Potente (Tile Cloner & Painter)
+let selectedMetatile = 28; // metatile del tileset primario
+let eyedropperActive = false;
+const customPaintedTiles = new Map<string, number>(); // "x,y" => mt
+
+function isWaterTile(gx: number, gy: number): boolean {
+  if (!waterGrid || !index) return false;
+  const lx = gx - minX;
+  const ly = gy - minY;
+  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return false;
+  return waterGrid[ly * index.world.width + lx] === 1;
+}
+
+function ledgeDirection(gx: number, gy: number): number {
+  if (!ledgeGrid || !index) return 0;
+  const lx = gx - minX;
+  const ly = gy - minY;
+  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return 0;
+  return ledgeGrid[ly * index.world.width + lx]!;
+}
+
+function isWalkable(gx: number, gy: number, mode: "walk" | "bike" | "surf"): boolean {
+  if (!solidCollisionGrid || !index) return true;
+  const lx = gx - minX;
+  const ly = gy - minY;
+  if (lx < 0 || ly < 0 || lx >= index.world.width || ly >= index.world.height) return false;
+  const solid = solidCollisionGrid[ly * index.world.width + lx] === 1;
+  const water = waterGrid ? waterGrid[ly * index.world.width + lx] === 1 : false;
+
+  if (mode === "surf") {
+    // En surf solo se navega por agua, o se puede desembarcar en tierra transitable (no sólida)
+    return water || !solid;
+  }
+  // A pie o en bici: no se puede entrar a casillas sólidas ni al agua directamente
+  return !solid && !water;
+}
 
 function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: number): number {
   const raw = id < NUM_METATILES_IN_PRIMARY ? (primaryAttrs[id] ?? 0) : (secondaryAttrs[id - NUM_METATILES_IN_PRIMARY] ?? 0);
@@ -260,6 +325,10 @@ function tickAnimations(now: number): void {
       // Si ningún tile de este mapa cambió en este tick, omitimos todo el redibujado
       if (m.dirtyMask === 0) continue;
 
+      // Cache de metatiles compuestos para este tick: muchas casillas comparten metatile
+      // (ej. cientos de casillas de mar 473). Componerlo una sola vez ahorra 50%+ de drawImage.
+      const composed = new Map<number, HTMLCanvasElement>();
+
       // Redibujar únicamente las casillas visibles que usan los rangos modificados
       for (const c of m.cells) {
         if (!(c.mask & m.dirtyMask)) continue;
@@ -270,11 +339,20 @@ function tickAnimations(now: number): void {
           continue;
         }
 
-        // Dibujo directo sin allocations intermedias de canvas
-        const { bottom, top } = m.renderer.metatile(c.mt);
+        let tileCanvas = composed.get(c.mt);
+        if (!tileCanvas) {
+          const { bottom, top } = m.renderer.metatile(c.mt);
+          tileCanvas = document.createElement("canvas");
+          tileCanvas.width = TILE;
+          tileCanvas.height = TILE;
+          const tctx = tileCanvas.getContext("2d")!;
+          tctx.drawImage(bottom, 0, 0);
+          tctx.drawImage(top, 0, 0);
+          composed.set(c.mt, tileCanvas);
+        }
+
         m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
-        m.bctx.drawImage(bottom, c.x * TILE, c.y * TILE);
-        m.bctx.drawImage(top, c.x * TILE, c.y * TILE);
+        m.bctx.drawImage(tileCanvas, c.x * TILE, c.y * TILE);
       }
     }
   }
@@ -303,18 +381,18 @@ function tickAnimations(now: number): void {
 }
 
 function updateMeta(): void {
-  const meta = document.getElementById("meta");
+  const meta = document.getElementById("status-meta") ?? document.getElementById("meta");
   if (!meta || !index) return;
   const count = Object.keys(index.maps).length;
   const w = index.world.width;
   const h = index.world.height;
-  let text = `${count} mapas · ${w}×${h} metatiles (${w * TILE}×${h * TILE} px) · ${index.conflicts.length} conflicto(s) · decomp ${index._meta.decomp_commit.slice(0, 8)}`;
+  let text = `${count} mapas · ${w}×${h} metatiles · decomp ${index._meta.decomp_commit.slice(0, 8)}`;
   if (index.conflicts.length > 0) {
     const c = index.conflicts[0];
-    text += ` · conflicto: ${c.from}→${c.to} previa (${c.placed}) propuesta (${c.proposed})`;
+    text += ` · conflicto: ${c.from}→${c.to}`;
   }
   if (animOn) {
-    text += ` · animaciones: ${fpsValue.toFixed(0)} FPS de pantalla, ${(1000 / GBA_FRAME_MS).toFixed(2)} pasos/s de GBA`;
+    text += ` · animaciones: ${fpsValue.toFixed(0)} FPS`;
   } else if (animDisabledNotice) {
     text += animDisabledNotice;
   }
@@ -375,80 +453,121 @@ function drawFill(sources: Map<string, FillSource>): void {
   const occupied = new Uint8Array(W * H);
   for (const r of rects) for (let y = r.y0; y < r.y1; y++) occupied.fill(1, y * W + r.x0, y * W + r.x1);
 
-  const nearest = new Int16Array(W * H).fill(-1);
+  // Distancia euclidiana exacta en casillas al mapa más cercano
+  // para calcular una niebla / viñeta suave y orgánica en lugar de bandas cuadradas
+  const dist = new Float32Array(W * H).fill(9999);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      if (!occupied[y * W + x]) nearest[y * W + x] = biomeAt(x, y);
+      if (occupied[y * W + x]) {
+        dist[y * W + x] = 0;
+        continue;
+      }
+      let minD = 9999;
+      for (const r of rects) {
+        const dx = x < r.x0 ? r.x0 - x : x >= r.x1 ? x - r.x1 + 1 : 0;
+        const dy = y < r.y0 ? r.y0 - y : y >= r.y1 ? y - r.y1 + 1 : 0;
+        const d = Math.hypot(dx, dy);
+        if (d < minD) minD = d;
+      }
+      dist[y * W + x] = minD;
     }
   }
+
+  // Mapa canónico de bordes GBA: cada mapa exterior tiene su bloque oficial de 2x2 metatiles
+  // (árboles [28,29,20,21], montaña [113,113,113,113], u océano [473,473,473,473]).
+  // Asignamos a cada casilla vacía el patrón del mapa del cual es frontera directa.
+  const nearest = new Int16Array(W * H).fill(-1);
+  const mapBorderType = new Int8Array(rects.length);
+  const ids = Object.keys(index.maps);
+  ids.forEach((id, i) => {
+    const src = sources.get(id);
+    if (!src) return;
+    const borderTiles = src.layout.border.slice(0, 4).map((t) => t & 0x3ff);
+    if (borderTiles[0] === 473) mapBorderType[i] = BIOME_OCEAN;
+    else if (borderTiles[0] === 113) mapBorderType[i] = BIOME_MOUNTAIN;
+    else mapBorderType[i] = BIOME_TREES;
+  });
+
+  const nearestOwner = new Int16Array(W * H).fill(-1);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (occupied[y * W + x]) continue;
+      let minD = 9999;
+      let owner = -1;
+      rects.forEach((r, i) => {
+        const dx = x < r.x0 ? r.x0 - x : x >= r.x1 ? x - r.x1 + 1 : 0;
+        const dy = y < r.y0 ? r.y0 - y : y >= r.y1 ? y - r.y1 + 1 : 0;
+        const d = Math.hypot(dx, dy);
+        if (d < minD) {
+          minD = d;
+          owner = i;
+        }
+      });
+      nearestOwner[y * W + x] = owner;
+      const b = owner >= 0 ? mapBorderType[owner]! : BIOME_TREES;
+      // En océano extendemos la masa de agua natural, en tierra desvanecemos suavemente
+      if (b === BIOME_OCEAN || minD <= 8) {
+        nearest[y * W + x] = b;
+      }
+    }
+  }
+  cachedFillSources = sources;
   nearestFill = nearest;
 
   const baseRenderer = sources.values().next().value?.renderer;
   if (!baseRenderer) return;
 
-  const createPattern = (metatiles: number[]): { url: string; w: number; h: number } => {
-    const c = document.createElement("canvas");
-    c.width = 2 * TILE;
-    c.height = 2 * TILE;
-    const ctx = c.getContext("2d")!;
-    for (let by = 0; by < 2; by++) {
-      for (let bx = 0; bx < 2; bx++) {
-        const { bottom, top } = baseRenderer.metatile(metatiles[bx + by * 2]!);
-        ctx.drawImage(bottom, bx * TILE, by * TILE);
-        ctx.drawImage(top, bx * TILE, by * TILE);
-      }
-    }
-    return { url: c.toDataURL(), w: c.width, h: c.height };
-  };
+  // Limpiar canvas de relleno existente si se vuelve a generar
+  const existingFill = content.querySelector(".fill");
+  if (existingFill) existingFill.remove();
 
-  const patterns = [
-    createPattern([28, 29, 20, 21]), // BIOME_TREES
-    createPattern([473, 473, 473, 473]), // BIOME_OCEAN
-    createPattern([113, 113, 113, 113]), // BIOME_MOUNTAIN
-  ];
+  // Canvas de relleno unificado: dibuja los patrones de bioma y desvanece
+  // suavemente los bordes de tierra con transparencia hacia el fondo oscuro
+  const fillCanvas = document.createElement("canvas");
+  fillCanvas.width = W * TILE;
+  fillCanvas.height = H * TILE;
+  fillCanvas.className = "fill";
+  fillCanvas.style.cssText = `position:absolute;left:0;top:0;width:${W * TILE}px;height:${H * TILE}px;pointer-events:none;image-rendering:pixelated;`;
+  const fctx = fillCanvas.getContext("2d")!;
 
-  // Tramos horizontales del mismo mapa, unidos en vertical cuando coinciden.
-  const fill = document.createElement("div");
-  fill.className = "fill";
-  let open = new Map<string, { x0: number; x1: number; y0: number; y1: number; i: number }>();
-  const flush = (r: { x0: number; x1: number; y0: number; y1: number; i: number }) => {
-    const p = patterns[r.i]!;
-    const left = r.x0 * TILE;
-    const top = r.y0 * TILE;
-    // Alineación global de la textura: anclada a las coordenadas (0,0) del mundo
-    // para que mapas adyacentes con el mismo patrón (ej. árboles 2x2) encajen
-    // sin cortes o costuras por desfases de posición local.
-    const ox = (((-left) % p.w) + p.w) % p.w;
-    const oy = (((-top) % p.h) + p.h) % p.h;
-    const d = document.createElement("div");
-    d.style.cssText = `position:absolute;left:${left}px;top:${top}px;width:${(r.x1 - r.x0) * TILE}px;height:${(r.y1 - r.y0) * TILE}px;background-image:url(${p.url});background-position:${ox}px ${oy}px;image-rendering:pixelated`;
-    fill.appendChild(d);
-  };
   for (let y = 0; y < H; y++) {
-    const next = new Map<string, { x0: number; x1: number; y0: number; y1: number; i: number }>();
-    let x = 0;
-    while (x < W) {
-      const i = nearest[y * W + x]!;
-      if (i < 0) {
-        x++;
-        continue;
+    for (let x = 0; x < W; x++) {
+      if (occupied[y * W + x]) continue;
+      let b = nearest[y * W + x]!;
+      if (fillBiomeOverride === "ocean") b = BIOME_OCEAN;
+      else if (fillBiomeOverride === "trees") b = BIOME_TREES;
+      else if (fillBiomeOverride === "mountain") b = BIOME_MOUNTAIN;
+      if (b < 0) continue;
+      const d = dist[y * W + x]!;
+
+      // Opacidad orgánica según distancia euclidiana
+      let alpha = 1.0;
+      if (b !== BIOME_OCEAN && d > 2) {
+        alpha = Math.max(0, 1 - (d - 2) / 6);
       }
-      let x1 = x + 1;
-      while (x1 < W && nearest[y * W + x1] === i) x1++;
-      const key = `${x}:${x1}:${i}`;
-      const prev = open.get(key);
-      if (prev) {
-        prev.y1 = y + 1;
-        next.set(key, prev);
-        open.delete(key);
-      } else next.set(key, { x0: x, x1, y0: y, y1: y + 1, i });
-      x = x1;
+      if (alpha <= 0.02) continue;
+
+      fctx.globalAlpha = alpha;
+      // Metatile del patrón según coordenadas globales (alineación continua)
+      let mt = 28;
+      const px = x % 2;
+      const py = y % 2;
+      if (b === BIOME_OCEAN) {
+        mt = 473;
+      } else if (b === BIOME_MOUNTAIN) {
+        mt = 113;
+      } else {
+        const treeTiles = [28, 29, 20, 21];
+        mt = treeTiles[px + py * 2]!;
+      }
+      const { bottom, top } = baseRenderer.metatile(mt);
+      fctx.drawImage(bottom, x * TILE, y * TILE);
+      fctx.drawImage(top, x * TILE, y * TILE);
     }
-    for (const r of open.values()) flush(r);
-    open = next;
   }
-  for (const r of open.values()) flush(r);
-  content.prepend(fill);
+  fctx.globalAlpha = 1.0;
+
+  content.prepend(fillCanvas);
   applyFillMode();
 }
 
@@ -480,6 +599,12 @@ async function build(): Promise<void> {
   }
 
   const fillSources = new Map<string, FillSource>();
+  // Rejillas globales de colisión, agua, salientes y metatiles originales para clonado
+  solidCollisionGrid = new Uint8Array(index.world.width * index.world.height).fill(1); // por defecto vacío = sólido
+  waterGrid = new Uint8Array(index.world.width * index.world.height);
+  ledgeGrid = new Uint8Array(index.world.width * index.world.height);
+  globalMetatileGrid = new Int16Array(index.world.width * index.world.height).fill(-1);
+
   // Por par de tilesets: paletas antes de dibujar sus mapas, uno a uno (par. 5.2).
   for (const ids of byPair.values()) {
     for (const id of ids) {
@@ -522,15 +647,33 @@ async function build(): Promise<void> {
           const { bottom, top } = renderer.metatile(mt);
           bctx.drawImage(bottom, x * TILE, y * TILE);
           bctx.drawImage(top, x * TILE, y * TILE);
-          if (((block & 0xc00) >> 10) !== 0) mark(ctxFor("colision"), x, y, LAYER_COLORS.colision);
+          const hasCollision = ((block & 0xc00) >> 10) !== 0;
+          if (hasCollision) mark(ctxFor("colision"), x, y, LAYER_COLORS.colision);
           const beh = behaviorOf(primary.attributes, secondary.attributes, mt);
-          if (MB.MetatileBehavior_IsSurfable(beh)) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
+          const isWater = MB.MetatileBehavior_IsSurfable(beh);
+          if (isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
+
+          // Actualizar colisión, agua y metatile para el jugador y editor
+          const gwx = (info.x - minX) + x;
+          const gwy = (info.y - minY) + y;
+          if (gwx >= 0 && gwy >= 0 && gwx < index.world.width && gwy < index.world.height) {
+            const idx = gwy * index.world.width + gwx;
+            solidCollisionGrid[idx] = hasCollision ? 1 : 0;
+            if (isWater) waterGrid[idx] = 1;
+            globalMetatileGrid[idx] = mt;
+          }
           let arrow: string | undefined;
-          if (MB.MetatileBehavior_IsJumpEast(beh)) arrow = "E";
-          else if (MB.MetatileBehavior_IsJumpWest(beh)) arrow = "W";
-          else if (MB.MetatileBehavior_IsJumpSouth(beh)) arrow = "S";
-          else if (MB.MetatileBehavior_IsJumpNorth(beh)) arrow = "N";
-          if (arrow) mark(ctxFor("salientes"), x, y, LAYER_COLORS.salientes, arrow);
+          let ledgeVal = 0;
+          if (MB.MetatileBehavior_IsJumpEast(beh)) { arrow = "E"; ledgeVal = 4; }
+          else if (MB.MetatileBehavior_IsJumpWest(beh)) { arrow = "W"; ledgeVal = 3; }
+          else if (MB.MetatileBehavior_IsJumpSouth(beh)) { arrow = "S"; ledgeVal = 1; }
+          else if (MB.MetatileBehavior_IsJumpNorth(beh)) { arrow = "N"; ledgeVal = 2; }
+          if (arrow) {
+            mark(ctxFor("salientes"), x, y, LAYER_COLORS.salientes, arrow);
+            if (gwx >= 0 && gwy >= 0 && gwx < index.world.width && gwy < index.world.height) {
+              ledgeGrid[gwy * index.world.width + gwx] = ledgeVal;
+            }
+          }
         }
       }
 
@@ -641,17 +784,101 @@ function resolveMap(query: string): string | null {
   return null;
 }
 
+function updateBrushPreview(): void {
+  const preview = document.getElementById("tile-brush-preview");
+  const label = document.getElementById("tile-brush-label");
+  if (label) {
+    label.textContent = `Tile: #${selectedMetatile}`;
+  }
+  if (!preview || !cachedFillSources) return;
+  const baseRenderer = cachedFillSources.values().next().value?.renderer;
+  if (!baseRenderer) return;
+  const { bottom, top } = baseRenderer.metatile(selectedMetatile);
+  const cvs = document.createElement("canvas");
+  cvs.width = TILE;
+  cvs.height = TILE;
+  const c = cvs.getContext("2d")!;
+  c.drawImage(bottom, 0, 0);
+  c.drawImage(top, 0, 0);
+  preview.innerHTML = "";
+  cvs.style.width = "100%";
+  cvs.style.height = "100%";
+  cvs.style.imageRendering = "pixelated";
+  preview.appendChild(cvs);
+}
+
 function showAt(worldX: number, worldY: number): void {
-  const mx = Math.floor(worldX / TILE) + minX;
-  const my = Math.floor(worldY / TILE) + minY;
+  const cellX = Math.floor(worldX / TILE);
+  const cellY = Math.floor(worldY / TILE);
+  const selBox = document.getElementById("selection-box");
+  if (selBox) {
+    selBox.style.display = "block";
+    selBox.style.left = `${cellX * TILE}px`;
+    selBox.style.top = `${cellY * TILE}px`;
+    selBox.style.width = `${TILE}px`;
+    selBox.style.height = `${TILE}px`;
+  }
+
+  // Auto-desplegar panel si el usuario pincha una casilla
+  if (panel.classList.contains("collapsed")) {
+    panel.classList.remove("collapsed");
+  }
+
+  const mx = cellX + minX;
+  const my = cellY + minY;
+  const worldIdx = cellY * index.world.width + cellX;
+
+  // Si estamos en modo clonar (cuentagotas) o modo edición sobre un mapa de Kanto, clonar su tile
+  if (appMode === "edit" || eyedropperActive) {
+    if (globalMetatileGrid && worldIdx >= 0 && worldIdx < globalMetatileGrid.length) {
+      const clonedMt = globalMetatileGrid[worldIdx]!;
+      if (clonedMt >= 0) {
+        selectedMetatile = clonedMt;
+        updateBrushPreview();
+        if (eyedropperActive) {
+          eyedropperActive = false;
+          viewport.classList.remove("mode-eyedropper");
+          const eyeBtn = document.getElementById("eyedropper-btn");
+          if (eyeBtn) eyeBtn.classList.remove("active-mode");
+        }
+      }
+    }
+  }
+
+  // Si estamos en modo edición y se hace clic en el lienzo, pintar esa casilla con el tile clonado
+  if (appMode === "edit" && cachedFillSources) {
+    const key = `${cellX},${cellY}`;
+    customPaintedTiles.set(key, selectedMetatile);
+    const fillCanvas = content.querySelector(".fill") as HTMLCanvasElement | null;
+    if (fillCanvas) {
+      const fctx = fillCanvas.getContext("2d")!;
+      const baseRenderer = cachedFillSources.values().next().value?.renderer;
+      if (baseRenderer) {
+        const { bottom, top } = baseRenderer.metatile(selectedMetatile);
+        fctx.clearRect(cellX * TILE, cellY * TILE, TILE, TILE);
+        fctx.drawImage(bottom, cellX * TILE, cellY * TILE);
+        fctx.drawImage(top, cellX * TILE, cellY * TILE);
+      }
+    }
+  }
+
   const entry = Object.entries(index.maps).find(([, m]) => mx >= m.x && mx < m.x + m.width && my >= m.y && my < m.y + m.height);
   if (!entry) {
     const fx = mx - minX;
     const fy = my - minY;
     const i = nearestFill && fx >= 0 && fy >= 0 && fx < index.world.width && fy < index.world.height ? nearestFill[fy * index.world.width + fx]! : -1;
     panel.innerHTML = i >= 0 && i < BIOME_NAMES.length
-      ? `<p>Fuera de los mapas: bioma de ${BIOME_NAMES[i]}. No es transitable.</p>`
-      : "<p>Fuera de los mapas.</p>";
+      ? `<h2>Exterior de Kanto</h2><p><span class="badge badge-trigger">BIOMA</span> ${BIOME_NAMES[i]}</p><p style="color:#71717a">Coordenadas mundo: (${mx}, ${my}) · No es transitable.</p><p style="margin-top:12px"><button id="btn-set-brush" class="btn" style="width:100%">🖌️ Clonar este bioma</button></p>`
+      : `<h2>Exterior de Kanto</h2><p>Fuera de los mapas.</p>`;
+    const btnSetBrush = document.getElementById("btn-set-brush");
+    if (btnSetBrush) {
+      btnSetBrush.addEventListener("click", () => {
+        if (i === 1) selectedMetatile = 473; // océano
+        else if (i === 2) selectedMetatile = 113; // montaña
+        else selectedMetatile = 28; // árboles
+        updateBrushPreview();
+      });
+    }
     return;
   }
   const [id, m] = entry;
@@ -659,38 +886,39 @@ function showAt(worldX: number, worldY: number): void {
   const ly = my - m.y;
   const els = index.elements.filter((e) => e.map === id && e.x === lx && e.y === ly);
   const trs = index.triggers.filter((t) => t.map === id && t.x === lx && t.y === ly);
-  let html = `<h2>${id} (${lx}, ${ly})</h2>`;
+  let html = `<h2>${id}</h2><p style="color:#a1a1aa;margin-bottom:8px">Casilla local: <b>(${lx}, ${ly})</b> · Mundo: (${mx}, ${my})</p>`;
   if (els.length === 0 && trs.length === 0) {
-    panel.innerHTML = html + "<p>Sin elementos del índice en esta casilla.</p>";
+    panel.innerHTML = html + "<p style='color:#71717a'>Sin elementos del índice en esta casilla.</p>";
     return;
   }
   for (const e of els) {
-    html += `<h3>${e.layer}${e.localId !== undefined ? ` #${e.localId}` : ""}</h3>`;
-    if (e.graphics) html += `<p>Gráficos: ${e.graphics}</p>`;
+    let badgeClass = "badge-flag";
+    if (e.layer === "entrenador") badgeClass = "badge-trainer";
+    else if (e.layer === "puerta") badgeClass = "badge-warp";
+    html += `<h3><span class="badge ${badgeClass}">${e.layer.toUpperCase()}</span>${e.localId !== undefined ? ` #${e.localId}` : ""}</h3>`;
+    if (e.graphics) html += `<p><b>Gráficos:</b> <code>${e.graphics}</code></p>`;
     // El indice omite flag cuando el objeto no tiene: no se muestra nada.
     if (e.flag !== undefined) {
-      html += `<p>Flag: ${e.flag}</p>${writersHtml(e.flag)}`;
       const line = typeof e.flag === "string" ? index.initialFlags[e.flag] : undefined;
-      html += e.startsHidden && line !== undefined
-        ? `<p>Al iniciar partida: oculto (setflag en EventScript_ResetAllMapFlags, data/event_scripts.s:${line}).</p>`
-        : "<p>Al iniciar partida: visible.</p>";
+      const initStatus = e.startsHidden && line !== undefined ? "Oculto" : "Visible";
+      html += `<p><b>Flag:</b> <code>${e.flag}</code> (Inicial: <span class="badge badge-flag">${initStatus}</span>)</p>${writersHtml(e.flag)}`;
     }
-    if (e.movedByScript) html += "<p>Se mueve por script (setobjectxyperm).</p>";
-    if (e.trainer) html += `<p>Combate: ${e.trainer}</p>`;
+    if (e.movedByScript) html += "<p><i>Se mueve por script (setobjectxyperm).</i></p>";
+    if (e.trainer) html += `<p><b>Combate:</b> <code>${e.trainer}</code></p>`;
     if (e.trainerRange !== undefined) {
       html += e.direction
-        ? `<p>Rango de visión: ${e.trainerRange} hacia ${e.direction}.</p>`
-        : `<p>Rango de visión: ${e.trainerRange} (dirección variable en juego).</p>`;
+        ? `<p><b>Rango de visión:</b> ${e.trainerRange} casillas hacia <b>${e.direction}</b>.</p>`
+        : `<p><b>Rango de visión:</b> ${e.trainerRange} casillas (dirección variable en juego).</p>`;
     }
     if (e.destMap) {
       const exterior = e.destMap in index.maps;
       html += exterior
-        ? `<p>Destino: ${e.destMap} (exterior).</p>`
-        : `<p>Destino: ${e.destMap} — interior: ${e.destName ?? e.destMap}.</p>`;
+        ? `<p><span class="badge badge-warp">DESTINO</span> ${e.destMap} (exterior)</p>`
+        : `<p><span class="badge badge-warp">DESTINO</span> ${e.destMap} — interior: <i>${e.destName ?? e.destMap}</i></p>`;
     }
   }
   for (const t of trs) {
-    html += `<h3>activador</h3><p>Condición: ${t.var} == ${t.value}</p><p>Script: ${t.script}</p>${writersHtml(t.var)}`;
+    html += `<h3><span class="badge badge-trigger">ACTIVADOR</span></h3><p><b>Condición:</b> <code>${t.var} == ${t.value}</code></p><p><b>Script:</b> <code>${t.script}</code></p>${writersHtml(t.var)}`;
   }
   panel.innerHTML = html;
   // La puerta centra la vista si el destino es exterior (en V1 todos los
@@ -725,6 +953,24 @@ function setupUi(): void {
       writeHash();
     });
   }
+
+  const biomeSelect = document.getElementById("fill-biome") as HTMLSelectElement | null;
+  if (biomeSelect) {
+    biomeSelect.value = fillBiomeOverride;
+    biomeSelect.addEventListener("change", () => {
+      fillBiomeOverride = (biomeSelect.value as "auto" | "ocean" | "trees" | "mountain") || "auto";
+      if (cachedFillSources) drawFill(cachedFillSources);
+    });
+  }
+
+  const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
+  if (charSelect) {
+    charSelect.value = playerChar;
+    charSelect.addEventListener("change", () => {
+      playerChar = (charSelect.value as "red" | "leaf") || "red";
+      loadPlayerSprite();
+    });
+  }
   for (const layer of LAYERS) {
     const label = document.createElement("label");
     const swatch = document.createElement("span");
@@ -743,6 +989,177 @@ function setupUi(): void {
     label.append(box, swatch, ` ${layer}`);
     layerBox.appendChild(label);
   }
+
+  const updateLayersBtnText = () => {
+    const btn = document.getElementById("layers-btn");
+    if (btn) btn.textContent = `Capas (${active.size}/${LAYERS.length}) ▾`;
+  };
+  updateLayersBtnText();
+
+  document.getElementById("layers-all")?.addEventListener("click", () => {
+    for (const l of LAYERS) active.add(l as Layer);
+    for (const l of LAYERS) {
+      const b = document.getElementById(`layer-${l}`) as HTMLInputElement | null;
+      if (b) b.checked = true;
+    }
+    applyLayerVisibility();
+    writeHash();
+    updateLayersBtnText();
+  });
+
+  document.getElementById("layers-none")?.addEventListener("click", () => {
+    active.clear();
+    for (const l of LAYERS) {
+      const b = document.getElementById(`layer-${l}`) as HTMLInputElement | null;
+      if (b) b.checked = false;
+    }
+    applyLayerVisibility();
+    writeHash();
+    updateLayersBtnText();
+  });
+
+  // --- Posicionamiento y fallback para Popover nativo ---
+  const layersBtn = document.getElementById("layers-btn");
+  const overflowBtn = document.getElementById("overflow-btn");
+  const overflowMenu = document.getElementById("overflow-menu");
+
+  const positionPopover = (btn: HTMLElement, menu: HTMLElement) => {
+    const rect = btn.getBoundingClientRect();
+    menu.style.top = `${rect.bottom + 6}px`;
+    if (menu.id === "overflow-menu") {
+      menu.style.right = `${window.innerWidth - rect.right}px`;
+      menu.style.left = "auto";
+    } else {
+      menu.style.left = `${rect.left}px`;
+      menu.style.right = "auto";
+    }
+  };
+
+  if (layersBtn) {
+    layersBtn.addEventListener("click", () => {
+      positionPopover(layersBtn, layerBox);
+      // Fallback si el navegador no soporta popover nativo
+      if (!("popover" in HTMLElement.prototype)) {
+        overflowMenu?.classList.remove("popover-open");
+        layerBox.classList.toggle("popover-open");
+      }
+    });
+  }
+  if (overflowBtn && overflowMenu) {
+    overflowBtn.addEventListener("click", () => {
+      positionPopover(overflowBtn, overflowMenu);
+      // Fallback si el navegador no soporta popover nativo
+      if (!("popover" in HTMLElement.prototype)) {
+        layerBox.classList.remove("popover-open");
+        overflowMenu.classList.toggle("popover-open");
+      }
+    });
+  }
+  if (!("popover" in HTMLElement.prototype)) {
+    document.addEventListener("click", (e) => {
+      const target = e.target as Node;
+      if (!layerBox.contains(target) && !layersBtn?.contains(target)) {
+        layerBox.classList.remove("popover-open");
+      }
+      if (!overflowMenu?.contains(target) && !overflowBtn?.contains(target)) {
+        overflowMenu?.classList.remove("popover-open");
+      }
+    });
+  }
+
+  const radarToggle = document.getElementById("radar-toggle") as HTMLInputElement | null;
+  const minimapWrap = document.getElementById("minimap-wrap");
+  if (radarToggle && minimapWrap) {
+    radarToggle.addEventListener("change", () => {
+      minimapWrap.style.display = radarToggle.checked ? "flex" : "none";
+    });
+  }
+
+  // --- Minimapa Radar de Navegación ---
+  const minimapCanvas = document.getElementById("minimap-canvas") as HTMLCanvasElement | null;
+  const minimapBox = document.getElementById("minimap-viewbox");
+  const minimapCanvasWrap = document.getElementById("minimap-canvas-wrap");
+  if (minimapCanvas && minimapBox && minimapCanvasWrap && index) {
+    const mctx = minimapCanvas.getContext("2d")!;
+    const mw = minimapCanvas.width;
+    const mh = minimapCanvas.height;
+    const worldW = index.world.width;
+    const worldH = index.world.height;
+    const scaleX = mw / worldW;
+    const scaleY = mh / worldH;
+
+    // Dibujar silueta de mapas de Kanto en el minimapa
+    mctx.fillStyle = "#18181b";
+    mctx.fillRect(0, 0, mw, mh);
+    mctx.fillStyle = "#065f46"; // Tierras / rutas
+    for (const m of Object.values(index.maps)) {
+      const rx = (m.x - minX) * scaleX;
+      const ry = (m.y - minY) * scaleY;
+      const rw = Math.max(1, m.width * scaleX);
+      const rh = Math.max(1, m.height * scaleY);
+      mctx.fillRect(rx, ry, rw, rh);
+    }
+
+    const playerDot = document.getElementById("minimap-player-dot");
+    const updateRadar = () => {
+      const worldPxW = worldW * TILE;
+      const worldPxH = worldH * TILE;
+      const vx = (viewport.scrollLeft / zoom) / worldPxW;
+      const vy = (viewport.scrollTop / zoom) / worldPxH;
+      const vw = (viewport.clientWidth / zoom) / worldPxW;
+      const vh = (viewport.clientHeight / zoom) / worldPxH;
+
+      minimapBox.style.left = `${Math.max(0, Math.min(mw, vx * mw))}px`;
+      minimapBox.style.top = `${Math.max(0, Math.min(mh, vy * mh))}px`;
+      minimapBox.style.width = `${Math.max(4, Math.min(mw, vw * mw))}px`;
+      minimapBox.style.height = `${Math.max(4, Math.min(mh, vh * mh))}px`;
+
+      if (playerDot) {
+        if (playerActive) {
+          playerDot.style.display = "block";
+          const px = (playerX - minX) * scaleX;
+          const py = (playerY - minY) * scaleY;
+          playerDot.style.left = `${px}px`;
+          playerDot.style.top = `${py}px`;
+        } else {
+          playerDot.style.display = "none";
+        }
+      }
+    };
+
+    viewport.addEventListener("scroll", updateRadar);
+    updateRadar();
+
+    // Click o arrastrar en minimapa para teletransportarse
+    const navigateMini = (e: MouseEvent) => {
+      const rect = minimapCanvasWrap.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) / rect.width;
+      const clickY = (e.clientY - rect.top) / rect.height;
+      viewport.scrollLeft = clickX * (worldW * TILE) * zoom - viewport.clientWidth / 2;
+      viewport.scrollTop = clickY * (worldH * TILE) * zoom - viewport.clientHeight / 2;
+      writeHash();
+      updateRadar();
+    };
+    let miniDragging = false;
+    minimapCanvasWrap.addEventListener("mousedown", (e) => {
+      miniDragging = true;
+      navigateMini(e);
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (miniDragging) navigateMini(e);
+    });
+    window.addEventListener("mouseup", () => {
+      miniDragging = false;
+    });
+  }
+
+  const panelToggle = document.getElementById("panel-toggle");
+  if (panelToggle) {
+    panelToggle.addEventListener("click", () => {
+      panel.classList.toggle("collapsed");
+    });
+  }
+
   const list = document.getElementById("maplist") as HTMLDataListElement;
   for (const id of Object.keys(index.maps).sort()) {
     const opt = document.createElement("option");
@@ -770,6 +1187,314 @@ function setupUi(): void {
     centerOnMap(id);
   });
 
+  // --- Inicialización y Lógica del Modo Exploración con Avatar ---
+  // --- Inicialización y Lógica del Modo Exploración con Avatar ---
+  playerEl = document.getElementById("player-sprite");
+
+  function getSpriteSheet(): string {
+    const isLeaf = playerChar === "leaf";
+    if (playerMode === "bike") return isLeaf ? "/fr/objects/greenbike__player.png" : "/fr/objects/redbike__player.png";
+    if (playerMode === "surf") return isLeaf ? "/fr/objects/greensurfrun__player.png" : "/fr/objects/redsurfrun__player.png";
+    if (playerRunning && playerMoving) return isLeaf ? "/fr/objects/greensurfrun__player.png" : "/fr/objects/redsurfrun__player.png";
+    return isLeaf ? "/fr/objects/greennormal__player.png" : "/fr/objects/rednormal__player.png";
+  }
+
+  function loadPlayerSprite(): void {
+    playerSpriteImg = new Image();
+    playerSpriteImg.src = getSpriteSheet();
+    playerSpriteImg.onload = () => updatePlayerDisplay();
+  }
+  loadPlayerSprite();
+
+  function updatePlayerDisplay(): void {
+    if (!playerEl || !playerActive) return;
+    const px = playerVisualX;
+    const py = playerVisualY;
+
+    // Dimensiones según vehículo: Bici = 32x32, a pie / surf = 16x32
+    const isBike = playerMode === "bike";
+    const spriteW = isBike ? 32 : 16;
+    const spriteH = 32;
+
+    playerEl.style.width = `${spriteW}px`;
+    playerEl.style.height = `${spriteH}px`;
+    playerEl.style.left = `${isBike ? px - 8 : px}px`;
+    playerEl.style.top = `${py - 16}px`;
+    playerEl.style.display = "block";
+
+    let frameIdx = 0;
+    let flip = false;
+    if (isBike) {
+      // redbike: 9 frames (32x32). 0: frente, 1: espalda, 2: perfil, 3..8: pedaleo
+      if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
+      else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
+      else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
+      else if (playerDir === "east") { frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2; flip = true; }
+    } else if (playerMode === "surf") {
+      // redsurfrun: frames 0..2 reposo/surf (0: sur, 1: norte, 2: oeste/este)
+      if (playerDir === "south") frameIdx = 0;
+      else if (playerDir === "north") frameIdx = 1;
+      else if (playerDir === "west") frameIdx = 2;
+      else if (playerDir === "east") { frameIdx = 2; flip = true; }
+    } else if (playerRunning && playerMoving) {
+      // Zapatillas de correr (redsurfrun/greensurfrun):
+      // frames 3..4: Correr Sur, 5..6: Correr Norte, 7..8: Correr Perfil
+      if (playerDir === "south") frameIdx = playerStep % 2 === 0 ? 3 : 4;
+      else if (playerDir === "north") frameIdx = playerStep % 2 === 0 ? 5 : 6;
+      else if (playerDir === "west") frameIdx = playerStep % 2 === 0 ? 7 : 8;
+      else if (playerDir === "east") { frameIdx = playerStep % 2 === 0 ? 7 : 8; flip = true; }
+    } else {
+      // Normal: 0 frente, 1 espalda, 2 perfil, 3..8 pasos normales
+      if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
+      else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
+      else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
+      else if (playerDir === "east") { frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2; flip = true; }
+    }
+
+    playerEl.style.backgroundImage = `url(${getSpriteSheet()})`;
+    playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
+    playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+
+    // Centrar cámara en el personaje durante exploración
+    viewport.scrollLeft = (px + TILE / 2) * zoom - viewport.clientWidth / 2;
+    viewport.scrollTop = (py + TILE / 2) * zoom - viewport.clientHeight / 2;
+  }
+
+  function startExploration(): void {
+    playerActive = true;
+    const btn = document.getElementById("player-btn");
+    if (btn) {
+      btn.style.background = "#0284c7";
+      btn.textContent = "🚶 Explorando";
+    }
+    // Asegurar que las animaciones de tiles (agua, flores) estén encendidas para máxima inmersión
+    if (!animOn) {
+      animOn = true;
+      const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
+      if (animBox) animBox.checked = true;
+      animLast = fpsSince = animStartTime = performance.now();
+      animAccumulator = 0;
+      fpsFrames = 0;
+      animFrame = requestAnimationFrame(tickAnimations);
+    }
+    // Ubicar en Pueblo Paleta por defecto si es inicio
+    if (playerX === 0 && playerY === 0) {
+      const paleta = index.maps["MAP_PALLET_TOWN"];
+      if (paleta) {
+        playerX = paleta.x + 8;
+        playerY = paleta.y + 8;
+      } else {
+        playerX = minX + Math.floor(index.world.width / 2);
+        playerY = minY + Math.floor(index.world.height / 2);
+      }
+    }
+    playerVisualX = (playerX - minX) * TILE;
+    playerVisualY = (playerY - minY) * TILE;
+    updatePlayerDisplay();
+  }
+
+  function stopExploration(): void {
+    playerActive = false;
+    if (playerEl) playerEl.style.display = "none";
+  }
+
+  function setAppMode(nextMode: AppMode): void {
+    appMode = nextMode;
+
+    const modeViewerBtn = document.getElementById("mode-viewer-btn");
+    const modeExploreBtn = document.getElementById("mode-explore-btn");
+    const modeEditBtn = document.getElementById("mode-edit-btn");
+    const editToolbar = document.getElementById("edit-toolbar");
+    const bikeBtn = document.getElementById("bike-btn");
+    const eyeBtn = document.getElementById("eyedropper-btn");
+
+    modeViewerBtn?.classList.toggle("active-mode", appMode === "viewer");
+    modeExploreBtn?.classList.toggle("active-mode", appMode === "explore");
+    modeEditBtn?.classList.toggle("active-mode", appMode === "edit");
+
+    viewport.classList.remove("mode-edit", "mode-eyedropper");
+    eyedropperActive = false;
+    eyeBtn?.classList.remove("active-mode");
+
+    if (appMode === "explore") {
+      if (editToolbar) editToolbar.style.display = "none";
+      if (bikeBtn) bikeBtn.style.display = "inline-flex";
+      startExploration();
+    } else {
+      stopExploration();
+      if (bikeBtn) bikeBtn.style.display = "none";
+      if (appMode === "edit") {
+        if (editToolbar) editToolbar.style.display = "inline-flex";
+        viewport.classList.add("mode-edit");
+        updateBrushPreview();
+      } else {
+        if (editToolbar) editToolbar.style.display = "none";
+      }
+    }
+  }
+
+  const modeViewerBtn = document.getElementById("mode-viewer-btn");
+  const modeExploreBtn = document.getElementById("mode-explore-btn");
+  const modeEditBtn = document.getElementById("mode-edit-btn");
+  const eyedropperBtn = document.getElementById("eyedropper-btn");
+
+  modeViewerBtn?.addEventListener("click", () => setAppMode("viewer"));
+  modeExploreBtn?.addEventListener("click", () => setAppMode("explore"));
+  modeEditBtn?.addEventListener("click", () => setAppMode("edit"));
+
+  eyedropperBtn?.addEventListener("click", () => {
+    eyedropperActive = !eyedropperActive;
+    eyedropperBtn.classList.toggle("active-mode", eyedropperActive);
+    viewport.classList.toggle("mode-eyedropper", eyedropperActive);
+  });
+
+  // Botón Bici
+  const bikeBtn = document.getElementById("bike-btn");
+  function toggleBike(): void {
+    if (playerMode === "surf") return; // No se puede usar bici en el agua
+    playerMode = playerMode === "bike" ? "walk" : "bike";
+    if (bikeBtn) {
+      bikeBtn.style.background = playerMode === "bike" ? "#f59e0b" : "";
+    }
+    loadPlayerSprite();
+  }
+  if (bikeBtn) bikeBtn.addEventListener("click", toggleBike);
+
+  // Teclado para controlar avatar (WASD / Flechas / Shift / B)
+  const keysDown = new Set<string>();
+  window.addEventListener("keydown", (e) => {
+    if (document.activeElement === search) return;
+    const key = e.key.toLowerCase();
+    if (key === "b" && playerActive) {
+      toggleBike();
+      return;
+    }
+    if (key === "shift") {
+      playerRunning = true;
+    }
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) {
+      if (playerActive) e.preventDefault();
+      keysDown.add(key);
+      processPlayerStep();
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    const key = e.key.toLowerCase();
+    keysDown.delete(key);
+    if (key === "shift") playerRunning = false;
+    if (!["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].some((k) => keysDown.has(k))) {
+      playerMoving = false;
+      updatePlayerDisplay();
+    }
+  });
+
+  let isStepping = false;
+  function processPlayerStep(): void {
+    if (!playerActive || isStepping) return;
+
+    let dx = 0;
+    let dy = 0;
+    let targetDir = playerDir;
+    if (keysDown.has("arrowup") || keysDown.has("w")) { dy = -1; targetDir = "north"; }
+    else if (keysDown.has("arrowdown") || keysDown.has("s")) { dy = 1; targetDir = "south"; }
+    else if (keysDown.has("arrowleft") || keysDown.has("a")) { dx = -1; targetDir = "west"; }
+    else if (keysDown.has("arrowright") || keysDown.has("d")) { dx = 1; targetDir = "east"; }
+
+    playerDir = targetDir;
+    if (dx === 0 && dy === 0) return;
+
+    let targetX = playerX + dx;
+    let targetY = playerY + dy;
+
+    // Comprobar si hay salto de saliente (Ledge jump)
+    const ledge = ledgeDirection(playerX, playerY);
+    let isLedgeJump = false;
+    if (
+      (ledge === 1 && dy === 1) ||  // Salto sur
+      (ledge === 2 && dy === -1) || // Salto norte
+      (ledge === 3 && dx === -1) || // Salto oeste
+      (ledge === 4 && dx === 1)     // Salto este
+    ) {
+      targetX = playerX + dx * 2;
+      targetY = playerY + dy * 2;
+      isLedgeJump = true;
+    }
+
+    // Comprobar entrada a agua para activar surf automáticamente
+    const targetIsWater = isWaterTile(targetX, targetY);
+    if (targetIsWater && playerMode !== "surf") {
+      playerMode = "surf";
+      loadPlayerSprite();
+    } else if (!targetIsWater && playerMode === "surf" && isWalkable(targetX, targetY, "walk")) {
+      // Desembarcar de surf a tierra
+      playerMode = "walk";
+      loadPlayerSprite();
+    }
+
+    if (isLedgeJump || isWalkable(targetX, targetY, playerMode)) {
+      isStepping = true;
+      playerMoving = true;
+      playerStep = (playerStep + 1) % 4;
+
+      const startPxX = (playerX - minX) * TILE;
+      const startPxY = (playerY - minY) * TILE;
+      const destPxX = (targetX - minX) * TILE;
+      const destPxY = (targetY - minY) * TILE;
+
+      const duration = playerMode === "bike" ? 100 : playerRunning ? 120 : 160;
+      const startTime = performance.now();
+
+      const animateStep = (now: number) => {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / duration);
+        playerVisualX = startPxX + (destPxX - startPxX) * t;
+        playerVisualY = startPxY + (destPxY - startPxY) * t;
+
+        // Salto con arco si es saliente
+        if (isLedgeJump) {
+          playerVisualY -= Math.sin(t * Math.PI) * 10;
+        }
+
+        updatePlayerDisplay();
+
+        if (t < 1) {
+          requestAnimationFrame(animateStep);
+        } else {
+          playerX = targetX;
+          playerY = targetY;
+          playerVisualX = destPxX;
+          playerVisualY = destPxY;
+          isStepping = false;
+          if (keysDown.size > 0) {
+            processPlayerStep();
+          } else {
+            playerMoving = false;
+            updatePlayerDisplay();
+          }
+        }
+      };
+      requestAnimationFrame(animateStep);
+    } else {
+      playerMoving = false;
+      updatePlayerDisplay();
+    }
+  }
+
+  // Atajo de teclado '/' o '⌘K' para enfocar búsqueda
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== search) {
+      e.preventDefault();
+      search.focus();
+      search.select();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      search.focus();
+      search.select();
+    }
+  });
+
   let dragX = 0;
   let dragY = 0;
   let dragging = false;
@@ -781,7 +1506,18 @@ function setupUi(): void {
     dragY = ev.clientY;
     viewport.setPointerCapture(ev.pointerId);
   });
+  const statusPos = document.getElementById("status-pos");
   viewport.addEventListener("pointermove", (ev) => {
+    // Coordenadas en tiempo real para el status bar
+    if (statusPos) {
+      const rect = content.getBoundingClientRect();
+      const worldPxX = (ev.clientX - rect.left) / zoom;
+      const worldPxY = (ev.clientY - rect.top) / zoom;
+      const curX = Math.floor(worldPxX / TILE) + minX;
+      const curY = Math.floor(worldPxY / TILE) + minY;
+      statusPos.innerHTML = `Cursor: <code>(${curX}, ${curY})</code>`;
+    }
+
     if (!dragging) return;
     const dx = ev.clientX - dragX;
     const dy = ev.clientY - dragY;
