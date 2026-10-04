@@ -51,8 +51,7 @@ export function renderTilePanel(
   const musicLabel = mapInfo?.musicName ? ` · 🎵 ${escapeHtml(mapInfo.musicName)}` : "";
   let html = `<h2>${escapeHtml(mapInfo?.title ?? id)}</h2><p style="color:#a1a1aa;margin-bottom:8px">Casilla local: <b>(${lx}, ${ly})</b> · Mundo: (${mx}, ${my})${musicLabel}</p>`;
   if (els.length === 0 && trs.length === 0) {
-    panel.innerHTML = html + "<p style='color:#71717a'>Sin elementos del índice en esta casilla.</p>";
-    return;
+    html += "<p style='color:#71717a'>Sin elementos del índice en esta casilla.</p>";
   }
 
   for (const e of els) {
@@ -96,11 +95,16 @@ export function renderTilePanel(
     )} == ${t.value}</code></p><p><b>Script:</b> <code>${escapeHtml(t.script)}</code></p>${writersHtml(index, t.var)}`;
   }
 
-  html += `<div style="margin-top:16px"><button id="btn-explore-here" class="btn" style="width:100%;background:#0284c7;color:#fff;border-color:#0369a1;font-weight:600">🚶 Ir aquí con el avatar</button></div>`;
-
   panel.innerHTML = html;
   if (onExploreHere) {
-    const btn = document.getElementById("btn-explore-here");
-    btn?.addEventListener("click", onExploreHere);
+    const wrap = document.createElement("div");
+    wrap.setAttribute("style", "margin-top:16px");
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.setAttribute("style", "width:100%;background:#0284c7;color:#fff;border-color:#0369a1;font-weight:600");
+    btn.textContent = "🚶 Ir aquí con el avatar";
+    btn.addEventListener("click", onExploreHere);
+    wrap.appendChild(btn);
+    panel.appendChild(wrap);
   }
 }
