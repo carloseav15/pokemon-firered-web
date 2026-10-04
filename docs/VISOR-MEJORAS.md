@@ -189,6 +189,57 @@ Asignación por tamaño/acoplamiento, sin afirmar una evaluación comparativa de
 modelo. **Una tarea por vez y revisión del diff antes de la siguiente.**
 No encargar modelo/persistencia de proyectos, relojes, fidelidad C ni reescritura global.
 
+### Revisión M1–M5: siguiente entrega de Muse
+
+Revisión de Codex sobre `1e622f71`, documentada el 2026-10-04. Tipos, build,
+honesty y diff-check PASS; comprobaciones en Chromium. No se corrigió código.
+
+| Tarea | Estado revisado | Commit de implementación |
+|---|---|---|
+| M1 | PARCIAL: búsquedas principales y escape funcionan; cerrar R1/R2 abajo | `01fd20f2` |
+| M2 | Aceptada: JSON/tipos inválidos, capas vacías/duplicadas y almacenamiento no disponible | `65bd06fb` |
+| M3 | Aceptada: layout a 900×700/1280×800, foco y movimiento reducido | `63079241` |
+| M4 | Aceptada: acción en ficha vacía, sin callback no hay botón y render repetido no duplica llamadas | `8765ab2b` |
+| M5 | PARCIAL: navegación con ratón/toque emulado funciona; cerrar R3 abajo | `1e622f71` |
+
+Las comprobaciones aisladas de M2/M4 y texto HTML de M1 usaron entradas
+**PREPARED** para probar límites del módulo; no representan un recorrido de juego.
+M3/M5 se comprobaron también sobre el viewer real. No se validó un dispositivo
+táctil físico ni Safari. No rehacer M2–M4 ni volver a ejecutar todo su trabajo.
+
+**R1 — Alias completo de Meseta Añil (M1).** Archivos permitidos: search.ts y
+auxiliar de nombres bajo `src/viewer/ui/`. Buscar `Meseta Añil` devuelve Sin
+resultados: traducir palabras en orden no coincide con el nombre fuente.
+Añadir alias completos por mapa y normalizarlos como título/ID, conservando
+identificadores y callbacks. ID verificado en el índice: `MAP_INDIGO_PLATEAU_EXTERIOR`
+(título `IndigoPlateau_Exterior`); volver a contrastarlo antes de editar. Aceptación:
+`Meseta Añil` y `meseta anil` encuentran ese mapa; siguen funcionando pallet,
+paleta, route 1, ruta 1, Pueblo Paleta, Ciudad Verde e ID completo, con Route1
+antes de Route10. No añadir un caso especial que cambie la consulta de otros mapas.
+
+**R2 — Limpiar opción activa inexistente (M1).** Archivo: `src/viewer/ui/search.ts`,
+rama sin coincidencias de renderResults. Buscar un mapa y después `zzzzzz` deja
+aria-activedescendant apuntando al nodo eliminado. Quitar el atributo cuando no
+existe opción seleccionable; mantener mensaje y aria-expanded coherentes con la
+lista visible. Aceptación: resultado → Sin resultados → consulta vacía → nueva
+coincidencia; cada vez el atributo está ausente o apunta a una opción existente.
+Enter sin coincidencias no llama onSelectMap; Esc cierra y limpia el atributo.
+
+**R3 — Indicadores en píxeles CSS (M5).** Archivo: `src/viewer/ui/minimap.ts`.
+Canvas interno observado 176×130, tamaño CSS 174×129,5. updateRadar coloca viewbox
+y punto del jugador directamente en coordenadas internas, aunque el dibujo se
+escala al mostrarse. Convertir posiciones y tamaños al sistema CSS del contenedor
+de los indicadores usando las medidas reales del canvas y su origen relativo al
+contenedor. Reutilizar una transformación coherente; conservar navegación inversa
+y captura de pointer. No modificar main.ts ni el zoom del mundo (C3 pendiente).
+Aceptar al comprobar centro/esquinas, viewbox/punto alineados con el dibujo, zoom
+y resize, ratón/toque emulado y arrastre fuera/cancelación. Medir dimensiones de
+nuevo: las cifras anteriores son evidencia de la revisión, no valores a fijar.
+
+Entregar R1/R2 como una corrección de M1 y R3 como corrección de M5, con commits
+de código separados y las comprobaciones de las instrucciones comunes. No marcar
+M1/M5 aceptadas sin repetir sus casos pendientes; no ampliar el alcance al editor.
+
 ### Instrucciones comunes para copiar junto a cada tarea
 
 Lee AGENTS.md, TAREAS-FINALES §0 y tu tarea. Worktree/rama propios si hay otro agente.
