@@ -21,6 +21,14 @@ export type AnimState = {
 
 export const VIEWER_STORAGE_KEY = "pokemon-gba-web-lab.viewer.v1";
 
+const FILL_MODES = ["full", "dim", "off"] as const;
+const FILL_BIOME_OVERRIDES = ["auto", "ocean", "trees", "mountain"] as const;
+const PLAYER_CHARS = ["red", "leaf"] as const;
+
+function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
+  return typeof value === "string" && (allowed as readonly string[]).includes(value);
+}
+
 export type StoredSettings = {
   fillMode?: FillMode;
   fillBiomeOverride?: FillBiomeOverride;
@@ -50,17 +58,27 @@ export class ViewerState {
     try {
       const raw = localStorage.getItem(VIEWER_STORAGE_KEY);
       if (!raw) return;
-      const s = JSON.parse(raw) as StoredSettings;
-      if (s.fillMode) this.fillMode = s.fillMode;
-      if (s.fillBiomeOverride) this.fillBiomeOverride = s.fillBiomeOverride;
-      if (s.radar !== undefined) this.radar = s.radar;
-      if (s.playerChar) this.playerChar = s.playerChar;
-      if (s.audio !== undefined) this.audio = s.audio;
-      if (Array.isArray(s.activeLayers)) {
-        this.activeLayers.clear();
-        for (const l of s.activeLayers) {
-          if ((LAYERS as readonly string[]).includes(l)) this.activeLayers.add(l);
+      const s: unknown = JSON.parse(raw);
+      // Raíz inválida: conserva todos los defaults en vez de descartar a medias.
+      if (typeof s !== "object" || s === null || Array.isArray(s)) return;
+      const o = s as Record<string, unknown>;
+      // Cada campo inválido conserva su default; los válidos sí se cargan.
+      if (isOneOf(o["fillMode"], FILL_MODES)) this.fillMode = o["fillMode"];
+      if (isOneOf(o["fillBiomeOverride"], FILL_BIOME_OVERRIDES)) {
+        this.fillBiomeOverride = o["fillBiomeOverride"];
+      }
+      if (typeof o["radar"] === "boolean") this.radar = o["radar"];
+      if (isOneOf(o["playerChar"], PLAYER_CHARS)) this.playerChar = o["playerChar"];
+      if (typeof o["audio"] === "boolean") this.audio = o["audio"];
+      if (Array.isArray(o["activeLayers"])) {
+        const known = new Set<Layer>();
+        for (const l of o["activeLayers"]) {
+          if (typeof l === "string" && (LAYERS as readonly string[]).includes(l)) {
+            known.add(l as Layer);
+          }
         }
+        // [] es cero capas: se acepta y sustituye el default.
+        this.activeLayers = known;
       }
     } catch {
       // Ignore invalid localStorage
