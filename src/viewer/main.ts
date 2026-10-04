@@ -61,7 +61,6 @@ let playerDir: "south" | "north" | "west" | "east" = "south";
 let playerStep = 0;
 let playerMoving = false;
 let playerRunning = false;
-let playerAnimFrame = 0;
 let playerSpriteImg: HTMLImageElement | null = null;
 let playerEl: HTMLElement | null = null;
 let solidCollisionGrid: Uint8Array | null = null; // 1 si bloqueado (sólido)
@@ -208,7 +207,16 @@ function setZoom(next: number, ax = viewport.clientWidth / 2, ay = viewport.clie
   content.style.height = `${index.world.height * TILE * zoom}px`;
   viewport.scrollLeft = worldX * zoom - ax;
   viewport.scrollTop = worldY * zoom - ay;
-  writeHash();
+  scheduleHashWrite();
+}
+
+let hashTimeout: ReturnType<typeof setTimeout> | null = null;
+function scheduleHashWrite(): void {
+  if (hashTimeout !== null) return;
+  hashTimeout = setTimeout(() => {
+    hashTimeout = null;
+    writeHash();
+  }, 200);
 }
 
 function writeHash(): void {
@@ -446,7 +454,7 @@ function tickAnimations(now: number): void {
 }
 
 function updateMeta(): void {
-  const meta = document.getElementById("status-meta") ?? document.getElementById("meta");
+  const meta = document.getElementById("status-meta");
   if (!meta || !index) return;
   const count = Object.keys(index.maps).length;
   const w = index.world.width;
@@ -478,31 +486,6 @@ const BIOME_OCEAN = 1;
 const BIOME_MOUNTAIN = 2;
 const BIOME_NAMES = ["bosque (árboles densos)", "marítimo (océano)", "montañoso (cordillera)"] as const;
 
-function biomeAt(x: number, y: number): number {
-  // 1. Zonas marítimas reales (Océano)
-  // Mar del sur abierto (Canela, Ruta 20 y bajo Fuchsia / Ruta 19)
-  if (y >= 340) return BIOME_OCEAN;
-  // Mar costero al oeste de la Ruta 21
-  if (x < 60 && y >= 280) return BIOME_OCEAN;
-  // Canal de agua marina bajo la Senda Bici (Ruta 17)
-  if (x >= 128 && x <= 160 && y >= 150 && y <= 310) return BIOME_OCEAN;
-  // Bahía al sur del puerto de Ciudad Carmín
-  if (x >= 264 && x <= 312 && y >= 240 && y <= 310) return BIOME_OCEAN;
-  // Océano abierto al este de la costa este (Ruta 12, 13)
-  if (x >= 408 && y >= 150) return BIOME_OCEAN;
-
-  // 2. Zonas montañosas reales (Cordillera Norte de Mt. Moon y Rock Tunnel)
-  // Cresta de Mt. Moon (sobre Ruta 3 y 4)
-  if (x >= 110 && x <= 260 && y <= 60) return BIOME_MOUNTAIN;
-  // Acantilados al norte del Cabo de Celeste (Ruta 24 y 25)
-  if (x >= 280 && x <= 375 && y <= 15) return BIOME_MOUNTAIN;
-  // Cresta de Rock Tunnel (sobre Ruta 9 y 10)
-  if (x >= 320 && x <= 408 && y <= 60) return BIOME_MOUNTAIN;
-
-  // 3. Todo el resto de Kanto (incluyendo Meseta Añil, valles y llanuras) es Bosque
-  return BIOME_TREES;
-}
-
 type FillSource = { info: KantoIndex["maps"][string]; layout: Awaited<ReturnType<typeof rom.loadLayout>>; renderer: TileRenderer };
 let nearestFill: Int16Array | null = null;
 
@@ -518,30 +501,8 @@ function drawFill(sources: Map<string, FillSource>): void {
   const occupied = new Uint8Array(W * H);
   for (const r of rects) for (let y = r.y0; y < r.y1; y++) occupied.fill(1, y * W + r.x0, y * W + r.x1);
 
-  // Distancia euclidiana exacta en casillas al mapa más cercano
-  // para calcular una niebla / viñeta suave y orgánica en lugar de bandas cuadradas
-  const dist = new Float32Array(W * H).fill(9999);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      if (occupied[y * W + x]) {
-        dist[y * W + x] = 0;
-        continue;
-      }
-      let minD = 9999;
-      for (const r of rects) {
-        const dx = x < r.x0 ? r.x0 - x : x >= r.x1 ? x - r.x1 + 1 : 0;
-        const dy = y < r.y0 ? r.y0 - y : y >= r.y1 ? y - r.y1 + 1 : 0;
-        const d = Math.hypot(dx, dy);
-        if (d < minD) minD = d;
-      }
-      dist[y * W + x] = minD;
-    }
-  }
-
   // Mapa canónico de bordes GBA: cada mapa exterior tiene su bloque oficial de 2x2 metatiles
   // (árboles [28,29,20,21], montaña [113,113,113,113], u océano [473,473,473,473]).
-  // Asignamos a cada casilla vacía el patrón del mapa del cual es frontera directa.
-  const nearest = new Int16Array(W * H).fill(-1);
   const mapBorderType = new Int8Array(rects.length);
   const ids = Object.keys(index.maps);
   ids.forEach((id, i) => {
@@ -553,10 +514,17 @@ function drawFill(sources: Map<string, FillSource>): void {
     else mapBorderType[i] = BIOME_TREES;
   });
 
-  const nearestOwner = new Int16Array(W * H).fill(-1);
+  // Distancia euclidiana exacta en casillas al mapa más cercano y dueño en un solo paso
+  const dist = new Float32Array(W * H).fill(9999);
+  const nearest = new Int16Array(W * H).fill(-1);
+
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      if (occupied[y * W + x]) continue;
+      const idx = y * W + x;
+      if (occupied[idx]) {
+        dist[idx] = 0;
+        continue;
+      }
       let minD = 9999;
       let owner = -1;
       rects.forEach((r, i) => {
@@ -568,11 +536,11 @@ function drawFill(sources: Map<string, FillSource>): void {
           owner = i;
         }
       });
-      nearestOwner[y * W + x] = owner;
+      dist[idx] = minD;
       const b = owner >= 0 ? mapBorderType[owner]! : BIOME_TREES;
       // En océano extendemos la masa de agua natural, en tierra desvanecemos suavemente
       if (b === BIOME_OCEAN || minD <= 8) {
-        nearest[y * W + x] = b;
+        nearest[idx] = b;
       }
     }
   }
@@ -645,8 +613,10 @@ async function build(): Promise<void> {
   parseHash();
 
   const byPair = new Map<string, string[]>();
+  const layoutsByMap = new Map<string, Awaited<ReturnType<typeof rom.loadLayout>>>();
   for (const [id, m] of Object.entries(index.maps)) {
     const layout = await rom.loadLayout(m.layout);
+    layoutsByMap.set(id, layout);
     const key = `${layout.primary}|${layout.secondary}`;
     if (!byPair.has(key)) byPair.set(key, []);
     byPair.get(key)!.push(id);
@@ -676,9 +646,7 @@ async function build(): Promise<void> {
   for (const ids of byPair.values()) {
     for (const id of ids) {
       const info = index.maps[id];
-      const header = await rom.loadMap(id);
-      void header;
-      const layout = await rom.loadLayout(info.layout);
+      const layout = layoutsByMap.get(id)!;
       const primary = await rom.loadTileset(layout.primary);
       const secondary = await rom.loadTileset(layout.secondary);
       const renderer = new TileRenderer(primary, secondary);
@@ -1035,7 +1003,7 @@ function setupUi(): void {
     fillSelect.addEventListener("change", () => {
       fillMode = (fillSelect.value as "full" | "dim" | "off") || "full";
       applyFillMode();
-      writeHash();
+      scheduleHashWrite();
     });
   }
 
@@ -1069,7 +1037,8 @@ function setupUi(): void {
       if (box.checked) active.add(layer);
       else active.delete(layer);
       applyLayerVisibility();
-      writeHash();
+      scheduleHashWrite();
+      updateLayersBtnText();
     });
     label.append(box, swatch, ` ${layer}`);
     layerBox.appendChild(label);
@@ -1088,7 +1057,7 @@ function setupUi(): void {
       if (b) b.checked = true;
     }
     applyLayerVisibility();
-    writeHash();
+    scheduleHashWrite();
     updateLayersBtnText();
   });
 
@@ -1099,7 +1068,7 @@ function setupUi(): void {
       if (b) b.checked = false;
     }
     applyLayerVisibility();
-    writeHash();
+    scheduleHashWrite();
     updateLayersBtnText();
   });
 
@@ -1222,7 +1191,7 @@ function setupUi(): void {
       const clickY = (e.clientY - rect.top) / rect.height;
       viewport.scrollLeft = clickX * (worldW * TILE) * zoom - viewport.clientWidth / 2;
       viewport.scrollTop = clickY * (worldH * TILE) * zoom - viewport.clientHeight / 2;
-      writeHash();
+      scheduleHashWrite();
       updateRadar();
     };
     let miniDragging = false;
@@ -1272,7 +1241,6 @@ function setupUi(): void {
     centerOnMap(id);
   });
 
-  // --- Inicialización y Lógica del Modo Exploración con Avatar ---
   // --- Inicialización y Lógica del Modo Exploración con Avatar ---
   playerEl = document.getElementById("player-sprite");
 
@@ -1567,11 +1535,6 @@ function setupUi(): void {
 
   function startExploration(): void {
     playerActive = true;
-    const btn = document.getElementById("player-btn");
-    if (btn) {
-      btn.style.background = "#0284c7";
-      btn.textContent = "🚶 Explorando";
-    }
     // Asegurar que las animaciones de tiles (agua, flores) estén encendidas para máxima inmersión
     if (!animOn) {
       animOn = true;
@@ -1668,7 +1631,8 @@ function setupUi(): void {
   // Teclado para controlar avatar (WASD / Flechas / Shift / B)
   const keysDown = new Set<string>();
   window.addEventListener("keydown", (e) => {
-    if (document.activeElement === search) return;
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea") return;
     const key = e.key.toLowerCase();
     if (key === "b" && playerActive) {
       toggleBike();
@@ -1859,6 +1823,8 @@ function setupUi(): void {
 
   // Atajo de teclado '/' o '⌘K' para enfocar búsqueda
   window.addEventListener("keydown", (e) => {
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea") return;
     if (e.key === "/" && document.activeElement !== search) {
       e.preventDefault();
       search.focus();
@@ -1891,7 +1857,12 @@ function setupUi(): void {
       const worldPxY = (ev.clientY - rect.top) / zoom;
       const curX = Math.floor(worldPxX / TILE) + minX;
       const curY = Math.floor(worldPxY / TILE) + minY;
-      statusPos.innerHTML = `Cursor: <code>(${curX}, ${curY})</code>`;
+      const code = statusPos.querySelector("code");
+      if (code) {
+        code.textContent = `(${curX}, ${curY})`;
+      } else {
+        statusPos.textContent = `Cursor: (${curX}, ${curY})`;
+      }
     }
 
     if (!dragging) return;
@@ -1906,7 +1877,7 @@ function setupUi(): void {
   viewport.addEventListener("pointerup", (ev) => {
     dragging = false;
     if (moved) {
-      writeHash();
+      scheduleHashWrite();
       return;
     }
     const rect = content.getBoundingClientRect();
@@ -1931,15 +1902,9 @@ function setupUi(): void {
     },
     { passive: false },
   );
-  // El desplazamiento nativo (trackpad, barras) también guarda la posición en la URL.
-  let hashPending = false;
+  // El desplazamiento nativo (trackpad, barras) también guarda la posición en la URL debounced.
   viewport.addEventListener("scroll", () => {
-    if (hashPending) return;
-    hashPending = true;
-    setTimeout(() => {
-      hashPending = false;
-      writeHash();
-    }, 200);
+    scheduleHashWrite();
   });
   document.getElementById("zoom-in")!.addEventListener("click", () => setZoom(zoom * 1.25));
   document.getElementById("zoom-out")!.addEventListener("click", () => setZoom(zoom * 0.8));
