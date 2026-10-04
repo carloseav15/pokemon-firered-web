@@ -22,16 +22,29 @@ html, body {
   color: var(--text-primary);
   overflow: hidden;
 }
+body {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+}
 #bar {
   display: flex;
   gap: 8px;
   align-items: center;
-  height: 50px;
-  padding: 0 16px;
+  min-height: 50px;
+  min-width: 0;
+  padding: 8px 16px;
   background: var(--bg-header);
   border-bottom: 1px solid var(--border-color);
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  row-gap: 8px;
   user-select: none;
+}
+#bar .btn-group,
+#bar .search-wrap,
+#mode-group {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .app-title {
   font-size: 13px;
@@ -146,7 +159,10 @@ html, body {
 .btn:active {
   transform: translateY(1px);
 }
-.btn:focus-visible {
+.btn:focus-visible,
+#bar input[type="search"]:focus-visible,
+#overflow-menu select:focus-visible,
+.layer-actions button:focus-visible {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-glow);
@@ -274,7 +290,7 @@ html, body {
 /* Viewport principal & Canvas */
 #main {
   display: flex;
-  height: calc(100% - 76px);
+  min-height: 0;
   position: relative;
 }
 .loading-overlay {
@@ -583,3 +599,17 @@ html, body {
 }
 #statusbar span { display: flex; gap: 12px; align-items: center; }
 #statusbar code { font-family: var(--font-mono); color: #e4e4e7; font-size: 11px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner,
+  .emoticon-balloon {
+    animation: none;
+  }
+  .loading-overlay,
+  .fill,
+  #panel,
+  .btn,
+  #bar input[type="search"] {
+    transition: none;
+  }
+}

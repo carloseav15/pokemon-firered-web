@@ -10,7 +10,7 @@
     <header id="bar">
       <div class="app-title"><span></span> Kanto Exterior</div>
       <div class="search-wrap">
-        <input id="search" type="search" placeholder="Buscar mapa..." title="Presiona '/' para buscar rápido" autocomplete="off" />
+        <input id="search" type="search" aria-label="Buscar mapa" placeholder="Buscar mapa..." title="Presiona '/' para buscar rápido" autocomplete="off" />
         <span class="search-shortcut">/</span>
         <div id="search-results" class="search-results" style="display:none;"></div>
       </div>
@@ -62,7 +62,7 @@
           <span class="menu-header-title">Ajustes del Visor</span>
         </div>
         <label><input id="audio-toggle" type="checkbox" /> Música y Sonidos (BGM/SE)</label>
-        <label><input id="anim-toggle" type="checkbox" /> Animaciones (60 FPS)</label>
+        <label><input id="anim-toggle" type="checkbox" /> Animar tiles</label>
         <label for="player-char" style="display:flex; justify-content:space-between; gap:12px;">
           Personaje:
           <select id="player-char">
@@ -72,8 +72,8 @@
         </label>
         <label for="fill-biome" style="display:flex; justify-content:space-between; gap:12px;">
           Bioma de fondo:
-          <select id="fill-biome">
-            <option value="auto">Automático (Canónico)</option>
+          <select id="fill-biome" title="El relleno automático es solo fondo visual, distinto del terreno pintado del proyecto">
+            <option value="auto">Automático (relleno visual)</option>
             <option value="ocean">Solo Océano (Agua)</option>
             <option value="trees">Solo Bosque (Árboles)</option>
             <option value="mountain">Solo Montaña (Rocas)</option>
