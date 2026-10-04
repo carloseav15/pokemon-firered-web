@@ -1,5 +1,11 @@
 # Visor del mundo: plan de la versión 1 (Kanto exterior)
 
+**Alcance vigente:** el usuario aclaró el 2026-10-03 que el viewer es un sandbox
+creativo para inspeccionar, editar/guardar/reabrir y explorar el mundo editado,
+sin batallas ni avance de historia por ahora. Manda [VISOR-MEJORAS.md](VISOR-MEJORAS.md).
+Las exclusiones de edición/animación y la propuesta de juego completo de este
+documento describen la V1 y planes anteriores; no limitan el objetivo actual.
+
 Herramienta de diseño y revisión, **no es parte del juego**. Muestra los 37 mapas
 exteriores de Kanto unidos en un solo lienzo, con capas que marcan qué bloquea el
 paso y qué dispara historia, y una ficha por elemento que dice **qué lo desactiva y

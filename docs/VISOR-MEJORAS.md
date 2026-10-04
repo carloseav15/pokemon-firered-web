@@ -7,10 +7,19 @@ registro de tareas en [TAREAS-FINALES §7](../TAREAS-FINALES.md).
 
 ## 1. Dictamen y verificación
 
-**Mantener el visor: sirve para inspeccionar mapas, obstáculos y condiciones de
-historia. Su exploración actual no tiene la fidelidad necesaria para revisar el
-juego.** La calidad es desigual: datos con procedencia, renderer reutilizado y
-módulos útiles, junto a un segundo motor simplificado y fallos de cámara/audio.
+**El viewer es un sandbox creativo personal:** inspeccionar el mundo y sus
+colisiones, editar tiles/rellenar huecos, guardar el proyecto y volver a modificarlo,
+y recorrer ese mismo mundo para verlo vivo y reconocer sus límites.
+Clarificación directa del usuario tras la auditoría, 2026-10-03: batallas y avance
+de historia quedan fuera de esta fase; movimiento, animaciones, transiciones,
+música y relación visual del protagonista con árboles/casas/pasto sí importan.
+
+La base cartográfica es útil y el modo de exploración propio tiene sentido para
+este objetivo. La recomendación anterior de sustituirlo obligatoriamente por el
+juego completo en iframe queda retirada: impediría ver las ediciones sin construir
+además un puente de mapas. Hay que mejorar el sandbox, reutilizando datos y
+componentes del port cuando encajen, sin exigir scripts ni combates para caminar.
+La calidad sigue desigual por los fallos de cámara/audio y la edición ausente.
 
 Se leyeron HTML, CSS, todos los módulos de `src/viewer/`, generador, planes,
 historial reciente y dependencias relevantes de ROM, renderer, paletas, audio,
@@ -29,8 +38,10 @@ Comprobaciones ejecutadas:
   Es consistencia, no un oracle independiente del parser. No se regeneró el índice.
 - El único conflicto sigue siendo Ruta 6 → conexión de Azafrán. No inventar
   posiciones para corregir una asimetría documentada de la fuente.
-- Pendientes: aislamiento del guardado al jugar/guardar en sandbox, recorrido
-  completo, Safari, móvil, escucha humana y comparación visual con GBA.
+- Pendientes: persistencia de proyectos editables, exploración del mundo editado,
+  profundidad visual, conexiones/transiciones, Safari, móvil, escucha humana y
+  comparación focalizada de animaciones con la fuente. Las pruebas de partida
+  sandbox del juego completo pertenecen a la tarea futura 7.3.
 
 Conservar caché de metatiles, carga paralela de layouts, debounce del hash,
 escape en fichas, contador de capas y módulos ya extraídos. TileRenderer carga
@@ -41,8 +52,9 @@ carga global por rutina.
 
 | Prioridad | Evidencia | Consecuencia y tarea |
 |---|---|---|
-| Alta | main.ts: interactWithEntity/processPlayerStep/checkTrainerSight usan diálogos inventados, tiempos 100/120/160 ms, surf automático, saltos que evitan isWalkable y visión sin paredes. No ejecutan scripts/warps/combates del motor. | Explorar no valida historia. C1. |
-| Alta | build añade objetos del índice a colisión/entidades sin aplicar startsHidden ni flags de partida. El índice selecciona obstáculos y condiciones, no todos los NPC. | Un índice de revisión se usa incorrectamente como estado del juego. C1. |
+| Alta | Edición retirada de ruta activa: no hay proyecto editable persistente. | Falta uno de los tres objetivos principales. C6. |
+| Alta | Movimiento usa tiempos 100/120/160 ms y saltos que evitan isWalkable; efectos/sprites se posicionan con capas DOM fijas. | Revisar movimiento, aterrizaje, profundidad y efectos. Ausencia de batallas/scripts no es un fallo del alcance actual. C1/C7. |
+| Alta | build usa objetos del índice parcial para colisión/entidades sin política de visibilidad; diálogos genéricos y avisos de combate simulado. | Definir objetos visibles en la sesión libre, cargar datos completos necesarios y retirar falsas batallas/diálogos canónicos. C1. |
 | Alta | Audio activado en Paleta: rom.constants ausente, backend de sound ausente, música actual 0 y transición a 300 pendiente en estado 6. init oculta el error; build no carga constantes. | El botón indica activo sin instalar reproducción. C2. |
 | Alta | setZoom multiplica dimensiones por zoom y también aplica transform. A 1,25×: estilo 8.160 px, rectángulo/scroll 10.200 px; extensión prevista del mundo 8.160 px. | Doble escalado de extensión y espacios sobrantes. C3. |
 | Media | tick congela mapas invisibles y zoom <0,5; invalida/compone por casilla. Audio recibe un callback por RAF con pasos, no uno por paso GBA, y depende de tiles activados. | Desincronización y reloj de audio incorrecto. C2/C4. |
@@ -52,7 +64,7 @@ carga global por rutina.
 | Media | loadStored acepta enums/booleanos sin validación; animación no se persiste. | Estado local incoherente. M2; persistencia de animación tras C4. |
 | Media | A 900×700 botones estrechos parten texto y grupo de zoom se solapa. Faltan nombre accesible propio de búsqueda y estados ARIA. | Interfaz frágil con poco espacio/teclado. M3. |
 | Media | Minimapa 176×130 para mundo 408×400, listeners mouse permanentes en window. | Distorsión y arrastre limitado. M5. |
-| Media | Relleno usa IDs fijos, primer renderer y distancia a rectángulos. Automático (Canónico) describe una heurística; conflicts no se comunica. | Confunde decoración con terreno fuente. M3/C5. |
+| Media | Relleno usa IDs fijos, primer renderer y distancia a rectángulos. Automático (Canónico) describe una heurística; conflicts no se comunica. | Distinguir fondo automático de terreno editado con colisión y tileset propios. M3/C5/C6. |
 | Baja | Búsqueda/error de carga interpolan innerHTML sin escape; índice sin validación; main.ts tiene 1.168 líneas y estado duplicado. | Robustez/mantenibilidad. M1/C3/C5. |
 
 Rendimiento: relleno 6.528×6.400 píxeles = **159,38 MiB** bajo representación RGBA
@@ -62,25 +74,31 @@ Se observaron 216 canvases en el DOM. Medir y fragmentar antes de prometer mejor
 
 ## 3. Trabajo reservado a Codex
 
-### C1 — Exploración con motor real y guardado aislado
+### C1 — Exploración libre sobre el proyecto del viewer
 
-Iframe del mismo origen para separar globals de paletas/sprites/tareas/audio/save.
-Eliminar movimiento/NPC/efectos/diálogos propios cuando la ruta real esté conectada.
-No revertir commits completos: 4bf12ca1 es referencia parcial; dependía de
-rom.mapNum sin cargar ROM y aceptaba base vacía si fallaba fetch.
-b8b1f3c9 y 9142b1b1 reintrodujeron el motor propio.
+Recorrer el mundo base más las ediciones de C6, con un estado de sesión separado
+de SaveData. Inspección, edición y exploración comparten un único modelo efectivo
+del mundo: pintar una pared/suelo cambia tanto dibujo como colisión y efectos.
+Cambiar de modo no descarta proyecto ni posición. Caminar no necesita medallas,
+historia ni combates; surf/bici pueden ser herramientas libres explícitas.
 
-boot.ts/save.ts ya tienen sandbox y clave aparte. Revisarlos antes de ampliar API.
-Preparar copia válida de SaveData, group/num desde fuente, partida base/género,
-posición local transitable y error si falta base. Preparación por lanzamiento
-(sessionStorage/protocolo explícito) para evitar que dos visores pisen una base
-compartida. La documentación anterior recoge autorización para cambios mínimos
-de sandbox; no ampliarla a otras modificaciones del motor.
+Separar controlador de movimiento, cámara, entidades y rendering; reutilizar
+tablas, animaciones y assets fuente con sus frames/semántica cuando corresponda.
+No importar el overworld completo a ciegas: revisar dependencias globales antes
+de elegir componentes. Un iframe del juego original sin patches no cumple la
+exploración del proyecto editado. El motor libre es una adaptación del viewer,
+no una implementación C contable ni una afirmación de fidelidad del juego entero.
 
-Aceptar tras comprobar clave canónica idéntica antes/después de jugar **y guardar**,
-lecturas al arrancar, dos sandboxes, parcel/oldman en Verde, chico/chica, conexión,
-puerta/interior/salida, alineación subcasilla, Esc y destrucción del iframe.
-Los huecos del port se registran sin reemplazarlos por simulación del visor.
+Mantener colisiones/límites coherentes, aterrizaje válido de salientes, elección
+de casilla inicial transitable y NPCs con política explícita de visibilidad libre.
+Quitar desafíos de combate simulados; interacciones de inspección o sandbox deben
+identificarse como tales, no atribuir texto inventado al juego fuente.
+Interiores jugables y campañas no se incorporan por rutina.
+
+Aceptar: caminar entre mapas sin salto de cámara, chico/chica, cambios caminar/
+bici/surf, bordes y obstáculos, selección de punto de inicio, Esc/blur sin teclas
+atascadas, probar pared y suelo recién pintados, salir/volver sin perder ediciones.
+Guardar el proyecto nunca modifica la partida FireRed del usuario.
 
 ### C2 — Audio con inicialización válida y reloj independiente
 
@@ -88,7 +106,8 @@ Constantes fuente disponibles sin cargar todo el juego por rutina. Conservar
 musicId junto al mapa: reactivar hoy pierde ID y llama rom.c(MUS_MAP_...), cuyo
 throw no se resuelve con ??. UI activa solo al inicializar; error visible/reintento.
 sound.frame por cada paso GBA, aunque tiles estén apagados; pausa al ocultar;
-silenciar padre en sandbox. Validar reactivación mismo mapa, cambios de mapa/
+una única fuente de audio compartida por los modos del viewer. Validar mismo mapa,
+reactivación, cambios de mapa/
 misma canción, tiles apagados, visibilidad y fallo de carga. Scheduler instrumentado
 no sustituye escucha humana.
 
@@ -117,15 +136,58 @@ Writers sintácticos no prueban ejecución/desbloqueo; faltan potenciales cambio
 desde C/macros. Decir sin referencia en scripts analizados, no asegurar fuera de
 scripts. Validar dimensiones/coordenadas/capas/versión; error visible aunque panel
 esté cerrado; comunicar conflicto y relleno heurístico. No convertir el índice
-parcial en inventario completo de NPC. Manifiesto de partidas/group/num desde
-generador para C1. Si cambia generador: dos regeneraciones, hashes iguales; ningún
-JSON generado se edita a mano.
+parcial en inventario completo de NPC. Exportar los metadatos adicionales que el
+sandbox necesita desde la fuente. Si cambia generador: dos regeneraciones, hashes
+iguales; ningún JSON generado se edita a mano.
+
+### C6 — Edición y proyectos que se pueden seguir modificando
+
+Crear capa de datos de proyecto versionada sobre el mundo fuente inmutable. Un
+tile editado registra metatile, par de tilesets y ubicación estable: mapa+casilla
+local dentro de mapas y coordenada de mundo en huecos. Conservar comportamiento,
+colisión y elevación fuente, con overrides explícitos cuando el editor los permita.
+No guardar solo una imagen ni pintar en el canvas del fondo: no permite reabrir
+el trabajo, recalcular capas o explorar correctamente.
+
+Pincel, cuentagotas, selección de tileset/metatile, relleno de área, borrar patch,
+deshacer/rehacer por operación y guardar/abrir proyecto. Un gesto de arrastre es
+una operación de undo, no cientos de entradas. Cuentagotas no pinta; drag de
+cámara no pinta. Separar relleno visual automático de terreno editable/transitable.
+Permitir llenar huecos con tiles de distintos pares sin perder colores/comportamiento.
+
+Persistencia local para proyectos y exportar/importar JSON como copia durable;
+evaluar IndexedDB según tamaño medido, reservar localStorage para ajustes pequeños.
+Versionar esquema y referencia a datos base; validar al importar, advertir si cambia
+la base, gestionar cuota/errores y mostrar cambios sin guardar. Fallo de guardado
+no marca proyecto como guardado; importación inválida no reemplaza el abierto.
+Cambiar bioma, zoom, capas o modo no borra patches. El guardado del viewer no toca
+public/fr, datos generados ni claves de partida FireRed.
+
+Aceptar: pintar mapa+hueco, cuentagotas, relleno acotado, deshacer/rehacer, guardar,
+cerrar/recargar, reabrir y seguir editando; exportar/importar reproduce proyecto,
+incluidas colisiones; iniciar Explorar y recorrer suelo/obstáculos editados.
+Comprobar error de escritura/importación sin perder trabajo y partida real intacta.
+
+### C7 — Profundidad visual, animaciones e interacciones del entorno
+
+Separar suelo, objetos/sprites y partes altas de tiles según atributos y rendering
+fuente. El protagonista debe pasar detrás de copa/tejado y delante de bases según
+posición/profundidad, no dibujarse siempre encima. Revisar máscara de hierba,
+huellas/polvo/salpicaduras, salto y entrada/salida de agua; usar gráficos y secuencias
+fuente, sin inventar un efecto por estar cerca de una casa o árbol.
+
+Conexiones deben cargar continuidad de terreno, entidades y música sin teletransportar
+la cámara. Mantener coherencia en mundo editado; terrenos sintéticos se identifican
+como decisiones del proyecto, no mapas canónicos. Probar árbol/casa desde lados
+distintos, caminar por pasto/arena/agua, salto, cambio de mapa y tiles pintados.
+Comparación focalizada con renderer/tablas C antes de afirmar fidelidad; comprobar
+profundidad visual en navegador y escuchar transiciones de música.
 
 ## 4. Tareas para Muse Spark 1.3
 
 Asignación por tamaño/acoplamiento, sin afirmar una evaluación comparativa del
 modelo. **Una tarea por vez y revisión del diff antes de la siguiente.**
-No encargar sandbox, save, relojes, fidelidad C ni reescritura global.
+No encargar modelo/persistencia de proyectos, relojes, fidelidad C ni reescritura global.
 
 ### Instrucciones comunes para copiar junto a cada tarea
 
@@ -173,9 +235,9 @@ Conservar setupSearch/onSelectMap.
    adicional si falta espacio; grupos sin solaparse/texto cortado; sin IDs duplicados.
 2. :focus-visible para controles; nombre accesible Buscar mapa. Cambiar Animaciones
    (60 FPS) por Animar tiles y Automático (Canónico) por Automático (relleno visual);
-   aclarar decoración no jugable.
+   aclarar que el relleno automático es fondo, distinto del terreno pintado del proyecto.
 3. prefers-reduced-motion para spinner/transiciones decorativas vía CSS; no cambiar
-   reloj del motor. ARIA dinámico de modos se conectará en C1.
+   reloj del motor. ARIA dinámico de modos se conectará en C1/C6.
 4. Probar 900×700/1280×800, Tab, popovers/búsqueda y panel visible/colapsado; footer/
    viewport siguen utilizables con barra de dos filas.
 
@@ -186,8 +248,8 @@ Conservar setupSearch/onSelectMap.
 1. Eliminar retorno que omite acción sin els/trs; conservar mensaje Sin elementos.
 2. Crear botón al final solo con onExploreHere; listener sobre el nodo directamente,
    no getElementById global; callback una vez por clic.
-3. No acción en renderBiomePanel ni inventar transitabilidad. Callback actual usa
-   motor propio: este cambio no valida C1.
+3. No acción nueva en renderBiomePanel ni inventar transitabilidad durante M4.
+   C1/C6 añadirá inicio en huecos convertidos en terreno; este cambio no valida C1.
 4. Probar ficha vacía con callback, entrenador/puerta, sin callback, relleno y render
    repetido sin listeners acumulados; mantener escape.
 
@@ -205,16 +267,20 @@ Conservar setupSearch/onSelectMap.
 
 ## 5. Orden y cierre
 
-Codex C1–C3 primero (C2/C3 pueden preceder a integración final C1), luego C4/C5.
+Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
+sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
+cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
 Muse M1 → M2 → M3 → M4 → M5, revisar cada entrega. Worktrees separados y
-coordinar main/HTML/CSS con C1 antes de fusionar M3.
+coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
-Editar no existe en ruta actual; quedan restos CSS como brush-active. No reconstruir
-editor ni ampliar regiones/interiores cartográficos en esta tanda.
+Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
+autorizado por la clarificación del usuario. No ampliar regiones ni añadir batallas
+o historia en esta fase. La tarea 7.3 de jugar el FireRed completo queda para después.
 Del plan anterior ya estaban resueltos contador, debounce, layouts duplicados,
 distancia/dueño en una pasada, guardia de inputs, cursor sin innerHTML, extracción
 CSS y módulos búsqueda/ficha/minimapa; musicName/copia de partidas también existen.
-Modularización sigue parcial; sandbox existe en motor pero desconectado del viewer.
+Modularización sigue parcial; sandbox del juego completo existe en motor pero su
+desconexión no bloquea el sandbox creativo del viewer.
 
 Entrega actual: **auditoría y asignación**, no reparación. No se cambió código
 del visor/motor. Marcar tareas terminadas solo tras cumplir aceptaciones.

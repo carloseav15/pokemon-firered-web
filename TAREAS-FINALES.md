@@ -448,15 +448,15 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   `ee5d81ec`. Zoom, hash, flags y leyenda corregidos; `TRAINER_` y dirección de visión en
   los 164 entrenadores; writers con `addvar`/`copyvar`.
 - [ ] **7.3 Visor: "Jugar aquí"** [medio] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §8.
-  PARCIAL: sandbox y clave aparte existen en motor (`4bf12ca1`), pero Explorar vuelve
-  a usar motor propio. Cerrar integración y comprobar guardado según
-  [VISOR-MEJORAS C1](docs/VISOR-MEJORAS.md); allí consta autorización mínima de sandbox.
+  DIFERIDA: sandbox y clave aparte existen en motor (`4bf12ca1`); falta integrar y
+  validar juego completo. Usuario prioriza sandbox creativo 7.6 (sin batallas/historia);
+  la exploración libre del viewer no necesita cerrar esta tarea.
 - [x] **7.4 Visor: mejoras pequeñas** [básico] — `cd675c45` (rama `muse/visor-2`).
   Puertas nombran interior, buscador legible, zoom redondeado, estado inicial NPC con
   cita (`event_scripts.s:1013`); verificado por punto en navegador.
 - [x] **7.5 Visor: animaciones de tiles** [básico] — `58fd3472` (rama
   `muse/visor-anim`). `TilesetAnimator` sin tocar `src/fr/`; flores (5 estados) y fuente
   verificadas contra el juego real; interruptor apagado por defecto.
-- [ ] **7.6 Visor: reparar integración y calidad** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
-  Auditoría sobre `9142b1b1`: Codex C1–C5 (C1 cierra 7.3); Muse M1–M5 por módulo.
-  Zoom/audio/enlaces fallan en Chromium; build/honesty PASS no cierran la aceptación.
+- [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
+  Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;
+  Codex C1–C7, Muse M1–M5. Sin batallas/historia; zoom/audio/enlaces siguen pendientes.
