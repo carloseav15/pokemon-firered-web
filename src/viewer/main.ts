@@ -1,6 +1,6 @@
 // Visor del mundo: 37 mapas exteriores de Kanto unidos (docs/VISOR-MUNDO.md).
-// Solo lectura sobre el juego: importa rom, TileRenderer y metatileBehavior.
-// Modo exploración: embebe el motor canónico FireRed (?fr=sandbox) sobre el mapa.
+// Navegación nativa sobre el lienzo de Kanto con avatar de jugador (Red/Leaf),
+// colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo) e interacción con NPCs.
 
 import { rom } from "../fr/rom";
 import { TileRenderer } from "../fr/field/tileRenderer";
@@ -9,7 +9,7 @@ import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN
 import * as MB from "../fr/generated/metatileBehavior";
 import { TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
 import type { Element, KantoIndex, Trigger } from "./types";
-import { state } from "./state";
+import { state, type PlayerVehicle } from "./state";
 import { fetchWorldIndex } from "./data/worldIndex";
 import { WorldGrid } from "./data/worldGrid";
 import { overlayCanvas, mark } from "./render/overlays";
@@ -19,7 +19,10 @@ import { renderTilePanel, renderBiomePanel } from "./ui/panel";
 import { setupSearch } from "./ui/search";
 import { setupMinimap, type MinimapController } from "./ui/minimap";
 import { setupPopovers } from "./ui/popover";
-import { SANDBOX_STORAGE_KEY } from "../fr/save";
+import { getPlayerSpriteSheet, type Direction, GFX_MAP } from "./render/sprites";
+import { spawnFieldFx } from "./render/fieldFx";
+import { EntityManager, type LiveEntity } from "./render/entities";
+import { DialogManager } from "./ui/dialog";
 
 const viewport = document.getElementById("viewport")!;
 const content = document.getElementById("content")!;
@@ -40,15 +43,26 @@ let fillSources = new Map<string, FillSource>();
 let fillNearest: Int16Array | null = null;
 let animController: TileAnimationController;
 let minimapController: MinimapController | null = null;
+let entityManager: EntityManager;
+let dialogManager: DialogManager;
 
 let zoom = 1;
 let startX: number | null = null;
 let startY: number | null = null;
 
-// Modo exploración canónico
-let exploreActive = false;
-let explorePos = { x: 0, y: 0 };
-let exploreIframe: HTMLIFrameElement | null = null;
+// --- Estado del Personaje Jugador en el Visor ---
+let playerActive = false;
+let playerMode: PlayerVehicle = "walk";
+let playerX = 0; // coordenadas globales de mundo
+let playerY = 0;
+let playerVisualX = 0; // interpolación visual en píxeles del mundo
+let playerVisualY = 0;
+let playerDir: Direction = "south";
+let playerStep = 0;
+let playerMoving = false;
+let playerRunning = false;
+let isStepping = false;
+const playerEl = document.getElementById("player-sprite");
 
 function parseHash(): void {
   const h = new URLSearchParams(location.hash.slice(1));
@@ -149,6 +163,331 @@ function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: 
   return ExtractMetatileAttribute(raw, METATILE_ATTRIBUTE_BEHAVIOR);
 }
 
+// --- Lógica del Avatar del Jugador ---
+
+function updatePlayerDisplay(): void {
+  if (!playerEl || !playerActive) return;
+  const px = playerVisualX;
+  const py = playerVisualY;
+
+  const isBike = playerMode === "bike";
+  const spriteW = isBike ? 32 : 16;
+  const spriteH = 32;
+
+  playerEl.style.width = `${spriteW}px`;
+  playerEl.style.height = `${spriteH}px`;
+  playerEl.style.left = `${isBike ? px - 8 : px}px`;
+  playerEl.style.top = `${py - 16}px`;
+  playerEl.style.display = "block";
+
+  let frameIdx = 0;
+  let flip = false;
+  if (isBike) {
+    if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
+    else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
+    else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
+    else if (playerDir === "east") {
+      frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
+      flip = true;
+    }
+  } else if (playerMode === "surf") {
+    if (playerDir === "south") frameIdx = 0;
+    else if (playerDir === "north") frameIdx = 1;
+    else if (playerDir === "west") frameIdx = 2;
+    else if (playerDir === "east") {
+      frameIdx = 2;
+      flip = true;
+    }
+  } else if (playerRunning && playerMoving) {
+    if (playerDir === "south") frameIdx = playerStep % 2 === 0 ? 3 : 4;
+    else if (playerDir === "north") frameIdx = playerStep % 2 === 0 ? 5 : 6;
+    else if (playerDir === "west") frameIdx = playerStep % 2 === 0 ? 7 : 8;
+    else if (playerDir === "east") {
+      frameIdx = playerStep % 2 === 0 ? 7 : 8;
+      flip = true;
+    }
+  } else {
+    if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
+    else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
+    else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
+    else if (playerDir === "east") {
+      frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
+      flip = true;
+    }
+  }
+
+  const inGrass = worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
+  playerEl.style.clipPath = inGrass ? "inset(0 0 4px 0)" : "none";
+
+  const spriteSheet = getPlayerSpriteSheet(state.playerChar, playerMode, playerRunning && playerMoving);
+  playerEl.style.backgroundImage = `url(${spriteSheet})`;
+  playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
+  playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+
+  viewport.scrollLeft = (px + TILE / 2) * zoom - viewport.clientWidth / 2;
+  viewport.scrollTop = (py + TILE / 2) * zoom - viewport.clientHeight / 2;
+  minimapController?.updateRadar();
+
+  updateEntitiesView();
+}
+
+function updateEntitiesView(): void {
+  if (!playerActive) {
+    entityManager.hideAll();
+    return;
+  }
+  const viewLeft = viewport.scrollLeft / zoom - 64;
+  const viewTop = viewport.scrollTop / zoom - 64;
+  const viewRight = viewLeft + viewport.clientWidth / zoom + 128;
+  const viewBottom = viewTop + viewport.clientHeight / zoom + 128;
+
+  entityManager.updateVisibility(viewLeft, viewTop, viewRight, viewBottom, (ent) => {
+    interactWithEntity(ent);
+  });
+}
+
+function interactWithEntity(ent: LiveEntity): void {
+  entityManager.faceTowards(ent, playerX, playerY);
+
+  const title = ent.element.trainer ? `${ent.element.trainer}` : `${ent.element.map.replace("MAP_", "")}`;
+  let msg = "";
+  if (ent.element.layer === "snorlax") {
+    msg = "¡Un enorme Pokémon duerme plácidamente en medio del camino! Está bloqueando el paso... Necesitas una Poké Flauta.";
+  } else if (ent.element.layer === "corte") {
+    msg = "¡Un árbol pequeño bloquea el paso! Un Pokémon podría cortarlo con la MO Corte.";
+  } else if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL") {
+    msg = `¡Has encontrado un objeto en el suelo! (${ent.element.flag ?? "Objeto misterioso"}).`;
+  } else if (ent.element.trainer) {
+    msg = `¡El entrenador <b>${ent.element.trainer}</b> te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`;
+  } else {
+    msg = "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?";
+  }
+  dialogManager.show(title, msg);
+}
+
+function checkTrainerSight(): void {
+  for (const ent of entityManager.entities) {
+    if (!ent.element.trainer || ent.defeated) continue;
+    const r = ent.element.trainerRange ?? 0;
+    if (r <= 0) continue;
+
+    let inSight = false;
+    if (ent.dir === "south" && playerX === ent.gx && playerY > ent.gy && playerY <= ent.gy + r) inSight = true;
+    else if (ent.dir === "north" && playerX === ent.gx && playerY < ent.gy && playerY >= ent.gy - r) inSight = true;
+    else if (ent.dir === "west" && playerY === ent.gy && playerX < ent.gx && playerX >= ent.gx - r) inSight = true;
+    else if (ent.dir === "east" && playerY === ent.gy && playerX > ent.gx && playerX <= ent.gx + r) inSight = true;
+
+    if (inSight) {
+      entityManager.showAlert(ent);
+      interactWithEntity(ent);
+      break;
+    }
+  }
+}
+
+function startExploration(targetGx?: number, targetGy?: number): void {
+  playerActive = true;
+  state.appMode = "explore";
+
+  const modeViewerBtn = document.getElementById("mode-viewer-btn");
+  const modeExploreBtn = document.getElementById("mode-explore-btn");
+  const bikeBtn = document.getElementById("bike-btn");
+  modeViewerBtn?.classList.remove("active-mode");
+  modeExploreBtn?.classList.add("active-mode");
+  if (bikeBtn) bikeBtn.style.display = "inline-flex";
+
+  if (!animController.animOn) {
+    animController.start();
+    const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
+    if (animBox) animBox.checked = true;
+    updateMeta();
+  }
+
+  if (targetGx !== undefined && targetGy !== undefined) {
+    playerX = targetGx;
+    playerY = targetGy;
+  } else if (playerX === 0 && playerY === 0) {
+    const paleta = index.maps["MAP_PALLET_TOWN"];
+    if (paleta) {
+      playerX = paleta.x + 8;
+      playerY = paleta.y + 8;
+    } else {
+      playerX = minX + Math.floor(index.world.width / 2);
+      playerY = minY + Math.floor(index.world.height / 2);
+    }
+  }
+
+  playerVisualX = (playerX - minX) * TILE;
+  playerVisualY = (playerY - minY) * TILE;
+  updatePlayerDisplay();
+}
+
+function stopExploration(): void {
+  playerActive = false;
+  state.appMode = "viewer";
+
+  const modeViewerBtn = document.getElementById("mode-viewer-btn");
+  const modeExploreBtn = document.getElementById("mode-explore-btn");
+  const bikeBtn = document.getElementById("bike-btn");
+  modeViewerBtn?.classList.add("active-mode");
+  modeExploreBtn?.classList.remove("active-mode");
+  if (bikeBtn) bikeBtn.style.display = "none";
+
+  if (playerEl) playerEl.style.display = "none";
+  entityManager.hideAll();
+  dialogManager.close();
+  minimapController?.updateRadar();
+}
+
+function toggleBike(): void {
+  if (playerMode === "surf") return;
+  playerMode = playerMode === "bike" ? "walk" : "bike";
+  const bikeBtn = document.getElementById("bike-btn");
+  if (bikeBtn) {
+    bikeBtn.style.background = playerMode === "bike" ? "#f59e0b" : "";
+  }
+  updatePlayerDisplay();
+}
+
+const keysDown = new Set<string>();
+
+function processPlayerStep(): void {
+  if (!playerActive || isStepping || dialogManager.isOpen()) return;
+
+  let dx = 0;
+  let dy = 0;
+  let targetDir = playerDir;
+  if (keysDown.has("arrowup") || keysDown.has("w")) {
+    dy = -1;
+    targetDir = "north";
+  } else if (keysDown.has("arrowdown") || keysDown.has("s")) {
+    dy = 1;
+    targetDir = "south";
+  } else if (keysDown.has("arrowleft") || keysDown.has("a")) {
+    dx = -1;
+    targetDir = "west";
+  } else if (keysDown.has("arrowright") || keysDown.has("d")) {
+    dx = 1;
+    targetDir = "east";
+  }
+
+  playerDir = targetDir;
+  if (dx === 0 && dy === 0) return;
+
+  let targetX = playerX + dx;
+  let targetY = playerY + dy;
+
+  const ledge = worldGrid.ledgeDirection(playerX, playerY);
+  let isLedgeJump = false;
+  if (
+    (ledge === 1 && dy === 1) ||
+    (ledge === 2 && dy === -1) ||
+    (ledge === 3 && dx === -1) ||
+    (ledge === 4 && dx === 1)
+  ) {
+    targetX = playerX + dx * 2;
+    targetY = playerY + dy * 2;
+    isLedgeJump = true;
+  }
+
+  const targetIsWater = worldGrid.isWaterTile(targetX, targetY);
+  if (targetIsWater && playerMode !== "surf") {
+    playerMode = "surf";
+    spawnFieldFx(content, (targetX - minX) * TILE, (targetY - minY) * TILE, "ripple");
+  } else if (!targetIsWater && playerMode === "surf" && worldGrid.isWalkable(targetX, targetY, "walk")) {
+    playerMode = "walk";
+  }
+
+  if (isLedgeJump || worldGrid.isWalkable(targetX, targetY, playerMode)) {
+    isStepping = true;
+    playerMoving = true;
+    playerStep = (playerStep + 1) % 4;
+
+    const startPxX = (playerX - minX) * TILE;
+    const startPxY = (playerY - minY) * TILE;
+    const destPxX = (targetX - minX) * TILE;
+    const destPxY = (targetY - minY) * TILE;
+
+    if (worldGrid.isGrassTile(targetX, targetY) && playerMode !== "surf") {
+      spawnFieldFx(content, destPxX, destPxY, "grass");
+    }
+    if (playerMode === "surf" && Math.random() < 0.3) {
+      spawnFieldFx(content, destPxX, destPxY, "ripple");
+    }
+
+    const duration = playerMode === "bike" ? 100 : playerRunning ? 120 : 160;
+    const startTime = performance.now();
+
+    const animateStep = (now: number) => {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / duration);
+      playerVisualX = startPxX + (destPxX - startPxX) * t;
+      playerVisualY = startPxY + (destPxY - startPxY) * t;
+
+      if (isLedgeJump) {
+        playerVisualY -= Math.sin(t * Math.PI) * 12;
+      }
+
+      updatePlayerDisplay();
+
+      if (t < 1) {
+        requestAnimationFrame(animateStep);
+      } else {
+        playerX = targetX;
+        playerY = targetY;
+        playerVisualX = destPxX;
+        playerVisualY = destPxY;
+        isStepping = false;
+
+        if (isLedgeJump) {
+          spawnFieldFx(content, destPxX, destPxY, "dust");
+        }
+
+        checkTrainerSight();
+
+        if (keysDown.size > 0 && !dialogManager.isOpen()) {
+          processPlayerStep();
+        } else {
+          playerMoving = false;
+          updatePlayerDisplay();
+        }
+      }
+    };
+    requestAnimationFrame(animateStep);
+  } else {
+    if (!isStepping) {
+      isStepping = true;
+      playerMoving = true;
+      playerStep = (playerStep + 1) % 4;
+      const basePxX = (playerX - minX) * TILE;
+      const basePxY = (playerY - minY) * TILE;
+      const bumpDist = 3;
+      const bumpDuration = 90;
+      const bumpStartTime = performance.now();
+
+      const animateBump = (now: number) => {
+        const elapsed = now - bumpStartTime;
+        const t = Math.min(1, elapsed / bumpDuration);
+        const offset = Math.sin(t * Math.PI) * bumpDist;
+        playerVisualX = basePxX + dx * offset;
+        playerVisualY = basePxY + dy * offset;
+        updatePlayerDisplay();
+
+        if (t < 1) {
+          requestAnimationFrame(animateBump);
+        } else {
+          playerVisualX = basePxX;
+          playerVisualY = basePxY;
+          isStepping = false;
+          playerMoving = false;
+          updatePlayerDisplay();
+        }
+      };
+      requestAnimationFrame(animateBump);
+    }
+  }
+}
+
 function showAt(worldX: number, worldY: number): void {
   const cellX = Math.floor(worldX / TILE);
   const cellY = Math.floor(worldY / TILE);
@@ -184,7 +523,7 @@ function showAt(worldX: number, worldY: number): void {
   const trs = index.triggers.filter((t) => t.map === id && t.x === lx && t.y === ly);
 
   renderTilePanel(panel, index, id, lx, ly, mx, my, els, trs, () => {
-    startCanonicalExploration(id, lx, ly);
+    startExploration(mx, my);
   });
 
   for (const e of els) {
@@ -192,104 +531,6 @@ function showAt(worldX: number, worldY: number): void {
       centerOnMap(e.destMap);
     }
   }
-}
-
-async function prepareSandboxSave(mapId: string, lx: number, ly: number): Promise<void> {
-  const mapNum = rom.mapNum(mapId);
-  const mapGroup = mapNum >>> 8;
-  const mapLocalNum = mapNum & 0xff;
-
-  let baseSave: Record<string, unknown> = {};
-  try {
-    const res = await fetch("/viewer/saves/pokedex.json");
-    if (res.ok) {
-      baseSave = (await res.json()) as Record<string, unknown>;
-    }
-  } catch {
-    // Si falla el fetch de la plantilla, usamos datos básicos
-  }
-
-  baseSave.location = {
-    mapGroup,
-    mapNum: mapLocalNum,
-    warpId: -1,
-    x: lx,
-    y: ly,
-  };
-  baseSave.pos = { x: lx, y: ly };
-  baseSave.continueGameWarpActive = false;
-
-  try {
-    localStorage.setItem(SANDBOX_STORAGE_KEY, JSON.stringify(baseSave));
-  } catch {
-    // Ignorar restricciones locales de cuota
-  }
-}
-
-function startCanonicalExploration(mapId?: string, lx?: number, ly?: number): void {
-  const container = document.getElementById("explore-iframe-container");
-  if (!container) return;
-
-  exploreActive = true;
-  const modeViewerBtn = document.getElementById("mode-viewer-btn");
-  const modeExploreBtn = document.getElementById("mode-explore-btn");
-  modeViewerBtn?.classList.remove("active-mode");
-  modeExploreBtn?.classList.add("active-mode");
-
-  let targetMap = mapId ?? "MAP_PALLET_TOWN";
-  let targetX = lx ?? 8;
-  let targetY = ly ?? 8;
-
-  if (!mapId) {
-    const m = index.maps[targetMap];
-    if (m) {
-      explorePos = { x: m.x + targetX, y: m.y + targetY };
-    }
-  } else {
-    const m = index.maps[targetMap];
-    if (m) {
-      explorePos = { x: m.x + targetX, y: m.y + targetY };
-    }
-  }
-
-  const px = (explorePos.x - minX) * TILE;
-  const py = (explorePos.y - minY) * TILE;
-
-  container.style.display = "block";
-  container.style.left = `${px - 120 + 8}px`;
-  container.style.top = `${py - 80 + 8}px`;
-
-  void prepareSandboxSave(targetMap, targetX, targetY).then(() => {
-    container.innerHTML = "";
-    exploreIframe = document.createElement("iframe");
-    exploreIframe.src = "/?fr=sandbox";
-    exploreIframe.tabIndex = 0;
-    container.appendChild(exploreIframe);
-
-    exploreIframe.onload = () => {
-      exploreIframe?.focus();
-    };
-
-    viewport.scrollLeft = (px + TILE / 2) * zoom - viewport.clientWidth / 2;
-    viewport.scrollTop = (py + TILE / 2) * zoom - viewport.clientHeight / 2;
-    minimapController?.updateRadar();
-  });
-}
-
-function stopCanonicalExploration(): void {
-  exploreActive = false;
-  const modeViewerBtn = document.getElementById("mode-viewer-btn");
-  const modeExploreBtn = document.getElementById("mode-explore-btn");
-  modeViewerBtn?.classList.add("active-mode");
-  modeExploreBtn?.classList.remove("active-mode");
-
-  const container = document.getElementById("explore-iframe-container");
-  if (container) {
-    container.style.display = "none";
-    container.innerHTML = "";
-    exploreIframe = null;
-  }
-  minimapController?.updateRadar();
 }
 
 async function build(): Promise<void> {
@@ -303,16 +544,20 @@ async function build(): Promise<void> {
   minY = worldData.minY;
 
   worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY);
+  entityManager = new EntityManager(content, minX, minY);
+  dialogManager = new DialogManager();
 
   const byPair = new Map<string, string[]>();
   const layoutsByMap = new Map<string, Awaited<ReturnType<typeof rom.loadLayout>>>();
 
   if (loadingText) loadingText.textContent = "Cargando layouts de mapas…";
   const mapEntries = Object.entries(index.maps);
-  const loadedLayouts = await Promise.all(mapEntries.map(async ([id, m]) => {
-    const layout = await rom.loadLayout(m.layout);
-    return { id, layout };
-  }));
+  const loadedLayouts = await Promise.all(
+    mapEntries.map(async ([id, m]) => {
+      const layout = await rom.loadLayout(m.layout);
+      return { id, layout };
+    })
+  );
 
   for (const { id, layout } of loadedLayouts) {
     layoutsByMap.set(id, layout);
@@ -388,7 +633,10 @@ async function build(): Promise<void> {
           if (hasCollision) mark(ctxFor("colision"), x, y, LAYER_COLORS.colision);
           const beh = behaviorOf(primary.attributes, secondary.attributes, mt);
           const isWater = MB.MetatileBehavior_IsSurfable(beh);
-          const isGrass = MB.MetatileBehavior_IsPokeGrass(beh) || MB.MetatileBehavior_IsTallGrass(beh) || MB.MetatileBehavior_IsLongGrass(beh);
+          const isGrass =
+            MB.MetatileBehavior_IsPokeGrass(beh) ||
+            MB.MetatileBehavior_IsTallGrass(beh) ||
+            MB.MetatileBehavior_IsLongGrass(beh);
           if (isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
 
           const gwx = info.x + x;
@@ -403,10 +651,19 @@ async function build(): Promise<void> {
 
           let arrow: string | undefined;
           let ledgeVal = 0;
-          if (MB.MetatileBehavior_IsJumpEast(beh)) { arrow = "E"; ledgeVal = 4; }
-          else if (MB.MetatileBehavior_IsJumpWest(beh)) { arrow = "W"; ledgeVal = 3; }
-          else if (MB.MetatileBehavior_IsJumpSouth(beh)) { arrow = "S"; ledgeVal = 1; }
-          else if (MB.MetatileBehavior_IsJumpNorth(beh)) { arrow = "N"; ledgeVal = 2; }
+          if (MB.MetatileBehavior_IsJumpEast(beh)) {
+            arrow = "E";
+            ledgeVal = 4;
+          } else if (MB.MetatileBehavior_IsJumpWest(beh)) {
+            arrow = "W";
+            ledgeVal = 3;
+          } else if (MB.MetatileBehavior_IsJumpSouth(beh)) {
+            arrow = "S";
+            ledgeVal = 1;
+          } else if (MB.MetatileBehavior_IsJumpNorth(beh)) {
+            arrow = "N";
+            ledgeVal = 2;
+          }
           if (arrow) {
             mark(ctxFor("salientes"), x, y, LAYER_COLORS.salientes, arrow);
             if (worldGrid.inBounds(gwx, gwy)) {
@@ -422,6 +679,14 @@ async function build(): Promise<void> {
         const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
         if (isSolidEntity && worldGrid.inBounds(egwx, egwy)) {
           worldGrid.npc[worldGrid.idx(egwx, egwy)] = 1;
+
+          let dir: Direction = "south";
+          if (e.direction === "up") dir = "north";
+          else if (e.direction === "down") dir = "south";
+          else if (e.direction === "left") dir = "west";
+          else if (e.direction === "right") dir = "east";
+
+          entityManager.addEntity(e, egwx, egwy, dir);
         }
 
         if (e.layer === "puerta") {
@@ -429,7 +694,10 @@ async function build(): Promise<void> {
         } else if (e.layer === "entrenador") {
           const ctx = ctxFor("entrenador");
           const r = e.trainerRange ?? 0;
-          const dir = e.direction === "up" || e.direction === "down" || e.direction === "left" || e.direction === "right" ? e.direction : null;
+          const dir =
+            e.direction === "up" || e.direction === "down" || e.direction === "left" || e.direction === "right"
+              ? e.direction
+              : null;
           if (dir) {
             ctx.fillStyle = "rgba(255,0,255,0.30)";
             const dx = dir === "left" ? -1 : dir === "right" ? 1 : 0;
@@ -524,6 +792,16 @@ function setupUi(): void {
     });
   }
 
+  const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
+  if (charSelect) {
+    charSelect.value = state.playerChar;
+    charSelect.addEventListener("change", () => {
+      state.playerChar = (charSelect.value as "red" | "leaf") || "red";
+      state.saveStored();
+      updatePlayerDisplay();
+    });
+  }
+
   const fillSelect = document.getElementById("fill-mode") as HTMLSelectElement | null;
   if (fillSelect) {
     fillSelect.value = state.fillMode;
@@ -615,7 +893,7 @@ function setupUi(): void {
     viewport,
     () => zoom,
     () => scheduleHashWrite(),
-    () => ({ active: exploreActive, x: explorePos.x, y: explorePos.y })
+    () => ({ active: playerActive, x: playerX, y: playerY })
   );
 
   const radarToggle = document.getElementById("radar-toggle") as HTMLInputElement | null;
@@ -643,21 +921,70 @@ function setupUi(): void {
 
   const modeViewerBtn = document.getElementById("mode-viewer-btn");
   const modeExploreBtn = document.getElementById("mode-explore-btn");
-  modeViewerBtn?.addEventListener("click", () => stopCanonicalExploration());
-  modeExploreBtn?.addEventListener("click", () => startCanonicalExploration());
+  const bikeBtn = document.getElementById("bike-btn");
+
+  modeViewerBtn?.addEventListener("click", () => stopExploration());
+  modeExploreBtn?.addEventListener("click", () => startExploration());
+  bikeBtn?.addEventListener("click", () => toggleBike());
 
   window.addEventListener("keydown", (e) => {
     const tag = document.activeElement?.tagName?.toLowerCase();
     if (tag === "input" || tag === "select" || tag === "textarea") return;
+    const key = e.key.toLowerCase();
+
+    if (key === "b" && playerActive) {
+      toggleBike();
+      return;
+    }
+    if (key === "shift") {
+      playerRunning = true;
+    }
+    if (key === " " || key === "enter" || key === "z") {
+      if (dialogManager.isOpen()) {
+        e.preventDefault();
+        dialogManager.close();
+        return;
+      } else if (playerActive) {
+        e.preventDefault();
+        let fx = playerX;
+        let fy = playerY;
+        if (playerDir === "north") fy--;
+        else if (playerDir === "south") fy++;
+        else if (playerDir === "west") fx--;
+        else if (playerDir === "east") fx++;
+
+        const frontEnt = entityManager.findAt(fx, fy);
+        if (frontEnt) {
+          interactWithEntity(frontEnt);
+          return;
+        }
+      }
+    }
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) {
+      if (playerActive) e.preventDefault();
+      if (dialogManager.isOpen()) dialogManager.close();
+      keysDown.add(key);
+      processPlayerStep();
+    }
     if (e.key === "/" && document.activeElement !== searchInput) {
       e.preventDefault();
       searchInput.focus();
       searchInput.select();
     }
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    if ((e.metaKey || e.ctrlKey) && key === "k") {
       e.preventDefault();
       searchInput.focus();
       searchInput.select();
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    const key = e.key.toLowerCase();
+    keysDown.delete(key);
+    if (key === "shift") playerRunning = false;
+    if (!["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].some((k) => keysDown.has(k))) {
+      playerMoving = false;
+      updatePlayerDisplay();
     }
   });
 
@@ -697,6 +1024,7 @@ function setupUi(): void {
     dragX = ev.clientX;
     dragY = ev.clientY;
     minimapController?.updateRadar();
+    updateEntitiesView();
   });
 
   viewport.addEventListener("pointerup", (ev) => {
@@ -713,7 +1041,8 @@ function setupUi(): void {
     "wheel",
     (ev) => {
       const legacy = (ev as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY ?? 0;
-      const mouseWheel = ev.deltaMode === 1 || (ev.deltaX === 0 && legacy !== 0 && legacy % 120 === 0 && Math.abs(ev.deltaY) >= 50);
+      const mouseWheel =
+        ev.deltaMode === 1 || (ev.deltaX === 0 && legacy !== 0 && legacy % 120 === 0 && Math.abs(ev.deltaY) >= 50);
       if (!ev.ctrlKey && !ev.metaKey && !mouseWheel) return;
       ev.preventDefault();
       const r = viewport.getBoundingClientRect();
@@ -725,6 +1054,7 @@ function setupUi(): void {
 
   viewport.addEventListener("scroll", () => {
     minimapController?.updateRadar();
+    updateEntitiesView();
     scheduleHashWrite();
   });
 

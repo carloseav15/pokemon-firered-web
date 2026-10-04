@@ -38,8 +38,11 @@
         <button id="mode-viewer-btn" class="btn active-mode" title="Modo Visor: Navegar libremente y consultar mapas">
           🗺️ Visor
         </button>
-        <button id="mode-explore-btn" class="btn" title="Modo Exploración: Motor canónico FireRed embebido">
-          🎮 Explorar con FireRed
+        <button id="mode-explore-btn" class="btn" title="Modo Exploración: Camina por el mapa con tu avatar">
+          🎮 Explorar Mapa
+        </button>
+        <button id="bike-btn" class="btn" style="display:none;" title="Alternar Bici (tecla B)">
+          🚲 Bici
         </button>
       </div>
 
@@ -55,6 +58,13 @@
           <span class="menu-header-title">Ajustes del Visor</span>
         </div>
         <label><input id="anim-toggle" type="checkbox" /> Animaciones (60 FPS)</label>
+        <label for="player-char" style="display:flex; justify-content:space-between; gap:12px;">
+          Personaje:
+          <select id="player-char">
+            <option value="red">Rojo (Red)</option>
+            <option value="leaf">Hoja (Leaf)</option>
+          </select>
+        </label>
         <label for="fill-biome" style="display:flex; justify-content:space-between; gap:12px;">
           Bioma de fondo:
           <select id="fill-biome">
@@ -85,8 +95,12 @@
         <div id="content">
           <div id="selection-box"></div>
           <div id="player-sprite"></div>
-          <div id="explore-iframe-container" class="explore-iframe-container" style="display:none;"></div>
         </div>
+      </div>
+      <div id="dialog-box">
+        <div id="dialog-title">MENSAJE</div>
+        <div id="dialog-text">...</div>
+        <div id="dialog-prompt">Presiona Z / Espacio / Enter para continuar</div>
       </div>
       <div id="minimap-wrap">
         <div id="minimap-title">Mapa de Navegación</div>

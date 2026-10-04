@@ -94,7 +94,7 @@ export function renderTilePanel(
     )} == ${t.value}</code></p><p><b>Script:</b> <code>${escapeHtml(t.script)}</code></p>${writersHtml(index, t.var)}`;
   }
 
-  html += `<div style="margin-top:16px"><button id="btn-explore-here" class="btn" style="width:100%;background:#0284c7;color:#fff;border-color:#0369a1;font-weight:600">🎮 Explorar aquí con FireRed</button></div>`;
+  html += `<div style="margin-top:16px"><button id="btn-explore-here" class="btn" style="width:100%;background:#0284c7;color:#fff;border-color:#0369a1;font-weight:600">🚶 Ir aquí con el avatar</button></div>`;
 
   panel.innerHTML = html;
   if (onExploreHere) {

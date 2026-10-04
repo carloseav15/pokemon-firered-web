@@ -4,6 +4,8 @@ import { LAYERS } from "./constants";
 export type AppMode = "viewer" | "explore";
 export type FillMode = "full" | "dim" | "off";
 export type FillBiomeOverride = "auto" | "ocean" | "trees" | "mountain";
+export type PlayerCharacter = "red" | "leaf";
+export type PlayerVehicle = "walk" | "bike" | "surf";
 
 export type ViewState = {
   zoom: number;
@@ -24,6 +26,7 @@ export type StoredSettings = {
   fillBiomeOverride?: FillBiomeOverride;
   activeLayers?: Layer[];
   radar?: boolean;
+  playerChar?: PlayerCharacter;
 };
 
 export class ViewerState {
@@ -33,6 +36,7 @@ export class ViewerState {
   fillMode: FillMode = "full";
   fillBiomeOverride: FillBiomeOverride = "auto";
   radar = true;
+  playerChar: PlayerCharacter = "red";
 
   anim: AnimState = {
     on: false,
@@ -48,6 +52,7 @@ export class ViewerState {
       if (s.fillMode) this.fillMode = s.fillMode;
       if (s.fillBiomeOverride) this.fillBiomeOverride = s.fillBiomeOverride;
       if (s.radar !== undefined) this.radar = s.radar;
+      if (s.playerChar) this.playerChar = s.playerChar;
       if (Array.isArray(s.activeLayers)) {
         this.activeLayers.clear();
         for (const l of s.activeLayers) {
@@ -65,6 +70,7 @@ export class ViewerState {
         fillMode: this.fillMode,
         fillBiomeOverride: this.fillBiomeOverride,
         radar: this.radar,
+        playerChar: this.playerChar,
         activeLayers: [...this.activeLayers],
       };
       localStorage.setItem(VIEWER_STORAGE_KEY, JSON.stringify(s));
