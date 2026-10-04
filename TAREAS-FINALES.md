@@ -438,7 +438,8 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 
 ## 7. Herramientas de diseño (fuera del juego)
 
-No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones 1–4.
+No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/fr/`.
+Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1–4.
 
 - [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama
   `muse/visor`). Pistas §4.1–4.3 cuadran con datos (sin PISTA INCORRECTA); §6 verificado
@@ -447,12 +448,15 @@ No tocan `src/fr/` ni `public/fr/`; pueden hacerse en paralelo con las secciones
   `ee5d81ec`. Zoom, hash, flags y leyenda corregidos; `TRAINER_` y dirección de visión en
   los 164 entrenadores; writers con `addvar`/`copyvar`.
 - [ ] **7.3 Visor: "Jugar aquí"** [medio] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §8.
-  Abre el juego real en la casilla pinchada, con chico/chica y partida base, sin tocar
-  la partida del usuario. **Toca `src/fr/boot.ts` y `src/fr/save.ts`: pedir permiso al
-  usuario antes de empezar.**
+  PARCIAL: sandbox y clave aparte existen en motor (`4bf12ca1`), pero Explorar vuelve
+  a usar motor propio. Cerrar integración y comprobar guardado según
+  [VISOR-MEJORAS C1](docs/VISOR-MEJORAS.md); allí consta autorización mínima de sandbox.
 - [x] **7.4 Visor: mejoras pequeñas** [básico] — `cd675c45` (rama `muse/visor-2`).
   Puertas nombran interior, buscador legible, zoom redondeado, estado inicial NPC con
   cita (`event_scripts.s:1013`); verificado por punto en navegador.
 - [x] **7.5 Visor: animaciones de tiles** [básico] — `58fd3472` (rama
   `muse/visor-anim`). `TilesetAnimator` sin tocar `src/fr/`; flores (5 estados) y fuente
   verificadas contra el juego real; interruptor apagado por defecto.
+- [ ] **7.6 Visor: reparar integración y calidad** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
+  Auditoría sobre `9142b1b1`: Codex C1–C5 (C1 cierra 7.3); Muse M1–M5 por módulo.
+  Zoom/audio/enlaces fallan en Chromium; build/honesty PASS no cierran la aceptación.
