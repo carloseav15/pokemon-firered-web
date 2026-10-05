@@ -102,10 +102,13 @@
           <div id="player-sprite"></div>
         </div>
       </div>
-      <div id="dialog-box">
+      <div id="dialog-box" role="status" aria-labelledby="dialog-title">
         <div id="dialog-title">MENSAJE</div>
         <div id="dialog-text">...</div>
-        <div id="dialog-prompt">Presiona Z / Espacio / Enter para continuar</div>
+        <div id="dialog-foot">
+          <span id="dialog-prompt">Presiona Z / Espacio / Enter para continuar</span>
+          <button id="dialog-close" class="btn" type="button">Cerrar</button>
+        </div>
       </div>
       <div id="minimap-wrap">
         <div id="minimap-title">Mapa de Navegación</div>

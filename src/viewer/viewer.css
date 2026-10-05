@@ -507,8 +507,9 @@ body {
   z-index: 35;
   display: none;
   user-select: none;
+  max-height: calc(100% - 48px);
 }
-#dialog-box.open { display: block; }
+#dialog-box.open { display: flex; flex-direction: column; }
 #dialog-title {
   font-size: 11px;
   font-weight: 700;
@@ -522,6 +523,15 @@ body {
   line-height: 1.4;
   font-weight: 500;
   color: #1e293b;
+  overflow-y: auto;
+  min-height: 1.4em;
+}
+#dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
 }
 #dialog-prompt {
   font-size: 10px;
