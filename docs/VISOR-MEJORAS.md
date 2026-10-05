@@ -50,6 +50,9 @@ carga global por rutina.
 
 ## 2. Hallazgos
 
+Esta tabla conserva el diagnóstico sobre `9142b1b1`; el estado de los cambios
+posteriores de Muse está en §4. No volver a asignar hallazgos ya aceptados allí.
+
 | Prioridad | Evidencia | Consecuencia y tarea |
 |---|---|---|
 | Alta | Edición retirada de ruta activa: no hay proyecto editable persistente. | Falta uno de los tres objetivos principales. C6. |
@@ -189,18 +192,24 @@ Asignación por tamaño/acoplamiento, sin afirmar una evaluación comparativa de
 modelo. **Una tarea por vez y revisión del diff antes de la siguiente.**
 No encargar modelo/persistencia de proyectos, relojes, fidelidad C ni reescritura global.
 
-### Revisión M1–M5: siguiente entrega de Muse
+### Revisión M1–M5 y cierre de correcciones
 
 Revisión de Codex sobre `1e622f71`, documentada el 2026-10-04. Tipos, build,
 honesty y diff-check PASS; comprobaciones en Chromium. No se corrigió código.
 
 | Tarea | Estado revisado | Commit de implementación |
 |---|---|---|
-| M1 | PARCIAL: búsquedas principales y escape funcionan; cerrar R1/R2 abajo | `01fd20f2` |
+| M1 | Aceptada tras R1/R2: Meseta Añil y ARIA sin opción activa corregidas | `01fd20f2`, `c62343fa` |
 | M2 | Aceptada: JSON/tipos inválidos, capas vacías/duplicadas y almacenamiento no disponible | `65bd06fb` |
 | M3 | Aceptada: layout a 900×700/1280×800, foco y movimiento reducido | `63079241` |
 | M4 | Aceptada: acción en ficha vacía, sin callback no hay botón y render repetido no duplica llamadas | `8765ab2b` |
-| M5 | PARCIAL: navegación con ratón/toque emulado funciona; cerrar R3 abajo | `1e622f71` |
+| M5 | Aceptada tras R3: indicadores CSS alineados y actualización ante resize | `1e622f71`, `8a36d0d8` |
+
+Segunda revisión sobre `8a36d0d8`, 2026-10-04: tipos/build/honesty PASS; Chromium
+confirma Meseta Añil con/sin acentos, búsquedas previas, Sin resultados sin atributo
+activo, Enter sin navegación y Esc. Minimap: viewbox alineado a 900×700/1280×800 y
+punto alineado con el jugador. R1–R3 cerrados; las instrucciones siguientes quedan
+como criterios de comprobación, no tareas abiertas. M6–M9 son la siguiente tanda.
 
 Las comprobaciones aisladas de M2/M4 y texto HTML de M1 usaron entradas
 **PREPARED** para probar límites del módulo; no representan un recorrido de juego.
@@ -316,12 +325,85 @@ Conservar setupSearch/onSelectMap.
 3. Probar proporción 408/400, centro/esquinas/zoom, arrastre fuera y cancelación,
    mouse/emulación táctil. C3 puede limitar validación final: informar sin tocar main.
 
+### M6 — Buscar también fragmentos de alias españoles
+
+**Archivo:** `src/viewer/ui/search.ts` (auxiliar bajo ui/ si hace falta).
+Defecto reproducido: Ciudad Azulona encuentra CeladonCity; Azulona sola no.
+Los alias completos solo participan en igualdad/prefijo, no en subcadena.
+
+1. Incorporar cada alias en las coincidencias por subcadena normalizada y sin
+   espacios, manteniendo exacto > prefijo > subcadena. No concatenar aliases para
+   producir coincidencias ficticias entre final de un nombre e inicio de otro.
+2. Conservar IDs, onSelectMap, resultados seguros y ARIA de M1; normalizar espacios
+   repetidos, tabs y acentos de forma coherente en consulta y nombres.
+3. Comprobar Azulona, azul, Ciudad Azulona, Meseta Añil, Añil, ruta 1 y Route1 antes
+   de Route10; consulta con espacios repetidos y sin coincidencias. Contrastarlos
+   con maps del índice, sin editar JSON. Entrega un diff pequeño: no reescribir M1.
+
+### M7 — Popovers con estado accesible y posición dentro de pantalla
+
+**Archivos:** `src/viewer/ui/popover.ts`; CSS solo reglas de estos menús si hace falta.
+setupPopovers conserva firma. Menú Capas abierto en Chromium actualmente deja
+aria-expanded/aria-controls ausentes en su botón.
+
+1. Añadir aria-controls con ID real y sincronizar aria-expanded en apertura/cierre.
+   En Popover API nativa observar toggle: incluye Esc, clic fuera y cambio al otro
+   menú. En fallback actualizar estado al cambiar popover-open; no simular nativo.
+2. Fallback admite Esc, cierra menú anterior y mantiene foco razonable: cierre por
+   Esc devuelve foco al botón; clic fuera no roba foco al control elegido.
+3. Posicionar según tamaño real con margen de pantalla; si no cabe debajo, situar
+   arriba o permitir scroll interno. Actualizar al resize con menú abierto sin
+   reabrirlo. No asignar role=menu a un formulario de checkboxes/selects.
+4. Probar Capas/Opciones, Esc/clic fuera, alternancia, Tab, resize, 900×700 y ventana
+   de poca altura. Fallback se prueba con fixture aislada PREPARED o navegador sin
+   soporte; documentar cuál. No tocar main ni crear un segundo controlador de UI.
+
+### M8 — Fichas claras y coordenadas copiables
+
+**Archivos:** `src/viewer/ui/panel.ts`; CSS de ficha si hace falta.
+Mantener firmas/callbacks; no navegar automáticamente ni modificar showAt.
+
+1. Mostrar nombre legible de capa mediante LAYER_LABELS, junto al identificador
+   fuente cuando ayude; mantener mapa, posiciones locales/mundo y nombres simbólicos.
+2. Sin writers: decir Sin referencias en los scripts analizados, en vez de asegurar
+   Se cambia fuera de los scripts de mapa. Etiquetar flags como estado inicial de
+   referencia, no estado actual del sandbox; no inferir qué desbloquea un camino.
+3. Botón Copiar coordenadas con ID de mapa + local(x,y) + mundo(x,y); en fondo,
+   solo mundo(x,y). Clipboard tras clic; feedback accesible de éxito/error y sin
+   falsas confirmaciones si falla. Nunca copiar script como si fuera un comando.
+4. Ficha vacía, entrenador, puerta/interior, flags/writers, coordenadas negativas,
+   relleno, texto con < y &, fallo de clipboard y render repetido. Conservar M4:
+   un callback por clic y sin botón de explorar cuando no se proporciona callback.
+
+### M9 — Minimapa con teclado y arrastre protegido
+
+**Archivo:** `src/viewer/ui/minimap.ts`; CSS solo reglas de foco de minimapa.
+Mantener setupMinimap/updateRadar, coordenadas y alineación aceptada en R3.
+
+1. Dar foco y nombre accesible al área navegable. Flechas desplazan cámara con paso
+   estable expresado en casillas del mundo y convertido con zoom; impedir scroll
+   de página y propagación de teclas manejadas al movimiento del protagonista.
+   No capturar teclas cuando el foco está fuera del minimapa.
+2. Aceptar solo pointer primario/botón principal; mientras hay arrastre no sustituir
+   pointerId por un segundo dedo. Cancelar/release/lostcapture dejan estado limpio.
+3. Limitar viewbox al rectángulo útil del mundo, no a todo el canvas con márgenes;
+   coordenadas relativas al canvas real dentro del wrap. Seguir también resize del
+   canvas y reaparición después de ocultar radar. No corregir C3 desde este módulo.
+4. Probar teclado con foco/fuera de foco, mouse/touch, segundo pointer (PREPARED si
+   sintético), cancelar y continuar, centro/bordes, panel colapsado y radar oculto/
+   visible. Separar cualquier límite heredado de C3 de un fallo propio de M9.
+
+M6–M9 quedan abiertos. Una entrega por tarea, instrucciones comunes y revisión
+antes de continuar; M7/M8/M9 comparten CSS y se hacen secuencialmente.
+El editor, sus datos/persistencia, audio y profundidad visual siguen reservados a
+Codex. No añadir controles de editor sin modelo funcional ni funciones contables.
+
 ## 5. Orden y cierre
 
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse M1 → M2 → M3 → M4 → M5, revisar cada entrega. Worktrees separados y
+Muse: M1–M5 aceptadas; siguiente M6 → M7 → M8 → M9, revisar cada entrega. Worktrees separados y
 coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,

@@ -459,6 +459,5 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   verificadas contra el juego real; interruptor apagado por defecto.
 - [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
   Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;
-  Codex C1–C7, Muse M1–M5. Sin batallas/historia; zoom/audio/enlaces siguen pendientes.
-  Revisión M1–M5 sobre `1e622f71`: M2/M3/M4 aceptadas; Muse debe cerrar R1/R2 (M1)
-  y R3 (M5), detalladas en VISOR-MEJORAS §4; sin correcciones de código en la revisión.
+  Codex C1–C7; sin batallas/historia. M1–M5 aceptadas tras `c62343fa`/`8a36d0d8`
+  (R1–R3 cerrados); Muse M6–M9 abiertas en VISOR-MEJORAS §4. Zoom/audio/editor pendientes.
