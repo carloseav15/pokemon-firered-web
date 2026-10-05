@@ -48,6 +48,48 @@ function aliasQuery(q: string): string {
     .join(" ");
 }
 
+// Alias completos en español por mapa (R1): nombres oficiales tal como los ve
+// el usuario. Solo búsqueda; no cambian IDs fuente, títulos ni el exportador.
+const MAP_ALIASES: Record<string, string[]> = {
+  MAP_PALLET_TOWN: ["Pueblo Paleta"],
+  MAP_VIRIDIAN_CITY: ["Ciudad Verde"],
+  MAP_PEWTER_CITY: ["Ciudad Plateada"],
+  MAP_CERULEAN_CITY: ["Ciudad Celeste"],
+  MAP_VERMILION_CITY: ["Ciudad Carmín"],
+  MAP_LAVENDER_TOWN: ["Pueblo Lavanda"],
+  MAP_SAFFRON_CITY_CONNECTION: ["Ciudad Azafrán"],
+  MAP_CELADON_CITY: ["Ciudad Azulona"],
+  MAP_FUCHSIA_CITY: ["Ciudad Fucsia"],
+  MAP_CINNABAR_ISLAND: ["Isla Canela"],
+  MAP_INDIGO_PLATEAU_EXTERIOR: ["Meseta Añil"],
+  MAP_ROUTE1: ["Ruta 1"],
+  MAP_ROUTE2: ["Ruta 2"],
+  MAP_ROUTE3: ["Ruta 3"],
+  MAP_ROUTE4: ["Ruta 4"],
+  MAP_ROUTE5: ["Ruta 5"],
+  MAP_ROUTE6: ["Ruta 6"],
+  MAP_ROUTE7: ["Ruta 7"],
+  MAP_ROUTE8: ["Ruta 8"],
+  MAP_ROUTE9: ["Ruta 9"],
+  MAP_ROUTE10: ["Ruta 10"],
+  MAP_ROUTE11: ["Ruta 11"],
+  MAP_ROUTE12: ["Ruta 12"],
+  MAP_ROUTE13: ["Ruta 13"],
+  MAP_ROUTE14: ["Ruta 14"],
+  MAP_ROUTE15: ["Ruta 15"],
+  MAP_ROUTE16: ["Ruta 16"],
+  MAP_ROUTE17: ["Ruta 17"],
+  MAP_ROUTE18: ["Ruta 18"],
+  MAP_ROUTE19: ["Ruta 19"],
+  MAP_ROUTE20: ["Ruta 20"],
+  MAP_ROUTE21_NORTH: ["Ruta 21 Norte"],
+  MAP_ROUTE21_SOUTH: ["Ruta 21 Sur"],
+  MAP_ROUTE22: ["Ruta 22"],
+  MAP_ROUTE23: ["Ruta 23"],
+  MAP_ROUTE24: ["Ruta 24"],
+  MAP_ROUTE25: ["Ruta 25"],
+};
+
 export function setupSearch(
   index: KantoIndex,
   searchInput: HTMLInputElement,
@@ -65,6 +107,7 @@ export function setupSearch(
     const section = m.section || "";
     const raw = `${id} ${title} ${section}`;
     const key = normalize(`${raw} ${splitWords(raw)}`);
+    const aliases = (MAP_ALIASES[id] ?? []).map((a) => normalize(a));
     return {
       id,
       title: m.title || id,
@@ -74,6 +117,8 @@ export function setupSearch(
       idNospace: normalize(id).replace(/ /g, ""),
       titleNorm: normalize(title),
       titleNospace: normalize(title).replace(/ /g, ""),
+      aliases,
+      aliasesNospace: aliases.map((a) => a.replace(/ /g, "")),
     };
   });
 
@@ -111,6 +156,8 @@ export function setupSearch(
         resultsEl.appendChild(item);
         resultsEl.style.display = "flex";
         setExpanded(true);
+        // R2: no hay opción seleccionable; el atributo no debe apuntar al nodo eliminado.
+        searchInput.removeAttribute("aria-activedescendant");
       } else {
         hideResults();
       }
@@ -148,15 +195,11 @@ export function setupSearch(
     q: string,
     qNospace: string
   ): number => {
-    // Coincidencia exacta de ID/título (ignorando espacios) > prefijo > subcadena.
-    if (m.idNorm === q || m.titleNorm === q || m.idNospace === qNospace || m.titleNospace === qNospace)
-      return 4;
-    if (
-      m.idNospace.startsWith(qNospace) ||
-      m.titleNospace.startsWith(qNospace) ||
-      m.idNorm.startsWith(q) ||
-      m.titleNorm.startsWith(q)
-    )
+    // Coincidencia exacta de ID/título/alias (ignorando espacios) > prefijo > subcadena.
+    const names = [m.idNorm, m.titleNorm, ...m.aliases];
+    const namesNospace = [m.idNospace, m.titleNospace, ...m.aliasesNospace];
+    if (names.includes(q) || namesNospace.includes(qNospace)) return 4;
+    if (names.some((n) => n.startsWith(q)) || namesNospace.some((n) => n.startsWith(qNospace)))
       return 3;
     if (m.key.includes(q)) return 2;
     if (m.keyNospace.includes(qNospace)) return 1;
