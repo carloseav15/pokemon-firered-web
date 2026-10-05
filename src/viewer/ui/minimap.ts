@@ -58,6 +58,12 @@ export function setupMinimap(
   const playerDot = document.getElementById("minimap-player-dot");
 
   const updateRadar = () => {
+    // R3: los indicadores son hermanos del canvas posicionados respecto al wrap,
+    // así que van en píxeles CSS, no en píxeles del buffer interno.
+    const rect = minimapCanvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const kx = rect.width / mw;
+    const ky = rect.height / mh;
     const zoom = getZoom();
     const worldPxW = worldW * TILE;
     const worldPxH = worldH * TILE;
@@ -69,18 +75,18 @@ export function setupMinimap(
     const a = toMini(x0, y0);
     const b = toMini(x1, y1);
 
-    minimapBox.style.left = `${Math.max(0, Math.min(mw, a.x))}px`;
-    minimapBox.style.top = `${Math.max(0, Math.min(mh, a.y))}px`;
-    minimapBox.style.width = `${Math.max(4, Math.min(mw, b.x - a.x))}px`;
-    minimapBox.style.height = `${Math.max(4, Math.min(mh, b.y - a.y))}px`;
+    minimapBox.style.left = `${Math.max(0, Math.min(rect.width, a.x * kx))}px`;
+    minimapBox.style.top = `${Math.max(0, Math.min(rect.height, a.y * ky))}px`;
+    minimapBox.style.width = `${Math.max(4, Math.min(rect.width, (b.x - a.x) * kx))}px`;
+    minimapBox.style.height = `${Math.max(4, Math.min(rect.height, (b.y - a.y) * ky))}px`;
 
     if (playerDot) {
       const p = getExplorePos ? getExplorePos() : { active: false, x: 0, y: 0 };
       if (p.active) {
         playerDot.style.display = "block";
         const px = toMini(p.x, p.y);
-        playerDot.style.left = `${px.x}px`;
-        playerDot.style.top = `${px.y}px`;
+        playerDot.style.left = `${px.x * kx}px`;
+        playerDot.style.top = `${px.y * ky}px`;
       } else {
         playerDot.style.display = "none";
       }
@@ -89,6 +95,12 @@ export function setupMinimap(
 
   viewport.addEventListener("scroll", updateRadar);
   updateRadar();
+
+  // Seguir cambios de tamaño del viewport (p. ej. colapso del panel) sin tocar main.ts.
+  if (typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(() => updateRadar());
+    ro.observe(viewport);
+  }
 
   const miniPoint = (clientX: number, clientY: number) => {
     const rect = minimapCanvas.getBoundingClientRect();
