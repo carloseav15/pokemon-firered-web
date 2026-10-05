@@ -491,6 +491,35 @@ y las tablas C relevantes en `pokefirered/src/data/field_effects/field_effect_ob
    No declarar fidelidad por usar una imagen del juego. Si falta metadato, señalar
    qué dato debe exportar Codex y detener únicamente esa comprobación.
 
+#### M10 — Tabla de cobertura (entrega Muse, 2026-10-05)
+
+1 tick = 1/60 s (≈16,7 ms). PNG medidos por cabecera IHDR con `python3`;
+frames/anims de `public/fr/fieldfx.json`; líneas C de
+`pokefirered/src/data/field_effects/field_effect_objects.h`; callers de
+`src/viewer/`. Estados: activo (conectado y fiel), disponible sin conexión
+(recurso/ts existen pero con secuencia o reloj propios), inexistente (ni recurso
+ni uso en Explorar). Ninguna cifra sale del nombre: todas de comandos/lecturas.
+
+| Familia | Recurso / template fuente | Secuencia fuente | Caller del viewer | Diferencia concreta | Estado | Destino |
+|---|---|---|---|---|---|---|
+| Avatar caminar | `objects/rednormal__player.png` 144×32, `greennormal` ídem | Tablas de movimiento C (reservadas, sin contrastar aquí) | `main.ts:193-239` frames manuales 0-8 por `playerStep`, sheets en `sprites.ts:42-54` | Secuencia manual, sin tabla C | Disponible sin conexión | Reservado Codex/C1 |
+| Avatar correr | Mismas sheets caminar | Ídem | `main.ts:227-239`, `sprites.ts:50-52` usa sheets `*surfrun__player` para correr | Hoja de correr por confirmar contra fuente | Disponible sin conexión | Reservado Codex: señalar qué sheet/frames usa correr |
+| Avatar bici | `greenbike/redbike__player.png` 288×32 | Ídem | `main.ts:227-239`, paso 100 ms en `:457` | Secuencia manual | Disponible sin conexión | Reservado Codex/C1 |
+| Avatar surf | `redsurfrun__player.png` 224×32; `SurfBlob` 6 frames, 4 anims por orientación con `J` loop (`fieldfx.json`, C `:182-215`), PNG `surfblob` 192×32 | Por orientación, 48 ticks/frame | `main.ts:425-431` cambia a surf + ripple; sin blob | Flotador inexistente en Explorar; distribución de frames del blob sin confirmar (no se deduce) | Inexistente | Reservado Codex/C7 |
+| Hierba | `tallgrass__ette1.png` 16×80 = 5×16×16 ✓ JSON 5 frames; anims orden 1,2,3,4,0 ×10 ticks (≈167 ms c/u, ≈833 ms); C `:64-94`, `UpdateTallGrassFieldEffect` | 1-2-3-4-0 a 10 ticks | `fieldFx.ts:11-27` (5 pos a 50 ms orden 0-4, `setInterval`), caller `main.ts:448` | Ritmo (50 vs ≈167 ms), orden y reloj propios | Disponible sin conexión | M12 |
+| Polvo | `groundimpactdust__ette0.png` 16×24 = 3×16×8 ✓; anims 0,1,2 ×8 ticks (≈133 ms, 400 ms); C `:288-313`, `UpdateJumpImpactEffect` | 0-1-2 a 8 ticks | `fieldFx.ts:28-44` (3 pos a 60 ms = 180 ms), caller `:482` solo tras salto de saliente | Ritmo propio; momento begin/finish sin confirmar | Disponible sin conexión | M12 (`JumpTallGrass` C `:319-347`, 4×16×8 a 8 ticks: inexistente en Explorar) |
+| Ondas | `ripple__ette1.png` 16×80 = 5×16×16 ✓; 8 cmds 0,1,2,3,0,1,2,4 a 12/9/9/9/9/9/11/11 ticks (≈1,3 s); C `:99-132`, `WaitFieldEffectSpriteAnim` | 8 pasos no lineales | `fieldFx.ts:45-61` (5 pos a 70 ms = 350 ms orden 0-4), callers `:428` entrar al agua y `:453-455` ripple aleatorio 0.3 en surf | Secuencia, duración y activación (el 0.3 es invento del viewer) | Disponible sin conexión | M12 |
+| Huellas | `sandfootprints__ette0.png` 16×32 = 2×16×16 ✓ (+`deep` ídem); 5 anims por dirección (tabla C `:382-388`), frame 0 ó 1 a 1 tick; `UpdateFootprintsTireTracksFieldEffect` | Variante por dirección, 1 tick | `fieldFx.ts:62-74` siempre frame 0 + fade 1200/600 ms, caller `:450` | Dirección ignorada, permanencia inventada | Disponible sin conexión | M13 (`SandPile` sin uso: inexistente) |
+| Marcas bici | `biketiretracks__ette0.png` 32×32, 4 frames 16×16; 9 anims (4 dirs + 4 giros + base), C `:460-514` | Frame por dirección y giro | `fieldFx.ts:75-88` siempre frame 0 + fade, caller `:450` | Dirección y giros ignorados | Disponible sin conexión | M13 |
+| Sombras | `shadow{small,medium,large,extralarge}` 8×8, 16×8, 32×8, 64×32 ✓ 1 frame c/u; C `:4-59`, `UpdateShadowFieldEffect` | 1 frame por tamaño | Ningún uso en Explorar (solo `box-shadow` CSS decorativo) | Inexistente en Explorar | Disponible sin conexión | Reservado Codex/C7 |
+| Reflejos | `ReflectionDistortion` vacío (sin frames, `SpriteCallbackDummy`); `WaterSurfacing` 4×16×16, `WaitFieldEffectSpriteAnim`, PNG 16×80 | Sin secuencia de distorsión en fuente | Ningún uso en Explorar | Inexistente en Explorar y sin datos fuente de distorsión | Inexistente | Reservado Codex: datos de activación |
+| NPC | `GFX_MAP` manual `sprites.ts:3-40` (campo `frames` sin usar); `faceTowards`/giros aleatorios `entities.ts:95-135`; `updateAutonomousBehaviors` en `main.ts:632` | Tablas de movimiento C (reservadas) | Sprites y giros propios | Secuencia y visibilidad manuales | Disponible sin conexión | Reservado Codex/C1-C7 |
+| Alerta | Sin template equivalente en `fieldfx.json` (35 templates, ninguno de exclamación); viewer usa `emoticons.png` 48×80 + `emoticonBounce` 0,4 s (`viewer.css:476-487`, `entities.ts:118-127`), caller `:309` tras `checkTrainerSight` (`:295-313`, rango cardinal) | N/A | Globo propio | Lógica de avistamiento simplificada | Propio del viewer | Reservado Codex/C7 |
+
+Metadato que debe exportar Codex si M12/M13 lo necesitan: loader/cache tipado de
+templates y eventos con posición/prioridad/sesión (ya pedido en M12), y la
+correspondencia dirección↔huella validada (ya pedida en M13); nada más detenido aquí.
+
 **Aceptar:** cada fila tiene evidencia verificable y estado de conexión; referencias
 existentes, sin cifras supuestas ni afirmación de prueba visual. Diff/enlaces y
 honesty antes del commit documental; no necesita build. Codex revisa la tabla.
