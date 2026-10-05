@@ -209,7 +209,7 @@ Segunda revisión sobre `8a36d0d8`, 2026-10-04: tipos/build/honesty PASS; Chromi
 confirma Meseta Añil con/sin acentos, búsquedas previas, Sin resultados sin atributo
 activo, Enter sin navegación y Esc. Minimap: viewbox alineado a 900×700/1280×800 y
 punto alineado con el jugador. R1–R3 cerrados; las instrucciones siguientes quedan
-como criterios de comprobación, no tareas abiertas. M6–M9 son la siguiente tanda.
+como criterios de comprobación, no tareas abiertas. M6–M9 se revisan abajo.
 
 Las comprobaciones aisladas de M2/M4 y texto HTML de M1 usaron entradas
 **PREPARED** para probar límites del módulo; no representan un recorrido de juego.
@@ -330,7 +330,7 @@ Conservar setupSearch/onSelectMap.
 **Aceptada:** `e12741d1`, revisión de Codex el 2026-10-05. Chromium: Azulona/azul,
 Ciudad Azulona, Meseta Añil/Añil, ruta 1/Route1 antes de Route10, ID, espacios
 repetidos/tabs y Sin resultados con ARIA limpio y Enter sin navegación. Tipos,
-build/honesty/diff-check PASS. M7–M9 no tienen entrega en las ramas locales revisadas.
+build/honesty/diff-check PASS. Entregas posteriores M7–M9 revisadas abajo.
 
 **Archivo:** `src/viewer/ui/search.ts` (auxiliar bajo ui/ si hace falta).
 Defecto reproducido: Ciudad Azulona encuentra CeladonCity; Azulona sola no.
@@ -347,9 +347,14 @@ Los alias completos solo participan en igualdad/prefijo, no en subcadena.
 
 ### M7 — Popovers con estado accesible y posición dentro de pantalla
 
+**Aceptada:** `87b2a9c2`, revisión de Codex el 2026-10-05. Chromium a 900×700
+y 900×300: controles/estado ARIA, Tab, Esc, clic fuera, alternancia y resize con
+scroll interno correctos. Fallback comprobado con fixture aislada **PREPARED**:
+Esc devuelve foco al botón y clic fuera conserva el foco del control elegido.
+
 **Archivos:** `src/viewer/ui/popover.ts`; CSS solo reglas de estos menús si hace falta.
-setupPopovers conserva firma. Menú Capas abierto en Chromium actualmente deja
-aria-expanded/aria-controls ausentes en su botón.
+setupPopovers conserva firma. Defecto original: menú Capas abierto en Chromium
+dejaba aria-expanded/aria-controls ausentes en su botón.
 
 1. Añadir aria-controls con ID real y sincronizar aria-expanded en apertura/cierre.
    En Popover API nativa observar toggle: incluye Esc, clic fuera y cambio al otro
@@ -364,6 +369,13 @@ aria-expanded/aria-controls ausentes en su botón.
    soporte; documentar cuál. No tocar main ni crear un segundo controlador de UI.
 
 ### M8 — Fichas claras y coordenadas copiables
+
+**Entregada, pendiente R4:** `1e00d1ed`. Chromium: ficha vacía, entrenador,
+puerta/interior y flag del índice, textos escapados, render repetido y callback
+único correctos. Clipboard de éxito diferido/error y texto con `<`/`&` comprobados
+con fixture **PREPARED**, sin afirmar prueba del portapapeles del sistema.
+Relleno válido ofrece copia; `renderBiomePanel(panel, -1, -4, -5)` no ofrece
+coordenadas ni copia. La ruta `showAt` usa ese caso fuera del rectángulo del mundo.
 
 **Archivos:** `src/viewer/ui/panel.ts`; CSS de ficha si hace falta.
 Mantener firmas/callbacks; no navegar automáticamente ni modificar showAt.
@@ -382,6 +394,16 @@ Mantener firmas/callbacks; no navegar automáticamente ni modificar showAt.
 
 ### M9 — Minimapa con teclado y arrastre protegido
 
+**Entregada, pendiente R5:** `fde7c0fc`. Chromium: flechas con foco desplazan
+128 px a zoom 1 y 160 px a 1,25; fuera del minimapa no capturan la tecla.
+Mouse real, panel colapsado y ocultar/reaparecer radar correctos. Segundo dedo,
+cancelación, lostcapture y botón derecho del mouse comprobados **PREPARED**.
+Con avatar activo la flecha no lo mueve; la cámara vuelve a seguirlo por la ruta
+existente de C1, no se acepta como cámara libre de exploración.
+Fixture **PREPARED** con canvas desplazado 20 px dentro del wrap: viewbox queda
+20 px a la izquierda de su posición debida. Lápiz primario con `button: 2`
+también navega: la guardia de botón solo se aplica al mouse.
+
 **Archivo:** `src/viewer/ui/minimap.ts`; CSS solo reglas de foco de minimapa.
 Mantener setupMinimap/updateRadar, coordenadas y alineación aceptada en R3.
 
@@ -398,8 +420,31 @@ Mantener setupMinimap/updateRadar, coordenadas y alineación aceptada en R3.
    sintético), cancelar y continuar, centro/bordes, panel colapsado y radar oculto/
    visible. Separar cualquier límite heredado de C3 de un fallo propio de M9.
 
-M6 aceptada; M7–M9 quedan abiertas. Una entrega por tarea, instrucciones comunes y revisión
-antes de continuar; M7/M8/M9 comparten CSS y se hacen secuencialmente.
+### Correcciones finales para Muse: R4 → R5
+
+Todas las tareas M1–M9 tienen entrega; M1–M7 aceptadas. Tipos, build, honesty y
+diff-check PASS sobre `fde7c0fc`. M8/M9 conservan únicamente estos pendientes:
+
+**R4 — Copiar coordenadas también fuera de los mapas (M8).** Solo `panel.ts`.
+En la rama de bioma inválido conservar «Fuera de los mapas», mostrar mundo(x,y)
+y añadir el mismo botón/feedback de copia que en el fondo válido, sin inventar
+un ID ni casilla local. Verificar índices -1 y fuera de BIOME_NAMES, coordenadas
+negativas, éxito/error asincrónico y render repetido. No modificar showAt ni
+crear una segunda implementación de clipboard. Un commit de código.
+
+**R5 — Indicadores relativos al canvas y botón principal del lápiz (M9).** Solo
+`minimap.ts`, CSS únicamente si resulta necesario. Convertir el origen del canvas
+al sistema de coordenadas del wrap que contiene viewbox/player-dot; sumar ese
+desplazamiento a ambos indicadores y conservar la escala uniforme y el recorte
+al mundo. Observar también el canvas para actualizar ante su resize aunque el
+wrap conserve tamaño. No asumir que canvas y wrap comienzan en el mismo punto.
+Rechazar botones secundarios de mouse **y lápiz** manteniendo touch primario y
+la protección contra segundo dedo. Verificar layout actual y fixture **PREPARED**
+con canvas desplazado 20 px/reducido sin redimensionar wrap, punto del avatar,
+viewbox, navegación, ocultar/reaparecer, lápiz con button 0/2 y cancelación.
+No tocar cámara/zoom de main: la doble escala C3 y el seguimiento C1 quedan
+reservados a Codex. Un commit de código; revisar después de R4.
+
 El editor, sus datos/persistencia, audio y profundidad visual siguen reservados a
 Codex. No añadir controles de editor sin modelo funcional ni funciones contables.
 
@@ -408,7 +453,7 @@ Codex. No añadir controles de editor sin modelo funcional ni funciones contable
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M6 aceptadas; siguiente M7 → M8 → M9, revisar cada entrega. Worktrees separados y
+Muse: entregó M1–M9; M1–M7 aceptadas, siguiente R4 → R5, revisar cada entrega. Worktrees separados y
 coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
