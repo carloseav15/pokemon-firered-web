@@ -8,7 +8,8 @@ function normalize(str: string): string {
   return str
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
 }
 
 function splitWords(str: string): string {
@@ -196,13 +197,16 @@ export function setupSearch(
     qNospace: string
   ): number => {
     // Coincidencia exacta de ID/título/alias (ignorando espacios) > prefijo > subcadena.
+    // Cada alias se evalúa por separado: no se concatenan, para no inventar
+    // coincidencias entre el final de un nombre y el inicio de otro.
     const names = [m.idNorm, m.titleNorm, ...m.aliases];
     const namesNospace = [m.idNospace, m.titleNospace, ...m.aliasesNospace];
     if (names.includes(q) || namesNospace.includes(qNospace)) return 4;
     if (names.some((n) => n.startsWith(q)) || namesNospace.some((n) => n.startsWith(qNospace)))
       return 3;
-    if (m.key.includes(q)) return 2;
-    if (m.keyNospace.includes(qNospace)) return 1;
+    if (m.key.includes(q) || m.aliases.some((a) => a.includes(q))) return 2;
+    if (m.keyNospace.includes(qNospace) || m.aliasesNospace.some((a) => a.includes(qNospace)))
+      return 1;
     return 0;
   };
 
