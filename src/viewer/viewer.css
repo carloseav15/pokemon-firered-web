@@ -565,6 +565,10 @@ body {
   flex: 1;
   cursor: crosshair;
 }
+#minimap-canvas-wrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 #minimap-canvas {
   width: 100%;
   height: 100%;
