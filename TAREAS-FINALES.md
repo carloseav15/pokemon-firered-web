@@ -460,6 +460,6 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
 - [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
   Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;
   Codex C1–C7; sin batallas/historia. M1–M5 aceptadas tras `c62343fa`/`8a36d0d8`
-  (R1–R3 cerrados); M6/M7 aceptadas (`e12741d1`/`87b2a9c2`); M8/M9 entregadas
-  (`1e00d1ed`/`fde7c0fc`), pendientes R4/R5 detallados en VISOR-MEJORAS §4.
-  Zoom/audio/editor pendientes; siguiente entrega de Muse: R4 → R5.
+  (R1–R3 cerrados); M6/M7 aceptadas (`e12741d1`/`87b2a9c2`); M8/M9 aceptadas
+  tras R4/R5 (`11915f9a`/`c2c8e47f`), revisión en VISOR-MEJORAS §4.
+  Muse M1–M9 cerradas; Codex zoom/audio/editor pendientes, siguiente C2/C3 y C6.

@@ -370,12 +370,12 @@ dejaba aria-expanded/aria-controls ausentes en su botón.
 
 ### M8 — Fichas claras y coordenadas copiables
 
-**Entregada, pendiente R4:** `1e00d1ed`. Chromium: ficha vacía, entrenador,
+**Aceptada tras R4:** `1e00d1ed` + `11915f9a`. Primera revisión: ficha vacía, entrenador,
 puerta/interior y flag del índice, textos escapados, render repetido y callback
 único correctos. Clipboard de éxito diferido/error y texto con `<`/`&` comprobados
 con fixture **PREPARED**, sin afirmar prueba del portapapeles del sistema.
-Relleno válido ofrece copia; `renderBiomePanel(panel, -1, -4, -5)` no ofrece
-coordenadas ni copia. La ruta `showAt` usa ese caso fuera del rectángulo del mundo.
+Relleno válido ofrecía copia; antes de R4, `renderBiomePanel(panel, -1, -4, -5)`
+no ofrecía coordenadas ni copia. Corregido; comprobación final abajo.
 
 **Archivos:** `src/viewer/ui/panel.ts`; CSS de ficha si hace falta.
 Mantener firmas/callbacks; no navegar automáticamente ni modificar showAt.
@@ -394,15 +394,15 @@ Mantener firmas/callbacks; no navegar automáticamente ni modificar showAt.
 
 ### M9 — Minimapa con teclado y arrastre protegido
 
-**Entregada, pendiente R5:** `fde7c0fc`. Chromium: flechas con foco desplazan
+**Aceptada tras R5:** `fde7c0fc` + `c2c8e47f`. Primera revisión: flechas con foco desplazan
 128 px a zoom 1 y 160 px a 1,25; fuera del minimapa no capturan la tecla.
 Mouse real, panel colapsado y ocultar/reaparecer radar correctos. Segundo dedo,
 cancelación, lostcapture y botón derecho del mouse comprobados **PREPARED**.
 Con avatar activo la flecha no lo mueve; la cámara vuelve a seguirlo por la ruta
 existente de C1, no se acepta como cámara libre de exploración.
-Fixture **PREPARED** con canvas desplazado 20 px dentro del wrap: viewbox queda
-20 px a la izquierda de su posición debida. Lápiz primario con `button: 2`
-también navega: la guardia de botón solo se aplica al mouse.
+Antes de R5, fixture **PREPARED** con canvas desplazado 20 px: viewbox quedaba
+20 px a la izquierda. Lápiz primario con `button: 2` también navegaba.
+Ambos corregidos; comprobación final abajo.
 
 **Archivo:** `src/viewer/ui/minimap.ts`; CSS solo reglas de foco de minimapa.
 Mantener setupMinimap/updateRadar, coordenadas y alineación aceptada en R3.
@@ -422,8 +422,15 @@ Mantener setupMinimap/updateRadar, coordenadas y alineación aceptada en R3.
 
 ### Correcciones finales para Muse: R4 → R5
 
-Todas las tareas M1–M9 tienen entrega; M1–M7 aceptadas. Tipos, build, honesty y
-diff-check PASS sobre `fde7c0fc`. M8/M9 conservan únicamente estos pendientes:
+**Cerradas:** R4 `11915f9a` y R5 `c2c8e47f`; M1–M9 aceptadas. Revisión de Codex
+el 2026-10-05: tipos/build/honesty/diff-check PASS. Chromium normal a 900×700:
+mouse, paso de teclado de 128 px, panel colapsado y radar oculto/reaparecido correctos.
+Fixtures **PREPARED**: R4 con índices -1/3/99, coordenadas negativas, render repetido
+y clipboard diferido/error; R5 con canvas desplazado 20×10 px y reducido a 140×110
+sin cambiar wrap, punto/viewbox alineados (error <0,02 px), resize/reaparición,
+lápiz principal/secundario, touch, segundo dedo, cancelación y reinicio correctos.
+No se afirma prueba del portapapeles del sistema ni de hardware táctil/lápiz real.
+Las instrucciones siguientes quedan como criterios ya cumplidos, no tareas abiertas.
 
 **R4 — Copiar coordenadas también fuera de los mapas (M8).** Solo `panel.ts`.
 En la rama de bioma inválido conservar «Fuera de los mapas», mostrar mundo(x,y)
@@ -453,8 +460,9 @@ Codex. No añadir controles de editor sin modelo funcional ni funciones contable
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: entregó M1–M9; M1–M7 aceptadas, siguiente R4 → R5, revisar cada entrega. Worktrees separados y
-coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
+Muse: M1–M9 y R1–R5 cerradas. No añadir otra tanda de controles hasta tener los
+fundamentos C2/C3 y el modelo C6; después asignar tareas pequeñas sobre APIs reales.
+Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
 autorizado por la clarificación del usuario. No ampliar regiones ni añadir batallas
