@@ -32,7 +32,8 @@ export function renderBiomePanel(
     )}</p><p style="color:#71717a">Coordenadas mundo: (${mx}, ${my}) · No es transitable.</p>`;
     appendCopyButton(panel, `mundo(${mx},${my})`);
   } else {
-    panel.innerHTML = `<h2>Exterior de Kanto</h2><p>Fuera de los mapas.</p>`;
+    panel.innerHTML = `<h2>Exterior de Kanto</h2><p>Fuera de los mapas.</p><p style="color:#71717a">Coordenadas mundo: (${mx}, ${my}).</p>`;
+    appendCopyButton(panel, `mundo(${mx},${my})`);
   }
 }
 
