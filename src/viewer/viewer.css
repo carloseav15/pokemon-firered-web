@@ -439,6 +439,17 @@ body {
 .badge-trainer { background: #4c1d95; color: #c4b5fd; border: 1px solid #7c3aed; }
 .badge-warp { background: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
 .badge-trigger { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
+.layer-id {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+.copy-feedback {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-height: 1.2em;
+  margin: 4px 0 0;
+}
 
 /* Entidades del Mundo (NPCs, Objetos, Entrenadores) */
 .world-npc {
