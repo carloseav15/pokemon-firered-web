@@ -455,13 +455,127 @@ reservados a Codex. Un commit de código; revisar después de R4.
 El editor, sus datos/persistencia, audio y profundidad visual siguen reservados a
 Codex. No añadir controles de editor sin modelo funcional ni funciones contables.
 
+### Nueva tanda: entorno e interacciones de Explorar (M10–M13)
+
+**Objetivo:** mejorar la presentación del entorno sin duplicar el motor. M1–M9
+cerradas no significan que las animaciones de FireRed estén conectadas a Explorar.
+El viewer usa `spawnFieldFx` propio para cinco tipos de efecto, frames manuales
+del avatar y giros aleatorios de NPC. Reutiliza TilesetAnimator, pero no el sistema
+de efectos de suelo/objetos del motor. Suelo y partes altas se componen hoy en un
+canvas; el z-index fijo del protagonista no resuelve copas/tejados.
+
+**Asignación y orden:** M10 → revisar → M11 → revisar. M12/M13 están bloqueadas
+hasta la entrega explícita de las APIs/datos indicados por Codex. No iniciar esos
+trabajos con un reloj nuevo, parámetros inventados o fixtures en la ruta real.
+Una tarea por commit; no iniciar subagentes ni enviar mensajes a otros chats.
+Mantener las instrucciones comunes de AGENTS.md y §4, con estas excepciones
+acotadas: Muse puede contrastar tablas para M10 y consumir secuencias ya exportadas
+en M12/M13; Codex decide semántica, activación y conexiones con el motor.
+
+#### M10 — Comprobar recursos y cobertura real de las animaciones [lista para empezar]
+
+**Entrega documental:** completar aquí una tabla compacta de cobertura, sin abrir
+otra crónica ni añadir código desconectado. Leer `render/fieldFx.ts`, `sprites.ts`,
+`entities.ts`, llamadas de `main.ts`, `public/fr/fieldfx.json`, metadatos de objetos
+y las tablas C relevantes en `pokefirered/src/data/field_effects/field_effect_objects.h`.
+
+1. Registrar por familia: recurso/template fuente, secuencia disponible, caller
+   activo del viewer, diferencia concreta y destino C1/C7 o M12/M13. Incluir avatar
+   caminar/correr/bici/surf, hierba, polvo, ondas, huellas, marcas de bici, sombras,
+   reflejos, NPC y alerta; distinguir inexistente, disponible sin conexión y activo.
+2. Verificar que los archivos referidos existen, dimensiones del PNG, tamaño de
+   frame y límites de cada índice usado. No deducir número de frames solo del nombre
+   ni ajustar cifras a esta guía. Contrastar arena/marcas por dirección y las
+   secuencias de hierba/polvo/ondas; anotar líneas C y TS de cualquier diferencia.
+3. No editar assets/JSON generados, generadores, lógica de juego ni el inventario.
+   No declarar fidelidad por usar una imagen del juego. Si falta metadato, señalar
+   qué dato debe exportar Codex y detener únicamente esa comprobación.
+
+**Aceptar:** cada fila tiene evidencia verificable y estado de conexión; referencias
+existentes, sin cifras supuestas ni afirmación de prueba visual. Diff/enlaces y
+honesty antes del commit documental; no necesita build. Codex revisa la tabla.
+
+#### M11 — Diálogos de interacción seguros y accesibles [lista después de M10]
+
+**Archivos:** `ui/dialog.ts`, HTML/CSS del diálogo y cambios mínimos a sus callers
+en `main.ts`. No cambiar contenido narrativo, combate, scripts ni movimiento.
+
+1. Sustituir la entrada HTML arbitraria por texto: revisar TODOS los callers de
+   `DialogManager.show`, retirar el `<b>` del mensaje de entrenador y presentar
+   nombres/flags con `textContent`. No dejar un segundo camino inseguro. Si se
+   necesita énfasis, usar nodos DOM explícitos con valores tratados como texto.
+2. Dar nombre/descripción accesibles al panel visible mediante sus IDs reales y
+   anunciar el mensaje una vez al abrir/actualizar. Elegir un único mecanismo
+   accesible adecuado; no combinar anuncios duplicados ni afirmar modalidad con
+   aria-modal si no se controla el foco. Mantener cierre con Z/Espacio/Enter y
+   parada del movimiento mientras el diálogo está abierto.
+3. Añadir botón Cerrar visible y accesible que use `close()`; estado oculto y abierto
+   coherentes para tecnologías de asistencia. No añadir listeners globales por
+   cada apertura, atrapar foco ni robarlo al mostrar un diálogo automático.
+4. Ajustar texto largo a 900×300 y 900×700: contenido y cierre alcanzables, scroll
+   interno si hace falta, sin recortar el mensaje ni cubrir toda la barra superior.
+
+**Aceptar:** NPC y mensaje de entrenador conservan su información; `<`, `&` y
+`<img onerror=...>` aparecen como texto sin crear elementos (fixture **PREPARED**).
+Abrir/actualizar/cerrar repetidamente no duplica callbacks; botón y teclas cierran,
+no avanza el avatar por clic en Cerrar. Tipos/build/honesty/diff-check y comprobación
+focalizada en navegador. No afirmar fidelidad de los diálogos al juego original.
+
+#### M12 — Presentación de hierba, polvo y ondas desde templates [bloqueada por C7]
+
+**Antes debe entregar Codex:** API de reloj GBA compartido con alta/baja y pausa;
+loader/cache tipado de templates fuente; eventos de efecto con posición, prioridad
+y generación de sesión. Confirmar el subconjunto de comandos AnimCmd que se usará.
+Codex mantiene la detección de terreno y sus momentos spawn/begin/finish.
+
+**Archivos para Muse:** `render/fieldFx.ts` y auxiliar de presentación si hace falta;
+CSS del efecto. Integración mínima con la API entregada, sin modificar movimiento.
+
+1. Presentar TallGrass/GroundImpactDust/Ripple consumiendo frames, tamaños, orden,
+   duraciones y flips de los templates; no copiar secuencias a una tabla manual.
+   Resolver índices sobre la distribución real del asset, sin suponer orientación.
+2. Avanzar con el reloj entregado; retirar setInterval/setTimeout de esas tres
+   ramas. No crear otro requestAnimationFrame ni depender del interruptor de tiles.
+3. Terminar efectos y liberar nodos/suscripciones al finalizar o invalidarse la
+   sesión. Reentrada y cambio de modo no reviven efectos anteriores. Reutilizar
+   prioridad/posición recibidas: no imponer z-index que sustituya la profundidad C7.
+4. Comando/template no soportado: error identificable, sin éxito ficticio ni
+   fallback a una secuencia aproximada. Mantener arena/bici intactas hasta M13.
+
+**Aceptar:** comparación focalizada con datos fuente en ticks exactos, frame final
+y liberación; reloj simulado **PREPARED** identificado. Después recorrido real por
+hierba/agua/salto, pausa/reentrada y efectos simultáneos. No preparar los eventos
+del recorrido que luego se afirma validar. Codex verifica la activación y fidelidad.
+
+#### M13 — Variantes visuales de huellas y marcas de bicicleta [bloqueada por C7 y M12]
+
+**Antes debe entregar Codex:** correspondencia validada entre dirección anterior/
+actual, tipo de huella, animación y flips fuente; evento con esos datos y política
+de duración/desvanecimiento. No inferir curvas ni dirección leyendo teclas del usuario.
+
+**Archivos:** presentación de `sand`/`tire` en `render/fieldFx.ts`; CSS si hace falta.
+Consumir la variante proporcionada, dimensiones y comandos fuente; corregir el
+recorte fijo que hoy muestra siempre el primer frame. Usar el reloj/lifecycle de
+M12 para permanencia y retirada; eliminar timers sustituidos. No decidir qué
+terrenos producen marcas, cuándo se crean ni incorporar terrenos de otro juego.
+
+**Aceptar:** cuatro direcciones y giros permitidos, arena a pie/bici, paso repetido,
+superposición, expiración y cambio de modo. Comparar variantes con fuente; fixtures
+**PREPARED** para combinaciones y recorrido real por arena separados. Si la fuente
+solo permite un subconjunto, documentarlo sin inventar variantes. Revisión de Codex.
+
+**Reservado a Codex:** frames/transiciones del protagonista y flotador de surf,
+saltos/aterrizaje y colisiones, sombras/reflejos y profundidad por elevación,
+movimiento/visibilidad de NPC, puertas/scripts, continuidad de mapas, audio y modelo
+editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento fuente.
+
 ## 5. Orden y cierre
 
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M9 y R1–R5 cerradas. No añadir otra tanda de controles hasta tener los
-fundamentos C2/C3 y el modelo C6; después asignar tareas pequeñas sobre APIs reales.
+Muse: M1–M9 y R1–R5 cerradas; M10 → M11 listas en el orden indicado. M12 → M13
+esperan APIs/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
 Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
