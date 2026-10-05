@@ -327,6 +327,11 @@ Conservar setupSearch/onSelectMap.
 
 ### M6 — Buscar también fragmentos de alias españoles
 
+**Aceptada:** `e12741d1`, revisión de Codex el 2026-10-05. Chromium: Azulona/azul,
+Ciudad Azulona, Meseta Añil/Añil, ruta 1/Route1 antes de Route10, ID, espacios
+repetidos/tabs y Sin resultados con ARIA limpio y Enter sin navegación. Tipos,
+build/honesty/diff-check PASS. M7–M9 no tienen entrega en las ramas locales revisadas.
+
 **Archivo:** `src/viewer/ui/search.ts` (auxiliar bajo ui/ si hace falta).
 Defecto reproducido: Ciudad Azulona encuentra CeladonCity; Azulona sola no.
 Los alias completos solo participan en igualdad/prefijo, no en subcadena.
@@ -393,7 +398,7 @@ Mantener setupMinimap/updateRadar, coordenadas y alineación aceptada en R3.
    sintético), cancelar y continuar, centro/bordes, panel colapsado y radar oculto/
    visible. Separar cualquier límite heredado de C3 de un fallo propio de M9.
 
-M6–M9 quedan abiertos. Una entrega por tarea, instrucciones comunes y revisión
+M6 aceptada; M7–M9 quedan abiertas. Una entrega por tarea, instrucciones comunes y revisión
 antes de continuar; M7/M8/M9 comparten CSS y se hacen secuencialmente.
 El editor, sus datos/persistencia, audio y profundidad visual siguen reservados a
 Codex. No añadir controles de editor sin modelo funcional ni funciones contables.
@@ -403,7 +408,7 @@ Codex. No añadir controles de editor sin modelo funcional ni funciones contable
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M5 aceptadas; siguiente M6 → M7 → M8 → M9, revisar cada entrega. Worktrees separados y
+Muse: M1–M6 aceptadas; siguiente M7 → M8 → M9, revisar cada entrega. Worktrees separados y
 coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
