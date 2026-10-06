@@ -274,7 +274,15 @@ Receta:
 
 **Otros archivos**
 - [ ] `field_player_avatar.c`: renombres.
-- [ ] `field_control_avatar.c`: getters de posición y helpers con `FieldControl` como contexto.
+- [x] `field_control_avatar.c`: getters de posición y helpers con `FieldControl` como contexto.
+  Iguales: `GetPlayerPosition` (C:345-349 frente a `fieldControl.ts:293-296`),
+  `GetInFrontOfPlayerPosition` (C:351-360 frente a `:299-304`),
+  `GetPlayerCurMetatileBehavior` (C:362-367 frente a `:217-220`),
+  `PlayerGetDestCoords`/`PlayerGetElevation`/`GetPlayerMovementDirection`/`GetPlayerFacingDirection`
+  (`field_player_avatar.c:1034-1095` frente a `playerAvatar.ts:47-73`; "dest" es
+  `currentCoords` y elevación es `previousElevation` en ambos) y vectores
+  S/N/W/E (`objectEvents.ts:17-19`). Wrappers de módulo en `:50-52`; callers vivos
+  en `:311,328,331,337`.
 - [ ] `start_menu.c`: `ShowStartMenu`, `SetUpReturnToStartMenu`, `CloseStartMenu`,
   `CloseSaveStatsWindow_`, `FieldCB_ReturnToFieldOpenStartMenu`.
 - [ ] `vs_seeker.c`: `VsSeekerFreezeObjectsAfterChargeComplete`, `VsSeekerResetObjectMovementAfterChargeComplete`.
