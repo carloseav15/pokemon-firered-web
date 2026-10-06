@@ -269,6 +269,46 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    ```
    Las coordenadas son las de `frDebug.state()` (sin el borde de +7).
 
+   Desde `66baef56`, la navegación usa `H.battleDefaults = { mode: "auto", slot: 0 }`.
+   `H.battle("auto")` puntúa ataques disponibles con potencia/precisión, STAB,
+   tipos de ambos lados, categoría física/especial de Gen III y etapas de stats.
+   Descarta PP0, movimientos de estado, daño variable/fijo con potencia1 y
+   restricciones Disable/Encore; contempla inmunidades comunes. Es política de
+   recorrido, no un cálculo exacto de daño ni un port de IA. No cubre todas las
+   interacciones de clima/objetos/efectos; formatos especiales/dobles se detienen.
+   Cuando el equipo tiene cuatro movimientos, rechaza reemplazos por UI; los
+   huecos libres se aprenden por el flujo normal. Los modos explícitos conservan
+   su comportamiento diagnóstico (incluido repetir Gruñido en C7).
+
+   API para los ejecutores:
+   ```js
+   H.resources()                       // HP/PP/estado, objetos y dinero observados
+   await H.prepareStep()               // {ok,note,resources}; respeta reserva y PP
+   await H.useItem(H.C.ITEM_POTION, 1)  // BAG > USE > miembro identificado; consumo real
+   await H.heal({leave:false})          // enfermera + verificación; permanece dentro
+   await H.heal()                       // mismo flujo y salida del Centro
+   await H.goto(x, y, {recovery:true})   // retirada decidida: omite guardia de campo
+   await H.enter(x, y, "D", {recovery:true})
+   await H.exit("D", 3, {recovery:true})
+   ```
+   `recovery` conserva colisiones y combate auto; solo permite dirigirse al Centro
+   con recursos bajos. No cambia HP/PP, resultado, bolsa ni flags. No activar para
+   continuar la cueva a costa de ignorar una parada. La política conserva una
+   medicina HP de reserva fuera del combate, exige dos PP de ataque por miembro,
+   cura por debajo del 60% HP en campo y del 40% (o daño reciente) en combate.
+   Estado sin remedio, miembro debilitado o PP escasos piden volver al Centro.
+   Los umbrales y presupuestos son política de prueba, no reglas del C.
+   `H.battle` devuelve `trace`, `stop`, `decisions` y `stuck`; goto/enter/exit/explore
+   deben inspeccionarse por `note`. No relanzar un recorrido tras `battle lost`,
+   presupuesto o recursos agotados sin diagnosticar/preparar una entrada nueva.
+   Fijar configuración antes del job, sin cambiarla a mitad de la operación.
+
+   Verificación focalizada: `node tools/playtest/strategy.check.mjs` y jobs
+   `driver-strategy`, `driver-auto-battle`, `driver-switch` mediante `pw.mjs`.
+   Sus entradas PREPARED están declaradas; switch verifica cambio/ataque/curación
+   y huida, no victoria. Estos casos no acreditan la ruta Monte Moon ni guardado.
+
+
    ### Cómo probar rápido y sin engañarte (método usado en las sesiones de Claude)
 
    1. **Punto de control antes de cada tramo** (`H.checkpoint("zona")`). Un fallo
