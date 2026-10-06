@@ -24,6 +24,7 @@ import { getPlayerSpriteSheet, type Direction, GFX_MAP } from "./render/sprites"
 import { spawnFieldFx } from "./render/fieldFx";
 import { EntityManager, type LiveEntity } from "./render/entities";
 import { DialogManager, type DialogSegment } from "./ui/dialog";
+import { ViewerCamera } from "./camera";
 import { ViewerAudioController } from "./audio/audioController";
 
 const viewport = document.getElementById("viewport")!;
@@ -49,9 +50,13 @@ let entityManager: EntityManager;
 let dialogManager: DialogManager;
 const audioController = new ViewerAudioController();
 
-let zoom = 1;
+const camera = new ViewerCamera(viewport, document.getElementById("world-stage")!, content);
+let initialZoom = 1;
+let selection: { x: number; y: number } | null = null;
 let startX: number | null = null;
 let startY: number | null = null;
+let startExplore = false;
+let startPlayer: { x: number; y: number } | null = null;
 
 // --- Estado del Personaje Jugador en el Visor ---
 let playerActive = false;
@@ -74,14 +79,22 @@ function parseHash(): void {
   const z = Number(h.get("z"));
   startX = h.get("x") !== null && Number.isFinite(x) ? x : null;
   startY = h.get("y") !== null && Number.isFinite(y) ? y : null;
-  if (z !== 0 && Number.isFinite(z)) zoom = Math.min(4, Math.max(0.25, Math.round(z * 1000) / 1000));
+  if (z !== 0 && Number.isFinite(z)) initialZoom = Math.min(4, Math.max(0.25, Math.round(z * 1000) / 1000));
   const capas = h.get("capas");
-  if (capas) {
+  if (capas !== null) {
     state.activeLayers.clear();
     for (const c of capas.split(",")) {
       if ((LAYERS as readonly string[]).includes(c)) state.activeLayers.add(c as Layer);
     }
   }
+  startExplore = h.get("modo") === "explore";
+  const px = Number(h.get("px"));
+  const py = Number(h.get("py"));
+  if (h.has("px") && h.has("py") && Number.isSafeInteger(px) && Number.isSafeInteger(py)) startPlayer = { x: px, y: py };
+  const sx = Number(h.get("sx"));
+  const sy = Number(h.get("sy"));
+  if (h.has("sx") && h.has("sy") && Number.isSafeInteger(sx) && Number.isSafeInteger(sy)) selection = { x: sx, y: sy };
+  if (h.get("panel") === "closed") panel.classList.add("collapsed");
   const relleno = h.get("relleno");
   if (relleno === "full" || relleno === "dim" || relleno === "off") state.fillMode = relleno;
 }
@@ -99,21 +112,24 @@ function writeHash(): void {
   const h = new URLSearchParams();
   h.set("x", String(Math.round(viewport.scrollLeft)));
   h.set("y", String(Math.round(viewport.scrollTop)));
-  h.set("z", String(zoom));
+  h.set("z", String(camera.zoom));
+  if (selection) {
+    h.set("sx", String(selection.x));
+    h.set("sy", String(selection.y));
+  }
+  if (panel.classList.contains("collapsed")) h.set("panel", "closed");
+  h.set("modo", state.appMode);
+  if (playerActive) {
+    h.set("px", String(playerX));
+    h.set("py", String(playerY));
+  }
   h.set("capas", [...state.activeLayers].join(","));
   if (state.fillMode !== "full") h.set("relleno", state.fillMode);
   history.replaceState(null, "", `#${h.toString()}`);
 }
 
 function setZoom(next: number, ax = viewport.clientWidth / 2, ay = viewport.clientHeight / 2): void {
-  const worldX = (viewport.scrollLeft + ax) / zoom;
-  const worldY = (viewport.scrollTop + ay) / zoom;
-  zoom = Math.round(Math.min(4, Math.max(0.25, next)) * 1000) / 1000;
-  content.style.transform = `scale(${zoom})`;
-  content.style.width = `${index.world.width * TILE * zoom}px`;
-  content.style.height = `${index.world.height * TILE * zoom}px`;
-  viewport.scrollLeft = worldX * zoom - ax;
-  viewport.scrollTop = worldY * zoom - ay;
+  camera.setZoom(next, ax, ay);
   minimapController?.updateRadar();
   scheduleHashWrite();
 }
@@ -154,8 +170,8 @@ function centerOnMap(id: string): boolean {
   const mapEl = content.querySelector<HTMLElement>(`[data-map="${id}"]`);
   const info = index.maps[id];
   if (!mapEl || !info) return false;
-  viewport.scrollLeft = (mapEl.offsetLeft + (info.width * TILE) / 2) * zoom - viewport.clientWidth / 2;
-  viewport.scrollTop = (mapEl.offsetTop + (info.height * TILE) / 2) * zoom - viewport.clientHeight / 2;
+  viewport.scrollLeft = (mapEl.offsetLeft + (info.width * TILE) / 2) * camera.zoom - viewport.clientWidth / 2;
+  viewport.scrollTop = (mapEl.offsetTop + (info.height * TILE) / 2) * camera.zoom - viewport.clientHeight / 2;
   minimapController?.updateRadar();
   checkCurrentMapMusic();
   scheduleHashWrite();
@@ -176,8 +192,8 @@ function findMapAt(gx: number, gy: number): [string, KantoIndex["maps"][string]]
 
 function checkCurrentMapMusic(): void {
   if (!audioController.isEnabled()) return;
-  const centerGx = Math.floor((viewport.scrollLeft / zoom + viewport.clientWidth / (2 * zoom)) / TILE) + minX;
-  const centerGy = Math.floor((viewport.scrollTop / zoom + viewport.clientHeight / (2 * zoom)) / TILE) + minY;
+  const centerGx = Math.floor((viewport.scrollLeft / camera.zoom + viewport.clientWidth / (2 * camera.zoom)) / TILE) + minX;
+  const centerGy = Math.floor((viewport.scrollTop / camera.zoom + viewport.clientHeight / (2 * camera.zoom)) / TILE) + minY;
   const curGx = playerActive ? playerX : centerGx;
   const curGy = playerActive ? playerY : centerGy;
 
@@ -249,12 +265,13 @@ function updatePlayerDisplay(): void {
   playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
   playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
 
-  viewport.scrollLeft = (px + TILE / 2) * zoom - viewport.clientWidth / 2;
-  viewport.scrollTop = (py + TILE / 2) * zoom - viewport.clientHeight / 2;
+  viewport.scrollLeft = (px + TILE / 2) * camera.zoom - viewport.clientWidth / 2;
+  viewport.scrollTop = (py + TILE / 2) * camera.zoom - viewport.clientHeight / 2;
   minimapController?.updateRadar();
 
   updateEntitiesView();
   checkCurrentMapMusic();
+  scheduleHashWrite();
 }
 
 function updateEntitiesView(): void {
@@ -262,10 +279,10 @@ function updateEntitiesView(): void {
     entityManager.hideAll();
     return;
   }
-  const viewLeft = viewport.scrollLeft / zoom - 64;
-  const viewTop = viewport.scrollTop / zoom - 64;
-  const viewRight = viewLeft + viewport.clientWidth / zoom + 128;
-  const viewBottom = viewTop + viewport.clientHeight / zoom + 128;
+  const viewLeft = viewport.scrollLeft / camera.zoom - 64;
+  const viewTop = viewport.scrollTop / camera.zoom - 64;
+  const viewRight = viewLeft + viewport.clientWidth / camera.zoom + 128;
+  const viewBottom = viewTop + viewport.clientHeight / camera.zoom + 128;
 
   entityManager.updateVisibility(viewLeft, viewTop, viewRight, viewBottom, (ent) => {
     interactWithEntity(ent);
@@ -357,6 +374,8 @@ function startExploration(targetGx?: number, targetGy?: number): void {
 
 function stopExploration(): void {
   playerActive = false;
+  keysDown.clear();
+  playerRunning = false;
   state.appMode = "viewer";
 
   const modeViewerBtn = document.getElementById("mode-viewer-btn");
@@ -370,6 +389,7 @@ function stopExploration(): void {
   entityManager.hideAll();
   dialogManager.close();
   minimapController?.updateRadar();
+  scheduleHashWrite();
 }
 
 function toggleBike(): void {
@@ -535,6 +555,9 @@ function processPlayerStep(): void {
 function showAt(worldX: number, worldY: number): void {
   const cellX = Math.floor(worldX / TILE);
   const cellY = Math.floor(worldY / TILE);
+  if (cellX < 0 || cellY < 0 || cellX >= index.world.width || cellY >= index.world.height) {
+    return;
+  }
   const selBox = document.getElementById("selection-box");
   if (selBox) {
     selBox.style.display = "block";
@@ -544,9 +567,8 @@ function showAt(worldX: number, worldY: number): void {
     selBox.style.height = `${TILE}px`;
   }
 
-  if (panel.classList.contains("collapsed")) {
-    panel.classList.remove("collapsed");
-  }
+  selection = { x: cellX + minX, y: cellY + minY };
+  scheduleHashWrite();
 
   const mx = cellX + minX;
   const my = cellY + minY;
@@ -568,13 +590,7 @@ function showAt(worldX: number, worldY: number): void {
 
   renderTilePanel(panel, index, id, lx, ly, mx, my, els, trs, () => {
     startExploration(mx, my);
-  });
-
-  for (const e of els) {
-    if (e.layer === "puerta" && e.destMap && e.destMap in index.maps) {
-      centerOnMap(e.destMap);
-    }
-  }
+  }, centerOnMap);
 }
 
 async function build(): Promise<void> {
@@ -627,7 +643,7 @@ async function build(): Promise<void> {
       top: viewport.scrollTop,
       width: viewport.clientWidth,
       height: viewport.clientHeight,
-      zoom,
+      zoom: camera.zoom,
     }),
     () => updateMeta(),
     () => {
@@ -818,9 +834,11 @@ async function build(): Promise<void> {
 
   const worldW = index.world.width * TILE;
   const worldH = index.world.height * TILE;
-  content.style.width = `${worldW * zoom}px`;
-  content.style.height = `${worldH * zoom}px`;
-  content.style.transform = `scale(${zoom})`;
+  camera.configure(worldW, worldH, initialZoom);
+  if (selection) {
+    if (selection.x < minX || selection.y < minY || selection.x >= minX + index.world.width || selection.y >= minY + index.world.height) selection = null;
+    else showAt((selection.x - minX) * TILE, (selection.y - minY) * TILE);
+  }
 
   if (startX !== null) viewport.scrollLeft = startX;
   if (startY !== null) viewport.scrollTop = startY;
@@ -979,7 +997,7 @@ function setupUi(): void {
     minX,
     minY,
     viewport,
-    () => zoom,
+    () => camera.zoom,
     () => {
       checkCurrentMapMusic();
       scheduleHashWrite();
@@ -1003,6 +1021,7 @@ function setupUi(): void {
   if (panelToggle) {
     panelToggle.addEventListener("click", () => {
       panel.classList.toggle("collapsed");
+      scheduleHashWrite();
     });
   }
 
@@ -1086,10 +1105,33 @@ function setupUi(): void {
 
   let dragX = 0;
   let dragY = 0;
-  let dragging = false;
+  let activePointer: number | null = null;
+  let originX = 0;
+  let originY = 0;
+  const cancelDrag = () => {
+    const id = activePointer;
+    activePointer = null;
+    if (id !== null && viewport.hasPointerCapture(id)) viewport.releasePointerCapture(id);
+    scheduleHashWrite();
+  };
+  window.addEventListener("blur", () => {
+    keysDown.clear();
+    playerRunning = false;
+    playerMoving = false;
+    cancelDrag();
+  });
+  viewport.addEventListener("pointercancel", (ev) => {
+    if (ev.pointerId === activePointer) cancelDrag();
+  });
+  viewport.addEventListener("lostpointercapture", (ev) => {
+    if (ev.pointerId === activePointer) cancelDrag();
+  });
   let moved = false;
   viewport.addEventListener("pointerdown", (ev) => {
-    dragging = true;
+    if (!ev.isPrimary || ev.button !== 0 || activePointer !== null) return;
+    activePointer = ev.pointerId;
+    originX = ev.clientX;
+    originY = ev.clientY;
     moved = false;
     dragX = ev.clientX;
     dragY = ev.clientY;
@@ -1098,9 +1140,7 @@ function setupUi(): void {
 
   viewport.addEventListener("pointermove", (ev) => {
     if (statusPos) {
-      const rect = content.getBoundingClientRect();
-      const worldPxX = (ev.clientX - rect.left) / zoom;
-      const worldPxY = (ev.clientY - rect.top) / zoom;
+      const { x: worldPxX, y: worldPxY } = camera.clientToWorld(ev.clientX, ev.clientY);
       const curX = Math.floor(worldPxX / TILE) + minX;
       const curY = Math.floor(worldPxY / TILE) + minY;
       const code = statusPos.querySelector("code");
@@ -1111,10 +1151,10 @@ function setupUi(): void {
       }
     }
 
-    if (!dragging) return;
+    if (ev.pointerId !== activePointer) return;
     const dx = ev.clientX - dragX;
     const dy = ev.clientY - dragY;
-    if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+    if (Math.abs(ev.clientX - originX) + Math.abs(ev.clientY - originY) > 3) moved = true;
     viewport.scrollLeft -= dx;
     viewport.scrollTop -= dy;
     dragX = ev.clientX;
@@ -1125,13 +1165,14 @@ function setupUi(): void {
   });
 
   viewport.addEventListener("pointerup", (ev) => {
-    dragging = false;
+    if (ev.pointerId !== activePointer) return;
+    cancelDrag();
     if (moved) {
       scheduleHashWrite();
       return;
     }
-    const rect = content.getBoundingClientRect();
-    showAt((ev.clientX - rect.left) / zoom, (ev.clientY - rect.top) / zoom);
+    const point = camera.clientToWorld(ev.clientX, ev.clientY);
+    showAt(point.x, point.y);
   });
 
   viewport.addEventListener(
@@ -1144,7 +1185,7 @@ function setupUi(): void {
       ev.preventDefault();
       const r = viewport.getBoundingClientRect();
       const factor = ev.ctrlKey ? Math.exp(-ev.deltaY * 0.01) : ev.deltaY > 0 ? 0.9 : 1.1;
-      setZoom(zoom * factor, ev.clientX - r.left, ev.clientY - r.top);
+      setZoom(camera.zoom * factor, ev.clientX - r.left - viewport.clientLeft, ev.clientY - r.top - viewport.clientTop);
     },
     { passive: false }
   );
@@ -1156,14 +1197,21 @@ function setupUi(): void {
     scheduleHashWrite();
   });
 
-  document.getElementById("zoom-in")!.addEventListener("click", () => setZoom(zoom * 1.25));
-  document.getElementById("zoom-out")!.addEventListener("click", () => setZoom(zoom * 0.8));
+  document.getElementById("zoom-in")!.addEventListener("click", () => setZoom(camera.zoom * 1.25));
+  document.getElementById("zoom-out")!.addEventListener("click", () => setZoom(camera.zoom * 0.8));
 }
 
 build()
   .then(() => {
     setupUi();
     updateMeta();
+    if (startExplore) {
+      const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
+        && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
+      startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
+      if (startX !== null) viewport.scrollLeft = startX;
+      if (startY !== null) viewport.scrollTop = startY;
+    }
   })
   .catch((err) => {
     panel.innerHTML = `<p>Error al cargar el visor: ${String(err)}</p>`;

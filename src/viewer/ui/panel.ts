@@ -70,7 +70,8 @@ export function renderTilePanel(
   my: number,
   els: Element[],
   trs: Trigger[],
-  onExploreHere?: () => void
+  onExploreHere?: () => void,
+  onNavigate?: (mapId: string) => void
 ): void {
   const mapInfo = index.maps[id];
   const musicLabel = mapInfo?.musicName ? ` · 🎵 ${escapeHtml(mapInfo.musicName)}` : "";
@@ -122,6 +123,16 @@ export function renderTilePanel(
   }
 
   panel.innerHTML = html;
+  if (onNavigate) {
+    const destinations = new Set(els.filter(e => e.layer === "puerta" && e.destMap && e.destMap in index.maps).map(e => e.destMap!));
+    for (const destination of destinations) {
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      btn.textContent = `Ver destino: ${index.maps[destination]?.title ?? destination}`;
+      btn.addEventListener("click", () => onNavigate(destination));
+      panel.appendChild(btn);
+    }
+  }
   appendCopyButton(panel, `${id} local(${lx},${ly}) mundo(${mx},${my})`);
   if (onExploreHere) {
     const wrap = document.createElement("div");

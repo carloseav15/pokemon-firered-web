@@ -348,10 +348,17 @@ body {
   overflow: auto;
   background: var(--bg-page);
   cursor: grab;
+  touch-action: none;
   position: relative;
 }
-#content {
+#world-stage {
   position: relative;
+  overflow: hidden;
+}
+#content {
+  position: absolute;
+  left: 0;
+  top: 0;
   transform-origin: 0 0;
   will-change: transform;
 }
