@@ -3,20 +3,25 @@ export default async function run(ctx) {
 
   const reloadAndContinue = async () => {
     await ctx.page.goto(`${BASE}?fr=continue`, { waitUntil: "load" });
-    await ctx.page.waitForTimeout(3000);
-    for (let i = 0; ; i++) {
-      try {
-        await ctx.page.evaluate(`(async () => {
-          const { H } = await import("/tools/playtest/driver.js");
-          window.H = H;
-          return await H.ready();
-        })();`);
-        break;
-      } catch (e) {
-        if (i >= 5) throw e;
-        await ctx.page.waitForTimeout(2000);
+    await ctx.page.waitForTimeout(1000);
+    const playbackDone = await ctx.runEval(`
+      const { H } = await import("/tools/playtest/driver.js");
+      window.H = H;
+      await H.ready();
+      const Q = await H.mod("/src/fr/questLogEvents.ts");
+      const isPlayback = () => Q.gQuestLogState === H.C.QL_STATE_PLAYBACK || Q.gQuestLogState === H.C.QL_STATE_PLAYBACK_LAST;
+      const observedQL = [];
+      for (let f = 0; f < 18000; f += 20) {
+        if (!observedQL.includes(Q.gQuestLogState)) observedQL.push(Q.gQuestLogState);
+        if (!isPlayback() && H.fieldFree()) break;
+        await frDebug.wait(20);
       }
-    }
+      if (isPlayback() || !H.fieldFree()) {
+        throw new Error("Quest Log playback did not finish: " + JSON.stringify({ observedQL, state: H.st() }));
+      }
+      return { observedQL };
+    `);
+    return playbackDone;
   };
 
   const saveViaStartMenu = `
@@ -295,9 +300,10 @@ export default async function run(ctx) {
     const pcSaveStats = await ctx.runEval(saveViaStartMenu);
 
     // 6. Reload and continue to verify PC persistence against preSaveSnapshot
-    await reloadAndContinue();
+    const pcReloadQL = await reloadAndContinue();
 
     const pcContinued = await ctx.runEval(`
+      const C = await H.mod("/src/fr/generated/constants.ts");
       const sv = frDebug.save.save;
       const monIdentity = (m) => m ? ({
         species: m.species,
@@ -315,22 +321,53 @@ export default async function run(ctx) {
         box0: sv.boxes[0].filter(m => m && m.species).map(monIdentity),
         bag: JSON.parse(JSON.stringify(sv.bag)),
         money: sv.money,
+        savedGameStat: sv.gameStats[C.GAME_STAT_SAVED_GAME],
         fieldFree: H.fieldFree()
       };
     `);
 
-    // Assert that continue restored the exact pre-save state (order, coords, box, money, bag)
-    if (JSON.stringify(pcContinued.party) !== JSON.stringify(pcFlow.preSaveSnapshot.party)) {
-      throw new Error("PC continue party mismatch: " + JSON.stringify({ got: pcContinued.party, expected: pcFlow.preSaveSnapshot.party }));
+    // Expected PC snapshot for comparison
+    const pcExpectedSnapshot = {
+      party: pcFlow.preSaveSnapshot.party,
+      box0: pcFlow.preSaveSnapshot.box0,
+      map: pcFlow.preSaveSnapshot.map,
+      coords: pcFlow.preSaveSnapshot.coords,
+      bag: pcFlow.preSaveSnapshot.bag,
+      money: pcFlow.preSaveSnapshot.money,
+      savedGameStat: pcSaveStats.statAfter
+    };
+
+    const pcObservedSnapshot = {
+      party: pcContinued.party,
+      box0: pcContinued.box0,
+      map: pcContinued.map,
+      coords: pcContinued.coords,
+      bag: pcContinued.bag,
+      money: pcContinued.money,
+      savedGameStat: pcContinued.savedGameStat
+    };
+
+    // Assert that continue restored the exact pre-save state (order, coords, box, money, bag, map, savedGameStat)
+    if (JSON.stringify(pcContinued.party) !== JSON.stringify(pcExpectedSnapshot.party)) {
+      throw new Error("PC continue party mismatch: " + JSON.stringify({ got: pcContinued.party, expected: pcExpectedSnapshot.party }));
     }
-    if (pcContinued.coords.x !== pcFlow.preSaveSnapshot.coords.x || pcContinued.coords.y !== pcFlow.preSaveSnapshot.coords.y) {
-      throw new Error("PC continue coords mismatch: got " + JSON.stringify(pcContinued.coords) + ", expected " + JSON.stringify(pcFlow.preSaveSnapshot.coords));
+    if (pcContinued.coords.x !== pcExpectedSnapshot.coords.x || pcContinued.coords.y !== pcExpectedSnapshot.coords.y) {
+      throw new Error("PC continue coords mismatch: got " + JSON.stringify(pcContinued.coords) + ", expected " + JSON.stringify(pcExpectedSnapshot.coords));
+    }
+    if (pcContinued.map !== pcExpectedSnapshot.map) {
+      throw new Error("PC continue map mismatch: got " + pcContinued.map + ", expected " + pcExpectedSnapshot.map);
+    }
+    if (JSON.stringify(pcContinued.bag) !== JSON.stringify(pcExpectedSnapshot.bag)) {
+      throw new Error("PC continue bag mismatch: got " + JSON.stringify(pcContinued.bag) + ", expected " + JSON.stringify(pcExpectedSnapshot.bag));
     }
     if (pcContinued.box0.length !== 0) {
       throw new Error("PC continue box0 not empty: " + JSON.stringify(pcContinued.box0));
     }
-    if (pcContinued.money !== pcFlow.preSaveSnapshot.money) {
-      throw new Error("PC continue money mismatch: got " + pcContinued.money + ", expected " + pcFlow.preSaveSnapshot.money);
+    if (pcContinued.money !== pcExpectedSnapshot.money) {
+      throw new Error("PC continue money mismatch: got " + pcContinued.money + ", expected " + pcExpectedSnapshot.money);
+    }
+    if (pcContinued.savedGameStat !== pcExpectedSnapshot.savedGameStat) {
+      throw new Error("PC continue savedGameStat mismatch: got " + pcContinued.savedGameStat + ", expected " + pcExpectedSnapshot.savedGameStat);
     }
     if (!pcContinued.fieldFree) {
       throw new Error("PC continue field not free: " + JSON.stringify(pcContinued));
@@ -338,6 +375,7 @@ export default async function run(ctx) {
 
     // =========================================================================
     // PARTE 2: Enfermera Joy (pewter) - Rechazo, Curación, Reglas C y Persistencia
+    // Declaración: El fixture cubre 1 miembro del equipo (Pikachu).
     // =========================================================================
     const initialNurse = await ctx.loadSave("pewter");
     if (initialNurse.map !== "MAP_PEWTER_CITY_POKEMON_CENTER_1F") {
@@ -360,7 +398,7 @@ export default async function run(ctx) {
 
       const initialPartyIdentity = sv.party.filter(m => m.species).map(monIdentity);
 
-      // PREPARED damage, PP consumption, and poison status
+      // PREPARED damage, PP consumption, and poison status for 1 party member
       // Contract: HP reduced by 5, first non-empty PP reduced by 1, status = STATUS1_POISON (8).
       // Max HP is strictly preserved; final results are never prepared.
       p.hp = p.stats[0] - 5;
@@ -516,9 +554,10 @@ export default async function run(ctx) {
     const nurseSaveStats = await ctx.runEval(saveViaStartMenu);
 
     // 6. Reload and continue to verify Nurse persistence against nursePreSaveSnapshot
-    await reloadAndContinue();
+    const nurseReloadQL = await reloadAndContinue();
 
     const nurseContinued = await ctx.runEval(`
+      const C = await H.mod("/src/fr/generated/constants.ts");
       const sv = frDebug.save.save;
       const p = sv.party[0];
       const monIdentity = (m) => m ? ({
@@ -538,21 +577,61 @@ export default async function run(ctx) {
         coords: { x: H.st().x, y: H.st().y },
         bag: JSON.parse(JSON.stringify(sv.bag)),
         money: sv.money,
+        savedGameStat: sv.gameStats[C.GAME_STAT_SAVED_GAME],
         fieldFree: H.fieldFree()
       };
     `);
 
-    if (JSON.stringify(nurseContinued.party) !== JSON.stringify(nurseFlow.nursePreSaveSnapshot.party)) {
-      throw new Error("Nurse continue party mismatch: " + JSON.stringify({ got: nurseContinued.party, expected: nurseFlow.nursePreSaveSnapshot.party }));
+    // Expected Nurse snapshot for comparison
+    const nurseExpectedSnapshot = {
+      party: nurseFlow.nursePreSaveSnapshot.party,
+      hp: nurseFlow.nursePreSaveSnapshot.maxHp,
+      maxHp: nurseFlow.nursePreSaveSnapshot.maxHp,
+      pp: nurseFlow.expectedPP,
+      status: 0,
+      map: nurseFlow.nursePreSaveSnapshot.map,
+      coords: nurseFlow.nursePreSaveSnapshot.coords,
+      bag: nurseFlow.nursePreSaveSnapshot.bag,
+      money: nurseFlow.nursePreSaveSnapshot.money,
+      savedGameStat: nurseSaveStats.statAfter
+    };
+
+    const nurseObservedSnapshot = {
+      party: nurseContinued.party,
+      hp: nurseContinued.hp,
+      maxHp: nurseContinued.maxHp,
+      pp: nurseContinued.pp,
+      status: nurseContinued.status,
+      map: nurseContinued.map,
+      coords: nurseContinued.coords,
+      bag: nurseContinued.bag,
+      money: nurseContinued.money,
+      savedGameStat: nurseContinued.savedGameStat
+    };
+
+    if (JSON.stringify(nurseContinued.party) !== JSON.stringify(nurseExpectedSnapshot.party)) {
+      throw new Error("Nurse continue party mismatch: " + JSON.stringify({ got: nurseContinued.party, expected: nurseExpectedSnapshot.party }));
     }
-    if (nurseContinued.coords.x !== nurseFlow.nursePreSaveSnapshot.coords.x || nurseContinued.coords.y !== nurseFlow.nursePreSaveSnapshot.coords.y) {
-      throw new Error("Nurse continue coords mismatch: got " + JSON.stringify(nurseContinued.coords) + ", expected " + JSON.stringify(nurseFlow.nursePreSaveSnapshot.coords));
+    if (nurseContinued.coords.x !== nurseExpectedSnapshot.coords.x || nurseContinued.coords.y !== nurseExpectedSnapshot.coords.y) {
+      throw new Error("Nurse continue coords mismatch: got " + JSON.stringify(nurseContinued.coords) + ", expected " + JSON.stringify(nurseExpectedSnapshot.coords));
     }
-    if (nurseContinued.hp !== nurseFlow.nursePreSaveSnapshot.maxHp || nurseContinued.status !== 0) {
+    if (nurseContinued.map !== nurseExpectedSnapshot.map) {
+      throw new Error("Nurse continue map mismatch: got " + nurseContinued.map + ", expected " + nurseExpectedSnapshot.map);
+    }
+    if (JSON.stringify(nurseContinued.bag) !== JSON.stringify(nurseExpectedSnapshot.bag)) {
+      throw new Error("Nurse continue bag mismatch: got " + JSON.stringify(nurseContinued.bag) + ", expected " + JSON.stringify(nurseExpectedSnapshot.bag));
+    }
+    if (nurseContinued.money !== nurseExpectedSnapshot.money) {
+      throw new Error("Nurse continue money mismatch: got " + nurseContinued.money + ", expected " + nurseExpectedSnapshot.money);
+    }
+    if (nurseContinued.savedGameStat !== nurseExpectedSnapshot.savedGameStat) {
+      throw new Error("Nurse continue savedGameStat mismatch: got " + nurseContinued.savedGameStat + ", expected " + nurseExpectedSnapshot.savedGameStat);
+    }
+    if (nurseContinued.hp !== nurseExpectedSnapshot.maxHp || nurseContinued.status !== nurseExpectedSnapshot.status) {
       throw new Error("Nurse continue healed stats corrupted: " + JSON.stringify(nurseContinued));
     }
-    if (JSON.stringify(nurseContinued.pp) !== JSON.stringify(nurseFlow.expectedPP)) {
-      throw new Error("Nurse continue PP mismatch: " + JSON.stringify({ got: nurseContinued.pp, expected: nurseFlow.expectedPP }));
+    if (JSON.stringify(nurseContinued.pp) !== JSON.stringify(nurseExpectedSnapshot.pp)) {
+      throw new Error("Nurse continue PP mismatch: " + JSON.stringify({ got: nurseContinued.pp, expected: nurseExpectedSnapshot.pp }));
     }
     if (!nurseContinued.fieldFree) {
       throw new Error("Nurse continue field not free: " + JSON.stringify(nurseContinued));
@@ -573,11 +652,15 @@ export default async function run(ctx) {
         activeTasksAfterExit: pcFlow.activeTasksAfterExit,
         walkedPosition: pcFlow.walkedPosition,
         saveStats: pcSaveStats,
+        questLog: pcReloadQL,
+        expectedSnapshot: pcExpectedSnapshot,
+        observedSnapshot: pcObservedSnapshot,
         continued: pcContinued
       },
       nurse: {
         checkpoint: "pewter",
         sha256: "6aa2386b7bb60b3e783dfe34503d97e6d20b50638f46cc9ea9e766ef007a8509",
+        scope: "Fixture covers 1 party member (Pikachu). Multi-party healing is not tested without a dedicated contract.",
         preparedFixture: nurseFlow.preparedFixture,
         afterReject: nurseFlow.afterReject,
         afterAccept: nurseFlow.afterAccept,
@@ -589,11 +672,15 @@ export default async function run(ctx) {
         },
         walkedNurse: nurseFlow.walkedNurse,
         saveStats: nurseSaveStats,
+        questLog: nurseReloadQL,
+        expectedSnapshot: nurseExpectedSnapshot,
+        observedSnapshot: nurseObservedSnapshot,
         continued: nurseContinued
       },
       limits: [
         "Audio / visual listening and pixel-perfect rendering parities have separate evidence and are not asserted by HP/PP checks.",
         "Damage, PP consumption and poison status for nurse validation were prepared in memory as declared PREPARED fixtures without modifying repository saves.",
+        "The nurse fixture covers 1 party member. Multi-member healing scope is excluded until specified by a dedicated contract.",
         "Bug 1.18 (MOVE ITEMS on empty box) is isolated and reproduced in a separate dedicated check to avoid crashing the standard PC storage flow."
       ]
     };
