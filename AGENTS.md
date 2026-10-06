@@ -127,8 +127,9 @@ Una tanda es una unidad integrada y revisable, no cada función o edición.
   corresponda y `Co-Authored-By: OpenAI Codex <codex@openai.com>` si trabaja Codex
   (otros agentes indican su entorno). Sin superlativos ni afirmaciones no probadas.
   Preserva cambios ajenos; no hagas push sin indicación del usuario.
-- Con varios agentes a la vez, cada uno trabaja en su worktree y rama
-  (`TAREAS-FINALES.md` §0, "Trabajo en paralelo"); solo el revisor fusiona en `main`.
+- Solo existe la rama `main` (decisión del usuario, 2026-10-06): un agente a la vez,
+  commits directos en `main`, sin worktrees ni ramas de agente. Claude revisa las
+  entregas (`TAREAS-FINALES.md` §0, "Un solo agente en `main`").
 - No inicies subagentes por defecto. La documentación antigua de paralelismo no
   autoriza delegación automática.
 

@@ -26,18 +26,12 @@ git switch main && git pull --ff-only && git status --short
 trabajando: no hagas `stash`, `checkout` ni `reset` sobre ellos y avisa al usuario.
 Elige **una** tarea sin marcar.
 
-### Trabajo en paralelo
-Con más de un agente activo, **cada uno en su carpeta y rama** (nunca dos en la misma):
-```bash
-git worktree add ../pokemon-<agente> -b <agente>/<tarea> main
-cd ../pokemon-<agente>
-ln -s ../pokemon/node_modules node_modules
-ln -s ../pokemon/.decomp-build .decomp-build
-```
-La carpeta debe ser hermana de `pokemon` (así se encuentran `../pokefirered` y
-`../refs-src`). Commit solo en tu rama; nada de `merge`, `push` ni `switch main`: el
-revisor fusiona. Para traer lo último: `git rebase main` (si choca, para y avisa).
-No toques archivos que esté editando otro agente.
+### Un solo agente en `main`
+Solo existe la rama `main` (decisión del usuario, 2026-10-06). Trabaja **un agente a
+la vez**, directamente en `main`, sin worktrees ni ramas propias. Si `git status` muestra
+cambios ajenos, otro agente sigue activo: para y avisa al usuario. Commit local por
+tarea; sin `push` salvo indicación del usuario. Claude revisa cada entrega en `main`
+y la corrige o revierte con un commit nuevo si no cumple.
 
 ### Eficiencia (obligatorio)
 - **Lee solo lo necesario:** §0 y tu tarea. En archivos grandes usa `grep -n` y
@@ -146,8 +140,9 @@ Abiertas:
   (`pokemon_storage_system_graphics.c:334-338`) también desreferencia NULL.
   Comportamiento original en hardware/emulador pendiente de verificar; no se
   afirma que sea un no-op. Decidir tratamiento fiel del acceso inválido antes de corregir.
-  `49c88b53` revisado y conservado en backup Git sin integrar: guarda web defensiva,
-  pero comentario/entrega atribuyen no-op BIOS sin evidencia en emulador/hardware.
+  Propuesta revisada y no integrada (opencode `49c88b53`, rama ya eliminada): añadir
+  `&& g.boxMonsSprites[boxPosition]` a la condición de la línea 121. Es una guarda web
+  defensiva; su comentario atribuía un no-op de BIOS sin evidencia en emulador/hardware.
 
 - [ ] 1.19 **Marcas de bicicleta del motor**: `field/fieldEffects.ts:DoTracksGroundEffect_BikeTireTracks` usa índices JS negativos; revisar direccionamiento contiguo u8 del C (previous * 4 + facing - 5). Detectado en M13, corregido solo en viewer `a29c9ae9`.
 
@@ -156,12 +151,11 @@ Abiertas:
   85e1e082; revisor repitió PC/enfermera, cierre y movimiento, guardados0→1 y
   continue con mapa/coords/bolsa/dinero/contador e identidades/orden coincidentes.
   Curación cubre un Bulbasaur con entrada médica PREPARED; sin paridad audiovisual
-  ni prueba de varios miembros. Evidencia en ../pokemon-cleanup-backup-2026-10-06/review-third-wave/sol-wave3-c8.json.
+  ni prueba de varios miembros. Evidencia en el mensaje del commit.
 - [x] 1.21 **Continue con escenas Quest Log**: 4ce0ab7f restaura índice de objetos,
   avatar por MOVEMENT_TYPE_PLAYER, paletas y mapa/posición guardados. Bytes SON-PREP
   sin alterar: playback2→3→0, equipo/HP/PP/bolsa/dinero/respawn/contador intactos,
-  movimiento posterior; continue sin escenas y auto/Brock pasan. Evidencia en
-  ../pokemon-cleanup-backup-2026-10-06/review-second-wave/sol-ql-*.json.
+  movimiento posterior; continue sin escenas y auto/Brock pasan (detalle en el commit).
 - [x] 1.22 **Persistencia de NPC y objetos dinámicos** — `bab7d84a`: SaveObjectEvents/LoadObjectEvents copian los 16 slots y campos C; SAVE normal conserva el mapa sin activar el warp especial; continue y retorno de Quest Log restauran registros antes de recrear sprites. Dos cuerpos C nuevos en `load_save.c` (archivo ya cubierto por navegador; delta del indicador 0), cero equivalencias. Check `tools/checks/objectEventSave.ts`: 53 campos C, slots inactivos, copias independientes, s16 y rechazo de registros incompletos. Job `object-event-save.job.mjs` con/sin `OBJECT_SAVE_PLAYBACK=1`: NPC movido por held movement, invisibilidad/dirección bloqueada y objeto runtime ausente de templates persisten; playback2→3→0 y movimiento posterior PASS. Entradas PREPARED declaradas; guardados antiguos sin snapshot usan templates y no recuperan posiciones históricas perdidas. Revisión manual del usuario y paridad audiovisual completa pendientes.
 - [x] 1.23 **H.heal reporta menú ausente tras curar**: 6fc39013 observa el
   ofrecimiento frame a frame, libera A y confirma YES; HP/PP/estados e identidades
@@ -183,43 +177,43 @@ Abiertas:
 ### Fiabilidad del driver: alcance inicial hasta Ciudad Celeste
 
 Prioridad vigente para recorridos; detalles y dependencias en
-[PLAN-RECORRIDO.md](PLAN-RECORRIDO.md#plan-vigente-de-fiabilidad-del-driver).
+[PLAN-RECORRIDO.md](PLAN-RECORRIDO.md#estado-de-fiabilidad-del-driver).
 No equivale a completar el juego ni su fidelidad. Las correcciones1.23–1.26 se
 conservan como evidencia focalizada; 1.22 implementada y comprobada en casos acotados;
 las validaciones generales anteriores siguen abiertas.
 
-- [ ] **DRV-01 — Matriz de capacidades (Luna).** Inventariar funciones públicas de
+- [ ] **DRV-01 — Matriz de capacidades.** Inventariar funciones públicas de
   driver.js, consumidores y checks/jobs existentes; clasificar implementado,
   comprobado, parcial, no soportado y NOT RUN por caso. Priorizar fallos del
   recorrido hasta Celeste. Terminada con referencias y huecos verificables,
   sin convertir análisis estático en PASS runtime.
-- [x] **DRV-02 — Estado y carga (Sol).** 6d693641/51cd5646/2e78b7df: observe distingue
+- [x] **DRV-02 — Estado y carga.** 6d693641/51cd5646/2e78b7df: observe distingue
   callbacks activos, carga, Quest Log, menús y movimiento terminado; ready espera
   control real. Carga pendiente, continue grabado y navegación focalizada PASS.
-- [x] **DRV-03 — Entradas y ejecución acotada (Sol).** 6d693641/51cd5646: pasos de
+- [x] **DRV-03 — Entradas y ejecución acotada.** 6d693641/51cd5646: pasos de
   un frame, resultados compatibles, límites/cancelación y reemplazo de sesión;
   control0/1/2 y Brock PASS. Guardias cooperativas: no cubren llamadas directas a frDebug.
-- [ ] **DRV-04 — Navegación y recursos por capacidades (Sol; escenarios Flash).**
+- [ ] **DRV-04 — Navegación y recursos por capacidades.**
   Revisar cobertura a pie, NPC/obstáculos, ledges, puertas/conexiones y recuperación
   con HP/PP/medicinas/reemplazos. Corregir fallos necesarios para Celeste y declarar
   límites posteriores (Surf/bici/empujes/movimientos forzados); no asumir que están
   ausentes del motor. Terminada con casos acotados y parada diagnosticada ante
   estado no soportado, sin bucles de curación ni repetir la historia completa.
-- [x] **DRV-05 — Checkpoints y exportación segura (Sol).** 2e78b7df: SAVE por UI,
+- [x] **DRV-05 — Checkpoints y exportación segura.** 2e78b7df: SAVE por UI,
   bytes/hash/procedencia y exportación exclusiva; velocidades0/1/2, NO inicial,
   cancelación, continue/movimiento y C8 PASS. Persistencia de NPC comprobada aparte
   en 1.22 (`bab7d84a`); DRV-05 por sí solo no la demuestra.
-- [ ] **DRV-06 — Gate de regresión del driver (Luna; revisión Sol).** Con contratos
+- [ ] **DRV-06 — Gate de regresión del driver.** Con contratos
   aceptados, integrar checks/jobs focalizados existentes y los casos faltantes
   aprobados en un comando acotado. Terminada con exit no exitoso ante fallo,
   MANUAL/NOT RUN separados, trazas de estado/acción/recurso y cobertura enlazada
   a DRV-01. No ejecutar toda la suite del juego por cada cambio.
-- [ ] **DRV-07 — Continuación de historia (Sonnet; revisión Sol).** Adaptar
+- [ ] **DRV-07 — Continuación de historia.** Adaptar
   SON-MM01-R a la API aceptada para reanudar una entrada real, detenerse con
   diagnóstico y guardar/exportar cuando sea posible. Sin crear fósil/flags ni
   reconstruir intentos anteriores. Terminada solo al entregar un checkpoint de
   Celeste guardado, recargado y con movimiento real; hasta entonces PARCIAL.
-  No ejecutar ruta hasta aceptar gate, entrada y presupuesto nuevos.
+  PARCIAL: job adaptado a la API (`5b1380a0`), sin ejecutar.
 
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
@@ -473,7 +467,8 @@ Receta manual (si un punto no se puede automatizar):
 - [ ] **C4 Quest Log**: tras continuar se reproduce el resumen y devuelve el control.
 - [x] **C5 Combate salvaje**: luchar, huir y capturar con pulsaciones reales
   (`d59b5003`), repetido sobre integración: captura en equipo y consumo de 2 balls.
-  Ruta alternativa hacia PC con equipo lleno aún no recorrida.
+  Job ampliado (`d2743aa7`): cinco casos aislados, equipo lleno → PC incluido; destapó el
+  fallo de texto de transferencia al PC, corregido en `bcd841b5`.
 - [ ] **C6 Combate de entrenador**: partida `pewter` → gimnasio → Brock; medalla y dinero.
   PARCIAL: `gym-camper` → Brock, victoria, medalla y 3150→4550 comprobados
   con el job `caa6885d` sobre integración. Falta la ruta previa desde `pewter` al gimnasio.
