@@ -2535,7 +2535,8 @@ export class Overworld {
     loaded = sync;
     this.Overworld_TryMapConnectionMusicTransition();
     this.applyCurrentWarp();
-    this.loaded = loaded;
+    // LoadCurrentMapData (overworld.c:760) also stores SaveBlock1.mapLayoutId, which continue uses.
+    this.LoadCurrentMapData(loaded);
     this.mapTypes.set(loaded.header.id, loaded.header.mapType);
     this.sectionCache.set(loaded.header.id, loaded.header.regionMapSection);
     this.loadObjEventTemplatesFromHeader();
