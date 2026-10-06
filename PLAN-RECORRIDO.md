@@ -165,30 +165,35 @@ Celeste; no promete paridad del juego entero.
   natural, Master Ball con hueco y equipo lleno → PC, casos aislados; cada desenlace
   camina a la casilla sin encuentros más cercana y un encuentro en el camino es MANUAL.
   Destapó y cerró el fallo de texto de transferencia al PC (`bcd841b5`).
-- **Monte Moon (SON-MM01):** intentos previos obtuvieron el Dome Fossil y
-  llegaron a Ruta 4 (32,6), pero ninguno guardó un checkpoint; no hay evidencia
-  reutilizable de ese avance. `son-mm01-r.job.mjs` está adaptado a la API
-  (`5b1380a0`) y aún no se ha ejecutado.
-- **Abierto:** DRV-01 (matriz de capacidades), DRV-04 (navegación/recursos más
-  allá de Celeste), DRV-06 (gate de regresión) y DRV-07 (checkpoint real en Celeste).
+- **Monte Moon → Celeste: hecho** (`78e781ad`). Checkpoints `mtmoon-{b2f,miguel,fossil,
+  route4east}-20261006233746` y `cerulean-arrival`, verificados con `mtmoon-checkpoints.job.mjs`.
+  Destapó y cerró el layout id perdido al cruzar conexiones (`77005743`).
+- **Regla para todo tramo:** el job guarda un checkpoint verificado en cada hito con el
+  campo libre (`stopCheckpoint` de `son-mm-lib.mjs`) y se reanuda con la entrada del último
+  hito; una parada dentro de un combate o menú no puede guardarse.
+- **Abierto:** DRV-01, DRV-04 (navegación/recursos que pidan los tramos siguientes) y DRV-06.
 
-### Siguiente tramo: Monte Moon → fósil → Ciudad Celeste
+### Siguiente tramo: Celeste → Bill → Misty → salida sur (tramo 2)
 
-Entrada: `mtmoon-prepared.json` (procedencia en `mtmoon-prepared.provenance.json`),
-importado, no evidencia del tramo anterior. Contrastar mapa, equipo y flags al cargar;
-una discrepancia es motivo para parar, no para ajustar el estado.
+Entrada: `cerulean-arrival.json` (Celeste (0,21); Pidgey L16, Ivysaur L18; ₽2928;
+Dome Fossil). Fuentes: `pokefirered/data/maps/{CeruleanCity,Route24,Route25,
+Route25_SeaCottage,CeruleanCity_Gym}/scripts.inc` y sus `map.json`. Hitos con checkpoint:
 
-- [ ] Recorrer 1F/B1F/B2F con colisiones y combatir los entrenadores encontrados.
-- [ ] Ganar a Miguel (B2F, coord event (14,11)): flag TRAINER_FLAGS_START +
-      TRAINER_SUPER_NERD_MIGUEL y VAR_MAP_SCENE_MT_MOON_B2F = 1.
-- [ ] Elegir **Dome Fossil** por diálogo: ITEM_DOME_FOSSIL +1, FLAG_GOT_DOME_FOSSIL y
-      FLAG_GOT_FOSSIL_FROM_MT_MOON verdaderas; HELIX falsa. Nunca concederlo por debug.
-- [ ] B2F warp (5,10) → B1F; salida B1F (45,4) → Ruta 4 (32,5); conexión este a
-      MAP_CERULEAN_CITY.
-- [ ] Curar, guardar por menú, recargar/CONTINUAR y comprobar fósil/flags/equipo/mapa
-      con un paso real; exportar `cerulean-arrival.json` sin sobrescribir otros saves.
+- [ ] **Rival:** coord events (22–24,6) de Celeste; combate según inicial
+      (TRAINER_RIVAL_CERULEAN_*), VAR_MAP_SCENE_CERULEAN_CITY_RIVAL = 1, FLAG_GOT_FAME_CHECKER
+      e ITEM_FAME_CHECKER recibidos.
+- [ ] **Puente Pepita (Ruta 24):** entrenadores del puente y TRAINER_TEAM_ROCKET_GRUNT_6;
+      ITEM_NUGGET recibido y VAR_MAP_SCENE_ROUTE24 = 1.
+- [ ] **Ruta 25 → casa de Bill:** ayudar a Bill (FLAG_HELPED_BILL_IN_SEA_COTTAGE), recibir
+      ITEM_SS_TICKET; FLAG_GOT_SS_TICKET y FLAG_SYS_NOT_SOMEONES_PC verdaderas.
+- [ ] **Misty:** entrenadores del gimnasio y TRAINER_LEADER_MISTY; FLAG_DEFEATED_MISTY,
+      FLAG_BADGE02_GET, ITEM_TM03 y FLAG_GOT_TM03_FROM_MISTY.
+- [ ] **Casa robada:** TRAINER_TEAM_ROCKET_GRUNT_5, VAR_MAP_SCENE_CERULEAN_CITY_ROCKET = 1,
+      ITEM_TM28 y FLAG_GOT_TM28_FROM_ROCKET; con FLAG_GOT_SS_TICKET, el policía y las salidas
+      ya no bloquean (CeruleanCity_OnTransition).
+- [ ] **Salida sur:** llegar a MAP_ROUTE5 a pie; guardar, recargar, paso real y exportar
+      `route5-arrival.json`.
 
-Fuente: `pokefirered/data/maps/MtMoon_B2F/scripts.inc` y `map.json` de B2F/B1F/Ruta 4.
-Usar `C.NOMBRE` en ejecución. Una derrota legítima se reintenta desde checkpoint;
-tras dos diagnósticos de un fallo reproducible, guardar checkpoint previo y evidencia
-y pasar el caso a revisión, sin saltar el guion.
+Tras cada hito: comprobar los flags/variables citados con `C.NOMBRE`, nunca escribirlos.
+Una derrota legítima se reintenta desde el último hito; dos diagnósticos fallidos del mismo
+problema → entregar checkpoint y evidencia a revisión.

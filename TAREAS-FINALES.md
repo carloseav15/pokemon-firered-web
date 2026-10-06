@@ -208,12 +208,11 @@ las validaciones generales anteriores siguen abiertas.
   aprobados en un comando acotado. Terminada con exit no exitoso ante fallo,
   MANUAL/NOT RUN separados, trazas de estado/acción/recurso y cobertura enlazada
   a DRV-01. No ejecutar toda la suite del juego por cada cambio.
-- [ ] **DRV-07 — Continuación de historia.** Adaptar
-  SON-MM01-R a la API aceptada para reanudar una entrada real, detenerse con
-  diagnóstico y guardar/exportar cuando sea posible. Sin crear fósil/flags ni
-  reconstruir intentos anteriores. Terminada solo al entregar un checkpoint de
-  Celeste guardado, recargado y con movimiento real; hasta entonces PARCIAL.
-  PARCIAL: job adaptado a la API (`5b1380a0`), sin ejecutar.
+- [x] **DRV-07 — Continuación de historia.** `30ac65b9`/`78e781ad`: el job guarda un
+  checkpoint verificado en cada hito (B2F, Miguel, Dome Fossil, salida a Ruta 4) y
+  `cerulean-arrival.json` continúa en Celeste con layout 81 y paso real; los cinco pasan
+  `mtmoon-checkpoints.job.mjs`. Destapó el layout id perdido al cruzar conexiones
+  (`77005743`). Política auto de combate; sin paridad audiovisual.
 
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
