@@ -138,9 +138,12 @@ Abiertas:
   `Task_ItemMenuAction_BattleUse` con `item_menu.c:1338-1360` y `sItemMenuContextActions`,
   y mirar `gBagMenuState.location` al abrir la mochila desde combate. Desbloquea C5
   (borrador en `tools/playtest/smoke/drafts/C5-wild-battle.draft.mjs`).
-- [ ] 1.17 **Brock no inicia el combate con `H.talk`** [medio]. Con `gym-camper`, según
-  el trabajo de C6 la interacción queda bloqueada antes del combate. Sin reproducir
-  por el revisor: reproducir primero y decidir si es fallo del juego o del driver.
+- [x] 1.17 **Brock inicia el combate con `H.talk`** [medio]. Era fallo del juego:
+  `GetMovementScriptIdFromObjectEventId` devolvía -1 (`findIndex`) frente al
+  centinela 16 del C, así que `applymovement` nunca obtenía slot y `waitmovement`
+  colgaba el reveal de Brock. Con el centinela como `script_movement.c`, el
+  combate arranca, se gana, hay medalla y el dinero sube 3150→4550 (`3b709ab5`).
+  C6 queda desbloqueado para automatizar.
 
 ## 2. Revisión de equivalencias y wrappers contra el C
 
