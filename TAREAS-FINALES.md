@@ -183,6 +183,52 @@ Abiertas:
   Route4(32,6)→(107,10) con dos saltos reales y conexión Celeste(0,20) PASS desde
   posición PREPARED; no acredita fósil, ruta anterior ni guardado. CB2 de gMain
   era antiguo, no prueba de carga activa; fieldFree/exit ahora esperan campo real.
+
+### Fiabilidad del driver: alcance inicial hasta Ciudad Celeste
+
+Prioridad vigente para recorridos; detalles y dependencias en
+[PLAN-RECORRIDO.md](PLAN-RECORRIDO.md#plan-vigente-de-fiabilidad-del-driver).
+No equivale a completar el juego ni su fidelidad. Las correcciones1.23–1.26 se
+conservan como evidencia focalizada; 1.22 y las validaciones anteriores siguen abiertas.
+
+- [ ] **DRV-01 — Matriz de capacidades (Luna).** Inventariar funciones públicas de
+  driver.js, consumidores y checks/jobs existentes; clasificar implementado,
+  comprobado, parcial, no soportado y NOT RUN por caso. Priorizar fallos del
+  recorrido hasta Celeste. Terminada con referencias y huecos verificables,
+  sin convertir análisis estático en PASS runtime.
+- [ ] **DRV-02 — Estado y carga (Sol).** Centralizar observación del estado activo
+  de Game, tareas/escena/menús y control; corregir ready/cb2 y revisar consumidores.
+  Terminada con carga pendiente, campo libre, Quest Log/continue y transición
+  de mapa discriminados; timeout explícito, sin aceptar mapa existente como listo.
+- [ ] **DRV-03 — Entradas, resultados y ejecución acotada (Sol).** Sustituir esperas
+  con A a ciegas por entradas observadas, comprobar granularidad real de frames;
+  contrato común de éxito/bloqueo/fallo, presupuestos, cancelación y generación de
+  sesión. Revisar todos los callers afectados. Terminada con velocidades0/1/2,
+  timeout/cancelación que detienen entradas y resultado propagado al runner.
+- [ ] **DRV-04 — Navegación y recursos por capacidades (Sol; escenarios Flash).**
+  Revisar cobertura a pie, NPC/obstáculos, ledges, puertas/conexiones y recuperación
+  con HP/PP/medicinas/reemplazos. Corregir fallos necesarios para Celeste y declarar
+  límites posteriores (Surf/bici/empujes/movimientos forzados); no asumir que están
+  ausentes del motor. Terminada con casos acotados y parada diagnosticada ante
+  estado no soportado, sin bucles de curación ni repetir la historia completa.
+- [ ] **DRV-05 — Checkpoints y exportación segura (Sol).** Contrato compartido de
+  guardado por UI, continue, export/import y procedencia; destino explícito,
+  protección contra sobrescritura accidental y checkpoint reportado solo después
+  de exportación verificada. Terminada con bytes/hash, comparación semántica,
+  control/movimiento tras continue y rechazo de guardado no disponible. Fidelidad
+  de objetos dinámicos se resuelve en1.22, no con un workaround del driver.
+- [ ] **DRV-06 — Gate de regresión del driver (Luna; revisión Sol).** Con contratos
+  aceptados, integrar checks/jobs focalizados existentes y los casos faltantes
+  aprobados en un comando acotado. Terminada con exit no exitoso ante fallo,
+  MANUAL/NOT RUN separados, trazas de estado/acción/recurso y cobertura enlazada
+  a DRV-01. No ejecutar toda la suite del juego por cada cambio.
+- [ ] **DRV-07 — Continuación de historia (Sonnet; revisión Sol).** Adaptar
+  SON-MM01-R a la API aceptada para reanudar una entrada real, detenerse con
+  diagnóstico y guardar/exportar cuando sea posible. Sin crear fósil/flags ni
+  reconstruir intentos anteriores. Terminada solo al entregar un checkpoint de
+  Celeste guardado, recargado y con movimiento real; hasta entonces PARCIAL.
+  No ejecutar ruta hasta aceptar gate, entrada y presupuesto nuevos.
+
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
   para SON-MM01-R; todavía no fósil ni llegada a Celeste.
