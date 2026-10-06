@@ -334,11 +334,13 @@ export const H = {
     if (menuSlot < 0 || !await this.selectPartySlot(menuSlot)) return { ok: false, note: "medicine target not reached" };
     await this.tap(1, 40);
     if (!await this.until(() => this.countItem(item) < count, "A")) return { ok: false, note: "medicine not consumed", before, after: this.resources() };
+    // Effect is read at consumption, before the turn continues: a foe can re-poison or hit the target afterwards.
+    const atUse = dbg().save.save.party[menuSlot];
+    const effectSeen = hpItems.includes(item) ? atUse.hp > hp0 : atUse.status !== status0;
     // Acknowledgement uses B to avoid selecting another Pokémon/item.
     const finished = await this.until(() => battle ? this.G.gBattlerControllerFuncs[0]?.name === "HandleInputChooseAction" && this.cb2() === "BattleMainCB2" : this.fieldFree(), "B", 300);
     const after = this.resources();
-    const changed = hpItems.includes(item) ? mon.hp > hp0 : mon.status !== status0;
-    const ok = finished && this.countItem(item) === count - 1 && changed;
+    const ok = finished && this.countItem(item) === count - 1 && effectSeen;
     const result = { ok, note: ok ? null : "medicine did not complete correctly", item, target, before, after };
     this.log.push({ medicine: result });
     return result;
