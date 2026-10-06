@@ -150,32 +150,82 @@ Resultados: **PASS continuidad**, **FAIL**, **BLOCKED** o **MANUAL pendiente**.
 Una comprobación sin ejecutar es NOT RUN; una pantalla cargada sin aserciones no
 es PASS. Fidelidad visual/audio y paridad con original tienen su resultado aparte.
 
-## Reparto actual: Sonnet 5.5, Gemini Flash 3.8 y GPT-6.1 Sol
+## Reparto actual: Sonnet 5.5, Gemini Flash 3.8, GPT-6 Luna y GPT-6.1 Sol
 
 Asignación propuesta por rol; no demuestra que un modelo sea más barato/mejor.
-Tareas preparadas para entregar al usuario: este documento no crea agentes ni
-manda mensajes. Sonnet mantiene la cadena de historia, Flash ejecuta validaciones
-acotadas y Sol revisa/diagnostica/integra. Cada uno en worktree y puerto propios.
+Plan listo para que el usuario asigne cada paquete: este documento no crea agentes
+ni manda mensajes. Sonnet mantiene la cadena de historia; Flash valida interacciones
+acotadas; Luna ejecuta pruebas existentes y regresiones; Sol revisa/diagnostica/integra.
+Cada uno en worktree, puerto y perfil de navegador propios.
 TAREAS-FINALES sigue siendo la lista única de problemas y validación pendientes;
 los IDs siguientes son paquetes de ejecución para sus tareas, no nuevos cierres.
+
+### Cómo empezar: instrucciones para cada agente
+
+Leer AGENTS.md, PORTING-STATUS.md, TAREAS-FINALES §1/§3/§4 y las secciones de este
+plan correspondientes al paquete. Respetar cambios ajenos. Si el usuario te asigna
+uno de estos roles, ejecutar solo sus tareas habilitadas y entregar evidencia:
+
+| Agente | Primer paquete | Después | No le corresponde |
+|---|---|---|---|
+| GPT-6.1 Sol | SOL-01 | SOL-02/03 y preparación del siguiente tramo | Repetir toda la ruta de los ejecutores por rutina |
+| GPT-6 Luna | LUNA-01, tras contrato SOL-01 | LUNA-02 cuando Sol indique commit y jobs afectados | Modificar motor, tests o criterios para conseguir PASS |
+| Sonnet 5.5 | SON-01, tras contrato SOL-01 | SON-02 después de aceptación; SON-03 tras SOL-03 | Saltar bloqueos de historia o abrir otra cadena de ruta |
+| Gemini Flash 3.8 | FLASH-02, tras contrato SOL-01 | FLASH-03 tras revisión de primera tanda | Corregir el motor o ejecutar de nuevo la historia de Sonnet |
+
+SOL-01 es la única tarea habilitada sin una base fijada. Los otros agentes pueden
+leer y preparar comandos mientras tanto, pero no empezar pruebas sobre una base
+inventada. Una dependencia requiere entrega y aceptación; transcurrir tiempo no
+la desbloquea. Para segunda tanda, Sol revisa primera tanda y publica commit nuevo.
+No crear subagentes ni enviar mensajes a otros chats por esta asignación; entregar
+al usuario/revisor los resultados en el chat donde se asignó el paquete.
+
+**Contrato de ejecución que completa Sol aquí antes de habilitar ejecutores:**
+
+| Dato | Valor al preparar este documento |
+|---|---|
+| Commit integrado del juego | PENDIENTE SOL-01 |
+| Worktree/rama/puerto por ejecutor | PENDIENTE SOL-01; cada ejecutor puede crear su worktree desde el commit fijado |
+| Perfil aislado / URL y comando de arranque | PENDIENTE SOL-01 |
+| Jobs/comandos y checkpoints autorizados por paquete | PENDIENTE SOL-01 |
+| Resultados esperados contrastados con C/datos | PENDIENTE SOL-01 |
+| Estado de SOL-01 y tareas habilitadas | NOT RUN; ninguna prueba aceptada por este documento |
+
+El revisor mantiene esta tabla, el registro de ruta y TAREAS-FINALES. Los ejecutores
+entregan sus resultados sin sobrescribir estos archivos compartidos con copias de
+una base antigua. Sus jobs/checkpoints nuevos se entregan en commits selectivos de
+rama propia; Sol los integra tras revisión. Los logs no requieren un commit.
+
+**Mensaje de inicio listo para copiar:**
+
+> Lee AGENTS.md del repositorio y esta versión del plan:
+> `/Users/carancibia/.codex/worktrees/viewer-m13/pokemon/PLAN-RECORRIDO.md`
+> (rama `codex/recorrido-strategy`), especialmente “Cómo empezar” y tu paquete.
+> Tu rol es [GPT-6.1 Sol / GPT-6 Luna / Sonnet 5.5 / Gemini Flash 3.8]. Ejecuta
+> [ID del paquete] cuando sus dependencias estén aceptadas. Usa el commit fijado
+> por SOL-01, worktree y perfil propios. No marques PASS sin acciones y aserciones;
+> registra PREPARED y límites. Ante un bloqueo reproducible, conserva evidencia y
+> escálalo tras dos intentos de diagnóstico. Entrega ID, base/commit, comandos,
+> checkpoints, resultado esperado/observado, pendientes y commit de cambios si hay.
 
 ### Primera tanda (hacer ahora)
 
 - [ ] **SOL-01 — Fijar base y reglas de aceptación.** Leer AGENTS, TAREAS-FINALES
-  §1/§3/§4 y este plan. Fijar el commit del juego integrado para ambos ejecutores,
+  §1/§3/§4 y este plan. Fijar el commit del juego integrado para los tres ejecutores,
   indicar worktrees/puertos, checkpoints y driver. Confirmar scripts fuente para
   los resultados esperados de SON-01/FLASH-02. Entregar contrato breve con rutas,
   final y aserciones. El viewer y M13 no son prerequisito de la ruta del juego.
-  **Aceptación:** ambos ejecutores pueden arrancar en la misma base identificada,
+  **Aceptación:** los tres ejecutores pueden arrancar en la misma base identificada,
   con resultados verificables; no mezclar commits durante un trabajo.
 
-- [ ] **FLASH-01 — Diagnóstico inicial y mapa de checkpoints.** Tras SOL-01,
+- [ ] **LUNA-01 — Diagnóstico inicial y mapa de checkpoints.** Tras SOL-01,
   ejecutar `play:smoke` con servidor propio; inspeccionar los resultados de cada
   C1–C14 y distinguir PASS/FAIL/MANUAL/NOT RUN, incluyendo límites de las pruebas.
   Revisar saves de tools/playtest/saves y registrar mapa/equipo/procedencia cuando
   se pueda verificar. No transformar existencia de un save en tramo jugado.
   **Entrega:** tabla breve, comando/commit probado y evidencia de fallos. Cambios
-  solo en pruebas si el driver falla; reportar al Sol los fallos del juego.
+  permitidos: ninguno en el motor ni en los tests de esta tarea. Conservar logs y
+  resultados tal como salen; pasar a Sol cualquier fallo de juego/driver/entorno.
   **Aceptación:** ninguna salida parcial o timeout figura como PASS completo.
 
 - [ ] **SON-01 — Partida nueva completa (C1/C2).** Tras SOL-01, entrar por `/`
@@ -190,7 +240,7 @@ los IDs siguientes son paquetes de ejecución para sus tareas, no nuevos cierres
   verificación de intro visual tiene su resultado aparte. Dos intentos ante un
   bloqueo reproducible; luego entregar a Sol, sin mutar el evento para avanzar.
 
-- [ ] **FLASH-02 — Curación y PC (C8).** Tras FLASH-01, cargar `pewter-pc`/`pewter`
+- [ ] **FLASH-02 — Curación y PC (C8).** Tras SOL-01, cargar `pewter-pc`/`pewter`
   y confirmar sus datos reales. Si ningún Pokémon está herido, obtener daño real
   o declarar PREPARED una fixture solo para curación; no preparar HP final.
   Hablar con enfermera por UI y verificar recuperación HP/PP/estado según fuente
@@ -210,9 +260,9 @@ los IDs siguientes son paquetes de ejecución para sus tareas, no nuevos cierres
   cualquier problema sin resolver en TAREAS-FINALES. No prometer cerrar todos los
   bloqueos si falta evidencia del original.
 
-SON-01 y FLASH-01/02 pueden ejecutarse a la vez tras SOL-01; el juego y los saves
+SON-01, LUNA-01 y FLASH-02 pueden ejecutarse a la vez tras SOL-01; el juego y los saves
 son independientes en sus worktrees/perfiles. Sol atiende incidencias con evidencia,
-no repite preventivamente toda la navegación de ambos. Sonnet reanuda sobre la
+no repite preventivamente toda la navegación de los ejecutores. Sonnet reanuda sobre la
 base nueva solo después de aceptar la corrección y registrar el commit.
 
 ### Segunda tanda (tras revisión de la primera)
@@ -224,10 +274,18 @@ base nueva solo después de aceptar la corrección y registrar el commit.
   validar. Exportar `route4` obtenido por recorrido. **Aceptación:** checklist de
   tramos 0/1 con evidencia y posibilidad de continuar; cargar route4 no basta.
 
-- [ ] **FLASH-03 — Regresiones delegadas por Sol.** Repetir los jobs afectados por
-  arreglos aceptados; validar guardar/continuar C3 y Quest Log C4 desde saves reales.
-  En C4 observar reproducción y devolución de control, no solo presencia de datos.
-  **Aceptación:** resultados con commit exacto y límites; fallo de C4 se escala,
+- [ ] **LUNA-02 — Regresiones delegadas por Sol.** Repetir únicamente los jobs
+  afectados por correcciones revisadas, sobre el commit indicado por Sol; guardar
+  comando, salida y estado por caso. Confirmar que un timeout/resultado parcial no
+  se etiqueta PASS. No cambiar código, expectativas, baseline ni fixture para
+  conseguir verde. **Aceptación:** resultado exacto y límites; cualquier fallo se
+  devuelve a Sol con reproducción, sin repetir intentos indefinidamente.
+
+- [ ] **FLASH-03 — Guardar/continuar y Quest Log (C3/C4).** Validar desde saves
+  reales con acciones de UI; comparar estado guardado/recargado y observar
+  reproducción y devolución del control, no solo presencia de datos de Quest Log.
+  Reutilizar/ampliar C3/C4 jobs si corresponde, con cambios de tests en rama propia.
+  **Aceptación:** evidencia por subcaso; cualquier bloqueo de C4 se escala a Sol,
   sin escribir flags ni cerrar el punto por un smoke parcial.
 
 - [ ] **SOL-03 — Aceptar tramos 0/1 y preparar Celeste.** Contrastar entregas con
@@ -252,7 +310,9 @@ cuando sea visible; sin facturación comparable no inventar dólares.
 No crear crónicas nuevas: registro de ruta aquí y problemas en TAREAS-FINALES.
 Las comprobaciones compartidas existentes se reutilizan; no escribir pruebas que
 solo repitan la implementación. Capturas para escenas clave/fallos y consultas
-agrupadas. Un ejecutor mantiene la historia, otro valida sistemas independientes.
+agrupadas. Sonnet mantiene la historia, Flash valida sistemas independientes y Luna repite
+pruebas definidas. Revisar este reparto después del piloto: si Luna cubre trabajo
+de Flash con igual evidencia y menor coste observado, simplificar la asignación.
 
 ## Registro histórico (sin nueva validación)
 
