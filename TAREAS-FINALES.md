@@ -147,6 +147,8 @@ Abiertas:
   Comportamiento original en hardware/emulador pendiente de verificar; no se
   afirma que sea un no-op. Decidir tratamiento fiel del acceso inválido antes de corregir.
 
+- [ ] 1.19 **Marcas de bicicleta del motor**: `field/fieldEffects.ts:DoTracksGroundEffect_BikeTireTracks` usa índices JS negativos; revisar direccionamiento contiguo u8 del C (previous * 4 + facing - 5). Detectado en M13, corregido solo en viewer `a29c9ae9`.
+
 ## 2. Revisión de equivalencias y wrappers contra el C
 
 Funciones con nombre C que delegan en lógica adaptada. Un bloque de archivo por sesión.
@@ -477,7 +479,8 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   Entregas integradas: M1–M9/R1–R5 cerradas; M11 aceptada (`ddd899ae`),
   M10 aceptada tras R6 (`3ac164a7`), revisión en VISOR-MEJORAS §4.
   Base C2/C7 `6743381e` en `codex/viewer-c7-contract`: reloj/loader/eventos conectados,
-  checks PASS. M12 `8df8c6a3` revisada: tiempos/contrato PASS, no aceptada; R7
-  retirada temprana pendiente en VISOR-MEJORAS §M12. M13 espera variantes; profundidad/agua/salto reales pendientes.
+  checks PASS. M12 aceptada con R7 `3b3acabc`; M13 `a29c9ae9` en
+  `codex/viewer-m13`: huellas/curvas/41–57 ticks y recorrido arena PASS; sin fusionar.
+  Profundidad/agua/salto reales y modelo editable siguen pendientes.
   Integración `ebe759c4`: viewer, 1.16/1.17, jobs C5/C6/C8/C13 y revisión B1.
   Tipos/build/honesty y checks focalizados PASS; C8/C13 siguen MANUAL parcial.

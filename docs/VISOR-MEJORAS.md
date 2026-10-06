@@ -473,14 +473,14 @@ Codex. No añadir controles de editor sin modelo funcional ni funciones contable
 
 **Objetivo:** mejorar la presentación del entorno sin duplicar el motor. M1–M9
 cerradas no significan que las animaciones de FireRed estén conectadas a Explorar.
-El viewer usa `spawnFieldFx` propio para cinco tipos de efecto, frames manuales
+En el diagnóstico M10, el viewer usaba `spawnFieldFx` propio para cinco tipos de efecto, frames manuales
 del avatar y giros aleatorios de NPC. Reutiliza TilesetAnimator, pero no el sistema
 de efectos de suelo/objetos del motor. Suelo y partes altas se componen hoy en un
 canvas; el z-index fijo del protagonista no resuelve copas/tejados.
 
-**Asignación y orden:** M10/M11 revisadas. M12 lista sobre `6743381e`; M13 espera
-las variantes fuente indicadas por Codex. No iniciar esos
-trabajos con un reloj nuevo, parámetros inventados o fixtures en la ruta real.
+**Asignación y orden:** M10/M11 revisadas. M12/R7 y M13 entregadas en
+`codex/viewer-m13`; contratos y revisión al final de esta sección. Mantener el
+reloj compartido y los datos fuente, sin fixtures en la ruta real.
 Una tarea por commit; no iniciar subagentes ni enviar mensajes a otros chats.
 Mantener las instrucciones comunes de AGENTS.md y §4, con estas excepciones
 acotadas: Muse puede contrastar tablas para M10 y consumir secuencias ya exportadas
@@ -518,6 +518,8 @@ implementado en Explorar» (ni recurso ni uso). Ninguna cifra sale del nombre:
 todas de comandos/lecturas. Límites: versión auditada en esta rama, sin prueba
 visual; las tablas de movimiento C del avatar/NPC no se declaran comprobadas
 (revisión reservada a Codex); la distribución de frames del SurfBlob no se deduce.
+
+Diagnóstico M10 anterior a M12/M13; estado vigente en las entregas de abajo.
 
 | Familia | Recurso / template fuente | Secuencia fuente | Caller del viewer | Diferencia concreta | Estado | Destino |
 |---|---|---|---|---|---|---|
@@ -574,8 +576,7 @@ Las instrucciones siguientes quedan como criterios ya revisados.
 
 **Aceptar:** tabla coherente con callers y metadatos; recursos, frames y conexión
 verificados independientemente. Diff/enlaces/honesty antes del commit documental.
-M12 ya dispone de APIs de C7 en `6743381e`; M13 espera variantes. No empezar sus cambios por haber
-entregado M10/M11. La integración revisada está completada; futuras entregas van
+M12 dispone de APIs de C7 en `6743381e`; M13 entregada en `a29c9ae9`. La integración revisada está completada; futuras entregas van
 en ramas propias y las fusiona el revisor tras comprobarlas.
 
 #### M11 — Diálogos de interacción seguros y accesibles [aceptada en rama Muse]
@@ -612,12 +613,12 @@ Abrir/actualizar/cerrar repetidamente no duplica callbacks; botón y teclas cier
 no avanza el avatar por clic en Cerrar. Tipos/build/honesty/diff-check y comprobación
 focalizada en navegador. No afirmar fidelidad de los diálogos al juego original.
 
-#### M12 — Presentación de hierba, polvo y ondas desde templates [entregada; R7 pendiente]
+#### M12 — Presentación de hierba, polvo y ondas desde templates [aceptada con R7; pendiente fusión]
 
 **Base entregada:** rama `codex/viewer-c7-contract`, código `6743381e` sobre
 `1d4a23c9`. Local, sin push ni fusión en main. Crear la rama M12 desde esta base
 o incorporar el commit de código antes de empezar. C2/C7 completos siguen abiertos;
-esta entrega desbloquea las APIs de M12. M13 aún espera variantes fuente.
+esta base desbloqueó las APIs de M12. M13 entregada en `a29c9ae9` (ver abajo).
 
 **Reloj:** `src/viewer/clock.ts` exporta `viewerClock`, `ViewerClock` y
 `bindViewerClockVisibility`. Main ya conecta visibilidad, audio, movimiento, NPCs
@@ -719,7 +720,7 @@ terminada**. Crear nodos/suscripciones solo al recibir spawn; en clear quitar
 nodos y bajas de TODAS las generaciones anteriores; en dispose dar de baja bus y
 reloj. La carga está resuelta antes del evento: no hacen falta awaits dentro del
 handler. Si se añade async, descartar resultados de una generación invalidada.
-Mantener `spawnFieldFx` para sand/tire y su contrato de disposición hasta M13.
+En la base C7 se mantuvo `spawnFieldFx` para sand/tire; M13 lo sustituye y elimina.
 
 **Verificación de la base:** tipos/build/honesty/diff PASS; tabla exportada contra
 C PASS (`check:fieldfx-anims`). `tools/checks/viewerClock.ts` prueba pausas por
@@ -734,7 +735,7 @@ Fixture **PREPARED** de terreno valida ondas/polvo/seek/release/generación;
 fallo HTTP **PREPARED** valida reintento. Recorrido real agua/salto, composición,
 profundidad y escucha humana siguen pendientes, no se afirman validados.
 
-**Revisión de `8df8c6a3` (rama `muse/visor-m12`):** tipos/build/diff PASS;
+**Revisión inicial de `8df8c6a3` (rama `muse/visor-m12`; R7 resuelta en `3b3acabc`):** tipos/build/diff PASS;
 contrato C7 con assets reales y paso por hierba PASS. Fixtures de ticks
 **PREPARED**: hierba begin 50 y spawn 11, polvo 24, ondas 79 PASS; retención tras E
 PASS. **No aceptada todavía:** `release` antes de E trunca la animación.
@@ -743,7 +744,7 @@ Reproducción sobre template real: avanzar 10 ticks de TallGrass begin y llamar
 Fuente: `field_effect_helpers.c:UpdateTallGrassFieldEffect` retira al combinar
 `data[7]` (salió de current/previous) con `animEnded`, no al salir por sí solo.
 
-**R7 para Muse — retirada diferida, una entrega de código:**
+**R7 cerrada por Codex en `3b3acabc`; requisitos conservados para revisión:**
 1. `effectPresenter.ts:81-84`: registrar que se pidió retirada. Si la animación
    sigue activa, conservarla y seguir recibiendo ticks; no llamar `complete()`
    ni `dispose()` por `release`. Si ya terminó, retirar inmediatamente.
@@ -783,9 +784,37 @@ y liberación; reloj simulado **PREPARED** identificado. Después recorrido real
 hierba/agua/salto, pausa/reentrada y efectos simultáneos. No preparar los eventos
 del recorrido que luego se afirma validar. Codex verifica la activación y fidelidad.
 
-#### M13 — Variantes visuales de huellas y marcas de bicicleta [bloqueada por C7 y M12]
+#### M13 — Variantes visuales de huellas y marcas de bicicleta [entregada por Codex]
 
-**Antes debe entregar Codex:** correspondencia validada entre dirección anterior/
+**Entrega:** rama `codex/viewer-m13`, código `a29c9ae9`. Incluye M12
+`8df8c6a3` como `df095b47` y R7 corregida en `3b3acabc`; sin fusionar en main.
+R7 ahora conserva y sigue avanzando hierba liberada antes de E (50/11 ticks).
+
+`loadViewerEffectTemplates()` carga seis plantillas; `loadEffectTemplate()` acepta
+SandFootprints/DeepSandFootprints/BikeTireTracks además de las tres M12.
+`GroundActor.vehicle` transporta walk/bike/surf; el productor emite animation,
+previousDirection, position y `lifetime: { holdTicks: 41, endTick: 57 }` con la
+misma generación de sesión. El renderer usa F/E/J y el reloj compartido; las marcas
+retienen su frame tras E, parpadean desde tick 42 y se retiran en 57. Sin timers.
+
+Variantes y duración salen de `python3 tools/viewer/track_effects.py` (`--check`
+comprueba vigencia y rechazo). La tabla C usa direccionamiento contiguo u8:
+previousDirection * 4 + facingDirection - 5. El evento se crea al comenzar el
+paso en previousCoords y según previousMetatileBehavior, prioridades 2/149.
+Los frames completos 16×16 y flips proceden de fieldfx.json. Corregido el extractor
+compartido: quitaba los flips por espacios en las claves `.hFlip`/`.vFlip`.
+Regeneración de objects/fieldfx determinista; solo cambiaron 48 flags 0→1.
+
+Tipos/build/honesty/diff y `check:fieldfx-anims` PASS. Jobs
+`viewer-effects.job.mjs` (terreno/reloj **PREPARED**, assets reales) y
+`viewer-tracks.job.mjs` (solo posición inicial **PREPARED** vía URL; arena real,
+teclas y botón de bicicleta) PASS: cuatro direcciones, 16 pares de bici,
+recortes/flips, posición previa, superposición, pausa, expiración y cambio de modo.
+Regresión `viewer-c7.job.mjs` PASS. IsDeepSand/IsFootprints devuelven FALSE en FR:
+DeepSandFootprints se carga y comprueba como plantilla dormida, sin inventar terreno.
+Profundidad/elevación y todas las animaciones del protagonista siguen pendientes.
+
+**Contrato requerido y satisfecho en esta entrega:** correspondencia validada entre dirección anterior/
 actual, tipo de huella, animación y flips fuente; evento con esos datos y política
 de duración/desvanecimiento. No inferir curvas ni dirección leyendo teclas del usuario.
 
@@ -807,11 +836,11 @@ editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento f
 
 ## 5. Orden y cierre
 
-Codex: bases C3 y C2/C7 entregadas; preparar variantes M13, profundidad C7,
+Codex: bases C3 y C2/C7 entregadas; M13 entregada en `a29c9ae9`; seguir con profundidad C7,
 C6 y exploración C1/C7 sobre el modelo, con C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M11 y R1–R6 cerradas e integradas. M12 entregada (`8df8c6a3`), pendiente R7; M13
-espera variantes/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
+Muse: M1–M11 y R1–R6 cerradas e integradas. M12 aceptada con R7 (`3b3acabc`); M13
+hecha por Codex (`a29c9ae9`), ambas listas para integración. Controles del editor esperan fundamentos C2/C3 y C6.
 Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de nuevas entregas.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
@@ -828,11 +857,11 @@ Siguiente entrega de Codex para Muse:
    seguimiento de cámara pendientes.
 2. C2/C7: entregado en `6743381e`: reloj, baja/pausa y loader validado para M12.
 3. C7: eventos/activación/lifecycle conectados en `6743381e`; profundidad y
-   elevación completas siguen abiertas, igual que las variantes para M13.
+   elevación completas siguen abiertas; variantes M13 entregadas en `a29c9ae9`.
 4. Muse M12: hierba/polvo/ondas consumen ese contrato; Codex compara ticks/secuencias
-   y revisa recorrido. Codex prepara tabla de variantes fuente para Muse M13.
+   y revisa recorrido. R7 y variantes M13 resueltas en `codex/viewer-m13`.
 
-Entrega actual: **base C2/C7 para M12**, no sandbox completo.
+Entrega actual: **C2/C7 + M12/R7 + M13 en rama propia**, pendiente fusión; editor y profundidad aún abiertos.
 Checks de integración previos sin errores de navegador: viewer, C5, Brock desde checkpoint,
 PC depósito/retiro y estados de audio. Curación, ruta previa de C6, escucha humana,
 MOVE ITEMS con caja vacía y animaciones completas del viewer siguen pendientes.
