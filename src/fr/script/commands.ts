@@ -469,7 +469,7 @@ function ScrCmd_waitbuttonpress(ctx: ScriptRunner): boolean {
   if (QL_GetPlaybackState() === C.QL_PLAYBACK_STATE_RUNNING || gQuestLogState === C.QL_STATE_PLAYBACK) {
     questLogWaitButtonPressTimer = 0;
   }
-  ctx.SetupNativeScript(() => WaitForAorBPress(ctx));
+  ctx.SetupNativeScript(WaitForAorBPress.bind(null, ctx));
   return true;
 }
 function ScrCmd_yesnobox(ctx: ScriptRunner): boolean {

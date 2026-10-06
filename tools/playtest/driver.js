@@ -42,6 +42,7 @@ export const H = {
     this.B = await this.mod("/src/fr/bagMenu.ts");
     this.BS = await this.mod("/src/fr/battle/bscript.ts");
     this.Q = await this.mod("/src/fr/questLogState.ts");
+    this.SC = await this.mod("/src/fr/script/context.ts");
     return this.observe();
   },
   /** Active callbacks: gMain runs only inside HwScene. Its field value can be stale. */
@@ -61,13 +62,15 @@ export const H = {
     const fieldFree = !!state.map && !!game?.callback1 && !scene && !playback && !state.script && !state.locked && !choice && !menu;
     const controller = battle ? this.G?.gBattlerControllerFuncs[0]?.name : null;
     const dialog = !!game?.overworld.messageBox.printer?.active;
+    const script = game?.overworld.script.global;
+    const waitingForButton = !!state.script && script?.mode === this.SC?.SCRIPT_MODE_NATIVE && script?.nativePtr?.name === "bound WaitForAorBPress";
     const phase = playback ? "quest-log" : scene === "BattleTransitionScene" ? "battle-transition"
       : scene === "HwScene" && cb2 === "CB2_UpdatePartyMenu" ? "party-menu"
       : scene === "HwScene" && cb2 === "CB2_BagMenuRun" ? "bag-menu"
       : battle ? controller === "HandleInputChooseAction" ? "battle-action" : controller === "HandleInputChooseMove" ? "battle-move" : "battle"
       : choice ? "choice" : menu ? "start-menu" : scene ? "screen"
-      : !state.map || !game?.callback1 ? "loading" : fieldFree ? "field" : dialog ? "dialog" : "field-busy";
-    return { ...state, phase, fieldFree, battle: !!battle, dialog, tasks, cb1: cb1 ?? null, cb2: cb2 ?? null,
+      : !state.map || !game?.callback1 ? "loading" : fieldFree ? "field" : waitingForButton ? "dialog-wait" : dialog ? "dialog" : "field-busy";
+    return { ...state, phase, fieldFree, battle: !!battle, dialog, waitingForButton, tasks, cb1: cb1 ?? null, cb2: cb2 ?? null,
       hardwareCb2: this.R?.gMain.callback2?.name ?? null, controller, questLog, frame: game?.frameCount };
   },
   /** Wait for actual field control, including recorded Quest Log scenes. Never sends A. */
@@ -155,7 +158,7 @@ export const H = {
       if (s.fieldFree) return { ...s, f, ok: true, status: "success" };
       if (["choice", "start-menu", "party-menu", "bag-menu", "screen"].includes(s.phase))
         return { ...s, f, ok: false, status: "blocked", reason: "input-required", note: "input required" };
-      this.step(tapA && s.phase === "dialog" && f % 32 === 1 ? 1 : 0);
+      this.step(tapA && ["dialog", "dialog-wait"].includes(s.phase) && f % 32 === 1 ? 1 : 0);
       if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
     }
     return { ...this.observe(), ok: false, status: "failure", reason: "idle-timeout", timeout: true };
