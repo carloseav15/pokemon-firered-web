@@ -297,6 +297,12 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    medicina HP de reserva fuera del combate, exige dos PP de ataque por miembro,
    cura por debajo del 60% HP en campo y del 40% (o daño reciente) en combate.
    Estado sin remedio, miembro debilitado o PP escasos piden volver al Centro.
+   Si el activo no dispone de ataques, primero cambia a una reserva saludable;
+   si no existe, puede curar por BAG a una reserva con ataques cuando una medicina
+   la lleva al 60% HP. Identifica el destinatario por personalidad y OT antes de
+   usar el objeto; reconsidera el cambio tras el turno. No gasta curación en un
+   activo sin ataques para evitar esta parada. H.heal observa el ofrecimiento
+   frame a frame antes de confirmar YES y comprobar HP/PP/estado e identidades.
    Los umbrales y presupuestos son política de prueba, no reglas del C.
    `H.battle` devuelve `trace`, `stop`, `decisions` y `stuck`; goto/enter/exit/explore
    deben inspeccionarse por `note`. No relanzar un recorrido tras `battle lost`,
@@ -304,7 +310,7 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    Fijar configuración antes del job, sin cambiarla a mitad de la operación.
 
    Verificación focalizada: `node tools/playtest/strategy.check.mjs` y jobs
-   `driver-strategy`, `driver-auto-battle`, `driver-switch` mediante `pw.mjs`.
+   `driver-strategy`, `driver-auto-battle`, `driver-switch`, `driver-recovery` mediante `pw.mjs`.
    Sus entradas PREPARED están declaradas; switch verifica cambio/ataque/curación
    y huida, no victoria. Estos casos no acreditan la ruta Monte Moon ni guardado.
 

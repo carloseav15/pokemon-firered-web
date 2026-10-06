@@ -167,15 +167,13 @@ Abiertas:
   se reconstruye jugador y NPC desde coordenadas/avatar/templates guardados, como
   el continue web. Revisar SaveObjectEvents/LoadObjectEvents y conservación de
   posiciones/estados dinámicos de NPC contra C; 1.21 no acredita esa fidelidad.
-- [ ] 1.23 **H.heal reporta menú ausente tras curar**: Sonnet documentó
-  nurse offer missing aunque verificó HP/PP/estado y devolución del control.
-  Diagnosticar sincronización de A/Task_MultichoiceMenu_HandleInput; no convertir
-  cualquier menú ausente en éxito ni ampliar esperas sin observar diálogo.
-- [ ] 1.24 **Driver conserva reserva curable al agotarse ataques del activo**:
-  intento1 SON-MM01-R paró con Ivysaur sin ataque, Pidgey17/40 con83 PP ofensivos
-  y6 pociones. bestReplacement(true) excluye HP<60%; decidir curación de reserva
-  y cambio por UI antes de declarar agotamiento. Sin ayudas de estado ni promesa
-  de victoria. Evidencia ../pokemon-son-prep-evidence/mm01r-attempt1/.
+- [x] 1.23 **H.heal reporta menú ausente tras curar**: 6fc39013 observa el
+  ofrecimiento frame a frame, libera A y confirma YES; HP/PP/estados e identidades
+  verificados con dos miembros y velocidades0/1/2. No acepta menú ausente como éxito.
+- [x] 1.24 **Driver conserva reserva curable al agotarse ataques del activo**:
+  6fc39013 cura por BAG al miembro identificado, cambia y ataca por UI; prueba
+  real PASS y sin medicina conserva la guardia. Recuperación exige que una
+  medicina alcance60% HP; no acredita victoria ni recorrido completo.
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
   para SON-MM01-R; todavía no fósil ni llegada a Celeste.

@@ -766,8 +766,25 @@ map.json tiene warpB2F(5,10) hacia B1F warp6. La posición4,10 no acredita
 salida este, mucho menos Celeste. Los logs de ambos intentos son ok:false
 y errors:[]: tarea incompleta sin excepción de página, nunca PASS de recorrido.
 
-Siguiente orden: Sol1.23/H.heal y1.24/reserva; corregir job de Sonnet según
-fase y consolidar su entrega parcial. Buscar si puede guardar desde el estado
-real todavía vivo antes de repetir todo; no reconstruir fósil/flags por debug.
-No se inició un tercer intento ni se enviaron mensajes a agentes. Revisar
-entrada y presupuesto de continuación antes del siguiente recorrido.
+Correcciones integradas en main6fc39013: H.heal observa el menú frame a frame;
+reserva curable recibe medicina por BAG antes de cambiar/atacar. driver-strategy,
+driver-switch y driver-recovery PASS; este último verifica curación de dos
+miembros a velocidades0/1/2 y guardia sin medicina. Evidencia focalizada:
+/tmp/pw-sol-reserve-nurse-final.log y /tmp/pw-sol-switch.log. check:port,
+check:honesty, build y diff --check PASS. No se modificó el motor ni el contador.
+
+El job de Sonnet está consolidado en tools/playtest/smoke/son-mm01-r.job.mjs;
+su archivo original del otro worktree queda intacto. El umbral adicional5 PP
+solo aplica antes del fósil; después sigue prepareStep (mínimo2 por miembro,
+HP/estados/medicinas), sin activar recovery para avanzar. Usa H.heal compartido,
+exige paso real tras continue y rechaza exportar si hay errores de navegador.
+Estos cambios del job están revisados estáticamente; falta ejecutar la ruta.
+
+Siguiente para Sonnet: conservar logs originales y comprobar si su sesión real
+mantiene el progreso del intento2. Si sigue viva, guardar por menú y entregar
+bytes/procedencia y continue verificado antes de planificar continuación desde
+ese estado; nunca reconstruir fósil, flags, HP o PP con debug. No iniciar un
+tercer intento desde mtmoon-prepared: el contrato de dos intentos ya se consumió.
+La integración del job no acepta SON-MM01-R como completada ni acredita Celeste.
+Sol continúa con snapshots NPC1.22 y contrato C5; Flash sigue pendiente de entregar
+su propuesta. No se enviaron mensajes a agentes ni se hicieron push.
