@@ -50,6 +50,9 @@ carga global por rutina.
 
 ## 2. Hallazgos
 
+Esta tabla conserva el diagnóstico sobre `9142b1b1`; el estado de los cambios
+posteriores de Muse está en §4. No volver a asignar hallazgos ya aceptados allí.
+
 | Prioridad | Evidencia | Consecuencia y tarea |
 |---|---|---|
 | Alta | Edición retirada de ruta activa: no hay proyecto editable persistente. | Falta uno de los tres objetivos principales. C6. |
@@ -189,18 +192,24 @@ Asignación por tamaño/acoplamiento, sin afirmar una evaluación comparativa de
 modelo. **Una tarea por vez y revisión del diff antes de la siguiente.**
 No encargar modelo/persistencia de proyectos, relojes, fidelidad C ni reescritura global.
 
-### Revisión M1–M5: siguiente entrega de Muse
+### Revisión M1–M5 y cierre de correcciones
 
 Revisión de Codex sobre `1e622f71`, documentada el 2026-10-04. Tipos, build,
 honesty y diff-check PASS; comprobaciones en Chromium. No se corrigió código.
 
 | Tarea | Estado revisado | Commit de implementación |
 |---|---|---|
-| M1 | PARCIAL: búsquedas principales y escape funcionan; cerrar R1/R2 abajo | `01fd20f2` |
+| M1 | Aceptada tras R1/R2: Meseta Añil y ARIA sin opción activa corregidas | `01fd20f2`, `c62343fa` |
 | M2 | Aceptada: JSON/tipos inválidos, capas vacías/duplicadas y almacenamiento no disponible | `65bd06fb` |
 | M3 | Aceptada: layout a 900×700/1280×800, foco y movimiento reducido | `63079241` |
 | M4 | Aceptada: acción en ficha vacía, sin callback no hay botón y render repetido no duplica llamadas | `8765ab2b` |
-| M5 | PARCIAL: navegación con ratón/toque emulado funciona; cerrar R3 abajo | `1e622f71` |
+| M5 | Aceptada tras R3: indicadores CSS alineados y actualización ante resize | `1e622f71`, `8a36d0d8` |
+
+Segunda revisión sobre `8a36d0d8`, 2026-10-04: tipos/build/honesty PASS; Chromium
+confirma Meseta Añil con/sin acentos, búsquedas previas, Sin resultados sin atributo
+activo, Enter sin navegación y Esc. Minimap: viewbox alineado a 900×700/1280×800 y
+punto alineado con el jugador. R1–R3 cerrados; las instrucciones siguientes quedan
+como criterios de comprobación, no tareas abiertas. M6–M9 se revisan abajo.
 
 Las comprobaciones aisladas de M2/M4 y texto HTML de M1 usaron entradas
 **PREPARED** para probar límites del módulo; no representan un recorrido de juego.
@@ -316,13 +325,287 @@ Conservar setupSearch/onSelectMap.
 3. Probar proporción 408/400, centro/esquinas/zoom, arrastre fuera y cancelación,
    mouse/emulación táctil. C3 puede limitar validación final: informar sin tocar main.
 
+### M6 — Buscar también fragmentos de alias españoles
+
+**Aceptada:** `e12741d1`, revisión de Codex el 2026-10-05. Chromium: Azulona/azul,
+Ciudad Azulona, Meseta Añil/Añil, ruta 1/Route1 antes de Route10, ID, espacios
+repetidos/tabs y Sin resultados con ARIA limpio y Enter sin navegación. Tipos,
+build/honesty/diff-check PASS. Entregas posteriores M7–M9 revisadas abajo.
+
+**Archivo:** `src/viewer/ui/search.ts` (auxiliar bajo ui/ si hace falta).
+Defecto reproducido: Ciudad Azulona encuentra CeladonCity; Azulona sola no.
+Los alias completos solo participan en igualdad/prefijo, no en subcadena.
+
+1. Incorporar cada alias en las coincidencias por subcadena normalizada y sin
+   espacios, manteniendo exacto > prefijo > subcadena. No concatenar aliases para
+   producir coincidencias ficticias entre final de un nombre e inicio de otro.
+2. Conservar IDs, onSelectMap, resultados seguros y ARIA de M1; normalizar espacios
+   repetidos, tabs y acentos de forma coherente en consulta y nombres.
+3. Comprobar Azulona, azul, Ciudad Azulona, Meseta Añil, Añil, ruta 1 y Route1 antes
+   de Route10; consulta con espacios repetidos y sin coincidencias. Contrastarlos
+   con maps del índice, sin editar JSON. Entrega un diff pequeño: no reescribir M1.
+
+### M7 — Popovers con estado accesible y posición dentro de pantalla
+
+**Aceptada:** `87b2a9c2`, revisión de Codex el 2026-10-05. Chromium a 900×700
+y 900×300: controles/estado ARIA, Tab, Esc, clic fuera, alternancia y resize con
+scroll interno correctos. Fallback comprobado con fixture aislada **PREPARED**:
+Esc devuelve foco al botón y clic fuera conserva el foco del control elegido.
+
+**Archivos:** `src/viewer/ui/popover.ts`; CSS solo reglas de estos menús si hace falta.
+setupPopovers conserva firma. Defecto original: menú Capas abierto en Chromium
+dejaba aria-expanded/aria-controls ausentes en su botón.
+
+1. Añadir aria-controls con ID real y sincronizar aria-expanded en apertura/cierre.
+   En Popover API nativa observar toggle: incluye Esc, clic fuera y cambio al otro
+   menú. En fallback actualizar estado al cambiar popover-open; no simular nativo.
+2. Fallback admite Esc, cierra menú anterior y mantiene foco razonable: cierre por
+   Esc devuelve foco al botón; clic fuera no roba foco al control elegido.
+3. Posicionar según tamaño real con margen de pantalla; si no cabe debajo, situar
+   arriba o permitir scroll interno. Actualizar al resize con menú abierto sin
+   reabrirlo. No asignar role=menu a un formulario de checkboxes/selects.
+4. Probar Capas/Opciones, Esc/clic fuera, alternancia, Tab, resize, 900×700 y ventana
+   de poca altura. Fallback se prueba con fixture aislada PREPARED o navegador sin
+   soporte; documentar cuál. No tocar main ni crear un segundo controlador de UI.
+
+### M8 — Fichas claras y coordenadas copiables
+
+**Aceptada tras R4:** `1e00d1ed` + `11915f9a`. Primera revisión: ficha vacía, entrenador,
+puerta/interior y flag del índice, textos escapados, render repetido y callback
+único correctos. Clipboard de éxito diferido/error y texto con `<`/`&` comprobados
+con fixture **PREPARED**, sin afirmar prueba del portapapeles del sistema.
+Relleno válido ofrecía copia; antes de R4, `renderBiomePanel(panel, -1, -4, -5)`
+no ofrecía coordenadas ni copia. Corregido; comprobación final abajo.
+
+**Archivos:** `src/viewer/ui/panel.ts`; CSS de ficha si hace falta.
+Mantener firmas/callbacks; no navegar automáticamente ni modificar showAt.
+
+1. Mostrar nombre legible de capa mediante LAYER_LABELS, junto al identificador
+   fuente cuando ayude; mantener mapa, posiciones locales/mundo y nombres simbólicos.
+2. Sin writers: decir Sin referencias en los scripts analizados, en vez de asegurar
+   Se cambia fuera de los scripts de mapa. Etiquetar flags como estado inicial de
+   referencia, no estado actual del sandbox; no inferir qué desbloquea un camino.
+3. Botón Copiar coordenadas con ID de mapa + local(x,y) + mundo(x,y); en fondo,
+   solo mundo(x,y). Clipboard tras clic; feedback accesible de éxito/error y sin
+   falsas confirmaciones si falla. Nunca copiar script como si fuera un comando.
+4. Ficha vacía, entrenador, puerta/interior, flags/writers, coordenadas negativas,
+   relleno, texto con < y &, fallo de clipboard y render repetido. Conservar M4:
+   un callback por clic y sin botón de explorar cuando no se proporciona callback.
+
+### M9 — Minimapa con teclado y arrastre protegido
+
+**Aceptada tras R5:** `fde7c0fc` + `c2c8e47f`. Primera revisión: flechas con foco desplazan
+128 px a zoom 1 y 160 px a 1,25; fuera del minimapa no capturan la tecla.
+Mouse real, panel colapsado y ocultar/reaparecer radar correctos. Segundo dedo,
+cancelación, lostcapture y botón derecho del mouse comprobados **PREPARED**.
+Con avatar activo la flecha no lo mueve; la cámara vuelve a seguirlo por la ruta
+existente de C1, no se acepta como cámara libre de exploración.
+Antes de R5, fixture **PREPARED** con canvas desplazado 20 px: viewbox quedaba
+20 px a la izquierda. Lápiz primario con `button: 2` también navegaba.
+Ambos corregidos; comprobación final abajo.
+
+**Archivo:** `src/viewer/ui/minimap.ts`; CSS solo reglas de foco de minimapa.
+Mantener setupMinimap/updateRadar, coordenadas y alineación aceptada en R3.
+
+1. Dar foco y nombre accesible al área navegable. Flechas desplazan cámara con paso
+   estable expresado en casillas del mundo y convertido con zoom; impedir scroll
+   de página y propagación de teclas manejadas al movimiento del protagonista.
+   No capturar teclas cuando el foco está fuera del minimapa.
+2. Aceptar solo pointer primario/botón principal; mientras hay arrastre no sustituir
+   pointerId por un segundo dedo. Cancelar/release/lostcapture dejan estado limpio.
+3. Limitar viewbox al rectángulo útil del mundo, no a todo el canvas con márgenes;
+   coordenadas relativas al canvas real dentro del wrap. Seguir también resize del
+   canvas y reaparición después de ocultar radar. No corregir C3 desde este módulo.
+4. Probar teclado con foco/fuera de foco, mouse/touch, segundo pointer (PREPARED si
+   sintético), cancelar y continuar, centro/bordes, panel colapsado y radar oculto/
+   visible. Separar cualquier límite heredado de C3 de un fallo propio de M9.
+
+### Correcciones finales para Muse: R4 → R5
+
+**Cerradas:** R4 `11915f9a` y R5 `c2c8e47f`; M1–M9 aceptadas. Revisión de Codex
+el 2026-10-05: tipos/build/honesty/diff-check PASS. Chromium normal a 900×700:
+mouse, paso de teclado de 128 px, panel colapsado y radar oculto/reaparecido correctos.
+Fixtures **PREPARED**: R4 con índices -1/3/99, coordenadas negativas, render repetido
+y clipboard diferido/error; R5 con canvas desplazado 20×10 px y reducido a 140×110
+sin cambiar wrap, punto/viewbox alineados (error <0,02 px), resize/reaparición,
+lápiz principal/secundario, touch, segundo dedo, cancelación y reinicio correctos.
+No se afirma prueba del portapapeles del sistema ni de hardware táctil/lápiz real.
+Las instrucciones siguientes quedan como criterios ya cumplidos, no tareas abiertas.
+
+**R4 — Copiar coordenadas también fuera de los mapas (M8).** Solo `panel.ts`.
+En la rama de bioma inválido conservar «Fuera de los mapas», mostrar mundo(x,y)
+y añadir el mismo botón/feedback de copia que en el fondo válido, sin inventar
+un ID ni casilla local. Verificar índices -1 y fuera de BIOME_NAMES, coordenadas
+negativas, éxito/error asincrónico y render repetido. No modificar showAt ni
+crear una segunda implementación de clipboard. Un commit de código.
+
+**R5 — Indicadores relativos al canvas y botón principal del lápiz (M9).** Solo
+`minimap.ts`, CSS únicamente si resulta necesario. Convertir el origen del canvas
+al sistema de coordenadas del wrap que contiene viewbox/player-dot; sumar ese
+desplazamiento a ambos indicadores y conservar la escala uniforme y el recorte
+al mundo. Observar también el canvas para actualizar ante su resize aunque el
+wrap conserve tamaño. No asumir que canvas y wrap comienzan en el mismo punto.
+Rechazar botones secundarios de mouse **y lápiz** manteniendo touch primario y
+la protección contra segundo dedo. Verificar layout actual y fixture **PREPARED**
+con canvas desplazado 20 px/reducido sin redimensionar wrap, punto del avatar,
+viewbox, navegación, ocultar/reaparecer, lápiz con button 0/2 y cancelación.
+No tocar cámara/zoom de main: la doble escala C3 y el seguimiento C1 quedan
+reservados a Codex. Un commit de código; revisar después de R4.
+
+El editor, sus datos/persistencia, audio y profundidad visual siguen reservados a
+Codex. No añadir controles de editor sin modelo funcional ni funciones contables.
+
+### Nueva tanda: entorno e interacciones de Explorar (M10–M13)
+
+**Objetivo:** mejorar la presentación del entorno sin duplicar el motor. M1–M9
+cerradas no significan que las animaciones de FireRed estén conectadas a Explorar.
+El viewer usa `spawnFieldFx` propio para cinco tipos de efecto, frames manuales
+del avatar y giros aleatorios de NPC. Reutiliza TilesetAnimator, pero no el sistema
+de efectos de suelo/objetos del motor. Suelo y partes altas se componen hoy en un
+canvas; el z-index fijo del protagonista no resuelve copas/tejados.
+
+**Asignación y orden:** M10 → revisar → M11 → revisar. M12/M13 están bloqueadas
+hasta la entrega explícita de las APIs/datos indicados por Codex. No iniciar esos
+trabajos con un reloj nuevo, parámetros inventados o fixtures en la ruta real.
+Una tarea por commit; no iniciar subagentes ni enviar mensajes a otros chats.
+Mantener las instrucciones comunes de AGENTS.md y §4, con estas excepciones
+acotadas: Muse puede contrastar tablas para M10 y consumir secuencias ya exportadas
+en M12/M13; Codex decide semántica, activación y conexiones con el motor.
+
+#### M10 — Comprobar recursos y cobertura real de las animaciones [lista para empezar]
+
+**Entrega documental:** completar aquí una tabla compacta de cobertura, sin abrir
+otra crónica ni añadir código desconectado. Leer `render/fieldFx.ts`, `sprites.ts`,
+`entities.ts`, llamadas de `main.ts`, `public/fr/fieldfx.json`, metadatos de objetos
+y las tablas C relevantes en `pokefirered/src/data/field_effects/field_effect_objects.h`.
+
+1. Registrar por familia: recurso/template fuente, secuencia disponible, caller
+   activo del viewer, diferencia concreta y destino C1/C7 o M12/M13. Incluir avatar
+   caminar/correr/bici/surf, hierba, polvo, ondas, huellas, marcas de bici, sombras,
+   reflejos, NPC y alerta; distinguir inexistente, disponible sin conexión y activo.
+2. Verificar que los archivos referidos existen, dimensiones del PNG, tamaño de
+   frame y límites de cada índice usado. No deducir número de frames solo del nombre
+   ni ajustar cifras a esta guía. Contrastar arena/marcas por dirección y las
+   secuencias de hierba/polvo/ondas; anotar líneas C y TS de cualquier diferencia.
+3. No editar assets/JSON generados, generadores, lógica de juego ni el inventario.
+   No declarar fidelidad por usar una imagen del juego. Si falta metadato, señalar
+   qué dato debe exportar Codex y detener únicamente esa comprobación.
+
+#### M10 — Tabla de cobertura (entrega Muse, 2026-10-05)
+
+1 tick = 1/60 s (≈16,7 ms). PNG medidos por cabecera IHDR con `python3`;
+frames/anims de `public/fr/fieldfx.json`; líneas C de
+`pokefirered/src/data/field_effects/field_effect_objects.h`; callers de
+`src/viewer/`. Estados: activo (conectado y fiel), disponible sin conexión
+(recurso/ts existen pero con secuencia o reloj propios), inexistente (ni recurso
+ni uso en Explorar). Ninguna cifra sale del nombre: todas de comandos/lecturas.
+
+| Familia | Recurso / template fuente | Secuencia fuente | Caller del viewer | Diferencia concreta | Estado | Destino |
+|---|---|---|---|---|---|---|
+| Avatar caminar | `objects/rednormal__player.png` 144×32, `greennormal` ídem | Tablas de movimiento C (reservadas, sin contrastar aquí) | `main.ts:193-239` frames manuales 0-8 por `playerStep`, sheets en `sprites.ts:42-54` | Secuencia manual, sin tabla C | Disponible sin conexión | Reservado Codex/C1 |
+| Avatar correr | Mismas sheets caminar | Ídem | `main.ts:227-239`, `sprites.ts:50-52` usa sheets `*surfrun__player` para correr | Hoja de correr por confirmar contra fuente | Disponible sin conexión | Reservado Codex: señalar qué sheet/frames usa correr |
+| Avatar bici | `greenbike/redbike__player.png` 288×32 | Ídem | `main.ts:227-239`, paso 100 ms en `:457` | Secuencia manual | Disponible sin conexión | Reservado Codex/C1 |
+| Avatar surf | `redsurfrun__player.png` 224×32; `SurfBlob` 6 frames, 4 anims por orientación con `J` loop (`fieldfx.json`, C `:182-215`), PNG `surfblob` 192×32 | Por orientación, 48 ticks/frame | `main.ts:425-431` cambia a surf + ripple; sin blob | Flotador inexistente en Explorar; distribución de frames del blob sin confirmar (no se deduce) | Inexistente | Reservado Codex/C7 |
+| Hierba | `tallgrass__ette1.png` 16×80 = 5×16×16 ✓ JSON 5 frames; anims orden 1,2,3,4,0 ×10 ticks (≈167 ms c/u, ≈833 ms); C `:64-94`, `UpdateTallGrassFieldEffect` | 1-2-3-4-0 a 10 ticks | `fieldFx.ts:11-27` (5 pos a 50 ms orden 0-4, `setInterval`), caller `main.ts:448` | Ritmo (50 vs ≈167 ms), orden y reloj propios | Disponible sin conexión | M12 |
+| Polvo | `groundimpactdust__ette0.png` 16×24 = 3×16×8 ✓; anims 0,1,2 ×8 ticks (≈133 ms, 400 ms); C `:288-313`, `UpdateJumpImpactEffect` | 0-1-2 a 8 ticks | `fieldFx.ts:28-44` (3 pos a 60 ms = 180 ms), caller `:482` solo tras salto de saliente | Ritmo propio; momento begin/finish sin confirmar | Disponible sin conexión | M12 (`JumpTallGrass` C `:319-347`, 4×16×8 a 8 ticks: inexistente en Explorar) |
+| Ondas | `ripple__ette1.png` 16×80 = 5×16×16 ✓; 8 cmds 0,1,2,3,0,1,2,4 a 12/9/9/9/9/9/11/11 ticks (≈1,3 s); C `:99-132`, `WaitFieldEffectSpriteAnim` | 8 pasos no lineales | `fieldFx.ts:45-61` (5 pos a 70 ms = 350 ms orden 0-4), callers `:428` entrar al agua y `:453-455` ripple aleatorio 0.3 en surf | Secuencia, duración y activación (el 0.3 es invento del viewer) | Disponible sin conexión | M12 |
+| Huellas | `sandfootprints__ette0.png` 16×32 = 2×16×16 ✓ (+`deep` ídem); 5 anims por dirección (tabla C `:382-388`), frame 0 ó 1 a 1 tick; `UpdateFootprintsTireTracksFieldEffect` | Variante por dirección, 1 tick | `fieldFx.ts:62-74` siempre frame 0 + fade 1200/600 ms, caller `:450` | Dirección ignorada, permanencia inventada | Disponible sin conexión | M13 (`SandPile` sin uso: inexistente) |
+| Marcas bici | `biketiretracks__ette0.png` 32×32, 4 frames 16×16; 9 anims (4 dirs + 4 giros + base), C `:460-514` | Frame por dirección y giro | `fieldFx.ts:75-88` siempre frame 0 + fade, caller `:450` | Dirección y giros ignorados | Disponible sin conexión | M13 |
+| Sombras | `shadow{small,medium,large,extralarge}` 8×8, 16×8, 32×8, 64×32 ✓ 1 frame c/u; C `:4-59`, `UpdateShadowFieldEffect` | 1 frame por tamaño | Ningún uso en Explorar (solo `box-shadow` CSS decorativo) | Inexistente en Explorar | Disponible sin conexión | Reservado Codex/C7 |
+| Reflejos | `ReflectionDistortion` vacío (sin frames, `SpriteCallbackDummy`); `WaterSurfacing` 4×16×16, `WaitFieldEffectSpriteAnim`, PNG 16×80 | Sin secuencia de distorsión en fuente | Ningún uso en Explorar | Inexistente en Explorar y sin datos fuente de distorsión | Inexistente | Reservado Codex: datos de activación |
+| NPC | `GFX_MAP` manual `sprites.ts:3-40` (campo `frames` sin usar); `faceTowards`/giros aleatorios `entities.ts:95-135`; `updateAutonomousBehaviors` en `main.ts:632` | Tablas de movimiento C (reservadas) | Sprites y giros propios | Secuencia y visibilidad manuales | Disponible sin conexión | Reservado Codex/C1-C7 |
+| Alerta | Sin template equivalente en `fieldfx.json` (35 templates, ninguno de exclamación); viewer usa `emoticons.png` 48×80 + `emoticonBounce` 0,4 s (`viewer.css:476-487`, `entities.ts:118-127`), caller `:309` tras `checkTrainerSight` (`:295-313`, rango cardinal) | N/A | Globo propio | Lógica de avistamiento simplificada | Propio del viewer | Reservado Codex/C7 |
+
+Metadato que debe exportar Codex si M12/M13 lo necesitan: loader/cache tipado de
+templates y eventos con posición/prioridad/sesión (ya pedido en M12), y la
+correspondencia dirección↔huella validada (ya pedida en M13); nada más detenido aquí.
+
+**Aceptar:** cada fila tiene evidencia verificable y estado de conexión; referencias
+existentes, sin cifras supuestas ni afirmación de prueba visual. Diff/enlaces y
+honesty antes del commit documental; no necesita build. Codex revisa la tabla.
+
+#### M11 — Diálogos de interacción seguros y accesibles [lista después de M10]
+
+**Archivos:** `ui/dialog.ts`, HTML/CSS del diálogo y cambios mínimos a sus callers
+en `main.ts`. No cambiar contenido narrativo, combate, scripts ni movimiento.
+
+1. Sustituir la entrada HTML arbitraria por texto: revisar TODOS los callers de
+   `DialogManager.show`, retirar el `<b>` del mensaje de entrenador y presentar
+   nombres/flags con `textContent`. No dejar un segundo camino inseguro. Si se
+   necesita énfasis, usar nodos DOM explícitos con valores tratados como texto.
+2. Dar nombre/descripción accesibles al panel visible mediante sus IDs reales y
+   anunciar el mensaje una vez al abrir/actualizar. Elegir un único mecanismo
+   accesible adecuado; no combinar anuncios duplicados ni afirmar modalidad con
+   aria-modal si no se controla el foco. Mantener cierre con Z/Espacio/Enter y
+   parada del movimiento mientras el diálogo está abierto.
+3. Añadir botón Cerrar visible y accesible que use `close()`; estado oculto y abierto
+   coherentes para tecnologías de asistencia. No añadir listeners globales por
+   cada apertura, atrapar foco ni robarlo al mostrar un diálogo automático.
+4. Ajustar texto largo a 900×300 y 900×700: contenido y cierre alcanzables, scroll
+   interno si hace falta, sin recortar el mensaje ni cubrir toda la barra superior.
+
+**Aceptar:** NPC y mensaje de entrenador conservan su información; `<`, `&` y
+`<img onerror=...>` aparecen como texto sin crear elementos (fixture **PREPARED**).
+Abrir/actualizar/cerrar repetidamente no duplica callbacks; botón y teclas cierran,
+no avanza el avatar por clic en Cerrar. Tipos/build/honesty/diff-check y comprobación
+focalizada en navegador. No afirmar fidelidad de los diálogos al juego original.
+
+#### M12 — Presentación de hierba, polvo y ondas desde templates [bloqueada por C7]
+
+**Antes debe entregar Codex:** API de reloj GBA compartido con alta/baja y pausa;
+loader/cache tipado de templates fuente; eventos de efecto con posición, prioridad
+y generación de sesión. Confirmar el subconjunto de comandos AnimCmd que se usará.
+Codex mantiene la detección de terreno y sus momentos spawn/begin/finish.
+
+**Archivos para Muse:** `render/fieldFx.ts` y auxiliar de presentación si hace falta;
+CSS del efecto. Integración mínima con la API entregada, sin modificar movimiento.
+
+1. Presentar TallGrass/GroundImpactDust/Ripple consumiendo frames, tamaños, orden,
+   duraciones y flips de los templates; no copiar secuencias a una tabla manual.
+   Resolver índices sobre la distribución real del asset, sin suponer orientación.
+2. Avanzar con el reloj entregado; retirar setInterval/setTimeout de esas tres
+   ramas. No crear otro requestAnimationFrame ni depender del interruptor de tiles.
+3. Terminar efectos y liberar nodos/suscripciones al finalizar o invalidarse la
+   sesión. Reentrada y cambio de modo no reviven efectos anteriores. Reutilizar
+   prioridad/posición recibidas: no imponer z-index que sustituya la profundidad C7.
+4. Comando/template no soportado: error identificable, sin éxito ficticio ni
+   fallback a una secuencia aproximada. Mantener arena/bici intactas hasta M13.
+
+**Aceptar:** comparación focalizada con datos fuente en ticks exactos, frame final
+y liberación; reloj simulado **PREPARED** identificado. Después recorrido real por
+hierba/agua/salto, pausa/reentrada y efectos simultáneos. No preparar los eventos
+del recorrido que luego se afirma validar. Codex verifica la activación y fidelidad.
+
+#### M13 — Variantes visuales de huellas y marcas de bicicleta [bloqueada por C7 y M12]
+
+**Antes debe entregar Codex:** correspondencia validada entre dirección anterior/
+actual, tipo de huella, animación y flips fuente; evento con esos datos y política
+de duración/desvanecimiento. No inferir curvas ni dirección leyendo teclas del usuario.
+
+**Archivos:** presentación de `sand`/`tire` en `render/fieldFx.ts`; CSS si hace falta.
+Consumir la variante proporcionada, dimensiones y comandos fuente; corregir el
+recorte fijo que hoy muestra siempre el primer frame. Usar el reloj/lifecycle de
+M12 para permanencia y retirada; eliminar timers sustituidos. No decidir qué
+terrenos producen marcas, cuándo se crean ni incorporar terrenos de otro juego.
+
+**Aceptar:** cuatro direcciones y giros permitidos, arena a pie/bici, paso repetido,
+superposición, expiración y cambio de modo. Comparar variantes con fuente; fixtures
+**PREPARED** para combinaciones y recorrido real por arena separados. Si la fuente
+solo permite un subconjunto, documentarlo sin inventar variantes. Revisión de Codex.
+
+**Reservado a Codex:** frames/transiciones del protagonista y flotador de surf,
+saltos/aterrizaje y colisiones, sombras/reflejos y profundidad por elevación,
+movimiento/visibilidad de NPC, puertas/scripts, continuidad de mapas, audio y modelo
+editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento fuente.
+
 ## 5. Orden y cierre
 
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse M1 → M2 → M3 → M4 → M5, revisar cada entrega. Worktrees separados y
-coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
+Muse: M1–M9 y R1–R5 cerradas; M10 → M11 listas en el orden indicado. M12 → M13
+esperan APIs/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
+Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
 autorizado por la clarificación del usuario. No ampliar regiones ni añadir batallas

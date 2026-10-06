@@ -23,7 +23,7 @@ import { setupPopovers } from "./ui/popover";
 import { getPlayerSpriteSheet, type Direction, GFX_MAP } from "./render/sprites";
 import { spawnFieldFx } from "./render/fieldFx";
 import { EntityManager, type LiveEntity } from "./render/entities";
-import { DialogManager } from "./ui/dialog";
+import { DialogManager, type DialogSegment } from "./ui/dialog";
 import { ViewerAudioController } from "./audio/audioController";
 
 const viewport = document.getElementById("viewport")!;
@@ -277,17 +277,21 @@ function interactWithEntity(ent: LiveEntity): void {
   entityManager.faceTowards(ent, playerX, playerY);
 
   const title = ent.element.trainer ? `${ent.element.trainer}` : `${ent.element.map.replace("MAP_", "")}`;
-  let msg = "";
+  let msg: DialogSegment[] = [""];
   if (ent.element.layer === "snorlax") {
-    msg = "¡Un enorme Pokémon duerme plácidamente en medio del camino! Está bloqueando el paso... Necesitas una Poké Flauta.";
+    msg = ["¡Un enorme Pokémon duerme plácidamente en medio del camino! Está bloqueando el paso... Necesitas una Poké Flauta."];
   } else if (ent.element.layer === "corte") {
-    msg = "¡Un árbol pequeño bloquea el paso! Un Pokémon podría cortarlo con la MO Corte.";
+    msg = ["¡Un árbol pequeño bloquea el paso! Un Pokémon podría cortarlo con la MO Corte."];
   } else if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL") {
-    msg = `¡Has encontrado un objeto en el suelo! (${ent.element.flag ?? "Objeto misterioso"}).`;
+    msg = [`¡Has encontrado un objeto en el suelo! (${ent.element.flag ?? "Objeto misterioso"}).`];
   } else if (ent.element.trainer) {
-    msg = `¡El entrenador <b>${ent.element.trainer}</b> te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`;
+    msg = [
+      "¡El entrenador ",
+      { text: ent.element.trainer, strong: true },
+      ` te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`,
+    ];
   } else {
-    msg = "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?";
+    msg = ["Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
   }
   dialogManager.show(title, msg);
 }

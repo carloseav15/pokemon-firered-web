@@ -25,6 +25,17 @@ export function setupMinimap(
   const worldW = index.world.width;
   const worldH = index.world.height;
 
+  // Área navegable con teclado: foco y nombre accesible.
+  minimapCanvasWrap.tabIndex = 0;
+  minimapCanvasWrap.setAttribute("role", "group");
+  minimapCanvasWrap.setAttribute(
+    "aria-label",
+    "Minimapa: usa las flechas del teclado para desplazar la cámara"
+  );
+
+  // Paso estable de teclado, expresado en casillas del mundo.
+  const KEY_STEP_TILES = 8;
+
   // Escala uniforme del mundo dentro del canvas, con márgenes centrados.
   // Una sola transformación para dibujo, viewbox, jugador y navegación.
   const view = () => {
@@ -58,6 +69,17 @@ export function setupMinimap(
   const playerDot = document.getElementById("minimap-player-dot");
 
   const updateRadar = () => {
+    // R3/R5: los indicadores son hermanos del canvas posicionados respecto al wrap:
+    // van en píxeles CSS y con el origen del canvas, no del wrap. No asumir que
+    // ambos comienzan en el mismo punto.
+    const rect = minimapCanvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const wrapRect = minimapCanvasWrap.getBoundingClientRect();
+    const cox = rect.left - wrapRect.left;
+    const coy = rect.top - wrapRect.top;
+    const kx = rect.width / mw;
+    const ky = rect.height / mh;
+    const v0 = view();
     const zoom = getZoom();
     const worldPxW = worldW * TILE;
     const worldPxH = worldH * TILE;
@@ -69,18 +91,25 @@ export function setupMinimap(
     const a = toMini(x0, y0);
     const b = toMini(x1, y1);
 
-    minimapBox.style.left = `${Math.max(0, Math.min(mw, a.x))}px`;
-    minimapBox.style.top = `${Math.max(0, Math.min(mh, a.y))}px`;
-    minimapBox.style.width = `${Math.max(4, Math.min(mw, b.x - a.x))}px`;
-    minimapBox.style.height = `${Math.max(4, Math.min(mh, b.y - a.y))}px`;
+    // Recortar el viewbox al rectángulo útil del mundo, no a todo el canvas con márgenes.
+    const ux = cox + v0.offX * kx;
+    const uy = coy + v0.offY * ky;
+    const uw = worldW * v0.scale * kx;
+    const uh = worldH * v0.scale * ky;
+    const bw = Math.max(4, Math.min(uw, (b.x - a.x) * kx));
+    const bh = Math.max(4, Math.min(uh, (b.y - a.y) * ky));
+    minimapBox.style.left = `${Math.max(ux, Math.min(ux + uw - bw, cox + a.x * kx))}px`;
+    minimapBox.style.top = `${Math.max(uy, Math.min(uy + uh - bh, coy + a.y * ky))}px`;
+    minimapBox.style.width = `${bw}px`;
+    minimapBox.style.height = `${bh}px`;
 
     if (playerDot) {
       const p = getExplorePos ? getExplorePos() : { active: false, x: 0, y: 0 };
       if (p.active) {
         playerDot.style.display = "block";
         const px = toMini(p.x, p.y);
-        playerDot.style.left = `${px.x}px`;
-        playerDot.style.top = `${px.y}px`;
+        playerDot.style.left = `${cox + px.x * kx}px`;
+        playerDot.style.top = `${coy + px.y * ky}px`;
       } else {
         playerDot.style.display = "none";
       }
@@ -89,6 +118,37 @@ export function setupMinimap(
 
   viewport.addEventListener("scroll", updateRadar);
   updateRadar();
+
+  // Seguir cambios de tamaño del viewport (p. ej. colapso del panel), del wrap
+  // y del propio canvas (resize, reaparición tras ocultar el radar) sin tocar main.ts.
+  if (typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(() => {
+      drawMaps();
+      updateRadar();
+    });
+    ro.observe(viewport);
+    ro.observe(minimapCanvasWrap);
+    ro.observe(minimapCanvas);
+  }
+
+  // Teclado solo con foco dentro del minimapa: no capturar teclas fuera de él.
+  minimapCanvasWrap.addEventListener("keydown", (e) => {
+    const step = KEY_STEP_TILES * TILE * getZoom();
+    let dx = 0;
+    let dy = 0;
+    if (e.key === "ArrowLeft") dx = -step;
+    else if (e.key === "ArrowRight") dx = step;
+    else if (e.key === "ArrowUp") dy = -step;
+    else if (e.key === "ArrowDown") dy = step;
+    else return;
+    // Impedir scroll de página y que la tecla llegue al movimiento del protagonista.
+    e.preventDefault();
+    e.stopPropagation();
+    viewport.scrollLeft += dx;
+    viewport.scrollTop += dy;
+    onNavigate();
+    updateRadar();
+  });
 
   const miniPoint = (clientX: number, clientY: number) => {
     const rect = minimapCanvas.getBoundingClientRect();
@@ -121,6 +181,11 @@ export function setupMinimap(
 
   minimapCanvasWrap.style.touchAction = "none";
   minimapCanvasWrap.addEventListener("pointerdown", (e) => {
+    // Solo puntero primario con botón principal de mouse o lápiz; un segundo
+    // dedo no sustituye el arrastre. El táctil primario pasa con button 0.
+    if (dragPointerId !== null) return;
+    if (!e.isPrimary) return;
+    if ((e.pointerType === "mouse" || e.pointerType === "pen") && e.button !== 0) return;
     dragPointerId = e.pointerId;
     try {
       minimapCanvasWrap.setPointerCapture(e.pointerId);
