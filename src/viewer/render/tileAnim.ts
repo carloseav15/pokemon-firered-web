@@ -1,4 +1,5 @@
-import { TILE, GBA_FRAME_MS, ANIM_RANGES } from "../constants";
+import { viewerClock, type ViewerClock } from "../clock";
+import { TILE, ANIM_RANGES } from "../constants";
 import type { TileRenderer } from "../../fr/field/tileRenderer";
 import type { TilesetAnimator } from "../../fr/field/tilesetAnimator";
 import type { TilesetData } from "../../fr/rom";
@@ -50,11 +51,10 @@ export function rangeMask(primary: TilesetData, secondary: TilesetData, ranges: 
 export class TileAnimationController {
   readonly animatedMaps: AnimatedMap[] = [];
   animOn = false;
-  animFrame = 0;
-  animLast = 0;
-  animAccumulator = 0;
+  private unsubscribe: (() => void) | null = null;
   animStartTime = 0;
   animDisabledNotice = "";
+  private fpsLast = -1;
   fpsFrames = 0;
   fpsSince = 0;
   fpsValue = 0;
@@ -62,7 +62,7 @@ export class TileAnimationController {
   constructor(
     private readonly getViewportRect: () => { left: number; top: number; width: number; height: number; zoom: number },
     private readonly onFpsUpdate: () => void,
-    private readonly onFrame?: () => void
+    private readonly clock: ViewerClock = viewerClock
   ) {}
 
   addMap(map: AnimatedMap): void {
@@ -76,35 +76,22 @@ export class TileAnimationController {
   start(): void {
     if (this.animOn) return;
     this.animOn = true;
-    this.animLast = this.fpsSince = this.animStartTime = performance.now();
-    this.animAccumulator = 0;
+    this.fpsSince = this.animStartTime = performance.now();
     this.fpsFrames = 0;
+    this.fpsLast = -1;
     this.animDisabledNotice = "";
-    this.animFrame = requestAnimationFrame((now) => this.tick(now));
+    this.unsubscribe = this.clock.subscribe(frame => this.tick(frame.wallTimeMs));
   }
 
   stop(): void {
     if (!this.animOn) return;
     this.animOn = false;
-    cancelAnimationFrame(this.animFrame);
+    this.unsubscribe?.();
+    this.unsubscribe = null;
   }
 
   private tick(now: number): void {
     if (!this.animOn) return;
-
-    this.animAccumulator += Math.min(now - this.animLast, 250);
-    this.animLast = now;
-    let steps = 0;
-    while (this.animAccumulator >= GBA_FRAME_MS && steps < 8) {
-      this.animAccumulator -= GBA_FRAME_MS;
-      steps++;
-    }
-
-    if (steps === 0) {
-      this.recordFps(now);
-      this.animFrame = requestAnimationFrame((n) => this.tick(n));
-      return;
-    }
 
     const { left, top, width, height, zoom } = this.getViewportRect();
     if (zoom >= 0.5) {
@@ -117,9 +104,7 @@ export class TileAnimationController {
         if (!this.mapVisible(m, viewLeft, viewTop, viewRight, viewBottom)) continue;
 
         m.dirtyMask = 0;
-        for (let s = 0; s < steps; s++) {
-          m.animator.update();
-        }
+        m.animator.update();
 
         if (m.dirtyMask === 0) continue;
 
@@ -142,13 +127,12 @@ export class TileAnimationController {
     }
 
     this.recordFps(now);
-    this.onFrame?.();
-    if (this.animOn) {
-      this.animFrame = requestAnimationFrame((n) => this.tick(n));
-    }
+
   }
 
   private recordFps(now: number): void {
+    if (now === this.fpsLast) return;
+    this.fpsLast = now;
     this.fpsFrames++;
     if (now - this.fpsSince >= 1000) {
       this.fpsValue = (this.fpsFrames * 1000) / (now - this.fpsSince);

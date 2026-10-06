@@ -1,29 +1,32 @@
 import { sound } from "../../fr/audio/sound";
 import { createM4aBackend } from "../../fr/audio/m4a";
-import { rom } from "../../fr/rom";
 import * as C from "../../fr/generated/constants";
 
 export class ViewerAudioController {
   private initialized = false;
   private currentMapId: string | null = null;
   private enabled = false;
+  private currentMusicId: number | null = null;
+  lastError: string | null = null;
 
   constructor() {}
 
-  init(): void {
-    if (this.initialized) return;
+  init(): boolean {
+    if (this.initialized) return true;
     try {
-      sound.init(rom.constants);
+      sound.init(C);
       sound.m4aSoundInit(createM4aBackend());
       this.initialized = true;
-    } catch {
-      // AudioContext unavailable or blocked
+      this.lastError = null;
+      return true;
+    } catch (error) {
+      this.lastError = `Audio del viewer: ${String(error)}`;
+      return false;
     }
   }
 
   enable(): void {
-    this.enabled = true;
-    this.init();
+    this.enabled = this.init();
     if (this.currentMapId) {
       this.playMapMusic(this.currentMapId);
     }
@@ -39,8 +42,9 @@ export class ViewerAudioController {
   }
 
   updateMap(mapId: string, musicId?: number): void {
-    if (this.currentMapId === mapId) return;
+    if (this.currentMapId === mapId && (musicId ?? null) === this.currentMusicId) return;
     this.currentMapId = mapId;
+    this.currentMusicId = musicId ?? null;
     if (!this.enabled) return;
     this.playMapMusic(mapId, musicId);
   }
@@ -48,7 +52,7 @@ export class ViewerAudioController {
   private playMapMusic(mapId: string, musicId?: number): void {
     if (!this.enabled) return;
     this.init();
-    const songId = musicId ?? rom.c(`MUS_${mapId}`) ?? C.MUS_PALLET;
+    const songId = musicId ?? this.currentMusicId ?? C.MUS_PALLET;
     if (songId > 0 && sound.getCurrentMapMusic() !== songId) {
       sound.fadeOutAndPlayNewMapMusic(songId, 6);
     }

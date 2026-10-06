@@ -10,6 +10,7 @@ export class WorldGrid {
   readonly grass: Uint8Array;
   readonly sand: Uint8Array;
   readonly npc: Uint8Array;
+  readonly behaviors: Uint8Array;
   readonly metatiles: Int16Array;
 
   constructor(width: number, height: number, minX: number, minY: number) {
@@ -25,6 +26,7 @@ export class WorldGrid {
     this.grass = new Uint8Array(size);
     this.sand = new Uint8Array(size);
     this.npc = new Uint8Array(size);
+    this.behaviors = new Uint8Array(size);
     this.metatiles = new Int16Array(size).fill(-1);
   }
 

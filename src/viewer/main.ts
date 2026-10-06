@@ -21,7 +21,9 @@ import { setupSearch } from "./ui/search";
 import { setupMinimap, type MinimapController } from "./ui/minimap";
 import { setupPopovers } from "./ui/popover";
 import { getPlayerSpriteSheet, type Direction, GFX_MAP } from "./render/sprites";
-import { spawnFieldFx } from "./render/fieldFx";
+import { viewerClock, bindViewerClockVisibility } from "./clock";
+import { ViewerFieldEffects } from "./fieldEffects";
+import { spawnFieldFx, installFieldFxRenderer } from "./render/fieldFx";
 import { EntityManager, type LiveEntity } from "./render/entities";
 import { DialogManager, type DialogSegment } from "./ui/dialog";
 import { ViewerCamera } from "./camera";
@@ -48,6 +50,19 @@ let animController: TileAnimationController;
 let minimapController: MinimapController | null = null;
 let entityManager: EntityManager;
 let dialogManager: DialogManager;
+let fieldEffects: ViewerFieldEffects;
+let cancelPlayerMotion: (() => void) | null = null;
+const legacyMarks = new Set<() => void>();
+function resetExploreSession(): void {
+  cancelPlayerMotion?.();
+  cancelPlayerMotion = null;
+  isStepping = false;
+  playerMoving = false;
+  keysDown.clear();
+  fieldEffects.resetSession();
+  for (const dispose of legacyMarks) dispose();
+  legacyMarks.clear();
+}
 const audioController = new ViewerAudioController();
 
 const camera = new ViewerCamera(viewport, document.getElementById("world-stage")!, content);
@@ -335,6 +350,7 @@ function checkTrainerSight(): void {
 }
 
 function startExploration(targetGx?: number, targetGy?: number): void {
+  resetExploreSession();
   playerActive = true;
   state.appMode = "explore";
 
@@ -370,9 +386,11 @@ function startExploration(targetGx?: number, targetGy?: number): void {
   playerVisualY = (playerY - minY) * TILE;
   updatePlayerDisplay();
   checkCurrentMapMusic();
+  fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false });
 }
 
 function stopExploration(): void {
+  resetExploreSession();
   playerActive = false;
   keysDown.clear();
   playerRunning = false;
@@ -427,6 +445,7 @@ function processPlayerStep(): void {
     targetDir = "east";
   }
 
+  const previousDirection = playerDir;
   playerDir = targetDir;
   if (dx === 0 && dy === 0) return;
 
@@ -449,7 +468,6 @@ function processPlayerStep(): void {
   const targetIsWater = worldGrid.isWaterTile(targetX, targetY);
   if (targetIsWater && playerMode !== "surf") {
     playerMode = "surf";
-    spawnFieldFx(content, (targetX - minX) * TILE, (targetY - minY) * TILE, "ripple");
   } else if (!targetIsWater && playerMode === "surf" && worldGrid.isWalkable(targetX, targetY, "walk")) {
     playerMode = "walk";
   }
@@ -468,18 +486,16 @@ function processPlayerStep(): void {
       audioController.playLedgeJump();
     }
 
-    if (worldGrid.isGrassTile(targetX, targetY) && playerMode !== "surf") {
-      spawnFieldFx(content, destPxX, destPxY, "grass");
-    } else if (worldGrid.isSandTile(targetX, targetY) && playerMode !== "surf") {
-      spawnFieldFx(content, destPxX, destPxY, playerMode === "bike" ? "tire" : "sand");
-    }
-
-    if (playerMode === "surf" && Math.random() < 0.3) {
-      spawnFieldFx(content, destPxX, destPxY, "ripple");
+    const groundActor = { x: targetX, y: targetY, previousX: playerX, previousY: playerY,
+      direction: playerDir, previousDirection, landingJump: isLedgeJump };
+    fieldEffects.onGroundStep("begin", groundActor);
+    if (worldGrid.isSandTile(targetX, targetY) && playerMode !== "surf") {
+      const dispose = spawnFieldFx(content, destPxX, destPxY, playerMode === "bike" ? "tire" : "sand", () => legacyMarks.delete(dispose));
+      legacyMarks.add(dispose);
     }
 
     const duration = playerMode === "bike" ? 100 : playerRunning ? 120 : 160;
-    const startTime = performance.now();
+    const startTime = viewerClock.elapsedMs;
 
     const animateStep = (now: number) => {
       const elapsed = now - startTime;
@@ -493,18 +509,16 @@ function processPlayerStep(): void {
 
       updatePlayerDisplay();
 
-      if (t < 1) {
-        requestAnimationFrame(animateStep);
-      } else {
+      if (t >= 1) {
+        cancelPlayerMotion?.();
+        cancelPlayerMotion = null;
         playerX = targetX;
         playerY = targetY;
         playerVisualX = destPxX;
         playerVisualY = destPxY;
         isStepping = false;
 
-        if (isLedgeJump) {
-          spawnFieldFx(content, destPxX, destPxY, "dust");
-        }
+        fieldEffects.onGroundStep("finish", groundActor);
 
         checkTrainerSight();
 
@@ -516,7 +530,7 @@ function processPlayerStep(): void {
         }
       }
     };
-    requestAnimationFrame(animateStep);
+    cancelPlayerMotion = viewerClock.subscribe(frame => animateStep(frame.elapsedMs));
   } else {
     if (!isStepping) {
       isStepping = true;
@@ -527,7 +541,7 @@ function processPlayerStep(): void {
       const basePxY = (playerY - minY) * TILE;
       const bumpDist = 3;
       const bumpDuration = 90;
-      const bumpStartTime = performance.now();
+      const bumpStartTime = viewerClock.elapsedMs;
 
       const animateBump = (now: number) => {
         const elapsed = now - bumpStartTime;
@@ -537,9 +551,9 @@ function processPlayerStep(): void {
         playerVisualY = basePxY + dy * offset;
         updatePlayerDisplay();
 
-        if (t < 1) {
-          requestAnimationFrame(animateBump);
-        } else {
+        if (t >= 1) {
+          cancelPlayerMotion?.();
+          cancelPlayerMotion = null;
           playerVisualX = basePxX;
           playerVisualY = basePxY;
           isStepping = false;
@@ -547,7 +561,7 @@ function processPlayerStep(): void {
           updatePlayerDisplay();
         }
       };
-      requestAnimationFrame(animateBump);
+      cancelPlayerMotion = viewerClock.subscribe(frame => animateBump(frame.elapsedMs));
     }
   }
 }
@@ -606,6 +620,18 @@ async function build(): Promise<void> {
   worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY);
   entityManager = new EntityManager(content, minX, minY);
   dialogManager = new DialogManager();
+  fieldEffects = await ViewerFieldEffects.create(worldGrid, viewerClock);
+  const disposeEffects = installFieldFxRenderer(fieldEffects, content, minX, minY);
+  const unbindVisibility = bindViewerClockVisibility();
+  const unsubscribeSimulation = viewerClock.subscribe(frame => {
+    audioController.frame();
+    if (playerActive) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY);
+  });
+  window.addEventListener("pagehide", event => {
+    if (event.persisted) { viewerClock.pause("pagehide"); return; }
+    resetExploreSession(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
+  });
+  window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
 
   const byPair = new Map<string, string[]>();
   const layoutsByMap = new Map<string, Awaited<ReturnType<typeof rom.loadLayout>>>();
@@ -646,12 +672,7 @@ async function build(): Promise<void> {
       zoom: camera.zoom,
     }),
     () => updateMeta(),
-    () => {
-      audioController.frame();
-      if (playerActive) {
-        entityManager.updateAutonomousBehaviors(performance.now(), playerX, playerY);
-      }
-    }
+    viewerClock
   );
 
   let processedCount = 0;
@@ -710,6 +731,7 @@ async function build(): Promise<void> {
           const gwy = info.y + y;
           if (worldGrid.inBounds(gwx, gwy)) {
             const idx = worldGrid.idx(gwx, gwy);
+            worldGrid.behaviors[idx] = beh;
             worldGrid.solid[idx] = hasCollision ? 1 : 0;
             if (isWater) worldGrid.water[idx] = 1;
             if (isGrass) worldGrid.grass[idx] = 1;
@@ -923,7 +945,8 @@ function setupUi(): void {
       state.audio = false;
     } else {
       audioController.enable();
-      state.audio = true;
+      state.audio = audioController.isEnabled();
+      if (audioController.lastError && statusMeta) statusMeta.textContent = audioController.lastError;
       checkCurrentMapMusic();
     }
     state.saveStored();
