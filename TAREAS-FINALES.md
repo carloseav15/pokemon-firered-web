@@ -362,6 +362,8 @@ Receta manual (si un punto no se puede automatizar):
 - [ ] **C12 Mapas y transiciones**: puertas, escaleras, mapas conectados, cartel de
   nombre y cueva (`route3` → Monte Moon); flores y agua animadas.
 - [ ] **C13 Audio**: música por mapa y combate, efectos y gritos; escucha humana del M4A.
+  PARCIAL: el smoke verifica BGM de mapa (303) y de combate salvaje (298), SE y
+  grito por estado (`9b95defe`); falta la escucha humana.
   PARCIAL: el smoke comprueba la música del mapa en WebAudio; falta lo demás.
 - [x] **C14 Clima**: niebla y sombra en mapas reales (1.6).
 
