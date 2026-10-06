@@ -41,6 +41,34 @@ export default async function run(ctx) {
     return { savedCounter: sv.gameStats[C.GAME_STAT_SAVED_GAME], ...status() };`);
   writeEvidence(out, evidence);
 
+  // Milestone checkpoints: a stop inside a battle or menu cannot be saved, so every milestone reached with a
+  // free field is saved/exported/reloaded at once (same verified flow as a stop checkpoint) and the next attempt
+  // resumes from it with SON_MM_ENTRY. A milestone already true at entry is not saved again. A failed milestone
+  // save is recorded and the route continues; the stop/arrival checkpoint rules are unchanged.
+  const milestoneProvenance = { origin: entryPath, originSha256: evidence.entry.sha256, job: "tools/playtest/smoke/son-mm01-r.job.mjs", aids: "none: no Pokemon/items/money/flags written by code; auto battle policy" };
+  const reached = (r) => ({
+    b2f: r.st.map === "MAP_MT_MOON_B2F" || !!r.miguel,
+    miguel: !!r.miguel && r.scene === 1,
+    fossil: !!r.gotMoon && r.domeItem === 1,
+    route4east: r.st.map === "MAP_ROUTE4" && !!r.gotMoon,
+  });
+  const done = new Set(Object.entries(reached(evidence.entryCheck)).filter(([, v]) => v).map(([k]) => k));
+  evidence.milestones = [];
+  const milestoneCheckpoint = async (r) => {
+    if (r.retreat || !r.st.free) return;
+    for (const [key, ok] of Object.entries(reached(r))) {
+      if (!ok || done.has(key)) continue;
+      done.add(key);
+      const name = `mtmoon-${key}-${stamp}`;
+      try {
+        const cp = await stopCheckpoint(ctx, { name, dir: exportDir, kind: `route milestone checkpoint (${key}); route not PASS`,
+          provenance: { ...milestoneProvenance, milestone: key }, evidence, base, prefix: `${prelude}${helpers}` });
+        evidence.milestones.push({ key, path: cp.path, state: cp.state });
+      } catch (e) { evidence.milestones.push({ key, error: String(e.message ?? e).slice(0, 400) }); }
+      writeEvidence(out, evidence);
+    }
+  };
+
   let stopError = null;
   try {
     if (process.env.SON_MM_DRYRUN === "1") throw new Error("DRYRUN: stop requested before walking");
@@ -52,6 +80,7 @@ export default async function run(ctx) {
       writeEvidence(out, evidence);
       if (r.bad) throw new Error(`STOP at "${r.action}": ${r.bad}; map ${r.st.map} (${r.st.x},${r.st.y}); party ${JSON.stringify(r.res.party.map(m => [m.species, m.level, m.hp + "/" + m.maxHP, m.pp]))}`);
       if (r.action === "arrived") break;
+      await milestoneCheckpoint(r);
       const key = JSON.stringify([r.action, r.st, r.res.party.map(m => m.hp)]);
       same = key === last ? same + 1 : 0; last = key;
       if (same >= 2) throw new Error(`no progress at "${r.action}" ${JSON.stringify(r.st)}`);
@@ -83,5 +112,5 @@ export default async function run(ctx) {
   if (!(a.gotDome && a.gotMoon && a.domeItem === 1 && a.miguel && a.st.map === "MAP_CERULEAN_CITY")) throw new Error("persistence lost fossil/Miguel/map: " + JSON.stringify(a));
   evidence.afterContinue = a;
   writeEvidence(out, evidence);
-  return { legs: evidence.legs.map(l => [l.action, l.st.map, l.st.x, l.st.y, l.battles.length]), checkpoint: cp };
+  return { legs: evidence.legs.map(l => [l.action, l.st.map, l.st.x, l.st.y, (l.battles ?? []).length]), milestones: evidence.milestones, checkpoint: cp };
 }

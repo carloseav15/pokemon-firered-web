@@ -175,11 +175,22 @@ export async function stopCheckpoint(ctx, { name, dir, path, provenance = {}, ki
   await ctx.page.goto(`${base}?fr=continue`, { waitUntil: "load" });
   const continued = await ctx.runEval(`const { H } = await import("/tools/playtest/driver.js"); window.H = H; await H.ready(); return { snapshot: H.saveSnapshot(), observe: H.observe() };`);
   if (JSON.stringify(continued.snapshot) !== JSON.stringify(expected)) throw new Error("continued semantic state differs: " + JSON.stringify({ expected, continued: continued.snapshot }));
-  const back = await ctx.runEval(`const t = ${JSON.stringify(move.before)}; return await H.goto(t.x, t.y);`);
+  // Real movement after continue: one step to a neighbour of the saved tile on the same map. The previous tile is
+  // not required: it can be a warp (arrival tile) or the top of a one-way ledge, which the game does not let you
+  // walk back onto. Warp tiles are skipped so the check never changes map.
+  const back = await ctx.runEval(`${prefix}
+    const b = H.st();
+    const ow = window.frGame.overworld, wp = new Set(ow.loaded.header.warps.map(w => w.x + "," + w.y));
+    for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+      const x = b.x + dx, y = b.y + dy;
+      if (wp.has(x + "," + y) || H.bfs(x + 7, y + 7) === null) continue;
+      const r = await H.goto(x, y);
+      if (r.ok !== false && r.map === b.map && r.x === x && r.y === y) return { ok: true, from: { x: b.x, y: b.y }, to: { x, y } };
+    }
+    return { ok: false, status: "blocked", reason: "no-real-movement-after-continue", state: H.observe() };`);
   assertOk("movement after continue", back);
-  if (back.x !== move.before.x || back.y !== move.before.y) throw new Error("continue movement did not reach the traversed tile: " + JSON.stringify(back));
   if (ctx.errors().length !== errors0 || ctx.errors().length) throw new Error("browser errors: " + ctx.errors().join("; "));
-  record.verified = { continued: true, movement: { from: move.after, to: { x: back.x, y: back.y } } };
+  record.verified = { continued: true, movement: { from: back.from, to: back.to } };
   return record;
 }
 
