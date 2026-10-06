@@ -123,7 +123,19 @@ export const helpers = `
       if (f.gotMoon) { action = "B2F -> B1F east part"; r = await warpLeg(5, 10, opt); }
       else if (retreat) { action = "B2F -> B1F west part"; r = await warpLeg(25, 21, opt); }
       else if (!f.miguel) { action = "Miguel trigger (14,11)"; r = await walk(14, 11, opt); if (!r.note) { r = noted(await H.idle(4000, true)); if (!r.note) r = null; } }
-      else { action = "Dome Fossil (13,7)"; r = noted(await H.talk(13, 7)); if (!r?.note) { r = noted(await H.idle(5000, true)); if (!r.note) r = null; } }
+      else {
+        // MtMoon_B2F_EventScript_DomeFossil: msgbox YESNO; YES -> removeobject, giveitem ITEM_DOME_FOSSIL, Miguel takes the Helix.
+        // The route's decision is the Dome Fossil, so the only prompt answered is that script's Yes/No at the fossil.
+        action = "Dome Fossil (13,7)"; r = noted(await H.talk(13, 7));
+        for (let n = 0; n < 2 && !r?.note; n++) {
+          r = noted(await H.idle(5000, true));
+          if (r.note === "input required" && H.observe().phase === "choice" && H.hasTask("Task_YesNoMenu_HandleInput")) {
+            const a = await H.answerYesNo(true);
+            r = a.ok ? { ...H.st(), note: null } : { ...H.st(), note: a.note };
+          } else break;
+        }
+        if (!r.note) { r = noted(await H.idle(5000, true)); if (!r.note) r = null; }
+      }
     } else { return { action: "unknown map", bad: "unexpected map " + m, ...f }; }
     let note = r?.note && r.note !== "map changed" ? r.note : null, bad = null;
     if (note && /^return to center/.test(note) && !f.gotMoon && !retreat) { window.__retreat = true; window.__retreats = (window.__retreats ?? 0) + 1; note = null; action += " [retreat start: " + r.note + "]"; }

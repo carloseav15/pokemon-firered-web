@@ -737,6 +737,16 @@ export const H = {
     await this.press("A");
     return this.st();
   },
+  /** Answer the script Yes/No menu (ScriptMenu_YesNo; cursor starts on YES) by key input.
+   * Only for a menu observed open; the caller states the answer, nothing is chosen implicitly. */
+  async answerYesNo(yes) {
+    if (typeof yes !== "boolean") throw new Error("answerYesNo needs an explicit boolean");
+    if (!this.hasTask("Task_YesNoMenu_HandleInput")) return { ok: false, status: "blocked", reason: "no-yes-no-menu", note: "no yes/no menu", state: this.observe() };
+    await this.wait(10); // the task ignores input for its first 5 frames
+    await this.press(yes ? "A" : "B", 20);
+    if (!await this.until(() => !this.hasTask("Task_YesNoMenu_HandleInput"), null, 20)) return { ok: false, status: "failure", reason: "yes-no-not-closed", note: "yes/no menu did not close", state: this.observe() };
+    return { ok: true, status: "success", answered: yes ? "yes" : "no", state: this.observe() };
+  },
   /** Walk next to an object/tile, face it and press A. */
   async talk(x, y) {
     // Prefer standing below the target (facing up), as most counters/NPCs expect.
