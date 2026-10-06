@@ -150,21 +150,109 @@ Resultados: **PASS continuidad**, **FAIL**, **BLOCKED** o **MANUAL pendiente**.
 Una comprobación sin ejecutar es NOT RUN; una pantalla cargada sin aserciones no
 es PASS. Fidelidad visual/audio y paridad con original tienen su resultado aparte.
 
-## Reparto de agentes y control de coste
+## Reparto actual: Sonnet 5.5, Gemini Flash 3.8 y GPT-6.1 Sol
 
-Asignación provisional por rol, no ranking demostrado ni comparación de precios:
-- Codex: fija contrato/checklist, diagnostica C/TS, integra y acepta entregas.
-- Sonnet 5.5: candidato inicial a ejecutor principal del tramo piloto; comparar su
-  disciplina/evidencia y consumo con Muse antes de asignar la ruta completa.
-- Muse Spark 1.3 / Gemini 3.8 Flash: candidatos para ejecutar jobs ya definidos,
-  repetir regresiones y preparar informes cortos si tienen herramientas necesarias.
-- Opus 5.5: reservar para bloqueo ambiguo, contradicción C/runtime o diagnóstico
-  difícil; invocarlo con reproducción compacta, sin pedirle repetir horas de ruta.
+Asignación propuesta por rol; no demuestra que un modelo sea más barato/mejor.
+Tareas preparadas para entregar al usuario: este documento no crea agentes ni
+manda mensajes. Sonnet mantiene la cadena de historia, Flash ejecuta validaciones
+acotadas y Sol revisa/diagnostica/integra. Cada uno en worktree y puerto propios.
+TAREAS-FINALES sigue siendo la lista única de problemas y validación pendientes;
+los IDs siguientes son paquetes de ejecución para sus tareas, no nuevos cierres.
 
-Elegir ejecutor por coste de un tramo aceptado: consumo facturado/disponible,
-tiempo, calidad de evidencia y reintentos. Si no hay factura comparable, informar
-solo consumo/tiempo observado; no inventar dólares. Un único ejecutor mantiene la
-cadena principal. No se crean agentes/chats ni se envían tareas con este documento.
+### Primera tanda (hacer ahora)
+
+- [ ] **SOL-01 — Fijar base y reglas de aceptación.** Leer AGENTS, TAREAS-FINALES
+  §1/§3/§4 y este plan. Fijar el commit del juego integrado para ambos ejecutores,
+  indicar worktrees/puertos, checkpoints y driver. Confirmar scripts fuente para
+  los resultados esperados de SON-01/FLASH-02. Entregar contrato breve con rutas,
+  final y aserciones. El viewer y M13 no son prerequisito de la ruta del juego.
+  **Aceptación:** ambos ejecutores pueden arrancar en la misma base identificada,
+  con resultados verificables; no mezclar commits durante un trabajo.
+
+- [ ] **FLASH-01 — Diagnóstico inicial y mapa de checkpoints.** Tras SOL-01,
+  ejecutar `play:smoke` con servidor propio; inspeccionar los resultados de cada
+  C1–C14 y distinguir PASS/FAIL/MANUAL/NOT RUN, incluyendo límites de las pruebas.
+  Revisar saves de tools/playtest/saves y registrar mapa/equipo/procedencia cuando
+  se pueda verificar. No transformar existencia de un save en tramo jugado.
+  **Entrega:** tabla breve, comando/commit probado y evidencia de fallos. Cambios
+  solo en pruebas si el driver falla; reportar al Sol los fallos del juego.
+  **Aceptación:** ninguna salida parcial o timeout figura como PASS completo.
+
+- [ ] **SON-01 — Partida nueva completa (C1/C2).** Tras SOL-01, entrar por `/`
+  con perfil aislado sin save. Recorrer copyright/intro/título/menú, NUEVA PARTIDA,
+  Oak, nombres, habitación, encuentro con Oak, laboratorio, inicial y rival.
+  Usar pulsaciones/driver sin saltar el discurso ni los scripts. Consultar C/datos
+  para recompensas y flags esperados. Guardar desde menú, recargar y confirmar
+  continuidad desde el checkpoint final. Reutilizar/ampliar C1/C2 jobs cuando sea
+  viable; lectura por estado y observación visual se informan por separado.
+  **Entrega:** acciones/aserciones, checkpoint inicial/final, evidencia y ayudas.
+  **Aceptación:** rival terminado, control recuperado y progreso correcto; la
+  verificación de intro visual tiene su resultado aparte. Dos intentos ante un
+  bloqueo reproducible; luego entregar a Sol, sin mutar el evento para avanzar.
+
+- [ ] **FLASH-02 — Curación y PC (C8).** Tras FLASH-01, cargar `pewter-pc`/`pewter`
+  y confirmar sus datos reales. Si ningún Pokémon está herido, obtener daño real
+  o declarar PREPARED una fixture solo para curación; no preparar HP final.
+  Hablar con enfermera por UI y verificar recuperación HP/PP/estado según fuente
+  y devolución del control. Depositar/retirar y comprobar identidad del Pokémon,
+  equipo/caja antes/después y persistencia al guardar/continuar. Reutilizar C8.
+  **Entrega:** job reproducible, resultados separados de curación/PC/persistencia,
+  preparación identificada y cualquier excepción. **Aceptación:** el recorrido
+  medido funciona; lo no ejecutado sigue MANUAL. 1.18 PC vacío se reproduce como
+  fallo aparte y se deriva a Sol; nunca se arregla con un objeto ficticio.
+
+- [ ] **SOL-02 — Revisar y resolver bloqueos de esta tanda.** Reproducir desde el
+  checkpoint previo, separar juego/driver/entorno y comparar con fuente C. Priorizar
+  pérdida de save y bloqueos SON-01, luego C8/1.18. En 1.18 respetar la decisión
+  pendiente de fidelidad del acceso NULL. Cambios selectivos, checks de AGENTS y
+  comprobación focalizada; integrar solo entregas revisadas, con commits exactos.
+  **Aceptación:** repetir el fallo con ejecutor y recuperar continuidad; marcar
+  cualquier problema sin resolver en TAREAS-FINALES. No prometer cerrar todos los
+  bloqueos si falta evidencia del original.
+
+SON-01 y FLASH-01/02 pueden ejecutarse a la vez tras SOL-01; el juego y los saves
+son independientes en sus worktrees/perfiles. Sol atiende incidencias con evidencia,
+no repite preventivamente toda la navegación de ambos. Sonnet reanuda sobre la
+base nueva solo después de aceptar la corrección y registrar el commit.
+
+### Segunda tanda (tras revisión de la primera)
+
+- [ ] **SON-02 — Continuidad hasta Ruta 4.** Partir del checkpoint aceptado de
+  SON-01 o reconstruir la cadena hasta Plateada. Validar paquete/Pokédex, acceso al
+  gimnasio y Brock; luego Ruta 3, Monte Moon, Rocket, fósil y salida real. Usar
+  checkpoints existentes para diagnóstico y anotar qué partes previas siguen sin
+  validar. Exportar `route4` obtenido por recorrido. **Aceptación:** checklist de
+  tramos 0/1 con evidencia y posibilidad de continuar; cargar route4 no basta.
+
+- [ ] **FLASH-03 — Regresiones delegadas por Sol.** Repetir los jobs afectados por
+  arreglos aceptados; validar guardar/continuar C3 y Quest Log C4 desde saves reales.
+  En C4 observar reproducción y devolución de control, no solo presencia de datos.
+  **Aceptación:** resultados con commit exacto y límites; fallo de C4 se escala,
+  sin escribir flags ni cerrar el punto por un smoke parcial.
+
+- [ ] **SOL-03 — Aceptar tramos 0/1 y preparar Celeste.** Contrastar entregas con
+  C/datos y checklist, registrar fallos abiertos y evaluar coste del piloto. Fijar
+  inicio/final/aserciones de tramo 2 y asignar evolución C11/mapas C12 según riesgo.
+  **Aceptación:** cadena y saves trazables; decisión de siguiente tanda sustentada,
+  sin ampliar a toda la historia antes de evaluar el piloto.
+
+- [ ] **SON-03 — Tramo 2: Celeste/Bill/Misty.** Solo tras SOL-03. Validar rival,
+  Puente Pepita, Bill/recompensa, Misty/recompensa y acceso sur; equipo PREPARED
+  permitido desde Celeste bajo las reglas de ayudas. **Aceptación:** checklist de
+  tramo 2 y checkpoint exportado. No contar evolución/experiencia manipulada como
+  comportamiento verificado.
+
+### Formato de entrega y coste
+
+Cada agente entrega: ID; commit/base; checkpoint antes/después; acciones y resultado
+esperado/observado; PASS/FAIL/BLOCKED/MANUAL/NOT RUN; ayudas PREPARED; fallos y
+reproducción; archivos/commit de entrega. Registrar tiempo, reintentos y consumo
+cuando sea visible; sin facturación comparable no inventar dólares.
+
+No crear crónicas nuevas: registro de ruta aquí y problemas en TAREAS-FINALES.
+Las comprobaciones compartidas existentes se reutilizan; no escribir pruebas que
+solo repitan la implementación. Capturas para escenas clave/fallos y consultas
+agrupadas. Un ejecutor mantiene la historia, otro valida sistemas independientes.
 
 ## Registro histórico (sin nueva validación)
 
