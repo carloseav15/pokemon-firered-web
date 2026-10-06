@@ -163,13 +163,16 @@ Abiertas:
   Revisión R2 fa036fb4: Sol repitió el job y confirmó PC, movimiento, enfermera y
   persistencia real0→1; antes de integrar faltan aserciones de mapa/bolsa/dinero
   descritas en PLAN-RECORRIDO (segunda ronda). Mantener abierta la tarea.
-- [ ] 1.21 **Continue con escenas Quest Log falla al restaurar jugador** [alto].
-  SON-PREP 660d7dfa guarda por UI, pero sus bytes escritos producen TypeError
-  currentCoords en setUpWarpExitTask: player.object undefined durante
-  FieldCB2_QuestLogStartPlaybackWithWarpExit. Sol lo reprodujo sin alterar el
-  guardado; evidencia en ../pokemon-cleanup-backup-2026-10-06/review-second-wave/.
-  Trazar inicialización/restauración de objetos y mapa contra quest_log.c y
-  overworld.c; no omitir playback para declarar persistencia. Bloquea SON-MM01-R.
+- [x] 1.21 **Continue con escenas Quest Log**: 4ce0ab7f restaura índice de objetos,
+  avatar por MOVEMENT_TYPE_PLAYER, paletas y mapa/posición guardados. Bytes SON-PREP
+  sin alterar: playback2→3→0, equipo/HP/PP/bolsa/dinero/respawn/contador intactos,
+  movimiento posterior; continue sin escenas y auto/Brock pasan. Evidencia en
+  ../pokemon-cleanup-backup-2026-10-06/review-second-wave/sol-ql-*.json.
+- [ ] 1.22 **Objetos de campo del guardado frente a load_save.c**: el guardado web
+  SON-PREP no contiene snapshot completo de gObjectEvents; al terminar playback
+  se reconstruye jugador y NPC desde coordenadas/avatar/templates guardados, como
+  el continue web. Revisar SaveObjectEvents/LoadObjectEvents y conservación de
+  posiciones/estados dinámicos de NPC contra C; 1.21 no acredita esa fidelidad.
 - [x] **LUNA-02 regresión focalizada del driver**: base66baef56, cinco casos PASS
   revisados; entradas PREPARED y segmento500 sin victoria declarados. No C8/ruta.
 - [x] **Driver detiene navegación tras derrota/atasco**: 65e631f9 propaga

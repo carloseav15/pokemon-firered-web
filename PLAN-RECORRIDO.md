@@ -664,3 +664,43 @@ entrada → Sonnet SON-MM01-R. Flash completa R2 sin tocar motor en paralelo;
 Luna espera commit corregido para regresión de continue/C8, sin suite completa.
 M12/R7/M13 y revisión OpenCode ya integrados según el registro anterior; esta
 ronda no valida de nuevo animaciones, sandbox ni calidad audiovisual.
+
+
+### Corrección 1.21 y nueva base — 2026-10-06
+
+**Base siguiente: 4ce0ab7f.** Quest Log ya completa playback2→3→0 y vuelve al
+Centro Ruta4 (7,5) desde los bytes escritos por SON-PREP, SHA256
+d68e2e067cb896ca4a2f6bb61d637f9c6082b97f78c794bce1eec8fa0487b6c6.
+Snapshot conservado: PidgeyL13/IvysaurL17, identidades/orden/movimientos/HP/PP/estado,
+8 pociones/3 antídotos,1808, respawn/escape y contador1. Hay control y un paso real.
+Continue de pewter-pc sin escenas y driver-auto (salvaje/Brock/retorno) pasan.
+Checks: questlog-objects, check:port, check:honesty, build y diff --check.
+Inventario/pending regenerados sin delta:0 cuerpos nuevos,0 equivalencias.
+
+La corrección sincroniza el índice web con gObjectEvents al reconstruir sprites,
+registra avatar por MOVEMENT_TYPE_PLAYER como event_object_movement.c, inicializa
+paletas en ReturnToFieldLocal y carga el mapa guardado sin aplicar el warp de la
+última escena. El regreso reconstruye objetos con templates guardados; fidelidad
+de snapshots dinámicos de NPC sigue abierta en TAREAS-FINALES1.22.
+
+**Sonnet:** integrar 4ce0ab7f en codex/sonnet-mtmoon conservando660d7dfa (merge,
+no reset). Corregir el final del job: H.ready solo confirma que existe un mapa,
+no que terminó playback. Esperar QL_STATE_PLAYBACK/PLAYBACK_LAST→fin y control
+libre antes de comparar. Reusar questlog-continue.job.mjs como regresión de los
+bytes escritos; comparar también escapeWarp y contador. Repetir SON-PREP por UI,
+exportar mtmoon-prepared.json solo tras continue exacto y entregar para aceptación.
+El save original está desbloqueado, pero SON-MM01-R aún no empieza sin esa entrega.
+
+**Luna:** avanzar con ff a4ce0ab7f si limpio. Ejecutar la regresión nueva primero
+con QL_SAVE_PATH=/Users/carancibia/Documents/ChatGPT/pokemon-son-prep-evidence/written-save.json
+y después sin QL_SAVE_PATH, en ambos con PW_BASE5199 explícito. No suite completa.
+**Flash:** integrar4ce0ab7f conservando su rama, completar comparaciones pendientes
+R2 y repetir C8; no motor/C5 todavía. No se enviaron mensajes ni arrancaron agentes.
+
+Comando de reproducción, puerto del servidor propio:
+```sh
+QL_SAVE_PATH=/Users/carancibia/Documents/ChatGPT/pokemon-son-prep-evidence/written-save.json PW_BASE=http://127.0.0.1:5199/ node tools/playtest/pw.mjs tools/playtest/smoke/questlog-continue.job.mjs /tmp/pw/luna-ql-continue
+```
+El job exige escenas reproducidas, estado guardado, bytes persistidos intactos y
+movimiento. Datos de entrada escritos por menú; no modifica sus archivos ni prepara
+resultados. La variante sin escenas usa pewter-pc.
