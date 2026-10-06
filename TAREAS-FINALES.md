@@ -160,6 +160,18 @@ Abiertas:
   y motor antes de corregir; revisar pc.inc, scriptMenu.ts y startMenu.ts.
   Evidencia /tmp/sol-review-c8.json, /tmp/sol-c8-diagnose2.json; contrato FLASH-02-R2
   en PLAN-RECORRIDO. Persistencia, identidad de ambos miembros y control real pendientes.
+  Revisión R2 fa036fb4: Sol repitió el job y confirmó PC, movimiento, enfermera y
+  persistencia real0→1; antes de integrar faltan aserciones de mapa/bolsa/dinero
+  descritas en PLAN-RECORRIDO (segunda ronda). Mantener abierta la tarea.
+- [ ] 1.21 **Continue con escenas Quest Log falla al restaurar jugador** [alto].
+  SON-PREP 660d7dfa guarda por UI, pero sus bytes escritos producen TypeError
+  currentCoords en setUpWarpExitTask: player.object undefined durante
+  FieldCB2_QuestLogStartPlaybackWithWarpExit. Sol lo reprodujo sin alterar el
+  guardado; evidencia en ../pokemon-cleanup-backup-2026-10-06/review-second-wave/.
+  Trazar inicialización/restauración de objetos y mapa contra quest_log.c y
+  overworld.c; no omitir playback para declarar persistencia. Bloquea SON-MM01-R.
+- [x] **LUNA-02 regresión focalizada del driver**: base66baef56, cinco casos PASS
+  revisados; entradas PREPARED y segmento500 sin victoria declarados. No C8/ruta.
 - [x] **Driver detiene navegación tras derrota/atasco**: 65e631f9 propaga
   battle lost/battle stuck por goto/explore/grind, permite sustituto sano en slot0
   y evita restauración perdida de battleDefaults. C7 confirma pérdida natural y

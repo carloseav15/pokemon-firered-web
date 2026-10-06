@@ -629,3 +629,38 @@ smoke completo, capturas de clima/audio ni la ruta de Sonnet en esta ronda.
 Los tres paquetes pueden ejecutarse en paralelo con perfiles/worktrees separados.
 La ruta de Monte Moon sigue lineal: SON-PREP → revisión Sol → SON-MM01-R. Cada
 entrega informa SHA probado, ayudas, acciones reales, resultados y límites.
+
+
+### Revisión de la segunda ronda — 2026-10-06
+
+Revisor Sol: main d930521d, worktrees limpios; no fusiones ni push en esta revisión.
+
+| Entrega | Resultado contrastado | Decisión / siguiente paso |
+| --- | --- | --- |
+| Luna LUNA-02, base 66baef56 | Cinco casos PASS: strategy, recursos/enfermera, auto/Brock, cambio/medicina/huida, C7. Revisado informe del chat y límites PREPARED; strategy repetido por Sol | Aceptar la regresión focalizada. C8 y ruta completa siguen fuera de esta entrega |
+| Sonnet SON-PREP, 660d7dfa | Job y evidence.json acreditan compra por UI (8 pociones/3 antídotos, dinero1808), equipo curado, Pidgey L13/Ivysaur L17 y guardado0→1. Continuar falla en Quest Log | Entrega diagnóstica útil, entrada no aceptada: no existe mtmoon-prepared.json. No iniciar SON-MM01-R; Sol corrige 1.21 |
+| Flash FLASH-02-R2, fa036fb4 | Sol ejecutó el job entregado sobre el motor de main: ok:true/errors:[], depósito/retiro con identidades y orden[16,1], PC cerrado y movimiento, enfermera rechazo/aceptación, dos guardados0→1 y continue | Avance funcional confirmado. Antes de integrar completar aserciones de mapa/bolsa en PC y mapa/bolsa/dinero en enfermera; verificar contador tras continue y devolver snapshots esperados para auditoría |
+
+Evidencia de Sol en ../pokemon-cleanup-backup-2026-10-06/review-second-wave/:
+sol-wave2-c8.json, sol-wave2-continue.json y job diagnóstico de continue.
+La reproducción usa sin alterar los bytes de
+../pokemon-son-prep-evidence/written-save.json. El runner diagnóstico devuelve
+ok:true por completar la captura, pero contiene pageerror y state.error: el
+resultado del juego es FAIL, nunca PASS. Traza: LoadMap_QLPlayback →
+FieldCB2_QuestLogStartPlaybackWithWarpExit → setUpWarpExitTask; player.object
+es undefined al leer currentCoords. Causa raíz y reparación contra C pendientes.
+
+Revisión estática Flash: captura map/bag pero omite compararlos tras recarga;
+en enfermera también omite money. El resultado real observado es correcto,
+pero el test no detectaría esas regresiones. PP independiente cubre el Pokémon
+único del fixture; no demuestra curación de un equipo completo.
+Sonnet compara PP con rom y confirma enfermera por estado si H.heal devuelve
+"nurse offer missing"; ese helper necesita diagnóstico, no aumentar esperas
+sin observar la fase de diálogo. Cierre del job Sonnet no compara escapeWarp
+ni saved tras continue; revisar al desbloquearlo.
+
+Orden vigente: Sol 1.21 (Quest Log/continue) → repetir SON-PREP y aceptar
+entrada → Sonnet SON-MM01-R. Flash completa R2 sin tocar motor en paralelo;
+Luna espera commit corregido para regresión de continue/C8, sin suite completa.
+M12/R7/M13 y revisión OpenCode ya integrados según el registro anterior; esta
+ronda no valida de nuevo animaciones, sandbox ni calidad audiovisual.
