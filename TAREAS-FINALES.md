@@ -413,9 +413,10 @@ Sigue [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md): un tramo por sesión, punto de con
 antes y partida exportada a `tools/playtest/saves/` al terminarlo.
 
 - [ ] **4.1 Actualizar el registro del tramo 1** [básico, navegador]. Carga `route4`
-  (Ruta 4, 2 Pokémon a nivel 12 y 17), confirma `MAP_ROUTE4` y marca el tramo 1 como
-  jugado en la tabla "Registro de tramos" de `PLAN-RECORRIDO.md`.
-- [ ] Recorrido zona por zona de Kanto y Sevii (tramos 2–12), con partidas por tramo.
+  y contrasta mapa/equipo con el estado real; recuperar evidencia o repetir desde
+  el checkpoint previo para confirmar fósil y salida de Monte Moon. Cargar
+  `route4` por sí solo no acepta el tramo 1 (ver PLAN-RECORRIDO).
+- [ ] Recorrido zona por zona de Kanto y Sevii (tramos 2–13, incluido postgame de un jugador), con partidas por tramo.
 - [ ] Checks headless por sistema en `tools/checks/` donde falten.
 - [ ] **4.2 Comparación con el juego original en emulador** [avanzado]. Compilar la ROM
   del decomp (`make` en `../pokefirered`), ejecutarla en un emulador con scripting
