@@ -130,14 +130,10 @@ Abiertas:
   recorre el menú hasta `CB2_PokeStorage` (`fbb30c01`).
 - [x] 1.15 Registros BG del campo (`hw/bgRegs.ts`): declarados sustituidos por Canvas, por
   decisión del usuario (2026-10-01); el navegador no tiene `BLDCNT` (`overworld.c:2071-2073`).
-- [ ] 1.16 **Poké Ball desde la mochila en combate** [medio]. Con `route2-north`, en un
-  combate salvaje: BOLSA → bolsillo de Poké Balls → A abre el menú contextual
-  (`Task_FieldItemContextMenuHandleInput`) y el siguiente A vuelve a la mochila sin
-  lanzar la ball. Decidir primero si es fallo del juego o del driver: comparar
-  `bagMenu.ts` `OpenContextMenu` (rama `ITEMMENULOCATION_BATTLE`) y
-  `Task_ItemMenuAction_BattleUse` con `item_menu.c:1338-1360` y `sItemMenuContextActions`,
-  y mirar `gBagMenuState.location` al abrir la mochila desde combate. Desbloquea C5
-  (borrador en `tools/playtest/smoke/drafts/C5-wild-battle.draft.mjs`).
+- [x] 1.16 **Poké Ball desde la mochila en combate** [medio]. Era fallo del driver,
+  no del juego: el borrador navegaba al bolsillo 1 (objetos clave) y pulsaba A sobre
+  la Bici, cuyo menú solo-CANCELAR vuelve a la mochila. Con el bolsillo 2 (`OPEN_BAG_POKEBALLS`)
+  la bola se lanza y el borrador C5 captura al primer tiro (`927c206c`).
 - [ ] 1.17 **Brock no inicia el combate con `H.talk`** [medio]. Con `gym-camper`, según
   el trabajo de C6 la interacción queda bloqueada antes del combate. Sin reproducir
   por el revisor: reproducir primero y decidir si es fallo del juego o del driver.
