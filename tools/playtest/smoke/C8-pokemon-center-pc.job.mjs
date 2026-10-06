@@ -25,78 +25,17 @@ export default async function run(ctx) {
   };
 
   const saveViaStartMenu = `
-    const C = await H.mod("/src/fr/generated/constants.ts");
-    const T = await H.mod("/src/fr/gba/tasks.ts");
-    const checkSM = () => T.tasks.tasks.some(t => t.isActive && (t.func.name === "startInput" || t.func.name === "Task_StartMenuHandleInput"));
-    const checkYesNo = () => T.tasks.tasks.some(t => t.isActive && t.func.name === "Task_YesNoMenu_HandleInput");
-
+    const C = H.C;
     const statBefore = frDebug.save.save.gameStats[C.GAME_STAT_SAVED_GAME];
     const rawBefore = localStorage.getItem("pokemon-gba-web-lab.firered.v2");
-
-    // Settle before opening Start Menu
-    for (let f = 0; f < 60; f += 5) {
-      if (H.fieldFree()) break;
-      await frDebug.wait(5);
-    }
-    await frDebug.wait(30);
-
-    for (let i = 0; i < 5 && !checkSM(); i++) {
-      await frDebug.press("START");
-      await frDebug.wait(40);
-    }
-    if (!checkSM()) throw new Error("Start menu did not open");
-
-    // Start Menu in NormalField has 7 entries with SAVE at index 4.
-    // Calculate relative steps from current cursor position.
-    const currentCursor = window.frGame.startMenuCursor ?? 0;
-    const stepsDown = (4 - currentCursor + 7) % 7;
-    for (let i = 0; i < stepsDown; i++) {
-      await frDebug.wait(4, 0x80);
-      await frDebug.wait(20);
-    }
-    await frDebug.press("A"); // Select SAVE
-
-    // 1. Wait for YesNo 1 ("Would you like to save the game?")
-    for (let f = 0; f < 400 && !checkYesNo(); f += 5) await frDebug.wait(5);
-    if (!checkYesNo()) throw new Error("Save confirmation prompt never appeared");
-    await frDebug.wait(15);
-    await frDebug.press("A"); // Confirm save
-
-    // 2. Wait for YesNo 1 to dismiss
-    for (let f = 0; f < 100 && checkYesNo(); f += 5) await frDebug.wait(5);
-
-    // 3. Wait for YesNo 2 (overwrite) if an existing save exists
-    let yn2Appeared = false;
-    for (let f = 0; f < 400; f += 5) {
-      if (checkYesNo()) { yn2Appeared = true; break; }
-      await frDebug.wait(5);
-    }
-    if (yn2Appeared) {
-      await frDebug.wait(15);
-      await frDebug.press("A"); // Confirm overwrite
-      for (let f = 0; f < 100 && checkYesNo(); f += 5) await frDebug.wait(5);
-    }
-
-    // 4. Wait for save to complete and controls to return (SaveDialogCB_ReturnSuccess waits at least 60 frames)
-    for (let f = 0; f < 600; f += 10) {
-      await frDebug.wait(10);
-      const stat = frDebug.save.save.gameStats[C.GAME_STAT_SAVED_GAME];
-      if (stat > statBefore && H.fieldFree() && !checkSM() && !checkYesNo()) break;
-    }
-
+    const result = await H.saveGame();
+    if (!result.ok) throw new Error("SAVE failed: " + JSON.stringify(result));
     const statAfter = frDebug.save.save.gameStats[C.GAME_STAT_SAVED_GAME];
     const rawAfter = localStorage.getItem("pokemon-gba-web-lab.firered.v2");
-    if (statAfter <= statBefore) {
-      throw new Error("GAME_STAT_SAVED_GAME did not increment: before=" + statBefore + ", after=" + statAfter);
-    }
-    if (!rawAfter || rawAfter === rawBefore) {
-      throw new Error("localStorage was not updated with new save content");
-    }
-    if (JSON.parse(rawAfter).gameStats[C.GAME_STAT_SAVED_GAME] !== statAfter) {
-      throw new Error("localStorage stat mismatch: expected " + statAfter);
-    }
-    if (!H.fieldFree()) throw new Error("field not free after save: " + JSON.stringify(H.st()));
-
+    // start_menu.c: the save dialog owns its YES/NO menu; it is not ScriptMenu_YesNo.
+    if (statAfter !== statBefore + 1 || !rawAfter || rawAfter === rawBefore
+        || JSON.parse(rawAfter).gameStats[C.GAME_STAT_SAVED_GAME] !== statAfter || !H.fieldFree())
+      throw new Error("SAVE did not persist counter and return field control");
     return { statBefore, statAfter };
   `;
 

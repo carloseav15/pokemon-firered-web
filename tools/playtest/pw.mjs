@@ -5,7 +5,8 @@
 // ctx: { page, loadSave(name), shot(name), state(), canvas(), errors(), wait(frames), press(btn) }
 // Screenshots and pixel data go to outdir (default /tmp/pw). Nothing is committed.
 import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, existsSync, unlinkSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -53,6 +54,27 @@ const ctx = {
         if (i >= 4 || !/destroyed|navigation/i.test(String(e))) throw e;
         await page.waitForTimeout(2000);
       }
+    }
+  },
+  /** Explicit destination, exclusive creation, then verify bytes before reporting a checkpoint. */
+  async exportCheckpoint({ name, path, provenance = {} }) {
+    if (!path || typeof path !== "string" || !path.endsWith(".json")) throw new Error("explicit .json checkpoint destination required");
+    const target = resolve(path), meta = target.slice(0, -5) + ".provenance.json";
+    if (existsSync(target) || existsSync(meta)) throw new Error("checkpoint destination already exists");
+    const data = await page.evaluate(name => window.H.checkpointData(name), name);
+    if (!data.provenance) throw new Error("checkpoint provenance missing");
+    const digest = createHash("sha256").update(data.raw).digest("hex");
+    if (digest !== data.sha256) throw new Error("checkpoint transfer hash differs");
+    let wroteSave = false, wroteMeta = false;
+    try {
+      writeFileSync(target, data.raw, { flag: "wx" });wroteSave = true;
+      if (readFileSync(target, "utf8") !== data.raw) throw new Error("checkpoint write differs");
+      writeFileSync(meta, JSON.stringify({ ...provenance, name, sha256: digest, driver: data.provenance }, null, 2) + "\n", { flag: "wx" });wroteMeta = true;
+      return { ok: true, status: "success", path: target, provenancePath: meta, name, sha256: digest };
+    } catch (error) {
+      if (wroteMeta) unlinkSync(meta);
+      if (wroteSave) unlinkSync(target);
+      throw error;
     }
   },
   state() {

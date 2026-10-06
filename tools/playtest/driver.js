@@ -59,7 +59,10 @@ export const H = {
       (this.R?.gMain.inBattle || cb1 === "BattleMainCB1" || /Battle/.test(cb2 ?? ""));
     const choice = tasks.some(n => ["Task_MultichoiceMenu_HandleInput", "Task_YesNoMenu_HandleInput", "Task_PCMainMenu"].includes(n));
     const menu = tasks.includes("startInput");
-    const fieldFree = !!state.map && !!game?.callback1 && !scene && !playback && !state.script && !state.locked && !choice && !menu;
+    const saveCallback = game?.activeSaveDialog?.saveDialogCB.name ?? null;
+    const saveChoice = ["SaveDialogCB_AskSaveHandleInput", "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"].includes(saveCallback);
+    const standing = !!game?.overworld.player.object && game.overworld.player.isStandingStill();
+    const fieldFree = standing && !!state.map && !!game?.callback1 && !scene && !playback && !state.script && !state.locked && !choice && !menu && !tasks.includes("saveInput") && !saveCallback;
     const controller = battle ? this.G?.gBattlerControllerFuncs[0]?.name : null;
     const dialog = !!game?.overworld.messageBox.printer?.active;
     const script = game?.overworld.script.global;
@@ -68,9 +71,9 @@ export const H = {
       : scene === "HwScene" && cb2 === "CB2_UpdatePartyMenu" ? "party-menu"
       : scene === "HwScene" && cb2 === "CB2_BagMenuRun" ? "bag-menu"
       : battle ? controller === "HandleInputChooseAction" ? "battle-action" : controller === "HandleInputChooseMove" ? "battle-move" : "battle"
-      : choice ? "choice" : menu ? "start-menu" : scene ? "screen"
+      : choice ? "choice" : saveChoice ? "save-choice" : menu ? "start-menu" : tasks.includes("saveInput") ? "save-dialog" : scene ? "screen"
       : !state.map || !game?.callback1 ? "loading" : fieldFree ? "field" : waitingForButton ? "dialog-wait" : dialog ? "dialog" : "field-busy";
-    return { ...state, phase, fieldFree, battle: !!battle, dialog, waitingForButton, tasks, cb1: cb1 ?? null, cb2: cb2 ?? null,
+    return { ...state, phase, fieldFree, standing, battle: !!battle, dialog, waitingForButton, tasks, saveCallback, cb1: cb1 ?? null, cb2: cb2 ?? null,
       hardwareCb2: this.R?.gMain.callback2?.name ?? null, controller, questLog, frame: game?.frameCount };
   },
   /** Wait for actual field control, including recorded Quest Log scenes. Never sends A. */
@@ -156,7 +159,7 @@ export const H = {
       const s = this.observe();
       if (s.battle) return { ...s, f, battle: true, ok: true, status: "success", reason: "battle-started" };
       if (s.fieldFree) return { ...s, f, ok: true, status: "success" };
-      if (["choice", "start-menu", "party-menu", "bag-menu", "screen"].includes(s.phase))
+      if (["choice", "save-choice", "start-menu", "party-menu", "bag-menu", "screen"].includes(s.phase))
         return { ...s, f, ok: false, status: "blocked", reason: "input-required", note: "input required" };
       this.step(tapA && ["dialog", "dialog-wait"].includes(s.phase) && f % 32 === 1 ? 1 : 0);
       if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
@@ -746,17 +749,99 @@ export const H = {
     }
     return { ...this.st(), note: "cannot reach" };
   },
+  validateCheckpointName(name) {
+    if (typeof name !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(name)) throw new Error("invalid checkpoint name");
+    return name;
+  },
+  saveSnapshot() {
+    const sv = dbg().save.save, st = this.st();
+    return { map: st.map, x: st.x, y: st.y, money: sv.money,
+      party: sv.party.filter(m => m.species).map(m => ({ species: m.species, personality: m.personality, otId: m.otId,
+        level: m.level, exp: m.exp, hp: m.hp, status: m.status, moves: [...m.moves], pp: [...m.pp], heldItem: m.heldItem })),
+      bag: JSON.parse(JSON.stringify(sv.bag)), heal: sv.lastHealLocation, escape: sv.escapeWarp,
+      saved: sv.gameStats[this.C.GAME_STAT_SAVED_GAME] };
+  },
+  /** SAVE through the normal start menu, with explicit YES on each observed prompt.
+   * Copies only bytes actually written by this operation, never calls writeSave. */
+  async saveGame({ checkpointName, maxFrames = 6000 } = {}) {
+    if (checkpointName !== undefined) {
+      this.validateCheckpointName(checkpointName);
+      if (localStorage.getItem(`fr-playtest-cp:${checkpointName}`) !== null)
+        return { ok: false, status: "blocked", reason: "checkpoint-exists", note: "checkpoint exists" };
+    }
+    if (!Number.isInteger(maxFrames) || maxFrames < 1) throw new Error("invalid save budget");
+    if (!this.fieldFree()) return { ok: false, status: "blocked", reason: "field-not-free", note: "field not free" };
+    const S = await this.mod("/src/fr/save.ts"), SM = await this.mod("/src/fr/startMenu.ts");
+    if (S.FlagGet(this.C.FLAG_SYS_SAFARI_MODE)) return { ok: false, status: "blocked", reason: "save-unavailable", note: "SAVE unavailable in Safari Zone" };
+    const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(this.C.FLAG_SYS_POKEDEX_GET),
+      pokemonObtained: S.FlagGet(this.C.FLAG_SYS_POKEMON_GET), linkStateActive: false, inUnionRoom: false, inSafariZone: false };
+    SM.SetUpStartMenu(menu);
+    const index = menu.order.indexOf(4); // start_menu.c STARTMENU_SAVE
+    if (index < 0) return { ok: false, status: "blocked", reason: "save-unavailable", note: "SAVE unavailable" };
+    const before = this.saveSnapshot(), rawBefore = localStorage.getItem(SAVE_KEY);
+    const cursor = g().startMenuCursor;
+    await this.tap(8, 12);
+    if (!await this.until(() => this.hasTask("startInput"), null, 60)) return { ok: false, note: "start menu did not open" };
+    for (let i = 0; i < (index - cursor + menu.numItems) % menu.numItems; i++) await this.tap(0x80, 12);
+    await this.tap(1, 12);
+    const prompts = [];
+    for (let f = 0; f < maxFrames; f++) {
+      if (this.fieldFree()) break;
+      const callback = g().activeSaveDialog?.saveDialogCB.name;
+      if (["SaveDialogCB_AskSaveHandleInput", "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"].includes(callback)) {
+        if (prompts.length >= 2) return { ok: false, note: "unexpected additional save prompt", prompts };
+        await this.tap(0x40, 1); // YES, including the different-file default NO
+        this.step();this.step(1);
+        if (g().activeSaveDialog?.saveDialogCB.name === callback) return { ok: false, note: "save choice did not close", prompts };
+        this.step();
+        prompts.push({ frame: g().frameCount, callback });
+        continue;
+      }
+      this.step(g().overworld.messageBox.printer?.active && f % 32 === 1 ? 1 : 0);
+      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
+    }
+    const raw = localStorage.getItem(SAVE_KEY), after = this.saveSnapshot();
+    if (!this.fieldFree() || after.saved !== before.saved + 1 || !raw || raw === rawBefore)
+      return { ok: false, note: "SAVE did not finish and persist", before, after, prompts };
+    const { saved: oldCounter, ...oldState } = before, { saved: newCounter, ...newState } = after;
+    if (JSON.stringify(oldState) !== JSON.stringify(newState)) return { ok: false, note: "SAVE changed semantic state", before, after, prompts };
+    const data = JSON.parse(raw);
+    if (data.gameStats[this.C.GAME_STAT_SAVED_GAME] !== after.saved || data.pos.x !== after.x || data.pos.y !== after.y)
+      return { ok: false, note: "written save does not match live state", before, after, prompts };
+    const receipt = { source: "in-game-SAVE", before, after, prompts };
+    if (checkpointName !== undefined) {
+      if (localStorage.getItem(`fr-playtest-cp:${checkpointName}`) !== null) return { ok: false, note: "checkpoint appeared during SAVE" };
+      localStorage.setItem(`fr-playtest-cp:${checkpointName}`, raw);
+      localStorage.setItem(`fr-playtest-meta:${checkpointName}`, JSON.stringify(receipt));
+    }
+    return { ok: true, ...receipt, checkpointName: checkpointName ?? null, rawLength: raw.length };
+  },
+  /** Return exact persisted bytes and provenance, without manufacturing a save. */
+  async checkpointData(name) {
+    this.validateCheckpointName(name);
+    const raw = localStorage.getItem(`fr-playtest-cp:${name}`);
+    if (!raw) throw new Error(`no checkpoint ${name}`);
+    const bytes = new TextEncoder().encode(raw), digest = await crypto.subtle.digest("SHA-256", bytes);
+    const sha256 = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+    const provenance = JSON.parse(localStorage.getItem(`fr-playtest-meta:${name}`) ?? "null");
+    return { name, raw, sha256, provenance };
+  },
   /**
    * Debug checkpoint: Game.writeSave() plus a named copy in localStorage.
    * Not the in-game SAVE flow (test that separately through the start menu).
    */
   checkpoint(name) {
-    g().writeSave();
+    this.validateCheckpointName(name);
+    if (!this.fieldFree()) throw new Error("field not free for debug checkpoint");
+    if (localStorage.getItem(`fr-playtest-cp:${name}`) !== null) throw new Error("checkpoint exists");
+    if (!g().writeSave()) throw new Error("debug save failed");
     localStorage.setItem(`fr-playtest-cp:${name}`, localStorage.getItem(SAVE_KEY));
+    localStorage.setItem(`fr-playtest-meta:${name}`, JSON.stringify({source: "PREPARED-debug-writeSave"}));
     return name;
   },
   /** Restore a checkpoint into the save slot; then load `?fr=continue`. */
   restore(name) {
+    this.validateCheckpointName(name);
     const data = localStorage.getItem(`fr-playtest-cp:${name}`);
     if (!data) throw new Error(`no checkpoint ${name}`);
     localStorage.setItem(SAVE_KEY, data);
@@ -768,6 +853,7 @@ export const H = {
    * write it with: echo <b64> | base64 -d | gunzip > tools/playtest/saves/<name>.json
    */
   async exportSave(name) {
+    this.validateCheckpointName(name);
     const data = localStorage.getItem(`fr-playtest-cp:${name}`);
     if (!data) throw new Error(`no checkpoint ${name}`);
     const gz = await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
@@ -777,9 +863,13 @@ export const H = {
   },
   /** Load tools/playtest/saves/<name>.json as checkpoint <name> and restore it. */
   async importSave(name) {
+    this.validateCheckpointName(name);
     const res = await fetch(`/tools/playtest/saves/${name}.json`);
     if (!res.ok) throw new Error(`no saved checkpoint ${name}`);
-    localStorage.setItem(`fr-playtest-cp:${name}`, await res.text());
+    const raw = await res.text(), data = JSON.parse(raw);
+    if (!Array.isArray(data.party) || !data.location || !data.pos) throw new Error("invalid saved checkpoint");
+    localStorage.setItem(`fr-playtest-cp:${name}`, raw);
+    localStorage.setItem(`fr-playtest-meta:${name}`, JSON.stringify({source: "fixture", path: `/tools/playtest/saves/${name}.json`}));
     this.restore(name);
   },
   checkpoints() {
@@ -788,7 +878,7 @@ export const H = {
 };
 // Primitive predicates keep boolean returns. Public actions keep their existing
 // payloads and add a common envelope; exceptions (including abort) propagate.
-for (const name of ["walk", "goto", "exit", "enter", "face", "counter", "talk", "explore", "grind", "battle", "heal", "useItem", "prepareStep"]) {
+for (const name of ["walk", "goto", "exit", "enter", "face", "counter", "talk", "explore", "grind", "battle", "heal", "useItem", "prepareStep", "saveGame"]) {
   const action = H[name];
   H[name] = async function(...args) {
     this.checkExecution();
