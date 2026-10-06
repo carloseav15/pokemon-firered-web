@@ -1,0 +1,235 @@
+{
+  "origin": "tools/playtest/saves/mtmoon-route4east-20261006233746.json",
+  "originSha256": "45ed769824fc91db10673e072ed71543e76ccff85843855502caeb1e014ddffc",
+  "job": "tools/playtest/smoke/son-mm01-r.job.mjs",
+  "aids": "none: no Pokemon/items/money/flags written by code; auto battle policy",
+  "method": "walk Route4 -> Mt. Moon 1F/B1F/B2F, Miguel battle, Dome Fossil by dialogue, B2F(5,10) -> B1F(45,4) -> Route4(32,5) -> Cerulean; START>SAVE",
+  "kind": "Cerulean arrival checkpoint",
+  "name": "cerulean-arrival",
+  "sha256": "f07a00d034875c3460d2f03e58de5c40ce3ecdb1811b987c788cbfb5b9d8a945",
+  "driver": {
+    "source": "in-game-SAVE",
+    "before": {
+      "map": "MAP_CERULEAN_CITY",
+      "x": 0,
+      "y": 21,
+      "money": 2928,
+      "party": [
+        {
+          "species": 16,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 16,
+          "exp": 2946,
+          "hp": 42,
+          "status": 0,
+          "moves": [
+            33,
+            28,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            15,
+            17,
+            17
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 18,
+          "exp": 4259,
+          "hp": 46,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            4
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 13,
+            "quantity": 4
+          },
+          {
+            "item": 14,
+            "quantity": 1
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 12,
+        "y": 6
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 19,
+        "y": 6
+      },
+      "saved": 5
+    },
+    "after": {
+      "map": "MAP_CERULEAN_CITY",
+      "x": 0,
+      "y": 21,
+      "money": 2928,
+      "party": [
+        {
+          "species": 16,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 16,
+          "exp": 2946,
+          "hp": 42,
+          "status": 0,
+          "moves": [
+            33,
+            28,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            15,
+            17,
+            17
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 18,
+          "exp": 4259,
+          "hp": 46,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            4
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 13,
+            "quantity": 4
+          },
+          {
+            "item": 14,
+            "quantity": 1
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 12,
+        "y": 6
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 19,
+        "y": 6
+      },
+      "saved": 6
+    },
+    "prompts": [
+      {
+        "frame": 3645,
+        "callback": "SaveDialogCB_AskSaveHandleInput"
+      },
+      {
+        "frame": 3877,
+        "callback": "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"
+      }
+    ]
+  }
+}

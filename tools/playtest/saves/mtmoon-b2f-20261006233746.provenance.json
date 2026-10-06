@@ -1,0 +1,227 @@
+{
+  "origin": "tools/playtest/saves/mtmoon-prepared.json",
+  "originSha256": "45b315d09e759b98f1f84d890ce8d8d1c906166cce214ca44ee9c28b543a2968",
+  "job": "tools/playtest/smoke/son-mm01-r.job.mjs",
+  "aids": "none: no Pokemon/items/money/flags written by code; auto battle policy",
+  "milestone": "b2f",
+  "kind": "route milestone checkpoint (b2f); route not PASS",
+  "name": "mtmoon-b2f-20261006233746",
+  "sha256": "1bdf05ec8957919938d7bc6340c0fad9b874d515d02b54df58be0b9e50dcf585",
+  "driver": {
+    "source": "in-game-SAVE",
+    "before": {
+      "map": "MAP_MT_MOON_B2F",
+      "x": 25,
+      "y": 22,
+      "money": 1808,
+      "party": [
+        {
+          "species": 16,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 14,
+          "exp": 1637,
+          "hp": 36,
+          "status": 0,
+          "moves": [
+            33,
+            28,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            15,
+            28,
+            29
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 17,
+          "exp": 3607,
+          "hp": 48,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            8
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 13,
+            "quantity": 8
+          },
+          {
+            "item": 14,
+            "quantity": 3
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 12,
+        "y": 6
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 19,
+        "y": 6
+      },
+      "saved": 1
+    },
+    "after": {
+      "map": "MAP_MT_MOON_B2F",
+      "x": 25,
+      "y": 22,
+      "money": 1808,
+      "party": [
+        {
+          "species": 16,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 14,
+          "exp": 1637,
+          "hp": 36,
+          "status": 0,
+          "moves": [
+            33,
+            28,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            15,
+            28,
+            29
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 17,
+          "exp": 3607,
+          "hp": 48,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            8
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 13,
+            "quantity": 8
+          },
+          {
+            "item": 14,
+            "quantity": 3
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 12,
+        "y": 6
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 22,
+        "warpId": -1,
+        "x": 19,
+        "y": 6
+      },
+      "saved": 2
+    },
+    "prompts": [
+      {
+        "frame": 25578,
+        "callback": "SaveDialogCB_AskSaveHandleInput"
+      },
+      {
+        "frame": 25811,
+        "callback": "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"
+      }
+    ]
+  }
+}
