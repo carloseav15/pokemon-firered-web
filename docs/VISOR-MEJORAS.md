@@ -478,8 +478,8 @@ del avatar y giros aleatorios de NPC. Reutiliza TilesetAnimator, pero no el sist
 de efectos de suelo/objetos del motor. Suelo y partes altas se componen hoy en un
 canvas; el z-index fijo del protagonista no resuelve copas/tejados.
 
-**Asignación y orden:** M10 → revisar → M11 → revisar. M12/M13 están bloqueadas
-hasta la entrega explícita de las APIs/datos indicados por Codex. No iniciar esos
+**Asignación y orden:** M10/M11 revisadas. M12 lista sobre `6743381e`; M13 espera
+las variantes fuente indicadas por Codex. No iniciar esos
 trabajos con un reloj nuevo, parámetros inventados o fixtures en la ruta real.
 Una tarea por commit; no iniciar subagentes ni enviar mensajes a otros chats.
 Mantener las instrucciones comunes de AGENTS.md y §4, con estas excepciones
@@ -574,7 +574,7 @@ Las instrucciones siguientes quedan como criterios ya revisados.
 
 **Aceptar:** tabla coherente con callers y metadatos; recursos, frames y conexión
 verificados independientemente. Diff/enlaces/honesty antes del commit documental.
-M12/M13 siguen bloqueadas por las APIs de C7; no empezar sus cambios por haber
+M12 ya dispone de APIs de C7 en `6743381e`; M13 espera variantes. No empezar sus cambios por haber
 entregado M10/M11. La integración revisada está completada; futuras entregas van
 en ramas propias y las fusiona el revisor tras comprobarlas.
 
@@ -612,12 +612,127 @@ Abrir/actualizar/cerrar repetidamente no duplica callbacks; botón y teclas cier
 no avanza el avatar por clic en Cerrar. Tipos/build/honesty/diff-check y comprobación
 focalizada en navegador. No afirmar fidelidad de los diálogos al juego original.
 
-#### M12 — Presentación de hierba, polvo y ondas desde templates [bloqueada por C7]
+#### M12 — Presentación de hierba, polvo y ondas desde templates [lista sobre base C7]
 
-**Antes debe entregar Codex:** API de reloj GBA compartido con alta/baja y pausa;
-loader/cache tipado de templates fuente; eventos de efecto con posición, prioridad
-y generación de sesión. Confirmar el subconjunto de comandos AnimCmd que se usará.
-Codex mantiene la detección de terreno y sus momentos spawn/begin/finish.
+**Base entregada:** rama `codex/viewer-c7-contract`, código `6743381e` sobre
+`1d4a23c9`. Local, sin push ni fusión en main. Crear la rama M12 desde esta base
+o incorporar el commit de código antes de empezar. C2/C7 completos siguen abiertos;
+esta entrega desbloquea las APIs de M12. M13 aún espera variantes fuente.
+
+**Reloj:** `src/viewer/clock.ts` exporta `viewerClock`, `ViewerClock` y
+`bindViewerClockVisibility`. Main ya conecta visibilidad, audio, movimiento, NPCs
+y tiles; no añadir otra instancia ni otro RAF. Periodo `GBA_FRAME_MS`, calculado
+con 280896 ciclos / 16777216 Hz. Uso desde `render/fieldFx.ts`:
+
+```ts
+import { viewerClock } from "../clock";
+const off = viewerClock.subscribe(({ tick, deltaMs, elapsedMs }) => {
+  // Un callback por tick GBA; avanzar UN tick de animación, sin performance.now().
+});
+off(); // Baja idempotente; llamar al finalizar, limpiar sesión o desmontar.
+viewerClock.pause("mi-motivo");
+viewerClock.resume("mi-motivo");
+```
+
+Las pausas son un conjunto de motivos: `resume` solo elimina el suyo. Main usa
+`visibility`/`pagehide`; el renderer no debe quitarlos. Al ocultar se cancela RAF
+y se descarta acumulador/tiempo de pared; el primer RAF al volver fija la nueva
+base, sin recuperar tiempo oculto. Un retraso visible admite máximo ocho ticks.
+`tick`/`elapsedMs` no se reinician por sesión; usar generación y tick de spawn.
+`wallTimeMs` es solo para medir FPS, nunca para duraciones del efecto. Apagar tiles
+quita únicamente su suscripción; audio/movimiento/efectos siguen teniendo reloj.
+
+**Cargador:** `src/viewer/data/fieldFxTemplates.ts` exporta
+`loadEffectTemplate(name)`, `loadM12Templates()`, `validateEffectAnimation(raw,
+frameCount, name)`, y los tipos `EffectTemplate`, `EffectFrame`, `ViewerAnimCmd`.
+Nombres admitidos: `TallGrass`, `GroundImpactDust`, `Ripple`; otros se rechazan.
+Main precarga las tres con `ViewerFieldEffects.create(grid, viewerClock)` antes de
+explorar. Cachea resultados/promesas e imágenes en vuelo; un fallo se elimina de
+caché y permite reintento. Valida HTTP/JSON, existencia y estructura de template,
+callback/size, rutas dentro de `fieldfx/`, índices, tamaños, carga real del PNG,
+packing integral y rectángulos dentro de la imagen, índices de animación, destinos
+de J y ciclos de control sin frames. No ejecuta callbacks C ni animaciones affine.
+
+`template.frames[i]` contiene `{image, url, sourceX, sourceY, width, height}`:
+`i` es el índice de **frame del template**, no un offset del PNG. Usar esos
+rectángulos: no deducir vertical/horizontal en el renderer. `template.anims`
+contiene las secuencias fuente validadas. Comandos aceptados por el cargador:
+
+- `["F", frameIndex, durationTicks, hFlip, vFlip]`: mantener el frame exactamente
+  `durationTicks` (1–63); flips 0/1. Aplicar el primer frame al crear el nodo.
+- `["J", commandIndex]`: salto a índice de **comando** de la misma animación;
+  resolver sin inventar un frame/duración entre instrucciones.
+- `["E"]`: animación terminada. No hay fallback por frames ausentes.
+
+`L`, duración cero, affine, comandos desconocidos o mal formados se rechazan con
+nombre y motivo. El intérprete de presentación F/E/J es trabajo de M12; no existe
+uno nuevo en esta base. Las tres secuencias M12 actuales solo usan F/E. Comprobado
+contra C: hierba begin 50 ticks, polvo 24, ondas 79. No copiarlas a una tabla manual.
+
+**Eventos:** `src/viewer/fieldEffects.ts` exporta `ViewerFieldEffects`,
+`FieldEffectEvent`, `FieldEffectSpawn`, `GroundActor`, `EffectPhase`. Main posee
+la instancia y llama `onGroundStep("spawn" | "begin" | "finish", actor)`;
+Muse no debe emitir eventos, detectar terreno ni modificar movimiento.
+`effects.subscribe(listener)` devuelve baja idempotente. Formato:
+
+```ts
+// type: "spawn"
+{
+  id, generation, tick, template, animation, startCommand, initialExtraTicks,
+  phase, direction, previousDirection, retainUntilLeave,
+  position: { tileX, tileY, xPx, yPx },
+  priority: { oamPriority, subpriority, domZIndex }
+}
+// type: "release": { id, generation }
+// type: "clear":   { generation }  // generación NUEVA, invalida todo lo anterior
+```
+
+Posición: casilla en coordenadas globales; `xPx/yPx` son píxeles globales de la
+esquina superior izquierda del efecto, pueden ser negativos. Para CSS dentro de
+content: `left = xPx - minX * TILE`, `top = yPx - minY * TILE`; **sin zoom ni
+scroll ni offsets adicionales**. Direcciones: north/south/west/east.
+`generation` crece al entrar, salir o reposicionar con Explorar; no confundir con
+mapa. Un cambio de mapa dentro del mismo mundo no crea otra sesión.
+
+Hierba nace en spawn/begin sobre `IsTallGrass`, se deduplica por casilla y se
+retira cuando sale tanto de current como previous coords. En spawn usa
+`startCommand=4`, `initialExtraTicks=1` (`sprite.c:SeekSpriteAnim`); en begin usa
+0/0. Inicializar contador del primer F con duración + initialExtraTicks;
+el extra se aplica una sola vez. Tras E, conservar frame final si
+`retainUntilLeave`; `release` permite retirada cuando la animación haya terminado
+(si llegó antes de E, terminarla primero). Polvo solo en finish de salto sobre
+suelo normal; efectos de aterrizaje en otros terrenos quedan para Codex. Ondas
+en finish sobre `HasRipples`; ya no se generan al azar durante surf.
+
+Prioridad: grass OAM 2; ripple OAM 3/subpriority 151; polvo usa 2 provisional del
+avatar actual. `domZIndex` conserva 26 de la adaptación actual. **No representa
+profundidad C/elevación completa**: esa tarea sigue reservada a Codex. Aplicar el
+valor recibido, no fijar otra capa dentro del renderer; así la corrección futura
+se hace en el productor sin rehacer M12. Offsets fuente: grass 0, dust +8,
+ripple −2 en y, ya incluidos en el evento.
+
+**Punto de integración:** sustituir el cuerpo de
+`installFieldFxRenderer(effects, content, minX, minY)` en `render/fieldFx.ts`,
+conservando firma y retorno `() => void`. Main ya lo instala una sola vez. Hoy
+ese consumidor mantiene secuencias/tiempos visuales simplificados: **no es M12
+terminada**. Crear nodos/suscripciones solo al recibir spawn; en clear quitar
+nodos y bajas de TODAS las generaciones anteriores; en dispose dar de baja bus y
+reloj. La carga está resuelta antes del evento: no hacen falta awaits dentro del
+handler. Si se añade async, descartar resultados de una generación invalidada.
+Mantener `spawnFieldFx` para sand/tire y su contrato de disposición hasta M13.
+
+**Verificación de la base:** tipos/build/honesty/diff PASS; tabla exportada contra
+C PASS (`check:fieldfx-anims`). `tools/checks/viewerClock.ts` prueba pausas por
+motivos, baja, no recuperar tiempo y rechazos (timestamps **PREPARED**); ejecutar
+con `./node_modules/.bin/esbuild tools/checks/viewerClock.ts --bundle --platform=node
+--format=esm --outfile=/tmp/viewer-clock-check.mjs` y luego
+`node /tmp/viewer-clock-check.mjs`. Job reproducible:
+`PW_BASE=http://127.0.0.1:5193/ node tools/playtest/pw.mjs tools/playtest/smoke/viewer-c7.job.mjs /tmp/pw/viewer-c7`.
+Carga assets reales/cache, paso con teclado sobre hierba real (posición inicial
+**PREPARED** vía URL), pausa/reentrada, limpieza y reloj con tiles apagados PASS.
+Fixture **PREPARED** de terreno valida ondas/polvo/seek/release/generación;
+fallo HTTP **PREPARED** valida reintento. Recorrido real agua/salto, composición,
+profundidad y escucha humana siguen pendientes, no se afirman validados.
 
 **Archivos para Muse:** `render/fieldFx.ts` y auxiliar de presentación si hace falta;
 CSS del efecto. Integración mínima con la API entregada, sin modificar movimiento.
@@ -625,8 +740,8 @@ CSS del efecto. Integración mínima con la API entregada, sin modificar movimie
 1. Presentar TallGrass/GroundImpactDust/Ripple consumiendo frames, tamaños, orden,
    duraciones y flips de los templates; no copiar secuencias a una tabla manual.
    Resolver índices sobre la distribución real del asset, sin suponer orientación.
-2. Avanzar con el reloj entregado; retirar setInterval/setTimeout de esas tres
-   ramas. No crear otro requestAnimationFrame ni depender del interruptor de tiles.
+2. Avanzar con el reloj entregado; sustituir secuencias/tiempos simplificados de
+   esas tres ramas. No crear otro requestAnimationFrame ni depender del interruptor de tiles.
 3. Terminar efectos y liberar nodos/suscripciones al finalizar o invalidarse la
    sesión. Reentrada y cambio de modo no reviven efectos anteriores. Reutilizar
    prioridad/posición recibidas: no imponer z-index que sustituya la profundidad C7.
@@ -662,11 +777,11 @@ editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento f
 
 ## 5. Orden y cierre
 
-Codex: base C3 entregada; reloj compartido de C2 y contrato de efectos C7 para
-desbloquear M12; después C6 y exploración C1/C7 sobre el modelo, con C4/C5 según dependencias. No implementar editor como pintura
+Codex: bases C3 y C2/C7 entregadas; preparar variantes M13, profundidad C7,
+C6 y exploración C1/C7 sobre el modelo, con C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M11 y R1–R6 cerradas e integradas. M12 → M13
-esperan APIs/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
+Muse: M1–M11 y R1–R6 cerradas e integradas. M12 lista sobre `6743381e`; M13
+espera variantes/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
 Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de nuevas entregas.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
@@ -681,15 +796,13 @@ desconexión no bloquea el sandbox creativo del viewer.
 Siguiente entrega de Codex para Muse:
 1. C3: geometría y restauración entregadas en `0c890154`; extracción restante y
    seguimiento de cámara pendientes.
-2. C2/C7: reloj GBA compartido, suscripción/cancelación y pausa sin recuperar tiempo
-   oculto; loader/cache tipado de templates y validación de recursos/comandos.
-3. C7: eventos con coordenadas de mundo, prioridad, dirección y generación de sesión;
-   activación por terreno y lifecycle conectados, con checks focalizados antes de
-   entregar el contrato a Muse. No dejar solo interfaces sin callers.
+2. C2/C7: entregado en `6743381e`: reloj, baja/pausa y loader validado para M12.
+3. C7: eventos/activación/lifecycle conectados en `6743381e`; profundidad y
+   elevación completas siguen abiertas, igual que las variantes para M13.
 4. Muse M12: hierba/polvo/ondas consumen ese contrato; Codex compara ticks/secuencias
    y revisa recorrido. Codex prepara tabla de variantes fuente para Muse M13.
 
-Entrega actual: **integración de entregas revisadas**, no sandbox completo.
-Checks de integración sin errores de navegador: viewer, C5, Brock desde checkpoint,
+Entrega actual: **base C2/C7 para M12**, no sandbox completo.
+Checks de integración previos sin errores de navegador: viewer, C5, Brock desde checkpoint,
 PC depósito/retiro y estados de audio. Curación, ruta previa de C6, escucha humana,
 MOVE ITEMS con caja vacía y animaciones completas del viewer siguen pendientes.

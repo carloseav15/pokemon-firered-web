@@ -475,6 +475,8 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   C3 base `0c890154`: zoom/scroll, selección/modo/posición/panel en URL y cancelación;
   checks y navegador PASS. C3 parcial: extracción/foco/seguimiento y hash sin recarga.
   Entregas integradas: M1–M9/R1–R5 cerradas; M11 aceptada (`ddd899ae`),
-  M10 aceptada tras R6 (`3ac164a7`), revisión en VISOR-MEJORAS §4; M12/M13 esperan APIs de C7.
+  M10 aceptada tras R6 (`3ac164a7`), revisión en VISOR-MEJORAS §4.
+  Base C2/C7 `6743381e` en `codex/viewer-c7-contract`: reloj/loader/eventos conectados,
+  checks PASS; M12 desbloqueada sobre esa base. M13 espera variantes, profundidad/agua/salto reales pendientes.
   Integración `ebe759c4`: viewer, 1.16/1.17, jobs C5/C6/C8/C13 y revisión B1.
   Tipos/build/honesty y checks focalizados PASS; C8/C13 siguen MANUAL parcial.
