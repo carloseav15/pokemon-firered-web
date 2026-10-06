@@ -174,18 +174,15 @@ Abiertas:
   6fc39013 cura por BAG al miembro identificado, cambia y ataca por UI; prueba
   real PASS y sin medicina conserva la guardia. Recuperación exige que una
   medicina alcance60% HP; no acredita victoria ni recorrido completo.
-- [ ] 1.25 **Menú de cambio del driver y estado real del equipo**: intento4 de
-  Sonnet queda en WaitForMonSelection/Task_HandleChooseMonInput con Pidgey29/42
-  y ataques disponibles en snapshot de party, Ivysaur18/48 sin ataque. El driver
-  devuelve no able replacement. Contrastar HP actual de gBattleMons frente a
-  party, cambio opcional/forzado, cancelación por UI y orden real; no afirmar
-  ausencia de debilitamiento solo con HP de party. Evidencia
-  ../pokemon-son-prep-evidence/mm01r-attempt4/evidence.json.
-- [ ] 1.26 **Disponibilidad de colisiones tras salida de Monte Moon**:
-  intento3 llega a Route4(32,6), con fósil/Miguel, pero BFS da no path mientras
-  callback2 es CB2_ChangeMapMain. Contrastar fin real de carga, mapa/colisiones
-  y camino a conexión este; x107 sí pertenece al layout108×20. No hay save
-  ni llegada a Celeste. Evidencia ../pokemon-son-prep-evidence/mm01r-attempt3/.
+- [x] 1.25 **Menú de cambio del driver**: c8ccc36f reproduce activo vivo y
+  CHOOSE_MON opcional; cancela por B sin reserva atacante y vuelve a atacar.
+  Debilitamiento real/SEND_OUT conserva reemplazo obligatorio y ataque. Pruebas
+  PREPARED acotadas, sin afirmar victoria ni reconstruir el intento de Sonnet.
+- [x] 1.26 **Ruta4 sin path en el driver**: c8ccc36f corrige planificación
+  de ledges y behavior/elevación por nodo; cálculo sin mutar jugador/estadísticas.
+  Route4(32,6)→(107,10) con dos saltos reales y conexión Celeste(0,20) PASS desde
+  posición PREPARED; no acredita fósil, ruta anterior ni guardado. CB2 de gMain
+  era antiguo, no prueba de carga activa; fieldFree/exit ahora esperan campo real.
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
   para SON-MM01-R; todavía no fósil ni llegada a Celeste.

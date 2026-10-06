@@ -547,12 +547,51 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
   Si persiste solapamiento, entregar snapshot de tareas/callbacks/VAR_RESULT a Sol;
   no modificar motor, ni parchear controles/estado para obtener PASS. Dos intentos
   diagnósticos máximo. C8 actual pasa para el fixture de un miembro; equipo completo y audiovisual siguen pendientes.
-- [ ] **FLASH-C5-R1 — C5 fiable (Flash, tras contrato de Sol).** Separar lanzar bola
-  por UI, conteo/consumo, captura y transferencia a caja con equipo lleno. El
-  agotamiento legítimo de bolas debe terminar limpiamente y dejar evidencia del
-  enemigo/HP/estado, no fingir captura ni confundirse con excepción del motor.
-  Acordar entrada/RNG controlado PREPARED para el caso determinista antes de
-  implementarlo; no poner Pokémon capturado ni flags finales por depuración.
+- [ ] **FLASH-C5-R1 — C5 fiable (Flash, implementación pendiente).**
+  **Contrato C5 cerrado por Sol para implementación (sustituye la propuesta
+  3172ed50; todavía no implementado ni validado en navegador).** Flash trabaja
+  únicamente en su rama/worktree desde la base de cierre indicada por Sol.
+  No modificar motor, driver, fixtures persistidos ni baselines. Casos aislados:
+  recargar route2-north entre casos; preservar resultados previos aunque otro falle.
+
+  | Caso | Entrada y recorrido | Aserciones y resultado |
+  | --- | --- | --- |
+  | Lucha | route2-north: MAP_ROUTE2(5,4), BulbasaurL15, moves[79,45,73,22]; Vine Whip se busca por ID, actualmente índice3. Encuentro por pasos reales, FIGHT y movimiento por cursor observado | B_OUTCOME_WON, EXP aumenta, registrar usos/PP del movimiento; retorno al campo y paso real. No fijar un único uso si hubo varios turnos |
+  | Huida | Entrada independiente, encuentro real y RUN por cursor observado | B_OUTCOME_RAN, inventario y acciones registrados; HP pueden bajar si antes hubo un intento fallido. No exigir HP inalterados como regla general; no gastar PP en movimientos de jugador si solo se eligió RUN |
+  | Lanzamiento natural | Entrada independiente con5 Poké Balls del fixture, BAG → OPEN_BAG_POKEBALLS(2) → ITEM_POKE_BALL → USE, hasta captura o agotamiento | Contar el item por ID (bagCount ya lo hace); por cada uso efectivo registrar consumo exactamente1, foe/species/HP/status y desenlace. No usar pokeBalls[0] ni sumar intentos antes de observar consumo. Si se agotan, RUN y retorno al campo: PASS de recursos, captura natural MANUAL si no ocurrió; nunca PASS de captura por agotamiento |
+  | Captura garantizada con hueco (PREPARED) | Mismo checkpoint; añadir una Master Ball en memoria como entrada declarada. No alterar foe, RNG, resultados ni flags. Lanzar por BAG y declinar mote por UI | B_OUTCOME_CAUGHT, consumo de1 Master Ball, nuevo miembro con especie/nivel/personality del enemigo observado, OT del jugador y pokeball=ITEM_MASTER_BALL; miembros previos conservados. Si se afirma Pokédex, leer y comprobar el flag correspondiente, no inferirlo del conteo |
+  | Captura con equipo lleno (PREPARED) | Recargar; mantener el líder original y crear cinco Pokémon válidos con createMon del proyecto (especie/nivel/identidades registrados), como entrada diagnóstica. Equipo6, una Master Ball, al menos un hueco observado en PC. No preparar el capturado ni una caja posterior | Captura/consumo por UI; equipo6 con identidades/orden intactos; exactamente un Pokémon nuevo en el primer hueco que seleccionaría SendMonToPC, empezando por currentBox y recorriendo cajas circularmente. Verificar especie/personality/OT/movimientos/EXP y bola. Registrar caja/slot reales y VAR_PC_BOX_TO_SEND_MON, sin fijar caja0 |
+
+  Fuentes de criterios: battle_script_commands.c Cmd_handleballthrow y
+  Cmd_givecaughtmon; pokemon.c GiveMonToPlayer, SendMonToPC, MonRestorePP y
+  CalculatePPWithBonus. El caso Master Ball prueba su garantía específica,
+  no odds>254 ni la probabilidad de Poké Ball. HP1+sueño no es garantía general:
+  catchRate45/maxHP30/Poké Ball produce odds88. No usar esa premisa del borrador.
+  SendMonToPC restaura PP y copia BoxPokemon; HP/status no forman parte del BoxMon
+  C. No exigir status0 al objeto web almacenado sin una comprobación de adaptación
+  separada. Comparar PP restaurados contra tablas del C y sus bonos, no contra el
+  mismo helper usado para producir el resultado. En captura con hueco, conservar
+  los datos reales del enemigo transferido; no exigir curación por captura.
+
+  Todos los desenlaces terminados necesitan !H.inBattle(), H.idle sin timeout,
+  H.fieldFree() y un paso real a una casilla conocida del mismo mapa. Seleccionar
+  una casilla libre de encuentros para que la comprobación no abra otro combate;
+  si no hay tal casilla, registrar MANUAL de movimiento y no afirmar retorno
+  completo. Error de navegador, bloqueo o discrepancia de consumo = FAIL.
+  Conservar por caso mapas, controlador/tareas, acciones, conteos y resultado.
+  Si queda cobertura incompleta, devolver result.manual con motivo (es el campo
+  que reconoce smoke/run.mjs) junto con los resultados parciales; no esconderlo
+  tras un status arbitrario ni hacer pasar un timeout. El agotamiento solo es
+  PASS del subcaso de recursos, no valida por sí solo la captura.
+
+  Límite de ejecución: una pasada por caso, máximo5 bolas en el caso natural;
+  ante fallo guardar evidencia y permitir una sola repetición diagnóstica.
+  Después entregar a Sol sin reintentos ilimitados ni ajustes para conseguir PASS.
+  No ejecutar toda la historia. Entregar código en un commit y evidencia fuera
+  del árbol; check:port/check:honesty/build/diff --check. C5 no incluye persistencia,
+  fidelidad audiovisual ni procedencia natural de la partida: dejar esos límites
+  explícitos. No cambiar contratos LUNA-02, captura opcional ni tareas ajenas.
+
 **Contrato focalizado de LUNA-02 (Luna):** Tras commit de revisión fijo,
   repetir C7 sobre 65e631f9 (o una base posterior fijada); C8 tras aceptar R2, y C5 solo cuando exista su contrato revisado; inspeccionar JSON,
   excepciones, contador de guardado y límites. No ejecutar de nuevo toda la
@@ -835,3 +874,39 @@ su alcance parcial y no afirmar oráculo C independiente para todo el equipo.
 Orden siguiente: Sol1.25 y1.26, cerrar contrato C5; después trabajo acotado por
 agente desde una base fijada. Sonnet no ejecuta otro recorrido ahora. Main queda
 con revisión documental; sin fusiones de estas dos entregas, push ni mensajes.
+
+Correcciones de Sol integradas en c8ccc36f: el fallo1.25 se reprodujo con
+liveHp16 y PARTY_ACTION_CHOOSE_MON(0), frente a SEND_OUT(1) obligatorio.
+El driver ahora cancela por B cuando no hay reserva atacante en un menú
+opcional, conserva la selección obligatoria y registra acción/HP real del menú.
+La prueba focalizada observa cancelación y ataque posterior; en el otro caso
+el enemigo causa el debilitamiento real (liveHp0), se exige SEND_OUT y la
+reserva entra y ataca. Son segmentos acotados, no victorias completas de historia.
+
+1.26: mapa y layout de Route4 estaban cargados. CB2_ChangeMapMain de gMain
+seguía como estado antiguo, distinto del callback que Game ejecutaba; ese nombre
+no acreditaba una carga pendiente. El defecto principal era BFS: consultaba
+GetCollisionAtCoords del objeto, que nunca devuelve LEDGE_JUMP. Se usa ahora
+GetLedgeJumpDirection sin efectos secundarios y estado virtual por nodo para
+behavior/elevación, sin mover al jugador ni llamar al helper que incrementa
+estadísticas. La planificación queda dentro del mapa; exit ejecuta conexiones.
+También fieldFree exige callback de campo y exit no repite una dirección del
+mapa anterior si su warp termina durante idle.
+
+Evidencia /tmp/sol-driver-navigation-complete.log: entrada PREPARED por carga
+normal en B1F, salida Route4(32,6), camino83 comandos hasta(107,10), dos saltos
+reales y conexión a Celeste(0,20), control libre. Planificar no cambió jugador,
+equipo ni estadísticas. /tmp/sol-pending-exit.log confirma que una carga pendiente
+no se declara libre ni aplica la dirección antigua al destino. Recovery y
+Brock regresión PASS; check:port/check:honesty/build/diff --check PASS.
+No se prepararon fósil, flags ni victorias. Esta prueba no acepta el recorrido
+completo ni un checkpoint de Celeste; es diagnóstico del driver y la conexión.
+No se reinició la ruta completa de Sonnet ni se fusionó c54ba497/3172ed50.
+
+Base de código para Flash: c8ccc36f más el commit documental de este cierre.
+Implementar exclusivamente el contrato FLASH-C5-R1 de arriba; conservar la
+propuesta anterior en Git, sin reintroducir sus criterios rechazados. Luna puede
+revisar esa entrega cuando exista. Sonnet conserva evidencia: cualquier próximo
+recorrido requiere una entrada y presupuesto nuevos fijados; no correr ahora.
+Sol sigue con1.22/guardado de objetos dinámicos y revisión de C5. Sin mensajes
+ni push. Contador sin cambio:0 cuerpos C nuevos y0 equivalencias/wrappers.
