@@ -73,7 +73,7 @@ import { ResetFameChecker } from "./fameChecker";
 import { ClearRoamerData } from "./pokemon/roamer";
 import { SetAllRenewableItemFlags } from "./renewableHiddenItems";
 import { NewGameInitPCItems } from "./menus/playerPc";
-import { QuestLog_CutRecording, ResetQuestLog, SaveQuestLogData, TryStartQuestLogPlayback } from "./questLogEvents";
+import { QuestLog_CutRecording, QuestLog_InitPalettesBackup, ResetQuestLog, SaveQuestLogData, TryStartQuestLogPlayback } from "./questLogEvents";
 import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
@@ -1049,6 +1049,7 @@ export class Game {
     const ow = this.overworld;
     switch (this.returnToFieldState) {
       case 0:
+        QuestLog_InitPalettesBackup();
         ow.ResumeMap();
         ow.ReloadObjectsAndRunReturnToFieldMapScript();
         ow.SetCameraToTrackPlayer();

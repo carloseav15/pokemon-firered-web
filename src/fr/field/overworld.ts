@@ -713,6 +713,9 @@ export class Overworld {
       this.gExitStairsMovementDisabled = true;
       this.script.ScriptContext_Init();
       this.initMap();
+      // Browser saves rebuild objects from their saved templates, as normal
+      // continue does; the current objects still belong to the playback map.
+      this.initObjectEventsLocal(false);
       this.game.CB2_ReturnToField();
       return;
     }
@@ -964,7 +967,13 @@ export class Overworld {
   CB2_EnterFieldFromQuestLog(): void {
     this.restoreMapViewOnNextInit = true;
     this.restoreQuestLogSaveOnNextLoad = true;
-    this.warpIntoMapAndLoad();
+    // CB2_EnterFieldFromQuestLog returns to the loaded save's current map.
+    // Fetch its bytes without ApplyCurrentWarp: warpDestination still describes
+    // the last playback scene, not the player's saved location.
+    this.loadState = 0;
+    this.mapLoadStep = 0;
+    this.loadPromise = undefined;
+    this.game.setCallbacks(null, () => this.cb2LoadMap());
   }
 
   private setDefaultFlashLevel(): void {
@@ -1193,7 +1202,7 @@ export class Overworld {
   }
 
   /** InitObjectEventsLocal + SetCameraToTrackPlayer */
-  private initObjectEventsLocal(): void {
+  private initObjectEventsLocal(runWarpScript = true): void {
     this.objects.ResetObjectEvents();
     const x = save.pos.x + MAP_OFFSET;
     const y = save.pos.y + MAP_OFFSET;
@@ -1204,7 +1213,7 @@ export class Overworld {
     this.objects.trySpawnInView(save.pos.x, save.pos.y);
     this.syncObjectSprites();
     this.player.InitWarpArrowSprite();
-    this.tryRunOnWarpIntoMapScript();
+    if (runWarpScript) this.tryRunOnWarpIntoMapScript();
     this.cameraTarget = this.player.object;
     this.cameraObject = null;
     this.InstallCameraPanAheadCallback();
@@ -1219,9 +1228,14 @@ export class Overworld {
     // C calls CreateReflectionEffectSprites here after rebuilding all object
     // sprites; ground-effect spawn dispatch recreates each visible reflection.
     for (const object of this.objects.list) object.triggerGroundEffectsOnMove = true;
-    const objectEventId = this.objects.indexOf(this.player.object);
+    // SpawnObjectEventOnReturnToField identifies the restored player by movement
+    // type in C. Quest Log can load a different object slot before an avatar has
+    // been initialized, so the previous browser object reference is not a key.
+    const objectEventId = this.objects.objects.findIndex(object =>
+      object?.active && object.movementType === C.MOVEMENT_TYPE_PLAYER);
     if (objectEventId >= 0) {
-      this.player.SetPlayerAvatarObjectEventIdAndObjectId(objectEventId, this.sprites.getId(this.player.object.sprite));
+      const object = this.objects.objects[objectEventId]!;
+      this.player.SetPlayerAvatarObjectEventIdAndObjectId(objectEventId, this.sprites.getId(object.sprite));
       this.player.InitWarpArrowSprite();
       this.syncObjectSprites();
     }

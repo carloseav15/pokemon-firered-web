@@ -1251,7 +1251,10 @@ export class ObjectEvents {
 
   /** SpawnObjectEventOnReturnToField: rebuild the renderer-owned sprite for one active object. */
   SpawnObjectEventOnReturnToField(objectEventId: number, x: number, y: number): void {
-    const object = this.objects[objectEventId & 0xff];
+    // C restores directly from gObjectEvents. Quest Log changes its active slots
+    // without going through template spawning, so refresh the browser index.
+    const object = gObjectEvents[objectEventId & 0xff];
+    this.objects[objectEventId & 0xff] = object?.active ? object : null;
     if (!object?.active) return;
     this.setupSprite(object);
     object.sprite.x += ((x << 16) >> 16) * 16;
