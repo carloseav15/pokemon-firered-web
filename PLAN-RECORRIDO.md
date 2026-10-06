@@ -788,3 +788,50 @@ tercer intento desde mtmoon-prepared: el contrato de dos intentos ya se consumi�
 La integración del job no acepta SON-MM01-R como completada ni acredita Celeste.
 Sol continúa con snapshots NPC1.22 y contrato C5; Flash sigue pendiente de entregar
 su propuesta. No se enviaron mensajes a agentes ni se hicieron push.
+
+### Revisión de entregas sobre f25728a2
+
+| Agente | Entrega contrastada | Decisión |
+| --- | --- | --- |
+| Luna | Auditoría estática de C5/C8/driver-recovery/SON-MM01-R, sin cambios ni ejecuciones nuevas; rama limpia en f25728a2 | Aceptada como análisis, sin ampliar resultados runtime. Riesgo de exportación se registra como guardia operativa pendiente, no pérdida de datos observada |
+| Flash | 3172ed50, propuesta documental C5; base correcta y rama limpia | Requiere corrección; no fusionada. No implementó ni ejecutó C5 nuevo |
+| Sonnet | c54ba497, job de checkpoint al parar; logs intentos3/4 con ok:false/errors:[] | Parcial no fusionada. Intento3 llega a Route4(32,6), Miguel/fósil presentes; intento4 para en menú de equipo antes del fósil. Ninguno guarda checkpoint ni llega a Celeste |
+
+Flash identificó correctamente la debilidad de retorno al campo y la falta
+de caso de captura con equipo lleno. Corregir antes de aceptar su contrato:
+- bagCount en lib.mjs suma inventario del item; no usa party.length como afirma.
+- route2-north tiene Vine Whip en índice3, no2; conservar búsqueda por ID.
+- RUN puede fallar antes de escapar y permitir daño enemigo; HP inalterados no
+  es un criterio general. Verificar desenlace, PP/consumos y eventos reales.
+- HP1 + sueño no garantiza odds>254 para cualquier especie: catchRate45,
+  maxHP30 y Poké Ball dan odds88 según C. Fijar especie/datos o separar Master Ball;
+  con Master Ball el campo pokeball debe identificar ese item y no Poké Ball.
+- No fijar caja0/slot0 sin observar currentBox/destino, ni usar placeholders
+  indefinidos. PP/estado de BoxMon deben contrastarse con C antes de exigirlos.
+- Separar PASS del manejo de recursos de PASS de captura; agotar bolas no prueba
+  captura ni Pokédex. No afirmar fórmula/Pokédex sin aserciones correspondientes.
+- Restaurar los contratos LUNA-02 y captura opcional que el diff borró sin motivo.
+
+Sonnet hizo dos recorridos nuevos pese al límite expreso de dos ya consumidos.
+El código añadido sigue cargando mtmoon-prepared al iniciar; no entrega un modo
+de continuación desde la sesión/checkpoint existente. El intento3 supera la
+cueva y para en Route4 durante CB2_ChangeMapMain; el intento4 queda en
+WaitForMonSelection con HP positivos en party y no puede guardar. Falta el HP
+actual del battler y la acción del menú para distinguir cambio opcional de
+debilitamiento; no concluir que ambos siguen vivos desde el snapshot. Se conserva
+la evidencia y se abren1.25/1.26 para Sol; no reiniciar toda la ruta. El nuevo
+flujo de guardado intermedio no tiene una ejecución exitosa que lo valide.
+Además exporta por defecto, permite sobrescribir y registra checkpoint antes
+de completar exportación: reforzar destino/procedencia y reporte antes de usar.
+
+Luna confirmó límites de C5 (sin CAUGHT/especie/control final explícitos),
+C8 (snapshot de identidad parcial y sin paso tras continue) y driver-recovery
+(sin persistencia/retorno final de combate). Son límites de cobertura, no nuevas
+regresiones probadas ni motivo para revocar la evidencia limitada aceptada.
+En C8 ampliar la identidad con nivel/HP/PP/estado/EXP solo al implementar su
+siguiente mejora; no repetir por rutina. En recovery conservar explícitamente
+su alcance parcial y no afirmar oráculo C independiente para todo el equipo.
+
+Orden siguiente: Sol1.25 y1.26, cerrar contrato C5; después trabajo acotado por
+agente desde una base fijada. Sonnet no ejecuta otro recorrido ahora. Main queda
+con revisión documental; sin fusiones de estas dos entregas, push ni mensajes.
