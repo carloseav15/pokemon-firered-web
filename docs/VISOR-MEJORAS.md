@@ -476,7 +476,7 @@ Mantener las instrucciones comunes de AGENTS.md y §4, con estas excepciones
 acotadas: Muse puede contrastar tablas para M10 y consumir secuencias ya exportadas
 en M12/M13; Codex decide semántica, activación y conexiones con el motor.
 
-#### M10 — Comprobar recursos y cobertura real de las animaciones [entregada, pendiente R6]
+#### M10 — Comprobar recursos y cobertura real de las animaciones [aceptada tras R6]
 
 **Entrega documental:** completar aquí una tabla compacta de cobertura, sin abrir
 otra crónica ni añadir código desconectado. Leer `render/fieldFx.ts`, `sprites.ts`,
@@ -517,11 +517,11 @@ visual; las tablas de movimiento C del avatar/NPC no se declaran comprobadas
 | Avatar surf | `redsurfrun__player.png` 224×32; `SurfBlob` 6 frames, 4 anims por orientación con `J` loop (`fieldfx.json`, C `:182-215`), PNG `surfblob` 192×32 | Por orientación, 48 ticks/frame | `main.ts:218-225` sprite estático por dirección + `:425-431` cambia a surf con ripple; sin blob | Avatar activo simplificado; flotador sin conectar | Activo simplificado / fuente disponible sin conectar | Reservado Codex/C7 |
 | Hierba | `tallgrass__ette1.png` 16×80 = 5×16×16 ✓ JSON 5 frames; anims orden 1,2,3,4,0 ×10 ticks (≈167 ms c/u, 50 ticks ≈837 ms); C `:64-94`, `UpdateTallGrassFieldEffect` | 1-2-3-4-0 a 10 ticks | `fieldFx.ts:11-27` (5 pos a 50 ms orden 0-4 = 250 ms, `setInterval`), caller `main.ts:448` | Ritmo, orden y reloj propios | Activo simplificado | M12 |
 | Polvo | `groundimpactdust__ette0.png` 16×24 = 3×16×8 ✓; anims 0,1,2 ×8 ticks (≈134 ms c/u, 24 ticks ≈402 ms); C `:288-313`, `UpdateJumpImpactEffect` | 0-1-2 a 8 ticks | `fieldFx.ts:28-44` (3 pos a 60 ms = 180 ms), caller `:482` solo tras salto de saliente | Ritmo propio; momento begin/finish sin confirmar | Activo simplificado | M12 (`JumpTallGrass` C `:319-347`, 4×16×8 a 8 ticks: fuente disponible sin conectar) |
-| Ondas | `ripple__ette1.png` 16×80 = 5×16×16 ✓; 8 cmds 0,1,2,3,0,1,2,4 a 12/9/9/9/9/9/11/11 ticks (78 ticks ≈1,3 s); C `:99-132`, `WaitFieldEffectSpriteAnim` | 8 pasos no lineales | `fieldFx.ts:45-61` (5 pos a 70 ms = 350 ms orden 0-4), callers `:428` entrar al agua y `:453-455` ripple aleatorio 0.3 en surf | Secuencia, duración y activación (el 0.3 es invento del viewer) | Activo simplificado | M12 |
+| Ondas | `ripple__ette1.png` 16×80 = 5×16×16 ✓; 8 cmds 0,1,2,3,0,1,2,4 a 12/9/9/9/9/9/11/11 ticks (79 ticks ≈1,32 s); C `:99-132`, `WaitFieldEffectSpriteAnim` | 8 pasos no lineales | `fieldFx.ts:45-61` (5 pos a 70 ms = 350 ms orden 0-4), callers `:428` entrar al agua y `:453-455` ripple aleatorio 0.3 en surf | Secuencia, duración y activación (el 0.3 es invento del viewer) | Activo simplificado | M12 |
 | Huellas | `sandfootprints__ette0.png` 16×32 = 2×16×16 ✓ (+`deep` ídem); 5 anims por dirección (tabla C `:382-388`), frame 0 ó 1 a 1 tick; `UpdateFootprintsTireTracksFieldEffect` | Variante por dirección, 1 tick | `fieldFx.ts:62-74` recorte 16×8, siempre frame 0 + fade 1200/600 ms, caller `:450` | Recorte, dirección ignorada, permanencia inventada | Activo simplificado | M13 (`SandPile` sin uso: fuente disponible sin conectar) |
 | Marcas bici | `biketiretracks__ette0.png` 32×32, 4 frames 16×16; 9 anims (4 dirs + 4 giros + base), C `:460-514` | Frame por dirección y giro | `fieldFx.ts:75-88` recorte 16×8, siempre frame 0 + fade, caller `:450` | Recorte, dirección y giros ignorados | Activo simplificado | M13 |
 | Sombras | `shadow{small,medium,large,extralarge}` 8×8, 16×8, 32×8, 64×32 ✓ 1 frame c/u; C `:4-59`, `UpdateShadowFieldEffect` | 1 frame por tamaño | Ningún uso en Explorar (solo `box-shadow` CSS decorativo) | Sin conectar | Fuente disponible sin conectar | Reservado Codex/C7 |
-| Reflejos | Reflejo reutiliza imágenes del objeto (`reflectionPaletteTag` en `objects.json`, detección en código de campo); `ReflectionDistortion` vacío (sin frames); `WaterSurfacing` 4×16×16, PNG 16×80 | Sin secuencia de distorsión en fuente; WaterSurfacing otro efecto | Ningún uso en Explorar | Fuente disponible sin conectar | Fuente disponible sin conectar | Reservado Codex: datos de activación |
+| Reflejos | C copia el sprite del objeto (`field_effect_helpers.c:33`); TS usa `reflectionFrames`/`bridgeReflectionFrames` de `objects.json` (`fieldEffects.ts:1090-1097`). ReflectionDistortion sin imágenes propias; WaterSurfacing es otro efecto | Dos secuencias affine en C (`field_effect_objects.h:889-931`); no aparecen en el template exportado de fieldfx.json. Integración/semántica affine pendientes de revisar | Ningún uso en Explorar | Fuente y recursos disponibles; distorsión/exportación requieren revisión de Codex | Fuente disponible sin conectar | Reservado Codex/C7 |
 | NPC | `GFX_MAP` manual `sprites.ts:3-40` (campo `frames` sin usar); `faceTowards`/giros aleatorios `entities.ts:95-135`; `updateAutonomousBehaviors` en `main.ts:632` | Tablas de movimiento C (reservadas) | Sprites y giros propios | Secuencia y visibilidad manuales | Activo simplificado | Reservado Codex/C1-C7 |
 | Alerta | Secuencia fuente `EMOTE_ANIMS` (`field/fieldEffects.ts:61`: 5 anims, frames 0-2/6-8/… a 4,4,52 ticks; tablas en `trainer_see.c:581+`); viewer usa `emoticons.png` 48×80 + `emoticonBounce` 0,4 s (`viewer.css:476-487`, `entities.ts:118-127`), caller `:309` tras `checkTrainerSight` (`:295-313`, rango cardinal) | 4,4,52 ticks por emoticono | Globo propio sin secuencia de frames | Secuencia y espera sustituidas por bounce; avistamiento simplificado | Activo simplificado / fuente disponible sin conectar | Reservado Codex/C7 |
 
@@ -533,10 +533,14 @@ correspondencia dirección↔huella validada (ya pedida en M13); nada más deten
 existentes, sin cifras supuestas ni afirmación de prueba visual. Diff/enlaces y
 honesty antes del commit documental; no necesita build. Codex revisa la tabla.
 
-#### R6 — Corregir la tabla M10 [siguiente tarea para Muse]
+#### R6 — Corregir la tabla M10 [cerrada]
 
-**Entrega:** `afcc1f0a`, todavía no aceptada. Solo documentación en esta sección;
-conservar hallazgos comprobados y corregir los siguientes puntos sin editar assets.
+**Aceptada:** M10 `afcc1f0a` + R6 `3ac164a7`, revisión de Codex el 2026-10-05.
+Estados, recursos, recortes y secuencias contrastados con callers/metadatos/C.
+Codex corrige aquí dos detalles finales: ondas = 79 ticks y distorsión de reflejo
+con dos secuencias affine en C, aunque fieldfx.json no las exporta. Revisión de
+fuente/documentación; sin afirmar comportamiento visual ni conexión de efectos.
+Las instrucciones siguientes quedan como criterios ya revisados.
 
 1. Separar estado de conexión de fidelidad: los cinco efectos y sprites manuales
    sí están activos en el viewer, aunque sus secuencias no sean fieles. Usar
@@ -651,7 +655,7 @@ editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento f
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M9 y R1–R5 cerradas; M11 aceptada en su rama, M10 pendiente R6. M12 → M13
+Muse: M1–M11 y R1–R6 cerradas en sus ramas; integración pendiente. M12 → M13
 esperan APIs/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
 Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 

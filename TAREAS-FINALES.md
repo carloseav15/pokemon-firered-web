@@ -465,6 +465,6 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;
   Codex C1–C7. Sin batallas/historia; zoom/audio/editor siguen pendientes.
   Entregas en ramas Muse: M1–M9/R1–R5 cerradas; M11 aceptada (`ddd899ae`),
-  M10 (`afcc1f0a`) pendiente R6 en VISOR-MEJORAS §4; M12/M13 esperan APIs de C7.
-  Rama actual B1-metatile anterior a M6–M11: integración de esas entregas pendiente;
+  M10 aceptada tras R6 (`3ac164a7`), revisión en VISOR-MEJORAS §4; M12/M13 esperan APIs de C7.
+  Base de la rama R6/B1-metatile anterior a M6–M11: integración de esas entregas pendiente;
   revisión aislada, sin fusionar código ni alterar trabajo del motor.
