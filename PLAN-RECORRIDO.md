@@ -160,6 +160,71 @@ Cada uno en worktree, puerto y perfil de navegador propios.
 TAREAS-FINALES sigue siendo la lista única de problemas y validación pendientes;
 los IDs siguientes son paquetes de ejecución para sus tareas, no nuevos cierres.
 
+### Plan vigente de fiabilidad del driver
+
+Este reparto sustituye las instrucciones históricas de próximos pasos cuando
+se contradigan. Tareas canónicas DRV-01–07 en TAREAS-FINALES §1; aquí se define
+su ejecución. Base inicial: código c8ccc36f y main con este plan documental.
+Cada agente registra el SHA completo usado; Sol publica una base nueva después
+de aceptar cambios de API. Ninguna dependencia se desbloquea por tiempo transcurrido.
+
+**Objetivo inicial:** driver comprobado para las acciones necesarias hasta Ciudad
+Celeste. No promete cero errores ni paridad del juego entero. Después ampliar por
+sistemas nuevos de historia; inventario C y cobertura del driver se miden aparte.
+
+**Primera ronda, en paralelo sin editar los mismos archivos:**
+
+- **Sol — DRV-02 y DRV-03.** Responsable exclusivo de driver.js, APIs compartidas y
+  cambios necesarios del runner. Leer Game/boot y consumidores antes de fijar el
+  contrato. Entregar nombres/API, estados observables, resultados, límites,
+  cancelación y casos comprobados. Mantener compatibilidad o migrar todos los
+  callers; no dejar un segundo camino activo contradictorio.
+- **Luna — DRV-01.** Auditoría estática de driver.js, strategy.js, pw.mjs y jobs:
+  por capacidad registrar función/callers, requisito/resultado, evidencia existente,
+  caso ausente y prioridad. Incluir carga/continue, diálogos/elecciones, combate,
+  recursos, navegación y persistencia. Entregar una tabla compacta en esta sección
+  del plan en su rama; sin cambiar herramientas ni ejecutar otra ruta. No contar
+  funciones como porcentaje de fiabilidad ni declarar nuevas regresiones sin prueba.
+- **Flash — FLASH-C5-R1.** Implementar el contrato cerrado de abajo, conservando
+  casos independientes y preparación declarada. Solo jobs/helpers de prueba
+  necesarios para C5; no editar driver/motor ni mezclar otras mejoras. Si Sol
+  cambia una API usada, terminar el caso independiente o esperar su nueva base;
+  rebase y repetir únicamente lo afectado. Entregar resultado por caso.
+- **Sonnet — preparación de DRV-07, sin recorrido.** Revisar estáticamente su job
+  c54ba497 y entregar puntos que fuerzan reinicio, exportan por defecto o reportan
+  checkpoint antes de exportar. Proponer entrada/modo resume y hitos, sin inventar
+  nombres de API. Conservar logs; no ejecutar otra ruta ni alterar los saves.
+
+**Segunda ronda, tras aceptar contratos:** Sol cierra DRV-05 y1.22, y corrige los
+huecos de DRV-04 necesarios para la ruta. Flash implementa escenarios faltantes
+pequeños indicados por ID por Sol (no duplica casos ya aceptados). Luna implementa
+DRV-06 únicamente en el ejecutor de pruebas y catálogo de escenarios, sin tocar
+APIs del driver: reutilizar estrategia/recovery/switch/navigation/continue, añadir
+solo pruebas de contratos pendientes aprobadas. Sonnet adapta su job a DRV-03/05
+sin ejecutar historia. Un fallo del motor se registra aparte y vuelve a Sol.
+
+**Tercera ronda, lineal:** Sol revisa y fusiona; Luna ejecuta el gate en una base
+fija; Sol acepta una entrada real y presupuesto nuevo; Sonnet realiza un tramo
+acotado y entrega checkpoint de Celeste con continue/movimiento. Los dos intentos
+fallidos previos no se reinician por este plan. Máximo un intento de ruta por
+asignación nueva; una repetición diagnóstica solo si Sol fija la corrección y el
+punto de entrada. Sin checkpoint real no hay reanudación desde logs ni debug.
+
+**Aceptación común por capacidad:**
+
+- [ ] Requisitos, estado esperado y resultado observables documentados.
+- [ ] Éxito comprobado por estado; requisito incumplido y timeout tratados.
+- [ ] Transición pertinente comprobada; velocidades0/1/2 donde haya texto/menú.
+- [ ] Cancelación/timeout paran las entradas; fallo llega al runner y al resultado.
+- [ ] Trazas distinguen driver/juego/entorno, preparación y límites de evidencia.
+- [ ] Caso reproducible enlazado; PASS/MANUAL/NOT RUN conservan significados distintos.
+
+Coste: checks puros y escenarios cortos antes del gate y de la ruta; repetir solo
+lo afectado. Dos fallos iguales en un diagnóstico: parar y entregar evidencia.
+No afirmar que los casos PREPARED demuestran historia, ni preparar el desenlace.
+Cada agente entrega commit, base, comando, resultado por caso y limitación breve;
+solo Sol integra a main. Sin push ni mensajes automáticos a otros agentes.
+
 ### Cómo empezar: instrucciones para cada agente
 
 Leer AGENTS.md, PORTING-STATUS.md, TAREAS-FINALES §1/§3/§4 y las secciones de este
@@ -168,10 +233,10 @@ uno de estos roles, ejecutar solo sus tareas habilitadas y entregar evidencia:
 
 | Agente | Paquete vigente | Después | No le corresponde |
 |---|---|---|---|
-| GPT-6.1 Sol | SON-PREP/C8 aceptadas; contrato C5 y H.heal1.23 | SOL-02/03 y preparación del siguiente tramo | Repetir toda la ruta de los ejecutores por rutina |
-| GPT-6 Luna | Continue aceptado; C8/Brock sobre14238405 | C8 después de aceptar FLASH-02-R2 | Modificar motor, tests o criterios para conseguir PASS |
-| Sonnet 5.5 | SON-MM01-R con mtmoon-prepared aceptado | SON-MM01-R tras aceptar entrada preparada; SON-03 tras Celeste | Saltar bloqueos de historia o abrir otra cadena de ruta |
-| Gemini Flash 3.8 | R2 aceptada; espera contrato C5 | C5/FLASH-03 después de C8 y contrato de Sol | Corregir el motor o ejecutar de nuevo la historia de Sonnet |
+| GPT-6.1 Sol | DRV-02/03: estado, esperas, entradas y contratos compartidos | DRV-05 y1.22; DRV-04 según auditoría; revisar C5/gate e integrar | Repetir toda la historia por rutina o ocultar fallos del motor con el driver |
+| GPT-6 Luna | DRV-01: auditar funciones, consumidores y cobertura | DRV-06 sobre contratos y commits aceptados; revisión independiente de C5 | Cambiar motor/driver o ajustar expectativas para conseguir PASS |
+| Sonnet 5.5 | DRV-07: diseño estático de continuación y preservación de evidencia | Adaptar job tras DRV-03/05; recorrido solo con gate, entrada y presupuesto aceptados | Reiniciar Monte Moon ahora o reconstruir avances con debug |
+| Gemini Flash 3.8 | FLASH-C5-R1: implementar contrato cerrado | Escenarios faltantes de DRV-04 y transiciones, fijados por Sol tras DRV-01/03 | Modificar APIs compartidas, motor o ejecutar la historia de Sonnet |
 
 SOL-01 ya está entregada. Los paquetes vigentes usan la base fijada en el
 contrato tras SOL-DRV01; no empezar pruebas sobre una base inventada. Una dependencia requiere entrega y aceptación; transcurrir tiempo no
@@ -547,12 +612,51 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
   Si persiste solapamiento, entregar snapshot de tareas/callbacks/VAR_RESULT a Sol;
   no modificar motor, ni parchear controles/estado para obtener PASS. Dos intentos
   diagnósticos máximo. C8 actual pasa para el fixture de un miembro; equipo completo y audiovisual siguen pendientes.
-- [ ] **FLASH-C5-R1 — C5 fiable (Flash, tras contrato de Sol).** Separar lanzar bola
-  por UI, conteo/consumo, captura y transferencia a caja con equipo lleno. El
-  agotamiento legítimo de bolas debe terminar limpiamente y dejar evidencia del
-  enemigo/HP/estado, no fingir captura ni confundirse con excepción del motor.
-  Acordar entrada/RNG controlado PREPARED para el caso determinista antes de
-  implementarlo; no poner Pokémon capturado ni flags finales por depuración.
+- [ ] **FLASH-C5-R1 — C5 fiable (Flash, implementación pendiente).**
+  **Contrato C5 cerrado por Sol para implementación (sustituye la propuesta
+  3172ed50; todavía no implementado ni validado en navegador).** Flash trabaja
+  únicamente en su rama/worktree desde la base de cierre indicada por Sol.
+  No modificar motor, driver, fixtures persistidos ni baselines. Casos aislados:
+  recargar route2-north entre casos; preservar resultados previos aunque otro falle.
+
+  | Caso | Entrada y recorrido | Aserciones y resultado |
+  | --- | --- | --- |
+  | Lucha | route2-north: MAP_ROUTE2(5,4), BulbasaurL15, moves[79,45,73,22]; Vine Whip se busca por ID, actualmente índice3. Encuentro por pasos reales, FIGHT y movimiento por cursor observado | B_OUTCOME_WON, EXP aumenta, registrar usos/PP del movimiento; retorno al campo y paso real. No fijar un único uso si hubo varios turnos |
+  | Huida | Entrada independiente, encuentro real y RUN por cursor observado | B_OUTCOME_RAN, inventario y acciones registrados; HP pueden bajar si antes hubo un intento fallido. No exigir HP inalterados como regla general; no gastar PP en movimientos de jugador si solo se eligió RUN |
+  | Lanzamiento natural | Entrada independiente con5 Poké Balls del fixture, BAG → OPEN_BAG_POKEBALLS(2) → ITEM_POKE_BALL → USE, hasta captura o agotamiento | Contar el item por ID (bagCount ya lo hace); por cada uso efectivo registrar consumo exactamente1, foe/species/HP/status y desenlace. No usar pokeBalls[0] ni sumar intentos antes de observar consumo. Si se agotan, RUN y retorno al campo: PASS de recursos, captura natural MANUAL si no ocurrió; nunca PASS de captura por agotamiento |
+  | Captura garantizada con hueco (PREPARED) | Mismo checkpoint; añadir una Master Ball en memoria como entrada declarada. No alterar foe, RNG, resultados ni flags. Lanzar por BAG y declinar mote por UI | B_OUTCOME_CAUGHT, consumo de1 Master Ball, nuevo miembro con especie/nivel/personality del enemigo observado, OT del jugador y pokeball=ITEM_MASTER_BALL; miembros previos conservados. Si se afirma Pokédex, leer y comprobar el flag correspondiente, no inferirlo del conteo |
+  | Captura con equipo lleno (PREPARED) | Recargar; mantener el líder original y crear cinco Pokémon válidos con createMon del proyecto (especie/nivel/identidades registrados), como entrada diagnóstica. Equipo6, una Master Ball, al menos un hueco observado en PC. No preparar el capturado ni una caja posterior | Captura/consumo por UI; equipo6 con identidades/orden intactos; exactamente un Pokémon nuevo en el primer hueco que seleccionaría SendMonToPC, empezando por currentBox y recorriendo cajas circularmente. Verificar especie/personality/OT/movimientos/EXP y bola. Registrar caja/slot reales y VAR_PC_BOX_TO_SEND_MON, sin fijar caja0 |
+
+  Fuentes de criterios: battle_script_commands.c Cmd_handleballthrow y
+  Cmd_givecaughtmon; pokemon.c GiveMonToPlayer, SendMonToPC, MonRestorePP y
+  CalculatePPWithBonus. El caso Master Ball prueba su garantía específica,
+  no odds>254 ni la probabilidad de Poké Ball. HP1+sueño no es garantía general:
+  catchRate45/maxHP30/Poké Ball produce odds88. No usar esa premisa del borrador.
+  SendMonToPC restaura PP y copia BoxPokemon; HP/status no forman parte del BoxMon
+  C. No exigir status0 al objeto web almacenado sin una comprobación de adaptación
+  separada. Comparar PP restaurados contra tablas del C y sus bonos, no contra el
+  mismo helper usado para producir el resultado. En captura con hueco, conservar
+  los datos reales del enemigo transferido; no exigir curación por captura.
+
+  Todos los desenlaces terminados necesitan !H.inBattle(), H.idle sin timeout,
+  H.fieldFree() y un paso real a una casilla conocida del mismo mapa. Seleccionar
+  una casilla libre de encuentros para que la comprobación no abra otro combate;
+  si no hay tal casilla, registrar MANUAL de movimiento y no afirmar retorno
+  completo. Error de navegador, bloqueo o discrepancia de consumo = FAIL.
+  Conservar por caso mapas, controlador/tareas, acciones, conteos y resultado.
+  Si queda cobertura incompleta, devolver result.manual con motivo (es el campo
+  que reconoce smoke/run.mjs) junto con los resultados parciales; no esconderlo
+  tras un status arbitrario ni hacer pasar un timeout. El agotamiento solo es
+  PASS del subcaso de recursos, no valida por sí solo la captura.
+
+  Límite de ejecución: una pasada por caso, máximo5 bolas en el caso natural;
+  ante fallo guardar evidencia y permitir una sola repetición diagnóstica.
+  Después entregar a Sol sin reintentos ilimitados ni ajustes para conseguir PASS.
+  No ejecutar toda la historia. Entregar código en un commit y evidencia fuera
+  del árbol; check:port/check:honesty/build/diff --check. C5 no incluye persistencia,
+  fidelidad audiovisual ni procedencia natural de la partida: dejar esos límites
+  explícitos. No cambiar contratos LUNA-02, captura opcional ni tareas ajenas.
+
 **Contrato focalizado de LUNA-02 (Luna):** Tras commit de revisión fijo,
   repetir C7 sobre 65e631f9 (o una base posterior fijada); C8 tras aceptar R2, y C5 solo cuando exista su contrato revisado; inspeccionar JSON,
   excepciones, contador de guardado y límites. No ejecutar de nuevo toda la
@@ -788,3 +892,86 @@ tercer intento desde mtmoon-prepared: el contrato de dos intentos ya se consumi�
 La integración del job no acepta SON-MM01-R como completada ni acredita Celeste.
 Sol continúa con snapshots NPC1.22 y contrato C5; Flash sigue pendiente de entregar
 su propuesta. No se enviaron mensajes a agentes ni se hicieron push.
+
+### Revisión de entregas sobre f25728a2
+
+| Agente | Entrega contrastada | Decisión |
+| --- | --- | --- |
+| Luna | Auditoría estática de C5/C8/driver-recovery/SON-MM01-R, sin cambios ni ejecuciones nuevas; rama limpia en f25728a2 | Aceptada como análisis, sin ampliar resultados runtime. Riesgo de exportación se registra como guardia operativa pendiente, no pérdida de datos observada |
+| Flash | 3172ed50, propuesta documental C5; base correcta y rama limpia | Requiere corrección; no fusionada. No implementó ni ejecutó C5 nuevo |
+| Sonnet | c54ba497, job de checkpoint al parar; logs intentos3/4 con ok:false/errors:[] | Parcial no fusionada. Intento3 llega a Route4(32,6), Miguel/fósil presentes; intento4 para en menú de equipo antes del fósil. Ninguno guarda checkpoint ni llega a Celeste |
+
+Flash identificó correctamente la debilidad de retorno al campo y la falta
+de caso de captura con equipo lleno. Corregir antes de aceptar su contrato:
+- bagCount en lib.mjs suma inventario del item; no usa party.length como afirma.
+- route2-north tiene Vine Whip en índice3, no2; conservar búsqueda por ID.
+- RUN puede fallar antes de escapar y permitir daño enemigo; HP inalterados no
+  es un criterio general. Verificar desenlace, PP/consumos y eventos reales.
+- HP1 + sueño no garantiza odds>254 para cualquier especie: catchRate45,
+  maxHP30 y Poké Ball dan odds88 según C. Fijar especie/datos o separar Master Ball;
+  con Master Ball el campo pokeball debe identificar ese item y no Poké Ball.
+- No fijar caja0/slot0 sin observar currentBox/destino, ni usar placeholders
+  indefinidos. PP/estado de BoxMon deben contrastarse con C antes de exigirlos.
+- Separar PASS del manejo de recursos de PASS de captura; agotar bolas no prueba
+  captura ni Pokédex. No afirmar fórmula/Pokédex sin aserciones correspondientes.
+- Restaurar los contratos LUNA-02 y captura opcional que el diff borró sin motivo.
+
+Sonnet hizo dos recorridos nuevos pese al límite expreso de dos ya consumidos.
+El código añadido sigue cargando mtmoon-prepared al iniciar; no entrega un modo
+de continuación desde la sesión/checkpoint existente. El intento3 supera la
+cueva y para en Route4 durante CB2_ChangeMapMain; el intento4 queda en
+WaitForMonSelection con HP positivos en party y no puede guardar. Falta el HP
+actual del battler y la acción del menú para distinguir cambio opcional de
+debilitamiento; no concluir que ambos siguen vivos desde el snapshot. Se conserva
+la evidencia y se abren1.25/1.26 para Sol; no reiniciar toda la ruta. El nuevo
+flujo de guardado intermedio no tiene una ejecución exitosa que lo valide.
+Además exporta por defecto, permite sobrescribir y registra checkpoint antes
+de completar exportación: reforzar destino/procedencia y reporte antes de usar.
+
+Luna confirmó límites de C5 (sin CAUGHT/especie/control final explícitos),
+C8 (snapshot de identidad parcial y sin paso tras continue) y driver-recovery
+(sin persistencia/retorno final de combate). Son límites de cobertura, no nuevas
+regresiones probadas ni motivo para revocar la evidencia limitada aceptada.
+En C8 ampliar la identidad con nivel/HP/PP/estado/EXP solo al implementar su
+siguiente mejora; no repetir por rutina. En recovery conservar explícitamente
+su alcance parcial y no afirmar oráculo C independiente para todo el equipo.
+
+Orden siguiente: Sol1.25 y1.26, cerrar contrato C5; después trabajo acotado por
+agente desde una base fijada. Sonnet no ejecuta otro recorrido ahora. Main queda
+con revisión documental; sin fusiones de estas dos entregas, push ni mensajes.
+
+Correcciones de Sol integradas en c8ccc36f: el fallo1.25 se reprodujo con
+liveHp16 y PARTY_ACTION_CHOOSE_MON(0), frente a SEND_OUT(1) obligatorio.
+El driver ahora cancela por B cuando no hay reserva atacante en un menú
+opcional, conserva la selección obligatoria y registra acción/HP real del menú.
+La prueba focalizada observa cancelación y ataque posterior; en el otro caso
+el enemigo causa el debilitamiento real (liveHp0), se exige SEND_OUT y la
+reserva entra y ataca. Son segmentos acotados, no victorias completas de historia.
+
+1.26: mapa y layout de Route4 estaban cargados. CB2_ChangeMapMain de gMain
+seguía como estado antiguo, distinto del callback que Game ejecutaba; ese nombre
+no acreditaba una carga pendiente. El defecto principal era BFS: consultaba
+GetCollisionAtCoords del objeto, que nunca devuelve LEDGE_JUMP. Se usa ahora
+GetLedgeJumpDirection sin efectos secundarios y estado virtual por nodo para
+behavior/elevación, sin mover al jugador ni llamar al helper que incrementa
+estadísticas. La planificación queda dentro del mapa; exit ejecuta conexiones.
+También fieldFree exige callback de campo y exit no repite una dirección del
+mapa anterior si su warp termina durante idle.
+
+Evidencia /tmp/sol-driver-navigation-complete.log: entrada PREPARED por carga
+normal en B1F, salida Route4(32,6), camino83 comandos hasta(107,10), dos saltos
+reales y conexión a Celeste(0,20), control libre. Planificar no cambió jugador,
+equipo ni estadísticas. /tmp/sol-pending-exit.log confirma que una carga pendiente
+no se declara libre ni aplica la dirección antigua al destino. Recovery y
+Brock regresión PASS; check:port/check:honesty/build/diff --check PASS.
+No se prepararon fósil, flags ni victorias. Esta prueba no acepta el recorrido
+completo ni un checkpoint de Celeste; es diagnóstico del driver y la conexión.
+No se reinició la ruta completa de Sonnet ni se fusionó c54ba497/3172ed50.
+
+Base de código para Flash: c8ccc36f más el commit documental de este cierre.
+Implementar exclusivamente el contrato FLASH-C5-R1 de arriba; conservar la
+propuesta anterior en Git, sin reintroducir sus criterios rechazados. Luna puede
+revisar esa entrega cuando exista. Sonnet conserva evidencia: cualquier próximo
+recorrido requiere una entrada y presupuesto nuevos fijados; no correr ahora.
+Sol sigue con1.22/guardado de objetos dinámicos y revisión de C5. Sin mensajes
+ni push. Contador sin cambio:0 cuerpos C nuevos y0 equivalencias/wrappers.

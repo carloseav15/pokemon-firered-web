@@ -3,7 +3,7 @@
 //   const { H } = await import("/tools/playtest/driver.js");
 // Coordinates are the ones frDebug.state() reports (map coords, without the +7 border).
 // Never walk while a script runs applymovement/waitmovement: goto()/path() only
-// move when no script is active and controls are unlocked; idle() only taps A.
+// move when no script is active and controls are unlocked; idle() stops at choices.
 // Call `await H.init()` after every page load (see AGENTS.md §6.5).
 
 import { rankMoves, hpItem, statusItem } from "./strategy.js";
@@ -11,16 +11,16 @@ import { rankMoves, hpItem, statusItem } from "./strategy.js";
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
 const DIRS = [[0, 1, 1, 0x80, "D"], [0, -1, 2, 0x40, "U"], [-1, 0, 3, 0x20, "L"], [1, 0, 4, 0x10, "R"]];
-const COLLISION_NONE = 0, COLLISION_OBJECT_EVENT = 4, COLLISION_LEDGE_JUMP = 6;
+const COLLISION_NONE = 0, COLLISION_OBJECT_EVENT = 4;
 
 export const H = {
   log: [],
   st() {
     const game = g();
-    return { ...dbg().state(), locked: game.overworld.controlsLocked, scene: game.scene?.constructor?.name, party: this.party() };
+    return { ...dbg()?.state?.(), locked: game?.overworld.controlsLocked, scene: game?.scene?.constructor?.name, party: this.party() };
   },
   party() {
-    return dbg().save.save.party.map((p) => `${p.species}:L${p.level}:${p.hp}/${p.stats?.[0]}`).join(",");
+    return (dbg()?.save?.save?.party ?? []).map((p) => `${p.species}:L${p.level}:${p.hp}/${p.stats?.[0]}`).join(",");
   },
   /**
    * Import a module as the running app sees it. After an HMR update the app
@@ -41,73 +41,167 @@ export const H = {
     this.T = await this.mod("/src/fr/gba/tasks.ts");
     this.B = await this.mod("/src/fr/bagMenu.ts");
     this.BS = await this.mod("/src/fr/battle/bscript.ts");
-    return { cb2: this.R.gMain.callback2?.name };
+    this.Q = await this.mod("/src/fr/questLogState.ts");
+    this.SC = await this.mod("/src/fr/script/context.ts");
+    return this.observe();
   },
-  /** After restore()/importSave(): run frames until the field map is loaded, then init(). */
-  async ready(maxFrames = 1200) {
-    for (let f = 0; f < maxFrames && !dbg()?.state?.()?.map; f += 20) {
-      if (dbg()?.wait) await dbg().wait(20); else await new Promise((r) => setTimeout(r, 200));
-    }
+  /** Active callbacks: gMain runs only inside HwScene. Its field value can be stale. */
+  cb2() { return g()?.scene?.constructor?.name === "HwScene" ? this.R?.gMain.callback2?.name : g()?.callback2?.name; },
+  observe() {
+    const game = g(), state = this.st();
+    const scene = game?.scene?.constructor?.name ?? null;
+    const tasks = this.T?.tasks.tasks.filter(t => t.isActive).map(t => t.func.name) ?? [];
+    const cb1 = scene === "HwScene" ? this.R?.gMain.callback1?.name : game?.callback1?.name;
+    const cb2 = this.cb2();
+    const questLog = this.Q?.gQuestLogState;
+    const playback = this.C && [this.C.QL_STATE_PLAYBACK, this.C.QL_STATE_PLAYBACK_LAST].includes(questLog);
+    const battle = scene === "BattleTransitionScene" || scene === "HwScene" &&
+      (this.R?.gMain.inBattle || cb1 === "BattleMainCB1" || /Battle/.test(cb2 ?? ""));
+    const choice = tasks.some(n => ["Task_MultichoiceMenu_HandleInput", "Task_YesNoMenu_HandleInput", "Task_PCMainMenu"].includes(n));
+    const menu = tasks.includes("startInput");
+    const saveCallback = game?.activeSaveDialog?.saveDialogCB.name ?? null;
+    const saveChoice = ["SaveDialogCB_AskSaveHandleInput", "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"].includes(saveCallback);
+    const standing = !!game?.overworld.player.object && game.overworld.player.isStandingStill();
+    const fieldFree = standing && !!state.map && !!game?.callback1 && !scene && !playback && !state.script && !state.locked && !choice && !menu && !tasks.includes("saveInput") && !saveCallback;
+    const controller = battle ? this.G?.gBattlerControllerFuncs[0]?.name : null;
+    const dialog = !!game?.overworld.messageBox.printer?.active;
+    const script = game?.overworld.script.global;
+    const waitingForButton = !!state.script && script?.mode === this.SC?.SCRIPT_MODE_NATIVE && script?.nativePtr?.name === "bound WaitForAorBPress";
+    const phase = playback ? "quest-log" : scene === "BattleTransitionScene" ? "battle-transition"
+      : scene === "HwScene" && cb2 === "CB2_UpdatePartyMenu" ? "party-menu"
+      : scene === "HwScene" && cb2 === "CB2_BagMenuRun" ? "bag-menu"
+      : battle ? controller === "HandleInputChooseAction" ? "battle-action" : controller === "HandleInputChooseMove" ? "battle-move" : "battle"
+      : choice ? "choice" : saveChoice ? "save-choice" : menu ? "start-menu" : tasks.includes("saveInput") ? "save-dialog" : scene ? "screen"
+      : !state.map || !game?.callback1 ? "loading" : fieldFree ? "field" : waitingForButton ? "dialog-wait" : dialog ? "dialog" : "field-busy";
+    return { ...state, phase, fieldFree, standing, battle: !!battle, dialog, waitingForButton, tasks, saveCallback, cb1: cb1 ?? null, cb2: cb2 ?? null,
+      hardwareCb2: this.R?.gMain.callback2?.name ?? null, controller, questLog, frame: game?.frameCount };
+  },
+  /** Wait for actual field control, including recorded Quest Log scenes. Never sends A. */
+  async ready(maxFrames = 18000) {
+    if (!Number.isInteger(maxFrames) || maxFrames < 0) throw new Error("invalid ready frame budget");
+    const start = performance.now();
+    while (!dbg() && performance.now() - start < 20000) await new Promise(r => setTimeout(r, 20));
+    if (!dbg()) throw new Error("driver unavailable after 20s");
     await this.init();
-    return dbg().state();
+    const observed = [];
+    for (let f = 0; f <= maxFrames; f++) {
+      const state = this.observe();
+      if (!observed.some(s => s.phase === state.phase && s.questLog === state.questLog && s.map === state.map))
+        observed.push({ phase: state.phase, questLog: state.questLog, map: state.map });
+      if (state.fieldFree) return { ...state, ok: true, status: "success", frames: f, observed };
+      if (f === maxFrames) throw Object.assign(new Error("field readiness timeout"), { result: { ok: false, status: "failure", reason: "ready-timeout", state, frames: f, observed } });
+      await this.wait(1);
+    }
   },
-  cb2() { return this.R?.gMain.callback2?.name; },
-  inBattle() {
-    const name = g().scene?.constructor?.name;
-    if (name === "BattleTransitionScene") return true;
-    if (name !== "HwScene") return false;
-    // Without init() any hardware screen (shop, bag) looks like a battle.
-    if (!this.R) return true;
-    return this.R.gMain.callback1?.name === "BattleMainCB1" || /Battle/.test(this.cb2() ?? "");
-  },
+  inBattle() { return this.observe().battle; },
   /**
    * Long work inside the page: tool calls time out (~45 s) but the page keeps
    * running. Start with H.job(async () => …), then poll H.jobStatus().
    */
-  job(fn) {
-    this.jobState = { done: false, out: null, t0: performance.now() };
-    const st = this.jobState;
+  job(fn, { maxFrames = 120000, timeoutMs = 120000 } = {}) {
+    if (this.execution && !this.execution.done) return { ok: false, status: "blocked", reason: "job-running", id: this.execution.id };
+    if (!(maxFrames > 0) || !(timeoutMs > 0)) throw new Error("positive job budgets required");
+    const st = { id: (this.jobSequence = (this.jobSequence ?? 0) + 1), done: false, out: null,
+      t0: performance.now(), frames: 0, maxFrames, timeoutMs, game: g(), debug: dbg(), cancelled: false };
+    this.execution = this.jobState = st;
     (async () => {
-      try { st.out = await fn(); } catch (e) { st.out = "ERR " + (e?.stack ?? e); }
-      st.done = true;
+      try { st.out = await fn(); this.checkExecution(); }
+      catch (e) { st.out = e.result ?? { ok: false, status: "failure", reason: "exception", error: String(e?.stack ?? e), state: this.observe() }; }
+      finally { st.done = true; }
     })();
-    return "started";
+    return "started"; // preserved for existing polling callers
   },
-  jobStatus() { return { ...this.jobState, s: Math.round((performance.now() - (this.jobState?.t0 ?? 0)) / 1000), st: this.st() }; },
+  cancelJob() {
+    const st = this.execution;
+    if (!st || st.done) return { ok: false, status: "blocked", reason: "no-active-job" };
+    st.cancelled = true;
+    dbg()?.joy?.release(0xffff);
+    return { ok: true, status: "success", id: st.id, reason: "cancellation-requested" };
+  },
+  checkExecution(checkFrames = false) {
+    const st = this.execution;
+    if (!st || st.done) return;
+    const reason = st.cancelled ? "cancelled" : st.game !== g() || st.debug !== dbg() || window.H !== this ? "session-changed"
+      : checkFrames && st.frames >= st.maxFrames ? "frame-budget" : performance.now() - st.t0 >= st.timeoutMs ? "time-budget" : null;
+    if (reason) throw Object.assign(new Error(reason), { result: { ok: false, status: "failure", reason, id: st.id, frames: st.frames } });
+  },
+  jobStatus() {
+    const st = this.jobState;
+    if (!st) return { done: true, status: "idle", st: this.observe() };
+    const { game, debug, ...publicState } = st;
+    return { ...publicState, s: Math.round((performance.now() - st.t0) / 1000), st: this.observe() };
+  },
+  /** Walking uses guarded single frames, never the uninterruptible debug.walk batch. */
+  async walk(dir, tiles = 1) {
+    const bits = { R: 0x10, L: 0x20, U: 0x40, D: 0x80 }[dir];
+    if (!bits || !Number.isInteger(tiles) || tiles < 1) throw new Error("invalid walk request");
+    const player = () => g().overworld.player;
+    const map = this.st().map, start = { ...player().object.currentCoords };
+    const moved = () => Math.abs(player().object.currentCoords.x - start.x) + Math.abs(player().object.currentCoords.y - start.y);
+    for (let f = 0; f < 40 * tiles + 40; f++) {
+      if (this.st().map !== map || !g().callback1 || g().scene || this.st().script || this.st().locked) break;
+      this.step(moved() >= tiles ? 0 : bits);
+      if (moved() >= tiles && player().tileTransitionState !== 1) break;
+      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
+    }
+    await this.wait(8);
+    return this.st();
+  },
   warps() { return g().overworld.loaded.header.warps.map((w) => [w.x, w.y, w.destMap]); },
   coords() { return g().overworld.loaded.header.coords.map((c) => [c.x, c.y, c.scriptName]); },
   objects() {
     return g().overworld.objects.objects.filter((o) => o && o.currentCoords)
       .map((o) => [o.localId, o.currentCoords.x - 7, o.currentCoords.y - 7, o.graphicsId, o.invisible]);
   },
-  /** Run frames tapping A until no script runs and controls are free. */
+  /** Settle scripts; choices are handed back to the caller, never accepted implicitly. */
   async idle(max = 3000, tapA = true) {
-    for (let f = 0; f < max; f += 20) {
-      const s = this.st();
-      // A trainer script can start a battle: hand it back to goto()/battle().
-      if (this.inBattle()) return { ...s, f, battle: true };
-      if (this.fieldFree() && f > 40) return { ...s, f };
-      await dbg().wait(16);
-      if (tapA) await dbg().wait(4, 1);
+    for (let f = 0; f < max; f++) {
+      const s = this.observe();
+      if (s.battle) return { ...s, f, battle: true, ok: true, status: "success", reason: "battle-started" };
+      if (s.fieldFree) return { ...s, f, ok: true, status: "success" };
+      if (["choice", "save-choice", "start-menu", "party-menu", "bag-menu", "screen"].includes(s.phase))
+        return { ...s, f, ok: false, status: "blocked", reason: "input-required", note: "input required" };
+      this.step(tapA && ["dialog", "dialog-wait"].includes(s.phase) && f % 32 === 1 ? 1 : 0);
+      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
     }
-    return { ...this.st(), timeout: true };
+    return { ...this.observe(), ok: false, status: "failure", reason: "idle-timeout", timeout: true };
   },
-  // Thresholds are walkthrough policy, not FireRed rules. Explicit fight/run
-  // modes keep their existing behavior for C5/C7 and diagnostics.
+  // Thresholds are walkthrough policy, not FireRed rules.
   policy: { fieldHp: 0.6, battleHp: 0.4, minAttackPP: 2, reservePotions: 1, maxDecisions: 80, maxUnchanged: 6 },
-  fieldFree() {
-    const state = this.st();
-    return !state.script && !state.locked && !g().scene && !this.T?.tasks.tasks.some(t => t.isActive &&
-      ["startInput", "Task_PCMainMenu", "Task_MultichoiceMenu_HandleInput", "Task_YesNoMenu_HandleInput"].includes(t.func.name));
+  fieldFree() { return this.observe().fieldFree; },
+  /** One commanded frame; browser rAF may also run frames while yielding. */
+  step(bits = 0) {
+    this.checkExecution(true);
+    dbg().run(1, bits);
+    if (this.execution && !this.execution.done) this.execution.frames++;
   },
-  async tap(bits, settle = 16) { await dbg().wait(2, bits); await dbg().wait(settle); },
-  async until(test, button = null, limit = 180) {
-    for (let i = 0; i < limit; i++) {
-      if (test()) return true;
-      if (button) await dbg().press(button, 4);
-      await dbg().wait(8);
+  async wait(frames, bits = 0) {
+    for (let f = 0; f < frames; f++) {
+      this.step(bits);
+      if (f % 4 === 3 || frames === 1) await new Promise(r => setTimeout(r, 1));
     }
-    return test();
+  },
+  async press(button, settle = 30) {
+    const bits = { A: 1, B: 2, SELECT: 4, START: 8 }[button];
+    if (!bits) throw new Error("unsupported button " + button);
+    return this.tap(bits, settle);
+  },
+  async tap(bits, settle = 16) {
+    this.step(); // ReadKeys must observe release before the next edge.
+    this.step(bits);
+    await this.wait(Math.max(1, settle));
+  },
+  /** Inspect predicates every frame; limit retains the old iteration budget (~16 frames each). */
+  async until(test, button = null, limit = 180) {
+    const bits = button ? { A: 1, B: 2, SELECT: 4, START: 8 }[button] : 0;
+    if (button && !bits) throw new Error("unsupported button " + button);
+    for (let f = 0; f < limit * 16; f++) {
+      this.checkExecution();
+      if (test()) return true;
+      this.step(f % 32 === 1 ? bits : 0);
+      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
+    }
+    return !!test();
   },
   hasTask(name) { return this.T.tasks.tasks.some(t => t.isActive && t.func.name === name); },
   countItem(item) { return Object.values(dbg().save.save.bag).flat().filter(e => e.item === item).reduce((n, e) => n + e.quantity, 0); },
@@ -208,7 +302,7 @@ export const H = {
         const c = this.G.gActionSelectionCursor[0];
         await this.tap(c & 1 ? 0x40 : 0x10);
       }
-      await dbg().press("A");
+      await this.press("A");
     } else {
       if (!this.fieldFree()) return { ok: false, note: "field not free", before };
       const S = await this.mod("/src/fr/save.ts");
@@ -225,7 +319,7 @@ export const H = {
       await this.tap(1, 30);
     }
     if (!await this.until(() => this.cb2() === "CB2_BagMenuRun" && this.hasTask("Task_BagMenu_HandleInput"))) return { ok: false, note: "bag did not open" };
-    await dbg().wait(60);
+    await this.wait(60);
     for (let i = 0; i < 4 && this.B.gBagMenuState.pocket !== this.C.OPEN_BAG_ITEMS; i++) await this.tap(0x20, 60);
     if (this.B.gBagMenuState.pocket !== this.C.OPEN_BAG_ITEMS) return { ok: false, note: "items pocket unavailable" };
     const index = dbg().save.save.bag.items.findIndex(e => e.item === item && e.quantity > 0);
@@ -283,7 +377,8 @@ export const H = {
     const screens = new Set();
     let n = 0, stop = null, decision = null, decisions = 0, unchanged = 0, lastKey = null, lastHp = null, incoming = 0;
     const trace = [];
-    const press = async (bits) => { await dbg().wait(2, bits); await dbg().wait(4); };
+    let observedPartyMenu = false;
+    const press = (bits) => this.tap(bits, 4);
     while (this.inBattle() && n < maxSteps) {
       n++;
       screens.add(this.cb2());
@@ -293,14 +388,15 @@ export const H = {
         const opcode = this.BS.r8(this.G.G.gBattlescriptCurrInstr);
         if (opcode === 0x5a) {
           trace.push({ action: "decline replacement", move: this.G.G.gMoveToLearn });
-          await dbg().press("B", 8); continue;
+          await this.press("B", 8); continue;
         }
         if (opcode === 0x5b) {
           if (this.G.gBattleCommunication[this.C.CURSOR_POSITION] !== 0) await this.tap(0x40);
-          await dbg().press("A", 8); continue;
+          await this.press("A", 8); continue;
         }
       }
       const f = this.G?.gBattlerControllerFuncs[0]?.name;
+      if (f !== "WaitForMonSelection" || this.cb2() !== "CB2_UpdatePartyMenu") observedPartyMenu = false;
       if (f === "HandleInputChooseAction") {
         if (decision?.action === "switch" && this.G.gBattleMons[0].personality === decision.personality) decision = null;
         if (mode === "auto" && !decision) {
@@ -330,7 +426,7 @@ export const H = {
         const wantSwitch = mode === "switch" && this.G.gBattlerPartyIndexes?.[0] === 0 && dbg().save.save.party[1]?.hp > 0;
         const want = mode === "run" || decision?.action === "run" ? 3 : wantSwitch || decision?.action === "switch" ? 2 : 0, c = this.G.gActionSelectionCursor[0];
         if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
-        await dbg().press("A");
+        await this.press("A");
         if (decision?.action === "run") decision = null;
         continue;
       }
@@ -344,29 +440,50 @@ export const H = {
         if (mode === "auto" && want === undefined) { stop = "no usable attack"; break; }
         if (pp && pp[want] === 0) for (let i = 0; i < 4; i++) if (pp[i] > 0) { want = i; break; }
         if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
-        await dbg().press("A");
+        await this.press("A");
         decision = null;
         continue;
       }
       if (f === "WaitForMonSelection" && this.PM && this.cb2() === "CB2_UpdatePartyMenu") {
+        if (!observedPartyMenu) {
+          trace.push({ action: "party selection", menuAction: this.PM.gPartyMenu.action,
+            liveHp: this.G.gBattleMons[0].hp, activePersonality: this.G.gBattleMons[0].personality,
+            party: this.resources().party });
+          observedPartyMenu = true;
+        }
         // Forced switch after a faint: go to the first able Pokémon, then SHIFT.
         // Pressing A on the fainted one only prints "has no energy left" forever.
         const party = dbg().save.save.party;
         const active = this.G.gBattlerPartyIndexes?.[0];
         const target = decision?.action === "switch" ? dbg().save.save.party.findIndex(m => m.personality === decision.personality) : mode === "auto" ? this.bestReplacement() : mode === "switch" && active === 0 && party[1]?.hp > 0 ? 1
           : party.findIndex((m, i) => i !== active && m.species && !m.isEgg && m.hp > 0);
-        if (target < 0) { stop = "no able replacement"; break; }
+        if (target < 0) {
+          // party_menu.c rejects B only for SEND_OUT (forced replacement).
+          // Trainer shift prompts may open CHOOSE_MON even while the active
+          // Pokémon is alive. Decline that optional change through the UI.
+          const menuAction = this.PM.gPartyMenu.action;
+          if (mode === "auto" && menuAction !== this.C.PARTY_ACTION_SEND_OUT) {
+            trace.push({ action: "cancel optional switch", menuAction,
+              liveHp: this.G.gBattleMons[0].hp, party: this.resources().party });
+            await this.press("B", 20);
+            decision = null;
+            continue;
+          }
+          trace.push({ action: "replacement unavailable", menuAction,
+            liveHp: this.G.gBattleMons[0].hp, party: this.resources().party });
+          stop = "no able replacement"; break;
+        }
         const cur = this.PM.gPartyMenu.slotId;
         if (target >= 0 && cur !== target) { await press(0x80); continue; }
-        await dbg().press("A", 20);
+        await this.press("A", 20);
         if (this.cb2() !== "CB2_UpdatePartyMenu") decision = null;
         continue;
       }
-      await dbg().press("A", 8);
+      await this.press("A", 8);
     }
     const stuck = this.inBattle();
     if (stuck && !stop) stop = "step budget";
-    await dbg().wait(30);
+    await this.wait(30);
     const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, stop, decisions, trace, screens: [...screens].filter(Boolean) };
     this.log.push(r);
     return r;
@@ -409,7 +526,8 @@ export const H = {
       if (dbg().state().map === here.map && !r.note) {
         for (const d of ["U", "D", "L", "R"]) { if ((await this.exit(d, 1)).map !== here.map) break; }
       }
-      await this.idle(600, false);
+      const settled = await this.idle(600, false);
+      if (!settled.ok) return { ...settled, path };
       if (target && dbg().state().map === target.dest) return { ok: true, path };
     }
     return { max: true, path };
@@ -429,14 +547,14 @@ export const H = {
     let offered = false;
     for (let frame = 0; frame < 3000; frame++) {
       if (this.hasTask("Task_MultichoiceMenu_HandleInput")) { offered = true; break; }
-      dbg().run(1, frame % 32 === 0 ? 1 : 0);
+      this.step(frame % 32 === 0 ? 1 : 0);
       if (frame % 16 === 15) await new Promise(resolve => setTimeout(resolve, 1));
     }
     if (!offered) offered = this.hasTask("Task_MultichoiceMenu_HandleInput");
-    dbg().run(1); // release A before the explicit YES confirmation
+    this.step(); // release A before the explicit YES confirmation
     if (!offered) return { ok: false, note: "nurse offer missing", before };
     // Nurse offer opens at YES. Never walk through the healing movement script.
-    await dbg().wait(30); await dbg().press("A");
+    await this.wait(30); await this.press("A");
     if (!await this.until(() => this.fieldFree(), "A", 500)) return { ok: false, note: "nurse did not return control" };
     const after = this.resources();
     const healed = dbg().save.save.party.filter(m => m.species).every(m => m.hp === m.stats[0] && m.status === 0 && m.moves.every((id, slot) =>
@@ -461,50 +579,66 @@ export const H = {
     const lead = () => dbg().save.save.party[0];
     for (let i = 0; i < loops; i++) {
       if (lead().level >= level) return { stop: "level", party: this.party() };
-      if (lead().hp < lead().stats[0] * minHp) return { stop: "lowhp", party: this.party() };
+      if (lead().hp < lead().stats[0] * minHp) return { ok: false, status: "blocked", reason: "low-hp", stop: "lowhp", party: this.party() };
       const saved = this.battleDefaults;
       this.battleDefaults = { mode: "fight", slot };
       try {
         for (const tile of [a, b]) {
           const r = await this.goto(...tile);
-          if (r.note) return { stop: r.note, state: r };
+          if (r.note) return { ok: false, status: r.status ?? "failure", reason: r.reason ?? r.note, stop: r.note, state: r };
         }
       } finally { this.battleDefaults = saved; }
     }
-    return { stop: "loops", party: this.party() };
+    return { ok: false, status: "failure", reason: "loop-budget", stop: "loops", party: this.party() };
   },
   battleDefaults: { mode: "auto", slot: 0 },
   /** Shortest path in map-internal coords (+7), using the live collision checks. */
   bfs(tx, ty) {
     const ow = g().overworld, player = ow.player.object, objects = ow.objects;
+    if (!this.fieldFree()) return null;
     const sx = player.currentCoords.x, sy = player.currentCoords.y;
-    const key = (x, y) => `${x},${y}`;
-    // Never step on a warp (door, ladder, stairs) unless it is the target.
-    const warps = new Set(ow.loaded.header.warps.map((w) => key(w.x + 7, w.y + 7)));
-    const prev = new Map([[key(sx, sy), null]]);
-    const queue = [[sx, sy]];
-    while (queue.length) {
-      const [x, y] = queue.shift();
-      if (x === tx && y === ty) break;
+    const key = (x, y, elevation) => `${x},${y},${elevation}`;
+    const xy = (x, y) => `${x},${y}`;
+    const inside = (x, y) => x >= 7 && y >= 7 && x < ow.loaded.layout.width + 7 && y < ow.loaded.layout.height + 7;
+    // Plan only within the current map; exit() executes camera connections.
+    if (!inside(tx, ty)) return null;
+    const warps = new Set(ow.loaded.header.warps.map(w => xy(w.x + 7, w.y + 7)));
+    const initial = key(sx, sy, player.currentElevation);
+    const prev = new Map([[initial, null]]), queue = [[sx, sy, player.currentElevation]];
+    let end = null;
+    for (let head = 0; head < queue.length; head++) {
+      const [x, y, elevation] = queue[head], from = key(x, y, elevation);
+      if (x === tx && y === ty) { end = from; break; }
+      // Collision queries read the source tile and elevation. Use a virtual
+      // object for each node, without moving/mutating the real player or camera.
+      const probe = { ...player, currentCoords: { x, y }, currentElevation: elevation,
+        currentMetatileBehavior: ow.map.behaviorAt(x, y), trackedByCamera: false };
       for (const [dx, dy, dir, , name] of DIRS) {
         let nx = x + dx, ny = y + dy;
-        const c = objects.GetCollisionAtCoords(player, nx, ny, dir);
-        if (c === COLLISION_LEDGE_JUMP) { nx += dx; ny += dy; }
-        else if (c !== COLLISION_NONE && !(nx === tx && ny === ty && c === COLLISION_OBJECT_EVENT)) continue;
-        const k = key(nx, ny);
+        if (!inside(nx, ny)) continue;
+        const c = objects.GetCollisionAtCoords(probe, nx, ny, dir);
+        // The object's collision API never returns LEDGE_JUMP. PlayerAvatar's
+        // pure ledge predicate supplies it; CheckForObjectEventCollision would
+        // also increment the jump statistic, so never call it during planning.
+        if (ow.player.GetLedgeJumpDirection(nx, ny, dir)) {
+          nx += dx; ny += dy;
+          if (!inside(nx, ny) || ow.map.collisionAt(nx, ny) || objects.objectAt(probe, nx, ny)) continue;
+        } else if (c !== COLLISION_NONE && !(nx === tx && ny === ty && c === COLLISION_OBJECT_EVENT)) continue;
+        const destination = xy(nx, ny);
+        if (warps.has(destination) && !(nx === tx && ny === ty)) continue;
+        const nextElevation = ow.map.elevationAt(nx, ny);
+        const next = nextElevation === 15 || ow.map.elevationAt(x, y) === 15 ? elevation : nextElevation;
+        const k = key(nx, ny, next);
         if (prev.has(k)) continue;
-        if (warps.has(k) && !(nx === tx && ny === ty)) continue;
-        prev.set(k, [x, y, name]);
-        queue.push([nx, ny]);
+        prev.set(k, [from, name]);
+        queue.push([nx, ny, next]);
       }
     }
-    if (!prev.has(key(tx, ty))) return null;
+    if (end === null) return null;
     const steps = [];
-    for (let cur = [tx, ty]; ;) {
-      const p = prev.get(key(cur[0], cur[1]));
-      if (!p) break;
-      steps.unshift(p[2]);
-      cur = [p[0], p[1]];
+    for (let cur = end; prev.get(cur); ) {
+      const [parent, name] = prev.get(cur);
+      steps.unshift(name); cur = parent;
     }
     return steps;
   },
@@ -524,7 +658,7 @@ export const H = {
       if (s.map !== map0) return { ...s, note: "map changed" };
       if (!this.fieldFree()) {
         const r = await this.idle(opts.idle ?? 4000);
-        if (r.timeout) return { ...r, note: "script stuck" };
+        if (r.status === "blocked" || r.timeout) return { ...r, note: r.note ?? "script stuck" };
         continue;
       }
       if (s.x === x && s.y === y) return s;
@@ -535,7 +669,7 @@ export const H = {
       const steps = this.bfs(x + 7, y + 7);
       if (!steps) return { ...s, note: "no path" };
       if (!steps.length) return s;
-      await dbg().walk(steps[0], 1);
+      await this.walk(steps[0], 1);
     }
     return { ...this.st(), note: "guard" };
   },
@@ -550,14 +684,17 @@ export const H = {
       }
       if (!this.fieldFree()) {
         const settled = await this.idle(opts.idle ?? 4000);
-        if (settled.timeout) return { ...settled, note: "script stuck" };
+        if (settled.status === "blocked" || settled.timeout) return { ...settled, note: settled.note ?? "script stuck" };
         if (settled.battle) continue;
       }
+      // The pending warp may finish while idle() runs. Do not execute the old
+      // map's exit direction in the destination (it could enter the cave again).
+      if (dbg().state().map !== map0 && this.fieldFree()) return this.st();
       if (this.battleDefaults.mode === "auto" && !opts.recovery) {
         const health = await this.prepareStep();
         if (!health.ok) return { ...this.st(), note: health.note, resources: health.resources };
       }
-      await dbg().walk(dir, 1);
+      await this.walk(dir, 1);
       for (let t = 0; t < 60; t++) {
         if (this.inBattle()) {
           const b = await this.battle(this.battleDefaults.mode, this.battleDefaults.slot);
@@ -565,9 +702,9 @@ export const H = {
           if (note) return { ...this.st(), note, battleResult: b };
         }
         const s = this.st();
-        if (s.map !== map0 && !s.locked) return s;
+        if (s.map !== map0 && this.fieldFree()) return s;
         if (s.map === map0 && !s.locked && !s.script && t > 2) break;
-        await dbg().wait(30);
+        await this.wait(30);
       }
     }
     return { ...this.st(), note: "no exit" };
@@ -581,19 +718,21 @@ export const H = {
   },
   /** Face a direction without moving (tap). */
   async face(dir) {
+    if (!this.fieldFree()) return { ...this.st(), ok: false, status: "blocked", reason: "field-not-free", note: "field not free" };
     const bits = { R: 0x10, L: 0x20, U: 0x40, D: 0x80 }[dir];
+    if (!bits) throw new Error("invalid facing direction");
     const facing = { D: 1, U: 2, L: 3, R: 4 }[dir];
     const object = () => g().overworld.player.object;
     // Hold only until the turn registers so the player does not also step.
-    for (let f = 0; f < 16 && object().facingDirection !== facing; f++) dbg().run(1, bits);
-    await dbg().wait(12);
+    for (let f = 0; f < 16 && object().facingDirection !== facing; f++) this.step(bits);
+    await this.wait(12);
   },
   /** Talk across a counter: stand two tiles below (x, y), face up, press A. */
   async counter(x, y) {
     const r = await this.goto(x, y + 2);
     if (r.note) return r;
     await this.face("U");
-    await dbg().press("A");
+    await this.press("A");
     return this.st();
   },
   /** Walk next to an object/tile, face it and press A. */
@@ -604,23 +743,105 @@ export const H = {
       const r = await this.goto(x + ox, y + oy);
       if (!r.note && r.x === x + ox && r.y === y + oy) {
         await this.face(name);
-        await dbg().press("A");
+        await this.press("A");
         return this.st();
       }
     }
     return { ...this.st(), note: "cannot reach" };
+  },
+  validateCheckpointName(name) {
+    if (typeof name !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(name)) throw new Error("invalid checkpoint name");
+    return name;
+  },
+  saveSnapshot() {
+    const sv = dbg().save.save, st = this.st();
+    return { map: st.map, x: st.x, y: st.y, money: sv.money,
+      party: sv.party.filter(m => m.species).map(m => ({ species: m.species, personality: m.personality, otId: m.otId,
+        level: m.level, exp: m.exp, hp: m.hp, status: m.status, moves: [...m.moves], pp: [...m.pp], heldItem: m.heldItem })),
+      bag: JSON.parse(JSON.stringify(sv.bag)), heal: sv.lastHealLocation, escape: sv.escapeWarp,
+      saved: sv.gameStats[this.C.GAME_STAT_SAVED_GAME] };
+  },
+  /** SAVE through the normal start menu, with explicit YES on each observed prompt.
+   * Copies only bytes actually written by this operation, never calls writeSave. */
+  async saveGame({ checkpointName, maxFrames = 6000 } = {}) {
+    if (checkpointName !== undefined) {
+      this.validateCheckpointName(checkpointName);
+      if (localStorage.getItem(`fr-playtest-cp:${checkpointName}`) !== null)
+        return { ok: false, status: "blocked", reason: "checkpoint-exists", note: "checkpoint exists" };
+    }
+    if (!Number.isInteger(maxFrames) || maxFrames < 1) throw new Error("invalid save budget");
+    if (!this.fieldFree()) return { ok: false, status: "blocked", reason: "field-not-free", note: "field not free" };
+    const S = await this.mod("/src/fr/save.ts"), SM = await this.mod("/src/fr/startMenu.ts");
+    if (S.FlagGet(this.C.FLAG_SYS_SAFARI_MODE)) return { ok: false, status: "blocked", reason: "save-unavailable", note: "SAVE unavailable in Safari Zone" };
+    const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(this.C.FLAG_SYS_POKEDEX_GET),
+      pokemonObtained: S.FlagGet(this.C.FLAG_SYS_POKEMON_GET), linkStateActive: false, inUnionRoom: false, inSafariZone: false };
+    SM.SetUpStartMenu(menu);
+    const index = menu.order.indexOf(4); // start_menu.c STARTMENU_SAVE
+    if (index < 0) return { ok: false, status: "blocked", reason: "save-unavailable", note: "SAVE unavailable" };
+    const before = this.saveSnapshot(), rawBefore = localStorage.getItem(SAVE_KEY);
+    const cursor = g().startMenuCursor;
+    await this.tap(8, 12);
+    if (!await this.until(() => this.hasTask("startInput"), null, 60)) return { ok: false, note: "start menu did not open" };
+    for (let i = 0; i < (index - cursor + menu.numItems) % menu.numItems; i++) await this.tap(0x80, 12);
+    await this.tap(1, 12);
+    const prompts = [];
+    for (let f = 0; f < maxFrames; f++) {
+      if (this.fieldFree()) break;
+      const callback = g().activeSaveDialog?.saveDialogCB.name;
+      if (["SaveDialogCB_AskSaveHandleInput", "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"].includes(callback)) {
+        if (prompts.length >= 2) return { ok: false, note: "unexpected additional save prompt", prompts };
+        await this.tap(0x40, 1); // YES, including the different-file default NO
+        this.step();this.step(1);
+        if (g().activeSaveDialog?.saveDialogCB.name === callback) return { ok: false, note: "save choice did not close", prompts };
+        this.step();
+        prompts.push({ frame: g().frameCount, callback });
+        continue;
+      }
+      this.step(g().overworld.messageBox.printer?.active && f % 32 === 1 ? 1 : 0);
+      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
+    }
+    const raw = localStorage.getItem(SAVE_KEY), after = this.saveSnapshot();
+    if (!this.fieldFree() || after.saved !== before.saved + 1 || !raw || raw === rawBefore)
+      return { ok: false, note: "SAVE did not finish and persist", before, after, prompts };
+    const { saved: oldCounter, ...oldState } = before, { saved: newCounter, ...newState } = after;
+    if (JSON.stringify(oldState) !== JSON.stringify(newState)) return { ok: false, note: "SAVE changed semantic state", before, after, prompts };
+    const data = JSON.parse(raw);
+    if (data.gameStats[this.C.GAME_STAT_SAVED_GAME] !== after.saved || data.pos.x !== after.x || data.pos.y !== after.y)
+      return { ok: false, note: "written save does not match live state", before, after, prompts };
+    const receipt = { source: "in-game-SAVE", before, after, prompts };
+    if (checkpointName !== undefined) {
+      if (localStorage.getItem(`fr-playtest-cp:${checkpointName}`) !== null) return { ok: false, note: "checkpoint appeared during SAVE" };
+      localStorage.setItem(`fr-playtest-cp:${checkpointName}`, raw);
+      localStorage.setItem(`fr-playtest-meta:${checkpointName}`, JSON.stringify(receipt));
+    }
+    return { ok: true, ...receipt, checkpointName: checkpointName ?? null, rawLength: raw.length };
+  },
+  /** Return exact persisted bytes and provenance, without manufacturing a save. */
+  async checkpointData(name) {
+    this.validateCheckpointName(name);
+    const raw = localStorage.getItem(`fr-playtest-cp:${name}`);
+    if (!raw) throw new Error(`no checkpoint ${name}`);
+    const bytes = new TextEncoder().encode(raw), digest = await crypto.subtle.digest("SHA-256", bytes);
+    const sha256 = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+    const provenance = JSON.parse(localStorage.getItem(`fr-playtest-meta:${name}`) ?? "null");
+    return { name, raw, sha256, provenance };
   },
   /**
    * Debug checkpoint: Game.writeSave() plus a named copy in localStorage.
    * Not the in-game SAVE flow (test that separately through the start menu).
    */
   checkpoint(name) {
-    g().writeSave();
+    this.validateCheckpointName(name);
+    if (!this.fieldFree()) throw new Error("field not free for debug checkpoint");
+    if (localStorage.getItem(`fr-playtest-cp:${name}`) !== null) throw new Error("checkpoint exists");
+    if (!g().writeSave()) throw new Error("debug save failed");
     localStorage.setItem(`fr-playtest-cp:${name}`, localStorage.getItem(SAVE_KEY));
+    localStorage.setItem(`fr-playtest-meta:${name}`, JSON.stringify({source: "PREPARED-debug-writeSave"}));
     return name;
   },
   /** Restore a checkpoint into the save slot; then load `?fr=continue`. */
   restore(name) {
+    this.validateCheckpointName(name);
     const data = localStorage.getItem(`fr-playtest-cp:${name}`);
     if (!data) throw new Error(`no checkpoint ${name}`);
     localStorage.setItem(SAVE_KEY, data);
@@ -632,6 +853,7 @@ export const H = {
    * write it with: echo <b64> | base64 -d | gunzip > tools/playtest/saves/<name>.json
    */
   async exportSave(name) {
+    this.validateCheckpointName(name);
     const data = localStorage.getItem(`fr-playtest-cp:${name}`);
     if (!data) throw new Error(`no checkpoint ${name}`);
     const gz = await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
@@ -641,14 +863,35 @@ export const H = {
   },
   /** Load tools/playtest/saves/<name>.json as checkpoint <name> and restore it. */
   async importSave(name) {
+    this.validateCheckpointName(name);
     const res = await fetch(`/tools/playtest/saves/${name}.json`);
     if (!res.ok) throw new Error(`no saved checkpoint ${name}`);
-    localStorage.setItem(`fr-playtest-cp:${name}`, await res.text());
+    const raw = await res.text(), data = JSON.parse(raw);
+    if (!Array.isArray(data.party) || !data.location || !data.pos) throw new Error("invalid saved checkpoint");
+    localStorage.setItem(`fr-playtest-cp:${name}`, raw);
+    localStorage.setItem(`fr-playtest-meta:${name}`, JSON.stringify({source: "fixture", path: `/tools/playtest/saves/${name}.json`}));
     this.restore(name);
   },
   checkpoints() {
     return Object.keys(localStorage).filter((k) => k.startsWith("fr-playtest-cp:")).map((k) => k.slice(15));
   },
 };
+// Primitive predicates keep boolean returns. Public actions keep their existing
+// payloads and add a common envelope; exceptions (including abort) propagate.
+for (const name of ["walk", "goto", "exit", "enter", "face", "counter", "talk", "explore", "grind", "battle", "heal", "useItem", "prepareStep", "saveGame"]) {
+  const action = H[name];
+  H[name] = async function(...args) {
+    this.checkExecution();
+    const value = await action.apply(this, args);
+    this.checkExecution();
+    const result = value ?? this.st();
+    if (result.status) return result;
+    const note = result.note;
+    const failed = result.ok === false || result.timeout || result.stuck || result.max ||
+      note && note !== "map changed" || name === "battle" && this.battleStop(result);
+    return { ...result, ok: !failed, status: failed ? "failure" : "success",
+      reason: result.reason ?? result.stop ?? note ?? (result.max ? "step-budget" : failed ? "action-failed" : "completed"), action: name };
+  };
+}
 const SAVE_KEY = "pokemon-gba-web-lab.firered.v2";
 window.H = H;

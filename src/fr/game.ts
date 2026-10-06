@@ -458,6 +458,8 @@ export class Game {
   private startMenuWindows: Window[] = [];
   private startMenuSafariStats: Window | null = null;
   private startMenuSaveStats: Window | null = null;
+  /** Active source save callback, also observable by the development driver. */
+  activeSaveDialog: SaveDialogRuntime | null = null;
 
   private removeStartMenuWindows(): void {
     DestroyHelpMessageWindow(this.overworld.windows, 0);
@@ -491,6 +493,7 @@ export class Game {
     let taskId = -1;
     let startCallback: (dialog: SaveDialogRuntime) => boolean = StartCB_Save1;
     const dialog = this.createSaveDialog((result) => {
+      this.activeSaveDialog = null;
       tasks.destroy(taskId);
       if (result === 2) {
         this.removeStartMenuWindows();
@@ -498,7 +501,8 @@ export class Game {
       } else this.closeStartMenu();
       RestoreHelpContext();
     });
-    taskId = tasks.create(() => {
+    this.activeSaveDialog = dialog;
+    taskId = tasks.create(function saveInput() {
       if (startCallback(dialog)) return;
       startCallback = StartCB_Save2;
     }, 80);
@@ -506,6 +510,8 @@ export class Game {
 
   private createSaveDialog(finish: SaveDialogRuntime["finish"]): SaveDialogRuntime {
     const ow = this.overworld;
+    let yesNoWindow: Window | null = null;
+    let yesNoMenu: Menu | null = null;
     const dialog: SaveDialogRuntime = {
       saveDialogCB: SaveDialogCB_PrintAskSaveText,
       saveDialogDelay: 0,
@@ -514,13 +520,24 @@ export class Game {
       messageIsHidden: () => ow.messageBox.isHidden(),
       showMessage: (text) => { ow.messageBox.hide(); ow.messageBox.show(expandPlaceholders(text)); },
       hideMessage: () => ow.messageBox.hide(),
-      showYesNo: (defaultNo = false) => this.scriptMenu.ScriptMenu_YesNo(0, 0, defaultNo ? 1 : 0),
+      // start_menu.c uses DisplayYesNoMenuDefaultYes/No and polls its own
+      // menu. ScriptMenu_YesNo resumes the field script and is not this flow.
+      showYesNo: (defaultNo = false) => {
+        yesNoWindow = new Window(20, 8, 6, 4);
+        yesNoWindow.frame = "std";
+        ow.windows.add(yesNoWindow);
+        printText(yesNoWindow, FONT_NORMAL, rom.text("gText_YesNo"), 10, 2);
+        yesNoMenu = new Menu(yesNoWindow, FONT_NORMAL, 0, 2, 14, 2, defaultNo ? 1 : 0);
+      },
       processInput: () => {
-        const result = varGet(0x800d);
-        if (result === 0xff) return -2;
-        if (result === 1) return 0;
-        if (result === 0) return 1;
-        return -1;
+        if (!yesNoMenu) return MENU_NOTHING_CHOSEN;
+        const result = yesNoMenu.processInputNoWrap();
+        if (result !== MENU_NOTHING_CHOSEN) {
+          if (yesNoWindow) ow.windows.remove(yesNoWindow);
+          yesNoWindow = null;
+          yesNoMenu = null;
+        }
+        return result;
       },
       hasUsableSave: () => saveStore.load() !== undefined,
       printSaveStats: () => {
