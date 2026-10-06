@@ -188,9 +188,9 @@ profundidad visual en navegador y escuchar transiciones de música.
 
 ## 4. Tareas para Muse Spark 1.3
 
-Estado de entregas revisadas en ramas Muse; no implica integración en la rama
-actual. Revisión M10/M11 en checkout aislado de `muse/visor-m11` (`ddd899ae`).
-`opencode/B1-metatile` todavía parte del viewer anterior a M6–M11; no se fusionó código.
+M1–M11/R1–R6 revisadas e integradas (`ebe759c4`). Check integrado del viewer:
+buscador Azulona, ARIA de popovers, minimapa con teclado y cierre de diálogo PASS.
+Interacción NPC activada con DOM click **PREPARED**; no equivale a recorrido narrativo.
 
 Asignación por tamaño/acoplamiento, sin afirmar una evaluación comparativa del
 modelo. **Una tarea por vez y revisión del diff antes de la siguiente.**
@@ -565,8 +565,8 @@ Las instrucciones siguientes quedan como criterios ya revisados.
 **Aceptar:** tabla coherente con callers y metadatos; recursos, frames y conexión
 verificados independientemente. Diff/enlaces/honesty antes del commit documental.
 M12/M13 siguen bloqueadas por las APIs de C7; no empezar sus cambios por haber
-entregado M10/M11. La discrepancia entre ramas requiere integración posterior del
-revisor, no cherry-picks ni fusión por Muse sin coordinación.
+entregado M10/M11. La integración revisada está completada; futuras entregas van
+en ramas propias y las fusiona el revisor tras comprobarlas.
 
 #### M11 — Diálogos de interacción seguros y accesibles [aceptada en rama Muse]
 
@@ -652,12 +652,12 @@ editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento f
 
 ## 5. Orden y cierre
 
-Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
-sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
+Codex: C3 para cámara/zoom, reloj compartido de C2 y contrato de efectos C7 para
+desbloquear M12; después C6 y exploración C1/C7 sobre el modelo, con C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M11 y R1–R6 cerradas en sus ramas; integración pendiente. M12 → M13
+Muse: M1–M11 y R1–R6 cerradas e integradas. M12 → M13
 esperan APIs/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
-Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
+Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de nuevas entregas.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
 autorizado por la clarificación del usuario. No ampliar regiones ni añadir batallas
@@ -668,5 +668,17 @@ CSS y módulos búsqueda/ficha/minimapa; musicName/copia de partidas también ex
 Modularización sigue parcial; sandbox del juego completo existe en motor pero su
 desconexión no bloquea el sandbox creativo del viewer.
 
-Entrega actual: **auditoría y asignación**, no reparación. No se cambió código
-del visor/motor. Marcar tareas terminadas solo tras cumplir aceptaciones.
+Siguiente entrega de Codex para Muse (todavía no implementada):
+1. C3: una transformación de cámara/zoom; selección y scroll coherentes en extremos.
+2. C2/C7: reloj GBA compartido, suscripción/cancelación y pausa sin recuperar tiempo
+   oculto; loader/cache tipado de templates y validación de recursos/comandos.
+3. C7: eventos con coordenadas de mundo, prioridad, dirección y generación de sesión;
+   activación por terreno y lifecycle conectados, con checks focalizados antes de
+   entregar el contrato a Muse. No dejar solo interfaces sin callers.
+4. Muse M12: hierba/polvo/ondas consumen ese contrato; Codex compara ticks/secuencias
+   y revisa recorrido. Codex prepara tabla de variantes fuente para Muse M13.
+
+Entrega actual: **integración de entregas revisadas**, no sandbox completo.
+Checks de integración sin errores de navegador: viewer, C5, Brock desde checkpoint,
+PC depósito/retiro y estados de audio. Curación, ruta previa de C6, escucha humana,
+MOVE ITEMS con caja vacía y animaciones completas del viewer siguen pendientes.

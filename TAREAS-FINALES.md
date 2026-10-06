@@ -133,18 +133,19 @@ Abiertas:
 - [x] 1.16 **Poké Ball desde la mochila en combate** [medio]. Era fallo del driver,
   no del juego: el borrador navegaba al bolsillo 1 (objetos clave) y pulsaba A sobre
   la Bici, cuyo menú solo-CANCELAR vuelve a la mochila. Con el bolsillo 2 (`OPEN_BAG_POKEBALLS`)
-  la bola se lanza y el borrador C5 captura al primer tiro (`927c206c`).
+  la bola se lanza (`927c206c`); check integrado C5 captura en equipo con 2 lanzamientos.
 - [x] 1.17 **Brock inicia el combate con `H.talk`** [medio]. Era fallo del juego:
   `GetMovementScriptIdFromObjectEventId` devolvía -1 (`findIndex`) frente al
   centinela 16 del C, así que `applymovement` nunca obtenía slot y `waitmovement`
   colgaba el reveal de Brock. Con el centinela como `script_movement.c`, el
   combate arranca, se gana, hay medalla y el dinero sube 3150→4550 (`3b709ab5`).
-  C6 queda desbloqueado para automatizar.
+  Job C6 integrado (`caa6885d`) y repetido: medalla y 3150→4550.
 - [ ] 1.18 **MOVE ITEMS con caja vacía rompe el PC** [medio]. Con `pewter-pc`, entrar
   en MOVE ITEMS revienta `InitBoxMonSprites` (`storageSystemGraphics.ts:121`):
   `boxMonsSprites[pos]!.oam` sobre null. El C
-  (`pokemon_storage_system_graphics.c:334-338`) también desreferencia NULL (en HW
-  escribe a la ROM-BIOS = no-op); decidir fidelidad antes de poner la guarda.
+  (`pokemon_storage_system_graphics.c:334-338`) también desreferencia NULL.
+  Comportamiento original en hardware/emulador pendiente de verificar; no se
+  afirma que sea un no-op. Decidir tratamiento fiel del acceso inválido antes de corregir.
 
 ## 2. Revisión de equivalencias y wrappers contra el C
 
@@ -325,7 +326,7 @@ Reparto por dificultad:
   acción y un resultado medible: C8 (curar y depositar/retirar), C13 (música de
   combate, efectos y gritos por estado de `sound`) y ampliar C1.
 - **Agente avanzado o revisor:** puntos donde la prueba destapa fallos del juego y hay
-  que leer el C: 1.16 → C5, 1.17 → C6, C2 (Oak completo hasta el rival), C4 (Quest
+  que leer el C: 1.18 (PC vacío), C2 (Oak completo hasta el rival), C4 (Quest
   Log), C11 (evolución) y C12 (ruta con puertas, conexiones y cueva).
 
 Receta manual (si un punto no se puede automatizar):
@@ -354,10 +355,12 @@ Receta manual (si un punto no se puede automatizar):
   PARCIAL: el smoke llega del título a Oak (`da01814a`); no alcanza el campo.
 - [x] **C3 Guardar y continuar**: misma posición, equipo y dinero — `play:smoke` con `pewter` (`190efec3`).
 - [ ] **C4 Quest Log**: tras continuar se reproduce el resumen y devuelve el control.
-- [ ] **C5 Combate salvaje**: atacar, huir y capturar; el capturado aparece en equipo o PC.
-  PARCIAL: luchar y huir pasan en el borrador; la captura espera a 1.16.
+- [x] **C5 Combate salvaje**: luchar, huir y capturar con pulsaciones reales
+  (`d59b5003`), repetido sobre integración: captura en equipo y consumo de 2 balls.
+  Ruta alternativa hacia PC con equipo lleno aún no recorrida.
 - [ ] **C6 Combate de entrenador**: partida `pewter` → gimnasio → Brock; medalla y dinero.
-  PARCIAL: carga `gym-camper`; el combate espera a 1.17.
+  PARCIAL: `gym-camper` → Brock, victoria, medalla y 3150→4550 comprobados
+  con el job `caa6885d` sobre integración. Falta la ruta previa desde `pewter` al gimnasio.
 - [x] **C7 Derrota (whiteout)**: reaparece en el Centro Pokémon **mirando al norte**,
   equipo curado y dinero reducido — `play:smoke` pierde un combate real (`fea0682e`).
 - [ ] **C8 Centro Pokémon y PC**: depósito/retiro automatizado con pulsaciones reales
@@ -372,7 +375,6 @@ Receta manual (si un punto no se puede automatizar):
 - [ ] **C13 Audio**: música por mapa y combate, efectos y gritos; escucha humana del M4A.
   PARCIAL: el smoke verifica BGM de mapa (303) y de combate salvaje (298), SE y
   grito por estado (`9b95defe`); falta la escucha humana.
-  PARCIAL: el smoke comprueba la música del mapa en WebAudio; falta lo demás.
 - [x] **C14 Clima**: niebla y sombra en mapas reales (1.6).
 
 ### 3.1 Lista completa por áreas
@@ -470,7 +472,7 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
 - [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
   Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;
   Codex C1–C7. Sin batallas/historia; zoom/audio/editor siguen pendientes.
-  Entregas en ramas Muse: M1–M9/R1–R5 cerradas; M11 aceptada (`ddd899ae`),
+  Entregas integradas: M1–M9/R1–R5 cerradas; M11 aceptada (`ddd899ae`),
   M10 aceptada tras R6 (`3ac164a7`), revisión en VISOR-MEJORAS §4; M12/M13 esperan APIs de C7.
-  Base de la rama R6/B1-metatile anterior a M6–M11: integración de esas entregas pendiente;
-  revisión aislada, sin fusionar código ni alterar trabajo del motor.
+  Integración `ebe759c4`: viewer, 1.16/1.17, jobs C5/C6/C8/C13 y revisión B1.
+  Tipos/build/honesty y checks focalizados PASS; C8/C13 siguen MANUAL parcial.
