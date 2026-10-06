@@ -46,7 +46,7 @@ export default async function run(ctx) {
     if (process.env.SON_MM_DRYRUN === "1") throw new Error("DRYRUN: stop requested before walking");
     let last = null, same = 0;
     for (let i = 0; i < 70; i++) {
-      const r = await runJob(ctx, `H.battleDefaults = { mode: "auto", slot: 0 }; return await window.__step();`, { prefix: `${prelude}${helpers}` });
+      const r = await runJob(ctx, `H.battleDefaults = { mode: "auto", slot: 0 }; return await window.__step();`, { prefix: `${prelude}${helpers}`, timeoutMs: 300000 }); // 110 s ended the Miguel step in a battle at 47k of 150k frames (attempt 3)
       if (r && r.ok === false) { evidence.legs.push({ action: "job", bad: r.reason ?? r.status, driver: r }); writeEvidence(out, evidence); throw new Error(`STOP: job ${r.reason ?? r.status}`); }
       evidence.legs.push(r);
       writeEvidence(out, evidence);
