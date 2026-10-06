@@ -166,6 +166,12 @@ Abiertas:
   devolución al Centro; runner ok:false devuelve exit1. Estrategia/curación
   automática y reemplazos con más miembros requieren revisión focalizada posterior.
 
+- [x] **SOL-DRV01 decisiones/recursos/curación del driver**: 66baef56, política auto
+  con tipos/PP/restricciones y stats, medicinas/objetivo identificado por UI,
+  enfermera verificada, reserva/retirada y presupuestos. Casos PREPARED focalizados
+  pasan en campo/salvaje/Brock/cambio/medicina tras cambio; C7 explícito conserva
+  whiteout. Sin claim de ruta completa/C8, ni todas las interacciones del combate.
+
 ## 2. Revisión de equivalencias y wrappers contra el C
 
 Funciones con nombre C que delegan en lógica adaptada. Un bloque de archivo por sesión.

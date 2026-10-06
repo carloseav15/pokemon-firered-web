@@ -166,16 +166,15 @@ Leer AGENTS.md, PORTING-STATUS.md, TAREAS-FINALES §1/§3/§4 y las secciones de
 plan correspondientes al paquete. Respetar cambios ajenos. Si el usuario te asigna
 uno de estos roles, ejecutar solo sus tareas habilitadas y entregar evidencia:
 
-| Agente | Primer paquete | Después | No le corresponde |
+| Agente | Paquete vigente | Después | No le corresponde |
 |---|---|---|---|
-| GPT-6.1 Sol | SOL-01 | SOL-02/03 y preparación del siguiente tramo | Repetir toda la ruta de los ejecutores por rutina |
-| GPT-6 Luna | LUNA-01, tras contrato SOL-01 | LUNA-02 cuando Sol indique commit y jobs afectados | Modificar motor, tests o criterios para conseguir PASS |
-| Sonnet 5.5 | SON-MM01, tras contrato SOL-01 | SON-03 tras aceptar llegada a Celeste; SON-01/02 para validar cadena previa | Saltar bloqueos de historia o abrir otra cadena de ruta |
-| Gemini Flash 3.8 | FLASH-02, tras contrato SOL-01 | FLASH-03 tras revisión de primera tanda | Corregir el motor o ejecutar de nuevo la historia de Sonnet |
+| GPT-6.1 Sol | SOL-DRV01 entregada; revisión de SON-PREP/C8 | SOL-02/03 y preparación del siguiente tramo | Repetir toda la ruta de los ejecutores por rutina |
+| GPT-6 Luna | LUNA-02 sobre 66baef56, jobs del contrato final | C8 después de aceptar FLASH-02-R2 | Modificar motor, tests o criterios para conseguir PASS |
+| Sonnet 5.5 | SON-PREP sobre 66baef56 | SON-MM01-R tras aceptar entrada preparada; SON-03 tras Celeste | Saltar bloqueos de historia o abrir otra cadena de ruta |
+| Gemini Flash 3.8 | FLASH-02-R2 sobre 66baef56 | C5/FLASH-03 después de C8 y contrato de Sol | Corregir el motor o ejecutar de nuevo la historia de Sonnet |
 
-SOL-01 es la única tarea habilitada sin una base fijada. Los otros agentes pueden
-leer y preparar comandos mientras tanto, pero no empezar pruebas sobre una base
-inventada. Una dependencia requiere entrega y aceptación; transcurrir tiempo no
+SOL-01 ya está entregada. Los paquetes vigentes usan la base fijada en el
+contrato tras SOL-DRV01; no empezar pruebas sobre una base inventada. Una dependencia requiere entrega y aceptación; transcurrir tiempo no
 la desbloquea. Para segunda tanda, Sol revisa primera tanda y publica commit nuevo.
 No crear subagentes ni enviar mensajes a otros chats por esta asignación; entregar
 al usuario/revisor los resultados en el chat donde se asignó el paquete.
@@ -503,7 +502,7 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
 
 ### Siguiente ronda, lineal hasta tener preparación fiable
 
-- [ ] **SOL-DRV01 — Driver y estrategia de combate (Sol).** Parada tras pérdida/
+- [x] **SOL-DRV01 — Driver y estrategia de combate (Sol).** Entrega 66baef56: Parada tras pérdida/
   atasco integrada en 65e631f9 y comprobada con C7; no reanudar automáticamente. Completar
   decisión por Pokémon activo, enemigo, movimientos disponibles/PP y tabla de
   tipos de la fuente; registrar decisión y HP/PP antes/después. No repetir
@@ -571,3 +570,62 @@ diff --check; C7 con derrota natural devolvió `battle lost` y whiteout correcto
 El runner aislado ahora devuelve exit1 con ok:false (error intencional de harness,
 no de juego). 0 cuerpos C nuevos y 0 equivalencias. C5 PASS aislado y 1.18 FAIL
 son evidencia de sus casos; no sustituyen C8 ni la ruta de historia.
+
+
+### Contrato de ejecución tras SOL-DRV01 — 2026-10-06
+
+Base de código común: **66baef563892ff5191252acd213d823e5e2748dd**. No usar ya
+bd41849f para la nueva ronda. Leer el plan actual en main aunque el checkout
+propio todavía sea antiguo. Reusar los worktrees de cada ejecutor conservando
+cambios ajenos. Sonnet/Luna pueden avanzar con fast-forward si siguen limpios;
+Flash integra esta base en su rama propia conservando 394b82b0, sin fusionar main
+ni cambiar el motor. Si hay conflicto, entregar a Sol antes de adaptar expectativas.
+No arrancar automáticamente agentes; el usuario copia los prompts.
+
+Pruebas de Sol: selección de tipos/PP/restricciones; objetos en campo al segundo
+miembro; reserva y PP agotado impiden movimiento; enfermera y salida del Centro;
+combate salvaje con poción real; Brock con Látigo Cepa ×4; cambio voluntario,
+medicina al activo tras el cambio y huida. C7 explícito pasó. Entradas médicas y
+orden de equipo de los jobs identificadas PREPARED. Tipos, honestidad y build
+pasaron. No demuestra ruta completa, persistencia C8 ni calidad audiovisual.
+
+**Comandos focalizados para Luna** (puerto 5199, perfil aislado por job):
+```sh
+node tools/playtest/strategy.check.mjs
+PW_BASE=http://127.0.0.1:5199/ node tools/playtest/pw.mjs tools/playtest/smoke/driver-strategy.job.mjs /tmp/pw/luna-driver-resources
+PW_BASE=http://127.0.0.1:5199/ node tools/playtest/pw.mjs tools/playtest/smoke/driver-auto-battle.job.mjs /tmp/pw/luna-driver-auto
+PW_BASE=http://127.0.0.1:5199/ node tools/playtest/pw.mjs tools/playtest/smoke/driver-switch.job.mjs /tmp/pw/luna-driver-switch
+PW_BASE=http://127.0.0.1:5199/ node tools/playtest/pw.mjs tools/playtest/smoke/C7-whiteout.job.mjs /tmp/pw/luna-driver-c7
+```
+Leer JSON/errors/exit. `driver-switch` corta el primer combate a 500 iteraciones
+para observar cambio y ataque; `stuck:true` de ese segmento es deliberado y no
+significa victoria. Luego verifica medicina/huida reales. Su aceptación global
+exige completar esas acciones; si expira/falla, conservar evidencia y reportar.
+No ajustar el límite o el resultado para convertirlo en PASS.
+
+**Sonnet:** ahora solo SON-PREP, puerto 5197. Configurar auto antes de empezar,
+leer H.resources y H.prepareStep, usar H.heal por UI. Para retirada usar recovery
+con destino al Centro. Comprar hasta 8 pociones/3 antídotos por UI, con presupuesto
+contrastado, curar después del trayecto y fijar respawn de Ruta4 por entrada real.
+Guardar desde menú; demostrar incremento de GAME_STAT_SAVED_GAME y persistencia
+antes de exportar el JSON realmente escrito en localStorage. H.checkpoint llama
+writeSave: no usarlo para acreditar GUARDAR ni ocultar un fallo. Exportar
+mtmoon-prepared.json con procedencia; no iniciar SON-MM01-R hasta aceptación de
+Sol. Dos intentos diagnósticos máximo, detener jobs/timer propios al acabar.
+
+**Flash:** FLASH-02-R2, puerto 5198, prioridad C8. Integrar base en su rama y revisar
+su entrega original. H.fieldFree ayuda a detectar los menús suspendidos; no
+sustituye prueba de movimiento real y guardado escrito. Corregir cierre por UI,
+comparar orden/ambas identidades/caja/dinero/mapa/coords antes y después de guardar.
+Tabla PP del C independiente, preparar solo entradas médicas declaradas. No
+corregir motor ni 1.18, no tocar baselines/saves originales. Job reproducible y
+commit de tests selectivo, checks de AGENTS; escalar juego/driver si dos intentos
+no resuelven el fallo. C5 queda para su contrato posterior.
+
+**Luna:** LUNA-02, puerto 5199. Ejecutar exclusivamente comandos arriba en la base
+fijada, sin modificar nada. C8 espera entrega corregida y aceptada; no repetir
+smoke completo, capturas de clima/audio ni la ruta de Sonnet en esta ronda.
+
+Los tres paquetes pueden ejecutarse en paralelo con perfiles/worktrees separados.
+La ruta de Monte Moon sigue lineal: SON-PREP → revisión Sol → SON-MM01-R. Cada
+entrega informa SHA probado, ayudas, acciones reales, resultados y límites.
