@@ -168,10 +168,10 @@ uno de estos roles, ejecutar solo sus tareas habilitadas y entregar evidencia:
 
 | Agente | Paquete vigente | Después | No le corresponde |
 |---|---|---|---|
-| GPT-6.1 Sol | SOL-DRV01 entregada; revisión de SON-PREP/C8 | SOL-02/03 y preparación del siguiente tramo | Repetir toda la ruta de los ejecutores por rutina |
-| GPT-6 Luna | LUNA-02 sobre 66baef56, jobs del contrato final | C8 después de aceptar FLASH-02-R2 | Modificar motor, tests o criterios para conseguir PASS |
-| Sonnet 5.5 | SON-PREP sobre 66baef56 | SON-MM01-R tras aceptar entrada preparada; SON-03 tras Celeste | Saltar bloqueos de historia o abrir otra cadena de ruta |
-| Gemini Flash 3.8 | FLASH-02-R2 sobre 66baef56 | C5/FLASH-03 después de C8 y contrato de Sol | Corregir el motor o ejecutar de nuevo la historia de Sonnet |
+| GPT-6.1 Sol | SON-PREP/C8 aceptadas; contrato C5 y H.heal1.23 | SOL-02/03 y preparación del siguiente tramo | Repetir toda la ruta de los ejecutores por rutina |
+| GPT-6 Luna | Continue aceptado; C8/Brock sobre14238405 | C8 después de aceptar FLASH-02-R2 | Modificar motor, tests o criterios para conseguir PASS |
+| Sonnet 5.5 | SON-MM01-R con mtmoon-prepared aceptado | SON-MM01-R tras aceptar entrada preparada; SON-03 tras Celeste | Saltar bloqueos de historia o abrir otra cadena de ruta |
+| Gemini Flash 3.8 | R2 aceptada; espera contrato C5 | C5/FLASH-03 después de C8 y contrato de Sol | Corregir el motor o ejecutar de nuevo la historia de Sonnet |
 
 SOL-01 ya está entregada. Los paquetes vigentes usan la base fijada en el
 contrato tras SOL-DRV01; no empezar pruebas sobre una base inventada. Una dependencia requiere entrega y aceptación; transcurrir tiempo no
@@ -512,7 +512,7 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
   entrenadores y salvajes para huida. Probar casos focalizados con entradas
   PREPARED explícitas si son necesarias; nunca preparar victoria/daño final.
   No desplegar una IA general para esta ruta ni usar fórmulas del TS como oráculo.
-- [ ] **SON-PREP — Preparar una entrada sostenible (Sonnet, tras SOL-DRV01).**
+- [x] **SON-PREP — Preparar una entrada sostenible (Sonnet, tras SOL-DRV01).**
   Desde checkpoint importado, ir por entradas reales al Centro de Ruta4; curar,
   verificar HP/PP/estado y fijar respawn allí. Comprar por UI en Plateada hasta
   tener 8 pociones y 3 antídotos: con la bolsa inicial cuesta 6×300 + 3×100=2100,
@@ -533,8 +533,8 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
   curar antes de quedar a un golpe y detenerse si ambos están dañados o sin ataque
   útil. Dos intentos máximo desde el nuevo checkpoint; guardar traza del fallo y
   devolver a Sol. No repetir la cueva completa indefinidamente.
-- [ ] **FLASH-02-R2 — C8 sin falso positivo (Flash, prioridad antes de C5).**
-  Conservar 394b82b0 como entrega original; no integrarla aún. Revisor dejó borrador
+- [x] **FLASH-02-R2 — C8 sin falso positivo (Flash, prioridad antes de C5).**
+  Cerrada con 0d982c02, integrada en85e1e082 tras repetición. Diagnóstico previo: revisor dejó borrador
   en `../pokemon-cleanup-backup-2026-10-06/review-first-wave/C8-persistence-review.job.mjs`
   (FAIL, no solución aceptada). Corregir primero cierre del PC: verificar que se
   cancela el menú padre, no queda Task_MultichoiceMenu_HandleInput y un paso real
@@ -546,7 +546,7 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
   estable y tabla PP independiente del C, no rom.moves como único oráculo.
   Si persiste solapamiento, entregar snapshot de tareas/callbacks/VAR_RESULT a Sol;
   no modificar motor, ni parchear controles/estado para obtener PASS. Dos intentos
-  diagnósticos máximo. C8 original en main continúa MANUAL para curación completa.
+  diagnósticos máximo. C8 actual pasa para el fixture de un miembro; equipo completo y audiovisual siguen pendientes.
 - [ ] **FLASH-C5-R1 — C5 fiable (Flash, tras contrato de Sol).** Separar lanzar bola
   por UI, conteo/consumo, captura y transferencia a caja con equipo lleno. El
   agotamiento legítimo de bolas debe terminar limpiamente y dejar evidencia del
@@ -704,3 +704,30 @@ QL_SAVE_PATH=/Users/carancibia/Documents/ChatGPT/pokemon-son-prep-evidence/writt
 El job exige escenas reproducidas, estado guardado, bytes persistidos intactos y
 movimiento. Datos de entrada escritos por menú; no modifica sus archivos ni prepara
 resultados. La variante sin escenas usa pewter-pc.
+
+
+### Tercera revisión: entregas aceptadas e integradas — 2026-10-06
+
+| Agente | Entrega y contraste del revisor | Resultado |
+| --- | --- | --- |
+| Sonnet | b765818f, merge a8fc2c6a. Exportado idéntico a los bytes escritos en run2 y su SHA256; questlog-continue repetido por Sol | SON-PREP aceptada: Centro Ruta4(7,5), PidgeyL13/IvysaurL17 sanos,8 pociones/3 antídotos,1808, contador1 y movimiento posterior. No Monte Moon completo |
+| Flash | 0d982c02, merge85e1e082. Job repetido: ambos snapshots esperados/observados iguales, guardados0→1, sin errores | FLASH-02-R2 /1.20 cerrada para PC y enfermera de un miembro. Etiqueta Pikachu corregida a Bulbasaur por revisor |
+| Luna | Base4ce0ab7f, worktree limpio. Dos continue PASS, combate MANUAL parcial porque idle descartaba su retorno | Revisión aceptada. Hallazgo de cobertura correcto: revisor14238405 comprueba retorno libre y paso real tras Brock; repetición PASS |
+
+**Base común siguiente: 14238405.** Los checks check:port/check:honesty/build
+y diff --check pasaron; inventario y pending sin delta,0 nuevas/0 equivalencias.
+Evidencia durable: ../pokemon-cleanup-backup-2026-10-06/review-third-wave/.
+SHA256 del save aceptado:
+45b315d09e759b98f1f84d890ce8d8d1c906166cce214ca44ee9c28b543a2968.
+No push ni eliminación de worktrees; todas las entregas revisadas están en main.
+
+**Siguiente:** Sonnet SON-MM01-R desde mtmoon-prepared, siguiendo la ruta acotada
+y límites del contrato existente; aceptación de entrada ya concedida por revisión.
+Antes de ejecutar actualizar su rama al código común preservando su historial.
+Flash C5 solo cuando Sol fije entrada y contrato (captura vs agotamiento legítimo,
+RNG/PREPARED y transferencia a caja); no reintentar captura a ciegas. Luna puede
+comprobar C8 y driver-auto reforzado en14238405, sin suite completa ni duplicar
+la ruta. Sol prepara C5 y diagnostica H.heal1.23; snapshots NPC1.22 siguen aparte.
+
+No se mandaron prompts a chats ni se iniciaron agentes. Las tareas antiguas
+marcadas como bloqueadas quedan como historial; esta sección es el estado vigente.

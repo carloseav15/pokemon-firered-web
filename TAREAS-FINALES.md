@@ -152,17 +152,11 @@ Abiertas:
 - [ ] 1.19 **Marcas de bicicleta del motor**: `field/fieldEffects.ts:DoTracksGroundEffect_BikeTireTracks` usa índices JS negativos; revisar direccionamiento contiguo u8 del C (previous * 4 + facing - 5). Detectado en M13, corregido solo en viewer `a29c9ae9`.
 
 
-- [ ] 1.20 **C8 persistencia falsa y salida del PC**: entrega Flash 394b82b0 no
-  integrada. Sol reprodujo depósito/retiro y curación PREPARED, pero recarga
-  restauró orden inicial [1,16] frente a [16,1] sin que el test fallase.
-  Aserción reforzada detecta GAME_STAT_SAVED_GAME sin incremento; Task_MultichoiceMenu_HandleInput
-  del PC aparece junto a YES/NO de guardar. Separar fallo de job/cierre del menú
-  y motor antes de corregir; revisar pc.inc, scriptMenu.ts y startMenu.ts.
-  Evidencia /tmp/sol-review-c8.json, /tmp/sol-c8-diagnose2.json; contrato FLASH-02-R2
-  en PLAN-RECORRIDO. Persistencia, identidad de ambos miembros y control real pendientes.
-  Revisión R2 fa036fb4: Sol repitió el job y confirmó PC, movimiento, enfermera y
-  persistencia real0→1; antes de integrar faltan aserciones de mapa/bolsa/dinero
-  descritas en PLAN-RECORRIDO (segunda ronda). Mantener abierta la tarea.
+- [x] 1.20 **C8 persistencia y salida del PC**: Flash 0d982c02 integrada en
+  85e1e082; revisor repitió PC/enfermera, cierre y movimiento, guardados0→1 y
+  continue con mapa/coords/bolsa/dinero/contador e identidades/orden coincidentes.
+  Curación cubre un Bulbasaur con entrada médica PREPARED; sin paridad audiovisual
+  ni prueba de varios miembros. Evidencia en ../pokemon-cleanup-backup-2026-10-06/review-third-wave/sol-wave3-c8.json.
 - [x] 1.21 **Continue con escenas Quest Log**: 4ce0ab7f restaura índice de objetos,
   avatar por MOVEMENT_TYPE_PLAYER, paletas y mapa/posición guardados. Bytes SON-PREP
   sin alterar: playback2→3→0, equipo/HP/PP/bolsa/dinero/respawn/contador intactos,
@@ -173,8 +167,17 @@ Abiertas:
   se reconstruye jugador y NPC desde coordenadas/avatar/templates guardados, como
   el continue web. Revisar SaveObjectEvents/LoadObjectEvents y conservación de
   posiciones/estados dinámicos de NPC contra C; 1.21 no acredita esa fidelidad.
+- [ ] 1.23 **H.heal reporta menú ausente tras curar**: Sonnet documentó
+  nurse offer missing aunque verificó HP/PP/estado y devolución del control.
+  Diagnosticar sincronización de A/Task_MultichoiceMenu_HandleInput; no convertir
+  cualquier menú ausente en éxito ni ampliar esperas sin observar diálogo.
+- [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
+  SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
+  para SON-MM01-R; todavía no fósil ni llegada a Celeste.
 - [x] **LUNA-02 regresión focalizada del driver**: base66baef56, cinco casos PASS
-  revisados; entradas PREPARED y segmento500 sin victoria declarados. No C8/ruta.
+  revisados; entradas PREPARED y segmento500 sin victoria declarados. Ronda4ce0ab7f:
+  dos continue PASS; retorno Brock MANUAL válido, cerrado por revisor14238405
+  con comprobación explícita y paso real. Sin ruta completa.
 - [x] **Driver detiene navegación tras derrota/atasco**: 65e631f9 propaga
   battle lost/battle stuck por goto/explore/grind, permite sustituto sano en slot0
   y evita restauración perdida de battleDefaults. C7 confirma pérdida natural y
