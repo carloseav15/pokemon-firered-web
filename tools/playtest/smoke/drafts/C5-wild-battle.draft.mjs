@@ -1,7 +1,8 @@
-// DRAFT, not run by run.mjs (task C5 in TAREAS-FINALES.md §3.0). Fight and run stages pass;
-// the capture stage loops: in battle, A on a Poké Ball opens the context menu and the next A
-// returns to the bag without throwing it. Decide first whether that is a game bug
-// (bagMenu.ts OpenContextMenu/Task_ItemMenuAction_BattleUse vs item_menu.c:1338) or a driver bug.
+// DRAFT, not run by run.mjs (task C5 in TAREAS-FINALES.md §3.0). Fight and run stages pass.
+// 1.16 verdict: DRIVER bug, game is correct. The old navigation (Lx3, R) landed on the
+// Key Items pocket (OPEN_BAG_POKEBALLS is 2, not 1), so A opened the Bicycle's
+// Cancel-only context menu and the next A returned to the bag with balls intact.
+// With pocket 2 the ball is thrown (USE path verified: ball count drops, throw anim runs).
 import { prelude } from "../lib.mjs";
 
 // Route 2 grass with Poké Balls in the bag: win a wild battle with FIGHT, escape one with
@@ -53,13 +54,13 @@ export default async function run(ctx) {
     for (let guard = 0; thrown < balls0 && guard < 600; guard++) {
       if (!H.inBattle()) break;
       if (ctl() === "HandleInputChooseAction") {
-        // Bag order in battle: Items, Poké Balls, Berries. Go to the first pocket, then one right.
+        // Pockets navigate as Items(0)/KeyItems(1)/Balls(2) also in battle:
+        // OPEN_BAG_POKEBALLS is 2, not 1. Steer to pocket 2 from any start.
         await tap("R", 12);                       // BAG
         if (!await until(() => H.cb2() === "CB2_BagMenuRun", "A", 60)) fail("bag did not open in battle");
         await frDebug.wait(150);
-        for (let i = 0; i < 3; i++) await tap("L", 30);
-        await tap("R", 40);
-        if (B.gBagMenuState.pocket !== 1) fail("not on the Poké Balls pocket", { pocket: B.gBagMenuState.pocket });
+        for (let i = 0; i < 4 && B.gBagMenuState.pocket !== 2; i++) await tap("R", 40);
+        if (B.gBagMenuState.pocket !== 2) fail("not on the Poké Balls pocket", { pocket: B.gBagMenuState.pocket });
         await tap("A", 40); await tap("A", 60);   // select the ball, USE
         thrown++;
       }
