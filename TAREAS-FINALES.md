@@ -140,6 +140,11 @@ Abiertas:
   colgaba el reveal de Brock. Con el centinela como `script_movement.c`, el
   combate arranca, se gana, hay medalla y el dinero sube 3150→4550 (`3b709ab5`).
   C6 queda desbloqueado para automatizar.
+- [ ] 1.18 **MOVE ITEMS con caja vacía rompe el PC** [medio]. Con `pewter-pc`, entrar
+  en MOVE ITEMS revienta `InitBoxMonSprites` (`storageSystemGraphics.ts:121`):
+  `boxMonsSprites[pos]!.oam` sobre null. El C
+  (`pokemon_storage_system_graphics.c:334-338`) también desreferencia NULL (en HW
+  escribe a la ROM-BIOS = no-op); decidir fidelidad antes de poner la guarda.
 
 ## 2. Revisión de equivalencias y wrappers contra el C
 
@@ -351,8 +356,8 @@ Receta manual (si un punto no se puede automatizar):
   PARCIAL: carga `gym-camper`; el combate espera a 1.17.
 - [x] **C7 Derrota (whiteout)**: reaparece en el Centro Pokémon **mirando al norte**,
   equipo curado y dinero reducido — `play:smoke` pierde un combate real (`fea0682e`).
-- [ ] **C8 Centro Pokémon y PC**: curar y abrir cajas automatizado; depósito/retiro pendiente.
-  PARCIAL: el smoke entra en `CB2_PokeStorage` y lo devuelve como MANUAL.
+- [ ] **C8 Centro Pokémon y PC**: depósito/retiro automatizado con pulsaciones reales
+  (`54895bba`, devuelve MANUAL honesto); curación de la enfermera pendiente.
 - [x] **C9 Tienda** (partida `mart`): el dependiente aparece, comprar y vender; el
   dinero cambia — `play:smoke` compra 200 y vende 150 (`fea0682e`, con el arreglo de `shop.c` `06b08838`).
 - [x] **C10 Menús**: Pokédex, Pokémon (resumen, mover, objeto), Mochila (Poción),
