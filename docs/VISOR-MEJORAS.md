@@ -19,7 +19,7 @@ este objetivo. La recomendación anterior de sustituirlo obligatoriamente por el
 juego completo en iframe queda retirada: impediría ver las ediciones sin construir
 además un puente de mapas. Hay que mejorar el sandbox, reutilizando datos y
 componentes del port cuando encajen, sin exigir scripts ni combates para caminar.
-La calidad sigue desigual por los fallos de cámara/audio y la edición ausente.
+La geometría de cámara está corregida; audio, animaciones y edición siguen pendientes.
 
 Se leyeron HTML, CSS, todos los módulos de `src/viewer/`, generador, planes,
 historial reciente y dependencias relevantes de ROM, renderer, paletas, audio,
@@ -123,6 +123,16 @@ Gestionar blur y pointercancel/lostpointercapture. Después extraer cámara, car
 render y toolbar; no perseguir un límite de líneas sacrificando legibilidad.
 Aceptar con 0,25/0,5/1/2/4×, zoom al cursor, arrastre/resize, extremos, enlace cero
 capas con perfil limpio y ficha restaurada.
+
+Entrega `0c890154`: cámara extraída; mundo en píxeles sin escalar y stage con
+extensión escalada, selección/modo/posición del avatar/panel en URL, `capas=` válido,
+cancelación de puntero/blur y navegación al destino explícita. Browser PASS a las
+cinco escalas, ancla al cursor, extremos tras resize, ficha/panel y modo/posición
+restaurados, minimapa con teclado, búsqueda y diálogo. Cancelación usa evento
+**PREPARED** de dispositivo sobre arrastre real. Sin puertas con destino exterior en
+el índice actual: el botón tiene revisión estática, no recorrido real. Pendientes:
+extraer carga/render/toolbar, navegación por cambios del hash sin recarga y revisar
+cámara de seguimiento/foco en Explorar con C1. No se afirma C3 entero cerrado.
 
 ### C4 — Animadores/cachés y memoria con mediciones
 
@@ -652,7 +662,7 @@ editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento f
 
 ## 5. Orden y cierre
 
-Codex: C3 para cámara/zoom, reloj compartido de C2 y contrato de efectos C7 para
+Codex: base C3 entregada; reloj compartido de C2 y contrato de efectos C7 para
 desbloquear M12; después C6 y exploración C1/C7 sobre el modelo, con C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
 Muse: M1–M11 y R1–R6 cerradas e integradas. M12 → M13
@@ -668,8 +678,9 @@ CSS y módulos búsqueda/ficha/minimapa; musicName/copia de partidas también ex
 Modularización sigue parcial; sandbox del juego completo existe en motor pero su
 desconexión no bloquea el sandbox creativo del viewer.
 
-Siguiente entrega de Codex para Muse (todavía no implementada):
-1. C3: una transformación de cámara/zoom; selección y scroll coherentes en extremos.
+Siguiente entrega de Codex para Muse:
+1. C3: geometría y restauración entregadas en `0c890154`; extracción restante y
+   seguimiento de cámara pendientes.
 2. C2/C7: reloj GBA compartido, suscripción/cancelación y pausa sin recuperar tiempo
    oculto; loader/cache tipado de templates y validación de recursos/comandos.
 3. C7: eventos con coordenadas de mundo, prioridad, dirección y generación de sesión;
