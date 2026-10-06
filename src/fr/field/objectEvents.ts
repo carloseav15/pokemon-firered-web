@@ -238,6 +238,7 @@ export class ObjectEvent {
   hasShadow = false;
   disableJumpLandingGroundEffect = false;
   fixedPriority = false;
+  hideReflection = false;
   inShortGrass = false;
   inHotSprings = false;
   inShallowFlowingWater = false;
@@ -1256,7 +1257,13 @@ export class ObjectEvents {
     const object = gObjectEvents[objectEventId & 0xff];
     this.objects[objectEventId & 0xff] = object?.active ? object : null;
     if (!object?.active) return;
+    const inanimate = object.inanimate;
+    const currentBehavior = object.currentMetatileBehavior;
+    const previousBehavior = object.previousMetatileBehavior;
     this.setupSprite(object);
+    object.inanimate = inanimate;
+    object.currentMetatileBehavior = currentBehavior;
+    object.previousMetatileBehavior = previousBehavior;
     object.sprite.x += ((x << 16) >> 16) * 16;
     object.sprite.y += ((y << 16) >> 16) * 16;
     this.ResetObjectEventFldEffData(object);

@@ -1,6 +1,7 @@
 // The main loop (main.c: CB1/CB2 callbacks at the GBA frame rate) and the
 // glue between the field, menus, battles and saving.
 
+import { SaveObjectEvents } from "./loadSave";
 import { sound } from "./audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
 import { BattleTransition_StartOnField, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
@@ -336,6 +337,7 @@ export class Game {
       save.pos = { x: this.overworld.warpDestination.x, y: this.overworld.warpDestination.y };
       usedContinueGameWarp = true;
     }
+    this.overworld.restoreObjectEventsOnNextInit = !usedContinueGameWarp;
     textOptions.speed = save.options.textSpeed;
     joy.buttonMode = save.options.buttonMode;
     sound.SetPokemonCryStereo(save.options.sound === 1 ? 1 : 0);
@@ -371,16 +373,13 @@ export class Game {
     SaveMapView(this.overworld.map, save.pos, save.mapView);
     ApplyNewEncryptionKeyToGameStats(save.trainerId);
     ApplyNewEncryptionKeyToBagItems_(save.trainerId);
-    const continueFlags = save as SaveData & { continueGameWarpActive?: boolean };
+    // SAVE_NORMAL retains the current map/object records. The source sets a
+    // continue warp only in special save paths (start_menu.c link-battle save).
+    SaveObjectEvents(this.overworld.sprites);
     if (isHallOfFame) {
       if (GetGameStat(C.GAME_STAT_ENTERED_HOF) < 999) IncrementGameStat(C.GAME_STAT_ENTERED_HOF);
-    } else {
-      this.overworld.SetContinueGameWarpToDynamicWarp(0);
-      continueFlags.continueGameWarpActive = true;
     }
-    const succeeded = saveStore.write(save);
-    if (succeeded && !isHallOfFame) continueFlags.continueGameWarpActive = false;
-    return succeeded;
+    return saveStore.write(save);
   }
 
   // ---------------------------------------------------------------- start menu

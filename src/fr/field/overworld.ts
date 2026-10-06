@@ -1,6 +1,7 @@
 // Port of overworld.c + field_camera.c: map loading from warps and camera
 // transitions, the per-frame field callbacks, and BG/OBJ composition.
 
+import { HasSavedObjectEvents, LoadObjectEvents } from "../loadSave";
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
 import { paletteFade, FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_WHITE, RGB_BLACK, RGB_WHITE } from "../gba/fade";
@@ -17,7 +18,7 @@ import { sound } from "../audio/sound";
 import { rom, type MapConnection, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "../save";
 import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MapGridGetMetatileBehaviorAt, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_DIVE, CONNECTION_EAST, CONNECTION_EMERGE, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
-import { actionJump, actionWalkInPlaceFaster, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
+import { actionJump, actionWalkInPlaceFaster, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, gObjectEvents, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
 import { TileRenderer, TilesetAnimator } from "./tileRenderer";
 import { PlayerAvatar, PlayerGetDestCoords, TestPlayerAvatarFlags, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_FLAG_UNDERWATER } from "./playerAvatar";
 import { FieldControl } from "./fieldControl";
@@ -216,6 +217,7 @@ export class Overworld {
   pendingLoad = false;
   /** InitMapFromSavedGame restores the saved VMap window on the first continue load. */
   restoreMapViewOnNextInit = false;
+  restoreObjectEventsOnNextInit = false;
   questLogStartType: number | undefined;
   /** Set after a QL scene warp, before the staged playback-map restoration begins. */
   private questLogMapLoadState: number | null = null;
@@ -699,8 +701,9 @@ export class Overworld {
 
   /** CB2_LoadMap2 (overworld.c): async map bytes are already fetched in the browser port. */
   private CB2_LoadMap2(loaded: LoadedMap): void {
-    if (this.restoreQuestLogSaveOnNextLoad) {
+    if (this.restoreQuestLogSaveOnNextLoad || (gQuestLogState !== C.QL_STATE_PLAYBACK && this.restoreObjectEventsOnNextInit && HasSavedObjectEvents())) {
       this.restoreQuestLogSaveOnNextLoad = false;
+      this.restoreObjectEventsOnNextInit = false;
       this.loaded = loaded;
       this.mapTypes.set(loaded.header.id, loaded.header.mapType);
       this.sectionCache.set(loaded.header.id, loaded.header.regionMapSection);
@@ -708,14 +711,24 @@ export class Overworld {
       this.LoadSaveblockMapHeader(loaded);
       this.loadObjEventTemplatesFromHeader(save.objectEventTemplates);
       this.LoadSaveblockObjEventScripts();
+      const restoredObjects = HasSavedObjectEvents();
+      if (restoredObjects) {
+        this.objects.ResetObjectEvents();
+        LoadObjectEvents();
+        for (let i = 0; i < C.OBJECT_EVENTS_COUNT; i++) {
+          const object = gObjectEvents[i];
+          this.objects.objects[i] = object.active ? object : null;
+          // Connected-map clones need their source script template too.
+          object.template = this.objects.spawnTemplates.find(entry => entry.mapNum === object.mapNum
+            && entry.mapGroup === object.mapGroup && entry.template.localId === object.localId)?.template;
+        }
+      }
       this.objects.unfreezeAll();
       this.Overworld_ResetStateOnContinue();
       this.gExitStairsMovementDisabled = true;
       this.script.ScriptContext_Init();
       this.initMap();
-      // Browser saves rebuild objects from their saved templates, as normal
-      // continue does; the current objects still belong to the playback map.
-      this.initObjectEventsLocal(false);
+      if (!restoredObjects) this.initObjectEventsLocal(false);
       this.game.CB2_ReturnToField();
       return;
     }
@@ -965,6 +978,14 @@ export class Overworld {
 
   /** CB2_EnterFieldFromQuestLog (overworld.c): restore the saved map and local field state. */
   CB2_EnterFieldFromQuestLog(): void {
+    const flags = save as typeof save & { continueGameWarpActive?: boolean };
+    if (flags.continueGameWarpActive && save.continueGameWarp.mapGroup !== 0xff) {
+      flags.continueGameWarpActive = false;
+      this.restoreObjectEventsOnNextInit = false;
+      this.SetWarpDestinationToContinueGameWarp();
+      this.warpIntoMapAndLoad();
+      return;
+    }
     this.restoreMapViewOnNextInit = true;
     this.restoreQuestLogSaveOnNextLoad = true;
     // CB2_EnterFieldFromQuestLog returns to the loaded save's current map.
@@ -1203,6 +1224,8 @@ export class Overworld {
 
   /** InitObjectEventsLocal + SetCameraToTrackPlayer */
   private initObjectEventsLocal(runWarpScript = true): void {
+    this.restoreObjectEventsOnNextInit = false;
+    // Pre-1.22 JSON saves have no complete records; retain template migration.
     this.objects.ResetObjectEvents();
     const x = save.pos.x + MAP_OFFSET;
     const y = save.pos.y + MAP_OFFSET;

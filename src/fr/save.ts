@@ -3,6 +3,7 @@
 import { CHAR_SPACE, encode, EOS } from "./gba/charmap";
 import { bindSaveBlockReader } from "./gba/stringBuffers";
 import { rom } from "./rom";
+import type { ObjectEventSave } from "./loadSave";
 import type { Pokemon } from "./pokemon/pokemon";
 import * as C from "./generated/constants";
 import type { QuestLogScene } from "./questLogObjects";
@@ -177,7 +178,8 @@ export type SaveData = {
   weatherCycleStage?: number;
   nationalDexMagic?: number;
   nationalDexRseMagic?: number;
-  objectEvents?: unknown;
+  objectEvents?: ObjectEventSave[];
+  objectEventsVersion?: 1;
   objectEventTemplates?: MapObjectTemplate[];
   daycare?: unknown;
   berryPowder?: number;

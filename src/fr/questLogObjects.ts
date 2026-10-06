@@ -2,6 +2,7 @@
 
 import * as C from "./generated/constants";
 import * as MB from "./generated/metatileBehavior";
+import { SaveObjectEvents } from "./loadSave";
 import { save } from "./save";
 import { gQuestLogState } from "./questLogEvents";
 import { gObjectEvents, type ObjectEvent } from "./field/objectEvents";
@@ -256,15 +257,7 @@ export function QL_LoadObjects(questLog: QuestLogScene, templates: readonly MapO
     }
   }
 
-  save.objectEvents = gObjectEvents.map((o) => ({
-    active: o.active,
-    localId: o.localId,
-    graphicsId: o.graphicsId,
-    x: o.currentCoords.x,
-    y: o.currentCoords.y,
-    facingDirection: o.facingDirection,
-    movementType: o.movementType,
-  }));
+  SaveObjectEvents();
 }
 
 export function QL_TryStopSurfing(): void {
