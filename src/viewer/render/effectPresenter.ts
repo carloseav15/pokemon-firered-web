@@ -35,6 +35,7 @@ export class EffectPresenter {
   private remaining = 0;
   private firstCommand = true;
   private ended = false;
+  private releaseRequested = false;
   private disposed = false;
 
   constructor(
@@ -80,8 +81,8 @@ export class EffectPresenter {
   /** Retire: finish first when the animation has not ended, then remove. */
   release(): void {
     if (this.disposed) return;
-    if (!this.ended && !this.lastError) this.complete();
-    this.dispose();
+    this.releaseRequested = true;
+    if (this.ended || this.lastError) this.dispose();
   }
 
   dispose(): void {
@@ -141,7 +142,7 @@ export class EffectPresenter {
   private complete(): void {
     this.ended = true;
     // retainUntilLeave keeps the final frame until release(); otherwise remove now.
-    if (!this.spawn.retainUntilLeave) this.dispose();
+    if (!this.spawn.retainUntilLeave || this.releaseRequested) this.dispose();
   }
 
   private fail(reason: string): void {
