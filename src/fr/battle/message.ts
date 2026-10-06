@@ -1,7 +1,7 @@
 // battle_message.c: battle string selection, placeholder expansion, text windows and the PREPARE_*_BUFFER macros.
 
 import * as C from "../generated/constants";
-import { cdata, incbin16, symName } from "../hw/assets";
+import { cdata, hasCData, incbin16, symName } from "../hw/assets";
 import { flagGet } from "../save";
 import { gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
 import { AddTextPrinter } from "../hw/text";
@@ -47,7 +47,9 @@ function S(name: string): number[] {
 function symStr(v: unknown): number[] {
   const name = symName(v);
   if (!name) return [EOS];
-  return cdata<number[] | undefined>("battle_message", name) ?? Array.from(rom.text(name));
+  // Symbols such as Text_MonSentToBoxInSomeonesPC live in data/text/pc_transfer.inc,
+  // not in battle_message.c; cdata() throws on a missing name, so test it first.
+  return hasCData("battle_message", name) ? cdata<number[]>("battle_message", name) : Array.from(rom.text(name));
 }
 
 // ---------------------------------------------------------------- PREPARE_*_BUFFER (battle_message.h)
