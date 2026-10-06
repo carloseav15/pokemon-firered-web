@@ -51,7 +51,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon_storage_system_misc.c` | 1430 | 66/70 | `storageSystemMisc.ts` |  |  |
 | `field_control_avatar.c` | 1182 | 47/49 | `field/fieldControl.ts`, `field/fieldEffects.ts`, `field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
-| `start_menu.c` | 1016 | 58/65 | `startMenu.ts` |  |  |
+| `start_menu.c` | 1016 | 58/65 | `game.ts`, `startMenu.ts` |  |  |
 | `field_fadetransition.c` | 965 | 50/59 | `field/fieldControl.ts`, `field/overworld.ts`, `startMenu.ts` |  |  |
 | `main.c` | 494 | 23/28 | `audio/sound.ts`, `game.ts`, `gba/input.ts` … |  |  |
 

@@ -309,6 +309,48 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    presupuesto o recursos agotados sin diagnosticar/preparar una entrada nueva.
    Fijar configuración antes del job, sin cambiarla a mitad de la operación.
 
+   **Contrato compartido del driver (base 2e78b7df):**
+   - `await H.init()` carga globals; `H.observe()` devuelve `phase`, `fieldFree`,
+     `standing`, callbacks activos, `hardwareCb2` histórico, tareas, controlador,
+     Quest Log y callback de guardado. `H.cb2()` consulta gMain solo en HwScene.
+   - `await H.ready(maxFrames=18000)` espera control libre y movimiento terminado,
+     incluyendo playback; nunca pulsa A. Devuelve estado/`observed`/frames o lanza
+     error con `result.reason="ready-timeout"`. Para observar playback desde el
+     principio, usar init y observar antes de ready (ver questlog-continue).
+   - Acciones goto/exit/enter/face/talk/counter/explore/grind/battle/heal/useItem/
+     prepareStep/saveGame/walk conservan payload y añaden `ok`,
+     `status: success|blocked|failure`, `reason`. Predicados y `until` conservan
+     booleanos. Comprobar resultados; un job no puede ignorar el fallo de un helper.
+     `idle` devuelve blocked/input-required ante elecciones, incluidos SAVE;
+     el caller elige explícitamente. Reconoce texto y waitbuttonpress para avanzar.
+   - `H.step(bits=0)`, `await H.wait(frames,bits=0)`, `H.tap(bits,settle)` y
+     `H.press(button,settle)` usan un frame por paso y liberan entre pulsaciones.
+     rAF puede avanzar frames adicionales al ceder al navegador; no es un reloj
+     determinista. `until(pred,button=null,limit=180)` observa cada frame, hasta
+     limit×16 pasos, con pulsos separados cuando el caller proporciona un botón.
+   - `H.job(fn,{maxFrames=120000,timeoutMs=120000})` devuelve "started";
+     un segundo job devuelve blocked/job-running. `H.jobStatus()` expone id,
+     done/out/frames/estado, y `H.cancelJob()` solicita la parada. Presupuestos,
+     cancelación y cambio de instancia/sesión se comprueban en acciones/entradas;
+     son cooperativos: no detienen un bucle propio que use directamente frDebug.
+     Usar H para entradas del job. No lanzar otro antes de done.
+   - `await H.saveGame({checkpointName?,maxFrames=6000})` guarda por el START/SAVE
+     real, confirma prompts observados, verifica contador/estado/bytes y, si se
+     pide nombre, copia solo esos bytes. Rechaza campo ocupado y nombre existente.
+     maxFrames limita la espera del diálogo; las entradas de menú son acotadas
+     aparte y el presupuesto del job limita todos los pasos del driver.
+   - `await H.checkpointData(name)` devuelve raw/SHA256/procedencia. En un job del
+     runner: `await ctx.exportCheckpoint({name,path,provenance})`; path .json es
+     obligatorio, crea exclusivamente save y .provenance.json y verifica bytes.
+     Registrar el checkpoint después del éxito. No tiene exportación por defecto.
+     `checkpoint()` sigue siendo escritura debug PREPARED, no SAVE por UI;
+     exportSave conserva gzip/base64 para consumidores anteriores.
+   - `pw.mjs` aplica PW_TIMEOUT_MS (120000 por defecto), cierra su navegador al
+     terminar y devuelve exit1 ante excepción, resultado failure/blocked/ok:false
+     o errores del navegador. Los resultados anidados requieren aserciones del job.
+     Ni exportar bytes ni movimiento tras continue demuestran persistencia de NPC
+     dinámicos (tarea1.22) o fidelidad audiovisual.
+
    Verificación focalizada: `node tools/playtest/strategy.check.mjs` y jobs
    `driver-strategy`, `driver-auto-battle`, `driver-switch`, `driver-recovery`,
    `driver-navigation` mediante `pw.mjs`.

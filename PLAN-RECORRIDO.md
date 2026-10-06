@@ -164,7 +164,7 @@ los IDs siguientes son paquetes de ejecución para sus tareas, no nuevos cierres
 
 Este reparto sustituye las instrucciones históricas de próximos pasos cuando
 se contradigan. Tareas canónicas DRV-01–07 en TAREAS-FINALES §1; aquí se define
-su ejecución. Base inicial: código c8ccc36f y main con este plan documental.
+su ejecución. Base vigente: código 2e78b7df y main con el cierre documental de esta entrega.
 Cada agente registra el SHA completo usado; Sol publica una base nueva después
 de aceptar cambios de API. Ninguna dependencia se desbloquea por tiempo transcurrido.
 
@@ -174,7 +174,7 @@ sistemas nuevos de historia; inventario C y cobertura del driver se miden aparte
 
 **Primera ronda, en paralelo sin editar los mismos archivos:**
 
-- **Sol — DRV-02 y DRV-03.** Responsable exclusivo de driver.js, APIs compartidas y
+- **Sol — DRV-02 y DRV-03 (entregadas).** Responsable exclusivo de driver.js, APIs compartidas y
   cambios necesarios del runner. Leer Game/boot y consumidores antes de fijar el
   contrato. Entregar nombres/API, estados observables, resultados, límites,
   cancelación y casos comprobados. Mantener compatibilidad o migrar todos los
@@ -195,7 +195,7 @@ sistemas nuevos de historia; inventario C y cobertura del driver se miden aparte
   checkpoint antes de exportar. Proponer entrada/modo resume y hitos, sin inventar
   nombres de API. Conservar logs; no ejecutar otra ruta ni alterar los saves.
 
-**Segunda ronda, tras aceptar contratos:** Sol cierra DRV-05 y1.22, y corrige los
+**Segunda ronda, contratos entregados:** DRV-05 cerrada; Sol continúa con1.22 y los
 huecos de DRV-04 necesarios para la ruta. Flash implementa escenarios faltantes
 pequeños indicados por ID por Sol (no duplica casos ya aceptados). Luna implementa
 DRV-06 únicamente en el ejecutor de pruebas y catálogo de escenarios, sin tocar
@@ -209,6 +209,20 @@ acotado y entrega checkpoint de Celeste con continue/movimiento. Los dos intento
 fallidos previos no se reinician por este plan. Máximo un intento de ruta por
 asignación nueva; una repetición diagnóstica solo si Sol fija la corrección y el
 punto de entrada. Sin checkpoint real no hay reanudación desde logs ni debug.
+
+**Entrega Sol — DRV-02/03/05 (base de código 2e78b7df).** Contrato de APIs en
+[PORTING-GUIDE.md](docs/PORTING-GUIDE.md), sección driver; jobs nuevos
+`driver-control` y `driver-save`. Estado activo/readiness, cancelación cooperativa,
+SAVE/export/continue y C8 comprobados; guardado conserva su propio menú según
+start_menu.c:714–783, sin reanudar el script por ScriptMenu_YesNo. La corrección
+51cd5646 reconoce WaitForAorBPress tras texto; 2e78b7df espera terminar el movimiento.
+Luna puede completar DRV-01/06 con estas APIs; Flash sigue C5 y Sonnet puede adaptar
+el job, sin iniciar historia. DRV-04/objetos dinámicos1.22 siguen abiertos; antes
+del recorrido faltan gate, entrada y presupuesto aceptados. Evidencia focalizada:
+`/tmp/sol-drv-control-final.log`, `/tmp/sol-drv-brock-fixed.log`,
+`/tmp/sol-drv-ql.log`, `/tmp/sol-drv-save-complete.log`,
+`/tmp/sol-drv-c8-standing.log`, `/tmp/sol-drv-nav-standing.log`; runner de fallo
+`/tmp/sol-driver-negative.log` devuelve exit1. No son prueba de historia completa.
 
 **Aceptación común por capacidad:**
 
@@ -233,9 +247,9 @@ uno de estos roles, ejecutar solo sus tareas habilitadas y entregar evidencia:
 
 | Agente | Paquete vigente | Después | No le corresponde |
 |---|---|---|---|
-| GPT-6.1 Sol | DRV-02/03: estado, esperas, entradas y contratos compartidos | DRV-05 y1.22; DRV-04 según auditoría; revisar C5/gate e integrar | Repetir toda la historia por rutina o ocultar fallos del motor con el driver |
+| GPT-6.1 Sol | DRV-02/03/05 entregadas; revisar auditoría DRV-01 y C5 | 1.22; DRV-04 según auditoría; revisar gate e integrar | Repetir toda la historia por rutina o ocultar fallos del motor con el driver |
 | GPT-6 Luna | DRV-01: auditar funciones, consumidores y cobertura | DRV-06 sobre contratos y commits aceptados; revisión independiente de C5 | Cambiar motor/driver o ajustar expectativas para conseguir PASS |
-| Sonnet 5.5 | DRV-07: diseño estático de continuación y preservación de evidencia | Adaptar job tras DRV-03/05; recorrido solo con gate, entrada y presupuesto aceptados | Reiniciar Monte Moon ahora o reconstruir avances con debug |
+| Sonnet 5.5 | DRV-07: adaptar continuación al contrato entregado; sin recorrido | Recorrido solo con gate, entrada y presupuesto aceptados | Reiniciar Monte Moon ahora o reconstruir avances con debug |
 | Gemini Flash 3.8 | FLASH-C5-R1: implementar contrato cerrado | Escenarios faltantes de DRV-04 y transiciones, fijados por Sol tras DRV-01/03 | Modificar APIs compartidas, motor o ejecutar la historia de Sonnet |
 
 SOL-01 ya está entregada. Los paquetes vigentes usan la base fijada en el

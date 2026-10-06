@@ -196,27 +196,21 @@ conservan como evidencia focalizada; 1.22 y las validaciones anteriores siguen a
   comprobado, parcial, no soportado y NOT RUN por caso. Priorizar fallos del
   recorrido hasta Celeste. Terminada con referencias y huecos verificables,
   sin convertir análisis estático en PASS runtime.
-- [ ] **DRV-02 — Estado y carga (Sol).** Centralizar observación del estado activo
-  de Game, tareas/escena/menús y control; corregir ready/cb2 y revisar consumidores.
-  Terminada con carga pendiente, campo libre, Quest Log/continue y transición
-  de mapa discriminados; timeout explícito, sin aceptar mapa existente como listo.
-- [ ] **DRV-03 — Entradas, resultados y ejecución acotada (Sol).** Sustituir esperas
-  con A a ciegas por entradas observadas, comprobar granularidad real de frames;
-  contrato común de éxito/bloqueo/fallo, presupuestos, cancelación y generación de
-  sesión. Revisar todos los callers afectados. Terminada con velocidades0/1/2,
-  timeout/cancelación que detienen entradas y resultado propagado al runner.
+- [x] **DRV-02 — Estado y carga (Sol).** 6d693641/51cd5646/2e78b7df: observe distingue
+  callbacks activos, carga, Quest Log, menús y movimiento terminado; ready espera
+  control real. Carga pendiente, continue grabado y navegación focalizada PASS.
+- [x] **DRV-03 — Entradas y ejecución acotada (Sol).** 6d693641/51cd5646: pasos de
+  un frame, resultados compatibles, límites/cancelación y reemplazo de sesión;
+  control0/1/2 y Brock PASS. Guardias cooperativas: no cubren llamadas directas a frDebug.
 - [ ] **DRV-04 — Navegación y recursos por capacidades (Sol; escenarios Flash).**
   Revisar cobertura a pie, NPC/obstáculos, ledges, puertas/conexiones y recuperación
   con HP/PP/medicinas/reemplazos. Corregir fallos necesarios para Celeste y declarar
   límites posteriores (Surf/bici/empujes/movimientos forzados); no asumir que están
   ausentes del motor. Terminada con casos acotados y parada diagnosticada ante
   estado no soportado, sin bucles de curación ni repetir la historia completa.
-- [ ] **DRV-05 — Checkpoints y exportación segura (Sol).** Contrato compartido de
-  guardado por UI, continue, export/import y procedencia; destino explícito,
-  protección contra sobrescritura accidental y checkpoint reportado solo después
-  de exportación verificada. Terminada con bytes/hash, comparación semántica,
-  control/movimiento tras continue y rechazo de guardado no disponible. Fidelidad
-  de objetos dinámicos se resuelve en1.22, no con un workaround del driver.
+- [x] **DRV-05 — Checkpoints y exportación segura (Sol).** 2e78b7df: SAVE por UI,
+  bytes/hash/procedencia y exportación exclusiva; velocidades0/1/2, NO inicial,
+  cancelación, continue/movimiento y C8 PASS. Persistencia de NPC1.22 sigue abierta.
 - [ ] **DRV-06 — Gate de regresión del driver (Luna; revisión Sol).** Con contratos
   aceptados, integrar checks/jobs focalizados existentes y los casos faltantes
   aprobados en un comando acotado. Terminada con exit no exitoso ante fallo,
