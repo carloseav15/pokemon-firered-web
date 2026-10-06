@@ -612,7 +612,7 @@ Abrir/actualizar/cerrar repetidamente no duplica callbacks; botón y teclas cier
 no avanza el avatar por clic en Cerrar. Tipos/build/honesty/diff-check y comprobación
 focalizada en navegador. No afirmar fidelidad de los diálogos al juego original.
 
-#### M12 — Presentación de hierba, polvo y ondas desde templates [lista sobre base C7]
+#### M12 — Presentación de hierba, polvo y ondas desde templates [entregada; R7 pendiente]
 
 **Base entregada:** rama `codex/viewer-c7-contract`, código `6743381e` sobre
 `1d4a23c9`. Local, sin push ni fusión en main. Crear la rama M12 desde esta base
@@ -734,6 +734,36 @@ Fixture **PREPARED** de terreno valida ondas/polvo/seek/release/generación;
 fallo HTTP **PREPARED** valida reintento. Recorrido real agua/salto, composición,
 profundidad y escucha humana siguen pendientes, no se afirman validados.
 
+**Revisión de `8df8c6a3` (rama `muse/visor-m12`):** tipos/build/diff PASS;
+contrato C7 con assets reales y paso por hierba PASS. Fixtures de ticks
+**PREPARED**: hierba begin 50 y spawn 11, polvo 24, ondas 79 PASS; retención tras E
+PASS. **No aceptada todavía:** `release` antes de E trunca la animación.
+Reproducción sobre template real: avanzar 10 ticks de TallGrass begin y llamar
+`release()` elimina el nodo inmediatamente, en vez de continuar hasta tick 50.
+Fuente: `field_effect_helpers.c:UpdateTallGrassFieldEffect` retira al combinar
+`data[7]` (salió de current/previous) con `animEnded`, no al salir por sí solo.
+
+**R7 para Muse — retirada diferida, una entrega de código:**
+1. `effectPresenter.ts:81-84`: registrar que se pidió retirada. Si la animación
+   sigue activa, conservarla y seguir recibiendo ticks; no llamar `complete()`
+   ni `dispose()` por `release`. Si ya terminó, retirar inmediatamente.
+2. En `complete()`, retirar si no hay `retainUntilLeave` **o** si ya se pidió
+   retirada; si hay retención sin petición, conservar el frame final hasta release.
+   `clear`/`dispose` siguen siendo cancelación inmediata y baja idempotente.
+3. `fieldFx.ts:58`: no borrar de `active` al recibir release. Dejar que `onDone`
+   lo quite cuando haya terminado; borrar antes impediría seguir avanzándolo
+   aunque se corrija el presenter. No tocar arena/bici, main ni productores C7.
+4. Check focalizado (fixtures **PREPARED**, templates reales): release en tick 10
+   conserva nodo/frames y acaba en 50; spawn seek release antes de acabar termina
+   en 11; release tras E retira una vez; release repetido es idempotente;
+   clear/desmontaje a mitad termina de inmediato sin nodos/suscripciones. Probar
+   además por `installFieldFxRenderer`, no solo la clase aislada, para detectar
+   eliminación prematura de `active`. Mantener checks normales y caminar rápido
+   por varias casillas de hierba (release puede llegar antes de E).
+5. Un commit propio sobre `muse/visor-m12`; no sustituir documentos por versiones
+   de main: Muse partió del código `6743381e` y los contratos completos viven en
+   `30308cee`/esta rama. Al integrar se conserva esa documentación del revisor.
+
 **Archivos para Muse:** `render/fieldFx.ts` y auxiliar de presentación si hace falta;
 CSS del efecto. Integración mínima con la API entregada, sin modificar movimiento.
 
@@ -780,7 +810,7 @@ editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento f
 Codex: bases C3 y C2/C7 entregadas; preparar variantes M13, profundidad C7,
 C6 y exploración C1/C7 sobre el modelo, con C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M11 y R1–R6 cerradas e integradas. M12 lista sobre `6743381e`; M13
+Muse: M1–M11 y R1–R6 cerradas e integradas. M12 entregada (`8df8c6a3`), pendiente R7; M13
 espera variantes/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
 Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de nuevas entregas.
 
