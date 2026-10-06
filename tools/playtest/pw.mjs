@@ -82,11 +82,21 @@ const ctx = {
 };
 
 try {
-  const result = await run(ctx);
-  console.log(JSON.stringify({ ok: true, result, errors }));
+  const timeoutMs = Number(process.env.PW_TIMEOUT_MS ?? 120000);
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error("invalid PW_TIMEOUT_MS");
+  let timer;
+  let result;
+  try {
+    result = await Promise.race([run(ctx), new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("runner time budget exceeded: " + timeoutMs + "ms")), timeoutMs);
+    })]);
+  } finally { clearTimeout(timer); }
+  const ok = result?.ok !== false && result?.status !== "failure" && result?.status !== "blocked" && errors.length === 0;
+  if (!ok) process.exitCode = 1;
+  console.log(JSON.stringify({ ok, result, errors }));
 } catch (e) {
   process.exitCode = 1;
-  console.log(JSON.stringify({ ok: false, error: String(e?.stack ?? e).slice(0, 2000), errors }));
+  console.log(JSON.stringify({ ok: false, error: String(e?.stack ?? e).slice(0, 2000), failure: e?.result ?? null, errors }));
 } finally {
   await browser.close();
 }

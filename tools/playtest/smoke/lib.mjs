@@ -6,17 +6,9 @@ export const prelude = `
   const names = () => T.tasks.tasks.filter(t => t.isActive).map(t => t.func.name);
   const has = (n) => names().includes(n);
   // Press \`btn\` (or nothing) every few frames until pred() holds; false on timeout.
-  const until = async (pred, btn = "A", max = 400) => {
-    for (let i = 0; i < max; i++) {
-      if (pred()) return true;
-      if (btn) await frDebug.press(btn, 4);
-      await frDebug.wait(8);
-    }
-    return pred();
-  };
+  const until = (pred, btn = "A", max = 400) => H.until(pred, btn, max);
   const BTN = { A: 1, B: 2, SELECT: 4, START: 8, R: 0x10, L: 0x20, U: 0x40, D: 0x80 };
-  // One clean key tap: held two frames, released, then settled (menus read edges).
-  const tap = async (b, settle = 14) => { await frDebug.wait(2, BTN[b]); await frDebug.wait(settle); };
+  const tap = (b, settle = 14) => H.tap(BTN[b], settle);
   // Open START (cursor reset to the top, like a fresh menu) and choose entry \`idx\` with real taps.
   const openStart = async (idx) => {
     window.frGame.startMenuCursor = 0;

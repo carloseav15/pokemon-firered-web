@@ -148,7 +148,7 @@ export default async function run(ctx) {
   writeFileSync(`${out}/written-save.json`, raw);
   evidence.writtenBytes = raw.length;
 
-  // 7. Reload with ?fr=continue. H.ready() only proves a map exists; wait for the Quest Log
+  // 7. Reload with ?fr=continue. Observe the Quest Log before waiting for readiness; wait for the Quest Log
   // playback to finish (state leaves PLAYBACK/PLAYBACK_LAST) and for free control, with a hard limit.
   const base = process.env.PW_BASE ?? "http://localhost:5173/";
   const errors = [];
@@ -157,7 +157,7 @@ export default async function run(ctx) {
   await ctx.page.waitForTimeout(2000);
   evidence.continue = await ctx.page.evaluate(`(async () => {
     try {
-      const { H } = await import("/tools/playtest/driver.js"); window.H = H; await H.ready(600);
+      const { H } = await import("/tools/playtest/driver.js"); window.H = H; await H.init();
       const Q = await H.mod("/src/fr/questLogEvents.ts");
       const playback = () => Q.gQuestLogState === H.C.QL_STATE_PLAYBACK || Q.gQuestLogState === H.C.QL_STATE_PLAYBACK_LAST;
       const observed = [];
