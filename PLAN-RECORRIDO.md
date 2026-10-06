@@ -199,8 +199,8 @@ rama propia; Sol los integra tras revisión. Los logs no requieren un commit.
 **Mensaje de inicio listo para copiar:**
 
 > Lee AGENTS.md del repositorio y esta versión del plan:
-> `/Users/carancibia/.codex/worktrees/viewer-m13/pokemon/PLAN-RECORRIDO.md`
-> (rama `codex/recorrido-strategy`), especialmente “Cómo empezar” y tu paquete.
+> `/Users/carancibia/Documents/ChatGPT/pokemon/PLAN-RECORRIDO.md`
+> (rama `main`), especialmente “Cómo empezar” y tu paquete.
 > Tu rol es [GPT-6.1 Sol / GPT-6 Luna / Sonnet 5.5 / Gemini Flash 3.8]. Ejecuta
 > [ID del paquete] cuando sus dependencias estén aceptadas. Usa el commit fijado
 > por SOL-01, worktree y perfil propios. No marques PASS sin acciones y aserciones;
@@ -314,30 +314,36 @@ agrupadas. Sonnet mantiene la historia, Flash valida sistemas independientes y L
 pruebas definidas. Revisar este reparto después del piloto: si Luna cubre trabajo
 de Flash con igual evidencia y menor coste observado, simplificar la asignación.
 
-## Registro histórico (sin nueva validación)
+## Registro y revisión de OpenCode (2026-10-06)
 
-La tabla siguiente conserva lo registrado el 2026-09-25. Puede estar desactualizada;
-actualizar solo tras reproducir y revisar evidencia, no por existencia del save.
-
-## Registro de tramos
-
-| Tramo | Estado | Fallos arreglados | Ayudas |
+| Tramo | Estado revisado | Evidencia / límites | Ayudas |
 |---|---|---|---|
-| 0 (intro → Plateada, PC, tienda, guardar) | jugado | ver historial en Git: `git show 3355d2e:docs/archive/PORTING-STATUS-2026-09-27.md` | ninguna |
-| 1 (Ruta 3 → Monte Moon → Ruta 4) | a medias: Ruta 3 y Monte Moon 1F/B1F/B2F; falta la salida | ninguno del juego (solo driver) | ninguna |
+| 0 (intro → Plateada) | Registro histórico, sin revalidación completa en esta revisión | Historial: `git show 3355d2e:docs/archive/PORTING-STATUS-2026-09-27.md`; checkpoints y smoke parciales no sustituyen C1/C2 | Según registro previo |
+| 1 (Ruta 3 → Monte Moon → Ruta 4 este) | PARCIAL; no aceptado como recorrido completo | OpenCode `967a496e` solo cargó `route4` y caminó. Repetido en navegador: MAP_ROUTE4 (8,19), Pidgey L12/Ivysaur L17, movimiento a (15,19), control libre, sin errores. El save está al oeste: entrada cueva (19,5), salida B1F este (32,5); no tiene fósil ni FLAG_GOT_FOSSIL_FROM_MT_MOON (562) | Importación de checkpoint existente; sin escritura de estado |
+| 2 (Celeste → Bill/Misty) | NOT RUN; no checkpoint de Celeste entregado | Las notas sin commit de `opencode/tramo-2` describen volver desde route4 oeste a Monte Moon B2F y acabar en whiteout. Eso aún pertenece al tramo 1; no demuestra llegada a Celeste | Notas reportan driver y sin preparación; no reejecutadas aquí |
 
-## Pendiente al cortar la sesión (2026-09-25)
+**Reanudación correcta:** obtener fósil por el guion real, alcanzar salida este
+por B1F y llegar a `MAP_CERULEAN_CITY` (Ciudad Celeste). Exportar checkpoint real
+tras curar/guardar y continuar. “Azulona” en las notas de OpenCode era un nombre
+incorrecto: Azulona es Celadon y no el destino de la conexión derecha de Ruta 4.
+Antes de ejecutar, consultar coordenadas/warps y scripts fuente, no adivinar ruta.
 
-- **Terminar el tramo 1**: desde el punto de control `mtmoon-1f`, `H.explore`
-  hacia la escalera de B1F que da a la Ruta 4 (`(map, w) => map === "MAP_MT_MOON_B1F" && w.dest === "MAP_ROUTE4"`,
-  evitando la entrada de 1F). El explorador ya retrocede por la escalera menos
-  usada, pero no se llegó a comprobar tras ese cambio. Ver en el camino: guion
-  de Miguel y el fósil (B2F, coord event en 14,11), Team Rocket.
-- ~~Exportar al repo los puntos de control nuevos~~: hecho el 2026-10-01; los 24
-  puntos de control están en `tools/playtest/saves/` (actualizar el registro del
-  tramo 1: tarea 4.1 de `TAREAS-FINALES.md`).
-- Driver sin probar a fondo: `H.explore` con retroceso y el modo `"switch"`
-  cuando el segundo Pokémon también cae.
-- `tools/playtest/driver.js` `H.battle` registra `outcome: 0` en combates de
-  entrenador ganados (lee `frGame.battleOutcome` después de que se reinicia);
-  usar la experiencia/flags para saber si se ganó.
+La revisión comprobó carga/movimiento del extremo, bolsa/flag del fósil y conexiones
+fuente; no jugó toda la cueva ni confirmó un fallo del juego en el intento B2F.
+No conceder fósil/flags para cerrar el tramo. `H.battle` puede leer outcome tras su
+reset; corroborar desenlace con estado/experiencia/flags y control, no solo ese campo.
+
+Las notas originales sin commit y todos los heads previos se conservaron fuera del
+repositorio en `../pokemon-cleanup-backup-2026-10-06/` (documento y bundle Git).
+La entrega 4.1 se acepta como inspección del checkpoint, no como prueba del tramo.
+Tras integrar lo revisado, se retiraron 37 ramas locales y cuatro worktrees
+auxiliares (dos archivados en Codex). Queda main y el checkout principal limpio.
+
+### Estado de integración
+
+C2/C7 del viewer, M12/R7/M13 y este plan están integrados en main. B2/B3/B4 de
+OpenCode se revisaron estáticamente e integraron; B2 conserva la diferencia de
+VS Seeker pendiente. `49c88b53` (PC 1.18) queda en el bundle sin integrar: propone
+una guarda defensiva web pero afirma un no-op de BIOS/ROM sin evidencia de original.
+La tarea 1.18 sigue abierta; decidir/documentar adaptación o verificar hardware
+antes de aceptar fidelidad. No se perdieron esas entregas al limpiar ramas.

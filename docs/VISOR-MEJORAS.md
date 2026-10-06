@@ -613,11 +613,11 @@ Abrir/actualizar/cerrar repetidamente no duplica callbacks; botón y teclas cier
 no avanza el avatar por clic en Cerrar. Tipos/build/honesty/diff-check y comprobación
 focalizada en navegador. No afirmar fidelidad de los diálogos al juego original.
 
-#### M12 — Presentación de hierba, polvo y ondas desde templates [aceptada con R7; pendiente fusión]
+#### M12 — Presentación de hierba, polvo y ondas desde templates [aceptada con R7; integrada]
 
 **Base entregada:** rama `codex/viewer-c7-contract`, código `6743381e` sobre
-`1d4a23c9`. Local, sin push ni fusión en main. Crear la rama M12 desde esta base
-o incorporar el commit de código antes de empezar. C2/C7 completos siguen abiertos;
+`1d4a23c9`. Local, integrado en main (2026-10-06), sin push. M12 se integró desde esta base;
+para continuar usar main y los commits registrados. C2/C7 completos siguen abiertos;
 esta base desbloqueó las APIs de M12. M13 entregada en `a29c9ae9` (ver abajo).
 
 **Reloj:** `src/viewer/clock.ts` exporta `viewerClock`, `ViewerClock` y
@@ -787,7 +787,7 @@ del recorrido que luego se afirma validar. Codex verifica la activación y fidel
 #### M13 — Variantes visuales de huellas y marcas de bicicleta [entregada por Codex]
 
 **Entrega:** rama `codex/viewer-m13`, código `a29c9ae9`. Incluye M12
-`8df8c6a3` como `df095b47` y R7 corregida en `3b3acabc`; sin fusionar en main.
+`8df8c6a3` como `df095b47` y R7 corregida en `3b3acabc`; integrado en main (2026-10-06).
 R7 ahora conserva y sigue avanzando hierba liberada antes de E (50/11 ticks).
 
 `loadViewerEffectTemplates()` carga seis plantillas; `loadEffectTemplate()` acepta
@@ -840,7 +840,7 @@ Codex: bases C3 y C2/C7 entregadas; M13 entregada en `a29c9ae9`; seguir con prof
 C6 y exploración C1/C7 sobre el modelo, con C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
 Muse: M1–M11 y R1–R6 cerradas e integradas. M12 aceptada con R7 (`3b3acabc`); M13
-hecha por Codex (`a29c9ae9`), ambas listas para integración. Controles del editor esperan fundamentos C2/C3 y C6.
+hecha por Codex (`a29c9ae9`), ambas integradas en main. Controles del editor esperan fundamentos C2/C3 y C6.
 Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de nuevas entregas.
 
 Editar no existe en ruta actual; **reconstruirlo es ahora objetivo principal C6**,
@@ -861,7 +861,7 @@ Siguiente entrega de Codex para Muse:
 4. Muse M12: hierba/polvo/ondas consumen ese contrato; Codex compara ticks/secuencias
    y revisa recorrido. R7 y variantes M13 resueltas en `codex/viewer-m13`.
 
-Entrega actual: **C2/C7 + M12/R7 + M13 en rama propia**, pendiente fusión; editor y profundidad aún abiertos.
+Entrega actual: **C2/C7 + M12/R7 + M13 en rama propia**, integrado en main; editor y profundidad aún abiertos.
 Checks de integración previos sin errores de navegador: viewer, C5, Brock desde checkpoint,
 PC depósito/retiro y estados de audio. Curación, ruta previa de C6, escucha humana,
 MOVE ITEMS con caja vacía y animaciones completas del viewer siguen pendientes.

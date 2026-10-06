@@ -146,6 +146,8 @@ Abiertas:
   (`pokemon_storage_system_graphics.c:334-338`) también desreferencia NULL.
   Comportamiento original en hardware/emulador pendiente de verificar; no se
   afirma que sea un no-op. Decidir tratamiento fiel del acceso inválido antes de corregir.
+  `49c88b53` revisado y conservado en backup Git sin integrar: guarda web defensiva,
+  pero comentario/entrega atribuyen no-op BIOS sin evidencia en emulador/hardware.
 
 - [ ] 1.19 **Marcas de bicicleta del motor**: `field/fieldEffects.ts:DoTracksGroundEffect_BikeTireTracks` usa índices JS negativos; revisar direccionamiento contiguo u8 del C (previous * 4 + facing - 5). Detectado en M13, corregido solo en viewer `a29c9ae9`.
 
@@ -304,7 +306,7 @@ Receta:
   Iguales: `LoadTradeAnimGfx` delega en una línea (`trade_scene.c:2803` frente a
   `ingameTrade.ts:369`); el correo copia 9 palabras, nombre, 4 bytes de ID con
   máscaras explícitas, especie y objeto (`trade_scene.c:2500-2512` frente a
-  `mail.ts:259-276`, con guardas benignas ante cdata ausente y firma adaptada a
+  `pokemon/mail.ts:259-276`, con guardas benignas ante cdata ausente y firma adaptada a
   anexar al mon). `MAIL_WORDS_COUNT` 9 en ambos.
 - [ ] `trade_scene.c`: `TradeAnimInit_LoadGfx` no sigue el cuerpo C: el C hace
   `ChangeBgX/Y(0, 0, 0)`, carga dos veces gráficos, tilemap y paleta del textbox
@@ -435,10 +437,11 @@ Receta manual (si un punto no se puede automatizar):
 Sigue [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md): un tramo por sesión, punto de control
 antes y partida exportada a `tools/playtest/saves/` al terminarlo.
 
-- [ ] **4.1 Actualizar el registro del tramo 1** [básico, navegador]. Carga `route4`
-  y contrasta mapa/equipo con el estado real; recuperar evidencia o repetir desde
-  el checkpoint previo para confirmar fósil y salida de Monte Moon. Cargar
-  `route4` por sí solo no acepta el tramo 1 (ver PLAN-RECORRIDO).
+- [x] **4.1 Revisar checkpoint `route4` y actualizar registro** — revisión 2026-10-06:
+  carga en Ruta 4 oeste (8,19), movimiento a (15,19), control libre y sin errores.
+  `967a496e` no demuestra salida de Monte Moon: falta fósil/flag 562 en el save.
+  El tramo 1 sigue parcial; obtener fósil → salida este → Celeste → guardar/continuar
+  sigue abierto en el recorrido siguiente y PLAN-RECORRIDO. Notas B2F preservadas.
 - [ ] Recorrido zona por zona de Kanto y Sevii (tramos 2–13, incluido postgame de un jugador), con partidas por tramo.
 - [ ] Checks headless por sistema en `tools/checks/` donde falten.
 - [ ] **4.2 Comparación con el juego original en emulador** [avanzado]. Compilar la ROM
@@ -502,9 +505,8 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   checks y navegador PASS. C3 parcial: extracción/foco/seguimiento y hash sin recarga.
   Entregas integradas: M1–M9/R1–R5 cerradas; M11 aceptada (`ddd899ae`),
   M10 aceptada tras R6 (`3ac164a7`), revisión en VISOR-MEJORAS §4.
-  Base C2/C7 `6743381e` en `codex/viewer-c7-contract`: reloj/loader/eventos conectados,
-  checks PASS. M12 aceptada con R7 `3b3acabc`; M13 `a29c9ae9` en
-  `codex/viewer-m13`: huellas/curvas/41–57 ticks y recorrido arena PASS; sin fusionar.
+  C2/C7 `6743381e`, M12/R7 `3b3acabc` y M13 `a29c9ae9` integrados en main:
+  reloj/loader/eventos, huellas/curvas/41–57 ticks y recorrido arena PASS.
   Profundidad/agua/salto reales y modelo editable siguen pendientes.
   Integración `ebe759c4`: viewer, 1.16/1.17, jobs C5/C6/C8/C13 y revisión B1.
   Tipos/build/honesty y checks focalizados PASS; C8/C13 siguen MANUAL parcial.
