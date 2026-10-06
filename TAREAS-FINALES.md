@@ -284,7 +284,11 @@ Receta:
   `ChangeBgX/Y(0, 0, 0)`, carga dos veces gráficos, tilemap y paleta del textbox
   (`gBattleInterface_Textbox_*`) y no asigna buffer a BG2; el TS asigna BG2 y no carga
   el textbox. Comprobar si esa carga ocurre en otro sitio.
-- [ ] `metatile_behavior.c`: fachada de predicados en `fieldmap.ts`.
+- [x] `metatile_behavior.c`: fachada de predicados en `fieldmap.ts` (`fieldmap.ts:132-139`,
+  delegación 1:1 sin lógica). Cuerpos generados clavan al C (`metatile_behavior.c:253,446,
+  454,527,535,648,676,846` frente a `generated/metatileBehavior.ts:365,563,571,644,652,
+  778,807,987`); 10 constantes MB_* coinciden con `metatile_behaviors.h`. Solo
+  `IsWater` tiene callers vivos (7 archivos); los otros 7 sin caller en TS.
 
 ## 3. Validación en navegador
 
@@ -465,8 +469,8 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   verificadas contra el juego real; interruptor apagado por defecto.
 - [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
   Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;
-  Codex C1–C7; sin batallas/historia. M1–M5 aceptadas tras `c62343fa`/`8a36d0d8`
-  (R1–R3 cerrados); M6/M7 aceptadas (`e12741d1`/`87b2a9c2`); M8/M9 aceptadas
-  tras R4/R5 (`11915f9a`/`c2c8e47f`), revisión en VISOR-MEJORAS §4.
-  Muse M1–M9 cerradas; nueva tanda M10 → M11 (recursos/diálogo), M12/M13 bloqueadas
-  por APIs de Codex C7; detalle en VISOR-MEJORAS §4. Codex C1–C7 siguen pendientes.
+  Codex C1–C7. Sin batallas/historia; zoom/audio/editor siguen pendientes.
+  Entregas en ramas Muse: M1–M9/R1–R5 cerradas; M11 aceptada (`ddd899ae`),
+  M10 aceptada tras R6 (`3ac164a7`), revisión en VISOR-MEJORAS §4; M12/M13 esperan APIs de C7.
+  Base de la rama R6/B1-metatile anterior a M6–M11: integración de esas entregas pendiente;
+  revisión aislada, sin fusionar código ni alterar trabajo del motor.

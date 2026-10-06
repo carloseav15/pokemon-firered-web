@@ -188,6 +188,10 @@ profundidad visual en navegador y escuchar transiciones de música.
 
 ## 4. Tareas para Muse Spark 1.3
 
+Estado de entregas revisadas en ramas Muse; no implica integración en la rama
+actual. Revisión M10/M11 en checkout aislado de `muse/visor-m11` (`ddd899ae`).
+`opencode/B1-metatile` todavía parte del viewer anterior a M6–M11; no se fusionó código.
+
 Asignación por tamaño/acoplamiento, sin afirmar una evaluación comparativa del
 modelo. **Una tarea por vez y revisión del diff antes de la siguiente.**
 No encargar modelo/persistencia de proyectos, relojes, fidelidad C ni reescritura global.
@@ -472,7 +476,7 @@ Mantener las instrucciones comunes de AGENTS.md y §4, con estas excepciones
 acotadas: Muse puede contrastar tablas para M10 y consumir secuencias ya exportadas
 en M12/M13; Codex decide semántica, activación y conexiones con el motor.
 
-#### M10 — Comprobar recursos y cobertura real de las animaciones [lista para empezar]
+#### M10 — Comprobar recursos y cobertura real de las animaciones [aceptada tras R6]
 
 **Entrega documental:** completar aquí una tabla compacta de cobertura, sin abrir
 otra crónica ni añadir código desconectado. Leer `render/fieldFx.ts`, `sprites.ts`,
@@ -491,30 +495,35 @@ y las tablas C relevantes en `pokefirered/src/data/field_effects/field_effect_ob
    No declarar fidelidad por usar una imagen del juego. Si falta metadato, señalar
    qué dato debe exportar Codex y detener únicamente esa comprobación.
 
-#### M10 — Tabla de cobertura (entrega Muse, 2026-10-05)
+#### M10 — Tabla de cobertura (entrega Muse, 2026-10-05; corregida R6)
 
-1 tick = 1/60 s (≈16,7 ms). PNG medidos por cabecera IHDR con `python3`;
+1 tick GBA = 280896/16777216 s (≈16,74 ms; `viewer/constants.ts:53`, igual que
+`game.ts:112`), no 1/60 exacto. PNG medidos por cabecera IHDR con `python3`;
 frames/anims de `public/fr/fieldfx.json`; líneas C de
 `pokefirered/src/data/field_effects/field_effect_objects.h`; callers de
-`src/viewer/`. Estados: activo (conectado y fiel), disponible sin conexión
-(recurso/ts existen pero con secuencia o reloj propios), inexistente (ni recurso
-ni uso en Explorar). Ninguna cifra sale del nombre: todas de comandos/lecturas.
+`src/viewer/`. Estados: «activo simplificado» (renderiza en Explorar con
+secuencia o reloj propios, sin afirmar fidelidad), «fuente disponible sin
+conectar» (recurso o secuencia fuente existentes sin uso en Explorar), «no
+implementado en Explorar» (ni recurso ni uso). Ninguna cifra sale del nombre:
+todas de comandos/lecturas. Límites: versión auditada en esta rama, sin prueba
+visual; las tablas de movimiento C del avatar/NPC no se declaran comprobadas
+(revisión reservada a Codex); la distribución de frames del SurfBlob no se deduce.
 
 | Familia | Recurso / template fuente | Secuencia fuente | Caller del viewer | Diferencia concreta | Estado | Destino |
 |---|---|---|---|---|---|---|
-| Avatar caminar | `objects/rednormal__player.png` 144×32, `greennormal` ídem | Tablas de movimiento C (reservadas, sin contrastar aquí) | `main.ts:193-239` frames manuales 0-8 por `playerStep`, sheets en `sprites.ts:42-54` | Secuencia manual, sin tabla C | Disponible sin conexión | Reservado Codex/C1 |
-| Avatar correr | Mismas sheets caminar | Ídem | `main.ts:227-239`, `sprites.ts:50-52` usa sheets `*surfrun__player` para correr | Hoja de correr por confirmar contra fuente | Disponible sin conexión | Reservado Codex: señalar qué sheet/frames usa correr |
-| Avatar bici | `greenbike/redbike__player.png` 288×32 | Ídem | `main.ts:227-239`, paso 100 ms en `:457` | Secuencia manual | Disponible sin conexión | Reservado Codex/C1 |
-| Avatar surf | `redsurfrun__player.png` 224×32; `SurfBlob` 6 frames, 4 anims por orientación con `J` loop (`fieldfx.json`, C `:182-215`), PNG `surfblob` 192×32 | Por orientación, 48 ticks/frame | `main.ts:425-431` cambia a surf + ripple; sin blob | Flotador inexistente en Explorar; distribución de frames del blob sin confirmar (no se deduce) | Inexistente | Reservado Codex/C7 |
-| Hierba | `tallgrass__ette1.png` 16×80 = 5×16×16 ✓ JSON 5 frames; anims orden 1,2,3,4,0 ×10 ticks (≈167 ms c/u, ≈833 ms); C `:64-94`, `UpdateTallGrassFieldEffect` | 1-2-3-4-0 a 10 ticks | `fieldFx.ts:11-27` (5 pos a 50 ms orden 0-4, `setInterval`), caller `main.ts:448` | Ritmo (50 vs ≈167 ms), orden y reloj propios | Disponible sin conexión | M12 |
-| Polvo | `groundimpactdust__ette0.png` 16×24 = 3×16×8 ✓; anims 0,1,2 ×8 ticks (≈133 ms, 400 ms); C `:288-313`, `UpdateJumpImpactEffect` | 0-1-2 a 8 ticks | `fieldFx.ts:28-44` (3 pos a 60 ms = 180 ms), caller `:482` solo tras salto de saliente | Ritmo propio; momento begin/finish sin confirmar | Disponible sin conexión | M12 (`JumpTallGrass` C `:319-347`, 4×16×8 a 8 ticks: inexistente en Explorar) |
-| Ondas | `ripple__ette1.png` 16×80 = 5×16×16 ✓; 8 cmds 0,1,2,3,0,1,2,4 a 12/9/9/9/9/9/11/11 ticks (≈1,3 s); C `:99-132`, `WaitFieldEffectSpriteAnim` | 8 pasos no lineales | `fieldFx.ts:45-61` (5 pos a 70 ms = 350 ms orden 0-4), callers `:428` entrar al agua y `:453-455` ripple aleatorio 0.3 en surf | Secuencia, duración y activación (el 0.3 es invento del viewer) | Disponible sin conexión | M12 |
-| Huellas | `sandfootprints__ette0.png` 16×32 = 2×16×16 ✓ (+`deep` ídem); 5 anims por dirección (tabla C `:382-388`), frame 0 ó 1 a 1 tick; `UpdateFootprintsTireTracksFieldEffect` | Variante por dirección, 1 tick | `fieldFx.ts:62-74` siempre frame 0 + fade 1200/600 ms, caller `:450` | Dirección ignorada, permanencia inventada | Disponible sin conexión | M13 (`SandPile` sin uso: inexistente) |
-| Marcas bici | `biketiretracks__ette0.png` 32×32, 4 frames 16×16; 9 anims (4 dirs + 4 giros + base), C `:460-514` | Frame por dirección y giro | `fieldFx.ts:75-88` siempre frame 0 + fade, caller `:450` | Dirección y giros ignorados | Disponible sin conexión | M13 |
-| Sombras | `shadow{small,medium,large,extralarge}` 8×8, 16×8, 32×8, 64×32 ✓ 1 frame c/u; C `:4-59`, `UpdateShadowFieldEffect` | 1 frame por tamaño | Ningún uso en Explorar (solo `box-shadow` CSS decorativo) | Inexistente en Explorar | Disponible sin conexión | Reservado Codex/C7 |
-| Reflejos | `ReflectionDistortion` vacío (sin frames, `SpriteCallbackDummy`); `WaterSurfacing` 4×16×16, `WaitFieldEffectSpriteAnim`, PNG 16×80 | Sin secuencia de distorsión en fuente | Ningún uso en Explorar | Inexistente en Explorar y sin datos fuente de distorsión | Inexistente | Reservado Codex: datos de activación |
-| NPC | `GFX_MAP` manual `sprites.ts:3-40` (campo `frames` sin usar); `faceTowards`/giros aleatorios `entities.ts:95-135`; `updateAutonomousBehaviors` en `main.ts:632` | Tablas de movimiento C (reservadas) | Sprites y giros propios | Secuencia y visibilidad manuales | Disponible sin conexión | Reservado Codex/C1-C7 |
-| Alerta | Sin template equivalente en `fieldfx.json` (35 templates, ninguno de exclamación); viewer usa `emoticons.png` 48×80 + `emoticonBounce` 0,4 s (`viewer.css:476-487`, `entities.ts:118-127`), caller `:309` tras `checkTrainerSight` (`:295-313`, rango cardinal) | N/A | Globo propio | Lógica de avistamiento simplificada | Propio del viewer | Reservado Codex/C7 |
+| Avatar caminar | `objects/rednormal__player.png` 144×32, `greennormal` ídem | Tablas de movimiento C (reservadas, sin contrastar aquí) | `main.ts:234-241` frames manuales 0-8 por `playerStep`, sheets en `sprites.ts:42-54` | Secuencia manual, sin tabla C | Activo simplificado | Reservado Codex/C1 |
+| Avatar correr | `green/redsurfrun__player.png` 224×32 medidos (el caller usa *surfrun, no la hoja normal 144×32) | Ídem | `main.ts:226-233`, sheets en `sprites.ts:50-52` | Hoja por confirmar contra fuente | Activo simplificado | Reservado Codex: señalar qué sheet/frames usa correr |
+| Avatar bici | `greenbike/redbike__player.png` 288×32 | Ídem | `main.ts:210-217` (hoja de 32 px, frames 0-8), paso 100 ms en `:457` | Secuencia manual | Activo simplificado | Reservado Codex/C1 |
+| Avatar surf | `redsurfrun__player.png` 224×32; `SurfBlob` 6 frames, 4 anims por orientación con `J` loop (`fieldfx.json`, C `:182-215`), PNG `surfblob` 192×32 | Por orientación, 48 ticks/frame | `main.ts:218-225` sprite estático por dirección + `:425-431` cambia a surf con ripple; sin blob | Avatar activo simplificado; flotador sin conectar | Activo simplificado / fuente disponible sin conectar | Reservado Codex/C7 |
+| Hierba | `tallgrass__ette1.png` 16×80 = 5×16×16 ✓ JSON 5 frames; anims orden 1,2,3,4,0 ×10 ticks (≈167 ms c/u, 50 ticks ≈837 ms); C `:64-94`, `UpdateTallGrassFieldEffect` | 1-2-3-4-0 a 10 ticks | `fieldFx.ts:11-27` (5 pos a 50 ms orden 0-4 = 250 ms, `setInterval`), caller `main.ts:448` | Ritmo, orden y reloj propios | Activo simplificado | M12 |
+| Polvo | `groundimpactdust__ette0.png` 16×24 = 3×16×8 ✓; anims 0,1,2 ×8 ticks (≈134 ms c/u, 24 ticks ≈402 ms); C `:288-313`, `UpdateJumpImpactEffect` | 0-1-2 a 8 ticks | `fieldFx.ts:28-44` (3 pos a 60 ms = 180 ms), caller `:482` solo tras salto de saliente | Ritmo propio; momento begin/finish sin confirmar | Activo simplificado | M12 (`JumpTallGrass` C `:319-347`, 4×16×8 a 8 ticks: fuente disponible sin conectar) |
+| Ondas | `ripple__ette1.png` 16×80 = 5×16×16 ✓; 8 cmds 0,1,2,3,0,1,2,4 a 12/9/9/9/9/9/11/11 ticks (79 ticks ≈1,32 s); C `:99-132`, `WaitFieldEffectSpriteAnim` | 8 pasos no lineales | `fieldFx.ts:45-61` (5 pos a 70 ms = 350 ms orden 0-4), callers `:428` entrar al agua y `:453-455` ripple aleatorio 0.3 en surf | Secuencia, duración y activación (el 0.3 es invento del viewer) | Activo simplificado | M12 |
+| Huellas | `sandfootprints__ette0.png` 16×32 = 2×16×16 ✓ (+`deep` ídem); 5 anims por dirección (tabla C `:382-388`), frame 0 ó 1 a 1 tick; `UpdateFootprintsTireTracksFieldEffect` | Variante por dirección, 1 tick | `fieldFx.ts:62-74` recorte 16×8, siempre frame 0 + fade 1200/600 ms, caller `:450` | Recorte, dirección ignorada, permanencia inventada | Activo simplificado | M13 (`SandPile` sin uso: fuente disponible sin conectar) |
+| Marcas bici | `biketiretracks__ette0.png` 32×32, 4 frames 16×16; 9 anims (4 dirs + 4 giros + base), C `:460-514` | Frame por dirección y giro | `fieldFx.ts:75-88` recorte 16×8, siempre frame 0 + fade, caller `:450` | Recorte, dirección y giros ignorados | Activo simplificado | M13 |
+| Sombras | `shadow{small,medium,large,extralarge}` 8×8, 16×8, 32×8, 64×32 ✓ 1 frame c/u; C `:4-59`, `UpdateShadowFieldEffect` | 1 frame por tamaño | Ningún uso en Explorar (solo `box-shadow` CSS decorativo) | Sin conectar | Fuente disponible sin conectar | Reservado Codex/C7 |
+| Reflejos | C copia el sprite del objeto (`field_effect_helpers.c:33`); TS usa `reflectionFrames`/`bridgeReflectionFrames` de `objects.json` (`fieldEffects.ts:1090-1097`). ReflectionDistortion sin imágenes propias; WaterSurfacing es otro efecto | Dos secuencias affine en C (`field_effect_objects.h:889-931`); no aparecen en el template exportado de fieldfx.json. Integración/semántica affine pendientes de revisar | Ningún uso en Explorar | Fuente y recursos disponibles; distorsión/exportación requieren revisión de Codex | Fuente disponible sin conectar | Reservado Codex/C7 |
+| NPC | `GFX_MAP` manual `sprites.ts:3-40` (campo `frames` sin usar); `faceTowards`/giros aleatorios `entities.ts:95-135`; `updateAutonomousBehaviors` en `main.ts:632` | Tablas de movimiento C (reservadas) | Sprites y giros propios | Secuencia y visibilidad manuales | Activo simplificado | Reservado Codex/C1-C7 |
+| Alerta | Secuencia fuente `EMOTE_ANIMS` (`field/fieldEffects.ts:61`: 5 anims, frames 0-2/6-8/… a 4,4,52 ticks; tablas en `trainer_see.c:581+`); viewer usa `emoticons.png` 48×80 + `emoticonBounce` 0,4 s (`viewer.css:476-487`, `entities.ts:118-127`), caller `:309` tras `checkTrainerSight` (`:295-313`, rango cardinal) | 4,4,52 ticks por emoticono | Globo propio sin secuencia de frames | Secuencia y espera sustituidas por bounce; avistamiento simplificado | Activo simplificado / fuente disponible sin conectar | Reservado Codex/C7 |
 
 Metadato que debe exportar Codex si M12/M13 lo necesitan: loader/cache tipado de
 templates y eventos con posición/prioridad/sesión (ya pedido en M12), y la
@@ -524,7 +533,50 @@ correspondencia dirección↔huella validada (ya pedida en M13); nada más deten
 existentes, sin cifras supuestas ni afirmación de prueba visual. Diff/enlaces y
 honesty antes del commit documental; no necesita build. Codex revisa la tabla.
 
-#### M11 — Diálogos de interacción seguros y accesibles [lista después de M10]
+#### R6 — Corregir la tabla M10 [cerrada]
+
+**Aceptada:** M10 `afcc1f0a` + R6 `3ac164a7`, revisión de Codex el 2026-10-05.
+Estados, recursos, recortes y secuencias contrastados con callers/metadatos/C.
+Codex corrige aquí dos detalles finales: ondas = 79 ticks y distorsión de reflejo
+con dos secuencias affine en C, aunque fieldfx.json no las exporta. Revisión de
+fuente/documentación; sin afirmar comportamiento visual ni conexión de efectos.
+Las instrucciones siguientes quedan como criterios ya revisados.
+
+1. Separar estado de conexión de fidelidad: los cinco efectos y sprites manuales
+   sí están activos en el viewer, aunque sus secuencias no sean fieles. Usar
+   «activo simplificado», «fuente disponible sin conectar» y «no implementado en
+   Explorar». No definir activo como fiel ni afirmar ausencia de recursos que existen.
+2. Reflejos: revisar `field/fieldEffects.ts` (ruta reflectionFrames) y
+   `field/objectEvents.ts`/`public/fr/objects.json`. ReflectionDistortion sin frames
+   no demuestra falta de datos: el reflejo reutiliza imágenes del objeto. WaterSurfacing
+   es otro efecto. Registrar fuente disponible y falta de conexión al viewer.
+3. Alerta: revisar `pokefirered/src/trainer_see.c` tablas de emoticons y
+   `field/fieldEffects.ts` EMOTE_ANIMS. La ausencia de template en fieldfx.json no
+   significa que la secuencia fuente sea N/A; distinguirla del bounce CSS del viewer.
+4. Avatar: corregir recurso de correr (el caller usa *surfrun, no la hoja normal),
+   separar avatar surf activo simplificado de flotador SurfBlob sin conectar y
+   apuntar las líneas de bici al bloque correcto. No declarar comprobadas tablas
+   de movimiento C que siguen pendientes de la revisión reservada a Codex.
+5. Huellas/bici: registrar además el recorte actual de 16×8 frente a frames fuente
+   de 16×16; verificar geometría real y variantes sin inferirlas de dimensiones.
+   Usar el tick GBA de constants.ts (16777216/280896), no 60 Hz exactos, al convertir
+   duraciones. Revisar referencias C/TS con la versión auditada y declarar límites.
+
+**Aceptar:** tabla coherente con callers y metadatos; recursos, frames y conexión
+verificados independientemente. Diff/enlaces/honesty antes del commit documental.
+M12/M13 siguen bloqueadas por las APIs de C7; no empezar sus cambios por haber
+entregado M10/M11. La discrepancia entre ramas requiere integración posterior del
+revisor, no cherry-picks ni fusión por Muse sin coordinación.
+
+#### M11 — Diálogos de interacción seguros y accesibles [aceptada en rama Muse]
+
+**Aceptada:** `ddd899ae`; tipos/build/honesty/diff-check PASS. Chromium a
+900×300/700: texto largo con scroll y cierre visible sin solapar cabecera;
+texto/strong seguros, sin interpretar HTML, y render repetido con un cierre por clic.
+Entrada maliciosa/texto largo e instancia aislada: **PREPARED**. Callbacks reales
+sobre NPC del índice invocados por DOM click **PREPARED**: Z/Espacio/Enter cierran,
+botón Cerrar no mueve avatar. No se afirma recorrido físico de interacción ni
+validación con lector de pantalla; role/status y nombre comprobados en DOM.
 
 **Archivos:** `ui/dialog.ts`, HTML/CSS del diálogo y cambios mínimos a sus callers
 en `main.ts`. No cambiar contenido narrativo, combate, scripts ni movimiento.
@@ -603,7 +655,7 @@ editable. No hacer que casa/árbol reaccionen por cercanía sin comportamiento f
 Codex: C2/C3 para reparar fundamentos, modelo de proyecto C6, exploración C1/C7
 sobre ese modelo y C4/C5 según dependencias. No implementar editor como pintura
 cosmética para después reconstruirlo: render, colisión y persistencia van juntos.
-Muse: M1–M9 y R1–R5 cerradas; M10 → M11 listas en el orden indicado. M12 → M13
+Muse: M1–M11 y R1–R6 cerradas en sus ramas; integración pendiente. M12 → M13
 esperan APIs/datos de Codex C7. Controles del editor esperan fundamentos C2/C3 y C6.
 Worktrees separados; coordinar main/HTML/CSS con C1/C6 antes de fusionar M3.
 
