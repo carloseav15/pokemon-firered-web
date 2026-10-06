@@ -1,6 +1,6 @@
 import { viewerClock } from "../clock";
 import type { ViewerFieldEffects } from "../fieldEffects";
-import { TILE } from "../constants";
+import { EffectPresenter } from "./effectPresenter";
 
 export function spawnFieldFx(
   content: HTMLElement,
@@ -11,37 +11,14 @@ export function spawnFieldFx(
 ): () => void {
   const timers: ReturnType<typeof setTimeout>[] = [];
   const fx = document.createElement("div");
-  let unsubscribe: (() => void) | null = null;
   let disposed = false;
-  const dispose = () => { if (disposed) return; disposed = true; unsubscribe?.(); for (const timer of timers) { clearTimeout(timer); clearInterval(timer); } fx.remove(); onDispose?.(); };
+  const dispose = () => { if (disposed) return; disposed = true; for (const timer of timers) { clearTimeout(timer); clearInterval(timer); } fx.remove(); onDispose?.(); };
   fx.className = "field-fx";
   fx.style.left = `${xPx}px`;
 
-  if (type === "grass") {
-    fx.style.top = `${yPx + 2}px`;
-    fx.style.width = "16px";
-    fx.style.height = "16px";
-    fx.style.backgroundImage = "url(/fr/fieldfx/tallgrass__ette1.png)";
-    fx.style.backgroundPosition = "0px 0px";
-    content.appendChild(fx);
-
-  } else if (type === "dust") {
-    fx.style.top = `${yPx + 8}px`;
-    fx.style.width = "16px";
-    fx.style.height = "8px";
-    fx.style.backgroundImage = "url(/fr/fieldfx/groundimpactdust__ette0.png)";
-    fx.style.backgroundPosition = "0px 0px";
-    content.appendChild(fx);
-
-  } else if (type === "ripple") {
-    fx.style.top = `${yPx + 4}px`;
-    fx.style.width = "16px";
-    fx.style.height = "16px";
-    fx.style.backgroundImage = "url(/fr/fieldfx/ripple__ette1.png)";
-    fx.style.backgroundPosition = "0px 0px";
-    content.appendChild(fx);
-
-  } else if (type === "sand") {
+  // M12: grass/dust/ripple present through EffectPresenter from templates;
+  // this legacy path stays for sand/tire only (M13).
+  if (type === "sand") {
     fx.style.top = `${yPx + 8}px`;
     fx.style.width = "16px";
     fx.style.height = "8px";
@@ -68,36 +45,20 @@ export function spawnFieldFx(
       timers.push(setTimeout(dispose, 600));
     }, 1200));
   }
-  if (type === "grass" || type === "dust" || type === "ripple") {
-    const start = viewerClock.elapsedMs;
-    const delay = type === "grass" ? 50 : type === "dust" ? 60 : 70;
-    const count = type === "dust" ? 3 : 5;
-    const height = type === "dust" ? 8 : 16;
-    unsubscribe = viewerClock.subscribe(frame => {
-      const f = Math.floor((frame.elapsedMs - start) / delay);
-      if (f >= count) dispose();
-      else fx.style.backgroundPosition = `0px -${f * height}px`;
-    });
-  }
   return dispose;
 }
 
-/** Temporary M12 consumer, preserving the old presentation until Muse replaces it. */
+/** M12 presenter: template frames, sizes, order, durations and flips driven by viewerClock. */
 export function installFieldFxRenderer(effects: ViewerFieldEffects, content: HTMLElement, minX: number, minY: number): () => void {
-  const active = new Map<number, () => void>();
-  const clear = () => { for (const dispose of active.values()) dispose(); active.clear(); };
+  const active = new Map<number, EffectPresenter>();
+  const remove = (id: number) => { active.get(id)?.dispose(); active.delete(id); };
+  const unsubClock = viewerClock.subscribe(() => { for (const p of [...active.values()]) p.tick(); });
   const unsubscribe = effects.subscribe(event => {
-    if (event.type === "clear") { clear(); return; }
-    if (event.type === "release") { active.get(event.id)?.(); active.delete(event.id); return; }
-    const type = event.template.name === "TallGrass" ? "grass" : event.template.name === "Ripple" ? "ripple" : "dust";
-    // Legacy spawn adds its own offset. Use the canonical world top-left from the event.
-    const legacyOffset = type === "grass" ? 2 : type === "ripple" ? 4 : 8;
-    const dispose = spawnFieldFx(content, event.position.xPx - minX * TILE, event.position.yPx - minY * TILE - legacyOffset, type, () => active.delete(event.id));
-    const node = content.lastElementChild as HTMLElement;
-    node.dataset.effectId = String(event.id);
-    node.dataset.effectGeneration = String(event.generation);
-    node.style.zIndex = String(event.priority.domZIndex);
-    active.set(event.id, dispose);
+    if (event.type === "clear") { for (const id of [...active.keys()]) remove(id); return; }
+    if (event.type === "release") { active.get(event.id)?.release(); active.delete(event.id); return; }
+    const presenter = new EffectPresenter(event, content, minX, minY, () => active.delete(event.id));
+    if (presenter.lastError) return;
+    active.set(event.id, presenter);
   });
-  return () => { unsubscribe(); clear(); };
+  return () => { unsubscribe(); unsubClock(); for (const id of [...active.keys()]) remove(id); };
 }
