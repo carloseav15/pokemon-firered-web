@@ -35,6 +35,7 @@ export class EffectPresenter {
   private remaining = 0;
   private firstCommand = true;
   private ended = false;
+  private age = 0;
   private releaseRequested = false;
   private disposed = false;
 
@@ -69,7 +70,16 @@ export class EffectPresenter {
 
   /** Advance one GBA tick. */
   tick(): void {
-    if (this.ended || this.disposed || this.lastError) return;
+    if (this.disposed || this.lastError) return;
+    const lifetime = this.spawn.lifetime;
+    if (lifetime) {
+      this.age++;
+      if (this.age >= lifetime.endTick) { this.dispose(); return; }
+      if (this.age > lifetime.holdTicks) {
+        this.node.style.visibility = (this.age - lifetime.holdTicks) % 2 ? "hidden" : "visible";
+      }
+    }
+    if (this.ended) return;
     if (this.remaining > 0) this.remaining--;
     if (this.remaining === 0) {
       this.cmdIndex++;
@@ -142,7 +152,7 @@ export class EffectPresenter {
   private complete(): void {
     this.ended = true;
     // retainUntilLeave keeps the final frame until release(); otherwise remove now.
-    if (!this.spawn.retainUntilLeave || this.releaseRequested) this.dispose();
+    if ((!this.spawn.retainUntilLeave && !this.spawn.lifetime) || this.releaseRequested) this.dispose();
   }
 
   private fail(reason: string): void {

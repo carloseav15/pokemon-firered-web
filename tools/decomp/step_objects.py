@@ -36,7 +36,9 @@ def parse_anim_cmds(text: str) -> dict[str, list]:
             if kind == "FRAME":
                 parts = [p.strip() for p in args.split(",")]
                 positional = [p for p in parts if not p.startswith(".")]
-                named = dict(p[1:].split("=", 1) for p in parts if p.startswith(".") and "=" in p)
+                named = {k.strip(): v.strip() for p in parts if p.startswith(".") and "=" in p for k, v in [p[1:].split("=", 1)]}
+                if any(k not in ("hFlip", "vFlip") or v not in ("TRUE", "FALSE", "0", "1") for k, v in named.items()):
+                    raise ValueError(f"Unsupported frame flags in {name}: {named}")
                 hflip = named.get("hFlip", "FALSE").strip() in ("TRUE", "1")
                 vflip = named.get("vFlip", "FALSE").strip() in ("TRUE", "1")
                 cmds.append(["F", int(positional[0], 0), int(positional[1], 0), int(hflip), int(vflip)])

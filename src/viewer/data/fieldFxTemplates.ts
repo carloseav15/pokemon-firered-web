@@ -1,12 +1,14 @@
 import { DATA_ROOT } from "../../fr/rom";
 
 export const M12_TEMPLATE_NAMES = ["TallGrass", "GroundImpactDust", "Ripple"] as const;
+export const VIEWER_TEMPLATE_NAMES = [...M12_TEMPLATE_NAMES, "SandFootprints", "DeepSandFootprints", "BikeTireTracks"] as const;
+export type EffectTemplateName = typeof VIEWER_TEMPLATE_NAMES[number];
 export type M12TemplateName = typeof M12_TEMPLATE_NAMES[number];
 export type ViewerAnimCmd = readonly ["F", number, number, 0 | 1, 0 | 1] | readonly ["J", number] | readonly ["E"];
 export type EffectFrame = Readonly<{ image: HTMLImageElement; url: string; sourceX: number; sourceY: number; width: number; height: number }>;
-export type EffectTemplate = Readonly<{ name: M12TemplateName; frames: readonly EffectFrame[]; anims: readonly (readonly ViewerAnimCmd[])[]; callback: string; size: readonly [number, number] }>;
+export type EffectTemplate = Readonly<{ name: EffectTemplateName; frames: readonly EffectFrame[]; anims: readonly (readonly ViewerAnimCmd[])[]; callback: string; size: readonly [number, number] }>;
 
-const templates = new Map<M12TemplateName, Promise<EffectTemplate>>();
+const templates = new Map<EffectTemplateName, Promise<EffectTemplate>>();
 const images = new Map<string, Promise<HTMLImageElement>>();
 let manifest: Promise<Record<string, unknown>> | null = null;
 function fail(name: string, reason: string): never { throw new Error(`Viewer fieldfx ${name}: ${reason}`); }
@@ -59,9 +61,9 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   return promise;
 }
 
-/** Cached including in-flight loads; failed loads are retryable. M12 only. */
-export function loadEffectTemplate(name: M12TemplateName): Promise<EffectTemplate> {
-  if (!(M12_TEMPLATE_NAMES as readonly string[]).includes(name)) return Promise.reject(new Error(`Viewer fieldfx unsupported template ${name}`));
+/** Cached including in-flight loads; failed loads are retryable. Source-backed viewer templates. */
+export function loadEffectTemplate(name: EffectTemplateName): Promise<EffectTemplate> {
+  if (!(VIEWER_TEMPLATE_NAMES as readonly string[]).includes(name)) return Promise.reject(new Error(`Viewer fieldfx unsupported template ${name}`));
   let promise = templates.get(name);
   if (!promise) {
     promise = loadManifest().then(async all => {
@@ -86,5 +88,10 @@ export function loadEffectTemplate(name: M12TemplateName): Promise<EffectTemplat
 }
 export async function loadM12Templates(): Promise<ReadonlyMap<M12TemplateName, EffectTemplate>> {
   const loaded = await Promise.all(M12_TEMPLATE_NAMES.map(loadEffectTemplate));
+  return new Map(loaded.map((t, i) => [M12_TEMPLATE_NAMES[i], t]));
+}
+
+export async function loadViewerEffectTemplates(): Promise<ReadonlyMap<EffectTemplateName, EffectTemplate>> {
+  const loaded = await Promise.all(VIEWER_TEMPLATE_NAMES.map(loadEffectTemplate));
   return new Map(loaded.map(t => [t.name, t]));
 }

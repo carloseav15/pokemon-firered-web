@@ -23,7 +23,7 @@ import { setupPopovers } from "./ui/popover";
 import { getPlayerSpriteSheet, type Direction, GFX_MAP } from "./render/sprites";
 import { viewerClock, bindViewerClockVisibility } from "./clock";
 import { ViewerFieldEffects } from "./fieldEffects";
-import { spawnFieldFx, installFieldFxRenderer } from "./render/fieldFx";
+import { installFieldFxRenderer } from "./render/fieldFx";
 import { EntityManager, type LiveEntity } from "./render/entities";
 import { DialogManager, type DialogSegment } from "./ui/dialog";
 import { ViewerCamera } from "./camera";
@@ -52,7 +52,6 @@ let entityManager: EntityManager;
 let dialogManager: DialogManager;
 let fieldEffects: ViewerFieldEffects;
 let cancelPlayerMotion: (() => void) | null = null;
-const legacyMarks = new Set<() => void>();
 function resetExploreSession(): void {
   cancelPlayerMotion?.();
   cancelPlayerMotion = null;
@@ -60,8 +59,6 @@ function resetExploreSession(): void {
   playerMoving = false;
   keysDown.clear();
   fieldEffects.resetSession();
-  for (const dispose of legacyMarks) dispose();
-  legacyMarks.clear();
 }
 const audioController = new ViewerAudioController();
 
@@ -487,12 +484,8 @@ function processPlayerStep(): void {
     }
 
     const groundActor = { x: targetX, y: targetY, previousX: playerX, previousY: playerY,
-      direction: playerDir, previousDirection, landingJump: isLedgeJump };
+      direction: playerDir, previousDirection, landingJump: isLedgeJump, vehicle: playerMode };
     fieldEffects.onGroundStep("begin", groundActor);
-    if (worldGrid.isSandTile(targetX, targetY) && playerMode !== "surf") {
-      const dispose = spawnFieldFx(content, destPxX, destPxY, playerMode === "bike" ? "tire" : "sand", () => legacyMarks.delete(dispose));
-      legacyMarks.add(dispose);
-    }
 
     const duration = playerMode === "bike" ? 100 : playerRunning ? 120 : 160;
     const startTime = viewerClock.elapsedMs;

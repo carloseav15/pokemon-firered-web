@@ -51,3 +51,18 @@ else:
     raise AssertionError("Unknown animation index was not rejected")
 
 print("Field effect animation tables match C declarations")
+
+# Independent oracle: do not derive these expectations with the parser under test.
+for template in ("SandFootprints", "DeepSandFootprints"):
+    actual = fieldfx["templates"][template]["anims"]
+    assert actual[1][0] == ["F", 0, 1, 0, 1], template + " south vFlip lost"
+    assert actual[4][0] == ["F", 1, 1, 1, 0], template + " east hFlip lost"
+assert fieldfx["templates"]["BikeTireTracks"]["anims"][6][0] == ["F", 0, 1, 1, 0]
+assert fieldfx["templates"]["BikeTireTracks"]["anims"][7][0] == ["F", 3, 1, 1, 0]
+for flag in (".hFlip = UNKNOWN", ".unknown = TRUE"):
+    try:
+        parse_anim_cmds("const union AnimCmd invalid[] = { ANIMCMD_FRAME(0, 1, " + flag + "), ANIMCMD_END };")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Unsupported frame flags accepted")
