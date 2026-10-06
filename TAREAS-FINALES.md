@@ -300,7 +300,12 @@ Receta:
 - [ ] `trainer_tower.c`: `TT_ConvertEasyChatMessageToString`, `GetTrainerTowerTrainerFrontSpriteId`,
   `CB2_EndTrainerTowerBattle`, `Task_DoTrainerTowerBattle`.
 - [ ] `battle_tower.c`: `Task_WaitBT` (adapta el scheduler a `game.startBattle`).
-- [ ] `trade_scene.c`: `LoadTradeAnimGfx`; `mail.c`: `GetInGameTradeMail` (`attachTradeMail`).
+- [x] `trade_scene.c`: `LoadTradeAnimGfx`; `mail.c`: `GetInGameTradeMail` (`attachTradeMail`).
+  Iguales: `LoadTradeAnimGfx` delega en una línea (`trade_scene.c:2803` frente a
+  `ingameTrade.ts:369`); el correo copia 9 palabras, nombre, 4 bytes de ID con
+  máscaras explícitas, especie y objeto (`trade_scene.c:2500-2512` frente a
+  `mail.ts:259-276`, con guardas benignas ante cdata ausente y firma adaptada a
+  anexar al mon). `MAIL_WORDS_COUNT` 9 en ambos.
 - [ ] `trade_scene.c`: `TradeAnimInit_LoadGfx` no sigue el cuerpo C: el C hace
   `ChangeBgX/Y(0, 0, 0)`, carga dos veces gráficos, tilemap y paleta del textbox
   (`gBattleInterface_Textbox_*`) y no asigna buffer a BG2; el TS asigna BG2 y no carga
