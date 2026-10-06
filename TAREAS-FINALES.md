@@ -280,7 +280,11 @@ Receta:
   `ChangeBgX/Y(0, 0, 0)`, carga dos veces gráficos, tilemap y paleta del textbox
   (`gBattleInterface_Textbox_*`) y no asigna buffer a BG2; el TS asigna BG2 y no carga
   el textbox. Comprobar si esa carga ocurre en otro sitio.
-- [ ] `metatile_behavior.c`: fachada de predicados en `fieldmap.ts`.
+- [x] `metatile_behavior.c`: fachada de predicados en `fieldmap.ts` (`fieldmap.ts:132-139`,
+  delegación 1:1 sin lógica). Cuerpos generados clavan al C (`metatile_behavior.c:253,446,
+  454,527,535,648,676,846` frente a `generated/metatileBehavior.ts:365,563,571,644,652,
+  778,807,987`); 10 constantes MB_* coinciden con `metatile_behaviors.h`. Solo
+  `IsWater` tiene callers vivos (7 archivos); los otros 7 sin caller en TS.
 
 ## 3. Validación en navegador
 
