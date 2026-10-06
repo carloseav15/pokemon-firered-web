@@ -139,6 +139,19 @@ export const H = {
     }).filter(Boolean).sort((a, b) => b.score - a.score || a.target - b.target);
     return choices[0]?.target ?? -1;
   },
+  recoverReplacement() {
+    const active = this.G.gBattleMons[0], bag = dbg().save.save.bag.items;
+    const choices = dbg().save.save.party.map((m, target) => {
+      if (!m.species || m.isEgg || m.hp <= 0 || m.personality === active.personality) return null;
+      const next = this.partyBattleMon(m), attacks = this.bestMoves(next), heal = hpItem(next, bag, this.C);
+      // Recover a usable reserve with one real medicine, then reconsider switching.
+      if (!attacks.length || !heal || (next.hp + heal.restores) / next.maxHP < this.policy.fieldHp) return null;
+      return { target, personality: m.personality, otId: m.otId, item: heal.item,
+        score: attacks[0].score * (next.hp + heal.restores) / next.maxHP };
+    }).filter(Boolean).sort((a, b) => b.score - a.score || a.target - b.target);
+    const choice = choices[0];
+    return choice ? { action: "item", ...choice, reason: "recover attacking reserve" } : null;
+  },
   battleDecision(incoming = 0) {
     const C = this.C, flags = this.G.G.gBattleTypeFlags;
     if (flags & (C.BATTLE_TYPE_DOUBLE | C.BATTLE_TYPE_LINK | C.BATTLE_TYPE_SAFARI | C.BATTLE_TYPE_POKEDUDE | C.BATTLE_TYPE_OLD_MAN_TUTORIAL)) {
@@ -147,19 +160,27 @@ export const H = {
     const mon = this.G.gBattleMons[0], bag = dbg().save.save.bag.items;
     const low = mon.hp <= Math.max(mon.maxHP * this.policy.battleHp, incoming * 1.5);
     const heal = hpItem(mon, bag, C);
+    const attacks = this.bestMoves();
+    if (!attacks.length) {
+      const target = this.bestReplacement(true);
+      if (target >= 0) return { action: "switch", target, personality: dbg().save.save.party[target].personality, reason: "no usable attack" };
+      const recovery = this.recoverReplacement();
+      if (recovery) return recovery;
+      return flags & C.BATTLE_TYPE_TRAINER ? { action: "stop", reason: "resources exhausted in trainer battle" }
+        : { action: "run", reason: "resources exhausted in wild battle" };
+    }
     if (low && heal) return { action: "item", item: heal.item, reason: "low hp", incoming };
     const cure = statusItem(mon.status1, bag, C);
     if (cure) return { action: "item", item: cure, reason: "status" };
-    const attacks = this.bestMoves();
     const better = this.bestReplacement(true);
-    if (attacks.length && attacks[0].effectiveness < 1 && better >= 0) {
+    if (attacks[0].effectiveness < 1 && better >= 0) {
       const next = this.partyBattleMon(dbg().save.save.party[better]);
       const best = this.bestMoves(next)[0];
       if (next.hp / next.maxHP >= this.policy.fieldHp && best.score > attacks[0].score * 1.8) return { action: "switch", target: better, personality: dbg().save.save.party[better].personality, reason: "better attack matchup" };
     }
-    if (!attacks.length || low && !heal) {
+    if (low && !heal) {
       const target = this.bestReplacement(true);
-      if (target >= 0) return { action: "switch", target, personality: dbg().save.save.party[target].personality, reason: attacks.length ? "low hp without medicine" : "no usable attack" };
+      if (target >= 0) return { action: "switch", target, personality: dbg().save.save.party[target].personality, reason: "low hp without medicine" };
       return flags & C.BATTLE_TYPE_TRAINER ? { action: "stop", reason: "resources exhausted in trainer battle" }
         : { action: "run", reason: "resources exhausted in wild battle" };
     }
@@ -294,7 +315,9 @@ export const H = {
           trace.push({ ...decision, remainingPP: decision.pp, active, hp: mons[0].hp, foe: mons[1].species, foeHp: mons[1].hp, pp: [...mons[0].pp] });
           if (decision.action === "stop") { stop = decision.reason; break; }
           if (decision.action === "item") {
-            const fieldSlot = dbg().save.save.party.findIndex(m => m.personality === mons[0].personality);
+            const personality = decision.personality ?? mons[0].personality;
+            const otId = decision.otId ?? mons[0].otId;
+            const fieldSlot = dbg().save.save.party.findIndex(m => m.species && m.personality === personality && m.otId === otId);
             const used = await this.useItem(decision.item, fieldSlot, { battle: true });
             trace.at(-1).used = used;
             decision = null;
@@ -399,8 +422,19 @@ export const H = {
     const identityBefore = JSON.stringify(dbg().save.save.party.filter(m => m.species).map(m => [m.species, m.personality, m.otId, [...m.moves]]));
     const arrived = await this.goto(7, 4, { battle: "fight" });
     if (arrived.note) return { ok: false, note: arrived.note, before };
-    await this.face("U"); await dbg().press("A");
-    if (!await this.until(() => this.hasTask("Task_MultichoiceMenu_HandleInput"), "A")) return { ok: false, note: "nurse offer missing" };
+    await this.face("U");
+    // press()/wait() advance batches of frames: an A batch can create and then
+    // dismiss the offer before until() observes it. Inspect every frame, release
+    // between key edges, and stop advancing A as soon as the offer exists.
+    let offered = false;
+    for (let frame = 0; frame < 3000; frame++) {
+      if (this.hasTask("Task_MultichoiceMenu_HandleInput")) { offered = true; break; }
+      dbg().run(1, frame % 32 === 0 ? 1 : 0);
+      if (frame % 16 === 15) await new Promise(resolve => setTimeout(resolve, 1));
+    }
+    if (!offered) offered = this.hasTask("Task_MultichoiceMenu_HandleInput");
+    dbg().run(1); // release A before the explicit YES confirmation
+    if (!offered) return { ok: false, note: "nurse offer missing", before };
     // Nurse offer opens at YES. Never walk through the healing movement script.
     await dbg().wait(30); await dbg().press("A");
     if (!await this.until(() => this.fieldFree(), "A", 500)) return { ok: false, note: "nurse did not return control" };
