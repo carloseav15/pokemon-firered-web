@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { prelude } from "./lib.mjs";
 
 // SON-PREP: from the original mtmoon-1f fixture, reach the Route 4 Center by walking, heal with
@@ -147,28 +148,58 @@ export default async function run(ctx) {
   writeFileSync(`${out}/written-save.json`, raw);
   evidence.writtenBytes = raw.length;
 
-  // 7. Reload with ?fr=continue; the Quest Log recorded during the trip plays back first.
+  // 7. Reload with ?fr=continue. H.ready() only proves a map exists; wait for the Quest Log
+  // playback to finish (state leaves PLAYBACK/PLAYBACK_LAST) and for free control, with a hard limit.
   const base = process.env.PW_BASE ?? "http://localhost:5173/";
   const errors = [];
   ctx.page.on("pageerror", e => errors.push(String(e).slice(0, 400)));
   await ctx.page.goto(`${base}?fr=continue`, { waitUntil: "load" });
-  await ctx.page.waitForTimeout(4000);
+  await ctx.page.waitForTimeout(2000);
   evidence.continue = await ctx.page.evaluate(`(async () => {
-    try { const { H } = await import("/tools/playtest/driver.js"); window.H = H; const s = await H.ready(600);
+    try {
+      const { H } = await import("/tools/playtest/driver.js"); window.H = H; await H.ready(600);
+      const Q = await H.mod("/src/fr/questLogEvents.ts");
+      const playback = () => Q.gQuestLogState === H.C.QL_STATE_PLAYBACK || Q.gQuestLogState === H.C.QL_STATE_PLAYBACK_LAST;
+      const observed = [];
+      let frames = 0;
+      for (; frames < 18000; frames += 20) {
+        if (!observed.includes(Q.gQuestLogState)) observed.push(Q.gQuestLogState);
+        if (frames > 0 && !playback() && H.fieldFree()) break;
+        await frDebug.wait(20);
+      }
+      const finished = !playback() && H.fieldFree();
       const sv = frDebug.save.save;
-      return { ok: true, st: H.st(), money: sv.money, party: sv.party.filter(p => p.species).map(p => [p.species, p.personality, p.otId, p.level, p.hp, [...p.moves], [...p.pp], p.status]), bag: sv.bag, heal: sv.lastHealLocation, saved: sv.gameStats[H.C.GAME_STAT_SAVED_GAME], free: H.fieldFree() };
-    } catch (e) { return { ok: false, error: String(e).slice(0, 300) }; } })()`);
+      return { ok: finished, error: finished ? null : "Quest Log playback/control did not finish within " + frames + " frames", observed, frames, state: Q.gQuestLogState,
+        st: { map: H.st().map, x: H.st().x, y: H.st().y }, money: sv.money,
+        party: sv.party.filter(p => p.species).map(p => [p.species, p.personality, p.otId, p.level, p.hp, [...p.moves], [...p.pp], p.status]),
+        bag: JSON.parse(JSON.stringify(sv.bag)), heal: sv.lastHealLocation, escape: sv.escapeWarp, saved: sv.gameStats[H.C.GAME_STAT_SAVED_GAME], free: H.fieldFree() };
+    } catch (e) { return { ok: false, error: String(e?.stack ?? e).slice(0, 500) }; } })()`);
   evidence.continueErrors = errors;
   await ctx.shot("son-prep-continue");
   writeFileSync(`${out}/evidence.json`, JSON.stringify(evidence, null, 1));
-  if (!evidence.continue.ok) throw new Error(`BLOCKED at continue: ${evidence.continue.error}; page errors: ${errors[0] ?? "none"}; evidence in ${out}`);
+  const c = evidence.continue;
+  if (!c.ok || errors.length) throw new Error(`FAIL at continue: ${c.error ?? "page errors"}; page errors: ${errors[0] ?? "none"}; evidence in ${out}`);
+  if (!c.observed.includes(2)) throw new Error("the recorded Quest Log scenes were not played back: " + JSON.stringify(c.observed));
 
-  const pre = evidence.save.post, c = evidence.continue;
-  const same = JSON.stringify({ st: { map: c.st.map, x: c.st.x, y: c.st.y }, money: c.money, party: c.party, bag: c.bag, heal: c.heal }) ===
-    JSON.stringify({ st: pre.st, money: pre.money, party: pre.party, bag: pre.bag, heal: pre.heal });
-  if (!same || !c.free) throw new Error(`continued state differs or control not returned: ${JSON.stringify({ pre, c })}`);
-  const sha = (await import("node:crypto")).createHash("sha256").update(raw).digest("hex");
+  // 8. Compare against the state captured immediately after the menu save.
+  const pre = evidence.save.post;
+  const wanted = { st: pre.st, money: pre.money, party: pre.party, bag: pre.bag, heal: pre.heal, escape: pre.escape, saved: evidence.save.savedAfter };
+  const actual = { st: c.st, money: c.money, party: c.party, bag: c.bag, heal: c.heal, escape: c.escape, saved: c.saved };
+  if (JSON.stringify(wanted) !== JSON.stringify(actual)) throw new Error("continued state differs from the saved state: " + JSON.stringify({ wanted, actual }));
+  const stored = await ctx.runEval(`return localStorage.getItem(${JSON.stringify(SAVE_KEY)});`);
+  if (stored !== raw) throw new Error("continue rewrote the persisted bytes");
+
+  // 9. Export exactly the bytes the game wrote, with provenance (sidecar keeps the save format untouched).
+  const sha = createHash("sha256").update(raw).digest("hex");
   evidence.writtenSha256 = sha;
+  if (process.env.SON_PREP_EXPORT !== "0") {
+    writeFileSync("tools/playtest/saves/mtmoon-prepared.json", raw);
+    writeFileSync("tools/playtest/saves/mtmoon-prepared.provenance.json", JSON.stringify({
+      origin: "tools/playtest/saves/mtmoon-1f.json", job: "tools/playtest/smoke/son-prep.job.mjs",
+      method: "walk to Route 4 Center, nurse, buy 7 Potion + 3 Antidote in Pewter Mart UI, nurse, START>SAVE; bytes copied from localStorage after the menu save",
+      sha256: sha, bytes: raw.length, gameStatSavedGame: evidence.save.savedAfter, aids: "none: no money/items/levels/PP/flags written by code; auto battle policy; recovery:true only on the return to the Center",
+    }, null, 1) + "\n");
+  }
   writeFileSync(`${out}/evidence.json`, JSON.stringify(evidence, null, 1));
   return evidence;
 }

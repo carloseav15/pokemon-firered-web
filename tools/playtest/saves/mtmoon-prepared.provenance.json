@@ -1,0 +1,9 @@
+{
+ "origin": "tools/playtest/saves/mtmoon-1f.json",
+ "job": "tools/playtest/smoke/son-prep.job.mjs",
+ "method": "walk to Route 4 Center, nurse, buy 7 Potion + 3 Antidote in Pewter Mart UI, nurse, START>SAVE; bytes copied from localStorage after the menu save",
+ "sha256": "45b315d09e759b98f1f84d890ce8d8d1c906166cce214ca44ee9c28b543a2968",
+ "bytes": 59425,
+ "gameStatSavedGame": 1,
+ "aids": "none: no money/items/levels/PP/flags written by code; auto battle policy; recovery:true only on the return to the Center"
+}
