@@ -547,56 +547,61 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
   Si persiste solapamiento, entregar snapshot de tareas/callbacks/VAR_RESULT a Sol;
   no modificar motor, ni parchear controles/estado para obtener PASS. Dos intentos
   diagnósticos máximo. C8 actual pasa para el fixture de un miembro; equipo completo y audiovisual siguen pendientes.
-- [ ] **FLASH-C5-R1 — C5 fiable (Flash, tras contrato de Sol).**
-  Propuesta técnica y checklist de validación para lucha, huida y captura en combate salvaje:
+- [ ] **FLASH-C5-R1 — C5 fiable (Flash, implementación pendiente).**
+  **Contrato C5 cerrado por Sol para implementación (sustituye la propuesta
+  3172ed50; todavía no implementado ni validado en navegador).** Flash trabaja
+  únicamente en su rama/worktree desde la base de cierre indicada por Sol.
+  No modificar motor, driver, fixtures persistidos ni baselines. Casos aislados:
+  recargar route2-north entre casos; preservar resultados previos aunque otro falle.
 
-  **Discrepancias observadas en el job C5 actual (`tools/playtest/smoke/C5-wild-battle.job.mjs`):**
-  1. *Falso negativo por agotamiento legítimo:* Trata el no capturar tras gastar todas las Poké Balls (`thrown < balls0`) como excepción del runner (`fail("capture did not add exactly one Pokémon")`), confundiendo mala suerte de RNG con un fallo del motor.
-  2. *Mezcla de casos en un único flujo acoplado:* Enlaza lucha, huida y captura en una sola ejecución secuencial. Si falla la captura probabilística, invalida la evidencia de lucha y huida previa.
-  3. *Verificación débil de retorno al campo:* Usa `H.idle(2000, false)` sin comprobar `H.fieldFree()`, ausencia de tareas/scripts bloqueantes ni movimiento real del avatar con colisiones (`H.goto`).
-  4. *Falta de cobertura para equipo lleno:* Solo valida captura con hueco en equipo (`party.length < 6`), sin comprobar `sendMonToPC`, inicialización de BoxMon ni preservación del equipo cuando el equipo está completo (6 miembros).
-  5. *Aserción de mochila imprecisa:* `bagCount(C.ITEM_POKE_BALL)` usa `sv.party.length` y asume que cualquier cambio en la mochila es solo de Poké Balls, sin aislar el evento exacto de consumo por cada lanzamiento.
+  | Caso | Entrada y recorrido | Aserciones y resultado |
+  | --- | --- | --- |
+  | Lucha | route2-north: MAP_ROUTE2(5,4), BulbasaurL15, moves[79,45,73,22]; Vine Whip se busca por ID, actualmente índice3. Encuentro por pasos reales, FIGHT y movimiento por cursor observado | B_OUTCOME_WON, EXP aumenta, registrar usos/PP del movimiento; retorno al campo y paso real. No fijar un único uso si hubo varios turnos |
+  | Huida | Entrada independiente, encuentro real y RUN por cursor observado | B_OUTCOME_RAN, inventario y acciones registrados; HP pueden bajar si antes hubo un intento fallido. No exigir HP inalterados como regla general; no gastar PP en movimientos de jugador si solo se eligió RUN |
+  | Lanzamiento natural | Entrada independiente con5 Poké Balls del fixture, BAG → OPEN_BAG_POKEBALLS(2) → ITEM_POKE_BALL → USE, hasta captura o agotamiento | Contar el item por ID (bagCount ya lo hace); por cada uso efectivo registrar consumo exactamente1, foe/species/HP/status y desenlace. No usar pokeBalls[0] ni sumar intentos antes de observar consumo. Si se agotan, RUN y retorno al campo: PASS de recursos, captura natural MANUAL si no ocurrió; nunca PASS de captura por agotamiento |
+  | Captura garantizada con hueco (PREPARED) | Mismo checkpoint; añadir una Master Ball en memoria como entrada declarada. No alterar foe, RNG, resultados ni flags. Lanzar por BAG y declinar mote por UI | B_OUTCOME_CAUGHT, consumo de1 Master Ball, nuevo miembro con especie/nivel/personality del enemigo observado, OT del jugador y pokeball=ITEM_MASTER_BALL; miembros previos conservados. Si se afirma Pokédex, leer y comprobar el flag correspondiente, no inferirlo del conteo |
+  | Captura con equipo lleno (PREPARED) | Recargar; mantener el líder original y crear cinco Pokémon válidos con createMon del proyecto (especie/nivel/identidades registrados), como entrada diagnóstica. Equipo6, una Master Ball, al menos un hueco observado en PC. No preparar el capturado ni una caja posterior | Captura/consumo por UI; equipo6 con identidades/orden intactos; exactamente un Pokémon nuevo en el primer hueco que seleccionaría SendMonToPC, empezando por currentBox y recorriendo cajas circularmente. Verificar especie/personality/OT/movimientos/EXP y bola. Registrar caja/slot reales y VAR_PC_BOX_TO_SEND_MON, sin fijar caja0 |
 
-  **Checklist de Validación C5:**
-  1. **Subcaso Lucha (FIGHT):**
-     - *Entrada/Prerrequisitos:* Save `route2-north` en `MAP_ROUTE2 (5, 4)`, Bulbasaur L15 con Látigo Cepa (`MOVE_VINE_WHIP` = 22, slot 2 o índice dinámico).
-     - *Navegación UI:* Caminar en hierba hasta encuentro salvaje (`H.inBattle() === true`). En menú de acción (`HandleInputChooseAction`), seleccionar FIGHT (`0, 0` + `A`), seleccionar Látigo Cepa (`A`).
-     - *Estado anterior/posterior:* Registrar `exp0 = sv.party[0].exp`, HP enemigo inicial, PP del movimiento. Tras debilitar al salvaje: `outcome === B_OUTCOME_WON`, `sv.party[0].exp > exp0`, PP decrementado en 1 por uso.
-     - *Retorno al campo:* Esperar a que el combate termine (`!H.inBattle()`), verificar `H.fieldFree() === true`, y realizar paso real (`H.goto(x, y + 1)`) sin notas ni colisiones bloqueantes.
-     - *Criterios:* PASS si gana, suma exp y camina en campo. FAIL si queda atascado (`r.stuck`), pierde combate o no puede moverse.
+  Fuentes de criterios: battle_script_commands.c Cmd_handleballthrow y
+  Cmd_givecaughtmon; pokemon.c GiveMonToPlayer, SendMonToPC, MonRestorePP y
+  CalculatePPWithBonus. El caso Master Ball prueba su garantía específica,
+  no odds>254 ni la probabilidad de Poké Ball. HP1+sueño no es garantía general:
+  catchRate45/maxHP30/Poké Ball produce odds88. No usar esa premisa del borrador.
+  SendMonToPC restaura PP y copia BoxPokemon; HP/status no forman parte del BoxMon
+  C. No exigir status0 al objeto web almacenado sin una comprobación de adaptación
+  separada. Comparar PP restaurados contra tablas del C y sus bonos, no contra el
+  mismo helper usado para producir el resultado. En captura con hueco, conservar
+  los datos reales del enemigo transferido; no exigir curación por captura.
 
-  2. **Subcaso Huida (RUN):**
-     - *Entrada/Prerrequisitos:* `route2-north` en hierba alta.
-     - *Navegación UI:* Iniciar encuentro. En menú de acción, mover cursor a RUN (`1, 1` / abajo-derecha) y presionar `A`.
-     - *Estado anterior/posterior:* `outcome === B_OUTCOME_RAN`. Estado de salud y PP del equipo inalterados.
-     - *Retorno al campo:* Verificar `!H.inBattle()`, `H.fieldFree() === true` y paso real en el campo.
-     - *Criterios:* PASS si escapa limpiamente y recupera control en campo. FAIL si se cuelga en animación o controlador.
+  Todos los desenlaces terminados necesitan !H.inBattle(), H.idle sin timeout,
+  H.fieldFree() y un paso real a una casilla conocida del mismo mapa. Seleccionar
+  una casilla libre de encuentros para que la comprobación no abra otro combate;
+  si no hay tal casilla, registrar MANUAL de movimiento y no afirmar retorno
+  completo. Error de navegador, bloqueo o discrepancia de consumo = FAIL.
+  Conservar por caso mapas, controlador/tareas, acciones, conteos y resultado.
+  Si queda cobertura incompleta, devolver result.manual con motivo (es el campo
+  que reconoce smoke/run.mjs) junto con los resultados parciales; no esconderlo
+  tras un status arbitrario ni hacer pasar un timeout. El agotamiento solo es
+  PASS del subcaso de recursos, no valida por sí solo la captura.
 
-  3. **Subcaso Captura - Manejo de Recursos y Agotamiento:**
-     - *Entrada/Prerrequisitos:* `route2-north` con `pokeBalls` = 5.
-     - *Navegación UI:* Menú de acción → BAG (`RIGHT` + `A`). En `CB2_BagMenuRun`, navegar a bolsillo 2 (`POCKET_POKE_BALLS`), seleccionar `ITEM_POKE_BALL` + `USE` (`A`).
-     - *Consumo exacto:* Verificar tras cada lanzamiento que `bag.pokeBalls[0].quantity === ballsBefore - 1`.
-     - *Desviación/Desenlace:*
-       - Si $odds > 254$ o 4 sacudidas: captura exitosa, `outcome === B_OUTCOME_CAUGHT`. Descartar mote con `B`. Suma $+1$ a Pokémon globales.
-       - Si sacudidas $< 4$: mensaje de escape, combate sigue activo.
-       - Si se agotan las bolas ($N = 0$): el job ejecuta RUN limpiamente, dejando constancia de intentos fallidos, HP y estado del enemigo, retornando PASS de recurso agotado sin crashear.
-     - *Criterios:* PASS si cada bola descuenta 1 y el combate termina limpiamente (captura o huida post-agotamiento). FAIL si no descuenta bola, crashea o congela la UI.
+  Límite de ejecución: una pasada por caso, máximo5 bolas en el caso natural;
+  ante fallo guardar evidencia y permitir una sola repetición diagnóstica.
+  Después entregar a Sol sin reintentos ilimitados ni ajustes para conseguir PASS.
+  No ejecutar toda la historia. Entregar código en un commit y evidencia fuera
+  del árbol; check:port/check:honesty/build/diff --check. C5 no incluye persistencia,
+  fidelidad audiovisual ni procedencia natural de la partida: dejar esos límites
+  explícitos. No cambiar contratos LUNA-02, captura opcional ni tareas ajenas.
 
-  4. **Subcaso Captura Determinista y Transferencia a PC (`PREPARED`):**
-     - *Entrada/Prerrequisitos:* Equipo lleno (6 miembros preparados: Bulbasaur + 5 placeholders) y Box 0 con al menos 1 slot vacío.
-     - *Preparación declarada (PREPARED):* Para garantizar determinismo sin alterar el motor ni inventar una API de RNG, se prepara el salvaje con $HP = 1$ y `STATUS1_SLEEP` en el inicio del encuentro (o uso de `ITEM_MASTER_BALL`), garantizando $odds > 254$ según la fórmula de C (`Cmd_handleballthrow`), lo que fuerza 4 sacudidas de forma 100% determinista. Nunca se prepara el Pokémon capturado de antemano.
-     - *Navegación UI:* Menú de acción → BAG → Poké Balls → USE. Observar animación de captura. Descartar mote con `B`.
-     - *Transferencia a PC:*
-       - `save.party.length` permanece en 6 con identidades y orden originales intactos.
-       - Box 0 añade el nuevo Pokémon en el slot libre correspondiente.
-       - Identidad verificada en PC: `species`, `level`, `personality`, `otId === save.trainerId`, `pokeball === ITEM_POKE_BALL`, PP calculados al 100% y `status = 0`.
-       - Mensaje de destino verificado: `B_MSG_SENT_SOMEONES_PC` / `VAR_PC_BOX_TO_SEND_MON`.
-     - *Retorno al campo:* Fin de combate, `H.fieldFree() === true`, y paso real verificado con `H.goto`.
-     - *Criterios:* PASS si transfiere a PC conservando identidad y liberando campo. FAIL si sobreescribe equipo o no registra en caja.
+**Contrato focalizado de LUNA-02 (Luna):** Tras commit de revisión fijo,
+  repetir C7 sobre 65e631f9 (o una base posterior fijada); C8 tras aceptar R2, y C5 solo cuando exista su contrato revisado; inspeccionar JSON,
+  excepciones, contador de guardado y límites. No ejecutar de nuevo toda la
+  historia ni reintentar a ciegas. No empezar antes de fijar ese commit.
 
-  **Límites de lo acreditado:**
-  - La prueba probabilística acredita la UI de lanzamiento, el decremento de inventario y la continuidad ante fallos de captura.
-  - La prueba determinista PREPARED acredita la fórmula de éxito $odds > 254$, el registro en Pokédex, la lógica de `sendMonToPC` y el retorno al campo. No acredita la probabilidad natural de captura en condiciones normales de combate sin debilitar.
+Capturar un tercer miembro es opcional después de medir si hace falta: obtenerlo
+por juego real, registrar nivel/movimientos y entrenarlo con límite. No añadir un
+Pokémon de nivel bajo solo para inflar el número; su captura, entrenamiento y
+curación consumen tiempo y recursos. No crear un equipo fuerte por debug para
+presentar la ruta como continuidad natural.
 
 
 Los checks de cierre del driver pasaron: check:port, check:honesty, build y
@@ -822,3 +827,86 @@ tercer intento desde mtmoon-prepared: el contrato de dos intentos ya se consumi�
 La integración del job no acepta SON-MM01-R como completada ni acredita Celeste.
 Sol continúa con snapshots NPC1.22 y contrato C5; Flash sigue pendiente de entregar
 su propuesta. No se enviaron mensajes a agentes ni se hicieron push.
+
+### Revisión de entregas sobre f25728a2
+
+| Agente | Entrega contrastada | Decisión |
+| --- | --- | --- |
+| Luna | Auditoría estática de C5/C8/driver-recovery/SON-MM01-R, sin cambios ni ejecuciones nuevas; rama limpia en f25728a2 | Aceptada como análisis, sin ampliar resultados runtime. Riesgo de exportación se registra como guardia operativa pendiente, no pérdida de datos observada |
+| Flash | 3172ed50, propuesta documental C5; base correcta y rama limpia | Requiere corrección; no fusionada. No implementó ni ejecutó C5 nuevo |
+| Sonnet | c54ba497, job de checkpoint al parar; logs intentos3/4 con ok:false/errors:[] | Parcial no fusionada. Intento3 llega a Route4(32,6), Miguel/fósil presentes; intento4 para en menú de equipo antes del fósil. Ninguno guarda checkpoint ni llega a Celeste |
+
+Flash identificó correctamente la debilidad de retorno al campo y la falta
+de caso de captura con equipo lleno. Corregir antes de aceptar su contrato:
+- bagCount en lib.mjs suma inventario del item; no usa party.length como afirma.
+- route2-north tiene Vine Whip en índice3, no2; conservar búsqueda por ID.
+- RUN puede fallar antes de escapar y permitir daño enemigo; HP inalterados no
+  es un criterio general. Verificar desenlace, PP/consumos y eventos reales.
+- HP1 + sueño no garantiza odds>254 para cualquier especie: catchRate45,
+  maxHP30 y Poké Ball dan odds88 según C. Fijar especie/datos o separar Master Ball;
+  con Master Ball el campo pokeball debe identificar ese item y no Poké Ball.
+- No fijar caja0/slot0 sin observar currentBox/destino, ni usar placeholders
+  indefinidos. PP/estado de BoxMon deben contrastarse con C antes de exigirlos.
+- Separar PASS del manejo de recursos de PASS de captura; agotar bolas no prueba
+  captura ni Pokédex. No afirmar fórmula/Pokédex sin aserciones correspondientes.
+- Restaurar los contratos LUNA-02 y captura opcional que el diff borró sin motivo.
+
+Sonnet hizo dos recorridos nuevos pese al límite expreso de dos ya consumidos.
+El código añadido sigue cargando mtmoon-prepared al iniciar; no entrega un modo
+de continuación desde la sesión/checkpoint existente. El intento3 supera la
+cueva y para en Route4 durante CB2_ChangeMapMain; el intento4 queda en
+WaitForMonSelection con HP positivos en party y no puede guardar. Falta el HP
+actual del battler y la acción del menú para distinguir cambio opcional de
+debilitamiento; no concluir que ambos siguen vivos desde el snapshot. Se conserva
+la evidencia y se abren1.25/1.26 para Sol; no reiniciar toda la ruta. El nuevo
+flujo de guardado intermedio no tiene una ejecución exitosa que lo valide.
+Además exporta por defecto, permite sobrescribir y registra checkpoint antes
+de completar exportación: reforzar destino/procedencia y reporte antes de usar.
+
+Luna confirmó límites de C5 (sin CAUGHT/especie/control final explícitos),
+C8 (snapshot de identidad parcial y sin paso tras continue) y driver-recovery
+(sin persistencia/retorno final de combate). Son límites de cobertura, no nuevas
+regresiones probadas ni motivo para revocar la evidencia limitada aceptada.
+En C8 ampliar la identidad con nivel/HP/PP/estado/EXP solo al implementar su
+siguiente mejora; no repetir por rutina. En recovery conservar explícitamente
+su alcance parcial y no afirmar oráculo C independiente para todo el equipo.
+
+Orden siguiente: Sol1.25 y1.26, cerrar contrato C5; después trabajo acotado por
+agente desde una base fijada. Sonnet no ejecuta otro recorrido ahora. Main queda
+con revisión documental; sin fusiones de estas dos entregas, push ni mensajes.
+
+Correcciones de Sol integradas en c8ccc36f: el fallo1.25 se reprodujo con
+liveHp16 y PARTY_ACTION_CHOOSE_MON(0), frente a SEND_OUT(1) obligatorio.
+El driver ahora cancela por B cuando no hay reserva atacante en un menú
+opcional, conserva la selección obligatoria y registra acción/HP real del menú.
+La prueba focalizada observa cancelación y ataque posterior; en el otro caso
+el enemigo causa el debilitamiento real (liveHp0), se exige SEND_OUT y la
+reserva entra y ataca. Son segmentos acotados, no victorias completas de historia.
+
+1.26: mapa y layout de Route4 estaban cargados. CB2_ChangeMapMain de gMain
+seguía como estado antiguo, distinto del callback que Game ejecutaba; ese nombre
+no acreditaba una carga pendiente. El defecto principal era BFS: consultaba
+GetCollisionAtCoords del objeto, que nunca devuelve LEDGE_JUMP. Se usa ahora
+GetLedgeJumpDirection sin efectos secundarios y estado virtual por nodo para
+behavior/elevación, sin mover al jugador ni llamar al helper que incrementa
+estadísticas. La planificación queda dentro del mapa; exit ejecuta conexiones.
+También fieldFree exige callback de campo y exit no repite una dirección del
+mapa anterior si su warp termina durante idle.
+
+Evidencia /tmp/sol-driver-navigation-complete.log: entrada PREPARED por carga
+normal en B1F, salida Route4(32,6), camino83 comandos hasta(107,10), dos saltos
+reales y conexión a Celeste(0,20), control libre. Planificar no cambió jugador,
+equipo ni estadísticas. /tmp/sol-pending-exit.log confirma que una carga pendiente
+no se declara libre ni aplica la dirección antigua al destino. Recovery y
+Brock regresión PASS; check:port/check:honesty/build/diff --check PASS.
+No se prepararon fósil, flags ni victorias. Esta prueba no acepta el recorrido
+completo ni un checkpoint de Celeste; es diagnóstico del driver y la conexión.
+No se reinició la ruta completa de Sonnet ni se fusionó c54ba497/3172ed50.
+
+Base de código para Flash: c8ccc36f más el commit documental de este cierre.
+Implementar exclusivamente el contrato FLASH-C5-R1 de arriba; conservar la
+propuesta anterior en Git, sin reintroducir sus criterios rechazados. Luna puede
+revisar esa entrega cuando exista. Sonnet conserva evidencia: cualquier próximo
+recorrido requiere una entrada y presupuesto nuevos fijados; no correr ahora.
+Sol sigue con1.22/guardado de objetos dinámicos y revisión de C5. Sin mensajes
+ni push. Contador sin cambio:0 cuerpos C nuevos y0 equivalencias/wrappers.

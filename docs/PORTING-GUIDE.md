@@ -310,7 +310,16 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    Fijar configuración antes del job, sin cambiarla a mitad de la operación.
 
    Verificación focalizada: `node tools/playtest/strategy.check.mjs` y jobs
-   `driver-strategy`, `driver-auto-battle`, `driver-switch`, `driver-recovery` mediante `pw.mjs`.
+   `driver-strategy`, `driver-auto-battle`, `driver-switch`, `driver-recovery`,
+   `driver-navigation` mediante `pw.mjs`.
+   BFS consulta colisiones por nodo con behavior/elevación virtual y el predicado
+   puro de ledges; no mueve al jugador ni incrementa estadísticas al planificar.
+   Se limita al mapa actual; exit ejecuta conexiones y espera el callback de campo.
+   Menús de cambio opcional sin reserva atacante se cancelan por B; SEND_OUT tras
+   un debilitamiento conserva reemplazo obligatorio. La traza registra HP real
+   del battler y acción del menú; HP del party aislado no basta para distinguirlos.
+   driver-navigation usa posiciones PREPARED y verifica cambio opcional/forzado
+   y Route4→Celeste con saltos reales; no acredita historia, fósil ni guardado.
    Sus entradas PREPARED están declaradas; switch verifica cambio/ataque/curación
    y huida, no victoria. Estos casos no acreditan la ruta Monte Moon ni guardado.
 

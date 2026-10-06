@@ -11,7 +11,7 @@ import { rankMoves, hpItem, statusItem } from "./strategy.js";
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
 const DIRS = [[0, 1, 1, 0x80, "D"], [0, -1, 2, 0x40, "U"], [-1, 0, 3, 0x20, "L"], [1, 0, 4, 0x10, "R"]];
-const COLLISION_NONE = 0, COLLISION_OBJECT_EVENT = 4, COLLISION_LEDGE_JUMP = 6;
+const COLLISION_NONE = 0, COLLISION_OBJECT_EVENT = 4;
 
 export const H = {
   log: [],
@@ -97,7 +97,7 @@ export const H = {
   policy: { fieldHp: 0.6, battleHp: 0.4, minAttackPP: 2, reservePotions: 1, maxDecisions: 80, maxUnchanged: 6 },
   fieldFree() {
     const state = this.st();
-    return !state.script && !state.locked && !g().scene && !this.T?.tasks.tasks.some(t => t.isActive &&
+    return !!g().callback1 && !state.script && !state.locked && !g().scene && !this.T?.tasks.tasks.some(t => t.isActive &&
       ["startInput", "Task_PCMainMenu", "Task_MultichoiceMenu_HandleInput", "Task_YesNoMenu_HandleInput"].includes(t.func.name));
   },
   async tap(bits, settle = 16) { await dbg().wait(2, bits); await dbg().wait(settle); },
@@ -283,6 +283,7 @@ export const H = {
     const screens = new Set();
     let n = 0, stop = null, decision = null, decisions = 0, unchanged = 0, lastKey = null, lastHp = null, incoming = 0;
     const trace = [];
+    let observedPartyMenu = false;
     const press = async (bits) => { await dbg().wait(2, bits); await dbg().wait(4); };
     while (this.inBattle() && n < maxSteps) {
       n++;
@@ -301,6 +302,7 @@ export const H = {
         }
       }
       const f = this.G?.gBattlerControllerFuncs[0]?.name;
+      if (f !== "WaitForMonSelection" || this.cb2() !== "CB2_UpdatePartyMenu") observedPartyMenu = false;
       if (f === "HandleInputChooseAction") {
         if (decision?.action === "switch" && this.G.gBattleMons[0].personality === decision.personality) decision = null;
         if (mode === "auto" && !decision) {
@@ -349,13 +351,34 @@ export const H = {
         continue;
       }
       if (f === "WaitForMonSelection" && this.PM && this.cb2() === "CB2_UpdatePartyMenu") {
+        if (!observedPartyMenu) {
+          trace.push({ action: "party selection", menuAction: this.PM.gPartyMenu.action,
+            liveHp: this.G.gBattleMons[0].hp, activePersonality: this.G.gBattleMons[0].personality,
+            party: this.resources().party });
+          observedPartyMenu = true;
+        }
         // Forced switch after a faint: go to the first able Pokémon, then SHIFT.
         // Pressing A on the fainted one only prints "has no energy left" forever.
         const party = dbg().save.save.party;
         const active = this.G.gBattlerPartyIndexes?.[0];
         const target = decision?.action === "switch" ? dbg().save.save.party.findIndex(m => m.personality === decision.personality) : mode === "auto" ? this.bestReplacement() : mode === "switch" && active === 0 && party[1]?.hp > 0 ? 1
           : party.findIndex((m, i) => i !== active && m.species && !m.isEgg && m.hp > 0);
-        if (target < 0) { stop = "no able replacement"; break; }
+        if (target < 0) {
+          // party_menu.c rejects B only for SEND_OUT (forced replacement).
+          // Trainer shift prompts may open CHOOSE_MON even while the active
+          // Pokémon is alive. Decline that optional change through the UI.
+          const menuAction = this.PM.gPartyMenu.action;
+          if (mode === "auto" && menuAction !== this.C.PARTY_ACTION_SEND_OUT) {
+            trace.push({ action: "cancel optional switch", menuAction,
+              liveHp: this.G.gBattleMons[0].hp, party: this.resources().party });
+            await dbg().press("B", 20);
+            decision = null;
+            continue;
+          }
+          trace.push({ action: "replacement unavailable", menuAction,
+            liveHp: this.G.gBattleMons[0].hp, party: this.resources().party });
+          stop = "no able replacement"; break;
+        }
         const cur = this.PM.gPartyMenu.slotId;
         if (target >= 0 && cur !== target) { await press(0x80); continue; }
         await dbg().press("A", 20);
@@ -477,34 +500,50 @@ export const H = {
   /** Shortest path in map-internal coords (+7), using the live collision checks. */
   bfs(tx, ty) {
     const ow = g().overworld, player = ow.player.object, objects = ow.objects;
+    if (!this.fieldFree()) return null;
     const sx = player.currentCoords.x, sy = player.currentCoords.y;
-    const key = (x, y) => `${x},${y}`;
-    // Never step on a warp (door, ladder, stairs) unless it is the target.
-    const warps = new Set(ow.loaded.header.warps.map((w) => key(w.x + 7, w.y + 7)));
-    const prev = new Map([[key(sx, sy), null]]);
-    const queue = [[sx, sy]];
-    while (queue.length) {
-      const [x, y] = queue.shift();
-      if (x === tx && y === ty) break;
+    const key = (x, y, elevation) => `${x},${y},${elevation}`;
+    const xy = (x, y) => `${x},${y}`;
+    const inside = (x, y) => x >= 7 && y >= 7 && x < ow.loaded.layout.width + 7 && y < ow.loaded.layout.height + 7;
+    // Plan only within the current map; exit() executes camera connections.
+    if (!inside(tx, ty)) return null;
+    const warps = new Set(ow.loaded.header.warps.map(w => xy(w.x + 7, w.y + 7)));
+    const initial = key(sx, sy, player.currentElevation);
+    const prev = new Map([[initial, null]]), queue = [[sx, sy, player.currentElevation]];
+    let end = null;
+    for (let head = 0; head < queue.length; head++) {
+      const [x, y, elevation] = queue[head], from = key(x, y, elevation);
+      if (x === tx && y === ty) { end = from; break; }
+      // Collision queries read the source tile and elevation. Use a virtual
+      // object for each node, without moving/mutating the real player or camera.
+      const probe = { ...player, currentCoords: { x, y }, currentElevation: elevation,
+        currentMetatileBehavior: ow.map.behaviorAt(x, y), trackedByCamera: false };
       for (const [dx, dy, dir, , name] of DIRS) {
         let nx = x + dx, ny = y + dy;
-        const c = objects.GetCollisionAtCoords(player, nx, ny, dir);
-        if (c === COLLISION_LEDGE_JUMP) { nx += dx; ny += dy; }
-        else if (c !== COLLISION_NONE && !(nx === tx && ny === ty && c === COLLISION_OBJECT_EVENT)) continue;
-        const k = key(nx, ny);
+        if (!inside(nx, ny)) continue;
+        const c = objects.GetCollisionAtCoords(probe, nx, ny, dir);
+        // The object's collision API never returns LEDGE_JUMP. PlayerAvatar's
+        // pure ledge predicate supplies it; CheckForObjectEventCollision would
+        // also increment the jump statistic, so never call it during planning.
+        if (ow.player.GetLedgeJumpDirection(nx, ny, dir)) {
+          nx += dx; ny += dy;
+          if (!inside(nx, ny) || ow.map.collisionAt(nx, ny) || objects.objectAt(probe, nx, ny)) continue;
+        } else if (c !== COLLISION_NONE && !(nx === tx && ny === ty && c === COLLISION_OBJECT_EVENT)) continue;
+        const destination = xy(nx, ny);
+        if (warps.has(destination) && !(nx === tx && ny === ty)) continue;
+        const nextElevation = ow.map.elevationAt(nx, ny);
+        const next = nextElevation === 15 || ow.map.elevationAt(x, y) === 15 ? elevation : nextElevation;
+        const k = key(nx, ny, next);
         if (prev.has(k)) continue;
-        if (warps.has(k) && !(nx === tx && ny === ty)) continue;
-        prev.set(k, [x, y, name]);
-        queue.push([nx, ny]);
+        prev.set(k, [from, name]);
+        queue.push([nx, ny, next]);
       }
     }
-    if (!prev.has(key(tx, ty))) return null;
+    if (end === null) return null;
     const steps = [];
-    for (let cur = [tx, ty]; ;) {
-      const p = prev.get(key(cur[0], cur[1]));
-      if (!p) break;
-      steps.unshift(p[2]);
-      cur = [p[0], p[1]];
+    for (let cur = end; prev.get(cur); ) {
+      const [parent, name] = prev.get(cur);
+      steps.unshift(name); cur = parent;
     }
     return steps;
   },
@@ -553,6 +592,9 @@ export const H = {
         if (settled.timeout) return { ...settled, note: "script stuck" };
         if (settled.battle) continue;
       }
+      // The pending warp may finish while idle() runs. Do not execute the old
+      // map's exit direction in the destination (it could enter the cave again).
+      if (dbg().state().map !== map0 && this.fieldFree()) return this.st();
       if (this.battleDefaults.mode === "auto" && !opts.recovery) {
         const health = await this.prepareStep();
         if (!health.ok) return { ...this.st(), note: health.note, resources: health.resources };
@@ -565,7 +607,7 @@ export const H = {
           if (note) return { ...this.st(), note, battleResult: b };
         }
         const s = this.st();
-        if (s.map !== map0 && !s.locked) return s;
+        if (s.map !== map0 && this.fieldFree()) return s;
         if (s.map === map0 && !s.locked && !s.script && t > 2) break;
         await dbg().wait(30);
       }
