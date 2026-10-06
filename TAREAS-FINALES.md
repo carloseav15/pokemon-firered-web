@@ -171,6 +171,11 @@ Abiertas:
   nurse offer missing aunque verificó HP/PP/estado y devolución del control.
   Diagnosticar sincronización de A/Task_MultichoiceMenu_HandleInput; no convertir
   cualquier menú ausente en éxito ni ampliar esperas sin observar diálogo.
+- [ ] 1.24 **Driver conserva reserva curable al agotarse ataques del activo**:
+  intento1 SON-MM01-R paró con Ivysaur sin ataque, Pidgey17/40 con83 PP ofensivos
+  y6 pociones. bestReplacement(true) excluye HP<60%; decidir curación de reserva
+  y cambio por UI antes de declarar agotamiento. Sin ayudas de estado ni promesa
+  de victoria. Evidencia ../pokemon-son-prep-evidence/mm01r-attempt1/.
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
   para SON-MM01-R; todavía no fósil ni llegada a Celeste.

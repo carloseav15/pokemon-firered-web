@@ -731,3 +731,43 @@ la ruta. Sol prepara C5 y diagnostica H.heal1.23; snapshots NPC1.22 siguen apart
 
 No se mandaron prompts a chats ni se iniciaron agentes. Las tareas antiguas
 marcadas como bloqueadas quedan como historial; esta sección es el estado vigente.
+
+
+### Cuarta revisión: Monte Moon parcial y regresión cerrada — 2026-10-06
+
+Base de los tres worktrees:4f3c00c3. Main limpio al iniciar; Sonnet tiene
+son-mm01-r.job.mjs sin commit. No hay cerulean-arrival exportado ni nuevas ramas
+fusionables. Se preservó su job sin editar y se copió para revisión en
+../pokemon-cleanup-backup-2026-10-06/review-fourth-wave/. No se ejecutó otra ruta.
+
+| Agente | Evidencia revisada | Decisión |
+| --- | --- | --- |
+| Luna | Informe sobre4f3c00c3: C8 y auto/Brock exit0/ok:true/errors:[]; snapshots coinciden, control libre y paso(6,6)→(6,7) | Regresión aceptada. Sin cambios de código; no repetir por rutina |
+| Sonnet | mm01r-attempt1/evidence.json: B2F(12,22), stop del driver, sin fósil. mm01r-attempt2: Miguel ganado, scene1, Dome×1, flags gotDome/gotMoon y ambos ocultos; B2F(4,10) libre | Avance parcial de historia acreditado por logs y contrastado con scripts; no Celeste, guardado final ni continue. Job no integrado |
+| Flash | Rama limpia en4f3c00c3, sin commits ni propuesta C5 localizada en los archivos revisados | No se puede aceptar la propuesta sin su contenido; estado del chat externo no confirmado |
+
+Primer intento: Ivysaur0 PP de Látigo Cepa; Pidgey17/40 con83 PP ofensivos,
+6 pociones/3 antídotos. battleDecision usa bestReplacement(true), exige HP≥60%
+y no contempla curar reserva antes del cambio. “resources exhausted” describe
+un stop de política, no agotamiento total. Abrir1.24 para Sol; no atribuirlo al
+motor ni a una derrota inevitable.
+
+Segundo intento: PidgeyL16 42/42,74 PP ofensivos; IvysaurL18 46/50,4 PP;
+5 pociones/2 antídotos,2512. lowSupplies exige5 PP a cada miembro antes de
+cada paso, también después del fósil; esa regla detiene un equipo utilizable
+a un paso del warp(5,10)→B1F. Corregir la condición según fase de ruta,
+conservando prepareStep, medicina y parada por derrota. No apagar todos los
+controles de recursos ni usar recovery para avanzar por la cueva.
+La enfermera propia del job aún pulsa A en su polling pese a su comentario;
+no se ejecutó en intento2(retreats0), por lo que no demuestra resolver1.23.
+
+Ruta fuente comprobada: scripts.inc concede Dome y flags tras el diálogo;
+map.json tiene warpB2F(5,10) hacia B1F warp6. La posición4,10 no acredita
+salida este, mucho menos Celeste. Los logs de ambos intentos son ok:false
+y errors:[]: tarea incompleta sin excepción de página, nunca PASS de recorrido.
+
+Siguiente orden: Sol1.23/H.heal y1.24/reserva; corregir job de Sonnet según
+fase y consolidar su entrega parcial. Buscar si puede guardar desde el estado
+real todavía vivo antes de repetir todo; no reconstruir fósil/flags por debug.
+No se inició un tercer intento ni se enviaron mensajes a agentes. Revisar
+entrada y presupuesto de continuación antes del siguiente recorrido.
