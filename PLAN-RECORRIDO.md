@@ -191,8 +191,8 @@ al usuario/revisor los resultados en el chat donde se asignó el paquete.
 | Perfil / URL | Un contexto Playwright nuevo por job o perfil vacío por ejecutor; `http://127.0.0.1:<puerto>/`; no compartir localStorage |
 | Datos y herramientas | node/Vite/Playwright presentes en la base; fuente decomp en checkout principal, exportados en public/fr; driver `tools/playtest/driver.js` |
 | Checkpoints y aserciones | Contratos SON-MM01 y FLASH-02 debajo; Luna ejecuta jobs existentes y conserva sus límites |
-| Preparación | Puertos libres al preparar, no reservados: comprobar al ejecutar; worktrees/ramas todavía NO creados |
-| Estado | SOL-01 completada como preparación estática; SON-MM01, FLASH-02 y LUNA-01 habilitadas para asignación por el usuario, todas NOT RUN |
+| Preparación | Contrato original: puertos libres al preparar. Ahora existen los tres worktrees; comprobar procesos y puerto antes de reusar |
+| Estado | SOL-01 completada. LUNA-01 entregada y revisada; FLASH-02 revisada parcialmente, persistencia rechazada; SON-MM01 abortada por el usuario, sin checkpoint final |
 
 **Inicio reproducible al recibir la tarea:** crear el worktree propio desde el
 SHA fijado, sin cambiar main ni instalar dependencias de nuevo. Ejemplo de Sonnet
@@ -327,7 +327,7 @@ rama propia; Sol los integra tras revisión. Los logs no requieren un commit.
 ### Primera tanda (hacer ahora)
 
 - [x] **SOL-01 — Fijar base y reglas de aceptación.** Contrato entregado arriba;
-  preparación estática, pruebas de ejecutores NOT RUN. Requisitos satisfechos: Leer AGENTS, TAREAS-FINALES
+  preparación estática; resultados de ejecutores revisados en la primera ronda. Requisitos satisfechos: Leer AGENTS, TAREAS-FINALES
   §1/§3/§4 y este plan. Fijar el commit del juego integrado para los tres ejecutores,
   indicar worktrees/puertos, checkpoints y driver. Confirmar scripts fuente para
   los resultados esperados de SON-01/FLASH-02. Entregar contrato breve con rutas,
@@ -335,11 +335,12 @@ rama propia; Sol los integra tras revisión. Los logs no requieren un commit.
   **Aceptación:** los tres ejecutores pueden arrancar en la misma base identificada,
   con resultados verificables; no mezclar commits durante un trabajo.
 
-- [ ] **LUNA-01 — Diagnóstico inicial y mapa de checkpoints.** Tras SOL-01,
+- [x] **LUNA-01 — Diagnóstico inicial y mapa de checkpoints.** Tras SOL-01,
   ejecutar `play:smoke` con servidor propio; inspeccionar los resultados de cada
   C1–C14 y distinguir PASS/FAIL/MANUAL/NOT RUN, incluyendo límites de las pruebas.
   Revisar saves de tools/playtest/saves y registrar mapa/equipo/procedencia cuando
   se pueda verificar. No transformar existencia de un save en tramo jugado.
+  Revisión 2026-10-06: 6 PASS (C1/3/6/7/9/10), C5 FAIL observado; C2/4/8/11/12/13/14 MANUAL. Ver tabla de resultados de esta ronda más abajo.
   **Entrega:** tabla breve, comando/commit probado y evidencia de fallos. Cambios
   permitidos: ninguno en el motor ni en los tests de esta tarea. Conservar logs y
   resultados tal como salen; pasar a Sol cualquier fallo de juego/driver/entorno.
@@ -464,3 +465,109 @@ VS Seeker pendiente. `49c88b53` (PC 1.18) queda en el bundle sin integrar: propo
 una guarda defensiva web pero afirma un no-op de BIOS/ROM sin evidencia de original.
 La tarea 1.18 sigue abierta; decidir/documentar adaptación o verificar hardware
 antes de aceptar fidelidad. No se perdieron esas entregas al limpiar ramas.
+
+
+### Revisión de la primera ronda — 2026-10-06
+
+Base de los ejecutores: bd41849f; revisión en main con servidor propio 5200; corrección del driver 65e631f9.
+Luna no modificó código. Flash entregó 394b82b0; Sonnet no dejó commits ni
+cerulean-arrival.json. Se revisaron su registro local y el estado de los worktrees.
+
+| Caso | Luna | Revisión Sol y alcance |
+|---|---|---|
+| C1 | PASS | Estados con render sustituido; gráficos pendientes |
+| C2/C4 | MANUAL | Intro completa y Quest Log pendientes |
+| C3 | PASS | Save/continue del checkpoint Pewter; no ruta completa |
+| C5 | FAIL | Cinco bolas sin captura. Revisión aislada pasó con dos lanzamientos (/tmp/sol-review-c5.json); no confirma fallo de motor. Azar, estrategia y navegación de bolsa pendientes de separar; retry de Luna sin PW_BASE no acredita reproducción en 5199 |
+| C6/C7 | PASS | Brock y whiteout medidos; C7 repetido por Sol y parada de navegación tras pérdida comprobada (/tmp/sol-review-nav-stop.json) |
+| C8 | MANUAL original | Flash amplió PC/enfermera. Primera revisión encontró falso positivo de persistencia: orden final [16,1], recarga [1,16]. No aceptar una recarga del fixture como prueba de guardado; contador sigue 0 en los intentos reforzados y aparece MC del PC superpuesto a YES/NO. No integrada |
+| C9/C10 | PASS | Compra/venta y menús acotados a jobs actuales |
+| C11/C12/C13/C14 | MANUAL | Evolución, ruta de mapas, escucha y clima pendientes |
+| 1.18 | FAIL reproducido | MOVE ITEMS vacío: TypeError en InitBoxMonSprites; /tmp/sol-review-118.json. Decisión de fidelidad pendiente |
+| SON-MM01 | ABORTADA / PARCIAL | Entradas a B2F y combates, derrotas y regresos al Centro. No fósil ni llegada a Celeste acreditados |
+
+**Diagnóstico Sonnet:** primer job inició mode=switch, slot=0 (Somnífero de
+Ivysaur), y cambió battleDefaults cuando la operación ya corría; goto captura
+su slot al iniciar. Siguió con Ivysaur slot3 (Látigo Cepa), poco adecuado contra
+Zubat y otros veneno. El primer registro contiene un combate de 2532 iteraciones,
+Ivysaur debilitado y whiteout al sexto combate. Hubo más reentradas después de
+las dos derrotas reportadas. explore elige warps por frecuencia, no una ruta de
+historia; no equivale a alcanzar Miguel. No hay evidencia suficiente para atribuir
+las derrotas a la fórmula del motor. No se acreditan fósil ni progreso final.
+
+**Estado inicial para estrategia:** Pidgey L12: Placaje/Ataque Arena/Tornado;
+Ivysaur L17: Somnífero/Gruñido/Drenadoras/Látigo Cepa (10 PP). Bolsa: 2 pociones,
+4 bolas; dinero 3840. Los slots deben buscarse por C.MOVE_* en el Pokémon activo
+cada vez; un nivel nuevo puede alterar movimientos. Dos miembros bastan como
+entrada de diagnóstico, pero no garantizan completar la cueva.
+
+### Siguiente ronda, lineal hasta tener preparación fiable
+
+- [ ] **SOL-DRV01 — Driver y estrategia de combate (Sol).** Parada tras pérdida/
+  atasco integrada en 65e631f9 y comprobada con C7; no reanudar automáticamente. Completar
+  decisión por Pokémon activo, enemigo, movimientos disponibles/PP y tabla de
+  tipos de la fuente; registrar decisión y HP/PP antes/después. No repetir
+  movimientos de estado como ataque ni elegir el primer slot con PP sin evaluar
+  qué hace. Detectar turnos sin progreso con presupuesto acotado. Curación por
+  mochila y cambio voluntario por UI con confirmación del objetivo; distinguir
+  entrenadores y salvajes para huida. Probar casos focalizados con entradas
+  PREPARED explícitas si son necesarias; nunca preparar victoria/daño final.
+  No desplegar una IA general para esta ruta ni usar fórmulas del TS como oráculo.
+- [ ] **SON-PREP — Preparar una entrada sostenible (Sonnet, tras SOL-DRV01).**
+  Desde checkpoint importado, ir por entradas reales al Centro de Ruta4; curar,
+  verificar HP/PP/estado y fijar respawn allí. Comprar por UI en Plateada hasta
+  tener 8 pociones y 3 antídotos: con la bolsa inicial cuesta 6×300 + 3×100=2100,
+  antes de otros gastos/combates (contrastar saldo real). Esa tienda vende ambos;
+  no asignar Superpociones, que no vende. Fuente: items.json y
+  PewterCity_Mart/scripts.inc. Llevar ambos sanos, movimientos/PP completos y
+  guardar/continuar verificando orden/bolsa/respawn. Exportar nuevo
+  mtmoon-prepared.json con procedencia, sin modificar los saves originales.
+  Volver a curar si el trayecto de compra gasta recursos. Objetivos de provisión
+  son política de prueba, no una regla del C ni garantía de victoria.
+- [ ] **SON-MM01-R — Ruta acotada (Sonnet, tras aceptar SON-PREP).** Definir
+  secuencia concreta de warps y coordenadas hacia Miguel con mapa/eventos; evitar
+  ramales opcionales en esta pasada. No usar explore genérico para buscar la
+  salida. Política: Tornado de Pidgey contra bicho/planta, Placaje contra rivales
+  resistentes a planta cuando sea la mejor opción disponible; Látigo Cepa contra
+  roca/tierra/agua, revisando tipos y PP reales. Estado como acción explícita
+  puntual, nunca slot fijo del recorrido. Revisar recursos después de cada pelea;
+  curar antes de quedar a un golpe y detenerse si ambos están dañados o sin ataque
+  útil. Dos intentos máximo desde el nuevo checkpoint; guardar traza del fallo y
+  devolver a Sol. No repetir la cueva completa indefinidamente.
+- [ ] **FLASH-02-R2 — C8 sin falso positivo (Flash, prioridad antes de C5).**
+  Conservar 394b82b0 como entrega original; no integrarla aún. Revisor dejó borrador
+  en `../pokemon-cleanup-backup-2026-10-06/review-first-wave/C8-persistence-review.job.mjs`
+  (FAIL, no solución aceptada). Corregir primero cierre del PC: verificar que se
+  cancela el menú padre, no queda Task_MultichoiceMenu_HandleInput y un paso real
+  fuera del mostrador devuelve control; H.st().script=false no prueba fin de
+  waitstate. Trazar pc.inc/menus/scriptMenu.ts. Guardar por menú midiendo incremento
+  GAME_STAT_SAVED_GAME y contenido de localStorage antes de recargar; comparar
+  equipo completo en el mismo orden (ambas identidades), caja, dinero y posición
+  con el estado inmediatamente anterior al guardado. Curación: identidad/equipo
+  estable y tabla PP independiente del C, no rom.moves como único oráculo.
+  Si persiste solapamiento, entregar snapshot de tareas/callbacks/VAR_RESULT a Sol;
+  no modificar motor, ni parchear controles/estado para obtener PASS. Dos intentos
+  diagnósticos máximo. C8 original en main continúa MANUAL para curación completa.
+- [ ] **FLASH-C5-R1 — C5 fiable (Flash, tras contrato de Sol).** Separar lanzar bola
+  por UI, conteo/consumo, captura y transferencia a caja con equipo lleno. El
+  agotamiento legítimo de bolas debe terminar limpiamente y dejar evidencia del
+  enemigo/HP/estado, no fingir captura ni confundirse con excepción del motor.
+  Acordar entrada/RNG controlado PREPARED para el caso determinista antes de
+  implementarlo; no poner Pokémon capturado ni flags finales por depuración.
+**Contrato focalizado de LUNA-02 (Luna):** Tras commit de revisión fijo,
+  repetir C7 sobre 65e631f9 (o una base posterior fijada); C8 tras aceptar R2, y C5 solo cuando exista su contrato revisado; inspeccionar JSON,
+  excepciones, contador de guardado y límites. No ejecutar de nuevo toda la
+  historia ni reintentar a ciegas. No empezar antes de fijar ese commit.
+
+Capturar un tercer miembro es opcional después de medir si hace falta: obtenerlo
+por juego real, registrar nivel/movimientos y entrenarlo con límite. No añadir un
+Pokémon de nivel bajo solo para inflar el número; su captura, entrenamiento y
+curación consumen tiempo y recursos. No crear un equipo fuerte por debug para
+presentar la ruta como continuidad natural.
+
+
+Los checks de cierre del driver pasaron: check:port, check:honesty, build y
+diff --check; C7 con derrota natural devolvió `battle lost` y whiteout correcto.
+El runner aislado ahora devuelve exit1 con ok:false (error intencional de harness,
+no de juego). 0 cuerpos C nuevos y 0 equivalencias. C5 PASS aislado y 1.18 FAIL
+son evidencia de sus casos; no sustituyen C8 ni la ruta de historia.

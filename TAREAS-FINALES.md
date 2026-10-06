@@ -151,6 +151,21 @@ Abiertas:
 
 - [ ] 1.19 **Marcas de bicicleta del motor**: `field/fieldEffects.ts:DoTracksGroundEffect_BikeTireTracks` usa índices JS negativos; revisar direccionamiento contiguo u8 del C (previous * 4 + facing - 5). Detectado en M13, corregido solo en viewer `a29c9ae9`.
 
+
+- [ ] 1.20 **C8 persistencia falsa y salida del PC**: entrega Flash 394b82b0 no
+  integrada. Sol reprodujo depósito/retiro y curación PREPARED, pero recarga
+  restauró orden inicial [1,16] frente a [16,1] sin que el test fallase.
+  Aserción reforzada detecta GAME_STAT_SAVED_GAME sin incremento; Task_MultichoiceMenu_HandleInput
+  del PC aparece junto a YES/NO de guardar. Separar fallo de job/cierre del menú
+  y motor antes de corregir; revisar pc.inc, scriptMenu.ts y startMenu.ts.
+  Evidencia /tmp/sol-review-c8.json, /tmp/sol-c8-diagnose2.json; contrato FLASH-02-R2
+  en PLAN-RECORRIDO. Persistencia, identidad de ambos miembros y control real pendientes.
+- [x] **Driver detiene navegación tras derrota/atasco**: 65e631f9 propaga
+  battle lost/battle stuck por goto/explore/grind, permite sustituto sano en slot0
+  y evita restauración perdida de battleDefaults. C7 confirma pérdida natural y
+  devolución al Centro; runner ok:false devuelve exit1. Estrategia/curación
+  automática y reemplazos con más miembros requieren revisión focalizada posterior.
+
 ## 2. Revisión de equivalencias y wrappers contra el C
 
 Funciones con nombre C que delegan en lógica adaptada. Un bloque de archivo por sesión.
