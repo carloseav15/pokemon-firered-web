@@ -25,10 +25,15 @@ export default async function(ctx) {
     const b=await H.battle('auto',0,4000);
     if(b.stuck||b.outcome!==C.B_OUTCOME_WON)throw new Error('auto Brock failed: '+JSON.stringify(b));
     if(b.trace.some(t=>t.action==='run')||!b.trace.some(t=>t.move===C.MOVE_VINE_WHIP&&t.effectiveness===4))throw new Error('trainer decision incorrect');
-    await H.idle(3000,true);
+    const resumed=await H.idle(3000,true);
+    if(resumed.timeout||H.inBattle()||!H.fieldFree())throw new Error('Brock did not return field control: '+JSON.stringify(resumed));
     const fl=frDebug.save.save.flags;
     if(!((fl[C.FLAG_BADGE01_GET>>3]>>(C.FLAG_BADGE01_GET&7))&1))throw new Error('no badge');
-    return b;
+    const beforeStep=H.st();
+    await frDebug.walk('D',1);
+    const afterStep=H.st();
+    if(afterStep.map!==beforeStep.map||afterStep.x!==beforeStep.x||afterStep.y!==beforeStep.y+1)throw new Error('cannot walk after Brock: '+JSON.stringify({beforeStep,afterStep}));
+    return {...b,resumed,beforeStep,afterStep};
   `);
   if(ctx.errors().length)throw new Error(ctx.errors().join('; '));
   return {wild,trainer,limits:['early single battles','PREPARED wild injury/stock','no route completion claim']};

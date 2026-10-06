@@ -375,7 +375,7 @@ export default async function run(ctx) {
 
     // =========================================================================
     // PARTE 2: Enfermera Joy (pewter) - Rechazo, Curación, Reglas C y Persistencia
-    // Declaración: El fixture cubre 1 miembro del equipo (Pikachu).
+    // Declaración: El fixture cubre 1 miembro del equipo (Bulbasaur).
     // =========================================================================
     const initialNurse = await ctx.loadSave("pewter");
     if (initialNurse.map !== "MAP_PEWTER_CITY_POKEMON_CENTER_1F") {
@@ -660,7 +660,7 @@ export default async function run(ctx) {
       nurse: {
         checkpoint: "pewter",
         sha256: "6aa2386b7bb60b3e783dfe34503d97e6d20b50638f46cc9ea9e766ef007a8509",
-        scope: "Fixture covers 1 party member (Pikachu). Multi-party healing is not tested without a dedicated contract.",
+        scope: "Fixture covers 1 party member (Bulbasaur). Multi-party healing is not tested without a dedicated contract.",
         preparedFixture: nurseFlow.preparedFixture,
         afterReject: nurseFlow.afterReject,
         afterAccept: nurseFlow.afterAccept,
