@@ -15,7 +15,6 @@ const reasons = {
   C2: "Requires playing the Oak intro, starter selection and rival battle; no checkpoint captures the complete path.",
   C4: "Quest Log playback timing and final return need a dedicated state-aware scene driver.",
   C5: "Random encounter, battle choices, capture and PC fallback are not deterministic from a supplied checkpoint.",
-  C6: "Brock victory is covered by a supplied checkpoint only after the battle; battle-entry progression needs a dedicated route.",
   C11: "No supplied checkpoint is immediately before a deterministic level-up evolution.",
   C12: "Requires a full route through doors, connected maps, map labels and Mt. Moon entry.",
   C13: "Audio playback quality needs listening or dedicated audio-output measurements.",

@@ -134,9 +134,12 @@ Abiertas:
   no del juego: el borrador navegaba al bolsillo 1 (objetos clave) y pulsaba A sobre
   la Bici, cuyo menú solo-CANCELAR vuelve a la mochila. Con el bolsillo 2 (`OPEN_BAG_POKEBALLS`)
   la bola se lanza y el borrador C5 captura al primer tiro (`927c206c`).
-- [ ] 1.17 **Brock no inicia el combate con `H.talk`** [medio]. Con `gym-camper`, según
-  el trabajo de C6 la interacción queda bloqueada antes del combate. Sin reproducir
-  por el revisor: reproducir primero y decidir si es fallo del juego o del driver.
+- [x] 1.17 **Brock inicia el combate con `H.talk`** [medio]. Era fallo del juego:
+  `GetMovementScriptIdFromObjectEventId` devolvía -1 (`findIndex`) frente al
+  centinela 16 del C, así que `applymovement` nunca obtenía slot y `waitmovement`
+  colgaba el reveal de Brock. Con el centinela como `script_movement.c`, el
+  combate arranca, se gana, hay medalla y el dinero sube 3150→4550 (`3b709ab5`).
+  C6 queda desbloqueado para automatizar.
 
 ## 2. Revisión de equivalencias y wrappers contra el C
 

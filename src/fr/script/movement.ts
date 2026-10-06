@@ -105,10 +105,11 @@ export class ScriptMovement {
     return false;
   }
 
-  /** GetMovementScriptIdFromObjectEventId. */
+  /** GetMovementScriptIdFromObjectEventId (script_movement.c: OBJECT_EVENTS_COUNT when missing). */
   GetMovementScriptIdFromObjectEventId(taskId: number, objectId: number): number {
     if (taskId === 0xff || taskId !== this.GetMoveObjectsTaskId()) return C.OBJECT_EVENTS_COUNT;
-    return this.entries.findIndex((entry) => entry?.objectId === (objectId & 0xff));
+    const slot = this.entries.findIndex((entry) => entry?.objectId === (objectId & 0xff));
+    return slot < 0 ? C.OBJECT_EVENTS_COUNT : slot;
   }
 
   /** LoadObjectEventIdPtrFromMovementScript: slot id stands for the task-data byte pointer. */
