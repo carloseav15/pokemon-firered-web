@@ -85,6 +85,7 @@ try {
   const result = await run(ctx);
   console.log(JSON.stringify({ ok: true, result, errors }));
 } catch (e) {
+  process.exitCode = 1;
   console.log(JSON.stringify({ ok: false, error: String(e?.stack ?? e).slice(0, 2000), errors }));
 } finally {
   await browser.close();

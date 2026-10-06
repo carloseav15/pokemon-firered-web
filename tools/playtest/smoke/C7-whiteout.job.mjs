@@ -12,11 +12,14 @@ export default async function run(ctx) {
     if (GROWL < 0 || hp0 >= max) throw new Error("fixture changed: " + JSON.stringify({ moves: sv.party[0].moves, hp0, max }));
     H.battleDefaults = { mode: "fight", slot: GROWL };
     H.log.length = 0;
+    let navigationStop;
     for (let i = 0; i < 40 && H.st().map === "MAP_VIRIDIAN_FOREST"; i++) {
-      await H.goto(6, i % 2 ? 22 : 21);   // two grass tiles
+      const nav = await H.goto(6, i % 2 ? 22 : 21);
+      if (nav.note === "battle lost") { navigationStop = nav; break; } // two grass tiles
       if (H.inBattle()) await H.battle("fight", GROWL, 3000);
       if (sv.money < money0) break;
     }
+    if (!navigationStop || navigationStop.battleResult.outcome !== C.B_OUTCOME_LOST) throw new Error("Navigation did not stop on defeat: " + JSON.stringify(navigationStop));
     const fights = H.log.filter(r => r.battle);
     if (fights.at(-1)?.outcome !== C.B_OUTCOME_LOST) throw new Error("the battle was not lost: " + JSON.stringify(fights));
     await frDebug.wait(600);
@@ -25,7 +28,7 @@ export default async function run(ctx) {
     if (!/POKEMON_CENTER_1F$/.test(end.map)) throw new Error("did not whiteout to a Pokémon Center: " + JSON.stringify({ end, fights }));
     if (end.facing !== 2) throw new Error("not facing north after whiteout: " + JSON.stringify(end));
     if (!heal || sv.money >= money0) throw new Error("party not healed or money not reduced: " + JSON.stringify({ party: H.party(), money0, money: sv.money }));
-    return { fights: fights.length, outcome: fights.at(-1)?.outcome, map: end.map, x: end.x, y: end.y, facing: end.facing, party: H.party(), money0, money: sv.money };`);
+    return { navigationStop: navigationStop.note, fights: fights.length, outcome: fights.at(-1)?.outcome, map: end.map, x: end.x, y: end.y, facing: end.facing, party: H.party(), money0, money: sv.money };`);
   if (ctx.errors().length) throw new Error(`browser errors: ${ctx.errors().join("; ")}`);
   return result;
 }

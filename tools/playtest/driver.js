@@ -34,6 +34,7 @@ export const H = {
     this.R = await this.mod("/src/fr/hw/runtime.ts");
     this.G = await this.mod("/src/fr/battle/globals.ts");
     this.PM = await this.mod("/src/fr/partyMenu.ts");
+    this.C = await this.mod("/src/fr/generated/constants.ts");
     return { cb2: this.R.gMain.callback2?.name };
   },
   /** After restore()/importSave(): run frames until the field map is loaded, then init(). */
@@ -127,19 +128,29 @@ export const H = {
         // Forced switch after a faint: go to the first able Pokémon, then SHIFT.
         // Pressing A on the fainted one only prints "has no energy left" forever.
         const party = dbg().save.save.party;
-        const target = mode === "switch" && this.G.gBattlerPartyIndexes?.[0] === 0 ? 1 : party.findIndex((m, i) => i > 0 && m.hp > 0);
+        const active = this.G.gBattlerPartyIndexes?.[0];
+        const target = mode === "switch" && active === 0 && party[1]?.hp > 0 ? 1
+          : party.findIndex((m, i) => i !== active && m.species && !m.isEgg && m.hp > 0);
+        if (target < 0) break;
         const cur = this.PM.gPartyMenu.slotId;
-        if (target > 0 && cur !== target) { await press(0x80); continue; }
+        if (target >= 0 && cur !== target) { await press(0x80); continue; }
         await dbg().press("A", 20);
         continue;
       }
       await dbg().press("A", 8);
     }
-    const stuck = n >= maxSteps && this.inBattle();
+    const stuck = this.inBattle();
     await dbg().wait(30);
     const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, screens: [...screens].filter(Boolean) };
     this.log.push(r);
     return r;
+  },
+  /** Navigation must stop after defeat or an unfinished battle, even after the
+   * whiteout script heals the team. Direct battle() remains usable by C7. */
+  battleStop(result) {
+    if (result.stuck) return "battle stuck";
+    if (result.outcome === this.C.B_OUTCOME_LOST || result.outcome === this.C.B_OUTCOME_DREW) return "battle lost";
+    return null;
   },
   /**
    * Multi-floor navigation (caves, towers): on each map take a reachable warp
@@ -151,7 +162,11 @@ export const H = {
     const used = new Map();
     const path = [];
     for (let m = 0; m < maxMoves; m++) {
-      if (this.inBattle()) await this.battle(this.battleDefaults.mode, this.battleDefaults.slot);
+      if (this.inBattle()) {
+        const b = await this.battle(this.battleDefaults.mode, this.battleDefaults.slot);
+        const note = this.battleStop(b);
+        if (note) return { ...this.st(), note, battleResult: b, path };
+      }
       const here = dbg().state();
       const warps = g().overworld.loaded.header.warps.map((w, i) => ({ i, x: w.x, y: w.y, dest: w.destMap }));
       const reachable = warps.filter((w) => this.bfs(w.x + 7, w.y + 7) !== null && !avoid(here.map, w));
@@ -163,6 +178,7 @@ export const H = {
       used.set(`${here.map}#${pick.i}`, count(pick) + 1);
       path.push(`${here.map}->${pick.dest}@${pick.x},${pick.y}`);
       const r = await this.goto(pick.x, pick.y);
+      if (r.note && r.note !== "map changed") return { ...r, path };
       // Some warps (ladders) fire on arrival; stairs and exits need one more step.
       if (dbg().state().map === here.map && !r.note) {
         for (const d of ["U", "D", "L", "R"]) { if ((await this.exit(d, 1)).map !== here.map) break; }
@@ -190,9 +206,12 @@ export const H = {
       if (lead().hp < lead().stats[0] * minHp) return { stop: "lowhp", party: this.party() };
       const saved = this.battleDefaults;
       this.battleDefaults = { mode: "fight", slot };
-      await this.goto(...a);
-      await this.goto(...b);
-      this.battleDefaults = saved;
+      try {
+        for (const tile of [a, b]) {
+          const r = await this.goto(...tile);
+          if (r.note) return { stop: r.note, state: r };
+        }
+      } finally { this.battleDefaults = saved; }
     }
     return { stop: "loops", party: this.party() };
   },
@@ -237,7 +256,12 @@ export const H = {
     const slot = opts.slot ?? this.battleDefaults.slot;
     const map0 = dbg().state().map;
     for (let guard = 0; guard < 500; guard++) {
-      if (this.inBattle()) { await this.battle(mode, slot); continue; }
+      if (this.inBattle()) {
+        const b = await this.battle(mode, slot);
+        const note = this.battleStop(b);
+        if (note) return { ...this.st(), note, battleResult: b };
+        continue;
+      }
       const s = this.st();
       if (s.map !== map0) return { ...s, note: "map changed" };
       if (s.script || s.locked) {
