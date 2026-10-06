@@ -17,7 +17,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Casi completo (≥ 80 % y < 100 %) | 19 | 59404 | 2589/2779 |
 | Sin huecos de nombre (100 %; fidelidad no medida) | 187 | 185693 | 6969/6969 |
 | Solo datos (exportados a cdata) | 2 | 346 | 0/0 |
-| Cubierto por hw/navegador/exportador | 30 | 17415 | 34/192 |
+| Cubierto por hw/navegador/exportador | 30 | 17415 | 36/192 |
 | Enlace e inalámbrico (fuera de la meta principal) | 42 | 49339 | 101/1711 |
 | **Pendiente de portar** | **22** | **67664** | |
 | **Total en alcance** | **211** | **253703** | **9772/10115** |
@@ -267,7 +267,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `mini_printf.c` | 355 | 0/8 |  | depuración de GBA |  |
 | `m4a_tables.c` | 308 | — |  | exportador (audio) |  |
 | `data.c` | 305 | — |  | exportador (data) |  |
-| `load_save.c` | 298 | 2/21 | `loadSave.ts` | save.ts (formato propio) |  |
+| `load_save.c` | 298 | 4/21 | `loadSave.ts` | save.ts (formato propio) |  |
 | `agb_flash.c` | 297 | 0/15 |  | save.ts (localStorage) |  |
 | `isagbprn.c` | 265 | 0/16 |  | depuración de GBA |  |
 | `save_failed_screen.c` | 228 | 0/14 |  | game.ts/save.ts: el error de localStorage ya muestra el texto de guardado fallido; reparación física de sectores Flash no aplica al navegador |  |

@@ -162,11 +162,7 @@ Abiertas:
   sin alterar: playback2→3→0, equipo/HP/PP/bolsa/dinero/respawn/contador intactos,
   movimiento posterior; continue sin escenas y auto/Brock pasan. Evidencia en
   ../pokemon-cleanup-backup-2026-10-06/review-second-wave/sol-ql-*.json.
-- [ ] 1.22 **Objetos de campo del guardado frente a load_save.c**: el guardado web
-  SON-PREP no contiene snapshot completo de gObjectEvents; al terminar playback
-  se reconstruye jugador y NPC desde coordenadas/avatar/templates guardados, como
-  el continue web. Revisar SaveObjectEvents/LoadObjectEvents y conservación de
-  posiciones/estados dinámicos de NPC contra C; 1.21 no acredita esa fidelidad.
+- [x] 1.22 **Persistencia de NPC y objetos dinámicos** — `bab7d84a`: SaveObjectEvents/LoadObjectEvents copian los 16 slots y campos C; SAVE normal conserva el mapa sin activar el warp especial; continue y retorno de Quest Log restauran registros antes de recrear sprites. Dos cuerpos C nuevos en `load_save.c` (archivo ya cubierto por navegador; delta del indicador 0), cero equivalencias. Check `tools/checks/objectEventSave.ts`: 53 campos C, slots inactivos, copias independientes, s16 y rechazo de registros incompletos. Job `object-event-save.job.mjs` con/sin `OBJECT_SAVE_PLAYBACK=1`: NPC movido por held movement, invisibilidad/dirección bloqueada y objeto runtime ausente de templates persisten; playback2→3→0 y movimiento posterior PASS. Entradas PREPARED declaradas; guardados antiguos sin snapshot usan templates y no recuperan posiciones históricas perdidas. Revisión manual del usuario y paridad audiovisual completa pendientes.
 - [x] 1.23 **H.heal reporta menú ausente tras curar**: 6fc39013 observa el
   ofrecimiento frame a frame, libera A y confirma YES; HP/PP/estados e identidades
   verificados con dos miembros y velocidades0/1/2. No acepta menú ausente como éxito.
@@ -189,7 +185,8 @@ Abiertas:
 Prioridad vigente para recorridos; detalles y dependencias en
 [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md#plan-vigente-de-fiabilidad-del-driver).
 No equivale a completar el juego ni su fidelidad. Las correcciones1.23–1.26 se
-conservan como evidencia focalizada; 1.22 y las validaciones anteriores siguen abiertas.
+conservan como evidencia focalizada; 1.22 implementada y comprobada en casos acotados;
+las validaciones generales anteriores siguen abiertas.
 
 - [ ] **DRV-01 — Matriz de capacidades (Luna).** Inventariar funciones públicas de
   driver.js, consumidores y checks/jobs existentes; clasificar implementado,
@@ -210,7 +207,8 @@ conservan como evidencia focalizada; 1.22 y las validaciones anteriores siguen a
   estado no soportado, sin bucles de curación ni repetir la historia completa.
 - [x] **DRV-05 — Checkpoints y exportación segura (Sol).** 2e78b7df: SAVE por UI,
   bytes/hash/procedencia y exportación exclusiva; velocidades0/1/2, NO inicial,
-  cancelación, continue/movimiento y C8 PASS. Persistencia de NPC1.22 sigue abierta.
+  cancelación, continue/movimiento y C8 PASS. Persistencia de NPC comprobada aparte
+  en 1.22 (`bab7d84a`); DRV-05 por sí solo no la demuestra.
 - [ ] **DRV-06 — Gate de regresión del driver (Luna; revisión Sol).** Con contratos
   aceptados, integrar checks/jobs focalizados existentes y los casos faltantes
   aprobados en un comando acotado. Terminada con exit no exitoso ante fallo,

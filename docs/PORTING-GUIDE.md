@@ -349,7 +349,17 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
      terminar y devuelve exit1 ante excepción, resultado failure/blocked/ok:false
      o errores del navegador. Los resultados anidados requieren aserciones del job.
      Ni exportar bytes ni movimiento tras continue demuestran persistencia de NPC
-     dinámicos (tarea1.22) o fidelidad audiovisual.
+     dinámicos o fidelidad audiovisual. La prueba separada `object-event-save.job.mjs`
+     (1.22, `bab7d84a`) mueve un NPC con held movement, crea un objeto runtime y
+     comprueba los bytes de SAVE y la restauración tras carga fría; repetir con
+     `OBJECT_SAVE_PLAYBACK=1` para incluir escenas de la fixture SON-PREP. No acredita
+     recorrido histórico ni fidelidad audiovisual. `tools/checks/objectEventSave.ts`
+     contrasta la lista completa de campos con `global.fieldmap.h`.
+     Los saves nuevos incluyen `objectEventsVersion: 1` y 16 registros lógicos;
+     los IDs de sprites se recrean al volver al campo, como en C. Los saves antiguos
+     sin registros completos siguen cargando desde templates; sus estados dinámicos
+     perdidos no son recuperables. SAVE_NORMAL conserva el mapa y los objetos;
+     el warp de continuación pertenece a rutas de guardado especiales del C.
 
    Verificación focalizada: `node tools/playtest/strategy.check.mjs` y jobs
    `driver-strategy`, `driver-auto-battle`, `driver-switch`, `driver-recovery`,
