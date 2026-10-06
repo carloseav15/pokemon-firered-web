@@ -278,6 +278,16 @@ Receta:
 - [ ] `start_menu.c`: `ShowStartMenu`, `SetUpReturnToStartMenu`, `CloseStartMenu`,
   `CloseSaveStatsWindow_`, `FieldCB_ReturnToFieldOpenStartMenu`.
 - [ ] `vs_seeker.c`: `VsSeekerFreezeObjectsAfterChargeComplete`, `VsSeekerResetObjectMovementAfterChargeComplete`.
+  - `Reset...` (`vs_seeker.c:636-661` frente a `vsSeeker.ts:319-334`): igual —mismo
+    filtro (STOP/JUMP/SWIM), tabla aleatoria UP/DOWN/LEFT/RIGHT, set solo si el
+    objeto existe y `movementType` de plantilla siempre actualizado; `templates`
+    es el mapa actual (`overworld.ts:1118`) como el conteo del C.
+  - DIFERENCIA en `Task_ResetObjectsRematchWantedState` (`vs_seeker.c:603-633`
+    frente a `vsSeeker.ts:290-311`): al detenerse, el C llama a
+    `HandleEnforcedLookDirectionOnPlayerStopMoving()` (`field_player_avatar.c`) y
+    el TS limpia el movimiento retenido del jugador; al terminar, el C llama a
+    `StopPlayerAvatar()` (`field_player_avatar.c:1122`: strange bits, dirección y
+    bici) y el TS solo pone `runningState = 0`. Sin check que lo cubra: sin marcar.
 - [ ] `trainer_card.c`: `Unref_InitTrainerCard`; `battle_setup.c`: `SetBattledTrainerFlag2`.
 - [ ] `trainer_tower.c`: `TT_ConvertEasyChatMessageToString`, `GetTrainerTowerTrainerFrontSpriteId`,
   `CB2_EndTrainerTowerBattle`, `Task_DoTrainerTowerBattle`.
