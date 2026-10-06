@@ -547,22 +547,56 @@ entrada de diagnóstico, pero no garantizan completar la cueva.
   Si persiste solapamiento, entregar snapshot de tareas/callbacks/VAR_RESULT a Sol;
   no modificar motor, ni parchear controles/estado para obtener PASS. Dos intentos
   diagnósticos máximo. C8 actual pasa para el fixture de un miembro; equipo completo y audiovisual siguen pendientes.
-- [ ] **FLASH-C5-R1 — C5 fiable (Flash, tras contrato de Sol).** Separar lanzar bola
-  por UI, conteo/consumo, captura y transferencia a caja con equipo lleno. El
-  agotamiento legítimo de bolas debe terminar limpiamente y dejar evidencia del
-  enemigo/HP/estado, no fingir captura ni confundirse con excepción del motor.
-  Acordar entrada/RNG controlado PREPARED para el caso determinista antes de
-  implementarlo; no poner Pokémon capturado ni flags finales por depuración.
-**Contrato focalizado de LUNA-02 (Luna):** Tras commit de revisión fijo,
-  repetir C7 sobre 65e631f9 (o una base posterior fijada); C8 tras aceptar R2, y C5 solo cuando exista su contrato revisado; inspeccionar JSON,
-  excepciones, contador de guardado y límites. No ejecutar de nuevo toda la
-  historia ni reintentar a ciegas. No empezar antes de fijar ese commit.
+- [ ] **FLASH-C5-R1 — C5 fiable (Flash, tras contrato de Sol).**
+  Propuesta técnica y checklist de validación para lucha, huida y captura en combate salvaje:
 
-Capturar un tercer miembro es opcional después de medir si hace falta: obtenerlo
-por juego real, registrar nivel/movimientos y entrenarlo con límite. No añadir un
-Pokémon de nivel bajo solo para inflar el número; su captura, entrenamiento y
-curación consumen tiempo y recursos. No crear un equipo fuerte por debug para
-presentar la ruta como continuidad natural.
+  **Discrepancias observadas en el job C5 actual (`tools/playtest/smoke/C5-wild-battle.job.mjs`):**
+  1. *Falso negativo por agotamiento legítimo:* Trata el no capturar tras gastar todas las Poké Balls (`thrown < balls0`) como excepción del runner (`fail("capture did not add exactly one Pokémon")`), confundiendo mala suerte de RNG con un fallo del motor.
+  2. *Mezcla de casos en un único flujo acoplado:* Enlaza lucha, huida y captura en una sola ejecución secuencial. Si falla la captura probabilística, invalida la evidencia de lucha y huida previa.
+  3. *Verificación débil de retorno al campo:* Usa `H.idle(2000, false)` sin comprobar `H.fieldFree()`, ausencia de tareas/scripts bloqueantes ni movimiento real del avatar con colisiones (`H.goto`).
+  4. *Falta de cobertura para equipo lleno:* Solo valida captura con hueco en equipo (`party.length < 6`), sin comprobar `sendMonToPC`, inicialización de BoxMon ni preservación del equipo cuando el equipo está completo (6 miembros).
+  5. *Aserción de mochila imprecisa:* `bagCount(C.ITEM_POKE_BALL)` usa `sv.party.length` y asume que cualquier cambio en la mochila es solo de Poké Balls, sin aislar el evento exacto de consumo por cada lanzamiento.
+
+  **Checklist de Validación C5:**
+  1. **Subcaso Lucha (FIGHT):**
+     - *Entrada/Prerrequisitos:* Save `route2-north` en `MAP_ROUTE2 (5, 4)`, Bulbasaur L15 con Látigo Cepa (`MOVE_VINE_WHIP` = 22, slot 2 o índice dinámico).
+     - *Navegación UI:* Caminar en hierba hasta encuentro salvaje (`H.inBattle() === true`). En menú de acción (`HandleInputChooseAction`), seleccionar FIGHT (`0, 0` + `A`), seleccionar Látigo Cepa (`A`).
+     - *Estado anterior/posterior:* Registrar `exp0 = sv.party[0].exp`, HP enemigo inicial, PP del movimiento. Tras debilitar al salvaje: `outcome === B_OUTCOME_WON`, `sv.party[0].exp > exp0`, PP decrementado en 1 por uso.
+     - *Retorno al campo:* Esperar a que el combate termine (`!H.inBattle()`), verificar `H.fieldFree() === true`, y realizar paso real (`H.goto(x, y + 1)`) sin notas ni colisiones bloqueantes.
+     - *Criterios:* PASS si gana, suma exp y camina en campo. FAIL si queda atascado (`r.stuck`), pierde combate o no puede moverse.
+
+  2. **Subcaso Huida (RUN):**
+     - *Entrada/Prerrequisitos:* `route2-north` en hierba alta.
+     - *Navegación UI:* Iniciar encuentro. En menú de acción, mover cursor a RUN (`1, 1` / abajo-derecha) y presionar `A`.
+     - *Estado anterior/posterior:* `outcome === B_OUTCOME_RAN`. Estado de salud y PP del equipo inalterados.
+     - *Retorno al campo:* Verificar `!H.inBattle()`, `H.fieldFree() === true` y paso real en el campo.
+     - *Criterios:* PASS si escapa limpiamente y recupera control en campo. FAIL si se cuelga en animación o controlador.
+
+  3. **Subcaso Captura - Manejo de Recursos y Agotamiento:**
+     - *Entrada/Prerrequisitos:* `route2-north` con `pokeBalls` = 5.
+     - *Navegación UI:* Menú de acción → BAG (`RIGHT` + `A`). En `CB2_BagMenuRun`, navegar a bolsillo 2 (`POCKET_POKE_BALLS`), seleccionar `ITEM_POKE_BALL` + `USE` (`A`).
+     - *Consumo exacto:* Verificar tras cada lanzamiento que `bag.pokeBalls[0].quantity === ballsBefore - 1`.
+     - *Desviación/Desenlace:*
+       - Si $odds > 254$ o 4 sacudidas: captura exitosa, `outcome === B_OUTCOME_CAUGHT`. Descartar mote con `B`. Suma $+1$ a Pokémon globales.
+       - Si sacudidas $< 4$: mensaje de escape, combate sigue activo.
+       - Si se agotan las bolas ($N = 0$): el job ejecuta RUN limpiamente, dejando constancia de intentos fallidos, HP y estado del enemigo, retornando PASS de recurso agotado sin crashear.
+     - *Criterios:* PASS si cada bola descuenta 1 y el combate termina limpiamente (captura o huida post-agotamiento). FAIL si no descuenta bola, crashea o congela la UI.
+
+  4. **Subcaso Captura Determinista y Transferencia a PC (`PREPARED`):**
+     - *Entrada/Prerrequisitos:* Equipo lleno (6 miembros preparados: Bulbasaur + 5 placeholders) y Box 0 con al menos 1 slot vacío.
+     - *Preparación declarada (PREPARED):* Para garantizar determinismo sin alterar el motor ni inventar una API de RNG, se prepara el salvaje con $HP = 1$ y `STATUS1_SLEEP` en el inicio del encuentro (o uso de `ITEM_MASTER_BALL`), garantizando $odds > 254$ según la fórmula de C (`Cmd_handleballthrow`), lo que fuerza 4 sacudidas de forma 100% determinista. Nunca se prepara el Pokémon capturado de antemano.
+     - *Navegación UI:* Menú de acción → BAG → Poké Balls → USE. Observar animación de captura. Descartar mote con `B`.
+     - *Transferencia a PC:*
+       - `save.party.length` permanece en 6 con identidades y orden originales intactos.
+       - Box 0 añade el nuevo Pokémon en el slot libre correspondiente.
+       - Identidad verificada en PC: `species`, `level`, `personality`, `otId === save.trainerId`, `pokeball === ITEM_POKE_BALL`, PP calculados al 100% y `status = 0`.
+       - Mensaje de destino verificado: `B_MSG_SENT_SOMEONES_PC` / `VAR_PC_BOX_TO_SEND_MON`.
+     - *Retorno al campo:* Fin de combate, `H.fieldFree() === true`, y paso real verificado con `H.goto`.
+     - *Criterios:* PASS si transfiere a PC conservando identidad y liberando campo. FAIL si sobreescribe equipo o no registra en caja.
+
+  **Límites de lo acreditado:**
+  - La prueba probabilística acredita la UI de lanzamiento, el decremento de inventario y la continuidad ante fallos de captura.
+  - La prueba determinista PREPARED acredita la fórmula de éxito $odds > 254$, el registro en Pokédex, la lógica de `sendMonToPC` y el retorno al campo. No acredita la probabilidad natural de captura en condiciones normales de combate sin debilitar.
 
 
 Los checks de cierre del driver pasaron: check:port, check:honesty, build y
