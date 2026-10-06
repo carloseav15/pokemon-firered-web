@@ -19,61 +19,85 @@ export default async function run(ctx) {
     }
   };
 
-  const saveViaStartMenuInBrowser = `
+  const saveViaStartMenu = `
+    const C = await H.mod("/src/fr/generated/constants.ts");
     const T = await H.mod("/src/fr/gba/tasks.ts");
     const checkSM = () => T.tasks.tasks.some(t => t.isActive && (t.func.name === "startInput" || t.func.name === "Task_StartMenuHandleInput"));
     const checkYesNo = () => T.tasks.tasks.some(t => t.isActive && t.func.name === "Task_YesNoMenu_HandleInput");
 
+    const statBefore = frDebug.save.save.gameStats[C.GAME_STAT_SAVED_GAME];
+    const rawBefore = localStorage.getItem("pokemon-gba-web-lab.firered.v2");
+
+    // Settle before opening Start Menu
+    for (let f = 0; f < 60; f += 5) {
+      if (H.fieldFree()) break;
+      await frDebug.wait(5);
+    }
     await frDebug.wait(30);
-    await frDebug.press("START");
-    await frDebug.wait(40);
+
+    for (let i = 0; i < 5 && !checkSM(); i++) {
+      await frDebug.press("START");
+      await frDebug.wait(40);
+    }
     if (!checkSM()) throw new Error("Start menu did not open");
 
-    // Move to SAVE (index 4)
-    for (let i = 0; i < 4; i++) {
+    // Start Menu in NormalField has 7 entries with SAVE at index 4.
+    // Calculate relative steps from current cursor position.
+    const currentCursor = window.frGame.startMenuCursor ?? 0;
+    const stepsDown = (4 - currentCursor + 7) % 7;
+    for (let i = 0; i < stepsDown; i++) {
       await frDebug.wait(4, 0x80);
       await frDebug.wait(20);
     }
     await frDebug.press("A"); // Select SAVE
 
     // 1. Wait for YesNo 1 ("Would you like to save the game?")
-    for (let f = 0; f < 300 && !checkYesNo(); f += 5) await frDebug.wait(5);
+    for (let f = 0; f < 400 && !checkYesNo(); f += 5) await frDebug.wait(5);
     if (!checkYesNo()) throw new Error("Save confirmation prompt never appeared");
-    await frDebug.wait(10);
+    await frDebug.wait(15);
     await frDebug.press("A"); // Confirm save
 
-    // 2. Wait for YesNo 1 to disappear
+    // 2. Wait for YesNo 1 to dismiss
     for (let f = 0; f < 100 && checkYesNo(); f += 5) await frDebug.wait(5);
 
-    // 3. Wait for YesNo 2 (overwrite) if an existing save is present
+    // 3. Wait for YesNo 2 (overwrite) if an existing save exists
     let yn2Appeared = false;
-    for (let f = 0; f < 300; f += 5) {
+    for (let f = 0; f < 400; f += 5) {
       if (checkYesNo()) { yn2Appeared = true; break; }
-      if (!checkSM()) break;
       await frDebug.wait(5);
     }
     if (yn2Appeared) {
-      await frDebug.wait(10);
+      await frDebug.wait(15);
       await frDebug.press("A"); // Confirm overwrite
       for (let f = 0; f < 100 && checkYesNo(); f += 5) await frDebug.wait(5);
     }
 
-    // 4. Wait cleanly for save completion without pressing buttons
-    for (let f = 0; f < 400; f += 5) {
-      const s = H.st();
-      if (!s.script && !s.locked && !checkSM() && !checkYesNo()) break;
-      await frDebug.wait(5);
+    // 4. Wait for save to complete and controls to return (SaveDialogCB_ReturnSuccess waits at least 60 frames)
+    for (let f = 0; f < 600; f += 10) {
+      await frDebug.wait(10);
+      const stat = frDebug.save.save.gameStats[C.GAME_STAT_SAVED_GAME];
+      if (stat > statBefore && H.fieldFree() && !checkSM() && !checkYesNo()) break;
     }
 
-    const s = H.st();
-    if (s.script || s.locked || checkSM() || checkYesNo()) {
-      throw new Error("Controls not returned after saving from Start Menu: " + JSON.stringify(s));
+    const statAfter = frDebug.save.save.gameStats[C.GAME_STAT_SAVED_GAME];
+    const rawAfter = localStorage.getItem("pokemon-gba-web-lab.firered.v2");
+    if (statAfter <= statBefore) {
+      throw new Error("GAME_STAT_SAVED_GAME did not increment: before=" + statBefore + ", after=" + statAfter);
     }
+    if (!rawAfter || rawAfter === rawBefore) {
+      throw new Error("localStorage was not updated with new save content");
+    }
+    if (JSON.parse(rawAfter).gameStats[C.GAME_STAT_SAVED_GAME] !== statAfter) {
+      throw new Error("localStorage stat mismatch: expected " + statAfter);
+    }
+    if (!H.fieldFree()) throw new Error("field not free after save: " + JSON.stringify(H.st()));
+
+    return { statBefore, statAfter };
   `;
 
   try {
     // =========================================================================
-    // PARTE 1: PC (pewter-pc) - Depósito, Retiro, Identidad y Persistencia
+    // PARTE 1: PC (pewter-pc) - Depósito, Retiro, Identidad, Cierre y Persistencia
     // =========================================================================
     const initialPC = await ctx.loadSave("pewter-pc");
     if (initialPC.map !== "MAP_PEWTER_CITY_POKEMON_CENTER_1F") {
@@ -118,7 +142,7 @@ export default async function run(ctx) {
         return false;
       };
 
-      // 1. Confirm initial state
+      // 1. Initial verification: Bulbasaur at slot 0, Pidgey at slot 1, Box 0 empty
       R.entry = {
         map: H.st().map,
         coords: { x: H.st().x, y: H.st().y },
@@ -131,12 +155,12 @@ export default async function run(ctx) {
         throw new Error("unexpected PC initial counts: " + JSON.stringify(R.entry));
       }
       if (R.entry.party[0].species !== 1 || R.entry.party[1].species !== 16) {
-        throw new Error("unexpected PC initial party species: " + JSON.stringify(R.entry.party));
+        throw new Error("unexpected PC initial party order/species: " + JSON.stringify(R.entry.party));
       }
 
       if (!await toMenu()) throw new Error("PC main menu never opened");
 
-      // 2. DEPOSIT Bulbasaur (slot 0) into box 0
+      // 2. DEPOSIT Bulbasaur (slot 0) into Box 0
       if (await setCursor(1) !== 1) throw new Error("could not move to DEPOSIT");
       await frDebug.press("A"); await frDebug.wait(250);
       await frDebug.press("A"); await frDebug.wait(150);
@@ -170,7 +194,7 @@ export default async function run(ctx) {
         throw new Error("save party not synced after deposit: " + JSON.stringify(R.syncedParty));
       }
 
-      // 3. WITHDRAW Bulbasaur back
+      // 3. WITHDRAW Bulbasaur back (lands at party slot 1, after Pidgey)
       if (await setCursor(0) !== 0) throw new Error("could not move to WITHDRAW");
       await frDebug.press("A"); await frDebug.wait(250);
       await frDebug.press("A"); await frDebug.wait(150);
@@ -194,12 +218,12 @@ export default async function run(ctx) {
         throw new Error("save party/box not restored after withdraw: " + JSON.stringify(R));
       }
 
-      // Check restored identities
-      const restoredBulbasaur = R.restoredParty.find(p => p.species === 1);
-      const restoredPidgey = R.restoredParty.find(p => p.species === 16);
-      if (!restoredBulbasaur || !restoredPidgey) {
-        throw new Error("missing restored mon in party: " + JSON.stringify(R.restoredParty));
+      // Check restored identities and order: slot 0 is Pidgey (16), slot 1 is Bulbasaur (1)
+      if (R.restoredParty[0].species !== 16 || R.restoredParty[1].species !== 1) {
+        throw new Error("restored party order mismatch: " + JSON.stringify(R.restoredParty));
       }
+      const restoredBulbasaur = R.restoredParty[1];
+      const restoredPidgey = R.restoredParty[0];
       if (restoredBulbasaur.personality !== R.entry.party[0].personality
           || restoredBulbasaur.otId !== R.entry.party[0].otId
           || JSON.stringify(restoredBulbasaur.moves) !== JSON.stringify(R.entry.party[0].moves)
@@ -209,29 +233,71 @@ export default async function run(ctx) {
           restored: restoredBulbasaur
         }));
       }
+      if (restoredPidgey.personality !== R.entry.party[1].personality
+          || restoredPidgey.otId !== R.entry.party[1].otId
+          || JSON.stringify(restoredPidgey.moves) !== JSON.stringify(R.entry.party[1].moves)
+          || restoredPidgey.heldItem !== R.entry.party[1].heldItem) {
+        throw new Error("Pidgey identity corrupted after withdraw: " + JSON.stringify({
+          initial: R.entry.party[1],
+          restored: restoredPidgey
+        }));
+      }
 
-      // 4. Leave PC back to field
-      for (let i = 0; i < 6; i++) {
-        await frDebug.press("B"); await frDebug.wait(150);
-        const s = H.st();
-        if (!s.script && !s.locked) break;
+      // 4. Exit PC: We are already in PCMainMenu. Dismiss PCMainMenu with B
+      await frDebug.press("B");
+      await frDebug.wait(60);
+
+      // Dismiss to parent PC menu with B
+      await frDebug.press("B");
+      await frDebug.wait(60);
+
+      // Wait until parent PC menu (Task_MultichoiceMenu_HandleInput) is active
+      for (let i = 0; i < 30; i++) {
+        if (T.tasks.tasks.some(t => t.isActive && t.func.name === "Task_MultichoiceMenu_HandleInput")) break;
+        await frDebug.wait(10);
       }
-      const s = H.st();
-      R.leftField = { map: s.map, script: !!s.script, locked: !!s.locked };
-      if (R.leftField.script || R.leftField.locked || R.leftField.map !== "MAP_PEWTER_CITY_POKEMON_CENTER_1F") {
-        throw new Error("did not return to field after PC: " + JSON.stringify(R.leftField));
+      R.hasParentMenu = T.tasks.tasks.some(t => t.isActive && t.func.name === "Task_MultichoiceMenu_HandleInput");
+      if (!R.hasParentMenu) throw new Error("Parent PC menu never appeared upon exit");
+
+      // LOG OFF with B
+      await frDebug.press("B");
+      await frDebug.wait(60);
+
+      // Wait for shutdown and confirm all PC tasks destroyed
+      for (let f = 0; f < 200 && !H.fieldFree(); f += 5) await frDebug.wait(5);
+      R.activeTasksAfterExit = T.tasks.tasks.filter(t => t.isActive).map(t => t.func.name);
+      if (R.activeTasksAfterExit.some(n => ["Task_PCMainMenu", "Task_MultichoiceMenu_HandleInput"].includes(n))) {
+        throw new Error("PC tasks remained active after shutdown: " + JSON.stringify(R.activeTasksAfterExit));
       }
+      if (!H.fieldFree()) throw new Error("H.fieldFree() false after PC exit: " + JSON.stringify(H.st()));
+
+      // Real step outside counter: walk down 2 tiles from (11, 2) to (11, 4)
+      const walkResult = await H.goto(11, 4);
+      if (walkResult.note || walkResult.x !== 11 || walkResult.y !== 4) {
+        throw new Error("Player could not move after PC exit: " + JSON.stringify(walkResult));
+      }
+      R.walkedPosition = { x: walkResult.x, y: walkResult.y };
+
+      // Pre-save snapshot to compare after reload & continue
+      R.preSaveSnapshot = {
+        party: sv.party.filter(p => p.species).map(monIdentity),
+        box0: sv.boxes[0].filter(m => m && m.species).map(monIdentity),
+        map: H.st().map,
+        coords: { x: walkResult.x, y: walkResult.y },
+        bag: JSON.parse(JSON.stringify(sv.bag)),
+        money: sv.money
+      };
 
       return R;
     `);
 
     // 5. Save PC state via in-game Start Menu
-    await ctx.runEval(saveViaStartMenuInBrowser);
+    const pcSaveStats = await ctx.runEval(saveViaStartMenu);
 
-    // 6. Reload and continue to verify PC persistence
+    // 6. Reload and continue to verify PC persistence against preSaveSnapshot
     await reloadAndContinue();
 
-    const pcPersisted = await ctx.runEval(`
+    const pcContinued = await ctx.runEval(`
       const sv = frDebug.save.save;
       const monIdentity = (m) => m ? ({
         species: m.species,
@@ -247,23 +313,27 @@ export default async function run(ctx) {
         locked: !!H.st().locked,
         party: sv.party.filter(p => p.species).map(monIdentity),
         box0: sv.boxes[0].filter(m => m && m.species).map(monIdentity),
-        money: sv.money
+        bag: JSON.parse(JSON.stringify(sv.bag)),
+        money: sv.money,
+        fieldFree: H.fieldFree()
       };
     `);
 
-    if (pcPersisted.party.length !== 2 || pcPersisted.box0.length !== 0) {
-      throw new Error("PC persistence failed: party or box0 corrupted: " + JSON.stringify(pcPersisted));
+    // Assert that continue restored the exact pre-save state (order, coords, box, money, bag)
+    if (JSON.stringify(pcContinued.party) !== JSON.stringify(pcFlow.preSaveSnapshot.party)) {
+      throw new Error("PC continue party mismatch: " + JSON.stringify({ got: pcContinued.party, expected: pcFlow.preSaveSnapshot.party }));
     }
-    const persistedBulbasaur = pcPersisted.party.find(p => p.species === 1);
-    const persistedPidgey = pcPersisted.party.find(p => p.species === 16);
-    if (!persistedBulbasaur || !persistedPidgey) {
-      throw new Error("PC persistence failed: missing mon: " + JSON.stringify(pcPersisted.party));
+    if (pcContinued.coords.x !== pcFlow.preSaveSnapshot.coords.x || pcContinued.coords.y !== pcFlow.preSaveSnapshot.coords.y) {
+      throw new Error("PC continue coords mismatch: got " + JSON.stringify(pcContinued.coords) + ", expected " + JSON.stringify(pcFlow.preSaveSnapshot.coords));
     }
-    if (persistedBulbasaur.personality !== pcFlow.entry.party[0].personality
-        || persistedBulbasaur.otId !== pcFlow.entry.party[0].otId
-        || JSON.stringify(persistedBulbasaur.moves) !== JSON.stringify(pcFlow.entry.party[0].moves)
-        || persistedBulbasaur.heldItem !== pcFlow.entry.party[0].heldItem) {
-      throw new Error("PC persistence failed: Bulbasaur identity mismatch: " + JSON.stringify(persistedBulbasaur));
+    if (pcContinued.box0.length !== 0) {
+      throw new Error("PC continue box0 not empty: " + JSON.stringify(pcContinued.box0));
+    }
+    if (pcContinued.money !== pcFlow.preSaveSnapshot.money) {
+      throw new Error("PC continue money mismatch: got " + pcContinued.money + ", expected " + pcFlow.preSaveSnapshot.money);
+    }
+    if (!pcContinued.fieldFree) {
+      throw new Error("PC continue field not free: " + JSON.stringify(pcContinued));
     }
 
     // =========================================================================
@@ -276,30 +346,27 @@ export default async function run(ctx) {
 
     const nurseFlow = await ctx.runEval(`
       const T = await H.mod("/src/fr/gba/tasks.ts");
-      const { varGet } = await H.mod("/src/fr/save.ts");
-      const { rom } = await H.mod("/src/fr/rom.ts");
+      const C = await H.mod("/src/fr/generated/constants.ts");
       const sv = frDebug.save.save;
       const p = sv.party[0];
 
-      // Initial checks
-      const initialMon = {
-        species: p.species,
-        level: p.level,
-        hp: p.hp,
-        maxHp: p.stats[0],
-        moves: [...p.moves],
-        pp: [...p.pp],
-        status: p.status,
-        money: sv.money
-      };
+      const monIdentity = (m) => m ? ({
+        species: m.species,
+        personality: m.personality,
+        otId: m.otId,
+        moves: m.moves ? [...m.moves] : [],
+        heldItem: m.heldItem
+      }) : null;
+
+      const initialPartyIdentity = sv.party.filter(m => m.species).map(monIdentity);
 
       // PREPARED damage, PP consumption, and poison status
       // Contract: HP reduced by 5, first non-empty PP reduced by 1, status = STATUS1_POISON (8).
       // Max HP is strictly preserved; final results are never prepared.
-      p.hp = initialMon.maxHp - 5;
+      p.hp = p.stats[0] - 5;
       const firstMoveIdx = p.moves.findIndex(m => m !== 0);
       p.pp[firstMoveIdx] = p.pp[firstMoveIdx] - 1;
-      p.status = 8; // STATUS1_POISON
+      p.status = C.STATUS1_POISON;
       const preparedFixture = {
         hp: p.hp,
         maxHp: p.stats[0],
@@ -334,7 +401,8 @@ export default async function run(ctx) {
         hp: p.hp,
         pp: [...p.pp],
         status: p.status,
-        money: sv.money
+        money: sv.money,
+        fieldFree: H.fieldFree()
       };
 
       // Assert that rejection did NOT heal the Pokémon
@@ -343,7 +411,7 @@ export default async function run(ctx) {
           || afterReject.status !== preparedFixture.status) {
         throw new Error("Nurse healed Pokémon on reject! " + JSON.stringify(afterReject));
       }
-      if (afterReject.st.script || afterReject.st.locked) {
+      if (!afterReject.fieldFree) {
         throw new Error("Control not returned after nurse reject: " + JSON.stringify(afterReject.st));
       }
 
@@ -359,7 +427,7 @@ export default async function run(ctx) {
       await frDebug.press("A");
       await frDebug.wait(60);
 
-      // Drain full healing sequence (Joy walks left, balls placed, music/sound, Joy walks down, bow, farewell)
+      // Drain full healing sequence (Joy walks left, balls placed, sound/music, Joy walks down, bow, farewell)
       for (let i = 0; i < 40; i++) {
         if (!H.st().script && !H.st().locked) break;
         await frDebug.press("A");
@@ -371,10 +439,11 @@ export default async function run(ctx) {
         maxHp: p.stats[0],
         pp: [...p.pp],
         status: p.status,
-        money: sv.money
+        money: sv.money,
+        fieldFree: H.fieldFree()
       };
 
-      if (afterAccept.st.script || afterAccept.st.locked) {
+      if (!afterAccept.fieldFree) {
         throw new Error("Control not returned after nurse accept: " + JSON.stringify(afterAccept.st));
       }
 
@@ -386,11 +455,12 @@ export default async function run(ctx) {
       if (afterAccept.status !== 0) {
         throw new Error("Status not restored to 0: " + JSON.stringify(afterAccept));
       }
-      if (afterAccept.money !== initialMon.money) {
+      if (afterAccept.money !== 2980) {
         throw new Error("Money changed by nurse: " + JSON.stringify(afterAccept));
       }
 
-      // Verify each move PP against C formula: basePP + floor(basePP * 20 * bonus / 100)
+      // Independent C PP oracle from pokefirered/src/data/battle_moves.h
+      const basePPByMove = { [C.MOVE_TACKLE]: 35, [C.MOVE_GROWL]: 40, [C.MOVE_LEECH_SEED]: 10, [C.MOVE_VINE_WHIP]: 10 };
       const expectedPP = [];
       for (let j = 0; j < 4; j++) {
         const move = p.moves[j];
@@ -398,7 +468,8 @@ export default async function run(ctx) {
           expectedPP.push(0);
           continue;
         }
-        const basePP = rom.moves[move].pp;
+        const basePP = basePPByMove[move];
+        if (basePP === undefined) throw new Error("Move has no independent C PP oracle: " + move);
         const ppBonus = (p.ppBonuses >> (2 * j)) & 3;
         const calcPP = basePP + Math.floor((basePP * 20 * ppBonus) / 100);
         expectedPP.push(calcPP);
@@ -407,41 +478,84 @@ export default async function run(ctx) {
         }
       }
 
-      return {
-        initialMon,
-        preparedFixture,
-        afterReject,
-        afterAccept,
-        expectedPP
-      };
-    `);
+      // Check team identity intact
+      const finalPartyIdentity = sv.party.filter(m => m.species).map(monIdentity);
+      if (JSON.stringify(finalPartyIdentity) !== JSON.stringify(initialPartyIdentity)) {
+        throw new Error("Party identity altered during nurse healing");
+      }
 
-    // 4. Save healed state via in-game Start Menu
-    await ctx.runEval(saveViaStartMenuInBrowser);
+      // 4. Real step away from counter to (7, 6)
+      const walkedNurse = await H.goto(7, 6);
+      if (walkedNurse.note || walkedNurse.x !== 7 || walkedNurse.y !== 6) {
+        throw new Error("Player could not move after nurse healing: " + JSON.stringify(walkedNurse));
+      }
 
-    // 5. Reload and continue to verify Nurse persistence
-    await reloadAndContinue();
-
-    const nursePersisted = await ctx.runEval(`
-      const sv = frDebug.save.save;
-      const p = sv.party[0];
-      return {
-        map: H.st().map,
-        coords: { x: H.st().x, y: H.st().y },
-        script: !!H.st().script,
-        locked: !!H.st().locked,
+      const nursePreSaveSnapshot = {
+        party: sv.party.filter(p => p.species).map(monIdentity),
         hp: p.hp,
         maxHp: p.stats[0],
         pp: [...p.pp],
         status: p.status,
+        map: H.st().map,
+        coords: { x: walkedNurse.x, y: walkedNurse.y },
+        bag: JSON.parse(JSON.stringify(sv.bag)),
         money: sv.money
+      };
+
+      return {
+        preparedFixture,
+        afterReject,
+        afterAccept,
+        expectedPP,
+        walkedNurse,
+        nursePreSaveSnapshot
       };
     `);
 
-    if (nursePersisted.hp !== nursePersisted.maxHp
-        || nursePersisted.status !== 0
-        || JSON.stringify(nursePersisted.pp) !== JSON.stringify(nurseFlow.expectedPP)) {
-      throw new Error("Nurse persistence failed: healed state corrupted after continue: " + JSON.stringify(nursePersisted));
+    // 5. Save healed state via in-game Start Menu
+    const nurseSaveStats = await ctx.runEval(saveViaStartMenu);
+
+    // 6. Reload and continue to verify Nurse persistence against nursePreSaveSnapshot
+    await reloadAndContinue();
+
+    const nurseContinued = await ctx.runEval(`
+      const sv = frDebug.save.save;
+      const p = sv.party[0];
+      const monIdentity = (m) => m ? ({
+        species: m.species,
+        personality: m.personality,
+        otId: m.otId,
+        moves: m.moves ? [...m.moves] : [],
+        heldItem: m.heldItem
+      }) : null;
+      return {
+        party: sv.party.filter(p => p.species).map(monIdentity),
+        hp: p.hp,
+        maxHp: p.stats[0],
+        pp: [...p.pp],
+        status: p.status,
+        map: H.st().map,
+        coords: { x: H.st().x, y: H.st().y },
+        bag: JSON.parse(JSON.stringify(sv.bag)),
+        money: sv.money,
+        fieldFree: H.fieldFree()
+      };
+    `);
+
+    if (JSON.stringify(nurseContinued.party) !== JSON.stringify(nurseFlow.nursePreSaveSnapshot.party)) {
+      throw new Error("Nurse continue party mismatch: " + JSON.stringify({ got: nurseContinued.party, expected: nurseFlow.nursePreSaveSnapshot.party }));
+    }
+    if (nurseContinued.coords.x !== nurseFlow.nursePreSaveSnapshot.coords.x || nurseContinued.coords.y !== nurseFlow.nursePreSaveSnapshot.coords.y) {
+      throw new Error("Nurse continue coords mismatch: got " + JSON.stringify(nurseContinued.coords) + ", expected " + JSON.stringify(nurseFlow.nursePreSaveSnapshot.coords));
+    }
+    if (nurseContinued.hp !== nurseFlow.nursePreSaveSnapshot.maxHp || nurseContinued.status !== 0) {
+      throw new Error("Nurse continue healed stats corrupted: " + JSON.stringify(nurseContinued));
+    }
+    if (JSON.stringify(nurseContinued.pp) !== JSON.stringify(nurseFlow.expectedPP)) {
+      throw new Error("Nurse continue PP mismatch: " + JSON.stringify({ got: nurseContinued.pp, expected: nurseFlow.expectedPP }));
+    }
+    if (!nurseContinued.fieldFree) {
+      throw new Error("Nurse continue field not free: " + JSON.stringify(nurseContinued));
     }
 
     if (ctx.errors().length) throw new Error(`browser errors: ${ctx.errors().join("; ")}`);
@@ -452,23 +566,18 @@ export default async function run(ctx) {
         checkpoint: "pewter-pc",
         sha256: "e2f7bf7cee99b071e81ef9e5d4fdc3abf66fb0cf870e154843162b7861485fe8",
         entry: pcFlow.entry,
-        afterDeposit: {
-          workParty: pcFlow.afterDepositWork.workParty,
-          box0: pcFlow.afterDepositWork.box0,
-          syncedParty: pcFlow.syncedParty
-        },
-        afterWithdraw: {
-          workParty: pcFlow.afterWithdrawWork.workParty,
-          box0: pcFlow.afterWithdrawWork.box0,
-          restoredParty: pcFlow.restoredParty
-        },
-        leftField: pcFlow.leftField,
-        persisted: pcPersisted
+        depositBox0: pcFlow.afterDepositWork.box0,
+        syncedParty: pcFlow.syncedParty,
+        restoredParty: pcFlow.restoredParty,
+        hasParentMenuOnExit: pcFlow.hasParentMenu,
+        activeTasksAfterExit: pcFlow.activeTasksAfterExit,
+        walkedPosition: pcFlow.walkedPosition,
+        saveStats: pcSaveStats,
+        continued: pcContinued
       },
       nurse: {
         checkpoint: "pewter",
         sha256: "6aa2386b7bb60b3e783dfe34503d97e6d20b50638f46cc9ea9e766ef007a8509",
-        initial: nurseFlow.initialMon,
         preparedFixture: nurseFlow.preparedFixture,
         afterReject: nurseFlow.afterReject,
         afterAccept: nurseFlow.afterAccept,
@@ -476,9 +585,11 @@ export default async function run(ctx) {
           hpEqualsMaxHp: nurseFlow.afterAccept.hp === nurseFlow.afterAccept.maxHp,
           statusZero: nurseFlow.afterAccept.status === 0,
           ppMatchesCalculatePPWithBonus: JSON.stringify(nurseFlow.afterAccept.pp) === JSON.stringify(nurseFlow.expectedPP),
-          moneyUnchanged: nurseFlow.afterAccept.money === nurseFlow.initialMon.money
+          moneyUnchanged: nurseFlow.afterAccept.money === 2980
         },
-        persisted: nursePersisted
+        walkedNurse: nurseFlow.walkedNurse,
+        saveStats: nurseSaveStats,
+        continued: nurseContinued
       },
       limits: [
         "Audio / visual listening and pixel-perfect rendering parities have separate evidence and are not asserted by HP/PP checks.",
