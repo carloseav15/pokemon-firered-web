@@ -6,6 +6,8 @@
 // move when no script is active and controls are unlocked; idle() only taps A.
 // Call `await H.init()` after every page load (see AGENTS.md §6.5).
 
+import { rankMoves, hpItem, statusItem } from "./strategy.js";
+
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
 const DIRS = [[0, 1, 1, 0x80, "D"], [0, -1, 2, 0x40, "U"], [-1, 0, 3, 0x20, "L"], [1, 0, 4, 0x10, "R"]];
@@ -35,6 +37,10 @@ export const H = {
     this.G = await this.mod("/src/fr/battle/globals.ts");
     this.PM = await this.mod("/src/fr/partyMenu.ts");
     this.C = await this.mod("/src/fr/generated/constants.ts");
+    this.rom = (await this.mod("/src/fr/rom.ts")).rom;
+    this.T = await this.mod("/src/fr/gba/tasks.ts");
+    this.B = await this.mod("/src/fr/bagMenu.ts");
+    this.BS = await this.mod("/src/fr/battle/bscript.ts");
     return { cb2: this.R.gMain.callback2?.name };
   },
   /** After restore()/importSave(): run frames until the field map is loaded, then init(). */
@@ -80,36 +86,229 @@ export const H = {
       const s = this.st();
       // A trainer script can start a battle: hand it back to goto()/battle().
       if (this.inBattle()) return { ...s, f, battle: true };
-      if (!s.script && !s.locked && f > 40) return { ...s, f };
+      if (this.fieldFree() && f > 40) return { ...s, f };
       await dbg().wait(16);
       if (tapA) await dbg().wait(4, 1);
     }
     return { ...this.st(), timeout: true };
   },
+  // Thresholds are walkthrough policy, not FireRed rules. Explicit fight/run
+  // modes keep their existing behavior for C5/C7 and diagnostics.
+  policy: { fieldHp: 0.6, battleHp: 0.4, minAttackPP: 2, reservePotions: 1, maxDecisions: 80, maxUnchanged: 6 },
+  fieldFree() {
+    const state = this.st();
+    return !state.script && !state.locked && !g().scene && !this.T?.tasks.tasks.some(t => t.isActive &&
+      ["startInput", "Task_PCMainMenu", "Task_MultichoiceMenu_HandleInput", "Task_YesNoMenu_HandleInput"].includes(t.func.name));
+  },
+  async tap(bits, settle = 16) { await dbg().wait(2, bits); await dbg().wait(settle); },
+  async until(test, button = null, limit = 180) {
+    for (let i = 0; i < limit; i++) {
+      if (test()) return true;
+      if (button) await dbg().press(button, 4);
+      await dbg().wait(8);
+    }
+    return test();
+  },
+  hasTask(name) { return this.T.tasks.tasks.some(t => t.isActive && t.func.name === name); },
+  countItem(item) { return Object.values(dbg().save.save.bag).flat().filter(e => e.item === item).reduce((n, e) => n + e.quantity, 0); },
+  resources() {
+    const sv = dbg().save.save;
+    return { money: sv.money, items: sv.bag.items.map(e => ({ ...e })),
+      party: sv.party.map((m, slot) => ({ slot, species: m.species, level: m.level,
+        hp: m.hp, maxHP: m.stats[0], status: m.status, moves: [...m.moves], pp: [...m.pp],
+        attackPP: m.moves.reduce((n, id, j) => n + ((this.rom.moves[id]?.power ?? 0) > 1 ? m.pp[j] : 0), 0) })).filter(m => m.species) };
+  },
+  partyBattleMon(m) {
+    const info = this.rom.species[m.species];
+    return { species: m.species, hp: m.hp, maxHP: m.stats[0], attack: m.stats[1], defense: m.stats[2],
+      spAttack: m.stats[4], spDefense: m.stats[5], type1: info.types[0], type2: info.types[1],
+      ability: info.abilities[m.abilityNum], moves: m.moves, pp: m.pp, status1: m.status, status2: 0 };
+  },
+  bestMoves(mon = this.G.gBattleMons[0], foe = this.G.gBattleMons[1]) {
+    const d = this.G.gDisableStructs[0];
+    return rankMoves(mon, foe, this.rom, this.C, mon === this.G.gBattleMons[0] ?
+      { disabledMove: d.disabledMove, encoredMove: d.encoreTimer ? d.encoredMove : 0 } : {});
+  },
+  bestReplacement(healthy = false) {
+    const active = this.G.gBattleMons[0];
+    const choices = dbg().save.save.party.map((m, target) => {
+      if (!m.species || m.isEgg || m.hp <= 0 || m.personality === active.personality
+          || healthy && m.hp / m.stats[0] < this.policy.fieldHp) return null;
+      const attacks = this.bestMoves(this.partyBattleMon(m));
+      return attacks.length ? { target, score: attacks[0].score * m.hp / m.stats[0] } : null;
+    }).filter(Boolean).sort((a, b) => b.score - a.score || a.target - b.target);
+    return choices[0]?.target ?? -1;
+  },
+  battleDecision(incoming = 0) {
+    const C = this.C, flags = this.G.G.gBattleTypeFlags;
+    if (flags & (C.BATTLE_TYPE_DOUBLE | C.BATTLE_TYPE_LINK | C.BATTLE_TYPE_SAFARI | C.BATTLE_TYPE_POKEDUDE | C.BATTLE_TYPE_OLD_MAN_TUTORIAL)) {
+      return { action: "stop", reason: "unsupported battle format" };
+    }
+    const mon = this.G.gBattleMons[0], bag = dbg().save.save.bag.items;
+    const low = mon.hp <= Math.max(mon.maxHP * this.policy.battleHp, incoming * 1.5);
+    const heal = hpItem(mon, bag, C);
+    if (low && heal) return { action: "item", item: heal.item, reason: "low hp", incoming };
+    const cure = statusItem(mon.status1, bag, C);
+    if (cure) return { action: "item", item: cure, reason: "status" };
+    const attacks = this.bestMoves();
+    const better = this.bestReplacement(true);
+    if (attacks.length && attacks[0].effectiveness < 1 && better >= 0) {
+      const next = this.partyBattleMon(dbg().save.save.party[better]);
+      const best = this.bestMoves(next)[0];
+      if (next.hp / next.maxHP >= this.policy.fieldHp && best.score > attacks[0].score * 1.8) return { action: "switch", target: better, personality: dbg().save.save.party[better].personality, reason: "better attack matchup" };
+    }
+    if (!attacks.length || low && !heal) {
+      const target = this.bestReplacement(true);
+      if (target >= 0) return { action: "switch", target, personality: dbg().save.save.party[target].personality, reason: attacks.length ? "low hp without medicine" : "no usable attack" };
+      return flags & C.BATTLE_TYPE_TRAINER ? { action: "stop", reason: "resources exhausted in trainer battle" }
+        : { action: "run", reason: "resources exhausted in wild battle" };
+    }
+    return { action: "move", ...attacks[0], reason: "ranked attack" };
+  },
+  async selectPartySlot(target) {
+    for (let i = 0; i < 16 && this.PM.gPartyMenu.slotId !== target; i++) {
+      await this.tap(this.PM.gPartyMenu.slotId < target ? 0x80 : 0x40, 20);
+    }
+    return this.PM.gPartyMenu.slotId === target;
+  },
+  /** Use one supported medicine through BAG > USE > the observed party slot.
+   * No item-effect function is called. Result includes actual consumption. */
+  async useItem(item, target, { battle = false } = {}) {
+    const before = this.resources(), mon = dbg().save.save.party[target];
+    const hpItems = [this.C.ITEM_POTION, this.C.ITEM_SUPER_POTION, this.C.ITEM_HYPER_POTION, this.C.ITEM_MAX_POTION];
+    const statusItems = [this.C.ITEM_ANTIDOTE, this.C.ITEM_PARALYZE_HEAL, this.C.ITEM_BURN_HEAL, this.C.ITEM_ICE_HEAL, this.C.ITEM_AWAKENING];
+    if (!mon?.species || mon.isEgg || mon.hp <= 0 || !hpItems.includes(item) && !statusItems.includes(item)
+        || this.countItem(item) < 1) return { ok: false, note: "medicine unavailable or invalid target", before };
+    const count = this.countItem(item);
+    const hp0 = mon.hp, status0 = mon.status;
+    if (battle) {
+      if (this.G.gBattlerControllerFuncs[0]?.name !== "HandleInputChooseAction") return { ok: false, note: "battle action not ready" };
+      for (let i = 0; i < 8 && this.G.gActionSelectionCursor[0] !== 1; i++) {
+        const c = this.G.gActionSelectionCursor[0];
+        await this.tap(c & 1 ? 0x40 : 0x10);
+      }
+      await dbg().press("A");
+    } else {
+      if (!this.fieldFree()) return { ok: false, note: "field not free", before };
+      const S = await this.mod("/src/fr/save.ts");
+      const SM = await this.mod("/src/fr/startMenu.ts");
+      const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(this.C.FLAG_SYS_POKEDEX_GET),
+        pokemonObtained: S.FlagGet(this.C.FLAG_SYS_POKEMON_GET), linkStateActive: false, inUnionRoom: false, inSafariZone: false };
+      SM.SetUpStartMenu(menu);
+      const want = menu.order.indexOf(2); // start_menu.c STARTMENU_BAG
+      if (want < 0) return { ok: false, note: "bag not in start menu" };
+      const cursor = g().startMenuCursor;
+      await this.tap(8, 60);
+      if (!await this.until(() => this.hasTask("startInput"))) return { ok: false, note: "start menu did not open" };
+      for (let i = 0; i < (want - cursor + menu.numItems) % menu.numItems; i++) await this.tap(0x80);
+      await this.tap(1, 30);
+    }
+    if (!await this.until(() => this.cb2() === "CB2_BagMenuRun" && this.hasTask("Task_BagMenu_HandleInput"))) return { ok: false, note: "bag did not open" };
+    await dbg().wait(60);
+    for (let i = 0; i < 4 && this.B.gBagMenuState.pocket !== this.C.OPEN_BAG_ITEMS; i++) await this.tap(0x20, 60);
+    if (this.B.gBagMenuState.pocket !== this.C.OPEN_BAG_ITEMS) return { ok: false, note: "items pocket unavailable" };
+    const index = dbg().save.save.bag.items.findIndex(e => e.item === item && e.quantity > 0);
+    const bagCursor = () => this.B.gBagMenuState.cursorPos[0] + this.B.gBagMenuState.itemsAbove[0];
+    for (let i = 0; i < 60 && bagCursor() !== index; i++) await this.tap(bagCursor() < index ? 0x80 : 0x40, 18);
+    if (index < 0 || bagCursor() !== index) return { ok: false, note: "medicine cursor not reached" };
+    await this.tap(1, 40);
+    if (!await this.until(() => this.hasTask("Task_FieldItemContextMenuHandleInput")) || this.B.bagResult.itemId !== item) return { ok: false, note: "wrong medicine selected" };
+    await this.tap(1, 40);
+    if (!await this.until(() => this.cb2() === "CB2_UpdatePartyMenu" && this.hasTask("Task_HandleChooseMonInput"))) return { ok: false, note: "medicine party menu missing" };
+    const menuSlot = dbg().save.save.party.findIndex(m => m.personality === mon.personality && m.otId === mon.otId);
+    if (menuSlot < 0 || !await this.selectPartySlot(menuSlot)) return { ok: false, note: "medicine target not reached" };
+    await this.tap(1, 40);
+    if (!await this.until(() => this.countItem(item) < count, "A")) return { ok: false, note: "medicine not consumed", before, after: this.resources() };
+    // Acknowledgement uses B to avoid selecting another Pokémon/item.
+    const finished = await this.until(() => battle ? this.G.gBattlerControllerFuncs[0]?.name === "HandleInputChooseAction" && this.cb2() === "BattleMainCB2" : this.fieldFree(), "B", 300);
+    const after = this.resources();
+    const changed = hpItems.includes(item) ? mon.hp > hp0 : mon.status !== status0;
+    const ok = finished && this.countItem(item) === count - 1 && changed;
+    const result = { ok, note: ok ? null : "medicine did not complete correctly", item, target, before, after };
+    this.log.push({ medicine: result });
+    return result;
+  },
+  /** Heal before walking; stop for exhausted PP, fainted members or no reserves. */
+  async prepareStep() {
+    if (!this.fieldFree()) return { ok: false, note: "field not free", resources: this.resources() };
+    const snapshot = this.resources();
+    if (!snapshot.party.length || snapshot.party.some(m => m.hp <= 0 || m.attackPP < this.policy.minAttackPP)) return { ok: false, note: "return to center: hp or pp exhausted", resources: snapshot };
+    for (const m of snapshot.party) {
+      const cure = statusItem(m.status, dbg().save.save.bag.items, this.C);
+      if (m.status && !cure) return { ok: false, note: "return to center: untreated status", resources: this.resources() };
+      if (cure) { const used = await this.useItem(cure, m.slot); if (!used.ok) return { ...used, resources: this.resources() }; }
+      for (let attempts = 0; attempts < 4 && dbg().save.save.party[m.slot].hp / m.maxHP < this.policy.fieldHp; attempts++) {
+        const heal = hpItem({ hp: dbg().save.save.party[m.slot].hp, maxHP: m.maxHP }, dbg().save.save.bag.items, this.C);
+        const stock = [this.C.ITEM_POTION, this.C.ITEM_SUPER_POTION, this.C.ITEM_HYPER_POTION, this.C.ITEM_MAX_POTION].reduce((n, id) => n + this.countItem(id), 0);
+        if (!heal || stock <= this.policy.reservePotions) return { ok: false, note: "return to center: low hp and medicine reserve", resources: this.resources() };
+        const used = await this.useItem(heal.item, m.slot);
+        if (!used.ok) return { ...used, resources: this.resources() };
+      }
+      if (dbg().save.save.party[m.slot].hp / m.maxHP < this.policy.fieldHp) return { ok: false, note: "return to center: healing budget", resources: this.resources() };
+    }
+    return { ok: true, resources: this.resources() };
+  },
   /**
    * Finish the current battle with real button presses.
+   * mode "auto": rank attacks, use medicine, switch/escape with resource guards.
    * mode "fight": FIGHT, then the move in `slot` (0 TL, 1 TR, 2 BL, 3 BR);
    * mode "run": RUN; mode "switch": shift the lead to party slot 1 on the
    * first turn, then fight with `slot`. With init() the cursor positions are read from
    * gActionSelectionCursor/gMoveSelectionCursor, so presses are never blind;
    * other screens (text, learn-move prompt, summary) get A.
    */
-  async battle(mode = "fight", slot = 0, maxSteps = 4000) {
+  async battle(mode = "auto", slot = 0, maxSteps = 4000) {
     const start = this.party();
     const screens = new Set();
-    let n = 0;
+    let n = 0, stop = null, decision = null, decisions = 0, unchanged = 0, lastKey = null, lastHp = null, incoming = 0;
+    const trace = [];
     const press = async (bits) => { await dbg().wait(2, bits); await dbg().wait(4); };
     while (this.inBattle() && n < maxSteps) {
       n++;
       screens.add(this.cb2());
+      // battle_script_commands.c 0x5A/0x5B: keep existing moves when full.
+      // Decline replacement and confirm stopping learning through real input.
+      if (mode === "auto" && this.G.gBattleScripting.learnMoveState === 1) {
+        const opcode = this.BS.r8(this.G.G.gBattlescriptCurrInstr);
+        if (opcode === 0x5a) {
+          trace.push({ action: "decline replacement", move: this.G.G.gMoveToLearn });
+          await dbg().press("B", 8); continue;
+        }
+        if (opcode === 0x5b) {
+          if (this.G.gBattleCommunication[this.C.CURSOR_POSITION] !== 0) await this.tap(0x40);
+          await dbg().press("A", 8); continue;
+        }
+      }
       const f = this.G?.gBattlerControllerFuncs[0]?.name;
       if (f === "HandleInputChooseAction") {
+        if (decision?.action === "switch" && this.G.gBattleMons[0].personality === decision.personality) decision = null;
+        if (mode === "auto" && !decision) {
+          const mons = this.G.gBattleMons;
+          const active = this.G.gBattlerPartyIndexes[0];
+          const key = JSON.stringify([mons[1].species, mons[1].hp, mons[1].status1]);
+          unchanged = key === lastKey ? unchanged + 1 : 0;
+          incoming = lastHp?.active === active ? Math.max(0, lastHp.hp - mons[0].hp) : 0;
+          lastHp = { active, hp: mons[0].hp }; lastKey = key;
+          if (++decisions > this.policy.maxDecisions || unchanged >= this.policy.maxUnchanged) { stop = "decision budget"; break; }
+          decision = this.battleDecision(incoming);
+          trace.push({ ...decision, remainingPP: decision.pp, active, hp: mons[0].hp, foe: mons[1].species, foeHp: mons[1].hp, pp: [...mons[0].pp] });
+          if (decision.action === "stop") { stop = decision.reason; break; }
+          if (decision.action === "item") {
+            const fieldSlot = dbg().save.save.party.findIndex(m => m.personality === mons[0].personality);
+            const used = await this.useItem(decision.item, fieldSlot, { battle: true });
+            trace.at(-1).used = used;
+            decision = null;
+            if (!used.ok) { stop = used.note; break; }
+            continue;
+          }
+        }
         // mode "switch": the lead comes out, then shift to party slot 1 so both
         // share the experience (a normal player technique).
         const wantSwitch = mode === "switch" && this.G.gBattlerPartyIndexes?.[0] === 0 && dbg().save.save.party[1]?.hp > 0;
-        const want = mode === "run" ? 3 : wantSwitch ? 2 : 0, c = this.G.gActionSelectionCursor[0];
+        const want = mode === "run" || decision?.action === "run" ? 3 : wantSwitch || decision?.action === "switch" ? 2 : 0, c = this.G.gActionSelectionCursor[0];
         if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
         await dbg().press("A");
+        if (decision?.action === "run") decision = null;
         continue;
       }
       if (f === "HandleInputChooseMove") {
@@ -118,10 +317,12 @@ export const H = {
         // selection: pick another slot with PP, or it loops forever.
         const pp = this.G.gBattleMons?.[0]?.pp;
         // `slot` may be a function of the active species: { 16: 2, 2: 3 }[species].
-        let want = typeof slot === "function" ? slot(this.G.gBattleMons?.[0]?.species) : slot;
+        let want = mode === "auto" ? this.bestMoves()[0]?.slot : typeof slot === "function" ? slot(this.G.gBattleMons?.[0]?.species) : slot;
+        if (mode === "auto" && want === undefined) { stop = "no usable attack"; break; }
         if (pp && pp[want] === 0) for (let i = 0; i < 4; i++) if (pp[i] > 0) { want = i; break; }
         if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
         await dbg().press("A");
+        decision = null;
         continue;
       }
       if (f === "WaitForMonSelection" && this.PM && this.cb2() === "CB2_UpdatePartyMenu") {
@@ -129,26 +330,28 @@ export const H = {
         // Pressing A on the fainted one only prints "has no energy left" forever.
         const party = dbg().save.save.party;
         const active = this.G.gBattlerPartyIndexes?.[0];
-        const target = mode === "switch" && active === 0 && party[1]?.hp > 0 ? 1
+        const target = decision?.action === "switch" ? dbg().save.save.party.findIndex(m => m.personality === decision.personality) : mode === "auto" ? this.bestReplacement() : mode === "switch" && active === 0 && party[1]?.hp > 0 ? 1
           : party.findIndex((m, i) => i !== active && m.species && !m.isEgg && m.hp > 0);
-        if (target < 0) break;
+        if (target < 0) { stop = "no able replacement"; break; }
         const cur = this.PM.gPartyMenu.slotId;
         if (target >= 0 && cur !== target) { await press(0x80); continue; }
         await dbg().press("A", 20);
+        if (this.cb2() !== "CB2_UpdatePartyMenu") decision = null;
         continue;
       }
       await dbg().press("A", 8);
     }
     const stuck = this.inBattle();
+    if (stuck && !stop) stop = "step budget";
     await dbg().wait(30);
-    const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, screens: [...screens].filter(Boolean) };
+    const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, stop, decisions, trace, screens: [...screens].filter(Boolean) };
     this.log.push(r);
     return r;
   },
   /** Navigation must stop after defeat or an unfinished battle, even after the
    * whiteout script heals the team. Direct battle() remains usable by C7. */
   battleStop(result) {
-    if (result.stuck) return "battle stuck";
+    if (result.stuck) return result.stop ?? "battle stuck";
     if (result.outcome === this.C.B_OUTCOME_LOST || result.outcome === this.C.B_OUTCOME_DREW) return "battle lost";
     return null;
   },
@@ -188,12 +391,33 @@ export const H = {
     }
     return { max: true, path };
   },
-  /** Heal inside a Pokémon Center 1F (nurse counter at 7,2) and walk back to the door mat. */
-  async heal() {
-    await this.counter(7, 2);
-    await this.idle(4000);
-    await this.goto(7, 7);
-    return this.exit("D", 3);
+  /** Nurse through dialogue; verify every HP/PP/status before optionally leaving.
+   * The counter coordinates are the standard Center 1F layout. */
+  async heal({ leave = true } = {}) {
+    if (!/POKEMON_CENTER_1F$/.test(this.st().map)) return { ok: false, note: "not a standard pokemon center" };
+    const before = this.resources();
+    const identityBefore = JSON.stringify(dbg().save.save.party.filter(m => m.species).map(m => [m.species, m.personality, m.otId, [...m.moves]]));
+    const arrived = await this.goto(7, 4, { battle: "fight" });
+    if (arrived.note) return { ok: false, note: arrived.note, before };
+    await this.face("U"); await dbg().press("A");
+    if (!await this.until(() => this.hasTask("Task_MultichoiceMenu_HandleInput"), "A")) return { ok: false, note: "nurse offer missing" };
+    // Nurse offer opens at YES. Never walk through the healing movement script.
+    await dbg().wait(30); await dbg().press("A");
+    if (!await this.until(() => this.fieldFree(), "A", 500)) return { ok: false, note: "nurse did not return control" };
+    const after = this.resources();
+    const healed = dbg().save.save.party.filter(m => m.species).every(m => m.hp === m.stats[0] && m.status === 0 && m.moves.every((id, slot) =>
+      m.pp[slot] === (id ? this.rom.moves[id].pp + Math.floor(this.rom.moves[id].pp * 20 * ((m.ppBonuses >> (slot * 2)) & 3) / 100) : 0)));
+    const identities = () => dbg().save.save.party.filter(m => m.species).map(m => [m.species, m.personality, m.otId]);
+    // The test oracle independently compares source PP; this is a runtime guard.
+    if (JSON.stringify(dbg().save.save.party.filter(m => m.species).map(m => [m.species, m.personality, m.otId, [...m.moves]])) !== identityBefore) return { ok: false, note: "nurse changed party identity", before, after };
+    if (!healed || after.money !== before.money || after.party.length !== before.party.length) return { ok: false, note: "nurse result mismatch", before, after };
+    const result = { ok: true, before, after, identity: identities() };
+    this.log.push({ nurse: result });
+    if (!leave) return result;
+    const door = await this.goto(7, 7, { battle: "fight" });
+    if (door.note) return { ...result, ok: false, note: door.note };
+    const exit = await this.exit("D", 3);
+    return { ...result, ok: !exit.note, note: exit.note, exit };
   },
   /**
    * Walk back and forth over two tiles (e.g. tall grass) fighting with move
@@ -215,7 +439,7 @@ export const H = {
     }
     return { stop: "loops", party: this.party() };
   },
-  battleDefaults: { mode: "fight", slot: 0 },
+  battleDefaults: { mode: "auto", slot: 0 },
   /** Shortest path in map-internal coords (+7), using the live collision checks. */
   bfs(tx, ty) {
     const ow = g().overworld, player = ow.player.object, objects = ow.objects;
@@ -264,12 +488,16 @@ export const H = {
       }
       const s = this.st();
       if (s.map !== map0) return { ...s, note: "map changed" };
-      if (s.script || s.locked) {
+      if (!this.fieldFree()) {
         const r = await this.idle(opts.idle ?? 4000);
         if (r.timeout) return { ...r, note: "script stuck" };
         continue;
       }
       if (s.x === x && s.y === y) return s;
+      if (mode === "auto" && !opts.recovery) {
+        const health = await this.prepareStep();
+        if (!health.ok) return { ...this.st(), note: health.note, resources: health.resources };
+      }
       const steps = this.bfs(x + 7, y + 7);
       if (!steps) return { ...s, note: "no path" };
       if (!steps.length) return s;
@@ -278,11 +506,30 @@ export const H = {
     return { ...this.st(), note: "guard" };
   },
   /** Walk one direction until the map changes (connections, door/arrow warps). */
-  async exit(dir, maxTiles = 4) {
+  async exit(dir, maxTiles = 4, opts = {}) {
     const map0 = dbg().state().map;
     for (let i = 0; i < maxTiles; i++) {
+      if (this.inBattle()) {
+        const b = await this.battle(this.battleDefaults.mode, this.battleDefaults.slot);
+        const note = this.battleStop(b);
+        if (note) return { ...this.st(), note, battleResult: b };
+      }
+      if (!this.fieldFree()) {
+        const settled = await this.idle(opts.idle ?? 4000);
+        if (settled.timeout) return { ...settled, note: "script stuck" };
+        if (settled.battle) continue;
+      }
+      if (this.battleDefaults.mode === "auto" && !opts.recovery) {
+        const health = await this.prepareStep();
+        if (!health.ok) return { ...this.st(), note: health.note, resources: health.resources };
+      }
       await dbg().walk(dir, 1);
       for (let t = 0; t < 60; t++) {
+        if (this.inBattle()) {
+          const b = await this.battle(this.battleDefaults.mode, this.battleDefaults.slot);
+          const note = this.battleStop(b);
+          if (note) return { ...this.st(), note, battleResult: b };
+        }
         const s = this.st();
         if (s.map !== map0 && !s.locked) return s;
         if (s.map === map0 && !s.locked && !s.script && t > 2) break;
@@ -292,11 +539,11 @@ export const H = {
     return { ...this.st(), note: "no exit" };
   },
   /** Stand below a door warp at (x, y) and step in. */
-  async enter(x, y, from = "D") {
+  async enter(x, y, from = "D", opts = {}) {
     const [dx, dy] = { D: [0, 1], U: [0, -1], L: [-1, 0], R: [1, 0] }[from];
-    const r = await this.goto(x + dx, y + dy);
+    const r = await this.goto(x + dx, y + dy, opts);
     if (r.note) return r;
-    return this.exit({ D: "U", U: "D", L: "R", R: "L" }[from], 1);
+    return this.exit({ D: "U", U: "D", L: "R", R: "L" }[from], 1, opts);
   },
   /** Face a direction without moving (tap). */
   async face(dir) {
