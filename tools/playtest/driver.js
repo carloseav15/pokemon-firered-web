@@ -747,6 +747,49 @@ export const H = {
     if (!await this.until(() => !this.hasTask("Task_YesNoMenu_HandleInput"), null, 20)) return { ok: false, status: "failure", reason: "yes-no-not-closed", note: "yes/no menu did not close", state: this.observe() };
     return { ok: true, status: "success", answered: yes ? "yes" : "no", state: this.observe() };
   },
+  /** Buy `quantity` of `item` at a Poke Mart counter through the real clerk menu (BUY > list > quantity > YES).
+   * The listed entry is checked on the quantity prompt (task data) before anything is confirmed; the result is
+   * verified by money (price * quantity from the item data) and bag count. Leaves the shop with B afterwards. */
+  async buyItem(item, quantity, { clerk = [2, 3] } = {}) {
+    if (!Number.isInteger(item) || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) throw new Error("invalid buyItem request");
+    const price = (await this.mod("/src/fr/pokemon/items.ts")).itemInfo(item)?.price;
+    const before = this.resources(), count0 = this.countItem(item);
+    if (!price || before.money < price * quantity) return { ok: false, status: "blocked", reason: "not-enough-money", note: "not enough money", price, before };
+    const task = (name) => this.T.tasks.tasks.find(t => t.isActive && t.func.name === name);
+    const leave = async (note) => { await this.until(() => this.fieldFree(), "B", 200); return { ok: false, status: "failure", reason: note, note, price, before, after: this.resources(), state: this.observe() }; };
+    const talked = await this.counter(clerk[0], clerk[1]);
+    if (talked.note) return talked;
+    if (!await this.until(() => this.hasTask("Task_ShopMenu"), "A", 400)) return leave("shop menu did not open");
+    await this.press("A", 10); // BUY (first entry of the clerk menu)
+    if (!await this.until(() => this.hasTask("Task_BuyMenu"), null, 600)) return leave("buy list did not open");
+    let found = false;
+    for (let i = 0; i < 12 && !found; i++) {
+      await this.press("A", 30);
+      const listIdle = () => !!task("Task_BuyMenu") && !this.hasTask("Task_ContinueTaskAfterMessagePrints");
+      if (!await this.until(() => !!task("Task_BuyHowManyDialogueHandleInput") || listIdle(), "A", 200)) return leave("quantity prompt missing");
+      const how = task("Task_BuyHowManyDialogueHandleInput");
+      if (how && how.data[5] === item) { found = true; break; }
+      if (how) await this.until(() => !task("Task_BuyHowManyDialogueHandleInput"), "B", 100);
+      if (!await this.until(listIdle, null, 200)) return leave("did not return to the buy list");
+      await this.tap(0x80, 10);
+    }
+    if (!found) return leave("item not in the buy list");
+    for (let i = 1; i < quantity; i++) await this.tap(0x40, 8);
+    if (!await this.until(() => task("Task_BuyHowManyDialogueHandleInput")?.data[1] === quantity, null, 100)) return leave("quantity not reached");
+    await this.press("A", 30);
+    if (!await this.until(() => this.hasTask("Task_CallYesOrNoCallback"), "A", 200)) return leave("confirmation prompt missing");
+    await this.press("A", 30); // YES
+    if (!await this.until(() => !!task("Task_BuyMenu") && !this.hasTask("Task_ContinueTaskAfterMessagePrints"), "A", 300)) return leave("did not return to the list after buying");
+    const paid = before.money - this.resources().money, gained = this.countItem(item) - count0;
+    await this.until(() => this.hasTask("Task_ShopMenu"), "B", 400);
+    await this.press("B", 10);
+    const left = await this.idle(1500, true);
+    const after = this.resources();
+    const ok = paid === price * quantity && gained === quantity && !left.script && !left.locked && this.fieldFree();
+    const result = { ok, status: ok ? "success" : "failure", reason: ok ? "completed" : "purchase-mismatch", note: ok ? null : "purchase did not match", item, quantity, price, paid, gained, before, after };
+    this.log.push({ purchase: { item, quantity, paid, ok } });
+    return result;
+  },
   /** Walk next to an object/tile, face it and press A. */
   async talk(x, y) {
     // Prefer standing below the target (facing up), as most counters/NPCs expect.
