@@ -39,10 +39,10 @@ export const routeHelpers = `
     rocket: f.rocket.grunt5 && f.rocket.scene === 1 && f.rocket.tmFlag && f.rocket.tm28 >= 1,
   });
   const newBattles = () => { const l = H.log.slice(window.__logMark); window.__logMark = H.log.length;
-    return l.map(b => b.battle ? { mode: b.battle, start: b.start, end: b.end, outcome: b.outcome, stop: b.stop, stuck: b.stuck, decisions: b.decisions, n: b.n, trace: (b.trace ?? []).slice(0, 60) } : b.medicine ? { medicine: { item: b.medicine.item, target: b.medicine.target, ok: b.medicine.ok } } : { other: Object.keys(b) }); };
+    return l.map(b => b.battle ? { mode: b.battle, start: b.start, end: b.end, outcome: b.outcome, stop: b.stop, stuck: b.stuck, decisions: b.decisions, n: b.n, trace: (b.trace ?? []).slice(0, 60) } : b.medicine ? { medicine: { item: b.medicine.item, target: b.medicine.target, ok: b.medicine.ok } } : b.purchase ? { purchase: b.purchase } : { other: Object.keys(b) }); };
   const noted = (r) => { if (r && !r.note && (r.ok === false || r.status === "failure" || r.status === "blocked")) r.note = r.reason ?? r.status; return r; };
   const M = { city: "MAP_CERULEAN_CITY", center: "MAP_CERULEAN_CITY_POKEMON_CENTER_1F", gym: "MAP_CERULEAN_CITY_GYM",
-    r24: "MAP_ROUTE24", r25: "MAP_ROUTE25", cottage: "MAP_ROUTE25_SEA_COTTAGE", r5: "MAP_ROUTE5" };
+    r24: "MAP_ROUTE24", r25: "MAP_ROUTE25", cottage: "MAP_ROUTE25_SEA_COTTAGE", r5: "MAP_ROUTE5", mart: "MAP_CERULEAN_CITY_MART" };
   // Own walking loop = H.goto with battle handling; recovery mode skips the supply policy (deliberate retreat only).
   const walk = async (x, y, opts = {}) => {
     const map0 = H.st().map;
@@ -116,6 +116,7 @@ export const routeHelpers = `
     window.__nurseRuns = (window.__nurseRuns ?? 0) + 1;
     return r;
   };
+  const POTIONS_TARGET = 12;
   const maxAttackPP = (m) => m.moves.reduce((n, id) => n + ((H.rom.moves[id]?.power ?? 0) > 1 ? H.rom.moves[id].pp : 0), 0);
   const needsHeal = (res) => res.party.some(m => m.hp < 0.9 * m.maxHP || m.status || m.attackPP < 0.7 * maxAttackPP(m));
   // goal from flags, in the recommended order
@@ -131,6 +132,7 @@ export const routeHelpers = `
       if (!r) r = await leaveBy(7, 7, { recovery: true });
     } else if (m === M.city) {
       if ((retreat || (needsHeal(f.res) && (window.__nurseRuns ?? 0) < 10)) && goal !== "route5") { action = "city -> center"; r = await doorIn(22, 19, opt); }
+      else if (goal === "rival" && !window.__shopped && bagCount(C.ITEM_POTION) < POTIONS_TARGET) { action = "city -> Poke Mart (29,28)"; r = await doorIn(29, 28, opt); }
       else if (goal === "rival") {
         action = "rival trigger (23,6)"; r = await walk(23, 6, opt); if (!r.note) r = await settle();
       } else if (goal === "bridge" || goal === "bill") { action = "city -> route24"; r = await edge("U", 23, opt); }
@@ -139,6 +141,12 @@ export const routeHelpers = `
         action = "Rocket grunt trigger (33,7)"; r = await walk(33, 7, opt); if (!r.note) r = await settle();
         if (!r.note && !f.rocket.tmFlag && vr("VAR_MAP_SCENE_CERULEAN_CITY_ROCKET") === 1) { action += " + talk grunt (33,6)"; r = await talkSettle(33, 6); }
       } else { action = "city -> route5"; r = await edge("D", 26, opt); }
+    } else if (m === M.mart) {
+      if (goal === "rival" && !retreat && !window.__shopped && bagCount(C.ITEM_POTION) < POTIONS_TARGET) {
+        // Real clerk menu (BUY > Potion > quantity > YES): carry POTIONS_TARGET Potions in total.
+        action = "buy Potions x" + (POTIONS_TARGET - bagCount(C.ITEM_POTION)); r = await H.buyItem(C.ITEM_POTION, POTIONS_TARGET - bagCount(C.ITEM_POTION));
+        window.__shopped = true; r = noted(r);
+      } else { action = "mart -> city"; r = await leaveBy(4, 6, { recovery: true }); }
     } else if (m === M.gym) {
       if (goal === "misty" && !retreat) { action = "Misty (8,6)"; r = await talkSettle(8, 6); }
       else { action = "gym -> city"; r = await leaveBy(8, 17, { recovery: true }); }
