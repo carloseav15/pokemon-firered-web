@@ -759,17 +759,19 @@ export const H = {
     const before = this.resources(), count0 = this.countItem(item);
     if (!price || before.money < price * quantity) return { ok: false, status: "blocked", reason: "not-enough-money", note: "not enough money", price, before };
     const task = (name) => this.T.tasks.tasks.find(t => t.isActive && t.func.name === name);
+    const listIdle = () => !!task("Task_BuyMenu") && !this.hasTask("Task_ContinueTaskAfterMessagePrints");
     const leave = async (note) => { await this.until(() => this.fieldFree(), "B", 200); return { ok: false, status: "failure", reason: note, note, price, before, after: this.resources(), state: this.observe() }; };
     const talked = await this.counter(clerk[0], clerk[1]);
     if (talked.note) return talked;
-    if (!await this.until(() => this.hasTask("Task_ShopMenu"), "A", 400)) return leave("shop menu did not open");
+    // The clerk script (message; waitmessage; pokemart) needs no button: a blind A here also selects BUY when the menu
+    // is created in the same frame and the following A presses then buy the first list entry (route 2 run 3: 13 Poke Balls).
+    if (!await this.until(() => this.hasTask("Task_ShopMenu"), null, 600)) return leave("shop menu did not open");
     await this.press("A", 10); // BUY (first entry of the clerk menu)
     if (!await this.until(() => this.hasTask("Task_BuyMenu"), null, 600)) return leave("buy list did not open");
     let found = false;
     for (let i = 0; i < 12 && !found; i++) {
       await this.press("A", 30);
-      const listIdle = () => !!task("Task_BuyMenu") && !this.hasTask("Task_ContinueTaskAfterMessagePrints");
-      if (!await this.until(() => !!task("Task_BuyHowManyDialogueHandleInput") || listIdle(), "A", 200)) return leave("quantity prompt missing");
+      if (!await this.until(() => !!task("Task_BuyHowManyDialogueHandleInput") || listIdle(), null, 300)) return leave("quantity prompt missing");
       const how = task("Task_BuyHowManyDialogueHandleInput");
       if (how && how.data[5] === item) { found = true; break; }
       if (how) await this.until(() => !task("Task_BuyHowManyDialogueHandleInput"), "B", 100);
@@ -780,9 +782,18 @@ export const H = {
     for (let i = 1; i < quantity; i++) await this.tap(0x40, 8);
     if (!await this.until(() => task("Task_BuyHowManyDialogueHandleInput")?.data[1] === quantity, null, 100)) return leave("quantity not reached");
     await this.press("A", 30);
-    if (!await this.until(() => this.hasTask("Task_CallYesOrNoCallback"), "A", 200)) return leave("confirmation prompt missing");
+    if (!await this.until(() => this.hasTask("Task_CallYesOrNoCallback"), null, 300)) return leave("confirmation prompt missing");
     await this.press("A", 30); // YES
-    if (!await this.until(() => !!task("Task_BuyMenu") && !this.hasTask("Task_ContinueTaskAfterMessagePrints"), "A", 300)) return leave("did not return to the list after buying");
+    // "Here you are" waits for a button: A only while its message/return task exists, never once the list is back.
+    let back = false;
+    for (let f = 0; f < 4800 && !back; f++) {
+      back = listIdle();
+      if (back) break;
+      const waiting = this.hasTask("Task_ContinueTaskAfterMessagePrints") || this.hasTask("Task_ReturnToItemListAfterItemPurchase");
+      this.step(waiting && f % 40 === 0 ? 1 : 0);
+      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
+    }
+    if (!back) return leave("did not return to the list after buying");
     const paid = before.money - this.resources().money, gained = this.countItem(item) - count0;
     await this.until(() => this.hasTask("Task_ShopMenu"), "B", 400);
     await this.press("B", 10);
