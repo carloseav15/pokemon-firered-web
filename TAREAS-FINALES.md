@@ -214,6 +214,20 @@ las validaciones generales anteriores siguen abiertas.
   `mtmoon-checkpoints.job.mjs`. Destapó el layout id perdido al cruzar conexiones
   (`77005743`). Política auto de combate; sin paridad audiovisual.
 
+- [x] **DRV-08 — Aprendizaje, evolución, fuerza y entrenamiento** (`40140bf1`, `7ade4328`):
+  aprender/rechazar movimiento y evolución con su aviso, `assessTrainer` con
+  diagnóstico de derrota, `train`/`healAtCenter`, `gate.mjs` y `scan-interactions.mjs`.
+  Probado con jobs focalizados; gate 14/15 (`driver-navigation` inestable, ver DRV-10).
+- [ ] **DRV-09 — Entrenamiento largo contra el rival de Celeste.** `driver-train.job.mjs`
+  entrena por rondas con checkpoint verificado por ronda; una ronda de 3 combates
+  pasó (Pidgey 16→17). Las ejecuciones largas murieron porque el servidor Vite del
+  puerto 5173 perdió la conexión ("server connection lost") y recargó la página.
+  Siguiente: servidor propio para jobs largos (sin HMR ni recarga) y reanudar con
+  `TRAIN_ENTRY` hasta `cerulean-trained`.
+- [ ] **DRV-10 — `driver-navigation` depende del azar.** Su caso de debilitamiento forzado
+  espera que el rival derribe a un líder con 1 PS; falló 1 de 4 ejecuciones (liveHp 1).
+  Fijar una entrada que garantice el debilitamiento o aceptar ambos desenlaces.
+
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
   para SON-MM01-R; todavía no fósil ni llegada a Celeste.
