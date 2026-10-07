@@ -361,9 +361,32 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
      perdidos no son recuperables. SAVE_NORMAL conserva el mapa y los objetos;
      el warp de continuación pertenece a rutas de guardado especiales del C.
 
+   - Movimientos y evoluciones: con cuatro movimientos, `H.battle("auto")` decide con
+     `chooseMoveToForget` (strategy.js: valor = potencia × precisión × STAB; estado y
+     daño fijo valen 0; MO nunca) y elige el hueco en la pantalla de resumen por
+     entrada; el resultado se comprueba en los datos del equipo. La escena de
+     evolución (`H.handleEvolution`, también desde `battle`/`idle`) nunca cancela y
+     aplica la misma política a su aviso de olvidar movimiento.
+   - `await H.assessTrainer(trainerId)`: estimación (no el motor de combate) contra
+     el equipo exportado del entrenador: `verdict` favorable/risky/unfavorable y
+     `levelsNeeded` (+k niveles con evolución por nivel y movimientos del learnset).
+     Sin objetos ni estados; conservadora. `battle()` la adjunta en combates de
+     entrenador y, si pierde o para, `diagnosis.cause`: underleveled / policy /
+     resources / budget.
+   - `await H.train({trainer, between, heal})`: entrena en hierba (caminando entre
+     las casillas de `between`) hasta que la estimación sea favorable; no gasta
+     objetos, mete en combate al miembro de menor nivel y cura con `heal` (por
+     defecto `H.healAtCenter()`, el Centro del mapa actual).
+   - Antes de un tramo: `node tools/playtest/scan-interactions.mjs <Mapa>...` lista
+     Sí/No, menús, tiendas, eventos de casilla, visión de entrenadores y specials
+     del decomp con su soporte en el driver (UNSUPPORTED = exit1).
+   - Gate de regresión: `PW_BASE=… node tools/playtest/gate.mjs [job…]` ejecuta los
+     jobs `driver-*` y la verificación de checkpoints. No edites driver.js ni
+     strategy.js mientras corre un job: Vite recarga la página y lo interrumpe.
+
    Verificación focalizada: `node tools/playtest/strategy.check.mjs` y jobs
    `driver-strategy`, `driver-auto-battle`, `driver-switch`, `driver-recovery`,
-   `driver-navigation` mediante `pw.mjs`.
+   `driver-navigation` mediante `pw.mjs` (todos en `gate.mjs`).
    BFS consulta colisiones por nodo con behavior/elevación virtual y el predicado
    puro de ledges; no mueve al jugador ni incrementa estadísticas al planificar.
    Se limita al mapa actual; exit ejecuta conexiones y espera el callback de campo.
