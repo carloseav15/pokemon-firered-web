@@ -61,3 +61,68 @@ export function statusItem(status, bag, C) {
   for (const [mask, item] of cures) if (status & mask && bag.some(e => e.item === item && e.quantity > 0)) return item;
   return null;
 }
+
+// Player policy for a full moveset: the attack ranking above only uses damaging moves, so a move's value is its
+// expected power (power x accuracy x STAB); status and fixed-damage moves are worth 0 to it. HM moves are never
+// offered (IsHMMove2 refuses them in the C). Returns the slot to forget, or -1 to keep the current moves.
+export function moveValue(moveId, types, rom) {
+  const move = rom.moves[moveId];
+  if (!moveId || !move || move.power <= 1) return 0;
+  const stab = types.includes(move.type) ? 1.5 : 1;
+  return move.power * (move.accuracy || 100) / 100 * stab;
+}
+
+export function chooseMoveToForget(moves, newMove, types, rom, C) {
+  const hm = [C.MOVE_CUT, C.MOVE_FLY, C.MOVE_SURF, C.MOVE_STRENGTH, C.MOVE_FLASH, C.MOVE_ROCK_SMASH, C.MOVE_WATERFALL, C.MOVE_DIVE];
+  const gain = moveValue(newMove, types, rom);
+  let worst = -1, worstValue = Infinity;
+  for (let slot = 0; slot < 4; slot++) {
+    if (!moves[slot] || hm.includes(moves[slot])) continue;
+    const value = moveValue(moves[slot], types, rom);
+    if (value < worstValue) { worst = slot; worstValue = value; }
+  }
+  return worst >= 0 && gain > worstValue ? worst : -1;
+}
+
+// Strength estimate before a trainer battle. Not the battle engine: expected damage with the Gen 3 formula
+// (no crits, mean random roll 0.925, accuracy as expectation), damaging moves only, no items, abilities only
+// through typeMultiplier, no switching except after a faint, faster side first. Used to decide whether to train.
+export function estimateDamage(att, def, moveId, rom, C) {
+  const move = rom.moves[moveId];
+  if (!moveId || !move || move.power <= 1) return 0;
+  const eff = typeMultiplier(move.type, def, rom.typeEffectiveness, C);
+  if (eff <= 0) return 0;
+  const physical = move.type < C.TYPE_MYSTERY;
+  const a = physical ? att.attack : att.spAttack, d = physical ? def.defense : def.spDefense;
+  let dmg = Math.floor(Math.floor(Math.floor(2 * att.level / 5 + 2) * move.power * a / Math.max(1, d)) / 50) + 2;
+  if (move.type === att.type1 || move.type === att.type2) dmg *= 1.5;
+  return dmg * eff * 0.925 * (move.accuracy || 100) / 100;
+}
+
+export function simulateBattle(ours, foes, rom, C) {
+  const team = ours.map(m => ({ ...m })), enemy = foes.map(m => ({ ...m }));
+  const best = (a, d) => Math.max(0, ...a.moves.map(id => estimateDamage(a, d, id, rom, C)));
+  const log = [];
+  let active = team.find(m => m.hp > 0), fi = 0, turns = 0;
+  while (active && fi < enemy.length && turns < 300) {
+    const foe = enemy[fi], out = best(active, foe), inc = best(foe, active);
+    if (out === 0 && inc === 0) { log.push({ stalemate: [active.species, foe.species] }); break; }
+    const order = active.speed >= foe.speed ? [[active, foe, out], [foe, active, inc]] : [[foe, active, inc], [active, foe, out]];
+    for (const [, target, dmg] of order) {
+      if (active.hp <= 0 || foe.hp <= 0) break;
+      target.hp = Math.max(0, target.hp - dmg);
+    }
+    turns++;
+    if (foe.hp <= 0) { log.push({ ko: foe.species, by: active.species, turns }); fi++; }
+    if (active.hp <= 0) {
+      log.push({ fainted: active.species, against: foe.species, turns });
+      // Next member: best margin against the current foe (share of its HP dealt minus share of own HP taken per turn).
+      const next = enemy[fi], margin = (m) => next ? best(m, next) / Math.max(1, next.hp) - best(next, m) / Math.max(1, m.hp) : 0;
+      active = team.filter(m => m.hp > 0).sort((x, y) => margin(y) - margin(x))[0];
+    }
+  }
+  const hpLeft = team.reduce((n, m) => n + m.hp, 0) / Math.max(1, team.reduce((n, m) => n + m.maxHP, 0));
+  const win = fi >= enemy.length;
+  return { win, hpLeft: Math.round(hpLeft * 100) / 100, foesLeft: enemy.length - fi, turns, log,
+    verdict: win && hpLeft >= 0.35 ? "favorable" : win ? "risky" : "unfavorable" };
+}

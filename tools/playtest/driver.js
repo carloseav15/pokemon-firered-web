@@ -6,7 +6,7 @@
 // move when no script is active and controls are unlocked; idle() stops at choices.
 // Call `await H.init()` after every page load (see AGENTS.md §6.5).
 
-import { rankMoves, hpItem, statusItem } from "./strategy.js";
+import { rankMoves, hpItem, statusItem, chooseMoveToForget, simulateBattle } from "./strategy.js";
 
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
@@ -43,6 +43,8 @@ export const H = {
     this.BS = await this.mod("/src/fr/battle/bscript.ts");
     this.Q = await this.mod("/src/fr/questLogState.ts");
     this.SC = await this.mod("/src/fr/script/context.ts");
+    this.SUM = await this.mod("/src/fr/pokemonSummaryScreen.ts");
+    this.MON = await this.mod("/src/fr/pokemon/mon.ts");
     return this.observe();
   },
   /** Active callbacks: gMain runs only inside HwScene. Its field value can be stale. */
@@ -159,6 +161,11 @@ export const H = {
       const s = this.observe();
       if (s.battle) return { ...s, f, battle: true, ok: true, status: "success", reason: "battle-started" };
       if (s.fieldFree) return { ...s, f, ok: true, status: "success" };
+      if (s.phase === "screen" && /EvolutionScene/.test(this.cb2() ?? "")) {
+        const evo = await this.handleEvolution();
+        if (!evo.ok) return { ...this.observe(), f, ok: false, status: "failure", reason: evo.reason, note: evo.reason, evolution: evo };
+        continue;
+      }
       if (["choice", "save-choice", "start-menu", "party-menu", "bag-menu", "screen"].includes(s.phase))
         return { ...s, f, ok: false, status: "blocked", reason: "input-required", note: "input required" };
       this.step(tapA && ["dialog", "dialog-wait"].includes(s.phase) && f % 32 === 1 ? 1 : 0);
@@ -218,6 +225,50 @@ export const H = {
       spAttack: m.stats[4], spDefense: m.stats[5], type1: info.types[0], type2: info.types[1],
       ability: info.abilities[m.abilityNum], moves: m.moves, pp: m.pp, status1: m.status, status2: 0 };
   },
+  /**
+   * Strength estimate for a trainer battle (simulateBattle in strategy.js; an estimate, not the battle engine).
+   * Foes come from the exported trainer party: createMon with the party's fixed IV (iv * 31 / 255, as
+   * CreateNPCTrainerParty) and personality 0 so no RNG is used, custom moves when the party has them. The own team is
+   * a copy of the party, at full HP unless fullHp is false. levelsNeeded is the smallest +k levels for every member
+   * that makes the estimate favorable (stats recomputed with calculateStats on the copy; no evolution assumed).
+   */
+  async assessTrainer(trainerId, { fullHp = true, maxExtraLevels = 15 } = {}) {
+    const P = await this.mod("/src/fr/pokemon/pokemon.ts");
+    const trainer = this.rom.trainers[trainerId];
+    if (!trainer) return { ok: false, reason: "unknown trainer " + trainerId };
+    const desc = (m) => ({ ...this.partyBattleMon(m), level: m.level, speed: m.stats[3] });
+    const foes = trainer.party.map(p => {
+      const m = P.createMon(p.species, p.level, { personality: 0, fixedIV: Math.floor(p.iv * 31 / 255), otId: 0 });
+      if (p.moves?.some(Boolean)) m.moves = [...p.moves];
+      return desc(m);
+    });
+    const team = (extra) => dbg().save.save.party.filter(m => m.species && !m.isEgg).map(m => {
+      const c = structuredClone(m);
+      if (extra) {
+        // Level by level, as the game would: level-up evolution (levelUpEvolution) and learnset moves through the
+        // same chooseMoveToForget policy the battle loop now applies.
+        const target = Math.min(100, c.level + extra);
+        for (let lvl = c.level + 1; lvl <= target; lvl++) {
+          c.exp = P.expForLevel(c.species, lvl); P.calculateStats(c);
+          const evo = P.levelUpEvolution(c);
+          if (evo && evo !== c.species) { c.species = evo; P.calculateStats(c); }
+          for (const [l, mv] of this.rom.species[c.species].learnset) {
+            if (l !== lvl || c.moves.includes(mv)) continue;
+            const free = c.moves.findIndex(x => !x);
+            const slot = free >= 0 ? free : chooseMoveToForget(c.moves, mv, this.rom.species[c.species].types, this.rom, this.C);
+            if (slot >= 0) { c.moves[slot] = mv; c.pp[slot] = this.rom.moves[mv].pp; }
+          }
+        }
+      }
+      if (fullHp || extra) c.hp = c.stats[0];
+      return desc(c);
+    });
+    const now = simulateBattle(team(0), foes, this.rom, this.C);
+    let levelsNeeded = now.verdict === "favorable" ? 0 : null;
+    for (let k = 1; levelsNeeded === null && k <= maxExtraLevels; k++) if (simulateBattle(team(k), foes, this.rom, this.C).verdict === "favorable") levelsNeeded = k;
+    return { ok: true, trainerId, double: !!trainer.double, foes: foes.map(f => [f.species, f.level]), team: team(0).map(m => [m.species, m.level, m.hp + "/" + m.maxHP]),
+      verdict: now.verdict, win: now.win, hpLeft: now.hpLeft, foesLeft: now.foesLeft, levelsNeeded, log: now.log };
+  },
   bestMoves(mon = this.G.gBattleMons[0], foe = this.G.gBattleMons[1]) {
     const d = this.G.gDisableStructs[0];
     return rankMoves(mon, foe, this.rom, this.C, mon === this.G.gBattleMons[0] ?
@@ -251,9 +302,16 @@ export const H = {
     if (flags & (C.BATTLE_TYPE_DOUBLE | C.BATTLE_TYPE_LINK | C.BATTLE_TYPE_SAFARI | C.BATTLE_TYPE_POKEDUDE | C.BATTLE_TYPE_OLD_MAN_TUTORIAL)) {
       return { action: "stop", reason: "unsupported battle format" };
     }
-    const mon = this.G.gBattleMons[0], bag = dbg().save.save.bag.items;
+    const mon = this.G.gBattleMons[0], bag = this.training?.saveItems ? [] : dbg().save.save.bag.items;
     const low = mon.hp <= Math.max(mon.maxHP * this.policy.battleHp, incoming * 1.5);
     const heal = hpItem(mon, bag, C);
+    // Training (H.train): in a wild battle, bring the member being trained in once so it shares the experience.
+    const t = this.training;
+    if (t?.target != null && !(flags & C.BATTLE_TYPE_TRAINER) && !t.switched && mon.personality !== t.target) {
+      const idx = dbg().save.save.party.findIndex(m => m.species && m.personality === t.target && m.hp / m.stats[0] >= this.policy.fieldHp);
+      t.switched = true;
+      if (idx >= 0) return { action: "switch", target: idx, personality: t.target, reason: "training: share experience" };
+    }
     const attacks = this.bestMoves();
     if (!attacks.length) {
       const target = this.bestReplacement(true);
@@ -382,18 +440,52 @@ export const H = {
     const screens = new Set();
     let n = 0, stop = null, decision = null, decisions = 0, unchanged = 0, lastKey = null, lastHp = null, incoming = 0;
     const trace = [];
-    let observedPartyMenu = false;
+    let observedPartyMenu = false, learn = null;
+    if (this.training) this.training.switched = false;
+    // Trainer battles: estimate before the first turn, so a loss or stop can be explained (diagnosis below).
+    const C0 = this.C, opponent = this.G.G.gBattleTypeFlags & C0.BATTLE_TYPE_TRAINER ? this.G.G.gTrainerBattleOpponent_A : null;
+    const assessment = opponent != null && this.rom.trainers[opponent] ? await this.assessTrainer(opponent, { fullHp: false }) : null;
+    const teamStart = this.resources().party.map(m => ({ species: m.species, level: m.level, hp: m.hp, maxHP: m.maxHP }));
     const press = (bits) => this.tap(bits, 4);
     while (this.inBattle() && n < maxSteps) {
       n++;
       screens.add(this.cb2());
-      // battle_script_commands.c 0x5A/0x5B: keep existing moves when full.
-      // Decline replacement and confirm stopping learning through real input.
+      // The evolution scene can start while gMain still reports the battle; it has its own learn-move prompt.
+      if (/EvolutionScene/.test(this.cb2() ?? "")) {
+        const evo = await this.handleEvolution();
+        trace.push({ action: "evolution", ok: evo.ok, evolved: evo.evolved, learn: evo.trace });
+        if (!evo.ok) { stop = evo.reason; break; }
+        continue;
+      }
+      // battle_script_commands.c 0x5A/0x5B (Cmd_yesnoboxlearnmove/Cmd_yesnoboxstoplearningmove): with a full
+      // moveset, chooseMoveToForget decides. YES opens ShowSelectMovePokemonSummaryScreen; the slot is chosen there
+      // by real input and the result is checked in the party data, since that screen's cursor is not observable.
+      if (learn && !learn.checked && !this.hasTask("Task_InputHandler_SelectOrForgetMove") && this.cb2() === "BattleMainCB2") {
+        const moves = dbg().save.save.party[learn.monId]?.moves ?? [];
+        if (moves[learn.slot] === learn.move) { learn.checked = true; trace.push({ action: "learned move", ...learn, moves: [...moves] }); }
+        else if (learn.chosen && ++learn.waits > 300) { stop = "learn move not applied"; trace.push({ action: "learn move mismatch", ...learn, moves: [...moves] }); break; }
+      }
+      if (learn && !learn.chosen && !this.hasTask("Task_InputHandler_SelectOrForgetMove") && /PSS|PokemonSummary|^$/.test(this.cb2() ?? "")) {
+        await this.wait(1); continue; // summary screen still loading: no input
+      }
+      if (learn && !learn.chosen && this.hasTask("Task_InputHandler_SelectOrForgetMove")) {
+        await this.wait(60); // fade-in (states 0-1) ignores input
+        for (let i = 0; i < learn.slot; i++) await this.tap(0x80, 20);
+        await this.tap(1, 20);
+        learn.chosen = true; learn.replaceSlotSeen = this.SUM?.GetMoveSlotToReplace?.() ?? null;
+        continue;
+      }
       if (mode === "auto" && this.G.gBattleScripting.learnMoveState === 1) {
         const opcode = this.BS.r8(this.G.G.gBattlescriptCurrInstr);
         if (opcode === 0x5a) {
-          trace.push({ action: "decline replacement", move: this.G.G.gMoveToLearn });
-          await this.press("B", 8); continue;
+          const monId = this.G.gBattleStruct.expGetterMonId, mon = dbg().save.save.party[monId], move = this.G.G.gMoveToLearn;
+          const types = this.rom.species[mon.species].types;
+          const slot = chooseMoveToForget(mon.moves, move, types, this.rom, this.C);
+          if (slot < 0) { trace.push({ action: "decline replacement", move }); await this.press("B", 8); continue; }
+          if (this.G.gBattleCommunication[this.C.CURSOR_POSITION] !== 0) { await this.tap(0x40); continue; }
+          learn = { monId, species: mon.species, move, slot, forgotten: mon.moves[slot], chosen: false, checked: false, waits: 0 };
+          trace.push({ action: "replace move", ...learn });
+          await this.press("A", 8); continue;
         }
         if (opcode === 0x5b) {
           if (this.G.gBattleCommunication[this.C.CURSOR_POSITION] !== 0) await this.tap(0x40);
@@ -490,8 +582,125 @@ export const H = {
     if (stuck && !stop) stop = "step budget";
     await this.wait(30);
     const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, stop, decisions, trace, screens: [...screens].filter(Boolean) };
+    if (assessment) r.assessment = { trainer: opponent, verdict: assessment.verdict, hpLeft: assessment.hpLeft, levelsNeeded: assessment.levelsNeeded, foes: assessment.foes };
+    if (stop || r.outcome === this.C.B_OUTCOME_LOST || r.outcome === this.C.B_OUTCOME_DREW) r.diagnosis = this.battleDiagnosis(r, assessment, teamStart);
     this.log.push(r);
     return r;
+  },
+  /** Walk into this map's Pokémon Center (its warp to *_POKEMON_CENTER_1F), heal with the nurse and walk out. */
+  async healAtCenter() {
+    const map0 = this.st().map;
+    const door = g().overworld.loaded.header.warps.find(w => /_POKEMON_CENTER_1F$/.test(w.destMap));
+    if (!door) return { ok: false, note: "no Pokemon Center on " + map0 };
+    const below = await this.goto(door.x, door.y + 1, { recovery: true });
+    if (below.note) return { ok: false, note: "center door: " + below.note };
+    const enter = await this.exit("U", 1, { recovery: true });
+    if (!/_POKEMON_CENTER_1F$/.test(this.st().map)) return { ok: false, note: "did not enter the center", enter };
+    const healed = await this.heal({ leave: true });
+    if (!healed.ok) return { ok: false, note: healed.note ?? "nurse failed", healed };
+    return { ok: this.st().map === map0, note: this.st().map === map0 ? null : "did not return to " + map0, map: this.st().map };
+  },
+  /**
+   * Natural training before a trainer battle: walk between two tiles of the current map (grass), fighting wild
+   * battles with the auto policy, until assessTrainer(trainer) is favorable. Medicine is kept (no items in battle,
+   * no field potions: recovery walking); low HP/PP calls heal (default: this map's Pokémon Center; it must bring
+   * the team back to the map of `between`). The lowest-level
+   * healthy member is switched in once per wild battle to share experience. Evolutions and new moves are handled by
+   * battle()/handleEvolution. Nothing is written to the game; stops on a lost battle or the battle budget.
+   */
+  async train({ trainer, between, maxBattles = 80, minHp = 0.5, heal = () => this.healAtCenter() } = {}) {
+    const start = { party: this.party(), assessment: await this.assessTrainer(trainer) };
+    if (!start.assessment.ok) return { ok: false, reason: start.assessment.reason, start };
+    const battles0 = this.log.filter(e => e.battle).length;
+    const battles = () => this.log.filter(e => e.battle).length - battles0;
+    const heals = [];
+    let assessment = start.assessment, reason = null;
+    this.training = { saveItems: true, target: null, switched: false };
+    try {
+      for (let loop = 0; loop < 400 && assessment.verdict !== "favorable"; loop++) {
+        if (battles() >= maxBattles) { reason = "battle budget"; break; }
+        const r = this.resources();
+        if (r.party.some(m => m.hp / m.maxHP < minHp || m.attackPP < 5 || m.status)) {
+          const h = await heal();
+          heals.push({ ok: h.ok, note: h.note ?? null, party: this.party() });
+          if (!h.ok) { reason = "heal failed: " + h.note; break; }
+        }
+        const alive = this.resources().party.filter(m => m.hp > 0);
+        const weakest = alive.sort((a, b) => a.level - b.level)[0];
+        this.training.target = weakest ? dbg().save.save.party[weakest.slot].personality : null;
+        for (const [x, y] of between) {
+          const g2 = await this.goto(x, y, { recovery: true, battle: "auto" });
+          const stop = g2.note && g2.note !== "map changed" ? g2.note : null;
+          if (stop) { reason = stop; break; }
+        }
+        if (reason) break;
+        assessment = await this.assessTrainer(trainer);
+      }
+    } finally { this.training = null; }
+    const evolutions = this.log.filter(e => e.evolution).map(e => e.evolution.evolved).flat();
+    const ok = assessment.verdict === "favorable";
+    return { ok, reason: ok ? "favorable" : reason ?? "loop budget", battles: battles(), heals, evolutions,
+      start: { party: start.party, verdict: start.assessment.verdict, levelsNeeded: start.assessment.levelsNeeded },
+      end: { party: this.party(), verdict: assessment.verdict, hpLeft: assessment.hpLeft, levelsNeeded: assessment.levelsNeeded } };
+  },
+  /**
+   * Evolution scene after a battle (evolution_scene.c Task_EvolutionScene). A advances text and keeps the evolution
+   * (only B cancels it). With a full moveset the scene asks to delete a move and opens the same summary screen as
+   * Cmd_yesnoboxlearnmove: chooseMoveToForget picks the slot (B there declines; the following "stop learning?" is
+   * answered YES by A). The move is the evolved species' learnset entry at its level; the result is read back.
+   */
+  async handleEvolution(maxFrames = 12000) {
+    const party = () => dbg().save.save.party;
+    const before = party().map(m => m.species);
+    const trace = [];
+    let learn = null;
+    for (let f = 0; f < maxFrames; f++) {
+      this.checkExecution();
+      const summary = this.hasTask("Task_InputHandler_SelectOrForgetMove");
+      // The summary screen loads behind an unnamed placeholder callback (SetMainCallback2WhenLoaded), then
+      // CB2_SetUpPSS/CB2_RunPokemonSummaryScreen: none of those means the scene is over.
+      const cb2 = this.cb2() ?? "";
+      if (!summary && !/EvolutionScene|PSS|PokemonSummary/.test(cb2) && cb2 !== "") break;
+      if (!summary && /PSS|PokemonSummary/.test(cb2) || cb2 === "") { this.step(0); if (f % 4 === 3) await new Promise(r => setTimeout(r, 1)); continue; }
+      if (summary && !learn) {
+        const idx = party().findIndex((m, i) => m.species && m.species !== before[i]);
+        const mon = party()[idx];
+        const move = mon ? (this.rom.species[mon.species].learnset.find(([lvl, mv]) => lvl === mon.level && !mon.moves.includes(mv)) ?? [])[1] : undefined;
+        const slot = move ? chooseMoveToForget(mon.moves, move, this.rom.species[mon.species].types, this.rom, this.C) : -1;
+        learn = { monId: idx, species: mon?.species, move: move ?? null, slot, forgotten: slot >= 0 ? mon.moves[slot] : null };
+        trace.push({ action: slot >= 0 ? "replace move" : "decline replacement", ...learn });
+        await this.wait(60);
+        if (slot < 0) await this.tap(2, 20);
+        else { for (let i = 0; i < slot; i++) await this.tap(0x80, 20); await this.tap(1, 20); }
+        continue;
+      }
+      this.step(f % 32 === 1 ? 1 : 0);
+      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
+    }
+    const evolved = party().map((m, i) => m.species !== before[i] ? { slot: i, from: before[i], to: m.species } : null).filter(Boolean);
+    if (/EvolutionScene/.test(this.cb2() ?? "") || this.hasTask("Task_InputHandler_SelectOrForgetMove")) return { ok: false, reason: "evolution scene did not finish", evolved, trace };
+    if (learn?.slot >= 0 && party()[learn.monId].moves[learn.slot] !== learn.move) return { ok: false, reason: "evolution learn move not applied", evolved, trace };
+    const result = { ok: true, evolved, trace };
+    this.log.push({ evolution: result });
+    return result;
+  },
+  /**
+   * Why a battle was lost or stopped, from observable data only: the pre-battle estimate (trainer battles), level
+   * gap, foes left, medicine and attack PP left. "underleveled" means the estimate was not favorable before the
+   * first turn (train first, see H.train); "policy" means it was favorable, so the driver's choices are suspect;
+   * "resources" means no medicine and no attack PP were left; "budget" is a driver limit, not a game result.
+   */
+  battleDiagnosis(r, assessment, teamStart) {
+    const foesLeft = (this.MON?.gEnemyParty ?? []).filter(m => m && m.species && m.hp > 0).map(m => [m.species, m.level, m.hp]);
+    const res = this.resources();
+    const medicine = [this.C.ITEM_POTION, this.C.ITEM_SUPER_POTION, this.C.ITEM_HYPER_POTION, this.C.ITEM_MAX_POTION].reduce((n, id) => n + this.countItem(id), 0);
+    const attackPP = res.party.reduce((n, m) => n + m.attackPP, 0);
+    const maxFoe = Math.max(0, ...(assessment?.foes ?? []).map(f => f[1])), maxOwn = Math.max(0, ...teamStart.map(m => m.level));
+    const cause = /budget|step budget/.test(r.stop ?? "") ? "budget"
+      : assessment && assessment.verdict !== "favorable" ? "underleveled"
+      : medicine === 0 && attackPP === 0 ? "resources" : assessment ? "policy" : "unknown";
+    return { cause, stop: r.stop, outcome: r.outcome, estimate: assessment ? { verdict: assessment.verdict, levelsNeeded: assessment.levelsNeeded } : null,
+      levelGap: assessment ? maxFoe - maxOwn : null, teamStart, foesLeft, medicine, attackPP };
   },
   /** Navigation must stop after defeat or an unfinished battle, even after the
    * whiteout script heals the team. Direct battle() remains usable by C7. */
