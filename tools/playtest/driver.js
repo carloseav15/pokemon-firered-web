@@ -263,7 +263,10 @@ export const H = {
       return flags & C.BATTLE_TYPE_TRAINER ? { action: "stop", reason: "resources exhausted in trainer battle" }
         : { action: "run", reason: "resources exhausted in wild battle" };
     }
-    if (low && heal) return { action: "item", item: heal.item, reason: "low hp", incoming };
+    // A potion that restores no more than the foe took last turn only burns stock (route 2 run 2: ten Potions on Ivysaur
+    // against Charmander); fight on or switch instead of healing in that case.
+    const futile = !!heal && incoming > 0 && heal.restores <= incoming;
+    if (low && heal && !futile) return { action: "item", item: heal.item, reason: "low hp", incoming };
     const cure = statusItem(mon.status1, bag, C);
     if (cure) return { action: "item", item: cure, reason: "status" };
     const better = this.bestReplacement(true);
