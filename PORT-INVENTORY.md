@@ -36,7 +36,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `event_object_movement.c` | 9412 | 718/759 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts`, `field/objectEvents.ts` … |  |  |
-| `pokemon.c` | 6453 | 135/140 | `battle/anim.ts`, `battle/battleSetup.ts`, `battle/damage.ts` … |  |  |
+| `pokemon.c` | 6453 | 135/140 | `audio/sound.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
 | `party_menu.c` | 6342 | 326/357 | `battle/ext.ts`, `field/overworld.ts`, `menus/fieldMenus.ts` … |  |  |
 | `pokemon_summary_screen.c` | 5224 | 131/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `battle_main.c` | 4477 | 87/106 | `battle/bg.ts`, `battle/controllers.ts`, `battle/globals.ts` … |  |  |
@@ -265,7 +265,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `move_descriptions.c` | 714 | — |  | exportador (textos) |  |
 | `field_camera.c` | 572 | 10/29 | `field/overworld.ts`, `overworldCredits.ts` | field/overworld.ts + fieldmap.ts + tileRenderer.ts + doors.ts + battle/transition.ts: el seguimiento/paneo del jugador está conectado; el viewport Canvas recompone los metatiles desde FieldMap y omite el ring buffer BG/VRAM, doors.ts dibuja el overlay y las transiciones usan una captura de pantalla. Cámara de créditos en overworldCredits.ts; MoveCameraAndRedrawMap está unused en C |  |
 | `mini_printf.c` | 355 | 0/8 |  | depuración de GBA |  |
-| `m4a_tables.c` | 308 | — |  | exportador (audio) |  |
+| `m4a_tables.c` | 308 | — | `audio/sound.ts` | exportador (audio) |  |
 | `data.c` | 305 | — |  | exportador (data) |  |
 | `load_save.c` | 298 | 4/21 | `loadSave.ts` | save.ts (formato propio) |  |
 | `agb_flash.c` | 297 | 0/15 |  | save.ts (localStorage) |  |

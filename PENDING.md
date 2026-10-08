@@ -66,6 +66,7 @@ No cuentan como portadas. Hay que escribir su cuerpo desde el C o borrarlas.
 
 ## 4. Huecos conocidos que el conteo no muestra
 
+- Driver de pruebas: modo manual y replay fase 1 (5de398c3), 10×10.000 fotogramas desde partida nueva con observación idéntica. Snapshot v1 no es un savestate: no captura closures, sprites, audio ni combate completo; cargas posteriores, audio lógico, intro/título, combate, consumo RNG por VBlank y paridad ROM quedan pendientes (DRV-15). DRV-10/13 siguen abiertos; revisión independiente de Muse pendiente.
 - Guardado: 1.22 (bab7d84a) integra SaveObjectEvents/LoadObjectEvents, 16 slots y campos C. NPC movido y objeto runtime conservados tras SAVE/continue con/sin Quest Log; pruebas focalizadas con entradas PREPARED declaradas, no paridad audiovisual completa. Saves antiguos sin snapshot solo recuperan templates; no se pueden reconstruir sus posiciones dinámicas perdidas.
 - Easy Chat: escribir cartas conectado (`partyMenu.ts` → `fieldMenus.writeMail` → `DoEasyChatScreen` de `easy_chat_2.c`, con `CommitECWords` escribiendo en `save.mail`); editor sin probar en navegador.
 - Intercambios de NPC: `pokemon/ingameTrade.ts` porta la animación; `SpriteCB_BouncingPokeball` se comparó con C y `check:trade` valida el rebote y el ciclo de escena. `GetInGameTradeMail` se adapta como `attachTradeMail`; `STATE_TRY_EVOLUTION` sigue al C vía `TradeEvolutionScene` (`evolution_scene.c`, tarea 1.7, 2026-10-01); animación pendiente de revisión visual en navegador. De `trade.c` solo hay stubs de la parte de enlace.

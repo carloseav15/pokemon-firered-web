@@ -241,12 +241,39 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    clima y el intérprete de animaciones de batalla. Añade un script `check:*`
    en `package.json` por cada check nuevo.
 5. **Navegador** (`npm run dev` o `preview_start` con `.claude/launch.json`):
-   `window.frDebug` permite avanzar sin rAF:
+   `window.frDebug` inyecta fotogramas; en el arranque normal rAF también sigue avanzando:
    - `frDebug.run(frames, botones)`, `await frDebug.wait(frames)`
    - `await frDebug.walk("U"|"D"|"L"|"R", casillas)`, `await frDebug.press("A"|"B"|"START"|"SELECT")`
    - `frDebug.rivalBattle("SPECIES_SQUIRTLE")` combate del laboratorio
    - `frDebug.state()`, `frDebug.save`, `frDebug.rom`, `window.frGame`
    Usa `?fr=new`/`?fr=continue`, revisa la consola y captura pantalla como prueba.
+
+   **Modo manual y replay (fase 1, 5de398c3):** `tools/playtest/replay.html` abre un
+   harness separado; `await frReplay.launch({timer1Low:12345})` inicia una partida
+   nueva con datos iniciales PREPARED, semilla antes del boot, teclado externo
+   aislado y cero rAF del juego. El arranque normal conserva rAF. Para comprobarlo:
+   ```bash
+   npm run check:manual-frames
+   npm run play:server
+   # En otra terminal, con el servidor de pruebas disponible:
+   PW_BASE=http://localhost:5197/ npm run play:determinism -- /tmp/fire-red-replay
+   ```
+   El runner crea 10 contextos nuevos y compara SHA-256 de la observación tras
+   cada uno de 10.000 fotogramas; comprueba entrada alterada, semilla distinta,
+   aislamiento, lotes/waits exactos y arranque normal. Artefactos: manifiesto con
+   revisión y hashes de código/datos, `reference.replay.json`, `summary.json` y
+   diagnóstico de la primera divergencia. `REPLAY_FRAMES`/`REPLAY_REPETITIONS`
+   permiten un diagnóstico corto (mínimos 400/2).
+   `frDebug.beginRecording()`/`endRecording()` registran máscaras reales de los
+   pasos del driver H; `frReplay.record(inputs)` produce el replay con hashes y
+   `frReplay.play(replay)` lo contrasta desde otra entrada reconstruida. Requieren
+   modo manual; no restauran el estado inicial. `frDebug.snapshot()` es una copia
+   de solo lectura, versión 1: SaveData, RNG general/encuentros, ReadKeys, tareas,
+   script y proyección de campo/ejecución. No captura closures, sprites, audio ni
+   combate completo. No es un savestate; cargas posteriores, audio lógico,
+   intro/título, combate y paridad ROM siguen pendientes. Continue exige bytes
+   explícitos en `frReplay.launch({mode:"continue",saveRaw,timer1Low})`, pero no
+   forma parte de la aceptación 10×10.000 de esta fase.
 
    **Driver de recorrido** (`tools/playtest/driver.js`, solo con el servidor de
    desarrollo). Desde la consola o `javascript_tool`:

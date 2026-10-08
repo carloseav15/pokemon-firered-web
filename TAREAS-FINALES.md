@@ -30,8 +30,9 @@ Elige **una** tarea sin marcar.
 Solo existe la rama `main` (decisión del usuario, 2026-10-06). Trabaja **un agente a
 la vez**, directamente en `main`, sin worktrees ni ramas propias. Si `git status` muestra
 cambios ajenos, otro agente sigue activo: para y avisa al usuario. Commit local por
-tarea; sin `push` salvo indicación del usuario. Claude revisa cada entrega en `main`
-y la corrige o revierte con un commit nuevo si no cumple.
+tarea; sin `push` salvo indicación del usuario. Claude revisa por defecto las entregas
+en `main`; para DRV-14 el usuario acordó revisión de Muse Spark 1.3 (2026-10-08).
+El revisor corrige o revierte con un commit nuevo si la entrega no cumple.
 
 ### Eficiencia (obligatorio)
 - **Lee solo lo necesario:** §0 y tu tarea. En archivos grandes usa `grep -n` y
@@ -239,6 +240,9 @@ las validaciones generales anteriores siguen abiertas.
 - [ ] **DRV-13 — Tests de combate dependientes del azar.** `driver-navigation` (caso opcional),
   `driver-switch` y `driver-recovery` fallan de vez en cuando y pasan al repetir; hacerlos deterministas
   sin perder lo que comprueban.
+- [x] **DRV-14 — Modo manual y replay, fase 1**: `5de398c3`, 10×10.000 fotogramas con observación idéntica, sin rAF espontáneo; entrada/semilla alteradas detectadas, lotes y waits exactos, teclado aislado y arranque normal comprobados.
+  Driver H: OPTION y retorno al campo, 409 fotogramas/409 entradas grabadas. `check:manual-frames`, tipos, honesty y build PASS; revisión independiente de Muse pendiente.
+- [ ] **DRV-15 — Ampliar determinismo**: cargas/continuaciones, audio lógico, intro/título, observación de combate y savestates; contrastar el consumo RNG por VBlank con C. DRV-10/13 siguen abiertos; investigar por separado `Quest Log palette backup is not initialized` al continuar `cerulean-arrival` (diagnóstico 2026-10-08).
 - [x] **Gritos en fotogramas y por id de grito** — `7dd38034`: la lógica ya no espera al audio del
   navegador (combate colgado en SoundTask_PlayDoubleCry_Step) y cada especie usa su grito (antes el de la
   siguiente). `check:cry-timing`. Falta escucha humana (C13).
