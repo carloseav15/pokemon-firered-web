@@ -228,6 +228,21 @@ las validaciones generales anteriores siguen abiertas.
   espera que el rival derribe a un líder con 1 PS; falló 1 de 4 ejecuciones (liveHp 1).
   Fijar una entrada que garantice el debilitamiento o aceptar ambos desenlaces.
 
+- [x] **DRV-11 — Reconstrucción del driver, fases 0–4** (Sonnet, `22ce04c7`…`6b30760e`): catálogo de
+  pantallas, política única, bucle único sin A genérica, `random-walk`. Revisado; traspaso en
+  `tools/playtest/DRIVER-REBUILD-HANDOFF.md`.
+- [ ] **DRV-12 — Pantalla "mensaje de derrota" sin manejador.** Tras un whiteout, la tarea de
+  `Task_RushInjuredPokemonToCenter` (overworld.ts) imprime gText_PlayerScurriedToCenter, que termina en
+  `\p`: la impresora queda en estado 2 (CLEAR) esperando A y `recognize()` la llama `field-busy`, así que el
+  bucle no avanza (atasco del Centro de Ruta 4 en `random-walk`). Reproducido: `frGame.whiteOut()` y una A
+  llevan al diálogo de la enfermera. Falta pantalla + manejador + caso en `screen-catalog`; C7 no está en el gate.
+- [ ] **DRV-13 — Tests de combate dependientes del azar.** `driver-navigation` (caso opcional),
+  `driver-switch` y `driver-recovery` fallan de vez en cuando y pasan al repetir; hacerlos deterministas
+  sin perder lo que comprueban.
+- [x] **Gritos en fotogramas y por id de grito** — `7dd38034`: la lógica ya no espera al audio del
+  navegador (combate colgado en SoundTask_PlayDoubleCry_Step) y cada especie usa su grito (antes el de la
+  siguiente). `check:cry-timing`. Falta escucha humana (C13).
+
 - [x] **SON-PREP**: b765818f integrada en a8fc2c6a; guardado por UI con procedencia,
   SHA25645b315d0… y restauración/movimiento repetidos por Sol. Entrada aceptada
   para SON-MM01-R; todavía no fósil ni llegada a Celeste.
