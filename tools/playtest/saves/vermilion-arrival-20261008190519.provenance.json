@@ -1,0 +1,282 @@
+{
+  "origin": "/Users/carancibia/Documents/ChatGPT/pokemon/tools/playtest/saves/route5-arrival.json",
+  "originSha256": "5d953441691f1655db0e7e3dd551b195651b18b75eaed6baf1048752fa7ca5dc",
+  "job": "tools/playtest/smoke/vermilion-progress.job.mjs",
+  "aids": "imported entry only; travel, battle and healing by UI; recovery walking skips field medicine policy",
+  "kind": "Vermilion arrival; S.S.Anne/Cut/Surge not tested",
+  "name": "vermilion-arrival-20261008190519",
+  "sha256": "62c8c61d95b51f2e3eafb33fb1428807b254ec7551ad3417ff3a5ddc77e45588",
+  "driver": {
+    "source": "in-game-SAVE",
+    "before": {
+      "map": "MAP_VERMILION_CITY",
+      "x": 15,
+      "y": 8,
+      "money": 2048,
+      "party": [
+        {
+          "species": 17,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 27,
+          "exp": 15406,
+          "hp": 77,
+          "status": 0,
+          "moves": [
+            33,
+            17,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            35,
+            35,
+            30
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 21,
+          "exp": 7414,
+          "hp": 57,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            10
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 110,
+            "quantity": 1
+          },
+          {
+            "item": 22,
+            "quantity": 8
+          },
+          {
+            "item": 14,
+            "quantity": 4
+          },
+          {
+            "item": 18,
+            "quantity": 2
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          },
+          {
+            "item": 363,
+            "quantity": 1
+          },
+          {
+            "item": 265,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 291,
+            "quantity": 1
+          },
+          {
+            "item": 316,
+            "quantity": 1
+          },
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "saved": 25
+    },
+    "after": {
+      "map": "MAP_VERMILION_CITY",
+      "x": 15,
+      "y": 8,
+      "money": 2048,
+      "party": [
+        {
+          "species": 17,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 27,
+          "exp": 15406,
+          "hp": 77,
+          "status": 0,
+          "moves": [
+            33,
+            17,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            35,
+            35,
+            30
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 21,
+          "exp": 7414,
+          "hp": 57,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            10
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 110,
+            "quantity": 1
+          },
+          {
+            "item": 22,
+            "quantity": 8
+          },
+          {
+            "item": 14,
+            "quantity": 4
+          },
+          {
+            "item": 18,
+            "quantity": 2
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          },
+          {
+            "item": 363,
+            "quantity": 1
+          },
+          {
+            "item": 265,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 291,
+            "quantity": 1
+          },
+          {
+            "item": 316,
+            "quantity": 1
+          },
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "saved": 26
+    },
+    "prompts": [
+      {
+        "frame": 48406,
+        "callback": "SaveDialogCB_AskSaveHandleInput"
+      },
+      {
+        "frame": 48645,
+        "callback": "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"
+      }
+    ]
+  }
+}

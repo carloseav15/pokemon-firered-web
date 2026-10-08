@@ -44,6 +44,7 @@ export const H = {
     this.rom = (await this.mod("/src/fr/rom.ts")).rom;
     this.T = await this.mod("/src/fr/gba/tasks.ts");
     this.B = await this.mod("/src/fr/bagMenu.ts");
+    this.SAVE = await this.mod("/src/fr/save.ts");
     this.BS = await this.mod("/src/fr/battle/bscript.ts");
     this.Q = await this.mod("/src/fr/questLogState.ts");
     this.SC = await this.mod("/src/fr/script/context.ts");
@@ -636,9 +637,18 @@ export const H = {
   },
   battleDefaults: { mode: "auto", slot: 0 },
   /** Shortest path in map-internal coords (+7), using the live collision checks. */
-  bfs(tx, ty) {
+  bfs(tx, ty, withTemplates = true) {
     const ow = g().overworld, player = ow.player.object, objects = ow.objects;
     if (!this.fieldFree()) return null;
+    // The game only spawns object events near the camera (TrySpawnObjectEvents), so an NPC far away is not in
+    // objects.list and the plan would change as it comes into view (two-tile oscillation). Block the tiles of the
+    // templates that are not spawned yet; if that closes every route, plan again with the live objects only.
+    const pending = new Set();
+    if (withTemplates) for (const e of objects.spawnTemplates ?? []) {
+      if (this.SAVE.FlagGet(e.template.flag)) continue;
+      const tx0 = e.x + 7, ty0 = e.y + 7;
+      if (!objects.list.some(o => o !== player && o.currentCoords.x === tx0 && o.currentCoords.y === ty0)) pending.add(`${tx0},${ty0}`);
+    }
     const sx = player.currentCoords.x, sy = player.currentCoords.y;
     const key = (x, y, elevation) => `${x},${y},${elevation}`;
     const xy = (x, y) => `${x},${y}`;
@@ -659,16 +669,21 @@ export const H = {
       for (const [dx, dy, dir, , name] of DIRS) {
         let nx = x + dx, ny = y + dy;
         if (!inside(nx, ny)) continue;
-        const c = objects.GetCollisionAtCoords(probe, nx, ny, dir);
+        // The probe is a copy of the player, so objectAt() does not recognise it as "self" and the real player's own
+        // current/previous tiles would block the plan (after a step the way back looks closed: two-tile oscillation).
+        const others = (px, py) => { const o = objects.objectAt(probe, px, py); return o === player ? undefined : o; };
+        let c = objects.GetCollisionAtCoords(probe, nx, ny, dir);
+        if (c === COLLISION_OBJECT_EVENT && !others(nx, ny)) c = COLLISION_NONE;
         // The object's collision API never returns LEDGE_JUMP. PlayerAvatar's
         // pure ledge predicate supplies it; CheckForObjectEventCollision would
         // also increment the jump statistic, so never call it during planning.
         if (ow.player.GetLedgeJumpDirection(nx, ny, dir)) {
           nx += dx; ny += dy;
-          if (!inside(nx, ny) || ow.map.collisionAt(nx, ny) || objects.objectAt(probe, nx, ny)) continue;
+          if (!inside(nx, ny) || ow.map.collisionAt(nx, ny) || others(nx, ny)) continue;
         } else if (c !== COLLISION_NONE && !(nx === tx && ny === ty && c === COLLISION_OBJECT_EVENT)) continue;
         const destination = xy(nx, ny);
         if (warps.has(destination) && !(nx === tx && ny === ty)) continue;
+        if (pending.has(destination)) continue;
         const nextElevation = ow.map.elevationAt(nx, ny);
         const next = nextElevation === 15 || ow.map.elevationAt(x, y) === 15 ? elevation : nextElevation;
         const k = key(nx, ny, next);
@@ -677,7 +692,7 @@ export const H = {
         queue.push([nx, ny, next]);
       }
     }
-    if (end === null) return null;
+    if (end === null) return withTemplates && pending.size ? this.bfs(tx, ty, false) : null;
     const steps = [];
     for (let cur = end; prev.get(cur); ) {
       const [parent, name] = prev.get(cur);
