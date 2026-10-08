@@ -175,11 +175,13 @@ Abiertas:
   posición PREPARED; no acredita fósil, ruta anterior ni guardado. CB2 de gMain
   era antiguo, no prueba de carga activa; fieldFree/exit ahora esperan campo real.
 
+- [x] 1.27 **Recorrido reanudable Celeste→Ruta5** — `98dc7ab1`: `play:cerulean` encadena entrenamiento natural, rival, Puente Pepita, Bill, Misty y Rocket; rondas/hitos SAVE→export→CONTINUAR→movimiento, importación con hash y recursos contrastados, medicina→KO→reemplazo y cálculo de daño corregidos. Ruta5 alcanzada y recargada; repetición desde checkpoint posterior a Misty con Rocket/salida PASS, reanudación de tramo ya completo PASS. Regresión de medicina PREPARED 10/10 y gate focalizado 2/2; tipos/honesty/build PASS. Entrada importada, ejecución con paradas/reanudaciones: no acredita historia anterior, Liga/Sevii, todas las opciones ni paridad ROM. Checkpoint/procedencia en `tools/playtest/saves/route5-arrival.*`; evidencia de sesión en `/tmp/pokemon-cerulean-progress-20261008`, `/tmp/pokemon-cerulean-retest-20261008` y `/tmp/pokemon-medicine-repeat2-20261008`.
+
 ### Fiabilidad del driver: alcance inicial hasta Ciudad Celeste
 
 Prioridad vigente para recorridos; detalles y dependencias en
 [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md#estado-de-fiabilidad-del-driver).
-No equivale a completar el juego ni su fidelidad. Las correcciones1.23–1.26 se
+No equivale a completar el juego ni su fidelidad. Las correcciones1.23–1.27 se
 conservan como evidencia focalizada; 1.22 implementada y comprobada en casos acotados;
 las validaciones generales anteriores siguen abiertas.
 
@@ -219,12 +221,7 @@ las validaciones generales anteriores siguen abiertas.
   aprender/rechazar movimiento y evolución con su aviso, `assessTrainer` con
   diagnóstico de derrota, `train`/`healAtCenter`, `gate.mjs` y `scan-interactions.mjs`.
   Probado con jobs focalizados; gate 14/15 (`driver-navigation` inestable, ver DRV-10).
-- [ ] **DRV-09 — Entrenamiento largo contra el rival de Celeste.** `driver-train.job.mjs`
-  entrena por rondas con checkpoint verificado por ronda; una ronda de 3 combates
-  pasó (Pidgey 16→17). Las ejecuciones largas murieron porque el servidor Vite del
-  puerto 5173 perdió la conexión ("server connection lost") y recargó la página.
-  Siguiente: servidor propio para jobs largos (sin HMR ni recarga) y reanudar con
-  `TRAIN_ENTRY` hasta `cerulean-trained`.
+- [x] **DRV-09 — Entrenamiento largo contra el rival de Celeste.** `98dc7ab1`: entrenamiento natural hasta favorable (Pidgeotto20/Ivysaur19), checkpoints por ronda conservados y reanudación por archivo; rival vencido después por UI. No acredita origen del guardado importado ni repetibilidad de toda la historia.
 - [ ] **DRV-10 — `driver-navigation` depende del azar.** Su caso de debilitamiento forzado
   espera que el rival derribe a un líder con 1 PS; falló 1 de 4 ejecuciones (liveHp 1).
   Fijar una entrada que garantice el debilitamiento o aceptar ambos desenlaces.
@@ -243,6 +240,7 @@ las validaciones generales anteriores siguen abiertas.
 - [x] **DRV-14 — Modo manual y replay, fase 1**: `5de398c3`, 10×10.000 fotogramas con observación idéntica, sin rAF espontáneo; entrada/semilla alteradas detectadas, lotes y waits exactos, teclado aislado y arranque normal comprobados.
   Driver H: OPTION y retorno al campo, 409 fotogramas/409 entradas grabadas. `check:manual-frames`, tipos, honesty y build PASS; revisión independiente de Muse pendiente.
 - [ ] **DRV-15 — Ampliar determinismo**: cargas/continuaciones, audio lógico, intro/título, observación de combate y savestates; contrastar el consumo RNG por VBlank con C. DRV-10/13 siguen abiertos; investigar por separado `Quest Log palette backup is not initialized` al continuar `cerulean-arrival` (diagnóstico 2026-10-08).
+- [ ] **DRV-16 — Extender recorrido y cobertura de opciones.** `98dc7ab1` deja Ruta5 comprobada; siguiente: rutas5/6→Carmín→S.S.Anne→Corte→Surge, luego Liga/Sevii. Encadenar entradas/salidas verificadas y casos alternativos de §3; revisión independiente del tramo2 pendiente. No cerrar por flags importados ni por checks estáticos.
 - [x] **Gritos en fotogramas y por id de grito** — `7dd38034`: la lógica ya no espera al audio del
   navegador (combate colgado en SoundTask_PlayDoubleCry_Step) y cada especie usa su grito (antes el de la
   siguiente). `check:cry-timing`. Falta escucha humana (C13).
