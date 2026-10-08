@@ -45,7 +45,9 @@ const trainBody = `
   return await H.train({ trainer: C.TRAINER_RIVAL_CERULEAN_CHARMANDER, between: [[80, 12], [80, 14]], maxBattles: ${roundBattles}, heal });
 `;
 const snapshot = `return { potions: H.countItem(H.C.ITEM_POTION), money: frDebug.save.save.money,
-  party: H.resources().party.map(m => [m.species, m.level, m.hp + "/" + m.maxHP, [...m.moves]]), field: H.fieldFree(), st: H.st() };`;
+  party: H.resources().party.map(m => [m.species, m.level, m.hp + "/" + m.maxHP, [...m.moves]]), field: H.fieldFree(), st: H.st(),
+  stuck: H.fieldFree() ? null : (() => { const b = [...H.log].reverse().find(e => e.battle); return { cb2: H.cb2(), controller: H.G.gBattlerControllerFuncs?.[0]?.name, inBattle: H.inBattle(), tasks: H.T.tasks.tasks.filter(t => t.isActive).map(t => t.func.name),
+    lastBattle: b && { stop: b.stop, stuck: b.stuck, n: b.n, outcome: b.outcome, start: b.start, end: b.end, screens: b.screens, trace: (b.trace ?? []).slice(-8) } }; })() };`;
 
 export default async function run(ctx) {
   mkdirSync(outdir, { recursive: true });
