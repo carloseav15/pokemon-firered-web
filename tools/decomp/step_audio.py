@@ -38,12 +38,25 @@ def _parse_cfg() -> dict[str, dict[str, int]]:
         opts: dict[str, int] = {}
         for flag in re.findall(r"-([A-Z])(\d+)", match.group(2)):
             opts[flag[0]] = int(flag[1])
+        # pokeemerald also names the voicegroup: -G_abandoned_ship (the group is voicegroup_abandoned_ship)
+        named = re.search(r"-G(_\w+)", match.group(2))
+        if named:
+            opts["G"] = named.group(1)
         flags[match.group(1)] = opts
     return flags
 
 
+def _read_with_includes(path) -> str:
+    """The file's text with `.include "dir/file.inc"` lines replaced by that file (pokeemerald splits its voicegroups)."""
+    out = []
+    for line in path.read_text().splitlines():
+        match = re.match(r'^\s*\.include\s+"([^"]+)"\s*$', line)
+        out.append(_read_with_includes(DECOMP / match.group(1)) if match and (DECOMP / match.group(1)).exists() else line)
+    return "\n".join(out)
+
+
 def _parse_voicegroups() -> tuple[dict[str, list], set[str]]:
-    text = (DECOMP / "sound/voice_groups.inc").read_text()
+    text = _read_with_includes(DECOMP / "sound/voice_groups.inc")
     groups: dict[str, list] = {}
     samples: set[str] = set()
     current: list | None = None
@@ -52,6 +65,11 @@ def _parse_voicegroups() -> tuple[dict[str, list], set[str]]:
         match = re.match(r"^(voicegroup\d+)::$", line)
         if match:
             current = groups[match.group(1)] = []
+            continue
+        # pokeemerald: `voice_group abandoned_ship` (asm/macros/m4a.inc) defines the label voicegroup_abandoned_ship.
+        match = re.match(r"^voice_group\s+(\w+)\s*(?:,\s*\d+)?$", line)
+        if match:
+            current = groups[f"voicegroup_{match.group(1)}"] = []
             continue
         if current is None:
             continue
@@ -140,7 +158,9 @@ def export_audio(_constants=None) -> None:
     out = OUT / "audio"
     cfg = _parse_cfg()
     table = (DECOMP / "sound/song_table.inc").read_text()
-    entries = re.findall(r"^\s*song\s+(\w+),\s*(\d+),\s*(\d+)", table, re.M)
+    # pokeemerald names the music player (MUSIC_PLAYER_BGM, defined by .equiv at the top); FireRed writes the number.
+    players = {n: int(v) for n, v in re.findall(r"^\s*\.equiv\s+(\w+)\s*,\s*(\d+)", table, re.M)}
+    entries = [(n, str(players.get(p, p)), u) for n, p, u in re.findall(r"^\s*song\s+(\w+),\s*(\w+),\s*(\d+)", table, re.M)]
     songs = []
     midi_dir = out / "midi"
     for index, (name, player, _unknown) in enumerate(entries):

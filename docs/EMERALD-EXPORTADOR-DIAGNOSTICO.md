@@ -86,17 +86,27 @@ Hecho en el exportador (`tools/decomp/`), con FireRed por defecto:
 
 Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `constants` (8.340), `codegen` y `structs` (25) **pasan**.
 
-Siguientes bloqueos, ya con las rutas resueltas:
+## 7. Avance posterior (2026-10-08): 10 de 15 pasos pasan para Emerald
 
-| Paso | Bloqueo actual |
-|---|---|
-| scripts | llega al ensamblador y falla con las macros de Emerald: `.if _last_implicit_waitstate == .` («expected absolute expression») en `waitstate implicit=1`; es una incompatibilidad con el ensamblador LLVM que `gas_to_llvm()` (`step_scripts.py`) no cubre |
-| battlescripts | «redefinition of B_SCR_OP_*» en `asm/macros.inc`: `strip_header()` (`step_battle_scripts.py`) elimina las macros duplicadas según marcadores de `preproc` y no cubre este caso |
-| maps | necesita la salida de `scripts` |
-| tilesets, objects, data, graphics | como en §2 |
-| cdata, tsconst, audio, incbin | como en §2 (sin diagnosticar) |
+`EXPORT_GAME=emerald python3 tools/decomp/export.py <paso>`; tras cada cambio FireRed se regeneró con **0 archivos cambiados**
+(`public/fr`, `src/fr/generated`).
 
-Siguiente trabajo útil, en este orden: `scripts` (LLVM y `waitstate implicit`), `battlescripts`, `maps`, `tilesets`, `objects`,
-`data`, `graphics`; en cada uno, FireRed debe regenerarse idéntico. Las salidas parciales de Emerald no se versionan: se
-regeneran con `EXPORT_GAME=emerald python3 tools/decomp/export.py <paso>` (y no deben quedar en `src/games/`, que entraría en la
-comprobación de tipos).
+| Paso | Estado | Resultado / qué se adaptó |
+|---|---|---|
+| setup, constants | OK | 9.282 constantes. Hubo que añadir `map_groups.h` (enum), prefijos y cabeceras propios de Emerald (`BERRY_TREE_`, `BERRY_STAGE_`, `SECRET_BASE_`, `COORD_EVENT_`, `item.h`) y buscar los `enum` en la salida preprocesada (el `ITEM_TM_*` se genera con una macro X). Solo para Emerald |
+| codegen, structs | OK | `metatileBehavior.ts`; 25 estructuras (FireRed 27; faltan `PokedudeBattlerState` y `MultiBattlePokemonTx`) |
+| scripts | OK | 972.520 bytes, 17.295 etiquetas, 227 comandos, 527 especiales. La macro `waitstate implicit=` compara el contador de posición, que LLVM no evalúa; se sustituye por un `.byte` simple con una comprobación en cada ejecución de que ningún `waitstate` explícito va pegado a uno implícito (en Emerald hay 0 casos de 214) |
+| battlescripts | OK | 13.593 bytes de combate, 9.303 de IA, 63.811 de animaciones; se descartan `.equiv` repetidos |
+| maps | OK | 518 mapas y 441 diseños (coinciden con `refs/emerald/maps.json`). Eventos nuevos: clima (86) y bases secretas (75) |
+| tilesets | OK | 75 tilesets. `INCGFX_*`; atributos de metateja de 16 bits (`attributeBits: 16` en esos JSON; FireRed usa 32) |
+| objects | OK | 239 gráficos de objetos, 424 imágenes, 37 efectos de campo. `INCGFX_*`; expresiones con constantes en tablas de animación; sin hoja de emoticonos (`emoticons: null`) |
+| audio | OK | 610 canciones, 530 MIDI, 193 grupos de voces, 154 muestras, 386 gritos. Jugadores musicales simbólicos, `voice_group nombre`, `.include` de grupos |
+| data | **falla** | vuelca `SpeciesInfo`, tablas de aprendizaje, Pokédex, movimientos, entrenadores y encuentros con código C escrito para FireRed (`pokedex_text_fr.h`, campos de la estructura): hay que reescribir cada volcado para Emerald |
+| graphics | **falla** | `export_fonts` busca `sFont*LatinGlyphWidths` en `src/text.c`; Emerald los tiene en `src/fonts.c` con otro conjunto (small, small narrow, narrow, short, normal; FRLG male/female solo japonés). Hay que decidir qué fuentes necesita el motor |
+| incbin | sin validar | termina, pero avisa de ficheros inexistentes (p. ej. `sootopolis/anim/stormy_water`) |
+| cdata, tsconst | sin diagnosticar | `cdata` agota 900 s (FireRed 38 s); `tsconst` tardó 802 s y no generó el ejecutable de prueba |
+
+Lo que **no** demuestra esto: que los datos exportados de Emerald sean correctos. Solo que el paso termina y cuenta cosas
+plausibles (518 mapas = los de `refs/emerald/maps.json`). La validación contra la ROM sigue pendiente.
+
+Siguiente trabajo, por orden: `data` (el más grande), `graphics`, y diagnosticar `cdata`/`tsconst`/`incbin`.
