@@ -153,6 +153,8 @@ export class Game {
   };
   private accumulator = 0;
   private lastTime = 0;
+  private started = false;
+  private manualFrames = false;
   frameCount = 0;
   readonly ctx: CanvasRenderingContext2D;
 
@@ -179,9 +181,15 @@ export class Game {
 
   // ---------------------------------------------------------------- loop
 
-  start(): void {
+  /** Manual mode changes frame ownership only; frame() retains the normal game logic. */
+  start({ manualFrames = false }: { manualFrames?: boolean } = {}): void {
+    if (this.started) throw new Error("Game frame loop already started");
+    this.started = true;
+    this.manualFrames = manualFrames;
+    joy.setExternalInputEnabled(!manualFrames);
     joy.attach();
     void preloadHelpSystem();
+    if (manualFrames) return;
     this.lastTime = performance.now();
     const loop = (now: number) => {
       const delta = Math.min(250, now - this.lastTime);
@@ -198,6 +206,15 @@ export class Game {
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+  }
+
+  /** Debug projection, not a savestate: callbacks/scene are identified by their current JS names. */
+  executionSnapshot(): Readonly<Record<string, number | boolean | string | null>> {
+    return { frame: this.frameCount, manualFrames: this.manualFrames,
+      callback1: this.callback1?.name ?? null, callback2: this.callback2?.name ?? null,
+      scene: this.scene?.constructor.name ?? null, battleOutcome: this.battleOutcome,
+      whiteOutFrames: this.whiteOutFrames, returnToFieldState: this.returnToFieldState,
+      startMenuCursor: this.startMenuCursor };
   }
 
   /** One GBA frame: ReadKeys, callback1, callback2, sound. */

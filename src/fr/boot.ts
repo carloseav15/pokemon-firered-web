@@ -16,11 +16,19 @@ import { installBattleHost } from "./battle/host";
 import { preloadBattleAssets } from "./battle/preload";
 import { createMon } from "./pokemon/pokemon";
 import { RIVAL_BATTLE_HEAL_AFTER, RIVAL_BATTLE_TUTORIAL } from "./generated/constants";
+import { getRandomState, SeedRngAndSetTrainerId } from "./random";
+import { sWildEncounterData, sWildEncountersDisabled } from "./field/wildEncounter";
+import { tasks } from "./gba/tasks";
+import { gMain } from "./hw/runtime";
+import { preloadHelpSystem } from "./helpSystemUtil";
 
-export type LaunchOptions =
+export type LaunchOptions = (
   | { mode: "new"; playerName: string; gender: number; rivalName: string }
   | { mode: "continue" }
-  | { mode: "sandbox" };
+  | { mode: "sandbox" }) & {
+    /** Direct-launch tests only. No rAF frames; explicit Timer1 input before new/continue initialization. */
+    test?: { timer1Low: number };
+  };
 
 let running: Game | undefined;
 
@@ -29,7 +37,13 @@ export function hasFireRedSave(): boolean {
 }
 
 export async function launchFireRed(options: LaunchOptions, container: HTMLElement = document.getElementById("game")!): Promise<Game> {
-  if (running) return running;
+  if (running) {
+    if (options.test) throw new Error("A test session requires a fresh page");
+    return running;
+  }
+  const manualFrames = options.test !== undefined;
+  if (options.test && (!Number.isInteger(options.test.timer1Low) || options.test.timer1Low < 0 || options.test.timer1Low > 0xffff))
+    throw new Error("test.timer1Low must be a u16 integer");
   container.innerHTML = "";
   const canvas = document.createElement("canvas");
   canvas.width = 240;
@@ -54,6 +68,7 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
     status.textContent = "Loading battle data…";
     await preloadBattleAssets();
     await sound.loadCryData();
+    if (manualFrames) await preloadHelpSystem();
   } catch (error) {
     status.textContent = `Could not load game data. Run: python3 tools/decomp/export.py\n${String(error)}`;
     throw error;
@@ -65,10 +80,54 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
   installBattleHost(game);
   running = game;
   (window as unknown as { frGame: Game }).frGame = game;
-  // Debug hook: step frames with buttons held (independent of rAF throttling).
+  let recording: { version: number; timer1Low: number; startFrame: number; initialState: unknown; inputs: number[] } | null = null;
+  // Debug hook: normal mode remains independent of rAF; tests have exclusive frame ownership.
   (window as unknown as { frDebug: unknown }).frDebug = {
     game, rom, joy, save: saveModule,
+    executionMode: manualFrames ? "manual" : "realtime",
+    snapshot() {
+      const ow = game.overworld, script = ow.script.global;
+      // Deliberately a projection. No callbacks, closures, sprites, audio or full battle state are serialized.
+      return JSON.parse(JSON.stringify({ version: 1, execution: game.executionSnapshot(), save: saveModule.save,
+        random: getRandomState(), wild: { ...sWildEncounterData, disabled: sWildEncountersDisabled }, input: joy.snapshot(),
+        hardware: { state: gMain.state, inBattle: gMain.inBattle, vblankCounter2: gMain.vblankCounter2,
+          callback1: gMain.callback1?.name ?? null, callback2: gMain.callback2?.name ?? null },
+        field: { map: ow.loaded?.header.id ?? null, locked: ow.controlsLocked,
+          objects: ow.objects.objects.map(o => o ? { localId: o.localId, currentCoords: o.currentCoords,
+            previousCoords: o.previousCoords, facingDirection: o.facingDirection, movementType: o.movementType,
+            invisible: o.invisible } : null) },
+        script: { mode: script.mode, scriptPtr: script.scriptPtr, stack: script.stack,
+          native: script.nativePtr?.name ?? null, comparisonResult: script.comparisonResult, data: script.data, entry: script.entry },
+        tasks: tasks.tasks.map(t => ({ active: t.isActive, func: t.func.name, priority: t.priority,
+          prev: t.prev, next: t.next, data: t.data, followup: t.followup?.name ?? null })) }));
+    },
+    beginRecording() {
+      if (!options.test) throw new Error("Input recording requires a manual test session");
+      if (recording) throw new Error("Input recording already active");
+      const debug = (window as unknown as { frDebug: { snapshot(): unknown } }).frDebug;
+      recording = { version: 1, timer1Low: options.test.timer1Low, startFrame: game.frameCount, initialState: debug.snapshot(), inputs: [] };
+    },
+    endRecording() {
+      if (!recording) throw new Error("Input recording is not active");
+      const result = recording;
+      recording = null;
+      return result;
+    },
     run(frames: number, buttons = 0): void {
+      if (!Number.isInteger(frames) || frames < 0) throw new Error("frames must be a nonnegative integer");
+      if (!Number.isInteger(buttons) || buttons < 0 || buttons > 0x3ff) throw new Error("buttons must be a GBA key mask");
+      if (manualFrames) {
+        for (let i = 0; i < frames; i++) {
+          joy.release(0x3ff);
+          joy.press(buttons);
+          recording?.inputs.push(buttons);
+          game.frame();
+          joy.release(0x3ff);
+          // HBlank/VCount callbacks currently run in render: retain one render per manual frame, independent of batch size.
+          game.render();
+        }
+        return;
+      }
       joy.press(buttons);
       for (let i = 0; i < frames; i++) game.frame();
       joy.release(buttons);
@@ -76,9 +135,11 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
     },
     /** Run frames while letting fetches resolve between batches. */
     async wait(frames: number, buttons = 0): Promise<void> {
+      if (!Number.isInteger(frames) || frames < 0) throw new Error("frames must be a nonnegative integer");
+      if (!Number.isInteger(buttons) || buttons < 0 || buttons > 0x3ff) throw new Error("buttons must be a GBA key mask");
       const debug = (window as unknown as { frDebug: { run(n: number, b?: number): void } }).frDebug;
       for (let i = 0; i < frames; i += 4) {
-        debug.run(4, buttons);
+        debug.run(Math.min(4, frames - i), buttons);
         await new Promise((resolve) => setTimeout(resolve, 1));
       }
     },
@@ -124,6 +185,10 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
       return object && { x: object.currentCoords.x - 7, y: object.currentCoords.y - 7, facing: object.facingDirection, map: game.overworld.loaded?.header.id, script: game.overworld.script.isActive?.() };
     },
   };
+  if (options.test) {
+    saveModule.setSaveStorageKey(saveModule.SANDBOX_STORAGE_KEY);
+    SeedRngAndSetTrainerId(options.test.timer1Low);
+  }
   if (options.mode === "sandbox") {
     saveModule.setSaveStorageKey(saveModule.SANDBOX_STORAGE_KEY);
     const data = saveStore.load();
@@ -136,7 +201,12 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
   } else {
     game.newGame(options.playerName, options.gender, options.rivalName);
   }
-  game.start();
+  if (manualFrames) {
+    // Initial map bytes are PREPARED before any frames. Later map/screen loads remain outside phase-one guarantees.
+    await game.overworld.prepareMap(game.overworld.mapIdForWarp(saveModule.save.location),
+      options.mode === "new" ? undefined : saveModule.save.mapLayoutId);
+  }
+  game.start({ manualFrames });
   canvas.focus();
   return game;
 }

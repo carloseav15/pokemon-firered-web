@@ -5,6 +5,11 @@ let generatedTrainerIdLower = 0;
 let wildEncounterSeed: number | undefined;
 let seededFromTimer1 = false;
 
+/** Read-only debug observation; includes the u32 LCG state, not just its initial u16 seed. */
+export function getRandomState(): Readonly<{ seed: number; generatedTrainerIdLower: number; wildEncounterSeed: number | null; seededFromTimer1: boolean }> {
+  return { seed, generatedTrainerIdLower, wildEncounterSeed: wildEncounterSeed ?? null, seededFromTimer1 };
+}
+
 export function random(): number {
   seed = (Math.imul(seed, 1103515245) + 24691) >>> 0;
   return seed >>> 16;

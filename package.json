@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check:port": "tsc --noEmit --project tsconfig.port.json",
+    "check:manual-frames": "esbuild tools/checks/manualFrames.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/manualFrames.mjs && node .decomp-build/checks/manualFrames.mjs",
     "check:honesty": "python3 tools/checks/honesty.py",
     "check:all": "python3 tools/checks/all.py",
     "check:cry-timing": "esbuild tools/checks/cryTiming.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/cryTiming.mjs && node .decomp-build/checks/cryTiming.mjs",
@@ -83,6 +84,7 @@
     "refs:expansion-frlg": "python3 tools/refs/expansion_frlg.py",
     "refs:showdown-gens": "python3 tools/refs/showdown_gens.py",
     "play:server": "vite --config tools/playtest/vite.playtest.config.mjs",
+    "play:determinism": "node tools/playtest/determinism.mjs",
     "play:smoke": "node tools/playtest/smoke/run.mjs",
     "viewer:index": "python3 tools/viewer/world_index.py"
   },

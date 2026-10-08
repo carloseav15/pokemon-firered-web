@@ -44,6 +44,7 @@ class Joypad {
   /** gKeyRepeatStartDelay; naming_screen.c temporarily uses 16 frames. */
   repeatStartDelay = 40;
   private attached = false;
+  private externalInputEnabled = true;
   /** Called on key events that should unlock audio playback. */
   onUserGesture?: () => void;
 
@@ -51,6 +52,7 @@ class Joypad {
     if (this.attached) return;
     this.attached = true;
     target.addEventListener("keydown", (event) => {
+      if (!this.externalInputEnabled) return;
       const bit = KEYMAP[event.code];
       this.onUserGesture?.();
       if (bit === undefined) return;
@@ -59,12 +61,13 @@ class Joypad {
       this.latched |= bit;
     });
     target.addEventListener("keyup", (event) => {
+      if (!this.externalInputEnabled) return;
       const bit = KEYMAP[event.code];
       if (bit === undefined) return;
       event.preventDefault();
       this.raw &= ~bit;
     });
-    target.addEventListener("blur", () => { this.raw = 0; });
+    target.addEventListener("blur", () => { if (this.externalInputEnabled) this.raw = 0; });
   }
 
   /** ReadKeys: once per frame. Repeat: 40 frames initial, then every 5. */
@@ -105,6 +108,19 @@ class Joypad {
   /** Inject presses for tests/automation. */
   press(bits: number): void { this.raw |= bits; this.latched |= bits; }
   release(bits: number): void { this.raw &= ~bits; }
+
+  /** A manual test session owns input; DOM events must not contaminate its replay. */
+  setExternalInputEnabled(enabled: boolean): void {
+    this.externalInputEnabled = enabled;
+    if (!enabled) { this.raw = 0; this.latched = 0; }
+  }
+
+  /** Copy all ReadKeys state, including the state that determines the next edge/repeat. */
+  snapshot(): Readonly<Record<string, number>> {
+    return { raw: this.raw, previousRaw: this.previousRaw, latched: this.latched,
+      held: this.held, newKeys: this.newKeys, repeated: this.repeated, buttonMode: this.buttonMode,
+      repeatCounter: this.repeatCounter, repeatStartDelay: this.repeatStartDelay };
+  }
 }
 
 export const joy = new Joypad();
