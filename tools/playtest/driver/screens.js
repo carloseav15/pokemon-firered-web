@@ -6,7 +6,7 @@
 
 /** Every screen name recognize() can return, except "unknown". The catalog job reports coverage against it. */
 export const CATALOG = [
-  "quest-log", "battle-transition", "text-wait", "evolution", "evolution-yesno", "summary-forget-move", "summary-view", "naming-screen",
+  "quest-log", "battle-transition", "whiteout-message", "text-wait", "evolution", "evolution-yesno", "summary-forget-move", "summary-view", "naming-screen",
   "shop-menu", "shop-loading", "shop-list", "shop-quantity", "shop-confirm", "shop-message",
   "bag-context", "bag-menu", "item-use-animation", "party-menu", "options-menu", "loading-screen",
   "battle-action", "battle-move", "battle-target", "battle-learn-yesno", "battle-yesno", "battle-nickname-yesno", "battle-levelup-box", "battle-busy",
@@ -35,7 +35,11 @@ export function read(H) {
   // Any text printer (battle, party, shop... windows) waiting for A/B: hw/text.ts keeps one printer per window id.
   let textWait = null;
   try { for (let id = 0; id < 32 && !textWait; id++) { const p = H.TXT?.textPrinterOf(id); if (p?.active && BUTTON_STATES.includes(p.state)) textWait = { window: id, state: p.state, pos: p.pos }; } } catch { /* printers not ready */ }
-  return { st, scene, textWait, tasks, cb1: cb1 ?? null, cb2: cb2 ?? null, script, questLog, playback, inBattle, controller,
+  // field_screen_effect.c PrintWhiteOutRecoveryMessage: the "scurried to the Pokemon Center" text has its own printer on
+  // frGame.overworld (not in hw/text.ts) and ends in a \p prompt that waits for A.
+  const wp = game?.overworld?.whiteOutPrinter;
+  const whiteOut = wp?.active ? { state: wp.state, pos: wp.pos } : null;
+  return { st, scene, textWait, whiteOut, tasks, cb1: cb1 ?? null, cb2: cb2 ?? null, script, questLog, playback, inBattle, controller,
     saveCallback: game?.activeSaveDialog?.saveDialogCB.name ?? null,
     standing: !!game?.overworld.player.object && game.overworld.player.isStandingStill(),
     dialog: !!game?.overworld.messageBox.printer?.active, printerState: game?.overworld.messageBox.printer?.state ?? null, hasGame: !!game, hasDebug: !!dbg };
@@ -56,6 +60,7 @@ const RULES = [
   ["battle-transition", d => d.scene === "BattleTransitionScene" ? {} : null],
   // evolution_scene.c keeps its state in the Task_EvolutionScene task: data[0] EvoState, data[6] MoveState,
   // data[7] the state a YES leads to (MVSTATE_SHOW_MOVE_SELECT = "forget a move?", otherwise "stop learning?").
+  ["whiteout-message", d => d.whiteOut && BUTTON_STATES.includes(d.whiteOut.state) ? { ...d.whiteOut } : null],
   ["text-wait", d => d.textWait ? { ...d.textWait } : null],
   ["evolution-yesno", (d, H) => /EvolutionScene/.test(d.cb2 ?? "") && evoTask(H)?.data[6] === EVO_MVSTATE_HANDLE_YES_NO
     ? { forget: evoTask(H).data[7] === EVO_MVSTATE_SHOW_MOVE_SELECT, state: evoTask(H).data[0] } : null],

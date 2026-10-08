@@ -22,7 +22,7 @@ export function fingerprint(H, rec = recognize(H)) {
   const battle = d?.inBattle && H.G ? [H.G.G.gBattlescriptCurrInstr, d.controller, H.G.gBattleMons?.[0]?.hp, H.G.gBattleMons?.[1]?.hp] : null;
   const d1 = { ...rec.details }; delete d1.tasks;
   return JSON.stringify([rec.screen, d1, d?.cb2, d?.tasks, script?.scriptPtr ?? null, script?.nativePtr?.name ?? null,
-    printer ? [printer.active, printer.state, printer.pos, printer.currentY] : null, d?.textWait, battle, d?.st?.x, d?.st?.y, d?.st?.map]);
+    printer ? [printer.active, printer.state, printer.pos, printer.currentY] : null, d?.textWait, d?.whiteOut, battle, d?.st?.x, d?.st?.y, d?.st?.map]);
 }
 
 /**

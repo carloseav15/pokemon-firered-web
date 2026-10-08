@@ -10,8 +10,13 @@ const position = `
   };
 `;
 export default async function(ctx){
-  await ctx.loadSave('mtmoon-1f');
-  const optional=await ctx.runEval(`${position}
+  // The optional case depends on how the trainer's Pokemon happen to fight (damage rolls decide whether the lead has to heal
+  // before it attacks again), so it is repeated from the same checkpoint up to 4 times; every attempt runs the same checks and
+  // retries collect diagnostics only: any failed attempt still fails the gate.
+  const attempts = []; let optional = null;
+  for (let k = 0; k < 4 && !optional; k++) {
+    await ctx.loadSave('mtmoon-1f');
+    const r = await ctx.runEval(`${position}
     const sv=frDebug.save.save;
     sv.party[1].pp[sv.party[1].moves.indexOf(C.MOVE_VINE_WHIP)]=0;
     sv.bag.items=[{item:C.ITEM_POTION,quantity:8}];
@@ -25,12 +30,18 @@ export default async function(ctx){
     // (policy default is NO, which never opens the menu); the menu is then cancelled through the UI.
     H.policy.set({battleYesNo:{...H.policy.options.battleYesNo,Cmd_yesnobox:true}});
     const b=await H.battle('auto',0,500);
-    if(!b.trace.some(t=>t.action==='cancel optional switch'&&t.menuAction===C.PARTY_ACTION_CHOOSE_MON&&t.liveHp>0))throw new Error('optional live switch not observed');
+    const fails=[];
+    if(!b.trace.some(t=>t.action==='cancel optional switch'&&t.menuAction===C.PARTY_ACTION_CHOOSE_MON&&t.liveHp>0))fails.push('optional live switch not observed');
     const cancelled=b.trace.findIndex(t=>t.action==='cancel optional switch');
-    if(!b.trace.some((t,i)=>i>cancelled&&t.action==='move'&&t.active===0))throw new Error('active never attacked after declining switch');
-    if(b.stop==='no able replacement'&&(H.G.gBattleMons[0].hp!==0||H.PM.gPartyMenu.action!==C.PARTY_ACTION_SEND_OUT))throw new Error('optional menu still causes stop');
+    if(!b.trace.some((t,i)=>i>cancelled&&t.action==='move'&&t.active===0))fails.push('active never attacked after declining switch');
+    if(b.stop==='no able replacement'&&(H.G.gBattleMons[0].hp!==0||H.PM.gPartyMenu.action!==C.PARTY_ACTION_SEND_OUT))fails.push('optional menu still causes stop');
+    if(fails.length)return {fails,stop:b.stop,outcome:b.outcome,trace:b.trace.map(t=>t.action+(t.active!==undefined?':'+t.active+':'+t.hp:''))};
     return {b,limits:['cancel optional change and resume attack; no trainer victory claim']};
   `);
+    if (r.fails) attempts.push(r); else optional = { ...r, attempt: k + 1, failedAttempts: attempts };
+  }
+  if (!optional) throw new Error('optional case failed in every attempt: ' + JSON.stringify(attempts));
+  if (attempts.length) throw new Error('optional case is intermittent; retries are diagnostic, not PASS: ' + JSON.stringify(attempts));
   await ctx.loadSave('mtmoon-1f');
   const forced=await ctx.runEval(`${position}
     const sv=frDebug.save.save;
@@ -44,8 +55,14 @@ export default async function(ctx){
     const attempts=[];
     const chooseMon=()=>H.G.gBattlerControllerFuncs[0]?.name==='WaitForMonSelection'&&H.hasTask('Task_HandleChooseMonInput');
     const chooseAction=()=>H.G.gBattlerControllerFuncs[0]?.name==='HandleInputChooseAction';
-    for(let n=0;n<12&&!chooseMon();n++){
+    // If the opponent's Pokemon falls first, the game asks "will you switch?" and the A presses below answer YES, opening the
+    // OPTIONAL party menu with the lead still alive. That is not the forced replacement under test: record it, back out with B
+    // and play the next turn (the foe's next Pokemon is the one that can faint the 1 HP lead).
+    const optionalMenu=()=>chooseMon()&&H.PM.gPartyMenu.action!==C.PARTY_ACTION_SEND_OUT&&H.G.gBattleMons[0].hp>0;
+    const backOut=async(n)=>{attempts.push({turn:n+1,optionalMenu:true,liveHp:H.G.gBattleMons[0].hp});if(!await H.until(()=>!chooseMon(),'B',300))throw new Error('optional party menu did not close');};
+    for(let n=0;n<12&&!(chooseMon()&&!optionalMenu());n++){
       if(!await H.until(()=>chooseAction()||chooseMon(),'A',500))throw new Error('action not ready');
+      if(optionalMenu()){await backOut(n);continue;}
       if(chooseMon())break;
       await H.tap(1,30);
       if(!await H.until(()=>H.G.gBattlerControllerFuncs[0]?.name==='HandleInputChooseMove'))throw new Error('move menu missing');
@@ -53,6 +70,7 @@ export default async function(ctx){
       if(H.G.gMoveSelectionCursor[0]!==2)throw new Error('Gust cursor not reached');
       await frDebug.press('A',30);
       await H.until(()=>chooseAction()||chooseMon(),'A',600);
+      if(optionalMenu()){await backOut(n);continue;}
       attempts.push({turn:n+1,liveHp:H.G.gBattleMons[0].hp,faint:chooseMon()});
       if(!chooseMon()&&H.G.gBattleMons[1]?.hp===0)throw new Error('opponent fainted before the lead: '+JSON.stringify(attempts));
     }

@@ -116,6 +116,11 @@ const CASES = [
       const b = await H.battle("auto", 0, 6000);
       for (let i = 0; i < 40 && !H.fieldFree(); i++) await H.idle(1500, true);
       return { stop: b.stop, species: mon.species, moves: [...mon.moves] };` },
+  { name: "whiteout", save: "mtmoon-1f", expect: ["whiteout-message", "dialog", "field-free"], prepared: "frGame.whiteOut() called directly (the aftermath of a lost battle, without fighting one)", body: `
+      frGame.whiteOut();
+      const r = await H.idle(9000, true);
+      if (!r.ok || !/POKEMON_CENTER_1F$/.test(H.st().map)) throw new Error("whiteout did not end at a Pokemon Center with the field free: " + JSON.stringify({ ok: r.ok, reason: r.reason, map: H.st().map }));
+      return { map: H.st().map, party: H.party() };` },
   { name: "trainer-battle", save: "mtmoon-1f", expect: ["battle-yesno"], prepared: "none; Josh's second Pokemon asks 'Will you switch?'", body: `
       const C = H.C, ow = frGame.overworld;
       ow.setWarpDestination(C.MAP_MT_MOON_1F >> 8, C.MAP_MT_MOON_1F & 255, -1, 14, 18); ow.warpIntoMapAndLoad();
@@ -132,6 +137,7 @@ export default async function run(ctx) {
   const results = [], recognized = new Set();
   const catalog = await (async () => { await ctx.loadSave("mtmoon-1f"); return ctx.runEval(`const m = await import("/tools/playtest/driver/screens.js"); return m.CATALOG;`); })();
   const only = process.env.CASE?.split(",");
+  if (only?.some(name => !CASES.some(c => c.name === name))) throw new Error("unknown catalog CASE: " + only.join(","));
   for (const c of CASES) {
     if (only && !only.includes(c.name)) continue;
     if (c.save !== "mtmoon-1f" || results.length) await ctx.loadSave(c.save);
@@ -150,9 +156,9 @@ export default async function run(ctx) {
   results.push(rrow);
   for (const s of Object.keys(ready)) recognized.add(s);
   const unreached = catalog.filter(s => !recognized.has(s));
-  const report = { recognized: [...recognized].sort(), unreached: unreached.map(s => ({ screen: s, reason: NOT_REACHED[s] ?? "NOT COVERED" })), cases: results };
+  const report = { scope: only ?? "full-catalog", recognized: [...recognized].sort(), unreached: unreached.map(s => ({ screen: s, reason: NOT_REACHED[s] ?? (only ? "NOT RUN (filtered catalog)" : "NOT COVERED") })), cases: results };
   const bad = results.filter(r => r.missing.length || r.unknown || r.fieldFreeMismatch || r.err);
-  const uncovered = unreached.filter(s => !NOT_REACHED[s]);
+  const uncovered = only ? [] : unreached.filter(s => !NOT_REACHED[s]);
   console.log(`${recognized.size} pantallas reconocidas de ${catalog.length} (${catalog.length - Object.keys(NOT_REACHED).length} alcanzables)`);
   if (ctx.errors().length) throw new Error(ctx.errors().join("; "));
   if (bad.length || uncovered.length) throw Object.assign(new Error("screen catalog: " + JSON.stringify({ bad, uncovered }).slice(0, 3000)), { result: report });

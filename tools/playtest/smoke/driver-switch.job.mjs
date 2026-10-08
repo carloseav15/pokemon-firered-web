@@ -13,8 +13,10 @@ export default async function(ctx) {
     if(!b.trace.some(t=>t.action==='switch'&&t.target===1))throw new Error('no voluntary switch: '+JSON.stringify(b));
     if(!b.trace.some(t=>t.action==='move'&&t.active===1))throw new Error('replacement never fought: '+JSON.stringify(b));
     let medicineAfterSwitch=null;
+    // H.battle stops at its budget in the middle of a turn: the loop brings the game to the next action menu (or the end).
+    const reached=H.inBattle()?await H.reach('battle-action'):null;
+    if(reached&&!reached.ok)throw new Error('no action after switch test: '+JSON.stringify(reached));
     if(H.inBattle()) {
-      if(!await H.until(()=>H.G.gBattlerControllerFuncs[0]?.name==='HandleInputChooseAction','B',300))throw new Error('no action after switch test');
       // PREPARED additional medical input after the real switch: injury and one Potion.
       const active=H.G.gBattleMons[0],slot=sv.party.findIndex(m=>m.personality===active.personality);
       const other=sv.party.find(m=>m.personality!==active.personality),otherHp=other.hp;
@@ -25,7 +27,7 @@ export default async function(ctx) {
     // This case asserts the switch and a real attack, not victory of a weak prepared team.
     const escape=H.inBattle()?await H.battle('run',0,1000):null;
     if(escape && (escape.stuck||escape.outcome!==C.B_OUTCOME_RAN))throw new Error('diagnostic could not escape: '+JSON.stringify({flags:H.G.G.gBattleTypeFlags,escape,state:H.st()}));
-    return {prepared,medicalInputAfterSwitch:{hp:6,potions:1},b,medicineAfterSwitch,escape,limits:['switch and attack only; no victory claim']};
+    return {reached,prepared,medicalInputAfterSwitch:{hp:6,potions:1},b,medicineAfterSwitch,escape,limits:['switch and attack only; no victory claim']};
   `);
   if(ctx.errors().length)throw new Error(ctx.errors().join('; '));
   return result;

@@ -6,6 +6,10 @@ import { DriverStop } from "../loop.js";
 const printerMoved = (r, before, changed) => changed;
 
 export const fieldHandlers = {
+  // After a lost battle the whiteout text (Task_RushInjuredPokemonToCenter) waits for A at its \p prompt; the printer must move on.
+  "whiteout-message": async (ctx, rec) => {
+    await ctx.input("A", { expect: (r) => r.screen !== "whiteout-message" || r.details.state !== rec.details.state || r.details.pos !== rec.details.pos, within: 240, label: "whiteout text" }); // input: whiteout-message
+  },
   // A text printer (battle, party, shop... window) sits in a wait state (RENDER_STATE_WAIT / CLEAR / SCROLL_START): A moves it on.
   "text-wait": async (ctx, rec) => {
     await ctx.input("A", { expect: (r) => r.screen !== "text-wait" || r.details.state !== rec.details.state || r.details.pos !== rec.details.pos || r.details.window !== rec.details.window, within: 240, label: "advance text" }); // input: text-wait

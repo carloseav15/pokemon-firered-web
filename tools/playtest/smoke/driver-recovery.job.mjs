@@ -28,9 +28,13 @@ export default async function(ctx) {
     if(medicine.used.after.party[1].hp!==Math.min(max,hp0+20)||H.countItem(C.ITEM_POTION)!==0)throw new Error('wrong reserve healing/consumption');
     const switchIndex=b.trace.findIndex((t,i)=>i>index&&t.action==='switch'&&t.personality===identity[0]);
     if(switchIndex<0||!b.trace.some((t,i)=>i>switchIndex&&t.action==='move'&&t.active===1))throw new Error('healed reserve never switched/attacked: '+JSON.stringify(b));
+    // H.battle stopped at its budget in the middle of a turn: reach the next action menu (or the end) before the diagnostic escape,
+    // so a foe that falls to the already chosen attack cannot turn the escape into a victory.
+    const reached=H.inBattle()?await H.reach('battle-action'):null;
+    if(reached&&!reached.ok)throw new Error('no action menu before the escape: '+JSON.stringify(reached));
     const escape=H.inBattle()?await H.battle('run',0,1000):null;
     if(escape&&(escape.stuck||escape.outcome!==C.B_OUTCOME_RAN))throw new Error('diagnostic escape failed');
-    return {prepared,unavailable,b,escape,limits:['recovery, switch and attack; no route or trainer victory claim']};
+    return {reached,prepared,unavailable,b,escape,limits:['recovery, switch and attack; no route or trainer victory claim']};
   `);
   await ctx.loadSave('pewter-pc');
   const nurse = await ctx.runEval(`

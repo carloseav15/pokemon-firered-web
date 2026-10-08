@@ -212,6 +212,17 @@ export const H = {
       } });
     return r.ok ? { ok: true, status: "success", entry, frames: r.frames } : { ok: false, status: "failure", reason: r.reason, note: r.reason, entry, driver: { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump } };
   },
+  /**
+   * Let the game run through the single loop until `screen` is on (default "battle-action"), or the battle is over.
+   * For code that stopped a battle at its budget in the middle of a turn and needs the next stable point.
+   * Returns { ok, reason: "reached" | "battle-over" } or the drive failure.
+   */
+  async reach(screen = "battle-action", { maxFrames = 20000 } = {}) {
+    const battle = { mode: "fight", slot: 0, decision: null, decisions: 0, unchanged: 0, lastKey: null, lastHp: null, incoming: 0, learn: null, sawPartyMenu: false };
+    const r = await drive(this, { label: "reach " + screen, state: { battle }, maxFrames,
+      until: (rec) => rec.screen === screen ? "reached" : screen.startsWith("battle") && !rec.raw?.inBattle && rec.screen === "field-free" ? "battle-over" : false });
+    return r.ok ? { ok: true, status: "success", reason: r.reason, frames: r.frames } : { ok: false, status: "failure", reason: r.reason, note: r.reason, driver: { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump } };
+  },
   /** Back out of whatever menu is open until the field is free again (cleanup after a failed menu flow). */
   async escapeMenus(maxFrames = 4000) {
     return drive(this, { label: "escape", state: { exitMenus: true }, maxFrames, until: (rec) => rec.screen === "field-free" || rec.raw?.inBattle });
