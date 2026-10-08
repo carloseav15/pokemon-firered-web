@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Export the pokefirered decompilation into browser data for the web port.
+"""Export a decompilation (pokefirered by default) into browser data for the web port.
 
 Usage:
     python3 tools/decomp/export.py            # every step
     python3 tools/decomp/export.py maps tilesets
 
 Set POKEFIRERED=/path/to/pokefirered if the decompilation is not a sibling
-folder of this project.
+folder of this project. EXPORT_GAME=emerald selects pokeemerald (POKEEMERALD, or the
+pinned ../refs-src/pokeemerald); its data goes to public/emerald and its generated TS to
+src/games/emerald/generated, never over FireRed's.
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ import time
 
 sys.path.insert(0, __import__("os").path.dirname(__file__))
 
-from common import DECOMP, OUT, read_json  # noqa: E402
+from common import DECOMP, GAME, OUT, read_json  # noqa: E402
 import step_setup  # noqa: E402
 import step_scripts  # noqa: E402
 
@@ -26,7 +28,7 @@ STEPS = ["setup", "constants", "scripts", "battlescripts", "maps", "tilesets", "
 def main(argv: list[str]) -> None:
     wanted = argv or STEPS
     if not (DECOMP / "charmap.txt").exists():
-        raise SystemExit(f"pokefirered not found at {DECOMP}")
+        raise SystemExit(f"{GAME} decompilation not found at {DECOMP}")
     OUT.mkdir(parents=True, exist_ok=True)
     constants = None
 

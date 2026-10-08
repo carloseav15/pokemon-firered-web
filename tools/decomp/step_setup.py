@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from common import BIN, BUILD, CPP_DEFINES, DECOMP, GEN_INCLUDE, run, write_json, OUT
+from common import BIN, BUILD, CPP_DEFINES, DECOMP, GAME, GEN_INCLUDE, MAPJSON_MODE, run, write_json, OUT
 
 
 def build_tools() -> None:
@@ -24,6 +24,16 @@ def build_tools() -> None:
         run(["clang++", std, "-O2", "-w", "-Itools/jsonproc", *sources, "-o", str(target)])
 
 
+def jsonproc_run(cmd: list[str]) -> bytes:
+    """FireRed needs every jsonproc input. Another game may keep some of that data in C headers (pokeemerald has
+    src/data/items.h, no items.json): a missing input is reported and skipped there, never silently for FireRed."""
+    missing = [c for c in cmd[1:3] if not (DECOMP / c).exists()]
+    if missing and GAME != "firered":
+        print(f"  skipped (no {', '.join(missing)} in {GAME})")
+        return b""
+    return run(cmd)
+
+
 def generate_headers() -> None:
     constants = GEN_INCLUDE / "constants"
     constants.mkdir(parents=True, exist_ok=True)
@@ -33,19 +43,19 @@ def generate_headers() -> None:
     layouts_out.mkdir(parents=True, exist_ok=True)
     mapjson = str(BIN / "mapjson")
     jsonproc = str(BIN / "jsonproc")
-    run([mapjson, "layouts", "firered", "data/layouts/layouts.json", str(layouts_out), str(constants)])
-    run([mapjson, "groups", "firered", "data/maps/map_groups.json", str(maps_out), str(constants)])
+    run([mapjson, "layouts", MAPJSON_MODE, "data/layouts/layouts.json", str(layouts_out), str(constants)])
+    run([mapjson, "groups", MAPJSON_MODE, "data/maps/map_groups.json", str(maps_out), str(constants)])
     map_jsons = sorted(str(p.relative_to(DECOMP)) for p in (DECOMP / "data/maps").glob("*/map.json"))
-    run([mapjson, "event_constants", "firered", *map_jsons, str(constants / "map_event_ids.h")])
-    run([jsonproc, "src/data/region_map/region_map_sections.json", "src/data/region_map/region_map_sections.constants.json.txt", str(constants / "region_map_sections.h")])
-    run([jsonproc, "src/data/heal_locations.json", "src/data/heal_locations.constants.json.txt", str(constants / "heal_locations.h")])
+    run([mapjson, "event_constants", MAPJSON_MODE, *map_jsons, str(constants / "map_event_ids.h")])
+    jsonproc_run([jsonproc, "src/data/region_map/region_map_sections.json", "src/data/region_map/region_map_sections.constants.json.txt", str(constants / "region_map_sections.h")])
+    jsonproc_run([jsonproc, "src/data/heal_locations.json", "src/data/heal_locations.constants.json.txt", str(constants / "heal_locations.h")])
     data_dir = GEN_INCLUDE / "data"
     (data_dir / "region_map").mkdir(parents=True, exist_ok=True)
-    run([jsonproc, "src/data/items.json", "src/data/items.json.txt", str(data_dir / "items.h")])
-    run([jsonproc, "src/data/wild_encounters.json", "src/data/wild_encounters.json.txt", str(data_dir / "wild_encounters.h")])
-    run([jsonproc, "src/data/heal_locations.json", "src/data/heal_locations.json.txt", str(data_dir / "heal_locations.h")])
-    run([jsonproc, "src/data/region_map/region_map_sections.json", "src/data/region_map/region_map_sections.entries.json.txt", str(data_dir / "region_map" / "region_map_entries.h")])
-    run([jsonproc, "src/data/region_map/region_map_sections.json", "src/data/region_map/region_map_sections.strings.json.txt", str(data_dir / "region_map" / "region_map_entry_strings.h")])
+    jsonproc_run([jsonproc, "src/data/items.json", "src/data/items.json.txt", str(data_dir / "items.h")])
+    jsonproc_run([jsonproc, "src/data/wild_encounters.json", "src/data/wild_encounters.json.txt", str(data_dir / "wild_encounters.h")])
+    jsonproc_run([jsonproc, "src/data/heal_locations.json", "src/data/heal_locations.json.txt", str(data_dir / "heal_locations.h")])
+    jsonproc_run([jsonproc, "src/data/region_map/region_map_sections.json", "src/data/region_map/region_map_sections.entries.json.txt", str(data_dir / "region_map" / "region_map_entries.h")])
+    jsonproc_run([jsonproc, "src/data/region_map/region_map_sections.json", "src/data/region_map/region_map_sections.strings.json.txt", str(data_dir / "region_map" / "region_map_entry_strings.h")])
 
 
 CONSTANT_PREFIXES = (

@@ -68,12 +68,35 @@ no producen datos válidos; el resto falla por causas distintas, que aparecen un
   sino a cómo se leen (no investigado).
 - Nada de esto prueba que lo exportado, una vez arreglado, sea correcto para Emerald.
 
-## 6. Qué decidir antes de seguir
+## 6. Estado tras A.1–A.3 (2026-10-08, con permiso para editar `common.py`)
 
-1. **¿Se permite editar `tools/decomp/common.py`?** `CLAUDE.md` dice «no lo modifiques». El plan A.1 (una configuración `Game`
-   con FireRed por defecto) y los cambios 3 y 4 de §3 lo exigen. Alternativa sin editarlo: un `common` por juego importado
-   desde un módulo nuevo; es más frágil porque los pasos hacen `from common import …`.
-2. **Ampliar `sparse` en `tools/refs/sources.json`** con `/charmap.txt /asm/ /data/ /graphics/ /sound/ /tools/jsonproc/
-   /tools/mapjson/ /tools/preproc/` (unos 14 MB).
-3. Siguiente trabajo útil: por orden, `scripts`/`battlescripts` (con `/asm/`), `tilesets`, `objects`, `data`, `graphics` y
-   los cuatro pasos sin diagnosticar; en cada uno, FireRed debe regenerarse idéntico.
+Hecho en el exportador (`tools/decomp/`), con FireRed por defecto:
+
+- **Selector de juego** `EXPORT_GAME=firered|emerald` en `common.py`. Cada juego tiene su checkout (`POKEFIRERED`/`POKEEMERALD`, o
+  `../refs-src/pokeemerald`), su build (`.decomp-build` / `.decomp-build/emerald`), sus datos (`public/fr` / `public/emerald`) y su
+  TS generado (`src/fr/generated` / `src/games/emerald/generated`), más el modo de `mapjson`, los defines y las rutas de inclusión extra.
+- `step_setup.py` usa el modo de `mapjson` del juego; las entradas `jsonproc` que no existan se saltan **solo** si el juego no es
+  FireRed (aviso en pantalla). `step_codegen/structs/tsconst.py` escriben en el directorio del juego (y lo crean); `step_scripts.py`
+  usa `.set <JUEGO>` y las rutas de inclusión extra; `export.py` muestra el juego.
+- **FireRed regenerada con estos cambios: 0 archivos cambiados** (dos veces, 3 min cada una) en `public/fr` y `src/fr/generated`.
+- `tools/refs/sources.json`: la lista parcial de pokeemerald incluye ahora `/data/ /graphics/ /sound/ /asm/ /constants/ /charmap.txt
+  /tools/jsonproc/ /tools/mapjson/ /tools/preproc/`. `npm run refs:fetch -- pokeemerald` y `npm run refs:check` pasan. Faltaba
+  también `/constants/` (5 archivos, 30 KB): `data/event_scripts.s` hace `.include "constants/constants.inc"`. Revisado todo el
+  nivel superior del árbol del commit fijado: no hay más carpetas necesarias para el exportador.
+
+Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `constants` (8.340), `codegen` y `structs` (25) **pasan**.
+
+Siguientes bloqueos, ya con las rutas resueltas:
+
+| Paso | Bloqueo actual |
+|---|---|
+| scripts | llega al ensamblador y falla con las macros de Emerald: `.if _last_implicit_waitstate == .` («expected absolute expression») en `waitstate implicit=1`; es una incompatibilidad con el ensamblador LLVM que `gas_to_llvm()` (`step_scripts.py`) no cubre |
+| battlescripts | «redefinition of B_SCR_OP_*» en `asm/macros.inc`: `strip_header()` (`step_battle_scripts.py`) elimina las macros duplicadas según marcadores de `preproc` y no cubre este caso |
+| maps | necesita la salida de `scripts` |
+| tilesets, objects, data, graphics | como en §2 |
+| cdata, tsconst, audio, incbin | como en §2 (sin diagnosticar) |
+
+Siguiente trabajo útil, en este orden: `scripts` (LLVM y `waitstate implicit`), `battlescripts`, `maps`, `tilesets`, `objects`,
+`data`, `graphics`; en cada uno, FireRed debe regenerarse idéntico. Las salidas parciales de Emerald no se versionan: se
+regeneran con `EXPORT_GAME=emerald python3 tools/decomp/export.py <paso>` (y no deben quedar en `src/games/`, que entraría en la
+comprobación de tipos).

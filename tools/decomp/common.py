@@ -1,7 +1,7 @@
-"""Shared helpers for exporting pokefirered data to the web port.
+"""Shared helpers for exporting a decomp (pokefirered by default, pokeemerald with EXPORT_GAME=emerald) to the web port.
 
-All steps read the sibling decompilation and write browser data to
-public/fr. Build intermediates (host tools, generated headers) live in
+All steps read the game's decompilation and write browser data to
+public/<game> (public/fr for FireRed). Build intermediates (host tools, generated headers) live in
 .decomp-build so the decompilation tree is never modified.
 """
 
@@ -15,21 +15,47 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+
+# One game per run, chosen with EXPORT_GAME (default firered). Each game has its own decomp checkout, build directory,
+# browser-data directory and generated TypeScript directory, so a run for one game never overwrites another's output.
+GAME = os.environ.get("EXPORT_GAME", "firered")
+GAMES = {
+    "firered": {"env": "POKEFIRERED", "dir": "pokefirered", "build": ".decomp-build", "out": "public/fr",
+                "generated": "src/fr/generated", "defines": ["-DFIRERED", "-DREVISION=0", "-DENGLISH", "-DMODERN=0"],
+                "mapjson": "firered"},
+    "emerald": {"env": "POKEEMERALD", "dir": "pokeemerald", "build": ".decomp-build/emerald", "out": "public/emerald",
+                "generated": "src/games/emerald/generated", "defines": ["-DEMERALD", "-DREVISION=0", "-DENGLISH", "-DMODERN=0"],
+                "mapjson": "emerald"},
+}
+if GAME not in GAMES:
+    raise SystemExit(f"unknown EXPORT_GAME {GAME!r}; expected one of {sorted(GAMES)}")
+_G = GAMES[GAME]
+
+
 def _find_decomp() -> Path:
-    """$POKEFIRERED, else a sibling ../pokefirered, else the pokefirered/ submodule."""
-    if os.environ.get("POKEFIRERED"):
-        return Path(os.environ["POKEFIRERED"]).resolve()
-    sibling = ROOT.parent / "pokefirered"
-    return (sibling if sibling.exists() else ROOT / "pokefirered").resolve()
+    """$POKEFIRERED / $POKEEMERALD, else a sibling checkout, else (firered) the pokefirered/ submodule or (emerald) the
+    pinned refs checkout ($REFS_SRC or ../refs-src/pokeemerald, see npm run refs:fetch)."""
+    if os.environ.get(_G["env"]):
+        return Path(os.environ[_G["env"]]).resolve()
+    sibling = ROOT.parent / _G["dir"]
+    if GAME == "emerald":
+        refs = Path(os.environ.get("REFS_SRC", ROOT.parent / "refs-src")) / _G["dir"]
+        return (sibling if sibling.exists() else refs).resolve()
+    return (sibling if sibling.exists() else ROOT / _G["dir"]).resolve()
 
 
 DECOMP = _find_decomp()
-BUILD = ROOT / ".decomp-build"
+BUILD = ROOT / _G["build"]
 BIN = BUILD / "bin"
 GEN_INCLUDE = BUILD / "include"
-OUT = ROOT / "public" / "fr"
+OUT = ROOT / _G["out"]
+GENERATED = ROOT / _G["generated"]  # generated TypeScript (constants, structs, metatile behaviours)
+MAPJSON_MODE = _G["mapjson"]  # the decomp's tools/mapjson mode (its layout/group JSON formats differ per game)
 
-CPP_DEFINES = ["-DFIRERED", "-DREVISION=0", "-DENGLISH", "-DMODERN=0"]
+# Extra include directories this game's headers need. Emerald's include/constants/maps.h does #include "map_groups.h"
+# relative to its own directory, where the generated header lives for the real build.
+EXTRA_INCLUDES = ["-I", str(GEN_INCLUDE / "constants")] if GAME == "emerald" else []
+CPP_DEFINES = list(_G["defines"]) + EXTRA_INCLUDES
 
 
 def run(cmd: list[str], *, cwd: Path | None = None, stdin: bytes | None = None, quiet: bool = False) -> bytes:

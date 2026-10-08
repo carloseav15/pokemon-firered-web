@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import re
 
-from common import DECOMP, ROOT
+from common import DECOMP, GENERATED, ROOT
 
-GEN_DIR = ROOT / "src" / "fr" / "generated"
+GEN_DIR = GENERATED
 
 
 def strip_comments(text: str) -> str:
@@ -64,4 +64,4 @@ def generate_metatile_behavior(constants: dict[str, int]) -> None:
 
 def export_codegen(constants: dict[str, int]) -> None:
     generate_metatile_behavior(constants)
-    print("  generated src/fr/generated/metatileBehavior.ts")
+    print(f"  generated {GEN_DIR.relative_to(ROOT)}/metatileBehavior.ts")

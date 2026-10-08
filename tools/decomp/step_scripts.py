@@ -12,13 +12,13 @@ from __future__ import annotations
 import re
 import struct
 
-from common import BIN, BUILD, DECOMP, GEN_INCLUDE, OUT, Elf32, run, write_json
+from common import BIN, BUILD, DECOMP, EXTRA_INCLUDES, GAME, GEN_INCLUDE, OUT, Elf32, run, write_json
 
 ROM_BASE = 0x08000000
 EXTERN_BASE = 0x0F000000
 
-PRELUDE = """
-.set FIRERED, 1
+PRELUDE = f"""
+.set {GAME.upper()}, 1
 .set REVISION, 0
 .set ENGLISH, 1
 .set MODERN, 0
@@ -41,7 +41,7 @@ def preprocess(entry: str) -> str:
     """preproc (charmap strings) -> C preprocessor -> preproc -ie, as the Makefile does."""
     preproc = str(BIN / "preproc")
     stage1 = run([preproc, entry, "charmap.txt"])
-    stage2 = run(["clang", "-E", "-x", "assembler-with-cpp", "-P", "-Wno-trigraphs", "-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", "-"], stdin=stage1)
+    stage2 = run(["clang", "-E", "-x", "assembler-with-cpp", "-P", "-Wno-trigraphs", "-I", str(GEN_INCLUDE), *EXTRA_INCLUDES, "-iquote", "include", "-I", "include", "-"], stdin=stage1)
     stage3 = run([preproc, "-ie", entry, "charmap.txt"], stdin=stage2)
     return gas_to_llvm(stage3.decode("utf-8", errors="replace"))
 

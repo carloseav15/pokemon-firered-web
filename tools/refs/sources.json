@@ -5,8 +5,15 @@
     "sparse": [
       "/src/",
       "/include/",
-      "/data/maps/",
-      "/data/layouts/"
+      "/data/",
+      "/graphics/",
+      "/sound/",
+      "/asm/",
+      "/constants/",
+      "/charmap.txt",
+      "/tools/jsonproc/",
+      "/tools/mapjson/",
+      "/tools/preproc/"
     ],
     "note": "GBA, C completo. Fuente de verdad de Emerald."
   },

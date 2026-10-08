@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 import subprocess
 
-from common import BUILD, CPP_DEFINES, DECOMP, GEN_INCLUDE, ROOT
+from common import BUILD, CPP_DEFINES, DECOMP, GEN_INCLUDE, GENERATED, ROOT
 
 SKIP_HEADERS = {"gba/m4a_internal.h", "gba/isagbprint.h", "gba/multiboot.h", "gba/flash_internal.h", "gba/syscall.h", "global.fieldmap.h", "global.berry.h", "global.tv.h", "constants/global.h"}
 
@@ -103,6 +103,7 @@ def export_ts_constants() -> None:
     for name in sorted(values):
         v = values[name]
         ts.append(f"export const {name} = {v};")
-    target = ROOT / "src" / "fr" / "generated" / "constants.ts"
+    target = GENERATED / "constants.ts"
+    GENERATED.mkdir(parents=True, exist_ok=True)
     target.write_text("\n".join(ts) + "\n")
     print(f"  ts constants: {len(values)} from {len(headers)} headers ({len(rejected)} rejected)")

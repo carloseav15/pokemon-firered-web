@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 import subprocess
 
-from common import BUILD, CPP_DEFINES, DECOMP, GEN_INCLUDE, ROOT
+from common import BUILD, CPP_DEFINES, DECOMP, GEN_INCLUDE, GENERATED, ROOT
 from step_cdata import CParser, tokenize
 
 STRUCTS = [
@@ -173,5 +173,6 @@ def export_structs() -> None:
                 ts.append(f"  /** raw bytes */ get {n}(): Uint8Array {{ return this.bytes.subarray({f['offset']}, {f['offset'] + f['size']}); }}")
         ts.append("}")
         ts.append("")
-    (ROOT / "src" / "fr" / "generated" / "structs.ts").write_text("\n".join(ts))
+    GENERATED.mkdir(parents=True, exist_ok=True)
+    (GENERATED / "structs.ts").write_text("\n".join(ts))
     print(f"  structs: {len(sizes)} generated for {TARGET}, missing {missing}")
