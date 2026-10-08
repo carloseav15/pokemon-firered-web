@@ -37,19 +37,29 @@ export default async function(ctx){
     await frDebug.walk('U',1);
     if(H.fieldFree())await H.face('L');
     await frDebug.press('A');
-    if(!await H.until(()=>H.G.gBattlerControllerFuncs[0]?.name==='HandleInputChooseAction','A',500))throw new Error('action not ready');
-    await H.tap(1,30);
-    if(!await H.until(()=>H.G.gBattlerControllerFuncs[0]?.name==='HandleInputChooseMove'))throw new Error('move menu missing');
-    for(let i=0;i<8&&H.G.gMoveSelectionCursor[0]!==2;i++)await H.tap(0x80);
-    if(H.G.gMoveSelectionCursor[0]!==2)throw new Error('Gust cursor not reached');
-    await frDebug.press('A',30);
-    if(!await H.until(()=>H.G.gBattlerControllerFuncs[0]?.name==='WaitForMonSelection'&&H.hasTask('Task_HandleChooseMonInput'),'A',600))throw new Error('actual faint did not open party');
+    // The opponent may miss or use a move without damage: repeat the turn until the lead really faints (capped, recorded).
+    const attempts=[];
+    const chooseMon=()=>H.G.gBattlerControllerFuncs[0]?.name==='WaitForMonSelection'&&H.hasTask('Task_HandleChooseMonInput');
+    const chooseAction=()=>H.G.gBattlerControllerFuncs[0]?.name==='HandleInputChooseAction';
+    for(let n=0;n<12&&!chooseMon();n++){
+      if(!await H.until(()=>chooseAction()||chooseMon(),'A',500))throw new Error('action not ready');
+      if(chooseMon())break;
+      await H.tap(1,30);
+      if(!await H.until(()=>H.G.gBattlerControllerFuncs[0]?.name==='HandleInputChooseMove'))throw new Error('move menu missing');
+      for(let i=0;i<8&&H.G.gMoveSelectionCursor[0]!==2;i++)await H.tap(0x80);
+      if(H.G.gMoveSelectionCursor[0]!==2)throw new Error('Gust cursor not reached');
+      await frDebug.press('A',30);
+      await H.until(()=>chooseAction()||chooseMon(),'A',600);
+      attempts.push({turn:n+1,liveHp:H.G.gBattleMons[0].hp,faint:chooseMon()});
+      if(!chooseMon()&&H.G.gBattleMons[1]?.hp===0)throw new Error('opponent fainted before the lead: '+JSON.stringify(attempts));
+    }
+    if(!chooseMon())throw new Error('actual faint did not open party after '+attempts.length+' turns: '+JSON.stringify(attempts));
     const observed={liveHp:H.G.gBattleMons[0].hp,menuAction:H.PM.gPartyMenu.action};
     if(observed.liveHp!==0||observed.menuAction!==C.PARTY_ACTION_SEND_OUT)throw new Error('not a forced replacement: '+JSON.stringify(observed));
     const b=await H.battle('auto',0,500);
     if(b.trace.some(t=>t.action==='cancel optional switch'&&t.menuAction===C.PARTY_ACTION_SEND_OUT))throw new Error('forced switch failed: '+JSON.stringify(b));
     if(!b.trace.some(t=>t.action==='move'&&t.active===1))throw new Error('forced replacement did not attack');
-    return {observed,b,limits:['actual faint, mandatory replacement and attack; no trainer victory claim']};
+    return {observed,attempts,b,limits:['actual faint, mandatory replacement and attack; no trainer victory claim']};
   `);
   await ctx.loadSave('mtmoon-1f');
   const navigation=await ctx.runEval(`${position}
