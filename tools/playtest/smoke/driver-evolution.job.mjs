@@ -5,13 +5,16 @@
 // - "learn": the lead becomes Abra L15 with [Tackle, Growl, Tail Whip, Leer]; Kadabra learns Confusion at 16
 //   (level_up_learnsets.h sKadabraLevelUpLearnset), so the scene asks to delete a move: chooseMoveToForget picks
 //   Growl (slot 1, the first move with no attack value) and the party data must show Confusion there.
-const body = (learnCase) => `
+// - "full10": as "plain" with a 10-character nickname (PREPARED: ten "A", stored without EOS as in the game). The scene
+//   texts expand it through StringCopy_Nickname; before the fix this hung StringExpandPlaceholders (page frozen).
+const body = (learnCase, fullNickname = false) => `
   const C = H.C, sv = frDebug.save.save, mon = sv.party[0];
   const P = await H.mod("/src/fr/pokemon/pokemon.ts");
   ${learnCase ? `
   if (!H.rom.species[C.SPECIES_KADABRA].learnset.some(([l, m]) => l === 16 && m === C.MOVE_CONFUSION)) throw new Error("no Confusion at 16 for Kadabra");
   mon.species = C.SPECIES_ABRA; // PREPARED
   mon.moves = [C.MOVE_TACKLE, C.MOVE_GROWL, C.MOVE_TAIL_WHIP, C.MOVE_LEER]; mon.pp = mon.moves.map(id => H.rom.moves[id].pp);` : ""}
+  ${fullNickname ? "mon.nickname = new Array(10).fill(0xBB); // PREPARED" : ""}
   mon.exp = P.expForLevel(mon.species, 16) - 1; // PREPARED
   mon.hp = 0; mon.stats = [0, 0, 0, 0, 0, 0]; P.calculateStats(mon);
   const before = { species: mon.species, moves: [...mon.moves] };
@@ -39,6 +42,12 @@ export default async function run(ctx) {
   if (a.species !== a.want.ivysaur || a.level !== 16 || !a.field || !a.step || a.evoLog.length !== 1 || !a.evoLog[0].evolved.length || a.moves.join() !== a.before.moves.join())
     throw new Error("plain evolution failed: " + JSON.stringify(a));
   out.plain = a;
+
+  await ctx.loadSave("route2-north");
+  const f = await ctx.runEval(body(false, true));
+  if (f.species !== f.want.ivysaur || f.level !== 16 || !f.field || !f.step || f.evoLog.length !== 1 || !f.evoLog[0].evolved.length)
+    throw new Error("full-length nickname evolution failed: " + JSON.stringify(f));
+  out.full10 = f;
 
   await ctx.loadSave("route2-north");
   const b = await ctx.runEval(body(true));

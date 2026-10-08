@@ -18,6 +18,7 @@ import * as C from "./generated/constants";
 import { sound } from "./audio/sound";
 import { joy, DPAD_UP, DPAD_DOWN, A_BUTTON, B_BUTTON, JOY_NEW } from "./gba/input";
 import { stringVars, expandPlaceholders } from "./gba/charmap";
+import { StringCopy_Nickname } from "./generated/stringUtil";
 import { tasks, type TaskFunc, TAIL_SENTINEL } from "./gba/tasks";
 import { gMain, SetMainCallback2, SetVBlankCallback, SetHBlankCallback, type MainCallback } from "./hw/runtime";
 import {
@@ -1004,6 +1005,21 @@ function CB2_EvolutionSceneLoadGraphics(): void {
   ShowBg(3);
 }
 
+/** GetMonData(mon, MON_DATA_NICKNAME, name) of evolution_scene.c: a full 10-character nickname is stored without EOS. */
+function monNickname(mon: Mon | Pokemon): Uint8Array {
+  const name = new Uint8Array(C.POKEMON_NAME_LENGTH + 1);
+  GetMonData(mon as Mon, C.MON_DATA_NICKNAME, name);
+  return name;
+}
+
+/** GetMonData(NICKNAME) + StringCopy_Nickname(gStringVar1, name): terminated, as expandPlaceholders needs. */
+function monNicknameString(mon: Mon | Pokemon): Uint8Array {
+  const out = new Uint8Array(C.POKEMON_NAME_LENGTH + 1);
+  StringCopy_Nickname(out, monNickname(mon));
+  return out;
+}
+
+
 function Task_EvolutionScene(taskId: number): void {
   const t = gTasks[taskId];
   const partyId = t.data[10];
@@ -1051,7 +1067,7 @@ function Task_EvolutionScene(taskId: number): void {
 
     case EvoState.EVOSTATE_INTRO_MSG:
       if (!gPaletteFade.active) {
-        stringVars.var1 = Uint8Array.from(mon.nickname);
+        stringVars.var1 = monNicknameString(mon);
         const text = expandPlaceholders(rom.text("gText_PkmnIsEvolving"));
         BattlePutTextOnWindow(text, C.B_WIN_MSG);
         t.data[0]++;
@@ -1152,7 +1168,7 @@ function Task_EvolutionScene(taskId: number): void {
 
     case EvoState.EVOSTATE_SET_MON_EVOLVED:
       if (sound.isCryFinished()) {
-        stringVars.var1 = Uint8Array.from(mon.nickname);
+        stringVars.var1 = monNicknameString(mon);
         stringVars.var2 = speciesName(postEvoSpecies);
         const text = expandPlaceholders(rom.text("gText_CongratsPkmnEvolved"));
         BattlePutTextOnWindow(text, C.B_WIN_MSG);
@@ -1172,7 +1188,7 @@ function Task_EvolutionScene(taskId: number): void {
           t.data[3] |= TASK_BIT_LEARN_MOVE;
           t.data[4] = 0; // tLearnsFirstMove = false
           t.data[6] = MoveState.MVSTATE_INTRO_MSG_1; // tLearnMoveState
-          gBattleTextBuff1.set(mon.nickname);
+          StringCopy_Nickname(gBattleTextBuff1, monNickname(mon));
 
           if (varRes === C.MON_HAS_MAX_MOVES) {
             t.data[0] = EvoState.EVOSTATE_REPLACE_MOVE;
@@ -1225,7 +1241,7 @@ function Task_EvolutionScene(taskId: number): void {
     case EvoState.EVOSTATE_CANCEL_MSG:
       if (sound.isCryFinished()) {
         const textKey = t.data[9] ? "gText_EllipsisQuestionMark" : "gText_PkmnStoppedEvolving";
-        stringVars.var1 = Uint8Array.from(mon.nickname);
+        stringVars.var1 = monNicknameString(mon);
         const text = expandPlaceholders(rom.text(textKey));
         BattlePutTextOnWindow(text, C.B_WIN_MSG);
         t.data[9] = 1; // tEvoWasStopped = true
@@ -1558,7 +1574,7 @@ function CB2_TradeEvolutionSceneLoadGraphics(): void {
 
 /** TradeEvolutionScene (evolution_scene.c): evolve the traded mon in place on the trade screen. */
 export function TradeEvolutionScene(mon: Pokemon, postEvoSpecies: number, preEvoSpriteId: number, partyId: number): void {
-  stringVars.var1 = Uint8Array.from(mon.nickname);
+  stringVars.var1 = monNicknameString(mon);
   stringVars.var2 = speciesName(postEvoSpecies);
 
   spriteState.gAffineAnimsDisabled = true;
@@ -1737,7 +1753,7 @@ function Task_TradeEvolutionScene(taskId: number): void {
 
     case TEvoState.T_EVOSTATE_SET_MON_EVOLVED:
       if (sound.isCryFinished()) {
-        stringVars.var1 = Uint8Array.from(mon.nickname);
+        stringVars.var1 = monNicknameString(mon);
         stringVars.var2 = speciesName(postEvoSpecies);
         const text = expandPlaceholders(rom.text("gText_CongratsPkmnEvolved"));
         DrawTextOnTradeWindow(0, text, 1);
@@ -1756,7 +1772,7 @@ function Task_TradeEvolutionScene(taskId: number): void {
           t.data[3] |= TASK_BIT_LEARN_MOVE;
           t.data[4] = 0; // tLearnsFirstMove = FALSE
           t.data[6] = TMoveState.T_MVSTATE_INTRO_MSG_1; // tLearnMoveState
-          gBattleTextBuff1.set(mon.nickname);
+          StringCopy_Nickname(gBattleTextBuff1, monNickname(mon));
 
           if (varRes === C.MON_HAS_MAX_MOVES) {
             t.data[0] = TEvoState.T_EVOSTATE_REPLACE_MOVE;
@@ -2014,7 +2030,7 @@ export function EvolutionScene(
   FreeSpriteTilesByTag(TAG_POST_EVO);
   FreeSpriteTilesByTag(TAG_SPARKLES);
 
-  stringVars.var1 = Uint8Array.from(mon.nickname);
+  stringVars.var1 = monNicknameString(mon);
   stringVars.var2 = speciesName(postEvoSpecies);
 
   const currSpecies = mon.species;

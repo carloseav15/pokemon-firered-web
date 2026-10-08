@@ -256,8 +256,14 @@ export function createMaleMon(species: number, level: number): Pokemon {
   return createMon(species, level, { otId, personality });
 }
 
+/** GetMonData(mon, MON_DATA_NICKNAME, buf): at most POKEMON_NAME_LENGTH bytes, EOS-terminated. A full-length
+ *  nickname is stored without EOS, so StringLength on the raw field would never stop. */
 export function nickname(mon: Pokemon): Uint8Array {
-  return Uint8Array.from(mon.nickname.slice(0, length(mon.nickname)).concat([EOS]));
+  const out = new Uint8Array(C.POKEMON_NAME_LENGTH + 1);
+  let i = 0;
+  for (; i < C.POKEMON_NAME_LENGTH && mon.nickname[i] !== undefined && mon.nickname[i] !== EOS; i++) out[i] = mon.nickname[i];
+  out[i] = EOS;
+  return out.slice(0, i + 1);
 }
 
 export function healMon(mon: Pokemon): void {
