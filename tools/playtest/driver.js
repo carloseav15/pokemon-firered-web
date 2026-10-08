@@ -7,6 +7,7 @@
 // Call `await H.init()` after every page load (see AGENTS.md §6.5).
 
 import { rankMoves, hpItem, statusItem, chooseMoveToForget, simulateBattle } from "./strategy.js";
+import { recognize, CATALOG } from "./driver/screens.js";
 
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
@@ -45,7 +46,27 @@ export const H = {
     this.SC = await this.mod("/src/fr/script/context.ts");
     this.SUM = await this.mod("/src/fr/pokemonSummaryScreen.ts");
     this.MON = await this.mod("/src/fr/pokemon/mon.ts");
+    this.CMDS = await this.mod("/src/fr/battle/cmds/index.ts");
     return this.observe();
+  },
+  /** { screen, details, raw }: the catalog name of what the player sees (driver/screens.js). */
+  recognize() { return recognize(this); },
+  catalog: CATALOG,
+  /**
+   * Record recognize() on every commanded frame while on. Turning it off returns
+   * { screens: {name: {count, first}}, unknown, mismatch }: "unknown" is the first unnamed state's dump and "mismatch"
+   * counts frames where field-free disagrees with the legacy fieldFree().
+   */
+  trackScreens(on) {
+    if (on) { this.tracking = { screens: {}, unknown: null, mismatch: 0, mismatchSample: null }; return true; }
+    const t = this.tracking; this.tracking = null; return t;
+  },
+  trackFrame() {
+    const t = this.tracking, r = recognize(this);
+    const e = t.screens[r.screen] ??= { count: 0, first: r.details };
+    e.count++;
+    if (r.screen === "unknown" && !t.unknown) t.unknown = r.details;
+    if ((r.screen === "field-free") !== this.observe().fieldFree) { t.mismatch++; t.mismatchSample ??= { screen: r.screen, details: r.details }; }
   },
   /** Active callbacks: gMain runs only inside HwScene. Its field value can be stale. */
   cb2() { return g()?.scene?.constructor?.name === "HwScene" ? this.R?.gMain.callback2?.name : g()?.callback2?.name; },
@@ -75,7 +96,8 @@ export const H = {
       : battle ? controller === "HandleInputChooseAction" ? "battle-action" : controller === "HandleInputChooseMove" ? "battle-move" : "battle"
       : choice ? "choice" : saveChoice ? "save-choice" : menu ? "start-menu" : tasks.includes("saveInput") ? "save-dialog" : scene ? "screen"
       : !state.map || !game?.callback1 ? "loading" : fieldFree ? "field" : waitingForButton ? "dialog-wait" : dialog ? "dialog" : "field-busy";
-    return { ...state, phase, fieldFree, standing, battle: !!battle, dialog, waitingForButton, tasks, saveCallback, cb1: cb1 ?? null, cb2: cb2 ?? null,
+    const rec = this.C && this.T ? recognize(this) : null;
+    return { ...state, screen: rec?.screen ?? "map-loading", screenDetails: rec?.details ?? null, phase, fieldFree, standing, battle: !!battle, dialog, waitingForButton, tasks, saveCallback, cb1: cb1 ?? null, cb2: cb2 ?? null,
       hardwareCb2: this.R?.gMain.callback2?.name ?? null, controller, questLog, frame: game?.frameCount };
   },
   /** Wait for actual field control, including recorded Quest Log scenes. Never sends A. */
@@ -86,8 +108,10 @@ export const H = {
     if (!dbg()) throw new Error("driver unavailable after 20s");
     await this.init();
     const observed = [];
+    this.readyScreens = {};
     for (let f = 0; f <= maxFrames; f++) {
       const state = this.observe();
+      this.readyScreens[state.screen] = (this.readyScreens[state.screen] ?? 0) + 1;
       if (!observed.some(s => s.phase === state.phase && s.questLog === state.questLog && s.map === state.map))
         observed.push({ phase: state.phase, questLog: state.questLog, map: state.map });
       if (state.fieldFree) return { ...state, ok: true, status: "success", frames: f, observed };
@@ -181,6 +205,7 @@ export const H = {
     this.checkExecution(true);
     dbg().run(1, bits);
     if (this.execution && !this.execution.done) this.execution.frames++;
+    if (this.tracking) this.trackFrame();
   },
   async wait(frames, bits = 0) {
     for (let f = 0; f < frames; f++) {
