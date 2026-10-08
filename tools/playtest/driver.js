@@ -6,8 +6,9 @@
 // move when no script is active and controls are unlocked; idle() stops at choices.
 // Call `await H.init()` after every page load (see AGENTS.md §6.5).
 
-import { rankMoves, hpItem, statusItem, chooseMoveToForget, simulateBattle } from "./strategy.js";
+import { rankMoves, simulateBattle } from "./strategy.js";
 import { recognize, CATALOG } from "./driver/screens.js";
+import { Policy } from "./driver/policy.js";
 
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
@@ -197,8 +198,14 @@ export const H = {
     }
     return { ...this.observe(), ok: false, status: "failure", reason: "idle-timeout", timeout: true };
   },
-  // Thresholds are walkthrough policy, not FireRed rules.
-  policy: { fieldHp: 0.6, battleHp: 0.4, minAttackPP: 2, reservePotions: 1, maxDecisions: 80, maxUnchanged: 6 },
+  /** The one decision policy (driver/policy.js): thresholds, noItems, declared answers. Options: H.policy.options. */
+  policy: new Policy(),
+  /** Party in the shape the policy reads: slot, hp, maxHP, identity and the battle-mon view used to rank attacks. */
+  policyMons() {
+    return dbg().save.save.party.map((m, slot) => m.species ? { slot, species: m.species, isEgg: m.isEgg, hp: m.hp, maxHP: m.stats[0],
+      personality: m.personality, otId: m.otId, battleMon: this.partyBattleMon(m) } : null).filter(Boolean);
+  },
+  policyDeps() { return { C: this.C, rom: this.rom, bestMoves: (mon) => this.bestMoves(mon) }; },
   fieldFree() { return this.observe().fieldFree; },
   /** One commanded frame; browser rAF may also run frames while yielding. */
   step(bits = 0) {
@@ -280,7 +287,7 @@ export const H = {
           for (const [l, mv] of this.rom.species[c.species].learnset) {
             if (l !== lvl || c.moves.includes(mv)) continue;
             const free = c.moves.findIndex(x => !x);
-            const slot = free >= 0 ? free : chooseMoveToForget(c.moves, mv, this.rom.species[c.species].types, this.rom, this.C);
+            const slot = free >= 0 ? free : this.policy.forgetMove({ moves: c.moves, move: mv, types: this.rom.species[c.species].types }, this.policyDeps());
             if (slot >= 0) { c.moves[slot] = mv; c.pp[slot] = this.rom.moves[mv].pp; }
           }
         }
@@ -300,71 +307,14 @@ export const H = {
       { disabledMove: d.disabledMove, encoredMove: d.encoreTimer ? d.encoredMove : 0 } : {});
   },
   bestReplacement(healthy = false) {
-    const active = this.G.gBattleMons[0];
-    const choices = dbg().save.save.party.map((m, target) => {
-      if (!m.species || m.isEgg || m.hp <= 0 || m.personality === active.personality
-          || healthy && m.hp / m.stats[0] < this.policy.fieldHp) return null;
-      const attacks = this.bestMoves(this.partyBattleMon(m));
-      return attacks.length ? { target, score: attacks[0].score * m.hp / m.stats[0] } : null;
-    }).filter(Boolean).sort((a, b) => b.score - a.score || a.target - b.target);
-    return choices[0]?.target ?? -1;
+    return this.policy.bestReplacement({ mons: this.policyMons(), active: this.G.gBattleMons[0], healthy }, this.policyDeps()) ;
   },
   recoverReplacement() {
-    const active = this.G.gBattleMons[0], bag = dbg().save.save.bag.items;
-    const choices = dbg().save.save.party.map((m, target) => {
-      if (!m.species || m.isEgg || m.hp <= 0 || m.personality === active.personality) return null;
-      const next = this.partyBattleMon(m), attacks = this.bestMoves(next), heal = hpItem(next, bag, this.C);
-      // Recover a usable reserve with one real medicine, then reconsider switching.
-      if (!attacks.length || !heal || (next.hp + heal.restores) / next.maxHP < this.policy.fieldHp) return null;
-      return { target, personality: m.personality, otId: m.otId, item: heal.item,
-        score: attacks[0].score * (next.hp + heal.restores) / next.maxHP };
-    }).filter(Boolean).sort((a, b) => b.score - a.score || a.target - b.target);
-    const choice = choices[0];
-    return choice ? { action: "item", ...choice, reason: "recover attacking reserve" } : null;
+    return this.policy.recoverReplacement({ mons: this.policyMons(), active: this.G.gBattleMons[0], bag: this.policy.bag(dbg().save.save.bag.items) }, this.policyDeps());
   },
   battleDecision(incoming = 0) {
-    const C = this.C, flags = this.G.G.gBattleTypeFlags;
-    if (flags & (C.BATTLE_TYPE_DOUBLE | C.BATTLE_TYPE_LINK | C.BATTLE_TYPE_SAFARI | C.BATTLE_TYPE_POKEDUDE | C.BATTLE_TYPE_OLD_MAN_TUTORIAL)) {
-      return { action: "stop", reason: "unsupported battle format" };
-    }
-    const mon = this.G.gBattleMons[0], bag = this.training?.saveItems ? [] : dbg().save.save.bag.items;
-    const low = mon.hp <= Math.max(mon.maxHP * this.policy.battleHp, incoming * 1.5);
-    const heal = hpItem(mon, bag, C);
-    // Training (H.train): in a wild battle, bring the member being trained in once so it shares the experience.
-    const t = this.training;
-    if (t?.target != null && !(flags & C.BATTLE_TYPE_TRAINER) && !t.switched && mon.personality !== t.target) {
-      const idx = dbg().save.save.party.findIndex(m => m.species && m.personality === t.target && m.hp / m.stats[0] >= this.policy.fieldHp);
-      t.switched = true;
-      if (idx >= 0) return { action: "switch", target: idx, personality: t.target, reason: "training: share experience" };
-    }
-    const attacks = this.bestMoves();
-    if (!attacks.length) {
-      const target = this.bestReplacement(true);
-      if (target >= 0) return { action: "switch", target, personality: dbg().save.save.party[target].personality, reason: "no usable attack" };
-      const recovery = this.recoverReplacement();
-      if (recovery) return recovery;
-      return flags & C.BATTLE_TYPE_TRAINER ? { action: "stop", reason: "resources exhausted in trainer battle" }
-        : { action: "run", reason: "resources exhausted in wild battle" };
-    }
-    // A potion that restores no more than the foe took last turn only burns stock (route 2 run 2: ten Potions on Ivysaur
-    // against Charmander); fight on or switch instead of healing in that case.
-    const futile = !!heal && incoming > 0 && heal.restores <= incoming;
-    if (low && heal && !futile) return { action: "item", item: heal.item, reason: "low hp", incoming };
-    const cure = statusItem(mon.status1, bag, C);
-    if (cure) return { action: "item", item: cure, reason: "status" };
-    const better = this.bestReplacement(true);
-    if (attacks[0].effectiveness < 1 && better >= 0) {
-      const next = this.partyBattleMon(dbg().save.save.party[better]);
-      const best = this.bestMoves(next)[0];
-      if (next.hp / next.maxHP >= this.policy.fieldHp && best.score > attacks[0].score * 1.8) return { action: "switch", target: better, personality: dbg().save.save.party[better].personality, reason: "better attack matchup" };
-    }
-    if (low && !heal) {
-      const target = this.bestReplacement(true);
-      if (target >= 0) return { action: "switch", target, personality: dbg().save.save.party[target].personality, reason: "low hp without medicine" };
-      return flags & C.BATTLE_TYPE_TRAINER ? { action: "stop", reason: "resources exhausted in trainer battle" }
-        : { action: "run", reason: "resources exhausted in wild battle" };
-    }
-    return { action: "move", ...attacks[0], reason: "ranked attack" };
+    return this.policy.battle({ flags: this.G.G.gBattleTypeFlags, mon: this.G.gBattleMons[0], mons: this.policyMons(),
+      bag: dbg().save.save.bag.items, incoming, training: this.training }, this.policyDeps());
   },
   async selectPartySlot(target) {
     for (let i = 0; i < 16 && this.PM.gPartyMenu.slotId !== target; i++) {
@@ -376,6 +326,7 @@ export const H = {
    * No item-effect function is called. Result includes actual consumption. */
   async useItem(item, target, { battle = false } = {}) {
     const before = this.resources(), mon = dbg().save.save.party[target];
+    if (!this.policy.itemsAllowed) return { ok: false, status: "blocked", reason: "items-disabled", note: "items disabled by policy (noItems)", before };
     const hpItems = [this.C.ITEM_POTION, this.C.ITEM_SUPER_POTION, this.C.ITEM_HYPER_POTION, this.C.ITEM_MAX_POTION];
     const statusItems = [this.C.ITEM_ANTIDOTE, this.C.ITEM_PARALYZE_HEAL, this.C.ITEM_BURN_HEAL, this.C.ITEM_ICE_HEAL, this.C.ITEM_AWAKENING];
     if (!mon?.species || mon.isEgg || mon.hp <= 0 || !hpItems.includes(item) && !statusItems.includes(item)
@@ -431,23 +382,25 @@ export const H = {
     this.log.push({ medicine: result });
     return result;
   },
-  /** Heal before walking; stop for exhausted PP, fainted members or no reserves. */
+  /** Heal before walking; stop for exhausted PP, fainted members or no reserves. Every choice is the policy's (prepare). */
   async prepareStep() {
     if (!this.fieldFree()) return { ok: false, note: "field not free", resources: this.resources() };
-    const snapshot = this.resources();
-    if (!snapshot.party.length || snapshot.party.some(m => m.hp <= 0 || m.attackPP < this.policy.minAttackPP)) return { ok: false, note: "return to center: hp or pp exhausted", resources: snapshot };
+    const snapshot = this.resources(), o = this.policy.options, deps = this.policyDeps();
+    if (!snapshot.party.length || snapshot.party.some(m => m.hp <= 0 || m.attackPP < o.minAttackPP)) return { ok: false, note: "return to center: hp or pp exhausted", resources: snapshot };
+    const live = (m) => dbg().save.save.party[m.slot];
+    const plan = (m) => this.policy.prepare({ mon: { hp: live(m).hp, maxHP: m.maxHP, attackPP: m.attackPP, status: live(m).status },
+      bag: dbg().save.save.bag.items, stock: [this.C.ITEM_POTION, this.C.ITEM_SUPER_POTION, this.C.ITEM_HYPER_POTION, this.C.ITEM_MAX_POTION].reduce((n, id) => n + this.countItem(id), 0) }, deps);
     for (const m of snapshot.party) {
-      const cure = statusItem(m.status, dbg().save.save.bag.items, this.C);
-      if (m.status && !cure) return { ok: false, note: "return to center: untreated status", resources: this.resources() };
-      if (cure) { const used = await this.useItem(cure, m.slot); if (!used.ok) return { ...used, resources: this.resources() }; }
-      for (let attempts = 0; attempts < 4 && dbg().save.save.party[m.slot].hp / m.maxHP < this.policy.fieldHp; attempts++) {
-        const heal = hpItem({ hp: dbg().save.save.party[m.slot].hp, maxHP: m.maxHP }, dbg().save.save.bag.items, this.C);
-        const stock = [this.C.ITEM_POTION, this.C.ITEM_SUPER_POTION, this.C.ITEM_HYPER_POTION, this.C.ITEM_MAX_POTION].reduce((n, id) => n + this.countItem(id), 0);
-        if (!heal || stock <= this.policy.reservePotions) return { ok: false, note: "return to center: low hp and medicine reserve", resources: this.resources() };
-        const used = await this.useItem(heal.item, m.slot);
+      let p = plan(m);
+      if (p.retreat && m.status && !p.cure) return { ok: false, note: p.retreat, resources: this.resources() };
+      if (p.cure) { const used = await this.useItem(p.cure, m.slot); if (!used.ok) return { ...used, resources: this.resources() }; }
+      for (let attempts = 0; attempts < 4 && live(m).hp / m.maxHP < o.fieldHp; attempts++) {
+        p = plan(m);
+        if (p.retreat) return { ok: false, note: p.retreat, resources: this.resources() };
+        const used = await this.useItem(p.heal, m.slot);
         if (!used.ok) return { ...used, resources: this.resources() };
       }
-      if (dbg().save.save.party[m.slot].hp / m.maxHP < this.policy.fieldHp) return { ok: false, note: "return to center: healing budget", resources: this.resources() };
+      if (live(m).hp / m.maxHP < o.fieldHp) return { ok: false, note: "return to center: healing budget", resources: this.resources() };
     }
     return { ok: true, resources: this.resources() };
   },
@@ -505,7 +458,7 @@ export const H = {
         if (opcode === 0x5a) {
           const monId = this.G.gBattleStruct.expGetterMonId, mon = dbg().save.save.party[monId], move = this.G.G.gMoveToLearn;
           const types = this.rom.species[mon.species].types;
-          const slot = chooseMoveToForget(mon.moves, move, types, this.rom, this.C);
+          const slot = this.policy.forgetMove({ moves: mon.moves, move, types }, this.policyDeps());
           if (slot < 0) { trace.push({ action: "decline replacement", move }); await this.press("B", 8); continue; }
           if (this.G.gBattleCommunication[this.C.CURSOR_POSITION] !== 0) { await this.tap(0x40); continue; }
           learn = { monId, species: mon.species, move, slot, forgotten: mon.moves[slot], chosen: false, checked: false, waits: 0 };
@@ -528,7 +481,7 @@ export const H = {
           unchanged = key === lastKey ? unchanged + 1 : 0;
           incoming = lastHp?.active === active ? Math.max(0, lastHp.hp - mons[0].hp) : 0;
           lastHp = { active, hp: mons[0].hp }; lastKey = key;
-          if (++decisions > this.policy.maxDecisions || unchanged >= this.policy.maxUnchanged) { stop = "decision budget"; break; }
+          if (++decisions > this.policy.options.maxDecisions || unchanged >= this.policy.options.maxUnchanged) { stop = "decision budget"; break; }
           decision = this.battleDecision(incoming);
           trace.push({ ...decision, remainingPP: decision.pp, active, hp: mons[0].hp, foe: mons[1].species, foeHp: mons[1].hp, pp: [...mons[0].pp] });
           if (decision.action === "stop") { stop = decision.reason; break; }
@@ -640,7 +593,9 @@ export const H = {
     const battles = () => this.log.filter(e => e.battle).length - battles0;
     const heals = [];
     let assessment = start.assessment, reason = null;
-    this.training = { saveItems: true, target: null, switched: false };
+    this.training = { target: null, switched: false };
+    const noItems0 = this.policy.options.noItems;
+    this.policy.set({ noItems: true });
     try {
       for (let loop = 0; loop < 400 && assessment.verdict !== "favorable"; loop++) {
         if (battles() >= maxBattles) { reason = "battle budget"; break; }
@@ -661,7 +616,7 @@ export const H = {
         if (reason) break;
         assessment = await this.assessTrainer(trainer);
       }
-    } finally { this.training = null; }
+    } finally { this.training = null; this.policy.set({ noItems: noItems0 }); }
     const evolutions = this.log.filter(e => e.evolution).map(e => e.evolution.evolved).flat();
     const ok = assessment.verdict === "favorable";
     return { ok, reason: ok ? "favorable" : reason ?? "loop budget", battles: battles(), heals, evolutions,
@@ -691,7 +646,7 @@ export const H = {
         const idx = party().findIndex((m, i) => m.species && m.species !== before[i]);
         const mon = party()[idx];
         const move = mon ? (this.rom.species[mon.species].learnset.find(([lvl, mv]) => lvl === mon.level && !mon.moves.includes(mv)) ?? [])[1] : undefined;
-        const slot = move ? chooseMoveToForget(mon.moves, move, this.rom.species[mon.species].types, this.rom, this.C) : -1;
+        const slot = move ? this.policy.forgetMove({ moves: mon.moves, move, types: this.rom.species[mon.species].types }, this.policyDeps()) : -1;
         learn = { monId: idx, species: mon?.species, move: move ?? null, slot, forgotten: slot >= 0 ? mon.moves[slot] : null };
         trace.push({ action: slot >= 0 ? "replace move" : "decline replacement", ...learn });
         await this.wait(60);
