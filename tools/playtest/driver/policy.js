@@ -11,6 +11,7 @@ export const DEFAULTS = {
   trainTarget: null,     // personality of the party member being trained (wild battles bring it in once)
   answers: {},           // script label -> boolean: the Yes/No answers a route declares (e.g. MtMoon_B2F_EventScript_DomeFossil)
   battleYesNo: { "Cmd_trygivecaughtmonnick": false, "Cmd_yesnobox": false, "Cmd_yesnoboxlearnmove": null, "Cmd_yesnoboxstoplearningmove": true },
+  unansweredYesNo: undefined, // answer for a script Yes/No the route did not declare; undefined = stop (exploration sets false)
   catchWild: false,      // the driver never throws a Poke Ball unless a route enables it
 };
 
@@ -110,7 +111,7 @@ export class Policy {
   forgetMove({ moves, move, types }, deps) { return chooseMoveToForget(moves, move, types, deps.rom, deps.C); }
 
   /** Answer for a script Yes/No: the label of the running script, declared by the route. undefined = not declared. */
-  scriptYesNo(entry) { return Object.hasOwn(this.options.answers, entry) ? this.options.answers[entry] : undefined; }
+  scriptYesNo(entry) { return Object.hasOwn(this.options.answers, entry) ? this.options.answers[entry] : this.options.unansweredYesNo; }
   /** Answer for a battle Yes/No prompt (by script command); null = decided by the caller from the situation. */
   battleYesNo(command) { return Object.hasOwn(this.options.battleYesNo, command) ? this.options.battleYesNo[command] : undefined; }
   nickname() { return false; }

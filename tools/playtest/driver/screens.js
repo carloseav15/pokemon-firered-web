@@ -65,6 +65,8 @@ const RULES = [
     ? { cursor: H.SUM?.GetMoveSlotToReplace?.() ?? null } : null],
   ["summary-view", d => /^CB2_(SetUpPSS|RunPokemonSummaryScreen)$/.test(d.cb2 ?? "") || /PokemonSummary/.test(d.cb2 ?? "")
     ? { cb2: d.cb2, loading: d.cb2 === "CB2_SetUpPSS" } : null],
+  ["trainer-card", d => d.cb2 === "CB2_TrainerCard" || has(d, "Task_TrainerCard") ? { cb2: d.cb2 } : null],
+  ["pokedex", d => /^CB2_.*Pokedex/.test(d.cb2 ?? "") || hasAny(d, /^Task_.*Pokedex/) ? { cb2: d.cb2 } : null],
   ["naming-screen", d => /Naming/.test(d.cb2 ?? "") ? { cb2: d.cb2 } : null],
   // Shop: the clerk menu (field), then the buy screen (CB2_InitBuyMenu / CB2_BuyMenu, its own HwScene) with the
   // buy list, quantity prompt, YES/NO confirmation (Task_CallYesOrNoCallback, then yesFunc) and message tasks.

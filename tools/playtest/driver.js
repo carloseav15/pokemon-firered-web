@@ -189,13 +189,28 @@ export const H = {
   /** Settle scripts through the single loop; menus and choices are handed back to the caller (reason "input-required"). */
   async idle(max = 3000, tapA = true) {
     const quiet = async (ctx) => { await ctx.wait(2); };
-    const r = await drive(this, { label: "idle", maxFrames: max, handlers: tapA ? {} : { dialog: quiet, "dialog-wait": quiet },
+    const defaults = this.idleDefaults ?? {};
+    const r = await drive(this, { label: "idle", maxFrames: max, state: { ...(defaults.state ?? {}) }, handlers: { ...(defaults.handlers ?? {}), ...(tapA ? {} : { dialog: quiet, "dialog-wait": quiet }) },
       until: (rec) => rec.raw?.inBattle ? "battle-started" : rec.screen === "field-free" ? "field-free" : false });
     const f = r.frames;
     if (r.ok) return r.reason === "battle-started" ? { ...this.observe(), f, battle: true, ok: true, status: "success", reason: "battle-started" } : { ...this.observe(), f, ok: true, status: "success" };
     if (["input-required", "unanswered-yes-no", "unhandled-multichoice"].includes(r.reason)) return { ...this.observe(), f, ok: false, status: "blocked", reason: "input-required", note: "input required", stop: r };
     if (r.reason === "frame-budget") return { ...this.observe(), ok: false, status: "failure", reason: "idle-timeout", timeout: true };
     return { ...this.observe(), f, ok: false, status: "failure", reason: r.reason, note: r.reason, driver: r };
+  },
+  /** Defaults merged into every idle() drive (exploration jobs set { state: { exitMenus: true } } and answer declines). */
+  idleDefaults: null,
+  /** Open START, choose menu entry `entry` (start_menu.c STARTMENU_*), look at it and leave it again through the loop. */
+  async tourMenu(entry) {
+    const goal = { kind: "tour", entry, started: false, menuUsed: false, freeSince: null };
+    const r = await drive(this, { goal, state: { exitMenus: true }, label: "menu-tour", maxFrames: 20000,
+      until: (rec) => {
+        if (!goal.menuUsed) return false;
+        if (rec.screen !== "field-free") { goal.freeSince = null; return false; }
+        goal.freeSince ??= window.frGame.frameCount;
+        return window.frGame.frameCount - goal.freeSince >= 45;
+      } });
+    return r.ok ? { ok: true, status: "success", entry, frames: r.frames } : { ok: false, status: "failure", reason: r.reason, note: r.reason, entry, driver: { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump } };
   },
   /** Back out of whatever menu is open until the field is free again (cleanup after a failed menu flow). */
   async escapeMenus(maxFrames = 4000) {

@@ -37,13 +37,33 @@ export const fieldHandlers = {
       await ctx.input("A", { expect: (r) => r.screen !== "multichoice", within: 90, retry: 2, label: "nurse: YES" }); // input: multichoice
       return;
     }
-    if (ctx.state.exitMenus) { await ctx.input("B", { expect: (r) => r.screen !== "multichoice", within: 90, retry: 2, label: "leave menu" }); return; } // input: multichoice
+    if (ctx.state.exitMenus) {
+      // B closes a list that allows it; script YES/NO offers (nurse, PC) ignore B, so fall back to the last entry (NO / EXIT),
+      // found by moving the (observable) cursor down until it stops.
+      try { await ctx.input("B", { expect: (r) => r.screen !== "multichoice", within: 60, retry: 1, label: "leave menu" }); return; } // input: multichoice
+      catch (e) { if (!(e instanceof DriverStop) || e.reason !== "no-effect") throw e; }
+      const pos = () => H.MENU.Menu_GetCursorPos();
+      for (let i = 0; i < 12; i++) { const p0 = pos(); await ctx.unobserved("D", "cursor is read from Menu_GetCursorPos; moving to the last entry"); if (pos() === p0) break; }
+      ctx.trace.push({ action: "multichoice last entry", entry, cursor: pos() });
+      await ctx.input("A", { expect: (r) => r.screen !== "multichoice", within: 120, retry: 1, label: "last entry (NO / EXIT)" }); // input: multichoice
+      return;
+    }
     return { stop: "unhandled-multichoice", info: { entry } };
   },
 
   "pc-menu": async (ctx) => {
     if (!ctx.state.exitMenus) return { stop: "input-required" };
     await ctx.input("B", { expect: (r) => r.screen !== "pc-menu", within: 300, retry: 2, label: "leave PC" }); // input: pc-menu
+  },
+
+  // Full-screen read-only menus reached from START: leave with B when the drive is allowed to exit menus.
+  "trainer-card": async (ctx) => {
+    if (!ctx.state.exitMenus) return { stop: "input-required" };
+    await ctx.input("B", { expect: (r) => r.screen !== "trainer-card", within: 400, retry: 2, label: "leave trainer card" }); // input: trainer-card
+  },
+  "pokedex": async (ctx, rec) => {
+    if (!ctx.state.exitMenus) return { stop: "input-required" };
+    await ctx.input("B", { expect: (r) => r.screen !== "pokedex" || r.details.cb2 !== rec.details.cb2, within: 400, retry: 2, label: "leave pokedex" }); // input: pokedex
   },
 
   "options-menu": async (ctx) => {
@@ -53,7 +73,7 @@ export const fieldHandlers = {
 
   "start-menu": async (ctx, rec) => {
     const H = ctx.H, g = ctx.goal, game = window.frGame;
-    const want = g?.kind === "use-item" ? 2 : g?.kind === "save" ? 4 : null; // start_menu.c STARTMENU_BAG / STARTMENU_SAVE
+    const want = g?.kind === "use-item" ? 2 : g?.kind === "save" ? 4 : g?.kind === "tour" ? g.entry : null; // start_menu.c STARTMENU_BAG / STARTMENU_SAVE / any entry of a menu tour
     if (want !== null && !g.menuUsed) {
       const S = await H.mod("/src/fr/save.ts"), SM = await H.mod("/src/fr/startMenu.ts");
       const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(H.C.FLAG_SYS_POKEDEX_GET), pokemonObtained: S.FlagGet(H.C.FLAG_SYS_POKEMON_GET),
@@ -66,13 +86,14 @@ export const fieldHandlers = {
       const presses = (index - game.startMenuCursor + menu.numItems) % menu.numItems;
       for (let i = 0; i < presses; i++) await ctx.unobserved("D", "start menu cursor is private; opens on startMenuCursor", 12);
       g.menuUsed = true;
+      const tour = g.kind === "tour";
       const target = g.kind === "save" ? ["save-prompt", "save-busy"] : ["bag-menu"];
       const transient = ["start-menu", "loading-screen", "field-busy", "map-loading", "dialog"];
-      await ctx.input("A", { expect: (r) => target.includes(r.screen), fail: (r) => !target.includes(r.screen) && !transient.includes(r.screen) ? "wrong-start-menu-entry" : null, within: 300, retry: 1, label: "start menu entry" }); // input: start-menu
+      await ctx.input("A", { expect: (r) => tour ? r.screen !== "start-menu" : target.includes(r.screen), fail: (r) => !tour && !target.includes(r.screen) && !transient.includes(r.screen) ? "wrong-start-menu-entry" : null, within: 300, retry: 1, label: "start menu entry" }); // input: start-menu
       return;
     }
     // The entry was chosen: the menu task is only closing (fade) while the chosen screen loads; the loop's watchdog bounds this.
-    if (g?.menuUsed && !g.consumed) { await ctx.wait(2); return; }
+    if (g?.menuUsed && !g.consumed && g.kind !== "tour") { await ctx.wait(2); return; }
     if (!ctx.state.exitMenus && !g?.consumed && g) return { stop: "input-required" };
     if (!ctx.state.exitMenus && !g) return { stop: "input-required" };
     await ctx.input("B", { expect: (r) => r.screen !== "start-menu", within: 300, retry: 2, label: "close START" }); // input: start-menu
@@ -98,6 +119,12 @@ export const fieldHandlers = {
   "field-free": async (ctx) => {
     const g = ctx.goal;
     if (g?.kind === "use-item" && g.consumed) { await ctx.wait(4); return; } // the drive's until() decides when the field has stayed free
+    if (g?.kind === "tour") {
+      if (g.started) return { done: "tour-over" };
+      g.started = true;
+      await ctx.input("START", { expect: (r) => r.screen === "start-menu", within: 120, retry: 2, label: "open START" }); // input: field-free
+      return;
+    }
     if (g && !g.consumed && g.kind === "use-item" || g?.kind === "save") {
       if (g.started) return { stop: g.kind === "save" ? "save-menu-closed" : "item-menu-closed", info: { goal: g.kind } };
       g.started = true;
