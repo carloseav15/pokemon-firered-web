@@ -2,6 +2,7 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { prelude } from "./lib.mjs";
 import { routeHelpers, MILESTONES, runJob, stopCheckpoint, assertOk, writeEvidence } from "./route2-lib.mjs";
+import { loadCheckpointPath } from "../checkpoint-entry.mjs";
 
 // Route segment 2: Cerulean City -> Bill (SS Ticket) -> Misty -> stolen-house Rocket -> Route 5, on the DRV-03/05 driver API.
 // Milestones (checkpoint at each, field free, verified by reload): rival, bridge, bill, misty, rocket; final route5-arrival.
@@ -19,14 +20,15 @@ const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
 export default async function run(ctx) {
   mkdirSync(out, { recursive: true });
   const entryName = process.env.ROUTE2_ENTRY ?? "cerulean-arrival";
-  const entryPath = `tools/playtest/saves/${entryName}.json`;
+  const entryPath = process.env.ROUTE2_ENTRY_PATH ?? `tools/playtest/saves/${entryName}.json`;
   const entryBytes = readFileSync(entryPath), entry = JSON.parse(entryBytes.toString("utf8"));
   const base = process.env.PW_BASE ?? "http://localhost:5173/";
   const prefix = `${prelude}${routeHelpers}`;
   const evidence = { entry: { name: entryName, sha256: createHash("sha256").update(entryBytes).digest("hex"), money: entry.money,
     bag: entry.bag.items, party: entry.party.filter(m => m.species).map(m => [m.species, m.level, m.hp, [...m.moves], [...m.pp]]), saved: entry.gameStats[0] }, legs: [], checkpoints: [] };
 
-  evidence.entryReady = assertOk("entry ready", await ctx.loadSave(entryName));
+  const loaded = process.env.ROUTE2_ENTRY_PATH ? (await loadCheckpointPath(ctx, entryPath, base)).ready : await ctx.loadSave(entryName);
+  evidence.entryReady = assertOk("entry ready", loaded);
   evidence.entryCheck = await ctx.runEval(`${prefix}
     H.battleDefaults = { mode: "auto", slot: 0 };
     window.__logMark = H.log.length;
@@ -49,7 +51,7 @@ export default async function run(ctx) {
       if (!hits[key] || done.has(key)) continue;
       done.add(key);
       try {
-        const cp = await stopCheckpoint(ctx, { name: `route2-${key}-${stamp}`, dir: exportDir, kind: `route segment 2 milestone checkpoint (${key}); route not PASS`,
+        const cp = await stopCheckpoint(ctx, { name: `route2-${key}-${stamp}`, dir: exportDir, movementOptions: { recovery: true }, kind: `route segment 2 milestone checkpoint (${key}); route not PASS`,
           provenance: { ...provenance, milestone: key }, evidence, base, prefix });
         evidence.milestones.push({ key, path: cp.path, state: cp.state });
       } catch (e) { evidence.milestones.push({ key, error: String(e.message ?? e).slice(0, 400) }); }
@@ -98,7 +100,7 @@ export default async function run(ctx) {
     // Intermediate checkpoint only through the game's own SAVE; its failure never hides the route stop.
     evidence.stop = { message: String(stopError.message), checkpoint: null };
     try {
-      const cp = await stopCheckpoint(ctx, { name: `route2-stop-${stamp}`, dir: exportDir, provenance: { ...provenance, stopReason: String(stopError.message).slice(0, 300) }, evidence, base, prefix });
+      const cp = await stopCheckpoint(ctx, { name: `route2-stop-${stamp}`, dir: exportDir, movementOptions: { recovery: true }, provenance: { ...provenance, stopReason: String(stopError.message).slice(0, 300) }, evidence, base, prefix });
       evidence.stop.checkpoint = cp.path;
     } catch (e2) { evidence.stop.checkpointError = String(e2.message ?? e2).slice(0, 500); evidence.stop.checkpointFailure = e2.result ?? null; }
     writeEvidence(out, evidence);
@@ -107,7 +109,7 @@ export default async function run(ctx) {
   }
 
   // Route 5 arrival: same flow, destination route5-arrival (exclusive).
-  const cp = await stopCheckpoint(ctx, { name: "route5-arrival", dir: exportDir, kind: "Route 5 arrival checkpoint", evidence, base, prefix,
+  const cp = await stopCheckpoint(ctx, { name: "route5-arrival", dir: exportDir, movementOptions: { recovery: true }, kind: "Route 5 arrival checkpoint", evidence, base, prefix,
     provenance: { ...provenance, method: "Cerulean: rival, Nugget Bridge + Rocket, Route 25, Bill (Yes/No, PC, SS Ticket), Misty, stolen-house Rocket, south exit to Route 5; START>SAVE" } });
   const a = await ctx.runEval(`${prefix} return { ...status(), reached: reached(status()) };`);
   if (!(a.st.map === "MAP_ROUTE5" && MILESTONES.every(k => a.reached[k]))) throw new Error("persistence lost milestone/map: " + JSON.stringify(a.reached) + " " + a.st.map);

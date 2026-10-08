@@ -812,6 +812,7 @@ export const H = {
     for (const [name, ox, oy] of [["U", 0, 1], ["L", 1, 0], ["R", -1, 0], ["D", 0, -1]]) {
       if (this.bfs(x + ox + 7, y + oy + 7) === null) continue;
       const r = await this.goto(x + ox, y + oy);
+      if (r.note && r.note !== "no path") return r;
       if (!r.note && r.x === x + ox && r.y === y + oy) {
         await this.face(name);
         return this.interact();

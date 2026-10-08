@@ -86,7 +86,8 @@
     "play:server": "vite --config tools/playtest/vite.playtest.config.mjs",
     "play:determinism": "node tools/playtest/determinism.mjs",
     "play:smoke": "node tools/playtest/smoke/run.mjs",
-    "viewer:index": "python3 tools/viewer/world_index.py"
+    "viewer:index": "python3 tools/viewer/world_index.py",
+    "play:cerulean": "node tools/playtest/cerulean.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

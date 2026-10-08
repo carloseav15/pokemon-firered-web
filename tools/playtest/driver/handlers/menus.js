@@ -49,6 +49,10 @@ export const menuHandlers = {
       g.targetChosen = true;
       return;
     }
+    // A medicine turn can end with the foe knocking the active out. Hand the forced
+    // replacement back to the outer battle loop; B cannot cancel SEND_OUT.
+    if (g?.consumed && d.inBattle && d.action === H.C.PARTY_ACTION_SEND_OUT && d.controller === "WaitForMonSelection")
+      return { done: "medicine-turn-ended-with-forced-replacement" };
     if (g?.consumed) { // the result message is shown over the party menu: B acknowledges without selecting another member
       await ctx.input("B", { expect: (r) => r.screen !== "party-menu" || r.details.tasks.join() !== d.tasks.join(), within: 300, retry: 1, label: "acknowledge medicine" }); // input: party-menu
       return;

@@ -4,12 +4,14 @@
 // Usage: PW_BASE=http://127.0.0.1:<port>/ node tools/playtest/gate.mjs [job-name ...]
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 const JOBS = [
   ["driver-control", 300000], ["driver-save", 300000], ["driver-navigation", 300000],
   ["driver-strategy", 300000], ["driver-auto-battle", 300000], ["driver-switch", 300000], ["driver-recovery", 300000],
   ["driver-futile-heal", 300000], ["driver-no-items", 600000], ["driver-yesno", 300000], ["driver-buy", 300000], ["driver-buy-cerulean", 300000],
   ["screen-catalog", 1500000], ["driver-learn-move", 600000], ["driver-evolution", 600000], ["driver-assess", 300000],
+  ["driver-medicine-faint", 300000],
   ["mtmoon-checkpoints", 600000, { MTMOON_STAMP: "20261006233746" }],
 ];
 // Static checks first: no generic "press A" in the driver, policy and strategy cases.
@@ -22,11 +24,13 @@ const only = process.argv.slice(2);
 const selected = only.length ? JOBS.filter(([name]) => only.includes(name)) : JOBS;
 const base = process.env.PW_BASE ?? "http://localhost:5173/";
 let failed = 0;
+mkdirSync("/tmp/pw/gate", { recursive: true });
 for (const [name, timeout, extra = {}] of selected) {
   const t0 = Date.now();
   const r = spawnSync("node", ["tools/playtest/pw.mjs", resolve("tools/playtest/smoke", `${name}.job.mjs`), `/tmp/pw/gate/${name}`], {
     env: { ...process.env, PW_BASE: base, PW_TIMEOUT_MS: String(timeout), ...extra }, encoding: "utf8", timeout: timeout + 60000,
   });
+  writeFileSync(`/tmp/pw/gate/${name}.log`, `${r.stdout ?? ""}${r.stderr ?? ""}`);
   const line = `${r.stdout ?? ""}`.split(/\r?\n/).reverse().find(l => l.trim().startsWith("{"));
   let payload; try { payload = JSON.parse(line); } catch { payload = { ok: false, error: (r.stderr || r.stdout || String(r.error)).slice(-400) }; }
   const ok = payload.ok && r.status === 0;

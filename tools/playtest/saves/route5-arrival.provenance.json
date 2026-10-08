@@ -1,0 +1,259 @@
+{
+  "origin": "/tmp/pokemon-cerulean-progress-20261008/saves/route2-stop-20261008174538.json",
+  "originSha256": "555a70c08f7aa336c457cafa52a0f8d422cd0cdfd1b40c8c28405ef3959c86d1",
+  "job": "tools/playtest/smoke/route2.job.mjs",
+  "aids": "none: no Pokemon/items/money/flags written by code; auto battle policy; potions and Center healing by the game's own menus",
+  "method": "Cerulean: rival, Nugget Bridge + Rocket, Route 25, Bill (Yes/No, PC, SS Ticket), Misty, stolen-house Rocket, south exit to Route 5; START>SAVE",
+  "kind": "Route 5 arrival checkpoint",
+  "name": "route5-arrival",
+  "sha256": "5d953441691f1655db0e7e3dd551b195651b18b75eaed6baf1048752fa7ca5dc",
+  "driver": {
+    "source": "in-game-SAVE",
+    "before": {
+      "map": "MAP_ROUTE5",
+      "x": 29,
+      "y": 1,
+      "money": 7768,
+      "party": [
+        {
+          "species": 17,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 26,
+          "exp": 13565,
+          "hp": 58,
+          "status": 0,
+          "moves": [
+            33,
+            28,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            15,
+            31,
+            30
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 21,
+          "exp": 7414,
+          "hp": 57,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            10
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 110,
+            "quantity": 1
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          },
+          {
+            "item": 363,
+            "quantity": 1
+          },
+          {
+            "item": 265,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 291,
+            "quantity": 1
+          },
+          {
+            "item": 316,
+            "quantity": 1
+          },
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 3,
+        "warpId": -1,
+        "x": 22,
+        "y": 20
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 3,
+        "warpId": -1,
+        "x": 30,
+        "y": 12
+      },
+      "saved": 24
+    },
+    "after": {
+      "map": "MAP_ROUTE5",
+      "x": 29,
+      "y": 1,
+      "money": 7768,
+      "party": [
+        {
+          "species": 17,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 26,
+          "exp": 13565,
+          "hp": 58,
+          "status": 0,
+          "moves": [
+            33,
+            28,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            15,
+            31,
+            30
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 21,
+          "exp": 7414,
+          "hp": 57,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            10
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 110,
+            "quantity": 1
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          },
+          {
+            "item": 363,
+            "quantity": 1
+          },
+          {
+            "item": 265,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 291,
+            "quantity": 1
+          },
+          {
+            "item": 316,
+            "quantity": 1
+          },
+          {
+            "item": 327,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 3,
+        "warpId": -1,
+        "x": 22,
+        "y": 20
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 3,
+        "warpId": -1,
+        "x": 30,
+        "y": 12
+      },
+      "saved": 25
+    },
+    "prompts": [
+      {
+        "frame": 4950,
+        "callback": "SaveDialogCB_AskSaveHandleInput"
+      },
+      {
+        "frame": 5187,
+        "callback": "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"
+      }
+    ]
+  }
+}

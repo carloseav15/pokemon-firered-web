@@ -248,6 +248,20 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    - `frDebug.state()`, `frDebug.save`, `frDebug.rom`, `window.frGame`
    Usa `?fr=new`/`?fr=continue`, revisa la consola y captura pantalla como prueba.
 
+   **Recorrido reanudable de Celeste:** `npm run play:server` y, en otra terminal,
+   `npm run play:cerulean`. Encadena entrenamiento natural, rival, Puente Pepita,
+   Bill, Misty, Rocket y llegada a Ruta 5. Guarda rondas e hitos por el menú real,
+   verifica CONTINUAR y movimiento; importa los bytes guardados sin conceder
+   niveles, objetos ni victorias. Los resultados y checkpoints quedan en
+   `tools/playtest/runs/cerulean/` (local, ignorado por Git); repetir el comando
+   retoma el último checkpoint verificado. Para otra salida:
+   `npm run play:cerulean -- /ruta/absoluta`; `TRAIN_ENTRY_PATH=/ruta/guardado.json`
+   elige una entrada explícita. El checkpoint comprobado de esta entrega está
+   en `tools/playtest/saves/route5-arrival.json`, con procedencia y hash.
+   La entrada por defecto `cerulean-arrival` es un guardado importado: este job
+   no acredita el recorrido anterior, Liga/Sevii ni todas las opciones. Una
+   interrupción durante combate conserva el último hito, no un savestate.
+
    **Modo manual y replay (fase 1, 5de398c3):** `tools/playtest/replay.html` abre un
    harness separado; `await frReplay.launch({timer1Low:12345})` inicia una partida
    nueva con datos iniciales PREPARED, semilla antes del boot, teclado externo

@@ -21,7 +21,7 @@ export const assertOk = (label, r) => { if (failed(r)) throw new DriverFailure(l
  * wait from Node. On Node-side deadline the job is cancelled; the cancellation result is returned, never hidden.
  * Returns the job output: a driver failure/budget/cancel arrives as { ok:false, status, reason }.
  */
-export async function runJob(ctx, body, { maxFrames = 150000, timeoutMs = 110000, deadlineMs = timeoutMs + 15000, prefix = "" } = {}) {
+export async function runJob(ctx, body, { maxFrames = 150000, timeoutMs = 110000, deadlineMs = timeoutMs + 15000, prefix = "", onProgress } = {}) {
   const started = await ctx.runEval(`${prefix}
     return H.job(async () => { ${body} }, ${JSON.stringify({ maxFrames, timeoutMs })});`);
   if (started !== "started") throw new DriverFailure("job did not start", started);
@@ -30,6 +30,7 @@ export async function runJob(ctx, body, { maxFrames = 150000, timeoutMs = 110000
   for (;;) {
     const s = await ctx.runEval(`const j = H.jobStatus(); return { done: j.done, out: j.out ?? null, frames: j.frames ?? null };`);
     if (s.done) return s.out;
+    if (onProgress) await onProgress(s);
     if (!cancelled && Date.now() - t0 > deadlineMs) { cancelled = true; await ctx.runEval(`return H.cancelJob();`); }
     await new Promise(r => setTimeout(r, 400));
     if (Date.now() - t0 > deadlineMs + 30000) throw new Error("job did not stop after cancellation");
@@ -153,13 +154,13 @@ export const helpers = `
  * -> only then record it -> reload with ?fr=continue -> same semantic snapshot -> real movement.
  * Every failure throws; nothing is recorded unless the export verified the bytes. Never overwrites.
  */
-export async function stopCheckpoint(ctx, { name, dir, path, provenance = {}, kind = "route-stop checkpoint (not Cerulean arrival, route not PASS)", evidence, base, prefix = "" }) {
+export async function stopCheckpoint(ctx, { name, dir, path, provenance = {}, kind = "route-stop checkpoint (not Cerulean arrival, route not PASS)", evidence, base, prefix = "", movementOptions = {} }) {
   const target = path ?? join(dir, `${name}.json`);
   const move = await ctx.runEval(`${prefix}
     const b = H.st();
     for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
       if (H.bfs(b.x + dx + 7, b.y + dy + 7) === null) continue;
-      const r = await H.goto(b.x + dx, b.y + dy);
+      const r = await H.goto(b.x + dx, b.y + dy, ${JSON.stringify(movementOptions)});
       if (r.ok !== false && r.x === b.x + dx && r.y === b.y + dy) return { ok: true, before: { x: b.x, y: b.y }, after: { x: r.x, y: r.y } };
     }
     return { ok: false, status: "blocked", reason: "no-real-movement", state: H.observe() };`);
@@ -184,7 +185,7 @@ export async function stopCheckpoint(ctx, { name, dir, path, provenance = {}, ki
     for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
       const x = b.x + dx, y = b.y + dy;
       if (wp.has(x + "," + y) || H.bfs(x + 7, y + 7) === null) continue;
-      const r = await H.goto(x, y);
+      const r = await H.goto(x, y, ${JSON.stringify(movementOptions)});
       if (r.ok !== false && r.map === b.map && r.x === x && r.y === y) return { ok: true, from: { x: b.x, y: b.y }, to: { x, y } };
     }
     return { ok: false, status: "blocked", reason: "no-real-movement-after-continue", state: H.observe() };`);

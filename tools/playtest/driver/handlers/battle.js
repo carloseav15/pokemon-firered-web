@@ -3,6 +3,7 @@
 // (H.battle() creates it). Cursor positions are read from the game (gActionSelectionCursor, gMoveSelectionCursor,
 // gBattleCommunication[CURSOR_POSITION], gPartyMenu.slotId) and every press states its postcondition.
 import { DriverStop } from "../loop.js";
+import { hpItem } from "../../strategy.js";
 
 // Cells of the 2x2 action/move menus: 0 top-left, 1 top-right, 2 bottom-left, 3 bottom-right.
 export const gridStep = (cur, want) => ({ button: (cur & 1) < (want & 1) ? "R" : (cur & 1) > (want & 1) ? "L" : (cur >> 1) < (want >> 1) ? "D" : "U" });
@@ -14,7 +15,7 @@ export const battleHandlers = {
     if (b.decision?.action === "switch" && mons[0].personality === b.decision.personality) b.decision = null;
     if (b.mode === "auto" && !b.decision) {
       const active = G.gBattlerPartyIndexes[0];
-      const key = JSON.stringify([mons[1].species, mons[1].hp, mons[1].status1]);
+      const key = JSON.stringify([active, mons[1].species, mons[1].hp, mons[1].status1]);
       b.unchanged = key === b.lastKey ? b.unchanged + 1 : 0;
       b.incoming = b.lastHp?.active === active ? Math.max(0, b.lastHp.hp - mons[0].hp) : 0;
       b.lastHp = { active, hp: mons[0].hp }; b.lastKey = key;
@@ -29,6 +30,14 @@ export const battleHandlers = {
         const fieldSlot = H.policyMons().find(m => m.personality === personality && m.otId === otId)?.slot ?? -1;
         const used = await H.useItem(d.item, fieldSlot, { battle: true });
         ctx.trace.at(-1).used = used;
+        // Measure damage from HP after the healing effect, not from pre-item HP.
+        // Otherwise a Potion that merely offsets a hit looks like zero incoming
+        // damage and the policy repeats ineffective healing until its budget ends.
+        const beforeActive = used.before?.party.find(m => m.slot === active);
+        if (used.ok && beforeActive) {
+          const restored = fieldSlot === active ? hpItem(beforeActive, [{ item: d.item, quantity: 1 }], H.C)?.restores ?? 0 : 0;
+          b.lastHp = { active, hp: beforeActive.hp + restored };
+        }
         b.decision = null;
         if (!used.ok) return { stop: used.note ?? used.reason };
         return;
