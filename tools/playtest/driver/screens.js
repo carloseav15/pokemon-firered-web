@@ -8,7 +8,7 @@
 export const CATALOG = [
   "quest-log", "battle-transition", "whiteout-message", "text-wait", "evolution", "evolution-yesno", "summary-forget-move", "summary-view", "naming-screen",
   "shop-menu", "shop-loading", "shop-list", "shop-quantity", "shop-confirm", "shop-message",
-  "bag-context", "bag-menu", "item-use-animation", "party-menu", "options-menu", "loading-screen",
+  "tm-case-closing", "tm-case-context", "tm-case-list", "party-yesno", "bag-context", "bag-menu", "item-use-animation", "party-menu", "options-menu", "loading-screen",
   "battle-action", "battle-move", "battle-target", "battle-learn-yesno", "battle-yesno", "battle-nickname-yesno", "battle-levelup-box", "battle-busy",
   "yes-no", "multichoice", "pc-menu", "save-prompt", "save-busy", "start-menu",
   "dialog-wait", "dialog", "field-free", "field-busy", "map-loading",
@@ -83,6 +83,11 @@ const RULES = [
   ["shop-list", (d, H) => d.cb2 === "CB2_BuyMenu" && has(d, "Task_BuyMenu") ? shopList(H) : null],
   ["shop-menu", d => has(d, "Task_ShopMenu") ? {} : null],
   // Bag: a context menu (USE/GIVE/TOSS/CANCEL) over the list, or the list itself with its pocket and cursor.
+  // TM Case (tm_case.c): the list, its USE/GIVE/EXIT context menu, and the party menu "learn which?" prompts that follow.
+  ["tm-case-closing", d => has(d, "Task_FadeOutAndCloseTMCase") || has(d, "Task_BeginFadeOutFromTMCase") || hasAny(d, /^Task_SelectedTMHM_/) ? {} : null],
+  ["tm-case-context", d => d.cb2 === "CB2_Idle" && has(d, "Task_ContextMenu_HandleInput") ? { cursor: null } : null],
+  ["tm-case-list", (d, H) => d.cb2 === "CB2_Idle" && has(d, "Task_HandleListInput") ? tmCaseList(H) : null],
+  ["party-yesno", (d, H) => has(d, "Task_HandleReplaceMoveYesNoInput") ? { cursor: H.MENU.Menu_GetCursorPos() } : null],
   ["bag-context", (d, H) => d.cb2 === "CB2_BagMenuRun" && hasAny(d, /^Task_(FieldItemContextMenuHandleInput|ItemContext|ItemMenuAction)/) ? bagState(H, d) : null],
   ["bag-menu", (d, H) => d.cb2 === "CB2_BagMenuRun" ? bagState(H, d) : null],
   // Item-use animation over the party (HP bar fill / effect message): runs by itself, accepts no input.
@@ -139,6 +144,15 @@ function shopList(H) {
 function shopQuantity(H) {
   const t = H.T.tasks.tasks.find(x => x.isActive && x.func.name === "Task_BuyHowManyDialogueHandleInput");
   return { item: t?.data[5] ?? null, quantity: t?.data[1] ?? null };
+}
+/** TM Case list: the list menu (id kept privately by tm_case.c) says which row the cursor is on; rows are the sorted pocket (HMs first). */
+function tmCaseList(H) {
+  let row = null;
+  for (let id = 0; id < 16 && row === null; id++) {
+    try { const lm = H.LM.listMenuOf(id); if (lm?.template?.items?.length) row = lm.cursorPos + lm.itemsAbove; } catch { /* no such list */ }
+  }
+  const slots = (window.frDebug.save.save.bag.tmCase ?? []).filter(e => e.quantity > 0);
+  return { row, item: row === null ? null : slots[row]?.item ?? null, items: slots.map(e => e.item) };
 }
 function bagState(H, d) {
   const s = H.B.gBagMenuState, pocket = s.pocket;

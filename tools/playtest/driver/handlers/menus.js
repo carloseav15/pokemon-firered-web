@@ -8,6 +8,20 @@ const OPEN_POCKET_ITEMS = (H) => H.C.OPEN_BAG_ITEMS;
 export const menuHandlers = {
   "bag-menu": async (ctx, rec) => {
     const H = ctx.H, g = ctx.goal, B = H.B, st = B.gBagMenuState;
+    if (g?.kind === "teach-move" && !g.consumed) {
+      // HMs/TMs are used through the TM Case, a key item (item_menu.c ItemUseOutOfBattle_TMCase).
+      if (st.pocket !== H.C.OPEN_BAG_KEYITEMS) {
+        const p0 = st.pocket;
+        await ctx.input(p0 > H.C.OPEN_BAG_KEYITEMS ? "L" : "R", { expect: () => st.pocket !== p0, within: 200, retry: 2, label: "key items pocket" }); // input: bag-menu
+        return;
+      }
+      const index = window.frDebug.save.save.bag.keyItems.filter(e => e.quantity > 0).findIndex(e => e.item === H.C.ITEM_TM_CASE);
+      if (index < 0) return { stop: "tm-case-not-in-bag" };
+      const cursor = () => st.cursorPos[st.pocket] + st.itemsAbove[st.pocket];
+      await ctx.cursorTo(index, cursor, (cur, want) => ({ button: cur < want ? "D" : "U" }), { limit: 20 });
+      await ctx.input("A", { expect: (r) => r.screen === "bag-context", within: 200, retry: 1, label: "select TM Case" }); // input: bag-menu
+      return;
+    }
     if (g?.kind !== "use-item" || g.consumed) {
       if (!ctx.state.exitMenus && !g?.consumed) return { stop: "input-required" };
       await ctx.input("B", { expect: (r) => r.screen !== "bag-menu", within: 300, retry: 2, label: "close bag" }); // input: bag-menu
@@ -28,6 +42,11 @@ export const menuHandlers = {
 
   "bag-context": async (ctx) => {
     const g = ctx.goal;
+    if (g?.kind === "teach-move" && !g.consumed) {
+      const transient = ["bag-context", "bag-menu", "tm-case-list", "tm-case-closing", "loading-screen", "map-loading", "unknown"];
+      await ctx.input("A", { expect: (r) => r.screen === "tm-case-list", fail: (r) => !transient.includes(r.screen) ? "wrong-screen-after-tm-case" : null, within: 600, retry: 1, label: "USE TM Case" }); // input: bag-context
+      return;
+    }
     if (g?.kind !== "use-item" || g.consumed) {
       await ctx.input("B", { expect: (r) => r.screen !== "bag-context", within: 200, retry: 2, label: "close item menu" }); // input: bag-context
       return;
@@ -38,6 +57,16 @@ export const menuHandlers = {
 
   "party-menu": async (ctx, rec) => {
     const H = ctx.H, g = ctx.goal, d = rec.details, PM = H.PM;
+    if (g?.kind === "teach-move" && !g.consumed) {
+      // Choose the member (Task_HandleChooseMonInput); afterwards the messages/prompts run as their own screens.
+      if (g.targetChosen) { await ctx.wait(4); return; }
+      const slot = H.dbgParty().findIndex(m => m.personality === g.personality && m.otId === g.otId);
+      if (slot < 0) return { stop: "teach-target-missing" };
+      await ctx.cursorTo(slot, () => PM.gPartyMenu.slotId, () => ({ button: "D" }), { limit: 14 });
+      await ctx.input("A", { expect: (r) => r.screen !== "party-menu" || r.details.tasks.join() !== d.tasks.join(), within: 300, retry: 1, label: "choose member to teach" }); // input: party-menu
+      g.targetChosen = true;
+      return;
+    }
     if (g?.kind === "use-item" && !g.consumed) {
       // After the target was chosen the animation and the party refresh (Task_SetSacredAshCB etc.) run before the bag count drops.
       if (g.targetChosen) { await ctx.wait(4); return; }
@@ -61,6 +90,40 @@ export const menuHandlers = {
     if (!ctx.state.exitMenus) return { stop: "input-required" };
     if (d.submenu) { await ctx.input("B", { expect: (r) => !r.details.submenu, within: 200, retry: 1, label: "close member menu" }); return; } // input: party-menu
     await ctx.input("B", { expect: (r) => r.screen !== "party-menu", within: 400, retry: 2, label: "close party menu" }); // input: party-menu
+  },
+
+  // TM Case list: put the cursor on the goal's TM/HM and open its USE/GIVE/EXIT menu; otherwise back out.
+  "tm-case-list": async (ctx, rec) => {
+    const g = ctx.goal;
+    if (g?.kind !== "teach-move" || g.consumed) {
+      if (!ctx.state.exitMenus && !g?.consumed) return { stop: "input-required" };
+      await ctx.input("B", { expect: (r) => r.screen !== "tm-case-list", within: 400, retry: 2, label: "close TM Case" }); // input: tm-case-list
+      return;
+    }
+    const want = rec.details.items.indexOf(g.item);
+    if (want < 0) return { stop: "tm-not-in-case", info: { item: g.item, items: rec.details.items } };
+    if (rec.details.row === null) { await ctx.wait(4); return; }
+    await ctx.cursorTo(want, () => ctx.H.recognize().details.row, (cur, w) => ({ button: cur < w ? "D" : "U" }), { limit: 40 });
+    await ctx.input("A", { expect: (r) => r.screen === "tm-case-context", within: 200, retry: 1, label: "select TM/HM" }); // input: tm-case-list
+  },
+  // USE is the first entry; the party menu in the learn mode must follow.
+  "tm-case-context": async (ctx) => {
+    const g = ctx.goal;
+    if (g?.kind !== "teach-move" || g.consumed) {
+      await ctx.input("B", { expect: (r) => r.screen !== "tm-case-context", within: 200, retry: 2, label: "close TM menu" }); // input: tm-case-context
+      return;
+    }
+    const transient = ["tm-case-context", "tm-case-list", "tm-case-closing", "party-menu", "loading-screen", "map-loading", "unknown", "text-wait"];
+    await ctx.input("A", { expect: (r) => r.screen === "party-menu", fail: (r) => !transient.includes(r.screen) ? "wrong-screen-after-tm-use" : null, within: 400, retry: 1, label: "USE TM/HM" }); // input: tm-case-context
+  },
+  // "Make it forget another move?" (Task_HandleReplaceMoveYesNoInput): YES leads to the forget-move summary screen.
+  "party-yesno": async (ctx) => {
+    const g = ctx.goal;
+    if (g?.kind !== "teach-move") return { stop: "unexpected-party-yesno" };
+    const yes = g.forgetSlot >= 0;
+    if (!yes) await ctx.unobserved("D", "Yes/No cursor opens on YES; NO is the second entry", 12);
+    await ctx.input(yes ? "A" : "B", { expect: (r) => r.screen !== "party-yesno", within: 120, retry: 1, label: yes ? "YES: forget a move" : "NO: do not learn" }); // input: party-yesno
+    if (yes) ctx.state.forget = { slot: g.forgetSlot, move: g.move, chosen: false };
   },
 
   // Summary screen opened by START > POKEMON > SUMMARY (read-only): wait while loading, then B.

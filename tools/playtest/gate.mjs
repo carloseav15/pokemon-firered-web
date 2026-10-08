@@ -11,7 +11,7 @@ const JOBS = [
   ["driver-strategy", 300000], ["driver-auto-battle", 300000], ["driver-switch", 300000], ["driver-recovery", 300000],
   ["driver-futile-heal", 300000], ["driver-no-items", 600000], ["driver-yesno", 300000], ["C7-whiteout", 300000], ["driver-buy", 300000], ["driver-buy-cerulean", 300000],
   ["screen-catalog", 1500000], ["driver-learn-move", 600000], ["driver-evolution", 600000], ["driver-assess", 300000],
-  ["driver-medicine-faint", 300000],
+  ["driver-medicine-faint", 300000], ["driver-teach-move", 300000],
   ["mtmoon-checkpoints", 600000, { MTMOON_STAMP: "20261006233746" }],
 ];
 // Static checks first: no generic "press A" in the driver, policy and strategy cases.

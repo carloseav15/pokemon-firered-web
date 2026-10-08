@@ -7,6 +7,7 @@ import { join, resolve } from "node:path";
 import { loadCheckpointPath } from "../checkpoint-entry.mjs";
 import { prelude } from "./lib.mjs";
 import { routeHelpers, runJob, stopCheckpoint, writeEvidence } from "./route2-lib.mjs";
+import { warpHelpers } from "./warp-lib.mjs";
 
 const shipHelpers = `
   const SS = {
@@ -16,38 +17,8 @@ const shipHelpers = `
   };
   const snap = () => ({ status: status(), ss: SS.flags() });
   const reachedShip = () => { const s = SS.flags(); return s.hm01Flag && s.hm01 >= 1 && s.rival.some(Boolean); };
-  // Step onto a warp tile (planner target); stairs/arrow warps need one more press in some direction.
-  const takeWarp = async (x, y, dest, opts) => {
-    // Leaving the ship plays the departure cutscene, which returns to Vermilion by itself once the HM01 is owned.
-    const arrived = () => H.st().map === dest || (reachedShip() && H.st().map === "MAP_VERMILION_CITY");
-    // A door tile (MB_WARP_DOOR) is impassable: stand next to it and press towards it (TryDoorWarp).
-    if (window.frGame.overworld.map.collisionAt(x + 7, y + 7)) {
-      const side = [[0, 1, "U"], [0, -1, "D"], [-1, 0, "R"], [1, 0, "L"]].find(([dx, dy]) => H.bfs(x + dx + 7, y + dy + 7) !== null);
-      if (!side) return { ...H.st(), note: "no reachable side of door (" + x + "," + y + ")" };
-      const w = await walk(x + side[0], y + side[1], opts);
-      if (w.note && w.note !== "map changed") return w;
-      window.__from = H.st().map;
-      await H.exit(side[2], 2, opts);
-      await H.until(() => arrived() && H.fieldFree(), null, 1500);
-      return arrived() ? H.st() : { ...H.st(), note: "door warp to " + dest + " failed" };
-    }
-    const r = await walk(x, y, opts);
-    if (r.note && r.note !== "map changed") return r;
-    // Arrow/stair warps fire on a press in their direction while standing on the tile: try the facing direction first.
-    const facing = { 1: "D", 2: "U", 3: "L", 4: "R" }[H.observe().facing];
-    // Directional stairs (MB_*_STAIR_WARP) are entered laterally (field_control_avatar.c TryArrowWarp).
-    const ow = window.frGame.overworld, beh = ow.map.behaviorAt(x + 7, y + 7);
-    const stair = [["L", C.DIR_WEST], ["R", C.DIR_EAST]].find(([, d]) => ow.player.IsDirectionalStairWarpMetatileBehavior(beh, d))?.[0];
-    for (const dir of [stair, facing, "U", "D", "L", "R"].filter((d, i, a) => d && a.indexOf(d) === i)) {
-      if (arrived()) break;
-      if (H.st().map === (window.__from ?? "") && H.fieldFree() && H.st().x === x && H.st().y === y) {
-        await H.exit(dir, 1, opts);
-        await H.until(() => arrived(), null, 400);
-      }
-    }
-    await H.until(() => arrived() && H.fieldFree(), null, 1500);
-    return arrived() ? H.st() : { ...H.st(), note: "warp to " + dest + " failed" };
-  };
+  ${warpHelpers}
+  window.__alsoArrived = () => reachedShip() && H.st().map === "MAP_VERMILION_CITY";
   window.__shipStep = async () => {
     const s = H.st(), m = s.map, f = SS.flags(), opts = { recovery: false };
     window.__from = m;

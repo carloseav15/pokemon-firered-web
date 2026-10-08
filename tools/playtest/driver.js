@@ -52,6 +52,7 @@ export const H = {
     this.MON = await this.mod("/src/fr/pokemon/mon.ts");
     this.CMDS = await this.mod("/src/fr/battle/cmds/index.ts");
     this.MENU = await this.mod("/src/fr/hw/menu.ts");
+    this.MON_PROGRESS = await this.mod("/src/fr/menus/monProgress.ts");
     this.LM = await this.mod("/src/fr/hw/listMenu.ts");
     this.TXT = await this.mod("/src/fr/hw/text.ts");
     this.PSA = await this.mod("/src/fr/pokemonSpecialAnim.ts");
@@ -382,6 +383,41 @@ export const H = {
     this.log.push({ medicine: result });
     return result;
   },
+  /**
+   * Teach a TM/HM from the bag through the real menus: START > BAG > TM Case (key item) > the TM/HM > USE > party member,
+   * and, when the member already knows four moves, YES > the move to forget on the summary screen (forgetSlot, 0..3).
+   * forgetSlot -1 answers NO to the replacement prompt. Verified by the move list of that member (identity: personality + OT id).
+   */
+  async teachMove(item, target, { forgetSlot = -1, maxFrames = 40000 } = {}) {
+    const before = this.resources(), mon = dbg().save.save.party[target];
+    const move = this.tmhmMove(item);
+    if (!mon?.species || mon.isEgg || !move || !dbg().save.save.bag.tmCase.some(e => e.item === item && e.quantity > 0))
+      return { ok: false, status: "blocked", reason: "invalid-request", note: "TM/HM unavailable or invalid target", before };
+    if (mon.moves.includes(move)) return { ok: false, status: "blocked", reason: "already-known", note: "move already known", before };
+    if (!this.fieldFree()) return { ok: false, status: "blocked", reason: "field-not-free", note: "field not free", before };
+    const movesBefore = [...mon.moves], full = mon.moves.filter(Boolean).length >= 4;
+    if (full && !(forgetSlot >= 0 && forgetSlot < 4)) return { ok: false, status: "blocked", reason: "needs-forget-slot", note: "member knows four moves: forgetSlot required", before };
+    const goal = { kind: "teach-move", item, move, personality: mon.personality, otId: mon.otId, forgetSlot: full ? forgetSlot : -1,
+      consumed: false, started: false, menuUsed: false, targetChosen: false };
+    const learnt = () => dbg().save.save.party.find(m => m.personality === mon.personality && m.otId === mon.otId)?.moves.includes(move);
+    const r = await drive(this, { goal, state: { exitMenus: true }, label: "teach-move", maxFrames,
+      until: (rec) => {
+        if (!goal.consumed && learnt()) goal.consumed = true;
+        if (!goal.consumed) return false;
+        if (rec.screen !== "field-free") { goal.freeSince = null; return false; }
+        goal.freeSince ??= window.frGame.frameCount;
+        return window.frGame.frameCount - goal.freeSince >= 45;
+      } });
+    const after = dbg().save.save.party.find(m => m.personality === mon.personality && m.otId === mon.otId);
+    const ok = r.ok && learnt() && (!full || !after.moves.includes(movesBefore[forgetSlot]));
+    const result = { ok, status: ok ? "success" : "failure", note: ok ? null : r.ok ? "move was not learnt as requested" : (r.note ?? r.reason), item, move, target,
+      moves: { before: movesBefore, after: after ? [...after.moves] : null }, before, after: this.resources() };
+    if (!r.ok) { result.driver = { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump }; await this.escapeMenus(); }
+    this.log.push({ teach: result });
+    return result;
+  },
+  /** Move taught by a TM/HM item (tm_case.c / item.c ItemIdToBattleMoveId). */
+  tmhmMove(item) { return this.MON_PROGRESS.tmhmMove(item) || null; },
   /** Heal before walking; stop for exhausted PP, fainted members or no reserves. Every choice is the policy's (prepare). */
   async prepareStep() {
     if (!this.fieldFree()) return { ok: false, note: "field not free", resources: this.resources() };

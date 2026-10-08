@@ -86,6 +86,10 @@ const CASES = [
   { name: "shop", save: "mart", expect: ["shop-menu", "shop-loading", "shop-list", "shop-quantity", "shop-confirm", "shop-message"], body: `
       const r = await H.buyItem(H.C.ITEM_POTION, 2);
       return r.ok;` },
+  { name: "teach-hm", save: "ssanne-hm01-20261008193359", expect: ["tm-case-list", "tm-case-context", "tm-case-closing", "party-menu", "party-yesno", "summary-forget-move"], body: `
+      // START > BAG > TM Case > HM01 > USE > Ivysaur (four moves) > "forget a move?" YES > summary: forget Growl (slot 1).
+      const r = await H.teachMove(H.C.ITEM_HM01, 1, { forgetSlot: 1 });
+      return { ok: r.ok, note: r.note, moves: r.moves };` },
   { name: "wild-battle-switch", save: "mtmoon-1f", expect: ["battle-transition", "battle-action", "battle-move", "battle-busy", "party-menu"], body: `
       for (let i = 0; i < 200 && !H.inBattle(); i++) await H.walk(i % 2 ? "D" : "U", 1);
       if (!H.inBattle()) throw new Error("no encounter");

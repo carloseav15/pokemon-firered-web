@@ -77,7 +77,7 @@ export const fieldHandlers = {
 
   "start-menu": async (ctx, rec) => {
     const H = ctx.H, g = ctx.goal, game = window.frGame;
-    const want = g?.kind === "use-item" ? 2 : g?.kind === "save" ? 4 : g?.kind === "tour" ? g.entry : null; // start_menu.c STARTMENU_BAG / STARTMENU_SAVE / any entry of a menu tour
+    const want = g?.kind === "use-item" || g?.kind === "teach-move" ? 2 : g?.kind === "save" ? 4 : g?.kind === "tour" ? g.entry : null; // start_menu.c STARTMENU_BAG / STARTMENU_SAVE / any entry of a menu tour
     if (want !== null && !g.menuUsed) {
       const S = await H.mod("/src/fr/save.ts"), SM = await H.mod("/src/fr/startMenu.ts");
       const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(H.C.FLAG_SYS_POKEDEX_GET), pokemonObtained: S.FlagGet(H.C.FLAG_SYS_POKEMON_GET),
@@ -122,14 +122,14 @@ export const fieldHandlers = {
 
   "field-free": async (ctx) => {
     const g = ctx.goal;
-    if (g?.kind === "use-item" && g.consumed) { await ctx.wait(4); return; } // the drive's until() decides when the field has stayed free
+    if ((g?.kind === "use-item" || g?.kind === "teach-move") && g.consumed) { await ctx.wait(4); return; } // the drive's until() decides when the field has stayed free
     if (g?.kind === "tour") {
       if (g.started) return { done: "tour-over" };
       g.started = true;
       await ctx.input("START", { expect: (r) => r.screen === "start-menu", within: 120, retry: 2, label: "open START" }); // input: field-free
       return;
     }
-    if (g && !g.consumed && g.kind === "use-item" || g?.kind === "save") {
+    if (g && !g.consumed && (g.kind === "use-item" || g.kind === "teach-move") || g?.kind === "save") {
       if (g.started) return { stop: g.kind === "save" ? "save-menu-closed" : "item-menu-closed", info: { goal: g.kind } };
       g.started = true;
       await ctx.input("START", { expect: (r) => r.screen === "start-menu", within: 120, retry: 2, label: "open START" }); // input: field-free
