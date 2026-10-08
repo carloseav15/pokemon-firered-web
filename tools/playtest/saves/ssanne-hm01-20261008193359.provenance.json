@@ -1,0 +1,290 @@
+{
+  "origin": "/Users/carancibia/Documents/ChatGPT/pokemon/tools/playtest/saves/vermilion-arrival-20261008190519.json",
+  "originSha256": "62c8c61d95b51f2e3eafb33fb1428807b254ec7551ad3417ff3a5ddc77e45588",
+  "job": "tools/playtest/smoke/ssanne-progress.job.mjs",
+  "aids": "imported entry only; travel, battles, dialogs and healing by UI",
+  "kind": "S.S. Anne rival defeated, HM01 Cut received, back in Vermilion; Cut/Surge not tested",
+  "name": "ssanne-hm01-20261008193359",
+  "sha256": "690082ff5814fd474f7eca4ef084f5a56af70aa009f38e70a87ee2541d4d4e7b",
+  "driver": {
+    "source": "in-game-SAVE",
+    "before": {
+      "map": "MAP_VERMILION_CITY",
+      "x": 15,
+      "y": 8,
+      "money": 2768,
+      "party": [
+        {
+          "species": 17,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 28,
+          "exp": 17427,
+          "hp": 80,
+          "status": 0,
+          "moves": [
+            33,
+            17,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            35,
+            35,
+            30
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 21,
+          "exp": 7414,
+          "hp": 57,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            10
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 110,
+            "quantity": 1
+          },
+          {
+            "item": 22,
+            "quantity": 7
+          },
+          {
+            "item": 14,
+            "quantity": 4
+          },
+          {
+            "item": 18,
+            "quantity": 2
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          },
+          {
+            "item": 363,
+            "quantity": 1
+          },
+          {
+            "item": 265,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 291,
+            "quantity": 1
+          },
+          {
+            "item": 316,
+            "quantity": 1
+          },
+          {
+            "item": 327,
+            "quantity": 1
+          },
+          {
+            "item": 339,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "saved": 26
+    },
+    "after": {
+      "map": "MAP_VERMILION_CITY",
+      "x": 15,
+      "y": 8,
+      "money": 2768,
+      "party": [
+        {
+          "species": 17,
+          "personality": 3971729400,
+          "otId": 3940725607,
+          "level": 28,
+          "exp": 17427,
+          "hp": 80,
+          "status": 0,
+          "moves": [
+            33,
+            17,
+            16,
+            98
+          ],
+          "pp": [
+            35,
+            35,
+            35,
+            30
+          ],
+          "heldItem": 0
+        },
+        {
+          "species": 2,
+          "personality": 1826066017,
+          "otId": 3940725607,
+          "level": 21,
+          "exp": 7414,
+          "hp": 57,
+          "status": 0,
+          "moves": [
+            79,
+            45,
+            73,
+            22
+          ],
+          "pp": [
+            15,
+            40,
+            10,
+            10
+          ],
+          "heldItem": 0
+        }
+      ],
+      "bag": {
+        "items": [
+          {
+            "item": 110,
+            "quantity": 1
+          },
+          {
+            "item": 22,
+            "quantity": 7
+          },
+          {
+            "item": 14,
+            "quantity": 4
+          },
+          {
+            "item": 18,
+            "quantity": 2
+          }
+        ],
+        "keyItems": [
+          {
+            "item": 366,
+            "quantity": 1
+          },
+          {
+            "item": 364,
+            "quantity": 1
+          },
+          {
+            "item": 358,
+            "quantity": 1
+          },
+          {
+            "item": 363,
+            "quantity": 1
+          },
+          {
+            "item": 265,
+            "quantity": 1
+          }
+        ],
+        "pokeBalls": [
+          {
+            "item": 4,
+            "quantity": 4
+          }
+        ],
+        "tmCase": [
+          {
+            "item": 291,
+            "quantity": 1
+          },
+          {
+            "item": 316,
+            "quantity": 1
+          },
+          {
+            "item": 327,
+            "quantity": 1
+          },
+          {
+            "item": 339,
+            "quantity": 1
+          }
+        ],
+        "berryPouch": []
+      },
+      "heal": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "escape": {
+        "mapGroup": 3,
+        "mapNum": 5,
+        "warpId": -1,
+        "x": 15,
+        "y": 7
+      },
+      "saved": 27
+    },
+    "prompts": [
+      {
+        "frame": 34348,
+        "callback": "SaveDialogCB_AskSaveHandleInput"
+      },
+      {
+        "frame": 34584,
+        "callback": "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"
+      }
+    ]
+  }
+}

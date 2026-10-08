@@ -88,7 +88,8 @@
     "play:smoke": "node tools/playtest/smoke/run.mjs",
     "viewer:index": "python3 tools/viewer/world_index.py",
     "play:cerulean": "node tools/playtest/cerulean.mjs",
-    "play:vermilion": "node tools/playtest/vermilion.mjs"
+    "play:vermilion": "node tools/playtest/vermilion.mjs",
+    "play:ssanne": "node tools/playtest/ssanne.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
