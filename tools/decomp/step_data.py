@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 
 from cdump import dump_json, extract_definition
-from common import BIN, BUILD, DECOMP, OUT, decode_gba_string, read_json, run, write_json
+from common import BIN, BUILD, DECOMP, GAME, OUT, decode_gba_string, read_json, run, write_json
 
 SRC = DECOMP / "src"
 
@@ -61,7 +61,7 @@ def dump_species(constants):
 #include "data/pokemon/tutor_learnsets.h"
 #include "data/pokemon/experience_tables.h"
 #include "data/pokemon/egg_moves.h"
-#include "data/pokemon/pokedex_text_fr.h"
+#include "data/pokemon/pokedex_text@POKEDEX_TEXT@.h"
 #include "data/pokemon/pokedex_entries.h"
 #include "data/pokemon_graphics/front_pic_coordinates.h"
 #include "data/pokemon_graphics/back_pic_coordinates.h"
@@ -70,7 +70,7 @@ def dump_species(constants):
 #define HM_MOVES_END 0xFFFF
 ''' + extract_definition(SRC / "pokemon.c", "sSpeciesToNationalPokedexNum") + "\n" + \
         extract_definition(SRC / "pokemon.c", "sHMMoves") + "\n" + \
-        extract_definition(SRC / "data" / "party_menu.h", "sTMHMMoves") + "\n" + \
+        ('#define TMHM_MOVE(id) CAT(MOVE_, id),\n' if GAME != "firered" else "") + extract_definition(SRC / "data" / "party_menu.h", "sTMHMMoves") + "\n" + \
         extract_definition(SRC / "pokemon.c", "gStatStageRatios") + "\n" + r'''
 int main(void) {
     int s, i;
@@ -134,6 +134,12 @@ int main(void) {
     return 0;
 }
 '''
+    source = source.replace("@POKEDEX_TEXT@", "_fr" if GAME == "firered" else "")  # pokeemerald: pokedex_text.h
+    if GAME != "firered":
+        # pokeemerald: the TM/HM learnsets are a bitfield struct built from FOREACH_TMHM (gTMHMLearnsets[s].as_u32s[]).
+        source = source.replace('#include "pokedex.h"', '#include "pokedex.h"\n#include "constants/tms_hms.h"', 1)
+        source = source.replace("sTMHMLearnsets[s][0], sTMHMLearnsets[s][1]", "gTMHMLearnsets[s].as_u32s[0], gTMHMLearnsets[s].as_u32s[1]")
+        source = source.replace("sTutorMoves[i]", "gTutorMoves[i]")  # pokeemerald's tutor move list is a global
     data = dump_json("species", source)
     for s in data["species"]:
         s["name"] = b64hex(s["name"])
@@ -148,8 +154,13 @@ def cdump_prelude() -> str:
 
 
 def dump_moves_and_misc():
-    move_desc = extract_definition(SRC / "move_descriptions.c", "gMoveDescriptionPointers")
-    desc_strings = "\n".join(re.findall(r"^(?:static )?const u8 \w+\[\] = _\((?:[^;])*?\);", (SRC / "move_descriptions.c").read_text(), flags=re.M)).replace("static ", "")
+    if GAME == "firered":
+        move_desc = extract_definition(SRC / "move_descriptions.c", "gMoveDescriptionPointers")
+        desc_strings = "\n".join(re.findall(r"^(?:static )?const u8 \w+\[\] = _\((?:[^;])*?\);", (SRC / "move_descriptions.c").read_text(), flags=re.M)).replace("static ", "")
+    else:
+        # pokeemerald keeps the strings and gMoveDescriptionPointers together in a data header.
+        move_desc = '#include "data/text/move_descriptions.h"'
+        desc_strings = ""
     source = r'''
 #include "global.h"
 #include "constants/species.h"
@@ -227,7 +238,7 @@ def dump_trainers():
 #include "constants/trainers.h"
 #include "constants/battle_ai.h"
 #include "battle.h"
-''' + cdump_prelude() + r'''
+''' + ('#include "data.h"\n' if GAME != "firered" else "") + cdump_prelude() + r'''
 #include "data/trainer_parties.h"
 #include "data/trainers.h"
 static void mons(const struct Trainer *t) {
@@ -319,7 +330,58 @@ int main(void) {
     return data
 
 
+def _eval_c(text: str, constants: dict[str, int]) -> int:
+    """Value of a C constant expression made of literals, known constants and + - * | & << >>."""
+    text = text.strip()
+    # include/constants/items.h: #define ITEM_TO_MAIL(itemId) ((itemId) - FIRST_MAIL_INDEX)
+    text = re.sub(r"\bITEM_TO_MAIL\(([^()]*)\)", r"((\1) - FIRST_MAIL_INDEX)", text)
+    try:
+        return int(text, 0)
+    except ValueError:
+        pass
+    constants = {"TRUE": 1, "FALSE": 0, "NULL": 0, **constants}
+    if text in constants:
+        return constants[text]
+    expr = re.sub(r"\b[A-Za-z_]\w*\b", lambda m: str(constants[m.group(0)]) if m.group(0) in constants else m.group(0), text)
+    if re.fullmatch(r"[0-9a-fA-FxX\s()+\-*|&<>]+", expr):
+        return int(eval(expr, {"__builtins__": {}}, {}))
+    raise KeyError(f"cannot evaluate {text!r}")
+
+
+def export_items_from_c(constants):
+    """pokeemerald declares gItems in C (src/data/items.h) instead of FireRed's items.json: same fields, same output."""
+    text = (SRC / "data/items.h").read_text()
+    descriptions = {}
+    for symbol, body in re.findall(r"static const u8 (\w+)\[\] = _\((.*?)\);", (SRC / "data/text/item_descriptions.h").read_text(), flags=re.S):
+        descriptions[symbol] = "".join(re.findall(r'"((?:[^"\\]|\\.)*)"', body))
+    entries = []
+    for const, body in re.findall(r"^\s*\[(ITEM_\w+)\]\s*=\s*\{(.*?)^\s*\},", text, flags=re.M | re.S):
+        fields = {}
+        for line in body.splitlines():
+            line = re.sub(r"\s*//.*$", "", line)  # trailing comments (outside the string literals this file uses)
+            m = re.match(r"^\s*\.(\w+)\s*=\s*(.*?),?\s*$", line)
+            if m:
+                fields[m.group(1)] = m.group(2)
+        entries.append((const, fields))
+    names = encode_strings([re.match(r'_\("(.*)"\)$', f["name"]).group(1) for _, f in entries])
+    encoded_desc = encode_strings([descriptions[f["description"]] for _, f in entries])
+    out = []
+    for (const, f), name, description in zip(entries, names, encoded_desc):
+        value = lambda key, default="0": _eval_c(f.get(key, default), constants)
+        out.append({
+            "id": value("itemId"), "const": const, "name": name, "price": value("price"),
+            "holdEffect": value("holdEffect"), "holdEffectParam": value("holdEffectParam"),
+            "description": description, "importance": value("importance"), "registrability": value("registrability"),
+            "pocket": value("pocket"), "type": value("type"),
+            "fieldUseFunc": f.get("fieldUseFunc", "NULL"), "battleUsage": value("battleUsage"),
+            "battleUseFunc": f.get("battleUseFunc", "NULL"), "secondaryId": value("secondaryId"),
+        })
+    return out
+
+
 def export_items(constants):
+    if GAME != "firered":
+        return export_items_from_c(constants)
     items = read_json(SRC / "data/items.json")["items"]
     names = encode_strings([i["english"] for i in items])
     descriptions = encode_strings([i.get("description_english", "") for i in items])
@@ -376,7 +438,8 @@ def export_wild(constants):
         for field in group["fields"]:
             result["rates"][field["type"]] = field["encounter_rates"]
         for entry in group["encounters"]:
-            if not entry["base_label"].endswith("_FireRed"):
+            # FireRed's file holds both FireRed and LeafGreen tables; pokeemerald has a single version.
+            if GAME == "firered" and not entry["base_label"].endswith("_FireRed"):
                 continue
             map_entry = {}
             for kind in ("land_mons", "water_mons", "rock_smash_mons", "fishing_mons"):
@@ -424,15 +487,26 @@ def export_data(constants) -> None:
 
 def export_script_menu(constants):
     """Multichoice lists, std strings and NPC text colors used by scripts."""
-    text = (SRC / "script_menu.c").read_text()
+    if GAME == "firered":
+        text = (SRC / "script_menu.c").read_text()
+        list_pattern = r"static const struct MenuAction (sMultichoiceList_\w+)\[\]\s*=\s*\{(.*?)\};"
+        key_prefix = "MULTICHOICE_"
+    else:
+        # pokeemerald: lists and the id table are in a data header; ids are MULTI_*.
+        text = (SRC / "data/script_menu.h").read_text()
+        list_pattern = r"static const struct MenuAction (MultichoiceList_\w+)\[\]\s*=\s*\{(.*?)\};"
+        key_prefix = "MULTI_"
     lists = {}
-    for name, body in re.findall(r"static const struct MenuAction (sMultichoiceList_\w+)\[\]\s*=\s*\{(.*?)\};", text, flags=re.S):
+    for name, body in re.findall(list_pattern, text, flags=re.S):
         lists[name] = re.findall(r"\{\s*(\w+)", body)
     table = re.search(r"sMultichoiceLists\[\]\s*=\s*\{(.*?)\};", text, flags=re.S).group(1)
     multichoice = {}
-    for key, list_name in re.findall(r"\[(MULTICHOICE_\w+)\]\s*=\s*MULTICHOICE\((\w+)\)", table):
+    for key, list_name in re.findall(rf"\[({key_prefix}\w+)\]\s*=\s*MULTICHOICE\((\w+)\)", table):
         if key in constants:
             multichoice[constants[key]] = lists.get(list_name, [])
+    if GAME != "firered":
+        # pokeemerald has neither gStdStringPtrs nor the NPC text colour table (dynamic_placeholder_text_util.c).
+        return {"multichoice": multichoice, "stdStrings": None, "textColors": None}
     std = re.search(r"gStdStringPtrs\[\]\s*=\s*\{(.*?)\};", text, flags=re.S).group(1)
     std_strings = {}
     for key, value in re.findall(r"\[(STDSTRING_\w+)\]\s*=\s*(\w+)", std):

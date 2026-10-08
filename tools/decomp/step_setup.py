@@ -75,9 +75,10 @@ CONSTANT_PREFIXES = (
 )
 
 # Emerald-only name families (FireRed has none of them as constants, so its output must not change).
-GAME_PREFIXES = {"emerald": ("BERRY_TREE_", "BERRY_STAGE_", "SECRET_BASE_", "COORD_EVENT_")}.get(GAME, ())
+GAME_PREFIXES = {"emerald": ("BERRY_TREE_", "BERRY_STAGE_", "SECRET_BASE_", "COORD_EVENT_",
+                            "OLD_ROD", "GOOD_ROD", "SUPER_ROD", "MACH_BIKE", "ACRO_BIKE", "MULTI_")}.get(GAME, ())
 # Headers FireRed's list lacks. item.h holds Emerald's ITEM_TM_* enum, built from FOREACH_TMHM with an X-macro.
-GAME_HEADERS = {"emerald": ["item.h", "constants/secret_bases.h", "constants/berry.h", "constants/tms_hms.h"]}.get(GAME, [])
+GAME_HEADERS = {"emerald": ["item.h", "constants/secret_bases.h", "constants/berry.h", "constants/tms_hms.h", "constants/script_menu.h"]}.get(GAME, [])
 
 CONSTANT_HEADERS = [
     "global.h", "constants/flags.h", "constants/vars.h", "constants/species.h", "constants/items.h", "constants/moves.h",

@@ -34,7 +34,11 @@ static void jstr(const u8 *s, int max) {
 def extract_definition(path: Path, symbol: str) -> str:
     """Return the C text defining `symbol` (declaration through the closing `};`)."""
     text = path.read_text()
-    match = re.search(rf"^[^\n;]*\b{re.escape(symbol)}\b\s*(\[[^\]]*\])*\s*=", text, flags=re.M)
+    # Look for the definition in code, not in a comment that quotes it (pokeemerald's party_menu.h documents sTMHMMoves
+    # in a block comment before defining it): blank comments for the search, keep the original text for the result.
+    blank = re.sub(r"/\*.*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.S)
+    blank = re.sub(r"//[^\n]*", lambda m: " " * len(m.group(0)), blank)
+    match = re.search(rf"^[^\n;]*\b{re.escape(symbol)}\b\s*(\[[^\]]*\])*\s*=", blank, flags=re.M)
     if not match:
         raise KeyError(f"{symbol} not found in {path}")
     start = match.start()

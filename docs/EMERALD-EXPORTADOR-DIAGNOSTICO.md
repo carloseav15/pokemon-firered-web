@@ -86,7 +86,7 @@ Hecho en el exportador (`tools/decomp/`), con FireRed por defecto:
 
 Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `constants` (8.340), `codegen` y `structs` (25) **pasan**.
 
-## 7. Avance posterior (2026-10-08): 10 de 15 pasos pasan para Emerald
+## 7. Avance posterior (2026-10-08): 11 de 15 pasos pasan para Emerald
 
 `EXPORT_GAME=emerald python3 tools/decomp/export.py <paso>`; tras cada cambio FireRed se regeneró con **0 archivos cambiados**
 (`public/fr`, `src/fr/generated`).
@@ -101,7 +101,7 @@ Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `cons
 | tilesets | OK | 75 tilesets. `INCGFX_*`; atributos de metateja de 16 bits (`attributeBits: 16` en esos JSON; FireRed usa 32) |
 | objects | OK | 239 gráficos de objetos, 424 imágenes, 37 efectos de campo. `INCGFX_*`; expresiones con constantes en tablas de animación; sin hoja de emoticonos (`emoticons: null`) |
 | audio | OK | 610 canciones, 530 MIDI, 193 grupos de voces, 154 muestras, 386 gritos. Jugadores musicales simbólicos, `voice_group nombre`, `.include` de grupos |
-| data | **falla** | vuelca `SpeciesInfo`, tablas de aprendizaje, Pokédex, movimientos, entrenadores y encuentros con código C escrito para FireRed (`pokedex_text_fr.h`, campos de la estructura): hay que reescribir cada volcado para Emerald |
+| data | OK | los 10 archivos (`species`, `moves`, `trainers`, `items`, `wild`, `heal_locations`, `region_map`, `strings`, `battle_strings`, `script_menu`) en 5 s. Especies 412 (Pokédex nacional 387 entradas; Treecko 40/45/35/70/65/55, Planta, Espesura, evoluciona a nivel 16, comprobado con los valores conocidos de Gen 3), movimientos 355, habilidades 78, entrenadores 855 (1.825 Pokémon), objetos 377, 116 mapas con encuentros salvajes, 114 menús de selección múltiple, 30 movimientos de tutor (FireRed 15) |
 | graphics | **falla** | `export_fonts` busca `sFont*LatinGlyphWidths` en `src/text.c`; Emerald los tiene en `src/fonts.c` con otro conjunto (small, small narrow, narrow, short, normal; FRLG male/female solo japonés). Hay que decidir qué fuentes necesita el motor |
 | incbin | sin validar | termina, pero avisa de ficheros inexistentes (p. ej. `sootopolis/anim/stormy_water`) |
 | cdata, tsconst | sin diagnosticar | `cdata` agota 900 s (FireRed 38 s); `tsconst` tardó 802 s y no generó el ejecutable de prueba |
@@ -109,4 +109,11 @@ Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `cons
 Lo que **no** demuestra esto: que los datos exportados de Emerald sean correctos. Solo que el paso termina y cuenta cosas
 plausibles (518 mapas = los de `refs/emerald/maps.json`). La validación contra la ROM sigue pendiente.
 
-Siguiente trabajo, por orden: `data` (el más grande), `graphics`, y diagnosticar `cdata`/`tsconst`/`incbin`.
+Adaptaciones de `data` (todas condicionadas al juego, FireRed regenera idéntico): encuentros salvajes sin el filtro `_FireRed` (en FireRed
+convive con LeafGreen; antes Emerald daba 0 mapas sin avisar), descripciones de movimientos en `src/data/text/move_descriptions.h`,
+entrenadores con `data.h`, objetos leídos del C de `src/data/items.h` (+ `item_descriptions.h`; los 67 `ITEM_0xx` de relleno
+tienen `itemId = ITEM_NONE` en el propio C), Pokédex `pokedex_text.h`, aprendizaje de MT/MO como bitfield (`gTMHMLearnsets[s].as_u32s`),
+`gTutorMoves`, menús de `data/script_menu.h` (`MULTI_*`), y `extract_definition()` ya no toma como definición un fragmento
+de comentario. En Emerald `script_menu.json` tiene `stdStrings` y `textColors` a `null` (no existen).
+
+Siguiente trabajo, por orden: `graphics`, y diagnosticar `cdata`/`tsconst`/`incbin`.
