@@ -34,7 +34,65 @@ def gas_to_llvm(source: str) -> str:
     # trainerbattle_* compare an optional label argument against FALSE. GAS
     # tolerates relocatable operands there; LLVM needs a string comparison.
     source = re.sub(r"\.if \\([a-z_]+) == FALSE", r".ifc \\\1,FALSE", source)
+    if GAME == "emerald":
+        source = emerald_waitstate_to_llvm(source)
     return source
+
+
+def emerald_waitstate_to_llvm(source: str) -> str:
+    """pokeemerald's `waitstate implicit=` macro (asm/macros/event.inc) drops an explicit waitstate that follows an implicit one
+    by comparing the location counter with a symbol (`.if _last_implicit_waitstate == .`). GNU as accepts that; LLVM's assembler
+    cannot evaluate it ("expected absolute expression"; a `. - label` form only folds inside one fragment). The rule only matters
+    when an explicit `waitstate` is the very next byte-emitting statement after a `special`/`specialvar` whose special has an
+    implicit waitstate, or after a macro that ends like that. In pokeemerald's scripts that never happens, so the macro becomes a
+    plain `.byte SCR_OP_WAITSTATE` and the absence is checked on every run: if a future source has such a case this raises
+    instead of silently emitting a different byte stream."""
+    macro = re.compile(r"\.macro waitstate implicit=0\b.*?\.endm", re.S)
+    if not macro.search(source):
+        return source
+    lines = source.split("\n")
+    implicit_specials = set(re.findall(r"^\s*def_special\s+(\w+)\s*,\s*waitstate=1\s*$", source, re.M))
+    quiet = lambda t: (not t) or t.startswith(("#", "@", ".global")) or re.match(r"^[\w.]+::?$", t)
+    bodies: dict[str, list[str]] = {}
+    current = None
+    for line in lines:
+        m = re.match(r"\s*\.macro (\w+)", line)
+        if m:
+            current = bodies.setdefault(m.group(1), [])
+        elif re.match(r"\s*\.endm", line):
+            current = None
+        elif current is not None:
+            current.append(line.strip())
+
+    def implicit_call(statement: str, ending: set[str]) -> bool:
+        m = re.match(r"special\s+(\S+)$", statement) or re.match(r"specialvar\s+[^,]+,\s*(\S+)$", statement)
+        if m:
+            return m.group(1) in implicit_specials
+        return statement.split(" ")[0] in ending
+
+    def last_statement(body: list[str]) -> str:
+        j = len(body) - 1
+        while j >= 0 and (quiet(body[j]) or body[j].startswith((".if", ".else", ".endif"))):
+            j -= 1
+        return body[j] if j >= 0 else ""
+
+    ending: set[str] = set()
+    grew = True
+    while grew:
+        grew = False
+        for name, body in bodies.items():
+            if name not in ending and implicit_call(last_statement(body), ending):
+                ending.add(name)
+                grew = True
+    for i, line in enumerate(lines):
+        if re.match(r"^\s*waitstate\s*$", line):
+            j = i - 1
+            while j >= 0 and quiet(lines[j].strip()):
+                j -= 1
+            if j >= 0 and implicit_call(lines[j].strip(), ending):
+                raise RuntimeError(f"explicit waitstate follows an implicit one ({lines[j].strip()!r}, line {i + 1}): "
+                                   "emerald_waitstate_to_llvm assumes this never happens")
+    return macro.sub(".macro waitstate implicit=0\n\t.byte SCR_OP_WAITSTATE\n\t.endm", source, count=1)
 
 
 def preprocess(entry: str) -> str:

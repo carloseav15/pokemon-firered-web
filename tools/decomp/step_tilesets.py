@@ -18,13 +18,18 @@ def b64(data: bytes) -> str:
 
 def export_tilesets() -> None:
     sources = (DECOMP / "src/graphics.c").read_text() + (DECOMP / "src/data/tilesets/graphics.h").read_text()
+    # FireRed names the compressed binary (INCBIN_U32("dir/tiles.4bpp.lz")); pokeemerald names the source image
+    # (INCGFX_U32("dir/tiles.png", ".4bpp.lz", flags)) and builds the binary from it.
     tiles_paths = dict(re.findall(r"gTilesetTiles_(\w+)\[\] = INCBIN_U32\(\"([^\"]+)/tiles\.4bpp(?:\.lz)?\"\)", sources))
+    tiles_paths.update(re.findall(r"gTilesetTiles_(\w+)\[\] = INCGFX_U32\(\"([^\"]+)/tiles\.png\"", sources))
     palette_paths = {}
     for name, body in re.findall(r"gTilesetPalettes_(\w+)\[\]\[16\] =\s*\{(.*?)\};", sources, flags=re.S):
-        palette_paths[name] = re.findall(r"INCBIN_U16\(\"([^\"]+)\.gbapal\"\)", body)
+        palette_paths[name] = re.findall(r"INCBIN_U16\(\"([^\"]+)\.gbapal\"\)", body) or re.findall(r"INCGFX_U16\(\"([^\"]+)\.pal\"", body)
     metatile_source = (DECOMP / "src/data/tilesets/metatiles.h").read_text()
     metatile_paths = dict(re.findall(r"gMetatiles_(\w+)\[\] = INCBIN_U16\(\"([^\"]+)\"\)", metatile_source))
     attribute_paths = dict(re.findall(r"gMetatileAttributes_(\w+)\[\] = INCBIN_U32\(\"([^\"]+)\"\)", metatile_source))
+    # pokeemerald stores 16-bit attributes (8-bit behaviour, 4-bit layer type), FireRed 32-bit ones.
+    attribute_paths16 = dict(re.findall(r"gMetatileAttributes_(\w+)\[\] = INCBIN_U16\(\"([^\"]+)\"\)", metatile_source))
     headers = (DECOMP / "src/data/tilesets/headers.h").read_text()
     out_dir = OUT / "tilesets"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -43,7 +48,8 @@ def export_tilesets() -> None:
         for pal in palette_paths[pal_name]:
             palettes.append(read_jasc_palette(DECOMP / (pal + ".pal")))
         metatiles = (DECOMP / metatile_paths[meta_name]).read_bytes()
-        attributes = (DECOMP / attribute_paths[attr_name]).read_bytes()
+        attribute_bits = 32 if attr_name in attribute_paths else 16
+        attributes = (DECOMP / (attribute_paths if attribute_bits == 32 else attribute_paths16)[attr_name]).read_bytes()
         anims = {}
         anim_dir = folder / "anim"
         if anim_dir.exists():
@@ -64,6 +70,8 @@ def export_tilesets() -> None:
             "attributes": b64(attributes),
             "anims": anims,
         }
+        if attribute_bits != 32:
+            entry["attributeBits"] = attribute_bits  # FireRed's files stay exactly as before
         write_json(out_dir / f"{symbol}.json", entry)
         index[symbol] = {"secondary": entry["isSecondary"], "callback": entry["callback"], "tileCount": len(tiles) // 32, "metatileCount": len(metatiles) // 16}
     write_json(OUT / "tilesets.json", index)

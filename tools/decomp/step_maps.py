@@ -114,6 +114,10 @@ def export_maps(constants: dict[str, int]) -> None:
         } for w in events_source.get("warp_events", [])]
         coords = []
         for c in events_source.get("coord_events", []):
+            if c.get("type") == "weather":  # pokeemerald: a weather change tied to a tile
+                coords.append({"type": "weather", "x": c["x"], "y": c["y"], "elevation": const(constants, c.get("elevation", 0)),
+                               "weather": const(constants, c["weather"])})
+                continue
             coords.append({
                 "x": c["x"], "y": c["y"], "elevation": const(constants, c.get("elevation", 0)),
                 "var": const(constants, c.get("var", 0)), "value": const(constants, c.get("var_value", 0)),
@@ -127,6 +131,9 @@ def export_maps(constants: dict[str, int]) -> None:
                     "item": const(constants, b["item"]), "flag": const(constants, b["flag"]),
                     "quantity": const(constants, b.get("quantity", 1)), "underfoot": bool(b.get("underfoot", False)),
                 })
+            elif b["type"] == "secret_base":  # pokeemerald secret base entrance
+                bgs.append({"type": "secret_base", "x": b["x"], "y": b["y"], "elevation": const(constants, b.get("elevation", 0)),
+                            "secretBaseId": const(constants, b["secret_base_id"])})
             else:
                 bgs.append({
                     "type": "sign", "x": b["x"], "y": b["y"], "elevation": const(constants, b.get("elevation", 0)),

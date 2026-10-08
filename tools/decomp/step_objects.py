@@ -52,7 +52,7 @@ def parse_anim_cmds(text: str) -> dict[str, list]:
     return anims
 
 
-def parse_anim_tables(text: str, anim_indices: dict[str, int]) -> dict[str, list]:
+def parse_anim_tables(text: str, anim_indices: dict[str, int], constants: dict[str, int] | None = None) -> dict[str, list]:
     tables = {}
     for name, body in re.findall(r"const union AnimCmd \*const (\w+)\[\]\s*=\s*\{(.*?)\};", text, flags=re.S):
         entries = []
@@ -64,6 +64,9 @@ def parse_anim_tables(text: str, anim_indices: dict[str, int]) -> dict[str, list
                 expression = expression.strip()
                 for key in sorted(anim_indices, key=len, reverse=True):
                     expression = re.sub(rf"\b{re.escape(key)}\b", str(anim_indices[key]), expression)
+                if constants and not re.fullmatch(r"[0-9a-fA-FxX\s()+\-]+", expression):
+                    # Other constants (pokeemerald: BERRY_STAGE_PLANTED - 1), only after the ANIM_ names failed to cover it.
+                    expression = re.sub(r"\b[A-Z_][A-Z0-9_]*\b", lambda m: str(constants[m.group(0)]) if m.group(0) in constants else m.group(0), expression)
                 if not re.fullmatch(r"[0-9a-fA-FxX\s()+\-]+", expression):
                     raise ValueError(f"Unsupported animation index in {name}: [{expression}]")
                 try:
@@ -84,6 +87,9 @@ def export_objects(constants: dict[str, int]) -> None:
     graphics_text = (base / "object_event_graphics.h").read_text()
     pics = dict(re.findall(r"(gObjectEventPic_\w+)\[\] = INCBIN_U(?:16|32)\(\"([^\"]+)\.4bpp\"\)", graphics_text))
     palettes = dict(re.findall(r"(gObjectEventPal_\w+)\[\] = INCBIN_U16\(\"([^\"]+)\.gbapal\"\)", graphics_text))
+    # pokeemerald names the source images instead: INCGFX_U32("dir/name.png", ".4bpp", ...) / INCGFX_U16("dir/name.pal", ".gbapal")
+    pics.update(re.findall(r"(gObjectEventPic_\w+)\[\] = INCGFX_U(?:16|32)\(\"([^\"]+)\.png\"", graphics_text))
+    palettes.update(re.findall(r"(gObjectEventPal_\w+)\[\] = INCGFX_U16\(\"([^\"]+)\.pal\"", graphics_text))
     movement_c = (DECOMP / "src/event_object_movement.c").read_text()
     palette_tags = {}
     block = re.search(r"sObjectEventSpritePalettes\[\] = \{(.*?)\};", movement_c, flags=re.S).group(1)
@@ -151,7 +157,7 @@ def export_objects(constants: dict[str, int]) -> None:
     anim_indices = parse_define_values(DECOMP / "include/constants/event_object_movement.h", "ANIM_")
     anims_text = strip_comments((base / "object_event_anims.h").read_text())
     anim_cmds = parse_anim_cmds(anims_text)
-    anim_tables = parse_anim_tables(anims_text, anim_indices)
+    anim_tables = parse_anim_tables(anims_text, anim_indices, constants)
 
     infos = {}
     info_text = strip_comments((base / "object_event_graphics_info.h").read_text())
@@ -307,7 +313,11 @@ def export_field_effect_objects(constants: dict[str, int]) -> None:
             "callback": fields.get("callback"),
             "size": [int(size.group(1)), int(size.group(2))] if size else None,
         }
-    emoticons = rgba_png(DECOMP / "graphics/misc/emoticons.png", image_dir / "emoticons.png",
-                         read_jasc_palette(DECOMP / "graphics/object_events/palettes/player.pal"))
-    write_json(OUT / "fieldfx.json", {"templates": templates, "emoticons": {"file": "fieldfx/emoticons.png", "width": emoticons[0], "height": emoticons[1]}})
+    # FireRed ships one emoticon sheet; pokeemerald has none (its emotion icons are separate field-effect pictures).
+    emoticons_png = DECOMP / "graphics/misc/emoticons.png"
+    emoticons = None
+    if emoticons_png.exists():
+        emoticons = rgba_png(emoticons_png, image_dir / "emoticons.png",
+                             read_jasc_palette(DECOMP / "graphics/object_events/palettes/player.pal"))
+    write_json(OUT / "fieldfx.json", {"templates": templates, "emoticons": {"file": "fieldfx/emoticons.png", "width": emoticons[0], "height": emoticons[1]} if emoticons else None})
     print(f"  {len(templates)} field effect templates")

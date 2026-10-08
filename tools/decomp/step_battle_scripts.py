@@ -16,8 +16,9 @@ from step_scripts import EXTERN_BASE, PRELUDE, ROM_BASE, assemble_source, link_s
 EXTERN_SHIFT = 12
 
 
-def strip_header(source: str) -> str:
-    """Drop macro definitions inlined by preproc and helper symbol definitions."""
+def strip_header(source: str, defined: set[str] = frozenset()) -> str:
+    """Drop macro definitions inlined by preproc and helper symbol definitions. `.equiv` (enum constants from the
+    headers the script file includes) cannot be redefined: drop those the earlier files already defined."""
     out = []
     in_inc = False
     for line in source.split("\n"):
@@ -29,16 +30,21 @@ def strip_header(source: str) -> str:
             continue
         if re.match(r"^\s*\.set (NULL|FALSE|TRUE), [01]\s*$", line):
             continue
+        equiv = re.match(r"^\s*\.equiv\s+(\w+)\s*,", line)
+        if equiv and equiv.group(1) in defined:
+            continue
         out.append(line)
     return "\n".join(out)
 
 
 def build(files: list[str], obj_name: str):
     parts = [PRELUDE, ".set NULL, 0\n.set FALSE, 0\n.set TRUE, 1\n"]
+    defined: set[str] = set()
     for index, path in enumerate(files):
         source = preprocess(path)
         # Keep the first file's inlined macros, strip them from the others.
-        parts.append(source if index == 0 else strip_header(source))
+        parts.append(source if index == 0 else strip_header(source, defined))
+        defined.update(re.findall(r"^\s*\.equiv\s+(\w+)\s*,", source, re.M))
         if index == 0:
             parts[-1] = re.sub(r"^\s*\.set (NULL|FALSE|TRUE), [01]\s*$", "", parts[-1], flags=re.M)
     elf = assemble_source("\n".join(parts), obj_name)
