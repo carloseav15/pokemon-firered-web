@@ -62,12 +62,22 @@ const CASES = [
       if (!sv.bag.items.some(e => e.item === C.ITEM_POTION && e.quantity > 0)) sv.bag.items.push({ item: C.ITEM_POTION, quantity: 2 }); // PREPARED
       const used = await H.useItem(C.ITEM_POTION, 0);
       // Summary: START > POKEMON > A on the first member > SUMMARY.
+      const S = await H.mod("/src/fr/save.ts"), SM = await H.mod("/src/fr/startMenu.ts");
+      const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(H.C.FLAG_SYS_POKEDEX_GET), pokemonObtained: S.FlagGet(H.C.FLAG_SYS_POKEMON_GET),
+        linkStateActive: false, inUnionRoom: false, inSafariZone: false };
+      SM.SetUpStartMenu(menu);
+      const pokemon = menu.order.indexOf(1); // start_menu.c STARTMENU_POKEMON
       window.frGame.startMenuCursor = 0;
+      await H.wait(60); // the START menu ignores input while it opens
       await H.tap(8, 30); await H.until(() => H.hasTask("startInput"), null, 60);
-      await H.tap(0x80, 12); await H.tap(1, 40); // entry 1 = POKEMON
+      await H.wait(30);
+      for (let i = 0; i < pokemon; i++) await H.tap(0x80, 20);
+      await H.tap(1, 40);
       await H.until(() => H.recognize().screen === "party-menu", null, 200);
-      await H.wait(30); await H.tap(1, 30); // A on slot 0: member menu
-      await H.wait(20); await H.tap(1, 30); // first entry: SUMMARY
+      await H.wait(60);
+      await H.tap(1, 30); // A on slot 0: member menu (submenu task)
+      if (!await H.until(() => H.recognize().details?.submenu === true, null, 120)) throw new Error("member menu did not open: " + JSON.stringify(H.recognize().details));
+      await H.wait(20); await H.tap(1, 30); // first entry of the field list: SUMMARY (sPartyMenuAction_SummarySwitchCancel)
       await H.until(() => H.recognize().screen === "summary-view", null, 300);
       await H.wait(60);
       const atSummary = H.recognize().screen;
@@ -97,6 +107,15 @@ const CASES = [
       const b = await H.battle("auto", 0, 6000);
       for (let i = 0; i < 40 && !H.fieldFree(); i++) await H.idle(1500, true);
       return { stop: b.stop, species: mon.species };` },
+  { name: "evolution-learn", save: "route2-north", expect: ["evolution", "evolution-yesno", "summary-forget-move"], prepared: "Abra L15 with four moves one point below level 16 (Kadabra learns Confusion)", body: `
+      const C = H.C, mon = frDebug.save.save.party[0], P = await H.mod("/src/fr/pokemon/pokemon.ts");
+      mon.species = C.SPECIES_ABRA; mon.moves = [C.MOVE_TACKLE, C.MOVE_GROWL, C.MOVE_TAIL_WHIP, C.MOVE_LEER]; mon.pp = mon.moves.map(id => H.rom.moves[id].pp);
+      mon.exp = P.expForLevel(mon.species, 16) - 1; mon.hp = 0; mon.stats = [0, 0, 0, 0, 0, 0]; P.calculateStats(mon); // PREPARED
+      for (let i = 0; i < 200 && !H.inBattle(); i++) await H.walk(i % 2 ? "D" : "U", 1);
+      if (!H.inBattle()) throw new Error("no encounter");
+      const b = await H.battle("auto", 0, 6000);
+      for (let i = 0; i < 40 && !H.fieldFree(); i++) await H.idle(1500, true);
+      return { stop: b.stop, species: mon.species, moves: [...mon.moves] };` },
   { name: "trainer-battle", save: "mtmoon-1f", expect: ["battle-yesno"], prepared: "none; Josh's second Pokemon asks 'Will you switch?'", body: `
       const C = H.C, ow = frGame.overworld;
       ow.setWarpDestination(C.MAP_MT_MOON_1F >> 8, C.MAP_MT_MOON_1F & 255, -1, 14, 18); ow.warpIntoMapAndLoad();

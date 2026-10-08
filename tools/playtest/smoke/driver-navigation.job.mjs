@@ -21,6 +21,9 @@ export default async function(ctx){
     await frDebug.press('A');
     for(let i=0;i<200&&!H.inBattle();i++)await frDebug.press('A',4);
     if(!H.inBattle())throw new Error('Josh did not start');
+    // The scenario under test is the optional party menu, so this case declares YES to the "will you switch?" prompt
+    // (policy default is NO, which never opens the menu); the menu is then cancelled through the UI.
+    H.policy.set({battleYesNo:{...H.policy.options.battleYesNo,Cmd_yesnobox:true}});
     const b=await H.battle('auto',0,500);
     if(!b.trace.some(t=>t.action==='cancel optional switch'&&t.menuAction===C.PARTY_ACTION_CHOOSE_MON&&t.liveHp>0))throw new Error('optional live switch not observed');
     const cancelled=b.trace.findIndex(t=>t.action==='cancel optional switch');

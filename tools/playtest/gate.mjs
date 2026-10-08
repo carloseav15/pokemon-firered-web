@@ -12,6 +12,12 @@ const JOBS = [
   ["screen-catalog", 1500000], ["driver-learn-move", 600000], ["driver-evolution", 600000], ["driver-assess", 300000],
   ["mtmoon-checkpoints", 600000, { MTMOON_STAMP: "20261006233746" }],
 ];
+// Static checks first: no generic "press A" in the driver, policy and strategy cases.
+for (const c of ["driver.check.mjs", "policy.check.mjs", "strategy.check.mjs"]) {
+  const r = spawnSync("node", [`tools/playtest/${c}`], { encoding: "utf8" });
+  console.log(`${r.status === 0 ? "PASS" : "FAIL"} ${c}`);
+  if (r.status !== 0) { console.log(`${r.stdout}${r.stderr}`.slice(-600)); process.exit(1); }
+}
 const only = process.argv.slice(2);
 const selected = only.length ? JOBS.filter(([name]) => only.includes(name)) : JOBS;
 const base = process.env.PW_BASE ?? "http://localhost:5173/";

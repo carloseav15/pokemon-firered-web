@@ -9,6 +9,8 @@
 import { rankMoves, simulateBattle } from "./strategy.js";
 import { recognize, CATALOG } from "./driver/screens.js";
 import { Policy } from "./driver/policy.js";
+import { drive, input as pressChecked, DriverStop } from "./driver/loop.js";
+import { battleItemMenu } from "./driver/handlers/menus.js";
 
 const g = () => window.frGame;
 const dbg = () => window.frDebug;
@@ -48,6 +50,10 @@ export const H = {
     this.SUM = await this.mod("/src/fr/pokemonSummaryScreen.ts");
     this.MON = await this.mod("/src/fr/pokemon/mon.ts");
     this.CMDS = await this.mod("/src/fr/battle/cmds/index.ts");
+    this.MENU = await this.mod("/src/fr/hw/menu.ts");
+    this.LM = await this.mod("/src/fr/hw/listMenu.ts");
+    this.TXT = await this.mod("/src/fr/hw/text.ts");
+    this.PSA = await this.mod("/src/fr/pokemonSpecialAnim.ts");
     return this.observe();
   },
   /** { screen, details, raw }: the catalog name of what the player sees (driver/screens.js). */
@@ -180,24 +186,22 @@ export const H = {
     return g().overworld.objects.objects.filter((o) => o && o.currentCoords)
       .map((o) => [o.localId, o.currentCoords.x - 7, o.currentCoords.y - 7, o.graphicsId, o.invisible]);
   },
-  /** Settle scripts; choices are handed back to the caller, never accepted implicitly. */
+  /** Settle scripts through the single loop; menus and choices are handed back to the caller (reason "input-required"). */
   async idle(max = 3000, tapA = true) {
-    for (let f = 0; f < max; f++) {
-      const s = this.observe();
-      if (s.battle) return { ...s, f, battle: true, ok: true, status: "success", reason: "battle-started" };
-      if (s.fieldFree) return { ...s, f, ok: true, status: "success" };
-      if (s.phase === "screen" && /EvolutionScene/.test(this.cb2() ?? "")) {
-        const evo = await this.handleEvolution();
-        if (!evo.ok) return { ...this.observe(), f, ok: false, status: "failure", reason: evo.reason, note: evo.reason, evolution: evo };
-        continue;
-      }
-      if (["choice", "save-choice", "start-menu", "party-menu", "bag-menu", "screen"].includes(s.phase))
-        return { ...s, f, ok: false, status: "blocked", reason: "input-required", note: "input required" };
-      this.step(tapA && ["dialog", "dialog-wait"].includes(s.phase) && f % 32 === 1 ? 1 : 0);
-      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
-    }
-    return { ...this.observe(), ok: false, status: "failure", reason: "idle-timeout", timeout: true };
+    const quiet = async (ctx) => { await ctx.wait(2); };
+    const r = await drive(this, { label: "idle", maxFrames: max, handlers: tapA ? {} : { dialog: quiet, "dialog-wait": quiet },
+      until: (rec) => rec.raw?.inBattle ? "battle-started" : rec.screen === "field-free" ? "field-free" : false });
+    const f = r.frames;
+    if (r.ok) return r.reason === "battle-started" ? { ...this.observe(), f, battle: true, ok: true, status: "success", reason: "battle-started" } : { ...this.observe(), f, ok: true, status: "success" };
+    if (["input-required", "unanswered-yes-no", "unhandled-multichoice"].includes(r.reason)) return { ...this.observe(), f, ok: false, status: "blocked", reason: "input-required", note: "input required", stop: r };
+    if (r.reason === "frame-budget") return { ...this.observe(), ok: false, status: "failure", reason: "idle-timeout", timeout: true };
+    return { ...this.observe(), f, ok: false, status: "failure", reason: r.reason, note: r.reason, driver: r };
   },
+  /** Back out of whatever menu is open until the field is free again (cleanup after a failed menu flow). */
+  async escapeMenus(maxFrames = 4000) {
+    return drive(this, { label: "escape", state: { exitMenus: true }, maxFrames, until: (rec) => rec.screen === "field-free" || rec.raw?.inBattle });
+  },
+  dbgParty() { return dbg().save.save.party; },
   /** The one decision policy (driver/policy.js): thresholds, noItems, declared answers. Options: H.policy.options. */
   policy: new Policy(),
   /** Party in the shape the policy reads: slot, hp, maxHP, identity and the battle-mon view used to rank attacks. */
@@ -223,7 +227,7 @@ export const H = {
   async press(button, settle = 30) {
     const bits = { A: 1, B: 2, SELECT: 4, START: 8 }[button];
     if (!bits) throw new Error("unsupported button " + button);
-    return this.tap(bits, settle);
+    return this.tap(bits, settle); // primitive: public low-level press for jobs; the driver itself never calls it
   },
   async tap(bits, settle = 16) {
     this.step(); // ReadKeys must observe release before the next edge.
@@ -316,13 +320,7 @@ export const H = {
     return this.policy.battle({ flags: this.G.G.gBattleTypeFlags, mon: this.G.gBattleMons[0], mons: this.policyMons(),
       bag: dbg().save.save.bag.items, incoming, training: this.training }, this.policyDeps());
   },
-  async selectPartySlot(target) {
-    for (let i = 0; i < 16 && this.PM.gPartyMenu.slotId !== target; i++) {
-      await this.tap(this.PM.gPartyMenu.slotId < target ? 0x80 : 0x40, 20);
-    }
-    return this.PM.gPartyMenu.slotId === target;
-  },
-  /** Use one supported medicine through BAG > USE > the observed party slot.
+  /** Use one supported medicine through BAG > USE > the observed party slot (loop goal "use-item").
    * No item-effect function is called. Result includes actual consumption. */
   async useItem(item, target, { battle = false } = {}) {
     const before = this.resources(), mon = dbg().save.save.party[target];
@@ -331,54 +329,29 @@ export const H = {
     const statusItems = [this.C.ITEM_ANTIDOTE, this.C.ITEM_PARALYZE_HEAL, this.C.ITEM_BURN_HEAL, this.C.ITEM_ICE_HEAL, this.C.ITEM_AWAKENING];
     if (!mon?.species || mon.isEgg || mon.hp <= 0 || !hpItems.includes(item) && !statusItems.includes(item)
         || this.countItem(item) < 1) return { ok: false, note: "medicine unavailable or invalid target", before };
-    const count = this.countItem(item);
-    const hp0 = mon.hp, status0 = mon.status;
-    if (battle) {
-      if (this.G.gBattlerControllerFuncs[0]?.name !== "HandleInputChooseAction") return { ok: false, note: "battle action not ready" };
-      for (let i = 0; i < 8 && this.G.gActionSelectionCursor[0] !== 1; i++) {
-        const c = this.G.gActionSelectionCursor[0];
-        await this.tap(c & 1 ? 0x40 : 0x10);
-      }
-      await this.press("A");
-    } else {
-      if (!this.fieldFree()) return { ok: false, note: "field not free", before };
-      const S = await this.mod("/src/fr/save.ts");
-      const SM = await this.mod("/src/fr/startMenu.ts");
-      const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(this.C.FLAG_SYS_POKEDEX_GET),
-        pokemonObtained: S.FlagGet(this.C.FLAG_SYS_POKEMON_GET), linkStateActive: false, inUnionRoom: false, inSafariZone: false };
-      SM.SetUpStartMenu(menu);
-      const want = menu.order.indexOf(2); // start_menu.c STARTMENU_BAG
-      if (want < 0) return { ok: false, note: "bag not in start menu" };
-      const cursor = g().startMenuCursor;
-      await this.tap(8, 60);
-      if (!await this.until(() => this.hasTask("startInput"))) return { ok: false, note: "start menu did not open" };
-      for (let i = 0; i < (want - cursor + menu.numItems) % menu.numItems; i++) await this.tap(0x80);
-      await this.tap(1, 30);
-    }
-    if (!await this.until(() => this.cb2() === "CB2_BagMenuRun" && this.hasTask("Task_BagMenu_HandleInput"))) return { ok: false, note: "bag did not open" };
-    await this.wait(60);
-    for (let i = 0; i < 4 && this.B.gBagMenuState.pocket !== this.C.OPEN_BAG_ITEMS; i++) await this.tap(0x20, 60);
-    if (this.B.gBagMenuState.pocket !== this.C.OPEN_BAG_ITEMS) return { ok: false, note: "items pocket unavailable" };
-    const index = dbg().save.save.bag.items.findIndex(e => e.item === item && e.quantity > 0);
-    const bagCursor = () => this.B.gBagMenuState.cursorPos[0] + this.B.gBagMenuState.itemsAbove[0];
-    for (let i = 0; i < 60 && bagCursor() !== index; i++) await this.tap(bagCursor() < index ? 0x80 : 0x40, 18);
-    if (index < 0 || bagCursor() !== index) return { ok: false, note: "medicine cursor not reached" };
-    await this.tap(1, 40);
-    if (!await this.until(() => this.hasTask("Task_FieldItemContextMenuHandleInput")) || this.B.bagResult.itemId !== item) return { ok: false, note: "wrong medicine selected" };
-    await this.tap(1, 40);
-    if (!await this.until(() => this.cb2() === "CB2_UpdatePartyMenu" && this.hasTask("Task_HandleChooseMonInput"))) return { ok: false, note: "medicine party menu missing" };
-    const menuSlot = dbg().save.save.party.findIndex(m => m.personality === mon.personality && m.otId === mon.otId);
-    if (menuSlot < 0 || !await this.selectPartySlot(menuSlot)) return { ok: false, note: "medicine target not reached" };
-    await this.tap(1, 40);
-    if (!await this.until(() => this.countItem(item) < count, "A")) return { ok: false, note: "medicine not consumed", before, after: this.resources() };
-    // Effect is read at consumption, before the turn continues: a foe can re-poison or hit the target afterwards.
-    const atUse = dbg().save.save.party[menuSlot];
-    const effectSeen = hpItems.includes(item) ? atUse.hp > hp0 : atUse.status !== status0;
-    // Acknowledgement uses B to avoid selecting another Pokémon/item.
-    const finished = await this.until(() => battle ? this.G.gBattlerControllerFuncs[0]?.name === "HandleInputChooseAction" && this.cb2() === "BattleMainCB2" : this.fieldFree(), "B", 300);
+    const count = this.countItem(item), hp0 = mon.hp, status0 = mon.status;
+    if (battle ? this.recognize().screen !== "battle-action" : !this.fieldFree()) return { ok: false, note: battle ? "battle action not ready" : "field not free", before };
+    const goal = { kind: "use-item", item, target, battle, personality: mon.personality, otId: mon.otId, count0: count,
+      consumed: false, started: false, menuUsed: false, effectSeen: null };
+    const r = await drive(this, { goal, label: "use-item", maxFrames: 30000, handlers: battle ? { "battle-action": battleItemMenu } : {},
+      until: (rec) => {
+        if (!goal.consumed && this.countItem(item) < count) {
+          // The effect is read at consumption, before the turn continues: a foe can re-poison or hit the target afterwards.
+          goal.consumed = true;
+          const atUse = dbg().save.save.party.find(m => m.personality === mon.personality && m.otId === mon.otId);
+          goal.effectSeen = hpItems.includes(item) ? atUse.hp > hp0 : atUse.status !== status0;
+        }
+        if (!goal.consumed) return false;
+        if (battle) return rec.screen === "battle-action";
+        // Closing the bag returns to the START menu (reopened a few frames later): only a field that stays free is the end.
+        if (rec.screen !== "field-free") { goal.freeSince = null; return false; }
+        goal.freeSince ??= window.frGame.frameCount;
+        return window.frGame.frameCount - goal.freeSince >= 45;
+      } });
     const after = this.resources();
-    const ok = finished && this.countItem(item) === count - 1 && effectSeen;
-    const result = { ok, note: ok ? null : "medicine did not complete correctly", item, target, before, after };
+    const ok = r.ok && this.countItem(item) === count - 1 && !!goal.effectSeen;
+    const result = { ok, note: ok ? null : r.ok ? "medicine did not complete correctly" : (r.note ?? r.reason), item, target, before, after };
+    if (!r.ok) result.driver = { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump };
     this.log.push({ medicine: result });
     return result;
   },
@@ -405,161 +378,38 @@ export const H = {
     return { ok: true, resources: this.resources() };
   },
   /**
-   * Finish the current battle with real button presses.
-   * mode "auto": rank attacks, use medicine, switch/escape with resource guards.
-   * mode "fight": FIGHT, then the move in `slot` (0 TL, 1 TR, 2 BL, 3 BR);
-   * mode "run": RUN; mode "switch": shift the lead to party slot 1 on the
-   * first turn, then fight with `slot`. With init() the cursor positions are read from
-   * gActionSelectionCursor/gMoveSelectionCursor, so presses are never blind;
-   * other screens (text, learn-move prompt, summary) get A.
+   * Finish the current battle through the single loop (recognize -> handler -> verified input), no blind presses.
+   * mode "auto": rank attacks, use medicine, switch/escape with resource guards (Policy).
+   * mode "fight": FIGHT, then the move in `slot` (0 TL, 1 TR, 2 BL, 3 BR; or a function of the active species);
+   * mode "run": RUN; mode "switch": shift the lead to party slot 1 on the first turn, then fight with `slot`.
+   * A screen without a handler (or "unknown") stops the battle with the state dump in `driver`.
    */
   async battle(mode = "auto", slot = 0, maxSteps = 4000) {
     const start = this.party();
     const screens = new Set();
-    let n = 0, stop = null, decision = null, decisions = 0, unchanged = 0, lastKey = null, lastHp = null, incoming = 0;
-    const trace = [];
-    let observedPartyMenu = false, learn = null;
     if (this.training) this.training.switched = false;
     // Trainer battles: estimate before the first turn, so a loss or stop can be explained (diagnosis below).
     const C0 = this.C, opponent = this.G.G.gBattleTypeFlags & C0.BATTLE_TYPE_TRAINER ? this.G.G.gTrainerBattleOpponent_A : null;
     const assessment = opponent != null && this.rom.trainers[opponent] ? await this.assessTrainer(opponent, { fullHp: false }) : null;
     const teamStart = this.resources().party.map(m => ({ species: m.species, level: m.level, hp: m.hp, maxHP: m.maxHP }));
-    const press = (bits) => this.tap(bits, 4);
-    while (this.inBattle() && n < maxSteps) {
-      n++;
-      screens.add(this.cb2());
-      // The evolution scene can start while gMain still reports the battle; it has its own learn-move prompt.
-      if (/EvolutionScene/.test(this.cb2() ?? "")) {
-        const evo = await this.handleEvolution();
-        trace.push({ action: "evolution", ok: evo.ok, evolved: evo.evolved, learn: evo.trace });
-        if (!evo.ok) { stop = evo.reason; break; }
-        continue;
-      }
-      // battle_script_commands.c 0x5A/0x5B (Cmd_yesnoboxlearnmove/Cmd_yesnoboxstoplearningmove): with a full
-      // moveset, chooseMoveToForget decides. YES opens ShowSelectMovePokemonSummaryScreen; the slot is chosen there
-      // by real input and the result is checked in the party data, since that screen's cursor is not observable.
-      if (learn && !learn.checked && !this.hasTask("Task_InputHandler_SelectOrForgetMove") && this.cb2() === "BattleMainCB2") {
-        const moves = dbg().save.save.party[learn.monId]?.moves ?? [];
-        if (moves[learn.slot] === learn.move) { learn.checked = true; trace.push({ action: "learned move", ...learn, moves: [...moves] }); }
-        else if (learn.chosen && ++learn.waits > 300) { stop = "learn move not applied"; trace.push({ action: "learn move mismatch", ...learn, moves: [...moves] }); break; }
-      }
-      if (learn && !learn.chosen && !this.hasTask("Task_InputHandler_SelectOrForgetMove") && /PSS|PokemonSummary|^$/.test(this.cb2() ?? "")) {
-        await this.wait(1); continue; // summary screen still loading: no input
-      }
-      if (learn && !learn.chosen && this.hasTask("Task_InputHandler_SelectOrForgetMove")) {
-        await this.wait(60); // fade-in (states 0-1) ignores input
-        for (let i = 0; i < learn.slot; i++) await this.tap(0x80, 20);
-        await this.tap(1, 20);
-        learn.chosen = true; learn.replaceSlotSeen = this.SUM?.GetMoveSlotToReplace?.() ?? null;
-        continue;
-      }
-      if (mode === "auto" && this.G.gBattleScripting.learnMoveState === 1) {
-        const opcode = this.BS.r8(this.G.G.gBattlescriptCurrInstr);
-        if (opcode === 0x5a) {
-          const monId = this.G.gBattleStruct.expGetterMonId, mon = dbg().save.save.party[monId], move = this.G.G.gMoveToLearn;
-          const types = this.rom.species[mon.species].types;
-          const slot = this.policy.forgetMove({ moves: mon.moves, move, types }, this.policyDeps());
-          if (slot < 0) { trace.push({ action: "decline replacement", move }); await this.press("B", 8); continue; }
-          if (this.G.gBattleCommunication[this.C.CURSOR_POSITION] !== 0) { await this.tap(0x40); continue; }
-          learn = { monId, species: mon.species, move, slot, forgotten: mon.moves[slot], chosen: false, checked: false, waits: 0 };
-          trace.push({ action: "replace move", ...learn });
-          await this.press("A", 8); continue;
-        }
-        if (opcode === 0x5b) {
-          if (this.G.gBattleCommunication[this.C.CURSOR_POSITION] !== 0) await this.tap(0x40);
-          await this.press("A", 8); continue;
-        }
-      }
-      const f = this.G?.gBattlerControllerFuncs[0]?.name;
-      if (f !== "WaitForMonSelection" || this.cb2() !== "CB2_UpdatePartyMenu") observedPartyMenu = false;
-      if (f === "HandleInputChooseAction") {
-        if (decision?.action === "switch" && this.G.gBattleMons[0].personality === decision.personality) decision = null;
-        if (mode === "auto" && !decision) {
-          const mons = this.G.gBattleMons;
-          const active = this.G.gBattlerPartyIndexes[0];
-          const key = JSON.stringify([mons[1].species, mons[1].hp, mons[1].status1]);
-          unchanged = key === lastKey ? unchanged + 1 : 0;
-          incoming = lastHp?.active === active ? Math.max(0, lastHp.hp - mons[0].hp) : 0;
-          lastHp = { active, hp: mons[0].hp }; lastKey = key;
-          if (++decisions > this.policy.options.maxDecisions || unchanged >= this.policy.options.maxUnchanged) { stop = "decision budget"; break; }
-          decision = this.battleDecision(incoming);
-          trace.push({ ...decision, remainingPP: decision.pp, active, hp: mons[0].hp, foe: mons[1].species, foeHp: mons[1].hp, pp: [...mons[0].pp] });
-          if (decision.action === "stop") { stop = decision.reason; break; }
-          if (decision.action === "item") {
-            const personality = decision.personality ?? mons[0].personality;
-            const otId = decision.otId ?? mons[0].otId;
-            const fieldSlot = dbg().save.save.party.findIndex(m => m.species && m.personality === personality && m.otId === otId);
-            const used = await this.useItem(decision.item, fieldSlot, { battle: true });
-            trace.at(-1).used = used;
-            decision = null;
-            if (!used.ok) { stop = used.note; break; }
-            continue;
-          }
-        }
-        // mode "switch": the lead comes out, then shift to party slot 1 so both
-        // share the experience (a normal player technique).
-        const wantSwitch = mode === "switch" && this.G.gBattlerPartyIndexes?.[0] === 0 && dbg().save.save.party[1]?.hp > 0;
-        const want = mode === "run" || decision?.action === "run" ? 3 : wantSwitch || decision?.action === "switch" ? 2 : 0, c = this.G.gActionSelectionCursor[0];
-        if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
-        await this.press("A");
-        if (decision?.action === "run") decision = null;
-        continue;
-      }
-      if (f === "HandleInputChooseMove") {
-        const c = this.G.gMoveSelectionCursor[0];
-        // With 0 PP the C prints "There's no PP left…" and returns to move
-        // selection: pick another slot with PP, or it loops forever.
-        const pp = this.G.gBattleMons?.[0]?.pp;
-        // `slot` may be a function of the active species: { 16: 2, 2: 3 }[species].
-        let want = mode === "auto" ? this.bestMoves()[0]?.slot : typeof slot === "function" ? slot(this.G.gBattleMons?.[0]?.species) : slot;
-        if (mode === "auto" && want === undefined) { stop = "no usable attack"; break; }
-        if (pp && pp[want] === 0) for (let i = 0; i < 4; i++) if (pp[i] > 0) { want = i; break; }
-        if (c !== want) { await press((c & 1) < (want & 1) ? 0x10 : (c & 1) > (want & 1) ? 0x20 : (c >> 1) < (want >> 1) ? 0x80 : 0x40); continue; }
-        await this.press("A");
-        decision = null;
-        continue;
-      }
-      if (f === "WaitForMonSelection" && this.PM && this.cb2() === "CB2_UpdatePartyMenu") {
-        if (!observedPartyMenu) {
-          trace.push({ action: "party selection", menuAction: this.PM.gPartyMenu.action,
-            liveHp: this.G.gBattleMons[0].hp, activePersonality: this.G.gBattleMons[0].personality,
-            party: this.resources().party });
-          observedPartyMenu = true;
-        }
-        // Forced switch after a faint: go to the first able Pokémon, then SHIFT.
-        // Pressing A on the fainted one only prints "has no energy left" forever.
-        const party = dbg().save.save.party;
-        const active = this.G.gBattlerPartyIndexes?.[0];
-        const target = decision?.action === "switch" ? dbg().save.save.party.findIndex(m => m.personality === decision.personality) : mode === "auto" ? this.bestReplacement() : mode === "switch" && active === 0 && party[1]?.hp > 0 ? 1
-          : party.findIndex((m, i) => i !== active && m.species && !m.isEgg && m.hp > 0);
-        if (target < 0) {
-          // party_menu.c rejects B only for SEND_OUT (forced replacement).
-          // Trainer shift prompts may open CHOOSE_MON even while the active
-          // Pokémon is alive. Decline that optional change through the UI.
-          const menuAction = this.PM.gPartyMenu.action;
-          if (mode === "auto" && menuAction !== this.C.PARTY_ACTION_SEND_OUT) {
-            trace.push({ action: "cancel optional switch", menuAction,
-              liveHp: this.G.gBattleMons[0].hp, party: this.resources().party });
-            await this.press("B", 20);
-            decision = null;
-            continue;
-          }
-          trace.push({ action: "replacement unavailable", menuAction,
-            liveHp: this.G.gBattleMons[0].hp, party: this.resources().party });
-          stop = "no able replacement"; break;
-        }
-        const cur = this.PM.gPartyMenu.slotId;
-        if (target >= 0 && cur !== target) { await press(0x80); continue; }
-        await this.press("A", 20);
-        if (this.cb2() !== "CB2_UpdatePartyMenu") decision = null;
-        continue;
-      }
-      await this.press("A", 8);
+    const b = { mode, slot, decision: null, decisions: 0, unchanged: 0, lastKey: null, lastHp: null, incoming: 0, learn: null, sawPartyMenu: false };
+    const EVO = new Set(["evolution", "evolution-yesno", "summary-forget-move"]);
+    const d = await drive(this, { label: "battle", state: { battle: b }, maxFrames: maxSteps * 12,
+      until: (rec) => { screens.add(rec.raw?.cb2); return !rec.raw?.inBattle && !EVO.has(rec.screen) && !/EvolutionScene/.test(rec.raw?.cb2 ?? ""); } });
+    let stop = d.ok ? null : d.reason === "frame-budget" ? "step budget" : d.reason;
+    const trace = d.trace;
+    // battle_script_commands.c 0x5A: YES opens ShowSelectMovePokemonSummaryScreen; the slot is chosen there by real input
+    // and the result is checked in the party data, since that screen's cursor is not observable.
+    if (b.learn) {
+      const moves = dbg().save.save.party[b.learn.monId]?.moves ?? [];
+      if (moves[b.learn.slot] === b.learn.move) trace.push({ action: "learned move", ...b.learn, moves: [...moves] });
+      else if (!stop) { stop = "learn move not applied"; trace.push({ action: "learn move mismatch", ...b.learn, moves: [...moves] }); }
     }
     const stuck = this.inBattle();
     if (stuck && !stop) stop = "step budget";
     await this.wait(30);
-    const r = { battle: mode, slot, n, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, stop, decisions, trace, screens: [...screens].filter(Boolean) };
+    const r = { battle: mode, slot, n: d.iterations, start, end: this.party(), outcome: g().battleOutcome, map: dbg().state().map, stuck, stop, decisions: b.decisions, trace, screens: [...screens].filter(Boolean) };
+    if (!d.ok) r.driver = { reason: d.reason, screen: d.rec?.screen, details: d.rec?.details, dump: d.dump };
     if (assessment) r.assessment = { trainer: opponent, verdict: assessment.verdict, hpLeft: assessment.hpLeft, levelsNeeded: assessment.levelsNeeded, foes: assessment.foes };
     if (stop || r.outcome === this.C.B_OUTCOME_LOST || r.outcome === this.C.B_OUTCOME_DREW) r.diagnosis = this.battleDiagnosis(r, assessment, teamStart);
     this.log.push(r);
@@ -624,41 +474,22 @@ export const H = {
       end: { party: this.party(), verdict: assessment.verdict, hpLeft: assessment.hpLeft, levelsNeeded: assessment.levelsNeeded } };
   },
   /**
-   * Evolution scene after a battle (evolution_scene.c Task_EvolutionScene). A advances text and keeps the evolution
-   * (only B cancels it). With a full moveset the scene asks to delete a move and opens the same summary screen as
-   * Cmd_yesnoboxlearnmove: chooseMoveToForget picks the slot (B there declines; the following "stop learning?" is
-   * answered YES by A). The move is the evolved species' learnset entry at its level; the result is read back.
+   * Evolution scene after a battle (evolution_scene.c Task_EvolutionScene) through the single loop. The scene runs by
+   * itself; the learn-move prompts are answered by the Policy (chooseMoveToForget) and the forget-move summary screen
+   * is driven with the slot read back from GetMoveSlotToReplace. B (which cancels an evolution) is never sent.
    */
   async handleEvolution(maxFrames = 12000) {
     const party = () => dbg().save.save.party;
     const before = party().map(m => m.species);
-    const trace = [];
-    let learn = null;
-    for (let f = 0; f < maxFrames; f++) {
-      this.checkExecution();
-      const summary = this.hasTask("Task_InputHandler_SelectOrForgetMove");
-      // The summary screen loads behind an unnamed placeholder callback (SetMainCallback2WhenLoaded), then
-      // CB2_SetUpPSS/CB2_RunPokemonSummaryScreen: none of those means the scene is over.
-      const cb2 = this.cb2() ?? "";
-      if (!summary && !/EvolutionScene|PSS|PokemonSummary/.test(cb2) && cb2 !== "") break;
-      if (!summary && /PSS|PokemonSummary/.test(cb2) || cb2 === "") { this.step(0); if (f % 4 === 3) await new Promise(r => setTimeout(r, 1)); continue; }
-      if (summary && !learn) {
-        const idx = party().findIndex((m, i) => m.species && m.species !== before[i]);
-        const mon = party()[idx];
-        const move = mon ? (this.rom.species[mon.species].learnset.find(([lvl, mv]) => lvl === mon.level && !mon.moves.includes(mv)) ?? [])[1] : undefined;
-        const slot = move ? this.policy.forgetMove({ moves: mon.moves, move, types: this.rom.species[mon.species].types }, this.policyDeps()) : -1;
-        learn = { monId: idx, species: mon?.species, move: move ?? null, slot, forgotten: slot >= 0 ? mon.moves[slot] : null };
-        trace.push({ action: slot >= 0 ? "replace move" : "decline replacement", ...learn });
-        await this.wait(60);
-        if (slot < 0) await this.tap(2, 20);
-        else { for (let i = 0; i < slot; i++) await this.tap(0x80, 20); await this.tap(1, 20); }
-        continue;
-      }
-      this.step(f % 32 === 1 ? 1 : 0);
-      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
-    }
+    const FAMILY = new Set(["evolution", "evolution-yesno", "summary-forget-move", "summary-view", "loading-screen"]);
+    const state = { evolution: { before, trace: [] } };
+    const r = await drive(this, { label: "evolution", state, maxFrames, handlers: { evolution: async (ctx) => { await ctx.wait(4); } },
+      // The scene is over when its task is gone and no evolution/summary screen shows (the YES -> summary hand-over passes
+      // through an anonymous battle callback, so the task is what keeps the scene alive).
+      until: (rec) => !this.hasTask("Task_EvolutionScene") && !FAMILY.has(rec.screen) && !/EvolutionScene|PSS|PokemonSummary/.test(rec.raw?.cb2 ?? "") });
     const evolved = party().map((m, i) => m.species !== before[i] ? { slot: i, from: before[i], to: m.species } : null).filter(Boolean);
-    if (/EvolutionScene/.test(this.cb2() ?? "") || this.hasTask("Task_InputHandler_SelectOrForgetMove")) return { ok: false, reason: "evolution scene did not finish", evolved, trace };
+    const trace = state.evolution.trace, learn = state.forget;
+    if (!r.ok) return { ok: false, reason: r.reason === "frame-budget" ? "evolution scene did not finish" : r.reason, evolved, trace, driver: { reason: r.reason, screen: r.rec?.screen, dump: r.dump } };
     if (learn?.slot >= 0 && party()[learn.monId].moves[learn.slot] !== learn.move) return { ok: false, reason: "evolution learn move not applied", evolved, trace };
     const result = { ok: true, evolved, trace };
     this.log.push({ evolution: result });
@@ -735,21 +566,13 @@ export const H = {
     const arrived = await this.goto(7, 4, { battle: "fight" });
     if (arrived.note) return { ok: false, note: arrived.note, before };
     await this.face("U");
-    // press()/wait() advance batches of frames: an A batch can create and then
-    // dismiss the offer before until() observes it. Inspect every frame, release
-    // between key edges, and stop advancing A as soon as the offer exists.
-    let offered = false;
-    for (let frame = 0; frame < 3000; frame++) {
-      if (this.hasTask("Task_MultichoiceMenu_HandleInput")) { offered = true; break; }
-      this.step(frame % 32 === 0 ? 1 : 0);
-      if (frame % 16 === 15) await new Promise(resolve => setTimeout(resolve, 1));
-    }
-    if (!offered) offered = this.hasTask("Task_MultichoiceMenu_HandleInput");
-    this.step(); // release A before the explicit YES confirmation
-    if (!offered) return { ok: false, note: "nurse offer missing", before };
-    // Nurse offer opens at YES. Never walk through the healing movement script.
-    await this.wait(30); await this.press("A");
-    if (!await this.until(() => this.fieldFree(), "A", 500)) return { ok: false, note: "nurse did not return control" };
+    const talk = await this.interact();
+    if (talk.note) return { ok: false, note: "nurse offer missing", before };
+    // Nurse offer opens at YES (multichoice, goal "heal"); the loop answers it, lets the dialogue and the healing
+    // movement script finish and returns when the field is free. The walk through that script is never driven by hand.
+    const goal = { kind: "heal", offered: false };
+    const run = await drive(this, { goal, label: "heal", maxFrames: 20000, until: (rec) => goal.offered && rec.screen === "field-free" });
+    if (!run.ok) return { ok: false, note: goal.offered ? "nurse did not return control" : "nurse offer missing", before, driver: { reason: run.reason, screen: run.rec?.screen, details: run.rec?.details, dump: run.dump } };
     const after = this.resources();
     const healed = dbg().save.save.party.filter(m => m.species).every(m => m.hp === m.stats[0] && m.status === 0 && m.moves.every((id, slot) =>
       m.pp[slot] === (id ? this.rom.moves[id].pp + Math.floor(this.rom.moves[id].pp * 20 * ((m.ppBonuses >> (slot * 2)) & 3) / 100) : 0)));
@@ -921,79 +744,54 @@ export const H = {
     for (let f = 0; f < 16 && object().facingDirection !== facing; f++) this.step(bits);
     await this.wait(12);
   },
-  /** Talk across a counter: stand two tiles below (x, y), face up, press A. */
+  /** Talk across a counter: stand two tiles below (x, y), face up, interact. */
   async counter(x, y) {
     const r = await this.goto(x, y + 2);
     if (r.note) return r;
     await this.face("U");
-    await this.press("A");
-    return this.st();
+    return this.interact();
   },
   /** Answer the script Yes/No menu (ScriptMenu_YesNo; cursor starts on YES) by key input.
    * Only for a menu observed open; the caller states the answer, nothing is chosen implicitly. */
   async answerYesNo(yes) {
     if (typeof yes !== "boolean") throw new Error("answerYesNo needs an explicit boolean");
     if (!this.hasTask("Task_YesNoMenu_HandleInput")) return { ok: false, status: "blocked", reason: "no-yes-no-menu", note: "no yes/no menu", state: this.observe() };
-    await this.wait(10); // the task ignores input for its first 5 frames
-    await this.press(yes ? "A" : "B", 20);
-    if (!await this.until(() => !this.hasTask("Task_YesNoMenu_HandleInput"), null, 20)) return { ok: false, status: "failure", reason: "yes-no-not-closed", note: "yes/no menu did not close", state: this.observe() };
+    try {
+      // The task ignores input for its first frames: the same verified press is repeated if it had no effect.
+      await pressChecked(this, yes ? "A" : "B", { expect: (r) => r.screen !== "yes-no", within: 60, retry: 2, label: "answerYesNo" }); // input: yes-no
+    } catch (e) {
+      if (!(e instanceof DriverStop)) throw e;
+      return { ok: false, status: "failure", reason: "yes-no-not-closed", note: "yes/no menu did not close", state: this.observe(), driver: { reason: e.reason, ...e.info } };
+    }
     return { ok: true, status: "success", answered: yes ? "yes" : "no", state: this.observe() };
   },
-  /** Buy `quantity` of `item` at a Poke Mart counter through the real clerk menu (BUY > list > quantity > YES).
-   * The listed entry is checked on the quantity prompt (task data) before anything is confirmed; the result is
+  /** Press A on the field for the faced object/tile; verified: a script, dialog or battle must start. */
+  async interact() {
+    try { await pressChecked(this, "A", { expect: (r) => r.screen !== "field-free", within: 120, label: "interact" }); return this.st(); } // input: field-free
+    catch (e) { if (e instanceof DriverStop) return { ...this.st(), ok: false, note: "nothing to interact with", driver: { reason: e.reason, ...e.info } }; throw e; }
+  },
+  /** Buy `quantity` of `item` at a Poke Mart counter through the real clerk menu (loop goal "buy": BUY > list > quantity > YES).
+   * The listed entry is read from the buy list and checked on the quantity prompt before anything is confirmed; the result is
    * verified by money (price * quantity from the item data) and bag count. Leaves the shop with B afterwards. */
   async buyItem(item, quantity, { clerk = [2, 3] } = {}) {
     if (!Number.isInteger(item) || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) throw new Error("invalid buyItem request");
     const price = (await this.mod("/src/fr/pokemon/items.ts")).itemInfo(item)?.price;
     const before = this.resources(), count0 = this.countItem(item);
     if (!price || before.money < price * quantity) return { ok: false, status: "blocked", reason: "not-enough-money", note: "not enough money", price, before };
-    const task = (name) => this.T.tasks.tasks.find(t => t.isActive && t.func.name === name);
-    const listIdle = () => !!task("Task_BuyMenu") && !this.hasTask("Task_ContinueTaskAfterMessagePrints");
-    const leave = async (note) => { await this.until(() => this.fieldFree(), "B", 200); return { ok: false, status: "failure", reason: note, note, price, before, after: this.resources(), state: this.observe() }; };
+    const leave = async (note, r) => { await this.escapeMenus(); return { ok: false, status: "failure", reason: note, note, price, before, after: this.resources(), state: this.observe(), driver: r && { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump } }; };
     const talked = await this.counter(clerk[0], clerk[1]);
     if (talked.note) return talked;
-    // The clerk script (message; waitmessage; pokemart) needs no button: a blind A here also selects BUY when the menu
-    // is created in the same frame and the following A presses then buy the first list entry (route 2 run 3: 13 Poke Balls).
-    if (!await this.until(() => this.hasTask("Task_ShopMenu"), null, 600)) return leave("shop menu did not open");
-    await this.press("A", 10); // BUY (first entry of the clerk menu)
-    if (!await this.until(() => this.hasTask("Task_BuyMenu"), null, 600)) return leave("buy list did not open");
-    let found = false;
-    for (let i = 0; i < 12 && !found; i++) {
-      await this.press("A", 30);
-      if (!await this.until(() => !!task("Task_BuyHowManyDialogueHandleInput") || listIdle(), null, 300)) return leave("quantity prompt missing");
-      const how = task("Task_BuyHowManyDialogueHandleInput");
-      if (how && how.data[5] === item) { found = true; break; }
-      if (how) await this.until(() => !task("Task_BuyHowManyDialogueHandleInput"), "B", 100);
-      if (!await this.until(listIdle, null, 200)) return leave("did not return to the buy list");
-      await this.tap(0x80, 10);
-    }
-    if (!found) return leave("item not in the buy list");
-    for (let i = 1; i < quantity; i++) await this.tap(0x40, 8);
-    if (!await this.until(() => task("Task_BuyHowManyDialogueHandleInput")?.data[1] === quantity, null, 100)) return leave("quantity not reached");
-    await this.press("A", 30);
-    if (!await this.until(() => this.hasTask("Task_CallYesOrNoCallback"), null, 300)) return leave("confirmation prompt missing");
-    await this.press("A", 30); // YES
-    // "Here you are" waits for a button: A only while its message/return task exists, never once the list is back.
-    let back = false;
-    for (let f = 0; f < 4800 && !back; f++) {
-      back = listIdle();
-      if (back) break;
-      const waiting = this.hasTask("Task_ContinueTaskAfterMessagePrints") || this.hasTask("Task_ReturnToItemListAfterItemPurchase");
-      this.step(waiting && f % 40 === 0 ? 1 : 0);
-      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
-    }
-    if (!back) return leave("did not return to the list after buying");
+    const goal = { kind: "buy", item, quantity, count0, bought: false };
+    const r = await drive(this, { goal, label: "buy", maxFrames: 40000, until: (rec) => goal.bought && rec.screen === "field-free" });
+    if (!r.ok) return leave(r.reason, r);
     const paid = before.money - this.resources().money, gained = this.countItem(item) - count0;
-    await this.until(() => this.hasTask("Task_ShopMenu"), "B", 400);
-    await this.press("B", 10);
-    const left = await this.idle(1500, true);
     const after = this.resources();
-    const ok = paid === price * quantity && gained === quantity && !left.script && !left.locked && this.fieldFree();
+    const ok = paid === price * quantity && gained === quantity && this.fieldFree();
     const result = { ok, status: ok ? "success" : "failure", reason: ok ? "completed" : "purchase-mismatch", note: ok ? null : "purchase did not match", item, quantity, price, paid, gained, before, after };
     this.log.push({ purchase: { item, quantity, paid, ok } });
     return result;
   },
-  /** Walk next to an object/tile, face it and press A. */
+  /** Walk next to an object/tile, face it and interact (verified: a script starts). */
   async talk(x, y) {
     // Prefer standing below the target (facing up), as most counters/NPCs expect.
     for (const [name, ox, oy] of [["U", 0, 1], ["L", 1, 0], ["R", -1, 0], ["D", 0, -1]]) {
@@ -1001,8 +799,7 @@ export const H = {
       const r = await this.goto(x + ox, y + oy);
       if (!r.note && r.x === x + ox && r.y === y + oy) {
         await this.face(name);
-        await this.press("A");
-        return this.st();
+        return this.interact();
       }
     }
     return { ...this.st(), note: "cannot reach" };
@@ -1037,27 +834,11 @@ export const H = {
     const index = menu.order.indexOf(4); // start_menu.c STARTMENU_SAVE
     if (index < 0) return { ok: false, status: "blocked", reason: "save-unavailable", note: "SAVE unavailable" };
     const before = this.saveSnapshot(), rawBefore = localStorage.getItem(SAVE_KEY);
-    const cursor = g().startMenuCursor;
-    await this.tap(8, 12);
-    if (!await this.until(() => this.hasTask("startInput"), null, 60)) return { ok: false, note: "start menu did not open" };
-    for (let i = 0; i < (index - cursor + menu.numItems) % menu.numItems; i++) await this.tap(0x80, 12);
-    await this.tap(1, 12);
-    const prompts = [];
-    for (let f = 0; f < maxFrames; f++) {
-      if (this.fieldFree()) break;
-      const callback = g().activeSaveDialog?.saveDialogCB.name;
-      if (["SaveDialogCB_AskSaveHandleInput", "SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput"].includes(callback)) {
-        if (prompts.length >= 2) return { ok: false, note: "unexpected additional save prompt", prompts };
-        await this.tap(0x40, 1); // YES, including the different-file default NO
-        this.step();this.step(1);
-        if (g().activeSaveDialog?.saveDialogCB.name === callback) return { ok: false, note: "save choice did not close", prompts };
-        this.step();
-        prompts.push({ frame: g().frameCount, callback });
-        continue;
-      }
-      this.step(g().overworld.messageBox.printer?.active && f % 32 === 1 ? 1 : 0);
-      if (f % 4 === 3) await new Promise(r => setTimeout(r, 1));
-    }
+    const goal = { kind: "save", started: false, menuUsed: false, prompts: 0, promptLog: [] };
+    const run = await drive(this, { goal, label: "save", maxFrames, until: (rec) => goal.prompts > 0 && rec.screen === "field-free" });
+    const prompts = goal.promptLog;
+    if (!run.ok) return { ok: false, note: /^unexpected additional/.test(run.reason) ? run.reason : "SAVE did not finish and persist", before, after: this.saveSnapshot(), prompts,
+      driver: { reason: run.reason, screen: run.rec?.screen, details: run.rec?.details, dump: run.dump } };
     const raw = localStorage.getItem(SAVE_KEY), after = this.saveSnapshot();
     if (!this.fieldFree() || after.saved !== before.saved + 1 || !raw || raw === rawBefore)
       return { ok: false, note: "SAVE did not finish and persist", before, after, prompts };
