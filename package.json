@@ -81,6 +81,7 @@
     "refs:crystal-maps": "python3 tools/refs/crystal_maps.py",
     "refs:expansion-frlg": "python3 tools/refs/expansion_frlg.py",
     "refs:showdown-gens": "python3 tools/refs/showdown_gens.py",
+    "play:server": "vite --config tools/playtest/vite.playtest.config.mjs",
     "play:smoke": "node tools/playtest/smoke/run.mjs",
     "viewer:index": "python3 tools/viewer/world_index.py"
   },
