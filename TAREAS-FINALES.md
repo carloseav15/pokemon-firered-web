@@ -240,7 +240,7 @@ las validaciones generales anteriores siguen abiertas.
 - [x] **DRV-14 — Modo manual y replay, fase 1**: `5de398c3`, 10×10.000 fotogramas con observación idéntica, sin rAF espontáneo; entrada/semilla alteradas detectadas, lotes y waits exactos, teclado aislado y arranque normal comprobados.
   Driver H: OPTION y retorno al campo, 409 fotogramas/409 entradas grabadas. `check:manual-frames`, tipos, honesty y build PASS; revisión independiente de Muse pendiente.
 - [ ] **DRV-15 — Ampliar determinismo**: cargas/continuaciones, audio lógico, intro/título, observación de combate y savestates; contrastar el consumo RNG por VBlank con C. DRV-10/13 siguen abiertos; investigar por separado `Quest Log palette backup is not initialized` al continuar `cerulean-arrival` (diagnóstico 2026-10-08).
-- [ ] **DRV-16 — Extender recorrido y cobertura de opciones.** `98dc7ab1` deja Ruta5 comprobada; siguiente: rutas5/6→Carmín→S.S.Anne→Corte→Surge, luego Liga/Sevii. Encadenar entradas/salidas verificadas y casos alternativos de §3; revisión independiente del tramo2 pendiente. No cerrar por flags importados ni por checks estáticos.
+- [ ] **DRV-16 — Extender recorrido y cobertura de opciones.** `98dc7ab1` deja Ruta5 comprobada; `aa681ccd` (Ruta5→Carmín, checkpoint `vermilion-arrival-*`) y `0a9432ac` (S.S.Anne, HM01, `ssanne-hm01-*`) verificados con SAVE/continue/movimiento desde entradas importadas; `61610652` añade `H.teachMove`. Pendiente: Surge (`surge-progress.job.mjs`, comprometido sin validar: «no path» a la puerta del gimnasio), luego Liga/Sevii. Encadenar entradas/salidas verificadas y casos alternativos de §3; revisión independiente del tramo2 pendiente. No cerrar por flags importados ni por checks estáticos.
 - [x] **Gritos en fotogramas y por id de grito** — `7dd38034`: la lógica ya no espera al audio del
   navegador (combate colgado en SoundTask_PlayDoubleCry_Step) y cada especie usa su grito (antes el de la
   siguiente). `check:cry-timing`. Falta escucha humana (C13).
@@ -596,6 +596,11 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/fr/`.
 Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1–4.
 
+- [ ] **6.4 Exportador por juego (Emerald)** — [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md),
+  [docs/EMERALD-FALTANTE.md](docs/EMERALD-FALTANTE.md). `EXPORT_GAME=emerald` exporta setup, constants, scripts, battlescripts,
+  maps, tilesets, objects, data, codegen, structs, audio y cdata; FireRed regenera idéntica (0 archivos cambiados, comprobado tras cada
+  cambio). Abierto: `tsconst` (causa hallada, sin confirmar), `incbin` (2.467 `INCGFX_*`; falta compilar `gbagfx` y ampliar la descarga),
+  `graphics` (decidir qué fuentes necesita el motor). Los datos exportados no están contrastados con la ROM.
 - [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama
   `muse/visor`). Pistas §4.1–4.3 cuadran con datos (sin PISTA INCORRECTA); §6 verificado
   en navegador contra partidas reales (Verde) + capturas de mundo y ficha.
