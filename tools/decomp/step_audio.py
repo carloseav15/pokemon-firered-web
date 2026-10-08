@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import wave
 from pathlib import Path
 
 from common import DECOMP, OUT, write_json
@@ -176,15 +177,22 @@ def export_audio(_constants=None) -> None:
     labels = re.findall(r"^\s*cry\s+(\w+)", cry_text, re.M)
     cries_dir = out / "cries"
     order: list[str | None] = []
+    # [sample rate, sample count] of each cry wave, so the game can time a cry in frames (the m4a channel lives
+    # until the sample or its release envelope ends) without waiting for the browser to decode or play it.
+    samples_meta: list[list[int] | None] = []
     for label in labels:
         wav = _wavname(label)
-        if wav and (DECOMP / "sound/direct_sound_samples/cries" / wav).exists():
+        src = DECOMP / "sound/direct_sound_samples/cries" / wav if wav else None
+        if src and src.exists():
             cries_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(DECOMP / "sound/direct_sound_samples/cries" / wav, cries_dir / wav)
+            shutil.copyfile(src, cries_dir / wav)
             order.append(wav)
+            with wave.open(str(src), "rb") as w:
+                samples_meta.append([w.getframerate(), w.getnframes()])
         else:
             order.append(None)
-    write_json(out / "cries.json", {"order": order})
+            samples_meta.append(None)
+    write_json(out / "cries.json", {"order": order, "samples": samples_meta})
 
     print(f"  songs={len(songs)} midis={sum(1 for s in songs if s['midi'])} "
           f"groups={len(groups)} samples={len(samples)} cries={sum(1 for c in order if c)}")
