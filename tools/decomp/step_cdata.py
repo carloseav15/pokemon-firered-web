@@ -23,6 +23,9 @@ from pathlib import Path
 from common import BIN, BUILD, CPP_DEFINES, DECOMP, GEN_INCLUDE, OUT, write_json
 
 INCBIN_MACROS = ("INCBIN", "INCBIN_U8", "INCBIN_U16", "INCBIN_U32", "INCBIN_S8", "INCBIN_S16", "INCBIN_S32")
+# pokeemerald also declares graphics by their SOURCE file: INCGFX_U32("dir/tiles.png", ".4bpp.lz"). preproc would try to open the
+# generated binary ("dir/tiles.png.4bpp.lz"), which only exists after a build, so these are folded into the same placeholder.
+INCGFX_MACROS = ("INCGFX_U8", "INCGFX_U16", "INCGFX_U32")
 BASE_TYPES = {"u8", "u16", "u32", "u64", "s8", "s16", "s32", "s64", "vu8", "vu16", "vu32", "bool8", "bool16", "bool32", "int", "unsigned", "signed", "char", "short", "long", "void", "float", "double", "const", "volatile", "static", "EWRAM_DATA", "IWRAM_DATA", "ALIGNED"}
 
 TOKEN_RE = re.compile(r"""
@@ -52,12 +55,15 @@ def tokenize(text: str) -> list[str]:
 
 
 def preprocess(path: Path) -> str:
-    defines = [f"-D{m}(...)=__INCBIN__(__VA_ARGS__)" for m in INCBIN_MACROS]
+    defines = [f"-D{m}(...)=__INCBIN__(__VA_ARGS__)" for m in INCBIN_MACROS + INCGFX_MACROS]
     include_args = ["-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", "-I", "src", "-I", str(BUILD)]
     pre = subprocess.run(["clang", "-E", "-P", "-x", "c", "-U__APPLE__", "-w", *defines, *CPP_DEFINES, *include_args, str(path)], cwd=DECOMP, capture_output=True)
     i_path = BUILD / f"cdata_{path.stem}.i"
     i_path.write_bytes(pre.stdout)
     enc = subprocess.run([str(BIN / "preproc"), str(i_path), "charmap.txt"], cwd=DECOMP, capture_output=True)
+    if enc.returncode != 0:
+        # A failed preproc leaves truncated text (an unclosed brace sent the parser into an endless loop on Emerald).
+        raise RuntimeError(f"preproc failed on {path.name}: {enc.stderr.decode(errors='replace')[:400]}")
     return enc.stdout.decode("utf-8", errors="replace")
 
 

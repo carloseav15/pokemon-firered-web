@@ -86,7 +86,7 @@ Hecho en el exportador (`tools/decomp/`), con FireRed por defecto:
 
 Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `constants` (8.340), `codegen` y `structs` (25) **pasan**.
 
-## 7. Avance posterior (2026-10-08): 11 de 15 pasos pasan para Emerald
+## 7. Avance posterior (2026-10-08): 12 de 15 pasos pasan para Emerald (tsconst sin confirmar)
 
 `EXPORT_GAME=emerald python3 tools/decomp/export.py <paso>`; tras cada cambio FireRed se regeneró con **0 archivos cambiados**
 (`public/fr`, `src/fr/generated`).
@@ -103,8 +103,9 @@ Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `cons
 | audio | OK | 610 canciones, 530 MIDI, 193 grupos de voces, 154 muestras, 386 gritos. Jugadores musicales simbólicos, `voice_group nombre`, `.include` de grupos |
 | data | OK | los 10 archivos (`species`, `moves`, `trainers`, `items`, `wild`, `heal_locations`, `region_map`, `strings`, `battle_strings`, `script_menu`) en 5 s. Especies 412 (Pokédex nacional 387 entradas; Treecko 40/45/35/70/65/55, Planta, Espesura, evoluciona a nivel 16, comprobado con los valores conocidos de Gen 3), movimientos 355, habilidades 78, entrenadores 855 (1.825 Pokémon), objetos 377, 116 mapas con encuentros salvajes, 114 menús de selección múltiple, 30 movimientos de tutor (FireRed 15) |
 | graphics | **falla** | `export_fonts` busca `sFont*LatinGlyphWidths` en `src/text.c`; Emerald los tiene en `src/fonts.c` con otro conjunto (small, small narrow, narrow, short, normal; FRLG male/female solo japonés). Hay que decidir qué fuentes necesita el motor |
-| incbin | sin validar | termina, pero avisa de ficheros inexistentes (p. ej. `sootopolis/anim/stormy_water`) |
-| cdata, tsconst | sin diagnosticar | `cdata` agota 900 s (FireRed 38 s); `tsconst` tardó 802 s y no generó el ejecutable de prueba |
+| cdata | OK | 310 archivos, 24.188 definiciones, 60 s (FireRed: 283, 18.606, 38 s). Causa de los 900 s: `preproc` intentaba abrir `x.pal.gbapal`, que solo existe tras compilar, por `INCGFX_U16("x.pal", ".gbapal")`; fallaba, el código ignoraba el error, el texto quedaba cortado en una llave abierta y el analizador giraba sin fin. Arreglo: `INCGFX_*` se pliega al mismo marcador que `INCBIN_*`, y un fallo de `preproc` ya levanta error |
+| tsconst | causa hallada, **sin confirmar** | `usable_headers` tarda 21 s (320 cabeceras); el resto eran 40 pasadas de `clang` de ~20 s con el límite por defecto de 20 errores por pasada, y Emerald tiene cientos de nombres a rechazar. Se añadió `-ferror-limit=0` (también en `step_setup`); FireRed idéntico. La ejecución de Emerald se interrumpió antes de terminar, así que no se sabe si basta |
+| incbin | **diagnosticado, no resuelto** | Emerald declara los gráficos con `INCGFX_*` (2.467 usos frente a 265 `INCBIN_*`): el paso solo cubre ese ~10 % y ningún gráfico. Faltan en la descarga `/tools/gbagfx/` (22 archivos) y `graphics_file_rules.mk`; además `gbagfx` lo espera ya compilado en `.decomp-build/<juego>/bin` (el exportador no lo construye; el de FireRed se compiló a mano y `libpng` existe en `/opt/homebrew`). Conversiones necesarias, por frecuencia: `.4bpp.lz` (~2.300), `.gbapal` y `.gbapal.lz` (~3.300), `.4bpp` con tamaños (`-mwidth/-mheight`, `-num_tiles`), `.1bpp`, `.lz`, `.rl`, `.latfont` |
 
 Lo que **no** demuestra esto: que los datos exportados de Emerald sean correctos. Solo que el paso termina y cuenta cosas
 plausibles (518 mapas = los de `refs/emerald/maps.json`). La validación contra la ROM sigue pendiente.
@@ -116,4 +117,4 @@ tienen `itemId = ITEM_NONE` en el propio C), Pokédex `pokedex_text.h`, aprendiz
 `gTutorMoves`, menús de `data/script_menu.h` (`MULTI_*`), y `extract_definition()` ya no toma como definición un fragmento
 de comentario. En Emerald `script_menu.json` tiene `stdStrings` y `textColors` a `null` (no existen).
 
-Siguiente trabajo, por orden: `graphics`, y diagnosticar `cdata`/`tsconst`/`incbin`.
+Siguiente trabajo, por orden: confirmar `tsconst`, `incbin` (compilar `gbagfx`, ampliar la descarga, manejar `INCGFX_*`) y `graphics` (antes: decidir qué fuentes necesita el motor).

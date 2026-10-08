@@ -138,7 +138,7 @@ def dump_constants() -> dict[str, int]:
         source.write_text(f'#include "global.h"\n#include "constants_probe.h"\n#include <stdio.h>\nint main(void){{\n{body}\nreturn 0;}}\n')
         exe = BUILD / "constants_probe"
         result = __import__("subprocess").run(
-            ["clang", "-w", "-x", "c", *CPP_DEFINES, "-I", str(BUILD), "-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", str(source), "-o", str(exe)],
+            ["clang", "-w", "-ferror-limit=0", "-x", "c", *CPP_DEFINES, "-I", str(BUILD), "-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", str(source), "-o", str(exe)],
             cwd=DECOMP, capture_output=True)
         if result.returncode == 0:
             break

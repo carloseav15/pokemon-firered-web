@@ -76,7 +76,7 @@ def export_ts_constants() -> None:
         body = "\n".join(f'printf("%s %lld\\n", "{n}", (long long)({n}));' for n in keep)
         src = BUILD / "tsconst_probe.c"
         src.write_text(f'#include "tsconst_probe.h"\n#include <stdio.h>\nint main(void){{\n{body}\nreturn 0;}}\n')
-        r = subprocess.run(["clang", "-w", "-x", "c", *CPP_DEFINES, "-I", str(BUILD), "-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", str(src), "-o", str(exe)], cwd=DECOMP, capture_output=True)
+        r = subprocess.run(["clang", "-w", "-ferror-limit=0", "-x", "c", *CPP_DEFINES, "-I", str(BUILD), "-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", str(src), "-o", str(exe)], cwd=DECOMP, capture_output=True)
         if r.returncode == 0:
             break
         err = r.stderr.decode()
