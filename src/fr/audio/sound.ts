@@ -5,6 +5,28 @@
 import * as C from "../generated/constants";
 import { tasks, type TaskFunc } from "../gba/tasks";
 import { gQuestLogState } from "../questLogEvents";
+import { DATA_ROOT } from "../rom";
+import { loadCData } from "../hw/assets";
+import { SpeciesToCryId } from "../pokemon/pokemon";
+
+/** GBA frame rate (16.78 MHz / 280896 cycles per frame). */
+const GBA_FRAMES_PER_SECOND = 59.7275;
+
+/**
+ * Frames a cry channel stays alive after its m4a song starts (IsPokemonCryPlaying is TRUE meanwhile). The cry song
+ * (gPokemonCrySongTemplate, m4a_tables.c) holds a TIE note for `length` frames (xWAIT) and ends it at EOT; the
+ * channel then releases with envelope = envelope * release >> 8 per frame from the cry voice's sustain 255 (release 0
+ * stops at once). A DirectSound sample that ends first stops the channel earlier: `samples` frames at `rate` Hz played
+ * at pitch / 15360 (C_V). Without sample data only the envelope bound is known.
+ */
+export function cryChannelFrames(length: number, release: number, pitch: number, sample?: [number, number] | null): number {
+  let releaseFrames = release ? 0 : 1;
+  if (release) for (let v = 255; v > 0; releaseFrames++) v = (v * release) >> 8;
+  const envelopeEnd = length + releaseFrames;
+  if (!sample || !sample[0] || !sample[1] || !pitch) return envelopeEnd;
+  const sampleEnd = Math.ceil(sample[1] / (sample[0] * (pitch / 15360)) * GBA_FRAMES_PER_SECOND);
+  return Math.max(1, Math.min(sampleEnd, envelopeEnd));
+}
 
 export interface SoundBackend {
   playSong(player: "bgm" | "se1" | "se2" | "se3" | "fanfare", song: number): void;
@@ -19,7 +41,7 @@ export interface SoundBackend {
   fadeIn(player: "bgm", speed: number): void;
   setVolume(player: "bgm", volume: number): void;
   setPan?(player: "se1" | "se2", pan: number): void;
-  playCry(species: number, mode: number, pan?: number, volume?: number, priority?: number, settings?: PokemonCrySettings): void;
+  playCry(cryId: number, mode: number, pan?: number, volume?: number, priority?: number, settings?: PokemonCrySettings): void;
   isCryPlaying(): boolean;
   stopCry?(): void;
   frame(): void;
@@ -459,8 +481,19 @@ class Sound {
     this.PlayCryInternal(species, pan, volume, priority, mode);
   }
 
+  /** cries.json [rate, samples] per cry id, for cryChannelFrames; filled once at boot by loadCryData. */
+  private crySamples: Array<[number, number] | null> = [];
+
+  /** Load the cry sample lengths and the cry-id table SpeciesToCryId reads (pokemon.c sHoennSpeciesIdToCryId). */
+  async loadCryData(): Promise<void> {
+    const [cries] = await Promise.all([fetch(`${DATA_ROOT}/audio/cries.json`).then((r) => r.json()), loadCData("pokemon")]);
+    this.crySamples = (cries.samples ?? []) as Array<[number, number] | null>;
+  }
+
   /** PlayCryInternal; cry waveforms and DSP are adapted to exported WAVs/Web Audio. */
   PlayCryInternal(species: number, pan: number, volume: number, priority: number, mode: number): void {
+    // sound.c: species-- then SpeciesToCryId; gCryTable starts with Bulbasaur at index 0.
+    const cryId = SpeciesToCryId((species - 1) & 0xffff);
     mode &= 0xff;
     let length = 140;
     let reverse = false;
@@ -489,7 +522,7 @@ class Sound {
     this.SetPokemonCryRelease(release);
     this.SetPokemonCryChorus(chorus);
     this.SetPokemonCryPriority(priority);
-    this.SetPokemonCryTone(species, mode, reverse);
+    this.SetPokemonCryTone(cryId, mode, reverse);
   }
 
   /** SetPokemonCryVolume (m4a.c). */
@@ -516,11 +549,12 @@ class Sound {
   /** SetPokemonCryPriority (m4a.c); priority arbitration is limited by the single WAV voice. */
   SetPokemonCryPriority(value: number): void { this.pokemonCryPriority = value & 0xff; }
 
-  /** SetPokemonCryTone (m4a.c): select the species WAV in place of the C tone-table pointer. */
-  SetPokemonCryTone(species: number, mode: number, reverse: boolean): void {
-    this.cryTimer = 30;
+  /** SetPokemonCryTone (m4a.c): select the cry WAV (by cry id) in place of the C tone-table pointer. The game-side
+   *  channel lifetime is counted in frames (cryChannelFrames); the browser audio only sounds and never gates logic. */
+  SetPokemonCryTone(cryId: number, mode: number, reverse: boolean): void {
+    this.cryTimer = cryChannelFrames(this.pokemonCryLength, this.pokemonCryRelease, this.pokemonCryPitch, this.crySamples[cryId]);
     this.backend?.playCry(
-      species,
+      cryId,
       mode,
       this.pokemonCryPanpot - 64,
       this.pokemonCryVolume,
@@ -538,7 +572,7 @@ class Sound {
 
   /** IsPokemonCryPlaying (m4a.c): the browser backend owns the active cry voice. */
   IsPokemonCryPlaying(_musicPlayer?: unknown): boolean {
-    return this.backend ? this.backend.isCryPlaying() : this.cryTimer > 0;
+    return this.cryTimer > 0;
   }
 
   PlayCry_Normal(species: number, pan: number): void {
@@ -592,16 +626,15 @@ class Sound {
       this.pokemonCryBGMDuckingCounter--;
       return;
     }
-    if (!this.backend?.isCryPlaying() && this.cryTimer === 0) {
+    if (!this.IsPokemonCryPlaying()) {
       this.setBgmVolume(256);
       tasks.destroy(taskId);
     }
   }
 
+  /** IsCryFinished (sound.c): only the BGM-ducking task decides; the caller clears the cry songs. */
   isCryFinished(): boolean {
-    if (tasks.isActive(this.taskDuckBgmForPokemonCryFunc)) return false;
-    if (this.backend) return !this.IsPokemonCryPlaying();
-    return this.cryTimer === 0;
+    return !tasks.isActive(this.taskDuckBgmForPokemonCryFunc);
   }
 
   /** IsCryFinished from sound.c clears the completed cry tables before returning TRUE. */
@@ -652,9 +685,9 @@ class Sound {
     this.backend?.stopCry?.();
   }
 
-  /** IsCryPlayingOrClearCrySongs */
+  /** IsCryPlaying (sound.c): IsPokemonCryPlaying(gMPlay_PokemonCry), the cry channel only. */
   isCryPlaying(): boolean {
-    return !this.isCryFinished();
+    return this.IsPokemonCryPlaying();
   }
 
   /** IsCryPlayingOrClearCrySongs from sound.c: clear the cry state when idle. */

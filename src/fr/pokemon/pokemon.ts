@@ -410,8 +410,8 @@ export function HoennToNationalOrder(hoennNum: number): number {
   return cdata<number[]>("pokemon", "sHoennToNationalOrder")[hoennNum - 1];
 }
 
-/** SpeciesToCryId (pokemon.c): maps the Old Unown forms onto Unown and the Hoenn ids onto the
- *  135-entry cry table. No caller in this port: the audio backend keys the WAVs by species. */
+/** SpeciesToCryId (pokemon.c): maps species - 1 onto gCryTable, with the Old Unown forms onto Unown and the Hoenn
+ *  ids onto their cry entries. Called by sound.ts PlayCryInternal. */
 export function SpeciesToCryId(species: number): number {
   if (species < C.SPECIES_OLD_UNOWN_B - 1) return species;
   if (species <= C.SPECIES_OLD_UNOWN_Z - 1) return C.SPECIES_UNOWN - 1;

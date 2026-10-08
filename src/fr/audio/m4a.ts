@@ -783,7 +783,7 @@ export class M4aBackend implements SoundBackend {
     this.players.get(player)?.setMasterVolume(this.master);
   }
 
-  playCry(species: number, mode: number, pan = 0, volume = 120, priority = 10, settings?: PokemonCrySettings): void {
+  playCry(cryId: number, mode: number, pan = 0, volume = 120, priority = 10, settings?: PokemonCrySettings): void {
     if (!this.ensure() || !this.ctx || !this.out) return;
     // Reserve the cry player synchronously (SetPokemonCryTone picks a free
     // player, else the longest-playing one); the async load below fills it.
@@ -812,7 +812,7 @@ export class M4aBackend implements SoundBackend {
         releasePending();
         return;
       }
-      const file = this.cries?.[species];
+      const file = this.cries?.[cryId]; // gCryTable index (SpeciesToCryId(species - 1)), as sound.c
       if (!file || !this.ctx || !this.out) {
         releasePending();
         return;

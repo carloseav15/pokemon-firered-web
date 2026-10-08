@@ -53,6 +53,7 @@ export async function launchFireRed(options: LaunchOptions, container: HTMLEleme
     await loadTrig();
     status.textContent = "Loading battle data…";
     await preloadBattleAssets();
+    await sound.loadCryData();
   } catch (error) {
     status.textContent = `Could not load game data. Run: python3 tools/decomp/export.py\n${String(error)}`;
     throw error;
