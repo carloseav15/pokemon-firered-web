@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -44,7 +45,8 @@ def decode(text: str) -> str:
         if byte == 0xFF:
             break
         out.append(charmap.get(str(byte), "?"))
-    return "".join(out)
+    # bytes 0x55-0x59 spell {POKEBLOCK} in the charmap but also decode as katakana
+    return "".join(out).replace("オカキクケ", "{POKEBLOCK}")
 
 
 def num(value):
@@ -233,7 +235,53 @@ def pokemon_images() -> None:
     print(f"  Pokemon front images compared with their source png: {compared} of {len(manifest)}")
 
 
-for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images):
+SRC = ROOT.parent / "refs-src/pokeemerald"
+
+
+def c_strings(text: str) -> list[str]:
+    """Concatenated string literals of a C initializer, with the \\n \\l \\p escapes kept as the game stores them."""
+    return re.findall(r'"((?:[^"\\]|\\.)*)"', text)
+
+
+def items() -> None:
+    exported = load(OUT / "data/items.json")["items"]
+    source = (SRC / "src/data/items.h").read_text()
+    descriptions = {}
+    for name, body in re.findall(r"static const u8 (\w+)\[\]\s*=\s*_\(((?:\s*\"(?:[^\"\\]|\\.)*\")+)\s*\);", (SRC / "src/data/text/item_descriptions.h").read_text()):
+        descriptions[name] = "".join(c_strings(body))
+    blocks = re.findall(r"\[(ITEM_\w+)\]\s*=\s*\{(.*?)\n    \},", source, re.S)
+    expect("item blocks", len(blocks), len(exported))
+    scope = {**constants, "ITEM_TO_MAIL": lambda i: i - constants["FIRST_MAIL_INDEX"], "ITEM_TO_BERRY": lambda i: i - constants["FIRST_BERRY_INDEX"] + 1}
+    compared = 0
+    for const, body in blocks:
+        body = re.sub(r"//[^\n]*", "", body)
+        fields = dict(re.findall(r"\.(\w+)\s*=\s*(.+?),\s*(?:\n|$)", body))
+        index = constants[const]
+        e = exported[index]
+        tag = f"item {index} {const}"
+        expect(tag + " const", e["const"], const)
+        name = re.search(r'_\("((?:[^"\\]|\\.)*)"\)', fields.get("name", '_("")'))
+        expect(tag + " name", decode(e["name"]), name.group(1) if name else "")
+        for field in ("price", "importance", "registrability", "secondaryId", "holdEffectParam"):
+            if field in fields:
+                expect(f"{tag} {field}", e[field], eval(fields[field], {}, scope))
+            else:
+                expect(f"{tag} {field}", e[field], 0)
+        for field in ("pocket", "type", "battleUsage", "holdEffect"):
+            if field in fields:
+                expect(f"{tag} {field}", e[field], eval(fields[field], {}, scope))
+            else:
+                expect(f"{tag} {field}", e[field], 0)
+        for field in ("fieldUseFunc", "battleUseFunc"):
+            expect(f"{tag} {field}", e.get(field) or "NULL", fields.get(field, "NULL"))
+        desc = fields.get("description")
+        if desc in descriptions:
+            expect(tag + " description", decode(e["description"]).replace("\n", " ").replace("\\", ""), descriptions[desc].replace("\\n", " ").replace("\\p", " ").replace("\\l", " "))
+        compared += 1
+    print(f"  items compared: {compared} of {len(exported)}")
+
+
+for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items):
     step()
 print(f"{checked} comparisons, {len(failures)} mismatches")
 for line in failures[:40]:

@@ -124,7 +124,7 @@ Ejecución completa `EXPORT_GAME=emerald python3 tools/decomp/export.py`: los 15
 `python3 tools/emeraldExportValidate.py` (tras `EXPORT_GAME=emerald python3 tools/decomp/export.py`) compara `public/emerald` con
 `refs/emerald/*.json` y con las fuentes de pokeemerald. Son dos canalizaciones independientes sobre el mismo commit (el exportador
 compila el C con clang; `tools/refs/emerald_*.py` leen el texto), así que la coincidencia prueba que el exportador leyó las tablas
-correctas, no que coincidan con la ROM ni con el motor. Resultado: **26.369 comparaciones, 0 diferencias**. Se comprobó que detecta
+correctas, no que coincidan con la ROM ni con el motor. Resultado: **31.648 comparaciones, 0 diferencias** (26.369 al principio; los objetos añadieron 5.279). Se comprobó que detecta
 una alteración (Treecko con HP 41 → 1 diferencia).
 
 | Qué | Comparación |
@@ -134,10 +134,28 @@ una alteración (Treecko con HP 41 → 1 diferencia).
 | Entrenadores (855) | nombre (decodificado con `charmap.json`), clase, doble, tamaño del equipo, especie/nivel/IV de cada Pokémon |
 | Mapas (518) | conjunto de nombres; por mapa: música, clima, tipo y número de objetos/warps/coordenadas/carteles (los salones de concurso heredan los eventos de `ContestHall` por `shared_events_map`; la referencia deja esos contadores en `null`) y de conexiones |
 | Encuentros salvajes (116 mapas) | mismo conjunto de mapas que `wild_encounters.json`; tasa y lista (nivel mín/máx, especie) de land, water, rock smash y fishing iguales a una de las cabeceras del mapa |
+| Objetos (377) | nombre, precio, bolsillo, tipo, uso en combate, efecto y parámetro de objeto equipado, importancia, `secondaryId`, funciones de uso y descripción, contra el bloque de `src/data/items.h` y `item_descriptions.h` (con `ITEM_TO_MAIL/BERRY` y comentarios). `{POKEBLOCK}` decodifica como katakana por colisión de bytes y se normaliza |
 | Gráficos | 4.521 `INCGFX` `.4bpp`/`.gbapal` sin flags: tamaño exportado = ancho×alto/2 del png o 2 bytes por color; 385 de 440 imágenes de frente con el tamaño de su `front.png` |
 
 Hallazgos que no son errores: seis `front.png` de origen (Blaziken, Marshtomp, Poochyena, Walrein, Swablu, Rayquaza) miden 64×256, no
 64×64, y se exportan tal cual; 55 especies no se comparan por no tener `graphics/pokemon/<nombre>/front.png` (NONE, Castform, las letras de Unown y OLD_UNOWN).
 
-No cubierto: objetos (377), anchos de fuente, scripts/eventos (`scripts.json`), tilesets, audio y las constantes de `tsconst` más allá
+No cubierto: anchos de fuente, tilesets, audio y las constantes de `tsconst` más allá
 de unos valores sueltos. Tampoco se contrastó ningún dato con la ROM.
+
+### Scripts (`python3 tools/emeraldScriptValidate.py`)
+
+Segundo comprobador, para `scripts.bin` y `scripts.json`. Reensambla los datos con un expansor de macros propio (no LLVM):
+`asm/macros/event.inc`, `map.inc`, `movement.inc`, `battle_frontier/*.inc`, `.byte/.2byte/.4byte`, `.if/.elseif/.else/.endif`,
+`.ifb/.ifnb`, macros anidadas, `#ifdef` con ninguna macro opcional definida, y `.string` codificado directamente desde `charmap.txt`
+(el exportador usa `preproc`). Resultado: **17.228 comparaciones, 0 diferencias**.
+
+- Tabla de comandos: 227 entradas en el mismo orden que `script_cmd_table.inc`, y los índices coinciden con los comentarios `@ 0xNN`.
+- Especiales: 527, en el orden de `specials.inc`.
+- Conjunto de etiquetas: las 17.295 de `data/event_scripts.s` y sus inclusiones, ni una más ni una menos.
+- Bytes: 905.640 de los 972.520 de `scripts.bin` (93 %) reproducidos byte a byte; 15.426 etiquetas completas y 1.797 hasta la primera
+  línea que el comprobador no sabe ensamblar (cada una compara el prefijo). Los 6.632 bytes de punteros a símbolos de C son comodines.
+- No ensamblado: condiciones con símbolos desconocidos (`SPECIAL_WAITSTATE_*` y la `waitstate` implícita, que el exportador sustituye
+  por una comprobación aparte; `YES`/`NO`/`STR_VAR_1`), `.align` (37), `.braille` (22), `.set` (3).
+- Mientras se escribía apareció una falsa alarma instructiva: `cave_hole.inc` usa `#ifdef UBFIX`; sin `BUGFIX` (comentado en
+  `config.h`, `MODERN=0`) se ensambla la rama `#else`, y el exportador la tomó igual que el compilador.
