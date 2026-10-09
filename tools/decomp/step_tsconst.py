@@ -89,11 +89,16 @@ def export_ts_constants() -> None:
             if 0 <= idx < len(keep):
                 rejected.add(keep[idx])
         if undefined:
-            # linker errors: drop names whose macro text mentions the symbol
-            for n in keep:
-                mm = re.search(rf"#define {n} (.+)$", macros, flags=re.M)
-                if mm and any(u in mm.group(1) for u in undefined):
-                    rejected.add(n)
+            # linker errors: drop the names whose fully expanded text mentions an undefined symbol (a macro can reach
+            # a function or variable through other macros, so the #define text alone is not enough)
+            expanded = subprocess.run(["clang", "-E", "-P", "-w", "-x", "c", *CPP_DEFINES, "-I", str(BUILD), "-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", str(src)], cwd=DECOMP, capture_output=True).stdout.decode()
+            before = len(rejected)
+            for line in expanded.splitlines():
+                m = re.search(r'printf\("%s %lld\\n", "(\w+)"', line)
+                if m and any(re.search(rf"\b{re.escape(u)}\b", line.split(m.group(0), 1)[1]) for u in undefined):
+                    rejected.add(m.group(1))
+            if len(rejected) == before and not bad:
+                raise RuntimeError("undefined symbols not traceable to a constant: " + ", ".join(sorted(undefined)))
     out = subprocess.run([str(exe)], capture_output=True).stdout.decode()
     values: dict[str, int] = {}
     for line in out.splitlines():
