@@ -401,7 +401,44 @@ def audio() -> None:
     print(f"  songs {len(table)}, voice groups {len(source_groups)}, samples {len(labels)}, cries {len(forward)}, keysplits {len(source_tables)}")
 
 
-for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items, tilesets, audio):
+def fonts() -> None:
+    from PIL import Image
+    exported = load(OUT / "gfx/fonts.json")
+    text = (SRC / "src/fonts.c").read_text()
+    table = {"small": "latin_small", "small_narrow": "latin_small_narrow", "narrow": "latin_narrow", "short": "latin_short", "normal": "latin_normal"}
+    for key, file in table.items():
+        symbol = "gFont" + "".join(w.capitalize() for w in key.split("_")) + "LatinGlyphWidths"
+        body = re.search(rf"{symbol}\[\] = \{{(.*?)\}};", text, re.S).group(1)
+        widths = [int(x) for x in re.findall(r"\d+", body)]
+        expect(f"font {key} widths", exported[key]["widths"], widths)
+        image = Image.open(SRC / f"graphics/fonts/{file}.png")
+        expect(f"font {key} size", (exported[key]["width"], exported[key]["height"]), image.size)
+        expect(f"font {key} pixels", base64.b64decode(exported[key]["pixels"]), bytes(image.getdata()))
+
+
+def ts_constants() -> None:
+    """Every plain `#define NAME <integer>` of include/constants/*.h that the tsconst step kept has the value written in the header."""
+    if not TS_CONSTANTS_PATH.exists():
+        print("  (skipped tsconst: run the tsconst step first)")
+        return
+    exported = {}
+    for line in TS_CONSTANTS_PATH.read_text().splitlines():
+        if line.startswith("export const "):
+            name, value = line[len("export const "):].rstrip(";").split(" = ")
+            exported[name] = int(value)
+    seen = missing = 0
+    for path in sorted((SRC / "include/constants").glob("*.h")):
+        for name, value in re.findall(r"^#define\s+([A-Z][A-Z0-9_]*)\s+(0[xX][0-9a-fA-F]+|\d+)\s*(?://.*|/\*.*)?$", path.read_text(), re.M):
+            if name not in exported:
+                missing += 1
+                continue
+            seen += 1
+            expect(f"constant {name} ({path.name})", exported[name], int(value, 0))
+    print(f"  constants compared: {seen}; plain defines absent from constants.ts: {missing}")
+
+
+TS_CONSTANTS_PATH = ROOT / "src/games/emerald/generated/constants.ts"
+for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items, tilesets, audio, fonts, ts_constants):
     step()
 print(f"{checked} comparisons, {len(failures)} mismatches")
 for line in failures[:40]:
