@@ -163,6 +163,23 @@ def map_files() -> None:
         expect(tag + " connections", len(e["connections"]), len(r["connections"] or []))
 
 
+def weather_events() -> None:
+    """The 86 coord events of type weather (a weather change tied to a tile) and each map header's weather."""
+    expected = []
+    for path in sorted((SRC / "data/maps").glob("*/map.json")):
+        data = load(path)
+        for event in data.get("coord_events", []):
+            if event["type"] == "weather":
+                expected.append((data["id"], event["x"], event["y"], num(event.get("elevation", 0)), num(event["weather"])))
+    got = []
+    for path in sorted((OUT / "maps").glob("*.json")):
+        data = load(path)
+        got += [(data["id"], e["x"], e["y"], e["elevation"], e["weather"]) for e in data["coords"] if e.get("type") == "weather"]
+    expect("weather event count", len(got), len(expected))
+    expect("weather events", sorted(got), sorted(expected))
+    print(f"  weather coord events: {len(expected)}")
+
+
 def wild() -> None:
     source = ROOT.parent / "refs-src/pokeemerald/src/data/wild_encounters.json"
     if not source.exists():
@@ -328,6 +345,15 @@ def tilesets() -> None:
             return (SRC / re.search(rf'{symbol}\[\] = INCBIN_U16\("([^"]+)"', metatile_sources).group(1)).read_bytes()
         expect(f"{name} metatiles", base64.b64decode(e["metatiles"]), bin_of("metatiles"))
         expect(f"{name} attributes", base64.b64decode(e["attributes"]), bin_of("metatileAttributes"))
+        # attributes32: the same metatiles in FireRed's layout (behavior bits 0-8, layer type bits 29-30, nothing else)
+        raw = bin_of("metatileAttributes")
+        want32 = bytearray()
+        for offset in range(0, len(raw), 2):
+            value = raw[offset] | (raw[offset + 1] << 8)
+            want32 += ((value & 0xFF) | (((value >> 12) & 3) << 29)).to_bytes(4, "little")
+            expect(f"{name} attribute {offset // 2} has no unused bits", (value & 0x0F00, value >> 12 <= 2), (0, True))
+        expect(f"{name} attributes32", base64.b64decode(e["attributes32"]), bytes(want32))
+        expect(f"{name} attributes keep the 16-bit original", e["attributeBits"], 16)
         palette_symbol = re.search(r"\.palettes = (\w+)", body).group(1)
         palette_block = re.search(rf"{palette_symbol}\[\]\[16\] =\s*\{{(.*?)\n\}};", graphics, re.S).group(1)
         palette_files = re.findall(r'INCGFX_U16\("([^"]+\.pal)"', palette_block)
@@ -470,7 +496,7 @@ def small_tables() -> None:
 
 
 TS_CONSTANTS_PATH = ROOT / "src/games/emerald/generated/constants.ts"
-for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items, tilesets, audio, fonts, ts_constants, small_tables):
+for step in (species, moves, trainers, maps, map_files, weather_events, wild, incbin_sizes, pokemon_images, items, tilesets, audio, fonts, ts_constants, small_tables):
     step()
 print(f"{checked} comparisons, {len(failures)} mismatches")
 for line in failures[:40]:

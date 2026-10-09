@@ -16,6 +16,20 @@ def b64(data: bytes) -> str:
     return base64.b64encode(data).decode()
 
 
+def attributes_to_32(attributes: bytes, tileset: str) -> bytes:
+    """pokeemerald's 16-bit metatile attributes (behavior bits 0-7, layer type bits 12-15) in FireRed's 32-bit layout
+    (behavior bits 0-8, layer type bits 29-30). Emerald stores no terrain or encounter type, so those fields stay 0.
+    Refuses anything that would not survive the conversion."""
+    out = bytearray()
+    for index in range(0, len(attributes), 2):
+        value = int.from_bytes(attributes[index:index + 2], "little")
+        behavior, unused, layer = value & 0xFF, (value >> 8) & 0xF, value >> 12
+        if unused or layer > 2:  # METATILE_LAYER_TYPE_NORMAL / COVERED / SPLIT
+            raise RuntimeError(f"{tileset}: attribute {index // 2} = {value:#06x} does not fit the 32-bit layout")
+        out += (behavior | (layer << 29)).to_bytes(4, "little")
+    return bytes(out)
+
+
 def export_tilesets() -> None:
     sources = (DECOMP / "src/graphics.c").read_text() + (DECOMP / "src/data/tilesets/graphics.h").read_text()
     # FireRed names the compressed binary (INCBIN_U32("dir/tiles.4bpp.lz")); pokeemerald names the source image
@@ -76,6 +90,8 @@ def export_tilesets() -> None:
         }
         if attribute_bits != 32:
             entry["attributeBits"] = attribute_bits  # FireRed's files stay exactly as before
+            # the original 16-bit attributes stay in "attributes"; "attributes32" is the same data in FireRed's layout
+            entry["attributes32"] = b64(attributes_to_32(attributes, symbol))
         write_json(out_dir / f"{symbol}.json", entry)
         index[symbol] = {"secondary": entry["isSecondary"], "callback": entry["callback"], "tileCount": len(tiles) // 32, "metatileCount": len(metatiles) // 16}
     write_json(OUT / "tilesets.json", index)

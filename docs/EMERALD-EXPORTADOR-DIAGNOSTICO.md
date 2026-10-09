@@ -176,3 +176,29 @@ Segundo comprobador, para `scripts.bin` y `scripts.json`. Reensambla los datos c
   `.align` (37), `.braille` (22), `.set` (3), `.endif` (3).
 - Mientras se escribía apareció una falsa alarma instructiva: `cave_hole.inc` usa `#ifdef UBFIX`; sin `BUGFIX` (comentado en
   `config.h`, `MODERN=0`) se ensambla la rama `#else`, y el exportador la tomó igual que el compilador.
+
+## 9. Decisiones de formato preparadas en el exportador (2026-10-08)
+
+**Atributos de metatile, versión 16 y 32 bits.** Cada `public/emerald/tilesets/gTileset_*.json` conserva `attributes` (los 16 bits originales,
+`attributeBits: 16`) y añade `attributes32`: los mismos metatiles en el formato de FireRed (comportamiento en los bits 0-8, tipo de capa en
+los bits 29-30). Emerald no guarda terreno ni tipo de encuentro, así que esos campos quedan a 0; el motor tendrá que obtenerlos del
+comportamiento. La conversión (`attributes_to_32` en `step_tilesets.py`) falla si un valor no cabe (bits 8-11 usados o capa > 2). Con los
+datos reales caben todos: capa 0 = 9.749 metatiles, capa 1 = 8.538, capa 2 = 31. Los **números de comportamiento siguen siendo los de Emerald**,
+no los de FireRed: hace falta `src/games/emerald/generated/metatileBehavior.ts`. El validador recalcula `attributes32` desde los `.bin`.
+FireRed no cambia (la rama solo se ejecuta si el atributo no es de 32 bits).
+
+**Clima.** Hay dos mecanismos. (1) El clima de la cabecera de cada mapa (`weather`), ya leído por `src/fr/field/weather.ts`, que contiene
+todos los tipos de Emerald, incluidos sequía, diluvio y los ciclos de las rutas 119 y 123. En los 518 mapas: sin clima 428, soleado 51,
+burbujas submarinas 14, sombra 14, niebla horizontal 10, ceniza 1. (2) Los 86 eventos de coordenada de tipo `weather` (un cambio de clima
+al pisar una casilla): soleado 34, ciclo ruta 119 12, ciclo ruta 123 12, nubes 12, ceniza 12, lluvia 4. Se exportan como
+`{"type": "weather", x, y, elevation, weather}` en `coords` de cada mapa y el validador comprueba los 86 contra los `map.json`. Falta el
+consumidor: `src/fr/field/coordEventWeather.ts` tiene los 13 manejadores vacíos (así es FireRed, "it's always sunny in Viridian"), y en
+`src/coord_event_weather.c` de Emerald cada uno llama a `SetWeather(WEATHER_X)`; `DoCoordEventWeather` se invoca desde
+`field_control_avatar.c`.
+
+**Voces de audio.** Emerald añade un solo tipo, `voice_directsound_reverse` (2 voces en `rs_sfx_2`; el byte de tipo es 0x10). El reproductor
+`src/fr/audio/m4a.ts` ya tiene búfer invertido para los gritos, pero `envelopePlan` (línea 119) solo trata como directas
+`voice_directsound`, `_no_resample` y `_alt`, y la reproducción de voces no invierte la muestra. Cambio necesario: incluir el tipo nuevo en
+esa rama y reproducir el búfer invertido.
+
+Pendiente de autorización (tocan `src/`): el consumidor de eventos de clima y el tipo de voz invertido.
