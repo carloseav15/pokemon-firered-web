@@ -22,7 +22,8 @@ import { DATA_ROOT } from "../rom";
 import * as C from "../generated/constants";
 import type { PokemonCrySettings, SoundBackend } from "./sound";
 
-const AUDIO_ROOT = `${DATA_ROOT}/audio`;
+/** DATA_ROOT can change at startup (the world viewer's Hoenn mode), so the audio folder is resolved on every use. */
+const audioRoot = (): string => `${DATA_ROOT}/audio`;
 
 type SongEntry = {
   id: number; name: string; midi: string | null; player: number;
@@ -596,11 +597,11 @@ export class M4aBackend implements SoundBackend {
     if (this.songs) return true;
     try {
       const [songs, voices, samples, cries, keysplit] = await Promise.all([
-        fetch(`${AUDIO_ROOT}/songs.json`).then((r) => r.json()),
-        fetch(`${AUDIO_ROOT}/voicegroups.json`).then((r) => r.json()),
-        fetch(`${AUDIO_ROOT}/samples.json`).then((r) => r.json()),
-        fetch(`${AUDIO_ROOT}/cries.json`).then((r) => r.json()),
-        fetch(`${AUDIO_ROOT}/keysplit_tables.json`).then((r) => r.json()).catch(() => ({})),
+        fetch(`${audioRoot()}/songs.json`).then((r) => r.json()),
+        fetch(`${audioRoot()}/voicegroups.json`).then((r) => r.json()),
+        fetch(`${audioRoot()}/samples.json`).then((r) => r.json()),
+        fetch(`${audioRoot()}/cries.json`).then((r) => r.json()),
+        fetch(`${audioRoot()}/keysplit_tables.json`).then((r) => r.json()).catch(() => ({})),
       ]);
       this.songs = songs.songs as SongEntry[];
       this.voices = voices.groups as Record<string, Voice[]>;
@@ -624,7 +625,7 @@ export class M4aBackend implements SoundBackend {
     let song = this.midiCache.get(id);
     if (!song) {
       try {
-        const bytes = new Uint8Array(await (await fetch(`${AUDIO_ROOT}/midi/${entry.midi}`)).arrayBuffer());
+        const bytes = new Uint8Array(await (await fetch(`${audioRoot()}/midi/${entry.midi}`)).arrayBuffer());
         song = parseSmf(bytes);
         this.midiCache.set(id, song);
       } catch {
@@ -821,7 +822,7 @@ export class M4aBackend implements SoundBackend {
       let buffer = this.buffers.get(`cry:${file}`);
       if (!buffer) {
         try {
-          buffer = await this.ctx.decodeAudioData(await (await fetch(`${AUDIO_ROOT}/cries/${file}`)).arrayBuffer());
+          buffer = await this.ctx.decodeAudioData(await (await fetch(`${audioRoot()}/cries/${file}`)).arrayBuffer());
           this.buffers.set(`cry:${file}`, buffer);
         } catch {
           releasePending();
@@ -1023,7 +1024,7 @@ export class M4aBackend implements SoundBackend {
       let buffer = this.buffers.get(`sample:${file}`);
       if (!buffer) {
         try {
-          buffer = await this.ctx.decodeAudioData(await (await fetch(`${AUDIO_ROOT}/samples/${file}`)).arrayBuffer());
+          buffer = await this.ctx.decodeAudioData(await (await fetch(`${audioRoot()}/samples/${file}`)).arrayBuffer());
           this.buffers.set(`sample:${file}`, buffer);
         } catch {
           return;

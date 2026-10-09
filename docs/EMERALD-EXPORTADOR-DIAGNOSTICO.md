@@ -243,5 +243,13 @@ personajes (entrenadores, NPC, árboles, rocas) se muestran fijos en modo visor 
 544 objetos de los 49 mapas, 73 se resuelven; `OBJ_EVENT_GFX_VAR_0` y `_3` (dependen de la partida) usan una mujer genérica y la planta de bayas
 (sin hoja) tampoco se dibuja. Comprobado en el navegador: 7 personajes de Pueblo Raíz con hojas de 144×32; Kanto conserva sus rutas `/fr/`.
 
-Pendiente del visor de Hoenn: audio de Emerald, animación de tiles de pokeemerald y exploración con
+**Música de Hoenn en el visor.** `src/fr/audio/m4a.ts` calculaba `AUDIO_ROOT` una sola vez al importar (siempre `/fr/audio`); ahora se
+resuelve en cada uso (`audioRoot()`), de modo que con la raíz de datos `/emerald` carga `songs.json`, `voicegroups.json`, `samples.json`,
+`cries.json`, `keysplit_tables.json` y los `.mid` de Emerald. Los `music` del índice de Hoenn coinciden con los `id` de `songs.json` (48 de
+49 mapas; `MAP_ROUTE118` usa el valor especial `0x7FFF` de `MUS_ROUTE118`, que en el juego elige entre dos pistas según la posición
+con `GetCurrLocationDefaultMusic`, y en el visor queda en silencio). Comprobado: al pedir la canción 405 se descargan los JSON de
+`/emerald/audio` y `mus_littleroot.mid`, y `check:m4a` pasa. **No se ha escuchado**: el panel del navegador no compone fotogramas y no se
+puede oír, y los nombres de voces de Emerald (`voicegroup_*`) solo coinciden con la clave `voicegroup` + `padStart` por casualidad.
+
+Pendiente del visor de Hoenn: animación de tiles de pokeemerald y exploración con
 avatar (necesitan sus propios módulos de campo, no los de FireRed). No se contrastaron los atributos de capa/colisión de Hoenn jugando.

@@ -604,7 +604,7 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
 - [ ] **6.6 Emerald: cablear en el motor lo ya exportado** — hecho: índice de Hoenn (`e9a43e6e`), visor de Hoenn solo lectura con
   `?game=emerald` (`e971864b`: perfil de tilesets 512/6, `attributes32`, comportamientos de Emerald), `UseEmeraldCoordEventWeather` y la voz
   inversa (`da9c4466`). Falta: llamar a `UseEmeraldCoordEventWeather(game.weather.setWeather)` al cargar Emerald (no existe cargador), terreno y
-  tipo de encuentro de Emerald derivados del comportamiento, audio/animación de tiles/exploración de Hoenn en el visor (los sprites ya se muestran, fijos), y el resto de la
+  tipo de encuentro de Emerald derivados del comportamiento, animación de tiles y exploración de Hoenn en el visor (los sprites se muestran fijos y la música carga, sin escucha; Ruta 118 queda muda), y el resto de la
   integración de Emerald. Sin comprobar jugando.
 - [x] **6.5 FireRed: muestra `sc88pro_tuba_39` ausente del export de audio** — `795e7cb6`. La etiqueta con comentario `@` se saltaba en
   `step_audio._sample_files`; ahora `samples.json` la lista y se genera el `.wav`. `check:m4a` pasa; sin escucha de las canciones con `tuba_keysplit`.

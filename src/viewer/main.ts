@@ -32,7 +32,7 @@ import { ViewerAudioController } from "./audio/audioController";
 
 // Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn en modo de solo lectura (mapa, capas y fichas).
 // Hoenn usa los datos de public/emerald, el reparto 512/6 de tiles y paletas de pokeemerald y sus propios comportamientos de
-// metatile. Sin avatar, NPC animados, música ni animación de tiles: sus gráficos, audio y efectos son de FireRed.
+// metatile. Sin avatar, NPC animados ni animación de tiles (transcritos de FireRed); la música sí es la de Emerald.
 type ViewerGame = "firered" | "emerald";
 const GAME: ViewerGame = new URLSearchParams(location.search).get("game") === "emerald" ? "emerald" : "firered";
 const HOENN = GAME === "emerald";
@@ -266,8 +266,8 @@ function setupGameSelect(): void {
     document.title = "Visor del mundo — Hoenn exterior";
     const title = document.querySelector(".app-title");
     if (title) title.lastChild!.textContent = " Hoenn Exterior";
-    for (const id of ["mode-group", "audio-btn", "bike-btn"]) document.getElementById(id)?.style.setProperty("display", "none");
-    for (const id of ["audio-toggle", "anim-toggle", "player-char"]) document.getElementById(id)?.closest("label")?.style.setProperty("display", "none");
+    for (const id of ["mode-group", "bike-btn"]) document.getElementById(id)?.style.setProperty("display", "none");
+    for (const id of ["anim-toggle", "player-char"]) document.getElementById(id)?.closest("label")?.style.setProperty("display", "none");
   }
 }
 
@@ -942,7 +942,7 @@ async function build(): Promise<void> {
 
   applyLayerVisibility();
 
-  if (state.audio && !HOENN) {
+  if (state.audio) {
     audioController.enable();
     checkCurrentMapMusic();
   }
@@ -1016,10 +1016,6 @@ function setupUi(): void {
   };
 
   const toggleAudio = () => {
-    if (HOENN) {
-      if (statusMeta) statusMeta.textContent = "Hoenn: sin música ni sonido (las pistas son de FireRed)";
-      return;
-    }
     if (audioController.isEnabled()) {
       audioController.disable();
       state.audio = false;
