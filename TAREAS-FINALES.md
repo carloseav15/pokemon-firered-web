@@ -601,11 +601,11 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   `tools/emeraldExportValidate.py` + `tools/emeraldScriptValidate.py` los comparan con las fuentes (66.470 + 17.228 comparaciones, 0
   diferencias; 98,8 % de `scripts.bin` reensamblado); FireRed regenera idéntica. Tilesets de Emerald con `attributes` (16 bits) y
   `attributes32` (formato FireRed). Abierto (validación): los datos no están contrastados con la ROM ni con el motor.
-- [ ] **6.6 Emerald: cablear en el motor lo ya exportado** — `da9c4466` dejó listos `UseEmeraldCoordEventWeather(setWeather)`
-  (`src/fr/field/coordEventWeather.ts`, tabla de Emerald; FireRed sigue con la vacía) y la voz `voice_directsound_reverse`
-  (`src/fr/audio/m4a.ts`, sin escucha). Falta: llamar a `UseEmeraldCoordEventWeather(game.weather.setWeather)` al cargar Emerald, leer
-  `attributes32` con los comportamientos de `src/games/emerald/generated/metatileBehavior.ts` (terreno y tipo de encuentro a 0 en Emerald:
-  derivarlos del comportamiento), atributos de visor para Hoenn (512 metatiles primarios, 6 paletas) y el resto de la integración de Emerald.
+- [ ] **6.6 Emerald: cablear en el motor lo ya exportado** — hecho: índice de Hoenn (`e9a43e6e`), visor de Hoenn solo lectura con
+  `?game=emerald` (`e971864b`: perfil de tilesets 512/6, `attributes32`, comportamientos de Emerald), `UseEmeraldCoordEventWeather` y la voz
+  inversa (`da9c4466`). Falta: llamar a `UseEmeraldCoordEventWeather(game.weather.setWeather)` al cargar Emerald (no existe cargador), terreno y
+  tipo de encuentro de Emerald derivados del comportamiento, sprites/audio/animación de tiles/exploración de Hoenn en el visor, y el resto de la
+  integración de Emerald. Sin comprobar jugando.
 - [x] **6.5 FireRed: muestra `sc88pro_tuba_39` ausente del export de audio** — `795e7cb6`. La etiqueta con comentario `@` se saltaba en
   `step_audio._sample_files`; ahora `samples.json` la lista y se genera el `.wav`. `check:m4a` pasa; sin escucha de las canciones con `tuba_keysplit`.
 - [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama

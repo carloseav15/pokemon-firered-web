@@ -221,4 +221,21 @@ Diferencias de configuración por juego (`GAME_CONFIG`): gráficos de obstáculo
 `CUT_TREE`, `ROCK_SMASH_ROCK`, `SNORLAX`), archivo de banderas iniciales, y los eventos de clima se indexan como activadores con el campo
 `weather`. Las partidas de prueba de `tools/playtest/saves` solo se copian en FireRed.
 
-Falta (paso 2, necesita permiso sobre código compartido): que `src/viewer` cargue `hoenn.json` con los datos de `public/emerald`.
+**Paso 2: el visor abre Hoenn** (`/viewer.html?game=emerald`, o el selector Kanto/Hoenn de la barra). Solo lectura: mapa, capas, fichas,
+búsqueda y minimapa. Cambios en código compartido, todos con FireRed como valor por omisión:
+
+- `src/fr/field/fieldmap.ts`: `NUM_METATILES_IN_PRIMARY`, `NUM_TILES_IN_PRIMARY` y el nuevo `NUM_PALS_IN_PRIMARY` son enlaces vivos con
+  perfiles `firered` (640/640/7) y `emerald` (512/512/6); `SetTilesetProfile(nombre)` los cambia. `tileRenderer.ts` usa los vivos.
+- `src/fr/rom.ts`: `DATA_ROOT` es mutable (`setDataRoot`) y `loadTileset` prefiere `attributes32` si el tileset lo trae (solo Emerald).
+- `src/viewer/main.ts`: `GAME` desde `?game=`, predicados de comportamiento por juego, índice `hoenn.json`, selector. En Hoenn no hay avatar,
+  sprites de NPC, música, efectos de campo ni animación de tiles (sus gráficos y audio son de FireRed).
+- `src/games/emerald/generated/metatileBehavior.ts` pasa a estar versionado (es lo único de `src/games` que se importa).
+
+Fallo del exportador que apareció aquí: `step_codegen.py` dejaba en el `metatileBehavior.ts` de Emerald C sin traducir (`#define` de
+`TILE_FLAG_*`, `#ifdef BUGFIX` dentro de una condición y funciones `bool8 UNUSED`), con errores de sintaxis aunque el paso «terminaba».
+Ahora resuelve `#ifdef/#else/#endif` con ninguna macro opcional definida, convierte los `#define` y acepta `UNUSED`; la salida de FireRed
+no cambia. Comprobado en el navegador: Hoenn se pinta con los mosaicos correctos (49 mapas) y Kanto sigue igual, incluida la exploración;
+`check:all` 44 pasan, `check:tileset-profile` nuevo.
+
+Pendiente del visor de Hoenn: sprites de objetos de Emerald, audio de Emerald, animación de tiles de pokeemerald y exploración con
+avatar (necesitan sus propios módulos de campo, no los de FireRed). No se contrastaron los atributos de capa/colisión de Hoenn jugando.
