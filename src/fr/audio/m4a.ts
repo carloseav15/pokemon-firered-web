@@ -116,7 +116,8 @@ export function envelopePlan(
   const A = toNum(attack) || 0, D = toNum(decay) || 0, R = toNum(release) || 0;
   const S = toNum(sustain);
   const level = Number.isFinite(S) ? S : peak > 0 ? 15 : 0;
-  if (kind === "voice_directsound" || kind === "voice_directsound_no_resample" || kind === "voice_directsound_alt") {
+  if (kind === "voice_directsound" || kind === "voice_directsound_no_resample" || kind === "voice_directsound_alt"
+    || kind === "voice_directsound_reverse") {
     return {
       attackTime: A >= 0xff ? 0.005 : (A / 255) * 0.3,
       decayTime: (D / 255) * 0.3,
@@ -1029,7 +1030,8 @@ export class M4aBackend implements SoundBackend {
         }
       }
       const src = this.ctx.createBufferSource();
-      src.buffer = buffer;
+      // voice_directsound_reverse (TONEDATA_TYPE_REV, pokeemerald's rs_sfx_2) plays the sample backwards
+      src.buffer = voice.kind === "voice_directsound_reverse" ? this.reversedCryBuffer(`sample:${file}`, buffer) : buffer;
       const noResample = voice.kind === "voice_directsound_no_resample";
       src.playbackRate.value = noResample ? 1 : Math.pow(2, (event.note - (voice.base || 60)) / 12);
       const gain = this.ctx.createGain();

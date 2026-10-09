@@ -57,6 +57,8 @@ assert.equal(shaped.releaseTime, (7 * 15) / 64);
 const direct = envelopePlan("voice_directsound", 0xff, 0, 0xff, 0xff, 1);
 assert.equal(direct.attackTime, 0.005);
 assert.equal(direct.sustainLevel, 1);
+// pokeemerald's voice_directsound_reverse (TONEDATA_TYPE_REV) uses the direct-sound envelope, not the CGB one.
+assert.deepEqual(envelopePlan("voice_directsound_reverse", 0xff, 0, 0xff, 0xff, 1), direct);
 
 // sound.c PlayCryInternal per-mode values and m4a.c SetPokemonCryChorus's s8 key delta.
 assert.deepEqual(cryModeParams(C.CRY_MODE_NORMAL), {

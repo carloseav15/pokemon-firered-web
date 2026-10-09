@@ -33,8 +33,43 @@ const sWeatherCoordEventFuncs: { weatherId: number; callback: () => void }[] = [
   { weatherId: C.WEATHER_ROUTE123_CYCLE, callback: WeatherCoordEvent_Route123Cycle },
 ];
 
+// pokeemerald's coord_event_weather.c: the table is keyed by COORD_EVENT_WEATHER_* and every handler is
+// SetWeather(WEATHER_*). The WEATHER_* values are the same in both games. FireRed keeps the dummied table above; the
+// Emerald table runs only after the game wiring registers its SetWeather (UseEmeraldCoordEventWeather).
+const sCoordEventWeatherFuncsEmerald: { coordEventWeather: number; weather: number }[] = [
+  { coordEventWeather: C.COORD_EVENT_WEATHER_SUNNY_CLOUDS, weather: C.WEATHER_SUNNY_CLOUDS },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_SUNNY, weather: C.WEATHER_SUNNY },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_RAIN, weather: C.WEATHER_RAIN },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_SNOW, weather: C.WEATHER_SNOW },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_RAIN_THUNDERSTORM, weather: C.WEATHER_RAIN_THUNDERSTORM },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_FOG_HORIZONTAL, weather: C.WEATHER_FOG_HORIZONTAL },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_FOG_DIAGONAL, weather: C.WEATHER_FOG_DIAGONAL },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_VOLCANIC_ASH, weather: C.WEATHER_VOLCANIC_ASH },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_SANDSTORM, weather: C.WEATHER_SANDSTORM },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_SHADE, weather: C.WEATHER_SHADE },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_DROUGHT, weather: C.WEATHER_DROUGHT },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_ROUTE119_CYCLE, weather: C.WEATHER_ROUTE119_CYCLE },
+  { coordEventWeather: C.COORD_EVENT_WEATHER_ROUTE123_CYCLE, weather: C.WEATHER_ROUTE123_CYCLE },
+];
+
+let setWeatherEmerald: ((weather: number) => void) | null = null;
+
+/** Switches DoCoordEventWeather to pokeemerald's table; pass the game's SetWeather, or null for FireRed's dummied one. */
+export function UseEmeraldCoordEventWeather(setWeather: ((weather: number) => void) | null): void {
+  setWeatherEmerald = setWeather;
+}
+
 export function DoCoordEventWeather(weatherId: number): void {
   weatherId &= 0xff;
+  if (setWeatherEmerald) {
+    for (const entry of sCoordEventWeatherFuncsEmerald) {
+      if (entry.coordEventWeather === weatherId) {
+        setWeatherEmerald(entry.weather);
+        return;
+      }
+    }
+    return;
+  }
   for (const entry of sWeatherCoordEventFuncs) {
     if (entry.weatherId === weatherId) {
       entry.callback();
