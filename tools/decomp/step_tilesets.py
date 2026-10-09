@@ -22,6 +22,8 @@ def export_tilesets() -> None:
     # (INCGFX_U32("dir/tiles.png", ".4bpp.lz", flags)) and builds the binary from it.
     tiles_paths = dict(re.findall(r"gTilesetTiles_(\w+)\[\] = INCBIN_U32\(\"([^\"]+)/tiles\.4bpp(?:\.lz)?\"\)", sources))
     tiles_paths.update(re.findall(r"gTilesetTiles_(\w+)\[\] = INCGFX_U32\(\"([^\"]+)/tiles\.png\"", sources))
+    # gbagfx keeps only the first N tiles of the png when the macro passes "-num_tiles N" (the secondary tilesets of pokeemerald)
+    tile_limits = {name: int(count) for name, count in re.findall(r"gTilesetTiles_(\w+)\[\] = INCGFX_U32\(\"[^\"]+\",\s*\"[^\"]+\",\s*\"[^\"]*-num_tiles (\d+)", sources)}
     palette_paths = {}
     for name, body in re.findall(r"gTilesetPalettes_(\w+)\[\]\[16\] =\s*\{(.*?)\};", sources, flags=re.S):
         palette_paths[name] = re.findall(r"INCBIN_U16\(\"([^\"]+)\.gbapal\"\)", body) or re.findall(r"INCGFX_U16\(\"([^\"]+)\.pal\"", body)
@@ -44,6 +46,8 @@ def export_tilesets() -> None:
         folder = DECOMP / tiles_paths[tiles_name]
         width, height, indices, _ = png_indices(folder / "tiles.png")
         tiles = to_4bpp_tiles(width, height, indices)
+        if tiles_name in tile_limits:
+            tiles = tiles[:tile_limits[tiles_name] * 32]
         palettes = []
         for pal in palette_paths[pal_name]:
             palettes.append(read_jasc_palette(DECOMP / (pal + ".pal")))

@@ -14,7 +14,7 @@ import shutil
 import wave
 from pathlib import Path
 
-from common import DECOMP, OUT, write_json
+from common import DECOMP, GAME, OUT, write_json
 
 
 def _wavname(label: str) -> str | None:
@@ -50,7 +50,7 @@ def _read_with_includes(path) -> str:
     """The file's text with `.include "dir/file.inc"` lines replaced by that file (pokeemerald splits its voicegroups)."""
     out = []
     for line in path.read_text().splitlines():
-        match = re.match(r'^\s*\.include\s+"([^"]+)"\s*$', line)
+        match = re.match(r'^\s*\.include\s+"([^"]+)"\s*(?:@.*)?$', line)
         out.append(_read_with_includes(DECOMP / match.group(1)) if match and (DECOMP / match.group(1)).exists() else line)
     return "\n".join(out)
 
@@ -87,7 +87,7 @@ def _parse_voicegroups() -> tuple[dict[str, list], set[str]]:
             current.append({"kind": kind, "base": base, "pan": pan, "sweep": 0,
                             "duty": duty, "attack": attack, "decay": decay,
                             "sustain": sustain, "release": release})
-        elif kind in ("voice_directsound", "voice_directsound_no_resample", "voice_directsound_alt"):
+        elif kind in ("voice_directsound", "voice_directsound_no_resample", "voice_directsound_alt", "voice_directsound_reverse"):
             base, pan, sample, attack, decay, sustain, release = args
             samples.add(sample)
             current.append({"kind": kind, "base": int(base), "pan": int(pan), "sample": sample,
@@ -132,6 +132,20 @@ def _parse_keysplit_tables() -> dict[str, dict]:
         match = re.match(r"^\.byte\s+(\d+)", line)
         if match and name is not None:
             values.append(int(match.group(1)))
+        # pokeemerald (asm/macros/m4a.inc): `keysplit piano, 36` then `split 0, 55` repeats index 0 up to note 55
+        match = re.match(r"^keysplit\s+(\w+)\s*(?:,\s*(\d+))?\s*(?:@.*)?$", line)
+        if match:
+            flush()
+            name, start, values = f"keysplit_{match.group(1)}", int(match.group(2) or 0), []
+            last_note = start
+            continue
+        match = re.match(r"^split\s+(\d+)\s*,\s*(\d+)", line)
+        if match and name is not None:
+            index, end = int(match.group(1)), int(match.group(2))
+            if end < last_note:
+                raise RuntimeError(f"{name}: split ending note {end} before {last_note}")
+            values.extend([index] * (end - last_note))
+            last_note = end
     flush()
     return tables
 
@@ -143,7 +157,9 @@ def _sample_files() -> dict[str, str]:
     label: str | None = None
     for line in text.splitlines():
         line = line.strip()
-        match = re.match(r"^(\w+)::$", line)
+        # A label may carry a trailing comment (`DirectSoundWaveData_sc88pro_tuba_39:: @N.B....`). FireRed's export has always
+        # skipped such labels, so its output is kept as it was (see docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md section 8).
+        match = re.match(r"^(\w+)::$" if GAME == "firered" else r"^(\w+)::\s*(?:@.*)?$", line)
         if match:
             label = match.group(1)
             continue
