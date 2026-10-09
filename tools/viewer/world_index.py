@@ -22,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "decomp"))
 from common import DECOMP, GAME, OUT as GAME_OUT, ROOT  # noqa: E402
 
-# Por juego: mapa de origen del BFS, fichero de salida, graficos de objeto que bloquean el paso y donde estan los
+# Por juego: mapa de origen del BFS, fichero de salida, graficos de objeto que bloquean el paso (Emerald no tiene el equivalente de Snorlax: Sudowoodo queda como NPC) y donde estan los
 # flags iniciales (EventScript_ResetAllMapFlags).
 GAME_CONFIG = {
     "firered": {

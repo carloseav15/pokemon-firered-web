@@ -6,7 +6,11 @@
 export const ROM_BASE = 0x08000000;
 export const EXTERN_BASE = 0x0f000000;
 export const RAM_SCRIPT_BASE = 0x10000000;
-export const DATA_ROOT = "/fr";
+/** Where the exported game data lives; "/fr" unless setDataRoot switches it (the world viewer's Hoenn mode uses "/emerald"). */
+export let DATA_ROOT = "/fr";
+export function setDataRoot(root: string): void {
+  DATA_ROOT = root;
+}
 
 export type MapObjectTemplate = {
   localId: number;
@@ -449,9 +453,10 @@ export class Rom {
   async loadTileset(name: string): Promise<TilesetData> {
     let tileset = this.tilesets.get(name);
     if (!tileset) {
-      const raw = await json<{ name: string; isSecondary: boolean; callback: string | null; tiles: string; palettes: number[][][]; metatiles: string; attributes: string; anims: Record<string, string[]> }>(`tilesets/${name}.json`);
+      const raw = await json<{ name: string; isSecondary: boolean; callback: string | null; tiles: string; palettes: number[][][]; metatiles: string; attributes: string; attributes32?: string; anims: Record<string, string[]> }>(`tilesets/${name}.json`);
       const metatiles = b64(raw.metatiles);
-      const attributes = b64(raw.attributes);
+      // pokeemerald's tilesets also carry attributes32: the 16-bit attributes in FireRed's 32-bit layout (the one this engine reads)
+      const attributes = b64(raw.attributes32 ?? raw.attributes);
       const anims: Record<string, Uint8Array[]> = {};
       for (const [group, frames] of Object.entries(raw.anims)) anims[group] = frames.map(b64);
       tileset = {

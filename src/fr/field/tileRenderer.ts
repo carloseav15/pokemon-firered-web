@@ -3,8 +3,8 @@
 // tile data, exactly as the DMA copies do on hardware.
 
 import type { TilesetData } from "../rom";
-import { NUM_METATILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY } from "./fieldmap";
-import { NUM_PALS_IN_PRIMARY, NUM_PALS_TOTAL, NUM_TILES_TOTAL } from "../generated/constants";
+import { NUM_METATILES_IN_PRIMARY, NUM_PALS_IN_PRIMARY, NUM_TILES_IN_PRIMARY } from "./fieldmap";
+import { NUM_PALS_TOTAL, NUM_TILES_TOTAL } from "../generated/constants";
 import { GET_B, GET_G, GET_R, LoadPalette, gPlttBufferFaded } from "../hw/palette";
 import { ApplyGlobalTintToPaletteEntries } from "./fieldPalette";
 

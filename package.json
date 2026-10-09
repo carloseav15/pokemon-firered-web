@@ -14,6 +14,7 @@
     "check:cry-timing": "esbuild tools/checks/cryTiming.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/cryTiming.mjs && node .decomp-build/checks/cryTiming.mjs",
     "check:m4a": "esbuild tools/checks/m4aAudio.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/m4aAudio.mjs && node .decomp-build/checks/m4aAudio.mjs",
     "check:coordweather": "esbuild tools/checks/coordEventWeather.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/coordEventWeather.mjs && node .decomp-build/checks/coordEventWeather.mjs",
+    "check:tileset-profile": "esbuild tools/checks/tilesetProfile.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/tilesetProfile.mjs && node .decomp-build/checks/tilesetProfile.mjs",
     "playwright:install": "playwright install chromium --only-shell",
     "check:arrow": "esbuild tools/checks/downArrow.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/downArrow.mjs && node .decomp-build/checks/downArrow.mjs",
     "check:renewable": "esbuild tools/checks/renewableHiddenItems.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/renewableHiddenItems.mjs && node .decomp-build/checks/renewableHiddenItems.mjs",

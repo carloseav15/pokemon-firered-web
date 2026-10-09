@@ -3,15 +3,16 @@
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
-import { rom } from "../fr/rom";
+import { rom, setDataRoot } from "../fr/rom";
 import { TileRenderer } from "../fr/field/tileRenderer";
 import { TilesetAnimator } from "../fr/field/tilesetAnimator";
-import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY } from "../fr/field/fieldmap";
+import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "../fr/field/fieldmap";
 import * as MB from "../fr/generated/metatileBehavior";
+import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
 import { TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
 import type { Element, KantoIndex, Trigger } from "./types";
 import { state, type PlayerVehicle } from "./state";
-import { fetchWorldIndex } from "./data/worldIndex";
+import { fetchWorldIndex, type WorldIndexData } from "./data/worldIndex";
 import { WorldGrid } from "./data/worldGrid";
 import { overlayCanvas, mark } from "./render/overlays";
 import { renderWorldFill, type FillSource } from "./render/fill";
@@ -28,6 +29,48 @@ import { EntityManager, type LiveEntity } from "./render/entities";
 import { DialogManager, type DialogSegment } from "./ui/dialog";
 import { ViewerCamera } from "./camera";
 import { ViewerAudioController } from "./audio/audioController";
+
+// Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn en modo de solo lectura (mapa, capas y fichas).
+// Hoenn usa los datos de public/emerald, el reparto 512/6 de tiles y paletas de pokeemerald y sus propios comportamientos de
+// metatile. Sin avatar, NPC animados, música ni animación de tiles: sus gráficos, audio y efectos son de FireRed.
+type ViewerGame = "firered" | "emerald";
+const GAME: ViewerGame = new URLSearchParams(location.search).get("game") === "emerald" ? "emerald" : "firered";
+const HOENN = GAME === "emerald";
+const GAME_NAME = HOENN ? "Hoenn" : "Kanto";
+if (HOENN) {
+  setDataRoot("/emerald");
+  SetTilesetProfile("emerald");
+}
+
+/** Predicados de comportamiento de metatile que usan las capas, según el juego. */
+type BehaviorTests = {
+  water: (b: number) => boolean;
+  grass: (b: number) => boolean;
+  sand: (b: number) => boolean;
+  jumpEast: (b: number) => boolean;
+  jumpWest: (b: number) => boolean;
+  jumpSouth: (b: number) => boolean;
+  jumpNorth: (b: number) => boolean;
+};
+const BEHAVIOR_TESTS: BehaviorTests = HOENN
+  ? {
+      water: MBEmerald.MetatileBehavior_IsSurfableWaterOrUnderwater,
+      grass: (b) => MBEmerald.MetatileBehavior_IsPokeGrass(b) || MBEmerald.MetatileBehavior_IsTallGrass(b) || MBEmerald.MetatileBehavior_IsLongGrass(b),
+      sand: MBEmerald.MetatileBehavior_IsSandOrDeepSand,
+      jumpEast: MBEmerald.MetatileBehavior_IsJumpEast,
+      jumpWest: MBEmerald.MetatileBehavior_IsJumpWest,
+      jumpSouth: MBEmerald.MetatileBehavior_IsJumpSouth,
+      jumpNorth: MBEmerald.MetatileBehavior_IsJumpNorth,
+    }
+  : {
+      water: MB.MetatileBehavior_IsSurfable,
+      grass: (b) => MB.MetatileBehavior_IsPokeGrass(b) || MB.MetatileBehavior_IsTallGrass(b) || MB.MetatileBehavior_IsLongGrass(b),
+      sand: (b) => MB.MetatileBehavior_IsSand(b) || MB.MetatileBehavior_IsSandOrShallowFlowingWater(b),
+      jumpEast: MB.MetatileBehavior_IsJumpEast,
+      jumpWest: MB.MetatileBehavior_IsJumpWest,
+      jumpSouth: MB.MetatileBehavior_IsJumpSouth,
+      jumpNorth: MB.MetatileBehavior_IsJumpNorth,
+    };
 
 const viewport = document.getElementById("viewport")!;
 const content = document.getElementById("content")!;
@@ -58,7 +101,7 @@ function resetExploreSession(): void {
   isStepping = false;
   playerMoving = false;
   keysDown.clear();
-  fieldEffects.resetSession();
+  if (!HOENN) fieldEffects.resetSession();
 }
 const audioController = new ViewerAudioController();
 
@@ -99,7 +142,7 @@ function parseHash(): void {
       if ((LAYERS as readonly string[]).includes(c)) state.activeLayers.add(c as Layer);
     }
   }
-  startExplore = h.get("modo") === "explore";
+  startExplore = h.get("modo") === "explore" && !HOENN;
   const px = Number(h.get("px"));
   const py = Number(h.get("py"));
   if (h.has("px") && h.has("py") && Number.isSafeInteger(px) && Number.isSafeInteger(py)) startPlayer = { x: px, y: py };
@@ -169,7 +212,7 @@ function applyLayerVisibility(): void {
 
 function updateMeta(): void {
   if (!statusMeta) return;
-  const base = `${Object.keys(index?.maps ?? {}).length || 37} mapas exteriores · Kanto GBA`;
+  const base = `${Object.keys(index?.maps ?? {}).length || 37} mapas exteriores · ${GAME_NAME} GBA`;
   if (animController?.animOn) {
     const fpsText = animController.fpsValue > 0 ? ` · ${animController.fpsValue.toFixed(0)} FPS` : " · 60 FPS";
     statusMeta.textContent = `${base}${fpsText}`;
@@ -188,6 +231,44 @@ function centerOnMap(id: string): boolean {
   checkCurrentMapMusic();
   scheduleHashWrite();
   return true;
+}
+
+async function fetchHoennIndex(): Promise<WorldIndexData> {
+  const res = await fetch("/viewer/hoenn.json");
+  if (!res.ok) throw new Error("falta public/viewer/hoenn.json: ejecuta EXPORT_GAME=emerald python3 tools/viewer/world_index.py");
+  const hoennIndex = (await res.json()) as KantoIndex;
+  const maps = Object.values(hoennIndex.maps);
+  return { index: hoennIndex, minX: Math.min(...maps.map((m) => m.x)), minY: Math.min(...maps.map((m) => m.y)) };
+}
+
+/** Selector Kanto/Hoenn (recarga la página con ?game=); Hoenn oculta los controles que dependen de FireRed. */
+function setupGameSelect(): void {
+  const select = document.createElement("select");
+  select.id = "game-select";
+  select.className = "btn";
+  select.title = "Región del mapa";
+  for (const [value, label] of [["firered", "Kanto"], ["emerald", "Hoenn"]] as const) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    select.appendChild(option);
+  }
+  select.value = GAME;
+  select.addEventListener("change", () => {
+    const url = new URL(location.href);
+    if (select.value === "emerald") url.searchParams.set("game", "emerald");
+    else url.searchParams.delete("game");
+    url.hash = "";
+    location.href = url.toString();
+  });
+  document.getElementById("layers-btn")?.before(select);
+  if (HOENN) {
+    document.title = "Visor del mundo — Hoenn exterior";
+    const title = document.querySelector(".app-title");
+    if (title) title.lastChild!.textContent = " Hoenn Exterior";
+    for (const id of ["mode-group", "audio-btn", "bike-btn"]) document.getElementById(id)?.style.setProperty("display", "none");
+    for (const id of ["audio-toggle", "anim-toggle", "player-char"]) document.getElementById(id)?.closest("label")?.style.setProperty("display", "none");
+  }
 }
 
 function behaviorOf(primaryAttrs: Uint32Array, secondaryAttrs: Uint32Array, id: number): number {
@@ -604,8 +685,8 @@ async function build(): Promise<void> {
   state.loadStored();
   parseHash();
 
-  if (loadingText) loadingText.textContent = "Descargando índice cartográfico de Kanto…";
-  const worldData = await fetchWorldIndex();
+  if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
+  const worldData = HOENN ? await fetchHoennIndex() : await fetchWorldIndex();
   index = worldData.index;
   minX = worldData.minX;
   minY = worldData.minY;
@@ -613,8 +694,9 @@ async function build(): Promise<void> {
   worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY);
   entityManager = new EntityManager(content, minX, minY);
   dialogManager = new DialogManager();
-  fieldEffects = await ViewerFieldEffects.create(worldGrid, viewerClock);
-  const disposeEffects = installFieldFxRenderer(fieldEffects, content, minX, minY);
+  // Los efectos de campo (hierba, polvo, huellas) son de FireRed y solo se usan al explorar, que Hoenn no ofrece.
+  fieldEffects = HOENN ? (undefined as unknown as ViewerFieldEffects) : await ViewerFieldEffects.create(worldGrid, viewerClock);
+  const disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame();
@@ -712,12 +794,9 @@ async function build(): Promise<void> {
           const hasCollision = ((block & 0xc00) >> 10) !== 0;
           if (hasCollision) mark(ctxFor("colision"), x, y, LAYER_COLORS.colision);
           const beh = behaviorOf(primary.attributes, secondary.attributes, mt);
-          const isWater = MB.MetatileBehavior_IsSurfable(beh);
-          const isGrass =
-            MB.MetatileBehavior_IsPokeGrass(beh) ||
-            MB.MetatileBehavior_IsTallGrass(beh) ||
-            MB.MetatileBehavior_IsLongGrass(beh);
-          const isSand = MB.MetatileBehavior_IsSand(beh) || MB.MetatileBehavior_IsSandOrShallowFlowingWater(beh);
+          const isWater = BEHAVIOR_TESTS.water(beh);
+          const isGrass = BEHAVIOR_TESTS.grass(beh);
+          const isSand = BEHAVIOR_TESTS.sand(beh);
           if (isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
 
           const gwx = info.x + x;
@@ -734,16 +813,16 @@ async function build(): Promise<void> {
 
           let arrow: string | undefined;
           let ledgeVal = 0;
-          if (MB.MetatileBehavior_IsJumpEast(beh)) {
+          if (BEHAVIOR_TESTS.jumpEast(beh)) {
             arrow = "E";
             ledgeVal = 4;
-          } else if (MB.MetatileBehavior_IsJumpWest(beh)) {
+          } else if (BEHAVIOR_TESTS.jumpWest(beh)) {
             arrow = "W";
             ledgeVal = 3;
-          } else if (MB.MetatileBehavior_IsJumpSouth(beh)) {
+          } else if (BEHAVIOR_TESTS.jumpSouth(beh)) {
             arrow = "S";
             ledgeVal = 1;
-          } else if (MB.MetatileBehavior_IsJumpNorth(beh)) {
+          } else if (BEHAVIOR_TESTS.jumpNorth(beh)) {
             arrow = "N";
             ledgeVal = 2;
           }
@@ -769,7 +848,7 @@ async function build(): Promise<void> {
           else if (e.direction === "left") dir = "west";
           else if (e.direction === "right") dir = "east";
 
-          entityManager.addEntity(e, egwx, egwy, dir);
+          if (!HOENN) entityManager.addEntity(e, egwx, egwy, dir);
         }
 
         if (e.layer === "puerta") {
@@ -797,7 +876,8 @@ async function build(): Promise<void> {
         mark(ctxFor("activador"), t.x, t.y, LAYER_COLORS.activador);
       }
 
-      const ranges = animRangesFor(primary, secondary);
+      // Las animaciones de tiles (tileset_anims.c) están transcritas de FireRed; Hoenn se muestra sin animar.
+      const ranges = HOENN ? [] : animRangesFor(primary, secondary);
       if (ranges.length > 0) {
         const cells: AnimatedMap["cells"] = [];
         for (let y = 0; y < info.height; y++) {
@@ -860,7 +940,7 @@ async function build(): Promise<void> {
 
   applyLayerVisibility();
 
-  if (state.audio) {
+  if (state.audio && !HOENN) {
     audioController.enable();
     checkCurrentMapMusic();
   }
@@ -872,6 +952,7 @@ async function build(): Promise<void> {
 }
 
 function setupUi(): void {
+  setupGameSelect();
   const animBox = document.getElementById("anim-toggle") as HTMLInputElement;
   if (animBox) {
     animBox.checked = false;
@@ -933,6 +1014,10 @@ function setupUi(): void {
   };
 
   const toggleAudio = () => {
+    if (HOENN) {
+      if (statusMeta) statusMeta.textContent = "Hoenn: sin música ni sonido (las pistas son de FireRed)";
+      return;
+    }
     if (audioController.isEnabled()) {
       audioController.disable();
       state.audio = false;

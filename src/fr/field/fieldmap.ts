@@ -14,9 +14,26 @@ export const MAPGRID_ELEVATION_MASK = 0xf000;
 export const MAPGRID_COLLISION_SHIFT = 10;
 export const MAPGRID_ELEVATION_SHIFT = 12;
 export const MAPGRID_UNDEFINED = 0x03ff;
-export const NUM_METATILES_IN_PRIMARY = 640;
 export const NUM_METATILES_TOTAL = 1024;
-export const NUM_TILES_IN_PRIMARY = 640;
+
+/** How the 1024 metatiles / tiles and the 13 palettes are split between the primary and secondary tileset (fieldmap.h). */
+export const TILESET_PROFILES = {
+  firered: { metatilesInPrimary: 640, tilesInPrimary: 640, palsInPrimary: 7 },
+  emerald: { metatilesInPrimary: 512, tilesInPrimary: 512, palsInPrimary: 6 },
+} as const;
+export type TilesetProfileName = keyof typeof TILESET_PROFILES;
+
+// Live bindings: importers see the active profile. FireRed unless SetTilesetProfile("emerald") runs (the world viewer in Hoenn mode).
+export let NUM_METATILES_IN_PRIMARY: number = TILESET_PROFILES.firered.metatilesInPrimary;
+export let NUM_TILES_IN_PRIMARY: number = TILESET_PROFILES.firered.tilesInPrimary;
+export let NUM_PALS_IN_PRIMARY: number = TILESET_PROFILES.firered.palsInPrimary;
+
+export function SetTilesetProfile(name: TilesetProfileName): void {
+  const profile = TILESET_PROFILES[name];
+  NUM_METATILES_IN_PRIMARY = profile.metatilesInPrimary;
+  NUM_TILES_IN_PRIMARY = profile.tilesInPrimary;
+  NUM_PALS_IN_PRIMARY = profile.palsInPrimary;
+}
 
 export const CONNECTION_INVALID = -1;
 export const CONNECTION_NONE = 0;

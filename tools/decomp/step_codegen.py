@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from common import DECOMP, GENERATED, ROOT
+from common import DECOMP, GAME, GENERATED, ROOT
 
 GEN_DIR = GENERATED
 
@@ -29,6 +29,29 @@ def convert_designated_array(name: str, body: str) -> str:
     return "\n".join(lines)
 
 
+def resolve_conditionals(text: str) -> str:
+    """Keep the branches the build takes with none of the optional macros (BUGFIX, UBFIX...) defined."""
+    out, stack = [], []
+    for line in text.split("\n"):
+        word = line.strip().split(None, 1)[0] if line.strip().startswith("#") and line.strip()[1:].strip() else ""
+        if word in ("#ifdef", "#ifndef"):
+            stack.append(word == "#ifndef")
+        elif word in ("#if", "#elif"):
+            raise RuntimeError(f"unsupported preprocessor line in metatile_behavior.c: {line.strip()}")
+        elif word == "#else" and stack:
+            stack[-1] = not stack[-1]
+        elif word == "#endif" and stack:
+            stack.pop()
+        elif all(stack):
+            out.append(line)
+    return "\n".join(out)
+
+
+def convert_defines(text: str) -> str:
+    """`#define NAME expression` -> `const NAME = expression;` (pokeemerald defines its tile flags in the file)."""
+    return re.sub(r"^#define\s+(\w+)\s+(.+?)\s*$", r"const \1 = \2;", text, flags=re.M)
+
+
 def convert_function(text: str) -> str:
     def signature(m: re.Match) -> str:
         ret, name, params = m.group(1), m.group(2), m.group(3)
@@ -40,7 +63,7 @@ def convert_function(text: str) -> str:
             args.append(p.split()[-1].lstrip("*") + ": number")
         ret_type = "boolean" if ret in ("bool8", "bool32") else "number"
         return f"export function {name}({', '.join(args)}): {ret_type}\n{{"
-    text = re.sub(r"^(?:static )?(bool8|bool32|u8|u16|u32|s32)\s+(\w+)\s*\(([^)]*)\)\s*\n?\{", signature, text, flags=re.M)
+    text = re.sub(r"^(?:static )?(bool8|bool32|u8|u16|u32|s32)\s+(?:UNUSED\s+)?(\w+)\s*\(([^)]*)\)\s*\n?\{", signature, text, flags=re.M)
     text = re.sub(r"\b(?:u8|u16|u32|s32|bool8|bool32)\s+(\w+)\s*=", r"let \1 =", text)
     text = re.sub(r"\bTRUE\b", "true", text)
     text = re.sub(r"\bFALSE\b", "false", text)
@@ -50,11 +73,12 @@ def convert_function(text: str) -> str:
 def generate_metatile_behavior(constants: dict[str, int]) -> None:
     source = strip_comments((DECOMP / "src/metatile_behavior.c").read_text())
     source = re.sub(r"#include[^\n]*\n", "", source)
+    source = convert_defines(resolve_conditionals(source))
     source = re.sub(r"(static )?const (bool8|u8) (\w+)\[[^\]]*\]\s*=\s*\{(.*?)\};",
                     lambda m: convert_designated_array(m.group(3), m.group(4)), source, flags=re.S)
     source = convert_function(source)
     used = sorted(set(re.findall(r"\b((?:MB|DIR|NUM)_[A-Z0-9_]+)\b", source)))
-    header = ["// Generated from pokefirered src/metatile_behavior.c by tools/decomp/step_codegen.py.", "// Do not edit by hand.", "/* eslint-disable */", "// @ts-nocheck", ""]
+    header = [f"// Generated from {'pokefirered' if GAME == 'firered' else 'pokeemerald'} src/metatile_behavior.c by tools/decomp/step_codegen.py.", "// Do not edit by hand.", "/* eslint-disable */", "// @ts-nocheck", ""]
     for name in used:
         if name in constants:
             header.append(f"export const {name} = {constants[name]};")
