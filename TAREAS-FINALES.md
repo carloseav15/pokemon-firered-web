@@ -596,10 +596,16 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/fr/`.
 Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1–4.
 
-- [x] **6.4 Exportador por juego (Emerald)** — pasos de código `37fe6675`, `a97a5a03`, `75a54ac2` (docs `e590c99d`);
-  [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md) §7. `EXPORT_GAME=emerald` termina los 15 pasos
-  (tsconst 18.474 constantes, incbin 6.617 símbolos/9,2 MB, graphics con las 5 fuentes latinas); FireRed regenera idéntica.
-  Abierto (validación): los datos de Emerald no están contrastados con la ROM ni con el motor.
+- [x] **6.4 Exportador por juego (Emerald)** — datos `37fe6675`, `5d482143`, `75a54ac2`, `c1a981f6`, `674615b9`; validación `bf6fffdc`…`7466b3ad`;
+  [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md) §7–9. `EXPORT_GAME=emerald` termina los 15 pasos y
+  `tools/emeraldExportValidate.py` + `tools/emeraldScriptValidate.py` los comparan con las fuentes (66.470 + 17.228 comparaciones, 0
+  diferencias; 98,8 % de `scripts.bin` reensamblado); FireRed regenera idéntica. Tilesets de Emerald con `attributes` (16 bits) y
+  `attributes32` (formato FireRed). Abierto (validación): los datos no están contrastados con la ROM ni con el motor.
+- [ ] **6.6 Emerald: cablear en el motor lo ya exportado** — `da9c4466` dejó listos `UseEmeraldCoordEventWeather(setWeather)`
+  (`src/fr/field/coordEventWeather.ts`, tabla de Emerald; FireRed sigue con la vacía) y la voz `voice_directsound_reverse`
+  (`src/fr/audio/m4a.ts`, sin escucha). Falta: llamar a `UseEmeraldCoordEventWeather(game.weather.setWeather)` al cargar Emerald, leer
+  `attributes32` con los comportamientos de `src/games/emerald/generated/metatileBehavior.ts` (terreno y tipo de encuentro a 0 en Emerald:
+  derivarlos del comportamiento), atributos de visor para Hoenn (512 metatiles primarios, 6 paletas) y el resto de la integración de Emerald.
 - [x] **6.5 FireRed: muestra `sc88pro_tuba_39` ausente del export de audio** — `795e7cb6`. La etiqueta con comentario `@` se saltaba en
   `step_audio._sample_files`; ahora `samples.json` la lista y se genera el `.wav`. `check:m4a` pasa; sin escucha de las canciones con `tuba_keysplit`.
 - [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama
