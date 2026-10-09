@@ -118,3 +118,26 @@ tienen `itemId = ITEM_NONE` en el propio C), Pokédex `pokedex_text.h`, aprendiz
 de comentario. En Emerald `script_menu.json` tiene `stdStrings` y `textColors` a `null` (no existen).
 
 Ejecución completa `EXPORT_GAME=emerald python3 tools/decomp/export.py`: los 15 pasos terminan sin errores (incbin 146 s, cdata 67 s, tsconst 62 s). FireRed regenerada tras cada cambio: 0 archivos cambiados en `public/fr` y `src/fr/generated`. Sigue pendiente la validación de los datos de Emerald contra la ROM o el motor; las salidas parciales no se versionan.
+
+## 8. Validación cruzada de los datos exportados (2026-10-08)
+
+`python3 tools/emeraldExportValidate.py` (tras `EXPORT_GAME=emerald python3 tools/decomp/export.py`) compara `public/emerald` con
+`refs/emerald/*.json` y con las fuentes de pokeemerald. Son dos canalizaciones independientes sobre el mismo commit (el exportador
+compila el C con clang; `tools/refs/emerald_*.py` leen el texto), así que la coincidencia prueba que el exportador leyó las tablas
+correctas, no que coincidan con la ROM ni con el motor. Resultado: **26.369 comparaciones, 0 diferencias**. Se comprobó que detecta
+una alteración (Treecko con HP 41 → 1 diferencia).
+
+| Qué | Comparación |
+|---|---|
+| Especies (412) | estadísticas base, tipos, habilidades, grupos huevo, ratio de captura, exp., EV, ciclos de huevo, crecimiento, objetos, color, amistad |
+| Movimientos (355) | potencia, precisión, PP, prioridad, probabilidad, tipo, efecto, objetivo |
+| Entrenadores (855) | nombre (decodificado con `charmap.json`), clase, doble, tamaño del equipo, especie/nivel/IV de cada Pokémon |
+| Mapas (518) | conjunto de nombres; por mapa: música, clima, tipo y número de objetos/warps/coordenadas/carteles (los salones de concurso heredan los eventos de `ContestHall` por `shared_events_map`; la referencia deja esos contadores en `null`) y de conexiones |
+| Encuentros salvajes (116 mapas) | mismo conjunto de mapas que `wild_encounters.json`; tasa y lista (nivel mín/máx, especie) de land, water, rock smash y fishing iguales a una de las cabeceras del mapa |
+| Gráficos | 4.521 `INCGFX` `.4bpp`/`.gbapal` sin flags: tamaño exportado = ancho×alto/2 del png o 2 bytes por color; 385 de 440 imágenes de frente con el tamaño de su `front.png` |
+
+Hallazgos que no son errores: seis `front.png` de origen (Blaziken, Marshtomp, Poochyena, Walrein, Swablu, Rayquaza) miden 64×256, no
+64×64, y se exportan tal cual; 55 especies no se comparan por no tener `graphics/pokemon/<nombre>/front.png` (NONE, Castform, las letras de Unown y OLD_UNOWN).
+
+No cubierto: objetos (377), anchos de fuente, scripts/eventos (`scripts.json`), tilesets, audio y las constantes de `tsconst` más allá
+de unos valores sueltos. Tampoco se contrastó ningún dato con la ROM.
