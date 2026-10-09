@@ -21,7 +21,7 @@ import { renderTilePanel, renderBiomePanel } from "./ui/panel";
 import { setupSearch } from "./ui/search";
 import { setupMinimap, type MinimapController } from "./ui/minimap";
 import { setupPopovers } from "./ui/popover";
-import { getPlayerSpriteSheet, type Direction, GFX_MAP } from "./render/sprites";
+import { getPlayerSpriteSheet, type Direction, loadHoennGfx } from "./render/sprites";
 import { viewerClock, bindViewerClockVisibility } from "./clock";
 import { ViewerFieldEffects } from "./fieldEffects";
 import { installFieldFxRenderer } from "./render/fieldFx";
@@ -368,7 +368,8 @@ function updatePlayerDisplay(): void {
 }
 
 function updateEntitiesView(): void {
-  if (!playerActive) {
+  // Hoenn no tiene exploración: sus personajes se muestran fijos, siempre que haya algo a la vista.
+  if (!playerActive && !HOENN) {
     entityManager.hideAll();
     return;
   }
@@ -378,7 +379,7 @@ function updateEntitiesView(): void {
   const viewBottom = viewTop + viewport.clientHeight / camera.zoom + 128;
 
   entityManager.updateVisibility(viewLeft, viewTop, viewRight, viewBottom, (ent) => {
-    interactWithEntity(ent);
+    if (!HOENN) interactWithEntity(ent);
   });
 }
 
@@ -687,6 +688,7 @@ async function build(): Promise<void> {
 
   if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
   const worldData = HOENN ? await fetchHoennIndex() : await fetchWorldIndex();
+  if (HOENN) await loadHoennGfx("/emerald");
   index = worldData.index;
   minX = worldData.minX;
   minY = worldData.minY;
@@ -848,7 +850,7 @@ async function build(): Promise<void> {
           else if (e.direction === "left") dir = "west";
           else if (e.direction === "right") dir = "east";
 
-          if (!HOENN) entityManager.addEntity(e, egwx, egwy, dir);
+          entityManager.addEntity(e, egwx, egwy, dir);
         }
 
         if (e.layer === "puerta") {

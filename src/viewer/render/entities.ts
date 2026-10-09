@@ -1,6 +1,7 @@
 import type { Element } from "../types";
 import { TILE } from "../constants";
-import { GFX_MAP, type Direction } from "./sprites";
+import { DATA_ROOT } from "../../fr/rom";
+import { facingFrame, fallbackGfx, gfxInfoOf, type Direction } from "./sprites";
 
 export type LiveEntity = {
   element: Element;
@@ -55,23 +56,16 @@ export class EntityManager {
 
       if (!ent.el) {
         const gfxKey = ent.element.graphics ?? "";
-        const gfxInfo = GFX_MAP[gfxKey] ?? { file: "objects/woman1__npcgreen.png", w: 16, h: 32 };
+        const gfxInfo = gfxInfoOf(gfxKey) ?? fallbackGfx();
         const el = document.createElement("div");
         el.className = "world-npc";
         el.style.width = `${gfxInfo.w}px`;
         el.style.height = `${gfxInfo.h}px`;
         el.style.left = `${px - (gfxInfo.w > 16 ? (gfxInfo.w - 16) / 2 : 0)}px`;
         el.style.top = `${py - (gfxInfo.h - 16)}px`;
-        el.style.backgroundImage = `url(/fr/${gfxInfo.file})`;
+        el.style.backgroundImage = `url(${DATA_ROOT}/${gfxInfo.file})`;
 
-        let frameIdx = 0;
-        let flip = false;
-        if (ent.dir === "north") frameIdx = 1;
-        else if (ent.dir === "west") frameIdx = 2;
-        else if (ent.dir === "east") {
-          frameIdx = 2;
-          flip = true;
-        }
+        const { frame: frameIdx, flip } = facingFrame(gfxInfo, ent.dir);
         el.style.backgroundPosition = `-${frameIdx * gfxInfo.w}px 0px`;
         el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
 
@@ -101,15 +95,8 @@ export class EntityManager {
       ent.dir = dy > 0 ? "south" : "north";
     }
     if (ent.el) {
-      const gfxInfo = GFX_MAP[ent.element.graphics ?? ""] ?? { w: 16, h: 32 };
-      let frame = 0;
-      let flip = false;
-      if (ent.dir === "north") frame = 1;
-      else if (ent.dir === "west") frame = 2;
-      else if (ent.dir === "east") {
-        frame = 2;
-        flip = true;
-      }
+      const gfxInfo = gfxInfoOf(ent.element.graphics ?? "") ?? fallbackGfx();
+      const { frame, flip } = facingFrame(gfxInfo, ent.dir);
       ent.el.style.backgroundPosition = `-${frame * gfxInfo.w}px 0px`;
       ent.el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
     }
@@ -137,15 +124,8 @@ export class EntityManager {
         const nextDir = dirs[Math.floor(Math.random() * dirs.length)]!;
         if (nextDir !== ent.dir) {
           ent.dir = nextDir;
-          const gfxInfo = GFX_MAP[ent.element.graphics ?? ""] ?? { w: 16, h: 32 };
-          let frame = 0;
-          let flip = false;
-          if (ent.dir === "north") frame = 1;
-          else if (ent.dir === "west") frame = 2;
-          else if (ent.dir === "east") {
-            frame = 2;
-            flip = true;
-          }
+          const gfxInfo = gfxInfoOf(ent.element.graphics ?? "") ?? fallbackGfx();
+          const { frame, flip } = facingFrame(gfxInfo, ent.dir);
           ent.el.style.backgroundPosition = `-${frame * gfxInfo.w}px 0px`;
           ent.el.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
         }

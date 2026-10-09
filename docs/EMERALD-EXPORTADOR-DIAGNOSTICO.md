@@ -237,5 +237,11 @@ Ahora resuelve `#ifdef/#else/#endif` con ninguna macro opcional definida, convie
 no cambia. Comprobado en el navegador: Hoenn se pinta con los mosaicos correctos (49 mapas) y Kanto sigue igual, incluida la exploración;
 `check:all` 44 pasan, `check:tileset-profile` nuevo.
 
-Pendiente del visor de Hoenn: sprites de objetos de Emerald, audio de Emerald, animación de tiles de pokeemerald y exploración con
+**Sprites de Hoenn en el visor.** `src/viewer/render/sprites.ts` carga `public/emerald/objects.json` (`loadHoennGfx`) y `gfxInfoOf` resuelve cada
+`OBJ_EVENT_GFX_*` a su hoja, tamaño y los fotogramas que miran al sur, norte y oeste; `entities.ts` los dibuja con `DATA_ROOT`. En Hoenn los
+personajes (entrenadores, NPC, árboles, rocas) se muestran fijos en modo visor y no responden al clic. De los 76 gráficos distintos que usan los
+544 objetos de los 49 mapas, 73 se resuelven; `OBJ_EVENT_GFX_VAR_0` y `_3` (dependen de la partida) usan una mujer genérica y la planta de bayas
+(sin hoja) tampoco se dibuja. Comprobado en el navegador: 7 personajes de Pueblo Raíz con hojas de 144×32; Kanto conserva sus rutas `/fr/`.
+
+Pendiente del visor de Hoenn: audio de Emerald, animación de tiles de pokeemerald y exploración con
 avatar (necesitan sus propios módulos de campo, no los de FireRed). No se contrastaron los atributos de capa/colisión de Hoenn jugando.
