@@ -202,3 +202,23 @@ consumidor: `src/fr/field/coordEventWeather.ts` tiene los 13 manejadores vacíos
 esa rama y reproducir el búfer invertido.
 
 Pendiente de autorización (tocan `src/`): el consumidor de eventos de clima y el tipo de voz invertido.
+
+## 10. Índice del visor para Hoenn (2026-10-08, tarea 6.6 paso 1)
+
+`EXPORT_GAME=emerald python3 tools/viewer/world_index.py` escribe `public/viewer/hoenn.json` (el de Kanto sigue siendo `kanto.json`, idéntico
+byte a byte tras el cambio). Origen del BFS: `MAP_LITTLEROOT_TOWN`. Resultado: 49 mapas exteriores unidos, mundo de 800×383 casillas, 712
+elementos (295 entrenadores, 210 NPC condicionales, 168 puertas, 20 árboles de corte, 8 rocas, 11 NPC), 209 activadores de los que 81 son
+cambios de clima (los otros 5 de los 86 están en mapas fuera de la red conectada), 159 banderas iniciales (`EventScript_ResetAllMapFlags` de
+`data/scripts/new_game.inc`). Determinista (mismo md5 en dos ejecuciones).
+
+Comprobación independiente: el conjunto de 49 mapas es exactamente la componente conexa desde Pueblo Raíz siguiendo solo las conexiones
+arriba/abajo/izquierda/derecha de los `map.json` (las 7 de bucear/emerger no cuentan); de las 112 conexiones entre esos mapas, 106 dan
+posiciones coherentes y las 6 restantes son los 3 pares de desajuste de 2 casillas que el índice informa como `conflicts` (Dewford–Ruta 107,
+Fallarbor–Ruta 114, Verdanturf–Ruta 116), un defecto de los propios datos de pokeemerald. Quedan fuera de la red, por no estar conectados con
+el resto: el Frente de Batalla (este y oeste) y las seis zonas del Parque Safari, que tienen conexiones propias.
+
+Diferencias de configuración por juego (`GAME_CONFIG`): gráficos de obstáculo (`CUTTABLE_TREE`, `BREAKABLE_ROCK`, `SUDOWOODO` en lugar de
+`CUT_TREE`, `ROCK_SMASH_ROCK`, `SNORLAX`), archivo de banderas iniciales, y los eventos de clima se indexan como activadores con el campo
+`weather`. Las partidas de prueba de `tools/playtest/saves` solo se copian en FireRed.
+
+Falta (paso 2, necesita permiso sobre código compartido): que `src/viewer` cargue `hoenn.json` con los datos de `public/emerald`.

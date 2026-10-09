@@ -1,11 +1,11 @@
-"""Indice del visor del mundo v1 (Kanto exterior).
+"""Indice del visor del mundo (Kanto exterior; con EXPORT_GAME=emerald, Hoenn).
 
 Lee public/fr/maps + layouts para unir los 37 mapas exteriores por sus
 conexiones (BFS en cola FIFO desde MAP_PALLET_TOWN) y el decomp para los
 nombres simbolicos (map.json: graphics/flags/vars) y los writers
 (setvar/setflag/clearflag en scripts.inc).
 
-Salida determinista: public/viewer/kanto.json (listas ordenadas).
+Salida determinista: public/viewer/kanto.json, o hoenn.json con EXPORT_GAME=emerald (listas ordenadas).
 Plan: docs/VISOR-MUNDO.md par. 4.
 """
 
@@ -20,15 +20,31 @@ from collections import deque
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "decomp"))
-from common import DECOMP, ROOT  # noqa: E402
+from common import DECOMP, GAME, OUT as GAME_OUT, ROOT  # noqa: E402
 
-PUBLIC_MAPS = ROOT / "public" / "fr" / "maps"
-PUBLIC_LAYOUTS = ROOT / "public" / "fr" / "layouts"
+# Por juego: mapa de origen del BFS, fichero de salida, graficos de objeto que bloquean el paso y donde estan los
+# flags iniciales (EventScript_ResetAllMapFlags).
+GAME_CONFIG = {
+    "firered": {
+        "origin": "MAP_PALLET_TOWN", "out": "kanto.json", "reset_flags": "data/event_scripts.s",
+        "obstacles": {"OBJ_EVENT_GFX_CUT_TREE": "corte", "OBJ_EVENT_GFX_PUSHABLE_BOULDER": "fuerza",
+                      "OBJ_EVENT_GFX_ROCK_SMASH_ROCK": "golpe_roca", "OBJ_EVENT_GFX_SNORLAX": "snorlax"},
+    },
+    "emerald": {
+        "origin": "MAP_LITTLEROOT_TOWN", "out": "hoenn.json", "reset_flags": "data/scripts/new_game.inc",
+        "obstacles": {"OBJ_EVENT_GFX_CUTTABLE_TREE": "corte", "OBJ_EVENT_GFX_PUSHABLE_BOULDER": "fuerza",
+                      "OBJ_EVENT_GFX_BREAKABLE_ROCK": "golpe_roca", "OBJ_EVENT_GFX_SUDOWOODO": "snorlax"},
+    },
+}
+CONFIG = GAME_CONFIG[GAME]
+
+PUBLIC_MAPS = GAME_OUT / "maps"
+PUBLIC_LAYOUTS = GAME_OUT / "layouts"
 PLAYTEST_SAVES = ROOT / "tools" / "playtest" / "saves"
-OUT = ROOT / "public" / "viewer" / "kanto.json"
+OUT = ROOT / "public" / "viewer" / CONFIG["out"]
 SAVES_OUT = ROOT / "public" / "viewer" / "saves"
 
-ORIGIN = "MAP_PALLET_TOWN"
+ORIGIN = CONFIG["origin"]
 DIRS = ("up", "down", "left", "right")
 
 SETVAR_RE = re.compile(r"^\s*setvar\s+(\w+)\s*,\s*(\w+)")
@@ -228,7 +244,7 @@ def initial_flags() -> dict[str, int]:
     ejecuta con RunScriptImmediately al crear la partida. Un objeto con uno
     de estos flags empieza oculto. Devuelve flag -> linea en event_scripts.s.
     """
-    path = DECOMP / "data" / "event_scripts.s"
+    path = DECOMP / CONFIG["reset_flags"]
     found: dict[str, int] = {}
     try:
         lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -241,7 +257,7 @@ def initial_flags() -> dict[str, int]:
             inside = True
             continue
         if inside:
-            if s == "end":
+            if s in ("end", "return"):
                 break
             m = SETFLAG_RE.match(line)
             if m and m.group(1) not in found:
@@ -304,14 +320,8 @@ def main() -> int:
             dobj = decomp_objs[idx] if idx < len(decomp_objs) else {}
             flag_name = dobj.get("flag", "0") if isinstance(dobj, dict) else "0"
             local_name = dobj.get("local_id", "") if isinstance(dobj, dict) else ""
-            if gfx == "OBJ_EVENT_GFX_CUT_TREE":
-                layer = "corte"
-            elif gfx == "OBJ_EVENT_GFX_PUSHABLE_BOULDER":
-                layer = "fuerza"
-            elif gfx == "OBJ_EVENT_GFX_ROCK_SMASH_ROCK":
-                layer = "golpe_roca"
-            elif gfx == "OBJ_EVENT_GFX_SNORLAX":
-                layer = "snorlax"
+            if gfx in CONFIG["obstacles"]:
+                layer = CONFIG["obstacles"][gfx]
             elif trainer != 0:
                 layer = "entrenador"
             elif flag_num != 0:
@@ -348,6 +358,10 @@ def main() -> int:
         # activadores y puertas: nombres simbolicos del decomp
         if dm:
             for c in dm.get("coord_events", []):
+                if c.get("type") == "weather":  # pokeemerald: cambio de clima al pisar la casilla, sin script ni variable
+                    triggers.append({"map": mid, "x": to_int(c.get("x", 0)), "y": to_int(c.get("y", 0)),
+                                     "var": "", "value": 0, "script": "", "weather": c.get("weather", "")})
+                    continue
                 triggers.append(
                     {
                         "map": mid,
@@ -422,7 +436,7 @@ def main() -> int:
         json.dumps(out, separators=(",", ":"), ensure_ascii=False, sort_keys=False)
         + "\n"
     )
-    if PLAYTEST_SAVES.is_dir():
+    if GAME == "firered" and PLAYTEST_SAVES.is_dir():
         SAVES_OUT.mkdir(parents=True, exist_ok=True)
         for s in PLAYTEST_SAVES.glob("*.json"):
             shutil.copy2(s, SAVES_OUT / s.name)
