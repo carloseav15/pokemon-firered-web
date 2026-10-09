@@ -596,11 +596,10 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/fr/`.
 Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1–4.
 
-- [ ] **6.4 Exportador por juego (Emerald)** — [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md),
-  [docs/EMERALD-FALTANTE.md](docs/EMERALD-FALTANTE.md). `EXPORT_GAME=emerald` exporta setup, constants, scripts, battlescripts,
-  maps, tilesets, objects, data, codegen, structs, audio y cdata; FireRed regenera idéntica (0 archivos cambiados, comprobado tras cada
-  cambio). Abierto: `tsconst` (causa hallada, sin confirmar), `incbin` (2.467 `INCGFX_*`; falta compilar `gbagfx` y ampliar la descarga),
-  `graphics` (decidir qué fuentes necesita el motor). Los datos exportados no están contrastados con la ROM.
+- [x] **6.4 Exportador por juego (Emerald)** — pasos de código `37fe6675`, `a97a5a03`, `75a54ac2` (docs `e590c99d`);
+  [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md) §7. `EXPORT_GAME=emerald` termina los 15 pasos
+  (tsconst 18.474 constantes, incbin 6.617 símbolos/9,2 MB, graphics con las 5 fuentes latinas); FireRed regenera idéntica.
+  Abierto (validación): los datos de Emerald no están contrastados con la ROM ni con el motor.
 - [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama
   `muse/visor`). Pistas §4.1–4.3 cuadran con datos (sin PISTA INCORRECTA); §6 verificado
   en navegador contra partidas reales (Verde) + capturas de mundo y ficha.
