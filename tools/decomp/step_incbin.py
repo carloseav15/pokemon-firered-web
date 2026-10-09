@@ -24,6 +24,8 @@ from common import BIN, BUILD, CPP_DEFINES, DECOMP, GEN_INCLUDE, OUT, run, write
 GFX_OUT = BUILD / "gfx"
 RULE_FILES = ["graphics_file_rules.mk", "spritesheet_rules.mk", "tileset_rules.mk"]
 INCBIN_MACROS = ("INCBIN", "INCBIN_U8", "INCBIN_U16", "INCBIN_U32", "INCBIN_S8", "INCBIN_S16", "INCBIN_S32")
+# pokeemerald names the SOURCE file and the conversion instead: INCGFX_U32("dir/tiles.png", ".4bpp.lz", "-num_tiles 8").
+INCGFX_MACROS = ("INCGFX_U8", "INCGFX_U16", "INCGFX_U32")
 
 
 # ---------------------------------------------------------------- make rules
@@ -38,7 +40,16 @@ class Rules:
                 self.parse(path.read_text())
 
     def expand(self, text: str) -> str:
-        return re.sub(r"\$\((\w+)\)", lambda m: self.vars.get(m.group(1), m.group(0)), text)
+        # $(NAME) and the substitution reference $(NAME:%=prefix/%.ext)
+        def subst(m: re.Match) -> str:
+            if m.group(2) is None:
+                return self.vars.get(m.group(1), m.group(0))
+            if m.group(1) not in self.vars:
+                return m.group(0)
+            left, right = m.group(2).split("=", 1)
+            return " ".join(right.replace("%", w[len(left.split("%")[0]):len(w) - len(left.split("%")[1])] if "%" in left else w) for w in self.vars[m.group(1)].split())
+        text = re.sub(r"\$\((\w+)\)", lambda m: self.vars.get(m.group(1), m.group(0)), text)
+        return re.sub(r"\$\((\w+):([^)]*)\)", subst, text)
 
     def parse(self, text: str) -> None:
         text = text.replace("\\\n", " ")
@@ -90,6 +101,7 @@ class Builder:
         self.rules = Rules()
         self.gbagfx = str(BIN / "gbagfx")
         self.cache: dict[str, bytes] = {}
+        self.gfx_cache: dict[tuple, bytes] = {}
         self.failed: dict[str, str] = {}
 
     def out_path(self, rel: str) -> Path:
@@ -113,6 +125,27 @@ class Builder:
             path.write_bytes(data)
         return path
 
+    def build_spec(self, spec) -> bytes:
+        """A plain path (INCBIN) or ("gfx", source, suffix, flags) (INCGFX)."""
+        if isinstance(spec, str):
+            return self.build(spec)
+        if spec not in self.gfx_cache:
+            self.gfx_cache[spec] = self.build_gfx(*spec[1:])
+        return self.gfx_cache[spec]
+
+    def build_gfx(self, src: str, suffix: str, flags: tuple[str, ...]) -> bytes:
+        """INCGFX: convert `src` (png/pal) to `suffix` with gbagfx, or take a binary source as it is. Compressed
+        variants (.lz/.rl) are stored uncompressed, like the INCBIN path."""
+        base = suffix[:-3] if suffix.endswith((".lz", ".rl")) else suffix
+        stem, _, ext = src.rpartition(".")
+        if ext in ("png", "pal") and base:
+            dest = stem + base
+            self.gfx(src, dest, list(flags))
+            return self.out_path(dest).read_bytes()
+        if (DECOMP / src).exists():
+            return (DECOMP / src).read_bytes()
+        return self.build(src)  # a generated intermediate (x.4bpp from x.png, x.gbapal from x.pal...)
+
     def build(self, rel: str) -> bytes:
         if rel in self.cache:
             return self.cache[rel]
@@ -127,6 +160,15 @@ class Builder:
         if rule and rule[1]:
             deps, recipe = rule
             command = recipe[0].lstrip("@")
+            if command.startswith("cp") and deps:
+                # cp $< $@ followed by dd if=/dev/zero bs=1 count=N >> $@
+                data = self.build(deps[0])
+                for extra in recipe[1:]:
+                    dd = re.search(r"dd if=/dev/zero bs=1 count=(\d+)", extra)
+                    if not dd:
+                        raise RuntimeError(f"unsupported recipe line for {rel}: {extra}")
+                    data += bytes(int(dd.group(1)))
+                return data
             if command.startswith("cat"):
                 return b"".join(self.build(d) for d in deps)
             if "$(GFX)" in command or "GFX" in command:
@@ -152,13 +194,27 @@ class Builder:
 
 # ---------------------------------------------------------------- symbols
 
-INCBIN_RE = re.compile(r"(\w+)\s*(?:\[[^\]]*\]\s*)*=\s*__INCBIN__\s*\(([^)]*)\)")
+INC_CALL = r"__INC(?:BIN|GFX)__\s*\([^)]*\)"
+INCBIN_RE = re.compile(r"(\w+)\s*(?:\[[^\]]*\]\s*)*=\s*(" + INC_CALL + ")")
+INC_ARGS_RE = re.compile(r"__INC(BIN|GFX)__\s*\(([^)]*)\)")
 # Arrays whose initializer is only INCBINs, e.g. gTextWindowPalettes[][16] = { INCBIN(...), ... }
-INCBIN_ARRAY_RE = re.compile(r"(\w+)\s*(?:\[[^\]]*\]\s*)+=\s*\{\s*((?:__INCBIN__\s*\([^)]*\)\s*,?\s*)+)\}")
+INCBIN_ARRAY_RE = re.compile(r"(\w+)\s*(?:\[[^\]]*\]\s*)+=\s*\{\s*((?:" + INC_CALL + r"\s*,?\s*)+)\}")
 
 
-def scan_file(path: Path) -> list[tuple[str, list[str]]]:
-    defines = [f"-D{m}(...)=__INCBIN__(__VA_ARGS__)" for m in INCBIN_MACROS]
+def call_specs(text: str) -> list:
+    specs: list = []
+    for kind, args in INC_ARGS_RE.findall(text):
+        strings = re.findall(r'"([^"]+)"', args)
+        if kind == "GFX" and len(strings) >= 2:
+            flags = tuple(strings[2].split()) if len(strings) > 2 else ()
+            specs.append(("gfx", strings[0], strings[1], flags))
+        else:
+            specs.extend(strings)
+    return specs
+
+
+def scan_file(path: Path) -> list[tuple[str, list]]:
+    defines = [f"-D{m}(...)=__INCBIN__(__VA_ARGS__)" for m in INCBIN_MACROS] + [f"-D{m}(...)=__INCGFX__(__VA_ARGS__)" for m in INCGFX_MACROS]
     include_args = ["-I", str(GEN_INCLUDE), "-iquote", "include", "-I", "include", "-I", "src", "-I", str(BUILD)]
     result = subprocess.run(["clang", "-E", "-P", "-x", "c", "-U__APPLE__", "-w", *defines, *CPP_DEFINES, *include_args, str(path)], cwd=DECOMP, capture_output=True)
     if result.returncode != 0 and not result.stdout:
@@ -167,13 +223,15 @@ def scan_file(path: Path) -> list[tuple[str, list[str]]]:
     found = []
     for regex in (INCBIN_RE, INCBIN_ARRAY_RE):
         for m in regex.finditer(text):
-            paths = re.findall(r'"([^"]+)"', m.group(2))
+            paths = call_specs(m.group(2))
             if paths:
                 found.append((m.group(1), paths))
     return found
 
 
-def pack_name(rel: str) -> str:
+def pack_name(rel) -> str:
+    if not isinstance(rel, str):
+        rel = rel[1]
     parts = rel.split("/")
     if parts[0] == "graphics" and len(parts) > 2:
         if parts[1] == "pokemon":
@@ -185,7 +243,7 @@ def pack_name(rel: str) -> str:
 def export_incbin() -> None:
     builder = Builder()
     sources = sorted((DECOMP / "src").glob("*.c"))
-    symbols: dict[str, list[str]] = {}
+    symbols: dict[str, list] = {}
     for src in sources:
         for name, paths in scan_file(src):
             symbols.setdefault(f"{src.name}:{name}", paths)
@@ -196,7 +254,7 @@ def export_incbin() -> None:
         tup = tuple(paths)
         if tup not in by_path:
             try:
-                data = b"".join(builder.build(p) for p in paths)
+                data = b"".join(builder.build_spec(p) for p in paths)
             except Exception as error:  # noqa: BLE001
                 builder.failed[key] = f"{paths}: {error}"
                 continue

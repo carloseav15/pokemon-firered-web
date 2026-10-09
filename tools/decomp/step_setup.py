@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 from common import BIN, BUILD, CPP_DEFINES, DECOMP, GAME, GEN_INCLUDE, MAPJSON_MODE, run, write_json, OUT
@@ -22,6 +23,20 @@ def build_tools() -> None:
             continue
         print(f"  building {name}")
         run(["clang++", std, "-O2", "-w", "-Itools/jsonproc", *sources, "-o", str(target)])
+    if GAME == "emerald":
+        build_gbagfx()
+
+
+def build_gbagfx() -> None:
+    """pokeemerald's graphics converter (needs libpng). FireRed's is built by hand and kept as it is."""
+    sources = ["main.c", "convert_png.c", "gfx.c", "jasc_pal.c", "lz.c", "rl.c", "util.c", "font.c", "huff.c"]
+    target = BIN / "gbagfx"
+    root = DECOMP / "tools" / "gbagfx"
+    if target.exists() and target.stat().st_mtime >= max((root / s).stat().st_mtime for s in sources):
+        return
+    prefix = subprocess.run(["brew", "--prefix", "libpng"], capture_output=True).stdout.decode().strip() or "/opt/homebrew"
+    print("  building gbagfx")
+    run(["clang", "-std=c11", "-O2", "-w", "-DPNG_SKIP_SETJMP_CHECK", f"-I{prefix}/include", f"-L{prefix}/lib", *[str(root / s) for s in sources], "-o", str(target), "-lpng", "-lz"])
 
 
 def jsonproc_run(cmd: list[str]) -> bytes:

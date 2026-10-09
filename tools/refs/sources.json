@@ -11,6 +11,8 @@
       "/asm/",
       "/constants/",
       "/charmap.txt",
+      "/*.mk",
+      "/tools/gbagfx/",
       "/tools/jsonproc/",
       "/tools/mapjson/",
       "/tools/preproc/"
