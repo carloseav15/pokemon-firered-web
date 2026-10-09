@@ -49,6 +49,12 @@ def decode(text: str) -> str:
     return "".join(out).replace("オカキクケ", "{POKEBLOCK}")
 
 
+def spelled(text: str) -> str:
+    """A source string with {NAME} tokens (charmap.json "names") written the way decode() shows their bytes."""
+    names = load(OUT / "charmap.json")["names"]
+    return re.sub(r"\{(\w+)\}", lambda m: "".join(charmap.get(str(b), "?") for b in names[m.group(1)]) if m.group(1) in names else m.group(0), text)
+
+
 def num(value):
     """Reference value (constant name, number or small macro) -> number."""
     if isinstance(value, (int, float)):
@@ -437,8 +443,34 @@ def ts_constants() -> None:
     print(f"  constants compared: {seen}; plain defines absent from constants.ts: {missing}")
 
 
+def small_tables() -> None:
+    """region_map (213 sections), heal_locations and the multichoice menus, against their sources."""
+    sections = load(SRC / "src/data/region_map/region_map_sections.json")["map_sections"]
+    exported = load(OUT / "data/region_map.json")
+    expect("region map sections", len(exported), len(sections))
+    for e, r in zip(exported, sections):
+        tag = f"region map {r['id']}"
+        expect(tag + " id", e["id"], r["id"])
+        expect(tag + " name", decode(e["name"]), spelled(r["name"]))
+        # the template (region_map_sections.json.txt) defaults a missing x/y to 0 and width/height to 1
+        for key, default in (("x", 0), ("y", 0), ("width", 1), ("height", 1)):
+            expect(f"{tag} {key}", e.get(key), r.get(key, default))
+    heal = load(SRC / "src/data/heal_locations.json")["heal_locations"]
+    got = load(OUT / "data/heal_locations.json")["heal_locations"]
+    expect("heal locations", got, heal)
+    text = (SRC / "src/data/script_menu.h").read_text()
+    lists = {name: re.findall(r"\{(\w+)\}", body) for name, body in re.findall(r"struct MenuAction (MultichoiceList_\w+)\[\] =\s*\{(.*?)\};", text, re.S)}
+    table = re.search(r"sMultichoiceLists\[\] =\s*\{(.*?)\n\};", text, re.S).group(1)
+    entries = re.findall(r"\[(MULTI_\w+)\]\s*=\s*MULTICHOICE\((\w+)\)", table)
+    menus = load(OUT / "data/script_menu.json")["multichoice"]
+    expect("multichoice count", len(menus), len(entries))
+    for const, symbol in entries:
+        expect(f"multichoice {const}", menus.get(str(constants[const])), lists[symbol])
+    print(f"  region map {len(sections)}, heal locations {len(heal)}, multichoice menus {len(entries)}")
+
+
 TS_CONSTANTS_PATH = ROOT / "src/games/emerald/generated/constants.ts"
-for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items, tilesets, audio, fonts, ts_constants):
+for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items, tilesets, audio, fonts, ts_constants, small_tables):
     step()
 print(f"{checked} comparisons, {len(failures)} mismatches")
 for line in failures[:40]:

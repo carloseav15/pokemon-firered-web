@@ -54,6 +54,23 @@ hex_marks = re.findall(r"script_cmd_table_entry\s+SCR_OP_\w+\s+\w+\s+@ 0x([0-9a-
 check("command indices match the 0xNN comments", [int(h, 16) for h in hex_marks], list(range(len(entries))))
 specials = re.findall(r"^\s*def_special\s+(\w+)", (SRC / "data/specials.inc").read_text(), re.M)
 check("specials", scripts["specials"], specials)
+# data/specials.inc: `def_special Name[, waitstate]` sets SPECIAL_WAITSTATE_Name (the special's index is SPECIAL_Name)
+for index, (name, wait) in enumerate(re.findall(r"^\s*def_special\s+(\w+)(?:\s*,\s*(?:waitstate\s*=\s*)?(\d+))?", (SRC / "data/specials.inc").read_text(), re.M)):
+    constants[f"SPECIAL_{name}"] = index
+    constants[f"SPECIAL_WAITSTATE_{name}"] = int(wait or 0)
+# plain `NAME = value` assignments of the macro files (YES = 1, NO = 0, STR_VAR_1 ...)
+for macro_path in ("asm/macros/event.inc", "asm/macros/map.inc"):
+    in_macro = False
+    for raw in (SRC / macro_path).read_text().splitlines():
+        line = raw.split("@")[0].strip()
+        if line.startswith(".macro"):
+            in_macro = True
+        elif line == ".endm":
+            in_macro = False
+        elif not in_macro:
+            m = re.match(r"^(\w+)\s*=\s*(0[xX][0-9a-fA-F]+|\d+)$", line)
+            if m:
+                constants.setdefault(m.group(1), int(m.group(2), 0))
 
 # ------------------------------------------------------------------ source files and labels
 def active_lines(rel: str):
@@ -100,6 +117,9 @@ for rel in files:
 check("label set", sorted(scripts["labels"]), sorted(source_labels))
 
 # ------------------------------------------------------------------ macro expander
+state = {"implicit_end": -1, "base": 0}  # position (in the current label's bytes) where the last implicit waitstate ended
+
+
 class Unsupported(Exception):
     pass
 
@@ -267,6 +287,13 @@ def expand(line: str, out: list[int | None], depth: int = 0) -> None:
         emit(2, rest, out)
     elif name == ".4byte":
         emit(4, rest, out)
+    elif name == "waitstate":
+        # asm/macros/event.inc: an explicit waitstate directly after an implicit one (from `special`) is dropped
+        implicit = rest.replace("implicit=", "").strip() not in ("", "0")
+        if state["implicit_end"] != len(out) or state["base"] != id(out):
+            out.append(constants["SCR_OP_WAITSTATE"])
+        if implicit:
+            state["implicit_end"], state["base"] = len(out), id(out)
     elif name == ".string":
         literals = re.findall(r'"((?:[^"\\]|\\.)*)"', rest)
         if not literals:
@@ -276,10 +303,18 @@ def expand(line: str, out: list[int | None], depth: int = 0) -> None:
     elif name in macros:
         params, body = macros[name]
         given = split_args(rest) if rest else []
+        named = {}
+        for position in reversed(range(len(given))):  # `name=value` arguments (waitstate implicit=1)
+            m = re.match(r"^(\w+)=(.*)$", given[position])
+            if m and any(param == m.group(1) for param, _, _ in params):
+                named[m.group(1)] = m.group(2)
+                given.pop(position)
         values: dict[str, str] = {}
         for i, (param, default, vararg) in enumerate(params):
             if vararg:
                 values[param] = ", ".join(given[i:])
+            elif param in named:
+                values[param] = named[param]
             elif i < len(given) and given[i] != "":
                 values[param] = given[i]
             else:
