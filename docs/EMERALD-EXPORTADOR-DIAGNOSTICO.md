@@ -155,8 +155,7 @@ Fallos del exportador que esta comprobación destapó (corregidos, FireRed intac
 - Los grupos `unused_2` y `vs_kyogre_groudon` se perdían porque su línea `.include` lleva un comentario `@`.
 - 2 muestras (`sc88pro_tuba_39`, `sc88pro_accordion_duplicate`) se perdían porque su etiqueta lleva un comentario `@`.
 
-Hallazgo en **FireRed** sin corregir (la regla es dejarla idéntica): el mismo fallo de etiqueta con comentario hace que
-`public/fr/audio/samples.json` no tenga `DirectSoundWaveData_sc88pro_tuba_39`, aunque `voicegroups.json` lo referencia (grupo `tuba_keysplit`, usado por varias canciones). Pendiente de decidir y anotado en `TAREAS-FINALES.md`.
+Hallazgo en **FireRed**, corregido a petición del usuario: el mismo fallo de etiqueta con comentario hacía que `public/fr/audio/samples.json` no tuviera `DirectSoundWaveData_sc88pro_tuba_39`, aunque `voicegroups.json` la referencia (grupo `tuba_keysplit`, usado por varias canciones). La regeneración añade esa entrada y `sc88pro_tuba_39.wav`; es lo único que cambia en `public/fr`.
 
 ### Scripts (`python3 tools/emeraldScriptValidate.py`)
 

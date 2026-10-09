@@ -14,7 +14,7 @@ import shutil
 import wave
 from pathlib import Path
 
-from common import DECOMP, GAME, OUT, write_json
+from common import DECOMP, OUT, write_json
 
 
 def _wavname(label: str) -> str | None:
@@ -157,9 +157,8 @@ def _sample_files() -> dict[str, str]:
     label: str | None = None
     for line in text.splitlines():
         line = line.strip()
-        # A label may carry a trailing comment (`DirectSoundWaveData_sc88pro_tuba_39:: @N.B....`). FireRed's export has always
-        # skipped such labels, so its output is kept as it was (see docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md section 8).
-        match = re.match(r"^(\w+)::$" if GAME == "firered" else r"^(\w+)::\s*(?:@.*)?$", line)
+        # a label may carry a trailing comment (`DirectSoundWaveData_sc88pro_tuba_39:: @N.B....`)
+        match = re.match(r"^(\w+)::\s*(?:@.*)?$", line)
         if match:
             label = match.group(1)
             continue
