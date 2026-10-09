@@ -600,6 +600,10 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md) §7. `EXPORT_GAME=emerald` termina los 15 pasos
   (tsconst 18.474 constantes, incbin 6.617 símbolos/9,2 MB, graphics con las 5 fuentes latinas); FireRed regenera idéntica.
   Abierto (validación): los datos de Emerald no están contrastados con la ROM ni con el motor.
+- [ ] **6.5 FireRed: muestra `sc88pro_tuba_39` ausente del export de audio** — hallado al validar Emerald (docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md §8).
+  `step_audio._sample_files` no reconoce etiquetas con comentario (`DirectSoundWaveData_sc88pro_tuba_39:: @N.B...`), así que
+  `public/fr/audio/samples.json` no la lista y el `.wav` no se genera, aunque `voicegroups.json` la usa (`tuba_keysplit`). Corregirlo cambia
+  `public/fr` (1 entrada + 1 `.wav`): decidir con el usuario y revisar el efecto en `src/fr/audio/m4a.ts`.
 - [x] **7.1 Visor del mundo, versión 1 (Kanto exterior)** [medio] — `7feababe` (rama
   `muse/visor`). Pistas §4.1–4.3 cuadran con datos (sin PISTA INCORRECTA); §6 verificado
   en navegador contra partidas reales (Verde) + capturas de mundo y ficha.

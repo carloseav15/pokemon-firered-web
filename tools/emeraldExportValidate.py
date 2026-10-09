@@ -281,7 +281,127 @@ def items() -> None:
     print(f"  items compared: {compared} of {len(exported)}")
 
 
-for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items):
+def tilesets() -> None:
+    """Tileset pixels, metatiles, attributes and palettes against data/tilesets/*: the exporter reads the same files through
+    gbagfx and the C headers, this recomputes 4bpp tiles from the png and compares the .bin files byte for byte."""
+    from PIL import Image
+    graphics = (SRC / "src/data/tilesets/graphics.h").read_text() + (SRC / "src/graphics.c").read_text()
+    headers = (SRC / "src/data/tilesets/headers.h").read_text()
+    metatile_sources = (SRC / "src/data/tilesets/metatiles.h").read_text()
+    names = re.findall(r"const struct Tileset (gTileset_\w+)\s*=", headers)
+    exported = {p.stem: load(p) for p in (OUT / "tilesets").glob("*.json")}
+    expect("tileset names", sorted(exported), sorted(names))
+    for name in names:
+        e = exported.get(name)
+        if e is None:
+            continue
+        suffix = name.removeprefix("gTileset_")
+        body = re.search(rf"const struct Tileset {name}\s*=\s*\{{(.*?)\n\}};", headers, re.S).group(1)
+        expect(f"{name} isSecondary", e["isSecondary"], "TRUE" in re.search(r"\.isSecondary = (\w+)", body).group(1))
+        callback = re.search(r"\.callback = (\w+)", body).group(1)
+        expect(f"{name} callback", e["callback"] or "NULL", callback)
+        tiles_symbol = re.search(r"\.tiles = (\w+)", body).group(1)
+        found = re.search(rf'{tiles_symbol}\[\] = INCGFX_U32\("([^"]+)/tiles\.png",\s*"[^"]+"(?:,\s*"([^"]*)")?', graphics)
+        folder, flags = found.group(1), found.group(2) or ""
+        limit = re.search(r"-num_tiles (\d+)", flags)
+        base = SRC / folder
+        image = Image.open(base / "tiles.png")
+        width, height = image.size
+        pixels = list(image.getdata())
+        packed = bytearray()
+        for ty in range(height // 8):
+            for tx in range(width // 8):
+                for y in range(8):
+                    row = [pixels[(ty * 8 + y) * width + tx * 8 + x] & 0xF for x in range(8)]
+                    packed += bytes(row[i] | (row[i + 1] << 4) for i in range(0, 8, 2))
+        if limit:  # gbagfx -num_tiles keeps only the first N tiles
+            packed = packed[:int(limit.group(1)) * 32]
+        expect(f"{name} tiles", base64.b64decode(e["tiles"]), bytes(packed))
+        def bin_of(field: str) -> bytes:
+            symbol = re.search(rf"\.{field} = (\w+)", body).group(1)
+            return (SRC / re.search(rf'{symbol}\[\] = INCBIN_U16\("([^"]+)"', metatile_sources).group(1)).read_bytes()
+        expect(f"{name} metatiles", base64.b64decode(e["metatiles"]), bin_of("metatiles"))
+        expect(f"{name} attributes", base64.b64decode(e["attributes"]), bin_of("metatileAttributes"))
+        palette_symbol = re.search(r"\.palettes = (\w+)", body).group(1)
+        palette_block = re.search(rf"{palette_symbol}\[\]\[16\] =\s*\{{(.*?)\n\}};", graphics, re.S).group(1)
+        palette_files = re.findall(r'INCGFX_U16\("([^"]+\.pal)"', palette_block)
+        expect(f"{name} palette count", len(e["palettes"]), len(palette_files))
+        for index, palette in enumerate(e["palettes"]):
+            lines = (SRC / palette_files[index]).read_text().split()
+            colors = [[(int(lines[3 + 3 * i + c]) >> 3) << 3 for c in range(3)] for i in range(16)]
+            expect(f"{name} palette {index}", palette, colors)
+    print(f"  tilesets compared: {len(names)}")
+
+
+def audio() -> None:
+    root = SRC / "sound"
+    # songs: song_table.inc (order, player, priority) + midi.cfg (volume, reverb, voicegroup)
+    players = {"MUSIC_PLAYER_BGM": 0, "MUSIC_PLAYER_SE1": 1, "MUSIC_PLAYER_SE2": 2, "MUSIC_PLAYER_SE3": 3}
+    table = re.findall(r"^\s*song\s+(\w+),\s*(\w+),\s*(\d+)", (root / "song_table.inc").read_text(), re.M)
+    config = {}
+    for line in (root / "songs/midi/midi.cfg").read_text().splitlines():
+        m = re.match(r"^(\S+\.mid):\s*(.*)$", line)
+        if m:
+            config[m.group(1)] = m.group(2)
+    songs = load(OUT / "audio/songs.json")["songs"]
+    named = [s for s in songs if s["midi"]]
+    expect("song table entries", len(table), 610 - 0 if len(table) == len(songs) else len(table))
+    expect("song count", len(songs), len(table))
+    for index, (name, player, priority) in enumerate(table):
+        e = songs[index]
+        tag = f"song {index} {name}"
+        expect(tag + " name", e["name"], name)
+        expect(tag + " player", e["player"], players[player])
+        cfg = config.get(f"{name}.mid")
+        if cfg is None:
+            continue
+        flags = dict(re.findall(r"-([A-Z])(\S*)", cfg))
+        # the third column of `song` is an unnamed field in the macro; the priority comes from midi.cfg -P
+        expect(tag + " priority", e["priority"], int(flags.get("P", 0)))
+        expect(tag + " volume", e["volume"], int(flags.get("V", 100)))
+        expect(tag + " reverb", e["reverb"], int(flags.get("R", 0)))
+        expect(tag + " voicegroup", e["voicegroup"], flags.get("G", 0))
+    midi_files = {p.name for p in (root / "songs/midi").glob("*.mid")}
+    expect("midi files exported", sorted(p.name for p in (OUT / "audio/midi").glob("*.mid")), sorted(midi_files))
+    # voice groups: names and the sequence of voice kinds
+    groups = load(OUT / "audio/voicegroups.json")["groups"]
+    source_groups: dict[str, list[str]] = {}
+    current = None
+    for path in sorted((root / "voicegroups").rglob("*.inc")):
+        for raw in path.read_text().splitlines():
+            line = raw.split("@")[0].strip()
+            m = re.match(r"voice_group\s+(\w+)", line)
+            if m:
+                current = "voicegroup_" + m.group(1)
+                source_groups[current] = []
+            elif current and re.match(r"voice_\w+\s", line + " "):
+                source_groups[current].append(line.split()[0])
+    expect("voicegroup names", sorted(groups), sorted(source_groups))
+    for name, kinds in source_groups.items():
+        if name in groups:
+            expect(f"{name} voices", [v["kind"] for v in groups[name]], kinds)
+    # direct sound samples and cries
+    samples = load(OUT / "audio/samples.json")["samples"]
+    labels = re.findall(r"^(DirectSoundWaveData_\w+)::", (root / "direct_sound_data.inc").read_text(), re.M)
+    # the export keeps the samples some voice uses; every one of them must be a label of direct_sound_data.inc and map to its .bin
+    used = {v["sample"] for voices in groups.values() for v in voices if "sample" in v}
+    incbins = dict(re.findall(r'^(DirectSoundWaveData_\w+)::[^\n]*\n\s*\.incbin "sound/direct_sound_samples/([^"]+)\.bin"', (root / "direct_sound_data.inc").read_text(), re.M))
+    for label, wav in samples.items():
+        expect(f"sample {label} file", wav, incbins.get(label, "?") + ".wav")
+    expect("sample set = samples used by the voice groups", sorted(samples), sorted(used))
+    expect("every sample is a direct sound label", sorted(set(samples) - set(labels)), [])
+    cries = load(OUT / "audio/cries.json")
+    forward = re.findall(r"^\s*cry\s+(\w+)", (root / "cry_tables.inc").read_text(), re.M)
+    expect("cry count", len(cries["order"]), len(forward))
+    files = dict(re.findall(r'^(\w+)::\s*\n\s*\.incbin "[^"]*?/([^/"]+)\.bin"', (root / "direct_sound_data.inc").read_text(), re.M))
+    expect("cry order", [n.removesuffix(".wav") if n else None for n in cries["order"]], [None if (files.get(c) or "").startswith("unused_") else files.get(c) for c in forward])
+    keysplits = load(OUT / "audio/keysplit_tables.json")
+    source_tables = re.findall(r"^keysplit\s+(\w+)", (root / "keysplit_tables.inc").read_text(), re.M)
+    expect("keysplit tables", sorted(keysplits), sorted("keysplit_" + n for n in source_tables))
+    print(f"  songs {len(table)}, voice groups {len(source_groups)}, samples {len(labels)}, cries {len(forward)}, keysplits {len(source_tables)}")
+
+
+for step in (species, moves, trainers, maps, map_files, wild, incbin_sizes, pokemon_images, items, tilesets, audio):
     step()
 print(f"{checked} comparisons, {len(failures)} mismatches")
 for line in failures[:40]:

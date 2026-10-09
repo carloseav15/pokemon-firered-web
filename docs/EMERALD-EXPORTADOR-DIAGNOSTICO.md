@@ -124,7 +124,7 @@ Ejecución completa `EXPORT_GAME=emerald python3 tools/decomp/export.py`: los 15
 `python3 tools/emeraldExportValidate.py` (tras `EXPORT_GAME=emerald python3 tools/decomp/export.py`) compara `public/emerald` con
 `refs/emerald/*.json` y con las fuentes de pokeemerald. Son dos canalizaciones independientes sobre el mismo commit (el exportador
 compila el C con clang; `tools/refs/emerald_*.py` leen el texto), así que la coincidencia prueba que el exportador leyó las tablas
-correctas, no que coincidan con la ROM ni con el motor. Resultado: **31.648 comparaciones, 0 diferencias** (26.369 al principio; los objetos añadieron 5.279). Se comprobó que detecta
+correctas, no que coincidan con la ROM ni con el motor. Resultado: **36.995 comparaciones, 0 diferencias** (26.369 al principio; objetos, tilesets y audio añadieron el resto). Se comprobó que detecta
 una alteración (Treecko con HP 41 → 1 diferencia).
 
 | Qué | Comparación |
@@ -136,12 +136,25 @@ una alteración (Treecko con HP 41 → 1 diferencia).
 | Encuentros salvajes (116 mapas) | mismo conjunto de mapas que `wild_encounters.json`; tasa y lista (nivel mín/máx, especie) de land, water, rock smash y fishing iguales a una de las cabeceras del mapa |
 | Objetos (377) | nombre, precio, bolsillo, tipo, uso en combate, efecto y parámetro de objeto equipado, importancia, `secondaryId`, funciones de uso y descripción, contra el bloque de `src/data/items.h` y `item_descriptions.h` (con `ITEM_TO_MAIL/BERRY` y comentarios). `{POKEBLOCK}` decodifica como katakana por colisión de bytes y se normaliza |
 | Gráficos | 4.521 `INCGFX` `.4bpp`/`.gbapal` sin flags: tamaño exportado = ancho×alto/2 del png o 2 bytes por color; 385 de 440 imágenes de frente con el tamaño de su `front.png` |
+| Tilesets (75) | nombres, `isSecondary`, callback; tiles recalculados desde `tiles.png` (4bpp, con `-num_tiles`), metatiles y atributos byte a byte con los `.bin`, 16 paletas por tileset contra los `.pal` (5 bits por canal) |
+| Audio | 610 canciones (nombre, jugador, prioridad `-P`, volumen `-V`, reverb `-R`, grupo `-G` de `midi.cfg`), 530 MIDI, 195 grupos de voces y su secuencia de tipos, muestras usadas por las voces y su `.wav`, 388 gritos en el orden de `cry_tables.inc`, 5 tablas de keysplit |
 
 Hallazgos que no son errores: seis `front.png` de origen (Blaziken, Marshtomp, Poochyena, Walrein, Swablu, Rayquaza) miden 64×256, no
 64×64, y se exportan tal cual; 55 especies no se comparan por no tener `graphics/pokemon/<nombre>/front.png` (NONE, Castform, las letras de Unown y OLD_UNOWN).
 
-No cubierto: anchos de fuente, tilesets, audio y las constantes de `tsconst` más allá
+No cubierto: anchos de fuente y las constantes de `tsconst` más allá
 de unos valores sueltos. Tampoco se contrastó ningún dato con la ROM.
+
+Fallos del exportador que esta comprobación destapó (corregidos, FireRed intacta):
+
+- `keysplit_tables.json` salía **vacío**: pokeemerald escribe las tablas con las macros `keysplit piano, 36` / `split 0, 55`, no con `.set KeySplitTable1, . - 36`. Ahora 5 tablas.
+- 40 tilesets secundarios llevaban una baldosa de más: `INCGFX_U32(..., "-num_tiles 159")` recorta el png y el exportador no aplicaba la marca.
+- 2 voces `voice_directsound_reverse` (rs_sfx_2) se descartaban sin aviso; ahora se exportan con ese `kind` (el reproductor tendrá que reconocerlo).
+- Los grupos `unused_2` y `vs_kyogre_groudon` se perdían porque su línea `.include` lleva un comentario `@`.
+- 2 muestras (`sc88pro_tuba_39`, `sc88pro_accordion_duplicate`) se perdían porque su etiqueta lleva un comentario `@`.
+
+Hallazgo en **FireRed** sin corregir (la regla es dejarla idéntica): el mismo fallo de etiqueta con comentario hace que
+`public/fr/audio/samples.json` no tenga `DirectSoundWaveData_sc88pro_tuba_39`, aunque `voicegroups.json` lo referencia (grupo `tuba_keysplit`, usado por varias canciones). Pendiente de decidir y anotado en `TAREAS-FINALES.md`.
 
 ### Scripts (`python3 tools/emeraldScriptValidate.py`)
 
