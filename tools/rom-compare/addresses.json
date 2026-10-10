@@ -1,0 +1,12 @@
+{
+  "rom": "FireRed USA 1.0, SHA1 41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc (= pokefirered firered.sha1)",
+  "note": "Addresses recovered from the ROM itself; no .map exists. 'verified' says how.",
+  "symbols": {
+    "gRngValue":       { "address": "0x03005000", "verified": "Random() literal pool (0x08044ee0: mult 0x41C64E6D, add 0x6073) + value advances exactly one LCG step per frame in the intro (scan, frames 200-260)" },
+    "gMain":           { "address": "0x030030F0", "verified": "word at +0x24 (vblankCounter2) increments by 1 every frame; +4 (callback2) and +0xC (vblankCallback) hold ROM function pointers" },
+    "gSaveBlock1Ptr":  { "address": "0x03005008", "verified": "holds 0x0202552C = gSaveBlock2 (0x02024588) + sizeof(SaveBlock2) 0xF24 + 0x80 DMA range; layout from load_save.c; position fields not yet checked in play" },
+    "gSaveBlock2Ptr":  { "address": "0x0300500C", "verified": "holds 0x02024588, EWRAM, precedes gSaveBlock1 (see above); name field not yet checked in play" },
+    "gPlayerParty":    { "address": "0x02024284", "verified": "NOT verified: community-known value; consistent with gEnemyParty 0x0202402C + 6*0x64" },
+    "gPlayerPartyCount": { "address": "0x02024029", "verified": "NOT verified: community-known value" }
+  }
+}
