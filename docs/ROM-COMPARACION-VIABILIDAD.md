@@ -136,3 +136,47 @@ y una palabra de IWRAM.
 
 Lo que **no** demuestra: que el estado coincida con el del port (aún no hay mapeo de
 variables) ni determinismo ante temporizadores reales distintos de los de mGBA.
+
+## 9. Resultado de la fase 2: direcciones y primera divergencia (2026-10-10)
+
+### Direcciones recuperadas de la propia ROM
+Sin `.map`. Detalle y método de verificación de cada una en
+[tools/rom-compare/addresses.json](../tools/rom-compare/addresses.json).
+
+| Símbolo | Dirección | Verificación |
+|---|---|---|
+| `gRngValue` | `0x03005000` | literal de `Random()` (`0x08044ee0`: ×`0x41C64E6D`, +`0x6073`); avanza exactamente un paso del LCG por fotograma |
+| `gMain` | `0x030030F0` | `vblankCounter2` (+0x24) sube 1 por fotograma; `callback2`/`vblankCallback` son punteros a ROM |
+| `gSaveBlock1Ptr` / `gSaveBlock2Ptr` | `0x03005008` / `0x0300500C` | apuntan a `0x0202552C` / `0x02024588`; separación = `sizeof(SaveBlock2)` + rango DMA (`load_save.c`); campos aún sin comprobar jugando |
+| `gPlayerParty`, `gPlayerPartyCount` | `0x02024284`, `0x02024029` | **no verificadas** (valores conocidos de la comunidad; coherentes con `gEnemyParty`) |
+
+### Herramientas
+`probe.lua` (fase 1), `scan.lua` (volcado de IWRAM por fotograma), `trace.lua` (una línea por
+fotograma: contador, RNG, callbacks) y `port-trace.mjs` (lado port: avanza las escenas de
+arranque de una en una y vuelca el estado del LCG).
+
+### Primera divergencia encontrada: el RNG avanza por fotograma en la ROM y no en el port
+- ROM: `main.c:412`, `VBlankIntr()` llama a `Random()` en **cada** VBlank. Medido en 1.600
+  fotogramas de intro: 1 llamada por fotograma, sin saltos. `gRngValue` empieza en 0 y no
+  se siembra hasta pulsar START en el título (`title_screen.c:735`).
+- Port, intro: tras 2.400 fotogramas de `frStartupStep`, el estado del LCG sigue en `00000000`.
+- Port, juego (partida nueva, `frDebug.run(1)`): el estado del LCG no cambia en fotogramas
+  en reposo (6 fotogramas medidos; `hardware.vblankCounter2` también queda en 0).
+- `src/fr/hw/runtime.ts:147` `VBlankIntr` omite `Random()` (y `m4aSoundMain`,
+  `TryReceiveLinkBattleData`, `UpdateWirelessStatusIndicatorSprite`, que viven en otro sitio o
+  no aplican).
+- Consecuencia: en la ROM el resultado de cualquier tirada (encuentros, golpes críticos,
+  precisión, capturas) depende del número exacto de fotogramas transcurridos; en el port solo
+  del número de llamadas. Con las mismas pulsaciones las secuencias divergen desde la primera
+  tirada tras sembrar. Clasificación: **bug del port** (no adaptador, no enlace).
+- Arreglo propuesto, no aplicado: llamar a `random()` una vez por fotograma en el bucle de
+  fotograma de `Game` y de las escenas de arranque, equivalente a `VBlankIntr`. Cambia las
+  secuencias aleatorias de todo el juego, así que rompe expectativas de `check:*`/replays
+  que dependan de valores concretos; requiere revisar esos checks en la misma tanda.
+
+### Estado de las fases
+| Fase | Estado |
+|---|---|
+| 2a Direcciones | hecha para RNG, `gMain`, save blocks; party y objetos de campo pendientes |
+| 2 Campos observados | parcial: contador, RNG, callbacks (en la ROM sin nombres; hace falta tabla dirección→nombre de callback) |
+| 3 Comparador | siguiente: corregir el avance de RNG y volver a comparar hasta el título |
