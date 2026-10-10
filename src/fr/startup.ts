@@ -19,7 +19,7 @@ import { InitMainCallbacks, SetVBlankCallback } from "./hw/runtime";
 import { LoadOam, ProcessSpriteCopyRequests } from "./hw/sprite";
 import { TransferPlttBuffer } from "./hw/palette";
 import { ScanlineEffect_InitHBlankDmaTransfer } from "./hw/scanline";
-import { SeedRngAndSetTrainerId } from "./random";
+import { SeedRngAndSetTrainerId, random } from "./random";
 
 type Stage = "copyright" | "logo" | "grass" | "forest" | "scene3" |
   "title" | "menu" | "clearsave" | "oak";
@@ -79,6 +79,7 @@ class Startup {
       }
       joy.release(buttons);
     };
+    this.copyright.afterBootup = true;
     SetUpCopyrightScreen(this.copyright);
     window.addEventListener("keydown", this.keydown);
     this.raf = requestAnimationFrame(this.tick);
@@ -93,6 +94,7 @@ class Startup {
   private restartIntro(): void {
     this.introIndex = 0;
     this.set("copyright");
+    this.copyright.afterBootup = false; // CB2_InitCopyrightScreenAfterTitleScreen: no ResetMenuAndMonGlobals
     this.copyright.begin();
   }
 
@@ -183,6 +185,7 @@ class Startup {
         if (this.stage === "scene3") this.scene3.begin();
         if (this.stage === "title") this.titleScreen.begin();
       }
+      random(); // main.c VBlankIntr: Random() once per frame (see Game.frame)
     }
     if (steps >= 8) this.elapsed = 0;
     this.render();

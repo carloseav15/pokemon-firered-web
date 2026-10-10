@@ -16,7 +16,9 @@ const out = await page.evaluate(async (N) => {
   const s = window.frStartup;
   cancelAnimationFrame(s.raf);           // we own the frame loop from here
   s.last = 0; s.elapsed = 0;
-  const rnd = await import("/src/fr/random.ts");
+  // Use the exact URL the app loaded (vite appends ?t=<hmr stamp>), or we would get a second module instance.
+  const url = performance.getEntriesByType("resource").map(r => r.name).find(n => /\/src\/fr\/random\.ts/.test(n));
+  const rnd = await import(url);
   const rows = [];
   for (let i = 0; i < N; i++) {
     window.frStartupStep(1, 0);

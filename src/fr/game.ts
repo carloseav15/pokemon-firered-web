@@ -25,7 +25,7 @@ import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScree
 import { computeWhiteOutMoneyLoss, GetMoveRelearnerMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { RestartWildEncounterImmunitySteps, WildEncounter } from "./field/wildEncounter";
-import { InitPlayerTrainerId, takeWildEncounterSeed } from "./random";
+import { InitPlayerTrainerId, random, takeWildEncounterSeed } from "./random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { healMon } from "./pokemon/pokemon";
 import { GetSetPokedexFlag } from "./pokemon/mon_extra";
@@ -229,6 +229,9 @@ export class Game {
     }
     PlayTimeCounter_Update();
     sound.frame();
+    // main.c VBlankIntr (main.c:412): Random() runs once per frame after the callbacks, so the
+    // LCG state depends on elapsed frames, not only on the draws game logic makes.
+    random();
   }
 
   render(): void {

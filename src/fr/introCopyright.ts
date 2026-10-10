@@ -13,6 +13,7 @@ import {
 } from "./hw/ppu";
 import { ProcessSpriteCopyRequests, LoadOam } from "./hw/sprite";
 import { SetVBlankCallback } from "./hw/runtime";
+import { random } from "./random";
 
 const symbols = ["sCopyright_Gfx", "sCopyright_Map", "sCopyright_Pal"];
 
@@ -43,6 +44,8 @@ export class IntroCopyright {
   private frame = 0;
   private fadingOut = false;
   done = false;
+  /** CB2_InitCopyrightScreenAfterBootup (true) vs CB2_InitCopyrightScreenAfterTitleScreen (false). */
+  afterBootup = false;
 
   waitFadeBeforeSetupIntro(): boolean { return this.done; }
 
@@ -82,7 +85,13 @@ export class IntroCopyright {
       BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
       this.fadingOut = true;
     }
-    if (this.fadingOut && !gPaletteFade.active) this.done = true;
+    if (this.fadingOut && !gPaletteFade.active) {
+      this.done = true;
+      // CB2_InitCopyrightScreenAfterBootup: SetUpCopyrightScreen returned FALSE, so
+      // ResetMenuAndMonGlobals runs SeedWildEncounterRng(Random()) with the LCG still unseeded.
+      // Measured on the USA 1.0 ROM: one extra draw in that frame (tools/rom-compare).
+      if (this.afterBootup) random();
+    }
     CopyBufferedValuesToGpuRegs();
   }
 
