@@ -169,14 +169,35 @@ arranque de una en una y vuelca el estado del LCG).
   precisión, capturas) depende del número exacto de fotogramas transcurridos; en el port solo
   del número de llamadas. Con las mismas pulsaciones las secuencias divergen desde la primera
   tirada tras sembrar. Clasificación: **bug del port** (no adaptador, no enlace).
-- Arreglo propuesto, no aplicado: llamar a `random()` una vez por fotograma en el bucle de
-  fotograma de `Game` y de las escenas de arranque, equivalente a `VBlankIntr`. Cambia las
-  secuencias aleatorias de todo el juego, así que rompe expectativas de `check:*`/replays
-  que dependan de valores concretos; requiere revisar esos checks en la misma tanda.
+- **Arreglo aplicado** (`0767f563`): `Game.frame()` y el bucle de `Startup` llaman a
+  `random()` una vez por fotograma, y la pantalla de copyright del arranque modela el
+  `Random()` de `ResetMenuAndMonGlobals` (ver abajo). Comprobado: `check:port`, `build`,
+  `check:all` (45 PASS, 0 regresiones) y replay determinista (3×2.000 fotogramas, hash
+  idéntico); en partida nueva el estado avanza un paso de LCG por fotograma (3 pasos
+  comprobados a mano).
+
+### Segunda observación: una llamada extra en el arranque
+En la ROM hay exactamente un fotograma con dos `Random()` (fotograma 175, fin de la pantalla
+de copyright): `CB2_InitCopyrightScreenAfterBootup` → `ResetMenuAndMonGlobals` →
+`SeedWildEncounterRng(Random())` con el LCG aún sin sembrar. El port la modela solo en
+`IntroCopyright.afterBootup` (no al volver del título, que usa
+`CB2_InitCopyrightScreenAfterTitleScreen`). Tras la siembra del título el estado es
+independiente de esto; solo afecta al estado previo.
+
+### Alineamiento del arranque: no es exacto, y por qué
+- El port arranca por `requestAnimationFrame` y el número de fotogramas ejecutados antes de
+  tomar el control varía entre corridas (se observaron desfases de 11 y 12). Un arnés que
+  compare el arranque debe fijar ese punto de partida o alinear por el valor del LCG.
+- La ROM tarda ~15 fotogramas entre el fin del copyright y el inicio de la intro
+  (`LoadGameSave` sobre flash/SRAM); el port no modela esa latencia. Es una diferencia de
+  hardware, no del RNG.
+- La semilla real viene de `REG_TM1CNT_L` al pulsar START en el título
+  (`title_screen.c:735`). No se puede reproducir por fotogramas; el arnés debe leer el valor
+  que usó la ROM (`gRngValue` justo tras sembrar) y pasarlo como `timer1Low` al port.
 
 ### Estado de las fases
 | Fase | Estado |
 |---|---|
 | 2a Direcciones | hecha para RNG, `gMain`, save blocks; party y objetos de campo pendientes |
 | 2 Campos observados | parcial: contador, RNG, callbacks (en la ROM sin nombres; hace falta tabla dirección→nombre de callback) |
-| 3 Comparador | siguiente: corregir el avance de RNG y volver a comparar hasta el título |
+| 3 Comparador | siguiente: comparar desde la siembra del título (leer el `timer1Low` de la ROM, inyectarlo en el port) hasta el menú principal y la partida nueva |
