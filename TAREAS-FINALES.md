@@ -563,6 +563,15 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   (mGBA), reproducir las mismas pulsaciones con la misma semilla y comparar flags,
   variables, equipo, dinero, posición y mapa. Primer objetivo: hasta el final del
   laboratorio de Oak. Entregar antes un informe de viabilidad.
+  PARCIAL: informe y fases 1–3 en [docs/ROM-COMPARACION-VIABILIDAD.md](docs/ROM-COMPARACION-VIABILIDAD.md)
+  (`e7a57cf3`…`3cee1e9d`, herramientas en `tools/rom-compare/`). ROM oficial 1.0 verificada por SHA1
+  (`assets/gba-reference/`, ignorada). Hecho: scripting mGBA determinista, direcciones de `gRngValue`/`gMain`/save
+  blocks, RNG por fotograma corregido en el port (`0767f563`), cadena de RNG idéntica del título a Oak (2.417
+  fotogramas). Falta: fase 4 (estado de juego: mapa/posición/flags/equipo hasta la habitación y el laboratorio),
+  automatizar mGBA sin Enter manual, direcciones de party/objetos de campo (`gPlayerParty` sin verificar).
+- [ ] Fidelidad de arranque (detectada en 4.2): el port no modela la latencia de `LoadGameSave` entre el
+  copyright y la intro (ROM ~15 fotogramas) ni tras sembrar en el título (ROM +17 hasta `CB2_InitMainMenu`, +22 hasta
+  Oak; port +0/+2). No afecta al RNG; sí al fotograma en que cada pantalla acepta entrada. Resolver en la revisión.
 - [ ] Decisión de diseño postgame (tickets de Mew/Deoxys).
 
 ## 5. Fuera de la meta principal (después)
