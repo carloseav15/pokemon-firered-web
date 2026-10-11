@@ -20,6 +20,11 @@ export function random32(): number {
   return (random() | (random() << 16)) >>> 0;
 }
 
+/** Test hook (tools/rom-compare): set the full 32-bit LCG state, e.g. to the ROM's gRngValue at an event. */
+export function setRandomStateForTest(value: number): void {
+  seed = value >>> 0;
+}
+
 export function seedRng(value: number): void {
   seed = value & 0xffff;
 }
