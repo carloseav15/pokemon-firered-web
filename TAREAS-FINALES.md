@@ -568,10 +568,18 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   (`assets/gba-reference/`, ignorada). Hecho: scripting mGBA determinista, direcciones de `gRngValue`/`gMain`/save
   blocks, RNG por fotograma corregido en el port (`0767f563`), cadena de RNG idéntica del título a Oak (2.417
   fotogramas), partida nueva hasta el cuarto del jugador con mapa/posición/nombre/género idénticos y una
-  divergencia real corregida (resiembra al salir de la pantalla de nombres, `ad3eb30a`). Los fotogramas entre eventos
+  divergencia real corregida (resiembra al salir de la pantalla de nombres, `ad3eb30a`), cuarto→pueblo→laboratorio→inicial con
+  flags/vars idénticos y dos fallos reales corregidos (`applymovement` sin hueco de movimiento y ventana de spawn por coordenadas
+  de cabecera, `620303ab`; informe §13). Los fotogramas entre eventos
   difieren por lag de CPU de la ROM (~10 fotogramas al montar páginas de texto; informe §12), no modelable en general:
   comparar por eventos y con `gRngValue` inyectado. Falta: ese arnés por eventos, laboratorio de Oak/equipo,
   automatizar mGBA sin Enter manual, `gPlayerParty` sin verificar.
+- [ ] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`): `applymovement` no ejecutaba
+  nada hasta ese commit (hueco de movimiento nunca encontrado; sumado a la ventana de spawn por coordenadas de
+  cabecera). Ahora las escenas con personajes caminando corren de verdad; las partidas/checkpoints grabados del driver
+  (tramos 2+, `vermilion-arrival-*`, `ssanne-hm01-*`) se hicieron sin esos movimientos. Revisar los tramos y el
+  recorrido: puede haber escenas que ahora cuelguen o cambien de posición final. Gate del driver 20/20 y `check:all`
+  45/45 tras el cambio, sin recorrido de historia.
 - [ ] Fidelidad de arranque (detectada en 4.2): falta modelar la latencia de `LoadGameSave` entre el copyright y la
   intro (ROM ~15 fotogramas; la de tras sembrar en el título, +17, ya está: `b21dd0df`). El lag de CPU disperso de la
   ROM (informe §12) no se modela. Resolver en la revisión.
