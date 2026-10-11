@@ -108,7 +108,10 @@ export class ScriptMovement {
   /** GetMovementScriptIdFromObjectEventId (script_movement.c: OBJECT_EVENTS_COUNT when missing). */
   GetMovementScriptIdFromObjectEventId(taskId: number, objectId: number): number {
     if (taskId === 0xff || taskId !== this.GetMoveObjectsTaskId()) return C.OBJECT_EVENTS_COUNT;
-    const slot = this.entries.findIndex((entry) => entry?.objectId === (objectId & 0xff));
+    // script_movement.c initializes every slot's objectEventId to 0xFF; here unused slots are `undefined`, so
+    // searching for MOVEMENT_SLOT_EMPTY must match them too or no applymovement ever finds a free slot.
+    const wanted = objectId & 0xff;
+    const slot = this.entries.findIndex((entry) => (entry ? entry.objectId === wanted : wanted === MOVEMENT_SLOT_EMPTY));
     return slot < 0 ? C.OBJECT_EVENTS_COUNT : slot;
   }
 
@@ -159,9 +162,11 @@ export class ScriptMovement {
 
   /** ScriptMovement_AddNewMovement. */
   ScriptMovement_AddNewMovement(taskId: number, moveScriptId: number, objectId: number, movementScript: number): void {
+    // C writes three independent task-data fields; here the slot entry is created by the object assignment, so
+    // it must come first or the pointer and finished bit are written to a slot that does not exist yet.
+    this.SetObjectEventIdAtMovementScript(taskId, moveScriptId, objectId);
     this.ClearMovementScriptFinished(taskId, moveScriptId);
     this.SetMovementScript(moveScriptId, movementScript);
-    this.SetObjectEventIdAtMovementScript(taskId, moveScriptId, objectId);
   }
 
   /** ScriptMovement_UnfreezeActiveObjects. */

@@ -1417,8 +1417,10 @@ export class ObjectEvents {
     const top = cameraY;
     const bottom = cameraY + 14 + 2;
     for (const entry of this.spawnTemplates) {
-      const x = entry.x + MAP_OFFSET;
-      const y = entry.y + MAP_OFFSET;
+      // event_object_movement.c reads template->x/y here, so setobjectxyperm moves an object into or out of
+      // the spawn window; only clones keep their own stored coordinates.
+      const x = (entry.isClone ? entry.x : entry.template.x) + MAP_OFFSET;
+      const y = (entry.isClone ? entry.y : entry.template.y) + MAP_OFFSET;
       if (top <= y && bottom >= y && left <= x && right >= x && !flagGet(entry.template.flag)) {
         this.TrySpawnObjectEventTemplate(entry.template, entry.mapNum, entry.mapGroup, entry.isClone ? entry : undefined);
       }
