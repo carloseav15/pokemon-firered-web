@@ -241,3 +241,52 @@ cancela el `raf` tras cada paso.
    `frDebug.state()` en el mismo punto; primera divergencia = primera tarea.
 3. Fijar la latencia de entrada: o bien anclar cada pulsación a un evento observable
    (callback activo en la ROM, escena en el port) en vez de a un fotograma.
+
+## 11. Resultado de la fase 4: partida nueva hasta el cuarto del jugador (2026-10-10)
+
+Guion de entrada (idéntico en ROM y port, relativo al título): START a +300, A cada 20
+fotogramas desde +487. Con A pulsada, la ROM pasa por Oak, género BOY y los dos teclados de
+nombres (`AAAAAAA` para jugador y rival) hasta la habitación. Estado volcado a +229 fotogramas
+del overworld:
+
+| Campo | ROM (`drive.lua`) | Port (`port-new-game.mjs`) |
+|---|---|---|
+| Mapa (grupo, número) | 4, 1 | 4, 1 (`MAP_PALLET_TOWN_PLAYERS_HOUSE_2F`) |
+| Posición | 6, 6 | 6, 6 |
+| `warpId`, x, y de `location` | 255 (= -1), 6, 6 | -1, 6, 6 |
+| Nombre | `BB×7 FF` | `187×7, 255` (igual) |
+| Género | 0 | 0 |
+| Trainer ID, mitad baja | `0xbd99` | `0xbd99` tras la corrección |
+| Trainer ID, mitad alta | `0xf45c` | `0xc153` |
+| RNG | `0x5016545c` | `0xbfdda482` |
+
+### Divergencia real encontrada y corregida
+`naming_screen.c` `DoNamingScreen` llama a `StartTimer1()` para `NAMING_SCREEN_PLAYER` y
+`MainState_Exit` llama a `SeedRngAndSetTrainerId()` al salir. La ROM **resiembra** el LCG y la
+mitad baja del Trainer ID con el valor de Timer1 (aquí `0xbd99`, no la semilla del título
+`0x3649`). El port no lo hacía: conservaba la semilla del título. Corregido en
+`src/fr/namingScreen.ts`; el Trainer ID bajo ya coincide. `check:all` 45 PASS, 0 regresiones.
+
+### Diferencias que quedan, y por qué no se tratan como errores
+Mitad alta del Trainer ID y RNG dependen del número de fotogramas entre la resiembra y
+`InitPlayerTrainerId`: 1.907 en la ROM frente a 2.014 en el port (107 de diferencia). La
+línea de tiempo por callbacks, relativa al inicio de la charla de Oak:
+
+| Evento | ROM | Port | Diferencia |
+|---|---|---|---|
+| 1ª pantalla de nombres | +2.429 | +2.355 | port 74 antes |
+| Duración del teclado 1 | 220 | 200 | 20 |
+| Entre fin del teclado 1 y 2ª pantalla | 610 | 590 | 20 |
+| Duración del teclado 2 | 222 | 202 | 20 |
+| Retorno de nombres → overworld | 1.057 | 1.017 | 40 |
+
+Todas son múltiplos de 20, el intervalo de la pulsación A: lo que se ve es la cuantización
+de la entrada por fase, no un cálculo distinto. Para decidir si hay una divergencia real de
+lógica (p. ej. el teclado, que parece durar siempre 20 menos en el port) hace falta
+sincronizar la entrada por evento (cuándo cada pantalla acepta A) y no por fotograma.
+
+### Qué queda de la fase 4
+1. Entrada sincronizada por eventos en ROM y port (callback/tarea activos, texto terminado).
+2. Comparar el Trainer ID alto y el RNG con esa entrada; si siguen distintos, medir la latencia
+   de `LoadGameSave` (+17/+22 fotogramas tras sembrar en la ROM, +0/+2 en el port).
+3. Verificar `gPlayerParty` y objetos de campo cuando haya equipo (tras el laboratorio).
