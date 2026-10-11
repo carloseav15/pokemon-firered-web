@@ -290,3 +290,43 @@ sincronizar la entrada por evento (cuándo cada pantalla acepta A) y no por foto
 2. Comparar el Trainer ID alto y el RNG con esa entrada; si siguen distintos, medir la latencia
    de `LoadGameSave` (+17/+22 fotogramas tras sembrar en la ROM, +0/+2 en el port).
 3. Verificar `gPlayerParty` y objetos de campo cuando haya equipo (tras el laboratorio).
+
+## 12. Por qué los fotogramas no coinciden: lag de CPU de la ROM (2026-10-10)
+
+Objetivo: explicar los 216 fotogramas entre la ROM y el port antes de la primera pantalla de
+nombres (§11). Método: captura de cada fotograma en ambos lados (`drive.lua` con
+`DRIVE_SHOTS`; `port-new-game.mjs` con `toDataURL`) y comparación de cuándo cambia la imagen.
+
+| Medida (relativa a la pulsación A en la página 1 de «CONTROLS») | ROM | Port |
+|---|---|---|
+| Latencia hasta empezar el fundido de salida | +3 | +2 (1 fotograma por la inyección de Lua) |
+| Duración del fundido de salida | 12 | 12 |
+| Página 1 se borra | +21 | +20 |
+| Página 2 en blanco hasta empezar el fundido de entrada | **~10** | ~2 |
+| Duración del fundido de entrada | 12 | 12 |
+
+La lógica de fundido (`deltaY`, alternancia OBJ/BG, `softwareFadeFinishing`) coincide con
+`palette.c`: 17 fotogramas activos por fundido, igual en ambos. La diferencia es un **hueco de
+~8–10 fotogramas** entre «borrar la página» y «empezar a mostrar la siguiente» en la ROM. El
+C no tiene ninguna espera ahí (`Task_ControlsGuide_ChangePage` → `Task_ControlsGuide_LoadPage`
+→ `BeginNormalPaletteFade`), así que es **tiempo de CPU**: montar tres ventanas de texto,
+volcar tiles y tilemaps tarda más de un fotograma en la GBA. Durante ese lag los VBlanks
+siguen ocurriendo (contador de fotogramas y `Random()` avanzan), pero el bucle principal no.
+
+Consecuencias:
+- El número de fotogramas entre dos eventos depende de la carga de CPU de la ROM, que el port
+  no modela (hace ese trabajo en 0 tiempo). Cualquier cosa que dependa de fotogramas
+  transcurridos —tiradas de RNG con entrada temporizada, Trainer ID alto, semillas de
+  encuentros— no puede coincidir fotograma a fotograma sin un modelo de coste de CPU.
+- Con entrada por reloj de pared (A cada 20 fotogramas) estos desfases se amplifican por
+  cuantización: una pulsación perdida cuesta 20 fotogramas.
+- La latencia de `LoadGameSave` tras sembrar en el título (17 fotogramas) sí es un hueco
+  fijo y medible; se modela desde `startup.ts` (`SAVE_LOAD_FRAMES`).
+
+### Cómo comparar entonces
+1. **Lógica y estado**: sincronizar por evento (pantalla/callback alcanzado), no por tiempo.
+2. **Resultados dependientes de RNG**: escribir el mismo `gRngValue` en ROM y port en el
+   evento de partida (Lua puede escribir en `0x03005000`; el port, vía `seedRng`/estado de
+   `random.ts`) y comparar a partir de ahí, p. ej. un combate o un encuentro.
+3. **Latencias grandes y fijas** (guardado, pantallas de carga) se pueden modelar como
+   esperas medidas; el lag disperso de CPU no.
