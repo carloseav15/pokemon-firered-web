@@ -17,8 +17,16 @@ let timer1StartedAt = 0;
 /** main.c StartTimer1; browser adaptation uses a monotonic clock at the GBA timer's rate. */
 export function StartTimer1(): void { timer1StartedAt = performance.now(); }
 
+/** Test hook (tools/rom-compare): the next GetTimer1Low() reads return these values, in order. */
+const timer1TestValues: number[] = [];
+export function setTimer1TestValues(values: number[]): void {
+  timer1TestValues.length = 0;
+  timer1TestValues.push(...values.map(v => v & 0xffff));
+}
+
 /** Read REG_TM1CNT_L while Timer 1 is enabled. */
 export function GetTimer1Low(): number {
+  if (timer1TestValues.length > 0) return timer1TestValues.shift()!;
   return Math.floor((performance.now() - timer1StartedAt) * 16777.216) & 0xffff;
 }
 

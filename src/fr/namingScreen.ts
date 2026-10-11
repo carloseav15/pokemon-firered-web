@@ -20,7 +20,8 @@ import { InitGpuRegManager, SetGpuReg } from "./hw/gpu";
 import { DrawDialogueFrame, GetTextWindowPalette, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters } from "./hw/menu";
 import { BeginNormalPaletteFade, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
 import { BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG2, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "./hw/runtime";
+import { GetTimer1Low, gMain, SetMainCallback2, SetHBlankCallback, SetVBlankCallback, StartTimer1 } from "./hw/runtime";
+import { SeedRngAndSetTrainerId } from "./random";
 import { AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Sprite, type Subsprite } from "./hw/sprite";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "./hw/window";
@@ -47,6 +48,8 @@ export function preloadNamingScreen(): Promise<void> {
 /** C argument order: template, destination, species, gender, personality, callback. */
 export function DoNamingScreen(type: number, destination: NameBuffer, species: number, gender: number, personality: number, returnCallback: () => void): void {
   const screen = new NamingScreen(new NamingModel(type, destination), species, gender, personality, returnCallback);
+  // naming_screen.c DoNamingScreen: the player's name entry restarts Timer1; MainState_Exit reads it to reseed.
+  if (type === C.NAMING_SCREEN_PLAYER) StartTimer1();
   // Defer initialization: Oak's caller frees its own windows after this call.
   SetMainCallback2(() => screen.CB2_LoadNamingScreen());
 }
@@ -806,6 +809,8 @@ class NamingScreen {
   /** MainState_Exit (naming_screen.c). */
   private MainState_Exit(): void {
     if (gPaletteFade.active) return;
+    // naming_screen.c MainState_Exit: the player template reseeds the LCG and the trainer ID low half.
+    if (this.model.type === C.NAMING_SCREEN_PLAYER) SeedRngAndSetTrainerId(GetTimer1Low());
     joy.repeatStartDelay = this.repeatDelay;
     Object.assign(textFlags, this.savedTextFlags);
     FreeAllWindowBuffers(); DeactivateAllTextPrinters();
