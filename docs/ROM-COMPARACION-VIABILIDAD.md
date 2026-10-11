@@ -330,3 +330,40 @@ Consecuencias:
    `random.ts`) y comparar a partir de ahí, p. ej. un combate o un encuentro.
 3. **Latencias grandes y fijas** (guardado, pantallas de carga) se pueden modelar como
    esperas medidas; el lag disperso de CPU no.
+
+## 13. Resultado de la fase 5: cuarto → pueblo → laboratorio → inicial (2026-10-10)
+
+Método: la ROM se maneja con estados guardados de mGBA (`emu:saveStateFile`/`loadStateFile`, 2.300
+fotogramas por iteración en vez de 7.000) y teclas por fotograma; el port con la misma ruta pero con
+esperas por posición/mapa/script. Se compara **estado** (mapa, posición, flags, vars, equipo) en
+puntos lógicos, no fotogramas. Direcciones nuevas verificadas: `gPlayerParty` `0x02024284` (la mon
+aparece con OT = Trainer ID y nivel 5), contador `0x02024029`.
+
+Dos divergencias reales, ambas con impacto en el juego, encontradas y corregidas (`620303ab`):
+
+1. **`applymovement` no funcionaba nunca.** `ScriptMovement.GetMovementScriptIdFromObjectEventId`
+   buscaba el hueco libre (`MOVEMENT_SLOT_EMPTY`) entre entradas `undefined`, así que nunca lo
+   encontraba, y además `ScriptMovement_AddNewMovement` escribía puntero y bit "terminado" antes
+   de que existiera la entrada. Efecto: ningún personaje caminaba en escenas con script (Oak
+   guiando al jugador, entrada al laboratorio, etc.); el script seguía como si hubiera terminado.
+   El commit `3b709ab5` ya había tapado un síntoma (el `waitmovement` colgado) sin arreglar la causa.
+2. **Ventana de aparición de objetos.** `TrySpawnObjectEvents` comparaba la cámara con las
+   coordenadas de la cabecera del mapa en vez de `template->x/y` (C: `event_object_movement.c`),
+   así que un objeto movido con `setobjectxyperm` (Oak, al entrar al laboratorio) no aparecía.
+
+| Comprobación | Antes | Después |
+|---|---|---|
+| Jugador al terminar la escena de Oak en el laboratorio | (6,12), sin Oak ni rival | **(6,4)**, igual que la ROM |
+| `applymovement` (llamadas que tienen éxito) | 0 | todas |
+| Flags y vars tras elegir inicial (ROM vs port) | — | **idénticos** salvo `FLAG_0x838` y `VAR_0x403C`, sin nombre, ya distintos en la habitación (candidatos: Quest Log/sistema) |
+| Inicial | — | Bulbasaur nivel 5, apodo `AAAAAAAAAA` (ROM y port) |
+| `check:all`, build, gate del driver | 45/45; — | 45/45; build OK; **20/20** |
+
+Limitaciones: la elección se hizo con A repetida en ambos lados; PID/IV del inicial dependen del RNG
+por fotograma y difieren (ver §12), así que no se comparan. En modo manual de Playwright los
+fanfarrias y fundidos dependen del reloj real; el recorrido condicionado se verificó en tiempo real
+(`?fr=new` con teclado) y el arnés manual necesita esperas de pared.
+
+Siguiente: batalla con el rival al salir del laboratorio, con RNG inyectado en un evento; y revisar el resto
+de usos de movimiento por script (los que no funcionaban hasta ahora): cualquier escena puede tener
+ahora comportamiento nuevo.
