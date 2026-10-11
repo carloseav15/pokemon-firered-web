@@ -22,7 +22,13 @@ import { ScanlineEffect_InitHBlankDmaTransfer } from "./hw/scanline";
 import { SeedRngAndSetTrainerId, random } from "./random";
 
 type Stage = "copyright" | "logo" | "grass" | "forest" | "scene3" |
-  "title" | "menu" | "clearsave" | "oak";
+  "title" | "saveload" | "menu" | "clearsave" | "oak";
+
+/**
+ * Frames the USA 1.0 ROM spends between Task_TitleScreenMain's seeding frame and CB2_InitMainMenu
+ * (LoadGameSave on the flash chip). Measured with tools/rom-compare: seed at frame 1884, CB2_InitMainMenu at 1901.
+ */
+const SAVE_LOAD_FRAMES = 17;
 const introStages: Stage[] = ["copyright", "logo", "grass", "forest", "scene3"];
 
 class Startup {
@@ -40,6 +46,7 @@ class Startup {
   private readonly scene3 = new IntroScene3();
   private readonly titleScreen = new IntroTitle();
   private readonly oakSpeech = new OakSpeech();
+  private saveLoadFrames = 0;
   private oakLoaded = false;
   private oakPending = false;
   private readonly mainMenu = new MainMenu();
@@ -136,6 +143,9 @@ class Startup {
         // CB2_InitMainMenu (a NEW GAME-only menu starts the new game immediately).
         // main.c seeds the LCG and trainer-ID low half from Timer1 before loading the menu.
         SeedRngAndSetTrainerId(this.titleScreen.timer1Low);
+        this.saveLoadFrames = SAVE_LOAD_FRAMES;
+        this.set("saveload");
+      } else if (this.stage === "saveload" && --this.saveLoadFrames <= 0) {
         this.set("menu");
         CB2_InitMainMenu();
       }
@@ -203,7 +213,7 @@ class Startup {
     if (this.stage === "scene3") return this.scene3.render(ctx);
     if (this.stage === "menu") return this.mainMenu.render(ctx);
     if (this.stage === "clearsave") return this.clearSave.render(ctx);
-    if (this.stage === "title") return this.titleScreen.render(ctx);
+    if (this.stage === "title" || this.stage === "saveload") return this.titleScreen.render(ctx);
     if (this.stage === "oak") return this.oakSpeech.render(ctx);
   }
 
