@@ -5,6 +5,9 @@
 local OUT = TRACE_OUT or "/tmp/rom-compare-trace.txt"
 local LAST = TRACE_LAST or 1800
 local KEYS = TRACE_KEYS or {}
+-- Optional anchor: TRACE_REL = { cb2 = <callback2 address>, keys = { [frames since cb2 first seen] = "KEY" } }
+local REL = TRACE_REL
+local anchor = nil
 local KEY = { A = 0, B = 1, SELECT = 2, START = 3, RIGHT = 4, LEFT = 5, UP = 6, DOWN = 7 }
 if _G.trace_cb then callbacks:remove(_G.trace_cb) end
 local out = io.open(OUT, "w")
@@ -12,7 +15,10 @@ local n, held = -1, {}
 _G.trace_cb = callbacks:add("frame", function()
   n = n + 1
   if n > LAST then return end
+  local cb2 = emu.memory.iwram:read32(0x30F4)
+  if REL and not anchor and cb2 == REL.cb2 then anchor = n end
   local k = KEYS[n]
+  if REL and anchor then k = REL.keys[n - anchor] or k end
   if k then emu:addKey(KEY[k]); held[n + 3] = KEY[k] end
   if held[n] then emu:clearKey(held[n]); held[n] = nil end
   local iw = emu.memory.iwram
