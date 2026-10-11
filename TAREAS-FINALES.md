@@ -568,12 +568,13 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   (`assets/gba-reference/`, ignorada). Hecho: scripting mGBA determinista, direcciones de `gRngValue`/`gMain`/save
   blocks, RNG por fotograma corregido en el port (`0767f563`), cadena de RNG idéntica del título a Oak (2.417
   fotogramas), partida nueva hasta el cuarto del jugador con mapa/posición/nombre/género idénticos y una
-  divergencia real corregida (resiembra al salir de la pantalla de nombres, `ad3eb30a`). Falta: entrada sincronizada
-  por eventos (hoy Trainer ID alto y RNG difieren por cuantización de 20 fotogramas), laboratorio de Oak/equipo,
+  divergencia real corregida (resiembra al salir de la pantalla de nombres, `ad3eb30a`). Los fotogramas entre eventos
+  difieren por lag de CPU de la ROM (~10 fotogramas al montar páginas de texto; informe §12), no modelable en general:
+  comparar por eventos y con `gRngValue` inyectado. Falta: ese arnés por eventos, laboratorio de Oak/equipo,
   automatizar mGBA sin Enter manual, `gPlayerParty` sin verificar.
-- [ ] Fidelidad de arranque (detectada en 4.2): el port no modela la latencia de `LoadGameSave` entre el
-  copyright y la intro (ROM ~15 fotogramas) ni tras sembrar en el título (ROM +17 hasta `CB2_InitMainMenu`, +22 hasta
-  Oak; port +0/+2). No afecta al RNG; sí al fotograma en que cada pantalla acepta entrada. Resolver en la revisión.
+- [ ] Fidelidad de arranque (detectada en 4.2): falta modelar la latencia de `LoadGameSave` entre el copyright y la
+  intro (ROM ~15 fotogramas; la de tras sembrar en el título, +17, ya está: `b21dd0df`). El lag de CPU disperso de la
+  ROM (informe §12) no se modela. Resolver en la revisión.
 - [ ] Decisión de diseño postgame (tickets de Mew/Deoxys).
 
 ## 5. Fuera de la meta principal (después)
