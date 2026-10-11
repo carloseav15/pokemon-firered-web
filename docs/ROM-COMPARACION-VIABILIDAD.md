@@ -201,3 +201,43 @@ independiente de esto; solo afecta al estado previo.
 | 2a Direcciones | hecha para RNG, `gMain`, save blocks; party y objetos de campo pendientes |
 | 2 Campos observados | parcial: contador, RNG, callbacks (en la ROM sin nombres; hace falta tabla dirección→nombre de callback) |
 | 3 Comparador | siguiente: comparar desde la siembra del título (leer el `timer1Low` de la ROM, inyectarlo en el port) hasta el menú principal y la partida nueva |
+
+## 10. Resultado de la fase 3: del título a Oak, RNG idéntico (2026-10-10)
+
+Escenario: ROM y port arrancan de cero; en cada lado, START a 300 fotogramas de entrar en el
+título y A cada 80 desde los 550 (el reloj de entrada es relativo al título, porque el
+arranque difiere en latencia). Se pasa al port el mismo valor de Timer1 que usó la ROM
+(`0x3649`, recuperado invirtiendo el LCG del fotograma de siembra).
+
+| Medida | ROM | Port |
+|---|---|---|
+| Fotograma de siembra | 1884 | paso 1762 (la ROM tarda ~122 más: arranque y carga de guardado) |
+| Pasos del LCG en el fotograma de siembra | 2 | 2 |
+| Pasos del LCG por fotograma después | 1 | 1 |
+| Índice de cadena desde la semilla, 2.417 fotogramas (menú, Oak) | — | **idéntico en todos** |
+
+Comando: `python3 tools/rom-compare/compare-rng.py <rom_trace> <port_trace>`.
+
+Lo que **sí** demuestra: el consumo de `Random()` entre la siembra del título y la charla de
+Oak coincide llamada a llamada, y el arreglo de §9 es correcto.
+Lo que **no** demuestra:
+- Que RNG coincida cuando haya consumidores reales (combates, encuentros, nombres, objetos):
+  en este tramo no hay ninguno, por eso no hay una sola diferencia que ver.
+- Ningún estado de juego (mapa, posición, flags, equipo, dinero). Esa es la fase 4.
+- El tiempo de pantalla: tras sembrar, la ROM tarda +17 fotogramas hasta `CB2_InitMainMenu`
+  y +22 hasta la charla de Oak; el port está en el menú en +0 y en Oak en +2 (la carga de
+  guardado de `LoadGameSave` no está modelada). Con entrada fijada por fotograma, esta
+  diferencia de latencia desplaza qué pulsación recibe cada pantalla en cada lado.
+
+Hallazgo de herramienta: `frStartupStep` re-arma `requestAnimationFrame` en cada tick; si el
+arnés cede el control (`await`) el navegador avanza fotogramas por su cuenta. El arnés
+cancela el `raf` tras cada paso.
+
+### Siguiente: fase 4 (estado de juego)
+1. Verificar en la ROM `gSaveBlock1Ptr`→`pos` (x, y), `location` y `gSaveBlock2Ptr`→nombre
+   jugando hasta la habitación (necesita pasar la charla de Oak y nombres, con teclas
+   deterministas para el teclado de nombres).
+2. Volcar mapa/posición/dirección y flags/vars desde la ROM y compararlos con
+   `frDebug.state()` en el mismo punto; primera divergencia = primera tarea.
+3. Fijar la latencia de entrada: o bien anclar cada pulsación a un evento observable
+   (callback activo en la ROM, escena en el port) en vez de a un fotograma.
