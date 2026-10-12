@@ -26,12 +26,15 @@ local function dump(tag, n)
   out:write(string.format("DUMP %s f=%d pos=%d,%d map=%d,%d scene=%d rng=%08x\n", tag, n, x, y, mg, mn, var(SCENE), I:read32(0x5000)))
   out:write("FLAGS ", tag, " ", hex(b + 0xEE0, 288), "\n")
   out:write("VARS ", tag, " ", hex(b + 0x1000, 512), "\n")
-  out:write(string.format("MONEY %s %08x\n", tag, W:read32(b + 0x290)))
+  -- money is XOR-encrypted with SaveBlock2.encryptionKey (+0xF20); the key is dumped so the report can decode it
+  local b2 = I:read32(0x0300500C - 0x03000000) - 0x02000000
+  out:write(string.format("MONEY %s %08x key=%08x\n", tag, W:read32(b + 0x290), W:read32(b2 + 0xF20)))
   out:write(string.format("PARTY %s count=%d mon0=%s\n", tag, W:read8(0x02024029 - 0x02000000), hex(0x02024284 - 0x02000000, 100)))
   out:write(string.format("ENEMY %s mon0=%s\n", tag, hex(0x0202402C - 0x02000000, 100)))
   out:flush()
 end
 if _G.rv_cb then callbacks:remove(_G.rv_cb) end
+for k = 0, 9 do emu:clearKey(k) end
 local n, held = -1, {}
 local phase, phaseAt, wasBattle, battles, doneAt = "dismiss", 0, false, 0, nil
 local function want(set)
@@ -68,7 +71,11 @@ _G.rv_cb = callbacks:add("frame", function()
     if tapA then set[KEY.A] = true end
     if n >= 240 then phase, phaseAt = "ball", n end
   elseif phase == "ball" then
-    if y < 5 then set[KEY.DOWN] = true
+    -- Direction and A are never held together (a held direction keeps the text box open): 30 frames of A taps,
+    -- then 20 frames of walking, repeated, so any remaining pages are dismissed once and the player moves.
+    local burst = (n % 50) < 30
+    if burst then if tapA then set[KEY.A] = true end
+    elseif y < 5 then set[KEY.DOWN] = true
     elseif x < 8 then set[KEY.RIGHT] = true
     else phase, phaseAt = "face", n end
   elseif phase == "face" then
@@ -82,8 +89,9 @@ _G.rv_cb = callbacks:add("frame", function()
     if n - phaseAt >= 900 then dump("afterpick", n) phase, phaseAt = "walk", n end
   elseif phase == "walk" then
     -- Rival trigger tiles are (5..7, 8): go to x=6, then down.
-    if x > 6 then set[KEY.LEFT] = true elseif x < 6 then set[KEY.RIGHT] = true else set[KEY.DOWN] = true end
-    if tapA then set[KEY.A] = true end
+    if (n % 50) < 30 then
+      if tapA then set[KEY.A] = true end
+    elseif x > 6 then set[KEY.LEFT] = true elseif x < 6 then set[KEY.RIGHT] = true else set[KEY.DOWN] = true end
   elseif phase == "battle" then
     if tapA then set[KEY.A] = true end
   elseif phase == "after" then

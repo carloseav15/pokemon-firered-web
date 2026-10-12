@@ -24,10 +24,13 @@ const note = (label, extra = "") => { log.push({ label, ms: Date.now() - t0, ext
 async function tapA(ms = 60) { await p.keyboard.down(KEY.A); await sleep(ms); await p.keyboard.up(KEY.A); }
 const scene = () => p.evaluate(i => window.frDebug.save.save.vars[i], SCENE);
 const inBattle = () => p.evaluate(() => window.frDebug.snapshot().hardware.inBattle);
-const dump = tag => p.evaluate(({ tag }) => {
+const dump = tag => p.evaluate(async ({ tag }) => {
   const sv = window.frDebug.save.save, s = window.frDebug.state();
+  const { gEnemyParty } = await import("/src/fr/pokemon/mon.ts");
+  const e = gEnemyParty[0];
   return { tag, st: s, scene: sv.vars[0x55], money: sv.money, flags: sv.flags.slice(), vars: sv.vars.slice(),
-    partyCount: sv.party.length, mon0: sv.party[0] ? JSON.parse(JSON.stringify(sv.party[0])) : null };
+    partyCount: sv.party.length, mon0: sv.party[0] ? JSON.parse(JSON.stringify(sv.party[0])) : null,
+    enemy0: e && e.species ? JSON.parse(JSON.stringify(e)) : null };
 }, { tag });
 async function hold(dir, pred, label, timeout = 8000) {
   const t = Date.now();
