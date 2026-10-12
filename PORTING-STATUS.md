@@ -1,5 +1,5 @@
 Modo: una tanda = archivo C completo o familia; commits de código por tarea; estado por fase; meta principal de un jugador.
-Siguiente: caso de victoria del rival en la ROM (4.2, `rival.lua` con otro `RV_RNG`) y siguiente hito (Ruta 1 → Verde); reejecutar cerulean/route2 desde cero; job de Surge; Emerald: cablear lo exportado (6.6); revisión tramo2/Muse; DRV-10/12/13/15.
+Siguiente: siguiente hito de la comparación con la ROM (4.2: Ruta 1 → Verde → Paquete de Oak); reejecutar cerulean/route2 desde cero; job de Surge; Emerald: cablear lo exportado (6.6); revisión tramo2/Muse; DRV-10/12/13/15.
 Bloqueos: traslado motor requiere permiso sobre portInventory.py; enlace fuera de meta.
 Validación diferida: historia anterior/tramos3–11 y opciones §3; revisión Muse/DRV-15, DRV-10/12/13 y Quest Log continue; revisión manual1.22, paridad audiovisual, C1 visual/C2/C4, ruta previa C6, C11–C13/escucha, PC1.18 y viewer.
 Última entrega: `NewGameInitData` fija `FLAG_0x838`/`VAR_0x403C` como new_game.c (flags/vars idénticos a la ROM hasta la batalla del rival); comparador `compare-rival.py`; `e03bdc7a` contexto de script en la carga de mapa y cadenas `ALIGNED(n)`. `check:all` 45/45, gate 20/20.

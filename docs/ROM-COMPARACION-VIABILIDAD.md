@@ -407,5 +407,11 @@ Notas de método: la clave de cifrado del dinero está en `SaveBlock2 + 0xF20` (
 partida (dinero 3.000 en la ROM al final: `0x190db0a7 ^ 0x190dbb1f`). En mGBA hay que reiniciar la app entre
 corridas del script: los callbacks anteriores siguen vivos y pisan las teclas del nuevo. En el caso de victoria del
 port, `VAR_QUEST_LOG_MON_COUNTS` (0x4027 = 4096) y `VAR_QLBAK_MAP_LAYOUT` (78 → 5) cambian; la ROM no ganó en
-ninguna corrida, así que no se sabe si es fidelidad. Pendiente: forzar victoria en la ROM (otro `RV_RNG`) y
-comparar esos dos vars y el premio de dinero.
+ninguna corrida. Se probaron tres `RV_RNG` en la ROM (`0x1A2B3C4D`, `0x12345678`, `0xDEADBEEF`): las tres
+perdieron (rival con 7, 2 y 2 de 18 HP; dinero 3.000; escena 4; flags y vars idénticos al port en las corridas
+perdidas). Con A repetida (FIGHT, primer movimiento) la ROM pierde siempre: el rival es más rápido y el
+placaje de un inicial nivel 5 no alcanza. Esos dos vars son copias de seguridad que `SetUpQuestLogRecording`
+escribe al iniciar una escena del Quest Log (`quest_log.c`: `BackUpMapLayout`, `SetPokemonCounts`), y la
+victoria inicia una escena nueva; el port hace lo mismo, así que se considera consistente con el C aunque no
+verificado contra la ROM. Para verificarlo haría falta una estrategia de batalla distinta (p. ej. mon con más
+nivel) en la ROM; no se prioriza.
