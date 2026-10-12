@@ -367,3 +367,29 @@ fanfarrias y fundidos dependen del reloj real; el recorrido condicionado se veri
 Siguiente: batalla con el rival al salir del laboratorio, con RNG inyectado en un evento; y revisar el resto
 de usos de movimiento por script (los que no funcionaban hasta ahora): cualquier escena puede tener
 ahora comportamiento nuevo.
+
+## 14. Fase 6: revalidación de escenas y batalla del rival (2026-10-11)
+
+**Escenas con movimiento por script.** `tools/playtest/smoke/scene-scan.job.mjs` lanza cada etiqueta con
+`applymovement` (423 en el decomp) en su mapa, con flags/vars restaurados entre etiquetas, pulsa A solo mientras
+la escena corre y marca como atasco 1.500 fotogramas sin cambio de mapa/posición/puntero de script. Resultado:
+384 terminan, 32 entran en combate; el resto son artefactos del arnés (créditos, enlace, Trainer Tower y
+guardería sin estado previo, `EventScript_FallDownHole` sin destino). Dos defectos reales, ambos corregidos en
+`e03bdc7a`:
+
+1. `warpIntoMapAndLoad` (equivalente de `CB2_LoadMap`) no ejecutaba `ScriptContext_Init`/`UnlockPlayerFieldControls`.
+   Un script con `warp`/`warphole` + `waitstate` dejaba el contexto en WAITING y el jugador no podía moverse en el
+   mapa nuevo (reproducido en Cueva Helada 1F, Entrada de la Zona Safari, salida del S.S. Anne).
+2. `dump_all_strings` no reconocía `ALIGNED(4) const u8 ...` (341 cadenas de `strings.c` y
+   `union_room_message.c`); `gText_Ghost` faltaba y `StartMarowakBattle` lanzaba excepción.
+
+Comprobación posterior: `check:all` 45/45, gate del driver 20/20, `ssanne-progress` y `vermilion-progress` pasan,
+y `tools/rom-compare/port-realtime.mjs` recorre cuarto → pueblo → Oak → laboratorio → inicial con teclado real
+(46 s de escena de Oak, sin atascos ni errores de página).
+
+**Batalla del rival (parcial).** `port-rival.mjs` (port, tiempo real, RNG inyectado en el evento) llega a
+escena 3 (inicial elegido), batalla al cruzar y=8, escena 4 al terminar, sin errores. Lado ROM:
+`rival.lua` parte de `/tmp/rom-free.ss` y sincroniza por eventos (`VAR_MAP_SCENE_..._OAKS_LAB`, `gMain.inBattle`).
+Hallazgo de arnés: con ese estado, A + DOWN mantenida no cierra el cuadro de texto de Oak (A sola, sí); se añadió
+una fase inicial de solo-A. Sin resultado de la ROM todavía, así que **no hay comparación ROM vs port de esta
+batalla**.

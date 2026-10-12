@@ -572,14 +572,24 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   flags/vars idénticos y dos fallos reales corregidos (`applymovement` sin hueco de movimiento y ventana de spawn por coordenadas
   de cabecera, `620303ab`; informe §13). Los fotogramas entre eventos
   difieren por lag de CPU de la ROM (~10 fotogramas al montar páginas de texto; informe §12), no modelable en general:
-  comparar por eventos y con `gRngValue` inyectado. Falta: ese arnés por eventos, laboratorio de Oak/equipo,
-  automatizar mGBA sin Enter manual, `gPlayerParty` sin verificar.
-- [ ] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`): `applymovement` no ejecutaba
-  nada hasta ese commit (hueco de movimiento nunca encontrado; sumado a la ventana de spawn por coordenadas de
-  cabecera). Ahora las escenas con personajes caminando corren de verdad; las partidas/checkpoints grabados del driver
-  (tramos 2+, `vermilion-arrival-*`, `ssanne-hm01-*`) se hicieron sin esos movimientos. Revisar los tramos y el
-  recorrido: puede haber escenas que ahora cuelguen o cambien de posición final. Gate del driver 20/20 y `check:all`
-  45/45 tras el cambio, sin recorrido de historia.
+  comparar por eventos y con `gRngValue` inyectado. Fase 6 (batalla del rival al salir del laboratorio): lado
+  port hecho y sin errores en tiempo real (`tools/rom-compare/port-rival.mjs`: inicial → var escena 3 → batalla →
+  var 4, RNG inyectado en el evento); lado ROM (`rival.lua`) sin terminar: el cuadro de texto de Oak del estado
+  `/tmp/rom-free.ss` no avanza con A + dirección mantenida (se añadió fase de solo-A), última corrida sin resultado.
+  Falta: volcar y comparar ROM vs port (flags/vars/dinero/equipo tras la batalla), `gPlayerParty` sin verificar,
+  automatizar mGBA sin Enter manual.
+- [x] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`; revalidado con `e03bdc7a`,
+  `526e9004`): `tools/playtest/smoke/scene-scan.job.mjs` ejecutó 423 etiquetas con `applymovement` de todo el
+  decomp en su mapa (384 terminan, 32 entran en combate, resto = artefactos: créditos, enlace, Trainer Tower y
+  guardería sin estado previo). Hallazgos reales corregidos: (1) `warpIntoMapAndLoad` no hacía el
+  `ScriptContext_Init` de `CB2_LoadMap`: tras `warp`/`warphole` + `waitstate` el jugador quedaba sin control
+  (S.S. Anne, Zona Safari, caída de Cueva Helada…); (2) `dump_all_strings` omitía las definiciones
+  `ALIGNED(4) const u8` (341 símbolos, entre ellos `gText_Ghost`: `StartMarowakBattle` lanzaba excepción).
+  Verificado con teclado real (`tools/rom-compare/port-realtime.mjs`: cuarto→pueblo→Oak→laboratorio→inicial sin
+  atascos), gate del driver 20/20, `check:all` 45/45, `ssanne-progress` y `vermilion-progress` pasan.
+  Pendiente menor: reejecutar `cerulean-progress`/`route2` desde cero (las partidas del tramo 1–2 se grabaron
+  sin movimientos; sus etiquetas sueltas ya pasan el escáner) y mirar a ojo las escenas largas (créditos,
+  salida del S.S. Anne, ~2.500 fotogramas sin cambio de posición).
 - [ ] Fidelidad de arranque (detectada en 4.2): falta modelar la latencia de `LoadGameSave` entre el copyright y la
   intro (ROM ~15 fotogramas; la de tras sembrar en el título, +17, ya está: `b21dd0df`). El lag de CPU disperso de la
   ROM (informe §12) no se modela. Resolver en la revisión.
