@@ -18,7 +18,7 @@ import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
 import { rom } from "./rom";
-import { ApplyNewEncryptionKeyToGameStats, flagGet, GetGameStat, IncrementGameStat, newBattleTowerData, newSaveData, ResetGameStats, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
+import { ApplyNewEncryptionKeyToGameStats, EnableNationalPokedex_RSE, flagGet, GetGameStat, IncrementGameStat, newBattleTowerData, newSaveData, ResetGameStats, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, InitChooseMonsForBattle, Task_ChoosePartyMon } from "./partyMenu";
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
@@ -287,6 +287,8 @@ export class Game {
     InitEasyChatPhrases(save);
     this.InitHeracrossSizeRecord();
     this.InitMagikarpSizeRecord();
+    // new_game.c: sets FLAG_0x838, VAR_0x403C = 0x0302 and pokedex.unused = 0xDA (never read; present in the ROM's saves).
+    EnableNationalPokedex_RSE();
     SetAllRenewableItemFlags();
     PlayTimeCounter_Reset();
     this.wild.seed(takeWildEncounterSeed());
