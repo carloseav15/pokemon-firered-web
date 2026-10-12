@@ -97,7 +97,12 @@ _G.rv_cb = callbacks:add("frame", function()
   elseif phase == "after" then
     if tapA then set[KEY.A] = true end
     if var(SCENE) == 4 and not doneAt then doneAt = n end
-    if doneAt and n - doneAt >= 900 then dump("final", n) out:write("DONE\n") out:close() phase = "done" end
+    if doneAt and n - doneAt >= 900 then
+      dump("final", n)
+      -- RV_SAVE: keep the state after the battle as the start of the next milestone (parcel.lua)
+      if RV_SAVE then emu:saveStateFile(RV_SAVE, 31) out:write("SAVED ", RV_SAVE, "\n") end
+      out:write("DONE\n") out:close() phase = "done"
+    end
   end
   want(set)
 end)

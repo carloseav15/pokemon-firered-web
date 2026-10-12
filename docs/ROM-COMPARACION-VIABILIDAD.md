@@ -415,3 +415,40 @@ escribe al iniciar una escena del Quest Log (`quest_log.c`: `BackUpMapLayout`, `
 victoria inicia una escena nueva; el port hace lo mismo, así que se considera consistente con el C aunque no
 verificado contra la ROM. Para verificarlo haría falta una estrategia de batalla distinta (p. ej. mon con más
 nivel) en la ROM; no se prioriza.
+
+## 15. Fase 7: Ruta 1 → Ciudad Verde → Tienda → Paquete de Oak (2026-10-12)
+
+Método: el port recorre la ruta en tiempo real con teclado, planificando con el BFS del driver
+(`port-parcel.mjs`), y escribe el trazado casilla a casilla (`/tmp/port-parcel-trace.lua`: mapa, x, y, dirección
+pulsada, si corrió un script). La ROM (`parcel.lua`) parte del estado posterior a la batalla del rival
+(`rival.lua` con `RV_SAVE`) y repite el trazado: sigue la dirección grabada en cada casilla, alterna ráfagas de A
+(30 fotogramas) y dirección (20) donde el port tuvo un script o si la ROM queda fuera del trazado, y vuelca
+flags/vars en cada cambio de mapa y al terminar (`VAR_MAP_SCENE_VIRIDIAN_CITY_MART` = 1 + 600 fotogramas).
+`compare-route.py` compara los volcados.
+
+Dos hallazgos de arnés, no del port:
+
+1. Los primeros tiles de la Ruta 1 junto a Pueblo Paleta son todo hierba alta (la conexión es una franja de
+   hierba), así que los combates salvajes no se evitan planificando.
+2. El encuentro salvaje no usa `gRngValue` sino `sWildEncounterData.rngState` (otra LCG, `ISO_RANDOMIZE2`).
+   Localizado en la ROM por diferencial de EWRAM: `0x020386D0` (llega a la Ruta 1 con `0x0000B66E`, el valor de
+   siembra). Los dos lados reescriben cada fotograma `gRngValue = 0x1B5BD042` y `rngState = 0x8B529B4A`
+   (tirada de encuentro nunca superada): cero combates, y los `Random()` de la ruta son idénticos.
+
+| Punto | Flags | Vars | Posición |
+|---|---|---|---|
+| Pueblo Paleta (salida del laboratorio) | 0 dif. | `VAR_TEMP_2/3/4` (muestreo del port antes de terminar la carga), `VAR_QUEST_LOG_MON_COUNTS`, `VAR_QLBAK_MAP_LAYOUT` | ver nota |
+| Ruta 1 (entrada) | 0 dif. | 0 dif. | (12,39) igual |
+| Ciudad Verde (entrada) | 0 dif. | `VAR_QLBAK_MAP_LAYOUT` (78 vs 79) | (23,39) igual |
+| Tienda (entrada) | 0 dif. | 0 dif. | — |
+| Fin: paquete recibido | 0 dif. | 0 dif. | (4,3) igual, escena = 1 |
+
+Las únicas diferencias (`VAR_QUEST_LOG_MON_COUNTS`, `VAR_QLBAK_MAP_LAYOUT`, dinero 3.000 vs 3.080) vienen de que
+el estado de la ROM salió de una batalla del rival **perdida** y el port **ganó** (+80, escena nueva del Quest
+Log): es el mismo caso de victoria ya anotado en §14. Los `VAR_TEMP_*` del primer volcado son artefacto del
+muestreo del port (lee el mapa nuevo con la posición vieja). Con estado de partida idéntico en victoria/derrota
+el resto de la ruta no difiere en nada medido.
+
+Limitaciones: la bolsa de la ROM no se volcó (se infiere por la escena y los flags); PID/IV del inicial siguen
+sin compararse (RNG distinto desde el principio); los NPCs de la ruta no se cruzaron con nadie que cambiase la
+ruta; las escenas que corrían en el port corrieron igual en la ROM (misma secuencia de casillas).

@@ -576,7 +576,10 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   tras corregir `EnableNationalPokedex_RSE` en `NewGameInitData`; el resultado de la batalla depende del RNG
   (ROM: tres `RV_RNG`, tres derrotas con flags/vars idénticos al port; el port ganó en una corrida y cambia
   `VAR_QUEST_LOG_MON_COUNTS`/`VAR_QLBAK_MAP_LAYOUT`, consistente con `quest_log.c` pero sin verificar en la ROM).
-  Falta: siguiente hito (Ruta 1 → Verde → Paquete de Oak); automatizar mGBA sin Enter manual.
+  Fase 7 (Ruta 1 → Verde → Tienda → Paquete de Oak, informe §15): flags/vars/posición idénticos en cada
+  cambio de mapa y al recibir el paquete (solo difieren las variables del Quest Log por haber ganado el port la
+  batalla). Falta: siguiente hito (devolver el paquete → Pokédex; Ruta 2/Bosque Verde), volcar la bolsa de la
+  ROM, automatizar mGBA sin Enter manual.
 - [x] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`; revalidado con `e03bdc7a`,
   `526e9004`): `tools/playtest/smoke/scene-scan.job.mjs` ejecutó 423 etiquetas con `applymovement` de todo el
   decomp en su mapa (384 terminan, 32 entran en combate, resto = artefactos: créditos, enlace, Trainer Tower y
