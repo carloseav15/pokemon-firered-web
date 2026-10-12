@@ -10,6 +10,7 @@
 local KEY = { A = 0, B = 1, SELECT = 2, START = 3, RIGHT = 4, LEFT = 5, UP = 6, DOWN = 7 }
 local W, I = emu.memory.wram, emu.memory.iwram
 local out = io.open(RV_OUT or "/tmp/rom-rival.txt", "w")
+out:setvbuf("no")   -- the report must be readable while the emulator is still running
 local MAXF = RV_MAXF or 40000
 local function sb() return I:read32(0x03005008 - 0x03000000) - 0x02000000 end
 local function pos() local b = sb(); return W:read16(b), W:read16(b + 2) end
