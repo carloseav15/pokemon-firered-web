@@ -572,12 +572,11 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   flags/vars idénticos y dos fallos reales corregidos (`applymovement` sin hueco de movimiento y ventana de spawn por coordenadas
   de cabecera, `620303ab`; informe §13). Los fotogramas entre eventos
   difieren por lag de CPU de la ROM (~10 fotogramas al montar páginas de texto; informe §12), no modelable en general:
-  comparar por eventos y con `gRngValue` inyectado. Fase 6 (batalla del rival al salir del laboratorio): lado
-  port hecho y sin errores en tiempo real (`tools/rom-compare/port-rival.mjs`: inicial → var escena 3 → batalla →
-  var 4, RNG inyectado en el evento); lado ROM (`rival.lua`) sin terminar: el cuadro de texto de Oak del estado
-  `/tmp/rom-free.ss` no avanza con A + dirección mantenida (se añadió fase de solo-A), última corrida sin resultado.
-  Falta: volcar y comparar ROM vs port (flags/vars/dinero/equipo tras la batalla), `gPlayerParty` sin verificar,
-  automatizar mGBA sin Enter manual.
+  comparar por eventos y con `gRngValue` inyectado. Fase 6 (batalla del rival, informe §14): flags/vars/posición/equipo/rival idénticos hasta el inicio de batalla
+  tras corregir `EnableNationalPokedex_RSE` en `NewGameInitData`; el resultado de la batalla depende del RNG
+  (ROM y port perdieron; una corrida del port ganó). Falta: caso de victoria en la ROM (otro `RV_RNG`) para
+  comparar `VAR_QUEST_LOG_MON_COUNTS`/`VAR_QLBAK_MAP_LAYOUT` y el premio; siguiente hito (Ruta 1 → Verde →
+  Paquete de Oak); automatizar mGBA sin Enter manual.
 - [x] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`; revalidado con `e03bdc7a`,
   `526e9004`): `tools/playtest/smoke/scene-scan.job.mjs` ejecutó 423 etiquetas con `applymovement` de todo el
   decomp en su mapa (384 terminan, 32 entran en combate, resto = artefactos: créditos, enlace, Trainer Tower y

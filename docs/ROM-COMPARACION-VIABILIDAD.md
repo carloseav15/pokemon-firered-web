@@ -387,9 +387,25 @@ Comprobación posterior: `check:all` 45/45, gate del driver 20/20, `ssanne-progr
 y `tools/rom-compare/port-realtime.mjs` recorre cuarto → pueblo → Oak → laboratorio → inicial con teclado real
 (46 s de escena de Oak, sin atascos ni errores de página).
 
-**Batalla del rival (parcial).** `port-rival.mjs` (port, tiempo real, RNG inyectado en el evento) llega a
-escena 3 (inicial elegido), batalla al cruzar y=8, escena 4 al terminar, sin errores. Lado ROM:
-`rival.lua` parte de `/tmp/rom-free.ss` y sincroniza por eventos (`VAR_MAP_SCENE_..._OAKS_LAB`, `gMain.inBattle`).
-Hallazgo de arnés: con ese estado, A + DOWN mantenida no cierra el cuadro de texto de Oak (A sola, sí); se añadió
-una fase inicial de solo-A. Sin resultado de la ROM todavía, así que **no hay comparación ROM vs port de esta
-batalla**.
+**Batalla del rival (2026-10-12).** `rival.lua` (ROM) y `port-rival.mjs` (port, tiempo real, mismo RNG inyectado
+en el evento de inicio de batalla) sincronizan por eventos: inicial elegido (`VAR_MAP_SCENE_..._OAKS_LAB` = 3),
+inicio de batalla (`gMain.inBattle`), fin de batalla y escena 4. `compare-rival.py` decodifica la mon cifrada de la
+ROM (substructs XOR `personality ^ otId`, orden `personality % 24`) y compara flags, vars, dinero, equipo y rival.
+
+| Evento | Resultado |
+|---|---|
+| Inicial elegido / tras 900 fotogramas | posición (8,5), escena 3, Bulbasaur L5 `[33,45]` PP `[35,40]` idénticos |
+| Inicio de batalla | posición (6,8); rival Charmander L5, 18/18 HP, `[10,45]`, PP `[35,40]` idénticos |
+| Flags/vars hasta ahí | **idénticos** tras corregir `FLAG_0x838`/`VAR_0x403C` (ver abajo) |
+| Resultado de la batalla | depende del RNG: ROM y port perdieron (rival 7/18 y 6/18) en las corridas 1–2; en la 3.ª el port ganó (+80, nivel 6) |
+
+Divergencia real corregida: `NewGameInitData` del port omitía `EnableNationalPokedex_RSE()` (new_game.c:133), que
+fija `FLAG_0x838`, `VAR_0x403C = 0x0302` y `pokedex.unused = 0xDA`. Era la única diferencia de flags/vars desde la
+habitación; ya es cero hasta el inicio de batalla.
+
+Notas de método: la clave de cifrado del dinero está en `SaveBlock2 + 0xF20` (no `+0xF1C`) y cambia durante la
+partida (dinero 3.000 en la ROM al final: `0x190db0a7 ^ 0x190dbb1f`). En mGBA hay que reiniciar la app entre
+corridas del script: los callbacks anteriores siguen vivos y pisan las teclas del nuevo. En el caso de victoria del
+port, `VAR_QUEST_LOG_MON_COUNTS` (0x4027 = 4096) y `VAR_QLBAK_MAP_LAYOUT` (78 → 5) cambian; la ROM no ganó en
+ninguna corrida, así que no se sabe si es fidelidad. Pendiente: forzar victoria en la ROM (otro `RV_RNG`) y
+comparar esos dos vars y el premio de dinero.
