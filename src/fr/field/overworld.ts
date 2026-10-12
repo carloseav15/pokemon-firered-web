@@ -659,8 +659,12 @@ export class Overworld {
     }
   }
 
-  /** Begin CB2_LoadMap for the current warp destination. */
+  /** Begin CB2_LoadMap for the current warp destination. CB2_LoadMap (overworld.c) first runs
+   * ScriptContext_Init and UnlockPlayerFieldControls: a script that warped and then `waitstate`d is
+   * discarded here, otherwise its WAITING context outlives the load and the player cannot move. */
   warpIntoMapAndLoad(): void {
+    this.script.ScriptContext_Init();
+    this.UnlockPlayerFieldControls();
     this.applyCurrentWarp();
     this.loadState = 0;
     this.mapLoadStep = 0;

@@ -283,7 +283,8 @@ def dump_all_strings():
     """Every `const u8 name[] = _("...")` in src/*.c, keyed by symbol (file-qualified when static)."""
     definitions = []
     seen = set()
-    pattern = re.compile(r"^(static )?const u8 (\w+)\[\w*\]\s*=\s*_\((.*?)\);", flags=re.M | re.S)
+    # `ALIGNED(4) const u8 gText_Ghost[]` (strings.c, union_room_message.c) carries a prefix before `const`.
+    pattern = re.compile(r"^(?:ALIGNED\(\d+\) )?(static )?const u8 (\w+)\[\w*\]\s*=\s*_\((.*?)\);", flags=re.M | re.S)
     for path in sorted(SRC.glob("*.c")) + sorted((SRC / "data/text").glob("*.h")):
         text = path.read_text(errors="replace")
         for match in pattern.finditer(text):
