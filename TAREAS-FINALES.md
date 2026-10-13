@@ -135,18 +135,15 @@ Abiertas:
   colgaba el reveal de Brock. Con el centinela como `script_movement.c`, el
   combate arranca, se gana, hay medalla y el dinero sube 3150→4550 (`3b709ab5`).
   Job C6 integrado (`caa6885d`) y repetido: medalla y 3150→4550.
-- [ ] 1.18 **MOVE ITEMS con caja vacía rompe el PC** [medio]. Con `pewter-pc`, entrar
-  en MOVE ITEMS revienta `InitBoxMonSprites` (`storageSystemGraphics.ts:121`):
-  `boxMonsSprites[pos]!.oam` sobre null. El C
-  (`pokemon_storage_system_graphics.c:334-338`) también desreferencia NULL.
-  Comportamiento original en hardware/emulador pendiente de verificar; no se
-  afirma que sea un no-op. Decidir tratamiento fiel del acceso inválido antes de corregir.
-  Propuesta revisada y no integrada (opencode `49c88b53`, rama ya eliminada): añadir
-  `&& g.boxMonsSprites[boxPosition]` a la condición de la línea 121. Es una guarda web
-  defensiva; su comentario atribuía un no-op de BIOS sin evidencia en emulador/hardware.
+- [x] 1.18 **MOVE ITEMS con caja vacía rompe el PC** — `1a767524`. El C escribe por un puntero NULL (región BIOS, escritura
+  ignorada) en las casillas vacías; en JS lanzaba `TypeError`. Se omite la casilla vacía. El job
+  `C8-move-items-118-repro` reproducía el fallo (`TypeError … 'oam'`) y ahora pasa sin errores. La región BIOS ignora
+  escrituras por diseño del hardware; no se contrastó en la ROM la pantalla MOVE ITEMS con casillas vacías.
 
-- [ ] 1.19 **Marcas de bicicleta del motor**: `field/fieldEffects.ts:DoTracksGroundEffect_BikeTireTracks` usa índices JS negativos; revisar direccionamiento contiguo u8 del C (previous * 4 + facing - 5). Detectado en M13, corregido solo en viewer `a29c9ae9`.
-
+- [x] 1.19 **Marcas de bicicleta del motor** — `7af1dae9`. La tabla se indexaba `[previous][facing - 5]` (índice
+  negativo en JS) y nunca creaba la marca: 16/16 combinaciones fallaban. Ahora `previous * 4 + facing - 5` como el C, y los
+  argumentos solo se escriben si la bici se movió. Comprobado con las 16 combinaciones frente a la tabla del C; sin
+  validar visualmente en el motor.
 
 - [x] 1.20 **C8 persistencia y salida del PC**: Flash 0d982c02 integrada en
   85e1e082; revisor repitió PC/enfermera, cierre y movimiento, guardados0→1 y
