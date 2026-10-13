@@ -153,3 +153,5 @@ for (const k of ["obligatoria", "opcional", "desconocido", "badge", "regalo", "c
 q.addEventListener("input", () => void render());
 kindSel.addEventListener("change", () => void render());
 void render().catch((e) => { summaryEl.textContent = `Error: ${String(e)}. ¿Ejecutaste tools/viewer/quest_index.py?`; });
+
+export {};
