@@ -231,4 +231,10 @@ for (let type = 0; type < 81; type++) {
     "CopyPlayer blocked step: walk action then face action (both go through ObjectEventSetSingleMovement)");
 }
 
+// GetOppositeDirection: gOppositeDirections = {N, S, E, W, NE, NW, SE, SW} indexed by direction - 1; 0 and values above 8 pass through.
+{
+  const expected = [0, 2, 1, 4, 3, 8, 7, 6, 5, 9, 10];
+  expected.forEach((want, dir) => assert.equal((objects as any).GetOppositeDirection(dir), want, `GetOppositeDirection(${dir})`));
+}
+
 console.log("event_object_movement.c MovementType_* dispatch table checks passed");

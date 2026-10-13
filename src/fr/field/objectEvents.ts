@@ -1844,10 +1844,10 @@ export class ObjectEvents {
     return this.ObjectEventSetHeldMovement(object, actionFace(this.GetOppositeDirection(direction & 0xff)));
   }
 
-  /** GetOppositeDirection (event_object_movement.c); invalid inputs pass through. */
+  /** GetOppositeDirection (event_object_movement.c): gOppositeDirections has 8 entries (diagonals included); others pass through. */
   GetOppositeDirection(direction: number): number {
     const value = direction & 0xff;
-    return value >= DIR_SOUTH && value <= DIR_EAST ? OPPOSITE[value] : value;
+    return value >= DIR_SOUTH && value <= DIR_NORTHEAST ? OPPOSITE[value] : value;
   }
 
   clearHeldMovementIfActive(object: ObjectEvent): void {
