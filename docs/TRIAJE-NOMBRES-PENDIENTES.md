@@ -91,3 +91,20 @@ contra el TS en la fase de revisión (§2 de `TAREAS-FINALES.md`).
 - `party_menu.c` (7): `ExitPartyMenu`, `Task_ExitPartyMenu`, `SpriteCB_HeldItem`, `CursorCB_Register`, `HasPartySlotAlreadyBeenSelected`, `ChooseMonForTradingBoard`, `BufferBattlePartyOrderBySide`
 - `battle_main.c` (8): `BufferPartyVsScreenHealth_AtStart`, `SetPlayerBerryDataInBattleStruct`, `SpriteCB_VsLetterDummy`, `SpriteCB_VsLetter`, `SpriteCB_VsLetterInit`, `BufferPartyVsScreenHealth_AtEnd`, `TryCorrectShedinjaLanguage`, `SpriteCB_Flicker`
 - `overworld.c` (10): `InitOverworldBgs`, `VBlankCB_Field`, `DoMapLoadLoop`, `MoveSaveBlocks_ResetHeap_`, `ResetScreenForMapLoad`, `ClearAllPlayerKeys`, `UpdateHeldKeyCode`, `ResetPlayerHeldKeys`, `ZeroObjectEvent`, `SetPlayerFacingDirection`
+
+## Revisadas contra el TS (2026-10-12)
+
+Confirmadas sin trabajo pendiente (comprobado en el C y en el TS):
+
+- `TryCorrectShedinjaLanguage`: solo la llaman las rutas de batalla de enlace (`battle_main.c` 1046–1051, 1403+).
+- `GetObjectTrainerTypeBy*`, `GetObjectEventBerryTreeId*`, `IsBerryTreeSparkling`, `SetBerryTreeJustPicked`,
+  `BattleIntroSwitchInPlayerMons`: definidas en el C sin ningún caller.
+- Objeto cámara (`AddCameraObject`, `CameraObject*`, `CameraObjectReset1/2`, `CameraObjectSetFollowedObjectId`):
+  equivalencia deliberada. `field/overworld.ts` sigue al jugador directamente y `SpawnCameraObject` /
+  `RemoveCameraObject` están en `script/specials.ts`; los comentarios `CameraObjectReset*` lo documentan.
+- `FieldEffectFree*Resources/IfUnused`: el `Sprite` del port no usa un pool de tiles/paletas de VRAM
+  (`field/fieldEffects.ts`, `FieldEffectStop`).
+
+Sin revisar todavía: intérprete `FieldEffectCmd_*`/`FieldEffectScript_*`, `overworld.c` (bgs/VBlank/carga de mapa),
+`party_menu.c` (`ExitPartyMenu`, `Task_ExitPartyMenu`, `BufferBattlePartyOrderBySide`), `battle_transition.c`
+(`InitTransitionData`, `BattleTransition_Start`), `quest_log.c`.
