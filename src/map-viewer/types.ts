@@ -1,5 +1,5 @@
 export type GameId = "world" | "firered" | "emerald" | "hns" | "crystal";
-export type Region = { id: string; title: string; game: GameId; version: string; parent?: string; origin: string; x: number; y: number; w: number; h: number; maps: number; commit: string };
+export type Region = { id: string; title: string; game: GameId; version: string; parent?: string; level?: string; origin: string; x: number; y: number; w: number; h: number; maps: number; commit: string };
 export type Journey = { id: string; a: string; b: string; label: string; kind: string; basis: string; description?: string };
 export type Layer = "base" | "sprites" | "collision";
 export type Texture = { key: string; url: string; x: number; y: number; w: number; h: number; layer: Layer; decodedWidth: number; decodedHeight: number };

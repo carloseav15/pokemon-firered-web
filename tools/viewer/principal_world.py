@@ -117,10 +117,10 @@ def sevii_rects(catalog,selected):
     return result,max(r['x']+r['w'] for r in result),y-GAP,bounds,conflicts
 
 
-def hoenn_rects(catalog,selected):
-    world=catalog['world'];main_ids={r['id'] for r in world['maps']}
-    missing={id for id in selected-main_ids if catalog['maps'][id]['type'] in {1,2,3,6}}
-    maps={id:{'w':m['width']//16,'h':m['height']//16,'type':m['type'],
+def hoenn_rects(catalog,selected,types={1,2,3,6},force=frozenset(),baseworld=True):
+    world=catalog['world'] if baseworld else {'maps':[],'w':0,'h':0};main_ids={r['id'] for r in world['maps']}
+    missing={id for id in selected-main_ids if (catalog['maps'][id]['type'] in types or id in force)}
+    maps={id:{'w':m['width']//16,'h':m['height']//16,'type':3 if id in force else m['type'],
         'connections':read(ROOT/'public/emerald/maps'/f'{id}.json')['connections']} for id,m in catalog['maps'].items() if id in missing}
     groups=[];errors=[]
     while missing:
@@ -129,11 +129,11 @@ def hoenn_rects(catalog,selected):
             for c in maps[queue.popleft()]['connections']:
                 if c['map'] in missing:
                     members.add(c['map']);missing.remove(c['map']);queue.append(c['map'])
-        rects,w,h,components,conflicts=johto_rects(maps,members,origin,{1,2,3,6})
+        rects,w,h,components,conflicts=johto_rects(maps,members,origin,types)
         groups.append({'origin':origin,'rects':rects,'w':w,'h':h,'maps':sorted(members)})
         errors+=conflicts
     # Keep continental geometry intact. Detached components occupy a separate two-column strip.
-    pitch=max(g['w'] for g in groups)+GAP;y=world['h']+GAP;rects=list(world['maps']);bounds=[]
+    pitch=max(g['w'] for g in groups)+GAP;y=world['h']+GAP if baseworld else 0;rects=list(world['maps']);bounds=[]
     for index in range(0,len(groups),2):
         row=groups[index:index+2]
         for col,g in enumerate(row):
@@ -153,20 +153,28 @@ def main():
       'kanto':{id for id,m in fr['maps'].items() if m['section'] in KANTO_SECTIONS},
       'johto':johto,
       'sevii':{id for id,m in fr['maps'].items() if m['section'] in SEVII_SECTIONS and 'UNUSED' not in id},
-      'hoenn':{id for id,m in em['maps'].items() if id not in LINK_MAPS and 'PROTOTYPE' not in id and m['section'] not in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK','MAPSEC_FARAWAY_ISLAND'}}}
+      'special':{id for id,m in fr['maps'].items() if m['section'] in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK'}},
+      'underwater':{id for id,m in em['maps'].items() if m['type']==5},
+      'hoenn':{id for id,m in em['maps'].items() if m['type']!=5 and id not in LINK_MAPS and 'PROTOTYPE' not in id and m['section'] not in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK'}}}
     jr,jw,jh,components,conflicts=johto_rects(hns['maps'],johto)
     sr,sw,sh,islands,sevii_conflicts=sevii_rects(fr,selections['sevii'])
-    er,ew,eh,hoenn_areas,hoenn_conflicts=hoenn_rects(em,selections['hoenn'])
+    er,ew,eh,hoenn_areas,hoenn_conflicts=hoenn_rects(em,selections['hoenn'],force={'MAP_FARAWAY_ISLAND_ENTRANCE','MAP_FARAWAY_ISLAND_INTERIOR'})
+    ur,uw,uh,underwater_areas,underwater_conflicts=hoenn_rects(em,selections['underwater'],types={5},baseworld=False)
+    special_ids=['MAP_NAVEL_ROCK_EXTERIOR','MAP_BIRTH_ISLAND_EXTERIOR']
+    special_rects=[{'id':id,'x':index*2048,'y':0,'w':fr['maps'][id]['width'],'h':fr['maps'][id]['height']} for index,id in enumerate(special_ids)]
+    special_w=max(r['x']+r['w'] for r in special_rects);special_h=max(r['h'] for r in special_rects)
     configs=[('johto','hns','Johto','Heart & Soul',hns,jr,jw,jh,'MAP_NEW_BARK_TOWN'),
              ('kanto','firered','Kanto','FireRed',fr,fr['world']['maps'],fr['world']['w'],fr['world']['h'],'MAP_PALLET_TOWN'),
              ('sevii','firered','Sevii · Kanto','FireRed',fr,sr,sw,sh,'MAP_ONE_ISLAND'),
-             ('hoenn','emerald','Hoenn','Emerald',em,er,ew,eh,'MAP_LITTLEROOT_TOWN')]
+             ('special','firered','Islas especiales · Kanto','FireRed',fr,special_rects,special_w,special_h,'MAP_NAVEL_ROCK_EXTERIOR'),
+             ('hoenn','emerald','Hoenn','Emerald',em,er,ew,eh,'MAP_LITTLEROOT_TOWN'),
+             ('underwater','emerald','Hoenn · Submarino','Emerald',em,ur,uw,uh,'MAP_UNDERWATER_ROUTE124')]
     if STAGE.exists():shutil.rmtree(STAGE)
     (STAGE/'world').mkdir(parents=True)
     maps={};rects=[];regions=[];xoffset=0
     for region,game,title,version,doc,local,width,height,origin in configs:
         for id in sorted(selections[region]):
-            m=doc['maps'][id];key=f'{region}/{id}'
+            m=doc['maps'][id];namespace='hoenn' if region=='underwater' else region;key=f'{namespace}/{id}'
             if game=='hns':
                 item={'id':key,'sourceId':id,'game':game,'region':region,'name':m['name'],'width':m['w']*16,'height':m['h']*16,
                       'image':'/hns/'+m['image'] if m['image'] else None,'sprites':None,'collision':None,'section':m['section']}
@@ -174,11 +182,13 @@ def main():
                 item={'id':key,'sourceId':id,'game':game,'region':region,'name':m['name'],'width':m['width'],'height':m['height'],
                       'image':f'/map-viewer/{game}/'+m['image'],'sprites':f'/map-viewer/{game}/'+m['sprites'] if m['sprites'] else None,
                       'collision':f'/map-viewer/{game}/'+m['collision'],'section':m['section']}
+            item['namespace']=namespace
             maps[key]=item
+        namespace='hoenn' if region=='underwater' else region
         for r in local:
-            if r['id'] in selections[region]:rects.append({**r,'id':f"{region}/{r['id']}",'x':r['x']+xoffset})
-        regions.append({'id':region,'title':title,'game':game,'version':version,'origin':f'{region}/{origin}','x':xoffset,'y':0,'w':width,'h':height,
-                        'maps':len(selections[region]),**({'parent':'kanto'} if region=='sevii' else {}),'commit':doc['_meta'].get('commit',doc['_meta'].get('sourceCommit'))})
+            if r['id'] in selections[region]:rects.append({**r,'id':f"{namespace}/{r['id']}",'x':r['x']+xoffset})
+        regions.append({'id':region,'title':title,'game':game,'version':version,'origin':f'{namespace}/{origin}','x':xoffset,'y':0,'w':width,'h':height,
+                        'maps':len(selections[region]),**({'parent':'kanto'} if region in {'sevii','special'} else {'parent':'hoenn','level':'underwater'} if region=='underwater' else {}),'commit':doc['_meta'].get('commit',doc['_meta'].get('sourceCommit'))})
         xoffset+=width+GAP
     # Cross-source destination matches are navigation references, never warp-index equivalences.
     aliases={'MAP_ROUTE22':'kanto/MAP_ROUTE22'}
@@ -225,8 +235,11 @@ def main():
                 with Image.open(ROOT/'public'/file.lstrip('/')) as source:
                     image.paste(source.resize((max(1,round(r['w']*scale)),max(1,round(r['h']*scale))),Image.Resampling.NEAREST),(round(r['x']*scale),round(r['y']*scale)))
         file=f'world/overview_{layer}.png';image.save(STAGE/file,optimize=True);overviews[layer]=file
-    write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Editorial: Johto, Kanto, Sevii and Hoenn separated by 1024 px; source connections preserved inside components.',
+    write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Editorial: Regions, archipelagos and underwater level separated by 1024 px; source connections preserved inside components.',
       'johtoSelection':'Source section allowlist plus reachability by connections, warps and script MAP references. References are not proof of runtime access.',
+      'underwaterAreas':underwater_areas,'underwaterConflicts':underwater_conflicts,
+      'specialIslandPolicy':'Navel Rock and Birth Island use FireRed once; Emerald representations remain alternatives. Faraway Island uses Emerald. Event requirements and transport are not simulated.',
+      'underwaterPolicy':'Separate atlas level from surface; preserves source IDs and source dive/emerge references without simulating Dive.',
       'hoennAreas':hoenn_areas,'hoennConflicts':hoenn_conflicts,
       'hoennPlacement':'Original continental positions preserved. Detached surface components arranged in a separate strip; not geographic or playable connections. Prototypes excluded.',
       'seviiIslands':islands,'seviiConflicts':sevii_conflicts,
@@ -235,12 +248,12 @@ def main():
       'excludedPermittedJohtoMaps':sorted(n for n,m in hns['maps'].items() if m['section'] in JOHTO_SECTIONS and n not in johto),
       'borderAssignment':'HnS Routes 26–28, Tohjo Falls and Mt Silver kept with Johto as border areas; not a claim about official regional geography.'},
       'regions':regions,'maps':maps,'boundaries':boundaries,'crossSourceAliases':aliases,'travels':travels,
-      'places':[{'id':f"hoenn/{a['origin']}",'label':em['maps'][a['origin']]['name']} for a in hoenn_areas],
+      'places':[{'id':f"hoenn/{a['origin']}",'label':em['maps'][a['origin']]['name']} for a in hoenn_areas+underwater_areas]+[{'id':f'special/{id}','label':fr['maps'][id]['name']} for id in special_ids],
       'world':{'w':width,'h':height,'origin':'kanto/MAP_PALLET_TOWN','maps':rects,'chunks':chunks,'overviews':overviews}})
     OUT.mkdir(parents=True,exist_ok=True)
     if (OUT/'world').exists():shutil.rmtree(OUT/'world')
     shutil.copytree(STAGE/'world',OUT/'world');shutil.copy2(STAGE/'catalog.json',OUT/'catalog.json')
-    print('Principal atlas:',[(r['id'],r['maps']) for r in regions],len(rects),'exteriors;',len(chunks),'chunks;',len(boundaries),'source boundaries')
+    print('Principal atlas:',[(r['id'],r['maps']) for r in regions],len(rects),'placed maps;',len(chunks),'chunks;',len(boundaries),'source boundaries')
 
 
 if __name__=='__main__':main()

@@ -114,9 +114,9 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
   $("inspector").hidden = !inspector;
   if (inspector) $("inspector").setAttribute("href", inspector);
   if (id === "world") {
-    meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas exteriores" : "mapas conectados"}`;
+    meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas en el plano" : "mapas conectados"}`;
     detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Viajes del atlas</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : j.kind === "source-navigation" ? " · referencia FireRed" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
-    if (source.places?.length) detail.innerHTML += `<h2>Zonas aisladas de Hoenn</h2><div class="links">${source.places.map(p => mapLink(p.id, p.label)).join("")}</div>`;
+    if (source.places?.length) detail.innerHTML += `<h2>Áreas aisladas y niveles del atlas</h2><div class="links">${source.places.map(p => mapLink(p.id, p.label)).join("")}</div>`;
     const origin = source.world.rects.find(r => r.id === source!.world.origin);
     const z = Number(zoom.value);
     viewport.scrollTo(viewRestore?.x ?? Math.max(0, (origin ? origin.x + origin.w / 2 : 0) * z - viewport.clientWidth / 2), viewRestore?.y ?? Math.max(0, (origin ? origin.y + origin.h / 2 : 0) * z - viewport.clientHeight / 2));
@@ -145,23 +145,29 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
     if (!signal.aborted) { meta.textContent = `No se pudo cargar la ficha: ${String(error)}`; detail.innerHTML = `<p class="error">${esc(error)}</p>`; }
   }
 }
+function fitZoom(fit: number): string {
+  const existing = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0];
+  if (existing != null) return String(existing);
+  const value = Math.pow(2, Math.floor(Math.log2(Math.max(fit, 1 / 1024))));
+  zoom.add(new Option(`${value}×`, String(value)));
+  return String(value);
+}
 function hashTarget(): { id: string; arrival?: string; restore?: Position } {
   const raw = location.hash.slice(1), params = new URLSearchParams(raw);
   const id = params.get("mapa") ?? (raw && !raw.includes("=") && raw !== "world" ? decodeURIComponent(raw) : "world");
   const z = params.get("z");
-  if (z && Number.isFinite(Number(z)) && Number(z) >= .0078125 && Number(z) <= 4 && ![...zoom.options].some(o => o.value === z)) zoom.add(new Option(`${z}×`, z));
+  if (z && Number.isFinite(Number(z)) && Number(z) >= 1 / 1024 && Number(z) <= 4 && ![...zoom.options].some(o => o.value === z)) zoom.add(new Option(`${z}×`, z));
   const restore = params.has("x") && params.has("y") && z && [...zoom.options].some(o => o.value === z) ? { map: id, zoom: z, x: Math.max(0, Number(params.get("x")) || 0), y: Math.max(0, Number(params.get("y")) || 0) } : undefined;
   if (source?.regions && params.get("region") === "all") {
     regionSelect.value = "all";
     const fit = Math.min(viewport.clientWidth / source.world.width, viewport.clientHeight / source.world.height);
-    const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .0078125;
+    const value = fitZoom(fit);
     return { id: "world", restore: { map: "world", zoom: String(value), x: 0, y: 0 } };
   }
   const region = source?.regions?.find(r => r.id === params.get("region"));
   if (region && id === "world") {
     const fit = Math.min(1, viewport.clientWidth / region.w);
-    const choices = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a);
-    const value = choices[0] ?? .0078125;
+    const value = Number(fitZoom(fit));
     regionSelect.value = region.id;
     return { id, restore: { map: "world", zoom: String(value), x: Math.max(0, (region.x + region.w / 2) * value - viewport.clientWidth / 2), y: Math.max(0, region.y * value) } };
   }
@@ -189,7 +195,7 @@ async function changeSource(game: GameId): Promise<void> {
     const target = hashTarget(), stored = remembered.get(game);
     if (source.game === "world" && !stored && !target.restore && target.id === "world") {
       const fit = Math.min(viewport.clientWidth / source.world.width, viewport.clientHeight / source.world.height);
-      const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .0078125;
+      const value = fitZoom(fit);
       target.restore = { map: "world", zoom: String(value), x: 0, y: 0 };
     }
     await show(stored?.map ?? target.id, stored ?? target.restore, target.arrival, false);
