@@ -19,6 +19,7 @@ import { renderWorldFill, type FillSource } from "./render/fill";
 import { TileAnimationController, animRangesFor, rangeMask, type AnimatedMap } from "./render/tileAnim";
 import { renderTilePanel, renderBiomePanel } from "./ui/panel";
 import { setupSearch } from "./ui/search";
+import { InteriorViewer } from "./ui/interior";
 import { setupMinimap, type MinimapController } from "./ui/minimap";
 import { setupPopovers } from "./ui/popover";
 import { getPlayerSpriteSheet, type Direction, loadHoennGfx } from "./render/sprites";
@@ -94,6 +95,9 @@ let animController: TileAnimationController;
 let minimapController: MinimapController | null = null;
 let entityManager: EntityManager;
 let dialogManager: DialogManager;
+let interiorViewer: InteriorViewer;
+/** maps.json del juego: todos los mapas (exteriores e interiores) con nombre, layout y sección. */
+let allMaps: Record<string, { num: number; name: string; layout: string; section: string }> = {};
 let fieldEffects: ViewerFieldEffects;
 /** Efectos de campo vacíos: Hoenn no tiene los de FireRed (hierba, polvo, huellas), así que explorar no los dibuja. */
 const NO_FIELD_EFFECTS = { onGroundStep(): void {}, resetSession(): void {} } as unknown as ViewerFieldEffects;
@@ -625,6 +629,7 @@ function processPlayerStep(): void {
 
         fieldEffects.onGroundStep("finish", groundActor);
 
+        if (checkDoorAt(playerX, playerY)) return;
         checkTrainerSight();
 
         if (keysDown.size > 0 && !dialogManager.isOpen()) {
@@ -710,6 +715,41 @@ function showAt(worldX: number, worldY: number): void {
   renderTilePanel(panel, index, id, lx, ly, mx, my, els, trs, () => {
     startExploration(mx, my);
   }, centerOnMap);
+
+  // Puertas: abren el interior de destino en el visor de interiores (los exteriores se centran en el mundo).
+  const doors = els.filter((e) => e.layer === "puerta" && e.destMap);
+  if (doors.length > 0) {
+    const box = document.createElement("div");
+    box.style.cssText = "margin-top:12px;display:flex;flex-direction:column;gap:6px;";
+    for (const d of doors) {
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      const exterior = d.destMap! in index.maps;
+      btn.textContent = `${exterior ? "Ir a" : "Entrar en"} ${d.destName ?? d.destMap}`;
+      btn.addEventListener("click", () => {
+        if (exterior) centerOnMap(d.destMap!);
+        else void interiorViewer.open(d.destMap!);
+      });
+      box.appendChild(btn);
+    }
+    panel.appendChild(box);
+  }
+}
+
+/** En exploración, pisar una puerta abre su interior (como el warp del juego). */
+function checkDoorAt(gx: number, gy: number): boolean {
+  const entry = findMapAt(gx, gy);
+  if (!entry) return false;
+  const [id, m] = entry;
+  const lx = gx - m.x;
+  const ly = gy - m.y;
+  const door = index.elements.find((e) => e.map === id && e.layer === "puerta" && e.x === lx && e.y === ly && e.destMap);
+  if (!door || door.destMap! in index.maps) return false;
+  keysDown.clear();
+  playerMoving = false;
+  updatePlayerDisplay();
+  void interiorViewer.open(door.destMap!);
+  return true;
 }
 
 async function build(): Promise<void> {
@@ -726,6 +766,12 @@ async function build(): Promise<void> {
   worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY);
   entityManager = new EntityManager(content, minX, minY);
   dialogManager = new DialogManager();
+  interiorViewer = new InteriorViewer({
+    isExterior: (mapId) => mapId in index.maps,
+    showExterior: (mapId) => { centerOnMap(mapId); },
+    mapName: (mapId) => allMaps[mapId]?.name,
+  });
+  allMaps = ((await (await fetch(`${HOENN ? "/emerald" : "/fr"}/maps.json`)).json()) as { maps: typeof allMaps }).maps;
   // Los efectos de campo (hierba, polvo, huellas) son de FireRed; en Hoenn se explora sin ellos.
   fieldEffects = HOENN ? NO_FIELD_EFFECTS : await ViewerFieldEffects.create(worldGrid, viewerClock);
   const disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
@@ -1154,8 +1200,15 @@ function setupUi(): void {
     });
   }
 
-  setupSearch(index, searchInput, searchResults, (mapId) => {
-    centerOnMap(mapId);
+  // El buscador incluye los interiores (no están en el lienzo del mundo): al elegirlos se abre su visor.
+  const searchable: KantoIndex = { ...index, maps: { ...index.maps } };
+  for (const [id, m] of Object.entries(allMaps)) {
+    if (id in searchable.maps) continue;
+    searchable.maps[id] = { x: 0, y: 0, width: 0, height: 0, layout: m.layout, title: m.name, section: m.section };
+  }
+  setupSearch(searchable, searchInput, searchResults, (mapId) => {
+    if (mapId in index.maps) centerOnMap(mapId);
+    else void interiorViewer.open(mapId);
   });
 
   const modeViewerBtn = document.getElementById("mode-viewer-btn");
