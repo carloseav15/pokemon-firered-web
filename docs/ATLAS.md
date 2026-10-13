@@ -9,7 +9,7 @@ exportados de los decomps.
 | Visor del mundo | `/viewer.html`, `/viewer.html?game=emerald` | Exteriores unidos, capas, fichas, buscador | `public/viewer/kanto.json` / `hoenn.json`, `public/fr`, `public/emerald` |
 | Explorar a pie | `/viewer.html#modo=explore` (+ `?game=emerald`) | Caminar con Rojo/Hoja o Bruno/Aura; pisar una puerta abre su interior | los mismos |
 | Interiores | desde el buscador o `#mapa=MAP_ID` | 425 + 518 mapas con warps, objetos, eventos, carteles | `public/<juego>/maps`, `layouts`, `tilesets` |
-| Pokédex comparada | `/dex.html`, `#<id de especie>` | Sprites y datos comunes / exclusivos por juego; sección «Sprites de otros juegos» (PMD Red con sus animaciones y 8 direcciones, retratos de PMD Sky con sus emociones, pokeemerald-expansion, Crystal con su animación, Platinum, HeartGold); las especies de Gen 4-9 sin datos de juego salen como fichas solo de sprites (`#n<nacional>`) | `public/<juego>/data`, `gfx/pokemon/*`, `public/sprites/` |
+| Pokédex comparada | `/dex.html`, `#<id de especie>` | Sprites y datos comunes / exclusivos por juego; sección «Sprites de otros juegos» (PMD Red con sus animaciones y 8 direcciones, sprites y retratos de PMD Sky (hasta Gen 4, con animaciones y 8 direcciones), pokeemerald-expansion, Crystal con su animación, Platinum, HeartGold); las especies de Gen 4-9 sin datos de juego salen como fichas solo de sprites (`#n<nacional>`) | `public/<juego>/data`, `gfx/pokemon/*`, `public/sprites/` |
 | Biblioteca visual | `/library.html` | Entrenadores con equipo, objetos con icono, gráficos de objetos de mapa | `data/trainers.json`, `gfx/trainers`, `gfx/items`, `objects.json` |
 | Comparador | `/compare.html` | Diferencias campo a campo (especies, movimientos, objetos, entrenadores) | `public/<juego>/data` |
 | Quests | `/quests.html` | Quests candidatas con clase, flags y variables | `public/viewer/quests_<juego>.json` |
@@ -74,3 +74,12 @@ Trabajo de verificación pasada: los 943 mapas se abren y se pintan (`tools/play
 - Cobertura: 648 retratos para las 493 especies; las filas ≥ 600 son variantes de género y las 555/560 variantes de Wigglytuff.
   Se omiten 4 filas con número nacional falso (Statue, Mama, Sentret y Bellossom del gremio).
 - Las emociones sin retrato (p. ej. Special0 en Pikachu) no se muestran. No se exportan las casillas volteadas.
+
+## Sprites de monstruos de PMD Sky
+
+- Origen: `files/MONSTER/monster.bin` (pack de 599 PKDPX con WAN dentro de SIR0). Lector en `tools/viewer/pmd_sky_wan.py`; el formato
+  está resumido en su docstring (piezas OAM de 10 bytes, imágenes como tiras con ceros, fotogramas de 12 bytes de `wan.h` de pmd-sky).
+- Índice de sprite por fila: palabra u16 8 de cada entrada de `monster.md`. Las filas ≥ 600 (hembras) tienen su propio índice; si
+  comparte sprite con la fila base no se repite. Cubre 493 especies con 597 sprites distintos.
+- Se muestran igual que los de PMD Red: 8 direcciones y animaciones numeradas (sin nombres verificados) a 1/60 s.
+- Paleta: solo la 0 (ningún sprite usa piezas con otra). No incluye `m_ground.bin` (sprites de suelo) ni `m_attack.bin`.

@@ -559,6 +559,69 @@ def build_pmd(table: dict[str, int]) -> dict[int, list[dict]]:
     return out
 
 
+# ---------------------------------------------------------------- PMD Sky: sprites WAN
+
+def compose_sky_sprite(wan, dst: Path) -> dict | None:
+    """Atlas + JSON de animaciones de un WAN de monstruo (mismo formato que los sprites de PMD Red)."""
+    OX, OY = 256, 128
+    anims = [(gi, seqs) for gi, seqs in enumerate(wan.anims) if seqs]
+    used = sorted({fid for _gi, seqs in anims for seq in seqs for _d, fid, _x, _y in seq if 0 <= fid < len(wan.frames)})
+    if not used:
+        return None
+    rendered: dict[int, Image.Image] = {}
+    pal_used: set[int] = set()
+    for fid in used:
+        canvas = Image.new("P", (512, 256), 0)
+        for piece in reversed(wan.frames[fid]):
+            px = wan.render_piece(piece)
+            if px is None:
+                continue
+            flat = bytes(v for row in px for v in row)
+            im = Image.frombytes("P", (piece.w, piece.h), flat)
+            mask = Image.frombytes("L", (piece.w, piece.h), bytes(255 if v else 0 for v in flat))
+            canvas.paste(im, (OX + piece.x, OY + piece.y), mask)
+            if piece.pal:
+                pal_used.add(piece.pal)
+        rendered[fid] = canvas
+    boxes = [b for b in (rendered[f].getbbox() for f in used) if b]
+    if not boxes:
+        return None
+    x0, y0 = min(b[0] for b in boxes), min(b[1] for b in boxes)
+    x1, y1 = max(b[2] for b in boxes), max(b[3] for b in boxes)
+    cw, ch = x1 - x0, y1 - y0
+    cells: list[Image.Image] = []
+    uniq: dict[bytes, int] = {}
+    cell_of: dict[int, int] = {}
+    for fid in used:
+        crop = rendered[fid].crop((x0, y0, x1, y1))
+        key = crop.tobytes()
+        if key not in uniq:
+            uniq[key] = len(cells)
+            cells.append(crop)
+        cell_of[fid] = uniq[key]
+    cols = max(1, min(len(cells), 2048 // cw))
+    atlas = Image.new("P", (cols * cw, ((len(cells) + cols - 1) // cols) * ch), 0)
+    for i, c in enumerate(cells):
+        atlas.paste(c, ((i % cols) * cw, (i // cols) * ch))
+    pal = [c for rgb in wan.palettes[0] for c in rgb]
+    save_indexed(atlas, dst.with_suffix(".png"), pal + [0] * (768 - len(pal)))
+    out_anims = []
+    for gi, seqs in anims:
+        table: list = []
+        dirs: list[int] = []
+        for seq in seqs:
+            enc = [[cell_of[fid], dur, dx, dy] for dur, fid, dx, dy in seq if fid in cell_of]
+            if enc not in table:
+                table.append(enc)
+            dirs.append(table.index(enc))
+        out_anims.append({"id": gi, "seq": table, "dirs": dirs})
+    pad = max([abs(v) for _g, seqs in anims for seq in seqs for _d, _f, dx, dy in seq for v in (dx, dy)] or [0])
+    doc = {"atlas": rel(dst.with_suffix(".png")), "cw": cw, "ch": ch, "cols": cols, "cells": len(cells), "pad": min(pad, 64),
+           "origin": [OX - x0, OY - y0], "anims": out_anims, "extraPalettes": sorted(pal_used)}
+    dst.with_suffix(".json").write_text(json.dumps(doc, separators=(",", ":")) + "\n")
+    return doc
+
+
 # ---------------------------------------------------------------- PMD Sky: retratos
 
 def build_pmd_sky() -> dict[int, list[dict]]:
@@ -591,6 +654,37 @@ def build_pmd_sky() -> dict[int, list[dict]]:
     first_row: dict[int, int] = {}
     excluded: list[int] = []
     dst = OUT / "pmd-sky"
+
+    # Sprites de mazmorra: MONSTER/monster.bin (WAN); la palabra u16 8 de cada fila de monster.md es su índice.
+    import pmd_sky_wan as wan_mod
+
+    pack = wan_mod.read_pack((root / "files/MONSTER/monster.bin").read_bytes())
+    sprite_docs: dict[int, dict | None] = {}
+
+    def sprite_doc(idx: int) -> dict | None:
+        if idx not in sprite_docs:
+            sprite_docs[idx] = compose_sky_sprite(wan_mod.Wan(pack[idx]), dst / f"s{idx}") if idx < len(pack) and pack[idx] else None
+        return sprite_docs[idx]
+
+    sprite_items: dict[int, list[dict]] = {}
+    seen_sprite: dict[int, set[int]] = {}
+    for row in range(1, count):
+        nat = struct.unpack_from("<H", md, 8 + row * 68)[0]
+        idx = struct.unpack_from("<H", md, 8 + row * 68 + 16)[0]
+        if not 0 < nat <= 493 or idx == 0xFFFF or idx >= len(pack) or idx in seen_sprite.setdefault(nat, set()):
+            continue
+        doc = sprite_doc(idx)
+        if doc is None:
+            continue
+        seen_sprite[nat].add(idx)
+        base = row - 600 if row >= 600 else row
+        nm = string(name_base + base) if base < 600 else ""
+        first = min(r for r in range(1, count) if struct.unpack_from("<H", md, 8 + r * 68)[0] == nat)
+        label = "Sprites de mazmorra" if row == first else ("Sprites de mazmorra · hembra" if row >= 600 else f"Sprites de mazmorra · {nm or 'forma'} (fila {row})")
+        sprite_items.setdefault(nat, []).append({
+            "label": label, "kind": "pmd", "data": rel(dst / f"s{idx}.json"), "atlas": doc["atlas"],
+            "anims": len(doc["anims"]), "cell": [doc["cw"], doc["ch"]], "row": row, "sprite": idx,
+        })
     for row in range(1, count):
         emotions = kao.emotions(row)
         if not emotions:
@@ -634,6 +728,10 @@ def build_pmd_sky() -> dict[int, list[dict]]:
         })
     if excluded:
         print(f"pmd-sky: filas con retrato y número nacional fuera de 1-493, omitidas: {excluded}")
+    for nat, items in sprite_items.items():
+        out.setdefault(nat, [])[:0] = items  # sprites antes que retratos
+    extra_pal = sum(1 for d in sprite_docs.values() if d and d["extraPalettes"])
+    print(f"pmd-sky: {len(sprite_docs)} sprites WAN; {extra_pal} usan paletas extra (se pintan con la 0)")
     return out
 
 

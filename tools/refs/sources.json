@@ -110,7 +110,8 @@
     "sparse": [
       "/files/FONT/kaomado.kao",
       "/files/BALANCE/monster.md",
-      "/files/language-specific/US/MESSAGE/text_e.str"
+      "/files/language-specific/US/MESSAGE/text_e.str",
+      "/files/MONSTER/monster.bin"
     ],
     "note": "NDS, C + ensamblador en progreso. Trae los datos del juego extraídos (files/): retratos, tablas y texto. Solo gráficos y tablas para el dex del visor; no se porta."
   }
