@@ -15,15 +15,15 @@
 
 import type { Scene } from "../game";
 import * as C from "../generated/constants";
-import { paletteFade, FADE_TO_BLACK, RGB_BLACK } from "../gba/fade";
+import { paletteFade, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
 import type { Pokemon } from "../pokemon/pokemon";
-import { rom } from "../rom";
-import { incbin, incbin16 } from "../hw/assets";
+import { rom } from "@core/rom";
+import { incbin, incbin16 } from "@core/hw/assets";
 import { save } from "../save";
 import type { Overworld } from "../field/overworld";
 import { MetatileBehavior_IsSurfable } from "../generated/metatileBehavior";
-import { Cos, Sin, gSineTable } from "../hw/trig";
-import { random as Random } from "../random";
+import { Cos, Sin, gSineTable } from "@core/hw/trig";
+import { random as Random } from "@core/random";
 import { MugshotTransitionEffect } from "./mugshotTransition";
 
 const TRANSITION_TYPE_NORMAL = 0;

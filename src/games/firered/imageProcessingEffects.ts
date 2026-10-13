@@ -1,7 +1,7 @@
 // Port of image_processing_effects.c: image filters, pointillism, quantization,
 // outline and color transformation effects for paintings and portraits.
 
-import { cdata, loadCData } from "./hw/assets";
+import { cdata, loadCData } from "@core/hw/assets";
 
 export const MAX_DIMENSION = 64;
 

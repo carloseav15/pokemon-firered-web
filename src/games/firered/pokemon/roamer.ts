@@ -1,8 +1,8 @@
 // roamer.c: roaming legendary storage, route movement, and encounter creation.
 
 import * as C from "../generated/constants";
-import { random } from "../random";
-import { rom } from "../rom";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { save, varGet } from "../save";
 import { createMon, type Pokemon } from "./pokemon";
 import { CreateMonWithIVsPersonality, zeroMon } from "./mon";

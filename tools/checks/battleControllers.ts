@@ -2,7 +2,7 @@
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import * as C from "../../src/games/firered/generated/constants.ts";
-import { tasks } from "../../src/games/firered/gba/tasks.ts";
+import { tasks } from "../../src/core/gba/tasks.ts";
 import {
   G, gBattleBufferA, gBattleBufferB, gBattlerControllerFuncs,
   gBattlerPositions, gLinkBattleSendBuffer, gLinkBattleRecvBuffer,

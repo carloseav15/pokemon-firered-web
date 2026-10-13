@@ -1,8 +1,8 @@
 // Mugshot transitions from battle_transition.c. Canvas replaces the BG0/OBJ
 // window and affine hardware, while preserving their source graphics and task timing.
 import * as C from "../generated/constants";
-import { cdata, incbin, incbin16 } from "../hw/assets";
-import { Sin } from "../hw/trig";
+import { cdata, incbin, incbin16 } from "@core/hw/assets";
+import { Sin } from "@core/hw/trig";
 import { gTrainerFrontPicPaletteTable, gTrainerFrontPicTable, sheetBytes, symPalette } from "../pokemon/pics";
 import { PlayerGenderToFrontTrainerPicId } from "../trainerPokemonSprites";
 

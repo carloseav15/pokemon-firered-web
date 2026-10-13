@@ -9,17 +9,17 @@ import { IntroScene2 } from "./introScene2";
 import { IntroScene3 } from "./introScene3";
 import { IntroTitle } from "./introTitle";
 import { OakSpeech } from "./oakSpeech";
-import { sound } from "./audio/sound";
-import { loadTrig } from "./hw/trig";
+import { sound } from "@core/audio/sound";
+import { loadTrig } from "@core/hw/trig";
 import { CB2_InitMainMenu, MainMenu } from "./mainMenu";
 import { ClearSaveScreen } from "./clearSaveScreen";
-import { joy, ReadKeys } from "./gba/input";
-import { rom } from "./rom";
-import { InitMainCallbacks, SetVBlankCallback } from "./hw/runtime";
-import { LoadOam, ProcessSpriteCopyRequests } from "./hw/sprite";
-import { TransferPlttBuffer } from "./hw/palette";
-import { ScanlineEffect_InitHBlankDmaTransfer } from "./hw/scanline";
-import { SeedRngAndSetTrainerId, random } from "./random";
+import { joy, ReadKeys } from "@core/gba/input";
+import { rom } from "@core/rom";
+import { InitMainCallbacks, SetVBlankCallback } from "@core/hw/runtime";
+import { LoadOam, ProcessSpriteCopyRequests } from "@core/hw/sprite";
+import { TransferPlttBuffer } from "@core/hw/palette";
+import { ScanlineEffect_InitHBlankDmaTransfer } from "@core/hw/scanline";
+import { SeedRngAndSetTrainerId, random } from "@core/random";
 
 type Stage = "copyright" | "logo" | "grass" | "forest" | "scene3" |
   "title" | "saveload" | "menu" | "clearsave" | "oak";

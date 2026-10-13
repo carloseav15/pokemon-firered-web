@@ -4,21 +4,21 @@
 // Adaptation: the contest-only Surf tilemap path is not taken (IsContest is FALSE).
 
 import * as C from "../../generated/constants";
-import { tasks, type Task } from "../../gba/tasks";
-import { incbin } from "../../hw/assets";
-import { SetGpuReg } from "../../hw/gpu";
-import { BG_PLTT_ID, gPlttBufferFaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "../../hw/palette";
-import { BLDALPHA_BLEND, REG_OFFSET_BLDALPHA } from "../../hw/ppu";
+import { tasks, type Task } from "@core/gba/tasks";
+import { incbin } from "@core/hw/assets";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BG_PLTT_ID, gPlttBufferFaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "@core/hw/palette";
+import { BLDALPHA_BLEND, REG_OFFSET_BLDALPHA } from "@core/hw/ppu";
 import {
   gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams, ScanlineEffect_Stop,
-} from "../../hw/scanline";
+} from "@core/hw/scanline";
 import {
   CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, gSprites, IndexOfSpritePaletteTag,
   MAX_SPRITES, SpriteCallbackDummy, ST_OAM_OBJ_NORMAL, StartSpriteAffineAnim, StartSpriteAnim, type Sprite,
-} from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
 import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
-import { random } from "../../random";
+import { random } from "@core/random";
 import {
   ANIM_ATTACKER, ANIM_DEF_PARTNER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, AnimTranslateLinear,
   BattleAnimHelper_RunSpriteSquash, BattleAnimHelper_SetSpriteSquashParams, DestroyAnimSprite, DestroyAnimVisualTask,

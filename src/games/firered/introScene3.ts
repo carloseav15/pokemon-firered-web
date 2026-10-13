@@ -1,26 +1,26 @@
 // intro.c: IntroCB_Scene3_Entrance, IntroCB_Scene3_Fight and their sprite callbacks.
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import { SPECIES_NIDORINO, CRY_MODE_DOUBLES } from "./generated/constants";
-import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
 import {
   BG_COORD_ADD, BG_COORD_SET, BG_COORD_SUB, type BgTemplate,
   ChangeBgX, ChangeBgY, GetBgX, HideBg, InitBgsFromTemplates,
   LoadBgTilemap, LoadBgTiles, ShowBg,
-} from "./hw/bg";
+} from "@core/hw/bg";
 import {
   ClearGpuRegBits, CopyBufferedValuesToGpuRegs, SetGpuReg,
   SetGpuRegBits,
-} from "./hw/gpu";
+} from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BlendPalettes, FillPalette, gPaletteFade,
   gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, RGB_BLACK,
   RGB_WHITE, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   DISPCNT_WIN0_ON, ppu, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H,
   REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
   WININ_WIN0_BG0, WININ_WIN0_BG1, WININ_WIN0_OBJ, WIN_RANGE,
-} from "./hw/ppu";
+} from "@core/hw/ppu";
 import {
   AFFINEANIMCMD_END, AFFINEANIMCMD_FRAME, ANIMCMD_END, ANIMCMD_FRAME,
   ANIMCMD_JUMP, AnimateSprites, BuildOamBuffer, CalcCenterToCornerVec,
@@ -30,8 +30,8 @@ import {
   SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim,
   type AffineAnimCmd, type AnimCmd, type OamData, type Sprite,
   type SpriteTemplate,
-} from "./hw/sprite";
-import { gSineTable } from "./hw/trig";
+} from "@core/hw/sprite";
+import { gSineTable } from "@core/hw/trig";
 
 const symbols = [
   "sScene3_Bg_Pal", "sScene3_Bg_Gfx", "sScene3_Bg_Map",

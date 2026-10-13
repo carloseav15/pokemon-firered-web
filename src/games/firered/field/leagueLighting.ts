@@ -1,9 +1,9 @@
 // field_specials.c: DoPokemonLeagueLightingEffect and its task family.
 
 import * as C from "../generated/constants";
-import { cdata, incbin16 } from "../hw/assets";
-import { BlendPalettes, BG_PLTT_ID, gPaletteFade, LoadPalette, PLTT_SIZE_4BPP, RGB_BLACK } from "../hw/palette";
-import { tasks } from "../gba/tasks";
+import { cdata, incbin16 } from "@core/hw/assets";
+import { BlendPalettes, BG_PLTT_ID, gPaletteFade, LoadPalette, PLTT_SIZE_4BPP, RGB_BLACK } from "@core/hw/palette";
+import { tasks } from "@core/gba/tasks";
 import { ApplyGlobalTintToPaletteSlot, gGlobalFieldTintMode } from "./fieldPalette";
 import { flagGet, save } from "../save";
 

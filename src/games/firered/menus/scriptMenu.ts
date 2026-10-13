@@ -1,18 +1,18 @@
 // script_menu.c: yes/no boxes, multichoice lists, money/coins boxes and the
 // picture box used by showmonpic.
 
-import { sound } from "../audio/sound";
-import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "../gba/font";
-import { paletteFade } from "../gba/fade";
-import { Sprite } from "../gba/sprite";
-import { tasks } from "../gba/tasks";
-import { printText } from "../gba/textPrinter";
-import { Window } from "../gba/window";
-import { DATA_ROOT, rom } from "../rom";
-import { cdata, incbin, incbin16, symName, type SymRef } from "../hw/assets";
+import { sound } from "@core/audio/sound";
+import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { paletteFade } from "@core/gba/fade";
+import { Sprite } from "@core/gba/sprite";
+import { tasks } from "@core/gba/tasks";
+import { printText } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
+import { DATA_ROOT, rom } from "@core/rom";
+import { cdata, incbin, incbin16, symName, type SymRef } from "@core/hw/assets";
 import { flagGet, save, SV, varGet, varSet } from "../save";
-import { joy, DPAD_DOWN, DPAD_UP } from "../gba/input";
+import { joy, DPAD_DOWN, DPAD_UP } from "@core/gba/input";
 import { GridMenu, Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
 import {
   DestroyListMenuTask, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, LIST_NOTHING_CHOSEN, ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuInitOnSurface,

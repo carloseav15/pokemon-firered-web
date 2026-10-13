@@ -4,9 +4,9 @@
 // the evolution_scene.c result messages (EvolutionScene is ported separately).
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { decode, stringVars } from "../gba/charmap";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { decode, stringVars } from "@core/gba/charmap";
+import { rom } from "@core/rom";
 import { save } from "../save";
 import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, type Pokemon } from "../pokemon/pokemon";
 import { openHardwareChoice, openHardwareMessage, openHardwareMessageWithFanfare } from "./hardwareChoice";

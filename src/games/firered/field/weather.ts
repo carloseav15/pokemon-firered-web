@@ -5,19 +5,19 @@
 // Canvas2D integration and weather sprites remain incomplete.
 // The live stub count is generated in PENDING.md §3b.
 
-import { random } from "../random";
+import { random } from "@core/random";
 import { incrementGameStat, save } from "../save";
-import { hasIncbin, incbin, incbin16 } from "../hw/assets";
+import { hasIncbin, incbin, incbin16 } from "@core/hw/assets";
 import { spriteSheet } from "./gfx4bpp";
 import type { Overworld } from "./overworld";
 import type { Rgb, TileRenderer } from "./tileRenderer";
-import { sound } from "../audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "../generated/constants";
 import * as WE from "./weatherEffects";
-import { gSineTable } from "../hw/trig";
-import { SetGpuReg } from "../hw/gpu";
-import { BLDALPHA_BLEND, REG_OFFSET_BLDALPHA } from "../hw/ppu";
-import { BeginNormalPaletteFade, BlendPalette, BlendPalettesAt, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "../hw/palette";
+import { gSineTable } from "@core/hw/trig";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BLDALPHA_BLEND, REG_OFFSET_BLDALPHA } from "@core/hw/ppu";
+import { BeginNormalPaletteFade, BlendPalette, BlendPalettesAt, GET_B, GET_G, GET_R, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITEALPHA } from "@core/hw/palette";
 
 const GAMMA_STEP_DELAY = 20;
 

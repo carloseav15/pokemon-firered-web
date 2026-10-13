@@ -7,23 +7,23 @@
 // palette straight from the INCBIN instead of a heap buffer.
 
 import * as C from "../../generated/constants";
-import { random } from "../../random";
-import { cdata, incbin, incbin16 } from "../../hw/assets";
-import { affineAnimFrom } from "../../hw/cdataSprite";
-import { SetGpuReg } from "../../hw/gpu";
+import { random } from "@core/random";
+import { cdata, incbin, incbin16 } from "@core/hw/assets";
+import { affineAnimFrom } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   BG_PLTT_ID, BlendPalette, BlendPalettes, gPlttBufferFaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITE,
-} from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
-import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "../../hw/scanline";
+} from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
+import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "@core/hw/scanline";
 import {
   AllocOamMatrix, AllocSpritePalette, CalcCenterToCornerVec, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix,
   FreeSpritePaletteByTag, gSprites, IndexOfSpritePaletteTag, MAX_SPRITES, SeekSpriteAnim, StartSpriteAffineAnim, StartSpriteAnim,
   ST_OAM_AFFINE_DOUBLE, ST_OAM_AFFINE_NORMAL, ST_OAM_HFLIP, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL, ST_OAM_VFLIP, type Sprite,
-} from "../../hw/sprite";
-import { Cos, Sin } from "../../hw/trig";
-import { Q_8_8_inv, Q_8_8_mul } from "../../mathUtil";
-import type { Task } from "../../gba/tasks";
+} from "@core/hw/sprite";
+import { Cos, Sin } from "@core/hw/trig";
+import { Q_8_8_inv, Q_8_8_mul } from "@core/mathUtil";
+import type { Task } from "@core/gba/tasks";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, AnimSpriteOnMonPos, AnimTranslateLinear,
   ArcTan2Neg, CloneBattlerSpriteWithBlend, DestroyAnimSprite, DestroyAnimVisualTask, DestroySpriteAndMatrix, DestroySpriteWithActiveSheet,

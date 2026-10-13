@@ -1,19 +1,19 @@
 // fame_checker.c: the Fame Checker key item screen: person list, flavor-text icon panels, pick mode with the
 // spinning Pokéball and person picture, and the unlock state kept in the save (fameChecker[]).
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { expandPlaceholders } from "./gba/charmap";
-import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "./gba/font";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, SELECT_BUTTON, START_BUTTON } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";
+import { sound } from "@core/audio/sound";
+import { expandPlaceholders } from "@core/gba/charmap";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "@core/hw/assets";
 import {
   type BgTemplate, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect, CopyToBgTilemapBufferRect_ChangePalette,
   FillBgTilemapBufferRect, GetBgX, InitBgsFromTemplates, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, ResetBgsAndClearDma3BusyFlags,
   SetBgTilemapBuffer, ShowBg,
-} from "./hw/bg";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPair, DestroyListMenuTask, ListMenuGetScrollAndRow, ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit,
   ListMenu_ProcessInput, RemoveScrollIndicatorArrowPair, type ListMenu, type ListMenuItem, type ListMenuTemplate, type ScrollArrowsTemplate,
@@ -22,7 +22,7 @@ import { DrawDialogueFrame, GetTextWindowPalette, LoadStdWindowFrameGfx } from "
 import { GetTextSpeedSetting } from "./hw/menuHelpers";
 import {
   BeginNormalPaletteFade, gPaletteFade, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_BD, BLDCNT_TGT2_BG0, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG2, BLDCNT_TGT2_BG3, BLDCNT_TGT2_OBJ,
   DISPCNT_BG0_ON, DISPCNT_BG1_ON, DISPCNT_BG2_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu,
@@ -30,24 +30,24 @@ import {
   REG_OFFSET_BG2CNT, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BG3CNT, REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS,
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V,
   REG_OFFSET_WININ, REG_OFFSET_WINOUT,
-} from "./hw/ppu";
-import { SetMainCallback2, SetVBlankCallback, gMain } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+} from "@core/hw/ppu";
+import { SetMainCallback2, SetVBlankCallback, gMain } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag,
   LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData, ST_OAM_OBJ_BLEND,
   ST_OAM_OBJ_NORMAL, gSprites, type Sprite,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized2, AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import {
   ClearWindowTilemap, COPYWIN_FULL, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { CreateFameCheckerObject, InitObjectEventPalettes } from "./objectEventGraphics";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { flagGet, save, SV, varGet, varSet } from "./save";
 import { CreateTrainerPicSprite, FreeAndDestroyTrainerPicSprite, ResetAllPicSprites } from "./trainerPokemonSprites";
-import { spriteState } from "./hw/sprite";
+import { spriteState } from "@core/hw/sprite";
 
 export const NUM_FAMECHECKER_PERSONS = 16;
 export const FCPICKSTATE_NO_DRAW = 0;

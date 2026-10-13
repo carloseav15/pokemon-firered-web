@@ -1,21 +1,21 @@
 // help_system_util.c: the help overlay's video state machine (RunHelpSystemCallback), its BG tilemap
 // helpers, text renderer and list-menu cursor. The overlay draws into gDecompressionBuffer (BG char
 // block 3 image: tile data plus the screen at 0x3800) and commits it to VRAM like the C DMA copies.
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "./generated/constants";
-import { FONT_FEMALE, FONT_SMALL, GetKeypadIconSheet, KEYPAD_ICONS, glyph, GetStringWidth } from "./gba/font";
-import { L_BUTTON, R_BUTTON, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy } from "./gba/input";
-import { GenerateFontHalfRowLookupTable, GetLastTextColor, RestoreTextColors, SaveTextColors } from "./gba/textPrinter";
-import { incbin, incbin16, loadCData, preloadIncbin } from "./hw/assets";
-import { GetGpuReg, SetGpuReg } from "./hw/gpu";
-import { FillBitmapRect4Bit } from "./hw/window";
+import { FONT_FEMALE, FONT_SMALL, GetKeypadIconSheet, KEYPAD_ICONS, glyph, GetStringWidth } from "@core/gba/font";
+import { L_BUTTON, R_BUTTON, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy } from "@core/gba/input";
+import { GenerateFontHalfRowLookupTable, GetLastTextColor, RestoreTextColors, SaveTextColors } from "@core/gba/textPrinter";
+import { incbin, incbin16, loadCData, preloadIncbin } from "@core/hw/assets";
+import { GetGpuReg, SetGpuReg } from "@core/hw/gpu";
+import { FillBitmapRect4Bit } from "@core/hw/window";
 import { GetFontAttribute } from "./hw/menu";
-import { gMain } from "./hw/runtime";
+import { gMain } from "@core/hw/runtime";
 import {
   BGCNT_16COLOR, DISPCNT_BG0_ON, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS,
   REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT,
-} from "./hw/ppu";
-import { rom } from "./rom";
+} from "@core/hw/ppu";
+import { rom } from "@core/rom";
 import { flagGet, save } from "./save";
 import {
   GetHelpSystemMenuLevel, HelpSystem_IsSinglePlayer, HelpSystem_PrintTopicLabel, HelpSystem_UpdateHasntSeenIntro,

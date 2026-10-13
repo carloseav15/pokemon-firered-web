@@ -1,8 +1,8 @@
 // Port of script_movement.c: task data holds up to OBJECT_EVENTS_COUNT movement
 // slots; each slot maps one object-event id to a byte-script pointer and finished bit.
 
-import { tasks } from "../gba/tasks";
-import { rom } from "../rom";
+import { tasks } from "@core/gba/tasks";
+import { rom } from "@core/rom";
 import { MOVEMENT_ACTION_STEP_END, type ObjectEvent } from "../field/objectEvents";
 import type { Overworld } from "../field/overworld";
 import * as C from "../generated/constants";

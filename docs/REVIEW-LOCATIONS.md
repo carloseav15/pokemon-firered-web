@@ -167,22 +167,22 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 
 | Nombre | C | TS |
 |---|---|---|
-| `DecompressGlyph_NormalCopy2` | `text.c:1503` | `src/games/firered/gba/textPrinter.ts:779` |
+| `DecompressGlyph_NormalCopy2` | `text.c:1503` | `src/core/gba/textPrinter.ts:779` |
 | `TextPrinter*` | 6 funciones | 6 funciones |
-| `TextPrinterDrawDownArrow` | `text.c:471` | `src/games/firered/gba/textPrinter.ts:272` |
-| `TextPrinterClearDownArrow` | `text.c:522` | `src/games/firered/gba/textPrinter.ts:287` |
-| `RenderText` | `text.c:629` | `src/games/firered/gba/textPrinter.ts:339` |
+| `TextPrinterDrawDownArrow` | `text.c:471` | `src/core/gba/textPrinter.ts:272` |
+| `TextPrinterClearDownArrow` | `text.c:522` | `src/core/gba/textPrinter.ts:287` |
+| `RenderText` | `text.c:629` | `src/core/gba/textPrinter.ts:339` |
 
 ## m4a.c
 
 | Nombre | C | TS |
 |---|---|---|
 | `m4aSongNumStart*` | 3 funciones | 3 funciones |
-| `m4aSongNumStop` | `m4a.c:153` | `src/games/firered/audio/sound.ts:193` |
-| `SetPokemonCryTone` | `m4a.c:1660` | `src/games/firered/audio/sound.ts:520` |
-| `SetPokemonCryStereo` | `m4a.c:1758` | `src/games/firered/audio/sound.ts:141` |
-| `IsPokemonCryPlaying` | `m4a.c:1735` | `src/games/firered/audio/sound.ts:540` |
-| `m4aMPlayPanpotControl` | `m4a.c:1314` | `src/games/firered/audio/sound.ts:680` |
+| `m4aSongNumStop` | `m4a.c:153` | `src/core/audio/sound.ts:193` |
+| `SetPokemonCryTone` | `m4a.c:1660` | `src/core/audio/sound.ts:520` |
+| `SetPokemonCryStereo` | `m4a.c:1758` | `src/core/audio/sound.ts:141` |
+| `IsPokemonCryPlaying` | `m4a.c:1735` | `src/core/audio/sound.ts:540` |
+| `m4aMPlayPanpotControl` | `m4a.c:1314` | `src/core/audio/sound.ts:680` |
 
 ## otros
 
@@ -206,7 +206,7 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 | `GetInGameTradeMail` | `trade_scene.c:2500` | `src/games/firered/pokemon/mail.ts:279` |
 | `attachTradeMail` | — | `src/games/firered/pokemon/mail.ts:263` |
 | `TradeAnimInit_LoadGfx` | `trade_scene.c:927` | `src/games/firered/pokemon/ingameTrade.ts:356` |
-| `ChangeBgX` | `bg.c:590` | `src/games/firered/hw/bg.ts:379` |
+| `ChangeBgX` | `bg.c:590` | `src/core/hw/bg.ts:379` |
 
 ## No encontrados (buscar a mano)
 

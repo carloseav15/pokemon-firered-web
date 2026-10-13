@@ -19,7 +19,7 @@ import { SetControllerToOpponent } from "./controller_opponent";
 import { SetControllerToOakOrOldMan } from "./controller_oak_old_man";
 import { SetControllerToSafari } from "./controller_safari";
 import { MarkBattlerReceivedLinkData } from "./util";
-import { tasks } from "../gba/tasks";
+import { tasks } from "@core/gba/tasks";
 import {
   gLinkPlayers, GetLinkPlayerCount, getReceivedRemoteLinkPlayers, getWirelessCommType,
   setWirelessCommTypeToRfu, linkTransport, gBlockRecvBuffer,

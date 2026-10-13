@@ -50,10 +50,10 @@ tiles.
 
 | Qué | Dónde | Notas |
 |---|---|---|
-| Cabecera de mapa | `public/fr/maps/MAP_*.json` | `connections`, `objects`, `warps`, `coords` (activadores: `var`, `value`, `scriptName`), `bgs`. Tipos en `src/games/firered/rom.ts:11-62` (`MapHeader` en 38) |
+| Cabecera de mapa | `public/fr/maps/MAP_*.json` | `connections`, `objects`, `warps`, `coords` (activadores: `var`, `value`, `scriptName`), `bgs`. Tipos en `src/core/rom.ts:11-62` (`MapHeader` en 38) |
 | Layout | `public/fr/layouts/LAYOUT_*.json` | `width`, `height`, `primary`, `secondary`, `blocks` (u16 en base64; `rom.loadLayout` lo decodifica) |
 | Tileset | `public/fr/tilesets/gTileset_*.json` | tiles 4bpp, paletas, metatiles, `attributes` (u32 por metatile) |
-| Cargadores | `src/games/firered/rom.ts:405` `loadMap`, `:421` `loadLayout`, `:449` `loadTileset` | Devuelven los tipos de `rom.ts` |
+| Cargadores | `src/core/rom.ts:405` `loadMap`, `:421` `loadLayout`, `:449` `loadTileset` | Devuelven los tipos de `rom.ts` |
 | Bits de cada bloque | `src/games/firered/field/fieldmap.ts:11-15` | metatile `& 0x3FF`; colisión `& 0xC00 >> 10`; elevación `& 0xF000 >> 12` |
 | Atributos de un metatile | `src/games/firered/field/fieldmap.ts:428-429` | primario si id < 640 (`NUM_METATILES_IN_PRIMARY`), si no secundario `id - 640`. Para extraer el comportamiento, sigue `ExtractMetatileAttribute` y `sMetatileAttrMasks` del C (`fieldmap.c:63` y `:382`) |
 | Comportamientos | `src/games/firered/generated/metatileBehavior.ts` | `MetatileBehavior_IsSurfable`, `IsJumpEast/West/North/South`, `IsTallGrass`, `IsWaterfall`… |

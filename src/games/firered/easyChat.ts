@@ -1,10 +1,10 @@
 // easy_chat.c: easy-chat word lookup, default phrases, trendy-saying bookkeeping,
 // and the group/alphabetical selection lists used by the word picker.
 import * as C from "./generated/constants";
-import { decode, encode, stringVars } from "./gba/charmap";
-import { random } from "./random";
-import { cdata, hasCData, loadCData, type SymRef } from "./hw/assets";
-import { rom } from "./rom";
+import { decode, encode, stringVars } from "@core/gba/charmap";
+import { random } from "@core/random";
+import { cdata, hasCData, loadCData, type SymRef } from "@core/hw/assets";
+import { rom } from "@core/rom";
 import { flagGet, IsNationalPokedexEnabled, save, SV, varGet } from "./save";
 import type { SaveData } from "./save";
 import { GetNationalPokedexCount, speciesName } from "./pokemon/pokemon";

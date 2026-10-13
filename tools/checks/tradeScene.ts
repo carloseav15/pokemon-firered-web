@@ -4,10 +4,10 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData, registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
-import { rom } from '../../src/games/firered/rom.ts';
-import { gMain } from '../../src/games/firered/hw/runtime.ts';
-import { tasks } from '../../src/games/firered/gba/tasks.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
+import { rom } from '../../src/core/rom.ts';
+import { gMain } from '../../src/core/hw/runtime.ts';
+import { tasks } from '../../src/core/gba/tasks.ts';
 import { flagClear, flagGet, save, SV, varSet } from '../../src/games/firered/save.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';
 

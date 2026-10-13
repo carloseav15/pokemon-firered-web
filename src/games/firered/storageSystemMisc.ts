@@ -6,25 +6,25 @@ import {
   BG_ATTR_BASETILE, BG_COORD_ADD, BG_COORD_SET, BG_ATTR_PALETTEMODE, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
   FillBgTilemapBufferRect_Palette0, GetBgAttribute, HideBg, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, SetBgAttribute, ShowBg,
   WriteSequenceToBgTilemapBuffer,
-} from "./hw/bg";
-import { ClearGpuRegBits, SetGpuRegBits } from "./hw/gpu";
+} from "@core/hw/bg";
+import { ClearGpuRegBits, SetGpuRegBits } from "@core/hw/gpu";
 import { ScheduleBgCopyTilemapToVram } from "./hw/menuHelpers";
 import { GetTextWindowPalette } from "./hw/menu";
-import { BG_PLTT_ID, BlendPalettes, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITE } from "./hw/palette";
-import { ppu, REG_OFFSET_BG0CNT } from "./hw/ppu";
+import { BG_PLTT_ID, BlendPalettes, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITE } from "@core/hw/palette";
+import { ppu, REG_OFFSET_BG0CNT } from "@core/hw/ppu";
 import {
   AllocSpritePalette, CreateSprite, GetSpriteTileStartByTag, gSprites, LoadSpriteSheet, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL, StartSpriteAffineAnim,
   SpriteCallbackDummy, type Sprite, type SpriteTemplate,
-} from "./hw/sprite";
-import { affineAnimsFrom, animsFrom, oamFrom } from "./hw/cdataSprite";
-import { cdata } from "./hw/assets";
-import { gSineTable } from "./hw/trig";
+} from "@core/hw/sprite";
+import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
+import { cdata } from "@core/hw/assets";
+import { gSineTable } from "@core/hw/trig";
 import {
   AddWindow8Bit, BlitBitmapRectToWindow4BitTo8Bit, COPYWIN_FULL, COPYWIN_GFX, CopyWindowToVram8Bit, FillWindowPixelBuffer, FillWindowPixelBuffer8Bit,
   FillWindowPixelRect8Bit, PIXEL_FILL, PutWindowTilemap, WINDOW_NONE, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { GetItemIconGfxPtr, ItemId_GetDescription } from "./bagMenu";
-import { FONT_NORMAL } from "./gba/font";
+import { FONT_NORMAL } from "@core/gba/font";
 import { ItemId_GetName } from "./pokemon/items";
 import { GetMonData, SetMonData, type Mon } from "./pokemon/mon";
 import { GetBoxedMonPtr, GetCurrentBoxMonData, SetBoxMonAt, SetCurrentBoxMonData, StorageGetCurrentBox, ZeroBoxMonAt } from "./pokemon/storage";
@@ -41,7 +41,7 @@ import {
   ITEM_ANIM_PUT_DOWN, MAX_ITEM_ICONS, MULTIMOVE_CHANGE_SELECTION, MULTIMOVE_GRAB_SELECTION, MULTIMOVE_MOVE_MONS, MULTIMOVE_PLACE_MONS,
   MULTIMOVE_SINGLE, MULTIMOVE_START, OPTION_MOVE_ITEMS, PALTAG_ITEM_ICON_0, sParty,
 } from "./storageSystemInternal";
-import { incbin } from "./hw/assets";
+import { incbin } from "@core/hw/assets";
 
 const OBJ_VRAM0 = 0x10000;
 const TILE_SIZE_4BPP = 32;

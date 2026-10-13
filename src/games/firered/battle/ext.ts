@@ -9,16 +9,16 @@
 import * as C from "../generated/constants";
 import { DoNamingScreen as OpenNamingScreen } from "../namingScreen";
 import { openHardwareChoice } from "../menus/hardwareChoice";
-import { decode, stringVars } from "../gba/charmap";
-import { A_BUTTON, B_BUTTON, JOY_NEW } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { FONT_NORMAL } from "../gba/font";
-import { b64 } from "../rom";
+import { decode, stringVars } from "@core/gba/charmap";
+import { A_BUTTON, B_BUTTON, JOY_NEW } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { FONT_NORMAL } from "@core/gba/font";
+import { b64 } from "@core/rom";
 import type { NameBuffer } from "../menus/namingModel";
-import { sound } from "../audio/sound";
+import { sound } from "@core/audio/sound";
 import { clearRematchStateByTrainerId } from "../field/vsSeeker";
-import { cdata } from "../hw/assets";
-import { gMain } from "../hw/runtime";
+import { cdata } from "@core/hw/assets";
+import { gMain } from "@core/hw/runtime";
 import { ItemId_GetBattleFunc, itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
 import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "../pokemon/pokemon";
 import {
@@ -27,7 +27,7 @@ import {
 import { GetSetPokedexFlag, PartyMonHasStatus } from "../pokemon/mon_extra";
 import { IsPokemonStorageFull } from "../pokemon/storage";
 import { symPalette } from "../pokemon/pics";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import { flagGet, flagSet, incrementGameStat, IsNationalPokedexEnabled, save, varGet, varSet } from "../save";
 import { BattlePokemon } from "../generated/structs";
 import {

@@ -10,32 +10,32 @@
 // screen's own task so leave() restores that table first.
 
 import type { Game } from "./game";
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import { G } from "./battle/globals";
-import { CHAR_SPACE, EOS, EXT_CTRL_CODE_BEGIN } from "./gba/charmap";
-import { FONT_NORMAL, GetStringWidth } from "./gba/font";
-import { A_BUTTON, B_BUTTON, joy } from "./gba/input";
-import { STRING_VAR4_LENGTH, stringVars } from "./gba/stringBuffers";
-import { tasks } from "./gba/tasks";
+import { CHAR_SPACE, EOS, EXT_CTRL_CODE_BEGIN } from "@core/gba/charmap";
+import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, joy } from "@core/gba/input";
+import { STRING_VAR4_LENGTH, stringVars } from "@core/gba/stringBuffers";
+import { tasks } from "@core/gba/tasks";
 import * as C from "./generated/constants";
 import { ConvertIntToDecimalStringN, StringCompareN, StringCopy, StringCopyN, StringExpandPlaceholders, StringFillWithTerminator } from "./generated/stringUtil";
-import { cdata, incbin, incbin16, loadCData, preloadIncbin, preloadPacks } from "./hw/assets";
-import { ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect, InitBgsFromTemplates, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+import { cdata, incbin, incbin16, loadCData, preloadIncbin, preloadPacks } from "@core/hw/assets";
+import { ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect, InitBgsFromTemplates, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import { GetTextWindowPalette } from "./hw/menu";
-import { BG_PLTT_ID, BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_BG0_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "./hw/ppu";
-import { HwScene, SetMainCallback2, SetVBlankCallback, gMain } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
-import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+import { BG_PLTT_ID, BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { DISPCNT_BG0_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "@core/hw/ppu";
+import { HwScene, SetMainCallback2, SetVBlankCallback, gMain } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
+import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
-import { ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate } from "./hw/window";
+import { ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate } from "@core/hw/window";
 import { gLinkPlayers } from "./linkState";
 import { gTrainerCards } from "./menus/trainerCard";
 import { GetGameStat, IncrementGameStat, save, SetGameStat, SV, varGet, type LinkBattleRecordSave, type LinkBattleRecordsSave } from "./save";
 import { ResetAllPicSprites } from "./trainerPokemonSprites";
 import { PrintTrainerTowerRecords } from "./trainerTower";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { InUnionRoom } from "./unionRoom";
 
 const data = <T>(name: string) => cdata<T>("battle_records", name);

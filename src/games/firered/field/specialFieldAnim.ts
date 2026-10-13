@@ -1,9 +1,9 @@
 // special_field_anim.c: Sea Cottage teleporter tile animations.
 // The source creates priority-0 tasks; the shared GBA task scheduler advances
 // them once per frame, while FieldMap's onChange invalidates the Canvas map.
-import { tasks } from "../gba/tasks";
+import { tasks } from "@core/gba/tasks";
 import { MAPGRID_COLLISION_MASK } from "./fieldmap";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import type { Overworld } from "./overworld";
 
 function playerCurrentCoords(ow: Overworld): { x: number; y: number } {

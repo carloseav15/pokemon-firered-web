@@ -3,30 +3,30 @@
 // Pick/Switch/Cancel bar). CloseAndSaveOptionMenu writes the options back;
 // the caller returns to the field with the start menu open.
 
-import { sound } from "./audio/sound";
-import { intToDecimal, STR_CONV_MODE_LEADING_ZEROS } from "./gba/charmap";
-import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { textOptions } from "./gba/textPrinter";
-import { cdata, incbin, loadCData, preloadPacks } from "./hw/assets";
+import { sound } from "@core/audio/sound";
+import { intToDecimal, STR_CONV_MODE_LEADING_ZEROS } from "@core/gba/charmap";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { textOptions } from "@core/gba/textPrinter";
+import { cdata, incbin, loadCData, preloadPacks } from "@core/hw/assets";
 import {
   BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags,
   ShowBg,
-} from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetTextWindowPalette, LoadStdWindowGfxOnBg } from "./hw/menu";
-import { BeginNormalPaletteFade, BG_PLTT_ID, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
+import { BeginNormalPaletteFade, BG_PLTT_ID, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_EFFECT_LIGHTEN, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY,
   REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT, WIN_RANGE, WININ_WIN0_BG0,
-} from "./hw/ppu";
-import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+} from "@core/hw/ppu";
+import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
+import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
-import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap } from "./hw/window";
-import { rom } from "./rom";
+import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap } from "@core/hw/window";
+import { rom } from "@core/rom";
 import { save } from "./save";
 
 const MENUITEM_TEXTSPEED = 0, MENUITEM_BATTLESCENE = 1, MENUITEM_BATTLESTYLE = 2, MENUITEM_SOUND = 3, MENUITEM_BUTTONMODE = 4, MENUITEM_FRAMETYPE = 5,

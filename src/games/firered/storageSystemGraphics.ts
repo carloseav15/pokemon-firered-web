@@ -2,27 +2,27 @@
 // animations, wallpaper loading, box titles and the box scroll arrows.
 import * as C from "./generated/constants";
 import { StringCopyPadded } from "./generated/stringUtil";
-import { FONT_NORMAL_COPY_1, GetStringWidth } from "./gba/font";
-import { tasks } from "./gba/tasks";
-import { cdata, incbin, incbin16, symName } from "./hw/assets";
+import { FONT_NORMAL_COPY_1, GetStringWidth } from "@core/gba/font";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin, incbin16, symName } from "@core/hw/assets";
 import {
   CopyBgTilemapBufferToVram, CopyRectToBgTilemapBufferRect, FillBgTilemapBufferRect, IsDma3ManagerBusyWithBgCopy, LoadBgTiles,
   SetBgTilemapBuffer, ShowBg,
-} from "./hw/bg";
-import { affineAnimsFrom, animsFrom, oamFrom } from "./hw/cdataSprite";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import { FuncIsActiveTask } from "./hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITEALPHA,
   UpdatePaletteFade,
-} from "./hw/palette";
-import { ppu, REG_OFFSET_BG2CNT } from "./hw/ppu";
+} from "@core/hw/palette";
+import { ppu, REG_OFFSET_BG2CNT } from "@core/hw/ppu";
 import {
   CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable, gSprites, IndexOfSpritePaletteTag,
   InitSpriteAffineAnim, LoadSpritePalettes, LoadSpriteSheet, MAX_SPRITES, ST_OAM_AFFINE_NORMAL, ST_OAM_OBJ_BLEND, StartSpriteAffineAnim,
   StartSpriteAnim, SpriteCallbackDummy, type Sprite, type SpriteTemplate,
-} from "./hw/sprite";
-import { gSineTable } from "./hw/trig";
+} from "@core/hw/sprite";
+import { gSineTable } from "@core/hw/trig";
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles, LoadMonIconPalettes } from "./pokemonIcon";
 import { GetBoxMonDataAt, GetBoxNamePtr, GetBoxWallpaper, GetCurrentBoxMonData, SetBoxWallpaper, StorageGetCurrentBox } from "./pokemon/storage";
 import { GetMonData } from "./pokemon/mon";

@@ -3,24 +3,24 @@
 // Uses the exported C templates, window definitions, and graphics.
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_2 } from "../gba/font";
-import { TEXT_SKIP_DRAW } from "../gba/textPrinter";
-import { incbin, incbin16, cdata, loadCData, preloadPacks, symName } from "../hw/assets";
-import { CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "../hw/bg";
-import { InitGpuRegManager, SetGpuReg } from "../hw/gpu";
+import { sound } from "@core/audio/sound";
+import { expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { FONT_NORMAL, FONT_NORMAL_COPY_2 } from "@core/gba/font";
+import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
+import { incbin, incbin16, cdata, loadCData, preloadPacks, symName } from "@core/hw/assets";
+import { CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "@core/hw/bg";
+import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
 import { DestroyListMenuTask, ListMenu_ProcessInput, ListMenuInit, ListMenuLoadStdPalAt, BlitMenuInfoIcon, listMenuTemplate, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, SCROLL_ARROW_UP, AddScrollIndicatorArrowPairParameterized, ListMenuGetScrollAndRow, RemoveScrollIndicatorArrowPair, StepScrollIndicatorArrowPair, type ListMenuItem, type ListMenu } from "../hw/listMenu";
 import { DrawStdFrameWithCustomTileAndPalette, FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, LoadUserWindowGfx } from "../hw/menu";
-import { BG_PLTT_ID, LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "../hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "../hw/ppu";
-import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "../hw/runtime";
-import { AnimateSprites, BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests, type Sprite } from "../hw/sprite";
+import { BG_PLTT_ID, LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "@core/hw/runtime";
+import { AnimateSprites, BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests, type Sprite } from "@core/hw/sprite";
 import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "../hw/text";
-import { COPYWIN_FULL, COPYWIN_GFX, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap, type WindowTemplate } from "../hw/window";
-import { rom } from "../rom";
+import { COPYWIN_FULL, COPYWIN_GFX, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap, type WindowTemplate } from "@core/hw/window";
+import { rom } from "@core/rom";
 import { openHardwareMessageYesNo } from "./hardwareChoice";
-import { joy, JOY_NEW, A_BUTTON, B_BUTTON } from "../gba/input";
+import { joy, JOY_NEW, A_BUTTON, B_BUTTON } from "@core/gba/input";
 
 const ARROW_TAG = 0x5a25;
 const COLOR_LABEL = [0, 2, 3];

@@ -28,6 +28,7 @@ else:
     sibling = ROOT.parent / "pokefirered"
     DECOMP = (sibling if sibling.exists() else ROOT / "pokefirered").resolve()
 SRC = ROOT / "src" / "games" / "firered"
+CORE = ROOT / "src" / "core"  # shared engine modules moved out of SRC (docs/SEPARACION-MOTOR.md step 5)
 OUT = ROOT / "PORT-INVENTORY.md"
 
 # Replaced by the TS hardware layer, the browser, or the decomp exporter.
@@ -220,7 +221,7 @@ def load_ts() -> tuple[set[str], dict[str, bool], dict[str, list[str]]]:
     # norm(name) -> True if at least one TS `function name` has a real body.
     real_def: dict[str, bool] = {}
     cites: dict[str, list[str]] = {}
-    for path in sorted(SRC.rglob("*.ts")):
+    for path in sorted([*SRC.rglob("*.ts"), *(CORE.rglob("*.ts") if CORE.exists() else [])]):
         if "generated" in path.parts:
             continue
         text = path.read_text()
@@ -237,7 +238,7 @@ def load_ts() -> tuple[set[str], dict[str, bool], dict[str, list[str]]]:
             key = norm(m.group(1))
             real = not is_trivial(body_after(code, m.end() - 1))
             real_def[key] = real_def.get(key, False) or real
-        rel = str(path.relative_to(SRC))
+        rel = str(path.relative_to(SRC)) if SRC in path.parents else "core/" + str(path.relative_to(CORE))
         for c in set(re.findall(r"\b([A-Za-z0-9_]+)\.c\b", text)):
             cites.setdefault(c, []).append(rel)
     return idents, real_def, cites

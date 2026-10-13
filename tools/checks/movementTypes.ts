@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import "./setupNodeGbaMock";
-import { registerCData } from "../../src/games/firered/hw/assets";
+import { registerCData } from "../../src/core/hw/assets";
 import * as C from "../../src/games/firered/generated/constants";
 import { DIR_SOUTH, ObjectEvent, ObjectEvents } from "../../src/games/firered/field/objectEvents";
 

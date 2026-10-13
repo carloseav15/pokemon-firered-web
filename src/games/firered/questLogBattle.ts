@@ -1,7 +1,7 @@
 // quest_log_battle.c: record the single-player trainer and wild battle result.
 
 import * as C from "./generated/constants";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { currentRegionMapSection, GetMonData, gEnemyParty } from "./pokemon/mon";
 import { G, gBattleMons, gBattleResults, gBattleStruct } from "./battle/globals";
 import { GetBattlerAtPosition, GetBattlerSide } from "./battle/util";

@@ -1,13 +1,13 @@
 // battle_anim_smokescreen.c: the four-quadrant Smokescreen impact cloud.
 // The enemy shadow sheet/template of this file are used by gfx_sfx_util.ts.
 
-import { cdata, incbin, symName, type SymRef } from "../../hw/assets";
-import { templateFrom, type CSpriteTemplate } from "../../hw/cdataSprite";
+import { cdata, incbin, symName, type SymRef } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
   AnimateSprite, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag,
   GetSpriteTileStartByTag, gSprites, LoadSpritePalette, LoadSpriteSheet, SpriteCallbackDummy, StartSpriteAnim, type Sprite,
   type SpriteTemplate,
-} from "../../hw/sprite";
+} from "@core/hw/sprite";
 import { registerAnimSpriteCallbacks } from "../animRegistry";
 
 // SmokescreenImpact main sprite data

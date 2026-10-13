@@ -4,11 +4,11 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData, registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
-import { rom } from '../../src/games/firered/rom.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
+import { rom } from '../../src/core/rom.ts';
 import * as SlotMachine from '../../src/games/firered/menus/slotMachine.ts';
-import { gMain } from '../../src/games/firered/hw/runtime.ts';
-import { tasks } from '../../src/games/firered/gba/tasks.ts';
+import { gMain } from '../../src/core/hw/runtime.ts';
+import { tasks } from '../../src/core/gba/tasks.ts';
 import { save } from '../../src/games/firered/save.ts';
 
 const root = process.cwd() + '/public/fr/';

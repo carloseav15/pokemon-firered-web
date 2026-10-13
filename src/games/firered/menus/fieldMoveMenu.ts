@@ -4,9 +4,9 @@
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
-import { decode, expandPlaceholders, stringVars } from "../gba/charmap";
-import { rom } from "../rom";
-import { sound } from "../audio/sound";
+import { decode, expandPlaceholders, stringVars } from "@core/gba/charmap";
+import { rom } from "@core/rom";
+import { sound } from "@core/audio/sound";
 import { SetUpFieldMove_Cut } from "../field/fieldMoves";
 import { flagGet, flagSet, save, varSet, SV, type WarpData } from "../save";
 import type { Game } from "../game";

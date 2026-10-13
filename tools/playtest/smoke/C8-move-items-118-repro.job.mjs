@@ -2,7 +2,7 @@ export default async function run(ctx) {
   await ctx.loadSave("pewter-pc");
 
   const repro = await ctx.runEval(`
-    const T = await H.mod("/src/games/firered/gba/tasks.ts");
+    const T = await H.mod("/src/core/gba/tasks.ts");
     const toMenu = async () => {
       for (let i = 0; i < 40; i++) {
         const t = T.tasks.tasks.find(t => t.isActive && t.func.name === "Task_PCMainMenu");

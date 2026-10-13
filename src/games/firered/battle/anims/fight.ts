@@ -3,13 +3,13 @@
 // Revenge, Focus Punch and the Sky Uppercut background.
 
 import * as C from "../../generated/constants";
-import { SetGpuReg } from "../../hw/gpu";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   CreateSprite, DestroySprite, FreeOamMatrix, gSprites, MAX_SPRITES, SpriteCallbackDummy, ST_OAM_HFLIP, ST_OAM_VFLIP,
   StartSpriteAffineAnim, StartSpriteAnim, type Sprite,
-} from "../../hw/sprite";
-import { Sin } from "../../hw/trig";
-import { random } from "../../random";
+} from "@core/hw/sprite";
+import { Sin } from "@core/hw/trig";
+import { random } from "@core/random";
 import {
   ANIM_ATTACKER, animState, AnimTranslateLinear, AnimTranslateLinear_WithFollowup, AnimTravelDiagonally, DestroyAnimSprite,
   DestroyAnimVisualTask, DestroySpriteAndMatrix, GetBattlerSpriteBGPriority, GetBattlerSpriteCoord, GetBattlerSpriteCoordAttr,

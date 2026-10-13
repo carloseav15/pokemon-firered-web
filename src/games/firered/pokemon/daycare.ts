@@ -2,10 +2,10 @@
 // Route 5 Day-Care (one mon), egg creation, egg step counting and hatching.
 
 import * as C from "../generated/constants";
-import { CHAR_NEWLINE, encode, EOS, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
+import { CHAR_NEWLINE, encode, EOS, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
 import { StringAppend, StringCompare, StringCopy, StringCopy_Nickname } from "../generated/stringUtil";
-import { random } from "../random";
-import { rom } from "../rom";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { flagSet, save, SV, varGet, varSet, type MailData } from "../save";
 import { ClearMailStruct, GetMailDataForMon, GiveMailToMon2, MonHasMail, TakeMailFromMon } from "./mail";
 import {

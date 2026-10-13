@@ -2,29 +2,29 @@
 // The link-battle VS screen (DrawLinkBattle*, InitLinkBattleVsScreen) is not ported: there is no link play.
 
 import * as C from "../generated/constants";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import { save } from "../save";
-import { cdata, incbin, symName } from "../hw/assets";
-import { EnableInterrupts, SetGpuReg } from "../hw/gpu";
+import { cdata, incbin, symName } from "@core/hw/assets";
+import { EnableInterrupts, SetGpuReg } from "@core/hw/gpu";
 import {
   CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, type BgTemplate,
-} from "../hw/bg";
-import { gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, RGB } from "../hw/palette";
+} from "@core/hw/bg";
+import { gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, RGB } from "@core/hw/palette";
 import { ppu, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_OBJWIN_ON, DISPCNT_WIN0_ON, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT,
-  REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "../hw/ppu";
+  REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
 import { DeactivateAllTextPrinters } from "../hw/text";
-import { GetWindowAttribute, InitWindows, WINDOW_BG, type WindowTemplate } from "../hw/window";
+import { GetWindowAttribute, InitWindows, WINDOW_BG, type WindowTemplate } from "@core/hw/window";
 import { GetTextWindowPalette } from "../hw/menu";
 import { G } from "./globals";
 import { battleHost } from "./host";
-import { AnimateSprites, BuildOamBuffer, CreateSprite, gSprites, ResetSpriteData } from "../hw/sprite";
-import { SetMainCallback2 } from "../hw/runtime";
-import { templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, gSprites, ResetSpriteData } from "@core/hw/sprite";
+import { SetMainCallback2 } from "@core/hw/runtime";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import { SpriteCB_UnusedDebugSprite } from "./main_init";
 
 export {
   BG_ATTR_PRIORITY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette, IsDma3ManagerBusyWithBgCopy, SetBgAttribute, ShowBg,
-} from "../hw/bg";
+} from "@core/hw/bg";
 
 const BG_CHAR_ADDR = (n: number) => n * 0x4000;
 const BG_SCREEN_ADDR = (n: number) => n * 0x800;

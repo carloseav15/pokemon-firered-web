@@ -4,15 +4,15 @@
 
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
-import { cdata, symName, type SymRef } from "../hw/assets";
-import { Sprite, type FrameImage } from "../gba/sprite";
-import { random } from "../random";
-import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
+import { cdata, symName, type SymRef } from "@core/hw/assets";
+import { Sprite, type FrameImage } from "@core/gba/sprite";
+import { random } from "@core/random";
+import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "@core/rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum, GetSpinDirectionAnimNum } from "../generated/eventObjectAnims";
 import { flagGet, flagSet, varGet } from "../save";
 import { gQuestLogPlaybackState, QL_GetPlaybackState, QuestLogRecordNPCStep } from "../questLogEvents";
 import { CONNECTION_INVALID, MAP_OFFSET, MAP_OFFSET_H, MAP_OFFSET_W, MapGridGetCollisionAt, MapGridGetElevationAt, type FieldMap } from "./fieldmap";
-import { gSineTable } from "../hw/trig";
+import { gSineTable } from "@core/hw/trig";
 
 export const DIR_NONE = 0, DIR_SOUTH = 1, DIR_NORTH = 2, DIR_WEST = 3, DIR_EAST = 4;
 export const DIR_SOUTHWEST = 5, DIR_SOUTHEAST = 6, DIR_NORTHWEST = 7, DIR_NORTHEAST = 8;

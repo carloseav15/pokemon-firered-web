@@ -3,17 +3,17 @@
 // Clefairy mascot animations, coin display digits, help window, line lights
 // and winning line flashing all follow the decomp.
 
-import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "../gba/font";
-import { A_BUTTON, B_BUTTON, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, JOY_HELD, JOY_NEW, R_BUTTON, START_BUTTON } from "../gba/input";
-import { tasks, type TaskFunc } from "../gba/tasks";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, JOY_HELD, JOY_NEW, R_BUTTON, START_BUTTON } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
 import {
   ChangeBgX, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect_Palette0,
   GetBgTilemapBuffer, HideBg, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles,
   ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "../hw/bg";
+} from "@core/hw/bg";
 import {
   ClearGpuRegBits, CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits,
-} from "../hw/gpu";
+} from "@core/hw/gpu";
 import {
   CreateYesNoMenu, DestroyYesNoMenu, GetTextWindowPalette, LoadStdWindowGfx, LoadStdWindowGfxOnBg,
   LoadUserWindowGfx, LoadUserWindowGfx2, Menu_MoveCursorNoWrapAround, Menu_ProcessInputNoWrapClearOnChoose,
@@ -22,7 +22,7 @@ import { DrawTextBorderOuter } from "../hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded,
   LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
-} from "../hw/palette";
+} from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_DARKEN, BLDCNT_TGT1_BD, BLDCNT_TGT1_BG3, BLDCNT_TGT1_OBJ, DISPCNT_MODE_0,
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, DISPLAY_WIDTH, OAM_SIZE,
@@ -31,30 +31,30 @@ import {
   WININ_WIN0_BG0, WININ_WIN0_BG1, WININ_WIN0_BG2, WININ_WIN0_BG3, WININ_WIN0_CLR,
   WININ_WIN0_OBJ, WINOUT_WIN01_BG0, WINOUT_WIN01_BG2, WINOUT_WIN01_BG3, WINOUT_WIN01_CLR,
   WINOUT_WIN01_OBJ,
-} from "../hw/ppu";
+} from "@core/hw/ppu";
 import {
   gMain, type MainCallback, SetHBlankCallback, SetMainCallback1, SetMainCallback2, SetVBlankCallback,
-} from "../hw/runtime";
+} from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gSprites,
   IndexOfSpritePaletteTag, LoadCompressedSpriteSheet, LoadOam, LoadSpritePalette,
   ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, type Sprite,
-} from "../hw/sprite";
-import { templateFrom } from "../hw/cdataSprite";
-import { cdata, incbin, incbin16, loadCData, preloadPacks } from "../hw/assets";
-import { gSineTable } from "../hw/trig";
+} from "@core/hw/sprite";
+import { templateFrom } from "@core/hw/cdataSprite";
+import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
+import { gSineTable } from "@core/hw/trig";
 import { AddTextPrinterParameterized3, AddTextPrinterParameterized5 } from "../hw/text";
-import { TEXT_SKIP_DRAW } from "../gba/textPrinter";
+import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
 import {
   ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers,
   InitWindows, PutWindowTilemap, type WindowTemplate,
-} from "../hw/window";
-import { sound } from "../audio/sound";
-import { random } from "../random";
+} from "@core/hw/window";
+import { sound } from "@core/audio/sound";
+import { random } from "@core/random";
 import { incrementGameStat, save } from "../save";
 import { GetCoins as getCoins, removeCoins } from "../pokemon/items";
 import { SetQLPlayedTheSlots } from "../questLogEvents";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import * as C from "../generated/constants";
 
 const NUM_REELS = 3;

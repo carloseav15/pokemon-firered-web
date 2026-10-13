@@ -2,16 +2,16 @@
 // done with WIN0 and the brighten blend. Direct port; task data indices are
 // the C's tState..tBldYBak.
 
-import { tasks } from "./gba/tasks";
-import { GetGpuReg, ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+import { tasks } from "@core/gba/tasks";
+import { GetGpuReg, ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import { FuncIsActiveTask } from "./hw/menuHelpers";
-import { BG_PLTT_ID, BlendPalettes, gPlttBufferFaded, PALETTES_ALL, RGB_BLACK } from "./hw/palette";
+import { BG_PLTT_ID, BlendPalettes, gPlttBufferFaded, PALETTES_ALL, RGB_BLACK } from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_LIGHTEN, BLDCNT_TGT1_BD, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1, BLDCNT_TGT1_BG2, BLDCNT_TGT1_BG3, BLDCNT_TGT1_OBJ, DISPCNT_WIN0_ON,
   DISPLAY_HEIGHT, DISPLAY_WIDTH, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ,
   REG_OFFSET_WINOUT, WIN_RANGE, WININ_WIN0_BG_ALL, WININ_WIN0_CLR, WININ_WIN0_OBJ,
-} from "./hw/ppu";
-import type { TaskFunc } from "./gba/tasks";
+} from "@core/hw/ppu";
+import type { TaskFunc } from "@core/gba/tasks";
 
 const tState = 0, tXSpeed = 1, tYSpeed = 2, tWin0Left = 3, tWin0Right = 4, tWin0Top = 5, tWin0Bottom = 6, tBldCntBak = 7, tBldYBak = 8;
 

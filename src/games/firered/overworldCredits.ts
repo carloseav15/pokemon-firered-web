@@ -24,27 +24,27 @@
 //    centered on the player (CreditsShowCurrentField).
 // Needs loadCData("credits") and preloadCreditsMaps().
 
-import { tasks } from "./gba/tasks";
+import { tasks } from "@core/gba/tasks";
 import { TilesetAnimator } from "./field/tilesetAnimator";
 import { SetGlobalFieldTintMode } from "./field/fieldPalette";
-import { cdata } from "./hw/assets";
+import { cdata } from "@core/hw/assets";
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg, BG_ATTR_MOSAIC,
   type BgTemplate,
-} from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
-import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "./hw/palette";
+} from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "@core/hw/palette";
 import {
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS,
   REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT, ppu,
-} from "./hw/ppu";
-import { gMain, SetMainCallback2 } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer } from "./hw/sprite";
-import { UpdatePaletteFade } from "./hw/palette";
+} from "@core/hw/ppu";
+import { gMain, SetMainCallback2 } from "@core/hw/runtime";
+import { AnimateSprites, BuildOamBuffer } from "@core/hw/sprite";
+import { UpdatePaletteFade } from "@core/hw/palette";
 import { DoScheduledBgTilemapCopiesToVram } from "./hw/menuHelpers";
 import { FieldMap, loadMap, METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY, type LoadedMap } from "./field/fieldmap";
 import { CopyMapTilesetsToHw } from "./field/hwTilesets";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 
 export type CreditsOverworldCmd = { unk_0: number; unk_2: number; unk_4: number };
 

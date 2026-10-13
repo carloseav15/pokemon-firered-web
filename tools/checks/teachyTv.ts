@@ -4,10 +4,10 @@
 import './setupNodeGbaMock.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData, registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
-import { tasks } from '../../src/games/firered/gba/tasks.ts';
-import { runHwFrame } from '../../src/games/firered/hw/runtime.ts';
-import { rom } from '../../src/games/firered/rom.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
+import { tasks } from '../../src/core/gba/tasks.ts';
+import { runHwFrame } from '../../src/core/hw/runtime.ts';
+import { rom } from '../../src/core/rom.ts';
 import * as TeachyTv from '../../src/games/firered/teachyTv.ts';
 
 const root = process.cwd() + '/public/fr/';

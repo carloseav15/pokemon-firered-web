@@ -1,12 +1,12 @@
 // battle_script_commands.c, commands 0x24-0x5B.
 
 import * as C from "../../generated/constants";
-import { sound } from "../../audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "../../gba/input";
-import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "../../hw/palette";
-import { gMain } from "../../hw/runtime";
-import { FreeAllWindowBuffers } from "../../hw/window";
-import { rom } from "../../rom";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "@core/gba/input";
+import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "@core/hw/palette";
+import { gMain } from "@core/hw/runtime";
+import { FreeAllWindowBuffers } from "@core/hw/window";
+import { rom } from "@core/rom";
 import {
   BS, BattleScriptPop, BattleScriptPush, BattleScriptPushCursor, memRead16, memRead32, memRead8, memWrite16, memWrite32, memWrite8,
   r16, r32, r8, scriptTable,

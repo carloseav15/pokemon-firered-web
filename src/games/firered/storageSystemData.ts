@@ -1,19 +1,19 @@
 // pokemon_storage_system_data.c: cursor movement, picking up / placing / shifting mons, the released-mon checks,
 // the display-mon text buffers, the four per-area input handlers and the selection menu.
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "./generated/constants";
 import { ConvertIntToDecimalStringN, StringCopyPadded, StringFill, StringGet_Nickname } from "./generated/stringUtil";
-import { STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL_COPY_1 } from "./gba/font";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, L_BUTTON, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "./gba/input";
-import { LoadSpritePalettes, LoadSpriteSheets, IndexOfSpritePaletteTag, CreateSprite, gSprites, MAX_SPRITES, StartSpriteAnim, type Sprite, type SpriteTemplate } from "./hw/sprite";
-import { incbin } from "./hw/assets";
-import { oamData, gDummySpriteAffineAnimTable, gDummySpriteAnimTable, ANIMCMD_FRAME, ANIMCMD_JUMP, ANIMCMD_END } from "./hw/sprite";
+import { STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
+import { FONT_NORMAL_COPY_1 } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, L_BUTTON, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
+import { LoadSpritePalettes, LoadSpriteSheets, IndexOfSpritePaletteTag, CreateSprite, gSprites, MAX_SPRITES, StartSpriteAnim, type Sprite, type SpriteTemplate } from "@core/hw/sprite";
+import { incbin } from "@core/hw/assets";
+import { oamData, gDummySpriteAffineAnimTable, gDummySpriteAnimTable, ANIMCMD_FRAME, ANIMCMD_JUMP, ANIMCMD_END } from "@core/hw/sprite";
 import {
   ClearStdWindowAndFrameToTransparent, DrawStdFrameWithCustomTileAndPalette, Menu_GetCursorPos, Menu_InitCursor, Menu_MoveCursor,
   PrintTextArray,
 } from "./hw/menu";
-import { ClearWindowTilemap, AddWindow, RemoveWindow } from "./hw/window";
+import { ClearWindowTilemap, AddWindow, RemoveWindow } from "@core/hw/window";
 import { ScheduleBgCopyTilemapToVram, CopyItemName } from "./hw/menuHelpers";
 import { GetMonSpritePalFromSpeciesAndPersonality } from "./pokemon/pics";
 import {
@@ -25,7 +25,7 @@ import {
   BoxMonAtToMon, GetAndCopyBoxMonDataAt, GetBoxedMonPtr, GetCurrentBoxMonData, SetBoxMonAt, SetCurrentBoxMonData, StorageGetCurrentBox,
   ZeroBoxMonAt,
 } from "./pokemon/storage";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { save } from "./save";
 import { GetLastViewedMonIndex } from "./pokemonSummaryScreen";
 import {

@@ -1,8 +1,8 @@
 // battle_main.c: battle flow (intro, turn loop, actions, end of battle).
 
 import * as C from "../generated/constants";
-import { random } from "../random";
-import { rom } from "../rom";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { flagGet, save } from "../save";
 import { BS, r8, scriptTable } from "./bscript";
 import { FreeBattleResources, G, gActionsByTurnOrder, gActionSelectionCursor, gBattleBufferB, gBattleCommunication, gBattleMons, gBattlerByTurnOrder, gBattlerControllerFuncs, gBattleResources, gBattleResults, gBattlerPartyIndexes, gBattleScripting, gBattleStruct, gBattleTextBuff1, gBattleTextBuff2, gBitTable, gChosenActionByBattler, gChosenMoveByBattler, gDisableStructs, gEnigmaBerries, gLastHitBy, gLastHitByType, gLastLandedMoves, gLastMoves, gLastPrintedMoves, gLastResultingMoves, gLockedMoves, gBattlePartyCurrentOrder, gMoveSelectionCursor, gProtectStructs, gSelectionBattleScripts, gSideStatuses, gSideTimers, gSpecialStatuses, gStatuses3, gWishFutureKnock } from "./globals";
@@ -14,16 +14,16 @@ import { HandleSetPokedexFlag } from "../pokemon/mon_extra";
 import { gBattleScriptingCommandsTable } from "./cmds";
 import { BattleMainCB2 } from "./main_init";
 import { BattleStopLowHpSound, PlayBGM } from "./gfx_sfx_util";
-import { BeginFastPaletteFade, gPaletteFade } from "../hw/palette";
+import { BeginFastPaletteFade, gPaletteFade } from "@core/hw/palette";
 import { ClearRematchStateByTrainerId, EvolutionScene, FadeOutMapMusic, GetEvolutionTargetSpecies, GetPartyIdFromBattlePartyId, GetRivalBattleFlags, GetTrainerBattleMode, IsPlayerPartyAndPokemonStorageFull, SwitchPartyMonSlots } from "./ext";
-import { FreeAllWindowBuffers } from "../hw/window";
+import { FreeAllWindowBuffers } from "@core/hw/window";
 import { GetBattlerTurnOrderNum } from "./cmds/part1";
 import { PREPARE_MON_NICK_BUFFER, PREPARE_STAT_BUFFER, PREPARE_STRING_BUFFER } from "./message";
-import { ResetSpriteData } from "../hw/sprite";
+import { ResetSpriteData } from "@core/hw/sprite";
 import { battleHost } from "./host";
-import { cdata } from "../hw/assets";
-import { gMain } from "../hw/runtime";
-import { sound } from "../audio/sound";
+import { cdata } from "@core/hw/assets";
+import { gMain } from "@core/hw/runtime";
+import { sound } from "@core/audio/sound";
 import { TrySetQuestLogBattleEvent, TrySetQuestLogLinkBattleEvent } from "../questLogBattle";
 
 const PARTY_SIZE = 6;

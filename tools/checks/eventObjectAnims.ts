@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import * as generated from "../../src/games/firered/generated/eventObjectAnims";
-import { registerCData } from "../../src/games/firered/hw/assets";
+import { registerCData } from "../../src/core/hw/assets";
 import "./setupNodeGbaMock";
 import {
   COLLISION_ELEVATION_MISMATCH,

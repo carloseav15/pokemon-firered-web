@@ -3,8 +3,8 @@
 import type { Game } from "../game";
 import * as C from "../generated/constants";
 import { MetatileBehavior_IsBridge } from "../generated/metatileBehavior";
-import { cdata, type SymRef } from "../hw/assets";
-import { random, random32 } from "../random";
+import { cdata, type SymRef } from "@core/hw/assets";
+import { random, random32 } from "@core/random";
 import { flagGet, incrementGameStat, save, varGet, varSet } from "../save";
 import { createMon, type Pokemon } from "../pokemon/pokemon";
 import { GetMonAbility } from "../pokemon/mon_extra";

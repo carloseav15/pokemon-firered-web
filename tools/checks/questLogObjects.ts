@@ -20,8 +20,8 @@ import {
   QL_TryStopSurfing,
   type QuestLogScene,
 } from "../../src/games/firered/questLogObjects.ts";
-import type { MapObjectTemplate } from "../../src/games/firered/rom.ts";
-import { rom } from "../../src/games/firered/rom.ts";
+import type { MapObjectTemplate } from "../../src/core/rom.ts";
+import { rom } from "../../src/core/rom.ts";
 
 const root = process.cwd() + "/public/fr/";
 (rom as any).charmap = JSON.parse(readFileSync(root + "charmap.json", "utf8"));

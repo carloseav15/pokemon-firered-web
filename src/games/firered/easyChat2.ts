@@ -1,22 +1,22 @@
 // easy_chat_2.c: the Easy Chat screen's task flow and joypad state machine (field select, footer, group
 // select, word select and the yes/no prompts); easy_chat_3.c draws what these handlers request.
 import * as C from "./generated/constants";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, SELECT_BUTTON, START_BUTTON } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { cdata, type SymRef } from "./hw/assets";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { cdata, type SymRef } from "@core/hw/assets";
 import { Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";
-import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { HwScene, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
-import { FreeAllWindowBuffers } from "./hw/window";
-import { rom } from "./rom";
+import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { HwScene, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
+import { FreeAllWindowBuffers } from "@core/hw/window";
+import { rom } from "@core/rom";
 import { flagSet, SV, varGet, varSet, save } from "./save";
 import { DestroyEasyChatSelectionData, GetDisplayedWordByIndex, GetNumDisplayableGroups, GetNumDisplayedWords, GetSelectedGroupByIndex, GetUnlockedECWords, InitEasyChatSelection } from "./easyChat";
 import {
   DestroyEasyChatGraphicsResources, EasyChatInterfaceCommand_Run, EasyChatInterfaceCommand_Setup, InitEasyChatGraphicsWork,
   LoadEasyChatGraphics,
 } from "./easyChat3";
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import { IsUpdateLinkStateCBActive } from "./linkState";
 import type { Game } from "./game";
 

@@ -1,6 +1,6 @@
 import type { Element } from "../types";
 import { TILE } from "../constants";
-import { DATA_ROOT } from "../../games/firered/rom";
+import { DATA_ROOT } from "@core/rom";
 import { facingFrame, fallbackGfx, gfxInfoOf, type Direction } from "./sprites";
 
 export type LiveEntity = {

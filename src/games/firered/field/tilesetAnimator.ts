@@ -1,5 +1,5 @@
 // Shared tileset animations used by the overworld renderer and credits BG VRAM.
-import type { TilesetData } from "../rom";
+import type { TilesetData } from "@core/rom";
 
 const TILE_BYTES = 32;
 

@@ -1,6 +1,6 @@
 // quest_log.c palette backup used while returning from Quest Log playback.
 
-import { OBJ_PLTT_ID, PLTT_BUFFER_SIZE, gPlttBufferUnfaded } from "./hw/palette";
+import { OBJ_PLTT_ID, PLTT_BUFFER_SIZE, gPlttBufferUnfaded } from "@core/hw/palette";
 import { SlightlyDarkenPalsInWeather } from "./field/weather";
 
 let sPalettesBackup: Uint16Array | undefined;

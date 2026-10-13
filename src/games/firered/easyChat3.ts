@@ -2,33 +2,33 @@
 // menus drawn in window 2, the cursor and helper sprites, and the numbered interface commands that
 // easy_chat_2.c issues through EasyChatInterfaceCommand_Setup/Run.
 import * as C from "./generated/constants";
-import { encode } from "./gba/charmap";
-import { FONT_NORMAL_COPY_1, GetStringWidth } from "./gba/font";
-import { cdata, incbin, incbin16, preloadIncbin, loadCData, type SymRef } from "./hw/assets";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
+import { encode } from "@core/gba/charmap";
+import { FONT_NORMAL_COPY_1, GetStringWidth } from "@core/gba/font";
+import { cdata, incbin, incbin16, preloadIncbin, loadCData, type SymRef } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
   BG_COORD_ADD, BG_COORD_SET, type BgTemplate, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer,
   FillBgTilemapBufferRect, FillBgTilemapBufferRect_Palette0, GetBgY, HideBg, InitBgsFromTemplates, IsDma3ManagerBusyWithBgCopy,
   ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg,
-} from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import { CreateYesNoMenu, LoadUserWindowGfx } from "./hw/menu";
 import { DecompressAndLoadBgGfxUsingHeap, DrawTextBorderOuter } from "./hw/menuHelpers";
-import { LoadPalette, ResetPaletteFade } from "./hw/palette";
+import { LoadPalette, ResetPaletteFade } from "@core/hw/palette";
 import {
   DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H,
   REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT, WIN_RANGE,
-} from "./hw/ppu";
+} from "@core/hw/ppu";
 import {
   CreateSprite, DestroySprite, LoadSpritePalettes, LoadSpriteSheet, MAX_SPRITES, StartSpriteAnim, gSprites,
   type Sprite, type SpriteCallback,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
 import {
   AddWindow, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, InitWindows, PIXEL_FILL, PutWindowTilemap,
   COPYWIN_FULL, COPYWIN_GFX, type WindowTemplate,
-} from "./hw/window";
-import { rom } from "./rom";
+} from "@core/hw/window";
+import { rom } from "@core/rom";
 import {
   GetECSelectGroupCursorCoords, GetECSelectGroupRowsAbove, GetECSelectWordCursorCoords, GetECSelectWordNumRows,
   GetECSelectWordRowsAbove, GetEasyChatConfirmCancelText, GetEasyChatConfirmDeletionText, GetEasyChatConfirmText,

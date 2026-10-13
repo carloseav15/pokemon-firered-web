@@ -12,19 +12,19 @@
 // TV scripted menus are not reachable in the port.
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, START_BUTTON } from "./gba/input";
-import { tasks, type TaskFunc } from "./gba/tasks";
-import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
-import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";
+import { sound } from "@core/audio/sound";
+import { encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, START_BUTTON } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
+import { getTextSpeedSetting, textFlags } from "@core/gba/textPrinter";
+import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "@core/hw/assets";
 import {
   ChangeBgX, CopyBgTilemapBufferToVram, CopyRectToBgTilemapBufferRect, CopyToBgTilemapBufferRect_ChangePalette, FillBgTilemapBufferRect,
   FillBgTilemapBufferRect_Palette0, GetBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg,
-} from "./hw/bg";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   ClearDialogWindowAndFrameToTransparent, ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, DrawDialogFrameWithCustomTileAndPalette,
   DrawStdFrameWithCustomTileAndPalette, FONTATTR_LETTER_SPACING, FONTATTR_MAX_LETTER_WIDTH, GetFontAttribute, GetMenuCursorDimensionByFont,
@@ -40,19 +40,19 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, ResetPaletteFade,
   RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
+} from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests,
   ResetSpriteData, StartSpriteAnim, type Sprite,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import {
   AddWindow, ClearWindowTilemap, COPYWIN_GFX, CopyToWindowPixelBuffer, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   GetWindowAttribute, InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, BlitBitmapToWindow, WINDOW_HEIGHT, WINDOW_NONE, WINDOW_PALETTE_NUM,
   WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { bagResult, GoToBagMenu } from "./bagMenu";
 import { CreateMonIcon, LoadMonIconPalettes, SetPartyHPBarSprite, UpdateMonIconFrame } from "./pokemonIcon";
 import { GetLastViewedMonIndex, ShowPokemonSummaryScreen } from "./summaryScreen";
@@ -69,7 +69,7 @@ import { gPlayerPcMenuManager } from "./mailboxPc";
 import {
   preloadPokemonSpecialAnim, PSA_IsCancelDisabled, StartUseItemAnim_CantEvolve, StartUseItemAnim_ForgetMoveAndLearnTMorHM, StartUseItemAnim_Normal,
 } from "./pokemonSpecialAnim";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { flagGet, save, varGet, varSet, SV } from "./save";
 import {
   DrawLevelUpWindowPg1, DrawLevelUpWindowPg2, GetEvolutionTargetSpecies, GetMonLevelUpWindowStats, GetMoveSlotToReplace, PokemonUseItemEffects,

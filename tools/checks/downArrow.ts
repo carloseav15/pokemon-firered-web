@@ -4,8 +4,8 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { TextPrinter, TextPrinterDrawDownArrow, textFlags } from '../../src/games/firered/gba/textPrinter.ts';
-import { rom } from '../../src/games/firered/rom.ts';
+import { TextPrinter, TextPrinterDrawDownArrow, textFlags } from '../../src/core/gba/textPrinter.ts';
+import { rom } from '../../src/core/rom.ts';
 const root=process.cwd()+'/public/fr/';
 rom.fonts=JSON.parse(readFileSync(root+'gfx/fonts.json','utf8'));
 const index=JSON.parse(readFileSync(root+'incbin/index.json','utf8'));

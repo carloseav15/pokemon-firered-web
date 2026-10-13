@@ -2,20 +2,20 @@
 // and menu_indicators.c (scroll indicator arrows, red outline / arrow cursors).
 // The C keeps these structs in gTasks[].data; here they live beside the task id.
 
-import { sound } from "../audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "../generated/constants";
-import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON, JOY_NEW } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { rom } from "../rom";
-import { incbin } from "./assets";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON, JOY_NEW } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { rom } from "@core/rom";
+import { incbin } from "@core/hw/assets";
 import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetMenuCursorDimensionByFont } from "./menu";
-import { LoadPalette, OBJ_PLTT_ID } from "./palette";
+import { LoadPalette, OBJ_PLTT_ID } from "@core/hw/palette";
 import {
   AnimateSprite, ANIMCMD_END, ANIMCMD_FRAME, CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable, gDummySpriteTemplate,
   gSprites, LoadSpritePalette, LoadSpriteSheet, oamData, SetSubspriteTables, StartSpriteAnim, TAG_NONE, type Sprite, type SpriteTemplate, type Subsprite,
-} from "./sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized4 } from "./text";
-import { gSineTable } from "./trig";
+import { gSineTable } from "@core/hw/trig";
 import { GetValidMonIconPalettePtr } from "../pokemonIcon";
 import { ClearStdWindowAndFrame, LoadUserWindowGfx } from "./menu";
 import { DrawTextBorderOuter } from "./menuHelpers";
@@ -23,7 +23,7 @@ import {
   AddWindow, BlitBitmapRectToWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_GFX, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer,
   FillWindowPixelRect, GetWindowAttribute, PIXEL_FILL, PutWindowRectTilemapOverridePalette, PutWindowTilemap, RemoveWindow, ScrollWindow,
   SetWindowAttribute, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, type WindowTemplate,
-} from "./window";
+} from "@core/hw/window";
 
 export const LIST_NOTHING_CHOSEN = -1;
 export const LIST_CANCEL = -2;

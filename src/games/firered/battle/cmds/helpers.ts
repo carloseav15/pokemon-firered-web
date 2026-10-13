@@ -1,7 +1,7 @@
 // Small shared helpers from battle_script_commands.c.
 
 import * as C from "../../generated/constants";
-import { cdata } from "../../hw/assets";
+import { cdata } from "@core/hw/assets";
 import { G, gBattleMons } from "../globals";
 import { gBattleMoves } from "../macros";
 import { GetBattlerSide } from "../util";

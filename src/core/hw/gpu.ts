@@ -2,7 +2,7 @@
 // hardware registers during the VBlank interrupt.
 
 import { ppu, REG_OFFSET_DISPCNT, REG_OFFSET_DISPSTAT, REG_OFFSET_IE, REG_OFFSET_IME, REG_OFFSET_VCOUNT, DISPCNT_FORCED_BLANK } from "./ppu";
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 
 const GPU_REG_BUF_SIZE = 0x60;
 const buffer = new Uint16Array(GPU_REG_BUF_SIZE / 2);

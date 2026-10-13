@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import * as C from "../../src/games/firered/generated/constants.ts";
 import { G, gBattleMons, gBattleResults } from "../../src/games/firered/battle/globals.ts";
 import { gEnemyParty } from "../../src/games/firered/pokemon/mon.ts";
-import { rom } from "../../src/games/firered/rom.ts";
+import { rom } from "../../src/core/rom.ts";
 import { flagSet, save } from "../../src/games/firered/save.ts";
 import { QL_SkipCommand } from "../../src/games/firered/questLogEventBuffer.ts";
 import {

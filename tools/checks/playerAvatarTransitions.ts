@@ -4,8 +4,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import "./setupNodeGbaMock";
-import { registerCData } from "../../src/games/firered/hw/assets";
-import { rom } from "../../src/games/firered/rom";
+import { registerCData } from "../../src/core/hw/assets";
+import { rom } from "../../src/core/rom";
 import { ObjectEvents } from "../../src/games/firered/field/objectEvents";
 import {
   PlayerAvatar, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE,

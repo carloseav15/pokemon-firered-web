@@ -2,18 +2,18 @@
 // across a Route 1 backdrop, then runs a scripted demo battle (battle_controller_pokedude.c) or opens the bag with
 // a fixed set of items.
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { A_BUTTON, B_BUTTON, JOY_NEW, SELECT_BUTTON } from "./gba/input";
-import { FONT_MALE, FONT_NORMAL } from "./gba/font";
-import { tasks } from "./gba/tasks";
-import { textFlags } from "./gba/textPrinter";
-import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, JOY_NEW, SELECT_BUTTON } from "@core/gba/input";
+import { FONT_MALE, FONT_NORMAL } from "@core/gba/font";
+import { tasks } from "@core/gba/tasks";
+import { textFlags } from "@core/gba/textPrinter";
+import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "@core/hw/assets";
 import {
   BG_COORD_ADD, BG_COORD_SET, BG_COORD_SUB, type BgTemplate, ChangeBgX, ChangeBgY, CopyToBgTilemapBufferRect_ChangePalette,
   FillBgTilemapBufferRect_Palette0, GetBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg,
-} from "./hw/bg";
-import { affineAnimsFrom, animsFrom, oamFrom, subspriteTablesFrom } from "./hw/cdataSprite";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { affineAnimsFrom, animsFrom, oamFrom, subspriteTablesFrom } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   DestroyListMenuTask, ListMenuGetScrollAndRow, ListMenuInit, ListMenu_ProcessInput, RemoveScrollIndicatorArrowPair, AddScrollIndicatorArrowPair,
   type ListMenu, type ListMenuItem, type ListMenuTemplate, type ScrollArrowsTemplate,
@@ -25,25 +25,25 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK,
   TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
-import { REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "./hw/ppu";
-import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+} from "@core/hw/palette";
+import { REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "@core/hw/ppu";
+import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, gSprites, LoadOam, LoadSpritePalette,
   ProcessSpriteCopyRequests, ResetSpriteData, SeekSpriteAnim, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Sprite,
   type SpriteFrameImage, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized2, DeactivateAllTextPrinters } from "./hw/text";
 import {
   ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { InitPokedudeBagRegister, InitPokedudeBagTMs } from "./bagMenu";
 import { SetHelpContextDontCheckBattle } from "./helpSystem";
 import { CreateObjectGraphicsSprite } from "./objectEventGraphics";
 import { checkBagHasItem } from "./pokemon/items";
-import { rom } from "./rom";
-import { random as Random } from "./random";
+import { rom } from "@core/rom";
+import { random as Random } from "@core/random";
 import { save, SV, varSet } from "./save";
 import { StartBattleFromHwScene } from "./battle/host";
 import { InitPokedudePartyAndOpponent } from "./battle/controller_pokedude";

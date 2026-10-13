@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as C from "../../src/games/firered/generated/constants.ts";
 import { HasAtLeastOneBerry } from "../../src/games/firered/pokemon/items.ts";
-import { rom } from "../../src/games/firered/rom.ts";
+import { rom } from "../../src/core/rom.ts";
 import { save, SV, varGet } from "../../src/games/firered/save.ts";
 
 rom.items = JSON.parse(readFileSync(`${process.cwd()}/public/fr/data/items.json`, "utf8")).items;

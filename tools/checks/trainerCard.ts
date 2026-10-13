@@ -4,15 +4,15 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData, registerIncbinIndex, registerPack, symName, type SymRef } from '../../src/games/firered/hw/assets.ts';
-import { rom } from '../../src/games/firered/rom.ts';
+import { registerCData, registerIncbinIndex, registerPack, symName, type SymRef } from '../../src/core/hw/assets.ts';
+import { rom } from '../../src/core/rom.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';
 import { save } from '../../src/games/firered/save.ts';
-import { gMain, runHwFrame } from '../../src/games/firered/hw/runtime.ts';
-import { ppu, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, WIN_RANGE } from '../../src/games/firered/hw/ppu.ts';
-import { gWindows } from '../../src/games/firered/hw/window.ts';
-import { tasks } from '../../src/games/firered/gba/tasks.ts';
-import { joy, A_BUTTON, B_BUTTON } from '../../src/games/firered/gba/input.ts';
+import { gMain, runHwFrame } from '../../src/core/hw/runtime.ts';
+import { ppu, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, WIN_RANGE } from '../../src/core/hw/ppu.ts';
+import { gWindows } from '../../src/core/hw/window.ts';
+import { tasks } from '../../src/core/gba/tasks.ts';
+import { joy, A_BUTTON, B_BUTTON } from '../../src/core/gba/input.ts';
 import {
   GetTrainerCardMainState, GetTrainerCardStars, MailSpeciesToIconSpecies, ShowPlayerTrainerCard,
 } from '../../src/games/firered/menus/trainerCard.ts';

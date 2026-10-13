@@ -4,12 +4,12 @@
 // relies on the EWRAM after the array; animState keeps 16 slots for it).
 
 import * as C from "../../generated/constants";
-import { tasks, type Task } from "../../gba/tasks";
-import { REG_OFFSET_BG1HOFS, REG_OFFSET_BG2HOFS } from "../../hw/ppu";
-import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "../../hw/scanline";
-import { gSprites, type Sprite } from "../../hw/sprite";
-import { gSineTable } from "../../hw/trig";
-import { random } from "../../random";
+import { tasks, type Task } from "@core/gba/tasks";
+import { REG_OFFSET_BG1HOFS, REG_OFFSET_BG2HOFS } from "@core/hw/ppu";
+import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "@core/hw/scanline";
+import { gSprites, type Sprite } from "@core/hw/sprite";
+import { gSineTable } from "@core/hw/trig";
+import { random } from "@core/random";
 import {
   ANIM_ATTACKER, animState, DestroyAnimSprite, DestroyAnimVisualTask, DestroySpriteAndMatrix, GetAnimBattlerSpriteId,
   GetBattlerSpriteBGPriorityRank, GetBattlerSpriteCoord, GetBattlerSpriteCoord2, GetBattlerYCoordWithElevation,

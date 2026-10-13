@@ -10,7 +10,7 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import * as C from '../../src/games/firered/generated/constants.ts';
-import { rom } from '../../src/games/firered/rom.ts';
+import { rom } from '../../src/core/rom.ts';
 import type { Mon } from '../../src/games/firered/pokemon/mon.ts';
 import type { AnimTable } from '../../src/games/firered/battle/anim.ts';
 
@@ -47,7 +47,7 @@ console.warn = (...args: unknown[]) => {
 await rom.load();
 // Battle boot reads berry data (GetBerryInfo via SetAllPlayersBerryData),
 // and battle messages print via the text printer tables.
-const { registerCData } = await import('../../src/games/firered/hw/assets.ts');
+const { registerCData } = await import('../../src/core/hw/assets.ts');
 registerCData('berry', JSON.parse(readFileSync(root + '/fr/cdata/berry.json', 'utf8')).defs);
 registerCData('text', JSON.parse(readFileSync(root + '/fr/cdata/text.json', 'utf8')).defs);
 registerCData('text_printer', JSON.parse(readFileSync(root + '/fr/cdata/text_printer.json', 'utf8')).defs);
@@ -57,9 +57,9 @@ const [{ sound }, { loadTrig }, { runHwFrame, SetMainCallback2 }, { ppu }, { Des
   { tasks }, { A_BUTTON, joy }, { preloadBattleAssets }, { G, gBattlerSpriteIds, gBattleSpritesDataPtr, resetBattleStructs },
   { TryShinyAnimation }, { CB2_InitBattle }, { CopyMon, gEnemyParty, GetMonData, SetMonData, ZeroEnemyPartyMons },
   { createMon }, { save }, { animState, LaunchBattleAnimation }, { SetBattlerSpriteAffineMode }, { DisableStruct }] = await Promise.all([
-  import('../../src/games/firered/audio/sound.ts'), import('../../src/games/firered/hw/trig.ts'), import('../../src/games/firered/hw/runtime.ts'),
-  import('../../src/games/firered/hw/ppu.ts'), import('../../src/games/firered/hw/sprite.ts'), import('../../src/games/firered/gba/tasks.ts'),
-  import('../../src/games/firered/gba/input.ts'), import('../../src/games/firered/battle/preload.ts'), import('../../src/games/firered/battle/globals.ts'),
+  import('../../src/core/audio/sound.ts'), import('../../src/core/hw/trig.ts'), import('../../src/core/hw/runtime.ts'),
+  import('../../src/core/hw/ppu.ts'), import('../../src/core/hw/sprite.ts'), import('../../src/core/gba/tasks.ts'),
+  import('../../src/core/gba/input.ts'), import('../../src/games/firered/battle/preload.ts'), import('../../src/games/firered/battle/globals.ts'),
   import('../../src/games/firered/battle/anims/special.ts'), import('../../src/games/firered/battle/main_init.ts'), import('../../src/games/firered/pokemon/mon.ts'),
   import('../../src/games/firered/pokemon/pokemon.ts'), import('../../src/games/firered/save.ts'), import('../../src/games/firered/battle/anim.ts'),
   import('../../src/games/firered/battle/gfx_sfx_util.ts'), import('../../src/games/firered/generated/structs.ts'),

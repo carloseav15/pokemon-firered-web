@@ -1,19 +1,19 @@
 // battle_intro.c: the terrain slide-in at battle start, plus the BGxCNT helpers used by battle animations.
 
 import * as C from "../generated/constants";
-import { tasks } from "../gba/tasks";
-import { BG_ATTR_CHARBASEINDEX, BG_SCREEN_SIZE, LoadBgTilemap, LoadBgTiles, SetBgAttribute } from "../hw/bg";
-import { GetGpuReg, SetGpuReg } from "../hw/gpu";
+import { tasks } from "@core/gba/tasks";
+import { BG_ATTR_CHARBASEINDEX, BG_SCREEN_SIZE, LoadBgTilemap, LoadBgTiles, SetBgAttribute } from "@core/hw/bg";
+import { GetGpuReg, SetGpuReg } from "@core/hw/gpu";
 import {
   BGCNT_16COLOR, BGCNT_CHARBASE, BGCNT_PRIORITY, BGCNT_SCREENBASE, BGCNT_TXT256x512, BGCNT_TXT512x256, BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND,
   BLDCNT_TGT1_BG1, BLDCNT_TGT2_BG3, BLDCNT_TGT2_OBJ, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG1CNT, REG_OFFSET_BG2CNT, REG_OFFSET_BG3CNT,
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_WININ, REG_OFFSET_WINOUT, WININ_WIN0_BG_ALL, WININ_WIN0_CLR,
   WININ_WIN0_OBJ, WININ_WIN1_BG_ALL, WININ_WIN1_CLR, WININ_WIN1_OBJ, WINOUT_WIN01_BG1, WINOUT_WIN01_BG2, WINOUT_WIN01_BG_ALL, WINOUT_WIN01_CLR,
   WINOUT_WIN01_OBJ, WINOUT_WINOBJ_BG_ALL, WINOUT_WINOBJ_CLR, WINOUT_WINOBJ_OBJ,
-} from "../hw/ppu";
-import { gScanlineEffect, gScanlineEffectRegBuffers } from "../hw/scanline";
-import { gSprites, ST_OAM_OBJ_WINDOW } from "../hw/sprite";
-import { Cos2 } from "../hw/trig";
+} from "@core/hw/ppu";
+import { gScanlineEffect, gScanlineEffectRegBuffers } from "@core/hw/scanline";
+import { gSprites, ST_OAM_OBJ_WINDOW } from "@core/hw/sprite";
+import { Cos2 } from "@core/hw/trig";
 import { G, gBattleMonForms, gBattleStruct, gMonSpritesGfxPtr } from "./globals";
 import { GetBattlerAtPosition } from "./util";
 

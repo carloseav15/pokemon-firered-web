@@ -1,7 +1,7 @@
 // C data definitions and INCBIN packs read synchronously by the field-side
 // ports (field effects, specials, key items, menus). Loaded once at boot.
 
-import { loadCData, preloadPacks } from "../hw/assets";
+import { loadCData, preloadPacks } from "@core/hw/assets";
 
 const CDATA_FILES = [
   "field_effect", "field_specials", "vs_seeker", "pokemon_jump", "fame_checker", "party_menu", "item_menu", "region_map", "map_preview_screen",

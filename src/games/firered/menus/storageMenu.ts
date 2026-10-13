@@ -15,33 +15,33 @@
 // the field and re-opens the main menu (FieldTask_ReturnToPcMenu).
 
 import type { Game } from "../game";
-import { tasks } from "../gba/tasks";
-import { DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, A_BUTTON, B_BUTTON, JOY_NEW } from "../gba/input";
-import { sound } from "../audio/sound";
+import { tasks } from "@core/gba/tasks";
+import { DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, A_BUTTON, B_BUTTON, JOY_NEW } from "@core/gba/input";
+import { sound } from "@core/audio/sound";
 import { save, varGet, SV } from "../save";
 import * as C from "../generated/constants";
-import { rom } from "../rom";
-import { incbin } from "../hw/assets";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1 } from "../gba/font";
-import { printText, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "../gba/textPrinter";
-import { Window } from "../gba/window";
-import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "../gba/fade";
+import { rom } from "@core/rom";
+import { incbin } from "@core/hw/assets";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1 } from "@core/gba/font";
+import { printText, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
+import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
 import { Menu, MENU_NOTHING_CHOSEN } from "./menu";
 import { MENU_B_PRESSED } from "../hw/menu";
 import { GetMenuCursorDimensionByFont } from "../hw/menu";
 import { StringCopy, StringLength_Multibyte, ConvertIntToDecimalStringN } from "../generated/stringUtil";
-import { STR_CONV_MODE_RIGHT_ALIGN, CHAR_SPACE, EOS, encode } from "../gba/charmap";
+import { STR_CONV_MODE_RIGHT_ALIGN, CHAR_SPACE, EOS, encode } from "@core/gba/charmap";
 import { GetBoxMonDataAt, GetBoxNamePtr } from "../pokemon/storage";
 import { resetPokemonStorageSystem } from "../pokemon/storage";
-import { AddWindow, FillWindowPixelBuffer, gWindows, PIXEL_FILL, RemoveWindow, type WindowTemplate } from "../hw/window";
+import { AddWindow, FillWindowPixelBuffer, gWindows, PIXEL_FILL, RemoveWindow, type WindowTemplate } from "@core/hw/window";
 import { AddTextPrinterParameterized4 } from "../hw/text";
-import { affineAnimsFrom, animsFrom, oamFrom } from "../hw/cdataSprite";
+import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpriteTileStartByTag, gDummySpriteAffineAnimTable,
   gDummySpriteAnimTable, gSprites, LoadSpritePalette, LoadSpriteSheets, oamData, SPRITE_SHAPE, SPRITE_SIZE, SpriteCallbackDummy,
   StartSpriteAnim, type Sprite, type SpriteTemplate,
-} from "../hw/sprite";
-import { ppu } from "../hw/ppu";
+} from "@core/hw/sprite";
+import { ppu } from "@core/hw/ppu";
 import { fieldMenu } from "./fieldMenus";
 import { CreateChooseBoxArrows } from "../storageSystemGraphics";
 import { EnterPokeStorage, GetCurrentBoxOption, preloadStorageSystem } from "../storageSystemTasks";

@@ -1,14 +1,14 @@
 // Shared hardware-window adapter for menu logic while dedicated party/summary
 // graphics are being ported. Runs under gMain, pauses battle callbacks and
 // returns only after an explicit selection or allowed cancellation.
-import { encode, expandPlaceholders } from "../gba/charmap";
-import { joy, A_BUTTON, B_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "../gba/input";
-import { FONT_NORMAL, FONT_NORMAL_COPY_2 } from "../gba/font";
-import { InitGpuRegManager, SetGpuReg } from "../hw/gpu";
-import { InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "../hw/bg";
-import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "../hw/runtime";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "../hw/ppu";
-import { BG_PLTT_ID, LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "../hw/palette";
+import { encode, expandPlaceholders } from "@core/gba/charmap";
+import { joy, A_BUTTON, B_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "@core/gba/input";
+import { FONT_NORMAL, FONT_NORMAL_COPY_2 } from "@core/gba/font";
+import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
+import { InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "@core/hw/bg";
+import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "@core/hw/runtime";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { BG_PLTT_ID, LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "@core/hw/palette";
 import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetTextWindowPalette } from "../hw/menu";
 import { CreateYesNoMenu, LoadUserWindowGfx, MENU_NOTHING_CHOSEN, Menu_ProcessInputNoWrapClearOnChoose } from "../hw/menu";
 import {
@@ -16,12 +16,12 @@ import {
   ListMenuGetScrollAndRow, ListMenuInit, listMenuTemplate, ListMenuOverrideSetColors, RemoveScrollIndicatorArrowPair, SCROLL_ARROW_UP,
   StepScrollIndicatorArrowPair, type ListMenuItem,
 } from "../hw/listMenu";
-import { BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests } from "../hw/sprite";
+import { BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests } from "@core/hw/sprite";
 import { DeactivateAllTextPrinters, AddTextPrinterParameterized2, AddTextPrinterParameterized3, IsTextPrinterActive, RunTextPrinters } from "../hw/text";
-import { getTextSpeedSetting } from "../gba/textPrinter";
-import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "../hw/window";
-import { sound } from "../audio/sound";
-import { loadCData, preloadPacks } from "../hw/assets";
+import { getTextSpeedSetting } from "@core/gba/textPrinter";
+import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "@core/hw/window";
+import { sound } from "@core/audio/sound";
+import { loadCData, preloadPacks } from "@core/hw/assets";
 
 export type HardwareChoice = { label: string | ArrayLike<number>; value: number; disabled?: boolean };
 

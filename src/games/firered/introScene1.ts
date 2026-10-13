@@ -1,18 +1,18 @@
 // intro.c: IntroCB_Scene1, Scene1_Task_AnimateGrass and Scene1_Task_BgZoom.
-import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import {
   BG_COORD_SET, BG_COORD_SUB, type BgTemplate, ChangeBgY,
   HideBg, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ShowBg,
-} from "./hw/bg";
-import { CopyBufferedValuesToGpuRegs } from "./hw/gpu";
+} from "@core/hw/bg";
+import { CopyBufferedValuesToGpuRegs } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BlendPalettes, gPaletteFade, LoadPalette,
   PALETTES_ALL, RGB_WHITE, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
-import { LoadSpritePalette, LoadSpriteSheet } from "./hw/sprite";
-import { ppu } from "./hw/ppu";
+} from "@core/hw/palette";
+import { LoadSpritePalette, LoadSpriteSheet } from "@core/hw/sprite";
+import { ppu } from "@core/hw/ppu";
 
 const symbols = [
   "sScene1_Grass_Pal", "sScene1_Bg_Pal", "sScene1_Bg_Gfx",

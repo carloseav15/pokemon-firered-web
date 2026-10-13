@@ -2,7 +2,7 @@
 
 import * as C from "./generated/constants";
 import { GetFishingDirectionAnimNum, GetFishingNoCatchDirectionAnimNum } from "./generated/eventObjectAnims";
-import { tasks } from "./gba/tasks";
+import { tasks } from "@core/gba/tasks";
 import { StartVsSeekerFieldEffect } from "./field/vsSeeker";
 import { QuestLogRecordPlayerAvatarGfxTransition, gQuestLogPlaybackState } from "./questLogEvents";
 import {

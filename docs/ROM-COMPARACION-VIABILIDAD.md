@@ -46,7 +46,7 @@ máquina señala dónde empieza a diferir y solo se lee el C de esa zona.
 ### 3.3 Determinismo: **viable con trabajo**
 - En emulador, mismas teclas + misma ROM + mismo punto de partida da la misma ejecución.
 - La semilla inicial viene de los temporizadores hardware. El port ya recibe ese valor como
-  parámetro (`SeedRngAndSetTrainerId(timer1Low)`, `src/games/firered/random.ts:28`), así que el
+  parámetro (`SeedRngAndSetTrainerId(timer1Low)`, `src/core/random.ts:28`), así que el
   mecanismo es: fijar el mismo valor en ambos lados (escribir `gRngValue` / el estado de
   semilla en la ROM con Lua en un fotograma acordado, o dejar que ambos corran y registrar
   el valor de timer que usó el emulador).
@@ -162,7 +162,7 @@ arranque de una en una y vuelca el estado del LCG).
 - Port, intro: tras 2.400 fotogramas de `frStartupStep`, el estado del LCG sigue en `00000000`.
 - Port, juego (partida nueva, `frDebug.run(1)`): el estado del LCG no cambia en fotogramas
   en reposo (6 fotogramas medidos; `hardware.vblankCounter2` también queda en 0).
-- `src/games/firered/hw/runtime.ts:147` `VBlankIntr` omite `Random()` (y `m4aSoundMain`,
+- `src/core/hw/runtime.ts:147` `VBlankIntr` omite `Random()` (y `m4aSoundMain`,
   `TryReceiveLinkBattleData`, `UpdateWirelessStatusIndicatorSprite`, que viven en otro sitio o
   no aplican).
 - Consecuencia: en la ROM el resultado de cualquier tirada (encuentros, golpes críticos,

@@ -1,7 +1,7 @@
 // Function-like macros from battle.h / constants/battle.h and friends.
 
 import * as C from "../generated/constants";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import { G, gBattleMons, gBattleStruct, gBattlerPositions, gBitTable } from "./globals";
 
 export const STATUS1_SLEEP_TURN = (n: number) => n;

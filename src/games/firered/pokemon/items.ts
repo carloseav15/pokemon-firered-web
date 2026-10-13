@@ -1,7 +1,7 @@
 // Port of item.c (bag pockets, PC items) and money.c.
 
 import * as C from "../generated/constants";
-import { b64, rom, type ItemInfo } from "../rom";
+import { b64, rom, type ItemInfo } from "@core/rom";
 import { flagSet, save, SV, varSet, type BagPocket } from "../save";
 import { SetQuestLogEvent } from "../questLogEvents";
 

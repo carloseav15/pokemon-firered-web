@@ -8,17 +8,17 @@
 // (no OBJ_EVENT_GFX_VARS). Needs loadCData("event_object_movement") and
 // preloadPacks(["graphics_object_events"]).
 
-import { cdata, incbin, symName, type SymRef } from "./hw/assets";
-import { affineAnimsFrom, animsFrom, oamFrom } from "./hw/cdataSprite";
+import { cdata, incbin, symName, type SymRef } from "@core/hw/assets";
+import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
 import * as C from "./generated/constants";
 import { GetFaceDirectionAnimNum } from "./generated/eventObjectAnims";
 import { ApplyGlobalFieldPaletteTint } from "./field/fieldPalette";
-import { LoadPalette, OBJ_PLTT_ID } from "./hw/palette";
+import { LoadPalette, OBJ_PLTT_ID } from "@core/hw/palette";
 import {
   CreateSprite, CreateSpriteAtEnd, FreeAllSpritePalettes, IndexOfSpritePaletteTag, LoadSpritePalette, MAX_SPRITES, gSprites, SetSubspriteTables,
   spriteState, StartSpriteAnim, SUBSPRITES_IGNORE_PRIORITY, TAG_NONE,
   type Sprite, type SpriteCallback, type SpriteFrameImage, type SpriteTemplate, type Subsprite, type SubspriteTable,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 
 export type ObjectEventGraphicsInfo = {
   tileTag: number; paletteTag: number; reflectionPaletteTag: number; size: number; width: number; height: number; paletteSlot: number;

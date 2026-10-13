@@ -20,7 +20,7 @@ export default async function run(ctx) {
   if (!launched.ready) return { manual: `Title and NEW GAME reached ${launched.stage}; Oak's opening sequence did not reach the field engine in this smoke run, so story progression remains unverified (${JSON.stringify(launched)}).` };
   await ctx.runEval(`const { H } = await import("/tools/playtest/driver.js"); window.H = H; await H.ready()`);
   await ctx.page.locator("canvas").click({ position: { x: 120, y: 80 } });
-  await ctx.runEval(`const S = await H.mod("/src/games/firered/audio/sound.ts"); await S.sound.backend.ctx.resume()`);
+  await ctx.runEval(`const S = await H.mod("/src/core/audio/sound.ts"); await S.sound.backend.ctx.resume()`);
   const result = await ctx.runEval(`const { H } = await import("/tools/playtest/driver.js"); window.H = H; await H.ready();
     const initial = H.st();
     if (initial.map !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F" || initial.x !== 6 || initial.y !== 6

@@ -10,19 +10,19 @@
 //  - Sprite scroll pointers (&sListMenuState.scroll) are getters.
 // Needs a HwScene host (menus/fieldMenus.ts fieldMenu).
 
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import { ItemUse_SetQuestLogEvent } from "./itemUse";
-import { expandPlaceholders, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN, stringVars } from "./gba/charmap";
-import { FONT_NORMAL, FONT_SMALL } from "./gba/font";
-import { A_BUTTON, B_BUTTON, JOY_NEW, SELECT_BUTTON } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { getTextSpeedSetting } from "./gba/textPrinter";
+import { expandPlaceholders, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN, stringVars } from "@core/gba/charmap";
+import { FONT_NORMAL, FONT_SMALL } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, JOY_NEW, SELECT_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { getTextSpeedSetting } from "@core/gba/textPrinter";
 import * as C from "./generated/constants";
-import { cdata, incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
+import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
 import {
   InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   DestroyListMenuTask, ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, ListMenuSetTemplateField,
   AddScrollIndicatorArrowPairParameterized, RemoveScrollIndicatorArrowPair, type ListMenu, type ListMenuItem, type ListMenuTemplate,
@@ -39,16 +39,16 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer,
   UpdatePaletteFade,
-} from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
-import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+} from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
+import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
 import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import {
   AddWindow, ClearWindowTilemap, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap,
   RemoveWindow, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import {
   CreateItemMenuIcon, CreateSwapLine, DestroyItemMenuIcon, ItemId_GetDescription, LoadBagSwapSpritePalette, LoadBagSwapSpriteSheet, MoveItemSlotInList,
   ResetItemMenuIconState, SetSwapLineInvisibility, UpdateSwapLinePos,
@@ -60,7 +60,7 @@ import { gPartyMenu, InitPartyMenu, Task_HandleChooseMonInput } from "./partyMen
 import { tmhmMove } from "./menus/monProgress";
 import { addBagItem, ItemPcCompaction, itemInfo, itemName, removePCItem } from "./pokemon/items";
 import { CalculatePlayerPartyCount } from "./pokemon/mon";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { save } from "./save";
 
 type ItemPcResources = {

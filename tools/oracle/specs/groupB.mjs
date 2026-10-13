@@ -40,7 +40,7 @@ export default [
     c: { stem: "sprite", name: "GetAnchorCoord", unstatic: ["GetAnchorCoord"] },
     params: [P("baseDim", "s32", { realisticSet: [2048, 4096, 8192, 16384] }), P("xformed", "s32", { realistic: [-524288, 524288] }),
       P("modifier", "s32", { realistic: [-128, 127] })],
-    impls: [{ label: "hw/sprite.ts", file: "src/games/firered/hw/sprite.ts", name: "getAnchorCoord" }], // TS keeps the older camelCase name
+    impls: [{ label: "hw/sprite.ts", file: "src/core/hw/sprite.ts", name: "getAnchorCoord" }], // TS keeps the older camelCase name
     realisticEvidence: [
       fact("baseDim = dim << 8 with dim in {8,16,32,64}; xformed = (dim << 16) / matrix.a with a an s16", "sprite.c:1223-1225"),
       assumed("modifier is a small anchor coordinate (-128..127)"),

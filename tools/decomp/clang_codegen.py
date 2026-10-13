@@ -66,8 +66,8 @@ for _ph in (
 MODELED_MEMBERS = {"playerName", "playerGender", "rivalName"}
 
 MODULE_IMPORTS = [
-    'import { rom } from "../rom";',
-    'import { saveBlocks, stringVars } from "../gba/stringBuffers";',
+    'import { rom } from "@core/rom";',
+    'import { saveBlocks, stringVars } from "@core/gba/stringBuffers";',
 ]
 
 # Expected element count for pointer-to-function tables, verified against
@@ -1226,7 +1226,7 @@ def generate_cdata_table_accessors_ts() -> str:
         "// DO NOT EDIT MANUALLY. Re-run npm run generate:cdata-table-accessors to regenerate.",
         "// Target: armv4t-none-eabi | u8/u16 input wrapping is preserved; table data comes from exported C cdata.",
         "",
-        'import { cdata } from "../hw/assets";',
+        'import { cdata } from "@core/hw/assets";',
         "",
         *rows,
         "",
@@ -1311,7 +1311,7 @@ def generate_incbin_row_pointer_accessors_ts() -> str:
         "// DO NOT EDIT MANUALLY. Re-run npm run generate:incbin-row-accessors to regenerate.",
         "// Target: armv4t-none-eabi | C const u8* uses the browser pointer model {buf, off}; u8 row indices wrap.",
         "",
-        'import { incbin } from "../hw/assets";',
+        'import { incbin } from "@core/hw/assets";',
         "",
         *rows,
         "",
@@ -1635,7 +1635,7 @@ def generate_event_object_anims_ts() -> str:
         "// Target: armv4t-none-eabi | ABI: u8 direction lookups, signed s16 jump index, and u32 copy helper with u8 narrowing.",
         "// C array bounds are preserved: out-of-range indices have no defined C result.",
         "",
-        'import { cdata, symName } from "../hw/assets";',
+        'import { cdata, symName } from "@core/hw/assets";',
         "",
         *rows,
         "",

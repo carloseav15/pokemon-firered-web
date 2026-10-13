@@ -1,13 +1,13 @@
 // intro.c: CB2_SetUpIntro and the Game Freak scene's BG, window, logo-art,
 // Presents (rev1) and star/sparkle sprite callbacks.
-import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { type BgTemplate, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, ShowBg, HideBg } from "./hw/bg";
-import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+import { sound } from "@core/audio/sound";
+import { type BgTemplate, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, ShowBg, HideBg } from "@core/hw/bg";
+import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import { IsBlendTaskActive, StartBlendTask } from "./hw/menu";
-import { tasks } from "./gba/tasks";
-import { BlendPalettes, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
+import { tasks } from "@core/gba/tasks";
+import { BlendPalettes, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_TGT1_BG2, BLDCNT_TGT1_OBJ, BLDCNT_TGT2_ALL,
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN1_ON, ppu,
@@ -16,12 +16,12 @@ import {
   REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_DISPCNT,
   REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
   WININ_WIN1_ALL, WIN_RANGE,
-} from "./hw/ppu";
+} from "@core/hw/ppu";
 import {
   BlitBitmapToWindow, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer,
   InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
   CopyWindowToVram,
-} from "./hw/window";
+} from "@core/hw/window";
 import {
   ANIMCMD_END, ANIMCMD_FRAME, ANIMCMD_JUMP, AnimateSprites,
   BuildOamBuffer, CreateSprite, DestroySprite, gDummySpriteAffineAnimTable,
@@ -29,8 +29,8 @@ import {
   LoadSpriteSheet, MAX_SPRITES, oamData, ResetSpriteData, FreeAllSpritePalettes,
   SpriteCallbackDummy, StartSpriteAnim,
   type AnimCmd, type OamData, type Sprite, type SpriteTemplate,
-} from "./hw/sprite";
-import { gSineTable } from "./hw/trig";
+} from "@core/hw/sprite";
+import { gSineTable } from "@core/hw/trig";
 
 const symbols = [
   "sGameFreakBg_Gfx", "sGameFreakBg_Map", "sGameFreakBg_Pal",

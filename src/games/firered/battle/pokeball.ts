@@ -2,19 +2,19 @@
 // ball-open particles and mon fade, which live in battle/anims/special.ts (battle_anim_special.c).
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { tasks } from "../gba/tasks";
-import { cdata } from "../hw/assets";
-import { templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
-import { OBJ_VRAM0, ppu } from "../hw/ppu";
-import { gMain } from "../hw/runtime";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
+import { cdata } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { OBJ_VRAM0, ppu } from "@core/hw/ppu";
+import { gMain } from "@core/hw/runtime";
 import {
   AnimateSprite, ChangeSpriteAffineAnim, CreateInvisibleSprite, CreateSprite, DestroySprite, DestroySpriteAndFreeResources, FreeOamMatrix,
   FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpriteTileStartByTag, gSprites, LoadSpritePalette, LoadSpriteSheet,
   SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim, TAG_NONE, type Sprite, type SpriteTemplate,
-} from "../hw/sprite";
-import { Cos, gSineTable, Sin } from "../hw/trig";
-import { incbin } from "../hw/assets";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
+import { incbin } from "@core/hw/assets";
 import { GetMonData, gEnemyParty, playerMon, type Mon } from "../pokemon/mon";
 import { symBytes, symPalette } from "../pokemon/pics";
 import { G, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds } from "./globals";

@@ -7,26 +7,26 @@
 // Teeter Dance, Knock Off, Recycle, Weather Ball and Slack Off.
 
 import * as C from "../../generated/constants";
-import { random } from "../../random";
-import { tasks } from "../../gba/tasks";
-import { cdata, incbin, incbin16 } from "../../hw/assets";
-import { LoadBgTiles } from "../../hw/bg";
-import { affineAnimFrom } from "../../hw/cdataSprite";
-import { ClearGpuRegBits, GetGpuReg, SetGpuReg, SetGpuRegBits } from "../../hw/gpu";
+import { random } from "@core/random";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin, incbin16 } from "@core/hw/assets";
+import { LoadBgTiles } from "@core/hw/bg";
+import { affineAnimFrom } from "@core/hw/cdataSprite";
+import { ClearGpuRegBits, GetGpuReg, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   BG_PLTT_ID, BlendPalette, FillPalette, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_BLACK,
   RGB_WHITE,
-} from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
+} from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
 import {
   gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, SCANLINE_EFFECT_DMACNT_32BIT, ScanlineEffect_SetParams,
-} from "../../hw/scanline";
+} from "@core/hw/scanline";
 import {
   ChangeSpriteAffineAnim, CreateSprite, CreateSpriteAndAnimate, DestroySprite, FreeOamMatrix, gSprites, MAX_SPRITES,
   SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim, ST_OAM_AFFINE_DOUBLE_MASK, ST_OAM_HFLIP, ST_OAM_OBJ_BLEND,
   ST_OAM_OBJ_NORMAL, ST_OAM_OBJ_WINDOW, type Sprite,
-} from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
 import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, AnimTranslateLinear, ArcTan2Neg,

@@ -3,21 +3,21 @@
 // sprite and press-start blink, as tasks on the TS hardware layer. LeafGreen
 // branches (leaves, streaks) are not built. IntroTitle only drives the frame
 // loop and reports where the title hands off.
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "./generated/constants";
-import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
-import { type BgTemplate, ChangeBgX, BG_COORD_SET, HideBg, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ShowBg } from "./hw/bg";
-import { tasks } from "./gba/tasks";
-import { A_BUTTON, B_BUTTON, DPAD_UP, joy, SELECT_BUTTON, START_BUTTON } from "./gba/input";
-import { gMain, GetTimer1Low, SetMainCallback2, SetVBlankCallback, StartTimer1 } from "./hw/runtime";
-import { ClearGpuRegBits, CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
+import { type BgTemplate, ChangeBgX, BG_COORD_SET, HideBg, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ShowBg } from "@core/hw/bg";
+import { tasks } from "@core/gba/tasks";
+import { A_BUTTON, B_BUTTON, DPAD_UP, joy, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
+import { gMain, GetTimer1Low, SetMainCallback2, SetVBlankCallback, StartTimer1 } from "@core/hw/runtime";
+import { ClearGpuRegBits, CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import { ResetBgPositions } from "./hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BlendPalettes, BlendPalettesGradually, DestroyBlendPalettesGraduallyTask, gPaletteFade,
   IsBlendPalettesGraduallyTaskActive, LoadPalette, PALETTES_ALL, PALETTES_BG,
   ResetPaletteFade, ResetPaletteFadeControl, RGB, RGB_BLACK, RGB_WHITE, TintPalette_GrayScale2,
   TransferPlttBuffer, UpdatePaletteFade, gPlttBufferFaded, gPlttBufferUnfaded,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_LIGHTEN, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1,
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_OBJWIN_ON, DISPCNT_WIN0_ON, DISPCNT_WIN1_ON,
@@ -29,11 +29,11 @@ import {
   WIN_RANGE, WININ_WIN0_ALL,
   WINOUT_WIN01_BG0, WINOUT_WIN01_BG1, WINOUT_WIN01_BG2, WINOUT_WIN01_BG3,
   WINOUT_WIN01_BG_ALL, WINOUT_WIN01_CLR, WINOUT_WIN01_OBJ, WINOUT_WINOBJ_ALL,
-} from "./hw/ppu";
+} from "@core/hw/ppu";
 import {
   SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_Clear, ScanlineEffect_InitHBlankDmaTransfer, ScanlineEffect_SetParams,
   ScanlineEffect_Stop, gScanlineEffect, gScanlineEffectRegBuffers,
-} from "./hw/scanline";
+} from "@core/hw/scanline";
 import {
   ANIMCMD_END, ANIMCMD_FRAME, ANIMCMD_JUMP, AnimateSprites,
   BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, gDummySpriteAffineAnimTable,
@@ -41,7 +41,7 @@ import {
   LoadSpriteSheet, MAX_SPRITES, oamData, ProcessSpriteCopyRequests, ResetSpriteData,
   SpriteCallbackDummy, StartSpriteAnim,
   type AnimCmd, type OamData, type Sprite, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 
 // help_system.c pulls in the quest log and field modules, which must not load before start-up finishes
 // (circular imports); preload() imports it once and the title screen calls it through this handle.

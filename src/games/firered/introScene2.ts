@@ -1,23 +1,23 @@
 // intro.c: IntroCB_Scene2 and its forest/close-up pan tasks.
-import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
 import {
   BG_COORD_ADD, BG_COORD_SET, BG_COORD_SUB, type BgTemplate,
   ChangeBgX, ChangeBgY, HideBg, InitBgsFromTemplates,
   LoadBgTilemap, LoadBgTiles, ShowBg,
-} from "./hw/bg";
-import { CopyBufferedValuesToGpuRegs } from "./hw/gpu";
+} from "@core/hw/bg";
+import { CopyBufferedValuesToGpuRegs } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BlendPalettes, gPaletteFade, LoadPalette,
   PALETTES_ALL, RGB_WHITE, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
-import { ppu } from "./hw/ppu";
+} from "@core/hw/palette";
+import { ppu } from "@core/hw/ppu";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite,
   gDummySpriteAffineAnimTable, gDummySpriteAnimTable, gSprites,
   LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES,
   oamData, ResetSpriteData, SpriteCallbackDummy,
   type OamData, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 
 const symbols = [
   "sScene2_Bg_Gfx", "sScene2_Bg_Map", "sScene2_Bg_Pal",

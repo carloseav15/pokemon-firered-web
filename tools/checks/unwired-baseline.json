@@ -1,9 +1,9 @@
 [
  "cableCarUtil.ts",
+ "core/hw/bgRegs.ts",
+ "core/hw/tilemapUtil.ts",
  "field/fieldEffectHelpers.ts",
  "game/slots.ts",
- "hw/bgRegs.ts",
- "hw/tilemapUtil.ts",
  "imageProcessingEffects.ts",
  "monMarkings.ts",
  "paletteUtil.ts",

@@ -2,7 +2,7 @@
 // DO NOT EDIT MANUALLY. Re-run npm run generate:cdata-table-accessors to regenerate.
 // Target: armv4t-none-eabi | u8/u16 input wrapping is preserved; table data comes from exported C cdata.
 
-import { cdata } from "../hw/assets";
+import { cdata } from "@core/hw/assets";
 
 export function FacilityClassToPicIndex(facilityClass: number): number { return cdata<number[]>("pokemon", "gFacilityClassToPicIndex")[facilityClass & 0xffff]!; }
 export function PageToNextGfxId(page: number): number { return cdata<number[]>("naming_screen", "sPageToNextGfxId")[page & 0xff]!; }

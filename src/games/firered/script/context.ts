@@ -1,10 +1,10 @@
 // Port of script.c: the bytecode script context (global and immediate).
 
-import { RAM_SCRIPT_BASE, rom } from "../rom";
+import { RAM_SCRIPT_BASE, rom } from "@core/rom";
 import { COMMANDS } from "./commands";
 import type { Overworld } from "../field/overworld";
 import { save } from "../save";
-import { CalcCRC16WithTable } from "../util";
+import { CalcCRC16WithTable } from "@core/util";
 import { SPECIALS } from "./specials";
 
 export const SCRIPT_MODE_STOPPED = 0;

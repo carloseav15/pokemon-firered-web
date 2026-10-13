@@ -7,26 +7,26 @@
 
 import * as C from "../generated/constants";
 import { gBattleAnimArgs } from "./animArgs";
-import { sound } from "../audio/sound";
-import { tasks, type Task } from "../gba/tasks";
-import { cdata } from "../hw/assets";
+import { sound } from "@core/audio/sound";
+import { tasks, type Task } from "@core/gba/tasks";
+import { cdata } from "@core/hw/assets";
 import { ANIMS, bs, ROM_BASE } from "./bscript";
-import { affineAnimFrom, animsFrom, cexpr, oamFrom, templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
-import { BG_SCREEN_SIZE, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect, LoadBgTiles } from "../hw/bg";
-import { SetGpuReg } from "../hw/gpu";
-import { BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, BG_PLTT_ID, PLTT_ID, PLTT_SIZE_4BPP } from "../hw/palette";
+import { affineAnimFrom, animsFrom, cexpr, oamFrom, templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { BG_SCREEN_SIZE, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect, LoadBgTiles } from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, BG_PLTT_ID, PLTT_ID, PLTT_SIZE_4BPP } from "@core/hw/palette";
 import {
   BLDALPHA_BLEND, OBJ_VRAM0, ppu, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS,
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT,
-} from "../hw/ppu";
+} from "@core/hw/ppu";
 import {
   AllocSpritePalette, CalcCenterToCornerVec, CreateInvisibleSprite, CreateSprite, DestroySprite, DestroySpriteAndFreeResources, FreeSpriteOamMatrix,
   gDummySpriteAffineAnimTable, gDummySpriteAnimTable, gOamMatrices, gSprites, IndexOfSpritePaletteTag,
   LoadSpriteSheet, MAX_SPRITES, objAffineSet, SPRITE_NONE, SpriteCallbackDummy, StartSpriteAnim, ST_OAM_AFFINE_DOUBLE,
   ST_OAM_AFFINE_NORMAL, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL, ST_OAM_OBJ_WINDOW,
   type AffineAnimCmd, type AnimCmd, type Sprite, type SpriteCallback, type SpriteFrameImage, type SpriteTemplate,
-} from "../hw/sprite";
-import { ArcTan2, Cos, Sin } from "../hw/trig";
+} from "@core/hw/sprite";
+import { ArcTan2, Cos, Sin } from "@core/hw/trig";
 import { GetMonData, gEnemyParty, playerMon } from "../pokemon/mon";
 import {
   gEnemyMonElevation, gMonBackPicCoords, gMonBackPicTable, gMonFrontPicCoords, gMonFrontPicTable, GetMonSpritePalFromSpeciesAndPersonality,

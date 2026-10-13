@@ -6,7 +6,7 @@ import { tasks, type Task } from "../gba/tasks";
 import { CopyBufferedValuesToGpuRegs, EnableInterrupts, GetGpuReg, setInVBlank, SetGpuReg } from "./gpu";
 import { ppu } from "./ppu";
 import { scanlineHBlank } from "./scanline";
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 import { REG_OFFSET_DISPSTAT } from "./ppu";
 
 export type MainCallback = (() => void) | null;

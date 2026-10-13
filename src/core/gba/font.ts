@@ -4,7 +4,7 @@
 import { b64, rom } from "../rom";
 import { cdata, incbin16 } from "../hw/assets";
 import { DynamicPlaceholderTextUtil_GetPlaceholderPtr } from "../dynamicPlaceholderTextUtil";
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 import { CHAR_EXTRA_SYMBOL, CHAR_KEYPAD_ICON, CHAR_NEWLINE, CHAR_PROMPT_CLEAR, CHAR_PROMPT_SCROLL, EOS, EXT_CTRL_CODE_BEGIN, PLACEHOLDER_BEGIN } from "./charmap";
 import { stringVars } from "./stringBuffers";
 

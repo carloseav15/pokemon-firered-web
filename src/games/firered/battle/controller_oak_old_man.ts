@@ -2,18 +2,18 @@
 // and the old man's catching tutorial.
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, START_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, START_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { rom } from "@core/rom";
 import { save, varGet } from "../save";
-import { CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, IsDma3ManagerBusyWithBgCopy } from "../hw/bg";
-import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK } from "../hw/palette";
-import { gMain } from "../hw/runtime";
+import { CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, IsDma3ManagerBusyWithBgCopy } from "@core/hw/bg";
+import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK } from "@core/hw/palette";
+import { gMain } from "@core/hw/runtime";
 import { battleHost } from "./host";
 import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag,
-  FreeSpriteTilesByTag, gSprites, SpriteCallbackDummy, StartSpriteAnim } from "../hw/sprite";
-import { FreeAllWindowBuffers } from "../hw/window";
+  FreeSpriteTilesByTag, gSprites, SpriteCallbackDummy, StartSpriteAnim } from "@core/hw/sprite";
+import { FreeAllWindowBuffers } from "@core/hw/window";
 import { IsTextPrinterActive } from "../hw/text";
 import { DisableStruct } from "../generated/structs";
 import {

@@ -4,8 +4,8 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/games/firered/hw/assets.ts';
-import { rom } from '../../src/games/firered/rom.ts';
+import { registerCData } from '../../src/core/hw/assets.ts';
+import { rom } from '../../src/core/rom.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';
 import {
   GetLastViewedMonIndex,
@@ -16,7 +16,7 @@ import { createMon, speciesName, type Pokemon } from '../../src/games/firered/po
 import { GetMonData, type Mon } from '../../src/games/firered/pokemon/mon.ts';
 import { itemName } from '../../src/games/firered/pokemon/items.ts';
 import { isHMMove } from '../../src/games/firered/menus/monProgress.ts';
-import { decode } from '../../src/games/firered/gba/charmap.ts';
+import { decode } from '../../src/core/gba/charmap.ts';
 
 const root = process.cwd() + '/public/fr/';
 

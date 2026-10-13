@@ -13,7 +13,7 @@ import {
   pickCrySlot,
   resolveVoice,
   type KeysplitTable,
-} from "../../src/games/firered/audio/m4a.ts";
+} from "../../src/core/audio/m4a.ts";
 
 const root = process.cwd() + "/public/fr/audio/";
 const groups = JSON.parse(readFileSync(root + "voicegroups.json", "utf8")).groups as Record<string, any[]>;

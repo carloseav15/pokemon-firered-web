@@ -1,8 +1,8 @@
 // naming_screen.c: text buffer, keyboard pages and input rules. Graphics are
 // owned by namingScreen.ts; all characters/templates come from exported C data.
-import { cdata } from "../hw/assets";
-import { CHAR_SPACE, EOS } from "../gba/charmap";
-import { A_BUTTON, B_BUTTON, SELECT_BUTTON, START_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "../gba/input";
+import { cdata } from "@core/hw/assets";
+import { CHAR_SPACE, EOS } from "@core/gba/charmap";
+import { A_BUTTON, B_BUTTON, SELECT_BUTTON, START_BUTTON, DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT } from "@core/gba/input";
 
 export type NameBuffer = { length: number; [index: number]: number };
 export type NamingTemplate = {

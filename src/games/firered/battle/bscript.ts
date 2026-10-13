@@ -3,8 +3,8 @@
 // sB_ANIM_TURN, ...) map into the emulated RAM, const tables (gStatUpStringIds,
 // ...) map to data exported from the decomp.
 
-import { DATA_ROOT } from "../rom";
-import { cdataAny } from "../hw/assets";
+import { DATA_ROOT } from "@core/rom";
+import { cdataAny } from "@core/hw/assets";
 import { ram, ramSymbols, ramView } from "./ram";
 import { G, gBattleResources } from "./globals";
 

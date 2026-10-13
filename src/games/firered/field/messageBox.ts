@@ -1,14 +1,14 @@
 // field_message_box.c: the dialogue window (window 0) used by scripts.
 
-import { expandPlaceholders, stringVars } from "../gba/charmap";
+import { expandPlaceholders, stringVars } from "@core/gba/charmap";
 import { menuHelperHooks } from "../hw/menuHelpers";
-import { FONT_BRAILLE, FONT_FEMALE, FONT_MALE, FONT_NORMAL } from "../gba/font";
-import { getTextSpeedSetting, TextPrinter, textFlags, TEXT_COLOR_BLUE, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "../gba/textPrinter";
-import { Window } from "../gba/window";
-import { rom } from "../rom";
+import { FONT_BRAILLE, FONT_FEMALE, FONT_MALE, FONT_NORMAL } from "@core/gba/font";
+import { getTextSpeedSetting, TextPrinter, textFlags, TEXT_COLOR_BLUE, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
+import { rom } from "@core/rom";
 import { SV, varGet } from "../save";
 import * as C from "../generated/constants";
-import { GetColorFromTextColorTable } from "../dynamicPlaceholderTextUtil";
+import { GetColorFromTextColorTable } from "@core/dynamicPlaceholderTextUtil";
 import type { Overworld } from "./overworld";
 
 export const FIELD_MESSAGE_BOX_HIDDEN = C.FIELD_MESSAGE_BOX_HIDDEN;

@@ -197,7 +197,7 @@ consumidor: `src/games/firered/field/coordEventWeather.ts` tiene los 13 manejado
 `field_control_avatar.c`.
 
 **Voces de audio.** Emerald añade un solo tipo, `voice_directsound_reverse` (2 voces en `rs_sfx_2`; el byte de tipo es 0x10). El reproductor
-`src/games/firered/audio/m4a.ts` ya tiene búfer invertido para los gritos, pero `envelopePlan` (línea 119) solo trata como directas
+`src/core/audio/m4a.ts` ya tiene búfer invertido para los gritos, pero `envelopePlan` (línea 119) solo trata como directas
 `voice_directsound`, `_no_resample` y `_alt`, y la reproducción de voces no invierte la muestra. Cambio necesario: incluir el tipo nuevo en
 esa rama y reproducir el búfer invertido.
 
@@ -226,7 +226,7 @@ búsqueda y minimapa. Cambios en código compartido, todos con FireRed como valo
 
 - `src/games/firered/field/fieldmap.ts`: `NUM_METATILES_IN_PRIMARY`, `NUM_TILES_IN_PRIMARY` y el nuevo `NUM_PALS_IN_PRIMARY` son enlaces vivos con
   perfiles `firered` (640/640/7) y `emerald` (512/512/6); `SetTilesetProfile(nombre)` los cambia. `tileRenderer.ts` usa los vivos.
-- `src/games/firered/rom.ts`: `DATA_ROOT` es mutable (`setDataRoot`) y `loadTileset` prefiere `attributes32` si el tileset lo trae (solo Emerald).
+- `src/core/rom.ts`: `DATA_ROOT` es mutable (`setDataRoot`) y `loadTileset` prefiere `attributes32` si el tileset lo trae (solo Emerald).
 - `src/viewer/main.ts`: `GAME` desde `?game=`, predicados de comportamiento por juego, índice `hoenn.json`, selector. En Hoenn no hay avatar,
   sprites de NPC, música, efectos de campo ni animación de tiles (sus gráficos y audio son de FireRed).
 - `src/games/emerald/generated/metatileBehavior.ts` pasa a estar versionado (es lo único de `src/games` que se importa).
@@ -243,7 +243,7 @@ personajes (entrenadores, NPC, árboles, rocas) se muestran fijos en modo visor 
 544 objetos de los 49 mapas, 73 se resuelven; `OBJ_EVENT_GFX_VAR_0` y `_3` (dependen de la partida) usan una mujer genérica y la planta de bayas
 (sin hoja) tampoco se dibuja. Comprobado en el navegador: 7 personajes de Pueblo Raíz con hojas de 144×32; Kanto conserva sus rutas `/fr/`.
 
-**Música de Hoenn en el visor.** `src/games/firered/audio/m4a.ts` calculaba `AUDIO_ROOT` una sola vez al importar (siempre `/fr/audio`); ahora se
+**Música de Hoenn en el visor.** `src/core/audio/m4a.ts` calculaba `AUDIO_ROOT` una sola vez al importar (siempre `/fr/audio`); ahora se
 resuelve en cada uso (`audioRoot()`), de modo que con la raíz de datos `/emerald` carga `songs.json`, `voicegroups.json`, `samples.json`,
 `cries.json`, `keysplit_tables.json` y los `.mid` de Emerald. Los `music` del índice de Hoenn coinciden con los `id` de `songs.json` (48 de
 49 mapas; `MAP_ROUTE118` usa el valor especial `0x7FFF` de `MUS_ROUTE118`, que en el juego elige entre dos pistas según la posición

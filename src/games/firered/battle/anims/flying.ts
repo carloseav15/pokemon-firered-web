@@ -4,13 +4,13 @@
 // writes the same bitfields over the s16 data array.
 
 import * as C from "../../generated/constants";
-import { OBJ_PLTT_ID, OBJ_PLTT_OFFSET, PLTT_ID, gPlttBufferFaded } from "../../hw/palette";
+import { OBJ_PLTT_ID, OBJ_PLTT_OFFSET, PLTT_ID, gPlttBufferFaded } from "@core/hw/palette";
 import {
   CreateSpriteAndAnimate, DestroySprite, FreeOamMatrix, gOamMatrices, gSprites, IndexOfSpritePaletteTag, SeekSpriteAnim,
   ST_OAM_AFFINE_OFF, ST_OAM_AFFINE_ON_MASK, ST_OAM_HFLIP, StartSpriteAffineAnim, StartSpriteAnim, type Sprite,
-} from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
-import { random } from "../../random";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
+import { random } from "@core/random";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimTranslateLinear, ArcTan2Neg, DestroyAnimSprite, DestroyAnimVisualTask,
   DestroySpriteAndMatrix, GetAnimBattlerSpriteId, GetBattlerSpriteBGPriority, GetBattlerSpriteCoord, InitAnimLinearTranslation,

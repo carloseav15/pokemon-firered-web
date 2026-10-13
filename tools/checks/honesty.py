@@ -67,15 +67,15 @@ def current_stubs() -> dict[str, list[str]]:
 
 
 IMPORT_RE = re.compile(
-    r"""(?:^|\n)\s*(import|export)\s+(type\s+)?[^'";]*?from\s+['"](\.[^'"]+|@game/[^'"]+)['"]"""
-    r"""|import\(\s*['"](\.[^'"]+|@game/[^'"]+)['"]\s*\)"""
-    r"""|(?:^|\n)\s*import\s+['"](\.[^'"]+|@game/[^'"]+)['"]"""
+    r"""(?:^|\n)\s*(import|export)\s+(type\s+)?[^'";]*?from\s+['"](\.[^'"]+|(?:@game|@core)/[^'"]+)['"]"""
+    r"""|import\(\s*['"](\.[^'"]+|(?:@game|@core)/[^'"]+)['"]\s*\)"""
+    r"""|(?:^|\n)\s*import\s+['"](\.[^'"]+|(?:@game|@core)/[^'"]+)['"]"""
 )
 
 
 def resolve(base: Path, spec: str) -> Path | None:
     # @game/* is the compiled game's directory (tsconfig paths); FireRed is the only game wired so far.
-    p = (ROOT / "src/games/firered" / spec[len("@game/"):]).resolve() if spec.startswith("@game/") else (base.parent / spec).resolve()
+    p = (ROOT / "src/games/firered" / spec[len("@game/"):]).resolve() if spec.startswith("@game/") else (ROOT / "src/core" / spec[len("@core/"):]).resolve() if spec.startswith("@core/") else (base.parent / spec).resolve()
     for cand in (p, p.with_suffix(".ts"), p / "index.ts"):
         if cand.is_file():
             return cand
@@ -130,7 +130,7 @@ def self_fulfilling() -> list[str]:
 def unknown_constants() -> list[str]:
     known = json.loads((ROOT / "public/fr/constants.json").read_text())
     bad = []
-    for f in sorted((ROOT / "src/games/firered").rglob("*.ts")):
+    for f in sorted([*(ROOT / "src/games/firered").rglob("*.ts"), *(ROOT / "src/core").rglob("*.ts")]):
         if "generated" in f.parts:
             continue
         for i, line in enumerate(f.read_text().splitlines(), 1):

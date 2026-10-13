@@ -4,20 +4,20 @@
 // scary face and the circular mon movement.
 
 import * as C from "../../generated/constants";
-import { incbin, incbin16 } from "../../hw/assets";
-import { CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette } from "../../hw/bg";
-import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "../../hw/gpu";
+import { incbin, incbin16 } from "@core/hw/assets";
+import { CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette } from "@core/hw/bg";
+import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalette, FillPalette, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette,
   OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB, RGB_BLACK,
-} from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
-import { gScanlineEffect, ScanlineEffect_InitWave } from "../../hw/scanline";
+} from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
+import { gScanlineEffect, ScanlineEffect_InitWave } from "@core/hw/scanline";
 import {
   AllocSpritePalette, CreateSprite, DestroySprite, FreeSpritePaletteByTag, gSprites, MAX_SPRITES, SpriteCallbackDummy,
   ST_OAM_HFLIP, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL, type Sprite,
-} from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimTranslateLinear, CloneBattlerSpriteWithBlend, DestroyAnimSprite,
   DestroyAnimSpriteAndDisableBlend, DestroyAnimVisualTask, DestroySpriteAndMatrix, DestroySpriteWithActiveSheet,

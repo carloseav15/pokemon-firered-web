@@ -10,7 +10,7 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "paths": { "@game/*": ["./src/games/firered/*"] }
+    "paths": { "@game/*": ["./src/games/firered/*"], "@core/*": ["./src/core/*"] }
   },
   "include": ["src/main.ts", "src/viewer/main.ts"]
 }

@@ -1,25 +1,25 @@
 // Starts the FireRed engine: loads the exported decomp data, mounts the
 // 240x160 canvas and begins a new game or continues the saved one.
 
-import { loadCData, preloadPacks } from "./hw/assets";
-import { sound } from "./audio/sound";
-import { createM4aBackend } from "./audio/m4a";
+import { loadCData, preloadPacks } from "@core/hw/assets";
+import { sound } from "@core/audio/sound";
+import { createM4aBackend } from "@core/audio/m4a";
 import { Game } from "./game";
-import { rom } from "./rom";
-import { joy } from "./gba/input";
+import { rom } from "@core/rom";
+import { joy } from "@core/gba/input";
 import * as saveModule from "./save";
 import { saveStore } from "./save";
 import { loadFieldFx } from "./field/fieldEffects";
 import { preloadFieldAssets } from "./field/preloadField";
-import { loadTrig } from "./hw/trig";
+import { loadTrig } from "@core/hw/trig";
 import { installBattleHost } from "./battle/host";
 import { preloadBattleAssets } from "./battle/preload";
 import { createMon } from "./pokemon/pokemon";
 import { RIVAL_BATTLE_HEAL_AFTER, RIVAL_BATTLE_TUTORIAL } from "./generated/constants";
-import { getRandomState, SeedRngAndSetTrainerId } from "./random";
+import { getRandomState, SeedRngAndSetTrainerId } from "@core/random";
 import { sWildEncounterData, sWildEncountersDisabled } from "./field/wildEncounter";
-import { tasks } from "./gba/tasks";
-import { gMain } from "./hw/runtime";
+import { tasks } from "@core/gba/tasks";
+import { gMain } from "@core/hw/runtime";
 import { preloadHelpSystem } from "./helpSystemUtil";
 
 export type LaunchOptions = (

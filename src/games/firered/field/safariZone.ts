@@ -2,7 +2,7 @@
 
 import * as C from "../generated/constants";
 import { flagClear, flagGet, flagSet, incrementGameStat } from "../save";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 
 type SafariGame = { safariSteps?: number; safariBalls: number };
 

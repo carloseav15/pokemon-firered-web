@@ -2,9 +2,9 @@
 // fainted-mon message is queued, preserving the per-Pokémon task sequence.
 import * as C from "../generated/constants";
 import type { Game } from "../game";
-import { tasks } from "../gba/tasks";
-import { stringVars } from "../gba/charmap";
-import { rom } from "../rom";
+import { tasks } from "@core/gba/tasks";
+import { stringVars } from "@core/gba/charmap";
+import { rom } from "@core/rom";
 import { save, SV, varSet } from "../save";
 import { GetMonData, SetMonData } from "../pokemon/mon";
 import { nickname } from "../pokemon/pokemon";

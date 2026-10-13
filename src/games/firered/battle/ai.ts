@@ -2,8 +2,8 @@
 // battle_ai_switch_items.c (switching / item use) is appended below.
 
 import * as C from "../generated/constants";
-import { random } from "../random";
-import { rom } from "../rom";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { AIS, bs, ROM_BASE } from "./bscript";
 import {
   G, gBattleMons, gBattleResources, gBattleResults, gBattleScripting, gBattleStruct, gBattlerPartyIndexes, gBitTable, gDisableStructs, gLastHitBy, gLastLandedMoves, gLastMoves,

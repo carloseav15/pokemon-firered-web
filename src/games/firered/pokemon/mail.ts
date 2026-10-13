@@ -3,10 +3,10 @@
 // composing a new message (the Easy Chat writer, via the party menu GIVE
 // path → DoEasyChatScreen) are connected.
 
-import { CHAR_SPACE, decode, EOS } from "../gba/charmap";
+import { CHAR_SPACE, decode, EOS } from "@core/gba/charmap";
 import * as C from "../generated/constants";
-import { cdata, hasCData, loadCData, type SymRef } from "../hw/assets";
-import { rom } from "../rom";
+import { cdata, hasCData, loadCData, type SymRef } from "@core/hw/assets";
+import { rom } from "@core/rom";
 import { GetUnownLetterByPersonality } from "../pokemonIcon";
 import { save, type MailData, type PcMailEntry } from "../save";
 import { speciesName, type Pokemon } from "./pokemon";

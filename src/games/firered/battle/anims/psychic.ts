@@ -3,17 +3,17 @@
 // Skill Swap, Extrasensory distortion and clone, and Psycho Boost.
 
 import * as C from "../../generated/constants";
-import { affineAnimFrom, affineAnimsFrom } from "../../hw/cdataSprite";
-import { SetGpuReg } from "../../hw/gpu";
-import { gPlttBufferFaded, OBJ_PLTT_ID } from "../../hw/palette";
-import { BLDALPHA_BLEND, REG_OFFSET_BG1HOFS, REG_OFFSET_BG2HOFS } from "../../hw/ppu";
-import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "../../hw/scanline";
+import { affineAnimFrom, affineAnimsFrom } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
+import { gPlttBufferFaded, OBJ_PLTT_ID } from "@core/hw/palette";
+import { BLDALPHA_BLEND, REG_OFFSET_BG1HOFS, REG_OFFSET_BG2HOFS } from "@core/hw/ppu";
+import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "@core/hw/scanline";
 import {
   AllocOamMatrix, CalcCenterToCornerVec, ChangeSpriteAffineAnim, CreateSprite, DestroySprite, FreeOamMatrix, gSprites,
   IndexOfSpritePaletteTag, InitSpriteAffineAnim, MAX_SPRITES, SpriteCallbackDummy, ST_OAM_AFFINE_DOUBLE, ST_OAM_AFFINE_NORMAL,
   ST_OAM_AFFINE_OFF, StartSpriteAffineAnim, StartSpriteAnim, type Sprite,
-} from "../../hw/sprite";
-import { gSineTable } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { gSineTable } from "@core/hw/trig";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, CloneBattlerSpriteWithBlend, DestroyAnimSprite, DestroyAnimVisualTask,
   DestroySpriteAndMatrix, DestroySpriteWithActiveSheet, GetAnimBattlerSpriteId, GetBattlerSpriteBGPriorityRank,

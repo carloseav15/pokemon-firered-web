@@ -8,15 +8,15 @@
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
-import { sound } from "../audio/sound";
-import { paletteFade } from "../gba/fade";
-import { Sprite } from "../gba/sprite";
-import { tasks } from "../gba/tasks";
-import { cdata, incbin } from "../hw/assets";
-import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, PALETTES_ALL, RGB_WHITE } from "../hw/palette";
-import { DATA_ROOT, rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { paletteFade } from "@core/gba/fade";
+import { Sprite } from "@core/gba/sprite";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin } from "@core/hw/assets";
+import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, PALETTES_ALL, RGB_WHITE } from "@core/hw/palette";
+import { DATA_ROOT, rom } from "@core/rom";
 import { flagGet, flagSet, incrementGameStat, save, varSet, SV } from "../save";
-import { stringVars } from "../gba/charmap";
+import { stringVars } from "@core/gba/charmap";
 import { IsWeatherNotFadingIn, SetWeatherScreenFadeOut, WeatherProcessingIdle } from "./weather";
 import { canvas, rgb555, spriteSheet, tilemapCanvas } from "./gfx4bpp";
 import { MAP_OFFSET, MapGridGetElevationAt, MapGridGetMetatileAttributeAt, MapGridGetMetatileIdAt, MapGridSetMetatileIdAt, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
@@ -1809,12 +1809,12 @@ function incbin16le(bytes: Uint8Array): Uint16Array {
 type CAnim = { frame?: { imageValue: number; duration: number; hFlip?: boolean; vFlip?: boolean }; loop?: { count: number }; jump?: { target: number }; type?: number };
 
 /** Convert exported AnimCmd arrays into the field sprite's command tuples. */
-export function animCmds(...anims: unknown[][]): import("../rom").AnimCmd[][] {
+export function animCmds(...anims: unknown[][]): import("@core/rom").AnimCmd[][] {
   return anims.map((list) => (list as CAnim[]).map((c) => {
-    if (c.frame) return ["F", c.frame.imageValue, c.frame.duration, c.frame.hFlip ? 1 : 0, c.frame.vFlip ? 1 : 0] as import("../rom").AnimCmd;
-    if (c.loop) return ["L", c.loop.count] as unknown as import("../rom").AnimCmd;
-    if (c.jump) return ["J", c.jump.target] as unknown as import("../rom").AnimCmd;
-    return ["E"] as unknown as import("../rom").AnimCmd;
+    if (c.frame) return ["F", c.frame.imageValue, c.frame.duration, c.frame.hFlip ? 1 : 0, c.frame.vFlip ? 1 : 0] as import("@core/rom").AnimCmd;
+    if (c.loop) return ["L", c.loop.count] as unknown as import("@core/rom").AnimCmd;
+    if (c.jump) return ["J", c.jump.target] as unknown as import("@core/rom").AnimCmd;
+    return ["E"] as unknown as import("@core/rom").AnimCmd;
   }));
 }
 

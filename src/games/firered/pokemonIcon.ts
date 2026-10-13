@@ -4,13 +4,13 @@
 // the icon bytes beside it (the C stores them in sprite->images).
 
 import * as C from "./generated/constants";
-import { cdata, incbin, symName, type SymRef } from "./hw/assets";
-import { affineAnimsFrom, animsFrom, oamFrom } from "./hw/cdataSprite";
-import { LoadPalette } from "./hw/palette";
+import { cdata, incbin, symName, type SymRef } from "@core/hw/assets";
+import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
+import { LoadPalette } from "@core/hw/palette";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, gSprites, IndexOfSpritePaletteTag, LoadSpritePalette, RequestSpriteCopy, TAG_NONE, type Sprite,
   type SpriteCallback, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { symPalette } from "./pokemon/pics";
 
 export const POKE_ICON_BASE_PAL_TAG = 56000;

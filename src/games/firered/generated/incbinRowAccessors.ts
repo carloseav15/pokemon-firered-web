@@ -2,6 +2,6 @@
 // DO NOT EDIT MANUALLY. Re-run npm run generate:incbin-row-accessors to regenerate.
 // Target: armv4t-none-eabi | C const u8* uses the browser pointer model {buf, off}; u8 row indices wrap.
 
-import { incbin } from "../hw/assets";
+import { incbin } from "@core/hw/assets";
 
 export function GetBattleInterfaceGfxPtr(elementId: number): { buf: Uint8Array; off: number } { return { buf: incbin("gBattleInterface_Gfx"), off: (elementId & 0xff) * 32 }; }

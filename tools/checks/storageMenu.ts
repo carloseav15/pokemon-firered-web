@@ -4,9 +4,9 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import { registerCData } from '../../src/core/hw/assets.ts';
 import { save } from '../../src/games/firered/save.ts';
-import { rom } from '../../src/games/firered/rom.ts';
+import { rom } from '../../src/core/rom.ts';
 import * as StorageMenu from '../../src/games/firered/menus/storageMenu.ts';
 
 const root = process.cwd() + '/public/fr/';

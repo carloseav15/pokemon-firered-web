@@ -1,4 +1,4 @@
-import { DATA_ROOT } from "../../games/firered/rom";
+import { DATA_ROOT } from "@core/rom";
 
 export const M12_TEMPLATE_NAMES = ["TallGrass", "GroundImpactDust", "Ripple"] as const;
 export const VIEWER_TEMPLATE_NAMES = [...M12_TEMPLATE_NAMES, "SandFootprints", "DeepSandFootprints", "BikeTireTracks"] as const;

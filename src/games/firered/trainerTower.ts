@@ -3,20 +3,20 @@
 // by the battle records screen. Needs cdata "trainer_tower_sets" (preloadField) and
 // "battle_message" (preloadBattleAssets), both loaded at boot.
 
-import { STRING_VAR4_LENGTH, stringVars } from "./gba/stringBuffers";
+import { STRING_VAR4_LENGTH, stringVars } from "@core/gba/stringBuffers";
 import { ConvertEasyChatWordsToString } from "./easyChat";
-import { encode } from "./gba/charmap";
-import { GetStringWidth, FONT_NORMAL } from "./gba/font";
+import { encode } from "@core/gba/charmap";
+import { GetStringWidth, FONT_NORMAL } from "@core/gba/font";
 import { addBagItem } from "./pokemon/items";
 import { CopyItemName } from "./hw/menuHelpers";
 import { GetMonData, ZeroEnemyPartyMons, gEnemyParty, CreateBattleTowerMon, type BattleTowerPokemon, playerMon, type Mon } from "./pokemon/mon";
 import { GetMonsStateToDoubles } from "./pokemon/scriptPokemonUtil";
-import { SetVBlankCounter1Ptr, DisableVBlankCounter1 } from "./hw/runtime";
-import { AddWindow, RemoveWindow, type WindowTemplate } from "./hw/window";
+import { SetVBlankCounter1Ptr, DisableVBlankCounter1 } from "@core/hw/runtime";
+import { AddWindow, RemoveWindow, type WindowTemplate } from "@core/hw/window";
 import { LoadStdWindowFrameGfx, DrawStdWindowFrame, ClearStdWindowAndFrameToTransparent } from "./hw/menu";
 import { AddTextPrinterParameterized } from "./hw/text";
 import { BattleSetup_GetBattleTowerBattleTransition } from "./battle/battleSetup";
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import { G } from "./battle/globals";
 import { type ScriptRunner } from "./script/context";
 import {
@@ -29,10 +29,10 @@ import {
 import { GetCurrentFieldMap } from "./field/fieldmap";
 import * as C from "./generated/constants";
 import { ConvertIntToDecimalStringN, StringExpandPlaceholders } from "./generated/stringUtil";
-import { cdata, symName } from "./hw/assets";
+import { cdata, symName } from "@core/hw/assets";
 import { AddTextPrinterParameterized3 } from "./hw/text";
-import { CopyWindowToVram, FillWindowPixelRect, PIXEL_FILL, PutWindowTilemap } from "./hw/window";
-import { rom } from "./rom";
+import { CopyWindowToVram, FillWindowPixelRect, PIXEL_FILL, PutWindowTilemap } from "@core/hw/window";
+import { rom } from "@core/rom";
 import { save, SV, varGet, varSet, type TrainerTowerSave } from "./save";
 
 /** trainer_tower.c struct TrainerTowerState. */

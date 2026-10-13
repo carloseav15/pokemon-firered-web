@@ -2,12 +2,12 @@
 // functions and the glyph decompression shared by every latin font.
 
 import { sound } from "../audio/sound";
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 import { CHAR_EXTRA_SYMBOL, CHAR_KEYPAD_ICON, CHAR_NEWLINE, CHAR_PROMPT_CLEAR, CHAR_PROMPT_SCROLL, EOS, EXT_CTRL_CODE_BEGIN, PLACEHOLDER_BEGIN } from "./charmap";
 import { FONT_BRAILLE, FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, DecompressGlyphTile, GetGlyphWidth_Female, GetGlyphWidth_Male, GetGlyphWidth_Normal, GetGlyphWidth_NormalCopy1, GetGlyphWidth_NormalCopy2, GetGlyphWidth_Small, GetKeypadIconSheet, KEYPAD_ICONS, glyph, type FontInfo } from "./font";
 import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "./input";
 import { b64, rom } from "../rom";
-import { gQuestLogState } from "../questLogState";
+import { gQuestLogState } from "@game/questLogState";
 import { incbin16 } from "../hw/assets";
 import type { Window } from "./window";
 

@@ -2,9 +2,9 @@
 // Regenerates hidden items in Sevii Islands (and selected Kanto routes)
 // after 1500 steps upon re-entering a valid map.
 
-import { cdata } from "./hw/assets";
+import { cdata } from "@core/hw/assets";
 import * as C from "./generated/constants";
-import { random } from "./random";
+import { random } from "@core/random";
 import { flagClear, flagSet, save, varGet, varSet } from "./save";
 
 export interface RenewableHiddenItemData {

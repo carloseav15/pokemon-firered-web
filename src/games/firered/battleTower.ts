@@ -2,11 +2,11 @@
 // The trainer/class tables are empty in this FireRed C source; they intentionally remain empty.
 
 import * as C from "./generated/constants";
-import { cdata } from "./hw/assets";
+import { cdata } from "@core/hw/assets";
 import { StringAppend } from "./generated/stringUtil";
 import { ConvertEasyChatWordsToString, EC_DoesEasyChatStringFitOnLine } from "./easyChat";
-import { random } from "./random";
-import { encode, EOS, stringVars, copy } from "./gba/charmap";
+import { random } from "@core/random";
+import { encode, EOS, stringVars, copy } from "@core/gba/charmap";
 import { CopyItemName } from "./hw/menuHelpers";
 import { addBagItem } from "./pokemon/items";
 import { GetSetPokedexFlag } from "./pokemon/mon_extra";

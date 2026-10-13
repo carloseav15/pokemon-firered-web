@@ -3,23 +3,23 @@
 // trainer pic tables, TryShinyAnimation from battle_anim_special.c).
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { tasks } from "../gba/tasks";
-import { cdata, incbin } from "../hw/assets";
-import { templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
-import { BG_PLTT_ID, BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITE } from "../hw/palette";
-import { OBJ_VRAM0, ppu } from "../hw/ppu";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { BG_PLTT_ID, BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITE } from "@core/hw/palette";
+import { OBJ_VRAM0, ppu } from "@core/hw/ppu";
 import {
   AnimateSprite, CreateSprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadSpritePalette, LoadSpriteSheet, SpriteCallbackDummy, StartSpriteAffineAnim,
   StartSpriteAnim, ST_OAM_AFFINE_OFF, type Sprite,
-} from "../hw/sprite";
+} from "@core/hw/sprite";
 import { GetMonData, gEnemyParty, playerMon, SetMonData, type Mon } from "../pokemon/mon";
 import {
   DecompressPicFromTable, gEnemyMonElevation, GetMonFrontSpritePal, GetMonSpritePalFromSpeciesAndPersonality, gMonBackPicTable, gMonFrontPicTable,
   gTrainerBackPicCoords as trainerBackPicCoordsTable, gTrainerBackPicPaletteTable, gTrainerFrontPicCoords as trainerFrontPicCoordsTable,
   gTrainerFrontPicPaletteTable, gTrainerFrontPicTable, LoadSpecialPokePic, LoadSpecialPokePic_DontHandleDeoxys, symBytes, symPalette,
 } from "../pokemon/pics";
-import { b64, rom } from "../rom";
+import { b64, rom } from "@core/rom";
 import {
   G, gBattleMonForms, gBattlerPartyIndexes, gBattlerPositions, gBattlerSpriteIds, gBattleSpritesDataPtr, gBattleStruct, gHealthboxSpriteIds,
   gMonSpritesGfxPtr, gTransformedPersonalities,

@@ -2,16 +2,16 @@
 // (The help-system context and wireless indicator are not part of the port.)
 
 import * as C from "../generated/constants";
-import { BG_ATTR_CHARBASEINDEX, SetBgAttribute, ShowBg } from "../hw/bg";
-import { SetGpuReg, SetGpuRegBits } from "../hw/gpu";
-import { BeginHardwarePaletteFade, gPaletteFade, ResetPaletteFade } from "../hw/palette";
+import { BG_ATTR_CHARBASEINDEX, SetBgAttribute, ShowBg } from "@core/hw/bg";
+import { SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
+import { BeginHardwarePaletteFade, gPaletteFade, ResetPaletteFade } from "@core/hw/palette";
 import {
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_OBJWIN_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT,
   REG_OFFSET_MOSAIC, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
-} from "../hw/ppu";
-import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "../hw/runtime";
-import { ScanlineEffect_Clear } from "../hw/scanline";
-import { CreateSprite, FreeAllSpritePalettes, gSprites, ResetSpriteData, SpriteCallbackDummy, spriteState, StartSpriteAnim } from "../hw/sprite";
+} from "@core/hw/ppu";
+import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Clear } from "@core/hw/scanline";
+import { CreateSprite, FreeAllSpritePalettes, gSprites, ResetSpriteData, SpriteCallbackDummy, spriteState, StartSpriteAnim } from "@core/hw/sprite";
 import { GetMonData, gEnemyParty, playerMon } from "../pokemon/mon";
 import { save } from "../save";
 import { G, gActionSelectionCursor, gBattleMonForms, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleScripting, gBattleSpritesDataPtr, gHealthboxSpriteIds } from "./globals";

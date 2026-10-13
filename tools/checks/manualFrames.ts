@@ -3,8 +3,8 @@ import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { Game, FRAME_MS } from "../../src/games/firered/game.ts";
-import { joy, A_BUTTON, DPAD_RIGHT } from "../../src/games/firered/gba/input.ts";
-import { getRandomState, SeedRngAndSetTrainerId, InitPlayerTrainerId, random, takeWildEncounterSeed } from "../../src/games/firered/random.ts";
+import { joy, A_BUTTON, DPAD_RIGHT } from "../../src/core/gba/input.ts";
+import { getRandomState, SeedRngAndSetTrainerId, InitPlayerTrainerId, random, takeWildEncounterSeed } from "../../src/core/random.ts";
 
 (globalThis as any).fetch = async (url: string) => {
   const bytes = readFileSync(process.cwd() + "/public" + url);

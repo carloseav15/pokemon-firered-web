@@ -2,11 +2,11 @@
 // rematch state), plus the rematch lookups battle_setup.c uses.
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { tasks } from "../gba/tasks";
-import { cdata } from "../hw/assets";
-import { random } from "../random";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
+import { cdata } from "@core/hw/assets";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { flagClear, flagGet, flagSet, save, SV, varGet } from "../save";
 import { checkBagHasItem } from "../pokemon/items";
 import type { Game } from "../game";
@@ -456,7 +456,7 @@ export function Task_VsSeeker_0(game: Game, item: number, showMessage: (text: Ui
   const useState = CanUseVsSeeker(ow, info);
   if (useState === 0) {
     const charge = stepCounter() & 0xff;
-    import("../gba/charmap").then(({ TV_PrintIntToStringVar }) => {
+    import("@core/gba/charmap").then(({ TV_PrintIntToStringVar }) => {
       TV_PrintIntToStringVar(0, 100 - charge);
       showMessage(rom.text("VSSeeker_Text_BatteryNotChargedNeedXSteps"), () => Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(release));
     });

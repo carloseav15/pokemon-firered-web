@@ -14,23 +14,23 @@
 //  - Post-trade evolution checking (STATE_TRY_EVOLUTION → TradeEvolutionScene)
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { copy, EOS, expandPlaceholders, stringVars } from "../gba/charmap";
-import { FONT_NORMAL } from "../gba/font";
-import { A_BUTTON, JOY_NEW } from "../gba/input";
-import { tasks, type TaskFunc } from "../gba/tasks";
-import { cdata, incbin, incbin16, loadCData, preloadPacks } from "../hw/assets";
-import { affineAnimsFrom, animsFrom, oamFrom, templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
+import { sound } from "@core/audio/sound";
+import { copy, EOS, expandPlaceholders, stringVars } from "@core/gba/charmap";
+import { FONT_NORMAL } from "@core/gba/font";
+import { A_BUTTON, JOY_NEW } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
+import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
+import { affineAnimsFrom, animsFrom, oamFrom, templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
   BG_SCREEN_SIZE, CopyToBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles,
   ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "../hw/bg";
-import { GetGpuReg, SetGpuReg, SetGpuRegBits, ClearGpuRegBits } from "../hw/gpu";
+} from "@core/hw/bg";
+import { GetGpuReg, SetGpuReg, SetGpuRegBits, ClearGpuRegBits } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette,
   OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITE, TransferPlttBuffer,
   UpdatePaletteFade,
-} from "../hw/palette";
+} from "@core/hw/palette";
 import {
   BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT1_BG1, BLDCNT_TGT1_OBJ, BLDCNT_TGT2_BG1,
   BLDCNT_TGT2_BG2, DISPCNT_BG0_ON, DISPCNT_BG1_ON, DISPCNT_BG2_ON, DISPCNT_MODE_0,
@@ -39,20 +39,20 @@ import {
   REG_OFFSET_BG2PA, REG_OFFSET_BG2PB, REG_OFFSET_BG2PC, REG_OFFSET_BG2PD, REG_OFFSET_BG2VOFS,
   REG_OFFSET_BG2X_L, REG_OFFSET_BG2Y_L, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT,
   REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
-} from "../hw/ppu";
-import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback } from "../hw/runtime";
+} from "@core/hw/ppu";
+import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback } from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes,
   FreeSpriteOamMatrix, gSprites, LoadCompressedSpriteSheet, LoadOam, LoadSpritePalette,
   LoadSpriteSheet, MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy,
   ST_OAM_AFFINE_DOUBLE, StartSpriteAffineAnim, StartSpriteAnim, type Sprite, type SpriteTemplate,
-} from "../hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "../hw/text";
 import {
   CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
-} from "../hw/window";
-import { rom } from "../rom";
+} from "@core/hw/window";
+import { rom } from "@core/rom";
 import { flagSet, save, SV, varGet } from "../save";
 import { GetMonData } from "./mon";
 import { calculateStats, createMon, nickname, setDexFlag, speciesName, type Pokemon } from "./pokemon";

@@ -1,7 +1,7 @@
 // quest_log_events.c: single-player event payloads and scene-script recording.
 
 import * as C from "./generated/constants";
-import { cdata, symName, type SymRef } from "./hw/assets";
+import { cdata, symName, type SymRef } from "@core/hw/assets";
 import { SetGlobalFieldTintMode } from "./field/fieldPalette";
 import {
   QL_LoadAction_Input, QL_LoadAction_MovementOrGfxChange, QL_LoadAction_SceneEnd, QL_LoadAction_Wait,
@@ -13,15 +13,15 @@ import { QL_SlightlyDarkenSomePals, QuestLog_InitPalettesBackup as initQuestLogP
 import { gQuestLogState, SetQuestLogWindow1Committer, WriteQuestLogState } from "./questLogState";
 import { QL_LoadObjects, SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import type { Overworld } from "./field/overworld";
-import type { MapObjectTemplate } from "./rom";
-import { CHAR_NEWLINE, EOS, expandPlaceholders, GetExpandedPlaceholder, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
-import { stringVars } from "./gba/stringBuffers";
-import { FONT_NORMAL } from "./gba/font";
-import { TextPrinter, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "./gba/textPrinter";
-import { Window, stdPalette } from "./gba/window";
-import { incbin16 } from "./hw/assets";
+import type { MapObjectTemplate } from "@core/rom";
+import { CHAR_NEWLINE, EOS, expandPlaceholders, GetExpandedPlaceholder, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
+import { stringVars } from "@core/gba/stringBuffers";
+import { FONT_NORMAL } from "@core/gba/font";
+import { TextPrinter, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
+import { Window, stdPalette } from "@core/gba/window";
+import { incbin16 } from "@core/hw/assets";
 import { ClearBag, ClearPCItemSlots, ItemId_GetName, ItemId_GetPocket, POCKET_BERRY_POUCH, POCKET_ITEMS, POCKET_KEY_ITEMS, POCKET_POKE_BALLS, POCKET_TM_CASE } from "./pokemon/items";
 import { createMon, speciesName } from "./pokemon/pokemon";
 import { GetBoxNamePtr } from "./pokemon/storage";
@@ -29,13 +29,13 @@ import { getMapNameGenericBytes } from "./regionMap";
 import {
   DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset,
   DynamicPlaceholderTextUtil_SetPlaceholderPtr,
-} from "./dynamicPlaceholderTextUtil";
+} from "@core/dynamicPlaceholderTextUtil";
 import { FadeScreen } from "./field/weather";
-import { paletteFade, FADE_TO_BLACK } from "./gba/fade";
-import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "./hw/palette";
+import { paletteFade, FADE_TO_BLACK } from "@core/gba/fade";
+import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "@core/hw/palette";
 import { DisableWildEncounters } from "./field/wildEncounter";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
-import { tasks } from "./gba/tasks";
+import { tasks } from "@core/gba/tasks";
 import { GetTextWindowPalette } from "./hw/menu";
 
 export { gQuestLogState };

@@ -2,7 +2,7 @@
 
 import * as C from "../generated/constants";
 import type { BattlePokemon } from "../generated/structs";
-import { cdata } from "../hw/assets";
+import { cdata } from "@core/hw/assets";
 import { flagGet } from "../save";
 import { G, gBattleResources, gEnigmaBerries } from "./globals";
 import { div, gBattleMoves } from "./macros";

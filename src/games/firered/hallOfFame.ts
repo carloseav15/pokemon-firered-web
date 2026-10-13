@@ -16,19 +16,19 @@
 //  - Cry playback uses decoded species samples; it does not model the GBA's cry tables and parameters.
 // Needs preloadHallOfFame().
 
-import { IsCryPlayingOrClearCrySongs, sound, StopCryAndClearCrySongs } from "./audio/sound";
-import { concat, EOS, expandPlaceholders as expand, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, stringVars } from "./gba/charmap";
-import { FONT_NORMAL, GetStringWidth as stringWidthOf } from "./gba/font";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "./gba/input";
-import { tasks } from "./gba/tasks";
+import { IsCryPlayingOrClearCrySongs, sound, StopCryAndClearCrySongs } from "@core/audio/sound";
+import { concat, EOS, expandPlaceholders as expand, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, stringVars } from "@core/gba/charmap";
+import { FONT_NORMAL, GetStringWidth as stringWidthOf } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
 import * as C from "./generated/constants";
-import { cdata, incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
+import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, HideBg, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags,
   SetBgTilemapBuffer, ShowBg, UnsetBgTilemapBuffer, type BgTemplate,
-} from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   ClearDialogWindowAndFrame, CreateTopBarWindowLoadPalette, DestroyTopBarWindow, DrawDialogueFrame, DrawStdFrameWithCustomTileAndPalette, FONTATTR_LETTER_SPACING,
   GetFontAttribute, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters, LoadStdWindowGfx, TopBarWindowPrintString, TopBarWindowPrintTwoStrings,
@@ -36,26 +36,26 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, BlendPalettesUnfaded, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL,
   PALETTES_OBJECTS, ResetPaletteFade, RGB, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT1_BG1, BLDCNT_TGT2_ALL, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDALPHA,
   REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT,
-} from "./hw/ppu";
-import { gMain, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+} from "@core/hw/ppu";
+import { gMain, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, gSprites, LoadCompressedSpriteSheet, LoadOam, LoadSpritePalette,
   MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData, spriteState, StartSpriteAnim, type Sprite,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, RunTextPrinters } from "./hw/text";
-import { gSineTable } from "./hw/trig";
+import { gSineTable } from "@core/hw/trig";
 import {
   AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { BeginPCScreenEffect_TurnOff, BeginPCScreenEffect_TurnOn, IsPCScreenEffectRunning_TurnOff, IsPCScreenEffectRunning_TurnOn } from "./pcScreenEffect";
 import { GetGenderFromSpeciesAndPersonality, SpeciesToNationalPokedexNum, playerMon } from "./pokemon/mon";
 import { speciesName } from "./pokemon/pokemon";
-import { random } from "./random";
+import { random } from "@core/random";
 import { GetGameStat, save } from "./save";
 import {
   CreateMonPicSprite_HandleDeoxys, CreateTrainerPicSprite, FreeAndDestroyMonPicSprite, FreeAndDestroyTrainerPicSprite, PlayerGenderToFrontTrainerPicId,

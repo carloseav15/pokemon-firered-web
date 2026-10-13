@@ -4,20 +4,20 @@
 // Minimize, Splash, Swagger, Sketch, Nature Power, and so on).
 
 import * as C from "../../generated/constants";
-import { random } from "../../random";
-import { cdata } from "../../hw/assets";
-import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "../../hw/gpu";
+import { random } from "@core/random";
+import { cdata } from "@core/hw/assets";
+import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BlendPalette, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, RGB,
   RGB_BLACK, RGB_WHITE,
-} from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
+} from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
 import {
   AllocSpritePalette, ChangeSpriteAffineAnim, CreateSprite, CreateSpriteAndAnimate, DestroySprite, FreeSpritePaletteByTag, gSprites,
   IndexOfSpritePaletteTag, MAX_SPRITES, StartSpriteAffineAnim, StartSpriteAnim, ST_OAM_HFLIP, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL,
   ST_OAM_VFLIP, type Sprite,
-} from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimFastTranslateLinear, AnimTranslateLinear, ArcTan2Neg, CloneBattlerSpriteWithBlend,
   DestroyAnimSprite, DestroyAnimSpriteAndDisableBlend, DestroyAnimVisualTask, DestroySpriteAndMatrix, DestroySpriteWithActiveSheet,

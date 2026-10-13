@@ -1,6 +1,6 @@
 // Per-step counters called by ProcessPlayerFieldInput (field_control_avatar.c).
 import * as C from "../generated/constants";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import { save, varGet, varSet } from "../save";
 
 export function RunMassageCooldownStepCounter(): void {

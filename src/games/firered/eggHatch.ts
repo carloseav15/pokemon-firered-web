@@ -1,41 +1,41 @@
 // daycare.c: the egg hatching scene (EggHatch, CB2_EggHatch_0/1, the egg and shard sprites, the nickname prompt).
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "./generated/constants";
-import { expandPlaceholders, stringVars } from "./gba/charmap";
-import { FONT_NORMAL_COPY_2 } from "./gba/font";
-import { tasks } from "./gba/tasks";
+import { expandPlaceholders, stringVars } from "@core/gba/charmap";
+import { FONT_NORMAL_COPY_2 } from "@core/gba/font";
+import { tasks } from "@core/gba/tasks";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
-import { cdata, incbin, incbin16, loadCData, preloadIncbin } from "./hw/assets";
+import { cdata, incbin, incbin16, loadCData, preloadIncbin } from "@core/hw/assets";
 import {
   type BgTemplate, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles,
   ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg, UnsetBgTilemapBuffer,
-} from "./hw/bg";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";
 import { DecompressAndLoadBgGfxUsingHeap } from "./hw/menuHelpers";
-import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { HwScene, SetMainCallback2, SetVBlankCallback, gMain } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { HwScene, SetMainCallback2, SetVBlankCallback, gMain } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, LoadOam, LoadSpritePalette, LoadSpriteSheet,
   ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim, gSprites,
   type Sprite,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
-import { Sin } from "./hw/trig";
+import { Sin } from "@core/hw/trig";
 import {
   CopyWindowToVram, FillWindowPixelBuffer, InitWindows, PutWindowTilemap, RemoveWindow, COPYWIN_FULL, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { AllocateMonSpritesGfx, FreeMonSpritesGfx, gMonSpritesGfxPtr } from "./battle/globals";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
 import { DoNamingScreen } from "./namingScreen";
 import { GetMonGender, playerMon } from "./pokemon/mon";
 import { AddHatchedMonToParty } from "./pokemon/daycare";
 import { gMonFrontPicCoords, LoadSpecialPokePic } from "./pokemon/pics";
-import { random } from "./random";
-import { rom } from "./rom";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { save, SV, varGet, varSet } from "./save";
 import { GetMonSpritePalStructFromOtIdPersonality } from "./trainerPokemonSprites";
 import type { Game } from "./game";

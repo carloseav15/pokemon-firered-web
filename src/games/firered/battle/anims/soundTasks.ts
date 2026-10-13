@@ -3,7 +3,7 @@
 // Cry WAVs and DSP remain approximate, but mode, pan, volume ducking and task wait follow sound.c.
 
 import * as C from "../../generated/constants";
-import { sound } from "../../audio/sound";
+import { sound } from "@core/audio/sound";
 import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
 import { animState, DestroyAnimSoundTask, DestroyAnimVisualTask, IsBattlerSpriteVisible } from "../anim";
 import { registerAnimTasks } from "../animRegistry";

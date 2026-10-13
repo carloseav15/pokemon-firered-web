@@ -5,24 +5,24 @@
 // Adaptation: RequestDma3Fill writes the OBJ VRAM directly.
 
 import * as C from "../../generated/constants";
-import { sound } from "../../audio/sound";
-import { tasks, TaskDummy } from "../../gba/tasks";
-import { cdata, incbin, incbin16 } from "../../hw/assets";
-import { templateFrom, type CSpriteTemplate } from "../../hw/cdataSprite";
-import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../../hw/gpu";
+import { sound } from "@core/audio/sound";
+import { tasks, TaskDummy } from "@core/gba/tasks";
+import { cdata, incbin, incbin16 } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalette, BlendPalettes, gPaletteFade, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID,
   PLTT_SIZE_4BPP, RGB, RGB_BLACK, RGB_WHITE,
-} from "../../hw/palette";
-import { BLDALPHA_BLEND, OBJ_VRAM0, ppu } from "../../hw/ppu";
-import { gMain } from "../../hw/runtime";
+} from "@core/hw/palette";
+import { BLDALPHA_BLEND, OBJ_VRAM0, ppu } from "@core/hw/ppu";
+import { gMain } from "@core/hw/runtime";
 import {
   AllocSpritePalette, AnimateSprite, ChangeSpriteAffineAnim, CreateInvisibleSprite, CreateSprite, DestroySprite,
   DestroySpriteAndFreeResources, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag,
   GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, MAX_SPRITES, SpriteCallbackDummy, StartSpriteAffineAnim,
   StartSpriteAnim, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL, ST_OAM_OBJ_WINDOW, type Sprite, type SpriteTemplate,
-} from "../../hw/sprite";
-import { Cos, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, Sin } from "@core/hw/trig";
 import { GetMonData, gEnemyParty, playerMon, type Mon } from "../../pokemon/mon";
 import { save } from "../../save";
 import {

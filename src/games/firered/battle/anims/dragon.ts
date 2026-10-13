@@ -2,11 +2,11 @@
 // Dance orbs and scanline waver, and Overheat flames.
 
 import * as C from "../../generated/constants";
-import { REG_OFFSET_BG1HOFS, REG_OFFSET_BG2HOFS } from "../../hw/ppu";
-import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "../../hw/scanline";
-import { StartSpriteAffineAnim, StartSpriteAnim, type Sprite } from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
-import { type Task } from "../../gba/tasks";
+import { REG_OFFSET_BG1HOFS, REG_OFFSET_BG2HOFS } from "@core/hw/ppu";
+import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "@core/hw/scanline";
+import { StartSpriteAffineAnim, StartSpriteAnim, type Sprite } from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
+import { type Task } from "@core/gba/tasks";
 import {
   animState, DestroyAnimSprite, DestroyAnimVisualTask, DestroySpriteAndMatrix, GetBattlerSpriteBGPriorityRank, GetBattlerSpriteCoord,
   GetBattlerSpriteCoordAttr, GetBattlerYCoordWithElevation, RunStoredCallbackWhenAnimEnds, SetAnimSpriteInitialXOffset,

@@ -40,9 +40,9 @@ import {
   STR_CONV_MODE_LEADING_ZEROS,
   LANGUAGE_JAPANESE,
 } from "../../src/games/firered/generated/stringUtil.ts";
-import { rom } from "../../src/games/firered/rom.ts";
-import { expandPlaceholders } from "../../src/games/firered/gba/charmap.ts";
-import { bindSaveBlockReader, stringVars, type SaveBlocks } from "../../src/games/firered/gba/stringBuffers.ts";
+import { rom } from "../../src/core/rom.ts";
+import { expandPlaceholders } from "../../src/core/gba/charmap.ts";
+import { bindSaveBlockReader, stringVars, type SaveBlocks } from "../../src/core/gba/stringBuffers.ts";
 import { newSaveData, save, setSave } from "../../src/games/firered/save.ts";
 
 let compared = 0;

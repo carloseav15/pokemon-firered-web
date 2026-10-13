@@ -7,23 +7,23 @@
 // the FishingMonsInfo rate and the pointer halves, and they cannot be reproduced.
 
 import * as C from "./generated/constants";
-import { tasks } from "./gba/tasks";
-import { cdata, incbin, loadCData, symName, type SymRef } from "./hw/assets";
-import { BG_ATTR_CHARBASEINDEX, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, HideBg, SetBgAttribute, ShowBg } from "./hw/bg";
-import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
-import { LoadPalette, OBJ_PLTT_ID } from "./hw/palette";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin, loadCData, symName, type SymRef } from "@core/hw/assets";
+import { BG_ATTR_CHARBASEINDEX, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, HideBg, SetBgAttribute, ShowBg } from "@core/hw/bg";
+import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
+import { LoadPalette, OBJ_PLTT_ID } from "@core/hw/palette";
 import {
   BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND, BLDCNT_TGT1_BG1, BLDCNT_TGT2_BD, BLDCNT_TGT2_BG0, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG2, BLDCNT_TGT2_BG3,
   DISPCNT_OBJWIN_ON, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
   WININ_WIN0_BG_ALL, WININ_WIN0_OBJ, WININ_WIN1_BG_ALL, WININ_WIN1_OBJ, WINOUT_WIN01_BG0, WINOUT_WIN01_BG2, WINOUT_WIN01_BG3,
   WINOUT_WIN01_BG_ALL, WINOUT_WIN01_CLR, WINOUT_WIN01_OBJ, WINOUT_WINOBJ_BG_ALL, WINOUT_WINOBJ_CLR, WINOUT_WINOBJ_OBJ,
-} from "./hw/ppu";
+} from "@core/hw/ppu";
 import {
   CreateSprite, DestroySprite, FreeSpriteTilesByTag, gDummySpriteTemplate, gSprites, LoadSpriteSheet, SetSubspriteTables, ST_OAM_OBJ_WINDOW, TAG_NONE,
   type Subsprite,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { roamerMapSection } from "./pokemon/roamer";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { flagGet, varGet } from "./save";
 
 // ---------------------------------------------------------------- wild_pokemon_area.c

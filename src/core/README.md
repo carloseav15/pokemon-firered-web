@@ -1,7 +1,9 @@
 # src/core
 
-Shared engine (docs/SEPARACION-MOTOR.md). Empty until step 5 moves modules here from
-`src/games/firered/`, bottom layer first (runtime `gba/`, `hw/`, `audio/`, ...).
+Shared engine (docs/SEPARACION-MOTOR.md). Step 5 moves modules here from
+`src/games/firered/`, bottom layer first. Done: runtime `gba/`, `hw/` (without the menu
+cluster), `audio/`, `decompress`, `random`, `mathUtil`, `util`, `rom`.
+Game modules import core with the `@core/*` alias; core reaches the game with `@game/*`.
 
 Rules, enforced by `npm run check:layers`:
 - Code here never imports `src/games/<game>/` by path. It reaches game content only

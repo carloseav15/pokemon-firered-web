@@ -3,10 +3,10 @@
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
-import { sound } from "../audio/sound";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { rom } from "@core/rom";
 import { flagGet, flagSet, varSet } from "../save";
-import { random } from "../random";
+import { random } from "@core/random";
 import { MAP_OFFSET } from "./fieldmap";
 import type { Overworld } from "./overworld";
 

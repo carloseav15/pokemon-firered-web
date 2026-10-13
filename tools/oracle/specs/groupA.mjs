@@ -14,7 +14,7 @@ export default [
     name: "Sin", group: "A", kind: "pure", ret: "s16",
     c: { stem: "trig", name: "Sin" },
     params: [P("index", "s16", { realistic: [0, 255], structural: true }), P("amplitude", "s16", { realistic: [-256, 255] })],
-    impls: [{ label: "hw/trig.ts", file: "src/games/firered/hw/trig.ts", name: "Sin" }],
+    impls: [{ label: "hw/trig.ts", file: "src/core/hw/trig.ts", name: "Sin" }],
     realisticEvidence: [
       fact("callers pass sprite->data[] (s16) as index; the table has 320 entries (index 0..255 plus the +64 Cos offset)", "battle_anim_dragon.c:281", "trig.c:4"),
       assumed("amplitude is a pixel amplitude; -256..255 is assumed, no caller audit"),
@@ -22,10 +22,10 @@ export default [
     async setup(ctx) { // TS table is filled from the exported cdata at startup (same as the game does)
       const defs = JSON.parse(readFileSync(path.join(ctx.ROOT, "public/fr/cdata/trig.json"), "utf8")).defs;
       ctx.assets.registerCData("trig", defs);
-      ctx.ns.mods[ctx.abs("src/games/firered/hw/trig.ts")].initTrig();
+      ctx.ns.mods[ctx.abs("src/core/hw/trig.ts")].initTrig();
     },
     dataChecks: [{ label: "gSineTable", cSymbol: "gSineTable", stride: 2, type: "s16",
-      ts: (ctx) => Array.from(ctx.ns.mods[ctx.abs("src/games/firered/hw/trig.ts")].gSineTable) }],
+      ts: (ctx) => Array.from(ctx.ns.mods[ctx.abs("src/core/hw/trig.ts")].gSineTable) }],
     cost: { ...NO, adapters: ["cdata registration (setup)"], reusable: "setup hook pattern" },
   },
   {
@@ -33,7 +33,7 @@ export default [
     c: { stem: "bg", name: "GetTileMapIndexFromCoords" },
     params: [P("x", "s32", { realistic: [0, 63] }), P("y", "s32", { realistic: [0, 63] }), P("screenSize", "s32", { realistic: [0, 3], structural: true }),
       P("screenWidth", "u32", { realisticSet: [32, 64], structural: true }), P("screenHeight", "u32", { realisticSet: [32, 64], structural: true })],
-    impls: [{ label: "hw/bg.ts", file: "src/games/firered/hw/bg.ts", name: "GetTileMapIndexFromCoords" }],
+    impls: [{ label: "hw/bg.ts", file: "src/core/hw/bg.ts", name: "GetTileMapIndexFromCoords" }],
     realisticEvidence: [
       assumed("tilemap coordinates 0..63 and BG sizes 32/64 tiles; callers bg.c:933/1017 not audited for the exact ranges"),
       fact("screenSize is the 2-bit BG size field (0..3)", "bg.c:1118"),
@@ -44,7 +44,7 @@ export default [
     name: "CountTrailingZeroBits", group: "A", kind: "pure", ret: "s32",
     c: { stem: "util", name: "CountTrailingZeroBits" },
     params: [P("value", "u32", { realistic: [0, 15] })],
-    impls: [{ label: "util.ts", file: "src/games/firered/util.ts", name: "CountTrailingZeroBits" }],
+    impls: [{ label: "util.ts", file: "src/core/util.ts", name: "CountTrailingZeroBits" }],
     realisticEvidence: [fact("only caller passes (status2 & STATUS2_INFATUATION) >> 16, a 4-bit value", "battle_util.c:1466", "constants/battle.h:118")],
     cost: { ...NO, adapters: [], reusable: "n/a" },
   },

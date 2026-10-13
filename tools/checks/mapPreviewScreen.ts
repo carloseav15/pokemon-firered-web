@@ -4,9 +4,9 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import { registerCData } from '../../src/core/hw/assets.ts';
 import { flagClear, flagGet, flagSet } from '../../src/games/firered/save.ts';
-import { gMain } from '../../src/games/firered/hw/runtime.ts';
+import { gMain } from '../../src/core/hw/runtime.ts';
 import {
   MPS_COUNT,
   MPS_TYPE_CAVE,
@@ -140,7 +140,7 @@ assert.equal(getHasVisitedMapBefore(), false, 'sHasVisitedMapBefore must be fals
 assert.equal(MapPreview_GetDuration(126), 40, 'Repeat forest visit duration must be 40 frames');
 
 // 9. Test actual canvas generation for all 28 preview screens
-import { registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
+import { registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
 registerIncbinIndex(incbinIndex);
 const packData = new Uint8Array(readFileSync(root + 'incbin/graphics_map_preview.bin'));
 registerPack('graphics_map_preview', packData);

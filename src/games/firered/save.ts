@@ -1,14 +1,14 @@
 // SaveBlock1/SaveBlock2 equivalents and event_data.c (flags and vars).
 
-import { CHAR_SPACE, encode, EOS } from "./gba/charmap";
-import { bindSaveBlockReader } from "./gba/stringBuffers";
-import { rom } from "./rom";
+import { CHAR_SPACE, encode, EOS } from "@core/gba/charmap";
+import { bindSaveBlockReader } from "@core/gba/stringBuffers";
+import { rom } from "@core/rom";
 import { CANONICAL_STORAGE_KEY, SANDBOX_STORAGE_KEY } from "@game/data";
 import type { ObjectEventSave } from "./loadSave";
 import type { Pokemon } from "./pokemon/pokemon";
 import * as C from "./generated/constants";
 import type { QuestLogScene } from "./questLogObjects";
-import type { MapObjectTemplate } from "./rom";
+import type { MapObjectTemplate } from "@core/rom";
 
 export const VARS_START = 0x4000;
 export const VARS_END = 0x40ff;

@@ -1,5 +1,5 @@
-import { sound } from "../../games/firered/audio/sound";
-import { createM4aBackend } from "../../games/firered/audio/m4a";
+import { sound } from "@core/audio/sound";
+import { createM4aBackend } from "@core/audio/m4a";
 import * as C from "../../games/firered/generated/constants";
 
 export class ViewerAudioController {

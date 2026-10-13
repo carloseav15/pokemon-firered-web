@@ -1,5 +1,5 @@
 // bg_regs.c: shared register offsets and per-background display/blend masks.
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 
 /** Register offsets corresponding to gBGControlRegs in the GBA MMIO table. */
 export const gBGControlRegs = [C.REG_OFFSET_BG0CNT, C.REG_OFFSET_BG1CNT, C.REG_OFFSET_BG2CNT, C.REG_OFFSET_BG3CNT] as const;

@@ -3,9 +3,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
-import { registerCData } from "../../src/games/firered/hw/assets";
+import { registerCData } from "../../src/core/hw/assets";
 import "./setupNodeGbaMock";
-import { rom } from "../../src/games/firered/rom";
+import { rom } from "../../src/core/rom";
 import * as C from "../../src/games/firered/generated/constants";
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, ObjectEvent, ObjectEvents } from "../../src/games/firered/field/objectEvents";
 

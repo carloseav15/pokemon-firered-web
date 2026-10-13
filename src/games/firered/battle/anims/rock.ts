@@ -3,17 +3,17 @@
 // Rock Blast and Seismic Toss backgrounds.
 
 import * as C from "../../generated/constants";
-import { tasks, type Task } from "../../gba/tasks";
-import { incbin } from "../../hw/assets";
-import { subspriteTablesFrom } from "../../hw/cdataSprite";
-import { SetGpuReg } from "../../hw/gpu";
-import { BG_PLTT_ID, LoadPalette, PLTT_SIZE_4BPP } from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
+import { tasks, type Task } from "@core/gba/tasks";
+import { incbin } from "@core/hw/assets";
+import { subspriteTablesFrom } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BG_PLTT_ID, LoadPalette, PLTT_SIZE_4BPP } from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
 import {
   AnimateSprite, CreateSprite, DestroySprite, gSprites, MAX_SPRITES, SetSubspriteTables, ST_OAM_HFLIP, StartSpriteAffineAnim,
   StartSpriteAnim, type Sprite,
-} from "../../hw/sprite";
-import { Cos, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, Sin } from "@core/hw/trig";
 import {
   ANIM_ATTACKER, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, DestroyAnimSprite, DestroyAnimVisualTask,
   DestroySpriteAndMatrix, GetAnimBattlerSpriteId, GetBattleAnimBg1Data, GetBattlerSpriteCoord, InitAnimArcTranslation,

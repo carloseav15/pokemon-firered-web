@@ -2,7 +2,7 @@
 // its C name. Every task lives in the battle_anim_*.c ports under anims/,
 // which register themselves in animRegistry.
 
-import { tasks } from "../gba/tasks";
+import { tasks } from "@core/gba/tasks";
 import { animState, DestroyAnimVisualTask } from "./anim";
 import { ANIM_TASK_FUNCS } from "./animRegistry";
 

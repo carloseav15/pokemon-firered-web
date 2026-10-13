@@ -14,37 +14,37 @@
 //  - SoftReset(RESET_ALL) reloads the page (back to the title screen).
 // Needs preloadCredits() first.
 
-import { sound } from "./audio/sound";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1 } from "./gba/font";
-import { A_BUTTON, JOY_NEW } from "./gba/input";
-import { tasks } from "./gba/tasks";
+import { sound } from "@core/audio/sound";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1 } from "@core/gba/font";
+import { A_BUTTON, JOY_NEW } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
 import * as C from "./generated/constants";
-import { cdata, incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
+import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
   BG_COORD_SET, BG_SCREEN_SIZE, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, HideBg, InitBgsFromTemplates, LoadBgTiles, LoadBgTilemap,
   ResetBgsAndClearDma3BusyFlags, SetBgAffine, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { ClearGpuRegBits, GetGpuReg, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+} from "@core/hw/bg";
+import { ClearGpuRegBits, GetGpuReg, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import { Menu_LoadStdPalAt } from "./hw/menu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade,
   RGB_BLACK, RGB_WHITE, TransferPlttBuffer,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   BLDALPHA_BLEND, BLDCNT_EFFECT_DARKEN, BLDCNT_TGT1_BG1, BLDCNT_TGT1_BG2, BLDCNT_TGT1_BG3, DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, DISPLAY_HEIGHT, DISPLAY_WIDTH,
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT, WIN_RANGE,
-} from "./hw/ppu";
-import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { LoadCompressedSpriteSheet } from "./decompress";
+} from "@core/hw/ppu";
+import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { LoadCompressedSpriteSheet } from "@core/decompress";
 import {
   CreateSprite, DestroySprite, FreeSpriteTilesByTag, gSprites, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, TAG_NONE,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized4 } from "./hw/text";
 import {
   AddWindow, COPYWIN_FULL, COPYWIN_GFX, CopyToWindowPixelBuffer, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap,
   RemoveWindow, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { InitStandardTextBoxWindows } from "./hw/menu";
 import {
   CreditsShowCurrentField, DrawCurrentFieldForCredits, FadeSelectedPals, gFieldCamera, Overworld_CreditsIdleCB, Overworld_CreditsMainCB,

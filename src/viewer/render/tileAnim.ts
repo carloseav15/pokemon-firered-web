@@ -2,7 +2,7 @@ import { viewerClock, type ViewerClock } from "../clock";
 import { TILE, ANIM_RANGES } from "../constants";
 import type { TileRenderer } from "../../games/firered/field/tileRenderer";
 import type { TilesetAnimator } from "../../games/firered/field/tilesetAnimator";
-import type { TilesetData } from "../../games/firered/rom";
+import type { TilesetData } from "@core/rom";
 import { NUM_METATILES_IN_PRIMARY } from "../../games/firered/field/fieldmap";
 import { composeMetatile, invalidateMetatile } from "./metatile";
 

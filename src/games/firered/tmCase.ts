@@ -5,15 +5,15 @@
 // / CB2_ChooseMonToGiveItem / CB2_GiveHoldItem / CB2_ReturnToPokeStorage.
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, GetStringWidth } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, SELECT_BUTTON } from "./gba/input";
-import { tasks, type TaskFunc } from "./gba/tasks";
-import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
-import { incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
-import { GetBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+import { sound } from "@core/audio/sound";
+import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, SELECT_BUTTON } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
+import { getTextSpeedSetting, textFlags } from "@core/gba/textPrinter";
+import { incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
+import { GetBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPairParameterized, BlitMenuInfoIcon, DestroyListMenuTask, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, LIST_NOTHING_CHOSEN,
   ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, ListMenuLoadStdPalAt, listMenuTemplate,
@@ -33,23 +33,23 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_OFFSET, PALETTES_ALL, PLTT_ID, ResetPaletteFade, RGB_BLACK,
   TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
+} from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gDummySpriteAffineAnimTable, gSprites, IndexOfSpritePaletteTag, LoadOam,
   LoadSpritePalette, LoadSpriteSheet, oamData, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAnim, ANIMCMD_END,
   ANIMCMD_FRAME, type Sprite, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import {
   AddWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PutWindowTilemap, RemoveWindow, WINDOW_NONE, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { bagResult } from "./bagMenu";
 import { tmhmMove } from "./menus/monProgress";
 import { addBagItem, addMoney, BagPocketCompaction, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
-import { b64, rom } from "./rom";
+import { b64, rom } from "@core/rom";
 import { save } from "./save";
 
 export type TmCaseHandlers = {

@@ -40,7 +40,7 @@ src/games/firered/*.ts                 pantallas del port: intro*, oakSpeech, ma
                             regionMap, optionMenu, bagMenu, tmCase, berryPouch, partyMenu,
                             pokemonIcon, hallOfFame, credits, itemPc, shop, diploma, seagallop…
 src/games/firered/generated/           GENERADO (no editar): constants.ts, structs.ts, metatileBehavior.ts
-src/games/firered/rom.ts save.ts       datos cargados (rom.text, rom.c, rom.moveName…) y partida guardada
+src/core/rom.ts save.ts       datos cargados (rom.text, rom.c, rom.moveName…) y partida guardada
 public/fr/                  GENERADO por el exportador (datos del juego para el navegador)
 tools/decomp/               exportador Python del decomp (única fuente de public/fr y generated/)
 tools/checks/               verificaciones headless en Node (ver §6)

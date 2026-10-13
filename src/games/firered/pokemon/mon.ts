@@ -1,11 +1,11 @@
 // pokemon.c: GetMonData/SetMonData over the TS Pokemon objects, plus the
 // struct Pokemon helpers used by battles (CreateMon, CalculateMonStats, ...).
 
-import { EOS } from "../gba/charmap";
+import { EOS } from "@core/gba/charmap";
 import * as C from "../generated/constants";
-import { cdata } from "../hw/assets";
-import { random, random32 } from "../random";
-import { b64, rom } from "../rom";
+import { cdata } from "@core/hw/assets";
+import { random, random32 } from "@core/random";
+import { b64, rom } from "@core/rom";
 import { save, SV, varGet } from "../save";
 import { G, gBattleResources, type SecretBaseRecord } from "../battle/globals";
 import { calculateStats, modifyStatByNature, type Pokemon } from "./pokemon";

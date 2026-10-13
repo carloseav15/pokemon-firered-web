@@ -2,10 +2,10 @@
 // Pin Missile stingers and Tail Glow sprite callbacks.
 
 import * as C from "../../generated/constants";
-import { SetGpuReg } from "../../hw/gpu";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
-import { StartSpriteAffineAnim, type Sprite } from "../../hw/sprite";
-import { Sin } from "../../hw/trig";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
+import { StartSpriteAffineAnim, type Sprite } from "@core/hw/sprite";
+import { Sin } from "@core/hw/trig";
 import {
   ANIM_ATTACKER, animState, AnimTranslateLinear, ArcTan2Neg, DestroyAnimSprite, DestroySpriteAndMatrix, GetBattlerSpriteCoord,
   GetBattlerSpriteCoord2, InitAnimArcTranslation, InitAnimLinearTranslationWithSpeed, InitSpritePosToAnimAttacker,

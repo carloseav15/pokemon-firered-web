@@ -7,8 +7,8 @@
 // audio backend; contests never occur (IsContest is FALSE as in FRLG).
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { tasks } from "../gba/tasks";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
 import { ROM_BASE, bs } from "./bscript";
 import {
   ANIM_ATK_PARTNER, ANIM_ATTACKER, ANIM_DEF_PARTNER, ANIM_TARGET,
@@ -17,17 +17,17 @@ import {
   MoveBattlerSpriteToBG, ResetBattleAnimBg,
 } from "./anim";
 import { UpdateOamPriorityInAllHealthboxes } from "./interface";
-import { cdata, cdataAny, incbin, symName, type SymRef } from "../hw/assets";
-import { templateFrom, type CSpriteTemplate } from "../hw/cdataSprite";
-import { SetGpuReg } from "../hw/gpu";
+import { cdata, cdataAny, incbin, symName, type SymRef } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_TGT2_ALL, ppu, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT,
-} from "../hw/ppu";
-import { BeginHardwarePaletteFade, BG_PLTT_ID, gPaletteFade, gPlttBufferFaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "../hw/palette";
+} from "@core/hw/ppu";
+import { BeginHardwarePaletteFade, BG_PLTT_ID, gPaletteFade, gPlttBufferFaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "@core/hw/palette";
 import {
   CreateSpriteAndAnimate, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadSpritePalette, LoadSpriteSheet, SPRITE_NONE,
   type Sprite, type SpriteTemplate,
-} from "../hw/sprite";
+} from "@core/hw/sprite";
 import { BG_ANIM_PRIORITY, SetAnimBgAttribute } from "./intro";
 import { G, gBattleSpritesDataPtr, gBattlerSpriteIds } from "./globals";
 import { GetBattlerPosition, GetBattlerSide } from "./util";

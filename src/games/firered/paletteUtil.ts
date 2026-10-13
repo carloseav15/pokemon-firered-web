@@ -1,6 +1,6 @@
 // Port of palette_util.c: general flashing/fading utility (roulette wheel flash and pulse blend).
 
-import { gPlttBufferFaded, gPlttBufferUnfaded, BlendPalette, gPaletteFade, GET_R, GET_G, GET_B, RGB } from "./hw/palette";
+import { gPlttBufferFaded, gPlttBufferUnfaded, BlendPalette, gPaletteFade, GET_R, GET_G, GET_B, RGB } from "@core/hw/palette";
 
 export const FLASHUTIL_USE_EXISTING_COLOR = 1 << 15;
 

@@ -5,18 +5,18 @@
 // every link attempt reports LINKUP_CONNECTION_ERROR, as an unplugged cable does).
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { concat, encode, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
-import { FONT_SMALL } from "../gba/font";
-import { tasks } from "../gba/tasks";
-import { printText } from "../gba/textPrinter";
-import { Window } from "../gba/window";
-import { cdata, incbin } from "../hw/assets";
-import { BG_PLTT_ID } from "../hw/palette";
-import { random } from "../random";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { concat, encode, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { FONT_SMALL } from "@core/gba/font";
+import { tasks } from "@core/gba/tasks";
+import { printText } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
+import { cdata, incbin } from "@core/hw/assets";
+import { BG_PLTT_ID } from "@core/hw/palette";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "../save";
-import { Sprite } from "../gba/sprite";
+import { Sprite } from "@core/gba/sprite";
 import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { DoPokemonLeagueLightingEffect } from "../field/leagueLighting";
 import { spriteSheet } from "../field/gfx4bpp";

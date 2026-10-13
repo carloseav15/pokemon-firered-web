@@ -3,18 +3,18 @@
 // and Ice Ball. Blend/coordinate tables come from cdata/battle_anim_ice.json.
 
 import * as C from "../../generated/constants";
-import { incbin } from "../../hw/assets";
-import { LoadBgTiles } from "../../hw/bg";
-import { SetGpuReg } from "../../hw/gpu";
-import { BG_PLTT_ID, LoadPalette, PLTT_SIZE_4BPP } from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
+import { incbin } from "@core/hw/assets";
+import { LoadBgTiles } from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BG_PLTT_ID, LoadPalette, PLTT_SIZE_4BPP } from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
 import {
   CreateSprite, DestroySprite, FreeOamMatrix, gSprites, MAX_SPRITES, ST_OAM_AFFINE_OFF, StartSpriteAffineAnim, StartSpriteAnim,
   type Sprite,
-} from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
-import { cdata } from "../../hw/assets";
-import { random } from "../../random";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
+import { cdata } from "@core/hw/assets";
+import { random } from "@core/random";
 import {
   ANIM_TARGET, animState, AnimFastTranslateLinear, AnimLoadCompressedBgTilemap, AnimTranslateLinear,
   ConvertPosDataToTranslateLinearData, DestroyAnimSprite, DestroyAnimVisualTask, DestroySpriteAndMatrix, GetAnimBattlerSpriteId,

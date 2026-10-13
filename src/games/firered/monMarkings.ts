@@ -2,16 +2,16 @@
 // Displays and handles interactive mon markings menu (circle, square, triangle, heart)
 // with cursor, OK/Cancel confirmation, and combo sprites.
 
-import { sound } from "./audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "./gba/input";
-import { cdata, incbin, incbin16 } from "./hw/assets";
-import { animsFrom, oamFrom } from "./hw/cdataSprite";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "@core/gba/input";
+import { cdata, incbin, incbin16 } from "@core/hw/assets";
+import { animsFrom, oamFrom } from "@core/hw/cdataSprite";
 import { GetUserWindowGraphics } from "./hw/menu";
 import {
   CalcCenterToCornerVec, CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag,
   gDummySpriteAffineAnimTable, gSprites, LoadSpritePalette, LoadSpriteSheet,
   SPRITE_SHAPE, SPRITE_SIZE, ST_OAM_AFFINE_OFF, StartSpriteAnim, type Sprite, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { save } from "./save";
 
 export const NUM_MON_MARKINGS = 4;

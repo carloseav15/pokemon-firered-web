@@ -3,8 +3,8 @@ import * as C from "./generated/constants";
 import { type MonMarkingsMenu } from "./monMarkings";
 import { type Mon, zeroMon } from "./pokemon/mon";
 import { save } from "./save";
-import type { Sprite } from "./hw/sprite";
-import type { WindowTemplate } from "./hw/window";
+import type { Sprite } from "@core/hw/sprite";
+import type { WindowTemplate } from "@core/hw/window";
 
 export const TOTAL_BOXES_COUNT = C.TOTAL_BOXES_COUNT;
 export const IN_BOX_ROWS = C.IN_BOX_ROWS;

@@ -4,9 +4,9 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
+import { registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';
-import { rom, type MapHeader } from '../../src/games/firered/rom.ts';
+import { rom, type MapHeader } from '../../src/core/rom.ts';
 import { save } from '../../src/games/firered/save.ts';
 import { loadFieldFx, FieldEffects } from '../../src/games/firered/field/fieldEffects.ts';
 import { ObjectEvent, ObjectManager, DIR_SOUTH } from '../../src/games/firered/field/objectEvents.ts';
@@ -18,7 +18,7 @@ import {
   BattleTransitionScene,
 } from '../../src/games/firered/battle/transition.ts';
 import { createMon, type Pokemon } from '../../src/games/firered/pokemon/pokemon.ts';
-import { SpriteManager } from '../../src/games/firered/gba/sprite.ts';
+import { SpriteManager } from '../../src/core/gba/sprite.ts';
 
 const root = process.cwd() + '/public';
 (globalThis as any).fetch = async (url: string) => {

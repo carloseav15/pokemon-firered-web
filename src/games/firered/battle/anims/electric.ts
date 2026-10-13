@@ -3,13 +3,13 @@
 // and the Shock Wave progressing bolt / lightning tasks.
 
 import * as C from "../../generated/constants";
-import { type Task } from "../../gba/tasks";
-import { cdata } from "../../hw/assets";
+import { type Task } from "@core/gba/tasks";
+import { cdata } from "@core/hw/assets";
 import {
   CreateSprite, DestroySprite, FreeOamMatrix, gOamMatrices, gSprites, MAX_SPRITES, ST_OAM_HFLIP, ST_OAM_VFLIP,
   StartSpriteAffineAnim, StartSpriteAnim, type Sprite,
-} from "../../hw/sprite";
-import { Cos, gSineTable, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, gSineTable, Sin } from "@core/hw/trig";
 import {
   ANIM_ATK_PARTNER, ANIM_ATTACKER, ANIM_DEF_PARTNER, ANIM_TARGET, animState, AnimTranslateLinear, DestroyAnimSprite,
   DestroyAnimVisualTask, DestroySpriteAndMatrix, GetAnimBattlerSpriteId, GetBattlerSpriteBGPriority, GetBattlerSpriteCoord,

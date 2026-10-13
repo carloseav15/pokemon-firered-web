@@ -4,7 +4,7 @@
 // registers the exact CB1 callback it installs in gMain.
 
 import * as C from "./generated/constants";
-import { gMain, type MainCallback } from "./hw/runtime";
+import { gMain, type MainCallback } from "@core/hw/runtime";
 
 const CMD_LENGTH = 8; // link.h
 const QUEUE_CAPACITY = 50; // link.h

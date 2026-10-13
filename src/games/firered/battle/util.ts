@@ -1,10 +1,10 @@
 // battle_util.c
 
 import * as C from "../generated/constants";
-import { CountTrailingZeroBits } from "../util";
-import { random } from "../random";
+import { CountTrailingZeroBits } from "@core/util";
+import { random } from "@core/random";
 import { BS, BattleScriptPop, BattleScriptPush, BattleScriptPushCursor, r8 } from "./bscript";
-import { cdata } from "../hw/assets";
+import { cdata } from "@core/hw/assets";
 import { flagGet } from "../save";
 import { gBattleScriptingCommandsTable } from "./cmds";
 import {
@@ -30,7 +30,7 @@ import { BattleTurnPassed, GetWhoStrikesFirst, RunBattleScriptCommands, RunBattl
 import { CalculatePPWithBonus, GetGenderFromSpeciesAndPersonality, GetMonData, gEnemyParty, playerMon, type Mon } from "../pokemon/mon";
 import { GetFlavorRelationByPersonality, IsOtherTrainer } from "../pokemon/mon_extra";
 import { GetCurrentWeather } from "./ext";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import { GetLinkPlayerCount } from "../linkState";
 
 const MAX_MON_MOVES = 4;

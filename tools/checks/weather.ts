@@ -4,12 +4,12 @@
 import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { registerCData, registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
-import * as Trig from '../../src/games/firered/hw/trig.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
+import * as Trig from '../../src/core/hw/trig.ts';
 import * as Weather from '../../src/games/firered/field/weather.ts';
-import { sound } from '../../src/games/firered/audio/sound.ts';
-import { gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from '../../src/games/firered/hw/palette.ts';
-import { ppu } from '../../src/games/firered/hw/ppu.ts';
+import { sound } from '../../src/core/audio/sound.ts';
+import { gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from '../../src/core/hw/palette.ts';
+import { ppu } from '../../src/core/hw/ppu.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';
 
 const root = process.cwd() + '/public/fr/';

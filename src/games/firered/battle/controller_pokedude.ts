@@ -2,21 +2,21 @@
 // input script (action / move cursor positions with delays) and the narration frames pause the battle to show his
 // commentary; the opponent side (Prof. Oak's picture) answers with the same scripted choices.
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { JOY_NEW, A_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { cdata, symName, type SymRef } from "../hw/assets";
-import { IsDma3ManagerBusyWithBgCopy } from "../hw/bg";
-import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK } from "../hw/palette";
-import { gMain, SetMainCallback2 } from "../hw/runtime";
+import { sound } from "@core/audio/sound";
+import { JOY_NEW, A_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { cdata, symName, type SymRef } from "@core/hw/assets";
+import { IsDma3ManagerBusyWithBgCopy } from "@core/hw/bg";
+import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK } from "@core/hw/palette";
+import { gMain, SetMainCallback2 } from "@core/hw/runtime";
 import {
   AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag,
   FreeSpriteTilesByTag, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, SpriteCallbackDummy, StartSpriteAnim,
-} from "../hw/sprite";
-import { FreeAllWindowBuffers } from "../hw/window";
+} from "@core/hw/sprite";
+import { FreeAllWindowBuffers } from "@core/hw/window";
 import { IsTextPrinterActive } from "../hw/text";
 import { DisableStruct } from "../generated/structs";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import { save, varGet, SV } from "../save";
 import {
   G, gActionSelectionCursor, gBattleBufferA, gBattleControllerData, gBattleMonForms, gBattlePartyCurrentOrder, gBattleSpritesDataPtr, gBattleStruct,

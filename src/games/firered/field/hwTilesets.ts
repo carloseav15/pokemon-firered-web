@@ -4,9 +4,9 @@
 // CopySecondaryTilesetToVram, LoadMapTilesetPalettes); the port's field draws
 // with Canvas2D, so they are copied here first.
 
-import type { TilesetData } from "../rom";
-import { BG_PLTT_ID, LoadPalette, PLTT_SIZE_4BPP } from "../hw/palette";
-import { ppu } from "../hw/ppu";
+import type { TilesetData } from "@core/rom";
+import { BG_PLTT_ID, LoadPalette, PLTT_SIZE_4BPP } from "@core/hw/palette";
+import { ppu } from "@core/hw/ppu";
 import { NUM_TILES_IN_PRIMARY } from "./fieldmap";
 
 /** Primary tiles at tile 0, secondary at NUM_TILES_IN_PRIMARY; primary palettes 0-6, secondary 7-12. */

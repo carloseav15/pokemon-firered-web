@@ -22,13 +22,13 @@
 //   - Move selection cursor (red left/right at (152, 216), blue swap cursor)
 
 import * as C from "./generated/constants";
-import { cdata, cdataAny, incbin, incbin16, isSym, loadCData, preloadPacks, symName } from "./hw/assets";
+import { cdata, cdataAny, incbin, incbin16, isSym, loadCData, preloadPacks, symName } from "@core/hw/assets";
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect,
   FillBgTilemapBufferRect_Palette0, HideBg, InitBgsFromTemplates,
   LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { SetGpuRegBits, ClearGpuRegBits, SetGpuReg, GetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuRegBits, ClearGpuRegBits, SetGpuReg, GetGpuReg } from "@core/hw/gpu";
 import {
   DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN1_ON,
   REG_OFFSET_DISPCNT, REG_OFFSET_BG0CNT, REG_OFFSET_BG1CNT, REG_OFFSET_BG2CNT,
@@ -36,35 +36,35 @@ import {
   REG_OFFSET_WININ, REG_OFFSET_WINOUT, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V,
   WININ_WIN0_BG0, WININ_WIN0_BG1, WININ_WIN0_BG2, WININ_WIN0_BG3, WININ_WIN0_OBJ,
   WINOUT_WIN01_BG0, WINOUT_WIN01_BG1, WINOUT_WIN01_BG2, WINOUT_WIN01_BG3,
-} from "./hw/ppu";
+} from "@core/hw/ppu";
 import {
   BeginNormalPaletteFade, BlendPalettes, LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
   gPaletteFade, BG_PLTT_ID, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySpriteAndFreeResources, FreeAllSpritePalettes,
   FreeSpriteTilesByTag, IndexOfSpritePaletteTag, LoadOam, LoadSpritePalette,
   LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, gDummySpriteAffineAnimTable,
   gDummySpriteAnimTable, oamData, SpriteCallbackDummy, ST_OAM_4BPP, ST_OAM_AFFINE_OFF, ST_OAM_OBJ_NORMAL,
   TAG_NONE, type Sprite, type SpriteTemplate, SPRITE_SHAPE, SPRITE_SIZE, gSprites,
-} from "./hw/sprite";
-import { animsFrom, oamFrom } from "./hw/cdataSprite";
+} from "@core/hw/sprite";
+import { animsFrom, oamFrom } from "@core/hw/cdataSprite";
 import {
   AddWindow, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap,
   RemoveWindow, type WindowTemplate, COPYWIN_GFX,
-} from "./hw/window";
+} from "@core/hw/window";
 import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import { BlitMenuInfoIcon, ListMenuLoadStdPalAt } from "./hw/listMenu";
-import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "./gba/font";
-import { EOS, encode, intToDecimal, StringCompareWithoutExtCtrlCodes, StringCopy, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { TEXT_SKIP_DRAW } from "./gba/textPrinter";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, L_BUTTON, R_BUTTON } from "./gba/input";
-import { tasks, type TaskFunc } from "./gba/tasks";
-import { SetMainCallback2, SetMainCallback2WhenLoaded, SetVBlankCallback, SetHBlankCallback } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
-import { sound } from "./audio/sound";
-import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr } from "./dynamicPlaceholderTextUtil";
-import { rom } from "./rom";
+import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { EOS, encode, intToDecimal, StringCompareWithoutExtCtrlCodes, StringCopy, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, L_BUTTON, R_BUTTON } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
+import { SetMainCallback2, SetMainCallback2WhenLoaded, SetVBlankCallback, SetHBlankCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
+import { sound } from "@core/audio/sound";
+import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr } from "@core/dynamicPlaceholderTextUtil";
+import { rom } from "@core/rom";
 import { save } from "./save";
 import { SetHelpContext } from "./helpSystem";
 import {

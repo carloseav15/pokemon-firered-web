@@ -106,7 +106,7 @@ for (let t = Date.now(); Date.now() - t < 120000 && !battleStart;) {
 
 // ---- Rival battle (same events as port-rival.mjs) ----
 if (!battleStart) { note("NO BATTLE", JSON.stringify(await state())); process.exit(1); }
-if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/games/firered/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
+if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/core/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
 for (let t = Date.now(); Date.now() - t < 240000;) { if (!(await inBattle())) break; await tapA(); await sleep(260); }
 let doneAt = null;
 for (let t = Date.now(); Date.now() - t < 120000;) {
@@ -138,7 +138,7 @@ await p.evaluate(async () => {
   // The first tiles of Route 1 are tall grass (the connection from Pallet Town is a grass strip), so wild battles
   // cannot be avoided by planning. Instead gRngValue is rewritten before every frame, here and in parcel.lua, to a
   // value whose next ten LCG outputs are all >= 900 mod 1600: the encounter roll (rate 25*16 = 400) never succeeds.
-  const { setRandomStateForTest } = await import("/src/games/firered/random.ts");
+  const { setRandomStateForTest } = await import("/src/core/random.ts");
   // The wild-encounter rng (WildEncounterRandom, sWildEncounterData.rngState) is a separate LCG: pinned the same way
   // (ROM address 0x020386d0, found by differential scan), to a value whose first output is >= 1000 mod 1600.
   const { sWildEncounterData } = await import("/src/games/firered/field/wildEncounter.ts");

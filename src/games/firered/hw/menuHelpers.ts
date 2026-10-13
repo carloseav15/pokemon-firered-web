@@ -3,32 +3,32 @@
 // the shared plumbing of the bag, party, PC and shop screens.
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
-import { FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_SMALL, GetStringWidth } from "../gba/font";
-import { joy, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON } from "../gba/input";
-import { tasks, type TaskFunc } from "../gba/tasks";
-import { SetFontsPointer, textFlags } from "../gba/textPrinter";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
+import { FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { joy, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, L_BUTTON, R_BUTTON } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
+import { SetFontsPointer, textFlags } from "@core/gba/textPrinter";
+import { rom } from "@core/rom";
 import { save } from "../save";
 import { itemName } from "../pokemon/items";
 import { GetBerryInfo } from "../pokemon/berry";
 import { ItemIsMail } from "../pokemon/mail";
 import { InUnionRoom } from "../unionRoom";
 import { IsLinkSessionActive, IsLinkRecvQueueAtOverworldMax, Overworld_LinkRecvQueueLengthMoreThan2 } from "../linkState";
-import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, LoadBgTilemap } from "./bg";
-import { BG_PLTT_ID, LoadPalette } from "./palette";
-import { incbin16 } from "./assets";
-import { SetGpuReg } from "./gpu";
+import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgTilemapBuffer, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, LoadBgTilemap } from "@core/hw/bg";
+import { BG_PLTT_ID, LoadPalette } from "@core/hw/palette";
+import { incbin16 } from "@core/hw/assets";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, DrawDialogFrameWithCustomTileAndPalette, DrawStdFrameWithCustomTileAndPalette, FONTATTR_COLOR_BACKGROUND, FONTATTR_COLOR_FOREGROUND,
   FONTATTR_COLOR_SHADOW, FONTATTR_LINE_SPACING, GetFontAttribute, MENU_B_PRESSED, Menu_ProcessInputNoWrapClearOnChoose,
   LoadMenuMessageWindowGfx, LoadQuestLogWindowTiles, LoadStdWindowGfx, LoadStdWindowFrameGfx, LoadSignpostWindowGfx, LoadUserWindowGfx,
 } from "./menu";
-import { OAM_SIZE, PLTT_SIZE, REG_OFFSET_DISPCNT, ppu, VRAM_SIZE } from "./ppu";
-import { SetHBlankCallback, SetVBlankCallback } from "./runtime";
+import { OAM_SIZE, PLTT_SIZE, REG_OFFSET_DISPCNT, ppu, VRAM_SIZE } from "@core/hw/ppu";
+import { SetHBlankCallback, SetVBlankCallback } from "@core/hw/runtime";
 import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized2, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./text";
-import { AddWindow, ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, GetWindowAttribute, PutWindowTilemap, RemoveWindow, WINDOW_BG, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, COPYWIN_GFX, type WindowTemplate } from "./window";
+import { AddWindow, ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, GetWindowAttribute, PutWindowTilemap, RemoveWindow, WINDOW_BG, WINDOW_HEIGHT, WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, COPYWIN_GFX, type WindowTemplate } from "@core/hw/window";
 import { gQuestLogState } from "../questLogEvents";
 
 export const MENU_L_PRESSED = 1, MENU_R_PRESSED = 2;

@@ -1,7 +1,7 @@
 // Shared in-page helpers for the smoke jobs. `prelude` is prepended to runEval code;
 // it defines `names()` (active task names), `until(pred, btn, max)` and `snap()`.
 export const prelude = `
-  const T = await H.mod("/src/games/firered/gba/tasks.ts");
+  const T = await H.mod("/src/core/gba/tasks.ts");
   const sv = frDebug.save.save;
   const names = () => T.tasks.tasks.filter(t => t.isActive).map(t => t.func.name);
   const has = (n) => names().includes(n);

@@ -3,20 +3,20 @@
 // Faithful translation of C data, durations, palette loading, tilemap stride,
 // map name window and fade/blend transitions.
 
-import { cdata, incbin, incbin16, symName } from "./hw/assets";
+import { cdata, incbin, incbin16, symName } from "@core/hw/assets";
 import { flagGet, flagSet } from "./save";
-import { rom } from "./rom";
-import { Window } from "./gba/window";
-import { FONT_NORMAL, GetStringWidth } from "./gba/font";
-import { printText, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "./gba/textPrinter";
+import { rom } from "@core/rom";
+import { Window } from "@core/gba/window";
+import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
+import { printText, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
 import { tilemapCanvas } from "./field/gfx4bpp";
-import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_WHITE, paletteFade, RGB_BLACK } from "./gba/fade";
-import { B_BUTTON, JOY_HELD } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { ResetPaletteFade, UpdatePaletteFade, TransferPlttBuffer } from "./hw/palette";
-import { AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
-import { SetMainCallback2, SetVBlankCallback, gMain } from "./hw/runtime";
-import { SetGpuReg } from "./hw/gpu";
+import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_WHITE, paletteFade, RGB_BLACK } from "@core/gba/fade";
+import { B_BUTTON, JOY_HELD } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { ResetPaletteFade, UpdatePaletteFade, TransferPlttBuffer } from "@core/hw/palette";
+import { AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
+import { SetMainCallback2, SetVBlankCallback, gMain } from "@core/hw/runtime";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   REG_OFFSET_BG0CNT,
   REG_OFFSET_BG1CNT,
@@ -28,7 +28,7 @@ import {
   REG_OFFSET_BG2HOFS,
   REG_OFFSET_BG2VOFS,
   REG_OFFSET_DISPCNT,
-} from "./hw/ppu";
+} from "@core/hw/ppu";
 import type { Overworld } from "./field/overworld";
 import { getMapNameGenericBytes } from "./regionMap";
 

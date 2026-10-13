@@ -14,7 +14,7 @@ import {
   PLAYER_AVATAR_FLAG_ON_FOOT,
   PLAYER_AVATAR_FLAG_SURFING,
 } from "./field/playerAvatar";
-import type { MapObjectTemplate } from "./rom";
+import type { MapObjectTemplate } from "@core/rom";
 
 export interface QuestLogObjectEvent {
   active: boolean;

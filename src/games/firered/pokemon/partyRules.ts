@@ -1,5 +1,5 @@
 // pokemon.c / overworld.c rules shared by field menus and battle.
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import * as C from "../generated/constants";
 import { flagGet, save } from "../save";
 import type { Pokemon } from "./pokemon";

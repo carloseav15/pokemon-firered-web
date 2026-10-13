@@ -3,15 +3,15 @@
 // backup palette buffers and battler/side queries used by move scripts.
 
 import * as C from "../../generated/constants";
-import { tasks } from "../../gba/tasks";
-import { incbin } from "../../hw/assets";
-import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../../hw/gpu";
+import { tasks } from "@core/gba/tasks";
+import { incbin } from "@core/hw/assets";
+import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   BeginHardwarePaletteFade, BG_PLTT_ID, BlendPalette, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID,
   PLTT_ID, PLTT_SIZE_4BPP, PLTT_SIZEOF, RGB, RGB_WHITE,
-} from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
-import { DestroySprite, gSprites, IndexOfSpritePaletteTag, type Sprite } from "../../hw/sprite";
+} from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
+import { DestroySprite, gSprites, IndexOfSpritePaletteTag, type Sprite } from "@core/hw/sprite";
 import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, CloneBattlerSpriteWithBlend,

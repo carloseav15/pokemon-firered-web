@@ -4,10 +4,10 @@
 // and task of the file that animation scripts reference by name.
 
 import * as C from "../../generated/constants";
-import { tasks, type Task } from "../../gba/tasks";
-import { BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PaletteStruct_ResetById } from "../../hw/palette";
-import { AllocSpritePalette, FreeSpritePaletteByTag, gSprites, StartSpriteAnim, type Sprite } from "../../hw/sprite";
-import { ArcTan2, Cos, Sin } from "../../hw/trig";
+import { tasks, type Task } from "@core/gba/tasks";
+import { BlendPalette, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID, PaletteStruct_ResetById } from "@core/hw/palette";
+import { AllocSpritePalette, FreeSpritePaletteByTag, gSprites, StartSpriteAnim, type Sprite } from "@core/hw/sprite";
+import { ArcTan2, Cos, Sin } from "@core/hw/trig";
 import { UpdateMonIconFrame } from "../../pokemonIcon";
 import {
   ANIM_ATTACKER, animState, AnimSpriteOnMonPos, AnimTask_AlphaFadeIn, AnimTask_BlendMonInAndOut, AnimTask_BlendPalInAndOutByTag,

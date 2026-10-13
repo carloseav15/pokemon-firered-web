@@ -2,21 +2,21 @@
 // (BALL / BAIT / ROCK / RUN). Most commands complete immediately.
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { A_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW } from "../gba/input";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW } from "@core/gba/input";
+import { rom } from "@core/rom";
 import { save, varGet } from "../save";
 import { G, gActionSelectionCursor, gBattleBufferA, gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gBitTable, gDisplayedStringBattle, gHealthboxSpriteIds } from "./globals";
 import { BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues, BUFFER_B } from "./controllers";
-import { CreateSprite, gSprites, SpriteCallbackDummy } from "../hw/sprite";
+import { CreateSprite, gSprites, SpriteCallbackDummy } from "@core/hw/sprite";
 import { playerMon, GetMonData } from "../pokemon/mon";
 import { DecompressTrainerBackPalette, gTrainerBackPicCoords, InitAndLaunchSpecialAnimation, PlaySE12WithPanning, TryHandleLaunchBattleTableAnimation } from "./gfx_sfx_util";
 import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle } from "./message";
-import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "../hw/palette";
-import { gMain } from "../hw/runtime";
+import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "@core/hw/palette";
+import { gMain } from "@core/hw/runtime";
 import { battleHost } from "./host";
 import { BattleMainCB2 } from "./main_init";
-import { IsDma3ManagerBusyWithBgCopy } from "../hw/bg";
+import { IsDma3ManagerBusyWithBgCopy } from "@core/hw/bg";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToTrainerBack, SpriteCB_TrainerSlideIn } from "./anim";
 import { SetHealthboxSpriteVisible, StartHealthboxSlideIn, UpdateHealthboxAttribute } from "./interface";
 import { HandleIntroSlide } from "./intro";

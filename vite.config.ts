@@ -9,7 +9,10 @@ const game = process.env.GAME ?? "firered";
 
 export default defineConfig({
   resolve: {
-    alias: { "@game": fileURLToPath(new URL(`./src/games/${game}`, import.meta.url)) },
+    alias: {
+      "@game": fileURLToPath(new URL(`./src/games/${game}`, import.meta.url)),
+      "@core": fileURLToPath(new URL("./src/core", import.meta.url)),
+    },
   },
   build: {
     rollupOptions: {

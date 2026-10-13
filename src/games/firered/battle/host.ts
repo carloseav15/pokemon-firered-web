@@ -3,9 +3,9 @@
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
-import { HwScene, gMain, SetMainCallback2, type MainCallback } from "../hw/runtime";
-import { random } from "../random";
-import { rom } from "../rom";
+import { HwScene, gMain, SetMainCallback2, type MainCallback } from "@core/hw/runtime";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import type { Game, Scene } from "../game";
 import type { BattleRequest } from "./battleSetup";
 import { PLAYER_AVATAR_FLAG_SURFING } from "../field/playerAvatar";

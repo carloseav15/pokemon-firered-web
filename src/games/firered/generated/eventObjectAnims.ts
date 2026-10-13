@@ -3,7 +3,7 @@
 // Target: armv4t-none-eabi | ABI: u8 direction lookups, signed s16 jump index, and u32 copy helper with u8 narrowing.
 // C array bounds are preserved: out-of-range indices have no defined C result.
 
-import { cdata, symName } from "../hw/assets";
+import { cdata, symName } from "@core/hw/assets";
 
 export function ElevationToPriority(elevation: number): number { return cdata<number[]>("event_object_movement", "sElevationToPriority")[elevation & 0xff]!; }
 export function GetAcroBunnyHopFrontWheelDirectionAnimNum(direction: number): number { return cdata<number[]>("event_object_movement", "sAcroBunnyHopFrontWheelDirectionAnimNums")[direction & 0xff]!; }

@@ -1,19 +1,19 @@
 // intro.c: the copyright screen, excluding the GameCube serial multiboot path.
 // Uses the extracted INCBIN bytes and the browser GBA register/VRAM model.
-import { incbin, preloadIncbin } from "./hw/assets";
-import { copyToVram } from "./hw/bg";
-import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg } from "./hw/gpu";
+import { incbin, preloadIncbin } from "@core/hw/assets";
+import { copyToVram } from "@core/hw/bg";
+import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL,
   ResetPaletteFade, RGB_BLACK, RGB_WHITEALPHA, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   DISPCNT_BG0_ON, DISPCNT_OBJ_1D_MAP, ppu, REG_OFFSET_BG0CNT,
   REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT,
-} from "./hw/ppu";
-import { ProcessSpriteCopyRequests, LoadOam } from "./hw/sprite";
-import { SetVBlankCallback } from "./hw/runtime";
-import { random } from "./random";
+} from "@core/hw/ppu";
+import { ProcessSpriteCopyRequests, LoadOam } from "@core/hw/sprite";
+import { SetVBlankCallback } from "@core/hw/runtime";
+import { random } from "@core/random";
 
 const symbols = ["sCopyright_Gfx", "sCopyright_Map", "sCopyright_Pal"];
 

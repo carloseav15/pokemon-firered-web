@@ -1,18 +1,18 @@
 // battle_script_commands.c, commands 0xAB-0xF7 and the battle window helpers.
 
 import * as C from "../../generated/constants";
-import { sound } from "../../audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "../../gba/input";
-import { CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette, IsDma3ManagerBusyWithBgCopy, ShowBg } from "../../hw/bg";
-import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, gPlttBufferFaded, PALETTES_ALL, RGB_BLACK, RGB_WHITE } from "../../hw/palette";
-import { gMain, SetVBlankCallback } from "../../hw/runtime";
-import { FreeAllWindowBuffers } from "../../hw/window";
-import { ppu } from "../../hw/ppu";
-import { tasks } from "../../gba/tasks";
-import { random } from "../../random";
-import { rom } from "../../rom";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "@core/gba/input";
+import { CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette, IsDma3ManagerBusyWithBgCopy, ShowBg } from "@core/hw/bg";
+import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, gPlttBufferFaded, PALETTES_ALL, RGB_BLACK, RGB_WHITE } from "@core/hw/palette";
+import { gMain, SetVBlankCallback } from "@core/hw/runtime";
+import { FreeAllWindowBuffers } from "@core/hw/window";
+import { ppu } from "@core/hw/ppu";
+import { tasks } from "@core/gba/tasks";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { flagGet, varGet } from "../../save";
-import { stringVars } from "../../gba/charmap";
+import { stringVars } from "@core/gba/charmap";
 import { BS, BattleScriptPush, r32, r8, scriptTable } from "../bscript";
 import {
   G, gActionsByTurnOrder, gBattleCommunication, gBattleMons, gBattleResults, gBattleScripting, gBattleStruct, gBattleTextBuff1,

@@ -4,7 +4,7 @@
 // SpriteCB/AnimTask functions here under the C name, so `createsprite` can
 // resolve a template's callback and `createvisualtask` its task function.
 
-import type { SpriteCallback } from "../hw/sprite";
+import type { SpriteCallback } from "@core/hw/sprite";
 
 export type AnimTaskFunc = (taskId: number) => void;
 

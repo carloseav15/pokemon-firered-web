@@ -29,8 +29,8 @@ export async function bundleTs(specs, tag = "run") {
   const files = [...targets.keys()];
   const entry = [
     `import ${JSON.stringify(path.join(ROOT, "tools/checks/setupNodeGbaMock.ts"))};`,
-    `import * as assets from ${JSON.stringify(path.join(ROOT, "src/games/firered/hw/assets.ts"))};`,
-    `import { rom } from ${JSON.stringify(path.join(ROOT, "src/games/firered/rom.ts"))};`,
+    `import * as assets from ${JSON.stringify(path.join(ROOT, "src/core/hw/assets.ts"))};`,
+    `import { rom } from ${JSON.stringify(path.join(ROOT, "src/core/rom.ts"))};`,
     ...files.map((f, i) => `import * as m${i} from ${JSON.stringify(f)};`),
     `export { assets, rom };`,
     `export const mods = { ${files.map((f, i) => `${JSON.stringify(f)}: m${i}`).join(", ")} };`,

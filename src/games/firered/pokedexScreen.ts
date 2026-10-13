@@ -9,19 +9,19 @@
 // destroyed mode-select list (states 5/6 of the ordered lists) reads the
 // list now occupying that task slot, as the C does with the stale task data.
 
-import { sound } from "./audio/sound";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "./gba/font";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, L_BUTTON, R_BUTTON, START_BUTTON } from "./gba/input";
-import { intToDecimal, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { tasks } from "./gba/tasks";
+import { sound } from "@core/audio/sound";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, L_BUTTON, R_BUTTON, START_BUTTON } from "@core/gba/input";
+import { intToDecimal, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { tasks } from "@core/gba/tasks";
 import * as C from "./generated/constants";
-import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";
+import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "@core/hw/assets";
 import {
   BG_SCREEN_SIZE, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette, FillBgTilemapBufferRect,
   FillBgTilemapBufferRect_Palette0, GetBgTilemapBuffer, HideBg, IsDma3ManagerBusyWithBgCopy, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags,
   SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+} from "@core/hw/bg";
+import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPair, BlitMenuInfoIcon, DestroyListMenuTask, ListMenu_DrawMonIconGraphics, ListMenu_ProcessInput, ListMenuAddCursorObjectInternal,
   ListMenuDefaultCursorMoveFunc, ListMenuGetScrollAndRow, ListMenuInit, ListMenuInitInRect, ListMenuLoadStdPalAt, listMenuOf, ListMenuOverrideSetColors,
@@ -31,16 +31,16 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BG_PLTT_OFFSET, gPaletteFade, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_ID, PLTT_SIZE_4BPP, PLTT_SIZEOF,
   ResetPaletteFade, RGB_BLACK, RGB_WHITEALPHA, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
-import { DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
-import { AnimateSprites, BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, SetOamMatrix, ST_OAM_AFFINE_NORMAL } from "./hw/sprite";
+} from "@core/hw/palette";
+import { DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
+import { AnimateSprites, BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, SetOamMatrix, ST_OAM_AFFINE_NORMAL } from "@core/hw/sprite";
 import { AddTextPrinter, AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "./hw/text";
 import {
   AddWindow, BlitBitmapRectToWindow, COPYWIN_GFX, CopyToWindowPixelBuffer, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers,
   GetWindowAttribute, InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, SetWindowAttribute, WINDOW_TILEMAP_TOP, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import {
   CreatePokedexAreaMarkers, DestroyPokedexAreaMarkers, GetNumPokedexAreaMarkers, GetUnlockedSeviiAreas, loadPokedexAreaData,
 } from "./pokedexArea";
@@ -48,7 +48,7 @@ import { GetSetPokedexFlag } from "./pokemon/mon_extra";
 import { NationalPokedexNumToSpecies, SpeciesToNationalPokedexNum } from "./pokemon/mon";
 import { speciesName } from "./pokemon/pokemon";
 import { GetMonIconPtr, GetValidMonIconPalettePtr } from "./pokemonIcon";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { IsNationalPokedexEnabled as isNationalPokedexEnabled, save } from "./save";
 import {
   CreateMonPicSprite_HandleDeoxys, CreateTrainerPicSprite, FreeAndDestroyMonPicSprite, FreeAndDestroyTrainerPicSprite, LoadMonPicInWindow,

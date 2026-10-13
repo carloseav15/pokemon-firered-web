@@ -102,7 +102,7 @@ for (let t = Date.now(); Date.now() - t < 120000 && !battleStart;) {
   battleStart = await inBattle();
 }
 if (battleStart) {
-  if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/games/firered/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
+  if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/core/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
   dumps.battleStart = await dump("battle-start"); note("battle start", JSON.stringify(dumps.battleStart.st));
   // FIGHT -> first move until the battle ends.
   for (let t = Date.now(); Date.now() - t < 240000;) {

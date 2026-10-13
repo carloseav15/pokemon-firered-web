@@ -1,8 +1,8 @@
 // battle_script_commands.c, commands 0x00-0x23.
 
 import * as C from "../../generated/constants";
-import { random } from "../../random";
-import { rom } from "../../rom";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { flagGet } from "../../save";
 import { BS, BattleScriptPop, BattleScriptPush, BattleScriptPushCursor, r16, r32, r8, tableU16 } from "../bscript";
 import {

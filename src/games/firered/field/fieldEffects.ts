@@ -5,12 +5,12 @@
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
 import { ElevationToPriority } from "../generated/eventObjectAnims";
-import { sound } from "../audio/sound";
-import { Sprite, loadImage } from "../gba/sprite";
-import { tasks } from "../gba/tasks";
-import { incbin } from "../hw/assets";
-import { BeginNormalPaletteFade, BlendPalettes, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_BG, RGB_WHITE, gPaletteFade } from "../hw/palette";
-import { DATA_ROOT, rom, type AnimCmd } from "../rom";
+import { sound } from "@core/audio/sound";
+import { Sprite, loadImage } from "@core/gba/sprite";
+import { tasks } from "@core/gba/tasks";
+import { incbin } from "@core/hw/assets";
+import { BeginNormalPaletteFade, BlendPalettes, gPlttBufferUnfaded, OBJ_PLTT_ID, PALETTES_BG, RGB_WHITE, gPaletteFade } from "@core/hw/palette";
+import { DATA_ROOT, rom, type AnimCmd } from "@core/rom";
 import { flagClear, flagGet, save, varGet, varSet } from "../save";
 import { actionWalkInPlaceNormal, actionWalkSlower, DIRECTION_VECTORS, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, ObjectEventGetLocalIdAndMap, ShiftObjectEventCoords, ShiftStillObjectEventCoords, graphicsInfo, type ObjectEvent } from "./objectEvents";
 import type { Overworld } from "./overworld";
@@ -18,18 +18,18 @@ import { FieldMoveEffects } from "./fieldMoves";
 import { RestartWildEncounterImmunitySteps } from "./wildEncounter";
 import { DoPoisonFieldEffect } from "./poison";
 import { SafariZoneTakeStep } from "./safariZone";
-import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
-import { Cos, Sin } from "../hw/trig";
+import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "@core/hw/scanline";
+import { Cos, Sin } from "@core/hw/trig";
 import { FindTaskIdByFunc } from "../hw/menuHelpers";
 import { MAP_OFFSET } from "./fieldmap";
 import { spriteSheet } from "./gfx4bpp";
 import { QuestLog_CutRecording } from "../questLogEvents";
-import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../hw/gpu";
+import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, DISPLAY_WIDTH, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_DISPCNT,
   REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
   WIN_RANGE, WINOUT_WIN01_BG_ALL, WINOUT_WIN01_CLR, WINOUT_WIN01_OBJ,
-} from "../hw/ppu";
+} from "@core/hw/ppu";
 
 type Template = { frames: Array<[string, number, number, number]>; anims: AnimCmd[][]; callback: string | null; size: [number, number] | null };
 type FieldFxData = { templates: Record<string, Template>; emoticons: { file: string; width: number; height: number } };

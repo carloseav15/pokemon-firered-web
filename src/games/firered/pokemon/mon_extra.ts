@@ -1,10 +1,10 @@
 // pokemon.c / pokedex*.c / battle_util2.c helpers used by the battle engine.
 
 import * as C from "../generated/constants";
-import { cdata } from "../hw/assets";
-import { gMain } from "../hw/runtime";
-import { random } from "../random";
-import { rom } from "../rom";
+import { cdata } from "@core/hw/assets";
+import { gMain } from "@core/hw/runtime";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { save } from "../save";
 import { currentRegionMapSection, GetMonData, GetNature, GetNatureFromPersonality, gPPUpClearMask, NationalPokedexNumToSpecies, playerMon, SetMonData, type Mon } from "./mon";
 import { G, gBattleMons, gBattlerPartyIndexes, gEnigmaBerries } from "../battle/globals";

@@ -5,43 +5,43 @@
 // owns the surrounding HwScene and gets control back through `done`.
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { FONT_NORMAL, FONT_SMALL } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, SELECT_BUTTON, START_BUTTON } from "./gba/input";
-import { tasks, type TaskFunc } from "./gba/tasks";
-import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "./hw/assets";
+import { sound } from "@core/audio/sound";
+import { FONT_NORMAL, FONT_SMALL } from "@core/gba/font";
+import { joy, A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
+import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "@core/hw/assets";
 import {
   BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect, FillBgTilemapBufferRect, FillBgTilemapBufferRect_Palette0,
   HideBg, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg,
-} from "./hw/bg";
-import { animsFrom, oamFrom } from "./hw/cdataSprite";
-import { ClearGpuRegBits, GetGpuReg, SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { animsFrom, oamFrom } from "@core/hw/cdataSprite";
+import { ClearGpuRegBits, GetGpuReg, SetGpuReg } from "@core/hw/gpu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TintPalette_CustomTone,
   TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_EFFECT_DARKEN, BLDCNT_EFFECT_LIGHTEN, BLDCNT_EFFECT_NONE, BLDCNT_TGT1_BD, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1, BLDCNT_TGT1_BG2,
   BLDCNT_TGT1_BG3, BLDCNT_TGT1_OBJ, BLDCNT_TGT2_BG0, BLDCNT_TGT2_BG1, BLDCNT_TGT2_BG3, BLDCNT_TGT2_OBJ, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu,
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V,
   REG_OFFSET_WININ, REG_OFFSET_WINOUT, WIN_RANGE, WININ_WIN0_ALL, WININ_WIN0_BG0, WININ_WIN0_BG1, WININ_WIN0_BG3, WININ_WIN0_BG_ALL, WININ_WIN0_CLR,
   WININ_WIN0_OBJ, WININ_WIN1_BG0, WININ_WIN1_BG2, WININ_WIN1_BG3, WININ_WIN1_CLR, WININ_WIN1_OBJ,
-} from "./hw/ppu";
-import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+} from "@core/hw/ppu";
+import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable,
   gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAnim, type Sprite,
   type SpriteCallback, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
 import {
   ClearWindowTilemap, COPYWIN_FULL, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap,
   type WindowTemplate,
-} from "./hw/window";
-import { rom } from "./rom";
+} from "@core/hw/window";
+import { rom } from "@core/rom";
 import { flagGet, save, type WarpData } from "./save";
 import type { Game } from "./game";
-import type { MapHeader } from "./rom";
+import type { MapHeader } from "@core/rom";
 
 const MAP_WIDTH = 22, MAP_HEIGHT = 15;
 const CANCEL_BUTTON_X = 21, CANCEL_BUTTON_Y = 13;

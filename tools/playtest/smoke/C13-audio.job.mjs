@@ -2,7 +2,7 @@ export default async function run(ctx) {
   const initial = await ctx.loadSave("pewter");
   await ctx.page.locator("canvas").click({ position: { x: 120, y: 80 } });
   const audio = await ctx.runEval(`
-    const { sound } = await H.mod("/src/games/firered/audio/sound.ts");
+    const { sound } = await H.mod("/src/core/audio/sound.ts");
     const C = await H.mod("/src/games/firered/generated/constants.ts");
     await sound.backend.ctx.resume();
     await frDebug.wait(60);
@@ -15,7 +15,7 @@ export default async function run(ctx) {
 
   // Sound effect and cry by engine state (no human listening here).
   const fx = await ctx.runEval(`
-    const { sound } = await H.mod("/src/games/firered/audio/sound.ts");
+    const { sound } = await H.mod("/src/core/audio/sound.ts");
     sound.playSE(${audio.SE_SELECT});
     await frDebug.wait(10);
     const se = sound.isSEPlaying();
@@ -34,7 +34,7 @@ export default async function run(ctx) {
   if (second.map !== "MAP_ROUTE2") throw new Error(`unexpected checkpoint: ${JSON.stringify(second)}`);
   await ctx.page.locator("canvas").click({ position: { x: 120, y: 80 } });
   const battle = await ctx.runEval(`
-    const { sound } = await H.mod("/src/games/firered/audio/sound.ts");
+    const { sound } = await H.mod("/src/core/audio/sound.ts");
     const C = await H.mod("/src/games/firered/generated/constants.ts");
     await sound.backend.ctx.resume();
     for (let i = 0; i < 200 && !H.inBattle(); i++) await frDebug.walk(i % 2 ? "D" : "U", 1);

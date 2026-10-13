@@ -3,30 +3,30 @@
 // Save-status error screens other than "no save" are not reachable with localStorage saves.
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
-import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, FillBgTilemapBufferRect_Palette0, InitBgsFromTemplates, LoadBgTiles,
   ResetBgsAndClearDma3BusyFlags, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { InitGpuRegManager, SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
 import { BeginNormalPaletteFade, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB, RGB_BLACK,
-  TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
+  TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_DARKEN, BLDCNT_TGT1_BD, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1, BLDCNT_TGT1_BG2, BLDCNT_TGT1_BG3, BLDCNT_TGT1_OBJ, DISPCNT_OBJ_1D_MAP,
   DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1CNT, REG_OFFSET_BG1HOFS,
   REG_OFFSET_BG1VOFS, REG_OFFSET_BG2CNT, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY,
   REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
-} from "./hw/ppu";
-import { gMain, renderHw, runHwFrame, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
-import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+} from "@core/hw/ppu";
+import { gMain, renderHw, runHwFrame, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
+import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
 import { AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
 import { ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap,
-  DUMMY_WIN_TEMPLATE, PIXEL_FILL, type WindowTemplate } from "./hw/window";
+  DUMMY_WIN_TEMPLATE, PIXEL_FILL, type WindowTemplate } from "@core/hw/window";
 import { flagGet, save, saveStore, setSave, varGet } from "./save";
 
 const FONT_NORMAL = 2;

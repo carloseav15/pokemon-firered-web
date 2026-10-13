@@ -1,17 +1,17 @@
 // battle_message.c: battle string selection, placeholder expansion, text windows and the PREPARE_*_BUFFER macros.
 
 import * as C from "../generated/constants";
-import { cdata, hasCData, incbin16, symName } from "../hw/assets";
+import { cdata, hasCData, incbin16, symName } from "@core/hw/assets";
 import { flagGet } from "../save";
-import { gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
+import { gPlttBufferFaded, gPlttBufferUnfaded } from "@core/hw/palette";
 import { AddTextPrinter } from "../hw/text";
-import { CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, PutWindowTilemap } from "../hw/window";
-import { getTextSpeedSetting, textFlags } from "../gba/textPrinter";
-import { GetStringWidth } from "../gba/font";
+import { CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, PutWindowTilemap } from "@core/hw/window";
+import { getTextSpeedSetting, textFlags } from "@core/gba/textPrinter";
+import { GetStringWidth } from "@core/gba/font";
 import { battleHost } from "./host";
-import { rom, b64 } from "../rom";
+import { rom, b64 } from "@core/rom";
 import { save } from "../save";
-import { intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
+import { intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
 import {
   G, gBattleBufferA, gBattleMons, gBattleResources, gBattleScripting, gBattleStruct, gBattleTextBuff1, gBattleTextBuff2, gBattleTextBuff3, gBattlerPartyIndexes,
   gDisplayedStringBattle, gMoveSelectionCursor,

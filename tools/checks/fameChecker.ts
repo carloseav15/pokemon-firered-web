@@ -5,13 +5,13 @@ import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import * as C from '../../src/games/firered/generated/constants.ts';
-import { rom } from '../../src/games/firered/rom.ts';
-import { sound } from '../../src/games/firered/audio/sound.ts';
-import { loadTrig } from '../../src/games/firered/hw/trig.ts';
-import { runHwFrame, SetMainCallback2, gMain } from '../../src/games/firered/hw/runtime.ts';
-import { tasks } from '../../src/games/firered/gba/tasks.ts';
-import { joy, START_BUTTON, B_BUTTON } from '../../src/games/firered/gba/input.ts';
-import { gPaletteFade } from '../../src/games/firered/hw/palette.ts';
+import { rom } from '../../src/core/rom.ts';
+import { sound } from '../../src/core/audio/sound.ts';
+import { loadTrig } from '../../src/core/hw/trig.ts';
+import { runHwFrame, SetMainCallback2, gMain } from '../../src/core/hw/runtime.ts';
+import { tasks } from '../../src/core/gba/tasks.ts';
+import { joy, START_BUTTON, B_BUTTON } from '../../src/core/gba/input.ts';
+import { gPaletteFade } from '../../src/core/hw/palette.ts';
 import { save, newSaveData, setSave, varSet, SV } from '../../src/games/firered/save.ts';
 import {
   ResetFameChecker,
@@ -64,7 +64,7 @@ async function initData() {
   await loadTrig();
   await preloadFameCheckerAssets();
   // Menu/palette assets the UI run reads beyond preloadFameCheckerAssets.
-  const { registerCData, registerPack } = await import('../../src/games/firered/hw/assets.ts');
+  const { registerCData, registerPack } = await import('../../src/core/hw/assets.ts');
   for (const pack of ['graphics_interface', 'graphics_text_window', 'graphics_fonts']) {
     const buf = readFileSync(fr + `incbin/${pack}.bin`);
     registerPack(pack, new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));

@@ -1,9 +1,9 @@
 // Port of battle_setup.c: trainerbattle argument parsing, trainer flags,
 // wild/scripted battle starts and the end-of-battle callbacks.
 
-import { sound } from "../audio/sound";
-import { expandPlaceholders } from "../gba/charmap";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { expandPlaceholders } from "@core/gba/charmap";
+import { rom } from "@core/rom";
 import * as C from "../generated/constants";
 import { clearRematchStateOfLastTalked, getRematchTrainerId } from "../field/vsSeeker";
 import { afterRoamerBattle } from "../pokemon/roamer";
@@ -13,7 +13,7 @@ import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "../save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
 import { createMaleMon, createMon, genderFromPersonality, healMon, MON_FEMALE, type Pokemon } from "../pokemon/pokemon";
-import { random32 } from "../random";
+import { random32 } from "@core/random";
 import type { Game } from "../game";
 import { GetSafariZoneFlag } from "../field/safariZone";
 import { QL_FinishRecordingScene, QuestLogEvents_HandleEndTrainerBattle } from "../questLogEvents";

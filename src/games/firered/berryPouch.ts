@@ -4,15 +4,15 @@
 // supplied through BerryPouchHandlers, like the bag's handlers.
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "./gba/font";
-import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON } from "./gba/input";
-import { tasks, type TaskFunc } from "./gba/tasks";
-import { getTextSpeedSetting, textFlags } from "./gba/textPrinter";
-import { incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
-import { InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+import { sound } from "@core/audio/sound";
+import { expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "@core/gba/font";
+import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON } from "@core/gba/input";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
+import { getTextSpeedSetting, textFlags } from "@core/gba/textPrinter";
+import { incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
+import { InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask, LIST_NO_MULTIPLE_SCROLL, ListMenu_ProcessInput, ListMenuGetScrollAndRow,
   ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, listMenuTemplate, RemoveScrollIndicatorArrowPair, type ListMenuItem, type ListMenuTemplate,
@@ -28,23 +28,23 @@ import {
   PrintMoneyAmountInMoneyBoxWithBorder, ResetAllBgsCoordinatesAndBgCntRegs, ScheduleBgCopyTilemapToVram, SetBgTilemapPalette, type MenuAction,
   type YesNoFuncTable,
 } from "./hw/menuHelpers";
-import { BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "./hw/runtime";
+import { BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, oamData,
   ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAffineAnim, ANIMCMD_END, ANIMCMD_FRAME, AFFINEANIMCMD_END,
   AFFINEANIMCMD_FRAME, type Sprite, type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import {
   AddWindow, ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL,
   PutWindowTilemap, RemoveWindow, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { bagResult, CreateBerryPouchItemIcon, DestroyItemMenuIcon, ResetItemMenuIconState, type BagTaskContext } from "./bagMenu";
 import { ItemIdToBerryType } from "./pokemon/berry";
 import { addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
-import { b64, rom } from "./rom";
+import { b64, rom } from "@core/rom";
 import { save } from "./save";
 
 export type BerryPouchHandlers = {

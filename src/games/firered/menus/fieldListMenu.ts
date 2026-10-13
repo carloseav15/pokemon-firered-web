@@ -3,12 +3,12 @@
 // The list logic itself is the shared port in hw/listMenu.ts.
 
 import { spriteSheet } from "../field/gfx4bpp";
-import { Sprite } from "../gba/sprite";
-import { printText } from "../gba/textPrinter";
-import type { Window } from "../gba/window";
-import { incbin, incbin16 } from "../hw/assets";
+import { Sprite } from "@core/gba/sprite";
+import { printText } from "@core/gba/textPrinter";
+import type { Window } from "@core/gba/window";
+import { incbin, incbin16 } from "@core/hw/assets";
 import { type ListSurface, SCROLL_ARROW_UP } from "../hw/listMenu";
-import { gSineTable } from "../hw/trig";
+import { gSineTable } from "@core/hw/trig";
 import type { Overworld } from "../field/overworld";
 
 export function fieldListSurface(win: Window): ListSurface {

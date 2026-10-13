@@ -2,12 +2,12 @@
 // cdata; Canvas draws the source frames over the map metatiles. The VRAM copy
 // is adapted to a transient buffer containing only the tiles visible in Canvas.
 
-import { sound } from "../audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
-import { b64, rom } from "../rom";
-import { cdata, cdataAny, symName } from "../hw/assets";
-import { tasks, type TaskFunc } from "../gba/tasks";
+import { b64, rom } from "@core/rom";
+import { cdata, cdataAny, symName } from "@core/hw/assets";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
 import type { Overworld } from "./overworld";
 
 const SIZE_1x2 = 1;

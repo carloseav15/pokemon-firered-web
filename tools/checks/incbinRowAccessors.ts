@@ -4,7 +4,7 @@ import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { GetBattleInterfaceGfxPtr } from "../../src/games/firered/generated/incbinRowAccessors.ts";
-import { incbin, registerIncbinIndex, registerPack } from "../../src/games/firered/hw/assets.ts";
+import { incbin, registerIncbinIndex, registerPack } from "../../src/core/hw/assets.ts";
 
 const index = JSON.parse(readFileSync("public/fr/incbin/index.json", "utf8")) as {
   packs: Record<string, number>;

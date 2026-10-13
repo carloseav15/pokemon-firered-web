@@ -1,9 +1,9 @@
 // field_effect.c: source stages for the two halves of an escalator map warp.
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { paletteFade } from "../gba/fade";
-import { tasks } from "../gba/tasks";
-import { Cos, Sin } from "../hw/trig";
+import { sound } from "@core/audio/sound";
+import { paletteFade } from "@core/gba/fade";
+import { tasks } from "@core/gba/tasks";
+import { Cos, Sin } from "@core/hw/trig";
 import { MapGridGetMetatileBehaviorAt } from "./fieldmap";
 import { DIR_EAST, DIR_NORTH, DIR_WEST, type ObjectEvent } from "./objectEvents";
 import { PlayerGetDestCoords } from "./playerAvatar";

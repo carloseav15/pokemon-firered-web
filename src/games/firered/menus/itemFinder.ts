@@ -3,14 +3,14 @@
 // 4bpp sprite sheet through a small palette/rendering adaptation.
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { cdata, incbin, loadCData, preloadIncbin } from "../hw/assets";
-import { Sprite, type Sprite as FieldSprite } from "../gba/sprite";
-import { rom, type MapBgEvent, type MapHeader } from "../rom";
+import { sound } from "@core/audio/sound";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
+import { Sprite, type Sprite as FieldSprite } from "@core/gba/sprite";
+import { rom, type MapBgEvent, type MapHeader } from "@core/rom";
 import { flagGet, SV, varSet } from "../save";
-import { tasks } from "../gba/tasks";
-import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
-import { TV_PrintIntToStringVar } from "../gba/charmap";
+import { tasks } from "@core/gba/tasks";
+import { joy, A_BUTTON, B_BUTTON } from "@core/gba/input";
+import { TV_PrintIntToStringVar } from "@core/gba/charmap";
 import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "../field/objectEvents";
 import { GetMapConnectionAtPos, GetMapHeaderFromConnection, CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
 import { canvas, rgb555 } from "../field/gfx4bpp";

@@ -2,9 +2,9 @@
 // Disguise callbacks and complete Quest Log playback state remain adaptations.
 import type { Game } from "../game";
 import * as C from "../generated/constants";
-import { tasks } from "../gba/tasks";
-import type { Sprite } from "../gba/sprite";
-import { rom } from "../rom";
+import { tasks } from "@core/gba/tasks";
+import type { Sprite } from "@core/gba/sprite";
+import { rom } from "@core/rom";
 import { countAliveNonEggMons } from "../pokemon/pokemon";
 import { MAP_OFFSET } from "./fieldmap";
 import { QL_IsTrainerSightDisabled } from "../questLogEvents";

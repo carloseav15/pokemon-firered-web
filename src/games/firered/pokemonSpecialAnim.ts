@@ -16,20 +16,20 @@
 //  - GetMonLevelUpWindowStats returns the stats instead of filling a u16 *.
 // Needs preloadPokemonSpecialAnim() before StartUseItemAnim_*.
 
-import { sound } from "./audio/sound";
-import { concat, copy, EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL, GetStringWidth } from "./gba/font";
-import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "./gba/input";
-import { getTextSpeedSetting } from "./gba/textPrinter";
-import { tasks, type TaskFunc } from "./gba/tasks";
+import { sound } from "@core/audio/sound";
+import { concat, copy, EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
+import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "@core/gba/input";
+import { getTextSpeedSetting } from "@core/gba/textPrinter";
+import { tasks, type TaskFunc } from "@core/gba/tasks";
 import * as C from "./generated/constants";
-import { cdata, incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
-import { affineAnimsFrom, templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
+import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
+import { affineAnimsFrom, templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
   BG_SCREEN_SIZE, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect_Palette0, HideBg,
   InitBgsFromTemplates, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import { ClearStdWindowAndFrameToTransparent, LoadUserWindowGfx } from "./hw/menu";
 import {
   DrawTextBorderOuter, FindTaskIdByFunc, FuncIsActiveTask, GetWordTaskArg, SetWordTaskArg,
@@ -37,34 +37,34 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, ResetPaletteFadeControl, RGB, RGB_BLACK, RGB_WHITE, TransferPlttBuffer,
   UpdatePaletteFade, PALETTES_ALL,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   BLDALPHA_BLEND, BLDCNT_EFFECT_NONE, BLDCNT_TGT2_ALL, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT,
   REG_OFFSET_DISPCNT,
-} from "./hw/ppu";
-import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback } from "./hw/runtime";
+} from "@core/hw/ppu";
+import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback } from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites,
   IndexOfSpritePaletteTag, InitSpriteAffineAnim, LoadCompressedSpriteSheet, LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES,
   ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, ST_OAM_AFFINE_DOUBLE, StartSpriteAffineAnim, StartSpriteAnim, type Sprite,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized3, AddTextPrinterParameterized5, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
-import { gSineTable } from "./hw/trig";
+import { gSineTable } from "@core/hw/trig";
 import {
   ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, COPYWIN_MAP, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL,
   PutWindowTilemap, type WindowTemplate,
-} from "./hw/window";
+} from "@core/hw/window";
 import { AddItemIconObject } from "./bagMenu";
 import {
   DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr,
-} from "./dynamicPlaceholderTextUtil";
+} from "@core/dynamicPlaceholderTextUtil";
 import { Menu2_GetMonPosAttribute, Menu2_GetStarSpritePosAttribute } from "./menu2";
 import { tmhmMove } from "./menus/monProgress";
 import { CheckIfItemIsTMHMOrEvolutionStone, itemName } from "./pokemon/items";
 import { GetMonData, type Mon } from "./pokemon/mon";
 import { playerMon } from "./pokemon/mon";
 import { GetMonFrontSpritePal, LoadSpecialPokePic } from "./pokemon/pics";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 
 const rd = <T>(name: string) => cdata<T>("pokemon_special_anim_scene", name);
 const txt = (name: string) => rom.text(name);

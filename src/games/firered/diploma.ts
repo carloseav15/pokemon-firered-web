@@ -1,23 +1,23 @@
 // diploma.c: the Pokédex completion diploma (Kanto, or National with every mon).
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { FONT_NORMAL, GetStringWidth } from "./gba/font";
-import { joy, A_BUTTON } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { incbin } from "./hw/assets";
-import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect_Palette0, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "./hw/bg";
-import { InitGpuRegManager, SetGpuReg } from "./hw/gpu";
-import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1HOFS, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { HwScene, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+import { sound } from "@core/audio/sound";
+import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
+import { joy, A_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { incbin } from "@core/hw/assets";
+import { BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect_Palette0, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "@core/hw/bg";
+import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
+import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1HOFS, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { HwScene, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
 import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
-import { FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap } from "./hw/window";
-import { rom } from "./rom";
+import { FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap } from "@core/hw/window";
+import { rom } from "@core/rom";
 import { save } from "./save";
 import { hasAllNationalDexSpecies } from "./pokemon/pokemon";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import type { Game } from "./game";
 
 /** DynamicPlaceholderTextUtil_ExpandPlaceholders: F7 nn → placeholder nn. */

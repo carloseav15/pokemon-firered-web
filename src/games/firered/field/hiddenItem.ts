@@ -1,7 +1,7 @@
 // field_specials.c GetHiddenItemAttr: decode the u32 stored in a BgEvent.
 
 import * as C from "../generated/constants";
-import type { MapBgEvent } from "../rom";
+import type { MapBgEvent } from "@core/rom";
 
 type HiddenItemEvent = Extract<MapBgEvent, { type: "hidden_item" }>;
 

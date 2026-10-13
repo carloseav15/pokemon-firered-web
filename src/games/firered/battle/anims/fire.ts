@@ -3,9 +3,9 @@
 // Templates, anims and affine anims come from cdata/battle_anim_fire.json.
 
 import * as C from "../../generated/constants";
-import { BG_PLTT_ID, BlendPalette } from "../../hw/palette";
-import { CreateSprite, DestroySprite, gSprites, MAX_SPRITES, ST_OAM_OBJ_NORMAL, StartSpriteAnim, type Sprite } from "../../hw/sprite";
-import { Cos, Sin } from "../../hw/trig";
+import { BG_PLTT_ID, BlendPalette } from "@core/hw/palette";
+import { CreateSprite, DestroySprite, gSprites, MAX_SPRITES, ST_OAM_OBJ_NORMAL, StartSpriteAnim, type Sprite } from "@core/hw/sprite";
+import { Cos, Sin } from "@core/hw/trig";
 import {
   ANIM_ATTACKER, ANIM_DEF_PARTNER, ANIM_TARGET, animState, AnimTranslateLinear, AnimTravelDiagonally, BattleAnimHelper_RunSpriteSquash,
   BattleAnimHelper_SetSpriteSquashParams, DestroyAnimSprite, DestroyAnimVisualTask, DestroySpriteAndMatrix, GetAnimBattlerSpriteId,

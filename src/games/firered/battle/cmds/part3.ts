@@ -1,16 +1,16 @@
 // battle_script_commands.c, commands 0x5C-0xAA (hitanimation .. copymovepermanently).
 
 import * as C from "../../generated/constants";
-import { sound } from "../../audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "../../gba/input";
-import { ShowBg, SetBgAttribute, BG_ATTR_PRIORITY, IsDma3ManagerBusyWithBgCopy } from "../../hw/bg";
-import { gMain } from "../../hw/runtime";
-import { ClearWindowTilemap, COPYWIN_FULL, COPYWIN_GFX, COPYWIN_MAP, CopyWindowToVram, CopyToWindowPixelBuffer, PutWindowTilemap } from "../../hw/window";
-import { LoadPalette, BG_PLTT_ID } from "../../hw/palette";
-import { incbin, incbin16 } from "../../hw/assets";
-import { CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, LoadSpritePalette, LoadSpriteSheet, gSprites, type Sprite, type SpriteTemplate } from "../../hw/sprite";
-import { random } from "../../random";
-import { rom } from "../../rom";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_UP, JOY_NEW } from "@core/gba/input";
+import { ShowBg, SetBgAttribute, BG_ATTR_PRIORITY, IsDma3ManagerBusyWithBgCopy } from "@core/hw/bg";
+import { gMain } from "@core/hw/runtime";
+import { ClearWindowTilemap, COPYWIN_FULL, COPYWIN_GFX, COPYWIN_MAP, CopyWindowToVram, CopyToWindowPixelBuffer, PutWindowTilemap } from "@core/hw/window";
+import { LoadPalette, BG_PLTT_ID } from "@core/hw/palette";
+import { incbin, incbin16 } from "@core/hw/assets";
+import { CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, LoadSpritePalette, LoadSpriteSheet, gSprites, type Sprite, type SpriteTemplate } from "@core/hw/sprite";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { save } from "../../save";
 import { BS, BattleScriptPush, r16, r32, r8, scriptTable } from "../bscript";
 import {
@@ -48,10 +48,10 @@ import { AddMoney, ComputeWhiteOutMoneyLoss, IncrementGameStat, IsFanfareTaskIna
 import { DrawLevelUpWindowPg1, DrawLevelUpWindowPg2, GetMonLevelUpWindowStats } from "../ext";
 import { GetMonIconPtr, GetValidMonIconPalettePtr } from "../ext";
 import { AddTextPrinter } from "../../hw/text";
-import { FONT_SMALL } from "../../gba/font";
-import { TEXT_COLOR_DARK_GRAY, TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE, TEXT_SKIP_DRAW } from "../../gba/textPrinter";
-import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../../gba/charmap";
-import { oamData, SPRITE_SHAPE, SPRITE_SIZE, gDummySpriteAnimTable, gDummySpriteAffineAnimTable } from "../../hw/sprite";
+import { FONT_SMALL } from "@core/gba/font";
+import { TEXT_COLOR_DARK_GRAY, TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE, TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
+import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
+import { oamData, SPRITE_SHAPE, SPRITE_SIZE, gDummySpriteAnimTable, gDummySpriteAffineAnimTable } from "@core/hw/sprite";
 
 const cur = () => G.gBattlescriptCurrInstr;
 const adv = (n: number) => { G.gBattlescriptCurrInstr += n; };

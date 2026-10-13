@@ -1,11 +1,11 @@
 // struct Pokemon and the pokemon.c helpers the field and battle code use.
 
-import { EOS, length } from "../gba/charmap";
+import { EOS, length } from "@core/gba/charmap";
 import * as C from "../generated/constants";
 import { StringCompare } from "../generated/stringUtil";
-import { cdata } from "../hw/assets";
-import { random, random32 } from "../random";
-import { b64, rom } from "../rom";
+import { cdata } from "@core/hw/assets";
+import { random, random32 } from "@core/random";
+import { b64, rom } from "@core/rom";
 import { sendMonToPC } from "./storage";
 import { save } from "../save";
 import type { MailMessage } from "./mail";

@@ -1,21 +1,21 @@
 // pokemon_storage_system_tasks.c: EnterPokeStorage, the Task_* state machines of the box screen, the display-mon panel,
 // the party menu slide, the close-box button, the messages and the quest log events.
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import * as C from "./generated/constants";
 import { addBagItem, removeBagItem } from "./pokemon/items";
 import { StringCopy } from "./generated/stringUtil";
-import { CHAR_SPACE, EOS } from "./gba/charmap";
-import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL } from "./gba/font";
-import { A_BUTTON, B_BUTTON, DPAD_ANY, joy, JOY_NEW } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { TEXT_SKIP_DRAW } from "./gba/textPrinter";
-import { cdata, incbin, incbin16, loadCData, preloadPacks, symName } from "./hw/assets";
+import { CHAR_SPACE, EOS } from "@core/gba/charmap";
+import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, DPAD_ANY, joy, JOY_NEW } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
+import { cdata, incbin, incbin16, loadCData, preloadPacks, symName } from "@core/hw/assets";
 import {
   BG_COORD_ADD, BG_COORD_SUB, type BgTemplate, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
   FillBgTilemapBufferRect_Palette0, InitBgsFromTemplates, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, SetBgTilemapBuffer, ShowBg,
-} from "./hw/bg";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, LoadStdWindowGfx, LoadUserWindowGfx, MENU_B_PRESSED, MENU_NOTHING_CHOSEN,
   Menu_MoveCursorNoWrapAround, Menu_ProcessInputNoWrapClearOnChoose,
@@ -24,25 +24,25 @@ import { ClearScheduledBgCopiesToVram, DoScheduledBgTilemapCopiesToVram, DrawTex
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK, ResetPaletteFade,
   TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1CNT, REG_OFFSET_BG1HOFS,
   REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BG3CNT, REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS,
   REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT, REG_OFFSET_MOSAIC,
-} from "./hw/ppu";
-import { SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
+} from "@core/hw/ppu";
+import { SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTileRanges, FreeSpriteTilesByTag,
   gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy,
   spriteState, StartSpriteAnim, StartSpriteAnimIfDifferent, GetSpriteTileStartByTag, type Sprite,
-} from "./hw/sprite";
-import { TilemapUtil_Free, TilemapUtil_Init, TilemapUtil_Move, TilemapUtil_SetPos, TilemapUtil_SetRect, TilemapUtil_SetTilemap, TilemapUtil_Update } from "./hw/tilemapUtil";
+} from "@core/hw/sprite";
+import { TilemapUtil_Free, TilemapUtil_Init, TilemapUtil_Move, TilemapUtil_SetPos, TilemapUtil_SetRect, TilemapUtil_SetTilemap, TilemapUtil_Update } from "@core/hw/tilemapUtil";
 import { AddTextPrinterParameterized, DeactivateAllTextPrinters } from "./hw/text";
 import {
   ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
-} from "./hw/window";
-import { ResetBgsAndClearDma3BusyFlags } from "./hw/bg";
-import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr } from "./dynamicPlaceholderTextUtil";
+} from "@core/hw/window";
+import { ResetBgsAndClearDma3BusyFlags } from "@core/hw/bg";
+import { DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr } from "@core/dynamicPlaceholderTextUtil";
 import { GoToBagMenu } from "./bagMenu";
 import { SetHelpContext } from "./helpSystem";
 import { CreateMonMarkingsMenu, BufferMonMarkingsMenuTiles, CreateMonMarkingComboSprite, FreeMonMarkingsMenu, HandleMonMarkingsMenuInput, InitMonMarkingsMenu, OpenMonMarkingsMenu, UpdateMonMarkingTiles } from "./monMarkings";
@@ -54,7 +54,7 @@ import { LoadSpecialPokePic } from "./pokemon/pics";
 import { GetBoxNamePtr, GetCurrentBoxMonData, SetCurrentBox, SetCurrentBoxMonData, StorageGetCurrentBox } from "./pokemon/storage";
 import { ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
 import { SetQuestLogEvent } from "./questLogEvents";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { bagResult } from "./bagMenu";
 import { flagClear, varSet } from "./save";
 import {

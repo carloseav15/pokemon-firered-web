@@ -14,7 +14,7 @@ const commonHelpers = `${prelude}
   const P = await H.mod("/src/games/firered/pokemon/pokemon.ts");
   const FM = await H.mod("/src/games/firered/field/fieldmap.ts");
   const S = await H.mod("/src/games/firered/save.ts");
-  const R = (await H.mod("/src/games/firered/rom.ts")).rom;
+  const R = (await H.mod("/src/core/rom.ts")).rom;
   const ctl = () => H.G.gBattlerControllerFuncs[0]?.name;
   const fail = (m, extra = {}) => {
     throw new Error(m + " " + JSON.stringify({ ctl: ctl(), cb2: H.cb2(), tasks: names(), map: H.st().map, ...extra }));

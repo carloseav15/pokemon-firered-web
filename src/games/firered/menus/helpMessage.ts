@@ -3,10 +3,10 @@
 // instead of BG0, so the tiles of gHelpMessageWindow_Gfx are copied into the
 // window's pixel buffer (what CopyToWindowPixelBuffer does in the C).
 
-import { FONT_NORMAL } from "../gba/font";
-import { printText } from "../gba/textPrinter";
-import { stdPalette, Window, type WindowLayer } from "../gba/window";
-import { incbin } from "../hw/assets";
+import { FONT_NORMAL } from "@core/gba/font";
+import { printText } from "@core/gba/textPrinter";
+import { stdPalette, Window, type WindowLayer } from "@core/gba/window";
+import { incbin } from "@core/hw/assets";
 
 const TEXT_COLOR_TRANSPARENT = 0;
 const TEXT_DYNAMIC_COLOR_1 = 10;

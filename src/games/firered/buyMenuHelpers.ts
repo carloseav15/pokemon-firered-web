@@ -3,19 +3,19 @@
 // (a call-time import cycle, as in the C).
 // Needs loadCData("buy_menu_helpers", "strings", "text_window_graphics").
 
-import { FONT_NORMAL } from "./gba/font";
-import { getTextSpeedSetting } from "./gba/textPrinter";
-import type { TaskFunc } from "./gba/tasks";
-import { cdata } from "./hw/assets";
+import { FONT_NORMAL } from "@core/gba/font";
+import { getTextSpeedSetting } from "@core/gba/textPrinter";
+import type { TaskFunc } from "@core/gba/tasks";
+import { cdata } from "@core/hw/assets";
 import {
   DrawStdFrameWithCustomTileAndPalette, LoadMenuMessageWindowGfx, LoadStdWindowGfx, LoadUserWindowGfx,
 } from "./hw/menu";
 import {
   CreateYesNoMenuWithCallbacks, DisplayMessageAndContinueTask, PrintMoneyAmountInMoneyBoxWithBorder, ScheduleBgCopyTilemapToVram, type YesNoFuncTable,
 } from "./hw/menuHelpers";
-import { BG_PLTT_ID } from "./hw/palette";
+import { BG_PLTT_ID } from "@core/hw/palette";
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
-import { InitWindows, PutWindowTilemap, type WindowTemplate } from "./hw/window";
+import { InitWindows, PutWindowTilemap, type WindowTemplate } from "@core/hw/window";
 import { save } from "./save";
 import { GetMartFontId } from "./shop";
 

@@ -50,7 +50,7 @@ def ts_index() -> tuple[dict[str, list[tuple[str, int]]], dict[str, list[tuple[s
     """(definitions, doc-comment mentions): the port often names the C function only in a `/** Name */` comment."""
     idx: dict[str, list[tuple[str, int]]] = {}
     doc: dict[str, list[tuple[str, int]]] = {}
-    for path in sorted((ROOT / "src/games/firered").rglob("*.ts")):
+    for path in sorted([*(ROOT / "src/games/firered").rglob("*.ts"), *(ROOT / "src/core").rglob("*.ts")]):
         if "generated" in path.parts:
             continue
         rel = str(path.relative_to(ROOT))

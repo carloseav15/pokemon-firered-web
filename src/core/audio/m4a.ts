@@ -19,7 +19,7 @@
 // - Cry length counts 1/60 s units; WAV playback/reverse remains sample-based.
 
 import { DATA_ROOT } from "../rom";
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 import type { PokemonCrySettings, SoundBackend } from "./sound";
 
 /** DATA_ROOT can change at startup (the world viewer's Hoenn mode), so the audio folder is resolved on every use. */

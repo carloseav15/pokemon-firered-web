@@ -2,8 +2,8 @@
 // droplets and the rising bubble after-effect.
 
 import * as C from "../../generated/constants";
-import { StartSpriteAnim, type Sprite } from "../../hw/sprite";
-import { Sin } from "../../hw/trig";
+import { StartSpriteAnim, type Sprite } from "@core/hw/sprite";
+import { Sin } from "@core/hw/trig";
 import {
   animState, DestroyAnimSprite, GetBattlerSpriteCoord, InitAnimArcTranslation, InitSpriteDataForLinearTranslation,
   InitSpritePosToAnimAttacker, InitSpritePosToAnimTarget, SetAverageBattlerPositions, StartAnimLinearTranslation,

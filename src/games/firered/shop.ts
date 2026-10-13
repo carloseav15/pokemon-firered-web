@@ -16,18 +16,18 @@
 //  - Alloc'd tilemap buffers are Uint16Arrays; the four Alloc failure paths cannot happen.
 // Needs preloadShop() before BUY.
 
-import { sound } from "./audio/sound";
-import { expandPlaceholders, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN, stringVars, concat } from "./gba/charmap";
-import { FONT_FEMALE, FONT_MALE, FONT_NORMAL, FONT_SMALL } from "./gba/font";
-import { A_BUTTON, B_BUTTON, JOY_NEW } from "./gba/input";
-import { tasks } from "./gba/tasks";
+import { sound } from "@core/audio/sound";
+import { expandPlaceholders, intToDecimal, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN, stringVars, concat } from "@core/gba/charmap";
+import { FONT_FEMALE, FONT_MALE, FONT_NORMAL, FONT_SMALL } from "@core/gba/font";
+import { A_BUTTON, B_BUTTON, JOY_NEW } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
 import * as C from "./generated/constants";
 import { SetQuestLogEvent } from "./questLogEvents";
-import { cdata, incbin, incbin16, loadCData, preloadPacks } from "./hw/assets";
+import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
 import {
   FillBgTilemapBufferRect_Palette0, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask, LIST_CANCEL, LIST_NOTHING_CHOSEN, ListMenu_ProcessInput, ListMenuGetScrollAndRow,
   ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, RemoveScrollIndicatorArrowPair, SCROLL_ARROW_UP, type ListMenu, type ListMenuItem, type ListMenuTemplate,
@@ -43,18 +43,18 @@ import {
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer,
   UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS,
   REG_OFFSET_BG2VOFS, REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT,
-} from "./hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+} from "@core/hw/ppu";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, MAX_SPRITES, gSprites, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy,
   StartSpriteAnim,
-} from "./hw/sprite";
-import { FillWindowPixelBuffer, FillWindowPixelRect, CopyWindowToVram, COPYWIN_GFX, ClearWindowTilemap, PIXEL_FILL, PutWindowTilemap, FreeAllWindowBuffers, type WindowTemplate } from "./hw/window";
+} from "@core/hw/sprite";
+import { FillWindowPixelBuffer, FillWindowPixelRect, CopyWindowToVram, COPYWIN_GFX, ClearWindowTilemap, PIXEL_FILL, PutWindowTilemap, FreeAllWindowBuffers, type WindowTemplate } from "@core/hw/window";
 import {
   BuyMenuConfirmPurchase, BuyMenuDisplayMessage, BuyMenuDrawMoneyBox, BuyMenuInitWindows, BuyMenuPrint, BuyMenuQuantityBoxNormalBorder,
   BuyMenuQuantityBoxThinBorder,
@@ -69,8 +69,8 @@ import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { tmhmMove } from "./menus/monProgress";
 import { CreateObjectGraphicsSprite, GetObjectEventGraphicsInfo } from "./objectEventGraphics";
 import { addBagItem, bagItemQuantity, itemInfo, removeMoney } from "./pokemon/items";
-import { printText } from "./gba/textPrinter";
-import { rom } from "./rom";
+import { printText } from "@core/gba/textPrinter";
+import { rom } from "@core/rom";
 import { incrementGameStat, save } from "./save";
 
 const rd = <T>(name: string) => cdata<T>("shop", name);

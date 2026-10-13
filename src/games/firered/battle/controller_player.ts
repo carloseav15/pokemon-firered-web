@@ -1,37 +1,37 @@
 // battle_controller_player.c
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, START_BUTTON, JOY_HELD, L_BUTTON, R_BUTTON, SELECT_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { b64, rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, START_BUTTON, JOY_HELD, L_BUTTON, R_BUTTON, SELECT_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { b64, rom } from "@core/rom";
 import { save, varGet } from "../save";
 import { G, gActionSelectionCursor, gBattleBufferA, gBattleBufferB, gBattleControllerData, gBattleMonForms, gBattleMons, gBattlePartyCurrentOrder, gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerSpriteIds, gBattlerStatusSummaryTaskId, gBattleSpritesDataPtr, gBattleStruct, gBitTable, gDisableStructs, gDisplayedStringBattle, gHealthboxSpriteIds, gMoveSelectionCursor, gTransformedPersonalities } from "./globals";
 import { gBattleMoves } from "./macros";
 import { CountAliveMonsInBattle, GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide, GetDefaultMoveTarget } from "./util";
 import { BattleControllerDummy, BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitOneReturnValue_Duplicate, BtlController_EmitTwoReturnValues, BUFFER_B, gUnusedControllerStruct, type ChooseMoveStruct, decodeChooseMoveStruct, decodeHpAndStatus, encodeChooseMoveStruct } from "./controllers";
 import { BattleMainCB2, BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB_FaintSlideAnim, SpriteCB_HideAsMoveTarget, SpriteCB_ShowAsMoveTarget } from "./main_init";
-import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpritePaletteTagByPaletteNum, gSprites, Sprite, SpriteCallbackDummy, StartSpriteAnim } from "../hw/sprite";
+import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpritePaletteTagByPaletteNum, gSprites, Sprite, SpriteCallbackDummy, StartSpriteAnim } from "@core/hw/sprite";
 import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "../pokemon/mon";
 import { addBagItem as AddBagItem } from "../pokemon/items";
 import { BattleGfxSfxDummy3, BattleLoadPlayerMonSpriteGfx, BattleStopLowHpSound, ClearTemporarySpeciesSpriteData, CopyAllBattleSpritesInvisibilities, CopyBattleSpriteInvisibility, DecompressTrainerBackPalette, DoHitAnimHealthboxEffect, gTrainerBackPicCoords, HandleLowHpMusicChange, InitAndLaunchChosenStatusAnimation, InitAndLaunchSpecialAnimation, IsBattlerSpritePresent, IsBattleSEPlaying, IsMoveWithoutAnimation, PlayBGM, PlaySE12WithPanning, SetBattlerSpriteAffineMode, SpriteCB_WaitForBattlerBallReleaseAnim, trainerBackPicPalette, TryHandleLaunchBattleTableAnimation, TrySetBehindSubstituteSpriteBit, TryShinyAnimation } from "./gfx_sfx_util";
 import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle, SetPpNumbersPaletteInMoveSelection } from "./message";
-import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFadeControl, RGB_BLACK, RGB_WHITE } from "../hw/palette";
+import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFadeControl, RGB_BLACK, RGB_WHITE } from "@core/hw/palette";
 import { CB2_BagMenuFromBattle, OpenPartyMenuInTutorialBattle, partyMenuResult } from "./ext";
-import { CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette, IsDma3ManagerBusyWithBgCopy } from "../hw/bg";
+import { CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect_ChangePalette, IsDma3ManagerBusyWithBgCopy } from "@core/hw/bg";
 import { animState, CreateLevelUpVerticalSpritesTask, DoMoveAnim, GetBattlerSpriteBGPriorityRank, GetBattlerSpriteCoord, GetBattlerSpriteDefault_Y, GetBattlerSpriteSubpriority, gMultiuseSpriteTemplate, IsBattlerSpriteVisible, LevelUpVerticalSpritesTaskIsRunning, MoveBattlerSpriteToBG, PlayerThrowBall_StartAnimLinearTranslation, ResetBattleAnimBg, SetMultiuseSpriteTemplateToPokemon, SetMultiuseSpriteTemplateToTrainerBack, SetSpritePrimaryCoordsFromSecondaryCoords, SpriteCB_TrainerSlideIn, StartAnimLinearTranslation, StoreSpriteCallbackInData6 } from "./anim";
 import { CreatePartyStatusSummarySprites, LoadBattleBarGfx, MoveBattleBar, SetBattleBarStruct, SetHealthboxSpriteInvisible, SetHealthboxSpriteVisible, StartHealthboxSlideIn, SwapHpBarsWithHpText, Task_HidePartyStatusSummary, UpdateHealthboxAttribute, UpdateHpTextInHealthbox } from "./interface";
 import { DisableStruct } from "../generated/structs";
 import { DoPokeballSendOutAnimation } from "./pokeball";
-import { FreeAllWindowBuffers } from "../hw/window";
+import { FreeAllWindowBuffers } from "@core/hw/window";
 import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
 import { HandleIntroSlide } from "./intro";
 import { IsMonGettingExpSentOut } from "./cmds/part3";
 import { IsTextPrinterActive } from "../hw/text";
 import { OakOldManHandleInputChooseMove } from "./controller_oak_old_man";
 import { ReshowBattleScreenAfterMenu } from "./reshow";
-import { intToDecimal, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
-import { gMain, SetMainCallback2 } from "../hw/runtime";
+import { intToDecimal, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { gMain, SetMainCallback2 } from "@core/hw/runtime";
 import { battleHost } from "./host";
 
 const sTargetIdentities = [C.B_POSITION_PLAYER_LEFT, C.B_POSITION_PLAYER_RIGHT, C.B_POSITION_OPPONENT_RIGHT, C.B_POSITION_OPPONENT_LEFT];

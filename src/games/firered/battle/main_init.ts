@@ -1,24 +1,24 @@
 // battle_main.c: battle start-up, main/vblank callbacks, NPC party creation and shared sprite callbacks.
 
 import * as C from "../generated/constants";
-import { random } from "../random";
-import { rom } from "../rom";
-import { JOY_HELD, B_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { sound } from "../audio/sound";
-import { SetGpuReg } from "../hw/gpu";
-import { ppu, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_MOSAIC, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "../hw/ppu";
-import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, ResetPaletteFadeControl, RGB, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "../hw/palette";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "../hw/runtime";
-import { IsDma3ManagerBusyWithBgCopy, ShowBg } from "../hw/bg";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
+import { JOY_HELD, B_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { sound } from "@core/audio/sound";
+import { SetGpuReg } from "@core/hw/gpu";
+import { ppu, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1HOFS, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BG3HOFS, REG_OFFSET_BG3VOFS, REG_OFFSET_MOSAIC, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "@core/hw/ppu";
+import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, ResetPaletteFadeControl, RGB, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { IsDma3ManagerBusyWithBgCopy, ShowBg } from "@core/hw/bg";
 import { RunTextPrinters } from "../hw/text";
-import { gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_InitHBlankDmaTransfer, ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "../hw/scanline";
+import { gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_InitHBlankDmaTransfer, ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateInvisibleSprite, DestroySprite, FreeAllSpritePalettes, FreeSpriteOamMatrix, gSprites, LoadOam,
   ProcessSpriteCopyRequests, ResetSpriteData, spriteState, StartSpriteAnim, StartSpriteAnimIfDifferent, type Sprite,
-} from "../hw/sprite";
-import { Sin } from "../hw/trig";
-import { cdata } from "../hw/assets";
+} from "@core/hw/sprite";
+import { Sin } from "@core/hw/trig";
+import { cdata } from "@core/hw/assets";
 import { CreateMon, gEnemyParty, OT_ID_RANDOM_NO_SHINY, playerMon, SetMonData, ZeroEnemyPartyMons } from "../pokemon/mon";
 import { AdjustFriendship } from "../pokemon/mon_extra";
 import { G, gBattleCommunication, gBattleMonForms, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds, gMonSpritesGfxPtr } from "./globals";

@@ -1,12 +1,12 @@
 // Field entry points of the BAG (item_use.c field functions) and the POKéMON
 // party menu (partyMenu.ts), with the field side the menus hand off to.
 import type { Game } from "../game";
-import { HwScene } from "../hw/runtime";
+import { HwScene } from "@core/hw/runtime";
 import { ReadMail } from "./mailView";
 import { DoEasyChatScreen } from "../easyChat2";
 import { GetMailDataForMon } from "../pokemon/mail";
-import { decode, expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
-import { rom } from "../rom";
+import { decode, expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
+import { rom } from "@core/rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
 import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "../pokemon/items";
 import { trySetUpFieldMove } from "./fieldMoveMenu";
@@ -22,14 +22,14 @@ import {
   type PartyMenuFieldHooks,
 } from "../partyMenu";
 import { GetNumberOfRelearnableMoves } from "../pokemon/partyRules";
-import { encode, stringVars } from "../gba/charmap";
+import { encode, stringVars } from "@core/gba/charmap";
 import { ExecuteTableBasedItemEffect } from "../battle/ext";
 import { GetMonData, type Mon } from "../pokemon/mon";
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
+import { sound } from "@core/audio/sound";
 import * as MB from "../generated/metatileBehavior";
-import { joy, A_BUTTON, B_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
+import { joy, A_BUTTON, B_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
 import { DIRECTION_VECTORS } from "../field/objectEvents";
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_UNDERWATER, PlayerGetDestCoords } from "../field/playerAvatar";
 import { startFishing } from "../field/fishing";
@@ -40,7 +40,7 @@ import { BeginEvolutionScene } from "../evolutionScene";
 import { flagGet, incrementGameStat } from "../save";
 import { GetBerryPowder } from "../script/specialsExtra";
 import { ItemUse_SetQuestLogEvent } from "../itemUse";
-import { FADE_FROM_BLACK, paletteFade, RGB_BLACK } from "../gba/fade";
+import { FADE_FROM_BLACK, paletteFade, RGB_BLACK } from "@core/gba/fade";
 import { IsWeatherNotFadingIn } from "../field/weather";
 import { FieldCB_ReturnToFieldOpenStartMenu } from "../startMenu";
 

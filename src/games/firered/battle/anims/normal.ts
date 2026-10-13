@@ -3,10 +3,10 @@
 // AnimShakeMonOrBattleTerrain stores a pointer to a u16 global in data[6..7];
 // here data[6] indexes a table of accessors for those globals instead.
 
-import { gSprites, spriteState, StartSpriteAffineAnim, IndexOfSpritePaletteTag, type Sprite } from "../../hw/sprite";
-import { Cos, Sin } from "../../hw/trig";
-import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, InvertPlttBuffer, RGB, TintPlttBuffer, UnfadePlttBuffer } from "../../hw/palette";
-import { random } from "../../random";
+import { gSprites, spriteState, StartSpriteAffineAnim, IndexOfSpritePaletteTag, type Sprite } from "@core/hw/sprite";
+import { Cos, Sin } from "@core/hw/trig";
+import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, InvertPlttBuffer, RGB, TintPlttBuffer, UnfadePlttBuffer } from "@core/hw/palette";
+import { random } from "@core/random";
 import {
   ANIM_ATTACKER, animState, DestroyAnimSprite, DestroyAnimVisualTask, DestroySpriteAndMatrix, GetAnimBattlerSpriteId,
   GetBattlePalettesMask, InitSpritePosToAnimAttacker, InitSpritePosToAnimTarget, RunStoredCallbackWhenAffineAnimEnds,

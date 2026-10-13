@@ -1,7 +1,7 @@
 // Port of fieldmap.c: the backup map layout (VMap) with MAP_OFFSET padding,
 // connections copied from neighbouring maps, borders and metatile attributes.
 
-import { rom, type LayoutData, type MapConnection, type MapHeader, type TilesetData } from "../rom";
+import { rom, type LayoutData, type MapConnection, type MapHeader, type TilesetData } from "@core/rom";
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
 

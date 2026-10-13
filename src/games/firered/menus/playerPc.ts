@@ -4,8 +4,8 @@
 // Withdrawals open item_pc.c (itemPc.ts), deposits open bagMenu.ts,
 // mailbox opens player_pc.c/mailbox_pc.c (playerPcMailbox.ts).
 
-import { decode } from "../gba/charmap";
-import { rom } from "../rom";
+import { decode } from "@core/gba/charmap";
+import { rom } from "@core/rom";
 import { save } from "../save";
 import type { Game } from "../game";
 import * as C from "../generated/constants";
@@ -14,12 +14,12 @@ import { ItemPc_Init, ItemPc_SetInitializedFlag } from "../itemPc";
 import { PlayerPcMailbox } from "../playerPcMailbox";
 import { fieldMenu } from "./fieldMenus";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
-import { FONT_NORMAL } from "../gba/font";
-import { printText } from "../gba/textPrinter";
-import { tasks } from "../gba/tasks";
+import { FONT_NORMAL } from "@core/gba/font";
+import { printText } from "@core/gba/textPrinter";
+import { tasks } from "@core/gba/tasks";
 import { addPCItem } from "../pokemon/items";
-import { sound } from "../audio/sound";
-import { joy, JOY_NEW, JOY_REPEAT, DPAD_UP, DPAD_DOWN, A_BUTTON, B_BUTTON } from "../gba/input";
+import { sound } from "@core/audio/sound";
+import { joy, JOY_NEW, JOY_REPEAT, DPAD_UP, DPAD_DOWN, A_BUTTON, B_BUTTON } from "@core/gba/input";
 
 export interface PlayerPCMenuManager {
   notInRoom: boolean;

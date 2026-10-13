@@ -87,7 +87,7 @@ import {
   StringExpandPlaceholders,
   StringBraille,
   GetExpandedPlaceholder,
-} from "../generated/stringUtil";
+} from "@game/generated/stringUtil";
 
 export {
   GetExtCtrlCodeLength,

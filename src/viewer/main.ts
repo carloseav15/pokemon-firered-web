@@ -3,7 +3,7 @@
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
-import { rom, setDataRoot } from "../games/firered/rom";
+import { rom, setDataRoot } from "@core/rom";
 import { TileRenderer } from "../games/firered/field/tileRenderer";
 import { TilesetAnimator } from "../games/firered/field/tilesetAnimator";
 import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "../games/firered/field/fieldmap";

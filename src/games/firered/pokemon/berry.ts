@@ -1,8 +1,8 @@
 // berry.c: berry table lookup, name copy, and item ID/type conversion helpers.
 
 import * as C from "../generated/constants";
-import { cdata, isSym } from "../hw/assets";
-import { rom, ROM_BASE } from "../rom";
+import { cdata, isSym } from "@core/hw/assets";
+import { rom, ROM_BASE } from "@core/rom";
 import { save } from "../save";
 
 type BerryData = {

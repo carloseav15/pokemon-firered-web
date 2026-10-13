@@ -4,7 +4,7 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import { registerCData } from '../../src/core/hw/assets.ts';
 import {
   ApplyImageProcessingEffects,
   ApplyImageProcessingQuantization,

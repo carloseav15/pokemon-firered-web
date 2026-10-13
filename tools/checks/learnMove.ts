@@ -4,7 +4,7 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData, registerIncbin } from '../../src/games/firered/hw/assets.ts';
+import { registerCData, registerIncbin } from '../../src/core/hw/assets.ts';
 import * as MoveRelearner from '../../src/games/firered/menus/moveRelearner.ts';
 
 const root = process.cwd() + '/public/fr/';

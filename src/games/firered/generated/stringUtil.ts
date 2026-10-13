@@ -2,8 +2,8 @@
 // DO NOT EDIT MANUALLY. Re-run npm run generate:string-util to regenerate.
 // Target: armv4t-none-eabi | ABI: 32-bit ILP32, unsigned char default.
 
-import { rom } from "../rom";
-import { saveBlocks, stringVars } from "../gba/stringBuffers";
+import { rom } from "@core/rom";
+import { saveBlocks, stringVars } from "@core/gba/stringBuffers";
 
 export const EOS = 0xff;
 export const CHAR_SPACE = 0x00;

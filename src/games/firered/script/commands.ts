@@ -3,15 +3,15 @@
 // the ScrCmd_ names so COMMANDS can be indexed directly by the ROM's
 // gScriptCmdTable symbol names (rom.scriptMeta.commands).
 
-import { FONT_BRAILLE, GetStringWidth } from "../gba/font";
+import { FONT_BRAILLE, GetStringWidth } from "@core/gba/font";
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { concat, copy, countDigits, encode, intToDecimal, length, stringVars, STR_CONV_MODE_LEFT_ALIGN, EOS } from "../gba/charmap";
-import { paletteFade } from "../gba/fade";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD, JOY_NEW, L_BUTTON, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { b64, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
-import { random } from "../random";
+import { sound } from "@core/audio/sound";
+import { concat, copy, countDigits, encode, intToDecimal, length, stringVars, STR_CONV_MODE_LEFT_ALIGN, EOS } from "@core/gba/charmap";
+import { paletteFade } from "@core/gba/fade";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD, JOY_NEW, L_BUTTON, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { b64, RAM_SCRIPT_BASE, rom, type MapHeader } from "@core/rom";
+import { random } from "@core/random";
 import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { LOCALID_PLAYER, OBJECT_EVENTS_COUNT, OPPOSITE } from "../field/objectEvents";

@@ -11,17 +11,17 @@
 //  - The list indexes compacted SaveBlock1 mail slots 6 through 15.
 //  - The help system (SetHelpContext) is out of scope.
 
-import { sound } from "./audio/sound";
-import { stringVars, expandPlaceholders } from "./gba/charmap";
-import { FONT_NORMAL, GetStringWidth } from "./gba/font";
-import { tasks } from "./gba/tasks";
-import { getTextSpeedSetting } from "./gba/textPrinter";
+import { sound } from "@core/audio/sound";
+import { stringVars, expandPlaceholders } from "@core/gba/charmap";
+import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
+import { tasks } from "@core/gba/tasks";
+import { getTextSpeedSetting } from "@core/gba/textPrinter";
 import * as C from "./generated/constants";
-import { loadCData, preloadPacks } from "./hw/assets";
+import { loadCData, preloadPacks } from "@core/hw/assets";
 import {
   InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/bg";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   DestroyListMenuTask, ListMenu_ProcessInput, ListMenuGetScrollAndRow, RemoveScrollIndicatorArrowPair,
 } from "./hw/listMenu";
@@ -34,13 +34,13 @@ import {
   ClearScheduledBgCopiesToVram, DisplayMessageAndContinueTask, DoScheduledBgTilemapCopiesToVram, ResetAllBgsCoordinatesAndBgCntRegs,
   ScheduleBgCopyTilemapToVram,
 } from "./hw/menuHelpers";
-import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
-import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
+import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
 import { AddTextPrinterParameterized } from "./hw/text";
-import { FreeAllWindowBuffers, type WindowTemplate } from "./hw/window";
+import { FreeAllWindowBuffers, type WindowTemplate } from "@core/hw/window";
 import { ChooseMonToGiveMailFromMailbox } from "./partyMenu";
 import {
   gPlayerPcMenuManager, MailboxPC_AddScrollIndicatorArrows, MailboxPC_DestroyListMenuBuffer, MailboxPC_GetAddWindow, MailboxPC_InitBuffers,
@@ -50,7 +50,7 @@ import { ReadMail } from "./menus/mailView";
 import { ClearPCMailEntry, CountPCMail as CountSavePCMail, GetPCMail, GetPCMailEntry, PCMailCompaction as CompactSavePCMail } from "./pokemon/mail";
 import { addBagItem } from "./pokemon/items";
 import { CalculatePlayerPartyCount } from "./pokemon/mon";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { save } from "./save";
 import type { Game } from "./game";
 import { fieldMenu } from "./menus/fieldMenus";

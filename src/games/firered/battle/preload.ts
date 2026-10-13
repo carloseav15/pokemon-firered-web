@@ -1,7 +1,7 @@
 // Loads everything the battle engine reads synchronously: C data definitions, graphics packs and the
 // assembled battle / AI / animation scripts.
 
-import { loadCData, preloadPacks } from "../hw/assets";
+import { loadCData, preloadPacks } from "@core/hw/assets";
 import { preloadNamingScreen } from "../namingScreen";
 import { preloadPokedexScreen } from "../pokedexScreen";
 import { loadBattleScripts } from "./bscript";

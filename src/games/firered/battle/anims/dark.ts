@@ -2,14 +2,14 @@
 // (scanline effects), claw slashes, Metal Claw shine and greyscale palettes.
 
 import * as C from "../../generated/constants";
-import { type Task } from "../../gba/tasks";
-import { incbin } from "../../hw/assets";
-import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "../../hw/gpu";
-import { BG_PLTT_ID, BlendPalette, FillPalette, LoadPalette, PLTT_ID, PLTT_SIZE_4BPP, RGB_BLACK } from "../../hw/palette";
-import { BLDALPHA_BLEND, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS } from "../../hw/ppu";
-import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "../../hw/scanline";
-import { DestroySprite, gSprites, StartSpriteAffineAnim, StartSpriteAnim, type Sprite } from "../../hw/sprite";
-import { Sin } from "../../hw/trig";
+import { type Task } from "@core/gba/tasks";
+import { incbin } from "@core/hw/assets";
+import { GetGpuReg, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
+import { BG_PLTT_ID, BlendPalette, FillPalette, LoadPalette, PLTT_ID, PLTT_SIZE_4BPP, RGB_BLACK } from "@core/hw/palette";
+import { BLDALPHA_BLEND, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS } from "@core/hw/ppu";
+import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "@core/hw/scanline";
+import { DestroySprite, gSprites, StartSpriteAffineAnim, StartSpriteAnim, type Sprite } from "@core/hw/sprite";
+import { Sin } from "@core/hw/trig";
 import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
 import {
   ANIM_ATK_PARTNER, ANIM_ATTACKER, ANIM_DEF_PARTNER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap,

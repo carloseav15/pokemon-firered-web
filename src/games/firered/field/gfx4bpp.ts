@@ -2,7 +2,7 @@
 // BG tilemaps and 15-bit palettes, as exported from the decomp INCBINs.
 // The field is drawn with Canvas 2D, so VRAM uploads become canvases.
 
-import { incbin, incbin16 } from "../hw/assets";
+import { incbin, incbin16 } from "@core/hw/assets";
 
 export function rgb555(color: number): [number, number, number] {
   return [(color & 31) << 3, ((color >> 5) & 31) << 3, ((color >> 10) & 31) << 3];

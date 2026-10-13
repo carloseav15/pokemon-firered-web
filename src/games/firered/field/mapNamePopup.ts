@@ -1,12 +1,12 @@
 // map_name_popup.c: the region name box that slides in from the top.
 
-import { b64, rom } from "../rom";
+import { b64, rom } from "@core/rom";
 import * as C from "../generated/constants";
 import { flagGet } from "../save";
-import { concat, encode } from "../gba/charmap";
-import { FONT_NORMAL, GetStringWidth } from "../gba/font";
-import { printText } from "../gba/textPrinter";
-import { Window } from "../gba/window";
+import { concat, encode } from "@core/gba/charmap";
+import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
+import { printText } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
 import type { Overworld } from "./overworld";
 
 const FLOOR_ROOFTOP = 127;

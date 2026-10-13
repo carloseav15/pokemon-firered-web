@@ -3,20 +3,20 @@
 
 import * as C from "./generated/constants";
 import { DoNamingScreen, preloadNamingScreen } from "./namingScreen";
-import { sound } from "./audio/sound";
-import { tasks } from "./gba/tasks";
-import { A_BUTTON, B_BUTTON, JOY_NEW } from "./gba/input";
-import { decode, EOS, expandPlaceholders } from "./gba/charmap";
-import { FONT_MALE, FONT_NORMAL } from "./gba/font";
-import { getTextSpeedSetting, textFlags, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "./gba/textPrinter";
-import { cdata, hasCData, incbin, loadCData, preloadPacks } from "./hw/assets";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
+import { A_BUTTON, B_BUTTON, JOY_NEW } from "@core/gba/input";
+import { decode, EOS, expandPlaceholders } from "@core/gba/charmap";
+import { FONT_MALE, FONT_NORMAL } from "@core/gba/font";
+import { getTextSpeedSetting, textFlags, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
+import { cdata, hasCData, incbin, loadCData, preloadPacks } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
   BG_ATTR_WRAPAROUND, BG_COORD_SET, BG_COORD_SUB, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyRectToBgTilemapBufferRect, CopyToBgTilemapBuffer,
   CopyToBgTilemapBufferRect, FillBgTilemapBufferRect, FillBgTilemapBufferRect_Palette0, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags,
   SetBgAffine, SetBgAttribute, SetBgTilemapBuffer, ShowBg, type BgTemplate,
-} from "./hw/bg";
-import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+} from "@core/hw/bg";
+import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
   ClearDialogWindowAndFrame, ClearStdWindowAndFrameToTransparent, ClearTopBarWindow, CreateTextCursorSprite, CreateTopBarWindowLoadPalette, CreateYesNoMenu,
   DestroyTextCursorSprite, DestroyTopBarWindow, DrawDialogueFrame, DrawStdFrameWithCustomTileAndPalette, FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute,
@@ -27,24 +27,24 @@ import {
 import {
   BeginNormalPaletteFade, BlendPalette, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, PALETTES_OBJECTS,
   ResetPaletteFade, RGB_BLACK, RGB_WHITE, TransferPlttBuffer, UpdatePaletteFade,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT,
   REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_WININ, REG_OFFSET_WINOUT, BLDALPHA_BLEND, BLDCNT_EFFECT_BLEND,
   BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG2, BLDCNT_TGT2_BG1, BLDCNT_TGT2_OBJ, WININ_WIN0_BG_ALL, WININ_WIN0_CLR, WININ_WIN0_OBJ, WINOUT_WIN01_BG_ALL, WINOUT_WIN01_OBJ,
-} from "./hw/ppu";
-import { gMain, renderHw, runHwFrame, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+} from "@core/hw/ppu";
+import { gMain, renderHw, runHwFrame, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadOam,
   LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, spriteState, ST_OAM_OBJ_BLEND, type Sprite,
   type SpriteTemplate,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
-import { AddWindow, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate } from "./hw/window";
-import { random } from "./random";
-import { Q_8_8_inv } from "./mathUtil";
-import { rom } from "./rom";
+import { AddWindow, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate } from "@core/hw/window";
+import { random } from "@core/random";
+import { Q_8_8_inv } from "@core/mathUtil";
+import { rom } from "@core/rom";
 import { gMonFrontPicTable, DecompressPicFromTable, symPalette } from "./pokemon/pics";
 import { CreateMonSpritesGfxManager, DestroyMonSpritesGfxManager, gMultiuseSpriteTemplate, MonSpritesGfxManager_GetSpritePtr, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
 import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "./battle/pokeball";

@@ -1,12 +1,12 @@
 // battle_controller_opponent.c
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { tasks } from "../gba/tasks";
-import { random } from "../random";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { CreateSprite, DestroySprite, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpriteTileStartByTag, gSprites,
-  IndexOfSpritePaletteTag, SpriteCallbackDummy, StartSpriteAnim, CreateInvisibleSprite, type Sprite } from "../hw/sprite";
+  IndexOfSpritePaletteTag, SpriteCallbackDummy, StartSpriteAnim, CreateInvisibleSprite, type Sprite } from "@core/hw/sprite";
 import { DisableStruct } from "../generated/structs";
 import {
   G, gBattleBufferA, gBattleControllerData, gBattleMonForms, gBattleSpritesDataPtr, gBattleStruct, gBattlerControllerFuncs, gBattlerPartyIndexes,

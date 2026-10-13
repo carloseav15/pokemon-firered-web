@@ -11,11 +11,11 @@
 
 import * as C from "../generated/constants";
 import * as MB from "../generated/metatileBehavior";
-import { cdata, incbin, incbin16, loadCData } from "../hw/assets";
+import { cdata, incbin, incbin16, loadCData } from "@core/hw/assets";
 import { spriteSheet } from "./gfx4bpp";
-import { SpriteManager } from "../gba/sprite";
-import { DATA_ROOT, rom } from "../rom";
-import { Sprite } from "../gba/sprite";
+import { SpriteManager } from "@core/gba/sprite";
+import { DATA_ROOT, rom } from "@core/rom";
+import { Sprite } from "@core/gba/sprite";
 import { graphicsInfo, type ObjectEvent } from "./objectEvents";
 import { fieldFxTemplate } from "./fieldEffects";
 

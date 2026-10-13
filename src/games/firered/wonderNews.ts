@@ -1,7 +1,7 @@
 // wonder_news.c: Wonder News rewards (berries from the Berry Man in Cerulean City House 4).
 
 import * as C from "./generated/constants";
-import { random } from "./random";
+import { random } from "@core/random";
 import { GetVarPointer, IsMysteryGiftEnabled, VarSet } from "./save";
 import { GetSavedWonderNewsMetadata, ValidateSavedWonderNews, type WonderNewsMetadata } from "./mysteryGift";
 

@@ -7,18 +7,18 @@ import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./field/weath
 import { GetNationalPokedexCount } from "./pokemon/pokemon";
 import { flagGet, IncrementGameStat, save } from "./save";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
-import { intToDecimal, expandPlaceholders, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { rom } from "./rom";
-import { sound } from "./audio/sound";
-import { FONT_NORMAL } from "./gba/font";
-import { tasks } from "./gba/tasks";
-import { printText } from "./gba/textPrinter";
-import { Window } from "./gba/window";
-import { joy, JOY_NEW, A_BUTTON, START_BUTTON } from "./gba/input";
+import { intToDecimal, expandPlaceholders, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { rom } from "@core/rom";
+import { sound } from "@core/audio/sound";
+import { FONT_NORMAL } from "@core/gba/font";
+import { tasks } from "@core/gba/tasks";
+import { printText } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
+import { joy, JOY_NEW, A_BUTTON, START_BUTTON } from "@core/gba/input";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
-import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
+import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
 import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
-import { FONT_SMALL, GetStringWidth } from "./gba/font";
+import { FONT_SMALL, GetStringWidth } from "@core/gba/font";
 import { SaveStatToString } from "./saveMenuUtil";
 
 enum StartMenuOption {

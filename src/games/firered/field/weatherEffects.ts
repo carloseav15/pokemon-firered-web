@@ -4,13 +4,13 @@
 // Clouds, Sunny, Drought, Rain, Thunderstorm, Downpour, Snow, Fog (H/D), Ash, Sandstorm, Shade, Bubbles.
 
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { incbin } from "../hw/assets";
-import { random } from "../random";
+import { sound } from "@core/audio/sound";
+import { incbin } from "@core/hw/assets";
+import { random } from "@core/random";
 import { DroughtStateInit, DroughtStateRun, gWeather, LoadDroughtWeatherPalettes, ResetDroughtWeatherPaletteLoading, SetRainStrengthFromSoundEffect, Weather_SetBlendCoeffs, Weather_SetTargetBlendCoeffs, Weather_UpdateBlend } from "./weather";
-import type { Sprite } from "../gba/sprite";
-import { LoadSpriteSheet, spriteState } from "../hw/sprite";
-import { gSineTable } from "../hw/trig";
+import type { Sprite } from "@core/gba/sprite";
+import { LoadSpriteSheet, spriteState } from "@core/hw/sprite";
+import { gSineTable } from "@core/hw/trig";
 
 export const MAX_RAIN_SPRITES = 24;
 export const NUM_CLOUD_SPRITES = 3;

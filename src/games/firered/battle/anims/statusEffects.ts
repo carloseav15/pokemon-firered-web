@@ -3,17 +3,17 @@
 // Task_DoStatusAnimation of this file live in battle/anim.ts.
 
 import * as C from "../../generated/constants";
-import { tasks } from "../../gba/tasks";
-import { cdata, incbin, symName, type SymRef } from "../../hw/assets";
-import { subspriteTablesFrom } from "../../hw/cdataSprite";
-import { SetGpuReg } from "../../hw/gpu";
-import { BlendPalette, gPlttBufferFaded, OBJ_PLTT_ID, RGB_BLUE, RGB_RED } from "../../hw/palette";
-import { BLDALPHA_BLEND } from "../../hw/ppu";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin, symName, type SymRef } from "@core/hw/assets";
+import { subspriteTablesFrom } from "@core/hw/cdataSprite";
+import { SetGpuReg } from "@core/hw/gpu";
+import { BlendPalette, gPlttBufferFaded, OBJ_PLTT_ID, RGB_BLUE, RGB_RED } from "@core/hw/palette";
+import { BLDALPHA_BLEND } from "@core/hw/ppu";
 import {
   CreateSprite, DestroySprite, DestroySpriteAndFreeResources, FreeSpriteOamMatrix, GetSpriteTileStartByTag, gSprites,
   IndexOfSpritePaletteTag, LoadSpritePalette, LoadSpriteSheet, SetSubspriteTables, type Sprite,
-} from "../../hw/sprite";
-import { Cos, Sin } from "../../hw/trig";
+} from "@core/hw/sprite";
+import { Cos, Sin } from "@core/hw/trig";
 import { animState, DestroyAnimVisualTask, GetBattlerSpriteCoord } from "../anim";
 import { registerAnimSpriteCallbacks, registerAnimTasks } from "../animRegistry";
 import { gBattlerSpriteIds, gBattleSpritesDataPtr } from "../globals";

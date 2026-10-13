@@ -1,9 +1,9 @@
 // Port of decompress.c. INCBIN assets exported by the decomp pipeline have
 // already passed through LZ77; the browser routines therefore copy their bytes.
 
-import { symBytes, gMonFrontPicTable, gMonBackPicTable, DecompressPicFromTable, LoadSpecialPokePic, DrawSpindaSpots } from "./pokemon/pics";
+import { symBytes, gMonFrontPicTable, gMonBackPicTable, DecompressPicFromTable, LoadSpecialPokePic, DrawSpindaSpots } from "@game/pokemon/pics";
 import { LoadSpritePalette, LoadSpriteSheet } from "./hw/sprite";
-import * as C from "./generated/constants";
+import * as C from "@game/generated/constants";
 
 type CompressedSpriteSheet = { data: unknown; size: number; tag: number };
 type CompressedSpritePalette = { data: unknown; tag: number };

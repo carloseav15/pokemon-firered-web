@@ -37,12 +37,12 @@ export const H = {
   },
   /** Cache gMain and the battle globals; call once after each page load. */
   async init() {
-    this.R = await this.mod("/src/games/firered/hw/runtime.ts");
+    this.R = await this.mod("/src/core/hw/runtime.ts");
     this.G = await this.mod("/src/games/firered/battle/globals.ts");
     this.PM = await this.mod("/src/games/firered/partyMenu.ts");
     this.C = await this.mod("/src/games/firered/generated/constants.ts");
-    this.rom = (await this.mod("/src/games/firered/rom.ts")).rom;
-    this.T = await this.mod("/src/games/firered/gba/tasks.ts");
+    this.rom = (await this.mod("/src/core/rom.ts")).rom;
+    this.T = await this.mod("/src/core/gba/tasks.ts");
     this.B = await this.mod("/src/games/firered/bagMenu.ts");
     this.SAVE = await this.mod("/src/games/firered/save.ts");
     this.BS = await this.mod("/src/games/firered/battle/bscript.ts");

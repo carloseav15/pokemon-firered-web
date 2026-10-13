@@ -2,9 +2,9 @@
 // bitmap copy helper. Needs loadCData("menu2") first.
 
 import * as C from "./generated/constants";
-import { cdata } from "./hw/assets";
+import { cdata } from "@core/hw/assets";
 import { GetUnownLetterByPersonalityLoByte } from "./field/wildEncounter";
-import { BlitBitmapRect4BitWithoutColorKey, type Bitmap } from "./hw/window";
+import { BlitBitmapRect4BitWithoutColorKey, type Bitmap } from "@core/hw/window";
 
 const SPECIES_OLD_UNOWN_EMARK = C.NUM_SPECIES + 0;
 const SPECIES_OLD_UNOWN_QMARK = C.NUM_SPECIES + 1;

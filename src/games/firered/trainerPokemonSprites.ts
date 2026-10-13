@@ -5,14 +5,14 @@
 
 import * as C from "./generated/constants";
 import { FacilityClassToPicIndex } from "./generated/cdataTableAccessors";
-import { cdata } from "./hw/assets";
-import { animsFrom } from "./hw/cdataSprite";
-import { BG_PLTT_ID, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "./hw/palette";
+import { cdata } from "@core/hw/assets";
+import { animsFrom } from "@core/hw/cdataSprite";
+import { BG_PLTT_ID, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "@core/hw/palette";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, gDummySpriteAffineAnimTable, GetSpritePaletteTagByPaletteNum, gSprites,
   LoadSpritePalette, oamData, SPRITE_SHAPE, SPRITE_SIZE, TAG_NONE, type AnimCmd, type Sprite, type SpriteFrameImage, type SpriteTemplate,
-} from "./hw/sprite";
-import { BlitBitmapRectToWindow, gWindows } from "./hw/window";
+} from "@core/hw/sprite";
+import { BlitBitmapRectToWindow, gWindows } from "@core/hw/window";
 import {
   DecompressPicFromTable, GetMonSpritePalFromSpeciesAndPersonality, gTrainerBackPicTable,
   gTrainerFrontPicPaletteTable, gTrainerFrontPicTable, LoadSpecialPokePic, LoadSpecialPokePic_DontHandleDeoxys, symPalette,

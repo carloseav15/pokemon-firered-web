@@ -15,12 +15,12 @@
 // BeginEvolutionScene fades to black and runs inside fieldMenu if needed.
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { joy, DPAD_UP, DPAD_DOWN, A_BUTTON, B_BUTTON, JOY_NEW } from "./gba/input";
-import { stringVars, expandPlaceholders } from "./gba/charmap";
+import { sound } from "@core/audio/sound";
+import { joy, DPAD_UP, DPAD_DOWN, A_BUTTON, B_BUTTON, JOY_NEW } from "@core/gba/input";
+import { stringVars, expandPlaceholders } from "@core/gba/charmap";
 import { StringCopy_Nickname } from "./generated/stringUtil";
-import { tasks, type TaskFunc, TAIL_SENTINEL } from "./gba/tasks";
-import { gMain, SetMainCallback2, SetVBlankCallback, SetHBlankCallback, type MainCallback } from "./hw/runtime";
+import { tasks, type TaskFunc, TAIL_SENTINEL } from "@core/gba/tasks";
+import { gMain, SetMainCallback2, SetVBlankCallback, SetHBlankCallback, type MainCallback } from "@core/hw/runtime";
 import {
   ppu,
   REG_OFFSET_DISPCNT,
@@ -56,8 +56,8 @@ import {
   BLDCNT_TGT2_BG2,
   BLDCNT_TGT2_BG3,
   BLDALPHA_BLEND,
-} from "./hw/ppu";
-import { SetGpuReg } from "./hw/gpu";
+} from "@core/hw/ppu";
+import { SetGpuReg } from "@core/hw/gpu";
 import {
   LoadBgTiles,
   CopyToBgTilemapBuffer,
@@ -67,8 +67,8 @@ import {
   ShowBg,
   UnsetBgTilemapBuffer,
   BG_ATTR_PRIORITY,
-} from "./hw/bg";
-import { FreeAllWindowBuffers, type WindowTemplate } from "./hw/window";
+} from "@core/hw/bg";
+import { FreeAllWindowBuffers, type WindowTemplate } from "@core/hw/window";
 import {
   BeginNormalPaletteFade,
   BlendPalettes,
@@ -85,7 +85,7 @@ import {
   PLTT_SIZE_4BPP,
   BG_PLTT_ID,
   OBJ_PLTT_ID,
-} from "./hw/palette";
+} from "@core/hw/palette";
 import {
   AnimateSprites,
   BuildOamBuffer,
@@ -112,13 +112,13 @@ import {
   gDummySpriteAffineAnimTable,
   gDummySpriteAnimTable,
   CalcCenterToCornerVec,
-} from "./hw/sprite";
+} from "@core/hw/sprite";
 import { RunTextPrinters, IsTextPrinterActive } from "./hw/text";
-import { cdata, incbin, incbin16, loadCData, preloadIncbin } from "./hw/assets";
+import { cdata, incbin, incbin16, loadCData, preloadIncbin } from "@core/hw/assets";
 import { GetBattleBgTemplateData } from "./battle/bg";
-import { Sin, Cos } from "./hw/trig";
-import { random } from "./random";
-import { rom } from "./rom";
+import { Sin, Cos } from "@core/hw/trig";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { save, flagGet, incrementGameStat, varGet } from "./save";
 import { calculateStats, evolveMon, setDexFlag, speciesName, type Pokemon } from "./pokemon/pokemon";
 import {
@@ -146,14 +146,14 @@ import { DecompressPicFromTable, gMonFrontPicTable } from "./pokemon/pics";
 import { GetMonSpritePalStructFromOtIdPersonality } from "./trainerPokemonSprites";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
 import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";
-import { textFlags } from "./gba/textPrinter";
+import { textFlags } from "@core/gba/textPrinter";
 import {
   DrawTextOnTradeWindow,
   InitTradeSequenceBgGpuRegs,
   LinkTradeDrawWindow,
   LoadTradeAnimGfx,
 } from "./pokemon/ingameTrade";
-import { ScanlineEffect_Stop } from "./hw/scanline";
+import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import { fieldMenu } from "./menus/fieldMenus";
 import type { Game } from "./game";
 

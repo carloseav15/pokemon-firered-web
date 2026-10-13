@@ -1,7 +1,7 @@
 // fieldmap.c ApplyGlobalTintToPaletteSlot and field_effect.c ApplyGlobalFieldPaletteTint.
 
 import * as C from "../generated/constants";
-import { BG_PLTT_ID, OBJ_PLTT_ID, TintPalette_GrayScale, TintPalette_SepiaTone, gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
+import { BG_PLTT_ID, OBJ_PLTT_ID, TintPalette_GrayScale, TintPalette_SepiaTone, gPlttBufferFaded, gPlttBufferUnfaded } from "@core/hw/palette";
 import { QuestLog_BackUpPalette } from "../questLogPalette";
 
 export let gGlobalFieldTintMode = C.QL_TINT_NONE;

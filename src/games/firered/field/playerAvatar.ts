@@ -3,10 +3,10 @@
 
 import * as MB from "../generated/metatileBehavior";
 import * as C from "../generated/constants";
-import { sound } from "../audio/sound";
-import { B_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { rom } from "../rom";
+import { sound } from "@core/audio/sound";
+import { B_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { rom } from "@core/rom";
 import { flagGet, incrementGameStat } from "../save";
 import { QuestLogApplyPlayerAvatarTransition, QuestLogCallUpdatePlayerSprite } from "../questLogPlayer";
 import { QuestLogRecordNPCStepWithDuration, QuestLogRecordPlayerAvatarGfxTransitionWithDuration, QuestLogRecordPlayerStep, QuestLogRecordPlayerStepWithDuration } from "../questLogEvents";
@@ -110,7 +110,7 @@ export class PlayerAvatar {
   preventStep = false;
   lastSpinTile = 0;
   object!: ObjectEvent;
-  surfBlob?: import("../gba/sprite").Sprite;
+  surfBlob?: import("@core/gba/sprite").Sprite;
 
   constructor(private readonly ow: Overworld) {
     gPlayerAvatar = this;

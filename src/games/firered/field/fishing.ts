@@ -2,14 +2,14 @@
 // AlignFishingAnimationFrames: the dot game, bite window and encounter.
 
 import * as C from "../generated/constants";
-import { encode } from "../gba/charmap";
-import { FONT_NORMAL } from "../gba/font";
-import { joy, A_BUTTON } from "../gba/input";
-import { tasks } from "../gba/tasks";
-import { printText, TextPrinter, getTextSpeedSetting } from "../gba/textPrinter";
-import { Window } from "../gba/window";
-import { random } from "../random";
-import { rom } from "../rom";
+import { encode } from "@core/gba/charmap";
+import { FONT_NORMAL } from "@core/gba/font";
+import { joy, A_BUTTON } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { printText, TextPrinter, getTextSpeedSetting } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
+import { random } from "@core/random";
+import { rom } from "@core/rom";
 import { GetFishingBiteDirectionAnimNum, GetFishingNoCatchDirectionAnimNum } from "../generated/eventObjectAnims";
 import { DIR_WEST } from "./objectEvents";
 import type { Overworld } from "./overworld";

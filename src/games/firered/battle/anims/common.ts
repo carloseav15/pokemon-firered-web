@@ -3,9 +3,9 @@
 // template lookup for sprites that the C code creates directly with
 // CreateSprite(&gSomeTemplate, ...).
 
-import { sound } from "../../audio/sound";
-import { tasks } from "../../gba/tasks";
-import type { SpriteTemplate } from "../../hw/sprite";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
+import type { SpriteTemplate } from "@core/hw/sprite";
 import { animSpriteTemplate } from "../animScript";
 
 export { gBattleAnimArgs } from "../animArgs";

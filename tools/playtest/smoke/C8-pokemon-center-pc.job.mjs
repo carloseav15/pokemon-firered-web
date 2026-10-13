@@ -49,7 +49,7 @@ export default async function run(ctx) {
     }
 
     const pcFlow = await ctx.runEval(`
-      const T = await H.mod("/src/games/firered/gba/tasks.ts");
+      const T = await H.mod("/src/core/gba/tasks.ts");
       const M = await H.mod("/src/games/firered/storageSystemInternal.ts");
       const sv = frDebug.save.save;
       const R = {};
@@ -322,7 +322,7 @@ export default async function run(ctx) {
     }
 
     const nurseFlow = await ctx.runEval(`
-      const T = await H.mod("/src/games/firered/gba/tasks.ts");
+      const T = await H.mod("/src/core/gba/tasks.ts");
       const C = await H.mod("/src/games/firered/generated/constants.ts");
       const sv = frDebug.save.save;
       const p = sv.party[0];

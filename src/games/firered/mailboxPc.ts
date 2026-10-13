@@ -5,18 +5,18 @@
 // needed for the port's English player names; Alloc'd buffers are arrays.
 // Needs loadCData("mailbox_pc", "strings").
 
-import { sound } from "./audio/sound";
-import { EOS } from "./gba/charmap";
-import { FONT_NORMAL } from "./gba/font";
+import { sound } from "@core/audio/sound";
+import { EOS } from "@core/gba/charmap";
+import { FONT_NORMAL } from "@core/gba/font";
 import * as C from "./generated/constants";
-import { cdata } from "./hw/assets";
+import { cdata } from "@core/hw/assets";
 import {
   AddScrollIndicatorArrowPairParameterized, ListMenuInit, type ListMenu, type ListMenuItem, type ListMenuTemplate,
 } from "./hw/listMenu";
 import { ClearStdWindowAndFrameToTransparent, DrawStdWindowFrame, GetMenuCursorDimensionByFont } from "./hw/menu";
 import { AddTextPrinterParameterized4 } from "./hw/text";
-import { AddWindow, ClearWindowTilemap, RemoveWindow, type WindowTemplate } from "./hw/window";
-import { rom } from "./rom";
+import { AddWindow, ClearWindowTilemap, RemoveWindow, type WindowTemplate } from "@core/hw/window";
+import { rom } from "@core/rom";
 import { save } from "./save";
 import { GetPCMailEntry } from "./pokemon/mail";
 

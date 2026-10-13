@@ -2,12 +2,12 @@
 // keeps the timing contracts (fanfares, SE waits, cries) so scripts that wait
 // on audio keep working with or without a backend installed.
 
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 import { tasks, type TaskFunc } from "../gba/tasks";
-import { gQuestLogState } from "../questLogEvents";
+import { gQuestLogState } from "@game/questLogEvents";
 import { DATA_ROOT } from "../rom";
 import { loadCData } from "../hw/assets";
-import { SpeciesToCryId } from "../pokemon/pokemon";
+import { SpeciesToCryId } from "@game/pokemon/pokemon";
 
 /** GBA frame rate (16.78 MHz / 280896 cycles per frame). */
 const GBA_FRAMES_PER_SECOND = 59.7275;

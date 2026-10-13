@@ -3,8 +3,8 @@
 // graphics are already decompressed, so LZ77UnCompWram is a plain copy.
 
 import * as C from "../generated/constants";
-import { cdata, incbin, symName } from "../hw/assets";
-import { rom } from "../rom";
+import { cdata, incbin, symName } from "@core/hw/assets";
+import { rom } from "@core/rom";
 import { gMonSpritesGfxPtr } from "../battle/globals";
 import { GetMonData, IsShinyOtIdPersonality, type Mon } from "./mon";
 

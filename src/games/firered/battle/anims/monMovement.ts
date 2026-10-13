@@ -3,8 +3,8 @@
 // animations. Task data is s16 in the C; values that can overflow are wrapped.
 
 import * as C from "../../generated/constants";
-import { gSprites, type Sprite } from "../../hw/sprite";
-import { Cos, Sin } from "../../hw/trig";
+import { gSprites, type Sprite } from "@core/hw/sprite";
+import { Cos, Sin } from "@core/hw/trig";
 import {
   ANIM_ATK_PARTNER, ANIM_ATTACKER, ANIM_DEF_PARTNER, ANIM_TARGET, animState, DestroyAnimSprite, DestroyAnimVisualTask,
   GetAnimBattlerSpriteId, InitSpriteDataForLinearTranslation, IsBattlerSpriteVisible, PrepareBattlerSpriteForRotScale,

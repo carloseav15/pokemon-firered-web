@@ -4,7 +4,7 @@
 import "./setupNodeGbaMock.ts";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-import { registerCData } from "../../src/games/firered/hw/assets.ts";
+import { registerCData } from "../../src/core/hw/assets.ts";
 import * as C from "../../src/games/firered/generated/constants.ts";
 import { flagClear, flagGet, flagSet, save, varGet, varSet } from "../../src/games/firered/save.ts";
 import {

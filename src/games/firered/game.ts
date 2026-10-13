@@ -2,22 +2,22 @@
 // glue between the field, menus, battles and saving.
 
 import { SaveObjectEvents } from "./loadSave";
-import { sound } from "./audio/sound";
+import { sound } from "@core/audio/sound";
 import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
 import { BattleTransition_StartOnField, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
 import { ClearPlayerLinkBattleRecords } from "./battleRecords";
-import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
-import { FONT_NORMAL } from "./gba/font";
-import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "./gba/fade";
-import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON, ReadKeys } from "./gba/input";
-import { tasks } from "./gba/tasks";
-import { printText, TextPrinter, getTextSpeedSetting, textOptions } from "./gba/textPrinter";
-import { Window } from "./gba/window";
+import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
+import { FONT_NORMAL } from "@core/gba/font";
+import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
+import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON, ReadKeys } from "@core/gba/input";
+import { tasks } from "@core/gba/tasks";
+import { printText, TextPrinter, getTextSpeedSetting, textOptions } from "@core/gba/textPrinter";
+import { Window } from "@core/gba/window";
 import { Overworld } from "./field/overworld";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "./pokemon/pokemon";
-import { rom } from "./rom";
+import { rom } from "@core/rom";
 import { ApplyNewEncryptionKeyToGameStats, EnableNationalPokedex_RSE, flagGet, GetGameStat, IncrementGameStat, newBattleTowerData, newSaveData, ResetGameStats, save, saveStore, setName, setSave, SV, varGet, varSet, PlayTimeCounter_Reset, PlayTimeCounter_Start, PlayTimeCounter_Update, type SaveData } from "./save";
 import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, InitChooseMonsForBattle, Task_ChoosePartyMon } from "./partyMenu";
@@ -25,7 +25,7 @@ import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScree
 import { computeWhiteOutMoneyLoss, GetMoveRelearnerMoves } from "./pokemon/partyRules";
 import { TrainerSee } from "./field/trainerSee";
 import { RestartWildEncounterImmunitySteps, WildEncounter } from "./field/wildEncounter";
-import { InitPlayerTrainerId, random, takeWildEncounterSeed } from "./random";
+import { InitPlayerTrainerId, random, takeWildEncounterSeed } from "@core/random";
 import { tryFieldPoisonWhiteOut } from "./field/poison";
 import { healMon } from "./pokemon/pokemon";
 import { GetSetPokedexFlag } from "./pokemon/mon_extra";
@@ -79,7 +79,7 @@ import { setRegionMapSectionProvider } from "./pokemon/mon";
 import { BackupHelpContext, HelpSystem_Disable, HelpSystem_Enable, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 import { InitEasyChatPhrases } from "./easyChat";
 import { IsHelpSystemActive, preloadHelpSystem, RunHelpSystemCallback } from "./helpSystemUtil";
-import { renderHw } from "./hw/runtime";
+import { renderHw } from "@core/hw/runtime";
 import { ClearEnigmaBerries } from "./pokemon/berry";
 import { SaveMapView } from "./field/fieldmap";
 
@@ -106,7 +106,7 @@ import { CreatePokemartMenu } from "./shop";
 import { openOptionMenu } from "./optionMenu";
 import { openRegionMap, REGIONMAP_TYPE_NORMAL, REGIONMAP_TYPE_WALL } from "./regionMap";
 import { DoNamingScreen } from "./namingScreen";
-import { HwScene } from "./hw/runtime";
+import { HwScene } from "@core/hw/runtime";
 import { gender as pokemonGender } from "./pokemon/pokemon";
 import { ScriptMovement } from "./script/movement";
 

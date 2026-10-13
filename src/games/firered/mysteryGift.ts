@@ -2,7 +2,7 @@
 
 import * as C from "./generated/constants";
 import { save, type WonderNews, type WonderNewsMetadata } from "./save";
-import { CalcCRC16WithTable } from "./util";
+import { CalcCRC16WithTable } from "@core/util";
 
 export { type WonderNews, type WonderNewsMetadata };
 

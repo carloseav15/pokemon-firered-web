@@ -1,22 +1,22 @@
 // clear_save_data_screen.c: "Clear all save data areas?" YES/NO, reached from the title screen
 // with UP + B + SELECT. YES erases the save; both answers soft-reset to the copyright screen.
 
-import { sound } from "./audio/sound";
-import { tasks } from "./gba/tasks";
-import { cdata, incbin, loadCData, preloadIncbin } from "./hw/assets";
-import { ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, ShowBg, type BgTemplate } from "./hw/bg";
-import { InitGpuRegManager, SetGpuReg } from "./hw/gpu";
+import { sound } from "@core/audio/sound";
+import { tasks } from "@core/gba/tasks";
+import { cdata, incbin, loadCData, preloadIncbin } from "@core/hw/assets";
+import { ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, ShowBg, type BgTemplate } from "@core/hw/bg";
+import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
 import {
   CreateYesNoMenu, DestroyYesNoMenu, DrawStdFrameWithCustomTileAndPalette, LoadStdWindowGfx, MENU_B_PRESSED, MENU_NOTHING_CHOSEN,
   Menu_ProcessInputNoWrapClearOnChoose,
 } from "./hw/menu";
-import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, RGB_WHITEALPHA, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "./hw/ppu";
-import { renderHw, runHwFrame, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "./hw/sprite";
+import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, RGB_WHITEALPHA, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
+import { renderHw, runHwFrame, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
 import { CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, DUMMY_WIN_TEMPLATE, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL,
-  type WindowTemplate } from "./hw/window";
+  type WindowTemplate } from "@core/hw/window";
 import { saveStore } from "./save";
 
 const FONT_NORMAL = 2;

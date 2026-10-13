@@ -3,19 +3,19 @@
 // script_menu.c DrawSeagallopDestinationMenu / GetSelectedSeagallopDestination.
 
 import * as C from "./generated/constants";
-import { sound } from "./audio/sound";
-import { cdata, incbin } from "./hw/assets";
-import { templateFrom, type CSpriteTemplate } from "./hw/cdataSprite";
-import { BG_COORD_ADD, BG_COORD_SUB, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "./hw/bg";
-import { InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "./hw/gpu";
+import { sound } from "@core/audio/sound";
+import { cdata, incbin } from "@core/hw/assets";
+import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { BG_COORD_ADD, BG_COORD_SUB, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBufferRect, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "@core/hw/bg";
+import { InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import { GetTextWindowPalette } from "./hw/menu";
-import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "./hw/palette";
-import { DISPCNT_BG0_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "./hw/ppu";
-import { HwScene, SetMainCallback2, SetVBlankCallback } from "./hw/runtime";
-import { AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadOam, LoadSpritePalettes, LoadSpriteSheets, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, type Sprite, type SpriteTemplate } from "./hw/sprite";
-import { FreeAllWindowBuffers } from "./hw/window";
+import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
+import { DISPCNT_BG0_ON, DISPCNT_BG3_ON, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BLDCNT, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WININ, REG_OFFSET_WINOUT } from "@core/hw/ppu";
+import { HwScene, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
+import { AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadOam, LoadSpritePalettes, LoadSpriteSheets, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnim, type Sprite, type SpriteTemplate } from "@core/hw/sprite";
+import { FreeAllWindowBuffers } from "@core/hw/window";
 import { ResetAllPicSprites } from "./trainerPokemonSprites";
-import { tasks } from "./gba/tasks";
+import { tasks } from "@core/gba/tasks";
 import { SV, varGet } from "./save";
 import type { Game } from "./game";
 

@@ -1,7 +1,7 @@
 // save_location.c: map classification and the save-warp / GCN link flags.
 
 import * as C from "../generated/constants";
-import { rom } from "../rom";
+import { rom } from "@core/rom";
 import { save } from "../save";
 
 const POKECENTER_MAPS = [
