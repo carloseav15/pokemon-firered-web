@@ -14,6 +14,7 @@ componentes es editorial: Kanto a la derecha de Johto con Route 22 alineada a Ro
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -176,7 +177,6 @@ def main() -> None:
     links = warp_links(by, {e["name"]: e for e in entries})
 
     OUT.mkdir(parents=True, exist_ok=True)
-    import shutil
     for old in OUT.iterdir():
         shutil.rmtree(old) if old.is_dir() else old.unlink()
     bg = (11, 15, 20)

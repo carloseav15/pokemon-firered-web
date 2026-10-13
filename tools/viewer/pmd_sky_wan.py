@@ -19,54 +19,13 @@ from __future__ import annotations
 
 import struct
 
-from pmd_sky_kao import _PATTERNS
+from pmd_sky_kao import px_decompress
 
 SHAPE_DIMS = {
     (0, 0): (8, 8), (0, 1): (16, 16), (0, 2): (32, 32), (0, 3): (64, 64),
     (1, 0): (16, 8), (1, 1): (32, 8), (1, 2): (32, 16), (1, 3): (64, 32),
     (2, 0): (8, 16), (2, 1): (8, 32), (2, 2): (16, 32), (2, 3): (32, 64),
 }
-
-
-def px_decompress(buf: bytes, off: int, data_start: int) -> bytes:
-    """Descompresión PX (mismos flags y comandos que AT4PX); data_start = 0x14 en PKDPX, 0x12 en AT4PX."""
-    s = memoryview(buf)[off:]
-    clen = s[5] | (s[6] << 8)
-    flags = [s[7 + i] + 3 for i in range(9)]
-    out = bytearray()
-    cur, cmd, bit = data_start, 0, 8
-    while cur < clen:
-        if bit == 8:
-            cmd = s[cur]
-            cur += 1
-            bit = 0
-            if cur >= clen:
-                break
-        if cmd & 0x80:
-            out.append(s[cur])
-            cur += 1
-        else:
-            command = (s[cur] >> 4) + 3
-            hi = (s[cur] & 0xF) << 8
-            for i, f in enumerate(flags):
-                if command == f:
-                    command = 0x1F - i
-            if 0x17 <= command <= 0x1F:
-                c = s[cur] & 0xF
-                cur += 1
-                p = [(c + x) & 0xF for x in _PATTERNS[command]]
-                out.append((p[0] << 4) | p[1])
-                out.append((p[2] << 4) | p[3])
-            else:
-                cur += 1
-                pos = len(out) + hi + s[cur] - 0x1000
-                cur += 1
-                for _ in range(command):
-                    out.append(out[pos])
-                    pos += 1
-        bit += 1
-        cmd = (cmd << 1) & 0xFF
-    return bytes(out)
 
 
 def read_pack(data: bytes) -> list[bytes]:

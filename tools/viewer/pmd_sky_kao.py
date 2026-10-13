@@ -24,14 +24,14 @@ _PATTERNS = {  # orden de los 9 flags -> nibbles (a b c d) como fracciones de c
 }
 
 
-def at_decompress(src: bytes | memoryview, off: int = 0) -> bytes:
-    s = src[off:]
-    if bytes(s[:5]) != b"AT4PX":
-        raise ValueError(f"cabecera AT4PX esperada en {off:#x}, hay {bytes(s[:5])!r}")
+def px_decompress(buf: bytes | memoryview, off: int, data_start: int) -> bytes:
+    """Descompresión PX (DecompressAT de pmd-red): flags en off+7..15; datos desde data_start
+    (0x12 en AT4PX, 0x14 en PKDPX). La longitud comprimida está en off+5 (u16, incluye la cabecera)."""
+    s = memoryview(buf)[off:]
     clen = s[5] | (s[6] << 8)
     flags = [s[7 + i] + 3 for i in range(9)]
     out = bytearray()
-    cur, cmd, bit = 0x12, 0, 8
+    cur, cmd, bit = data_start, 0, 8
     while cur < clen:
         if bit == 8:
             cmd = s[cur]
@@ -64,6 +64,12 @@ def at_decompress(src: bytes | memoryview, off: int = 0) -> bytes:
         bit += 1
         cmd = (cmd << 1) & 0xFF
     return bytes(out)
+
+
+def at_decompress(src: bytes | memoryview, off: int = 0) -> bytes:
+    if bytes(src[off : off + 5]) != b"AT4PX":
+        raise ValueError(f"cabecera AT4PX esperada en {off:#x}, hay {bytes(src[off:off + 5])!r}")
+    return px_decompress(src, off, 0x12)
 
 
 class Kao:

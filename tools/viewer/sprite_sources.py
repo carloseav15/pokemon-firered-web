@@ -16,7 +16,6 @@ en src/data/ax/<especie>.h. Se componen las poses (tiles 8x8 en orden 1D de OBJ,
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 import re
 import sys
@@ -131,14 +130,12 @@ def build_expansion(table: dict[str, int]) -> dict[int, list[dict]]:
             suf = " · estilo GBA" if gba else ""
             norm_pal = d / f"normal{gba}.pal"
             shiny_pal = d / f"shiny{gba}.pal"
-            for stem, label, anim in (("anim_front", "Frente", True), ("back", "Espalda", False), ("icon", "Icono", False)):
+            for stem, label in (("anim_front", "Frente"), ("back", "Espalda"), ("icon", "Icono")):
                 f = d / f"{stem}{gba}.png"
                 if not f.exists():
                     continue
                 img = Image.open(f)
                 kind = "icon" if stem == "icon" else None
-                if stem == "anim_front":
-                    kind = None
                 out_png = dst / f"{stem}{gba}.png"
                 save_indexed(img, out_png, read_pal(norm_pal) if stem != "icon" and norm_pal.exists() else None)
                 items.append(item(f"{label}{tag}{suf}", out_png, img, kind))
