@@ -19,7 +19,7 @@ modo fiel que se puede comparar con el original.
 
 | Fase | Qué | Resultado |
 |---|---|---|
-| 1 | FireRed fiel (`src/fr/`) | FireRed funciona igual que el original. **Actual.** |
+| 1 | FireRed fiel (`src/games/firered/`) | FireRed funciona igual que el original. **Actual.** |
 | 2 | Separar motor y contenido | `core/` (hardware GBA, texto, sprites, tareas, audio, combate, scripts, save) + `games/firered/` (mapas, scripts, entrenadores, datos) |
 | 3 | Emerald fiel (`games/emerald/`) | Segundo juego sobre el mismo motor, validado contra su ROM |
 | 4 | Capa de reglas | `rules/gen3` (fiel) y `rules/gen4+` (opcional) elegibles por partida |
@@ -128,7 +128,7 @@ La extracción de referencias ya tiene base y guía propias en
 1. Validar FireRed (`TAREAS-FINALES.md`), incluida la comparación con emulador.
 2. Con el script de comparación de cuerpos C, decidir qué va a `core/` y qué es
    propio de cada juego.
-3. Mover `src/fr/` a `core/` + `games/firered/` sin cambiar comportamiento
+3. Mover `src/games/firered/` a `core/` + `games/firered/` sin cambiar comportamiento
    (los checks deben seguir pasando).
 4. Empezar Emerald por la historia principal; el Frente Batalla, los concursos y
    la TV, después.

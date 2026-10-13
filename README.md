@@ -27,7 +27,7 @@ git clone --recurse-submodules <repo>     # o: git submodule update --init
 El exportador (`tools/decomp/export.py`) busca el decomp en `$POKEFIRERED`, luego
 en `../pokefirered` y por último en el submódulo; ver la
 [referencia del exportador](docs/PORTING-GUIDE.md#4-de-dónde-salen-los-datos-pipeline-del-exportador).
-`public/fr/` y `src/fr/generated/` ya están versionados, así que solo hace falta
+`public/fr/` y `src/games/firered/generated/` ya están versionados, así que solo hace falta
 reexportar si cambias `tools/decomp/`.
 
 ## Documentación

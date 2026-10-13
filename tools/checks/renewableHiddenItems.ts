@@ -3,15 +3,15 @@
 
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/fr/hw/assets.ts';
-import * as C from '../../src/fr/generated/constants.ts';
-import { flagClear, flagGet, flagSet, varGet, varSet } from '../../src/fr/save.ts';
+import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
+import { flagClear, flagGet, flagSet, varGet, varSet } from '../../src/games/firered/save.ts';
 import {
   IncrementRenewableHiddenItemStepCounter,
   TryRegenerateRenewableHiddenItems,
   SetAllRenewableItemFlags,
   type RenewableHiddenItemData,
-} from '../../src/fr/renewableHiddenItems.ts';
+} from '../../src/games/firered/renewableHiddenItems.ts';
 
 const root = process.cwd() + '/public/fr/';
 const cdataRaw = JSON.parse(readFileSync(root + 'cdata/renewable_hidden_items.json', 'utf8'));

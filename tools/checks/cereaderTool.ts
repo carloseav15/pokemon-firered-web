@@ -1,8 +1,8 @@
 // Headless check for cereader_tool.c (Trainer Tower e-Reader validation and save/load).
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
-import * as C from "../../src/fr/generated/constants.ts";
-import { save } from "../../src/fr/save.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { save } from "../../src/games/firered/save.ts";
 import {
   CalcByteArraySum,
   GetTrainerHillUnkVal,
@@ -13,7 +13,7 @@ import {
   ReadTrainerTowerAndValidate,
   type EReaderTrainerTowerSet,
   type TrainerTowerFloor,
-} from "../../src/fr/cereaderTool.ts";
+} from "../../src/games/firered/cereaderTool.ts";
 
 // 1. Test CalcByteArraySum
 assert.equal(CalcByteArraySum([1, 2, 3, 4]), 10);

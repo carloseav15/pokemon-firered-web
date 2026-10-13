@@ -32,8 +32,8 @@ tiles.
 
 ## 2. Reglas de la tarea
 
-- **No modifiques `src/fr/`, `public/fr/` ni `tools/decomp/`.** El visor importa
-  módulos de `src/fr/` en modo solo lectura (`rom`, `TileRenderer`,
+- **No modifiques `src/games/firered/`, `public/fr/` ni `tools/decomp/`.** El visor importa
+  módulos de `src/games/firered/` en modo solo lectura (`rom`, `TileRenderer`,
   `metatileBehavior`). Si necesitas un cambio en ellos, para y avisa.
 - **Archivos nuevos:**
   - `viewer.html` en la raíz;
@@ -50,14 +50,14 @@ tiles.
 
 | Qué | Dónde | Notas |
 |---|---|---|
-| Cabecera de mapa | `public/fr/maps/MAP_*.json` | `connections`, `objects`, `warps`, `coords` (activadores: `var`, `value`, `scriptName`), `bgs`. Tipos en `src/fr/rom.ts:11-62` (`MapHeader` en 38) |
+| Cabecera de mapa | `public/fr/maps/MAP_*.json` | `connections`, `objects`, `warps`, `coords` (activadores: `var`, `value`, `scriptName`), `bgs`. Tipos en `src/games/firered/rom.ts:11-62` (`MapHeader` en 38) |
 | Layout | `public/fr/layouts/LAYOUT_*.json` | `width`, `height`, `primary`, `secondary`, `blocks` (u16 en base64; `rom.loadLayout` lo decodifica) |
 | Tileset | `public/fr/tilesets/gTileset_*.json` | tiles 4bpp, paletas, metatiles, `attributes` (u32 por metatile) |
-| Cargadores | `src/fr/rom.ts:405` `loadMap`, `:421` `loadLayout`, `:449` `loadTileset` | Devuelven los tipos de `rom.ts` |
-| Bits de cada bloque | `src/fr/field/fieldmap.ts:11-15` | metatile `& 0x3FF`; colisión `& 0xC00 >> 10`; elevación `& 0xF000 >> 12` |
-| Atributos de un metatile | `src/fr/field/fieldmap.ts:428-429` | primario si id < 640 (`NUM_METATILES_IN_PRIMARY`), si no secundario `id - 640`. Para extraer el comportamiento, sigue `ExtractMetatileAttribute` y `sMetatileAttrMasks` del C (`fieldmap.c:63` y `:382`) |
-| Comportamientos | `src/fr/generated/metatileBehavior.ts` | `MetatileBehavior_IsSurfable`, `IsJumpEast/West/North/South`, `IsTallGrass`, `IsWaterfall`… |
-| Dibujo de metatiles | `src/fr/field/tileRenderer.ts:15` (`TileRenderer`), `:173` `metatile(id)` | Devuelve canvas `bottom` y `top`. **Usa el estado global de paleta** (`hw/palette`): carga las paletas de cada par de tilesets antes de dibujar sus mapas (`LoadMapTilesetPalettes`) y dibuja los mapas uno a uno |
+| Cargadores | `src/games/firered/rom.ts:405` `loadMap`, `:421` `loadLayout`, `:449` `loadTileset` | Devuelven los tipos de `rom.ts` |
+| Bits de cada bloque | `src/games/firered/field/fieldmap.ts:11-15` | metatile `& 0x3FF`; colisión `& 0xC00 >> 10`; elevación `& 0xF000 >> 12` |
+| Atributos de un metatile | `src/games/firered/field/fieldmap.ts:428-429` | primario si id < 640 (`NUM_METATILES_IN_PRIMARY`), si no secundario `id - 640`. Para extraer el comportamiento, sigue `ExtractMetatileAttribute` y `sMetatileAttrMasks` del C (`fieldmap.c:63` y `:382`) |
+| Comportamientos | `src/games/firered/generated/metatileBehavior.ts` | `MetatileBehavior_IsSurfable`, `IsJumpEast/West/North/South`, `IsTallGrass`, `IsWaterfall`… |
+| Dibujo de metatiles | `src/games/firered/field/tileRenderer.ts:15` (`TileRenderer`), `:173` `metatile(id)` | Devuelve canvas `bottom` y `top`. **Usa el estado global de paleta** (`hw/palette`): carga las paletas de cada par de tilesets antes de dibujar sus mapas (`LoadMapTilesetPalettes`) y dibuja los mapas uno a uno |
 
 Los **scripts** están compilados (`public/fr/scripts.bin`). Para saber quién cambia
 una variable o un flag, el índice lee el texto fuente del decomp (§4.3), no el binario.
@@ -214,9 +214,9 @@ NPCs, colisiones, animaciones) sin reimplementar nada en el visor.
 
 ### 8.1 Cómo coloca el juego al jugador (comprobado)
 
-- "Continuar" (`src/fr/boot.ts:125-128`) lee la partida con `saveStore.load()` y llama a
+- "Continuar" (`src/games/firered/boot.ts:125-128`) lee la partida con `saveStore.load()` y llama a
   `game.continueGame(data)`.
-- `continueGame` (`src/fr/game.ts:322-359`) pone al jugador en `save.location`
+- `continueGame` (`src/games/firered/game.ts:322-359`) pone al jugador en `save.location`
   (`mapGroup`, `mapNum`) y `save.pos` (`x`, `y`), salvo que esté activo
   `continueGameWarpActive`, que solo se activa tras el Salón de la Fama.
 - **Pista**: `save.pos` son coordenadas locales del mapa, sin el +7 de la rejilla
@@ -226,16 +226,16 @@ NPCs, colisiones, animaciones) sin reimplementar nada en el visor.
 - `playerGender` (0 chico, 1 chica) está en la partida. Comprueba en el navegador que
   el sprite de Leaf aparece al continuar con 1.
 - Si la partida tiene escenas de Quest Log, al continuar se reproducen primero
-  (`TryStartQuestLogPlayback`, `src/fr/questLogEvents.ts:1153`). En la partida de
+  (`TryStartQuestLogPlayback`, `src/games/firered/questLogEvents.ts:1153`). En la partida de
   prueba vacía `questLogScenes` para entrar directo.
 
 ### 8.2 Riesgo: no pisar la partida real
 
 La partida vive en **una sola clave** de `localStorage`, `pokemon-gba-web-lab.firered.v2`
-(`src/fr/save.ts:214`). Escribir ahí una partida de prueba borraría la del usuario, y
+(`src/games/firered/save.ts:214`). Escribir ahí una partida de prueba borraría la del usuario, y
 guardar dentro del juego de prueba también.
 
-Solución propuesta (**toca `src/fr/`: necesita permiso del usuario antes de empezar**):
+Solución propuesta (**toca `src/games/firered/`: necesita permiso del usuario antes de empezar**):
 - Un modo `sandbox` en `LaunchOptions` (`boot.ts`) que recibe la partida ya preparada y
   llama a `game.continueGame(data)`.
 - `saveStore` con clave configurable; en `sandbox` usa
@@ -292,6 +292,6 @@ FireRed solo anima 5 de sus 68 tilesets (**pista**, de `anims` en `public/fr/til
 `CeladonGym` (flores), `MtEmber` (vapor) y `VermilionGym` (puerta). Los árboles no se
 mueven en el original.
 
-El visor podría animarlas reutilizando `TilesetAnimator` (`src/fr/field/tilesetAnimator.ts`)
+El visor podría animarlas reutilizando `TilesetAnimator` (`src/games/firered/field/tilesetAnimator.ts`)
 y redibujando solo las casillas que usan metatiles animados. Es cosmético: no aporta a
 la revisión. Hazlo solo si el usuario lo pide.

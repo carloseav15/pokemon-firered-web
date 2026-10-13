@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Measure how src/fr would split into core/ and games/firered/ (task 6.1).
+"""Measure how src/games/firered would split into core/ and games/firered/ (task 6.1).
 
 Read-only: prints figures and module lists, writes nothing. Inputs:
   ../pokefirered/src/*.c           FireRed C functions (parser of portInventory.py)
   refs/emerald/functions.json      Emerald status per C function (refs:emerald-functions)
-  src/fr/**/*.ts                   TS definitions and relative imports
+  src/games/firered/**/*.ts                   TS definitions and relative imports
 
 Each TS `function` named like a C function inherits that function's status:
   identical / different   same name in the same Emerald file (textual body comparison)
@@ -42,7 +42,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import portInventory as P  # noqa: E402  (read-only reuse of the C parser)
 
 ROOT = P.ROOT
-SRC = ROOT / "src" / "fr"
+SRC = ROOT / "src" / "games" / "firered"
 EMERALD = ROOT / "refs" / "emerald" / "functions.json"
 EMERALD_DECOMP = ROOT.parent / "refs-src" / "pokeemerald"
 DEFINE_RE = re.compile(

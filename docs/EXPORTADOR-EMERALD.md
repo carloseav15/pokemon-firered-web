@@ -16,7 +16,7 @@ Tarea 6.2 de [TAREAS-FINALES.md](../TAREAS-FINALES.md), fase 2 de [VISION.md](VI
 | Clase | Evidencia | Efecto |
 |---|---|---|
 | (a) Parámetros | `common.py:17-32` resuelve `DECOMP` mediante `POKEFIRERED`/hermano, fija `BUILD = .decomp-build`, `OUT = public/fr`, y `CPP_DEFINES` contiene `-DFIRERED`; `export.py:8-9,29-30` nombra FireRed y crea esa salida. | Resolver fuente, build, salida y defines según juego, aislando build por juego. |
-| (a) Salida generada | `step_codegen.py:14,57-62`, `step_tsconst.py:1,106-107` y `step_structs.py:1,176` escriben en `src/fr/generated/`. | Usar `Game.generated`, finalmente `src/games/<juego>/generated`. |
+| (a) Salida generada | `step_codegen.py:14,57-62`, `step_tsconst.py:1,106-107` y `step_structs.py:1,176` escriben en `src/games/firered/generated/`. | Usar `Game.generated`, finalmente `src/games/<juego>/generated`. |
 | (b) Pokédex/textos | `step_data.py:64-65` incluye `pokedex_text_fr.h`; el árbol Emerald contiene `pokedex_text.h` (`git ls-tree`). | Diferencia de nombre/ruta de entrada; no demuestra diferencia semántica en los datos. Adaptar el lector. |
 | (b) Descripciones de movimientos | `step_data.py:151-152` lee `src/move_descriptions.c`; Emerald guarda `src/data/text/move_descriptions.h` (`git ls-tree`). | Representación/ubicación distinta; lector/adaptador, no duplicación completa de `step_data.py`. |
 | (b) Ítems | `step_setup.py:44` y `step_data.py:323` requieren `src/data/items.json`; Emerald tiene `src/data/items.h`, sin esos JSON. | Formato de fuente diferente; significado/equivalencia de contenido `SIN VERIFICAR`. |
@@ -74,9 +74,9 @@ todos los símbolos que usa el port (corrección del revisor, 2026-10-01).
 
 ### 2.4 Tamaño y consumidores
 
-`du -sh public/fr src/fr/generated` dio `32M public/fr` y `684K src/fr/generated`. **SIN VERIFICAR: tamaño de `public/emerald`**, que requeriría exportar.
+`du -sh public/fr src/games/firered/generated` dio `32M public/fr` y `684K src/games/firered/generated`. **SIN VERIFICAR: tamaño de `public/emerald`**, que requeriría exportar.
 
-Hay consumidores FireRed-only: `tools/portInventory.py:7,295` lee `public/fr/cdata`; `tools/checks/honesty.py:16,130` consulta `public/fr/constants.json`; por ejemplo, `tools/checks/wildEncounter.ts:8,38` y `tools/checks/incbinRowAccessors.ts:6,9-15` fijan rutas `public/fr`/`src/fr/generated`. Coordinar estos cambios con el traslado 6.1.
+Hay consumidores FireRed-only: `tools/portInventory.py:7,295` lee `public/fr/cdata`; `tools/checks/honesty.py:16,130` consulta `public/fr/constants.json`; por ejemplo, `tools/checks/wildEncounter.ts:8,38` y `tools/checks/incbinRowAccessors.ts:6,9-15` fijan rutas `public/fr`/`src/games/firered/generated`. Coordinar estos cambios con el traslado 6.1.
 
 ## 3. Diseño
 
@@ -98,7 +98,7 @@ Resolver `--game firered|emerald` una vez y pasar `Game` a cada paso. `firered` 
 
 Cada paso conserva una sola lógica común. Los adaptadores solo eligen fuentes/lectores para charmap, mapas, pokédex/textos, descripciones, ítems, encuentros, gráficos y audio. Cuando el formato difiere, el lector propio normaliza a un modelo interno común; no se copia el paso entero. `Game.generated` parametriza las tres salidas hoy fijas: `metatileBehavior.ts` (`step_codegen.py:14,57-62`), `constants.ts` (`step_tsconst.py:106-107`) y `structs.ts` (`step_structs.py:176`).
 
-Esto encaja con el alias `@game/*` del diseño 6.1: el paso 2 mueve `src/fr/` a `src/games/firered/` y el alias selecciona `src/games/<juego>/*`, incluyendo `generated/`. El paso 3 de 6.1 configura datos y exige coordinar la nueva ruta del exportador; no debe quedar un generador escribiendo en `src/fr/generated`. `public/<juego>` es la raíz de datos de esa compilación.
+Esto encaja con el alias `@game/*` del diseño 6.1: el paso 2 mueve `src/games/firered/` a `src/games/firered/` y el alias selecciona `src/games/<juego>/*`, incluyendo `generated/`. El paso 3 de 6.1 configura datos y exige coordinar la nueva ruta del exportador; no debe quedar un generador escribiendo en `src/games/firered/generated`. `public/<juego>` es la raíz de datos de esa compilación.
 
 ## 4. Orden de los pasos de código
 
@@ -120,10 +120,10 @@ Cada paso pequeño se verifica con §5 y se detiene si FireRed difiere sin expli
 - **Charmap/texto:** `step_setup.py:144-160` lee y transforma `charmap.txt`; `step_data.py:20-42,271-320` codifica textos. Sparse no incluye charmap. Igualdad de formato no prueba códigos/textos iguales: `SIN VERIFICAR`.
 - **Build:** `common.py:27-29` comparte `.decomp-build`; headers/probes/cachés contaminados pueden cruzar juegos. Mantener uno por juego y no enlazar el build principal.
 - **Tamaño:** FireRed mide 32M en disco; Emerald `SIN VERIFICAR`.
-- **Consumidores:** checks e inventory siguen apuntando a `public/fr` y `src/fr/generated` (§2.4); cambiar outputs aislado deja validaciones leyendo FireRed.
+- **Consumidores:** checks e inventory siguen apuntando a `public/fr` y `src/games/firered/generated` (§2.4); cambiar outputs aislado deja validaciones leyendo FireRed.
 - **INCBIN/ABI:** regex pueden no reconocer variantes Emerald; compilar en host no demuestra el layout GBA.
 
-Procedimiento futuro, **no ejecutado aquí**: en un worktree aislado con checkout de FireRed fijado y `.decomp-build` propio (no compartido), guardar antes un manifiesto ordenado `{ruta relativa, md5}` de cada archivo regular de `public/fr/` y `src/fr/generated/`. Ejecutar exportación FireRed antes y después de cada paso de código y comparar conjuntos de rutas y MD5 por ruta. Si un hash difiere, detenerse, localizar productor y revisar bytes/diff; no modificar baseline para aceptar el resultado. Tras el traslado 6.1 de `generated/`, comparar el contenido con una transformación explícita de prefijo de ruta, sin confundir movimiento con diferencia de bytes.
+Procedimiento futuro, **no ejecutado aquí**: en un worktree aislado con checkout de FireRed fijado y `.decomp-build` propio (no compartido), guardar antes un manifiesto ordenado `{ruta relativa, md5}` de cada archivo regular de `public/fr/` y `src/games/firered/generated/`. Ejecutar exportación FireRed antes y después de cada paso de código y comparar conjuntos de rutas y MD5 por ruta. Si un hash difiere, detenerse, localizar productor y revisar bytes/diff; no modificar baseline para aceptar el resultado. Tras el traslado 6.1 de `generated/`, comparar el contenido con una transformación explícita de prefijo de ruta, sin confundir movimiento con diferencia de bytes.
 
 ## 6. Qué no cubre
 

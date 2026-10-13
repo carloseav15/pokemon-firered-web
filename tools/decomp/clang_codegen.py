@@ -1234,7 +1234,7 @@ def generate_cdata_table_accessors_ts() -> str:
 
 
 def write_cdata_table_accessors_file() -> Path:
-    out_file = ROOT / "src" / "fr" / "generated" / "cdataTableAccessors.ts"
+    out_file = ROOT / "src" / "games" / "firered" / "generated" / "cdataTableAccessors.ts"
     out_file.write_text(generate_cdata_table_accessors_ts())
     return out_file
 
@@ -1319,7 +1319,7 @@ def generate_incbin_row_pointer_accessors_ts() -> str:
 
 
 def write_incbin_row_pointer_accessors_file() -> Path:
-    out_file = ROOT / "src" / "fr" / "generated" / "incbinRowAccessors.ts"
+    out_file = ROOT / "src" / "games" / "firered" / "generated" / "incbinRowAccessors.ts"
     out_file.write_text(generate_incbin_row_pointer_accessors_ts())
     return out_file
 
@@ -1643,14 +1643,14 @@ def generate_event_object_anims_ts() -> str:
 
 
 def write_event_object_anims_file() -> Path:
-    out_file = ROOT / "src" / "fr" / "generated" / "eventObjectAnims.ts"
+    out_file = ROOT / "src" / "games" / "firered" / "generated" / "eventObjectAnims.ts"
     out_file.write_text(generate_event_object_anims_ts())
     return out_file
 
 
 def write_generated_file() -> Path:
     code = generate_string_util_ts()
-    out_file = ROOT / "src" / "fr" / "generated" / "stringUtil.ts"
+    out_file = ROOT / "src" / "games" / "firered" / "generated" / "stringUtil.ts"
     out_file.write_text(code)
     return out_file
 

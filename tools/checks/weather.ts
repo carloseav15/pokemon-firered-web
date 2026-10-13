@@ -4,13 +4,13 @@
 import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
-import * as Trig from '../../src/fr/hw/trig.ts';
-import * as Weather from '../../src/fr/field/weather.ts';
-import { sound } from '../../src/fr/audio/sound.ts';
-import { gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from '../../src/fr/hw/palette.ts';
-import { ppu } from '../../src/fr/hw/ppu.ts';
-import * as C from '../../src/fr/generated/constants.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
+import * as Trig from '../../src/games/firered/hw/trig.ts';
+import * as Weather from '../../src/games/firered/field/weather.ts';
+import { sound } from '../../src/games/firered/audio/sound.ts';
+import { gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from '../../src/games/firered/hw/palette.ts';
+import { ppu } from '../../src/games/firered/hw/ppu.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
 
 const root = process.cwd() + '/public/fr/';
 const trigCData = JSON.parse(readFileSync(root + 'cdata/trig.json', 'utf8'));
@@ -359,7 +359,7 @@ assert.equal(fw.next, 3);
 console.log('✓ Current/next weather state updates exercised');
 
 console.log('--- 4. Exercising selected weather particle lifecycles ---');
-import * as WE from '../../src/fr/field/weatherEffects.ts';
+import * as WE from '../../src/games/firered/field/weatherEffects.ts';
 
 // Clouds
 WE.Clouds_InitAll();

@@ -4,12 +4,12 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/fr/hw/assets.ts';
-import { rom } from '../../src/fr/rom.ts';
-import * as C from '../../src/fr/generated/constants.ts';
-import { createMon, speciesName, type Pokemon } from '../../src/fr/pokemon/pokemon.ts';
-import { CreateShedinja as trySpawnShedinja } from '../../src/fr/evolutionScene.ts';
-import { save } from '../../src/fr/save.ts';
+import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import { rom } from '../../src/games/firered/rom.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
+import { createMon, speciesName, type Pokemon } from '../../src/games/firered/pokemon/pokemon.ts';
+import { CreateShedinja as trySpawnShedinja } from '../../src/games/firered/evolutionScene.ts';
+import { save } from '../../src/games/firered/save.ts';
 
 const root = process.cwd() + '/public/fr/';
 

@@ -3,7 +3,7 @@
 
 Writes docs/REVIEW-LOCATIONS.md (generated; do not edit): for each section-2 block,
 each backticked name with its C definition (`../pokefirered/src/<file>.c:<line>`) and
-its TS definition (`src/fr/<path>:<line>`). Wildcards (`MovementAction_*`) are expanded
+its TS definition (`src/games/firered/<path>:<line>`). Wildcards (`MovementAction_*`) are expanded
 to counts. Names not found are listed so the reviewer can search by hand.
 
 Usage: npm run review:where            regenerate docs/REVIEW-LOCATIONS.md
@@ -50,7 +50,7 @@ def ts_index() -> tuple[dict[str, list[tuple[str, int]]], dict[str, list[tuple[s
     """(definitions, doc-comment mentions): the port often names the C function only in a `/** Name */` comment."""
     idx: dict[str, list[tuple[str, int]]] = {}
     doc: dict[str, list[tuple[str, int]]] = {}
-    for path in sorted((ROOT / "src/fr").rglob("*.ts")):
+    for path in sorted((ROOT / "src/games/firered").rglob("*.ts")):
         if "generated" in path.parts:
             continue
         rel = str(path.relative_to(ROOT))

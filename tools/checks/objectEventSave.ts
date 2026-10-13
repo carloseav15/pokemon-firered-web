@@ -2,10 +2,10 @@
 import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { gObjectEvents, ObjectEvent } from '../../src/fr/field/objectEvents.ts';
-import { save } from '../../src/fr/save.ts';
-import { SaveObjectEvents, LoadObjectEvents, HasSavedObjectEvents } from '../../src/fr/loadSave.ts';
-import * as C from '../../src/fr/generated/constants.ts';
+import { gObjectEvents, ObjectEvent } from '../../src/games/firered/field/objectEvents.ts';
+import { save } from '../../src/games/firered/save.ts';
+import { SaveObjectEvents, LoadObjectEvents, HasSavedObjectEvents } from '../../src/games/firered/loadSave.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
 
 const header=readFileSync('pokefirered/include/global.fieldmap.h','utf8');
 const body=header.split('struct ObjectEvent\n{')[1].split('\n};')[0];

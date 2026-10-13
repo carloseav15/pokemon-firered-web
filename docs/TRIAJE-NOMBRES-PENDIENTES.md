@@ -1,13 +1,13 @@
 # Triaje de los nombres pendientes del inventario (2026-10-12)
 
-**Conclusión:** `PENDING.md` cuenta nombres C sin homólogo del mismo nombre en `src/fr`. De los 345
+**Conclusión:** `PENDING.md` cuenta nombres C sin homólogo del mismo nombre en `src/games/firered`. De los 345
 nombres que quedan (PENDING.md da 343: este script usa una comprobación de nombre más simple que el inventario) en los 22 archivos en alcance, **no se identificó ninguna tanda de código de un jugador claramente por portar**
 (la categoría «equivalencia por revisar» no está verificada función a función): son enlace/cable, el motor de audio m4a sustituido por WebAudio, código sin ningún caller en el C, o
 funciones cuyo comportamiento vive en TS con otra estructura. No hace falta repetir este análisis; vuelve a
 generarlo solo si cambia el inventario.
 
 Método: `tools/portInventory.py` (`c_functions`, `load_ts`) sobre los archivos de la tabla 1 de `PENDING.md`;
-categoría = patrón de nombre (enlace), archivo (`m4a.c`), nombre citado en algún `.ts` de `src/fr`
+categoría = patrón de nombre (enlace), archivo (`m4a.c`), nombre citado en algún `.ts` de `src/games/firered`
 (citado), número de usos en `../pokefirered/src/*.c` (muerto: una sola aparición, o `Unref_`/`Unused`/`UnkUtil`)
 o el resto (equivalencia por revisar). Es heurística: la lista "equivalencia" requiere confirmar cada función
 contra el TS en la fase de revisión (§2 de `TAREAS-FINALES.md`).

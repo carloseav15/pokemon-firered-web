@@ -1,15 +1,15 @@
 // Headless check for battle_util.c (controller execution flags, multi-turn moves, link data flags).
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
-import * as C from "../../src/fr/generated/constants.ts";
-import { G, gBattleMons, gDisableStructs, gProtectStructs, gStatuses3 } from "../../src/fr/battle/globals.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { G, gBattleMons, gDisableStructs, gProtectStructs, gStatuses3 } from "../../src/games/firered/battle/globals.ts";
 import {
   MarkAllBattlersForControllerExec,
   MarkBattlerForControllerExec,
   MarkBattlerReceivedLinkData,
   CancelMultiTurnMoves,
   WasUnableToUseMove,
-} from "../../src/fr/battle/util.ts";
+} from "../../src/games/firered/battle/util.ts";
 
 // 1. Test MarkAllBattlersForControllerExec in standard single battle
 G.gBattleTypeFlags = 0;

@@ -15,7 +15,7 @@ export async function loadCheckpointPath(ctx, path, base) {
   if (!Array.isArray(data.party) || !data.location || !data.pos) throw new Error("invalid checkpoint: " + absolute);
   await ctx.page.goto(base, { waitUntil: "load" });
   await ctx.page.evaluate(async raw => {
-    const S = await import("/src/fr/save.ts");
+    const S = await import("/src/games/firered/save.ts");
     localStorage.setItem(S.CANONICAL_STORAGE_KEY, raw);
   }, raw);
   await ctx.page.goto(`${base}?fr=continue`, { waitUntil: "load" });

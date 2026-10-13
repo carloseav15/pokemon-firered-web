@@ -4,8 +4,8 @@ const P = (n, t, extra = {}) => ({ n, t, ...extra });
 const fact = (text, ...refs) => ({ level: "fact", text, refs });
 const assumed = (text, ...refs) => ({ level: "assumed", text, refs });
 
-const GLOBALS = "src/fr/battle/globals.ts";
-const STRUCTS = "src/fr/generated/structs.ts";
+const GLOBALS = "src/games/firered/battle/globals.ts";
+const STRUCTS = "src/games/firered/generated/structs.ts";
 const protectStruct = { name: "gProtectStructs", ctype: "struct ProtectStruct", structName: "ProtectStruct", count: 4, tsFile: GLOBALS, tsClassFile: STRUCTS };
 const battleStruct = { name: "gBattleStruct", ctype: "struct BattleStruct", structName: "BattleStruct", count: 1, pointer: true, tsFile: GLOBALS, tsClassFile: STRUCTS };
 const expose = (s) => [{ file: s.tsFile, name: s.name }, { file: s.tsClassFile, name: s.structName }];
@@ -17,7 +17,7 @@ export default [
     params: [P("battler", "u8", { realistic: [0, 3], structural: true, extra: [3, 4, 5] })],
     structs: [protectStruct], tsExtra: expose(protectStruct),
     impls: [
-      { label: "battle/util.ts", file: "src/fr/battle/util.ts", name: "WasUnableToUseMove" },
+      { label: "battle/util.ts", file: "src/games/firered/battle/util.ts", name: "WasUnableToUseMove" },
       // detector checks: each of these MUST be flagged (expect), they are not project code
       { label: "MUTANT ignores confusionSelfDmg", expect: "NEEDS_TRIAGE",
         build: (c) => { const g = c.ns.mods[c.abs(GLOBALS)].__o_gProtectStructs; return (b) => { const p = g[b];
@@ -39,7 +39,7 @@ export default [
     params: [P("mask", "u8", { realisticSet: [0x1, 0x2, 0x4, 0x8] })],
     structs: [battleStruct], tsExtra: expose(battleStruct),
     impls: [
-      { label: "battle/controller_oak_old_man.ts", file: "src/fr/battle/controller_oak_old_man.ts", name: "BtlCtrl_OakOldMan_SetState2Flag" },
+      { label: "battle/controller_oak_old_man.ts", file: "src/games/firered/battle/controller_oak_old_man.ts", name: "BtlCtrl_OakOldMan_SetState2Flag" },
       { label: "MUTANT writes simulatedInputState[1]", expect: "NEEDS_TRIAGE",
         build: (c) => { const s = c.ns.mods[c.abs(GLOBALS)].__o_gBattleStruct; return (m) => { s.simulatedInputState[1] |= m; }; } },
       { label: "MUTANT also writes [3]", expect: "NEEDS_TRIAGE",
@@ -55,7 +55,7 @@ export default [
     c: { stem: "battle_controller_oak_old_man", name: "BtlCtrl_OakOldMan_TestState2Flag" },
     params: [P("mask", "u8", { realisticSet: [0x1, 0x2, 0x4, 0x8] })],
     structs: [battleStruct], tsExtra: expose(battleStruct),
-    impls: [{ label: "battle/controller_oak_old_man.ts", file: "src/fr/battle/controller_oak_old_man.ts", name: "BtlCtrl_OakOldMan_TestState2Flag" }],
+    impls: [{ label: "battle/controller_oak_old_man.ts", file: "src/games/firered/battle/controller_oak_old_man.ts", name: "BtlCtrl_OakOldMan_TestState2Flag" }],
     observed: "return value + all 512 bytes of *gBattleStruct",
     realisticEvidence: [fact("masks are FIRST_BATTLE_MSG_FLAG_* = 1, 2, 4, 8", "battle_controllers.h:287-293")],
     cost: { wrapper: "none", state: "*gBattleStruct", touchedTs: false, adapters: ["ByteStruct raw-byte adapter (already built)"], reusable: "yes" },

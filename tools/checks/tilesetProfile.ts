@@ -1,7 +1,7 @@
 // The tileset split profile: FireRed (640 metatiles/tiles, 7 palettes in the primary tileset) by default, pokeemerald's 512/512/6
 // after SetTilesetProfile("emerald"); and the Emerald behaviour predicates the world viewer's Hoenn mode uses.
 import assert from "node:assert/strict";
-import * as fieldmap from "../../src/fr/field/fieldmap";
+import * as fieldmap from "../../src/games/firered/field/fieldmap";
 import * as MBEmerald from "../../src/games/emerald/generated/metatileBehavior";
 
 assert.equal(fieldmap.NUM_METATILES_IN_PRIMARY, 640);

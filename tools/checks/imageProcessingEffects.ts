@@ -4,7 +4,7 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/fr/hw/assets.ts';
+import { registerCData } from '../../src/games/firered/hw/assets.ts';
 import {
   ApplyImageProcessingEffects,
   ApplyImageProcessingQuantization,
@@ -28,7 +28,7 @@ import {
   QUANTIZE_EFFECT_PRIMARY_COLORS,
   QUANTIZE_EFFECT_BLACK_WHITE,
   type ImageProcessingContext,
-} from '../../src/fr/imageProcessingEffects.ts';
+} from '../../src/games/firered/imageProcessingEffects.ts';
 
 const root = process.cwd() + '/public/fr/';
 

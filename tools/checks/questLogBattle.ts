@@ -2,17 +2,17 @@
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import * as C from "../../src/fr/generated/constants.ts";
-import { G, gBattleMons, gBattleResults } from "../../src/fr/battle/globals.ts";
-import { gEnemyParty } from "../../src/fr/pokemon/mon.ts";
-import { rom } from "../../src/fr/rom.ts";
-import { flagSet, save } from "../../src/fr/save.ts";
-import { QL_SkipCommand } from "../../src/fr/questLogEventBuffer.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { G, gBattleMons, gBattleResults } from "../../src/games/firered/battle/globals.ts";
+import { gEnemyParty } from "../../src/games/firered/pokemon/mon.ts";
+import { rom } from "../../src/games/firered/rom.ts";
+import { flagSet, save } from "../../src/games/firered/save.ts";
+import { QL_SkipCommand } from "../../src/games/firered/questLogEventBuffer.ts";
 import {
   QuestLogEvents_HandleEndTrainerBattle,
   ResetQuestLog,
-} from "../../src/fr/questLogEvents.ts";
-import { TrySetQuestLogBattleEvent } from "../../src/fr/questLogBattle.ts";
+} from "../../src/games/firered/questLogEvents.ts";
+import { TrySetQuestLogBattleEvent } from "../../src/games/firered/questLogBattle.ts";
 
 // QL_StartRecordingAction snapshots a real map layout; supply the game's map index and a valid current map.
 const mapIndex = JSON.parse(readFileSync(`${process.cwd()}/public/fr/maps.json`, "utf8"));

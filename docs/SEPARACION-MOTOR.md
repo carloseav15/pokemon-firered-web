@@ -11,7 +11,7 @@ listas). El script solo lee y no escribe nada; su docstring explica cómo clasif
 - **El 69 % de las funciones C de FireRed tienen nombre en Emerald.** De 12.018:
   3.677 idénticas, 3.680 con cuerpo distinto, 885 con el mismo nombre en otro
   archivo de Emerald y 3.776 exclusivas de FireRed.
-- **Reparto propuesto de `src/fr/`** (260 módulos, 167.888 líneas, sin contar los
+- **Reparto propuesto de `src/games/firered/`** (260 módulos, 167.888 líneas, sin contar los
   generados):
 
   | Destino | Módulos | Líneas |
@@ -76,7 +76,7 @@ enlace (7). La lista completa la da `tools/engineSplit.py`.
 
 ### 2.3 Las constantes son de cada juego
 
-`src/fr/generated/constants.ts` tiene 14.057 constantes y lo importan 188 módulos.
+`src/games/firered/generated/constants.ts` tiene 14.057 constantes y lo importan 188 módulos.
 Comparé los `#define NOMBRE número` literales de `include/constants/*.h` en los dos
 decomps (`python3 tools/engineSplit.py --constants`):
 
@@ -96,9 +96,9 @@ El inventario completo de valores corresponde al informe 6.2.
 
 ### 2.4 Lo que ya está bien separado
 
-- **Una sola raíz de datos:** `DATA_ROOT = "/fr"` (`src/fr/rom.ts:9`), usada por
+- **Una sola raíz de datos:** `DATA_ROOT = "/fr"` (`src/games/firered/rom.ts:9`), usada por
   `rom.ts`, `hw/assets.ts`, `battle/bscript.ts` y seis módulos más.
-- **El guardado es un objeto JSON** (`SaveData`, `src/fr/save.ts:121`) con clave de
+- **El guardado es un objeto JSON** (`SaveData`, `src/games/firered/save.ts:121`) con clave de
   `localStorage` propia (`save.ts:677`). No copia el layout de bytes, así que
   Emerald puede tener su propio esquema sin chocar.
 - **El runtime GBA escrito para el navegador** (`hw/ppu`, `hw/assets`, `gba/tasks`,
@@ -214,13 +214,13 @@ idénticos.
 
 0. **Requisitos.** §3.0 en verde con `play:smoke` estable. Ninguna rama de agente
    abierta: el paso 2 cambia todas las rutas. Guardar el md5 de `public/fr/` y
-   `src/fr/generated/` como referencia.
+   `src/games/firered/generated/` como referencia.
 1. **Rutas centralizadas en las herramientas.** Hoy 70 archivos de `tools/` citan
-   `src/fr` (sin contar `engineSplit.py`) y 44 citan `public/fr`. Pasarlos a una constante compartida (Python y
+   `src/games/firered` (sin contar `engineSplit.py`) y 44 citan `public/fr`. Pasarlos a una constante compartida (Python y
    JS) sin mover nada. Incluye `portInventory.py`, `portPending.py`, `honesty.py` y
    `review_locations.py`: solo cambian la ruta, no el algoritmo. **Necesita permiso
    del usuario**, porque TAREAS-FINALES §0 prohíbe tocar `portInventory.py`.
-2. **Mover `src/fr/` a `src/games/firered/` con `git mv` y añadir el alias**
+2. **Mover `src/games/firered/` a `src/games/firered/` con `git mv` y añadir el alias**
    (tsconfig, Vite y esbuild). Es un cambio de nombre puro: los imports relativos no
    cambian, así que tampoco el orden de evaluación del ciclo de 169 módulos.
 3. **Configuración del juego.** `@game/data` exporta `DATA_ROOT` y la clave de

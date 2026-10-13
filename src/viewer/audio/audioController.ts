@@ -1,6 +1,6 @@
-import { sound } from "../../fr/audio/sound";
-import { createM4aBackend } from "../../fr/audio/m4a";
-import * as C from "../../fr/generated/constants";
+import { sound } from "../../games/firered/audio/sound";
+import { createM4aBackend } from "../../games/firered/audio/m4a";
+import * as C from "../../games/firered/generated/constants";
 
 export class ViewerAudioController {
   private initialized = false;

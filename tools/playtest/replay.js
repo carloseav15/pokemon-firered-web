@@ -1,7 +1,7 @@
 // Phase-one input replay, not a savestate or a complete-engine determinism guarantee.
 // The observation scope is frDebug.snapshot() version 1 (no full battle, sprites or audio).
-import { launchFireRed } from "/src/fr/boot.ts";
-import { SANDBOX_STORAGE_KEY } from "/src/fr/save.ts";
+import { launchFireRed } from "/src/games/firered/boot.ts";
+import { SANDBOX_STORAGE_KEY } from "/src/games/firered/save.ts";
 
 const VERSION = 1;
 const OBSERVATION = "frDebug.snapshot/v1";

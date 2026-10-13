@@ -5,7 +5,7 @@ import {
   ANIMCMD_END, ANIMCMD_FRAME, ANIMCMD_JUMP, ANIMCMD_LOOP,
   AnimateSprite, DecrementAnimDelayCounter, ResetSprite, Sprite,
   StartSpriteAnim,
-} from "../../src/fr/hw/sprite.ts";
+} from "../../src/games/firered/hw/sprite.ts";
 
 const sprite = new Sprite(0);
 sprite.usingSheet = true;

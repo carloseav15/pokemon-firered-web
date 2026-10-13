@@ -1,12 +1,12 @@
 // Headless check for battle_controllers.c link functions and buffer transfer.
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
-import * as C from "../../src/fr/generated/constants.ts";
-import { tasks } from "../../src/fr/gba/tasks.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { tasks } from "../../src/games/firered/gba/tasks.ts";
 import {
   G, gBattleBufferA, gBattleBufferB, gBattlerControllerFuncs,
   gBattlerPositions, gLinkBattleSendBuffer, gLinkBattleRecvBuffer,
-} from "../../src/fr/battle/globals.ts";
+} from "../../src/games/firered/battle/globals.ts";
 import {
   BUFFER_A, BUFFER_B,
   HandleLinkBattleSetup,
@@ -16,10 +16,10 @@ import {
   Task_HandleSendLinkBuffersData,
   TryReceiveLinkBattleData,
   Task_HandleCopyReceivedLinkBuffersData,
-} from "../../src/fr/battle/controllers.ts";
+} from "../../src/games/firered/battle/controllers.ts";
 import {
   gLinkPlayers, SetReceivedRemoteLinkPlayers, linkTransport, gBlockRecvBuffer,
-} from "../../src/fr/linkState.ts";
+} from "../../src/games/firered/linkState.ts";
 
 tasks.reset();
 

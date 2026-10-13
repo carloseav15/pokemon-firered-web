@@ -5,7 +5,7 @@ Tarea 6.3 de [TAREAS-FINALES.md](../TAREAS-FINALES.md), preparación de la fase 
 ## 1. Resumen
 
 - Hay nombres conservados en índices de mapas, referencias parciales de eventos, etiquetas de scripts, datos de objetos/tilesets/audio y constantes. En cambio, especies, movimientos y entrenadores son principalmente arreglos posicionales cuyos IDs son índices; los binarios de scripts contienen operandos numéricos.
-- `scripts.json` registra nombres de comandos en orden de opcode, etiquetas, símbolos externos y rutinas especiales, pero no un esquema que clasifique cada operando por tipo y offset. `src/fr/script/commands.ts` lee bytes/palabras en ejecución, no es un índice declarativo para reescritura.
+- `scripts.json` registra nombres de comandos en orden de opcode, etiquetas, símbolos externos y rutinas especiales, pero no un esquema que clasifique cada operando por tipo y offset. `src/games/firered/script/commands.ts` lee bytes/palabras en ejecución, no es un índice declarativo para reescritura.
 - Propuesta: para cada juego, agregar `symbols.json` con nombres y valores, y un archivo auxiliar de operandos tipados con offsets, ancho, clase, valor y símbolo de origen. Para macros genéricas hay que conservar la clase antes de que el ensamblado borre esa información.
 - `python3 tools/engineSplit.py --constants` dio **740** defines literales homónimos con valores distintos. Coincidir en el nombre no prueba equivalencia semántica.
 - **SIN VERIFICAR:** forma/bytes de Emerald exportado, cobertura de anotaciones y equivalencia semántica. No hubo bloqueo repetido: **BLOQUEADO: ninguno**.
@@ -46,7 +46,7 @@ Tarea 6.3 de [TAREAS-FINALES.md](../TAREAS-FINALES.md), preparación de la fase 
 
 ## 3. Bytecode: operandos y medidas
 
-No existe una tabla que indique “opcode X, bytes Y..Z = flag/map/item”. `scripts.json` guarda nombres de comandos, etiquetas, símbolos externos y rutinas especiales, pero no firmas de operandos (`step_scripts.py:131-141`). `commands.ts` interpreta bytes y palabras: `ScrCmd_setflag` pasa una halfword a `flagSet`, `ScrCmd_setvar` consume dos halfwords y `ScrCmd_specialvar` lee variable destino e índice de special (`src/fr/script/commands.ts:189-225,233-235`). El código del intérprete no es un índice declarativo exhaustivo de literales serializados.
+No existe una tabla que indique “opcode X, bytes Y..Z = flag/map/item”. `scripts.json` guarda nombres de comandos, etiquetas, símbolos externos y rutinas especiales, pero no firmas de operandos (`step_scripts.py:131-141`). `commands.ts` interpreta bytes y palabras: `ScrCmd_setflag` pasa una halfword a `flagSet`, `ScrCmd_setvar` consume dos halfwords y `ScrCmd_specialvar` lee variable destino e índice de special (`src/games/firered/script/commands.ts:189-225,233-235`). El código del intérprete no es un índice declarativo exhaustivo de literales serializados.
 
 La clase se puede derivar parcialmente de macros en `../pokefirered/asm/macros/event.inc`: `setvar`, `setflag`, `warp`, `giveitem`, `trainerbattle`, etc. Pero macros de alto nivel se expanden; macros genéricas pueden elegir var o inmediato por rango (`compare`, `setorcopyvar`); una constante `VAR_*` puede usarse como argumento de flag. El binario pierde el token fuente y parte de la intención. La firma debe cotejar macros y handlers C y guardarse antes de ensamblar.
 
@@ -112,7 +112,7 @@ Usar la configuración `Game` y rutas de 6.2. Agregar productos nuevos por juego
 
 Es solo un esquema, no salida exportada. Guardar inverso como `valor → [nombres]` para alias. Agregar `script_operands.json` (y equivalente de combate) con `{kind, scriptOffset, opcode, operandOffset, width, namespace, value, symbol, sourceKind}`. Capturar al expandir/ensamblar macros con firmas auditadas contra `event.inc` y handlers. Si conviene para FireRed, generar un archivo nuevo aparte; nunca editar/reserializar sus productos actuales.
 
-**Equivalencia binaria FireRed:** árbol de trabajo aislado y compilación privada; manifiesto ordenado `{ruta relativa, MD5}` de archivos regulares de `public/fr/` y `src/fr/generated/` antes y después; comparar conjuntos de rutas y hashes siguiendo [EXPORTADOR-EMERALD.md §5](EXPORTADOR-EMERALD.md). Si 6.1 ya trasladó generated, usar solo correspondencia explícita de prefijos. Un archivo auxiliar nuevo no debe alterar hashes de archivos existentes.
+**Equivalencia binaria FireRed:** árbol de trabajo aislado y compilación privada; manifiesto ordenado `{ruta relativa, MD5}` de archivos regulares de `public/fr/` y `src/games/firered/generated/` antes y después; comparar conjuntos de rutas y hashes siguiendo [EXPORTADOR-EMERALD.md §5](EXPORTADOR-EMERALD.md). Si 6.1 ya trasladó generated, usar solo correspondencia explícita de prefijos. Un archivo auxiliar nuevo no debe alterar hashes de archivos existentes.
 
 ### 5.2 Renumerar al unir el mundo
 

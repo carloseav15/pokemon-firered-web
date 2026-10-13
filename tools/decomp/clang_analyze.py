@@ -5,7 +5,7 @@ Clang analysis step of the batch porting workflow (AGENTS.md):
   1. src/string_util.c (buffer manipulation, charmap strings, formatting, control codes)
   2. src/item.c (save block struct, item slot queries, EWRAM encryption, ROM getters)
   3. src/digit_obj_util.c (dynamic heap allocation, direct OAM hardware manipulation, digit graphics)
-- Finds existing TS equivalents in src/fr/
+- Finds existing TS equivalents in src/games/firered/
 - Classifies functions into:
   - ALREADY_PORTED (present with real body)
   - CANDIDATE (viable AST patterns, dependencies resolved or resolvable)
@@ -129,7 +129,7 @@ def analyze_file(c_stem: str, idents: set[str], real_defs: dict[str, bool]) -> l
             reason = "Contains inline assembly"
         elif ts_status == "ported":
             classification = "ALREADY_PORTED"
-            reason = f"Present in src/fr/ with real body"
+            reason = f"Present in src/games/firered/ with real body"
         elif c_stem == "digit_obj_util":
             # digit_obj_util uses raw dynamic heap Alloc and raw hardware OAM array
             if "Alloc" in callees or "Free" in callees:

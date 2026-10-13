@@ -7,7 +7,7 @@ import ts from "typescript";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const sourceRoot = path.join(root, "src/fr");
+const sourceRoot = path.join(root, "src/games/firered");
 const definitions = new Map();
 const aliases = [];
 

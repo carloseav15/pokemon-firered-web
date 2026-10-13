@@ -3,11 +3,11 @@
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
-import { rom, setDataRoot } from "../fr/rom";
-import { TileRenderer } from "../fr/field/tileRenderer";
-import { TilesetAnimator } from "../fr/field/tilesetAnimator";
-import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "../fr/field/fieldmap";
-import * as MB from "../fr/generated/metatileBehavior";
+import { rom, setDataRoot } from "../games/firered/rom";
+import { TileRenderer } from "../games/firered/field/tileRenderer";
+import { TilesetAnimator } from "../games/firered/field/tilesetAnimator";
+import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "../games/firered/field/fieldmap";
+import * as MB from "../games/firered/generated/metatileBehavior";
 import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
 import { TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
 import type { Element, KantoIndex, Trigger } from "./types";

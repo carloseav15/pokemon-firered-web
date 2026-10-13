@@ -1,4 +1,4 @@
-"""Generate src/fr/generated/constants.ts: every integer #define and enum
+"""Generate src/games/firered/generated/constants.ts: every integer #define and enum
 member of the decompilation's headers, evaluated by the host compiler.
 """
 

@@ -1,9 +1,9 @@
 # Qué falta portar de pokeemerald (análisis)
 
 Generado por `python3 tools/emeraldGap.py` (solo lectura: no toca `src/` ni `refs/`). No editar a mano.
-Fuente: pokeemerald `fe1d8e51b2` (`refs/emerald/`), inventario del port (`src/fr`) y las fuentes C de Emerald para medir cada función.
+Fuente: pokeemerald `fe1d8e51b2` (`refs/emerald/`), inventario del port (`src/games/firered`) y las fuentes C de Emerald para medir cada función.
 
-**Cómo leer las cifras.** Una función cuenta como *en el port* si su nombre aparece en `src/fr` con cuerpo real (la misma regla de `tools/portInventory.py`): mide nombres, no fidelidad. *Idéntica* y *distinta* son comparaciones de texto entre Emerald y FireRed; una función idéntica puede leer constantes o estructuras distintas (ver `docs/SEPARACION-MOTOR.md` §2.1 y §2.3). Las líneas son líneas de C de cada función (de la firma a la llave de cierre). Las estimaciones de esfuerzo están en la sección 5 con sus supuestos.
+**Cómo leer las cifras.** Una función cuenta como *en el port* si su nombre aparece en `src/games/firered` con cuerpo real (la misma regla de `tools/portInventory.py`): mide nombres, no fidelidad. *Idéntica* y *distinta* son comparaciones de texto entre Emerald y FireRed; una función idéntica puede leer constantes o estructuras distintas (ver `docs/SEPARACION-MOTOR.md` §2.1 y §2.3). Las líneas son líneas de C de cada función (de la firma a la llave de cierre). Las estimaciones de esfuerzo están en la sección 5 con sus supuestos.
 
 ## 1. Resumen
 

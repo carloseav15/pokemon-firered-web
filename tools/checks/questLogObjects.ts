@@ -2,26 +2,26 @@
 import "./setupNodeGbaMock.ts";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-import * as C from "../../src/fr/generated/constants.ts";
-import * as MB from "../../src/fr/generated/metatileBehavior.ts";
-import { save } from "../../src/fr/save.ts";
-import { SetQuestLogState } from "../../src/fr/questLogEvents.ts";
-import { gObjectEvents, ObjectEvent } from "../../src/fr/field/objectEvents.ts";
-import { FieldMap, MAP_OFFSET, SetCurrentFieldMap } from "../../src/fr/field/fieldmap.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import * as MB from "../../src/games/firered/generated/metatileBehavior.ts";
+import { save } from "../../src/games/firered/save.ts";
+import { SetQuestLogState } from "../../src/games/firered/questLogEvents.ts";
+import { gObjectEvents, ObjectEvent } from "../../src/games/firered/field/objectEvents.ts";
+import { FieldMap, MAP_OFFSET, SetCurrentFieldMap } from "../../src/games/firered/field/fieldmap.ts";
 import {
   PlayerAvatar,
   SetPlayerAvatar,
   PLAYER_AVATAR_FLAG_ON_FOOT,
   PLAYER_AVATAR_FLAG_SURFING,
-} from "../../src/fr/field/playerAvatar.ts";
+} from "../../src/games/firered/field/playerAvatar.ts";
 import {
   QL_RecordObjects,
   QL_LoadObjects,
   QL_TryStopSurfing,
   type QuestLogScene,
-} from "../../src/fr/questLogObjects.ts";
-import type { MapObjectTemplate } from "../../src/fr/rom.ts";
-import { rom } from "../../src/fr/rom.ts";
+} from "../../src/games/firered/questLogObjects.ts";
+import type { MapObjectTemplate } from "../../src/games/firered/rom.ts";
+import { rom } from "../../src/games/firered/rom.ts";
 
 const root = process.cwd() + "/public/fr/";
 (rom as any).charmap = JSON.parse(readFileSync(root + "charmap.json", "utf8"));

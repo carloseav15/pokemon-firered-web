@@ -8,13 +8,13 @@ import { prelude } from "./lib.mjs";
 const outdir = process.argv[3] ?? "/tmp/pw";
 
 const commonHelpers = `${prelude}
-  const C = await H.mod("/src/fr/generated/constants.ts");
-  const B = await H.mod("/src/fr/bagMenu.ts");
-  const M = await H.mod("/src/fr/pokemon/mon.ts");
-  const P = await H.mod("/src/fr/pokemon/pokemon.ts");
-  const FM = await H.mod("/src/fr/field/fieldmap.ts");
-  const S = await H.mod("/src/fr/save.ts");
-  const R = (await H.mod("/src/fr/rom.ts")).rom;
+  const C = await H.mod("/src/games/firered/generated/constants.ts");
+  const B = await H.mod("/src/games/firered/bagMenu.ts");
+  const M = await H.mod("/src/games/firered/pokemon/mon.ts");
+  const P = await H.mod("/src/games/firered/pokemon/pokemon.ts");
+  const FM = await H.mod("/src/games/firered/field/fieldmap.ts");
+  const S = await H.mod("/src/games/firered/save.ts");
+  const R = (await H.mod("/src/games/firered/rom.ts")).rom;
   const ctl = () => H.G.gBattlerControllerFuncs[0]?.name;
   const fail = (m, extra = {}) => {
     throw new Error(m + " " + JSON.stringify({ ctl: ctl(), cb2: H.cb2(), tasks: names(), map: H.st().map, ...extra }));

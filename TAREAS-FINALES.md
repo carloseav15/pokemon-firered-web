@@ -51,8 +51,8 @@ El revisor corrige o revierte con un commit nuevo si la entrega no cumple.
   El detalle va en el mensaje del commit, no en este archivo.
 
 ### Dónde está cada cosa
-- C: `../pokefirered/src/<archivo>.c`. Port TS: `src/fr/`.
-- Datos generados (`src/fr/generated/`, `public/fr/`): **no se editan a mano**.
+- C: `../pokefirered/src/<archivo>.c`. Port TS: `src/games/firered/`.
+- Datos generados (`src/games/firered/generated/`, `public/fr/`): **no se editan a mano**.
 - Checks: `tools/checks/*.ts` → `npm run check:<nombre>`. Navegador:
   `tools/playtest/` (driver `driver.js`, ejecutor `pw.mjs`, `smoke/`, partidas `saves/`).
 
@@ -675,7 +675,7 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 - [x] **6.1 Informe: separación del motor** [avanzado] — [docs/SEPARACION-MOTOR.md](docs/SEPARACION-MOTOR.md)
   (`ec6f0747`, cifras en `tools/engineSplit.py`). Antes de mover código: permiso para tocar la ruta en `portInventory.py`. Proponer qué va a `core/` y qué a
   `games/firered/`, apoyándose en `refs/emerald/functions.json` (3.677 funciones
-  idénticas entre Emerald y FireRed) y en los imports reales de `src/fr/`. Entregar
+  idénticas entre Emerald y FireRed) y en los imports reales de `src/games/firered/`. Entregar
   la lista de módulos, el orden de traslado en pasos pequeños (cada paso con
   `check:all` y `play:smoke` en verde) y los riesgos. Sin mover código todavía.
 - [x] **6.2 Informe: exportador para Emerald** [avanzado] — [docs/EXPORTADOR-EMERALD.md](docs/EXPORTADOR-EMERALD.md)
@@ -689,7 +689,7 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 
 ## 7. Herramientas de diseño (fuera del juego)
 
-No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/fr/`.
+No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/games/firered/`.
 Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1–4.
 
 - [x] **6.4 Exportador por juego (Emerald)** — datos `37fe6675`, `5d482143`, `75a54ac2`, `c1a981f6`, `674615b9`; validación `bf6fffdc`…`7466b3ad`;
@@ -718,7 +718,7 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
   Puertas nombran interior, buscador legible, zoom redondeado, estado inicial NPC con
   cita (`event_scripts.s:1013`); verificado por punto en navegador.
 - [x] **7.5 Visor: animaciones de tiles** [básico] — `58fd3472` (rama
-  `muse/visor-anim`). `TilesetAnimator` sin tocar `src/fr/`; flores (5 estados) y fuente
+  `muse/visor-anim`). `TilesetAnimator` sin tocar `src/games/firered/`; flores (5 estados) y fuente
   verificadas contra el juego real; interruptor apagado por defecto.
 - [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
   Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;

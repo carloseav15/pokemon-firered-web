@@ -168,7 +168,7 @@ def main() -> None:
     if total and pend:
         done, allf = int(total.group(3)), int(total.group(4))
         parts += ["## Avance", "",
-                  f"- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **{done}/{allf} ({100 * done / allf:.1f} %)**.",
+                  f"- Funciones con homólogo del mismo nombre en `src/games/firered` (en alcance): **{done}/{allf} ({100 * done / allf:.1f} %)**.",
                   f"- Archivos C con funciones aún sin homólogo: **{pend.group(1)}**; quedan **{allf - done} nombres**.",
                   *([f"- Fuera de la meta principal, enlace e inalámbrico: {link.group(3)}/{link.group(4)} en {link.group(1)} archivos (sección aparte en PORT-INVENTORY.md)."] if link else []),
                   f"- Estos archivos contienen {fmt_int(int(pend.group(2)))} líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.",

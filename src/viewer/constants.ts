@@ -48,7 +48,7 @@ export const LAYER_LABELS: Record<Layer, string> = {
 };
 
 // Fotograma de la GBA: 280896 ciclos a 16,78 MHz (59,73 por segundo). Mismo valor que
-// FRAME_MS en src/fr/game.ts:112; el juego avanza con este paso fijo y no con el
+// FRAME_MS en src/games/firered/game.ts:112; el juego avanza con este paso fijo y no con el
 // refresco de la pantalla (que en un Mac puede ser 120 Hz).
 export const GBA_FRAME_MS = 1000 / (16777216 / 280896);
 

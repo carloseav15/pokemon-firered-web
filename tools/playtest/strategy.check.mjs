@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {rankMoves,typeMultiplier,hpItem,chooseMoveToForget,estimateDamage,simulateBattle} from './strategy.js';
-const text=readFileSync('src/fr/generated/constants.ts','utf8');
+const text=readFileSync('src/games/firered/generated/constants.ts','utf8');
 const C=Object.fromEntries([...text.matchAll(/export const (\w+) = (\d+);/g)].map(m=>[m[1],Number(m[2])]));
 const rom=JSON.parse(readFileSync('public/fr/data/moves.json','utf8'));
 const foe=(type1,type2=type1,ability=0)=>({type1,type2,ability,status2:0,defense:20,spDefense:20});

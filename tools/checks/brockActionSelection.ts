@@ -11,21 +11,21 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import * as C from '../../src/fr/generated/constants.ts';
-import { rom, type MapHeader } from '../../src/fr/rom.ts';
-import { sound } from '../../src/fr/audio/sound.ts';
-import { loadTrig } from '../../src/fr/hw/trig.ts';
-import { runHwFrame, SetMainCallback2, gMain } from '../../src/fr/hw/runtime.ts';
-import { tasks } from '../../src/fr/gba/tasks.ts';
-import { A_BUTTON, joy } from '../../src/fr/gba/input.ts';
-import { preloadBattleAssets } from '../../src/fr/battle/preload.ts';
-import { G, resetBattleStructs } from '../../src/fr/battle/globals.ts';
-import { CB2_InitBattle, FreeRestoreBattleData } from '../../src/fr/battle/main_init.ts';
-import { createMon, giveMonToPlayer } from '../../src/fr/pokemon/pokemon.ts';
-import { save, newSaveData, setSave } from '../../src/fr/save.ts';
-import { registerCData } from '../../src/fr/hw/assets.ts';
-import { GetTrainerBattleTransition } from '../../src/fr/battle/transition.ts';
-import type { Overworld } from '../../src/fr/field/overworld.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
+import { rom, type MapHeader } from '../../src/games/firered/rom.ts';
+import { sound } from '../../src/games/firered/audio/sound.ts';
+import { loadTrig } from '../../src/games/firered/hw/trig.ts';
+import { runHwFrame, SetMainCallback2, gMain } from '../../src/games/firered/hw/runtime.ts';
+import { tasks } from '../../src/games/firered/gba/tasks.ts';
+import { A_BUTTON, joy } from '../../src/games/firered/gba/input.ts';
+import { preloadBattleAssets } from '../../src/games/firered/battle/preload.ts';
+import { G, resetBattleStructs } from '../../src/games/firered/battle/globals.ts';
+import { CB2_InitBattle, FreeRestoreBattleData } from '../../src/games/firered/battle/main_init.ts';
+import { createMon, giveMonToPlayer } from '../../src/games/firered/pokemon/pokemon.ts';
+import { save, newSaveData, setSave } from '../../src/games/firered/save.ts';
+import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import { GetTrainerBattleTransition } from '../../src/games/firered/battle/transition.ts';
+import type { Overworld } from '../../src/games/firered/field/overworld.ts';
 
 const root = process.cwd() + '/public';
 (globalThis as any).fetch = async (url: string) => {

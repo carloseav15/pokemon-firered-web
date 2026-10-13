@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GAME = os.environ.get("EXPORT_GAME", "firered")
 GAMES = {
     "firered": {"env": "POKEFIRERED", "dir": "pokefirered", "build": ".decomp-build", "out": "public/fr",
-                "generated": "src/fr/generated", "defines": ["-DFIRERED", "-DREVISION=0", "-DENGLISH", "-DMODERN=0"],
+                "generated": "src/games/firered/generated", "defines": ["-DFIRERED", "-DREVISION=0", "-DENGLISH", "-DMODERN=0"],
                 "mapjson": "firered"},
     "emerald": {"env": "POKEEMERALD", "dir": "pokeemerald", "build": ".decomp-build/emerald", "out": "public/emerald",
                 "generated": "src/games/emerald/generated", "defines": ["-DEMERALD", "-DREVISION=0", "-DENGLISH", "-DMODERN=0"],

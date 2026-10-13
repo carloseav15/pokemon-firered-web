@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { Policy } from "./driver/policy.js";
 import { rankMoves } from "./strategy.js";
 
-const text = readFileSync("src/fr/generated/constants.ts", "utf8");
+const text = readFileSync("src/games/firered/generated/constants.ts", "utf8");
 const C = Object.fromEntries([...text.matchAll(/export const (\w+) = (\d+);/g)].map(m => [m[1], Number(m[2])]));
 const rom = JSON.parse(readFileSync("public/fr/data/moves.json", "utf8"));
 const deps = { C, rom, bestMoves: (mon) => rankMoves(mon, FOE, rom, C) };

@@ -7,8 +7,8 @@ import path from "node:path";
 const P = (n, t, extra = {}) => ({ n, t, ...extra });
 const fact = (text, ...refs) => ({ level: "fact", text, refs });
 const assumed = (text, ...refs) => ({ level: "assumed", text, refs });
-const GLB = "src/fr/battle/globals.ts";
-const STRUCTS = "src/fr/generated/structs.ts";
+const GLB = "src/games/firered/battle/globals.ts";
+const STRUCTS = "src/games/firered/generated/structs.ts";
 const G = (name, type, extra = {}) => ({ name, type, ts: { file: GLB, expr: `G.${name}` }, ...extra });
 
 const flags = G("gBattleTypeFlags", "u32", { realistic: [0, 0xfffff] });
@@ -31,7 +31,7 @@ export default [
     c: { stem: "battle_anim_mons", name: "IsDoubleBattle" },
     globals: [flags],
     impls: [
-      { label: "battle/animScript.ts", file: "src/fr/battle/animScript.ts", name: "IsDoubleBattle" },
+      { label: "battle/animScript.ts", file: "src/games/firered/battle/animScript.ts", name: "IsDoubleBattle" },
       { label: "MUTANT reads the wrong bit", expect: "NEEDS_TRIAGE", build: (c) => () => (tsG(c).gBattleTypeFlags & 2) !== 0 },
     ],
     observed: "return value + gBattleTypeFlags before/after",
@@ -43,7 +43,7 @@ export default [
     c: { stem: "party_menu", name: "IsMultiBattle" },
     globals: [flags],
     impls: [
-      { label: "partyMenu.ts", file: "src/fr/partyMenu.ts", name: "IsMultiBattle" },
+      { label: "partyMenu.ts", file: "src/games/firered/partyMenu.ts", name: "IsMultiBattle" },
       { label: "MUTANT resets the global (bad init)", expect: "NEEDS_TRIAGE", build: (c) => () => { tsG(c).gBattleTypeFlags = 0; return false; } },
     ],
     observed: "return value + gBattleTypeFlags before/after",
@@ -57,7 +57,7 @@ export default [
     params: [P("species", "u16", { realistic: [0, 411], structural: true }), P("abilityNum", "bool8", { realistic: [0, 1], extra: [2, 255] })],
     globals: [lastAbility],
     impls: [
-      { label: "battle/util.ts", file: "src/fr/battle/util.ts", name: "GetAbilityBySpecies" },
+      { label: "battle/util.ts", file: "src/games/firered/battle/util.ts", name: "GetAbilityBySpecies" },
       { label: "MUTANT does not write the global", expect: "NEEDS_TRIAGE",
         build: (c) => (sp, n) => { const a = c.rom.species[sp]?.abilities ?? [0, 0]; return n ? a[1] : a[0]; } },
       { label: "MUTANT writes the wrong global", expect: "NEEDS_TRIAGE",
@@ -75,7 +75,7 @@ export default [
     c: { stem: "battle_main", name: "SpecialStatusesClear", unstatic: ["SpecialStatusesClear"] },
     globals: [activeBattler, battlersCount], structs: [specialStatuses], tsExtra: expose(specialStatuses),
     impls: [
-      { label: "battle/main.ts", file: "src/fr/battle/main.ts", name: "SpecialStatusesClear" },
+      { label: "battle/main.ts", file: "src/games/firered/battle/main.ts", name: "SpecialStatusesClear" },
       { label: "MUTANT wrong final gActiveBattler (no wrap)", expect: "NEEDS_TRIAGE",
         build: (c) => () => { const g = tsG(c), s = c.ns.mods[c.abs(GLB)].__o_gSpecialStatuses; for (g.gActiveBattler = 0; g.gActiveBattler < g.gBattlersCount; g.gActiveBattler++) s[g.gActiveBattler].clear(); g.gActiveBattler += 256; } },
       { label: "MUTANT skips the last battler", expect: "NEEDS_TRIAGE",
@@ -89,7 +89,7 @@ export default [
     name: "IsMonGettingExpSentOut", group: "E", kind: "struct", ret: "bool32", params: [],
     c: { stem: "battle_script_commands", name: "IsMonGettingExpSentOut" },
     globals: [flags, partyIdx], structs: [battleStruct], tsExtra: expose(battleStruct),
-    impls: [{ label: "battle/cmds/part3.ts", file: "src/fr/battle/cmds/part3.ts", name: "IsMonGettingExpSentOut" }],
+    impls: [{ label: "battle/cmds/part3.ts", file: "src/games/firered/battle/cmds/part3.ts", name: "IsMonGettingExpSentOut" }],
     observed: "return value + 2 globals + all 512 bytes of *gBattleStruct",
     realisticEvidence: [FLAGS_EVIDENCE, assumed("party indexes 0..5 (PARTY_SIZE); expGetterMonId comes from the ByteStruct state (any byte)")],
     cost: { wrapper: "none", state: "gBattleTypeFlags + 4-element u16 array + *gBattleStruct", ...NO_TS_CHANGE, adapters: ["scalar global adapter (array)", "ByteStruct adapter"], reusable: "yes" },
@@ -98,7 +98,7 @@ export default [
     name: "Cmd_endselectionscript", group: "E", kind: "struct", ret: "void", params: [],
     c: { stem: "battle_script_commands", name: "Cmd_endselectionscript", unstatic: ["Cmd_endselectionscript"] },
     globals: [attacker], structs: [battleStruct], tsExtra: expose(battleStruct),
-    impls: [{ label: "battle/cmds/part2.ts", file: "src/fr/battle/cmds/part2.ts", name: "Cmd_endselectionscript" }],
+    impls: [{ label: "battle/cmds/part2.ts", file: "src/games/firered/battle/cmds/part2.ts", name: "Cmd_endselectionscript" }],
     observed: "gBattlerAttacker and all 512 bytes of *gBattleStruct (writes selectionScriptFinished[gBattlerAttacker])",
     realisticEvidence: [fact("gBattlerAttacker is a battler id 0..3", "battle.h")],
     cost: { wrapper: "unstatic (C)", state: "gBattlerAttacker (index) + *gBattleStruct", ...NO_TS_CHANGE, adapters: ["scalar global adapter", "ByteStruct adapter"], reusable: "yes" },

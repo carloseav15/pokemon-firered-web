@@ -4,7 +4,7 @@
 export default async function(ctx) {
   await ctx.loadSave('mtmoon-1f');
   const result = await ctx.runEval(`
-    const SM = await H.mod("/src/fr/menus/scriptMenu.ts"), S = await H.mod("/src/fr/save.ts");
+    const SM = await H.mod("/src/games/firered/menus/scriptMenu.ts"), S = await H.mod("/src/games/firered/save.ts");
     const none = await H.answerYesNo(true);
     if (none.ok !== false || none.reason !== "no-yes-no-menu") throw new Error("answered without a menu: " + JSON.stringify(none));
     let bad = null; try { await H.answerYesNo("yes"); } catch (e) { bad = String(e.message); }

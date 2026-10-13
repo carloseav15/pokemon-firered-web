@@ -14,7 +14,7 @@ export const MILESTONES = ["rival", "bridge", "bill", "misty", "rocket"];
 /** Page-side helpers (string); evaluate after `prelude` (bagCount, names). */
 export const routeHelpers = `
   window.__logMark ??= 0;
-  const S = await H.mod("/src/fr/save.ts"), C = H.C;
+  const S = await H.mod("/src/games/firered/save.ts"), C = H.C;
   const flag = (n) => S.FlagGet(C[n]);
   const vr = (n) => S.VarGet(C[n]);
   const trainer = (n) => S.FlagGet(C.TRAINER_FLAGS_START + C[n]);

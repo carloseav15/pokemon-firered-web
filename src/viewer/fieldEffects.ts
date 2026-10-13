@@ -4,9 +4,9 @@ import { loadViewerEffectTemplates, type EffectTemplate, type EffectTemplateName
 import type { Direction } from "./render/sprites";
 import type { WorldGrid } from "./data/worldGrid";
 import type { PlayerVehicle } from "./state";
-import * as C from "../fr/generated/constants";
+import * as C from "../games/firered/generated/constants";
 import { BIKE_TRACK_TRANSITIONS, TRACK_ROW_WIDTH, TRACK_INDEX_OFFSET, TRACK_HOLD_TICKS, TRACK_END_TICK } from "./generated/trackEffects";
-import * as MB from "../fr/generated/metatileBehavior";
+import * as MB from "../games/firered/generated/metatileBehavior";
 
 export type EffectPhase = "spawn" | "begin" | "finish";
 export type GroundActor = Readonly<{ x: number; y: number; previousX: number; previousY: number; direction: Direction; previousDirection: Direction; landingJump: boolean; vehicle?: PlayerVehicle }>;

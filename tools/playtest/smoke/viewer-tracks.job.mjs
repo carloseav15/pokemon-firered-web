@@ -7,7 +7,7 @@ export default async function run(ctx) {
  await p.locator('#loading-overlay').waitFor({state:'hidden'});
  await p.evaluate(async()=>{const {ViewerFieldEffects}=await window.trackImport('/src/viewer/fieldEffects.ts');const o=ViewerFieldEffects.prototype.onGroundStep;ViewerFieldEffects.prototype.onGroundStep=function(...args){window.trackGrid=this.grid;return o.apply(this,args);};});
  await p.locator('#mode-explore-btn').click();await p.waitForFunction(()=>window.trackGrid);
- const start=await p.evaluate(async()=>{const C=await window.trackImport('/src/fr/generated/constants.ts');const g=window.trackGrid;for(let y=g.minY;y<g.minY+g.height;y++)for(let x=g.minX;x<g.minX+g.width;x++)if((g.behaviors[g.idx(x,y)]===C.MB_SAND||g.behaviors[g.idx(x,y)]===C.MB_SAND_CAVE)&&g.isWalkable(x,y,'walk')&&g.isWalkable(x+1,y,'walk')&&g.isWalkable(x,y,'bike')&&g.isWalkable(x+1,y,'bike'))return {x,y};throw Error('No real sand pair');});
+ const start=await p.evaluate(async()=>{const C=await window.trackImport('/src/games/firered/generated/constants.ts');const g=window.trackGrid;for(let y=g.minY;y<g.minY+g.height;y++)for(let x=g.minX;x<g.minX+g.width;x++)if((g.behaviors[g.idx(x,y)]===C.MB_SAND||g.behaviors[g.idx(x,y)]===C.MB_SAND_CAVE)&&g.isWalkable(x,y,'walk')&&g.isWalkable(x+1,y,'walk')&&g.isWalkable(x,y,'bike')&&g.isWalkable(x+1,y,'bike'))return {x,y};throw Error('No real sand pair');});
  await p.goto('about:blank');await p.goto(new URL(`viewer.html#modo=explore&px=${start.x}&py=${start.y}`,base).href);
  await p.locator('#loading-overlay').waitFor({state:'hidden'});
  await p.waitForFunction(()=>document.querySelector('#mode-explore-btn').classList.contains('active-mode'));

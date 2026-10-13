@@ -9,7 +9,7 @@
 //   texts expand it through StringCopy_Nickname; before the fix this hung StringExpandPlaceholders (page frozen).
 const body = (learnCase, fullNickname = false) => `
   const C = H.C, sv = frDebug.save.save, mon = sv.party[0];
-  const P = await H.mod("/src/fr/pokemon/pokemon.ts");
+  const P = await H.mod("/src/games/firered/pokemon/pokemon.ts");
   ${learnCase ? `
   if (!H.rom.species[C.SPECIES_KADABRA].learnset.some(([l, m]) => l === 16 && m === C.MOVE_CONFUSION)) throw new Error("no Confusion at 16 for Kadabra");
   mon.species = C.SPECIES_ABRA; // PREPARED

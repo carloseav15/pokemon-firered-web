@@ -6,7 +6,7 @@ Inputs:
   refs/emerald/systems.json    the 103 Emerald-only files grouped into 10 systems
   refs/emerald/summary.json    per-file counts (used as a cross-check)
   ../refs-src/pokeemerald/src  the pinned Emerald sources (function line spans)
-  src/fr                       the port (a function counts as ported when its name appears in a TS file with a real
+  src/games/firered                       the port (a function counts as ported when its name appears in a TS file with a real
                                body, the same rule as tools/portInventory.py: it measures names, not fidelity)
 
 Output: docs/EMERALD-FALTANTE.md (deterministic). Usage: python3 tools/emeraldGap.py [--check]
@@ -192,9 +192,9 @@ def main() -> None:
     w("# Qué falta portar de pokeemerald (análisis)")
     w("")
     w("Generado por `python3 tools/emeraldGap.py` (solo lectura: no toca `src/` ni `refs/`). No editar a mano.")
-    w(f"Fuente: pokeemerald `{json.loads((ROOT / 'refs/emerald/functions.json').read_text())['_meta']['commit'][:10]}` (`refs/emerald/`), inventario del port (`src/fr`) y las fuentes C de Emerald para medir cada función.")
+    w(f"Fuente: pokeemerald `{json.loads((ROOT / 'refs/emerald/functions.json').read_text())['_meta']['commit'][:10]}` (`refs/emerald/`), inventario del port (`src/games/firered`) y las fuentes C de Emerald para medir cada función.")
     w("")
-    w("**Cómo leer las cifras.** Una función cuenta como *en el port* si su nombre aparece en `src/fr` con cuerpo real (la misma regla de `tools/portInventory.py`): mide nombres, no fidelidad. *Idéntica* y *distinta* son comparaciones de texto entre Emerald y FireRed; una función idéntica puede leer constantes o estructuras distintas (ver `docs/SEPARACION-MOTOR.md` §2.1 y §2.3). Las líneas son líneas de C de cada función (de la firma a la llave de cierre). Las estimaciones de esfuerzo están en la sección 5 con sus supuestos.")
+    w("**Cómo leer las cifras.** Una función cuenta como *en el port* si su nombre aparece en `src/games/firered` con cuerpo real (la misma regla de `tools/portInventory.py`): mide nombres, no fidelidad. *Idéntica* y *distinta* son comparaciones de texto entre Emerald y FireRed; una función idéntica puede leer constantes o estructuras distintas (ver `docs/SEPARACION-MOTOR.md` §2.1 y §2.3). Las líneas son líneas de C de cada función (de la firma a la llave de cierre). Las estimaciones de esfuerzo están en la sección 5 con sus supuestos.")
     w("")
     # ---------- 1. summary
     w("## 1. Resumen")

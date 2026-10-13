@@ -1,8 +1,8 @@
 import { TILE, BIOME_TREES, BIOME_OCEAN, BIOME_MOUNTAIN } from "../constants";
-import type { TileRenderer } from "../../fr/field/tileRenderer";
+import type { TileRenderer } from "../../games/firered/field/tileRenderer";
 import type { KantoIndex } from "../types";
 import { composeMetatile } from "./metatile";
-import type { rom } from "../../fr/rom";
+import type { rom } from "../../games/firered/rom";
 
 export type FillSource = {
   info: KantoIndex["maps"][string];

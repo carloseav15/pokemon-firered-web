@@ -4,21 +4,21 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync, existsSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
-import * as C from '../../src/fr/generated/constants.ts';
-import { rom, type MapHeader } from '../../src/fr/rom.ts';
-import { save } from '../../src/fr/save.ts';
-import { loadFieldFx, FieldEffects } from '../../src/fr/field/fieldEffects.ts';
-import { ObjectEvent, ObjectManager, DIR_SOUTH } from '../../src/fr/field/objectEvents.ts';
-import { Overworld } from '../../src/fr/field/overworld.ts';
-import type { FieldMap } from '../../src/fr/field/fieldmap.ts';
+import { registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
+import { rom, type MapHeader } from '../../src/games/firered/rom.ts';
+import { save } from '../../src/games/firered/save.ts';
+import { loadFieldFx, FieldEffects } from '../../src/games/firered/field/fieldEffects.ts';
+import { ObjectEvent, ObjectManager, DIR_SOUTH } from '../../src/games/firered/field/objectEvents.ts';
+import { Overworld } from '../../src/games/firered/field/overworld.ts';
+import type { FieldMap } from '../../src/games/firered/field/fieldmap.ts';
 import {
   GetWildBattleTransition,
   GetTrainerBattleTransition,
   BattleTransitionScene,
-} from '../../src/fr/battle/transition.ts';
-import { createMon, type Pokemon } from '../../src/fr/pokemon/pokemon.ts';
-import { SpriteManager } from '../../src/fr/gba/sprite.ts';
+} from '../../src/games/firered/battle/transition.ts';
+import { createMon, type Pokemon } from '../../src/games/firered/pokemon/pokemon.ts';
+import { SpriteManager } from '../../src/games/firered/gba/sprite.ts';
 
 const root = process.cwd() + '/public';
 (globalThis as any).fetch = async (url: string) => {
@@ -57,7 +57,7 @@ assert.ok(existsSync(process.cwd() + '/public/fr/' + fieldfxRaw.emoticons.file),
 console.log('✓ fieldfx.json templates and assets verified');
 
 console.log('--- 1b. Testing field_effect_helpers functions presence & cdata ---');
-const helpers = await import('../../src/fr/field/fieldEffectHelpers.ts');
+const helpers = await import('../../src/games/firered/field/fieldEffectHelpers.ts');
 assert.equal(typeof helpers.SetUpReflection, 'function');
 // The connected FldEff_* live as FieldEffects methods (fieldEffects.ts), not as
 // helpers-module functions (see TAREAS-FINALES.md 1.5/1.11).

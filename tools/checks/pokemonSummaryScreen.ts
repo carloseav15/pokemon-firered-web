@@ -4,19 +4,19 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/fr/hw/assets.ts';
-import { rom } from '../../src/fr/rom.ts';
-import * as C from '../../src/fr/generated/constants.ts';
+import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import { rom } from '../../src/games/firered/rom.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
 import {
   GetLastViewedMonIndex,
   GetMoveSlotToReplace,
   PokemonSummaryScreenMode,
-} from '../../src/fr/pokemonSummaryScreen.ts';
-import { createMon, speciesName, type Pokemon } from '../../src/fr/pokemon/pokemon.ts';
-import { GetMonData, type Mon } from '../../src/fr/pokemon/mon.ts';
-import { itemName } from '../../src/fr/pokemon/items.ts';
-import { isHMMove } from '../../src/fr/menus/monProgress.ts';
-import { decode } from '../../src/fr/gba/charmap.ts';
+} from '../../src/games/firered/pokemonSummaryScreen.ts';
+import { createMon, speciesName, type Pokemon } from '../../src/games/firered/pokemon/pokemon.ts';
+import { GetMonData, type Mon } from '../../src/games/firered/pokemon/mon.ts';
+import { itemName } from '../../src/games/firered/pokemon/items.ts';
+import { isHMMove } from '../../src/games/firered/menus/monProgress.ts';
+import { decode } from '../../src/games/firered/gba/charmap.ts';
 
 const root = process.cwd() + '/public/fr/';
 

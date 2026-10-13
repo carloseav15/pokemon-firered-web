@@ -6,7 +6,7 @@ export default async function run(ctx) {
   const initial = await ctx.loadSave("forest-sammy");
   if (initial.map !== "MAP_VIRIDIAN_FOREST") throw new Error(`unexpected checkpoint: ${JSON.stringify(initial)}`);
   const result = await ctx.runEval(`${prelude}
-    const C = await H.mod("/src/fr/generated/constants.ts");
+    const C = await H.mod("/src/games/firered/generated/constants.ts");
     const money0 = sv.money, hp0 = sv.party[0].hp, max = sv.party[0].stats[0];
     const GROWL = sv.party[0].moves.indexOf(C.MOVE_GROWL);
     if (GROWL < 0 || hp0 >= max) throw new Error("fixture changed: " + JSON.stringify({ moves: sv.party[0].moves, hp0, max }));

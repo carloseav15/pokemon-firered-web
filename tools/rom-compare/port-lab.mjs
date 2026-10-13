@@ -17,7 +17,7 @@ p.on("response", r => { if (r.status() >= 400) errs.push("http" + r.status() + "
 await p.goto(new URL("tools/playtest/replay.html", process.env.BASE ?? "http://localhost:5197/").href);
 await p.waitForFunction(() => !!window.frReplay, undefined, { polling: 100, timeout: 60000 });
 await p.evaluate(async ({ TIMERS }) => {
-  const { launchFireRed } = await import("/src/fr/boot.ts");
+  const { launchFireRed } = await import("/src/games/firered/boot.ts");
   await launchFireRed({ mode: "new", playerName: "AAAAAAA", gender: 0, rivalName: "AAAAAAA", test: { timer1Low: TIMERS[0] } });
   window.__sleep = ms => new Promise(r => setTimeout(r, ms));
 }, { TIMERS });

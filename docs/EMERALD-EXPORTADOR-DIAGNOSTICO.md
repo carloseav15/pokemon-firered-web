@@ -8,7 +8,7 @@ se escribe. Es un diagnóstico: cada «parche» de abajo se aplicó solo a la co
 ## 1. Línea base de FireRed
 
 `python3 tools/decomp/export.py` completo: unos 3 min y **0 archivos cambiados** en `git status` de `public/fr` (3.290 archivos
-versionados) y `src/fr/generated` (7). Es decir, la regeneración actual de FireRed es reproducible, y git sirve de línea base
+versionados) y `src/games/firered/generated` (7). Es decir, la regeneración actual de FireRed es reproducible, y git sirve de línea base
 para cualquier cambio del exportador.
 
 ## 2. Resultado
@@ -30,7 +30,7 @@ Pasos de `export.py`: `setup constants scripts battlescripts maps tilesets objec
 | incbin | «OK» (97 s) pero con varios ficheros inexistentes (p. ej. `sootopolis/anim/stormy_water/3..7_kyogre.4bpp`); no se contaron todos | sin repetir |
 | cdata | **tiempo agotado (900 s)**; FireRed tarda 38 s. Causa **sin diagnosticar** | sin repetir |
 | tsconst | falla (en cascada) | **falla tras 802 s**: no se genera el ejecutable `tsconst_probe`; causa sin diagnosticar |
-| structs | falla por un artefacto de la copia (no existía `src/fr/generated`, que el exportador no crea); no es un hallazgo de Emerald | **OK**: 25 structs (FireRed: 27); faltan `PokedudeBattlerState` y `MultiBattlePokemonTx` |
+| structs | falla por un artefacto de la copia (no existía `src/games/firered/generated`, que el exportador no crea); no es un hallazgo de Emerald | **OK**: 25 structs (FireRed: 27); faltan `PokedudeBattlerState` y `MultiBattlePokemonTx` |
 | audio | falla (en cascada) | «OK» con **songs=0, midis=0, groups=0, samples=0** (cries=386): no extrajo canciones, causa sin diagnosticar |
 
 Resumen: con los 4 cambios pasan 4 de 15 pasos (`setup`, `constants`, `codegen`, `structs`; este último con el directorio de salida creado a mano); `audio` y `incbin` terminan pero
@@ -74,11 +74,11 @@ Hecho en el exportador (`tools/decomp/`), con FireRed por defecto:
 
 - **Selector de juego** `EXPORT_GAME=firered|emerald` en `common.py`. Cada juego tiene su checkout (`POKEFIRERED`/`POKEEMERALD`, o
   `../refs-src/pokeemerald`), su build (`.decomp-build` / `.decomp-build/emerald`), sus datos (`public/fr` / `public/emerald`) y su
-  TS generado (`src/fr/generated` / `src/games/emerald/generated`), más el modo de `mapjson`, los defines y las rutas de inclusión extra.
+  TS generado (`src/games/firered/generated` / `src/games/emerald/generated`), más el modo de `mapjson`, los defines y las rutas de inclusión extra.
 - `step_setup.py` usa el modo de `mapjson` del juego; las entradas `jsonproc` que no existan se saltan **solo** si el juego no es
   FireRed (aviso en pantalla). `step_codegen/structs/tsconst.py` escriben en el directorio del juego (y lo crean); `step_scripts.py`
   usa `.set <JUEGO>` y las rutas de inclusión extra; `export.py` muestra el juego.
-- **FireRed regenerada con estos cambios: 0 archivos cambiados** (dos veces, 3 min cada una) en `public/fr` y `src/fr/generated`.
+- **FireRed regenerada con estos cambios: 0 archivos cambiados** (dos veces, 3 min cada una) en `public/fr` y `src/games/firered/generated`.
 - `tools/refs/sources.json`: la lista parcial de pokeemerald incluye ahora `/data/ /graphics/ /sound/ /asm/ /constants/ /charmap.txt
   /tools/jsonproc/ /tools/mapjson/ /tools/preproc/`. `npm run refs:fetch -- pokeemerald` y `npm run refs:check` pasan. Faltaba
   también `/constants/` (5 archivos, 30 KB): `data/event_scripts.s` hace `.include "constants/constants.inc"`. Revisado todo el
@@ -89,7 +89,7 @@ Con `EXPORT_GAME=emerald` y la configuración real (no la copia): `setup`, `cons
 ## 7. Avance posterior (2026-10-08): los 15 pasos terminan para Emerald
 
 `EXPORT_GAME=emerald python3 tools/decomp/export.py <paso>`; tras cada cambio FireRed se regeneró con **0 archivos cambiados**
-(`public/fr`, `src/fr/generated`).
+(`public/fr`, `src/games/firered/generated`).
 
 | Paso | Estado | Resultado / qué se adaptó |
 |---|---|---|
@@ -117,7 +117,7 @@ tienen `itemId = ITEM_NONE` en el propio C), Pokédex `pokedex_text.h`, aprendiz
 `gTutorMoves`, menús de `data/script_menu.h` (`MULTI_*`), y `extract_definition()` ya no toma como definición un fragmento
 de comentario. En Emerald `script_menu.json` tiene `stdStrings` y `textColors` a `null` (no existen).
 
-Ejecución completa `EXPORT_GAME=emerald python3 tools/decomp/export.py`: los 15 pasos terminan sin errores (incbin 146 s, cdata 67 s, tsconst 62 s). FireRed regenerada tras cada cambio: 0 archivos cambiados en `public/fr` y `src/fr/generated`. Sigue pendiente la validación de los datos de Emerald contra la ROM o el motor; las salidas parciales no se versionan.
+Ejecución completa `EXPORT_GAME=emerald python3 tools/decomp/export.py`: los 15 pasos terminan sin errores (incbin 146 s, cdata 67 s, tsconst 62 s). FireRed regenerada tras cada cambio: 0 archivos cambiados en `public/fr` y `src/games/firered/generated`. Sigue pendiente la validación de los datos de Emerald contra la ROM o el motor; las salidas parciales no se versionan.
 
 ## 8. Validación cruzada de los datos exportados (2026-10-08)
 
@@ -187,17 +187,17 @@ datos reales caben todos: capa 0 = 9.749 metatiles, capa 1 = 8.538, capa 2 = 31.
 no los de FireRed: hace falta `src/games/emerald/generated/metatileBehavior.ts`. El validador recalcula `attributes32` desde los `.bin`.
 FireRed no cambia (la rama solo se ejecuta si el atributo no es de 32 bits).
 
-**Clima.** Hay dos mecanismos. (1) El clima de la cabecera de cada mapa (`weather`), ya leído por `src/fr/field/weather.ts`, que contiene
+**Clima.** Hay dos mecanismos. (1) El clima de la cabecera de cada mapa (`weather`), ya leído por `src/games/firered/field/weather.ts`, que contiene
 todos los tipos de Emerald, incluidos sequía, diluvio y los ciclos de las rutas 119 y 123. En los 518 mapas: sin clima 428, soleado 51,
 burbujas submarinas 14, sombra 14, niebla horizontal 10, ceniza 1. (2) Los 86 eventos de coordenada de tipo `weather` (un cambio de clima
 al pisar una casilla): soleado 34, ciclo ruta 119 12, ciclo ruta 123 12, nubes 12, ceniza 12, lluvia 4. Se exportan como
 `{"type": "weather", x, y, elevation, weather}` en `coords` de cada mapa y el validador comprueba los 86 contra los `map.json`. Falta el
-consumidor: `src/fr/field/coordEventWeather.ts` tiene los 13 manejadores vacíos (así es FireRed, "it's always sunny in Viridian"), y en
+consumidor: `src/games/firered/field/coordEventWeather.ts` tiene los 13 manejadores vacíos (así es FireRed, "it's always sunny in Viridian"), y en
 `src/coord_event_weather.c` de Emerald cada uno llama a `SetWeather(WEATHER_X)`; `DoCoordEventWeather` se invoca desde
 `field_control_avatar.c`.
 
 **Voces de audio.** Emerald añade un solo tipo, `voice_directsound_reverse` (2 voces en `rs_sfx_2`; el byte de tipo es 0x10). El reproductor
-`src/fr/audio/m4a.ts` ya tiene búfer invertido para los gritos, pero `envelopePlan` (línea 119) solo trata como directas
+`src/games/firered/audio/m4a.ts` ya tiene búfer invertido para los gritos, pero `envelopePlan` (línea 119) solo trata como directas
 `voice_directsound`, `_no_resample` y `_alt`, y la reproducción de voces no invierte la muestra. Cambio necesario: incluir el tipo nuevo en
 esa rama y reproducir el búfer invertido.
 
@@ -224,9 +224,9 @@ Diferencias de configuración por juego (`GAME_CONFIG`): gráficos de obstáculo
 **Paso 2: el visor abre Hoenn** (`/viewer.html?game=emerald`, o el selector Kanto/Hoenn de la barra). Solo lectura: mapa, capas, fichas,
 búsqueda y minimapa. Cambios en código compartido, todos con FireRed como valor por omisión:
 
-- `src/fr/field/fieldmap.ts`: `NUM_METATILES_IN_PRIMARY`, `NUM_TILES_IN_PRIMARY` y el nuevo `NUM_PALS_IN_PRIMARY` son enlaces vivos con
+- `src/games/firered/field/fieldmap.ts`: `NUM_METATILES_IN_PRIMARY`, `NUM_TILES_IN_PRIMARY` y el nuevo `NUM_PALS_IN_PRIMARY` son enlaces vivos con
   perfiles `firered` (640/640/7) y `emerald` (512/512/6); `SetTilesetProfile(nombre)` los cambia. `tileRenderer.ts` usa los vivos.
-- `src/fr/rom.ts`: `DATA_ROOT` es mutable (`setDataRoot`) y `loadTileset` prefiere `attributes32` si el tileset lo trae (solo Emerald).
+- `src/games/firered/rom.ts`: `DATA_ROOT` es mutable (`setDataRoot`) y `loadTileset` prefiere `attributes32` si el tileset lo trae (solo Emerald).
 - `src/viewer/main.ts`: `GAME` desde `?game=`, predicados de comportamiento por juego, índice `hoenn.json`, selector. En Hoenn no hay avatar,
   sprites de NPC, música, efectos de campo ni animación de tiles (sus gráficos y audio son de FireRed).
 - `src/games/emerald/generated/metatileBehavior.ts` pasa a estar versionado (es lo único de `src/games` que se importa).
@@ -243,7 +243,7 @@ personajes (entrenadores, NPC, árboles, rocas) se muestran fijos en modo visor 
 544 objetos de los 49 mapas, 73 se resuelven; `OBJ_EVENT_GFX_VAR_0` y `_3` (dependen de la partida) usan una mujer genérica y la planta de bayas
 (sin hoja) tampoco se dibuja. Comprobado en el navegador: 7 personajes de Pueblo Raíz con hojas de 144×32; Kanto conserva sus rutas `/fr/`.
 
-**Música de Hoenn en el visor.** `src/fr/audio/m4a.ts` calculaba `AUDIO_ROOT` una sola vez al importar (siempre `/fr/audio`); ahora se
+**Música de Hoenn en el visor.** `src/games/firered/audio/m4a.ts` calculaba `AUDIO_ROOT` una sola vez al importar (siempre `/fr/audio`); ahora se
 resuelve en cada uso (`audioRoot()`), de modo que con la raíz de datos `/emerald` carga `songs.json`, `voicegroups.json`, `samples.json`,
 `cries.json`, `keysplit_tables.json` y los `.mid` de Emerald. Los `music` del índice de Hoenn coinciden con los `id` de `songs.json` (48 de
 49 mapas; `MAP_ROUTE118` usa el valor especial `0x7FFF` de `MUS_ROUTE118`, que en el juego elige entre dos pistas según la posición

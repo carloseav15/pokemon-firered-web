@@ -11,7 +11,7 @@ export default async function run(ctx) {
       money: frDebug.save.save.money,
       pos: { ...frDebug.save.save.pos },
       party: frDebug.save.save.party.map(p => [p.species, p.level, p.hp]),
-      saveStat: frDebug.save.save.gameStats[${(await import("../../../src/fr/generated/constants.ts")).GAME_STAT_SAVED_GAME}],
+      saveStat: frDebug.save.save.gameStats[${(await import("../../../src/games/firered/generated/constants.ts")).GAME_STAT_SAVED_GAME}],
     }`);
 
     // Pewter has Pokédex, Pokémon, Bag, Trainer, Save in that order.
@@ -33,7 +33,7 @@ export default async function run(ctx) {
       money: frDebug.save.save.money,
       pos: { ...frDebug.save.save.pos },
       party: frDebug.save.save.party.map(p => [p.species, p.level, p.hp]),
-      saveStat: frDebug.save.save.gameStats[${(await import("../../../src/fr/generated/constants.ts")).GAME_STAT_SAVED_GAME}],
+      saveStat: frDebug.save.save.gameStats[${(await import("../../../src/games/firered/generated/constants.ts")).GAME_STAT_SAVED_GAME}],
       raw: localStorage.getItem("${SAVE_KEY}"),
     }`);
     if (!written.raw || written.saveStat <= before.saveStat) throw new Error(`in-game save did not update storage/save statistic: ${JSON.stringify({ saveStat: written.saveStat, state: written.pos })}`);

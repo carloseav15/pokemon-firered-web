@@ -61,7 +61,7 @@ El inventario mide nombres, no fidelidad.
   No es obligatorio ampliar Clang ni analizar tres archivos en cada tanda.
 - Conserva nombres C, estados, callbacks, frames, anchos/signo, división entera,
   alias y layout GBA. No supongas que el ABI de macOS coincide con GBA.
-- Los datos salen del decomp. No edites `src/fr/generated/` ni `public/fr/` a mano:
+- Los datos salen del decomp. No edites `src/games/firered/generated/` ni `public/fr/` a mano:
   modifica `tools/decomp/` y regenera. Usa `C.NOMBRE` para constantes literales.
 - El generador rechaza patrones no soportados con archivo, función y motivo.
   No emitas stubs ni aproximaciones para hacer compilar. Conserva procedencia y

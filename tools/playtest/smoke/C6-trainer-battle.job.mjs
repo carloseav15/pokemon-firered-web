@@ -3,7 +3,7 @@
 import { prelude } from "./lib.mjs";
 
 const helpers = `${prelude}
-  const C = await H.mod("/src/fr/generated/constants.ts");
+  const C = await H.mod("/src/games/firered/generated/constants.ts");
   const fail = (m, extra = {}) => { throw new Error(m + " " + JSON.stringify({ cb2: H.cb2(), tasks: names(), ...extra })); };
 `;
 

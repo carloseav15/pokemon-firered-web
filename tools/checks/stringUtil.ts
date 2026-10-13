@@ -39,11 +39,11 @@ import {
   STR_CONV_MODE_RIGHT_ALIGN,
   STR_CONV_MODE_LEADING_ZEROS,
   LANGUAGE_JAPANESE,
-} from "../../src/fr/generated/stringUtil.ts";
-import { rom } from "../../src/fr/rom.ts";
-import { expandPlaceholders } from "../../src/fr/gba/charmap.ts";
-import { bindSaveBlockReader, stringVars, type SaveBlocks } from "../../src/fr/gba/stringBuffers.ts";
-import { newSaveData, save, setSave } from "../../src/fr/save.ts";
+} from "../../src/games/firered/generated/stringUtil.ts";
+import { rom } from "../../src/games/firered/rom.ts";
+import { expandPlaceholders } from "../../src/games/firered/gba/charmap.ts";
+import { bindSaveBlockReader, stringVars, type SaveBlocks } from "../../src/games/firered/gba/stringBuffers.ts";
+import { newSaveData, save, setSave } from "../../src/games/firered/save.ts";
 
 let compared = 0;
 
@@ -380,7 +380,7 @@ try {
     "import sys; sys.path.insert(0, \"tools/decomp\")\n" +
     "import clang_codegen\n" +
     "from pathlib import Path\n" +
-    "current = Path(\"src/fr/generated/stringUtil.ts\").read_text()\n" +
+    "current = Path(\"src/games/firered/generated/stringUtil.ts\").read_text()\n" +
     "generated = clang_codegen.generate_string_util_ts()\n" +
     "assert current == generated, \"Regeneration diff detected!\"\n" +
     "print(\"DETERMINISTIC\")\n" +

@@ -1,6 +1,6 @@
-// TS side of the oracle: bundle the real src/fr modules with esbuild and let an
+// TS side of the oracle: bundle the real src/games/firered modules with esbuild and let an
 // esbuild plugin append `export { fn as __o_fn }` / state accessors to the
-// target modules IN MEMORY, so src/fr is never edited to expose internals.
+// target modules IN MEMORY, so src/games/firered is never edited to expose internals.
 import esbuild from "esbuild";
 import { readFileSync, mkdirSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -29,8 +29,8 @@ export async function bundleTs(specs, tag = "run") {
   const files = [...targets.keys()];
   const entry = [
     `import ${JSON.stringify(path.join(ROOT, "tools/checks/setupNodeGbaMock.ts"))};`,
-    `import * as assets from ${JSON.stringify(path.join(ROOT, "src/fr/hw/assets.ts"))};`,
-    `import { rom } from ${JSON.stringify(path.join(ROOT, "src/fr/rom.ts"))};`,
+    `import * as assets from ${JSON.stringify(path.join(ROOT, "src/games/firered/hw/assets.ts"))};`,
+    `import { rom } from ${JSON.stringify(path.join(ROOT, "src/games/firered/rom.ts"))};`,
     ...files.map((f, i) => `import * as m${i} from ${JSON.stringify(f)};`),
     `export { assets, rom };`,
     `export const mods = { ${files.map((f, i) => `${JSON.stringify(f)}: m${i}`).join(", ")} };`,

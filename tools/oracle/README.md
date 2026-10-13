@@ -1,12 +1,12 @@
 # Differential oracle (proof of concept)
 
-Compares a pokefirered C function, compiled to wasm32, with the real TypeScript in `src/fr`
+Compares a pokefirered C function, compiled to wasm32, with the real TypeScript in `src/games/firered`
 on the same inputs. **Opt-in**: nothing here is wired to `check:port`, `npm test`, the normal
-checks or CI, and nothing here edits `src/fr` or the decomp tree.
+checks or CI, and nothing here edits `src/games/firered` or the decomp tree.
 
 ```text
 same inputs ─┬─> pokefirered C  ─ clang --target=wasm32 ─> wasm ─┐
-             └─> real src/fr TS ─ esbuild bundle (+expose) ──────┴─> compare ─> MATCH_OBSERVED | NEEDS_TRIAGE
+             └─> real src/games/firered TS ─ esbuild bundle (+expose) ──────┴─> compare ─> MATCH_OBSERVED | NEEDS_TRIAGE
 ```
 
 ## What it is not
@@ -80,7 +80,7 @@ identifier, and, when relevant, realistic ranges with evidence, a `setup` for da
 ## ByteStruct adapter (group D)
 
 For a function whose state is a C struct global mirrored by a binary-compatible TS `ByteStruct`
-(`src/fr/generated/structs.ts`): the initial state is written as **raw bytes** to the C global (defined by an appended
+(`src/games/firered/generated/structs.ts`): the initial state is written as **raw bytes** to the C global (defined by an appended
 `struct X gName[N];`, or `struct X storage; struct X *gName` plus an appended init function for pointer globals) and to
 the TS instances, both sides run, and **all struct bytes** are compared afterwards. A mismatch names the element, byte
 offset, member, and the C and TS bytes. Before any call the layout is checked: `sizeof` and every member's bit range from
@@ -111,4 +111,4 @@ TypeScript variants with the C/wasm reference: the generator **before** the INT 
 never edited), the **current** `tools/decomp` generator, and (for the ten original controls) hand-fixed TS. `expect` pins only the
 current generator: it must reach `MATCH_OBSERVED`, except division/modulo controls, which may differ only in `c-trap` clusters
 (wasm traps on `b == 0` and `INT_MIN / -1`). Run `node tools/oracle/run.mjs --group controls,real`; the three-way table is in
-`REPORT.generated.md`. `baseline/stringUtil.before_int.ts` is the previous `src/fr/generated/stringUtil.ts`, kept for diffing.
+`REPORT.generated.md`. `baseline/stringUtil.before_int.ts` is the previous `src/games/firered/generated/stringUtil.ts`, kept for diffing.

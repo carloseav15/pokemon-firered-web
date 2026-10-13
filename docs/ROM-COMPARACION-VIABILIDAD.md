@@ -46,7 +46,7 @@ máquina señala dónde empieza a diferir y solo se lee el C de esa zona.
 ### 3.3 Determinismo: **viable con trabajo**
 - En emulador, mismas teclas + misma ROM + mismo punto de partida da la misma ejecución.
 - La semilla inicial viene de los temporizadores hardware. El port ya recibe ese valor como
-  parámetro (`SeedRngAndSetTrainerId(timer1Low)`, `src/fr/random.ts:28`), así que el
+  parámetro (`SeedRngAndSetTrainerId(timer1Low)`, `src/games/firered/random.ts:28`), así que el
   mecanismo es: fijar el mismo valor en ambos lados (escribir `gRngValue` / el estado de
   semilla en la ROM con Lua en un fotograma acordado, o dejar que ambos corran y registrar
   el valor de timer que usó el emulador).
@@ -162,7 +162,7 @@ arranque de una en una y vuelca el estado del LCG).
 - Port, intro: tras 2.400 fotogramas de `frStartupStep`, el estado del LCG sigue en `00000000`.
 - Port, juego (partida nueva, `frDebug.run(1)`): el estado del LCG no cambia en fotogramas
   en reposo (6 fotogramas medidos; `hardware.vblankCounter2` también queda en 0).
-- `src/fr/hw/runtime.ts:147` `VBlankIntr` omite `Random()` (y `m4aSoundMain`,
+- `src/games/firered/hw/runtime.ts:147` `VBlankIntr` omite `Random()` (y `m4aSoundMain`,
   `TryReceiveLinkBattleData`, `UpdateWirelessStatusIndicatorSprite`, que viven en otro sitio o
   no aplican).
 - Consecuencia: en la ROM el resultado de cualquier tirada (encuentros, golpes críticos,
@@ -265,7 +265,7 @@ del overworld:
 `MainState_Exit` llama a `SeedRngAndSetTrainerId()` al salir. La ROM **resiembra** el LCG y la
 mitad baja del Trainer ID con el valor de Timer1 (aquí `0xbd99`, no la semilla del título
 `0x3649`). El port no lo hacía: conservaba la semilla del título. Corregido en
-`src/fr/namingScreen.ts`; el Trainer ID bajo ya coincide. `check:all` 45 PASS, 0 regresiones.
+`src/games/firered/namingScreen.ts`; el Trainer ID bajo ya coincide. `check:all` 45 PASS, 0 regresiones.
 
 ### Diferencias que quedan, y por qué no se tratan como errores
 Mitad alta del Trainer ID y RNG dependen del número de fotogramas entre la resiembra y

@@ -1,7 +1,7 @@
 // Headless check for script.c parity (context, RAM scripts, Quest Log input)
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
-import { save } from "../../src/fr/save.ts";
+import { save } from "../../src/games/firered/save.ts";
 import {
   ClearRamScript,
   InitRamScript,
@@ -18,7 +18,7 @@ import {
   GetRegisteredQuestLogInput,
   setRamScriptRetAddr,
   gRamScriptRetAddr,
-} from "../../src/fr/script/context.ts";
+} from "../../src/games/firered/script/context.ts";
 
 // =========================================================================
 // 1. Quest Log Input Tracking

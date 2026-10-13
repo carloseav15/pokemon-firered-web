@@ -1,8 +1,8 @@
 // Headless check for wonder_news.c (Wonder News reward tracking and distribution).
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
-import * as C from "../../src/fr/generated/constants.ts";
-import { flagClear, flagSet, GetVarPointer, save, varGet, varSet } from "../../src/fr/save.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { flagClear, flagSet, GetVarPointer, save, varGet, varSet } from "../../src/games/firered/save.ts";
 import {
   WonderNews_SetReward,
   WonderNews_Reset,
@@ -13,7 +13,7 @@ import {
   IncrementSentRewardCounter,
   IncrementRewardCounter,
   GetRewardType,
-} from "../../src/fr/wonderNews.ts";
+} from "../../src/games/firered/wonderNews.ts";
 import {
   GetSavedWonderNewsMetadata,
   SaveWonderNews,
@@ -21,7 +21,7 @@ import {
   ValidateWonderNews,
   ClearSavedWonderNews,
   type WonderNews,
-} from "../../src/fr/mysteryGift.ts";
+} from "../../src/games/firered/mysteryGift.ts";
 
 console.log("Checking wonder_news.c headless logic...");
 

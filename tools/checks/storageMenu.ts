@@ -4,10 +4,10 @@
 import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { registerCData } from '../../src/fr/hw/assets.ts';
-import { save } from '../../src/fr/save.ts';
-import { rom } from '../../src/fr/rom.ts';
-import * as StorageMenu from '../../src/fr/menus/storageMenu.ts';
+import { registerCData } from '../../src/games/firered/hw/assets.ts';
+import { save } from '../../src/games/firered/save.ts';
+import { rom } from '../../src/games/firered/rom.ts';
+import * as StorageMenu from '../../src/games/firered/menus/storageMenu.ts';
 
 const root = process.cwd() + '/public/fr/';
 rom.charmap = JSON.parse(readFileSync(root + 'charmap.json', 'utf8'));

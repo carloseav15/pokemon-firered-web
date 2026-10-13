@@ -100,7 +100,7 @@ export function recordMismatch(rec, spec, cluster, example) {
 
 export function tsFn(ctx, impl) {
   if (impl.build) return { fn: impl.build(ctx) }; // deliberately wrong variants (detector checks)
-  if (impl.mjs) { // hand-loaded module (controls); not part of src/fr
+  if (impl.mjs) { // hand-loaded module (controls); not part of src/games/firered
     const mod = ctx.loaded[impl.mjs];
     if (impl.makeName) return { fresh: () => mod[impl.makeName]() };
     return { fn: mod[impl.name] };

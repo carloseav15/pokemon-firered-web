@@ -3,8 +3,8 @@
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { GetBattleInterfaceGfxPtr } from "../../src/fr/generated/incbinRowAccessors.ts";
-import { incbin, registerIncbinIndex, registerPack } from "../../src/fr/hw/assets.ts";
+import { GetBattleInterfaceGfxPtr } from "../../src/games/firered/generated/incbinRowAccessors.ts";
+import { incbin, registerIncbinIndex, registerPack } from "../../src/games/firered/hw/assets.ts";
 
 const index = JSON.parse(readFileSync("public/fr/incbin/index.json", "utf8")) as {
   packs: Record<string, number>;
@@ -30,8 +30,8 @@ for (const input of cResults.inputs) {
   assert.deepEqual(ptr.buf, packBytes.subarray(offset, offset + size), `C INCBIN bytes for element ${input}`);
 }
 
-const source = readFileSync("src/fr/battle/interface.ts", "utf8");
+const source = readFileSync("src/games/firered/battle/interface.ts", "utf8");
 assert.match(source, /const ptr = GetBattleInterfaceGfxPtr\(elementId\);\s*return \{ buf: ptr\.buf, off: ptr\.off \+ byteOffset \};/);
-const preload = readFileSync("src/fr/battle/preload.ts", "utf8");
+const preload = readFileSync("src/games/firered/battle/preload.ts", "utf8");
 assert.match(preload, /"graphics_battle_interface"/, "active battle preload must load the INCBIN pack");
 console.log(`GetBattleInterfaceGfxPtr: ${cResults.inputs.length} C row pointer cases and active battle-interface pack/caller checks passed`);

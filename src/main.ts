@@ -1,6 +1,6 @@
 import "./styles.css";
-import { launchFireRed } from "./fr/boot";
-import { launchStartup } from "./fr/startup";
+import { launchFireRed } from "./games/firered/boot";
+import { launchStartup } from "./games/firered/startup";
 
 // ?fr=new / ?fr=continue / ?fr=sandbox skip the intro and boot the FireRed engine directly.
 const direct = new URLSearchParams(location.search).get("fr");

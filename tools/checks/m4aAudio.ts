@@ -2,7 +2,7 @@
 // Run: npm run check:m4a
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import * as C from "../../src/fr/generated/constants.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
 import {
   chorusDetuneCents,
   cryModeParams,
@@ -13,7 +13,7 @@ import {
   pickCrySlot,
   resolveVoice,
   type KeysplitTable,
-} from "../../src/fr/audio/m4a.ts";
+} from "../../src/games/firered/audio/m4a.ts";
 
 const root = process.cwd() + "/public/fr/audio/";
 const groups = JSON.parse(readFileSync(root + "voicegroups.json", "utf8")).groups as Record<string, any[]>;

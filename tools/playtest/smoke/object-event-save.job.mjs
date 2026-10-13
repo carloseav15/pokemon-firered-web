@@ -50,7 +50,7 @@ export default async function run(ctx) {
   await ctx.page.waitForFunction(()=>window.frDebug&&window.frGame);
   const continued = await ctx.runEval(`
     const {H}=await import('/tools/playtest/driver.js');window.H=H;await H.init();
-    const Q=await H.mod('/src/fr/questLogEvents.ts');
+    const Q=await H.mod('/src/games/firered/questLogEvents.ts');
     const observed=[];
     for(let f=0;f<18000;f+=20) {
       if(!observed.includes(Q.gQuestLogState))observed.push(Q.gQuestLogState);

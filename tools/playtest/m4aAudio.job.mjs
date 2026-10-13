@@ -5,7 +5,7 @@ const SAMPLE_RATE = 44100;
 
 async function render(ctx, seconds, build) {
   return ctx.runEval(`
-    const M = await window.H.mod("/src/fr/audio/m4a.ts");
+    const M = await window.H.mod("/src/games/firered/audio/m4a.ts");
     const off = new OfflineAudioContext(1, Math.floor(${SAMPLE_RATE} * ${seconds}), ${SAMPLE_RATE});
     await (${build})(M, off);
     const d = (await off.startRendering()).getChannelData(0);
@@ -47,7 +47,7 @@ export default async function run(ctx) {
   const sweep = await render(ctx, 0.5, noteBuilder({ note: 48, sweep: 0x11 }));
 
   const reverbEnergy = await ctx.runEval(`
-    const M = await window.H.mod("/src/fr/audio/m4a.ts");
+    const M = await window.H.mod("/src/games/firered/audio/m4a.ts");
     const off = new OfflineAudioContext(1, ${SAMPLE_RATE}, ${SAMPLE_RATE});
     const send = M.buildReverbSend(off, 50);
     const src = off.createBufferSource();
@@ -61,7 +61,7 @@ export default async function run(ctx) {
   `);
 
   const keysplit = await ctx.runEval(`
-    const M = await window.H.mod("/src/fr/audio/m4a.ts");
+    const M = await window.H.mod("/src/games/firered/audio/m4a.ts");
     const [voiceData, tableData] = await Promise.all([
       fetch("/fr/audio/voicegroups.json").then((r) => r.json()),
       fetch("/fr/audio/keysplit_tables.json").then((r) => r.json()),
@@ -71,7 +71,7 @@ export default async function run(ctx) {
   `);
 
   const cry = await ctx.runEval(`
-    const M = await window.H.mod("/src/fr/audio/m4a.ts");
+    const M = await window.H.mod("/src/games/firered/audio/m4a.ts");
     const backend = new M.M4aBackend();
     backend.ctx = new OfflineAudioContext(1, ${SAMPLE_RATE} * 3, ${SAMPLE_RATE});
     backend.out = backend.ctx.createGain(); backend.out.connect(backend.ctx.destination);

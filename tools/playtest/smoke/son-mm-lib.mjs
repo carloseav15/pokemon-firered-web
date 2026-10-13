@@ -40,7 +40,7 @@ export async function runJob(ctx, body, { maxFrames = 150000, timeoutMs = 110000
 /** Page-side helpers (string) shared by the route job and the harness. */
 export const helpers = `
   window.__logMark ??= 0;
-  const S = await H.mod("/src/fr/save.ts"), C = H.C;
+  const S = await H.mod("/src/games/firered/save.ts"), C = H.C;
   const flag = (n) => S.FlagGet(C[n]);
   const status = () => ({
     st: { map: H.st().map, x: H.st().x, y: H.st().y, free: H.fieldFree() },

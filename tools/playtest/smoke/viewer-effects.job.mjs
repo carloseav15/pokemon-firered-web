@@ -9,7 +9,7 @@ export default async function run(ctx) {
     const {WorldGrid}=await load('/src/viewer/data/worldGrid.ts');
     const {installFieldFxRenderer}=await load('/src/viewer/render/fieldFx.ts');
     const {GBA_FRAME_MS}=await load('/src/viewer/constants.ts');
-    const C=await load('/src/fr/generated/constants.ts');
+    const C=await load('/src/games/firered/generated/constants.ts');
     let callback=null, now=0;
     const clock=new ViewerClock({request:cb=>{callback=cb;return 1;},cancel:()=>{callback=null;}});
     const grid=new WorldGrid(4,1,0,0);grid.behaviors[0]=C.MB_TALL_GRASS;

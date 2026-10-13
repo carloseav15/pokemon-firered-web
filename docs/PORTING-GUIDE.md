@@ -20,8 +20,8 @@ el decomp.
 ## 2. Mapa del repositorio
 
 ```text
-src/main.ts                 entrada → src/fr/startup.ts
-src/fr/hw/                  "hardware" GBA y librerías base del juego
+src/main.ts                 entrada → src/games/firered/startup.ts
+src/games/firered/hw/                  "hardware" GBA y librerías base del juego
   runtime.ts                gMain, SetMainCallback2, VBlank/HBlank, HwScene (bucle por frame)
   ppu.ts gpu.ts             PPU scanline (BG 0-3, OBJ, WIN0/1, blend, mosaic), registros
   bg.ts window.ts text.ts   bg.c, window.c, text.c (templates, tilemaps, impresoras de texto)
@@ -30,17 +30,17 @@ src/fr/hw/                  "hardware" GBA y librerías base del juego
   menu.ts listMenu.ts menuHelpers.ts   menu.c, list_menu.c+menu_indicators.c, menu_helpers.c+money.c
   assets.ts                 acceso a datos exportados: incbin(), incbin16(), cdata(), loadCData()
   cdataSprite.ts            convierte cdata a OamData/AnimCmd/AffineAnimCmd/SpriteTemplate
-src/fr/gba/                 capa antigua de campo (Canvas2D): tasks, input, charmap, fuentes, textPrinter
-src/fr/field/               overworld: mapas, objetos, efectos de campo, clima, puertas, encuentros
-src/fr/script/              intérprete de scripts de eventos (213 comandos) y specials (272)
-src/fr/battle/              motor de batalla (battle_main, 248 comandos, IA, controladores, anims)
-src/fr/pokemon/             reglas de Pokémon/objetos/caja/guardería/intercambios
-src/fr/menus/               adaptadores de menús de campo (algunos aún son listas de texto)
-src/fr/*.ts                 pantallas del port: intro*, oakSpeech, mainMenu, namingScreen,
+src/games/firered/gba/                 capa antigua de campo (Canvas2D): tasks, input, charmap, fuentes, textPrinter
+src/games/firered/field/               overworld: mapas, objetos, efectos de campo, clima, puertas, encuentros
+src/games/firered/script/              intérprete de scripts de eventos (213 comandos) y specials (272)
+src/games/firered/battle/              motor de batalla (battle_main, 248 comandos, IA, controladores, anims)
+src/games/firered/pokemon/             reglas de Pokémon/objetos/caja/guardería/intercambios
+src/games/firered/menus/               adaptadores de menús de campo (algunos aún son listas de texto)
+src/games/firered/*.ts                 pantallas del port: intro*, oakSpeech, mainMenu, namingScreen,
                             regionMap, optionMenu, bagMenu, tmCase, berryPouch, partyMenu,
                             pokemonIcon, hallOfFame, credits, itemPc, shop, diploma, seagallop…
-src/fr/generated/           GENERADO (no editar): constants.ts, structs.ts, metatileBehavior.ts
-src/fr/rom.ts save.ts       datos cargados (rom.text, rom.c, rom.moveName…) y partida guardada
+src/games/firered/generated/           GENERADO (no editar): constants.ts, structs.ts, metatileBehavior.ts
+src/games/firered/rom.ts save.ts       datos cargados (rom.text, rom.c, rom.moveName…) y partida guardada
 public/fr/                  GENERADO por el exportador (datos del juego para el navegador)
 tools/decomp/               exportador Python del decomp (única fuente de public/fr y generated/)
 tools/checks/               verificaciones headless en Node (ver §6)
@@ -70,12 +70,12 @@ URLs de desarrollo: `/` = arranque completo; `?fr=new` / `?fr=continue` saltan l
 Flujo de arranque activo (antes en `START-FLOW.md`):
 
 ```text
-src/main.ts -> src/fr/startup.ts
+src/main.ts -> src/games/firered/startup.ts
   -> copyright -> Game Freak -> intro escenas 1–3 -> título
   -> menú principal (main_menu.c)
      -> Nueva partida -> guía de controles -> discurso de Oak -> género y nombres
-        -> src/fr/boot.ts -> habitación del jugador
-     -> Continuar -> src/fr/boot.ts -> estado de campo guardado
+        -> src/games/firered/boot.ts -> habitación del jugador
+     -> Continuar -> src/games/firered/boot.ts -> estado de campo guardado
 ```
 
 `boot.ts` carga las tablas trigonométricas y los recursos de batalla e instala el
@@ -87,13 +87,13 @@ la URL por defecto hasta entrar al mundo (título, START, controles, Oak).
 `tools/decomp/export.py` resuelve `$POKEFIRERED`, `../pokefirered`
 y el submódulo `pokefirered/` mediante `common.py`, compila las
 herramientas del propio decomp (`gbagfx`, `preproc`…) y escribe `public/fr` y
-`src/fr/generated`. Pasos (`export.py <paso>` ejecuta solo ese):
+`src/games/firered/generated`. Pasos (`export.py <paso>` ejecuta solo ese):
 
 | Paso | Qué hace | Salida | Cómo se lee en TS |
 |---|---|---|---|
 | `setup` | compila tools del decomp, genera headers, charmap | `.decomp-build/`, `charmap.json` | `gba/charmap.ts` |
 | `constants` | todos los `#define`/enum evaluados por el compilador | `constants.json` | `rom.c("NAME")`, `rom.constants` |
-| `tsconst` | lo mismo como TS tipado | `src/fr/generated/constants.ts` | `import * as C` → `C.ITEM_POTION` |
+| `tsconst` | lo mismo como TS tipado | `src/games/firered/generated/constants.ts` | `import * as C` → `C.ITEM_POTION` |
 | `structs` | clases TS con offsets/bitfields **medidos** con un probe C | `generated/structs.ts` | `BattlePokemon`, etc. |
 | `scripts` / `battlescripts` | ensambla `data/*.s` con clang y los macros reales | `scripts.bin`, `battle/*.bin` | intérpretes en `script/` y `battle/` |
 | `maps` `tilesets` `objects` | mapas, layouts, tilesets 4bpp, objetos y sus anims | `maps/ layouts/ tilesets/ objects/` | `field/` |
@@ -225,7 +225,7 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
    python3 - <<'EOF'
    import json,re
    d=json.load(open('public/fr/cdata/party_menu.json'))['defs']
-   src=open('src/fr/partyMenu.ts').read()
+   src=open('src/games/firered/partyMenu.ts').read()
    used=set(re.findall(r'rd(?:<[^>]*>)?\("(\w+)"\)',src))
    print(sorted(u for u in used if u not in d))
    idx=json.load(open('public/fr/incbin/index.json'))['symbols']
@@ -473,7 +473,7 @@ Niveles, de más barato a más caro. Informa siempre **qué nivel** alcanzaste;
      `window.*`: vuelve con `H.restore(nombre)` y `await H.init()`. Agrupa las
      ediciones y prueba después.
    - **Instancias duplicadas de módulos**: tras un HMR la app importa
-     `x.ts?t=…`. Un `import("/src/fr/…/x.ts")` a secas carga otra copia vacía y
+     `x.ts?t=…`. Un `import("/src/games/firered/…/x.ts")` a secas carga otra copia vacía y
      todo lo que leas es falso. Usa siempre `H.mod(ruta)` (lo hace `H.init()`).
    - Sin `H.init()`, `H.inBattle()` confunde cualquier pantalla de hardware
      (tienda, bolsa) con un combate.

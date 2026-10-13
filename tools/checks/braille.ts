@@ -8,10 +8,10 @@ import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 import assert from 'node:assert/strict';
-import * as C from '../../src/fr/generated/constants.ts';
-import { registerCData, registerIncbinIndex, registerPack } from '../../src/fr/hw/assets.ts';
-import { FONT_BRAILLE, glyph, GetStringWidth } from '../../src/fr/gba/font.ts';
-import { TextPrinter } from '../../src/fr/gba/textPrinter.ts';
+import * as C from '../../src/games/firered/generated/constants.ts';
+import { registerCData, registerIncbinIndex, registerPack } from '../../src/games/firered/hw/assets.ts';
+import { FONT_BRAILLE, glyph, GetStringWidth } from '../../src/games/firered/gba/font.ts';
+import { TextPrinter } from '../../src/games/firered/gba/textPrinter.ts';
 
 const root = process.cwd();
 const decomp = process.env.POKEFIRERED ?? `${root}/../pokefirered`;

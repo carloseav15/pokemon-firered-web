@@ -5,7 +5,7 @@ import {
   AFFINEANIMCMD_END, AFFINEANIMCMD_FRAME, AnimateSprite, GetAffineAnimFrame,
   AFFINEANIMCMD_JUMP, AFFINEANIMCMD_LOOP, gOamMatrices, objAffineSet, ResetAffineAnimData, Sprite,
   ST_OAM_AFFINE_NORMAL, StartSpriteAffineAnim,
-} from "../../src/fr/hw/sprite.ts";
+} from "../../src/games/firered/hw/sprite.ts";
 
 ResetAffineAnimData();
 const matrixNum = 31;

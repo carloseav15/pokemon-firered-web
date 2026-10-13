@@ -5,7 +5,7 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/fr` (en alcance): **9772/10115 (96.6 %)**.
+- Funciones con homólogo del mismo nombre en `src/games/firered` (en alcance): **9772/10115 (96.6 %)**.
 - Archivos C con funciones aún sin homólogo: **22**; quedan **343 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 67.664 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.

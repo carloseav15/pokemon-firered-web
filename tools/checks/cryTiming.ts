@@ -8,9 +8,9 @@
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import * as C from "../../src/fr/generated/constants.ts";
-import { sound, cryChannelFrames } from "../../src/fr/audio/sound.ts";
-import { tasks } from "../../src/fr/gba/tasks.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { sound, cryChannelFrames } from "../../src/games/firered/audio/sound.ts";
+import { tasks } from "../../src/games/firered/gba/tasks.ts";
 
 // Data loads read public/fr through a fetch stub (DATA_ROOT "/fr").
 (globalThis as any).fetch = async (url: string) => {

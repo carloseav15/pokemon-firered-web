@@ -37,25 +37,25 @@ export const H = {
   },
   /** Cache gMain and the battle globals; call once after each page load. */
   async init() {
-    this.R = await this.mod("/src/fr/hw/runtime.ts");
-    this.G = await this.mod("/src/fr/battle/globals.ts");
-    this.PM = await this.mod("/src/fr/partyMenu.ts");
-    this.C = await this.mod("/src/fr/generated/constants.ts");
-    this.rom = (await this.mod("/src/fr/rom.ts")).rom;
-    this.T = await this.mod("/src/fr/gba/tasks.ts");
-    this.B = await this.mod("/src/fr/bagMenu.ts");
-    this.SAVE = await this.mod("/src/fr/save.ts");
-    this.BS = await this.mod("/src/fr/battle/bscript.ts");
-    this.Q = await this.mod("/src/fr/questLogState.ts");
-    this.SC = await this.mod("/src/fr/script/context.ts");
-    this.SUM = await this.mod("/src/fr/pokemonSummaryScreen.ts");
-    this.MON = await this.mod("/src/fr/pokemon/mon.ts");
-    this.CMDS = await this.mod("/src/fr/battle/cmds/index.ts");
-    this.MENU = await this.mod("/src/fr/hw/menu.ts");
-    this.MON_PROGRESS = await this.mod("/src/fr/menus/monProgress.ts");
-    this.LM = await this.mod("/src/fr/hw/listMenu.ts");
-    this.TXT = await this.mod("/src/fr/hw/text.ts");
-    this.PSA = await this.mod("/src/fr/pokemonSpecialAnim.ts");
+    this.R = await this.mod("/src/games/firered/hw/runtime.ts");
+    this.G = await this.mod("/src/games/firered/battle/globals.ts");
+    this.PM = await this.mod("/src/games/firered/partyMenu.ts");
+    this.C = await this.mod("/src/games/firered/generated/constants.ts");
+    this.rom = (await this.mod("/src/games/firered/rom.ts")).rom;
+    this.T = await this.mod("/src/games/firered/gba/tasks.ts");
+    this.B = await this.mod("/src/games/firered/bagMenu.ts");
+    this.SAVE = await this.mod("/src/games/firered/save.ts");
+    this.BS = await this.mod("/src/games/firered/battle/bscript.ts");
+    this.Q = await this.mod("/src/games/firered/questLogState.ts");
+    this.SC = await this.mod("/src/games/firered/script/context.ts");
+    this.SUM = await this.mod("/src/games/firered/pokemonSummaryScreen.ts");
+    this.MON = await this.mod("/src/games/firered/pokemon/mon.ts");
+    this.CMDS = await this.mod("/src/games/firered/battle/cmds/index.ts");
+    this.MENU = await this.mod("/src/games/firered/hw/menu.ts");
+    this.MON_PROGRESS = await this.mod("/src/games/firered/menus/monProgress.ts");
+    this.LM = await this.mod("/src/games/firered/hw/listMenu.ts");
+    this.TXT = await this.mod("/src/games/firered/hw/text.ts");
+    this.PSA = await this.mod("/src/games/firered/pokemonSpecialAnim.ts");
     return this.observe();
   },
   /** { screen, details, raw }: the catalog name of what the player sees (driver/screens.js). */
@@ -297,7 +297,7 @@ export const H = {
    * that makes the estimate favorable (stats recomputed with calculateStats on the copy; no evolution assumed).
    */
   async assessTrainer(trainerId, { fullHp = true, maxExtraLevels = 15 } = {}) {
-    const P = await this.mod("/src/fr/pokemon/pokemon.ts");
+    const P = await this.mod("/src/games/firered/pokemon/pokemon.ts");
     const trainer = this.rom.trainers[trainerId];
     if (!trainer) return { ok: false, reason: "unknown trainer " + trainerId };
     const desc = (m) => ({ ...this.partyBattleMon(m), level: m.level, speed: m.stats[3] });
@@ -852,7 +852,7 @@ export const H = {
    * verified by money (price * quantity from the item data) and bag count. Leaves the shop with B afterwards. */
   async buyItem(item, quantity, { clerk = [2, 3] } = {}) {
     if (!Number.isInteger(item) || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) throw new Error("invalid buyItem request");
-    const price = (await this.mod("/src/fr/pokemon/items.ts")).itemInfo(item)?.price;
+    const price = (await this.mod("/src/games/firered/pokemon/items.ts")).itemInfo(item)?.price;
     const before = this.resources(), count0 = this.countItem(item);
     if (!price || before.money < price * quantity) return { ok: false, status: "blocked", reason: "not-enough-money", note: "not enough money", price, before };
     const leave = async (note, r) => { await this.escapeMenus(); return { ok: false, status: "failure", reason: note, note, price, before, after: this.resources(), state: this.observe(), driver: r && { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump } }; };
@@ -904,7 +904,7 @@ export const H = {
     }
     if (!Number.isInteger(maxFrames) || maxFrames < 1) throw new Error("invalid save budget");
     if (!this.fieldFree()) return { ok: false, status: "blocked", reason: "field-not-free", note: "field not free" };
-    const S = await this.mod("/src/fr/save.ts"), SM = await this.mod("/src/fr/startMenu.ts");
+    const S = await this.mod("/src/games/firered/save.ts"), SM = await this.mod("/src/games/firered/startMenu.ts");
     if (S.FlagGet(this.C.FLAG_SYS_SAFARI_MODE)) return { ok: false, status: "blocked", reason: "save-unavailable", note: "SAVE unavailable in Safari Zone" };
     const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(this.C.FLAG_SYS_POKEDEX_GET),
       pokemonObtained: S.FlagGet(this.C.FLAG_SYS_POKEMON_GET), linkStateActive: false, inUnionRoom: false, inSafariZone: false };

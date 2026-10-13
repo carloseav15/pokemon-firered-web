@@ -10,8 +10,8 @@ import { cLayout, probeTsLayout } from "../lib/structs.mjs";
 const tc = findToolchain();
 if (!tc.ok) { console.error("missing toolchain:", tc.missing.join("; ")); process.exit(2); }
 const layout = cLayout(tc, path.join(OUT, "battle_util.oracle.c"), "ProtectStruct");
-const { ns } = await bundleTs([{ tsTargets: [{ file: "src/fr/generated/structs.ts", name: "ProtectStruct" }] }], "layout-mutants");
-const Real = ns.mods[path.join(ROOT, "src/fr/generated/structs.ts")].__o_ProtectStruct;
+const { ns } = await bundleTs([{ tsTargets: [{ file: "src/games/firered/generated/structs.ts", name: "ProtectStruct" }] }], "layout-mutants");
+const Real = ns.mods[path.join(ROOT, "src/games/firered/generated/structs.ts")].__o_ProtectStruct;
 
 class WrongBit extends Real { // prlzImmobility read/written one bit too low
   get prlzImmobility() { return this.getBitsAt(0, 6, 1); }

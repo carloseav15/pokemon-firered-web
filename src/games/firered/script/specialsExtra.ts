@@ -677,7 +677,7 @@ function SampleResortGorgeousReward(): number {
 }
 
 // ---------------------------------------------------------------- museum fossil pic (script_menu.c)
-// Implemented directly in src/fr/menus/scriptMenu.ts (OpenMuseumFossilPic, CloseMuseumFossilPic, Task_WaitMuseumFossilPic)
+// Implemented directly in src/games/firered/menus/scriptMenu.ts (OpenMuseumFossilPic, CloseMuseumFossilPic, Task_WaitMuseumFossilPic)
 
 /** LoopWingFlapSound and Task_WingFlapSound from field_specials.c. */
 function LoopWingFlapSound(): void {

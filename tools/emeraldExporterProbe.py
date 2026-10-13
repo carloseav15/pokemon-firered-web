@@ -3,7 +3,7 @@
 
 Nothing in this repository is written: the exporter is copied to <work>/tools/decomp, pokeemerald to <work>/pokeemerald
 (from ../refs-src/pokeemerald, with the extra sparse paths added in the copy only), and the exporter's own outputs
-(public/fr, .decomp-build, src/fr/generated) land under <work>. Used by docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md.
+(public/fr, .decomp-build, src/games/firered/generated) land under <work>. Used by docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md.
 
   python3 tools/emeraldExporterProbe.py --work /tmp/emerald-probe                 # unmodified exporter, every step
   python3 tools/emeraldExporterProbe.py --work /tmp/emerald-probe --patched       # + the four diagnostic edits below
@@ -76,7 +76,7 @@ def main() -> None:
     if dec.exists():
         shutil.rmtree(dec)
     shutil.copytree(ROOT / "tools/decomp", dec, ignore=shutil.ignore_patterns("__pycache__"))
-    (work / "src/fr/generated").mkdir(parents=True, exist_ok=True)
+    (work / "src/games/firered/generated").mkdir(parents=True, exist_ok=True)
     notes = patch_copy(work) if a.patched else []
     for n in notes:
         print("PATCH", n)

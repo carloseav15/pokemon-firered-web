@@ -27,7 +27,7 @@ const scene = () => p.evaluate(i => window.frDebug.save.save.vars[i], SCENE);
 const inBattle = () => p.evaluate(() => window.frDebug.snapshot().hardware.inBattle);
 const dump = tag => p.evaluate(async ({ tag }) => {
   const sv = window.frDebug.save.save, s = window.frDebug.state();
-  const { gEnemyParty } = await import("/src/fr/pokemon/mon.ts");
+  const { gEnemyParty } = await import("/src/games/firered/pokemon/mon.ts");
   const e = gEnemyParty[0];
   return { tag, st: s, scene: sv.vars[0x55], money: sv.money, flags: sv.flags.slice(), vars: sv.vars.slice(),
     partyCount: sv.party.length, mon0: sv.party[0] ? JSON.parse(JSON.stringify(sv.party[0])) : null,
@@ -106,7 +106,7 @@ for (let t = Date.now(); Date.now() - t < 120000 && !battleStart;) {
 
 // ---- Rival battle (same events as port-rival.mjs) ----
 if (!battleStart) { note("NO BATTLE", JSON.stringify(await state())); process.exit(1); }
-if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/fr/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
+if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/games/firered/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
 for (let t = Date.now(); Date.now() - t < 240000;) { if (!(await inBattle())) break; await tapA(); await sleep(260); }
 let doneAt = null;
 for (let t = Date.now(); Date.now() - t < 120000;) {
@@ -138,12 +138,12 @@ await p.evaluate(async () => {
   // The first tiles of Route 1 are tall grass (the connection from Pallet Town is a grass strip), so wild battles
   // cannot be avoided by planning. Instead gRngValue is rewritten before every frame, here and in parcel.lua, to a
   // value whose next ten LCG outputs are all >= 900 mod 1600: the encounter roll (rate 25*16 = 400) never succeeds.
-  const { setRandomStateForTest } = await import("/src/fr/random.ts");
+  const { setRandomStateForTest } = await import("/src/games/firered/random.ts");
   // The wild-encounter rng (WildEncounterRandom, sWildEncounterData.rngState) is a separate LCG: pinned the same way
   // (ROM address 0x020386d0, found by differential scan), to a value whose first output is >= 1000 mod 1600.
-  const { sWildEncounterData } = await import("/src/fr/field/wildEncounter.ts");
+  const { sWildEncounterData } = await import("/src/games/firered/field/wildEncounter.ts");
   // Battle log, same fields as parcel.lua (BSTART/BHP/BEND): party HP of both sides while a battle is on.
-  const { gEnemyParty: enemyParty } = await import("/src/fr/pokemon/mon.ts");
+  const { gEnemyParty: enemyParty } = await import("/src/games/firered/pokemon/mon.ts");
   window.__btl = [];
   let btlOn = false, btlSig = null;
   const side = (arr, withSpecies) => arr.slice(0, 6).map(m => !m || !m.level ? "-" : withSpecies ? `${m.species}:L${m.level}:${m.hp}` : String(m.hp)).join(",");

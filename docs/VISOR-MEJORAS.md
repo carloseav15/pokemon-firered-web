@@ -266,7 +266,7 @@ M1/M5 aceptadas sin repetir sus casos pendientes; no ampliar el alcance al edito
 ### Instrucciones comunes para copiar junto a cada tarea
 
 Lee AGENTS.md, TAREAS-FINALES §0 y tu tarea. Worktree/rama propios si hay otro agente.
-Sin merge/push. No tocar src/fr, public/fr, tools/decomp, inventario, baselines,
+Sin merge/push. No tocar src/games/firered, public/fr, tools/decomp, inventario, baselines,
 kanto.json ni partidas. Solo archivos permitidos; conservar contratos públicos.
 Si necesitas otro archivo, explicar dependencia y dejar parcial. Ejecutar
 check:port, build, check:honesty y git diff --check; comprobar aceptación en navegador

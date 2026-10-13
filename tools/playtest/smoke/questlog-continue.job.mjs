@@ -15,7 +15,7 @@ export default async function run(ctx) {
   const result = await ctx.runEval(`
     const { H } = await import("/tools/playtest/driver.js"); window.H = H;
     await H.init();
-    const Q = await H.mod("/src/fr/questLogEvents.ts");
+    const Q = await H.mod("/src/games/firered/questLogEvents.ts");
     const playback = () => Q.gQuestLogState === H.C.QL_STATE_PLAYBACK || Q.gQuestLogState === H.C.QL_STATE_PLAYBACK_LAST;
     const observed = [];
     for (let f = 0; f < 18000; f += 20) {

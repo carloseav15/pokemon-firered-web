@@ -26,7 +26,7 @@ const scene = () => p.evaluate(i => window.frDebug.save.save.vars[i], SCENE);
 const inBattle = () => p.evaluate(() => window.frDebug.snapshot().hardware.inBattle);
 const dump = tag => p.evaluate(async ({ tag }) => {
   const sv = window.frDebug.save.save, s = window.frDebug.state();
-  const { gEnemyParty } = await import("/src/fr/pokemon/mon.ts");
+  const { gEnemyParty } = await import("/src/games/firered/pokemon/mon.ts");
   const e = gEnemyParty[0];
   return { tag, st: s, scene: sv.vars[0x55], money: sv.money, flags: sv.flags.slice(), vars: sv.vars.slice(),
     partyCount: sv.party.length, mon0: sv.party[0] ? JSON.parse(JSON.stringify(sv.party[0])) : null,
@@ -102,7 +102,7 @@ for (let t = Date.now(); Date.now() - t < 120000 && !battleStart;) {
   battleStart = await inBattle();
 }
 if (battleStart) {
-  if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/fr/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
+  if (RNG !== null) await p.evaluate(async v => { const m = await import("/src/games/firered/random.ts"); m.setRandomStateForTest(v >>> 0); }, RNG);
   dumps.battleStart = await dump("battle-start"); note("battle start", JSON.stringify(dumps.battleStart.st));
   // FIGHT -> first move until the battle ends.
   for (let t = Date.now(); Date.now() - t < 240000;) {

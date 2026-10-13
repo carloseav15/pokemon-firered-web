@@ -12,7 +12,7 @@ const SAVES = (process.env.RW_SAVES ?? "cerulean-arrival,mtmoon-b2f-202610062337
 const MINUTES = Number(process.env.RW_MINUTES ?? 10), SEED = Number(process.env.RW_SEED ?? 1);
 
 const body = (minutes, seed) => `
-  const C = H.C, S = await H.mod("/src/fr/save.ts"), SM = await H.mod("/src/fr/startMenu.ts");
+  const C = H.C, S = await H.mod("/src/games/firered/save.ts"), SM = await H.mod("/src/games/firered/startMenu.ts");
   const mulberry32 = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const rng = mulberry32(${seed}), pick = (a) => a[Math.floor(rng() * a.length)];
   H.policy.set({ unansweredYesNo: false });

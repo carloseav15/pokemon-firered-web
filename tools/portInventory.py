@@ -2,7 +2,7 @@
 """Generate PORT-INVENTORY.md: one row per pokefirered/src/*.c.
 
 For every C file it measures how many of its function definitions exist by
-the same name in src/fr (the port keeps C names), which TS files cite the
+the same name in src/games/firered (the port keeps C names), which TS files cite the
 file (`name.c` anywhere in a comment), and whether its constant data is
 exported (public/fr/cdata/<name>.json). Categories that cannot be measured
 automatically (out of scope, covered by the browser/exporter, adapters) come
@@ -27,7 +27,7 @@ if os.environ.get("POKEFIRERED"):
 else:
     sibling = ROOT.parent / "pokefirered"
     DECOMP = (sibling if sibling.exists() else ROOT / "pokefirered").resolve()
-SRC = ROOT / "src" / "fr"
+SRC = ROOT / "src" / "games" / "firered"
 OUT = ROOT / "PORT-INVENTORY.md"
 
 # Replaced by the TS hardware layer, the browser, or the decomp exporter.
@@ -342,7 +342,7 @@ def main() -> None:
         "# Inventario del port (generado)",
         "",
         "Generado por `tools/portInventory.py` (`npm run inventory`); no editar a mano.",
-        "Mide cuántas funciones de cada `.c` existen con el mismo nombre en `src/fr`.",
+        "Mide cuántas funciones de cada `.c` existen con el mismo nombre en `src/games/firered`.",
         "La comparación ignora mayúsculas y `_` (la capa de campo antigua usa camelCase).",
         "La coincidencia de nombres no demuestra paridad funcional ni fidelidad.",
         "Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene",

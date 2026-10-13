@@ -87,7 +87,7 @@ oldToMax = (Math.trunc(Math.imul(oldValue, totalPixels) / maxValue) << 24) >> 24
 ## Callers written by hand
 
 Generated functions assume normalised parameters (see Assumptions). Only `generated/stringUtil.ts` is produced by this path today.
-Static scan of `src/fr`: the generated entry points are reached through `gba/charmap.ts` (9 direct call sites, 3 with narrow arguments, all
+Static scan of `src/games/firered`: the generated entry points are reached through `gba/charmap.ts` (9 direct call sites, 3 with narrow arguments, all
 inside `charmap.ts` wrappers) and, mostly, through `intToDecimal` (114 call sites in 27 files: `digits` is a literal 1..10 in 106, a literal
 outside that range in 1, an expression in 7; `value` is a game quantity). No call site was found that can pass a value outside the C range,
 but nothing enforces it: a future hand-written caller can pass 300 to a `u8` parameter.

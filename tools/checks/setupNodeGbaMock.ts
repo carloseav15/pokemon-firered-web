@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
-import { rom } from "../../src/fr/rom.ts";
+import { rom } from "../../src/games/firered/rom.ts";
 
 const constsPath = process.cwd() + "/public/fr/constants.json";
 if (existsSync(constsPath) && !rom.constants) {

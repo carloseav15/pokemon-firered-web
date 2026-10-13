@@ -79,7 +79,7 @@ export const fieldHandlers = {
     const H = ctx.H, g = ctx.goal, game = window.frGame;
     const want = g?.kind === "use-item" || g?.kind === "teach-move" ? 2 : g?.kind === "save" ? 4 : g?.kind === "tour" ? g.entry : null; // start_menu.c STARTMENU_BAG / STARTMENU_SAVE / any entry of a menu tour
     if (want !== null && !g.menuUsed) {
-      const S = await H.mod("/src/fr/save.ts"), SM = await H.mod("/src/fr/startMenu.ts");
+      const S = await H.mod("/src/games/firered/save.ts"), SM = await H.mod("/src/games/firered/startMenu.ts");
       const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(H.C.FLAG_SYS_POKEDEX_GET), pokemonObtained: S.FlagGet(H.C.FLAG_SYS_POKEMON_GET),
         linkStateActive: false, inUnionRoom: false, inSafariZone: false };
       SM.SetUpStartMenu(menu);

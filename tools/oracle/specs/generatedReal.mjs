@@ -21,7 +21,7 @@ export default [
   reuse("CountTrailingZeroBits"), reuse("CalcCRC16"), reuse("CalculatePanIncrement"), reuse("IsShinyOtIdPersonality"),
   reuse("ModifyStatByNature"), reuse("GetTileMapIndexFromCoords"), reuse("GetScaledHPFraction"), reuse("GetHPBarLevel"),
   // regression: the generator reproduces the manual fix, so hand port, generated (INT) and C/wasm must all agree
-  reuse("GetReceivedValueInPixels", { impls: [...impls("GetReceivedValueInPixels"), { label: "hand port (battle/interface.ts)", file: "src/fr/battle/interface.ts", name: "GetReceivedValueInPixels" }] }),
+  reuse("GetReceivedValueInPixels", { impls: [...impls("GetReceivedValueInPixels"), { label: "hand port (battle/interface.ts)", file: "src/games/firered/battle/interface.ts", name: "GetReceivedValueInPixels" }] }),
   reuse("GetAnchorCoord"), reuse("GetPlayerDirectionTowardsHiddenItem"),
   reuse("Sin"), reuse("ExtractMetatileAttribute"),
   { ...reuse("Sin"), name: "Cos", c: { stem: "trig", name: "Cos" }, impls: impls("Cos") },

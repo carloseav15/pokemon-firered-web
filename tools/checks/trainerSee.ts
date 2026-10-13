@@ -2,7 +2,7 @@
 import "./setupNodeGbaMock.ts";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-import * as C from "../../src/fr/generated/constants.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
 import {
   GetTrainerApproachDistanceSouth,
   GetTrainerApproachDistanceNorth,
@@ -14,8 +14,8 @@ import {
   TrainerSeeFunc_Dummy,
   TrainerSeeFunc_BeginRemoveDisguise,
   TrainerSeeFunc_WaitRemoveDisguise,
-} from "../../src/fr/field/trainerSee.ts";
-import { COLLISION_OBJECT_EVENT, type ObjectEvent, type ObjectEvents } from "../../src/fr/field/objectEvents.ts";
+} from "../../src/games/firered/field/trainerSee.ts";
+import { COLLISION_OBJECT_EVENT, type ObjectEvent, type ObjectEvents } from "../../src/games/firered/field/objectEvents.ts";
 
 // 1. Verify cdata exports from trainer_see.json
 const cdataRaw = JSON.parse(readFileSync(process.cwd() + "/public/fr/cdata/trainer_see.json", "utf8"));

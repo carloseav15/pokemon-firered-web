@@ -6,7 +6,7 @@ See AGENTS.md (Clang y fidelidad; Verificación). Four checks:
 1. Stubs: a TS `function` named after a C function whose body is trivial
    (empty, `return 0;`…) while the C body has code. The list may only shrink:
    any stub not in tools/checks/stub-baseline.json fails.
-2. Unwired modules: a src/fr module that nothing reachable from src/main.ts
+2. Unwired modules: a src/games/firered module that nothing reachable from src/main.ts
    imports at runtime (`import type` does not count). The list may only
    shrink: any module not in tools/checks/unwired-baseline.json fails.
 3. Self-fulfilling checks: a file in tools/checks that sets a flag, var or bag
@@ -99,7 +99,7 @@ def current_unwired() -> list[str]:
             dep = resolve(f, spec)
             if dep and dep not in seen:
                 stack.append(dep)
-    src = (ROOT / "src/fr").resolve()
+    src = (ROOT / "src/games/firered").resolve()
     return sorted(
         str(p.relative_to(src)) for p in src.rglob("*.ts")
         if "generated" not in p.parts and p.resolve() not in seen
@@ -129,7 +129,7 @@ def self_fulfilling() -> list[str]:
 def unknown_constants() -> list[str]:
     known = json.loads((ROOT / "public/fr/constants.json").read_text())
     bad = []
-    for f in sorted((ROOT / "src/fr").rglob("*.ts")):
+    for f in sorted((ROOT / "src/games/firered").rglob("*.ts")):
         if "generated" in f.parts:
             continue
         for i, line in enumerate(f.read_text().splitlines(), 1):

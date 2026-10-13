@@ -8,7 +8,7 @@ export default async function run(ctx) {
       const { H } = await import("/tools/playtest/driver.js");
       window.H = H;
       await H.ready();
-      const Q = await H.mod("/src/fr/questLogEvents.ts");
+      const Q = await H.mod("/src/games/firered/questLogEvents.ts");
       const isPlayback = () => Q.gQuestLogState === H.C.QL_STATE_PLAYBACK || Q.gQuestLogState === H.C.QL_STATE_PLAYBACK_LAST;
       const observedQL = [];
       for (let f = 0; f < 18000; f += 20) {
@@ -49,8 +49,8 @@ export default async function run(ctx) {
     }
 
     const pcFlow = await ctx.runEval(`
-      const T = await H.mod("/src/fr/gba/tasks.ts");
-      const M = await H.mod("/src/fr/storageSystemInternal.ts");
+      const T = await H.mod("/src/games/firered/gba/tasks.ts");
+      const M = await H.mod("/src/games/firered/storageSystemInternal.ts");
       const sv = frDebug.save.save;
       const R = {};
 
@@ -242,7 +242,7 @@ export default async function run(ctx) {
     const pcReloadQL = await reloadAndContinue();
 
     const pcContinued = await ctx.runEval(`
-      const C = await H.mod("/src/fr/generated/constants.ts");
+      const C = await H.mod("/src/games/firered/generated/constants.ts");
       const sv = frDebug.save.save;
       const monIdentity = (m) => m ? ({
         species: m.species,
@@ -322,8 +322,8 @@ export default async function run(ctx) {
     }
 
     const nurseFlow = await ctx.runEval(`
-      const T = await H.mod("/src/fr/gba/tasks.ts");
-      const C = await H.mod("/src/fr/generated/constants.ts");
+      const T = await H.mod("/src/games/firered/gba/tasks.ts");
+      const C = await H.mod("/src/games/firered/generated/constants.ts");
       const sv = frDebug.save.save;
       const p = sv.party[0];
 
@@ -496,7 +496,7 @@ export default async function run(ctx) {
     const nurseReloadQL = await reloadAndContinue();
 
     const nurseContinued = await ctx.runEval(`
-      const C = await H.mod("/src/fr/generated/constants.ts");
+      const C = await H.mod("/src/games/firered/generated/constants.ts");
       const sv = frDebug.save.save;
       const p = sv.party[0];
       const monIdentity = (m) => m ? ({

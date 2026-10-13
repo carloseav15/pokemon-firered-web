@@ -22,7 +22,7 @@ const track = (body) => `
 
 const CASES = [
   { name: "start-options-save", save: "mtmoon-1f", expect: ["field-free", "start-menu", "options-menu", "save-prompt", "save-busy"], body: `
-      const C = H.C, S = await H.mod("/src/fr/save.ts"), SM = await H.mod("/src/fr/startMenu.ts");
+      const C = H.C, S = await H.mod("/src/games/firered/save.ts"), SM = await H.mod("/src/games/firered/startMenu.ts");
       const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(C.FLAG_SYS_POKEDEX_GET), pokemonObtained: S.FlagGet(C.FLAG_SYS_POKEMON_GET),
         linkStateActive: false, inUnionRoom: false, inSafariZone: false };
       SM.SetUpStartMenu(menu);
@@ -40,7 +40,7 @@ const CASES = [
       if (!saved.ok) throw new Error("SAVE: " + JSON.stringify(saved));
       return { option, saved: saved.ok };` },
   { name: "dialog-yesno", save: "mtmoon-1f", expect: ["field-free", "yes-no"], prepared: "ScriptMenu_YesNo opened directly (key handling only)", body: `
-      const SM = await H.mod("/src/fr/menus/scriptMenu.ts");
+      const SM = await H.mod("/src/games/firered/menus/scriptMenu.ts");
       SM.ScriptMenu_YesNo(); await H.wait(2);
       const r = await H.answerYesNo(false);
       return r.ok;` },
@@ -62,7 +62,7 @@ const CASES = [
       if (!sv.bag.items.some(e => e.item === C.ITEM_POTION && e.quantity > 0)) sv.bag.items.push({ item: C.ITEM_POTION, quantity: 2 }); // PREPARED
       const used = await H.useItem(C.ITEM_POTION, 0);
       // Summary: START > POKEMON > A on the first member > SUMMARY.
-      const S = await H.mod("/src/fr/save.ts"), SM = await H.mod("/src/fr/startMenu.ts");
+      const S = await H.mod("/src/games/firered/save.ts"), SM = await H.mod("/src/games/firered/startMenu.ts");
       const menu = { order: [], numItems: 0, pokedexObtained: S.FlagGet(H.C.FLAG_SYS_POKEDEX_GET), pokemonObtained: S.FlagGet(H.C.FLAG_SYS_POKEMON_GET),
         linkStateActive: false, inUnionRoom: false, inSafariZone: false };
       SM.SetUpStartMenu(menu);
@@ -96,7 +96,7 @@ const CASES = [
       const b = await H.battle("switch", 0, 4000);
       return { stop: b.stop, outcome: b.outcome };` },
   { name: "levelup-learn-move", save: "route2-north", expect: ["battle-levelup-box", "battle-learn-yesno", "summary-forget-move"], prepared: "experience one point below level 20 (Razor Leaf)", body: `
-      const C = H.C, mon = frDebug.save.save.party[0], P = await H.mod("/src/fr/pokemon/pokemon.ts");
+      const C = H.C, mon = frDebug.save.save.party[0], P = await H.mod("/src/games/firered/pokemon/pokemon.ts");
       mon.exp = P.expForLevel(mon.species, 20) - 1; // PREPARED
       for (let i = 0; i < 200 && !H.inBattle(); i++) await H.walk(i % 2 ? "D" : "U", 1);
       if (!H.inBattle()) throw new Error("no encounter");
@@ -104,7 +104,7 @@ const CASES = [
       await H.idle(3000, true);
       return { stop: b.stop, level: mon.level };` },
   { name: "evolution", save: "route2-north", expect: ["evolution"], prepared: "experience one point below level 16 (Bulbasaur -> Ivysaur)", body: `
-      const mon = frDebug.save.save.party[0], P = await H.mod("/src/fr/pokemon/pokemon.ts");
+      const mon = frDebug.save.save.party[0], P = await H.mod("/src/games/firered/pokemon/pokemon.ts");
       mon.exp = P.expForLevel(mon.species, 16) - 1; mon.hp = 0; mon.stats = [0, 0, 0, 0, 0, 0]; P.calculateStats(mon); // PREPARED
       for (let i = 0; i < 200 && !H.inBattle(); i++) await H.walk(i % 2 ? "D" : "U", 1);
       if (!H.inBattle()) throw new Error("no encounter");
@@ -112,7 +112,7 @@ const CASES = [
       for (let i = 0; i < 40 && !H.fieldFree(); i++) await H.idle(1500, true);
       return { stop: b.stop, species: mon.species };` },
   { name: "evolution-learn", save: "route2-north", expect: ["evolution", "evolution-yesno", "summary-forget-move"], prepared: "Abra L15 with four moves one point below level 16 (Kadabra learns Confusion)", body: `
-      const C = H.C, mon = frDebug.save.save.party[0], P = await H.mod("/src/fr/pokemon/pokemon.ts");
+      const C = H.C, mon = frDebug.save.save.party[0], P = await H.mod("/src/games/firered/pokemon/pokemon.ts");
       mon.species = C.SPECIES_ABRA; mon.moves = [C.MOVE_TACKLE, C.MOVE_GROWL, C.MOVE_TAIL_WHIP, C.MOVE_LEER]; mon.pp = mon.moves.map(id => H.rom.moves[id].pp);
       mon.exp = P.expForLevel(mon.species, 16) - 1; mon.hp = 0; mon.stats = [0, 0, 0, 0, 0, 0]; P.calculateStats(mon); // PREPARED
       for (let i = 0; i < 200 && !H.inBattle(); i++) await H.walk(i % 2 ? "D" : "U", 1);

@@ -39,7 +39,7 @@ export default async function run(ctx) {
   const {WorldGrid}=await import('/src/viewer/data/worldGrid.ts');
   const {ViewerFieldEffects}=await window.c7Import('/src/viewer/fieldEffects.ts');
   const {ViewerClock}=await window.c7Import('/src/viewer/clock.ts');
-  const C=await import('/src/fr/generated/constants.ts');
+  const C=await import('/src/games/firered/generated/constants.ts');
   const g=new WorldGrid(4,1,-2,0);g.behaviors[0]=C.MB_TALL_GRASS;g.behaviors[1]=C.MB_POND_WATER;
   const fx=await ViewerFieldEffects.create(g,new ViewerClock({request:()=>1,cancel:()=>{}}));let events=[];const off=fx.subscribe(e=>events.push(e));
   const actor={x:-2,y:0,previousX:-2,previousY:0,direction:'east',previousDirection:'north',landingJump:false};

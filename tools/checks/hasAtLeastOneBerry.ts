@@ -3,10 +3,10 @@
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import * as C from "../../src/fr/generated/constants.ts";
-import { HasAtLeastOneBerry } from "../../src/fr/pokemon/items.ts";
-import { rom } from "../../src/fr/rom.ts";
-import { save, SV, varGet } from "../../src/fr/save.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { HasAtLeastOneBerry } from "../../src/games/firered/pokemon/items.ts";
+import { rom } from "../../src/games/firered/rom.ts";
+import { save, SV, varGet } from "../../src/games/firered/save.ts";
 
 rom.items = JSON.parse(readFileSync(`${process.cwd()}/public/fr/data/items.json`, "utf8")).items;
 const keyItems = save.bag.keyItems;

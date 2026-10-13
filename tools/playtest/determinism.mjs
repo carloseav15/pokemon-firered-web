@@ -24,7 +24,7 @@ function treeDigest(root) {
   visit(root); return h.digest("hex");
 }
 const manifest = { revision: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
-  sourceSHA256: treeDigest(resolve("src/fr")), dataSHA256: treeDigest(resolve("public/fr")),
+  sourceSHA256: treeDigest(resolve("src/games/firered")), dataSHA256: treeDigest(resolve("public/fr")),
   toolSHA256: createHash("sha256").update(readFileSync("tools/playtest/replay.js")).update(readFileSync("tools/playtest/determinism.mjs")).digest("hex"),
   dirty: !!execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim(), frames, repetitions,
   entry: { mode: "new", timer1Low: 12345, bootstrapFrames: 120 },

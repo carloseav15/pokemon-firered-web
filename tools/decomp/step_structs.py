@@ -1,4 +1,4 @@
-"""Generate byte-backed TS classes for decomp structs (src/fr/generated/structs.ts).
+"""Generate byte-backed TS classes for decomp structs (src/games/firered/generated/structs.ts).
 
 Field names/types come from the C parser (step_cdata); offsets, sizes,
 signedness and bitfield positions come from Clang's ARMv4T record-layout dump.

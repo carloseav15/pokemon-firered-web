@@ -2,7 +2,7 @@
 // controller and script command, script mode, menu cursors) and names the screen the player is looking at.
 // A state that matches no rule is "unknown" with a dump of that state: callers must stop there, never press A.
 // Rules are ordered; the first match wins. Each returns the details object (or null for "not this screen").
-// Sources: the C functions named in each rule exist in src/fr (checked when the catalog was written).
+// Sources: the C functions named in each rule exist in src/games/firered (checked when the catalog was written).
 
 /** Every screen name recognize() can return, except "unknown". The catalog job reports coverage against it. */
 export const CATALOG = [

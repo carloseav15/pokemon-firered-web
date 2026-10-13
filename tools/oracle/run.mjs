@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Differential oracle PoC: pokefirered C (clang/wasm32) vs the real src/fr TypeScript.
+// Differential oracle PoC: pokefirered C (clang/wasm32) vs the real src/games/firered TypeScript.
 // Opt-in tool. Not wired to check:port, npm test or CI. See tools/oracle/README.md.
 //
 //   node tools/oracle/run.mjs [--group A|B|C|controls|all] [--fn Name] [--seed N] [--fuzz N] [--cap N]
@@ -107,7 +107,7 @@ for (const s of specs) { // a generator variant that rejected a function has no 
 }
 if (rejected.length) console.log(`[gen] not generated, skipped: ${rejected.join(", ")}`);
 
-// ---- TS side: one esbuild bundle of the real src/fr modules
+// ---- TS side: one esbuild bundle of the real src/games/firered modules
 for (const s of specs) {
   s.tsTargets = s.impls.filter((i) => i.file).flatMap((i) =>
     [i.name, i.seedName, i.callName, ...(s.extraExpose ?? [])].filter(Boolean).map((n) => ({ file: i.file, name: n, state: i.state }))).concat(s.tsExtra ?? [], (s.globals ?? []).map((g) => (g.ts.expr ? { file: g.ts.file, state: { [g.name]: g.ts.expr } } : { file: g.ts.file, name: g.ts.name })));

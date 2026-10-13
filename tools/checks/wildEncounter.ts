@@ -4,9 +4,9 @@
 import "./setupNodeGbaMock.ts";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-import { registerCData } from "../../src/fr/hw/assets.ts";
-import * as C from "../../src/fr/generated/constants.ts";
-import { flagClear, flagGet, flagSet, save, varGet, varSet } from "../../src/fr/save.ts";
+import { registerCData } from "../../src/games/firered/hw/assets.ts";
+import * as C from "../../src/games/firered/generated/constants.ts";
+import { flagClear, flagGet, flagSet, save, varGet, varSet } from "../../src/games/firered/save.ts";
 import {
   SeedWildEncounterRng,
   WildEncounterRandom,
@@ -32,7 +32,7 @@ import {
   sWildEncounterData,
   sWildEncountersDisabled,
   MAX_ENCOUNTER_RATE,
-} from "../../src/fr/field/wildEncounter.ts";
+} from "../../src/games/firered/field/wildEncounter.ts";
 
 // Register cdata for wild_encounter
 const cdataRaw = JSON.parse(readFileSync(process.cwd() + "/public/fr/cdata/wild_encounter.json", "utf8"));

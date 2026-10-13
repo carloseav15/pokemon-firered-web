@@ -1,7 +1,7 @@
 # Inventario del port (generado)
 
 Generado por `tools/portInventory.py` (`npm run inventory`); no editar a mano.
-Mide cuántas funciones de cada `.c` existen con el mismo nombre en `src/fr`.
+Mide cuántas funciones de cada `.c` existen con el mismo nombre en `src/games/firered`.
 La comparación ignora mayúsculas y `_` (la capa de campo antigua usa camelCase).
 La coincidencia de nombres no demuestra paridad funcional ni fidelidad.
 Una `function` TS con cuerpo trivial (vacío, `return 0;`…) cuando el C tiene
