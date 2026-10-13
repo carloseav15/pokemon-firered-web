@@ -687,13 +687,18 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   (Codex, `3a1b4425`). Qué salidas conservan nombres y propuesta de `symbols.json` y
   tabla de operandos tipados para la fase 6; comandos reproducidos por el revisor.
 
-- [x] **6.4 Separación del motor, pasos 1–5.5** (Claude, `d2892e70`..`2432fbed`): `src/fr` →
-  `src/games/firered`, alias `@game/*` y `@core/*`, `@game/data`, `check:layers`, y 135
-  módulos en `src/core` (runtime, modelo Pokémon, scripts, campo, combate). Contrato en
-  `tools/checks/layers-contract.json` (41 entradas, solo puede encoger). Inventario y
-  `public/fr` sin cambios. Pendiente: 5.6 pantallas compartidas (equipo, nombre, PC,
-  ficha, grupo `hw/menu*`), 6 interfaz `Game`, 7 dividir `save`, y comprobar `play:smoke`
-  completo (C5–C14 no se han ejecutado enteros).
+- [x] **6.4 Separación del motor, pasos 1–5.6** (Claude, `d2892e70`..`4aa31451`): `src/fr` →
+  `src/games/firered`, alias `@game/*` y `@core/*`, `@game/data`, `check:layers`, y 152
+  módulos en `src/core` (runtime, modelo Pokémon, scripts, campo, combate, base de menús,
+  nombre/marcas/ficha). Contrato en `tools/checks/layers-contract.json` (38 entradas,
+  solo puede encoger). Inventario y `public/fr` sin cambios. El paso 6 (interfaz `Game`)
+  y el 7 (dividir `save`) no se hicieron: razones y lista de miembros en
+  [docs/SEPARACION-MOTOR.md](docs/SEPARACION-MOTOR.md) §8. `play:smoke` completo no se ejecutó
+  (el usuario lo declinó); solo C1–C3, C5–C10 y dos drivers.
+- [ ] **6.5 Primer corte de Emerald (fase 3)**: elegir un sistema pequeño de
+  `docs/EMERALD-FALTANTE.md` y portarlo sobre `src/core` con `GAME=emerald`; cada entrada del
+  contrato que Emerald necesite decide si se abstrae o se bifurca. Los datos de Emerald ya
+  se exportan y validan (`docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md` §7–9).
 
 ## 7. Herramientas de diseño (fuera del juego)
 

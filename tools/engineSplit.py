@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """Measure how src/games/firered would split into core/ and games/firered/ (task 6.1).
 
+NOTE (2026-10-13): the split has since been carried out (152 modules live in src/core), so this script only
+sees what remained in src/games/firered and its import graph no longer matches. The figures in
+docs/SEPARACION-MOTOR.md come from the layout at e95ee70a / d2892e70; use `git checkout d2892e70 -- src` in a
+scratch worktree to reproduce them. For the current state use `npm run check:layers` and
+tools/checks/layers-contract.json.
+
+
 Read-only: prints figures and module lists, writes nothing. Inputs:
   ../pokefirered/src/*.c           FireRed C functions (parser of portInventory.py)
   refs/emerald/functions.json      Emerald status per C function (refs:emerald-functions)
