@@ -584,8 +584,11 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   (`0x03000EB1`, localizado por firma con `scanctx.lua`). Automatizado (`7252d79a`, `fa2ad30d`): `run-rom.sh` reinicia
   mGBA y carga el Lua por System Events (mGBA 0.10.5 no tiene `--script`; exige pantalla desbloqueada y permiso de
   Accesibilidad); `run-milestone.sh` encadena recorrido del port, replay y `compare-route.py`. Port hasta Pewter
-  (`FOREST=1`, `ae1935cd`): 0 errores, batallas del bosque ganadas, sin whiteout; **falta el replay en la ROM**
-  (`SKIP_PORT=1 PV_ENDMAP="{3,2}" PV_ENDTAG=pewter tools/rom-compare/run-milestone.sh /tmp/forest`) y mirar el diff por mapa.
+  (`FOREST=1`, `ae1935cd`): 0 errores, sin whiteout. Replay en la ROM con compuertas de escena (`PARCEL_GATES`; sin ellas
+  la ROM salía del laboratorio antes de terminar el Pokédex): flags, vars y bolsa idénticos en cada mapa hasta la entrada
+  del Bosque Verde. **Divergencia abierta:** en el bosque la ROM pierde una batalla (whiteout a la casa del jugador, mapa 4,0)
+  que el port gana con el mismo RNG fijado y el mismo inicial nivel 6. Falta registrar cada batalla en la ROM (especie,
+  nivel, HP, resultado) y compararla con el port; candidatos: orden/velocidad, daño, precisión o el RNG de batalla.
 - [x] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`; revalidado con `e03bdc7a`,
   `526e9004`): `tools/playtest/smoke/scene-scan.job.mjs` ejecutó 423 etiquetas con `applymovement` de todo el
   decomp en su mapa (384 terminan, 32 entran en combate, resto = artefactos: créditos, enlace, Trainer Tower y
