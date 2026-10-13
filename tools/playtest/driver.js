@@ -51,10 +51,10 @@ export const H = {
     this.SUM = await this.mod("/src/games/firered/pokemonSummaryScreen.ts");
     this.MON = await this.mod("/src/core/pokemon/mon.ts");
     this.CMDS = await this.mod("/src/core/battle/cmds/index.ts");
-    this.MENU = await this.mod("/src/games/firered/hw/menu.ts");
+    this.MENU = await this.mod("/src/core/hw/menu.ts");
     this.MON_PROGRESS = await this.mod("/src/games/firered/menus/monProgress.ts");
-    this.LM = await this.mod("/src/games/firered/hw/listMenu.ts");
-    this.TXT = await this.mod("/src/games/firered/hw/text.ts");
+    this.LM = await this.mod("/src/core/hw/listMenu.ts");
+    this.TXT = await this.mod("/src/core/hw/text.ts");
     this.PSA = await this.mod("/src/games/firered/pokemonSpecialAnim.ts");
     return this.observe();
   },
@@ -852,7 +852,7 @@ export const H = {
    * verified by money (price * quantity from the item data) and bag count. Leaves the shop with B afterwards. */
   async buyItem(item, quantity, { clerk = [2, 3] } = {}) {
     if (!Number.isInteger(item) || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) throw new Error("invalid buyItem request");
-    const price = (await this.mod("/src/games/firered/pokemon/items.ts")).itemInfo(item)?.price;
+    const price = (await this.mod("/src/core/pokemon/items.ts")).itemInfo(item)?.price;
     const before = this.resources(), count0 = this.countItem(item);
     if (!price || before.money < price * quantity) return { ok: false, status: "blocked", reason: "not-enough-money", note: "not enough money", price, before };
     const leave = async (note, r) => { await this.escapeMenus(); return { ok: false, status: "failure", reason: note, note, price, before, after: this.resources(), state: this.observe(), driver: r && { reason: r.reason, screen: r.rec?.screen, details: r.rec?.details, dump: r.dump } }; };

@@ -1,6 +1,6 @@
 [
  "cableCarUtil.ts",
  "core/hw/bgRegs.ts",
- "imageProcessingEffects.ts",
- "paletteUtil.ts"
+ "core/paletteUtil.ts",
+ "imageProcessingEffects.ts"
 ]

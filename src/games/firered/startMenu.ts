@@ -15,7 +15,7 @@ import { tasks } from "@core/gba/tasks";
 import { printText } from "@core/gba/textPrinter";
 import { Window } from "@core/gba/window";
 import { joy, JOY_NEW, A_BUTTON, START_BUTTON } from "@core/gba/input";
-import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
+import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "@core/menus/menu";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
 import { StopPokemonLeagueLightingEffectTask } from "@core/field/leagueLighting";
 import { FONT_SMALL, GetStringWidth } from "@core/gba/font";

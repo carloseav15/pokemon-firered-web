@@ -9,12 +9,12 @@ import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
 import {
   CreateYesNoMenu, DestroyYesNoMenu, DrawStdFrameWithCustomTileAndPalette, LoadStdWindowGfx, MENU_B_PRESSED, MENU_NOTHING_CHOSEN,
   Menu_ProcessInputNoWrapClearOnChoose,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, RGB_WHITEALPHA, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import { DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDY, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
 import { renderHw, runHwFrame, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
-import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
 import { CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, DUMMY_WIN_TEMPLATE, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL,
   type WindowTemplate } from "@core/hw/window";
 import { saveStore } from "./save";

@@ -12,7 +12,7 @@ import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetP
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BG1HOFS, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
 import { HwScene, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
-import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "@core/hw/text";
 import { FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap } from "@core/hw/window";
 import { rom } from "@core/rom";
 import { save } from "./save";

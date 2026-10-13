@@ -1,9 +1,9 @@
 // text_printer.c / menu.c printer helpers for GBA windows: one printer per
 // window, run once per frame by RunTextPrinters.
 
-import { FONT_INFOS } from "@core/gba/font";
-import { TEXT_SKIP_DRAW, TextPrinter } from "@core/gba/textPrinter";
-import { COPYWIN_GFX, CopyWindowToVram, WindowSurface } from "@core/hw/window";
+import { FONT_INFOS } from "../gba/font";
+import { TEXT_SKIP_DRAW, TextPrinter } from "../gba/textPrinter";
+import { COPYWIN_GFX, CopyWindowToVram, WindowSurface } from "./window";
 
 export type PrinterCallback = (printer: TextPrinter, cmd: number) => void;
 

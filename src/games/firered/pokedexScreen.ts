@@ -27,7 +27,7 @@ import {
   ListMenuDefaultCursorMoveFunc, ListMenuGetScrollAndRow, ListMenuInit, ListMenuInitInRect, ListMenuLoadStdPalAt, listMenuOf, ListMenuOverrideSetColors,
   ListMenuRemoveCursorObject, ListMenuUpdateCursorObject, RemoveScrollIndicatorArrowPair, type CursorStruct, type ListMenu, type ListMenuItem,
   type ListMenuTemplate, type ListMenuWindowRect, type ScrollArrowsTemplate,
-} from "./hw/listMenu";
+} from "@core/hw/listMenu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BG_PLTT_OFFSET, gPaletteFade, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_ID, PLTT_SIZE_4BPP, PLTT_SIZEOF,
   ResetPaletteFade, RGB_BLACK, RGB_WHITEALPHA, TransferPlttBuffer, UpdatePaletteFade,
@@ -36,7 +36,7 @@ import { DISPCNT_WIN0_ON, DISPCNT_WIN1_ON, REG_OFFSET_BLDALPHA, REG_OFFSET_BLDCN
 import { gMain, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import { AnimateSprites, BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, SetOamMatrix, ST_OAM_AFFINE_NORMAL } from "@core/hw/sprite";
-import { AddTextPrinter, AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "./hw/text";
+import { AddTextPrinter, AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "@core/hw/text";
 import {
   AddWindow, BlitBitmapRectToWindow, COPYWIN_GFX, CopyToWindowPixelBuffer, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers,
   GetWindowAttribute, InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, SetWindowAttribute, WINDOW_TILEMAP_TOP, type WindowTemplate,
@@ -47,13 +47,13 @@ import {
 import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
 import { NationalPokedexNumToSpecies, SpeciesToNationalPokedexNum } from "@core/pokemon/mon";
 import { speciesName } from "@core/pokemon/pokemon";
-import { GetMonIconPtr, GetValidMonIconPalettePtr } from "./pokemonIcon";
+import { GetMonIconPtr, GetValidMonIconPalettePtr } from "@core/pokemonIcon";
 import { rom } from "@core/rom";
 import { IsNationalPokedexEnabled as isNationalPokedexEnabled, save } from "./save";
 import {
   CreateMonPicSprite_HandleDeoxys, CreateTrainerPicSprite, FreeAndDestroyMonPicSprite, FreeAndDestroyTrainerPicSprite, LoadMonPicInWindow,
   PlayerGenderToFrontTrainerPicId, ResetAllPicSprites,
-} from "./trainerPokemonSprites";
+} from "@core/trainerPokemonSprites";
 
 const TAG_AREA_MARKERS = 2001;
 

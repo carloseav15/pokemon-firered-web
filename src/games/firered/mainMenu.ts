@@ -24,7 +24,7 @@ import {
 import { gMain, renderHw, runHwFrame, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
-import { AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized3, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "@core/hw/text";
 import { ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap,
   DUMMY_WIN_TEMPLATE, PIXEL_FILL, type WindowTemplate } from "@core/hw/window";
 import { flagGet, save, saveStore, setSave, varGet } from "./save";

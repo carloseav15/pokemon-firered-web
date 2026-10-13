@@ -47,7 +47,7 @@ import {
   LoadSpriteSheet, MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy,
   ST_OAM_AFFINE_DOUBLE, StartSpriteAffineAnim, StartSpriteAnim, type Sprite, type SpriteTemplate,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "../hw/text";
+import { AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "@core/hw/text";
 import {
   CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
@@ -56,7 +56,7 @@ import { rom } from "@core/rom";
 import { flagSet, save, SV, varGet } from "../save";
 import { GetMonData } from "@core/pokemon/mon";
 import { calculateStats, createMon, nickname, setDexFlag, speciesName, type Pokemon } from "@core/pokemon/pokemon";
-import { GetInGameTradeMail } from "./mail";
+import { GetInGameTradeMail } from "@core/pokemon/mail";
 import { GetMonFrontSpritePal, LoadSpecialPokePic } from "@core/pokemon/pics";
 import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "@core/battle/pokeball";
 import { GetEvolutionTargetSpecies } from "../battle/ext";

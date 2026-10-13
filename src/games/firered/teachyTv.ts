@@ -17,11 +17,11 @@ import { SetGpuReg } from "@core/hw/gpu";
 import {
   DestroyListMenuTask, ListMenuGetScrollAndRow, ListMenuInit, ListMenu_ProcessInput, RemoveScrollIndicatorArrowPair, AddScrollIndicatorArrowPair,
   type ListMenu, type ListMenuItem, type ListMenuTemplate, type ScrollArrowsTemplate,
-} from "./hw/listMenu";
+} from "@core/hw/listMenu";
 import {
   ClearScheduledBgCopiesToVram, DoScheduledBgTilemapCopiesToVram, GetTextSpeedSetting, ResetAllBgsCoordinatesAndBgCntRegs,
   RunTextPrinters_CheckActive, ScheduleBgCopyTilemapToVram, SetVBlankHBlankCallbacksToNull,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK,
   TransferPlttBuffer, UpdatePaletteFade,
@@ -34,14 +34,14 @@ import {
   ProcessSpriteCopyRequests, ResetSpriteData, SeekSpriteAnim, SetSubspriteTables, SpriteCallbackDummy, StartSpriteAnim, type Sprite,
   type SpriteFrameImage, type SpriteTemplate,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized2, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized2, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap, type WindowTemplate,
 } from "@core/hw/window";
 import { InitPokedudeBagRegister, InitPokedudeBagTMs } from "./bagMenu";
 import { SetHelpContextDontCheckBattle } from "./helpSystem";
 import { CreateObjectGraphicsSprite } from "./objectEventGraphics";
-import { checkBagHasItem } from "./pokemon/items";
+import { checkBagHasItem } from "@core/pokemon/items";
 import { rom } from "@core/rom";
 import { random as Random } from "@core/random";
 import { save, SV, varSet } from "./save";

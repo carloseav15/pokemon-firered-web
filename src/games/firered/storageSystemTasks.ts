@@ -2,7 +2,7 @@
 // the party menu slide, the close-box button, the messages and the quest log events.
 import { sound } from "@core/audio/sound";
 import * as C from "./generated/constants";
-import { addBagItem, removeBagItem } from "./pokemon/items";
+import { addBagItem, removeBagItem } from "@core/pokemon/items";
 import { StringCopy } from "./generated/stringUtil";
 import { CHAR_SPACE, EOS } from "@core/gba/charmap";
 import { FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL } from "@core/gba/font";
@@ -19,8 +19,8 @@ import { SetGpuReg } from "@core/hw/gpu";
 import {
   ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, LoadStdWindowGfx, LoadUserWindowGfx, MENU_B_PRESSED, MENU_NOTHING_CHOSEN,
   Menu_MoveCursorNoWrapAround, Menu_ProcessInputNoWrapClearOnChoose,
-} from "./hw/menu";
-import { ClearScheduledBgCopiesToVram, DoScheduledBgTilemapCopiesToVram, DrawTextBorderOuter, ScheduleBgCopyTilemapToVram } from "./hw/menuHelpers";
+} from "@core/hw/menu";
+import { ClearScheduledBgCopiesToVram, DoScheduledBgTilemapCopiesToVram, DrawTextBorderOuter, ScheduleBgCopyTilemapToVram } from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK, ResetPaletteFade,
   TransferPlttBuffer, UpdatePaletteFade,
@@ -37,7 +37,7 @@ import {
   spriteState, StartSpriteAnim, StartSpriteAnimIfDifferent, GetSpriteTileStartByTag, type Sprite,
 } from "@core/hw/sprite";
 import { TilemapUtil_Free, TilemapUtil_Init, TilemapUtil_Move, TilemapUtil_SetPos, TilemapUtil_SetRect, TilemapUtil_SetTilemap, TilemapUtil_Update } from "@core/hw/tilemapUtil";
-import { AddTextPrinterParameterized, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "@core/hw/window";
@@ -49,7 +49,7 @@ import { CreateMonMarkingsMenu, BufferMonMarkingsMenuTiles, CreateMonMarkingComb
 import { DoNamingScreen } from "./namingScreen";
 import { BeginPCScreenEffect_TurnOff, BeginPCScreenEffect_TurnOn, IsPCScreenEffectRunning_TurnOff, IsPCScreenEffectRunning_TurnOn } from "./pcScreenEffect";
 import { GetMonData, SetMonData, zeroMon } from "@core/pokemon/mon";
-import { isMailItem as ItemIsMail } from "./pokemon/mail";
+import { isMailItem as ItemIsMail } from "@core/pokemon/mail";
 import { LoadSpecialPokePic } from "@core/pokemon/pics";
 import { GetBoxNamePtr, GetCurrentBoxMonData, SetCurrentBox, SetCurrentBoxMonData, StorageGetCurrentBox } from "@core/pokemon/storage";
 import { ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";

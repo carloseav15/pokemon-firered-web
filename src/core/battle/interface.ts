@@ -16,7 +16,7 @@ import {
   ST_OAM_OBJ_BLEND, SPRITE_SHAPE, SPRITE_SIZE, SpriteCallbackDummy, SUBSPRITES_IGNORE_PRIORITY, TILE_SIZE_4BPP,
   type Sprite, type Subsprite, type SubspriteTable, type SpriteTemplate,
 } from "../hw/sprite";
-import { AddTextPrinterParameterized4 } from "@game/hw/text";
+import { AddTextPrinterParameterized4 } from "../hw/text";
 import { AddWindow, FillWindowPixelBuffer, gWindows, PIXEL_FILL, RemoveWindow, type WindowTemplate } from "../hw/window";
 import { EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
 import { FONT_SMALL, GetStringWidth } from "../gba/font";

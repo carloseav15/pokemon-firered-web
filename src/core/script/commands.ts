@@ -15,14 +15,14 @@ import { random } from "../random";
 import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, varGet, varSet } from "@game/save";
 import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { LOCALID_PLAYER, OBJECT_EVENTS_COUNT, OPPOSITE } from "../field/objectEvents";
-import * as items from "@game/pokemon/items";
+import * as items from "../pokemon/items";
 import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "@game/script/specials";
 import { gQuestLogState, QL_GetPlaybackState, QuestLog_RecordEnteredMap } from "@game/questLogEvents";
 import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "@game/mapPreviewScreen";
-import { DestroyHelpMessageWindow, DrawHelpMessageWindowWithText } from "@game/menus/helpMessage";
+import { DestroyHelpMessageWindow, DrawHelpMessageWindowWithText } from "../menus/helpMessage";
 import type { ScriptCommand, ScriptRunner } from "./context";
 import {
   ClearQuestLogInput, ClearQuestLogInputIsDpadFlag, ClearRamScript, GetSavedRamScriptIfValid,

@@ -7,7 +7,7 @@ import { Sprite } from "@core/gba/sprite";
 import { printText } from "@core/gba/textPrinter";
 import type { Window } from "@core/gba/window";
 import { incbin, incbin16 } from "@core/hw/assets";
-import { type ListSurface, SCROLL_ARROW_UP } from "../hw/listMenu";
+import { type ListSurface, SCROLL_ARROW_UP } from "@core/hw/listMenu";
 import { gSineTable } from "@core/hw/trig";
 import type { Overworld } from "@core/field/overworld";
 

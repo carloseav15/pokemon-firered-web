@@ -24,22 +24,22 @@ import {
 import { SetGpuReg } from "@core/hw/gpu";
 import {
   DestroyListMenuTask, ListMenu_ProcessInput, ListMenuGetScrollAndRow, RemoveScrollIndicatorArrowPair,
-} from "./hw/listMenu";
+} from "@core/hw/listMenu";
 import {
   ClearDialogWindowAndFrame, CreateYesNoMenu, DLG_WINDOW_BASE_TILE_NUM, DLG_WINDOW_PALETTE_NUM, GetMenuCursorDimensionByFont, InitStandardTextBoxWindows,
   InitTextBoxGfxAndPrinters, LoadStdWindowFrameGfx, Menu_InitCursor, Menu_ProcessInput_other, Menu_ProcessInputNoWrapClearOnChoose, PrintTextArray,
   STD_WINDOW_BASE_TILE_NUM, STD_WINDOW_PALETTE_NUM,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   ClearScheduledBgCopiesToVram, DisplayMessageAndContinueTask, DoScheduledBgTilemapCopiesToVram, ResetAllBgsCoordinatesAndBgCntRegs,
   ScheduleBgCopyTilemapToVram,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
 import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
-import { AddTextPrinterParameterized } from "./hw/text";
+import { AddTextPrinterParameterized } from "@core/hw/text";
 import { FreeAllWindowBuffers, type WindowTemplate } from "@core/hw/window";
 import { ChooseMonToGiveMailFromMailbox } from "./partyMenu";
 import {
@@ -47,8 +47,8 @@ import {
   MailboxPC_InitListMenu, MailboxPC_RemoveWindow,
 } from "./mailboxPc";
 import { ReadMail } from "./menus/mailView";
-import { ClearPCMailEntry, CountPCMail as CountSavePCMail, GetPCMail, GetPCMailEntry, PCMailCompaction as CompactSavePCMail } from "./pokemon/mail";
-import { addBagItem } from "./pokemon/items";
+import { ClearPCMailEntry, CountPCMail as CountSavePCMail, GetPCMail, GetPCMailEntry, PCMailCompaction as CompactSavePCMail } from "@core/pokemon/mail";
+import { addBagItem } from "@core/pokemon/items";
 import { CalculatePlayerPartyCount } from "@core/pokemon/mon";
 import { rom } from "@core/rom";
 import { save } from "./save";

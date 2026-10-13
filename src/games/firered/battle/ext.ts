@@ -19,7 +19,7 @@ import { sound } from "@core/audio/sound";
 import { clearRematchStateByTrainerId } from "../field/vsSeeker";
 import { cdata } from "@core/hw/assets";
 import { gMain } from "@core/hw/runtime";
-import { ItemId_GetBattleFunc, itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
+import { ItemId_GetBattleFunc, itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "@core/pokemon/items";
 import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "@core/pokemon/pokemon";
 import {
   CalculateMonStats, CalculatePPWithBonus, currentRegionMapSection, GetMonData, GetMonEVCount, gEnemyParty, playerMon, SetMonData, type Mon,
@@ -65,7 +65,7 @@ export function IncrementGameStat(index: number): void {
 }
 
 // Shared with field whiteout: both paths use the same source calculation.
-export { computeWhiteOutMoneyLoss as ComputeWhiteOutMoneyLoss } from "../pokemon/partyRules";
+export { computeWhiteOutMoneyLoss as ComputeWhiteOutMoneyLoss } from "@core/pokemon/partyRules";
 
 export function GetTrainerBattleMode(): number {
   return battleHost.trainerBattleMode();
@@ -392,7 +392,7 @@ export function DoNamingScreen(type: number, dest: NameBuffer, species: number, 
 }
 
 export { DexScreen_RegisterMonToPokedex } from "../pokedexScreen";
-export { CreateMonPicSprite_HandleDeoxys } from "../trainerPokemonSprites";
+export { CreateMonPicSprite_HandleDeoxys } from "@core/trainerPokemonSprites";
 
 /** evolution_scene.c EvolutionScene (presentation in ./evoScene). */
 import { EvolutionScene } from "@core/battle/evoScene";
@@ -454,7 +454,7 @@ export {
 
 // ---------------------------------------------------------------- pokemon_icon.c
 
-export { GetMonIconPtr, GetValidMonIconPalettePtr } from "../pokemonIcon";
+export { GetMonIconPtr, GetValidMonIconPalettePtr } from "@core/pokemonIcon";
 
 // ---------------------------------------------------------------- pokemon.c PokemonUseItemEffects
 

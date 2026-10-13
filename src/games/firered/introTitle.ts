@@ -11,7 +11,7 @@ import { tasks } from "@core/gba/tasks";
 import { A_BUTTON, B_BUTTON, DPAD_UP, joy, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
 import { gMain, GetTimer1Low, SetMainCallback2, SetVBlankCallback, StartTimer1 } from "@core/hw/runtime";
 import { ClearGpuRegBits, CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
-import { ResetBgPositions } from "./hw/menuHelpers";
+import { ResetBgPositions } from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BlendPalettes, BlendPalettesGradually, DestroyBlendPalettesGraduallyTask, gPaletteFade,
   IsBlendPalettesGraduallyTaskActive, LoadPalette, PALETTES_ALL, PALETTES_BG,

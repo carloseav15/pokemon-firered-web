@@ -14,7 +14,7 @@ import { battleHost } from "@core/battle/host";
 import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag,
   FreeSpriteTilesByTag, gSprites, SpriteCallbackDummy, StartSpriteAnim } from "@core/hw/sprite";
 import { FreeAllWindowBuffers } from "@core/hw/window";
-import { IsTextPrinterActive } from "../hw/text";
+import { IsTextPrinterActive } from "@core/hw/text";
 import { DisableStruct } from "../generated/structs";
 import {
   G, gActionSelectionCursor, gBattleBufferA, gBattleCommunication, gBattleControllerData, gBattleMonForms, gBattlePartyCurrentOrder,
@@ -30,7 +30,7 @@ import { ActionSelectionCreateCursorAt, ActionSelectionDestroyCursorAt, HandleIn
   SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry, PlayerHandleGetRawMonData } from "@core/battle/controller_player";
 import { OpponentBufferExecCompleted } from "@core/battle/controller_opponent";
 import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "@core/pokemon/mon";
-import { addBagItem as AddBagItem } from "../pokemon/items";
+import { addBagItem as AddBagItem } from "@core/pokemon/items";
 import {
   CopyAllBattleSpritesInvisibilities, DecompressTrainerBackPalette, DoHitAnimHealthboxEffect, HandleLowHpMusicChange, InitAndLaunchSpecialAnimation,
   IsMoveWithoutAnimation, PlaySE12WithPanning, SetBattlerSpriteAffineMode, SpriteCB_WaitForBattlerBallReleaseAnim, TryHandleLaunchBattleTableAnimation,

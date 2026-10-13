@@ -153,7 +153,7 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 
 | Nombre | C | TS |
 |---|---|---|
-| `GetMonSpritePalStruct` | `pokemon.c:5918` | `src/games/firered/trainerPokemonSprites.ts:74` |
+| `GetMonSpritePalStruct` | `pokemon.c:5918` | `src/core/trainerPokemonSprites.ts:74` |
 
 ## pokemon_summary_screen.c
 
@@ -203,8 +203,8 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 | `Task_DoTrainerTowerBattle` | `trainer_tower.c:722` | `src/games/firered/trainerTower.ts:224` |
 | `Task_WaitBT` | `battle_tower.c:883` | `src/games/firered/battleTower.ts:292` |
 | `LoadTradeAnimGfx` | `trade_scene.c:2803` | `src/games/firered/pokemon/ingameTrade.ts:369` |
-| `GetInGameTradeMail` | `trade_scene.c:2500` | `src/games/firered/pokemon/mail.ts:279` |
-| `attachTradeMail` | — | `src/games/firered/pokemon/mail.ts:263` |
+| `GetInGameTradeMail` | `trade_scene.c:2500` | `src/core/pokemon/mail.ts:279` |
+| `attachTradeMail` | — | `src/core/pokemon/mail.ts:263` |
 | `TradeAnimInit_LoadGfx` | `trade_scene.c:927` | `src/games/firered/pokemon/ingameTrade.ts:356` |
 | `ChangeBgX` | `bg.c:590` | `src/core/hw/bg.ts:379` |
 

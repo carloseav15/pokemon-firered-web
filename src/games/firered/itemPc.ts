@@ -26,16 +26,16 @@ import { SetGpuReg } from "@core/hw/gpu";
 import {
   DestroyListMenuTask, ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, ListMenuSetTemplateField,
   AddScrollIndicatorArrowPairParameterized, RemoveScrollIndicatorArrowPair, type ListMenu, type ListMenuItem, type ListMenuTemplate,
-} from "./hw/listMenu";
+} from "@core/hw/listMenu";
 import {
   ClearDialogWindowAndFrameToTransparent, ClearStdWindowAndFrameToTransparent, DrawStdFrameWithCustomTileAndPalette, FONTATTR_MAX_LETTER_HEIGHT,
   FONTATTR_MAX_LETTER_WIDTH, GetFontAttribute, GetTextWindowPalette, LoadMenuMessageWindowGfx, LoadStdWindowGfx, LoadUserWindowGfx, Menu_InitCursor,
   Menu_ProcessInputNoWrapAround, PrintTextArray,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   AdjustQuantityAccordingToDPadInput, ClearScheduledBgCopiesToVram, DisplayMessageAndContinueTask, DoScheduledBgTilemapCopiesToVram, CopyItemName,
   MenuHelpers_IsLinkActive, ResetAllBgsCoordinatesAndBgCntRegs, ScheduleBgCopyTilemapToVram, SetBgTilemapPalette,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer,
   UpdatePaletteFade,
@@ -44,7 +44,7 @@ import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPC
 import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, type MainCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
-import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   AddWindow, ClearWindowTilemap, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap,
   RemoveWindow, type WindowTemplate,
@@ -58,7 +58,7 @@ import {
 } from "./pcScreenEffect";
 import { gPartyMenu, InitPartyMenu, Task_HandleChooseMonInput } from "./partyMenu";
 import { tmhmMove } from "./menus/monProgress";
-import { addBagItem, ItemPcCompaction, itemInfo, itemName, removePCItem } from "./pokemon/items";
+import { addBagItem, ItemPcCompaction, itemInfo, itemName, removePCItem } from "@core/pokemon/items";
 import { CalculatePlayerPartyCount } from "@core/pokemon/mon";
 import { rom } from "@core/rom";
 import { save } from "./save";

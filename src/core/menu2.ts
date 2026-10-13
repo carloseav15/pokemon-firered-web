@@ -1,10 +1,10 @@
 // menu2.c: per-species position data, text helpers, blend task and unused 4bpp
 // bitmap copy helper. Needs loadCData("menu2") first.
 
-import * as C from "./generated/constants";
-import { cdata } from "@core/hw/assets";
-import { GetUnownLetterByPersonalityLoByte } from "@core/field/wildEncounter";
-import { BlitBitmapRect4BitWithoutColorKey, type Bitmap } from "@core/hw/window";
+import * as C from "@game/generated/constants";
+import { cdata } from "./hw/assets";
+import { GetUnownLetterByPersonalityLoByte } from "./field/wildEncounter";
+import { BlitBitmapRect4BitWithoutColorKey, type Bitmap } from "./hw/window";
 
 const SPECIES_OLD_UNOWN_EMARK = C.NUM_SPECIES + 0;
 const SPECIES_OLD_UNOWN_QMARK = C.NUM_SPECIES + 1;

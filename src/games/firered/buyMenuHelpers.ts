@@ -9,12 +9,12 @@ import type { TaskFunc } from "@core/gba/tasks";
 import { cdata } from "@core/hw/assets";
 import {
   DrawStdFrameWithCustomTileAndPalette, LoadMenuMessageWindowGfx, LoadStdWindowGfx, LoadUserWindowGfx,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   CreateYesNoMenuWithCallbacks, DisplayMessageAndContinueTask, PrintMoneyAmountInMoneyBoxWithBorder, ScheduleBgCopyTilemapToVram, type YesNoFuncTable,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import { BG_PLTT_ID } from "@core/hw/palette";
-import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
 import { InitWindows, PutWindowTilemap, type WindowTemplate } from "@core/hw/window";
 import { save } from "./save";
 import { GetMartFontId } from "./shop";

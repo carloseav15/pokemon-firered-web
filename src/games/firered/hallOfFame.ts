@@ -32,7 +32,7 @@ import { SetGpuReg } from "@core/hw/gpu";
 import {
   ClearDialogWindowAndFrame, CreateTopBarWindowLoadPalette, DestroyTopBarWindow, DrawDialogueFrame, DrawStdFrameWithCustomTileAndPalette, FONTATTR_LETTER_SPACING,
   GetFontAttribute, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters, LoadStdWindowGfx, TopBarWindowPrintString, TopBarWindowPrintTwoStrings,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, BlendPalettesUnfaded, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL,
   PALETTES_OBJECTS, ResetPaletteFade, RGB, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade,
@@ -47,7 +47,7 @@ import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, gSprites, LoadCompressedSpriteSheet, LoadOam, LoadSpritePalette,
   MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData, spriteState, StartSpriteAnim, type Sprite,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, RunTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, RunTextPrinters } from "@core/hw/text";
 import { gSineTable } from "@core/hw/trig";
 import {
   AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
@@ -60,7 +60,7 @@ import { GetGameStat, save } from "./save";
 import {
   CreateMonPicSprite_HandleDeoxys, CreateTrainerPicSprite, FreeAndDestroyMonPicSprite, FreeAndDestroyTrainerPicSprite, PlayerGenderToFrontTrainerPicId,
   ResetAllPicSprites,
-} from "./trainerPokemonSprites";
+} from "@core/trainerPokemonSprites";
 import { IsNationalPokedexEnabled } from "./pokedexScreen";
 import type { Game } from "./game";
 import { fieldMenu } from "./menus/fieldMenus";

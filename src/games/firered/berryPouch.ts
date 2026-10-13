@@ -16,18 +16,18 @@ import { SetGpuReg } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask, LIST_NO_MULTIPLE_SCROLL, ListMenu_ProcessInput, ListMenuGetScrollAndRow,
   ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, listMenuTemplate, RemoveScrollIndicatorArrowPair, type ListMenuItem, type ListMenuTemplate,
-} from "./hw/listMenu";
+} from "@core/hw/listMenu";
 import {
   ClearDialogWindowAndFrameToTransparent, ClearStdWindowAndFrameToTransparent, DrawStdFrameWithCustomTileAndPalette, FONTATTR_LETTER_SPACING,
   FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetMenuCursorDimensionByFont, LoadMenuMessageWindowGfx, LoadStdWindowGfx, LoadUserWindowGfx,
   MENU_B_PRESSED, MENU_NOTHING_CHOSEN, Menu_InitCursor, Menu_ProcessInputNoWrapAround,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   AddItemMenuActionTextPrinters, AdjustQuantityAccordingToDPadInput, ClearScheduledBgCopiesToVram, CopyItemName, CreateYesNoMenuWithCallbacks,
   DisplayMessageAndContinueTask, DoScheduledBgTilemapCopiesToVram, GetDialogBoxFontId, PrintMoneyAmount, PrintMoneyAmountInMoneyBox,
   PrintMoneyAmountInMoneyBoxWithBorder, ResetAllBgsCoordinatesAndBgCntRegs, ScheduleBgCopyTilemapToVram, SetBgTilemapPalette, type MenuAction,
   type YesNoFuncTable,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import { BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_BLDCNT, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
 import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
@@ -36,14 +36,14 @@ import {
   ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAffineAnim, ANIMCMD_END, ANIMCMD_FRAME, AFFINEANIMCMD_END,
   AFFINEANIMCMD_FRAME, type Sprite, type SpriteTemplate,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   AddWindow, ClearWindowTilemap, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL,
   PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "@core/hw/window";
 import { bagResult, CreateBerryPouchItemIcon, DestroyItemMenuIcon, ResetItemMenuIconState, type BagTaskContext } from "./bagMenu";
 import { ItemIdToBerryType } from "@core/pokemon/berry";
-import { addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addMoney, itemInfo, pocketList, removeBagItem } from "@core/pokemon/items";
 import { b64, rom } from "@core/rom";
 import { save } from "./save";
 

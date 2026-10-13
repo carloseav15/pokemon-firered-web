@@ -26,15 +26,15 @@ import { FONT_NORMAL, FONT_NORMAL_COPY_1 } from "@core/gba/font";
 import { printText, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
 import { Window } from "@core/gba/window";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
-import { Menu, MENU_NOTHING_CHOSEN } from "./menu";
-import { MENU_B_PRESSED } from "../hw/menu";
-import { GetMenuCursorDimensionByFont } from "../hw/menu";
+import { Menu, MENU_NOTHING_CHOSEN } from "@core/menus/menu";
+import { MENU_B_PRESSED } from "@core/hw/menu";
+import { GetMenuCursorDimensionByFont } from "@core/hw/menu";
 import { StringCopy, StringLength_Multibyte, ConvertIntToDecimalStringN } from "../generated/stringUtil";
 import { STR_CONV_MODE_RIGHT_ALIGN, CHAR_SPACE, EOS, encode } from "@core/gba/charmap";
 import { GetBoxMonDataAt, GetBoxNamePtr } from "@core/pokemon/storage";
 import { resetPokemonStorageSystem } from "@core/pokemon/storage";
 import { AddWindow, FillWindowPixelBuffer, gWindows, PIXEL_FILL, RemoveWindow, type WindowTemplate } from "@core/hw/window";
-import { AddTextPrinterParameterized4 } from "../hw/text";
+import { AddTextPrinterParameterized4 } from "@core/hw/text";
 import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpriteTileStartByTag, gDummySpriteAffineAnimTable,

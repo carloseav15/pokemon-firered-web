@@ -12,7 +12,7 @@ import { random } from "@core/random";
 import { EnableNationalPokedex as enableNationalPokedex, flagGet, flagSet, incrementGameStat, IsNationalPokedexEnabled, save, SV, varGet, varSet } from "../save";
 import { MAP_OFFSET } from "@core/field/fieldmap";
 import { LOCALID_CAMERA, OPPOSITE } from "@core/field/objectEvents";
-import * as items from "../pokemon/items";
+import * as items from "@core/pokemon/items";
 import { countAliveNonEggMons, GetKantoPokedexCount, GetNationalPokedexCount, GetLeadMonIndex, GetPlayerTrainerId, HasAllKantoMons, HasAllMons, healMon, leadMonIndex, nickname, setDexFlag, speciesName } from "@core/pokemon/pokemon";
 import { GetMonData, GetMonEVCount, SetMonData } from "@core/pokemon/mon";
 import { cdata, hasCData, incbin16, loadCData } from "@core/hw/assets";

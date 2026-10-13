@@ -12,8 +12,8 @@ import {
   ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg,
 } from "@core/hw/bg";
 import { SetGpuReg } from "@core/hw/gpu";
-import { CreateYesNoMenu, LoadUserWindowGfx } from "./hw/menu";
-import { DecompressAndLoadBgGfxUsingHeap, DrawTextBorderOuter } from "./hw/menuHelpers";
+import { CreateYesNoMenu, LoadUserWindowGfx } from "@core/hw/menu";
+import { DecompressAndLoadBgGfxUsingHeap, DrawTextBorderOuter } from "@core/hw/menuHelpers";
 import { LoadPalette, ResetPaletteFade } from "@core/hw/palette";
 import {
   DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON, ppu, REG_OFFSET_DISPCNT, REG_OFFSET_WIN0H,
@@ -23,7 +23,7 @@ import {
   CreateSprite, DestroySprite, LoadSpritePalettes, LoadSpriteSheet, MAX_SPRITES, StartSpriteAnim, gSprites,
   type Sprite, type SpriteCallback,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   AddWindow, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, InitWindows, PIXEL_FILL, PutWindowTilemap,
   COPYWIN_FULL, COPYWIN_GFX, type WindowTemplate,

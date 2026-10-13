@@ -34,7 +34,7 @@ import {
   WriteSequenceToBgTilemapBuffer, type BgTemplate,
 } from "@core/hw/bg";
 import { SetGpuReg } from "@core/hw/gpu";
-import { LoadStdWindowFrameGfx } from "../hw/menu";
+import { LoadStdWindowFrameGfx } from "@core/hw/menu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade,
   RGB_BLACK, TintPalette_CustomTone, TintPalette_SepiaTone, TransferPlttBuffer, UpdatePaletteFade,
@@ -51,14 +51,14 @@ import {
 } from "@core/hw/ppu";
 import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "@core/hw/scanline";
-import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "../hw/text";
+import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   BlitBitmapRectToWindow, COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
   FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "@core/hw/window";
 import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllHoennMons, HasAllMons } from "@core/pokemon/pokemon";
-import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
-import { MailSpeciesToSpecies } from "../pokemon/mail";
+import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "@core/pokemonIcon";
+import { MailSpeciesToSpecies } from "@core/pokemon/mail";
 import { rom } from "@core/rom";
 import { flagGet, GetGameStat, IsNationalPokedexEnabled, save, varGet } from "../save";
 import { CopyEasyChatWord } from "../easyChat";

@@ -4,11 +4,11 @@ import type { Game } from "../game";
 import { HwScene } from "@core/hw/runtime";
 import { ReadMail } from "./mailView";
 import { DoEasyChatScreen } from "../easyChat2";
-import { GetMailDataForMon } from "../pokemon/mail";
+import { GetMailDataForMon } from "@core/pokemon/mail";
 import { decode, expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
 import { rom } from "@core/rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
-import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "../pokemon/items";
+import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "@core/pokemon/items";
 import { trySetUpFieldMove } from "./fieldMoveMenu";
 import { openFlyMap, openRegionMap, REGIONMAP_TYPE_NORMAL } from "../regionMap";
 import { SetUsedFieldMoveQuestLogEvent, SetUsedFlyQuestLogEvent } from "../questLogEvents";
@@ -21,7 +21,7 @@ import {
   ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, GetCursorSelectionMonId, GetItemEffectType, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
   type PartyMenuFieldHooks,
 } from "../partyMenu";
-import { GetNumberOfRelearnableMoves } from "../pokemon/partyRules";
+import { GetNumberOfRelearnableMoves } from "@core/pokemon/partyRules";
 import { encode, stringVars } from "@core/gba/charmap";
 import { ExecuteTableBasedItemEffect } from "../battle/ext";
 import { GetMonData, type Mon } from "@core/pokemon/mon";

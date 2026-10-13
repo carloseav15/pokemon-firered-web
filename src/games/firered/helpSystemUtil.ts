@@ -9,7 +9,7 @@ import { GenerateFontHalfRowLookupTable, GetLastTextColor, RestoreTextColors, Sa
 import { incbin, incbin16, loadCData, preloadIncbin } from "@core/hw/assets";
 import { GetGpuReg, SetGpuReg } from "@core/hw/gpu";
 import { FillBitmapRect4Bit } from "@core/hw/window";
-import { GetFontAttribute } from "./hw/menu";
+import { GetFontAttribute } from "@core/hw/menu";
 import { gMain } from "@core/hw/runtime";
 import {
   BGCNT_16COLOR, DISPCNT_BG0_ON, ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS,

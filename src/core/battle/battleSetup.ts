@@ -9,7 +9,7 @@ import { clearRematchStateOfLastTalked, getRematchTrainerId } from "@game/field/
 import { afterRoamerBattle } from "../pokemon/roamer";
 import { CreateScriptedWildMon } from "@game/pokemon/scriptPokemonUtil";
 import { CreateEnemyEventMon, GetTrainerEncounterMusicId, gEnemyParty } from "../pokemon/mon";
-import { checkBagHasItem } from "@game/pokemon/items";
+import { checkBagHasItem } from "../pokemon/items";
 import { incrementGameStat } from "@game/save";
 import { flagClear, flagGet, flagSet, save, SV, varSet } from "@game/save";
 import { createMaleMon, createMon, genderFromPersonality, healMon, MON_FEMALE, type Pokemon } from "../pokemon/pokemon";

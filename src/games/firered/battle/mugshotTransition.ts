@@ -4,7 +4,7 @@ import * as C from "../generated/constants";
 import { cdata, incbin, incbin16 } from "@core/hw/assets";
 import { Sin } from "@core/hw/trig";
 import { gTrainerFrontPicPaletteTable, gTrainerFrontPicTable, sheetBytes, symPalette } from "@core/pokemon/pics";
-import { PlayerGenderToFrontTrainerPicId } from "../trainerPokemonSprites";
+import { PlayerGenderToFrontTrainerPicId } from "@core/trainerPokemonSprites";
 
 const W = 240, H = 160;
 type TrainerPic = { image: HTMLCanvasElement; x: number; y: number; scaleX: number; scaleY: number; state: number; slideSpeed: number; slideAccel: number; done: boolean; slideDir: number };

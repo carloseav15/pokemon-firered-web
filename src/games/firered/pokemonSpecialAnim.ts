@@ -30,10 +30,10 @@ import {
   InitBgsFromTemplates, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
 } from "@core/hw/bg";
 import { SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
-import { ClearStdWindowAndFrameToTransparent, LoadUserWindowGfx } from "./hw/menu";
+import { ClearStdWindowAndFrameToTransparent, LoadUserWindowGfx } from "@core/hw/menu";
 import {
   DrawTextBorderOuter, FindTaskIdByFunc, FuncIsActiveTask, GetWordTaskArg, SetWordTaskArg,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, ResetPaletteFadeControl, RGB, RGB_BLACK, RGB_WHITE, TransferPlttBuffer,
   UpdatePaletteFade, PALETTES_ALL,
@@ -48,7 +48,7 @@ import {
   IndexOfSpritePaletteTag, InitSpriteAffineAnim, LoadCompressedSpriteSheet, LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES,
   ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, ST_OAM_AFFINE_DOUBLE, StartSpriteAffineAnim, StartSpriteAnim, type Sprite,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized3, AddTextPrinterParameterized5, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized3, AddTextPrinterParameterized5, IsTextPrinterActive, RunTextPrinters } from "@core/hw/text";
 import { gSineTable } from "@core/hw/trig";
 import {
   ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, COPYWIN_MAP, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL,
@@ -58,9 +58,9 @@ import { AddItemIconObject } from "./bagMenu";
 import {
   DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset, DynamicPlaceholderTextUtil_SetPlaceholderPtr,
 } from "@core/dynamicPlaceholderTextUtil";
-import { Menu2_GetMonPosAttribute, Menu2_GetStarSpritePosAttribute } from "./menu2";
+import { Menu2_GetMonPosAttribute, Menu2_GetStarSpritePosAttribute } from "@core/menu2";
 import { tmhmMove } from "./menus/monProgress";
-import { CheckIfItemIsTMHMOrEvolutionStone, itemName } from "./pokemon/items";
+import { CheckIfItemIsTMHMOrEvolutionStone, itemName } from "@core/pokemon/items";
 import { GetMonData, type Mon } from "@core/pokemon/mon";
 import { playerMon } from "@core/pokemon/mon";
 import { GetMonFrontSpritePal, LoadSpecialPokePic } from "@core/pokemon/pics";

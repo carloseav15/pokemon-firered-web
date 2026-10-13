@@ -3,15 +3,15 @@
 // the species' two-frame image into the sprite's tiles, so the sprite keeps
 // the icon bytes beside it (the C stores them in sprite->images).
 
-import * as C from "./generated/constants";
-import { cdata, incbin, symName, type SymRef } from "@core/hw/assets";
-import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
-import { LoadPalette } from "@core/hw/palette";
+import * as C from "@game/generated/constants";
+import { cdata, incbin, symName, type SymRef } from "./hw/assets";
+import { affineAnimsFrom, animsFrom, oamFrom } from "./hw/cdataSprite";
+import { LoadPalette } from "./hw/palette";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, gSprites, IndexOfSpritePaletteTag, LoadSpritePalette, RequestSpriteCopy, TAG_NONE, type Sprite,
   type SpriteCallback, type SpriteTemplate,
-} from "@core/hw/sprite";
-import { symPalette } from "@core/pokemon/pics";
+} from "./hw/sprite";
+import { symPalette } from "./pokemon/pics";
 
 export const POKE_ICON_BASE_PAL_TAG = 56000;
 const OBJ_VRAM0 = 0x10000;

@@ -4,7 +4,7 @@ import * as C from "@game/generated/constants";
 import { cdata, hasCData, incbin16, symName } from "../hw/assets";
 import { flagGet } from "@game/save";
 import { gPlttBufferFaded, gPlttBufferUnfaded } from "../hw/palette";
-import { AddTextPrinter } from "@game/hw/text";
+import { AddTextPrinter } from "../hw/text";
 import { CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, PutWindowTilemap } from "../hw/window";
 import { getTextSpeedSetting, textFlags } from "../gba/textPrinter";
 import { GetStringWidth } from "../gba/font";

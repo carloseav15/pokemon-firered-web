@@ -4,7 +4,7 @@
 
 import { tasks } from "@core/gba/tasks";
 import { GetGpuReg, ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
-import { FuncIsActiveTask } from "./hw/menuHelpers";
+import { FuncIsActiveTask } from "@core/hw/menuHelpers";
 import { BG_PLTT_ID, BlendPalettes, gPlttBufferFaded, PALETTES_ALL, RGB_BLACK } from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_LIGHTEN, BLDCNT_TGT1_BD, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1, BLDCNT_TGT1_BG2, BLDCNT_TGT1_BG3, BLDCNT_TGT1_OBJ, DISPCNT_WIN0_ON,

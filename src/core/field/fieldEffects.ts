@@ -20,7 +20,7 @@ import { DoPoisonFieldEffect } from "./poison";
 import { SafariZoneTakeStep } from "./safariZone";
 import { gScanlineEffect, gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
 import { Cos, Sin } from "../hw/trig";
-import { FindTaskIdByFunc } from "@game/hw/menuHelpers";
+import { FindTaskIdByFunc } from "../hw/menuHelpers";
 import { MAP_OFFSET } from "./fieldmap";
 import { spriteSheet } from "./gfx4bpp";
 import { QuestLog_CutRecording } from "@game/questLogEvents";

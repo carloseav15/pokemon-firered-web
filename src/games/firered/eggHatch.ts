@@ -12,8 +12,8 @@ import {
 } from "@core/hw/bg";
 import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import { SetGpuReg } from "@core/hw/gpu";
-import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";
-import { DecompressAndLoadBgGfxUsingHeap } from "./hw/menuHelpers";
+import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "@core/hw/menu";
+import { DecompressAndLoadBgGfxUsingHeap } from "@core/hw/menuHelpers";
 import { BeginNormalPaletteFade, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
 import { HwScene, SetMainCallback2, SetVBlankCallback, gMain } from "@core/hw/runtime";
@@ -23,7 +23,7 @@ import {
   ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim, gSprites,
   type Sprite,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "@core/hw/text";
 import { Sin } from "@core/hw/trig";
 import {
   CopyWindowToVram, FillWindowPixelBuffer, InitWindows, PutWindowTilemap, RemoveWindow, COPYWIN_FULL, type WindowTemplate,
@@ -37,7 +37,7 @@ import { gMonFrontPicCoords, LoadSpecialPokePic } from "@core/pokemon/pics";
 import { random } from "@core/random";
 import { rom } from "@core/rom";
 import { save, SV, varGet, varSet } from "./save";
-import { GetMonSpritePalStructFromOtIdPersonality } from "./trainerPokemonSprites";
+import { GetMonSpritePalStructFromOtIdPersonality } from "@core/trainerPokemonSprites";
 import type { Game } from "./game";
 
 const symbols = [

@@ -3,14 +3,14 @@
 // composing a new message (the Easy Chat writer, via the party menu GIVE
 // path → DoEasyChatScreen) are connected.
 
-import { CHAR_SPACE, decode, EOS } from "@core/gba/charmap";
-import * as C from "../generated/constants";
-import { cdata, hasCData, loadCData, type SymRef } from "@core/hw/assets";
-import { rom } from "@core/rom";
+import { CHAR_SPACE, decode, EOS } from "../gba/charmap";
+import * as C from "@game/generated/constants";
+import { cdata, hasCData, loadCData, type SymRef } from "../hw/assets";
+import { rom } from "../rom";
 import { GetUnownLetterByPersonality } from "../pokemonIcon";
-import { save, type MailData, type PcMailEntry } from "../save";
-import { speciesName, type Pokemon } from "@core/pokemon/pokemon";
-import { ConvertEasyChatWordsToString, CopyEasyChatWord } from "../easyChat";
+import { save, type MailData, type PcMailEntry } from "@game/save";
+import { speciesName, type Pokemon } from "./pokemon";
+import { ConvertEasyChatWordsToString, CopyEasyChatWord } from "@game/easyChat";
 
 export const MAIL_WORDS_COUNT = C.MAIL_WORDS_COUNT;
 export const EC_WORD_UNDEFINED = C.EC_WORD_UNDEFINED;

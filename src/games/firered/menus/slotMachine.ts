@@ -17,8 +17,8 @@ import {
 import {
   CreateYesNoMenu, DestroyYesNoMenu, GetTextWindowPalette, LoadStdWindowGfx, LoadStdWindowGfxOnBg,
   LoadUserWindowGfx, LoadUserWindowGfx2, Menu_MoveCursorNoWrapAround, Menu_ProcessInputNoWrapClearOnChoose,
-} from "../hw/menu";
-import { DrawTextBorderOuter } from "../hw/menuHelpers";
+} from "@core/hw/menu";
+import { DrawTextBorderOuter } from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded,
   LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
@@ -43,7 +43,7 @@ import {
 import { templateFrom } from "@core/hw/cdataSprite";
 import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
 import { gSineTable } from "@core/hw/trig";
-import { AddTextPrinterParameterized3, AddTextPrinterParameterized5 } from "../hw/text";
+import { AddTextPrinterParameterized3, AddTextPrinterParameterized5 } from "@core/hw/text";
 import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
 import {
   ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers,
@@ -52,7 +52,7 @@ import {
 import { sound } from "@core/audio/sound";
 import { random } from "@core/random";
 import { incrementGameStat, save } from "../save";
-import { GetCoins as getCoins, removeCoins } from "../pokemon/items";
+import { GetCoins as getCoins, removeCoins } from "@core/pokemon/items";
 import { SetQLPlayedTheSlots } from "../questLogEvents";
 import { rom } from "@core/rom";
 import * as C from "../generated/constants";

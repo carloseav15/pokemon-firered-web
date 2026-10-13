@@ -7,13 +7,13 @@ import { StringAppend, StringCompare, StringCopy, StringCopy_Nickname } from "..
 import { random } from "@core/random";
 import { rom } from "@core/rom";
 import { flagSet, save, SV, varGet, varSet, type MailData } from "../save";
-import { ClearMailStruct, GetMailDataForMon, GiveMailToMon2, MonHasMail, TakeMailFromMon } from "./mail";
+import { ClearMailStruct, GetMailDataForMon, GiveMailToMon2, MonHasMail, TakeMailFromMon } from "@core/pokemon/mail";
 import {
   calculateStats, CanMonLearnTMHM, createMon, deleteFirstMoveAndGive, genderFromPersonality, giveMove, levelFromExp, MON_HAS_MAX_MOVES,
   movesLearnedAtLevel, nickname, setDexFlag, speciesName, TryIncrementMonLevel, MON_FEMALE, MON_GENDERLESS, MON_MALE, type Pokemon,
 } from "@core/pokemon/pokemon";
 import { tmhmMove } from "../menus/monProgress";
-import { GetLevelUpMovesBySpecies } from "./partyRules";
+import { GetLevelUpMovesBySpecies } from "@core/pokemon/partyRules";
 
 export type DaycareMon = { mon: Pokemon | null; steps: number; mail?: MailData; mailOtName?: number[]; mailMonName?: number[] };
 export type DayCare = { mons: [DaycareMon, DaycareMon]; offspringPersonality: number; stepCounter: number };

@@ -12,14 +12,14 @@ import { oamData, gDummySpriteAffineAnimTable, gDummySpriteAnimTable, ANIMCMD_FR
 import {
   ClearStdWindowAndFrameToTransparent, DrawStdFrameWithCustomTileAndPalette, Menu_GetCursorPos, Menu_InitCursor, Menu_MoveCursor,
   PrintTextArray,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import { ClearWindowTilemap, AddWindow, RemoveWindow } from "@core/hw/window";
-import { ScheduleBgCopyTilemapToVram, CopyItemName } from "./hw/menuHelpers";
+import { ScheduleBgCopyTilemapToVram, CopyItemName } from "@core/hw/menuHelpers";
 import { GetMonSpritePalFromSpeciesAndPersonality } from "@core/pokemon/pics";
 import {
   GetGenderFromSpeciesAndPersonality, GetMonData, GetMonGender, MonRestorePP, SetMonData, zeroMon, type Mon,
 } from "@core/pokemon/mon";
-import { isMailItem } from "./pokemon/mail";
+import { isMailItem } from "@core/pokemon/mail";
 import { speciesName } from "@core/pokemon/pokemon";
 import {
   BoxMonAtToMon, GetAndCopyBoxMonDataAt, GetBoxedMonPtr, GetCurrentBoxMonData, SetBoxMonAt, SetCurrentBoxMonData, StorageGetCurrentBox,

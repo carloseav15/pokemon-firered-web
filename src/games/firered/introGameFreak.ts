@@ -5,7 +5,7 @@ import * as C from "./generated/constants";
 import { sound } from "@core/audio/sound";
 import { type BgTemplate, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, ShowBg, HideBg } from "@core/hw/bg";
 import { CopyBufferedValuesToGpuRegs, InitGpuRegManager, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
-import { IsBlendTaskActive, StartBlendTask } from "./hw/menu";
+import { IsBlendTaskActive, StartBlendTask } from "@core/hw/menu";
 import { tasks } from "@core/gba/tasks";
 import { BlendPalettes, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import {

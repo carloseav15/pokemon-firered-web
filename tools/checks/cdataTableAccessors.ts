@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import * as C from "../../src/games/firered/generated/constants.ts";
 import { FacilityClassToPicIndex, PageToNextGfxId } from "../../src/games/firered/generated/cdataTableAccessors.ts";
 import { registerCData } from "../../src/core/hw/assets.ts";
-import { PlayerGenderToFrontTrainerPicId } from "../../src/games/firered/trainerPokemonSprites.ts";
+import { PlayerGenderToFrontTrainerPicId } from "../../src/core/trainerPokemonSprites.ts";
 import { CurrentPageToKeyboardId, CurrentPageToNextKeyboardId, GetPreviousTextCaretPosition, GetTextEntryPosition, type NamingModel } from "../../src/games/firered/menus/namingModel.ts";
 
 const root = `${process.cwd()}/public/fr/cdata/`;

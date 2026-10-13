@@ -13,14 +13,14 @@ import { DATA_ROOT, rom } from "@core/rom";
 import { cdata, incbin, incbin16, symName, type SymRef } from "@core/hw/assets";
 import { flagGet, save, SV, varGet, varSet } from "../save";
 import { joy, DPAD_DOWN, DPAD_UP } from "@core/gba/input";
-import { GridMenu, Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
+import { GridMenu, Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "@core/menus/menu";
 import {
   DestroyListMenuTask, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, LIST_NOTHING_CHOSEN, ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuInitOnSurface,
   listMenuTemplate, SCROLL_ARROW_UP,
-} from "../hw/listMenu";
+} from "@core/hw/listMenu";
 import { addFieldScrollArrows, fieldListSurface } from "./fieldListMenu";
 import type { Overworld } from "@core/field/overworld";
-import { GetCoins } from "../pokemon/items";
+import { GetCoins } from "@core/pokemon/items";
 import {
   LISTMENU_BADGES, LISTMENU_SILPHCO_FLOORS, LISTMENU_ROCKET_HIDEOUT_FLOORS, LISTMENU_DEPT_STORE_FLOORS,
   LISTMENU_WIRELESS_LECTURE_HEADERS, LISTMENU_BERRY_POWDER, LISTMENU_TRAINER_TOWER_FLOORS,

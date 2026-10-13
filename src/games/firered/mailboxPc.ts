@@ -12,13 +12,13 @@ import * as C from "./generated/constants";
 import { cdata } from "@core/hw/assets";
 import {
   AddScrollIndicatorArrowPairParameterized, ListMenuInit, type ListMenu, type ListMenuItem, type ListMenuTemplate,
-} from "./hw/listMenu";
-import { ClearStdWindowAndFrameToTransparent, DrawStdWindowFrame, GetMenuCursorDimensionByFont } from "./hw/menu";
-import { AddTextPrinterParameterized4 } from "./hw/text";
+} from "@core/hw/listMenu";
+import { ClearStdWindowAndFrameToTransparent, DrawStdWindowFrame, GetMenuCursorDimensionByFont } from "@core/hw/menu";
+import { AddTextPrinterParameterized4 } from "@core/hw/text";
 import { AddWindow, ClearWindowTilemap, RemoveWindow, type WindowTemplate } from "@core/hw/window";
 import { rom } from "@core/rom";
 import { save } from "./save";
-import { GetPCMailEntry } from "./pokemon/mail";
+import { GetPCMailEntry } from "@core/pokemon/mail";
 
 /** struct PlayerPCItemPageStruct */
 export type PlayerPCItemPageStruct = {

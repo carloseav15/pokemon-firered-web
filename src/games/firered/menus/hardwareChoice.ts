@@ -9,15 +9,15 @@ import { InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer
 import { gMain, SetMainCallback1, SetMainCallback2, SetHBlankCallback, SetVBlankCallback } from "@core/hw/runtime";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
 import { BG_PLTT_ID, LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "@core/hw/palette";
-import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetTextWindowPalette } from "../hw/menu";
-import { CreateYesNoMenu, LoadUserWindowGfx, MENU_NOTHING_CHOSEN, Menu_ProcessInputNoWrapClearOnChoose } from "../hw/menu";
+import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetTextWindowPalette } from "@core/hw/menu";
+import { CreateYesNoMenu, LoadUserWindowGfx, MENU_NOTHING_CHOSEN, Menu_ProcessInputNoWrapClearOnChoose } from "@core/hw/menu";
 import {
   AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask, LIST_CANCEL, LIST_MULTIPLE_SCROLL_DPAD, ListMenu_ProcessInput, ListMenuDefaultCursorMoveFunc,
   ListMenuGetScrollAndRow, ListMenuInit, listMenuTemplate, ListMenuOverrideSetColors, RemoveScrollIndicatorArrowPair, SCROLL_ARROW_UP,
   StepScrollIndicatorArrowPair, type ListMenuItem,
-} from "../hw/listMenu";
+} from "@core/hw/listMenu";
 import { BuildOamBuffer, gSprites, LoadOam, ProcessSpriteCopyRequests } from "@core/hw/sprite";
-import { DeactivateAllTextPrinters, AddTextPrinterParameterized2, AddTextPrinterParameterized3, IsTextPrinterActive, RunTextPrinters } from "../hw/text";
+import { DeactivateAllTextPrinters, AddTextPrinterParameterized2, AddTextPrinterParameterized3, IsTextPrinterActive, RunTextPrinters } from "@core/hw/text";
 import { getTextSpeedSetting } from "@core/gba/textPrinter";
 import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "@core/hw/window";
 import { sound } from "@core/audio/sound";

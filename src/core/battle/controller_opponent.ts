@@ -40,7 +40,7 @@ import {
   StartHealthboxSlideIn, Task_HidePartyStatusSummary, UpdateHealthboxAttribute, UpdateHpTextInHealthbox,
 } from "./interface";
 import { BattlePutTextOnWindow, BattleStringShouldBeColored, BufferStringBattle } from "./message";
-import { IsTextPrinterActive } from "@game/hw/text";
+import { IsTextPrinterActive } from "../hw/text";
 import { HandleIntroSlide } from "./intro";
 import { DoPokeballSendOutAnimation } from "./pokeball";
 import { AI_TrySwitchOrUseItem, BattleAI_ChooseMoveOrAction, BattleAI_SetupAIData, GetMostSuitableMonToSwitchInto } from "./ai";

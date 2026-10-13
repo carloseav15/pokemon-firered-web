@@ -1,9 +1,9 @@
 // Port of item.c (bag pockets, PC items) and money.c.
 
-import * as C from "../generated/constants";
-import { b64, rom, type ItemInfo } from "@core/rom";
-import { flagSet, save, SV, varSet, type BagPocket } from "../save";
-import { SetQuestLogEvent } from "../questLogEvents";
+import * as C from "@game/generated/constants";
+import { b64, rom, type ItemInfo } from "../rom";
+import { flagSet, save, SV, varSet, type BagPocket } from "@game/save";
+import { SetQuestLogEvent } from "@game/questLogEvents";
 
 export const POCKET_ITEMS = 1, POCKET_KEY_ITEMS = 2, POCKET_POKE_BALLS = 3, POCKET_TM_CASE = 4, POCKET_BERRY_POUCH = 5;
 const CAPACITY: Record<number, number> = { 1: 42, 2: 30, 3: 13, 4: 58, 5: 43 };

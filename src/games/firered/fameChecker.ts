@@ -17,9 +17,9 @@ import { SetGpuReg } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPair, DestroyListMenuTask, ListMenuGetScrollAndRow, ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit,
   ListMenu_ProcessInput, RemoveScrollIndicatorArrowPair, type ListMenu, type ListMenuItem, type ListMenuTemplate, type ScrollArrowsTemplate,
-} from "./hw/listMenu";
-import { DrawDialogueFrame, GetTextWindowPalette, LoadStdWindowFrameGfx } from "./hw/menu";
-import { GetTextSpeedSetting } from "./hw/menuHelpers";
+} from "@core/hw/listMenu";
+import { DrawDialogueFrame, GetTextWindowPalette, LoadStdWindowFrameGfx } from "@core/hw/menu";
+import { GetTextSpeedSetting } from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, gPaletteFade, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
 } from "@core/hw/palette";
@@ -38,7 +38,7 @@ import {
   LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData, ST_OAM_OBJ_BLEND,
   ST_OAM_OBJ_NORMAL, gSprites, type Sprite,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized2, AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized2, AddTextPrinterParameterized4, DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters } from "@core/hw/text";
 import {
   ClearWindowTilemap, COPYWIN_FULL, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
@@ -46,7 +46,7 @@ import {
 import { CreateFameCheckerObject, InitObjectEventPalettes } from "./objectEventGraphics";
 import { rom } from "@core/rom";
 import { flagGet, save, SV, varGet, varSet } from "./save";
-import { CreateTrainerPicSprite, FreeAndDestroyTrainerPicSprite, ResetAllPicSprites } from "./trainerPokemonSprites";
+import { CreateTrainerPicSprite, FreeAndDestroyTrainerPicSprite, ResetAllPicSprites } from "@core/trainerPokemonSprites";
 import { spriteState } from "@core/hw/sprite";
 
 export const NUM_FAMECHECKER_PERSONS = 16;

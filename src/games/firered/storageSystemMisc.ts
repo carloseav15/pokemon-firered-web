@@ -1,15 +1,15 @@
 // pokemon_storage_system_misc.c: the multi-move (selection box) state machine, the held-item icon sprites,
 // the item info window and the (functionally unused) UnkUtil transfer queue.
 import * as C from "./generated/constants";
-import { AddTextPrinterParameterized5 } from "./hw/text";
+import { AddTextPrinterParameterized5 } from "@core/hw/text";
 import {
   BG_ATTR_BASETILE, BG_COORD_ADD, BG_COORD_SET, BG_ATTR_PALETTEMODE, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
   FillBgTilemapBufferRect_Palette0, GetBgAttribute, HideBg, IsDma3ManagerBusyWithBgCopy, LoadBgTiles, SetBgAttribute, ShowBg,
   WriteSequenceToBgTilemapBuffer,
 } from "@core/hw/bg";
 import { ClearGpuRegBits, SetGpuRegBits } from "@core/hw/gpu";
-import { ScheduleBgCopyTilemapToVram } from "./hw/menuHelpers";
-import { GetTextWindowPalette } from "./hw/menu";
+import { ScheduleBgCopyTilemapToVram } from "@core/hw/menuHelpers";
+import { GetTextWindowPalette } from "@core/hw/menu";
 import { BG_PLTT_ID, BlendPalettes, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITE } from "@core/hw/palette";
 import { ppu, REG_OFFSET_BG0CNT } from "@core/hw/ppu";
 import {
@@ -25,10 +25,10 @@ import {
 } from "@core/hw/window";
 import { GetItemIconGfxPtr, ItemId_GetDescription } from "./bagMenu";
 import { FONT_NORMAL } from "@core/gba/font";
-import { ItemId_GetName } from "./pokemon/items";
+import { ItemId_GetName } from "@core/pokemon/items";
 import { GetMonData, SetMonData, type Mon } from "@core/pokemon/mon";
 import { GetBoxedMonPtr, GetCurrentBoxMonData, SetBoxMonAt, SetCurrentBoxMonData, StorageGetCurrentBox, ZeroBoxMonAt } from "@core/pokemon/storage";
-import { GetMonIconPtr, GetValidMonIconPalIndex, LoadMonIconPalettesAt } from "./pokemonIcon";
+import { GetMonIconPtr, GetValidMonIconPalIndex, LoadMonIconPalettesAt } from "@core/pokemonIcon";
 import {
   CreateBoxMonIconAtPos, DestroyBoxMonIconAtPosition, SetBoxMonIconObjMode, SetPartyMonIconObjMode,
 } from "./storageSystemGraphics";

@@ -8,7 +8,7 @@ import { random, random32 } from "../random";
 import { b64, rom } from "../rom";
 import { sendMonToPC } from "./storage";
 import { save } from "@game/save";
-import type { MailMessage } from "@game/pokemon/mail";
+import type { MailMessage } from "./mail";
 
 export const MAX_LEVEL = 100;
 export const PARTY_SIZE = 6;

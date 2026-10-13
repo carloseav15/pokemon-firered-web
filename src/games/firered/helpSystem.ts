@@ -9,7 +9,7 @@ import { cdata } from "@core/hw/assets";
 import { sound } from "@core/audio/sound";
 import { A_BUTTON, B_BUTTON, joy, L_BUTTON, R_BUTTON } from "@core/gba/input";
 import { GetKantoPokedexCount } from "@core/pokemon/pokemon";
-import { checkBagHasItem } from "./pokemon/items";
+import { checkBagHasItem } from "@core/pokemon/items";
 import { getReceivedRemoteLinkPlayers } from "./linkState";
 import {
   HelpSystem_FillPanel1, HelpSystem_FillPanel2, HelpSystem_GetMenuInput,

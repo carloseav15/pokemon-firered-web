@@ -4,7 +4,7 @@ import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as C from "../../src/games/firered/generated/constants.ts";
-import { HasAtLeastOneBerry } from "../../src/games/firered/pokemon/items.ts";
+import { HasAtLeastOneBerry } from "../../src/core/pokemon/items.ts";
 import { rom } from "../../src/core/rom.ts";
 import { save, SV, varGet } from "../../src/games/firered/save.ts";
 

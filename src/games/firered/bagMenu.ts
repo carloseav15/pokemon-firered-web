@@ -24,19 +24,19 @@ import {
   DestroyListMenuTask, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, LIST_NOTHING_CHOSEN, ListMenu_ProcessInput, ListMenuGetScrollAndRow,
   ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, listMenuTemplate, ListMenuSetTemplateField, AddScrollIndicatorArrowPair,
   AddScrollIndicatorArrowPairParameterized, RemoveScrollIndicatorArrowPair, SCROLL_ARROW_UP, type ListMenuItem, type ListMenuTemplate, type ScrollArrowsTemplate,
-} from "./hw/listMenu";
+} from "@core/hw/listMenu";
 import {
   ClearDialogWindowAndFrameToTransparent, ClearStdWindowAndFrameToTransparent, DrawStdFrameWithCustomTileAndPalette, FONTATTR_LETTER_SPACING,
   FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetMenuCursorDimensionByFont, LoadMenuMessageWindowGfx, LoadStdWindowGfx, LoadUserWindowGfx, MENU_B_PRESSED,
   MENU_NOTHING_CHOSEN, Menu_InitCursor, Menu_MoveCursorNoWrapAround, Menu_ProcessInputNoWrapAround,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   AddItemMenuActionTextPrinters, AdjustQuantityAccordingToDPadInput, ClearScheduledBgCopiesToVram, CopyItemName, CreateYesNoMenuWithCallbacks,
   DisplayMessageAndContinueTask, DoScheduledBgTilemapCopiesToVram, DrawTextBorderOuter, FuncIsActiveTask, GetDialogBoxFontId, GetLRKeysPressed,
   IsWritingMailAllowed, MENU_L_PRESSED, MENU_R_PRESSED, PrintMoneyAmount, PrintMoneyAmountInMoneyBox, PrintMoneyAmountInMoneyBoxWithBorder,
   ResetAllBgsCoordinatesAndBgCntRegs, ScheduleBgCopyTilemapToVram, SetBgTilemapPalette, SetTaskFuncWithFollowupFunc, SwitchTaskToFollowupFunc,
   type MenuAction, type YesNoFuncTable,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, ResetPaletteFade,
   RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade,
@@ -51,12 +51,12 @@ import {
   gDummySpriteAffineAnimTable, gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, MAX_SPRITES, ProcessSpriteCopyRequests, ResetSpriteData,
   SpriteCallbackDummy, StartSpriteAffineAnim, StartSpriteAnim, type Sprite, type SpriteTemplate,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized, AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized, AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   AddWindow, BlitBitmapToWindow, ClearWindowTilemap, COPYWIN_MAP, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "@core/hw/window";
-import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFunc, ItemId_GetPocket, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
+import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFunc, ItemId_GetPocket, itemInfo, pocketList, removeBagItem } from "@core/pokemon/items";
 import { b64, rom } from "@core/rom";
 import { Pokedude_InitTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";

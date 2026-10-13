@@ -13,7 +13,7 @@ import { BattleControllerDummy, BtlController_EmitChosenMonReturnValue, BtlContr
 import { BattleMainCB2, BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB_FaintSlideAnim, SpriteCB_HideAsMoveTarget, SpriteCB_ShowAsMoveTarget } from "@game/battle/main_init";
 import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag, FreeSpriteTilesByTag, GetSpritePaletteTagByPaletteNum, gSprites, Sprite, SpriteCallbackDummy, StartSpriteAnim } from "../hw/sprite";
 import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "../pokemon/mon";
-import { addBagItem as AddBagItem } from "@game/pokemon/items";
+import { addBagItem as AddBagItem } from "../pokemon/items";
 import { BattleGfxSfxDummy3, BattleLoadPlayerMonSpriteGfx, BattleStopLowHpSound, ClearTemporarySpeciesSpriteData, CopyAllBattleSpritesInvisibilities, CopyBattleSpriteInvisibility, DecompressTrainerBackPalette, DoHitAnimHealthboxEffect, gTrainerBackPicCoords, HandleLowHpMusicChange, InitAndLaunchChosenStatusAnimation, InitAndLaunchSpecialAnimation, IsBattlerSpritePresent, IsBattleSEPlaying, IsMoveWithoutAnimation, PlayBGM, PlaySE12WithPanning, SetBattlerSpriteAffineMode, SpriteCB_WaitForBattlerBallReleaseAnim, trainerBackPicPalette, TryHandleLaunchBattleTableAnimation, TrySetBehindSubstituteSpriteBit, TryShinyAnimation } from "./gfx_sfx_util";
 import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle, SetPpNumbersPaletteInMoveSelection } from "./message";
 import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFadeControl, RGB_BLACK, RGB_WHITE } from "../hw/palette";
@@ -27,7 +27,7 @@ import { FreeAllWindowBuffers } from "../hw/window";
 import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
 import { HandleIntroSlide } from "./intro";
 import { IsMonGettingExpSentOut } from "./cmds/part3";
-import { IsTextPrinterActive } from "@game/hw/text";
+import { IsTextPrinterActive } from "../hw/text";
 import { OakOldManHandleInputChooseMove } from "@game/battle/controller_oak_old_man";
 import { ReshowBattleScreenAfterMenu } from "./reshow";
 import { intToDecimal, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";

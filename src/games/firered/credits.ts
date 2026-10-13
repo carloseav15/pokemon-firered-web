@@ -26,7 +26,7 @@ import {
   ResetBgsAndClearDma3BusyFlags, SetBgAffine, SetBgTilemapBuffer, ShowBg, type BgTemplate,
 } from "@core/hw/bg";
 import { ClearGpuRegBits, GetGpuReg, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
-import { Menu_LoadStdPalAt } from "./hw/menu";
+import { Menu_LoadStdPalAt } from "@core/hw/menu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade,
   RGB_BLACK, RGB_WHITE, TransferPlttBuffer,
@@ -40,17 +40,17 @@ import { LoadCompressedSpriteSheet } from "@core/decompress";
 import {
   CreateSprite, DestroySprite, FreeSpriteTilesByTag, gSprites, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, TAG_NONE,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized4 } from "./hw/text";
+import { AddTextPrinterParameterized4 } from "@core/hw/text";
 import {
   AddWindow, COPYWIN_FULL, COPYWIN_GFX, CopyToWindowPixelBuffer, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap,
   RemoveWindow, type WindowTemplate,
 } from "@core/hw/window";
-import { InitStandardTextBoxWindows } from "./hw/menu";
+import { InitStandardTextBoxWindows } from "@core/hw/menu";
 import {
   CreditsShowCurrentField, DrawCurrentFieldForCredits, FadeSelectedPals, gFieldCamera, Overworld_CreditsIdleCB, Overworld_CreditsMainCB,
   Overworld_DoScrollSceneForCredits, preloadCreditsMaps, type CreditsOverworldCmd,
 } from "./overworldCredits";
-import { LoadMonPicInWindow } from "./trainerPokemonSprites";
+import { LoadMonPicInWindow } from "@core/trainerPokemonSprites";
 import { FieldMap } from "@core/field/fieldmap";
 import type { Game } from "./game";
 import { fieldMenu } from "./menus/fieldMenus";

@@ -15,7 +15,7 @@ import {
   ShowBg,
 } from "@core/hw/bg";
 import { SetGpuReg } from "@core/hw/gpu";
-import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetTextWindowPalette, LoadStdWindowGfxOnBg } from "./hw/menu";
+import { FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, GetTextWindowPalette, LoadStdWindowGfxOnBg } from "@core/hw/menu";
 import { BeginNormalPaletteFade, BG_PLTT_ID, gPaletteFade, LoadPalette, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import {
   BLDCNT_EFFECT_BLEND, BLDCNT_EFFECT_LIGHTEN, BLDCNT_TGT1_BG0, BLDCNT_TGT1_BG1, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_BLDCNT, REG_OFFSET_BLDY,
@@ -24,7 +24,7 @@ import {
 import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback, SetMainCallback2WhenLoaded } from "@core/hw/runtime";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
-import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized, AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "@core/hw/text";
 import { COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap } from "@core/hw/window";
 import { rom } from "@core/rom";
 import { save } from "./save";

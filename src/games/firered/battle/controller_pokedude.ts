@@ -14,7 +14,7 @@ import {
   FreeSpriteTilesByTag, GetSpriteTileStartByTag, gSprites, IndexOfSpritePaletteTag, SpriteCallbackDummy, StartSpriteAnim,
 } from "@core/hw/sprite";
 import { FreeAllWindowBuffers } from "@core/hw/window";
-import { IsTextPrinterActive } from "../hw/text";
+import { IsTextPrinterActive } from "@core/hw/text";
 import { DisableStruct } from "../generated/structs";
 import { rom } from "@core/rom";
 import { save, varGet, SV } from "../save";

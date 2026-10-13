@@ -53,8 +53,8 @@ import {
   AddWindow, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap,
   RemoveWindow, type WindowTemplate, COPYWIN_GFX,
 } from "@core/hw/window";
-import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
-import { BlitMenuInfoIcon, ListMenuLoadStdPalAt } from "./hw/listMenu";
+import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
+import { BlitMenuInfoIcon, ListMenuLoadStdPalAt } from "@core/hw/listMenu";
 import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
 import { EOS, encode, intToDecimal, StringCompareWithoutExtCtrlCodes, StringCopy, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
 import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
@@ -72,10 +72,10 @@ import {
 } from "@core/pokemon/mon";
 import { SeekToNextMonInBox } from "@core/pokemon/storage";
 import { speciesName, type Pokemon } from "@core/pokemon/pokemon";
-import { itemName } from "./pokemon/items";
+import { itemName } from "@core/pokemon/items";
 import { GetHPBarLevel } from "@core/battle/interface";
 import { GetMonSpritePalFromSpeciesAndPersonality, IsMonSpriteNotFlipped, LoadSpecialPokePic } from "@core/pokemon/pics";
-import { CreateMonIcon, DestroyMonIcon, SafeFreeMonIconPalette, SafeLoadMonIconPalette } from "./pokemonIcon";
+import { CreateMonIcon, DestroyMonIcon, SafeFreeMonIconPalette, SafeLoadMonIconPalette } from "@core/pokemonIcon";
 import { FreeBallGfx, gBallSpriteTemplates, ItemIdToBallId, LoadBallGfx } from "@core/battle/pokeball";
 import { ShouldPlayNormalMonCry } from "@core/battle/gfx_sfx_util";
 import { IsMoveHm } from "./menus/monProgress";

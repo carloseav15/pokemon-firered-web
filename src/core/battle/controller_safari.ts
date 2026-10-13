@@ -20,7 +20,7 @@ import { IsDma3ManagerBusyWithBgCopy } from "../hw/bg";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToTrainerBack, SpriteCB_TrainerSlideIn } from "./anim";
 import { SetHealthboxSpriteVisible, StartHealthboxSlideIn, UpdateHealthboxAttribute } from "./interface";
 import { HandleIntroSlide } from "./intro";
-import { IsTextPrinterActive } from "@game/hw/text";
+import { IsTextPrinterActive } from "../hw/text";
 import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "./util";
 import { ActionSelectionCreateCursorAt, ActionSelectionDestroyCursorAt } from "./controller_player";
 

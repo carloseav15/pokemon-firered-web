@@ -31,12 +31,12 @@ import {
   GetTextWindowPalette, LoadMenuMessageWindowGfx, LoadStdWindowGfx, LoadUserWindowGfx, MENU_B_PRESSED, MENU_NOTHING_CHOSEN, Menu_GetCursorPos,
   Menu_InitCursor, Menu_InitCursorInternal, Menu_ProcessInput, Menu_ProcessInput_other, Menu_ProcessInputNoWrapAround_other,
   Menu_ProcessInputNoWrapClearOnChoose,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   ClearScheduledBgCopiesToVram, CopyItemName, DoScheduledBgTilemapCopiesToVram, FuncIsActiveTask, GetLRKeysPressedAndHeld, MENU_L_PRESSED,
   MENU_R_PRESSED, ResetAllBgsCoordinatesAndBgCntRegs, RunTextPrinters_CheckActive, ScheduleBgCopyTilemapToVram, SetBgTilemapPalette,
   SetTaskFuncWithFollowupFunc, SwitchTaskToFollowupFunc,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, ResetPaletteFade,
   RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade,
@@ -47,22 +47,22 @@ import {
   AnimateSprites, BuildOamBuffer, CreateSprite, FreeAllSpritePalettes, gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests,
   ResetSpriteData, StartSpriteAnim, type Sprite,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   AddWindow, ClearWindowTilemap, COPYWIN_GFX, CopyToWindowPixelBuffer, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
   GetWindowAttribute, InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, BlitBitmapToWindow, WINDOW_HEIGHT, WINDOW_NONE, WINDOW_PALETTE_NUM,
   WINDOW_TILEMAP_LEFT, WINDOW_TILEMAP_TOP, WINDOW_WIDTH, type WindowTemplate,
 } from "@core/hw/window";
 import { bagResult, GoToBagMenu } from "./bagMenu";
-import { CreateMonIcon, LoadMonIconPalettes, SetPartyHPBarSprite, UpdateMonIconFrame } from "./pokemonIcon";
+import { CreateMonIcon, LoadMonIconPalettes, SetPartyHPBarSprite, UpdateMonIconFrame } from "@core/pokemonIcon";
 import { GetLastViewedMonIndex, ShowPokemonSummaryScreen } from "./summaryScreen";
 import { AdjustFriendship } from "@core/pokemon/mon_extra";
 import {
   CalculatePlayerPartyCount, GetMonData, GetMonGender, GiveMoveToMon, MonTryLearningNewMove, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot,
   zeroMon, type Mon,
 } from "@core/pokemon/mon";
-import { addBagItem, addPCItem, CheckIfItemIsTMHMOrEvolutionStone, itemInfo, removeBagItem, removePCItem } from "./pokemon/items";
-import { ClearPCMailEntry, GetPCMail, GiveMailToMon, GiveMailToMon2, isMailItem, TakeMailFromMon, TakeMailFromMon2 } from "./pokemon/mail";
+import { addBagItem, addPCItem, CheckIfItemIsTMHMOrEvolutionStone, itemInfo, removeBagItem, removePCItem } from "@core/pokemon/items";
+import { ClearPCMailEntry, GetPCMail, GiveMailToMon, GiveMailToMon2, isMailItem, TakeMailFromMon, TakeMailFromMon2 } from "@core/pokemon/mail";
 import { CanMonLearnTMHM, speciesName } from "@core/pokemon/pokemon";
 import { tmhmMove } from "./menus/monProgress";
 import { gPlayerPcMenuManager } from "./mailboxPc";

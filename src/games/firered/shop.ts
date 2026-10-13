@@ -31,15 +31,15 @@ import { SetGpuReg } from "@core/hw/gpu";
 import {
   AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask, LIST_CANCEL, LIST_NOTHING_CHOSEN, ListMenu_ProcessInput, ListMenuGetScrollAndRow,
   ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, RemoveScrollIndicatorArrowPair, SCROLL_ARROW_UP, type ListMenu, type ListMenuItem, type ListMenuTemplate,
-} from "./hw/listMenu";
+} from "@core/hw/listMenu";
 import {
   ClearDialogWindowAndFrameToTransparent, ClearStdWindowAndFrameToTransparent, FONTATTR_COLOR_FOREGROUND, FONTATTR_COLOR_SHADOW, FONTATTR_MAX_LETTER_HEIGHT,
   FONTATTR_MAX_LETTER_WIDTH, GetFontAttribute,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   AdjustQuantityAccordingToDPadInput, ClearScheduledBgCopiesToVram, CopyItemName, DoScheduledBgTilemapCopiesToVram, menuHelperHooks, PrintMoneyAmount,
   PrintMoneyAmountInMoneyBox, ScheduleBgCopyTilemapToVram, SetBgTilemapPalette, type YesNoFuncTable,
-} from "./hw/menuHelpers";
+} from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer,
   UpdatePaletteFade,
@@ -65,10 +65,10 @@ import { METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY } from "@core/f
 import { CopyMapTilesetsToHw } from "@core/field/hwTilesets";
 import type { Game } from "./game";
 import { fieldMenu } from "./menus/fieldMenus";
-import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
+import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "@core/menus/menu";
 import { tmhmMove } from "./menus/monProgress";
 import { CreateObjectGraphicsSprite, GetObjectEventGraphicsInfo } from "./objectEventGraphics";
-import { addBagItem, bagItemQuantity, itemInfo, removeMoney } from "./pokemon/items";
+import { addBagItem, bagItemQuantity, itemInfo, removeMoney } from "@core/pokemon/items";
 import { printText } from "@core/gba/textPrinter";
 import { rom } from "@core/rom";
 import { incrementGameStat, save } from "./save";

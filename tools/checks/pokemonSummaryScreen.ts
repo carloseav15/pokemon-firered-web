@@ -14,7 +14,7 @@ import {
 } from '../../src/games/firered/pokemonSummaryScreen.ts';
 import { createMon, speciesName, type Pokemon } from '../../src/core/pokemon/pokemon.ts';
 import { GetMonData, type Mon } from '../../src/core/pokemon/mon.ts';
-import { itemName } from '../../src/games/firered/pokemon/items.ts';
+import { itemName } from '../../src/core/pokemon/items.ts';
 import { isHMMove } from '../../src/games/firered/menus/monProgress.ts';
 import { decode } from '../../src/core/gba/charmap.ts';
 

@@ -11,7 +11,7 @@ import {
 } from "@core/hw/bg";
 import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
 import { SetGpuReg } from "@core/hw/gpu";
-import { FuncIsActiveTask } from "./hw/menuHelpers";
+import { FuncIsActiveTask } from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP, RGB_WHITEALPHA,
   UpdatePaletteFade,
@@ -23,7 +23,7 @@ import {
   StartSpriteAnim, SpriteCallbackDummy, type Sprite, type SpriteTemplate,
 } from "@core/hw/sprite";
 import { gSineTable } from "@core/hw/trig";
-import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles, LoadMonIconPalettes } from "./pokemonIcon";
+import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles, LoadMonIconPalettes } from "@core/pokemonIcon";
 import { GetBoxMonDataAt, GetBoxNamePtr, GetBoxWallpaper, GetCurrentBoxMonData, SetBoxWallpaper, StorageGetCurrentBox } from "@core/pokemon/storage";
 import { GetMonData } from "@core/pokemon/mon";
 import { DrawTextWindowAndBufferTiles } from "./menus/storageMenu";

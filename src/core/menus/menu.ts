@@ -1,14 +1,14 @@
 // menu.c: the vertical cursor menu used by scripts, the start menu and
 // most list-less menus.
 
-import { sound } from "@core/audio/sound";
-import { encode } from "@core/gba/charmap";
-import { FONT_NORMAL } from "@core/gba/font";
-import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW } from "@core/gba/input";
-import { printText } from "@core/gba/textPrinter";
+import { sound } from "../audio/sound";
+import { encode } from "../gba/charmap";
+import { FONT_NORMAL } from "../gba/font";
+import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW } from "../gba/input";
+import { printText } from "../gba/textPrinter";
 import { GetMenuCursorDimensionByFont } from "../hw/menu";
-import type { Window } from "@core/gba/window";
-import { rom } from "@core/rom";
+import type { Window } from "../gba/window";
+import { rom } from "../rom";
 
 export const MENU_NOTHING_CHOSEN = -2;
 export const MENU_B_PRESSED = -1;

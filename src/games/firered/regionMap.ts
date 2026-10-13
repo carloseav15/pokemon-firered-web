@@ -33,7 +33,7 @@ import {
   gSprites, LoadOam, LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, StartSpriteAnim, type Sprite,
   type SpriteCallback, type SpriteTemplate,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "@core/hw/text";
 import {
   ClearWindowTilemap, COPYWIN_FULL, COPYWIN_GFX, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap,
   type WindowTemplate,

@@ -11,7 +11,7 @@ import { ppu, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1HOFS, REG_OF
 import { BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, ResetPaletteFade, ResetPaletteFadeControl, RGB, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { IsDma3ManagerBusyWithBgCopy, ShowBg } from "@core/hw/bg";
-import { RunTextPrinters } from "../hw/text";
+import { RunTextPrinters } from "@core/hw/text";
 import { gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_InitHBlankDmaTransfer, ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateInvisibleSprite, DestroySprite, FreeAllSpritePalettes, FreeSpriteOamMatrix, gSprites, LoadOam,

@@ -1,28 +1,28 @@
 // menu.c / text_window.c / new_menu_helpers.c helpers on the GBA hardware layer:
 // standard window frames, the single-column cursor menu (sMenu) and the YES/NO menu.
 
-import { sound } from "@core/audio/sound";
-import { A_BUTTON, B_BUTTON, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, JOY_NEW, L_BUTTON, R_BUTTON } from "@core/gba/input";
-import { FONT_INFOS, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "@core/gba/font";
-import { expandPlaceholders, stringVars } from "@core/gba/charmap";
-import { tasks } from "@core/gba/tasks";
-import { cdata, incbin, incbin16 } from "@core/hw/assets";
-import { ChangeBgX, ChangeBgY, FillBgTilemapBufferRect, LoadBgTiles } from "@core/hw/bg";
-import { LoadPalette } from "@core/hw/palette";
+import { sound } from "../audio/sound";
+import { A_BUTTON, B_BUTTON, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, JOY_NEW, L_BUTTON, R_BUTTON } from "../gba/input";
+import { FONT_INFOS, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_SMALL, GetStringWidth } from "../gba/font";
+import { expandPlaceholders, stringVars } from "../gba/charmap";
+import { tasks } from "../gba/tasks";
+import { cdata, incbin, incbin16 } from "./assets";
+import { ChangeBgX, ChangeBgY, FillBgTilemapBufferRect, LoadBgTiles } from "./bg";
+import { LoadPalette } from "./palette";
 import { AddTextPrinter, AddTextPrinterParameterized, AddTextPrinterParameterized3, AddTextPrinterParameterized4, AddTextPrinterParameterized5, DeactivateAllTextPrinters } from "./text";
-import { save } from "../save";
-import { CommitQuestLogWindow1, gQuestLogState } from "../questLogState";
-import * as C from "../generated/constants";
-import { SetGpuReg } from "@core/hw/gpu";
-import { REG_OFFSET_BLDALPHA } from "@core/hw/ppu";
+import { save } from "@game/save";
+import { CommitQuestLogWindow1, gQuestLogState } from "@game/questLogState";
+import * as C from "@game/generated/constants";
+import { SetGpuReg } from "./gpu";
+import { REG_OFFSET_BLDALPHA } from "./ppu";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gDummySpriteAffineAnimTable, gDummySpriteAnimTable, gSprites, LoadSpritePalette,
   LoadSpriteSheet, oamData, SPRITE_SHAPE, SPRITE_SIZE, type Sprite, type SpriteTemplate,
-} from "@core/hw/sprite";
+} from "./sprite";
 import {
   AddWindow, CallWindowFunction, InitWindows, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FillWindowPixelRect, GetWindowAttribute,
   PIXEL_FILL, PutWindowTilemap, RemoveWindow, WINDOW_BG, WINDOW_PALETTE_NUM, type WindowTemplate,
-} from "@core/hw/window";
+} from "./window";
 
 export const MENU_NOTHING_CHOSEN = -2;
 export const MENU_B_PRESSED = -1;

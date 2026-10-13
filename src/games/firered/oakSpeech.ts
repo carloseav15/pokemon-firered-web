@@ -23,7 +23,7 @@ import {
   GetStdWindowBaseTileNum, GetTextWindowPalette, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters, MENU_B_PRESSED, MENU_NOTHING_CHOSEN, Menu_InitCursor,
   Menu_LoadStdPalAt, Menu_ProcessInput, Menu_ProcessInputNoWrapAround, Menu_ProcessInputNoWrapClearOnChoose, TopBarWindowPrintString,
   TopBarWindowPrintTwoStrings,
-} from "./hw/menu";
+} from "@core/hw/menu";
 import {
   BeginNormalPaletteFade, BlendPalette, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, PALETTES_ALL, PALETTES_OBJECTS,
   ResetPaletteFade, RGB_BLACK, RGB_WHITE, TransferPlttBuffer, UpdatePaletteFade,
@@ -40,7 +40,7 @@ import {
   LoadSpritePalette, LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, spriteState, ST_OAM_OBJ_BLEND, type Sprite,
   type SpriteTemplate,
 } from "@core/hw/sprite";
-import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, IsTextPrinterActive, RunTextPrinters } from "./hw/text";
+import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4, IsTextPrinterActive, RunTextPrinters } from "@core/hw/text";
 import { AddWindow, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate } from "@core/hw/window";
 import { random } from "@core/random";
 import { Q_8_8_inv } from "@core/mathUtil";

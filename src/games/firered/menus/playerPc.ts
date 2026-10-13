@@ -13,11 +13,11 @@ import { GoToBagMenu } from "../bagMenu";
 import { ItemPc_Init, ItemPc_SetInitializedFlag } from "../itemPc";
 import { PlayerPcMailbox } from "../playerPcMailbox";
 import { fieldMenu } from "./fieldMenus";
-import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menu";
+import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "@core/menus/menu";
 import { FONT_NORMAL } from "@core/gba/font";
 import { printText } from "@core/gba/textPrinter";
 import { tasks } from "@core/gba/tasks";
-import { addPCItem } from "../pokemon/items";
+import { addPCItem } from "@core/pokemon/items";
 import { sound } from "@core/audio/sound";
 import { joy, JOY_NEW, JOY_REPEAT, DPAD_UP, DPAD_DOWN, A_BUTTON, B_BUTTON } from "@core/gba/input";
 

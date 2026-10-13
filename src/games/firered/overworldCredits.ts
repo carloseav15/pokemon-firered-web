@@ -41,7 +41,7 @@ import {
 import { gMain, SetMainCallback2 } from "@core/hw/runtime";
 import { AnimateSprites, BuildOamBuffer } from "@core/hw/sprite";
 import { UpdatePaletteFade } from "@core/hw/palette";
-import { DoScheduledBgTilemapCopiesToVram } from "./hw/menuHelpers";
+import { DoScheduledBgTilemapCopiesToVram } from "@core/hw/menuHelpers";
 import { FieldMap, loadMap, METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY, type LoadedMap } from "@core/field/fieldmap";
 import { CopyMapTilesetsToHw } from "@core/field/hwTilesets";
 import { rom } from "@core/rom";

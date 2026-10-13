@@ -113,7 +113,7 @@ import {
   gDummySpriteAnimTable,
   CalcCenterToCornerVec,
 } from "@core/hw/sprite";
-import { RunTextPrinters, IsTextPrinterActive } from "./hw/text";
+import { RunTextPrinters, IsTextPrinterActive } from "@core/hw/text";
 import { cdata, incbin, incbin16, loadCData, preloadIncbin } from "@core/hw/assets";
 import { GetBattleBgTemplateData } from "./battle/bg";
 import { Sin, Cos } from "@core/hw/trig";
@@ -143,9 +143,9 @@ import {
 } from "@core/battle/message";
 import { ShowSelectMovePokemonSummaryScreen, GetMoveSlotToReplace } from "./pokemonSummaryScreen";
 import { DecompressPicFromTable, gMonFrontPicTable } from "@core/pokemon/pics";
-import { GetMonSpritePalStructFromOtIdPersonality } from "./trainerPokemonSprites";
+import { GetMonSpritePalStructFromOtIdPersonality } from "@core/trainerPokemonSprites";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "@core/battle/anim";
-import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";
+import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "@core/hw/menu";
 import { textFlags } from "@core/gba/textPrinter";
 import {
   DrawTextOnTradeWindow,

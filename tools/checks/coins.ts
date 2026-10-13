@@ -1,7 +1,7 @@
 // Execute the C coins.c balance API against the browser save representation.
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
-import { GetCoins, SetCoins, addCoins, removeCoins, ApplyNewEncryptionKeyToBagItems, ApplyNewEncryptionKeyToBagItems_, GetBagItemQuantity } from "../../src/games/firered/pokemon/items.ts";
+import { GetCoins, SetCoins, addCoins, removeCoins, ApplyNewEncryptionKeyToBagItems, ApplyNewEncryptionKeyToBagItems_, GetBagItemQuantity } from "../../src/core/pokemon/items.ts";
 import { save } from "../../src/games/firered/save.ts";
 
 SetCoins(0x10002);

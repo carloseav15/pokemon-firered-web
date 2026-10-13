@@ -47,7 +47,7 @@ import { JumpIfMoveFailed, u16bytes, u32bytes } from "./part1";
 import { AddMoney, ComputeWhiteOutMoneyLoss, IncrementGameStat, IsFanfareTaskInactive, PokemonUseItemEffects } from "@game/battle/ext";
 import { DrawLevelUpWindowPg1, DrawLevelUpWindowPg2, GetMonLevelUpWindowStats } from "@game/battle/ext";
 import { GetMonIconPtr, GetValidMonIconPalettePtr } from "@game/battle/ext";
-import { AddTextPrinter } from "@game/hw/text";
+import { AddTextPrinter } from "../../hw/text";
 import { FONT_SMALL } from "../../gba/font";
 import { TEXT_COLOR_DARK_GRAY, TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE, TEXT_SKIP_DRAW } from "../../gba/textPrinter";
 import { EOS, encode, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../../gba/charmap";

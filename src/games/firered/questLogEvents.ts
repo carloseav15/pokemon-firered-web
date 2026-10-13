@@ -22,7 +22,7 @@ import { FONT_NORMAL } from "@core/gba/font";
 import { TextPrinter, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
 import { Window, stdPalette } from "@core/gba/window";
 import { incbin16 } from "@core/hw/assets";
-import { ClearBag, ClearPCItemSlots, ItemId_GetName, ItemId_GetPocket, POCKET_BERRY_POUCH, POCKET_ITEMS, POCKET_KEY_ITEMS, POCKET_POKE_BALLS, POCKET_TM_CASE } from "./pokemon/items";
+import { ClearBag, ClearPCItemSlots, ItemId_GetName, ItemId_GetPocket, POCKET_BERRY_POUCH, POCKET_ITEMS, POCKET_KEY_ITEMS, POCKET_POKE_BALLS, POCKET_TM_CASE } from "@core/pokemon/items";
 import { createMon, speciesName } from "@core/pokemon/pokemon";
 import { GetBoxNamePtr } from "@core/pokemon/storage";
 import { getMapNameGenericBytes } from "./regionMap";
@@ -36,7 +36,7 @@ import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfad
 import { DisableWildEncounters } from "@core/field/wildEncounter";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
 import { tasks } from "@core/gba/tasks";
-import { GetTextWindowPalette } from "./hw/menu";
+import { GetTextWindowPalette } from "@core/hw/menu";
 
 export { gQuestLogState };
 

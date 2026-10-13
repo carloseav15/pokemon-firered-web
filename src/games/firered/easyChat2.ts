@@ -4,7 +4,7 @@ import * as C from "./generated/constants";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, joy, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
 import { tasks } from "@core/gba/tasks";
 import { cdata, type SymRef } from "@core/hw/assets";
-import { Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";
+import { Menu_ProcessInputNoWrapClearOnChoose } from "@core/hw/menu";
 import { BeginNormalPaletteFade, BlendPalettes, gPaletteFade, PALETTES_ALL, ResetPaletteFade, RGB_BLACK, TransferPlttBuffer, UpdatePaletteFade } from "@core/hw/palette";
 import { HwScene, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData } from "@core/hw/sprite";
