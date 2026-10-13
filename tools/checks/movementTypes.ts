@@ -154,4 +154,43 @@ for (let type = 0; type < 81; type++) {
   }
 }
 
+// MovementType_FaceDirection (FACE_UP/DOWN/LEFT/RIGHT), Step0-2: Step0 starts the face action with the object's current
+// facingDirection (not the type's initial one), Step1 waits for it and Step2 clears singleMovementActive.
+{
+  const faceTypes: Array<[string, number, number]> = [
+    ["FACE_UP", C.MOVEMENT_TYPE_FACE_UP, 2], ["FACE_DOWN", C.MOVEMENT_TYPE_FACE_DOWN, 1],
+    ["FACE_LEFT", C.MOVEMENT_TYPE_FACE_LEFT, 3], ["FACE_RIGHT", C.MOVEMENT_TYPE_FACE_RIGHT, 4],
+  ];
+  for (const [name, type, initial] of faceTypes) {
+    const object = spawn(type);
+    object.facingDirection = initial;
+    stepFrames(object, 60);
+    assert.equal(object.singleMovementActive, false, `MovementType_${name}: Step2 must clear singleMovementActive`);
+    assert.equal(object.facingDirection, initial, `MovementType_${name}: keeps its facing`);
+    // A script turned the NPC; Step0 running again must face the current direction, not the type's initial one.
+    const other = initial === 1 ? 3 : 1;
+    const turned = spawn(type);
+    turned.facingDirection = other;
+    stepFrames(turned, 60);
+    assert.equal(turned.facingDirection, other, `MovementType_${name}: Step0 must use the current facingDirection`);
+  }
+}
+
+// MovementType_WalkInPlace / WalkInPlaceFast / JogInPlace Step0: walk in place toward the current facingDirection (the C
+// reads objectEvent->facingDirection, not the type's initial direction) and Step0 returns TRUE, so Step1 runs in the same frame.
+{
+  const groups: Array<[string, number, number]> = [
+    ["WALK_IN_PLACE", C.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN, C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_RIGHT],
+    ["WALK_IN_PLACE_FAST", C.MOVEMENT_TYPE_WALK_IN_PLACE_FAST_DOWN, C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_RIGHT],
+    ["JOG_IN_PLACE", C.MOVEMENT_TYPE_JOG_IN_PLACE_DOWN, C.MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_RIGHT],
+  ];
+  for (const [name, firstType, rightAction] of groups) {
+    const object = spawn(firstType);
+    object.facingDirection = 4; // DIR_EAST, whatever the type's initial direction is
+    stepFrames(object, 1);
+    assert.equal(object.movementActionId, rightAction, `MovementType_${name}: first frame walks in place toward facingDirection`);
+    assert.equal(object.sprite.data[1], 1, `MovementType_${name}: Step1 is waiting for the action after the first frame`);
+  }
+}
+
 console.log("event_object_movement.c MovementType_* dispatch table checks passed");

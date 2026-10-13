@@ -2291,7 +2291,7 @@ export class ObjectEvents {
     if ([c.MOVEMENT_TYPE_FACE_UP, c.MOVEMENT_TYPE_FACE_DOWN, c.MOVEMENT_TYPE_FACE_LEFT, c.MOVEMENT_TYPE_FACE_RIGHT].includes(type)) {
       if (step === 0) {
         this.ClearObjectEventMovement(object);
-        this.ObjectEventSetSingleMovement(object, actionFace(INITIAL_FACING[type] ?? object.facingDirection));
+        this.ObjectEventSetSingleMovement(object, actionFace(object.facingDirection)); // GetFaceDirectionMovementAction(facingDirection)
         s.data[1] = 1;
         return true;
       }
@@ -2477,15 +2477,18 @@ export class ObjectEvents {
       return false;
     }
 
-    // Walking/jogging in place
+    // Walking/jogging in place (MovementType_WalkInPlace / WalkInPlaceFast / JogInPlace, Step0 + MoveInPlace_Step1)
     if (type >= c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN && type <= c.MOVEMENT_TYPE_JOG_IN_PLACE_RIGHT) {
-      const dir = [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST][(type - c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN) & 3];
       const group = Math.floor((type - c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN) / 4);
       if (step === 0) {
+        // The C walks in place toward the object's current facingDirection, and Step0 returns TRUE so Step1 runs now.
         this.ClearObjectEventMovement(object);
+        const dir = object.facingDirection;
         this.ObjectEventSetSingleMovement(object, group === 0 ? actionWalkInPlaceNormal(dir) : group === 1 ? actionWalkInPlaceFast(dir) : actionWalkInPlaceFaster(dir));
         s.data[1] = 1;
-      } else if (this.ObjectEventExecSingleMovementAction(object)) s.data[1] = 0;
+        return true;
+      }
+      if (this.ObjectEventExecSingleMovementAction(object)) s.data[1] = 0;
       return false;
     }
     return false;
