@@ -31,10 +31,11 @@ rom.objects = {
   anims: {},
 };
 
+const sounds: string[] = [];
 const hooks = {
   playerDestCoords: () => ({ x: 5, y: 5 }),
   emote: () => {},
-  playSE: () => {},
+  playSE: (name: string) => { sounds.push(name); },
   playerIsRunning: () => false,
 };
 const objects = new ObjectEvents(hooks as any);
@@ -140,6 +141,51 @@ for (let id = 0; id <= C.MOVEMENT_ACTION_JUMP_SPECIAL_WITH_EFFECT_RIGHT; id++) {
 {
   const { object } = run(C.MOVEMENT_ACTION_FACE_PLAYER, 1);
   assert.equal(object.facingDirection, DIR_EAST);
+}
+
+// MovementAction_SlideDown_Step0 = InitMovementNormal(DIR_SOUTH, MOVE_SPEED_FASTEST): sSpeedFastestStepFuncs has two
+// Step8 entries, so a slide takes 2 frames and moves one tile (the C does not use FAST_1 / a face animation here).
+{
+  const { object, frames } = run(C.MOVEMENT_ACTION_SLIDE_DOWN);
+  assert.equal(frames, 2, "slide covers a tile in two frames (MOVE_SPEED_FASTEST)");
+  assert.equal(object.currentCoords.y, 1);
+}
+
+// MovementAction_ShakeHeadOrWalkInPlace: Step0 starts ANIM_SHAKE_HEAD_OR_WALK_IN_PLACE unpaused and Step1 returns
+// sprite->animEnded, so it ends with the animation (here the two-command fallback), not after a fixed 32 frames.
+{
+  const { object, frames } = run(C.MOVEMENT_ACTION_SHAKE_HEAD_OR_WALK_IN_PLACE);
+  assert.ok(frames <= 6, `shake head ends with its animation (took ${frames} frames)`);
+  assert.equal(object.sprite.animPaused, false);
+}
+
+// Acro bike hops end by clearing hasShadow like MovementAction_Jump* (DoJumpAnim -> hasShadow = FALSE) and play no
+// sound themselves: SE_BIKE_HOP / SE_WALL_HIT come from field_player_avatar.c.
+{
+  sounds.length = 0;
+  for (const id of [C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_HOP_FACE_DOWN, C.MOVEMENT_ACTION_ACRO_WHEELIE_JUMP_DOWN]) {
+    const object = new ObjectEvent();
+    object.sprite.anims = anims;
+    object.isPlayer = true;
+    object.hasShadow = true;
+    object.movementActionId = id;
+    object.sprite.data[2] = 0;
+    objects.objects[0] = object;
+    let finished = false;
+    for (let frame = 0; frame < 200 && !finished; frame++) { finished = objects.execAction(object); object.sprite.animate(); }
+    assert.ok(finished, `action ${id} finishes`);
+    assert.equal(object.hasShadow, false, `action ${id} clears hasShadow`);
+  }
+  {
+    const object = new ObjectEvent();
+    object.sprite.anims = anims;
+    object.isPlayer = true;
+    object.movementActionId = C.MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_DOWN;
+    object.sprite.data[2] = 0;
+    objects.objects[0] = object;
+    for (let frame = 0; frame < 50 && !objects.execAction(object); frame++) object.sprite.animate();
+  }
+  assert.deepEqual(sounds, [], "acro movement actions do not play sounds");
 }
 
 console.log("event_object_movement.c MovementAction_* dispatch table checks passed");

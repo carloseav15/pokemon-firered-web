@@ -3115,12 +3115,9 @@ export class ObjectEvents {
       if (this.updateMovementNormal(object)) return this.finishStep(object);
       return false;
     }
-    // Slide (ice): fast speed, no walk anim
+    // Slide: MovementAction_Slide*_Step0 = InitMovementNormal(direction, MOVE_SPEED_FASTEST)
     if (id >= 0x39 && id <= 0x3c) {
-      if (step === 0) {
-        this.initNpcForMovement(object, dirOf(0x39), MOVE_SPEED_FAST_1);
-        this.setStepAnim(object, faceAnim(object.facingDirection));
-      }
+      if (step === 0) this.initMovementNormal(object, dirOf(0x39), MOVE_SPEED_FASTEST);
       if (this.updateMovementNormal(object)) return this.finishStep(object);
       return false;
     }
@@ -3355,8 +3352,15 @@ export class ObjectEvents {
       return false;
     }
     if (id === 0x9f) {
-      if (step === 0) { object.sprite.startAnim(ANIM_RUN + 8); s.data[3] = 32; s.data[2] = 1; }
-      return this.updateMoveInPlace(object);
+      // MovementAction_ShakeHeadOrWalkInPlace: Step0 starts ANIM_SHAKE_HEAD_OR_WALK_IN_PLACE, Step1 returns sprite->animEnded.
+      if (step === 0) {
+        s.startAnim(C.ANIM_SHAKE_HEAD_OR_WALK_IN_PLACE);
+        s.animPaused = false;
+        object.disableAnim = false;
+        s.data[2] = 1;
+        return false;
+      }
+      return SpriteAnimEnded(s);
     }
     // Glide (used by Fly/teleport scenes): fast step with face anim
     if (id >= 0xa0 && id <= 0xa3) {
@@ -3365,6 +3369,7 @@ export class ObjectEvents {
         if (object.facingDirection !== direction) object.sprite.startAnim(faceAnim(direction));
         this.initNpcForMovement(object, direction, MOVE_SPEED_FAST_1);
       }
+      s.animate(); // MovementAction_Glide*_Step1: AnimateSprite(sprite) before UpdateMovementGlide
       if (this.updateMovementGlide(object)) return this.finishStep(object);
       return false;
     }
@@ -3407,24 +3412,21 @@ export class ObjectEvents {
       const base = face ? 0x7c : 0x80;
       const dir = dirOf(base);
       if (step === 0) {
-        if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
         this.InitAcroWheelieJump(object, s, dir, face ? JUMP_DISTANCE_IN_PLACE : JUMP_DISTANCE_NORMAL, JUMP_TYPE_LOW);
       }
-      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
+      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.hasShadow = false; return this.finishStep(object); }
       return false;
     }
     if (id >= 0x84 && id <= 0x87) {
       const dir = dirOf(0x84);
       if (step === 0) {
-        if (object.isPlayer) this.hooks.playSE("SE_BIKE_HOP");
         this.InitAcroWheelieJump(object, s, dir, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
       }
-      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) return this.finishStep(object);
+      if (this.DoJumpAnimStep(object) === JUMP_FINISHED) { object.hasShadow = false; return this.finishStep(object); }
       return false;
     }
     if (id >= 0x88 && id <= 0x8b) {
       if (step === 0) {
-        if (object.isPlayer) this.hooks.playSE("SE_WALL_HIT");
         this.initMoveInPlace(object, dirOf(0x88), GetAcroWheeliePedalDirectionAnimNum(dirOf(0x88)), 8);
       }
       return this.updateMoveInPlace(object);
