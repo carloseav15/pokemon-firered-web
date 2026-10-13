@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas FireRed / Emerald</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, sans-serif; }
+      main { max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
+      h1 { margin:0 0 4px; font-size:24px; } h1 span.a { color:var(--a); } h1 span.b { color:var(--b); }
+      .sub { color:var(--mut); margin:0 0 20px; }
+      h2 { margin:28px 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--mut); border-bottom:1px solid var(--line); padding-bottom:4px; }
+      .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+      .card { background:#0f1520; border:1px solid var(--line); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+      .card h3 { margin:0; font-size:15px; }
+      .card p { margin:0; color:var(--mut); font-size:13px; }
+      .links { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+      a.btn { display:inline-block; padding:4px 10px; border-radius:6px; background:#1f2937; border:1px solid var(--line); color:var(--fg); text-decoration:none; font-size:13px; }
+      a.btn:hover { background:#2563eb; border-color:#2563eb; }
+      a.btn.ga:hover { background:#b45309; border-color:#b45309; } a.btn.gb:hover { background:#0369a1; border-color:#0369a1; }
+      table { border-collapse:collapse; width:100%; font-size:13px; }
+      td, th { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+      code { background:#1b2433; padding:1px 5px; border-radius:4px; font-size:12px; }
+      .ok { color:#4ade80; } .bad { color:#f87171; } .mut { color:var(--mut); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Atlas <span class="a">FireRed</span> / <span class="b">Emerald</span></h1>
+      <p class="sub">Índice de las herramientas de consulta y validación. Todas leen los datos exportados de los decomps; ninguna ejecuta el motor del juego.</p>
+
+      <h2>Mundo y mapas</h2>
+      <div class="grid">
+        <div class="card"><h3>Visor del mundo</h3><p>Exteriores unidos en un lienzo, con capas de colisión, agua, NPC, entrenadores y activadores; ficha por casilla y buscador.</p>
+          <div class="links"><a class="btn ga" href="/viewer.html">Kanto</a><a class="btn gb" href="/viewer.html?game=emerald">Hoenn</a></div></div>
+        <div class="card"><h3>Explorar a pie</h3><p>Camina por el mundo con tu avatar (Rojo/Hoja en Kanto, Bruno/Aura en Hoenn). Pisar una puerta abre su interior.</p>
+          <div class="links"><a class="btn ga" href="/viewer.html#modo=explore">Kanto</a><a class="btn gb" href="/viewer.html?game=emerald#modo=explore">Hoenn</a></div></div>
+        <div class="card"><h3>Interiores</h3><p>425 mapas de FireRed y 518 de Emerald con warps, objetos con sprite, eventos y carteles. Desde el buscador, o con <code>#mapa=MAP_ID</code>.</p>
+          <div class="links">
+            <a class="btn ga" href="/viewer.html#mapa=MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB">Ej. Laboratorio de Oak</a>
+            <a class="btn gb" href="/viewer.html?game=emerald#mapa=MAP_LITTLEROOT_TOWN_BRENDANS_HOUSE_1F">Ej. Casa de Bruno</a></div></div>
+      </div>
+
+      <h2>Pokémon, objetos y entrenadores</h2>
+      <div class="grid">
+        <div class="card"><h3>Pokédex comparada</h3><p>Por especie: sprites de los dos juegos (frontal, variocolor, espalda, icono, huella), datos en común, y lo exclusivo de cada juego con sus encuentros.</p>
+          <div class="links"><a class="btn" href="/dex.html">Abrir</a><a class="btn" href="/dex.html#25">Ej. Pikachu</a><a class="btn" href="/dex.html#277">Ej. Treecko</a></div></div>
+        <div class="card"><h3>Biblioteca visual</h3><p>Entrenadores con retrato y equipo, objetos con icono y descripción, gráficos de objetos de mapa y NPC.</p>
+          <div class="links"><a class="btn" href="/library.html">Abrir</a></div></div>
+        <div class="card"><h3>Comparador de diferencias</h3><p>Campo a campo entre FireRed y Emerald: especies, movimientos, objetos y entrenadores.</p>
+          <div class="links"><a class="btn" href="/compare.html">Abrir</a></div></div>
+      </div>
+
+      <h2>Historia y quests</h2>
+      <div class="grid">
+        <div class="card"><h3>Biblioteca de quests</h3><p>Quests candidatas (medallas, regalos, combates) con clase obligatoria / opcional / sidequest / postgame / evento, flags y variables con quién los pone y los comprueba.</p>
+          <div class="links"><a class="btn" href="/quests.html">Abrir</a></div></div>
+        <div class="card"><h3>Línea argumental</h3><p>Escenas de progreso agrupadas por capítulos en el orden oficial de rutas, con los pasos que asignan los scripts.</p>
+          <div class="links"><a class="btn" href="/story.html">Abrir</a></div></div>
+      </div>
+
+      <h2>El juego</h2>
+      <div class="grid">
+        <div class="card"><h3>FireRed (port)</h3><p>El port jugable en el navegador. Emerald no es jugable: solo existe como datos y en el visor.</p>
+          <div class="links"><a class="btn ga" href="/index.html">Jugar</a></div></div>
+      </div>
+
+      <h2>Estado de los datos</h2>
+      <p class="mut">Cada sección necesita ficheros generados. Aquí se comprueba si existen y cómo regenerarlos.</p>
+      <table id="status"><thead><tr><th>Dato</th><th>Estado</th><th>Necesario para</th><th>Cómo regenerarlo</th></tr></thead><tbody></tbody></table>
+
+      <h2>Documentos</h2>
+      <p class="mut">En el repositorio: <code>docs/ATLAS.md</code> (este índice y los comandos), <code>docs/EMERALD-BRECHA-NUCLEO.md</code> (qué falta para compilar el núcleo contra Emerald),
+        <code>docs/SEPARACION-MOTOR.md</code>, <code>docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md</code> y <code>TAREAS-FINALES.md</code>.</p>
+    </main>
+    <script type="module">
+      const checks = [
+        ["FireRed: datos exportados", "/fr/data/species.json", "Pokédex, comparador, biblioteca", "python3 tools/decomp/export.py"],
+        ["Emerald: datos exportados", "/emerald/data/species.json", "Hoenn, Pokédex, comparador, biblioteca", "EXPORT_GAME=emerald python3 tools/decomp/export.py"],
+        ["FireRed: sprites de espalda, iconos y huellas", "/fr/gfx/pokemon/icon/25.png", "Pokédex, biblioteca (equipos)", "python3 tools/decomp/export.py graphics"],
+        ["Emerald: sprites de espalda, iconos y huellas", "/emerald/gfx/pokemon/icon/25.png", "Pokédex, biblioteca (equipos)", "EXPORT_GAME=emerald python3 tools/decomp/export.py graphics"],
+        ["FireRed: retratos de entrenadores e iconos de objetos", "/fr/gfx/items/14.png", "Biblioteca visual", "python3 tools/decomp/export.py graphics"],
+        ["Índice del mundo de Kanto", "/viewer/kanto.json", "Visor de Kanto", "python3 tools/viewer/world_index.py"],
+        ["Índice del mundo de Hoenn", "/viewer/hoenn.json", "Visor de Hoenn", "EXPORT_GAME=emerald python3 tools/viewer/world_index.py"],
+        ["Quests de FireRed", "/viewer/quests_firered.json", "Quests y línea argumental", "python3 tools/viewer/quest_index.py"],
+        ["Quests de Emerald", "/viewer/quests_emerald.json", "Quests y línea argumental", "EXPORT_GAME=emerald python3 tools/viewer/quest_index.py"],
+        ["Línea argumental", "/viewer/story_firered.json", "Línea argumental", "python3 tools/viewer/story_index.py"],
+      ];
+      const body = document.querySelector("#status tbody");
+      for (const [label, url, usedBy, cmd] of checks) {
+        let ok = false;
+        try { const r = await fetch(url, { method: "HEAD" }); ok = r.ok && !(r.headers.get("content-type") || "").includes("text/html"); } catch { ok = false; }
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${label}</td><td class="${ok ? "ok" : "bad"}">${ok ? "✓ disponible" : "✗ falta"}</td><td>${usedBy}</td><td><code>${cmd}</code></td>`;
+        body.appendChild(tr);
+      }
+    </script>
+  </body>
+</html>
