@@ -340,9 +340,10 @@ Receta:
 **`overworld.c`** (`field/overworld.ts`, `fieldControl.ts`, `game.ts`)
 - [x] `Overworld_ResetStateAfterFly/Teleport/DigEscRope/WhitingOut`: cuerpos C idénticos
   (`overworld.c:289-342`) y secuencia compartida en `overworld.ts:524-542`.
-- [ ] `CB2_WhiteOut` (`overworld.c:1545`): faltan en `game.ts` `StopMapMusic()`,
-  `UnlockPlayerFieldControls()` y `ResetSafariZoneFlag_()`; los dos primeros quedan
-  cubiertos en la práctica por el script; revisar.
+- [x] `CB2_WhiteOut` (`overworld.c:1545`): secuencia comprobada contra el C (`StopMapMusic`, `DoWhiteOut`,
+  `SetInitialPlayerAvatarStateWithDirection(DIR_NORTH)`, `ScriptContext_Init`/`UnlockPlayerFieldControls` dentro de
+  `warpIntoMapAndLoad`, `QuestLog_CutRecording` tras la carga). Faltaba `StopMapMusic()`: añadido; `ResetSafariZoneFlag_`
+  queda dentro de `Overworld_ResetStateAfterWhitingOut`. Job C7 (whiteout con teclado real) pasa.
 - [ ] `WarpIntoMap`/`TryFadeOutOldMapMusic`.
   - DIFERENCIA: el C carga el mapa de forma síncrona (`overworld.c:583-588`); el TS lo
     hace por etapas asíncronas (`overworld.ts:641-673`). `TryFadeOutOldMapMusic`
@@ -351,11 +352,11 @@ Receta:
   `GetCurrentRegionMapSectionId`, `GetCurrentMapBattleScene`.
   - DIFERENCIA: en mapas válidos coinciden; el TS usa `?.` y admite `undefined` en
     mapas inválidos (`overworld.c:1203-1206,1260-1273`, `overworld.ts:339-371`).
-- [ ] `SetDiveWarpEmerge`/`SetDiveWarpDive`; `cb1`/`cb2`;
-  `CB2_ReturnToFieldContinueScript(PlayMapMusic)`/`CB2_ContinueSavedGame`.
-  - DIFERENCIA: falta cotejar anchos de coordenadas (`u16` a `s8` en
-    `SetWarpDestination`, `overworld.c:722-747`); los CB2 comparten dispatch con carga
-    asíncrona (`overworld.c:1663-1719`, `game.ts:319-362,1017-1037`).
+- [~] `SetWarpData`/`SetWarpDestination`/`SetDynamicWarp*`/`SetWarpDestinationTo*`: coinciden (parámetros `s8` truncados
+  en `SetWarpData`). `LoadMapFromWarp`/`LoadMapFromCameraTransition`/`QL_LoadMapNormal`: mismas llamadas (la elección del
+  grito ambiental va dentro de `stepCallback.reset()`); orden distinto sin dependencia de datos
+  (`TrySetMapSaveWarpStatus` después de `onMapLoad`). Sin revisar: `SetDiveWarp*`, `cb1`/`cb2`,
+  `CB2_ReturnToFieldContinueScript`, `CB2_ContinueSavedGame` (comparten dispatch con carga asíncrona).
 - [ ] `DoCB1_Overworld_QuestLogPlayback`, `LoadMap_QLPlayback`,
   `CB2_SetUpOverworldForQLPlayback*`, `QL_UpdateObject`/`QL_UpdateObjectEventCurrentMovement`.
   - DIFERENCIA: el C consume la máquina de estados en un callback
