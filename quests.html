@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biblioteca de quests FireRed / Emerald</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.45 system-ui, sans-serif; }
+      header { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line); padding:8px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      header h1 { font-size:15px; margin:0 8px 0 0; }
+      button, input[type=search], select { background:#1f2937; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:5px 10px; font:inherit; }
+      button.on { background:#2563eb; border-color:#2563eb; }
+      button.ga.on { background:#b45309; border-color:#b45309; } button.gb.on { background:#0369a1; border-color:#0369a1; }
+      a { color:#93c5fd; text-decoration:none; } a:hover { text-decoration:underline; }
+      #layout { display:grid; grid-template-columns:minmax(360px,44%) 1fr; height:calc(100vh - 49px); }
+      #list { overflow:auto; border-right:1px solid var(--line); }
+      #detail { overflow:auto; padding:16px 24px 60px; }
+      .row { padding:6px 12px; border-bottom:1px solid var(--line); cursor:pointer; display:flex; gap:8px; align-items:baseline; }
+      .row:hover, .row.sel { background:#16202f; }
+      .row small { color:var(--mut); margin-left:auto; text-align:right; }
+      .chip { display:inline-block; padding:0 6px; border-radius:4px; background:#1b2433; font-size:11px; color:var(--mut); }
+      .chip.obligatoria { background:#14532d; color:#bbf7d0; } .chip.opcional { background:#3b2f0b; color:#fde68a; } .chip.desconocido { background:#1f2937; }
+      h2 { margin:0 0 4px; font-size:18px; word-break:break-all; }
+      h3 { margin:18px 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); border-bottom:1px solid var(--line); padding-bottom:3px; }
+      ul { margin:0; padding-left:18px; } li { margin:1px 0; word-break:break-all; }
+      .none { color:var(--mut); font-style:italic; }
+      #summary { padding:8px 12px; color:var(--mut); border-bottom:1px solid var(--line); }
+      @media (max-width:900px) { #layout { grid-template-columns:1fr; } #list { max-height:40vh; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Biblioteca de quests</h1>
+      <button data-game="firered" class="ga on">FireRed</button>
+      <button data-game="emerald" class="gb">Emerald</button>
+      <button data-tab="quests" class="on">Quests</button>
+      <button data-tab="flags">Flags</button>
+      <button data-tab="vars">Variables</button>
+      <select id="kind"><option value="">Todas las clases</option></select>
+      <input id="q" type="search" placeholder="Buscar flag, mapa, script…" />
+      <a href="/library.html" style="margin-left:auto">Biblioteca visual →</a>
+      <a href="/dex.html">Pokédex →</a>
+      <a href="/viewer.html">Visor del mundo →</a>
+    </header>
+    <div id="layout">
+      <div><div id="summary">Cargando…</div><div id="list"></div></div>
+      <div id="detail"><p class="none">Elige una entrada.</p></div>
+    </div>
+    <script type="module" src="/src/compare/questsMain.ts"></script>
+  </body>
+</html>

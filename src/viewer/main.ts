@@ -118,6 +118,8 @@ let selection: { x: number; y: number } | null = null;
 let startX: number | null = null;
 let startY: number | null = null;
 let startExplore = false;
+/** #mapa=MAP_ID: abre el visor centrado en ese mapa (o en su interior si no está en el mundo exterior). */
+let startMapId: string | null = null;
 let startPlayer: { x: number; y: number } | null = null;
 
 // --- Estado del Personaje Jugador en el Visor ---
@@ -150,6 +152,7 @@ function parseHash(): void {
     }
   }
   startExplore = h.get("modo") === "explore";
+  startMapId = h.get("mapa");
   const px = Number(h.get("px"));
   const py = Number(h.get("py"));
   if (h.has("px") && h.has("py") && Number.isSafeInteger(px) && Number.isSafeInteger(py)) startPlayer = { x: px, y: py };
@@ -1389,6 +1392,10 @@ build()
   .then(() => {
     setupUi();
     updateMeta();
+    if (startMapId && !startExplore) {
+      if (startMapId in index.maps) centerOnMap(startMapId);
+      else void interiorViewer.open(startMapId);
+    }
     if (startExplore) {
       const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
         && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
