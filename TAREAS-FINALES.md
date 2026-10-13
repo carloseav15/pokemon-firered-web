@@ -286,8 +286,7 @@ Receta:
   de cara), `ShakeHeadOrWalkInPlace` (termina con `animEnded`, el TS con 32 fotogramas), `Glide*` (faltaba
   `AnimateSprite` por fotograma), saltos acro (faltaba `hasShadow = FALSE`; el sonido SE_BIKE_HOP/SE_WALL_HIT sonaba dos
   veces: ya lo emite `field_player_avatar.c`). Cubierto en `check:movement-actions`.
-  Sin revisar: cuerpos de `InitWalkSlow*/UpdateWalkSlow*`, `InitJumpRegular/DoJumpAnim`, `InitSpin`, `RaiseHandAndJump` S1,
-  `RevealTrainer`; y `MovementType_*` ya revisado arriba.
+  Sin revisar: `InitSpin`, `RaiseHandAndJump` S1 y `RevealTrainer`.
 - [ ] `UpdateObjectEventCurrentMovement` (secuencia por objeto/ground effects) y
   driver por objeto; `ObjectEventSetSingleMovement`, `ObjectEventExecSingleMovementAction`,
   `ClearObjectEventMovement` (registro QL y `sprite.data[2]`).
@@ -312,11 +311,11 @@ Receta:
   `GroundEffect_*`/`DoTracksGroundEffect_*`.
 - [ ] `ObjectEventSetHeldMovement`, `ObjectEventForceSetHeldMovement`,
   `ObjectEventFaceOppositeDirection` y ambos drivers del movimiento retenido.
-- [ ] `InitNpcForWalk*`/`InitWalk*`/`UpdateWalk*`, `InitRunSlow`/`UpdateRunSlow`;
-  `Step1/2/3/4/8` y tablas de velocidad frente a `NpcTakeStep`; OAM de hierba larga.
-  - DIFERENCIA: el C (`UpdateWalkSlowerAnim`) solo mueve el sprite (`Step1`); el TS
-    (`UpdateSlowStyleAnim`) además resuelve el objeto desde el sprite y devuelve
-    `false` si no está en `ObjectEvents.objects` (en juego siempre lo está).
+- [x] `InitNpcForWalk*`/`InitWalk*`/`UpdateWalk*`, `InitRunSlow`/`UpdateRunSlow`;
+  `Step1/2/3/4/8` y tablas de velocidad frente a `NpcTakeStep`: cuerpos, campos `data[3..5]`, las cinco tablas
+  `sSpeed*StepFuncs`/`sStepTimes` y los saltos (`InitJump*`, `sJumpInitDisplacements`/`sJumpDisplacements`,
+  `DoJump*SpriteMovement`, `UpdateJumpAnim`) coinciden con el C. Corregida la diferencia anterior: `UpdateSlowStyleAnim` ya
+  solo mueve el sprite (commit tras `194eaef3`). OAM de hierba larga sin revisar.
 - [ ] `StartFieldEffectForObjectEvent` y `DoRippleFieldEffect` (dispatch y scripts de efecto).
 - [ ] `UpdateObjectEventVisibility` y `ObjectEventUpdateSubpriority` (orden del ciclo de frame).
 - [ ] `ObjectEventSetGraphicsId*`, `ObjectEventTurn*`, `PlayerObjectTurn`, `SetObjectEventDirection`.
