@@ -2463,7 +2463,8 @@ export class ObjectEvents {
           if (!player || player.movementActionId === MOVEMENT_ACTION_NONE || player.tileTransitionState === 2) return false; // T_TILE_CENTER
           const moveDir = player.movementDirection;
           const playerInit = object.directionSequenceIndex;
-          if (!playerInit || !moveDir || playerInit > 4 || moveDir > 4) return false;
+          // No range guard here: GetCopyDirection returns DIR_NONE for DIR_NONE/out-of-range directions and the C
+          // callbacks go on to use it (e.g. a face-down action), instead of skipping the frame.
           const movement = player.copyableMovement;
           const copyDirection = GetCopyDirection(copyInit, playerInit, moveDir);
           const didStart = this.runCopyablePlayerMovement(object, movement, copyDirection, inGrass);
@@ -2566,9 +2567,12 @@ export class ObjectEvents {
   /** Shared collision and movement setup used by the C walk/slide copy callbacks. */
   private CopyablePlayerMovement_SetStep(object: ObjectEvent, direction: number, action: number, inGrass: boolean): boolean {
     const destination = ObjectEventMoveDestCoords(object, direction);
+    // The C sets the walk/slide/jump action first and then, if the tile is blocked, sets the face action over it; each
+    // ObjectEventSetSingleMovement call is also recorded by the Quest Log, so both calls are kept.
+    this.ObjectEventSetSingleMovement(object, action);
     const blocked = this.GetCollisionAtCoords(object, destination.x, destination.y, direction)
       || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(destination.x, destination.y)));
-    this.ObjectEventSetSingleMovement(object, blocked ? actionFace(direction) : action);
+    if (blocked) this.ObjectEventSetSingleMovement(object, actionFace(direction));
     object.singleMovementActive = true;
     object.sprite.data[1] = 2;
     return true;
@@ -2612,9 +2616,10 @@ export class ObjectEvents {
     const vector = DIRECTION_VECTORS[direction]!;
     const x = ((object.currentCoords.x + vector[0] * 2) << 16) >> 16;
     const y = ((object.currentCoords.y + vector[1] * 2) << 16) >> 16;
+    this.ObjectEventSetSingleMovement(object, actionJump2(direction));
     const blocked = this.GetCollisionAtCoords(object, x, y, direction)
       || (inGrass && !MB.MetatileBehavior_IsPokeGrass(this.hooks.map().behaviorAt(x, y)));
-    this.ObjectEventSetSingleMovement(object, blocked ? actionFace(direction) : actionJump2(direction));
+    if (blocked) this.ObjectEventSetSingleMovement(object, actionFace(direction));
     object.singleMovementActive = true;
     object.sprite.data[1] = 2;
     return true;

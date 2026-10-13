@@ -193,4 +193,42 @@ for (let type = 0; type < 81; type++) {
   }
 }
 
+// MovementType_CopyPlayer Step0/Step1 with CopyablePlayerMovement_FaceDirection. GetCopyDirection returns DIR_NONE when the
+// player's facing/movement direction is DIR_NONE, and the C then still sets the face action (face down) instead of
+// waiting; with valid directions the object copies the player's turn (COPY_PLAYER starts facing NORTH; player init DOWN, move RIGHT -> WEST).
+{
+  const withPlayer = (facing: number, movementDirection: number, copyableMovement: number) => {
+    const o = new ObjectEvents({
+      ...hooks,
+      playerInfo: () => ({ facing, movementDirection, movementActionId: 5, copyableMovement, tileTransitionState: 0 }),
+    } as any);
+    o.objects.fill(null);
+    const actions: number[] = [];
+    const original = (o as any).ObjectEventSetSingleMovement.bind(o);
+    (o as any).ObjectEventSetSingleMovement = (object: ObjectEvent, actionId: number) => { actions.push(actionId); original(object, actionId); };
+    return { o, actions };
+  };
+  const first = (o: ObjectEvents, object: ObjectEvent) => (o as any).runMovementType(object);
+
+  const invalid = withPlayer(0, 1, 1);
+  first(invalid.o, spawn(C.MOVEMENT_TYPE_COPY_PLAYER));
+  assert.deepEqual(invalid.actions, [C.MOVEMENT_ACTION_FACE_DOWN], "CopyPlayer with DIR_NONE player direction sets the DIR_NONE face action (face down)");
+
+  const valid = withPlayer(1, 4, 1); // player faced DOWN at start, now moves RIGHT
+  first(valid.o, spawn(C.MOVEMENT_TYPE_COPY_PLAYER));
+  assert.deepEqual(valid.actions, [C.MOVEMENT_ACTION_FACE_LEFT], "CopyPlayer (initial NORTH) turns LEFT when the player turns RIGHT");
+
+  // CopyablePlayerMovement_GoSpeed0 with a blocked tile: the C sets the walk action and then the face action over it.
+  const blockedMap = { ...mockMap, collisionAt: () => 1 };
+  const blocked = new ObjectEvents({ ...hooks, map: () => blockedMap,
+    playerInfo: () => ({ facing: 1, movementDirection: 1, movementActionId: 5, copyableMovement: 2, tileTransitionState: 0 }) } as any);
+  blocked.objects.fill(null);
+  const calls: number[] = [];
+  const orig = (blocked as any).ObjectEventSetSingleMovement.bind(blocked);
+  (blocked as any).ObjectEventSetSingleMovement = (object: ObjectEvent, actionId: number) => { calls.push(actionId); orig(object, actionId); };
+  first(blocked, spawn(C.MOVEMENT_TYPE_COPY_PLAYER));
+  assert.deepEqual(calls, [C.MOVEMENT_ACTION_WALK_NORMAL_UP, C.MOVEMENT_ACTION_FACE_UP],
+    "CopyPlayer blocked step: walk action then face action (both go through ObjectEventSetSingleMovement)");
+}
+
 console.log("event_object_movement.c MovementType_* dispatch table checks passed");
