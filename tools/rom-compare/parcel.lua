@@ -1,7 +1,7 @@
 -- ROM side of the Route 1 -> Viridian City -> Poke Mart (Oak's Parcel) comparison. It replays the port's tile trace
 -- (tools/rom-compare/port-parcel.mjs writes /tmp/port-parcel-trace.lua: PARCEL_TRACE = { {g,n,x,y,dir,script}, ... })
 -- and dumps flags/vars at every map change and at the end (the parcel scene var reaches 1 and 600 frames pass).
--- Globals: PV_LOAD (state file), PV_OUT (report), PV_MAXF (frame cap), PARCEL_TRACE (set by dofile of the trace).
+-- Globals: PV_ENDMAP/PV_ENDTAG (second milestone: map {group,num} and the dump tag, default "route2"), PV_LOAD (state file), PV_OUT (report), PV_MAXF (frame cap), PARCEL_TRACE (set by dofile of the trace).
 -- Input is never held together with A: when the trace says a script runs (or the ROM is off the trace) it taps A
 -- in 30-frame bursts; otherwise it holds the recorded direction.
 local KEY = { A = 0, B = 1, SELECT = 2, START = 3, RIGHT = 4, LEFT = 5, UP = 6, DOWN = 7 }
@@ -118,7 +118,7 @@ _G.pv_cb = callbacks:add("frame", function()
   end
   if PV_ENDMAP and g == PV_ENDMAP[1] and m == PV_ENDMAP[2] and I:read8(0x03000EB1 - 0x03000000) == 0 then
     mapAt = mapAt or n
-    if n - mapAt >= 600 then dump("route2", n) out:write("DONE\n") out:close() doneAt = -1 return end
+    if n - mapAt >= 600 then dump(PV_ENDTAG or "route2", n) out:write("DONE\n") out:close() doneAt = -1 return end
   end
   -- sGlobalScriptContext.mode (IWRAM 0x03000EB0 + 1, located with scanctx.lua by its command-table pointers):
   -- 0 = no script, 1 = bytecode, 2 = native wait (text box, movement, ...). A is tapped only while a script runs

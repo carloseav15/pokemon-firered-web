@@ -67,10 +67,11 @@ pairs = [(d["tag"], d) for d in port["mapDumps"]]
 if "parcel" in port:
     pairs.append(("parcel", port["parcel"]))
 pairs.append(("end", port["end"]))
-if port.get("route2"):
-    pairs.append(("route2", port["route2"]))
+for extra in ("route2", "pewter"):
+    if port.get(extra):
+        pairs.append((extra, port[extra]))
 for tag, p in pairs:
-    if tag in ("parcel", "end", "route2"):
+    if tag in ("parcel", "end", "route2", "pewter"):
         rtag = tag
     else:
         name, _, visit = tag.split(":", 1)[1].partition("#")

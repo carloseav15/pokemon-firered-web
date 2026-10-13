@@ -272,6 +272,47 @@ if (process.env.ROUTE2 !== "0") {
   var route2End = await dump("route2");
   note("route2", JSON.stringify(route2End.st));
 }
+// ---- Viridian Forest -> Pewter City (FOREST=1; draft: the ROM side compares through PV_ENDMAP / PV_ENDTAG) ----
+// Trainer battles and wild encounters (rng pinned above) are played by A taps inside settle(); a whiteout ends the walk.
+if (process.env.FOREST === "1" && route2End) {
+  const whiteout = async () => /PALLET_TOWN|VIRIDIAN_CITY_POKEMON_CENTER/.test((await state()).map);
+  // Take the first warp whose destination matches `re`: walk onto it (arrow/mat tiles) or, when the tile is
+  // impassable (doors), stand next to it and press toward it; then try each direction until the map changes.
+  const takeWarp = async (re, label) => {
+    const from = (await state()).map;
+    const ws = (await p.evaluate(() => window.H.warps())).filter(w => re.test(w[2]));
+    for (const w of ws) {
+      if (await bfs(w[0], w[1])) {
+        await gotoTile(w[0], w[1]);
+        for (const d of ["D", "U", "L", "R"]) {
+          if ((await state()).map !== from) break;
+          await stepDir(d); await settle();
+          if ((await state()).map === from) await gotoTile(w[0], w[1]);
+        }
+      } else {
+        for (const [dx, dy, d] of [[0, 1, "U"], [0, -1, "D"], [1, 0, "L"], [-1, 0, "R"]]) {
+          if (!(await bfs(w[0] + dx, w[1] + dy)) || !(await gotoTile(w[0] + dx, w[1] + dy))) continue;
+          for (let i = 0; i < 3 && (await state()).map === from; i++) { await stepDir(d); await settle(); }
+          if ((await state()).map !== from) break;
+        }
+      }
+      if ((await state()).map !== from) break;
+    }
+    note(label, JSON.stringify(await state()));
+    return (await state()).map !== from;
+  };
+  const ok = await takeWarp(/^MAP_VIRIDIAN_FOREST$/, "enter forest")
+    && await takeWarp(/ROUTE2_VIRIDIAN_FOREST_NORTH_ENTRANCE$/, "forest north exit")
+    && await takeWarp(/^MAP_ROUTE2$/, "gate north exit");
+  if (ok && !(await whiteout())) {
+    const w2 = await p.evaluate(() => window.frGame.overworld.loaded.layout.width);
+    const top2 = Array.from({ length: w2 }, (_, x) => [x, 0]).sort((a, b) => Math.abs(a[0] - 6) - Math.abs(b[0] - 6));
+    await leaveMap("MAP_PEWTER_CITY", "U", top2);
+    await settle(); await sleep(5000);
+    var pewterEnd = await dump("pewter");
+    note("pewter", JSON.stringify(pewterEnd.st));
+  } else note("forest walk ended", JSON.stringify(await state()) + (await whiteout() ? " (whiteout)" : ""));
+}
 // One entry per visited tile: the last direction pressed there and whether a script ran there.
 const tiles = [];
 for (let i = 0; i < trace.length; i++) {
@@ -283,6 +324,6 @@ for (let i = 0; i < trace.length; i++) {
 }
 writeFileSync(process.env.TRACE ?? "/tmp/port-parcel-trace.lua",
   "PARCEL_TRACE = {\n" + tiles.map(t => { const g = t.num >> 8, n = t.num & 255; return `{${g},${n},${t.x},${t.y},${t.dir ? `"${t.dir}"` : "nil"},${t.script},${Math.ceil(t.ms * 0.06 * 1.3) + 180}},`; }).join("\n") + "\n}\n");
-writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, route2: typeof route2End === "undefined" ? null : route2End, errors: errs, traceLength: tiles.length }, null, 1));
+writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, route2: typeof route2End === "undefined" ? null : route2End, pewter: typeof pewterEnd === "undefined" ? null : pewterEnd, errors: errs, traceLength: tiles.length }, null, 1));
 console.log("trace", trace.length, "errors", errs.length, errs.slice(0, 3).join(" | "));
 await b.close();
