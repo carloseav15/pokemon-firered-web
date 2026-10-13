@@ -283,9 +283,16 @@ Receta:
 - [ ] `UpdateObjectEventCurrentMovement` (secuencia por objeto/ground effects) y
   driver por objeto; `ObjectEventSetSingleMovement`, `ObjectEventExecSingleMovementAction`,
   `ClearObjectEventMovement` (registro QL y `sprite.data[2]`).
-- [ ] `GetTrainerFacingDirectionMovementType` (tabla C, todas las direcciones);
-  `GetVectorDirection`/`GetLimitedVectorDirection_*`/`TryGetTrainerEncounterDirection`.
-- [ ] `MoveCoords`/`MoveCoordsInDirection` (overflow s16 y deltas u16); `SetObjectEventCoords`.
+- [x] `GetTrainerFacingDirectionMovementType` (9 entradas idénticas a `sTrainerFacingDirectionMovementTypes`);
+  `GetVectorDirection` y los 10 `GetLimitedVectorDirection_*` (ramas idénticas al C, `objectEvents.ts:~135-185`);
+  `TryGetTrainerEncounterDirection` (envoltura s16 de dx/dy/abs y mapeo RUNFOLLOW 0–10 frente a
+  `gGetVectorDirectionFuncs`; los 11 `MovementType_*_Step4` pasan el RUNFOLLOW correcto).
+- [x] `MoveCoords`/`MoveCoordsInDirection` (envoltura s16; `(u16)delta` equivale módulo 2^16; vectores iguales a
+  `sDirectionToVectors`); `SetObjectEventCoords`.
+  - Encontrado y corregido (`1f6608ff`): `MovementType_FaceDownAndUp`/`FaceLeftAndRight` usan
+    `gMovementDelaysMedium`; el TS usaba `Short` para todos salvo LookAround. Cubierto en `check:movement-types`.
+  - Sin revisar aún en este bloque: pasos `Step0–Step3` y el resto de `MovementType_*` (máquina fusionada en
+    `movementTypeBranch`); `ObjectEventIsTrainerAndCloseToPlayer` y `PlayerGetDestCoords`.
 - [ ] `GetAvailableObjectEventId`, `TrySetupObjectEventSprite`, `TrySpawnObjectEventTemplate`,
   `TrySpawnObjectEvents`, `RemoveObjectEventsOutsideView`, getters/overrides de plantillas;
   `GroundEffect_*`/`DoTracksGroundEffect_*`.
