@@ -348,10 +348,12 @@ Receta:
   - DIFERENCIA: el C carga el mapa de forma síncrona (`overworld.c:583-588`); el TS lo
     hace por etapas asíncronas (`overworld.ts:641-673`). `TryFadeOutOldMapMusic`
     coincide (`overworld.c:1112-1118`, `overworld.ts:2342-2349`).
-- [ ] `GetMapTypeByGroupAndId`, `GetLastUsedWarpMapType`, `GetSavedWarpRegionMapSectionId`,
+- [x] `GetMapTypeByGroupAndId`, `GetLastUsedWarpMapType`, `GetSavedWarpRegionMapSectionId`,
   `GetCurrentRegionMapSectionId`, `GetCurrentMapBattleScene`.
-  - DIFERENCIA: en mapas válidos coinciden; el TS usa `?.` y admite `undefined` en
-    mapas inválidos (`overworld.c:1203-1206,1260-1273`, `overworld.ts:339-371`).
+  - Revisado: en mapas válidos coinciden; el TS devuelve `undefined` en mapas inválidos donde el C lee basura.
+    También `IsMapTypeOutdoors`/`Indoors`/`AllowsTeleportAndFly` y el estado `UpdateAmbientCry`/`ChooseAmbientCrySpecies`
+    (retardos 1200–3599 y 1200–2399). Corregido `PlayAmbientCry`: comprobaba la casilla de enfrente en vez de la propia
+    (`PlayerGetDestCoords`) para mons de agua.
 - [~] `SetWarpData`/`SetWarpDestination`/`SetDynamicWarp*`/`SetWarpDestinationTo*`: coinciden (parámetros `s8` truncados
   en `SetWarpData`). `LoadMapFromWarp`/`LoadMapFromCameraTransition`/`QL_LoadMapNormal`: mismas llamadas (la elección del
   grito ambiental va dentro de `stepCallback.reset()`); orden distinto sin dependencia de datos
@@ -365,8 +367,10 @@ Receta:
     el TS aplica comandos en `fieldControl.ts:204-214` antes del driver.
 
 **`quest_log.c`** (`questLogEvents.ts`)
-- [ ] Callbacks de entrada/fin de playback, `RunQuestLogCB`, `QLogCB_Playback`,
-  `QuestLog_PlayCurrentEvent`, `HandleShowQuestLogMessage`, `QL_TryRunActions`.
+- [~] Callbacks de entrada/fin de playback, `RunQuestLogCB`, `QLogCB_Playback`,
+  `QuestLog_PlayCurrentEvent`, `HandleShowQuestLogMessage`, `QL_TryRunActions` (bucle de acciones y
+  retardos iguales al C; el TS además espera a `scriptContextIdle` y no pasa a STOPPED con `idx >= max` mientras los
+  controles están bloqueados; la entrada reproduce los bytes 0 y 2 de `FieldInput`, sin `pressedRButton`).
   - DIFERENCIA: fin de escena (`quest_log.c:270-289`) frente a `sPlaybackEndMode`
     (`questLogEvents.ts:824-849`); `QL_TryRunActions` escribe estado global en C
     (`quest_log.c:1594-1669`) y devuelve comandos en TS (`questLogEvents.ts:1168-1221`).
