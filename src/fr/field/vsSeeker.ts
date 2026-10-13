@@ -286,13 +286,13 @@ export function MapResetTrainerRematches(game: Game): void {
   }
 }
 
-/** VsSeekerFreezeObjectsAfterChargeComplete */
+/** Task_ResetObjectsRematchWantedState (vs_seeker.c:603-633), created by VsSeekerFreezeObjectsAfterChargeComplete. */
 export function Task_ResetObjectsRematchWantedState(game: Game): void {
   const ow = game.overworld;
   let standing = 0, frozen = 0;
   const id = tasks.create(() => {
     if (!standing && ow.player.isStandingStill()) {
-      ow.objects.ObjectEventClearHeldMovementIfFinished(ow.player.object);
+      ow.player.HandleEnforcedLookDirectionOnPlayerStopMoving();
       standing = 1;
     }
     if (!frozen) {
@@ -304,7 +304,7 @@ export function Task_ResetObjectsRematchWantedState(game: Game): void {
     frozen = 1;
     if (standing) {
       tasks.destroy(id);
-      ow.player.runningState = 0;
+      ow.player.StopPlayerAvatar();
       ow.script.ScriptContext_Enable();
     }
   }, 80);
