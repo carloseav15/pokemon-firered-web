@@ -287,5 +287,110 @@
     "cluster": "c-trap",
     "verdict": "UNDEFINED_BEHAVIOR",
     "reason": "maxValue = 0 divides by zero (same cluster as the generated variant: hand port and generator now agree everywhere else)"
+  },
+  {
+    "fn": "GetFlavorRelationByPersonality",
+    "impl": "pokemon/mon_extra.ts",
+    "cluster": "ts-non-finite",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "flavor >= 5 indexes past the 25 x 5 compatibility table; C reads the next row, TS undefined. Realistic domain (flavor 0..4) has 0 mismatches"
+  },
+  {
+    "fn": "HoennToNationalOrder",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "HoennToNationalOrder",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "ts-non-finite",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "HoennToNationalOrder",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToHoennPokedexNum",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToHoennPokedexNum",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "ts-non-finite",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToHoennPokedexNum",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToNationalPokedexNum",
+    "impl": "pokemon/mon.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToNationalPokedexNum",
+    "impl": "pokemon/mon.ts",
+    "cluster": "ts-non-finite",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToNationalPokedexNum",
+    "impl": "pokemon/mon.ts",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "IsMonSpriteNotFlipped",
+    "impl": "pokemon/pics.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "IsMonSpriteNotFlipped",
+    "impl": "pokemon/pics.ts",
+    "cluster": "ts-non-finite",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "IsMonSpriteNotFlipped",
+    "impl": "pokemon/pics.ts",
+    "cluster": "value-differs",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToCryId",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "c-trap",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species/number index past the 411-entry C table (species >= 412 or hoennNum/nationalNum > 411); C reads adjacent memory or traps, TS reads undefined. Realistic and structural domains (0..411) have 0 mismatches"
+  },
+  {
+    "fn": "SpeciesToCryId",
+    "impl": "pokemon/pokemon.ts",
+    "cluster": "ts-non-finite",
+    "verdict": "UNDEFINED_BEHAVIOR",
+    "reason": "species 411 (Chimecho) indexes entry 135 of the 135-entry sHoennSpeciesIdToCryId table (species - SPECIES_OLD_UNOWN_Z); the C reads the bytes after the table. No Chimecho exists in FireRed, so no cry request reaches it; species > 411 are invalid ids"
   }
 ]

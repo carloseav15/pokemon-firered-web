@@ -70,7 +70,7 @@ sample) plus seeded fuzz (mulberry32). C traps (divide by zero, out-of-bounds) a
 
 - `run.mjs` driver, `report.mjs` report generator, `verdicts.json` triage decisions.
 - `lib/` toolchain lookup, C->wasm, esbuild bundle with in-memory expose plugin, input generation, comparators (pure, sequence, RNG, buffer, table).
-- `specs/` one entry per function (`groupA` direct, `groupB` wrapper, `groupC` scalar state adapters, `groupD` ByteStruct state, `controls`).
+- `specs/` one entry per function (`groupA` direct, `groupB` wrapper, `groupC` scalar state adapters, `groupD` ByteStruct state, `groupE` scalar globals, `groupF` pokemon.c lookup tables, `controls`).
 - `controls/` known-buggy vs fixed integer semantics used to prove the detector works; `adapter_mutants.mjs` (RNG/buffer) and `struct_mutants.mjs` (layout probe) do the same for the adapters.
 - `results/latest.json`, `REPORT.generated.md` generated output; raw build products live in `.decomp-build/oracle/` (ignored).
 

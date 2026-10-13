@@ -402,9 +402,14 @@ Receta:
   Corregido `WEATHER_HAS_EFFECT2` (se aliasaba a `WEATHER_HAS_EFFECT`: el C usa el modo `ABILITYEFFECT_FIELD_SPORT`, sin
   comprobar `hp != 0`) — `475b8118`. Macros de `battle.h`/`battle_util.h` (`GET_MOVE_TYPE`, `IS_TYPE_*`,
   `SET_BATTLER_TYPE`, `GET_STAT_BUFF_*`, `MOVE_IS_PERMANENT`, `ABILITY_ON_FIELD*`) iguales.
-  Pendiente de pokemon.c: de 140 funciones solo 5 tienen especificación en `tools/oracle` (el oracle funciona en esta
-  máquina con `llvm@16`, 4 s para los grupos A+B); candidatas: `GetNature*`, `GetMonGender`, `CalculateBoxMonChecksum`,
-  `GetLevelFromBoxMonExp`, `GetMonFlavorRelation`, `CalculateMonStats`.
+  Oracle (`tools/oracle`, funciona con `llvm@16`; todo en ~20 s): grupo F nuevo con 11 funciones de pokemon.c
+  (`GetNatureFromPersonality`, `GetFlavorRelationByPersonality`, `SpeciesToNationalPokedexNum`,
+  `NationalPokedexNumToSpecies`, `SpeciesToHoennPokedexNum`, `HoennPokedexNumToSpecies`, `NationalToHoennOrder`,
+  `HoennToNationalOrder`, `SpeciesToCryId`, `IsHMMove2`, `IsMonSpriteNotFlipped`): 0 diferencias en el dominio
+  realista salvo `SpeciesToCryId(411)` (el C lee un byte tras `sHoennSpeciesIdToCryId`; Chimecho no existe en FireRed).
+  Sin cobertura: las funciones sobre `Mon`/`BoxMon` (`CalculateBoxMonChecksum`, `GetLevelFromBoxMonExp`,
+  `CalculateMonStats`, `GetMonGender`…): el TS usa objetos decodificados, no bytes, y el adaptador ByteStruct no los
+  alcanza sin una capa de conversión.
 
 **`pokemon_summary_screen.c`**
 - [ ] `SwapBoxMonMoveSlots`, `UpdateCurrentMonBufferFromPartyOrBox`, transición de

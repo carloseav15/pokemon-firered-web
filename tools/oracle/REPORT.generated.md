@@ -28,7 +28,7 @@ Seed: 20260928, fuzz cases per domain: 2000, boundary-combination cap: 20000
 | ModifyStatByNature | pokemon/pokemon.ts | structural | 288 | 2000 | NEEDS_TRIAGE | value-differs: TS_DIVERGENCE (574) | return value |
 | ModifyStatByNature | pokemon/pokemon.ts | realistic | 160 | 2000 | MATCH_OBSERVED | - | return value |
 | ModifyStatByNature | data:sNatureStatTable | type | 125 | 0 | MATCH_OBSERVED | - | return value |
-| CalculatePPWithBonus | pokemon/mon.ts | type | 637 | 2000 | NEEDS_TRIAGE | value-differs: UNDEFINED_BEHAVIOR (146); c-trap: UNDEFINED_BEHAVIOR (1810) | return value |
+| CalculatePPWithBonus | pokemon/mon.ts | type | 637 | 2000 | NEEDS_TRIAGE | value-differs: UNDEFINED_BEHAVIOR (148); c-trap: UNDEFINED_BEHAVIOR (1810) | return value |
 | CalculatePPWithBonus | pokemon/mon.ts | structural | 280 | 2000 | MATCH_OBSERVED | - | return value |
 | CalculatePPWithBonus | pokemon/mon.ts | realistic | 280 | 2000 | MATCH_OBSERVED | - | return value |
 | CalculatePPWithBonus | data:gBattleMoves.pp | type | 355 | 0 | MATCH_OBSERVED | - | return value |
@@ -37,6 +37,38 @@ Seed: 20260928, fuzz cases per domain: 2000, boundary-combination cap: 20000
 | GetAbilityBySpecies | battle/util.ts | realistic | 80 | 2000 | MATCH_OBSERVED | - | return value + gLastUsedAbility before/after; gSpeciesInfo.abilities table |
 | GetAbilityBySpecies | data:gSpeciesInfo.abilities[0] | type | 412 | 0 | MATCH_OBSERVED | - | return value + gLastUsedAbility before/after; gSpeciesInfo.abilities table |
 | GetAbilityBySpecies | data:gSpeciesInfo.abilities[1] | type | 412 | 0 | MATCH_OBSERVED | - | return value + gLastUsedAbility before/after; gSpeciesInfo.abilities table |
+| GetNatureFromPersonality | pokemon/mon.ts | type | 19 | 2000 | MATCH_OBSERVED | - | return value |
+| GetNatureFromPersonality | pokemon/mon.ts | realistic | 19 | 2000 | MATCH_OBSERVED | - | return value |
+| GetFlavorRelationByPersonality | pokemon/mon_extra.ts | type | 133 | 2000 | NEEDS_TRIAGE | ts-non-finite: UNDEFINED_BEHAVIOR (1615) | return value |
+| GetFlavorRelationByPersonality | pokemon/mon_extra.ts | structural | 76 | 2000 | MATCH_OBSERVED | - | return value |
+| GetFlavorRelationByPersonality | pokemon/mon_extra.ts | realistic | 76 | 2000 | MATCH_OBSERVED | - | return value |
+| SpeciesToNationalPokedexNum | pokemon/mon.ts | type | 13 | 2000 | NEEDS_TRIAGE | c-trap: UNDEFINED_BEHAVIOR (707); value-differs: UNDEFINED_BEHAVIOR (57) | return value |
+| SpeciesToNationalPokedexNum | pokemon/mon.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| SpeciesToNationalPokedexNum | pokemon/mon.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| NationalPokedexNumToSpecies | pokemon/mon.ts | type | 13 | 2000 | MATCH_OBSERVED | - | return value |
+| NationalPokedexNumToSpecies | pokemon/mon.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| NationalPokedexNumToSpecies | pokemon/mon.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| SpeciesToHoennPokedexNum | pokemon/pokemon.ts | type | 13 | 2000 | NEEDS_TRIAGE | ts-non-finite: UNDEFINED_BEHAVIOR (1304); c-trap: UNDEFINED_BEHAVIOR (687) | return value |
+| SpeciesToHoennPokedexNum | pokemon/pokemon.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| SpeciesToHoennPokedexNum | pokemon/pokemon.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| HoennPokedexNumToSpecies | pokemon/pokemon.ts | type | 13 | 2000 | MATCH_OBSERVED | - | return value |
+| HoennPokedexNumToSpecies | pokemon/pokemon.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| HoennPokedexNumToSpecies | pokemon/pokemon.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| NationalToHoennOrder | pokemon/pokemon.ts | type | 13 | 2000 | MATCH_OBSERVED | - | return value |
+| NationalToHoennOrder | pokemon/pokemon.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| NationalToHoennOrder | pokemon/pokemon.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| HoennToNationalOrder | pokemon/pokemon.ts | type | 13 | 2000 | NEEDS_TRIAGE | ts-non-finite: UNDEFINED_BEHAVIOR (1269); c-trap: UNDEFINED_BEHAVIOR (722) | return value |
+| HoennToNationalOrder | pokemon/pokemon.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| HoennToNationalOrder | pokemon/pokemon.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| SpeciesToCryId | pokemon/pokemon.ts | type | 13 | 2000 | NEEDS_TRIAGE | ts-non-finite: UNDEFINED_BEHAVIOR (1264); c-trap: UNDEFINED_BEHAVIOR (727) | return value |
+| SpeciesToCryId | pokemon/pokemon.ts | structural | 10 | 2000 | NEEDS_TRIAGE | ts-non-finite: UNDEFINED_BEHAVIOR (3) | return value |
+| SpeciesToCryId | pokemon/pokemon.ts | realistic | 10 | 2000 | NEEDS_TRIAGE | ts-non-finite: UNDEFINED_BEHAVIOR (3) | return value |
+| IsHMMove2 | pokemon/mon_extra.ts | type | 13 | 2000 | MATCH_OBSERVED | - | return value |
+| IsHMMove2 | pokemon/mon_extra.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| IsHMMove2 | pokemon/mon_extra.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| IsMonSpriteNotFlipped | pokemon/pics.ts | type | 13 | 2000 | NEEDS_TRIAGE | c-trap: UNDEFINED_BEHAVIOR (1868); value-differs: UNDEFINED_BEHAVIOR (2) | return value |
+| IsMonSpriteNotFlipped | pokemon/pics.ts | structural | 10 | 2000 | MATCH_OBSERVED | - | return value |
+| IsMonSpriteNotFlipped | pokemon/pics.ts | realistic | 10 | 2000 | MATCH_OBSERVED | - | return value |
 | GetTileMapIndexFromCoords | hw/bg.ts | type | 20000 | 2000 | NEEDS_TRIAGE | missing-truncation-to-u32: INVALID_DOMAIN (5961) | return value |
 | GetTileMapIndexFromCoords | hw/bg.ts | structural | 15376 | 2000 | MATCH_OBSERVED | - | return value |
 | GetTileMapIndexFromCoords | hw/bg.ts | realistic | 256 | 2000 | MATCH_OBSERVED | - | return value |
@@ -97,7 +129,7 @@ Clusters, not cases: one cluster groups all mismatches with the same automatic c
 |---|---:|
 | TS_DIVERGENCE | 6 |
 | DATA_MISMATCH | 0 |
-| UNDEFINED_BEHAVIOR | 18 |
+| UNDEFINED_BEHAVIOR | 31 |
 | INVALID_DOMAIN | 4 |
 | ORACLE_LIMITATION | 0 |
 | HARNESS_ERROR | 0 |
@@ -117,6 +149,17 @@ Only the realistic domain counts towards confidence. Type-domain mismatches are 
 | ModifyStatByNature | pokemon/pokemon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED + DATA_CHECKED | MATCH_OBSERVED | esbuild expose, unstatic in C TU, table data check | realistic domain from callers |
 | CalculatePPWithBonus | pokemon/mon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED + DATA_CHECKED | MATCH_OBSERVED | rom data load, appendC offsetof helper | realistic domain from callers |
 | GetAbilityBySpecies | battle/util.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED + DATA_CHECKED | MATCH_OBSERVED | scalar global adapter, data-check | realistic domain from callers |
+| GetNatureFromPersonality | pokemon/mon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | none | realistic domain from callers |
+| GetFlavorRelationByPersonality | pokemon/mon_extra.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | cdata pokemon | realistic domain from callers |
+| SpeciesToNationalPokedexNum | pokemon/mon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | rom.species | realistic domain from callers |
+| NationalPokedexNumToSpecies | pokemon/mon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | rom.species | realistic domain from callers |
+| SpeciesToHoennPokedexNum | pokemon/pokemon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | cdata pokemon | realistic domain from callers |
+| HoennPokedexNumToSpecies | pokemon/pokemon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | cdata pokemon | realistic domain from callers |
+| NationalToHoennOrder | pokemon/pokemon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | cdata pokemon | realistic domain from callers |
+| HoennToNationalOrder | pokemon/pokemon.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | cdata pokemon | realistic domain from callers |
+| SpeciesToCryId | pokemon/pokemon.ts | BASIC | NEEDS_TRIAGE | cdata pokemon | realistic domain from callers |
+| IsHMMove2 | pokemon/mon_extra.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | cdata pokemon | realistic domain from callers |
+| IsMonSpriteNotFlipped | pokemon/pics.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | rom.species | realistic domain from callers |
 | GetTileMapIndexFromCoords | hw/bg.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | none | realistic domain partly ASSUMED |
 | GetHPBarLevel | battle/interface.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | none | realistic domain partly ASSUMED |
 | GetScaledHPFraction | battle/interface.ts | BASIC + BOUNDARY_TESTED + FUZZ_TESTED | MATCH_OBSERVED | two TS impls compared to one C | realistic domain partly ASSUMED |
@@ -321,23 +364,23 @@ Each function is compiled as its full preprocessed `.c`. Imports are functions t
 
 | Unit | wasm bytes | imports (libc-provided / stubbed) | undefined symbols | compile ms |
 |---|---:|---|---:|---:|
-| controls.c | 5660 | 0 (0 / 0) | 1 | 130 |
-| util | 7744 | 3 (0 / 3) | 8 | 145 |
-| battle_anim | 57140 | 39 (0 / 39) | 622 | 143 |
-| pokemon | 234570 | 44 (2 / 42) | 120 | 343 |
-| bg | 32833 | 7 (0 / 7) | 8 | 114 |
-| battle_interface | 66353 | 40 (0 / 40) | 68 | 156 |
-| sprite | 58480 | 4 (1 / 3) | 6 | 139 |
-| itemfinder | 19645 | 22 (0 / 22) | 33 | 125 |
-| trig | 2311 | 0 (0 / 0) | 1 | 101 |
-| fieldmap | 48305 | 14 (0 / 14) | 20 | 113 |
-| random | 723 | 0 (0 / 0) | 1 | 99 |
-| battle_util | 133311 | 31 (0 / 31) | 195 | 151 |
-| battle_controller_oak_old_man | 91774 | 100 (0 / 100) | 162 | 136 |
-| battle_anim_mons | 80064 | 42 (2 / 40) | 74 | 127 |
-| party_menu | 207765 | 227 (2 / 225) | 412 | 203 |
-| battle_main | 165987 | 152 (2 / 150) | 217 | 171 |
-| battle_script_commands | 383882 | 152 (1 / 151) | 319 | 210 |
+| controls.c | 5660 | 0 (0 / 0) | 1 | 87 |
+| util | 7744 | 3 (0 / 3) | 8 | 213 |
+| battle_anim | 57140 | 39 (0 / 39) | 622 | 280 |
+| pokemon | 236751 | 44 (2 / 42) | 120 | 648 |
+| bg | 32833 | 7 (0 / 7) | 8 | 227 |
+| battle_interface | 66353 | 40 (0 / 40) | 68 | 286 |
+| sprite | 58480 | 4 (1 / 3) | 6 | 249 |
+| itemfinder | 19645 | 22 (0 / 22) | 33 | 242 |
+| trig | 2311 | 0 (0 / 0) | 1 | 203 |
+| fieldmap | 48305 | 14 (0 / 14) | 20 | 234 |
+| random | 723 | 0 (0 / 0) | 1 | 207 |
+| battle_util | 133311 | 31 (0 / 31) | 195 | 297 |
+| battle_controller_oak_old_man | 91774 | 100 (0 / 100) | 162 | 274 |
+| battle_anim_mons | 80064 | 42 (2 / 40) | 74 | 261 |
+| party_menu | 207765 | 227 (2 / 225) | 412 | 412 |
+| battle_main | 165987 | 152 (2 / 150) | 217 | 343 |
+| battle_script_commands | 383882 | 152 (1 / 151) | 319 | 421 |
 
-TS bundle: 20 modules, 132 ms. Run: 2329 ms.
+TS bundle: 22 modules, 247 ms. Run: 4957 ms.
 
