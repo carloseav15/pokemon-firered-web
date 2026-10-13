@@ -121,4 +121,37 @@ for (let type = 0; type < 81; type++) {
   assert.ok(moved, "MovementType_WalkSequenceUpRightLeftDown must eventually move");
 }
 
+// Idle delays chosen in MovementType_*_Step2: gMovementDelaysMedium {32, 64, 96, 128} for LookAround, FaceDownAndUp and
+// FaceLeftAndRight; gMovementDelaysShort {32, 48, 64, 80} for the other eight FACE_*_AND_* types (event_object_movement.c).
+{
+  const MEDIUM = [32, 64, 96, 128], SHORT = [32, 48, 64, 80];
+  const cases: Array<[string, number, number[]]> = [
+    ["LOOK_AROUND", C.MOVEMENT_TYPE_LOOK_AROUND, MEDIUM],
+    ["FACE_DOWN_AND_UP", C.MOVEMENT_TYPE_FACE_DOWN_AND_UP, MEDIUM],
+    ["FACE_LEFT_AND_RIGHT", C.MOVEMENT_TYPE_FACE_LEFT_AND_RIGHT, MEDIUM],
+    ["FACE_UP_AND_LEFT", C.MOVEMENT_TYPE_FACE_UP_AND_LEFT, SHORT],
+    ["FACE_UP_AND_RIGHT", C.MOVEMENT_TYPE_FACE_UP_AND_RIGHT, SHORT],
+    ["FACE_DOWN_AND_LEFT", C.MOVEMENT_TYPE_FACE_DOWN_AND_LEFT, SHORT],
+    ["FACE_DOWN_AND_RIGHT", C.MOVEMENT_TYPE_FACE_DOWN_AND_RIGHT, SHORT],
+    ["FACE_DOWN_UP_AND_LEFT", C.MOVEMENT_TYPE_FACE_DOWN_UP_AND_LEFT, SHORT],
+    ["FACE_DOWN_UP_AND_RIGHT", C.MOVEMENT_TYPE_FACE_DOWN_UP_AND_RIGHT, SHORT],
+    ["FACE_UP_LEFT_AND_RIGHT", C.MOVEMENT_TYPE_FACE_UP_LEFT_AND_RIGHT, SHORT],
+    ["FACE_DOWN_LEFT_AND_RIGHT", C.MOVEMENT_TYPE_FACE_DOWN_LEFT_AND_RIGHT, SHORT],
+  ];
+  for (const [name, type, allowed] of cases) {
+    const object = spawn(type);
+    const seen = new Set<number>();
+    let previous = 0;
+    for (let i = 0; i < 60000 && seen.size < allowed.length; i++) {
+      stepFrames(object, 1);
+      // Step2 stores a fresh delay in data[3]; Step3 only counts it down, so a rise marks a new draw.
+      const delay = object.sprite.data[3];
+      if (object.sprite.data[1] === 3 && delay > previous) seen.add(delay);
+      previous = delay;
+    }
+    for (const v of seen) assert.ok(allowed.includes(v), `MovementType_${name}: delay ${v} not in {${allowed}}`);
+    assert.equal(seen.size, allowed.length, `MovementType_${name}: saw delays ${[...seen]} of {${allowed}}`);
+  }
+}
+
 console.log("event_object_movement.c MovementType_* dispatch table checks passed");

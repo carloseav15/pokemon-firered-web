@@ -2323,7 +2323,11 @@ export class ObjectEvents {
         case 1: this.ObjectEventSetSingleMovement(object, actionFace(object.facingDirection)); s.data[1] = 2; return true;
         case 2:
           if (this.ObjectEventExecSingleMovementAction(object)) {
-            this.setDelay(object, (type === c.MOVEMENT_TYPE_LOOK_AROUND ? DELAYS_MEDIUM : DELAYS_SHORT)[random() & 3]);
+            // Step2: gMovementDelaysMedium for LookAround, FaceDownAndUp and FaceLeftAndRight; gMovementDelaysShort for the other
+          // eight FACE_*_AND_* types (event_object_movement.c, MovementType_Face*_Step2).
+          const medium = type === c.MOVEMENT_TYPE_LOOK_AROUND || type === c.MOVEMENT_TYPE_FACE_DOWN_AND_UP
+            || type === c.MOVEMENT_TYPE_FACE_LEFT_AND_RIGHT;
+          this.setDelay(object, (medium ? DELAYS_MEDIUM : DELAYS_SHORT)[random() & 3]);
             object.singleMovementActive = false;
             s.data[1] = 3;
           }
