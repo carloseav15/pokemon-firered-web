@@ -33,8 +33,8 @@
 
       <h2>Mundo y mapas</h2>
       <div class="grid">
-        <div class="card"><h3>Visor del mundo</h3><p>Visor común de FireRed, Emerald, Heart &amp; Soul y Crystal: carga por bloques, cámara libre, búsqueda y fichas con eventos y puertas. El inspector avanzado conserva las herramientas específicas.</p>
-          <div class="links"><a class="btn ga" href="/maps.html?game=firered">Kanto</a><a class="btn gb" href="/maps.html?game=emerald">Hoenn</a><a class="btn" href="/maps.html?game=hns">Johto GBA</a><a class="btn" href="/maps.html?game=crystal">Crystal</a></div></div>
+        <div class="card"><h3>Visor del mundo</h3><p>Atlas principal con Kanto FireRed, Johto Heart &amp; Soul y Hoenn Emerald. Cámara, búsqueda y puertas en un visor; variantes disponibles por separado.</p>
+          <div class="links"><a class="btn" href="/maps.html?game=world">Mundo principal</a><a class="btn ga" href="/maps.html?game=world#region=kanto">Kanto</a><a class="btn gb" href="/maps.html?game=world#region=hoenn">Hoenn</a><a class="btn" href="/maps.html?game=world#region=johto">Johto GBA</a><a class="btn" href="/maps.html?game=crystal">Crystal</a></div></div>
         <div class="card"><h3>Explorar a pie</h3><p>Camina por el mundo con tu avatar (Rojo/Hoja en Kanto, Bruno/Aura en Hoenn). Pisar una puerta abre su interior.</p>
           <div class="links"><a class="btn ga" href="/viewer.html#modo=explore">Kanto</a><a class="btn gb" href="/viewer.html?game=emerald#modo=explore">Hoenn</a></div></div>
         <div class="card"><h3>Interiores</h3><p>425 mapas de FireRed y 518 de Emerald con warps, objetos con sprite, eventos y carteles. Desde el buscador, o con <code>#mapa=MAP_ID</code>.</p>
@@ -97,6 +97,7 @@
     </main>
     <script type="module">
       const checks = [
+        ["Mundo principal", "/map-viewer/principal/catalog.json", "Kanto, Johto y Hoenn en un atlas", "npm run maps:principal"],
         ["Visor común: imágenes FireRed", "/map-viewer/firered/catalog.json", "Consulta ligera de Kanto", "npm run maps:images -- firered"],
         ["Visor común: imágenes Emerald", "/map-viewer/emerald/catalog.json", "Consulta ligera de Hoenn", "npm run maps:images -- emerald"],
         ["Visor común: vista reducida HnS", "/map-viewer/hns/world/overview.png", "Johto GBA al alejar el zoom", "npm run maps:images -- hns"],

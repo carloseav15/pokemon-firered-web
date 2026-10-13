@@ -7,6 +7,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const viewport = $<HTMLDivElement>("viewport"), stage = $("stage"), sizer = $("sizer"), annotations = $("annotations");
 const gameSelect = $<HTMLSelectElement>("game"), zoom = $<HTMLSelectElement>("zoom"), time = $<HTMLSelectElement>("time");
 const search = $<HTMLInputElement>("search"), filter = $<HTMLSelectElement>("filter"), back = $<HTMLButtonElement>("back");
+const regionSelect = $<HTMLSelectElement>("region");
 const labels = $<HTMLInputElement>("labels"), events = $<HTMLInputElement>("events");
 const meta = $("meta"), detail = $("detail"), list = $("list"), explore = $<HTMLAnchorElement>("explore");
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -19,7 +20,8 @@ const historyStack: Position[] = [], remembered = new Map<GameId, Position>();
 const pool = new TexturePool(stage, url => { meta.textContent = `No se pudo cargar ${url}. Revisa los datos en Atlas.`; });
 const position = (): Position => ({ map: current, zoom: zoom.value, x: viewport.scrollLeft, y: viewport.scrollTop });
 
-function mapLink(id: string, text?: string, warp?: string): string {
+function mapLink(id: string, text?: string, warp?: string, referenceUrl?: string): string {
+  if (!source?.maps.has(id) && referenceUrl) return `<a class="reference" href="${esc(referenceUrl)}">${esc(text ?? id)} · fuente alternativa</a>`;
   if (!source?.maps.has(id)) return `<span>${esc(text ?? id)} (destino dinámico o ausente)</span>`;
   return `<a href="#mapa=${encodeURIComponent(id)}${warp != null ? `&warp=${encodeURIComponent(warp)}` : ""}">${esc(text ?? source.maps.get(id)!.name)}</a>`;
 }
@@ -27,7 +29,7 @@ function renderList(): void {
   if (!source) return;
   const term = search.value.toLowerCase().replace(/[^a-z0-9]/g, "");
   const connected = new Set(source.world.rects.map(r => r.id));
-  const maps = [...source.maps.values()].filter(m => (filter.value !== "available" || m.available) && (filter.value !== "world" || connected.has(m.id)) && m.searchable.includes(term)).sort((a, b) => a.name.localeCompare(b.name));
+  const maps = [...source.maps.values()].filter(m => (regionSelect.value === "all" || !source!.regions || m.region === regionSelect.value) && (filter.value !== "available" || m.available) && (filter.value !== "world" || connected.has(m.id)) && m.searchable.includes(term)).sort((a, b) => a.name.localeCompare(b.name));
   $("count").textContent = `${maps.length} resultados · ${[...source.maps.values()].filter(m => m.available).length}/${source.maps.size} disponibles`;
   list.innerHTML = maps.slice(0, listLimit).map(m => `<a class="map${m.id === current ? " selected" : ""}" href="#mapa=${encodeURIComponent(m.id)}">${esc(m.name)}<small>${m.width}×${m.height} px${m.available ? "" : " · Sin render"}</small></a>`).join("");
   $("more").hidden = maps.length <= listLimit;
@@ -51,14 +53,21 @@ function update(): void {
   try { pool.render(textures); } catch (error) { meta.textContent = String(error); }
   $("budget").textContent = `${pool.activeCount} imágenes visibles · ${(pool.retainedBytes / 1048576).toFixed(1)} MiB estimados retenidos (límite 96)`;
   const z = view.zoom;
+  const regionFrames = current === "world" && source.regions ? source.regions.map(r => `<div class="region-outline" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px"><button data-region="${esc(r.id)}" style="font-size:${14 / z}px">${esc(r.title)} · ${esc(r.version)}</button></div>`).join("") : "";
   const rects = current === "world" ? source.world.rects.filter(r => r.x < view.x / z + view.width / z && r.y < view.y / z + view.height / z && r.x + r.w > view.x / z && r.y + r.h > view.y / z) : [];
-  annotations.innerHTML = rects.map(r => `<a class="rect${source!.maps.get(r.id)!.available ? "" : " unavailable"}" href="#mapa=${encodeURIComponent(r.id)}" title="${esc(source!.maps.get(r.id)!.name)}" aria-label="${esc(source!.maps.get(r.id)!.name)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px">${labels.checked ? `<span style="font-size:${12 / z}px">${esc(source!.maps.get(r.id)!.name)}</span>` : ""}</a>`).join("");
+  annotations.innerHTML = regionFrames + rects.map(r => `<a class="rect${source!.maps.get(r.id)!.available ? "" : " unavailable"}" href="#mapa=${encodeURIComponent(r.id)}" title="${esc(source!.maps.get(r.id)!.name)}" aria-label="${esc(source!.maps.get(r.id)!.name)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px">${labels.checked && (z >= .125 || r.w * z >= 120) ? `<span style="font-size:${12 / z}px">${esc(source!.maps.get(r.id)!.name)}</span>` : ""}</a>`).join("");
   if (mapDetail && events.checked && current !== "world") {
     annotations.innerHTML += mapDetail.events.map(e => {
       const title = `${e.kind} #${e.index} (${e.x}, ${e.y}) · ${e.destination ?? e.details.scriptName ?? e.details.script ?? e.details.graphics_id ?? e.details.sprite ?? ""}`;
       const attrs = `class="marker ${e.kind === "object" ? "object" : e.kind}" style="left:${e.x * 16}px;top:${e.y * 16}px" title="${esc(title)}" aria-label="${esc(title)}"`;
       return e.kind === "warp" && e.destination && source!.maps.has(e.destination) ? `<a ${attrs} href="#mapa=${encodeURIComponent(e.destination)}${e.destinationWarp != null ? `&warp=${encodeURIComponent(e.destinationWarp)}` : ""}"></a>` : `<button ${attrs} data-event="${e.kind}:${e.index}"></button>`;
     }).join("");
+  }
+  if (source.exploreLink) {
+    const link = source.exploreLink(current, zoom.value);
+    explore.hidden = !link;
+    if (link) explore.href = link;
+    return;
   }
   explore.hidden = !source.capabilities.explore || (current !== "world" && !source.world.rects.some(r => r.id === current));
   if (explore.hidden) return;
@@ -76,8 +85,8 @@ function renderDetail(): void {
   const m = source.maps.get(current)!;
   detail.innerHTML = `${m.available ? "" : `<p class="error">Sin imagen: ${esc(m.unavailable)}. Los datos se conservan sin gráficos aproximados.</p>`}
     <p>${Object.entries(mapDetail.info).map(([k, v]) => `${esc(k)}: ${esc(Array.isArray(v) ? v.join(", ") : v)}`).join(" · ")}</p>
-    <h2>Conexiones</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})`)).join("") || "Sin conexiones"}</div>
-    <h2>Puertas y warps</h2><div class="links">${mapDetail.events.filter(e => e.kind === "warp").map(e => mapLink(e.destination!, `#${e.index} (${e.x}, ${e.y}) → ${source!.maps.get(e.destination!)?.name ?? e.destination} #${e.destinationWarp}`, e.destinationWarp)).join("") || "Sin warps"}</div>
+    <h2>Conexiones</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})${m.region && source!.maps.get(c.destination)?.region && m.region !== source!.maps.get(c.destination)?.region ? " · referencia entre fuentes" : ""}`, undefined, c.referenceUrl)).join("") || "Sin conexiones"}</div>
+    <h2>Puertas y warps</h2><div class="links">${mapDetail.events.filter(e => e.kind === "warp").map(e => mapLink(e.destination!, `#${e.index} (${e.x}, ${e.y}) → ${source!.maps.get(e.destination!)?.name ?? e.destination} ${e.details.atlasPolicy ? "· referencia entre fuentes" : e.destinationWarp != null ? `#${e.destinationWarp}` : ""}`, e.destinationWarp, e.referenceUrl)).join("") || "Sin warps"}</div>
     <h2>Objetos y eventos</h2><table class="event-table">${mapDetail.events.map(e => `<tr tabindex="-1" data-event-row="${e.kind}:${e.index}"><td>${esc(e.kind)} #${e.index}</td><td>(${e.x}, ${e.y})</td><td>${esc(JSON.stringify(e.details))}</td></tr>`).join("")}</table>`;
 }
 async function show(id: string, restore?: Position, arrival?: string, remember = true): Promise<void> {
@@ -89,7 +98,9 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
   const viewRestore = restore ?? worldRestore;
   detailController.abort(); detailController = new AbortController();
   const signal = detailController.signal, epoch = sourceEpoch;
-  current = id; mapDetail = null; back.disabled = !historyStack.length;
+  current = id; mapDetail = null;
+  const selectedRegion = source.maps.get(id)?.region;
+  if (selectedRegion) regionSelect.value = selectedRegion; back.disabled = !historyStack.length;
   if (viewRestore) zoom.value = viewRestore.zoom;
   else if (id !== "world" && previousMap === "world") {
     const map = source.maps.get(id)!;
@@ -103,8 +114,8 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
   $("inspector").hidden = !inspector;
   if (inspector) $("inspector").setAttribute("href", inspector);
   if (id === "world") {
-    meta.textContent = `${source.title} · ${source.world.rects.length} mapas conectados`;
-    detail.innerHTML = `<p>${esc(source.world.notes)}</p>`;
+    meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas exteriores" : "mapas conectados"}`;
+    detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Viajes del atlas</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
     const origin = source.world.rects.find(r => r.id === source!.world.origin);
     const z = Number(zoom.value);
     viewport.scrollTo(viewRestore?.x ?? Math.max(0, (origin ? origin.x + origin.w / 2 : 0) * z - viewport.clientWidth / 2), viewRestore?.y ?? Math.max(0, (origin ? origin.y + origin.h / 2 : 0) * z - viewport.clientHeight / 2));
@@ -137,8 +148,22 @@ function hashTarget(): { id: string; arrival?: string; restore?: Position } {
   const raw = location.hash.slice(1), params = new URLSearchParams(raw);
   const id = params.get("mapa") ?? (raw && !raw.includes("=") && raw !== "world" ? decodeURIComponent(raw) : "world");
   const z = params.get("z");
-  if (z && Number.isFinite(Number(z)) && Number(z) >= .125 && Number(z) <= 4 && ![...zoom.options].some(o => o.value === z)) zoom.add(new Option(`${z}×`, z));
+  if (z && Number.isFinite(Number(z)) && Number(z) >= .015625 && Number(z) <= 4 && ![...zoom.options].some(o => o.value === z)) zoom.add(new Option(`${z}×`, z));
   const restore = params.has("x") && params.has("y") && z && [...zoom.options].some(o => o.value === z) ? { map: id, zoom: z, x: Math.max(0, Number(params.get("x")) || 0), y: Math.max(0, Number(params.get("y")) || 0) } : undefined;
+  if (source?.regions && params.get("region") === "all") {
+    regionSelect.value = "all";
+    const fit = Math.min(viewport.clientWidth / source.world.width, viewport.clientHeight / source.world.height);
+    const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .015625;
+    return { id: "world", restore: { map: "world", zoom: String(value), x: 0, y: 0 } };
+  }
+  const region = source?.regions?.find(r => r.id === params.get("region"));
+  if (region && id === "world") {
+    const fit = Math.min(1, viewport.clientWidth / region.w);
+    const choices = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a);
+    const value = choices[0] ?? .015625;
+    regionSelect.value = region.id;
+    return { id, restore: { map: "world", zoom: String(value), x: Math.max(0, (region.x + region.w / 2) * value - viewport.clientWidth / 2), y: Math.max(0, region.y * value) } };
+  }
   return { id, arrival: params.get("warp") ?? undefined, restore };
 }
 async function changeSource(game: GameId): Promise<void> {
@@ -152,13 +177,20 @@ async function changeSource(game: GameId): Promise<void> {
     if (epoch !== sourceEpoch) return;
     source = next;
     document.title = `Visor · ${source.title}`; gameSelect.value = game;
+    regionSelect.innerHTML = '<option value="all">Todas las regiones</option>' + (source.regions ?? []).map(r => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
+    $("region-wrap").hidden = !source.regions;
     explore.hidden = !source.capabilities.explore;
     $("time-wrap").hidden = !source.capabilities.times.length;
     $("sprites-wrap").hidden = !source.capabilities.sprites;
     $("collision-wrap").hidden = !source.capabilities.collision;
-    $("source").textContent = `${source.title} · fuente ${source.commit.slice(0, 10)}`;
+    $("source").textContent = `${source.title} · ${source.game === "world" ? source.commit : `fuente ${source.commit.slice(0, 10)}`}`;
     $("limits").textContent = source.limitations;
     const target = hashTarget(), stored = remembered.get(game);
+    if (source.game === "world" && !stored && !target.restore && target.id === "world") {
+      const fit = Math.min(viewport.clientWidth / source.world.width, viewport.clientHeight / source.world.height);
+      const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .015625;
+      target.restore = { map: "world", zoom: String(value), x: 0, y: 0 };
+    }
     await show(stored?.map ?? target.id, stored ?? target.restore, target.arrival, false);
   } catch (error) { if (epoch === sourceEpoch) { meta.textContent = String(error); $("count").textContent = "Datos no disponibles"; } }
 }
@@ -166,12 +198,24 @@ function go(id: string): void {
   const hash = id === "world" ? "#world" : `#mapa=${encodeURIComponent(id)}`;
   if (location.hash === hash) void show(id); else location.hash = hash;
 }
-for (const s of SOURCES) gameSelect.add(new Option(s.label, s.id));
+for (const s of SOURCES) gameSelect.add(new Option(`${s.id === "world" ? "" : "Variante · "}${s.label}`, s.id));
 gameSelect.value = currentGame;
 gameSelect.addEventListener("change", () => {
   const game = gameId(gameSelect.value), url = new URL(location.href);
   url.searchParams.set("game", game); url.hash = ""; history.replaceState(null, "", url);
   listLimit = 100; search.value = ""; void changeSource(game);
+});
+regionSelect.addEventListener("change", () => {
+  listLimit = 100;
+  const hash = regionSelect.value === "all" ? "#region=all" : `#region=${encodeURIComponent(regionSelect.value)}`;
+  if (location.hash === hash) { const target = hashTarget(); void show(target.id, target.restore); }
+  else location.hash = hash;
+});
+detail.addEventListener("click", e => {
+  const target = (e.target as HTMLElement).closest<HTMLElement>("[data-journey]");
+  if (!target || !source?.journeys) return;
+  const journey = source.journeys.find(j => j.id === target.dataset.journey)!;
+  detail.innerHTML = `<h2>${esc(journey.label)}</h2><p>${esc(journey.kind === "project-navigation" ? "Enlace propuesto por el proyecto para navegar entre regiones del atlas." : "Heart & Soul incluye un viaje entre Olivine y Vermilion. Aquí los destinos se adaptan a las versiones principales de cada región.")}</p><div class="links">${mapLink(journey.a)}${mapLink(journey.b)}</div><p>Estos enlaces cambian de lugar en el atlas; no ejecutan un viaje del juego.</p>`;
 });
 window.addEventListener("hashchange", () => { const target = hashTarget(); void show(target.id, target.restore, target.arrival); });
 $("world-btn").addEventListener("click", () => go("world"));
@@ -201,6 +245,8 @@ for (const event of ["pointerup", "pointercancel"]) viewport.addEventListener(ev
 viewport.addEventListener("dragstart", e => e.preventDefault());
 viewport.addEventListener("click", e => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); suppressClick = false; } }, true);
 annotations.addEventListener("click", e => {
+  const regionButton = (e.target as HTMLElement).closest<HTMLElement>("[data-region]");
+  if (regionButton) { regionSelect.value = regionButton.dataset.region!; regionSelect.dispatchEvent(new Event("change")); return; }
   const button = (e.target as HTMLElement).closest<HTMLElement>("[data-event]");
   if (!button) return;
   const row = [...detail.querySelectorAll<HTMLElement>("[data-event-row]")].find(r => r.dataset.eventRow === button.dataset.event);

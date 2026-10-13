@@ -1,4 +1,4 @@
-import type { GameId, Layer, MapDetail, MapEntry, MapEvent, Rect, Source, Texture } from "./types";
+import type { GameId, Layer, MapDetail, MapEntry, MapEvent, Rect, Region, Journey, Source, Texture } from "./types";
 
 async function json<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal });
@@ -108,6 +108,66 @@ async function crystal(signal: AbortSignal): Promise<Source> {
   };
 }
 
+async function principal(signal: AbortSignal): Promise<Source> {
+  type M = { id: string; sourceId: string; game: "firered" | "emerald" | "hns"; region: string; name: string; width: number; height: number; image: string | null; section: string };
+  type Chunk = { file: string; layer: "image" | "sprites" | "collision"; x: number; y: number; w: number; h: number };
+  const root = "/map-viewer/principal/";
+  const [doc, fr, em, hs] = await Promise.all([
+    json<{ regions: Region[]; maps: Record<string, M>; crossSourceAliases: Record<string, string>; travels: Journey[];
+      world: { w: number; h: number; origin: string; maps: Rect[]; chunks: Chunk[]; overviews: Record<string, string> } }>(root + "catalog.json", signal),
+    gba("firered", signal), gba("emerald", signal), hns(signal),
+  ]);
+  const providers = { firered: fr, emerald: em, hns: hs };
+  const mapEntries = new Map(Object.entries(doc.maps).map(([id, m]) => {
+    const original = providers[m.game].maps.get(m.sourceId)!;
+    return [id, { ...original, id, name: `${doc.regions.find(r => r.id === m.region)!.title} · ${original.name}`,
+      searchable: `${m.region}${original.searchable}`, region: m.region, originGame: m.game, originId: m.sourceId }];
+  }));
+  const translate = (m: M, target: string): { destination: string; referenceUrl?: string; crossSource: boolean } => {
+    const local = `${m.region}/${target}`;
+    if (mapEntries.has(local)) return { destination: local, crossSource: false };
+    const alias = m.game === "hns" ? doc.crossSourceAliases[target] : undefined;
+    if (alias && mapEntries.has(alias)) return { destination: alias, crossSource: true };
+    return { destination: target, referenceUrl: `/maps.html?game=${m.game}#mapa=${encodeURIComponent(target)}`, crossSource: false };
+  };
+  return {
+    game: "world", title: "Mundo principal · Kanto / Johto / Hoenn", commit: doc.regions.map(r => `${r.title}:${r.commit.slice(0, 7)}`).join(" · "),
+    limitations: "Kanto: FireRed · Johto: HnS · Hoenn: Emerald. Disposición y viajes del atlas definidos por el proyecto. Sin unión física ni simulación compartida. Johto usa marcadores; sprites/colisión de bloques disponibles en Kanto y Hoenn.",
+    maps: mapEntries, regions: doc.regions, journeys: doc.travels,
+    world: { width: doc.world.w, height: doc.world.h, origin: doc.world.origin, rects: doc.world.maps,
+      notes: "Tres regiones con fuentes principales distintas. Sus componentes se colocan separados; la posición relativa es editorial. HnS conserva discrepancias de conexiones de origen, pendientes de revisión. Áreas fronterizas de HnS (Routes 26–28, Tohjo Falls y Mt Silver) se conservan con Johto. Los viajes son navegación del atlas, no transporte jugable." },
+    capabilities: { explore: true, sprites: true, collision: true, times: [] },
+    textures(id, time, layers, overview) {
+      if (id !== "world") { const m = doc.maps[id]; return m ? providers[m.game].textures(m.sourceId, time, layers, false) : []; }
+      const layerOf = (kind: string): Layer => kind === "image" ? "base" : kind as Layer;
+      if (overview) {
+        const scale = Math.min(1, 2048 / Math.max(doc.world.w, doc.world.h));
+        return Object.entries(doc.world.overviews).filter(([kind]) => layers.has(layerOf(kind))).map(([kind, file]) => texture(root + file, 0, 0, doc.world.w, doc.world.h, layerOf(kind), scale));
+      }
+      return doc.world.chunks.filter(c => layers.has(layerOf(c.layer))).map(c => texture(root + c.file, c.x, c.y, c.w, c.h, layerOf(c.layer)));
+    },
+    async details(id, detailSignal) {
+      const m = doc.maps[id], original = await providers[m.game].details(m.sourceId, detailSignal);
+      return { info: { region: m.region, source: m.game, sourceMap: m.sourceId, ...original.info },
+        connections: original.connections.map(c => ({ ...c, ...translate(m, c.destination) })),
+        events: original.events.map(e => {
+          if (!e.destination) return e;
+          const target = translate(m, e.destination);
+          return { ...e, destination: target.destination, referenceUrl: target.referenceUrl,
+            destinationWarp: target.crossSource ? undefined : e.destinationWarp,
+            details: { ...e.details, ...(target.crossSource ? { atlasPolicy: "Cross-source navigation reference; original warp index not transferred" } : {}) } };
+        }) };
+    },
+    exploreLink(id, zoom) {
+      const m = doc.maps[id];
+      if (!m || m.game === "hns" || !providers[m.game].world.rects.some(r => r.id === m.sourceId)) return null;
+      return `/viewer.html${m.game === "emerald" ? "?game=emerald" : ""}#modo=explore&mapa=${encodeURIComponent(m.sourceId)}&z=${zoom}`;
+    },
+    inspector(id) { const m = doc.maps[id]; return m ? providers[m.game].inspector(m.sourceId) : null; },
+  };
+}
+
 export function loadSource(game: GameId, signal: AbortSignal): Promise<Source> {
+  if (game === "world") return principal(signal);
   return game === "hns" ? hns(signal) : game === "crystal" ? crystal(signal) : gba(game, signal);
 }
