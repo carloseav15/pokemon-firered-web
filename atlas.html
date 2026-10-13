@@ -57,6 +57,8 @@
       <div class="grid">
         <div class="card"><h3>Mapas de Crystal</h3><p>388 mapas de Johto y Kanto renderizados desde el decomp (bloques, tiles y paletas), con warps, carteles, objetos y conexiones.</p>
           <div class="links"><a class="btn" href="/crystal.html">Abrir</a></div></div>
+        <div class="card"><h3>Mundo de Crystal</h3><p>Johto y Kanto en un solo mapa, colocados con las conexiones del decomp; cada mapa enlaza a su ficha.</p>
+          <div class="links"><a class="btn" href="/crystal-world.html">Abrir</a></div></div>
       </div>
 
       <h2>Historia y quests</h2>
@@ -94,6 +96,7 @@
         ["Quests de Emerald", "/viewer/quests_emerald.json", "Quests y línea argumental", "EXPORT_GAME=emerald python3 tools/viewer/quest_index.py"],
         ["Línea argumental", "/viewer/story_firered.json", "Línea argumental", "python3 tools/viewer/story_index.py"],
         ["Mapas de Crystal", "/crystal/maps.json", "Mapas de Crystal", "npm run refs:fetch -- pokecrystal && npm run crystal:maps"],
+        ["Mundo de Crystal", "/crystal/world/world.json", "Mundo de Crystal", "npm run crystal:world"],
       ];
       const body = document.querySelector("#status tbody");
       for (const [label, url, usedBy, cmd] of checks) {

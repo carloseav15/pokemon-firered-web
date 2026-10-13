@@ -14,6 +14,7 @@ exportados de los decomps.
 | Comparador | `/compare.html` | Diferencias campo a campo (especies, movimientos, objetos, entrenadores) | `public/<juego>/data` |
 | Quests | `/quests.html` | Quests candidatas con clase, flags y variables | `public/viewer/quests_<juego>.json` |
 | Mapas de Crystal | `/crystal.html`, `#<Mapa>` | 388 mapas de Johto/Kanto renderizados (bloques + tiles + paletas de día, tejados por grupo), warps navegables, carteles, objetos, escenas y conexiones | `public/crystal/` |
+| Mundo de Crystal | `/crystal-world.html`, `#<Mapa>` | 68 mapas exteriores conectados (Johto, Kanto, Route 28) en un solo plano con zoom, arrastre y enlaces a cada ficha | `public/crystal/world/` |
 | Línea argumental | `/story.html` | Escenas por capítulos en el orden oficial de rutas | `public/viewer/story_<juego>.json` |
 
 ## Regenerar datos
@@ -28,6 +29,7 @@ python3 tools/viewer/quest_index.py                     # quests de FireRed (y c
 python3 tools/viewer/story_index.py                     # línea argumental de los dos juegos
 npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold pokecrystal   # una vez
 npm run crystal:maps                                    # public/crystal/ (mapas renderizados de Crystal, ~4 MB, ignorado en git)
+npm run crystal:world                                   # public/crystal/world/ (mapa del mundo; requiere crystal:maps)
 npm run sprites:sources                                 # public/sprites/ (~70 MB, ignorado en git); admite una fuente: pmd-red | emerald-expansion | crystal | platinum | heartgold
 ```
 
@@ -54,3 +56,6 @@ Trabajo de verificación pasada: los 943 mapas se abren y se pintan (`tools/play
 - Paleta de día fija; sin animación de tiles (agua, flores) ni sprites de objetos (solo marcadores).
 - `house.pal` y `mansion_2.pal` no se aplican: su condición de uso está en el motor (`engine/`), que no está en el checkout.
 - Coordenadas de eventos en pasos de 16 px (2×2 tiles); los warps salen tal cual del `.asm`.
+- Mundo: las conexiones del decomp unen Johto (31 mapas), Kanto (35) y Route 28 + Silver Cave (2); el juego los une con warps,
+  así que la colocación entre secciones es editorial. Dos solapes de un bloque (Route 13/14 y Viridian/Route 1) vienen de las
+  conexiones del propio decomp y quedan listados en `world.json`. Las ~320 salas interiores no entran en el mundo.

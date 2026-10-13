@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mundo de Pokémon Crystal</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.45 system-ui, sans-serif; }
+      header { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line); padding:8px 16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+      header h1 { font-size:15px; margin:0; }
+      select, input[type=search] { background:#1f2937; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:4px 8px; font:inherit; }
+      a { color:#93c5fd; text-decoration:none; } a:hover { text-decoration:underline; }
+      #layout { display:grid; grid-template-columns:230px 1fr; height:calc(100vh - 49px); }
+      #side { overflow:auto; border-right:1px solid var(--line); padding-bottom:30px; }
+      #side h4 { margin:10px 12px 2px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); }
+      #side .it { padding:2px 12px; cursor:pointer; } #side .it:hover { background:#16202f; }
+      #view { overflow:auto; position:relative; cursor:grab; background:#0b0f14; }
+      #view.drag { cursor:grabbing; }
+      #sizer { position:relative; }
+      #world { position:absolute; left:0; top:0; transform-origin:0 0; }
+      #world img { position:absolute; image-rendering:pixelated; user-select:none; -webkit-user-drag:none; }
+      .rect { position:absolute; border:1px solid transparent; }
+      .rect:hover { border-color:#fff8; background:#ffffff14; }
+      .lbl { position:absolute; color:#fff; font-weight:600; text-shadow:0 0 3px #000, 0 0 3px #000, 0 0 6px #000; pointer-events:none; white-space:nowrap; }
+      #tip { position:fixed; z-index:9; background:#111827ee; border:1px solid var(--line); padding:3px 8px; border-radius:4px; pointer-events:none; display:none; }
+      .meta { color:var(--mut); }
+      @media (max-width:800px) { #layout { grid-template-columns:1fr; } #side { max-height:26vh; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Mundo de Pokémon Crystal</h1>
+      <a href="/atlas.html">☰ Atlas</a>
+      <label>Zoom <select id="zoom"><option value="0.125">12 %</option><option value="0.25" selected>25 %</option><option value="0.5">50 %</option><option value="1">100 %</option><option value="2">200 %</option></select></label>
+      <label><input type="checkbox" id="labels" checked /> nombres</label>
+      <label><input type="checkbox" id="towns" /> solo pueblos y ciudades</label>
+      <span id="info" class="meta"></span>
+      <a href="/crystal.html" style="margin-left:auto">Mapas por separado →</a>
+    </header>
+    <div id="layout">
+      <div id="side"></div>
+      <div id="view"><div id="sizer"><div id="world"></div></div></div>
+    </div>
+    <div id="tip"></div>
+    <script type="module" src="/src/compare/crystalWorldMain.ts"></script>
+  </body>
+</html>
