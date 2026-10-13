@@ -5,12 +5,12 @@ export default async function run(ctx) {
   await ctx.runEval(`
     frStartup.render = () => {};
     for (let i = 0; i < 300 && frStartup.stage !== "menu"; i++) {
-      frStartupStep(frStartup.stage === "title" ? 1 : 30, frStartup.stage === "title" ? 8 : 0);
+      frStartupStep(frStartup.stage === "title" || frStartup.stage === "saveload" ? 1 : 30, frStartup.stage === "title" ? 8 : 0);
       await new Promise(r => setTimeout(r, 2));
     }
     if (frStartup.stage !== "menu" || !frStartup.romReady) throw new Error("title flow did not reach the ready main menu: " + frStartup.stage);
     // With no save file, the main menu contains only NEW GAME.
-    for (let i = 0; i < 200 && !window.frGame; i++) {
+    for (let i = 0; i < 3000 && !window.frGame; i++) {
       frStartupStep(4, i % 3 === 0 ? 1 : 0);
       await new Promise(r => setTimeout(r, 2));
     }
@@ -26,14 +26,15 @@ export default async function run(ctx) {
     if (initial.map !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F" || initial.x !== 6 || initial.y !== 6
       || frDebug.save.save.money !== 3000 || frDebug.save.save.party.length !== 0)
       throw new Error("new game did not start at the expected Pallet bedroom state: " + JSON.stringify(initial));
+    // The new game has no party; recovery skips prepareStep's "return to center" gate.
     const warps = H.warps();
-    const upstairs = await H.goto(11, 2);
+    const upstairs = await H.goto(11, 2, { recovery: true });
     if (upstairs.note) throw new Error("cannot reach upstairs warp: " + JSON.stringify(upstairs));
     const stair = await frDebug.walk("L", 2);
     const firstFloor = await H.idle(1200, false);
     if (firstFloor.map !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_1F")
       throw new Error("upstairs warp failed: " + JSON.stringify({ stair, firstFloor }));
-    const doorApproach = await H.goto(4, 7);
+    const doorApproach = await H.goto(4, 7, { recovery: true });
     // Keep SOUTH held briefly after landing on the SOUTH_ARROW_WARP tile.
     // The driver releases as soon as the step starts; C checks the arrow warp
     // again while the direction remains held.

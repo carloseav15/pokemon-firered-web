@@ -9,7 +9,7 @@ export default async function run(ctx) {
     const seen = [];
     for (let i = 0; i < 300 && frStartup.stage !== "menu"; i++) {
       if (!seen.includes(frStartup.stage)) seen.push(frStartup.stage);
-      frStartupStep(frStartup.stage === "title" ? 1 : 30, frStartup.stage === "title" ? 8 : 0);
+      frStartupStep(frStartup.stage === "title" || frStartup.stage === "saveload" ? 1 : 30, frStartup.stage === "title" ? 8 : 0);
       await new Promise(r => setTimeout(r, 2));
     }
     return { stage: frStartup.stage, seen, titleDone: frStartup.titleScreen.done, romReady: frStartup.romReady,
