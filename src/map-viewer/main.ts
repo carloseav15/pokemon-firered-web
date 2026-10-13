@@ -85,7 +85,7 @@ function renderDetail(): void {
   const m = source.maps.get(current)!;
   detail.innerHTML = `${m.available ? "" : `<p class="error">Sin imagen: ${esc(m.unavailable)}. Los datos se conservan sin gráficos aproximados.</p>`}
     <p>${Object.entries(mapDetail.info).map(([k, v]) => `${esc(k)}: ${esc(Array.isArray(v) ? v.join(", ") : v)}`).join(" · ")}</p>
-    <h2>Conexiones</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})${m.region && source!.maps.get(c.destination)?.region && m.region !== source!.maps.get(c.destination)?.region ? " · referencia entre fuentes" : ""}`, undefined, c.referenceUrl)).join("") || "Sin conexiones"}</div>
+    <h2>Conexiones</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})${m.region && source!.maps.get(c.destination)?.region && m.originGame !== source!.maps.get(c.destination)?.originGame ? " · referencia entre fuentes" : ""}`, undefined, c.referenceUrl)).join("") || "Sin conexiones"}</div>
     <h2>Puertas y warps</h2><div class="links">${mapDetail.events.filter(e => e.kind === "warp").map(e => mapLink(e.destination!, `#${e.index} (${e.x}, ${e.y}) → ${source!.maps.get(e.destination!)?.name ?? e.destination} ${e.details.atlasPolicy ? "· referencia entre fuentes" : e.destinationWarp != null ? `#${e.destinationWarp}` : ""}`, e.destinationWarp, e.referenceUrl)).join("") || "Sin warps"}</div>
     <h2>Objetos y eventos</h2><table class="event-table">${mapDetail.events.map(e => `<tr tabindex="-1" data-event-row="${e.kind}:${e.index}"><td>${esc(e.kind)} #${e.index}</td><td>(${e.x}, ${e.y})</td><td>${esc(JSON.stringify(e.details))}</td></tr>`).join("")}</table>`;
 }
@@ -115,7 +115,7 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
   if (inspector) $("inspector").setAttribute("href", inspector);
   if (id === "world") {
     meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas exteriores" : "mapas conectados"}`;
-    detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Viajes del atlas</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
+    detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Viajes del atlas</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : j.kind === "source-navigation" ? " · referencia FireRed" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
     const origin = source.world.rects.find(r => r.id === source!.world.origin);
     const z = Number(zoom.value);
     viewport.scrollTo(viewRestore?.x ?? Math.max(0, (origin ? origin.x + origin.w / 2 : 0) * z - viewport.clientWidth / 2), viewRestore?.y ?? Math.max(0, (origin ? origin.y + origin.h / 2 : 0) * z - viewport.clientHeight / 2));
@@ -148,19 +148,19 @@ function hashTarget(): { id: string; arrival?: string; restore?: Position } {
   const raw = location.hash.slice(1), params = new URLSearchParams(raw);
   const id = params.get("mapa") ?? (raw && !raw.includes("=") && raw !== "world" ? decodeURIComponent(raw) : "world");
   const z = params.get("z");
-  if (z && Number.isFinite(Number(z)) && Number(z) >= .015625 && Number(z) <= 4 && ![...zoom.options].some(o => o.value === z)) zoom.add(new Option(`${z}×`, z));
+  if (z && Number.isFinite(Number(z)) && Number(z) >= .0078125 && Number(z) <= 4 && ![...zoom.options].some(o => o.value === z)) zoom.add(new Option(`${z}×`, z));
   const restore = params.has("x") && params.has("y") && z && [...zoom.options].some(o => o.value === z) ? { map: id, zoom: z, x: Math.max(0, Number(params.get("x")) || 0), y: Math.max(0, Number(params.get("y")) || 0) } : undefined;
   if (source?.regions && params.get("region") === "all") {
     regionSelect.value = "all";
     const fit = Math.min(viewport.clientWidth / source.world.width, viewport.clientHeight / source.world.height);
-    const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .015625;
+    const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .0078125;
     return { id: "world", restore: { map: "world", zoom: String(value), x: 0, y: 0 } };
   }
   const region = source?.regions?.find(r => r.id === params.get("region"));
   if (region && id === "world") {
     const fit = Math.min(1, viewport.clientWidth / region.w);
     const choices = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a);
-    const value = choices[0] ?? .015625;
+    const value = choices[0] ?? .0078125;
     regionSelect.value = region.id;
     return { id, restore: { map: "world", zoom: String(value), x: Math.max(0, (region.x + region.w / 2) * value - viewport.clientWidth / 2), y: Math.max(0, region.y * value) } };
   }
@@ -188,7 +188,7 @@ async function changeSource(game: GameId): Promise<void> {
     const target = hashTarget(), stored = remembered.get(game);
     if (source.game === "world" && !stored && !target.restore && target.id === "world") {
       const fit = Math.min(viewport.clientWidth / source.world.width, viewport.clientHeight / source.world.height);
-      const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .015625;
+      const value = [...zoom.options].map(o => Number(o.value)).filter(z => z <= fit).sort((a, b) => b - a)[0] ?? .0078125;
       target.restore = { map: "world", zoom: String(value), x: 0, y: 0 };
     }
     await show(stored?.map ?? target.id, stored ?? target.restore, target.arrival, false);
@@ -215,7 +215,7 @@ detail.addEventListener("click", e => {
   const target = (e.target as HTMLElement).closest<HTMLElement>("[data-journey]");
   if (!target || !source?.journeys) return;
   const journey = source.journeys.find(j => j.id === target.dataset.journey)!;
-  detail.innerHTML = `<h2>${esc(journey.label)}</h2><p>${esc(journey.kind === "project-navigation" ? "Enlace propuesto por el proyecto para navegar entre regiones del atlas." : "Heart & Soul incluye un viaje entre Olivine y Vermilion. Aquí los destinos se adaptan a las versiones principales de cada región.")}</p><div class="links">${mapLink(journey.a)}${mapLink(journey.b)}</div><p>Estos enlaces cambian de lugar en el atlas; no ejecutan un viaje del juego.</p>`;
+  detail.innerHTML = `<h2>${esc(journey.label)}</h2><p>${esc(journey.description ?? (journey.kind === "project-navigation" ? "Enlace propuesto por el proyecto para navegar entre regiones del atlas." : "Heart & Soul incluye un viaje entre Olivine y Vermilion. Aquí los destinos se adaptan a las versiones principales de cada región."))}</p><div class="links">${mapLink(journey.a)}${mapLink(journey.b)}</div><p>Estos enlaces cambian de lugar en el atlas; no ejecutan un viaje del juego.</p>`;
 });
 window.addEventListener("hashchange", () => { const target = hashTarget(); void show(target.id, target.restore, target.arrival); });
 $("world-btn").addEventListener("click", () => go("world"));

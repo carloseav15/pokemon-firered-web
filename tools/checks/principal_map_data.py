@@ -22,6 +22,18 @@ for region,ids in {'kanto':['PALLET_TOWN','VIRIDIAN_CITY','SAFFRON_CITY'], 'joht
 assert not any(m['sourceId'] in p.STATE_VARIANTS for m in d['maps'].values())
 assert not any(m['region']=='johto' and m['sourceId'] in sources['emerald']['maps'] for m in d['maps'].values() if m['sourceId'] in ['MAP_LITTLEROOT_TOWN','MAP_SLATEPORT_CITY','MAP_FORTREE_CITY'])
 regions={r['id']:r for r in d['regions']}
+assert regions['sevii']['parent']=='kanto' and regions['sevii']['game']=='firered'
+for island in ['ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN']:
+    assert f'sevii/MAP_{island}_ISLAND' in d['maps']
+assert all('PROTOTYPE' not in m['sourceId'] and 'UNUSED' not in m['sourceId'] for m in d['maps'].values() if m['region']=='sevii')
+assert not any(m['section'] in ['MAPSEC_NAVEL_ROCK','MAPSEC_BIRTH_ISLAND'] for m in d['maps'].values() if m['region']=='sevii')
+for id in ['MAP_MT_EMBER_EXTERIOR','MAP_FOUR_ISLAND_ICEFALL_CAVE_BACK','MAP_FIVE_ISLAND_ROCKET_WAREHOUSE','MAP_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER','MAP_TRAINER_TOWER_ROOF']:
+    assert f'sevii/{id}' in d['maps']
+placed={r['id'] for r in d['world']['maps'] if r['id'].startswith('sevii/')}
+assert placed=={key for key,m in d['maps'].items() if m['region']=='sevii' and sources['firered']['maps'][m['sourceId']]['type'] in [1,2,3,6]}
+for g in d['_meta']['seviiIslands']:
+    assert g['maps'] and f"MAP_{g['island']}_ISLAND" in g['maps']
+
 for a,b in zip(d['regions'],d['regions'][1:]): assert a['x']+a['w']+p.GAP==b['x']
 for r in d['world']['maps']:
     assert r['id'] in d['maps'];region=regions[d['maps'][r['id']]['region']]
@@ -41,4 +53,12 @@ script=(hns/'data/maps/OlivineCity_PortInside/scripts.inc').read_text()
 assert 'OlivinePort_EventScript_ChoseVermilion' in script and 'warpsilent MAP_VERMILION_CITY_PORT_INSIDE' in script
 selected,evidence=p.johto_members(sources['hns']['maps'],hns)
 assert selected=={m['sourceId'] for m in d['maps'].values() if m['region']=='johto'} and evidence==d['_meta']['johtoEvidence']
+import sys
+sys.path.insert(0,str(ROOT/'tools/decomp'))
+from common import DECOMP
+seagallop=(DECOMP/'data/scripts/seagallop.inc').read_text()
+for island in ['ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN']:
+    assert f'SEAGALLOP_{island}_ISLAND' in seagallop
+    t=next(t for t in d['travels'] if t['id']==f'vermilion-{island.lower()}-island')
+    assert t['a']=='kanto/MAP_VERMILION_CITY' and t['b']==f'sevii/MAP_{island}_ISLAND'
 print(f"Principal data PASS: {len(d['maps'])} maps, {len(d['world']['maps'])} exteriors, {len(d['boundaries'])} boundaries; {len(d['_meta']['johtoConflicts'])} source connection discrepancies retained")

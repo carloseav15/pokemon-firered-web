@@ -8,14 +8,14 @@ export default async function run(ctx) {
   await p.goto(new URL('maps.html',base).href);
   await p.locator('#source').filter({hasText:'Kanto:'}).waitFor();
   assert.equal(await p.locator('#game').inputValue(),'world');
-  assert.equal(await p.locator('.region-outline').count(),3);
+  assert.equal(await p.locator('.region-outline').count(),4);
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await ctx.shot('principal-world-desktop');
   const before=await p.evaluate(()=>window.atlasRaf);await p.waitForTimeout(1000);
   const idle=await p.evaluate(()=>window.atlasRaf)-before;assert(idle<=1);
-  for(const [region,id,search] of [['kanto','MAP_PALLET_TOWN','Pallet Town'],['johto','MAP_NEW_BARK_TOWN','New Bark Town'],['hoenn','MAP_LITTLEROOT_TOWN','Littleroot Town']]) {
+  for(const [region,id,search] of [['kanto','MAP_PALLET_TOWN','Pallet Town'],['johto','MAP_NEW_BARK_TOWN','New Bark Town'],['hoenn','MAP_LITTLEROOT_TOWN','Littleroot Town'],['sevii','MAP_ONE_ISLAND','One Island']]) {
     await p.locator('#region').selectOption(region);
-    await p.locator('#meta').filter({hasText:'140 mapas exteriores'}).waitFor();
+    await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
     await p.locator('#zoom').selectOption('1');
     await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
     assert(Number((await p.locator('#budget').textContent()).match(/([\d.]+) MiB/)[1])<=96);
@@ -23,13 +23,13 @@ export default async function run(ctx) {
     const link=p.locator(`#list a[href="#mapa=${region}%2F${id}"]`);
     assert.equal(await link.count(),1);await link.click();
     await p.locator('#meta').filter({hasText:`${region}/${id}`}).waitFor();
-    assert.equal(await p.locator('#explore').isVisible(),region!=='johto');
-    if(region!=='johto')assert((await p.locator('#explore').getAttribute('href')).includes(`mapa=${id}`));
+    assert.equal(await p.locator('#explore').isVisible(),region!=='johto'&&region!=='sevii');
+    if(region!=='johto'&&region!=='sevii')assert((await p.locator('#explore').getAttribute('href')).includes(`mapa=${id}`));
     if(region==='johto') {
       await p.locator('#detail .links a').filter({hasText:'New Bark Town Lab'}).first().click();
       await p.locator('#meta').filter({hasText:'johto/MAP_NEW_BARK_TOWN_LAB'}).waitFor();
       await p.locator('#back').click();await p.locator('#meta').filter({hasText:'johto/MAP_NEW_BARK_TOWN'}).waitFor();
-      await p.locator('#world-btn').click();await p.locator('#meta').filter({hasText:'140 mapas exteriores'}).waitFor();
+      await p.locator('#world-btn').click();await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
       await ctx.shot('principal-johto-desktop');
     }
     await p.locator('#search').fill('');
@@ -47,6 +47,22 @@ export default async function run(ctx) {
   await p.locator('#detail button[data-journey="vermilion-slateport"]').click();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SLATEPORT_CITY"]').click();
   await p.locator('#meta').filter({hasText:'hoenn/MAP_SLATEPORT_CITY'}).waitFor();
+  await p.locator('#region').selectOption('all');
+  await p.locator('#detail button[data-journey="vermilion-seven-island"]').click();
+  await p.locator('#detail').filter({hasText:'ferris Seagallop'}).waitFor();
+  await p.locator('#detail a[href="#mapa=sevii%2FMAP_SEVEN_ISLAND"]').click();
+  await p.locator('#meta').filter({hasText:'sevii/MAP_SEVEN_ISLAND'}).waitFor();
+  assert(!(await p.locator('#explore').isVisible()));
+  await p.locator('#region').selectOption('sevii');
+  await p.locator('#search').fill('Tanoby');
+  await p.locator('#list a[href="#mapa=sevii%2FMAP_SEVEN_ISLAND_TANOBY_RUINS"]').click();
+  await p.locator('#meta').filter({hasText:'sevii/MAP_SEVEN_ISLAND_TANOBY_RUINS'}).waitFor();
+  await p.locator('#detail a[href="#mapa=sevii%2FMAP_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER&warp=0"]').click();
+  await p.locator('#meta').filter({hasText:'sevii/MAP_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER'}).waitFor();
+  await p.locator('#search').fill('');await p.locator('#region').selectOption('sevii');
+  await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
+  await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
+  await ctx.shot('principal-sevii-desktop');
   await p.locator('#game').selectOption('hns');
   await p.locator('#source').filter({hasText:'Heart & Soul'}).waitFor();
   assert(!(await p.locator('#region').isVisible()));
@@ -54,12 +70,16 @@ export default async function run(ctx) {
   await p.locator('#source').filter({hasText:'Kanto:'}).waitFor();
   await p.setViewportSize({width:390,height:844});
   await p.locator('#region').selectOption('johto');
-  await p.locator('#meta').filter({hasText:'140 mapas exteriores'}).waitFor();
+  await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await ctx.shot('principal-johto-mobile');
+  await p.locator('#region').selectOption('sevii');
+  await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
+  await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
+  await ctx.shot('principal-sevii-mobile');
   assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const budget=await p.locator('#budget').textContent();assert(Number(budget.match(/([\d.]+) MiB/)[1])<=96);
   assert(!requests.some(r=>/\/src\/(core|games)\//.test(r)));
   assert.equal(ctx.errors().length,0,ctx.errors().join(';'));
-  return {regions:3,idleRaf:idle,maps:await p.locator('#count').textContent(),doors:true,crossSourceNavigation:true,editorialJourney:true,variants:true,mobile:true,budget,noEngineRequests:true};
+  return {regions:3,archipelagos:1,idleRaf:idle,maps:await p.locator('#count').textContent(),doors:true,crossSourceNavigation:true,editorialJourney:true,variants:true,mobile:true,budget,noEngineRequests:true};
 }

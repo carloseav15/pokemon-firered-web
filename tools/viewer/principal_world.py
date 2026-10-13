@@ -24,6 +24,17 @@ KANTO_SECTIONS={f'MAPSEC_ROUTE_{i}' for i in range(1,26)}|{
  'MAPSEC_ROCK_TUNNEL','MAPSEC_POWER_PLANT','MAPSEC_ROCKET_HIDEOUT','MAPSEC_SILPH_CO','MAPSEC_POKEMON_TOWER',
  'MAPSEC_POKEMON_MANSION','MAPSEC_KANTO_SAFARI_ZONE','MAPSEC_KANTO_VICTORY_ROAD','MAPSEC_SEAFOAM_ISLANDS',
  'MAPSEC_CERULEAN_CAVE','MAPSEC_S_S_ANNE','MAPSEC_UNDERGROUND_PATH','MAPSEC_UNDERGROUND_PATH_2'}
+SEVII_SECTIONS={f'MAPSEC_{island}_ISLAND' for island in ['ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN']}|{
+ 'MAPSEC_LOST_CAVE','MAPSEC_MT_EMBER','MAPSEC_TRAINER_TOWER_2','MAPSEC_DOTTED_HOLE','MAPSEC_ICEFALL_CAVE',
+ 'MAPSEC_WATER_PATH','MAPSEC_RESORT_GORGEOUS','MAPSEC_SEVAULT_CANYON','MAPSEC_THREE_ISLE_PORT',
+ 'MAPSEC_CAPE_BRINK','MAPSEC_FIVE_ISLE_MEADOW','MAPSEC_MEMORIAL_PILLAR','MAPSEC_ROCKET_WAREHOUSE',
+ 'MAPSEC_WATER_LABYRINTH','MAPSEC_KINDLE_ROAD','MAPSEC_EMBER_SPA','MAPSEC_TREASURE_BEACH',
+ 'MAPSEC_CANYON_ENTRANCE','MAPSEC_TANOBY_KEY','MAPSEC_TANOBY_RUINS','MAPSEC_DILFORD_CHAMBER',
+ 'MAPSEC_LIPTOO_CHAMBER','MAPSEC_MONEAN_CHAMBER','MAPSEC_RIXY_CHAMBER','MAPSEC_SCUFIB_CHAMBER',
+ 'MAPSEC_VIAPOIS_CHAMBER','MAPSEC_WEEPTH_CHAMBER','MAPSEC_TRAINER_TOWER','MAPSEC_ALTERING_CAVE',
+ 'MAPSEC_GREEN_PATH','MAPSEC_OUTCAST_ISLAND','MAPSEC_PATTERN_BUSH','MAPSEC_RUIN_VALLEY',
+ 'MAPSEC_BERRY_FOREST','MAPSEC_BOND_BRIDGE','MAPSEC_THREE_ISLE_PATH'}
+ISLANDS=['ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN']
 JOHTO_SECTIONS={f'MAPSEC_ROUTE_{i}' for i in range(26,49)}|{
  'MAPSEC_NEW_BARK_TOWN','MAPSEC_CHERRYGROVE_CITY','MAPSEC_VIOLET_CITY','MAPSEC_AZALEA_TOWN','MAPSEC_GOLDENROD_CITY',
  'MAPSEC_ECRUTEAK_CITY','MAPSEC_OLIVINE_CITY','MAPSEC_CIANWOOD_CITY','MAPSEC_MAHOGANY_TOWN','MAPSEC_LAKE_OF_RAGE',
@@ -56,16 +67,16 @@ def johto_members(maps,source):
     return seen,evidence
 
 
-def johto_rects(maps,selected):
-    remaining={n for n in selected if maps[n]['type'] in EXTERIOR_TYPES};components=[];conflicts=[]
+def johto_rects(maps,selected,origin="MAP_NEW_BARK_TOWN",exterior_types=EXTERIOR_TYPES):
+    remaining={n for n in selected if maps[n]['type'] in exterior_types};components=[];conflicts=[]
     while remaining:
-        start='MAP_NEW_BARK_TOWN' if 'MAP_NEW_BARK_TOWN' in remaining else min(remaining)
+        start=origin if origin in remaining else min(remaining)
         positions={start:(0,0)};queue=deque([start]);remaining.remove(start)
         while queue:
             n=queue.popleft();m=maps[n];x,y=positions[n]
             for c in m['connections']:
                 target,d,o=c['map'],c['direction'],c['offset']
-                if target not in selected or maps[target]['type'] not in EXTERIOR_TYPES or d not in ['up','down','left','right']:continue
+                if target not in selected or maps[target]['type'] not in exterior_types or d not in ['up','down','left','right']:continue
                 b=maps[target];desired={'up':(x+o,y-b['h']),'down':(x+o,y+m['h']),'left':(x-b['w'],y+o),'right':(x+m['w'],y+o)}[d]
                 if target in positions:
                     if positions[target]!=desired:conflicts.append({'from':n,'to':target,'placed':positions[target],'wanted':desired})
@@ -83,6 +94,29 @@ def johto_rects(maps,selected):
     return result,max(width,cursor),height,[{'origin':c['origin'],'maps':[r['id'] for r in c['rects']]} for c in components],conflicts
 
 
+def sevii_rects(catalog,selected):
+    # Source offsets are in metatiles. Reuse the connection placement with GBA dimensions/types.
+    maps={id:{'w':m['width']//16,'h':m['height']//16,'type':m['type'],
+              'connections':read(ROOT/'public/fr/maps'/f'{id}.json')['connections']} for id,m in catalog['maps'].items() if id in selected}
+    groups=[];conflicts=[]
+    for island in ISLANDS:
+        members={id for id in selected if id.startswith(f'MAP_{island}_ISLAND') or
+                 (island=='ONE' and id.startswith('MAP_MT_EMBER')) or (island=='SEVEN' and id.startswith('MAP_TRAINER_TOWER'))}
+        rects,w,h,components,errors=johto_rects(maps,members,f'MAP_{island}_ISLAND',{1,2,3,6})
+        groups.append({'island':island,'rects':rects,'w':w,'h':h,'maps':sorted(members),'components':components})
+        conflicts+=errors
+    assert set().union(*(set(g['maps']) for g in groups))==selected
+    pitch=max(g['w'] for g in groups)+GAP; y=0;result=[];bounds=[]
+    for index in range(0,len(groups),2):
+        row=groups[index:index+2]
+        for col,g in enumerate(row):
+            x=col*pitch
+            result += [{**r,'x':r['x']+x,'y':r['y']+y} for r in g['rects']]
+            bounds.append({k:v for k,v in g.items() if k!='rects'}|{'x':x,'y':y})
+        y+=max(g['h'] for g in row)+GAP
+    return result,max(r['x']+r['w'] for r in result),y-GAP,bounds,conflicts
+
+
 def main():
     spec=importlib.util.spec_from_file_location('world_refs',ROOT/'tools/refs/common.py');refs=importlib.util.module_from_spec(spec);spec.loader.exec_module(refs)
     hns_source=refs.source_path('pokemon-hns');hns=read(ROOT/'public/hns/maps.json')
@@ -91,10 +125,13 @@ def main():
     selections={
       'kanto':{id for id,m in fr['maps'].items() if m['section'] in KANTO_SECTIONS},
       'johto':johto,
+      'sevii':{id for id,m in fr['maps'].items() if m['section'] in SEVII_SECTIONS and 'UNUSED' not in id},
       'hoenn':{id for id,m in em['maps'].items() if id not in LINK_MAPS and m['section'] not in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK','MAPSEC_FARAWAY_ISLAND'}}}
     jr,jw,jh,components,conflicts=johto_rects(hns['maps'],johto)
+    sr,sw,sh,islands,sevii_conflicts=sevii_rects(fr,selections['sevii'])
     configs=[('johto','hns','Johto','Heart & Soul',hns,jr,jw,jh,'MAP_NEW_BARK_TOWN'),
              ('kanto','firered','Kanto','FireRed',fr,fr['world']['maps'],fr['world']['w'],fr['world']['h'],'MAP_PALLET_TOWN'),
+             ('sevii','firered','Sevii · Kanto','FireRed',fr,sr,sw,sh,'MAP_ONE_ISLAND'),
              ('hoenn','emerald','Hoenn','Emerald',em,em['world']['maps'],em['world']['w'],em['world']['h'],'MAP_LITTLEROOT_TOWN')]
     if STAGE.exists():shutil.rmtree(STAGE)
     (STAGE/'world').mkdir(parents=True)
@@ -113,7 +150,7 @@ def main():
         for r in local:
             if r['id'] in selections[region]:rects.append({**r,'id':f"{region}/{r['id']}",'x':r['x']+xoffset})
         regions.append({'id':region,'title':title,'game':game,'version':version,'origin':f'{region}/{origin}','x':xoffset,'y':0,'w':width,'h':height,
-                        'maps':len(selections[region]),'commit':doc['_meta'].get('commit',doc['_meta'].get('sourceCommit'))})
+                        'maps':len(selections[region]),**({'parent':'kanto'} if region=='sevii' else {}),'commit':doc['_meta'].get('commit',doc['_meta'].get('sourceCommit'))})
         xoffset+=width+GAP
     # Cross-source destination matches are navigation references, never warp-index equivalences.
     aliases={'MAP_ROUTE22':'kanto/MAP_ROUTE22'}
@@ -129,6 +166,11 @@ def main():
               'kind':'atlas-navigation','basis':'HnS OlivineCity_PortInside/scripts.inc: OlivinePort_EventScript_ChoseVermilion. Endpoints adapted to principal sources; not a playable boat.'},
              {'id':'vermilion-slateport','a':'kanto/MAP_VERMILION_CITY','b':'hoenn/MAP_SLATEPORT_CITY','label':'Vermilion ↔ Slateport',
               'kind':'project-navigation','basis':'Editorial atlas journey. No original game connection is claimed.'}]
+    for island in ISLANDS:
+        travels.append({'id':f'vermilion-{island.lower()}-island','a':'kanto/MAP_VERMILION_CITY',
+            'b':f'sevii/MAP_{island}_ISLAND','label':f'Vermilion ↔ Sevii · {ISLANDS.index(island)+1}',
+            'kind':'source-navigation','description':'FireRed incluye los ferris Seagallop entre Vermilion y las Islas Sevii. Aquí puedes consultar sus destinos; no se ejecuta el viaje del juego.',
+            'basis':f'FireRed data/scripts/seagallop.inc: SEAGALLOP_{island}_ISLAND. Atlas endpoints are town maps; source pass/flag requirements are not simulated.'})
     for t in travels:
         assert t['a'] in maps and t['b'] in maps,t
     width=xoffset-GAP;height=max(r['h'] for r in regions);chunks=[]
@@ -155,8 +197,10 @@ def main():
                 with Image.open(ROOT/'public'/file.lstrip('/')) as source:
                     image.paste(source.resize((max(1,round(r['w']*scale)),max(1,round(r['h']*scale))),Image.Resampling.NEAREST),(round(r['x']*scale),round(r['y']*scale)))
         file=f'world/overview_{layer}.png';image.save(STAGE/file,optimize=True);overviews[layer]=file
-    write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Editorial: Johto, Kanto and Hoenn separated by 1024 px; source connections preserved inside components.',
+    write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Editorial: Johto, Kanto, Sevii and Hoenn separated by 1024 px; source connections preserved inside components.',
       'johtoSelection':'Source section allowlist plus reachability by connections, warps and script MAP references. References are not proof of runtime access.',
+      'seviiIslands':islands,'seviiConflicts':sevii_conflicts,
+      'seviiSelection':'Seven FireRed island groups and their routes/interiors. Event islands, prototypes, unused house and LINK rooms remain in source variants. Island/component positions are editorial.',
       'johtoEvidence':evidence,'johtoComponents':components,'johtoConflicts':conflicts,'excludedStateVariants':sorted(STATE_VARIANTS),
       'excludedPermittedJohtoMaps':sorted(n for n,m in hns['maps'].items() if m['section'] in JOHTO_SECTIONS and n not in johto),
       'borderAssignment':'HnS Routes 26–28, Tohjo Falls and Mt Silver kept with Johto as border areas; not a claim about official regional geography.'},
