@@ -3,6 +3,7 @@
 import { CHAR_SPACE, encode, EOS } from "./gba/charmap";
 import { bindSaveBlockReader } from "./gba/stringBuffers";
 import { rom } from "./rom";
+import { CANONICAL_STORAGE_KEY, SANDBOX_STORAGE_KEY } from "@game/data";
 import type { ObjectEventSave } from "./loadSave";
 import type { Pokemon } from "./pokemon/pokemon";
 import * as C from "./generated/constants";
@@ -213,8 +214,7 @@ function emptyRamScript(): RamScriptSave {
   return { checksum: 0, data: { magic: 0, mapGroup: 0, mapNum: 0, objectId: 0, script: new Array(995).fill(0) } };
 }
 
-export const CANONICAL_STORAGE_KEY = "pokemon-gba-web-lab.firered.v2";
-export const SANDBOX_STORAGE_KEY = "pokemon-gba-web-lab.firered.sandbox";
+export { CANONICAL_STORAGE_KEY, SANDBOX_STORAGE_KEY };
 
 let activeStorageKey = CANONICAL_STORAGE_KEY;
 

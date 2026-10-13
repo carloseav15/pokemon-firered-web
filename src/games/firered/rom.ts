@@ -3,11 +3,13 @@
 // assembled event script bytecode, constants, maps, tilesets, object
 // graphics and the battle/pokemon tables.
 
+import { DEFAULT_DATA_ROOT } from "@game/data";
+
 export const ROM_BASE = 0x08000000;
 export const EXTERN_BASE = 0x0f000000;
 export const RAM_SCRIPT_BASE = 0x10000000;
 /** Where the exported game data lives; "/fr" unless setDataRoot switches it (the world viewer's Hoenn mode uses "/emerald"). */
-export let DATA_ROOT = "/fr";
+export let DATA_ROOT = DEFAULT_DATA_ROOT;
 export function setDataRoot(root: string): void {
   DATA_ROOT = root;
 }

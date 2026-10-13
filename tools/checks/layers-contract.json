@@ -1,0 +1,4 @@
+{
+  "_comment": "@game/* modules src/core may import (docs/SEPARACION-MOTOR.md §4.2). Only remove entries; a new one needs the user's approval.",
+  "modules": ["data"]
+}

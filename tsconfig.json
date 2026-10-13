@@ -9,7 +9,8 @@
     "isolatedModules": true,
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": { "@game/*": ["./src/games/firered/*"] }
   },
   "include": ["src/main.ts", "src/viewer/main.ts"]
 }
