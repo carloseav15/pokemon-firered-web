@@ -283,3 +283,23 @@ la fase 3.
   informe solo fija que `generated/` y `public/` deben ser de cada juego.
 - La revisión función por función de la lista `different` (fase 3).
 - El orden de port de los 103 archivos exclusivos de Emerald (`refs/emerald/systems.json`).
+
+## 8. Estado del traslado (2026-10-13)
+
+Pasos 1 a 5.6 hechos (`d2892e70`..`4aa31451`): `src/core` tiene 152 módulos y el contrato
+`tools/checks/layers-contract.json` lista 38 módulos de juego que el núcleo importa.
+Lo que queda en `games/firered/` son pantallas de FireRed (equipo, mochila, resumen,
+Pokédex, mapa, almacenamiento…), Quest Log, intro y `game.ts`.
+
+**Paso 6 (interfaz `Game`) no se hizo.** Probé a sacar la interfaz del compilador: 8
+módulos del núcleo (`battle/battleSetup`, `transition`, `host`; `field/overworld`,
+`trainerSee`, `wildEncounter`, `poison`, `fieldMoves`) usan unos 50 miembros de `Game`,
+y bastantes son pantallas concretas de FireRed (`openPlayerPC`, `showDiploma`,
+`playSlotMachine`, `openHallOfFamePc`, `showTownMap`, `doCredits`, `eggHatch`…). Una
+interfaz honesta tendría que declarar esas ~50 firmas, y hacerlo antes de la fase 3
+sería inventar el contrato de Emerald sin conocerlo. La lista de miembros es el
+trabajo de la fase 3: cada pantalla que el núcleo llama debe pasar a ser un gancho
+que el juego registra, o desaparecer del núcleo.
+
+**Paso 7 (dividir `save`) tampoco**: el núcleo ya llega al esquema por `@game/save`;
+conviene hacerlo cuando se vea qué parte es API común (flags, vars, tiempo de juego).
