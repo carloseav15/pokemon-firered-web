@@ -6,7 +6,7 @@ exportados de los decomps.
 
 | Sección | Página | Para qué | Datos que necesita |
 |---|---|---|---|
-| Mundo principal | `/maps.html` o `?game=world` | Kanto FireRed, Johto HnS y Hoenn Emerald en un plano; selector de región, búsqueda, puertas y viajes de navegación | `public/map-viewer/principal/` más las fuentes principales |
+| Mundo principal | `/maps.html` o `?game=world` | Kanto/Sevii FireRed, Johto HnS y Hoenn Emerald en un plano; selector de región, búsqueda, puertas y viajes de navegación | `public/map-viewer/principal/` más las fuentes principales |
 | Variantes del visor común | `/maps.html?game=firered`, `emerald`, `hns` o `crystal` | Cámara, búsqueda, mundo por bloques, mapas individuales, eventos, warps e historial | `public/map-viewer/` y datos de cada fuente |
 | Inspector GBA | `/viewer.html?legacy=1` (+ `&game=emerald`) | Capas técnicas, ficha por casilla, flags, writers, animación y audio | `public/viewer/kanto.json` / `hoenn.json`, `public/fr`, `public/emerald` |
 | Explorar a pie | `/viewer.html#modo=explore` (+ `?game=emerald`) | Caminar con Rojo/Hoja o Bruno/Aura; pisar una puerta abre su interior | los mismos |
@@ -219,12 +219,12 @@ producción, paridad con ROM, Explorer por sectores y traslado de más herramien
 
 ## Mundo principal y variantes
 
-Entrega `7ef990af`: `/maps.html` abre por defecto el atlas principal. «Región» enfoca Kanto,
-Johto o Hoenn y filtra la lista; «Todas las regiones» restaura el plano general. «Vista» conserva
+Entregas `7ef990af` y `bd310671`: `/maps.html` abre por defecto el atlas principal. «Región» enfoca Kanto,
+Johto, Hoenn o Sevii y filtra la lista; «Todas las regiones» restaura el plano general. «Vista» conserva
 FireRed, Emerald, HnS y Crystal completos como variantes. La portada enlaza este atlas.
 
-El catálogo reúne **996 mapas disponibles**: Kanto FireRed 256, Johto Heart & Soul 253 y Hoenn
-Emerald 487. El plano tiene 140 exteriores; los interiores se abren desde búsqueda o puertas.
+El catálogo reúne **1131 mapas disponibles**: Kanto FireRed 256, Johto Heart & Soul 253 y Hoenn
+Emerald 487, más 135 mapas de las Islas Sevii asociados a Kanto. El plano tiene 167 exteriores; los interiores se abren desde búsqueda o puertas.
 Los IDs llevan región (`johto/MAP_NEW_BARK_TOWN`) y conservan el ID/fuente original en la ficha.
 No presupone que nombres iguales sean el mismo lugar: los escondites Rocket de Mahogany y
 Celadon siguen perteneciendo a sus fuentes y regiones respectivas.
@@ -241,7 +241,7 @@ Las regiones se separan por 1024 px. Johto conserva las posiciones por conexione
 componente; exteriores aislados se organizan en una franja aparte. Seis discrepancias de origen
 siguen registradas en el catálogo; no se afirma que todas las conexiones encajen. Los chunks se
 recomponen desde los mapas seleccionados para evitar incorporar el Kanto alternativo de HnS.
-Los 389 archivos del atlas regeneran idénticos.
+Los 526 archivos del atlas regeneran idénticos.
 
 Siete referencias de Johto apuntan fuera de su selección; las fichas ofrecen la variante fuente
 cuando procede. Route 26 North enlaza a Route 22 FireRed como referencia entre fuentes.
@@ -254,8 +254,8 @@ Johto conserva marcadores de eventos.
 
 Comprobaciones: `npm run check:principal-map-data` verifica pertenencia, ciudades, procedencia,
 imágenes, posiciones, fronteras y evidencia del barco. El job siguiente recorre la UI real,
-puertas New Bark/Mahogany, frontera hacia Kanto, viaje editorial hacia Hoenn, variantes y vista
-390 px; comprueba caché estimada ≤96 MiB al acercar las tres regiones, ausencia de solicitudes
+puertas New Bark/Mahogany/Tanoby, frontera hacia Kanto, ferris hacia Sevii, viaje editorial hacia Hoenn, variantes y vista
+390 px; comprueba caché estimada ≤96 MiB al acercar las tres regiones y Sevii, ausencia de solicitudes
 al motor y 0 callbacks RAF en un segundo de reposo. Capturas inspeccionadas en escritorio y
 móvil. También pasan los checks de datos comunes/HnS, el recorrido común de cuatro fuentes,
 tipos, honestidad, build y diff. El build conserva avisos de tamaño de otros bundles del juego.
@@ -267,3 +267,36 @@ PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/p
 Pendientes: revisar exhaustivamente la selección y los mapas, resolver discrepancias con
 fuentes/ROM, gestos reales y producción; establecer conexiones físicas y simulación por sectores
 antes de explorar el conjunto como un único mundo jugable.
+
+
+### Sevii y zonas adicionales
+
+`bd310671` incorpora las siete islas de FireRed como grupo «Sevii · Kanto», con `parent: kanto`
+y IDs `sevii/MAP_...`. Incluye rutas, interiores, Monte Ascuas, Cueva Glaciada, Almacén Rocket,
+Ruinas Tanoby y Torre Desafío. Los grupos de islas se ordenan en dos columnas con separación
+editorial; las conexiones conservan sus offsets de origen, sin discrepancias detectadas en esta
+colocación. Monte Ascuas, conectado mediante puertas, tiene su componente separado dentro de
+Isla 1. No se simulan mar, pases ni ferris. Los siete enlaces desde Vermilion conservan procedencia
+`data/scripts/seagallop.inc`; cambian el destino consultado, no el estado del juego.
+
+Destinos de otra subdivisión pero de la misma fuente se resuelven con el ID original y conservan
+el índice de warp; los índices siguen descartándose entre fuentes diferentes. La selección
+excluye la casa marcada UNUSED de Isla 7, cuatro prototipos, salas LINK y Navel Rock/Birth Island.
+Estos mapas permanecen en la variante FireRed. Sevii ofrece imágenes/sprites/colisión y eventos;
+«Explorar» queda oculto porque el explorer anterior solo dispone del plano continental conectado.
+El atlas permite alejarse hasta 1/128× para abarcar el conjunto en móvil.
+
+Áreas verificadas contra el catálogo preparado, sin afirmar acceso jugable:
+
+| Área | Estado actual | Trabajo conveniente |
+|---|---|---|
+| Hoenn: Frente Batalla, Isla del Sur, Pilar Celeste | Mapas incluidos en búsqueda/fichas, sin posición en el plano general | Colocar sus exteriores como componentes aislados y resolver navegación desde sus fuentes |
+| Hoenn: zonas submarinas | Mapas incluidos en catálogo, fuera del plano exterior | Tratar como otro nivel con enlaces de inmersión; no superponer al terreno de superficie |
+| Johto: Safari, Monte Plateado, Ruinas de Alph, Islas Remolino, Torre Tin | Mapas incluidos; algunos exteriores ya colocados | Revisar exhaustivamente interiores, fronteras y conexiones de HnS |
+| Navel Rock y Birth Island | Solo variantes FireRed/Emerald; aparecen en ambas fuentes | Elegir una representación principal y conservar las otras como variantes, evitando duplicarlas |
+| Faraway Island | Solo variante Emerald | Incorporar como zona especial aislada con origen identificado |
+| Estados nocturnos/concurso/marea y prototipos | Variantes de fuente | Mantenerlos separados del terreno principal; no tratarlos como nuevas islas |
+
+Para completar primero el mundo, conviene colocar los exteriores aislados ya catalogados de
+Hoenn, después integrar las islas especiales con una política explícita de fuente, y finalmente
+modelar niveles submarinos y transiciones. La simulación por sectores sigue siendo trabajo aparte.
