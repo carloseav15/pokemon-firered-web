@@ -11,10 +11,10 @@ import { flagGet, SV, varSet } from "../save";
 import { tasks } from "@core/gba/tasks";
 import { joy, A_BUTTON, B_BUTTON } from "@core/gba/input";
 import { TV_PrintIntToStringVar } from "@core/gba/charmap";
-import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "../field/objectEvents";
-import { GetMapConnectionAtPos, GetMapHeaderFromConnection, CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "../field/fieldmap";
-import { canvas, rgb555 } from "../field/gfx4bpp";
-import { EncodeHiddenItemData, GetHiddenItemAttr } from "../field/hiddenItem";
+import { DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, type ObjectEvent } from "@core/field/objectEvents";
+import { GetMapConnectionAtPos, GetMapHeaderFromConnection, CONNECTION_EAST, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, MAP_OFFSET, type LoadedConnection } from "@core/field/fieldmap";
+import { canvas, rgb555 } from "@core/field/gfx4bpp";
+import { EncodeHiddenItemData, GetHiddenItemAttr } from "@core/field/hiddenItem";
 import type { Game } from "../game";
 
 type HiddenItem = Extract<MapBgEvent, { type: "hidden_item" }>;

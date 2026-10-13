@@ -187,12 +187,12 @@ datos reales caben todos: capa 0 = 9.749 metatiles, capa 1 = 8.538, capa 2 = 31.
 no los de FireRed: hace falta `src/games/emerald/generated/metatileBehavior.ts`. El validador recalcula `attributes32` desde los `.bin`.
 FireRed no cambia (la rama solo se ejecuta si el atributo no es de 32 bits).
 
-**Clima.** Hay dos mecanismos. (1) El clima de la cabecera de cada mapa (`weather`), ya leído por `src/games/firered/field/weather.ts`, que contiene
+**Clima.** Hay dos mecanismos. (1) El clima de la cabecera de cada mapa (`weather`), ya leído por `src/core/field/weather.ts`, que contiene
 todos los tipos de Emerald, incluidos sequía, diluvio y los ciclos de las rutas 119 y 123. En los 518 mapas: sin clima 428, soleado 51,
 burbujas submarinas 14, sombra 14, niebla horizontal 10, ceniza 1. (2) Los 86 eventos de coordenada de tipo `weather` (un cambio de clima
 al pisar una casilla): soleado 34, ciclo ruta 119 12, ciclo ruta 123 12, nubes 12, ceniza 12, lluvia 4. Se exportan como
 `{"type": "weather", x, y, elevation, weather}` en `coords` de cada mapa y el validador comprueba los 86 contra los `map.json`. Falta el
-consumidor: `src/games/firered/field/coordEventWeather.ts` tiene los 13 manejadores vacíos (así es FireRed, "it's always sunny in Viridian"), y en
+consumidor: `src/core/field/coordEventWeather.ts` tiene los 13 manejadores vacíos (así es FireRed, "it's always sunny in Viridian"), y en
 `src/coord_event_weather.c` de Emerald cada uno llama a `SetWeather(WEATHER_X)`; `DoCoordEventWeather` se invoca desde
 `field_control_avatar.c`.
 
@@ -224,7 +224,7 @@ Diferencias de configuración por juego (`GAME_CONFIG`): gráficos de obstáculo
 **Paso 2: el visor abre Hoenn** (`/viewer.html?game=emerald`, o el selector Kanto/Hoenn de la barra). Solo lectura: mapa, capas, fichas,
 búsqueda y minimapa. Cambios en código compartido, todos con FireRed como valor por omisión:
 
-- `src/games/firered/field/fieldmap.ts`: `NUM_METATILES_IN_PRIMARY`, `NUM_TILES_IN_PRIMARY` y el nuevo `NUM_PALS_IN_PRIMARY` son enlaces vivos con
+- `src/core/field/fieldmap.ts`: `NUM_METATILES_IN_PRIMARY`, `NUM_TILES_IN_PRIMARY` y el nuevo `NUM_PALS_IN_PRIMARY` son enlaces vivos con
   perfiles `firered` (640/640/7) y `emerald` (512/512/6); `SetTilesetProfile(nombre)` los cambia. `tileRenderer.ts` usa los vivos.
 - `src/core/rom.ts`: `DATA_ROOT` es mutable (`setDataRoot`) y `loadTileset` prefiere `attributes32` si el tileset lo trae (solo Emerald).
 - `src/viewer/main.ts`: `GAME` desde `?game=`, predicados de comportamiento por juego, índice `hoenn.json`, selector. En Hoenn no hay avatar,

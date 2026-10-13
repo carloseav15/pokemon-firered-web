@@ -2,7 +2,7 @@
 
 import * as C from "./generated/constants";
 import { cdata, symName, type SymRef } from "@core/hw/assets";
-import { SetGlobalFieldTintMode } from "./field/fieldPalette";
+import { SetGlobalFieldTintMode } from "@core/field/fieldPalette";
 import {
   QL_LoadAction_Input, QL_LoadAction_MovementOrGfxChange, QL_LoadAction_SceneEnd, QL_LoadAction_Wait,
   QL_RecordAction_Input, QL_RecordAction_MovementOrGfxChange, QL_RecordAction_SceneEnd, QL_RecordAction_Wait,
@@ -14,7 +14,7 @@ import { gQuestLogState, SetQuestLogWindow1Committer, WriteQuestLogState } from 
 import { QL_LoadObjects, SetGameStateAtScene, SetNPCInitialCoordsAtScene, SetPlayerInitialCoordsAtScene, type QuestLogScene } from "./questLogObjects";
 import { QL_SkipCommand, RecordQuestLogEvent, type QuestLogEventRepeatState } from "./questLogEventBuffer";
 import { rom } from "@core/rom";
-import type { Overworld } from "./field/overworld";
+import type { Overworld } from "@core/field/overworld";
 import type { MapObjectTemplate } from "@core/rom";
 import { CHAR_NEWLINE, EOS, expandPlaceholders, GetExpandedPlaceholder, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
 import { stringVars } from "@core/gba/stringBuffers";
@@ -30,10 +30,10 @@ import {
   DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset,
   DynamicPlaceholderTextUtil_SetPlaceholderPtr,
 } from "@core/dynamicPlaceholderTextUtil";
-import { FadeScreen } from "./field/weather";
+import { FadeScreen } from "@core/field/weather";
 import { paletteFade, FADE_TO_BLACK } from "@core/gba/fade";
 import { BG_PLTT_ID, CopyPaletteInvertedTint, gPlttBufferFaded, gPlttBufferUnfaded, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "@core/hw/palette";
-import { DisableWildEncounters } from "./field/wildEncounter";
+import { DisableWildEncounters } from "@core/field/wildEncounter";
 import { HelpSystem_Disable, HelpSystem_Enable } from "./helpSystem";
 import { tasks } from "@core/gba/tasks";
 import { GetTextWindowPalette } from "./hw/menu";

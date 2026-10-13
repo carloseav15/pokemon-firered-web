@@ -3,10 +3,10 @@
 
 import type { Game } from "./game";
 import * as C from "./generated/constants";
-import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./field/weather";
+import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "@core/field/weather";
 import { GetNationalPokedexCount } from "@core/pokemon/pokemon";
 import { flagGet, IncrementGameStat, save } from "./save";
-import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
+import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "@core/field/safariZone";
 import { intToDecimal, expandPlaceholders, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
 import { rom } from "@core/rom";
 import { sound } from "@core/audio/sound";
@@ -17,7 +17,7 @@ import { Window } from "@core/gba/window";
 import { joy, JOY_NEW, A_BUTTON, START_BUTTON } from "@core/gba/input";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { paletteFade, FADE_FROM_BLACK, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
-import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
+import { StopPokemonLeagueLightingEffectTask } from "@core/field/leagueLighting";
 import { FONT_SMALL, GetStringWidth } from "@core/gba/font";
 import { SaveStatToString } from "./saveMenuUtil";
 

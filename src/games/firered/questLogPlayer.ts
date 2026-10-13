@@ -9,9 +9,9 @@ import {
   PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT,
   PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_BIKE, PLAYER_AVATAR_GFX_FISH,
   PLAYER_AVATAR_GFX_NORMAL, PLAYER_AVATAR_GFX_RIDE, PlayerAvatar,
-} from "./field/playerAvatar";
-import type { Overworld } from "./field/overworld";
-import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST } from "./field/objectEvents";
+} from "@core/field/playerAvatar";
+import type { Overworld } from "@core/field/overworld";
+import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST } from "@core/field/objectEvents";
 
 type QLFishMovementTask = { id: number; ow: Overworld; step: number; timer: number };
 type QLVSSeekerMovementTask = { id: number; ow: Overworld; isFinished: () => boolean };

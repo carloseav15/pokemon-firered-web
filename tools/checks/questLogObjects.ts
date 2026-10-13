@@ -6,14 +6,14 @@ import * as C from "../../src/games/firered/generated/constants.ts";
 import * as MB from "../../src/games/firered/generated/metatileBehavior.ts";
 import { save } from "../../src/games/firered/save.ts";
 import { SetQuestLogState } from "../../src/games/firered/questLogEvents.ts";
-import { gObjectEvents, ObjectEvent } from "../../src/games/firered/field/objectEvents.ts";
-import { FieldMap, MAP_OFFSET, SetCurrentFieldMap } from "../../src/games/firered/field/fieldmap.ts";
+import { gObjectEvents, ObjectEvent } from "../../src/core/field/objectEvents.ts";
+import { FieldMap, MAP_OFFSET, SetCurrentFieldMap } from "../../src/core/field/fieldmap.ts";
 import {
   PlayerAvatar,
   SetPlayerAvatar,
   PLAYER_AVATAR_FLAG_ON_FOOT,
   PLAYER_AVATAR_FLAG_SURFING,
-} from "../../src/games/firered/field/playerAvatar.ts";
+} from "../../src/core/field/playerAvatar.ts";
 import {
   QL_RecordObjects,
   QL_LoadObjects,

@@ -11,7 +11,7 @@ import {
   DIR_EAST,
   ObjectEvent,
   ObjectEvents,
-} from "../../src/games/firered/field/objectEvents";
+} from "../../src/core/field/objectEvents";
 
 const exported = JSON.parse(readFileSync(resolve("public/fr/cdata/event_object_movement.json"), "utf8")) as {
   defs: Record<string, { type: string; value: unknown[] }>;

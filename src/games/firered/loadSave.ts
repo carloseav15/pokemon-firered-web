@@ -2,7 +2,7 @@
 // what &gPlayerParty[i] reads), so the save block's copy is held here while a scene rewrites the working party.
 import { save } from "./save";
 import * as C from "./generated/constants";
-import { gObjectEvents, ObjectEvent } from "./field/objectEvents";
+import { gObjectEvents, ObjectEvent } from "@core/field/objectEvents";
 import type { SpriteManager } from "@core/gba/sprite";
 import type { Pokemon } from "@core/pokemon/pokemon";
 

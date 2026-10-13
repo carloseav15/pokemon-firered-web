@@ -32,7 +32,7 @@ import {
   sWildEncounterData,
   sWildEncountersDisabled,
   MAX_ENCOUNTER_RATE,
-} from "../../src/games/firered/field/wildEncounter.ts";
+} from "../../src/core/field/wildEncounter.ts";
 
 // Register cdata for wild_encounter
 const cdataRaw = JSON.parse(readFileSync(process.cwd() + "/public/fr/cdata/wild_encounter.json", "utf8"));

@@ -7,11 +7,11 @@ import * as MB from "../generated/metatileBehavior";
 import { decode, expandPlaceholders, stringVars } from "@core/gba/charmap";
 import { rom } from "@core/rom";
 import { sound } from "@core/audio/sound";
-import { SetUpFieldMove_Cut } from "../field/fieldMoves";
+import { SetUpFieldMove_Cut } from "@core/field/fieldMoves";
 import { flagGet, flagSet, save, varSet, SV, type WarpData } from "../save";
 import type { Game } from "../game";
-import { DIRECTION_VECTORS, DIR_NORTH } from "../field/objectEvents";
-import { Overworld_MapTypeAllowsTeleportAndFly } from "../field/overworld";
+import { DIRECTION_VECTORS, DIR_NORTH } from "@core/field/objectEvents";
+import { Overworld_MapTypeAllowsTeleportAndFly } from "@core/field/overworld";
 import { getMapNameGenericBytes } from "../regionMap";
 
 export const FIELD_MOVE_FLASH = 0, FIELD_MOVE_CUT = 1, FIELD_MOVE_FLY = 2, FIELD_MOVE_STRENGTH = 3, FIELD_MOVE_SURF = 4,

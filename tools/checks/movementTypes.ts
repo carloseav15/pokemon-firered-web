@@ -1,12 +1,12 @@
 // Headless check for the event_object_movement.c MovementType_* dispatch tables
-// (src/games/firered/field/objectEvents.ts: MOVEMENT_TYPE_CALLBACKS / MOVEMENT_TYPE_STEPS / movementTypeCallback).
+// (src/core/field/objectEvents.ts: MOVEMENT_TYPE_CALLBACKS / MOVEMENT_TYPE_STEPS / movementTypeCallback).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import "./setupNodeGbaMock";
 import { registerCData } from "../../src/core/hw/assets";
 import * as C from "../../src/games/firered/generated/constants";
-import { DIR_SOUTH, ObjectEvent, ObjectEvents } from "../../src/games/firered/field/objectEvents";
+import { DIR_SOUTH, ObjectEvent, ObjectEvents } from "../../src/core/field/objectEvents";
 
 const exported = JSON.parse(readFileSync(resolve("public/fr/cdata/event_object_movement.json"), "utf8")) as {
   defs: Record<string, { type: string; value: unknown[] }>;

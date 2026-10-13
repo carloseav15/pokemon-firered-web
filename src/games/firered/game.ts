@@ -13,7 +13,7 @@ import { joy, JOY_NEW, A_BUTTON, B_BUTTON, START_BUTTON, ReadKeys } from "@core/
 import { tasks } from "@core/gba/tasks";
 import { printText, TextPrinter, getTextSpeedSetting, textOptions } from "@core/gba/textPrinter";
 import { Window } from "@core/gba/window";
-import { Overworld } from "./field/overworld";
+import { Overworld } from "@core/field/overworld";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";
 import { ScriptMenu } from "./menus/scriptMenu";
 import { createMon, giveMonToPlayer, setDexFlag, type Pokemon } from "@core/pokemon/pokemon";
@@ -23,10 +23,10 @@ import { openHardwareChoice } from "./menus/hardwareChoice";
 import { ChooseMonForDaycare, ChooseMonForMoveTutor, gSelectedOrderFromParty, InitChooseMonsForBattle, Task_ChoosePartyMon } from "./partyMenu";
 import { GetMoveSlotToReplace, PokemonSummaryScreenMode, ShowPokemonSummaryScreen } from "./pokemonSummaryScreen";
 import { computeWhiteOutMoneyLoss, GetMoveRelearnerMoves } from "./pokemon/partyRules";
-import { TrainerSee } from "./field/trainerSee";
-import { RestartWildEncounterImmunitySteps, WildEncounter } from "./field/wildEncounter";
+import { TrainerSee } from "@core/field/trainerSee";
+import { RestartWildEncounterImmunitySteps, WildEncounter } from "@core/field/wildEncounter";
 import { InitPlayerTrainerId, random, takeWildEncounterSeed } from "@core/random";
-import { tryFieldPoisonWhiteOut } from "./field/poison";
+import { tryFieldPoisonWhiteOut } from "@core/field/poison";
 import { healMon } from "@core/pokemon/pokemon";
 import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
 import * as C from "./generated/constants";
@@ -35,11 +35,11 @@ import { openFameChecker } from "./menus/keyItemScreens";
 import { StartTeachyTv } from "./teachyTv";
 import { ResetTrainerTowerResults } from "./trainerTower";
 import { Task_VsSeeker_0 } from "./field/vsSeeker";
-import { GetSafariZoneFlag } from "./field/safariZone";
+import { GetSafariZoneFlag } from "@core/field/safariZone";
 import { ClearMailData } from "./pokemon/mail";
 import { InUnionRoom } from "./unionRoom";
-import { FieldWeather } from "./field/weather";
-import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
+import { FieldWeather } from "@core/field/weather";
+import { StopPokemonLeagueLightingEffectTask } from "@core/field/leagueLighting";
 import { openPlayerPc } from "./menus/playerPc";
 import { DestroyHelpMessageWindow, DrawHelpMessageWindowWithText } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
@@ -81,7 +81,7 @@ import { InitEasyChatPhrases } from "./easyChat";
 import { IsHelpSystemActive, preloadHelpSystem, RunHelpSystemCallback } from "./helpSystemUtil";
 import { renderHw } from "@core/hw/runtime";
 import { ClearEnigmaBerries } from "@core/pokemon/berry";
-import { SaveMapView } from "./field/fieldmap";
+import { SaveMapView } from "@core/field/fieldmap";
 
 /** GetProfOaksRatingMessageByCount (prof_pc.c). */
 function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
@@ -108,7 +108,7 @@ import { openRegionMap, REGIONMAP_TYPE_NORMAL, REGIONMAP_TYPE_WALL } from "./reg
 import { DoNamingScreen } from "./namingScreen";
 import { HwScene } from "@core/hw/runtime";
 import { gender as pokemonGender } from "@core/pokemon/pokemon";
-import { ScriptMovement } from "./script/movement";
+import { ScriptMovement } from "@core/script/movement";
 
 export const FRAME_MS = 1000 / (16777216 / 280896);
 

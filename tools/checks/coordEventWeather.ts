@@ -1,7 +1,7 @@
 // DoCoordEventWeather: FireRed's table is dummied out; pokeemerald's (registered by the game wiring) calls SetWeather.
 import assert from "node:assert/strict";
 import * as C from "../../src/games/firered/generated/constants";
-import { DoCoordEventWeather, UseEmeraldCoordEventWeather } from "../../src/games/firered/field/coordEventWeather";
+import { DoCoordEventWeather, UseEmeraldCoordEventWeather } from "../../src/core/field/coordEventWeather";
 
 const calls: number[] = [];
 

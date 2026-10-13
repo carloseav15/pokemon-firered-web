@@ -1,5 +1,5 @@
 import { TILE, BIOME_TREES, BIOME_OCEAN, BIOME_MOUNTAIN } from "../constants";
-import type { TileRenderer } from "../../games/firered/field/tileRenderer";
+import type { TileRenderer } from "@core/field/tileRenderer";
 import type { KantoIndex } from "../types";
 import { composeMetatile } from "./metatile";
 import type { rom } from "@core/rom";

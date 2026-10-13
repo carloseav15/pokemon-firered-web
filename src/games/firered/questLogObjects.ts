@@ -5,15 +5,15 @@ import * as MB from "./generated/metatileBehavior";
 import { SaveObjectEvents } from "./loadSave";
 import { save } from "./save";
 import { gQuestLogState } from "./questLogEvents";
-import { gObjectEvents, type ObjectEvent } from "./field/objectEvents";
-import { MapGridGetMetatileBehaviorAt, MAP_OFFSET } from "./field/fieldmap";
+import { gObjectEvents, type ObjectEvent } from "@core/field/objectEvents";
+import { MapGridGetMetatileBehaviorAt, MAP_OFFSET } from "@core/field/fieldmap";
 import {
   PlayerGetDestCoords,
   SetPlayerAvatarTransitionFlags,
   TestPlayerAvatarFlags,
   PLAYER_AVATAR_FLAG_ON_FOOT,
   PLAYER_AVATAR_FLAG_SURFING,
-} from "./field/playerAvatar";
+} from "@core/field/playerAvatar";
 import type { MapObjectTemplate } from "@core/rom";
 
 export interface QuestLogObjectEvent {

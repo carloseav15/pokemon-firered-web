@@ -12,7 +12,7 @@ const commonHelpers = `${prelude}
   const B = await H.mod("/src/games/firered/bagMenu.ts");
   const M = await H.mod("/src/core/pokemon/mon.ts");
   const P = await H.mod("/src/core/pokemon/pokemon.ts");
-  const FM = await H.mod("/src/games/firered/field/fieldmap.ts");
+  const FM = await H.mod("/src/core/field/fieldmap.ts");
   const S = await H.mod("/src/games/firered/save.ts");
   const R = (await H.mod("/src/core/rom.ts")).rom;
   const ctl = () => H.G.gBattlerControllerFuncs[0]?.name;

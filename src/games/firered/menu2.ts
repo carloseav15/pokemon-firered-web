@@ -3,7 +3,7 @@
 
 import * as C from "./generated/constants";
 import { cdata } from "@core/hw/assets";
-import { GetUnownLetterByPersonalityLoByte } from "./field/wildEncounter";
+import { GetUnownLetterByPersonalityLoByte } from "@core/field/wildEncounter";
 import { BlitBitmapRect4BitWithoutColorKey, type Bitmap } from "@core/hw/window";
 
 const SPECIES_OLD_UNOWN_EMARK = C.NUM_SPECIES + 0;

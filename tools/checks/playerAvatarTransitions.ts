@@ -1,16 +1,16 @@
 // Headless check for field_player_avatar.c's PlayerAvatarTransition_* /
-// ForcedMovement_* reshape (src/games/firered/field/playerAvatar.ts).
+// ForcedMovement_* reshape (src/core/field/playerAvatar.ts).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import "./setupNodeGbaMock";
 import { registerCData } from "../../src/core/hw/assets";
 import { rom } from "../../src/core/rom";
-import { ObjectEvents } from "../../src/games/firered/field/objectEvents";
+import { ObjectEvents } from "../../src/core/field/objectEvents";
 import {
   PlayerAvatar, PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE,
   PLAYER_AVATAR_FLAG_CONTROLLABLE, BIKE_STATE_NORMAL, PLAYER_SPEED_STANDING,
-} from "../../src/games/firered/field/playerAvatar";
+} from "../../src/core/field/playerAvatar";
 
 const exported = JSON.parse(readFileSync(resolve("public/fr/cdata/event_object_movement.json"), "utf8")) as {
   defs: Record<string, { type: string; value: unknown[] }>;

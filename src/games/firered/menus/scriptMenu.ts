@@ -19,7 +19,7 @@ import {
   listMenuTemplate, SCROLL_ARROW_UP,
 } from "../hw/listMenu";
 import { addFieldScrollArrows, fieldListSurface } from "./fieldListMenu";
-import type { Overworld } from "../field/overworld";
+import type { Overworld } from "@core/field/overworld";
 import { GetCoins } from "../pokemon/items";
 import {
   LISTMENU_BADGES, LISTMENU_SILPHCO_FLOORS, LISTMENU_ROCKET_HIDEOUT_FLOORS, LISTMENU_DEPT_STORE_FLOORS,
@@ -29,7 +29,7 @@ import {
   SEAGALLOP_VERMILION_CITY, SEAGALLOP_FOUR_ISLAND, SEAGALLOP_FIVE_ISLAND, SEAGALLOP_SIX_ISLAND, SEAGALLOP_SEVEN_ISLAND, SEAGALLOP_MORE,
 } from "../generated/constants";
 import * as C from "../generated/constants";
-import { spriteSheet } from "../field/gfx4bpp";
+import { spriteSheet } from "@core/field/gfx4bpp";
 import { QL_AvoidDisplay } from "../questLogEvents";
 
 export const SCR_MENU_UNSET = 0xff;

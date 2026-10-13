@@ -54,10 +54,10 @@ tiles.
 | Layout | `public/fr/layouts/LAYOUT_*.json` | `width`, `height`, `primary`, `secondary`, `blocks` (u16 en base64; `rom.loadLayout` lo decodifica) |
 | Tileset | `public/fr/tilesets/gTileset_*.json` | tiles 4bpp, paletas, metatiles, `attributes` (u32 por metatile) |
 | Cargadores | `src/core/rom.ts:405` `loadMap`, `:421` `loadLayout`, `:449` `loadTileset` | Devuelven los tipos de `rom.ts` |
-| Bits de cada bloque | `src/games/firered/field/fieldmap.ts:11-15` | metatile `& 0x3FF`; colisión `& 0xC00 >> 10`; elevación `& 0xF000 >> 12` |
-| Atributos de un metatile | `src/games/firered/field/fieldmap.ts:428-429` | primario si id < 640 (`NUM_METATILES_IN_PRIMARY`), si no secundario `id - 640`. Para extraer el comportamiento, sigue `ExtractMetatileAttribute` y `sMetatileAttrMasks` del C (`fieldmap.c:63` y `:382`) |
+| Bits de cada bloque | `src/core/field/fieldmap.ts:11-15` | metatile `& 0x3FF`; colisión `& 0xC00 >> 10`; elevación `& 0xF000 >> 12` |
+| Atributos de un metatile | `src/core/field/fieldmap.ts:428-429` | primario si id < 640 (`NUM_METATILES_IN_PRIMARY`), si no secundario `id - 640`. Para extraer el comportamiento, sigue `ExtractMetatileAttribute` y `sMetatileAttrMasks` del C (`fieldmap.c:63` y `:382`) |
 | Comportamientos | `src/games/firered/generated/metatileBehavior.ts` | `MetatileBehavior_IsSurfable`, `IsJumpEast/West/North/South`, `IsTallGrass`, `IsWaterfall`… |
-| Dibujo de metatiles | `src/games/firered/field/tileRenderer.ts:15` (`TileRenderer`), `:173` `metatile(id)` | Devuelve canvas `bottom` y `top`. **Usa el estado global de paleta** (`hw/palette`): carga las paletas de cada par de tilesets antes de dibujar sus mapas (`LoadMapTilesetPalettes`) y dibuja los mapas uno a uno |
+| Dibujo de metatiles | `src/core/field/tileRenderer.ts:15` (`TileRenderer`), `:173` `metatile(id)` | Devuelve canvas `bottom` y `top`. **Usa el estado global de paleta** (`hw/palette`): carga las paletas de cada par de tilesets antes de dibujar sus mapas (`LoadMapTilesetPalettes`) y dibuja los mapas uno a uno |
 
 Los **scripts** están compilados (`public/fr/scripts.bin`). Para saber quién cambia
 una variable o un flag, el índice lee el texto fuente del decomp (§4.3), no el binario.
@@ -292,6 +292,6 @@ FireRed solo anima 5 de sus 68 tilesets (**pista**, de `anims` en `public/fr/til
 `CeladonGym` (flores), `MtEmber` (vapor) y `VermilionGym` (puerta). Los árboles no se
 mueven en el original.
 
-El visor podría animarlas reutilizando `TilesetAnimator` (`src/games/firered/field/tilesetAnimator.ts`)
+El visor podría animarlas reutilizando `TilesetAnimator` (`src/core/field/tilesetAnimator.ts`)
 y redibujando solo las casillas que usan metatiles animados. Es cosmético: no aporta a
 la revisión. Hazlo solo si el usuario lo pide.

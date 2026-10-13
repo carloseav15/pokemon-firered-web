@@ -4,9 +4,9 @@
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
 import { rom, setDataRoot } from "@core/rom";
-import { TileRenderer } from "../games/firered/field/tileRenderer";
-import { TilesetAnimator } from "../games/firered/field/tilesetAnimator";
-import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "../games/firered/field/fieldmap";
+import { TileRenderer } from "@core/field/tileRenderer";
+import { TilesetAnimator } from "@core/field/tilesetAnimator";
+import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
 import * as MB from "../games/firered/generated/metatileBehavior";
 import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
 import { TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";

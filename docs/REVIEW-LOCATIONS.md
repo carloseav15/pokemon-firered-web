@@ -9,89 +9,89 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 |---|---|---|
 | `MovementAction_*` | 285 funciones | 282 funciones |
 | `MovementType_*` | 148 funciones | 142 funciones |
-| `movementActionStep` | — | `src/games/firered/field/objectEvents.ts:3015` |
-| `UpdateObjectEventCurrentMovement` | `event_object_movement.c:5110` | `src/games/firered/field/objectEvents.ts:1969` |
-| `ObjectEventSetSingleMovement` | `event_object_movement.c:5267` | `src/games/firered/field/objectEvents.ts:2086` |
-| `ObjectEventExecSingleMovementAction` | `event_object_movement.c:5256` | `src/games/firered/field/objectEvents.ts:2095` |
-| `ClearObjectEventMovement` | `event_object_movement.c:4647` | `src/games/firered/field/objectEvents.ts:2605` |
-| `GetTrainerFacingDirectionMovementType` | `event_object_movement.c:4815` | `src/games/firered/field/objectEvents.ts:28` |
-| `GetVectorDirection` | `event_object_movement.c:2801` | `src/games/firered/field/objectEvents.ts:131` |
+| `movementActionStep` | — | `src/core/field/objectEvents.ts:3015` |
+| `UpdateObjectEventCurrentMovement` | `event_object_movement.c:5110` | `src/core/field/objectEvents.ts:1969` |
+| `ObjectEventSetSingleMovement` | `event_object_movement.c:5267` | `src/core/field/objectEvents.ts:2086` |
+| `ObjectEventExecSingleMovementAction` | `event_object_movement.c:5256` | `src/core/field/objectEvents.ts:2095` |
+| `ClearObjectEventMovement` | `event_object_movement.c:4647` | `src/core/field/objectEvents.ts:2605` |
+| `GetTrainerFacingDirectionMovementType` | `event_object_movement.c:4815` | `src/core/field/objectEvents.ts:28` |
+| `GetVectorDirection` | `event_object_movement.c:2801` | `src/core/field/objectEvents.ts:131` |
 | `GetLimitedVectorDirection_*` | 10 funciones | 10 funciones |
-| `TryGetTrainerEncounterDirection` | `event_object_movement.c:2992` | `src/games/firered/field/objectEvents.ts:2149` |
-| `MoveCoords` | `event_object_movement.c:4940` | `src/games/firered/field/objectEvents.ts:53` |
-| `MoveCoordsInDirection` | `event_object_movement.c:4953` | `src/games/firered/field/objectEvents.ts:60` |
-| `SetObjectEventCoords` | `event_object_movement.c:2257` | `src/games/firered/field/objectEvents.ts:1232` |
-| `GetAvailableObjectEventId` | `event_object_movement.c:1489` | `src/games/firered/field/objectEvents.ts:989` |
-| `TrySetupObjectEventSprite` | `event_object_movement.c:1549` | `src/games/firered/field/objectEvents.ts:1220` |
-| `TrySpawnObjectEventTemplate` | `event_object_movement.c:1599` | `src/games/firered/field/objectEvents.ts:1053` (comentario) |
-| `TrySpawnObjectEvents` | `event_object_movement.c:1792` | `src/games/firered/field/objectEvents.ts:1404` |
-| `RemoveObjectEventsOutsideView` | `event_object_movement.c:1819` | `src/games/firered/field/objectEvents.ts:1465` |
+| `TryGetTrainerEncounterDirection` | `event_object_movement.c:2992` | `src/core/field/objectEvents.ts:2149` |
+| `MoveCoords` | `event_object_movement.c:4940` | `src/core/field/objectEvents.ts:53` |
+| `MoveCoordsInDirection` | `event_object_movement.c:4953` | `src/core/field/objectEvents.ts:60` |
+| `SetObjectEventCoords` | `event_object_movement.c:2257` | `src/core/field/objectEvents.ts:1232` |
+| `GetAvailableObjectEventId` | `event_object_movement.c:1489` | `src/core/field/objectEvents.ts:989` |
+| `TrySetupObjectEventSprite` | `event_object_movement.c:1549` | `src/core/field/objectEvents.ts:1220` |
+| `TrySpawnObjectEventTemplate` | `event_object_movement.c:1599` | `src/core/field/objectEvents.ts:1053` (comentario) |
+| `TrySpawnObjectEvents` | `event_object_movement.c:1792` | `src/core/field/objectEvents.ts:1404` |
+| `RemoveObjectEventsOutsideView` | `event_object_movement.c:1819` | `src/core/field/objectEvents.ts:1465` |
 | `GroundEffect_*` | 20 funciones | 20 funciones |
 | `DoTracksGroundEffect_*` | 3 funciones | 3 funciones |
-| `ObjectEventSetHeldMovement` | `event_object_movement.c:5049` | `src/games/firered/field/objectEvents.ts:1805` |
-| `ObjectEventForceSetHeldMovement` | `event_object_movement.c:5064` | `src/games/firered/field/objectEvents.ts:1814` |
-| `ObjectEventFaceOppositeDirection` | `event_object_movement.c:5193` | `src/games/firered/field/objectEvents.ts:1831` |
+| `ObjectEventSetHeldMovement` | `event_object_movement.c:5049` | `src/core/field/objectEvents.ts:1805` |
+| `ObjectEventForceSetHeldMovement` | `event_object_movement.c:5064` | `src/core/field/objectEvents.ts:1814` |
+| `ObjectEventFaceOppositeDirection` | `event_object_movement.c:5193` | `src/core/field/objectEvents.ts:1831` |
 | `InitNpcForWalk*` | 3 funciones | 3 funciones |
 | `InitWalk*` | 3 funciones | 4 funciones |
 | `UpdateWalk*` | 6 funciones | 7 funciones |
-| `InitRunSlow` | `event_object_movement.c:6529` | `src/games/firered/field/objectEvents.ts:2850` |
-| `UpdateRunSlow` | `event_object_movement.c:6535` | `src/games/firered/field/objectEvents.ts:2861` |
-| `Step1` | `event_object_movement.c:8827` | `src/games/firered/field/objectEvents.ts:76` |
-| `NpcTakeStep` | `event_object_movement.c:8933` | `src/games/firered/field/objectEvents.ts:2702` (comentario) |
-| `UpdateSlowStyleAnim` | — | `src/games/firered/field/objectEvents.ts:2787` |
-| `StartFieldEffectForObjectEvent` | `event_object_movement.c:9389` | `src/games/firered/field/fieldEffects.ts:432` |
-| `DoRippleFieldEffect` | `event_object_movement.c:9404` | `src/games/firered/field/fieldEffects.ts:1413` |
-| `UpdateObjectEventVisibility` | `event_object_movement.c:7966` | `src/games/firered/field/objectEvents.ts:2040` |
-| `ObjectEventUpdateSubpriority` | `event_object_movement.c:8424` | `src/games/firered/field/objectEvents.ts:1717` |
+| `InitRunSlow` | `event_object_movement.c:6529` | `src/core/field/objectEvents.ts:2850` |
+| `UpdateRunSlow` | `event_object_movement.c:6535` | `src/core/field/objectEvents.ts:2861` |
+| `Step1` | `event_object_movement.c:8827` | `src/core/field/objectEvents.ts:76` |
+| `NpcTakeStep` | `event_object_movement.c:8933` | `src/core/field/objectEvents.ts:2702` (comentario) |
+| `UpdateSlowStyleAnim` | — | `src/core/field/objectEvents.ts:2787` |
+| `StartFieldEffectForObjectEvent` | `event_object_movement.c:9389` | `src/core/field/fieldEffects.ts:432` |
+| `DoRippleFieldEffect` | `event_object_movement.c:9404` | `src/core/field/fieldEffects.ts:1413` |
+| `UpdateObjectEventVisibility` | `event_object_movement.c:7966` | `src/core/field/objectEvents.ts:2040` |
+| `ObjectEventUpdateSubpriority` | `event_object_movement.c:8424` | `src/core/field/objectEvents.ts:1717` |
 | `ObjectEventSetGraphicsId*` | 2 funciones | 2 funciones |
 | `ObjectEventTurn*` | 2 funciones | 2 funciones |
-| `PlayerObjectTurn` | `event_object_movement.c:2035` | `src/games/firered/field/objectEvents.ts:1778` |
-| `SetObjectEventDirection` | `event_object_movement.c:2497` | `src/games/firered/field/objectEvents.ts:1652` |
-| `RemoveObjectEvent` | `event_object_movement.c:1514` | `src/games/firered/field/objectEvents.ts:1377` |
-| `RemoveObjectEventInternal` | `event_object_movement.c:1530` | `src/games/firered/field/objectEvents.ts:1371` |
-| `RemoveObjectEventIfOutsideView` | `event_object_movement.c:1841` | `src/games/firered/field/objectEvents.ts:1472` |
-| `InitJumpRegular` | `event_object_movement.c:5741` | `src/games/firered/field/objectEvents.ts:2880` |
-| `UpdateJumpAnim` | `event_object_movement.c:5748` | `src/games/firered/field/objectEvents.ts:2927` |
-| `DoJumpAnim` | `event_object_movement.c:5786` | `src/games/firered/field/objectEvents.ts:2962` |
-| `DoJumpSpecialAnim` | `event_object_movement.c:5794` | `src/games/firered/field/objectEvents.ts:2967` |
-| `DoJumpInPlaceAnim` | `event_object_movement.c:5802` | `src/games/firered/field/objectEvents.ts:2972` |
-| `InitJumpSpecial` | `event_object_movement.c:6634` | `src/games/firered/field/objectEvents.ts:2887` |
-| `InitAcroWheelieJump` | `event_object_movement.c:7365` | `src/games/firered/field/objectEvents.ts:2676` |
-| `InitAcroPopWheelie` | `event_object_movement.c:7600` | `src/games/firered/field/objectEvents.ts:2683` |
-| `InitAcroWheelieMove` | `event_object_movement.c:7671` | `src/games/firered/field/objectEvents.ts:2690` |
-| `InitSpin` | `event_object_movement.c:7741` | `src/games/firered/field/objectEvents.ts:2696` |
-| `AcroWheelieFaceDirection` | `event_object_movement.c:7260` | `src/games/firered/field/objectEvents.ts:2667` |
-| `ObjectEventIsTrainerAndCloseToPlayer` | `event_object_movement.c:2772` | `src/games/firered/field/objectEvents.ts:2113` |
-| `MoveNextDirectionInSequence` | `event_object_movement.c:3909` | `src/games/firered/field/objectEvents.ts:2127` |
-| `GetLedgeJumpDirection` | `event_object_movement.c:8303` | `src/games/firered/field/playerAvatar.ts:1234` |
+| `PlayerObjectTurn` | `event_object_movement.c:2035` | `src/core/field/objectEvents.ts:1778` |
+| `SetObjectEventDirection` | `event_object_movement.c:2497` | `src/core/field/objectEvents.ts:1652` |
+| `RemoveObjectEvent` | `event_object_movement.c:1514` | `src/core/field/objectEvents.ts:1377` |
+| `RemoveObjectEventInternal` | `event_object_movement.c:1530` | `src/core/field/objectEvents.ts:1371` |
+| `RemoveObjectEventIfOutsideView` | `event_object_movement.c:1841` | `src/core/field/objectEvents.ts:1472` |
+| `InitJumpRegular` | `event_object_movement.c:5741` | `src/core/field/objectEvents.ts:2880` |
+| `UpdateJumpAnim` | `event_object_movement.c:5748` | `src/core/field/objectEvents.ts:2927` |
+| `DoJumpAnim` | `event_object_movement.c:5786` | `src/core/field/objectEvents.ts:2962` |
+| `DoJumpSpecialAnim` | `event_object_movement.c:5794` | `src/core/field/objectEvents.ts:2967` |
+| `DoJumpInPlaceAnim` | `event_object_movement.c:5802` | `src/core/field/objectEvents.ts:2972` |
+| `InitJumpSpecial` | `event_object_movement.c:6634` | `src/core/field/objectEvents.ts:2887` |
+| `InitAcroWheelieJump` | `event_object_movement.c:7365` | `src/core/field/objectEvents.ts:2676` |
+| `InitAcroPopWheelie` | `event_object_movement.c:7600` | `src/core/field/objectEvents.ts:2683` |
+| `InitAcroWheelieMove` | `event_object_movement.c:7671` | `src/core/field/objectEvents.ts:2690` |
+| `InitSpin` | `event_object_movement.c:7741` | `src/core/field/objectEvents.ts:2696` |
+| `AcroWheelieFaceDirection` | `event_object_movement.c:7260` | `src/core/field/objectEvents.ts:2667` |
+| `ObjectEventIsTrainerAndCloseToPlayer` | `event_object_movement.c:2772` | `src/core/field/objectEvents.ts:2113` |
+| `MoveNextDirectionInSequence` | `event_object_movement.c:3909` | `src/core/field/objectEvents.ts:2127` |
+| `GetLedgeJumpDirection` | `event_object_movement.c:8303` | `src/core/field/playerAvatar.ts:1234` |
 | `CopyablePlayerMovement_*` | 8 funciones | 9 funciones |
-| `cph_IM_DIFFERENT` | `event_object_movement.c:4380` | `src/games/firered/field/objectEvents.ts:2579` |
-| `SpawnObjectEventsOnReturnToField` | `event_object_movement.c:1857` | `src/games/firered/field/objectEvents.ts:1263`, `src/games/firered/field/overworld.ts:1215` |
+| `cph_IM_DIFFERENT` | `event_object_movement.c:4380` | `src/core/field/objectEvents.ts:2579` |
+| `SpawnObjectEventsOnReturnToField` | `event_object_movement.c:1857` | `src/core/field/objectEvents.ts:1263`, `src/core/field/overworld.ts:1215` |
 
 ## overworld.c
 
 | Nombre | C | TS |
 |---|---|---|
-| `Overworld_ResetStateAfterFly` | `overworld.c:289` | `src/games/firered/field/overworld.ts:541` |
+| `Overworld_ResetStateAfterFly` | `overworld.c:289` | `src/core/field/overworld.ts:541` |
 | `CB2_WhiteOut` | `overworld.c:1545` | `src/games/firered/game.ts:1088` |
-| `WarpIntoMap` | `overworld.c:583` | `src/games/firered/field/overworld.ts:673` |
-| `TryFadeOutOldMapMusic` | `overworld.c:1112` | `src/games/firered/field/overworld.ts:2343` |
-| `GetMapTypeByGroupAndId` | `overworld.c:1203` | `src/games/firered/field/overworld.ts:340` |
-| `GetLastUsedWarpMapType` | `overworld.c:1218` | `src/games/firered/field/overworld.ts:350` |
-| `GetSavedWarpRegionMapSectionId` | `overworld.c:1260` | `src/games/firered/field/overworld.ts:360` |
-| `GetCurrentRegionMapSectionId` | `overworld.c:1265` | `src/games/firered/field/overworld.ts:365` |
-| `GetCurrentMapBattleScene` | `overworld.c:1270` | `src/games/firered/field/overworld.ts:370` |
-| `SetDiveWarpEmerge` | `overworld.c:740` | `src/games/firered/field/overworld.ts:468` |
-| `SetDiveWarpDive` | `overworld.c:745` | `src/games/firered/field/overworld.ts:473` |
-| `cb1` | — | `src/games/firered/field/overworld.ts:2624` |
-| `cb2` | — | `src/games/firered/field/overworld.ts:2632` |
+| `WarpIntoMap` | `overworld.c:583` | `src/core/field/overworld.ts:673` |
+| `TryFadeOutOldMapMusic` | `overworld.c:1112` | `src/core/field/overworld.ts:2343` |
+| `GetMapTypeByGroupAndId` | `overworld.c:1203` | `src/core/field/overworld.ts:340` |
+| `GetLastUsedWarpMapType` | `overworld.c:1218` | `src/core/field/overworld.ts:350` |
+| `GetSavedWarpRegionMapSectionId` | `overworld.c:1260` | `src/core/field/overworld.ts:360` |
+| `GetCurrentRegionMapSectionId` | `overworld.c:1265` | `src/core/field/overworld.ts:365` |
+| `GetCurrentMapBattleScene` | `overworld.c:1270` | `src/core/field/overworld.ts:370` |
+| `SetDiveWarpEmerge` | `overworld.c:740` | `src/core/field/overworld.ts:468` |
+| `SetDiveWarpDive` | `overworld.c:745` | `src/core/field/overworld.ts:473` |
+| `cb1` | — | `src/core/field/overworld.ts:2624` |
+| `cb2` | — | `src/core/field/overworld.ts:2632` |
 | `CB2_ContinueSavedGame` | `overworld.c:1691` | `src/games/firered/game.ts:362` |
-| `SetWarpDestination` | `overworld.c:590` | `src/games/firered/field/overworld.ts:384` |
-| `DoCB1_Overworld_QuestLogPlayback` | `overworld.c:1420` | `src/games/firered/field/fieldControl.ts:162` |
-| `LoadMap_QLPlayback` | `overworld.c:2246` | `src/games/firered/field/overworld.ts:822` |
+| `SetWarpDestination` | `overworld.c:590` | `src/core/field/overworld.ts:384` |
+| `DoCB1_Overworld_QuestLogPlayback` | `overworld.c:1420` | `src/core/field/fieldControl.ts:162` |
+| `LoadMap_QLPlayback` | `overworld.c:2246` | `src/core/field/overworld.ts:822` |
 | `CB2_SetUpOverworldForQLPlayback*` | 2 funciones | 2 funciones |
-| `QL_UpdateObject` | `quest_log.c:1340` | `src/games/firered/field/objectEvents.ts:1936` |
-| `QL_UpdateObjectEventCurrentMovement` | `event_object_movement.c:5127` | `src/games/firered/field/objectEvents.ts:1941` |
+| `QL_UpdateObject` | `quest_log.c:1340` | `src/core/field/objectEvents.ts:1936` |
+| `QL_UpdateObjectEventCurrentMovement` | `event_object_movement.c:5127` | `src/core/field/objectEvents.ts:1941` |
 
 ## quest_log.c
 
@@ -138,8 +138,8 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 
 | Nombre | C | TS |
 |---|---|---|
-| `popOutOfAsh` | — | `src/games/firered/field/fieldEffects.ts:1987` |
-| `startLavaridgeGymWarpEffect` | — | `src/games/firered/field/fieldEffects.ts:2008` |
+| `popOutOfAsh` | — | `src/core/field/fieldEffects.ts:1987` |
+| `startLavaridgeGymWarpEffect` | — | `src/core/field/fieldEffects.ts:2008` |
 | `SpriteCB_*` | 205 funciones | 178 funciones |
 
 ## party_menu.c

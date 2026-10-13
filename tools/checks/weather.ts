@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { registerCData, registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
 import * as Trig from '../../src/core/hw/trig.ts';
-import * as Weather from '../../src/games/firered/field/weather.ts';
+import * as Weather from '../../src/core/field/weather.ts';
 import { sound } from '../../src/core/audio/sound.ts';
 import { gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded, OBJ_PLTT_ID } from '../../src/core/hw/palette.ts';
 import { ppu } from '../../src/core/hw/ppu.ts';
@@ -359,7 +359,7 @@ assert.equal(fw.next, 3);
 console.log('✓ Current/next weather state updates exercised');
 
 console.log('--- 4. Exercising selected weather particle lifecycles ---');
-import * as WE from '../../src/games/firered/field/weatherEffects.ts';
+import * as WE from '../../src/core/field/weatherEffects.ts';
 
 // Clouds
 WE.Clouds_InitAll();

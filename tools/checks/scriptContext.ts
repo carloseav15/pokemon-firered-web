@@ -18,7 +18,7 @@ import {
   GetRegisteredQuestLogInput,
   setRamScriptRetAddr,
   gRamScriptRetAddr,
-} from "../../src/games/firered/script/context.ts";
+} from "../../src/core/script/context.ts";
 
 // =========================================================================
 // 1. Quest Log Input Tracking

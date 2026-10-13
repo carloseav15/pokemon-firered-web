@@ -69,7 +69,7 @@ export default [
     name: "ExtractMetatileAttribute", group: "A", kind: "pure", ret: "u32",
     c: { stem: "fieldmap", name: "ExtractMetatileAttribute" },
     params: [P("attributes", "u32", { realistic: [0, 4294967295] }), P("attributeType", "u8", { realisticSet: [0, 1, 2, 3, 4, 0xff], structural: true })],
-    impls: [{ label: "field/fieldmap.ts", file: "src/games/firered/field/fieldmap.ts", name: "ExtractMetatileAttribute" }],
+    impls: [{ label: "field/fieldmap.ts", file: "src/core/field/fieldmap.ts", name: "ExtractMetatileAttribute" }],
     realisticEvidence: [assumed("attributeType is one of the METATILE_ATTRIBUTE_* selectors or ALL; exact set not enumerated from constants", "wild_encounter.c:366")],
     cost: { ...NO, adapters: [], reusable: "n/a" },
   },

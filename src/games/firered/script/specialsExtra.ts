@@ -17,9 +17,9 @@ import { random } from "@core/random";
 import { rom } from "@core/rom";
 import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "../save";
 import { Sprite } from "@core/gba/sprite";
-import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
-import { DoPokemonLeagueLightingEffect } from "../field/leagueLighting";
-import { spriteSheet } from "../field/gfx4bpp";
+import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "@core/field/fieldmap";
+import { DoPokemonLeagueLightingEffect } from "@core/field/leagueLighting";
+import { spriteSheet } from "@core/field/gfx4bpp";
 import { adjustFriendship, getDexFlag, GetPlayerTrainerId, leadMonIndex, nickname, speciesName, type Pokemon } from "@core/pokemon/pokemon";
 import { GetPokedexHeightWeight } from "../battle/ext";
 import { setFlavorTextFlagFromSpecialVars, updatePickStateFromSpecialVar8005 } from "../menus/keyItemScreens";
@@ -36,7 +36,7 @@ import { ShowEasyChatScreen } from "../easyChat2";
 import { preloadEasyChatScreen } from "../easyChat3";
 import { preloadBattleRecords, ShowBattleRecords } from "../battleRecords";
 import { BufferEReaderTrainerGreeting, SetEReaderTrainerGfxId, StartSpecialBattle } from "../battleTower";
-import type { ScriptRunner } from "./context";
+import type { ScriptRunner } from "@core/script/context";
 
 type Special = (ctx: ScriptRunner) => number | void;
 

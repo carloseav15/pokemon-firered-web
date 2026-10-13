@@ -27,7 +27,7 @@ import { AddTextPrinterParameterized, AddTextPrinterParameterized2, AddTextPrint
 import { AddWindow, CopyWindowToVram, COPYWIN_FULL, COPYWIN_GFX, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate } from "@core/hw/window";
 import { CreateMonIcon, LoadMonIconPalettes } from "./pokemonIcon";
 import { CreateObjectGraphicsSprite, CopyObjectGraphicsInfoToSpriteTemplate } from "./objectEventGraphics";
-import { GetRivalAvatarGraphicsIdByStateIdAndGender } from "./field/playerAvatar";
+import { GetRivalAvatarGraphicsIdByStateIdAndGender } from "@core/field/playerAvatar";
 import { Sin } from "@core/hw/trig";
 import { BackupHelpContext, RestoreHelpContext, SetHelpContext } from "./helpSystem";
 

@@ -1,9 +1,9 @@
 import { viewerClock, type ViewerClock } from "../clock";
 import { TILE, ANIM_RANGES } from "../constants";
-import type { TileRenderer } from "../../games/firered/field/tileRenderer";
-import type { TilesetAnimator } from "../../games/firered/field/tilesetAnimator";
+import type { TileRenderer } from "@core/field/tileRenderer";
+import type { TilesetAnimator } from "@core/field/tilesetAnimator";
 import type { TilesetData } from "@core/rom";
-import { NUM_METATILES_IN_PRIMARY } from "../../games/firered/field/fieldmap";
+import { NUM_METATILES_IN_PRIMARY } from "@core/field/fieldmap";
 import { composeMetatile, invalidateMetatile } from "./metatile";
 
 export type AnimatedCell = {

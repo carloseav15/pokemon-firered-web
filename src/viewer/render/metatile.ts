@@ -1,5 +1,5 @@
 import { TILE } from "../constants";
-import type { TileRenderer } from "../../games/firered/field/tileRenderer";
+import type { TileRenderer } from "@core/field/tileRenderer";
 
 const metatileCache = new WeakMap<TileRenderer, Map<number, HTMLCanvasElement>>();
 

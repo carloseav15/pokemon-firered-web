@@ -12,7 +12,7 @@ import { cdata, incbin, symName, type SymRef } from "@core/hw/assets";
 import { affineAnimsFrom, animsFrom, oamFrom } from "@core/hw/cdataSprite";
 import * as C from "./generated/constants";
 import { GetFaceDirectionAnimNum } from "./generated/eventObjectAnims";
-import { ApplyGlobalFieldPaletteTint } from "./field/fieldPalette";
+import { ApplyGlobalFieldPaletteTint } from "@core/field/fieldPalette";
 import { LoadPalette, OBJ_PLTT_ID } from "@core/hw/palette";
 import {
   CreateSprite, CreateSpriteAtEnd, FreeAllSpritePalettes, IndexOfSpritePaletteTag, LoadSpritePalette, MAX_SPRITES, gSprites, SetSubspriteTables,

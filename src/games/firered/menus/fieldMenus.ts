@@ -15,7 +15,7 @@ import { SetUsedFieldMoveQuestLogEvent, SetUsedFlyQuestLogEvent } from "../quest
 import { bagResult, GoToBagMenu, RemoveUsedItem, type BagHandlers, type BagTaskContext } from "../bagMenu";
 import { InitTMCase } from "../tmCase";
 import { InitBerryPouch } from "../berryPouch";
-import { StopPokemonLeagueLightingEffectTask } from "../field/leagueLighting";
+import { StopPokemonLeagueLightingEffectTask } from "@core/field/leagueLighting";
 import {
   CB2_ChooseMonToGiveItem, CB2_PartyMenuFromStartMenu, CB2_ShowPartyMenuForItemUse, ItemUseCB_EvolutionStone, ItemUseCB_Medicine, ItemUseCB_PPUp,
   ItemUseCB_RareCandy, ItemUseCB_SacredAsh, ItemUseCB_TMHM, ItemUseCB_TryRestorePP, GetCursorSelectionMonId, GetItemEffectType, SetItemUseCB, SetItemUseReturns, SetPartyMenuFieldHooks,
@@ -30,9 +30,9 @@ import { sound } from "@core/audio/sound";
 import * as MB from "../generated/metatileBehavior";
 import { joy, A_BUTTON, B_BUTTON } from "@core/gba/input";
 import { tasks } from "@core/gba/tasks";
-import { DIRECTION_VECTORS } from "../field/objectEvents";
-import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_UNDERWATER, PlayerGetDestCoords } from "../field/playerAvatar";
-import { startFishing } from "../field/fishing";
+import { DIRECTION_VECTORS } from "@core/field/objectEvents";
+import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_UNDERWATER, PlayerGetDestCoords } from "@core/field/playerAvatar";
+import { startFishing } from "@core/field/fishing";
 import { startItemFinder } from "./itemFinder";
 import { openHardwareMessage } from "./hardwareChoice";
 import { openFameChecker } from "./keyItemScreens";
@@ -41,7 +41,7 @@ import { flagGet, incrementGameStat } from "../save";
 import { GetBerryPowder } from "../script/specialsExtra";
 import { ItemUse_SetQuestLogEvent } from "../itemUse";
 import { FADE_FROM_BLACK, paletteFade, RGB_BLACK } from "@core/gba/fade";
-import { IsWeatherNotFadingIn } from "../field/weather";
+import { IsWeatherNotFadingIn } from "@core/field/weather";
 import { FieldCB_ReturnToFieldOpenStartMenu } from "../startMenu";
 
 

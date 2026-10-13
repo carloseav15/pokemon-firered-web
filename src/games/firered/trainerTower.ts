@@ -18,7 +18,7 @@ import { AddTextPrinterParameterized } from "./hw/text";
 import { BattleSetup_GetBattleTowerBattleTransition } from "./battle/battleSetup";
 import { sound } from "@core/audio/sound";
 import { G } from "./battle/globals";
-import { type ScriptRunner } from "./script/context";
+import { type ScriptRunner } from "@core/script/context";
 import {
   CEReaderTool_LoadTrainerTower,
   ReadTrainerTowerAndValidate,
@@ -26,7 +26,7 @@ import {
   type EReaderTrainerTowerSetSubstruct,
   type TrainerTowerFloor,
 } from "./cereaderTool";
-import { GetCurrentFieldMap } from "./field/fieldmap";
+import { GetCurrentFieldMap } from "@core/field/fieldmap";
 import * as C from "./generated/constants";
 import { ConvertIntToDecimalStringN, StringExpandPlaceholders } from "./generated/stringUtil";
 import { cdata, symName } from "@core/hw/assets";

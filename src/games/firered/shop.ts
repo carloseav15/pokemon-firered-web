@@ -60,9 +60,9 @@ import {
   BuyMenuQuantityBoxThinBorder,
 } from "./buyMenuHelpers";
 import { CreateItemMenuIcon, DestroyItemMenuIcon, GoToBagMenu, ItemId_GetDescription, ResetItemMenuIconState } from "./bagMenu";
-import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "./field/objectEvents";
-import { METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY } from "./field/fieldmap";
-import { CopyMapTilesetsToHw } from "./field/hwTilesets";
+import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS } from "@core/field/objectEvents";
+import { METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY } from "@core/field/fieldmap";
+import { CopyMapTilesetsToHw } from "@core/field/hwTilesets";
 import type { Game } from "./game";
 import { fieldMenu } from "./menus/fieldMenus";
 import { Menu, MENU_B_PRESSED, MENU_NOTHING_CHOSEN } from "./menus/menu";

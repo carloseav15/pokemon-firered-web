@@ -25,7 +25,7 @@ import { createMon, giveMonToPlayer } from '../../src/core/pokemon/pokemon.ts';
 import { save, newSaveData, setSave } from '../../src/games/firered/save.ts';
 import { registerCData } from '../../src/core/hw/assets.ts';
 import { GetTrainerBattleTransition } from '../../src/games/firered/battle/transition.ts';
-import type { Overworld } from '../../src/games/firered/field/overworld.ts';
+import type { Overworld } from '../../src/core/field/overworld.ts';
 
 const root = process.cwd() + '/public';
 (globalThis as any).fetch = async (url: string) => {

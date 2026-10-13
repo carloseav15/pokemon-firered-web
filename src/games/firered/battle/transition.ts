@@ -20,7 +20,7 @@ import type { Pokemon } from "@core/pokemon/pokemon";
 import { rom } from "@core/rom";
 import { incbin, incbin16 } from "@core/hw/assets";
 import { save } from "../save";
-import type { Overworld } from "../field/overworld";
+import type { Overworld } from "@core/field/overworld";
 import { MetatileBehavior_IsSurfable } from "../generated/metatileBehavior";
 import { Cos, Sin, gSineTable } from "@core/hw/trig";
 import { random as Random } from "@core/random";

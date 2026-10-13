@@ -2,7 +2,7 @@
 import './setupNodeGbaMock.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { gObjectEvents, ObjectEvent } from '../../src/games/firered/field/objectEvents.ts';
+import { gObjectEvents, ObjectEvent } from '../../src/core/field/objectEvents.ts';
 import { save } from '../../src/games/firered/save.ts';
 import { SaveObjectEvents, LoadObjectEvents, HasSavedObjectEvents } from '../../src/games/firered/loadSave.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';

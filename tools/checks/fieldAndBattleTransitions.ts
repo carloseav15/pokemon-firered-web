@@ -8,10 +8,10 @@ import { registerIncbinIndex, registerPack } from '../../src/core/hw/assets.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';
 import { rom, type MapHeader } from '../../src/core/rom.ts';
 import { save } from '../../src/games/firered/save.ts';
-import { loadFieldFx, FieldEffects } from '../../src/games/firered/field/fieldEffects.ts';
-import { ObjectEvent, ObjectManager, DIR_SOUTH } from '../../src/games/firered/field/objectEvents.ts';
-import { Overworld } from '../../src/games/firered/field/overworld.ts';
-import type { FieldMap } from '../../src/games/firered/field/fieldmap.ts';
+import { loadFieldFx, FieldEffects } from '../../src/core/field/fieldEffects.ts';
+import { ObjectEvent, ObjectManager, DIR_SOUTH } from '../../src/core/field/objectEvents.ts';
+import { Overworld } from '../../src/core/field/overworld.ts';
+import type { FieldMap } from '../../src/core/field/fieldmap.ts';
 import {
   GetWildBattleTransition,
   GetTrainerBattleTransition,
@@ -57,7 +57,7 @@ assert.ok(existsSync(process.cwd() + '/public/fr/' + fieldfxRaw.emoticons.file),
 console.log('✓ fieldfx.json templates and assets verified');
 
 console.log('--- 1b. Testing field_effect_helpers functions presence & cdata ---');
-const helpers = await import('../../src/games/firered/field/fieldEffectHelpers.ts');
+const helpers = await import('../../src/core/field/fieldEffectHelpers.ts');
 assert.equal(typeof helpers.SetUpReflection, 'function');
 // The connected FldEff_* live as FieldEffects methods (fieldEffects.ts), not as
 // helpers-module functions (see TAREAS-FINALES.md 1.5/1.11).

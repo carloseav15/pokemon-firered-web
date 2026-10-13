@@ -25,8 +25,8 @@
 // Needs loadCData("credits") and preloadCreditsMaps().
 
 import { tasks } from "@core/gba/tasks";
-import { TilesetAnimator } from "./field/tilesetAnimator";
-import { SetGlobalFieldTintMode } from "./field/fieldPalette";
+import { TilesetAnimator } from "@core/field/tilesetAnimator";
+import { SetGlobalFieldTintMode } from "@core/field/fieldPalette";
 import { cdata } from "@core/hw/assets";
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg, BG_ATTR_MOSAIC,
@@ -42,8 +42,8 @@ import { gMain, SetMainCallback2 } from "@core/hw/runtime";
 import { AnimateSprites, BuildOamBuffer } from "@core/hw/sprite";
 import { UpdatePaletteFade } from "@core/hw/palette";
 import { DoScheduledBgTilemapCopiesToVram } from "./hw/menuHelpers";
-import { FieldMap, loadMap, METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY, type LoadedMap } from "./field/fieldmap";
-import { CopyMapTilesetsToHw } from "./field/hwTilesets";
+import { FieldMap, loadMap, METATILE_ATTRIBUTE_LAYER_TYPE, NUM_METATILES_IN_PRIMARY, type LoadedMap } from "@core/field/fieldmap";
+import { CopyMapTilesetsToHw } from "@core/field/hwTilesets";
 import { rom } from "@core/rom";
 
 export type CreditsOverworldCmd = { unk_0: number; unk_2: number; unk_4: number };

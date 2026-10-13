@@ -15,7 +15,7 @@ import { flagClear, flagGet, flagSet, save, SV, varSet } from "../save";
 import { createMaleMon, createMon, genderFromPersonality, healMon, MON_FEMALE, type Pokemon } from "@core/pokemon/pokemon";
 import { random32 } from "@core/random";
 import type { Game } from "../game";
-import { GetSafariZoneFlag } from "../field/safariZone";
+import { GetSafariZoneFlag } from "@core/field/safariZone";
 import { QL_FinishRecordingScene, QuestLogEvents_HandleEndTrainerBattle } from "../questLogEvents";
 
 export const TRAINER_BATTLE_SINGLE = 0;

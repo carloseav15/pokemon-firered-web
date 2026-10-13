@@ -10,9 +10,9 @@ import { rom } from "@core/rom";
 import { flagClear, flagGet, flagSet, save, SV, varGet } from "../save";
 import { checkBagHasItem } from "../pokemon/items";
 import type { Game } from "../game";
-import type { ObjectEvent } from "./objectEvents";
-import type { Overworld } from "./overworld";
-import { PLAYER_AVATAR_GFX_VSSEEKER } from "./playerAvatar";
+import type { ObjectEvent } from "@core/field/objectEvents";
+import type { Overworld } from "@core/field/overworld";
+import { PLAYER_AVATAR_GFX_VSSEEKER } from "@core/field/playerAvatar";
 import { ItemUse_SetQuestLogEvent, Task_ItemUse_CloseMessageBoxAndReturnToField } from "../itemUse";
 import { gQuestLogState, QuestLogRecordPlayerAvatarGfxTransitionWithDuration } from "../questLogEvents";
 

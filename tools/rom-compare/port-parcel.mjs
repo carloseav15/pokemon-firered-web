@@ -141,7 +141,7 @@ await p.evaluate(async () => {
   const { setRandomStateForTest } = await import("/src/core/random.ts");
   // The wild-encounter rng (WildEncounterRandom, sWildEncounterData.rngState) is a separate LCG: pinned the same way
   // (ROM address 0x020386d0, found by differential scan), to a value whose first output is >= 1000 mod 1600.
-  const { sWildEncounterData } = await import("/src/games/firered/field/wildEncounter.ts");
+  const { sWildEncounterData } = await import("/src/core/field/wildEncounter.ts");
   // Battle log, same fields as parcel.lua (BSTART/BHP/BEND): party HP of both sides while a battle is on.
   const { gEnemyParty: enemyParty } = await import("/src/core/pokemon/mon.ts");
   window.__btl = [];

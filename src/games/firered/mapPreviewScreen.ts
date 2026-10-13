@@ -9,7 +9,7 @@ import { rom } from "@core/rom";
 import { Window } from "@core/gba/window";
 import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
 import { printText, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "@core/gba/textPrinter";
-import { tilemapCanvas } from "./field/gfx4bpp";
+import { tilemapCanvas } from "@core/field/gfx4bpp";
 import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_WHITE, paletteFade, RGB_BLACK } from "@core/gba/fade";
 import { B_BUTTON, JOY_HELD } from "@core/gba/input";
 import { tasks } from "@core/gba/tasks";
@@ -29,7 +29,7 @@ import {
   REG_OFFSET_BG2VOFS,
   REG_OFFSET_DISPCNT,
 } from "@core/hw/ppu";
-import type { Overworld } from "./field/overworld";
+import type { Overworld } from "@core/field/overworld";
 import { getMapNameGenericBytes } from "./regionMap";
 
 export const MPS_VIRIDIAN_FOREST = 0;

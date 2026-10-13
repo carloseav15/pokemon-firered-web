@@ -8,7 +8,7 @@ import { random } from "@core/random";
 import { rom } from "@core/rom";
 import type { Game, Scene } from "../game";
 import type { BattleRequest } from "./battleSetup";
-import { PLAYER_AVATAR_FLAG_SURFING } from "../field/playerAvatar";
+import { PLAYER_AVATAR_FLAG_SURFING } from "@core/field/playerAvatar";
 import { CopyMon, GetMonData, gEnemyParty, SetMonData, ZeroEnemyPartyMons, type Mon } from "@core/pokemon/mon";
 import { AllocateBattleSpritesData, AllocateMonSpritesGfx, FreeBattleSpritesData, FreeMonSpritesGfx, G, resetBattleStructs } from "./globals";
 import { CB2_InitBattle } from "./main_init";

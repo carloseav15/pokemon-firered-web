@@ -51,7 +51,7 @@ import {
   Overworld_DoScrollSceneForCredits, preloadCreditsMaps, type CreditsOverworldCmd,
 } from "./overworldCredits";
 import { LoadMonPicInWindow } from "./trainerPokemonSprites";
-import { FieldMap } from "./field/fieldmap";
+import { FieldMap } from "@core/field/fieldmap";
 import type { Game } from "./game";
 import { fieldMenu } from "./menus/fieldMenus";
 import { flagClear, save } from "./save";

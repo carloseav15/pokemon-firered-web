@@ -1,5 +1,5 @@
 // Headless check for the event_object_movement.c MovementAction_* dispatch table
-// (src/games/firered/field/objectEvents.ts: MOVEMENT_ACTION_STEPS / movementActionStep).
+// (src/core/field/objectEvents.ts: MOVEMENT_ACTION_STEPS / movementActionStep).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
@@ -7,7 +7,7 @@ import { registerCData } from "../../src/core/hw/assets";
 import "./setupNodeGbaMock";
 import { rom } from "../../src/core/rom";
 import * as C from "../../src/games/firered/generated/constants";
-import { DIR_EAST, DIR_NORTH, DIR_SOUTH, ObjectEvent, ObjectEvents } from "../../src/games/firered/field/objectEvents";
+import { DIR_EAST, DIR_NORTH, DIR_SOUTH, ObjectEvent, ObjectEvents } from "../../src/core/field/objectEvents";
 
 const root = process.cwd() + "/public/fr/";
 (rom as any).charmap = JSON.parse(readFileSync(root + "charmap.json", "utf8"));
