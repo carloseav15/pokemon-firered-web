@@ -9,7 +9,7 @@
 set -eu
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"; cd "$ROOT"
 W="${1:-/tmp/rom-milestone}"; mkdir -p "$W"
-ENDMAP="${PV_ENDMAP:-{15,0\}}"
+ENDMAP="${PV_ENDMAP:-"{15,0}"}"
 STATE="${RV_STATE:-/tmp/rom-postrival.ss}"
 export BASE="${BASE:-http://localhost:5197/}"
 

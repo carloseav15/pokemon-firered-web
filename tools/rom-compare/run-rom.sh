@@ -35,14 +35,21 @@ AS
 fi
 
 CMD="${PRELUDE}; dofile('${LUA}')"
-osascript - "$CMD" <<'AS' >/dev/null
+for attempt in 1 2 3 4 5; do
+  if osascript - "$CMD" <<'AS' >/dev/null 2>&1
 on run argv
-  tell application "System Events" to tell process "mGBA" to tell splitter group 1 of window "Scripting"
-    set value of text field 1 to (item 1 of argv)
-    click button "Run"
+  tell application "System Events"
+    tell process "mGBA"
+      set theField to text field 1 of splitter group 1 of window "Scripting"
+      set value of theField to (item 1 of argv)
+      click button "Run" of splitter group 1 of window "Scripting"
+    end tell
   end tell
 end run
 AS
+  then break; fi
+  sleep 2
+done
 
 END=$(( $(date +%s) + LIMIT ))
 while [ "$(date +%s)" -lt "$END" ]; do
