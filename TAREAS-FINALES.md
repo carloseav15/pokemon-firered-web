@@ -291,8 +291,14 @@ Receta:
   `sDirectionToVectors`); `SetObjectEventCoords`.
   - Encontrado y corregido (`1f6608ff`): `MovementType_FaceDownAndUp`/`FaceLeftAndRight` usan
     `gMovementDelaysMedium`; el TS usaba `Short` para todos salvo LookAround. Cubierto en `check:movement-types`.
-  - Sin revisar aún en este bloque: pasos `Step0–Step3` y el resto de `MovementType_*` (máquina fusionada en
-    `movementTypeBranch`); `ObjectEventIsTrainerAndCloseToPlayer` y `PlayerGetDestCoords`.
+  - `movementTypeBranch` (máquina fusionada de los `MovementType_*`) revisada contra el C: LookAround, Face*, FaceDirection,
+    Wander*, Rotate*, WalkBackAndForth, las 24 `WalkSequence*` (ruta, índice, eje y valor de las 24 coinciden),
+    `MoveNextDirectionInSequence`, Invisible, RaiseHand*, Buried, Disguise, WalkInPlace/JogInPlace y
+    `gInitialMovementTypeFacingDirections` (81 entradas). Corregido (commit siguiente a `1f6608ff`):
+    `FACE_UP/DOWN/LEFT/RIGHT` y `WALK/JOG_IN_PLACE` usaban la dirección inicial del tipo en vez de
+    `facingDirection` en `Step0` y `WALK/JOG_IN_PLACE` devolvía FALSE donde el C devuelve TRUE (un fotograma).
+  - Sin revisar aún: `MovementType_CopyPlayer*` y `CopyablePlayerMovement_*` (el TS usa `runCopyablePlayerMovement`),
+    `ObjectEventIsTrainerAndCloseToPlayer`, `PlayerGetDestCoords`, y la capa `MovementAction_*`.
 - [ ] `GetAvailableObjectEventId`, `TrySetupObjectEventSprite`, `TrySpawnObjectEventTemplate`,
   `TrySpawnObjectEvents`, `RemoveObjectEventsOutsideView`, getters/overrides de plantillas;
   `GroundEffect_*`/`DoTracksGroundEffect_*`.
