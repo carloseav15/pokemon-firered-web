@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comparador FireRed / Emerald</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
+      * { box-sizing: border-box; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.4 system-ui, sans-serif; }
+      header { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line); padding:8px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      header h1 { font-size:15px; margin:0 8px 0 0; }
+      button, input[type=search] { background:#1f2937; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:5px 10px; font:inherit; }
+      button.on { background:#2563eb; border-color:#2563eb; }
+      main { padding:12px 16px 40px; max-width:1400px; margin:0 auto; }
+      #summary { color:var(--mut); margin:6px 0 12px; }
+      table { border-collapse:collapse; width:100%; }
+      th, td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+      th { color:var(--mut); font-weight:600; position:sticky; top:49px; background:var(--bg); }
+      .a { color:var(--a); } .b { color:var(--b); }
+      .chip { display:inline-block; margin:1px 6px 1px 0; padding:1px 6px; background:#1b2433; border-radius:4px; }
+      .chip em { color:var(--mut); font-style:normal; }
+      .only { color:var(--mut); font-style:italic; }
+      .id { color:var(--mut); width:56px; }
+      .trainers { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+      @media (max-width: 900px) { .trainers { grid-template-columns:1fr; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Comparador <span class="a">FireRed</span> / <span class="b">Emerald</span></h1>
+      <button data-tab="species" class="on">Pokémon</button>
+      <button data-tab="moves">Movimientos</button>
+      <button data-tab="items">Objetos</button>
+      <button data-tab="trainers">Entrenadores</button>
+      <input id="q" type="search" placeholder="Buscar por nombre…" />
+      <label><input id="onlyDiff" type="checkbox" checked /> solo con diferencias</label>
+      <a href="/viewer.html" style="color:var(--mut);margin-left:auto">Visor del mundo →</a>
+    </header>
+    <main>
+      <div id="summary">Cargando datos…</div>
+      <div id="out"></div>
+    </main>
+    <script type="module" src="/src/compare/main.ts"></script>
+  </body>
+</html>

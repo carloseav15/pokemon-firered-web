@@ -12,6 +12,7 @@
     "check:honesty": "python3 tools/checks/honesty.py",
     "check:layers": "python3 tools/checks/layers.py",
     "check:warps": "python3 tools/checks/warps.py",
+    "check:compare-data": "python3 tools/checks/compare_data.py",
     "check:all": "python3 tools/checks/all.py",
     "check:cry-timing": "esbuild tools/checks/cryTiming.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/cryTiming.mjs && node .decomp-build/checks/cryTiming.mjs",
     "check:m4a": "esbuild tools/checks/m4aAudio.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/m4aAudio.mjs && node .decomp-build/checks/m4aAudio.mjs",

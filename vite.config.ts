@@ -16,7 +16,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      input: { main: "index.html", viewer: "viewer.html" },
+      input: { main: "index.html", viewer: "viewer.html", compare: "compare.html" },
     },
   },
 });
