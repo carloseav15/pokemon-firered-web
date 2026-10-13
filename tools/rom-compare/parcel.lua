@@ -13,7 +13,10 @@ local out = io.open(PV_OUT or "/tmp/rom-parcel.txt", "w")
 out:setvbuf("no")
 local MAXF = PV_MAXF or 60000
 local TR = PARCEL_TRACE
-local MART_SCENE = 0x4000 + (16471 - 0x4000)   -- VAR_MAP_SCENE_VIRIDIAN_CITY_MART = 0x4057
+local MART_SCENE = 0x4057   -- VAR_MAP_SCENE_VIRIDIAN_CITY_MART
+local ENDVAR, ENDVAL = PV_ENDVAR or MART_SCENE, PV_ENDVAL or 1   -- the run ends 600 frames after ENDVAR == ENDVAL
+local mapCount, parcelAt = {}, nil
+local lastIdx, idxFrames = 0, 0
 local function sb() return I:read32(0x03005008 - 0x03000000) - 0x02000000 end
 local function pos() local b = sb(); return W:read16(b), W:read16(b + 2) end
 local function map() local b = sb(); return W:read8(b + 4), W:read8(b + 5) end
@@ -29,6 +32,8 @@ local function dump(tag, n)
   local b2 = I:read32(0x0300500C - 0x03000000) - 0x02000000
   out:write(string.format("MONEY %s %08x key=%08x\n", tag, W:read32(b + 0x290), W:read32(b2 + 0xF20)))
   out:write(string.format("PARTY %s count=%d mon0=%s\n", tag, W:read8(0x02024029 - 0x02000000), hex(0x02024284 - 0x02000000, 100)))
+  -- bagPocket_KeyItems (+0x3B8, 30 slots) and bagPocket_PokeBalls (+0x430, 13 slots): u16 item id, u16 quantity ^ key
+  out:write("BAG ", tag, " ", hex(b + 0x3B8, 172), "\n")
   out:flush()
 end
 -- PV_SCAN: locate sWildEncounterData.rngState (EWRAM u32, ISO_RANDOMIZE2 = 1103515245 * v + 12345 per grass step) by
@@ -73,19 +78,25 @@ _G.pv_cb = callbacks:add("frame", function()
     if snap1 and not scanned and inBattle() then scanned = true scan(snap()) out:write("SCANNED f=" .. n .. "\n") end
   end
   if mapKey ~= lastMap then
-    if lastMap then dump(string.format("map:%d,%d", g, m), n) end
+    if lastMap then
+      mapCount[mapKey] = (mapCount[mapKey] or 0) + 1
+      dump(string.format("map:%d,%d#%d", g, m, mapCount[mapKey]), n)
+    end
     lastMap = mapKey
   end
   -- Position on the trace: look a few entries ahead (a step can skip an entry when a script moves the player).
   for k = idx, math.min(#TR, idx + 6) do
     if same(TR[k], g, m, x, y) then idx = k break end
   end
+  if idx ~= lastIdx then lastIdx, idxFrames = idx, 0 else idxFrames = idxFrames + 1 end
   local e, nx = TR[idx], TR[idx + 1]
   local set = {}
   local burst = (n % 50) < 30
   local tapA = (n % 20) < 3
   if n % 300 == 0 then out:write(string.format("T f=%d idx=%d/%d pos=%d,%d map=%d,%d scene=%d\n", n, idx, #TR, x, y, g, m, var(MART_SCENE))) end
-  if var(MART_SCENE) == 1 and not doneAt then doneAt = n end
+  if var(MART_SCENE) == 1 and not parcelAt then parcelAt = n end
+  if parcelAt and parcelAt > 0 and n - parcelAt == 300 then dump("parcel", n) end
+  if var(ENDVAR) == ENDVAL and not doneAt then doneAt = n end
   if doneAt and doneAt > 0 and n - doneAt >= 600 then
     dump("end", n) out:write("DONE\n") out:close() doneAt = -1 return
   end
@@ -95,9 +106,16 @@ _G.pv_cb = callbacks:add("frame", function()
   elseif not onTrace then
     -- off the trace (a script moved the player or the ROM diverged): only A until the position matches again
     if tapA then set[KEY.A] = true end
-  elseif e[6] then
-    -- a script ran on this tile in the port: alternate A bursts and the recorded direction so neither side stalls
+  elseif e[6] and idxFrames < (e[7] or 600) then
+    -- a script ran on this tile in the port: alternate A bursts and the recorded direction for as many frames as the
+    -- port spent there (e[7]); beyond that only the direction, so a finished script is not re-triggered by A
+    -- (facing an NPC and pressing A starts a new conversation).
     if burst then if tapA then set[KEY.A] = true end
+    elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
+  elseif e[6] then
+    -- budget spent: one A tap per 70 frames closes a box that is still open, the rest of the cycle walks away, so an
+    -- A on a free field (which would talk to the NPC in front) is followed by a direction that leaves it
+    if (n % 70) < 3 then set[KEY.A] = true
     elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
   else
     local d = e[5]

@@ -31,6 +31,7 @@ const dump = tag => p.evaluate(async ({ tag }) => {
   const e = gEnemyParty[0];
   return { tag, st: s, scene: sv.vars[0x55], money: sv.money, flags: sv.flags.slice(), vars: sv.vars.slice(),
     partyCount: sv.party.length, mon0: sv.party[0] ? JSON.parse(JSON.stringify(sv.party[0])) : null,
+    bag: JSON.parse(JSON.stringify(sv.bag)),
     enemy0: e && e.species ? JSON.parse(JSON.stringify(e)) : null };
 }, { tag });
 async function hold(dir, pred, label, timeout = 8000) {
@@ -118,12 +119,15 @@ note("rival battle done", JSON.stringify(await state()));
 const mapNum = JSON.parse(await p.evaluate(() => JSON.stringify(window.frDebug.rom.constants)));
 const trace = [];
 const mapId = m => mapNum[m];
-const mapDumps = [];
+const mapDumps = [], mapCount = {};
 let lastMap = (await state()).map;
 async function record(dir) {
   const s = await state();
-  trace.push({ num: mapId(s.map), x: s.x, y: s.y, dir: dir ?? null, script: s.script === true });
-  if (s.map !== lastMap) { mapDumps.push(await dump("map:" + s.map)); lastMap = s.map; note("map", s.map); }
+  trace.push({ num: mapId(s.map), x: s.x, y: s.y, dir: dir ?? null, script: s.script === true, t: Date.now() });
+  if (s.map !== lastMap) {
+    mapCount[s.map] = (mapCount[s.map] ?? 0) + 1;
+    mapDumps.push(await dump(`map:${s.map}#${mapCount[s.map]}`)); lastMap = s.map; note("map", s.map);
+  }
 }
 await p.evaluate(async () => {
   const { H } = await import("/tools/playtest/driver.js");
@@ -212,19 +216,49 @@ for (let t = Date.now(); Date.now() - t < 180000;) {
   if (v === 1 && await free()) break;
   await record(null); await tapA(); await sleep(260);
 }
+await sleep(5000);
+const parcelDump = await dump("parcel");
+note("parcel", JSON.stringify(parcelDump.st) + " scene=" + parcelDump.vars[0x57]);
+// ---- Back to the lab: Mart -> Viridian -> Route 1 -> Pallet Town -> Oak (Pokedex scene) ----
+// The three mat tiles are warp events but only the middle one has an arrow-warp behavior: try them in order.
+for (const w of (await p.evaluate(() => window.H.warps()))) {
+  if ((await state()).map !== "MAP_VIRIDIAN_CITY_MART") break;
+  if (!(await gotoTile(w[0], w[1]))) continue;
+  for (let i = 0; i < 2 && (await state()).map === "MAP_VIRIDIAN_CITY_MART"; i++) { await stepDir("D"); await settle(); }
+}
+const wv = await p.evaluate(() => window.frGame.overworld.loaded.layout.width);
+const hv = await p.evaluate(() => window.frGame.overworld.loaded.layout.height);
+const bottom = (w, h) => Array.from({ length: w }, (_, x) => [x, h - 1]).sort((a, b) => Math.abs(a[0] - 23) - Math.abs(b[0] - 23));
+await leaveMap("MAP_ROUTE1", "D", bottom(wv, hv));
+const wr = await p.evaluate(() => window.frGame.overworld.loaded.layout.width);
+const hr = await p.evaluate(() => window.frGame.overworld.loaded.layout.height);
+await leaveMap("MAP_PALLET_TOWN", "D", bottom(wr, hr).sort((a, b) => Math.abs(a[0] - 12) - Math.abs(b[0] - 12)));
+const labDoor = await p.evaluate(() => window.H.warps().find(w => /OAKS_LAB/.test(w[2])));
+note("lab door", JSON.stringify(labDoor));
+await gotoTile(labDoor[0], labDoor[1] + 1);
+for (let i = 0; i < 5 && (await state()).map === "MAP_PALLET_TOWN"; i++) { await stepDir("U"); await settle(); }
+await settle();
+await gotoTile(6, 4);                       // Oak stands at (6,3): face him and talk
+await stepDir("U"); await settle();
+for (let t = Date.now(); Date.now() - t < 240000;) {
+  const v = await p.evaluate(() => window.frDebug.save.save.vars[0x55]);
+  if (v === 6 && await free()) break;
+  await record(null); await tapA(); await sleep(260);
+}
 await sleep(10000);
 const end = await dump("end");
-const parcel = await p.evaluate(() => JSON.stringify(window.frDebug.save.save.bag));
-note("end", JSON.stringify(end.st) + " scene=" + end.vars[0x57]);
+note("end", JSON.stringify(end.st) + " lab scene=" + end.vars[0x55]);
 // One entry per visited tile: the last direction pressed there and whether a script ran there.
 const tiles = [];
-for (const t of trace) {
-  const last = tiles[tiles.length - 1];
-  if (last && last.num === t.num && last.x === t.x && last.y === t.y) { last.dir = t.dir ?? last.dir; last.script = last.script || t.script; }
-  else tiles.push({ ...t });
+for (let i = 0; i < trace.length; i++) {
+  const t = trace[i], last = tiles[tiles.length - 1];
+  // Wall-clock milliseconds this tile spent with a script running (until the next sample, capped at 1 s).
+  const ms = t.script && trace[i + 1] ? Math.min(1000, trace[i + 1].t - t.t) : 0;
+  if (last && last.num === t.num && last.x === t.x && last.y === t.y) { last.dir = t.dir ?? last.dir; last.script = last.script || t.script; last.ms += ms; }
+  else tiles.push({ ...t, ms });
 }
 writeFileSync(process.env.TRACE ?? "/tmp/port-parcel-trace.lua",
-  "PARCEL_TRACE = {\n" + tiles.map(t => { const g = t.num >> 8, n = t.num & 255; return `{${g},${n},${t.x},${t.y},${t.dir ? `"${t.dir}"` : "nil"},${t.script}},`; }).join("\n") + "\n}\n");
-writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, end, bag: JSON.parse(parcel), errors: errs, traceLength: tiles.length }, null, 1));
+  "PARCEL_TRACE = {\n" + tiles.map(t => { const g = t.num >> 8, n = t.num & 255; return `{${g},${n},${t.x},${t.y},${t.dir ? `"${t.dir}"` : "nil"},${t.script},${Math.ceil(t.ms * 0.06 * 1.3) + 180}},`; }).join("\n") + "\n}\n");
+writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, errors: errs, traceLength: tiles.length }, null, 1));
 console.log("trace", trace.length, "errors", errs.length, errs.slice(0, 3).join(" | "));
 await b.close();

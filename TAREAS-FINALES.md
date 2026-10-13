@@ -578,8 +578,12 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   `VAR_QUEST_LOG_MON_COUNTS`/`VAR_QLBAK_MAP_LAYOUT`, consistente con `quest_log.c` pero sin verificar en la ROM).
   Fase 7 (Ruta 1 → Verde → Tienda → Paquete de Oak, informe §15): flags/vars/posición idénticos en cada
   cambio de mapa y al recibir el paquete (solo difieren las variables del Quest Log por haber ganado el port la
-  batalla). Falta: siguiente hito (devolver el paquete → Pokédex; Ruta 2/Bosque Verde), volcar la bolsa de la
-  ROM, automatizar mGBA sin Enter manual.
+  batalla). Siguiente tramo (devolver el paquete → Pokédex): el port lo completa en tiempo real (`port-parcel.mjs`, escena
+  del laboratorio = 6); la repetición en la ROM (`parcel.lua`) queda atascada en el mostrador de la Tienda
+  (4,3): tras la escena del paquete el dependiente vuelve a hablar con cada A y el cuadro no cierra con el
+  presupuesto de A por casilla ni con A única cada 70 fotogramas. Falta: resolver ese atasco (p. ej. leer el
+  estado del script/cuadro de texto de la ROM en vez de contar fotogramas), Ruta 2/Bosque Verde, volcado de bolsa
+  ya añadido al Lua (`BAG`), automatizar mGBA sin Enter manual.
 - [x] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`; revalidado con `e03bdc7a`,
   `526e9004`): `tools/playtest/smoke/scene-scan.job.mjs` ejecutó 423 etiquetas con `applymovement` de todo el
   decomp en su mapa (384 terminan, 32 entran en combate, resto = artefactos: créditos, enlace, Trainer Tower y
