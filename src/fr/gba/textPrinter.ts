@@ -407,8 +407,9 @@ export function RenderText(printer: TextPrinter): number {
               sound.playSE(printer.next() | (printer.next() << 8));
               return RENDER_REPEAT;
             case C.EXT_CTRL_CODE_ESCAPE:
+              // text.c: currentChar++; currChar = *currentChar; (no second increment: that byte is read again next call)
               printer.pos++;
-              currChar = printer.next();
+              currChar = printer.str[printer.pos] ?? EOS;
               break;
             case C.EXT_CTRL_CODE_SHIFT_RIGHT:
               printer.currentX = printer.x + printer.next();
