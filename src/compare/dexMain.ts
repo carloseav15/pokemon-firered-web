@@ -27,7 +27,8 @@ let locB: Map<number, Location[]>;
 let ids: number[] = [];
 let selected = 0;
 
-const sprite = (root: string, kind: "front" | "front_shiny", id: number) => `${root}/gfx/pokemon/${kind}/${id}.png`;
+type SpriteKind = "front" | "front_shiny" | "back" | "back_shiny" | "icon" | "footprint" | "front_anim";
+const sprite = (root: string, kind: SpriteKind, id: number) => `${root}/gfx/pokemon/${kind}/${id}.png`;
 
 function ul(items: string[], empty = "—"): string {
   return items.length ? `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>` : `<span class="none">${empty}</span>`;
@@ -51,13 +52,31 @@ function show(id: number): void {
   document.querySelectorAll(".tile").forEach((t) => t.classList.toggle("sel", (t as HTMLElement).dataset.id === String(id)));
   const c: Card = buildCard(A, B, id, locA, locB);
   const sameName = c.nameA === c.nameB;
-  const spr = (root: string, kind: "front" | "front_shiny", label: string) =>
-    `<div class="sprite"><img src="${sprite(root, kind, id)}" alt="" onerror="this.parentElement.style.display='none'" />${label}</div>`;
+  // Cada sprite oculta su casilla si el juego no lo tiene (p. ej. la hoja animada solo existe en Emerald).
+  const spr = (root: string, kind: SpriteKind, label: string) => {
+    const url = sprite(root, kind, id);
+    if (kind === "icon") {
+      // Hoja de 32x64: dos fotogramas de 32x32 que se alternan.
+      return `<div class="sprite"><div class="icon" style="background-image:url(${url})"></div>${label}<img src="${url}" alt="" style="display:none" onerror="this.parentElement.style.display='none'" /></div>`;
+    }
+    if (kind === "front_anim") {
+      return `<div class="sprite"><div class="anim" style="background-image:url(${url})"></div>${label}<img src="${url}" alt="" style="display:none" onerror="this.parentElement.style.display='none'" /></div>`;
+    }
+    const cls = kind === "footprint" ? ' class="foot"' : "";
+    return `<div class="sprite"><img${cls} src="${url}" alt="" onerror="this.parentElement.style.display='none'" />${label}</div>`;
+  };
   detailEl.innerHTML = `
     <h2>#${String(c.national).padStart(3, "0")} ${esc(c.nameA)}${sameName ? "" : ` <span style="color:var(--b)">/ ${esc(c.nameB)}</span>`}</h2>
     <div class="sprites">
       ${spr("/fr", "front", "FireRed")}${spr("/fr", "front_shiny", "FireRed · variocolor")}
+      ${spr("/fr", "back", "FireRed · espalda")}${spr("/fr", "back_shiny", "FireRed · espalda variocolor")}
+      ${spr("/fr", "icon", "FireRed · icono")}${spr("/fr", "footprint", "FireRed · huella")}
+    </div>
+    <div class="sprites">
       ${spr("/emerald", "front", "Emerald")}${spr("/emerald", "front_shiny", "Emerald · variocolor")}
+      ${spr("/emerald", "front_anim", "Emerald · animación")}
+      ${spr("/emerald", "back", "Emerald · espalda")}${spr("/emerald", "back_shiny", "Emerald · espalda variocolor")}
+      ${spr("/emerald", "icon", "Emerald · icono")}${spr("/emerald", "footprint", "Emerald · huella")}
     </div>
     <h3>En común</h3>
     ${dl(c.common)}

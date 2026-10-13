@@ -25,6 +25,11 @@
       .sprites { display:flex; flex-wrap:wrap; gap:14px; margin:10px 0; }
       .sprite { background:#0f1520; border:1px solid var(--line); border-radius:8px; padding:6px 10px; text-align:center; font-size:11px; color:var(--mut); }
       .sprite img { width:128px; height:128px; image-rendering:pixelated; display:block; }
+      .sprite img.foot { width:64px; height:64px; margin:32px; }
+      .sprite .icon { width:96px; height:96px; margin:16px; image-rendering:pixelated; background-size:96px 192px; animation:icon 0.5s steps(1) infinite; }
+      .sprite .anim { width:128px; height:128px; image-rendering:pixelated; background-size:128px 256px; animation:anim 0.6s steps(1) infinite; }
+      @keyframes icon { 0% { background-position:0 0; } 50% { background-position:0 -96px; } }
+      @keyframes anim { 0% { background-position:0 0; } 50% { background-position:0 -128px; } }
       dl { display:grid; grid-template-columns:170px 1fr; gap:4px 12px; margin:0; }
       dt { color:var(--mut); } dd { margin:0; }
       .cols { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
@@ -38,7 +43,8 @@
       <h1>Pokédex <span style="color:var(--a)">FireRed</span> / <span style="color:var(--b)">Emerald</span></h1>
       <input id="q" type="search" placeholder="Nombre o número…" />
       <span id="count" style="color:var(--mut)"></span>
-      <a href="/compare.html" style="margin-left:auto">Comparador de diferencias →</a>
+      <a href="/library.html" style="margin-left:auto">Biblioteca visual →</a>
+      <a href="/compare.html">Comparador de diferencias →</a>
       <a href="/viewer.html">Visor del mundo →</a>
     </header>
     <div id="layout">

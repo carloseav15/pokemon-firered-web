@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biblioteca visual FireRed / Emerald</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.45 system-ui, sans-serif; }
+      header { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line); padding:8px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      header h1 { font-size:15px; margin:0 8px 0 0; }
+      button, input[type=search] { background:#1f2937; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:5px 10px; font:inherit; }
+      button.on { background:#2563eb; border-color:#2563eb; }
+      button.ga.on { background:#b45309; border-color:#b45309; } button.gb.on { background:#0369a1; border-color:#0369a1; }
+      a { color:var(--mut); }
+      main { padding:12px 16px 40px; max-width:1500px; margin:0 auto; }
+      #summary { color:var(--mut); margin:4px 0 12px; }
+      .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; }
+      .card { background:#0f1520; border:1px solid var(--line); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; }
+      .card h4 { margin:0; font-size:13px; }
+      .card small { color:var(--mut); }
+      .pic { height:96px; display:flex; align-items:center; justify-content:center; }
+      .pic img { max-height:96px; max-width:100%; image-rendering:pixelated; }
+      .party { display:flex; flex-wrap:wrap; gap:2px; }
+      .mon { width:36px; text-align:center; font-size:9px; color:var(--mut); }
+      .mon .ic { width:32px; height:32px; margin:0 auto; background-size:32px 64px; image-rendering:pixelated; }
+      .npc { width:100%; display:flex; justify-content:center; align-items:flex-end; min-height:72px; }
+      .npc div { image-rendering:pixelated; background-repeat:no-repeat; transform-origin:bottom center; }
+      .item { flex-direction:row; align-items:flex-start; }
+      .item .ic { width:48px; height:48px; image-rendering:pixelated; flex:none; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Biblioteca visual</h1>
+      <button data-tab="trainers" class="on">Entrenadores</button>
+      <button data-tab="items">Objetos</button>
+      <button data-tab="npcs">NPC y objetos de mapa</button>
+      <span style="width:12px"></span>
+      <button data-game="/fr" class="ga on">FireRed</button>
+      <button data-game="/emerald" class="gb">Emerald</button>
+      <input id="q" type="search" placeholder="Buscar…" />
+      <a href="/dex.html" style="margin-left:auto">Pokédex →</a>
+      <a href="/compare.html">Diferencias →</a>
+      <a href="/viewer.html">Visor del mundo →</a>
+    </header>
+    <main>
+      <div id="summary">Cargando datos…</div>
+      <div id="out" class="grid"></div>
+    </main>
+    <script type="module" src="/src/compare/libraryMain.ts"></script>
+  </body>
+</html>

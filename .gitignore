@@ -19,3 +19,11 @@ tools/playtest/runs/
 
 # Exported Emerald browser data (44 MB; regenerate with EXPORT_GAME=emerald python3 tools/decomp/export.py)
 public/emerald/
+
+# Sprites exported for the Pokedex/library pages (regenerate: python3 tools/decomp/export.py graphics)
+public/fr/gfx/pokemon/back/
+public/fr/gfx/pokemon/back_shiny/
+public/fr/gfx/pokemon/icon/
+public/fr/gfx/pokemon/footprint/
+public/fr/gfx/items/
+public/fr/gfx/trainers/
