@@ -59,7 +59,11 @@ export function WEATHER_HAS_EFFECT(): boolean {
   return AbilityBattleEffects(C.ABILITYEFFECT_CHECK_ON_FIELD, 0, C.ABILITY_CLOUD_NINE, 0, 0) === 0
     && AbilityBattleEffects(C.ABILITYEFFECT_CHECK_ON_FIELD, 0, C.ABILITY_AIR_LOCK, 0, 0) === 0;
 }
-export const WEATHER_HAS_EFFECT2 = WEATHER_HAS_EFFECT;
+/** WEATHER_HAS_EFFECT2 (battle_util.h): the same test in ABILITYEFFECT_FIELD_SPORT mode, which does not require hp != 0. */
+export function WEATHER_HAS_EFFECT2(): boolean {
+  return AbilityBattleEffects(C.ABILITYEFFECT_FIELD_SPORT, 0, C.ABILITY_CLOUD_NINE, 0, 0) === 0
+    && AbilityBattleEffects(C.ABILITYEFFECT_FIELD_SPORT, 0, C.ABILITY_AIR_LOCK, 0, 0) === 0;
+}
 
 export function IS_BATTLE_TYPE_GHOST_WITHOUT_SCOPE(flags: number): boolean {
   return (flags & C.BATTLE_TYPE_GHOST) !== 0 && (flags & C.BATTLE_TYPE_GHOST_UNVEILED) === 0;
