@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Mapa del mundo de Crystal (Johto + Kanto) a partir de las conexiones de public/crystal/maps.json.
 
-Escribe en public/crystal/world/: world.json, overview.png (16 px por bloque) y teselas de 1024 px
-a 32 px por bloque (t_<cx>_<cy>.png). Requiere `npm run crystal:maps`.
+Escribe en public/crystal/world/: world.json, overview.png (16 px por bloque), teselas de 1024 px
+a 32 px por bloque (t_<cx>_<cy>.png) y la capa de sprites de objetos aparte (o_<cx>_<cy>.png, overview_obj.png). Requiere `npm run crystal:maps`.
 
 Las conexiones del decomp (`connection <dir>, <mapa>, <id>, <offset>`) colocan cada mapa respecto a su vecino:
 norte/sur desplazan en X por `offset`, este/oeste en Y. El grafo de conexiones tiene tres componentes:
@@ -192,10 +192,26 @@ def main() -> None:
             name = f"t_{cx // TILE}_{cy // TILE}.png"
             q.save(OUT / name, optimize=True)
             tiles.append({"file": name, "x": cx, "y": cy, "w": t.width, "h": t.height})
+    # Capa de sprites de objetos (<Mapa>_obj.png de crystal_maps.py), aparte para poder ocultarla.
+    spr = Image.new("RGBA", full.size, (0, 0, 0, 0))
+    for e in entries:
+        obj = CRYSTAL / "maps" / f"{e['name']}_obj.png"
+        if obj.exists():
+            spr.alpha_composite(Image.open(obj), (e["x"] * 32, e["y"] * 32))
+    sprite_tiles = []
+    for cy in range(0, spr.height, TILE):
+        for cx in range(0, spr.width, TILE):
+            t = spr.crop((cx, cy, min(cx + TILE, spr.width), min(cy + TILE, spr.height)))
+            if t.getbbox() is None:
+                continue
+            name = f"o_{cx // TILE}_{cy // TILE}.png"
+            t.save(OUT / name, optimize=True)
+            sprite_tiles.append({"file": name, "x": cx, "y": cy, "w": t.width, "h": t.height})
+    spr.resize((spr.width // 2, spr.height // 2), Image.BOX).save(OUT / "overview_obj.png", optimize=True)
     half = full.resize((full.width // 2, full.height // 2), Image.BOX).quantize(colors=256, dither=Image.Dither.NONE)
     half.save(OUT / "overview.png", optimize=True)
     (OUT / "world.json").write_text(json.dumps({
-        "w": W, "h": H, "blockPx": 32, "tile": TILE, "tiles": tiles, "maps": entries,
+        "w": W, "h": H, "blockPx": 32, "tile": TILE, "tiles": tiles, "spriteTiles": sprite_tiles, "maps": entries,
         "sections": [{"name": n, "conflicts": c} for n, _comp, c in sections],
         "links": links, "overlaps": overlaps, "unplaced": sorted(k for k in by if k not in all_pos),
         "note": "Johto y Kanto se unen con warps en el juego; la colocación entre secciones es editorial.",
