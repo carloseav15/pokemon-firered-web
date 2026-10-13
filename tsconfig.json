@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "paths": { "@game/*": ["./src/games/firered/*"], "@core/*": ["./src/core/*"] }
   },
-  "include": ["src/main.ts", "src/viewer/main.ts", "src/compare/main.ts"]
+  "include": ["src/main.ts", "src/viewer/main.ts", "src/compare/main.ts", "src/compare/dexMain.ts"]
 }

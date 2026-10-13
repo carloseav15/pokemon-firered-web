@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokédex FireRed / Emerald</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.45 system-ui, sans-serif; }
+      header { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line); padding:8px 16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+      header h1 { font-size:15px; margin:0; }
+      input[type=search] { background:#1f2937; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:5px 10px; font:inherit; min-width:220px; }
+      a { color:var(--mut); }
+      #layout { display:grid; grid-template-columns:340px 1fr; height:calc(100vh - 49px); }
+      #list { overflow:auto; border-right:1px solid var(--line); display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:4px; padding:8px; align-content:start; }
+      .tile { background:#0f1520; border:1px solid var(--line); border-radius:6px; text-align:center; padding:4px 2px; cursor:pointer; font-size:11px; }
+      .tile:hover, .tile.sel { border-color:#3b82f6; }
+      .tile img { width:56px; height:56px; image-rendering:pixelated; display:block; margin:0 auto; }
+      .tile span { color:var(--mut); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      #detail { overflow:auto; padding:16px 24px 60px; }
+      h2 { margin:0 0 4px; font-size:22px; }
+      h3 { margin:22px 0 6px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); border-bottom:1px solid var(--line); padding-bottom:3px; }
+      h3.a { color:var(--a); } h3.b { color:var(--b); }
+      .sprites { display:flex; flex-wrap:wrap; gap:14px; margin:10px 0; }
+      .sprite { background:#0f1520; border:1px solid var(--line); border-radius:8px; padding:6px 10px; text-align:center; font-size:11px; color:var(--mut); }
+      .sprite img { width:128px; height:128px; image-rendering:pixelated; display:block; }
+      dl { display:grid; grid-template-columns:170px 1fr; gap:4px 12px; margin:0; }
+      dt { color:var(--mut); } dd { margin:0; }
+      .cols { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+      @media (max-width:1000px) { #layout { grid-template-columns:1fr; } #list { max-height:34vh; } .cols { grid-template-columns:1fr; } }
+      ul { margin:0; padding-left:18px; } li { margin:1px 0; }
+      .none { color:var(--mut); font-style:italic; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Pokédex <span style="color:var(--a)">FireRed</span> / <span style="color:var(--b)">Emerald</span></h1>
+      <input id="q" type="search" placeholder="Nombre o número…" />
+      <span id="count" style="color:var(--mut)"></span>
+      <a href="/compare.html" style="margin-left:auto">Comparador de diferencias →</a>
+      <a href="/viewer.html">Visor del mundo →</a>
+    </header>
+    <div id="layout">
+      <div id="list"></div>
+      <div id="detail"><p class="none">Cargando datos…</p></div>
+    </div>
+    <script type="module" src="/src/compare/dexMain.ts"></script>
+  </body>
+</html>
