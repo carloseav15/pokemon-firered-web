@@ -1131,6 +1131,7 @@ export class Game {
   private DoWhiteOut(): void {
     const ow = this.overworld;
     this.scene = null;
+    sound.stopMapMusic(); // CB2_WhiteOut: StopMapMusic() before DoWhiteOut(); ResetSafariZoneFlag_ is part of the state reset below
     ow.script.RunScriptImmediately(rom.label("EventScript_ResetEliteFourEnd"));
     save.money -= computeWhiteOutMoneyLoss();
     for (const mon of save.party) healMon(mon);
