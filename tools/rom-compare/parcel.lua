@@ -41,6 +41,41 @@ end
 -- comparing EWRAM at arrival on Route 1 and at the first wild battle.
 local function snap() local t = {} for a = 0, 0x3FFFC, 4 do t[a] = W:read32(a) end return t end
 local function inBattle() return (I:read8(0x30F0 + 0x439) & 2) ~= 0 end
+-- Battle log (PV_BTL): party HP of both sides (gPlayerParty 0x02024284, gEnemyParty 0x0202402C, struct Pokemon 100 bytes,
+-- level +0x54, hp +0x56) whenever it changes while gMain.inBattle is set; species is read from the encrypted growth substruct.
+local ORD = {"GAEM","GAME","GEAM","GEMA","GMAE","GMEA","AGEM","AGME","AEGM","AEMG","AMGE","AMEG","EGAM","EGMA","EAGM","EAMG","EMGA","EMAG","MGAE","MGEA","MAGE","MAEG","MEGA","MEAG"}
+local function monSpecies(base)
+  local pers, ot = W:read32(base), W:read32(base + 4)
+  local pos = ORD[pers % 24 + 1]:find("G") - 1
+  return (W:read32(base + 0x20 + 12 * pos) ~ pers ~ ot) & 0xFFFF
+end
+local PARTY_P, PARTY_E = 0x02024284 - 0x02000000, 0x0202402C - 0x02000000
+local function side(base, withSpecies)
+  local t = {}
+  for i = 0, 5 do
+    local m = base + 100 * i
+    local lvl = W:read8(m + 0x54)
+    if lvl == 0 then t[#t + 1] = "-"
+    elseif withSpecies then t[#t + 1] = string.format("%d:L%d:%d", monSpecies(m), lvl, W:read16(m + 0x56))
+    else t[#t + 1] = tostring(W:read16(m + 0x56)) end
+  end
+  return table.concat(t, ",")
+end
+local btlOn, btlSig = false, nil
+local function btlLog(n, inB)
+  if inB and not btlOn then
+    btlOn, btlSig = true, nil
+    out:write(string.format("BSTART f=%d P=%s E=%s\n", n, side(PARTY_P, true), side(PARTY_E, true)))
+  elseif not inB and btlOn then
+    btlOn = false
+    out:write(string.format("BEND f=%d P=%s E=%s\n", n, side(PARTY_P, false), side(PARTY_E, false)))
+    return
+  end
+  if inB then
+    local s = side(PARTY_P, false) .. " | " .. side(PARTY_E, false)
+    if s ~= btlSig then btlSig = s out:write(string.format("BHP f=%d %s\n", n, s)) end
+  end
+end
 local snap1, scanned = nil, false
 local function scan(s2)
   for a, v in pairs(snap1) do
@@ -75,6 +110,8 @@ _G.pv_cb = callbacks:add("frame", function()
   local g, m = map()
   local x, y = pos()
   local mapKey = g * 256 + m
+  btlLog(n, inBattle())
+  if PV_ABORTMAP and g == PV_ABORTMAP[1] and m == PV_ABORTMAP[2] then dump("abort", n) out:write("DONE\n") out:close() doneAt = -1 return end
   if PV_SCAN then
     if mapKey == 3 * 256 + 19 and not snap1 then snap1 = snap() out:write("SNAP1 f=" .. n .. "\n") end
     if snap1 and not scanned and inBattle() then scanned = true scan(snap()) out:write("SCANNED f=" .. n .. "\n") end

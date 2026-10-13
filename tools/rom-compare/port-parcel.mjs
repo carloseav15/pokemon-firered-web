@@ -142,6 +142,17 @@ await p.evaluate(async () => {
   // The wild-encounter rng (WildEncounterRandom, sWildEncounterData.rngState) is a separate LCG: pinned the same way
   // (ROM address 0x020386d0, found by differential scan), to a value whose first output is >= 1000 mod 1600.
   const { sWildEncounterData } = await import("/src/fr/field/wildEncounter.ts");
+  // Battle log, same fields as parcel.lua (BSTART/BHP/BEND): party HP of both sides while a battle is on.
+  const { gEnemyParty: enemyParty } = await import("/src/fr/pokemon/mon.ts");
+  window.__btl = [];
+  let btlOn = false, btlSig = null;
+  const side = (arr, withSpecies) => arr.slice(0, 6).map(m => !m || !m.level ? "-" : withSpecies ? `${m.species}:L${m.level}:${m.hp}` : String(m.hp)).join(",");
+  setInterval(() => {
+    const b = window.frDebug.snapshot().hardware.inBattle, party = window.frDebug.save.save.party;
+    if (b && !btlOn) { btlOn = true; btlSig = null; window.__btl.push({ ev: "BSTART", t: Date.now(), P: side(party, true), E: side(enemyParty, true) }); }
+    else if (!b && btlOn) { btlOn = false; window.__btl.push({ ev: "BEND", t: Date.now(), P: side(party, false), E: side(enemyParty, false) }); return; }
+    if (b) { const s = side(party, false) + " | " + side(enemyParty, false); if (s !== btlSig) { btlSig = s; window.__btl.push({ ev: "BHP", t: Date.now(), P: side(party, false), E: side(enemyParty, false) }); } }
+  }, 10);
   const game = window.frGame, frame = game.frame.bind(game);
   game.frame = () => { setRandomStateForTest(0x1B5BD042); sWildEncounterData.rngState = 0x8B529B4A; frame(); };
 });
@@ -330,6 +341,6 @@ for (let i = 0; i < trace.length; i++) {
 }
 writeFileSync(process.env.TRACE ?? "/tmp/port-parcel-trace.lua",
   "PARCEL_TRACE = {\n" + tiles.map(t => { const g = t.num >> 8, n = t.num & 255; return `{${g},${n},${t.x},${t.y},${t.dir ? `"${t.dir}"` : "nil"},${t.script},${Math.ceil(t.ms * 0.06 * 1.3) + 180}},`; }).join("\n") + "\n}\nPARCEL_GATES = {\n" + gates.map(g => `[${tileOf[g.at]}] = {${g.var}, ${g.val}},`).join("\n") + "\n}\n");
-writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, route2: typeof route2End === "undefined" ? null : route2End, pewter: typeof pewterEnd === "undefined" ? null : pewterEnd, errors: errs, traceLength: tiles.length }, null, 1));
+writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, route2: typeof route2End === "undefined" ? null : route2End, pewter: typeof pewterEnd === "undefined" ? null : pewterEnd, errors: errs, traceLength: tiles.length, battles: await p.evaluate(() => window.__btl) }, null, 1));
 console.log("trace", trace.length, "errors", errs.length, errs.slice(0, 3).join(" | "));
 await b.close();

@@ -5,6 +5,7 @@
 # Usage: tools/rom-compare/run-milestone.sh [workdir]
 # Env: PV_ENDMAP="{15,0}" (ROM stops 600 frames after the player is free on that map; default Route 2's forest gate),
 #      FOREST=1 (port continues Viridian Forest -> Pewter; use PV_ENDMAP="{3,2}" PV_ENDTAG=pewter for the ROM),
+#      PV_ABORTMAP="{4,0}" (stop the ROM replay when it reaches that map, e.g. a whiteout to the player's house),
 #      PV_ENDTAG (dump tag of the ROM milestone, default route2),
 #      RV_STATE (ROM savestate to start from, default /tmp/rom-postrival.ss), RNG (pinned gRngValue, port side),
 #      SKIP_PORT=1 (reuse the port json/trace in the workdir), ROM_LIMIT (seconds, default 1500).
@@ -25,8 +26,11 @@ if [ "${SKIP_PORT:-0}" != "1" ]; then
 fi
 
 echo "== ROM replay =="
-PRELUDE="dofile('$W/trace.lua'); PV_LOAD='$STATE'; PV_OUT='$W/rom.txt'; PV_ENDMAP=$ENDMAP; PV_ENDTAG='${PV_ENDTAG:-route2}'"
+PRELUDE="dofile('$W/trace.lua'); PV_LOAD='$STATE'; PV_OUT='$W/rom.txt'; PV_ENDMAP=$ENDMAP; PV_ENDTAG='${PV_ENDTAG:-route2}'; PV_ABORTMAP=${PV_ABORTMAP:-nil}"
 tools/rom-compare/run-rom.sh "$ROOT/tools/rom-compare/parcel.lua" "$W/rom.txt" "$PRELUDE" "${ROM_LIMIT:-1500}"
 
 echo "== compare =="
 python3 tools/rom-compare/compare-route.py "$W/rom.txt" "$W/port.json" | tee "$W/compare.txt" | tail -40
+
+echo "== battles =="
+python3 tools/rom-compare/compare-battles.py "$W/rom.txt" "$W/port.json" | tee "$W/battles.txt" | tail -60
