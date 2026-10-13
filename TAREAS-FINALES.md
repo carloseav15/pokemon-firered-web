@@ -320,7 +320,12 @@ Receta:
   `AcroWheelieFaceDirection`.
 - [ ] `ObjectEventIsTrainerAndCloseToPlayer`, `MoveNextDirectionInSequence`,
   `GetLedgeJumpDirection` (callers y colisión de ledge).
-- [ ] `CopyablePlayerMovement_*` y `cph_IM_DIFFERENT` frente a `gCopyPlayerMovementFuncs`.
+- [x] `CopyablePlayerMovement_*` y `cph_IM_DIFFERENT` frente a `gCopyPlayerMovementFuncs` y `MovementType_CopyPlayer*`:
+  tabla de 11 entradas, `GetCopyDirection`/`sPlayerDirectionsForCopy`/`sPlayerDirectionToCopyDirection` (generado del C),
+  los 7 ids de acción (`Get*MovementAction`, verificados con script) y `MoveCoordsInDirection(…, 2, 2)` del salto
+  coinciden. Corregido: con bloqueo el C llama dos veces a `ObjectEventSetSingleMovement` (andar y después girar; el Quest
+  Log registra ambas) y el TS una; y el TS saltaba el fotograma con direcciones DIR_NONE/fuera de rango donde el C
+  continúa con `DIR_NONE`. Cubierto en `check:movement-types`.
 - [ ] Clones/obstáculos y ciclo `SpawnObjectEventsOnReturnToField`.
 
 **`overworld.c`** (`field/overworld.ts`, `fieldControl.ts`, `game.ts`)
