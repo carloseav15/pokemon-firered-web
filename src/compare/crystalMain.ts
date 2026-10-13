@@ -1,12 +1,12 @@
 // Visor de mapas de Pokémon Crystal (crystal.html). Datos: public/crystal/ (tools/viewer/crystal_maps.py).
 type Warp = { x: number; y: number; dest: string; destConst: string; warp: number };
 type Bg = { x: number; y: number; kind: string; script: string };
-type Obj = { x: number; y: number; sprite: string; move: string; type: string; script: string; flag: string };
+type Obj = { x: number; y: number; sprite: string; move: string; pal?: string; type: string; script: string; flag: string };
 type Coord = { x: number; y: number; scene: string; script: string };
 type Conn = { direction: string; map: string; mapId: string; offset: number };
 type CrystalMap = {
   name: string; w: number; h: number; tileset: string; environment: string; landmark: string; music: string; group: number;
-  connections: Conn[]; warps: Warp[]; bgs: Bg[]; objects: Obj[]; coords: Coord[];
+  connections: Conn[]; warps: Warp[]; bgs: Bg[]; objects: Obj[]; coords: Coord[]; objLayer?: boolean;
 };
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -18,7 +18,7 @@ let maps: CrystalMap[] = [];
 let byName = new Map<string, CrystalMap>();
 let current = "";
 let zoom = 1;
-const layers = { warp: true, bg: true, obj: true, coord: false };
+const layers = { sprites: true, warp: true, bg: true, obj: true, coord: false };
 
 const pretty = (s: string) => s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 const link = (name: string) => (byName.has(name) ? `<a href="#${name}" data-map="${name}">${esc(name)}</a>` : esc(name));
@@ -64,12 +64,13 @@ function show(name: string): void {
     <div class="meta">${esc(pretty(m.landmark))} · tileset ${esc(m.tileset)} · ${esc(m.environment)} · música ${esc(pretty(m.music))} · grupo ${m.group} · ${m.w}×${m.h} bloques</div>
     <div class="bar">
       <label>Zoom <select id="zoom">${[1, 2, 3].map((z) => `<option value="${z}" ${z === zoom ? "selected" : ""}>${z}×</option>`).join("")}</select></label>
+      <label><input type="checkbox" data-layer="sprites" ${layers.sprites ? "checked" : ""} /> sprites de objetos</label>
       <label><input type="checkbox" data-layer="warp" ${layers.warp ? "checked" : ""} /> <span class="dot" style="border-color:#38bdf8"></span>warps (${m.warps.length})</label>
       <label><input type="checkbox" data-layer="bg" ${layers.bg ? "checked" : ""} /> <span class="dot" style="border-color:#facc15"></span>carteles y eventos (${m.bgs.length})</label>
       <label><input type="checkbox" data-layer="obj" ${layers.obj ? "checked" : ""} /> <span class="dot" style="border-color:#f87171"></span>objetos (${m.objects.length})</label>
       <label><input type="checkbox" data-layer="coord" ${layers.coord ? "checked" : ""} /> <span class="dot" style="border-color:#c084fc"></span>escenas (${m.coords.length})</label>
     </div>
-    <div class="stage" id="stage"><img src="/crystal/maps/${m.name}.png" width="${m.w * 32 * zoom}" height="${m.h * 32 * zoom}" alt="${esc(m.name)}" /><span id="mks">${markers(m)}</span></div>
+    <div class="stage" id="stage"><img src="/crystal/maps/${m.name}.png" width="${m.w * 32 * zoom}" height="${m.h * 32 * zoom}" alt="${esc(m.name)}" />${layers.sprites && m.objLayer ? `<img class="spr" src="/crystal/maps/${m.name}_obj.png" width="${m.w * 32 * zoom}" height="${m.h * 32 * zoom}" alt="" />` : ""}<span id="mks">${markers(m)}</span></div>
     <h3>Conexiones</h3>${conns}
     <h3>Warps</h3>${m.warps.length ? `<table>${m.warps.map((w, i) => row([`#${i + 1}`, `(${w.x}, ${w.y})`, `→ ${link(w.dest)} #${w.warp}`])).join("")}</table>` : `<span class="none">ninguno</span>`}
     <h3>Carteles y eventos de fondo</h3>${m.bgs.length ? `<table>${m.bgs.map((b) => row([`(${b.x}, ${b.y})`, esc(b.kind), esc(b.script)])).join("")}</table>` : `<span class="none">ninguno</span>`}

@@ -64,7 +64,13 @@
       "/maps/",
       "/constants/",
       "/gfx/tilesets/",
-      "/gfx/pokemon/"
+      "/gfx/pokemon/",
+      "/gfx/sprites/",
+      "/gfx/sprites.asm",
+      "/data/sprites/sprites.asm",
+      "/constants/sprite_constants.asm",
+      "/constants/sprite_data_constants.asm",
+      "/gfx/overworld/npc_sprites.pal"
     ],
     "note": "GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta."
   },

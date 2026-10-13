@@ -9,7 +9,8 @@ Lee el checkout fijado de pokecrystal (npm run refs:fetch -- pokecrystal) y escr
 Render: bloque (4x4 tiles) -> tiles 2bpp del PNG del tileset -> paleta por tile (<tileset>_palette_map.asm)
 -> colores de bg_tiles.pal (día) o de la paleta especial del tileset. Los tejados de pueblos/rutas de Johto
 se sustituyen por gfx/tilesets/roofs/*.png con los colores de roofs.pal (data/maps/roofs.asm).
-No cubre: animaciones de tiles (agua, flores), hora del día ni sprites de objetos.
+Cada mapa con objetos conocidos tiene además <Mapa>_obj.png (capa RGBA con sus sprites).
+No cubre: animaciones de tiles (agua, flores), hora del día ni los sprites de Pokémon (SPRITE_POKEMON).
 """
 
 from __future__ import annotations
@@ -159,10 +160,91 @@ def events(path: Path, const_to_name: dict[str, str]) -> dict[str, list]:
         if m:
             coords.append({"x": int(m.group(1)), "y": int(m.group(2)), "scene": m.group(3), "script": m.group(4)})
             continue
-        m = re.match(r"object_event\s+(\d+)\s*,\s*(\d+)\s*,\s*(\w+)\s*,\s*(\w+)\s*,[^,]*,[^,]*,[^,]*,[^,]*,\s*(\w+)\s*,\s*(\w+)\s*,\s*([^,]+),\s*(\w+)\s*,\s*(\w+)", line)
+        m = re.match(r"object_event\s+(\d+)\s*,\s*(\d+)\s*,\s*(\w+)\s*,\s*(\w+)\s*,[^,]*,[^,]*,[^,]*,[^,]*,\s*(\w+)\s*,\s*(\w+)\s*,\s*([^,]+),\s*(\w+)\s*,\s*(-?\w+)", line)
         if m:
-            objs.append({"x": int(m.group(1)), "y": int(m.group(2)), "sprite": m.group(3), "move": m.group(4), "type": m.group(6), "script": m.group(8), "flag": m.group(9)})
+            objs.append({"x": int(m.group(1)), "y": int(m.group(2)), "sprite": m.group(3), "move": m.group(4), "pal": m.group(5), "type": m.group(6), "script": m.group(8), "flag": m.group(9)})
     return {"warps": warps, "bgs": bgs, "objects": objs, "coords": coords}
+
+
+def load_object_sprites(src: Path) -> dict[str, dict]:
+    """SPRITE_* -> {frames: [índices 2bpp 16x16...], pal: índice por defecto, w, h}."""
+    consts = []
+    for line in (src / "constants/sprite_constants.asm").read_text().splitlines():
+        if "NUM_OVERWORLD_SPRITES" in line:
+            break
+        m = re.match(r"\s*const\s+(SPRITE_\w+)", line)
+        if m:
+            consts.append(m.group(1))
+    entries = re.findall(r"overworld_sprite\s+(\w+)\s*,\s*(\d+)\s*,\s*(\w+)\s*,\s*PAL_OW_(\w+)", (src / "data/sprites/sprites.asm").read_text())
+    files = dict(re.findall(r'^(\w+)::\s*INCBIN "gfx/sprites/([\w]+)\.2bpp"', (src / "gfx/sprites.asm").read_text(), re.M))
+    names = ["RED", "BLUE", "GREEN", "BROWN", "PINK", "EMOTE", "TREE", "ROCK"]
+    out = {}
+    for const, (label, _tiles, _type, pal) in zip(consts[1:], entries):
+        png = src / "gfx/sprites" / f"{files[label]}.png"
+        im = Image.open(png).convert("L")
+        w, h = im.size
+        px = im.load()
+        scale = 1 if im.getextrema()[1] > 3 else 85  # PNG de 2 bits: PIL entrega 0..3 sin escalar
+        out[const] = {"w": w, "h": h, "pal": names.index(pal),
+                      "px": [[3 - min(3, px[x, y] * scale // 64) for x in range(w)] for y in range(h)]}
+    return out
+
+
+def object_palettes(src: Path) -> list[list[tuple[int, int, int]]]:
+    """npc_sprites.pal: bloque `day` (8 paletas)."""
+    return parse_rgb_lines((src / "gfx/overworld/npc_sprites.pal").read_text())[8:16]
+
+
+FACING_FRAME = {"down": 0, "up": 1, "left": 2, "right": 2}
+
+
+def facing(move: str) -> str:
+    m = move.removeprefix("SPRITEMOVEDATA_")
+    if m.endswith("_UP") or m == "STANDING_UP":
+        return "up"
+    if m.endswith("_LEFT") or m in ("WALK_LEFT_RIGHT",):
+        return "left"
+    if m.endswith("_RIGHT"):
+        return "right"
+    return "down"
+
+
+def object_layer(objs: list[dict], w: int, h: int, sprites: dict, pals: list) -> Image.Image | None:
+    layer = Image.new("RGBA", (w * 32, h * 32), (0, 0, 0, 0))
+    drawn = 0
+    for o in objs:
+        spr = sprites.get(o["sprite"])
+        if not spr:
+            continue
+        pal_name = o.get("pal", "0")
+        pal = spr["pal"]
+        if pal_name.startswith("PAL_NPC_"):
+            pal = ["RED", "BLUE", "GREEN", "BROWN", "PINK", "EMOTE", "TREE", "ROCK"].index(pal_name.removeprefix("PAL_NPC_"))
+        colors = pals[pal]
+        sw, sh = spr["w"], spr["h"]
+        if sw == 16:
+            frames = max(1, sh // 16)
+            face = facing(o["move"])
+            fi = FACING_FRAME[face] if frames > 1 else 0
+            fi = min(fi, frames - 1)
+            box = (0, fi * 16, 16, fi * 16 + 16)
+            flip = face == "right" and frames > 1
+        else:  # sprites grandes (Snorlax, Lapras...): imagen completa
+            box = (0, 0, sw, sh)
+            flip = False
+        fw, fh = box[2] - box[0], box[3] - box[1]
+        img = Image.new("RGBA", (fw, fh), (0, 0, 0, 0))
+        out = img.load()
+        for yy in range(fh):
+            for xx in range(fw):
+                v = spr["px"][box[1] + yy][box[0] + xx]
+                if v:
+                    out[xx, yy] = colors[v] + (255,)
+        if flip:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+        layer.alpha_composite(img, (o["x"] * 16, o["y"] * 16 - 4)) if o["y"] * 16 - 4 >= 0 else layer.alpha_composite(img.crop((0, 4, fw, fh)), (o["x"] * 16, 0))
+        drawn += 1
+    return layer if drawn else None
 
 
 def main() -> None:
@@ -180,6 +262,8 @@ def main() -> None:
         raise SystemExit(f"{len(consts)} constantes de mapa frente a {len(order)} mapas")
     const_to_name = dict(zip(consts, order))
 
+    sprites = load_object_sprites(src)
+    npc_pals = object_palettes(src)
     cache: dict[str, tuple[list[list[int]], list[tuple[int, int]], list[list[tuple[int, int, int]]]]] = {}
     (OUT / "maps").mkdir(parents=True, exist_ok=True)
     result = []
@@ -230,6 +314,10 @@ def main() -> None:
                         out[ox + p % 8, oy + p // 8] = col[data[p]] if data else col[0]
         img.save(OUT / "maps" / f"{m['name']}.png", optimize=True)
         ev = events(src / "maps" / f"{m['name']}.asm", const_to_name)
+        layer = object_layer(ev["objects"], w, h, sprites, npc_pals)
+        if layer:
+            layer.save(OUT / "maps" / f"{m['name']}_obj.png", optimize=True)
+        ev["objLayer"] = layer is not None
         result.append({
             "name": m["name"], "w": w, "h": h, "tileset": ts_name, "environment": m["environment"],
             "landmark": m["landmark"].removeprefix("LANDMARK_"), "music": m["music"].removeprefix("MUSIC_"),
