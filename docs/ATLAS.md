@@ -13,6 +13,7 @@ exportados de los decomps.
 | Biblioteca visual | `/library.html` | Entrenadores con equipo, objetos con icono, gráficos de objetos de mapa | `data/trainers.json`, `gfx/trainers`, `gfx/items`, `objects.json` |
 | Comparador | `/compare.html` | Diferencias campo a campo (especies, movimientos, objetos, entrenadores) | `public/<juego>/data` |
 | Quests | `/quests.html` | Quests candidatas con clase, flags y variables | `public/viewer/quests_<juego>.json` |
+| Mapas de Crystal | `/crystal.html`, `#<Mapa>` | 388 mapas de Johto/Kanto renderizados (bloques + tiles + paletas de día, tejados por grupo), warps navegables, carteles, objetos, escenas y conexiones | `public/crystal/` |
 | Línea argumental | `/story.html` | Escenas por capítulos en el orden oficial de rutas | `public/viewer/story_<juego>.json` |
 
 ## Regenerar datos
@@ -26,6 +27,7 @@ EXPORT_GAME=emerald python3 tools/viewer/world_index.py # índice de Hoenn
 python3 tools/viewer/quest_index.py                     # quests de FireRed (y con EXPORT_GAME=emerald, de Emerald)
 python3 tools/viewer/story_index.py                     # línea argumental de los dos juegos
 npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold pokecrystal   # una vez
+npm run crystal:maps                                    # public/crystal/ (mapas renderizados de Crystal, ~4 MB, ignorado en git)
 npm run sprites:sources                                 # public/sprites/ (~70 MB, ignorado en git); admite una fuente: pmd-red | emerald-expansion | crystal | platinum | heartgold
 ```
 
@@ -46,3 +48,9 @@ Trabajo de verificación pasada: los 943 mapas se abren y se pintan (`tools/play
 - Las etiquetas de quests (`tools/viewer/quest_tags.json`) y el orden de los capítulos (`SPINE` en
   `tools/viewer/story_index.py`) son criterio editorial, no un análisis de bloqueos reales.
 - Emerald no es jugable: existe como datos y en el visor.
+
+## Límites del visor de Crystal
+
+- Paleta de día fija; sin animación de tiles (agua, flores) ni sprites de objetos (solo marcadores).
+- `house.pal` y `mansion_2.pal` no se aplican: su condición de uso está en el motor (`engine/`), que no está en el checkout.
+- Coordenadas de eventos en pasos de 16 px (2×2 tiles); los warps salen tal cual del `.asm`.

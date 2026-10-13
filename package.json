@@ -95,7 +95,8 @@
     "play:cerulean": "node tools/playtest/cerulean.mjs",
     "play:vermilion": "node tools/playtest/vermilion.mjs",
     "play:ssanne": "node tools/playtest/ssanne.mjs",
-    "sprites:sources": "python3 tools/viewer/sprite_sources.py"
+    "sprites:sources": "python3 tools/viewer/sprite_sources.py",
+    "crystal:maps": "python3 tools/viewer/crystal_maps.py"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
