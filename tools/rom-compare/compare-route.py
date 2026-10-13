@@ -31,6 +31,8 @@ def parse_rom(path):
             d["money"] = int(p[2], 16) ^ (int(p[3][4:], 16) if len(p) > 3 else 0)
         elif p[0] == "PARTY":
             ev.setdefault(p[1], {})["count"] = int(p[2].split("=")[1])
+        elif p[0] == "BAG":
+            ev.setdefault(p[1], {})["bag"] = bytes.fromhex(p[2])
     return ev
 
 
@@ -60,16 +62,17 @@ def label(kind, ident):
 
 rom = parse_rom(rom_path)
 port = json.load(open(port_path))
-pairs = []
-for d in port["mapDumps"]:
-    pairs.append((d["tag"], d))
+pairs = [(d["tag"], d) for d in port["mapDumps"]]
+if "parcel" in port:
+    pairs.append(("parcel", port["parcel"]))
 pairs.append(("end", port["end"]))
 for tag, p in pairs:
-    if tag == "end":
-        rtag = "end"
+    if tag in ("parcel", "end"):
+        rtag = tag
     else:
-        num = consts[tag.split(":", 1)[1]]
-        rtag = f"map:{num >> 8},{num & 255}"
+        name, _, visit = tag.split(":", 1)[1].partition("#")
+        num = consts[name]
+        rtag = f"map:{num >> 8},{num & 255}#{visit or 1}"
     r = rom.get(rtag)
     print(f"== {tag}  (ROM {rtag})")
     if not r:
@@ -80,3 +83,10 @@ for tag, p in pairs:
     fd, vd = bits(r["flags"], p["flags"]), words(r["vars"], p["vars"])
     print(f"   flags differing: {len(fd)} " + ", ".join(f"{label('FLAG_', i)}(rom={int(v)})" for i, v in fd[:25]))
     print(f"   vars differing:  {len(vd)} " + ", ".join(f"{label('VAR_', i)}(rom={a} port={b})" for i, a, b in vd[:25]))
+    if "bag" in r and isinstance(p.get("bag"), dict):
+        # key items (+0x3B8, 30 slots) and Poke Balls (+0x430, 13 slots): u16 id, u16 quantity ^ key low half
+        raw = r["bag"]
+        slots = [struct.unpack_from("<HH", raw, i * 4) for i in range(len(raw) // 4)]
+        rom_items = sorted((i, q) for i, q in slots if i)
+        port_items = sorted((e["item"], e["quantity"]) for k in ("keyItems", "pokeBalls") for e in p["bag"].get(k, []) if e.get("item"))
+        print(f"   bag items (ids) ROM={[i for i, _ in rom_items]} port={[i for i, _ in port_items]}")

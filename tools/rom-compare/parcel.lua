@@ -67,6 +67,7 @@ local function same(e, g, m, x, y) return e[1] == g and e[2] == m and e[3] == x 
 _G.pv_cb = callbacks:add("frame", function()
   n = n + 1
   I:write32(0x5000, RNG)
+  if PV_SAVES and PV_SAVES[n] then emu:saveStateFile(PV_SAVES[n], 31) out:write("SAVED " .. PV_SAVES[n] .. " f=" .. n .. "\n") end
   W:write32(0x020386d0 - 0x02000000, WILD)   -- sWildEncounterData.rngState (see port-parcel.mjs)
   if n > MAXF then if not doneAt then dump("timeout", n) out:close() doneAt = -1 end return end
   if doneAt == -1 then return end
@@ -94,32 +95,43 @@ _G.pv_cb = callbacks:add("frame", function()
   local burst = (n % 50) < 30
   local tapA = (n % 20) < 3
   if n % 300 == 0 then out:write(string.format("T f=%d idx=%d/%d pos=%d,%d map=%d,%d scene=%d\n", n, idx, #TR, x, y, g, m, var(MART_SCENE))) end
-  if var(MART_SCENE) == 1 and not parcelAt then parcelAt = n end
-  if parcelAt and parcelAt > 0 and n - parcelAt == 300 then dump("parcel", n) end
+  -- the parcel script ends by setting the lab scene var to 5: dump 120 frames later, like the port's settled state
+  if var(0x4055) == 5 and not parcelAt then parcelAt = n end
+  if parcelAt and n - parcelAt == 120 then dump("parcel", n) end
   if var(ENDVAR) == ENDVAL and not doneAt then doneAt = n end
   if doneAt and doneAt > 0 and n - doneAt >= 600 then
     dump("end", n) out:write("DONE\n") out:close() doneAt = -1 return
   end
-  local onTrace = e and same(e, g, m, x, y)
-  if not nx then
-    if tapA then set[KEY.A] = true end
-  elseif not onTrace then
-    -- off the trace (a script moved the player or the ROM diverged): only A until the position matches again
-    if tapA then set[KEY.A] = true end
-  elseif e[6] and idxFrames < (e[7] or 600) then
-    -- a script ran on this tile in the port: alternate A bursts and the recorded direction for as many frames as the
-    -- port spent there (e[7]); beyond that only the direction, so a finished script is not re-triggered by A
-    -- (facing an NPC and pressing A starts a new conversation).
-    if burst then if tapA then set[KEY.A] = true end
-    elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
-  elseif e[6] then
-    -- budget spent: one A tap per 70 frames closes a box that is still open, the rest of the cycle walks away, so an
-    -- A on a free field (which would talk to the NPC in front) is followed by a direction that leaves it
-    if (n % 70) < 3 then set[KEY.A] = true
-    elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
+  -- Opt-in (PV_LOCK = EWRAM address of a "controls locked" byte): the candidates found by diffstates.lua did not hold
+  -- across scenes (0 bytes were consistent over 3 text-box states and 2 free states), so it is off by default.
+  if PV_LOCK then
+    local locked = W:read8(PV_LOCK - 0x02000000) ~= 0
+    if locked then
+      if tapA then set[KEY.A] = true end
+    elseif nx and e and e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
   else
-    local d = e[5]
-    if d and DIRKEY[d] then set[DIRKEY[d]] = true end
+    local onTrace = e and same(e, g, m, x, y)
+    if not nx then
+      if tapA then set[KEY.A] = true end
+    elseif not onTrace then
+      -- off the trace (a script moved the player or the ROM diverged): only A until the position matches again
+      if tapA then set[KEY.A] = true end
+    elseif e[6] and idxFrames < (e[7] or 600) then
+      -- a script ran on this tile in the port: alternate A bursts and the recorded direction for as many frames as the
+      -- port spent there (e[7]); beyond that only the direction, so a finished script is not re-triggered by A
+      -- (facing an NPC and pressing A starts a new conversation).
+      if burst then if tapA then set[KEY.A] = true end
+      elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
+    elseif e[6] then
+      -- budget spent: one A tap per 70 frames closes a box that is still open, the rest of the cycle walks away, so an
+      -- A on a free field (which would talk to the NPC in front) is followed by a direction that leaves it
+      if (n % 70) < 3 then set[KEY.A] = true
+      elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
+    else
+      local d = e[5]
+      if d and DIRKEY[d] then set[DIRKEY[d]] = true end
+    end
+
   end
   want(set)
 end)
