@@ -16,8 +16,8 @@ import { BlitBitmapRectToWindow, gWindows } from "@core/hw/window";
 import {
   DecompressPicFromTable, GetMonSpritePalFromSpeciesAndPersonality, gTrainerBackPicTable,
   gTrainerFrontPicPaletteTable, gTrainerFrontPicTable, LoadSpecialPokePic, LoadSpecialPokePic_DontHandleDeoxys, symPalette,
-} from "./pokemon/pics";
-import { GetMonData, IsShinyOtIdPersonality, type Mon } from "./pokemon/mon";
+} from "@core/pokemon/pics";
+import { GetMonData, IsShinyOtIdPersonality, type Mon } from "@core/pokemon/mon";
 
 type PicData = { frames: Uint8Array | null; images: SpriteFrameImage[] | null; paletteTag: number; spriteId: number; active: boolean };
 

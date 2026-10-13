@@ -15,8 +15,8 @@ import {
 } from "@core/hw/sprite";
 import { Cos, gSineTable, Sin } from "@core/hw/trig";
 import { incbin } from "@core/hw/assets";
-import { GetMonData, gEnemyParty, playerMon, type Mon } from "../pokemon/mon";
-import { symBytes, symPalette } from "../pokemon/pics";
+import { GetMonData, gEnemyParty, playerMon, type Mon } from "@core/pokemon/mon";
+import { symBytes, symPalette } from "@core/pokemon/pics";
 import { G, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds } from "./globals";
 import { GetBattlerSpriteCoord, InitAnimArcTranslation, AnimTranslateLinear, TranslateAnimHorizontalArc } from "./anim";
 import { ShouldPlayNormalMonCry } from "./gfx_sfx_util";

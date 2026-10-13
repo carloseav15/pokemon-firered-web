@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { registerCData } from '../../src/core/hw/assets.ts';
 import { rom } from '../../src/core/rom.ts';
 import * as C from '../../src/games/firered/generated/constants.ts';
-import { createMon, speciesName, type Pokemon } from '../../src/games/firered/pokemon/pokemon.ts';
+import { createMon, speciesName, type Pokemon } from '../../src/core/pokemon/pokemon.ts';
 import { CreateShedinja as trySpawnShedinja } from '../../src/games/firered/evolutionScene.ts';
 import { save } from '../../src/games/firered/save.ts';
 

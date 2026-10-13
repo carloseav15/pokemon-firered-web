@@ -25,7 +25,7 @@ import { isMapTypeOutdoors, type Overworld } from "./overworld";
 import type { Game } from "../game";
 import { PlayerGetDestCoords, PLAYER_AVATAR_FLAG_CONTROLLABLE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING, PLAYER_AVATAR_GFX_NORMAL, PLAYER_AVATAR_GFX_RIDE } from "./playerAvatar";
 import { SetHelpContext } from "../helpSystem";
-import { CalculatePlayerPartyCount } from "../pokemon/mon";
+import { CalculatePlayerPartyCount } from "@core/pokemon/mon";
 import { QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode } from "../questLogEvents";
 import { FldEff_UseVsSeeker } from "./vsSeeker";
 

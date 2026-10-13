@@ -1,12 +1,15 @@
 {
   "_comment": "@game/* modules src/core may import (docs/SEPARACION-MOTOR.md \u00a74.2). Only remove entries; a new one needs the user's approval.",
   "modules": [
+    "battle/globals",
+    "battle/util",
     "data",
     "generated/constants",
     "generated/stringUtil",
-    "pokemon/pics",
-    "pokemon/pokemon",
+    "generated/structs",
+    "pokemon/mail",
     "questLogEvents",
-    "questLogState"
+    "questLogState",
+    "save"
   ]
 }

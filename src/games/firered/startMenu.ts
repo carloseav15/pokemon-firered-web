@@ -4,7 +4,7 @@
 import type { Game } from "./game";
 import * as C from "./generated/constants";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "./field/weather";
-import { GetNationalPokedexCount } from "./pokemon/pokemon";
+import { GetNationalPokedexCount } from "@core/pokemon/pokemon";
 import { flagGet, IncrementGameStat, save } from "./save";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { intToDecimal, expandPlaceholders, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";

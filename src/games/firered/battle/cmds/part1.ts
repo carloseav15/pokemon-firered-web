@@ -16,7 +16,7 @@ import {
   STAT_BUFF_NEGATIVE, STATUS1_SLEEP_TURN, STATUS2_CONFUSION_TURN, STATUS2_LOCK_CONFUSE_TURN, STATUS2_UPROAR_TURN, STATUS2_WRAPPED_TURN,
   TYPE_EFFECT_ATK_TYPE, TYPE_EFFECT_DEF_TYPE, TYPE_EFFECT_MULTIPLIER, div, gBattleMoves, F_DYNAMIC_TYPE_1, DYNAMIC_TYPE_MASK,
 } from "../macros";
-import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import {
   AbilityBattleEffects, AtkCanceller_UnableToUseMove, CancelMultiTurnMoves, GetBattlerForBattleScript, GetBattlerSide,
   IsMonDisobedient, ItemId_GetHoldEffect, ItemId_GetHoldEffectParam, MarkBattlerForControllerExec, PressurePPLose,
@@ -32,7 +32,7 @@ import {
 } from "../message";
 import { CalculateBaseDamage } from "../damage";
 import { BtlCtrl_OakOldMan_TestState2Flag } from "../controller_oak_old_man";
-import { AdjustFriendship, AdjustFriendshipOnBattleFaint, IsTradedMon, MonGainEVs } from "../../pokemon/mon_extra";
+import { AdjustFriendship, AdjustFriendshipOnBattleFaint, IsTradedMon, MonGainEVs } from "@core/pokemon/mon_extra";
 import { BattleStopLowHpSound, HandleLowHpMusicChange, PlayBGM } from "../gfx_sfx_util";
 import { FaintClearSetData } from "../main";
 import { AttacksThisTurn, ChangeStatBuffs, IsTwoTurnsMove, TrySetDestinyBondToHappen } from "./helpers";

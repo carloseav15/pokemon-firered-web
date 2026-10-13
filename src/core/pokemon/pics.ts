@@ -2,10 +2,10 @@
 // and pokemon.c (GetMonSpritePalFromSpeciesAndPersonality, DrawSpindaSpots). The exported
 // graphics are already decompressed, so LZ77UnCompWram is a plain copy.
 
-import * as C from "../generated/constants";
-import { cdata, incbin, symName } from "@core/hw/assets";
-import { rom } from "@core/rom";
-import { gMonSpritesGfxPtr } from "../battle/globals";
+import * as C from "@game/generated/constants";
+import { cdata, incbin, symName } from "../hw/assets";
+import { rom } from "../rom";
+import { gMonSpritesGfxPtr } from "@game/battle/globals";
 import { GetMonData, IsShinyOtIdPersonality, type Mon } from "./mon";
 
 type CSheet = { data: unknown; size: number; tag: number };

@@ -9,7 +9,7 @@ import { save, varGet } from "../save";
 import { G, gActionSelectionCursor, gBattleBufferA, gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gBitTable, gDisplayedStringBattle, gHealthboxSpriteIds } from "./globals";
 import { BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues, BUFFER_B } from "./controllers";
 import { CreateSprite, gSprites, SpriteCallbackDummy } from "@core/hw/sprite";
-import { playerMon, GetMonData } from "../pokemon/mon";
+import { playerMon, GetMonData } from "@core/pokemon/mon";
 import { DecompressTrainerBackPalette, gTrainerBackPicCoords, InitAndLaunchSpecialAnimation, PlaySE12WithPanning, TryHandleLaunchBattleTableAnimation } from "./gfx_sfx_util";
 import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle } from "./message";
 import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, PALETTES_ALL, RGB_BLACK } from "@core/hw/palette";

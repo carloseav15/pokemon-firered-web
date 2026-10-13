@@ -20,13 +20,13 @@ import { clearRematchStateByTrainerId } from "../field/vsSeeker";
 import { cdata } from "@core/hw/assets";
 import { gMain } from "@core/hw/runtime";
 import { ItemId_GetBattleFunc, itemInfo, itemName, pocketList, removeBagItem, addBagItem, addMoney } from "../pokemon/items";
-import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "../pokemon/pokemon";
+import { giveMonToPlayer, itemEvolution, levelUpEvolution, type Pokemon } from "@core/pokemon/pokemon";
 import {
   CalculateMonStats, CalculatePPWithBonus, currentRegionMapSection, GetMonData, GetMonEVCount, gEnemyParty, playerMon, SetMonData, type Mon,
-} from "../pokemon/mon";
-import { GetSetPokedexFlag, PartyMonHasStatus } from "../pokemon/mon_extra";
-import { IsPokemonStorageFull } from "../pokemon/storage";
-import { symPalette } from "../pokemon/pics";
+} from "@core/pokemon/mon";
+import { GetSetPokedexFlag, PartyMonHasStatus } from "@core/pokemon/mon_extra";
+import { IsPokemonStorageFull } from "@core/pokemon/storage";
+import { symPalette } from "@core/pokemon/pics";
 import { rom } from "@core/rom";
 import { flagGet, flagSet, incrementGameStat, IsNationalPokedexEnabled, save, varGet, varSet } from "../save";
 import { BattlePokemon } from "../generated/structs";
@@ -450,7 +450,7 @@ export {
   shouldShowBoxWasFullMessage as ShouldShowBoxWasFullMessage,
   getPCBoxToSendMon as GetPCBoxToSendMon,
   getBoxName as GetBoxNamePtr,
-} from "../pokemon/storage";
+} from "@core/pokemon/storage";
 
 // ---------------------------------------------------------------- pokemon_icon.c
 

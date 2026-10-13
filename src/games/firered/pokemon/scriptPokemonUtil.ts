@@ -2,8 +2,8 @@
 
 import * as C from "../generated/constants";
 import { save } from "../save";
-import { createMon } from "./pokemon";
-import { GetMonData, gEnemyParty, playerMon, SetMonData, ZeroEnemyPartyMons, type Mon } from "./mon";
+import { createMon } from "@core/pokemon/pokemon";
+import { GetMonData, gEnemyParty, playerMon, SetMonData, ZeroEnemyPartyMons, type Mon } from "@core/pokemon/mon";
 import { gSelectedOrderFromParty } from "../partyMenu";
 
 export function CheckPartyMonHasHeldItem(item: number): boolean {

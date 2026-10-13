@@ -7,7 +7,7 @@ import { tasks, type TaskFunc } from "../gba/tasks";
 import { gQuestLogState } from "@game/questLogEvents";
 import { DATA_ROOT } from "../rom";
 import { loadCData } from "../hw/assets";
-import { SpeciesToCryId } from "@game/pokemon/pokemon";
+import { SpeciesToCryId } from "../pokemon/pokemon";
 
 /** GBA frame rate (16.78 MHz / 280896 cycles per frame). */
 const GBA_FRAMES_PER_SECOND = 59.7275;

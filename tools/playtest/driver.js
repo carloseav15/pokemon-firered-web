@@ -49,7 +49,7 @@ export const H = {
     this.Q = await this.mod("/src/games/firered/questLogState.ts");
     this.SC = await this.mod("/src/games/firered/script/context.ts");
     this.SUM = await this.mod("/src/games/firered/pokemonSummaryScreen.ts");
-    this.MON = await this.mod("/src/games/firered/pokemon/mon.ts");
+    this.MON = await this.mod("/src/core/pokemon/mon.ts");
     this.CMDS = await this.mod("/src/games/firered/battle/cmds/index.ts");
     this.MENU = await this.mod("/src/games/firered/hw/menu.ts");
     this.MON_PROGRESS = await this.mod("/src/games/firered/menus/monProgress.ts");
@@ -297,7 +297,7 @@ export const H = {
    * that makes the estimate favorable (stats recomputed with calculateStats on the copy; no evolution assumed).
    */
   async assessTrainer(trainerId, { fullHp = true, maxExtraLevels = 15 } = {}) {
-    const P = await this.mod("/src/games/firered/pokemon/pokemon.ts");
+    const P = await this.mod("/src/core/pokemon/pokemon.ts");
     const trainer = this.rom.trainers[trainerId];
     if (!trainer) return { ok: false, reason: "unknown trainer " + trainerId };
     const desc = (m) => ({ ...this.partyBattleMon(m), level: m.level, speed: m.stats[3] });

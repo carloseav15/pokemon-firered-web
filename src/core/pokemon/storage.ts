@@ -1,10 +1,10 @@
 // pokemon_storage_system.c box accessors, pokemon.c SendMonToPC, and field_specials.c destination bookkeeping.
-import { concat, EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
-import { rom } from "@core/rom";
-import { flagClear, flagGet, flagSet, save, SV, varGet, varSet, type SaveData } from "../save";
+import { concat, EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "../gba/charmap";
+import { rom } from "../rom";
+import { flagClear, flagGet, flagSet, save, SV, varGet, varSet, type SaveData } from "@game/save";
 import { calculatePPWithBonus, createMon, type Pokemon } from "./pokemon";
 import { BoxMonToMon, GetMonData, SetMonData, zeroMon, type Mon } from "./mon";
-import * as C from "../generated/constants";
+import * as C from "@game/generated/constants";
 
 export type PokemonStorage = Pick<SaveData, "currentBox" | "boxes" | "boxNames" | "boxWallpapers">;
 

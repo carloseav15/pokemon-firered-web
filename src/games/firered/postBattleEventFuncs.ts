@@ -5,7 +5,7 @@
 
 import * as C from "./generated/constants";
 import { flagGet, flagSet, GetGameStat, incrementGameStat, save, SetGameStat, varSet } from "./save";
-import { healMon, type Pokemon } from "./pokemon/pokemon";
+import { healMon, type Pokemon } from "@core/pokemon/pokemon";
 import { addBagItem, checkBagHasItem } from "./pokemon/items";
 import { rom } from "@core/rom";
 import type { Game } from "./game";

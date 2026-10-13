@@ -13,12 +13,12 @@ import {
   AnimateSprite, CreateSprite, FreeSpritePaletteByTag, FreeSpriteTilesByTag, gSprites, LoadSpritePalette, LoadSpriteSheet, SpriteCallbackDummy, StartSpriteAffineAnim,
   StartSpriteAnim, ST_OAM_AFFINE_OFF, type Sprite,
 } from "@core/hw/sprite";
-import { GetMonData, gEnemyParty, playerMon, SetMonData, type Mon } from "../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon, SetMonData, type Mon } from "@core/pokemon/mon";
 import {
   DecompressPicFromTable, gEnemyMonElevation, GetMonFrontSpritePal, GetMonSpritePalFromSpeciesAndPersonality, gMonBackPicTable, gMonFrontPicTable,
   gTrainerBackPicCoords as trainerBackPicCoordsTable, gTrainerBackPicPaletteTable, gTrainerFrontPicCoords as trainerFrontPicCoordsTable,
   gTrainerFrontPicPaletteTable, gTrainerFrontPicTable, LoadSpecialPokePic, LoadSpecialPokePic_DontHandleDeoxys, symBytes, symPalette,
-} from "../pokemon/pics";
+} from "@core/pokemon/pics";
 import { b64, rom } from "@core/rom";
 import {
   G, gBattleMonForms, gBattlerPartyIndexes, gBattlerPositions, gBattlerSpriteIds, gBattleSpritesDataPtr, gBattleStruct, gHealthboxSpriteIds,

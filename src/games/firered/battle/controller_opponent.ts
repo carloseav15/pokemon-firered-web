@@ -20,7 +20,7 @@ import {
 } from "./controllers";
 import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
 import { SpriteCB_FaintOpponentMon } from "./main_init";
-import { GetMonData, GetSecretBaseTrainerPicIndex, gEnemyParty } from "../pokemon/mon";
+import { GetMonData, GetSecretBaseTrainerPicIndex, gEnemyParty } from "@core/pokemon/mon";
 import { GetTrainerTowerOpponentPic } from "../trainerTower";
 import { GetBattleTowerTrainerFrontSpriteId, GetEreaderTrainerFrontSpriteId } from "../battleTower";
 import {

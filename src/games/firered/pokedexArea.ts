@@ -22,7 +22,7 @@ import {
   CreateSprite, DestroySprite, FreeSpriteTilesByTag, gDummySpriteTemplate, gSprites, LoadSpriteSheet, SetSubspriteTables, ST_OAM_OBJ_WINDOW, TAG_NONE,
   type Subsprite,
 } from "@core/hw/sprite";
-import { roamerMapSection } from "./pokemon/roamer";
+import { roamerMapSection } from "@core/pokemon/roamer";
 import { rom } from "@core/rom";
 import { flagGet, varGet } from "./save";
 

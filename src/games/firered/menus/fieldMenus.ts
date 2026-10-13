@@ -24,7 +24,7 @@ import {
 import { GetNumberOfRelearnableMoves } from "../pokemon/partyRules";
 import { encode, stringVars } from "@core/gba/charmap";
 import { ExecuteTableBasedItemEffect } from "../battle/ext";
-import { GetMonData, type Mon } from "../pokemon/mon";
+import { GetMonData, type Mon } from "@core/pokemon/mon";
 import * as C from "../generated/constants";
 import { sound } from "@core/audio/sound";
 import * as MB from "../generated/metatileBehavior";

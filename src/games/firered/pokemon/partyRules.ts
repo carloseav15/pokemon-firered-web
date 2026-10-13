@@ -2,8 +2,8 @@
 import { rom } from "@core/rom";
 import * as C from "../generated/constants";
 import { flagGet, save } from "../save";
-import type { Pokemon } from "./pokemon";
-import { GetPlayerPartyHighestLevel } from "./mon";
+import type { Pokemon } from "@core/pokemon/pokemon";
+import { GetPlayerPartyHighestLevel } from "@core/pokemon/mon";
 
 /** GetMoveRelearnerMoves (pokemon.c): preserve learnset order and skip known or repeated moves. */
 export function GetMoveRelearnerMoves(mon: Pokemon): number[] {

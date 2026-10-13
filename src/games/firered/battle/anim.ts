@@ -27,11 +27,11 @@ import {
   type AffineAnimCmd, type AnimCmd, type Sprite, type SpriteCallback, type SpriteFrameImage, type SpriteTemplate,
 } from "@core/hw/sprite";
 import { ArcTan2, Cos, Sin } from "@core/hw/trig";
-import { GetMonData, gEnemyParty, playerMon } from "../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import {
   gEnemyMonElevation, gMonBackPicCoords, gMonBackPicTable, gMonFrontPicCoords, gMonFrontPicTable, GetMonSpritePalFromSpeciesAndPersonality,
   LoadSpecialPokePic, LoadSpecialPokePic_DontHandleDeoxys, symBytes,
-} from "../pokemon/pics";
+} from "@core/pokemon/pics";
 import { DisableStruct } from "../generated/structs";
 import {
   G, gBattleAnimBgTileBuffer, gBattleAnimBgTilemapBuffer, gBattleMonForms, gBattlerPartyIndexes, gBattlerPositions, gBattlerSpriteIds, gBattleSpritesDataPtr, gMonSpritesGfxPtr, gTransformedPersonalities,

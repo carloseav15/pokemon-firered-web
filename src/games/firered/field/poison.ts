@@ -6,10 +6,10 @@ import { tasks } from "@core/gba/tasks";
 import { stringVars } from "@core/gba/charmap";
 import { rom } from "@core/rom";
 import { save, SV, varSet } from "../save";
-import { GetMonData, SetMonData } from "../pokemon/mon";
-import { nickname } from "../pokemon/pokemon";
-import { AdjustFriendship } from "../pokemon/mon_extra";
-import type { Mon } from "../pokemon/mon";
+import { GetMonData, SetMonData } from "@core/pokemon/mon";
+import { nickname } from "@core/pokemon/pokemon";
+import { AdjustFriendship } from "@core/pokemon/mon_extra";
+import type { Mon } from "@core/pokemon/mon";
 
 /** IsMonValidSpecies (field_poison.c): empty and egg slots are not party mons. */
 function IsMonValidSpecies(pokemon: Mon): boolean {

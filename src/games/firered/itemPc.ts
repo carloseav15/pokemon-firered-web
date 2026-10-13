@@ -59,7 +59,7 @@ import {
 import { gPartyMenu, InitPartyMenu, Task_HandleChooseMonInput } from "./partyMenu";
 import { tmhmMove } from "./menus/monProgress";
 import { addBagItem, ItemPcCompaction, itemInfo, itemName, removePCItem } from "./pokemon/items";
-import { CalculatePlayerPartyCount } from "./pokemon/mon";
+import { CalculatePlayerPartyCount } from "@core/pokemon/mon";
 import { rom } from "@core/rom";
 import { save } from "./save";
 

@@ -51,13 +51,13 @@ export default [
     name: "ModifyStatByNature", group: "B", kind: "pure", ret: "u16",
     c: { stem: "pokemon", name: "ModifyStatByNature", unstatic: ["ModifyStatByNature", "sNatureStatTable"] },
     params: [P("nature", "u8", { realistic: [0, 24], structural: true }), P("stat", "u16", { realistic: [0, 595], extra: [595, 596, 727, 728, 729] }), P("statIndex", "u8", { realistic: [0, 5], structural: true })],
-    impls: [{ label: "pokemon/pokemon.ts", file: "src/games/firered/pokemon/pokemon.ts", name: "modifyStatByNature" }], // TS uses camelCase
+    impls: [{ label: "pokemon/pokemon.ts", file: "src/core/pokemon/pokemon.ts", name: "modifyStatByNature" }], // TS uses camelCase
     realisticEvidence: [
       fact("C comment: the u16 product overflows for stat > 595 (positive nature); base-game stats stay below it", "pokemon.c:5406-5411"),
       fact("BUGFIX is not defined in this build, so the C keeps the u16 intermediate", "pokemon.c:5412"),
     ],
     dataChecks: [{ label: "sNatureStatTable", cSymbol: "sNatureStatTable", stride: 1, type: "s8",
-      ts: (ctx) => ctx.ns.mods[ctx.abs("src/games/firered/pokemon/pokemon.ts")].__o_NATURE_STAT_TABLE.flat() }],
+      ts: (ctx) => ctx.ns.mods[ctx.abs("src/core/pokemon/pokemon.ts")].__o_NATURE_STAT_TABLE.flat() }],
     extraExpose: ["NATURE_STAT_TABLE"],
     cost: { wrapper: "expose non-exported TS fn + table, unstatic fn + table in C", state: "none", touchedTs: false, adapters: ["esbuild expose", "unstatic in C TU", "table data check"], reusable: "expose/unstatic/data-check" },
   },
@@ -74,7 +74,7 @@ export default [
     c: { stem: "pokemon", name: "CalculatePPWithBonus",
       appendC: "unsigned __oracle_move_stride(void){return sizeof(gBattleMoves[0]);}\nunsigned __oracle_move_pp_off(void){return (unsigned)(unsigned long)&((struct BattleMove*)0)->pp;}" },
     params: [P("move", "u16", { realistic: [0, 354], structural: true }), P("ppBonuses", "u8", { realistic: [0, 255] }), P("moveIndex", "u8", { realistic: [0, 3], structural: true })],
-    impls: [{ label: "pokemon/mon.ts", file: "src/games/firered/pokemon/mon.ts", name: "CalculatePPWithBonus" }],
+    impls: [{ label: "pokemon/mon.ts", file: "src/core/pokemon/mon.ts", name: "CalculatePPWithBonus" }],
     realisticEvidence: [fact("move ids are 0..MOVES_COUNT-1 (355); moveIndex is a party-mon move slot 0..3", "constants/moves.h:360", "pokemon.c:4206")],
     async setup(ctx) { ctx.rom.moves = json(ctx, "data/moves.json").moves; },
     dataChecks: [{ label: "gBattleMoves.pp", cSymbol: "gBattleMoves", strideFn: "__oracle_move_stride", offsetFn: "__oracle_move_pp_off",

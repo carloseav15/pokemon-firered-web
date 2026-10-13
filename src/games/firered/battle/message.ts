@@ -17,7 +17,7 @@ import {
   gDisplayedStringBattle, gMoveSelectionCursor,
 } from "./globals";
 import { GetBattlerAtPosition, GetBattlerSide } from "./util";
-import { GetMonData, GetSecretBaseTrainerNameIndex, gEnemyParty, playerMon } from "../pokemon/mon";
+import { GetMonData, GetSecretBaseTrainerNameIndex, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import { GetTrainerTowerOpponentClass, GetTrainerTowerOpponentName, GetTrainerTowerOpponentLoseText, GetTrainerTowerOpponentWinText, GetTrainerTowerOpponentGender } from "../trainerTower";
 import { GetBattleTowerTrainerClassNameId, GetBattleTowerTrainerName, GetEreaderTrainerClassId, CopyEReaderTrainerName5 } from "../battleTower";
 

@@ -54,10 +54,10 @@ import {
 } from "@core/hw/window";
 import { rom } from "@core/rom";
 import { flagSet, save, SV, varGet } from "../save";
-import { GetMonData } from "./mon";
-import { calculateStats, createMon, nickname, setDexFlag, speciesName, type Pokemon } from "./pokemon";
+import { GetMonData } from "@core/pokemon/mon";
+import { calculateStats, createMon, nickname, setDexFlag, speciesName, type Pokemon } from "@core/pokemon/pokemon";
 import { GetInGameTradeMail } from "./mail";
-import { GetMonFrontSpritePal, LoadSpecialPokePic } from "./pics";
+import { GetMonFrontSpritePal, LoadSpecialPokePic } from "@core/pokemon/pics";
 import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "../battle/pokeball";
 import { GetEvolutionTargetSpecies } from "../battle/ext";
 import { SetCB2AfterEvolution, TradeEvolutionScene } from "../evolutionScene";

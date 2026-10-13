@@ -19,8 +19,8 @@ import {
 } from "@core/hw/sprite";
 import { Sin } from "@core/hw/trig";
 import { cdata } from "@core/hw/assets";
-import { CreateMon, gEnemyParty, OT_ID_RANDOM_NO_SHINY, playerMon, SetMonData, ZeroEnemyPartyMons } from "../pokemon/mon";
-import { AdjustFriendship } from "../pokemon/mon_extra";
+import { CreateMon, gEnemyParty, OT_ID_RANDOM_NO_SHINY, playerMon, SetMonData, ZeroEnemyPartyMons } from "@core/pokemon/mon";
+import { AdjustFriendship } from "@core/pokemon/mon_extra";
 import { G, gBattleCommunication, gBattleMonForms, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds, gMonSpritesGfxPtr } from "./globals";
 import { BattleMainCB1 } from "./main";
 import { GetBattlerPosition } from "./util";

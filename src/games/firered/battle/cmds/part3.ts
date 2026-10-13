@@ -24,7 +24,7 @@ import {
   STATUS1_SLEEP_TURN, STATUS2_BIDE_TURN, STATUS2_INFATUATED_WITH, STATUS3_ALWAYS_HITS_TURN, TYPE_EFFECT_ATK_TYPE, TYPE_EFFECT_DEF_TYPE,
   TYPE_EFFECT_MULTIPLIER, div, gBattleMoves, GET_STAT_BUFF_ID,
 } from "../macros";
-import { GetMonData, GetGenderFromSpeciesAndPersonality, gEnemyParty, playerMon, type Mon, GetMonGender } from "../../pokemon/mon";
+import { GetMonData, GetGenderFromSpeciesAndPersonality, gEnemyParty, playerMon, type Mon, GetMonGender } from "@core/pokemon/mon";
 import {
   CancelMultiTurnMoves, CountAliveMonsInBattle, GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerForBattleScript, GetBattlerPosition,
   GetBattlerSide, GetMoveTarget, ItemId_GetHoldEffect, ItemId_GetHoldEffectParam, MarkBattlerForControllerExec, RecordAbilityBattle,

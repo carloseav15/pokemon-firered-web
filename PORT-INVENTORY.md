@@ -36,7 +36,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `event_object_movement.c` | 9412 | 718/759 | `field/fieldEffectHelpers.ts`, `field/fieldEffects.ts`, `field/objectEvents.ts` … |  |  |
-| `pokemon.c` | 6453 | 135/140 | `core/audio/sound.ts`, `battle/anim.ts`, `battle/battleSetup.ts` … |  |  |
+| `pokemon.c` | 6453 | 135/140 | `core/audio/sound.ts`, `core/pokemon/battleMusic.ts`, `core/pokemon/mon.ts` … |  |  |
 | `party_menu.c` | 6342 | 326/357 | `battle/ext.ts`, `field/overworld.ts`, `menus/fieldMenus.ts` … |  |  |
 | `pokemon_summary_screen.c` | 5224 | 131/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `battle_main.c` | 4477 | 87/106 | `battle/bg.ts`, `battle/controllers.ts`, `battle/globals.ts` … |  |  |
@@ -65,11 +65,11 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `image_processing_effects.c` | 4436 | 38/38 | `imageProcessingEffects.ts` |  |  |
 | `region_map.c` | 4036 | 140/140 | `regionMap.ts` |  |  |
 | `battle_anim_effects_2.c` | 3865 | 121/121 | `battle/anims/effects2.ts` |  |  |
-| `pokedex_screen.c` | 3452 | 66/66 | `pokedexScreen.ts`, `pokemon/mon_extra.ts` |  |  |
+| `pokedex_screen.c` | 3452 | 66/66 | `core/pokemon/mon_extra.ts`, `pokedexScreen.ts` |  |  |
 | `battle_util.c` | 3252 | 37/37 | `battle/util.ts` |  |  |
 | `battle_message.c` | 2855 | 10/10 | `battle/message.ts`, `trainerTower.ts` |  |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 82/82 | `storageSystemTasks.ts` |  |  |
-| `field_specials.c` | 2555 | 118/118 | `core/gba/charmap.ts`, `field/fieldControl.ts`, `field/fieldMoves.ts` … |  |  |
+| `field_specials.c` | 2555 | 118/118 | `core/gba/charmap.ts`, `core/pokemon/pokemon.ts`, `core/pokemon/storage.ts` … |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `menus/slotMachine.ts` |  |  |
 | `naming_screen.c` | 2509 | 109/109 | `core/gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
 | `help_system.c` | 2480 | 41/41 | `field/overworld.ts`, `helpSystem.ts`, `introTitle.ts` |  |  |
@@ -83,7 +83,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_interface.c` | 2240 | 52/52 | `battle/interface.ts`, `battle/util.ts` |  |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `field_player_avatar.c` | 2168 | 176/176 | `field/fieldEffects.ts`, `field/fieldmap.ts`, `field/fishing.ts` … |  |  |
-| `pokemon_storage_system_data.c` | 2165 | 83/83 | `pokemon/storage.ts`, `storageSystemData.ts` |  |  |
+| `pokemon_storage_system_data.c` | 2165 | 83/83 | `core/pokemon/storage.ts`, `storageSystemData.ts` |  |  |
 | `daycare.c` | 2155 | 93/93 | `eggHatch.ts`, `game.ts`, `pokemon/daycare.ts` … |  |  |
 | `battle_ai_script_commands.c` | 1970 | 105/105 | `battle/ai.ts`, `battle/util.ts` |  |  |
 | `trainer_card.c` | 1959 | 73/73 | `menus/trainerCard.ts` |  |  |
@@ -123,7 +123,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_setup.c` | 1070 | 66/66 | `battle/battleSetup.ts`, `battle/ext.ts`, `battle/host.ts` … |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 48/48 | `battle/bg.ts`, `battle/gfx_sfx_util.ts`, `battle/globals.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 115/115 | `field/fieldEffectHelpers.ts`, `field/fieldmap.ts`, `generated/metatileBehavior.ts` |  |  |
-| `berry.c` | 1028 | 9/9 | `pokemon/berry.ts`, `save.ts`, `script/specials.ts` |  |  |
+| `berry.c` | 1028 | 9/9 | `core/pokemon/berry.ts`, `save.ts`, `script/specials.ts` |  |  |
 | `battle_anim_normal.c` | 997 | 36/36 | `battle/anims/normal.ts` |  |  |
 | `palette.c` | 994 | 41/41 | `core/hw/palette.ts` |  |  |
 | `battle_anim_utility_funcs.c` | 970 | 42/42 | `battle/anims/utilityFuncs.ts` |  |  |
@@ -143,7 +143,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_anim_ground.c` | 752 | 25/25 | `battle/anims/ground.ts` |  |  |
 | `trainer_see.c` | 750 | 37/37 | `field/fieldEffects.ts`, `field/objectEvents.ts`, `field/trainerSee.ts` |  |  |
 | `player_pc.c` | 740 | 47/47 | `menus/playerPc.ts`, `playerPcMailbox.ts`, `pokemon/mail.ts` |  |  |
-| `mail.c` | 734 | 10/10 | `menus/mailView.ts`, `pokemon/mail.ts`, `pokemon/pokemon.ts` |  |  |
+| `mail.c` | 734 | 10/10 | `core/pokemon/pokemon.ts`, `menus/mailView.ts`, `pokemon/mail.ts` |  |  |
 | `easy_chat.c` | 730 | 39/39 | `easyChat.ts`, `pokemon/mail.ts`, `script/specials.ts` |  |  |
 | `string_util.c` | 726 | 40/40 | `core/gba/charmap.ts`, `core/gba/stringBuffers.ts`, `battleRecords.ts` … |  |  |
 | `pokemon_special_anim.c` | 709 | 31/31 | `partyMenu.ts`, `pokemonSpecialAnim.ts` |  |  |
@@ -151,7 +151,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_ai_switch_items.c` | 674 | 13/13 | `battle/ai.ts` |  |  |
 | `menu2.c` | 671 | 10/10 | `hw/menu.ts`, `menu2.ts` |  |  |
 | `battle_controller_safari.c` | 669 | 72/72 | `battle/controller_safari.ts` |  |  |
-| `pokemon_storage_system_menu.c` | 660 | 29/29 | `menus/storageMenu.ts`, `pokemon/storage.ts`, `storageSystemData.ts` |  |  |
+| `pokemon_storage_system_menu.c` | 660 | 29/29 | `core/pokemon/storage.ts`, `menus/storageMenu.ts`, `storageSystemData.ts` |  |  |
 | `itemfinder.c` | 658 | 24/24 | `menus/itemFinder.ts` |  |  |
 | `menu_indicators.c` | 656 | 20/20 | `hw/listMenu.ts`, `menus/fieldListMenu.ts`, `menus/hardwareChoice.ts` |  |  |
 | `sound.c` | 649 | 48/48 | `core/audio/m4a.ts`, `core/audio/sound.ts`, `battle/animScript.ts` … |  |  |
@@ -175,7 +175,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `item_menu_icons.c` | 439 | 17/17 | `bagMenu.ts` |  |  |
 | `battle_anim_dragon.c` | 434 | 11/11 | `battle/anims/dragon.ts` |  |  |
 | `bike.c` | 418 | 24/24 | `field/playerAvatar.ts` |  |  |
-| `decompress.c` | 352 | 18/18 | `core/decompress.ts`, `pokemon/pics.ts` |  |  |
+| `decompress.c` | 352 | 18/18 | `core/decompress.ts`, `core/pokemon/pics.ts` |  |  |
 | `field_tasks.c` | 351 | 12/12 | `field/fieldTasks.ts`, `script/specialsExtra.ts` |  |  |
 | `trainer_fan_club.c` | 347 | 23/23 | `script/specialsExtra.ts` |  |  |
 | `special_field_anim.c` | 341 | 10/10 | `field/specialFieldAnim.ts`, `script/specialsExtra.ts` |  |  |
@@ -192,7 +192,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `util.c` | 276 | 10/10 | `core/util.ts` |  |  |
 | `diploma.c` | 275 | 10/10 | `diploma.ts` |  |  |
 | `pokedex_area_markers.c` | 274 | 5/5 | `pokedexArea.ts` |  |  |
-| `roamer.c` | 264 | 13/13 | `pokemon/roamer.ts` |  |  |
+| `roamer.c` | 264 | 13/13 | `core/pokemon/roamer.ts` |  |  |
 | `scanline_effect.c` | 261 | 9/9 | `core/hw/scanline.ts` |  |  |
 | `menu_helpers.c` | 243 | 17/17 | `hw/menuHelpers.ts`, `linkState.ts` |  |  |
 | `tilemap_util.c` | 238 | 11/11 | `core/hw/tilemapUtil.ts` |  |  |
@@ -211,11 +211,11 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `mail_data.c` | 187 | 12/12 | `pokemon/mail.ts` |  |  |
 | `pc_screen_effect.c` | 179 | 7/7 | `pcScreenEffect.ts` |  |  |
 | `text_window.c` | 177 | 19/19 | `battle/bg.ts`, `hw/menu.ts`, `hw/menuHelpers.ts` |  |  |
-| `pokemon_storage_system.c` | 171 | 21/21 | `pokemon/storage.ts` |  |  |
+| `pokemon_storage_system.c` | 171 | 21/21 | `core/pokemon/storage.ts` |  |  |
 | `new_game.c` | 160 | 11/11 | `core/random.ts`, `battleRecords.ts`, `game.ts` … |  |  |
 | `gpu_regs.c` | 158 | 11/11 | `core/hw/gpu.ts` |  |  |
 | `quest_log_battle.c` | 150 | 3/3 | `questLogBattle.ts` |  |  |
-| `pokedex.c` | 148 | 8/8 | `battle/ext.ts`, `pokemon/pokemon.ts` |  |  |
+| `pokedex.c` | 148 | 8/8 | `core/pokemon/pokemon.ts`, `battle/ext.ts` |  |  |
 | `quest_log_objects.c` | 146 | 3/3 | `questLogObjects.ts` |  |  |
 | `field_message_box.c` | 142 | 14/14 | `field/messageBox.ts` |  |  |
 | `mailbox_pc.c` | 140 | 9/9 | `mailboxPc.ts`, `menus/playerPc.ts`, `playerPcMailbox.ts` … |  |  |
@@ -226,9 +226,9 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `heal_location.c` | 122 | 5/5 | `field/overworld.ts` |  |  |
 | `field_poison.c` | 119 | 7/7 | `field/poison.ts` |  |  |
 | `event_object_lock.c` | 114 | 11/11 | `script/eventObjectLock.ts` |  |  |
-| `save_location.c` | 112 | 10/10 | `pokemon/saveLocation.ts` |  |  |
+| `save_location.c` | 112 | 10/10 | `core/pokemon/saveLocation.ts` |  |  |
 | `prof_pc.c` | 109 | 3/3 | `game.ts` |  |  |
-| `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
+| `battle_util2.c` | 108 | 3/3 | `core/pokemon/mon_extra.ts`, `battle/anim.ts`, `battle/globals.ts` |  |  |
 | `fldeff_softboiled.c` | 108 | 8/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
 | `party_menu_specials.c` | 108 | 9/9 | `game.ts`, `partyMenu.ts`, `script/specialsExtra.ts` |  |  |
 | `help_message.c` | 106 | 7/7 | `boot.ts`, `menus/helpMessage.ts`, `partyMenu.ts` |  |  |

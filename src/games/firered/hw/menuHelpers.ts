@@ -12,7 +12,7 @@ import { SetFontsPointer, textFlags } from "@core/gba/textPrinter";
 import { rom } from "@core/rom";
 import { save } from "../save";
 import { itemName } from "../pokemon/items";
-import { GetBerryInfo } from "../pokemon/berry";
+import { GetBerryInfo } from "@core/pokemon/berry";
 import { ItemIsMail } from "../pokemon/mail";
 import { InUnionRoom } from "../unionRoom";
 import { IsLinkSessionActive, IsLinkRecvQueueAtOverworldMax, Overworld_LinkRecvQueueLengthMoreThan2 } from "../linkState";

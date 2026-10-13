@@ -53,8 +53,8 @@ import {
   AddWindow, CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "@core/hw/window";
 import { BeginPCScreenEffect_TurnOff, BeginPCScreenEffect_TurnOn, IsPCScreenEffectRunning_TurnOff, IsPCScreenEffectRunning_TurnOn } from "./pcScreenEffect";
-import { GetGenderFromSpeciesAndPersonality, SpeciesToNationalPokedexNum, playerMon } from "./pokemon/mon";
-import { speciesName } from "./pokemon/pokemon";
+import { GetGenderFromSpeciesAndPersonality, SpeciesToNationalPokedexNum, playerMon } from "@core/pokemon/mon";
+import { speciesName } from "@core/pokemon/pokemon";
 import { random } from "@core/random";
 import { GetGameStat, save } from "./save";
 import {

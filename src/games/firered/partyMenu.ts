@@ -56,14 +56,14 @@ import {
 import { bagResult, GoToBagMenu } from "./bagMenu";
 import { CreateMonIcon, LoadMonIconPalettes, SetPartyHPBarSprite, UpdateMonIconFrame } from "./pokemonIcon";
 import { GetLastViewedMonIndex, ShowPokemonSummaryScreen } from "./summaryScreen";
-import { AdjustFriendship } from "./pokemon/mon_extra";
+import { AdjustFriendship } from "@core/pokemon/mon_extra";
 import {
   CalculatePlayerPartyCount, GetMonData, GetMonGender, GiveMoveToMon, MonTryLearningNewMove, playerMon, RemoveMonPPBonus, SetMonData, SetMonMoveSlot,
   zeroMon, type Mon,
-} from "./pokemon/mon";
+} from "@core/pokemon/mon";
 import { addBagItem, addPCItem, CheckIfItemIsTMHMOrEvolutionStone, itemInfo, removeBagItem, removePCItem } from "./pokemon/items";
 import { ClearPCMailEntry, GetPCMail, GiveMailToMon, GiveMailToMon2, isMailItem, TakeMailFromMon, TakeMailFromMon2 } from "./pokemon/mail";
-import { CanMonLearnTMHM, speciesName } from "./pokemon/pokemon";
+import { CanMonLearnTMHM, speciesName } from "@core/pokemon/pokemon";
 import { tmhmMove } from "./menus/monProgress";
 import { gPlayerPcMenuManager } from "./mailboxPc";
 import {

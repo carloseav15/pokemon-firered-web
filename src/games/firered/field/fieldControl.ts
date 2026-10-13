@@ -17,7 +17,7 @@ import { IncrementRenewableHiddenItemStepCounter } from "../renewableHiddenItems
 import { EncodeHiddenItemData, GetHiddenItemAttr } from "./hiddenItem";
 import { WonderNews_IncrementStepCounter } from "../wonderNews";
 import { IncrementBirthIslandRockStepCount, IncrementResortGorgeousStepCounter, RunMassageCooldownStepCounter } from "./fieldStepCounters";
-import { AdjustFriendship } from "../pokemon/mon_extra";
+import { AdjustFriendship } from "@core/pokemon/mon_extra";
 import { tasks } from "@core/gba/tasks";
 import { GetRamScript } from "../script/context";
 import { StartEscalatorWarp } from "./escalatorWarp";

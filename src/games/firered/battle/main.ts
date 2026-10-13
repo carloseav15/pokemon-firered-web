@@ -9,8 +9,8 @@ import { FreeBattleResources, G, gActionsByTurnOrder, gActionSelectionCursor, gB
 import { div, gBattleMoves, IS_BATTLER_OF_TYPE, s8, STATUS2_INFATUATED_WITH, STATUS3_ALWAYS_HITS_TURN } from "./macros";
 import { AbilityBattleEffects, AreAllMovesUnusable, BattleScriptExecute, CancelMultiTurnMoves, ClearFuryCutterDestinyBondGrudge, DoBattlerEndTurnEffects, DoFieldEndTurnEffects, GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide, GetMoveTarget, HandleAction_RunBattleScript, HandleFaintedMonActions, HandleWishPerishSongOnTurnEnd, IS_BATTLE_TYPE_GHOST_WITHOUT_SCOPE, ItemBattleEffects, ItemId_GetHoldEffect, ItemId_GetHoldEffectParam, MarkBattlerForControllerExec, PrepareStringBattle, RecordAbilityBattle, ResetSentPokesToOpponentValue, TryClearRageStatuses, TrySetCantSelectMoveBattleScript, WEATHER_HAS_EFFECT } from "./util";
 import { BtlController_EmitChooseAction, BtlController_EmitChooseItem, BtlController_EmitChooseMove, BtlController_EmitChoosePokemon, BtlController_EmitDrawPartyStatusSummary, BtlController_EmitDrawTrainerPic, BtlController_EmitEndBounceEffect, BtlController_EmitGetMonData, BtlController_EmitIntroSlide, BtlController_EmitIntroTrainerBallThrow, BtlController_EmitLinkStandbyMsg, BtlController_EmitLoadMonSprite, BUFFER_A, type ChooseMoveStruct, type HpAndStatus } from "./controllers";
-import { CalculatePPWithBonus, gEnemyParty, GetMonData, playerMon, SpeciesToNationalPokedexNum } from "../pokemon/mon";
-import { HandleSetPokedexFlag } from "../pokemon/mon_extra";
+import { CalculatePPWithBonus, gEnemyParty, GetMonData, playerMon, SpeciesToNationalPokedexNum } from "@core/pokemon/mon";
+import { HandleSetPokedexFlag } from "@core/pokemon/mon_extra";
 import { gBattleScriptingCommandsTable } from "./cmds";
 import { BattleMainCB2 } from "./main_init";
 import { BattleStopLowHpSound, PlayBGM } from "./gfx_sfx_util";

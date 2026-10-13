@@ -7,9 +7,9 @@ import { cdata, hasCData, loadCData, type SymRef } from "@core/hw/assets";
 import { rom } from "@core/rom";
 import { flagGet, IsNationalPokedexEnabled, save, SV, varGet } from "./save";
 import type { SaveData } from "./save";
-import { GetNationalPokedexCount, speciesName } from "./pokemon/pokemon";
-import { GetSetPokedexFlag } from "./pokemon/mon_extra";
-import { SpeciesToNationalPokedexNum } from "./pokemon/mon";
+import { GetNationalPokedexCount, speciesName } from "@core/pokemon/pokemon";
+import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
+import { SpeciesToNationalPokedexNum } from "@core/pokemon/mon";
 
 const EC_WORD_UNDEFINED = C.EC_WORD_UNDEFINED;
 const CHAR_SPACE_TEXT = " ";

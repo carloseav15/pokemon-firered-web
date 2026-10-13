@@ -6,14 +6,14 @@ import { CurrentPageToNextKeyboardId, GetKeyRoleAtCursorPos, HandleDpadMovement,
 import { cdata, incbin, loadCData, preloadPacks, type SymRef } from "@core/hw/assets";
 import { animFrom, oamFrom, templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import { save, varGet, flagGet } from "./save";
-import { getBoxName, getPCBoxToSendMon, isDestinationBoxFull } from "./pokemon/storage";
+import { getBoxName, getPCBoxToSendMon, isDestinationBoxFull } from "@core/pokemon/storage";
 import { rom } from "@core/rom";
 import { joy, A_BUTTON, B_BUTTON, SELECT_BUTTON, START_BUTTON } from "@core/gba/input";
 import { EOS, stringVars, expandPlaceholders } from "@core/gba/charmap";
 import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
 import { tasks } from "@core/gba/tasks";
 import { sound } from "@core/audio/sound";
-import { speciesName } from "./pokemon/pokemon";
+import { speciesName } from "@core/pokemon/pokemon";
 import { textFlags, getTextSpeedSetting } from "@core/gba/textPrinter";
 import { BG_ATTR_PRIORITY, BG_COORD_SET, ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, GetBgAttribute, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "@core/hw/bg";
 import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";

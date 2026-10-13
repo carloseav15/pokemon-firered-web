@@ -3,12 +3,12 @@
 import * as C from "./generated/constants";
 import { gQuestLogState } from "./questLogEvents";
 import { flagGet, flagSet, save } from "./save";
-import { IsCurMapPokeCenter } from "./pokemon/saveLocation";
+import { IsCurMapPokeCenter } from "@core/pokemon/saveLocation";
 import { rom } from "@core/rom";
 import { cdata } from "@core/hw/assets";
 import { sound } from "@core/audio/sound";
 import { A_BUTTON, B_BUTTON, joy, L_BUTTON, R_BUTTON } from "@core/gba/input";
-import { GetKantoPokedexCount } from "./pokemon/pokemon";
+import { GetKantoPokedexCount } from "@core/pokemon/pokemon";
 import { checkBagHasItem } from "./pokemon/items";
 import { getReceivedRemoteLinkPlayers } from "./linkState";
 import {

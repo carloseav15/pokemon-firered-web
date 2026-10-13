@@ -4,7 +4,7 @@ import { save } from "./save";
 import * as C from "./generated/constants";
 import { gObjectEvents, ObjectEvent } from "./field/objectEvents";
 import type { SpriteManager } from "@core/gba/sprite";
-import type { Pokemon } from "./pokemon/pokemon";
+import type { Pokemon } from "@core/pokemon/pokemon";
 
 let sSaveBlockParty: Pokemon[] = [];
 

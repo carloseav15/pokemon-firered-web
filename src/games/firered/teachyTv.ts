@@ -48,7 +48,7 @@ import { save, SV, varSet } from "./save";
 import { StartBattleFromHwScene } from "./battle/host";
 import { InitPokedudePartyAndOpponent } from "./battle/controller_pokedude";
 import { BattleTransitionScene } from "./battle/transition";
-import { PlayMapChosenOrBattleBGM } from "./pokemon/battleMusic";
+import { PlayMapChosenOrBattleBGM } from "@core/pokemon/battleMusic";
 import { G } from "./battle/globals";
 import type { Game } from "./game";
 import { LoadPlayerParty, SavePlayerParty } from "./loadSave";

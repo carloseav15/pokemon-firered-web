@@ -21,7 +21,7 @@ import { A_BUTTON, joy } from '../../src/core/gba/input.ts';
 import { preloadBattleAssets } from '../../src/games/firered/battle/preload.ts';
 import { G, resetBattleStructs } from '../../src/games/firered/battle/globals.ts';
 import { CB2_InitBattle, FreeRestoreBattleData } from '../../src/games/firered/battle/main_init.ts';
-import { createMon, giveMonToPlayer } from '../../src/games/firered/pokemon/pokemon.ts';
+import { createMon, giveMonToPlayer } from '../../src/core/pokemon/pokemon.ts';
 import { save, newSaveData, setSave } from '../../src/games/firered/save.ts';
 import { registerCData } from '../../src/core/hw/assets.ts';
 import { GetTrainerBattleTransition } from '../../src/games/firered/battle/transition.ts';

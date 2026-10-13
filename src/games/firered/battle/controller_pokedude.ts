@@ -37,7 +37,7 @@ import {
   MoveSelectionDestroyCursorAt, PlayerHandleGetRawMonData, SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry,
 } from "./controller_player";
 import { BtlCtrl_DrawVoiceoverMessageFrame, BtlCtrl_RemoveVoiceoverMessageFrame } from "./controller_oak_old_man";
-import { CalculateMonStats, CreateMonWithGenderNatureLetter, gEnemyParty, GetMonData, playerMon, SetMonData, SetMonMoveSlot, ZeroEnemyPartyMons, ZeroPlayerPartyMons, type Mon } from "../pokemon/mon";
+import { CalculateMonStats, CreateMonWithGenderNatureLetter, gEnemyParty, GetMonData, playerMon, SetMonData, SetMonMoveSlot, ZeroEnemyPartyMons, ZeroPlayerPartyMons, type Mon } from "@core/pokemon/mon";
 import {
   BattleLoadOpponentMonSpriteGfx, BattleLoadPlayerMonSpriteGfx, BattleStopLowHpSound, ClearTemporarySpeciesSpriteData, CopyAllBattleSpritesInvisibilities,
   CopyBattleSpriteInvisibility, DecompressTrainerBackPalette, DecompressTrainerFrontPic, DoHitAnimHealthboxEffect, gTrainerBackPicCoords,

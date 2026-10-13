@@ -25,7 +25,7 @@ import {
 import {
   CalculatePlayerPartyCount, GetMonData, MonTryLearningNewMove, RemoveMonPPBonus, SetMonMoveSlot, gEnemyParty, playerMon,
   type Mon, SpeciesToNationalPokedexNum,
-} from "../../pokemon/mon";
+} from "@core/pokemon/mon";
 import {
   AbilityBattleEffects, GetBattlerAtPosition, GetBattlerForBattleScript, GetBattlerPosition, GetBattlerSide, HasNoMonsToSwitch,
   ItemBattleEffects, ItemId_GetHoldEffect, MarkBattlerForControllerExec, RecordAbilityBattle, WasUnableToUseMove, GetAbilityBySpecies,
@@ -44,7 +44,7 @@ import { SwitchInClearSetData, UpdatePartyOwnerOnSwitch_NonMulti } from "../main
 import { BattleMainCB2 } from "../main_init";
 import { AttacksThisTurn } from "./helpers";
 import { u32bytes } from "./part1";
-import { HandleSetPokedexFlag, IsHMMove2, RemoveBattleMonPPBonus } from "../../pokemon/mon_extra";
+import { HandleSetPokedexFlag, IsHMMove2, RemoveBattleMonPPBonus } from "@core/pokemon/mon_extra";
 import { UpdateSentPokesToOpponentValue } from "../util";
 import { ShowSelectMovePokemonSummaryScreen, GetMoveSlotToReplace } from "../ext";
 import { ReshowBattleScreenAfterMenu } from "../reshow";

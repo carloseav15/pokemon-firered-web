@@ -1,8 +1,8 @@
 // save_location.c: map classification and the save-warp / GCN link flags.
 
-import * as C from "../generated/constants";
-import { rom } from "@core/rom";
-import { save } from "../save";
+import * as C from "@game/generated/constants";
+import { rom } from "../rom";
+import { save } from "@game/save";
 
 const POKECENTER_MAPS = [
   "VIRIDIAN_CITY_POKEMON_CENTER_1F", "VIRIDIAN_CITY_POKEMON_CENTER_2F", "PEWTER_CITY_POKEMON_CENTER_1F", "PEWTER_CITY_POKEMON_CENTER_2F",

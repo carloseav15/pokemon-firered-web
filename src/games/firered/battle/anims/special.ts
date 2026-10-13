@@ -23,7 +23,7 @@ import {
   StartSpriteAnim, ST_OAM_OBJ_BLEND, ST_OAM_OBJ_NORMAL, ST_OAM_OBJ_WINDOW, type Sprite, type SpriteTemplate,
 } from "@core/hw/sprite";
 import { Cos, Sin } from "@core/hw/trig";
-import { GetMonData, gEnemyParty, playerMon, type Mon } from "../../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon, type Mon } from "@core/pokemon/mon";
 import { save } from "../../save";
 import {
   animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, copySprite, DestroyAnimSprite, DestroyAnimVisualTask,

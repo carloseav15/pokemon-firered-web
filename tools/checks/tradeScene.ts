@@ -52,7 +52,7 @@ const incbinIndex = JSON.parse(readFileSync(root + 'incbin/index.json', 'utf8'))
 registerIncbinIndex(incbinIndex);
 
 // Populate ROM text data before evaluating modules that encode strings at load time.
-const { createMon } = await import('../../src/games/firered/pokemon/pokemon.ts');
+const { createMon } = await import('../../src/core/pokemon/pokemon.ts');
 const Trade = await import('../../src/games/firered/pokemon/ingameTrade.ts');
 
 const tradePack = readFileSync(root + 'incbin/graphics_trade.bin');

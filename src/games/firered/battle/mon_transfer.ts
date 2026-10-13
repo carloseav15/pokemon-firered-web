@@ -4,7 +4,7 @@
 import * as C from "../generated/constants";
 import { BattlePokemon } from "../generated/structs";
 import { G, gBattleBufferA, gBattlerPartyIndexes } from "./globals";
-import { GetMonData, SetMonData, type Mon } from "../pokemon/mon";
+import { GetMonData, SetMonData, type Mon } from "@core/pokemon/mon";
 
 const MOVE_PP_INFO_SIZE = 14; // u16 moves[4]; u8 pp[4]; u8 ppBonuses; (+pad)
 

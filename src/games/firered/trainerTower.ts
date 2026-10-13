@@ -9,7 +9,7 @@ import { encode } from "@core/gba/charmap";
 import { GetStringWidth, FONT_NORMAL } from "@core/gba/font";
 import { addBagItem } from "./pokemon/items";
 import { CopyItemName } from "./hw/menuHelpers";
-import { GetMonData, ZeroEnemyPartyMons, gEnemyParty, CreateBattleTowerMon, type BattleTowerPokemon, playerMon, type Mon } from "./pokemon/mon";
+import { GetMonData, ZeroEnemyPartyMons, gEnemyParty, CreateBattleTowerMon, type BattleTowerPokemon, playerMon, type Mon } from "@core/pokemon/mon";
 import { GetMonsStateToDoubles } from "./pokemon/scriptPokemonUtil";
 import { SetVBlankCounter1Ptr, DisableVBlankCounter1 } from "@core/hw/runtime";
 import { AddWindow, RemoveWindow, type WindowTemplate } from "@core/hw/window";

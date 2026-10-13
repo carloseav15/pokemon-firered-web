@@ -15,16 +15,16 @@ import {
 } from "./hw/menu";
 import { ClearWindowTilemap, AddWindow, RemoveWindow } from "@core/hw/window";
 import { ScheduleBgCopyTilemapToVram, CopyItemName } from "./hw/menuHelpers";
-import { GetMonSpritePalFromSpeciesAndPersonality } from "./pokemon/pics";
+import { GetMonSpritePalFromSpeciesAndPersonality } from "@core/pokemon/pics";
 import {
   GetGenderFromSpeciesAndPersonality, GetMonData, GetMonGender, MonRestorePP, SetMonData, zeroMon, type Mon,
-} from "./pokemon/mon";
+} from "@core/pokemon/mon";
 import { isMailItem } from "./pokemon/mail";
-import { speciesName } from "./pokemon/pokemon";
+import { speciesName } from "@core/pokemon/pokemon";
 import {
   BoxMonAtToMon, GetAndCopyBoxMonDataAt, GetBoxedMonPtr, GetCurrentBoxMonData, SetBoxMonAt, SetCurrentBoxMonData, StorageGetCurrentBox,
   ZeroBoxMonAt,
-} from "./pokemon/storage";
+} from "@core/pokemon/storage";
 import { rom } from "@core/rom";
 import { save } from "./save";
 import { GetLastViewedMonIndex } from "./pokemonSummaryScreen";

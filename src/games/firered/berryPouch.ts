@@ -42,7 +42,7 @@ import {
   PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "@core/hw/window";
 import { bagResult, CreateBerryPouchItemIcon, DestroyItemMenuIcon, ResetItemMenuIconState, type BagTaskContext } from "./bagMenu";
-import { ItemIdToBerryType } from "./pokemon/berry";
+import { ItemIdToBerryType } from "@core/pokemon/berry";
 import { addMoney, itemInfo, pocketList, removeBagItem } from "./pokemon/items";
 import { b64, rom } from "@core/rom";
 import { save } from "./save";

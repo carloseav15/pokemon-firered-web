@@ -29,7 +29,7 @@ import { BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB
 import { ActionSelectionCreateCursorAt, ActionSelectionDestroyCursorAt, HandleInputChooseMove, InitMoveSelectionsVarsAndStrings,
   SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry, PlayerHandleGetRawMonData } from "./controller_player";
 import { OpponentBufferExecCompleted } from "./controller_opponent";
-import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "../pokemon/mon";
+import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "@core/pokemon/mon";
 import { addBagItem as AddBagItem } from "../pokemon/items";
 import {
   CopyAllBattleSpritesInvisibilities, DecompressTrainerBackPalette, DoHitAnimHealthboxEffect, HandleLowHpMusicChange, InitAndLaunchSpecialAnimation,

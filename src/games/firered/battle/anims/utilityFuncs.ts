@@ -12,7 +12,7 @@ import {
 } from "@core/hw/palette";
 import { BLDALPHA_BLEND } from "@core/hw/ppu";
 import { DestroySprite, gSprites, IndexOfSpritePaletteTag, type Sprite } from "@core/hw/sprite";
-import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, CloneBattlerSpriteWithBlend,
   CreateInvisibleSpriteCopy, DestroyAnimVisualTask, DestroySpriteWithActiveSheet, GetAnimBattlerSpriteId, GetBattleAnimBg1Data,

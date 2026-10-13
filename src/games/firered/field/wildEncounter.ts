@@ -6,9 +6,9 @@ import { MetatileBehavior_IsBridge } from "../generated/metatileBehavior";
 import { cdata, type SymRef } from "@core/hw/assets";
 import { random, random32 } from "@core/random";
 import { flagGet, incrementGameStat, save, varGet, varSet } from "../save";
-import { createMon, type Pokemon } from "../pokemon/pokemon";
-import { GetMonAbility } from "../pokemon/mon_extra";
-import { roamerLevel, tryStartRoamerEncounter } from "../pokemon/roamer";
+import { createMon, type Pokemon } from "@core/pokemon/pokemon";
+import { GetMonAbility } from "@core/pokemon/mon_extra";
+import { roamerLevel, tryStartRoamerEncounter } from "@core/pokemon/roamer";
 
 export const MAX_ENCOUNTER_RATE = 1600;
 export const HEADER_NONE = 0xFFFF;

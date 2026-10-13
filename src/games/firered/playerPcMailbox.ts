@@ -49,7 +49,7 @@ import {
 import { ReadMail } from "./menus/mailView";
 import { ClearPCMailEntry, CountPCMail as CountSavePCMail, GetPCMail, GetPCMailEntry, PCMailCompaction as CompactSavePCMail } from "./pokemon/mail";
 import { addBagItem } from "./pokemon/items";
-import { CalculatePlayerPartyCount } from "./pokemon/mon";
+import { CalculatePlayerPartyCount } from "@core/pokemon/mon";
 import { rom } from "@core/rom";
 import { save } from "./save";
 import type { Game } from "./game";

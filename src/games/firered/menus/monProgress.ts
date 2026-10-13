@@ -8,7 +8,7 @@ import { sound } from "@core/audio/sound";
 import { decode, stringVars } from "@core/gba/charmap";
 import { rom } from "@core/rom";
 import { save } from "../save";
-import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, type Pokemon } from "../pokemon/pokemon";
+import { evolveMon, giveMove, MON_ALREADY_KNOWS_MOVE, MON_HAS_MAX_MOVES, movesLearnedAtLevel, type Pokemon } from "@core/pokemon/pokemon";
 import { openHardwareChoice, openHardwareMessage, openHardwareMessageWithFanfare } from "./hardwareChoice";
 import { BeginEvolutionScene } from "../evolutionScene";
 import { GetMoveSlotToReplace, ShowSelectMovePokemonSummaryScreen } from "../pokemonSummaryScreen";

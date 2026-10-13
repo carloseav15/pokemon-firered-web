@@ -14,8 +14,8 @@ import { BtlController_EmitTwoReturnValues, BUFFER_B } from "./controllers";
 import { AbilityBattleEffects, CheckMoveLimitations, GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide, ItemId_GetHoldEffect } from "./util";
 import { GetWhoStrikesFirst } from "./main";
 import { AI_CalcDmg, AI_TypeCalc, TypeCalc } from "./cmds/part1";
-import { GetGenderFromSpeciesAndPersonality, GetMonData, gEnemyParty, playerMon, type Mon } from "../pokemon/mon";
-import { GetItemEffectParamOffset } from "../pokemon/mon_extra";
+import { GetGenderFromSpeciesAndPersonality, GetMonData, gEnemyParty, playerMon, type Mon } from "@core/pokemon/mon";
+import { GetItemEffectParamOffset } from "@core/pokemon/mon_extra";
 
 const AI_ACTION_DONE = 0x01;
 const AI_ACTION_FLEE = 0x02;

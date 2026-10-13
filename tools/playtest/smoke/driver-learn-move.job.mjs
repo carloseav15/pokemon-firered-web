@@ -6,7 +6,7 @@
 // refuse with B, confirm stopping, and keep the moves. Nothing else is prepared; outcomes are read from the game.
 const body = (moves) => `
   const C = H.C, sv = frDebug.save.save, mon = sv.party[0];
-  const P = await H.mod("/src/games/firered/pokemon/pokemon.ts");
+  const P = await H.mod("/src/core/pokemon/pokemon.ts");
   const learnset = H.rom.species[mon.species].learnset;
   if (!learnset.some(([lvl, mv]) => lvl === 20 && mv === C.MOVE_RAZOR_LEAF)) throw new Error("learnset has no Razor Leaf at 20: " + JSON.stringify(learnset));
   const between = learnset.filter(([lvl]) => lvl > mon.level && lvl < 20);

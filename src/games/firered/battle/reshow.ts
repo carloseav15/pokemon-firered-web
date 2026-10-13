@@ -12,7 +12,7 @@ import {
 import { SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { ScanlineEffect_Clear } from "@core/hw/scanline";
 import { CreateSprite, FreeAllSpritePalettes, gSprites, ResetSpriteData, SpriteCallbackDummy, spriteState, StartSpriteAnim } from "@core/hw/sprite";
-import { GetMonData, gEnemyParty, playerMon } from "../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import { save } from "../save";
 import { G, gActionSelectionCursor, gBattleMonForms, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleScripting, gBattleSpritesDataPtr, gHealthboxSpriteIds } from "./globals";
 import { IS_BATTLE_TYPE_GHOST_WITHOUT_SCOPE } from "./macros";

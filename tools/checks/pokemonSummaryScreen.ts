@@ -12,8 +12,8 @@ import {
   GetMoveSlotToReplace,
   PokemonSummaryScreenMode,
 } from '../../src/games/firered/pokemonSummaryScreen.ts';
-import { createMon, speciesName, type Pokemon } from '../../src/games/firered/pokemon/pokemon.ts';
-import { GetMonData, type Mon } from '../../src/games/firered/pokemon/mon.ts';
+import { createMon, speciesName, type Pokemon } from '../../src/core/pokemon/pokemon.ts';
+import { GetMonData, type Mon } from '../../src/core/pokemon/mon.ts';
 import { itemName } from '../../src/games/firered/pokemon/items.ts';
 import { isHMMove } from '../../src/games/firered/menus/monProgress.ts';
 import { decode } from '../../src/core/gba/charmap.ts';

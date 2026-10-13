@@ -11,7 +11,7 @@ import { ClearMailStruct, GetMailDataForMon, GiveMailToMon2, MonHasMail, TakeMai
 import {
   calculateStats, CanMonLearnTMHM, createMon, deleteFirstMoveAndGive, genderFromPersonality, giveMove, levelFromExp, MON_HAS_MAX_MOVES,
   movesLearnedAtLevel, nickname, setDexFlag, speciesName, TryIncrementMonLevel, MON_FEMALE, MON_GENDERLESS, MON_MALE, type Pokemon,
-} from "./pokemon";
+} from "@core/pokemon/pokemon";
 import { tmhmMove } from "../menus/monProgress";
 import { GetLevelUpMovesBySpecies } from "./partyRules";
 

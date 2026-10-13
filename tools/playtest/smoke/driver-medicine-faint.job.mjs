@@ -11,7 +11,7 @@ export default async function run(ctx) {
       state:{battle:{mode:"fight",slot:0,decision:null}},
       handlers:{"battle-action":async()=>({stop:"action-before-required-replacement"})},
       until:rec=>rec.screen===screen?"reached":false});return {ok:r.ok,reason:r.reason,frames:r.frames,screen:r.rec?.screen,details:r.rec?.details};};
-    const P=await H.mod("/src/games/firered/pokemon/pokemon.ts");
+    const P=await H.mod("/src/core/pokemon/pokemon.ts");
     if(sv.party.filter(m=>m.species&&m.hp>0).length<2) sv.party.push(P.createMon(C.SPECIES_PIDGEY,12,{personality:123,fixedIV:10,otId:sv.trainerId}));
     const talked=await H.talk(6,5);
     const opening=talked.note?null:await reach("battle-action");

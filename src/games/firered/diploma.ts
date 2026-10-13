@@ -16,7 +16,7 @@ import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "./hw/te
 import { FillWindowPixelBuffer, FreeAllWindowBuffers, InitWindows, PutWindowTilemap } from "@core/hw/window";
 import { rom } from "@core/rom";
 import { save } from "./save";
-import { hasAllNationalDexSpecies } from "./pokemon/pokemon";
+import { hasAllNationalDexSpecies } from "@core/pokemon/pokemon";
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import type { Game } from "./game";
 

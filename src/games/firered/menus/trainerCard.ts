@@ -56,7 +56,7 @@ import {
   BlitBitmapRectToWindow, COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
   FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
 } from "@core/hw/window";
-import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllHoennMons, HasAllMons } from "../pokemon/pokemon";
+import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllHoennMons, HasAllMons } from "@core/pokemon/pokemon";
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
 import { MailSpeciesToSpecies } from "../pokemon/mail";
 import { rom } from "@core/rom";

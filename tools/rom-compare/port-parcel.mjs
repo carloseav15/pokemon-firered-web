@@ -27,7 +27,7 @@ const scene = () => p.evaluate(i => window.frDebug.save.save.vars[i], SCENE);
 const inBattle = () => p.evaluate(() => window.frDebug.snapshot().hardware.inBattle);
 const dump = tag => p.evaluate(async ({ tag }) => {
   const sv = window.frDebug.save.save, s = window.frDebug.state();
-  const { gEnemyParty } = await import("/src/games/firered/pokemon/mon.ts");
+  const { gEnemyParty } = await import("/src/core/pokemon/mon.ts");
   const e = gEnemyParty[0];
   return { tag, st: s, scene: sv.vars[0x55], money: sv.money, flags: sv.flags.slice(), vars: sv.vars.slice(),
     partyCount: sv.party.length, mon0: sv.party[0] ? JSON.parse(JSON.stringify(sv.party[0])) : null,
@@ -143,7 +143,7 @@ await p.evaluate(async () => {
   // (ROM address 0x020386d0, found by differential scan), to a value whose first output is >= 1000 mod 1600.
   const { sWildEncounterData } = await import("/src/games/firered/field/wildEncounter.ts");
   // Battle log, same fields as parcel.lua (BSTART/BHP/BEND): party HP of both sides while a battle is on.
-  const { gEnemyParty: enemyParty } = await import("/src/games/firered/pokemon/mon.ts");
+  const { gEnemyParty: enemyParty } = await import("/src/core/pokemon/mon.ts");
   window.__btl = [];
   let btlOn = false, btlSig = null;
   const side = (arr, withSpecies) => arr.slice(0, 6).map(m => !m || !m.level ? "-" : withSpecies ? `${m.species}:L${m.level}:${m.hp}` : String(m.hp)).join(",");

@@ -45,7 +45,7 @@ import { AddWindow, ClearWindowTilemap, CopyWindowToVram, COPYWIN_FULL, FillWind
 import { random } from "@core/random";
 import { Q_8_8_inv } from "@core/mathUtil";
 import { rom } from "@core/rom";
-import { gMonFrontPicTable, DecompressPicFromTable, symPalette } from "./pokemon/pics";
+import { gMonFrontPicTable, DecompressPicFromTable, symPalette } from "@core/pokemon/pics";
 import { CreateMonSpritesGfxManager, DestroyMonSpritesGfxManager, gMultiuseSpriteTemplate, MonSpritesGfxManager_GetSpritePtr, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
 import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "./battle/pokeball";
 import { preloadBattleAssets } from "./battle/preload";

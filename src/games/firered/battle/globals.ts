@@ -10,7 +10,7 @@ import {
   BattleScripting, BattleSpriteInfo, BattleStruct, DisableStruct, ProtectStruct, SideTimer, SpecialStatus, WishFutureKnock,
   BattleEnigmaBerry, PokedudeBattlerState,
 } from "../generated/structs";
-import type { Pokemon } from "../pokemon/pokemon";
+import type { Pokemon } from "@core/pokemon/pokemon";
 
 export const MAX_BATTLERS_COUNT = 4;
 

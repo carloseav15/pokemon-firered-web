@@ -10,7 +10,7 @@ import { BLDALPHA_BLEND, REG_OFFSET_BG1VOFS, REG_OFFSET_BG2VOFS } from "@core/hw
 import { gScanlineEffect, gScanlineEffectRegBuffers, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_SetParams } from "@core/hw/scanline";
 import { DestroySprite, gSprites, StartSpriteAffineAnim, StartSpriteAnim, type Sprite } from "@core/hw/sprite";
 import { Sin } from "@core/hw/trig";
-import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import {
   ANIM_ATK_PARTNER, ANIM_ATTACKER, ANIM_DEF_PARTNER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap,
   CreateInvisibleSpriteCopy, DestroyAnimSprite, DestroyAnimVisualTask, DestroySpriteAndMatrix, GetAnimBattlerSpriteId,

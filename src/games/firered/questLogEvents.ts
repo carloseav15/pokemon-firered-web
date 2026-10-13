@@ -23,8 +23,8 @@ import { TextPrinter, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE } from "@core/gba/
 import { Window, stdPalette } from "@core/gba/window";
 import { incbin16 } from "@core/hw/assets";
 import { ClearBag, ClearPCItemSlots, ItemId_GetName, ItemId_GetPocket, POCKET_BERRY_POUCH, POCKET_ITEMS, POCKET_KEY_ITEMS, POCKET_POKE_BALLS, POCKET_TM_CASE } from "./pokemon/items";
-import { createMon, speciesName } from "./pokemon/pokemon";
-import { GetBoxNamePtr } from "./pokemon/storage";
+import { createMon, speciesName } from "@core/pokemon/pokemon";
+import { GetBoxNamePtr } from "@core/pokemon/storage";
 import { getMapNameGenericBytes } from "./regionMap";
 import {
   DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_Reset,

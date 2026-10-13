@@ -24,8 +24,8 @@ import {
 } from "@core/hw/sprite";
 import { gSineTable } from "@core/hw/trig";
 import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles, LoadMonIconPalettes } from "./pokemonIcon";
-import { GetBoxMonDataAt, GetBoxNamePtr, GetBoxWallpaper, GetCurrentBoxMonData, SetBoxWallpaper, StorageGetCurrentBox } from "./pokemon/storage";
-import { GetMonData } from "./pokemon/mon";
+import { GetBoxMonDataAt, GetBoxNamePtr, GetBoxWallpaper, GetCurrentBoxMonData, SetBoxWallpaper, StorageGetCurrentBox } from "@core/pokemon/storage";
+import { GetMonData } from "@core/pokemon/mon";
 import { DrawTextWindowAndBufferTiles } from "./menus/storageMenu";
 import { IsCursorInBox, IsCursorOnBoxTitle } from "./storageSystemData";
 import {

@@ -11,7 +11,7 @@ import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, gSprites, IndexOfSpritePaletteTag, LoadSpritePalette, RequestSpriteCopy, TAG_NONE, type Sprite,
   type SpriteCallback, type SpriteTemplate,
 } from "@core/hw/sprite";
-import { symPalette } from "./pokemon/pics";
+import { symPalette } from "@core/pokemon/pics";
 
 export const POKE_ICON_BASE_PAL_TAG = 56000;
 const OBJ_VRAM0 = 0x10000;

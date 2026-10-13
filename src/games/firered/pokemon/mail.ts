@@ -9,7 +9,7 @@ import { cdata, hasCData, loadCData, type SymRef } from "@core/hw/assets";
 import { rom } from "@core/rom";
 import { GetUnownLetterByPersonality } from "../pokemonIcon";
 import { save, type MailData, type PcMailEntry } from "../save";
-import { speciesName, type Pokemon } from "./pokemon";
+import { speciesName, type Pokemon } from "@core/pokemon/pokemon";
 import { ConvertEasyChatWordsToString, CopyEasyChatWord } from "../easyChat";
 
 export const MAIL_WORDS_COUNT = C.MAIL_WORDS_COUNT;

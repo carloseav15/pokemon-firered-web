@@ -21,8 +21,8 @@ import { AddWindow, FillWindowPixelBuffer, gWindows, PIXEL_FILL, RemoveWindow, t
 import { EOS, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
 import { FONT_SMALL, GetStringWidth } from "@core/gba/font";
 import { rom, b64 } from "@core/rom";
-import { GetMonData, GetMonGender, GetNature, gEnemyParty, playerMon, SpeciesToNationalPokedexNum, type Mon } from "../pokemon/mon";
-import { GetSetPokedexFlag } from "../pokemon/mon_extra";
+import { GetMonData, GetMonGender, GetNature, gEnemyParty, playerMon, SpeciesToNationalPokedexNum, type Mon } from "@core/pokemon/mon";
+import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
 import { G, gBattlerPartyIndexes, gBattlerPositions, gBattleSpritesDataPtr, gBattleStruct, gDisplayedStringBattle, gHealthboxSpriteIds, gMonSpritesGfxPtr } from "./globals";
 import { GetBattlerPosition, GetBattlerSide } from "./util";
 

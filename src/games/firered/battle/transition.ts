@@ -16,7 +16,7 @@
 import type { Scene } from "../game";
 import * as C from "../generated/constants";
 import { paletteFade, FADE_TO_BLACK, RGB_BLACK } from "@core/gba/fade";
-import type { Pokemon } from "../pokemon/pokemon";
+import type { Pokemon } from "@core/pokemon/pokemon";
 import { rom } from "@core/rom";
 import { incbin, incbin16 } from "@core/hw/assets";
 import { save } from "../save";

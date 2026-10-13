@@ -26,8 +26,8 @@ import {
 import { GetItemIconGfxPtr, ItemId_GetDescription } from "./bagMenu";
 import { FONT_NORMAL } from "@core/gba/font";
 import { ItemId_GetName } from "./pokemon/items";
-import { GetMonData, SetMonData, type Mon } from "./pokemon/mon";
-import { GetBoxedMonPtr, GetCurrentBoxMonData, SetBoxMonAt, SetCurrentBoxMonData, StorageGetCurrentBox, ZeroBoxMonAt } from "./pokemon/storage";
+import { GetMonData, SetMonData, type Mon } from "@core/pokemon/mon";
+import { GetBoxedMonPtr, GetCurrentBoxMonData, SetBoxMonAt, SetCurrentBoxMonData, StorageGetCurrentBox, ZeroBoxMonAt } from "@core/pokemon/storage";
 import { GetMonIconPtr, GetValidMonIconPalIndex, LoadMonIconPalettesAt } from "./pokemonIcon";
 import {
   CreateBoxMonIconAtPos, DestroyBoxMonIconAtPosition, SetBoxMonIconObjMode, SetPartyMonIconObjMode,

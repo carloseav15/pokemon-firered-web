@@ -21,7 +21,7 @@ import {
   gWishFutureKnock,
 } from "../globals";
 import { GET_BATTLER_SIDE, IS_BATTLER_OF_TYPE, SET_BATTLER_TYPE, STATUS3_YAWN_TURN, div, gBattleMoves, F_DYNAMIC_TYPE_1, F_DYNAMIC_TYPE_2 } from "../macros";
-import { CalculatePlayerPartyCount, GetMonData, GetMonGender, SetMonData, gEnemyParty, playerMon, type Mon, SpeciesToNationalPokedexNum } from "../../pokemon/mon";
+import { CalculatePlayerPartyCount, GetMonData, GetMonGender, SetMonData, gEnemyParty, playerMon, type Mon, SpeciesToNationalPokedexNum } from "@core/pokemon/mon";
 import {
   CancelMultiTurnMoves, CastformDataTypeChange, CheckMoveLimitations, GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerForBattleScript,
   GetBattlerPosition, GetBattlerSide, GetMoveTarget, MarkBattlerForControllerExec, PressurePPLoseOnUsingImprison,
@@ -41,7 +41,7 @@ import {
   CreateMonPicSprite_HandleDeoxys, DexScreen_RegisterMonToPokedex, DoNamingScreen, GetBoxNamePtr, GetPCBoxToSendMon, GetPokedexHeightWeight,
   GetSetPokedexFlag, GiveMonToPlayer, ShouldShowBoxWasFullMessage, GetCurrentMapType,
 } from "../ext";
-import { HandleSetPokedexFlag } from "../../pokemon/mon_extra";
+import { HandleSetPokedexFlag } from "@core/pokemon/mon_extra";
 
 const cur = () => G.gBattlescriptCurrInstr;
 const adv = (n: number) => { G.gBattlescriptCurrInstr += n; };

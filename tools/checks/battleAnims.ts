@@ -11,7 +11,7 @@ import './setupNodeGbaMock.ts';
 import { readFileSync } from 'node:fs';
 import * as C from '../../src/games/firered/generated/constants.ts';
 import { rom } from '../../src/core/rom.ts';
-import type { Mon } from '../../src/games/firered/pokemon/mon.ts';
+import type { Mon } from '../../src/core/pokemon/mon.ts';
 import type { AnimTable } from '../../src/games/firered/battle/anim.ts';
 
 const root = process.cwd() + '/public';
@@ -60,8 +60,8 @@ const [{ sound }, { loadTrig }, { runHwFrame, SetMainCallback2 }, { ppu }, { Des
   import('../../src/core/audio/sound.ts'), import('../../src/core/hw/trig.ts'), import('../../src/core/hw/runtime.ts'),
   import('../../src/core/hw/ppu.ts'), import('../../src/core/hw/sprite.ts'), import('../../src/core/gba/tasks.ts'),
   import('../../src/core/gba/input.ts'), import('../../src/games/firered/battle/preload.ts'), import('../../src/games/firered/battle/globals.ts'),
-  import('../../src/games/firered/battle/anims/special.ts'), import('../../src/games/firered/battle/main_init.ts'), import('../../src/games/firered/pokemon/mon.ts'),
-  import('../../src/games/firered/pokemon/pokemon.ts'), import('../../src/games/firered/save.ts'), import('../../src/games/firered/battle/anim.ts'),
+  import('../../src/games/firered/battle/anims/special.ts'), import('../../src/games/firered/battle/main_init.ts'), import('../../src/core/pokemon/mon.ts'),
+  import('../../src/core/pokemon/pokemon.ts'), import('../../src/games/firered/save.ts'), import('../../src/games/firered/battle/anim.ts'),
   import('../../src/games/firered/battle/gfx_sfx_util.ts'), import('../../src/games/firered/generated/structs.ts'),
 ]);
 await loadTrig();

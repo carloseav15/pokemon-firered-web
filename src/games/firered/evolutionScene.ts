@@ -120,7 +120,7 @@ import { Sin, Cos } from "@core/hw/trig";
 import { random } from "@core/random";
 import { rom } from "@core/rom";
 import { save, flagGet, incrementGameStat, varGet } from "./save";
-import { calculateStats, evolveMon, setDexFlag, speciesName, type Pokemon } from "./pokemon/pokemon";
+import { calculateStats, evolveMon, setDexFlag, speciesName, type Pokemon } from "@core/pokemon/pokemon";
 import {
   type Mon,
   CalculatePlayerPartyCount,
@@ -129,9 +129,9 @@ import {
   RemoveMonPPBonus,
   SetMonMoveSlot,
   playerMon,
-} from "./pokemon/mon";
-import { GetMonSpritePalFromSpeciesAndPersonality, LoadSpecialPokePic } from "./pokemon/pics";
-import { IsHMMove2 } from "./pokemon/mon_extra";
+} from "@core/pokemon/mon";
+import { GetMonSpritePalFromSpeciesAndPersonality, LoadSpecialPokePic } from "@core/pokemon/pics";
+import { IsHMMove2 } from "@core/pokemon/mon_extra";
 import { G, gBattleTextBuff1, gBattleTextBuff2, gDisplayedStringBattle, gMonSpritesGfxPtr } from "./battle/globals";
 import { InitBattleBgsVideo, LoadBattleTextboxAndBackground } from "./battle/bg";
 import {
@@ -142,7 +142,7 @@ import {
   BattleDestroyYesNoCursorAt,
 } from "./battle/message";
 import { ShowSelectMovePokemonSummaryScreen, GetMoveSlotToReplace } from "./pokemonSummaryScreen";
-import { DecompressPicFromTable, gMonFrontPicTable } from "./pokemon/pics";
+import { DecompressPicFromTable, gMonFrontPicTable } from "@core/pokemon/pics";
 import { GetMonSpritePalStructFromOtIdPersonality } from "./trainerPokemonSprites";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
 import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";

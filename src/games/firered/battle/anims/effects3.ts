@@ -27,7 +27,7 @@ import {
   ST_OAM_OBJ_NORMAL, ST_OAM_OBJ_WINDOW, type Sprite,
 } from "@core/hw/sprite";
 import { Cos, gSineTable, Sin } from "@core/hw/trig";
-import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import {
   ANIM_ATTACKER, ANIM_TARGET, animState, AnimLoadCompressedBgGfx, AnimLoadCompressedBgTilemap, AnimTranslateLinear, ArcTan2Neg,
   CloneBattlerSpriteWithBlend, CreateAdditionalMonSpriteForMoveAnim, DestroyAnimSprite, DestroyAnimVisualTask,

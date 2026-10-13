@@ -5,7 +5,7 @@ import { bindSaveBlockReader } from "@core/gba/stringBuffers";
 import { rom } from "@core/rom";
 import { CANONICAL_STORAGE_KEY, SANDBOX_STORAGE_KEY } from "@game/data";
 import type { ObjectEventSave } from "./loadSave";
-import type { Pokemon } from "./pokemon/pokemon";
+import type { Pokemon } from "@core/pokemon/pokemon";
 import * as C from "./generated/constants";
 import type { QuestLogScene } from "./questLogObjects";
 import type { MapObjectTemplate } from "@core/rom";

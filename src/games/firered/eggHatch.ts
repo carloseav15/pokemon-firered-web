@@ -31,9 +31,9 @@ import {
 import { AllocateMonSpritesGfx, FreeMonSpritesGfx, gMonSpritesGfxPtr } from "./battle/globals";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
 import { DoNamingScreen } from "./namingScreen";
-import { GetMonGender, playerMon } from "./pokemon/mon";
+import { GetMonGender, playerMon } from "@core/pokemon/mon";
 import { AddHatchedMonToParty } from "./pokemon/daycare";
-import { gMonFrontPicCoords, LoadSpecialPokePic } from "./pokemon/pics";
+import { gMonFrontPicCoords, LoadSpecialPokePic } from "@core/pokemon/pics";
 import { random } from "@core/random";
 import { rom } from "@core/rom";
 import { save, SV, varGet, varSet } from "./save";

@@ -69,12 +69,12 @@ import { save } from "./save";
 import { SetHelpContext } from "./helpSystem";
 import {
   CalculatePPWithBonus, GetMonData, GetMonGender, IsMonShiny, zeroMon, type Mon,
-} from "./pokemon/mon";
-import { SeekToNextMonInBox } from "./pokemon/storage";
-import { speciesName, type Pokemon } from "./pokemon/pokemon";
+} from "@core/pokemon/mon";
+import { SeekToNextMonInBox } from "@core/pokemon/storage";
+import { speciesName, type Pokemon } from "@core/pokemon/pokemon";
 import { itemName } from "./pokemon/items";
 import { GetHPBarLevel } from "./battle/interface";
-import { GetMonSpritePalFromSpeciesAndPersonality, IsMonSpriteNotFlipped, LoadSpecialPokePic } from "./pokemon/pics";
+import { GetMonSpritePalFromSpeciesAndPersonality, IsMonSpriteNotFlipped, LoadSpecialPokePic } from "@core/pokemon/pics";
 import { CreateMonIcon, DestroyMonIcon, SafeFreeMonIconPalette, SafeLoadMonIconPalette } from "./pokemonIcon";
 import { FreeBallGfx, gBallSpriteTemplates, ItemIdToBallId, LoadBallGfx } from "./battle/pokeball";
 import { ShouldPlayNormalMonCry } from "./battle/gfx_sfx_util";

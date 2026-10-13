@@ -9,7 +9,7 @@ import {
 import { gBattleMoves } from "./macros";
 import { WEATHER_HAS_EFFECT2 } from "./util";
 import { BeginBattleIntro } from "./main";
-import { GetMonData, gEnemyParty, playerMon } from "../pokemon/mon";
+import { GetMonData, gEnemyParty, playerMon } from "@core/pokemon/mon";
 import type { DisableStruct } from "../generated/structs";
 import { ClearBattleAnimationVars, ClearBattleMonForms } from "./gfx_sfx_util";
 import { BattleAI_HandleItemUseBeforeAISetup } from "./ai";
@@ -24,7 +24,7 @@ import {
   gLinkPlayers, GetLinkPlayerCount, getReceivedRemoteLinkPlayers, getWirelessCommType,
   setWirelessCommTypeToRfu, linkTransport, gBlockRecvBuffer,
 } from "../linkState";
-import { GetBerryInfo, IsEnigmaBerryValid } from "../pokemon/berry";
+import { GetBerryInfo, IsEnigmaBerryValid } from "@core/pokemon/berry";
 import { save } from "../save";
 
 export const BUFFER_A = 0;

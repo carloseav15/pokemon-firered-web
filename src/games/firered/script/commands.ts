@@ -16,8 +16,8 @@ import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, 
 import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
 import { LOCALID_PLAYER, OBJECT_EVENTS_COUNT, OPPOSITE } from "../field/objectEvents";
 import * as items from "../pokemon/items";
-import { getBoxName } from "../pokemon/storage";
-import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
+import { getBoxName } from "@core/pokemon/storage";
+import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "@core/pokemon/pokemon";
 import { runSpecial } from "./specials";
 import { gQuestLogState, QL_GetPlaybackState, QuestLog_RecordEnteredMap } from "../questLogEvents";
 import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";

@@ -44,9 +44,9 @@ import {
 import {
   CreatePokedexAreaMarkers, DestroyPokedexAreaMarkers, GetNumPokedexAreaMarkers, GetUnlockedSeviiAreas, loadPokedexAreaData,
 } from "./pokedexArea";
-import { GetSetPokedexFlag } from "./pokemon/mon_extra";
-import { NationalPokedexNumToSpecies, SpeciesToNationalPokedexNum } from "./pokemon/mon";
-import { speciesName } from "./pokemon/pokemon";
+import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
+import { NationalPokedexNumToSpecies, SpeciesToNationalPokedexNum } from "@core/pokemon/mon";
+import { speciesName } from "@core/pokemon/pokemon";
 import { GetMonIconPtr, GetValidMonIconPalettePtr } from "./pokemonIcon";
 import { rom } from "@core/rom";
 import { IsNationalPokedexEnabled as isNationalPokedexEnabled, save } from "./save";

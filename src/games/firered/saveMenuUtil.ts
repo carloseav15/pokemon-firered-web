@@ -2,7 +2,7 @@
 
 import * as C from "./generated/constants";
 import { concat, intToDecimal, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
-import { GetKantoPokedexCount, GetNationalPokedexCount } from "./pokemon/pokemon";
+import { GetKantoPokedexCount, GetNationalPokedexCount } from "@core/pokemon/pokemon";
 import { flagGet, save, varGet } from "./save";
 import { rom } from "@core/rom";
 import { getMapNameGenericBytes } from "./regionMap";

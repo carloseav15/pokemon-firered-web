@@ -17,7 +17,7 @@ import {
   GetTrainerBattleTransition,
   BattleTransitionScene,
 } from '../../src/games/firered/battle/transition.ts';
-import { createMon, type Pokemon } from '../../src/games/firered/pokemon/pokemon.ts';
+import { createMon, type Pokemon } from '../../src/core/pokemon/pokemon.ts';
 import { SpriteManager } from '../../src/core/gba/sprite.ts';
 
 const root = process.cwd() + '/public';

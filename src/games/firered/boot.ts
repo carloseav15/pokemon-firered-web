@@ -14,7 +14,7 @@ import { preloadFieldAssets } from "./field/preloadField";
 import { loadTrig } from "@core/hw/trig";
 import { installBattleHost } from "./battle/host";
 import { preloadBattleAssets } from "./battle/preload";
-import { createMon } from "./pokemon/pokemon";
+import { createMon } from "@core/pokemon/pokemon";
 import { RIVAL_BATTLE_HEAL_AFTER, RIVAL_BATTLE_TUTORIAL } from "./generated/constants";
 import { getRandomState, SeedRngAndSetTrainerId } from "@core/random";
 import { sWildEncounterData, sWildEncountersDisabled } from "./field/wildEncounter";

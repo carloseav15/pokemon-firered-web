@@ -61,9 +61,9 @@ import {
 import { Menu2_GetMonPosAttribute, Menu2_GetStarSpritePosAttribute } from "./menu2";
 import { tmhmMove } from "./menus/monProgress";
 import { CheckIfItemIsTMHMOrEvolutionStone, itemName } from "./pokemon/items";
-import { GetMonData, type Mon } from "./pokemon/mon";
-import { playerMon } from "./pokemon/mon";
-import { GetMonFrontSpritePal, LoadSpecialPokePic } from "./pokemon/pics";
+import { GetMonData, type Mon } from "@core/pokemon/mon";
+import { playerMon } from "@core/pokemon/mon";
+import { GetMonFrontSpritePal, LoadSpecialPokePic } from "@core/pokemon/pics";
 import { rom } from "@core/rom";
 
 const rd = <T>(name: string) => cdata<T>("pokemon_special_anim_scene", name);
