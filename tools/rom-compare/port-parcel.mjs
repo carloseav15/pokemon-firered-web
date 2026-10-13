@@ -248,6 +248,30 @@ for (let t = Date.now(); Date.now() - t < 240000;) {
 await sleep(10000);
 const end = await dump("end");
 note("end", JSON.stringify(end.st) + " lab scene=" + end.vars[0x55]);
+// ---- Route 2: lab -> Pallet Town -> Route 1 -> Viridian (old man's catching tutorial) -> Route 2 -> forest gate ----
+if (process.env.ROUTE2 !== "0") {
+  for (const w of (await p.evaluate(() => window.H.warps()))) {
+    if ((await state()).map !== "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB") break;
+    if (!(await gotoTile(w[0], w[1]))) continue;
+    for (let i = 0; i < 2 && (await state()).map === "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB"; i++) { await stepDir("D"); await settle(); }
+  }
+  const topOf = async (cx) => {
+    const w = await p.evaluate(() => window.frGame.overworld.loaded.layout.width);
+    return Array.from({ length: w }, (_, x) => [x, 0]).sort((a, b) => Math.abs(a[0] - cx) - Math.abs(b[0] - cx));
+  };
+  await leaveMap("MAP_ROUTE1", "U", await topOf(12));
+  await leaveMap("MAP_VIRIDIAN_CITY", "U", await topOf(12));
+  // The old man's tutorial triggers at (20,8)/(22,8) while VAR_MAP_SCENE_VIRIDIAN_CITY_OLD_MAN = 1: it starts a scripted battle.
+  await leaveMap("MAP_ROUTE2", "U", await topOf(20));
+  const gate = await p.evaluate(() => window.H.warps().find(w => /VIRIDIAN_FOREST_SOUTH_ENTRANCE/.test(w[2])));
+  note("forest gate", JSON.stringify(gate));
+  await gotoTile(gate[0], gate[1] + 1);
+  for (let i = 0; i < 5 && (await state()).map === "MAP_ROUTE2"; i++) { await stepDir("U"); await settle(); }
+  await settle();
+  await sleep(5000);
+  var route2End = await dump("route2");
+  note("route2", JSON.stringify(route2End.st));
+}
 // One entry per visited tile: the last direction pressed there and whether a script ran there.
 const tiles = [];
 for (let i = 0; i < trace.length; i++) {
@@ -259,6 +283,6 @@ for (let i = 0; i < trace.length; i++) {
 }
 writeFileSync(process.env.TRACE ?? "/tmp/port-parcel-trace.lua",
   "PARCEL_TRACE = {\n" + tiles.map(t => { const g = t.num >> 8, n = t.num & 255; return `{${g},${n},${t.x},${t.y},${t.dir ? `"${t.dir}"` : "nil"},${t.script},${Math.ceil(t.ms * 0.06 * 1.3) + 180}},`; }).join("\n") + "\n}\n");
-writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, errors: errs, traceLength: tiles.length }, null, 1));
+writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, route2: typeof route2End === "undefined" ? null : route2End, errors: errs, traceLength: tiles.length }, null, 1));
 console.log("trace", trace.length, "errors", errs.length, errs.slice(0, 3).join(" | "));
 await b.close();

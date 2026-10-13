@@ -17,6 +17,7 @@ local MART_SCENE = 0x4057   -- VAR_MAP_SCENE_VIRIDIAN_CITY_MART
 local ENDVAR, ENDVAL = PV_ENDVAR or MART_SCENE, PV_ENDVAL or 1   -- the run ends 600 frames after ENDVAR == ENDVAL
 local mapCount, parcelAt = {}, nil
 local lastIdx, idxFrames = 0, 0
+local endDumped, mapAt = false, nil
 local function sb() return I:read32(0x03005008 - 0x03000000) - 0x02000000 end
 local function pos() local b = sb(); return W:read16(b), W:read16(b + 2) end
 local function map() local b = sb(); return W:read8(b + 4), W:read8(b + 5) end
@@ -106,9 +107,18 @@ _G.pv_cb = callbacks:add("frame", function()
   -- the parcel script ends by setting the lab scene var to 5: dump 120 frames later, like the port's settled state
   if var(0x4055) == 5 and not parcelAt then parcelAt = n end
   if parcelAt and n - parcelAt == 120 then dump("parcel", n) end
+  -- Milestone dumps: "end" = ENDVAR == ENDVAL for 600 frames (the port's settled state); with PV_ENDMAP = {group, num}
+  -- the run continues and finishes 600 frames after the player is free on that map ("route2"); without it "end"
+  -- finishes the run.
   if var(ENDVAR) == ENDVAL and not doneAt then doneAt = n end
-  if doneAt and doneAt > 0 and n - doneAt >= 600 then
-    dump("end", n) out:write("DONE\n") out:close() doneAt = -1 return
+  if doneAt and doneAt > 0 and not endDumped and n - doneAt >= 600 then
+    endDumped = true
+    dump("end", n)
+    if not PV_ENDMAP then out:write("DONE\n") out:close() doneAt = -1 return end
+  end
+  if PV_ENDMAP and g == PV_ENDMAP[1] and m == PV_ENDMAP[2] and I:read8(0x03000EB1 - 0x03000000) == 0 then
+    mapAt = mapAt or n
+    if n - mapAt >= 600 then dump("route2", n) out:write("DONE\n") out:close() doneAt = -1 return end
   end
   -- sGlobalScriptContext.mode (IWRAM 0x03000EB0 + 1, located with scanctx.lua by its command-table pointers):
   -- 0 = no script, 1 = bytecode, 2 = native wait (text box, movement, ...). A is tapped only while a script runs
