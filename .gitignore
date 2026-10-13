@@ -16,3 +16,6 @@ __pycache__/
 
 # Local resumable playtest runs
 tools/playtest/runs/
+
+# Exported Emerald browser data (44 MB; regenerate with EXPORT_GAME=emerald python3 tools/decomp/export.py)
+public/emerald/
