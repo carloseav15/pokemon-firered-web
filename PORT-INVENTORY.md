@@ -231,7 +231,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_util2.c` | 108 | 3/3 | `battle/anim.ts`, `battle/globals.ts`, `pokemon/mon_extra.ts` |  |  |
 | `fldeff_softboiled.c` | 108 | 8/8 | `menus/fieldMoveMenu.ts`, `partyMenu.ts` |  |  |
 | `party_menu_specials.c` | 108 | 9/9 | `game.ts`, `partyMenu.ts`, `script/specialsExtra.ts` |  |  |
-| `help_message.c` | 106 | 7/7 | `boot.ts`, `game.ts`, `menus/helpMessage.ts` … |  |  |
+| `help_message.c` | 106 | 7/7 | `boot.ts`, `menus/helpMessage.ts`, `partyMenu.ts` |  |  |
 | `field_weather_util.c` | 105 | 10/10 | `field/weather.ts` |  |  |
 | `fldeff_sweetscent.c` | 100 | 7/7 | `field/fieldMoves.ts`, `menus/fieldMoveMenu.ts` |  |  |
 | `coins.c` | 98 | 9/9 | `hw/menuHelpers.ts`, `pokemon/items.ts` |  |  |
