@@ -698,7 +698,12 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 - [ ] **6.5 Primer corte de Emerald (fase 3)**: elegir un sistema pequeño de
   `docs/EMERALD-FALTANTE.md` y portarlo sobre `src/core` con `GAME=emerald`; cada entrada del
   contrato que Emerald necesite decide si se abstrae o se bifurca. Los datos de Emerald ya
-  se exportan y validan (`docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md` §7–9).
+  se exportan y validan (`docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md` §7–9). Medido el 2026-10-13
+  (`tools/emeraldCoreGap.py` → [docs/EMERALD-BRECHA-NUCLEO.md](docs/EMERALD-BRECHA-NUCLEO.md)):
+  `src/core` contra Emerald da 898 errores de tipos; Emerald solo aporta 4 de los 38
+  módulos del contrato (`data`, `generated/constants`, `generated/structs`,
+  `generated/metatileBehavior`); faltan 227 constantes de FireRed y `save`, `game`,
+  `questLogEvents`, `battle/ext`… Esa lista es el trabajo.
 
 ## 7. Herramientas de diseño (fuera del juego)
 
