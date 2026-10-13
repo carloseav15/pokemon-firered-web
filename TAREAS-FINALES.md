@@ -420,8 +420,18 @@ Receta:
   alcanza sin una capa de conversión.
 
 **`pokemon_summary_screen.c`**
-- [ ] `SwapBoxMonMoveSlots`, `UpdateCurrentMonBufferFromPartyOrBox`, transición de
-  páginas, setup y `SpriteCB_MonPicDummy`.
+- [~] `SwapMonMoveSlots`/`SwapBoxMonMoveSlots` (`SwapMoveSlotsInMon`: movimientos, PP y bonos de PP idénticos),
+  `GetMonPpByMoveSlot`/`GetMonMoveBySlotId`, `SeekToNextMonInSingleParty`, mapeo de dirección de
+  `PokeSum_SeekToNextMon` en caja y `PokeSum_BufferOtName_IsEqualToCurrentOwner` (rama sin enlace): iguales.
+  Corregido `PokeSum_PrintTrainerMemo_Egg`: el TS siempre mostraba el texto 0 («guardería»); ahora elige entre los 7
+  de `sEggOriginTexts` según lugar/versión de encuentro, OT y `isBadEgg`. Sin comprobar con un huevo real.
+  Detector `tools/reviewSizeCompare.py` (funciones del C cuyo port del mismo nombre es mucho más corto): sin más señales
+  en lógica; el resto son sprites/visual (`CreateHpBarObjs`, `PokeSum_*BeforePageFlip`). Pendiente:
+  `UpdateCurrentMonBufferFromPartyOrBox`, transición de páginas, setup y `SpriteCB_MonPicDummy`.
+- Detector aplicado a `battle_transition.c`, `field_effect.c` e `intro.c`: **no informativo**. Esos tres están reescritos
+  como escenas sobre Canvas (intro: un cuerpo de 1 sentencia por escena; transiciones: `Spiral_UpdateFrame` etc. con
+  un 1/N de sentencias; field_effect: 70 funciones del C sin homónimo exacto en el TS), así que la comparación por
+  tamaño no identifica omisiones; requieren revisión visual/comparación por fotogramas.
 
 **`text.c`** (`gba/textPrinter.ts`)
 - [x] `DecompressGlyph_NormalCopy2` y 4 `TextPrinter*` (espera, flecha, modo auto) — `c4282dab`.
