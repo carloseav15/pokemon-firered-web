@@ -219,19 +219,20 @@ producción, paridad con ROM, Explorer por sectores y traslado de más herramien
 
 ## Mundo principal y variantes
 
-Entregas `7ef990af` y `bd310671`: `/maps.html` abre por defecto el atlas principal. «Región» enfoca Kanto,
+Entregas `7ef990af`, `bd310671`, `652d9e3e` y `7f252e84`: `/maps.html` abre por defecto el atlas principal. «Región» enfoca Kanto,
 Johto, Hoenn o Sevii y filtra la lista; «Todas las regiones» restaura el plano general. «Vista» conserva
 FireRed, Emerald, HnS y Crystal completos como variantes. La portada enlaza este atlas.
 
-El catálogo reúne **1131 mapas disponibles**: Kanto FireRed 256, Johto Heart & Soul 253 y Hoenn
-Emerald 487, más 135 mapas de las Islas Sevii asociados a Kanto. El plano tiene 167 exteriores; los interiores se abren desde búsqueda o puertas.
+El catálogo reúne **1155 mapas disponibles**: Kanto FireRed 256, Johto Heart & Soul 253 y Hoenn
+Emerald 487 (473 de superficie/interiores y 14 submarinos), más 135 mapas de las Islas Sevii y 24 de Navel Rock/Birth Island asociados a Kanto. Los planos colocan 203 mapas: 189 de superficie y 14 submarinos; los interiores se abren desde búsqueda o puertas.
 Los IDs llevan región (`johto/MAP_NEW_BARK_TOWN`) y conservan el ID/fuente original en la ficha.
 No presupone que nombres iguales sean el mismo lugar: los escondites Rocket de Mahogany y
 Celadon siguen perteneciendo a sus fuentes y regiones respectivas.
 
 `tools/viewer/principal_world.py` selecciona Kanto por secciones de FireRed, Johto por secciones
 permitidas y referencias alcanzables desde New Bark (conexiones, warps y scripts), y Hoenn de
-Emerald excluyendo salas LINK y las islas Birth/Navel/Faraway. Las referencias de script indican
+Emerald excluyendo salas LINK, dos mapas PROTOTYPE y las representaciones Birth/Navel; Faraway
+se incluye desde Emerald y los 14 mapas de tipo UNDERWATER se separan en otro nivel. Las referencias de script indican
 pertenencia, no demuestran acceso durante una partida. La selección evita mapas Emerald
 heredados en HnS con etiquetas reutilizadas; incluye el escondite Rocket de Mahogany. Cinco
 estados alternativos de Johto se conservan únicamente en la variante HnS. Routes 26–28, Tohjo
@@ -241,20 +242,21 @@ Las regiones se separan por 1024 px. Johto conserva las posiciones por conexione
 componente; exteriores aislados se organizan en una franja aparte. Seis discrepancias de origen
 siguen registradas en el catálogo; no se afirma que todas las conexiones encajen. Los chunks se
 recomponen desde los mapas seleccionados para evitar incorporar el Kanto alternativo de HnS.
-Los 526 archivos del atlas regeneran idénticos.
+Los 707 archivos del atlas regeneran idénticos.
 
 Siete referencias de Johto apuntan fuera de su selección; las fichas ofrecen la variante fuente
 cuando procede. Route 26 North enlaza a Route 22 FireRed como referencia entre fuentes.
 Los índices de warp nunca se transfieren entre fuentes. Olivine–Vermilion adapta una ruta del
 barco de HnS (`OlivinePort_EventScript_ChoseVermilion`); Vermilion–Slateport es navegación
 propuesta por el proyecto. Ninguno ejecuta transporte del juego ni une físicamente las regiones.
-«Explorar» aparece para exteriores FireRed/Emerald y usa el mapa original del motor previo;
+«Explorar» aparece para los exteriores FireRed/Emerald conectados del motor anterior y usa el mapa original del motor previo;
 Johto sigue siendo consulta estática. Sprites/colisión de bloques se ofrecen en Kanto/Hoenn;
 Johto conserva marcadores de eventos.
 
 Comprobaciones: `npm run check:principal-map-data` verifica pertenencia, ciudades, procedencia,
 imágenes, posiciones, fronteras y evidencia del barco. El job siguiente recorre la UI real,
-puertas New Bark/Mahogany/Tanoby, frontera hacia Kanto, ferris hacia Sevii, viaje editorial hacia Hoenn, variantes y vista
+puertas New Bark/Mahogany/Tanoby/Navel/Faraway/Isla del Sur, Ruta 131–Pilar Celeste,
+Ruta 124–submarino–superficie, frontera hacia Kanto, ferris hacia Sevii, viaje editorial hacia Hoenn, variantes y vista
 390 px; comprueba caché estimada ≤96 MiB al acercar las tres regiones y Sevii, ausencia de solicitudes
 al motor y 0 callbacks RAF en un segundo de reposo. Capturas inspeccionadas en escritorio y
 móvil. También pasan los checks de datos comunes/HnS, el recorrido común de cuatro fuentes,
@@ -290,13 +292,50 @@ El atlas permite alejarse hasta 1/128× para abarcar el conjunto en móvil.
 
 | Área | Estado actual | Trabajo conveniente |
 |---|---|---|
-| Hoenn: Frente Batalla, Isla del Sur, Pilar Celeste | Mapas incluidos en búsqueda/fichas, sin posición en el plano general | Colocar sus exteriores como componentes aislados y resolver navegación desde sus fuentes |
-| Hoenn: zonas submarinas | Mapas incluidos en catálogo, fuera del plano exterior | Tratar como otro nivel con enlaces de inmersión; no superponer al terreno de superficie |
+| Hoenn: Frente Batalla, Isla del Sur, Pilar Celeste | Superficies e interiores incluidos; exteriores colocados en franja separada | Revisar fuente/ROM y futura simulación por sectores |
+| Hoenn: zonas submarinas | 14 mapas en nivel separado, con referencias originales dive/emerge | Revisar paletas/ROM y futura ejecución de Dive |
 | Johto: Safari, Monte Plateado, Ruinas de Alph, Islas Remolino, Torre Tin | Mapas incluidos; algunos exteriores ya colocados | Revisar exhaustivamente interiores, fronteras y conexiones de HnS |
-| Navel Rock y Birth Island | Solo variantes FireRed/Emerald; aparecen en ambas fuentes | Elegir una representación principal y conservar las otras como variantes, evitando duplicarlas |
-| Faraway Island | Solo variante Emerald | Incorporar como zona especial aislada con origen identificado |
+| Navel Rock y Birth Island | Fuente principal FireRed; otras versiones en variante Emerald | Revisar eventos/transporte al integrar simulación |
+| Faraway Island | Incluida desde Emerald; entrada e interior colocados como áreas aisladas | Revisar eventos/transporte al integrar simulación |
 | Estados nocturnos/concurso/marea y prototipos | Variantes de fuente | Mantenerlos separados del terreno principal; no tratarlos como nuevas islas |
 
-Para completar primero el mundo, conviene colocar los exteriores aislados ya catalogados de
-Hoenn, después integrar las islas especiales con una política explícita de fuente, y finalmente
-modelar niveles submarinos y transiciones. La simulación por sectores sigue siendo trabajo aparte.
+Las áreas aisladas, islas especiales y nivel submarino ya están integrados para consulta.
+La simulación por sectores y las transiciones jugables siguen siendo trabajo aparte.
+
+
+### Superficies aisladas, islas especiales y submarino
+
+`652d9e3e` coloca 18 superficies aisladas de Hoenn en 12 componentes bajo el plano continental:
+Frente Batalla, Desfiladero, Monte Cenizo, Monte Pírico (exterior/cumbre), Bosque Petalia, Safari,
+Pilar Celeste (exterior/cima), Arrecípolis e Isla del Sur (exterior/interior). Conserva intactos los
+rectángulos continentales y comprueba las conexiones internas contra los offsets de la fuente.
+Dos mapas PROTOTYPE de Route 104 quedan en la variante Emerald, fuera de la selección principal.
+
+`7f252e84` incluye Navel Rock/Birth Island una sola vez desde FireRed (24 mapas, dos exteriores)
+y Faraway Island desde Emerald (dos mapas colocados aunque su tipo fuente sea INDOOR).
+La división es una política de representación del atlas, no una equivalencia de motor o warps
+entre juegos. Las puertas conservan su destino e índice de la fuente; requisitos de eventos,
+pases y transporte no se ejecutan.
+
+«Hoenn · Submarino» es un nivel aparte con los 14 mapas de tipo UNDERWATER de Emerald, incluidas
+las dos salas submarinas del barco abandonado. Se conservan los IDs anteriores `hoenn/MAP_*`
+y las referencias dive/emerge de la fuente: Ruta 124 abre su ficha submarina y esta permite
+volver a la superficie. Las conexiones cardinales entre zonas submarinas se contrastan contra
+la fuente; sin discrepancias detectadas en los componentes nuevos. No se simula Dive, efectos
+de paleta ni audio del juego. La presentación usa las imágenes y paletas estáticas preparadas;
+la apariencia completa requiere revisión contra la ROM.
+
+El panel «Áreas aisladas y niveles del atlas» da acceso directo a los componentes. «Mapas en el
+plano» sustituye la etiqueta de exteriores porque el conjunto incluye otro nivel. El zoom de
+ajuste añade escalas menores cuando la pantalla lo necesita; las cabeceras largas conservan su
+altura en móvil. «Explorar» permanece oculto para áreas que el explorer continental anterior no
+puede cargar. La disposición de la franja/islas/nivel es editorial, sin uniones físicas inventadas.
+
+Comprobados: cobertura de superficies y nivel submarino contra datos originales, rectángulos
+continentales idénticos, conexiones nuevas, fuente única de islas, imágenes, regeneración idéntica
+de 707 archivos, puertas/transiciones de consulta y caché estimada ≤96 MiB. El recorrido Chromium
+usa UI real; una captura de la franja sitúa únicamente la cámara según el catálogo, sin preparar
+estado del juego. Las capturas esperan decodificación de imágenes y se inspeccionaron en escritorio
+y móvil. Los checks de tipos/honestidad/build/diff pasan; avisos existentes de bundles permanecen.
+Pendientes: revisión exhaustiva de mapas, paletas/animación/ROM, dispositivos reales y producción;
+simulación por sectores, Dive, ferris y conexiones físicas entre regiones.
