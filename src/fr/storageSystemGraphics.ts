@@ -118,7 +118,12 @@ function InitBoxMonSprites(boxId: number): void {
   }
   if (g.boxOption === OPTION_MOVE_ITEMS) {
     for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++) {
-      if (GetBoxMonDataAt(boxId, boxPosition, C.MON_DATA_HELD_ITEM) === 0) g.boxMonsSprites[boxPosition]!.oam.objMode = ST_OAM_OBJ_BLEND;
+      // The C stores NULL for empty slots (above) and still runs `boxMonsSprites[boxPosition]->oam.objMode = BLEND` for
+      // every slot with no held item, empty ones included (an empty slot reads item 0). That writes through NULL, i.e. the
+      // GBA BIOS region, which ignores writes: there is no sprite to blend and the game goes on. A JS null would throw,
+      // so the empty slot is skipped; the visible result is the same (nothing is drawn there).
+      const sprite = g.boxMonsSprites[boxPosition];
+      if (GetBoxMonDataAt(boxId, boxPosition, C.MON_DATA_HELD_ITEM) === 0 && sprite) sprite.oam.objMode = ST_OAM_OBJ_BLEND;
     }
   }
 }
