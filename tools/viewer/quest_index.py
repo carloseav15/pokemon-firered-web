@@ -6,7 +6,8 @@ flags/variables it sets, clears or checks, which items/Pokémon/trainers it hand
 other scripts it calls. Only identifiers are kept (no message text). Then it groups flags into quest candidates.
 
 Usage: [EXPORT_GAME=emerald] python3 tools/viewer/quest_index.py   -> public/viewer/quests_<game>.json
-The "obligatoria/opcional" suggestion is a naming/reachability heuristic and is overridden by tools/viewer/quest_tags.json.
+Quest classes come from tools/viewer/quest_tags.json (labels assigned by hand per game); without a label the class is a
+naming heuristic (badge -> obligatoria, gift -> opcional, battle -> desconocido).
 """
 from __future__ import annotations
 
@@ -159,7 +160,8 @@ def main() -> int:
         name = var_by_value.get(int(k)) if k.isdigit() else k
         if name:
             gates[name] = gates.pop(k)
-    tags = json.loads(TAGS.read_text()) if TAGS.exists() else {}
+    # quest_tags.json: {"firered": {FLAG: {"class", "confidence"}}, "emerald": {...}} (manual labels, see its _meta note)
+    tags = (json.loads(TAGS.read_text()) if TAGS.exists() else {}).get(GAME, {})
     flag_out = {}
     for name, d in sorted(flags.items()):
         flag_out[name] = {"kind": kind_of(name), **d, "hides": hides.get(name, [])}
@@ -191,6 +193,7 @@ def main() -> int:
             "requiresFlags": sorted(prereq_flags), "requiresVars": sorted(prereq_vars), "effects": sorted(effects),
             "items": sorted(items), "mons": sorted(mons), "trainers": sorted(trainers), "warps": sorted(warps),
             "suggested": tags.get(name, {}).get("class", suggested), "tagged": name in tags,
+            "confidence": tags.get(name, {}).get("confidence"),
         })
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({

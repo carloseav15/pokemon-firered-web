@@ -5,7 +5,7 @@
 type Script = { map: string; line: number; sets: string[]; clears: string[]; checks: string[]; varSets: [string, string][]; varChecks: string[]; items: string[]; mons: string[]; trainers: string[]; warps: string[]; calls: string[]; specials: string[] };
 type FlagInfo = { kind: string; setBy: string[]; clearedBy: string[]; checkedBy: string[]; hides: { map: string; localId: number; graphics: string; script: string | null }[] };
 type VarInfo = { setBy: [string, string][]; checkedBy: string[]; gates: { map: string; x: number; y: number; value: number; script: string | null }[] };
-type Quest = { id: string; kind: string; start: string; map: string; maps: string[]; requiresFlags: string[]; requiresVars: string[]; effects: string[]; items: string[]; mons: string[]; trainers: string[]; warps: string[]; suggested: string; tagged: boolean };
+type Quest = { id: string; kind: string; start: string; map: string; maps: string[]; requiresFlags: string[]; requiresVars: string[]; effects: string[]; items: string[]; mons: string[]; trainers: string[]; warps: string[]; suggested: string; tagged: boolean; confidence?: string | null };
 type Data = { scripts: Record<string, Script>; flags: Record<string, FlagInfo>; vars: Record<string, VarInfo>; quests: Quest[] };
 
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
@@ -51,7 +51,7 @@ const scriptRef = (d: Data, label: string) => {
 function detailQuest(d: Data, qu: Quest): string {
   const s = d.scripts[qu.start];
   return `<h2>${esc(qu.id)}</h2>
-    <span class="chip ${qu.suggested}">${qu.suggested}${qu.tagged ? " · etiqueta manual" : " · sugerencia"}</span> <span class="chip">${qu.kind}</span>
+    <span class="chip ${qu.suggested}">${qu.suggested}${qu.tagged ? ` · etiqueta (confianza ${qu.confidence ?? "—"})` : " · sin etiqueta (sugerencia por nombre)"}</span> <span class="chip">${qu.kind}</span>
     <h3>Dónde empieza</h3>${ul([`${scriptRef(d, qu.start)}${s ? ` · línea ${s.line}` : ""}`])}
     <h3>Mapas implicados</h3>${ul(qu.maps.map(mapLink))}
     <h3>Requisitos (flags que comprueba el script)</h3>${ul(qu.requiresFlags.map(flagLink), "ninguno detectado")}
@@ -144,7 +144,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>("button[data-game]"
     void render();
   });
 }
-for (const k of ["obligatoria", "opcional", "desconocido", "badge", "regalo", "combate", "aparicion", "sistema", "visita", "temporal", "objeto-suelo", "entrenador", "otro"]) {
+for (const k of ["obligatoria", "opcional", "sidequest", "postgame", "evento", "desconocido", "badge", "regalo", "combate", "aparicion", "sistema", "visita", "temporal", "objeto-suelo", "entrenador", "otro"]) {
   const o = document.createElement("option");
   o.value = k;
   o.textContent = k;

@@ -1,1 +1,973 @@
-{}
+{
+ "_meta": {
+  "note": "Etiquetas asignadas por el asistente según el recorrido oficial de los juegos; NO verificadas jugando. confidence: media = criterio general, baja = dudoso. Edita este archivo para corregir; quest_index.py las aplica.",
+  "classes": [
+   "obligatoria",
+   "opcional",
+   "sidequest",
+   "postgame",
+   "evento",
+   "desconocido"
+  ]
+ },
+ "firered": {
+  "FLAG_BADGE01_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE02_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE03_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE04_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE05_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE06_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE07_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE08_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BEAT_RIVAL_IN_OAKS_LAB": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BOUGHT_MAGIKARP": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_AGATHA": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_BLAINE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_BROCK": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_BRUNO": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_CHAMP": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ERIKA": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_KOGA": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_LANCE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_LEADER_GIOVANNI": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_LORELEI": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_LT_SURGE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_MISTY": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ROCKETS_IN_WAREHOUSE": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_SABRINA": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_10_COINS_FROM_GAMBLER": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_20_COINS_FROM_GAMBLER": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_20_COINS_FROM_GAMBLER_2": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_AMULET_COIN_FROM_OAKS_AIDE": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_BICYCLE": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_BIKE_VOUCHER": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_COIN_CASE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_DOME_FOSSIL": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_EEVEE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_EVERSTONE_FROM_OAKS_AIDE": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_EXP_SHARE_FROM_OAKS_AIDE": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_FAME_CHECKER": {
+   "class": "opcional",
+   "confidence": "baja"
+  },
+  "FLAG_GOT_FOSSIL_FROM_MT_MOON": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_FULL_RESTORE_FROM_THREE_ISLAND_DEFENDER": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_GOOD_ROD": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_HELIX_FOSSIL": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_HITMON_FROM_DOJO": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_HM01": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_HM02": {
+   "class": "opcional",
+   "confidence": "baja"
+  },
+  "FLAG_GOT_HM03": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_HM04": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_HM05": {
+   "class": "opcional",
+   "confidence": "baja"
+  },
+  "FLAG_GOT_HM06": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_ITEMFINDER": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_LAPRAS_FROM_SILPH": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_MASTER_BALL_FROM_SILPH": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_MOON_STONE_FROM_JOYFUL_GAME_CORNER": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_NEST_BALL_FROM_WATER_PATH_HOUSE_1": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_NUGGET_FROM_DUNSPARCE_TUNNEL": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_OLD_AMBER": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_OLD_ROD": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_POKEBALLS_FROM_OAK_AFTER_22_RIVAL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_POKE_FLUTE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_POTION_ON_ROUTE_1": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_POWDER_JAR": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_RECORD_SETTING_MAGIKARP": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_RUBY": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_SS_TICKET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_SS_TICKET_DUP": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_SUPER_ROD": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TEA": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM03_FROM_MISTY": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM04_FROM_SABRINA": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM06_FROM_KOGA": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM16_FROM_THIRSTY_GIRL": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM19_FROM_ERIKA": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM20_FROM_THIRSTY_GIRL": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM26_FROM_GIOVANNI": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM27": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM28_FROM_ROCKET": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM29_FROM_MR_PSYCHIC": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM33_FROM_THIRSTY_GIRL": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM34_FROM_SURGE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM38_FROM_BLAINE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM39_FROM_BROCK": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM42_AT_MEMORIAL_PILLAR": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TOGEPI_EGG": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_GOT_VS_SEEKER": {
+   "class": "desconocido",
+   "confidence": "baja"
+  },
+  "FLAG_RESCUED_LOSTELLE": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_RESCUED_MR_FUJI": {
+   "class": "obligatoria",
+   "confidence": "media"
+  }
+ },
+ "emerald": {
+  "FLAG_BADGE01_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE02_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE03_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE04_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE05_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE06_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE07_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BADGE08_GET": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_BEAT_MAGMA_GRUNT_JAGGED_PASS": {
+   "class": "obligatoria",
+   "confidence": "baja"
+  },
+  "FLAG_CAUGHT_HO_OH": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_CAUGHT_LATIAS_OR_LATIOS": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_CAUGHT_LUGIA": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_CAUGHT_MEW": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_DEOXYS": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_DEWFORD_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ELECTRODE_1_AQUA_HIDEOUT": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ELECTRODE_2_AQUA_HIDEOUT": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ELITE_4_DRAKE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ELITE_4_GLACIA": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ELITE_4_PHOEBE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_ELITE_4_SIDNEY": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_EVIL_TEAM_MT_CHIMNEY": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_FORTREE_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_GROUDON": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_GRUNT_SPACE_CENTER_1F": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_HO_OH": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_KYOGRE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_LATIAS_OR_LATIOS": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_LAVARIDGE_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_LUGIA": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_MAGMA_SPACE_CENTER": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_MAUVILLE_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_METEOR_FALLS_STEVEN": {
+   "class": "postgame",
+   "confidence": "baja"
+  },
+  "FLAG_DEFEATED_MEW": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_MOSSDEEP_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_PETALBURG_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_RAYQUAZA": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_REGICE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_REGIROCK": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_REGISTEEL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_RIVAL_ROUTE103": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_RIVAL_ROUTE_104": {
+   "class": "obligatoria",
+   "confidence": "baja"
+  },
+  "FLAG_DEFEATED_RIVAL_RUSTBORO": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_RUSTBORO_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_SEASHORE_HOUSE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_SOOTOPOLIS_GYM": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_SS_TIDAL_TRAINERS": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_SUDOWOODO": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_VOLTORB_1_NEW_MAUVILLE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_VOLTORB_2_NEW_MAUVILLE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_VOLTORB_3_NEW_MAUVILLE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_WALLY_MAUVILLE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_DEFEATED_WALLY_VICTORY_ROAD": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_BASEMENT_KEY_FROM_WATTSON": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_GOT_TM_THUNDERBOLT_FROM_WATTSON": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_20_COINS": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_6_SODA_POP": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_AMULET_COIN": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_AURORA_TICKET": {
+   "class": "evento",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_BELDUM": {
+   "class": "sidequest",
+   "confidence": "baja"
+  },
+  "FLAG_RECEIVED_BELUE_BERRY": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_BIKE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_BLUE_SCARF": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_CASTFORM": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_CHARCOAL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_CHESTO_BERRY_ROUTE_104": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_CLEANSE_TAG": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_COIN_CASE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_DEVON_SCOPE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_DOLL_LANETTE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_DURIN_BERRY": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_EXP_SHARE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_FANCLUB_TM_THIS_WEEK": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_FOCUS_BAND": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_GLASS_ORNAMENT": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_GOLD_SHIELD": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_GOOD_ROD": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_GO_GOGGLES": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_GREEN_SCARF": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_HM_CUT": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_HM_DIVE": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_HM_FLASH": {
+   "class": "opcional",
+   "confidence": "baja"
+  },
+  "FLAG_RECEIVED_HM_FLY": {
+   "class": "opcional",
+   "confidence": "baja"
+  },
+  "FLAG_RECEIVED_HM_ROCK_SMASH": {
+   "class": "opcional",
+   "confidence": "baja"
+  },
+  "FLAG_RECEIVED_HM_STRENGTH": {
+   "class": "opcional",
+   "confidence": "baja"
+  },
+  "FLAG_RECEIVED_HM_SURF": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_HM_WATERFALL": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_KINGS_ROCK": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_LAVARIDGE_EGG": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_MACHO_BRACE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_MENTAL_HERB": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_METEORITE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_MIRACLE_SEED": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_MYSTIC_TICKET": {
+   "class": "evento",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_OLD_ROD": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_OLD_SEA_MAP": {
+   "class": "evento",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_PAMTRE_BERRY": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_PINK_SCARF": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_POKEBLOCK_CASE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_POKEDEX_FROM_BIRCH": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_POKENAV": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_POTION_OLDALE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_POWDER_JAR": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_PREMIER_BALL_RUSTBORO": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_QUICK_CLAW": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_RED_OR_BLUE_ORB": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_RED_SCARF": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_REPEAT_BALL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_REVIVED_FOSSIL_MON": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_RUNNING_SHOES": {
+   "class": "obligatoria",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SECRET_POWER": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SALT_1": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SALT_2": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SALT_3": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SALT_4": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SHELL_1": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SHELL_2": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SHELL_3": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SHOAL_SHELL_4": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SILK_SCARF": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SILVER_SHIELD": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SOFT_SAND": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SOOTHE_BELL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SPELON_BERRY": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SS_TICKET": {
+   "class": "postgame",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_STARTER_DOLL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SUN_STONE_MOSSDEEP": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_SUPER_ROD": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_AERIAL_ACE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_ATTRACT": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_BRICK_BREAK": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_BULK_UP": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_BULLET_SEED": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_CALM_MIND": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_DIG": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_FACADE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_GIGA_DRAIN": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_HIDDEN_POWER": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_OVERHEAT": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_REST": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_RETURN": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_ROAR": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_ROCK_TOMB": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_SHOCK_WAVE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_SLUDGE_BOMB": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_SNATCH": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_THIEF": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_TORMENT": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_TM_WATER_PULSE": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_WAILMER_DOLL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_WAILMER_PAIL": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_WATMEL_BERRY": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_WHITE_HERB": {
+   "class": "opcional",
+   "confidence": "media"
+  },
+  "FLAG_RECEIVED_YELLOW_SCARF": {
+   "class": "sidequest",
+   "confidence": "media"
+  },
+  "FLAG_RESCUED_BIRCH": {
+   "class": "obligatoria",
+   "confidence": "media"
+  }
+ }
+}
