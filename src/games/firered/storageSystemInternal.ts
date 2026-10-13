@@ -1,6 +1,6 @@
 // pokemon_storage_system_internal.h: shared constants, types and the gStorage state of the PC box screen.
 import * as C from "./generated/constants";
-import { type MonMarkingsMenu } from "./monMarkings";
+import { type MonMarkingsMenu } from "@core/monMarkings";
 import { type Mon, zeroMon } from "@core/pokemon/mon";
 import { save } from "./save";
 import type { Sprite } from "@core/hw/sprite";

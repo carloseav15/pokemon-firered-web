@@ -71,7 +71,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon_storage_system_tasks.c` | 2770 | 82/82 | `storageSystemTasks.ts` |  |  |
 | `field_specials.c` | 2555 | 118/118 | `core/field/fieldControl.ts`, `core/field/fieldMoves.ts`, `core/field/hiddenItem.ts` … |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `menus/slotMachine.ts` |  |  |
-| `naming_screen.c` | 2509 | 109/109 | `core/gba/input.ts`, `menus/namingModel.ts`, `namingScreen.ts` … |  |  |
+| `naming_screen.c` | 2509 | 109/109 | `core/gba/input.ts`, `core/menus/namingModel.ts`, `core/namingScreen.ts` … |  |  |
 | `help_system.c` | 2480 | 41/41 | `core/field/overworld.ts`, `helpSystem.ts`, `introTitle.ts` |  |  |
 | `item_menu.c` | 2397 | 116/116 | `bagMenu.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `battle_anim_mons.c` | 2360 | 128/128 | `core/battle/anim.ts`, `core/battle/anims/fight.ts`, `core/battle/anims/mons.ts` |  |  |
@@ -86,7 +86,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `pokemon_storage_system_data.c` | 2165 | 83/83 | `core/pokemon/storage.ts`, `storageSystemData.ts` |  |  |
 | `daycare.c` | 2155 | 93/93 | `eggHatch.ts`, `game.ts`, `pokemon/daycare.ts` … |  |  |
 | `battle_ai_script_commands.c` | 1970 | 105/105 | `core/battle/ai.ts`, `core/battle/util.ts` |  |  |
-| `trainer_card.c` | 1959 | 73/73 | `menus/trainerCard.ts` |  |  |
+| `trainer_card.c` | 1959 | 73/73 | `core/menus/trainerCard.ts` |  |  |
 | `battle_controller_opponent.c` | 1777 | 87/87 | `core/battle/controller_opponent.ts` |  |  |
 | `fame_checker.c` | 1739 | 64/64 | `fameChecker.ts`, `menus/keyItemScreens.ts` |  |  |
 | `tm_case.c` | 1737 | 73/73 | `menus/fieldMenus.ts`, `tmCase.ts` |  |  |
@@ -158,10 +158,10 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `evolution_graphics.c` | 637 | 37/37 | `evolutionScene.ts` |  |  |
 | `map_preview_screen.c` | 616 | 14/14 | `mapPreviewScreen.ts` |  |  |
 | `renewable_hidden_items.c` | 608 | 4/4 | `renewableHiddenItems.ts` |  |  |
-| `mon_markings.c` | 605 | 15/15 | `monMarkings.ts` |  |  |
+| `mon_markings.c` | 605 | 15/15 | `core/monMarkings.ts` |  |  |
 | `script.c` | 583 | 55/55 | `core/field/fieldControl.ts`, `core/script/context.ts` |  |  |
 | `option_menu.c` | 575 | 19/19 | `optionMenu.ts` |  |  |
-| `battle_records.c` | 568 | 31/31 | `battleRecords.ts`, `menus/trainerCard.ts`, `script/specialsExtra.ts` |  |  |
+| `battle_records.c` | 568 | 31/31 | `core/menus/trainerCard.ts`, `battleRecords.ts`, `script/specialsExtra.ts` |  |  |
 | `trig.c` | 542 | 4/4 | `core/hw/trig.ts` |  |  |
 | `battle_anim_status_effects.c` | 535 | 12/12 | `core/battle/anim.ts`, `core/battle/anims/statusEffects.ts` |  |  |
 | `field_door.c` | 524 | 21/21 | `core/field/doors.ts` |  |  |
@@ -294,7 +294,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | Archivo C | Líneas | Funciones | TS que lo citan | Nota | Stubs |
 |---|---:|---:|---|---|---:|
 | `dodrio_berry_picking.c` | 4954 | 8/147 |  | 8/147 |  |
-| `union_room.c` | 4761 | 6/110 | `core/script/eventObjectLock.ts`, `menus/trainerCard.ts`, `script/specials.ts` … | 6/110 | 1 |
+| `union_room.c` | 4761 | 6/110 | `core/menus/trainerCard.ts`, `core/script/eventObjectLock.ts`, `script/specials.ts` … | 6/110 | 1 |
 | `pokemon_jump.c` | 4582 | 4/186 |  | 4/186 |  |
 | `berry_crush.c` | 3488 | 4/73 |  | 4/73 |  |
 | `link_rfu_2.c` | 3163 | 0/149 |  | 0/149 |  |
@@ -308,7 +308,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `AgbRfu_LinkManager.c` | 1480 | 0/33 |  | 0/33 |  |
 | `union_room_chat_display.c` | 1339 | 0/58 |  | 0/58 |  |
 | `link_rfu_3.c` | 1192 | 0/30 |  | 0/30 |  |
-| `cable_club.c` | 1036 | 9/54 | `battleRecords.ts`, `menus/trainerCard.ts`, `script/specials.ts` … | 9/54 | 2 |
+| `cable_club.c` | 1036 | 9/54 | `core/menus/trainerCard.ts`, `battleRecords.ts`, `script/specials.ts` … | 9/54 | 2 |
 | `librfu_stwi.c` | 650 | 0/48 |  | 0/48 |  |
 | `mystery_gift.c` | 634 | 9/45 | `easyChat.ts`, `easyChat2.ts`, `mysteryGift.ts` | 9/45 |  |
 | `union_room_player_avatar.c` | 624 | 0/38 |  | 0/38 |  |

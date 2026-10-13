@@ -7,14 +7,14 @@
 // Pokédex and evolution screens still require port work.
 
 import * as C from "../generated/constants";
-import { DoNamingScreen as OpenNamingScreen } from "../namingScreen";
+import { DoNamingScreen as OpenNamingScreen } from "@core/namingScreen";
 import { openHardwareChoice } from "../menus/hardwareChoice";
 import { decode, stringVars } from "@core/gba/charmap";
 import { A_BUTTON, B_BUTTON, JOY_NEW } from "@core/gba/input";
 import { tasks } from "@core/gba/tasks";
 import { FONT_NORMAL } from "@core/gba/font";
 import { b64 } from "@core/rom";
-import type { NameBuffer } from "../menus/namingModel";
+import type { NameBuffer } from "@core/menus/namingModel";
 import { sound } from "@core/audio/sound";
 import { clearRematchStateByTrainerId } from "../field/vsSeeker";
 import { cdata } from "@core/hw/assets";

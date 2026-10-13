@@ -56,7 +56,7 @@ import { checkBagHasItem, ApplyNewEncryptionKeyToBagItems_ } from "@core/pokemon
 import { resetPokemonStorageSystem } from "@core/pokemon/storage";
 import { openStorageMenu } from "./menus/storageMenu";
 import { openPokedexScreen } from "./pokedexScreen";
-import { openTrainerCardScreen } from "./menus/trainerCard";
+import { openTrainerCardScreen } from "@core/menus/trainerCard";
 import {
   CloseSaveStatsWindow_, DestroySafariZoneStatsWindow, DrawSafariZoneStatsWindow, DrawStartMenuInOneGo, OpenStartMenuWithFollowupFunc,
   PrintSaveStats, SaveDialogCB_PrintAskSaveText, StartCB_Save1, StartCB_Save2, StartMenu_PrepareForSave, task50_save_game, type SaveDialogRuntime,
@@ -105,7 +105,7 @@ function GetProfOaksRatingMessageByCount(count: number): Uint8Array {
 import { CreatePokemartMenu } from "./shop";
 import { openOptionMenu } from "./optionMenu";
 import { openRegionMap, REGIONMAP_TYPE_NORMAL, REGIONMAP_TYPE_WALL } from "./regionMap";
-import { DoNamingScreen } from "./namingScreen";
+import { DoNamingScreen } from "@core/namingScreen";
 import { HwScene } from "@core/hw/runtime";
 import { gender as pokemonGender } from "@core/pokemon/pokemon";
 import { ScriptMovement } from "@core/script/movement";

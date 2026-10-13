@@ -15,7 +15,7 @@ import { tasks } from '../../src/core/gba/tasks.ts';
 import { joy, A_BUTTON, B_BUTTON } from '../../src/core/gba/input.ts';
 import {
   GetTrainerCardMainState, GetTrainerCardStars, MailSpeciesToIconSpecies, ShowPlayerTrainerCard,
-} from '../../src/games/firered/menus/trainerCard.ts';
+} from '../../src/core/menus/trainerCard.ts';
 
 const root = process.cwd() + '/public/fr/';
 

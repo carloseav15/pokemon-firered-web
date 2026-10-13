@@ -30,7 +30,7 @@ import {
 } from "@core/hw/window";
 import { AllocateMonSpritesGfx, FreeMonSpritesGfx, gMonSpritesGfxPtr } from "@core/battle/globals";
 import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "@core/battle/anim";
-import { DoNamingScreen } from "./namingScreen";
+import { DoNamingScreen } from "@core/namingScreen";
 import { GetMonGender, playerMon } from "@core/pokemon/mon";
 import { AddHatchedMonToParty } from "./pokemon/daycare";
 import { gMonFrontPicCoords, LoadSpecialPokePic } from "@core/pokemon/pics";

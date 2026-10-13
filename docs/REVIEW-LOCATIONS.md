@@ -195,7 +195,7 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 | `FieldCB_ReturnToFieldOpenStartMenu` | `field_fadetransition.c:498` | `src/games/firered/startMenu.ts:170` |
 | `VsSeekerFreezeObjectsAfterChargeComplete` | `vs_seeker.c:598` | `src/games/firered/field/vsSeeker.ts:314` |
 | `VsSeekerResetObjectMovementAfterChargeComplete` | `vs_seeker.c:636` | `src/games/firered/field/vsSeeker.ts:332` |
-| `Unref_InitTrainerCard` | `trainer_card.c:1939` | `src/games/firered/menus/trainerCard.ts:1463` |
+| `Unref_InitTrainerCard` | `trainer_card.c:1939` | `src/core/menus/trainerCard.ts:1463` |
 | `SetBattledTrainerFlag2` | `battle_setup.c:876` | `src/core/battle/battleSetup.ts:246` |
 | `TT_ConvertEasyChatMessageToString` | `trainer_tower.c:631` | `src/games/firered/trainerTower.ts:102` |
 | `GetTrainerTowerTrainerFrontSpriteId` | `trainer_tower.c:455` | `src/games/firered/trainerTower.ts:347` |

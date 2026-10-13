@@ -265,7 +265,7 @@ del overworld:
 `MainState_Exit` llama a `SeedRngAndSetTrainerId()` al salir. La ROM **resiembra** el LCG y la
 mitad baja del Trainer ID con el valor de Timer1 (aquí `0xbd99`, no la semilla del título
 `0x3649`). El port no lo hacía: conservaba la semilla del título. Corregido en
-`src/games/firered/namingScreen.ts`; el Trainer ID bajo ya coincide. `check:all` 45 PASS, 0 regresiones.
+`src/core/namingScreen.ts`; el Trainer ID bajo ya coincide. `check:all` 45 PASS, 0 regresiones.
 
 ### Diferencias que quedan, y por qué no se tratan como errores
 Mitad alta del Trainer ID y RNG dependen del número de fotogramas entre la resiembra y

@@ -23,6 +23,7 @@
     "linkState",
     "loadSave",
     "mapPreviewScreen",
+    "objectEventGraphics",
     "pokemon/scriptPokemonUtil",
     "pokemonSpecialAnim",
     "questLogBattle",

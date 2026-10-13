@@ -2,7 +2,7 @@
 // choice, player / rival naming and the shrinking exit — on the GBA hardware layer (gMain + tasks).
 
 import * as C from "./generated/constants";
-import { DoNamingScreen, preloadNamingScreen } from "./namingScreen";
+import { DoNamingScreen, preloadNamingScreen } from "@core/namingScreen";
 import { sound } from "@core/audio/sound";
 import { tasks } from "@core/gba/tasks";
 import { A_BUTTON, B_BUTTON, JOY_NEW } from "@core/gba/input";

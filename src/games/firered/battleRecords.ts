@@ -31,7 +31,7 @@ import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, Process
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
 import { ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate } from "@core/hw/window";
 import { gLinkPlayers } from "./linkState";
-import { gTrainerCards } from "./menus/trainerCard";
+import { gTrainerCards } from "@core/menus/trainerCard";
 import { GetGameStat, IncrementGameStat, save, SetGameStat, SV, varGet, type LinkBattleRecordSave, type LinkBattleRecordsSave } from "./save";
 import { ResetAllPicSprites } from "@core/trainerPokemonSprites";
 import { PrintTrainerTowerRecords } from "./trainerTower";

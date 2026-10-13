@@ -14,7 +14,7 @@ import { SetMainCallback2, SetVBlankCallback, SetHBlankCallback, gMain } from "@
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import { AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, SpriteCallbackDummy, gSprites } from "@core/hw/sprite";
 import { CreateMonIcon_HandleDeoxys, DestroyMonIcon, FreeMonIconPalette as freeIconPalette, LoadMonIconPalette } from "@core/pokemonIcon";
-import { MailSpeciesToIconSpecies } from "./trainerCard";
+import { MailSpeciesToIconSpecies } from "@core/menus/trainerCard";
 import { mailLines, MailSpeciesToSpecies } from "@core/pokemon/mail";
 import { AddTextPrinterParameterized3, RunTextPrinters, DeactivateAllTextPrinters } from "@core/hw/text";
 import { FONT_NORMAL_COPY_1, GetStringWidth } from "@core/gba/font";

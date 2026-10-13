@@ -7,7 +7,7 @@ import * as C from "../../src/games/firered/generated/constants.ts";
 import { FacilityClassToPicIndex, PageToNextGfxId } from "../../src/games/firered/generated/cdataTableAccessors.ts";
 import { registerCData } from "../../src/core/hw/assets.ts";
 import { PlayerGenderToFrontTrainerPicId } from "../../src/core/trainerPokemonSprites.ts";
-import { CurrentPageToKeyboardId, CurrentPageToNextKeyboardId, GetPreviousTextCaretPosition, GetTextEntryPosition, type NamingModel } from "../../src/games/firered/menus/namingModel.ts";
+import { CurrentPageToKeyboardId, CurrentPageToNextKeyboardId, GetPreviousTextCaretPosition, GetTextEntryPosition, type NamingModel } from "../../src/core/menus/namingModel.ts";
 
 const root = `${process.cwd()}/public/fr/cdata/`;
 const pokemon = JSON.parse(readFileSync(`${root}pokemon.json`, "utf8")) as {
@@ -64,10 +64,10 @@ for (const [maxChars, mask, cPosition, cPrevious] of pageResults.caretCases) {
   assert.equal(GetTextEntryPosition(model), cPosition, `text entry position max=${maxChars} mask=${mask}`);
   assert.equal(GetPreviousTextCaretPosition(model), cPrevious, `previous caret position max=${maxChars} mask=${mask}`);
 }
-const namingSource = readFileSync(`${process.cwd()}/src/games/firered/namingScreen.ts`, "utf8");
+const namingSource = readFileSync(`${process.cwd()}/src/core/namingScreen.ts`, "utf8");
 assert.match(namingSource, /const gfx = PageToNextGfxId\(page\);/, "naming screen page button must use the generated C accessor");
 assert.equal((namingSource.match(/CurrentPageToNextKeyboardId\(this\.model\)/g) ?? []).length, 2, "both active keyboard-page callers must use the C-named helper");
-const namingModelSource = readFileSync(`${process.cwd()}/src/games/firered/menus/namingModel.ts`, "utf8");
+const namingModelSource = readFileSync(`${process.cwd()}/src/core/menus/namingModel.ts`, "utf8");
 assert.match(namingModelSource, /text\[GetPreviousTextCaretPosition\(this\)\] = EOS/, "delete path must use the C-named previous-caret helper");
 assert.match(namingModelSource, /get caret\(\): number \{ return GetTextEntryPosition\(this\); \}/, "entry path must use the C-named caret helper");
 console.log(`C-data accessors: ${table.value.length * 2} trainer-pic comparisons, 3 integrated trainer-pic checks, ${pageResults.cases.length} PageToNextGfxId cases, 6 keyboard-page mappings, and ${pageResults.caretCases.length * 2} C/TS caret comparisons passed`);

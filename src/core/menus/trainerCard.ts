@@ -21,24 +21,24 @@
 //   - Hall of Fame records & debut time on back
 //   - Blinking play time colon (60 frames cycle)
 
-import { sound } from "@core/audio/sound";
-import { concat, copy, EOS, intToDecimal, length, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
-import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
-import { A_BUTTON, B_BUTTON, joy } from "@core/gba/input";
-import { tasks, TAIL_SENTINEL } from "@core/gba/tasks";
-import * as C from "../generated/constants";
-import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "@core/hw/assets";
+import { sound } from "../audio/sound";
+import { concat, copy, EOS, intToDecimal, length, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "../gba/charmap";
+import { FONT_NORMAL, GetStringWidth } from "../gba/font";
+import { A_BUTTON, B_BUTTON, joy } from "../gba/input";
+import { tasks, TAIL_SENTINEL } from "../gba/tasks";
+import * as C from "@game/generated/constants";
+import { cdata, incbin, incbin16, loadCData, preloadPacks, symName, type SymRef } from "../hw/assets";
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, FillBgTilemapBufferRect_Palette0,
   InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, HideBg,
   WriteSequenceToBgTilemapBuffer, type BgTemplate,
-} from "@core/hw/bg";
-import { SetGpuReg } from "@core/hw/gpu";
-import { LoadStdWindowFrameGfx } from "@core/hw/menu";
+} from "../hw/bg";
+import { SetGpuReg } from "../hw/gpu";
+import { LoadStdWindowFrameGfx } from "../hw/menu";
 import {
   BeginNormalPaletteFade, BG_PLTT_ID, LoadPalette, PALETTES_ALL, PLTT_SIZE_4BPP, ResetPaletteFade,
   RGB_BLACK, TintPalette_CustomTone, TintPalette_SepiaTone, TransferPlttBuffer, UpdatePaletteFade,
-} from "@core/hw/palette";
+} from "../hw/palette";
 import {
   ppu, REG_OFFSET_BG0CNT, REG_OFFSET_BG0HOFS, REG_OFFSET_BG0VOFS, REG_OFFSET_BG1CNT, REG_OFFSET_BG1HOFS,
   REG_OFFSET_BG1VOFS, REG_OFFSET_BG2CNT, REG_OFFSET_BG2HOFS, REG_OFFSET_BG2VOFS, REG_OFFSET_BG3CNT,
@@ -48,22 +48,22 @@ import {
   BLDCNT_EFFECT_DARKEN, BLDCNT_TGT1_BG0, WIN_RANGE,
   WININ_WIN0_BG_ALL, WININ_WIN0_CLR, WININ_WIN0_OBJ,
   WINOUT_WIN01_BG1, WINOUT_WIN01_BG2, WINOUT_WIN01_BG3, WINOUT_WIN01_OBJ,
-} from "@core/hw/ppu";
-import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
-import { gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "@core/hw/scanline";
-import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "@core/hw/text";
+} from "../hw/ppu";
+import { gMain, SetHBlankCallback, SetMainCallback2, SetVBlankCallback } from "../hw/runtime";
+import { gScanlineEffectRegBuffers, ScanlineEffect_Clear, ScanlineEffect_Stop } from "../hw/scanline";
+import { AddTextPrinterParameterized3, DeactivateAllTextPrinters } from "../hw/text";
 import {
   BlitBitmapRectToWindow, COPYWIN_FULL, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
   FreeAllWindowBuffers, InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
-} from "@core/hw/window";
-import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllHoennMons, HasAllMons } from "@core/pokemon/pokemon";
-import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "@core/pokemonIcon";
-import { MailSpeciesToSpecies } from "@core/pokemon/mail";
-import { rom } from "@core/rom";
-import { flagGet, GetGameStat, IsNationalPokedexEnabled, save, varGet } from "../save";
-import { CopyEasyChatWord } from "../easyChat";
-import { encode } from "@core/gba/charmap";
-import { gLinkPlayers } from "../linkState";
+} from "../hw/window";
+import { GetKantoPokedexCount, GetNationalPokedexCount, HasAllHoennMons, HasAllMons } from "../pokemon/pokemon";
+import { GetIconSpecies, GetMonIconPaletteIndexFromSpecies, GetMonIconTiles } from "../pokemonIcon";
+import { MailSpeciesToSpecies } from "../pokemon/mail";
+import { rom } from "../rom";
+import { flagGet, GetGameStat, IsNationalPokedexEnabled, save, varGet } from "@game/save";
+import { CopyEasyChatWord } from "@game/easyChat";
+import { encode } from "../gba/charmap";
+import { gLinkPlayers } from "@game/linkState";
 
 const CARD_TYPE_FRLG = 0;
 const CARD_TYPE_RSE = 1;

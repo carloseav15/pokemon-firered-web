@@ -2,7 +2,7 @@
 // assembled battle / AI / animation scripts.
 
 import { loadCData, preloadPacks } from "@core/hw/assets";
-import { preloadNamingScreen } from "../namingScreen";
+import { preloadNamingScreen } from "@core/namingScreen";
 import { preloadPokedexScreen } from "../pokedexScreen";
 import { loadBattleScripts } from "@core/battle/bscript";
 import "@core/battle/anims";
