@@ -1,8 +1,8 @@
 Modo: una tanda = archivo C completo o familia; commits de código por tarea; estado por fase; meta principal de un jugador.
-Siguiente: siguiente hito de la comparación con la ROM (4.2: Ruta 2/Bosque Verde y Pewter); reejecutar cerulean/route2 desde cero; job de Surge; Emerald: cablear lo exportado (6.6); revisión tramo2/Muse; DRV-10/12/13/15.
-Bloqueos: traslado motor requiere permiso sobre portInventory.py; enlace fuera de meta.
+Siguiente: replay en la ROM de Ruta 2/Bosque Verde/Pewter (`SKIP_PORT=1 PV_ENDMAP="{3,2}" PV_ENDTAG=pewter tools/rom-compare/run-milestone.sh /tmp/forest`; el port ya llega a Pewter, falta la ROM: pantalla bloqueada) y comparar; reejecutar cerulean/route2 desde cero; job de Surge; Emerald: cablear lo exportado (6.6); revisión tramo2/Muse; DRV-10/12/13/15.
+Bloqueos: traslado motor requiere permiso sobre portInventory.py; enlace fuera de meta; replay de la ROM exige pantalla desbloqueada (mGBA vía System Events).
 Validación diferida: historia anterior/tramos3–11 y opciones §3; revisión Muse/DRV-15, DRV-10/12/13 y Quest Log continue; revisión manual1.22, paridad audiovisual, C1 visual/C2/C4, ruta previa C6, C11–C13/escucha, PC1.18 y viewer.
-Última entrega: comparación con la ROM hasta la escena del Pokédex (flags/vars/bolsa idénticos; `parcel.lua` con `sGlobalScriptContext`, `port-parcel.mjs`); `NewGameInitData` fija `FLAG_0x838`/`VAR_0x403C`; `e03bdc7a` contexto de script en la carga de mapa y cadenas `ALIGNED(n)`. `check:all` 45/45, gate 20/20.
+Última entrega: ejecución automática de la ROM (`run-rom.sh`/`run-milestone.sh`), recorrido del port hasta Pewter (`FOREST=1`, 0 errores, sin whiteout) y triaje de los 343 nombres (`docs/TRIAJE-NOMBRES-PENDIENTES.md`); antes, comparación hasta la escena del Pokédex (flags/vars/bolsa idénticos); `NewGameInitData` fija `FLAG_0x838`/`VAR_0x403C`; `e03bdc7a` contexto de script en la carga de mapa y cadenas `ALIGNED(n)`. `check:all` 45/45, gate 20/20.
 Contador: ver PENDING.md y PORT-INVENTORY.md; inventario y pendientes regenerados al cierre.
-Acumulado desde 6.234: +3.538 hasta 9.772; esta sesión 0 cuerpos C nuevos y 0 equivalencias/wrappers (dos correcciones de fidelidad y herramientas de revalidación); desglose en TAREAS-FINALES.md §2.
+Acumulado desde 6.234: +3.538 hasta 9.772; esta sesión 0 cuerpos C nuevos y 0 equivalencias/wrappers (herramientas de ejecución automática, recorrido del port hasta Pewter y triaje de nombres pendientes); desglose en TAREAS-FINALES.md §2.
 Wrappers a revisar: lista por archivo en §2 de [TAREAS-FINALES.md](TAREAS-FINALES.md).

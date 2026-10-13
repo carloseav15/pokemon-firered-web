@@ -581,8 +581,11 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   batalla). Tramo «devolver el paquete → Pokédex» (informe §15.1): ROM y port coinciden en flags,
   vars y bolsa en los 9 cambios de mapa y al terminar la escena (`FLAG_SYS_POKEDEX_GET`, Poké Ball ×5, sin
   paquete; dinero distinto solo por la batalla del rival). El control de la ROM usa `sGlobalScriptContext.mode`
-  (`0x03000EB1`, localizado por firma con `scanctx.lua`). Falta: siguiente hito (Ruta 2/Bosque Verde y Pewter),
-  automatizar mGBA sin Enter manual.
+  (`0x03000EB1`, localizado por firma con `scanctx.lua`). Automatizado (`7252d79a`, `fa2ad30d`): `run-rom.sh` reinicia
+  mGBA y carga el Lua por System Events (mGBA 0.10.5 no tiene `--script`; exige pantalla desbloqueada y permiso de
+  Accesibilidad); `run-milestone.sh` encadena recorrido del port, replay y `compare-route.py`. Port hasta Pewter
+  (`FOREST=1`, `ae1935cd`): 0 errores, batallas del bosque ganadas, sin whiteout; **falta el replay en la ROM**
+  (`SKIP_PORT=1 PV_ENDMAP="{3,2}" PV_ENDTAG=pewter tools/rom-compare/run-milestone.sh /tmp/forest`) y mirar el diff por mapa.
 - [x] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`; revalidado con `e03bdc7a`,
   `526e9004`): `tools/playtest/smoke/scene-scan.job.mjs` ejecutó 423 etiquetas con `applymovement` de todo el
   decomp en su mapa (384 terminan, 32 entran en combate, resto = artefactos: créditos, enlace, Trainer Tower y
