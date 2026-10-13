@@ -1833,22 +1833,23 @@ export class FieldEffects {
 
   /** DoTracksGroundEffect_BikeTireTracks (event_object_movement.c). */
   DoTracksGroundEffect_BikeTireTracks(object: ObjectEvent, _sprite: Sprite, _deepSand: number): void {
+    // bikeTireTracks_Transitions[4][4] is a u8 table the C indexes as [previousMovementDirection][facingDirection - 5].
+    // Directions run 1..4 (DIR_SOUTH..DIR_EAST), so that address is previous * 4 + facing - 5 bytes into the table,
+    // which is row previous - 1, column facing - 1 (rows: down, up, left, right).
+    const transitions = [
+      1, 2, 7, 8,
+      1, 2, 6, 5,
+      5, 8, 3, 4,
+      6, 7, 3, 4,
+    ];
+    if (object.currentCoords.x === object.previousCoords.x && object.currentCoords.y === object.previousCoords.y) return;
     const args = this.ow.game.fieldEffectArguments;
     args[0] = (object.previousCoords.x << 16) >> 16;
     args[1] = (object.previousCoords.y << 16) >> 16;
     args[2] = 149;
     args[3] = 2;
-    if (object.currentCoords.x === object.previousCoords.x && object.currentCoords.y === object.previousCoords.y) return;
-    const transitions = [
-      [1, 2, 7, 8],
-      [1, 2, 6, 5],
-      [5, 8, 3, 4],
-      [6, 7, 3, 4],
-    ];
-    const previousDirection = object.previousMovementDirection;
-    const nextDirection = object.facingDirection - 5;
-    // The source indexes this table directly. Out-of-range state has no defined C result.
-    const animation = transitions[previousDirection]?.[nextDirection];
+    // DIR_NONE (0) would read before the table in C; no caller moves the bike with it.
+    const animation = transitions[object.previousMovementDirection * 4 + object.facingDirection - 5];
     if (animation === undefined) return;
     args[4] = animation;
     this.start(C.FLDEFF_BIKE_TIRE_TRACKS);
