@@ -6,7 +6,8 @@ exportados de los decomps.
 
 | Sección | Página | Para qué | Datos que necesita |
 |---|---|---|---|
-| Visor común | `/maps.html?game=firered`, `emerald`, `hns` o `crystal` | Cámara, búsqueda, mundo por bloques, mapas individuales, eventos, warps e historial | `public/map-viewer/` y datos de cada fuente |
+| Mundo principal | `/maps.html` o `?game=world` | Kanto FireRed, Johto HnS y Hoenn Emerald en un plano; selector de región, búsqueda, puertas y viajes de navegación | `public/map-viewer/principal/` más las fuentes principales |
+| Variantes del visor común | `/maps.html?game=firered`, `emerald`, `hns` o `crystal` | Cámara, búsqueda, mundo por bloques, mapas individuales, eventos, warps e historial | `public/map-viewer/` y datos de cada fuente |
 | Inspector GBA | `/viewer.html?legacy=1` (+ `&game=emerald`) | Capas técnicas, ficha por casilla, flags, writers, animación y audio | `public/viewer/kanto.json` / `hoenn.json`, `public/fr`, `public/emerald` |
 | Explorar a pie | `/viewer.html#modo=explore` (+ `?game=emerald`) | Caminar con Rojo/Hoja o Bruno/Aura; pisar una puerta abre su interior | los mismos |
 | Interiores | desde el buscador o `#mapa=MAP_ID` | 425 + 518 mapas con warps, objetos, eventos, carteles | `public/<juego>/maps`, `layouts`, `tilesets` |
@@ -37,6 +38,7 @@ npm run hns:maps                                       # public/hns/ (mapas 2D, 
 npm run expansion:catalog                               # public/expansion/ (catálogo Gen 1-9; requiere clang y refs:fetch de pokeemerald-expansion)
 npm run crystal:world                                   # public/crystal/world/ (mapa del mundo; requiere crystal:maps)
 npm run maps:images                                    # imágenes/mips del visor común; exige las cuatro fuentes anteriores
+npm run maps:principal                                 # componer mundo principal después de preparar imágenes
 # Una sola fuente: npm run maps:images -- firered | emerald | hns | crystal
 npm run sprites:sources                                 # public/sprites/ (~90 MB, ignorado en git); admite una fuente: pmd-red | pmd-sky | emerald-expansion | crystal | platinum | heartgold
 ```
@@ -213,3 +215,55 @@ usa un retraso de red de 150 ms declarado PREPARED, sin preparar estado del jueg
 solicita módulos de `src/core` ni `src/games`. También pasó el job existente de huellas/bici y
 limpieza al salir. Pendientes: revisión completa de todos los mapas/sprites, gestos táctiles reales,
 producción, paridad con ROM, Explorer por sectores y traslado de más herramientas técnicas al visor común.
+
+
+## Mundo principal y variantes
+
+Entrega `7ef990af`: `/maps.html` abre por defecto el atlas principal. «Región» enfoca Kanto,
+Johto o Hoenn y filtra la lista; «Todas las regiones» restaura el plano general. «Vista» conserva
+FireRed, Emerald, HnS y Crystal completos como variantes. La portada enlaza este atlas.
+
+El catálogo reúne **996 mapas disponibles**: Kanto FireRed 256, Johto Heart & Soul 253 y Hoenn
+Emerald 487. El plano tiene 140 exteriores; los interiores se abren desde búsqueda o puertas.
+Los IDs llevan región (`johto/MAP_NEW_BARK_TOWN`) y conservan el ID/fuente original en la ficha.
+No presupone que nombres iguales sean el mismo lugar: los escondites Rocket de Mahogany y
+Celadon siguen perteneciendo a sus fuentes y regiones respectivas.
+
+`tools/viewer/principal_world.py` selecciona Kanto por secciones de FireRed, Johto por secciones
+permitidas y referencias alcanzables desde New Bark (conexiones, warps y scripts), y Hoenn de
+Emerald excluyendo salas LINK y las islas Birth/Navel/Faraway. Las referencias de script indican
+pertenencia, no demuestran acceso durante una partida. La selección evita mapas Emerald
+heredados en HnS con etiquetas reutilizadas; incluye el escondite Rocket de Mahogany. Cinco
+estados alternativos de Johto se conservan únicamente en la variante HnS. Routes 26–28, Tohjo
+Falls y Mt Silver se agrupan con Johto por decisión del atlas, sin afirmar geografía oficial.
+
+Las regiones se separan por 1024 px. Johto conserva las posiciones por conexiones de cada
+componente; exteriores aislados se organizan en una franja aparte. Seis discrepancias de origen
+siguen registradas en el catálogo; no se afirma que todas las conexiones encajen. Los chunks se
+recomponen desde los mapas seleccionados para evitar incorporar el Kanto alternativo de HnS.
+Los 389 archivos del atlas regeneran idénticos.
+
+Siete referencias de Johto apuntan fuera de su selección; las fichas ofrecen la variante fuente
+cuando procede. Route 26 North enlaza a Route 22 FireRed como referencia entre fuentes.
+Los índices de warp nunca se transfieren entre fuentes. Olivine–Vermilion adapta una ruta del
+barco de HnS (`OlivinePort_EventScript_ChoseVermilion`); Vermilion–Slateport es navegación
+propuesta por el proyecto. Ninguno ejecuta transporte del juego ni une físicamente las regiones.
+«Explorar» aparece para exteriores FireRed/Emerald y usa el mapa original del motor previo;
+Johto sigue siendo consulta estática. Sprites/colisión de bloques se ofrecen en Kanto/Hoenn;
+Johto conserva marcadores de eventos.
+
+Comprobaciones: `npm run check:principal-map-data` verifica pertenencia, ciudades, procedencia,
+imágenes, posiciones, fronteras y evidencia del barco. El job siguiente recorre la UI real,
+puertas New Bark/Mahogany, frontera hacia Kanto, viaje editorial hacia Hoenn, variantes y vista
+390 px; comprueba caché estimada ≤96 MiB al acercar las tres regiones, ausencia de solicitudes
+al motor y 0 callbacks RAF en un segundo de reposo. Capturas inspeccionadas en escritorio y
+móvil. También pasan los checks de datos comunes/HnS, el recorrido común de cuatro fuentes,
+tipos, honestidad, build y diff. El build conserva avisos de tamaño de otros bundles del juego.
+
+```bash
+PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/principal-maps.job.mjs output/playwright/principal-maps
+```
+
+Pendientes: revisar exhaustivamente la selección y los mapas, resolver discrepancias con
+fuentes/ROM, gestos reales y producción; establecer conexiones físicas y simulación por sectores
+antes de explorar el conjunto como un único mundo jugable.
