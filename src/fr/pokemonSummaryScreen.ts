@@ -1366,7 +1366,35 @@ function PokeSum_PrintTrainerMemo_Egg(): void {
   const win = sMonSummaryScreen.windowIds[POKESUM_WIN_TRAINER_MEMO];
   const colors = cdata<number[][]>("pokemon_summary_screen", "sLevelNickTextColors");
   const eggOriginTexts = cdata<unknown[]>("pokemon_summary_screen", "sEggOriginTexts");
-  const originStr = resolveText(eggOriginTexts[0]);
+  // PokeSum_PrintTrainerMemo_Egg (pokemon_summary_screen.c): the origin text depends on where/how the egg was met and
+  // on whether the current trainer is its OT.
+  const currentMon = sMonSummaryScreen.currentMon;
+  const metLocation = GetMonData(currentMon, C.MON_DATA_MET_LOCATION);
+  let chosenStrIndex = 0;
+  if (!sMonSummaryScreen.isEnemyParty) {
+    if (metLocation === C.METLOC_FATEFUL_ENCOUNTER || GetMonData(currentMon, C.MON_DATA_MODERN_FATEFUL_ENCOUNTER) === 1) {
+      chosenStrIndex = 4;
+    } else {
+      const version = GetMonData(currentMon, C.MON_DATA_MET_GAME);
+      if (version !== C.VERSION_LEAF_GREEN && version !== C.VERSION_FIRE_RED) chosenStrIndex = 1;
+      else if (metLocation === C.METLOC_SPECIAL_EGG) chosenStrIndex = 2;
+      if (chosenStrIndex === 0 || chosenStrIndex === 2) {
+        if (!PokeSum_BufferOtName_IsEqualToCurrentOwner(currentMon)) chosenStrIndex++;
+      }
+    }
+  } else if (metLocation === C.METLOC_FATEFUL_ENCOUNTER || GetMonData(currentMon, C.MON_DATA_MODERN_FATEFUL_ENCOUNTER) === 1) {
+    chosenStrIndex = 4;
+  } else {
+    const version = GetMonData(currentMon, C.MON_DATA_MET_GAME);
+    if (version !== C.VERSION_LEAF_GREEN && version !== C.VERSION_FIRE_RED) {
+      if (metLocation === C.METLOC_SPECIAL_EGG) chosenStrIndex = 5;
+    } else if (metLocation === C.METLOC_SPECIAL_EGG) {
+      chosenStrIndex = 2;
+    }
+    if (!PokeSum_BufferOtName_IsEqualToCurrentOwner(currentMon)) chosenStrIndex++;
+  }
+  if (sMonSummaryScreen.isBadEgg) chosenStrIndex = 0;
+  const originStr = resolveText(eggOriginTexts[chosenStrIndex]);
   AddTextPrinterParameterized4(win, FONT_NORMAL, 0, 3, 0, 0, colors[0], TEXT_SKIP_DRAW, originStr);
 }
 
