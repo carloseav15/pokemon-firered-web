@@ -771,6 +771,8 @@ async function build(): Promise<void> {
     showExterior: (mapId) => { centerOnMap(mapId); },
     mapName: (mapId) => allMaps[mapId]?.name,
   });
+  // Sonda de pruebas (tools/playtest/smoke/interiors.job.mjs): abre cualquier interior sin pasar por la UI.
+  (window as unknown as { frInterior?: InteriorViewer }).frInterior = interiorViewer;
   allMaps = ((await (await fetch(`${HOENN ? "/emerald" : "/fr"}/maps.json`)).json()) as { maps: typeof allMaps }).maps;
   // Los efectos de campo (hierba, polvo, huellas) son de FireRed; en Hoenn se explora sin ellos.
   fieldEffects = HOENN ? NO_FIELD_EFFECTS : await ViewerFieldEffects.create(worldGrid, viewerClock);
