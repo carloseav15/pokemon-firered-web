@@ -1,4 +1,4 @@
-# Atlas FireRed / Emerald: índice de las herramientas de consulta
+# Atlas Pokémon: índice de las herramientas de consulta
 
 Páginas del servidor de desarrollo (`npm run dev`, puerto 5174 en esta máquina). La portada de todas es
 [`atlas.html`](../atlas.html) (enlace «☰ Atlas» en cada cabecera). Ninguna ejecuta el motor del juego: leen los datos
@@ -6,16 +6,17 @@ exportados de los decomps.
 
 | Sección | Página | Para qué | Datos que necesita |
 |---|---|---|---|
-| Visor del mundo | `/viewer.html`, `/viewer.html?game=emerald` | Exteriores unidos, capas, fichas, buscador | `public/viewer/kanto.json` / `hoenn.json`, `public/fr`, `public/emerald` |
+| Visor común | `/maps.html?game=firered`, `emerald`, `hns` o `crystal` | Cámara, búsqueda, mundo por bloques, mapas individuales, eventos, warps e historial | `public/map-viewer/` y datos de cada fuente |
+| Inspector GBA | `/viewer.html?legacy=1` (+ `&game=emerald`) | Capas técnicas, ficha por casilla, flags, writers, animación y audio | `public/viewer/kanto.json` / `hoenn.json`, `public/fr`, `public/emerald` |
 | Explorar a pie | `/viewer.html#modo=explore` (+ `?game=emerald`) | Caminar con Rojo/Hoja o Bruno/Aura; pisar una puerta abre su interior | los mismos |
 | Interiores | desde el buscador o `#mapa=MAP_ID` | 425 + 518 mapas con warps, objetos, eventos, carteles | `public/<juego>/maps`, `layouts`, `tilesets` |
 | Pokédex comparada | `/dex.html`, `#<id de especie>`, `#n<nacional>` | Sprites y datos comunes / exclusivos por juego, más la sección «Sprites de otros juegos» (tabla de fuentes abajo). Las especies de Gen 4-9 sin datos de juego salen como fichas solo de sprites | `public/<juego>/data`, `gfx/pokemon/*`, `public/sprites/` |
 | Biblioteca visual | `/library.html` | Entrenadores con equipo, objetos con icono, gráficos de objetos de mapa | `data/trainers.json`, `gfx/trainers`, `gfx/items`, `objects.json` |
 | Comparador | `/compare.html` | Diferencias campo a campo (especies, movimientos, objetos, entrenadores) | `public/<juego>/data` |
 | Quests | `/quests.html` | Quests candidatas con clase, flags y variables | `public/viewer/quests_<juego>.json` |
-| Johto GBA — Heart & Soul | `/hns.html`, `#MAP_NEW_BARK_TOWN` | Mundo conectado por bloques, mapas individuales, warps, conexiones y marcadores de eventos; adaptación HnS | `public/hns/` |
-| Mapas de Crystal | `/crystal.html`, `#<Mapa>` | 388 mapas de Johto/Kanto renderizados (bloques + tiles + paletas por entorno y hora, tejados por grupo), warps navegables, carteles, objetos con su sprite y orientación, escenas y conexiones | `public/crystal/` |
-| Mundo de Crystal | `/crystal-world.html`, `#<Mapa>` | 68 mapas exteriores conectados (Johto, Kanto, Route 28) en un solo plano con zoom, arrastre, hora del día, sprites de objetos (capa opcional), enlaces a cada ficha y las uniones por warps entre mapas (puertas, cuevas, tren, barco) | `public/crystal/world/` |
+| Johto GBA — Heart & Soul | `/maps.html?game=hns#mapa=MAP_NEW_BARK_TOWN` (`/hns.html` redirige) | Mundo conectado por bloques, mapas individuales, warps, conexiones y marcadores de eventos; adaptación HnS | `public/hns/` |
+| Mapas de Crystal | `/maps.html?game=crystal#mapa=<Mapa>` (`/crystal.html` redirige) | 388 mapas de Johto/Kanto renderizados (bloques + tiles + paletas por entorno y hora, tejados por grupo), warps navegables, carteles, objetos con su sprite y orientación, escenas y conexiones | `public/crystal/` |
+| Enlaces del mundo de Crystal | `/crystal-world.html?legacy=1`, `#<Mapa>` | 68 mapas exteriores conectados (Johto, Kanto, Route 28) en un solo plano con zoom, arrastre, hora del día, sprites de objetos (capa opcional), enlaces a cada ficha y las uniones por warps entre mapas (puertas, cuevas, tren, barco) | `public/crystal/world/` |
 | Catálogo Gen 1-9 | `/expansion.html`, `#s/<ESPECIE>`, `#m/`, `#a/`, `#i/` | 1573 especies y formas, 956 movimientos, 320 habilidades y 874 objetos de pokeemerald-expansion; evoluciones, aprendizajes (por nivel de cualquier generación, huevo y otros) y sprites de todas las fuentes | `public/expansion/` |
 | Línea argumental | `/story.html` | Escenas por capítulos en el orden oficial de rutas | `public/viewer/story_<juego>.json` |
 
@@ -35,6 +36,8 @@ npm run refs:fetch -- pokemon-hns                        # fuente fijada de Hear
 npm run hns:maps                                       # public/hns/ (mapas 2D, ignorado en git)
 npm run expansion:catalog                               # public/expansion/ (catálogo Gen 1-9; requiere clang y refs:fetch de pokeemerald-expansion)
 npm run crystal:world                                   # public/crystal/world/ (mapa del mundo; requiere crystal:maps)
+npm run maps:images                                    # imágenes/mips del visor común; exige las cuatro fuentes anteriores
+# Una sola fuente: npm run maps:images -- firered | emerald | hns | crystal
 npm run sprites:sources                                 # public/sprites/ (~90 MB, ignorado en git); admite una fuente: pmd-red | pmd-sky | emerald-expansion | crystal | platinum | heartgold
 ```
 
@@ -55,6 +58,7 @@ se extraen porque en pmd-red son `incbin` de `baserom.gba` (solo 73 especies); h
 ## Comprobaciones
 
 ```bash
+npm run check:common-map-data # cobertura, geometría y assets preparados del visor común
 npm run check:hns-maps       # 5 mapas contra PNG/paletas/bloques fuente; requiere datos y fuente HnS
 npm run check:warps          # grafo de warps y conexiones (los dos juegos)
 npm run check:compare-data   # el comparador coincide con una segunda implementación en Python
@@ -139,5 +143,73 @@ animación de tiles, ciclo horario, audio, scripts ni exploración jugable de Hn
 Verificación: `check:hns-maps` contrasta 48.640 píxeles de New Bark, Goldenrod, Ecruteak,
 Union Cave 1F y el laboratorio de Elm contra los PNG/paletas/metatiles fuente; 829 archivos idénticos
 entre dos exportaciones; lector FireRed conserva sus 69 archivos de tilesets. Tipos y build pasan.
-Pendiente: revisión visual en navegador, navegación por puertas, zoom/arrastre y móvil; no se comparó
-con la ROM. Estos checks de datos no validan historia ni comportamiento.
+El visor HnS independiente fue sustituido por el visor común en `79ec8960`: navegación por puertas,
+historial, zoom/arrastre, fuente no disponible y captura a 390 px comprobados en Chromium. Quedan
+comparación con ROM, gestos táctiles/dispositivos reales, conexiones y variantes. Estos checks no validan historia ni comportamiento.
+
+## Visor común y rendimiento
+
+`79ec8960` conecta FireRed, Emerald, HnS y Crystal en `maps.html`. `src/map-viewer/types.ts`
+define el contrato en píxeles; los lectores de `sources.ts` mantienen el paso de evento de 16 px
+(GBA: metatiles de 16 px; Crystal: bloques de 32 px y warps de 16 px). Crystal conserva paletas y
+capas de sprites por hora. Las fichas GBA se descargan al abrir el mapa; los catálogos HnS/Crystal
+ya contienen sus eventos. Se muestran hasta 100 filas de búsqueda, ampliables con «Mostrar más».
+
+`TexturePool` conserva como máximo 96 MiB **estimados** de RGBA de sus imágenes, con expulsión LRU
+antes de añadir recursos y limpieza al cambiar de fuente. No mide ni limita las cachés internas
+ni la memoria total del navegador/GPU. El mundo carga bloques próximos a la cámara y usa mips de
+hasta 2048 px al alejarse (umbral según resolución) o cuando las capas superarían el presupuesto.
+No hay reloj de simulación ni bucle continuo en Visor; los cambios programan una actualización.
+Se cancela la descarga de una ficha al cambiar de mapa/fuente; se restaura cámara/zoom al volver.
+
+Los PNG GBA salen de los exports existentes, con perfiles FireRed 640/7 y Emerald 512/6, paletas
+estáticas y slots BG reservados negros como en `TileRenderer.reloadPalettes`. No se modifica
+`public/fr` ni `public/emerald`. `map_images.py` comparte la composición con HnS, cuyo perfil y
+rechazos se conservan. Las capas de sprites muestran templates; clones y gráficos dinámicos sin
+resolución quedan registrados en `_meta.unresolvedObjects`, sin inventar sprites. La capa de
+colisión muestra bits de bloque, no toda la transitabilidad de una partida.
+
+Las rutas antiguas conservan los enlaces de mapa y redirigen a la consulta común. Se retiraron
+`src/hns/maps.ts` y `src/compare/crystalMain.ts`; el inspector GBA y el grafo de enlaces Crystal
+se conservan porque aportan herramientas adicionales. Los jobs anteriores especifican `legacy=1`.
+Explorar se ofrece solo para el mundo/exteriores de FireRed y Emerald: entra en el mapa elegido y
+«Visor» regresa a la consulta común con su cámara. Su renderizador/simulación anterior sigue cargando
+el mundo completo; optimizar Explorar por sectores es trabajo pendiente. No es un port jugable de
+Emerald, HnS o Crystal.
+
+Medición local antes/después: Chromium headless, Vite ya en ejecución, 1280×800, caché de red
+desactivada, una muestra por fuente. «Listo» significa imágenes de la vista cargadas; tiempos
+orientativos, no benchmark de producción. Buffers anteriores = suma RGBA de canvases; nuevos =
+imágenes conectadas, sin incluir cachés del navegador. Las muestras posteriores tienen 0–1
+callbacks RAF en dos segundos de reposo (una actualización pendiente puede entrar en esa ventana).
+
+| Fuente | Antes: listo (ms) | Común: listo (ms) | Gráficos antes (MiB estimados) | Común: imágenes visibles (MiB estimados) |
+|---|---:|---:|---:|---:|
+| FireRed | 2219 | 185 | 501,1 | 32 |
+| Emerald | 2265 | 65 | 1064,8 | 16 |
+| HnS | 119 | 81 | 16,0 | 16 |
+| Crystal mundo | 68 | 71 | 125,6 | 16 |
+
+Verificación focalizada: `check:common-map-data` contrasta 943 mapas GBA, sus posiciones y 2984
+referencias de imagen; 2530 archivos preparados regeneran idénticos; el renderer compartido
+conserva los 829 archivos HnS. `maps-raster.job.mjs` compara 42.240 píxeles de seis mapas con el
+`TileRenderer` anterior (selección de mapas por sonda declarada PREPARED; se excluyen su tinte de
+colisión y píxeles transparentes). `check:hns-maps` conserva su contraste independiente con PNG fuente.
+
+Jobs del harness existente (resultados locales en `.decomp-build`, capturas en `output/playwright`):
+
+```bash
+PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/common-maps.job.mjs output/playwright/common-maps
+PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/maps-explore.job.mjs output/playwright/maps-explore
+PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/maps-cache.job.mjs .decomp-build/maps-cache
+PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/maps-raster.job.mjs .decomp-build/maps-raster
+MAPS_COMMON=1 PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/maps-performance.job.mjs .decomp-build/maps-performance-after
+```
+
+Los recorridos verifican búsqueda, cambio de fuente, puertas, historial, zoom/arrastre, noche de
+Crystal, Route 7 no disponible, captura móvil sin desbordamiento, entrada/salida de Explorar y
+compatibilidad de enlaces. El stress de caché pasó en las cuatro fuentes; la prueba de carrera
+usa un retraso de red de 150 ms declarado PREPARED, sin preparar estado del juego. La consulta no
+solicita módulos de `src/core` ni `src/games`. También pasó el job existente de huellas/bici y
+limpieza al salir. Pendientes: revisión completa de todos los mapas/sprites, gestos táctiles reales,
+producción, paridad con ROM, Explorer por sectores y traslado de más herramientas técnicas al visor común.
