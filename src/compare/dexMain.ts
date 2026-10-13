@@ -3,7 +3,8 @@ import { prepare } from "./diff";
 import type { Raw } from "./diff";
 import { buildCard, locationsIndex, speciesIds } from "./dex";
 import type { Card, DexSource, Location } from "./dex";
-import { activateSpriteSections, loadSpriteIndex, otherSourcesHtml } from "./dexSprites";
+import { activateSpriteSections, loadSpriteIndex, otherSourcesHtml, thumbOf } from "./dexSprites";
+import type { SpriteIndex } from "./dexSprites";
 
 async function load(root: string): Promise<DexSource> {
   const j = async (p: string) => (await fetch(`${root}/${p}`)).json();
@@ -27,6 +28,10 @@ let locA: Map<number, Location[]>;
 let locB: Map<number, Location[]>;
 let ids: number[] = [];
 let selected = 0;
+let spriteIndex: SpriteIndex | null = null;
+/** Especies nacionales sin datos de juego (más allá de FireRed/Emerald): solo sprites de otras fuentes. */
+let extras: number[] = [];
+const prettyName = (n: number) => (spriteIndex?.names?.[String(n)] ?? `#${n}`).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 type SpriteKind = "front" | "front_shiny" | "back" | "back_shiny" | "icon" | "footprint" | "front_anim";
 const sprite = (root: string, kind: SpriteKind, id: number) => `${root}/gfx/pokemon/${kind}/${id}.png`;
@@ -46,6 +51,18 @@ function locs(l: Location[]): string {
 
 function dl(items: { label: string; value: string }[]): string {
   return `<dl>${items.map((i) => `<dt>${esc(i.label)}</dt><dd>${esc(i.value)}</dd>`).join("")}</dl>`;
+}
+
+function showExtra(nat: number): void {
+  selected = -nat;
+  document.querySelectorAll(".tile").forEach((t) => t.classList.toggle("sel", (t as HTMLElement).dataset.extra === String(nat)));
+  detailEl.innerHTML = `<h2>#${String(nat).padStart(3, "0")} ${esc(prettyName(nat))}</h2>
+    <p class="none">Sin datos de FireRed ni Emerald: solo sprites de las otras fuentes.</p>
+    <h3>Sprites de otros juegos</h3><div id="others"></div>`;
+  history.replaceState(null, "", `#n${nat}`);
+  const others = document.getElementById("others")!;
+  others.innerHTML = otherSourcesHtml(spriteIndex, nat);
+  activateSpriteSections(others);
 }
 
 function show(id: number): void {
@@ -123,14 +140,26 @@ function renderList(): void {
     return `${A.game.speciesName(id)} ${B.game.speciesName(id)} ${nat}`.toLowerCase().includes(term);
   });
   countEl.textContent = `${shown.length} de ${ids.length}`;
+  const ex = extras.filter((n) => !term || `${prettyName(n)} ${n}`.toLowerCase().includes(term));
+  const exTiles = ex
+    .map((n) => {
+      const t = spriteIndex ? thumbOf(spriteIndex, n) : null;
+      const size = !t ? "" : t.n > 1 ? (t.axis === "y" ? `56px ${56 * t.n}px` : `${56 * t.n}px 56px`) : "56px 56px";
+      const bg = t ? `style="background:url(${t.url}) 0 0/${size} no-repeat"` : "";
+      return `<div class="tile" data-extra="${n}"><div class="thumb" ${bg}></div><span>#${n}</span><span>${esc(prettyName(n))}</span></div>`;
+    })
+    .join("");
+  countEl.textContent = `${shown.length + ex.length} de ${ids.length + extras.length}`;
   listEl.innerHTML = shown
     .map((id) => `<div class="tile" data-id="${id}"><img loading="lazy" src="${sprite("/fr", "front", id)}" alt="" /><span>#${A.game.raw.species.species[id].national}</span><span>${esc(A.game.speciesName(id))}</span></div>`)
-    .join("");
+    .join("") + exTiles;
 }
 
 listEl.addEventListener("click", (e) => {
   const t = (e.target as HTMLElement).closest<HTMLElement>(".tile");
-  if (t) show(Number(t.dataset.id));
+  if (!t) return;
+  if (t.dataset.extra) showExtra(Number(t.dataset.extra));
+  else show(Number(t.dataset.id));
 });
 q.addEventListener("input", renderList);
 
@@ -139,8 +168,15 @@ q.addEventListener("input", renderList);
   locA = locationsIndex(A);
   locB = locationsIndex(B);
   ids = speciesIds(A, B);
+  spriteIndex = await loadSpriteIndex();
+  const covered = new Set(ids.map((i) => A.game.raw.species.species[i].national as number));
+  extras = spriteIndex ? Object.keys(spriteIndex.species).map(Number).filter((n) => !covered.has(n)).sort((a, b) => a - b) : [];
   renderList();
-  const fromHash = Number(location.hash.slice(1));
-  show(ids.includes(fromHash) ? fromHash : ids[0]!);
+  const hash = location.hash.slice(1);
+  if (hash.startsWith("n") && extras.includes(Number(hash.slice(1)))) showExtra(Number(hash.slice(1)));
+  else {
+    const fromHash = Number(hash);
+    show(ids.includes(fromHash) ? fromHash : ids[0]!);
+  }
   (window as unknown as { frDex: unknown }).frDex = { ids, card: (id: number) => buildCard(A, B, id, locA, locB), selected: () => selected };
 })().catch((e) => { detailEl.innerHTML = `<p class="none">Error: ${esc(String(e))}. ¿Están exportados public/fr y public/emerald?</p>`; });

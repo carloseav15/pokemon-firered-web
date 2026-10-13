@@ -11,29 +11,36 @@ type Item = {
   axis?: "x" | "y";
   fw?: number;
   fh?: number;
-  kind?: "pmd";
+  kind?: "pmd" | "frames";
+  anims?: number | { name: string; seq: number[][] }[];
+  shiny?: string;
   data?: string;
   atlas?: string;
-  anims?: number;
   cell?: [number, number];
 };
-type Index = { sources: Record<string, { label: string; repo: string; commit: string; species: number }>; species: Record<string, Record<string, Item[]>> };
+export type SpriteIndex = { names?: Record<string, string>; sources: Record<string, { label: string; repo: string; commit: string; species: number }>; species: Record<string, Record<string, Item[]>> };
 type PmdAnim = { id: number; seq: number[][][]; dirs: number[] };
 type PmdData = { atlas: string; cw: number; ch: number; cols: number; cells: number; pad: number; anims: PmdAnim[] };
 
-const SOURCE_ORDER = ["pmd-red", "emerald-expansion", "platinum", "heartgold"];
+const SOURCE_ORDER = ["pmd-red", "emerald-expansion", "crystal", "platinum", "heartgold"];
 const TICK_MS = 1000 / 60;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-let indexPromise: Promise<Index | null> | null = null;
-export function loadSpriteIndex(): Promise<Index | null> {
+let indexPromise: Promise<SpriteIndex | null> | null = null;
+export function loadSpriteIndex(): Promise<SpriteIndex | null> {
   indexPromise ??= fetch("/sprites/index.json")
-    .then((r) => (r.ok ? (r.json() as Promise<Index>) : null))
+    .then((r) => (r.ok ? (r.json() as Promise<SpriteIndex>) : null))
     .catch(() => null);
   return indexPromise;
 }
 
 function itemHtml(it: Item): string {
+  if (it.kind === "frames") {
+    const k = Math.max(1, Math.round(120 / Math.max(it.fw!, it.fh!)));
+    const anims = (it.anims as { name: string; seq: number[][] }[]) ?? [];
+    const opts = [`<option value="-1">Fotograma 0</option>`, ...anims.map((a, i) => `<option value="${i}" ${i === 0 ? "selected" : ""}>${esc(a.name)}</option>`)].join("");
+    return `<div class="sprite frames" data-item="${esc(JSON.stringify(it))}" data-k="${k}"><canvas width="${it.fw! * k}" height="${it.fh! * k}"></canvas>${esc(it.label)}<br /><select>${opts}</select>${it.shiny ? ` <label><input type="checkbox" /> variocolor</label>` : ""}</div>`;
+  }
   if (it.kind === "pmd") {
     return `<div class="pmd" data-json="${esc(it.data!)}"><div class="none">${esc(it.label)}: cargando…</div></div>`;
   }
@@ -52,7 +59,7 @@ function itemHtml(it: Item): string {
 }
 
 /** HTML de la sección «Otros juegos» para una especie nacional, o null si no hay datos de ninguna fuente. */
-export function otherSourcesHtml(index: Index | null, national: number): string {
+export function otherSourcesHtml(index: SpriteIndex | null, national: number): string {
   if (!index) {
     return `<p class="none">Sprites de otros juegos no generados: <code>npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold &amp;&amp; npm run sprites:sources</code>.</p>`;
   }
@@ -159,10 +166,67 @@ async function mountPmd(host: HTMLElement, gen: number): Promise<void> {
   requestAnimationFrame(draw);
 }
 
+/** Hoja de fotogramas de Crystal (front.png apilado) con anim.asm / anim_idle.asm. */
+async function mountFrames(host: HTMLElement, gen: number): Promise<void> {
+  const it: Item = JSON.parse(host.dataset.item!);
+  const k = Number(host.dataset.k);
+  const cv = host.querySelector("canvas")!;
+  const sel = host.querySelector("select")!;
+  const chk = host.querySelector<HTMLInputElement>("input[type=checkbox]");
+  const imgs = [await loadImage(it.url!), it.shiny ? await loadImage(it.shiny) : null];
+  if (gen !== generation) return;
+  const anims = (it.anims as { name: string; seq: number[][] }[]) ?? [];
+  const fw = it.fw!;
+  const fh = it.fh!;
+  let t0 = performance.now();
+  sel.addEventListener("change", () => (t0 = performance.now()));
+  const draw = (now: number) => {
+    if (gen !== generation || !host.isConnected) return;
+    const img = (chk?.checked ? imgs[1] : imgs[0]) ?? imgs[0]!;
+    const a = Number(sel.value);
+    let frame = 0;
+    if (a >= 0 && anims[a]) {
+      const seq = anims[a]!.seq;
+      const total = seq.reduce((t, f) => t + f[1]!, 0) * TICK_MS || 1;
+      let t = (now - t0) % total;
+      for (const f of seq) {
+        const dur = f[1]! * TICK_MS;
+        if (t < dur) {
+          frame = f[0]!;
+          break;
+        }
+        t -= dur;
+      }
+    }
+    const ctx = cv.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(img, 0, frame * fh, fw, fh, 0, 0, fw * k, fh * k);
+    requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+}
+
+/** Primera imagen representativa de una especie para la lista (fuentes sin datos de juego). */
+export function thumbOf(index: SpriteIndex, national: number): { url: string; n: number; axis: string } | null {
+  const per = index.species[String(national)];
+  if (!per) return null;
+  for (const src of ["emerald-expansion", "platinum", "heartgold", "crystal"]) {
+    const it = per[src]?.find((i) => /^Frente/.test(i.label) && !/variocolor|hembra|GBA/.test(i.label)) ?? per[src]?.find((i) => /^Frente/.test(i.label));
+    if (it?.url) return { url: it.url, n: it.n ?? 1, axis: it.axis ?? "" };
+  }
+  return null;
+}
+
 /** Monta los reproductores de PMD dentro de `root` (cancela los del contenido anterior). */
 export function activateSpriteSections(root: HTMLElement): void {
   generation++;
   const gen = generation;
+  root.querySelectorAll<HTMLElement>(".frames").forEach((h) => {
+    mountFrames(h, gen).catch((e) => {
+      h.innerHTML = `<p class="none">Error: ${esc(String(e))}</p>`;
+    });
+  });
   root.querySelectorAll<HTMLElement>(".pmd").forEach((h) => {
     mountPmd(h, gen).catch((e) => {
       h.innerHTML = `<p class="none">Error: ${esc(String(e))}</p>`;

@@ -63,7 +63,8 @@
       "/data/maps/",
       "/maps/",
       "/constants/",
-      "/gfx/tilesets/"
+      "/gfx/tilesets/",
+      "/gfx/pokemon/"
     ],
     "note": "GBC, ensamblador. Solo datos de mapas y tilesets; el código no se porta."
   },

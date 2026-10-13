@@ -6,7 +6,7 @@ public/sprites/<fuente>/ más public/sprites/index.json (nacional -> fuentes -> 
 Los gráficos no van en refs/ (regla 5 de refs/README.md); el juego no los usa.
 
 Uso: python3 tools/viewer/sprite_sources.py [fuente ...]
-Fuentes: pmd-red, emerald-expansion, platinum, heartgold (sin argumentos: todas).
+Fuentes: pmd-red, emerald-expansion, platinum, heartgold, crystal (sin argumentos: todas).
 
 PMD Red: cada especie son piezas OAM (graphics/ax/mon/<especie>/sprite_N[_k].png) más poses y animaciones
 en src/data/ax/<especie>.h. Se componen las poses (tiles 8x8 en orden 1D de OBJ, flips, prioridad por
@@ -33,11 +33,18 @@ SOURCE_INFO = {
     "emerald-expansion": {"label": "pokeemerald-expansion", "repo": "rh-hideout/pokeemerald-expansion", "pin": "pokeemerald-expansion"},
     "platinum": {"label": "Pokémon Platinum", "repo": "pret/pokeplatinum", "pin": "pokeplatinum"},
     "heartgold": {"label": "Pokémon HeartGold", "repo": "pret/pokeheartgold", "pin": "pokeheartgold"},
+    "crystal": {"label": "Pokémon Crystal", "repo": "pret/pokecrystal", "pin": "pokecrystal"},
 }
 
 
 def norm(s: str) -> str:
     return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def species_names() -> dict[int, str]:
+    src = source_path("pokeapi") / "data/v2/csv/pokemon_species.csv"
+    with src.open() as f:
+        return {int(r["id"]): r["identifier"] for r in csv.DictReader(f)}
 
 
 def species_table() -> dict[str, int]:
@@ -132,7 +139,7 @@ def build_expansion(table: dict[str, int]) -> dict[int, list[dict]]:
                 if stem == "anim_front":
                     kind = None
                 out_png = dst / f"{stem}{gba}.png"
-                save_indexed(img, out_png)
+                save_indexed(img, out_png, read_pal(norm_pal) if stem != "icon" and norm_pal.exists() else None)
                 items.append(item(f"{label}{tag}{suf}", out_png, img, kind))
                 if stem != "icon" and shiny_pal.exists():
                     sp = dst / f"{stem}{gba}_shiny.png"
@@ -213,8 +220,14 @@ def build_platinum(table: dict[str, int]) -> dict[int, list[dict]]:
 # ---------------------------------------------------------------- HeartGold
 
 def build_heartgold() -> dict[int, list[dict]]:
+    """pokegra.mk construye la paleta normal (-04.NCLR) desde male/front.png (o female si falta) y la variocolor
+    (-05.NCLR) desde male/back.png: los índices de cada imagen se combinan con una u otra paleta."""
     base = source_path("pokeheartgold") / "files/poketool"
     out: dict[int, list[dict]] = {}
+
+    def real(p: Path) -> bool:
+        return p.exists() and p.stat().st_size > 0
+
     for d in sorted((base / "pokegra/pokegra").iterdir()):
         if not (d.is_dir() and d.name.isdigit()):
             continue
@@ -222,17 +235,30 @@ def build_heartgold() -> dict[int, list[dict]]:
         if nat == 0:
             continue
         dst = OUT / "heartgold" / d.name
+        pal_src = {}
+        for stem in ("front", "back"):
+            for gender in ("male", "female"):
+                f = d / gender / f"{stem}.png"
+                if real(f):
+                    pal_src[stem] = Image.open(f).getpalette()[:768]
+                    break
+        normal_pal = pal_src.get("front")
+        shiny_pal = pal_src.get("back")
         items: list[dict] = []
         for gender, glabel in (("male", ""), ("female", " hembra")):
             for stem, label in (("front", "Frente"), ("back", "Espalda")):
                 f = d / gender / f"{stem}.png"
-                if not f.exists() or f.stat().st_size == 0:  # el decomp deja vacío el sexo que no existe
+                if not real(f):
                     continue
-                if gender == "female" and (d / "male" / f"{stem}.png").read_bytes() == f.read_bytes():
+                if gender == "female" and real(d / "male" / f"{stem}.png") and (d / "male" / f"{stem}.png").read_bytes() == f.read_bytes():
                     continue
                 img = Image.open(f)
-                save_indexed(img, dst / f"{gender}_{stem}.png")
+                pad = lambda p: (p or []) + [0] * (768 - len(p or []))  # noqa: E731
+                save_indexed(img, dst / f"{gender}_{stem}.png", pad(normal_pal))
                 items.append(item(f"{label}{glabel}", dst / f"{gender}_{stem}.png", img))
+                if shiny_pal:
+                    save_indexed(img, dst / f"{gender}_{stem}_shiny.png", pad(shiny_pal))
+                    items.append(item(f"{label} variocolor{glabel}", dst / f"{gender}_{stem}_shiny.png", img))
         # Los iconos van desplazados: poke_icon_00000007 es la especie 0 (huevo/forma), el 8 es Bulbasaur.
         ic = base / f"icongra/poke_icon/poke_icon_{nat + 7:08d}.png"
         if ic.exists():
@@ -241,6 +267,96 @@ def build_heartgold() -> dict[int, list[dict]]:
             items.append(item("Icono", dst / "icon.png", img, "icon"))
         if items:
             out.setdefault(nat, []).extend(items)
+    return out
+
+
+# ---------------------------------------------------------------- Crystal
+
+def crystal_anim(path: Path) -> list[list[int]] | None:
+    """anim.asm de Crystal -> secuencia lineal [[fotograma, ticks], ...] (macros de pic_anims.asm)."""
+    cmds: list[tuple[str, list[int]]] = []
+    for raw in path.read_text().splitlines():
+        line = raw.split(";")[0].strip()
+        if not line:
+            continue
+        m = re.match(r"(frame|setrepeat|dorepeat|endanim)\b\s*(.*)$", line)
+        if not m:
+            return None
+        cmds.append((m.group(1), [int(v) for v in re.findall(r"\d+", m.group(2))]))
+    seq: list[list[int]] = []
+    pc, counter, steps = 0, 0, 0
+    while pc < len(cmds) and steps < 2000:
+        steps += 1
+        op, a = cmds[pc]
+        if op == "endanim":
+            break
+        if op == "frame":
+            seq.append([a[0], a[1]])
+        elif op == "setrepeat":
+            counter = a[0]
+        elif op == "dorepeat":
+            counter -= 1
+            if counter != 0:
+                pc = a[0]
+                continue
+        pc += 1
+    return seq
+
+
+def build_crystal(table: dict[str, int]) -> dict[int, list[dict]]:
+    root = source_path("pokecrystal") / "gfx/pokemon"
+    out: dict[int, list[dict]] = {}
+    skipped = []
+    for d in sorted(p for p in root.iterdir() if p.is_dir()):
+        r = resolve(d.name, table)
+        if not r or not (d / "front.png").exists():
+            skipped.append(d.name)
+            continue
+        nat, form = r
+        dst = OUT / "crystal" / d.name
+        tag = f" · {form.replace('_', ' ')}" if form else ""
+        shiny_file = d / "shiny.pal"
+        if not shiny_file.exists():  # unown_a... comparten la paleta de unown/
+            shiny_file = root / d.name.split("_")[0] / "shiny.pal"
+        shiny_rgb = [tuple(int(v) * 255 // 31 for v in re.findall(r"\d+", l)) for l in shiny_file.read_text().splitlines() if l.strip().startswith("RGB")] if shiny_file.exists() else []
+        items: list[dict] = []
+        for stem, label in (("front", "Frente"), ("back", "Espalda")):
+            f = d / f"{stem}.png"
+            if not f.exists():
+                continue
+            img = Image.open(f)
+            w, h = img.size
+            n = h // w if h % w == 0 else 1
+            fh = h // n
+            save_indexed(img, dst / f"{stem}.png")
+            shiny = None
+            if len(shiny_rgb) == 2:
+                pal = (img.getpalette() or [])[:768]
+                pal += [0] * (768 - len(pal))
+                for i, rgb in enumerate(shiny_rgb):  # colores intermedios 1 y 2 (ver data/pokemon/palettes.asm)
+                    pal[(i + 1) * 3 : (i + 1) * 3 + 3] = list(rgb)
+                shiny = pal
+                save_indexed(img, dst / f"{stem}_shiny.png", pal)
+            first = {"label": f"{label}{tag}", "url": rel(dst / f"{stem}.png"), "w": w, "h": h, "n": n, "fw": w, "fh": fh}
+            if n > 1:
+                first["kind"] = "frames"
+                anims = []
+                for name, fn in (("Animación", "anim.asm"), ("Reposo", "anim_idle.asm")):
+                    af = d / fn
+                    if af.exists() and stem == "front":
+                        seq = crystal_anim(af)
+                        if seq:
+                            anims.append({"name": name, "seq": seq})
+                first["anims"] = anims
+                if shiny:
+                    first["shiny"] = rel(dst / f"{stem}_shiny.png")
+            items.append(first)
+            if shiny and n == 1:
+                items.append({"label": f"{label} variocolor{tag}", "url": rel(dst / f"{stem}_shiny.png"), "w": w, "h": h})
+        if items:
+            out.setdefault(nat, []).extend(items)
+    if skipped:
+        print(f"crystal: sin especie o sin frente ({len(skipped)}): {', '.join(skipped[:12])}")
     return out
 
 
@@ -457,6 +573,7 @@ def main() -> None:
         "emerald-expansion": lambda: build_expansion(table),
         "platinum": lambda: build_platinum(table),
         "heartgold": build_heartgold,
+        "crystal": lambda: build_crystal(table),
     }
     for w in wanted:
         res = builders[w]()
@@ -469,6 +586,8 @@ def main() -> None:
             index["species"].setdefault(str(nat), {})[w] = items
         print(f"{w}: {len(res)} especies, {sum(len(v) for v in res.values())} elementos")
     index["species"] = {k: v for k, v in index["species"].items() if v}
+    names = species_names()
+    index["names"] = {k: names[int(k)] for k in index["species"] if int(k) in names}
     index["species"] = dict(sorted(index["species"].items(), key=lambda kv: int(kv[0])))
     OUT.mkdir(parents=True, exist_ok=True)
     index_path.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n")
