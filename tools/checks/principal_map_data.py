@@ -39,6 +39,28 @@ for r in d['world']['maps']:
     assert r['id'] in d['maps'];region=regions[d['maps'][r['id']]['region']]
     assert region['x']<=r['x'] and r['x']+r['w']<=region['x']+region['w']
     assert 0<=r['y'] and r['y']+r['h']<=region['h']
+# Surface completeness and original continental geometry, compared to source records.
+hoenn=regions['hoenn']; rects={r['id']:r for r in d['world']['maps']}
+expected={f'hoenn/{id}' for id,m in sources['emerald']['maps'].items() if m['type'] in [1,2,3,6] and f'hoenn/{id}' in d['maps']}
+assert {id for id in rects if id.startswith('hoenn/')}==expected
+assert not any('PROTOTYPE' in id for id in d['maps'] if id.startswith('hoenn/'))
+for r in sources['emerald']['world']['maps']:
+    assert rects['hoenn/'+r['id']]=={**r,'id':'hoenn/'+r['id'],'x':r['x']+hoenn['x']}
+for id in ['MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_BATTLE_FRONTIER_OUTSIDE_WEST','MAP_SKY_PILLAR_OUTSIDE','MAP_SKY_PILLAR_TOP','MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_SOUTHERN_ISLAND_INTERIOR','MAP_SOOTOPOLIS_CITY','MAP_PETALBURG_WOODS']:
+    assert 'hoenn/'+id in rects
+for group in d['_meta']['hoennAreas']:
+    assert group['y']>=sources['emerald']['world']['h']+p.GAP
+    for id in group['maps']:
+        original=json.loads((ROOT/'public/emerald/maps'/f'{id}.json').read_text())
+        a=rects['hoenn/'+id]
+        for c in original['connections']:
+            if c['map'] not in group['maps']:continue
+            b=rects['hoenn/'+c['map']];offset=c['offset']*16
+            desired={'left':(a['x']-b['w'],a['y']+offset),'right':(a['x']+a['w'],a['y']+offset),
+                     'up':(a['x']+offset,a['y']-b['h']),'down':(a['x']+offset,a['y']+a['h'])}[c['direction']]
+            assert (b['x'],b['y'])==desired, (id,c)
+for place in d['places']:assert place['id'] in rects
+
 for c in d['world']['chunks']:
     with Image.open(p.OUT/c['file']) as image: assert image.size==(c['w'],c['h'])
 for file in d['world']['overviews'].values():

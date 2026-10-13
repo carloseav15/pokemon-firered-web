@@ -117,6 +117,33 @@ def sevii_rects(catalog,selected):
     return result,max(r['x']+r['w'] for r in result),y-GAP,bounds,conflicts
 
 
+def hoenn_rects(catalog,selected):
+    world=catalog['world'];main_ids={r['id'] for r in world['maps']}
+    missing={id for id in selected-main_ids if catalog['maps'][id]['type'] in {1,2,3,6}}
+    maps={id:{'w':m['width']//16,'h':m['height']//16,'type':m['type'],
+        'connections':read(ROOT/'public/emerald/maps'/f'{id}.json')['connections']} for id,m in catalog['maps'].items() if id in missing}
+    groups=[];errors=[]
+    while missing:
+        origin=min(missing);members={origin};queue=deque([origin]);missing.remove(origin)
+        while queue:
+            for c in maps[queue.popleft()]['connections']:
+                if c['map'] in missing:
+                    members.add(c['map']);missing.remove(c['map']);queue.append(c['map'])
+        rects,w,h,components,conflicts=johto_rects(maps,members,origin,{1,2,3,6})
+        groups.append({'origin':origin,'rects':rects,'w':w,'h':h,'maps':sorted(members)})
+        errors+=conflicts
+    # Keep continental geometry intact. Detached components occupy a separate two-column strip.
+    pitch=max(g['w'] for g in groups)+GAP;y=world['h']+GAP;rects=list(world['maps']);bounds=[]
+    for index in range(0,len(groups),2):
+        row=groups[index:index+2]
+        for col,g in enumerate(row):
+            x=col*pitch
+            rects += [{**r,'x':r['x']+x,'y':r['y']+y} for r in g['rects']]
+            bounds.append({k:v for k,v in g.items() if k!='rects'}|{'x':x,'y':y})
+        y+=max(g['h'] for g in row)+GAP
+    return rects,max(world['w'],max(r['x']+r['w'] for r in rects)),y-GAP,bounds,errors
+
+
 def main():
     spec=importlib.util.spec_from_file_location('world_refs',ROOT/'tools/refs/common.py');refs=importlib.util.module_from_spec(spec);spec.loader.exec_module(refs)
     hns_source=refs.source_path('pokemon-hns');hns=read(ROOT/'public/hns/maps.json')
@@ -126,13 +153,14 @@ def main():
       'kanto':{id for id,m in fr['maps'].items() if m['section'] in KANTO_SECTIONS},
       'johto':johto,
       'sevii':{id for id,m in fr['maps'].items() if m['section'] in SEVII_SECTIONS and 'UNUSED' not in id},
-      'hoenn':{id for id,m in em['maps'].items() if id not in LINK_MAPS and m['section'] not in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK','MAPSEC_FARAWAY_ISLAND'}}}
+      'hoenn':{id for id,m in em['maps'].items() if id not in LINK_MAPS and 'PROTOTYPE' not in id and m['section'] not in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK','MAPSEC_FARAWAY_ISLAND'}}}
     jr,jw,jh,components,conflicts=johto_rects(hns['maps'],johto)
     sr,sw,sh,islands,sevii_conflicts=sevii_rects(fr,selections['sevii'])
+    er,ew,eh,hoenn_areas,hoenn_conflicts=hoenn_rects(em,selections['hoenn'])
     configs=[('johto','hns','Johto','Heart & Soul',hns,jr,jw,jh,'MAP_NEW_BARK_TOWN'),
              ('kanto','firered','Kanto','FireRed',fr,fr['world']['maps'],fr['world']['w'],fr['world']['h'],'MAP_PALLET_TOWN'),
              ('sevii','firered','Sevii · Kanto','FireRed',fr,sr,sw,sh,'MAP_ONE_ISLAND'),
-             ('hoenn','emerald','Hoenn','Emerald',em,em['world']['maps'],em['world']['w'],em['world']['h'],'MAP_LITTLEROOT_TOWN')]
+             ('hoenn','emerald','Hoenn','Emerald',em,er,ew,eh,'MAP_LITTLEROOT_TOWN')]
     if STAGE.exists():shutil.rmtree(STAGE)
     (STAGE/'world').mkdir(parents=True)
     maps={};rects=[];regions=[];xoffset=0
@@ -199,12 +227,15 @@ def main():
         file=f'world/overview_{layer}.png';image.save(STAGE/file,optimize=True);overviews[layer]=file
     write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Editorial: Johto, Kanto, Sevii and Hoenn separated by 1024 px; source connections preserved inside components.',
       'johtoSelection':'Source section allowlist plus reachability by connections, warps and script MAP references. References are not proof of runtime access.',
+      'hoennAreas':hoenn_areas,'hoennConflicts':hoenn_conflicts,
+      'hoennPlacement':'Original continental positions preserved. Detached surface components arranged in a separate strip; not geographic or playable connections. Prototypes excluded.',
       'seviiIslands':islands,'seviiConflicts':sevii_conflicts,
       'seviiSelection':'Seven FireRed island groups and their routes/interiors. Event islands, prototypes, unused house and LINK rooms remain in source variants. Island/component positions are editorial.',
       'johtoEvidence':evidence,'johtoComponents':components,'johtoConflicts':conflicts,'excludedStateVariants':sorted(STATE_VARIANTS),
       'excludedPermittedJohtoMaps':sorted(n for n,m in hns['maps'].items() if m['section'] in JOHTO_SECTIONS and n not in johto),
       'borderAssignment':'HnS Routes 26–28, Tohjo Falls and Mt Silver kept with Johto as border areas; not a claim about official regional geography.'},
       'regions':regions,'maps':maps,'boundaries':boundaries,'crossSourceAliases':aliases,'travels':travels,
+      'places':[{'id':f"hoenn/{a['origin']}",'label':em['maps'][a['origin']]['name']} for a in hoenn_areas],
       'world':{'w':width,'h':height,'origin':'kanto/MAP_PALLET_TOWN','maps':rects,'chunks':chunks,'overviews':overviews}})
     OUT.mkdir(parents=True,exist_ok=True)
     if (OUT/'world').exists():shutil.rmtree(OUT/'world')

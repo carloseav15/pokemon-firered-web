@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 export default async function run(ctx) {
   const p=ctx.page, base=process.env.PW_BASE??'http://localhost:5174/';
   await p.addInitScript(() => { const raf=window.requestAnimationFrame.bind(window); window.atlasRaf=0; window.requestAnimationFrame=fn=>raf(t=>{window.atlasRaf++;fn(t);}); });
+  const catalog=await (await p.request.get(new URL('map-viewer/principal/catalog.json',base).href)).json();
   const requests=[];p.on('request',r=>requests.push(new URL(r.url()).pathname));
   await p.setViewportSize({width:1280,height:800});
   await p.goto(new URL('maps.html',base).href);
@@ -17,7 +18,9 @@ export default async function run(ctx) {
     await p.locator('#region').selectOption(region);
     await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
     await p.locator('#zoom').selectOption('1');
-    await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
+    await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    // Zooming can land in the legitimate empty area between components.
+    await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
     assert(Number((await p.locator('#budget').textContent()).match(/([\d.]+) MiB/)[1])<=96);
     await p.locator('#search').fill(search);
     const link=p.locator(`#list a[href="#mapa=${region}%2F${id}"]`);
@@ -34,6 +37,27 @@ export default async function run(ctx) {
     }
     await p.locator('#search').fill('');
   }
+  for (const id of ['MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_SKY_PILLAR_OUTSIDE']) {
+    await p.locator('#region').selectOption('hoenn');
+    await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
+    await p.locator(`#detail a[href="#mapa=hoenn%2F${id}"]`).click();
+    await p.locator('#meta').filter({hasText:`hoenn/${id}`}).waitFor();
+    assert(!(await p.locator('#explore').isVisible()), 'isolated area cannot spawn in old continental explorer');
+  }
+  await p.goto(new URL('maps.html?game=world#mapa=hoenn%2FMAP_ROUTE131',base).href);
+  await p.locator('#meta').filter({hasText:'hoenn/MAP_ROUTE131'}).waitFor();
+  await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SKY_PILLAR_ENTRANCE&warp=0"]').click();
+  await p.locator('#meta').filter({hasText:'hoenn/MAP_SKY_PILLAR_ENTRANCE'}).waitFor();
+  await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SKY_PILLAR_OUTSIDE&warp=0"]').click();
+  await p.locator('#meta').filter({hasText:'hoenn/MAP_SKY_PILLAR_OUTSIDE'}).waitFor();
+  await ctx.shot('principal-sky-pillar-desktop');
+  await p.locator('#region').selectOption('hoenn');
+  await p.locator('#zoom').selectOption('0.03125');
+  // Camera only, to inspect the actual detached strip, without preparing game state.
+  const strip=catalog._meta.hoennAreas[0], hoenn=catalog.regions.find(r=>r.id==='hoenn');
+  await p.locator('#viewport').evaluate((el,pos)=>{el.scrollLeft=pos.x;el.scrollTop=pos.y;}, {x:(hoenn.x+strip.x)*.03125,y:strip.y*.03125});
+  await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
+  await ctx.shot('principal-hoenn-isolated-desktop');
   await p.goto(new URL('maps.html?game=world#mapa=johto%2FMAP_MAHOGANY_TOWN_SHOP',base).href);
   await p.locator('#meta').filter({hasText:'johto/MAP_MAHOGANY_TOWN_SHOP'}).waitFor();
   await p.locator('#detail a[href="#mapa=johto%2FMAP_ROCKET_HIDEOUT_B1F&warp=0"]').click();
@@ -77,9 +101,17 @@ export default async function run(ctx) {
   await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await ctx.shot('principal-sevii-mobile');
+  await p.locator('#region').selectOption('hoenn');
+  await p.locator('#meta').filter({hasText:/mapas exteriores/}).waitFor();
+  await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SOUTHERN_ISLAND_EXTERIOR"]').click();
+  await p.locator('#meta').filter({hasText:'hoenn/MAP_SOUTHERN_ISLAND_EXTERIOR'}).waitFor();
+  await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SOUTHERN_ISLAND_INTERIOR&warp=0"]').click();
+  await p.locator('#meta').filter({hasText:'hoenn/MAP_SOUTHERN_ISLAND_INTERIOR'}).waitFor();
+  await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
+  await ctx.shot('principal-southern-island-mobile');
   assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const budget=await p.locator('#budget').textContent();assert(Number(budget.match(/([\d.]+) MiB/)[1])<=96);
   assert(!requests.some(r=>/\/src\/(core|games)\//.test(r)));
   assert.equal(ctx.errors().length,0,ctx.errors().join(';'));
-  return {regions:3,archipelagos:1,idleRaf:idle,maps:await p.locator('#count').textContent(),doors:true,crossSourceNavigation:true,editorialJourney:true,variants:true,mobile:true,budget,noEngineRequests:true};
+  return {regions:3,archipelagos:1,idleRaf:idle,maps:await p.locator('#count').textContent(),doors:true,hoennIsolated:true,crossSourceNavigation:true,editorialJourney:true,variants:true,mobile:true,budget,noEngineRequests:true};
 }

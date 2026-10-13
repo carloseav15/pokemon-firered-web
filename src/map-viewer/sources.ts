@@ -113,7 +113,7 @@ async function principal(signal: AbortSignal): Promise<Source> {
   type Chunk = { file: string; layer: "image" | "sprites" | "collision"; x: number; y: number; w: number; h: number };
   const root = "/map-viewer/principal/";
   const [doc, fr, em, hs] = await Promise.all([
-    json<{ regions: Region[]; maps: Record<string, M>; crossSourceAliases: Record<string, string>; travels: Journey[];
+    json<{ regions: Region[]; maps: Record<string, M>; crossSourceAliases: Record<string, string>; travels: Journey[]; places: { id: string; label: string }[];
       world: { w: number; h: number; origin: string; maps: Rect[]; chunks: Chunk[]; overviews: Record<string, string> } }>(root + "catalog.json", signal),
     gba("firered", signal), gba("emerald", signal), hns(signal),
   ]);
@@ -136,9 +136,9 @@ async function principal(signal: AbortSignal): Promise<Source> {
   return {
     game: "world", title: "Mundo principal · Kanto / Johto / Hoenn", commit: doc.regions.map(r => `${r.title}:${r.commit.slice(0, 7)}`).join(" · "),
     limitations: "Kanto y Sevii: FireRed · Johto: HnS · Hoenn: Emerald. Disposición y viajes del atlas definidos por el proyecto. Sin unión física ni simulación compartida. Johto usa marcadores; sprites/colisión de bloques disponibles en Kanto y Hoenn.",
-    maps: mapEntries, regions: doc.regions, journeys: doc.travels,
+    maps: mapEntries, regions: doc.regions, journeys: doc.travels, places: doc.places.map(p => ({ ...p, label: pretty(p.label) })),
     world: { width: doc.world.w, height: doc.world.h, origin: doc.world.origin, rects: doc.world.maps,
-      notes: "Kanto, su archipiélago Sevii, Johto y Hoenn. Las siete islas y los componentes se colocan separados; la posición relativa es editorial. HnS conserva discrepancias de conexiones de origen, pendientes de revisión. Áreas fronterizas de HnS (Routes 26–28, Tohjo Falls y Mt Silver) se conservan con Johto. Los viajes son navegación del atlas, no transporte jugable." },
+      notes: "Kanto, su archipiélago Sevii, Johto y Hoenn. Las siete islas y los componentes se colocan separados; Hoenn conserva su plano continental y agrupa sus superficies aisladas en una franja aparte; la posición relativa es editorial. HnS conserva discrepancias de conexiones de origen, pendientes de revisión. Áreas fronterizas de HnS (Routes 26–28, Tohjo Falls y Mt Silver) se conservan con Johto. Los viajes son navegación del atlas, no transporte jugable." },
     capabilities: { explore: true, sprites: true, collision: true, times: [] },
     textures(id, time, layers, overview) {
       if (id !== "world") { const m = doc.maps[id]; return m ? providers[m.game].textures(m.sourceId, time, layers, false) : []; }

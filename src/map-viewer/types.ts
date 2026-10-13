@@ -14,7 +14,7 @@ export type Source = {
   capabilities: { explore: boolean; sprites: boolean; collision: boolean; times: string[] };
   textures: (map: string, time: string, layers: ReadonlySet<Layer>, overview: boolean) => Texture[];
   details: (map: string, signal: AbortSignal) => Promise<MapDetail>;
-  regions?: Region[]; journeys?: Journey[];
+  regions?: Region[]; journeys?: Journey[]; places?: { id: string; label: string }[];
   exploreLink?: (map: string, zoom: string) => string | null;
   inspector: (map: string) => string | null;
 };

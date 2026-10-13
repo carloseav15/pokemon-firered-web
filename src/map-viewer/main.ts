@@ -116,6 +116,7 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
   if (id === "world") {
     meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas exteriores" : "mapas conectados"}`;
     detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Viajes del atlas</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : j.kind === "source-navigation" ? " · referencia FireRed" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
+    if (source.places?.length) detail.innerHTML += `<h2>Zonas aisladas de Hoenn</h2><div class="links">${source.places.map(p => mapLink(p.id, p.label)).join("")}</div>`;
     const origin = source.world.rects.find(r => r.id === source!.world.origin);
     const z = Number(zoom.value);
     viewport.scrollTo(viewRestore?.x ?? Math.max(0, (origin ? origin.x + origin.w / 2 : 0) * z - viewport.clientWidth / 2), viewRestore?.y ?? Math.max(0, (origin ? origin.y + origin.h / 2 : 0) * z - viewport.clientHeight / 2));
