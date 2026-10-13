@@ -14,8 +14,8 @@ export default [
     c: { stem: "battle_interface", name: "GetScaledHPFraction" },
     params: [P("hp", "s16", { realistic: [0, 999] }), P("maxhp", "s16", { realistic: [1, 999] }), P("scale", "u8", { realistic: [1, 96] })],
     impls: [
-      { label: "battle/interface.ts", file: "src/games/firered/battle/interface.ts", name: "GetScaledHPFraction" },
-      { label: "battle/util.ts", file: "src/games/firered/battle/util.ts", name: "GetScaledHPFraction" },
+      { label: "battle/interface.ts", file: "src/core/battle/interface.ts", name: "GetScaledHPFraction" },
+      { label: "battle/util.ts", file: "src/core/battle/util.ts", name: "GetScaledHPFraction" },
     ],
     realisticEvidence: [
       fact("scale is 48 (B_HEALTHBAR_NUM_PIXELS) or a party-menu box dimension", "battle_interface.c:2173", "battle_script_commands.c:7931", "party_menu.c:2439"),
@@ -28,7 +28,7 @@ export default [
     c: { stem: "battle_interface", name: "GetReceivedValueInPixels", unstatic: ["GetReceivedValueInPixels"] },
     params: [P("oldValue", "s32", { realistic: [0, 999] }), P("receivedValue", "s32", { realistic: [-999, 999] }),
       P("maxValue", "s32", { realistic: [1, 999] }), P("totalPixels", "u8", { realisticSet: [8] })],
-    impls: [{ label: "battle/interface.ts", file: "src/games/firered/battle/interface.ts", name: "GetReceivedValueInPixels" }],
+    impls: [{ label: "battle/interface.ts", file: "src/core/battle/interface.ts", name: "GetReceivedValueInPixels" }],
     realisticEvidence: [
       fact("only caller passes B_EXPBAR_NUM_TILES = 64 / 8 = 8", "battle_interface.c:1864", "battle_interface.c:1846"),
       assumed("oldValue/maxValue are exp-bar values; exp-in-level values can exceed 999, so this range is a lower bound"),

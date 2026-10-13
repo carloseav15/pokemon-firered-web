@@ -3,7 +3,7 @@ import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as C from "../../src/games/firered/generated/constants.ts";
-import { G, gBattleMons, gBattleResults } from "../../src/games/firered/battle/globals.ts";
+import { G, gBattleMons, gBattleResults } from "../../src/core/battle/globals.ts";
 import { gEnemyParty } from "../../src/core/pokemon/mon.ts";
 import { rom } from "../../src/core/rom.ts";
 import { flagSet, save } from "../../src/games/firered/save.ts";

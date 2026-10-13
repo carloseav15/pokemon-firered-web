@@ -10,7 +10,7 @@ import { save, varGet } from "../save";
 import { CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, IsDma3ManagerBusyWithBgCopy } from "@core/hw/bg";
 import { BeginFastPaletteFade, BeginNormalPaletteFade, gPaletteFade, LoadCompressedPalette, OBJ_PLTT_ID, PALETTES_ALL, PLTT_SIZE_4BPP, RGB_BLACK } from "@core/hw/palette";
 import { gMain } from "@core/hw/runtime";
-import { battleHost } from "./host";
+import { battleHost } from "@core/battle/host";
 import { AllocSpritePalette, CreateInvisibleSprite, CreateSprite, DestroySprite, FreeOamMatrix, FreeSpriteOamMatrix, FreeSpritePaletteByTag,
   FreeSpriteTilesByTag, gSprites, SpriteCallbackDummy, StartSpriteAnim } from "@core/hw/sprite";
 import { FreeAllWindowBuffers } from "@core/hw/window";
@@ -20,35 +20,35 @@ import {
   G, gActionSelectionCursor, gBattleBufferA, gBattleCommunication, gBattleControllerData, gBattleMonForms, gBattlePartyCurrentOrder,
   gBattleSpritesDataPtr, gBattleStruct, gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerSpriteIds, gBattlerStatusSummaryTaskId, gBitTable,
   gDisplayedStringBattle, gHealthboxSpriteIds, gTransformedPersonalities,
-} from "./globals";
-import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "./util";
+} from "@core/battle/globals";
+import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "@core/battle/util";
 import { BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues,
-  BattleControllerDummy, BUFFER_B, decodeHpAndStatus } from "./controllers";
-import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
+  BattleControllerDummy, BUFFER_B, decodeHpAndStatus } from "@core/battle/controllers";
+import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "@core/battle/mon_transfer";
 import { BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB_FaintSlideAnim, BattleMainCB2 } from "./main_init";
 import { ActionSelectionCreateCursorAt, ActionSelectionDestroyCursorAt, HandleInputChooseMove, InitMoveSelectionsVarsAndStrings,
-  SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry, PlayerHandleGetRawMonData } from "./controller_player";
-import { OpponentBufferExecCompleted } from "./controller_opponent";
+  SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry, PlayerHandleGetRawMonData } from "@core/battle/controller_player";
+import { OpponentBufferExecCompleted } from "@core/battle/controller_opponent";
 import { CalculateMonStats, GetMonData, playerMon, SetMonData } from "@core/pokemon/mon";
 import { addBagItem as AddBagItem } from "../pokemon/items";
 import {
   CopyAllBattleSpritesInvisibilities, DecompressTrainerBackPalette, DoHitAnimHealthboxEffect, HandleLowHpMusicChange, InitAndLaunchSpecialAnimation,
   IsMoveWithoutAnimation, PlaySE12WithPanning, SetBattlerSpriteAffineMode, SpriteCB_WaitForBattlerBallReleaseAnim, TryHandleLaunchBattleTableAnimation,
   TrySetBehindSubstituteSpriteBit, TryShinyAnimation, trainerBackPicPalette, gTrainerBackPicCoords,
-} from "./gfx_sfx_util";
+} from "@core/battle/gfx_sfx_util";
 import {
   animState, DoMoveAnim, GetBattlerSpriteCoord, GetBattlerSpriteDefault_Y, GetBattlerSpriteSubpriority, gMultiuseSpriteTemplate,
   SetMultiuseSpriteTemplateToPokemon, SetMultiuseSpriteTemplateToTrainerBack, SetSpritePrimaryCoordsFromSecondaryCoords, SpriteCB_TrainerSlideIn,
   StartAnimLinearTranslation, StoreSpriteCallbackInData6,
-} from "./anim";
+} from "@core/battle/anim";
 import {
   CreatePartyStatusSummarySprites, DoFreeHealthboxPalsForLevelUp, DoLoadHealthboxPalsForLevelUp, LoadBattleBarGfx, MoveBattleBar, SetBattleBarStruct,
   SetHealthboxSpriteInvisible, SetHealthboxSpriteVisible, StartHealthboxSlideIn, SwapHpBarsWithHpText, Task_HidePartyStatusSummary,
   UpdateHealthboxAttribute, UpdateHpTextInHealthbox,
-} from "./interface";
-import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle } from "./message";
-import { HandleIntroSlide } from "./intro";
-import { DoPokeballSendOutAnimation } from "./pokeball";
+} from "@core/battle/interface";
+import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle } from "@core/battle/message";
+import { HandleIntroSlide } from "@core/battle/intro";
+import { DoPokeballSendOutAnimation } from "@core/battle/pokeball";
 import { CB2_BagMenuFromBattle, InitOldManBag, OpenPartyMenuInTutorialBattle, partyMenuResult } from "./ext";
 
 const FIRST_BATTLE_MSG_FLAG_INFLICT_DMG = 1 << 0;

@@ -22,20 +22,20 @@ import {
   G, gActionSelectionCursor, gBattleBufferA, gBattleControllerData, gBattleMonForms, gBattlePartyCurrentOrder, gBattleSpritesDataPtr, gBattleStruct,
   gBattlerControllerFuncs, gBattlerPartyIndexes, gBattlerSpriteIds, gBattlerStatusSummaryTaskId, gBitTable, gDisplayedStringBattle, gHealthboxSpriteIds,
   gMoveSelectionCursor, gPokedudeBattlerStates, gTransformedPersonalities,
-} from "./globals";
-import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "./util";
+} from "@core/battle/globals";
+import { GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide } from "@core/battle/util";
 import {
   BtlController_EmitChosenMonReturnValue, BtlController_EmitDataTransfer, BtlController_EmitOneReturnValue, BtlController_EmitTwoReturnValues,
   BUFFER_B, decodeHpAndStatus,
-} from "./controllers";
-import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "./mon_transfer";
+} from "@core/battle/controllers";
+import { CopyMonData, HandleGetMonData, HandleSetMonData, SetMonDataFromBuffer } from "@core/battle/mon_transfer";
 import {
   BattleMainCB2, BOUNCE_HEALTHBOX, BOUNCE_MON, DoBounceEffect, EndBounceEffect, SpriteCB_FaintOpponentMon, SpriteCB_FaintSlideAnim,
 } from "./main_init";
 import {
   ActionSelectionCreateCursorAt, ActionSelectionDestroyCursorAt, InitMoveSelectionsVarsAndStrings, MoveSelectionCreateCursorAt,
   MoveSelectionDestroyCursorAt, PlayerHandleGetRawMonData, SpriteCB_FreePlayerSpriteLoadMonSprite, Task_PlayerController_RestoreBgmAfterCry,
-} from "./controller_player";
+} from "@core/battle/controller_player";
 import { BtlCtrl_DrawVoiceoverMessageFrame, BtlCtrl_RemoveVoiceoverMessageFrame } from "./controller_oak_old_man";
 import { CalculateMonStats, CreateMonWithGenderNatureLetter, gEnemyParty, GetMonData, playerMon, SetMonData, SetMonMoveSlot, ZeroEnemyPartyMons, ZeroPlayerPartyMons, type Mon } from "@core/pokemon/mon";
 import {
@@ -45,25 +45,25 @@ import {
   InitAndLaunchSpecialAnimation, IsBattleSEPlaying, IsMoveWithoutAnimation, PlayBGM, PlaySE12WithPanning, SetBattlerShadowSpriteCallback,
   SetBattlerSpriteAffineMode, SpriteCB_WaitForBattlerBallReleaseAnim, trainerBackPicPalette, TryHandleLaunchBattleTableAnimation,
   TrySetBehindSubstituteSpriteBit, TryShinyAnimation,
-} from "./gfx_sfx_util";
+} from "@core/battle/gfx_sfx_util";
 import {
   animState, DoMoveAnim, GetBattlerSpriteCoord, GetBattlerSpriteDefault_Y, GetBattlerSpriteSubpriority, gMultiuseSpriteTemplate,
   SetMultiuseSpriteTemplateToPokemon, SetMultiuseSpriteTemplateToTrainerBack, SetSpritePrimaryCoordsFromSecondaryCoords, SpriteCB_TrainerSlideIn,
   StartAnimLinearTranslation, StoreSpriteCallbackInData6,
-} from "./anim";
+} from "@core/battle/anim";
 import {
   CreatePartyStatusSummarySprites, DoFreeHealthboxPalsForLevelUp, DoLoadHealthboxPalsForLevelUp, LoadBattleBarGfx, MoveBattleBar, SetBattleBarStruct,
   SetHealthboxSpriteInvisible, SetHealthboxSpriteVisible, StartHealthboxSlideIn, Task_HidePartyStatusSummary, UpdateHealthboxAttribute,
   UpdateHpTextInHealthbox,
-} from "./interface";
-import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle } from "./message";
-import { HandleIntroSlide } from "./intro";
-import { DoPokeballSendOutAnimation } from "./pokeball";
+} from "@core/battle/interface";
+import { BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString, BattleStringShouldBeColored, BufferStringBattle } from "@core/battle/message";
+import { HandleIntroSlide } from "@core/battle/intro";
+import { DoPokeballSendOutAnimation } from "@core/battle/pokeball";
 import { partyMenuResult, Pokedude_OpenPartyMenuInBattle } from "./ext";
 import { InitPokedudeBag } from "../bagMenu";
 import { bagResult } from "../bagMenu";
-import { battleHost } from "./host";
-import { ReshowBattleScreenDummy } from "./reshow";
+import { battleHost } from "@core/battle/host";
+import { ReshowBattleScreenDummy } from "@core/battle/reshow";
 
 const s16v = (v: number) => (v << 16) >> 16;
 const expTable = (species: number) => rom.expTables[rom.species[species].growthRate];

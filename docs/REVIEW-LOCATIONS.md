@@ -110,20 +110,20 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 
 | Nombre | C | TS |
 |---|---|---|
-| `SetSinWave` | `battle_transition.c:2895` | `src/games/firered/battle/transition.ts:1020` |
-| `SetCircularMask` | `battle_transition.c:2903` | `src/games/firered/battle/transition.ts:1026` |
-| `Task_Swirl` | `battle_transition.c:773` | `src/games/firered/battle/transition.ts:1254` |
+| `SetSinWave` | `battle_transition.c:2895` | `src/core/battle/transition.ts:1020` |
+| `SetCircularMask` | `battle_transition.c:2903` | `src/core/battle/transition.ts:1026` |
+| `Task_Swirl` | `battle_transition.c:773` | `src/core/battle/transition.ts:1254` |
 | `Swirl_*` | 2 funciones | 2 funciones |
-| `VBlankCB_Swirl` | `battle_transition.c:803` | `src/games/firered/battle/transition.ts:1284` |
-| `Task_Ripple` | `battle_transition.c:1412` | `src/games/firered/battle/transition.ts:1175` |
+| `VBlankCB_Swirl` | `battle_transition.c:803` | `src/core/battle/transition.ts:1284` |
+| `Task_Ripple` | `battle_transition.c:1412` | `src/core/battle/transition.ts:1175` |
 | `Ripple_*` | 2 funciones | 2 funciones |
-| `VBlankCB_Ripple` | `battle_transition.c:1461` | `src/games/firered/battle/transition.ts:1212` |
-| `HBlankCB_Ripple` | `battle_transition.c:1468` | `src/games/firered/battle/transition.ts:1218` |
-| `Task_BigPokeball` | `battle_transition.c:906` | `src/games/firered/battle/transition.ts:1051` |
-| `Task_ClockwiseWipe` | `battle_transition.c:1207` | `src/games/firered/battle/transition.ts:426` |
-| `Task_Slice` | `battle_transition.c:2293` | `src/games/firered/battle/transition.ts:518` |
+| `VBlankCB_Ripple` | `battle_transition.c:1461` | `src/core/battle/transition.ts:1212` |
+| `HBlankCB_Ripple` | `battle_transition.c:1468` | `src/core/battle/transition.ts:1218` |
+| `Task_BigPokeball` | `battle_transition.c:906` | `src/core/battle/transition.ts:1051` |
+| `Task_ClockwiseWipe` | `battle_transition.c:1207` | `src/core/battle/transition.ts:426` |
+| `Task_Slice` | `battle_transition.c:2293` | `src/core/battle/transition.ts:518` |
 | `Slice_*` | 3 funciones | 3 funciones |
-| `Task_WhiteBarsFade` | `battle_transition.c:2402` | `src/games/firered/battle/transition.ts:688` |
+| `Task_WhiteBarsFade` | `battle_transition.c:2402` | `src/core/battle/transition.ts:688` |
 
 ## intro.c
 
@@ -196,7 +196,7 @@ Las líneas cambian con el código: regenera antes de revisar. C: `../pokefirere
 | `VsSeekerFreezeObjectsAfterChargeComplete` | `vs_seeker.c:598` | `src/games/firered/field/vsSeeker.ts:314` |
 | `VsSeekerResetObjectMovementAfterChargeComplete` | `vs_seeker.c:636` | `src/games/firered/field/vsSeeker.ts:332` |
 | `Unref_InitTrainerCard` | `trainer_card.c:1939` | `src/games/firered/menus/trainerCard.ts:1463` |
-| `SetBattledTrainerFlag2` | `battle_setup.c:876` | `src/games/firered/battle/battleSetup.ts:246` |
+| `SetBattledTrainerFlag2` | `battle_setup.c:876` | `src/core/battle/battleSetup.ts:246` |
 | `TT_ConvertEasyChatMessageToString` | `trainer_tower.c:631` | `src/games/firered/trainerTower.ts:102` |
 | `GetTrainerTowerTrainerFrontSpriteId` | `trainer_tower.c:455` | `src/games/firered/trainerTower.ts:347` |
 | `CB2_EndTrainerTowerBattle` | `trainer_tower.c:717` | `src/games/firered/trainerTower.ts:219` |

@@ -3,8 +3,8 @@
 
 import { SaveObjectEvents } from "./loadSave";
 import { sound } from "@core/audio/sound";
-import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "./battle/battleSetup";
-import { BattleTransition_StartOnField, GetTrainerBattleTransition, GetWildBattleTransition } from "./battle/transition";
+import { BattleSetup, B_OUTCOME_WON, type BattleRequest } from "@core/battle/battleSetup";
+import { BattleTransition_StartOnField, GetTrainerBattleTransition, GetWildBattleTransition } from "@core/battle/transition";
 import { ClearPlayerLinkBattleRecords } from "./battleRecords";
 import { concat, encode, expandPlaceholders, intToDecimal, stringVars, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
 import { FONT_NORMAL } from "@core/gba/font";

@@ -7,8 +7,8 @@ import { random } from "../random";
 import { rom } from "../rom";
 import { save } from "@game/save";
 import { currentRegionMapSection, GetMonData, GetNature, GetNatureFromPersonality, gPPUpClearMask, NationalPokedexNumToSpecies, playerMon, SetMonData, type Mon } from "./mon";
-import { G, gBattleMons, gBattlerPartyIndexes, gEnigmaBerries } from "@game/battle/globals";
-import { GetAbilityBySpecies, GetBattlerAtPosition, ItemId_GetHoldEffect } from "@game/battle/util";
+import { G, gBattleMons, gBattlerPartyIndexes, gEnigmaBerries } from "../battle/globals";
+import { GetAbilityBySpecies, GetBattlerAtPosition, ItemId_GetHoldEffect } from "../battle/util";
 import type { BattlePokemon } from "@game/generated/structs";
 
 const HM_MOVES_END = 0xffff;

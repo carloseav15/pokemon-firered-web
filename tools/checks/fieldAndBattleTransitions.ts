@@ -16,7 +16,7 @@ import {
   GetWildBattleTransition,
   GetTrainerBattleTransition,
   BattleTransitionScene,
-} from '../../src/games/firered/battle/transition.ts';
+} from '../../src/core/battle/transition.ts';
 import { createMon, type Pokemon } from '../../src/core/pokemon/pokemon.ts';
 import { SpriteManager } from '../../src/core/gba/sprite.ts';
 

@@ -2,14 +2,14 @@
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
 import * as C from "../../src/games/firered/generated/constants.ts";
-import { G, gBattleMons, gDisableStructs, gProtectStructs, gStatuses3 } from "../../src/games/firered/battle/globals.ts";
+import { G, gBattleMons, gDisableStructs, gProtectStructs, gStatuses3 } from "../../src/core/battle/globals.ts";
 import {
   MarkAllBattlersForControllerExec,
   MarkBattlerForControllerExec,
   MarkBattlerReceivedLinkData,
   CancelMultiTurnMoves,
   WasUnableToUseMove,
-} from "../../src/games/firered/battle/util.ts";
+} from "../../src/core/battle/util.ts";
 
 // 1. Test MarkAllBattlersForControllerExec in standard single battle
 G.gBattleTypeFlags = 0;

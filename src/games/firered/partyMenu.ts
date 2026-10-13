@@ -75,12 +75,12 @@ import {
   DrawLevelUpWindowPg1, DrawLevelUpWindowPg2, GetEvolutionTargetSpecies, GetMonLevelUpWindowStats, GetMoveSlotToReplace, PokemonUseItemEffects,
   partyMenuResult, ShowSelectMovePokemonSummaryScreen,
 } from "./battle/ext";
-import { G, gBattlePartyCurrentOrder, gBattlerPartyIndexes, gBattleStruct } from "./battle/globals";
-import { GetBattlerSide } from "./battle/util";
-import { IsDoubleBattle } from "./battle/anim";
-import { GetHPBarLevel, GetScaledHPFraction } from "./battle/interface";
-import { HandleBattleLowHpMusicChange } from "./battle/gfx_sfx_util";
-import { BattleStringExpandPlaceholders } from "./battle/message";
+import { G, gBattlePartyCurrentOrder, gBattlerPartyIndexes, gBattleStruct } from "@core/battle/globals";
+import { GetBattlerSide } from "@core/battle/util";
+import { IsDoubleBattle } from "@core/battle/anim";
+import { GetHPBarLevel, GetScaledHPFraction } from "@core/battle/interface";
+import { HandleBattleLowHpMusicChange } from "@core/battle/gfx_sfx_util";
+import { BattleStringExpandPlaceholders } from "@core/battle/message";
 import { BtlCtrl_OakOldMan_SetState2Flag, BtlCtrl_OakOldMan_TestState2Flag } from "./battle/controller_oak_old_man";
 import { AppendToList } from "./startMenu";
 import { SetSwappedHeldItemQuestLogEvent, SetSwitchedPartyOrderQuestLogEvent } from "./questLogEvents";

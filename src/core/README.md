@@ -4,7 +4,8 @@ Shared engine (docs/SEPARACION-MOTOR.md). Step 5 moves modules here from
 `src/games/firered/`, bottom layer first. Done: runtime `gba/`, `hw/` (without the menu
 cluster), `audio/`, `decompress`, `random`, `mathUtil`, `util`, `rom`; Pokémon model (`pokemon/`: mon, mon_extra, pokemon,
 pics, storage, berry, roamer, saveLocation, battleMusic); script engine (`script/commands`,
-`context`, `movement`, `eventObjectLock`) and the field engine (`field/*` except `vsSeeker`).
+`context`, `movement`, `eventObjectLock`) and the field engine (`field/*` except `vsSeeker`); battle engine and animations (`battle/*` except `ext`,
+`bg`, `main_init`, `mugshotTransition`, `preload` and the Oak/Old Man and Pokédude controllers).
 Game modules import core with the `@core/*` alias; core reaches the game with `@game/*`.
 
 Rules, enforced by `npm run check:layers`:

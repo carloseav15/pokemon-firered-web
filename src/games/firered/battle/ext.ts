@@ -33,18 +33,18 @@ import { BattlePokemon } from "../generated/structs";
 import {
   G, gBattleMons, gBattlePartyCurrentOrder, gBattleTextBuff1, gBattleTextBuff2, gBattlerPartyIndexes, gBattleResults, gBattleScripting, gBattleStruct,
   gBitTable, gDisplayedStringBattle, gEnigmaBerries, gSideTimers,
-} from "./globals";
-import { BattleStringExpandPlaceholdersToDisplayedString, PREPARE_STAT_BUFFER } from "./message";
-import { MOVE_IS_PERMANENT } from "./macros";
-import { CopyMonData } from "./mon_transfer";
-import { BtlController_EmitGetMonData, BUFFER_A } from "./controllers";
-import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHoldEffect, MarkBattlerForControllerExec } from "./util";
-import { battleHost } from "./host";
-import { ReshowBattleScreenAfterMenu, SetCB2ToReshowScreenAfterMenu2 } from "./reshow";
+} from "@core/battle/globals";
+import { BattleStringExpandPlaceholdersToDisplayedString, PREPARE_STAT_BUFFER } from "@core/battle/message";
+import { MOVE_IS_PERMANENT } from "@core/battle/macros";
+import { CopyMonData } from "@core/battle/mon_transfer";
+import { BtlController_EmitGetMonData, BUFFER_A } from "@core/battle/controllers";
+import { GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerSide, ItemId_GetHoldEffect, MarkBattlerForControllerExec } from "@core/battle/util";
+import { battleHost } from "@core/battle/host";
+import { ReshowBattleScreenAfterMenu, SetCB2ToReshowScreenAfterMenu2 } from "@core/battle/reshow";
 import * as PartyMenu from "../partyMenu";
 import { bagResult, BackUpPlayerBag, CB2_SetUpReshowBattleScreenAfterMenu, GoToBagMenu, RemoveUsedItem, RestorePlayerBag, type BagTaskContext } from "../bagMenu";
 import { InitBerryPouch } from "../berryPouch";
-import { gDisableStructs } from "./globals";
+import { gDisableStructs } from "@core/battle/globals";
 import { ItemUse_SetQuestLogEvent } from "../itemUse";
 
 export { DrawLevelUpWindowPg1, DrawLevelUpWindowPg2, GetMonLevelUpWindowStats } from "../pokemonSpecialAnim";
@@ -395,7 +395,7 @@ export { DexScreen_RegisterMonToPokedex } from "../pokedexScreen";
 export { CreateMonPicSprite_HandleDeoxys } from "../trainerPokemonSprites";
 
 /** evolution_scene.c EvolutionScene (presentation in ./evoScene). */
-import { EvolutionScene } from "./evoScene";
+import { EvolutionScene } from "@core/battle/evoScene";
 export { EvolutionScene };
 
 // ---------------------------------------------------------------- pokemon.c

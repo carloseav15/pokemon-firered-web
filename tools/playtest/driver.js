@@ -38,19 +38,19 @@ export const H = {
   /** Cache gMain and the battle globals; call once after each page load. */
   async init() {
     this.R = await this.mod("/src/core/hw/runtime.ts");
-    this.G = await this.mod("/src/games/firered/battle/globals.ts");
+    this.G = await this.mod("/src/core/battle/globals.ts");
     this.PM = await this.mod("/src/games/firered/partyMenu.ts");
     this.C = await this.mod("/src/games/firered/generated/constants.ts");
     this.rom = (await this.mod("/src/core/rom.ts")).rom;
     this.T = await this.mod("/src/core/gba/tasks.ts");
     this.B = await this.mod("/src/games/firered/bagMenu.ts");
     this.SAVE = await this.mod("/src/games/firered/save.ts");
-    this.BS = await this.mod("/src/games/firered/battle/bscript.ts");
+    this.BS = await this.mod("/src/core/battle/bscript.ts");
     this.Q = await this.mod("/src/games/firered/questLogState.ts");
     this.SC = await this.mod("/src/core/script/context.ts");
     this.SUM = await this.mod("/src/games/firered/pokemonSummaryScreen.ts");
     this.MON = await this.mod("/src/core/pokemon/mon.ts");
-    this.CMDS = await this.mod("/src/games/firered/battle/cmds/index.ts");
+    this.CMDS = await this.mod("/src/core/battle/cmds/index.ts");
     this.MENU = await this.mod("/src/games/firered/hw/menu.ts");
     this.MON_PROGRESS = await this.mod("/src/games/firered/menus/monProgress.ts");
     this.LM = await this.mod("/src/games/firered/hw/listMenu.ts");

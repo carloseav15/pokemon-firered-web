@@ -19,13 +19,13 @@ import { runHwFrame, SetMainCallback2 } from '../../src/core/hw/runtime.ts';
 import { tasks } from '../../src/core/gba/tasks.ts';
 import { A_BUTTON, joy } from '../../src/core/gba/input.ts';
 import { preloadBattleAssets } from '../../src/games/firered/battle/preload.ts';
-import { G, resetBattleStructs } from '../../src/games/firered/battle/globals.ts';
+import { G, resetBattleStructs } from '../../src/core/battle/globals.ts';
 import { CB2_InitBattle } from '../../src/games/firered/battle/main_init.ts';
 import { CopyMon, gEnemyParty, type Mon } from '../../src/core/pokemon/mon.ts';
 import { createMon, giveMonToPlayer } from '../../src/core/pokemon/pokemon.ts';
 import { save, newSaveData, setSave } from '../../src/games/firered/save.ts';
 import { registerCData } from '../../src/core/hw/assets.ts';
-import { GetWildBattleTransition } from '../../src/games/firered/battle/transition.ts';
+import { GetWildBattleTransition } from '../../src/core/battle/transition.ts';
 import type { Overworld } from '../../src/core/field/overworld.ts';
 
 const root = process.cwd() + '/public';

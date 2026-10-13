@@ -4,7 +4,7 @@ const P = (n, t, extra = {}) => ({ n, t, ...extra });
 const fact = (text, ...refs) => ({ level: "fact", text, refs });
 const assumed = (text, ...refs) => ({ level: "assumed", text, refs });
 
-const GLOBALS = "src/games/firered/battle/globals.ts";
+const GLOBALS = "src/core/battle/globals.ts";
 const STRUCTS = "src/games/firered/generated/structs.ts";
 const protectStruct = { name: "gProtectStructs", ctype: "struct ProtectStruct", structName: "ProtectStruct", count: 4, tsFile: GLOBALS, tsClassFile: STRUCTS };
 const battleStruct = { name: "gBattleStruct", ctype: "struct BattleStruct", structName: "BattleStruct", count: 1, pointer: true, tsFile: GLOBALS, tsClassFile: STRUCTS };
@@ -17,7 +17,7 @@ export default [
     params: [P("battler", "u8", { realistic: [0, 3], structural: true, extra: [3, 4, 5] })],
     structs: [protectStruct], tsExtra: expose(protectStruct),
     impls: [
-      { label: "battle/util.ts", file: "src/games/firered/battle/util.ts", name: "WasUnableToUseMove" },
+      { label: "battle/util.ts", file: "src/core/battle/util.ts", name: "WasUnableToUseMove" },
       // detector checks: each of these MUST be flagged (expect), they are not project code
       { label: "MUTANT ignores confusionSelfDmg", expect: "NEEDS_TRIAGE",
         build: (c) => { const g = c.ns.mods[c.abs(GLOBALS)].__o_gProtectStructs; return (b) => { const p = g[b];

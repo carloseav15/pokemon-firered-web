@@ -132,7 +132,7 @@ import {
 } from "@core/pokemon/mon";
 import { GetMonSpritePalFromSpeciesAndPersonality, LoadSpecialPokePic } from "@core/pokemon/pics";
 import { IsHMMove2 } from "@core/pokemon/mon_extra";
-import { G, gBattleTextBuff1, gBattleTextBuff2, gDisplayedStringBattle, gMonSpritesGfxPtr } from "./battle/globals";
+import { G, gBattleTextBuff1, gBattleTextBuff2, gDisplayedStringBattle, gMonSpritesGfxPtr } from "@core/battle/globals";
 import { InitBattleBgsVideo, LoadBattleTextboxAndBackground } from "./battle/bg";
 import {
   BattlePutTextOnWindow,
@@ -140,11 +140,11 @@ import {
   HandleBattleWindow,
   BattleCreateYesNoCursorAt,
   BattleDestroyYesNoCursorAt,
-} from "./battle/message";
+} from "@core/battle/message";
 import { ShowSelectMovePokemonSummaryScreen, GetMoveSlotToReplace } from "./pokemonSummaryScreen";
 import { DecompressPicFromTable, gMonFrontPicTable } from "@core/pokemon/pics";
 import { GetMonSpritePalStructFromOtIdPersonality } from "./trainerPokemonSprites";
-import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
+import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "@core/battle/anim";
 import { CreateYesNoMenu, LoadUserWindowGfx2, Menu_ProcessInputNoWrapClearOnChoose } from "./hw/menu";
 import { textFlags } from "@core/gba/textPrinter";
 import {

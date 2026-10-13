@@ -1,7 +1,7 @@
 // pokemon.c: which music the battle plays (GetBattleBGM / PlayBattleBGM / PlayMapChosenOrBattleBGM).
 import * as C from "@game/generated/constants";
 import { sound } from "../audio/sound";
-import { G } from "@game/battle/globals";
+import { G } from "../battle/globals";
 import { rom } from "../rom";
 
 /** GetBattleBGM */

@@ -15,9 +15,9 @@ import { SetVBlankCounter1Ptr, DisableVBlankCounter1 } from "@core/hw/runtime";
 import { AddWindow, RemoveWindow, type WindowTemplate } from "@core/hw/window";
 import { LoadStdWindowFrameGfx, DrawStdWindowFrame, ClearStdWindowAndFrameToTransparent } from "./hw/menu";
 import { AddTextPrinterParameterized } from "./hw/text";
-import { BattleSetup_GetBattleTowerBattleTransition } from "./battle/battleSetup";
+import { BattleSetup_GetBattleTowerBattleTransition } from "@core/battle/battleSetup";
 import { sound } from "@core/audio/sound";
-import { G } from "./battle/globals";
+import { G } from "@core/battle/globals";
 import { type ScriptRunner } from "@core/script/context";
 import {
   CEReaderTool_LoadTrainerTower,

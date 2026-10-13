@@ -45,11 +45,11 @@ import { checkBagHasItem } from "./pokemon/items";
 import { rom } from "@core/rom";
 import { random as Random } from "@core/random";
 import { save, SV, varSet } from "./save";
-import { StartBattleFromHwScene } from "./battle/host";
+import { StartBattleFromHwScene } from "@core/battle/host";
 import { InitPokedudePartyAndOpponent } from "./battle/controller_pokedude";
-import { BattleTransitionScene } from "./battle/transition";
+import { BattleTransitionScene } from "@core/battle/transition";
 import { PlayMapChosenOrBattleBGM } from "@core/pokemon/battleMusic";
-import { G } from "./battle/globals";
+import { G } from "@core/battle/globals";
 import type { Game } from "./game";
 import { LoadPlayerParty, SavePlayerParty } from "./loadSave";
 

@@ -7,7 +7,7 @@ import { cdata } from "../hw/assets";
 import { random, random32 } from "../random";
 import { b64, rom } from "../rom";
 import { save, SV, varGet } from "@game/save";
-import { G, gBattleResources, type SecretBaseRecord } from "@game/battle/globals";
+import { G, gBattleResources, type SecretBaseRecord } from "../battle/globals";
 import { calculateStats, modifyStatByNature, type Pokemon } from "./pokemon";
 
 export type Mon = Pokemon & {

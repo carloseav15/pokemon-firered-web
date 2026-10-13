@@ -64,7 +64,7 @@ import { ItemUseCB_MedicineStep, SetItemUseCB } from "./partyMenu";
 import { Pokedude_ChooseMonForInBattleItem } from "./battle/ext";
 import { CB2_ReturnToTeachyTV, SetTeachyTvControllerModeToResume } from "./teachyTv";
 import { FreeRestoreBattleData } from "./battle/main_init";
-import { SetCB2ToReshowScreenAfterMenu2 } from "./battle/reshow";
+import { SetCB2ToReshowScreenAfterMenu2 } from "@core/battle/reshow";
 import { LoadPlayerParty } from "./loadSave";
 import { save } from "./save";
 

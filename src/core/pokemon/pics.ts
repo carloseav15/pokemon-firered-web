@@ -5,7 +5,7 @@
 import * as C from "@game/generated/constants";
 import { cdata, incbin, symName } from "../hw/assets";
 import { rom } from "../rom";
-import { gMonSpritesGfxPtr } from "@game/battle/globals";
+import { gMonSpritesGfxPtr } from "../battle/globals";
 import { GetMonData, IsShinyOtIdPersonality, type Mon } from "./mon";
 
 type CSheet = { data: unknown; size: number; tag: number };

@@ -129,7 +129,7 @@
     "cluster": "value-differs",
     "verdict": "TS_DIVERGENCE",
     "reason": "two causes, both latent: `totalPixels *= 8` is not truncated to u8 (986/1000 mismatches for totalPixels >= 32), and oldValue * totalPixels is not wrapped to 32 bits (mismatches once values reach ~2^25). Realistic domain (totalPixels = 8, values below the exp cap) has 0 mismatches",
-    "fixedBy": "working-tree edit of GetReceivedValueInPixels in src/games/firered/battle/interface.ts (uncommitted); evidence in results/evidence/GetReceivedValueInPixels.{before,after-stage1,after}.json"
+    "fixedBy": "working-tree edit of GetReceivedValueInPixels in src/core/battle/interface.ts (uncommitted); evidence in results/evidence/GetReceivedValueInPixels.{before,after-stage1,after}.json"
   },
   {
     "fn": "GetReceivedValueInPixels",

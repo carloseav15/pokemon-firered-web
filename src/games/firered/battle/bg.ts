@@ -15,8 +15,8 @@ import { ppu, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_OBJWIN
 import { DeactivateAllTextPrinters } from "../hw/text";
 import { GetWindowAttribute, InitWindows, WINDOW_BG, type WindowTemplate } from "@core/hw/window";
 import { GetTextWindowPalette } from "../hw/menu";
-import { G } from "./globals";
-import { battleHost } from "./host";
+import { G } from "@core/battle/globals";
+import { battleHost } from "@core/battle/host";
 import { AnimateSprites, BuildOamBuffer, CreateSprite, gSprites, ResetSpriteData } from "@core/hw/sprite";
 import { SetMainCallback2 } from "@core/hw/runtime";
 import { templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";

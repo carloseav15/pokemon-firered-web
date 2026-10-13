@@ -11,7 +11,7 @@
 
 import type { Game } from "./game";
 import { sound } from "@core/audio/sound";
-import { G } from "./battle/globals";
+import { G } from "@core/battle/globals";
 import { CHAR_SPACE, EOS, EXT_CTRL_CODE_BEGIN } from "@core/gba/charmap";
 import { FONT_NORMAL, GetStringWidth } from "@core/gba/font";
 import { A_BUTTON, B_BUTTON, joy } from "@core/gba/input";

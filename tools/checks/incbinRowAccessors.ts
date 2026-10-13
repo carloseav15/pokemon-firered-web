@@ -30,7 +30,7 @@ for (const input of cResults.inputs) {
   assert.deepEqual(ptr.buf, packBytes.subarray(offset, offset + size), `C INCBIN bytes for element ${input}`);
 }
 
-const source = readFileSync("src/games/firered/battle/interface.ts", "utf8");
+const source = readFileSync("src/core/battle/interface.ts", "utf8");
 assert.match(source, /const ptr = GetBattleInterfaceGfxPtr\(elementId\);\s*return \{ buf: ptr\.buf, off: ptr\.off \+ byteOffset \};/);
 const preload = readFileSync("src/games/firered/battle/preload.ts", "utf8");
 assert.match(preload, /"graphics_battle_interface"/, "active battle preload must load the INCBIN pack");

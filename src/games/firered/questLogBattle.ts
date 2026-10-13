@@ -3,8 +3,8 @@
 import * as C from "./generated/constants";
 import { rom } from "@core/rom";
 import { currentRegionMapSection, GetMonData, gEnemyParty } from "@core/pokemon/mon";
-import { G, gBattleMons, gBattleResults, gBattleStruct } from "./battle/globals";
-import { GetBattlerAtPosition, GetBattlerSide } from "./battle/util";
+import { G, gBattleMons, gBattleResults, gBattleStruct } from "@core/battle/globals";
+import { GetBattlerAtPosition, GetBattlerSide } from "@core/battle/util";
 import { SetQuestLogEvent } from "./questLogEvents";
 import { gLinkPlayers } from "./linkState";
 import { InUnionRoom } from "./unionRoom";

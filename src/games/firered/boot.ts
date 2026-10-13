@@ -12,7 +12,7 @@ import { saveStore } from "./save";
 import { loadFieldFx } from "@core/field/fieldEffects";
 import { preloadFieldAssets } from "@core/field/preloadField";
 import { loadTrig } from "@core/hw/trig";
-import { installBattleHost } from "./battle/host";
+import { installBattleHost } from "@core/battle/host";
 import { preloadBattleAssets } from "./battle/preload";
 import { createMon } from "@core/pokemon/pokemon";
 import { RIVAL_BATTLE_HEAL_AFTER, RIVAL_BATTLE_TUTORIAL } from "./generated/constants";

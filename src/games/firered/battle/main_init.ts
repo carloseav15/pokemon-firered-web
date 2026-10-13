@@ -21,14 +21,14 @@ import { Sin } from "@core/hw/trig";
 import { cdata } from "@core/hw/assets";
 import { CreateMon, gEnemyParty, OT_ID_RANDOM_NO_SHINY, playerMon, SetMonData, ZeroEnemyPartyMons } from "@core/pokemon/mon";
 import { AdjustFriendship } from "@core/pokemon/mon_extra";
-import { G, gBattleCommunication, gBattleMonForms, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds, gMonSpritesGfxPtr } from "./globals";
-import { BattleMainCB1 } from "./main";
-import { GetBattlerPosition } from "./util";
-import { InitBattleControllers, SetUpBattleVars, TryReceiveLinkBattleData } from "./controllers";
-import { BattleInitAllSprites } from "./gfx_sfx_util";
+import { G, gBattleCommunication, gBattleMonForms, gBattlerPartyIndexes, gBattlerSpriteIds, gBattleSpritesDataPtr, gHealthboxSpriteIds, gMonSpritesGfxPtr } from "@core/battle/globals";
+import { BattleMainCB1 } from "@core/battle/main";
+import { GetBattlerPosition } from "@core/battle/util";
+import { InitBattleControllers, SetUpBattleVars, TryReceiveLinkBattleData } from "@core/battle/controllers";
+import { BattleInitAllSprites } from "@core/battle/gfx_sfx_util";
 import { BattleInterfaceSetWindowPals, DrawBattleEntryBackground, InitBattleBgsVideo, LoadBattleTextboxAndBackground } from "./bg";
-import { SetHealthboxSpriteVisible, StartHealthboxSlideIn } from "./interface";
-import { battleHost } from "./host";
+import { SetHealthboxSpriteVisible, StartHealthboxSlideIn } from "@core/battle/interface";
+import { battleHost } from "@core/battle/host";
 
 let sUnknownDebugSpriteDataBuffer: Uint16Array | null = null;
 

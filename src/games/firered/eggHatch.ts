@@ -28,8 +28,8 @@ import { Sin } from "@core/hw/trig";
 import {
   CopyWindowToVram, FillWindowPixelBuffer, InitWindows, PutWindowTilemap, RemoveWindow, COPYWIN_FULL, type WindowTemplate,
 } from "@core/hw/window";
-import { AllocateMonSpritesGfx, FreeMonSpritesGfx, gMonSpritesGfxPtr } from "./battle/globals";
-import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
+import { AllocateMonSpritesGfx, FreeMonSpritesGfx, gMonSpritesGfxPtr } from "@core/battle/globals";
+import { gMultiuseSpriteTemplate, SetMultiuseSpriteTemplateToPokemon } from "@core/battle/anim";
 import { DoNamingScreen } from "./namingScreen";
 import { GetMonGender, playerMon } from "@core/pokemon/mon";
 import { AddHatchedMonToParty } from "./pokemon/daycare";

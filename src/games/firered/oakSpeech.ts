@@ -46,8 +46,8 @@ import { random } from "@core/random";
 import { Q_8_8_inv } from "@core/mathUtil";
 import { rom } from "@core/rom";
 import { gMonFrontPicTable, DecompressPicFromTable, symPalette } from "@core/pokemon/pics";
-import { CreateMonSpritesGfxManager, DestroyMonSpritesGfxManager, gMultiuseSpriteTemplate, MonSpritesGfxManager_GetSpritePtr, SetMultiuseSpriteTemplateToPokemon } from "./battle/anim";
-import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "./battle/pokeball";
+import { CreateMonSpritesGfxManager, DestroyMonSpritesGfxManager, gMultiuseSpriteTemplate, MonSpritesGfxManager_GetSpritePtr, SetMultiuseSpriteTemplateToPokemon } from "@core/battle/anim";
+import { CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite } from "@core/battle/pokeball";
 import { preloadBattleAssets } from "./battle/preload";
 
 const INTRO_SPECIES = C.SPECIES_NIDORAN_F;

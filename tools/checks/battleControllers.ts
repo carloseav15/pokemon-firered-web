@@ -6,7 +6,7 @@ import { tasks } from "../../src/core/gba/tasks.ts";
 import {
   G, gBattleBufferA, gBattleBufferB, gBattlerControllerFuncs,
   gBattlerPositions, gLinkBattleSendBuffer, gLinkBattleRecvBuffer,
-} from "../../src/games/firered/battle/globals.ts";
+} from "../../src/core/battle/globals.ts";
 import {
   BUFFER_A, BUFFER_B,
   HandleLinkBattleSetup,
@@ -16,7 +16,7 @@ import {
   Task_HandleSendLinkBuffersData,
   TryReceiveLinkBattleData,
   Task_HandleCopyReceivedLinkBuffersData,
-} from "../../src/games/firered/battle/controllers.ts";
+} from "../../src/core/battle/controllers.ts";
 import {
   gLinkPlayers, SetReceivedRemoteLinkPlayers, linkTransport, gBlockRecvBuffer,
 } from "../../src/games/firered/linkState.ts";
