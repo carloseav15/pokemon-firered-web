@@ -127,6 +127,7 @@ commit aparte (`Update refs task status`), no uno por tarea.
 | `pokeemerald` | GBA, C completo | Catálogo de lógica frente a FireRed; datos de Emerald | Fuente de verdad de Emerald |
 | `pokeplatinum` | DS, C en progreso, datos JSON | Reglas y datos de Gen 4 (físico/especial, 493 especies) | Muy fiable en datos |
 | `pokeheartgold` | DS, C + ensamblador | Johto: entrenadores, encuentros, teléfono, radio | Entrenadores y encuentros extraídos; teléfono/radio pendientes |
+| `pokemon-hns` | Heart & Soul, fork GBA de Modern Emerald | Mapas 2D de Johto/Kanto en `public/hns/`; `npm run hns:maps` | Fuente de la adaptación HnS; no de GSC/HGSS |
 | `pokeapi` | CSV de todas las generaciones | Megas, especies posteriores, nombres en español | **No es fuente de verdad**: errores medidos en `compare_pokeapi.py` |
 
 ## 2. Salidas actuales

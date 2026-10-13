@@ -705,6 +705,8 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   (`compare.html`), quests con etiquetas (`quests.html`, `quest_tags.json`), línea argumental (`story.html`) e índice
   (`atlas.html`, `docs/ATLAS.md`). Datos contra datos del mismo decomp: no validan comportamiento ni se compararon con
   la ROM. Pendiente: revisión visual con capturas, verificar las 12 etiquetas de confianza baja y el orden `SPINE`.
+- [x] **6.5c Johto GBA de Heart & Soul** — `dfe3926b`: fuente fijada, visor 2D `/hns.html` con mundo por bloques, fichas y warps; 584 mapas renderizados / 955 IDs, rechazo explícito de 303 layouts. Verificación fuente→PNG y determinismo; límites y regeneración en [docs/ATLAS.md](docs/ATLAS.md).
+- [ ] **6.5c revisión del visor HnS**: navegador (zoom, arrastre, búsqueda, warps e historial; escritorio/móvil), paridad visual con la fuente/ROM, Route 7 (metatile 902 fuera de tileset), 14 discrepancias de conexiones y variantes superpuestas. NPC son marcadores; animación, paletas horarias y audio no implementados. No acredita portado jugable ni historia HnS.
 - [ ] **6.5 Primer corte de Emerald (fase 3)**: elegir un sistema pequeño de
   `docs/EMERALD-FALTANTE.md` y portarlo sobre `src/core` con `GAME=emerald`; cada entrada del
   contrato que Emerald necesite decide si se abstrae o se bifurca. Los datos de Emerald ya

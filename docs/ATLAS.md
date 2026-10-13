@@ -13,6 +13,7 @@ exportados de los decomps.
 | Biblioteca visual | `/library.html` | Entrenadores con equipo, objetos con icono, gráficos de objetos de mapa | `data/trainers.json`, `gfx/trainers`, `gfx/items`, `objects.json` |
 | Comparador | `/compare.html` | Diferencias campo a campo (especies, movimientos, objetos, entrenadores) | `public/<juego>/data` |
 | Quests | `/quests.html` | Quests candidatas con clase, flags y variables | `public/viewer/quests_<juego>.json` |
+| Johto GBA — Heart & Soul | `/hns.html`, `#MAP_NEW_BARK_TOWN` | Mundo conectado por bloques, mapas individuales, warps, conexiones y marcadores de eventos; adaptación HnS | `public/hns/` |
 | Mapas de Crystal | `/crystal.html`, `#<Mapa>` | 388 mapas de Johto/Kanto renderizados (bloques + tiles + paletas por entorno y hora, tejados por grupo), warps navegables, carteles, objetos con su sprite y orientación, escenas y conexiones | `public/crystal/` |
 | Mundo de Crystal | `/crystal-world.html`, `#<Mapa>` | 68 mapas exteriores conectados (Johto, Kanto, Route 28) en un solo plano con zoom, arrastre, hora del día, sprites de objetos (capa opcional), enlaces a cada ficha y las uniones por warps entre mapas (puertas, cuevas, tren, barco) | `public/crystal/world/` |
 | Catálogo Gen 1-9 | `/expansion.html`, `#s/<ESPECIE>`, `#m/`, `#a/`, `#i/` | 1573 especies y formas, 956 movimientos, 320 habilidades y 874 objetos de pokeemerald-expansion; evoluciones, aprendizajes (por nivel de cualquier generación, huevo y otros) y sprites de todas las fuentes | `public/expansion/` |
@@ -30,6 +31,8 @@ python3 tools/viewer/quest_index.py                     # quests de FireRed (y c
 python3 tools/viewer/story_index.py                     # línea argumental de los dos juegos
 npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold pokecrystal pmd-sky   # una vez
 npm run crystal:maps                                    # public/crystal/ (mapas renderizados de Crystal, ~4 MB, ignorado en git)
+npm run refs:fetch -- pokemon-hns                        # fuente fijada de Heart & Soul
+npm run hns:maps                                       # public/hns/ (mapas 2D, ignorado en git)
 npm run expansion:catalog                               # public/expansion/ (catálogo Gen 1-9; requiere clang y refs:fetch de pokeemerald-expansion)
 npm run crystal:world                                   # public/crystal/world/ (mapa del mundo; requiere crystal:maps)
 npm run sprites:sources                                 # public/sprites/ (~90 MB, ignorado en git); admite una fuente: pmd-red | pmd-sky | emerald-expansion | crystal | platinum | heartgold
@@ -52,6 +55,7 @@ se extraen porque en pmd-red son `incbin` de `baserom.gba` (solo 73 especies); h
 ## Comprobaciones
 
 ```bash
+npm run check:hns-maps       # 5 mapas contra PNG/paletas/bloques fuente; requiere datos y fuente HnS
 npm run check:warps          # grafo de warps y conexiones (los dos juegos)
 npm run check:compare-data   # el comparador coincide con una segunda implementación en Python
 npm run check:all            # todas
@@ -109,3 +113,31 @@ Trabajo de verificación pasada: los 943 mapas se abren y se pintan (`tools/play
 - Learnsets por nivel: cada `gen_N.h` es un conjunto completo por generación y el motor incluye solo el de `P_LVL_UP_LEARNSETS` (Gen 9);
   la ficha deja elegir cualquiera de las nueve. «Otros» = `all_learnables.json` menos nivel y huevo (MT, tutor y similares).
 - No incluye: formas de cambio (`form_change_tables`), compatibilidades de MT por separado, mapas ni encuentros.
+
+## Johto GBA de Heart & Soul
+
+`dfe3926b` añade `/hns.html`, accesible desde el Atlas y el selector de regiones del visor GBA.
+Fuente fijada: `PokemonHnS-Development/pokemonHnS`, commit `751823abaf677020bcd72c45fe3e7cb2b8a576e4`.
+Es una adaptación de Johto/Kanto basada en Modern Emerald, no los mapas oficiales de HGSS.
+El exportador reutiliza el lector de tilesets con salida aislada y conserva atributos u16 originales;
+compone imágenes con el perfil HnS 640 tiles/metatiles y 7 paletas primarias. Fuente y créditos
+se conservan en `public/hns/SOURCE-README.md` y en la ficha `_meta` de `maps.json`.
+
+La fuente tiene 956 archivos de mapa y 955 IDs únicos: el duplicado `MAP_ROCKET_HIDEOUT_B1F`
+se resuelve con la carpeta que coincide con su nombre de mapa, registrándolo en `_meta.duplicateMapIds`.
+El catálogo conserva todos los IDs: 584 mapas tienen imagen (541 layouts); 371 mapas no se renderizan
+(303 layouts rechazados, en gran parte heredados con índices anteriores). El filtro «Toda la fuente»
+muestra estos últimos con su motivo, sin imágenes aproximadas. El mundo contiene 77 mapas conectados,
+76 renderizados y Route 7 marcada como no disponible porque usa el metatile 902, fuera de su tileset.
+Las 14 discrepancias de conexiones y las variantes superpuestas se conservan y se registran.
+
+El mundo usa 102 bloques PNG de hasta 1024 px, cargados por proximidad a la cámara, y una vista reducida
+al alejarse. No crea un canvas del mundo completo en el navegador. Las puertas y conexiones abren
+fichas de mapas, con historial de regreso. Los objetos/eventos son marcadores: sin sprites de NPC,
+animación de tiles, ciclo horario, audio, scripts ni exploración jugable de HnS.
+
+Verificación: `check:hns-maps` contrasta 48.640 píxeles de New Bark, Goldenrod, Ecruteak,
+Union Cave 1F y el laboratorio de Elm contra los PNG/paletas/metatiles fuente; 829 archivos idénticos
+entre dos exportaciones; lector FireRed conserva sus 69 archivos de tilesets. Tipos y build pasan.
+Pendiente: revisión visual en navegador, navegación por puertas, zoom/arrastre y móvil; no se comparó
+con la ROM. Estos checks de datos no validan historia ni comportamiento.
