@@ -1,8 +1,8 @@
 # Triaje de los nombres pendientes del inventario (2026-10-12)
 
 **Conclusión:** `PENDING.md` cuenta nombres C sin homólogo del mismo nombre en `src/fr`. De los 345
-nombres que quedan (PENDING.md da 343: este script usa una comprobación de nombre más simple que el inventario) en los 22 archivos en alcance, **ninguno es una tanda de código de un jugador por portar**:
-son enlace/cable, el motor de audio m4a sustituido por WebAudio, código sin ningún caller en el C, o
+nombres que quedan (PENDING.md da 343: este script usa una comprobación de nombre más simple que el inventario) en los 22 archivos en alcance, **no se identificó ninguna tanda de código de un jugador claramente por portar**
+(la categoría «equivalencia por revisar» no está verificada función a función): son enlace/cable, el motor de audio m4a sustituido por WebAudio, código sin ningún caller en el C, o
 funciones cuyo comportamiento vive en TS con otra estructura. No hace falta repetir este análisis; vuelve a
 generarlo solo si cambia el inventario.
 
