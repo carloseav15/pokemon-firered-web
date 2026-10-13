@@ -109,7 +109,7 @@ async function crystal(signal: AbortSignal): Promise<Source> {
 }
 
 async function principal(signal: AbortSignal): Promise<Source> {
-  type M = { id: string; sourceId: string; game: "firered" | "emerald" | "hns"; region: string; name: string; width: number; height: number; image: string | null; section: string };
+  type M = { id: string; sourceId: string; game: "firered" | "emerald" | "hns"; region: string; name: string; width: number; height: number; image: string | null; section: string; level: string; positionPending: boolean };
   type Chunk = { file: string; layer: "image" | "sprites" | "collision"; x: number; y: number; w: number; h: number };
   const root = "/map-viewer/principal/";
   const [doc, fr, em, hs] = await Promise.all([
@@ -121,7 +121,7 @@ async function principal(signal: AbortSignal): Promise<Source> {
   const mapEntries = new Map(Object.entries(doc.maps).map(([id, m]) => {
     const original = providers[m.game].maps.get(m.sourceId)!;
     return [id, { ...original, id, name: `${doc.regions.find(r => r.id === m.region)!.title} · ${original.name}`,
-      searchable: `${m.region}${doc.regions.find(r => r.id === m.region)!.title.toLowerCase().replace(/[^a-z0-9]/g, "")}${original.searchable}`, region: m.region, originGame: m.game, originId: m.sourceId }];
+      searchable: `${m.region}${doc.regions.find(r => r.id === m.region)!.title.toLowerCase().replace(/[^a-z0-9]/g, "")}${original.searchable}`, region: m.region === "underwater" ? "hoenn" : m.region, level: m.level, positionPending: m.positionPending, originGame: m.game, originId: m.sourceId }];
   }));
   const sourceIds = new Map([...mapEntries.values()].map(m => [`${m.originGame}/${m.originId}`, m.id]));
   const translate = (m: M, target: string): { destination: string; referenceUrl?: string; crossSource: boolean } => {
@@ -136,9 +136,9 @@ async function principal(signal: AbortSignal): Promise<Source> {
   return {
     game: "world", title: "Mundo principal · Kanto / Johto / Hoenn", commit: doc.regions.map(r => `${r.title}:${r.commit.slice(0, 7)}`).join(" · "),
     limitations: "Kanto y Sevii: FireRed · Johto: HnS · Hoenn: Emerald. Disposición y viajes del atlas definidos por el proyecto. Sin unión física ni simulación compartida. Johto usa marcadores; sprites/colisión de bloques disponibles en Kanto y Hoenn.",
-    maps: mapEntries, regions: doc.regions, journeys: doc.travels, places: doc.places.map(p => ({ ...p, label: pretty(p.label) })),
+    maps: mapEntries, regions: doc.regions.filter(r => r.level !== "underwater"), journeys: doc.travels, places: doc.places.map(p => ({ ...p, label: pretty(p.label) })),
     world: { width: doc.world.w, height: doc.world.h, origin: doc.world.origin, rects: doc.world.maps,
-      notes: "Kanto, su archipiélago Sevii, Johto y Hoenn. Las siete islas y los componentes se colocan separados; Hoenn conserva su plano continental y agrupa sus superficies aisladas en una franja aparte; el nivel submarino se muestra separado de la superficie; las islas especiales conservan una sola fuente principal; la posición relativa es editorial. HnS conserva discrepancias de conexiones de origen, pendientes de revisión. Áreas fronterizas de HnS (Routes 26–28, Tohjo Falls y Mt Silver) se conservan con Johto. Los viajes son navegación del atlas, no transporte jugable." },
+      notes: "Superficie de Kanto, Johto, Hoenn y sus islas. Los interiores se abren desde entradas y los submarinos desde referencias de inmersión; también están en el buscador. Las zonas terrestres de posición pendiente se consultan desde sus accesos sin representarlas como islas. La disposición entre regiones e islas es editorial y conserva discrepancias de fuente pendientes de revisión. Los viajes son navegación del atlas." },
     capabilities: { explore: true, sprites: true, collision: true, times: [] },
     textures(id, time, layers, overview) {
       if (id !== "world") { const m = doc.maps[id]; return m ? providers[m.game].textures(m.sourceId, time, layers, false) : []; }

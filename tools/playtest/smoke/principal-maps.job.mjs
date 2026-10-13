@@ -10,14 +10,17 @@ export default async function run(ctx) {
   await p.goto(new URL('maps.html',base).href);
   await p.locator('#source').filter({hasText:'Kanto:'}).waitFor();
   assert.equal(await p.locator('#game').inputValue(),'world');
-  assert.equal(await p.locator('.region-outline').count(),6);
+  assert.equal(await p.locator('.region-outline').count(),5);
+  assert.equal(await p.locator('#region option[value="underwater"]').count(),0);
+  assert(!catalog.world.maps.some(r=>catalog.maps[r.id].level!=='surface'));
+  assert(!catalog.places.some(r=>catalog.maps[r.id].level==='underwater'));
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await shot('principal-world-desktop');
   const before=await p.evaluate(()=>window.atlasRaf);await p.waitForTimeout(1000);
   const idle=await p.evaluate(()=>window.atlasRaf)-before;assert(idle<=1);
   for(const [region,id,search] of [['kanto','MAP_PALLET_TOWN','Pallet Town'],['johto','MAP_NEW_BARK_TOWN','New Bark Town'],['hoenn','MAP_LITTLEROOT_TOWN','Littleroot Town'],['sevii','MAP_ONE_ISLAND','One Island']]) {
     await p.locator('#region').selectOption(region);
-    await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+    await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
     await p.locator('#zoom').selectOption('1');
     await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     // Zooming can land in the legitimate empty area between components.
@@ -33,14 +36,14 @@ export default async function run(ctx) {
       await p.locator('#detail .links a').filter({hasText:'New Bark Town Lab'}).first().click();
       await p.locator('#meta').filter({hasText:'johto/MAP_NEW_BARK_TOWN_LAB'}).waitFor();
       await p.locator('#back').click();await p.locator('#meta').filter({hasText:'johto/MAP_NEW_BARK_TOWN'}).waitFor();
-      await p.locator('#world-btn').click();await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+      await p.locator('#world-btn').click();await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
       await shot('principal-johto-desktop');
     }
     await p.locator('#search').fill('');
   }
-  for (const id of ['MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_SKY_PILLAR_OUTSIDE']) {
+  for (const id of ['MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_SOUTHERN_ISLAND_EXTERIOR']) {
     await p.locator('#region').selectOption('hoenn');
-    await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+    await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
     await p.locator(`#detail a[href="#mapa=hoenn%2F${id}"]`).click();
     await p.locator('#meta').filter({hasText:`hoenn/${id}`}).waitFor();
     assert(!(await p.locator('#explore').isVisible()), 'isolated area cannot spawn in old continental explorer');
@@ -51,6 +54,7 @@ export default async function run(ctx) {
   await p.locator('#meta').filter({hasText:'hoenn/MAP_SKY_PILLAR_ENTRANCE'}).waitFor();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SKY_PILLAR_OUTSIDE&warp=0"]').click();
   await p.locator('#meta').filter({hasText:'hoenn/MAP_SKY_PILLAR_OUTSIDE'}).waitFor();
+  await p.locator('#detail').filter({hasText:'ubicación pendiente'}).waitFor();
   await shot('principal-sky-pillar-desktop');
   await p.locator('#region').selectOption('hoenn');
   await p.locator('#zoom').selectOption('0.03125');
@@ -63,21 +67,21 @@ export default async function run(ctx) {
   await p.locator('#meta').filter({hasText:'hoenn/MAP_ROUTE124'}).waitFor();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_UNDERWATER_ROUTE124"]').click();
   await p.locator('#meta').filter({hasText:'hoenn/MAP_UNDERWATER_ROUTE124'}).waitFor();
-  assert.equal(await p.locator('#region').inputValue(),'underwater');
+  assert.equal(await p.locator('#region').inputValue(),'hoenn');
   assert(!(await p.locator('#explore').isVisible()));
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await shot('principal-underwater-desktop');
-  await p.locator('#detail a[href="#mapa=hoenn%2FMAP_ROUTE124"]').click();
+  await p.locator('[data-surface-return]').click();
   await p.locator('#meta').filter({hasText:'hoenn/MAP_ROUTE124'}).waitFor();
   assert.equal(await p.locator('#region').inputValue(),'hoenn');
   await p.locator('#region').selectOption('special');
-  await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+  await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
   await p.locator('#detail a[href="#mapa=special%2FMAP_NAVEL_ROCK_EXTERIOR"]').click();
   await p.locator('#meta').filter({hasText:'special/MAP_NAVEL_ROCK_EXTERIOR'}).waitFor();
   await p.locator('#detail a[href="#mapa=special%2FMAP_NAVEL_ROCK_1F&warp=1"]').click();
   await p.locator('#meta').filter({hasText:'special/MAP_NAVEL_ROCK_1F'}).waitFor();
   await p.locator('#region').selectOption('hoenn');
-  await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+  await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_FARAWAY_ISLAND_ENTRANCE"]').click();
   await p.locator('#meta').filter({hasText:'hoenn/MAP_FARAWAY_ISLAND_ENTRANCE'}).waitFor();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_FARAWAY_ISLAND_INTERIOR&warp=0"]').click();
@@ -95,7 +99,8 @@ export default async function run(ctx) {
   await p.locator('#detail button[data-journey="vermilion-slateport"]').click();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SLATEPORT_CITY"]').click();
   await p.locator('#meta').filter({hasText:'hoenn/MAP_SLATEPORT_CITY'}).waitFor();
-  await p.locator('#region').selectOption('all');
+  await p.goto(new URL('maps.html?game=world#mapa=kanto%2FMAP_VERMILION_CITY',base).href);
+  await p.locator('#meta').filter({hasText:'kanto/MAP_VERMILION_CITY'}).waitFor();
   await p.locator('#detail button[data-journey="vermilion-seven-island"]').click();
   await p.locator('#detail').filter({hasText:'ferris Seagallop'}).waitFor();
   await p.locator('#detail a[href="#mapa=sevii%2FMAP_SEVEN_ISLAND"]').click();
@@ -108,7 +113,7 @@ export default async function run(ctx) {
   await p.locator('#detail a[href="#mapa=sevii%2FMAP_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER&warp=0"]').click();
   await p.locator('#meta').filter({hasText:'sevii/MAP_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER'}).waitFor();
   await p.locator('#search').fill('');await p.locator('#region').selectOption('sevii');
-  await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+  await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await shot('principal-sevii-desktop');
   await p.locator('#game').selectOption('hns');
@@ -118,15 +123,15 @@ export default async function run(ctx) {
   await p.locator('#source').filter({hasText:'Kanto:'}).waitFor();
   await p.setViewportSize({width:390,height:844});
   await p.locator('#region').selectOption('johto');
-  await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+  await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await shot('principal-johto-mobile');
   await p.locator('#region').selectOption('sevii');
-  await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+  await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
   await p.waitForFunction(()=>[...document.querySelectorAll('#stage img')].length>0&&[...document.querySelectorAll('#stage img')].every(i=>i.complete&&i.naturalWidth));
   await shot('principal-sevii-mobile');
   await p.locator('#region').selectOption('hoenn');
-  await p.locator('#meta').filter({hasText:/mapas en el plano/}).waitFor();
+  await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SOUTHERN_ISLAND_EXTERIOR"]').click();
   await p.locator('#meta').filter({hasText:'hoenn/MAP_SOUTHERN_ISLAND_EXTERIOR'}).waitFor();
   await p.locator('#detail a[href="#mapa=hoenn%2FMAP_SOUTHERN_ISLAND_INTERIOR&warp=0"]').click();
@@ -135,6 +140,13 @@ export default async function run(ctx) {
   await shot('principal-southern-island-mobile');
   assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const budget=await p.locator('#budget').textContent();assert(Number(budget.match(/([\d.]+) MiB/)[1])<=96);
+  await p.goto(new URL('maps.html?game=world#region=underwater',base).href);
+  await p.locator('#meta').filter({hasText:'hoenn/MAP_UNDERWATER_ROUTE124'}).waitFor();
+  await p.locator('[data-surface-return]').click();
+  await p.locator('#meta').filter({hasText:'hoenn/MAP_ROUTE124'}).waitFor();
+  await p.locator('#world-btn').click();
+  await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
+  assert.equal(await p.locator('.region-outline').count(),5);
   assert(!requests.some(r=>/\/src\/(core|games)\//.test(r)));
   assert.equal(ctx.errors().length,0,ctx.errors().join(';'));
   return {regions:3,archipelagos:1,idleRaf:idle,maps:await p.locator('#count').textContent(),doors:true,hoennIsolated:true,underwater:true,specialIslands:true,crossSourceNavigation:true,editorialJourney:true,variants:true,mobile:true,budget,noEngineRequests:true};

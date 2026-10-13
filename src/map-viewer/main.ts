@@ -53,7 +53,7 @@ function update(): void {
   try { pool.render(textures); } catch (error) { meta.textContent = String(error); }
   $("budget").textContent = `${pool.activeCount} imágenes visibles · ${(pool.retainedBytes / 1048576).toFixed(1)} MiB estimados retenidos (límite 96)`;
   const z = view.zoom;
-  const regionFrames = current === "world" && source.regions ? source.regions.map(r => `<div class="region-outline" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px"><button data-region="${esc(r.id)}" style="font-size:${14 / z}px">${esc(r.title)} · ${esc(r.version)}</button></div>`).join("") : "";
+  const regionFrames = current === "world" && source.regions ? source.regions.map(r => `<div class="region-outline" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px"><button data-region="${esc(r.id)}" title="${esc(r.title)} · ${esc(r.version)}" style="font-size:${14 / z}px;max-width:${r.w}px;overflow:hidden;text-overflow:ellipsis">${esc(r.id === "sevii" ? "Sevii" : r.title)}</button></div>`).join("") : "";
   const rects = current === "world" ? source.world.rects.filter(r => r.x < view.x / z + view.width / z && r.y < view.y / z + view.height / z && r.x + r.w > view.x / z && r.y + r.h > view.y / z) : [];
   annotations.innerHTML = regionFrames + rects.map(r => `<a class="rect${source!.maps.get(r.id)!.available ? "" : " unavailable"}" href="#mapa=${encodeURIComponent(r.id)}" title="${esc(source!.maps.get(r.id)!.name)}" aria-label="${esc(source!.maps.get(r.id)!.name)}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px">${labels.checked && (z >= .125 || r.w * z >= 120) ? `<span style="font-size:${12 / z}px">${esc(source!.maps.get(r.id)!.name)}</span>` : ""}</a>`).join("");
   if (mapDetail && events.checked && current !== "world") {
@@ -83,10 +83,15 @@ function scheduleUpdate(): void {
 function renderDetail(): void {
   if (!source || !mapDetail) return;
   const m = source.maps.get(current)!;
-  detail.innerHTML = `${m.available ? "" : `<p class="error">Sin imagen: ${esc(m.unavailable)}. Los datos se conservan sin gráficos aproximados.</p>`}
+  const journeys = source.journeys?.filter(j => j.a === current || j.b === current ||
+    ((m.originId?.includes("HARBOR") || m.originId === "MAP_OLIVINE_CITY_PORT_INSIDE") &&
+      (mapDetail!.events.some(e => e.destination === j.a || e.destination === j.b) ||
+       (m.originId === "MAP_OLIVINE_CITY_PORT_INSIDE" && j.a === "johto/MAP_OLIVINE_CITY")))) ?? [];
+  detail.innerHTML = `${m.level ? `<p>${m.level === "underwater" ? "Submarino" : m.level === "interior" ? "Interior" : "Superficie"}${m.positionPending ? " · ubicación pendiente de verificar; acceso desde sus entradas o el buscador" : ""}</p>` : ""}${m.level && m.level !== "surface" ? '<button data-surface-return>Volver a la superficie</button>' : ""}${m.available ? "" : `<p class="error">Sin imagen: ${esc(m.unavailable)}. Los datos se conservan sin gráficos aproximados.</p>`}
     <p>${Object.entries(mapDetail.info).map(([k, v]) => `${esc(k)}: ${esc(Array.isArray(v) ? v.join(", ") : v)}`).join(" · ")}</p>
-    <h2>Conexiones</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})${m.region && source!.maps.get(c.destination)?.region && m.originGame !== source!.maps.get(c.destination)?.originGame ? " · referencia entre fuentes" : ""}`, undefined, c.referenceUrl)).join("") || "Sin conexiones"}</div>
+    <h2>Conexiones</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction === "dive" ? "Sumergirse" : c.direction === "emerge" ? "Emerger" : c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})${m.region && source!.maps.get(c.destination)?.region && m.originGame !== source!.maps.get(c.destination)?.originGame ? " · referencia entre fuentes" : ""}`, undefined, c.referenceUrl)).join("") || "Sin conexiones"}</div>
     <h2>Puertas y warps</h2><div class="links">${mapDetail.events.filter(e => e.kind === "warp").map(e => mapLink(e.destination!, `#${e.index} (${e.x}, ${e.y}) → ${source!.maps.get(e.destination!)?.name ?? e.destination} ${e.details.atlasPolicy ? "· referencia entre fuentes" : e.destinationWarp != null ? `#${e.destinationWarp}` : ""}`, e.destinationWarp, e.referenceUrl)).join("") || "Sin warps"}</div>
+    ${journeys.length ? `<h2>Puertos y viajes de consulta</h2><div class="links">${journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : ""}</button>`).join("")}</div>` : ""}
     <h2>Objetos y eventos</h2><table class="event-table">${mapDetail.events.map(e => `<tr tabindex="-1" data-event-row="${e.kind}:${e.index}"><td>${esc(e.kind)} #${e.index}</td><td>(${e.x}, ${e.y})</td><td>${esc(JSON.stringify(e.details))}</td></tr>`).join("")}</table>`;
 }
 async function show(id: string, restore?: Position, arrival?: string, remember = true): Promise<void> {
@@ -114,9 +119,9 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
   $("inspector").hidden = !inspector;
   if (inspector) $("inspector").setAttribute("href", inspector);
   if (id === "world") {
-    meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas en el plano" : "mapas conectados"}`;
+    meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas de superficie" : "mapas conectados"}`;
     detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Viajes del atlas</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : j.kind === "source-navigation" ? " · referencia FireRed" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
-    if (source.places?.length) detail.innerHTML += `<h2>Áreas aisladas y niveles del atlas</h2><div class="links">${source.places.map(p => mapLink(p.id, p.label)).join("")}</div>`;
+    if (source.places?.length) detail.innerHTML += `<h2>Islas y destinos de superficie</h2><div class="links">${source.places.map(p => mapLink(p.id, p.label)).join("")}</div>`;
     const origin = source.world.rects.find(r => r.id === source!.world.origin);
     const z = Number(zoom.value);
     viewport.scrollTo(viewRestore?.x ?? Math.max(0, (origin ? origin.x + origin.w / 2 : 0) * z - viewport.clientWidth / 2), viewRestore?.y ?? Math.max(0, (origin ? origin.y + origin.h / 2 : 0) * z - viewport.clientHeight / 2));
@@ -164,6 +169,7 @@ function hashTarget(): { id: string; arrival?: string; restore?: Position } {
     const value = fitZoom(fit);
     return { id: "world", restore: { map: "world", zoom: String(value), x: 0, y: 0 } };
   }
+  if (source?.game === "world" && params.get("region") === "underwater") return { id: "hoenn/MAP_UNDERWATER_ROUTE124" };
   const region = source?.regions?.find(r => r.id === params.get("region"));
   if (region && id === "world") {
     const fit = Math.min(1, viewport.clientWidth / region.w);
@@ -219,6 +225,16 @@ regionSelect.addEventListener("change", () => {
   else location.hash = hash;
 });
 detail.addEventListener("click", e => {
+  if ((e.target as HTMLElement).closest("[data-surface-return]")) {
+    const previous = [...historyStack].reverse().find(p => source?.maps.get(p.map)?.level === "surface");
+    const emerge = mapDetail?.connections.find(c => c.direction === "emerge" && source?.maps.get(c.destination)?.level === "surface")?.destination;
+    const entrance = mapDetail?.events.find(e => e.kind === "warp" && e.destination && source?.maps.get(e.destination)?.level === "surface")?.destination;
+    const destination = source?.maps.get(current)?.level === "underwater"
+      ? emerge ?? previous?.map ?? entrance : previous?.map ?? entrance ?? emerge;
+    if (destination) go(destination);
+    else { regionSelect.value = source?.maps.get(current)?.region ?? "all"; regionSelect.dispatchEvent(new Event("change")); }
+    return;
+  }
   const target = (e.target as HTMLElement).closest<HTMLElement>("[data-journey]");
   if (!target || !source?.journeys) return;
   const journey = source.journeys.find(j => j.id === target.dataset.journey)!;

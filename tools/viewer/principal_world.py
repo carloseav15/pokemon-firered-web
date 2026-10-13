@@ -160,6 +160,23 @@ def main():
     sr,sw,sh,islands,sevii_conflicts=sevii_rects(fr,selections['sevii'])
     er,ew,eh,hoenn_areas,hoenn_conflicts=hoenn_rects(em,selections['hoenn'],force={'MAP_FARAWAY_ISLAND_ENTRANCE','MAP_FARAWAY_ISLAND_INTERIOR'})
     ur,uw,uh,underwater_areas,underwater_conflicts=hoenn_rects(em,selections['underwater'],types={5},baseworld=False)
+    # Only source-connected land and actual island exteriors belong on the main surface.
+    johto_main=set(components[0]['maps']);jr=[r for r in jr if r['id'] in johto_main]
+    jw=max(r['x']+r['w'] for r in jr);jh=max(r['y']+r['h'] for r in jr)
+    sevii_main=set().union(*(set(g['components'][0]['maps']) for g in islands))
+    sr=[r for r in sr if r['id'] in sevii_main]
+    sw=max(r['x']+r['w'] for r in sr);sh=max(r['y']+r['h'] for r in sr)
+    island_surfaces={'MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_BATTLE_FRONTIER_OUTSIDE_WEST','MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_FARAWAY_ISLAND_ENTRANCE'}
+    er=[r for r in er if r['id'] in {a['id'] for a in em['world']['maps']}|island_surfaces]
+    # Pack only detached island surfaces beside one another, retaining each component's geometry.
+    island_rects=[];cursor=0;island_y=em['world']['h']+GAP
+    for group in hoenn_areas:
+        chosen=[r for r in er if r['id'] in group['maps']]
+        if not chosen:continue
+        for r in chosen:island_rects.append({**r,'x':r['x']-group['x']+cursor,'y':r['y']-group['y']+island_y})
+        cursor+=max(r['x']+r['w'] for r in chosen)-group['x']+GAP
+    er=list(em['world']['maps'])+island_rects
+    ew=max(r['x']+r['w'] for r in er);eh=max(r['y']+r['h'] for r in er)
     special_ids=['MAP_NAVEL_ROCK_EXTERIOR','MAP_BIRTH_ISLAND_EXTERIOR']
     special_rects=[{'id':id,'x':index*2048,'y':0,'w':fr['maps'][id]['width'],'h':fr['maps'][id]['height']} for index,id in enumerate(special_ids)]
     special_w=max(r['x']+r['w'] for r in special_rects);special_h=max(r['h'] for r in special_rects)
@@ -182,14 +199,17 @@ def main():
                 item={'id':key,'sourceId':id,'game':game,'region':region,'name':m['name'],'width':m['width'],'height':m['height'],
                       'image':f'/map-viewer/{game}/'+m['image'],'sprites':f'/map-viewer/{game}/'+m['sprites'] if m['sprites'] else None,
                       'collision':f'/map-viewer/{game}/'+m['collision'],'section':m['section']}
+            map_type=m['type']
+            exterior=map_type in (EXTERIOR_TYPES if game=='hns' else {1,2,3,6}) or id=='MAP_FARAWAY_ISLAND_ENTRANCE'
+            item['level']='underwater' if region=='underwater' else 'surface' if exterior else 'interior'
             item['namespace']=namespace
             maps[key]=item
         namespace='hoenn' if region=='underwater' else region
-        for r in local:
+        for r in ([] if region=='underwater' else local):
             if r['id'] in selections[region]:rects.append({**r,'id':f"{namespace}/{r['id']}",'x':r['x']+xoffset})
         regions.append({'id':region,'title':title,'game':game,'version':version,'origin':f'{namespace}/{origin}','x':xoffset,'y':0,'w':width,'h':height,
                         'maps':len(selections[region]),**({'parent':'kanto'} if region in {'sevii','special'} else {'parent':'hoenn','level':'underwater'} if region=='underwater' else {}),'commit':doc['_meta'].get('commit',doc['_meta'].get('sourceCommit'))})
-        xoffset+=width+GAP
+        if region!='underwater':xoffset+=width+GAP
     # Cross-source destination matches are navigation references, never warp-index equivalences.
     aliases={'MAP_ROUTE22':'kanto/MAP_ROUTE22'}
     aliases['MAP_INDIGO_PLATEAU']='kanto/MAP_INDIGO_PLATEAU_EXTERIOR'
@@ -211,7 +231,7 @@ def main():
             'basis':f'FireRed data/scripts/seagallop.inc: SEAGALLOP_{island}_ISLAND. Atlas endpoints are town maps; source pass/flag requirements are not simulated.'})
     for t in travels:
         assert t['a'] in maps and t['b'] in maps,t
-    width=xoffset-GAP;height=max(r['h'] for r in regions);chunks=[]
+    width=xoffset-GAP;height=max(r['h'] for r in regions if r.get('level')!='underwater');chunks=[]
     for y in range(0,height,1024):
         for x in range(0,width,1024):
             near=[r for r in rects if r['x']<x+1024 and r['y']<y+1024 and r['x']+r['w']>x and r['y']+r['h']>y]
@@ -235,20 +255,23 @@ def main():
                 with Image.open(ROOT/'public'/file.lstrip('/')) as source:
                     image.paste(source.resize((max(1,round(r['w']*scale)),max(1,round(r['h']*scale))),Image.Resampling.NEAREST),(round(r['x']*scale),round(r['y']*scale)))
         file=f'world/overview_{layer}.png';image.save(STAGE/file,optimize=True);overviews[layer]=file
-    write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Editorial: Regions, archipelagos and underwater level separated by 1024 px; source connections preserved inside components.',
+    surface_ids={r['id'] for r in rects}
+    for id,m in maps.items():m['positionPending']=m['level']=='surface' and id not in surface_ids
+    write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Surface only: source-connected land and island exteriors. Islands/regions arranged editorially; unverified terrestrial positions omitted, not treated as islands.',
       'johtoSelection':'Source section allowlist plus reachability by connections, warps and script MAP references. References are not proof of runtime access.',
       'underwaterAreas':underwater_areas,'underwaterConflicts':underwater_conflicts,
       'specialIslandPolicy':'Navel Rock and Birth Island use FireRed once; Emerald representations remain alternatives. Faraway Island uses Emerald. Event requirements and transport are not simulated.',
-      'underwaterPolicy':'Separate atlas level from surface; preserves source IDs and source dive/emerge references without simulating Dive.',
+      'underwaterPolicy':'Individual maps only, absent from main surface textures/rectangles; access through source dive/emerge references or search. Source IDs preserved, no simulated Dive.',
       'hoennAreas':hoenn_areas,'hoennConflicts':hoenn_conflicts,
-      'hoennPlacement':'Original continental positions preserved. Detached surface components arranged in a separate strip; not geographic or playable connections. Prototypes excluded.',
+      'hoennPlacement':'Continental geometry preserved; only detached island surfaces placed. Terrestrial/roof positions remain pending and accessed via source entrances/search. Prototypes excluded.',
+      'pendingSurfacePlacement':sorted(id for id,m in maps.items() if m['positionPending']),
       'seviiIslands':islands,'seviiConflicts':sevii_conflicts,
       'seviiSelection':'Seven FireRed island groups and their routes/interiors. Event islands, prototypes, unused house and LINK rooms remain in source variants. Island/component positions are editorial.',
       'johtoEvidence':evidence,'johtoComponents':components,'johtoConflicts':conflicts,'excludedStateVariants':sorted(STATE_VARIANTS),
       'excludedPermittedJohtoMaps':sorted(n for n,m in hns['maps'].items() if m['section'] in JOHTO_SECTIONS and n not in johto),
       'borderAssignment':'HnS Routes 26–28, Tohjo Falls and Mt Silver kept with Johto as border areas; not a claim about official regional geography.'},
       'regions':regions,'maps':maps,'boundaries':boundaries,'crossSourceAliases':aliases,'travels':travels,
-      'places':[{'id':f"hoenn/{a['origin']}",'label':em['maps'][a['origin']]['name']} for a in hoenn_areas+underwater_areas]+[{'id':f'special/{id}','label':fr['maps'][id]['name']} for id in special_ids],
+      'places':[{'id':f"hoenn/{a['origin']}",'label':em['maps'][a['origin']]['name']} for a in hoenn_areas if 'hoenn/'+a['origin'] in surface_ids]+[{'id':f'special/{id}','label':fr['maps'][id]['name']} for id in special_ids],
       'world':{'w':width,'h':height,'origin':'kanto/MAP_PALLET_TOWN','maps':rects,'chunks':chunks,'overviews':overviews}})
     OUT.mkdir(parents=True,exist_ok=True)
     if (OUT/'world').exists():shutil.rmtree(OUT/'world')

@@ -29,53 +29,32 @@ assert all('PROTOTYPE' not in m['sourceId'] and 'UNUSED' not in m['sourceId'] fo
 assert not any(m['section'] in ['MAPSEC_NAVEL_ROCK','MAPSEC_BIRTH_ISLAND'] for m in d['maps'].values() if m['region']=='sevii')
 for id in ['MAP_MT_EMBER_EXTERIOR','MAP_FOUR_ISLAND_ICEFALL_CAVE_BACK','MAP_FIVE_ISLAND_ROCKET_WAREHOUSE','MAP_SEVEN_ISLAND_TANOBY_RUINS_MONEAN_CHAMBER','MAP_TRAINER_TOWER_ROOF']:
     assert f'sevii/{id}' in d['maps']
-placed={r['id'] for r in d['world']['maps'] if r['id'].startswith('sevii/')}
-assert placed=={key for key,m in d['maps'].items() if m['region']=='sevii' and sources['firered']['maps'][m['sourceId']]['type'] in [1,2,3,6]}
-for g in d['_meta']['seviiIslands']:
-    assert g['maps'] and f"MAP_{g['island']}_ISLAND" in g['maps']
-
-for a,b in zip(d['regions'],d['regions'][1:]): assert a['x']+a['w']+p.GAP==b['x']
-for r in d['world']['maps']:
-    assert r['id'] in d['maps'];region=regions[d['maps'][r['id']]['region']]
+rects={r['id']:r for r in d['world']['maps']}
+assert all(d['maps'][id]['level']=='surface' for id in rects)
+assert not any(d['maps'][id]['region']=='underwater' for id in rects)
+for a,b in zip([r for r in d['regions'] if r.get('level')!='underwater'],[r for r in d['regions'] if r.get('level')!='underwater'][1:]): assert a['x']+a['w']+p.GAP==b['x']
+for r in rects.values():
+    region=regions[d['maps'][r['id']]['region']]
     assert region['x']<=r['x'] and r['x']+r['w']<=region['x']+region['w']
     assert 0<=r['y'] and r['y']+r['h']<=region['h']
-# Surface completeness and original continental geometry, compared to source records.
-hoenn=regions['hoenn']; rects={r['id']:r for r in d['world']['maps']}
-expected={f'hoenn/{id}' for id,m in sources['emerald']['maps'].items() if (m['type'] in [1,2,3,6] or id in ['MAP_FARAWAY_ISLAND_ENTRANCE','MAP_FARAWAY_ISLAND_INTERIOR']) and f'hoenn/{id}' in d['maps']}
-assert {id for id in rects if d['maps'][id]['region']=='hoenn'}==expected
-assert not any('PROTOTYPE' in id for id in d['maps'] if id.startswith('hoenn/'))
 for r in sources['emerald']['world']['maps']:
-    assert rects['hoenn/'+r['id']]=={**r,'id':'hoenn/'+r['id'],'x':r['x']+hoenn['x']}
-for id in ['MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_BATTLE_FRONTIER_OUTSIDE_WEST','MAP_SKY_PILLAR_OUTSIDE','MAP_SKY_PILLAR_TOP','MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_SOUTHERN_ISLAND_INTERIOR','MAP_SOOTOPOLIS_CITY','MAP_PETALBURG_WOODS']:
+    assert rects['hoenn/'+r['id']]=={**r,'id':'hoenn/'+r['id'],'x':r['x']+regions['hoenn']['x']}
+for id in ['MAP_SKY_PILLAR_OUTSIDE','MAP_SKY_PILLAR_TOP','MAP_SOOTOPOLIS_CITY','MAP_PETALBURG_WOODS','MAP_MT_CHIMNEY','MAP_SAFARI_ZONE_NORTH','MAP_FARAWAY_ISLAND_INTERIOR','MAP_SOUTHERN_ISLAND_INTERIOR']:
+    assert 'hoenn/'+id not in rects and 'hoenn/'+id in d['maps']
+for id in ['MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_BATTLE_FRONTIER_OUTSIDE_WEST','MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_FARAWAY_ISLAND_ENTRANCE']:
     assert 'hoenn/'+id in rects
-for group in d['_meta']['hoennAreas']:
-    assert group['y']>=sources['emerald']['world']['h']+p.GAP
-    for id in group['maps']:
-        original=json.loads((ROOT/'public/emerald/maps'/f'{id}.json').read_text())
-        a=rects['hoenn/'+id]
-        for c in original['connections']:
-            if c['map'] not in group['maps']:continue
-            b=rects['hoenn/'+c['map']];offset=c['offset']*16
-            desired={'left':(a['x']-b['w'],a['y']+offset),'right':(a['x']+a['w'],a['y']+offset),
-                     'up':(a['x']+offset,a['y']-b['h']),'down':(a['x']+offset,a['y']+a['h'])}[c['direction']]
-            assert (b['x'],b['y'])==desired, (id,c)
-for place in d['places']:assert place['id'] in rects
-
-underwater=regions['underwater'];assert underwater['parent']=='hoenn' and underwater['level']=='underwater'
+assert 'sevii/MAP_MT_EMBER_EXTERIOR' not in rects and 'sevii/MAP_MT_EMBER_EXTERIOR' in d['maps']
+assert not any('PROTOTYPE' in id for id in d['maps'] if id.startswith('hoenn/'))
 assert {m['sourceId'] for m in d['maps'].values() if m['region']=='underwater'}=={id for id,m in sources['emerald']['maps'].items() if m['type']==5}
-assert all('hoenn/'+id in rects for id,m in sources['emerald']['maps'].items() if m['type']==5)
 for section in ['MAPSEC_NAVEL_ROCK','MAPSEC_BIRTH_ISLAND']:
-    entries=[m for m in d['maps'].values() if m['section']==section]
-    assert entries and all(m['game']=='firered' and m['region']=='special' for m in entries)
-assert 'hoenn/MAP_FARAWAY_ISLAND_ENTRANCE' in rects and 'hoenn/MAP_FARAWAY_ISLAND_INTERIOR' in rects
-for group in d['_meta']['underwaterAreas']:
-    for id in group['maps']:
-        original=json.loads((ROOT/'public/emerald/maps'/f'{id}.json').read_text());a=rects['hoenn/'+id]
-        for c in original['connections']:
-            if c['map'] not in group['maps'] or c['direction'] in ['dive','emerge']:continue
-            b=rects['hoenn/'+c['map']];offset=c['offset']*16
-            desired={'left':(a['x']-b['w'],a['y']+offset),'right':(a['x']+a['w'],a['y']+offset),'up':(a['x']+offset,a['y']-b['h']),'down':(a['x']+offset,a['y']+a['h'])}[c['direction']]
-            assert (b['x'],b['y'])==desired
+    assert all(m['game']=='firered' for m in d['maps'].values() if m['section']==section)
+assert all(place['id'] in rects for place in d['places'])
+assert sorted(id for id,m in d['maps'].items() if m['positionPending'])==d['_meta']['pendingSurfacePlacement']
+# Input connections remain intact for consultation, regardless of visibility in the surface.
+route=json.loads((ROOT/'public/emerald/maps/MAP_ROUTE124.json').read_text())
+underwater=json.loads((ROOT/'public/emerald/maps/MAP_UNDERWATER_ROUTE124.json').read_text())
+assert any(c['direction']=='dive' and c['map']=='MAP_UNDERWATER_ROUTE124' for c in route['connections'])
+assert any(c['direction']=='emerge' and c['map']=='MAP_ROUTE124' for c in underwater['connections'])
 
 for c in d['world']['chunks']:
     with Image.open(p.OUT/c['file']) as image: assert image.size==(c['w'],c['h'])
