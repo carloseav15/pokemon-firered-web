@@ -67,14 +67,15 @@ def current_stubs() -> dict[str, list[str]]:
 
 
 IMPORT_RE = re.compile(
-    r"""(?:^|\n)\s*(import|export)\s+(type\s+)?[^'";]*?from\s+['"](\.[^'"]+)['"]"""
-    r"""|import\(\s*['"](\.[^'"]+)['"]\s*\)"""
-    r"""|(?:^|\n)\s*import\s+['"](\.[^'"]+)['"]"""
+    r"""(?:^|\n)\s*(import|export)\s+(type\s+)?[^'";]*?from\s+['"](\.[^'"]+|@game/[^'"]+)['"]"""
+    r"""|import\(\s*['"](\.[^'"]+|@game/[^'"]+)['"]\s*\)"""
+    r"""|(?:^|\n)\s*import\s+['"](\.[^'"]+|@game/[^'"]+)['"]"""
 )
 
 
 def resolve(base: Path, spec: str) -> Path | None:
-    p = (base.parent / spec).resolve()
+    # @game/* is the compiled game's directory (tsconfig paths); FireRed is the only game wired so far.
+    p = (ROOT / "src/games/firered" / spec[len("@game/"):]).resolve() if spec.startswith("@game/") else (base.parent / spec).resolve()
     for cand in (p, p.with_suffix(".ts"), p / "index.ts"):
         if cand.is_file():
             return cand
@@ -100,10 +101,10 @@ def current_unwired() -> list[str]:
             if dep and dep not in seen:
                 stack.append(dep)
     src = (ROOT / "src/games/firered").resolve()
-    return sorted(
-        str(p.relative_to(src)) for p in src.rglob("*.ts")
-        if "generated" not in p.parts and p.resolve() not in seen
-    )
+    core = (ROOT / "src/core").resolve()
+    names = [str(p.relative_to(src)) for p in src.rglob("*.ts") if "generated" not in p.parts and p.resolve() not in seen]
+    names += ["core/" + str(p.relative_to(core)) for p in core.rglob("*.ts") if p.resolve() not in seen] if core.exists() else []
+    return sorted(names)
 
 
 PAIRS = [("flagSet", "flagGet"), ("varSet", "varGet"), ("addBagItem", "checkBagHasItem")]
