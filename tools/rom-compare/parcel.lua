@@ -125,7 +125,13 @@ _G.pv_cb = callbacks:add("frame", function()
   -- (text boxes close, scenes advance); on a free field only the port's direction is held, so A never re-opens a
   -- conversation with the NPC in front.
   local mode = I:read8(0x03000EB1 - 0x03000000)
+  -- Gate (PARCEL_GATES[idx] = {var, value}): the port waited on this tile until the scene variable had that value;
+  -- the ROM talks/taps here until it does, whatever the frame budget, instead of walking on with the scene unfinished.
+  local gate = PARCEL_GATES and PARCEL_GATES[idx]
+  local gated = gate and var(gate[1]) ~= gate[2]
   if mode ~= 0 then
+    if tapA then set[KEY.A] = true end
+  elseif gated then
     if tapA then set[KEY.A] = true end
   elseif nx and e and e[5] and DIRKEY[e[5]] then
     set[DIRKEY[e[5]]] = true

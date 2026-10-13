@@ -120,6 +120,9 @@ const mapNum = JSON.parse(await p.evaluate(() => JSON.stringify(window.frDebug.r
 const trace = [];
 const mapId = m => mapNum[m];
 const mapDumps = [], mapCount = {};
+// Waits the port did on one tile until a scene variable reached a value; the ROM replay waits for the same
+// variable before it follows the trace on (its CPU lag makes the port's frame budget unreliable): { at: trace row, var, val }.
+const gates = [];
 let lastMap = (await state()).map;
 async function record(dir) {
   const s = await state();
@@ -216,6 +219,7 @@ for (let t = Date.now(); Date.now() - t < 180000;) {
   if (v === 1 && await free()) break;
   await record(null); await tapA(); await sleep(260);
 }
+gates.push({ at: trace.length - 1, var: 0x4057, val: 1 });
 await sleep(5000);
 const parcelDump = await dump("parcel");
 note("parcel", JSON.stringify(parcelDump.st) + " scene=" + parcelDump.vars[0x57]);
@@ -245,6 +249,7 @@ for (let t = Date.now(); Date.now() - t < 240000;) {
   if (v === 6 && await free()) break;
   await record(null); await tapA(); await sleep(260);
 }
+gates.push({ at: trace.length - 1, var: 0x4055, val: 6 });
 await sleep(10000);
 const end = await dump("end");
 note("end", JSON.stringify(end.st) + " lab scene=" + end.vars[0x55]);
@@ -314,16 +319,17 @@ if (process.env.FOREST === "1" && route2End) {
   } else note("forest walk ended", JSON.stringify(await state()) + (await whiteout() ? " (whiteout)" : ""));
 }
 // One entry per visited tile: the last direction pressed there and whether a script ran there.
-const tiles = [];
+const tiles = [], tileOf = [];
 for (let i = 0; i < trace.length; i++) {
   const t = trace[i], last = tiles[tiles.length - 1];
   // Wall-clock milliseconds this tile spent with a script running (until the next sample, capped at 1 s).
   const ms = t.script && trace[i + 1] ? Math.min(1000, trace[i + 1].t - t.t) : 0;
   if (last && last.num === t.num && last.x === t.x && last.y === t.y) { last.dir = t.dir ?? last.dir; last.script = last.script || t.script; last.ms += ms; }
   else tiles.push({ ...t, ms });
+  tileOf[i] = tiles.length;   // 1-based index in PARCEL_TRACE
 }
 writeFileSync(process.env.TRACE ?? "/tmp/port-parcel-trace.lua",
-  "PARCEL_TRACE = {\n" + tiles.map(t => { const g = t.num >> 8, n = t.num & 255; return `{${g},${n},${t.x},${t.y},${t.dir ? `"${t.dir}"` : "nil"},${t.script},${Math.ceil(t.ms * 0.06 * 1.3) + 180}},`; }).join("\n") + "\n}\n");
+  "PARCEL_TRACE = {\n" + tiles.map(t => { const g = t.num >> 8, n = t.num & 255; return `{${g},${n},${t.x},${t.y},${t.dir ? `"${t.dir}"` : "nil"},${t.script},${Math.ceil(t.ms * 0.06 * 1.3) + 180}},`; }).join("\n") + "\n}\nPARCEL_GATES = {\n" + gates.map(g => `[${tileOf[g.at]}] = {${g.var}, ${g.val}},`).join("\n") + "\n}\n");
 writeFileSync(process.env.OUT ?? "/tmp/port-parcel.json", JSON.stringify({ log, mapDumps, parcel: parcelDump, end, route2: typeof route2End === "undefined" ? null : route2End, pewter: typeof pewterEnd === "undefined" ? null : pewterEnd, errors: errs, traceLength: tiles.length }, null, 1));
 console.log("trace", trace.length, "errors", errs.length, errs.slice(0, 3).join(" | "));
 await b.close();
