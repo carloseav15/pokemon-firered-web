@@ -7,7 +7,9 @@ Lee el checkout fijado de pokecrystal (npm run refs:fetch -- pokecrystal) y escr
   public/crystal/maps/<Mapa>.png  mapa completo a 32 px por bloque, paleta de día
 
 Render: bloque (4x4 tiles) -> tiles 2bpp del PNG del tileset -> paleta por tile (<tileset>_palette_map.asm)
--> colores de bg_tiles.pal (día) o de la paleta especial del tileset. Los tejados de pueblos/rutas de Johto
+-> colores de bg_tiles.pal elegidos por entorno y hora (data/maps/environment_colors.asm) o paleta especial
+del tileset (engine/tilesets/tileset_palettes.asm). Mapas PALETTE_AUTO: <Mapa>.png = día, _morn y _nite;
+mapas con paleta fija: solo <Mapa>.png con esa hora. Los tejados de pueblos/rutas de Johto
 se sustituyen por gfx/tilesets/roofs/*.png con los colores de roofs.pal (data/maps/roofs.asm).
 Cada mapa con objetos conocidos tiene además <Mapa>_obj.png (capa RGBA con sus sprites).
 No cubre: animaciones de tiles (agua, flores), hora del día ni los sprites de Pokémon (SPRITE_POKEMON).
@@ -27,12 +29,6 @@ from common import ROOT, source_path  # noqa: E402
 
 OUT = ROOT / "public" / "crystal"
 PAL_NAMES = ["GRAY", "RED", "GREEN", "WATER", "YELLOW", "BROWN", "ROOF", "TEXT"]
-SPECIAL_PAL = {  # tileset -> archivo en gfx/tilesets (los demás usan bg_tiles.pal)
-    "pokecom_center": "pokecom_center.pal",
-    "battle_tower_inside": "battle_tower_inside.pal",
-    "ice_path": "ice_path.pal",
-    "radio_tower": "radio_tower.pal",
-}
 ROOF_TILE = 0x0A  # primer tile del tejado (9 tiles, 24x24 px)
 ROOF_TILESETS = {"johto", "johto_modern"}
 
@@ -53,16 +49,49 @@ def parse_rgb_lines(text: str) -> list[list[tuple[int, int, int]]]:
     return rows
 
 
-def load_palettes(gfx: Path, tileset: str) -> list[list[tuple[int, int, int]]]:
-    """8 paletas de 4 colores (día)."""
+TIMES = ["morn", "day", "nite", "dark"]
+ENV_GROUP = {"TOWN": "Outdoor", "ROUTE": "Outdoor", "INDOOR": "Indoor", "GATE": "Indoor", "CAVE": "Dungeon",
+             "DUNGEON": "Dungeon", "ENVIRONMENT_5": "Env5"}
+SPECIAL_PAL = {  # tileset -> .pal fijo de 8 paletas (LoadSpecialMapPalette)
+    "pokecom_center": "pokecom_center.pal",
+    "battle_tower_inside": "battle_tower_inside.pal",
+    "ice_path": "ice_path.pal",
+    "house": "house.pal",
+    "radio_tower": "radio_tower.pal",
+}
+
+
+def env_colors(src: Path) -> dict[str, list[list[int]]]:
+    """data/maps/environment_colors.asm: grupo -> [morn, day, nite, dark] -> 8 índices de bg_tiles.pal."""
+    text = (src / "data/maps/environment_colors.asm").read_text()
+    out: dict[str, list[list[int]]] = {}
+    for name, body in re.findall(r"^\.(\w+)Colors:\n((?:\s*db [^\n]+\n)+)", text, re.M):
+        rows = [[int(v, 16) for v in re.findall(r"\$([0-9a-fA-F]{2})", line)] for line in body.strip().splitlines()]
+        out[name] = rows
+    return out
+
+
+def load_palettes(src: Path, gfx: Path, tileset: str, env: str, time: str) -> list[list[tuple[int, int, int]]]:
+    """Las 8 paletas de fondo de un mapa a una hora (LoadMapPals; las especiales ignoran la hora)."""
     special = SPECIAL_PAL.get(tileset)
+    if tileset == "ice_path" and env == "INDOOR":  # Hall of Fame
+        special = None
     if special:
-        rows = parse_rgb_lines((gfx / special).read_text())
-        # Formato por-paleta: una línea RGB por color -> agrupar de 4 en 4.
-        flat = [c for r in rows for c in r]
+        flat = [c for r in parse_rgb_lines((gfx / special).read_text()) for c in r]
         return [flat[i : i + 4] for i in range(0, 32, 4)]
+    if tileset == "mansion":
+        def one(name: str) -> list[list[tuple[int, int, int]]]:
+            flat = [c for r in parse_rgb_lines((gfx / name).read_text()) for c in r]
+            return [flat[i : i + 4] for i in range(0, len(flat), 4)]
+        m1, m2 = one("mansion_1.pal"), one("mansion_2.pal")
+        pals = [list(p) for p in m1[:8]]
+        pals[4] = list(m2[0])  # PAL_BG_YELLOW
+        pals[3] = list(m1[6])  # PAL_BG_WATER
+        pals[6] = list(m1[8])  # PAL_BG_ROOF
+        return pals
     rows = parse_rgb_lines((gfx / "bg_tiles.pal").read_text())
-    return rows[8:16]  # morn, day, nite, dark -> day
+    indices = env_colors(src)[ENV_GROUP[env]][TIMES.index(time)]
+    return [list(rows[i]) for i in indices]
 
 
 def parse_palette_map(path: Path) -> list[tuple[int, int]]:
@@ -124,7 +153,7 @@ def map_groups(src: Path) -> dict[str, int]:
     return groups
 
 
-def roofs(src: Path) -> tuple[list[int], list[list[tuple[int, int, int]]]]:
+def roofs(src: Path) -> tuple[list[int], list[tuple[list, list]]]:
     """MapGroupRoofs (por grupo) y los colores de roofs.pal (día) por grupo."""
     text = (src / "data/maps/roofs.asm").read_text()
     names = re.findall(r"const (ROOF_\w+)", text)
@@ -137,7 +166,7 @@ def roofs(src: Path) -> tuple[list[int], list[list[tuple[int, int, int]]]]:
     day = []
     for chunk in re.split(r"; group \d+", pal_text)[1:]:
         rows = parse_rgb_lines(chunk)
-        day.append(rows[0])  # morn/day
+        day.append((rows[0], rows[1]))  # (morn/day, nite)
     return ids, day
 
 
@@ -190,9 +219,10 @@ def load_object_sprites(src: Path) -> dict[str, dict]:
     return out
 
 
-def object_palettes(src: Path) -> list[list[tuple[int, int, int]]]:
-    """npc_sprites.pal: bloque `day` (8 paletas)."""
-    return parse_rgb_lines((src / "gfx/overworld/npc_sprites.pal").read_text())[8:16]
+def object_palettes(src: Path) -> dict[str, list[list[tuple[int, int, int]]]]:
+    """npc_sprites.pal: 8 paletas por hora (morn, day, nite, dark)."""
+    rows = parse_rgb_lines((src / "gfx/overworld/npc_sprites.pal").read_text())
+    return {t: rows[i * 8 : i * 8 + 8] for i, t in enumerate(TIMES)}
 
 
 FACING_FRAME = {"down": 0, "up": 1, "left": 2, "right": 2}
@@ -247,6 +277,30 @@ def object_layer(objs: list[dict], w: int, h: int, sprites: dict, pals: list) ->
     return layer if drawn else None
 
 
+def render_map(m: dict, ts: dict, tiles: list, pmap: list, pals: list) -> Image.Image:
+    w, h = m["width"], m["height"]
+    img = Image.new("RGB", (w * 32, h * 32), (0, 0, 0))
+    out = img.load()
+    for by in range(h):
+        for bx in range(w):
+            blk = ts["blocks"][m["blocks"][by][bx]] if m["blocks"][by][bx] < len(ts["blocks"]) else [0] * 16
+            for i, tid in enumerate(blk):
+                _bank, pal = pmap[tid]
+                if tid < 0x60:
+                    data = tiles[tid] if tid < len(tiles) else None
+                elif 0x80 <= tid < 0xE0:
+                    gi = 96 + tid - 0x80
+                    data = tiles[gi] if gi < len(tiles) else None
+                else:
+                    data = None  # 0x60-0x7F y 0xE0-0xFF: texto/gráficos comunes fuera del tileset
+                col = pals[pal]
+                ox = bx * 32 + (i % 4) * 8
+                oy = by * 32 + (i // 4) * 8
+                for p in range(64):
+                    out[ox + p % 8, oy + p // 8] = col[data[p]] if data else col[0]
+    return img
+
+
 def main() -> None:
     src = source_path("pokecrystal")
     maps = json.loads((ROOT / "refs/crystal/maps.json").read_text())["data"]
@@ -257,15 +311,20 @@ def main() -> None:
 
     # map_const (orden de la tabla de mapas) -> nombre
     consts = re.findall(r"^\s*map_const\s+(\w+)\s*,", (src / "constants/map_constants.asm").read_text(), re.M)
-    order = re.findall(r"^\s*map\s+(\w+)\s*,\s*TILESET_", (src / "data/maps/maps.asm").read_text(), re.M)
+    maps_asm = (src / "data/maps/maps.asm").read_text()
+    order = re.findall(r"^\s*map\s+(\w+)\s*,\s*TILESET_", maps_asm, re.M)
     if len(consts) != len(order):
         raise SystemExit(f"{len(consts)} constantes de mapa frente a {len(order)} mapas")
     const_to_name = dict(zip(consts, order))
+    # 7.º argumento de `map`: PALETTE_AUTO (hora real) / DAY / NITE / DARK fijos
+    palette_of = {n: p for n, p in re.findall(r"^\s*map\s+(\w+)\s*,\s*TILESET_\w+\s*,\s*\w+\s*,\s*LANDMARK_\w+\s*,\s*MUSIC_\w+\s*,\s*\w+\s*,\s*PALETTE_(\w+)", maps_asm, re.M)}
 
     sprites = load_object_sprites(src)
     npc_pals = object_palettes(src)
-    cache: dict[str, tuple[list[list[int]], list[tuple[int, int]], list[list[tuple[int, int, int]]]]] = {}
+    cache: dict[str, tuple[list[list[int]], list[tuple[int, int]]]] = {}
     (OUT / "maps").mkdir(parents=True, exist_ok=True)
+    for old in (OUT / "maps").glob("*.png"):
+        old.unlink()
     result = []
     problems = []
     for m in maps:
@@ -275,56 +334,61 @@ def main() -> None:
             if not png.exists():
                 problems.append(f"{m['name']}: sin PNG de tileset {ts_name}")
                 continue
-            cache[ts_name] = (load_tiles(png), parse_palette_map(gfx / f"{ts_name}_palette_map.asm"), load_palettes(gfx, ts_name))
-        tiles, pmap, pals = cache[ts_name]
-        pals = [list(p) for p in pals]
-        tiles = [list(t) for t in tiles]
+            cache[ts_name] = (load_tiles(png), parse_palette_map(gfx / f"{ts_name}_palette_map.asm"))
+        base_tiles, pmap = cache[ts_name]
+        tiles = [list(t) for t in base_tiles]
         group = groups.get(m["name"], 0)
         roof = roof_by_group[group - 1] if 0 < group <= len(roof_by_group) else -1
-        if ts_name in ROOF_TILESETS and roof >= 0 and m["environment"] in ("TOWN", "ROUTE"):
+        outdoors = m["environment"] in ("TOWN", "ROUTE")
+        if ts_name in ROOF_TILESETS and roof >= 0 and outdoors:
             roof_name = ["new_bark", "violet", "azalea", "olivine", "goldenrod"][roof]
             rt = load_tiles(gfx / "roofs" / f"{roof_name}.png")
             # 24x24 -> 3x3 tiles; se colocan en ROOF_TILE.. (orden de lectura del PNG)
             for i, t in enumerate(rt[:9]):
                 tiles[ROOF_TILE + i] = t
-        if ts_name in ROOF_TILESETS and 0 < group <= len(roof_pal):
-            c = roof_pal[group - 1]
-            pals[6] = [pals[6][0], c[0], c[1], pals[6][3]]
 
+        palette = palette_of.get(m["name"], "AUTO")
+        default = {"AUTO": "day", "DAY": "day", "NITE": "nite", "DARK": "dark"}[palette]
+        times = ["morn", "day", "nite"] if palette == "AUTO" else [default]
         ts = tilesets[ts_name]
         w, h = m["width"], m["height"]
-        img = Image.new("RGB", (w * 32, h * 32), (0, 0, 0))
-        out = img.load()
-        for by in range(h):
-            for bx in range(w):
-                blk = ts["blocks"][m["blocks"][by][bx]] if m["blocks"][by][bx] < len(ts["blocks"]) else [0] * 16
-                for i, tid in enumerate(blk):
-                    bank, pal = pmap[tid]
-                    if tid < 0x60:
-                        data = tiles[tid] if tid < len(tiles) else None
-                    elif 0x80 <= tid < 0xE0:
-                        gi = 96 + tid - 0x80
-                        data = tiles[gi] if gi < len(tiles) else None
-                    else:
-                        data = None  # 0x60-0x7F y 0xE0-0xFF: texto/gráficos comunes fuera del tileset
-                    col = pals[pal]
-                    ox = bx * 32 + (i % 4) * 8
-                    oy = by * 32 + (i // 4) * 8
-                    for p in range(64):
-                        out[ox + p % 8, oy + p // 8] = col[data[p]] if data else col[0]
-        img.save(OUT / "maps" / f"{m['name']}.png", optimize=True)
         ev = events(src / "maps" / f"{m['name']}.asm", const_to_name)
-        layer = object_layer(ev["objects"], w, h, sprites, npc_pals)
-        if layer:
-            layer.save(OUT / "maps" / f"{m['name']}_obj.png", optimize=True)
-        ev["objLayer"] = layer is not None
+        obj_variants = []
+        base_layer_bytes = None
+        for t in times:
+            pals = [list(p) for p in load_palettes(src, gfx, ts_name, m["environment"], t)]
+            if outdoors and 0 < group <= len(roof_pal):  # LoadMapPals: color 1-2 del tejado (nite también en dark)
+                c = roof_pal[group - 1][1 if t in ("nite", "dark") else 0]
+                pals[6][1], pals[6][2] = c[0], c[1]
+            img = render_map(m, ts, tiles, pmap, pals)
+            suffix = "" if t == default else f"_{t}"
+            img.save(OUT / "maps" / f"{m['name']}{suffix}.png", optimize=True)
+            layer = object_layer(ev["objects"], w, h, sprites, npc_pals[t])
+            if layer is None:
+                continue
+            raw = layer.tobytes()
+            if t == default:
+                base_layer_bytes = raw
+                layer.save(OUT / "maps" / f"{m['name']}_obj.png", optimize=True)
+        # capas de objetos que difieren de la base (paletas de árbol y roca cambian con la hora)
+        if base_layer_bytes is not None:
+            for t in times:
+                if t == default:
+                    continue
+                layer = object_layer(ev["objects"], w, h, sprites, npc_pals[t])
+                if layer is not None and layer.tobytes() != base_layer_bytes:
+                    layer.save(OUT / "maps" / f"{m['name']}_obj_{t}.png", optimize=True)
+                    obj_variants.append(t)
+        ev["objLayer"] = base_layer_bytes is not None
+        ev["objTimes"] = obj_variants
         result.append({
             "name": m["name"], "w": w, "h": h, "tileset": ts_name, "environment": m["environment"],
             "landmark": m["landmark"].removeprefix("LANDMARK_"), "music": m["music"].removeprefix("MUSIC_"),
-            "group": group, "connections": m["connections"], **ev,
+            "group": group, "palette": palette, "default": default, "times": times,
+            "connections": m["connections"], **ev,
         })
     (OUT / "maps.json").write_text(json.dumps({"maps": result, "commit": json.loads((ROOT / "tools/refs/sources.json").read_text())["pokecrystal"]["commit"]}, separators=(",", ":")) + "\n")
-    print(f"{len(result)} mapas, {len(cache)} tilesets, {sum(len(r['warps']) for r in result)} warps")
+    print(f"{len(result)} mapas, {len(cache)} tilesets, {sum(len(r['warps']) for r in result)} warps, {sum(1 for r in result if len(r['times']) > 1)} con hora del día")
     for p in problems:
         print("aviso:", p)
 

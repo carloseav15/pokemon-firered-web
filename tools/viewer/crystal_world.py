@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Mapa del mundo de Crystal (Johto + Kanto) a partir de las conexiones de public/crystal/maps.json.
 
-Escribe en public/crystal/world/: world.json, overview.png (16 px por bloque), teselas de 1024 px
-a 32 px por bloque (t_<cx>_<cy>.png) y la capa de sprites de objetos aparte (o_<cx>_<cy>.png, overview_obj.png). Requiere `npm run crystal:maps`.
+Escribe en public/crystal/world/: world.json y, por hora (morn/day/nite), overview.png (16 px por bloque),
+teselas de 1024 px a 32 px por bloque (t_<cx>_<cy>.png) y la capa de sprites aparte (o_<cx>_<cy>.png, overview_obj.png). Requiere `npm run crystal:maps`.
 
 Las conexiones del decomp (`connection <dir>, <mapa>, <id>, <offset>`) colocan cada mapa respecto a su vecino:
 norte/sur desplazan en X por `offset`, este/oeste en Y. El grafo de conexiones tiene tres componentes:
@@ -176,42 +176,48 @@ def main() -> None:
     links = warp_links(by, {e["name"]: e for e in entries})
 
     OUT.mkdir(parents=True, exist_ok=True)
-    for old in OUT.glob("*.png"):
-        old.unlink()
-    full = Image.new("RGB", (W * 32, H * 32), (11, 15, 20))
-    # Los mapas se pegan en orden; en un solape gana el último (queda listado en world.json).
-    for e in entries:
-        full.paste(Image.open(CRYSTAL / "maps" / f"{e['name']}.png"), (e["x"] * 32, e["y"] * 32))
-    tiles = []
-    for cy in range(0, full.height, TILE):
-        for cx in range(0, full.width, TILE):
-            t = full.crop((cx, cy, min(cx + TILE, full.width), min(cy + TILE, full.height)))
-            if t.getbbox() is None or all(c == (11, 15, 20) for _n, c in (t.getcolors(1) or [(0, (0, 0, 0))])):
-                continue
-            q = t.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-            name = f"t_{cx // TILE}_{cy // TILE}.png"
-            q.save(OUT / name, optimize=True)
-            tiles.append({"file": name, "x": cx, "y": cy, "w": t.width, "h": t.height})
-    # Capa de sprites de objetos (<Mapa>_obj.png de crystal_maps.py), aparte para poder ocultarla.
-    spr = Image.new("RGBA", full.size, (0, 0, 0, 0))
-    for e in entries:
-        obj = CRYSTAL / "maps" / f"{e['name']}_obj.png"
-        if obj.exists():
-            spr.alpha_composite(Image.open(obj), (e["x"] * 32, e["y"] * 32))
-    sprite_tiles = []
-    for cy in range(0, spr.height, TILE):
-        for cx in range(0, spr.width, TILE):
-            t = spr.crop((cx, cy, min(cx + TILE, spr.width), min(cy + TILE, spr.height)))
-            if t.getbbox() is None:
-                continue
-            name = f"o_{cx // TILE}_{cy // TILE}.png"
-            t.save(OUT / name, optimize=True)
-            sprite_tiles.append({"file": name, "x": cx, "y": cy, "w": t.width, "h": t.height})
-    spr.resize((spr.width // 2, spr.height // 2), Image.BOX).save(OUT / "overview_obj.png", optimize=True)
-    half = full.resize((full.width // 2, full.height // 2), Image.BOX).quantize(colors=256, dither=Image.Dither.NONE)
-    half.save(OUT / "overview.png", optimize=True)
+    import shutil
+    for old in OUT.iterdir():
+        shutil.rmtree(old) if old.is_dir() else old.unlink()
+    bg = (11, 15, 20)
+    times = ["morn", "day", "nite"]
+    tiles: list[dict] = []
+    sprite_tiles: list[dict] = []
+    for t in times:
+        tdir = OUT / t
+        tdir.mkdir()
+        full = Image.new("RGB", (W * 32, H * 32), bg)
+        spr = Image.new("RGBA", full.size, (0, 0, 0, 0))
+        # Los mapas se pegan en orden; en un solape gana el último (queda listado en world.json).
+        for e in entries:
+            base = CRYSTAL / "maps" / f"{e['name']}.png"
+            variant = CRYSTAL / "maps" / f"{e['name']}_{t}.png"
+            full.paste(Image.open(variant if variant.exists() else base), (e["x"] * 32, e["y"] * 32))
+            obj_t = CRYSTAL / "maps" / f"{e['name']}_obj_{t}.png"
+            obj = obj_t if obj_t.exists() else CRYSTAL / "maps" / f"{e['name']}_obj.png"
+            if obj.exists():
+                spr.alpha_composite(Image.open(obj), (e["x"] * 32, e["y"] * 32))
+        tl, st = [], []
+        for cy in range(0, full.height, TILE):
+            for cx in range(0, full.width, TILE):
+                box = (cx, cy, min(cx + TILE, full.width), min(cy + TILE, full.height))
+                tile = full.crop(box)
+                if all(c == bg for _n, c in (tile.getcolors(1) or [(0, (0, 0, 0))])):
+                    continue
+                q = tile.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+                name = f"t_{cx // TILE}_{cy // TILE}.png"
+                q.save(tdir / name, optimize=True)
+                tl.append({"file": name, "x": cx, "y": cy, "w": tile.width, "h": tile.height})
+                s_tile = spr.crop(box)
+                if s_tile.getbbox() is not None:
+                    sname = f"o_{cx // TILE}_{cy // TILE}.png"
+                    s_tile.save(tdir / sname, optimize=True)
+                    st.append({"file": sname, "x": cx, "y": cy, "w": tile.width, "h": tile.height})
+        tiles, sprite_tiles = tl, st  # mismas posiciones en todas las horas
+        spr.resize((spr.width // 2, spr.height // 2), Image.BOX).save(tdir / "overview_obj.png", optimize=True)
+        full.resize((full.width // 2, full.height // 2), Image.BOX).quantize(colors=256, dither=Image.Dither.NONE).save(tdir / "overview.png", optimize=True)
     (OUT / "world.json").write_text(json.dumps({
-        "w": W, "h": H, "blockPx": 32, "tile": TILE, "tiles": tiles, "spriteTiles": sprite_tiles, "maps": entries,
+        "w": W, "h": H, "times": times, "blockPx": 32, "tile": TILE, "tiles": tiles, "spriteTiles": sprite_tiles, "maps": entries,
         "sections": [{"name": n, "conflicts": c} for n, _comp, c in sections],
         "links": links, "overlaps": overlaps, "unplaced": sorted(k for k in by if k not in all_pos),
         "note": "Johto y Kanto se unen con warps en el juego; la colocación entre secciones es editorial.",

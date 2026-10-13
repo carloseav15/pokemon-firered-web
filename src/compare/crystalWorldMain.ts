@@ -4,7 +4,7 @@ type Tile = { file: string; x: number; y: number; w: number; h: number };
 type Link = { a: { map: string; x: number; y: number }; b: { map: string; x: number; y: number }; via: string[]; cross: boolean };
 type World = {
   links: Link[];
-  w: number; h: number; blockPx: number; tile: number; tiles: Tile[]; spriteTiles: Tile[]; maps: Entry[];
+  w: number; h: number; times: string[]; blockPx: number; tile: number; tiles: Tile[]; spriteTiles: Tile[]; maps: Entry[];
   sections: { name: string; conflicts: unknown[] }[]; overlaps: string[][]; unplaced: string[]; note: string;
 };
 
@@ -15,6 +15,7 @@ const side = document.getElementById("side")!;
 const zoomSel = document.getElementById("zoom") as HTMLSelectElement;
 const labelsChk = document.getElementById("labels") as HTMLInputElement;
 const townsChk = document.getElementById("towns") as HTMLInputElement;
+const timeSel = document.getElementById("time") as HTMLSelectElement;
 const spritesChk = document.getElementById("sprites") as HTMLInputElement;
 const crossChk = document.getElementById("cross") as HTMLInputElement;
 const shortChk = document.getElementById("short") as HTMLInputElement;
@@ -36,11 +37,11 @@ function draw(): void {
   worldEl.style.height = `${H}px`;
   worldEl.style.transform = `scale(${z})`;
   const parts: string[] = [];
-  if (z < 0.5) parts.push(`<img src="/crystal/world/overview.png" style="left:0;top:0;width:${W}px;height:${H}px" alt="" />`);
-  else for (const t of world.tiles) parts.push(`<img loading="lazy" src="/crystal/world/${t.file}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px" alt="" />`);
+  if (z < 0.5) parts.push(`<img src="/crystal/world/${timeSel.value}/overview.png" style="left:0;top:0;width:${W}px;height:${H}px" alt="" />`);
+  else for (const t of world.tiles) parts.push(`<img loading="lazy" src="/crystal/world/${timeSel.value}/${t.file}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px" alt="" />`);
   if (spritesChk.checked) {
-    if (z < 0.5) parts.push(`<img src="/crystal/world/overview_obj.png" style="left:0;top:0;width:${W}px;height:${H}px" alt="" />`);
-    else for (const t of world.spriteTiles) parts.push(`<img loading="lazy" src="/crystal/world/${t.file}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px" alt="" />`);
+    if (z < 0.5) parts.push(`<img src="/crystal/world/${timeSel.value}/overview_obj.png" style="left:0;top:0;width:${W}px;height:${H}px" alt="" />`);
+    else for (const t of world.spriteTiles) parts.push(`<img loading="lazy" src="/crystal/world/${timeSel.value}/${t.file}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px" alt="" />`);
   }
   const onlyTowns = townsChk.checked;
   const fs = Math.max(14, Math.round(14 / z));
@@ -114,6 +115,7 @@ zoomSel.addEventListener("change", () => {
 labelsChk.addEventListener("change", draw);
 townsChk.addEventListener("change", draw);
 spritesChk.addEventListener("change", draw);
+timeSel.addEventListener("change", draw);
 crossChk.addEventListener("change", draw);
 shortChk.addEventListener("change", draw);
 

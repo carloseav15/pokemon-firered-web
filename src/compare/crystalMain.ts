@@ -7,6 +7,7 @@ type Conn = { direction: string; map: string; mapId: string; offset: number };
 type CrystalMap = {
   name: string; w: number; h: number; tileset: string; environment: string; landmark: string; music: string; group: number;
   connections: Conn[]; warps: Warp[]; bgs: Bg[]; objects: Obj[]; coords: Coord[]; objLayer?: boolean;
+  palette: string; default: string; times: string[]; objTimes: string[];
 };
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -18,6 +19,12 @@ let maps: CrystalMap[] = [];
 let byName = new Map<string, CrystalMap>();
 let current = "";
 let zoom = 1;
+let time = "day";
+const TIME_LABEL: Record<string, string> = { morn: "Mañana", day: "Día", nite: "Noche", dark: "Oscuro" };
+/** Variante de hora disponible para un mapa: la elegida si existe; si no, la fija del mapa. */
+const timeOf = (m: CrystalMap) => (m.times.includes(time) ? time : m.default);
+const mapImg = (m: CrystalMap) => { const t = timeOf(m); return `/crystal/maps/${m.name}${t === m.default ? "" : `_${t}`}.png`; };
+const objImg = (m: CrystalMap) => { const t = timeOf(m); return `/crystal/maps/${m.name}_obj${t !== m.default && m.objTimes.includes(t) ? `_${t}` : ""}.png`; };
 const layers = { sprites: true, warp: true, bg: true, obj: true, coord: false };
 
 const pretty = (s: string) => s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
@@ -63,6 +70,7 @@ function show(name: string): void {
     <h2>${esc(m.name)}</h2>
     <div class="meta">${esc(pretty(m.landmark))} · tileset ${esc(m.tileset)} · ${esc(m.environment)} · música ${esc(pretty(m.music))} · grupo ${m.group} · ${m.w}×${m.h} bloques</div>
     <div class="bar">
+      ${m.times.length > 1 ? `<label>Hora <select id="time">${["morn", "day", "nite"].map((t) => `<option value="${t}" ${t === timeOf(m) ? "selected" : ""}>${TIME_LABEL[t]}</option>`).join("")}</select></label>` : `<span class="meta">hora fija: ${TIME_LABEL[m.default]} (PALETTE_${m.palette})</span>`}
       <label>Zoom <select id="zoom">${[1, 2, 3].map((z) => `<option value="${z}" ${z === zoom ? "selected" : ""}>${z}×</option>`).join("")}</select></label>
       <label><input type="checkbox" data-layer="sprites" ${layers.sprites ? "checked" : ""} /> sprites de objetos</label>
       <label><input type="checkbox" data-layer="warp" ${layers.warp ? "checked" : ""} /> <span class="dot" style="border-color:#38bdf8"></span>warps (${m.warps.length})</label>
@@ -70,7 +78,7 @@ function show(name: string): void {
       <label><input type="checkbox" data-layer="obj" ${layers.obj ? "checked" : ""} /> <span class="dot" style="border-color:#f87171"></span>objetos (${m.objects.length})</label>
       <label><input type="checkbox" data-layer="coord" ${layers.coord ? "checked" : ""} /> <span class="dot" style="border-color:#c084fc"></span>escenas (${m.coords.length})</label>
     </div>
-    <div class="stage" id="stage"><img src="/crystal/maps/${m.name}.png" width="${m.w * 32 * zoom}" height="${m.h * 32 * zoom}" alt="${esc(m.name)}" />${layers.sprites && m.objLayer ? `<img class="spr" src="/crystal/maps/${m.name}_obj.png" width="${m.w * 32 * zoom}" height="${m.h * 32 * zoom}" alt="" />` : ""}<span id="mks">${markers(m)}</span></div>
+    <div class="stage" id="stage"><img src="${mapImg(m)}" width="${m.w * 32 * zoom}" height="${m.h * 32 * zoom}" alt="${esc(m.name)}" />${layers.sprites && m.objLayer ? `<img class="spr" src="${objImg(m)}" width="${m.w * 32 * zoom}" height="${m.h * 32 * zoom}" alt="" />` : ""}<span id="mks">${markers(m)}</span></div>
     <h3>Conexiones</h3>${conns}
     <h3>Warps</h3>${m.warps.length ? `<table>${m.warps.map((w, i) => row([`#${i + 1}`, `(${w.x}, ${w.y})`, `→ ${link(w.dest)} #${w.warp}`])).join("")}</table>` : `<span class="none">ninguno</span>`}
     <h3>Carteles y eventos de fondo</h3>${m.bgs.length ? `<table>${m.bgs.map((b) => row([`(${b.x}, ${b.y})`, esc(b.kind), esc(b.script)])).join("")}</table>` : `<span class="none">ninguno</span>`}
@@ -92,7 +100,10 @@ document.addEventListener("click", (e) => {
 });
 detailEl.addEventListener("change", (e) => {
   const t = e.target as HTMLInputElement | HTMLSelectElement;
-  if (t.id === "zoom") {
+  if (t.id === "time") {
+    time = t.value;
+    show(current);
+  } else if (t.id === "zoom") {
     zoom = Number(t.value);
     show(current);
   } else if (t instanceof HTMLInputElement && t.dataset.layer) {
