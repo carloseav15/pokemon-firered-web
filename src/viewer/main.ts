@@ -30,9 +30,10 @@ import { DialogManager, type DialogSegment } from "./ui/dialog";
 import { ViewerCamera } from "./camera";
 import { ViewerAudioController } from "./audio/audioController";
 
-// Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn en modo de solo lectura (mapa, capas y fichas).
+// Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn (mapa, capas, fichas y exploración a pie).
 // Hoenn usa los datos de public/emerald, el reparto 512/6 de tiles y paletas de pokeemerald y sus propios comportamientos de
-// metatile. Sin avatar, NPC animados ni animación de tiles (transcritos de FireRed); la música sí es la de Emerald.
+// metatile. Se explora con Brendan o May (sus hojas de Emerald), sin bici, efectos de campo (hierba, polvo, huellas), combates
+// ni interiores; sin animación de tiles (transcrita de FireRed). La música sí es la de Emerald.
 type ViewerGame = "firered" | "emerald";
 const GAME: ViewerGame = new URLSearchParams(location.search).get("game") === "emerald" ? "emerald" : "firered";
 const HOENN = GAME === "emerald";
@@ -94,6 +95,8 @@ let minimapController: MinimapController | null = null;
 let entityManager: EntityManager;
 let dialogManager: DialogManager;
 let fieldEffects: ViewerFieldEffects;
+/** Efectos de campo vacíos: Hoenn no tiene los de FireRed (hierba, polvo, huellas), así que explorar no los dibuja. */
+const NO_FIELD_EFFECTS = { onGroundStep(): void {}, resetSession(): void {} } as unknown as ViewerFieldEffects;
 let cancelPlayerMotion: (() => void) | null = null;
 function resetExploreSession(): void {
   cancelPlayerMotion?.();
@@ -142,7 +145,7 @@ function parseHash(): void {
       if ((LAYERS as readonly string[]).includes(c)) state.activeLayers.add(c as Layer);
     }
   }
-  startExplore = h.get("modo") === "explore" && !HOENN;
+  startExplore = h.get("modo") === "explore";
   const px = Number(h.get("px"));
   const py = Number(h.get("py"));
   if (h.has("px") && h.has("py") && Number.isSafeInteger(px) && Number.isSafeInteger(py)) startPlayer = { x: px, y: py };
@@ -266,8 +269,13 @@ function setupGameSelect(): void {
     document.title = "Visor del mundo — Hoenn exterior";
     const title = document.querySelector(".app-title");
     if (title) title.lastChild!.textContent = " Hoenn Exterior";
-    for (const id of ["mode-group", "bike-btn"]) document.getElementById(id)?.style.setProperty("display", "none");
-    for (const id of ["anim-toggle", "player-char"]) document.getElementById(id)?.closest("label")?.style.setProperty("display", "none");
+    document.getElementById("bike-btn")?.style.setProperty("display", "none");
+    document.getElementById("anim-toggle")?.closest("label")?.style.setProperty("display", "none");
+    const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
+    if (charSelect) {
+      charSelect.options[0]!.text = "Bruno (Brendan)";
+      charSelect.options[1]!.text = "Aura (May)";
+    }
   }
 }
 
@@ -305,12 +313,14 @@ function updatePlayerDisplay(): void {
   const py = playerVisualY;
 
   const isBike = playerMode === "bike";
-  const spriteW = isBike ? 32 : 16;
+  // Emerald surfing sheet: 32x32 cells (a player riding the Pokémon), like the FireRed bike's width.
+  const wide = isBike || (HOENN && playerMode === "surf");
+  const spriteW = wide ? 32 : 16;
   const spriteH = 32;
 
   playerEl.style.width = `${spriteW}px`;
   playerEl.style.height = `${spriteH}px`;
-  playerEl.style.left = `${isBike ? px - 8 : px}px`;
+  playerEl.style.left = `${wide ? px - 8 : px}px`;
   playerEl.style.top = `${py - 16}px`;
   playerEl.style.display = "block";
 
@@ -325,11 +335,14 @@ function updatePlayerDisplay(): void {
       flip = true;
     }
   } else if (playerMode === "surf") {
+    // FireRed's sheet has the three facings in frames 0-2; Emerald's has two frames per facing (0-1, 2-3, 4-5).
+    const north = HOENN ? 2 : 1;
+    const west = HOENN ? 4 : 2;
     if (playerDir === "south") frameIdx = 0;
-    else if (playerDir === "north") frameIdx = 1;
-    else if (playerDir === "west") frameIdx = 2;
+    else if (playerDir === "north") frameIdx = north;
+    else if (playerDir === "west") frameIdx = west;
     else if (playerDir === "east") {
-      frameIdx = 2;
+      frameIdx = west;
       flip = true;
     }
   } else if (playerRunning && playerMoving) {
@@ -368,7 +381,7 @@ function updatePlayerDisplay(): void {
 }
 
 function updateEntitiesView(): void {
-  // Hoenn no tiene exploración: sus personajes se muestran fijos, siempre que haya algo a la vista.
+  // Hoenn muestra sus personajes también fuera de la exploración (fijos), siempre que haya algo a la vista.
   if (!playerActive && !HOENN) {
     entityManager.hideAll();
     return;
@@ -379,7 +392,7 @@ function updateEntitiesView(): void {
   const viewBottom = viewTop + viewport.clientHeight / camera.zoom + 128;
 
   entityManager.updateVisibility(viewLeft, viewTop, viewRight, viewBottom, (ent) => {
-    if (!HOENN) interactWithEntity(ent);
+    if (!HOENN || playerActive) interactWithEntity(ent);
   });
 }
 
@@ -402,7 +415,9 @@ function interactWithEntity(ent: LiveEntity): void {
       ` te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`,
     ];
   } else {
-    msg = ["Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
+    msg = [HOENN
+      ? "Hola viajero. Bienvenido a Hoenn. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"
+      : "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
   }
   dialogManager.show(title, msg);
 }
@@ -451,10 +466,25 @@ function startExploration(targetGx?: number, targetGy?: number): void {
     playerX = targetGx;
     playerY = targetGy;
   } else if (playerX === 0 && playerY === 0) {
-    const paleta = index.maps["MAP_PALLET_TOWN"];
+    const paleta = index.maps[HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN"];
     if (paleta) {
       playerX = paleta.x + 8;
       playerY = paleta.y + 8;
+      // El centro del mapa puede ser un muro (la ciudad de Hoenn es otra): busca la casilla libre más cercana.
+      for (let r = 0; r < 12 && !worldGrid.isWalkable(playerX, playerY, "walk"); r++) {
+        let found = false;
+        for (let oy = -r; oy <= r && !found; oy++) {
+          for (let ox = -r; ox <= r && !found; ox++) {
+            if (Math.max(Math.abs(ox), Math.abs(oy)) !== r) continue;
+            if (worldGrid.isWalkable(paleta.x + 8 + ox, paleta.y + 8 + oy, "walk")) {
+              playerX = paleta.x + 8 + ox;
+              playerY = paleta.y + 8 + oy;
+              found = true;
+            }
+          }
+        }
+        if (found) break;
+      }
     } else {
       playerX = minX + Math.floor(index.world.width / 2);
       playerY = minY + Math.floor(index.world.height / 2);
@@ -696,8 +726,8 @@ async function build(): Promise<void> {
   worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY);
   entityManager = new EntityManager(content, minX, minY);
   dialogManager = new DialogManager();
-  // Los efectos de campo (hierba, polvo, huellas) son de FireRed y solo se usan al explorar, que Hoenn no ofrece.
-  fieldEffects = HOENN ? (undefined as unknown as ViewerFieldEffects) : await ViewerFieldEffects.create(worldGrid, viewerClock);
+  // Los efectos de campo (hierba, polvo, huellas) son de FireRed; en Hoenn se explora sin ellos.
+  fieldEffects = HOENN ? NO_FIELD_EFFECTS : await ViewerFieldEffects.create(worldGrid, viewerClock);
   const disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
@@ -1146,7 +1176,7 @@ function setupUi(): void {
       return;
     }
     if (key === "b" && playerActive) {
-      toggleBike();
+      if (!HOENN) toggleBike();
       return;
     }
     if (key === "shift") {

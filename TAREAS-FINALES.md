@@ -695,6 +695,10 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   y el 7 (dividir `save`) no se hicieron: razones y lista de miembros en
   [docs/SEPARACION-MOTOR.md](docs/SEPARACION-MOTOR.md) §8. `play:smoke` completo no se ejecutó
   (el usuario lo declinó); solo C1–C3, C5–C10 y dos drivers.
+- [x] **6.5a Emerald caminable en el visor** (Claude, 2026-10-13): `viewer.html?game=emerald`, botón
+  «Explorar Mapa»: Brendan/May, colisiones del mapa, surf, NPC de Hoenn, música de Emerald. Sin
+  interiores, combates, menús, guardado, bici ni efectos de campo. Verificado en el navegador
+  (Littleroot: se camina y los muros bloquean); el panel iba a 3 FPS, sin comparar con la ROM.
 - [ ] **6.5 Primer corte de Emerald (fase 3)**: elegir un sistema pequeño de
   `docs/EMERALD-FALTANTE.md` y portarlo sobre `src/core` con `GAME=emerald`; cada entrada del
   contrato que Emerald necesite decide si se abstrae o se bifurca. Los datos de Emerald ya
