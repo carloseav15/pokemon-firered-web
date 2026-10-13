@@ -699,6 +699,12 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   «Explorar Mapa»: Brendan/May, colisiones del mapa, surf, NPC de Hoenn, música de Emerald. Sin
   interiores, combates, menús, guardado, bici ni efectos de campo. Verificado en el navegador
   (Littleroot: se camina y los muros bloquean); el panel iba a 3 FPS, sin comparar con la ROM.
+- [x] **6.5b Atlas de consulta y validación** (Claude, 2026-10-13, `a62516d9`..`06eaf918`): interiores por warps
+  (`src/viewer/ui/interior.ts`; los 943 mapas abren, `interiors.job.mjs`), `check:warps` y `check:compare-data`,
+  Pokédex comparada con espalda/icono/huella (`dex.html`), biblioteca visual (`library.html`), comparador
+  (`compare.html`), quests con etiquetas (`quests.html`, `quest_tags.json`), línea argumental (`story.html`) e índice
+  (`atlas.html`, `docs/ATLAS.md`). Datos contra datos del mismo decomp: no validan comportamiento ni se compararon con
+  la ROM. Pendiente: revisión visual con capturas, verificar las 12 etiquetas de confianza baja y el orden `SPINE`.
 - [ ] **6.5 Primer corte de Emerald (fase 3)**: elegir un sistema pequeño de
   `docs/EMERALD-FALTANTE.md` y portarlo sobre `src/core` con `GAME=emerald`; cada entrada del
   contrato que Emerald necesite decide si se abstrae o se bifurca. Los datos de Emerald ya
