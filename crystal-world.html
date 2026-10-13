@@ -21,6 +21,7 @@
       #sizer { position:relative; }
       #world { position:absolute; left:0; top:0; transform-origin:0 0; }
       #world img { position:absolute; image-rendering:pixelated; user-select:none; -webkit-user-drag:none; }
+      #world a { pointer-events:auto; }
       .rect { position:absolute; border:1px solid transparent; }
       .rect:hover { border-color:#fff8; background:#ffffff14; }
       .lbl { position:absolute; color:#fff; font-weight:600; text-shadow:0 0 3px #000, 0 0 3px #000, 0 0 6px #000; pointer-events:none; white-space:nowrap; }
@@ -36,6 +37,8 @@
       <label>Zoom <select id="zoom"><option value="0.125">12 %</option><option value="0.25" selected>25 %</option><option value="0.5">50 %</option><option value="1">100 %</option><option value="2">200 %</option></select></label>
       <label><input type="checkbox" id="labels" checked /> nombres</label>
       <label><input type="checkbox" id="towns" /> solo pueblos y ciudades</label>
+      <label><input type="checkbox" id="cross" checked /> <span style="color:#fb923c">━</span> enlaces entre secciones</label>
+      <label><input type="checkbox" id="short" /> <span style="color:#22d3ee">╌</span> atajos por cuevas y puertas</label>
       <span id="info" class="meta"></span>
       <a href="/crystal.html" style="margin-left:auto">Mapas por separado →</a>
     </header>

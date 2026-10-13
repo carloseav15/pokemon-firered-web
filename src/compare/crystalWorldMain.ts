@@ -1,7 +1,9 @@
 // Mapa del mundo de Crystal (crystal-world.html). Datos: public/crystal/world/ (tools/viewer/crystal_world.py).
 type Entry = { name: string; x: number; y: number; w: number; h: number; section: string; landmark: string; environment: string };
 type Tile = { file: string; x: number; y: number; w: number; h: number };
+type Link = { a: { map: string; x: number; y: number }; b: { map: string; x: number; y: number }; via: string[]; cross: boolean };
 type World = {
+  links: Link[];
   w: number; h: number; blockPx: number; tile: number; tiles: Tile[]; maps: Entry[];
   sections: { name: string; conflicts: unknown[] }[]; overlaps: string[][]; unplaced: string[]; note: string;
 };
@@ -13,6 +15,8 @@ const side = document.getElementById("side")!;
 const zoomSel = document.getElementById("zoom") as HTMLSelectElement;
 const labelsChk = document.getElementById("labels") as HTMLInputElement;
 const townsChk = document.getElementById("towns") as HTMLInputElement;
+const crossChk = document.getElementById("cross") as HTMLInputElement;
+const shortChk = document.getElementById("short") as HTMLInputElement;
 const tip = document.getElementById("tip")!;
 const info = document.getElementById("info")!;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -43,7 +47,32 @@ function draw(): void {
       parts.push(`<div class="lbl" style="left:${x + 8}px;top:${y + 6}px;font-size:${isTown ? fs : Math.round(fs * 0.7)}px">${esc(spaced(m.name))}</div>`);
     }
   }
+  parts.push(linksSvg(W, H));
   worldEl.innerHTML = parts.join("");
+}
+
+/** Líneas entre las puertas de los mapas que se unen por interiores (warps). Posición de puerta: pasos de 16 px. */
+function linksSvg(W: number, H: number): string {
+  const at = new Map(world.maps.map((m) => [m.name, m]));
+  const door = (p: { map: string; x: number; y: number }) => {
+    const m = at.get(p.map)!;
+    return [m.x * BP + p.x * 16 + 8, m.y * BP + p.y * 16 + 8] as const;
+  };
+  const out: string[] = [];
+  const k = 1 / Number(zoomSel.value); // grosor constante en pantalla aunque el mundo esté escalado
+  for (const l of world.links) {
+    if (l.cross ? !crossChk.checked : !shortChk.checked) continue;
+    const [x1, y1] = door(l.a);
+    const [x2, y2] = door(l.b);
+    const color = l.cross ? "#fb923c" : "#22d3ee";
+    const bend = l.cross ? 0.15 : 0.25;
+    const cx = (x1 + x2) / 2 - (y2 - y1) * bend;
+    const cy = (y1 + y2) / 2 + (x2 - x1) * bend;
+    const tip = `${spaced(l.a.map)} ⇄ ${spaced(l.b.map)}\nvía ${l.via.map(spaced).join(" → ")}`;
+    const href = `/crystal.html#${l.via[0] ?? l.a.map}`;
+    out.push(`<a href="${href}"><title>${esc(tip)}</title><path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="${(l.cross ? 4 : 3) * k}" stroke-dasharray="${l.cross ? "" : `${10 * k} ${7 * k}`}" opacity=".95" /><path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="transparent" stroke-width="${14 * k}" /><circle cx="${x1}" cy="${y1}" r="${7 * k}" fill="${color}" stroke="#000" stroke-width="${k}" /><circle cx="${x2}" cy="${y2}" r="${7 * k}" fill="${color}" stroke="#000" stroke-width="${k}" /></a>`);
+  }
+  return `<svg width="${W}" height="${H}" style="position:absolute;left:0;top:0;overflow:visible;pointer-events:none">${out.join("").replace(/<a /g, '<a style="pointer-events:stroke" ')}</svg>`;
 }
 
 function jump(name: string): void {
@@ -79,6 +108,8 @@ zoomSel.addEventListener("change", () => {
 });
 labelsChk.addEventListener("change", draw);
 townsChk.addEventListener("change", draw);
+crossChk.addEventListener("change", draw);
+shortChk.addEventListener("change", draw);
 
 // arrastrar para desplazar; la rueda con Ctrl/⌘ cambia el zoom
 let drag: { x: number; y: number; l: number; t: number; moved: boolean } | null = null;
@@ -113,7 +144,7 @@ view.addEventListener("click", (e) => {
   const res = await fetch("/crystal/world/world.json");
   if (!res.ok) throw new Error("falta public/crystal/world: npm run crystal:maps && npm run crystal:world");
   world = (await res.json()) as World;
-  info.textContent = `${world.maps.length} mapas conectados · ${world.w}×${world.h} bloques · ${world.overlaps.length} solapes del decomp`;
+  info.textContent = `${world.maps.length} mapas conectados · ${world.w}×${world.h} bloques · ${world.overlaps.length} solapes del decomp · ${world.links.filter((l) => l.cross).length} enlaces entre secciones, ${world.links.filter((l) => !l.cross).length} atajos`;
   sideList();
   draw();
   const hash = decodeURIComponent(location.hash.slice(1));

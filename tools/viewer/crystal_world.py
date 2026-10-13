@@ -66,6 +66,79 @@ def bounds(comp: dict, by: dict) -> tuple[int, int, int, int]:
     )
 
 
+def warp_links(by: dict, placed: dict) -> list[dict]:
+    """Pares de mapas exteriores unidos a través de interiores (puertas, cuevas, túneles).
+
+    Las salas sin conexión de mapa forman componentes unidos por warps; cada puerta de un mapa colocado que
+    entra en una componente es una salida. Dos salidas de mapas distintos de la misma componente son un enlace.
+    `via` es el camino más corto entre ambos por las salas interiores.
+    """
+    # Salas con un warp de destino -1 (Pokécenter 2F, centros de intercambio...) vuelven a la última puerta
+    # usada: unirían todos los centros entre sí, así que no se atraviesan.
+    # FastShip1F es el trayecto Olivine <-> Vermilion: se atraviesa aunque su salida sea dinámica.
+    hubs = {n for n in by if any(w["warp"] == -1 for w in by[n]["warps"]) and n != "FastShip1F"}
+    inner = [n for n in by if n not in placed and n not in hubs]
+    adj: dict[str, set[str]] = {n: set() for n in inner}
+    for n in inner:
+        for w in by[n]["warps"]:
+            d = w["dest"]
+            if d in adj and d != n:
+                adj[n].add(d)
+                adj[d].add(n)
+    comp_of: dict[str, int] = {}
+    for n in inner:
+        if n in comp_of:
+            continue
+        stack = [n]
+        comp_of[n] = n_id = len(set(comp_of.values()))
+        while stack:
+            cur = stack.pop()
+            for nb in adj[cur]:
+                if nb not in comp_of:
+                    comp_of[nb] = n_id
+                    stack.append(nb)
+
+    def path(src: str, dst: str) -> list[str]:
+        prev = {src: None}
+        queue = [src]
+        while queue:
+            cur = queue.pop(0)
+            if cur == dst:
+                break
+            for nb in sorted(adj[cur]):
+                if nb not in prev:
+                    prev[nb] = cur
+                    queue.append(nb)
+        out, cur = [], dst
+        while cur is not None:
+            out.append(cur)
+            cur = prev.get(cur)
+        return out[::-1]
+
+    exits: dict[int, list[tuple[str, int, str]]] = {}
+    for name, e in placed.items():
+        for k, w in enumerate(by[name]["warps"]):
+            if w["dest"] in comp_of:
+                exits.setdefault(comp_of[w["dest"]], []).append((name, k, w["dest"]))
+    links = []
+    for ex in exits.values():
+        for i, (a, ka, ia) in enumerate(ex):
+            for b, kb, ib in ex[i + 1 :]:
+                if a == b:
+                    continue
+                wa, wb = by[a]["warps"][ka], by[b]["warps"][kb]
+                links.append({"a": {"map": a, "x": wa["x"], "y": wa["y"]}, "b": {"map": b, "x": wb["x"], "y": wb["y"]},
+                              "via": path(ia, ib), "cross": placed[a]["section"] != placed[b]["section"]})
+    # Una entrada por par de mapas y camino (varias puertas de un mismo edificio dan el mismo enlace).
+    seen, out = set(), []
+    for l in links:
+        key = (tuple(sorted((l["a"]["map"], l["b"]["map"]))), tuple(l["via"]))
+        if key not in seen:
+            seen.add(key)
+            out.append(l)
+    return out
+
+
 def main() -> None:
     doc = json.loads((CRYSTAL / "maps.json").read_text())
     by = {m["name"]: m for m in doc["maps"]}
@@ -100,6 +173,8 @@ def main() -> None:
             if a["x"] < b["x"] + b["w"] and b["x"] < a["x"] + a["w"] and a["y"] < b["y"] + b["h"] and b["y"] < a["y"] + a["h"]:
                 overlaps.append([a["name"], b["name"]])
 
+    links = warp_links(by, {e["name"]: e for e in entries})
+
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*.png"):
         old.unlink()
@@ -122,9 +197,10 @@ def main() -> None:
     (OUT / "world.json").write_text(json.dumps({
         "w": W, "h": H, "blockPx": 32, "tile": TILE, "tiles": tiles, "maps": entries,
         "sections": [{"name": n, "conflicts": c} for n, _comp, c in sections],
-        "overlaps": overlaps, "unplaced": sorted(k for k in by if k not in all_pos),
+        "links": links, "overlaps": overlaps, "unplaced": sorted(k for k in by if k not in all_pos),
         "note": "Johto y Kanto se unen con warps en el juego; la colocación entre secciones es editorial.",
     }, separators=(",", ":")) + "\n")
+    print(f"enlaces por warps: {len(links)} ({sum(1 for l in links if l['cross'])} entre secciones)")
     print(f"{W}x{H} bloques, {len(entries)} mapas, {len(tiles)} teselas; conflictos: {len(c1)}/{len(c2)}/{len(c3)}, solapes: {len(overlaps)}, sin colocar: {len(by) - len(entries)}")
 
 
