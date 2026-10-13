@@ -1,6 +1,6 @@
 // PREPARED fixed RAF timestamps and synthetic ground; real source templates/assets.
 export default async function run(ctx) {
-  await ctx.page.goto(new URL('viewer.html',process.env.PW_BASE??'http://localhost:5173/').href);
+  await ctx.page.goto(new URL('viewer.html?legacy=1',process.env.PW_BASE??'http://localhost:5173/').href);
   await ctx.page.locator('#loading-overlay').waitFor({state:'hidden'});
   const result=await ctx.page.evaluate(async()=>{
     const load=path=>{const e=performance.getEntriesByType('resource').find(e=>new URL(e.name).pathname===path);return import(e?.name??path);};

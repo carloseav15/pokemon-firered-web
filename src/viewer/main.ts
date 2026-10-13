@@ -474,19 +474,26 @@ function startExploration(targetGx?: number, targetGy?: number): void {
     playerX = targetGx;
     playerY = targetGy;
   } else if (playerX === 0 && playerY === 0) {
-    const paleta = index.maps[HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN"];
+    const requestedX = startX !== null ? minX + Math.floor((startX + viewport.clientWidth / 2) / camera.zoom / TILE) : null;
+    const requestedY = startY !== null ? minY + Math.floor((startY + viewport.clientHeight / 2) / camera.zoom / TILE) : null;
+    const selected = startMapId && index.maps[startMapId];
+    const nearCamera = requestedX !== null && requestedY !== null ? Object.values(index.maps).find(m => requestedX >= m.x && requestedX < m.x + m.width && requestedY >= m.y && requestedY < m.y + m.height) : undefined;
+    const paleta = selected || nearCamera || index.maps[HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN"];
     if (paleta) {
-      playerX = paleta.x + 8;
-      playerY = paleta.y + 8;
+      const spawnX = nearCamera && !selected ? requestedX! : selected ? paleta.x + Math.floor(paleta.width / 2) : paleta.x + 8;
+      const spawnY = nearCamera && !selected ? requestedY! : selected ? paleta.y + Math.floor(paleta.height / 2) : paleta.y + 8;
+      playerX = spawnX;
+      playerY = spawnY;
       // El centro del mapa puede ser un muro (la ciudad de Hoenn es otra): busca la casilla libre más cercana.
-      for (let r = 0; r < 12 && !worldGrid.isWalkable(playerX, playerY, "walk"); r++) {
+      for (let r = 0; r < Math.max(paleta.width, paleta.height) && !worldGrid.isWalkable(playerX, playerY, "walk"); r++) {
         let found = false;
         for (let oy = -r; oy <= r && !found; oy++) {
           for (let ox = -r; ox <= r && !found; ox++) {
             if (Math.max(Math.abs(ox), Math.abs(oy)) !== r) continue;
-            if (worldGrid.isWalkable(paleta.x + 8 + ox, paleta.y + 8 + oy, "walk")) {
-              playerX = paleta.x + 8 + ox;
-              playerY = paleta.y + 8 + oy;
+            if (spawnX + ox < paleta.x || spawnX + ox >= paleta.x + paleta.width || spawnY + oy < paleta.y || spawnY + oy >= paleta.y + paleta.height) continue;
+            if (worldGrid.isWalkable(spawnX + ox, spawnY + oy, "walk")) {
+              playerX = spawnX + ox;
+              playerY = spawnY + oy;
               found = true;
             }
           }
@@ -1221,7 +1228,14 @@ function setupUi(): void {
   const modeExploreBtn = document.getElementById("mode-explore-btn");
   const bikeBtn = document.getElementById("bike-btn");
 
-  modeViewerBtn?.addEventListener("click", () => stopExploration());
+  modeViewerBtn?.addEventListener("click", () => {
+    stopExploration();
+    const target = new URL("/maps.html", location.href);
+    target.searchParams.set("game", GAME);
+    const view = new URLSearchParams({ x: String(Math.round(viewport.scrollLeft)), y: String(Math.round(viewport.scrollTop)), z: String(camera.zoom) });
+    target.hash = `world&${view}`;
+    location.href = target.href;
+  });
   modeExploreBtn?.addEventListener("click", () => startExploration());
   bikeBtn?.addEventListener("click", () => toggleBike());
 

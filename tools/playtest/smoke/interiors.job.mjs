@@ -5,7 +5,7 @@ const BASE = process.env.PW_BASE ?? "http://localhost:5174/";
 export default async function run(ctx) {
   const report = {};
   for (const game of ["firered", "emerald"]) {
-    const url = `${BASE}viewer.html${game === "emerald" ? "?game=emerald" : ""}`;
+    const url = `${BASE}viewer.html?legacy=1${game === "emerald" ? "&game=emerald" : ""}`;
     await ctx.page.goto(url, { waitUntil: "load" });
     await ctx.page.waitForFunction(() => window.frInterior, null, { timeout: 60000 });
     const ids = await ctx.runEval(`

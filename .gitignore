@@ -40,3 +40,7 @@ public/fr/gfx/trainers/
 
 # Heart & Soul 2D maps (npm run refs:fetch -- pokemon-hns && npm run hns:maps)
 public/hns/
+
+# Prepared images for the common map viewer (npm run maps:images)
+public/map-viewer/
+output/playwright/

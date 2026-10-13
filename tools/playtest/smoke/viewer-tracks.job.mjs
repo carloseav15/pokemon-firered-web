@@ -3,7 +3,7 @@ export default async function run(ctx) {
  const p=ctx.page;
  await p.addInitScript(()=>{window.trackImport=path=>{const e=performance.getEntriesByType('resource').find(e=>new URL(e.name).pathname===path);return import(e?.name??path);};});
  const base=process.env.PW_BASE??'http://localhost:5173/';
- await p.goto(new URL('viewer.html',base).href);
+ await p.goto(new URL('viewer.html?legacy=1',base).href);
  await p.locator('#loading-overlay').waitFor({state:'hidden'});
  await p.evaluate(async()=>{const {ViewerFieldEffects}=await window.trackImport('/src/viewer/fieldEffects.ts');const o=ViewerFieldEffects.prototype.onGroundStep;ViewerFieldEffects.prototype.onGroundStep=function(...args){window.trackGrid=this.grid;return o.apply(this,args);};});
  await p.locator('#mode-explore-btn').click();await p.waitForFunction(()=>window.trackGrid);

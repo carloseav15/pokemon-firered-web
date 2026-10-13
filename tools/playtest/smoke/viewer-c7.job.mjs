@@ -1,7 +1,7 @@
 export default async function run(ctx) {
  const p=ctx.page;
  await p.addInitScript(()=>{window.c7Import=path=>{const entry=performance.getEntriesByType('resource').find(e=>new URL(e.name).pathname===path);if(!entry)throw Error('Unloaded module '+path);return import(entry.name);};});
- await p.goto(new URL('viewer.html',process.env.PW_BASE).href);
+ await p.goto(new URL('viewer.html?legacy=1',process.env.PW_BASE).href);
  await p.locator('#loading-overlay').waitFor({state:'hidden'});
  const templates=await p.evaluate(async()=>{
   const {loadEffectTemplate}=await window.c7Import('/src/viewer/data/fieldFxTemplates.ts');

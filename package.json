@@ -100,7 +100,9 @@
     "crystal:world": "python3 tools/viewer/crystal_world.py",
     "expansion:catalog": "python3 tools/viewer/expansion_catalog.py",
     "hns:maps": "python3 tools/viewer/hns_maps.py",
-    "check:hns-maps": "python3 tools/checks/hns_maps.py"
+    "check:hns-maps": "python3 tools/checks/hns_maps.py",
+    "maps:images": "python3 tools/viewer/gba_maps.py",
+    "check:common-map-data": "python3 tools/checks/common_map_data.py"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

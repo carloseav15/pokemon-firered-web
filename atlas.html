@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Atlas FireRed / Emerald</title>
+    <title>Atlas Pokémon</title>
     <style>
       :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
       * { box-sizing:border-box; }
@@ -28,13 +28,13 @@
   </head>
   <body>
     <main>
-      <h1>Atlas <span class="a">FireRed</span> / <span class="b">Emerald</span></h1>
+      <h1>Atlas <span class="a">Pokémon</span></h1>
       <p class="sub">Índice de las herramientas de consulta y validación. Todas leen los datos exportados de los decomps; ninguna ejecuta el motor del juego.</p>
 
       <h2>Mundo y mapas</h2>
       <div class="grid">
-        <div class="card"><h3>Visor del mundo</h3><p>Exteriores unidos en un lienzo, con capas de colisión, agua, NPC, entrenadores y activadores; ficha por casilla y buscador.</p>
-          <div class="links"><a class="btn ga" href="/viewer.html">Kanto</a><a class="btn gb" href="/viewer.html?game=emerald">Hoenn</a></div></div>
+        <div class="card"><h3>Visor del mundo</h3><p>Visor común de FireRed, Emerald, Heart &amp; Soul y Crystal: carga por bloques, cámara libre, búsqueda y fichas con eventos y puertas. El inspector avanzado conserva las herramientas específicas.</p>
+          <div class="links"><a class="btn ga" href="/maps.html?game=firered">Kanto</a><a class="btn gb" href="/maps.html?game=emerald">Hoenn</a><a class="btn" href="/maps.html?game=hns">Johto GBA</a><a class="btn" href="/maps.html?game=crystal">Crystal</a></div></div>
         <div class="card"><h3>Explorar a pie</h3><p>Camina por el mundo con tu avatar (Rojo/Hoja en Kanto, Bruno/Aura en Hoenn). Pisar una puerta abre su interior.</p>
           <div class="links"><a class="btn ga" href="/viewer.html#modo=explore">Kanto</a><a class="btn gb" href="/viewer.html?game=emerald#modo=explore">Hoenn</a></div></div>
         <div class="card"><h3>Interiores</h3><p>425 mapas de FireRed y 518 de Emerald con warps, objetos con sprite, eventos y carteles. Desde el buscador, o con <code>#mapa=MAP_ID</code>.</p>
@@ -62,15 +62,15 @@
       <h2>Johto con gráficos GBA</h2>
       <div class="grid">
         <div class="card"><h3>Heart &amp; Soul · Johto / Kanto</h3><p>Mapas 2D de la adaptación GBA: mundo conectado por bloques, buscador, interiores y puertas navegables. Tiles estáticos y objetos como marcadores; el catálogo distingue mapas renderizados y datos heredados incompatibles.</p>
-          <div class="links"><a class="btn" href="/hns.html">Mundo conectado</a><a class="btn" href="/hns.html#MAP_NEW_BARK_TOWN">New Bark</a></div></div>
+          <div class="links"><a class="btn" href="/maps.html?game=hns">Mundo conectado</a><a class="btn" href="/maps.html?game=hns#mapa=MAP_NEW_BARK_TOWN">New Bark</a></div></div>
       </div>
 
       <h2>Pokémon Crystal</h2>
       <div class="grid">
         <div class="card"><h3>Mapas de Crystal</h3><p>388 mapas de Johto y Kanto renderizados desde el decomp (bloques, tiles y paletas), con warps, carteles, objetos y conexiones.</p>
-          <div class="links"><a class="btn" href="/crystal.html">Abrir</a></div></div>
+          <div class="links"><a class="btn" href="/maps.html?game=crystal">Abrir</a></div></div>
         <div class="card"><h3>Mundo de Crystal</h3><p>Johto y Kanto en un solo mapa, colocados con las conexiones del decomp; cada mapa enlaza a su ficha.</p>
-          <div class="links"><a class="btn" href="/crystal-world.html">Abrir</a></div></div>
+          <div class="links"><a class="btn" href="/maps.html?game=crystal#world">Abrir</a></div></div>
       </div>
 
       <h2>Historia y quests</h2>
@@ -97,6 +97,10 @@
     </main>
     <script type="module">
       const checks = [
+        ["Visor común: imágenes FireRed", "/map-viewer/firered/catalog.json", "Consulta ligera de Kanto", "npm run maps:images -- firered"],
+        ["Visor común: imágenes Emerald", "/map-viewer/emerald/catalog.json", "Consulta ligera de Hoenn", "npm run maps:images -- emerald"],
+        ["Visor común: vista reducida HnS", "/map-viewer/hns/world/overview.png", "Johto GBA al alejar el zoom", "npm run maps:images -- hns"],
+        ["Visor común: vista reducida Crystal", "/map-viewer/crystal/world/day/overview.png", "Johto / Kanto GBC al alejar el zoom", "npm run maps:images -- crystal"],
         ["HnS: mapas 2D de Johto / Kanto", "/hns/maps.json", "Visor HnS", "npm run refs:fetch -- pokemon-hns && npm run hns:maps"],
         ["FireRed: datos exportados", "/fr/data/species.json", "Pokédex, comparador, biblioteca", "python3 tools/decomp/export.py"],
         ["Emerald: datos exportados", "/emerald/data/species.json", "Hoenn, Pokédex, comparador, biblioteca", "EXPORT_GAME=emerald python3 tools/decomp/export.py"],
