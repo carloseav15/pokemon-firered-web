@@ -309,8 +309,10 @@ Receta:
 - [ ] `GetAvailableObjectEventId`, `TrySetupObjectEventSprite`, `TrySpawnObjectEventTemplate`,
   `TrySpawnObjectEvents`, `RemoveObjectEventsOutsideView`, getters/overrides de plantillas;
   `GroundEffect_*`/`DoTracksGroundEffect_*`.
-- [ ] `ObjectEventSetHeldMovement`, `ObjectEventForceSetHeldMovement`,
-  `ObjectEventFaceOppositeDirection` y ambos drivers del movimiento retenido.
+- [x] `ObjectEventSetHeldMovement`, `ObjectEventForceSetHeldMovement`, `ClearHeldMovement*`, `CheckHeldMovementStatus`,
+  `ClearHeldMovementIfFinished`, `GetHeldMovementActionId`, `IsHeldMovementActive`, `IsMovementOverridden` y
+  `ObjectEventFaceOppositeDirection` iguales al C. Corregido `GetOppositeDirection` (el C mapea también las diagonales 5–8;
+  el TS solo 1–4). Los drivers `ObjectEventExecHeldMovementAction` / `QL_UpdateObjectEventCurrentMovement` sin revisar.
 - [x] `InitNpcForWalk*`/`InitWalk*`/`UpdateWalk*`, `InitRunSlow`/`UpdateRunSlow`;
   `Step1/2/3/4/8` y tablas de velocidad frente a `NpcTakeStep`: cuerpos, campos `data[3..5]`, las cinco tablas
   `sSpeed*StepFuncs`/`sStepTimes` y los saltos (`InitJump*`, `sJumpInitDisplacements`/`sJumpDisplacements`,
