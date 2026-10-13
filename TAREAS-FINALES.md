@@ -391,6 +391,14 @@ Receta:
 - [ ] `popOutOfAsh`/`startLavaridgeGymWarpEffect` y callbacks `SpriteCB_*` conectados a sus tareas.
 
 **`party_menu.c`**
+- [~] Revisión 2026-10-13 (`partyMenu.ts`): comparados con el C `ItemUseCB_Medicine/Step`, `ItemUseCB_RareCandy`,
+  `TryUsePPItemInBattle`, `ItemUseCB_RestorePP`, `ItemUseCB_TMHM`, `Task_ReplaceMoveWithTMHM`,
+  `GetPartyMenuActionsType(InBattle)`, `CanLearnTutorMove`, `UpdatePartyTo{Battle,Field}Order`,
+  `GetPartyIdFromBattle{PartyId,Slot}`, `SwitchPartyMon`, `Display{Gave,Took}HeldItemMessage`: lógica igual salvo que el TS
+  **no registraba ninguno de los 8 `ItemUse_SetQuestLogEvent` del C** (usar objeto sobre un mon, dar/quitar objeto,
+  MT/MO, PP, reemplazar movimiento). Añadidos. Sin comprobar en juego: el Quest Log ignora estos eventos fuera de una
+  escena ya abierta (`ShouldRegisterEvent_HandlePartyActions`), así que el smoke C10 no los ve. Sin revisar:
+  `CreatePartyMon*SpriteParameterized`, `PartyMenuStartSpriteAnim`, `CB2_ReturnTo*Menu`, evolución por objeto.
 - [ ] `CreatePartyMon*SpriteParameterized` (especie, prioridad, estado, objeto);
   `PartyMenuStartSpriteAnim`, los tres `CB2_ReturnTo*Menu`, `CB2_SetUpExitToBattleScreen`.
 
