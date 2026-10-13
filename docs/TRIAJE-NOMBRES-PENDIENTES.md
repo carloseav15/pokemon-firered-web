@@ -105,6 +105,10 @@ Confirmadas sin trabajo pendiente (comprobado en el C y en el TS):
 - `FieldEffectFree*Resources/IfUnused`: el `Sprite` del port no usa un pool de tiles/paletas de VRAM
   (`field/fieldEffects.ts`, `FieldEffectStop`).
 
+- `ExitPartyMenu`/`Task_ExitPartyMenu`: solo se llaman si falla `Alloc` en `AllocPartyMenuBg` (sin equivalente en TS).
+- `BattleTransition_Start`/`InitTransitionData`/`VBlankCB_BattleTransition`: la transición vive en
+  `battle/transition.ts` (`BattleTransition_StartOnField`, escena de canvas) con otra estructura.
+
 Sin revisar todavía: intérprete `FieldEffectCmd_*`/`FieldEffectScript_*`, `overworld.c` (bgs/VBlank/carga de mapa),
-`party_menu.c` (`ExitPartyMenu`, `Task_ExitPartyMenu`, `BufferBattlePartyOrderBySide`), `battle_transition.c`
-(`InitTransitionData`, `BattleTransition_Start`), `quest_log.c`.
+`party_menu.c` (`BufferBattlePartyOrderBySide`: comprobar el cuerpo dentro de `BufferBattlePartyCurrentOrderBySide`),
+`quest_log.c`.
