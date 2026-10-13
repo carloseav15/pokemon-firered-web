@@ -9,6 +9,7 @@ import { flagGet, IncrementGameStat, save } from "./save";
 import { GetSafariZoneFlag, SafariZoneRetirePrompt } from "./field/safariZone";
 import { intToDecimal, expandPlaceholders, stringVars, STR_CONV_MODE_RIGHT_ALIGN } from "./gba/charmap";
 import { rom } from "./rom";
+import { sound } from "./audio/sound";
 import { FONT_NORMAL } from "./gba/font";
 import { tasks } from "./gba/tasks";
 import { printText } from "./gba/textPrinter";
@@ -172,12 +173,15 @@ export function FieldCB_ReturnToFieldOpenStartMenu(game: Game): false {
   return false;
 }
 
-/** CloseStartMenu (start_menu.c); release and cleanup live on the field Game. */
-export function CloseStartMenu(game: Game): void { game.closeStartMenu(); }
+/** CloseStartMenu (start_menu.c): SE_SELECT first; window removal and unfreeze live on the field Game. */
+export function CloseStartMenu(game: Game): void {
+  sound.playSE(sound.SE_SELECT);
+  game.closeStartMenu();
+}
 
 /** DrawSafariZoneStatsWindow (start_menu.c). */
 export function DrawSafariZoneStatsWindow(game: Game): Window {
-  const stats = new Window(2, 2, 10, 4);
+  const stats = new Window(1, 1, 10, 4);
   stats.frame = "std";
   stats.frameType = save.options.frameType;
   stats.fill(1);
@@ -311,7 +315,7 @@ export function PrintSaveStats(game: Game): Window {
   stats.fill(1);
 
   const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
-  printText(stats, FONT_NORMAL, location, (112 - GetStringWidth(FONT_NORMAL, location)) >> 1, 0);
+  printText(stats, FONT_NORMAL, location, Math.trunc(((112 - GetStringWidth(FONT_NORMAL, location)) >>> 0) / 2) & 0xff, 0);
   const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y);
   const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y);
   label(14, "gSaveStatName_Player");

@@ -41,7 +41,7 @@ import { InUnionRoom } from "./unionRoom";
 import { FieldWeather } from "./field/weather";
 import { StopPokemonLeagueLightingEffectTask } from "./field/leagueLighting";
 import { openPlayerPc } from "./menus/playerPc";
-import { CreateHelpMessageWindow, DestroyHelpMessageWindow, DrawHelpMessageWindowWithText, PrintTextOnHelpMessageWindow } from "./menus/helpMessage";
+import { DestroyHelpMessageWindow, DrawHelpMessageWindowWithText } from "./menus/helpMessage";
 import { showDiploma } from "./diploma";
 import { EggHatch, preloadEggHatch } from "./eggHatch";
 import { DoCredits } from "./credits";
@@ -65,7 +65,7 @@ import {
   StartMenuPokedexCallback, StartMenuPokedexSanityCheck, StartMenuPokemonCallback, StartMenuSafariZoneRetireCallback,
   StartMenuSaveCallback, Task_StartMenuHandleInput, type StartMenuDrawState, type StartMenuInputState, type StartMenuItem, type StartMenuSetupState,
 } from "./startMenu";
-import { IsUpdateLinkStateCBActive } from "./linkState";
+import { IsLinkSessionActive, IsUpdateLinkStateCBActive } from "./linkState";
 import { openSlotMachine } from "./menus/slotMachine";
 import { ReducePlayerPartyToThree } from "./pokemon/scriptPokemonUtil";
 import { ResetBagCursorPositions } from "./bagMenu";
@@ -409,7 +409,9 @@ export class Game {
   showStartMenu(drawImmediately = false, fadeInAfterDrawing = false): void {
     const ow = this.overworld;
     const linkStateActive = IsUpdateLinkStateCBActive();
-    if (!linkStateActive) {
+    // ShowStartMenu freezes the field only when the menu opens; SetUpReturnToStartMenu
+    // and the save-cancel redraw (StartCB_Save2) only redraw it.
+    if (!linkStateActive && !drawImmediately && !fadeInAfterDrawing) {
       ow.objects.freezeAll();
       ow.player.HandleEnforcedLookDirectionOnPlayerStopMoving();
       ow.player.StopPlayerAvatar();
@@ -438,14 +440,16 @@ export class Game {
     ];
     const items = startMenu.order.slice(0, startMenu.numItems).map((entry) => actions[entry]!);
     const window = new Window(22, 1, 7, items.length * 2 - 1);
-    // DrawHelpMessageWindowWithText (help_message.c).
-    const desc = CreateHelpMessageWindow(ow.windows);
+    // The help bar exists only in OPTIONS_BUTTON_MODE_HELP outside link and Union Room
+    // (DoDrawStartMenu state 5, StartCB_HandleInput).
+    const helpShown = (): boolean => !IsLinkSessionActive() && !InUnionRoom() && save.options.buttonMode === C.OPTIONS_BUTTON_MODE_HELP;
     const menu = new Menu(window, FONT_NORMAL, 0, 0, 15, items.length, this.startMenuCursor);
     const printDesc = () => {
+      if (!helpShown()) return;
       const sym = items[menu.cursorPos].desc;
       DrawHelpMessageWindowWithText(ow.windows, rom.strings[sym] ? rom.text(sym) : [0xff]);
     };
-    this.startMenuWindows = [window, desc];
+    this.startMenuWindows = [window];
     this.startMenuSafariStats = null;
     const draw: StartMenuDrawState = {
       state: [0, 0], items, window, safari,
