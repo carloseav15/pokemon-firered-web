@@ -53,6 +53,12 @@
           <div class="links"><a class="btn" href="/compare.html">Abrir</a></div></div>
       </div>
 
+      <h2>Catálogos de otras fuentes</h2>
+      <div class="grid">
+        <div class="card"><h3>Catálogo Gen 1-9 (expansion)</h3><p>1573 especies y formas, 956 movimientos, 320 habilidades y 874 objetos de pokeemerald-expansion, con evoluciones, aprendizajes y sprites. Valores de su configuración por defecto.</p>
+          <div class="links"><a class="btn" href="/expansion.html">Abrir</a></div></div>
+      </div>
+
       <h2>Pokémon Crystal</h2>
       <div class="grid">
         <div class="card"><h3>Mapas de Crystal</h3><p>388 mapas de Johto y Kanto renderizados desde el decomp (bloques, tiles y paletas), con warps, carteles, objetos y conexiones.</p>
@@ -97,6 +103,7 @@
         ["Línea argumental", "/viewer/story_firered.json", "Línea argumental", "python3 tools/viewer/story_index.py"],
         ["Mapas de Crystal", "/crystal/maps.json", "Mapas de Crystal", "npm run refs:fetch -- pokecrystal && npm run crystal:maps"],
         ["Mundo de Crystal", "/crystal/world/world.json", "Mundo de Crystal", "npm run crystal:world"],
+        ["Catálogo de expansion", "/expansion/species.json", "Catálogo Gen 1-9", "npm run refs:fetch -- pokeemerald-expansion && npm run expansion:catalog"],
       ];
       const body = document.querySelector("#status tbody");
       for (const [label, url, usedBy, cmd] of checks) {

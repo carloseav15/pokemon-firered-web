@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catálogo Gen 1-9 · pokeemerald-expansion</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --acc:#38bdf8; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:13px/1.45 system-ui, sans-serif; }
+      header { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line); padding:8px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      header h1 { font-size:15px; margin:0 6px 0 0; }
+      a { color:#93c5fd; text-decoration:none; } a:hover { text-decoration:underline; }
+      input[type=search], select, button { background:#1f2937; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:5px 9px; font:inherit; }
+      button.tab.on { background:#2563eb; border-color:#2563eb; }
+      #note { color:var(--mut); padding:6px 16px; border-bottom:1px solid var(--line); font-size:12px; }
+      #layout { display:grid; grid-template-columns:340px 1fr; height:calc(100vh - 118px); }
+      #list { overflow:auto; border-right:1px solid var(--line); }
+      #filters { padding:8px; display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
+      #filters input[type=search] { flex:1 1 100%; }
+      .row { padding:3px 10px; cursor:pointer; display:flex; gap:8px; align-items:center; border-bottom:1px solid #0f1621; }
+      .row:hover, .row.sel { background:#16202f; }
+      .row .th { width:36px; height:36px; flex:none; image-rendering:pixelated; background-repeat:no-repeat; }
+      .row small { color:var(--mut); margin-left:auto; white-space:nowrap; }
+      #detail { overflow:auto; padding:14px 22px 60px; }
+      h2 { margin:0 0 4px; font-size:21px; }
+      h3 { margin:20px 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); border-bottom:1px solid var(--line); padding-bottom:3px; }
+      .meta { color:var(--mut); }
+      .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600; color:#0b0f14; background:#9ca3af; margin-right:4px; }
+      .chip.flat { color:var(--fg); background:#1f2937; font-weight:400; }
+      .t-NORMAL{background:#a8a77a}.t-FIRE{background:#ee8130}.t-WATER{background:#6390f0}.t-ELECTRIC{background:#f7d02c}.t-GRASS{background:#7ac74c}
+      .t-ICE{background:#96d9d6}.t-FIGHTING{background:#c22e28}.t-POISON{background:#a33ea1}.t-GROUND{background:#e2bf65}.t-FLYING{background:#a98ff3}
+      .t-PSYCHIC{background:#f95587}.t-BUG{background:#a6b91a}.t-ROCK{background:#b6a136}.t-GHOST{background:#735797}.t-DRAGON{background:#6f35fc}
+      .t-DARK{background:#705746;color:#fff}.t-STEEL{background:#b7b7ce}.t-FAIRY{background:#d685ad}.t-STELLAR{background:#40b5a5}.t-MYSTERY{background:#68a090}
+      .stats { display:grid; grid-template-columns:70px 40px 1fr; gap:3px 8px; max-width:520px; align-items:center; }
+      .bar { height:9px; border-radius:5px; background:#1f2937; overflow:hidden; } .bar i { display:block; height:100%; }
+      dl { display:grid; grid-template-columns:150px 1fr; gap:3px 12px; margin:0; } dt { color:var(--mut); } dd { margin:0; }
+      table { border-collapse:collapse; width:100%; max-width:900px; } td, th { padding:2px 10px 2px 0; text-align:left; font-weight:normal; vertical-align:top; }
+      th { color:var(--mut); border-bottom:1px solid var(--line); }
+      tr.mv:hover { background:#16202f; }
+      .none { color:var(--mut); font-style:italic; }
+      .cols { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+      .sprites { display:flex; flex-wrap:wrap; gap:14px; margin:10px 0; }
+      .sprite { background:#0f1520; border:1px solid var(--line); border-radius:8px; padding:6px 10px; text-align:center; font-size:11px; color:var(--mut); }
+      .sprite img { display:block; image-rendering:pixelated; }
+      .sprite .sheet { width:var(--w); height:var(--h); background-size:var(--bw) var(--bh); background-repeat:no-repeat; image-rendering:pixelated; margin:8px; animation:sheet .6s steps(1) infinite; }
+      @keyframes sheet { 0% { background-position:0 0; } 50% { background-position:var(--end); } }
+      details.src { border:1px solid var(--line); border-radius:8px; padding:6px 12px; margin:10px 0; background:#0c121b; }
+      .portraits .pgrid, .pmd-dirs { display:flex; flex-wrap:wrap; gap:8px; } figure.pt { margin:0; text-align:center; font-size:10px; color:var(--mut); }
+      .pmd-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; } .pmd-dirs canvas { image-rendering:pixelated; display:block; }
+      .pmd-atlas { overflow:auto; max-width:100%; } .pmd-atlas img { image-rendering:pixelated; max-width:none; }
+      @media (max-width:900px) { #layout { grid-template-columns:1fr; } #list { max-height:34vh; } .cols { grid-template-columns:1fr; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Catálogo Gen 1-9</h1>
+      <a href="/atlas.html">☰ Atlas</a>
+      <button class="tab on" data-tab="s">Pokémon</button>
+      <button class="tab" data-tab="m">Movimientos</button>
+      <button class="tab" data-tab="a">Habilidades</button>
+      <button class="tab" data-tab="i">Objetos</button>
+      <span id="count" class="meta"></span>
+      <a href="/dex.html" style="margin-left:auto">Pokédex FireRed / Emerald →</a>
+    </header>
+    <div id="note"></div>
+    <div id="layout">
+      <div id="list"><div id="filters"></div><div id="rows"></div></div>
+      <div id="detail"><p class="none">Cargando…</p></div>
+    </div>
+    <script type="module" src="/src/compare/expansionMain.ts"></script>
+  </body>
+</html>

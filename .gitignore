@@ -27,6 +27,9 @@ public/sprites/
 # Mapas renderizados de Crystal (npm run refs:fetch -- pokecrystal && npm run crystal:maps)
 public/crystal/
 
+# Catálogo Gen 1-9 de pokeemerald-expansion (npm run refs:fetch -- pokeemerald-expansion && npm run expansion:catalog)
+public/expansion/
+
 # Sprites exported for the Pokedex/library pages (regenerate: python3 tools/decomp/export.py graphics)
 public/fr/gfx/pokemon/back/
 public/fr/gfx/pokemon/back_shiny/

@@ -97,7 +97,8 @@
     "play:ssanne": "node tools/playtest/ssanne.mjs",
     "sprites:sources": "python3 tools/viewer/sprite_sources.py",
     "crystal:maps": "python3 tools/viewer/crystal_maps.py",
-    "crystal:world": "python3 tools/viewer/crystal_world.py"
+    "crystal:world": "python3 tools/viewer/crystal_world.py",
+    "expansion:catalog": "python3 tools/viewer/expansion_catalog.py"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
