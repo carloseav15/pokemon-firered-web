@@ -2636,12 +2636,6 @@ export class ObjectEvents {
 
   // ---------------------------------------------------------------- movement actions
 
-  private stepSprite(object: ObjectEvent, amount: number, direction: number): void {
-    const [dx, dy] = DIRECTION_VECTORS[direction];
-    object.sprite.x += dx * amount;
-    object.sprite.y += dy * amount;
-  }
-
   private faceDirection(object: ObjectEvent, direction: number): void {
     this.setDirection(object, direction);
     this.shiftStill(object);
@@ -2758,10 +2752,6 @@ export class ObjectEvents {
     return true;
   }
 
-  private objectForMovementSprite(sprite: Sprite): ObjectEvent | undefined {
-    return this.objects.find((object): object is ObjectEvent => object !== null && object.sprite === sprite);
-  }
-
   private InitNpcForSlowStyle(object: ObjectEvent, sprite: Sprite, direction: number, setData: (sprite: Sprite, direction: number) => void): void {
     direction &= 0xff;
     this.setDirection(object, direction);
@@ -2808,25 +2798,25 @@ export class ObjectEvents {
     this.SetWalkSlowerSpriteData(sprite, direction);
   }
 
+  // UpdateWalkSlowerAnim / UpdateWalkSlowAnim / UpdateWalkSlowestAnim / UpdateRunSlowAnim only move the sprite:
+  // tDirection = data[3], tDelay = data[4], tStepNo = data[5], Step1/Step2 = MoveCoordsInDirection on sprite->x/y.
   private UpdateSlowStyleAnim(sprite: Sprite, kind: "slow" | "slower" | "slowest" | "runSlow"): boolean {
-    const object = this.objectForMovementSprite(sprite);
-    if (!object) return false;
     const direction = sprite.data[3];
     switch (kind) {
       case "slower":
-        if (!(sprite.data[4] & 1)) { this.stepSprite(object, 1, direction); sprite.data[5]++; }
+        if (!(sprite.data[4] & 1)) { Step1(sprite, direction); sprite.data[5]++; }
         sprite.data[4]++;
         break;
       case "slow":
-        if (++sprite.data[4] < 3) { this.stepSprite(object, 1, direction); sprite.data[5]++; }
+        if (++sprite.data[4] < 3) { Step1(sprite, direction); sprite.data[5]++; }
         else sprite.data[4] = 0;
         break;
       case "slowest":
-        if (++sprite.data[4] > 9) { sprite.data[4] = 0; this.stepSprite(object, 1, direction); sprite.data[5]++; }
+        if (++sprite.data[4] > 9) { sprite.data[4] = 0; Step1(sprite, direction); sprite.data[5]++; }
         break;
       case "runSlow":
-        if ((++sprite.data[4]) & 1) { this.stepSprite(object, 1, direction); sprite.data[5]++; }
-        else { this.stepSprite(object, 2, direction); sprite.data[5] += 2; }
+        if ((++sprite.data[4]) & 1) { Step1(sprite, direction); sprite.data[5]++; }
+        else { Step2(sprite, direction); sprite.data[5] += 2; }
         break;
     }
     return sprite.data[5] > 15;
