@@ -84,6 +84,7 @@ import { BattleStringExpandPlaceholders } from "./battle/message";
 import { BtlCtrl_OakOldMan_SetState2Flag, BtlCtrl_OakOldMan_TestState2Flag } from "./battle/controller_oak_old_man";
 import { AppendToList } from "./startMenu";
 import { SetSwappedHeldItemQuestLogEvent, SetSwitchedPartyOrderQuestLogEvent } from "./questLogEvents";
+import { ItemUse_SetQuestLogEvent } from "./itemUse";
 import { FreeRestoreBattleData } from "./battle/main_init";
 import { LoadPlayerParty } from "./loadSave";
 import { CB2_ReturnToTeachyTV, SetTeachyTvControllerModeToResume } from "./teachyTv";
@@ -839,7 +840,10 @@ function Task_ReturnToChooseMonAfterText(taskId: number): void {
   }
 }
 
-function DisplayGaveHeldItemMessage(m: Mon, item: number, keepOpen: boolean): void {
+function DisplayGaveHeldItemMessage(m: Mon, item: number, keepOpen: boolean, fromBagMenu = false): void {
+  if (!fromBagMenu) ItemUse_SetQuestLogEvent(C.QL_EVENT_GAVE_HELD_ITEM, m, item, 0xffff); // Give option of the party menu
+  else if (gPartyMenu.action === C.PARTY_ACTION_GIVE_PC_ITEM) ItemUse_SetQuestLogEvent(C.QL_EVENT_GAVE_HELD_ITEM_PC, m, item, 0xffff);
+  else ItemUse_SetQuestLogEvent(C.QL_EVENT_GAVE_HELD_ITEM_BAG, m, item, 0xffff);
   stringVars.var1 = GetMonNickname(m);
   stringVars.var2 = CopyItemName(item);
   stringVars.var4 = expandPlaceholders(text("gText_PkmnWasGivenItem"));
@@ -848,6 +852,7 @@ function DisplayGaveHeldItemMessage(m: Mon, item: number, keepOpen: boolean): vo
 }
 
 function DisplayTookHeldItemMessage(m: Mon, item: number, keepOpen: boolean): void {
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_TOOK_HELD_ITEM, m, item, 0xffff);
   stringVars.var1 = GetMonNickname(m);
   stringVars.var2 = CopyItemName(item);
   stringVars.var4 = expandPlaceholders(text("gText_ReceivedItemFromPkmn"));
@@ -2437,6 +2442,7 @@ export function ItemUseCB_Medicine(taskId: number, func: TaskFunc): void {
     ScheduleBgCopyTilemapToVram(2);
     tasks.setFunc(taskId, func);
   } else {
+    ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, m, item, 0xffff);
     Task_DoUseItemAnim(taskId);
     gItemUseCB = ItemUseCB_MedicineStep;
   }
@@ -2572,6 +2578,7 @@ function ItemUseCB_RestorePP(taskId: number, _func: TaskFunc): void {
   const m = mon(gPartyMenu.slotId);
   ExecuteTableBasedItemEffect_(gPartyMenu.slotId, bagResult.itemId, gPartyMenu.ppMoveSlot);
   partyMenuResult.useExitCallback = true;
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, m, bagResult.itemId, 0xffff);
   sound.playSE(C.SE_USE_ITEM);
   removeBagItem(bagResult.itemId, 1);
   stringVars.var1 = moveName(GetMonData(m, gPartyMenu.ppMoveSlot + C.MON_DATA_MOVE1));
@@ -2589,6 +2596,7 @@ function TryUsePPItemInBattle(taskId: number): void {
     DisplayPartyMenuMessage(text("gText_WontHaveEffect"), true);
   } else {
     partyMenuResult.useExitCallback = true;
+    ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, mon(gPartyMenu.slotId), item, 0xffff);
     sound.playSE(C.SE_USE_ITEM);
     removeBagItem(item, 1);
     stringVars.var1 = moveName(GetMonData(mon(gPartyMenu.slotId), C.MON_DATA_MOVE1 + gPartyMenu.ppMoveSlot));
@@ -2641,6 +2649,7 @@ export function ItemUseCB_TMHM(taskId: number, _func: TaskFunc): void {
     case ALREADY_KNOWS_MOVE: DisplayLearnMoveMessageAndClose(taskId, text("gText_PkmnAlreadyKnows")); return;
   }
   if (GiveMoveToMon(m, gPartyMenu.learnMoveId) !== C.MON_HAS_MAX_MOVES) {
+    ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, m, item, 0xffff);
     Task_DoUseItemAnim(taskId);
     gItemUseCB = ItemUseCB_LearnedMove;
   } else {
@@ -2728,9 +2737,11 @@ function CB2_UseTMHMAfterForgettingMove(): void {
   if (PSA_IsCancelDisabled()) {
     const m = mon(gPartyMenu.slotId);
     const moveIdx = GetMoveSlotToReplace();
+    const move = GetMonData(m, moveIdx + C.MON_DATA_MOVE1);
     RemoveMonPPBonus(m, moveIdx);
     SetMonMoveSlot(m, ItemIdToBattleMoveId(bagResult.itemId), moveIdx);
     AdjustFriendship(m, C.FRIENDSHIP_EVENT_LEARN_TMHM);
+    ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, m, bagResult.itemId, move);
     if (bagResult.itemId < C.ITEM_HM01) removeBagItem(bagResult.itemId, 1);
     gPartyMenu.exitCallback?.();
   } else {
@@ -2752,6 +2763,7 @@ function Task_ReplaceMoveWithTMHM(taskId: number): void {
   const m = mon(gPartyMenu.slotId);
   const moveIdx = GetMoveSlotToReplace();
   const move = GetMonData(m, moveIdx + C.MON_DATA_MOVE1);
+  ItemUse_SetQuestLogEvent(C.QL_EVENT_USED_ITEM, m, bagResult.itemId, move);
   stringVars.var1 = GetMonNickname(m);
   stringVars.var2 = moveName(move);
   RemoveMonPPBonus(m, moveIdx);
@@ -3153,14 +3165,14 @@ function CB2_ReturnToPartyOrBagMenuFromWritingMail(): void {
 function Task_DisplayGaveMailFromBagMessage(taskId: number): void {
   if (gPaletteFade.active) return;
   if (sPartyMenuItemId !== C.ITEM_NONE) DisplaySwitchedHeldItemMessage(gPartyMenu.bagItem, sPartyMenuItemId, false);
-  else DisplayGaveHeldItemMessage(mon(gPartyMenu.slotId), gPartyMenu.bagItem, false);
+  else DisplayGaveHeldItemMessage(mon(gPartyMenu.slotId), gPartyMenu.bagItem, false, true);
   tasks.setFunc(taskId, Task_UpdateHeldItemSpriteAndClosePartyMenu);
 }
 
 function GiveItemToSelectedMon(taskId: number): void {
   if (gPaletteFade.active) return;
   const item = gPartyMenu.bagItem;
-  DisplayGaveHeldItemMessage(mon(gPartyMenu.slotId), item, false);
+  DisplayGaveHeldItemMessage(mon(gPartyMenu.slotId), item, false, true);
   GiveItemToMon(mon(gPartyMenu.slotId), item);
   RemoveItemToGiveFromBag(item);
   tasks.setFunc(taskId, Task_UpdateHeldItemSpriteAndClosePartyMenu);
