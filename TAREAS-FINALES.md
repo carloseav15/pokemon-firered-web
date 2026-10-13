@@ -397,6 +397,14 @@ Receta:
 **`pokemon.c`**
 - [x] Los 6 wrappers BoxMon/Mon revisados con líneas citadas; `GetMonSpritePalStruct`
   corregido a `MON_DATA_SPECIES_OR_EGG` — `3bea3c6d`, `3d63e11a`.
+- [x] `CalculateBaseDamage` (`pokemon.c`, `battle/damage.ts`): comparada línea a línea con el C (objetos, habilidades,
+  insignias, rama física/especial, clima, Flash Fire; `gStatStageRatios` y `sHoldEffectToType` vienen de cdata). Iguales.
+  Corregido `WEATHER_HAS_EFFECT2` (se aliasaba a `WEATHER_HAS_EFFECT`: el C usa el modo `ABILITYEFFECT_FIELD_SPORT`, sin
+  comprobar `hp != 0`) — `475b8118`. Macros de `battle.h`/`battle_util.h` (`GET_MOVE_TYPE`, `IS_TYPE_*`,
+  `SET_BATTLER_TYPE`, `GET_STAT_BUFF_*`, `MOVE_IS_PERMANENT`, `ABILITY_ON_FIELD*`) iguales.
+  Pendiente de pokemon.c: de 140 funciones solo 5 tienen especificación en `tools/oracle` (el oracle funciona en esta
+  máquina con `llvm@16`, 4 s para los grupos A+B); candidatas: `GetNature*`, `GetMonGender`, `CalculateBoxMonChecksum`,
+  `GetLevelFromBoxMonExp`, `GetMonFlavorRelation`, `CalculateMonStats`.
 
 **`pokemon_summary_screen.c`**
 - [ ] `SwapBoxMonMoveSlots`, `UpdateCurrentMonBufferFromPartyOrBox`, transición de
