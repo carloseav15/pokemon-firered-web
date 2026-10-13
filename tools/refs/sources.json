@@ -26,7 +26,10 @@
       "/res/moves/*/data.json",
       "/res/pokemon/*/data.json",
       "/generated/",
-      "/include/constants/"
+      "/include/constants/",
+      "/res/pokemon/*/*.png",
+      "/res/pokemon/*/*.pal",
+      "/res/graphics/field_sprites/pokemon/"
     ],
     "note": "DS, C en progreso. Datos JSON de Gen 4."
   },
@@ -38,7 +41,9 @@
       "/include/",
       "/files/poketool/trainer/",
       "/files/fielddata/encountdata/",
-      "/files/fielddata/eventdata/zone_event/"
+      "/files/fielddata/eventdata/zone_event/",
+      "/files/poketool/pokegra/",
+      "/files/poketool/icongra/poke_icon/"
     ],
     "note": "DS, C + ensamblador, en progreso. Fijado; sin extractores todavía."
   },
@@ -68,7 +73,8 @@
     "sparse": [
       "/src/",
       "/include/",
-      "/test/"
+      "/test/",
+      "/graphics/pokemon/"
     ],
     "note": "GBA, C. Base comunitaria que compila Emerald y FRLG (IS_FRLG) y trae tests de combate. No es fuente de verdad de ningún juego."
   },
@@ -79,5 +85,16 @@
       "/*"
     ],
     "note": "Simulador de combate en TypeScript (MIT). Datos y mecánicas por generación (data/mods). No reproduce el RNG ni el orden de llamadas de la GBA."
+  },
+  "pmd-red": {
+    "repo": "https://github.com/pret/pmd-red.git",
+    "commit": "013475aa04f5be3191e5527c186d9bfceae7cae0",
+    "sparse": [
+      "/graphics/ax/",
+      "/src/data/ax/",
+      "/data/monster/monster_names.s",
+      "/include/constants/monster.h"
+    ],
+    "note": "GBA, C. Sprites de Mystery Dungeon Red (piezas OAM + poses). Solo gráficos para el dex del visor; no se porta."
   }
 }

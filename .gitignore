@@ -20,6 +20,10 @@ tools/playtest/runs/
 # Exported Emerald browser data (44 MB; regenerate with EXPORT_GAME=emerald python3 tools/decomp/export.py)
 public/emerald/
 
+# Sprites de otras fuentes para el dex (PMD, expansion, Platinum, HeartGold; ~65 MB).
+# Regenerar: npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold && npm run sprites:sources
+public/sprites/
+
 # Sprites exported for the Pokedex/library pages (regenerate: python3 tools/decomp/export.py graphics)
 public/fr/gfx/pokemon/back/
 public/fr/gfx/pokemon/back_shiny/

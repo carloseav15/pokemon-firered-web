@@ -3,6 +3,7 @@ import { prepare } from "./diff";
 import type { Raw } from "./diff";
 import { buildCard, locationsIndex, speciesIds } from "./dex";
 import type { Card, DexSource, Location } from "./dex";
+import { activateSpriteSections, loadSpriteIndex, otherSourcesHtml } from "./dexSprites";
 
 async function load(root: string): Promise<DexSource> {
   const j = async (p: string) => (await fetch(`${root}/${p}`)).json();
@@ -78,6 +79,8 @@ function show(id: number): void {
       ${spr("/emerald", "back", "Emerald · espalda")}${spr("/emerald", "back_shiny", "Emerald · espalda variocolor")}
       ${spr("/emerald", "icon", "Emerald · icono")}${spr("/emerald", "footprint", "Emerald · huella")}
     </div>
+    <h3>Sprites de otros juegos</h3>
+    <div id="others"><p class="none">Cargando…</p></div>
     <h3>En común</h3>
     ${dl(c.common)}
     <h3>Movimientos por nivel en común</h3>${ul(c.commonLevelMoves)}
@@ -104,6 +107,12 @@ function show(id: number): void {
       </div>
     </div>`;
   history.replaceState(null, "", `#${id}`);
+  const others = document.getElementById("others")!;
+  loadSpriteIndex().then((index) => {
+    if (selected !== id) return;
+    others.innerHTML = otherSourcesHtml(index, c.national);
+    activateSpriteSections(others);
+  });
 }
 
 function renderList(): void {
