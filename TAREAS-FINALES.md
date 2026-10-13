@@ -417,12 +417,13 @@ Receta:
 
 **`text.c`** (`gba/textPrinter.ts`)
 - [x] `DecompressGlyph_NormalCopy2` y 4 `TextPrinter*` (espera, flecha, modo auto) — `c4282dab`.
-- [ ] `TextPrinterDrawDownArrow`, `TextPrinterClearDownArrow`.
-  - DIFERENCIA: el C llama `CopyWindowToVram(..., 0x2)` tras dibujar o limpiar
-    (`text.c:514,531`); el TS escribe directo en el Canvas.
-- [ ] `RenderText`.
-  - DIFERENCIA: en `RENDER_STATE_SCROLL` el C usa `ScrollWindow` y `CopyWindowToVram`
-    por frame; el TS usa `window.scroll` sobre Canvas (velocidades `[1, 2, 4]` iguales).
+- [x] `TextPrinterDrawDownArrow`, `TextPrinterClearDownArrow`, `TextPrinterInitDownArrowCounters`,
+  `TextPrinterWaitAutoMode` (50 fotogramas en Quest Log, 120 si no), `TextPrinterWait*`, `DrawDownArrow` y `RenderText`
+  (todos los estados y códigos de control): iguales al C. La diferencia anotada (`CopyWindowToVram`/`ScrollWindow` por
+  fotograma frente al Canvas) es estructural del renderer; `sWindowVerticalScrollSpeeds` {1,2,4} y la lógica de
+  `scrollDistance` coinciden. `GetStringWidth` (código a código, incl. `CHAR_DYNAMIC`, `PLACEHOLDER_*`, saltos de
+  `COLOR_HIGHLIGHT_SHADOW`/`PLAY_*`) igual. Corregido el quirk de `EXT_CTRL_CODE_ESCAPE` (el C no consume el byte
+  siguiente; solo aparece en `gText_Escape3`, sin uso).
 
 **`m4a.c`** (`audio/sound.ts`, `audio/m4a.ts`)
 - [ ] `m4aSongNumStart*`, `m4aSongNumStop/Continue`, `m4aMPlayContinue/FadeOut/
