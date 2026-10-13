@@ -7,7 +7,6 @@ import { sound } from "../audio/sound";
 import { rom } from "../rom";
 import { flagGet, flagSet, varSet } from "../save";
 import { random } from "../random";
-import { DIRECTION_VECTORS } from "./objectEvents";
 import { MAP_OFFSET } from "./fieldmap";
 import type { Overworld } from "./overworld";
 
@@ -114,9 +113,9 @@ export class PerStepCallback {
 
   /** PlayAmbientCry from overworld.c; WAV playback preserves the source pan/volume, with priority approximate. */
   PlayAmbientCry(): void {
+    // PlayerGetDestCoords: the player's own (destination) tile, not the one in front of it.
     const p = this.ow.player.object;
-    const [dx, dy] = DIRECTION_VECTORS[p.facingDirection];
-    const behavior = this.ow.map.behaviorAt(p.currentCoords.x + dx, p.currentCoords.y + dy);
+    const behavior = this.ow.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
     if (this.ambientCryIsWaterMon && !MB.MetatileBehavior_IsSurfable(behavior)) return;
     const pan = (((random() % 88) + 212) << 24) >> 24;
     const volume = (random() % 30) + 50;
