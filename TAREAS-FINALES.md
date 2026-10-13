@@ -279,7 +279,15 @@ Receta:
 4. No marques nada que no hayas leído en los dos lados.
 
 **`event_object_movement.c`** (`field/objectEvents.ts`, `fieldEffects.ts`)
-- [ ] `MovementAction_*` y `MovementType_*` (delegan en `movementActionStep`).
+- [~] `MovementAction_*` (delegan en `movementActionStep`): comparadas las 105 familias de `Step0/Step1` extraídas del C
+  (init, argumentos y condición de fin) con los brazos del TS. Iguales: Face*, Walk (slowest/slower/slow/normal/fast/faster),
+  RideWaterCurrent, PlayerRun, RunSlow, Jump/Jump2/JumpInPlace*/JumpSpecial*, Delay*, WalkInPlace*, Spin, Fly, Emote*,
+  RockSmash/CutTree, Acro (init y tipo de salto). Corregido: `Slide*` (el C usa `MOVE_SPEED_FASTEST`; el TS FAST_1 con anim
+  de cara), `ShakeHeadOrWalkInPlace` (termina con `animEnded`, el TS con 32 fotogramas), `Glide*` (faltaba
+  `AnimateSprite` por fotograma), saltos acro (faltaba `hasShadow = FALSE`; el sonido SE_BIKE_HOP/SE_WALL_HIT sonaba dos
+  veces: ya lo emite `field_player_avatar.c`). Cubierto en `check:movement-actions`.
+  Sin revisar: cuerpos de `InitWalkSlow*/UpdateWalkSlow*`, `InitJumpRegular/DoJumpAnim`, `InitSpin`, `RaiseHandAndJump` S1,
+  `RevealTrainer`; y `MovementType_*` ya revisado arriba.
 - [ ] `UpdateObjectEventCurrentMovement` (secuencia por objeto/ground effects) y
   driver por objeto; `ObjectEventSetSingleMovement`, `ObjectEventExecSingleMovementAction`,
   `ClearObjectEventMovement` (registro QL y `sprite.data[2]`).
