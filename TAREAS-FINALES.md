@@ -687,6 +687,14 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   (Codex, `3a1b4425`). Qué salidas conservan nombres y propuesta de `symbols.json` y
   tabla de operandos tipados para la fase 6; comandos reproducidos por el revisor.
 
+- [x] **6.4 Separación del motor, pasos 1–5.5** (Claude, `d2892e70`..`2432fbed`): `src/fr` →
+  `src/games/firered`, alias `@game/*` y `@core/*`, `@game/data`, `check:layers`, y 135
+  módulos en `src/core` (runtime, modelo Pokémon, scripts, campo, combate). Contrato en
+  `tools/checks/layers-contract.json` (41 entradas, solo puede encoger). Inventario y
+  `public/fr` sin cambios. Pendiente: 5.6 pantallas compartidas (equipo, nombre, PC,
+  ficha, grupo `hw/menu*`), 6 interfaz `Game`, 7 dividir `save`, y comprobar `play:smoke`
+  completo (C5–C14 no se han ejecutado enteros).
+
 ## 7. Herramientas de diseño (fuera del juego)
 
 No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/games/firered/`.
