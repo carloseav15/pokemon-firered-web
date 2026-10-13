@@ -6,7 +6,7 @@ public/sprites/<fuente>/ más public/sprites/index.json (nacional -> fuentes -> 
 Los gráficos no van en refs/ (regla 5 de refs/README.md); el juego no los usa.
 
 Uso: python3 tools/viewer/sprite_sources.py [fuente ...]
-Fuentes: pmd-red, emerald-expansion, platinum, heartgold, crystal (sin argumentos: todas).
+Fuentes: pmd-red, emerald-expansion, platinum, heartgold, crystal, pmd-sky (sin argumentos: todas).
 
 PMD Red: cada especie son piezas OAM (graphics/ax/mon/<especie>/sprite_N[_k].png) más poses y animaciones
 en src/data/ax/<especie>.h. Se componen las poses (tiles 8x8 en orden 1D de OBJ, flips, prioridad por
@@ -34,6 +34,7 @@ SOURCE_INFO = {
     "platinum": {"label": "Pokémon Platinum", "repo": "pret/pokeplatinum", "pin": "pokeplatinum"},
     "heartgold": {"label": "Pokémon HeartGold", "repo": "pret/pokeheartgold", "pin": "pokeheartgold"},
     "crystal": {"label": "Pokémon Crystal", "repo": "pret/pokecrystal", "pin": "pokecrystal"},
+    "pmd-sky": {"label": "Pokémon Mystery Dungeon: Explorers of Sky (retratos)", "repo": "pret/pmd-sky", "pin": "pmd-sky"},
 }
 
 
@@ -558,6 +559,84 @@ def build_pmd(table: dict[str, int]) -> dict[int, list[dict]]:
     return out
 
 
+# ---------------------------------------------------------------- PMD Sky: retratos
+
+def build_pmd_sky() -> dict[int, list[dict]]:
+    """files/FONT/kaomado.kao + BALANCE/monster.md + MESSAGE/text_e.str -> atlas de retratos por fila de monstruo.
+
+    monster.md: cabecera de 8 bytes (`MD\\0\\0` + nº de entradas) y entradas de 68 bytes; la palabra u16 0 es el
+    número nacional. text_e.str: tabla de u32 con desplazamientos; el nombre de la fila r es la cadena 8734 + r.
+    """
+    import struct
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import pmd_sky_kao as kao_mod
+
+    root = source_path("pmd-sky")
+    kao = kao_mod.Kao((root / "files/FONT/kaomado.kao").read_bytes())
+    md = (root / "files/BALANCE/monster.md").read_bytes()
+    if md[:4] != b"MD\0\0":
+        raise SystemExit("monster.md: cabecera inesperada")
+    count = struct.unpack_from("<I", md, 4)[0]
+    text = (root / "files/language-specific/US/MESSAGE/text_e.str").read_bytes()
+    n_str = struct.unpack_from("<I", text, 0)[0] // 4
+    offs = struct.unpack_from(f"<{n_str}I", text, 0)
+
+    def string(i: int) -> str:
+        end = offs[i + 1] if i + 1 < n_str else len(text)
+        return text[offs[i]:end].rstrip(b"\0").decode("latin-1")
+
+    name_base = 8734
+    out: dict[int, list[dict]] = {}
+    first_row: dict[int, int] = {}
+    excluded: list[int] = []
+    dst = OUT / "pmd-sky"
+    for row in range(1, count):
+        emotions = kao.emotions(row)
+        if not emotions:
+            continue
+        nat = struct.unpack_from("<H", md, 8 + row * 68)[0]
+        if not 0 < nat <= 493:  # Sky acaba en el 493; hay filas con números falsos (Statue, Mama, Sentret, Bellossom)
+            excluded.append(row)
+            continue
+        base_row = row - 600 if row >= 600 else row
+        name = string(name_base + base_row) if base_row < 600 else ""
+        # atlas: 5 columnas x filas, 40x40 por emoción, RGBA (cada retrato lleva su paleta)
+        cols = 5
+        rows_n = (len(emotions) + cols - 1) // cols
+        atlas = Image.new("RGBA", (cols * 40, rows_n * 40), (0, 0, 0, 0))
+        for i, e in enumerate(emotions):
+            pal, pix = kao.portrait(row, e * 2)
+            im = Image.new("P", (40, 40))
+            im.putdata(kao_mod.tiles_to_indices(pix))
+            im.putpalette([c for rgb in pal for c in rgb] + [0] * (768 - 48))
+            atlas.paste(im.convert("RGBA"), ((i % cols) * 40, (i // cols) * 40))
+        # Si caben en 256 colores, indexada (mucho más pequeña); si no, RGBA.
+        png = dst / f"{row}.png"
+        png.parent.mkdir(parents=True, exist_ok=True)
+        colors = atlas.getcolors(maxcolors=256)
+        if colors is not None:
+            atlas.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(png, optimize=True)
+        else:
+            atlas.save(png, optimize=True)
+        first = first_row.setdefault(nat, row)
+        if row >= 600:
+            label = "Retratos · hembra" if base_row == first or first_row.get(nat) == base_row else f"Retratos · {name} (hembra)"
+        elif row == first:
+            label = "Retratos"
+        elif name and name != string(name_base + first):
+            label = f"Retratos · {name} (fila {row})"
+        else:
+            label = f"Retratos · variante (fila {row})"
+        out.setdefault(nat, []).append({
+            "label": label, "kind": "portraits", "url": rel(png), "w": atlas.width, "h": atlas.height,
+            "cols": cols, "cell": 40, "emotions": [kao_mod.EMOTIONS[e] for e in emotions], "row": row,
+        })
+    if excluded:
+        print(f"pmd-sky: filas con retrato y número nacional fuera de 1-493, omitidas: {excluded}")
+    return out
+
+
 # ---------------------------------------------------------------- índice
 
 def main() -> None:
@@ -574,6 +653,7 @@ def main() -> None:
         "platinum": lambda: build_platinum(table),
         "heartgold": build_heartgold,
         "crystal": lambda: build_crystal(table),
+        "pmd-sky": build_pmd_sky,
     }
     for w in wanted:
         res = builders[w]()

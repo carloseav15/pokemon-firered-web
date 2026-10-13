@@ -9,7 +9,7 @@ exportados de los decomps.
 | Visor del mundo | `/viewer.html`, `/viewer.html?game=emerald` | Exteriores unidos, capas, fichas, buscador | `public/viewer/kanto.json` / `hoenn.json`, `public/fr`, `public/emerald` |
 | Explorar a pie | `/viewer.html#modo=explore` (+ `?game=emerald`) | Caminar con Rojo/Hoja o Bruno/Aura; pisar una puerta abre su interior | los mismos |
 | Interiores | desde el buscador o `#mapa=MAP_ID` | 425 + 518 mapas con warps, objetos, eventos, carteles | `public/<juego>/maps`, `layouts`, `tilesets` |
-| Pokédex comparada | `/dex.html`, `#<id de especie>` | Sprites y datos comunes / exclusivos por juego; sección «Sprites de otros juegos» (PMD Red con sus animaciones y 8 direcciones, pokeemerald-expansion, Crystal con su animación, Platinum, HeartGold); las especies de Gen 4-9 sin datos de juego salen como fichas solo de sprites (`#n<nacional>`) | `public/<juego>/data`, `gfx/pokemon/*`, `public/sprites/` |
+| Pokédex comparada | `/dex.html`, `#<id de especie>` | Sprites y datos comunes / exclusivos por juego; sección «Sprites de otros juegos» (PMD Red con sus animaciones y 8 direcciones, retratos de PMD Sky con sus emociones, pokeemerald-expansion, Crystal con su animación, Platinum, HeartGold); las especies de Gen 4-9 sin datos de juego salen como fichas solo de sprites (`#n<nacional>`) | `public/<juego>/data`, `gfx/pokemon/*`, `public/sprites/` |
 | Biblioteca visual | `/library.html` | Entrenadores con equipo, objetos con icono, gráficos de objetos de mapa | `data/trainers.json`, `gfx/trainers`, `gfx/items`, `objects.json` |
 | Comparador | `/compare.html` | Diferencias campo a campo (especies, movimientos, objetos, entrenadores) | `public/<juego>/data` |
 | Quests | `/quests.html` | Quests candidatas con clase, flags y variables | `public/viewer/quests_<juego>.json` |
@@ -27,10 +27,10 @@ python3 tools/viewer/world_index.py                     # índice del mundo de K
 EXPORT_GAME=emerald python3 tools/viewer/world_index.py # índice de Hoenn
 python3 tools/viewer/quest_index.py                     # quests de FireRed (y con EXPORT_GAME=emerald, de Emerald)
 python3 tools/viewer/story_index.py                     # línea argumental de los dos juegos
-npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold pokecrystal   # una vez
+npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold pokecrystal pmd-sky   # una vez
 npm run crystal:maps                                    # public/crystal/ (mapas renderizados de Crystal, ~4 MB, ignorado en git)
 npm run crystal:world                                   # public/crystal/world/ (mapa del mundo; requiere crystal:maps)
-npm run sprites:sources                                 # public/sprites/ (~70 MB, ignorado en git); admite una fuente: pmd-red | emerald-expansion | crystal | platinum | heartgold
+npm run sprites:sources                                 # public/sprites/ (~70 MB, ignorado en git); admite una fuente: pmd-red | pmd-sky | emerald-expansion | crystal | platinum | heartgold
 ```
 
 ## Comprobaciones
@@ -65,3 +65,12 @@ Trabajo de verificación pasada: los 943 mapas se abren y se pintan (`tools/play
 - Enlaces por warps: componentes de salas interiores unidas por warps; cada puerta de un mapa exterior que entra en ellas es una salida
   y dos salidas de mapas distintos forman un enlace (`via` = camino más corto). Las salas con un warp de destino -1 (Pokécenter 2F,
   ascensores) vuelven a la última puerta usada y no se atraviesan; FastShip1F es la excepción deliberada (Olivine ⇄ Vermilion).
+
+## Retratos de PMD Sky
+
+- Origen: `files/FONT/kaomado.kao` (tabla de 1155 filas × 40 casillas; casilla par = emoción, impar = volteada y vacía), `BALANCE/monster.md`
+  (palabra u16 0 de cada entrada de 68 bytes = número nacional) y `MESSAGE/text_e.str` (cadena 8734 + fila = nombre).
+  El lector está en `tools/viewer/pmd_sky_kao.py`; la descompresión AT4PX sigue `DecompressAT` de pmd-red.
+- Cobertura: 648 retratos para las 493 especies; las filas ≥ 600 son variantes de género y las 555/560 variantes de Wigglytuff.
+  Se omiten 4 filas con número nacional falso (Statue, Mama, Sentret y Bellossom del gremio).
+- Las emociones sin retrato (p. ej. Special0 en Pikachu) no se muestran. No se exportan las casillas volteadas.

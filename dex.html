@@ -35,6 +35,11 @@
       @keyframes anim { 0% { background-position:0 0; } 50% { background-position:0 -128px; } }
       .sprite .sheet { width:var(--w); height:var(--h); background-size:var(--bw) var(--bh); background-repeat:no-repeat; image-rendering:pixelated; margin:8px; animation:sheet .6s steps(1) infinite; }
       @keyframes sheet { 0% { background-position:0 0; } 50% { background-position:var(--end); } }
+      .portraits { margin:8px 0 14px; }
+      .pgrid { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+      figure.pt { margin:0; text-align:center; font-size:10px; color:var(--mut); }
+      figure.pt div { image-rendering:pixelated; border:1px solid var(--line); border-radius:4px; }
+      figcaption { margin-top:2px; }
       details.src { border:1px solid var(--line); border-radius:8px; padding:6px 12px; margin:10px 0; background:#0c121b; }
       details.src > summary { cursor:pointer; padding:4px 0; }
       .pmd-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }

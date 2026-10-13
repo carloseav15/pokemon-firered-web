@@ -14,6 +14,7 @@ Generado por `npm run refs:check -- --write`; no editar a mano. Guía: [README.m
 | [pokeemerald-expansion](https://github.com/rh-hideout/pokeemerald-expansion) | `dfb0f84374` | GBA, C. Base comunitaria que compila Emerald y FRLG (IS_FRLG) y trae tests de combate. No es fuente de verdad de ningún juego. |
 | [pokemon-showdown](https://github.com/smogon/pokemon-showdown) | `3661ce40bf` | Simulador de combate en TypeScript (MIT). Datos y mecánicas por generación (data/mods). No reproduce el RNG ni el orden de llamadas de la GBA. |
 | [pmd-red](https://github.com/pret/pmd-red) | `013475aa04` | GBA, C. Sprites de Mystery Dungeon Red (piezas OAM + poses). Solo gráficos para el dex del visor; no se porta. |
+| [pmd-sky](https://github.com/pret/pmd-sky) | `fc85040831` | NDS, C + ensamblador en progreso. Trae los datos del juego extraídos (files/): retratos, tablas y texto. Solo gráficos y tablas para el dex del visor; no se porta. |
 
 ## Salidas
 

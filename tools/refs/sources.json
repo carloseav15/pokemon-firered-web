@@ -103,5 +103,15 @@
       "/include/constants/monster.h"
     ],
     "note": "GBA, C. Sprites de Mystery Dungeon Red (piezas OAM + poses). Solo gráficos para el dex del visor; no se porta."
+  },
+  "pmd-sky": {
+    "repo": "https://github.com/pret/pmd-sky.git",
+    "commit": "fc85040831b248ecb690a71898010fe837091613",
+    "sparse": [
+      "/files/FONT/kaomado.kao",
+      "/files/BALANCE/monster.md",
+      "/files/language-specific/US/MESSAGE/text_e.str"
+    ],
+    "note": "NDS, C + ensamblador en progreso. Trae los datos del juego extraídos (files/): retratos, tablas y texto. Solo gráficos y tablas para el dex del visor; no se porta."
   }
 }

@@ -11,18 +11,20 @@ type Item = {
   axis?: "x" | "y";
   fw?: number;
   fh?: number;
-  kind?: "pmd" | "frames";
+  kind?: "pmd" | "frames" | "portraits";
+  cols?: number;
+  cell?: number | [number, number];
+  emotions?: string[];
   anims?: number | { name: string; seq: number[][] }[];
   shiny?: string;
   data?: string;
   atlas?: string;
-  cell?: [number, number];
 };
 export type SpriteIndex = { names?: Record<string, string>; sources: Record<string, { label: string; repo: string; commit: string; species: number }>; species: Record<string, Record<string, Item[]>> };
 type PmdAnim = { id: number; seq: number[][][]; dirs: number[] };
 type PmdData = { atlas: string; cw: number; ch: number; cols: number; cells: number; pad: number; anims: PmdAnim[] };
 
-const SOURCE_ORDER = ["pmd-red", "emerald-expansion", "crystal", "platinum", "heartgold"];
+const SOURCE_ORDER = ["pmd-red", "pmd-sky", "emerald-expansion", "crystal", "platinum", "heartgold"];
 const TICK_MS = 1000 / 60;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
@@ -35,6 +37,17 @@ export function loadSpriteIndex(): Promise<SpriteIndex | null> {
 }
 
 function itemHtml(it: Item): string {
+  if (it.kind === "portraits") {
+    const k = 2;
+    const cell = it.cell as number;
+    const cols = it.cols!;
+    const cells = it.emotions!.map((e, i) => {
+      const x = (i % cols) * cell * k;
+      const y = Math.floor(i / cols) * cell * k;
+      return `<figure class="pt"><div style="width:${cell * k}px;height:${cell * k}px;background:url(${it.url}) -${x}px -${y}px/${it.w! * k}px ${it.h! * k}px"></div><figcaption>${esc(e)}</figcaption></figure>`;
+    });
+    return `<div class="portraits"><div class="none">${esc(it.label)}</div><div class="pgrid">${cells.join("")}</div></div>`;
+  }
   if (it.kind === "frames") {
     const k = Math.max(1, Math.round(120 / Math.max(it.fw!, it.fh!)));
     const anims = (it.anims as { name: string; seq: number[][] }[]) ?? [];
@@ -68,8 +81,8 @@ export function otherSourcesHtml(index: SpriteIndex | null, national: number): s
   const blocks = SOURCE_ORDER.filter((s) => per[s]?.length).map((s) => {
     const meta = index.sources[s];
     const items = per[s]!;
-    const pmd = items.filter((i) => i.kind === "pmd");
-    const rest = items.filter((i) => i.kind !== "pmd");
+    const pmd = items.filter((i) => i.kind === "pmd" || i.kind === "portraits");
+    const rest = items.filter((i) => i.kind !== "pmd" && i.kind !== "portraits");
     return `<details class="src" open><summary><b>${esc(meta?.label ?? s)}</b> <span class="none">· ${items.length} elementos · ${esc(meta?.repo ?? "")}@${esc((meta?.commit ?? "").slice(0, 8))}</span></summary>
       ${pmd.map(itemHtml).join("")}
       ${rest.length ? `<div class="sprites">${rest.map(itemHtml).join("")}</div>` : ""}</details>`;
