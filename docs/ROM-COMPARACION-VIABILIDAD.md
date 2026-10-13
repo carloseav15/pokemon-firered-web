@@ -452,3 +452,28 @@ el resto de la ruta no difiere en nada medido.
 Limitaciones: la bolsa de la ROM no se volcó (se infiere por la escena y los flags); PID/IV del inicial siguen
 sin compararse (RNG distinto desde el principio); los NPCs de la ruta no se cruzaron con nadie que cambiase la
 ruta; las escenas que corrían en el port corrieron igual en la ROM (misma secuencia de casillas).
+
+### 15.1 Devolver el paquete → Pokédex (2026-10-12)
+
+El recorrido se prolonga por la misma vía: Tienda → Ciudad Verde → Ruta 1 → Pueblo Paleta → laboratorio → hablar con
+Oak (escena del Pokédex: el rival entra y sale, Oak trae los Pokédex, 5 Poké Balls). Resultado, ROM vs port, en
+los 9 cambios de mapa, tras el paquete y al terminar la escena (`VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB` = 6):
+
+| Punto | Flags | Vars | Bolsa (pocket de objetos clave + Poké Balls) |
+|---|---|---|---|
+| 9 cambios de mapa | 0 dif. | 0 dif. salvo temporales/Quest Log ya explicados | paquete (349 ×1) igual |
+| Fin (Pokédex + 5 Poké Balls) | **0 dif.** (incl. `FLAG_SYS_POKEDEX_GET`) | **0 dif.** | Poké Ball ×5 igual, sin paquete |
+
+Diferencias residuales, todas de muestreo o de la batalla del rival (§14): dinero 3.000 vs 3.080;
+`VAR_HAPPINESS/POISON/RENEWABLE_ITEM_STEP_COUNTER` en el volcado «parcel» (la ROM lo toma 120 fotogramas después
+de fijar la variable, el port a los 5 s; distinto número de pasos); posiciones de los dos primeros volcados por
+el muestreo del port.
+
+**Cómo se resolvió el atasco del mostrador.** El bloqueo no era de la ruta sino del control de la ROM: pulsar A en
+campo libre frente al dependiente reabre la conversación. Un diferencial de bytes entre estados «libre» y
+«bloqueado» no encontró ninguna bandera común (un estado «libre» era en realidad la escena de la dama del cartel).
+El indicador fiable es el contexto de script global: `sGlobalScriptContext` en `0x03000EB0` (IWRAM), localizado
+por su firma (`cmdTable`/`cmdTableEnd` a +0x5C/+0x60, 213 comandos; `tools/rom-compare/scanctx.lua`). `mode` (+1) es
+0 sin script, 1 con bytecode y 2 en espera nativa (cuadro de texto, movimiento). `parcel.lua` pulsa A solo con
+`mode != 0` y mantiene la dirección grabada del port con el campo libre. El contexto inmediato
+(`sImmediateScriptContext`) está en `0x03000F28`. `sWildEncounterData.rngState` es `0x020386D0` (EWRAM).

@@ -85,16 +85,24 @@ _G.pv_cb = callbacks:add("frame", function()
     end
     lastMap = mapKey
   end
-  -- Position on the trace: look a few entries ahead (a step can skip an entry when a script moves the player).
+  -- Position on the trace: the first entry at or after idx that matches (a script can skip entries); if none does,
+  -- the nearest one behind (the trace revisits tiles, e.g. (4,4) before and after the counter).
+  local found
   for k = idx, math.min(#TR, idx + 6) do
-    if same(TR[k], g, m, x, y) then idx = k break end
+    if same(TR[k], g, m, x, y) then found = k break end
   end
+  if not found then
+    for k = idx - 1, math.max(1, idx - 8), -1 do
+      if same(TR[k], g, m, x, y) then found = k break end
+    end
+  end
+  if found then idx = found end
   if idx ~= lastIdx then lastIdx, idxFrames = idx, 0 else idxFrames = idxFrames + 1 end
   local e, nx = TR[idx], TR[idx + 1]
   local set = {}
   local burst = (n % 50) < 30
   local tapA = (n % 20) < 3
-  if n % 300 == 0 then out:write(string.format("T f=%d idx=%d/%d pos=%d,%d map=%d,%d scene=%d\n", n, idx, #TR, x, y, g, m, var(MART_SCENE))) end
+  if n % 300 == 0 then out:write(string.format("T f=%d idx=%d/%d pos=%d,%d map=%d,%d scene=%d mode=%d dir=%s\n", n, idx, #TR, x, y, g, m, var(MART_SCENE), I:read8(0x03000EB1 - 0x03000000), tostring(TR[idx] and TR[idx][5]))) end
   -- the parcel script ends by setting the lab scene var to 5: dump 120 frames later, like the port's settled state
   if var(0x4055) == 5 and not parcelAt then parcelAt = n end
   if parcelAt and n - parcelAt == 120 then dump("parcel", n) end
@@ -102,36 +110,19 @@ _G.pv_cb = callbacks:add("frame", function()
   if doneAt and doneAt > 0 and n - doneAt >= 600 then
     dump("end", n) out:write("DONE\n") out:close() doneAt = -1 return
   end
-  -- Opt-in (PV_LOCK = EWRAM address of a "controls locked" byte): the candidates found by diffstates.lua did not hold
-  -- across scenes (0 bytes were consistent over 3 text-box states and 2 free states), so it is off by default.
-  if PV_LOCK then
-    local locked = W:read8(PV_LOCK - 0x02000000) ~= 0
-    if locked then
-      if tapA then set[KEY.A] = true end
-    elseif nx and e and e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
-  else
-    local onTrace = e and same(e, g, m, x, y)
-    if not nx then
-      if tapA then set[KEY.A] = true end
-    elseif not onTrace then
-      -- off the trace (a script moved the player or the ROM diverged): only A until the position matches again
-      if tapA then set[KEY.A] = true end
-    elseif e[6] and idxFrames < (e[7] or 600) then
-      -- a script ran on this tile in the port: alternate A bursts and the recorded direction for as many frames as the
-      -- port spent there (e[7]); beyond that only the direction, so a finished script is not re-triggered by A
-      -- (facing an NPC and pressing A starts a new conversation).
-      if burst then if tapA then set[KEY.A] = true end
-      elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
-    elseif e[6] then
-      -- budget spent: one A tap per 70 frames closes a box that is still open, the rest of the cycle walks away, so an
-      -- A on a free field (which would talk to the NPC in front) is followed by a direction that leaves it
-      if (n % 70) < 3 then set[KEY.A] = true
-      elseif e[5] and DIRKEY[e[5]] then set[DIRKEY[e[5]]] = true end
-    else
-      local d = e[5]
-      if d and DIRKEY[d] then set[DIRKEY[d]] = true end
-    end
-
+  -- sGlobalScriptContext.mode (IWRAM 0x03000EB0 + 1, located with scanctx.lua by its command-table pointers):
+  -- 0 = no script, 1 = bytecode, 2 = native wait (text box, movement, ...). A is tapped only while a script runs
+  -- (text boxes close, scenes advance); on a free field only the port's direction is held, so A never re-opens a
+  -- conversation with the NPC in front.
+  local mode = I:read8(0x03000EB1 - 0x03000000)
+  if mode ~= 0 then
+    if tapA then set[KEY.A] = true end
+  elseif nx and e and e[5] and DIRKEY[e[5]] then
+    set[DIRKEY[e[5]]] = true
+  elseif not nx and var(ENDVAR) ~= ENDVAL then
+    -- end of the trace: the port faced the last NPC and talked to it, so talk (one tap every 20 frames) until the
+    -- end variable is set; the script that starts then keeps mode ~= 0 and the branch above takes over
+    if tapA then set[KEY.A] = true end
   end
   want(set)
 end)

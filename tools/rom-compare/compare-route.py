@@ -28,7 +28,8 @@ def parse_rom(path):
             ev.setdefault(p[1], {})[p[0].lower()] = bytes.fromhex(p[2])
         elif p[0] == "MONEY":
             d = ev.setdefault(p[1], {})
-            d["money"] = int(p[2], 16) ^ (int(p[3][4:], 16) if len(p) > 3 else 0)
+            d["key"] = int(p[3][4:], 16) if len(p) > 3 else 0
+            d["money"] = int(p[2], 16) ^ d["key"]
         elif p[0] == "PARTY":
             ev.setdefault(p[1], {})["count"] = int(p[2].split("=")[1])
         elif p[0] == "BAG":
@@ -85,8 +86,9 @@ for tag, p in pairs:
     print(f"   vars differing:  {len(vd)} " + ", ".join(f"{label('VAR_', i)}(rom={a} port={b})" for i, a, b in vd[:25]))
     if "bag" in r and isinstance(p.get("bag"), dict):
         # key items (+0x3B8, 30 slots) and Poke Balls (+0x430, 13 slots): u16 id, u16 quantity ^ key low half
-        raw = r["bag"]
+        raw, keylow = r["bag"], r.get("key", 0) & 0xFFFF
         slots = [struct.unpack_from("<HH", raw, i * 4) for i in range(len(raw) // 4)]
-        rom_items = sorted((i, q) for i, q in slots if i)
+        rom_items = sorted((i, q ^ keylow) for i, q in slots if i)
         port_items = sorted((e["item"], e["quantity"]) for k in ("keyItems", "pokeBalls") for e in p["bag"].get(k, []) if e.get("item"))
-        print(f"   bag items (ids) ROM={[i for i, _ in rom_items]} port={[i for i, _ in port_items]}")
+        verdict = "same" if rom_items == port_items else "DIFFERENT"
+        print(f"   bag (key items + balls, id:qty) ROM={rom_items} port={port_items} -> {verdict}")

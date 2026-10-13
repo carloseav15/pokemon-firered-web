@@ -578,15 +578,11 @@ antes y partida exportada a `tools/playtest/saves/` al terminarlo.
   `VAR_QUEST_LOG_MON_COUNTS`/`VAR_QLBAK_MAP_LAYOUT`, consistente con `quest_log.c` pero sin verificar en la ROM).
   Fase 7 (Ruta 1 → Verde → Tienda → Paquete de Oak, informe §15): flags/vars/posición idénticos en cada
   cambio de mapa y al recibir el paquete (solo difieren las variables del Quest Log por haber ganado el port la
-  batalla). Siguiente tramo (devolver el paquete → Pokédex): el port lo completa en tiempo real (`port-parcel.mjs`, escena
-  del laboratorio = 6); la repetición en la ROM (`parcel.lua`) queda atascada en el mostrador de la Tienda
-  (4,3): tras la escena del paquete el dependiente vuelve a hablar con cada A y el cuadro no cierra con el
-  presupuesto de A por casilla ni con A única cada 70 fotogramas. Se intentó leer de la memoria
-  de la ROM un indicador de «controles bloqueados» (`tools/rom-compare/diffstates.lua`: diferencial IWRAM/EWRAM
-  entre estados libres y con cuadro abierto): un candidato (`0x02036EA5`) falló en la escena de la dama del cartel y
-  con tres estados bloqueados + dos libres no queda ningún byte común; hace falta localizar el estado del script
-  (`sGlobalScriptContext`/impresor de texto) por símbolo, no por diferencial. Falta: resolver ese atasco, Ruta 2/Bosque
-  Verde, automatizar mGBA sin Enter manual; el volcado de bolsa (`BAG`) ya está y coincide en el paquete (id 349).
+  batalla). Tramo «devolver el paquete → Pokédex» (informe §15.1): ROM y port coinciden en flags,
+  vars y bolsa en los 9 cambios de mapa y al terminar la escena (`FLAG_SYS_POKEDEX_GET`, Poké Ball ×5, sin
+  paquete; dinero distinto solo por la batalla del rival). El control de la ROM usa `sGlobalScriptContext.mode`
+  (`0x03000EB1`, localizado por firma con `scanctx.lua`). Falta: siguiente hito (Ruta 2/Bosque Verde y Pewter),
+  automatizar mGBA sin Enter manual.
 - [x] **Revalidar escenas con movimiento por script** (detectado en 4.2, `620303ab`; revalidado con `e03bdc7a`,
   `526e9004`): `tools/playtest/smoke/scene-scan.job.mjs` ejecutó 423 etiquetas con `applymovement` de todo el
   decomp en su mapa (384 terminan, 32 entran en combate, resto = artefactos: créditos, enlace, Trainer Tower y
