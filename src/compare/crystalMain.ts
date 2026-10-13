@@ -1,3 +1,4 @@
+export {};
 // Visor de mapas de Pokémon Crystal (crystal.html). Datos: public/crystal/ (tools/viewer/crystal_maps.py).
 type Warp = { x: number; y: number; dest: string; destConst: string; warp: number };
 type Bg = { x: number; y: number; kind: string; script: string };

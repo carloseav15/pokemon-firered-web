@@ -257,7 +257,7 @@ function setupGameSelect(): void {
   select.id = "game-select";
   select.className = "btn";
   select.title = "Región del mapa";
-  for (const [value, label] of [["firered", "Kanto"], ["emerald", "Hoenn"]] as const) {
+  for (const [value, label] of [["firered", "Kanto · FireRed"], ["emerald", "Hoenn · Emerald"], ["hns", "Johto / Kanto · HnS"]] as const) {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = label;
@@ -265,6 +265,7 @@ function setupGameSelect(): void {
   }
   select.value = GAME;
   select.addEventListener("change", () => {
+    if (select.value === "hns") { location.href = "/hns.html"; return; }
     const url = new URL(location.href);
     if (select.value === "emerald") url.searchParams.set("game", "emerald");
     else url.searchParams.delete("game");

@@ -98,7 +98,9 @@
     "sprites:sources": "python3 tools/viewer/sprite_sources.py",
     "crystal:maps": "python3 tools/viewer/crystal_maps.py",
     "crystal:world": "python3 tools/viewer/crystal_world.py",
-    "expansion:catalog": "python3 tools/viewer/expansion_catalog.py"
+    "expansion:catalog": "python3 tools/viewer/expansion_catalog.py",
+    "hns:maps": "python3 tools/viewer/hns_maps.py",
+    "check:hns-maps": "python3 tools/checks/hns_maps.py"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

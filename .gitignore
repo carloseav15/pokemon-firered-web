@@ -37,3 +37,6 @@ public/fr/gfx/pokemon/icon/
 public/fr/gfx/pokemon/footprint/
 public/fr/gfx/items/
 public/fr/gfx/trainers/
+
+# Heart & Soul 2D maps (npm run refs:fetch -- pokemon-hns && npm run hns:maps)
+public/hns/

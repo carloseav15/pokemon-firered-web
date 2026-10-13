@@ -16,7 +16,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      input: { main: "index.html", viewer: "viewer.html", compare: "compare.html", dex: "dex.html", library: "library.html", quests: "quests.html", story: "story.html", atlas: "atlas.html", crystal: "crystal.html", crystalWorld: "crystal-world.html", expansion: "expansion.html" },
+      input: { main: "index.html", viewer: "viewer.html", compare: "compare.html", dex: "dex.html", library: "library.html", quests: "quests.html", story: "story.html", atlas: "atlas.html", crystal: "crystal.html", crystalWorld: "crystal-world.html", hns: "hns.html", expansion: "expansion.html" },
     },
   },
 });

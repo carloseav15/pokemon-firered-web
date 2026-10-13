@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import re
+from pathlib import Path
 
 from common import DECOMP, OUT, png_indices, read_jasc_palette, to_4bpp_tiles, write_json
 
@@ -30,7 +31,9 @@ def attributes_to_32(attributes: bytes, tileset: str) -> bytes:
     return bytes(out)
 
 
-def export_tilesets() -> None:
+def export_tilesets(*, source: Path = DECOMP, output: Path = OUT, normalize_attributes: bool = True) -> None:
+    # Independent map catalogs can retain the source attributes without converting them to the engine ABI.
+    DECOMP, OUT = source, output
     sources = (DECOMP / "src/graphics.c").read_text() + (DECOMP / "src/data/tilesets/graphics.h").read_text()
     # FireRed names the compressed binary (INCBIN_U32("dir/tiles.4bpp.lz")); pokeemerald names the source image
     # (INCGFX_U32("dir/tiles.png", ".4bpp.lz", flags)) and builds the binary from it.
@@ -91,7 +94,8 @@ def export_tilesets() -> None:
         if attribute_bits != 32:
             entry["attributeBits"] = attribute_bits  # FireRed's files stay exactly as before
             # the original 16-bit attributes stay in "attributes"; "attributes32" is the same data in FireRed's layout
-            entry["attributes32"] = b64(attributes_to_32(attributes, symbol))
+            if normalize_attributes:
+                entry["attributes32"] = b64(attributes_to_32(attributes, symbol))
         write_json(out_dir / f"{symbol}.json", entry)
         index[symbol] = {"secondary": entry["isSecondary"], "callback": entry["callback"], "tileCount": len(tiles) // 32, "metatileCount": len(metatiles) // 16}
     write_json(OUT / "tilesets.json", index)

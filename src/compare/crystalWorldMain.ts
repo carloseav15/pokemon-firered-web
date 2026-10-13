@@ -1,3 +1,4 @@
+export {};
 // Mapa del mundo de Crystal (crystal-world.html). Datos: public/crystal/world/ (tools/viewer/crystal_world.py).
 type Entry = { name: string; x: number; y: number; w: number; h: number; section: string; landmark: string; environment: string };
 type Tile = { file: string; x: number; y: number; w: number; h: number };

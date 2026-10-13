@@ -59,6 +59,12 @@
           <div class="links"><a class="btn" href="/expansion.html">Abrir</a></div></div>
       </div>
 
+      <h2>Johto con gráficos GBA</h2>
+      <div class="grid">
+        <div class="card"><h3>Heart &amp; Soul · Johto / Kanto</h3><p>Mapas 2D de la adaptación GBA: mundo conectado por bloques, buscador, interiores y puertas navegables. Tiles estáticos y objetos como marcadores; el catálogo distingue mapas renderizados y datos heredados incompatibles.</p>
+          <div class="links"><a class="btn" href="/hns.html">Mundo conectado</a><a class="btn" href="/hns.html#MAP_NEW_BARK_TOWN">New Bark</a></div></div>
+      </div>
+
       <h2>Pokémon Crystal</h2>
       <div class="grid">
         <div class="card"><h3>Mapas de Crystal</h3><p>388 mapas de Johto y Kanto renderizados desde el decomp (bloques, tiles y paletas), con warps, carteles, objetos y conexiones.</p>
@@ -91,6 +97,7 @@
     </main>
     <script type="module">
       const checks = [
+        ["HnS: mapas 2D de Johto / Kanto", "/hns/maps.json", "Visor HnS", "npm run refs:fetch -- pokemon-hns && npm run hns:maps"],
         ["FireRed: datos exportados", "/fr/data/species.json", "Pokédex, comparador, biblioteca", "python3 tools/decomp/export.py"],
         ["Emerald: datos exportados", "/emerald/data/species.json", "Hoenn, Pokédex, comparador, biblioteca", "EXPORT_GAME=emerald python3 tools/decomp/export.py"],
         ["FireRed: sprites de espalda, iconos y huellas", "/fr/gfx/pokemon/icon/25.png", "Pokédex, biblioteca (equipos)", "python3 tools/decomp/export.py graphics"],

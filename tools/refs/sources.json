@@ -114,5 +114,18 @@
       "/files/MONSTER/monster.bin"
     ],
     "note": "NDS, C + ensamblador en progreso. Trae los datos del juego extraídos (files/): retratos, tablas y texto. Solo gráficos y tablas para el dex del visor; no se porta."
+  },
+  "pokemon-hns": {
+    "repo": "https://github.com/PokemonHnS-Development/pokemonHnS.git",
+    "commit": "751823abaf677020bcd72c45fe3e7cb2b8a576e4",
+    "sparse": [
+      "/data/",
+      "/src/",
+      "/include/",
+      "/graphics/",
+      "/README.md",
+      "/charmap.txt"
+    ],
+    "note": "Heart & Soul, Modern Emerald fork. Independent GBA map viewer; not canonical GSC/HGSS or a FireRed engine source."
   }
 }
