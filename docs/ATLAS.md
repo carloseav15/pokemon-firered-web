@@ -312,3 +312,8 @@ siguen siendo estados distintos.
   de la especie (7939 de 8750 animaciones); el resto sigue como «Animación N».
 - «Solo ataques» filtra las acciones de golpe, carga, disparo y efecto (lista `ATTACK_ACTIONS` de `dexSprites.ts`, tomada de
   `sprite_config.json`); no hay una tabla movimiento → acción, así que no es un simulador (fase 4-5 pendientes).
+
+## Ideas futuras
+
+- Entorno de combate 2D con sprites de Mundo Misterioso y datos de la serie principal: `docs/VISION-COMBATE-2D.md`.
+- Combate completo del motor de FireRed en el visor: `docs/PRUEBA-BATALLA-EN-VISOR.md`.
