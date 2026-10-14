@@ -65,6 +65,92 @@ function showExtra(nat: number): void {
   activateSpriteSections(others);
 }
 
+// ---- Animaciones de movimientos (motor FireRed incrustado: /?fr=anims, ver src/games/firered/animHarness.ts) ----
+type FrAnim = { ready: Promise<void>; play(move: number): Promise<void>; status(): { ready: boolean; playing: boolean; error: string | null } };
+const DEFAULT_TARGET = 16; // PIDGEY en FireRed
+
+function animPanelHtml(id: number): string {
+  const sp = A.game.raw.species.species[id];
+  const own = (sp.learnset as number[][]).map(([lv, m]) => ({ lv: lv!, m: m! }));
+  const seen = new Set<number>();
+  const learn = own.filter((x) => (seen.has(x.m) ? false : (seen.add(x.m), true)));
+  const allMoves = (A.game.raw.moves.moves as unknown[]).map((_m, i) => i).filter((i) => i > 0 && !seen.has(i));
+  const opt = (m: number, lv?: number) => `<option value="${m}">${lv !== undefined ? `Nv${lv} · ` : ""}${esc(A.game.moveName(m))}</option>`;
+  const targets = ids.map((i) => `<option value="${i}" ${i === DEFAULT_TARGET ? "selected" : ""}>${esc(A.game.speciesName(i))}</option>`).join("");
+  return `<h3>Animaciones de movimientos (motor de FireRed)</h3>
+    <div class="animPanel" data-species="${id}">
+      <div class="animBar">
+        <button class="animOpen" type="button">Abrir la ventana del juego</button>
+        <span class="none animMsg">Carga el motor de FireRed en una ventana; solo para las especies de FireRed.</span>
+      </div>
+      <div class="animBody" hidden>
+        <div class="animCtl">
+          <label>Movimiento <select class="animMove"><optgroup label="Aprendidos por nivel">${learn.map((x) => opt(x.m, x.lv)).join("")}</optgroup>
+            <optgroup label="Otros movimientos">${allMoves.map((m) => opt(m)).join("")}</optgroup></select></label>
+          <button class="animPlay" type="button">Reproducir</button>
+          <label>Rival <select class="animTarget">${targets}</select></label>
+        </div>
+        <iframe class="animFrame" title="Motor de FireRed" width="480" height="320" loading="lazy"></iframe>
+      </div>
+    </div>`;
+}
+
+let animToken = 0;
+function bindAnimPanel(root: HTMLElement): void {
+  const panel = root.querySelector<HTMLElement>(".animPanel");
+  if (!panel) return;
+  const species = Number(panel.dataset.species);
+  const q = <T extends Element>(c: string) => panel.querySelector<T>(c)!;
+  const msg = q<HTMLElement>(".animMsg");
+  const frame = q<HTMLIFrameElement>(".animFrame");
+  const move = q<HTMLSelectElement>(".animMove");
+  const target = q<HTMLSelectElement>(".animTarget");
+  const playBtn = q<HTMLButtonElement>(".animPlay");
+  let api: FrAnim | null = null;
+  let loading = false;
+  const load = async (): Promise<void> => {
+    const token = ++animToken;
+    loading = true;
+    api = null;
+    playBtn.disabled = true;
+    msg.textContent = "Cargando el motor del juego…";
+    frame.src = `/?fr=anims&a=${species}&t=${target.value}`;
+    await new Promise<void>((res) => frame.addEventListener("load", () => res(), { once: true }));
+    const win = frame.contentWindow as (Window & { frAnim?: FrAnim }) | null;
+    for (let i = 0; i < 400 && !win?.frAnim; i++) await new Promise((r) => setTimeout(r, 50));
+    if (token !== animToken) return;
+    try {
+      await win!.frAnim!.ready;
+      api = win!.frAnim!;
+      msg.textContent = "Listo. Elige un movimiento y pulsa Reproducir.";
+      playBtn.disabled = false;
+    } catch (e) {
+      msg.textContent = `No se pudo montar el combate: ${String(e)}`;
+    }
+    loading = false;
+  };
+  const play = async (): Promise<void> => {
+    if (!api) return;
+    playBtn.disabled = true;
+    try {
+      await api.play(Number(move.value));
+    } catch (e) {
+      msg.textContent = `Error: ${String(e)}`;
+    }
+    playBtn.disabled = false;
+  };
+  q<HTMLButtonElement>(".animOpen").addEventListener("click", () => {
+    q<HTMLElement>(".animBody").hidden = false;
+    q<HTMLButtonElement>(".animOpen").hidden = true;
+    void load();
+  });
+  playBtn.addEventListener("click", () => void play());
+  move.addEventListener("change", () => void play());
+  target.addEventListener("change", () => {
+    if (!loading) void load();
+  });
+}
+
 function show(id: number): void {
   selected = id;
   document.querySelectorAll(".tile").forEach((t) => t.classList.toggle("sel", (t as HTMLElement).dataset.id === String(id)));
@@ -98,6 +184,7 @@ function show(id: number): void {
     </div>
     <h3>Sprites de otros juegos</h3>
     <div id="others"><p class="none">Cargando…</p></div>
+    ${animPanelHtml(id)}
     <h3>En común</h3>
     ${dl(c.common)}
     <h3>Movimientos por nivel en común</h3>${ul(c.commonLevelMoves)}
@@ -124,6 +211,8 @@ function show(id: number): void {
       </div>
     </div>`;
   history.replaceState(null, "", `#${id}`);
+  animToken++; // cancela una carga pendiente de otra ficha
+  bindAnimPanel(detailEl);
   const others = document.getElementById("others")!;
   loadSpriteIndex().then((index) => {
     if (selected !== id) return;

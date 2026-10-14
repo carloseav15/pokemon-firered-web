@@ -1,30 +1,32 @@
-# Prueba: el sistema de batalla del port dentro de una página web
+# El sistema de batalla del port dentro del visor web
 
-Fecha: 2026-10-14. Objetivo: comprobar que el visor web puede albergar en el futuro el sistema de batalla (animaciones primero,
-combate completo después). Esto es una **prueba de viabilidad**, no una función integrada: no cambia nada en `src/`.
+Estado (2026-10-14): **integrado como arnés de animaciones** y mostrado en el dex de FireRed/Emerald. Es la base para albergar
+más adelante el combate completo en el visor; hoy solo reproduce animaciones de movimientos.
 
-## Qué se demostró
+## Qué hay
 
-Con `tools/viewer/poc/battle-anim-in-viewer.mjs` (Playwright contra el servidor de desarrollo):
+- `src/games/firered/animHarness.ts` + `?fr=anims` en `src/main.ts`: arranca el motor FireRed (`launchFireRed({mode:"sandbox"})`),
+  monta un combate salvaje (`a` = especie del jugador, `t` = especie del rival, índices de especie de FireRed), avanza la
+  presentación hasta el menú de acciones, congela la lógica de turnos (`gBattleMainFunc` vacío) y oculta el menú.
+- `window.frAnim`: `ready` (promesa), `play(move, {power, damage, friendship})` (promesa que resuelve al terminar la animación) y
+  `status()`. Pide la animación por el camino del juego: `BtlController_EmitMoveAnimation` → `PlayerHandleMoveAnimation` →
+  `PlayerDoMoveAnimation`; no se llama a `DoMoveAnim` ni se altera el motor.
+- Dex (`dex.html`): panel «Animaciones de movimientos (motor de FireRed)» en cada ficha; abre un iframe con `?fr=anims`, lista los
+  movimientos de nivel de la especie y el resto, y deja elegir rival (al cambiarlo se recarga la ventana).
+- `tools/viewer/check-anim-harness.mjs`: comprobación con Playwright (muestra de movimientos o `MOVES=ALL`). Con `MOVES=ALL`
+  (2026-10-14, FireRed, Charmander contra Pidgey): los 425 nombres `MOVE_*` terminan sin error ni excepción de página; «termina» solo
+  significa que el guion de la animación acabó, no que el resultado visual sea fiel.
 
-1. `?fr=sandbox` arranca el motor FireRed del port en una página (ya existía en `src/main.ts`).
-2. `window.frDebug` (de `src/games/firered/boot.ts`) permite crear Pokémon y llamar a
-   `game.battleSetup.StartWildBattle(enemigo)`: el motor monta el combate real con la especie que se pida.
-3. Importando `/src/core/battle/anim.ts` y fijando `G.gBattlerAttacker/gBattlerTarget`, `DoMoveAnim(move)` lanza la animación
-   exacta del juego; llamando a `animState.gAnimScriptCallback()` en cada fotograma (como hace `PlayerDoMoveAnimation`) corre
-   hasta que `gAnimScriptActive` es falso. Con `MOVE_EMBER` fueron ~100 fotogramas, sin errores.
+## Qué no hace (todavía)
 
-## Qué no se probó
+- No hay turnos, daño ni selección de movimientos del rival: la lógica de turnos está congelada a propósito.
+- Cambiar el atacante recarga el motor (≈1,5 s con la caché caliente); cambiar de movimiento no.
+- Los movimientos que dependen del estado del combate (clima, sustituto, potencia/daño) usan valores por defecto
+  (`power` del movimiento, daño 0, amistad 70); no se ha revisado cada familia a ojo.
+- Solo FireRed: el núcleo no compila contra Emerald (898 errores de tipos, `docs/EMERALD-BRECHA-NUCLEO.md`).
 
-- Solo Ember; las animaciones que dependen del estado del combate (daño, clima, sustituto, potencia) necesitan valores por defecto.
-- El atacante aún no estaba en pantalla (se lanzó durante la presentación); un arnés real debe esperar a que termine.
-- Emerald: el núcleo no compila (898 errores de tipos, `docs/EMERALD-BRECHA-NUCLEO.md`); solo hay datos de animación.
-- Tiempo y memoria de arranque, y varios combates seguidos sin recargar.
+## Camino hacia el combate completo en el visor
 
-## Camino previsible hacia el visor con combate
-
-1. Entrada de arnés (`?fr=anims`) con una API estable `play({atacante, objetivo, movimiento})` y espera a la presentación.
-2. Página del visor que incruste el motor (iframe del mismo origen o módulo) y mande órdenes por esa API; ficha del Pokémon al lado.
-3. Combate completo: el motor ya ejecuta combates de verdad (`rivalBattle`, `StartWildBattle`); el visor aportaría la selección de
-   equipos y movimientos y leería el estado desde `frDebug.snapshot()`.
-4. Emerald: cerrar la brecha del núcleo (tarea del port, no del visor).
+1. Reutilizar `frAnim` para el rival (movimiento elegido, lado, doble combate) y para estados (clima, sustituto).
+2. Descongelar la lógica de turnos y leer el estado desde `frDebug.snapshot()`; el visor aportaría equipos y selección.
+3. Emerald: cerrar la brecha del núcleo (tarea del port, no del visor).
