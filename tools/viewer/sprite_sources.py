@@ -6,7 +6,7 @@ public/sprites/<fuente>/ más public/sprites/index.json (nacional -> fuentes -> 
 Los gráficos no van en refs/ (regla 5 de refs/README.md); el juego no los usa.
 
 Uso: python3 tools/viewer/sprite_sources.py [fuente ...]
-Fuentes: pmd-red, emerald-expansion, platinum, heartgold, crystal, pmd-sky (sin argumentos: todas).
+Fuentes: pmd-red, emerald-expansion, platinum, heartgold, heartgold-follower, crystal, pmd-sky (sin argumentos: todas).
 
 PMD Red: cada especie son piezas OAM (graphics/ax/mon/<especie>/sprite_N[_k].png) más poses y animaciones
 en src/data/ax/<especie>.h. Se componen las poses (tiles 8x8 en orden 1D de OBJ, flips, prioridad por
@@ -27,13 +27,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "refs"))
 from common import ROOT, source_path  # noqa: E402
 
 OUT = ROOT / "public" / "sprites"
+# origin: official = datos del juego extraídos por un decomp; project = base comunitaria (gráficos propios y del juego);
+# community = arte de fans con autores y licencia propios.
 SOURCE_INFO = {
-    "pmd-red": {"label": "Pokémon Mystery Dungeon: Red Rescue Team", "repo": "pret/pmd-red", "pin": "pmd-red"},
-    "emerald-expansion": {"label": "pokeemerald-expansion", "repo": "rh-hideout/pokeemerald-expansion", "pin": "pokeemerald-expansion"},
-    "platinum": {"label": "Pokémon Platinum", "repo": "pret/pokeplatinum", "pin": "pokeplatinum"},
-    "heartgold": {"label": "Pokémon HeartGold", "repo": "pret/pokeheartgold", "pin": "pokeheartgold"},
-    "crystal": {"label": "Pokémon Crystal", "repo": "pret/pokecrystal", "pin": "pokecrystal"},
-    "pmd-sky": {"label": "Pokémon Mystery Dungeon: Explorers of Sky (retratos)", "repo": "pret/pmd-sky", "pin": "pmd-sky"},
+    "pmd-red": {"label": "Pokémon Mystery Dungeon: Red Rescue Team", "repo": "pret/pmd-red", "pin": "pmd-red", "origin": "official"},
+    "pmd-sky": {"label": "Pokémon Mystery Dungeon: Explorers of Sky", "repo": "pret/pmd-sky", "pin": "pmd-sky", "origin": "official"},
+    "emerald-expansion": {"label": "pokeemerald-expansion", "repo": "rh-hideout/pokeemerald-expansion", "pin": "pokeemerald-expansion", "origin": "project"},
+    "platinum": {"label": "Pokémon Platinum", "repo": "pret/pokeplatinum", "pin": "pokeplatinum", "origin": "official"},
+    "heartgold": {"label": "Pokémon HeartGold (batalla e iconos)", "repo": "pret/pokeheartgold", "pin": "pokeheartgold", "origin": "official"},
+    "heartgold-follower": {"label": "Pokémon HeartGold (compañero que te sigue)", "repo": "pret/pokeheartgold", "pin": "pokeheartgold", "origin": "official"},
+    "crystal": {"label": "Pokémon Crystal", "repo": "pret/pokecrystal", "pin": "pokecrystal", "origin": "official"},
 }
 
 
@@ -265,6 +268,66 @@ def build_heartgold() -> dict[int, list[dict]]:
             items.append(item("Icono", dst / "icon.png", img, "icon"))
         if items:
             out.setdefault(nat, []).extend(items)
+    return out
+
+
+# ---------------------------------------------------------------- HeartGold: compañeros
+
+def build_heartgold_follower(table: dict[str, int]) -> dict[int, list[dict]]:
+    """files/data/mmodel/mmodel/mmodel_<297 + índice>.NSBTX: 8 texturas por Pokémon (arriba, abajo, izquierda, derecha x 2 pasos)
+    y 2 paletas (normal y variocolor). El índice es FOLLOWER_MON_* de include/constants/follow_mon_idx.h; el motor
+    suma 297 en RegisterHallOfFame_GetMmodelBySpeciesFormGender (register_hall_of_fame.c)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import nsbtx
+
+    root = source_path("pokeheartgold")
+    idx = [(n, int(v)) for n, v in re.findall(r"#define FOLLOWER_MON_(\w+)\s+(\d+)", (root / "include/constants/follow_mon_idx.h").read_text()) if n != "NONE"]
+    out: dict[int, list[dict]] = {}
+    skipped = []
+    names_set = {n for n, _i in idx}
+    dst = OUT / "heartgold-follower"
+    for name, i in idx:
+        f = root / f"files/data/mmodel/mmodel/mmodel_{297 + i:08d}.NSBTX"
+        if not f.exists():
+            skipped.append(name)
+            continue
+        textures, pals = nsbtx.parse(f.read_bytes())
+        if len(textures) != 8 or len(pals) < 2:
+            skipped.append(name)
+            continue
+        key = name.lower()
+        female = False
+        if table.get(norm(key)):  # especie con nombre propio (nidoran_f, mr_mime...)
+            r = (table[norm(key)], "")
+        elif key.endswith("_f") and name[:-2] in names_set and resolve(key[:-2], table):
+            r = resolve(key[:-2], table)
+            female = True
+        else:
+            r = resolve(key, table)
+        if not r:
+            skipped.append(name)
+            continue
+        nat, form = r
+        tag = (" · hembra" if female else "") + (f" · {form.replace('_', ' ').upper() if len(form) == 1 else form.replace('_', ' ')}" if form else "")
+        w, h = textures[0].width, textures[0].height
+        files = {}
+        for pi, suffix in ((0, ""), (1, "_shiny")):
+            sheet = Image.new("P", (w, h * 8), 0)
+            for t, tx in enumerate(textures):
+                im = Image.frombytes("P", (tx.width, tx.height), tx.data)
+                sheet.paste(im, (0, t * h))
+            flat = [c for rgb in pals[pi].colors for c in rgb]
+            png = dst / f"{i}{suffix}.png"
+            save_indexed(sheet, png, flat + [0] * (768 - len(flat)))
+            files[suffix] = png
+        step = 10
+        anims = [{"name": label, "seq": [[a, step], [a + 1, step]]} for label, a in (("Abajo", 2), ("Arriba", 0), ("Izquierda", 4), ("Derecha", 6))]
+        out.setdefault(nat, []).append({
+            "label": f"Compañero{tag}", "kind": "frames", "url": rel(files[""]), "w": w, "h": h * 8, "n": 8, "fw": w, "fh": h,
+            "anims": anims, "shiny": rel(files["_shiny"]),
+        })
+    if skipped:
+        print(f"heartgold-follower: sin especie o sin 8 texturas ({len(skipped)}): {', '.join(skipped[:10])}")
     return out
 
 
@@ -749,10 +812,11 @@ def main() -> None:
         "heartgold": build_heartgold,
         "crystal": lambda: build_crystal(table),
         "pmd-sky": build_pmd_sky,
+        "heartgold-follower": lambda: build_heartgold_follower(table),
     }
     for w in wanted:
         res = builders[w]()
-        index["sources"][w] = {"label": SOURCE_INFO[w]["label"], "repo": SOURCE_INFO[w]["repo"],
+        index["sources"][w] = {"label": SOURCE_INFO[w]["label"], "repo": SOURCE_INFO[w]["repo"], "origin": SOURCE_INFO[w]["origin"],
                                "commit": __import__("json").loads((ROOT / "tools/refs/sources.json").read_text())[SOURCE_INFO[w]["pin"]]["commit"],
                                "species": len(res)}
         for nat_s, per in list(index["species"].items()):

@@ -67,7 +67,7 @@ def johto_members(maps,source):
     return seen,evidence
 
 
-def johto_rects(maps,selected,origin="MAP_NEW_BARK_TOWN",exterior_types=EXTERIOR_TYPES):
+def connection_components(maps,selected,origin="MAP_NEW_BARK_TOWN",exterior_types=EXTERIOR_TYPES):
     remaining={n for n in selected if maps[n]['type'] in exterior_types};components=[];conflicts=[]
     while remaining:
         start=origin if origin in remaining else min(remaining)
@@ -86,12 +86,7 @@ def johto_rects(maps,selected,origin="MAP_NEW_BARK_TOWN",exterior_types=EXTERIOR
         rects=[{'id':n,'x':(x-minx)*16,'y':(y-miny)*16,'w':maps[n]['w']*16,'h':maps[n]['h']*16} for n,(x,y) in sorted(positions.items())]
         width=max(r['x']+r['w'] for r in rects);height=max(r['y']+r['h'] for r in rects)
         components.append({'origin':start,'rects':rects,'w':width,'h':height})
-    # Doors connect isolated exterior spaces; arrange those components in a separate strip.
-    result=list(components[0]['rects']);width=components[0]['w'];height=components[0]['h'];cursor=0;strip_y=height+GAP
-    for component in components[1:]:
-        for r in component['rects']:result.append({**r,'x':r['x']+cursor,'y':r['y']+strip_y})
-        cursor+=component['w']+256; height=max(height,strip_y+component['h'])
-    return result,max(width,cursor),height,[{'origin':c['origin'],'maps':[r['id'] for r in c['rects']]} for c in components],conflicts
+    return components,conflicts
 
 
 def sevii_rects(catalog,selected):
@@ -102,8 +97,9 @@ def sevii_rects(catalog,selected):
     for island in ISLANDS:
         members={id for id in selected if id.startswith(f'MAP_{island}_ISLAND') or
                  (island=='ONE' and id.startswith('MAP_MT_EMBER')) or (island=='SEVEN' and id.startswith('MAP_TRAINER_TOWER'))}
-        rects,w,h,components,errors=johto_rects(maps,members,f'MAP_{island}_ISLAND',{1,2,3,6})
-        groups.append({'island':island,'rects':rects,'w':w,'h':h,'maps':sorted(members),'components':components})
+        components,errors=connection_components(maps,members,f'MAP_{island}_ISLAND',{1,2,3,6})
+        main=components[0];rects,w,h=main['rects'],main['w'],main['h']
+        groups.append({'island':island,'rects':rects,'w':w,'h':h,'maps':sorted(members),'components':[{'origin':c['origin'],'maps':[r['id'] for r in c['rects']]} for c in components]})
         conflicts+=errors
     assert set().union(*(set(g['maps']) for g in groups))==selected
     pitch=max(g['w'] for g in groups)+GAP; y=0;result=[];bounds=[]
@@ -117,31 +113,20 @@ def sevii_rects(catalog,selected):
     return result,max(r['x']+r['w'] for r in result),y-GAP,bounds,conflicts
 
 
-def hoenn_rects(catalog,selected,types={1,2,3,6},force=frozenset(),baseworld=True):
-    world=catalog['world'] if baseworld else {'maps':[],'w':0,'h':0};main_ids={r['id'] for r in world['maps']}
-    missing={id for id in selected-main_ids if (catalog['maps'][id]['type'] in types or id in force)}
-    maps={id:{'w':m['width']//16,'h':m['height']//16,'type':3 if id in force else m['type'],
-        'connections':read(ROOT/'public/emerald/maps'/f'{id}.json')['connections']} for id,m in catalog['maps'].items() if id in missing}
-    groups=[];errors=[]
-    while missing:
-        origin=min(missing);members={origin};queue=deque([origin]);missing.remove(origin)
-        while queue:
-            for c in maps[queue.popleft()]['connections']:
-                if c['map'] in missing:
-                    members.add(c['map']);missing.remove(c['map']);queue.append(c['map'])
-        rects,w,h,components,conflicts=johto_rects(maps,members,origin,types)
-        groups.append({'origin':origin,'rects':rects,'w':w,'h':h,'maps':sorted(members)})
-        errors+=conflicts
-    # Keep continental geometry intact. Detached components occupy a separate two-column strip.
-    pitch=max(g['w'] for g in groups)+GAP;y=world['h']+GAP if baseworld else 0;rects=list(world['maps']);bounds=[]
-    for index in range(0,len(groups),2):
-        row=groups[index:index+2]
-        for col,g in enumerate(row):
-            x=col*pitch
-            rects += [{**r,'x':r['x']+x,'y':r['y']+y} for r in g['rects']]
-            bounds.append({k:v for k,v in g.items() if k!='rects'}|{'x':x,'y':y})
-        y+=max(g['h'] for g in row)+GAP
-    return rects,max(world['w'],max(r['x']+r['w'] for r in rects)),y-GAP,bounds,errors
+def hoenn_surface(catalog):
+    # Only real detached island exteriors need placement; interiors/other land remain at accesses.
+    ids={'MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_BATTLE_FRONTIER_OUTSIDE_WEST',
+         'MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_FARAWAY_ISLAND_ENTRANCE'}
+    maps={id:{'w':catalog['maps'][id]['width']//16,'h':catalog['maps'][id]['height']//16,'type':3,
+              'connections':read(ROOT/'public/emerald/maps'/f'{id}.json')['connections']} for id in sorted(ids)}
+    components,conflicts=connection_components(maps,ids,min(ids),{3})
+    rects=list(catalog['world']['maps']);bounds=[];cursor=0;y=catalog['world']['h']+GAP
+    for c in components:
+        rects += [{**r,'x':r['x']+cursor,'y':r['y']+y} for r in c['rects']]
+        bounds.append({'origin':c['origin'],'maps':[r['id'] for r in c['rects']],
+                       'x':cursor,'y':y,'w':c['w'],'h':c['h']})
+        cursor+=c['w']+GAP
+    return rects,max(r['x']+r['w'] for r in rects),max(r['y']+r['h'] for r in rects),bounds,conflicts
 
 
 def main():
@@ -154,29 +139,12 @@ def main():
       'johto':johto,
       'sevii':{id for id,m in fr['maps'].items() if m['section'] in SEVII_SECTIONS and 'UNUSED' not in id},
       'special':{id for id,m in fr['maps'].items() if m['section'] in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK'}},
-      'underwater':{id for id,m in em['maps'].items() if m['type']==5},
-      'hoenn':{id for id,m in em['maps'].items() if m['type']!=5 and id not in LINK_MAPS and 'PROTOTYPE' not in id and m['section'] not in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK'}}}
-    jr,jw,jh,components,conflicts=johto_rects(hns['maps'],johto)
+      'hoenn':{id for id,m in em['maps'].items() if id not in LINK_MAPS and 'PROTOTYPE' not in id and m['section'] not in {'MAPSEC_BIRTH_ISLAND','MAPSEC_NAVEL_ROCK'}}}
+    johto_components,conflicts=connection_components(hns['maps'],johto)
+    main_component=johto_components[0];jr,jw,jh=main_component['rects'],main_component['w'],main_component['h']
+    components=[{'origin':c['origin'],'maps':[r['id'] for r in c['rects']]} for c in johto_components]
     sr,sw,sh,islands,sevii_conflicts=sevii_rects(fr,selections['sevii'])
-    er,ew,eh,hoenn_areas,hoenn_conflicts=hoenn_rects(em,selections['hoenn'],force={'MAP_FARAWAY_ISLAND_ENTRANCE','MAP_FARAWAY_ISLAND_INTERIOR'})
-    ur,uw,uh,underwater_areas,underwater_conflicts=hoenn_rects(em,selections['underwater'],types={5},baseworld=False)
-    # Only source-connected land and actual island exteriors belong on the main surface.
-    johto_main=set(components[0]['maps']);jr=[r for r in jr if r['id'] in johto_main]
-    jw=max(r['x']+r['w'] for r in jr);jh=max(r['y']+r['h'] for r in jr)
-    sevii_main=set().union(*(set(g['components'][0]['maps']) for g in islands))
-    sr=[r for r in sr if r['id'] in sevii_main]
-    sw=max(r['x']+r['w'] for r in sr);sh=max(r['y']+r['h'] for r in sr)
-    island_surfaces={'MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_BATTLE_FRONTIER_OUTSIDE_WEST','MAP_SOUTHERN_ISLAND_EXTERIOR','MAP_FARAWAY_ISLAND_ENTRANCE'}
-    er=[r for r in er if r['id'] in {a['id'] for a in em['world']['maps']}|island_surfaces]
-    # Pack only detached island surfaces beside one another, retaining each component's geometry.
-    island_rects=[];cursor=0;island_y=em['world']['h']+GAP
-    for group in hoenn_areas:
-        chosen=[r for r in er if r['id'] in group['maps']]
-        if not chosen:continue
-        for r in chosen:island_rects.append({**r,'x':r['x']-group['x']+cursor,'y':r['y']-group['y']+island_y})
-        cursor+=max(r['x']+r['w'] for r in chosen)-group['x']+GAP
-    er=list(em['world']['maps'])+island_rects
-    ew=max(r['x']+r['w'] for r in er);eh=max(r['y']+r['h'] for r in er)
+    er,ew,eh,hoenn_areas,hoenn_conflicts=hoenn_surface(em)
     special_ids=['MAP_NAVEL_ROCK_EXTERIOR','MAP_BIRTH_ISLAND_EXTERIOR']
     special_rects=[{'id':id,'x':index*2048,'y':0,'w':fr['maps'][id]['width'],'h':fr['maps'][id]['height']} for index,id in enumerate(special_ids)]
     special_w=max(r['x']+r['w'] for r in special_rects);special_h=max(r['h'] for r in special_rects)
@@ -184,14 +152,13 @@ def main():
              ('kanto','firered','Kanto','FireRed',fr,fr['world']['maps'],fr['world']['w'],fr['world']['h'],'MAP_PALLET_TOWN'),
              ('sevii','firered','Sevii · Kanto','FireRed',fr,sr,sw,sh,'MAP_ONE_ISLAND'),
              ('special','firered','Islas especiales · Kanto','FireRed',fr,special_rects,special_w,special_h,'MAP_NAVEL_ROCK_EXTERIOR'),
-             ('hoenn','emerald','Hoenn','Emerald',em,er,ew,eh,'MAP_LITTLEROOT_TOWN'),
-             ('underwater','emerald','Hoenn · Submarino','Emerald',em,ur,uw,uh,'MAP_UNDERWATER_ROUTE124')]
+             ('hoenn','emerald','Hoenn','Emerald',em,er,ew,eh,'MAP_LITTLEROOT_TOWN')]
     if STAGE.exists():shutil.rmtree(STAGE)
     (STAGE/'world').mkdir(parents=True)
     maps={};rects=[];regions=[];xoffset=0
     for region,game,title,version,doc,local,width,height,origin in configs:
         for id in sorted(selections[region]):
-            m=doc['maps'][id];namespace='hoenn' if region=='underwater' else region;key=f'{namespace}/{id}'
+            m=doc['maps'][id];key=f'{region}/{id}'
             if game=='hns':
                 item={'id':key,'sourceId':id,'game':game,'region':region,'name':m['name'],'width':m['w']*16,'height':m['h']*16,
                       'image':'/hns/'+m['image'] if m['image'] else None,'sprites':None,'collision':None,'section':m['section']}
@@ -201,15 +168,13 @@ def main():
                       'collision':f'/map-viewer/{game}/'+m['collision'],'section':m['section']}
             map_type=m['type']
             exterior=map_type in (EXTERIOR_TYPES if game=='hns' else {1,2,3,6}) or id=='MAP_FARAWAY_ISLAND_ENTRANCE'
-            item['level']='underwater' if region=='underwater' else 'surface' if exterior else 'interior'
-            item['namespace']=namespace
+            item['level']='underwater' if game=='emerald' and map_type==5 else 'surface' if exterior else 'interior'
             maps[key]=item
-        namespace='hoenn' if region=='underwater' else region
-        for r in ([] if region=='underwater' else local):
-            if r['id'] in selections[region]:rects.append({**r,'id':f"{namespace}/{r['id']}",'x':r['x']+xoffset})
-        regions.append({'id':region,'title':title,'game':game,'version':version,'origin':f'{namespace}/{origin}','x':xoffset,'y':0,'w':width,'h':height,
-                        'maps':len(selections[region]),**({'parent':'kanto'} if region in {'sevii','special'} else {'parent':'hoenn','level':'underwater'} if region=='underwater' else {}),'commit':doc['_meta'].get('commit',doc['_meta'].get('sourceCommit'))})
-        if region!='underwater':xoffset+=width+GAP
+        for r in local:
+            if r['id'] in selections[region]:rects.append({**r,'id':f"{region}/{r['id']}",'x':r['x']+xoffset})
+        regions.append({'id':region,'title':title,'game':game,'version':version,'origin':f'{region}/{origin}','x':xoffset,'y':0,'w':width,'h':height,
+                        'maps':len(selections[region]),**({'parent':'kanto'} if region in {'sevii','special'} else {}),'commit':doc['_meta'].get('commit',doc['_meta'].get('sourceCommit'))})
+        xoffset+=width+GAP
     # Cross-source destination matches are navigation references, never warp-index equivalences.
     aliases={'MAP_ROUTE22':'kanto/MAP_ROUTE22'}
     aliases['MAP_INDIGO_PLATEAU']='kanto/MAP_INDIGO_PLATEAU_EXTERIOR'
@@ -231,7 +196,7 @@ def main():
             'basis':f'FireRed data/scripts/seagallop.inc: SEAGALLOP_{island}_ISLAND. Atlas endpoints are town maps; source pass/flag requirements are not simulated.'})
     for t in travels:
         assert t['a'] in maps and t['b'] in maps,t
-    width=xoffset-GAP;height=max(r['h'] for r in regions if r.get('level')!='underwater');chunks=[]
+    width=xoffset-GAP;height=max(r['h'] for r in regions);chunks=[]
     for y in range(0,height,1024):
         for x in range(0,width,1024):
             near=[r for r in rects if r['x']<x+1024 and r['y']<y+1024 and r['x']+r['w']>x and r['y']+r['h']>y]
@@ -259,7 +224,6 @@ def main():
     for id,m in maps.items():m['positionPending']=m['level']=='surface' and id not in surface_ids
     write(STAGE/'catalog.json',{'_meta':{'generator':'tools/viewer/principal_world.py','placement':'Surface only: source-connected land and island exteriors. Islands/regions arranged editorially; unverified terrestrial positions omitted, not treated as islands.',
       'johtoSelection':'Source section allowlist plus reachability by connections, warps and script MAP references. References are not proof of runtime access.',
-      'underwaterAreas':underwater_areas,'underwaterConflicts':underwater_conflicts,
       'specialIslandPolicy':'Navel Rock and Birth Island use FireRed once; Emerald representations remain alternatives. Faraway Island uses Emerald. Event requirements and transport are not simulated.',
       'underwaterPolicy':'Individual maps only, absent from main surface textures/rectangles; access through source dive/emerge references or search. Source IDs preserved, no simulated Dive.',
       'hoennAreas':hoenn_areas,'hoennConflicts':hoenn_conflicts,
@@ -276,6 +240,7 @@ def main():
     OUT.mkdir(parents=True,exist_ok=True)
     if (OUT/'world').exists():shutil.rmtree(OUT/'world')
     shutil.copytree(STAGE/'world',OUT/'world');shutil.copy2(STAGE/'catalog.json',OUT/'catalog.json')
+    shutil.rmtree(STAGE)
     print('Principal atlas:',[(r['id'],r['maps']) for r in regions],len(rects),'placed maps;',len(chunks),'chunks;',len(boundaries),'source boundaries')
 
 

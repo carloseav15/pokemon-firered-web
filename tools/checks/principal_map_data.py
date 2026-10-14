@@ -10,7 +10,7 @@ d=json.loads((p.OUT/'catalog.json').read_text())
 sources={g:json.loads((ROOT/path).read_text()) for g,path in {'hns':'public/hns/maps.json','firered':'public/map-viewer/firered/catalog.json','emerald':'public/map-viewer/emerald/catalog.json'}.items()}
 assert len(d['maps'])==sum(r['maps'] for r in d['regions'])
 for key,m in d['maps'].items():
-    assert key==f"{m.get('namespace',m['region'])}/{m['sourceId']}"
+    assert key==f"{m['region']}/{m['sourceId']}"
     original=sources[m['game']]['maps'][m['sourceId']]
     assert m['section']==original['section']
     for layer in ['image','sprites','collision']:
@@ -31,8 +31,8 @@ for id in ['MAP_MT_EMBER_EXTERIOR','MAP_FOUR_ISLAND_ICEFALL_CAVE_BACK','MAP_FIVE
     assert f'sevii/{id}' in d['maps']
 rects={r['id']:r for r in d['world']['maps']}
 assert all(d['maps'][id]['level']=='surface' for id in rects)
-assert not any(d['maps'][id]['region']=='underwater' for id in rects)
-for a,b in zip([r for r in d['regions'] if r.get('level')!='underwater'],[r for r in d['regions'] if r.get('level')!='underwater'][1:]): assert a['x']+a['w']+p.GAP==b['x']
+assert not any(d['maps'][id]['level']=='underwater' for id in rects)
+for a,b in zip(d['regions'],d['regions'][1:]): assert a['x']+a['w']+p.GAP==b['x']
 for r in rects.values():
     region=regions[d['maps'][r['id']]['region']]
     assert region['x']<=r['x'] and r['x']+r['w']<=region['x']+region['w']
@@ -45,7 +45,7 @@ for id in ['MAP_BATTLE_FRONTIER_OUTSIDE_EAST','MAP_BATTLE_FRONTIER_OUTSIDE_WEST'
     assert 'hoenn/'+id in rects
 assert 'sevii/MAP_MT_EMBER_EXTERIOR' not in rects and 'sevii/MAP_MT_EMBER_EXTERIOR' in d['maps']
 assert not any('PROTOTYPE' in id for id in d['maps'] if id.startswith('hoenn/'))
-assert {m['sourceId'] for m in d['maps'].values() if m['region']=='underwater'}=={id for id,m in sources['emerald']['maps'].items() if m['type']==5}
+assert {m['sourceId'] for m in d['maps'].values() if m['level']=='underwater'}=={id for id,m in sources['emerald']['maps'].items() if m['type']==5}
 for section in ['MAPSEC_NAVEL_ROCK','MAPSEC_BIRTH_ISLAND']:
     assert all(m['game']=='firered' for m in d['maps'].values() if m['section']==section)
 assert all(place['id'] in rects for place in d['places'])

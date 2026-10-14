@@ -147,6 +147,8 @@ export default async function run(ctx) {
   await p.locator('#world-btn').click();
   await p.locator('#meta').filter({hasText:/mapas de superficie/}).waitFor();
   assert.equal(await p.locator('.region-outline').count(),5);
+  await p.locator('#search').fill('submarino');
+  assert.equal(await p.locator('#list a').count(),Object.values(catalog.maps).filter(m=>m.level==='underwater').length);
   assert(!requests.some(r=>/\/src\/(core|games)\//.test(r)));
   assert.equal(ctx.errors().length,0,ctx.errors().join(';'));
   return {regions:3,archipelagos:1,idleRaf:idle,maps:await p.locator('#count').textContent(),doors:true,hoennIsolated:true,underwater:true,specialIslands:true,crossSourceNavigation:true,editorialJourney:true,variants:true,mobile:true,budget,noEngineRequests:true};

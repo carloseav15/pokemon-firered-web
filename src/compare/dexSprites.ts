@@ -20,11 +20,16 @@ type Item = {
   data?: string;
   atlas?: string;
 };
-export type SpriteIndex = { names?: Record<string, string>; sources: Record<string, { label: string; repo: string; commit: string; species: number }>; species: Record<string, Record<string, Item[]>> };
+export type SpriteIndex = { names?: Record<string, string>; sources: Record<string, { label: string; repo: string; commit: string; species: number; origin?: string; license?: string; credit?: string }>; species: Record<string, Record<string, Item[]>> };
 type PmdAnim = { id: number; seq: number[][][]; dirs: number[] };
 type PmdData = { atlas: string; cw: number; ch: number; cols: number; cells: number; pad: number; anims: PmdAnim[] };
 
-const SOURCE_ORDER = ["pmd-red", "pmd-sky", "emerald-expansion", "crystal", "platinum", "heartgold"];
+const SOURCE_ORDER = ["pmd-red", "pmd-sky", "heartgold-follower", "emerald-expansion", "crystal", "platinum", "heartgold", "spritecollab"];
+const ORIGIN: Record<string, { text: string; cls: string }> = {
+  official: { text: "Oficial · extraído del juego", cls: "o-official" },
+  project: { text: "Proyecto comunitario", cls: "o-project" },
+  community: { text: "Comunidad · arte de fans", cls: "o-community" },
+};
 const TICK_MS = 1000 / 60;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
@@ -83,7 +88,10 @@ export function otherSourcesHtml(index: SpriteIndex | null, national: number): s
     const items = per[s]!;
     const pmd = items.filter((i) => i.kind === "pmd" || i.kind === "portraits");
     const rest = items.filter((i) => i.kind !== "pmd" && i.kind !== "portraits");
-    return `<details class="src" open><summary><b>${esc(meta?.label ?? s)}</b> <span class="none">· ${items.length} elementos · ${esc(meta?.repo ?? "")}@${esc((meta?.commit ?? "").slice(0, 8))}</span></summary>
+    const o = ORIGIN[meta?.origin ?? ""];
+    const badge = o ? `<span class="origin ${o.cls}">${esc(o.text)}</span>` : "";
+    const lic = meta?.license ? ` · licencia ${esc(meta.license)}` : "";
+    return `<details class="src" open><summary><b>${esc(meta?.label ?? s)}</b> ${badge} <span class="none">· ${items.length} elementos · ${esc(meta?.repo ?? "")}@${esc((meta?.commit ?? "").slice(0, 8))}${lic}</span></summary>
       ${pmd.map(itemHtml).join("")}
       ${rest.length ? `<div class="sprites">${rest.map(itemHtml).join("")}</div>` : ""}</details>`;
   });

@@ -43,7 +43,9 @@
       "/files/fielddata/encountdata/",
       "/files/fielddata/eventdata/zone_event/",
       "/files/poketool/pokegra/",
-      "/files/poketool/icongra/poke_icon/"
+      "/files/poketool/icongra/poke_icon/",
+      "/files/data/mmodel/mmodel/*.NSBTX",
+      "/include/constants/sprites.h"
     ],
     "note": "DS, C + ensamblador, en progreso. Fijado; sin extractores todavía."
   },
