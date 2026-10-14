@@ -11,7 +11,7 @@ type Item = {
   axis?: "x" | "y";
   fw?: number;
   fh?: number;
-  kind?: "pmd" | "frames" | "portraits";
+  kind?: "pmd" | "frames" | "portraits" | "spritecollab";
   cols?: number;
   cell?: number | [number, number];
   emotions?: string[];
@@ -21,7 +21,7 @@ type Item = {
   atlas?: string;
 };
 export type SpriteIndex = { names?: Record<string, string>; sources: Record<string, { label: string; repo: string; commit: string; species: number; origin?: string; license?: string; credit?: string }>; species: Record<string, Record<string, Item[]>> };
-type PmdAnim = { id: number; seq: number[][][]; dirs: number[] };
+type PmdAnim = { id: number; seq: number[][][]; dirs: number[]; name?: string };
 type PmdData = { atlas: string; cw: number; ch: number; cols: number; cells: number; pad: number; anims: PmdAnim[] };
 
 const SOURCE_ORDER = ["pmd-red", "pmd-sky", "heartgold-follower", "emerald-expansion", "crystal", "platinum", "heartgold", "spritecollab"];
@@ -42,6 +42,9 @@ export function loadSpriteIndex(): Promise<SpriteIndex | null> {
 }
 
 function itemHtml(it: Item): string {
+  if (it.kind === "spritecollab") {
+    return `<div class="sc" data-json="${esc(it.data!)}"><div class="none">${esc(it.label)}: cargando…</div></div>`;
+  }
   if (it.kind === "portraits") {
     const k = 2;
     const cell = it.cell as number;
@@ -86,8 +89,9 @@ export function otherSourcesHtml(index: SpriteIndex | null, national: number): s
   const blocks = SOURCE_ORDER.filter((s) => per[s]?.length).map((s) => {
     const meta = index.sources[s];
     const items = per[s]!;
-    const pmd = items.filter((i) => i.kind === "pmd" || i.kind === "portraits");
-    const rest = items.filter((i) => i.kind !== "pmd" && i.kind !== "portraits");
+    const big = (i: Item) => i.kind === "pmd" || i.kind === "portraits" || i.kind === "spritecollab";
+    const pmd = items.filter(big);
+    const rest = items.filter((i) => !big(i));
     const o = ORIGIN[meta?.origin ?? ""];
     const badge = o ? `<span class="origin ${o.cls}">${esc(o.text)}</span>` : "";
     const lic = meta?.license ? ` · licencia ${esc(meta.license)}` : "";
@@ -128,7 +132,7 @@ async function mountPmd(host: HTMLElement, gen: number): Promise<void> {
   const H = (data.ch + pad * 2) * scale;
   const totalTicks = (a: PmdAnim, dir: number) => a.seq[a.dirs[dir]!]!.reduce((t, f) => t + f[1]!, 0);
   const opts = data.anims
-    .map((a, i) => `<option value="${i}">Animación ${a.id} · ${Math.round(totalTicks(a, 0) * TICK_MS)} ms</option>`)
+    .map((a, i) => `<option value="${i}">${a.name ? esc(a.name) : `Animación ${a.id}`} · ${Math.round(totalTicks(a, 0) * TICK_MS)} ms</option>`)
     .join("");
   host.innerHTML = `
     <div class="pmd-bar">
@@ -187,6 +191,122 @@ async function mountPmd(host: HTMLElement, gen: number): Promise<void> {
   requestAnimationFrame(draw);
 }
 
+// ---- SpriteCollab (arte de la comunidad) ----
+
+type ScAnim = { name: string; index: number; fw: number; fh: number; durations: number[]; rush: string | null; hit: string | null; ret: string | null; inherited: boolean; url: string };
+type ScAuthor = { name: string; contact: string };
+type ScSprite = { form: string; formName: string; shiny: boolean; gender: string; authors: ScAuthor[]; anims: ScAnim[] };
+type ScPortrait = { form: string; formName: string; shiny: boolean; gender: string; authors: ScAuthor[]; emotions: { name: string; url: string }[] };
+type ScData = { dex: number; name: string; sprites: ScSprite[]; portraits: ScPortrait[] };
+/** Acciones de SpriteCollab que representan golpes, cargas, disparos o efectos de ataque (sprite_config.json). */
+const ATTACK_ACTIONS = new Set(["Attack", "QuickStrike", "Strike", "Shoot", "Charge", "Shock", "Chop", "Scratch", "Punch", "Slap", "Slice", "MultiScratch",
+  "MultiStrike", "Uppercut", "Ricochet", "Bite", "Shake", "Jab", "Kick", "Lick", "Slam", "Stomp", "SpAttack", "Swing", "Double", "Rotate", "Hop", "Emit", "Gas",
+  "Appeal", "Dance", "Twirl", "TailWhip", "Sing", "Sound", "Rumble", "FlapAround", "Withdraw", "RearUp", "Swell", "Hover", "Wiggle", "Roar"]);
+const SC_DIRS = ["Abajo", "Abajo-der.", "Derecha", "Arriba-der.", "Arriba", "Arriba-izq.", "Izquierda", "Abajo-izq."];
+const scVariant = (v: { formName: string; form: string; shiny: boolean; gender: string }) =>
+  `${v.formName || (v.form === "0000" ? "Base" : `Forma ${v.form}`)}${v.shiny ? " · variocolor" : ""}${v.gender === "female" ? " · hembra" : ""}`;
+const scAuthors = (a: ScAuthor[]) => (a.length ? a.map((x) => (x.contact.startsWith("http") ? `<a href="${esc(x.contact)}" target="_blank" rel="noopener">${esc(x.name)}</a>` : esc(x.name))).join(", ") : "sin autores listados");
+
+async function mountSc(host: HTMLElement, gen: number): Promise<void> {
+  const data: ScData = await (await fetch(host.dataset.json!)).json();
+  if (gen !== generation) return;
+  const spriteOpts = data.sprites.map((v, i) => `<option value="${i}">${esc(scVariant(v))}</option>`).join("");
+  const portOpts = data.portraits.map((v, i) => `<option value="${i}">${esc(scVariant(v))}</option>`).join("");
+  host.innerHTML = `
+    <div class="sc-head none">Arte de fans de la comunidad PMD (CC BY-NC 4.0); no es contenido oficial del juego.</div>
+    ${data.sprites.length ? `<div class="pmd-bar"><label>Variante <select class="sc-var">${spriteOpts}</select></label>
+      <label>Acción <select class="sc-act"></select></label>
+      <label><input type="checkbox" class="sc-atk" /> solo ataques</label><button class="sc-play" type="button">Pausa</button>
+      <span class="none sc-info"></span></div>
+      <div class="pmd-dirs sc-dirs"></div><div class="none sc-credit"></div>` : `<div class="none">sin sprites animados</div>`}
+    ${data.portraits.length ? `<h4 style="margin:14px 0 4px">Retratos <select class="sc-pvar">${portOpts}</select></h4>
+      <div class="pgrid sc-ports"></div><div class="none sc-pcredit"></div>` : ""}`;
+  const q = <T extends Element>(c: string) => host.querySelector<T>(c)!;
+  // --- sprites
+  if (data.sprites.length) {
+    const varSel = q<HTMLSelectElement>(".sc-var"), actSel = q<HTMLSelectElement>(".sc-act"), dirsEl = q(".sc-dirs"), info = q(".sc-info");
+    const playBtn = q<HTMLButtonElement>(".sc-play");
+    let playing = true, t0 = performance.now(), frozen = 0;
+    let canvases: HTMLCanvasElement[] = [];
+    let sheet: HTMLImageElement | null = null;
+    let anim: ScAnim | null = null;
+    let scale = 1;
+    const loadAction = async () => {
+      const v = data.sprites[Number(varSel.value)]!;
+      anim = v.anims[Number(actSel.value)] ?? null;
+      if (!anim) return;
+      sheet = await loadImage(anim.url);
+      if (gen !== generation) return;
+      const fw = anim.fw || Math.floor(sheet.width / Math.max(1, anim.durations.length));
+      const fh = anim.fh || sheet.height;
+      const rows = Math.max(1, Math.round(sheet.height / fh));
+      scale = Math.max(1, Math.min(4, Math.floor(150 / Math.max(fw, fh))));
+      dirsEl.innerHTML = Array.from({ length: rows }, (_, r) => `<div class="sprite"><canvas width="${fw * scale}" height="${fh * scale}" data-row="${r}"></canvas>${rows === 8 ? SC_DIRS[r] : "Sin dirección"}</div>`).join("");
+      canvases = [...dirsEl.querySelectorAll("canvas")];
+      const marks = [anim.rush && `rush ${anim.rush}`, anim.hit && `golpe ${anim.hit}`, anim.ret && `retorno ${anim.ret}`].filter(Boolean).join(" · ");
+      info.textContent = `${anim.durations.length} fotogramas · ${anim.durations.reduce((a, b) => a + b, 0)} ticks${marks ? ` · ${marks}` : ""}${anim.inherited ? " · heredada de la forma base" : ""}`;
+      t0 = performance.now();
+      frozen = 0;
+    };
+    const atkChk = q<HTMLInputElement>(".sc-atk");
+    const fillActions = () => {
+      const v = data.sprites[Number(varSel.value)]!;
+      actSel.innerHTML = v.anims
+        .map((a, i) => ({ a, i }))
+        .filter(({ a }) => !atkChk.checked || ATTACK_ACTIONS.has(a.name))
+        .map(({ a, i }) => `<option value="${i}">${esc(a.name)}${a.inherited ? " *" : ""}</option>`)
+        .join("");
+      q(".sc-credit").innerHTML = `Autores de esta variante: ${scAuthors(v.authors)}${v.anims.some((a) => a.inherited) ? ` · <span class="none">* acción heredada de la forma base</span>` : ""}`;
+    };
+    fillActions();
+    void loadAction();
+    varSel.addEventListener("change", () => { fillActions(); void loadAction(); });
+    atkChk.addEventListener("change", () => { fillActions(); void loadAction(); });
+    actSel.addEventListener("change", () => void loadAction());
+    playBtn.addEventListener("click", () => {
+      playing = !playing;
+      playBtn.textContent = playing ? "Pausa" : "Reproducir";
+      if (playing) t0 = performance.now() - frozen;
+      else frozen = performance.now() - t0;
+    });
+    const draw = (now: number) => {
+      if (gen !== generation || !host.isConnected) return;
+      if (anim && sheet) {
+        const n = anim.durations.length || 1;
+        const total = anim.durations.reduce((a, b) => a + b, 0) * TICK_MS || 1;
+        let t = (playing ? now - t0 : frozen) % total;
+        let frame = 0;
+        for (let i = 0; i < n; i++) {
+          const dur = (anim.durations[i] ?? 1) * TICK_MS;
+          if (t < dur) { frame = i; break; }
+          t -= dur;
+        }
+        const fw = anim.fw || Math.floor(sheet.width / n);
+        const fh = anim.fh || sheet.height;
+        for (const cv of canvases) {
+          const ctx = cv.getContext("2d")!;
+          ctx.imageSmoothingEnabled = false;
+          ctx.clearRect(0, 0, cv.width, cv.height);
+          ctx.drawImage(sheet, frame * fw, Number(cv.dataset.row) * fh, fw, fh, 0, 0, fw * scale, fh * scale);
+        }
+      }
+      requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+  }
+  // --- retratos
+  if (data.portraits.length) {
+    const pSel = q<HTMLSelectElement>(".sc-pvar"), grid = q(".sc-ports");
+    const showPortraits = () => {
+      const v = data.portraits[Number(pSel.value)]!;
+      grid.innerHTML = v.emotions.map((e) => `<figure class="pt"><div style="width:80px;height:80px;background:url(${e.url}) 0 0/80px 80px;image-rendering:pixelated;border:1px solid var(--line);border-radius:4px"></div><figcaption>${esc(e.name)}</figcaption></figure>`).join("");
+      q(".sc-pcredit").innerHTML = `Autores: ${scAuthors(v.authors)}`;
+    };
+    pSel.addEventListener("change", showPortraits);
+    showPortraits();
+  }
+}
+
 /** Hoja de fotogramas de Crystal (front.png apilado) con anim.asm / anim_idle.asm. */
 async function mountFrames(host: HTMLElement, gen: number): Promise<void> {
   const it: Item = JSON.parse(host.dataset.item!);
@@ -243,6 +363,11 @@ export function thumbOf(index: SpriteIndex, national: number): { url: string; n:
 export function activateSpriteSections(root: HTMLElement): void {
   generation++;
   const gen = generation;
+  root.querySelectorAll<HTMLElement>(".sc").forEach((h) => {
+    mountSc(h, gen).catch((e) => {
+      h.innerHTML = `<p class="none">Error: ${esc(String(e))}</p>`;
+    });
+  });
   root.querySelectorAll<HTMLElement>(".frames").forEach((h) => {
     mountFrames(h, gen).catch((e) => {
       h.innerHTML = `<p class="none">Error: ${esc(String(e))}</p>`;

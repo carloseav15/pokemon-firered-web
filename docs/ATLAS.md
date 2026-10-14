@@ -31,7 +31,7 @@ python3 tools/viewer/world_index.py                     # índice del mundo de K
 EXPORT_GAME=emerald python3 tools/viewer/world_index.py # índice de Hoenn
 python3 tools/viewer/quest_index.py                     # quests de FireRed (y con EXPORT_GAME=emerald, de Emerald)
 python3 tools/viewer/story_index.py                     # línea argumental de los dos juegos
-npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold pokecrystal pmd-sky   # una vez
+npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold pokecrystal pmd-sky spritecollab   # una vez
 npm run crystal:maps                                    # public/crystal/ (mapas renderizados de Crystal, ~4 MB, ignorado en git)
 npm run refs:fetch -- pokemon-hns                        # fuente fijada de Heart & Soul
 npm run hns:maps                                       # public/hns/ (mapas 2D, ignorado en git)
@@ -40,6 +40,7 @@ npm run crystal:world                                   # public/crystal/world/ 
 npm run maps:images                                    # imágenes/mips del visor común; exige las cuatro fuentes anteriores
 npm run maps:principal                                 # componer mundo principal después de preparar imágenes
 # Una sola fuente: npm run maps:images -- firered | emerald | hns | crystal
+npm run sprites:spritecollab                             # tras sprites:sources: enlace public/sprites/sc, JSON por especie y nombres de acción
 npm run sprites:sources                                 # public/sprites/ (~90 MB, ignorado en git); admite una fuente: pmd-red | pmd-sky | emerald-expansion | crystal | platinum | heartgold
 ```
 
@@ -53,9 +54,16 @@ npm run sprites:sources                                 # public/sprites/ (~90 M
 | `crystal` | Frente con la animación de `anim.asm`, espalda y variocolor | Gen 1-2 (251) | `sprite_sources.py` |
 | `platinum` | Frente y espalda (macho/hembra), variocolor, icono, huella, overworld | Gen 1-4 (493) | `sprite_sources.py` |
 | `heartgold` | Frente y espalda (macho/hembra), variocolor, icono | Gen 1-4 (493) | `sprite_sources.py` |
+| `heartgold-follower` | Pokémon que te sigue: 4 direcciones x 2 pasos, normal y variocolor (hembra y formas incluidas) | Gen 1-4 (493, 566 variantes) | `sprite_sources.py` + `nsbtx.py` |
+| `spritecollab` | Sprites animados (35+ acciones, 8 direcciones) y retratos con todas las emociones, formas, variocolor y género | Gen 1-9 (985 con sprites; 1025 con retratos) | `spritecollab.py` |
 
 Notas: en HeartGold la paleta normal sale de `front.png` y la variocolor de `back.png` (`pokegra.mk`). Los retratos de PMD Red no
 se extraen porque en pmd-red son `incbin` de `baserom.gba` (solo 73 especies); haría falta una ROM propia en el equipo.
+
+### Procedencia
+
+Cada fuente declara un origen que el dex muestra como insignia: **Oficial · extraído del juego** (decomps de pret), **Proyecto comunitario**
+(pokeemerald-expansion) y **Comunidad · arte de fans** (SpriteCollab, CC BY-NC 4.0, con los autores de cada variante junto al reproductor).
 
 ## Comprobaciones
 
@@ -286,3 +294,21 @@ Pendientes: verificar las posiciones omitidas, revisar exhaustivamente selecció
 paletas/animación/ROM, gestos/dispositivos y producción; implementar simulación por sectores,
 Dive, ferris y conexiones físicas entre regiones. Consulta integrada y exploración jugable
 siguen siendo estados distintos.
+
+## Compañeros de HeartGold
+
+- `files/data/mmodel/mmodel/mmodel_<297 + FOLLOWER_MON_*>.NSBTX` (el motor suma 297 en `RegisterHallOfFame_GetMmodelBySpeciesFormGender`):
+  8 texturas de 32x32 (64x64 en los grandes) a 4 bits, orden de nombre `tsure_poke.1, .10 … .16` = arriba x2, abajo x2, izquierda x2,
+  derecha x2 (comprobado con Arceus y Quilava), y 2 paletas (normal y variocolor). Decodificador: `tools/viewer/nsbtx.py`.
+- Los nombres de formas salen de los sufijos de `FOLLOWER_MON_*` (letras de Unown, `ATK/DEF/SPD` de Deoxys…); `_F` es hembra solo si
+  existe la entrada sin sufijo.
+
+## SpriteCollab
+
+- No se copia el repositorio (1.4 GB de sprites): `public/sprites/sc` es un enlace simbólico al checkout y los datos por especie están en
+  `public/sprites/spritecollab-data/<dex>.json`. Las rutas `sprite/<dex>/<forma>/<0000|0001 variocolor>/<0001|0002 género>` heredan
+  las acciones que faltan del nivel superior (se marcan con `*`).
+- Nombres de acción para PMD Red/Sky: se asignan solo si el índice y la lista de duraciones coinciden exactamente con el `AnimData.xml`
+  de la especie (7939 de 8750 animaciones); el resto sigue como «Animación N».
+- «Solo ataques» filtra las acciones de golpe, carga, disparo y efecto (lista `ATTACK_ACTIONS` de `dexSprites.ts`, tomada de
+  `sprite_config.json`); no hay una tabla movimiento → acción, así que no es un simulador (fase 4-5 pendientes).

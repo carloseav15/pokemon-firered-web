@@ -104,7 +104,8 @@
     "maps:images": "python3 tools/viewer/gba_maps.py",
     "check:common-map-data": "python3 tools/checks/common_map_data.py",
     "maps:principal": "python3 tools/viewer/principal_world.py",
-    "check:principal-map-data": "python3 tools/checks/principal_map_data.py"
+    "check:principal-map-data": "python3 tools/checks/principal_map_data.py",
+    "sprites:spritecollab": "python3 tools/viewer/spritecollab.py"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

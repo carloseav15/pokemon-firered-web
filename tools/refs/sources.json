@@ -129,5 +129,19 @@
       "/charmap.txt"
     ],
     "note": "Heart & Soul, Modern Emerald fork. Independent GBA map viewer; not canonical GSC/HGSS or a FireRed engine source."
+  },
+  "spritecollab": {
+    "repo": "https://github.com/PMDCollab/SpriteCollab.git",
+    "commit": "26710cbafd1df058d576e55fca80a2a73d64d356",
+    "sparse": [
+      "/sprite/",
+      "/portrait/",
+      "/tracker.json",
+      "/credit_names.txt",
+      "/sprite_config.json",
+      "/LICENSE.md",
+      "/README.md"
+    ],
+    "note": "Arte de la comunidad PMD (SpriteCollab): sprites animados y retratos de Gen 1-9, formas, variocolor y género. CC BY-NC 4.0 con créditos por autor; no es contenido oficial."
   }
 }
