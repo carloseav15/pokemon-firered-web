@@ -9,7 +9,7 @@ import { BIKE_TRACK_TRANSITIONS, TRACK_ROW_WIDTH, TRACK_INDEX_OFFSET, TRACK_HOLD
 import * as MB from "../games/firered/generated/metatileBehavior";
 
 export type EffectPhase = "spawn" | "begin" | "finish";
-export type GroundActor = Readonly<{ x: number; y: number; previousX: number; previousY: number; direction: Direction; previousDirection: Direction; landingJump: boolean; vehicle?: PlayerVehicle }>;
+export type GroundActor = Readonly<{ x: number; y: number; previousX: number; previousY: number; direction: Direction; previousDirection: Direction; landingJump: boolean; vehicle?: PlayerVehicle; airborne?: boolean; elevation?: number; priority?: number }>;
 export type FieldEffectSpawn = Readonly<{
   type: "spawn"; id: number; generation: number; tick: number;
   template: EffectTemplate; animation: number; startCommand: number; initialExtraTicks: 0 | 1;
@@ -18,9 +18,13 @@ export type FieldEffectSpawn = Readonly<{
   priority: Readonly<{ oamPriority: number; subpriority: number; domZIndex: number }>;
   // TallGrass stays after E until it has left both current and previous cells.
   retainUntilLeave: boolean;
+  elevation?: number; followPlayer?: boolean;
   lifetime?: Readonly<{ holdTicks: number; endTick: number }>;
 }>;
+export type ActorVisual = Readonly<{xPx:number;groundYPx:number;height:number;elevation:number}>;
 export type FieldEffectEvent = FieldEffectSpawn
+  | Readonly<{type:"actor";visual:ActorVisual}>
+  | Readonly<{type:"sound";id:number}>
   | Readonly<{ type: "release"; id: number; generation: number }>
   | Readonly<{ type: "clear"; generation: number }>;
 
@@ -29,6 +33,7 @@ export class ViewerFieldEffects {
   private listeners = new Set<(event: FieldEffectEvent) => void>();
   private grass = new Map<string, number>();
   private nextId = 0;
+  private flowing: number | null = null;
   private sessionGeneration = 0;
   get generation(): number { return this.sessionGeneration; }
   private constructor(private readonly grid: WorldGrid, private readonly clock: ViewerClock, private readonly templates: ReadonlyMap<EffectTemplateName, EffectTemplate>) {}
@@ -43,11 +48,13 @@ export class ViewerFieldEffects {
   resetSession(): void {
     this.sessionGeneration++;
     this.grass.clear();
+    this.flowing = null;
     this.emit(Object.freeze({ type: "clear", generation: this.generation }));
   }
   private emit(event: FieldEffectEvent): void {
     for (const listener of [...this.listeners]) if (this.listeners.has(listener)) listener(event);
   }
+  setActorVisual(visual:ActorVisual):void {this.emit({type:"actor",visual});}
   onGroundStep(phase: EffectPhase, actor: GroundActor): void {
     if (!this.grid.inBounds(actor.x, actor.y)) return;
     const key = `${actor.x},${actor.y}`, previous = `${actor.previousX},${actor.previousY}`;
@@ -58,7 +65,17 @@ export class ViewerFieldEffects {
       }
     }
     const behavior = this.grid.behaviorAt(actor.x, actor.y);
-    if ((phase === "spawn" || phase === "begin") && MB.MetatileBehavior_IsTallGrass(behavior) && !this.grass.has(key)) {
+    const before = this.grid.behaviorAt(actor.previousX, actor.previousY);
+    const disabled = phase === "begin" && !!actor.airborne;
+    const flowing = !disabled && MB.MetatileBehavior_IsShallowFlowingWater(behavior) && MB.MetatileBehavior_IsShallowFlowingWater(before);
+    if(!flowing && this.flowing!==null){this.emit({type:"release",id:this.flowing,generation:this.generation});this.flowing=null;}
+    const startedFlow=flowing&&this.flowing===null;
+    if(startedFlow){this.flowing=this.spawn("Splash",phase,actor,0,actor.priority??2,0,8,true,1,undefined,true);}
+    if(flowing && (phase==="begin" || startedFlow))this.emit({type:"sound",id:C.SE_PUDDLE});
+    if((phase==="begin"||phase==="finish")&&!actor.landingJump&&MB.MetatileBehavior_IsPuddle(behavior)&&MB.MetatileBehavior_IsPuddle(before)){
+      this.spawn("Splash",phase,actor,0,actor.priority??2,0,8,false,0,undefined,true);this.emit({type:"sound",id:C.SE_PUDDLE});
+    }
+    if ((phase === "spawn" || phase === "begin") && !disabled && MB.MetatileBehavior_IsTallGrass(behavior) && !this.grass.has(key)) {
       this.grass.set(key, this.spawn("TallGrass", phase, actor, phase === "spawn" ? 4 : 0, 2, 0, 0, true));
     }
     // Tracks are emitted on begin-step at previousCoords, from previous behavior.
@@ -80,23 +97,28 @@ export class ViewerFieldEffects {
       }
     }
     // event_object_movement.c: GetAllGroundEffectFlags_OnFinishStep / HasRipples.
-    if (phase === "finish" && MB.MetatileBehavior_HasRipples(behavior)) this.spawn("Ripple", phase, actor, 0, 3, 151, -2, false);
-    if (phase === "finish" && actor.landingJump && !MB.MetatileBehavior_IsTallGrass(behavior)
-      && !MB.MetatileBehavior_IsLongGrass(behavior) && !MB.MetatileBehavior_IsPuddle(behavior)
-      && !MB.MetatileBehavior_IsSurfable(behavior) && !MB.MetatileBehavior_IsShallowFlowingWater(behavior)) {
-      this.spawn("GroundImpactDust", phase, actor, 0, 2, 0, 8, false);
+    if (phase === "finish" && MB.MetatileBehavior_HasRipples(behavior)) this.spawn("Ripple", phase, actor, 0, 3, 151, 6, false);
+    if(phase === "finish" && actor.landingJump){
+      if(MB.MetatileBehavior_IsTallGrass(behavior)){
+        this.spawn("JumpTallGrass",phase,actor,0,2,0,8,false);
+        if(!this.grass.has(key))this.grass.set(key,this.spawn("TallGrass",phase,actor,4,2,0,0,true));
+      }else if(MB.MetatileBehavior_IsPuddle(behavior)||MB.MetatileBehavior_IsShallowFlowingWater(behavior)){
+        this.spawn("JumpSmallSplash",phase,actor,0,actor.priority??2,0,8,false);
+      }else if(MB.MetatileBehavior_IsSurfable(behavior)){
+        this.spawn("JumpBigSplash",phase,actor,0,actor.priority??2,0,0,false);
+      }else if(!MB.MetatileBehavior_IsLongGrass(behavior))this.spawn("GroundImpactDust",phase,actor,0,actor.priority??2,0,8,false);
     }
   }
-  private spawn(name: EffectTemplateName, phase: EffectPhase, actor: GroundActor, startCommand: number, oamPriority: number, subpriority: number, yOffset: number, retainUntilLeave: boolean, animation = 0, lifetime?: FieldEffectSpawn["lifetime"]): number {
+  private spawn(name: EffectTemplateName, phase: EffectPhase, actor: GroundActor, startCommand: number, oamPriority: number, subpriority: number, yOffset: number, retainUntilLeave: boolean, animation = 0, lifetime?: FieldEffectSpawn["lifetime"], followPlayer=false): number {
     const id = ++this.nextId;
     this.emit(Object.freeze({ type: "spawn", id, generation: this.generation, tick: this.clock.tick,
       template: this.templates.get(name)!, animation, startCommand,
       // sprite.c SeekSpriteAnim adds one delay tick when its frame delay is nonzero.
-      initialExtraTicks: name === "TallGrass" && phase === "spawn" ? 1 : 0, phase,
+      initialExtraTicks: name === "TallGrass" && startCommand === 4 ? 1 : 0, phase,
       direction: actor.direction, previousDirection: actor.previousDirection,
       position: Object.freeze({ tileX: actor.x, tileY: actor.y, xPx: actor.x * TILE, yPx: actor.y * TILE + yOffset }),
       // DOM stacking remains the existing viewer adaptation; full elevation/depth is C7 pending.
-      priority: Object.freeze({ oamPriority, subpriority, domZIndex: 26 }), retainUntilLeave, lifetime,
+      priority: Object.freeze({ oamPriority, subpriority, domZIndex: oamPriority>=3?22:oamPriority<=1?(followPlayer&&retainUntilLeave?29:31):lifetime||followPlayer&&retainUntilLeave?24:26 }), retainUntilLeave, lifetime, followPlayer, elevation:actor.elevation??0,
     }));
     return id;
   }

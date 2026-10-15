@@ -1,4 +1,6 @@
-import type { FieldEffectSpawn } from "../fieldEffects";
+import { cdata } from "@core/hw/assets";
+import * as C from "../../games/firered/generated/constants";
+import type { ActorVisual, FieldEffectSpawn } from "../fieldEffects";
 import type { ViewerAnimCmd } from "../data/fieldFxTemplates";
 import { TILE } from "../constants";
 
@@ -38,6 +40,7 @@ export class EffectPresenter {
   private age = 0;
   private releaseRequested = false;
   private disposed = false;
+  private actorVisual:ActorVisual|null=null;
 
   constructor(
     private readonly spawn: FieldEffectSpawn,
@@ -62,6 +65,7 @@ export class EffectPresenter {
     this.node.style.left = `${spawn.position.xPx - minX * TILE}px`;
     this.node.style.top = `${spawn.position.yPx - minY * TILE}px`;
     this.node.style.zIndex = String(spawn.priority.domZIndex);
+    this.node.dataset.effectName = spawn.template.name;
     this.node.dataset.effectId = String(spawn.id);
     this.node.dataset.effectGeneration = String(spawn.generation);
     content.appendChild(this.node);
@@ -79,6 +83,7 @@ export class EffectPresenter {
         this.node.style.visibility = (this.age - lifetime.holdTicks) % 2 ? "hidden" : "visible";
       }
     }
+    if(this.actorVisual)this.setActor(this.actorVisual);
     if (this.ended) return;
     if (this.remaining > 0) this.remaining--;
     if (this.remaining === 0) {
@@ -91,8 +96,30 @@ export class EffectPresenter {
   /** Retire: finish first when the animation has not ended, then remove. */
   release(): void {
     if (this.disposed) return;
+    if(this.spawn.followPlayer){this.dispose();return;}
     this.releaseRequested = true;
     if (this.ended || this.lastError) this.dispose();
+  }
+
+  setActor(actor:ActorVisual):void {
+    this.actorVisual=actor;
+    if(this.spawn.followPlayer){
+      this.node.style.left=`${actor.xPx-this.minX*TILE-(this.spawn.template.size[0]-TILE)/2}px`;
+      this.node.style.top=`${actor.groundYPx-this.minY*TILE+12-this.spawn.template.size[1]/2}px`;
+    }
+    if(this.spawn.template.name!=="TallGrass")return;
+    const base=cdata<number[]>("event_object_movement","sElevationToSubpriority");
+    const actorCenter=actor.groundYPx+TILE-actor.height/2;
+    // Use the native camera's center for ordering near the avatar in the expanded viewer.
+    const offset=C.DISPLAY_HEIGHT/2-actorCenter;
+    const priority=(bottom:number,elevation:number,extra:number)=>(base[elevation]??0)+((16-(((bottom+offset+8)&255)>>4))<<1)+extra;
+    const grassY=this.spawn.position.yPx,grassX=this.spawn.position.xPx+8;
+    let sub=priority(grassY+16,this.spawn.elevation??0,this.cmdIndex===0?4:0);
+    const playerSub=priority(actor.groundYPx+16,actor.elevation,1);
+    const ylo=grassY+16,yhi=ylo-actor.height/2;
+    if(grassX-8<actor.xPx+8&&grassX+8>actor.xPx+8
+      &&(actorCenter-actor.height/2<yhi||actorCenter-actor.height/2<ylo)&&actorCenter>yhi&&sub<=playerSub)sub=playerSub+2;
+    this.node.style.zIndex=sub<=playerSub?"26":"24";
   }
 
   dispose(): void {
@@ -137,7 +164,9 @@ export class EffectPresenter {
         this.node.style.backgroundRepeat = "no-repeat";
         this.node.style.backgroundPosition = `-${rect.sourceX}px -${rect.sourceY}px`;
         this.node.style.transform = `scaleX(${frame[3] ? -1 : 1}) scaleY(${frame[4] ? -1 : 1})`;
+        this.node.dataset.effectCommand = String(this.cmdIndex);
         this.remaining = frame[2] + (initial && this.firstCommand ? this.spawn.initialExtraTicks : 0);
+        if(this.actorVisual)this.setActor(this.actorVisual);
         return;
       }
       if (asEnd(cmd)) {

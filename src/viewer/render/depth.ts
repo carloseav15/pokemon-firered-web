@@ -30,8 +30,8 @@ export class AvatarDepth {
   update(x:number,y:number,minX:number,minY:number,elevation:number):void{
     const priority=cdata<number[]>("event_object_movement","sElevationToPriority")[elevation]!;
     this.middle.style.display=this.upper.style.display="block";
-    // Same-priority OBJ precedes BG. Upper BG is behind priority0/1 actors.
-    this.upper.style.zIndex=priority<=1?"23":"27";
+    // Keep BG planes fixed; the actor moves above BG2 when its source priority is0/1.
+    this.upper.style.zIndex="27";
     const left=Math.floor((x-48)/16)*16,top=Math.floor((y-48)/16)*16;
     this.upper.dataset.depth=JSON.stringify({left,top,priority,elevation,sectors:this.sectors.size});
     const key=`${left},${top}`;if(this.key===key)return;this.key=key;

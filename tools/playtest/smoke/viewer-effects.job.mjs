@@ -75,10 +75,34 @@ export default async function run(ctx) {
     const {EffectPresenter}=await load('/src/viewer/render/effectPresenter.ts');
     const deep=await loadEffectTemplate('DeepSandFootprints');
     for(let d=1;d<=4;d++){const e={...observed[0],template:deep,animation:d};const p=new EffectPresenter(e,content,0,0,()=>{});if(p.lastError||content.firstElementChild.style.height!=='16px')throw Error('deep template');p.dispose();}
-    effects.onGroundStep('begin',actor);dispose();dispose();
+    // PREPARED adjacent terrain tests the C activation/lifecycle, not a fabricated live map.
+    const {loadCData}=await load('/src/core/hw/assets.ts');await loadCData('event_object_movement');
+    effects.resetSession();grid.behaviors.fill(C.MB_NORMAL);grid.behaviors[0]=grid.behaviors[1]=C.MB_SHALLOW_WATER;
+    const attached={...actor,x:1,previousX:0,elevation:3,priority:2};
+    effects.onGroundStep('begin',attached);
+    const flowing=content.querySelector('[data-effect-name="Splash"]');if(!flowing)throw Error('Flowing-water effect missing');
+    effects.setActorVisual({xPx:24,groundYPx:8,height:32,elevation:3});
+    if(flowing.style.left!=='24px'||flowing.style.top!=='16px')throw Error('Splash attachment lost source center offset');
+    for(let i=0;i<120;i++)step();if(!flowing.isConnected)throw Error('Flowing loop ended');
+    effects.onGroundStep('begin',{...attached,x:2,previousX:1});if(flowing.isConnected)throw Error('Flowing loop leaked after leave');
+    effects.resetSession();grid.behaviors[0]=grid.behaviors[1]=C.MB_PUDDLE;
+    effects.onGroundStep('begin',attached);const splash=content.querySelector('[data-effect-name="Splash"]');
+    if(!splash)throw Error('Puddle splash absent');for(let i=0;i<7;i++)step();if(!splash.isConnected)throw Error('Splash ended early');
+    step();if(splash.isConnected)throw Error('Splash exceeded source animation');
+    effects.resetSession();grid.behaviors[1]=C.MB_TALL_GRASS;
+    const jump={...attached,airborne:true,landingJump:true};effects.onGroundStep('begin',jump);
+    if(content.querySelector('[data-effect-name="TallGrass"]'))throw Error('Grass covering started in air');
+    effects.onGroundStep('finish',jump);
+    if(!content.querySelector('[data-effect-name="JumpTallGrass"]')||!content.querySelector('[data-effect-name="TallGrass"]'))throw Error('Grass landing effects missing');
+    effects.resetSession();grid.behaviors[0]=grid.behaviors[1]=C.MB_SHALLOW_WATER;effects.onGroundStep('finish',jump);
+    if(!content.querySelector('[data-effect-name="JumpSmallSplash"]'))throw Error('Shallow landing missing');
+    effects.resetSession();grid.behaviors[1]=C.MB_POND_WATER;let ripple=null;const stop=effects.subscribe(e=>{if(e.type==='spawn'&&e.template.name==='Ripple')ripple=e;});
+    effects.onGroundStep('finish',jump);stop();
+    if(!ripple||ripple.position.yPx!==6||ripple.priority.domZIndex!==22||!content.querySelector('[data-effect-name="JumpBigSplash"]'))throw Error('Water landing/ripple center/priority differs from C');
+    effects.resetSession();effects.onGroundStep('begin',actor);dispose();dispose();
     if(content.children.length||clock.subscriberCount)throw Error('Disposal leaked nodes/subscriptions');
     content.remove();
-    return {R7:'PASS: delayed release via installed renderer, seek 11, retained E, clear/dispose',M13:'PASS: 4 foot directions, 16 bike pairs, crops/flips, previous tile, 41/57 ticks, pause, overlap, reset; deep template dormant in FR',fixture:'PREPARED ground / RAF ticks; real assets'};
+    return {R7:'PASS: delayed release via installed renderer, seek 11, retained E, clear/dispose',M13:'PASS: 4 foot directions, 16 bike pairs, crops/flips, previous tile, 41/57 ticks, pause, overlap, reset; deep template dormant in FR',water:'PASS: attached loop/leave, puddle lifetime, jump suppression/grass/shallow/water landings, ripple center and priority',fixture:'PREPARED ground / RAF ticks; real assets'};
   });
   if(ctx.errors().length)throw Error(ctx.errors().join(';'));
   return result;

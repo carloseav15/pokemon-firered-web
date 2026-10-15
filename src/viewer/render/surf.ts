@@ -22,6 +22,7 @@ export class SurfSupport {
   static async create(content: HTMLElement): Promise<SurfSupport> {
     return new SurfSupport(await loadEffectTemplate("SurfBlob"), content);
   }
+  setPriority(priority:number):void {this.node.style.zIndex=priority<=1?"29":"24";}
   hide(): void { this.node.style.display = "none"; this.direction = null; }
   update(visible: boolean, direction: Direction, x: number, y: number, tick: number): number {
     if (!visible) { this.hide(); return 0; }

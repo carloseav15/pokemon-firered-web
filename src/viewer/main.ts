@@ -408,6 +408,9 @@ function updatePlayerDisplay(): void {
 
   if (avatarAnimator) {
     const frame = avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick);
+    const priority=cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]!;
+    playerEl.style.zIndex=priority<=1?"30":"25";
+    surfSupport?.setPriority(priority);jumpShadow?.setPriority(priority);
     playerEl.style.width = `${frame.width}px`; playerEl.style.height = `${frame.height}px`;
     playerEl.style.left = `${px - (frame.width - TILE) / 2}px`;
     const shoreJump = frame.moving && (frame.action === "board" || frame.action === "dismount");
@@ -419,6 +422,7 @@ function updatePlayerDisplay(): void {
     const riderOffset = shoreJump ? 0 : bob;
     const groundY = airborne ? groundVisualY : py;
     avatarDepth?.update(px,groundY,minX,minY,playerElevation);
+    fieldEffects.setActorVisual({xPx:px+minX*TILE,groundYPx:groundY+minY*TILE,height:frame.height,elevation:playerElevation});
     playerReflection?.update(frame,worldGrid,stepTarget ?? {x:playerX,y:playerY},{x:playerX,y:playerY},px,groundY,py-groundY+riderOffset,minX,minY,viewerClock.tick);
     playerEl.style.top = `${py - (frame.height - TILE) + riderOffset}px`;
     playerEl.style.backgroundImage = `url(${frame.url})`;
@@ -600,7 +604,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   playerVisualY = (playerY - minY) * TILE;
   updatePlayerDisplay();
   checkCurrentMapMusic();
-  fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false, vehicle: playerMode });
+  fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false, elevation:playerElevation, priority:HOENN?2:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation],vehicle: playerMode });
 }
 
 function stopExploration(): void {
@@ -713,18 +717,19 @@ function processPlayerStep(): void {
       audioController.playLedgeJump();
     }
 
-    const groundActor = { x: targetX, y: targetY, previousX: playerX, previousY: playerY,
-      direction: playerDir, previousDirection, landingJump: isLedgeJump, vehicle: playerMode };
-    fieldEffects.onGroundStep("begin", groundActor);
-
-    // Kanto uses the C step tables and 32-tick jumps (far/special); Hoenn retains its adapter timings.
-    const transition = !!avatarAnimator && (previousVehicle === "surf") !== (playerMode === "surf");
-    const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk";
-    const offsets = avatarAnimator?.offsets(action);
-    const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
     const nextElevation=avatarDepth?.elevationAt(targetX,targetY)??0;
     const previousElevation=avatarDepth?.elevationAt(playerX,playerY)??0;
     if(nextElevation!==15&&previousElevation!==15&&nextElevation!==0)playerElevation=nextElevation;
+    const transition = !!avatarAnimator && (previousVehicle === "surf") !== (playerMode === "surf");
+    const groundActor = { x: targetX, y: targetY, previousX: playerX, previousY: playerY,
+      direction: playerDir, previousDirection, landingJump: isLedgeJump || (transition && previousVehicle === "surf"), airborne:isLedgeJump||transition,
+      elevation:playerElevation,priority:HOENN?2:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation],vehicle: playerMode };
+    fieldEffects.onGroundStep("begin", groundActor);
+
+    // Kanto uses the C step tables and 32-tick jumps (far/special); Hoenn retains its adapter timings.
+    const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk";
+    const offsets = avatarAnimator?.offsets(action);
+    const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
     stepTarget = {x:targetX,y:targetY};
     jumpBehaviors = [worldGrid.behaviorAt(targetX, targetY), worldGrid.behaviorAt(playerX, playerY)];
     shoreAnchor = transition ? previousVehicle === "surf" ? {x:startPxX,y:startPxY} : {x:destPxX,y:destPxY} : null;
@@ -939,6 +944,7 @@ async function build(): Promise<void> {
   [allMaps, fieldEffects] = await Promise.all([mapsReady, effectsReady, jumpReady]).then(([maps, effects]) => [maps, effects] as const);
   // Los efectos de campo (hierba, polvo, huellas) son de FireRed; en Hoenn se explora sin ellos.
   const disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
+  const disposeEffectsSound=HOENN?()=>{}:fieldEffects.subscribe(event=>{if(event.type==="sound")audioController.playSE(event.id);});
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame();
@@ -947,6 +953,7 @@ async function build(): Promise<void> {
     if (playerActive && playerEl && avatarAnimator && !isStepping && !interiorViewer.isOpen()) {
       const bob = surfSupport?.update(playerMode === "surf", playerDir, playerVisualX, playerVisualY, frame.tick) ?? 0;
       playerEl.style.top = `${playerVisualY - 16 + bob}px`;
+      fieldEffects.setActorVisual({xPx:playerVisualX+minX*TILE,groundYPx:playerVisualY+minY*TILE,height:32,elevation:playerElevation});
       playerReflection?.update(avatarAnimator.frame(state.playerChar,playerMode,playerDir,frame.tick),worldGrid,
         {x:playerX,y:playerY},{x:playerX,y:playerY},playerVisualX,playerVisualY,bob,minX,minY,frame.tick);
     }
@@ -955,7 +962,7 @@ async function build(): Promise<void> {
   window.addEventListener("pagehide", event => {
     if (event.persisted) { viewerClock.pause("pagehide"); return; }
     sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose();
-    resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); playerReflection?.dispose(); avatarDepth?.dispose(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
+    resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); playerReflection?.dispose(); avatarDepth?.dispose(); disposeEffects(); disposeEffectsSound(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
   });
   window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
 

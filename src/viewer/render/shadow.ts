@@ -17,6 +17,7 @@ export class JumpShadow {
     const templates = await Promise.all(Object.entries(names).map(async ([size,name]) => [size,await loadEffectTemplate(name)] as const));
     return new JumpShadow(new Map(templates),content,cdata<number[]>("field_effect_helpers", "gShadowVerticalOffsets"));
   }
+  setPriority(priority:number):void {this.node.style.zIndex=priority<=1?"29":"24";}
   hide(): void { this.node.style.display = "none"; }
   update(visible: boolean, x: number, groundY: number, avatarHeight: number, size: string): void {
     if (!visible) { this.hide(); return; }

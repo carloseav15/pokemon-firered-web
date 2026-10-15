@@ -46,7 +46,7 @@ export default async function run(ctx) {
   fx.resetSession();fx.onGroundStep('spawn',actor);fx.onGroundStep('begin',actor);
   if(events.filter(e=>e.type==='spawn').length!==1||events[1].startCommand!==4||events[1].initialExtraTicks!==1||!events[1].retainUntilLeave)throw Error('grass dedup/seek');
   fx.onGroundStep('finish',{...actor,x:-1,previousX:-2});
-  const ripple=events.find(e=>e.type==='spawn'&&e.template.name==='Ripple');if(!ripple||ripple.position.yPx!==-2||ripple.priority.oamPriority!==3||ripple.priority.subpriority!==151)throw Error('ripple contract');
+  const ripple=events.find(e=>e.type==='spawn'&&e.template.name==='Ripple');if(!ripple||ripple.position.yPx!==6||ripple.priority.oamPriority!==3||ripple.priority.subpriority!==151)throw Error('ripple contract');
   fx.onGroundStep('finish',{...actor,x:0,previousX:-1,landingJump:true});
   if(!events.some(e=>e.type==='release')||!events.some(e=>e.type==='spawn'&&e.template.name==='GroundImpactDust'&&e.position.yPx===8))throw Error('retire/dust');
   fx.resetSession();const generation=fx.generation;if(events.at(-1).type!=='clear'||generation!==2)throw Error('generation clear');off();const n=events.length;fx.resetSession();if(events.length!==n)throw Error('bus cancellation');
