@@ -1,3 +1,4 @@
+import {GetStairsMovementDirection} from "../../src/core/field/mapTransitions";
 // Source-data validation; does not claim browser transitions or story-script parity.
 import { readFile } from 'node:fs/promises';
 import { strict as assert } from 'node:assert';
@@ -27,6 +28,13 @@ for(let n=0;n<pending.length;n++){
   }
   for(const connection of header.connections)if(!seen.has(connection.map))pending.push(connection.map);
 }
+const C=await import('../../src/games/firered/generated/constants');
+assert.deepEqual(GetStairsMovementDirection(C.MB_UP_RIGHT_STAIR_WARP),[16,-10]);
+assert.deepEqual(GetStairsMovementDirection(C.MB_UP_LEFT_STAIR_WARP),[-17,-10]);
+assert.deepEqual(GetStairsMovementDirection(C.MB_DOWN_RIGHT_STAIR_WARP),[17,3]);
+assert.deepEqual(GetStairsMovementDirection(C.MB_DOWN_LEFT_STAIR_WARP),[-17,3]);
+assert.deepEqual(GetStairsMovementDirection(C.MB_UP_RIGHT_STAIR_WARP+256),[16,-10]);
+assert.deepEqual(GetStairsMovementDirection(C.MB_NORMAL),[0,0]);
 const blank=new NavigationWarps(load);
 await assert.rejects(()=>blank.resolve({warps:[{destMap:'MAP_DYNAMIC',destWarpId:127}]} as MapHeader,0),/sin entrada previa/);
 console.log(JSON.stringify({maps:seen.size,staticWarps,dynamicReturns,status:'PASS',scope:'real exported addresses and dynamic slot; browser animation not covered'}));

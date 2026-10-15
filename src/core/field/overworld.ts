@@ -1,4 +1,4 @@
-import { MapTransitionIsEnter, MapTransitionIsExit } from "./mapTransitions";
+import { MapTransitionIsEnter, MapTransitionIsExit, GetStairsMovementDirection } from "./mapTransitions";
 // Port of overworld.c + field_camera.c: map loading from warps and camera
 // transitions, the per-frame field callbacks, and BG/OBJ composition.
 
@@ -1553,16 +1553,6 @@ export class Overworld {
     return IsWeatherNotFadingIn() && this.mapPreview.ForestMapPreviewScreenIsRunning();
   }
 
-  /** GetStairsMovementDirection (field_fadetransition.c); C narrows behavior to u8. */
-  private GetStairsMovementDirection(metatileBehavior: number): [number, number] {
-    const behavior = metatileBehavior & 0xff;
-    if (MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior)) return [16, -10];
-    if (MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior)) return [-17, -10];
-    if (MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior)) return [17, 3];
-    if (MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior)) return [-17, 3];
-    return [0, 0];
-  }
-
   /** ExitStairsMovement (field_fadetransition.c), using task data slots 1..5 as s16. */
   private ExitStairsMovement(taskId: number): void {
     const data = tasks.tasks[taskId].data;
@@ -1573,7 +1563,7 @@ export class Overworld {
     this.objects.forceSetHeldMovement(player, direction === DIR_WEST
       ? C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_LEFT
       : C.MOVEMENT_ACTION_WALK_IN_PLACE_FAST_RIGHT);
-    const [speedX, speedY] = this.GetStairsMovementDirection(behavior);
+    const [speedX, speedY] = GetStairsMovementDirection(behavior);
     data[3] = speedX * 16;
     data[4] = speedY * 16;
     data[5] = 16;
@@ -2268,7 +2258,7 @@ export class Overworld {
         : direction === DIR_EAST ? C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_RIGHT
           : C.MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_DOWN;
     this.objects.forceSetHeldMovement(player, action);
-    const [speedX, speedY] = this.GetStairsMovementDirection(data[1]);
+    const [speedX, speedY] = GetStairsMovementDirection(data[1]);
     data[2] = speedX;
     data[3] = speedY;
   }
