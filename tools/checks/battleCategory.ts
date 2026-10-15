@@ -4,7 +4,7 @@
 // Steps 0-1: the default (gen3) profile is pinned to a reference recorded before the refactor.
 // Step 2: the unified profile (Gen 4 per-move category) is checked against the data files and the damage formula.
 // Step 3: the Fairy type (chart, species, moves, name) is checked against Showdown's Gen 6 data, independently of the generator.
-// Step 5: the Fairy menu label (icon id, bitmap, palette entry) is checked against the sheet it is composed from.
+// Step 5: the Fairy menu label (icon id, bitmap, palettes) is checked against the properties of FireRed's own sheet.
 //
 // What this proves: the behaviour of those functions over a fixed grid of inputs is unchanged by a refactor.
 // What it does NOT prove: that the behaviour matches the GBA. The reference was recorded from this port, not from
@@ -32,7 +32,6 @@ import { Cmd_accuracycheck, Cmd_datahpupdate, Cmd_typecalc } from '../../src/cor
 import { Cmd_hiddenpowercalc } from '../../src/core/battle/cmds/part4.ts';
 import { gBattleScriptingCommandsTable } from '../../src/core/battle/cmds/index.ts';
 import { MenuInfoIconOfType, MenuInfoIconBitmap, MenuInfoPalette, MENU_INFO_ICON_FAIRY } from '../../src/core/hw/listMenu.ts';
-import { incbin } from '../../src/core/hw/assets.ts';
 import {
   G, gBattleMons, gBattleStruct, gProtectStructs, gSpecialStatuses, gBattlerPositions, resetBattleStructs,
 } from '../../src/core/battle/globals.ts';
@@ -630,7 +629,8 @@ function fairyChecks(): void {
   const fairy = MenuInfoIconBitmap(MENU_INFO_ICON_FAIRY);
   assert.deepEqual([fairy.srcWidth, fairy.srcHeight, fairy.width, fairy.height], [32, 16, 32, 12]);
   assert.notEqual(uniIcons[MENU_INFO_ICON_FAIRY], gen3Icons[MENU_INFO_ICON_FAIRY], 'unified must supply a Fairy label');
-  // Bitmap properties, read from the pixels: 4bpp tile order, only background 10, text 15 and shadow 14, 4 clear corners.
+  // Bitmap properties, read from the pixels: 4bpp tile order, 32x12 label, four clear corners, nothing below it,
+  // and only palette indices that FireRed's own colour palette defines (background 5/12, shadow 14, letters 15).
   const at = (x: number, y: number): number => {
     const t = (y >> 3) * 4 + (x >> 3);
     const byte = fairy.pixels[t * 32 + (y & 7) * 4 + ((x & 7) >> 1)];
@@ -638,18 +638,14 @@ function fairyChecks(): void {
   };
   const used = new Map<number, number>();
   for (let y = 0; y < 12; y++) for (let x = 0; x < 32; x++) used.set(at(x, y), (used.get(at(x, y)) ?? 0) + 1);
-  assert.deepEqual([...used.keys()].sort((a, b) => a - b), [0, 10, 14, 15]);
+  assert.deepEqual([...used.keys()].sort((a, b) => a - b), [0, 5, 12, 14, 15]);
   assert.deepEqual([at(0, 0), at(31, 0), at(0, 11), at(31, 11)], [0, 0, 0, 0]);
   assert.equal(used.get(0), 4, 'only the four rounded corners are transparent');
   assert.ok((used.get(15) ?? 0) > 40 && (used.get(14) ?? 0) > 40, 'the label must carry letters and shadow');
-  for (let y = 12; y < 16; y++) for (let x = 0; x < 32; x++) assert.equal(((x & 1) ? fairy.pixels[((y >> 3) * 4 + (x >> 3)) * 32 + (y & 7) * 4 + ((x & 7) >> 1)] >> 4 : fairy.pixels[((y >> 3) * 4 + (x >> 3)) * 32 + (y & 7) * 4 + ((x & 7) >> 1)] & 15), 0);
-  // Palette index 10 is unused by every pixel of the sheet it joins, so recolouring it touches nothing else.
-  const sheet = incbin('gMenuInfoElements_Gfx');
-  assert.ok(![...sheet].some((b) => (b & 15) === 10 || (b >> 4) === 10), 'palette index 10 is used by the original sheet');
-  const fairyRgb555 = ((0xac >> 3) << 10) | ((0x99 >> 3) << 5) | (0xee >> 3);
+  for (let y = 12; y < 16; y++) for (let x = 0; x < 32; x++) assert.equal(at(x, y), 0, 'pixels below the label');
+  // The label recolours nothing: both palettes are the originals under unified.
   const pal1 = [...MenuInfoPalette(1)], pal0 = [...MenuInfoPalette(0)];
-  assert.equal(pal1[20] | (pal1[21] << 8), fairyRgb555, 'palette entry 10 must be the Fairy colour');
-  assert.deepEqual(pal1.filter((_, i) => i !== 20 && i !== 21), gen3Palettes[1].filter((_, i) => i !== 20 && i !== 21), 'other entries changed');
+  assert.deepEqual(pal1, gen3Palettes[1], 'the coloured palette must not change');
   assert.deepEqual(pal0, gen3Palettes[0], 'the monochrome palette must not change');
   setBattleRulesProfile('gen3');
 

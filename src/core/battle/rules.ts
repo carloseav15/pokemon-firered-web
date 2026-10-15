@@ -22,7 +22,7 @@ import { MOVE_CATEGORIES_GEN4 } from "./data/moveCategoriesGen4";
 import {
   FAIRY_MOVE_TYPES, FAIRY_SPECIES_TYPES, FAIRY_TYPE_NAME_B64, TYPE_CHART_ADD, TYPE_CHART_REMOVE,
 } from "./data/fairyGen6";
-import { FAIRY_ICON_COLOR, FAIRY_ICON_PALETTE_INDEX, FAIRY_ICON_TILES_B64 } from "./data/fairyIcon";
+import { FAIRY_ICON_PALETTE_PATCH, FAIRY_ICON_TILES_B64 } from "./data/fairyIcon";
 import { setMenuInfoFairyIcon } from "../hw/listMenu";
 
 export type BattleRulesProfile = "gen3" | "unified";
@@ -129,8 +129,7 @@ export function applyUnifiedData(): void {
   // The type label the summary, Pokédex, TM case and move relearner draw for Fairy.
   setMenuInfoFairyIcon({
     tiles: Uint8Array.from(atob(FAIRY_ICON_TILES_B64), (c) => c.charCodeAt(0)),
-    paletteIndex: FAIRY_ICON_PALETTE_INDEX,
-    color: FAIRY_ICON_COLOR,
+    palette: FAIRY_ICON_PALETTE_PATCH,
   });
 }
 

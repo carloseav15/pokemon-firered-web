@@ -438,10 +438,8 @@ export function ListMenu_DrawMonIconGraphics(windowId: number, iconPixels: Uint8
 export type MenuInfoFairyIcon = {
   /** 32x16 4bpp bitmap in tile order (4 tiles per row), as BlitBitmapRect4Bit reads it. */
   tiles: Uint8Array;
-  /** Palette entry used for the label background (no other pixel of the sheet uses it). */
-  paletteIndex: number;
-  /** BGR555 colour for that entry in the coloured palette. */
-  color: number;
+  /** Optional change to one entry of the coloured palette, for a label that needs a colour the sheet lacks. */
+  palette: { index: number; color: number } | null;
 };
 
 let fairyIcon: MenuInfoFairyIcon | null = null;
@@ -450,13 +448,14 @@ export function setMenuInfoFairyIcon(icon: MenuInfoFairyIcon | null): void {
   fairyIcon = icon;
 }
 
-/** Palette bytes for ListMenuLoadStdPalAt: the original, except entry `paletteIndex` of the coloured palette when a Fairy icon is set. */
+/** Palette bytes for ListMenuLoadStdPalAt: the original, plus the Fairy label's palette change if it has one. */
 export function MenuInfoPalette(palId: number): Uint8Array {
   const original = incbin(palId === 1 ? "gMenuInfoElements2_Pal" : "gMenuInfoElements1_Pal");
-  if (palId !== 1 || !fairyIcon) return original;
+  const patch = fairyIcon?.palette;
+  if (palId !== 1 || !patch) return original;
   const patched = new Uint8Array(original.subarray(0, 32));
-  patched[fairyIcon.paletteIndex * 2] = fairyIcon.color & 0xff;
-  patched[fairyIcon.paletteIndex * 2 + 1] = (fairyIcon.color >> 8) & 0xff;
+  patched[patch.index * 2] = patch.color & 0xff;
+  patched[patch.index * 2 + 1] = (patch.color >> 8) & 0xff;
   return patched;
 }
 

@@ -83,7 +83,10 @@
       "/src/",
       "/include/",
       "/test/",
-      "/graphics/pokemon/"
+      "/graphics/pokemon/",
+      "/graphics/interface/menu_info.png",
+      "/graphics/interface/menu_info*.pal",
+      "/graphics/types/"
     ],
     "note": "GBA, C. Base comunitaria que compila Emerald y FRLG (IS_FRLG) y trae tests de combate. No es fuente de verdad de ningún juego."
   },
