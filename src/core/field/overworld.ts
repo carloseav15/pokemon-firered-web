@@ -1,3 +1,4 @@
+import { MapTransitionIsEnter, MapTransitionIsExit } from "./mapTransitions";
 // Port of overworld.c + field_camera.c: map loading from warps and camera
 // transitions, the per-frame field callbacks, and BG/OBJ composition.
 
@@ -137,20 +138,7 @@ export function IsMapTypeIndoors(mapType: number): boolean {
   return mapType === MAP_TYPE.INDOOR || mapType === MAP_TYPE.SECRET_BASE;
 }
 
-// MapTransitionIsEnter / MapTransitionIsExit (fldeff_flash.c): mirror the
-// explicit sTransitionTypes rows instead of treating unknown map types as valid.
-const FLASH_TRANSITION_SURFACE_TYPES = new Set([
-  MAP_TYPE.TOWN, MAP_TYPE.CITY, MAP_TYPE.ROUTE, MAP_TYPE.UNDERWATER,
-  MAP_TYPE.OCEAN_ROUTE, MAP_TYPE.UNKNOWN, MAP_TYPE.INDOOR, MAP_TYPE.SECRET_BASE,
-]);
-
-export function MapTransitionIsEnter(fromType: number, toType: number): boolean {
-  return toType === MAP_TYPE.UNDERGROUND && FLASH_TRANSITION_SURFACE_TYPES.has(fromType);
-}
-
-export function MapTransitionIsExit(fromType: number, toType: number): boolean {
-  return fromType === MAP_TYPE.UNDERGROUND && FLASH_TRANSITION_SURFACE_TYPES.has(toType);
-}
+export { MapTransitionIsEnter, MapTransitionIsExit } from "./mapTransitions";
 
 export function dummyWarp(): WarpData {
   return { mapGroup: 0x7f, mapNum: 0x7f, warpId: -1, x: -1, y: -1 };

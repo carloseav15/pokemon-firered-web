@@ -12,6 +12,11 @@ export class AvatarDepth {
   private readonly middle=document.createElement("canvas");
   private readonly upper=document.createElement("canvas");
   private key="";
+  private lastUpdate: [number,number,number,number,number] | null = null;
+  private replacements: ReadonlySet<string> = new Set();
+  /** DrawDoorMetatileAt replaces all three BG assignments at these world cells. */
+  setReplacements(cells: ReadonlySet<string>): void { if(cells.size===this.replacements.size&&[...cells].every(k=>this.replacements.has(k)))return;
+    this.replacements = cells; this.invalidate(); if(this.lastUpdate)this.update(...this.lastUpdate); }
   constructor(content:HTMLElement){
     for(const [node,name,z]of [[this.middle,"middle","23"],[this.upper,"upper","27"]] as const){
       node.width=node.height=128;node.className=`field-fx avatar-depth depth-${name}`;node.style.zIndex=z;
@@ -28,6 +33,7 @@ export class AvatarDepth {
     return 15;
   }
   update(x:number,y:number,minX:number,minY:number,elevation:number):void{
+    this.lastUpdate=[x,y,minX,minY,elevation];
     const priority=cdata<number[]>("event_object_movement","sElevationToPriority")[elevation]!;
     this.middle.style.display=this.upper.style.display="block";
     // Keep BG planes fixed; the actor moves above BG2 when its source priority is0/1.
@@ -41,6 +47,7 @@ export class AvatarDepth {
     for(let gy=top/16+minY;gy<top/16+minY+8;gy++)for(let gx=left/16+minX;gx<left/16+minX+8;gx++){
       for(const s of this.sectors.values()){
         if(gx<s.x||gy<s.y||gx>=s.x+s.width||gy>=s.y+s.height)continue;
+        if(this.replacements.has(`${gx},${gy}`))break;
         const mt=s.blocks[(gy-s.y)*s.width+gx-s.x]!&0x3ff;
         const attrs=mt<NUM_METATILES_IN_PRIMARY?s.renderer.primary.attributes[mt]:s.renderer.secondary.attributes[mt-NUM_METATILES_IN_PRIMARY];
         const layer=ExtractMetatileAttribute(attrs??0,METATILE_ATTRIBUTE_LAYER_TYPE);

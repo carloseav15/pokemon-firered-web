@@ -57,7 +57,11 @@ export class DoorAnimator {
   /** Door frame currently drawn at a map position (tile offset or CLOSED). */
   private drawn = new Map<string, { door: DoorGfx; tileOffset: number; frameTiles: Uint8Array }>();
 
-  constructor(private readonly ow: Overworld) {}
+  constructor(
+    private readonly ow: { map: Pick<Overworld["map"], "metatileIdAt" | "behaviorAt">; renderer?: Overworld["renderer"] },
+    private readonly scheduler = tasks,
+    private readonly doorTiles = () => rom.doors,
+  ) {}
 
   private table(): DoorGfx[] {
     if (!this.gfx) {
@@ -79,7 +83,7 @@ export class DoorAnimator {
   }
 
   reset(): void {
-    if (this.taskId >= 0 && tasks.tasks[this.taskId].func === this.Task_AnimateDoor) tasks.destroy(this.taskId);
+    if (this.taskId >= 0 && this.scheduler.tasks[this.taskId].func === this.Task_AnimateDoor) this.scheduler.destroy(this.taskId);
     this.taskId = -1;
     this.anim = undefined;
     this.drawn.clear();
@@ -108,10 +112,10 @@ export class DoorAnimator {
   }
 
   private StartDoorAnimationTask(door: DoorGfx, frames: DoorAnimFrame[], x: number, y: number): number {
-    if (tasks.isActive(this.Task_AnimateDoor)) return -1;
+    if (this.scheduler.isActive(this.Task_AnimateDoor)) return -1;
     this.anim = { door, frames, x, y, frameId: 0, counter: 0 };
-    const taskId = tasks.create(this.Task_AnimateDoor, DoorAnimator.TASK_PRIORITY);
-    if (!tasks.tasks[taskId].isActive || tasks.tasks[taskId].func !== this.Task_AnimateDoor) {
+    const taskId = this.scheduler.create(this.Task_AnimateDoor, DoorAnimator.TASK_PRIORITY);
+    if (!this.scheduler.tasks[taskId].isActive || this.scheduler.tasks[taskId].func !== this.Task_AnimateDoor) {
       this.anim = undefined;
       return -1;
     }
@@ -158,7 +162,7 @@ export class DoorAnimator {
   }
 
   FieldIsDoorAnimationRunning(): boolean {
-    return tasks.isActive(this.Task_AnimateDoor);
+    return this.scheduler.isActive(this.Task_AnimateDoor);
   }
 
   /** GetDoorGraphics: lookup the source table entry for the map metatile. */
@@ -206,7 +210,7 @@ export class DoorAnimator {
     if (!this.AnimateDoorFrame()) {
       this.anim = undefined;
       this.taskId = -1;
-      tasks.destroy(taskId);
+      this.scheduler.destroy(taskId);
     }
   }
 
@@ -232,7 +236,7 @@ export class DoorAnimator {
   private tiles(file: string): Uint8Array {
     let data = this.tileData.get(file);
     if (!data) {
-      const raw = rom.doors[file];
+      const raw = this.doorTiles()[file];
       const pixels = b64(raw.pixels);
       // Convert the 16px-wide indexed image into 4bpp tiles in row-major tile order.
       const tilesAcross = raw.width / 8;
@@ -259,26 +263,28 @@ export class DoorAnimator {
   render(ctx: CanvasRenderingContext2D, camX: number, camY: number): void {
     const renderer = this.ow.renderer;
     if (!renderer || this.drawn.size === 0) return;
-    for (const [key, { door, tileOffset, frameTiles }] of this.drawn) {
+    for (const key of this.drawn.keys()) {
       const [x, y] = key.split(",").map(Number);
       const sx = x * 16 - camX;
       const sy = y * 16 - camY;
       if (sx < -16 || sy < -16 || sx > 240 || sy > 160) continue;
-      const paletteOffset = door.size === SIZE_1x2 && tileOffset === 4 ? 4 : 0;
-      const tileNum = paletteOffset;
-      const tilemap = BuildDoorTiles(tileNum, door.palettes, paletteOffset);
-      for (let i = 0; i < tilemap.length; i++) {
-        const tile = tilemap[i];
-        renderer.drawRawTiles(
-          ctx,
-          frameTiles,
-          tile & 0x03ff,
-          (tile >>> 12) & 0x0f,
-          sx + (i & 1) * 8,
-          sy + (i >> 1) * 8,
-        );
-      }
+      this.renderTile(ctx, x, y, sx, sy);
     }
+  }
+
+  /** DrawDoorMetatileAt replacement, reusable by the streaming viewer's BG planes. */
+  renderTile(ctx: CanvasRenderingContext2D, x: number, y: number, sx = 0, sy = 0): boolean {
+    const replacement = this.drawn.get(`${x},${y}`), renderer = this.ow.renderer;
+    if (!replacement || !renderer) return false;
+    const { door, tileOffset, frameTiles } = replacement;
+    const paletteOffset = door.size === SIZE_1x2 && tileOffset === 4 ? 4 : 0;
+    const tilemap = BuildDoorTiles(paletteOffset, door.palettes, paletteOffset);
+    for (let i = 0; i < tilemap.length; i++) {
+      const tile = tilemap[i];
+      renderer.drawRawTiles(ctx, frameTiles, tile & 0x03ff, (tile >>> 12) & 0x0f,
+        sx + (i & 1) * 8, sy + (i >> 1) * 8);
+    }
+    return true;
   }
 
   /** Metatile positions currently replaced by door frames (bottom layer hidden). */

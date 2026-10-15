@@ -9,7 +9,7 @@ const HEAD_SENTINEL = 0xfe;
 export const TAIL_SENTINEL = 0xff;
 export const TaskDummy: TaskFunc = () => {};
 
-class TaskManager {
+export class TaskManager {
   readonly tasks: Task[] = Array.from({ length: NUM_TASKS }, (_, i) => ({ func: TaskDummy, priority: -1, data: new Array(16).fill(0), isActive: false, prev: i, next: i + 1 }));
 
   create(func: TaskFunc, priority: number): number {

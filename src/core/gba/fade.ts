@@ -10,7 +10,7 @@ export const FADE_TO_WHITE = 3;
 export const RGB_BLACK = [0, 0, 0];
 export const RGB_WHITE = [255, 255, 255];
 
-class PaletteFade {
+export class PaletteFade {
   active = false;
   y = 0;
   targetY = 0;
@@ -75,8 +75,8 @@ class PaletteFade {
   update(): void {
     if (!this.active) return;
     if (this.finishing) {
-      // IsSoftwarePaletteFadeFinishing: two extra frames before inactive.
-      if (++this.finishCounter >= 2) {
+      // IsSoftwarePaletteFadeFinishing: counter 0..4, inactive on the fifth call.
+      if (++this.finishCounter >= 5) {
         this.active = false;
         this.finishing = false;
       }

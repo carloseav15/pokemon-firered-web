@@ -1,3 +1,7 @@
+import { ViewerDoorAnimation, ViewerWarpVisuals } from "./render/warpVisuals";
+import * as C from "../games/firered/generated/constants";
+import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_WHITE } from "@core/gba/fade";
+import { MapTransitionIsEnter, MapTransitionIsExit } from "@core/field/mapTransitions";
 import { AvatarDepth } from "./render/depth";
 import { PlayerReflection } from "./render/reflection";
 import { JumpShadow } from "./render/shadow";
@@ -203,6 +207,8 @@ let surfSupport: SurfSupport | null = null;
 let jumpShadow: JumpShadow | null = null;
 let playerReflection: PlayerReflection | null = null;
 let avatarDepth: AvatarDepth | null = null;
+let warpVisuals: ViewerWarpVisuals | null = null;
+let playerWarpHidden = false;
 let playerElevation = 0;
 let stepTarget: {x:number;y:number} | null = null;
 let groundVisualY = 0;
@@ -414,6 +420,7 @@ function updatePlayerDisplay(): void {
   playerEl.style.left = `${wide ? px - 8 : px}px`;
   playerEl.style.top = `${py - 16}px`;
   playerEl.style.display = "block";
+  playerEl.style.visibility = playerWarpHidden ? "hidden" : "";
 
   // Hoenn retains its earlier adapter; Kanto resolves all frames through AvatarAnimator.
   let frameIdx = 0;
@@ -923,7 +930,7 @@ function tryNavigationWarp(phase: "input" | "front" | "step", direction: Directi
   const active = phase === "front" ? MB.MetatileBehavior_IsWarpDoor(behavior)
     : phase === "input" ? inputWarpBehavior(behavior, direction) : stepWarpBehavior(behavior);
   if (!active) return false;
-  void followNavigationWarp(header, warpId);
+  void followNavigationWarp(header, warpId, phase);
   return true;
 }
 
@@ -952,13 +959,32 @@ async function walkWarpStep(direction: Direction): Promise<void> {
   });
 }
 
-async function followNavigationWarp(source: MapHeader, warpId: number): Promise<void> {
+async function followNavigationWarp(source: MapHeader, warpId: number, phase: "input" | "front" | "step"): Promise<void> {
   if (warpBusy) return;
   warpBusy = true; content.setAttribute("aria-busy","true"); keysDown.clear(); playerMoving = false;
   const old = { map: navigationMap, x: playerX, y: playerY, direction: playerDir, vehicle: playerMode, dynamic: navigationWarps.returnAddress };
   let switched = false;
+  let door: ViewerDoorAnimation | null = null;
   try {
     const destination = await navigationWarps.resolve(source, warpId);
+    if (phase === "front") {
+      const sourceInfo = findMapAt(playerX,playerY)![1];
+      const entry = source.warps[warpId]!;
+      const resource = fillSources.get(source.id);
+      if (!resource || !avatarDepth || !warpVisuals) throw Error("Door source is not resident");
+      door = await ViewerDoorAnimation.create(resource,worldGrid,avatarDepth,content,
+        sourceInfo.x+entry.x,sourceInfo.y+entry.y,minX,minY,viewerClock);
+      audioController.playSE(door.sound);
+      await door.animate(true);
+      await walkWarpStep("north");
+      playerWarpHidden=true;updatePlayerDisplay();
+      await door.animate(false);door.dispose();door=null;
+    }
+    await loadCData("map_preview_screen");
+    const cavePreview=source.regionMapSection!==destination.header.regionMapSection
+      && cdata<Array<{mapsec:number;type:number}>>("map_preview_screen","sMapPreviewScreenData")
+        .some(row=>row.mapsec===destination.header.regionMapSection&&row.type===C.MPS_TYPE_CAVE);
+    await warpVisuals!.fadeScreen(!cavePreview&&MapTransitionIsEnter(source.mapType,destination.header.mapType)?FADE_TO_WHITE:FADE_TO_BLACK);
     viewerClock.pause("warp");
     content.style.visibility = "hidden";
     resetExploreSession();
@@ -977,9 +1003,27 @@ async function followNavigationWarp(source: MapHeader, warpId: number): Promise<
     navigationWarps.commit(destination);
     blockedArrival = `${playerX},${playerY}`;
     viewerClock.resume("warp"); content.style.visibility = "";
-    updatePlayerDisplay();
-    if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) await walkWarpStep("south");
-    else if (MB.MetatileBehavior_IsNonAnimDoor(behavior)) await walkWarpStep(playerDir);
+    const fromWhite=MapTransitionIsExit(source.mapType,destination.header.mapType);
+    if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
+      playerWarpHidden=true;updatePlayerDisplay();
+      const resource=fillSources.get(destination.mapId);
+      if(!resource||!avatarDepth)throw Error("Arrival door is not resident");
+      door=await ViewerDoorAnimation.create(resource,worldGrid,avatarDepth,content,playerX,playerY,minX,minY,viewerClock);
+      const wipe=warpVisuals!.outwardWipe();
+      const fade=warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK,3);
+      await warpVisuals!.wait(25);
+      audioController.playSE(door.sound);await door.animate(true);
+      playerWarpHidden=false;updatePlayerDisplay();
+      const walking=walkWarpStep("south");
+      await warpVisuals!.wait(14);await door.animate(false);
+      await Promise.all([walking,fade,wipe]);door.dispose();door=null;
+    } else {
+      const nonAnimDoor=MB.MetatileBehavior_IsNonAnimDoor(behavior);
+      playerWarpHidden=nonAnimDoor;updatePlayerDisplay();
+      await warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK);
+      playerWarpHidden=false;updatePlayerDisplay();
+      if (nonAnimDoor) await walkWarpStep(playerDir);
+    }
     blockedArrival = `${playerX},${playerY}`;
     fieldEffects.onGroundStep("spawn", { x:playerX,y:playerY,previousX:playerX,previousY:playerY,direction:playerDir,previousDirection:playerDir,
       landingJump:false,vehicle:playerMode,elevation:playerElevation,priority:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation] });
@@ -995,6 +1039,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number): Promise<
     }
     panel.textContent = `No se pudo cambiar de mapa: ${String(error)}`;
   } finally {
+    door?.dispose();warpVisuals?.clear();playerWarpHidden=false;
     viewerClock.resume("warp"); content.style.visibility = "";
     warpBusy = false; content.setAttribute("aria-busy","false"); playerMoving = false; updatePlayerDisplay(); writeHash();
   }
@@ -1024,6 +1069,7 @@ async function build(): Promise<void> {
     await jumpReady;
     playerReflection = await PlayerReflection.create(data,content,viewerClock.tick);
     avatarDepth = new AvatarDepth(content);
+    warpVisuals = new ViewerWarpVisuals(document.getElementById("main")!,viewerClock);
   }) : Promise.resolve();
   const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
@@ -1070,7 +1116,7 @@ async function build(): Promise<void> {
   window.addEventListener("pagehide", event => {
     if (event.persisted) { viewerClock.pause("pagehide"); return; }
     sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose();
-    resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); playerReflection?.dispose(); avatarDepth?.dispose(); disposeEffects(); disposeEffectsSound(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
+    resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); playerReflection?.dispose(); avatarDepth?.dispose(); warpVisuals?.dispose(); disposeEffects(); disposeEffectsSound(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
   });
   window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
 
