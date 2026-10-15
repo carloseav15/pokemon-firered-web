@@ -1,0 +1,479 @@
+{
+ "_meta": {
+  "generator": "unified-world/extract_flag_spaces.py",
+  "note": "live = used by scripts of both games; names as in each decomp"
+ },
+ "comparisons": {
+  "emerald|hns": {
+   "flags": {
+    "differentName": 774,
+    "examples": [
+     {
+      "emerald": [
+       "FLAG_HIDE_SKY_PILLAR_TOP_RAYQUAZA_STILL"
+      ],
+      "hns": [
+       "FLAG_GARBAGEFLAG_STILL"
+      ],
+      "id": 80
+     },
+     {
+      "emerald": [
+       "FLAG_LEGENDARIES_IN_SOOTOPOLIS"
+      ],
+      "hns": [
+       "FLAG_GARBAGEFLAG"
+      ],
+      "id": 83
+     },
+     {
+      "emerald": [
+       "FLAG_UNUSED_RS_LEGENDARY_BATTLE_DONE"
+      ],
+      "hns": [
+       "FLAG_FINITE_TMS"
+      ],
+      "id": 113
+     },
+     {
+      "emerald": [
+       "FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_BIRCH"
+      ],
+      "hns": [
+       "FLAG_GARBAGEFLAGS_LAB_BIRCH"
+      ],
+      "id": 721
+     },
+     {
+      "emerald": [
+       "FLAG_HIDE_LILYCOVE_FAN_CLUB_INTERVIEWER"
+      ],
+      "hns": [
+       "FLAG_GOT_SILK_SCARF"
+      ],
+      "id": 730
+     },
+     {
+      "emerald": [
+       "FLAG_HIDE_RUSTBORO_CITY_AQUA_GRUNT"
+      ],
+      "hns": [
+       "FLAG_GOT_MYSTICWATER"
+      ],
+      "id": 731
+     }
+    ],
+    "idsInBoth": 1538,
+    "liveCollisions": 243,
+    "liveSameNameDifferentId": 2,
+    "sameName": 764,
+    "sameNameDifferentId": 3,
+    "sameNameInBoth": 772
+   },
+   "vars": {
+    "differentName": 82,
+    "examples": [
+     {
+      "emerald": [
+       "VAR_LITTLEROOT_TOWN_STATE"
+      ],
+      "hns": [
+       "VAR_NEWBARK_TOWN_STATE"
+      ],
+      "id": 16464
+     },
+     {
+      "emerald": [
+       "VAR_LAVARIDGE_TOWN_STATE"
+      ],
+      "hns": [
+       "VAR_CHERRYGROVE_CITY_STATE"
+      ],
+      "id": 16467
+     },
+     {
+      "emerald": [
+       "VAR_PETALBURG_CITY_STATE"
+      ],
+      "hns": [
+       "VAR_VIOLET_CITY_STATE"
+      ],
+      "id": 16471
+     },
+     {
+      "emerald": [
+       "VAR_SLATEPORT_CITY_STATE"
+      ],
+      "hns": [
+       "VAR_AZALEA_TOWN_STATE"
+      ],
+      "id": 16472
+     },
+     {
+      "emerald": [
+       "VAR_RUSTBORO_CITY_STATE"
+      ],
+      "hns": [
+       "VAR_ECRUTEAK_CITY_STATE"
+      ],
+      "id": 16474
+     },
+     {
+      "emerald": [
+       "VAR_MOSSDEEP_CITY_STATE"
+      ],
+      "hns": [
+       "VAR_CIANWOOD_CITY_STATE"
+      ],
+      "id": 16477
+     }
+    ],
+    "idsInBoth": 278,
+    "liveCollisions": 32,
+    "liveSameNameDifferentId": 1,
+    "sameName": 196,
+    "sameNameDifferentId": 1,
+    "sameNameInBoth": 204
+   }
+  },
+  "firered|emerald": {
+   "flags": {
+    "differentName": 1351,
+    "examples": [
+     {
+      "emerald": [
+       "FLAG_HIDE_SKY_PILLAR_TOP_RAYQUAZA_STILL"
+      ],
+      "firered": [
+       "FLAG_HIDE_PEWTER_MUSEUM_GUIDE"
+      ],
+      "id": 80
+     },
+     {
+      "emerald": [
+       "FLAG_RESCUED_BIRCH"
+      ],
+      "firered": [
+       "FLAG_HIDE_MOLTRES"
+      ],
+      "id": 82
+     },
+     {
+      "emerald": [
+       "FLAG_BIRCH_AIDE_MET"
+      ],
+      "firered": [
+       "FLAG_HIDE_VICTORY_ROAD_2F_BOULDER"
+      ],
+      "id": 88
+     },
+     {
+      "emerald": [
+       "FLAG_DECLINED_BIKE"
+      ],
+      "firered": [
+       "FLAG_HIDE_VICTORY_ROAD_3F_BOULDER"
+      ],
+      "id": 89
+     },
+     {
+      "emerald": [
+       "FLAG_COLLECTED_ALL_SILVER_SYMBOLS"
+      ],
+      "firered": [
+       "FLAG_HIDE_CERULEAN_CAVE_GUARD"
+      ],
+      "id": 92
+     },
+     {
+      "emerald": [
+       "FLAG_GOOD_LUCK_SAFARI_ZONE"
+      ],
+      "firered": [
+       "FLAG_HIDE_ZAPDOS"
+      ],
+      "id": 93
+     }
+    ],
+    "idsInBoth": 1393,
+    "liveCollisions": 147,
+    "liveSameNameDifferentId": 29,
+    "sameName": 42,
+    "sameNameDifferentId": 73,
+    "sameNameInBoth": 120
+   },
+   "vars": {
+    "differentName": 216,
+    "examples": [
+     {
+      "emerald": [
+       "VAR_PC_BOX_TO_SEND_MON"
+      ],
+      "firered": [
+       "VAR_RESORT_GORGEOUS_REQUESTED_MON"
+      ],
+      "id": 16438
+     },
+     {
+      "emerald": [
+       "VAR_ABNORMAL_WEATHER_LOCATION"
+      ],
+      "firered": [
+       "VAR_PC_BOX_TO_SEND_MON"
+      ],
+      "id": 16439
+     },
+     {
+      "emerald": [
+       "VAR_FARAWAY_ISLAND_STEP_COUNTER"
+      ],
+      "firered": [
+       "VAR_ELEVATOR_FLOOR"
+      ],
+      "id": 16442
+     },
+     {
+      "emerald": [
+       "VAR_REGICE_STEPS_1"
+      ],
+      "firered": [
+       "VAR_RESORT_GORGEOUS_REWARD"
+      ],
+      "id": 16443
+     },
+     {
+      "emerald": [
+       "VAR_ALTERING_CAVE_WILD_SET"
+      ],
+      "firered": [
+       "VAR_DEOXYS_INTERACTION_NUM"
+      ],
+      "id": 16446
+     },
+     {
+      "emerald": [
+       "VAR_BIRCH_STATE"
+      ],
+      "firered": [
+       "VAR_HOF_BRAG_STATE"
+      ],
+      "id": 16457
+     }
+    ],
+    "idsInBoth": 274,
+    "liveCollisions": 28,
+    "liveSameNameDifferentId": 4,
+    "sameName": 58,
+    "sameNameDifferentId": 15,
+    "sameNameInBoth": 73
+   }
+  },
+  "firered|hns": {
+   "flags": {
+    "differentName": 1360,
+    "examples": [
+     {
+      "firered": [
+       "FLAG_HIDE_OAK_IN_HIS_LAB"
+      ],
+      "hns": [
+       "FLAG_SYS_SET_BATTLE_BGM"
+      ],
+      "id": 43
+     },
+     {
+      "firered": [
+       "FLAG_HIDE_OAK_IN_PALLET_TOWN"
+      ],
+      "hns": [
+       "FLAG_WONDERTRADE_FIRSTIME"
+      ],
+      "id": 44
+     },
+     {
+      "firered": [
+       "FLAG_HIDE_PEWTER_CITY_GYM_GUIDE"
+      ],
+      "hns": [
+       "FLAG_GLACIA_REMATCH"
+      ],
+      "id": 46
+     },
+     {
+      "firered": [
+       "FLAG_HIDE_BILL_CLEFAIRY"
+      ],
+      "hns": [
+       "FLAG_EV_MAN_FIRSTIME"
+      ],
+      "id": 50
+     },
+     {
+      "firered": [
+       "FLAG_HIDE_BILL_HUMAN_SEA_COTTAGE"
+      ],
+      "hns": [
+       "FLAG_MODEST_MINT_LILYCOVE"
+      ],
+      "id": 51
+     },
+     {
+      "firered": [
+       "FLAG_HIDE_TOWER_FUJI"
+      ],
+      "hns": [
+       "FLAG_TIMID_MINT_MAUVILLE"
+      ],
+      "id": 52
+     }
+    ],
+    "idsInBoth": 1391,
+    "liveCollisions": 212,
+    "liveSameNameDifferentId": 36,
+    "sameName": 31,
+    "sameNameDifferentId": 80,
+    "sameNameInBoth": 111
+   },
+   "vars": {
+    "differentName": 216,
+    "examples": [
+     {
+      "firered": [
+       "VAR_RESORT_GORGEOUS_REQUESTED_MON"
+      ],
+      "hns": [
+       "VAR_PC_BOX_TO_SEND_MON"
+      ],
+      "id": 16438
+     },
+     {
+      "firered": [
+       "VAR_PC_BOX_TO_SEND_MON"
+      ],
+      "hns": [
+       "VAR_ABNORMAL_WEATHER_LOCATION"
+      ],
+      "id": 16439
+     },
+     {
+      "firered": [
+       "VAR_ELEVATOR_FLOOR"
+      ],
+      "hns": [
+       "VAR_FARAWAY_ISLAND_STEP_COUNTER"
+      ],
+      "id": 16442
+     },
+     {
+      "firered": [
+       "VAR_RESORT_GORGEOUS_REWARD"
+      ],
+      "hns": [
+       "VAR_REGICE_STEPS_1"
+      ],
+      "id": 16443
+     },
+     {
+      "firered": [
+       "VAR_DEOXYS_INTERACTION_NUM"
+      ],
+      "hns": [
+       "VAR_ALTERING_CAVE_WILD_SET"
+      ],
+      "id": 16446
+     },
+     {
+      "firered": [
+       "VAR_HOF_BRAG_STATE"
+      ],
+      "hns": [
+       "VAR_BIRCH_STATE"
+      ],
+      "id": 16457
+     }
+    ],
+    "idsInBoth": 274,
+    "liveCollisions": 60,
+    "liveSameNameDifferentId": 4,
+    "sameName": 58,
+    "sameNameDifferentId": 15,
+    "sameNameInBoth": 73
+   }
+  }
+ },
+ "globalCandidates": [
+  "FLAG_BADGE01_GET",
+  "FLAG_BADGE02_GET",
+  "FLAG_BADGE03_GET",
+  "FLAG_BADGE04_GET",
+  "FLAG_BADGE05_GET",
+  "FLAG_BADGE06_GET",
+  "FLAG_BADGE07_GET",
+  "FLAG_BADGE08_GET",
+  "FLAG_SYS_B_DASH",
+  "FLAG_SYS_GAME_CLEAR",
+  "FLAG_SYS_NATIONAL_DEX",
+  "FLAG_SYS_POKEDEX_GET",
+  "FLAG_SYS_POKEMON_GET",
+  "FLAG_SYS_RIBBON_GET"
+ ],
+ "hmFlagNames": {
+  "emerald": [
+   "FLAG_ITEM_MOSSDEEP_STEVENS_HOUSE_HM08",
+   "FLAG_RECEIVED_HM_CUT",
+   "FLAG_RECEIVED_HM_DIVE",
+   "FLAG_RECEIVED_HM_FLASH",
+   "FLAG_RECEIVED_HM_FLY",
+   "FLAG_RECEIVED_HM_ROCK_SMASH",
+   "FLAG_RECEIVED_HM_STRENGTH",
+   "FLAG_RECEIVED_HM_SURF",
+   "FLAG_RECEIVED_HM_WATERFALL"
+  ],
+  "firered": [
+   "FLAG_GOT_HM01",
+   "FLAG_GOT_HM02",
+   "FLAG_GOT_HM03",
+   "FLAG_GOT_HM04",
+   "FLAG_GOT_HM05",
+   "FLAG_GOT_HM06",
+   "FLAG_HIDE_FOUR_ISLAND_ICEFALL_CAVE_1F_HM07"
+  ],
+  "hns": [
+   "FLAG_ITEM_ICEPATH1_HM_WATERFALL",
+   "FLAG_RECEIVED_HM_CUT",
+   "FLAG_RECEIVED_HM_DIVE",
+   "FLAG_RECEIVED_HM_FLASH",
+   "FLAG_RECEIVED_HM_FLY",
+   "FLAG_RECEIVED_HM_ROCK_SMASH",
+   "FLAG_RECEIVED_HM_STRENGTH",
+   "FLAG_RECEIVED_HM_SURF",
+   "FLAG_RECEIVED_HM_WATERFALL"
+  ]
+ },
+ "spaces": {
+  "emerald": {
+   "flagMax": 16388,
+   "flags": 1551,
+   "flagsUsedByScripts": 710,
+   "varMax": 32789,
+   "vars": 285,
+   "varsUsedByScripts": 166
+  },
+  "firered": {
+   "flagMax": 16385,
+   "flags": 1476,
+   "flagsUsedByScripts": 349,
+   "varMax": 32788,
+   "vars": 274,
+   "varsUsedByScripts": 85
+  },
+  "hns": {
+   "flagMax": 16389,
+   "flags": 1545,
+   "flagsUsedByScripts": 886,
+   "varMax": 32789,
+   "vars": 285,
+   "varsUsedByScripts": 210
+  }
+ }
+}

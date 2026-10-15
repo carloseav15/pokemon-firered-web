@@ -36,6 +36,24 @@ python3 unified-world/extract_levels.py           # niveles de líderes, Alto Ma
 Salida: `out/gates_<fuente>.json` (evidencia por evento) y `out/GATES.md` (resumen). Es
 determinista: ejecutarlo dos veces da los mismos archivos.
 
+## Experiencia, flags y progreso
+
+| Script | Salida | Para qué |
+|---|---|---|
+| `extract_curve.py` | `out/CURVE.md`, `out/curve.json` | XP finita de entrenadores por región frente al nivel alcanzable |
+| `extract_flag_spaces.py` | `out/FLAG_SPACES.md`, `flag_spaces.json`, `flag_ids.json` | Colisiones de IDs de flags y variables entre FireRed, Emerald y HnS |
+| `progress/progress.ts` | – | Modelo de progreso en tres capas (regional, derivada, exploración) |
+| `progress/progress.check.ts` | – | Comprobación con los IDs reales; ver el comando abajo |
+
+Resultados e interpretación: [PROGRESO.md](PROGRESO.md).
+
+```bash
+npx esbuild unified-world/progress/progress.check.ts --bundle --platform=node --format=esm \
+  --outfile=/tmp/progress.check.mjs && node /tmp/progress.check.mjs
+```
+
+El check lee `out/flag_ids.json`; si no existe, ejecuta antes `extract_flag_spaces.py`.
+
 ## Etapas de gimnasio (`extract_stages.py`)
 
 Parte de `out/levels.json` (ejecutar antes `extract_levels.py`). Regla: con **N** medallas, el as del líder

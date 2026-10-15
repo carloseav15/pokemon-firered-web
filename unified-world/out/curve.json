@@ -1,0 +1,117 @@
+{
+ "_meta": {
+  "formula": "floor(1.5 * expYield * level / 7)",
+  "generator": "unified-world/extract_curve.py",
+  "scope": "finite trainer XP only; wild XP unbounded and not measured",
+  "tables": {
+   "mediumFast@100": 1000000,
+   "mediumSlow@100": 1059860
+  }
+ },
+ "combined": {
+  "levelIfOnePokemon": {
+   "mediumFast": 100,
+   "mediumSlow": 100
+  },
+  "levelIfSplitSix": {
+   "mediumFast": 78,
+   "mediumSlow": 77
+  },
+  "xpSupply": 2857492
+ },
+ "ladder": [
+  11,
+  14,
+  15,
+  16,
+  19,
+  21,
+  21,
+  24,
+  24,
+  25,
+  29,
+  29,
+  31,
+  31,
+  33,
+  33,
+  36,
+  42,
+  43,
+  43,
+  45,
+  46,
+  47,
+  50
+ ],
+ "regions": {
+  "emerald": {
+   "levelIfOnePokemon": {
+    "mediumFast": 88,
+    "mediumSlow": 87
+   },
+   "levelIfSplitSix": {
+    "mediumFast": 48,
+    "mediumSlow": 49
+   },
+   "levelMax": 78,
+   "levelMedian": 26,
+   "levelMin": 3,
+   "pokemon": 954,
+   "trainersUsed": 502,
+   "unresolvedPokemon": 0,
+   "unresolvedSpecies": {},
+   "xpSupply": 689691
+  },
+  "firered": {
+   "levelIfOnePokemon": {
+    "mediumFast": 98,
+    "mediumSlow": 96
+   },
+   "levelIfSplitSix": {
+    "mediumFast": 54,
+    "mediumSlow": 54
+   },
+   "levelMax": 63,
+   "levelMedian": 29,
+   "levelMin": 5,
+   "pokemon": 1172,
+   "trainersUsed": 455,
+   "unresolvedPokemon": 0,
+   "unresolvedSpecies": {},
+   "xpSupply": 953781
+  },
+  "hns": {
+   "levelIfOnePokemon": {
+    "mediumFast": 100,
+    "mediumSlow": 100
+   },
+   "levelIfSplitSix": {
+    "mediumFast": 58,
+    "mediumSlow": 59
+   },
+   "levelMax": 75,
+   "levelMedian": 38,
+   "levelMin": 2,
+   "pokemon": 943,
+   "trainersUsed": 407,
+   "unresolvedPokemon": 15,
+   "unresolvedSpecies": {
+    "SPECIES_DUDUNSPARCE": 2,
+    "SPECIES_HAPPINY": 1,
+    "SPECIES_HONCHKROW": 2,
+    "SPECIES_KLEAVOR": 1,
+    "SPECIES_MAGMORTAR": 1,
+    "SPECIES_MAGNEZONE": 1,
+    "SPECIES_MUNCHLAX": 1,
+    "SPECIES_PORYGON_Z": 1,
+    "SPECIES_RHYPERIOR": 1,
+    "SPECIES_ROSERADE": 1,
+    "SPECIES_TANGROWTH": 1,
+    "SPECIES_URSALUNA": 1
+   },
+   "xpSupply": 1214020
+  }
+ }
+}
