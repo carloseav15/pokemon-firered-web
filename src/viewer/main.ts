@@ -14,6 +14,7 @@ import type { Element, KantoIndex, Trigger } from "./types";
 import { state, type PlayerVehicle } from "./state";
 import { fetchWorldIndex, type WorldIndexData } from "./data/worldIndex";
 import { WorldGrid } from "./data/worldGrid";
+import { AvatarAnimator, type AvatarData, type AvatarAction } from "./render/avatar";
 import { planStep } from "./movement";
 import { cdata, loadCData } from "@core/hw/assets";
 import { SectorLoader, nearbySectors, type SectorResource } from "./data/sectors";
@@ -138,6 +139,7 @@ let cancelPlayerMotion: (() => void) | null = null;
 function resetExploreSession(): void {
   cancelPlayerMotion?.();
   cancelPlayerMotion = null;
+  avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
   isStepping = false;
   stepRunning = false;
   playerMoving = false;
@@ -170,6 +172,7 @@ let playerRunning = false;
 let isStepping = false;
 let stepRunning = false;
 let jumpArc: readonly number[] = [];
+let avatarAnimator: AvatarAnimator | null = null;
 const playerEl = document.getElementById("player-sprite");
 
 function parseHash(): void {
@@ -370,52 +373,32 @@ function updatePlayerDisplay(): void {
   playerEl.style.top = `${py - 16}px`;
   playerEl.style.display = "block";
 
+  // Hoenn retains its earlier adapter; Kanto resolves all frames through AvatarAnimator.
   let frameIdx = 0;
-  let flip = false;
-  if (isBike) {
-    if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
-    else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
-    else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
-    else if (playerDir === "east") {
-      frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
-      flip = true;
-    }
-  } else if (playerMode === "surf") {
-    // FireRed's sheet has the three facings in frames 0-2; Emerald's has two frames per facing (0-1, 2-3, 4-5).
-    const north = HOENN ? 2 : 1;
-    const west = HOENN ? 4 : 2;
-    if (playerDir === "south") frameIdx = 0;
-    else if (playerDir === "north") frameIdx = north;
-    else if (playerDir === "west") frameIdx = west;
-    else if (playerDir === "east") {
-      frameIdx = west;
-      flip = true;
-    }
-  } else if (running) {
-    if (playerDir === "south") frameIdx = playerStep % 2 === 0 ? 3 : 4;
-    else if (playerDir === "north") frameIdx = playerStep % 2 === 0 ? 5 : 6;
-    else if (playerDir === "west") frameIdx = playerStep % 2 === 0 ? 7 : 8;
-    else if (playerDir === "east") {
-      frameIdx = playerStep % 2 === 0 ? 7 : 8;
-      flip = true;
-    }
-  } else {
-    if (playerDir === "south") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 3 : 4) : 0;
-    else if (playerDir === "north") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 5 : 6) : 1;
-    else if (playerDir === "west") frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
-    else if (playerDir === "east") {
-      frameIdx = playerMoving ? (playerStep % 2 === 0 ? 7 : 8) : 2;
-      flip = true;
-    }
+  const flip = playerDir === "east";
+  if (!avatarAnimator) {
+    const facing = playerDir === "south" ? 0 : playerDir === "north" ? playerMode === "surf" && HOENN ? 2 : 1 : playerMode === "surf" && HOENN ? 4 : 2;
+    frameIdx = playerMode === "surf" || !playerMoving ? facing
+      : (playerDir === "south" ? 3 : playerDir === "north" ? 5 : 7) + (playerStep % 2 === 0 ? 0 : 1);
   }
 
   const inGrass = worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
   playerEl.style.clipPath = inGrass ? "inset(0 0 4px 0)" : "none";
 
-  const spriteSheet = getPlayerSpriteSheet(state.playerChar, playerMode, running);
-  playerEl.style.backgroundImage = `url(${spriteSheet})`;
-  playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
-  playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+  if (avatarAnimator) {
+    const frame = avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick);
+    playerEl.style.width = `${frame.width}px`; playerEl.style.height = `${frame.height}px`;
+    playerEl.style.left = `${px - (frame.width - TILE) / 2}px`;
+    playerEl.style.top = `${py - (frame.height - TILE)}px`;
+    playerEl.style.backgroundImage = `url(${frame.url})`;
+    playerEl.style.backgroundPosition = `-${frame.index * frame.width}px 0px`;
+    playerEl.style.transform = `scale(${frame.hFlip ? -1 : 1}, ${frame.vFlip ? -1 : 1})`;
+    playerEl.dataset.animation = JSON.stringify(frame);
+  } else {
+    playerEl.style.backgroundImage = `url(${getPlayerSpriteSheet(state.playerChar, playerMode, running)})`;
+    playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
+    playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+  }
 
   viewport.scrollLeft = (px + TILE / 2) * camera.zoom - viewport.clientWidth / 2;
   viewport.scrollTop = (py + TILE / 2) * camera.zoom - viewport.clientHeight / 2;
@@ -647,6 +630,23 @@ function processPlayerStep(): void {
   const previousDirection = playerDir;
   playerDir = targetDir;
   if (dx === 0 && dy === 0) return;
+  // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
+  if (avatarAnimator && playerMode !== "bike" && previousDirection !== targetDir && !playerMoving) {
+    isStepping = true; playerMoving = true; stepRunning = false;
+    const started = viewerClock.tick;
+    avatarAnimator.begin(state.playerChar, playerMode, playerDir, "turn", started);
+    updatePlayerDisplay();
+    cancelPlayerMotion = viewerClock.subscribe(frame => {
+      updatePlayerDisplay();
+      if (frame.tick - started < 8) return;
+      cancelPlayerMotion?.(); cancelPlayerMotion = null;
+      isStepping = false; playerMoving = false;
+      avatarAnimator?.stop(state.playerChar, playerMode, playerDir, frame.tick);
+      updatePlayerDisplay();
+      if (keysDown.size) processPlayerStep();
+    });
+    return;
+  }
 
   const plan = planStep(worldGrid, playerX, playerY, playerDir, playerMode);
   const targetX = plan.x, targetY = plan.y;
@@ -659,6 +659,7 @@ function processPlayerStep(): void {
   }
 
   if (plan.status === "ready") {
+    const previousVehicle = playerMode;
     playerMode = plan.vehicle;
     stepRunning = playerMode === "walk" && playerRunning && !isLedgeJump;
     isStepping = true;
@@ -678,18 +679,23 @@ function processPlayerStep(): void {
       direction: playerDir, previousDirection, landingJump: isLedgeJump, vehicle: playerMode };
     fieldEffects.onGroundStep("begin", groundActor);
 
-    // DoJumpSpriteMovement: JUMP_DISTANCE_FAR lasts 32 GBA ticks; other speeds
-    // remain the viewer's existing navigation timings, not a claim of C movement parity.
-    const duration = isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
+    // Kanto uses the C step tables and 32-tick jumps (far/special); Hoenn retains its adapter timings.
+    const transition = !!avatarAnimator && (previousVehicle === "surf") !== (playerMode === "surf");
+    const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk";
+    const offsets = avatarAnimator?.offsets(action);
+    const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
     const startTick = viewerClock.tick;
+    avatarAnimator?.begin(state.playerChar, playerMode, playerDir, action, startTick);
 
     const animateStep = (tick: number) => {
       const elapsed = (tick - startTick) * GBA_FRAME_MS;
       const t = Math.min(1, elapsed / duration);
-      playerVisualX = startPxX + (destPxX - startPxX) * t;
-      playerVisualY = startPxY + (destPxY - startPxY) * t;
+      const elapsedTicks = tick - startTick;
+      const progress = avatarAnimator ? isLedgeJump ? Math.min(1, elapsedTicks / 32) : transition ? Math.min(16, Math.ceil(elapsedTicks / 2)) / 16 : offsets![Math.min(offsets!.length - 1, elapsedTicks - 1)]! / 16 : t;
+      playerVisualX = startPxX + (destPxX - startPxX) * progress;
+      playerVisualY = startPxY + (destPxY - startPxY) * progress;
 
-      if (isLedgeJump) {
+      if (isLedgeJump || transition) {
         const elapsedTicks = tick - startTick;
         playerVisualY += HOENN ? -Math.sin(t * Math.PI) * 12 : t >= 1 ? 0 : jumpArc[Math.min(15, Math.max(0, elapsedTicks - 1) >> 1)]!;
       }
@@ -704,6 +710,7 @@ function processPlayerStep(): void {
         playerVisualX = destPxX;
         playerVisualY = destPxY;
         isStepping = false;
+        avatarAnimator?.stop(state.playerChar, playerMode, playerDir, tick);
 
         fieldEffects.onGroundStep("finish", groundActor);
 
@@ -729,13 +736,14 @@ function processPlayerStep(): void {
       const basePxX = (playerX - minX) * TILE;
       const basePxY = (playerY - minY) * TILE;
       const bumpDist = 3;
-      const bumpDuration = 90;
-      const bumpStartTime = viewerClock.elapsedMs;
+      const bumpDuration = avatarAnimator ? (playerMode === "bike" ? 16 : 32) * GBA_FRAME_MS : 90;
+      avatarAnimator?.begin(state.playerChar, playerMode, playerDir, "bump", viewerClock.tick);
+      const bumpStartTick = viewerClock.tick;
 
-      const animateBump = (now: number) => {
-        const elapsed = now - bumpStartTime;
+      const animateBump = (tick: number) => {
+        const elapsed = (tick - bumpStartTick) * GBA_FRAME_MS;
         const t = Math.min(1, elapsed / bumpDuration);
-        const offset = Math.sin(t * Math.PI) * bumpDist;
+        const offset = avatarAnimator ? 0 : Math.sin(t * Math.PI) * bumpDist;
         playerVisualX = basePxX + dx * offset;
         playerVisualY = basePxY + dy * offset;
         updatePlayerDisplay();
@@ -747,10 +755,11 @@ function processPlayerStep(): void {
           playerVisualY = basePxY;
           isStepping = false;
           playerMoving = false;
+          avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
           updatePlayerDisplay();
         }
       };
-      cancelPlayerMotion = viewerClock.subscribe(frame => animateBump(frame.elapsedMs));
+      cancelPlayerMotion = viewerClock.subscribe(frame => animateBump(frame.tick));
     }
   }
 }
@@ -845,7 +854,12 @@ async function build(): Promise<void> {
   });
 
   if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
-  const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady]);
+  const avatarReady = !HOENN && startExplore ? fetch("/fr/objects.json").then(async response => {
+    if (!response.ok) throw new Error(`objects.json: HTTP ${response.status}`);
+    avatarAnimator = new AvatarAnimator(await response.json() as AvatarData);
+    await avatarAnimator.preload();
+  }) : Promise.resolve();
+  const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
   index = worldData.index;
   minX = worldData.minX;

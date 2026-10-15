@@ -36,6 +36,7 @@ export class ExplorationUi {
     this.menu.setAttribute("aria-labelledby", "explore-menu-title");
     this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar Kanto</h2>
       <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio.</p>
+      <label>Personaje <select id="explore-character"><option value="red">Rojo</option><option value="leaf">Hoja</option></select></label>
       <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option></select></label>
       <label>Escala <select id="explore-scale"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
@@ -43,6 +44,12 @@ export class ExplorationUi {
       <p id="explore-note">Navegación exterior en desarrollo. Las puertas abren el visor de interiores; historia y combates no se ejecutan aquí.</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);
+    const character = this.menu.querySelector<HTMLSelectElement>("#explore-character")!;
+    character.value = (document.getElementById("player-char") as HTMLSelectElement).value;
+    character.addEventListener("change", () => {
+      const original = document.getElementById("player-char") as HTMLSelectElement;
+      original.value = character.value; original.dispatchEvent(new Event("change"));
+    });
     this.menu.querySelector("#explore-format")!.addEventListener("change", event => {
       document.body.classList.toggle("explore-wide", (event.target as HTMLSelectElement).value === "wide");
       this.hooks.resize();
@@ -93,6 +100,7 @@ export class ExplorationUi {
   setLocation(name: string): void { if (this.location.textContent !== name) this.location.textContent = name; }
   private openMenu(): void {
     if (!this.active || this.menu.open) return;
+    (this.menu.querySelector("#explore-character") as HTMLSelectElement).value = (document.getElementById("player-char") as HTMLSelectElement).value;
     this.hooks.pause(true);
     this.menu.showModal();
   }

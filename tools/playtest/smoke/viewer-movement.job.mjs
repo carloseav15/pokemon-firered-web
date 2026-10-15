@@ -37,7 +37,15 @@ export default async function run(ctx) {
   return result;
  });
  const reverse={ArrowDown:'ArrowUp',ArrowUp:'ArrowDown',ArrowLeft:'ArrowRight',ArrowRight:'ArrowLeft'};
+ const face=async key=>{
+  await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
+  const direction={ArrowDown:'south',ArrowUp:'north',ArrowLeft:'west',ArrowRight:'east'}[key];
+  if(await p.locator('#player-sprite').evaluate((el,d)=>JSON.parse(el.dataset.animation).direction!==d,direction)){
+   await p.keyboard.press(key);await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
+  }
+ };
  const step=async(point,vehicle,inspectJump=false)=>{
+  await face(point.key);
   const before=await p.evaluate(()=>window.motionProbe.events.length);
   await p.keyboard.down(point.key);await p.waitForTimeout(20);await p.keyboard.up(point.key);
   if(inspectJump){
@@ -87,7 +95,7 @@ export default async function run(ctx) {
  if(!jump.jump||jump.ticks!==32)throw Error('Ledge timing/distance '+JSON.stringify(jump));
  const beforeWrong=await p.evaluate(()=>window.motionProbe.events.length);
  const beforeStyle=await p.locator('#player-sprite').evaluate(el=>[el.style.left,el.style.top]);
- await p.keyboard.press(reverse[cases.jump.key]);await p.waitForTimeout(200);
+ await face(reverse[cases.jump.key]);await p.keyboard.press(reverse[cases.jump.key]);await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
  if(await p.evaluate(n=>window.motionProbe.events.slice(n).some(e=>e.phase==='finish'),beforeWrong))throw Error('Ledge traversed in reverse');
  const afterStyle=await p.locator('#player-sprite').evaluate(el=>[el.style.left,el.style.top]);
  if(JSON.stringify(beforeStyle)!==JSON.stringify(afterStyle))throw Error('Blocked reverse jump moved avatar');

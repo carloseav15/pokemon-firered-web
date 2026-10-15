@@ -2,6 +2,13 @@
 // probes only observe grids/effects, never alter terrain, positions or flags.
 export default async function run(ctx) {
   const p = ctx.page;
+  const face=async key=>{
+    await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
+    const direction={ArrowDown:'south',ArrowUp:'north',ArrowLeft:'west',ArrowRight:'east'}[key];
+    if(await p.locator('#player-sprite').evaluate((el,d)=>JSON.parse(el.dataset.animation).direction!==d,direction)){
+      await p.keyboard.press(key);await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
+    }
+  };
   await p.setViewportSize({ width: 1280, height: 720 });
   await p.addInitScript(() => {
     window.navProbe = { finished: [], disposed: [], tasks: [], effects: [] };
@@ -58,7 +65,8 @@ export default async function run(ctx) {
     }
     throw Error('No adjacent collision at observed spawn');
   });
-  await p.keyboard.press(blocked.key);await p.waitForTimeout(200);
+  await face(blocked.key);await p.keyboard.press(blocked.key);
+  await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
   if(!await p.evaluate(at=>{const now=window.navProbe.finished.at(-1),el=document.querySelector('#player-sprite');return now.x===at.x&&now.y===at.y&&el.style.left===at.left&&el.style.top===at.top;},blocked))throw Error('Blocked tile moved avatar');
   await p.getByRole('button', { name: 'Menú · Esc' }).click();
   const paused = await p.evaluate(async () => (await import('/src/viewer/clock.ts')).viewerClock.tick);
@@ -96,7 +104,9 @@ export default async function run(ctx) {
     window.navProbe.measureWalk=new MutationObserver(()=>window.navProbe.walkSamples.push(JSON.parse(document.querySelector('#explore-performance').dataset.sample)));
     window.navProbe.measureWalk.observe(document.querySelector('#explore-performance'),{attributes:true,attributeFilter:['data-sample']});
   });
+
   for (const step of path) {
+    await face(step.key);
     await p.keyboard.down(step.key); await p.waitForTimeout(25); await p.keyboard.up(step.key);
     await p.waitForFunction(({x,y}) => window.navProbe.finished.at(-1).x===x && window.navProbe.finished.at(-1).y===y, step, { timeout: 2500 });
   }
@@ -107,6 +117,7 @@ export default async function run(ctx) {
   const start=await p.evaluate(()=>window.navProbe.finished.find(e=>e.phase==='spawn'));
   for(let i=path.length-1;i>=0;i--){
     const dest=i===0?start:path[i-1];
+    await face(reverse[path[i].key]);
     await p.keyboard.down(reverse[path[i].key]);await p.waitForTimeout(25);await p.keyboard.up(reverse[path[i].key]);
     await p.waitForFunction(({x,y})=>window.navProbe.finished.at(-1).x===x&&window.navProbe.finished.at(-1).y===y,dest,{timeout:2500});
   }
