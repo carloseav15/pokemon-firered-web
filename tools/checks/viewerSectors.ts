@@ -54,6 +54,10 @@ const closing = new SectorLoader(async () => {
   await new Promise<void>(resolve => { releaseDisposed = resolve; });
   return { bytes: 5, dispose() { disposedLate = true; } };
 });
-const inFlight = closing.update(["map"]); closing.dispose(); releaseDisposed(); await inFlight;
+const inFlight = closing.update(["map"]); closing.dispose();
+let drained = false;
+const drain = closing.settled().then(() => { drained = true; });
+await Promise.resolve(); assert.equal(drained, false);
+releaseDisposed(); await inFlight; await drain; assert.equal(drained, true);
 assert.equal(disposedLate, true); assert.deepEqual(closing.ids, []);
 console.log("Viewer sectors PASS: PREPARED sparse grids, eviction, stale async result and retry");

@@ -41,7 +41,7 @@ export class ExplorationUi {
       <label>Escala <select id="explore-scale"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
-      <p id="explore-note">Navegación exterior en desarrollo. Las puertas abren el visor de interiores; historia y combates no se ejecutan aquí.</p>
+      <p id="explore-note">Navegación por exteriores e interiores en desarrollo. Historia y combates no se ejecutan aquí.</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);
     const character = this.menu.querySelector<HTMLSelectElement>("#explore-character")!;

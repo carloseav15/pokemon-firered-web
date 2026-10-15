@@ -86,6 +86,12 @@ export class EntityManager {
     }
   }
 
+  dispose(): void {
+    this.container?.remove();
+    this.container = null;
+    for (const entity of this.entities) entity.el = undefined;
+  }
+
   faceTowards(ent: LiveEntity, targetGx: number, targetGy: number): void {
     const dx = targetGx - ent.gx;
     const dy = targetGy - ent.gy;

@@ -7,6 +7,8 @@ import { SurfSupport } from "./render/surf";
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
+import type { MapHeader } from "@core/rom";
+import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, warpArrivalDirection } from "./navigation";
 import { Rom, rom, setDataRoot } from "@core/rom";
 import { TileRenderer } from "@core/field/tileRenderer";
 import { TilesetAnimator } from "@core/field/tilesetAnimator";
@@ -96,6 +98,20 @@ const statusMeta = document.getElementById("status-meta");
 const statusPos = document.getElementById("status-pos");
 
 let index: KantoIndex;
+let exteriorWorld: WorldIndexData;
+let navigationMap: string | null = null;
+let warpBusy = false;
+let blockedArrival: string | null = null;
+const mapHeaders = new Map<string, MapHeader>();
+const navigationWarps = new NavigationWarps(async id => {
+  const cached = mapHeaders.get(id);
+  if (cached) return cached;
+  const header = await new Rom().loadMap(id);
+  mapHeaders.set(id, header);
+  return header;
+});
+let changeNavigationWorld: (mapId: string) => Promise<void>;
+
 let minX = 0;
 let minY = 0;
 let worldGrid: WorldGrid;
@@ -113,7 +129,7 @@ function updateSectorBorder(): void {
 let explorationUi: ExplorationUi | null = null;
 let sectorUpdateQueued = false;
 function requestSectors(): Promise<void> {
-  if (!sectorLoader) return Promise.resolve();
+  if (!sectorLoader || warpBusy) return Promise.resolve();
   const view = { x: minX + viewport.scrollLeft / camera.zoom / TILE,
     y: minY + viewport.scrollTop / camera.zoom / TILE,
     width: viewport.clientWidth / camera.zoom / TILE, height: viewport.clientHeight / camera.zoom / TILE };
@@ -211,6 +227,9 @@ function parseHash(): void {
   }
   startExplore = h.get("modo") === "explore";
   startMapId = h.get("mapa");
+  const returnWarp = Number(h.get("retornoWarp"));
+  if (h.has("retorno") && h.has("retornoWarp") && Number.isSafeInteger(returnWarp) && returnWarp >= 0)
+    navigationWarps.restore({ mapId: h.get("retorno")!, warpId: returnWarp });
   const px = Number(h.get("px"));
   const py = Number(h.get("py"));
   if (h.has("px") && h.has("py") && Number.isSafeInteger(px) && Number.isSafeInteger(py)) startPlayer = { x: px, y: py };
@@ -232,6 +251,7 @@ function scheduleHashWrite(): void {
 }
 
 function writeHash(): void {
+  if (warpBusy) return;
   const h = new URLSearchParams();
   h.set("x", String(Math.round(viewport.scrollLeft)));
   h.set("y", String(Math.round(viewport.scrollTop)));
@@ -242,6 +262,9 @@ function writeHash(): void {
   }
   if (panel.classList.contains("collapsed")) h.set("panel", "closed");
   h.set("modo", state.appMode);
+  if (navigationMap) h.set("mapa", navigationMap);
+  const dynamicReturn = navigationWarps.returnAddress;
+  if (dynamicReturn) { h.set("retorno", dynamicReturn.mapId); h.set("retornoWarp", String(dynamicReturn.warpId)); }
   if (playerActive) {
     h.set("px", String(playerX));
     h.set("py", String(playerY));
@@ -602,6 +625,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   if(playerElevation===15)playerElevation=0;
   playerVisualX = (playerX - minX) * TILE;
   playerVisualY = (playerY - minY) * TILE;
+  groundVisualY = playerVisualY;
   updatePlayerDisplay();
   checkCurrentMapMusic();
   fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false, elevation:playerElevation, priority:HOENN?2:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation],vehicle: playerMode });
@@ -635,7 +659,9 @@ function stopExploration(): void {
 }
 
 function toggleBike(): void {
-  if (isStepping || playerMode === "surf") return;
+  if (warpBusy || isStepping || playerMode === "surf") return;
+  const mapId = findMapAt(playerX,playerY)?.[0];
+  if (mapId && mapHeaders.get(mapId)?.allowCycling === false) return;
   playerMode = playerMode === "bike" ? "walk" : "bike";
   const bikeBtn = document.getElementById("bike-btn");
   if (bikeBtn) {
@@ -650,7 +676,7 @@ function toggleBike(): void {
 const keysDown = new Set<string>();
 
 function processPlayerStep(): void {
-  if (!playerActive || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
+  if (!playerActive || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
 
   let dx = 0;
   let dy = 0;
@@ -672,6 +698,7 @@ function processPlayerStep(): void {
   const previousDirection = playerDir;
   playerDir = targetDir;
   if (dx === 0 && dy === 0) return;
+  if (!HOENN && tryNavigationWarp("input", playerDir)) return;
   // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
   if (avatarAnimator && playerMode !== "bike" && previousDirection !== targetDir && !playerMoving) {
     isStepping = true; playerMoving = true; stepRunning = false;
@@ -690,6 +717,7 @@ function processPlayerStep(): void {
     return;
   }
 
+  if (!HOENN && tryNavigationWarp("front", playerDir)) return;
   const plan = planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerElevation);
   const targetX = plan.x, targetY = plan.y;
   const isLedgeJump = plan.jump;
@@ -703,7 +731,8 @@ function processPlayerStep(): void {
   if (plan.status === "ready") {
     const previousVehicle = playerMode;
     playerMode = plan.vehicle;
-    stepRunning = playerMode === "walk" && playerRunning && !isLedgeJump;
+    stepRunning = playerMode === "walk" && playerRunning && !isLedgeJump
+      && mapHeaders.get(findMapAt(playerX,playerY)?.[0] ?? "")?.allowRunning !== false;
     isStepping = true;
     playerMoving = true;
     playerStep = (playerStep + 1) % 4;
@@ -767,7 +796,8 @@ function processPlayerStep(): void {
 
         fieldEffects.onGroundStep("finish", groundActor);
 
-        if (checkDoorAt(playerX, playerY)) return;
+        if (blockedArrival !== `${playerX},${playerY}`) blockedArrival = null;
+        if (!HOENN && tryNavigationWarp("step", playerDir)) return;
         checkTrainerSight();
 
         if (keysDown.size > 0 && !dialogManager.isOpen()) {
@@ -877,20 +907,97 @@ function showAt(worldX: number, worldY: number): void {
   }
 }
 
-/** En exploración, pisar una puerta abre su interior (como el warp del juego). */
-function checkDoorAt(gx: number, gy: number): boolean {
-  const entry = findMapAt(gx, gy);
-  if (!entry) return false;
-  const [id, m] = entry;
-  const lx = gx - m.x;
-  const ly = gy - m.y;
-  const door = index.elements.find((e) => e.map === id && e.layer === "puerta" && e.x === lx && e.y === ly && e.destMap);
-  if (!door || door.destMap! in index.maps) return false;
-  keysDown.clear();
-  playerMoving = false;
-  updatePlayerDisplay();
-  void interiorViewer.open(door.destMap!);
+/** Original warp triggers; animated doors are tested in front even when their map tile is solid. */
+function tryNavigationWarp(phase: "input" | "front" | "step", direction: Direction): boolean {
+  const point = phase === "front" ? { x: playerX, y: playerY - 1 } : { x: playerX, y: playerY };
+  if (phase === "front" && direction !== "north") return false;
+  if (phase === "step" && blockedArrival === `${point.x},${point.y}`) return false;
+  const found = findMapAt(point.x, point.y);
+  if (!found) return false;
+  const [id, info] = found;
+  const header = mapHeaders.get(id);
+  if (!header) return false;
+  const warpId = warpAt(header, point.x - info.x, point.y - info.y, playerElevation);
+  if (warpId < 0) return false;
+  const behavior = worldGrid.behaviorAt(point.x, point.y);
+  const active = phase === "front" ? MB.MetatileBehavior_IsWarpDoor(behavior)
+    : phase === "input" ? inputWarpBehavior(behavior, direction) : stepWarpBehavior(behavior);
+  if (!active) return false;
+  void followNavigationWarp(header, warpId);
   return true;
+}
+
+/** A held walk bypasses collision on the arrival door itself, as Task_ExitDoor/ExitNonAnimDoor do. */
+async function walkWarpStep(direction: Direction): Promise<void> {
+  const dx = direction === "west" ? -1 : direction === "east" ? 1 : 0;
+  const dy = direction === "north" ? -1 : direction === "south" ? 1 : 0;
+  const x = playerVisualX, y = playerVisualY, started = viewerClock.tick;
+  playerDir = direction; isStepping = true;
+  avatarAnimator!.begin(state.playerChar, playerMode, direction, "walk", started);
+  const offsets = avatarAnimator!.offsets("walk");
+  await new Promise<void>(resolve => {
+    const unsubscribe = viewerClock.subscribe(frame => {
+      const elapsed = frame.tick - started;
+      const progress = elapsed >= offsets.length ? 1 : offsets[Math.max(0, elapsed - 1)]! / TILE;
+      playerVisualX = x + dx * TILE * progress;
+      playerVisualY = groundVisualY = y + dy * TILE * progress;
+      updatePlayerDisplay();
+      if (elapsed < offsets.length) return;
+      unsubscribe(); playerX += dx; playerY += dy; isStepping = false;
+      const elevation = worldGrid.elevationAt(playerX,playerY);
+      if (elevation !== 0 && elevation !== 15) playerElevation = elevation;
+      avatarAnimator!.stop(state.playerChar, playerMode, direction, frame.tick);
+      resolve();
+    });
+  });
+}
+
+async function followNavigationWarp(source: MapHeader, warpId: number): Promise<void> {
+  if (warpBusy) return;
+  warpBusy = true; content.setAttribute("aria-busy","true"); keysDown.clear(); playerMoving = false;
+  const old = { map: navigationMap, x: playerX, y: playerY, direction: playerDir, vehicle: playerMode, dynamic: navigationWarps.returnAddress };
+  let switched = false;
+  try {
+    const destination = await navigationWarps.resolve(source, warpId);
+    viewerClock.pause("warp");
+    content.style.visibility = "hidden";
+    resetExploreSession();
+    await changeNavigationWorld(destination.mapId); switched = true;
+    const info = index.maps[destination.mapId]!;
+    playerX = info.x + destination.arrival.x; playerY = info.y + destination.arrival.y;
+    playerElevation = worldGrid.elevationAt(playerX, playerY);
+    if (playerElevation === 15) playerElevation = 0;
+    const behavior = worldGrid.behaviorAt(playerX, playerY);
+    playerDir = warpArrivalDirection(behavior,playerDir);
+    if (!destination.header.allowCycling && playerMode === "bike") playerMode = "walk";
+    if (playerMode === "surf" && !worldGrid.isWaterTile(playerX, playerY)) playerMode = "walk";
+    playerVisualX = (playerX - minX) * TILE; playerVisualY = groundVisualY = (playerY - minY) * TILE;
+    playerActive = true;
+    await preloadExplorationSprites();
+    navigationWarps.commit(destination);
+    blockedArrival = `${playerX},${playerY}`;
+    viewerClock.resume("warp"); content.style.visibility = "";
+    updatePlayerDisplay();
+    if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) await walkWarpStep("south");
+    else if (MB.MetatileBehavior_IsNonAnimDoor(behavior)) await walkWarpStep(playerDir);
+    blockedArrival = `${playerX},${playerY}`;
+    fieldEffects.onGroundStep("spawn", { x:playerX,y:playerY,previousX:playerX,previousY:playerY,direction:playerDir,previousDirection:playerDir,
+      landingJump:false,vehicle:playerMode,elevation:playerElevation,priority:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation] });
+    updatePlayerDisplay(); writeHash();
+  } catch (error) {
+    console.error("Navigation warp", error);
+    navigationWarps.restore(old.dynamic);
+    if (switched || !playerActive) {
+      await changeNavigationWorld(old.map ?? source.id);
+      playerX = old.x; playerY = old.y; playerDir = old.direction; playerMode = old.vehicle;
+      playerElevation = worldGrid.elevationAt(playerX, playerY);
+      playerVisualX = (playerX-minX)*TILE; playerVisualY = groundVisualY = (playerY-minY)*TILE; playerActive = true;
+    }
+    panel.textContent = `No se pudo cambiar de mapa: ${String(error)}`;
+  } finally {
+    viewerClock.resume("warp"); content.style.visibility = "";
+    warpBusy = false; content.setAttribute("aria-busy","false"); playerMoving = false; updatePlayerDisplay(); writeHash();
+  }
 }
 
 async function build(): Promise<void> {
@@ -920,6 +1027,7 @@ async function build(): Promise<void> {
   }) : Promise.resolve();
   const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
+  exteriorWorld = worldData;
   index = worldData.index;
   minX = worldData.minX;
   minY = worldData.minY;
@@ -943,8 +1051,8 @@ async function build(): Promise<void> {
   const effectsReady = HOENN ? Promise.resolve(NO_FIELD_EFFECTS) : ViewerFieldEffects.create(worldGrid, viewerClock);
   [allMaps, fieldEffects] = await Promise.all([mapsReady, effectsReady, jumpReady]).then(([maps, effects]) => [maps, effects] as const);
   // Los efectos de campo (hierba, polvo, huellas) son de FireRed; en Hoenn se explora sin ellos.
-  const disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
-  const disposeEffectsSound=HOENN?()=>{}:fieldEffects.subscribe(event=>{if(event.type==="sound")audioController.playSE(event.id);});
+  let disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
+  let disposeEffectsSound=HOENN?()=>{}:fieldEffects.subscribe(event=>{if(event.type==="sound")audioController.playSE(event.id);});
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame();
@@ -1009,11 +1117,13 @@ async function build(): Promise<void> {
     renderer => { sectorBorder?.invalidate(renderer); avatarDepth?.invalidate(); if(playerActive)avatarDepth?.update(playerVisualX,isStepping?groundVisualY:playerVisualY,minX,minY,playerElevation); updateSectorBorder(); }
   );
 
+  let contextData: Rom | null = null;
   const renderMap = async (id: string): Promise<SectorResource> => {
     const info = index.maps[id];
     // A private ROM cache belongs to this sector and dies with it (no shared engine cache eviction).
-    const data = streaming ? new Rom() : rom;
+    const data = contextData ?? (streaming ? new Rom() : rom);
     const layout = layoutsByMap.get(id) ?? await data.loadLayout(info.layout);
+    if (!HOENN && !mapHeaders.has(id)) mapHeaders.set(id, await data.loadMap(id));
     const grid = streaming ? new WorldGrid(info.width, info.height, info.x, info.y) : worldGrid;
     const [primary, secondary] = await Promise.all([data.loadTileset(layout.primary), data.loadTileset(layout.secondary)]);
     const renderer = new TileRenderer(primary, secondary);
@@ -1217,6 +1327,52 @@ async function build(): Promise<void> {
     content.prepend(fillResult.canvas);
   }
   applyFillMode();
+
+  const exteriorEntities = entityManager;
+  changeNavigationWorld = async mapId => {
+    if (!streaming) throw new Error("Los interiores jugables requieren Explorar Kanto");
+    const exterior = !!exteriorWorld.index.maps[mapId];
+    let next = exteriorWorld;
+    let data: Rom | null = null;
+    if (!exterior) {
+      data = new Rom();
+      const header = mapHeaders.get(mapId) ?? await data.loadMap(mapId);
+      mapHeaders.set(mapId, header);
+      const layout = await data.loadLayout(header.layout);
+      const padding = 32;
+      next = { minX: -padding, minY: -padding, index: {
+        ...exteriorWorld.index,
+        world: { width: layout.width + padding*2, height: layout.height + padding*2, origin: mapId },
+        maps: { [mapId]: { x:0,y:0,width:layout.width,height:layout.height,layout:header.layout,
+          title:header.name,section:header.regionMapSectionName,music:header.music,musicName:header.musicName,weather:header.weather } },
+        elements: [], triggers: [], conflicts: [],
+      } };
+    }
+    // Drain any asynchronous sector before replacing the globals its renderer uses.
+    playerActive = false;
+    const previousLoader = sectorLoader;
+    sectorLoader = null;
+    previousLoader?.dispose();
+    await previousLoader?.settled();
+    sectorBorder?.dispose(); sectorBorder = null;
+    entityManager.dispose();
+    disposeEffects(); disposeEffectsSound(); fieldEffects.resetSession();
+    index = next.index; minX = next.minX; minY = next.minY;
+    navigationMap = exterior ? null : mapId;
+    contextData = data; layoutsByMap.clear(); fillSources = new Map();
+    worldGrid = new WorldGrid(index.world.width,index.world.height,minX,minY,true);
+    entityManager = exterior ? exteriorEntities : new EntityManager(content,minX,minY);
+    fieldEffects = await ViewerFieldEffects.create(worldGrid,viewerClock);
+    disposeEffects = installFieldFxRenderer(fieldEffects,content,minX,minY);
+    disposeEffectsSound = fieldEffects.subscribe(event => {if(event.type === "sound")audioController.playSE(event.id);});
+    camera.configure(index.world.width*TILE,index.world.height*TILE,camera.zoom);
+    minimapController?.setWorld(index,minX,minY);
+    sectorBorder = new SectorBorder(content);
+    sectorLoader = new SectorLoader(renderMap, () => { if (!warpBusy) {updateEntitiesView();updateSectorBorder();if(playerActive)updatePlayerDisplay();} });
+    await sectorLoader.update([mapId]);
+    if (!worldGrid.isLoaded(index.maps[mapId]!.x,index.maps[mapId]!.y)) throw new Error(sectorLoader.error || `Mapa no cargado: ${mapId}`);
+    content.dataset.navigationMap = mapId;
+  };
 
   const worldW = index.world.width * TILE;
   const worldH = index.world.height * TILE;
@@ -1467,6 +1623,7 @@ function setupUi(): void {
     const tag = document.activeElement?.tagName?.toLowerCase();
     if (tag === "input" || tag === "select" || tag === "textarea") return;
     const key = e.key.toLowerCase();
+    if (warpBusy && ["arrowup","arrowdown","arrowleft","arrowright","w","a","s","d","b","z","enter"," "].includes(key)) { e.preventDefault(); return; }
 
     if (playerActive && (explorationUi?.paused || interiorViewer.isOpen())) return;
     if (key === "m") {
@@ -1639,6 +1796,7 @@ build()
       else void interiorViewer.open(startMapId);
     }
     if (startExplore) {
+      if (!HOENN && startMapId && !index.maps[startMapId]) await changeNavigationWorld(startMapId);
       const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
         && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
       await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);

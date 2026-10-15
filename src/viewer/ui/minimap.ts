@@ -3,6 +3,7 @@ import type { KantoIndex } from "../types";
 
 export type MinimapController = {
   updateRadar: () => void;
+  setWorld(index: KantoIndex, minX: number, minY: number): void;
 };
 
 export function setupMinimap(
@@ -22,8 +23,8 @@ export function setupMinimap(
   const mctx = minimapCanvas.getContext("2d")!;
   const mw = minimapCanvas.width;
   const mh = minimapCanvas.height;
-  const worldW = index.world.width;
-  const worldH = index.world.height;
+  let worldW = index.world.width;
+  let worldH = index.world.height;
 
   // Área navegable con teclado: foco y nombre accesible.
   minimapCanvasWrap.tabIndex = 0;
@@ -218,5 +219,9 @@ export function setupMinimap(
     endDrag();
   });
 
-  return { updateRadar };
+  return { updateRadar, setWorld(next, x, y) {
+    index = next; minX = x; minY = y;
+    worldW = next.world.width; worldH = next.world.height;
+    drawMaps(); updateRadar();
+  } };
 }

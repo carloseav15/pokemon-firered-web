@@ -46,6 +46,8 @@ export class SectorLoader {
     for (const entry of this.resident.values()) entry.dispose();
     this.resident.clear(); this.wanted = [];
   }
+  /** Wait for a discarded asynchronous load to release its resources before replacing the world. */
+  async settled(): Promise<void> { await this.running; }
 }
 
 export function nearbySectors(maps: Record<string, SectorBounds>, view: SectorBounds, margin = 256): string[] {
