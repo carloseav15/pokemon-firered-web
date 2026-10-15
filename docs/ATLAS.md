@@ -455,6 +455,34 @@ El recorrido de 62 pasos Pallet/Ruta1 pasa (~60 FPS, p95≤16,8 ms, sin tareas>5
 No completa el compositor de toda la cámara ni la prioridad/subsprites de todos los NPC/objetos,
 colisiones por elevación/puentes o revisión exhaustiva/ROM. Esas validaciones continúan en 6.5d.
 
+Revisión funcional en curso (objetivo6.5o: puntos1/3/4/6). `f87e8e28` conserva elevaciones de los
+bloques en WorldGrid (un byte adicional por casilla residente), comprueba el lado de salida y el
+de entrada con los predicados C, y rechaza desniveles incompatibles conservando0/15 y el retorno
+de surf a nivel3. El embarque automático sigue siendo la adaptación de navegación ya declarada.
+Checks PREPARED de barreras, elevación heredada y liberación/reintento de sectores PASS; teclado
+exterior conserva16/8/6 ticks de caminar/correr/bici y32 de saltos/orilla.
+
+297fc052 completa las activaciones de aterrizaje y agua utilizadas por el alcance: cobertura
+suprimida durante salto, JumpTallGrass con hierba persistente al aterrizar, JumpSmall/BigSplash,
+Splash de charco y bucle de pies en agua somera (sigue al centro base del avatar, sin copiar y2,
+se retira inmediatamente al salir). Sonido SE_PUDDLE desde datos C. Ripple se centra a y+6 desde
+la esquina de la casilla (centro base +height/2−2−alturaDelRipple/2); antes estaba 8 px arriba.
+Huellas quedan detrás del actor, ondas bajo BG1 y hierba ordenada por elevación/subprioridad C
+con cámara virtual nativa centrada para el viewport ampliado. BG2 conserva un plano fijo;
+el avatar y soportes pasan delante al usar prioridad0/1. Esto evita alterar la prioridad de
+otros efectos al cruzar niveles. La prioridad completa de NPC/subsprites continúa fuera del objetivo.
+
+Tipos, honesty, build y harness PREPARED de efectos PASS (animaciones y recursos reales, suelo y
+RAF sintéticos): bucle/seguimiento/retirada, charcos de 8 ticks, aterrizajes y centro/prioridad de ondas.
+Teclado en terreno real conserva movimiento/salto/orilla/recarga y añade el polvo al desembarcar
+según JumpSpecialWithEffect. El recorrido exterior de 62 pasos registra ~60 FPS, p95 ≤16,8 ms y ninguna tarea >50 ms; no mide GPU ni rendimiento general. Silph (charcos), Seafoam (corrientes/agua somera) y HallOfFame (hielo) necesitan el contexto interior jugable y su recorrido real antes de cerrar efectos/terrenos.
+
+`tools/checks/viewerNavigationData.ts` lee los exportados sin cambiarlos y censa el grafo estático:
+255 mapas desde los 37 exteriores, 941 warps y ocho salidas dinámicas; no implica que ya se naveguen.
+SaffronCity real tiene 66×55 y SaffronCity_Connection 48×40: no se pueden sustituir como si fueran
+el mismo plano. El cambio de contexto debe conservar warps/conexiones explícitos. El objetivo
+completo continúa abierto en TAREAS-FINALES.md §6.5o.
+
 Límite de la revisión base: avatar de locomoción. El soporte normal se añadió en aa4279a8;
 las sombras fuera de los saltos revisados, revisión exhaustiva de reflejos, huellas/ondas en navegación real, revisión exhaustiva de máscaras/profundidad y terreno animado siguen en el punto de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
 escenas/acciones especiales, recorrido exhaustivo y comparación ROM/dispositivos siguen pendientes.
