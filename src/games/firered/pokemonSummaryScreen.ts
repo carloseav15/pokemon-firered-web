@@ -54,7 +54,7 @@ import {
   RemoveWindow, type WindowTemplate, COPYWIN_GFX,
 } from "@core/hw/window";
 import { AddTextPrinterParameterized3, AddTextPrinterParameterized4, DeactivateAllTextPrinters } from "@core/hw/text";
-import { BlitMenuInfoIcon, ListMenuLoadStdPalAt } from "@core/hw/listMenu";
+import { BlitMenuInfoIcon, MenuInfoIconOfType, ListMenuLoadStdPalAt } from "@core/hw/listMenu";
 import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
 import { EOS, encode, intToDecimal, StringCompareWithoutExtCtrlCodes, StringCopy, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
 import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
@@ -1458,10 +1458,10 @@ function PokeSum_DrawMoveTypeIcons(): void {
   FillWindowPixelBuffer(win, 0);
   for (let i = 0; i < 4; i++) {
     if (!sMonSummaryScreen.moveIds[i]) continue;
-    BlitMenuInfoIcon(win, sMonSummaryScreen.moveTypes[i] + 1, 3, GetMoveNamePrinterYpos(i));
+    BlitMenuInfoIcon(win, MenuInfoIconOfType(sMonSummaryScreen.moveTypes[i]), 3, GetMoveNamePrinterYpos(i));
   }
   if (sMonSummaryScreen.mode === PokemonSummaryScreenMode.PSS_MODE_SELECT_MOVE) {
-    BlitMenuInfoIcon(win, sMonSummaryScreen.moveTypes[4] + 1, 3, GetMoveNamePrinterYpos(4));
+    BlitMenuInfoIcon(win, MenuInfoIconOfType(sMonSummaryScreen.moveTypes[4]), 3, GetMoveNamePrinterYpos(4));
   }
 }
 
@@ -1472,18 +1472,18 @@ function PokeSum_PrintMonTypeIcons(): void {
   switch (pss.curPageIndex) {
     case PokemonSummaryScreenPage.PSS_PAGE_INFO:
       if (!pss.isEgg) {
-        BlitMenuInfoIcon(pss.windowIds[POKESUM_WIN_RIGHT_PANE], pss.monTypes[0] + 1, 47, 35);
+        BlitMenuInfoIcon(pss.windowIds[POKESUM_WIN_RIGHT_PANE], MenuInfoIconOfType(pss.monTypes[0]), 47, 35);
         if (pss.monTypes[0] !== pss.monTypes[1]) {
-          BlitMenuInfoIcon(pss.windowIds[POKESUM_WIN_RIGHT_PANE], pss.monTypes[1] + 1, 83, 35);
+          BlitMenuInfoIcon(pss.windowIds[POKESUM_WIN_RIGHT_PANE], MenuInfoIconOfType(pss.monTypes[1]), 83, 35);
         }
       }
       break;
     case PokemonSummaryScreenPage.PSS_PAGE_MOVES_INFO: {
       const win = pss.windowIds[6];
       FillWindowPixelBuffer(win, 0);
-      BlitMenuInfoIcon(win, pss.monTypes[0] + 1, 0, 3);
+      BlitMenuInfoIcon(win, MenuInfoIconOfType(pss.monTypes[0]), 0, 3);
       if (pss.monTypes[0] !== pss.monTypes[1]) {
-        BlitMenuInfoIcon(win, pss.monTypes[1] + 1, 36, 3);
+        BlitMenuInfoIcon(win, MenuInfoIconOfType(pss.monTypes[1]), 36, 3);
       }
       PutWindowTilemap(win);
       break;

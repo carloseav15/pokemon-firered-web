@@ -15,7 +15,7 @@ import { incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
 import { GetBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg } from "@core/hw/bg";
 import { SetGpuReg } from "@core/hw/gpu";
 import {
-  AddScrollIndicatorArrowPairParameterized, BlitMenuInfoIcon, DestroyListMenuTask, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, LIST_NOTHING_CHOSEN,
+  AddScrollIndicatorArrowPairParameterized, BlitMenuInfoIcon, MenuInfoIconOfType, DestroyListMenuTask, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, LIST_NOTHING_CHOSEN,
   ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, ListMenuLoadStdPalAt, listMenuTemplate,
   RemoveScrollIndicatorArrowPair, SCROLL_ARROW_UP, type ListMenuItem, type ListMenuTemplate,
 } from "@core/hw/listMenu";
@@ -937,7 +937,7 @@ function PrintMoveInfo(itemId: number): void {
     return;
   }
   const move = moveOf(itemId);
-  BlitMenuInfoIcon(WIN_MOVE_INFO, move.type + 1, 0, 0);
+  BlitMenuInfoIcon(WIN_MOVE_INFO, MenuInfoIconOfType(move.type), 0, 0);
   TMCase_Print(WIN_MOVE_INFO, FONT_NORMAL_COPY_2, move.power < 2 ? hyphens : intToDecimal(move.power, STR_CONV_MODE_RIGHT_ALIGN, 3), 7, 12, 0, 0, 0xff, COLOR_MOVE_INFO);
   TMCase_Print(WIN_MOVE_INFO, FONT_NORMAL_COPY_2, move.accuracy === 0 ? hyphens : intToDecimal(move.accuracy, STR_CONV_MODE_RIGHT_ALIGN, 3), 7, 24, 0, 0, 0xff, COLOR_MOVE_INFO);
   TMCase_Print(WIN_MOVE_INFO, FONT_NORMAL_COPY_2, intToDecimal(move.pp, STR_CONV_MODE_RIGHT_ALIGN, 3), 7, 36, 0, 0, 0xff, COLOR_MOVE_INFO);

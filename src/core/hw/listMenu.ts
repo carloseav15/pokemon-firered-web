@@ -431,9 +431,38 @@ export function ListMenu_DrawMonIconGraphics(windowId: number, iconPixels: Uint8
   BlitBitmapToWindow(windowId, iconPixels, x, y, 32, 32);
 }
 
+/**
+ * Label for a type that FireRed's sheet does not have (the Fairy type, id 18). The label is supplied by the unified
+ * rules profile (src/core/battle/rules.ts); without it the id falls back to the "???" label, never to a wrong one.
+ */
+export type MenuInfoFairyIcon = {
+  /** 32x16 4bpp bitmap in tile order (4 tiles per row), as BlitBitmapRect4Bit reads it. */
+  tiles: Uint8Array;
+  /** Palette entry used for the label background (no other pixel of the sheet uses it). */
+  paletteIndex: number;
+  /** BGR555 colour for that entry in the coloured palette. */
+  color: number;
+};
+
+let fairyIcon: MenuInfoFairyIcon | null = null;
+
+export function setMenuInfoFairyIcon(icon: MenuInfoFairyIcon | null): void {
+  fairyIcon = icon;
+}
+
+/** Palette bytes for ListMenuLoadStdPalAt: the original, except entry `paletteIndex` of the coloured palette when a Fairy icon is set. */
+export function MenuInfoPalette(palId: number): Uint8Array {
+  const original = incbin(palId === 1 ? "gMenuInfoElements2_Pal" : "gMenuInfoElements1_Pal");
+  if (palId !== 1 || !fairyIcon) return original;
+  const patched = new Uint8Array(original.subarray(0, 32));
+  patched[fairyIcon.paletteIndex * 2] = fairyIcon.color & 0xff;
+  patched[fairyIcon.paletteIndex * 2 + 1] = (fairyIcon.color >> 8) & 0xff;
+  return patched;
+}
+
 /** ListMenuLoadStdPalAt */
 export function ListMenuLoadStdPalAt(palOffset: number, palId: number): void {
-  LoadPalette(incbin(palId === 1 ? "gMenuInfoElements2_Pal" : "gMenuInfoElements1_Pal"), palOffset, 32);
+  LoadPalette(MenuInfoPalette(palId), palOffset, 32);
 }
 
 const sMenuInfoIcons: Array<[number, number, number]> = [
@@ -442,10 +471,32 @@ const sMenuInfoIcons: Array<[number, number, number]> = [
   [32, 12, 0x8c], [40, 12, 0xa8], [40, 12, 0xc0], [40, 12, 0xc8], [40, 12, 0xe0], [40, 12, 0xe8],
 ];
 
-/** BlitMenuInfoIcon: type/category icons from gMenuInfoElements_Gfx (iconId = type + 1 for types). */
-export function BlitMenuInfoIcon(windowId: number, iconId: number, x: number, y: number): void {
+/** Icon id of the Fairy label. Not `type + 1`: for type 18 that is 19 = MENU_INFO_ICON_TYPE, the "TYPE" caption. */
+export const MENU_INFO_ICON_FAIRY = 24;
+/** First type id that FireRed's sheet has no label for. */
+const FIRST_UNLABELLED_TYPE = 18;
+
+/** Icon id for a Pokémon type: `type + 1` for the 18 original types (0 is the "caught" icon), MENU_INFO_ICON_FAIRY beyond. */
+export function MenuInfoIconOfType(type: number): number {
+  return type >= FIRST_UNLABELLED_TYPE ? MENU_INFO_ICON_FAIRY : type + 1;
+}
+
+export type MenuInfoBitmap = { pixels: Uint8Array; srcWidth: number; srcHeight: number; width: number; height: number };
+
+/** The bitmap BlitMenuInfoIcon draws for an icon id. */
+export function MenuInfoIconBitmap(iconId: number): MenuInfoBitmap {
+  if (iconId === MENU_INFO_ICON_FAIRY) {
+    if (fairyIcon) return { pixels: fairyIcon.tiles, srcWidth: 32, srcHeight: 16, width: 32, height: 12 };
+    iconId = 10; // TYPE_MYSTERY + 1: the "???" label, rather than a wrong one
+  }
   const [w, h, offset] = sMenuInfoIcons[iconId] ?? sMenuInfoIcons[0];
-  BlitBitmapRectToWindow(windowId, incbin("gMenuInfoElements_Gfx").subarray(offset * 32), 0, 0, 128, 128, x, y, w, h);
+  return { pixels: incbin("gMenuInfoElements_Gfx").subarray(offset * 32), srcWidth: 128, srcHeight: 128, width: w, height: h };
+}
+
+/** BlitMenuInfoIcon: type/category icons from gMenuInfoElements_Gfx (use MenuInfoIconOfType for a type). */
+export function BlitMenuInfoIcon(windowId: number, iconId: number, x: number, y: number): void {
+  const b = MenuInfoIconBitmap(iconId);
+  BlitBitmapRectToWindow(windowId, b.pixels, 0, 0, b.srcWidth, b.srcHeight, x, y, b.width, b.height);
 }
 
 // ---------------------------------------------------------------- menu_indicators.c

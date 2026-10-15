@@ -23,7 +23,7 @@ import {
 } from "@core/hw/bg";
 import { ClearGpuRegBits, SetGpuReg, SetGpuRegBits } from "@core/hw/gpu";
 import {
-  AddScrollIndicatorArrowPair, BlitMenuInfoIcon, DestroyListMenuTask, ListMenu_DrawMonIconGraphics, ListMenu_ProcessInput, ListMenuAddCursorObjectInternal,
+  AddScrollIndicatorArrowPair, BlitMenuInfoIcon, MenuInfoIconOfType, DestroyListMenuTask, ListMenu_DrawMonIconGraphics, ListMenu_ProcessInput, ListMenuAddCursorObjectInternal,
   ListMenuDefaultCursorMoveFunc, ListMenuGetScrollAndRow, ListMenuInit, ListMenuInitInRect, ListMenuLoadStdPalAt, listMenuOf, ListMenuOverrideSetColors,
   ListMenuRemoveCursorObject, ListMenuUpdateCursorObject, RemoveScrollIndicatorArrowPair, type CursorStruct, type ListMenu, type ListMenuItem,
   type ListMenuTemplate, type ListMenuWindowRect, type ScrollArrowsTemplate,
@@ -840,8 +840,8 @@ function ItemPrintFunc_OrderedListMenu(_windowId: number, itemId: number, y: num
     BlitMenuInfoIcon(d.numericalOrderWindowId, C.MENU_INFO_ICON_CAUGHT, 0x28, y);
     const types = rom.species[species].types;
     const type1 = types[0];
-    BlitMenuInfoIcon(d.numericalOrderWindowId, type1 + 1, 0x78, y);
-    if (type1 !== types[1]) BlitMenuInfoIcon(d.numericalOrderWindowId, types[1] + 1, 0x98, y);
+    BlitMenuInfoIcon(d.numericalOrderWindowId, MenuInfoIconOfType(type1), 0x78, y);
+    if (type1 !== types[1]) BlitMenuInfoIcon(d.numericalOrderWindowId, MenuInfoIconOfType(types[1]), 0x98, y);
   }
 }
 
@@ -1978,8 +1978,8 @@ export function DexScreen_DrawMonAreaPage(): number {
 
   if (monIsCaught) {
     const types = rom.species[species].types;
-    BlitMenuInfoIcon(d.windowIds[12], 1 + types[0], 0, 1);
-    if (types[0] !== types[1]) BlitMenuInfoIcon(d.windowIds[12], 1 + types[1], 32, 1);
+    BlitMenuInfoIcon(d.windowIds[12], MenuInfoIconOfType(types[0]), 0, 1);
+    if (types[0] !== types[1]) BlitMenuInfoIcon(d.windowIds[12], MenuInfoIconOfType(types[1]), 32, 1);
   }
   PutWindowTilemap(d.windowIds[12]);
   CopyWindowToVram(d.windowIds[12], COPYWIN_GFX);

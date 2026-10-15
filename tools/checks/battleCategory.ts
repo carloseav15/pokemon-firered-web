@@ -4,6 +4,7 @@
 // Steps 0-1: the default (gen3) profile is pinned to a reference recorded before the refactor.
 // Step 2: the unified profile (Gen 4 per-move category) is checked against the data files and the damage formula.
 // Step 3: the Fairy type (chart, species, moves, name) is checked against Showdown's Gen 6 data, independently of the generator.
+// Step 5: the Fairy menu label (icon id, bitmap, palette entry) is checked against the sheet it is composed from.
 //
 // What this proves: the behaviour of those functions over a fixed grid of inputs is unchanged by a refactor.
 // What it does NOT prove: that the behaviour matches the GBA. The reference was recorded from this port, not from
@@ -30,6 +31,8 @@ import { MOVE_CATEGORIES_GEN4 } from '../../src/core/battle/data/moveCategoriesG
 import { Cmd_accuracycheck, Cmd_datahpupdate, Cmd_typecalc } from '../../src/core/battle/cmds/part1.ts';
 import { Cmd_hiddenpowercalc } from '../../src/core/battle/cmds/part4.ts';
 import { gBattleScriptingCommandsTable } from '../../src/core/battle/cmds/index.ts';
+import { MenuInfoIconOfType, MenuInfoIconBitmap, MenuInfoPalette, MENU_INFO_ICON_FAIRY } from '../../src/core/hw/listMenu.ts';
+import { incbin } from '../../src/core/hw/assets.ts';
 import {
   G, gBattleMons, gBattleStruct, gProtectStructs, gSpecialStatuses, gBattlerPositions, resetBattleStructs,
 } from '../../src/core/battle/globals.ts';
@@ -501,6 +504,12 @@ function fairyChecks(): void {
     species: rom.species.map((x: any) => [...x.types]), moves: rom.moves.map((m: any) => m.type),
   };
   const gen3Typecalc = typecalcRun(GEN3_TYPES);
+  const iconSnapshot = (): string[] => Array.from({ length: 25 }, (_, id) => {
+    const b = MenuInfoIconBitmap(id);
+    return `${id}:${b.srcWidth}x${b.srcHeight}@${b.width}x${b.height}:${createHash('sha256').update(b.pixels.subarray(0, 512)).digest('hex').slice(0, 16)}`;
+  });
+  const gen3Icons = iconSnapshot();
+  const gen3Palettes = [0, 1].map((p) => [...MenuInfoPalette(p)]);
   setBattleRulesProfile('unified');
   const chartAfterFirst = rom.typeEffectiveness.length;
   setBattleRulesProfile('unified'); // idempotent
@@ -611,13 +620,51 @@ function fairyChecks(): void {
   setBattleRulesProfile('gen3');
   assert.deepEqual(hpUnified, hpTypes(), 'Hidden Power types must not depend on the profile');
 
+  // 5b. The type label the UI draws. Types 0..17 keep `type + 1`; Fairy must not collide with the "TYPE" caption (19).
+  setBattleRulesProfile('unified'); // step 5 above left gen3 selected
+  for (let t = 0; t <= 17; t++) assert.equal(MenuInfoIconOfType(t), t + 1);
+  assert.equal(MenuInfoIconOfType(18), MENU_INFO_ICON_FAIRY);
+  assert.notEqual(MenuInfoIconOfType(18), C.MENU_INFO_ICON_TYPE, 'Fairy must not draw the TYPE caption');
+  const uniIcons = iconSnapshot();
+  for (let id = 0; id < 24; id++) assert.equal(uniIcons[id], gen3Icons[id], `icon ${id} changed under unified`);
+  const fairy = MenuInfoIconBitmap(MENU_INFO_ICON_FAIRY);
+  assert.deepEqual([fairy.srcWidth, fairy.srcHeight, fairy.width, fairy.height], [32, 16, 32, 12]);
+  assert.notEqual(uniIcons[MENU_INFO_ICON_FAIRY], gen3Icons[MENU_INFO_ICON_FAIRY], 'unified must supply a Fairy label');
+  // Bitmap properties, read from the pixels: 4bpp tile order, only background 10, text 15 and shadow 14, 4 clear corners.
+  const at = (x: number, y: number): number => {
+    const t = (y >> 3) * 4 + (x >> 3);
+    const byte = fairy.pixels[t * 32 + (y & 7) * 4 + ((x & 7) >> 1)];
+    return (x & 1) ? byte >> 4 : byte & 15;
+  };
+  const used = new Map<number, number>();
+  for (let y = 0; y < 12; y++) for (let x = 0; x < 32; x++) used.set(at(x, y), (used.get(at(x, y)) ?? 0) + 1);
+  assert.deepEqual([...used.keys()].sort((a, b) => a - b), [0, 10, 14, 15]);
+  assert.deepEqual([at(0, 0), at(31, 0), at(0, 11), at(31, 11)], [0, 0, 0, 0]);
+  assert.equal(used.get(0), 4, 'only the four rounded corners are transparent');
+  assert.ok((used.get(15) ?? 0) > 40 && (used.get(14) ?? 0) > 40, 'the label must carry letters and shadow');
+  for (let y = 12; y < 16; y++) for (let x = 0; x < 32; x++) assert.equal(((x & 1) ? fairy.pixels[((y >> 3) * 4 + (x >> 3)) * 32 + (y & 7) * 4 + ((x & 7) >> 1)] >> 4 : fairy.pixels[((y >> 3) * 4 + (x >> 3)) * 32 + (y & 7) * 4 + ((x & 7) >> 1)] & 15), 0);
+  // Palette index 10 is unused by every pixel of the sheet it joins, so recolouring it touches nothing else.
+  const sheet = incbin('gMenuInfoElements_Gfx');
+  assert.ok(![...sheet].some((b) => (b & 15) === 10 || (b >> 4) === 10), 'palette index 10 is used by the original sheet');
+  const fairyRgb555 = ((0xac >> 3) << 10) | ((0x99 >> 3) << 5) | (0xee >> 3);
+  const pal1 = [...MenuInfoPalette(1)], pal0 = [...MenuInfoPalette(0)];
+  assert.equal(pal1[20] | (pal1[21] << 8), fairyRgb555, 'palette entry 10 must be the Fairy colour');
+  assert.deepEqual(pal1.filter((_, i) => i !== 20 && i !== 21), gen3Palettes[1].filter((_, i) => i !== 20 && i !== 21), 'other entries changed');
+  assert.deepEqual(pal0, gen3Palettes[0], 'the monochrome palette must not change');
+  setBattleRulesProfile('gen3');
+
   // 6. Back to gen3: every patched table is exactly as it was.
   assert.deepEqual(rom.typeEffectiveness, before.chart);
   assert.deepEqual(rom.typeNames, before.names);
   assert.deepEqual(rom.species.map((x: any) => [...x.types]), before.species);
   assert.deepEqual(rom.moves.map((m: any) => m.type), before.moves);
   assert.deepEqual(typecalcRun(GEN3_TYPES), gen3Typecalc, 'gen3 type chart changed after using the unified profile');
-  console.log(`fairy PASS (${actual.length} chart cases vs Showdown Gen 6; 18 species, 3 moves, name, Hidden Power, restore)`);
+  // Back on gen3 the Fairy id draws the "???" label (never a wrong one) and the palettes are the originals.
+  const backIcons = iconSnapshot();
+  assert.deepEqual(backIcons, gen3Icons, 'menu-info icons differ after returning to gen3');
+  assert.equal(backIcons[MENU_INFO_ICON_FAIRY].split(':').slice(1).join(':'), backIcons[10].split(':').slice(1).join(':'));
+  assert.deepEqual([0, 1].map((p) => [...MenuInfoPalette(p)]), gen3Palettes, 'palettes differ after returning to gen3');
+  console.log(`fairy PASS (${actual.length} chart cases vs Showdown Gen 6; 18 species, 3 moves, name, Hidden Power, menu label, restore)`);
 }
 
 try {

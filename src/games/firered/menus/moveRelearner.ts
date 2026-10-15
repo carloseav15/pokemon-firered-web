@@ -10,7 +10,7 @@ import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
 import { incbin, incbin16, cdata, loadCData, preloadPacks, symName } from "@core/hw/assets";
 import { CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect, InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate } from "@core/hw/bg";
 import { InitGpuRegManager, SetGpuReg } from "@core/hw/gpu";
-import { DestroyListMenuTask, ListMenu_ProcessInput, ListMenuInit, ListMenuLoadStdPalAt, BlitMenuInfoIcon, listMenuTemplate, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, SCROLL_ARROW_UP, AddScrollIndicatorArrowPairParameterized, ListMenuGetScrollAndRow, RemoveScrollIndicatorArrowPair, StepScrollIndicatorArrowPair, type ListMenuItem, type ListMenu } from "@core/hw/listMenu";
+import { DestroyListMenuTask, ListMenu_ProcessInput, ListMenuInit, ListMenuLoadStdPalAt, BlitMenuInfoIcon, MenuInfoIconOfType, listMenuTemplate, LIST_CANCEL, LIST_NO_MULTIPLE_SCROLL, SCROLL_ARROW_UP, AddScrollIndicatorArrowPairParameterized, ListMenuGetScrollAndRow, RemoveScrollIndicatorArrowPair, StepScrollIndicatorArrowPair, type ListMenuItem, type ListMenu } from "@core/hw/listMenu";
 import { DrawStdFrameWithCustomTileAndPalette, FONTATTR_MAX_LETTER_HEIGHT, GetFontAttribute, LoadUserWindowGfx } from "@core/hw/menu";
 import { BG_PLTT_ID, LoadPalette, ResetPaletteFade, TransferPlttBuffer } from "@core/hw/palette";
 import { DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, ppu, REG_OFFSET_DISPCNT } from "@core/hw/ppu";
@@ -151,7 +151,7 @@ export function PrintMoveInfo(moveId: number): void {
   for (const id of [2, 3, 4, 5]) FillWindowPixelBuffer(id, 0);
   if (moveId > 0 && moveId < rom.moves.length) {
     const move = rom.moves[moveId];
-    BlitMenuInfoIcon(2, move.type + 1, 1, 4);
+    BlitMenuInfoIcon(2, MenuInfoIconOfType(move.type), 1, 4);
     const dashes = rom.text("gText_ThreeHyphens");
     AddTextPrinterParameterized3(3, FONT_NORMAL_COPY_2, 1, 4, COLOR_VALUE, TEXT_SKIP_DRAW,
       move.power < 2 ? dashes : intToDecimal(move.power, STR_CONV_MODE_RIGHT_ALIGN, 3));

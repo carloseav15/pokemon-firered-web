@@ -10,8 +10,8 @@
 //   unified  Gen 4 categories, per move (src/core/battle/data/moveCategoriesGen4.ts). A move whose category
 //            is "status" in that table keeps the type rule, so nothing that is not a damaging move changes.
 //            Badges give no stat boosts. Obedience by badges (util.ts) is not covered yet: it needs its own rule.
-//            The Fairy type (src/core/battle/data/fairyGen6.ts) is applied to the loaded data when the profile is
-//            selected and removed again when gen3 is selected: see applyUnifiedData().
+//            The Fairy type (src/core/battle/data/fairyGen6.ts, label in fairyIcon.ts) is applied to the loaded data
+//            when the profile is selected and removed again when gen3 is selected: see applyUnifiedData().
 //
 // Design: unified-world/DISENO-REGLAS.md.
 
@@ -22,6 +22,8 @@ import { MOVE_CATEGORIES_GEN4 } from "./data/moveCategoriesGen4";
 import {
   FAIRY_MOVE_TYPES, FAIRY_SPECIES_TYPES, FAIRY_TYPE_NAME_B64, TYPE_CHART_ADD, TYPE_CHART_REMOVE,
 } from "./data/fairyGen6";
+import { FAIRY_ICON_COLOR, FAIRY_ICON_PALETTE_INDEX, FAIRY_ICON_TILES_B64 } from "./data/fairyIcon";
+import { setMenuInfoFairyIcon } from "../hw/listMenu";
 
 export type BattleRulesProfile = "gen3" | "unified";
 
@@ -123,6 +125,13 @@ export function applyUnifiedData(): void {
     snapshot.moveTypes.set(Number(id), mv.type);
     mv.type = type;
   }
+
+  // The type label the summary, Pokédex, TM case and move relearner draw for Fairy.
+  setMenuInfoFairyIcon({
+    tiles: Uint8Array.from(atob(FAIRY_ICON_TILES_B64), (c) => c.charCodeAt(0)),
+    paletteIndex: FAIRY_ICON_PALETTE_INDEX,
+    color: FAIRY_ICON_COLOR,
+  });
 }
 
 /** Undo applyUnifiedData(): the faithful FireRed data, as loaded. No-op when it was never applied. */
@@ -132,6 +141,7 @@ export function restoreFaithfulData(): void {
   rom.typeNames = snapshot.typeNames;
   for (const [id, types] of snapshot.speciesTypes) rom.species[id].types = types;
   for (const [id, type] of snapshot.moveTypes) rom.moves[id].type = type;
+  setMenuInfoFairyIcon(null);
   snapshot = null;
 }
 
