@@ -74,6 +74,13 @@ export default async function run(ctx) {
     {name:'tree',map:'MAP_PALLET_TOWN',x:2,y:19},
     {name:'furniture',map:'MAP_PALLET_TOWN_PLAYERS_HOUSE_2F',x:2,y:5},
     {name:'interior-wall',map:'MAP_PALLET_TOWN_PLAYERS_HOUSE_1F',x:1,y:6},
+    {name:'full-fuchsia',map:'MAP_FUCHSIA_CITY',x:26,y:4,full:true,candidate:true},
+    // Proven walking routes: losing any of these routes is a regression, not an untested candidate.
+    {name:'full-vermilion',map:'MAP_VERMILION_CITY',x:35,y:22,full:true},
+    {name:'full-vermilion-middle',map:'MAP_VERMILION_CITY',x:36,y:22,full:true},
+    {name:'full-vermilion-right',map:'MAP_VERMILION_CITY',x:37,y:22,full:true},
+    {name:'full-lab',map:'MAP_CINNABAR_ISLAND_POKEMON_LAB_ENTRANCE',x:18,y:1,full:true,candidate:true},
+    {name:'full-route10',map:'MAP_ROUTE10',x:18,y:73,full:true,candidate:true},
   ],results=[];
   for(const fixture of cases){
     await p.goto('about:blank');await p.goto(new URL(`viewer.html#modo=explore&mapa=${fixture.map}`,process.env.PW_BASE).href);await idle();
@@ -91,9 +98,12 @@ export default async function run(ctx) {
           if(step.x<sector.x||step.y<sector.y||step.x>=sector.x+sector.width||step.y>=sector.y+sector.height)continue;
           seen.add(k);q.push({...step,path:[...at.path,{key,x:step.x,y:step.y}]});
         }
-      }throw Error('No real collision route '+JSON.stringify(goal));
+      }if(goal.candidate)return null;
+      throw Error('No real collision route '+JSON.stringify(goal));
     },fixture);
+    if(!route){results.push({fixture,reachable:false,scope:'No walking-only route from the actual entry; jumps, Surf, alternate entries and scripts not covered.'});continue;}
     await walk(route.path);const behind=await inspect(fixture.name+'-behind');
+    if(fixture.full&&behind.visible!==0)throw Error('Source full occluder left visible pixels '+JSON.stringify({fixture,behind}));
     if(!behind.covered)throw Error('Selected source fixture does not occlude '+JSON.stringify({fixture,behind}));
     const collision=await p.evaluate(async()=>{
       const {planStep}=await import('/src/viewer/movement.ts'),g=window.occlusion.grid,at=window.occlusion.positions.at(-1);
@@ -111,5 +121,5 @@ export default async function run(ctx) {
     if(front.covered||!front.visible)throw Error('Avatar failed to return in front '+JSON.stringify(front));
     results.push({fixture,steps:route.path.length,behind,collision,front});
   }
-  return{character,results,note:'PREPARED map entry only; real source BG, keyboard routes and screenshot pixel comparison. No terrain or expected screenshot pixels injected; no ROM comparison.'};
+  return{character,results,note:'Full-occlusion candidates are not assumed reachable. PREPARED map entry only; real source BG, keyboard routes and screenshot pixel comparison. No terrain or expected screenshot pixels injected; no ROM comparison.'};
 }
