@@ -475,13 +475,31 @@ otros efectos al cruzar niveles. La prioridad completa de NPC/subsprites contin�
 Tipos, honesty, build y harness PREPARED de efectos PASS (animaciones y recursos reales, suelo y
 RAF sintéticos): bucle/seguimiento/retirada, charcos de 8 ticks, aterrizajes y centro/prioridad de ondas.
 Teclado en terreno real conserva movimiento/salto/orilla/recarga y añade el polvo al desembarcar
-según JumpSpecialWithEffect. El recorrido exterior de 62 pasos registra ~60 FPS, p95 ≤16,8 ms y ninguna tarea >50 ms; no mide GPU ni rendimiento general. Silph (charcos), Seafoam (corrientes/agua somera) y HallOfFame (hielo) necesitan el contexto interior jugable y su recorrido real antes de cerrar efectos/terrenos.
+según JumpSpecialWithEffect. El recorrido exterior de 62 pasos registra ~60 FPS, p95 ≤16,8 ms y ninguna tarea >50 ms; no mide GPU ni rendimiento general. Silph (charcos), Seafoam (corrientes/agua somera) y HallOfFame (hielo) ya disponen del contexto interior jugable, pero necesitan su recorrido real antes de cerrar efectos/terrenos.
 
 `tools/checks/viewerNavigationData.ts` lee los exportados sin cambiarlos y censa el grafo estático:
 255 mapas desde los 37 exteriores, 941 warps y ocho salidas dinámicas; no implica que ya se naveguen.
 SaffronCity real tiene 66×55 y SaffronCity_Connection 48×40: no se pueden sustituir como si fueran
 el mismo plano. El cambio de contexto debe conservar warps/conexiones explícitos. El objetivo
 completo continúa abierto en TAREAS-FINALES.md §6.5o.
+
+`33a980b4` añade cambio de contexto en la ruta de Explorar: usa el mismo avatar,
+reloj, cámara, render y efectos; libera el loader anterior y espera a que termine cualquier
+carga descartada antes de sustituir grids. El minimapa cambia de mundo sin instalar listeners
+nuevos y la URL interior conserva mapa/posición y la dirección del retorno dinámico. Los
+warps usan coordenadas/elevación originales, el índice exacto de destino y la dirección de
+llegada de overworld.c. El retorno dinámico ocupa un solo slot, como en C.
+
+Chromium con teclado y datos reales: puerta de casa de Paleta → caminar → salir en (6,8),
+recarga en el interior conservando (4,8), escaleras 1F↔2F en (10,2) y sin rebote automático;
+una sola escena interior y grids anteriores liberados. Entradas URL PREPARED declaradas.
+La regresión exterior de 62 pasos mantiene ~60 FPS y p95 ≤16,8 ms en este Chromium.
+El check de datos resuelve 933 destinos estáticos y 47 entradas a destinos con retorno dinámico
+entre 255 mapas; no demuestra que se hayan recorrido todos. Tipos/honesty/build y check de
+sectores (incluida espera de carga descartada) PASS. Las animaciones/fades de puertas y
+transiciones especiales siguen pendientes; también ascensores/plantas, conexión de Saffron
+real con rutas y recorrido exhaustivo. Los interiores todavía no instancian sus NPC/scripts.
+
 
 Límite de la revisión base: avatar de locomoción. El soporte normal se añadió en aa4279a8;
 las sombras fuera de los saltos revisados, revisión exhaustiva de reflejos, huellas/ondas en navegación real, revisión exhaustiva de máscaras/profundidad y terreno animado siguen en el punto de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
