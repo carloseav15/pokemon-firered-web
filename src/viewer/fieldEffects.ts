@@ -34,6 +34,8 @@ export class ViewerFieldEffects {
   private grass = new Map<string, number>();
   private nextId = 0;
   private flowing: number | null = null;
+  /** ObjectEvent.inHotSprings: id of the live HotSpringsWater effect while both cells are hot springs. */
+  private hotSprings: number | null = null;
   private sessionGeneration = 0;
   get generation(): number { return this.sessionGeneration; }
   private constructor(private readonly grid: WorldGrid, private readonly clock: ViewerClock, private readonly templates: ReadonlyMap<EffectTemplateName, EffectTemplate>) {}
@@ -49,6 +51,7 @@ export class ViewerFieldEffects {
     this.sessionGeneration++;
     this.grass.clear();
     this.flowing = null;
+    this.hotSprings = null;
     this.emit(Object.freeze({ type: "clear", generation: this.generation }));
   }
   private emit(event: FieldEffectEvent): void {
@@ -72,6 +75,10 @@ export class ViewerFieldEffects {
     const startedFlow=flowing&&this.flowing===null;
     if(startedFlow){this.flowing=this.spawn("Splash",phase,actor,0,actor.priority??2,0,8,true,1,undefined,true);}
     if(flowing && (phase==="begin" || startedFlow))this.emit({type:"sound",id:C.SE_PUDDLE});
+    // GetGroundEffectFlags_HotSprings: both cells must be hot springs; FldEff_HotSpringsWater lives while inHotSprings.
+    const inSprings=!disabled&&MB.MetatileBehavior_IsHotSprings(behavior)&&MB.MetatileBehavior_IsHotSprings(before);
+    if(!inSprings&&this.hotSprings!==null){this.emit({type:"release",id:this.hotSprings,generation:this.generation});this.hotSprings=null;}
+    if(inSprings&&this.hotSprings===null)this.hotSprings=this.spawn("HotSpringsWater",phase,actor,0,actor.priority??2,0,8,true,0,undefined,true);
     if((phase==="begin"||phase==="finish")&&!actor.landingJump&&MB.MetatileBehavior_IsPuddle(behavior)&&MB.MetatileBehavior_IsPuddle(before)){
       this.spawn("Splash",phase,actor,0,actor.priority??2,0,8,false,0,undefined,true);this.emit({type:"sound",id:C.SE_PUDDLE});
     }

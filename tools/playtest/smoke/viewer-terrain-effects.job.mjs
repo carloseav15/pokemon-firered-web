@@ -31,6 +31,7 @@ export default async function run(ctx){
   {name:'sand',map:'MAP_ROUTE19',effect:'SandFootprints'},
   {name:'bike',map:'MAP_ROUTE19',effect:'BikeTireTracks'},
   {name:'flowing',map:'MAP_ROUTE20',effect:'Splash'},
+  {name:'springs',map:'MAP_ONE_ISLAND_KINDLE_ROAD_EMBER_SPA',effect:'HotSpringsWater'},
   {name:'water',map:'MAP_CELADON_CITY',effect:'Ripple'}];
  const results=[];
  for(const test of cases){
@@ -41,7 +42,7 @@ export default async function run(ctx){
    const rom=new Rom(),header=await rom.loadMap(test.map),layout=await rom.loadLayout(header.layout);
    const index=await(await fetch('/viewer/kanto.json')).json(),origin=index.maps[test.map]??{x:0,y:0};
    const pred={grass:MB.MetatileBehavior_IsTallGrass,sand:MB.MetatileBehavior_IsSand,bike:MB.MetatileBehavior_IsSand,
-    flowing:MB.MetatileBehavior_IsShallowFlowingWater,puddle:MB.MetatileBehavior_IsPuddle,water:MB.MetatileBehavior_HasRipples}[test.name];
+    flowing:MB.MetatileBehavior_IsShallowFlowingWater,springs:MB.MetatileBehavior_IsHotSprings,puddle:MB.MetatileBehavior_IsPuddle,water:MB.MetatileBehavior_HasRipples}[test.name];
    for(let y=origin.y;y<origin.y+layout.height;y++)for(let x=origin.x;x<origin.x+layout.width;x++){
     if(!g.isLoaded(x,y)||!pred(g.behaviorAt(x,y)))continue;
     const vehicle=test.name==='water'?'surf':test.name==='bike'?'bike':'walk';
@@ -57,7 +58,7 @@ export default async function run(ctx){
   const before=await p.evaluate(()=>({events:window.terrainFx.events.length,presented:window.terrainFx.presented.length}));
   await step(fixture);
   const observed=await p.evaluate(before=>({at:window.terrainFx.positions.at(-1),events:window.terrainFx.events.slice(before.events),presented:window.terrainFx.presented.slice(before.presented),live:[...document.querySelectorAll('[data-effect-name]')].map(e=>e.dataset.effectName)}),before);
-  if(test.name==='flowing'? !observed.live.includes(test.effect):(!observed.events.some(e=>e.name===test.effect)||!observed.presented.includes(test.effect)))throw Error('Actual terrain did not render '+JSON.stringify({test,fixture,observed}));
+  if(['flowing','springs'].includes(test.name)? !observed.live.includes(test.effect):(!observed.events.some(e=>e.name===test.effect)||!observed.presented.includes(test.effect)))throw Error('Actual terrain did not render '+JSON.stringify({test,fixture,observed}));
   if(observed.at.vehicle!==fixture.vehicle)throw Error('Wrong native vehicle '+JSON.stringify(observed));
   await ctx.shot(`${test.name}-${character}`);
   // Menu pause freezes the shared source timeline and the live effect frame.
@@ -74,20 +75,20 @@ export default async function run(ctx){
    await p.waitForFunction(name=>!document.querySelector(`[data-effect-name="${name}"]`),test.effect,{timeout:2500});
   }
   let leave=null;
-  if(test.name==='flowing'){
-   const path=await p.evaluate(async()=>{
+  if(['flowing','springs'].includes(test.name)){
+   const path=await p.evaluate(async name=>{
     const {planStep}=await import('/src/viewer/movement.ts'),MB=await import('/src/games/firered/generated/metatileBehavior.ts'),g=window.terrainFx.grid,start=window.terrainFx.positions.at(-1);
     const q=[{...start,path:[]}],seen=new Set([`${start.x},${start.y}`]);
-    for(let n=0;n<q.length;n++){const at=q[n];if(!MB.MetatileBehavior_IsShallowFlowingWater(g.behaviorAt(at.x,at.y)))return at.path;
+    for(let n=0;n<q.length;n++){const at=q[n];if(!(name==='springs'?MB.MetatileBehavior_IsHotSprings:MB.MetatileBehavior_IsShallowFlowingWater)(g.behaviorAt(at.x,at.y)))return at.path;
      if(at.path.length>=12)continue;
      for(const [key,dir]of [['ArrowDown','south'],['ArrowUp','north'],['ArrowLeft','west'],['ArrowRight','east']]){
       const next=planStep(g,at.x,at.y,dir,'walk',start.elevation),k=`${next.x},${next.y}`;
       if(next.status!=='ready'||next.vehicle!=='walk'||next.jump||seen.has(k))continue;seen.add(k);q.push({...next,path:[...at.path,{nx:next.x,ny:next.y,key}]});
      }
     }throw Error('No real flowing-water exit');
-   });
+   },test.name);
    for(const at of path)await step(at);
-   if(await p.locator('[data-effect-name=Splash]').count())throw Error('Flowing-water loop leaked on actual exit');
+   if(await p.locator(`[data-effect-name=${test.effect}]`).count())throw Error(`${test.effect} leaked on actual exit`);
    leave={steps:path.length,at:await p.evaluate(()=>window.terrainFx.positions.at(-1))};
   }
   results.push({test,fixture,observed,pause:true,leave});

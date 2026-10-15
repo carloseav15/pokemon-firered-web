@@ -1,7 +1,7 @@
 import { DATA_ROOT } from "@core/rom";
 
 export const M12_TEMPLATE_NAMES = ["TallGrass", "GroundImpactDust", "Ripple"] as const;
-export const VIEWER_TEMPLATE_NAMES = [...M12_TEMPLATE_NAMES, "SandFootprints", "DeepSandFootprints", "BikeTireTracks", "SurfBlob", "ShadowSmall", "ShadowMedium", "ShadowLarge", "ShadowExtraLarge", "Splash", "JumpTallGrass", "JumpSmallSplash", "JumpBigSplash"] as const;
+export const VIEWER_TEMPLATE_NAMES = [...M12_TEMPLATE_NAMES, "SandFootprints", "DeepSandFootprints", "BikeTireTracks", "SurfBlob", "ShadowSmall", "ShadowMedium", "ShadowLarge", "ShadowExtraLarge", "Splash", "JumpTallGrass", "JumpSmallSplash", "JumpBigSplash", "HotSpringsWater"] as const;
 export type EffectTemplateName = typeof VIEWER_TEMPLATE_NAMES[number];
 export type M12TemplateName = typeof M12_TEMPLATE_NAMES[number];
 export type ViewerAnimCmd = readonly ["F", number, number, 0 | 1, 0 | 1] | readonly ["J", number] | readonly ["E"];

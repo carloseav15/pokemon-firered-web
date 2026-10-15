@@ -105,7 +105,9 @@ export class EffectPresenter {
     this.actorVisual=actor;
     if(this.spawn.followPlayer){
       this.node.style.left=`${actor.xPx-this.minX*TILE-(this.spawn.template.size[0]-TILE)/2}px`;
-      this.node.style.top=`${actor.groundYPx-this.minY*TILE+12-this.spawn.template.size[1]/2}px`;
+      // UpdateHotSpringsWaterFieldEffect: y = (height >> 1) + linked.y - 8, below the avatar's feet line.
+      const hotSprings=this.spawn.template.name==="HotSpringsWater"?(actor.height>>1)-8:0;
+      this.node.style.top=`${actor.groundYPx-this.minY*TILE+12+hotSprings-this.spawn.template.size[1]/2}px`;
     }
     if(this.spawn.template.name!=="TallGrass")return;
     const base=cdata<number[]>("event_object_movement","sElevationToSubpriority");
