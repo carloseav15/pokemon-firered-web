@@ -6,7 +6,7 @@ import * as C from "../../games/firered/generated/constants";
 import type { Direction } from "./sprites";
 import type { PlayerVehicle } from "../state";
 
-export type AvatarAction = "walk" | "run" | "bike" | "surf" | "jump" | "bump" | "turn" | "board" | "dismount" | "ice" | "spin" | "current";
+export type AvatarAction = "walk" | "run" | "bike" | "surf" | "jump" | "bump" | "turn" | "board" | "dismount" | "ice" | "spin" | "current" | "walkSlow" | "runSlow";
 export type AvatarData = { gfx: Record<string, ObjectGfxInfo>; animTables: Record<string, Array<string | null>>; anims: Record<string, AnimCmd[]> };
 const directions = { south: C.DIR_SOUTH, north: C.DIR_NORTH, west: C.DIR_WEST, east: C.DIR_EAST };
 
@@ -66,7 +66,7 @@ export class AvatarAnimator {
     this.char = char; this.vehicle = vehicle; this.direction = direction; this.action = action;
     this.configure(char, action === "board" || action === "dismount" ? "surf" : vehicle);
     const dir = directions[direction];
-    this.sprite.animNum = action === "spin" ? GetSpinDirectionAnimNum(dir) : action === "run" ? GetRunningDirectionAnimNum(dir)
+    this.sprite.animNum = action === "spin" ? GetSpinDirectionAnimNum(dir) : action === "run" || action === "runSlow" ? GetRunningDirectionAnimNum(dir)
       : action === "board" || action === "dismount" ? GetJumpSpecialDirectionAnimNum(dir)
       : action === "bike" || action === "surf" || action === "turn" || action === "ice" || action === "current" ? GetMoveDirectionFastAnimNum(dir) : GetMoveDirectionAnimNum(dir);
     const commands = this.sprite.anims[this.sprite.animNum];
@@ -114,6 +114,17 @@ export class AvatarAnimator {
   }
   /** NpcTakeStep tables, not macOS timing or a guessed ms duration. */
   offsets(action: AvatarAction): number[] {
+    if (action === "walkSlow" || action === "runSlow") {
+      // UpdateWalkSlowAnim / UpdateRunSlowAnim (event_object_movement.c): per-frame Step1/Step2 until tStepNo > 15.
+      const out: number[] = [];
+      let delay = 0, steps = 0, x = 0;
+      do {
+        if (action === "walkSlow") { if (++delay < 3) { x += 1; steps += 1; } else delay = 0; }
+        else if ((++delay) & 1) { x += 1; steps += 1; } else { x += 2; steps += 2; }
+        out.push(x);
+      } while (steps <= 15);
+      return out;
+    }
     const table = action === "bike" || action === "current" ? "sSpeedFast2StepFuncs" : action === "run" || action === "surf" || action === "ice" || action === "spin" ? "sSpeedFast1StepFuncs" : "sSpeedNormalStepFuncs";
     let x = 0;
     return cdata<unknown[]>("event_object_movement", table).map(ref => {

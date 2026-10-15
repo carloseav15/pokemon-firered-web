@@ -820,7 +820,11 @@ function processPlayerStep(): void {
 
     // Kanto uses the C step tables and 32-tick jumps (far/special); Hoenn retains its adapter timings.
     const forcedAction: AvatarAction | undefined = forcedStep ? ({PlayerGoSpin:"spin",PlayerRideWaterCurrent:"current",PlayerWalkFast:"ice",PlayerWalkNormal:"walk",PlayerJumpLedge:"jump"} as const)[forcedStep.action] : undefined;
-    const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : forcedAction ?? (playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk");
+    // PlayerIsMovingOnRockStairs (field_player_avatar.c): north uses the current cell, south the destination.
+    const rockStairs = !forcedStep && !isLedgeJump && !transition && !HOENN && playerMode === "walk"
+      && (playerDir === "north" ? MB.MetatileBehavior_IsRockStairs(worldGrid.behaviorAt(playerX, playerY))
+        : playerDir === "south" ? MB.MetatileBehavior_IsRockStairs(worldGrid.behaviorAt(targetX, targetY)) : false);
+    const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : forcedAction ?? (playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? (rockStairs ? "runSlow" : "run") : (rockStairs ? "walkSlow" : "walk"));
     const offsets = avatarAnimator?.offsets(action);
     const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
     stepTarget = {x:targetX,y:targetY};
