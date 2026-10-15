@@ -86,6 +86,7 @@
     "check:movement-actions": "esbuild tools/checks/movementActions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/movementActions.mjs && node .decomp-build/checks/movementActions.mjs",
     "check:movement-types": "esbuild tools/checks/movementTypes.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/movementTypes.mjs && node .decomp-build/checks/movementTypes.mjs",
     "check:forced-movement": "esbuild tools/checks/forcedMovement.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/forcedMovement.mjs && node .decomp-build/checks/forcedMovement.mjs",
+    "check:elevator": "esbuild tools/checks/elevatorAnimation.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/elevatorAnimation.mjs && node .decomp-build/checks/elevatorAnimation.mjs",
     "check:escalator-warp": "esbuild tools/checks/escalatorWarp.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/escalatorWarp.mjs && node .decomp-build/checks/escalatorWarp.mjs",
     "check:player-avatar-transitions": "esbuild tools/checks/playerAvatarTransitions.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/playerAvatarTransitions.mjs && node .decomp-build/checks/playerAvatarTransitions.mjs",
     "refs:crystal-maps": "python3 tools/refs/crystal_maps.py",

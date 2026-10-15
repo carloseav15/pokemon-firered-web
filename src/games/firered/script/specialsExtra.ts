@@ -9,6 +9,7 @@ import { sound } from "@core/audio/sound";
 import { concat, encode, intToDecimal, stringVars, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
 import { FONT_SMALL } from "@core/gba/font";
 import { tasks } from "@core/gba/tasks";
+import { ElevatorAnimation } from "@core/field/elevatorAnimation";
 import { printText } from "@core/gba/textPrinter";
 import { Window } from "@core/gba/window";
 import { cdata, incbin } from "@core/hw/assets";
@@ -384,80 +385,22 @@ const FLOOR_NAMES = ["gText_B4F", "gText_B3F", "gText_B2F", "gText_B1F", "gText_
   "gText_7F", "gText_8F", "gText_9F", "gText_10F", "gText_11F", "gText_Rooftop"];
 let floorWindow: Window | undefined;
 
-/** AnimateElevator (field_specials.c). */
+// Keep one controller per scheduler: AnimateElevatorWindowView rejects an active window task.
+let elevatorContext: ScriptRunner;
+const elevatorAnimation = new ElevatorAnimation({
+  stopCameraPanning: () => elevatorContext.ow.SetCameraPanningCallback(null),
+  pan: (x, y) => elevatorContext.ow.SetCameraPanning(x, y),
+  restoreCameraPanning: () => elevatorContext.ow.InstallCameraPanAheadCallback(),
+  resumeScript: () => elevatorContext.ow.script.ScriptContext_Enable(),
+  playSE: id => sound.playSE(id),
+  setMetatile: (x, y, value) => MapGridSetMetatileIdAt(x, y, value, elevatorContext.ow.map),
+  drawMap: () => elevatorContext.ow.renderer?.invalidate(),
+});
+
+/** AnimateElevator (field_specials.c): the same tasks can be hosted by navigation. */
 function AnimateElevator(ctx: ScriptRunner): void {
-  const ow = ctx.ow;
-  const from = varGet(SV.x8005), to = varGet(SV.x8006);
-  const data = tasks.tasks[tasks.create((taskId) => Task_ElevatorShake(taskId, ctx), 9)].data;
-  data[1] = 0;
-  data[2] = 0;
-  data[4] = 1;
-  let nfloors: number;
-  if (from > to) {
-    nfloors = from - to;
-    data[6] = 1;
-  } else {
-    nfloors = to - from;
-    data[6] = 0;
-  }
-  if (nfloors > 8) nfloors = 8;
-  data[5] = cdata<number[]>("field_specials", "sElevatorAnimationDuration")[nfloors];
-  ow.SetCameraPanningCallback(null);
-  AnimateElevatorWindowView(nfloors, data[6]!, ctx);
-  sound.playSE(C.SE_ELEVATOR);
-}
-
-/** Task_ElevatorShake (field_specials.c). */
-function Task_ElevatorShake(taskId: number, ctx: ScriptRunner): void {
-  const data = tasks.tasks[taskId].data;
-  data[1] = data[1]! + 1;
-  if (data[1]! % 3 !== 0) return;
-  data[1] = 0;
-  data[2] = data[2]! + 1;
-  data[4] = -data[4]!;
-  ctx.ow.SetCameraPanning(0, data[4]!);
-  if (data[2] === data[5]) {
-    sound.playSE(C.SE_DING_DONG);
-    tasks.destroy(taskId);
-    ctx.ow.script.ScriptContext_Enable();
-    ctx.ow.InstallCameraPanAheadCallback();
-  }
-}
-
-/** AnimateElevatorWindowView (field_specials.c). */
-let elevatorWindowTaskId: number | undefined;
-function AnimateElevatorWindowView(nfloors: number, direction: number, ctx: ScriptRunner): void {
-  if (elevatorWindowTaskId !== undefined && tasks.tasks[elevatorWindowTaskId]?.isActive) return;
-  const taskId = tasks.create((id) => Task_AnimateElevatorWindowView(id, ctx), 8);
-  elevatorWindowTaskId = taskId;
-  const data = tasks.tasks[taskId].data;
-  data[0] = 0;
-  data[1] = 0;
-  data[2] = direction;
-  data[3] = cdata<number[]>("field_specials", "sElevatorWindowAnimDuration")[nfloors]!;
-}
-
-/** Task_AnimateElevatorWindowView (field_specials.c). */
-function Task_AnimateElevatorWindowView(taskId: number, ctx: ScriptRunner): void {
-  const data = tasks.tasks[taskId].data;
-  if (data[1] === 6) {
-    data[0] = data[0]! + 1;
-    const tables = cdata<number[][]>("field_specials", data[2] === 0
-      ? "sElevatorWindowMetatilesGoingUp" : "sElevatorWindowMetatilesGoingDown");
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        MapGridSetMetatileIdAt(j + 1 + MAP_OFFSET, i + MAP_OFFSET,
-          tables[i]![data[0]! % 3]! | MAPGRID_COLLISION_MASK, ctx.ow.map);
-      }
-    }
-    ctx.ow.renderer?.invalidate();
-    data[1] = 0;
-    if (data[0] === data[3]) {
-      tasks.destroy(taskId);
-      elevatorWindowTaskId = undefined;
-    }
-  }
-  data[1] = data[1]! + 1;
+  elevatorContext = ctx;
+  elevatorAnimation.AnimateElevator(varGet(SV.x8005), varGet(SV.x8006));
 }
 
 // ---------------------------------------------------------------- berry powder vendor
