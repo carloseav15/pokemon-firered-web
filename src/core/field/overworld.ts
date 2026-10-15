@@ -1,3 +1,4 @@
+import { FallWarpAnimation } from "./fallWarpAnimation";
 import { MapTransitionIsEnter, MapTransitionIsExit, GetStairsMovementDirection } from "./mapTransitions";
 // Port of overworld.c + field_camera.c: map loading from warps and camera
 // transitions, the per-frame field callbacks, and BG/OBJ composition.
@@ -2025,108 +2026,30 @@ export class Overworld {
     this.controlsLocked = true;
     this.objects.freezeAll();
     QuestLog_DrawPreviouslyOnQuestHeaderIfInPlaybackMode(this);
-    const taskId = tasks.create((taskId) => this.Task_FallWarpFieldEffect(taskId), 0);
-    tasks.data(taskId)[15] = taskId;
+    this.falling.start();
   }
 
-  /** Task_FallWarpFieldEffect (field_effect.c): run consecutive source stages in one frame when requested. */
-  private Task_FallWarpFieldEffect(taskId: number): void {
-    const data = tasks.data(taskId);
-    const steps = [this.FallWarpEffect_1, this.FallWarpEffect_2, this.FallWarpEffect_3, this.FallWarpEffect_4,
-      this.FallWarpEffect_5, this.FallWarpEffect_6, this.FallWarpEffect_7] as const;
-    while (data[0]! < steps.length && steps[data[0]!]!.call(this, data)) { /* C step returned TRUE: continue this frame. */ }
-  }
-
-  private FallWarpEffect_1(data: number[]): boolean {
-    const object = this.player.object;
-    const sprite = object.sprite;
-    // CameraObjectReset2 is a no-op in this renderer, which tracks the player directly.
-    object.invisible = true;
-    this.player.preventStep = true;
-    const faceAction = object.facingDirection === DIR_NORTH ? C.MOVEMENT_ACTION_FACE_UP
-      : object.facingDirection === DIR_WEST ? C.MOVEMENT_ACTION_FACE_LEFT
-        : object.facingDirection === DIR_EAST ? C.MOVEMENT_ACTION_FACE_RIGHT : C.MOVEMENT_ACTION_FACE_DOWN;
-    this.objects.setHeldMovement(object, faceAction);
-    data[4] = sprite.subspriteMode;
-    object.fixedPriority = true;
-    sprite.priority = 1;
-    sprite.subspriteMode = C.SUBSPRITES_IGNORE_PRIORITY;
-    data[0] = data[0]! + 1;
-    return true;
-  }
-
-  private FallWarpEffect_2(data: number[]): boolean {
-    if (IsWeatherNotFadingIn()) data[0] = data[0]! + 1;
-    return false;
-  }
-
-  private FallWarpEffect_3(data: number[]): boolean {
-    const sprite = this.player.object.sprite;
-    sprite.y2 = -(sprite.y - sprite.centerToCornerVecY + spriteState.gSpriteCoordOffsetY);
-    data[1] = 1;
-    data[2] = 0;
-    this.player.object.invisible = false;
-    sound.playSE(sound.c("SE_FALL"));
-    data[0] = data[0]! + 1;
-    return false;
-  }
-
-  private FallWarpEffect_4(data: number[]): boolean {
-    const object = this.player.object;
-    const sprite = object.sprite;
-    sprite.y2 += data[1]!;
-    if (data[1]! < 8) {
-      data[2] = data[2]! + data[1]!;
-      if (data[2]! & 0xf) data[1] = data[1]! << 1;
-    }
-    if (data[3] === 0 && sprite.y2 >= -16) {
-      data[3] = 1;
-      object.fixedPriority = false;
-      sprite.subspriteMode = data[4]!;
-      object.triggerGroundEffectsOnMove = true;
-    }
-    if (sprite.y2 >= 0) {
-      sound.playSE(sound.c("SE_M_STRENGTH"));
-      object.triggerGroundEffectsOnStop = true;
-      object.landingJump = true;
-      sprite.y2 = 0;
-      data[0] = data[0]! + 1;
-    }
-    return false;
-  }
-
-  private FallWarpEffect_5(data: number[]): boolean {
-    data[0] = data[0]! + 1;
-    data[1] = 4;
-    data[2] = 0;
-    this.SetCameraPanningCallback(null);
-    return true;
-  }
-
-  private FallWarpEffect_6(data: number[]): boolean {
-    this.SetCameraPanning(0, data[1]!);
-    data[1] = -data[1]!;
-    data[2] = data[2]! + 1;
-    if ((data[2]! & 3) === 0) data[1] = data[1]! >> 1;
-    if (data[1] === 0) data[0] = data[0]! + 1;
-    return false;
-  }
-
-  private FallWarpEffect_7(data: number[]): boolean {
-    this.player.preventStep = false;
-    this.UnlockPlayerFieldControls();
-    this.SetCameraPanning(0, 0);
-    this.InstallCameraPanAheadCallback();
-    this.objects.unfreezeAll();
-    const dest = PlayerGetDestCoords();
-    if (this.MetatileBehavior_IsSurfableInSeafoamIslands(MapGridGetMetatileBehaviorAt(dest.x, dest.y, this.map))) {
-      varSet(C.VAR_TEMP_1, 1);
-      this.player.setTransitionFlags(PLAYER_AVATAR_FLAG_SURFING);
-      SetHelpContext(C.HELPCONTEXT_SURFING);
-    }
-    tasks.destroy(data[15]!);
-    return false;
-  }
+  private readonly falling = new FallWarpAnimation({
+    object:()=>this.player.object,
+    screenY:()=>this.player.object.sprite.y+spriteState.gSpriteCoordOffsetY,
+    preventStep:value=>{this.player.preventStep=value;},
+    face:direction=>{const action=direction===DIR_NORTH?C.MOVEMENT_ACTION_FACE_UP:direction===DIR_WEST?C.MOVEMENT_ACTION_FACE_LEFT:direction===DIR_EAST?C.MOVEMENT_ACTION_FACE_RIGHT:C.MOVEMENT_ACTION_FACE_DOWN;
+      this.objects.setHeldMovement(this.player.object,action);},
+    weatherFinished:()=>IsWeatherNotFadingIn(),playSound:id=>sound.playSE(id),
+    beginPan:()=>this.SetCameraPanningCallback(null),pan:y=>this.SetCameraPanning(0,y),
+    finish:()=>{
+      this.UnlockPlayerFieldControls();
+      this.SetCameraPanning(0, 0);
+      this.InstallCameraPanAheadCallback();
+      this.objects.unfreezeAll();
+      const dest = PlayerGetDestCoords();
+      if (this.MetatileBehavior_IsSurfableInSeafoamIslands(MapGridGetMetatileBehaviorAt(dest.x, dest.y, this.map))) {
+        varSet(C.VAR_TEMP_1, 1);
+        this.player.setTransitionFlags(PLAYER_AVATAR_FLAG_SURFING);
+        SetHelpContext(C.HELPCONTEXT_SURFING);
+      }
+    },
+  });
 
   DoDoorWarp(): void {
     this.controlsLocked = true;

@@ -1,3 +1,4 @@
+import { FallWarpAnimation, type FallObject } from "@core/field/fallWarpAnimation";
 import { TeleportAnimation, type TeleportObject } from "@core/field/teleportAnimation";
 import { TaskManager } from "@core/gba/tasks";
 import { ViewerDoorAnimation, ViewerWarpVisuals } from "./render/warpVisuals";
@@ -213,6 +214,7 @@ let warpVisuals: ViewerWarpVisuals | null = null;
 let playerWarpHidden = false;
 let warpOffsetX=0,warpOffsetY=0;
 let warpPriority: number | null = null;
+let warpCameraY=0,fallPreventStep=false;
 let playerElevation = 0;
 let stepTarget: {x:number;y:number} | null = null;
 let groundVisualY = 0;
@@ -473,7 +475,7 @@ function updatePlayerDisplay(): void {
   playerEl.style.top=`${parseFloat(playerEl.style.top)+warpOffsetY}px`;
 
   viewport.scrollLeft = (px + TILE / 2) * camera.zoom - viewport.clientWidth / 2;
-  viewport.scrollTop = (py + TILE / 2) * camera.zoom - viewport.clientHeight / 2;
+  viewport.scrollTop = (py + TILE / 2) * camera.zoom - viewport.clientHeight / 2 + warpCameraY*camera.zoom;
   minimapController?.updateRadar();
 
   scheduleSectors();
@@ -673,7 +675,7 @@ function stopExploration(): void {
 }
 
 function toggleBike(): void {
-  if (warpBusy || isStepping || playerMode === "surf") return;
+  if (fallPreventStep || warpBusy || isStepping || playerMode === "surf") return;
   const mapId = findMapAt(playerX,playerY)?.[0];
   if (mapId && mapHeaders.get(mapId)?.allowCycling === false) return;
   playerMode = playerMode === "bike" ? "walk" : "bike";
@@ -690,7 +692,7 @@ function toggleBike(): void {
 const keysDown = new Set<string>();
 
 function processPlayerStep(): void {
-  if (!playerActive || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
+  if (!playerActive || fallPreventStep || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
 
   let dx = 0;
   let dy = 0;
@@ -994,15 +996,18 @@ function startStairMovement(behavior: number, exit: boolean): () => void {
   };
 }
 
-const teleportTasks=new TaskManager();
+const warpTasks=new TaskManager();
 let teleportFixedPriority=false,teleportSubpriority=0,teleportSubsprites=0,teleportFaceTick=-1;
 const warpDirections=["south","south","north","west","east"] as const;
 const warpDirectionIds={south:C.DIR_SOUTH,north:C.DIR_NORTH,west:C.DIR_WEST,east:C.DIR_EAST};
-const teleportActor: TeleportObject={
+const warpActor: TeleportObject & FallObject={
+  get invisible(){return playerWarpHidden;},set invisible(value){playerWarpHidden=value;},
+  triggerGroundEffectsOnMove:false,triggerGroundEffectsOnStop:false,landingJump:false,
   get facingDirection(){return warpDirectionIds[playerDir];},
   set facingDirection(direction){playerDir=warpDirections[direction]!;},
   get fixedPriority(){return teleportFixedPriority;},set fixedPriority(value){teleportFixedPriority=value;},
   sprite:{
+    get centerToCornerVecY(){return -parseFloat(playerEl!.style.height)/2;},
     get y2(){return warpOffsetY;},set y2(value){warpOffsetY=value;},
     get priority(){return warpPriority??cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]!;},
     set priority(value){warpPriority=value;},
@@ -1011,7 +1016,7 @@ const teleportActor: TeleportObject={
   },
 };
 const navigationTeleport=new TeleportAnimation({
-  object:()=>teleportActor,
+  object:()=>warpActor,
   // The native 240x160 camera centers the tile at y80: the 32px sprite center is y72.
   // Keep that virtual anchor when the viewer reveals extra tiles around the native view.
   screenY:()=>C.DISPLAY_HEIGHT/2-TILE/2,
@@ -1019,18 +1024,55 @@ const navigationTeleport=new TeleportAnimation({
   heldMovementFinished:()=>viewerClock.tick>teleportFaceTick,
   face:direction=>{playerDir=warpDirections[direction]!;teleportFaceTick=viewerClock.tick;
     avatarAnimator!.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);},
-},teleportTasks);
+},warpTasks);
 async function animateTeleport(incoming: boolean): Promise<void> {
   const started=viewerClock.tick;isStepping=true;
   if(incoming)navigationTeleport.StartTeleportInPlayerAnim();else navigationTeleport.StartTeleportWarpOutPlayerAnim();
   const display=()=>{updatePlayerDisplay();playerEl!.dataset.warpMotion=JSON.stringify({phase:incoming?"teleport-in":"teleport-out",
-    tick:viewerClock.tick-started,x:warpOffsetX,y:warpOffsetY,direction:playerDir,priority:teleportActor.sprite.priority});};
+    tick:viewerClock.tick-started,x:warpOffsetX,y:warpOffsetY,direction:playerDir,priority:warpActor.sprite.priority});};
   display();
   await new Promise<void>(resolve=>{const off=viewerClock.subscribe(()=>{
-    teleportTasks.run();display();
+    warpTasks.run();display();
     if(incoming?navigationTeleport.WaitTeleportInPlayerAnim():navigationTeleport.WaitTeleportWarpOutPlayerAnim())return;
     off();isStepping=false;delete playerEl!.dataset.warpMotion;resolve();
   });});
+}
+
+const navigationFall=new FallWarpAnimation({
+  object:()=>warpActor,screenY:()=>C.DISPLAY_HEIGHT/2-TILE/2,
+  preventStep:value=>{fallPreventStep=value;},
+  face:direction=>{playerDir=warpDirections[direction]!;avatarAnimator!.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);},
+  weatherFinished:()=>!warpVisuals!.isFading,playSound:id=>audioController.playSE(id),
+  beginPan:()=>{warpCameraY=0;},pan:y=>{warpCameraY=y;},
+  finish:()=>{warpCameraY=0;
+    const map=findMapAt(playerX,playerY)?.[0];
+    if((map==="MAP_SEAFOAM_ISLANDS_B3F"||map==="MAP_SEAFOAM_ISLANDS_B4F")&&MB.MetatileBehavior_IsSurfable(worldGrid.behaviorAt(playerX,playerY)))playerMode="surf";
+  },
+},warpTasks);
+async function animateFallArrival(): Promise<void> {
+  const started=viewerClock.tick;isStepping=true;
+  warpActor.triggerGroundEffectsOnMove=warpActor.triggerGroundEffectsOnStop=warpActor.landingJump=false;
+  navigationFall.start();
+  await new Promise<void>(resolve=>{const off=viewerClock.subscribe(()=>{
+    warpTasks.run();
+    if(!warpActor.fixedPriority)warpPriority=null;
+    const actor={x:playerX,y:playerY,previousX:playerX,previousY:playerY,direction:playerDir,previousDirection:playerDir,
+      elevation:playerElevation,priority:warpActor.sprite.priority,vehicle:playerMode,landingJump:warpActor.landingJump};
+    if(warpActor.triggerGroundEffectsOnMove){fieldEffects.onGroundStep("begin",actor);warpActor.triggerGroundEffectsOnMove=false;}
+    if(warpActor.triggerGroundEffectsOnStop){fieldEffects.onGroundStep("finish",actor);warpActor.triggerGroundEffectsOnStop=false;}
+    updatePlayerDisplay();playerEl!.dataset.warpMotion=JSON.stringify({phase:"fall-in",tick:viewerClock.tick-started,
+      stage:navigationFall.stage,y:warpOffsetY,pan:warpCameraY,invisible:playerWarpHidden,priority:warpActor.sprite.priority,vehicle:playerMode});
+    if(navigationFall.active)return;
+    off();isStepping=false;delete playerEl!.dataset.warpMotion;resolve();
+  });});
+}
+async function animateFallDeparture(): Promise<void> {
+  // hole.inc EventScript_DoFallWarp. Controls are already locked by followNavigationWarp.
+  // delay's native callback yields one frame before bytecode resumes (script.c RunScriptCommand).
+  await warpVisuals!.wait(20+1);playerWarpHidden=true;updatePlayerDisplay();
+  // SetInvisible executes, movement reaches STEP_END, then waitmovement resumes bytecode.
+  await warpVisuals!.wait(3);audioController.playSE(C.SE_FALL);
+  await warpVisuals!.wait(60+1);
 }
 
 async function followNavigationWarp(source: MapHeader, warpId: number, phase: "input" | "front" | "step"): Promise<void> {
@@ -1038,6 +1080,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
   warpBusy = true; content.setAttribute("aria-busy","true"); keysDown.clear(); playerMoving = false;
   const old = { map: navigationMap, x: playerX, y: playerY, direction: playerDir, vehicle: playerMode, dynamic: navigationWarps.returnAddress };
   const sourceBehavior=worldGrid.behaviorAt(playerX,playerY);
+  const falling=phase==="step"&&MB.MetatileBehavior_IsFallWarp(sourceBehavior);
   const teleport=phase==="step"&&MB.MetatileBehavior_IsWarpPad(sourceBehavior);
   let switched = false;
   let door: ViewerDoorAnimation | null = null;
@@ -1069,6 +1112,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
       stopStairs=startStairMovement(worldGrid.behaviorAt(playerX,playerY),false);
       audioController.playSE(C.SE_EXIT);await warpVisuals!.wait(12);
     }
+    if(falling)await animateFallDeparture();
     if(teleport){audioController.playSE(C.SE_WARP_IN);await animateTeleport(false);playerWarpHidden=true;updatePlayerDisplay();}
     await warpVisuals!.fadeScreen(!cavePreview&&MapTransitionIsEnter(source.mapType,destination.header.mapType)?FADE_TO_WHITE:FADE_TO_BLACK);
     stopStairs?.();stopStairs=null;
@@ -1082,6 +1126,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     if (playerElevation === 15) playerElevation = 0;
     const behavior = worldGrid.behaviorAt(playerX, playerY);
     playerDir = warpArrivalDirection(behavior,playerDir);
+    if(falling)playerMode="walk";
     if (!destination.header.allowCycling && playerMode === "bike") playerMode = "walk";
     if (playerMode === "surf" && !worldGrid.isWaterTile(playerX, playerY)) playerMode = "walk";
     playerVisualX = (playerX - minX) * TILE; playerVisualY = groundVisualY = (playerY - minY) * TILE;
@@ -1091,7 +1136,10 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     blockedArrival = `${playerX},${playerY}`;
     viewerClock.resume("warp"); content.style.visibility = "";
     const fromWhite=MapTransitionIsExit(source.mapType,destination.header.mapType);
-    if (teleport) {
+    if (falling) {
+      playerWarpHidden=true;updatePlayerDisplay();
+      await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateFallArrival()]);
+    } else if (teleport) {
       playerWarpHidden=false;updatePlayerDisplay();audioController.playSE(C.SE_WARP_OUT);
       await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateTeleport(true)]);
     } else if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
@@ -1133,7 +1181,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     }
     panel.textContent = `No se pudo cambiar de mapa: ${String(error)}`;
   } finally {
-    stopStairs?.();door?.dispose();navigationTeleport.reset();warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
+    stopStairs?.();door?.dispose();navigationTeleport.reset();navigationFall.reset();fallPreventStep=false;warpCameraY=0;warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
     warpVisuals?.clear();playerWarpHidden=false;
     viewerClock.resume("warp"); content.style.visibility = "";
     warpBusy = false; content.setAttribute("aria-busy","false"); playerMoving = false; updatePlayerDisplay(); writeHash();

@@ -82,6 +82,7 @@ export class ViewerWarpVisuals {
     const started=this.clock.tick;
     return new Promise(resolve=>{const off=this.clock.subscribe(frame=>{if(frame.tick-started>=ticks){off();resolve();}});});
   }
+  get isFading(): boolean { return this.fade.active; }
   solid(): void { this.fade.fill(RGB_BLACK);this.paint(); }
   async fadeScreen(mode: number, delay=0): Promise<void> {
     this.fade.fadeScreen(mode,delay);this.paint();
