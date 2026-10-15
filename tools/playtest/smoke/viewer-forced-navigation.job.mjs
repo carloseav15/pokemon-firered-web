@@ -19,6 +19,7 @@ export default async function run(ctx){
   {map:'MAP_ROCKET_HIDEOUT_B2F',x:13,y:5,key:'ArrowLeft',direction:'west',action:'spin',duration:8,path:[[12,5],[12,6],[12,7],[13,7]],stop:'spin-stop',stopAt:[13,7],leave:'ArrowUp',left:[13,6]},
   {map:'MAP_FOUR_ISLAND_ICEFALL_CAVE_B1F',x:20,y:7,key:'ArrowLeft',direction:'west',action:'ice',duration:8,path:Array.from({length:6},(_,i)=>[19-i,7]),stop:'collision'},
   {map:'MAP_VIRIDIAN_CITY_GYM',x:4,y:17,key:'ArrowRight',direction:'east',action:'spin',duration:8,path:Array.from({length:9},(_,i)=>[5+i,17]),stop:'spin-stop',stopAt:[13,17],leave:'ArrowDown',left:[13,18]},
+  {map:'MAP_SEAFOAM_ISLANDS_B3F',x:19,y:5,key:'ArrowUp',direction:'north',action:'current',duration:6,path:[[19,4],[19,5],[19,6]],stop:'plain-water'},
   {map:'MAP_SEAFOAM_ISLANDS_B4F',x:9,y:13,key:'ArrowDown',direction:'south',action:'current',duration:6,path:[[9,14],[10,14],[11,14],[12,14],[12,13]],stop:'plain-water'},
  ];
  const results=[];
