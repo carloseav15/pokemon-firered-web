@@ -141,7 +141,10 @@ def export_maps(constants: dict[str, int]) -> None:
                     "script": script_address(b.get("script")), "scriptName": b.get("script"),
                 })
         connections = []
-        for connection in data.get("connections") or []:
+        # mapjson.cpp generate_map_header_text emits NULL when connections_no_include is true.
+        # Authored connection data can still exist for the alternate connection-only map.
+        active_connections = [] if data.get("connections_no_include") else data.get("connections") or []
+        for connection in active_connections:
             connections.append({
                 "direction": connection["direction"],
                 "offset": const(constants, connection["offset"]),
