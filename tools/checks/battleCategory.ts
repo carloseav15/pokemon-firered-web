@@ -23,11 +23,13 @@ import { bs, ROM_BASE } from '../../src/core/battle/bscript.ts';
 import { seedRng } from '../../src/core/random.ts';
 import { CalculateBaseDamage } from '../../src/core/battle/damage.ts';
 import { setBattleRulesProfile } from '../../src/core/battle/rules.ts';
+import { GetWhoStrikesFirst } from '../../src/core/battle/main.ts';
+import { flagSet, flagClear, setSave, newSaveData } from '../../src/games/firered/save.ts';
 import { MOVE_CATEGORIES_GEN4 } from '../../src/core/battle/data/moveCategoriesGen4.ts';
 import { Cmd_accuracycheck, Cmd_datahpupdate } from '../../src/core/battle/cmds/part1.ts';
 import { gBattleScriptingCommandsTable } from '../../src/core/battle/cmds/index.ts';
 import {
-  G, gBattleMons, gBattleStruct, gProtectStructs, gSpecialStatuses, resetBattleStructs,
+  G, gBattleMons, gBattleStruct, gProtectStructs, gSpecialStatuses, gBattlerPositions, resetBattleStructs,
 } from '../../src/core/battle/globals.ts';
 
 const root = process.cwd() + '/public';
@@ -391,9 +393,57 @@ function unifiedChecks(): void {
     }
   }
 
+  // 6c. Badges give no stat boosts under unified; under gen3 they give +10 %. Expected values come from the formula.
+  //     The badge flags are set by hand (PREPARED) and cleared afterwards so later digests are not contaminated.
+  setSave(newSaveData('RED', 0, 'GREEN'));
+  gBattlerPositions[0] = 0; gBattlerPositions[1] = 1;      // PREPARED: battler 0 is the player's, 1 the opponent's
+  const boosted = (v: number): number => Math.trunc((v * 110) / 100);
+  const withBadges = (flags: number[], fn: () => void): void => {
+    for (const f of flags) flagSet(f);                      // PREPARED
+    try { fn(); } finally { for (const f of flags) flagClear(f); }
+  };
+  const dmgSides = (move: number, atk: number, def: number, stats: Record<string, number>): number => {
+    setMon(atk, { attack: stats.attack, spAttack: stats.spAttack, level: L });
+    setMon(def, { defense: stats.defense, spDefense: stats.spDefense });
+    G.gBattleTypeFlags = 0; G.gBattlersCount = 2; G.gCurrentMove = move; G.gCritMultiplier = 1; G.gBattleWeather = 0;
+    return CalculateBaseDamage(gBattleMons[atk], gBattleMons[def], move, 0, 0, 0, atk, def);
+  };
+  const base = { attack: 100, spAttack: 100, defense: 100, spDefense: 100 };
+  const pTackle = power(C.MOVE_TACKLE), pFlame = power(C.MOVE_FLAMETHROWER);
+  const cases: Array<{ name: string; flag: number; run: () => number; boostedValue: number; plainValue: number }> = [
+    { name: 'attack (badge 1)', flag: C.FLAG_BADGE01_GET, run: () => dmgSides(C.MOVE_TACKLE, 0, 1, base),
+      boostedValue: formula(L, pTackle, boosted(100), 100), plainValue: formula(L, pTackle, 100, 100) },
+    { name: 'defense (badge 5)', flag: C.FLAG_BADGE05_GET, run: () => dmgSides(C.MOVE_TACKLE, 1, 0, base),
+      boostedValue: formula(L, pTackle, 100, boosted(100)), plainValue: formula(L, pTackle, 100, 100) },
+    { name: 'sp. attack (badge 7)', flag: C.FLAG_BADGE07_GET, run: () => dmgSides(C.MOVE_FLAMETHROWER, 0, 1, base),
+      boostedValue: formula(L, pFlame, boosted(100), 100), plainValue: formula(L, pFlame, 100, 100) },
+    { name: 'sp. defense (badge 7)', flag: C.FLAG_BADGE07_GET, run: () => dmgSides(C.MOVE_FLAMETHROWER, 1, 0, base),
+      boostedValue: formula(L, pFlame, 100, boosted(100)), plainValue: formula(L, pFlame, 100, 100) },
+  ];
+  for (const c of cases) {
+    setBattleRulesProfile('gen3');
+    assert.equal(c.run(), c.plainValue, `${c.name}: no badge, gen3`);
+    withBadges([c.flag], () => assert.equal(c.run(), c.boostedValue, `${c.name}: gen3 must apply the +10 %`));
+    setBattleRulesProfile('unified');
+    withBadges([c.flag], () => assert.equal(c.run(), c.plainValue, `${c.name}: unified must not apply the boost`));
+  }
+  // Speed (badge 3): player 100 against opponent 105. A +10 % boost makes the player faster (strikes first = 0).
+  const first = (): number => {
+    setMon(0, {}); setMon(1, {});
+    (gBattleMons[0] as any).speed = 100; (gBattleMons[1] as any).speed = 105;
+    G.gBattleTypeFlags = 0; G.gBattlersCount = 2; G.gBattleWeather = 0;
+    return GetWhoStrikesFirst(0, 1, true);
+  };
+  setBattleRulesProfile('gen3');
+  assert.equal(first(), 1, 'speed: without the badge the opponent is faster');
+  withBadges([C.FLAG_BADGE03_GET], () => assert.equal(first(), 0, 'speed: gen3 badge 3 makes the player faster'));
+  setBattleRulesProfile('unified');
+  withBadges([C.FLAG_BADGE03_GET], () => assert.equal(first(), 1, 'speed: unified ignores badge 3'));
+  setBattleRulesProfile('gen3');
+
   // 7. Switching back leaves no residue.
   assert.equal(digest(damageCases()), result.damage.sha256, 'gen3 behaviour changed after using the unified profile');
-  console.log(`unified profile PASS (53 Gen 4 category changes + Hidden Power; ${insideDiff} damage cases differ, 0 outside the set)`);
+  console.log(`unified profile PASS (53 Gen 4 category changes + Hidden Power; badge boosts off; ${insideDiff} damage cases differ, 0 outside the set)`);
 }
 
 try {

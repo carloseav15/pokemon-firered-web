@@ -9,6 +9,7 @@
 //            (tools/checks/battleCategory.ts) pins it.
 //   unified  Gen 4 categories, per move (src/core/battle/data/moveCategoriesGen4.ts). A move whose category
 //            is "status" in that table keeps the type rule, so nothing that is not a damaging move changes.
+//            Badges give no stat boosts. Obedience by badges (util.ts) is not covered yet: it needs its own rule.
 //
 // Design: unified-world/DISENO-REGLAS.md.
 
@@ -24,11 +25,17 @@ export interface BattleRules {
   isPhysical(move: number, moveType: number): boolean;
   /** Is `move` (whose effective type is `moveType`) a special move? */
   isSpecial(move: number, moveType: number): boolean;
+  /**
+   * Gym badges raise the player's Attack (1), Defense (5), Sp. Atk / Sp. Def (7) and Speed (3) by 10 % in battle
+   * (CalculateBaseDamage, GetWhoStrikesFirst). The unified world treats badges as progress only.
+   */
+  readonly statBadgeBoosts: boolean;
 }
 
 /** FireRed / Emerald rules: category by type, exactly the original macros. */
 export const gen3Rules: BattleRules = {
   profile: "gen3",
+  statBadgeBoosts: true,
   isPhysical: (_move, moveType) => IS_TYPE_PHYSICAL(moveType),
   isSpecial: (_move, moveType) => IS_TYPE_SPECIAL(moveType),
 };
@@ -39,6 +46,7 @@ export const gen3Rules: BattleRules = {
  */
 export const unifiedRules: BattleRules = {
   profile: "unified",
+  statBadgeBoosts: false,
   isPhysical(move, moveType) {
     if (moveType === C.TYPE_MYSTERY) return false;
     const c = MOVE_CATEGORIES_GEN4[move];

@@ -7,6 +7,7 @@ import { flagGet, save } from "@game/save";
 import { BS, r8, scriptTable } from "./bscript";
 import { FreeBattleResources, G, gActionsByTurnOrder, gActionSelectionCursor, gBattleBufferB, gBattleCommunication, gBattleMons, gBattlerByTurnOrder, gBattlerControllerFuncs, gBattleResources, gBattleResults, gBattlerPartyIndexes, gBattleScripting, gBattleStruct, gBattleTextBuff1, gBattleTextBuff2, gBitTable, gChosenActionByBattler, gChosenMoveByBattler, gDisableStructs, gEnigmaBerries, gLastHitBy, gLastHitByType, gLastLandedMoves, gLastMoves, gLastPrintedMoves, gLastResultingMoves, gLockedMoves, gBattlePartyCurrentOrder, gMoveSelectionCursor, gProtectStructs, gSelectionBattleScripts, gSideStatuses, gSideTimers, gSpecialStatuses, gStatuses3, gWishFutureKnock } from "./globals";
 import { div, gBattleMoves, IS_BATTLER_OF_TYPE, s8, STATUS2_INFATUATED_WITH, STATUS3_ALWAYS_HITS_TURN } from "./macros";
+import { battleRules } from "./rules";
 import { AbilityBattleEffects, AreAllMovesUnusable, BattleScriptExecute, CancelMultiTurnMoves, ClearFuryCutterDestinyBondGrudge, DoBattlerEndTurnEffects, DoFieldEndTurnEffects, GetAbilityBySpecies, GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide, GetMoveTarget, HandleAction_RunBattleScript, HandleFaintedMonActions, HandleWishPerishSongOnTurnEnd, IS_BATTLE_TYPE_GHOST_WITHOUT_SCOPE, ItemBattleEffects, ItemId_GetHoldEffect, ItemId_GetHoldEffectParam, MarkBattlerForControllerExec, PrepareStringBattle, RecordAbilityBattle, ResetSentPokesToOpponentValue, TryClearRageStatuses, TrySetCantSelectMoveBattleScript, WEATHER_HAS_EFFECT } from "./util";
 import { BtlController_EmitChooseAction, BtlController_EmitChooseItem, BtlController_EmitChooseMove, BtlController_EmitChoosePokemon, BtlController_EmitDrawPartyStatusSummary, BtlController_EmitDrawTrainerPic, BtlController_EmitEndBounceEffect, BtlController_EmitGetMonData, BtlController_EmitIntroSlide, BtlController_EmitIntroTrainerBallThrow, BtlController_EmitLinkStandbyMsg, BtlController_EmitLoadMonSprite, BUFFER_A, type ChooseMoveStruct, type HpAndStatus } from "./controllers";
 import { CalculatePPWithBonus, gEnemyParty, GetMonData, playerMon, SpeciesToNationalPokedexNum } from "../pokemon/mon";
@@ -801,7 +802,7 @@ function effectiveSpeed(b: number): number {
   let speed = Math.floor(((m.speed * mult) * num) / den) >>> 0;
   const holdEffect = m.item === C.ITEM_ENIGMA_BERRY ? gEnigmaBerries[b].holdEffect : ItemId_GetHoldEffect(m.item);
   const holdEffectParam = m.item === C.ITEM_ENIGMA_BERRY ? gEnigmaBerries[b].holdEffectParam : ItemId_GetHoldEffectParam(m.item);
-  if (!(G.gBattleTypeFlags & C.BATTLE_TYPE_LINK) && flagGet(C.FLAG_BADGE03_GET) && GetBattlerSide(b) === C.B_SIDE_PLAYER) speed = Math.floor((speed * 110) / 100);
+  if (battleRules().statBadgeBoosts && !(G.gBattleTypeFlags & C.BATTLE_TYPE_LINK) && flagGet(C.FLAG_BADGE03_GET) && GetBattlerSide(b) === C.B_SIDE_PLAYER) speed = Math.floor((speed * 110) / 100);
   if (holdEffect === C.HOLD_EFFECT_MACHO_BRACE) speed = Math.floor(speed / 2);
   if (m.status1 & C.STATUS1_PARALYSIS) speed = Math.floor(speed / 4);
   if (holdEffect === C.HOLD_EFFECT_QUICK_CLAW && G.gRandomTurnNumber < Math.trunc((0xffff * holdEffectParam) / 100)) speed = 0xffffffff;

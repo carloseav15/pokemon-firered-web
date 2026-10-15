@@ -22,7 +22,7 @@ function applyStatMod(mon: BattlePokemon, stat: number, statIndex: number): numb
 }
 
 function shouldGetStatBadgeBoost(flag: number, battler: number): boolean {
-  return !(G.gBattleTypeFlags & (C.BATTLE_TYPE_LINK | C.BATTLE_TYPE_EREADER_TRAINER)) && flagGet(flag) && GetBattlerSide(battler) === C.B_SIDE_PLAYER;
+  return battleRules().statBadgeBoosts && !(G.gBattleTypeFlags & (C.BATTLE_TYPE_LINK | C.BATTLE_TYPE_EREADER_TRAINER)) && flagGet(flag) && GetBattlerSide(battler) === C.B_SIDE_PLAYER;
 }
 
 function ABILITY_ON_FIELD2(ability: number): number {
