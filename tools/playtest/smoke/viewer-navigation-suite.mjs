@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 const jobs = [
   "viewer-startup", "viewer-movement", "viewer-navigation", "viewer-avatar", "viewer-depth", "viewer-occlusion",
-  "viewer-reflections", "viewer-effects", "viewer-terrain-effects", "viewer-tracks", "viewer-interior-navigation",
+  "viewer-reflections", "viewer-reflection-terrains", "viewer-shadow-terrains", "viewer-effects", "viewer-terrain-effects", "viewer-tracks", "viewer-interior-navigation",
   "viewer-stair-navigation", "viewer-teleport-navigation", "viewer-fall-navigation", "viewer-forced-navigation",
   "viewer-escalator", "viewer-bike-stairs", "viewer-bridge-walk", "viewer-cave-levels", "viewer-saffron-gates",
   "viewer-door-navigation", "viewer-door-large",
