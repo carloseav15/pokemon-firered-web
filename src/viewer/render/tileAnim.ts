@@ -62,11 +62,17 @@ export class TileAnimationController {
   constructor(
     private readonly getViewportRect: () => { left: number; top: number; width: number; height: number; zoom: number },
     private readonly onFpsUpdate: () => void,
-    private readonly clock: ViewerClock = viewerClock
+    private readonly clock: ViewerClock = viewerClock,
+    private readonly onTilesChanged: (renderer: TileRenderer) => void = () => {}
   ) {}
 
   addMap(map: AnimatedMap): void {
     this.animatedMaps.push(map);
+  }
+
+  removeMap(map: AnimatedMap): void {
+    const i = this.animatedMaps.indexOf(map);
+    if (i !== -1) this.animatedMaps.splice(i, 1);
   }
 
   private mapVisible(m: AnimatedMap, viewLeft: number, viewTop: number, viewRight: number, viewBottom: number): boolean {
@@ -107,8 +113,10 @@ export class TileAnimationController {
         m.animator.update();
 
         if (m.dirtyMask === 0) continue;
+        this.onTilesChanged(m.renderer);
 
 
+        const refreshed = new Set<number>();
         for (const c of m.cells) {
           if (!(c.mask & m.dirtyMask)) continue;
 
@@ -118,7 +126,7 @@ export class TileAnimationController {
             continue;
           }
 
-          invalidateMetatile(m.renderer, c.mt);
+          if (!refreshed.has(c.mt)) { invalidateMetatile(m.renderer, c.mt); refreshed.add(c.mt); }
           const tileCanvas = composeMetatile(m.renderer, c.mt);
           m.bctx.clearRect(c.x * TILE, c.y * TILE, TILE, TILE);
           m.bctx.drawImage(tileCanvas, c.x * TILE, c.y * TILE);

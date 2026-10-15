@@ -669,3 +669,31 @@ body {
 .interior-mark.item { border: 2px solid #fb923c; z-index: 1; }
 .interior-mark.clickable { cursor: pointer; }
 .interior-sprite { position: absolute; image-rendering: pixelated; background-repeat: no-repeat; pointer-events: none; }
+
+/* Immersive exploration keeps atlas diagnostics out of the game viewport. */
+body.exploring { display: block; background: #080b10; }
+body.exploring #bar, body.exploring #statusbar,
+body.exploring #panel, body.exploring #selection-box,
+body.exploring [data-layer] { display: none !important; }
+body.exploring #main { position: absolute; inset: 0; width: 100%; height: 100%; }
+body.exploring #viewport { width: 100%; height: 100%; overflow: hidden; outline: none; }
+body.exploring #minimap-wrap { display: none !important; }
+body.exploring.explore-radar #minimap-wrap { pointer-events: none; display: flex !important; top: 64px; bottom: auto; }
+body.exploring.explore-wide #main {
+  width: min(100vw, calc(100dvh * 16 / 9));
+  height: min(100dvh, calc(100vw * 9 / 16));
+  inset: 50% auto auto 50%; transform: translate(-50%, -50%);
+}
+#explore-hud { position: fixed; inset: max(12px, env(safe-area-inset-top)) 16px auto; z-index: 80; display: flex; align-items: center; gap: 12px; pointer-events: none; }
+#explore-hud[hidden], #explore-performance[hidden] { display: none; }
+#explore-hud button { pointer-events: auto; margin-left: auto; }
+#explore-location, #explore-performance { padding: 6px 10px; border-radius: 6px; background: #09090bd9; font-size: 12px; }
+#explore-performance { max-width: 65vw; }
+#explore-menu { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 24px; border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); background: var(--bg-panel); }
+#explore-menu::backdrop { background: #0009; }
+#explore-menu h2 { margin-top: 0; }
+#explore-menu p { line-height: 1.6; color: var(--text-secondary); font-size: 13px; }
+#explore-menu label { display: flex; gap: 12px; align-items: center; margin: 16px 0; }
+#explore-menu select { margin-left: auto; background: var(--bg-control); color: var(--text-primary); padding: 6px; }
+.explore-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 600px) { #explore-hud { flex-wrap: wrap; gap: 4px; } #explore-performance { order: 3; max-width: 100%; } }

@@ -3,7 +3,7 @@
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
-import { rom, setDataRoot } from "@core/rom";
+import { Rom, rom, setDataRoot } from "@core/rom";
 import { TileRenderer } from "@core/field/tileRenderer";
 import { TilesetAnimator } from "@core/field/tilesetAnimator";
 import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
@@ -14,6 +14,9 @@ import type { Element, KantoIndex, Trigger } from "./types";
 import { state, type PlayerVehicle } from "./state";
 import { fetchWorldIndex, type WorldIndexData } from "./data/worldIndex";
 import { WorldGrid } from "./data/worldGrid";
+import { SectorLoader, nearbySectors, type SectorResource } from "./data/sectors";
+import { ExplorationUi } from "./ui/exploration";
+import { SectorBorder } from "./render/sectorBorder";
 import { overlayCanvas, mark } from "./render/overlays";
 import { renderWorldFill, type FillSource } from "./render/fill";
 import { TileAnimationController, animRangesFor, rangeMask, type AnimatedMap } from "./render/tileAnim";
@@ -89,6 +92,34 @@ let index: KantoIndex;
 let minX = 0;
 let minY = 0;
 let worldGrid: WorldGrid;
+let sectorLoader: SectorLoader | null = null;
+let streaming = false;
+let sectorBorder: SectorBorder | null = null;
+function updateSectorBorder(): void {
+  if (!sectorBorder || !playerActive) return;
+  const current = findMapAt(playerX, playerY)?.[0];
+  sectorBorder.draw(current ? fillSources.get(current) : undefined, {
+    x: viewport.scrollLeft / camera.zoom, y: viewport.scrollTop / camera.zoom,
+    width: viewport.clientWidth / camera.zoom, height: viewport.clientHeight / camera.zoom,
+  }, minX, minY);
+}
+let explorationUi: ExplorationUi | null = null;
+let sectorUpdateQueued = false;
+function requestSectors(): Promise<void> {
+  if (!sectorLoader) return Promise.resolve();
+  const view = { x: minX + viewport.scrollLeft / camera.zoom / TILE,
+    y: minY + viewport.scrollTop / camera.zoom / TILE,
+    width: viewport.clientWidth / camera.zoom / TILE, height: viewport.clientHeight / camera.zoom / TILE };
+  const nearby = nearbySectors(index.maps, view, 20);
+  const playerMap = playerActive ? findMapAt(playerX, playerY)?.[0] : undefined;
+  if (playerMap && !nearby.includes(playerMap)) nearby.unshift(playerMap);
+  return sectorLoader.update(nearby);
+}
+function scheduleSectors(): void {
+  if (!sectorLoader || sectorUpdateQueued) return;
+  sectorUpdateQueued = true;
+  requestAnimationFrame(() => { sectorUpdateQueued = false; void requestSectors(); });
+}
 let fillSources = new Map<string, FillSource>();
 let fillNearest: Int16Array | null = null;
 let animController: TileAnimationController;
@@ -194,6 +225,7 @@ function writeHash(): void {
 }
 
 function setZoom(next: number, ax = viewport.clientWidth / 2, ay = viewport.clientHeight / 2): void {
+  if (playerActive && !HOENN) next = Math.round(Math.max(1, next));
   camera.setZoom(next, ax, ay);
   minimapController?.updateRadar();
   scheduleHashWrite();
@@ -224,7 +256,7 @@ function updateMeta(): void {
   if (!statusMeta) return;
   const base = `${Object.keys(index?.maps ?? {}).length || 37} mapas exteriores · ${GAME_NAME} GBA`;
   if (animController?.animOn) {
-    const fpsText = animController.fpsValue > 0 ? ` · ${animController.fpsValue.toFixed(0)} FPS` : " · 60 FPS";
+    const fpsText = animController.fpsValue > 0 ? ` · ${animController.fpsValue.toFixed(0)} FPS` : " · midiendo FPS";
     statusMeta.textContent = `${base}${fpsText}`;
   } else {
     statusMeta.textContent = `${base}${animController?.animDisabledNotice ?? ""}`;
@@ -232,11 +264,11 @@ function updateMeta(): void {
 }
 
 function centerOnMap(id: string): boolean {
-  const mapEl = content.querySelector<HTMLElement>(`[data-map="${id}"]`);
   const info = index.maps[id];
-  if (!mapEl || !info) return false;
-  viewport.scrollLeft = (mapEl.offsetLeft + (info.width * TILE) / 2) * camera.zoom - viewport.clientWidth / 2;
-  viewport.scrollTop = (mapEl.offsetTop + (info.height * TILE) / 2) * camera.zoom - viewport.clientHeight / 2;
+  if (!info) return false;
+  viewport.scrollLeft = ((info.x - minX) * TILE + (info.width * TILE) / 2) * camera.zoom - viewport.clientWidth / 2;
+  viewport.scrollTop = ((info.y - minY) * TILE + (info.height * TILE) / 2) * camera.zoom - viewport.clientHeight / 2;
+  scheduleSectors();
   minimapController?.updateRadar();
   checkCurrentMapMusic();
   scheduleHashWrite();
@@ -383,6 +415,9 @@ function updatePlayerDisplay(): void {
   viewport.scrollTop = (py + TILE / 2) * camera.zoom - viewport.clientHeight / 2;
   minimapController?.updateRadar();
 
+  scheduleSectors();
+  updateSectorBorder();
+  explorationUi?.setLocation(findMapAt(playerX, playerY)?.[1].title ?? GAME_NAME);
   updateEntitiesView();
   checkCurrentMapMusic();
   scheduleHashWrite();
@@ -451,7 +486,16 @@ function checkTrainerSight(): void {
   }
 }
 
-function startExploration(targetGx?: number, targetGy?: number): void {
+async function startExploration(targetGx?: number, targetGy?: number): Promise<void> {
+  if (!HOENN && !streaming) {
+    writeHash();
+    const h = new URLSearchParams(location.hash.slice(1));
+    h.set("modo", "explore");
+    if (targetGx !== undefined && targetGy !== undefined) { h.set("px", String(targetGx)); h.set("py", String(targetGy)); }
+    location.hash = h.toString(); location.reload(); return;
+  }
+  explorationUi?.enter();
+  if (!playerActive && !HOENN) camera.setZoom(2);
   resetExploreSession();
   playerActive = true;
   state.appMode = "explore";
@@ -470,6 +514,12 @@ function startExploration(targetGx?: number, targetGy?: number): void {
     updateMeta();
   }
 
+  if (sectorLoader) {
+    const preferred = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[0] : startMapId;
+    if (preferred && index.maps[preferred]) centerOnMap(preferred);
+    else if (playerX === 0 && playerY === 0 && startX === null) centerOnMap("MAP_PALLET_TOWN");
+    await requestSectors();
+  }
   if (targetGx !== undefined && targetGy !== undefined) {
     playerX = targetGx;
     playerY = targetGy;
@@ -519,6 +569,7 @@ function stopExploration(): void {
   keysDown.clear();
   playerRunning = false;
   state.appMode = "viewer";
+  explorationUi?.exit();
 
   const modeViewerBtn = document.getElementById("mode-viewer-btn");
   const modeExploreBtn = document.getElementById("mode-explore-btn");
@@ -550,7 +601,7 @@ function toggleBike(): void {
 const keysDown = new Set<string>();
 
 function processPlayerStep(): void {
-  if (!playerActive || isStepping || dialogManager.isOpen()) return;
+  if (!playerActive || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
 
   let dx = 0;
   let dy = 0;
@@ -589,6 +640,12 @@ function processPlayerStep(): void {
     isLedgeJump = true;
   }
 
+  if (!worldGrid.isLoaded(targetX, targetY) && findMapAt(targetX, targetY)) {
+    void requestSectors().then(() => {
+      if (worldGrid.isLoaded(targetX, targetY)) processPlayerStep();
+    });
+    return;
+  }
   const targetIsWater = worldGrid.isWaterTile(targetX, targetY);
   if (targetIsWater && playerMode !== "surf") {
     playerMode = "surf";
@@ -596,7 +653,7 @@ function processPlayerStep(): void {
     playerMode = "walk";
   }
 
-  if (isLedgeJump || worldGrid.isWalkable(targetX, targetY, playerMode)) {
+  if ((isLedgeJump && worldGrid.isLoaded(targetX, targetY)) || worldGrid.isWalkable(targetX, targetY, playerMode)) {
     isStepping = true;
     playerMoving = true;
     playerStep = (playerStep + 1) % 4;
@@ -774,7 +831,13 @@ async function build(): Promise<void> {
   minX = worldData.minX;
   minY = worldData.minY;
 
-  worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY);
+  streaming = !HOENN && startExplore;
+  if (streaming) {
+    if (startX !== null) startX *= 2 / initialZoom;
+    if (startY !== null) startY *= 2 / initialZoom;
+    initialZoom = 2;
+  }
+  worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY, streaming);
   entityManager = new EntityManager(content, minX, minY);
   dialogManager = new DialogManager();
   interiorViewer = new InteriorViewer({
@@ -791,10 +854,11 @@ async function build(): Promise<void> {
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame();
-    if (playerActive) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY);
+    if (playerActive && !interiorViewer.isOpen()) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY);
   });
   window.addEventListener("pagehide", event => {
     if (event.persisted) { viewerClock.pause("pagehide"); return; }
+    sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose();
     resetExploreSession(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
   });
   window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
@@ -804,7 +868,7 @@ async function build(): Promise<void> {
 
   if (loadingText) loadingText.textContent = "Cargando layouts de mapas…";
   const mapEntries = Object.entries(index.maps);
-  const loadedLayouts = await Promise.all(
+  const loadedLayouts = streaming ? [] : await Promise.all(
     mapEntries.map(async ([id, m]) => {
       const layout = await rom.loadLayout(m.layout);
       return { id, layout };
@@ -838,184 +902,215 @@ async function build(): Promise<void> {
       zoom: camera.zoom,
     }),
     () => updateMeta(),
-    viewerClock
+    viewerClock,
+    renderer => { sectorBorder?.invalidate(renderer); updateSectorBorder(); }
   );
 
-  let processedCount = 0;
-  for (const ids of byPair.values()) {
-    for (const id of ids) {
-      const info = index.maps[id];
-      const layout = layoutsByMap.get(id)!;
-      const primary = await rom.loadTileset(layout.primary);
-      const secondary = await rom.loadTileset(layout.secondary);
-      const renderer = new TileRenderer(primary, secondary);
+  const renderMap = async (id: string): Promise<SectorResource> => {
+    const info = index.maps[id];
+    // A private ROM cache belongs to this sector and dies with it (no shared engine cache eviction).
+    const data = streaming ? new Rom() : rom;
+    const layout = layoutsByMap.get(id) ?? await data.loadLayout(info.layout);
+    const grid = streaming ? new WorldGrid(info.width, info.height, info.x, info.y) : worldGrid;
+    const primary = await data.loadTileset(layout.primary);
+    const secondary = await data.loadTileset(layout.secondary);
+    const renderer = new TileRenderer(primary, secondary);
 
-      const wrap = document.createElement("div");
-      wrap.className = "map";
-      wrap.style.left = `${(info.x - minX) * TILE}px`;
-      wrap.style.top = `${(info.y - minY) * TILE}px`;
-      wrap.dataset.map = id;
+    const wrap = document.createElement("div");
+    wrap.className = "map";
+    wrap.style.left = `${(info.x - minX) * TILE}px`;
+    wrap.style.top = `${(info.y - minY) * TILE}px`;
+    wrap.dataset.map = id;
 
-      const base = document.createElement("canvas");
-      base.width = info.width * TILE;
-      base.height = info.height * TILE;
-      base.className = "base";
-      const bctx = base.getContext("2d")!;
-      wrap.appendChild(base);
+    const base = document.createElement("canvas");
+    base.width = info.width * TILE;
+    base.height = info.height * TILE;
+    base.className = "base";
+    const bctx = base.getContext("2d")!;
+    wrap.appendChild(base);
 
-      const overlays = new Map<Layer, CanvasRenderingContext2D>();
-      const ctxFor = (layer: Layer): CanvasRenderingContext2D => {
-        let ctx = overlays.get(layer);
-        if (!ctx) {
-          const [c, cc] = overlayCanvas(info.width, info.height, layer);
-          wrap.appendChild(c);
-          overlays.set(layer, cc);
-          ctx = cc;
+    let animated: AnimatedMap | undefined;
+    const overlays = new Map<Layer, CanvasRenderingContext2D>();
+    const ctxFor = (layer: Layer): CanvasRenderingContext2D => {
+      let ctx = overlays.get(layer);
+      if (!ctx) {
+        const [c, cc] = overlayCanvas(info.width, info.height, layer);
+        wrap.appendChild(c);
+        overlays.set(layer, cc);
+        ctx = cc;
+      }
+      return ctx;
+    };
+
+    for (let y = 0; y < info.height; y++) {
+      if (streaming && y % 16 === 15) await new Promise<void>(resolve => setTimeout(resolve, 0));
+      for (let x = 0; x < info.width; x++) {
+        const block = layout.blocks[y * info.width + x]!;
+        const mt = block & 0x3ff;
+        const { bottom, top } = renderer.metatile(mt);
+        bctx.drawImage(bottom, x * TILE, y * TILE);
+        bctx.drawImage(top, x * TILE, y * TILE);
+        const hasCollision = ((block & 0xc00) >> 10) !== 0;
+        if (!streaming && hasCollision) mark(ctxFor("colision"), x, y, LAYER_COLORS.colision);
+        const beh = behaviorOf(primary.attributes, secondary.attributes, mt);
+        const isWater = BEHAVIOR_TESTS.water(beh);
+        const isGrass = BEHAVIOR_TESTS.grass(beh);
+        const isSand = BEHAVIOR_TESTS.sand(beh);
+        if (!streaming && isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
+
+        const gwx = info.x + x;
+        const gwy = info.y + y;
+        if (grid.inBounds(gwx, gwy)) {
+          const idx = grid.idx(gwx, gwy);
+          grid.behaviors[idx] = beh;
+          grid.solid[idx] = hasCollision ? 1 : 0;
+          if (isWater) grid.water[idx] = 1;
+          if (isGrass) grid.grass[idx] = 1;
+          if (isSand) grid.sand[idx] = 1;
+          grid.metatiles[idx] = mt;
         }
-        return ctx;
-      };
 
+        let arrow: string | undefined;
+        let ledgeVal = 0;
+        if (BEHAVIOR_TESTS.jumpEast(beh)) {
+          arrow = "E";
+          ledgeVal = 4;
+        } else if (BEHAVIOR_TESTS.jumpWest(beh)) {
+          arrow = "W";
+          ledgeVal = 3;
+        } else if (BEHAVIOR_TESTS.jumpSouth(beh)) {
+          arrow = "S";
+          ledgeVal = 1;
+        } else if (BEHAVIOR_TESTS.jumpNorth(beh)) {
+          arrow = "N";
+          ledgeVal = 2;
+        }
+        if (arrow) {
+          if (!streaming) mark(ctxFor("salientes"), x, y, LAYER_COLORS.salientes, arrow);
+          if (grid.inBounds(gwx, gwy)) {
+            grid.ledge[grid.idx(gwx, gwy)] = ledgeVal;
+          }
+        }
+      }
+    }
+
+    for (const e of elementsByMap.get(id) ?? []) {
+      const egwx = info.x + e.x;
+      const egwy = info.y + e.y;
+      const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
+      if (isSolidEntity && grid.inBounds(egwx, egwy)) {
+        grid.npc[grid.idx(egwx, egwy)] = 1;
+
+        let dir: Direction = "south";
+        if (e.direction === "up") dir = "north";
+        else if (e.direction === "down") dir = "south";
+        else if (e.direction === "left") dir = "west";
+        else if (e.direction === "right") dir = "east";
+
+        if (!streaming) entityManager.addEntity(e, egwx, egwy, dir);
+      }
+
+      if (streaming) continue;
+      if (e.layer === "puerta") {
+        mark(ctxFor("puerta"), e.x, e.y, LAYER_COLORS.puerta);
+      } else if (e.layer === "entrenador") {
+        const ctx = ctxFor("entrenador");
+        const r = e.trainerRange ?? 0;
+        const dir =
+          e.direction === "up" || e.direction === "down" || e.direction === "left" || e.direction === "right"
+            ? e.direction
+            : null;
+        if (dir) {
+          ctx.fillStyle = "rgba(255,0,255,0.30)";
+          const dx = dir === "left" ? -1 : dir === "right" ? 1 : 0;
+          const dy = dir === "up" ? -1 : dir === "down" ? 1 : 0;
+          for (let i = 1; i <= r; i++) ctx.fillRect((e.x + dx * i) * TILE, (e.y + dy * i) * TILE, TILE, TILE);
+        }
+        mark(ctx, e.x, e.y, LAYER_COLORS.entrenador);
+      } else {
+        mark(ctxFor(e.layer as Layer), e.x, e.y, LAYER_COLORS[e.layer as Layer]);
+      }
+    }
+
+    for (const t of streaming ? [] : triggersByMap.get(id) ?? []) {
+      mark(ctxFor("activador"), t.x, t.y, LAYER_COLORS.activador);
+    }
+
+    // Las animaciones de tiles (tileset_anims.c) están transcritas de FireRed; Hoenn se muestra sin animar.
+    const ranges = HOENN ? [] : animRangesFor(primary, secondary);
+    if (ranges.length > 0) {
+      const cells: AnimatedMap["cells"] = [];
       for (let y = 0; y < info.height; y++) {
         for (let x = 0; x < info.width; x++) {
-          const block = layout.blocks[y * info.width + x]!;
-          const mt = block & 0x3ff;
-          const { bottom, top } = renderer.metatile(mt);
-          bctx.drawImage(bottom, x * TILE, y * TILE);
-          bctx.drawImage(top, x * TILE, y * TILE);
-          const hasCollision = ((block & 0xc00) >> 10) !== 0;
-          if (hasCollision) mark(ctxFor("colision"), x, y, LAYER_COLORS.colision);
-          const beh = behaviorOf(primary.attributes, secondary.attributes, mt);
-          const isWater = BEHAVIOR_TESTS.water(beh);
-          const isGrass = BEHAVIOR_TESTS.grass(beh);
-          const isSand = BEHAVIOR_TESTS.sand(beh);
-          if (isWater) mark(ctxFor("agua"), x, y, LAYER_COLORS.agua);
-
-          const gwx = info.x + x;
-          const gwy = info.y + y;
-          if (worldGrid.inBounds(gwx, gwy)) {
-            const idx = worldGrid.idx(gwx, gwy);
-            worldGrid.behaviors[idx] = beh;
-            worldGrid.solid[idx] = hasCollision ? 1 : 0;
-            if (isWater) worldGrid.water[idx] = 1;
-            if (isGrass) worldGrid.grass[idx] = 1;
-            if (isSand) worldGrid.sand[idx] = 1;
-            worldGrid.metatiles[idx] = mt;
-          }
-
-          let arrow: string | undefined;
-          let ledgeVal = 0;
-          if (BEHAVIOR_TESTS.jumpEast(beh)) {
-            arrow = "E";
-            ledgeVal = 4;
-          } else if (BEHAVIOR_TESTS.jumpWest(beh)) {
-            arrow = "W";
-            ledgeVal = 3;
-          } else if (BEHAVIOR_TESTS.jumpSouth(beh)) {
-            arrow = "S";
-            ledgeVal = 1;
-          } else if (BEHAVIOR_TESTS.jumpNorth(beh)) {
-            arrow = "N";
-            ledgeVal = 2;
-          }
-          if (arrow) {
-            mark(ctxFor("salientes"), x, y, LAYER_COLORS.salientes, arrow);
-            if (worldGrid.inBounds(gwx, gwy)) {
-              worldGrid.ledge[worldGrid.idx(gwx, gwy)] = ledgeVal;
-            }
-          }
+          const mt = layout.blocks[y * info.width + x]! & 0x3ff;
+          const mask = rangeMask(primary, secondary, ranges, mt);
+          if (mask) cells.push({ x, y, mt, mask });
         }
       }
-
-      for (const e of elementsByMap.get(id) ?? []) {
-        const egwx = info.x + e.x;
-        const egwy = info.y + e.y;
-        const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
-        if (isSolidEntity && worldGrid.inBounds(egwx, egwy)) {
-          worldGrid.npc[worldGrid.idx(egwx, egwy)] = 1;
-
-          let dir: Direction = "south";
-          if (e.direction === "up") dir = "north";
-          else if (e.direction === "down") dir = "south";
-          else if (e.direction === "left") dir = "west";
-          else if (e.direction === "right") dir = "east";
-
-          entityManager.addEntity(e, egwx, egwy, dir);
-        }
-
-        if (e.layer === "puerta") {
-          mark(ctxFor("puerta"), e.x, e.y, LAYER_COLORS.puerta);
-        } else if (e.layer === "entrenador") {
-          const ctx = ctxFor("entrenador");
-          const r = e.trainerRange ?? 0;
-          const dir =
-            e.direction === "up" || e.direction === "down" || e.direction === "left" || e.direction === "right"
-              ? e.direction
-              : null;
-          if (dir) {
-            ctx.fillStyle = "rgba(255,0,255,0.30)";
-            const dx = dir === "left" ? -1 : dir === "right" ? 1 : 0;
-            const dy = dir === "up" ? -1 : dir === "down" ? 1 : 0;
-            for (let i = 1; i <= r; i++) ctx.fillRect((e.x + dx * i) * TILE, (e.y + dy * i) * TILE, TILE, TILE);
-          }
-          mark(ctx, e.x, e.y, LAYER_COLORS.entrenador);
-        } else {
-          mark(ctxFor(e.layer as Layer), e.x, e.y, LAYER_COLORS[e.layer as Layer]);
-        }
+      if (cells.length > 0) {
+        const entry: AnimatedMap = {
+          renderer,
+          bctx,
+          cells,
+          dirtyMask: 0,
+          left: (info.x - minX) * TILE,
+          top: (info.y - minY) * TILE,
+          width: info.width * TILE,
+          height: info.height * TILE,
+          animator: undefined as unknown as TilesetAnimator,
+        };
+        entry.animator = new TilesetAnimator({
+          primary,
+          secondary,
+          writeTiles(destTile: number, data: Uint8Array, count?: number) {
+            renderer.writeTiles(destTile, data, count);
+            const n = count ?? data.length / 32;
+            ranges.forEach(([lo, hi], i) => {
+              if (destTile < hi && destTile + n > lo) entry.dirtyMask |= 1 << i;
+            });
+          },
+        });
+        animated = entry;
+        animController.addMap(entry);
       }
+    }
 
-      for (const t of triggersByMap.get(id) ?? []) {
-        mark(ctxFor("activador"), t.x, t.y, LAYER_COLORS.activador);
-      }
+    fillSources.set(id, { info, layout, renderer });
+    if (streaming) worldGrid.addSector(id, grid);
+    content.appendChild(wrap);
 
-      // Las animaciones de tiles (tileset_anims.c) están transcritas de FireRed; Hoenn se muestra sin animar.
-      const ranges = HOENN ? [] : animRangesFor(primary, secondary);
-      if (ranges.length > 0) {
-        const cells: AnimatedMap["cells"] = [];
-        for (let y = 0; y < info.height; y++) {
-          for (let x = 0; x < info.width; x++) {
-            const mt = layout.blocks[y * info.width + x]! & 0x3ff;
-            const mask = rangeMask(primary, secondary, ranges, mt);
-            if (mask) cells.push({ x, y, mt, mask });
-          }
-        }
-        if (cells.length > 0) {
-          const entry: AnimatedMap = {
-            renderer,
-            bctx,
-            cells,
-            dirtyMask: 0,
-            left: (info.x - minX) * TILE,
-            top: (info.y - minY) * TILE,
-            width: info.width * TILE,
-            height: info.height * TILE,
-            animator: undefined as unknown as TilesetAnimator,
-          };
-          entry.animator = new TilesetAnimator({
-            primary,
-            secondary,
-            writeTiles(destTile: number, data: Uint8Array, count?: number) {
-              renderer.writeTiles(destTile, data, count);
-              const n = count ?? data.length / 32;
-              ranges.forEach(([lo, hi], i) => {
-                if (destTile < hi && destTile + n > lo) entry.dirtyMask |= 1 << i;
-              });
-            },
-          });
-          animController.addMap(entry);
-        }
-      }
-
-      fillSources.set(id, { info, layout, renderer });
-      content.appendChild(wrap);
-
-      processedCount++;
-      if (loadingText) loadingText.textContent = `Renderizando mapas (${processedCount}/${mapEntries.length})…`;
+    return { bytes: grid.retainedBytes + [...wrap.querySelectorAll("canvas")].reduce((sum, c) => sum + c.width * c.height * 4, 0),
+      dispose() {
+        wrap.remove();
+        for (const c of wrap.querySelectorAll("canvas")) { c.width = 0; c.height = 0; }
+        if (animated) animController.removeMap(animated);
+        worldGrid.removeSector(id);
+        fillSources.delete(id);
+      } };
+  };
+  if (streaming) {
+    // Lightweight object state persists independently of sector graphics/collision buffers.
+    for (const e of index.elements) {
+      const info = index.maps[e.map];
+      if (!info || e.layer === "puerta" || e.layer === "activador") continue;
+      const dir: Direction = e.direction === "up" ? "north" : e.direction === "left" ? "west" : e.direction === "right" ? "east" : "south";
+      entityManager.addEntity(e, info.x + e.x, info.y + e.y, dir);
+    }
+    sectorBorder = new SectorBorder(content);
+    sectorLoader = new SectorLoader(renderMap, () => { updateEntitiesView(); updateSectorBorder(); });
+  } else {
+    let processedCount = 0;
+    for (const ids of byPair.values()) for (const id of ids) {
+      await renderMap(id);
+      if (loadingText) loadingText.textContent = `Renderizando mapas (${++processedCount}/${mapEntries.length})…`;
     }
   }
 
-  const fillResult = renderWorldFill(index, minX, minY, fillSources, state.fillBiomeOverride);
-  fillNearest = fillResult.nearest;
-  content.prepend(fillResult.canvas);
+  if (!streaming) {
+    const fillResult = renderWorldFill(index, minX, minY, fillSources, state.fillBiomeOverride);
+    fillNearest = fillResult.nearest;
+    content.prepend(fillResult.canvas);
+  }
   applyFillMode();
 
   const worldW = index.world.width * TILE;
@@ -1029,6 +1124,12 @@ async function build(): Promise<void> {
   if (startX !== null) viewport.scrollLeft = startX;
   if (startY !== null) viewport.scrollTop = startY;
 
+  if (streaming) {
+    if (startPlayer) { const id = findMapAt(startPlayer.x, startPlayer.y)?.[0]; if (id) centerOnMap(id); }
+    else if (startMapId && index.maps[startMapId]) centerOnMap(startMapId);
+    else if (startX === null) centerOnMap("MAP_PALLET_TOWN");
+    await requestSectors();
+  }
   applyLayerVisibility();
 
   if (state.audio) {
@@ -1043,6 +1144,21 @@ async function build(): Promise<void> {
 }
 
 function setupUi(): void {
+  if (!HOENN) explorationUi = new ExplorationUi({
+    pause: paused => {
+      keysDown.clear(); playerRunning = false;
+      if (paused) viewerClock.pause("explore-menu"); else viewerClock.resume("explore-menu");
+    },
+    resize: () => { if (playerActive) updatePlayerDisplay(); scheduleSectors(); },
+    exit: () => document.getElementById("mode-viewer-btn")?.click(),
+    stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
+      bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
+  });
+  window.addEventListener("explore-scale", event => {
+    setZoom((event as CustomEvent<number>).detail);
+    if (playerActive) updatePlayerDisplay();
+    scheduleSectors();
+  });
   setupGameSelect();
   const animBox = document.getElementById("anim-toggle") as HTMLInputElement;
   if (animBox) {
@@ -1230,13 +1346,19 @@ function setupUi(): void {
 
   modeViewerBtn?.addEventListener("click", () => {
     stopExploration();
+    let back: string | null = null;
+    try { back = sessionStorage.getItem("atlas-explore-return"); } catch { /* Storage may be unavailable. */ }
+    if (back) {
+      const saved = new URL(back, location.href);
+      if (saved.origin === location.origin && saved.pathname === "/maps.html") { location.href = saved.href; return; }
+    }
     const target = new URL("/maps.html", location.href);
     target.searchParams.set("game", GAME);
     const view = new URLSearchParams({ x: String(Math.round(viewport.scrollLeft)), y: String(Math.round(viewport.scrollTop)), z: String(camera.zoom) });
     target.hash = `world&${view}`;
     location.href = target.href;
   });
-  modeExploreBtn?.addEventListener("click", () => startExploration());
+  modeExploreBtn?.addEventListener("click", () => { void startExploration(); });
   bikeBtn?.addEventListener("click", () => toggleBike());
 
   window.addEventListener("keydown", (e) => {
@@ -1244,6 +1366,7 @@ function setupUi(): void {
     if (tag === "input" || tag === "select" || tag === "textarea") return;
     const key = e.key.toLowerCase();
 
+    if (playerActive && (explorationUi?.paused || interiorViewer.isOpen())) return;
     if (key === "m") {
       toggleAudio();
       return;
@@ -1330,6 +1453,7 @@ function setupUi(): void {
   });
   let moved = false;
   viewport.addEventListener("pointerdown", (ev) => {
+    if (playerActive) return;
     if (!ev.isPrimary || ev.button !== 0 || activePointer !== null) return;
     activePointer = ev.pointerId;
     originX = ev.clientX;
@@ -1393,6 +1517,7 @@ function setupUi(): void {
   );
 
   viewport.addEventListener("scroll", () => {
+    scheduleSectors();
     minimapController?.updateRadar();
     updateEntitiesView();
     checkCurrentMapMusic();
@@ -1404,7 +1529,7 @@ function setupUi(): void {
 }
 
 build()
-  .then(() => {
+  .then(async () => {
     setupUi();
     updateMeta();
     if (startMapId && !startExplore) {
@@ -1414,9 +1539,7 @@ build()
     if (startExplore) {
       const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
         && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
-      startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
-      if (startX !== null) viewport.scrollLeft = startX;
-      if (startY !== null) viewport.scrollTop = startY;
+      await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
     }
   })
   .catch((err) => {

@@ -57,14 +57,14 @@ export class ViewerFieldEffects {
         this.emit(Object.freeze({ type: "release", id, generation: this.generation }));
       }
     }
-    const behavior = this.grid.behaviors[this.grid.idx(actor.x, actor.y)];
+    const behavior = this.grid.behaviorAt(actor.x, actor.y);
     if ((phase === "spawn" || phase === "begin") && MB.MetatileBehavior_IsTallGrass(behavior) && !this.grass.has(key)) {
       this.grass.set(key, this.spawn("TallGrass", phase, actor, phase === "spawn" ? 4 : 0, 2, 0, 0, true));
     }
     // Tracks are emitted on begin-step at previousCoords, from previous behavior.
     if (phase === "begin" && actor.vehicle !== "surf" && (actor.x !== actor.previousX || actor.y !== actor.previousY)
       && this.grid.inBounds(actor.previousX, actor.previousY)) {
-      const previousBehavior = this.grid.behaviors[this.grid.idx(actor.previousX, actor.previousY)];
+      const previousBehavior = this.grid.behaviorAt(actor.previousX, actor.previousY);
       const deep = MB.MetatileBehavior_IsDeepSand(previousBehavior);
       if (deep || MB.MetatileBehavior_IsSand(previousBehavior) || MB.MetatileBehavior_IsFootprints(previousBehavior)) {
         const directions = { south: C.DIR_SOUTH, north: C.DIR_NORTH, west: C.DIR_WEST, east: C.DIR_EAST };

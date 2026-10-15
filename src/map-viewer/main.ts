@@ -283,3 +283,8 @@ window.addEventListener("pageshow", e => {
   else scheduleUpdate();
 });
 void changeSource(currentGame);
+
+// Preserve the atlas selection/camera when returning from the separate exploration page.
+explore.addEventListener("click", () => {
+  try { sessionStorage.setItem("atlas-explore-return", location.pathname + location.search + location.hash); } catch { /* Navigation also works without storage. */ }
+});
