@@ -66,15 +66,18 @@ export class EscalatorTiles {
     if (data[0] === 0) { data[1] = (data[1]! + 1) % 3; data[3] = 0; }
   }
 
-  /** StartEscalator: CreateEscalatorTask captures the player's coords and draws the first section at once. */
-  StartEscalator(goingUp: boolean): void {
-    this.taskId = this.scheduler.create(this.run, 0);
-    const data = this.scheduler.data(this.taskId);
+  /** CreateEscalatorTask captures the player's coords and draws the first section at once. */
+  private CreateEscalatorTask(goingUp: boolean): number {
+    const taskId = this.scheduler.create(this.run, 0);
+    const data = this.scheduler.data(taskId);
     const p = this.playerCoords();
     data[0] = 0; data[1] = 0; data[2] = goingUp ? 1 : 0; data[3] = 0;
     data[4] = p.x; data[5] = p.y;
-    this.Task_DrawEscalator(this.taskId);
+    this.Task_DrawEscalator(taskId);
+    return taskId;
   }
+
+  StartEscalator(goingUp: boolean): void { this.taskId = this.CreateEscalatorTask(goingUp); }
 
   StopEscalator(): void { this.scheduler.destroy(this.taskId); }
 
@@ -157,11 +160,11 @@ export class EscalatorWarpAnimation {
 
   private Task_EscalatorWarpFieldEffect(taskId: number): void {
     const data = this.scheduler.data(taskId);
-    const steps = [this.Out_1, this.Out_2, this.Out_3, this.Out_4, this.Out_5, this.Out_6] as const;
+    const steps = [this.EscalatorWarpEffect_1, this.EscalatorWarpEffect_2, this.EscalatorWarpEffect_3, this.EscalatorWarpEffect_4, this.EscalatorWarpEffect_5, this.EscalatorWarpEffect_6] as const;
     while (steps[data[0]!]!.call(this, taskId)) { /* C returns TRUE to execute the next state this frame. */ }
   }
 
-  private Out_1(taskId: number): boolean {
+  private EscalatorWarpEffect_1(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
     this.host.freezeObjects();
     this.tiles.StartEscalator(data[1] !== 0);
@@ -170,7 +173,7 @@ export class EscalatorWarpAnimation {
     return false;
   }
 
-  private Out_2(taskId: number): boolean {
+  private EscalatorWarpEffect_2(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
     if (this.host.playerMovementReady()) {
       this.host.holdFacing();
@@ -183,39 +186,41 @@ export class EscalatorWarpAnimation {
     return false;
   }
 
-  private Out_3(taskId: number): boolean {
+  private EscalatorWarpEffect_3(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
-    this.AnimateGoingDown(taskId);
+    this.Escalator_AnimatePlayerGoingDown(taskId);
     if (data[2]! > 3) {
-      this.host.beginFadeOut();
+      this.Escalator_BeginFadeOutToNewMap();
       data[0] = data[0]! + 1;
     }
     return false;
   }
 
-  private Out_4(taskId: number): boolean {
-    this.AnimateGoingDown(taskId);
-    this.TransitionToWarpIn(taskId);
+  private EscalatorWarpEffect_4(taskId: number): boolean {
+    this.Escalator_AnimatePlayerGoingDown(taskId);
+    this.Escalator_TransitionToWarpInEffect(taskId);
     return false;
   }
 
-  private Out_5(taskId: number): boolean {
+  private EscalatorWarpEffect_5(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
-    this.AnimateGoingUp(taskId);
+    this.Escalator_AnimatePlayerGoingUp(taskId);
     if (data[2]! > 3) {
-      this.host.beginFadeOut();
+      this.Escalator_BeginFadeOutToNewMap();
       data[0] = data[0]! + 1;
     }
     return false;
   }
 
-  private Out_6(taskId: number): boolean {
-    this.AnimateGoingUp(taskId);
-    this.TransitionToWarpIn(taskId);
+  private EscalatorWarpEffect_6(taskId: number): boolean {
+    this.Escalator_AnimatePlayerGoingUp(taskId);
+    this.Escalator_TransitionToWarpInEffect(taskId);
     return false;
   }
 
-  private AnimateGoingDown(taskId: number): void {
+  private Escalator_BeginFadeOutToNewMap(): void { this.host.beginFadeOut(); }
+
+  private Escalator_AnimatePlayerGoingDown(taskId: number): void {
     const data = this.scheduler.data(taskId);
     const sprite = this.host.sprite();
     sprite.x2 = Cos(0x84, data[2]!);
@@ -224,7 +229,7 @@ export class EscalatorWarpAnimation {
     if (data[3]! & 1) data[2] = data[2]! + 1;
   }
 
-  private AnimateGoingUp(taskId: number): void {
+  private Escalator_AnimatePlayerGoingUp(taskId: number): void {
     const data = this.scheduler.data(taskId);
     const sprite = this.host.sprite();
     sprite.x2 = Cos(0x7c, data[2]!);
@@ -233,7 +238,7 @@ export class EscalatorWarpAnimation {
     if (data[3]! & 1) data[2] = data[2]! + 1;
   }
 
-  private TransitionToWarpIn(taskId: number): void {
+  private Escalator_TransitionToWarpInEffect(taskId: number): void {
     if (!this.host.fadeFinished()) return;
     this.tiles.StopEscalator();
     this.host.warpIntoMap();
@@ -242,11 +247,11 @@ export class EscalatorWarpAnimation {
 
   private Task_EscalatorWarpInFieldEffect(taskId: number): void {
     const data = this.scheduler.data(taskId);
-    const steps = [this.In_1, this.In_2, this.In_3, this.In_4, this.In_5, this.In_6, this.In_7] as const;
+    const steps = [this.EscalatorWarpInEffect_1, this.EscalatorWarpInEffect_2, this.EscalatorWarpInEffect_3, this.EscalatorWarpInEffect_4, this.EscalatorWarpInEffect_5, this.EscalatorWarpInEffect_6, this.EscalatorWarpInEffect_7] as const;
     while (steps[data[0]!]!.call(this, taskId)) { /* C continues only when a state returns TRUE. */ }
   }
 
-  private In_1(taskId: number): boolean {
+  private EscalatorWarpInEffect_1(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
     this.host.faceRight();
     let goingUp = true;
@@ -260,7 +265,7 @@ export class EscalatorWarpAnimation {
     return true;
   }
 
-  private In_2(taskId: number): boolean {
+  private EscalatorWarpInEffect_2(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
     const sprite = this.host.sprite();
     sprite.x2 = Cos(0x84, data[1]!);
@@ -269,7 +274,7 @@ export class EscalatorWarpAnimation {
     return false;
   }
 
-  private In_3(taskId: number): boolean {
+  private EscalatorWarpInEffect_3(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
     const sprite = this.host.sprite();
     sprite.x2 = Cos(0x84, data[1]!);
@@ -280,7 +285,7 @@ export class EscalatorWarpAnimation {
     return false;
   }
 
-  private In_4(taskId: number): boolean {
+  private EscalatorWarpInEffect_4(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
     const sprite = this.host.sprite();
     sprite.x2 = Cos(0x7c, data[1]!);
@@ -289,7 +294,7 @@ export class EscalatorWarpAnimation {
     return false;
   }
 
-  private In_5(taskId: number): boolean {
+  private EscalatorWarpInEffect_5(taskId: number): boolean {
     const data = this.scheduler.data(taskId);
     const sprite = this.host.sprite();
     sprite.x2 = Cos(0x7c, data[1]!);
@@ -300,7 +305,7 @@ export class EscalatorWarpAnimation {
     return false;
   }
 
-  private In_6(taskId: number): boolean {
+  private EscalatorWarpInEffect_6(taskId: number): boolean {
     if (this.tiles.IsEscalatorMoving()) return false;
     this.tiles.StopEscalator();
     const data = this.scheduler.data(taskId);
@@ -308,7 +313,7 @@ export class EscalatorWarpAnimation {
     return true;
   }
 
-  private In_7(taskId: number): boolean {
+  private EscalatorWarpInEffect_7(taskId: number): boolean {
     if (!this.host.playerMovementFinished()) return false;
     this.host.unlockControls();
     this.host.unfreezeObjects();
