@@ -69,7 +69,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `battle_util.c` | 3252 | 37/37 | `core/battle/util.ts` |  |  |
 | `battle_message.c` | 2855 | 10/10 | `core/battle/message.ts`, `trainerTower.ts` |  |  |
 | `pokemon_storage_system_tasks.c` | 2770 | 82/82 | `storageSystemTasks.ts` |  |  |
-| `field_specials.c` | 2555 | 118/118 | `core/field/fieldControl.ts`, `core/field/fieldMoves.ts`, `core/field/hiddenItem.ts` … |  |  |
+| `field_specials.c` | 2555 | 118/118 | `core/field/elevatorAnimation.ts`, `core/field/fieldControl.ts`, `core/field/fieldMoves.ts` … |  |  |
 | `slot_machine.c` | 2527 | 77/77 | `menus/slotMachine.ts` |  |  |
 | `naming_screen.c` | 2509 | 109/109 | `core/gba/input.ts`, `core/menus/namingModel.ts`, `core/namingScreen.ts` … |  |  |
 | `help_system.c` | 2480 | 41/41 | `core/field/overworld.ts`, `helpSystem.ts`, `introTitle.ts` |  |  |
