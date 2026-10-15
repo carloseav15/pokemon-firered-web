@@ -105,7 +105,7 @@ export class ExplorationUi {
     this.menu.showModal();
   }
   private onKey = (event: KeyboardEvent): void => {
-    if (!this.active || event.key !== "Escape" || this.menu.open || document.getElementById("interior")?.style.display !== "none") return;
+    if (!this.active || event.key !== "Escape" || document.querySelector("dialog[open]") || this.menu.open || document.getElementById("interior")?.style.display !== "none") return;
     event.preventDefault(); event.stopImmediatePropagation(); this.openMenu();
   };
   private measure = (now: number): void => {

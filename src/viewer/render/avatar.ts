@@ -1,12 +1,12 @@
 import { Sprite, loadImage } from "@core/gba/sprite";
 import type { AnimCmd, ObjectGfxInfo } from "@core/rom";
 import { cdata, symName } from "@core/hw/assets";
-import { GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetRunningDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetSpinDirectionAnimNum } from "../../games/firered/generated/eventObjectAnims";
+import { GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetRunningDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetSpinDirectionAnimNum } from "../../games/firered/generated/eventObjectAnims";
 import * as C from "../../games/firered/generated/constants";
 import type { Direction } from "./sprites";
 import type { PlayerVehicle } from "../state";
 
-export type AvatarAction = "walk" | "run" | "bike" | "surf" | "jump" | "bump" | "turn" | "board" | "dismount" | "ice" | "spin" | "current" | "walkSlow" | "runSlow";
+export type AvatarAction = "walk" | "run" | "bike" | "surf" | "jump" | "bump" | "turn" | "board" | "dismount" | "ice" | "spin" | "current" | "walkSlow" | "runSlow" | "inPlaceFaster";
 export type AvatarData = { gfx: Record<string, ObjectGfxInfo>; animTables: Record<string, Array<string | null>>; anims: Record<string, AnimCmd[]> };
 const directions = { south: C.DIR_SOUTH, north: C.DIR_NORTH, west: C.DIR_WEST, east: C.DIR_EAST };
 
@@ -66,7 +66,7 @@ export class AvatarAnimator {
     this.char = char; this.vehicle = vehicle; this.direction = direction; this.action = action;
     this.configure(char, action === "board" || action === "dismount" ? "surf" : vehicle);
     const dir = directions[direction];
-    this.sprite.animNum = action === "spin" ? GetSpinDirectionAnimNum(dir) : action === "run" || action === "runSlow" ? GetRunningDirectionAnimNum(dir)
+    this.sprite.animNum = action === "inPlaceFaster" ? GetMoveDirectionFasterAnimNum(dir) : action === "spin" ? GetSpinDirectionAnimNum(dir) : action === "run" || action === "runSlow" ? GetRunningDirectionAnimNum(dir)
       : action === "board" || action === "dismount" ? GetJumpSpecialDirectionAnimNum(dir)
       : action === "bike" || action === "surf" || action === "turn" || action === "ice" || action === "current" ? GetMoveDirectionFastAnimNum(dir) : GetMoveDirectionAnimNum(dir);
     const commands = this.sprite.anims[this.sprite.animNum];

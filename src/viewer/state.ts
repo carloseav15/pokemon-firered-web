@@ -40,6 +40,8 @@ export type StoredSettings = {
 
 export class ViewerState {
   appMode: AppMode = "viewer";
+  // Session event state; populated by real event logic when story integration lands.
+  readonly eventFlags = new Set<string>();
   view: ViewState = { zoom: 1, scrollLeft: 0, scrollTop: 0 };
   activeLayers = new Set<Layer>((LAYERS as unknown as Layer[]).filter((l) => l !== "colision"));
   fillMode: FillMode = "full";

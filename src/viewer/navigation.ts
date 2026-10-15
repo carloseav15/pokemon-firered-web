@@ -26,7 +26,7 @@ export function inputWarpBehavior(behavior: number, direction: Direction): boole
   }
 }
 
-export type WarpAddress = { mapId: string; warpId: number };
+export type WarpAddress = { mapId: string; warpId: number; x?: number; y?: number };
 
 /** overworld.c GetAdjustedInitialDirection after StoreInitialPlayerAvatarState (no scripted direction override). */
 export function warpArrivalDirection(behavior: number, previous: Direction): Direction {
@@ -50,11 +50,18 @@ export class NavigationWarps {
     if (!warp) throw new Error(`Warp inexistente: ${source.id}:${warpId}`);
     const address = warp.destMap === "MAP_DYNAMIC" ? this.dynamic : { mapId: warp.destMap, warpId: warp.destWarpId };
     if (!address) throw new Error(`Salida dinámica sin entrada previa: ${source.id}:${warpId}`);
+    return this.resolveAddress(address, { mapId: source.id, warpId, x: warp.x, y: warp.y });
+  }
+  /** overworld.c SetPlayerCoordsFromWarp: signed warpId first, explicit coords second. */
+  async resolveAddress(address: WarpAddress, source?: WarpAddress): Promise<ResolvedWarp> {
     const header = await this.load(address.mapId);
-    const arrival = header.warps[address.warpId];
+    let arrival = address.warpId >= 0 ? header.warps[address.warpId] : undefined;
+    if (!arrival && Number.isSafeInteger(address.x) && Number.isSafeInteger(address.y) && address.x! >= 0 && address.y! >= 0) {
+      arrival = { x: address.x!, y: address.y!, elevation: 0, destMap: "", destWarpId: -1 };
+    }
     if (!arrival) throw new Error(`Destino inexistente: ${address.mapId}:${address.warpId}`);
     return { ...address, header, arrival,
-      dynamicReturn: arrival.destMap === "MAP_DYNAMIC" ? { mapId: source.id, warpId } : null };
+      dynamicReturn: arrival.destMap === "MAP_DYNAMIC" && source ? { ...source } : null };
   }
   commit(destination: ResolvedWarp): void {
     if (destination.dynamicReturn) this.dynamic = destination.dynamicReturn;

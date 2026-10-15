@@ -1,3 +1,6 @@
+import { ElevatorAnimation } from "@core/field/elevatorAnimation";
+import { ElevatorMenu } from "./ui/elevator";
+import { loadElevators, type ElevatorDefinition, type ElevatorChoice } from "./elevators";
 import { ViewerForcedMovement } from "./forcedNavigation";
 import { FallWarpAnimation, type FallObject } from "@core/field/fallWarpAnimation";
 import { TeleportAnimation, type TeleportObject } from "@core/field/teleportAnimation";
@@ -17,11 +20,11 @@ import { SurfSupport } from "./render/surf";
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
 import type { MapHeader, TilesetData } from "@core/rom";
-import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, warpArrivalDirection } from "./navigation";
+import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, warpArrivalDirection, type WarpAddress } from "./navigation";
 import { Rom, rom, setDataRoot } from "@core/rom";
 import { TileRenderer } from "@core/field/tileRenderer";
 import { TilesetAnimator } from "@core/field/tilesetAnimator";
-import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
+import { MAP_OFFSET, ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
 import * as MB from "../games/firered/generated/metatileBehavior";
 import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
 import { GBA_FRAME_MS, TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
@@ -110,6 +113,9 @@ let index: KantoIndex;
 let exteriorWorld: WorldIndexData;
 let navigationMap: string | null = null;
 let warpBusy = false;
+let elevatorBusy = false;
+let elevatorMenu: ElevatorMenu;
+let elevators: Record<string,ElevatorDefinition> = {};
 let blockedArrival: string | null = null;
 const mapHeaders = new Map<string, MapHeader>();
 const navigationWarps = new NavigationWarps(async id => {
@@ -268,8 +274,9 @@ function parseHash(): void {
   startExplore = h.get("modo") === "explore";
   startMapId = h.get("mapa");
   const returnWarp = Number(h.get("retornoWarp"));
-  if (h.has("retorno") && h.has("retornoWarp") && Number.isSafeInteger(returnWarp) && returnWarp >= 0)
-    navigationWarps.restore({ mapId: h.get("retorno")!, warpId: returnWarp });
+  if (h.has("retorno") && h.has("retornoWarp") && Number.isSafeInteger(returnWarp) && returnWarp >= -1)
+    navigationWarps.restore({ mapId: h.get("retorno")!, warpId: returnWarp,
+      ...(h.has("retornoX") && h.has("retornoY") ? { x:Number(h.get("retornoX")),y:Number(h.get("retornoY")) } : {}) });
   const px = Number(h.get("px"));
   const py = Number(h.get("py"));
   if (h.has("px") && h.has("py") && Number.isSafeInteger(px) && Number.isSafeInteger(py)) startPlayer = { x: px, y: py };
@@ -304,7 +311,8 @@ function writeHash(): void {
   h.set("modo", state.appMode);
   if (navigationMap) h.set("mapa", navigationMap);
   const dynamicReturn = navigationWarps.returnAddress;
-  if (dynamicReturn) { h.set("retorno", dynamicReturn.mapId); h.set("retornoWarp", String(dynamicReturn.warpId)); }
+  if (dynamicReturn) { h.set("retorno", dynamicReturn.mapId); h.set("retornoWarp", String(dynamicReturn.warpId));
+    if (dynamicReturn.x !== undefined && dynamicReturn.y !== undefined) { h.set("retornoX",String(dynamicReturn.x));h.set("retornoY",String(dynamicReturn.y)); } }
   if (playerActive) {
     h.set("px", String(playerX));
     h.set("py", String(playerY));
@@ -704,7 +712,7 @@ function stopExploration(): void {
 }
 
 function toggleBike(): void {
-  if (fallPreventStep || warpBusy || isStepping || playerMode === "surf") return;
+  if (elevatorBusy || fallPreventStep || warpBusy || isStepping || playerMode === "surf") return;
   const mapId = findMapAt(playerX,playerY)?.[0];
   if (mapId && mapHeaders.get(mapId)?.allowCycling === false) return;
   playerMode = playerMode === "bike" ? "walk" : "bike";
@@ -721,7 +729,7 @@ function toggleBike(): void {
 const keysDown = new Set<string>();
 
 function processPlayerStep(): void {
-  if (!playerActive || fallPreventStep || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
+  if (!playerActive || elevatorBusy || fallPreventStep || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
 
   let dx = 0;
   let dy = 0;
@@ -1171,11 +1179,75 @@ async function animateEscalator(outgoing: boolean, behavior: number): Promise<vo
   });
 }
 
-async function followNavigationWarp(source: MapHeader, warpId: number, phase: "input" | "front" | "step"): Promise<void> {
+/** Source elevator destination scripts; DOM menu adapts presentation, not floor/warp data. */
+function tryElevatorPanel(x:number,y:number):boolean {
+  if(HOENN||isStepping||warpBusy||elevatorBusy)return false;
+  const found=findMapAt(playerX,playerY);if(!found)return false;
+  const [mapId,info]=found,definition=elevators[mapId];if(!definition)return false;
+  if(!definition.panels.some(p=>p.x===x-info.x&&p.y===y-info.y&&(p.elevation===0||p.elevation===playerElevation)))return false;
+  keysDown.clear();playerRunning=false;
+  if(definition.requiredFlag&&!state.eventFlags.has(definition.requiredFlag)){
+    dialogManager.show("Ascensor",[definition.deniedText!]);return true;
+  }
+  const address=navigationWarps.returnAddress;
+  if(!address||definition.floors[address.mapId]===undefined){
+    dialogManager.show("Ascensor",["Entra desde una planta para establecer el destino de retorno."]);return true;
+  }
+  elevatorBusy=true;
+  void (async()=>{
+    try{
+      const from=definition.floors[address.mapId]!;
+      const current=definition.choices.findIndex(c=>c.floor===from);
+      const selected=await elevatorMenu.choose(definition.choices.map(c=>c.label),current);
+      if(selected===null)return;
+      const choice=definition.choices[selected]!;
+      if(!choice.destination)return; // Trainer Tower SelectRoof intentionally just closes the menu.
+      navigationWarps.restore(choice.destination); // setdynamicwarp precedes the same-floor branch.
+      if(choice.floor===from)return;
+      await animateNavigationElevator(from,choice.floor);
+      if(choice.autoExit)await exitTrainerTowerElevator(mapHeaders.get(mapId)!,choice);
+    }catch(error){console.error("Navigation elevator",error);dialogManager.show("Ascensor",[String(error)]);}
+    finally{elevatorBusy=false;keysDown.clear();warpCameraY=0;updatePlayerDisplay();writeHash();}
+  })();
+  return true;
+}
+
+async function animateNavigationElevator(from:number,to:number):Promise<void>{
+  await loadCData("field_specials");
+  const found=findMapAt(playerX,playerY);if(!found)throw Error("Elevator map missing");
+  const info=found[1],scheduler=new TaskManager();
+  const animation=new ElevatorAnimation({
+    stopCameraPanning:()=>{warpCameraY=0;},pan:(_x,y)=>{warpCameraY=y;},
+    restoreCameraPanning:()=>{warpCameraY=0;},resumeScript:()=>{},
+    playSE:id=>audioController.playSE(id),
+    setMetatile:(x,y,value)=>paintNavigationMetatile(info.x+x-MAP_OFFSET,info.y+y-MAP_OFFSET,value),
+    // paintNavigationMetatile redraws each changed cell immediately.
+    drawMap:()=>{},
+  },scheduler);
+  // The awaiting navigation event replaces ScriptContext_Enable; window tasks finish independently.
+  animation.AnimateElevator(from,to);
+  await new Promise<void>(resolve=>{
+    const off=viewerClock.subscribe(()=>{
+      scheduler.run();updatePlayerDisplay();
+      if(!scheduler.tasks.some(t=>t.isActive)){off();resolve();}
+    });
+  });
+}
+async function exitTrainerTowerElevator(source:MapHeader,choice:ElevatorChoice):Promise<void>{
+  // TrainerTower_Elevator/scripts.inc: delay25, faster in-place down, delay16, down/right/right/down, warp.
+  await warpVisuals!.wait(25);
+  playerDir="south";avatarAnimator!.begin(state.playerChar,playerMode,playerDir,"inPlaceFaster",viewerClock.tick);
+  await warpVisuals!.wait(4);avatarAnimator!.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);
+  await warpVisuals!.wait(16);
+  for(const direction of ["south","east","east","south"] as const)await walkWarpStep(direction);
+  await followNavigationWarp(source,0,"input",choice.destination!);
+}
+
+async function followNavigationWarp(source: MapHeader, warpId: number, phase: "input" | "front" | "step", address?: WarpAddress): Promise<void> {
   if (warpBusy) return;
   warpBusy = true; content.setAttribute("aria-busy","true"); keysDown.clear(); playerMoving = false;
   const old = { map: navigationMap, x: playerX, y: playerY, direction: playerDir, vehicle: playerMode, dynamic: navigationWarps.returnAddress };
-  const sourceBehavior=worldGrid.behaviorAt(playerX,playerY);
+  const sourceBehavior=address ? C.MB_NORMAL : worldGrid.behaviorAt(playerX,playerY);
   const falling=phase==="step"&&MB.MetatileBehavior_IsFallWarp(sourceBehavior);
   const teleport=phase==="step"&&MB.MetatileBehavior_IsWarpPad(sourceBehavior);
   const escalator=phase==="step"&&MB.MetatileBehavior_IsEscalator(sourceBehavior);
@@ -1183,7 +1255,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
   let door: ViewerDoorAnimation | null = null;
   let stopStairs: (()=>void) | null = null;
   try {
-    const destination = await navigationWarps.resolve(source, warpId);
+    const destination = address ? await navigationWarps.resolveAddress(address) : await navigationWarps.resolve(source, warpId);
     await loadCData("map_preview_screen");
     const cavePreview=source.regionMapSection!==destination.header.regionMapSection
       && cdata<Array<{mapsec:number;type:number}>>("map_preview_screen","sMapPreviewScreenData")
@@ -1224,6 +1296,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     resetExploreSession();warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
     await changeNavigationWorld(destination.mapId); switched = true;
     const info = index.maps[destination.mapId]!;
+    if(destination.arrival.x<0||destination.arrival.y<0||destination.arrival.x>=info.width||destination.arrival.y>=info.height)throw Error("Warp coordinates outside destination layout");
     playerX = info.x + destination.arrival.x; playerY = info.y + destination.arrival.y;
     playerElevation = worldGrid.elevationAt(playerX, playerY);
     if (playerElevation === 15) playerElevation = 0;
@@ -1324,7 +1397,8 @@ async function build(): Promise<void> {
     avatarDepth = new AvatarDepth(content);
     warpVisuals = new ViewerWarpVisuals(document.getElementById("main")!,viewerClock);
   }) : Promise.resolve();
-  const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
+  const elevatorReady = HOENN ? Promise.resolve() : loadElevators().then(data=>{elevators=data;});
+  const [,worldData] = await Promise.all([elevatorReady,HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
   exteriorWorld = worldData;
   index = worldData.index;
@@ -1340,6 +1414,7 @@ async function build(): Promise<void> {
   worldGrid = new WorldGrid(index.world.width, index.world.height, minX, minY, streaming);
   entityManager = new EntityManager(content, minX, minY);
   dialogManager = new DialogManager();
+  elevatorMenu = new ElevatorMenu();
   interiorViewer = new InteriorViewer({
     isExterior: (mapId) => mapId in index.maps,
     showExterior: (mapId) => { centerOnMap(mapId); },
@@ -1921,6 +1996,7 @@ function setupUi(): void {
   bikeBtn?.addEventListener("click", () => toggleBike());
 
   window.addEventListener("keydown", (e) => {
+    if (elevatorBusy || elevatorMenu?.open) return;
     const tag = document.activeElement?.tagName?.toLowerCase();
     if (tag === "input" || tag === "select" || tag === "textarea") return;
     const key = e.key.toLowerCase();
@@ -1953,6 +2029,7 @@ function setupUi(): void {
         else if (playerDir === "west") fx--;
         else if (playerDir === "east") fx++;
 
+        if (tryElevatorPanel(fx,fy)) return;
         const frontEnt = entityManager.findAt(fx, fy);
         if (frontEnt) {
           interactWithEntity(frontEnt);

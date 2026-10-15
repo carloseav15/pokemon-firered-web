@@ -7,7 +7,7 @@ const jobs = [
   "viewer-reflections", "viewer-reflection-terrains", "viewer-shadow-terrains", "viewer-effects", "viewer-terrain-effects", "viewer-tracks", "viewer-interior-navigation",
   "viewer-stair-navigation", "viewer-teleport-navigation", "viewer-fall-navigation", "viewer-forced-navigation",
   "viewer-escalator", "viewer-bike-stairs", "viewer-bridge-walk", "viewer-cave-levels", "viewer-saffron-gates",
-  "viewer-door-navigation", "viewer-door-large",
+  "viewer-door-navigation", "viewer-door-large", "viewer-elevator",
 ];
 // Jobs known to fail for a reason that predates the current work; none at the moment.
 const known = {};
