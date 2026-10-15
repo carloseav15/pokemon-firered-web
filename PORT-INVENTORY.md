@@ -52,7 +52,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `field_control_avatar.c` | 1182 | 47/49 | `core/field/fieldControl.ts`, `core/field/fieldEffects.ts`, `core/field/fieldStepCounters.ts` … |  |  |
 | `battle_bg.c` | 1111 | 14/17 | `battle/bg.ts` |  |  |
 | `start_menu.c` | 1016 | 58/65 | `game.ts`, `startMenu.ts` |  |  |
-| `field_fadetransition.c` | 965 | 50/59 | `core/field/fieldControl.ts`, `core/field/overworld.ts`, `startMenu.ts` |  |  |
+| `field_fadetransition.c` | 965 | 50/59 | `core/field/fieldControl.ts`, `core/field/mapTransitions.ts`, `core/field/overworld.ts` … |  |  |
 | `main.c` | 494 | 23/28 | `core/audio/sound.ts`, `core/gba/input.ts`, `core/hw/runtime.ts` … |  |  |
 
 ## Sin huecos de nombre (100 %; fidelidad no medida)
@@ -168,7 +168,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `window.c` | 513 | 21/21 | `core/gba/window.ts`, `core/hw/window.ts` |  |  |
 | `seagallop.c` | 504 | 22/22 | `battleRecords.ts`, `seagallop.ts` |  |  |
 | `battle_intro.c` | 492 | 10/10 | `core/battle/intro.ts` |  |  |
-| `fldeff_flash.c` | 479 | 22/22 | `core/field/overworld.ts`, `mapPreviewScreen.ts`, `menus/fieldMoveMenu.ts` |  |  |
+| `fldeff_flash.c` | 479 | 22/22 | `core/field/mapTransitions.ts`, `core/field/overworld.ts`, `mapPreviewScreen.ts` … |  |  |
 | `palette_util.c` | 474 | 17/17 | `core/paletteUtil.ts` |  |  |
 | `battle_anim_bug.c` | 462 | 13/13 | `core/battle/anims/bug.ts` |  |  |
 | `field_screen_effect.c` | 462 | 19/19 | `core/field/fieldEffects.ts`, `core/field/overworld.ts`, `script/specials.ts` |  |  |
