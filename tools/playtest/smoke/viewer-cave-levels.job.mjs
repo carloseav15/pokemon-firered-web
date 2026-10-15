@@ -21,16 +21,25 @@ export default async function run(ctx){
   await p.evaluate(()=>{window.caveProbe.steps=window.caveProbe.steps.filter(s=>s.phase==='spawn');});
   await p.keyboard.down(key);await finished(n);await p.keyboard.up(key);await p.waitForTimeout(500);
   return (await p.evaluate(()=>window.caveProbe.steps.filter(s=>s.phase==='finish'))).slice(0,n);};
+ // Expected draw priority comes from the exported C table, not from hand-typed values.
+ const table=(await(await fetch(new URL('fr/cdata/event_object_movement.json',process.env.PW_BASE).href)).json()).defs.sElevationToPriority.value;
+ const zOf=()=>p.locator('#player-sprite').evaluate(e=>e.style.zIndex);
+ const expectZ=elevation=>table[elevation]<=1?'30':'25';
+ if(await zOf()!==expectZ(3))throw Error('Initial avatar priority differs '+await zOf());
  const up=(await walk('ArrowUp',3));
  if(JSON.stringify(up.map(s=>[s.x,s.y]))!==JSON.stringify([[10,9],[10,8],[10,7]]))throw Error('Ascent route differs '+JSON.stringify(up));
  const grid=await p.evaluate(()=>({stairs:window.caveProbe.grid.behaviorAt(10,9),low:window.caveProbe.grid.elevationAt(10,10),high:window.caveProbe.grid.elevationAt(10,8)}));
  if(grid.stairs!==42||grid.low!==3||grid.high!==4)throw Error('Fixture is not the source rock stairs '+JSON.stringify(grid));
  if(up[2].elevation!==4)throw Error('Upper level did not take elevation 4 '+JSON.stringify(up));
+ if(up.some(s=>s.priority!==table[s.elevation]))throw Error('Step priority differs from sElevationToPriority '+JSON.stringify({up,table}));
+ if(await zOf()!==expectZ(4))throw Error('Upper-level avatar is not drawn at the C priority '+await zOf());
  const down=await walk('ArrowDown',4);
  // The held key may have taken one extra step north before release: the descent starts at (10,7).
  if(JSON.stringify(down.map(s=>[s.x,s.y]))!==JSON.stringify([[10,7],[10,8],[10,9],[10,10]]))throw Error('Descent route differs '+JSON.stringify(down));
+ if(down.some(s=>s.priority!==table[s.elevation]))throw Error('Descent priority differs from sElevationToPriority '+JSON.stringify(down));
+ if(await zOf()!==expectZ(3))throw Error('Lower-level avatar is not drawn at the C priority '+await zOf());
  if(down[1].elevation!==4||down[3].elevation!==3)throw Error('Lower level did not return to elevation 3 '+JSON.stringify(down));
  await ctx.shot(`cave-levels-${character}`);
  return{character,up:up.map(s=>[s.x,s.y,s.elevation]),down:down.map(s=>[s.x,s.y,s.elevation]),grid,
-  note:'PREPARED start; real keyboard across source MB_ROCK_STAIRS between elevations 3 and 4, both directions. Draw priority not asserted; no global ROM parity claim.'};
+  note:'PREPARED start; real keyboard across source MB_ROCK_STAIRS between elevations 3 and 4, both directions. Avatar draw priority is asserted against sElevationToPriority at both levels; no global ROM parity claim.'};
 }
