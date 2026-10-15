@@ -9,11 +9,13 @@ import { TilesetAnimator } from "@core/field/tilesetAnimator";
 import { ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
 import * as MB from "../games/firered/generated/metatileBehavior";
 import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
-import { TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
+import { GBA_FRAME_MS, TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
 import type { Element, KantoIndex, Trigger } from "./types";
 import { state, type PlayerVehicle } from "./state";
 import { fetchWorldIndex, type WorldIndexData } from "./data/worldIndex";
 import { WorldGrid } from "./data/worldGrid";
+import { planStep } from "./movement";
+import { cdata, loadCData } from "@core/hw/assets";
 import { SectorLoader, nearbySectors, type SectorResource } from "./data/sectors";
 import { ExplorationUi } from "./ui/exploration";
 import { SectorBorder } from "./render/sectorBorder";
@@ -25,7 +27,7 @@ import { setupSearch } from "./ui/search";
 import { InteriorViewer } from "./ui/interior";
 import { setupMinimap, type MinimapController } from "./ui/minimap";
 import { setupPopovers } from "./ui/popover";
-import { getPlayerSpriteSheet, type Direction, loadHoennGfx } from "./render/sprites";
+import { getPlayerSpriteSheet, gfxInfoOf, fallbackGfx, type Direction, loadHoennGfx } from "./render/sprites";
 import { viewerClock, bindViewerClockVisibility } from "./clock";
 import { ViewerFieldEffects } from "./fieldEffects";
 import { installFieldFxRenderer } from "./render/fieldFx";
@@ -137,6 +139,7 @@ function resetExploreSession(): void {
   cancelPlayerMotion?.();
   cancelPlayerMotion = null;
   isStepping = false;
+  stepRunning = false;
   playerMoving = false;
   keysDown.clear();
   if (!HOENN) fieldEffects.resetSession();
@@ -165,6 +168,8 @@ let playerStep = 0;
 let playerMoving = false;
 let playerRunning = false;
 let isStepping = false;
+let stepRunning = false;
+let jumpArc: readonly number[] = [];
 const playerEl = document.getElementById("player-sprite");
 
 function parseHash(): void {
@@ -352,6 +357,7 @@ function updatePlayerDisplay(): void {
   const px = playerVisualX;
   const py = playerVisualY;
 
+  const running = isStepping ? stepRunning : playerRunning && playerMoving;
   const isBike = playerMode === "bike";
   // Emerald surfing sheet: 32x32 cells (a player riding the Pokémon), like the FireRed bike's width.
   const wide = isBike || (HOENN && playerMode === "surf");
@@ -385,7 +391,7 @@ function updatePlayerDisplay(): void {
       frameIdx = west;
       flip = true;
     }
-  } else if (playerRunning && playerMoving) {
+  } else if (running) {
     if (playerDir === "south") frameIdx = playerStep % 2 === 0 ? 3 : 4;
     else if (playerDir === "north") frameIdx = playerStep % 2 === 0 ? 5 : 6;
     else if (playerDir === "west") frameIdx = playerStep % 2 === 0 ? 7 : 8;
@@ -406,7 +412,7 @@ function updatePlayerDisplay(): void {
   const inGrass = worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
   playerEl.style.clipPath = inGrass ? "inset(0 0 4px 0)" : "none";
 
-  const spriteSheet = getPlayerSpriteSheet(state.playerChar, playerMode, playerRunning && playerMoving);
+  const spriteSheet = getPlayerSpriteSheet(state.playerChar, playerMode, running);
   playerEl.style.backgroundImage = `url(${spriteSheet})`;
   playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
   playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
@@ -486,6 +492,18 @@ function checkTrainerSight(): void {
   }
 }
 
+async function preloadExplorationSprites(): Promise<void> {
+  const halfW = viewport.clientWidth / camera.zoom / TILE / 2 + 2;
+  const halfH = viewport.clientHeight / camera.zoom / TILE / 2 + 2;
+  const urls = new Set([getPlayerSpriteSheet(state.playerChar, "walk"), getPlayerSpriteSheet(state.playerChar, "walk", true),
+    getPlayerSpriteSheet(state.playerChar, "surf"), ...(!HOENN ? [getPlayerSpriteSheet(state.playerChar, "bike")] : [])]);
+  for (const ent of entityManager.entities) if (Math.abs(ent.gx - playerX) <= halfW && Math.abs(ent.gy - playerY) <= halfH) {
+    const gfx = gfxInfoOf(ent.element.graphics ?? "") ?? fallbackGfx();
+    urls.add(`${HOENN ? "/emerald" : "/fr"}/${gfx.file}`);
+  }
+  await Promise.all([...urls].map(async url => { const image = new Image(); image.src = url; await image.decode(); }));
+}
+
 async function startExploration(targetGx?: number, targetGy?: number): Promise<void> {
   if (!HOENN && !streaming) {
     writeHash();
@@ -494,10 +512,8 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     if (targetGx !== undefined && targetGy !== undefined) { h.set("px", String(targetGx)); h.set("py", String(targetGy)); }
     location.hash = h.toString(); location.reload(); return;
   }
-  explorationUi?.enter();
   if (!playerActive && !HOENN) camera.setZoom(2);
   resetExploreSession();
-  playerActive = true;
   state.appMode = "explore";
 
   const modeViewerBtn = document.getElementById("mode-viewer-btn");
@@ -507,12 +523,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   modeExploreBtn?.classList.add("active-mode");
   if (bikeBtn) bikeBtn.style.display = "inline-flex";
 
-  if (!animController.animOn) {
-    animController.start();
-    const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
-    if (animBox) animBox.checked = true;
-    updateMeta();
-  }
+
 
   if (sectorLoader) {
     const preferred = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[0] : startMapId;
@@ -520,28 +531,30 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     else if (playerX === 0 && playerY === 0 && startX === null) centerOnMap("MAP_PALLET_TOWN");
     await requestSectors();
   }
-  if (targetGx !== undefined && targetGy !== undefined) {
+  const requestedVehicle = targetGx !== undefined && targetGy !== undefined && worldGrid.isWaterTile(targetGx, targetGy) ? "surf" : "walk";
+  if (targetGx !== undefined && targetGy !== undefined && worldGrid.isWalkable(targetGx, targetGy, requestedVehicle)) {
     playerX = targetGx;
     playerY = targetGy;
+    playerMode = requestedVehicle;
   } else if (playerX === 0 && playerY === 0) {
     const requestedX = startX !== null ? minX + Math.floor((startX + viewport.clientWidth / 2) / camera.zoom / TILE) : null;
     const requestedY = startY !== null ? minY + Math.floor((startY + viewport.clientHeight / 2) / camera.zoom / TILE) : null;
-    const selected = startMapId && index.maps[startMapId];
+    const selected = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[1] : startMapId && index.maps[startMapId];
     const nearCamera = requestedX !== null && requestedY !== null ? Object.values(index.maps).find(m => requestedX >= m.x && requestedX < m.x + m.width && requestedY >= m.y && requestedY < m.y + m.height) : undefined;
     const paleta = selected || nearCamera || index.maps[HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN"];
     if (paleta) {
-      const spawnX = nearCamera && !selected ? requestedX! : selected ? paleta.x + Math.floor(paleta.width / 2) : paleta.x + 8;
-      const spawnY = nearCamera && !selected ? requestedY! : selected ? paleta.y + Math.floor(paleta.height / 2) : paleta.y + 8;
+      const spawnX = targetGx !== undefined && targetGx >= paleta.x && targetGx < paleta.x + paleta.width ? targetGx : nearCamera && !selected ? requestedX! : selected ? paleta.x + Math.floor(paleta.width / 2) : paleta.x + 8;
+      const spawnY = targetGy !== undefined && targetGy >= paleta.y && targetGy < paleta.y + paleta.height ? targetGy : nearCamera && !selected ? requestedY! : selected ? paleta.y + Math.floor(paleta.height / 2) : paleta.y + 8;
       playerX = spawnX;
       playerY = spawnY;
       // El centro del mapa puede ser un muro (la ciudad de Hoenn es otra): busca la casilla libre más cercana.
-      for (let r = 0; r < Math.max(paleta.width, paleta.height) && !worldGrid.isWalkable(playerX, playerY, "walk"); r++) {
+      for (let r = 0; r < Math.max(paleta.width, paleta.height) && !worldGrid.isWalkable(playerX, playerY, requestedVehicle); r++) {
         let found = false;
         for (let oy = -r; oy <= r && !found; oy++) {
           for (let ox = -r; ox <= r && !found; ox++) {
             if (Math.max(Math.abs(ox), Math.abs(oy)) !== r) continue;
             if (spawnX + ox < paleta.x || spawnX + ox >= paleta.x + paleta.width || spawnY + oy < paleta.y || spawnY + oy >= paleta.y + paleta.height) continue;
-            if (worldGrid.isWalkable(spawnX + ox, spawnY + oy, "walk")) {
+            if (worldGrid.isWalkable(spawnX + ox, spawnY + oy, requestedVehicle)) {
               playerX = spawnX + ox;
               playerY = spawnY + oy;
               found = true;
@@ -556,11 +569,22 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     }
   }
 
+  playerMode = worldGrid.isWaterTile(playerX, playerY) ? "surf" : playerMode === "surf" ? "walk" : playerMode;
+  if (!worldGrid.isWalkable(playerX, playerY, playerMode)) throw new Error("No se encontró una posición inicial transitable");
+  await preloadExplorationSprites();
+  playerActive = true;
+  explorationUi?.enter();
+  if (!animController.animOn) {
+    animController.start();
+    const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
+    if (animBox) animBox.checked = true;
+    updateMeta();
+  }
   playerVisualX = (playerX - minX) * TILE;
   playerVisualY = (playerY - minY) * TILE;
   updatePlayerDisplay();
   checkCurrentMapMusic();
-  fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false });
+  fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false, vehicle: playerMode });
 }
 
 function stopExploration(): void {
@@ -586,7 +610,7 @@ function stopExploration(): void {
 }
 
 function toggleBike(): void {
-  if (playerMode === "surf") return;
+  if (isStepping || playerMode === "surf") return;
   playerMode = playerMode === "bike" ? "walk" : "bike";
   const bikeBtn = document.getElementById("bike-btn");
   if (bikeBtn) {
@@ -624,36 +648,19 @@ function processPlayerStep(): void {
   playerDir = targetDir;
   if (dx === 0 && dy === 0) return;
 
-  let targetX = playerX + dx;
-  let targetY = playerY + dy;
-
-  const ledge = worldGrid.ledgeDirection(playerX, playerY);
-  let isLedgeJump = false;
-  if (
-    (ledge === 1 && dy === 1) ||
-    (ledge === 2 && dy === -1) ||
-    (ledge === 3 && dx === -1) ||
-    (ledge === 4 && dx === 1)
-  ) {
-    targetX = playerX + dx * 2;
-    targetY = playerY + dy * 2;
-    isLedgeJump = true;
-  }
-
-  if (!worldGrid.isLoaded(targetX, targetY) && findMapAt(targetX, targetY)) {
+  const plan = planStep(worldGrid, playerX, playerY, playerDir, playerMode);
+  const targetX = plan.x, targetY = plan.y;
+  const isLedgeJump = plan.jump;
+  if (plan.status === "loading" && findMapAt(targetX, targetY)) {
     void requestSectors().then(() => {
       if (worldGrid.isLoaded(targetX, targetY)) processPlayerStep();
     });
     return;
   }
-  const targetIsWater = worldGrid.isWaterTile(targetX, targetY);
-  if (targetIsWater && playerMode !== "surf") {
-    playerMode = "surf";
-  } else if (!targetIsWater && playerMode === "surf" && worldGrid.isWalkable(targetX, targetY, "walk")) {
-    playerMode = "walk";
-  }
 
-  if ((isLedgeJump && worldGrid.isLoaded(targetX, targetY)) || worldGrid.isWalkable(targetX, targetY, playerMode)) {
+  if (plan.status === "ready") {
+    playerMode = plan.vehicle;
+    stepRunning = playerMode === "walk" && playerRunning && !isLedgeJump;
     isStepping = true;
     playerMoving = true;
     playerStep = (playerStep + 1) % 4;
@@ -671,17 +678,20 @@ function processPlayerStep(): void {
       direction: playerDir, previousDirection, landingJump: isLedgeJump, vehicle: playerMode };
     fieldEffects.onGroundStep("begin", groundActor);
 
-    const duration = playerMode === "bike" ? 100 : playerRunning ? 120 : 160;
-    const startTime = viewerClock.elapsedMs;
+    // DoJumpSpriteMovement: JUMP_DISTANCE_FAR lasts 32 GBA ticks; other speeds
+    // remain the viewer's existing navigation timings, not a claim of C movement parity.
+    const duration = isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
+    const startTick = viewerClock.tick;
 
-    const animateStep = (now: number) => {
-      const elapsed = now - startTime;
+    const animateStep = (tick: number) => {
+      const elapsed = (tick - startTick) * GBA_FRAME_MS;
       const t = Math.min(1, elapsed / duration);
       playerVisualX = startPxX + (destPxX - startPxX) * t;
       playerVisualY = startPxY + (destPxY - startPxY) * t;
 
       if (isLedgeJump) {
-        playerVisualY -= Math.sin(t * Math.PI) * 12;
+        const elapsedTicks = tick - startTick;
+        playerVisualY += HOENN ? -Math.sin(t * Math.PI) * 12 : t >= 1 ? 0 : jumpArc[Math.min(15, Math.max(0, elapsedTicks - 1) >> 1)]!;
       }
 
       updatePlayerDisplay();
@@ -708,11 +718,12 @@ function processPlayerStep(): void {
         }
       }
     };
-    cancelPlayerMotion = viewerClock.subscribe(frame => animateStep(frame.elapsedMs));
+    cancelPlayerMotion = viewerClock.subscribe(frame => animateStep(frame.tick));
   } else {
     if (!isStepping) {
       isStepping = true;
       playerMoving = true;
+      stepRunning = false;
       audioController.playWallBump();
       playerStep = (playerStep + 1) % 4;
       const basePxX = (playerX - minX) * TILE;
@@ -823,9 +834,18 @@ function checkDoorAt(gx: number, gy: number): boolean {
 async function build(): Promise<void> {
   state.loadStored();
   parseHash();
+  if (!HOENN && startExplore) { document.body.classList.add("exploring"); document.body.setAttribute("aria-busy", "true"); }
+  const mapsReady = fetch(`${HOENN ? "/emerald" : "/fr"}/maps.json`).then(async response => {
+    if (!response.ok) throw new Error(`maps.json: HTTP ${response.status}`);
+    return (await response.json()).maps as typeof allMaps;
+  });
+  const jumpReady = HOENN || !startExplore ? Promise.resolve() : loadCData("event_object_movement").then(() => {
+    jumpArc = cdata<number[]>("event_object_movement", "sJumpY_High");
+    if (jumpArc.length !== 16 || jumpArc.some(value => !Number.isInteger(value))) throw new Error("Invalid source jump arc");
+  });
 
   if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
-  const worldData = HOENN ? await fetchHoennIndex() : await fetchWorldIndex();
+  const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady]);
   if (HOENN) await loadHoennGfx("/emerald");
   index = worldData.index;
   minX = worldData.minX;
@@ -847,9 +867,9 @@ async function build(): Promise<void> {
   });
   // Sonda de pruebas (tools/playtest/smoke/interiors.job.mjs): abre cualquier interior sin pasar por la UI.
   (window as unknown as { frInterior?: InteriorViewer }).frInterior = interiorViewer;
-  allMaps = ((await (await fetch(`${HOENN ? "/emerald" : "/fr"}/maps.json`)).json()) as { maps: typeof allMaps }).maps;
+  const effectsReady = HOENN ? Promise.resolve(NO_FIELD_EFFECTS) : ViewerFieldEffects.create(worldGrid, viewerClock);
+  [allMaps, fieldEffects] = await Promise.all([mapsReady, effectsReady, jumpReady]).then(([maps, effects]) => [maps, effects] as const);
   // Los efectos de campo (hierba, polvo, huellas) son de FireRed; en Hoenn se explora sin ellos.
-  fieldEffects = HOENN ? NO_FIELD_EFFECTS : await ViewerFieldEffects.create(worldGrid, viewerClock);
   const disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
@@ -912,8 +932,7 @@ async function build(): Promise<void> {
     const data = streaming ? new Rom() : rom;
     const layout = layoutsByMap.get(id) ?? await data.loadLayout(info.layout);
     const grid = streaming ? new WorldGrid(info.width, info.height, info.x, info.y) : worldGrid;
-    const primary = await data.loadTileset(layout.primary);
-    const secondary = await data.loadTileset(layout.secondary);
+    const [primary, secondary] = await Promise.all([data.loadTileset(layout.primary), data.loadTileset(layout.secondary)]);
     const renderer = new TileRenderer(primary, secondary);
 
     const wrap = document.createElement("div");
@@ -1137,10 +1156,7 @@ async function build(): Promise<void> {
     checkCurrentMapMusic();
   }
 
-  if (loadingOverlay) {
-    loadingOverlay.classList.add("hidden");
-    setTimeout(() => loadingOverlay.remove(), 400);
-  }
+
 }
 
 function setupUi(): void {
@@ -1422,7 +1438,7 @@ function setupUi(): void {
     const key = e.key.toLowerCase();
     keysDown.delete(key);
     if (key === "shift") playerRunning = false;
-    if (!["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].some((k) => keysDown.has(k))) {
+    if (!isStepping && !["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].some((k) => keysDown.has(k))) {
       playerMoving = false;
       updatePlayerDisplay();
     }
@@ -1541,9 +1557,21 @@ build()
         && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
       await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
     }
+    document.body.removeAttribute("aria-busy");
+    performance.mark("viewer-interactive");
+    if (loadingOverlay) { loadingOverlay.classList.add("hidden"); setTimeout(() => loadingOverlay.remove(), 400); }
   })
   .catch((err) => {
-    panel.innerHTML = `<p>Error al cargar el visor: ${String(err)}</p>`;
-    if (loadingOverlay) loadingOverlay.remove();
-    throw err;
+    const message = `Error al cargar el visor: ${String(err)}`;
+    panel.textContent = message;
+    document.body.removeAttribute("aria-busy");
+    if (loadingOverlay) {
+      if (loadingText) loadingText.textContent = message;
+      loadingOverlay.querySelector(".loading-spinner")?.remove();
+      const retry = document.createElement("button");
+      retry.className = "btn"; retry.textContent = "Reintentar";
+      retry.addEventListener("click", () => location.reload());
+      loadingOverlay.append(retry);
+    }
+    console.error(err);
   });
